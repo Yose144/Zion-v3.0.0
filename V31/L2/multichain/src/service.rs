@@ -224,7 +224,8 @@ impl MultichainService {
             Arc::clone(&adapters),
             wallet_ledger.clone(),
             Arc::clone(&dex),
-        );
+        )
+        .with_htlc(htlc.clone());
 
         Self {
             config,
@@ -420,6 +421,45 @@ impl MultichainService {
     /// Load a swap order by id.
     pub async fn get_swap_order(&self, order_id: &str) -> MultichainResult<Option<DexOrder>> {
         self.swap_executor.get_order(order_id).await
+    }
+
+    /// Execute a non-custodial two-sided HTLC swap.
+    pub async fn execute_htlc_swap(
+        &self,
+        user_id: &str,
+        from: &Asset,
+        to: &Asset,
+        req: &crate::swap::dex::swap_executor::HtlcSwapRequest,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .execute_htlc_swap(user_id, from, to, req)
+            .await
+    }
+
+    /// Record the user's source-side lock transaction for an HTLC swap order.
+    pub async fn record_source_htlc_lock(
+        &self,
+        order_id: &str,
+        source_lock_tx_id: &str,
+        source_expires_at: u64,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .record_source_htlc_lock(order_id, source_lock_tx_id, source_expires_at)
+            .await
+    }
+
+    /// Claim the source-side HTLC after the user has revealed the preimage.
+    pub async fn claim_htlc_swap(
+        &self,
+        order_id: &str,
+        secret: &[u8],
+        source_asset: &Asset,
+        source_operator_recipient: &Address,
+        source_user_address: Option<&Address>,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .claim_htlc_swap(order_id, secret, source_asset, source_operator_recipient, source_user_address)
+            .await
     }
 
     /// Access the withdrawal processor.
