@@ -367,14 +367,17 @@ impl MultichainService {
         self.dex.write().await.add_bridge_edge(from, to, fee_bps);
     }
 
-    /// Return a DEX quote for swapping `amount` of `from` into `to`.
+    /// Return the best DEX quote for swapping `amount` of `from` into `to`.
     pub async fn dex_quote(
         &self,
         from: &Asset,
         to: &Asset,
         amount: Amount,
     ) -> MultichainResult<Quote> {
-        self.dex.read().await.quote(from, to, amount)
+        let quotes = self.dex.read().await.quote_multi(from, to, amount, 1, 3)?;
+        quotes.into_iter().next().ok_or_else(|| {
+            MultichainError::Unsupported(format!("no route from {} to {}", from.id, to.id))
+        })
     }
 
     /// Return the top-N DEX routes for a swap (multi-path quote).
