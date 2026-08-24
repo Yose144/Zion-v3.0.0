@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
+use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
 use crate::error::MultichainResult;
 use crate::types::Transfer;
@@ -50,6 +50,17 @@ pub trait ChainAdapter: Send + Sync {
 
     /// Build and sign a raw payment from this adapter's wallet/key.
     async fn send_payment(&self, to: &Address, amount: Amount) -> MultichainResult<Hash>;
+
+    /// Transfer an ERC-20 / token asset.  Default implementation falls back to
+    /// a native payment (used by chains without a generic token contract layer).
+    async fn transfer_token(
+        &self,
+        _token: &Asset,
+        to: &Address,
+        amount: Amount,
+    ) -> MultichainResult<Hash> {
+        self.send_payment(to, amount).await
+    }
 
     /// Query the spendable balance for `address` of the native asset.
     async fn balance(&self, address: &Address) -> MultichainResult<Amount>;

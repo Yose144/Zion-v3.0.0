@@ -221,6 +221,8 @@ impl ApiServer {
             .route("/v1/swap/quote", post(swap_quote))
             .route("/v1/swap/quote/multi", post(swap_quote_multi))
             .route("/v1/swap/execute", post(swap_execute))
+            .route("/v1/swap/execute-v2", post(swap_execute_v2))
+            .route("/v1/swap/order/:id", get(get_swap_order))
             .route("/v1/swap/intent", post(create_intent))
             .route("/v1/swap/intent/:id", get(get_intent))
             .route("/v1/swap/intent/:id/bid", post(submit_bid))
@@ -623,6 +625,79 @@ async fn swap_execute(
             "amount": req.amount.to_string(),
             "out": out.0.to_string(),
         }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+#[derive(Deserialize)]
+struct SwapExecuteV2Request {
+    from: Asset,
+    to: Asset,
+    amount: u128,
+    #[serde(default)]
+    min_amount_out: u128,
+    #[serde(default)]
+    recipient: Option<String>,
+}
+
+async fn swap_execute_v2(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<SwapExecuteV2Request>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    let recipient = match req.recipient {
+        Some(addr) => Some(parse_address_string(&addr, req.to.id.chain).map_err(|_| StatusCode::BAD_REQUEST)?),
+        None => None,
+    };
+
+    match state
+        .service
+        .swap_execute(
+            &user_id,
+            &req.from,
+            &req.to,
+            Amount::new(req.amount),
+            Amount::new(req.min_amount_out),
+            recipient,
+        )
+        .await
+    {
+        Ok(order) => Ok(Json(serde_json::json!({
+            "order_id": order.id,
+            "from": req.from,
+            "to": req.to,
+            "amount": req.amount.to_string(),
+            "amount_out": order.amount_out.0.to_string(),
+            "route": order.route,
+            "tx_hash": order.tx_hash,
+            "status": order.status.to_string(),
+        }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn get_swap_order(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Path(order_id): Path<String>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let _user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state.service.get_swap_order(&order_id).await {
+        Ok(Some(order)) => Ok(Json(serde_json::json!({
+            "order": order,
+        }))),
+        Ok(None) => Err(StatusCode::NOT_FOUND),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
 }
@@ -1183,6 +1258,27 @@ async fn broadcast_intent(
         }
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
+}
+
+fn parse_address_string(encoded: &str, chain: ChainId) -> MultichainResult<Address> {
+    let bytes = match chain.family() {
+        zion_l1_types::ChainFamily::Evm => {
+            let hex = encoded.strip_prefix("0x").unwrap_or(encoded);
+            let bytes = hex::decode(hex)
+                .map_err(|_| MultichainError::Internal("invalid evm address hex".to_string()))?;
+            if bytes.len() != 20 {
+                return Err(MultichainError::Validation("evm address must be 20 bytes".to_string()));
+            }
+            bytes
+        }
+        zion_l1_types::ChainFamily::Solana | zion_l1_types::ChainFamily::Near => {
+            bs58::decode(encoded)
+                .into_vec()
+                .map_err(|_| MultichainError::Validation("invalid base58 address".to_string()))?
+        }
+        _ => Vec::new(),
+    };
+    Ok(Address::new(chain, bytes, encoded)?)
 }
 
 fn build_endpoint(

@@ -3,7 +3,7 @@ use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
-use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, WalletAccount, WalletAddress, WithdrawalRecord, WithdrawalStatus};
+use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount, WalletAddress, WithdrawalRecord, WithdrawalStatus};
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
 use crate::swap::htlc::{HtlcRecord, SwapState};
@@ -212,6 +212,24 @@ impl Db {
             );
             CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
             CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status);
+
+            CREATE TABLE IF NOT EXISTS dex_orders (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                from_asset_key TEXT NOT NULL,
+                to_asset_key TEXT NOT NULL,
+                amount_in TEXT NOT NULL,
+                amount_out TEXT NOT NULL,
+                min_amount_out TEXT NOT NULL,
+                recipient_address TEXT,
+                route_json TEXT NOT NULL,
+                tx_hash TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL,
+                executed_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_dex_orders_user ON dex_orders(user_id);
+            CREATE INDEX IF NOT EXISTS idx_dex_orders_status ON dex_orders(status);
             "#,
         )?;
         Ok(())
@@ -721,6 +739,77 @@ impl Db {
         Ok(out)
     }
 
+    /// Persist a DEX swap order.
+    pub fn save_dex_order(&self, order: &DexOrder) -> MultichainResult<()> {
+        let created_at = order.created_at.to_rfc3339();
+        let executed_at = order.executed_at.map(|t| t.to_rfc3339());
+        let route_json = serde_json::to_string(&order.route)
+            .map_err(|e| MultichainError::Internal(format!("serialize dex order route: {e}")))?;
+        self.conn.execute(
+            r#"
+            INSERT OR REPLACE INTO dex_orders
+            (id, user_id, from_asset_key, to_asset_key, amount_in, amount_out, min_amount_out,
+             recipient_address, route_json, tx_hash, status, created_at, executed_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+            "#,
+            rusqlite::params![
+                order.id,
+                order.user_id,
+                order.from_asset_key,
+                order.to_asset_key,
+                order.amount_in.0.to_string(),
+                order.amount_out.0.to_string(),
+                order.min_amount_out.0.to_string(),
+                order.recipient_address,
+                route_json,
+                order.tx_hash,
+                order.status.to_string(),
+                created_at,
+                executed_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load a DEX order by id.
+    pub fn load_dex_order(&self, id: &str) -> MultichainResult<Option<DexOrder>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, from_asset_key, to_asset_key, amount_in, amount_out,
+                   min_amount_out, recipient_address, route_json, tx_hash, status,
+                   created_at, executed_at
+            FROM dex_orders
+            WHERE id = ?1
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![id])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(parse_dex_order(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Load all DEX orders for a user, newest first.
+    pub fn load_dex_orders_for_user(&self, user_id: &str) -> MultichainResult<Vec<DexOrder>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, from_asset_key, to_asset_key, amount_in, amount_out,
+                   min_amount_out, recipient_address, route_json, tx_hash, status,
+                   created_at, executed_at
+            FROM dex_orders
+            WHERE user_id = ?1
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        let mut out = Vec::new();
+        let mut rows = stmt.query(rusqlite::params![user_id])?;
+        while let Some(row) = rows.next()? {
+            out.push(parse_dex_order(row)?);
+        }
+        Ok(out)
+    }
+
     /// Update an existing withdrawal's status and (optionally) on-chain tx hash.
     pub fn update_withdrawal(
         &mut self,
@@ -873,6 +962,50 @@ fn parse_withdrawal(row: &Row) -> MultichainResult<WithdrawalRecord> {
         status,
         created_at: parse_datetime(&created_at)?,
         sent_at: sent_at.as_deref().map(parse_datetime).transpose()?,
+    })
+}
+
+fn parse_dex_order(row: &Row) -> MultichainResult<DexOrder> {
+    let id: String = row.get(0)?;
+    let user_id: String = row.get(1)?;
+    let from_asset_key: String = row.get(2)?;
+    let to_asset_key: String = row.get(3)?;
+    let amount_in: String = row.get(4)?;
+    let amount_out: String = row.get(5)?;
+    let min_amount_out: String = row.get(6)?;
+    let recipient_address: Option<String> = row.get(7)?;
+    let route_json: String = row.get(8)?;
+    let tx_hash: Option<String> = row.get(9)?;
+    let status_str: String = row.get(10)?;
+    let created_at: String = row.get(11)?;
+    let executed_at: Option<String> = row.get(12)?;
+
+    let status = status_str
+        .parse::<DexOrderStatus>()
+        .map_err(MultichainError::Validation)?;
+    let route: Vec<String> = serde_json::from_str(&route_json)
+        .map_err(|e| MultichainError::Internal(format!("deserialize dex order route: {e}")))?;
+
+    Ok(DexOrder {
+        id,
+        user_id,
+        from_asset_key,
+        to_asset_key,
+        amount_in: Amount::new(amount_in.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid dex order amount_in: {e}"))
+        })?),
+        amount_out: Amount::new(amount_out.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid dex order amount_out: {e}"))
+        })?),
+        min_amount_out: Amount::new(min_amount_out.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid dex order min_amount_out: {e}"))
+        })?),
+        recipient_address,
+        route,
+        tx_hash,
+        status,
+        created_at: parse_datetime(&created_at)?,
+        executed_at: executed_at.as_deref().map(parse_datetime).transpose()?,
     })
 }
 
