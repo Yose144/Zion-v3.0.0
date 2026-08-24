@@ -1883,15 +1883,19 @@ impl StratumServer {
                             let share_target_hex = hex::encode(share_target);
 
                             if !header_hex.is_empty() {
-                                // Candidate job id for the next broadcast.
-                                let candidate_id = format!("zion_{}", job_counter + 1);
-                                let v3_msg = self.build_v3_job_message(
+                                // Build a trial V3 Job using the last broadcast job id.
+                                // The job id itself is not part of the meaningful content;
+                                // we compare the full message so that any change in the
+                                // ZION header or the external stream triggers a new
+                                // mining.notify with a fresh id.
+                                let candidate_id = format!("zion_{}", job_counter);
+                                let trial_v3_msg = self.build_v3_job_message(
                                     &candidate_id,
                                     header_hex,
                                     &template_json,
                                 );
 
-                                let changed = match (&last_v3_msg, &v3_msg) {
+                                let changed = match (&last_v3_msg, &trial_v3_msg) {
                                     (None, Some(_)) => true,
                                     (Some(last), Some(cur)) => last != cur,
                                     _ => false,
@@ -1900,6 +1904,13 @@ impl StratumServer {
                                 if changed {
                                     job_counter += 1;
                                     let job_id = format!("zion_{}", job_counter);
+                                    // Rebuild with the new job id so last_v3_msg matches
+                                    // exactly what the miners receive.
+                                    let v3_msg = self.build_v3_job_message(
+                                        &job_id,
+                                        header_hex,
+                                        &template_json,
+                                    );
                                     tracing::info!(job = %job_id, "broadcasting mining.notify");
                                     self.broadcast_job(
                                         &job_id,
