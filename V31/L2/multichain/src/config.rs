@@ -81,6 +81,8 @@ pub struct MultichainConfig {
     pub solvers: Vec<SolverEntry>,
     #[serde(default)]
     pub node_rewards: NodeRewardsConfig,
+    #[serde(default)]
+    pub reconciliation: ReconciliationConfig,
 }
 
 impl Default for MultichainConfig {
@@ -97,12 +99,48 @@ impl Default for MultichainConfig {
             solver: SolverConfig::default(),
             solvers: Vec::new(),
             node_rewards: NodeRewardsConfig::default(),
+            reconciliation: ReconciliationConfig::default(),
         }
     }
 }
 
 fn default_l1_rpc_url() -> String {
     "http://127.0.0.1:9445".to_string()
+}
+
+/// Reconciliation task configuration.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ReconciliationConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Seconds between reconciliation passes.
+    #[serde(default = "default_reconciliation_interval")]
+    pub interval_seconds: u64,
+    /// Absolute difference larger than this triggers an alert.
+    #[serde(default = "default_reconciliation_threshold")]
+    pub alert_threshold: String,
+}
+
+impl Default for ReconciliationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            interval_seconds: 300,
+            alert_threshold: "1000000".to_string(),
+        }
+    }
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_reconciliation_interval() -> u64 {
+    300
+}
+
+fn default_reconciliation_threshold() -> String {
+    "1000000".to_string()
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]

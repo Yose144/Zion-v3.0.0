@@ -22,6 +22,7 @@ use crate::error::{MultichainError, MultichainResult};
 use crate::multichain_wallet::{DepositWatcher, DexOrder, MultichainWallet, WalletLedger, WithdrawalProcessor};
 use crate::swap::dex::swap_executor::SwapExecutor;
 use crate::node_rewards::NodeRewards;
+use crate::reconciliation::{Reconciler, ReconcilerConfig, ReconciliationReport};
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
 use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
@@ -58,6 +59,7 @@ pub struct MultichainService {
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
     node_rewards: Arc<Mutex<NodeRewards>>,
+    reconciler: Reconciler,
 }
 
 fn load_bridge_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
@@ -230,6 +232,19 @@ impl MultichainService {
         )
         .with_htlc(htlc.clone());
 
+        let reconciler_config = ReconcilerConfig::from_config(&config.reconciliation)
+            .unwrap_or_else(|e| {
+                tracing::warn!("invalid reconciliation config, using defaults: {e}");
+                ReconcilerConfig::default()
+            });
+        let reconciler = Reconciler::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_keyring.clone(),
+            Arc::clone(&dex),
+            reconciler_config,
+        );
+
         Self {
             config,
             db,
@@ -250,6 +265,7 @@ impl MultichainService {
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
             node_rewards: Arc::new(Mutex::new(node_rewards)),
+            reconciler,
         }
     }
 
@@ -716,6 +732,19 @@ impl MultichainService {
         &self.wallet_keyring
     }
 
+    /// Access the on-chain/internal reconciliation engine.
+    pub fn reconciler(&self) -> Reconciler {
+        self.reconciler.clone()
+    }
+
+    /// Load the most recent reconciliation reports from the database.
+    pub async fn reconciliation_reports(
+        &self,
+        limit: usize,
+    ) -> MultichainResult<Vec<ReconciliationReport>> {
+        self.db.lock().await.load_reconciliation_reports(limit)
+    }
+
     /// Derive a wallet address for a chain.
     pub fn wallet_address(
         &self,
@@ -984,6 +1013,21 @@ fn build_adapter(
             }
         }
     }
+}
+
+/// Parse an `asset_key` of the form `chain:ticker` or `chain:ticker:contract`.
+pub fn parse_asset_key(asset_key: &str) -> MultichainResult<(ChainId, String, Option<String>)> {
+    let parts: Vec<&str> = asset_key.split(':').collect();
+    if parts.len() < 2 {
+        return Err(MultichainError::Validation(format!(
+            "invalid asset key: {}",
+            asset_key
+        )));
+    }
+    let chain = chain_id_by_name(parts[0])?;
+    let ticker = parts[1].to_string();
+    let contract = parts.get(2).map(|s| s.to_string());
+    Ok((chain, ticker, contract))
 }
 
 fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {

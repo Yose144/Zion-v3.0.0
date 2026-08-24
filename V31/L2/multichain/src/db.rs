@@ -5,6 +5,7 @@ use crate::error::MultichainError;
 use crate::error::MultichainResult;
 use crate::audit::{AuditLog, AuditResult};
 use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount, WalletAddress, WithdrawalRecord, WithdrawalStatus};
+use crate::reconciliation::ReconciliationReport;
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
 use crate::swap::htlc::{HtlcRecord, SwapState};
@@ -248,6 +249,22 @@ impl Db {
             );
             CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp ON audit_logs(user_id, timestamp DESC);
             CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
+
+            CREATE TABLE IF NOT EXISTS reconciliation_reports (
+                id TEXT PRIMARY KEY,
+                timestamp TEXT NOT NULL,
+                chain TEXT NOT NULL,
+                asset_key TEXT NOT NULL,
+                hot_wallet_address TEXT,
+                on_chain TEXT NOT NULL,
+                internal TEXT NOT NULL,
+                pool_reserves TEXT NOT NULL,
+                diff TEXT NOT NULL,
+                alert INTEGER NOT NULL DEFAULT 0,
+                notes TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_reconciliation_alert ON reconciliation_reports(alert, timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_reconciliation_asset ON reconciliation_reports(asset_key, timestamp DESC);
             "#,
         )?;
 
@@ -633,6 +650,24 @@ impl Db {
             "SELECT asset_key, amount FROM wallet_balances WHERE user_id = ?1 ORDER BY asset_key"
         )?;
         let mut rows = stmt.query(rusqlite::params![user_id])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            let asset_key: String = row.get(0)?;
+            let amount: String = row.get(1)?;
+            let amount = amount.parse::<u128>().map_err(|e| {
+                MultichainError::Internal(format!("invalid wallet balance amount: {e}"))
+            })?;
+            out.push((asset_key, Amount::new(amount)));
+        }
+        Ok(out)
+    }
+
+    /// Load all wallet balances aggregated by asset key.
+    pub fn load_all_wallet_balances(&self) -> MultichainResult<Vec<(String, Amount)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT asset_key, CAST(SUM(amount) AS TEXT) FROM wallet_balances GROUP BY asset_key ORDER BY asset_key")?;
+        let mut rows = stmt.query([])?;
         let mut out = Vec::new();
         while let Some(row) = rows.next()? {
             let asset_key: String = row.get(0)?;
@@ -1033,6 +1068,91 @@ impl Db {
         }
         Ok(out)
     }
+
+    // ------------------------------------------------------------------------
+    // Reconciliation reports
+    // ------------------------------------------------------------------------
+
+    /// Persist a reconciliation report.
+    pub fn save_reconciliation_report(&self, report: &ReconciliationReport) -> MultichainResult<()> {
+        let timestamp = report.timestamp.to_rfc3339();
+        self.conn.execute(
+            r#"
+            INSERT INTO reconciliation_reports
+            (id, timestamp, chain, asset_key, hot_wallet_address,
+             on_chain, internal, pool_reserves, diff, alert, notes)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+            "#,
+            rusqlite::params![
+                report.id,
+                timestamp,
+                report.chain,
+                report.asset_key,
+                report.hot_wallet_address,
+                report.on_chain.0.to_string(),
+                report.internal.0.to_string(),
+                report.pool_reserves.0.to_string(),
+                report.diff.to_string(),
+                if report.alert { 1 } else { 0 },
+                report.notes,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load the most recent reconciliation reports.
+    pub fn load_reconciliation_reports(&self, limit: usize) -> MultichainResult<Vec<ReconciliationReport>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, timestamp, chain, asset_key, hot_wallet_address,
+                   on_chain, internal, pool_reserves, diff, alert, notes
+            FROM reconciliation_reports
+            ORDER BY timestamp DESC
+            LIMIT ?1
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![limit as i64])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            out.push(parse_reconciliation_report(row)?);
+        }
+        Ok(out)
+    }
+}
+
+fn parse_reconciliation_report(row: &Row) -> MultichainResult<ReconciliationReport> {
+    let id: String = row.get(0)?;
+    let timestamp: String = row.get(1)?;
+    let chain: String = row.get(2)?;
+    let asset_key: String = row.get(3)?;
+    let hot_wallet_address: Option<String> = row.get(4)?;
+    let on_chain: String = row.get(5)?;
+    let internal: String = row.get(6)?;
+    let pool_reserves: String = row.get(7)?;
+    let diff: String = row.get(8)?;
+    let alert: i32 = row.get(9)?;
+    let notes: Option<String> = row.get(10)?;
+    Ok(ReconciliationReport {
+        id,
+        timestamp: parse_datetime(&timestamp)?,
+        chain,
+        asset_key,
+        hot_wallet_address,
+        on_chain: Amount::new(on_chain.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid reconciliation on_chain amount: {e}"))
+        })?),
+        internal: Amount::new(internal.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid reconciliation internal amount: {e}"))
+        })?),
+        pool_reserves: Amount::new(pool_reserves.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid reconciliation pool_reserves amount: {e}"))
+        })?),
+        diff: diff.parse::<i128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid reconciliation diff: {e}"))
+        })?,
+        alert: alert != 0,
+        notes,
+    })
 }
 
 fn parse_deposit_rows(

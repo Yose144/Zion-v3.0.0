@@ -484,8 +484,13 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
    výběrů a DEX objednávek; prolink z `/wallet`. Rozšíření swap proxy o
    `/api/multichain/[...path]` (mapuje `/v1/wallet/*` a `/v1/swap/*`).
 2. ⏳ E2E testy (Cypress/Playwright) pro celý flow: deposit → swap → withdraw.
-3. ⏳ Reconciliation: porovnat on-chain zůstatky L2 hot walletů s interními
-   saldy + pool reserves. Alarm při nesrovnalosti.
+3. ✅ Reconciliation: `Reconciler` (`V31/L2/multichain/src/reconciliation.rs`)
+   porovnává on-chain zůstatky L2 hot walletů (odvozené z `wallet_keyring`)
+   s interními saldy a AMM pool reserves, persistuje reporty do SQLite,
+   alertuje při `diff > alert_threshold`. Konfigurovatelné přes
+   `MultichainConfig.reconciliation` (`interval_seconds`, `alert_threshold`,
+   `enabled`). Background task spuštěn v `ApiServer::run`; HTTP endpointy
+   `GET /v1/admin/reconciliation?limit=N` a `POST /v1/admin/reconciliation/trigger`.
 4. ✅ Rate limiting per-IP + per-user token buckets
    (`V31/L2/multichain/src/rate_limit.rs`) a audit log
    (`V31/L2/multichain/src/audit.rs`) pro swap/withdraw/HTLC/wallet/auth.
@@ -517,7 +522,10 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
 
 - Po každém swapu by se měl `DexRouter` rezervy shodovat s on-chain zůstatky
   L2 hot walletů. Rozdíl znamená chybu nebo útok.
-- Denní reconciliation task a alert.
+- `Reconciler` běží jako background task (interval dle `MultichainConfig.reconciliation`)
+  a persistuje reporty; alert při `diff > alert_threshold`.
+- HTTP endpointy pro operátory: `GET /v1/admin/reconciliation?limit=N` (reporty)
+  a `POST /v1/admin/reconciliation/trigger` (manuální okamžitá kontrola).
 - Minimální hot-wallet threshold — při dosažení se spustí refill z cold
   storage / treasury.
 

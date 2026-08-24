@@ -21,6 +21,7 @@ pub mod error;
 pub mod multichain_wallet;
 pub mod node_rewards;
 pub mod rate_limit;
+pub mod reconciliation;
 pub mod server;
 pub mod service;
 pub mod swap;
