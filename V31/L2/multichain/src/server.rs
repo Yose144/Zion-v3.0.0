@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{
-    extract::{Extension, Path, State},
+    extract::{Extension, Path, Query, State},
     http::{HeaderValue, Method, StatusCode, header::HeaderName},
     response::Json,
     routing::{get, post},
@@ -23,6 +23,7 @@ use crate::error::{MultichainError, MultichainResult};
 use crate::node_rewards::{HeartbeatRequest, NodeRecord, PayoutRecord, RegisterNodeRequest};
 use crate::audit::{AuditLogger, AuditResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
+use crate::reconciliation::ReconciliationReport;
 use crate::service::MultichainService;
 use crate::zis_auth::{address_from_linked, resolve_zis_auth, ZisClient, ZisUser};
 use crate::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
@@ -271,6 +272,8 @@ impl ApiServer {
             .route("/v1/nodes/heartbeat", post(node_heartbeat))
             .route("/v1/nodes", get(list_nodes))
             .route("/v1/nodes/payouts", get(node_reward_payouts))
+            .route("/v1/admin/reconciliation", get(get_reconciliation_reports))
+            .route("/v1/admin/reconciliation/trigger", post(trigger_reconciliation))
             .layer(axum::middleware::from_fn_with_state(
                 state.limiter.clone(),
                 auth_rate_limit,
@@ -349,6 +352,13 @@ impl ApiServer {
         tokio::spawn(async move {
             if let Err(e) = withdrawal_processor.run().await {
                 tracing::warn!("withdrawal processor exited: {}", e);
+            }
+        });
+
+        let reconciler = self.service.reconciler();
+        tokio::spawn(async move {
+            if let Err(e) = reconciler.run().await {
+                tracing::warn!("reconciler exited: {}", e);
             }
         });
 
@@ -1787,6 +1797,42 @@ async fn node_reward_payouts(
         Ok(payouts) => Ok(Json(payouts)),
         Err(e) => {
             tracing::warn!("list node reward payouts failed: {e}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct ReconciliationQuery {
+    #[serde(default = "default_reconciliation_limit")]
+    limit: usize,
+}
+
+fn default_reconciliation_limit() -> usize {
+    50
+}
+
+async fn get_reconciliation_reports(
+    State(state): State<AppState>,
+    Query(query): Query<ReconciliationQuery>,
+) -> Result<Json<Vec<ReconciliationReport>>, StatusCode> {
+    match state.service.reconciliation_reports(query.limit).await {
+        Ok(reports) => Ok(Json(reports)),
+        Err(e) => {
+            tracing::warn!("list reconciliation reports failed: {e}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn trigger_reconciliation(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<ReconciliationReport>>, StatusCode> {
+    let reconciler = state.service.reconciler();
+    match reconciler.reconcile().await {
+        Ok(reports) => Ok(Json(reports)),
+        Err(e) => {
+            tracing::warn!("manual reconciliation failed: {e}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

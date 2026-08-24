@@ -25,7 +25,7 @@ use std::sync::Arc;
 use clap::Parser;
 use tracing::{error, info};
 
-use zion_multichain::config::{AdapterConfig, DatabaseConfig, MultichainConfig, NodeRewardsConfig, ServerConfig};
+use zion_multichain::config::{AdapterConfig, DatabaseConfig, MultichainConfig, NodeRewardsConfig, ReconciliationConfig, ServerConfig};
 use zion_multichain::server::ApiServer;
 use zion_multichain::service::MultichainService;
 use zion_multichain::warp::config::WarpConfig;
@@ -100,6 +100,7 @@ fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
         solver: warp.solver.clone(),
         solvers: warp.solvers.clone(),
         node_rewards: NodeRewardsConfig::default(),
+        reconciliation: ReconciliationConfig::default(),
     }
 }
 
