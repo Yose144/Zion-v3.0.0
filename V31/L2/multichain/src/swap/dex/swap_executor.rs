@@ -79,14 +79,13 @@ impl SwapExecutor {
         self.ledger.debit(user_id, from, amount).await?;
 
         // 2. Quote and execute against the router.
-        let quote = {
-            let router = self.router.read().await;
-            router.quote(from, to, amount)
-        };
-
-        let quote = match quote {
-            Ok(q) => q,
+        let mut router = self.router.write().await;
+        let quote = match router.quote_multi(from, to, amount, 1, 4) {
+            Ok(mut quotes) => quotes.pop().ok_or_else(|| {
+                MultichainError::Unsupported(format!("no route from {} to {}", from.id, to.id))
+            })?,
             Err(e) => {
+                drop(router);
                 self.ledger.credit(user_id, from, amount).await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
@@ -95,6 +94,7 @@ impl SwapExecutor {
         };
 
         if quote.expected_out < min_amount_out {
+            drop(router);
             self.ledger.credit(user_id, from, amount).await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
@@ -104,24 +104,32 @@ impl SwapExecutor {
             )));
         }
 
-        // Phase 3 supports direct-pool execution only (same-chain or 1:1 bridge
-        // synthetic pools). Multi-hop execution is deferred to Phase 5/6.
-        if quote.route.len() != 2 {
-            self.ledger.credit(user_id, from, amount).await?;
-            order.status = DexOrderStatus::Failed;
-            self.save_order(&order).await?;
-            return Err(MultichainError::Unsupported(
-                "multi-hop swap execution not supported yet".to_string(),
-            ));
+        // Phase 5: execute the full route hop-by-hop (AMM or 1:1 bridge pools).
+        let mut current = amount;
+        for window in quote.route.windows(2) {
+            let from_id = &window[0];
+            let to_id = &window[1];
+            let hop_from = router.find_asset(from_id).ok_or_else(|| {
+                MultichainError::Unsupported(format!("unknown hop asset {from_id}"))
+            })?;
+            let hop_to = router.find_asset(to_id).ok_or_else(|| {
+                MultichainError::Unsupported(format!("unknown hop asset {to_id}"))
+            })?;
+            current = match router.execute(&hop_from, &hop_to, current) {
+                Ok(out) => out,
+                Err(e) => {
+                    drop(router);
+                    self.ledger.credit(user_id, from, amount).await?;
+                    order.status = DexOrderStatus::Failed;
+                    self.save_order(&order).await?;
+                    return Err(e);
+                }
+            };
         }
 
-        let amount_out = {
-            let mut router = self.router.write().await;
-            router.execute(from, to, amount)
-        }?;
-
-        if amount_out < min_amount_out {
+        if current < min_amount_out {
             // This should not happen after the quote check, but keep the user safe.
+            drop(router);
             self.ledger.credit(user_id, from, amount).await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
@@ -130,10 +138,12 @@ impl SwapExecutor {
             ));
         }
 
+        let amount_out = current;
         order.amount_out = amount_out;
         order.route = quote.route.iter().map(|a| a.to_string()).collect();
         order.status = DexOrderStatus::Executed;
         order.executed_at = Some(chrono::Utc::now());
+        drop(router);
 
         // 3. On-chain settlement if a recipient was supplied.
         if let Some(recipient) = recipient {
@@ -205,9 +215,27 @@ mod tests {
     use crate::multichain_wallet::ledger::WalletLedger;
     use crate::swap::dex::{DexRouter, Pool};
 
-    #[derive(Default)]
     struct MockAdapter {
+        family: ChainFamily,
         transfer_token_calls: std::sync::Arc<std::sync::Mutex<Vec<(String, String, u128)>>>,
+    }
+
+    impl Default for MockAdapter {
+        fn default() -> Self {
+            Self {
+                family: ChainFamily::Evm,
+                transfer_token_calls: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+            }
+        }
+    }
+
+    impl MockAdapter {
+        fn new(family: ChainFamily) -> Self {
+            Self {
+                family,
+                transfer_token_calls: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+            }
+        }
     }
 
     #[async_trait]
@@ -217,7 +245,7 @@ mod tests {
         }
 
         fn family(&self) -> ChainFamily {
-            ChainFamily::Evm
+            self.family
         }
 
         async fn health_check(&self) -> MultichainResult<bool> {
@@ -382,5 +410,214 @@ mod tests {
         assert_eq!(recorded[0].0, usdc.id.to_string());
         assert_eq!(recorded[0].1, recipient.encoded);
         assert_eq!(recorded[0].2, order.amount_out.0);
+    }
+
+    #[tokio::test]
+    async fn zion_to_btc_swap_settles_on_bitcoin() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let mut dex = DexRouter::new();
+        let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+        let btc = Asset::native(ChainId::Bitcoin, "BTC", 8, "Bitcoin");
+
+        dex.add_pool(Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: btc.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(10_000_000_000),
+            fee_bps: 30,
+        });
+
+        let user_id = "user1";
+        ledger
+            .credit(user_id, &zion, Amount::new(10_000_000))
+            .await
+            .unwrap();
+
+        let mut adapters = ChainAdapterRegistry::new();
+        let mock = MockAdapter::new(ChainFamily::Utxo);
+        let calls = mock.transfer_token_calls.clone();
+        adapters.register(ChainId::Bitcoin, Box::new(mock));
+
+        let executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            ledger.clone(),
+            Arc::new(RwLock::new(dex)),
+        );
+
+        let recipient = Address::new(ChainId::Bitcoin, Vec::new(), "bc1qrecipient").unwrap();
+
+        let order = executor
+            .execute_swap(
+                user_id,
+                &zion,
+                &btc,
+                Amount::new(1_000_000),
+                Amount::ZERO,
+                Some(recipient.clone()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(order.status, DexOrderStatus::Settled);
+        assert!(order.amount_out.0 > 0);
+        assert_eq!(order.route, vec![zion.id.to_string(), btc.id.to_string()]);
+
+        let recorded = calls.lock().unwrap();
+        assert_eq!(recorded.len(), 1);
+        assert_eq!(recorded[0].0, btc.id.to_string());
+        assert_eq!(recorded[0].1, recipient.encoded);
+        assert_eq!(recorded[0].2, order.amount_out.0);
+
+        let zion_balance = ledger.balance(user_id, &zion).await.unwrap();
+        assert_eq!(zion_balance.0, 9_000_000);
+    }
+
+    #[tokio::test]
+    async fn btc_to_zion_swap_settles_on_zion_l1() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let mut dex = DexRouter::new();
+        let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+        let btc = Asset::native(ChainId::Bitcoin, "BTC", 8, "Bitcoin");
+
+        dex.add_pool(Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: btc.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(10_000_000_000),
+            fee_bps: 30,
+        });
+
+        let user_id = "user1";
+        ledger
+            .credit(user_id, &btc, Amount::new(100_000))
+            .await
+            .unwrap();
+
+        let mut adapters = ChainAdapterRegistry::new();
+        let mock = MockAdapter::new(ChainFamily::Zion);
+        let calls = mock.transfer_token_calls.clone();
+        adapters.register(ChainId::ZionL1, Box::new(mock));
+
+        let executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            ledger.clone(),
+            Arc::new(RwLock::new(dex)),
+        );
+
+        let recipient = Address::new(ChainId::ZionL1, Vec::new(), "zion1recipient").unwrap();
+
+        let order = executor
+            .execute_swap(
+                user_id,
+                &btc,
+                &zion,
+                Amount::new(100_000),
+                Amount::ZERO,
+                Some(recipient.clone()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(order.status, DexOrderStatus::Settled);
+        assert!(order.amount_out.0 > 0);
+        assert_eq!(order.route, vec![btc.id.to_string(), zion.id.to_string()]);
+
+        let recorded = calls.lock().unwrap();
+        assert_eq!(recorded.len(), 1);
+        assert_eq!(recorded[0].0, zion.id.to_string());
+        assert_eq!(recorded[0].1, recipient.encoded);
+        assert_eq!(recorded[0].2, order.amount_out.0);
+    }
+
+    #[tokio::test]
+    async fn cross_chain_bridge_hop_then_amm_settles_on_target_chain() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let mut dex = DexRouter::new();
+
+        let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+        let wzion = Asset::with_contract(
+            ChainId::Base,
+            "wZION",
+            "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6",
+            18,
+            "Wrapped ZION",
+        );
+        let usdc = Asset::with_contract(
+            ChainId::Base,
+            "USDC",
+            "0xA0b86a33E6B8",
+            6,
+            "USD Coin",
+        );
+
+        // Bridge edge: ZION (ZionL1) <-> wZION (Base)
+        dex.add_bridge_edge(zion.clone(), wzion.clone(), 10);
+
+        // AMM pool on Base: wZION / USDC
+        dex.add_pool(Pool {
+            id: 2,
+            asset_a: wzion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(100_000_000_000_000_000_000_000u128),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+        });
+
+        let user_id = "user1";
+        ledger
+            .credit(user_id, &zion, Amount::new(10_000_000))
+            .await
+            .unwrap();
+
+        let mut adapters = ChainAdapterRegistry::new();
+        let mock = MockAdapter::new(ChainFamily::Evm);
+        let calls = mock.transfer_token_calls.clone();
+        adapters.register(ChainId::Base, Box::new(mock));
+
+        let executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            ledger.clone(),
+            Arc::new(RwLock::new(dex)),
+        );
+
+        let recipient = Address::new(
+            ChainId::Base,
+            vec![0u8; 20],
+            "0x0000000000000000000000000000000000000002",
+        )
+        .unwrap();
+
+        let order = executor
+            .execute_swap(
+                user_id,
+                &zion,
+                &usdc,
+                Amount::new(10_000_000),
+                Amount::ZERO,
+                Some(recipient.clone()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(order.status, DexOrderStatus::Settled);
+        assert!(order.amount_out.0 > 0);
+        assert_eq!(order.route.len(), 3);
+
+        let recorded = calls.lock().unwrap();
+        assert_eq!(recorded.len(), 1);
+        assert_eq!(recorded[0].0, usdc.id.to_string());
+        assert_eq!(recorded[0].1, recipient.encoded);
+        assert_eq!(recorded[0].2, order.amount_out.0);
+
+        let zion_balance = ledger.balance(user_id, &zion).await.unwrap();
+        assert_eq!(zion_balance.0, 0);
     }
 }

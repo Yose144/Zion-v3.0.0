@@ -42,16 +42,30 @@ impl Pool {
 
     fn quote_by_id(&self, from: &AssetId, to: &AssetId, amount: Amount) -> Option<Amount> {
         let (reserve_in, reserve_out) = self.reserves_for(from, to)?;
-        compute_out(reserve_in, reserve_out, amount, self.fee_bps)
+        let in_decimals = self.decimals_for(from)?;
+        let out_decimals = self.decimals_for(to)?;
+        compute_out(reserve_in, reserve_out, amount, in_decimals, out_decimals, self.fee_bps)
     }
 
     fn execute_by_id(&mut self, from: &AssetId, to: &AssetId, amount: Amount) -> Option<Amount> {
         let fee_bps = self.fee_bps;
+        let in_decimals = self.decimals_for(from)?;
+        let out_decimals = self.decimals_for(to)?;
         let (reserve_in, reserve_out) = self.reserves_mut_for(from, to)?;
-        let out = compute_out(*reserve_in, *reserve_out, amount, fee_bps)?;
+        let out = compute_out(*reserve_in, *reserve_out, amount, in_decimals, out_decimals, fee_bps)?;
         *reserve_in = reserve_in.saturating_add(amount);
         *reserve_out = reserve_out.saturating_sub(out);
         Some(out)
+    }
+
+    fn decimals_for(&self, id: &AssetId) -> Option<u8> {
+        if self.asset_a.id == *id {
+            Some(self.asset_a.decimals)
+        } else if self.asset_b.id == *id {
+            Some(self.asset_b.decimals)
+        } else {
+            None
+        }
     }
 
     fn reserves_for(&self, from: &AssetId, to: &AssetId) -> Option<(Amount, Amount)> {
@@ -79,6 +93,40 @@ impl Pool {
     }
 }
 
+/// A bridgeable asset pair with the fee charged by the bridge.
+#[derive(Debug, Clone)]
+pub struct BridgeEdge {
+    pub from: AssetId,
+    pub to: AssetId,
+    pub fee_bps: u16,
+}
+
+/// Registry of known cross-chain bridge edges.
+#[derive(Debug, Clone, Default)]
+pub struct BridgeRegistry {
+    edges: Vec<BridgeEdge>,
+}
+
+impl BridgeRegistry {
+    pub fn new() -> Self {
+        Self { edges: Vec::new() }
+    }
+
+    pub fn add(&mut self, edge: BridgeEdge) {
+        self.edges.push(edge);
+    }
+
+    pub fn contains(&self, from: &AssetId, to: &AssetId) -> bool {
+        self.edges
+            .iter()
+            .any(|e| (e.from == *from && e.to == *to) || (e.from == *to && e.to == *from))
+    }
+
+    pub fn edges(&self) -> &[BridgeEdge] {
+        &self.edges
+    }
+}
+
 /// A quote from the DEX router.
 #[derive(Clone, Debug)]
 pub struct Quote {
@@ -89,15 +137,19 @@ pub struct Quote {
     pub total_fee_bps: u16,
 }
 
-/// In-memory AMM router.
+/// In-memory AMM router with an optional bridge-pool registry.
 #[derive(Clone, Debug, Default)]
 pub struct DexRouter {
     pools: Vec<Pool>,
+    bridges: BridgeRegistry,
 }
 
 impl DexRouter {
     pub fn new() -> Self {
-        Self { pools: Vec::new() }
+        Self {
+            pools: Vec::new(),
+            bridges: BridgeRegistry::new(),
+        }
     }
 
     pub fn add_pool(&mut self, pool: Pool) {
@@ -106,6 +158,27 @@ impl DexRouter {
 
     pub fn pools(&self) -> &[Pool] {
         &self.pools
+    }
+
+    /// Return the asset metadata for an `AssetId` known to the router.
+    pub fn find_asset(&self, id: &AssetId) -> Option<Asset> {
+        self.pools.iter().find_map(|p| {
+            if p.asset_a.id == *id {
+                Some(p.asset_a.clone())
+            } else if p.asset_b.id == *id {
+                Some(p.asset_b.clone())
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn is_bridge_hop(&self, from: &AssetId, to: &AssetId) -> bool {
+        self.bridges.contains(from, to)
+    }
+
+    pub fn bridge_registry(&self) -> &BridgeRegistry {
+        &self.bridges
     }
 
     /// Return the best route and expected output for a swap.
@@ -277,10 +350,12 @@ impl DexRouter {
         }
     }
 
-    /// Add a cross-chain bridge edge as a synthetic pool with 1:1 ratio.
+    /// Add a cross-chain bridge edge as a synthetic pool with a 1:1 peg.
     ///
     /// This allows the router to route through bridge hops when finding
     /// multi-path quotes. The bridge fee is expressed in basis points.
+    /// Reserves are set to represent an equal real value on both sides,
+    /// taking each asset's decimals into account.
     pub fn add_bridge_pool(
         &mut self,
         id: u64,
@@ -288,15 +363,40 @@ impl DexRouter {
         wrapped_asset: Asset,
         fee_bps: u16,
     ) {
-        // Bridge pools have equal reserves (1:1 peg) with the bridge fee
+        if self.bridges.contains(&native_asset.id, &wrapped_asset.id) {
+            return;
+        }
+
+        let one_million = BigUint::from(1_000_000u64);
+        let reserve_a = (one_million.clone() * BigUint::from(10u32).pow(native_asset.decimals as u32))
+            .to_u128()
+            .map(Amount::new)
+            .unwrap_or(Amount::new(u128::MAX));
+        let reserve_b = (one_million * BigUint::from(10u32).pow(wrapped_asset.decimals as u32))
+            .to_u128()
+            .map(Amount::new)
+            .unwrap_or(Amount::new(u128::MAX));
+
         self.pools.push(Pool {
             id,
-            asset_a: native_asset,
-            asset_b: wrapped_asset,
-            reserve_a: Amount::new(1_000_000_000_000),
-            reserve_b: Amount::new(1_000_000_000_000),
+            asset_a: native_asset.clone(),
+            asset_b: wrapped_asset.clone(),
+            reserve_a,
+            reserve_b,
             fee_bps,
         });
+        self.bridges.add(BridgeEdge {
+            from: native_asset.id,
+            to: wrapped_asset.id,
+            fee_bps,
+        });
+    }
+
+    /// Convenience wrapper around `add_bridge_pool` that auto-generates a
+    /// synthetic pool id.
+    pub fn add_bridge_edge(&mut self, from: Asset, to: Asset, fee_bps: u16) {
+        let id = u64::MAX - self.bridges.edges().len() as u64;
+        self.add_bridge_pool(id, from, to, fee_bps);
     }
 
     /// Execute a DEX swap in-place, updating pool reserves.
@@ -339,20 +439,31 @@ fn compute_out(
     reserve_in: Amount,
     reserve_out: Amount,
     amount_in: Amount,
+    in_decimals: u8,
+    out_decimals: u8,
     fee_bps: u16,
 ) -> Option<Amount> {
     if fee_bps >= 10_000 || reserve_in.0 == 0 || reserve_out.0 == 0 || amount_in.0 == 0 {
         return None;
     }
+    let max_decimals = in_decimals.max(out_decimals);
+    let scale_in = BigUint::from(10u32).pow((max_decimals - in_decimals) as u32);
+    let scale_out = BigUint::from(10u32).pow((max_decimals - out_decimals) as u32);
+
+    let r_in = BigUint::from(reserve_in.0) * &scale_in;
+    let r_out = BigUint::from(reserve_out.0) * &scale_out;
+    let a_in = BigUint::from(amount_in.0) * &scale_in;
+
     let fee_denom = BigUint::from(10_000u64);
-    let amount_in_with_fee =
-        BigUint::from(amount_in.0) * BigUint::from(10_000u64 - u64::from(fee_bps));
-    let reserve_in_scaled = BigUint::from(reserve_in.0) * &fee_denom;
-    let numerator = BigUint::from(reserve_out.0) * amount_in_with_fee;
-    let denominator = reserve_in_scaled + BigUint::from(amount_in.0) * &fee_denom;
+    let amount_in_with_fee = &a_in * BigUint::from(10_000u64 - u64::from(fee_bps));
+    let reserve_in_scaled = &r_in * &fee_denom;
+    let numerator = &r_out * amount_in_with_fee;
+    let denominator = reserve_in_scaled + &a_in * &fee_denom;
     // amount_out = reserve_out * amount_in_with_fee / (reserve_in * fee_denom + amount_in * fee_denom)
     let out = numerator / denominator;
-    out.to_u128().map(Amount::new)
+    // `out` is in max_decimals; scale back to the output asset's decimals.
+    let out_back = out / scale_out;
+    out_back.to_u128().map(Amount::new)
 }
 
 #[cfg(test)]
