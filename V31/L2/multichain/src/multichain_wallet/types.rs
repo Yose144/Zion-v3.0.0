@@ -146,6 +146,59 @@ impl std::str::FromStr for WithdrawalStatus {
     }
 }
 
+/// Status of a DEX swap order.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DexOrderStatus {
+    Pending,
+    Executed,
+    Settled,
+    Failed,
+}
+
+impl std::fmt::Display for DexOrderStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pending => write!(f, "pending"),
+            Self::Executed => write!(f, "executed"),
+            Self::Settled => write!(f, "settled"),
+            Self::Failed => write!(f, "failed"),
+        }
+    }
+}
+
+impl std::str::FromStr for DexOrderStatus {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "pending" => Ok(Self::Pending),
+            "executed" => Ok(Self::Executed),
+            "settled" => Ok(Self::Settled),
+            "failed" => Ok(Self::Failed),
+            _ => Err(format!("unknown dex order status: {s}")),
+        }
+    }
+}
+
+/// A custodial DEX swap order.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DexOrder {
+    pub id: String,
+    pub user_id: String,
+    pub from_asset_key: String,
+    pub to_asset_key: String,
+    pub amount_in: Amount,
+    pub amount_out: Amount,
+    pub min_amount_out: Amount,
+    pub recipient_address: Option<String>,
+    pub route: Vec<String>,
+    pub tx_hash: Option<String>,
+    pub status: DexOrderStatus,
+    pub created_at: DateTime<Utc>,
+    pub executed_at: Option<DateTime<Utc>>,
+}
+
 /// A withdrawal request.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WithdrawalRecord {

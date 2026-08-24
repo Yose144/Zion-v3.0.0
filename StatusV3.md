@@ -2,6 +2,8 @@
 
 > **Datum poslední aktualizace:** 2026-08-23
 >
+> **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet Fáze 0–3 implementovány a testy zelené.** Vznikl feature branch `feat/ziondex-zis-multichain-wallet` s odděleným wallet seedem (`ZION_WALLET_MNEMONIC`), `multichain_wallet` modulem, per-user deposit adresami (`/v1/wallet/derive`), ledgerem (`/v1/wallet/balance`), `DepositWatcher` pro BTC deposit detection a `SwapExecutor` pro `/v1/swap/execute-v2` s on-chain ERC-20 settlement (`ChainAdapter::transfer_token`). `cargo test -p zion-multichain` prochází 577 testy. Detailní plán a stav v [`ZionDexZis.md`](./ZionDexZis.md).
+>
 > **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet plán vytvořen.** Detailní E2E plán pro plnohodnotný DEX, multichain peněženku a settlement pod ZIS je v [`ZionDexZis.md`](./ZionDexZis.md). Řeší per-user deposit adresy, ledger/UTXO tracking, keyring integraci, quote → settle tok a web UI.
 >
 > **Update (2026-08-23):** **L5 Free World a L6 Issobella fund trackery aktivní na Edge.** Binárky `zion-free-world` a `zion-issobella` jsou nasazeny jako systemd `zion-v31-free-world.service` a `zion-v31-issobella.service`; nginx proxy `/api/free-world/` → `127.0.0.1:8095` a `/api/issobella/` → `127.0.0.1:8097` (L6 běží na 8097 kvůli portovému konfliktu se ZIS na 8096) připraveny. Python dashboard (`ZION_OS/dashboard/app.py`) a veřejný web dashboard (`MissionControlDashboard`) aktualizovány. Kanonické adresy: L5 `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`, L6 `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0`.

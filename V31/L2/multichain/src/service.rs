@@ -18,7 +18,8 @@ use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
-use crate::multichain_wallet::{DepositWatcher, MultichainWallet, WalletLedger};
+use crate::multichain_wallet::{DepositWatcher, DexOrder, MultichainWallet, WalletLedger};
+use crate::swap::dex::swap_executor::SwapExecutor;
 use crate::node_rewards::NodeRewards;
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
@@ -48,7 +49,8 @@ pub struct MultichainService {
     wallet_ledger: WalletLedger,
     deposit_watcher: DepositWatcher,
     credits: CreditsLedger,
-    dex: RwLock<DexRouter>,
+    dex: Arc<RwLock<DexRouter>>,
+    swap_executor: SwapExecutor,
     intent_engine: RwLock<IntentEngine>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
@@ -210,6 +212,13 @@ impl MultichainService {
             Arc::clone(&adapters),
             wallet_ledger.clone(),
         );
+        let dex = Arc::new(RwLock::new(DexRouter::new()));
+        let swap_executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+            Arc::clone(&dex),
+        );
 
         Self {
             config,
@@ -223,7 +232,8 @@ impl MultichainService {
             wallet_ledger,
             deposit_watcher,
             credits: CreditsLedger::new(),
-            dex: RwLock::new(DexRouter::new()),
+            dex,
+            swap_executor,
             intent_engine: RwLock::new(intent_engine),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
@@ -375,6 +385,26 @@ impl MultichainService {
         amount: Amount,
     ) -> MultichainResult<Amount> {
         self.dex.write().await.execute(from, to, amount)
+    }
+
+    /// Execute a custodial wallet-backed swap and return the order record.
+    pub async fn swap_execute(
+        &self,
+        user_id: &str,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+        min_amount_out: Amount,
+        recipient: Option<Address>,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .execute_swap(user_id, from, to, amount, min_amount_out, recipient)
+            .await
+    }
+
+    /// Load a swap order by id.
+    pub async fn get_swap_order(&self, order_id: &str) -> MultichainResult<Option<DexOrder>> {
+        self.swap_executor.get_order(order_id).await
     }
 
     /// Register a solver in the intent engine whitelist and persist it.
