@@ -14,3 +14,4 @@ pub use deposits::DepositWatcher;
 pub use derivation::MultichainWallet;
 pub use ledger::{asset_key, WalletLedger};
 pub use types::*;
+pub use withdrawals::WithdrawalProcessor;

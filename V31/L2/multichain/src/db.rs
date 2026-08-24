@@ -1062,7 +1062,7 @@ fn parse_wallet_address(row: &Row) -> MultichainResult<WalletAddress> {
     })
 }
 
-fn chain_id_from_str(s: &str) -> MultichainResult<ChainId> {
+pub(crate) fn chain_id_from_str(s: &str) -> MultichainResult<ChainId> {
     match s {
         "zion-l1" => Ok(ChainId::ZionL1),
         "bitcoin" => Ok(ChainId::Bitcoin),
