@@ -479,12 +479,17 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
 
 ### Fáze 7 — UI, testování, tvrdé hardening (2 týdny)
 
-1. `MultichainWalletContext`, `/wallet/multichain` stránka, rozšíření widgetu.
-2. E2E testy (Cypress/Playwright) pro celý flow: deposit → swap → withdraw.
-3. Reconciliation: porovnat on-chain zůstatky L2 hot walletů s interními
+1. ✅ `MultichainWalletContext` (`APP&WEB/website-v2.9/src/contexts/MultichainWalletContext.tsx`)
+   a `/wallet/multichain` stránka s přehledem zůstatků, adres, vkladů,
+   výběrů a DEX objednávek; prolink z `/wallet`. Rozšíření swap proxy o
+   `/api/multichain/[...path]` (mapuje `/v1/wallet/*` a `/v1/swap/*`).
+2. ⏳ E2E testy (Cypress/Playwright) pro celý flow: deposit → swap → withdraw.
+3. ⏳ Reconciliation: porovnat on-chain zůstatky L2 hot walletů s interními
    saldy + pool reserves. Alarm při nesrovnalosti.
-4. Rate limiting, audit log, revoke session odpojí pending operations.
-5. Dokumentace pro operátory.
+4. ✅ Rate limiting per-IP + per-user token buckets
+   (`V31/L2/multichain/src/rate_limit.rs`) a audit log
+   (`V31/L2/multichain/src/audit.rs`) pro swap/withdraw/HTLC/wallet/auth.
+5. ⏳ Dokumentace pro operátory.
 
 ---
 

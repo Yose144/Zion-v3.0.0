@@ -12,7 +12,7 @@ use std::task::{Context, Poll};
 use std::time::Instant;
 
 use axum::body::Body;
-use axum::extract::{ConnectInfo, State};
+use axum::extract::{ConnectInfo, Extension, State};
 use axum::http::{Method, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
@@ -20,6 +20,7 @@ use tokio::sync::Mutex;
 use tower::{Layer, Service};
 
 use crate::config::ServerConfig;
+use crate::zis_auth::ZisUser;
 
 /// Per-IP token bucket.
 #[derive(Clone, Debug)]
@@ -55,31 +56,46 @@ impl TokenBucket {
     }
 }
 
-/// In-memory per-IP rate limiter.
+/// In-memory per-IP and per-user token bucket rate limiter.
 #[derive(Clone)]
 pub struct RateLimiter {
-    buckets: Arc<Mutex<HashMap<SocketAddr, TokenBucket>>>,
+    ip_buckets: Arc<Mutex<HashMap<SocketAddr, TokenBucket>>>,
+    user_buckets: Arc<Mutex<HashMap<String, TokenBucket>>>,
     rate: f64,
     burst: f64,
+    user_rate: f64,
+    user_burst: f64,
     api_key: Option<String>,
 }
 
 impl RateLimiter {
     pub fn new(config: &ServerConfig) -> Self {
         Self {
-            buckets: Arc::new(Mutex::new(HashMap::new())),
+            ip_buckets: Arc::new(Mutex::new(HashMap::new())),
+            user_buckets: Arc::new(Mutex::new(HashMap::new())),
             rate: config.rate_limit.requests_per_second,
             burst: f64::from(config.rate_limit.burst),
+            user_rate: config.rate_limit.user_requests_per_second,
+            user_burst: f64::from(config.rate_limit.user_burst),
             api_key: config.auth.api_key.clone(),
         }
     }
 
     /// Check (and record) a request from `addr`. Returns `true` if allowed.
     pub async fn check(&self, addr: SocketAddr) -> bool {
-        let mut buckets = self.buckets.lock().await;
+        let mut buckets = self.ip_buckets.lock().await;
         let bucket = buckets
             .entry(addr)
             .or_insert_with(|| TokenBucket::new(self.rate, self.burst));
+        bucket.try_consume()
+    }
+
+    /// Check (and record) a request from an authenticated `user_id`.
+    pub async fn check_user(&self, user_id: &str) -> bool {
+        let mut buckets = self.user_buckets.lock().await;
+        let bucket = buckets
+            .entry(user_id.to_string())
+            .or_insert_with(|| TokenBucket::new(self.user_rate, self.user_burst));
         bucket.try_consume()
     }
 
@@ -89,10 +105,13 @@ impl RateLimiter {
     }
 }
 
-/// Tower/Axum middleware that enforces API key auth and per-IP rate limits.
+/// Tower/Axum middleware that enforces API key auth, per-IP and per-user
+/// token-bucket rate limits. Per-user limits apply to authenticated callers
+/// in addition to the per-IP limits.
 pub async fn auth_rate_limit(
     State(limiter): State<RateLimiter>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    user: Option<Extension<ZisUser>>,
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
@@ -129,6 +148,13 @@ pub async fn auth_rate_limit(
     // Per-IP token bucket.
     if !limiter.check(addr).await {
         return Err(StatusCode::TOO_MANY_REQUESTS);
+    }
+
+    // Per-user token bucket (stricter, keyed by ZIS user id).
+    if let Some(user) = user {
+        if !limiter.check_user(&user.0.id).await {
+            return Err(StatusCode::TOO_MANY_REQUESTS);
+        }
     }
 
     Ok(next.run(req).await)

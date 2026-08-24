@@ -21,6 +21,7 @@ use crate::config::ServerConfig;
 use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
 use crate::node_rewards::{HeartbeatRequest, NodeRecord, PayoutRecord, RegisterNodeRequest};
+use crate::audit::{AuditLogger, AuditResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
 use crate::zis_auth::{address_from_linked, resolve_zis_auth, ZisClient, ZisUser};
@@ -86,6 +87,22 @@ fn resolve_auth_user(
         Err(StatusCode::UNAUTHORIZED)
     } else {
         Ok(user.map(|u| u.0))
+    }
+}
+
+/// Helper to record an audit log from a route handler.
+async fn record_audit(
+    audit: &AuditLogger,
+    user_id: Option<&str>,
+    action: &str,
+    resource_type: &str,
+    resource_id: Option<&str>,
+    details: serde_json::Value,
+    result: AuditResult,
+    error: Option<&str>,
+) {
+    if let Err(e) = audit.log(user_id, action, resource_type, resource_id, details, result, error).await {
+        tracing::warn!("failed to record audit log: {e}");
     }
 }
 
@@ -215,6 +232,9 @@ impl ApiServer {
             .route("/v1/wallet/address", post(wallet_address))
             .route("/v1/wallet/derive", post(wallet_derive))
             .route("/v1/wallet/balance", post(wallet_balance))
+            .route("/v1/wallet/me", get(wallet_me))
+            .route("/v1/wallet/orders", get(wallet_orders))
+            .route("/v1/wallet/deposits", get(wallet_deposits))
             .route("/v1/wallet/withdraw", post(wallet_withdraw))
             .route("/v1/wallet/withdrawals", get(wallet_withdrawals))
             .route("/v1/wallet/sign", post(wallet_sign))
@@ -495,21 +515,49 @@ async fn wallet_derive(
     };
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
 
+    let details = serde_json::json!({ "chain": req.chain });
+
     match state
         .service
         .multichain_wallet()
         .derive_deposit_address(&user_id, chain)
         .await
     {
-        Ok(addr) => Ok(Json(serde_json::json!({
-            "chain": req.chain,
-            "address": addr.address.encoded,
-            "public_key": addr.public_key,
-            "derivation_path": addr.derivation_path,
-            "purpose": addr.purpose,
-            "is_external": addr.is_external,
-        }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Ok(addr) => {
+            record_audit(
+                state.service.audit(),
+                Some(&user_id),
+                "wallet_derive",
+                "wallet_address",
+                Some(&addr.address.encoded),
+                details,
+                AuditResult::Success,
+                None,
+            )
+            .await;
+            Ok(Json(serde_json::json!({
+                "chain": req.chain,
+                "address": addr.address.encoded,
+                "public_key": addr.public_key,
+                "derivation_path": addr.derivation_path,
+                "purpose": addr.purpose,
+                "is_external": addr.is_external,
+            })))
+        }
+        Err(e) => {
+            record_audit(
+                state.service.audit(),
+                Some(&user_id),
+                "wallet_derive",
+                "wallet_address",
+                None,
+                details,
+                AuditResult::Failure,
+                Some(&e.to_string()),
+            )
+            .await;
+            Err(StatusCode::BAD_REQUEST)
+        }
     }
 }
 
@@ -562,16 +610,48 @@ async fn wallet_withdraw(
         None => return Err(StatusCode::UNAUTHORIZED),
     };
 
+    let details = serde_json::json!({
+        "asset": req.asset,
+        "amount": req.amount.to_string(),
+        "recipient": req.recipient,
+    });
+
     match state
         .service
         .request_withdraw(&user_id, &req.asset, Amount::new(req.amount), &req.recipient)
         .await
     {
-        Ok(id) => Ok(Json(serde_json::json!({
-            "withdrawal_id": id,
-            "status": "pending",
-        }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Ok(id) => {
+            record_audit(
+                state.service.audit(),
+                Some(&user_id),
+                "wallet_withdraw",
+                "withdrawal",
+                Some(&id),
+                details,
+                AuditResult::Success,
+                None,
+            )
+            .await;
+            Ok(Json(serde_json::json!({
+                "withdrawal_id": id,
+                "status": "pending",
+            })))
+        }
+        Err(e) => {
+            record_audit(
+                state.service.audit(),
+                Some(&user_id),
+                "wallet_withdraw",
+                "withdrawal",
+                None,
+                details,
+                AuditResult::Failure,
+                Some(&e.to_string()),
+            )
+            .await;
+            Err(StatusCode::BAD_REQUEST)
+        }
     }
 }
 
@@ -587,6 +667,54 @@ async fn wallet_withdrawals(
 
     match state.service.withdrawals_for_user(&user_id).await {
         Ok(withdrawals) => Ok(Json(serde_json::json!({ "withdrawals": withdrawals }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn wallet_me(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state.service.wallet_me(&user_id).await {
+        Ok(snapshot) => Ok(Json(snapshot)),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn wallet_orders(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state.service.orders_for_user(&user_id).await {
+        Ok(orders) => Ok(Json(serde_json::json!({ "orders": orders }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn wallet_deposits(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state.service.deposits_for_user(&user_id).await {
+        Ok(deposits) => Ok(Json(serde_json::json!({ "deposits": deposits }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
 }
@@ -711,10 +839,18 @@ async fn swap_execute_v2(
         None => return Err(StatusCode::UNAUTHORIZED),
     };
 
-    let recipient = match req.recipient {
-        Some(addr) => Some(parse_address_string(&addr, req.to.id.chain).map_err(|_| StatusCode::BAD_REQUEST)?),
+    let recipient = match &req.recipient {
+        Some(addr) => Some(parse_address_string(addr, req.to.id.chain).map_err(|_| StatusCode::BAD_REQUEST)?),
         None => None,
     };
+
+    let details = serde_json::json!({
+        "from": req.from,
+        "to": req.to,
+        "amount": req.amount.to_string(),
+        "min_amount_out": req.min_amount_out.to_string(),
+        "recipient": req.recipient,
+    });
 
     match state
         .service
@@ -728,17 +864,43 @@ async fn swap_execute_v2(
         )
         .await
     {
-        Ok(order) => Ok(Json(serde_json::json!({
-            "order_id": order.id,
-            "from": req.from,
-            "to": req.to,
-            "amount": req.amount.to_string(),
-            "amount_out": order.amount_out.0.to_string(),
-            "route": order.route,
-            "tx_hash": order.tx_hash,
-            "status": order.status.to_string(),
-        }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Ok(order) => {
+            record_audit(
+                state.service.audit(),
+                Some(&user_id),
+                "swap_execute_v2",
+                "dex_order",
+                Some(&order.id),
+                details,
+                AuditResult::Success,
+                None,
+            )
+            .await;
+            Ok(Json(serde_json::json!({
+                "order_id": order.id,
+                "from": req.from,
+                "to": req.to,
+                "amount": req.amount.to_string(),
+                "amount_out": order.amount_out.0.to_string(),
+                "route": order.route,
+                "tx_hash": order.tx_hash,
+                "status": order.status.to_string(),
+            })))
+        }
+        Err(e) => {
+            record_audit(
+                state.service.audit(),
+                Some(&user_id),
+                "swap_execute_v2",
+                "dex_order",
+                None,
+                details,
+                AuditResult::Failure,
+                Some(&e.to_string()),
+            )
+            .await;
+            Err(StatusCode::BAD_REQUEST)
+        }
     }
 }
 

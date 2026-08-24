@@ -3,6 +3,7 @@ use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
+use crate::audit::{AuditLog, AuditResult};
 use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount, WalletAddress, WithdrawalRecord, WithdrawalStatus};
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
@@ -231,6 +232,22 @@ impl Db {
             );
             CREATE INDEX IF NOT EXISTS idx_dex_orders_user ON dex_orders(user_id);
             CREATE INDEX IF NOT EXISTS idx_dex_orders_status ON dex_orders(status);
+
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id TEXT PRIMARY KEY,
+                timestamp TEXT NOT NULL,
+                user_id TEXT,
+                action TEXT NOT NULL,
+                resource_type TEXT NOT NULL,
+                resource_id TEXT,
+                details TEXT NOT NULL,
+                result TEXT NOT NULL,
+                error_message TEXT,
+                ip_address TEXT,
+                user_agent TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp ON audit_logs(user_id, timestamp DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
             "#,
         )?;
 
@@ -610,6 +627,24 @@ impl Db {
         Ok(())
     }
 
+    /// Load all wallet balances for a user.
+    pub fn load_wallet_balances_for_user(&self, user_id: &str) -> MultichainResult<Vec<(String, Amount)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT asset_key, amount FROM wallet_balances WHERE user_id = ?1 ORDER BY asset_key"
+        )?;
+        let mut rows = stmt.query(rusqlite::params![user_id])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            let asset_key: String = row.get(0)?;
+            let amount: String = row.get(1)?;
+            let amount = amount.parse::<u128>().map_err(|e| {
+                MultichainError::Internal(format!("invalid wallet balance amount: {e}"))
+            })?;
+            out.push((asset_key, Amount::new(amount)));
+        }
+        Ok(out)
+    }
+
     // ------------------------------------------------------------------------
     // Multichain wallet deposits / withdrawals
     // ------------------------------------------------------------------------
@@ -716,6 +751,20 @@ impl Db {
         }
     }
 
+    /// Load all deposits for a user, newest first.
+    pub fn load_deposits_for_user(&self, user_id: &str) -> MultichainResult<Vec<DepositRecord>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, chain, chain_id, tx_hash, asset_key, amount, confirmations,
+                   status, created_at, credited_at
+            FROM deposits
+            WHERE user_id = ?1
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        parse_deposit_rows(&mut stmt, [user_id])
+    }
+
     /// Record a new withdrawal request.
     pub fn record_withdrawal(&self, withdrawal: &WithdrawalRecord) -> MultichainResult<()> {
         let created_at = withdrawal.created_at.to_rfc3339();
@@ -754,6 +803,25 @@ impl Db {
         )?;
         let mut out = Vec::new();
         let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            out.push(parse_withdrawal(row)?);
+        }
+        Ok(out)
+    }
+
+    /// Load all withdrawals for a user, newest first.
+    pub fn load_withdrawals_for_user(&self, user_id: &str) -> MultichainResult<Vec<WithdrawalRecord>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, asset_key, amount, recipient_address, tx_hash,
+                   status, created_at, sent_at
+            FROM withdrawals
+            WHERE user_id = ?1
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        let mut out = Vec::new();
+        let mut rows = stmt.query(rusqlite::params![user_id])?;
         while let Some(row) = rows.next()? {
             out.push(parse_withdrawal(row)?);
         }
@@ -907,6 +975,63 @@ impl Db {
             rusqlite::params![cutoff.to_rfc3339()],
         )?;
         Ok(n)
+    }
+
+    // ------------------------------------------------------------------------
+    // Audit log persistence
+    // ------------------------------------------------------------------------
+
+    /// Persist an audit log entry.
+    pub fn record_audit_log(&self, log: &AuditLog) -> MultichainResult<()> {
+        let timestamp = log.timestamp.to_rfc3339();
+        let details = serde_json::to_string(&log.details)
+            .map_err(|e| MultichainError::Internal(format!("serialize audit log details: {e}")))?;
+        self.conn.execute(
+            r#"
+            INSERT INTO audit_logs
+            (id, timestamp, user_id, action, resource_type, resource_id, details,
+             result, error_message, ip_address, user_agent)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+            "#,
+            rusqlite::params![
+                log.id,
+                timestamp,
+                log.user_id,
+                log.action,
+                log.resource_type,
+                log.resource_id,
+                details,
+                log.result.to_string(),
+                log.error_message,
+                log.ip_address,
+                log.user_agent,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load the most recent audit log entries for a user.
+    pub fn load_audit_logs_for_user(
+        &self,
+        user_id: &str,
+        limit: usize,
+    ) -> MultichainResult<Vec<AuditLog>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, timestamp, user_id, action, resource_type, resource_id,
+                   details, result, error_message, ip_address, user_agent
+            FROM audit_logs
+            WHERE user_id = ?1
+            ORDER BY timestamp DESC
+            LIMIT ?2
+            "#,
+        )?;
+        let mut out = Vec::new();
+        let mut rows = stmt.query(rusqlite::params![user_id, limit as i64])?;
+        while let Some(row) = rows.next()? {
+            out.push(parse_audit_log(row)?);
+        }
+        Ok(out)
     }
 }
 
@@ -1083,6 +1208,40 @@ fn parse_wallet_address(row: &Row) -> MultichainResult<WalletAddress> {
         derivation_path,
         is_external: is_external_i != 0,
         created_at: parse_datetime(&created_at)?,
+    })
+}
+
+fn parse_audit_log(row: &Row) -> MultichainResult<AuditLog> {
+    let id: String = row.get(0)?;
+    let timestamp: String = row.get(1)?;
+    let user_id: Option<String> = row.get(2)?;
+    let action: String = row.get(3)?;
+    let resource_type: String = row.get(4)?;
+    let resource_id: Option<String> = row.get(5)?;
+    let details_json: String = row.get(6)?;
+    let result_str: String = row.get(7)?;
+    let error_message: Option<String> = row.get(8)?;
+    let ip_address: Option<String> = row.get(9)?;
+    let user_agent: Option<String> = row.get(10)?;
+
+    let details = serde_json::from_str(&details_json)
+        .map_err(|e| MultichainError::Internal(format!("deserialize audit log details: {e}")))?;
+    let result = result_str
+        .parse::<AuditResult>()
+        .map_err(MultichainError::Validation)?;
+
+    Ok(AuditLog {
+        id,
+        timestamp: parse_datetime(&timestamp)?,
+        user_id,
+        action,
+        resource_type,
+        resource_id,
+        details,
+        result,
+        error_message,
+        ip_address,
+        user_agent,
     })
 }
 

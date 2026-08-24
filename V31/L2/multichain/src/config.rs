@@ -119,6 +119,18 @@ pub struct ServerConfig {
 pub struct RateLimitConfig {
     pub requests_per_second: f64,
     pub burst: u32,
+    #[serde(default = "default_user_rate")]
+    pub user_requests_per_second: f64,
+    #[serde(default = "default_user_burst")]
+    pub user_burst: u32,
+}
+
+fn default_user_rate() -> f64 {
+    2.0
+}
+
+fn default_user_burst() -> u32 {
+    20
 }
 
 impl Default for RateLimitConfig {
@@ -126,6 +138,8 @@ impl Default for RateLimitConfig {
         Self {
             requests_per_second: 10.0,
             burst: 100,
+            user_requests_per_second: default_user_rate(),
+            user_burst: default_user_burst(),
         }
     }
 }
