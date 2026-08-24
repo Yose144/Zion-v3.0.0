@@ -18,6 +18,7 @@ use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
+use crate::multichain_wallet::{MultichainWallet, WalletLedger};
 use crate::node_rewards::NodeRewards;
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
@@ -43,6 +44,8 @@ pub struct MultichainService {
     keyring: Keyring,
     /// Custodial multichain wallet keyring. Separate from the bridge seed.
     wallet_keyring: Keyring,
+    multichain_wallet: MultichainWallet,
+    wallet_ledger: WalletLedger,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
     intent_engine: RwLock<IntentEngine>,
@@ -199,6 +202,9 @@ impl MultichainService {
             .expect("default node rewards config must initialize")
         });
 
+        let multichain_wallet = MultichainWallet::new(Arc::clone(&db), wallet_keyring.clone());
+        let wallet_ledger = WalletLedger::new(Arc::clone(&db));
+
         Self {
             config,
             db,
@@ -207,6 +213,8 @@ impl MultichainService {
             htlc,
             keyring,
             wallet_keyring,
+            multichain_wallet,
+            wallet_ledger,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
             intent_engine: RwLock::new(intent_engine),
@@ -526,6 +534,16 @@ impl MultichainService {
     /// Borrow the HTLC atomic-swap coordinator.
     pub fn htlc(&self) -> &HtlcSwap {
         &self.htlc
+    }
+
+    /// Access the custodial multichain wallet.
+    pub fn multichain_wallet(&self) -> &MultichainWallet {
+        &self.multichain_wallet
+    }
+
+    /// Access the internal ledger.
+    pub fn wallet_ledger(&self) -> &WalletLedger {
+        &self.wallet_ledger
     }
 
     /// Access the bridge/relay keyring.
