@@ -84,6 +84,7 @@ fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
         },
         l1_rpc_url: warp.l1_rpc_url.clone(),
         mnemonic: warp.mnemonic.clone(),
+        wallet_mnemonic: warp.wallet_mnemonic.clone(),
         adapters: warp
             .chains
             .iter()

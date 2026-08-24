@@ -22,6 +22,12 @@ pub struct WarpConfig {
     #[serde(default)]
     pub mnemonic: Option<String>,
 
+    /// Optional BIP39 mnemonic for the custodial multichain wallet.
+    /// Falls back to ZION_WALLET_MNEMONIC env var. Must be different from
+    /// `mnemonic` / `WARP_MNEMONIC` in production.
+    #[serde(default)]
+    pub wallet_mnemonic: Option<String>,
+
     /// Poll interval for chain watchers in seconds (default: 15).
     #[serde(default)]
     pub poll_interval_secs: Option<u64>,
@@ -79,6 +85,7 @@ impl Default for WarpConfig {
             l1_rpc_url: "http://127.0.0.1:9445".into(),
             l1_vault_address: "zion1warp_vault_address".into(),
             mnemonic: None,
+            wallet_mnemonic: None,
             chains: vec![],
             poll_interval_secs: None,
             solver: SolverConfig::default(),
