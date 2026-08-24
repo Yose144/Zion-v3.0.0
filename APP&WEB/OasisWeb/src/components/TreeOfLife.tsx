@@ -263,8 +263,9 @@ interface LeafCanopyProps {
   rng: ReturnType<typeof createRandom>;
 }
 
-// Rasta canopy: green, gold, red with occasional black/earth base.
-const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1a1a1a'];
+// Logo-aligned canopy palette: Zion green, forest green, terra gold, earth brown,
+// with rasta red/gold accents and cosmic black for shadowed bases.
+const LEAF_PALETTE = ['#00F88A', '#0B3D1E', '#D4AF37', '#6B3A1E', '#e41e2b', '#0A0A0A', '#078930', '#fcd116'];
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const lineRef = useRef<THREE.LineSegments>(null);
@@ -278,6 +279,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
       baseIndex: number;
       pairs: number;
       color: THREE.Color;
+      srcColors: THREE.Color[];
       pos: THREE.Vector3;
       perp: THREE.Vector3;
       dir: THREE.Vector3;
@@ -320,34 +322,31 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
         if (perp.lengthSq() < 0.001) perp.set(1, 0, 0);
         const normal = new THREE.Vector3().crossVectors(perp, dir).normalize();
 
-        // Leaf outline shape in the local x-y plane; the 4th dimension (w)
-        // is extruded along the normal axis, then projected back to 3D.
-        const edgeCount = rng.int(3, 6); // 3, 4 or 5 segments
-        const length = 0.45 + rng.next() * 0.55;
-        const width = length * (0.32 + rng.next() * 0.22);
+        // Logo-style leaf outline in the local x-y plane: stem, two rounded
+        // sides and a pointed tip. The 4th dimension (w) is extruded along the
+        // normal axis and projected back to 3D.
+        const edgeCount = 7; // stem base + stem top + 5 outline points
+        const length = 0.48 + rng.next() * 0.52;
+        const width = length * (0.34 + rng.next() * 0.2);
         const localPoints: { x: number; y: number }[] = [];
 
-        if (edgeCount === 3) {
-          // Triangle leaf.
-          localPoints.push({ x: 0, y: -length * 0.2 });
-          localPoints.push({ x: -width * 0.85, y: length * 0.5 });
-          localPoints.push({ x: 0, y: length });
-        } else if (edgeCount === 4) {
-          // Diamond leaf.
-          localPoints.push({ x: 0, y: -length * 0.2 });
-          localPoints.push({ x: -width, y: length * 0.45 });
-          localPoints.push({ x: 0, y: length });
-          localPoints.push({ x: width, y: length * 0.45 });
-        } else {
-          // Stem + diamond leaf.
-          localPoints.push({ x: 0, y: -length * 0.4 });
-          localPoints.push({ x: 0, y: 0 });
-          localPoints.push({ x: -width, y: length * 0.5 });
-          localPoints.push({ x: 0, y: length });
-          localPoints.push({ x: width, y: length * 0.5 });
-        }
+        // 0: stem base
+        localPoints.push({ x: 0, y: -length * 0.45 });
+        // 1: stem top (where blade starts)
+        localPoints.push({ x: 0, y: -length * 0.1 });
+        // 2: left lower blade
+        localPoints.push({ x: -width * 0.88, y: length * 0.22 });
+        // 3: left upper blade
+        localPoints.push({ x: -width * 0.55, y: length * 0.68 });
+        // 4: tip
+        localPoints.push({ x: 0, y: length });
+        // 5: right upper blade
+        localPoints.push({ x: width * 0.55, y: length * 0.68 });
+        // 6: right lower blade
+        localPoints.push({ x: width * 0.88, y: length * 0.22 });
 
-        const depth = 0.12 + rng.next() * 0.12;
+        const depth = 0.1 + rng.next() * 0.12;
+        const half = edgeCount;
         const vertexCount = edgeCount * 2;
         const srcX = new Float32Array(vertexCount);
         const srcY = new Float32Array(vertexCount);
@@ -357,23 +356,46 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
           srcX[v] = localPoints[v].x;
           srcY[v] = localPoints[v].y;
           srcW[v] = -depth;
-          srcX[v + edgeCount] = localPoints[v].x;
-          srcY[v + edgeCount] = localPoints[v].y;
-          srcW[v + edgeCount] = depth;
+          srcX[v + half] = localPoints[v].x;
+          srcY[v + half] = localPoints[v].y;
+          srcW[v + half] = depth;
         }
 
-        const next = (e: number) => (edgeCount === 5 && e === edgeCount - 1 ? 1 : (e + 1) % edgeCount);
+        // Build pair map: stem, closed blade outline, extrusion edges, central vein.
         const pairMap: number[] = [];
-        for (let e = 0; e < edgeCount; e++) {
-          const a = e;
-          const b = next(e);
-          // front and back outline edges
-          pairMap.push(a, b);
-          pairMap.push(a + edgeCount, b + edgeCount);
-          // extrusion edges connecting the two w-layers
-          pairMap.push(a, a + edgeCount);
+        // stem
+        pairMap.push(0, 1);
+        pairMap.push(half, half + 1);
+        // blade outline: 1->2->3->4->5->6->1
+        pairMap.push(1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 1);
+        pairMap.push(half + 1, half + 2, half + 2, half + 3, half + 3, half + 4, half + 4, half + 5, half + 5, half + 6, half + 6, half + 1);
+        // extrusion edges
+        for (let v = 0; v < edgeCount; v++) {
+          pairMap.push(v, v + half);
         }
+        // central vein on both w-layers
+        pairMap.push(1, 4);
+        pairMap.push(half + 1, half + 4);
+
         const pairs = pairMap.length / 2;
+
+        // Per-vertex color gradient: stem/base darker, tip bright, sides vivid.
+        const baseColor = palette[rng.int(0, palette.length)];
+        const srcColors: THREE.Color[] = new Array(vertexCount);
+        const tipColor = baseColor.clone().lerp(new THREE.Color('#ffffff'), 0.55);
+        const edgeColor = baseColor.clone().lerp(new THREE.Color('#ffffff'), 0.25);
+        const baseDark = baseColor.clone().multiplyScalar(0.35);
+        const stemColor = baseColor.clone().lerp(new THREE.Color('#1a1a1a'), 0.45);
+        for (let v = 0; v < edgeCount; v++) {
+          let c: THREE.Color;
+          if (v === 0) c = stemColor; // stem base
+          else if (v === 1) c = baseColor.clone().lerp(new THREE.Color('#1a1a1a'), 0.2); // stem top
+          else if (v === 4) c = tipColor; // tip
+          else if (v === 2 || v === 6) c = edgeColor; // lower blade edges
+          else c = baseColor; // upper blade
+          srcColors[v] = c;
+          srcColors[v + half] = c;
+        }
 
         // Initial 3D projection with zero 4D rotation.
         const baseIndex = positions.length;
@@ -395,7 +417,8 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
         leaves.push({
           baseIndex,
           pairs,
-          color: palette[rng.int(0, palette.length)],
+          color: baseColor,
+          srcColors,
           pos,
           perp,
           dir,
@@ -420,12 +443,18 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
     const colors = new Float32Array(leafData.positions.length);
     for (const leaf of leafData.leaves) {
-      const c = leaf.color;
       for (let p = 0; p < leaf.pairs; p++) {
         const i = leaf.baseIndex + p * 6;
-        colors[i] = colors[i + 3] = c.r;
-        colors[i + 1] = colors[i + 4] = c.g;
-        colors[i + 2] = colors[i + 5] = c.b;
+        const ai = leaf.pairMap[p * 2];
+        const bi = leaf.pairMap[p * 2 + 1];
+        const ca = leaf.srcColors[ai];
+        const cb = leaf.srcColors[bi];
+        colors[i] = ca.r;
+        colors[i + 1] = ca.g;
+        colors[i + 2] = ca.b;
+        colors[i + 3] = cb.r;
+        colors[i + 4] = cb.g;
+        colors[i + 5] = cb.b;
       }
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
