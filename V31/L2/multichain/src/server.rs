@@ -91,6 +91,7 @@ fn resolve_auth_user(
 }
 
 /// Helper to record an audit log from a route handler.
+#[allow(clippy::too_many_arguments)]
 async fn record_audit(
     audit: &AuditLogger,
     user_id: Option<&str>,

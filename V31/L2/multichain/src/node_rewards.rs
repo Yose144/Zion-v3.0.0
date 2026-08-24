@@ -293,7 +293,7 @@ impl NodeRewards {
         let Some(adapter) = self.l1_adapter.as_ref() else {
             return Ok(None);
         };
-        if current_height % self.config.epoch_blocks != 0 {
+        if !current_height.is_multiple_of(self.config.epoch_blocks) {
             return Ok(None);
         }
 
