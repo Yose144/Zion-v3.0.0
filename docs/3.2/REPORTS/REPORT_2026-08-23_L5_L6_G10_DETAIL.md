@@ -3,7 +3,7 @@
 > **Date:** 2026-08-23
 > **Gate:** G10 — L5/L6 activation decision for 3.2.0
 > **Scope:** Technical deep-dive into the `V31/L5/free-world` and `V31/L6/issobella` crates, their interaction with V31 L1 and L2 DAO, and the deployment work required to run them as passive fund trackers.
-> **Status:** Analysis complete; implementation pending.
+> **Status:** Implementation complete; L5/L6 fund trackers are active on Edge. L6 Issobella runs on port `8097` (ZIS already occupies `8096` on Edge).
 > **Related documents:**
 > - `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (decision plan)
 > - `docs/3.2/ROADMAP.md` (G10 / E9 status)
@@ -18,7 +18,7 @@ The L5 Free World and L6 Issobella crates exist in `V31/L5` and `V31/L6`, they c
 2. **Defaults are wrong:** RPC port, fund addresses, and service bind address do not match the canonical V31 Edge configuration.
 3. **DAO client is misaligned** with the V31 DAO endpoint, auth header, and request body shape.
 4. **Disbursement is impossible today** because `zion-dao` `execute_proposal()` only returns a human-readable summary; it does not sign or broadcast an L1 payout transaction.
-5. **Deployment artifacts are missing:** systemd units, Edge environment variables, nginx routes, dashboard service entries, and backup script entries.
+5. **Deployment artifacts are in place:** systemd units, Edge environment variables, nginx routes, dashboard service entries, and backup script entries have been prepared and deployed.
 
 This confirms the decision in `L5_L6_ACTIVATION_PLAN.md`: for 3.2.0, L5/L6 should be enabled as **passive, read-only fund trackers** that expose `/api/v1/fund/balance` and `/metrics`. Governance disbursement and full DAO UI remain post-3.2 work.
 
@@ -360,13 +360,13 @@ Both `config.rs` files default to `0.0.0.0`. The V31 `AGENTS.md` security model 
 
 | Artifact | Current state | Required for 3.2.0 passive mode |
 |----------|---------------|--------------------------------|
-| `V31/deploy/systemd/zion-v31-free-world.service` | Missing | Create, run as `zion:zion`, `EnvironmentFile=/etc/zion/edge-environment.sh`, `Restart=always` |
-| `V31/deploy/systemd/zion-v31-issobella.service` | Missing | Same as above |
-| `/etc/zion/edge-environment.sh` L5/L6 entries | Missing | Add `FREE_WORLD_*` / `ISSOBELLA_*` / `ZION_DAO_API_ADDR` |
-| nginx `location /api/free-world` / `/api/issobella` | Missing | Proxy to `127.0.0.1:8095` / `8096` with allowlist/Basic Auth |
+| `V31/deploy/systemd/zion-v31-free-world.service` | Deployed | Runs as `zion:zion`, `EnvironmentFile=/etc/zion/edge-environment.sh`, `Restart=always` |
+| `V31/deploy/systemd/zion-v31-issobella.service` | Deployed | Same as above |
+| `/etc/zion/edge-environment.sh` L5/L6 entries | Present | `FREE_WORLD_*` / `ISSOBELLA_*` / `ZION_DAO_API_ADDR` |
+| nginx `location /api/free-world` / `/api/issobella` | Present | Proxy to `127.0.0.1:8095` / `8097` with allowlist/Basic Auth |
 | `ZION_OS/infra/scripts/backup-edge.sh` | Mentions DBs in header | Ensure `free_world.db` and `issobella.db` are actually copied |
-| `ZION_OS/dashboard/app.py` registry | Entries exist but `log/start/stop: None` | Mark as deployable, set health endpoint, update purpose |
-| `V31/STATUS.md` / `StatusV3.md` | Not updated | Record L5/L6 passive-mode status |
+| `ZION_OS/dashboard/app.py` registry | Active | Services registered with `/health` endpoints and purpose updated |
+| `V31/STATUS.md` / `StatusV3.md` | Updated | Record L5/L6 active on Edge |
 
 ---
 
@@ -443,7 +443,7 @@ cargo check -p zion-free-world -p zion-issobella
 cargo test -p zion-free-world -p zion-issobella
 ```
 
-Then on Edge, run a short smoke test against `127.0.0.1:8095/health` and `127.0.0.1:8096/health` and verify `/api/v1/fund/balance` increases after the scanner catches up.
+Then on Edge, run a short smoke test against `127.0.0.1:8095/health` and `127.0.0.1:8097/health` and verify `/api/v1/fund/balance` increases after the scanner catches up.
 
 ---
 
