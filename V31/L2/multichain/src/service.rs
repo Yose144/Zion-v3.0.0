@@ -18,7 +18,7 @@ use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
-use crate::multichain_wallet::{MultichainWallet, WalletLedger};
+use crate::multichain_wallet::{DepositWatcher, MultichainWallet, WalletLedger};
 use crate::node_rewards::NodeRewards;
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
@@ -46,6 +46,7 @@ pub struct MultichainService {
     wallet_keyring: Keyring,
     multichain_wallet: MultichainWallet,
     wallet_ledger: WalletLedger,
+    deposit_watcher: DepositWatcher,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
     intent_engine: RwLock<IntentEngine>,
@@ -204,6 +205,11 @@ impl MultichainService {
 
         let multichain_wallet = MultichainWallet::new(Arc::clone(&db), wallet_keyring.clone());
         let wallet_ledger = WalletLedger::new(Arc::clone(&db));
+        let deposit_watcher = DepositWatcher::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+        );
 
         Self {
             config,
@@ -215,6 +221,7 @@ impl MultichainService {
             wallet_keyring,
             multichain_wallet,
             wallet_ledger,
+            deposit_watcher,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
             intent_engine: RwLock::new(intent_engine),
@@ -544,6 +551,11 @@ impl MultichainService {
     /// Access the internal ledger.
     pub fn wallet_ledger(&self) -> &WalletLedger {
         &self.wallet_ledger
+    }
+
+    /// Access the deposit watcher.
+    pub fn deposit_watcher(&self) -> &DepositWatcher {
+        &self.deposit_watcher
     }
 
     /// Access the bridge/relay keyring.

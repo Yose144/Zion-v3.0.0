@@ -3,7 +3,7 @@ use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
-use crate::multichain_wallet::types::{AddressPurpose, WalletAccount, WalletAddress};
+use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, WalletAccount, WalletAddress, WithdrawalRecord, WithdrawalStatus};
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
 use crate::swap::htlc::{HtlcRecord, SwapState};
@@ -572,6 +572,179 @@ impl Db {
     }
 
     // ------------------------------------------------------------------------
+    // Multichain wallet deposits / withdrawals
+    // ------------------------------------------------------------------------
+
+    /// Load a single wallet address by its encoded form, regardless of user.
+    pub fn load_wallet_address_by_encoded(
+        &self,
+        encoded: &str,
+    ) -> MultichainResult<Option<WalletAddress>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT address, user_id, chain, chain_id, purpose, public_key,
+                   derivation_path, is_external, created_at
+            FROM wallet_addresses
+            WHERE address = ?1
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![encoded])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(parse_wallet_address(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Load all wallet addresses with a given purpose.
+    pub fn load_wallet_addresses_by_purpose(
+        &self,
+        purpose: AddressPurpose,
+    ) -> MultichainResult<Vec<WalletAddress>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT address, user_id, chain, chain_id, purpose, public_key,
+                   derivation_path, is_external, created_at
+            FROM wallet_addresses
+            WHERE purpose = ?1
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![purpose.to_string()])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            out.push(parse_wallet_address(row)?);
+        }
+        Ok(out)
+    }
+
+    /// Record a new deposit or return the existing id for the same tx/asset/user.
+    pub fn record_deposit(&self, deposit: &DepositRecord) -> MultichainResult<()> {
+        let created_at = deposit.created_at.to_rfc3339();
+        let credited_at = deposit.credited_at.map(|t| t.to_rfc3339());
+        self.conn.execute(
+            r#"
+            INSERT OR REPLACE INTO deposits
+            (id, user_id, chain, chain_id, tx_hash, asset_key, amount, confirmations, status, created_at, credited_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+            "#,
+            rusqlite::params![
+                deposit.id,
+                deposit.user_id,
+                deposit.chain.as_str(),
+                deposit.chain_id,
+                deposit.tx_hash,
+                deposit.asset_key,
+                deposit.amount.0.to_string(),
+                deposit.confirmations as i64,
+                deposit.status.to_string(),
+                created_at,
+                credited_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load all pending deposits.
+    pub fn load_pending_deposits(&self) -> MultichainResult<Vec<DepositRecord>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, chain, chain_id, tx_hash, asset_key, amount, confirmations,
+                   status, created_at, credited_at
+            FROM deposits
+            WHERE status = 'pending'
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        parse_deposit_rows(&mut stmt, [])
+    }
+
+    /// Load a deposit by its unique id.
+    pub fn load_deposit(&self, id: &str) -> MultichainResult<Option<DepositRecord>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, chain, chain_id, tx_hash, asset_key, amount, confirmations,
+                   status, created_at, credited_at
+            FROM deposits
+            WHERE id = ?1
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![id])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(parse_deposit(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Record a new withdrawal request.
+    pub fn record_withdrawal(&self, withdrawal: &WithdrawalRecord) -> MultichainResult<()> {
+        let created_at = withdrawal.created_at.to_rfc3339();
+        let sent_at = withdrawal.sent_at.map(|t| t.to_rfc3339());
+        self.conn.execute(
+            r#"
+            INSERT INTO withdrawals
+            (id, user_id, asset_key, amount, recipient_address, tx_hash, status, created_at, sent_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            "#,
+            rusqlite::params![
+                withdrawal.id,
+                withdrawal.user_id,
+                withdrawal.asset_key,
+                withdrawal.amount.0.to_string(),
+                withdrawal.recipient_address,
+                withdrawal.tx_hash,
+                withdrawal.status.to_string(),
+                created_at,
+                sent_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load all pending withdrawals.
+    pub fn load_pending_withdrawals(&self) -> MultichainResult<Vec<WithdrawalRecord>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, asset_key, amount, recipient_address, tx_hash,
+                   status, created_at, sent_at
+            FROM withdrawals
+            WHERE status = 'pending'
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        let mut out = Vec::new();
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            out.push(parse_withdrawal(row)?);
+        }
+        Ok(out)
+    }
+
+    /// Update an existing withdrawal's status and (optionally) on-chain tx hash.
+    pub fn update_withdrawal(
+        &mut self,
+        id: &str,
+        status: WithdrawalStatus,
+        tx_hash: Option<&str>,
+    ) -> MultichainResult<()> {
+        let sent_at = if status == WithdrawalStatus::Sent {
+            Some(chrono::Utc::now().to_rfc3339())
+        } else {
+            None
+        };
+        self.conn.execute(
+            r#"
+            UPDATE withdrawals
+            SET status = ?1, tx_hash = ?2, sent_at = ?3
+            WHERE id = ?4
+            "#,
+            rusqlite::params![status.to_string(), tx_hash, sent_at, id],
+        )?;
+        Ok(())
+    }
+
+    // ------------------------------------------------------------------------
     // AMM pool persistence
     // ------------------------------------------------------------------------
 
@@ -624,6 +797,83 @@ impl Db {
         )?;
         Ok(n)
     }
+}
+
+fn parse_deposit_rows(
+    stmt: &mut rusqlite::Statement,
+    params: impl rusqlite::Params,
+) -> MultichainResult<Vec<DepositRecord>> {
+    let mut out = Vec::new();
+    let mut rows = stmt.query(params)?;
+    while let Some(row) = rows.next()? {
+        out.push(parse_deposit(row)?);
+    }
+    Ok(out)
+}
+
+fn parse_deposit(row: &Row) -> MultichainResult<DepositRecord> {
+    let id: String = row.get(0)?;
+    let user_id: String = row.get(1)?;
+    let chain_str: String = row.get(2)?;
+    let chain_id: Option<String> = row.get(3)?;
+    let tx_hash: String = row.get(4)?;
+    let asset_key: String = row.get(5)?;
+    let amount: String = row.get(6)?;
+    let confirmations: i64 = row.get(7)?;
+    let status_str: String = row.get(8)?;
+    let created_at: String = row.get(9)?;
+    let credited_at: Option<String> = row.get(10)?;
+
+    let chain = chain_id_from_str(&chain_str)?;
+    let status = status_str
+        .parse::<DepositStatus>()
+        .map_err(MultichainError::Validation)?;
+
+    Ok(DepositRecord {
+        id,
+        user_id,
+        chain,
+        chain_id,
+        tx_hash,
+        asset_key,
+        amount: Amount::new(amount.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid deposit amount: {e}"))
+        })?),
+        confirmations: confirmations as u64,
+        status,
+        created_at: parse_datetime(&created_at)?,
+        credited_at: credited_at.as_deref().map(parse_datetime).transpose()?,
+    })
+}
+
+fn parse_withdrawal(row: &Row) -> MultichainResult<WithdrawalRecord> {
+    let id: String = row.get(0)?;
+    let user_id: String = row.get(1)?;
+    let asset_key: String = row.get(2)?;
+    let amount: String = row.get(3)?;
+    let recipient_address: String = row.get(4)?;
+    let tx_hash: Option<String> = row.get(5)?;
+    let status_str: String = row.get(6)?;
+    let created_at: String = row.get(7)?;
+    let sent_at: Option<String> = row.get(8)?;
+
+    let status = status_str
+        .parse::<WithdrawalStatus>()
+        .map_err(MultichainError::Validation)?;
+
+    Ok(WithdrawalRecord {
+        id,
+        user_id,
+        asset_key,
+        amount: Amount::new(amount.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid withdrawal amount: {e}"))
+        })?),
+        recipient_address,
+        tx_hash,
+        status,
+        created_at: parse_datetime(&created_at)?,
+        sent_at: sent_at.as_deref().map(parse_datetime).transpose()?,
+    })
 }
 
 fn parse_datetime(s: &str) -> MultichainResult<chrono::DateTime<chrono::Utc>> {

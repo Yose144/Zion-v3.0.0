@@ -35,6 +35,49 @@ pub struct BitcoinAdapter {
 }
 
 impl BitcoinAdapter {
+    async fn watch_address(&self, address: &Address) -> MultichainResult<Vec<DepositEvent>> {
+        let addr = self.btc_address_string(address)?;
+        let url = format!("{}/api/address/{}/txs", self.api_url, addr);
+        let txs: Vec<MempoolAddressTx> = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?
+            .json()
+            .await
+            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+
+        let mut events = Vec::new();
+        for tx in txs {
+            let mut amount = 0u64;
+            let mut memo = None;
+            for vout in &tx.vout {
+                if vout.scriptpubkey_address.as_deref() == Some(&addr) {
+                    amount += vout.value;
+                }
+                if vout.scriptpubkey_type == "op_return" {
+                    memo = extract_op_return_memo(&vout.scriptpubkey);
+                }
+            }
+            if amount == 0 {
+                continue;
+            }
+            let tx_hash = Hash::from_hex(&tx.txid).ok_or_else(|| {
+                MultichainError::Internal(format!("invalid bitcoin txid: {}", tx.txid))
+            })?;
+            events.push(DepositEvent {
+                chain: ChainId::Bitcoin,
+                tx_hash,
+                recipient: address.clone(),
+                amount: Amount::new(amount as u128),
+                memo,
+                confirmations: if tx.status.confirmed { 1 } else { 0 },
+            });
+        }
+        Ok(events)
+    }
+
     pub fn new(
         network_str: &str,
         rpc_url: Option<&str>,
@@ -127,48 +170,15 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
-        let url = format!(
-            "{}/api/address/{}/txs",
-            self.api_url, self.deposit_address_str
-        );
-        let txs: Vec<MempoolAddressTx> = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| MultichainError::Internal(e.to_string()))?
-            .json()
-            .await
-            .map_err(|e| MultichainError::Internal(e.to_string()))?;
+        self.watch_address(&self.deposit_address).await
+    }
 
-        let mut events = Vec::new();
-        for tx in txs {
-            let mut amount = 0u64;
-            let mut memo = None;
-            for vout in &tx.vout {
-                if vout.scriptpubkey_address.as_deref() == Some(&self.deposit_address_str) {
-                    amount += vout.value;
-                }
-                if vout.scriptpubkey_type == "op_return" {
-                    memo = extract_op_return_memo(&vout.scriptpubkey);
-                }
-            }
-            if amount == 0 {
-                continue;
-            }
-            let tx_hash = Hash::from_hex(&tx.txid).ok_or_else(|| {
-                MultichainError::Internal(format!("invalid bitcoin txid: {}", tx.txid))
-            })?;
-            events.push(DepositEvent {
-                chain: ChainId::Bitcoin,
-                tx_hash,
-                recipient: self.deposit_address.clone(),
-                amount: Amount::new(amount as u128),
-                memo,
-                confirmations: if tx.status.confirmed { 1 } else { 0 },
-            });
+    async fn watch_addresses(&self, addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
+        let mut all = Vec::new();
+        for addr in addresses {
+            all.extend(self.watch_address(addr).await?);
         }
-        Ok(events)
+        Ok(all)
     }
 
     async fn current_height(&self) -> MultichainResult<u64> {
