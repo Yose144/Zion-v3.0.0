@@ -17,6 +17,7 @@ pub mod contracts;
 pub mod credits;
 pub mod db;
 pub mod error;
+pub mod multichain_wallet;
 pub mod node_rewards;
 pub mod rate_limit;
 pub mod server;

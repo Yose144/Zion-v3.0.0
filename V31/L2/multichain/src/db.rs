@@ -1,7 +1,9 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, Row};
+use zion_l1_types::{Address, Amount, ChainId};
 
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
+use crate::multichain_wallet::types::{AddressPurpose, WalletAccount, WalletAddress};
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
 use crate::swap::htlc::{HtlcRecord, SwapState};
@@ -151,6 +153,65 @@ impl Db {
                 amount INTEGER NOT NULL,
                 PRIMARY KEY (payout_id, node_id)
             );
+
+            -- Multichain wallet (ZionDex + ZIS Multichain Wallet)
+            CREATE TABLE IF NOT EXISTS wallet_accounts (
+                user_id TEXT PRIMARY KEY,
+                account_index INTEGER UNIQUE NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS wallet_addresses (
+                address TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                chain TEXT NOT NULL,
+                chain_id TEXT,
+                purpose TEXT NOT NULL,
+                public_key TEXT,
+                derivation_path TEXT NOT NULL,
+                is_external INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_wallet_address_user ON wallet_addresses(user_id);
+            CREATE INDEX IF NOT EXISTS idx_wallet_address_chain ON wallet_addresses(chain, chain_id, purpose);
+
+            CREATE TABLE IF NOT EXISTS wallet_balances (
+                user_id TEXT NOT NULL,
+                asset_key TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, asset_key)
+            );
+
+            CREATE TABLE IF NOT EXISTS deposits (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                chain TEXT NOT NULL,
+                chain_id TEXT,
+                tx_hash TEXT NOT NULL,
+                asset_key TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                confirmations INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL,
+                credited_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_deposits_user ON deposits(user_id);
+            CREATE INDEX IF NOT EXISTS idx_deposits_status ON deposits(status);
+
+            CREATE TABLE IF NOT EXISTS withdrawals (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                asset_key TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                recipient_address TEXT NOT NULL,
+                tx_hash TEXT,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL,
+                sent_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
+            CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status);
             "#,
         )?;
         Ok(())
@@ -351,6 +412,166 @@ impl Db {
     }
 
     // ------------------------------------------------------------------------
+    // Multichain wallet persistence
+    // ------------------------------------------------------------------------
+
+    /// Load a wallet account by user_id.
+    pub fn load_wallet_account(&self, user_id: &str) -> MultichainResult<Option<WalletAccount>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT user_id, account_index, created_at FROM wallet_accounts WHERE user_id = ?1")?;
+        let mut rows = stmt.query(rusqlite::params![user_id])?;
+        if let Some(row) = rows.next()? {
+            let created_at: String = row.get(2)?;
+            Ok(Some(WalletAccount {
+                user_id: row.get(0)?,
+                account_index: row.get::<_, i64>(1)? as u32,
+                created_at: parse_datetime(&created_at)?,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Get or create a wallet account for a user.
+    ///
+    /// `Db` is held behind an async mutex, so the max+insert sequence is safe
+    /// from races within a single process.
+    pub fn get_or_create_wallet_account(&mut self, user_id: &str) -> MultichainResult<WalletAccount> {
+        if let Some(account) = self.load_wallet_account(user_id)? {
+            return Ok(account);
+        }
+
+        let next_index: i64 = self.conn.query_row(
+            "SELECT COALESCE(MAX(account_index), -1) + 1 FROM wallet_accounts",
+            [],
+            |row| row.get(0),
+        )?;
+
+        let created_at = chrono::Utc::now().to_rfc3339();
+        let account_index = next_index as u32;
+
+        self.conn.execute(
+            "INSERT INTO wallet_accounts (user_id, account_index, created_at) VALUES (?1, ?2, ?3)",
+            rusqlite::params![user_id, next_index, &created_at],
+        )?;
+
+        Ok(WalletAccount {
+            user_id: user_id.to_string(),
+            account_index,
+            created_at: parse_datetime(&created_at)?,
+        })
+    }
+
+    /// Persist a wallet address.
+    pub fn save_wallet_address(&self, address: &WalletAddress) -> MultichainResult<()> {
+        let created_at = address.created_at.to_rfc3339();
+        self.conn.execute(
+            r#"
+            INSERT OR REPLACE INTO wallet_addresses
+            (address, user_id, chain, chain_id, purpose, public_key, derivation_path, is_external, created_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            "#,
+            rusqlite::params![
+                address.address.encoded,
+                address.user_id,
+                address.chain.as_str(),
+                address.chain_id,
+                address.purpose.to_string(),
+                address.public_key,
+                address.derivation_path,
+                if address.is_external { 1 } else { 0 },
+                created_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load a wallet address by user, chain, optional chain_id, and purpose.
+    pub fn load_wallet_address(
+        &self,
+        user_id: &str,
+        chain: zion_l1_types::ChainId,
+        chain_id: Option<&str>,
+        purpose: AddressPurpose,
+    ) -> MultichainResult<Option<WalletAddress>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT address, user_id, chain, chain_id, purpose, public_key,
+                   derivation_path, is_external, created_at
+            FROM wallet_addresses
+            WHERE user_id = ?1 AND chain = ?2 AND purpose = ?3
+              AND ((?4 IS NULL AND chain_id IS NULL) OR (chain_id = ?4))
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![
+            user_id,
+            chain.as_str(),
+            purpose.to_string(),
+            chain_id,
+        ])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(parse_wallet_address(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Load all wallet addresses for a user.
+    pub fn load_wallet_addresses_for_user(&self, user_id: &str) -> MultichainResult<Vec<WalletAddress>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT address, user_id, chain, chain_id, purpose, public_key,
+                   derivation_path, is_external, created_at
+            FROM wallet_addresses
+            WHERE user_id = ?1
+            ORDER BY created_at DESC
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![user_id])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            out.push(parse_wallet_address(row)?);
+        }
+        Ok(out)
+    }
+
+    /// Load a wallet balance.
+    pub fn load_wallet_balance(&self, user_id: &str, asset_key: &str) -> MultichainResult<Amount> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT amount FROM wallet_balances WHERE user_id = ?1 AND asset_key = ?2")?;
+        let mut rows = stmt.query(rusqlite::params![user_id, asset_key])?;
+        if let Some(row) = rows.next()? {
+            let s: String = row.get(0)?;
+            Ok(Amount::new(s.parse::<u128>().map_err(|e| {
+                MultichainError::Internal(format!("invalid wallet balance amount: {e}"))
+            })?))
+        } else {
+            Ok(Amount::ZERO)
+        }
+    }
+
+    /// Persist a wallet balance.
+    pub fn save_wallet_balance(&mut self, user_id: &str, asset_key: &str, amount: Amount) -> MultichainResult<()> {
+        let updated_at = chrono::Utc::now().to_rfc3339();
+        self.conn.execute(
+            r#"
+            INSERT OR REPLACE INTO wallet_balances
+            (user_id, asset_key, amount, updated_at)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+            rusqlite::params![
+                user_id,
+                asset_key,
+                amount.0.to_string(),
+                updated_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    // ------------------------------------------------------------------------
     // AMM pool persistence
     // ------------------------------------------------------------------------
 
@@ -402,6 +623,90 @@ impl Db {
             rusqlite::params![cutoff.to_rfc3339()],
         )?;
         Ok(n)
+    }
+}
+
+fn parse_datetime(s: &str) -> MultichainResult<chrono::DateTime<chrono::Utc>> {
+    chrono::DateTime::parse_from_rfc3339(s)
+        .map(|dt| dt.with_timezone(&chrono::Utc))
+        .map_err(|e| MultichainError::Internal(format!("parse datetime: {e}")))
+}
+
+fn parse_wallet_address(row: &Row) -> MultichainResult<WalletAddress> {
+    let address: String = row.get(0)?;
+    let user_id: String = row.get(1)?;
+    let chain_str: String = row.get(2)?;
+    let chain_id: Option<String> = row.get(3)?;
+    let purpose_str: String = row.get(4)?;
+    let public_key: Option<String> = row.get(5)?;
+    let derivation_path: String = row.get(6)?;
+    let is_external_i: i64 = row.get(7)?;
+    let created_at: String = row.get(8)?;
+
+    let chain = chain_id_from_str(&chain_str)?;
+    let purpose = purpose_str
+        .parse::<AddressPurpose>()
+        .map_err(MultichainError::Validation)?;
+
+    let bytes = match chain.family() {
+        zion_l1_types::ChainFamily::Evm => {
+            let s = address.trim_start_matches("0x").trim_start_matches("0X").to_lowercase();
+            if s.len() != 40 {
+                return Err(MultichainError::Validation(format!("invalid evm address length: {s}")));
+            }
+            hex::decode(&s).map_err(|e| MultichainError::Validation(format!("invalid evm hex: {e}")))?
+        }
+        zion_l1_types::ChainFamily::Solana | zion_l1_types::ChainFamily::Near => {
+            bs58::decode(&address).into_vec().map_err(|e| {
+                MultichainError::Validation(format!("invalid base58 address: {e}"))
+            })?
+        }
+        _ => Vec::new(),
+    };
+
+    let address = Address::new(chain, bytes, address)?;
+
+    Ok(WalletAddress {
+        address,
+        user_id,
+        chain,
+        chain_id,
+        purpose,
+        public_key,
+        derivation_path,
+        is_external: is_external_i != 0,
+        created_at: parse_datetime(&created_at)?,
+    })
+}
+
+fn chain_id_from_str(s: &str) -> MultichainResult<ChainId> {
+    match s {
+        "zion-l1" => Ok(ChainId::ZionL1),
+        "bitcoin" => Ok(ChainId::Bitcoin),
+        "ethereum" => Ok(ChainId::Ethereum),
+        "base" => Ok(ChainId::Base),
+        "arbitrum" => Ok(ChainId::Arbitrum),
+        "optimism" => Ok(ChainId::Optimism),
+        "bsc" => Ok(ChainId::Bsc),
+        "polygon" => Ok(ChainId::Polygon),
+        "avalanche" => Ok(ChainId::Avalanche),
+        "zksync" => Ok(ChainId::Zksync),
+        "linea" => Ok(ChainId::Linea),
+        "solana" => Ok(ChainId::Solana),
+        "tron" => Ok(ChainId::Tron),
+        "stellar" => Ok(ChainId::Stellar),
+        "cardano" => Ok(ChainId::Cardano),
+        "cosmos" => Ok(ChainId::Cosmos),
+        "sui" => Ok(ChainId::Sui),
+        "aptos" => Ok(ChainId::Aptos),
+        "near" => Ok(ChainId::Near),
+        "ton" => Ok(ChainId::Ton),
+        "lightning" => Ok(ChainId::Lightning),
+        "decred" => Ok(ChainId::Decred),
+        "ethereum_classic" => Ok(ChainId::EthereumClassic),
+        "monero" => Ok(ChainId::Monero),
+        "zano" => Ok(ChainId::Zano),
+        _ => Err(MultichainError::Validation(format!("unknown chain id: {s}"))),
     }
 }
 

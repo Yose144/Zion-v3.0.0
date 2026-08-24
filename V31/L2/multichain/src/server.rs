@@ -213,6 +213,8 @@ impl ApiServer {
             .route("/v1/multichain/contracts", get(get_all_contracts))
             .route("/v1/multichain/contracts/:chain", get(get_contracts))
             .route("/v1/wallet/address", post(wallet_address))
+            .route("/v1/wallet/derive", post(wallet_derive))
+            .route("/v1/wallet/balance", post(wallet_balance))
             .route("/v1/wallet/sign", post(wallet_sign))
             .route("/v1/swap/pool/deploy", post(deploy_pool))
             .route("/v1/swap/pools", get(list_pools))
@@ -449,6 +451,72 @@ async fn wallet_sign(
         Ok(sig) => Ok(Json(serde_json::json!({
             "chain": req.chain,
             "signature": format!("0x{}", hex::encode(sig)),
+        }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+#[derive(Deserialize)]
+struct WalletDeriveRequest {
+    chain: String,
+}
+
+async fn wallet_derive(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<WalletDeriveRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+    let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    match state
+        .service
+        .multichain_wallet()
+        .derive_deposit_address(&user_id, chain)
+        .await
+    {
+        Ok(addr) => Ok(Json(serde_json::json!({
+            "chain": req.chain,
+            "address": addr.address.encoded,
+            "public_key": addr.public_key,
+            "derivation_path": addr.derivation_path,
+            "purpose": addr.purpose,
+            "is_external": addr.is_external,
+        }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+#[derive(Deserialize)]
+struct WalletBalanceRequest {
+    asset: Asset,
+}
+
+async fn wallet_balance(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<WalletBalanceRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state
+        .service
+        .wallet_ledger()
+        .balance(&user_id, &req.asset)
+        .await
+    {
+        Ok(amount) => Ok(Json(serde_json::json!({
+            "user_id": user_id,
+            "asset": req.asset,
+            "balance": amount.0.to_string(),
         }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
