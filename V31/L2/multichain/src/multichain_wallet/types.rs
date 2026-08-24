@@ -75,6 +75,29 @@ pub enum DepositStatus {
     Failed,
 }
 
+impl std::fmt::Display for DepositStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pending => write!(f, "pending"),
+            Self::Credited => write!(f, "credited"),
+            Self::Failed => write!(f, "failed"),
+        }
+    }
+}
+
+impl std::str::FromStr for DepositStatus {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "pending" => Ok(Self::Pending),
+            "credited" => Ok(Self::Credited),
+            "failed" => Ok(Self::Failed),
+            _ => Err(format!("unknown deposit status: {s}")),
+        }
+    }
+}
+
 /// An observed or expected deposit.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DepositRecord {
@@ -98,6 +121,29 @@ pub enum WithdrawalStatus {
     Pending,
     Sent,
     Failed,
+}
+
+impl std::fmt::Display for WithdrawalStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Pending => write!(f, "pending"),
+            Self::Sent => write!(f, "sent"),
+            Self::Failed => write!(f, "failed"),
+        }
+    }
+}
+
+impl std::str::FromStr for WithdrawalStatus {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "pending" => Ok(Self::Pending),
+            "sent" => Ok(Self::Sent),
+            "failed" => Ok(Self::Failed),
+            _ => Err(format!("unknown withdrawal status: {s}")),
+        }
+    }
 }
 
 /// A withdrawal request.

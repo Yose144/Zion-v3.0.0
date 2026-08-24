@@ -33,6 +33,14 @@ pub trait ChainAdapter: Send + Sync {
     /// Poll for deposit or burn events on this chain.
     async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>>;
 
+    /// Poll for deposits sent to any of the supplied addresses.
+    ///
+    /// Default implementation returns an empty vector; adapters should override
+    /// this once they can scan for multi-address deposits.
+    async fn watch_addresses(&self, _addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
+        Ok(Vec::new())
+    }
+
     /// Execute an outbound transfer (mint, release, or refund) on this chain.
     async fn execute_outbound(&self, transfer: &Transfer) -> MultichainResult<Hash>;
 

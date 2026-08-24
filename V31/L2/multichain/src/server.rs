@@ -309,6 +309,13 @@ impl ApiServer {
             }
         });
 
+        let deposit_watcher = self.service.deposit_watcher().clone();
+        tokio::spawn(async move {
+            if let Err(e) = deposit_watcher.run().await {
+                tracing::warn!("deposit watcher exited: {}", e);
+            }
+        });
+
         let app = self.router();
 
         let bind = format!("{}:{}", self.config.bind, self.config.port);
