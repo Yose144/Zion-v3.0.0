@@ -268,9 +268,7 @@ const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const lineRef = useRef<THREE.LineSegments>(null);
-  const qRef = useRef(new THREE.Quaternion());
   const vRef = useRef(new THREE.Vector3());
-  const pRef = useRef(new THREE.Vector3());
 
   const leafData = useMemo(() => {
     const palette = LEAF_PALETTE.map((c) => new THREE.Color(c));
@@ -282,10 +280,14 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
       color: THREE.Color;
       pos: THREE.Vector3;
       perp: THREE.Vector3;
+      dir: THREE.Vector3;
+      normal: THREE.Vector3;
       phase: number;
       speed: number;
-      w: number;
-      offsets: THREE.Vector3[];
+      amp: number;
+      srcX: Float32Array;
+      srcY: Float32Array;
+      srcW: Float32Array;
       pairMap: number[];
     }[] = [];
 
@@ -316,66 +318,94 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
           .cross(dir)
           .normalize();
         if (perp.lengthSq() < 0.001) perp.set(1, 0, 0);
+        const normal = new THREE.Vector3().crossVectors(perp, dir).normalize();
 
-        // Leaf outline shape in the local dir/perp plane.
+        // Leaf outline shape in the local x-y plane; the 4th dimension (w)
+        // is extruded along the normal axis, then projected back to 3D.
         const edgeCount = rng.int(3, 6); // 3, 4 or 5 segments
         const length = 0.45 + rng.next() * 0.55;
         const width = length * (0.32 + rng.next() * 0.22);
-        const localPoints: THREE.Vector3[] = [];
+        const localPoints: { x: number; y: number }[] = [];
 
         if (edgeCount === 3) {
           // Triangle leaf.
-          localPoints.push(new THREE.Vector3(0, -length * 0.2, 0));
-          localPoints.push(new THREE.Vector3(-width * 0.85, length * 0.5, 0));
-          localPoints.push(new THREE.Vector3(0, length, 0));
+          localPoints.push({ x: 0, y: -length * 0.2 });
+          localPoints.push({ x: -width * 0.85, y: length * 0.5 });
+          localPoints.push({ x: 0, y: length });
         } else if (edgeCount === 4) {
           // Diamond leaf.
-          localPoints.push(new THREE.Vector3(0, -length * 0.2, 0));
-          localPoints.push(new THREE.Vector3(-width, length * 0.45, 0));
-          localPoints.push(new THREE.Vector3(0, length, 0));
-          localPoints.push(new THREE.Vector3(width, length * 0.45, 0));
+          localPoints.push({ x: 0, y: -length * 0.2 });
+          localPoints.push({ x: -width, y: length * 0.45 });
+          localPoints.push({ x: 0, y: length });
+          localPoints.push({ x: width, y: length * 0.45 });
         } else {
           // Stem + diamond leaf.
-          localPoints.push(new THREE.Vector3(0, -length * 0.4, 0));
-          localPoints.push(new THREE.Vector3(0, 0, 0));
-          localPoints.push(new THREE.Vector3(-width, length * 0.5, 0));
-          localPoints.push(new THREE.Vector3(0, length, 0));
-          localPoints.push(new THREE.Vector3(width, length * 0.5, 0));
+          localPoints.push({ x: 0, y: -length * 0.4 });
+          localPoints.push({ x: 0, y: 0 });
+          localPoints.push({ x: -width, y: length * 0.5 });
+          localPoints.push({ x: 0, y: length });
+          localPoints.push({ x: width, y: length * 0.5 });
         }
 
-        const offsets: THREE.Vector3[] = [];
-        for (const lp of localPoints) {
-          offsets.push(new THREE.Vector3().copy(perp).multiplyScalar(lp.x).addScaledVector(dir, lp.y));
+        const depth = 0.12 + rng.next() * 0.12;
+        const vertexCount = edgeCount * 2;
+        const srcX = new Float32Array(vertexCount);
+        const srcY = new Float32Array(vertexCount);
+        const srcW = new Float32Array(vertexCount);
+
+        for (let v = 0; v < edgeCount; v++) {
+          srcX[v] = localPoints[v].x;
+          srcY[v] = localPoints[v].y;
+          srcW[v] = -depth;
+          srcX[v + edgeCount] = localPoints[v].x;
+          srcY[v + edgeCount] = localPoints[v].y;
+          srcW[v + edgeCount] = depth;
         }
 
+        const next = (e: number) => (edgeCount === 5 && e === edgeCount - 1 ? 1 : (e + 1) % edgeCount);
         const pairMap: number[] = [];
         for (let e = 0; e < edgeCount; e++) {
           const a = e;
-          const b = edgeCount === 5 && e === edgeCount - 1 ? 1 : (e + 1) % edgeCount;
+          const b = next(e);
+          // front and back outline edges
           pairMap.push(a, b);
+          pairMap.push(a + edgeCount, b + edgeCount);
+          // extrusion edges connecting the two w-layers
+          pairMap.push(a, a + edgeCount);
         }
+        const pairs = pairMap.length / 2;
 
-        // Generate initial world positions (zero rotation).
+        // Initial 3D projection with zero 4D rotation.
         const baseIndex = positions.length;
-        for (let e = 0; e < edgeCount; e++) {
-          const a = offsets[pairMap[e * 2]];
-          const b = offsets[pairMap[e * 2 + 1]];
-          point.copy(pos).add(a);
+        for (let e = 0; e < pairs; e++) {
+          const ai = pairMap[e * 2];
+          const bi = pairMap[e * 2 + 1];
+          point.copy(pos)
+            .addScaledVector(perp, srcX[ai])
+            .addScaledVector(dir, srcY[ai])
+            .addScaledVector(normal, srcW[ai]);
           positions.push(point.x, point.y, point.z);
-          point.copy(pos).add(b);
+          point.copy(pos)
+            .addScaledVector(perp, srcX[bi])
+            .addScaledVector(dir, srcY[bi])
+            .addScaledVector(normal, srcW[bi]);
           positions.push(point.x, point.y, point.z);
         }
 
         leaves.push({
           baseIndex,
-          pairs: edgeCount,
+          pairs,
           color: palette[rng.int(0, palette.length)],
           pos,
           perp,
+          dir,
+          normal,
           phase: rng.next() * Math.PI * 2,
-          speed: 0.4 + rng.next() * 0.6,
-          w: 0.6 + rng.next() * 0.9,
-          offsets,
+          speed: 0.35 + rng.next() * 0.45,
+          amp: 0.6 + rng.next() * 0.9,
+          srcX,
+          srcY,
+          srcW,
           pairMap,
         });
       }
@@ -415,30 +445,54 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   useFrame((state) => {
     if (!lineRef.current) return;
     const positions = lineRef.current.geometry.attributes.position.array as Float32Array;
-    const q = qRef.current;
     const v = vRef.current;
-    const p = pRef.current;
     const t = state.clock.elapsedTime;
 
     for (const leaf of leafData.leaves) {
-      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.2 * leaf.w;
-      q.setFromAxisAngle(leaf.perp, sway);
+      // Two 4D rotations (x-w and y-w), then orthographic projection
+      // where the 4th coordinate becomes the 3rd spatial axis (normal).
+      const ax = Math.sin(t * leaf.speed + leaf.phase) * 0.22 * leaf.amp;
+      const ay = Math.cos(t * leaf.speed * 0.7 + leaf.phase) * 0.16 * leaf.amp;
+      const cx = Math.cos(ax);
+      const sx = Math.sin(ax);
+      const cy = Math.cos(ay);
+      const sy = Math.sin(ay);
 
       for (let e = 0; e < leaf.pairs; e++) {
         const ai = leaf.pairMap[e * 2];
         const bi = leaf.pairMap[e * 2 + 1];
 
-        v.copy(leaf.offsets[ai]).applyQuaternion(q);
-        p.copy(leaf.pos).add(v);
-        positions[leaf.baseIndex + e * 6] = p.x;
-        positions[leaf.baseIndex + e * 6 + 1] = p.y;
-        positions[leaf.baseIndex + e * 6 + 2] = p.z;
+        // endpoint a
+        let x = leaf.srcX[ai];
+        let y = leaf.srcY[ai];
+        let w = leaf.srcW[ai];
+        let x1 = x * cx - w * sx;
+        let w1 = x * sx + w * cx;
+        let y2 = y * cy - w1 * sy;
+        let w2 = y * sy + w1 * cy;
+        v.copy(leaf.pos)
+          .addScaledVector(leaf.perp, x1)
+          .addScaledVector(leaf.dir, y2)
+          .addScaledVector(leaf.normal, w2);
+        positions[leaf.baseIndex + e * 6] = v.x;
+        positions[leaf.baseIndex + e * 6 + 1] = v.y;
+        positions[leaf.baseIndex + e * 6 + 2] = v.z;
 
-        v.copy(leaf.offsets[bi]).applyQuaternion(q);
-        p.copy(leaf.pos).add(v);
-        positions[leaf.baseIndex + e * 6 + 3] = p.x;
-        positions[leaf.baseIndex + e * 6 + 4] = p.y;
-        positions[leaf.baseIndex + e * 6 + 5] = p.z;
+        // endpoint b
+        x = leaf.srcX[bi];
+        y = leaf.srcY[bi];
+        w = leaf.srcW[bi];
+        x1 = x * cx - w * sx;
+        w1 = x * sx + w * cx;
+        y2 = y * cy - w1 * sy;
+        w2 = y * sy + w1 * cy;
+        v.copy(leaf.pos)
+          .addScaledVector(leaf.perp, x1)
+          .addScaledVector(leaf.dir, y2)
+          .addScaledVector(leaf.normal, w2);
+        positions[leaf.baseIndex + e * 6 + 3] = v.x;
+        positions[leaf.baseIndex + e * 6 + 4] = v.y;
+        positions[leaf.baseIndex + e * 6 + 5] = v.z;
       }
     }
 
