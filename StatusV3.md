@@ -2,7 +2,7 @@
 
 > **Datum poslední aktualizace:** 2026-08-23
 >
-> **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet Fáze 0–3 implementovány a testy zelené.** Vznikl feature branch `feat/ziondex-zis-multichain-wallet` s odděleným wallet seedem (`ZION_WALLET_MNEMONIC`), `multichain_wallet` modulem, per-user deposit adresami (`/v1/wallet/derive`), ledgerem (`/v1/wallet/balance`), `DepositWatcher` pro BTC deposit detection a `SwapExecutor` pro `/v1/swap/execute-v2` s on-chain ERC-20 settlement (`ChainAdapter::transfer_token`). `cargo test -p zion-multichain` prochází 577 testy. Detailní plán a stav v [`ZionDexZis.md`](./ZionDexZis.md).
+> **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet Fáze 0–4 implementovány a testy zelené.** Feature branch `feat/ziondex-zis-multichain-wallet` nyní obsahuje oddělený wallet seed (`ZION_WALLET_MNEMONIC`), `multichain_wallet` modul, per-user deposit adresy (`/v1/wallet/derive`), ledger (`/v1/wallet/balance`), `DepositWatcher` pro BTC deposit detection, `SwapExecutor` pro `/v1/swap/execute-v2` s on-chain ERC-20 settlement (`ChainAdapter::transfer_token`) a `WithdrawalProcessor` pro `/v1/wallet/withdraw`. `cargo test -p zion-multichain` prochází 578 testy. Detailní plán a stav v [`ZionDexZis.md`](./ZionDexZis.md).
 >
 > **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet plán vytvořen.** Detailní E2E plán pro plnohodnotný DEX, multichain peněženku a settlement pod ZIS je v [`ZionDexZis.md`](./ZionDexZis.md). Řeší per-user deposit adresy, ledger/UTXO tracking, keyring integraci, quote → settle tok a web UI.
 >

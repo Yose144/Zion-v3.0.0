@@ -18,7 +18,7 @@ use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
-use crate::multichain_wallet::{DepositWatcher, DexOrder, MultichainWallet, WalletLedger};
+use crate::multichain_wallet::{DepositWatcher, DexOrder, MultichainWallet, WalletLedger, WithdrawalProcessor};
 use crate::swap::dex::swap_executor::SwapExecutor;
 use crate::node_rewards::NodeRewards;
 use crate::swap::dex::{DexRouter, Pool, Quote};
@@ -48,6 +48,7 @@ pub struct MultichainService {
     multichain_wallet: MultichainWallet,
     wallet_ledger: WalletLedger,
     deposit_watcher: DepositWatcher,
+    withdrawal_processor: WithdrawalProcessor,
     credits: CreditsLedger,
     dex: Arc<RwLock<DexRouter>>,
     swap_executor: SwapExecutor,
@@ -212,6 +213,11 @@ impl MultichainService {
             Arc::clone(&adapters),
             wallet_ledger.clone(),
         );
+        let withdrawal_processor = WithdrawalProcessor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+        );
         let dex = Arc::new(RwLock::new(DexRouter::new()));
         let swap_executor = SwapExecutor::new(
             Arc::clone(&db),
@@ -231,6 +237,7 @@ impl MultichainService {
             multichain_wallet,
             wallet_ledger,
             deposit_watcher,
+            withdrawal_processor,
             credits: CreditsLedger::new(),
             dex,
             swap_executor,
@@ -405,6 +412,32 @@ impl MultichainService {
     /// Load a swap order by id.
     pub async fn get_swap_order(&self, order_id: &str) -> MultichainResult<Option<DexOrder>> {
         self.swap_executor.get_order(order_id).await
+    }
+
+    /// Access the withdrawal processor.
+    pub fn withdrawal_processor(&self) -> &WithdrawalProcessor {
+        &self.withdrawal_processor
+    }
+
+    /// Request a withdrawal for a user.
+    pub async fn request_withdraw(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+        recipient_address: &str,
+    ) -> MultichainResult<String> {
+        self.withdrawal_processor
+            .request_withdraw(user_id, asset, amount, recipient_address)
+            .await
+    }
+
+    /// List all withdrawals for a user.
+    pub async fn withdrawals_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::WithdrawalRecord>> {
+        let db = self.db.lock().await;
+        // Reuse deposit filter by status is not present; load all and filter.
+        let all: Vec<_> = db.load_pending_withdrawals()?;
+        Ok(all.into_iter().filter(|r| r.user_id == user_id).collect())
     }
 
     /// Register a solver in the intent engine whitelist and persist it.

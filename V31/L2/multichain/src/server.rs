@@ -215,6 +215,8 @@ impl ApiServer {
             .route("/v1/wallet/address", post(wallet_address))
             .route("/v1/wallet/derive", post(wallet_derive))
             .route("/v1/wallet/balance", post(wallet_balance))
+            .route("/v1/wallet/withdraw", post(wallet_withdraw))
+            .route("/v1/wallet/withdrawals", get(wallet_withdrawals))
             .route("/v1/wallet/sign", post(wallet_sign))
             .route("/v1/swap/pool/deploy", post(deploy_pool))
             .route("/v1/swap/pools", get(list_pools))
@@ -315,6 +317,13 @@ impl ApiServer {
         tokio::spawn(async move {
             if let Err(e) = deposit_watcher.run().await {
                 tracing::warn!("deposit watcher exited: {}", e);
+            }
+        });
+
+        let withdrawal_processor = self.service.withdrawal_processor().clone();
+        tokio::spawn(async move {
+            if let Err(e) = withdrawal_processor.run().await {
+                tracing::warn!("withdrawal processor exited: {}", e);
             }
         });
 
@@ -527,6 +536,53 @@ async fn wallet_balance(
             "asset": req.asset,
             "balance": amount.0.to_string(),
         }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+#[derive(Deserialize)]
+struct WalletWithdrawRequest {
+    asset: Asset,
+    amount: u128,
+    recipient: String,
+}
+
+async fn wallet_withdraw(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<WalletWithdrawRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state
+        .service
+        .request_withdraw(&user_id, &req.asset, Amount::new(req.amount), &req.recipient)
+        .await
+    {
+        Ok(id) => Ok(Json(serde_json::json!({
+            "withdrawal_id": id,
+            "status": "pending",
+        }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn wallet_withdrawals(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user_id = match user {
+        Some(u) => u.id,
+        None => return Err(StatusCode::UNAUTHORIZED),
+    };
+
+    match state.service.withdrawals_for_user(&user_id).await {
+        Ok(withdrawals) => Ok(Json(serde_json::json!({ "withdrawals": withdrawals }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
 }
