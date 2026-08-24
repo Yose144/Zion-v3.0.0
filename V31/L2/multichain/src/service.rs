@@ -9,6 +9,7 @@ use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
 use zion_pool::telemetry::MinerTelemetryRegistry;
 use zion_pool::Pool as MiningPool;
 
+use crate::audit::AuditLogger;
 use crate::bridge::Bridge;
 use crate::bridge::consensus::BridgeConsensus;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
@@ -49,6 +50,7 @@ pub struct MultichainService {
     wallet_ledger: WalletLedger,
     deposit_watcher: DepositWatcher,
     withdrawal_processor: WithdrawalProcessor,
+    audit: AuditLogger,
     credits: CreditsLedger,
     dex: Arc<RwLock<DexRouter>>,
     swap_executor: SwapExecutor,
@@ -208,6 +210,7 @@ impl MultichainService {
 
         let multichain_wallet = MultichainWallet::new(Arc::clone(&db), wallet_keyring.clone());
         let wallet_ledger = WalletLedger::new(Arc::clone(&db));
+        let audit = AuditLogger::new(Arc::clone(&db));
         let deposit_watcher = DepositWatcher::new(
             Arc::clone(&db),
             Arc::clone(&adapters),
@@ -239,6 +242,7 @@ impl MultichainService {
             wallet_ledger,
             deposit_watcher,
             withdrawal_processor,
+            audit,
             credits: CreditsLedger::new(),
             dex,
             swap_executor,
@@ -483,9 +487,37 @@ impl MultichainService {
     /// List all withdrawals for a user.
     pub async fn withdrawals_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::WithdrawalRecord>> {
         let db = self.db.lock().await;
-        // Reuse deposit filter by status is not present; load all and filter.
-        let all: Vec<_> = db.load_pending_withdrawals()?;
-        Ok(all.into_iter().filter(|r| r.user_id == user_id).collect())
+        db.load_withdrawals_for_user(user_id)
+    }
+
+    /// List all deposits for a user.
+    pub async fn deposits_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::DepositRecord>> {
+        let db = self.db.lock().await;
+        db.load_deposits_for_user(user_id)
+    }
+
+    /// List all DEX orders for a user.
+    pub async fn orders_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::DexOrder>> {
+        self.swap_executor.list_orders(user_id).await
+    }
+
+    /// Return a wallet snapshot for a user: addresses, balances, deposits,
+    /// withdrawals and orders.
+    pub async fn wallet_me(&self, user_id: &str) -> MultichainResult<serde_json::Value> {
+        let db = self.db.lock().await;
+        let addresses = db.load_wallet_addresses_for_user(user_id)?;
+        let balances = db.load_wallet_balances_for_user(user_id)?;
+        let deposits = db.load_deposits_for_user(user_id)?;
+        let withdrawals = db.load_withdrawals_for_user(user_id)?;
+        let orders = db.load_dex_orders_for_user(user_id)?;
+        Ok(serde_json::json!({
+            "user_id": user_id,
+            "addresses": addresses,
+            "balances": balances,
+            "deposits": deposits,
+            "withdrawals": withdrawals,
+            "orders": orders,
+        }))
     }
 
     /// Register a solver in the intent engine whitelist and persist it.
@@ -657,6 +689,11 @@ impl MultichainService {
     /// Access the custodial multichain wallet.
     pub fn multichain_wallet(&self) -> &MultichainWallet {
         &self.multichain_wallet
+    }
+
+    /// Access the audit logger.
+    pub fn audit(&self) -> &AuditLogger {
+        &self.audit
     }
 
     /// Access the internal ledger.

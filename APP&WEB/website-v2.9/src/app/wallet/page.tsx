@@ -7,7 +7,7 @@ import { useZionWallet } from '@/contexts/ZionWalletContext';
 import {
   Wallet, Plus, Import, Send, RefreshCw, Trash2, Copy, Eye, EyeOff,
   Shield, KeyRound, Download, BookOpen, Lock, Fingerprint,
-  Zap, Globe2, Usb, AlertTriangle, Activity, ArrowRight,
+  Zap, Globe2, Usb, AlertTriangle, Activity, ArrowRight, ArrowLeftRight,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -96,6 +96,8 @@ const WalletCopy = {
   learnMoreAboutZionWallet: { cs: `Více o ZION Wallet`, en: `Learn more about ZION Wallet` },
   download: { cs: `Stáhnout`, en: `Download` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
+  multichainWallet: { cs: `Multichain peněženka`, en: `Multichain Wallet` },
+  openMultichainWallet: { cs: `Otevřít multichain peněženku`, en: `Open multichain wallet` },
 };
 
 // ── Tithe Wallets (89/5/5/1 coinbase fee split) ──────────────────────────
@@ -429,6 +431,15 @@ export default function WalletPage() {
                 <p className="text-lg text-gray-300 max-w-2xl">
                   {WalletCopy.fullyOnChainWalletForZionL1Cre[cs ? 'cs' : 'en']}
                 </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/wallet/multichain"
+                    className="zion-button-primary inline-flex items-center gap-2"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                    {WalletCopy.openMultichainWallet[cs ? 'cs' : 'en']}
+                  </Link>
+                </div>
                 <div className="flex flex-wrap gap-3 text-xs">
                   <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
                     <Fingerprint className="h-3 w-3" /> Ed25519

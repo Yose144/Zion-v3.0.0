@@ -10,6 +10,7 @@
 //! All modules share a single `Transfer` pipeline and a `ChainAdapter` trait.
 //! No V3 code is copied here; implementations are written clean for `V31/`.
 
+pub mod audit;
 pub mod bridge;
 pub mod chain;
 pub mod config;

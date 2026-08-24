@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { MultichainWalletProvider } from "@/contexts/MultichainWalletContext";
 import HeroSection from "@/components/HeroSection";
 import BackgroundToggle from "@/components/BackgroundToggle";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
@@ -78,6 +79,7 @@ export default function RootLayout({
                 <WalletProvider>
                   <ZionWalletProvider>
                     <AuthProvider>
+                    <MultichainWalletProvider>
                     <PerformanceShell />
                     <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
@@ -92,6 +94,7 @@ export default function RootLayout({
                         <Footer />
                       </div>
                     </div>
+                    </MultichainWalletProvider>
                     </AuthProvider>
                   </ZionWalletProvider>
                 </WalletProvider>
