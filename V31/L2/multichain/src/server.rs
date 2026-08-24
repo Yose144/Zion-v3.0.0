@@ -225,6 +225,9 @@ impl ApiServer {
             .route("/v1/swap/quote/multi", post(swap_quote_multi))
             .route("/v1/swap/execute", post(swap_execute))
             .route("/v1/swap/execute-v2", post(swap_execute_v2))
+            .route("/v1/swap/htlc", post(swap_htlc))
+            .route("/v1/swap/order/:id/htlc-source-lock", post(swap_htlc_source_lock))
+            .route("/v1/swap/order/:id/htlc-claim", post(swap_htlc_claim))
             .route("/v1/swap/order/:id", get(get_swap_order))
             .route("/v1/swap/intent", post(create_intent))
             .route("/v1/swap/intent/:id", get(get_intent))
@@ -1085,6 +1088,169 @@ async fn htlc_refund(
         Ok(()) => Ok(Json(serde_json::json!({
             "hash": req.hash_hex,
             "status": transfer.status,
+        }))),
+        Err(e) => Err(bad_request(&e.to_string())),
+    }
+}
+
+#[derive(Deserialize)]
+struct HtlcSwapCreateRequest {
+    user: String,
+    from: Asset,
+    to: Asset,
+    amount_in: u128,
+    #[serde(default)]
+    min_amount_out: u128,
+    hash_hex: String,
+    target_timelock: u64,
+    operator_target_address: String,
+    target_recipient: String,
+    #[serde(default)]
+    source_user_address: Option<String>,
+    #[serde(default)]
+    source_chain: Option<String>,
+    #[serde(default)]
+    source_amount: Option<u128>,
+    #[serde(default)]
+    source_timelock: Option<u64>,
+    #[serde(default)]
+    source_lock_tx_id: Option<String>,
+    #[serde(default)]
+    source_refund_pubkey_hex: Option<String>,
+    #[serde(default)]
+    source_claimant_pubkey_hex: Option<String>,
+    #[serde(default)]
+    target_refund_pubkey_hex: Option<String>,
+    #[serde(default)]
+    target_claimant_pubkey_hex: Option<String>,
+}
+
+async fn swap_htlc(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<HtlcSwapCreateRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+
+    let hashlock = Hash::from_hex(&req.hash_hex)
+        .ok_or_else(|| bad_request("invalid hash_hex"))?;
+
+    let operator_target = parse_address_string(&req.operator_target_address, req.to.id.chain)
+        .map_err(|e| bad_request(&e.to_string()))?;
+    let target_recipient = parse_address_string(&req.target_recipient, req.to.id.chain)
+        .map_err(|e| bad_request(&e.to_string()))?;
+
+    let source_chain = req
+        .source_chain
+        .as_deref()
+        .map(chain_name_to_id)
+        .transpose()
+        .map_err(|e| bad_request(&e.to_string()))?;
+
+    let htlc_req = crate::swap::dex::swap_executor::HtlcSwapRequest {
+        amount_in: Amount::new(req.amount_in),
+        min_amount_out: Amount::new(req.min_amount_out),
+        hashlock,
+        target_timelock: req.target_timelock,
+        operator_target_address: operator_target,
+        target_recipient,
+        source_user_address: req.source_user_address,
+        source_chain,
+        source_amount: req.source_amount.map(Amount::new),
+        source_timelock: req.source_timelock,
+        source_lock_tx_id: req.source_lock_tx_id,
+        source_refund_pubkey: decode_pubkey_hex(&req.source_refund_pubkey_hex)?,
+        source_claimant_pubkey: decode_pubkey_hex(&req.source_claimant_pubkey_hex)?,
+        target_refund_pubkey: decode_pubkey_hex(&req.target_refund_pubkey_hex)?,
+        target_claimant_pubkey: decode_pubkey_hex(&req.target_claimant_pubkey_hex)?,
+    };
+
+    match state
+        .service
+        .execute_htlc_swap(&req.user, &req.from, &req.to, &htlc_req)
+        .await
+    {
+        Ok(order) => Ok(Json(serde_json::json!({
+            "order_id": order.id,
+            "status": order.status,
+            "amount_out": order.amount_out.0.to_string(),
+            "htlc_hash": order.htlc_hash,
+            "tx_hash": order.tx_hash,
+        }))),
+        Err(e) => Err(bad_request(&e.to_string())),
+    }
+}
+
+#[derive(Deserialize)]
+struct HtlcSwapSourceLockRequest {
+    source_lock_tx_id: String,
+    source_expires_at: u64,
+}
+
+async fn swap_htlc_source_lock(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Path(order_id): Path<String>,
+    Json(req): Json<HtlcSwapSourceLockRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+
+    match state
+        .service
+        .record_source_htlc_lock(&order_id, &req.source_lock_tx_id, req.source_expires_at)
+        .await
+    {
+        Ok(order) => Ok(Json(serde_json::json!({
+            "order_id": order.id,
+            "status": order.status,
+        }))),
+        Err(e) => Err(bad_request(&e.to_string())),
+    }
+}
+
+#[derive(Deserialize)]
+struct HtlcSwapClaimRequest {
+    secret_hex: String,
+    source_asset: Asset,
+    source_operator_recipient: String,
+    #[serde(default)]
+    source_user_address: Option<String>,
+}
+
+async fn swap_htlc_claim(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Path(order_id): Path<String>,
+    Json(req): Json<HtlcSwapClaimRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+
+    let secret = hex::decode(&req.secret_hex).map_err(|_| bad_request("invalid secret_hex"))?;
+
+    let source_operator = parse_address_string(&req.source_operator_recipient, req.source_asset.id.chain)
+        .map_err(|e| bad_request(&e.to_string()))?;
+    let source_user = req
+        .source_user_address
+        .as_deref()
+        .map(|a| parse_address_string(a, req.source_asset.id.chain))
+        .transpose()
+        .map_err(|e| bad_request(&e.to_string()))?;
+
+    match state
+        .service
+        .claim_htlc_swap(
+            &order_id,
+            &secret,
+            &req.source_asset,
+            &source_operator,
+            source_user.as_ref(),
+        )
+        .await
+    {
+        Ok(order) => Ok(Json(serde_json::json!({
+            "order_id": order.id,
+            "status": order.status,
+            "tx_hash": order.tx_hash,
         }))),
         Err(e) => Err(bad_request(&e.to_string())),
     }
