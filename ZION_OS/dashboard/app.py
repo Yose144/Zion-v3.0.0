@@ -3806,13 +3806,14 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
+    v31_miner_worker = _get_active_miner_worker()
     v31_miner_status = {
         "running": v31_miner_active == "active",
         "systemd_active": v31_miner_active,
         "hashrate": v31_miner_hashrate,
         "shares_submitted": v31_miner_shares,
         "shares_accepted": v31_miner_accepted,
-        "worker": "v31-miner",
+        "worker": v31_miner_worker,
         "payout_address": v31_miner_wallet,
         "on_chain_balance_zion": v31_miner_on_chain,
     }
@@ -5892,6 +5893,40 @@ def _get_active_miner_wallet() -> str:
 
     # 4. canonical fallback
     return V31_CANONICAL_DEFAULT_MINER_WALLET
+
+
+@_ttl_cache_fn(60.0)
+def _get_active_miner_worker() -> str:
+    """Return the best available active miner worker name.
+
+    Priority:
+      1. ZION_MINER_WORKER env / .env files
+      2. zion.toml [miner] worker_name
+      3. fallback to v31-miner
+    """
+    # 1. env / .env files
+    env_worker = find_env_value("ZION_MINER_WORKER") or find_env_value("ZION_WORKER_NAME")
+    if env_worker:
+        return env_worker
+
+    # 2. zion.toml [miner] worker_name
+    toml_path = REPO_ROOT / "zion.toml"
+    if toml_path.exists():
+        try:
+            with open(toml_path, "r", encoding="utf-8", errors="ignore") as f:
+                in_miner_section = False
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("[") and "]" in line:
+                        in_miner_section = line.strip("[]").startswith("miner")
+                        continue
+                    if in_miner_section and (m := re.search(r'worker_name\s*=\s*["\']?([^"\'\s#]+)', line)):
+                        return m.group(1).strip()
+        except Exception:
+            pass
+
+    # 3. canonical fallback
+    return "v31-miner"
 
 
 # ── Explorer data builder ──────────────────────────────────────────────
