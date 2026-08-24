@@ -11,6 +11,7 @@ import {
   planetStyleFromColor,
   type PlanetStyle,
 } from '../lib/planetTexture';
+import OrbitingShip from './OrbitingShip';
 
 /**
  * Universal planet component — uses real Earth textures for Nova Zeme,
@@ -387,6 +388,13 @@ export function NovaZeme({
           emissiveIntensity={1.5}
         />
       </mesh>
+
+      {/* Millennium Falcon-style ship in orbit around Nova Zeme */}
+      {!isMobile && (
+        <group scale={0.7}>
+          <OrbitingShip radius={radius + 0.55} speed={0.42} yAmp={0.1} color="#9ca3af" scale={0.9} />
+        </group>
+      )}
 
       {/* "Nova Zeme" label above planet (desktop) */}
       {!isMobile && (
