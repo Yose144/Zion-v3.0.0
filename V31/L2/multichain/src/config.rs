@@ -65,6 +65,11 @@ pub struct MultichainConfig {
     pub l1_rpc_url: String,
     #[serde(default)]
     pub mnemonic: Option<String>,
+    /// Optional BIP39 mnemonic for the custodial multichain wallet.
+    /// Falls back to `ZION_WALLET_MNEMONIC` env var. Must be different from
+    /// `mnemonic` / `WARP_MNEMONIC` in production.
+    #[serde(default)]
+    pub wallet_mnemonic: Option<String>,
     #[serde(default)]
     pub adapters: Vec<AdapterConfig>,
     pub pool: Option<PoolConfigFile>,
@@ -85,6 +90,7 @@ impl Default for MultichainConfig {
             database: DatabaseConfig::default(),
             l1_rpc_url: default_l1_rpc_url(),
             mnemonic: None,
+            wallet_mnemonic: None,
             adapters: Vec::new(),
             pool: None,
             warp: None,

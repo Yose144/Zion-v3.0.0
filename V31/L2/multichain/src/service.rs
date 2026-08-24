@@ -38,7 +38,11 @@ pub struct MultichainService {
     adapters: Arc<ChainAdapterRegistry>,
     bridge: Bridge,
     htlc: HtlcSwap,
+    /// Bridge / validator / relay keyring. Must NOT be used for per-user
+    /// custodial wallet addresses.
     keyring: Keyring,
+    /// Custodial multichain wallet keyring. Separate from the bridge seed.
+    wallet_keyring: Keyring,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
     intent_engine: RwLock<IntentEngine>,
@@ -47,7 +51,7 @@ pub struct MultichainService {
     node_rewards: Arc<Mutex<NodeRewards>>,
 }
 
-fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
+fn load_bridge_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
     if let Some(mnemonic) = config.mnemonic.as_deref() {
         return Keyring::from_mnemonic(mnemonic);
     }
@@ -56,6 +60,22 @@ fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
             return Keyring::from_mnemonic(&mnemonic);
         }
     }
+    Keyring::generate()
+}
+
+fn load_wallet_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
+    if let Some(mnemonic) = config.wallet_mnemonic.as_deref() {
+        return Keyring::from_mnemonic(mnemonic);
+    }
+    if let Ok(mnemonic) = std::env::var("ZION_WALLET_MNEMONIC") {
+        if !mnemonic.is_empty() {
+            return Keyring::from_mnemonic(&mnemonic);
+        }
+    }
+    tracing::warn!(
+        "ZION_WALLET_MNEMONIC not set; generating an ephemeral custodial wallet keyring. \
+         User deposit addresses will change on every restart."
+    );
     Keyring::generate()
 }
 
@@ -70,14 +90,15 @@ impl MultichainService {
 
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        let keyring = load_keyring(&config)?;
+        let bridge_keyring = load_bridge_keyring(&config)?;
+        let wallet_keyring = load_wallet_keyring(&config)?;
         let mut adapters = ChainAdapterRegistry::new();
 
         for cfg in &config.adapters {
             if !cfg.enabled {
                 continue;
             }
-            match build_adapter(cfg, &keyring) {
+            match build_adapter(cfg, &bridge_keyring) {
                 Ok(adapter) => match chain_id_by_name(&cfg.chain) {
                     Ok(chain_id) => {
                         adapters.register(chain_id, adapter);
@@ -102,11 +123,17 @@ impl MultichainService {
 
         // Always register a ZION L1 adapter if an L1 RPC URL is configured.
         if !config.l1_rpc_url.is_empty() {
-            let l1_adapter = Box::new(ZionL1Adapter::new(&config.l1_rpc_url, keyring.clone()));
+            let l1_adapter = Box::new(ZionL1Adapter::new(&config.l1_rpc_url, bridge_keyring.clone()));
             adapters.register(ChainId::ZionL1, l1_adapter);
         }
 
-        Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
+        Ok(Self::from_parts(
+            config,
+            db,
+            Arc::new(adapters),
+            bridge_keyring,
+            wallet_keyring,
+        ))
     }
 
     /// Build a service from an already-constructed registry. Useful in tests
@@ -116,8 +143,15 @@ impl MultichainService {
         adapters: ChainAdapterRegistry,
     ) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        let keyring = load_keyring(&config)?;
-        Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
+        let bridge_keyring = load_bridge_keyring(&config)?;
+        let wallet_keyring = load_wallet_keyring(&config)?;
+        Ok(Self::from_parts(
+            config,
+            db,
+            Arc::new(adapters),
+            bridge_keyring,
+            wallet_keyring,
+        ))
     }
 
     fn from_parts(
@@ -125,6 +159,7 @@ impl MultichainService {
         db: Arc<Mutex<Db>>,
         adapters: Arc<ChainAdapterRegistry>,
         keyring: Keyring,
+        wallet_keyring: Keyring,
     ) -> Self {
         let bridge = match load_bridge_consensus() {
             Some(consensus) => Bridge::with_consensus(Arc::clone(&adapters), consensus),
@@ -171,6 +206,7 @@ impl MultichainService {
             bridge,
             htlc,
             keyring,
+            wallet_keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
             intent_engine: RwLock::new(intent_engine),
@@ -492,9 +528,14 @@ impl MultichainService {
         &self.htlc
     }
 
-    /// Access the wallet keyring.
+    /// Access the bridge/relay keyring.
     pub fn keyring(&self) -> &Keyring {
         &self.keyring
+    }
+
+    /// Access the custodial multichain wallet keyring.
+    pub fn wallet_keyring(&self) -> &Keyring {
+        &self.wallet_keyring
     }
 
     /// Derive a wallet address for a chain.
