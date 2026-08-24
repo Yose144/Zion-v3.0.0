@@ -1,6 +1,6 @@
 # ZionDex + ZIS Multichain Wallet — komplexní implementační plán
 
-> **Status (2026-08-23):** Fáze 0–4 implementovány a `cargo test -p zion-multichain` prochází 578 testy. Fáze 5+ jsou pending.
+> **Status (2026-08-23):** Fáze 0–5 implementovány a `cargo test -p zion-multichain` prochází 581 testy. Fáze 6+ jsou pending.
 >
 > Cíl: převést `ZionDex` z in-memory AMM quote engine na skutečně E2E fungující
 > multichain DEX a vytvořit v rámci ZIS vlastní `Multichain Wallet`, která
@@ -627,6 +627,6 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
 
 ---
 
-*Poslední aktualizace: 2026-08-23 (Fáze 0–4 implementovány)*  
+*Poslední aktualizace: 2026-08-23 (Fáze 0–5 implementovány)*  
 *Autor: Devin dle pokynu týmu*  
 *Repozitář: root `ZionDexZis.md`*

@@ -219,6 +219,7 @@ impl ApiServer {
             .route("/v1/wallet/withdrawals", get(wallet_withdrawals))
             .route("/v1/wallet/sign", post(wallet_sign))
             .route("/v1/swap/pool/deploy", post(deploy_pool))
+            .route("/v1/swap/bridge", post(deploy_bridge))
             .route("/v1/swap/pools", get(list_pools))
             .route("/v1/swap/quote", post(swap_quote))
             .route("/v1/swap/quote/multi", post(swap_quote_multi))
@@ -776,6 +777,26 @@ async fn deploy_pool(
 async fn list_pools(State(state): State<AppState>) -> Json<serde_json::Value> {
     let pools = state.service.list_dex_pools().await;
     Json(serde_json::json!({"pools": pools}))
+}
+
+#[derive(Deserialize)]
+struct BridgeEdgeRequest {
+    from: Asset,
+    to: Asset,
+    fee_bps: u16,
+}
+
+async fn deploy_bridge(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<BridgeEdgeRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    if req.fee_bps >= 10_000 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    state.service.add_bridge_edge(req.from, req.to, req.fee_bps).await;
+    Ok(Json(serde_json::json!({"ok": true})))
 }
 
 #[derive(Deserialize)]

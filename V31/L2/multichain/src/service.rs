@@ -362,6 +362,11 @@ impl MultichainService {
         self.dex.write().await.add_pool(pool);
     }
 
+    /// Add a cross-chain bridge edge to the DEX router.
+    pub async fn add_bridge_edge(&self, from: Asset, to: Asset, fee_bps: u16) {
+        self.dex.write().await.add_bridge_edge(from, to, fee_bps);
+    }
+
     /// Return a DEX quote for swapping `amount` of `from` into `to`.
     pub async fn dex_quote(
         &self,

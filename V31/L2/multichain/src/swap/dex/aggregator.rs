@@ -11,15 +11,7 @@ use zion_l1_types::{Amount, Asset, AssetId};
 
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::intent::PathHop;
-use crate::swap::dex::{DexRouter, Quote};
-
-/// A bridgeable asset pair with the fee charged by the bridge.
-#[derive(Debug, Clone)]
-pub struct BridgeEdge {
-    pub from: AssetId,
-    pub to: AssetId,
-    pub fee_bps: u16,
-}
+use crate::swap::dex::{BridgeEdge, BridgeRegistry, DexRouter, Quote};
 
 /// A path through AMM and bridge hops returned by the aggregator.
 #[derive(Debug, Clone)]
@@ -27,32 +19,6 @@ pub struct CrossChainPath {
     pub hops: Vec<PathHop>,
     pub expected_out: Amount,
     pub total_fee_bps: u16,
-}
-
-/// Registry of known cross-chain bridge edges.
-#[derive(Debug, Clone, Default)]
-pub struct BridgeRegistry {
-    edges: Vec<BridgeEdge>,
-}
-
-impl BridgeRegistry {
-    pub fn new() -> Self {
-        Self { edges: Vec::new() }
-    }
-
-    pub fn add(&mut self, edge: BridgeEdge) {
-        self.edges.push(edge);
-    }
-
-    pub fn contains(&self, from: &AssetId, to: &AssetId) -> bool {
-        self.edges
-            .iter()
-            .any(|e| e.from == *from && e.to == *to)
-    }
-
-    pub fn edges(&self) -> &[BridgeEdge] {
-        &self.edges
-    }
 }
 
 /// Aggregates AMM liquidity and bridge edges to find cross-chain swap paths.
