@@ -74,7 +74,7 @@ impl ZisUser {
     pub fn linked_address(&self, chain_type: &str, chain_id: Option<&str>) -> Option<&ZisLinkedAddress> {
         self.linked_addresses.iter().find(|a| {
             a.chain_type.eq_ignore_ascii_case(chain_type)
-                && chain_id.map_or(true, |c| a.chain_id.as_deref() == Some(c))
+                && chain_id.is_none_or(|c| a.chain_id.as_deref() == Some(c))
         })
     }
 
