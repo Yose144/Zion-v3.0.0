@@ -267,15 +267,19 @@ interface LeafCanopyProps {
 const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1a1a1a'];
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const lineRef = useRef<THREE.LineSegments>(null);
+  const qRef = useRef(new THREE.Quaternion());
+  const endRef = useRef(new THREE.Vector3());
+  const dirRef = useRef(new THREE.Vector3());
+  const perpRef = useRef(new THREE.Vector3());
 
   const leaves = useMemo(() => {
     const palette = LEAF_PALETTE.map((c) => new THREE.Color(c));
-    const up = new THREE.Vector3(0, 1, 0);
     const result: {
-      pos: THREE.Vector3;
-      quat: THREE.Quaternion;
-      scale: number;
+      start: THREE.Vector3;
+      dir: THREE.Vector3;
+      axis: THREE.Vector3;
+      length: number;
       phase: number;
       speed: number;
       w: number;
@@ -286,24 +290,34 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
       for (let i = 0; i < leavesPerAnchor; i++) {
         const spread = 0.18 + rng.next() * 0.4;
         const along = 0.05 + rng.next() * 0.32;
-        const jitter = new THREE.Vector3((rng.next() - 0.5) * spread, (rng.next() - 0.5) * spread * 0.6, (rng.next() - 0.5) * spread);
-        const pos = anchor.end.clone().addScaledVector(anchor.dir, along).add(jitter);
+        const jitter = new THREE.Vector3(
+          (rng.next() - 0.5) * spread,
+          (rng.next() - 0.5) * spread * 0.6,
+          (rng.next() - 0.5) * spread
+        );
+        const start = anchor.end.clone().addScaledVector(anchor.dir, along).add(jitter);
 
         const dir = anchor.dir.clone().normalize();
-        const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
         const spreadQuat = new THREE.Quaternion().setFromEuler(
           new THREE.Euler(
-            (rng.next() - 0.5) * 0.6,
-            (rng.next() - 0.5) * 0.6,
+            (rng.next() - 0.5) * 0.9,
+            (rng.next() - 0.5) * 0.9,
             rng.next() * Math.PI
           )
         );
-        quat.multiply(spreadQuat);
+        dir.applyQuaternion(spreadQuat);
+
+        // Per-leaf wobble axis is perpendicular to the line direction.
+        const perp = perpRef.current.set(rng.next() - 0.5, rng.next() - 0.5, rng.next() - 0.5).normalize();
+        const axis = new THREE.Vector3().crossVectors(dir, perp);
+        if (axis.lengthSq() < 0.001) axis.set(1, 0, 0);
+        axis.normalize();
 
         result.push({
-          pos,
-          quat,
-          scale: 0.85 + rng.next() * 0.95,
+          start,
+          dir,
+          axis,
+          length: 0.45 + rng.next() * 0.55,
           phase: rng.next() * Math.PI * 2,
           speed: 0.4 + rng.next() * 0.5,
           w: 0.6 + rng.next() * 0.8,
@@ -316,100 +330,168 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
   const count = leaves.length;
 
-  const geometry = useMemo(() => {
-    const geo = new THREE.ConeGeometry(0.15, 0.85, 4, 1, true);
-    if (count === 0) return geo;
-
-    const phaseArr = new Float32Array(count);
-    const speedArr = new Float32Array(count);
-    const wArr = new Float32Array(count);
-    const colorArr = new Float32Array(count * 3);
+  const { geometry, material } = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 2 * 3);
+    const colors = new Float32Array(count * 2 * 3);
 
     for (let i = 0; i < count; i++) {
       const leaf = leaves[i];
-      phaseArr[i] = leaf.phase;
-      speedArr[i] = leaf.speed;
-      wArr[i] = leaf.w;
-      colorArr[i * 3] = leaf.color.r;
-      colorArr[i * 3 + 1] = leaf.color.g;
-      colorArr[i * 3 + 2] = leaf.color.b;
+      const end = new THREE.Vector3().copy(leaf.start).addScaledVector(leaf.dir, leaf.length);
+      const i6 = i * 6;
+      positions[i6] = leaf.start.x;
+      positions[i6 + 1] = leaf.start.y;
+      positions[i6 + 2] = leaf.start.z;
+      positions[i6 + 3] = end.x;
+      positions[i6 + 4] = end.y;
+      positions[i6 + 5] = end.z;
+      colors[i6] = colors[i6 + 3] = leaf.color.r;
+      colors[i6 + 1] = colors[i6 + 4] = leaf.color.g;
+      colors[i6 + 2] = colors[i6 + 5] = leaf.color.b;
     }
 
-    geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phaseArr, 1));
-    geo.setAttribute('aSpeed', new THREE.InstancedBufferAttribute(speedArr, 1));
-    geo.setAttribute('aW', new THREE.InstancedBufferAttribute(wArr, 1));
-    geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(colorArr, 3));
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    return geo;
-  }, [leaves, count]);
-
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-        },
-        vertexShader: `
-          attribute float aPhase;
-          attribute float aSpeed;
-          attribute float aW;
-          attribute vec3 aColor;
-
-          uniform float uTime;
-          varying vec3 vColor;
-
-          void main() {
-            vColor = aColor;
-
-            float sway = sin(uTime * aSpeed + aPhase) * 0.12 * aW;
-            float c = cos(sway);
-            float s = sin(sway);
-
-            // Sway around local X so the cone visibly tilts.
-            vec3 pos = position;
-            float y = pos.y * c - pos.z * s;
-            float z = pos.y * s + pos.z * c;
-            pos.y = y;
-            pos.z = z;
-
-            vec4 worldPosition = instanceMatrix * vec4(pos, 1.0);
-            gl_Position = projectionMatrix * modelViewMatrix * worldPosition;
-          }
-        `,
-        fragmentShader: `
-          varying vec3 vColor;
-
-          void main() {
-            gl_FragColor = vec4(vColor, 0.96);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide,
-        toneMapped: false,
-      }),
-    []
-  );
-
-  useEffect(() => {
-    if (!meshRef.current || count === 0) return;
-    const matrix = new THREE.Matrix4();
-    const scale = new THREE.Vector3();
-    leaves.forEach((leaf, i) => {
-      scale.setScalar(leaf.scale);
-      matrix.compose(leaf.pos, leaf.quat, scale);
-      meshRef.current!.setMatrixAt(i, matrix);
+    const mat = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
     });
-    meshRef.current.instanceMatrix.needsUpdate = true;
-    meshRef.current.frustumCulled = false;
+
+    return { geometry: geo, material: mat };
   }, [leaves, count]);
 
   useFrame((state) => {
-    material.uniforms.uTime.value = state.clock.elapsedTime;
-    material.uniformsNeedUpdate = true;
+    if (!lineRef.current || count === 0) return;
+    const positions = lineRef.current.geometry.attributes.position.array as Float32Array;
+    const q = qRef.current;
+    const end = endRef.current;
+    const dir = dirRef.current;
+    const t = state.clock.elapsedTime;
+
+    for (let i = 0; i < count; i++) {
+      const leaf = leaves[i];
+      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.15 * leaf.w;
+      q.setFromAxisAngle(leaf.axis, sway);
+      dir.copy(leaf.dir).applyQuaternion(q);
+      end.copy(leaf.start).addScaledVector(dir, leaf.length);
+      const i6 = i * 6;
+      positions[i6 + 3] = end.x;
+      positions[i6 + 4] = end.y;
+      positions[i6 + 5] = end.z;
+    }
+
+    lineRef.current.geometry.attributes.position.needsUpdate = true;
   });
 
   if (count === 0) return null;
-  return <instancedMesh ref={meshRef} args={[geometry, material, count]} frustumCulled={false} />;
+  return <lineSegments ref={lineRef} geometry={geometry} material={material} frustumCulled={false} />;
+}
+
+/* ── Princess Mononoke kodama spirits perched on branches ── */
+interface KodamaFieldProps {
+  anchors: LeafAnchor[];
+  count?: number;
+  rng: ReturnType<typeof createRandom>;
+}
+
+function KodamaField({ anchors, count = 6, rng }: KodamaFieldProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const figureRefs = useRef<THREE.Group[]>([]);
+
+  const kodamas = useMemo(() => {
+    const figures: {
+      pos: THREE.Vector3;
+      rot: THREE.Euler;
+      phase: number;
+      speed: number;
+      scale: number;
+    }[] = [];
+    for (let i = 0; i < count; i++) {
+      const anchor = anchors[rng.int(0, anchors.length)];
+      if (!anchor) continue;
+      const spread = 0.25 + rng.next() * 0.5;
+      const pos = anchor.end
+        .clone()
+        .addScaledVector(anchor.dir, spread)
+        .add(new THREE.Vector3((rng.next() - 0.5) * 0.25, (rng.next() - 0.5) * 0.25, (rng.next() - 0.5) * 0.25));
+      const rot = new THREE.Euler(
+        (rng.next() - 0.5) * 0.6,
+        (rng.next() - 0.5) * 0.6,
+        (rng.next() - 0.5) * 0.6
+      );
+      figures.push({
+        pos,
+        rot,
+        phase: rng.next() * Math.PI * 2,
+        speed: 2.5 + rng.next() * 3.5,
+        scale: 0.7 + rng.next() * 0.5,
+      });
+    }
+    return figures;
+  }, [anchors, count, rng]);
+
+  const shared = useMemo(() => {
+    const bodyGeo = new THREE.SphereGeometry(0.1, 12, 12);
+    const headGeo = new THREE.SphereGeometry(0.12, 14, 14);
+    const eyeGeo = new THREE.SphereGeometry(0.022, 8, 8);
+    const whiteMat = new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false });
+    const blackMat = new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false });
+    return { bodyGeo, headGeo, eyeGeo, whiteMat, blackMat };
+  }, []);
+
+  useEffect(() => {
+    if (!groupRef.current) return;
+    const parent = groupRef.current;
+    parent.clear();
+    figureRefs.current = [];
+
+    for (const k of kodamas) {
+      const figure = new THREE.Group();
+
+      const body = new THREE.Mesh(shared.bodyGeo, shared.whiteMat);
+      const head = new THREE.Mesh(shared.headGeo, shared.whiteMat);
+      head.position.y = 0.18;
+
+      const leftEye = new THREE.Mesh(shared.eyeGeo, shared.blackMat);
+      leftEye.position.set(-0.045, 0.22, 0.105);
+      const rightEye = new THREE.Mesh(shared.eyeGeo, shared.blackMat);
+      rightEye.position.set(0.045, 0.22, 0.105);
+      head.add(leftEye, rightEye);
+
+      figure.add(body, head);
+      figure.position.copy(k.pos);
+      figure.rotation.copy(k.rot);
+      figure.scale.setScalar(k.scale);
+      parent.add(figure);
+      figureRefs.current.push(figure);
+    }
+
+    return () => {
+      parent.clear();
+      figureRefs.current = [];
+    };
+  }, [kodamas, shared]);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    figureRefs.current.forEach((figure, i) => {
+      const k = kodamas[i];
+      const head = figure.children[1] as THREE.Mesh | undefined;
+      if (head) {
+        head.rotation.z = Math.sin(t * k.speed + k.phase) * 0.25;
+        head.rotation.x = Math.cos(t * k.speed * 0.7 + k.phase) * 0.12;
+      }
+      figure.position.y = k.pos.y + Math.sin(t * 1.2 + k.phase) * 0.018;
+    });
+  });
+
+  if (kodamas.length === 0) return null;
+  return <group ref={groupRef} />;
 }
 
 /* ── Contact-style light fountain: vertical streaks spiraling upward ── */
@@ -918,6 +1000,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
       <SporeField count={isMobile ? 120 : 200} rng={rng} />
       <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 2} rng={rng} />
+      <KodamaField anchors={leafAnchors} count={isMobile ? 3 : 7} rng={rng} />
     </group>
   );
 }
