@@ -1827,9 +1827,16 @@ impl StratumServer {
             }
         };
 
-        let interval = Duration::from_secs(5);
+        // Poll the L1 node every second. VRSC/LuckPool jobs can switch on a
+        // 60s block boundary, so a 5s polling interval leaves miners working
+        // on a stale external job for up to ~5s. 1s keeps the external stream
+        // fresh and matches the pool-side "touch job timestamp" cadence.
+        let interval = Duration::from_secs(1);
         let mut job_counter: u64 = 0u64;
         let mut first = true;
+        // Track the last V3 Job message we broadcast; only send a new notify
+        // when the ZION template or the external stream actually changes.
+        let mut last_v3_msg: Option<String> = None;
 
         loop {
             let sleep_fut = if first {
@@ -1842,9 +1849,6 @@ impl StratumServer {
             tokio::select! {
                 _ = shutdown.changed() => break,
                 _ = sleep_fut => {
-                    job_counter += 1;
-                    let job_id = format!("zion_{}", job_counter);
-
                     let payload = json!({
                         "jsonrpc": "2.0",
                         "id": 1,
@@ -1879,15 +1883,38 @@ impl StratumServer {
                             let share_target_hex = hex::encode(share_target);
 
                             if !header_hex.is_empty() {
-                                tracing::info!(job = %job_id, "broadcasting mining.notify");
-                                self.broadcast_job(
-                                    &job_id,
+                                // Candidate job id for the next broadcast.
+                                let candidate_id = format!("zion_{}", job_counter + 1);
+                                let v3_msg = self.build_v3_job_message(
+                                    &candidate_id,
                                     header_hex,
-                                    &share_target_hex,
-                                    block_target_hex,
-                                    reward,
                                     &template_json,
                                 );
+
+                                let changed = match (&last_v3_msg, &v3_msg) {
+                                    (None, Some(_)) => true,
+                                    (Some(last), Some(cur)) => last != cur,
+                                    _ => false,
+                                };
+
+                                if changed {
+                                    job_counter += 1;
+                                    let job_id = format!("zion_{}", job_counter);
+                                    tracing::info!(job = %job_id, "broadcasting mining.notify");
+                                    self.broadcast_job(
+                                        &job_id,
+                                        header_hex,
+                                        &share_target_hex,
+                                        block_target_hex,
+                                        reward,
+                                        &template_json,
+                                    );
+                                    last_v3_msg = v3_msg;
+                                } else {
+                                    tracing::debug!("template_feed_loop: ZION/external stream unchanged, skipping broadcast");
+                                }
+                            } else {
+                                last_v3_msg = None;
                             }
                         }
                         Err(e) => tracing::warn!("getTemplate request failed: {}", e),
