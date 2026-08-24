@@ -224,6 +224,7 @@ impl Db {
                 recipient_address TEXT,
                 route_json TEXT NOT NULL,
                 tx_hash TEXT,
+                htlc_hash TEXT,
                 status TEXT NOT NULL DEFAULT 'pending',
                 created_at TEXT NOT NULL,
                 executed_at TEXT
@@ -232,6 +233,26 @@ impl Db {
             CREATE INDEX IF NOT EXISTS idx_dex_orders_status ON dex_orders(status);
             "#,
         )?;
+
+        // Backfill htlc_hash column on databases created before the column existed.
+        let mut stmt = self.conn.prepare("PRAGMA table_info(dex_orders)")?;
+        let mut has_htlc_hash = false;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let col_name: String = row.get(1)?;
+            if col_name == "htlc_hash" {
+                has_htlc_hash = true;
+                break;
+            }
+        }
+        drop(rows);
+        drop(stmt);
+        if !has_htlc_hash {
+            let _ = self
+                .conn
+                .execute("ALTER TABLE dex_orders ADD COLUMN htlc_hash TEXT", []);
+        }
+
         Ok(())
     }
 
@@ -749,8 +770,8 @@ impl Db {
             r#"
             INSERT OR REPLACE INTO dex_orders
             (id, user_id, from_asset_key, to_asset_key, amount_in, amount_out, min_amount_out,
-             recipient_address, route_json, tx_hash, status, created_at, executed_at)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+             recipient_address, route_json, tx_hash, htlc_hash, status, created_at, executed_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
             "#,
             rusqlite::params![
                 order.id,
@@ -763,6 +784,7 @@ impl Db {
                 order.recipient_address,
                 route_json,
                 order.tx_hash,
+                order.htlc_hash,
                 order.status.to_string(),
                 created_at,
                 executed_at,
@@ -776,7 +798,7 @@ impl Db {
         let mut stmt = self.conn.prepare(
             r#"
             SELECT id, user_id, from_asset_key, to_asset_key, amount_in, amount_out,
-                   min_amount_out, recipient_address, route_json, tx_hash, status,
+                   min_amount_out, recipient_address, route_json, tx_hash, htlc_hash, status,
                    created_at, executed_at
             FROM dex_orders
             WHERE id = ?1
@@ -795,7 +817,7 @@ impl Db {
         let mut stmt = self.conn.prepare(
             r#"
             SELECT id, user_id, from_asset_key, to_asset_key, amount_in, amount_out,
-                   min_amount_out, recipient_address, route_json, tx_hash, status,
+                   min_amount_out, recipient_address, route_json, tx_hash, htlc_hash, status,
                    created_at, executed_at
             FROM dex_orders
             WHERE user_id = ?1
@@ -976,9 +998,10 @@ fn parse_dex_order(row: &Row) -> MultichainResult<DexOrder> {
     let recipient_address: Option<String> = row.get(7)?;
     let route_json: String = row.get(8)?;
     let tx_hash: Option<String> = row.get(9)?;
-    let status_str: String = row.get(10)?;
-    let created_at: String = row.get(11)?;
-    let executed_at: Option<String> = row.get(12)?;
+    let htlc_hash: Option<String> = row.get(10)?;
+    let status_str: String = row.get(11)?;
+    let created_at: String = row.get(12)?;
+    let executed_at: Option<String> = row.get(13)?;
 
     let status = status_str
         .parse::<DexOrderStatus>()
@@ -1003,6 +1026,7 @@ fn parse_dex_order(row: &Row) -> MultichainResult<DexOrder> {
         recipient_address,
         route,
         tx_hash,
+        htlc_hash,
         status,
         created_at: parse_datetime(&created_at)?,
         executed_at: executed_at.as_deref().map(parse_datetime).transpose()?,

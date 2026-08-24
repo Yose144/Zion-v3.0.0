@@ -153,6 +153,8 @@ pub enum DexOrderStatus {
     Pending,
     Executed,
     Settled,
+    HtlcLocked,
+    HtlcSettled,
     Failed,
 }
 
@@ -162,6 +164,8 @@ impl std::fmt::Display for DexOrderStatus {
             Self::Pending => write!(f, "pending"),
             Self::Executed => write!(f, "executed"),
             Self::Settled => write!(f, "settled"),
+            Self::HtlcLocked => write!(f, "htlc_locked"),
+            Self::HtlcSettled => write!(f, "htlc_settled"),
             Self::Failed => write!(f, "failed"),
         }
     }
@@ -175,6 +179,8 @@ impl std::str::FromStr for DexOrderStatus {
             "pending" => Ok(Self::Pending),
             "executed" => Ok(Self::Executed),
             "settled" => Ok(Self::Settled),
+            "htlc_locked" => Ok(Self::HtlcLocked),
+            "htlc_settled" => Ok(Self::HtlcSettled),
             "failed" => Ok(Self::Failed),
             _ => Err(format!("unknown dex order status: {s}")),
         }
@@ -194,6 +200,9 @@ pub struct DexOrder {
     pub recipient_address: Option<String>,
     pub route: Vec<String>,
     pub tx_hash: Option<String>,
+    /// HTLC hashlock hex for non-custodial HTLC swap orders.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub htlc_hash: Option<String>,
     pub status: DexOrderStatus,
     pub created_at: DateTime<Utc>,
     pub executed_at: Option<DateTime<Utc>>,
