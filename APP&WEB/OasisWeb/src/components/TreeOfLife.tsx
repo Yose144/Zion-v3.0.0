@@ -268,12 +268,26 @@ const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const lineRef = useRef<THREE.LineSegments>(null);
+  const qRef = useRef(new THREE.Quaternion());
+  const vRef = useRef(new THREE.Vector3());
+  const pRef = useRef(new THREE.Vector3());
 
   const leafData = useMemo(() => {
     const palette = LEAF_PALETTE.map((c) => new THREE.Color(c));
     const point = new THREE.Vector3();
     const positions: number[] = [];
-    const leaves: { baseIndex: number; pairs: number; color: THREE.Color }[] = [];
+    const leaves: {
+      baseIndex: number;
+      pairs: number;
+      color: THREE.Color;
+      pos: THREE.Vector3;
+      perp: THREE.Vector3;
+      phase: number;
+      speed: number;
+      w: number;
+      offsets: THREE.Vector3[];
+      pairMap: number[];
+    }[] = [];
 
     for (const anchor of anchors) {
       for (let i = 0; i < leavesPerAnchor; i++) {
@@ -329,18 +343,41 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
           localPoints.push(new THREE.Vector3(width, length * 0.5, 0));
         }
 
-        // Generate line-segment pairs and transform to world.
+        const offsets: THREE.Vector3[] = [];
+        for (const lp of localPoints) {
+          offsets.push(new THREE.Vector3().copy(perp).multiplyScalar(lp.x).addScaledVector(dir, lp.y));
+        }
+
+        const pairMap: number[] = [];
+        for (let e = 0; e < edgeCount; e++) {
+          const a = e;
+          const b = edgeCount === 5 && e === edgeCount - 1 ? 1 : (e + 1) % edgeCount;
+          pairMap.push(a, b);
+        }
+
+        // Generate initial world positions (zero rotation).
         const baseIndex = positions.length;
         for (let e = 0; e < edgeCount; e++) {
-          const a = localPoints[e];
-          const b = edgeCount === 5 && e === edgeCount - 1 ? localPoints[1] : localPoints[(e + 1) % edgeCount];
-          point.copy(pos).addScaledVector(perp, a.x).addScaledVector(dir, a.y);
+          const a = offsets[pairMap[e * 2]];
+          const b = offsets[pairMap[e * 2 + 1]];
+          point.copy(pos).add(a);
           positions.push(point.x, point.y, point.z);
-          point.copy(pos).addScaledVector(perp, b.x).addScaledVector(dir, b.y);
+          point.copy(pos).add(b);
           positions.push(point.x, point.y, point.z);
         }
 
-        leaves.push({ baseIndex, pairs: edgeCount, color: palette[rng.int(0, palette.length)] });
+        leaves.push({
+          baseIndex,
+          pairs: edgeCount,
+          color: palette[rng.int(0, palette.length)],
+          pos,
+          perp,
+          phase: rng.next() * Math.PI * 2,
+          speed: 0.4 + rng.next() * 0.6,
+          w: 0.6 + rng.next() * 0.9,
+          offsets,
+          pairMap,
+        });
       }
     }
 
@@ -374,6 +411,39 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
     return { geometry: geo, material: mat };
   }, [leafData]);
+
+  useFrame((state) => {
+    if (!lineRef.current) return;
+    const positions = lineRef.current.geometry.attributes.position.array as Float32Array;
+    const q = qRef.current;
+    const v = vRef.current;
+    const p = pRef.current;
+    const t = state.clock.elapsedTime;
+
+    for (const leaf of leafData.leaves) {
+      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.2 * leaf.w;
+      q.setFromAxisAngle(leaf.perp, sway);
+
+      for (let e = 0; e < leaf.pairs; e++) {
+        const ai = leaf.pairMap[e * 2];
+        const bi = leaf.pairMap[e * 2 + 1];
+
+        v.copy(leaf.offsets[ai]).applyQuaternion(q);
+        p.copy(leaf.pos).add(v);
+        positions[leaf.baseIndex + e * 6] = p.x;
+        positions[leaf.baseIndex + e * 6 + 1] = p.y;
+        positions[leaf.baseIndex + e * 6 + 2] = p.z;
+
+        v.copy(leaf.offsets[bi]).applyQuaternion(q);
+        p.copy(leaf.pos).add(v);
+        positions[leaf.baseIndex + e * 6 + 3] = p.x;
+        positions[leaf.baseIndex + e * 6 + 4] = p.y;
+        positions[leaf.baseIndex + e * 6 + 5] = p.z;
+      }
+    }
+
+    lineRef.current.geometry.attributes.position.needsUpdate = true;
+  });
 
   if (leafData.leaves.length === 0) return null;
   return <lineSegments ref={lineRef} geometry={geometry} material={material} frustumCulled={false} />;
