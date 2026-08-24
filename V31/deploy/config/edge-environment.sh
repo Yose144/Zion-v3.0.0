@@ -1,4 +1,6 @@
 # ZION Edge Server — Common Environment
+# Updated: 2026-08-24 - Edge CPU miner re-activation (ZION-only, CPU backend)
+#                        Wallet / worker / threads / Nice / CPUQuota templated.
 # Updated: 2026-08-23 - V31 L5/L6 fund trackers
 #                        Direct node RPC is 127.0.0.1:9445 (V31 native)
 #                        DAO API is 127.0.0.1:8456
@@ -24,6 +26,15 @@ ZION_MINER_ADDRESS=zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2
 
 # Edge CPU miner payout address (must be a valid 44-char zion1 address)
 ZION_PAYOUT_ADDRESS=zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2
+
+# ── Edge CPU-only ZION miner settings ─────────────────────────────────────────
+# Used by zion-v31-miner.service. GPU backend is forced to CPU because the Edge
+# server has no OpenCL/CUDA devices. AuxPoW streams are disabled; only the ZION
+# (Stream 1) PoW is mined locally against zion-v31-pool (127.0.0.1:8444).
+ZION_MINER_WALLET=zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5
+ZION_MINER_WORKER=proEricku!
+ZION_MINER_THREADS=4
+ZION_GPU_BACKEND=cpu
 ZION_HUMANITARIAN_WALLET=zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8
 ZION_ISSOBELLA_WALLET=zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0
 # Network configuration
