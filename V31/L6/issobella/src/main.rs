@@ -5,7 +5,7 @@
 //! cargo run --bin zion-issobella
 //!
 //! # Override via env vars
-//! ISSOBELLA_PORT=8096 \
+//! ISSOBELLA_PORT=8097 \
 //! ISSOBELLA_DB=./issobella.db \
 //! ISSOBELLA_L1_RPC=http://127.0.0.1:9445/jsonrpc \
 //! ISSOBELLA_FUND_ADDRESS=zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0 \

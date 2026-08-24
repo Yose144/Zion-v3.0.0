@@ -1368,11 +1368,11 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🕊️ V31 Free World — humanitarian fund tracker!",
      "depends_on": ["v31-node", "v31-dao"]},
     {"id": "v31-issobella", "name": "V31 Issobella (PROD)", "icon": "🚀", "level": "L6", "kind": "space",
-     "ports": {"api": 8096},
+     "ports": {"api": 8097},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8096/health",
+     "health_endpoint": "http://127.0.0.1:8097/health",
      "purpose": "V31 Issobella L6 space fund tracker. Scans coinbase for zion1z4s...l0f0 and submits mission proposals to DAO. systemd zion-v31-issobella.service.",
      "child_says": "🚀 V31 Issobella — space fund tracker!",
      "depends_on": ["v31-node", "v31-dao"]},
@@ -1456,7 +1456,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
      "depends_on": ["edge-node1"]},
     {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
-     "ports": {"api": 8096},
+     "ports": {"api": 8097},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
@@ -1630,7 +1630,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 
     # ── L6: Issobella Space ──────────────────────────────────────────────
     {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
-     "ports": {"api": 8096},
+     "ports": {"api": 8097},
      "log": "issobella.log", "start": "start-space", "stop": "stop-space",
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
@@ -3901,9 +3901,9 @@ def _build_status_edge_primary() -> dict:
     v31_issobella_health = {}
     v31_issobella_balance_zion = 0
     try:
-        with urllib.request.urlopen("http://127.0.0.1:8096/health", timeout=2) as resp:
+        with urllib.request.urlopen("http://127.0.0.1:8097/health", timeout=2) as resp:
             v31_issobella_health = json.loads(resp.read().decode())
-        with urllib.request.urlopen("http://127.0.0.1:8096/api/v1/fund/balance", timeout=2) as resp:
+        with urllib.request.urlopen("http://127.0.0.1:8097/api/v1/fund/balance", timeout=2) as resp:
             _iss_body = resp.read().decode()
             _iss_data = json.loads(_iss_body)
             if _iss_data.get("success") and _iss_data.get("data"):
@@ -4193,7 +4193,7 @@ def _build_status_edge_primary() -> dict:
         "dex":        8454,   # V31 multichain DEX router
         "oasis":      8094,   # V31 OASIS API
         "free_world": 8095,   # V31 Free World (if running)
-        "issobella":  8096,   # V31 Issobella (if running)
+        "issobella":  8097,   # V31 Issobella (if running)
     }
     _health_map = {}
     for _sid, _port in _edge_ports.items():
@@ -12400,9 +12400,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "settlements": int(metrics.get("zion_free_world_projects_active", 0)),
                         "citizens": 0})
         elif route == "/api/space/stats":
-            alive = check_port_open("127.0.0.1", 8096, timeout=1.5)
-            metrics = fetch_prometheus_metrics("127.0.0.1", 8096) if alive else {}
-            self._json({"ok": alive, "service": "issobella-space", "port": 8096,
+            alive = check_port_open("127.0.0.1", 8097, timeout=1.5)
+            metrics = fetch_prometheus_metrics("127.0.0.1", 8097) if alive else {}
+            self._json({"ok": alive, "service": "issobella-space", "port": 8097,
                         "status": "online" if alive else "offline",
                         "blocks_scanned": int(metrics.get("zion_issobella_blocks_scanned", 0)),
                         "missions_planning": int(metrics.get("zion_issobella_missions_planning", 0)),
@@ -12498,9 +12498,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "total_disbursed_zion": metrics.get("zion_free_world_total_disbursed_zion", 0)})
         # ── L6 endpoints: Issobella space ──
         elif route == "/api/l6/stats":
-            alive = check_port_open("127.0.0.1", 8096, timeout=1.5)
-            metrics = fetch_prometheus_metrics("127.0.0.1", 8096) if alive else {}
-            self._json({"ok": alive, "service": "issobella-space", "port": 8096,
+            alive = check_port_open("127.0.0.1", 8097, timeout=1.5)
+            metrics = fetch_prometheus_metrics("127.0.0.1", 8097) if alive else {}
+            self._json({"ok": alive, "service": "issobella-space", "port": 8097,
                         "status": "online" if alive else "offline",
                         "blocks_scanned": int(metrics.get("zion_issobella_blocks_scanned", 0)),
                         "missions_planning": int(metrics.get("zion_issobella_missions_planning", 0)),
