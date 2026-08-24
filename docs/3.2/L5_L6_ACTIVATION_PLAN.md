@@ -1,7 +1,7 @@
 # ZION L5 Free World / L6 Issobella — Activation Plan for 3.2.0
 
 > **Scope:** Define the run mode, governance, canonical fund addresses, current V31 implementation state, and a concrete implementation plan for Layer 5 (Free World — humanitarian fund) and Layer 6 (Issobella — science/space fund).  
-> **Status:** Decision plan — not yet implemented.  
+> **Status:** Implementation staged — code, tests, systemd units, nginx and dashboard integration prepared; Edge service start pending.  
 > **Target version:** 3.2.0 "One Love" Mainnet Stable.  
 > **Decision:** Enable L5/L6 **as long-term, read-only fund trackers with a DAO proposal bridge**, treat them as a **vision project**, and **do not block 3.2.0** on full disbursement / DAO UI.  
 > **Canonical source of truth:** This document is the decision record for gate **G10** in [`ROADMAP.md`](./ROADMAP.md).
@@ -116,8 +116,8 @@ The L5/L6 code was copied from `archive/V3/` to `V31/L5/free-world` and `V31/L6/
 
 | Crate | Path | Binary | State |
 |-------|------|--------|-------|
-| `zion-free-world` | `V31/L5/free-world` | `zion-free-world` | Code present, builds, not deployed |
-| `zion-issobella` | `V31/L6/issobella` | `zion-issobella` | Code present, builds, not deployed |
+| `zion-free-world` | `V31/L5/free-world` | `zion-free-world` | Builds and unit tests pass; deployment artifacts staged |
+| `zion-issobella` | `V31/L6/issobella` | `zion-issobella` | Builds and unit tests pass; deployment artifacts staged |
 
 Both are listed in `V31/Cargo.toml` workspace members.
 
@@ -224,10 +224,10 @@ Source: `V31/cli/src/commands/free_world.rs`, `V31/cli/src/commands/issobella.rs
 
 ### 4.10 Deployment Artifacts
 
-- **No systemd service files** for `zion-v31-free-world` or `zion-v31-issobella` in `V31/deploy/systemd/` or `ZION_OS/infra/systemd/`.
-- **No Edge environment variables** for L5/L6 in `V31/deploy/config/edge-environment.sh`.
-- **No nginx route** for L5/L6 APIs.
-- Dashboard `ZION_OS/dashboard/app.py` has `free-world` and `issobella` service registry entries (ports 8095/8096) but the services are not deployed.
+- ✅ **Systemd service files** `V31/deploy/systemd/zion-v31-free-world.service` and `V31/deploy/systemd/zion-v31-issobella.service` created; run as `zion` user, bind `127.0.0.1:8095` and `:8096`.
+- ✅ **Edge environment variables** for L5/L6 added to `V31/deploy/config/edge-environment.sh` (`FREE_WORLD_*`, `ISSOBELLA_*`, DAO API/key vars).
+- ✅ **Nginx routes** `/api/free-world/` and `/api/issobella/` added to `V31/deploy/nginx/zion-nginx.conf` (operator-only).
+- ✅ Dashboard `ZION_OS/dashboard/app.py` has `free-world` and `issobella` service registry entries (ports 8095/8096); public `MissionControlDashboard` also updated. Edge service start is pending.
 
 ---
 
@@ -239,13 +239,13 @@ Source: `V31/cli/src/commands/free_world.rs`, `V31/cli/src/commands/issobella.rs
 | 2 | **Wrong block field name** — scanner expects `utxo_transactions`; V31 returns `transactions`. | Critical for function | `V31/L5/free-world/src/l1_scanner.rs:98`, `V31/L1/core/src/rpc.rs:679` |
 | 3 | **Scanner only checks first tx** — misses separate `coinbase_humanitarian` / `coinbase_issobella` txs. | Critical for function | `V31/L5/free-world/src/l1_scanner.rs:98`, `V31/L1/core/src/v3_template.rs:139-155` |
 | 4 | **Placeholder fund addresses in config** — not linked to canonical V31 addresses. | Critical for function | `V31/L5/free-world/src/config.rs:31`, `V31/L6/issobella/src/config.rs:31` |
-| 5 | **No env override for fund addresses / min / max amounts.** | Medium | `V31/L5/free-world/src/config.rs` load method |
-| 6 | **DAO client points to pool API** (`127.0.0.1:8080`) and wrong path/header/payload. | Critical for governance integration | `V31/L5/free-world/src/dao_client.rs:18`, `V31/L6/issobella/src/dao_client.rs:18` |
+| 5 | **Env overrides for fund addresses / bind / port / RPC / DAO** are now supported in both crates. | Medium | `V31/L5/free-world/src/config.rs`, `V31/L6/issobella/src/config.rs` |
+| 6 | **DAO client** now uses `ZION_DAO_API_ADDR`, `X-DAO-Key` header and `/v1/proposals` path. | Critical for governance integration | `V31/L5/free-world/src/dao_client.rs`, `V31/L6/issobella/src/dao_client.rs` |
 | 7 | **No DAO UI** for creating/voting/executing L5/L6 proposals. | Blocker on disbursement | `V31/L2/dao` has HTTP API but no front-end; dashboard `J4` not started in `ROADMAP.md` |
 | 8 | **DAO execution is summary-only** — it does not build or broadcast a payout transaction. | Critical for disbursement | `V31/L2/dao/src/runtime.rs:294-364` |
-| 9 | **No systemd / env / nginx / backup config** for L5/L6 on Edge. | Blocker on production deployment | `V31/deploy/systemd/` does not contain the services |
-| 10 | **CLI subcommands are stubs** — cannot start/status from `zion` CLI. | Medium | `V31/cli/src/commands/free_world.rs`, `issobella.rs` |
-| 11 | **Public website pages have stale V3 addresses and old copy.** | Medium | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx:59`, `l6-issobella/page.tsx:52` |
+| 9 | **Systemd / env / nginx / backup config prepared** for L5/L6; Edge start pending. | Production deployment staged | `V31/deploy/systemd/`, `V31/deploy/config/edge-environment.sh`, `V31/deploy/nginx/zion-nginx.conf` |
+| 10 | **CLI subcommands** `zion free-world` and `zion issobella` are wired for `start/status/stop` (systemd passthrough). | Medium | `V31/cli/src/commands/free_world.rs`, `issobella.rs` |
+| 11 | **Public website pages** `l5-free-world` and `l6-issobella` updated to canonical V31 fund addresses. | Medium | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx`, `l6-issobella/page.tsx` |
 | 12 | **No Hiran service** — AI bridge endpoints would fail if enabled. | Low | `hiran` not in Edge service list |
 | 13 | **Resonance / consciousness / L5 physical community features** are vision-only and not implemented. | Out of 3.2.0 scope | `archive/V3/L5/docs/PROTOCOLS/resonance-protocol.md` |
 
