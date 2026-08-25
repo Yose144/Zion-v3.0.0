@@ -117,7 +117,7 @@ Unikátní feature: kupující může platit buď:
 
 ## Deployment
 
-### Edge server (62.171.141.136)
+### Edge server (zionterranova.com)
 - **Cesta:** `/opt/zion/APP&WEB/MarketPlace/`
 - **Systemd:** `zion-marketplace.service` (port 3100)
 - **Nginx:** `market.zionterranova.com.conf` → proxy `127.0.0.1:3100`
@@ -136,9 +136,9 @@ npm run build
 ```bash
 rsync -avz --exclude 'node_modules' --exclude '.next' --exclude '.env' \
   -e "ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222" \
-  ./ root@62.171.141.136:/opt/zion/APP\&WEB/MarketPlace/
+  ./ root@zionterranova.com:/opt/zion/APP\&WEB/MarketPlace/
 
-ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 \
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@zionterranova.com \
   "cd '/opt/zion/APP&WEB/MarketPlace' && npm run build && systemctl restart zion-marketplace.service"
 ```
 

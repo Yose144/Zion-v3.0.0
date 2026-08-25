@@ -248,7 +248,7 @@ network as of 2026-08-09. It is the technical spine of this whitepaper.
 
 ## 2. Edge production status
 
-The production Edge server is `62.171.141.136` (Contabo VPS,
+The production Edge server is `zionterranova.com` (Contabo VPS,
 `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`).
 
 Live check on 2026-08-09 via `https://dashboard.zionterranova.com/api/health`:
@@ -262,7 +262,7 @@ Live check on 2026-08-09 via `https://dashboard.zionterranova.com/api/health`:
 
 Additional live checks: `https://zionterranova.com`, `https://oasis.zionterranova.com`,
 and `https://market.zionterranova.com` all returned HTTP 200. Pool stratum
-port `62.171.141.136:8444` and public RPC `rpc.zionterranova.com:8443`
+port `pool.zionterranova.com:8444` and public RPC `rpc.zionterranova.com:8443`
 were reachable by TCP.
 
 | Resource | Used | Total | % |

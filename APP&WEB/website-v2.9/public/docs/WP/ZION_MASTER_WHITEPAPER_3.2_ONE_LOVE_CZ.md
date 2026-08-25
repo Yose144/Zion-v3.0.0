@@ -493,7 +493,7 @@ Je to **živá infrastruktura + kompas**.
 | Licence core a pool | MIT, open source |
 | Zdrojový kód | https://github.com/Zion-TerraNova/v3-Mainnet |
 | Web / Explorer | https://zionterranova.com · /explorer |
-| Pool | `62.171.141.136:8444` |
+| Pool | `pool.zionterranova.com:8444` |
 | Status | Mainnet Alpha · veřejný launch cíl 31. prosince 2026 |
 
 Nevěř příběhu. Ověř kroniku. A když kronika drží — vyprávěj příběh dál,

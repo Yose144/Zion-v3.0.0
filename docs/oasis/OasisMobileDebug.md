@@ -6,7 +6,7 @@
 OASIS preview na mobilu (https://oasis.zionterranova.com) — po intro "Enter the OASIS" černá obrazovka, jen mini tlačítka viditelná.
 
 ## Environment
-- Server: 62.171.141.136:2222 (Contabo VPS)
+- Server: zionterranova.com:2222 (Contabo VPS)
 - Site: https://oasis.zionterranova.com (static Next.js export)
 - Mobile: width=375, isMobile=true (detekce funguje)
 - Browser: mobilní Chrome/Safari (konkrétní verze neznámá)

@@ -44,7 +44,7 @@ současně nesou její společenský rytmus.
 ### 3. Učíš se na živé síti, ne na powerpointu Babylonu
 
 Pool přijímá share, node produkuje bloky, payout confirmation sweep běží
-a veřejný stratum je otevřený na `62.171.141.136:8444`. Ranný těžař se
+a veřejný stratum je otevřený na `pool.zionterranova.com:8444`. Ranný těžař se
 učí wallet, rig, monitoring, worker naming a bezpečnost dřív, než se
 z toho stane davový sport.
 
@@ -142,7 +142,7 @@ stavitel — nikdo z nich nestojí nad druhým.
 
 1. Vytvoř si **vlastní** ZION wallet adresu. Mnemonik a privátní klíče nikdy nikomu neposílej.
 2. Postav nebo stáhni `zion-miner` pro svůj systém.
-3. Připoj se k veřejnému poolu `62.171.141.136:8444`.
+3. Připoj se k veřejnému poolu `pool.zionterranova.com:8444`.
 4. Začni s konzervativním nastavením, sleduj accepted/rejected share a teploty.
 5. Až pak objevuj GPU backend, TUI a Trinity proudy.
 
@@ -152,7 +152,7 @@ Příklad minimálního lokálního V31 běhu:
 cd V31
 cargo build --release --bin zion-miner
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...tvoje_adresa \
   --worker roots-rig-01 \
   --threads 4
@@ -189,7 +189,7 @@ výplata; pool používá PPLNS a on-chain potvrzení výplat.
 | Protokol | `zion-v3-node/3.1.0-alpha` |
 | Test gate | `cargo test --workspace`: **2178 pass, 0 failures** |
 | Chain | 1000+ bloků po genesis resetu 2026-08-06 |
-| Pool | `62.171.141.136:8444` — veřejný Stratum |
+| Pool | `pool.zionterranova.com:8444` — veřejný Stratum |
 | OASIS Web | `https://oasis.zionterranova.com` — veřejný preview |
 | Market | `https://market.zionterranova.com` — veřejně dostupný marketplace |
 | Health | `https://dashboard.zionterranova.com/api/health` — produkční V31 služby hlásí `up` |

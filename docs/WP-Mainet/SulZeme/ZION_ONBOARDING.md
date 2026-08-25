@@ -345,7 +345,7 @@ Sůl, která ví, že je sůl — a neříká o sobě, že je zlato — je dův�
 
 1. **Otevři** `https://zionterranova.com` a podívej se na živou síť.
 2. **Stáhni** `zion` CLI z [GitHub releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases) a spusť `zion onboard`.
-3. **Vytvoř peněženku** a připoj se k veřejnému poolu `62.171.141.136:8444`.
+3. **Vytvoř peněženku** a připoj se k veřejnému poolu `pool.zionterranova.com:8444`.
 
 Nikdo tě nebude honit. Archa se nestaví křikem — staví se blok po bloku, 60 sekund po 60 sekundách, a dveře jsou otevřené.
 
@@ -387,7 +387,7 @@ Wizard vytvoří `~/.zion/zion.toml`, zeptá se na topologii a volitelně nastav
 ```bash
 zion config set node.rpc_host rpc.zionterranova.com
 zion config set node.rpc_port 8443
-zion config set pool.host 62.171.141.136
+zion config set pool.host zionterranova.com
 zion config set pool.port 8444
 ```
 
@@ -419,13 +419,13 @@ zion pool earnings
 
 ```bash
 # CPU
-zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+zion mine start --backend cpu --threads 4 --pool pool.zionterranova.com:8444
 
 # OpenCL GPU
-zion mine start --backend opencl --pool 62.171.141.136:8444
+zion mine start --backend opencl --pool pool.zionterranova.com:8444
 
 # CUDA GPU
-zion mine start --backend cuda --pool 62.171.141.136:8444
+zion mine start --backend cuda --pool pool.zionterranova.com:8444
 ```
 
 Pokud potřebuješ změnit payout adresu:
@@ -453,7 +453,7 @@ export ZION_NODE_STATE_PATH="/var/lib/zion/state.db"
 export ZION_P2P_BIND="0.0.0.0:8333"
 export ZION_RPC_BIND="127.0.0.1:8443"
 export ZION_METRICS_BIND="0.0.0.0:9115"
-export ZION_SEED_PEERS="62.171.141.136:8333,62.171.141.136:8334"
+export ZION_SEED_PEERS="zionterranova.com:8333,zionterranova.com:8334"
 export ZION_BLOCK_RETENTION=0
 
 # Volitelné: fee-split peněženky musí být nastaveny všechny tři najednou, nebo žádná
@@ -464,7 +464,7 @@ export ZION_POOL_FEE_WALLET="zion1..."
 ./target/release/node
 ```
 
-> **Poznámka:** Veřejný RPC běží na `http://rpc.zionterranova.com:8443` (plain HTTP, žádné TLS) a pool na `62.171.141.136:8444`. P2P porty Edge jsou `8333`, `8334` a V31 `8335`. Pro vlastní uzel nastav `ZION_BLOCK_RETENTION=0`, aby se neopakoval starý chyba ořezávání historie.
+> **Poznámka:** Veřejný RPC běží na `http://rpc.zionterranova.com:8443` (plain HTTP, žádné TLS) a pool na `pool.zionterranova.com:8444`. P2P porty Edge jsou `8333`, `8334` a V31 `8335`. Pro vlastní uzel nastav `ZION_BLOCK_RETENTION=0`, aby se neopakoval starý chyba ořezávání historie.
 
 #### Inspekce uzlu přes CLI
 
@@ -487,7 +487,7 @@ Nejjednodušší cesta pro začátečníky:
    - macOS Intel: `zion-public-miner-v3.1.0-mac-x64.dmg`
    - Linux: `.AppImage` nebo `.deb`
 3. Nainstaluj, povol v systémových nastaveních.
-4. Vytvoř peněženku, nastav pool `62.171.141.136:8444`, worker name a spusť těžbu.
+4. Vytvoř peněženku, nastav pool `pool.zionterranova.com:8444`, worker name a spusť těžbu.
 
 > **Zdroj:** AGENTS.md, sekce Public Miner & Desktop release build; `APP&WEB/website-v2.9/public/docs/onboard/desktop.md`.
 
@@ -563,9 +563,9 @@ rpcCall('getChainInfo').then(console.log);
 | **Rozdělení odměny** | 89 % těžaři, 5 % humanitární fond, 5 % Issobella fond, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../V3/README.md) |
 | **Hard cap** | 144 000 000 000 ZION | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | **PoW algoritmus** | Ekam Deeksha / CosmicHarmony; 6 fází; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`V3/README.md`](../../../V3/README.md) |
-| **Public pool** | `62.171.141.136:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), řádek 114; [`AGENTS.md`](../../../AGENTS.md) |
+| **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), řádek 114; [`AGENTS.md`](../../../AGENTS.md) |
 | **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` na Edge) | [`StatusV3.md`](../../../StatusV3.md), řádek 112 |
-| **Edge P2P** | `62.171.141.136:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
+| **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
 | **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../../StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
 | **GitHub** | `https://github.com/Zion-TerraNova/v3-Mainnet` (public, MIT) | [`AGENTS.md`](../../../AGENTS.md), sekce `public/` |
 | **Web** | `https://zionterranova.com`, dashboard `https://dashboard.zionterranova.com`, market `https://market.zionterranova.com` | [`StatusV3.md`](../../../StatusV3.md), sekce Public Endpoints; [`AGENTS.md`](../../../AGENTS.md) |

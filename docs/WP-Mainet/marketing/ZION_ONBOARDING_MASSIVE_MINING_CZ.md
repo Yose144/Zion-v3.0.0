@@ -161,7 +161,7 @@ Poctivost žádá říct i tohle: možná ZION nikdy nebude mít hodnotu, jakou 
 
 1. Stáhni **ZION Public Miner** z [zionterranova.com/download](https://app.zionterranova.com/download) — Windows 11, macOS, Linux.
 2. Vytvoř peněženku přímo v aplikaci. **Zapiš si mnemonic na papír. Drž ho offline. Nikomu ho nedávej — ani nám.**
-3. Pool: `62.171.141.136:8444`.
+3. Pool: `pool.zionterranova.com:8444`.
 4. Zvol CPU vlákna nebo GPU. Klikni **Start Mining**.
 5. Sleduj čítač akceptovaných share. To je tvůj první pant na dveřích archy.
 
@@ -173,7 +173,7 @@ cd v3-Mainnet/V31
 cargo build --release --bin zion-miner
 
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...tvoje_adresa \
   --worker muj-prvni-rig
 ```
@@ -186,7 +186,7 @@ Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + 
 
 | Co | Kde |
 |---|---|
-| Pool (Stratum) | `62.171.141.136:8444` |
+| Pool (Stratum) | `pool.zionterranova.com:8444` |
 | RPC | `rpc.zionterranova.com:8443` |
 | Explorer + web | `https://zionterranova.com` · `https://app.zionterranova.com` |
 | Kód (MIT) | `github.com/Zion-TerraNova/v3-Mainnet` |
@@ -277,7 +277,7 @@ Sůl, která ví, že je sůl — a neříká o sobě, že je zlato — je dův�
 | Síť běží, blok každou minutu | `rpc.zionterranova.com:8443` → `getStatus`; explorer na webu |
 | Nejvyšší odměna je dnes | `V31/L1/core/src/emission.rs` — dekáda 1: 5 400,067 ZION |
 | 89/5/5/1 vynucené protokolem | `V31/L1/core/src/fee.rs`, coinbase každého bloku |
-| Pool akceptuje share | `62.171.141.136:8444` — připoj se a uvidíš |
+| Pool akceptuje share | `pool.zionterranova.com:8444` — připoj se a uvidíš |
 | Kód je otevřený | MIT, `github.com/Zion-TerraNova/v3-Mainnet` |
 | Testy prochází | `cargo test --workspace` — 2178 pass, 0 failures |
 | OASIS je preview | `oasis.zionterranova.com` — hratelné, nedokončené, poctivě označené |

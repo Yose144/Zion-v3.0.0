@@ -161,7 +161,7 @@ Honesty demands this too: maybe ZION will never hold the value bitcoin holds. Ni
 
 1. Download **ZION Public Miner** from [zionterranova.com/download](https://app.zionterranova.com/download) — Windows 11, macOS, Linux.
 2. Create your wallet inside the app. **Write the mnemonic on paper. Keep it offline. Give it to no one — not even us.**
-3. Pool: `62.171.141.136:8444`.
+3. Pool: `pool.zionterranova.com:8444`.
 4. Choose CPU threads or GPU. Click **Start Mining**.
 5. Watch the accepted-shares counter. That is your first hinge on the ark's door.
 
@@ -173,7 +173,7 @@ cd v3-Mainnet/V31
 cargo build --release --bin zion-miner
 
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...your_address \
   --worker my-first-rig
 ```
@@ -186,7 +186,7 @@ One miner runs three streams at once (**Trinity**): ZION via Ekam Deeksha + opti
 
 | What | Where |
 |---|---|
-| Pool (Stratum) | `62.171.141.136:8444` |
+| Pool (Stratum) | `pool.zionterranova.com:8444` |
 | RPC | `rpc.zionterranova.com:8443` |
 | Explorer + web | `https://zionterranova.com` · `https://app.zionterranova.com` |
 | Code (MIT) | `github.com/Zion-TerraNova/v3-Mainnet` |
@@ -277,7 +277,7 @@ Salt that knows it is salt — and does not call itself gold — is more trustwo
 | The network runs, a block a minute | `rpc.zionterranova.com:8443` → `getStatus`; explorer on the web |
 | The highest reward is today | `V31/L1/core/src/emission.rs` — Decade 1: 5,400.067 ZION |
 | 89/5/5/1 enforced by protocol | `V31/L1/core/src/fee.rs`, the coinbase of every block |
-| The pool accepts shares | `62.171.141.136:8444` — connect and see |
+| The pool accepts shares | `pool.zionterranova.com:8444` — connect and see |
 | The code is open | MIT, `github.com/Zion-TerraNova/v3-Mainnet` |
 | The tests pass | `cargo test --workspace` — 2178 pass, 0 failures |
 | OASIS is a preview | `oasis.zionterranova.com` — playable, unfinished, honestly labeled |

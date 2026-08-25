@@ -29,7 +29,7 @@ Protože odměna za blok je dnes nejvyšší, jakou kdy protokol vyplatí, a sí
 1. Stáhni si instalátor z [GitHub release v3.1.0-desktop](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop).
 2. Nainstaluj a v případě potřeby povol spuštění v systémových nastaveních (Windows SmartScreen / macOS Gatekeeper).
 3. Vytvoř peněženku v záložce **Wallet** a zaznamenej seed offline.
-4. Nastav pool na `62.171.141.136:8444` a zvol worker name.
+4. Nastav pool na `pool.zionterranova.com:8444` a zvol worker name.
 5. Klikni **Start Mining**.
 
 Aplikace je zdarma. Ve veřejné verzi jsou všechny tři Trinity streamy automaticky směrovány do **ZION Liquidity & Grow**, aby posílily růst celé sítě. V budoucím VIP mineru bude možné nastavit i zbylé dva streamy podle sebe.
@@ -42,7 +42,7 @@ cd v3-Mainnet
 cargo build --release --bin zion-miner
 
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...tvoje_adresa \
   --worker muj-prvni-rig
 ```
@@ -88,7 +88,7 @@ Je to technická možnost, ne zisková kalkulačka. Výkon závisí na tvém har
 
 | Služba | Adresa |
 |---|---|
-| Pool (Stratum) | `62.171.141.136:8444` |
+| Pool (Stratum) | `pool.zionterranova.com:8444` |
 | RPC | `rpc.zionterranova.com:8443` |
 | Web | `https://app.zionterranova.com` |
 | wZION na Base | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
@@ -109,8 +109,8 @@ cargo build --release --bin zion-node
 Spusť s veřejnými seed peers:
 
 ```text
-62.171.141.136:8333
-62.171.141.136:8334
+zionterranova.com:8333
+zionterranova.com:8334
 ```
 
 Pokud nechceš node, použij veřejný RPC:

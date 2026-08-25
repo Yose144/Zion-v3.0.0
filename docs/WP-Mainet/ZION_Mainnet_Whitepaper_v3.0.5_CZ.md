@@ -67,7 +67,7 @@ Klíčové parametry na první pohled:
 | **Verze protokolu** | `zion-v3-node/3.1.0-alpha` |
 | **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | **Živá výška** | 827+ a roste |
-| **Produkční server** | `62.171.141.136` |
+| **Produkční server** | `zionterranova.com` |
 | **Cíl veřejného launchi** | 31. prosince 2026 |
 
 Z každé odměny za blok putuje **10 %** automaticky na humanitární a vědecké účely: 5 % do Humanitárního fondu a 5 % do fondu L5/L6 Issobella. Dalších 1 % je protokolem spáleno. Toto rozdělení vynucuje samotný protokol a nelze jej změnit hlasováním DAO.
@@ -134,7 +134,7 @@ Fork zachoval všechny hashe bloků 0..18 850 a změnil pouze display a kontrakt
 
 Bezpečnostní incident s kompromitovaným Edge serverem a uniklými EVM/týmovými klíči přinutil k plnému hard genesis resetu. Reset:
 
-- Přesunul všechny služby na nový server: `62.171.141.136`
+- Přesunul všechny služby na nový server: `zionterranova.com`
 - Zregeneroval všech 14 premine + 5 canonical + bridge vault adres
 - Deploynul 7 nových kontraktů na Base Mainnet (wZION, ZIONBridge, ZIONGovernance, ZIONTreasury, ZIONStaking, ZIONFarm, ZIONAtomicSwap)
 - Implementoval account-model `memo` pole a sjednocené L2 watcher skenování
@@ -173,7 +173,7 @@ Nedávné milníky:
 ### 4.1 Topologie
 
 ```
-Edge Server (62.171.141.136) — primární 24/7 node + pool
+Edge Server (zionterranova.com) — primární 24/7 node + pool
   ├── zion-node    :8333 P2P, 127.0.0.1:8443 RPC
   ├── zion-node2   :8334 P2P, 127.0.0.1:8448 RPC (follower)
   ├── zion-pool    :8444 Stratum
@@ -213,7 +213,7 @@ Core/Local (109.81.87.10) — backup node + AI služby
 |--------|----------|
 | Web | `https://zionterranova.com` |
 | Dashboard | `https://dashboard.zionterranova.com` |
-| Pool | `62.171.141.136:8444` |
+| Pool | `pool.zionterranova.com:8444` |
 | Veřejný RPC | `rpc.zionterranova.com:8443` (nginx TCP proxy) |
 
 ---
@@ -835,7 +835,7 @@ Při selhání se poplatky obnoví přes `restore_fees()` a retry se provede př
 
 ### 17.4 Živá infrastruktura
 
-**Edge server (`62.171.141.136`) — AKTIVNÍ:**
+**Edge server (`zionterranova.com`) — AKTIVNÍ:**
 - V3 mainnet node: výška 827+
 - RPC endpoint: `127.0.0.1:8443` (veřejně přes nginx proxy)
 - Pool server: `0.0.0.0:8444`

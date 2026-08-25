@@ -10,7 +10,7 @@ Pro většinu uživatelů je nejjednodušší těžit přes desktopovou aplikaci
 
 1. Nainstaluj **ZION Public Miner** (viz kategorie **Desktop App**).
 2. Vytvoř peněženku a získej adresu.
-3. Nastav **Pool** na `62.171.141.136:8444`.
+3. Nastav **Pool** na `pool.zionterranova.com:8444`.
 4. Zvol počet CPU vláken a případně zapni GPU.
 5. Klikni na **Start Mining**.
 
@@ -35,13 +35,13 @@ Aplikace se postará o vše ostatní — připojení na pool, sledování hashra
 ## Pokročilá těžba z příkazové řádky
 
 ```bash
-zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+zion mine start --backend cpu --threads 4 --pool pool.zionterranova.com:8444
 ```
 
 Alternativně s vlastním cílovým algoritmem a adresou (počkej na konkrétní releasovou dokumentaci pro `--miner.wallet` a `--miner.algorithm`):
 
 ```bash
-zion mine start --backend cuda --threads 4 --pool 62.171.141.136:8444 \
+zion mine start --backend cuda --threads 4 --pool pool.zionterranova.com:8444 \
   --miner.wallet zion1PRIKLADNA_ADRESA --miner.worker muj-rig
 ```
 

@@ -58,10 +58,10 @@ Kluk se podíval na kov. „A co musím umět?"
 > zion wallet address --chain zion-l1 --account 0 --index 0
 >
 > # 2. Spusť těžbu na veřejném poolu
-> zion miner start --reward-address zion1TVOJEADRESA --pool-url 62.171.141.136:8444
+> zion miner start --reward-address zion1TVOJEADRESA --pool-url pool.zionterranova.com:8444
 > ```
 >
-> **Pool:** `62.171.141.136:8444` (Stratum v1)
+> **Pool:** `pool.zionterranova.com:8444` (Stratum v1)
 > **RPC:** `http://rpc.zionterranova.com:8443`
 > **To je vše.** Tvůj počítač teď hledá bloky. Každých 60 sekund někdo v síti jeden najde — a pokud jsi to ty, nebo jsi blízko, dostaneš podíl.
 
@@ -89,13 +89,13 @@ Kovář viděl, že kluk zírá na notebook a přemýšlí, jestli mu ten slabý
 >
 > **Stream 1 — ZION (vždy hlavní, CPU i GPU):**
 > ```bash
-> zion miner start --reward-address zion1TVOJEADRESA --pool-url 62.171.141.136:8444
+> zion miner start --reward-address zion1TVOJEADRESA --pool-url pool.zionterranova.com:8444
 > ```
 >
 > **Stream 1 + GPU AuxPoW (Trinity — ZION + externí GPU mince):**
 > ```bash
 > zion miner start --reward-address zion1TVOJEADRESA \
->   --pool-url 62.171.141.136:8444 \
+>   --pool-url pool.zionterranova.com:8444 \
 >   --auxpow-pool EXTERNÍ_POOL
 > ```
 >
@@ -289,7 +289,7 @@ Kluk se chystal odejít. Kovář ho zadržel.
 Kluk zavřel notebook. Otevřel ho znovu. Napsal:
 
 ```bash
-zion miner start --reward-address zion1TVOJEADRESA --pool-url 62.171.141.136:8444
+zion miner start --reward-address zion1TVOJEADRESA --pool-url pool.zionterranova.com:8444
 ```
 
 Obrazovka se pohnula. Čísla, která nerozuměl. A pak — poprvé — jedno slovo, kterému rozuměl:
@@ -315,7 +315,7 @@ Kovář se nepodíval. Bušil dál. Ale kluk věděl, že slyšel — protože k
 > # Stáhni CLI z GitHub releases
 > zion menu                    # interaktivní menu
 > zion wallet address --chain zion-l1
-> zion miner start --reward-address zion1... --pool-url 62.171.141.136:8444
+> zion miner start --reward-address zion1... --pool-url pool.zionterranova.com:8444
 > zion doctor                  # ověř, že vše běží
 > zion pool status             # kolik share ses podílel
 > ```
@@ -325,7 +325,7 @@ Kovář se nepodíval. Bušil dál. Ale kluk věděl, že slyšel — protože k
 > - Windows 11 (x64), macOS (arm64 + Intel), Linux (.AppImage / .deb)
 > - Jedno kliknutí: peněženka, pool, těžba. Žádný terminál.
 >
-> > **Pool:** `62.171.141.136:8444` · **RPC:** `http://rpc.zionterranova.com:8443`
+> > **Pool:** `pool.zionterranova.com:8444` · **RPC:** `http://rpc.zionterranova.com:8443`
 
 ---
 

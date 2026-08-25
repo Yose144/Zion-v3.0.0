@@ -22,7 +22,7 @@ ZION je vlastní Layer 1 blockchain v Rustu: Proof-of-Work, fair launch, žádn�
 - **Fee split:** 89 % těžař / 5 % humanitární / 5 % budoucnost / 1 % burn
 - **Launch:** testnet od 1. 1. 2026, Mainnet Stable žije, public launch 31. 12. 2026
 - **Licence:** MIT
-- **Public pool:** 62.171.141.136:8444
+- **Public pool:** pool.zionterranova.com:8444
 - **Weby:** https://zionterranova.com, https://app.zionterranova.com, https://oasis.zionterranova.com, https://market.zionterranova.com
 - **GitHub:** https://github.com/Zion-TerraNova/v3-Mainnet
 - **Vrstvy:** L1 blockchain, L2 bridge/DeFi/DAO/DEX, L3 WARP/AI, L4 Oasis hra, L5 Free World, L6 Issobella
@@ -45,5 +45,5 @@ ZION je vlastní Layer 1 blockchain v Rustu: Proof-of-Work, fair launch, žádn�
 
 - Web: https://zionterranova.com
 - GitHub: https://github.com/Zion-TerraNova/v3-Mainnet
-- Pool: 62.171.141.136:8444
+- Pool: pool.zionterranova.com:8444
 - Status: `StatusV3.md`

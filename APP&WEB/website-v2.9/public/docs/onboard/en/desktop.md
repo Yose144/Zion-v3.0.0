@@ -58,7 +58,7 @@ After launching the app for the first time:
    - Copy your public address (`zion1...`) and paste it into the mining settings.
 3. Set the **Pool** to the public pool:
    ```
-   62.171.141.136:8444
+   pool.zionterranova.com:8444
    ```
 4. Choose a **Worker Name** — any name for your device, e.g. `my-mac` or `home-pc`.
 5. Set the number of **CPU threads** according to your processor's core count.

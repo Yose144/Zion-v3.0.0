@@ -26,7 +26,7 @@ export ZION_NODE_STATE_PATH="/var/lib/zion/state.db"
 export ZION_P2P_BIND="0.0.0.0:8333"
 export ZION_RPC_BIND="127.0.0.1:8443"
 export ZION_METRICS_BIND="0.0.0.0:9115"
-export ZION_SEED_PEERS="62.171.141.136:8333,62.171.141.136:8334"
+export ZION_SEED_PEERS="zionterranova.com:8333,zionterranova.com:8334"
 export ZION_BLOCK_RETENTION=0
 
 # Optional: all three fee-split wallets must be set together, or none
@@ -53,7 +53,7 @@ Group=zion
 Environment="ZION_NODE_STATE_PATH=/var/lib/zion/state.db"
 Environment="ZION_P2P_BIND=0.0.0.0:8333"
 Environment="ZION_RPC_BIND=127.0.0.1:8443"
-Environment="ZION_SEED_PEERS=62.171.141.136:8333,62.171.141.136:8334"
+Environment="ZION_SEED_PEERS=zionterranova.com:8333,zionterranova.com:8334"
 Environment="ZION_BLOCK_RETENTION=0"
 ExecStart=/opt/zion/node
 Restart=always
