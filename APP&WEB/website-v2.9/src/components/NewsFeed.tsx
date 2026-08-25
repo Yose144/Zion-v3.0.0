@@ -32,6 +32,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'massive-onboarding-32-one-love-released',
+    date: '2026-08-25',
+    tag: { cs: 'Onboard', en: 'Onboard' },
+    tagColor: 'text-zion-cyan',
+    title: {
+      cs: 'Massive Onboarding 3.2 „One Love" — jedna kniha, jedna síť, jeden riddim',
+      en: 'Massive Onboarding 3.2 "One Love" — one book, one network, one riddim',
+    },
+    summary: {
+      cs: 'Spustili jsme jednotný onboarding pro ZION TerraNova: příběh, whitepaper, technická fakta a návod k těžbě v jednom dokumentu. Včetně nové jednostránkové FAQ a aktuálního časového rámce: poslední genesis 8. 8. 2026, Mainnet Launch 31. 12. 2026, OASIS preview s 400+ světy. One love, one chain, one road.',
+      en: 'We launched the unified ZION TerraNova onboarding: story, whitepaper, technical facts, and mining guide in one document. Plus a new single-page FAQ and the updated timeline: final genesis 8 August 2026, Mainnet Launch 31 December 2026, OASIS preview with 400+ worlds. One love, one chain, one road.',
+    },
+    href: '/onboard',
+  },
+  {
     slug: 'zion-v320-public-release-miner-cli-desktop',
     date: '2026-08-22',
     tag: { cs: 'Release', en: 'Release' },
