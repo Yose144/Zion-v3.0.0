@@ -45,4 +45,4 @@ Salt that knows this about itself and says it out loud is more trustworthy than 
 
 ---
 
-*After the epilogue follows a separate invitation: [ZION — A New Civilization](/onboard#book-08). Back to the [index](/onboard#book-00).*
+*After the epilogue follows a separate invitation: [ZION — A New Civilization](08-zion-nova-civilizace.md). Back to the [index](00-index.md).*

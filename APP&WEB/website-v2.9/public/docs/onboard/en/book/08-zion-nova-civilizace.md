@@ -229,4 +229,4 @@ It begins when different people — the carpenter, the pilgrim, the shepherd, th
 - [Nielsen Norman Group — Mobile-App Onboarding](https://www.nngroup.com/articles/mobile-app-onboarding/) and [Onboarding Tutorials vs. Contextual Help](https://www.nngroup.com/articles/onboarding-tutorials/) — why onboarding should minimize unnecessary cognitive load and provide help in context.
 - [ESMA / MiCA, Art. 7 — Marketing communications](https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mica/article-7-marketing-communications) — crypto marketing must be clearly labeled, fair, clear, and non-misleading.
 
-*→ Back to the [index of the Salt of This Land series](/onboard#book-00).*
+*→ Back to the [index of the Salt of This Land series](00-index.md).*

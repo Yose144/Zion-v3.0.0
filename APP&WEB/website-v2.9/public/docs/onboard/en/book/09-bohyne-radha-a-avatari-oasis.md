@@ -122,6 +122,6 @@ Here is the complete roadmap for every newcomer:
 
 ---
 
-*→ Continuation: [Episode 10 — The First World of Oasis and the Best of Avatars](/onboard#book-10)*
+*→ Continuation: [Episode 10 — The First World of Oasis and the Best of Avatars](10-prvni-svet-oasis-a-best-of-avatari.md)*
 
-*→ Back to [the Salt of This Earth series index](/onboard#book-00).*
+*→ Back to [the Salt of This Earth series index](00-index.md).*

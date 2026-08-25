@@ -4,7 +4,7 @@
 **The complete invitation to ZION TerraNova: story + whitepaper + mining in one document.**
 **Network:** Mainnet Alpha `3.1.0-beta` / protocol `zion-v3-node/3.1.0-alpha` → **3.2.0 "One Love" (Mainnet Stable)**
 **Last genesis:** August 8, 2026 (after two hard resets) — this chain is the **Mainnet Launch for December 31, 2026** · **License:** MIT for code
-**Language:** English — [Česká verze](./ZION_ONBOARDING_MASSIVE_MINING_CZ.md)
+**Language:** English — Česká verze
 
 > *"One good thing about music — when it hits you, you feel no pain.*
 > *One good thing about Zion — when it calls you, you feel no chain."*
@@ -83,7 +83,7 @@ That night, for the first time, it was not only the early ones who gathered in T
 | Claim from the story | What is verifiable |
 |---|---|
 | "Salt is small but necessary." | Genesis block mined **August 8, 2026** — after two hard resets, the final genesis before Mainnet Launch. No `mint()` for founders — every coin comes from work. |
-| "The rules hold wordlessly." | Hard cap **144,000,000,000 ZION** written in consensus konsenzu, not in a statement. |
+| "The rules hold wordlessly." | Hard cap **144,000,000,000 ZION** written in consensus, not in a statement. |
 | "Salt is shared, not hoarded." | Every block: **89% miner, 5% humanitarian fund, 5% Issobella fund, 1% burned** — consensus-enforced. |
 | "One door, not two." | **Fair launch** — no ICO, no presale, no VIP allocation. The premine is publicly auditable. |
 | "A bridge across the ocean." | wZION ERC-20 on Base: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, verified on Basescan. |
@@ -147,7 +147,7 @@ Honesty demands this too: maybe ZION will never hold the value bitcoin holds. Ni
 |---|---|
 | "Ten thousand coins for two pizzas." | Historical fact, Bitcointalk, May 22, 2010 — a different network, not a prediction about ZION. |
 | "The highest reward is today." | 5,400.067 ZION/block, Decade 1, konsensus ZION L1. |
-| "89% of the block goes to miners." | Fee split in konsensus ZION L1 + PPLNS in PPLNS engine veřejného poolu. |
+| "89% of the block goes to miners." | Fee split enforced by ZION L1 consensus and the public pool PPLNS engine. |
 | "~6.9M ZION daily for miners." | 1,440 blocks × 4,806 ZION — arithmetic from the emission, not an estimate. |
 | "Difficulty responds to today." | LWMA-60, ±25% clamp, algoritmus obtížnosti ZION L1. |
 | "The network is small." | Chain height and miner count: `rpc.zionterranova.com:8443` method `getStatus`, explorer on the web. |
@@ -318,11 +318,11 @@ One love. One chain. One road.
 
 ### Deeper layers
 
-- [Canonical Whitepaper 3.2 "One Love"](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md) — the whole book of four books
-- [Technical Whitepaper 3.1](../ZION_Technical_Whitepaper_v3.1_EN.md) — consensus, emission, contracts in detail
-- [Salt of the Earth — the twelve stops in full](../SulZeme/00-README_EN.md)
-- [Rasta Fireside Story](./RASTA_ONBOARD_3.2_ONE_LOVE_EN.md) · [Structured Rasta Onboarding](./ONBOARDING_ONE_LOVE_3.2_RASTA_EN.md)
-- [Onboarding Lite — 30 seconds](./ONBOARDING_LITE_EN.md)
+- [Canonical Whitepaper 3.2 "One Love"](/whitepapers#master-3.2-en) — the whole book of four books
+- [Technical Whitepaper 3.1](/whitepapers#technical-en) — consensus, emission, contracts in detail
+- Salt of the Earth — the twelve stops in full
+- Rasta Fireside Story · Structured Rasta Onboarding
+- Onboarding Lite — 30 seconds
 - Web onboard: [app.zionterranova.com/onboard](https://app.zionterranova.com/onboard)
 
 *Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

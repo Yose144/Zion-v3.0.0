@@ -68,4 +68,4 @@ To je otázka, kterou by Buddha položil každé síti, která si říká sůl: 
 
 ---
 
-*→ Pokračování: [Epizoda 3 — Chuť vody](/onboard#book-03)*
+*→ Pokračování: [Epizoda 3 — Chuť vody](03-chut-vody.md)*

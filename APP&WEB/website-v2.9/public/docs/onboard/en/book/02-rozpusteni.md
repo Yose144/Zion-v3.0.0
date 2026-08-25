@@ -68,4 +68,4 @@ That is the question Buddha would put to any network that calls itself salt: **D
 
 ---
 
-*→ Continues: [Episode 3 — The Taste of Water](/onboard#book-03)*
+*→ Continues: [Episode 3 — The Taste of Water](03-chut-vody.md)*

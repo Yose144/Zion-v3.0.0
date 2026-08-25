@@ -43,7 +43,7 @@ That ship is called **ZION**. And this is your invitation aboard.
 
 This is the only part of the invitation you must verify yourself in the code, not take on faith: **ZION is currently in the first decade of emission — the reward of 5,400.067 ZION per block is the highest the protocol will ever pay out.** Every ten years it drops by a fifth, forever. And the fewer machines mining on the network today, the larger the share of found blocks goes to yours.
 
-No one is promising you a price. But open networks have their history: on May 22, 2010, one programmer paid 10,000 bitcoins for two pizzas, because at the time they had no market value and no one knew what would come next. Want to know what honestly follows from this for you today — without any promise of profit, just with facts about how the first day of every network works? **[Read The Hour Before the Rain →](/onboard#why-now)**
+No one is promising you a price. But open networks have their history: on May 22, 2010, one programmer paid 10,000 bitcoins for two pizzas, because at the time they had no market value and no one knew what would come next. Want to know what honestly follows from this for you today — without any promise of profit, just with facts about how the first day of every network works? **[Read The Hour Before the Rain →](book/12-hodina-pred-destem.md)**
 
 ---
 
@@ -129,7 +129,7 @@ No one will chase you. The ark is not built by shouting — it is built block by
 
 ---
 
-*Want the whole story? Read the book [The Salt of This Land](/onboard#book-00) — twelve stops with Jesus, Buddha, Krishna, Rama, Sita, Hanuman, Noah, and one hour before the rain, each with verifiable facts.*
+*Want the whole story? Read the book [The Salt of This Land](book/00-index.md) — twelve stops with Jesus, Buddha, Krishna, Rama, Sita, Hanuman, Noah, and one hour before the rain, each with verifiable facts.*
 
 *Want the numbers? [Technical Whitepaper 3.1](/whitepapers#technical-cz) — consensus, emission, contracts, architecture.*
 

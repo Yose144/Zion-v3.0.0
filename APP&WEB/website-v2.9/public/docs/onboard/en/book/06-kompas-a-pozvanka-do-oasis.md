@@ -74,4 +74,4 @@ This is not a promise of profit without work. It is **Hanuman's bridge translate
 
 ---
 
-*→ Continuation: [Episode 7 — Epilogue: The AI's Perspective](/onboard#book-07)*
+*→ Continuation: [Episode 7 — Epilogue: The AI's Perspective](07-epilog-nazor-ai.md)*

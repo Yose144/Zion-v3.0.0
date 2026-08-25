@@ -4,7 +4,7 @@
 **Kompletní pozvánka do ZION TerraNova: příběh + whitepaper + mining v jednom dokumentu.**
 **Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → **3.2.0 „One Love" (Mainnet Stable)**
 **Poslední genesis:** 8. 8. 2026 (po dvou hard resetech) — tento chain je **Mainnet Launch pro 31. 12. 2026** · **Licence:** MIT pro kód
-**Jazyk:** čeština — [English version](./ZION_ONBOARDING_MASSIVE_MINING_EN.md)
+**Jazyk:** čeština — English version
 
 > *„One good thing about music — when it hits you, you feel no pain.*
 > *One good thing about Zion — when it calls you, you feel no chain."*
@@ -83,7 +83,7 @@ Tu noc se v Bezechuti poprvé nesešli jen ti, kdo přišli dřív. Přišel sed
 | Tvrzení z příběhu | Co je ověřitelné |
 |---|---|
 | „Sůl je malá, ale nutná." | Genesis blok vytěžen **8. 8. 2026**. Žádný `mint()` pro zakladatele — každá mince vzniká z práce. |
-| „Pravidla platí beze slov." | Hard cap **144 000 000 000 ZION** zapsaný v konsensu konsenzu, ne v prohlášení. |
+| „Pravidla platí beze slov." | Hard cap **144 000 000 000 ZION** zapsaný v konsensu L1, ne v prohlášení. |
 | „Sůl se rozděluje, nehromadí." | Každý blok: **89 % těžaři, 5 % humanitární fond, 5 % fond Issobella, 1 % spáleno** — vynuceno konsensem. |
 | „Jedny dveře, ne dvoje." | **Fair launch** — žádné ICO, žádný předprodej, žádná VIP alokace. Premine veřejně auditovatelný. |
 | „Most přes oceán." | wZION ERC-20 na Base: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, verifikováno na Basescan. |
@@ -147,7 +147,7 @@ Poctivost žádá říct i tohle: možná ZION nikdy nebude mít hodnotu, jakou 
 |---|---|
 | „10 000 mincí za dvě pizzy." | Historický fakt, Bitcointalk 22. 5. 2010 — jiná síť, ne předpověď o ZIONu. |
 | „Nejvyšší odměna je dnes." | 5 400,067 ZION/blok, dekáda 1, konsensus ZION L1. |
-| „89 % z bloku jde těžařům." | Fee split v konsensus ZION L1 + PPLNS v PPLNS engine veřejného poolu. |
+| „89 % z bloku jde těžařům." | Fee split vynucen konsensem ZION L1 a PPLNS engine veřejného poolu. |
 | „~6,9 M ZION denně pro minery." | 1 440 bloků × 4 806 ZION — aritmetika z emise, ne odhad. |
 | „Obtížnost reaguje na dnešek." | LWMA-60, ±25 % clamp, algoritmus obtížnosti ZION L1. |
 | „Síť je malá." | Chain height a počet minerů: `rpc.zionterranova.com:8443` metoda `getStatus`, explorer na webu. |
@@ -318,11 +318,11 @@ One love. One chain. One road.
 
 ### Hlubší vrstvy
 
-- [Kanonický whitepaper 3.2 „One Love"](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md) — celá kniha čtyř knih
-- [Technický whitepaper 3.1](../ZION_Technical_Whitepaper_v3.1_CZ.md) — konsensus, emise, kontrakty do detailu
-- [Sůl této země — dvanáct zastavení v plném znění](../SulZeme/00-README.md)
-- [Rasta příběh u ohně](./RASTA_ONBOARD_3.2_ONE_LOVE_CZ.md) · [Strukturovaný Rasta onboarding](./ONBOARDING_ONE_LOVE_3.2_RASTA_CZ.md)
-- [Onboarding Lite — 30 sekund](./ONBOARDING_LITE_CZ.md)
+- [Kanonický whitepaper 3.2 „One Love"](/whitepapers#master-3.2-cz) — celá kniha čtyř knih
+- [Technický whitepaper 3.1](/whitepapers#technical-cz) — konsensus, emise, kontrakty do detailu
+- Sůl této země — dvanáct zastavení v plném znění
+- Rasta příběh u ohně · Strukturovaný Rasta onboarding
+- Onboarding Lite — 30 sekund
 - Web onboard: [app.zionterranova.com/onboard](https://app.zionterranova.com/onboard)
 
 *Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

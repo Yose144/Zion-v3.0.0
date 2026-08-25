@@ -63,4 +63,4 @@ Jesus did not tell his disciples "you are the gold of the earth" or "you are the
 
 ---
 
-*→ Continues: [Episode 2 — Dissolution](/onboard#book-02)*
+*→ Continues: [Episode 2 — Dissolution](02-rozpusteni.md)*
