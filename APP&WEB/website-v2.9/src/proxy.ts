@@ -9,7 +9,7 @@ function getZisUrl(): string {
   return (
     process.env.ZIS_URL ||
     process.env.NEXT_PUBLIC_ZIS_URL ||
-    'https://auth.zionterranova.com'
+    'http://127.0.0.1:8096'
   ).replace(/\/+$/, '');
 }
 
