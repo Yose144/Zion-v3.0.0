@@ -128,7 +128,7 @@ interface QuoteData {
 }
 
 interface SwapResult {
-  out: string;
+  amount_out: string;
 }
 
 type SwapPhase = 'idle' | 'quoting' | 'quoted' | 'executing' | 'success' | 'error';
@@ -168,20 +168,27 @@ function toAtomicAmount(amount: string, decimals: number): string {
 }
 
 /**
- * Build a JSON body string with `amount` as a raw JSON number (not a string).
- * This avoids precision loss for u128 values > Number.MAX_SAFE_INTEGER (2^53-1),
- * which the V31 backend's serde deserializer requires (amount: u128).
+ * Build a JSON body string with u128 fields as raw JSON numbers (not strings).
+ * This avoids precision loss for values > Number.MAX_SAFE_INTEGER (2^53-1),
+ * which the V31 backend's serde deserializer requires.
  */
 function buildSwapBody(
   from: object,
   to: object,
   amount: string,
   extra?: object,
+  rawNumeric?: Record<string, string>,
 ): string {
   const base = { from, to, ...extra };
   const jsonStr = JSON.stringify(base);
-  // Insert "amount":<raw-number> before the closing brace
-  return jsonStr.replace(/}$/, `,"amount":${amount}}`);
+  const parts: string[] = [`"amount":${amount}`];
+  if (rawNumeric) {
+    for (const [k, v] of Object.entries(rawNumeric)) {
+      parts.push(`"${k}":${v}`);
+    }
+  }
+  // Insert raw numeric fields before the closing brace
+  return jsonStr.replace(/}$/, `,${parts.join(',')}}`);
 }
 
 function buildSteps(route: Route['route']) {
@@ -321,9 +328,12 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const body = buildSwapBody(fromAsset, toAsset, amountAtomic);
+      const extra = recipient.trim() ? { recipient: recipient.trim() } : undefined;
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, extra, {
+        min_amount_out: minOutput,
+      });
 
-      const resp = await fetch(`${API_BASE}/execute`, {
+      const resp = await fetch(`${API_BASE}/execute-v2`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -342,7 +352,7 @@ export default function CrossChainSwapWidget() {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated]);
+  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated, recipient, minOutput]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -512,7 +522,7 @@ export default function CrossChainSwapWidget() {
             <CheckCircle2 className="w-4 h-4 text-zion-cyan flex-shrink-0 mt-0.5" />
             <div className="text-sm text-zion-cyan">
               <div>Swap executed</div>
-              <div className="text-xs text-zion-cyan/70 mt-1">Output: {swapResult.out}</div>
+              <div className="text-xs text-zion-cyan/70 mt-1">Output: {swapResult.amount_out}</div>
             </div>
           </div>
         )}
