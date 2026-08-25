@@ -2,8 +2,8 @@
 ## Jedna kniha, jedna síť, jeden riddim — „One Love" 3.2
 
 **Kompletní pozvánka do ZION TerraNova: příběh + whitepaper + mining v jednom dokumentu.**
-**Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → cíl **3.2.0 „One Love" (Mainnet Stable)**
-**Veřejný launch:** 31. prosince 2026 · **Licence:** MIT pro kód
+**Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → **3.2.0 „One Love" (Mainnet Stable)**
+**Poslední genesis:** 8. 8. 2026 (po dvou hard resetech) — tento chain je **Mainnet Launch pro 31. 12. 2026** · **Licence:** MIT pro kód
 **Jazyk:** čeština — [English version](./ZION_ONBOARDING_MASSIVE_MINING_EN.md)
 
 > *„One good thing about music — when it hits you, you feel no pain.*
@@ -178,9 +178,9 @@ cargo build --release --bin zion-miner
   --worker muj-prvni-rig
 ```
 
-Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + volitelný GPU AuxPoW (např. ZANO) + volitelný CPU AuxPoW (např. VRSC). Jedna binárka, tři kanály — ne slib zisku, technická možnost, kterou si změříš sám. 
+Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + volitelný GPU AuxPoW (např. ZANO) + volitelný CPU AuxPoW (např. VRSC). Jedna binárka, tři kanály — ne slib zisku, technická možnost, kterou si změříš sám.
 
-/// Public Desktop App je free, 3 Streamy jdou automaticky do Zion Liquidity a Grow, cena poroste ... VIP miner bude mit moznost nastavit i ostatni 2 streamy /// 
+> **Public Desktop App je zdarma.** Ve veřejné aplikaci jsou všechny tři streamy směrovány automaticky do programu **ZION Liquidity & Grow** — výnosy z doprovodných streamů posilují likviditu a růst celé sítě, ze které těžíš. **VIP miner** (STAVBA) přinese možnost nastavit si zbylé dva streamy podle vlastního uvážení.
 
 **Veřejné body sítě (ŽIVÉ):**
 
@@ -204,15 +204,15 @@ Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + 
 # ČÁST ČTVRTÁ — LOĎ A ZAHRADA
 ## Co vlastně stavíme — whitepaper v jedné kapitole
 
-### XII. Šest palub lodi 
+### XII. Šest palub lodi
 
 ```
 L6 — ISSOBELLA        orbitální výzkum, hvězdný horizont (2040+)     HORIZONT
 L5 — SVĚT SVOBODY     humanitární fond, fyzické komunity              STAVBA
-L4 — OASIS            herní svět, avataři, 400+ světů                 STAVBA (preview ŽIVÉ) 
+L4 — OASIS            herní svět, avataři, 400+ světů                 STAVBA (preview ŽIVÉ)
 L3 — INTELIGENCE      AI Native, NCL, WARP multichain                 STAVBA (WARP ŽIVÉ)
-L2 — DeFi & DAO       wZION, bridge, staking, governance              ŽIVÉ (Base mainnet) /// First Beta
-L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ // v3.1 Beta, v3.2 Stable
+L2 — DeFi & DAO       wZION, bridge, staking, governance              ŽIVÉ (Base mainnet, první beta)
+L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ (v3.1 beta → v3.2 stable)
 ```
 
 **L1 (ŽIVÉ):** Rust, konsensus Ekam Deeksha v3.2 — memory-hard PoW (512 KiB scratchpad, AES passy, náhodná čtení, Keccak finál), navržený tak, aby domácí CPU a GPU měly šanci a ASIC ne. Ed25519 podpisy, BLAKE3 hashe, UTXO + account model, adresy `zion1…`.
@@ -288,7 +288,7 @@ Sůl, která ví, že je sůl — a neříká o sobě, že je zlato — je dův�
 
 # ZÁVĚR — RIDDIM POKRAČUJE
 
-Oheň hoří od 8.8 2026 a nikdo ho neuhasil — ani déšť, ani smích těch, kdo nevěřili, že vydrží do rána.
+Oheň hoří od 8. 8. 2026 — po dvou hard resetech, třetí a poslední genesis — a nikdo ho neuhasil: ani déšť, ani smích těch, kdo nevěřili, že vydrží do rána.
 
 Řeka je pořád malá. Zahrada voní čerstvou hlínou. Loď není hotová — ale paluba je suchá, dveře mají panty a kompas ukazuje sever.
 

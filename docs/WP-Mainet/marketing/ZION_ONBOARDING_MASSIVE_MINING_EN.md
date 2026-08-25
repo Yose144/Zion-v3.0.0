@@ -2,8 +2,8 @@
 ## One Book, One Network, One Riddim — "One Love" 3.2
 
 **The complete invitation to ZION TerraNova: story + whitepaper + mining in one document.**
-**Network:** Mainnet Alpha `3.1.0-beta` / protocol `zion-v3-node/3.1.0-alpha` → target **3.2.0 "One Love" (Mainnet Stable)**
-**Public launch:** December 31, 2026 · **License:** MIT for code
+**Network:** Mainnet Alpha `3.1.0-beta` / protocol `zion-v3-node/3.1.0-alpha` → **3.2.0 "One Love" (Mainnet Stable)**
+**Last genesis:** August 8, 2026 (after two hard resets) — this chain is the **Mainnet Launch for December 31, 2026** · **License:** MIT for code
 **Language:** English — [Česká verze](./ZION_ONBOARDING_MASSIVE_MINING_CZ.md)
 
 > *"One good thing about music — when it hits you, you feel no pain.*
@@ -82,7 +82,7 @@ That night, for the first time, it was not only the early ones who gathered in T
 
 | Claim from the story | What is verifiable |
 |---|---|
-| "Salt is small but necessary." | Genesis block mined **January 1, 2026**. No `mint()` for founders — every coin comes from work. |
+| "Salt is small but necessary." | Genesis block mined **August 8, 2026** — after two hard resets, the final genesis before Mainnet Launch. No `mint()` for founders — every coin comes from work. |
 | "The rules hold wordlessly." | Hard cap **144,000,000,000 ZION** written in consensus (`genesis.rs`), not in a statement. |
 | "Salt is shared, not hoarded." | Every block: **89% miner, 5% humanitarian fund, 5% Issobella fund, 1% burned** — consensus-enforced. |
 | "One door, not two." | **Fair launch** — no ICO, no presale, no VIP allocation. The premine is publicly auditable. |
@@ -180,6 +180,8 @@ cargo build --release --bin zion-miner
 
 One miner runs three streams at once (**Trinity**): ZION via Ekam Deeksha + optional GPU AuxPoW (e.g. ZANO) + optional CPU AuxPoW (e.g. VRSC). One binary, three channels — not a profit promise, a technical option you measure yourself.
 
+> **Public Desktop App is free.** In the public app all three streams are automatically routed to the **ZION Liquidity & Grow** program — yields from the secondary streams strengthen the liquidity and growth of the entire network you are mining. **VIP miner** (BUILDING) will bring the option to configure the remaining two streams to your own preference.
+
 **Public network endpoints (LIVE):**
 
 | What | Where |
@@ -207,10 +209,10 @@ One miner runs three streams at once (**Trinity**): ZION via Ekam Deeksha + opti
 ```
 L6 — ISSOBELLA        orbital research, stellar horizon (2040+)      HORIZON
 L5 — FREE WORLD       humanitarian fund, physical communities        BUILDING
-L4 — OASIS            game world, avatars, 55 worlds                 BUILDING (preview LIVE)
+L4 — OASIS            game world, avatars, 400+ worlds               BUILDING (preview LIVE)
 L3 — INTELLIGENCE     AI Native, NCL, WARP multichain                BUILDING (WARP LIVE)
-L2 — DeFi & DAO       wZION, bridge, staking, governance             LIVE (Base mainnet)
-L1 — CORE             PoW blockchain, Ekam Deeksha, 60s blocks       LIVE
+L2 — DeFi & DAO       wZION, bridge, staking, governance             LIVE (Base mainnet, first beta)
+L1 — CORE             PoW blockchain, Ekam Deeksha, 60s blocks       LIVE (v3.1 beta → v3.2 stable)
 ```
 
 **L1 (LIVE):** Rust, Ekam Deeksha v3.2 consensus — memory-hard PoW (512 KiB scratchpad, AES passes, random reads, Keccak final), designed so home CPUs and GPUs have a chance and ASICs do not. Ed25519 signatures, BLAKE3 hashing, UTXO + account model, `zion1…` addresses.
@@ -241,7 +243,7 @@ L1 — CORE             PoW blockchain, Ekam Deeksha, 60s blocks       LIVE
 
 Beyond the river, where the forest opens into light, a garden grows. Its name is **OASIS**. Two women stand at the gate — Radha laughs: *"Come in, dance, play — let your heart feel that technology need not be cold as steel."* Elizabeth stands one step further with a lantern and asks softly: *"And what will remain of you, once you walk on?"*
 
-But let us say it plain, bredda: **the garden is not finished.** The seeds are planted, the first saplings are growing, the gate still smells of fresh paint. You can fly into the 3D galaxy of 55 worlds at [oasis.zionterranova.com](https://oasis.zionterranova.com), pass the Tree of Life, open the Avatar Codex. But you are not at the end of the road — you are at the first rows.
+But let us say it plain, bredda: **the garden is not finished.** The seeds are planted, the first saplings are growing, the gate still smells of fresh paint. You can fly into the 3D galaxy of 400+ worlds at [oasis.zionterranova.com](https://oasis.zionterranova.com), pass the Tree of Life, open the Avatar Codex. But you are not at the end of the road — you are at the first rows.
 
 | What EXISTS today | What it is NOT today |
 |---|---|
@@ -286,7 +288,7 @@ Salt that knows it is salt — and does not call itself gold — is more trustwo
 
 # CLOSING — THE RIDDIM CONTINUES
 
-The fire has burned since January 1, 2026, and nobody has put it out — not the rain, not the laughter of those who never believed it would last till morning.
+The fire has burned since August 8, 2026 — after two hard resets, the third and final genesis — and nobody has put it out: not the rain, not the laughter of those who never believed it would last till morning.
 
 The river is still small. The garden smells of fresh soil. The ship is not finished — but the deck is dry, the doors have hinges, and the compass points north.
 

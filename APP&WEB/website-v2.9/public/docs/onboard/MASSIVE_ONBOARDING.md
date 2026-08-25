@@ -2,8 +2,8 @@
 ## Jedna kniha, jedna síť, jeden riddim — „One Love" 3.2
 
 **Kompletní pozvánka do ZION TerraNova: příběh + whitepaper + mining v jednom dokumentu.**
-**Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → cíl **3.2.0 „One Love" (Mainnet Stable)**
-**Veřejný launch:** 31. prosince 2026 · **Licence:** MIT pro kód
+**Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → **3.2.0 „One Love" (Mainnet Stable)**
+**Poslední genesis:** 8. 8. 2026 (po dvou hard resetech) — tento chain je **Mainnet Launch pro 31. 12. 2026** · **Licence:** MIT pro kód
 **Jazyk:** čeština — [English version](./ZION_ONBOARDING_MASSIVE_MINING_EN.md)
 
 > *„One good thing about music — when it hits you, you feel no pain.*
@@ -72,7 +72,7 @@ Most v našem světě má jméno: bridge a WARP. Spojení mezi ZION L1 a ostatn�
 
 Poslední poutník přišel s prachem nejdelší cesty a řekl: „Voda přijde víc, než čekáte. Ne trest — **fyzika**. Svět, který se přetíží — příliš mnoho slibů bez chuti, příliš mnoho zlata bez práce — se jednou přelije. A bude potřeba loď, ne palác."
 
-„A co ti, kdo zůstanou na břehu?" zeptala se Sítá.
+„A co ti, kdo zůstanou na břehu?" zeptala se Síta.
 
 „Nikdo je nenutí nastoupit. Archa nezachraňuje silou. Zachraňuje tím, že je **otevřená a viditelná dost dlouho předem**, aby si každý mohl vybrat sám. A má **jedny dveře, ne dvoje** — ne jedny pro krále a jedny pro chudé."
 
@@ -82,8 +82,8 @@ Tu noc se v Bezechuti poprvé nesešli jen ti, kdo přišli dřív. Přišel sed
 
 | Tvrzení z příběhu | Co je ověřitelné |
 |---|---|
-| „Sůl je malá, ale nutná." | Genesis blok vytěžen **1. 1. 2026**. Žádný `mint()` pro zakladatele — každá mince vzniká z práce. |
-| „Pravidla platí beze slov." | Hard cap **144 000 000 000 ZION** zapsaný v konsensu (`genesis.rs`), ne v prohlášení. |
+| „Sůl je malá, ale nutná." | Genesis blok vytěžen **8. 8. 2026**. Žádný `mint()` pro zakladatele — každá mince vzniká z práce. |
+| „Pravidla platí beze slov." | Hard cap **144 000 000 000 ZION** zapsaný v konsensu konsenzu, ne v prohlášení. |
 | „Sůl se rozděluje, nehromadí." | Každý blok: **89 % těžaři, 5 % humanitární fond, 5 % fond Issobella, 1 % spáleno** — vynuceno konsensem. |
 | „Jedny dveře, ne dvoje." | **Fair launch** — žádné ICO, žádný předprodej, žádná VIP alokace. Premine veřejně auditovatelný. |
 | „Most přes oceán." | wZION ERC-20 na Base: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, verifikováno na Basescan. |
@@ -180,6 +180,8 @@ cargo build --release --bin zion-miner
 
 Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + volitelný GPU AuxPoW (např. ZANO) + volitelný CPU AuxPoW (např. VRSC). Jedna binárka, tři kanály — ne slib zisku, technická možnost, kterou si změříš sám.
 
+> **Public Desktop App je zdarma.** Ve veřejné aplikaci jsou všechny tři streamy směrovány automaticky do programu **ZION Liquidity & Grow** — výnosy z doprovodných streamů posilují likviditu a růst celé sítě, ze které těžíš. **VIP miner** (STAVBA) přinese možnost nastavit si zbylé dva streamy podle vlastního uvážení.
+
 **Veřejné body sítě (ŽIVÉ):**
 
 | Co | Kde |
@@ -207,10 +209,10 @@ Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + 
 ```
 L6 — ISSOBELLA        orbitální výzkum, hvězdný horizont (2040+)     HORIZONT
 L5 — SVĚT SVOBODY     humanitární fond, fyzické komunity              STAVBA
-L4 — OASIS            herní svět, avataři, 55 světů                   STAVBA (preview ŽIVÉ)
+L4 — OASIS            herní svět, avataři, 400+ světů                 STAVBA (preview ŽIVÉ)
 L3 — INTELIGENCE      AI Native, NCL, WARP multichain                 STAVBA (WARP ŽIVÉ)
-L2 — DeFi & DAO       wZION, bridge, staking, governance              ŽIVÉ (Base mainnet)
-L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ
+L2 — DeFi & DAO       wZION, bridge, staking, governance              ŽIVÉ (Base mainnet, první beta)
+L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ (v3.1 beta → v3.2 stable)
 ```
 
 **L1 (ŽIVÉ):** Rust, konsensus Ekam Deeksha v3.2 — memory-hard PoW (512 KiB scratchpad, AES passy, náhodná čtení, Keccak finál), navržený tak, aby domácí CPU a GPU měly šanci a ASIC ne. Ed25519 podpisy, BLAKE3 hashe, UTXO + account model, adresy `zion1…`.
@@ -239,9 +241,9 @@ L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ
 
 ### XIV. Zahrada Oasis — Rádha a Elizabeth
 
-Za řekou, kde les otvírá světlo, roste zahrada. Jmenuje se **OASIS**. U brány stojí dvě ženy — Rádha se směje: *„Pojď dál, tancuj, hraj — ať tvé srdce ucítí, že technologie nemusí být studená jako ocel."* Elizabeth stojí o krok dál s lucernou a ptá se tiše: *„A co po tobě zůstane, až půjdeš dál?"*
+Za řekou, kde les otvírá světlo, roste zahrada. Jmenuje se **OASIS**. U brány stojí dvě ženy — Rádha se směje: *„Pojď dál, tancuj, hraj — ať tvé srdce ucítí, že technologie nemusí být studená jako ocel."* Elizabeth stojí o krok dál s lucernou a ptá se tiše: *„Co po tobě zůstane, až půjdeš dál?"*
 
-Ale řekněme to narovinu, bredda: **zahrada není hotová.** Semínka jsou zasazená, první stromky rostou, brána ještě voní čerstvou barvou. Můžeš vletět do 3D galaxie 55 světů na [oasis.zionterranova.com](https://oasis.zionterranova.com), projít kolem Stromu Života, otevřít Avatar Codex. Ale nejsi na konci cesty — jsi u prvních záhonů.
+Ale řekněme to narovinu, bredda: **zahrada není hotová.** Semínka jsou zasazená, první stromky rostou, brána ještě voní čerstvou barvou. Můžeš vletět do 3D galaxie 400+ světů na [oasis.zionterranova.com](https://oasis.zionterranova.com), projít kolem Stromu Života, otevřít Avatar Codex. Ale nejsi na konci cesty — jsi u prvních záhonů.
 
 | Co dnes JE | Co dnes NENÍ |
 |---|---|
@@ -286,7 +288,7 @@ Sůl, která ví, že je sůl — a neříká o sobě, že je zlato — je dův�
 
 # ZÁVĚR — RIDDIM POKRAČUJE
 
-Oheň hoří od 1. ledna 2026 a nikdo ho neuhasil — ani déšť, ani smích těch, kdo nevěřili, že vydrží do rána.
+Oheň hoří od 8. 8. 2026 — po dvou hard resetech, třetí a poslední genesis — a nikdo ho neuhasil: ani déšť, ani smích těch, kdo nevěřili, že vydrží do rána.
 
 Řeka je pořád malá. Zahrada voní čerstvou hlínou. Loď není hotová — ale paluba je suchá, dveře mají panty a kompas ukazuje sever.
 
