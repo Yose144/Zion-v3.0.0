@@ -400,7 +400,7 @@ export default function MultichainWalletPage() {
                       {balances.map((b, i) => (
                         <li key={i} className="zion-rainbow-sub p-3 flex items-center justify-between">
                           <span className="font-mono text-sm text-zion-gold">{b.asset_key}</span>
-                          <span className="font-mono text-white">{formatMultichainAmount(b.amount)}</span>
+                          <span className="font-mono text-white">{formatMultichainAmount(b.amount, b.asset_key)}</span>
                         </li>
                       ))}
                     </ul>
@@ -479,7 +479,7 @@ export default function MultichainWalletPage() {
                       <li key={d.id} className="zion-rainbow-sub p-3">
                         <div className="flex items-center justify-between gap-4 flex-wrap">
                           <div>
-                            <p className="text-sm text-white">{d.asset_key}: {formatMultichainAmount(d.amount)}</p>
+                            <p className="text-sm text-white">{d.asset_key}: {formatMultichainAmount(d.amount, d.asset_key)}</p>
                             <p className="text-xs text-gray-500">{t('chain')}: {d.chain} · {t('status')}: {d.status}</p>
                           </div>
                           <div className="text-right">
@@ -505,7 +505,7 @@ export default function MultichainWalletPage() {
                       <li key={w.id} className="zion-rainbow-sub p-3">
                         <div className="flex items-center justify-between gap-4 flex-wrap">
                           <div>
-                            <p className="text-sm text-white">{w.asset_key}: {formatMultichainAmount(w.amount)}</p>
+                            <p className="text-sm text-white">{w.asset_key}: {formatMultichainAmount(w.amount, w.asset_key)}</p>
                             <p className="text-xs text-gray-500">{t('recipient')}: <span className="font-mono">{w.recipient_address}</span></p>
                             <p className="text-xs text-gray-500">{t('status')}: {w.status}</p>
                           </div>
@@ -536,7 +536,7 @@ export default function MultichainWalletPage() {
                               {o.from_asset_key} → {o.to_asset_key}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {t('amount')}: {formatMultichainAmount(o.amount_in)} → {formatMultichainAmount(o.amount_out)} ({t('status')}: {o.status})
+                              {t('amount')}: {formatMultichainAmount(o.amount_in, o.from_asset_key)} → {formatMultichainAmount(o.amount_out, o.to_asset_key)} ({t('status')}: {o.status})
                             </p>
                           </div>
                           <div className="text-right">

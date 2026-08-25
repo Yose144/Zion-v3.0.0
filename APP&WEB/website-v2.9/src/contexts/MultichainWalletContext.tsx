@@ -18,8 +18,27 @@ import {
   type MultichainWithdrawInput,
   type MultichainAddressResult,
 } from '@/lib/multichain-api';
+import { TOKENS_BY_CHAIN } from '@/components/dex/TokenSelector';
 
 export const MULTICHAIN_DECIMALS = 1_000_000;
+
+const API_CHAIN_TO_UI: Record<string, string> = {
+  zion_l1: 'zion',
+};
+
+function parseAssetKey(assetKey: string): { chain: string; ticker: string } {
+  const [chain, ticker] = assetKey.split(':');
+  return { chain: chain ?? '', ticker: ticker ?? '' };
+}
+
+export function getMultichainAssetDecimals(assetKey: string): number {
+  const { chain, ticker } = parseAssetKey(assetKey);
+  const uiChain = API_CHAIN_TO_UI[chain] ?? chain;
+  const tokens = TOKENS_BY_CHAIN[uiChain];
+  if (!tokens) return 6;
+  const token = tokens.find((t) => t.symbol === ticker);
+  return token?.decimals ?? 6;
+}
 
 interface MultichainWalletState {
   snapshot: MultichainWalletSnapshot | null;
@@ -45,8 +64,10 @@ const defaultState: MultichainWalletState = {
 
 const MultichainWalletContext = createContext<MultichainWalletState>(defaultState);
 
-/** Format an on-chain atomic amount as a human-readable decimal string. */
-export function formatMultichainAmount(raw: string | number, decimals = 6): string {
+/** Format an on-chain atomic amount as a human-readable decimal string.
+ *  When `assetKey` is provided, decimals are resolved from the token registry. */
+export function formatMultichainAmount(raw: string | number, assetKey?: string): string {
+  const decimals = assetKey ? getMultichainAssetDecimals(assetKey) : 6;
   try {
     const value = BigInt(String(raw));
     const divisor = BigInt(10 ** decimals);
