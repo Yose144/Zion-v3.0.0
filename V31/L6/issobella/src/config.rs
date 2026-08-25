@@ -32,7 +32,7 @@ impl Default for IssobellaConfig {
         Self {
             name: "zion-issobella".to_string(),
             bind: "127.0.0.1".to_string(),
-            port: 8096,
+            port: 8097,
             db_path: "./issobella.db".to_string(),
             l1_rpc_url: "http://127.0.0.1:9445/jsonrpc".to_string(),
             scan_interval_secs: 60,

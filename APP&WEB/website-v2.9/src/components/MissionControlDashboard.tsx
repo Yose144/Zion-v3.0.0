@@ -57,6 +57,7 @@ const MissionControlDashboardCopy = {
   finalCleanupBeforeLaunch: { cs: `Finální cleanup před launch`, en: `Final cleanup before launch` },
   all: { cs: `Vše`, en: `All` },
   mining: { cs: `Těžba`, en: `Mining` },
+  fund: { cs: `Fondy`, en: `Funds` },
   inspect: { cs: `Zkontrolovat`, en: `Inspect` },
   offline: { cs: `Offline`, en: `Offline` },
   online: { cs: `Online`, en: `Online` },
@@ -418,7 +419,7 @@ interface WalletBroadcastResult {
 type WalletSubmitMethod = 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction';
 
 type ChartRange = '1h' | '6h' | '24h';
-type ServiceGroup = 'all' | 'core' | 'mining' | 'monitoring' | 'remote';
+type ServiceGroup = 'all' | 'core' | 'mining' | 'fund' | 'monitoring' | 'remote';
 
 interface OpsAlert {
   id: string;
@@ -663,6 +664,8 @@ async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
   const STACK: Omit<ServiceStatus, 'up'>[] = [
     { name: 'zion-core', job: 'zion-core', displayName: 'ZION Core', image: 'ZION core 3.2.0', ports: 'public P2P', note: 'consensus node' },
     { name: 'zion-pool', job: 'zion-pool', displayName: 'ZION Pool', image: 'ZION pool 3.2.0', ports: 'public stratum', note: 'mining pool' },
+    { name: 'zion-free-world', job: '', displayName: 'L5 Free World', image: 'fund tracker 3.2.0', ports: 'operator API', note: 'humanitarian fund' },
+    { name: 'zion-issobella', job: '', displayName: 'L6 Issobella', image: 'fund tracker 3.2.0', ports: 'operator API', note: 'science/space fund' },
     { name: 'zion-miner', job: '', displayName: 'ZION Miner', image: 'ZION miner 3.2.0', ports: '—', note: 'no telemetry target' },
     { name: 'zion-redis', job: 'redis', displayName: 'ZION Cache', image: 'cache service', ports: '—' },
     { name: 'zion-seed-1', job: '', displayName: 'ZION Seed Node 1', image: 'ZION core 3.2.0', ports: 'restricted', note: 'network node' },
@@ -830,6 +833,7 @@ const getServiceGroups = (cs: boolean): { value: ServiceGroup; label: string }[]
   { value: 'all', label: MissionControlDashboardCopy.all[cs ? 'cs' : 'en'] },
   { value: 'core', label: 'Core' },
   { value: 'mining', label: MissionControlDashboardCopy.mining[cs ? 'cs' : 'en'] },
+  { value: 'fund', label: MissionControlDashboardCopy.fund[cs ? 'cs' : 'en'] },
   { value: 'monitoring', label: 'Monitoring' },
   { value: 'remote', label: 'Remote' },
 ];
@@ -838,6 +842,7 @@ function getServiceGroup(service: ServiceStatus): Exclude<ServiceGroup, 'all'> {
   if (service.name.includes('germany-')) return 'remote';
   if (service.name.includes('prometheus') || service.name.includes('grafana') || service.name.includes('exporter') || service.name.includes('alertmanager') || service.name.includes('website')) return 'monitoring';
   if (service.name.includes('pool') || service.name.includes('miner')) return 'mining';
+  if (service.name.includes('free-world') || service.name.includes('issobella')) return 'fund';
   return 'core';
 }
 
@@ -848,6 +853,12 @@ function getServiceActions(service: ServiceStatus, cs: boolean): { href: string;
   }
   if (service.name.includes('prometheus') || service.name.includes('grafana') || service.name.includes('exporter') || service.name.includes('alertmanager')) {
     actions.push({ href: '/grafana/', label: 'Metrics' });
+  }
+  if (service.name.includes('free-world')) {
+    actions.push({ href: '/l5-free-world', label: 'L5' });
+  }
+  if (service.name.includes('issobella')) {
+    actions.push({ href: '/l6-issobella', label: 'L6' });
   }
   if (actions.length === 0) {
     actions.push({ href: '/monitoring', label: MissionControlDashboardCopy.inspect[cs ? 'cs' : 'en'] });
@@ -3147,8 +3158,8 @@ export default function MissionControlDashboard() {
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-zion-purple/5', title: 'Orbital Consciousness Station', desc: cs ? 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund' : 'ZION Issobella space station — decentralized research, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Deep Research'], date: '2040+', labelColor: 'text-zion-purple', active: false, Icon: Rocket },
-                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-zion-gold/5', title: 'Sovereign Governance Layer', desc: cs ? 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic' : 'Fully decentralized governance, community governance, free ecosystem without borders', tags: ['Governance', 'Sovereignty', 'Community', 'Freedom'], date: '2030+', labelColor: 'text-zion-gold', active: false, Icon: Globe2 },
+                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-zion-purple/5', title: 'Orbital Consciousness Station', desc: cs ? 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund' : 'ZION Issobella space station — decentralized research, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : '2026 Q3 — fund tracker live (G10 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Rocket },
+                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-zion-gold/5', title: 'Sovereign Governance Layer', desc: cs ? 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic' : 'Fully decentralized governance, community governance, free ecosystem without borders', tags: ['Governance', 'Sovereignty', 'Community', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : '2026 Q3 — fund tracker live (G10 ✅)', labelColor: 'text-zion-gold', active: true, Icon: Globe2 },
                   { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-zion-purple/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : 'UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-zion-purple', active: false, Icon: Gamepad2 },
                   { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-zion-purple/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP chain registry config-driven (G2 uzavřen), non-EVM chainy gated, NCL gateway a AI Native SDK navazují' : 'WARP chain registry config-driven (G2 closed), non-EVM chains gated, NCL gateway and AI Native SDK follow', tags: ['WARP Registry', 'NCL Gateway', cs ? 'AI Orchestrátor' : 'AI Orchestrator', cs ? 'GPU za ZION' : 'GPU for ZION'], date: cs ? '2026 Q3 — gated (G2 ✅)' : '2026 Q3 — gated (G2 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Brain },
                   { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 lock → mint → burn → unlock round-trip ověřen' : 'wZION bridge live on Base mainnet — E4 lock → mint → burn → unlock round-trip verified', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅)', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },

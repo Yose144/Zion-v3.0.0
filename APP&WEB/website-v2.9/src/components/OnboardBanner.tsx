@@ -6,12 +6,12 @@ import { useLang } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 
 const OnboardBannerCopy = {
-  title: { cs: 'Sůl této země — Vítej na palubě', en: 'Salt of the Earth — Welcome Aboard' },
+  title: { cs: 'ZION — One Love. One Chain. One Road.', en: 'ZION — One Love. One Chain. One Road.' },
   body: {
-    cs: 'Síť je pořád malá a odměna za blok je dnes nejvyšší, jakou kdy bude. Přečti si proč — beze slibu ceny, jen s fakty.',
-    en: 'The network is still small and today\u2019s block reward is the highest it will ever be. Read why — no price promises, just the facts.',
+    cs: 'Síť je pořád malá a odměna za blok je dnes nejvyšší, jakou kdy bude. Přečti si proč — beze slibu ceny, jen s fakty, jedna kniha, jeden riddim.',
+    en: 'The network is still small and today\u2019s block reward is the highest it will ever be. Read why — no price promises, just the facts, one book, one riddim.',
   },
-  cta: { cs: 'Otevřít onboard', en: 'Open Onboarding' },
+  cta: { cs: 'Vstoupit na palubu', en: 'Come aboard' },
 };
 
 export default function OnboardBanner() {
@@ -42,7 +42,7 @@ export default function OnboardBanner() {
             </div>
           </div>
           <Link
-            href="/onboard#why-now"
+            href="/onboard#massive-onboarding"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-zion-cyan/20 hover:bg-zion-cyan/30 border border-zion-cyan/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors shrink-0"
           >
             <Rocket className="h-4 w-4" />

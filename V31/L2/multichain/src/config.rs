@@ -65,6 +65,11 @@ pub struct MultichainConfig {
     pub l1_rpc_url: String,
     #[serde(default)]
     pub mnemonic: Option<String>,
+    /// Optional BIP39 mnemonic for the custodial multichain wallet.
+    /// Falls back to `ZION_WALLET_MNEMONIC` env var. Must be different from
+    /// `mnemonic` / `WARP_MNEMONIC` in production.
+    #[serde(default)]
+    pub wallet_mnemonic: Option<String>,
     #[serde(default)]
     pub adapters: Vec<AdapterConfig>,
     pub pool: Option<PoolConfigFile>,
@@ -76,6 +81,8 @@ pub struct MultichainConfig {
     pub solvers: Vec<SolverEntry>,
     #[serde(default)]
     pub node_rewards: NodeRewardsConfig,
+    #[serde(default)]
+    pub reconciliation: ReconciliationConfig,
 }
 
 impl Default for MultichainConfig {
@@ -85,18 +92,55 @@ impl Default for MultichainConfig {
             database: DatabaseConfig::default(),
             l1_rpc_url: default_l1_rpc_url(),
             mnemonic: None,
+            wallet_mnemonic: None,
             adapters: Vec::new(),
             pool: None,
             warp: None,
             solver: SolverConfig::default(),
             solvers: Vec::new(),
             node_rewards: NodeRewardsConfig::default(),
+            reconciliation: ReconciliationConfig::default(),
         }
     }
 }
 
 fn default_l1_rpc_url() -> String {
     "http://127.0.0.1:9445".to_string()
+}
+
+/// Reconciliation task configuration.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ReconciliationConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// Seconds between reconciliation passes.
+    #[serde(default = "default_reconciliation_interval")]
+    pub interval_seconds: u64,
+    /// Absolute difference larger than this triggers an alert.
+    #[serde(default = "default_reconciliation_threshold")]
+    pub alert_threshold: String,
+}
+
+impl Default for ReconciliationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            interval_seconds: 300,
+            alert_threshold: "1000000".to_string(),
+        }
+    }
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_reconciliation_interval() -> u64 {
+    300
+}
+
+fn default_reconciliation_threshold() -> String {
+    "1000000".to_string()
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -113,6 +157,18 @@ pub struct ServerConfig {
 pub struct RateLimitConfig {
     pub requests_per_second: f64,
     pub burst: u32,
+    #[serde(default = "default_user_rate")]
+    pub user_requests_per_second: f64,
+    #[serde(default = "default_user_burst")]
+    pub user_burst: u32,
+}
+
+fn default_user_rate() -> f64 {
+    2.0
+}
+
+fn default_user_burst() -> u32 {
+    20
 }
 
 impl Default for RateLimitConfig {
@@ -120,6 +176,8 @@ impl Default for RateLimitConfig {
         Self {
             requests_per_second: 10.0,
             burst: 100,
+            user_requests_per_second: default_user_rate(),
+            user_burst: default_user_burst(),
         }
     }
 }

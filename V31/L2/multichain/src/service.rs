@@ -9,6 +9,7 @@ use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
 use zion_pool::telemetry::MinerTelemetryRegistry;
 use zion_pool::Pool as MiningPool;
 
+use crate::audit::AuditLogger;
 use crate::bridge::Bridge;
 use crate::bridge::consensus::BridgeConsensus;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
@@ -18,7 +19,10 @@ use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
+use crate::multichain_wallet::{DepositWatcher, DexOrder, MultichainWallet, WalletLedger, WithdrawalProcessor};
+use crate::swap::dex::swap_executor::SwapExecutor;
 use crate::node_rewards::NodeRewards;
+use crate::reconciliation::{Reconciler, ReconcilerConfig, ReconciliationReport};
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
 use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
@@ -38,16 +42,27 @@ pub struct MultichainService {
     adapters: Arc<ChainAdapterRegistry>,
     bridge: Bridge,
     htlc: HtlcSwap,
+    /// Bridge / validator / relay keyring. Must NOT be used for per-user
+    /// custodial wallet addresses.
     keyring: Keyring,
+    /// Custodial multichain wallet keyring. Separate from the bridge seed.
+    wallet_keyring: Keyring,
+    multichain_wallet: MultichainWallet,
+    wallet_ledger: WalletLedger,
+    deposit_watcher: DepositWatcher,
+    withdrawal_processor: WithdrawalProcessor,
+    audit: AuditLogger,
     credits: CreditsLedger,
-    dex: RwLock<DexRouter>,
+    dex: Arc<RwLock<DexRouter>>,
+    swap_executor: SwapExecutor,
     intent_engine: RwLock<IntentEngine>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
     node_rewards: Arc<Mutex<NodeRewards>>,
+    reconciler: Reconciler,
 }
 
-fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
+fn load_bridge_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
     if let Some(mnemonic) = config.mnemonic.as_deref() {
         return Keyring::from_mnemonic(mnemonic);
     }
@@ -56,6 +71,22 @@ fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
             return Keyring::from_mnemonic(&mnemonic);
         }
     }
+    Keyring::generate()
+}
+
+fn load_wallet_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
+    if let Some(mnemonic) = config.wallet_mnemonic.as_deref() {
+        return Keyring::from_mnemonic(mnemonic);
+    }
+    if let Ok(mnemonic) = std::env::var("ZION_WALLET_MNEMONIC") {
+        if !mnemonic.is_empty() {
+            return Keyring::from_mnemonic(&mnemonic);
+        }
+    }
+    tracing::warn!(
+        "ZION_WALLET_MNEMONIC not set; generating an ephemeral custodial wallet keyring. \
+         User deposit addresses will change on every restart."
+    );
     Keyring::generate()
 }
 
@@ -70,14 +101,15 @@ impl MultichainService {
 
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        let keyring = load_keyring(&config)?;
+        let bridge_keyring = load_bridge_keyring(&config)?;
+        let wallet_keyring = load_wallet_keyring(&config)?;
         let mut adapters = ChainAdapterRegistry::new();
 
         for cfg in &config.adapters {
             if !cfg.enabled {
                 continue;
             }
-            match build_adapter(cfg, &keyring) {
+            match build_adapter(cfg, &bridge_keyring) {
                 Ok(adapter) => match chain_id_by_name(&cfg.chain) {
                     Ok(chain_id) => {
                         adapters.register(chain_id, adapter);
@@ -102,11 +134,17 @@ impl MultichainService {
 
         // Always register a ZION L1 adapter if an L1 RPC URL is configured.
         if !config.l1_rpc_url.is_empty() {
-            let l1_adapter = Box::new(ZionL1Adapter::new(&config.l1_rpc_url, keyring.clone()));
+            let l1_adapter = Box::new(ZionL1Adapter::new(&config.l1_rpc_url, bridge_keyring.clone()));
             adapters.register(ChainId::ZionL1, l1_adapter);
         }
 
-        Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
+        Ok(Self::from_parts(
+            config,
+            db,
+            Arc::new(adapters),
+            bridge_keyring,
+            wallet_keyring,
+        ))
     }
 
     /// Build a service from an already-constructed registry. Useful in tests
@@ -116,8 +154,15 @@ impl MultichainService {
         adapters: ChainAdapterRegistry,
     ) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        let keyring = load_keyring(&config)?;
-        Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
+        let bridge_keyring = load_bridge_keyring(&config)?;
+        let wallet_keyring = load_wallet_keyring(&config)?;
+        Ok(Self::from_parts(
+            config,
+            db,
+            Arc::new(adapters),
+            bridge_keyring,
+            wallet_keyring,
+        ))
     }
 
     fn from_parts(
@@ -125,6 +170,7 @@ impl MultichainService {
         db: Arc<Mutex<Db>>,
         adapters: Arc<ChainAdapterRegistry>,
         keyring: Keyring,
+        wallet_keyring: Keyring,
     ) -> Self {
         let bridge = match load_bridge_consensus() {
             Some(consensus) => Bridge::with_consensus(Arc::clone(&adapters), consensus),
@@ -164,6 +210,41 @@ impl MultichainService {
             .expect("default node rewards config must initialize")
         });
 
+        let multichain_wallet = MultichainWallet::new(Arc::clone(&db), wallet_keyring.clone());
+        let wallet_ledger = WalletLedger::new(Arc::clone(&db));
+        let audit = AuditLogger::new(Arc::clone(&db));
+        let deposit_watcher = DepositWatcher::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+        );
+        let withdrawal_processor = WithdrawalProcessor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+        );
+        let dex = Arc::new(RwLock::new(DexRouter::new()));
+        let swap_executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+            Arc::clone(&dex),
+        )
+        .with_htlc(htlc.clone());
+
+        let reconciler_config = ReconcilerConfig::from_config(&config.reconciliation)
+            .unwrap_or_else(|e| {
+                tracing::warn!("invalid reconciliation config, using defaults: {e}");
+                ReconcilerConfig::default()
+            });
+        let reconciler = Reconciler::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_keyring.clone(),
+            Arc::clone(&dex),
+            reconciler_config,
+        );
+
         Self {
             config,
             db,
@@ -171,12 +252,20 @@ impl MultichainService {
             bridge,
             htlc,
             keyring,
+            wallet_keyring,
+            multichain_wallet,
+            wallet_ledger,
+            deposit_watcher,
+            withdrawal_processor,
+            audit,
             credits: CreditsLedger::new(),
-            dex: RwLock::new(DexRouter::new()),
+            dex,
+            swap_executor,
             intent_engine: RwLock::new(intent_engine),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
             node_rewards: Arc::new(Mutex::new(node_rewards)),
+            reconciler,
         }
     }
 
@@ -294,14 +383,22 @@ impl MultichainService {
         self.dex.write().await.add_pool(pool);
     }
 
-    /// Return a DEX quote for swapping `amount` of `from` into `to`.
+    /// Add a cross-chain bridge edge to the DEX router.
+    pub async fn add_bridge_edge(&self, from: Asset, to: Asset, fee_bps: u16) {
+        self.dex.write().await.add_bridge_edge(from, to, fee_bps);
+    }
+
+    /// Return the best DEX quote for swapping `amount` of `from` into `to`.
     pub async fn dex_quote(
         &self,
         from: &Asset,
         to: &Asset,
         amount: Amount,
     ) -> MultichainResult<Quote> {
-        self.dex.read().await.quote(from, to, amount)
+        let quotes = self.dex.read().await.quote_multi(from, to, amount, 1, 3)?;
+        quotes.into_iter().next().ok_or_else(|| {
+            MultichainError::Unsupported(format!("no route from {} to {}", from.id, to.id))
+        })
     }
 
     /// Return the top-N DEX routes for a swap (multi-path quote).
@@ -324,6 +421,119 @@ impl MultichainService {
         amount: Amount,
     ) -> MultichainResult<Amount> {
         self.dex.write().await.execute(from, to, amount)
+    }
+
+    /// Execute a custodial wallet-backed swap and return the order record.
+    pub async fn swap_execute(
+        &self,
+        user_id: &str,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+        min_amount_out: Amount,
+        recipient: Option<Address>,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .execute_swap(user_id, from, to, amount, min_amount_out, recipient)
+            .await
+    }
+
+    /// Load a swap order by id.
+    pub async fn get_swap_order(&self, order_id: &str) -> MultichainResult<Option<DexOrder>> {
+        self.swap_executor.get_order(order_id).await
+    }
+
+    /// Execute a non-custodial two-sided HTLC swap.
+    pub async fn execute_htlc_swap(
+        &self,
+        user_id: &str,
+        from: &Asset,
+        to: &Asset,
+        req: &crate::swap::dex::swap_executor::HtlcSwapRequest,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .execute_htlc_swap(user_id, from, to, req)
+            .await
+    }
+
+    /// Record the user's source-side lock transaction for an HTLC swap order.
+    pub async fn record_source_htlc_lock(
+        &self,
+        order_id: &str,
+        source_lock_tx_id: &str,
+        source_expires_at: u64,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .record_source_htlc_lock(order_id, source_lock_tx_id, source_expires_at)
+            .await
+    }
+
+    /// Claim the source-side HTLC after the user has revealed the preimage.
+    pub async fn claim_htlc_swap(
+        &self,
+        order_id: &str,
+        secret: &[u8],
+        source_asset: &Asset,
+        source_operator_recipient: &Address,
+        source_user_address: Option<&Address>,
+    ) -> MultichainResult<DexOrder> {
+        self.swap_executor
+            .claim_htlc_swap(order_id, secret, source_asset, source_operator_recipient, source_user_address)
+            .await
+    }
+
+    /// Access the withdrawal processor.
+    pub fn withdrawal_processor(&self) -> &WithdrawalProcessor {
+        &self.withdrawal_processor
+    }
+
+    /// Request a withdrawal for a user.
+    pub async fn request_withdraw(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+        recipient_address: &str,
+    ) -> MultichainResult<String> {
+        self.withdrawal_processor
+            .request_withdraw(user_id, asset, amount, recipient_address)
+            .await
+    }
+
+    /// List all withdrawals for a user.
+    pub async fn withdrawals_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::WithdrawalRecord>> {
+        let db = self.db.lock().await;
+        db.load_withdrawals_for_user(user_id)
+    }
+
+    /// List all deposits for a user.
+    pub async fn deposits_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::DepositRecord>> {
+        let db = self.db.lock().await;
+        db.load_deposits_for_user(user_id)
+    }
+
+    /// List all DEX orders for a user.
+    pub async fn orders_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::DexOrder>> {
+        self.swap_executor.list_orders(user_id).await
+    }
+
+    /// Return a wallet snapshot for a user: addresses, balances, deposits,
+    /// withdrawals and orders.
+    pub async fn wallet_me(&self, user_id: &str) -> MultichainResult<serde_json::Value> {
+        let db = self.db.lock().await;
+        let addresses = db.load_wallet_addresses_for_user(user_id)?;
+        let balances = db.load_wallet_balances_for_user(user_id)?;
+        let deposits = db.load_deposits_for_user(user_id)?;
+        let withdrawals = db.load_withdrawals_for_user(user_id)?;
+        let orders = db.load_dex_orders_for_user(user_id)?;
+        Ok(serde_json::json!({
+            "user_id": user_id,
+            "addresses": addresses,
+            "balances": balances,
+            "deposits": deposits,
+            "withdrawals": withdrawals,
+            "orders": orders,
+        }))
     }
 
     /// Register a solver in the intent engine whitelist and persist it.
@@ -492,9 +702,47 @@ impl MultichainService {
         &self.htlc
     }
 
-    /// Access the wallet keyring.
+    /// Access the custodial multichain wallet.
+    pub fn multichain_wallet(&self) -> &MultichainWallet {
+        &self.multichain_wallet
+    }
+
+    /// Access the audit logger.
+    pub fn audit(&self) -> &AuditLogger {
+        &self.audit
+    }
+
+    /// Access the internal ledger.
+    pub fn wallet_ledger(&self) -> &WalletLedger {
+        &self.wallet_ledger
+    }
+
+    /// Access the deposit watcher.
+    pub fn deposit_watcher(&self) -> &DepositWatcher {
+        &self.deposit_watcher
+    }
+
+    /// Access the bridge/relay keyring.
     pub fn keyring(&self) -> &Keyring {
         &self.keyring
+    }
+
+    /// Access the custodial multichain wallet keyring.
+    pub fn wallet_keyring(&self) -> &Keyring {
+        &self.wallet_keyring
+    }
+
+    /// Access the on-chain/internal reconciliation engine.
+    pub fn reconciler(&self) -> Reconciler {
+        self.reconciler.clone()
+    }
+
+    /// Load the most recent reconciliation reports from the database.
+    pub async fn reconciliation_reports(
+        &self,
+        limit: usize,
+    ) -> MultichainResult<Vec<ReconciliationReport>> {
+        self.db.lock().await.load_reconciliation_reports(limit)
     }
 
     /// Derive a wallet address for a chain.
@@ -765,6 +1013,21 @@ fn build_adapter(
             }
         }
     }
+}
+
+/// Parse an `asset_key` of the form `chain:ticker` or `chain:ticker:contract`.
+pub fn parse_asset_key(asset_key: &str) -> MultichainResult<(ChainId, String, Option<String>)> {
+    let parts: Vec<&str> = asset_key.split(':').collect();
+    if parts.len() < 2 {
+        return Err(MultichainError::Validation(format!(
+            "invalid asset key: {}",
+            asset_key
+        )));
+    }
+    let chain = chain_id_by_name(parts[0])?;
+    let ticker = parts[1].to_string();
+    let contract = parts.get(2).map(|s| s.to_string());
+    Ok((chain, ticker, contract))
 }
 
 fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {

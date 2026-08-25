@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
+use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
 use crate::error::MultichainResult;
 use crate::types::Transfer;
@@ -33,6 +33,14 @@ pub trait ChainAdapter: Send + Sync {
     /// Poll for deposit or burn events on this chain.
     async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>>;
 
+    /// Poll for deposits sent to any of the supplied addresses.
+    ///
+    /// Default implementation returns an empty vector; adapters should override
+    /// this once they can scan for multi-address deposits.
+    async fn watch_addresses(&self, _addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
+        Ok(Vec::new())
+    }
+
     /// Execute an outbound transfer (mint, release, or refund) on this chain.
     async fn execute_outbound(&self, transfer: &Transfer) -> MultichainResult<Hash>;
 
@@ -42,6 +50,17 @@ pub trait ChainAdapter: Send + Sync {
 
     /// Build and sign a raw payment from this adapter's wallet/key.
     async fn send_payment(&self, to: &Address, amount: Amount) -> MultichainResult<Hash>;
+
+    /// Transfer an ERC-20 / token asset.  Default implementation falls back to
+    /// a native payment (used by chains without a generic token contract layer).
+    async fn transfer_token(
+        &self,
+        _token: &Asset,
+        to: &Address,
+        amount: Amount,
+    ) -> MultichainResult<Hash> {
+        self.send_payment(to, amount).await
+    }
 
     /// Query the spendable balance for `address` of the native asset.
     async fn balance(&self, address: &Address) -> MultichainResult<Amount>;
