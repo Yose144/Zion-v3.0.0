@@ -574,7 +574,7 @@ async fn wallet_derive(
 
 #[derive(Deserialize)]
 struct WalletBalanceRequest {
-    asset: Asset,
+    asset: String,
 }
 
 async fn wallet_balance(
@@ -588,15 +588,16 @@ async fn wallet_balance(
         None => return Err(StatusCode::UNAUTHORIZED),
     };
 
+    let asset = asset_from_input(&req.asset).map_err(|_| StatusCode::BAD_REQUEST)?;
     match state
         .service
         .wallet_ledger()
-        .balance(&user_id, &req.asset)
+        .balance(&user_id, &asset)
         .await
     {
         Ok(amount) => Ok(Json(serde_json::json!({
             "user_id": user_id,
-            "asset": req.asset,
+            "asset_key": asset.id.to_string(),
             "balance": amount.0.to_string(),
         }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
@@ -605,8 +606,8 @@ async fn wallet_balance(
 
 #[derive(Deserialize)]
 struct WalletWithdrawRequest {
-    asset: Asset,
-    amount: u128,
+    asset: String,
+    amount: String,
     recipient: String,
 }
 
@@ -621,15 +622,18 @@ async fn wallet_withdraw(
         None => return Err(StatusCode::UNAUTHORIZED),
     };
 
+    let asset = asset_from_input(&req.asset).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let amount = req.amount.parse::<u128>().map_err(|_| StatusCode::BAD_REQUEST)?;
+
     let details = serde_json::json!({
-        "asset": req.asset,
-        "amount": req.amount.to_string(),
+        "asset_key": asset.id.to_string(),
+        "amount": amount.to_string(),
         "recipient": req.recipient,
     });
 
     match state
         .service
-        .request_withdraw(&user_id, &req.asset, Amount::new(req.amount), &req.recipient)
+        .request_withdraw(&user_id, &asset, Amount::new(amount), &req.recipient)
         .await
     {
         Ok(id) => {
@@ -1742,6 +1746,29 @@ fn chain_name_to_id(name: &str) -> MultichainResult<zion_l1_types::ChainId> {
         "ethereum" | "eth" => Ok(ChainId::Ethereum),
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
         _ => Err(MultichainError::AdapterNotFound(name.to_string())),
+    }
+}
+
+/// Parse a wallet/swap asset input. Accepts either a full asset key
+/// (`chain:ticker` or `chain:ticker:contract`) or a bare chain name, in
+/// which case the canonical native ticker for that chain is used.
+fn asset_from_input(key: &str) -> MultichainResult<Asset> {
+    if key.contains(':') {
+        let (chain, ticker, contract) = crate::service::parse_asset_key(key)?;
+        match contract {
+            Some(c) => Ok(Asset::with_contract(
+                chain,
+                ticker.clone(),
+                c,
+                0,
+                ticker,
+            )),
+            None => Ok(Asset::native(chain, ticker.clone(), 0, ticker)),
+        }
+    } else {
+        let chain = chain_name_to_id(key)?;
+        let ticker = default_ticker(chain);
+        Ok(Asset::native(chain, ticker, 0, ticker))
     }
 }
 
