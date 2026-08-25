@@ -2,7 +2,15 @@
 
 > **Datum poslední aktualizace:** 2026-08-23
 >
+> **Update (2026-08-23):** **Reconciliation modul a background task implementovány.** `Reconciler` (`V31/L2/multichain/src/reconciliation.rs`) porovnává on-chain zůstatky L2 hot walletů s interními saldy a AMM pool reserves, ukládá reporty do SQLite a alertuje při překročení thresholdu. Konfigurovatelné přes `MultichainConfig.reconciliation` (`interval_seconds`, `alert_threshold`, `enabled`). HTTP endpointy `GET /v1/admin/reconciliation` (seznam reportů) a `POST /v1/admin/reconciliation/trigger` (manuální spuštění). Spuštěn v `ApiServer::run` jako background task. `cargo test -p zion-multichain` nyní 583 testů (1 ignored), `cargo clippy -p zion-multichain` bez varování v crate.
+>
+> **Update (2026-08-23):** **Fáze 7 backend hardening + frontend UI pushnuto na `origin/feat/ziondex-zis-multichain-wallet` (`8b1246091`).** Zůstávají otevřené: E2E testy (Cypress/Playwright) deposit → swap → withdraw a operátorská dokumentace.
+>
+> **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet Fáze 0–7 hardening a UI implementovány, testy a build zelené.** Feature branch `feat/ziondex-zis-multichain-wallet` nyní obsahuje oddělený wallet seed (`ZION_WALLET_MNEMONIC`), `multichain_wallet` modul, per-user deposit adresy (`/v1/wallet/derive`), ledger (`/v1/wallet/balance`), `DepositWatcher` pro BTC deposit detection, `SwapExecutor` pro `/v1/swap/execute-v2` s on-chain ERC-20 settlement, `WithdrawalProcessor` pro `/v1/wallet/withdraw` a **cross-chain DEX** s `BridgeRegistry`, decimal-aware `DexRouter` a ZION/BTC AMM pool. Phase 7 přidala audit log (`V31/L2/multichain/src/audit.rs`), per-user rate limiting (`V31/L2/multichain/src/rate_limit.rs`), nové wallet endpointy `GET /v1/wallet/me/orders/deposits/withdrawals`, Next.js proxy `/api/multichain/[...path]`, `MultichainWalletContext`, `/wallet/multichain` stránku a prolink z `/wallet`. `cargo test -p zion-multichain` prochází 582 testy. `APP&WEB/website-v2.9` `npm run build` úspěšně (114 stránek včetně `/wallet/multichain`). Detailní plán a stav v [`ZionDexZis.md`](./ZionDexZis.md).
+>
 > **Update (2026-08-23):** **ZionDex + ZIS Multichain Wallet plán vytvořen.** Detailní E2E plán pro plnohodnotný DEX, multichain peněženku a settlement pod ZIS je v [`ZionDexZis.md`](./ZionDexZis.md). Řeší per-user deposit adresy, ledger/UTXO tracking, keyring integraci, quote → settle tok a web UI.
+>
+> **Update (2026-08-23):** **L5 Free World a L6 Issobella fund trackery aktivní na Edge.** Binárky `zion-free-world` a `zion-issobella` jsou nasazeny jako systemd `zion-v31-free-world.service` a `zion-v31-issobella.service`; nginx proxy `/api/free-world/` → `127.0.0.1:8095` a `/api/issobella/` → `127.0.0.1:8097` (L6 běží na 8097 kvůli portovému konfliktu se ZIS na 8096) připraveny. Python dashboard (`ZION_OS/dashboard/app.py`) a veřejný web dashboard (`MissionControlDashboard`) aktualizovány. Kanonické adresy: L5 `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`, L6 `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0`.
 >
 > **Update (2026-08-22):** **Public archive Linux build unblocked + CLI wallet send E2E.** `archive/DesktopAgentP3.0.6/scripts/prepare-rust-miner.js` nyní používá per-platform feature matrix místo `full` aliasu — `gpu-metal` se nezapíná na Linuxu/Windowsu, `gpu-cuda` jen když je NVRTC (`4dc269144`). `zion-miner` solo-node mining opraven: `getBlockTemplate` nyní dostává konfigurovanou `--wallet` reward address místo hardcoded placeholderu `zion1miner` (`54bc76b00`). CLI `zion node start` má nový flag `--soft-fork-activation-height` (`53c1fc6e4`). `npm run build:linux` v public archive prochází a vytváří `zion-public-miner-v3.2.0-linux-x86_64.AppImage` a `zion-public-miner-v3.2.0-linux-amd64.deb`. Lokální E2E: `zion wallet send --rpc http://127.0.0.1:19543` úspěšně odeslal 0.1 ZION, vrátil `{"accepted":true,"model":"v31-native",...}` — `submitUtxoTransaction` potvrzuje V31 native JSON. `cargo test --manifest-path V31/Cargo.toml -p zion-core --release get_mempool_transactions_e2e` pass.
 >
@@ -132,8 +140,8 @@
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
 | zion-agent.service | — | — | — | 🔄 activating (auto-restart) |
-| zion-free-world | — | — | L5 | ⛔ inactive (disabled) |
-| zion-issobella | — | — | L6 | ⛔ inactive (disabled) |
+| zion-v31-free-world | 8095 (HTTP API) | 127.0.0.1 | L5 | ✅ active (fund tracker live on Edge) |
+| zion-v31-issobella | 8097 (HTTP API) | 127.0.0.1 | L6 | ✅ active (fund tracker live on Edge) |
 | zion-node (V3 legacy) | — | — | L1 | ⛔ failed (expected after V31 cutover) |
 | zion-pool (V3 legacy) | — | — | L1 | ⛔ failed (expected after V31 cutover) |
 | zion-dashboard-web (legacy Flask) | — | — | — | ⛔ failed (superseded by zion-edge-python-dashboard) |

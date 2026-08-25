@@ -1,7 +1,7 @@
 # ZION WP-Mainet — Kanonický index / Canonical Index
 
-> **Zkanonizováno / Canonized: 2026-08-09 (3.2 „One Love")**
-> Tento soubor určuje, které dokumenty v `docs/WP-Mainet/` jsou kanonické.
+> **Zkanonizováno / Canonized: 2026-08-25 (3.2 „One Love" — final genesis 8. 8. 2026, Mainnet Launch 31. 12. 2026)**
+> Poslední genesis chain, nasazený 8. 8. 2026 po dvou hard resetech, je považován za Mainnet Launch pro 31. 12. 2026.
 > This file defines which documents in `docs/WP-Mainet/` are canonical.
 
 ---
@@ -14,6 +14,7 @@
 | **Onboarding pro širokou veřejnost** (vstupní bod / entry point) | [`ZION_ONBOARDING_PUBLIC_CZ.md`](./ZION_ONBOARDING_PUBLIC_CZ.md) | [`ZION_ONBOARDING_PUBLIC_EN.md`](./ZION_ONBOARDING_PUBLIC_EN.md) |
 | **Hloubkový onboarding 3.2** (technický + narativní / in-depth) | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](./ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) | [`ZION_ONBOARDING_3.2_ONE_LOVE_EN.md`](./ZION_ONBOARDING_3.2_ONE_LOVE_EN.md) |
 | **Sůl této země / Salt of the Earth** (narativní řada / narrative series) | [`SulZeme/00-README.md`](./SulZeme/00-README.md) | [`SulZeme/00-README_EN.md`](./SulZeme/00-README_EN.md) |
+| **Massive Onboarding** (mining-first + Sůl země + whitepaper v jedné knize) | [`marketing/ZION_ONBOARDING_MASSIVE_MINING_CZ.md`](./marketing/ZION_ONBOARDING_MASSIVE_MINING_CZ.md) | [`marketing/ZION_ONBOARDING_MASSIVE_MINING_EN.md`](./marketing/ZION_ONBOARDING_MASSIVE_MINING_EN.md) |
 | **Technický whitepaper** (referenční doplněk / technical companion) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](./ZION_Technical_Whitepaper_v3.1_CZ.md) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](./ZION_Technical_Whitepaper_v3.1_EN.md) |
 
 ## Marketingové materiály / Marketing materials
@@ -46,5 +47,5 @@ These documents remain as archive; their numbers may be outdated.
 
 ---
 
-*Pořadí pravdy při konfliktu: běžící síť a kód → `StatusV3.md` → kanonický whitepaper 3.2 → ostatní dokumenty.*
-*Order of truth on conflict: running network and code → `StatusV3.md` → canonical 3.2 whitepaper → other documents.*
+*Pořadí pravdy při konfliktu: běžící síť a kód → `StatusV3.md` → `ZION_ONBOARDING_MASSIVE_MINING_*` (zjednocený onboarding) → kanonický whitepaper 3.2 → ostatní dokumenty.*
+*Order of truth on conflict: running network and code → `StatusV3.md` → `ZION_ONBOARDING_MASSIVE_MINING_*` (unified onboarding) → canonical 3.2 whitepaper → other documents.*

@@ -112,6 +112,19 @@ pub struct StratumServer {
     share_store: Option<Arc<crate::store::ShareStore>>,
 }
 
+/// Stable fingerprint of the ZION template + external streams.
+/// We compare these instead of the full V3 job message because the ZION
+/// header timestamp/nonce are updated every second, which would otherwise
+/// force a broadcast every poll cycle.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct JobFingerprint {
+    zion_height: u64,
+    zion_previous_hash: String,
+    zion_merkle_root: Vec<u8>,
+    gpu_external_job_id: Option<String>,
+    cpu_external_job_id: Option<String>,
+}
+
 impl StratumServer {
     /// Get a reference to the routing stats for the HTTP API.
     pub fn routing_stats_handle(&self) -> Arc<Mutex<RoutingStats>> {
@@ -781,6 +794,49 @@ impl StratumServer {
             }
         }
         None
+    }
+
+    /// Build a fingerprint from the current template and external streams.
+    fn build_job_fingerprint(&self, template_json: &str) -> Option<JobFingerprint> {
+        let template: Value = serde_json::from_str(template_json).ok()?;
+        let height = template.get("height").and_then(Value::as_u64).unwrap_or(0);
+        let previous_hash = template
+            .get("previous_hash")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+
+        // merkle_root lives inside header_json (a JSON string) on V31 nodes.
+        let mut merkle_root = Vec::new();
+        if let Some(header_json_str) = template.get("header_json").and_then(Value::as_str) {
+            if let Ok(header_json) = serde_json::from_str::<Value>(header_json_str) {
+                if let Some(merkle) = header_json.get("merkle_root") {
+                    if let Some(arr) = merkle.as_array() {
+                        merkle_root = arr
+                            .iter()
+                            .filter_map(|v| v.as_u64().map(|n| n as u8))
+                            .collect();
+                    } else if let Some(s) = merkle.as_str() {
+                        merkle_root = hex::decode(s).unwrap_or_default();
+                    }
+                }
+            }
+        }
+
+        let gpu_external_job_id = self
+            .build_external_stream_gpu()
+            .map(|j| j.job_id);
+        let cpu_external_job_id = self
+            .build_external_stream_cpu()
+            .map(|j| j.job_id);
+
+        Some(JobFingerprint {
+            zion_height: height,
+            zion_previous_hash: previous_hash,
+            zion_merkle_root: merkle_root,
+            gpu_external_job_id,
+            cpu_external_job_id,
+        })
     }
 
     /// Return true if an external job is fresh enough to send to a miner.
@@ -1827,9 +1883,18 @@ impl StratumServer {
             }
         };
 
-        let interval = Duration::from_secs(5);
+        // Poll the L1 node every second. VRSC/LuckPool jobs can switch on a
+        // 60s block boundary, so a 5s polling interval leaves miners working
+        // on a stale external job for up to ~5s. 1s keeps the external stream
+        // fresh and matches the pool-side "touch job timestamp" cadence.
+        let interval = Duration::from_secs(1);
         let mut job_counter: u64 = 0u64;
         let mut first = true;
+        // Track the last template/external-stream fingerprint we broadcast.
+        // The ZION header timestamp/nonce are updated every second, so we
+        // compare height, previous_hash, merkle_root and external job ids
+        // instead of the full message.
+        let mut last_fingerprint: Option<JobFingerprint> = None;
 
         loop {
             let sleep_fut = if first {
@@ -1842,9 +1907,6 @@ impl StratumServer {
             tokio::select! {
                 _ = shutdown.changed() => break,
                 _ = sleep_fut => {
-                    job_counter += 1;
-                    let job_id = format!("zion_{}", job_counter);
-
                     let payload = json!({
                         "jsonrpc": "2.0",
                         "id": 1,
@@ -1879,15 +1941,32 @@ impl StratumServer {
                             let share_target_hex = hex::encode(share_target);
 
                             if !header_hex.is_empty() {
-                                tracing::info!(job = %job_id, "broadcasting mining.notify");
-                                self.broadcast_job(
-                                    &job_id,
-                                    header_hex,
-                                    &share_target_hex,
-                                    block_target_hex,
-                                    reward,
-                                    &template_json,
-                                );
+                                let fingerprint = self.build_job_fingerprint(&template_json);
+
+                                let changed = match (&last_fingerprint, &fingerprint) {
+                                    (None, Some(_)) => true,
+                                    (Some(last), Some(cur)) => last != cur,
+                                    _ => false,
+                                };
+
+                                if changed {
+                                    job_counter += 1;
+                                    let job_id = format!("zion_{}", job_counter);
+                                    tracing::info!(job = %job_id, "broadcasting mining.notify");
+                                    self.broadcast_job(
+                                        &job_id,
+                                        header_hex,
+                                        &share_target_hex,
+                                        block_target_hex,
+                                        reward,
+                                        &template_json,
+                                    );
+                                    last_fingerprint = fingerprint;
+                                } else {
+                                    tracing::debug!("template_feed_loop: ZION/external stream unchanged, skipping broadcast");
+                                }
+                            } else {
+                                last_fingerprint = None;
                             }
                         }
                         Err(e) => tracing::warn!("getTemplate request failed: {}", e),

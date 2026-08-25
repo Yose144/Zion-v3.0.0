@@ -129,6 +129,11 @@ impl std::fmt::Display for SwapState {
 // ---------------------------------------------------------------------------
 
 /// A single Hash-Time-Lock-Contract record.
+///
+/// For a two-sided cross-chain atomic swap the record stores both the
+/// target-side lock (created by the L2 operator) and the source-side lock
+/// (created by the user). Both locks share the same hashlock and the
+/// source-side is released when the user reveals the preimage.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HtlcRecord {
     /// Hash H (hex) — primary key.
@@ -153,6 +158,27 @@ pub struct HtlcRecord {
     /// Optional 32-byte Ed25519 public key for the claimant (claim path).
     #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
     pub claimant_pubkey: Option<[u8; 32]>,
+    /// User source chain (e.g. `"zion-l1"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_chain: Option<String>,
+    /// User source address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_address: Option<String>,
+    /// User source-side lock transaction id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_lock_tx_id: Option<String>,
+    /// User source-side amount in atomic units.
+    #[serde(default)]
+    pub source_amount: u64,
+    /// User source-side timelock (UNIX seconds).
+    #[serde(default)]
+    pub source_expires_at: i64,
+    /// User source-side refund public key.
+    #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
+    pub source_refund_pubkey: Option<[u8; 32]>,
+    /// L2 source-side claimant public key.
+    #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
+    pub source_claimant_pubkey: Option<[u8; 32]>,
     /// Current lifecycle state.
     pub state: SwapState,
     /// TX hash of the CLAIM or REFUND release transaction.
@@ -278,6 +304,7 @@ impl SwapMemo {
 ///
 /// Records are persisted to SQLite if `db` is provided, otherwise kept
 /// in memory (useful for tests and dev mode).
+#[derive(Clone)]
 pub struct HtlcSwap {
     records: Arc<Mutex<HashMap<String, HtlcRecord>>>,
     adapters: Arc<ChainAdapterRegistry>,
@@ -402,10 +429,17 @@ impl HtlcSwap {
             lock_tx_id: lock_tx.to_hex(),
             lock_block_height: 0,
             expires_at: timelock as i64,
-            counterparty_chain: format!("{:?}", transfer.target.address.chain),
+            counterparty_chain: transfer.target.address.chain.as_str().to_string(),
             counterparty_addr: transfer.target.address.to_string(),
             refund_pubkey: transfer.source_pubkey,
             claimant_pubkey: transfer.target_pubkey,
+            source_chain: None,
+            source_address: None,
+            source_lock_tx_id: None,
+            source_amount: 0,
+            source_expires_at: 0,
+            source_refund_pubkey: None,
+            source_claimant_pubkey: None,
             state: SwapState::Pending,
             release_tx_id: None,
             release_recipient: None,
@@ -425,7 +459,7 @@ impl HtlcSwap {
 
     // ── Claim (release funds after preimage verification) ───────────────
 
-    /// Claim the HTLC by revealing the preimage.
+    /// Claim the target-side HTLC by revealing the preimage.
     ///
     /// Verifies `SHA-256(preimage) == hashlock`, checks the claimant address
     /// if pre-committed, then releases funds on the target chain via
@@ -436,9 +470,39 @@ impl HtlcSwap {
         recipient: &str,
         transfer: &mut Transfer,
     ) -> MultichainResult<()> {
+        self.do_claim(secret, recipient, transfer, false).await
+    }
+
+    /// Claim the source-side HTLC by revealing the preimage.
+    ///
+    /// This is the L2 operator-side claim: the user has already claimed the
+    /// target lock off-chain/on-chain and revealed the 32-byte preimage, which
+    /// the L2 uses to release the user's source lock to the operator's address.
+    pub async fn claim_source(
+        &self,
+        secret: &[u8],
+        recipient: &str,
+        transfer: &mut Transfer,
+    ) -> MultichainResult<()> {
+        self.do_claim(secret, recipient, transfer, true).await
+    }
+
+    async fn do_claim(
+        &self,
+        secret: &[u8],
+        recipient: &str,
+        transfer: &mut Transfer,
+        is_source: bool,
+    ) -> MultichainResult<()> {
         let hashlock = transfer
             .hashlock
             .ok_or_else(|| MultichainError::Validation("HTLC missing hashlock".to_string()))?;
+
+        if secret.len() != 32 {
+            return Err(MultichainError::Validation(
+                "HTLC secret must be 32 bytes".to_string(),
+            ));
+        }
 
         // 1. Verify preimage.
         let actual = hash_sha256(secret);
@@ -463,17 +527,47 @@ impl HtlcSwap {
             )));
         }
 
-        // 4. Guard: timelock expired?
-        if record.is_expired() {
+        // 4. Select source- or target-side parameters.
+        let (lock_tx_id, expires_at, refund_pubkey, claimant_pubkey) = if is_source {
+            let lock_tx_id = record
+                .source_lock_tx_id
+                .as_deref()
+                .ok_or_else(|| {
+                    MultichainError::Validation("HTLC missing source_lock_tx_id".to_string())
+                })?;
+            (
+                lock_tx_id.to_string(),
+                record.source_expires_at,
+                record.source_refund_pubkey,
+                record.source_claimant_pubkey,
+            )
+        } else {
+            (
+                record.lock_tx_id.clone(),
+                record.expires_at,
+                record.refund_pubkey,
+                record.claimant_pubkey,
+            )
+        };
+
+        if expires_at == 0 {
+            return Err(MultichainError::Validation(format!(
+                "HTLC {} timelock is not set",
+                if is_source { "source" } else { "target" }
+            )));
+        }
+
+        // 5. Guard: timelock expired?
+        if Utc::now().timestamp() >= expires_at {
             return Err(MultichainError::Validation(format!(
                 "HTLC timelock expired for {hash_hex}"
             )));
         }
 
-        // 5. Guard: pre-committed claimant public key (only enforced for ZION L1 targets).
+        // 6. Guard: pre-committed claimant public key (only enforced for ZION L1 targets).
         let target_chain = transfer.target.address.chain;
         if target_chain == ChainId::ZionL1 {
-            if let Some(ref expected_pk) = record.claimant_pubkey {
+            if let Some(ref expected_pk) = claimant_pubkey {
                 let expected_addr = zion_core::crypto::derive_address(expected_pk);
                 if expected_addr != recipient {
                     return Err(MultichainError::Validation(format!(
@@ -483,37 +577,33 @@ impl HtlcSwap {
             }
         }
 
-        // 6. Release funds on target chain via adapter.
-        // Native L1 HTLC scripts require a 32-byte preimage (the secret itself),
-        // not the SHA-256 hash of it, and the on-chain timeout from the record.
-        let target_chain = transfer.target.address.chain;
-        if target_chain == ChainId::ZionL1 && secret.len() != 32 {
-            return Err(MultichainError::Validation(
-                "HTLC secret must be 32 bytes for native L1 claim".to_string(),
-            ));
-        }
+        // 7. Release funds on target chain via adapter.
         let mut preimage = [0u8; 32];
-        if target_chain == ChainId::ZionL1 {
-            preimage.copy_from_slice(secret);
-        } else {
-            // Non-native chains store the SHA-256 hash as the preimage field
-            // (legacy behaviour preserved for offline/EVM test paths).
-            preimage.copy_from_slice(&hash_sha256(secret).0);
-        }
+        preimage.copy_from_slice(secret);
         let preimage_hex = hex::encode(secret);
         transfer.preimage = Some(Hash::new(preimage));
-        transfer.timelock = Some(record.expires_at as u64);
-        transfer.lock_tx_id = Some(record.lock_tx_id.clone());
-        transfer.source_pubkey = record.refund_pubkey;
-        transfer.target_pubkey = record.claimant_pubkey;
+        transfer.timelock = Some(expires_at as u64);
+        transfer.lock_tx_id = Some(lock_tx_id);
+        transfer.source_pubkey = refund_pubkey;
+        transfer.target_pubkey = claimant_pubkey;
         let release_tx = if let Some(adapter) = self.adapters.get(target_chain) {
             adapter.execute_outbound(transfer).await?
         } else {
             // Offline mode (tests): synthesize a fake tx hash.
-            Hash::new(Sha256::digest(format!("claim:{hash_hex}").as_bytes()).into())
+            Hash::new(
+                Sha256::digest(
+                    format!(
+                        "claim:{}:{}",
+                        if is_source { "source" } else { "target" },
+                        hash_hex
+                    )
+                    .as_bytes(),
+                )
+                .into(),
+            )
         };
 
-        // 7. Persist state.
+        // 8. Persist state.
         record.state = SwapState::Claimed;
         record.release_tx_id = Some(release_tx.to_hex());
         record.release_recipient = Some(recipient.to_string());
@@ -530,6 +620,60 @@ impl HtlcSwap {
         self.persist(&record).await;
 
         transfer.status = TransferStatus::Completed;
+        Ok(())
+    }
+
+    /// Update the source-side details of an existing target-side HTLC record.
+    pub async fn set_source_details(
+        &self,
+        hash_hex: &str,
+        source_address: &str,
+        source_chain: &str,
+        source_amount: u64,
+        source_refund_pubkey: Option<[u8; 32]>,
+        source_claimant_pubkey: Option<[u8; 32]>,
+    ) -> MultichainResult<()> {
+        let mut records = self.records.lock().await;
+        let record = records
+            .get_mut(hash_hex)
+            .ok_or_else(|| MultichainError::TransferNotFound(hash_hex.to_string()))?;
+        record.source_address = Some(source_address.to_string());
+        record.source_chain = Some(source_chain.to_string());
+        record.source_amount = source_amount;
+        record.source_refund_pubkey = source_refund_pubkey;
+        record.source_claimant_pubkey = source_claimant_pubkey;
+        record.updated_at = Utc::now();
+        let record = record.clone();
+        drop(records);
+        self.records
+            .lock()
+            .await
+            .insert(hash_hex.to_string(), record.clone());
+        self.persist(&record).await;
+        Ok(())
+    }
+
+    /// Set the user's source-side lock transaction id and timelock.
+    pub async fn set_source_lock(
+        &self,
+        hash_hex: &str,
+        source_lock_tx_id: &str,
+        source_expires_at: i64,
+    ) -> MultichainResult<()> {
+        let mut records = self.records.lock().await;
+        let record = records
+            .get_mut(hash_hex)
+            .ok_or_else(|| MultichainError::TransferNotFound(hash_hex.to_string()))?;
+        record.source_lock_tx_id = Some(source_lock_tx_id.to_string());
+        record.source_expires_at = source_expires_at;
+        record.updated_at = Utc::now();
+        let record = record.clone();
+        drop(records);
+        self.records
+            .lock()
+            .await
+            .insert(hash_hex.to_string(), record.clone());
+        self.persist(&record).await;
         Ok(())
     }
 
@@ -646,13 +790,13 @@ mod tests {
     use zion_l1_types::{Address, Amount, Asset, ChainId};
 
     /// Build an HTLC transfer with a far-future timelock (year 2099).
-    fn htlc_transfer(secret: &[u8]) -> Transfer {
+    fn htlc_transfer(secret: [u8; 32]) -> Transfer {
         htlc_transfer_with_timelock(secret, 4_077_782_400) // 2099-01-01
     }
 
     /// Build an HTLC transfer with an explicit timelock.
-    fn htlc_transfer_with_timelock(secret: &[u8], timelock: u64) -> Transfer {
-        let hashlock = hash_sha256(secret);
+    fn htlc_transfer_with_timelock(secret: [u8; 32], timelock: u64) -> Transfer {
+        let hashlock = hash_sha256(&secret);
         let source = TransferEndpoint {
             address: Address::new(ChainId::Bitcoin, vec![0u8; 20], "bc1qtest").unwrap(),
             asset: Asset::native(ChainId::Bitcoin, "BTC", 8, "Bitcoin"),
@@ -671,38 +815,40 @@ mod tests {
 
     #[tokio::test]
     async fn htlc_initiate_claim_succeeds() {
-        let secret = b"preimage";
+        let secret = [0xAB; 32];
         let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
         assert_eq!(transfer.status, TransferStatus::Executing);
 
-        swap.claim(secret, "0xdead", &mut transfer).await.unwrap();
+        swap.claim(&secret, "0xdead", &mut transfer).await.unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);
 
         let record = swap
-            .get_record(&hash_sha256(secret).to_hex())
+            .get_record(&hash_sha256(&secret).to_hex())
             .await
             .unwrap();
         assert_eq!(record.state, SwapState::Claimed);
-        assert_eq!(record.preimage_hex, Some(hex::encode(secret)));
+        assert_eq!(record.preimage_hex, Some(hex::encode(&secret)));
     }
 
     #[tokio::test]
     async fn htlc_claim_fails_with_invalid_secret() {
-        let secret = b"preimage";
+        let secret = [0xAB; 32];
         let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
-        let err = swap.claim(b"wrong", "0xdead", &mut transfer).await;
+        let wrong = [0x42; 32];
+        let err = swap.claim(&wrong, "0xdead", &mut transfer).await;
         assert!(matches!(err, Err(MultichainError::Validation(_))));
     }
 
     #[tokio::test]
     async fn htlc_refund_fails_before_timelock() {
-        let mut transfer = htlc_transfer(b"preimage");
+        let secret = [0xAB; 32];
+        let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
@@ -712,14 +858,14 @@ mod tests {
 
     #[tokio::test]
     async fn htlc_refund_succeeds_after_timelock() {
-        let secret = b"preimage";
+        let secret = [0xAB; 32];
         let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
 
         // Force the record's expires_at into the past to simulate timeout.
-        let hash_hex = hash_sha256(secret).to_hex();
+        let hash_hex = hash_sha256(&secret).to_hex();
         swap.records
             .lock()
             .await
@@ -735,14 +881,14 @@ mod tests {
 
     #[tokio::test]
     async fn htlc_claim_fails_after_refund() {
-        let secret = b"preimage";
+        let secret = [0xAB; 32];
         let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
 
         // Force expiry.
-        let hash_hex = hash_sha256(secret).to_hex();
+        let hash_hex = hash_sha256(&secret).to_hex();
         swap.records
             .lock()
             .await
@@ -753,7 +899,7 @@ mod tests {
 
         swap.refund(&mut transfer).await.unwrap();
 
-        let err = swap.claim(secret, "0xdead", &mut transfer).await;
+        let err = swap.claim(&secret, "0xdead", &mut transfer).await;
         assert!(matches!(err, Err(MultichainError::Validation(_))));
     }
 
@@ -813,13 +959,15 @@ mod tests {
         let swap = HtlcSwap::new_offline();
 
         // Expired record.
-        let mut t1 = htlc_transfer(b"secret1");
+        let secret1 = [0x11; 32];
+        let mut t1 = htlc_transfer(secret1);
         swap.initiate(&mut t1).await.unwrap();
-        let h1 = hash_sha256(b"secret1").to_hex();
+        let h1 = hash_sha256(&secret1).to_hex();
         swap.records.lock().await.get_mut(&h1).unwrap().expires_at = 0;
 
         // Active record.
-        let mut t2 = htlc_transfer(b"secret2");
+        let secret2 = [0x22; 32];
+        let mut t2 = htlc_transfer(secret2);
         swap.initiate(&mut t2).await.unwrap();
 
         let expired = swap.expired_pending().await;
@@ -957,7 +1105,7 @@ mod tests {
         // First coordinator creates a record.
         {
             let swap = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db.clone());
-            let mut transfer = htlc_transfer_with_timelock(&secret, 4_077_782_400);
+            let mut transfer = htlc_transfer_with_timelock(secret, 4_077_782_400);
             swap.initiate(&mut transfer).await.unwrap();
 
             let record = swap.get_record(&hash.to_hex()).await.unwrap();
@@ -995,7 +1143,7 @@ mod tests {
         let secret = preimage.0;
 
         let swap = HtlcSwap::with_db(Arc::new(ChainAdapterRegistry::new()), db);
-        let mut transfer = htlc_transfer_with_timelock(&secret, 4_077_782_400);
+        let mut transfer = htlc_transfer_with_timelock(secret, 4_077_782_400);
         swap.initiate(&mut transfer).await.unwrap();
 
         // Force record and transfer timelock to the past so refund() passes.

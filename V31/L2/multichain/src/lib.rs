@@ -10,6 +10,7 @@
 //! All modules share a single `Transfer` pipeline and a `ChainAdapter` trait.
 //! No V3 code is copied here; implementations are written clean for `V31/`.
 
+pub mod audit;
 pub mod bridge;
 pub mod chain;
 pub mod config;
@@ -17,8 +18,10 @@ pub mod contracts;
 pub mod credits;
 pub mod db;
 pub mod error;
+pub mod multichain_wallet;
 pub mod node_rewards;
 pub mod rate_limit;
+pub mod reconciliation;
 pub mod server;
 pub mod service;
 pub mod swap;

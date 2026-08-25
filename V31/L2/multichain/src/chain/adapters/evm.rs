@@ -587,6 +587,29 @@ impl ChainAdapter for EvmAdapter {
             .await
     }
 
+    async fn transfer_token(&self, token: &zion_l1_types::Asset, to: &Address, amount: Amount) -> MultichainResult<Hash> {
+        let token_addr = match token.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token contract: {e}")))?,
+            None if token.id.ticker == "wZION" => self
+                .wzion_address()
+                .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string()))?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "token contract address required for {}",
+                    token.id
+                )))
+            }
+        };
+
+        let to_eth = self.to_eth_address(to)?;
+        let mut data = Self::function_selector(ERC20_TRANSFER_SIG).to_vec();
+        let args = encode(&[Token::Address(to_eth), Token::Uint(U256::from(amount.0))]);
+        data.extend_from_slice(&args);
+
+        self.send_transaction(token_addr, data, U256::zero()).await
+    }
+
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
         let eth_addr = self.to_eth_address(address)?;
         let wei = self

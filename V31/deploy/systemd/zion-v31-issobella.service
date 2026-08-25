@@ -11,7 +11,7 @@ WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_issobella=debug"
 Environment="ISSOBELLA_BIND=127.0.0.1"
-Environment="ISSOBELLA_PORT=8096"
+Environment="ISSOBELLA_PORT=8097"
 Environment="ISSOBELLA_DB=/data/zion/issobella.db"
 Environment="ISSOBELLA_L1_RPC=http://127.0.0.1:9445/jsonrpc"
 ExecStart=/opt/zion/V31/target/release/zion-issobella
