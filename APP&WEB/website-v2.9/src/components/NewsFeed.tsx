@@ -44,7 +44,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       cs: 'Spustili jsme jednotný onboarding pro ZION TerraNova: příběh, whitepaper, technická fakta a návod k těžbě v jednom dokumentu. Včetně nové jednostránkové FAQ a aktuálního časového rámce: poslední genesis 8. 8. 2026, Mainnet Launch 31. 12. 2026, OASIS preview s 400+ světy. One love, one chain, one road.',
       en: 'We launched the unified ZION TerraNova onboarding: story, whitepaper, technical facts, and mining guide in one document. Plus a new single-page FAQ and the updated timeline: final genesis 8 August 2026, Mainnet Launch 31 December 2026, OASIS preview with 400+ worlds. One love, one chain, one road.',
     },
-    href: '/onboard',
+    href: '/onboard?v=2',
   },
   {
     slug: 'zion-v320-public-release-miner-cli-desktop',
