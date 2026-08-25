@@ -1,7 +1,7 @@
 # ZION WP-Mainet — Kanonický index / Canonical Index
 
-> **Zkanonizováno / Canonized: 2026-08-09 (3.2 „One Love")**
-> Tento soubor určuje, které dokumenty v `docs/WP-Mainet/` jsou kanonické.
+> **Zkanonizováno / Canonized: 2026-08-25 (3.2 „One Love" — final genesis 8. 8. 2026, Mainnet Launch 31. 12. 2026)**
+> Poslední genesis chain, nasazený 8. 8. 2026 po dvou hard resetech, je považován za Mainnet Launch pro 31. 12. 2026.
 > This file defines which documents in `docs/WP-Mainet/` are canonical.
 
 ---
@@ -47,5 +47,5 @@ These documents remain as archive; their numbers may be outdated.
 
 ---
 
-*Pořadí pravdy při konfliktu: běžící síť a kód → `StatusV3.md` → kanonický whitepaper 3.2 → ostatní dokumenty.*
-*Order of truth on conflict: running network and code → `StatusV3.md` → canonical 3.2 whitepaper → other documents.*
+*Pořadí pravdy při konfliktu: běžící síť a kód → `StatusV3.md` → `ZION_ONBOARDING_MASSIVE_MINING_*` (zjednocený onboarding) → kanonický whitepaper 3.2 → ostatní dokumenty.*
+*Order of truth on conflict: running network and code → `StatusV3.md` → `ZION_ONBOARDING_MASSIVE_MINING_*` (unified onboarding) → canonical 3.2 whitepaper → other documents.*
