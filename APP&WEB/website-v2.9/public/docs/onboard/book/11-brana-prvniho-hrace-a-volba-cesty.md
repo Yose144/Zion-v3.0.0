@@ -200,6 +200,6 @@ Oasis má pracovat s tradicemi jako s kontextem pro příběh, ne jako s licenc�
 
 ---
 
-*→ Pokračování: [Epizoda 12 — Hodina před deštěm](/onboard#book-12)*
+*→ Pokračování: [Epizoda 12 — Hodina před deštěm](12-hodina-pred-destem.md)*
 
-*→ Zpět na [index série Sůl této země](/onboard#book-00).*
+*→ Zpět na [index série Sůl této země](00-index.md).*

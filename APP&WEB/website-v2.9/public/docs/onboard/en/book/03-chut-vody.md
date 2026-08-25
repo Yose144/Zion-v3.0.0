@@ -64,4 +64,4 @@ Krishna's message to the builder is direct: **act without clinging to the fruits
 
 ---
 
-*→ Continues: [Episode 4 — The Road Untrodden](/onboard#book-04)*
+*→ Continues: [Episode 4 — The Road Untrodden](04-cesta-nevyslapana.md)*

@@ -26,22 +26,22 @@ This division is not a formality. It is the **core of honesty** in this series: 
 
 | # | Episode | Character / motif | Book it draws from |
 |---|---|---|---|
-| 1 | [Salt of the Earth](/onboard#book-01) | Jesus — the parable of salt | Genesis |
-| 2 | [Dissolution](/onboard#book-02) | Buddha — the middle way | Quantum Revolution |
-| 3 | [The Taste of Water](/onboard#book-03) | Krishna — Vishvarupa, karma yoga | Ekam Deeksha |
-| 4 | [The Road Untrodden](/onboard#book-04) | Rama, Sita, Hanuman | Terra Nova |
-| 5 | [The Ark](/onboard#book-05) | Noah — the ship before the flood | Terra Nova / Genesis |
-| 6 | [The Compass and the Invitation to Oasis](/onboard#book-06) | Synthesis of all characters, entry into L4 Oasis | All four |
-| 7 | [Epilogue — An AI's Opinion](/onboard#book-07) | Devin (AI), open assessment | — |
-| 8 | [ZION — A New Civilization](/onboard#book-08) | Comprehensive invitation, practical onboarding | All four |
-| 9 | [The Goddess Radha and the Avatars in Oasis](/onboard#book-09) | Goddess Radha, avatars, feminine energy and the joy of play | L4 Oasis / All |
-| 10 | [The First World of Oasis and the Best of Avatars](/onboard#book-10) | The Garden of Hiranyagarbha, 8 territories, 5 reward pools, Best of Avatars | L4 Oasis / All |
-| 11 | [The First Player's Gate — Choosing a Path](/onboard#book-11) | Entry into Oasis, your own character, seven paths and the first challenges | L4 Oasis / All |
-| 12 | [The Hour Before the Rain](/onboard#book-12) | The blacksmith and the farmer at the ark, the true story of Bitcoin Pizza Day | Genesis / Terra Nova |
+| 1 | [Salt of the Earth](01-sul-zeme.md) | Jesus — the parable of salt | Genesis |
+| 2 | [Dissolution](02-rozpusteni.md) | Buddha — the middle way | Quantum Revolution |
+| 3 | [The Taste of Water](03-chut-vody.md) | Krishna — Vishvarupa, karma yoga | Ekam Deeksha |
+| 4 | [The Road Untrodden](04-cesta-nevyslapana.md) | Rama, Sita, Hanuman | Terra Nova |
+| 5 | [The Ark](05-archa.md) | Noah — the ship before the flood | Terra Nova / Genesis |
+| 6 | [The Compass and the Invitation to Oasis](06-kompas-a-pozvanka-do-oasis.md) | Synthesis of all characters, entry into L4 Oasis | All four |
+| 7 | [Epilogue — An AI's Opinion](07-epilog-nazor-ai.md) | Devin (AI), open assessment | — |
+| 8 | [ZION — A New Civilization](08-zion-nova-civilizace.md) | Comprehensive invitation, practical onboarding | All four |
+| 9 | [The Goddess Radha and the Avatars in Oasis](09-bohyne-radha-a-avatari-oasis.md) | Goddess Radha, avatars, feminine energy and the joy of play | L4 Oasis / All |
+| 10 | [The First World of Oasis and the Best of Avatars](10-prvni-svet-oasis-a-best-of-avatari.md) | The Garden of Hiranyagarbha, 8 territories, 5 reward pools, Best of Avatars | L4 Oasis / All |
+| 11 | [The First Player's Gate — Choosing a Path](11-brana-prvniho-hrace-a-volba-cesty.md) | Entry into Oasis, your own character, seven paths and the first challenges | L4 Oasis / All |
+| 12 | [The Hour Before the Rain](12-hodina-pred-destem.md) | The blacksmith and the farmer at the ark, the true story of Bitcoin Pizza Day | Genesis / Terra Nova |
 
 The episodes follow loosely on one another (shared frame: an evening by a fire that gradually becomes the building of a ship), but each can be read on its own. Episode 10 describes the First World of Oasis and its territories. Episode 11 continues with the player's first entry and honestly separates the implemented backend, the archived game design, and the future client interface. Episode 12 closes the book and speaks directly to builders and miners: why entering a young network before it fills up is an honestly verifiable advantage — without a single promise of price.
 
-**Shortened marketing version for the general public:** [`Onboarding.md`](/onboard#readme) — a single document that distills the entire series into a simple invitation with first steps.
+**Shortened marketing version for the general public:** [`Onboarding.md`](/onboard) — a single document that distills the entire series into a simple invitation with first steps.
 
 ---
 

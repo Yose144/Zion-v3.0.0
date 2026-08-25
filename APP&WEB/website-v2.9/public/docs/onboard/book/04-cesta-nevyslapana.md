@@ -68,4 +68,4 @@ Tohle je přesně obraz, který ZION potřebuje pro cestu odsud dál: **kompas n
 
 ---
 
-*→ Pokračování: [Epizoda 5 — Archa](/onboard#book-05)*
+*→ Pokračování: [Epizoda 5 — Archa](05-archa.md)*

@@ -93,6 +93,6 @@ How does life in the First World of Oasis work?
 
 ---
 
-*→ Continuation: [Episode 11 — The Gate of the First Player and the Choice of Path](/onboard#book-11)*
+*→ Continuation: [Episode 11 — The Gate of the First Player and the Choice of Path](11-brana-prvniho-hrace-a-volba-cesty.md)*
 
-*→ Back to [the Salt of This Earth series index](/onboard#book-00).*
+*→ Back to [the Salt of This Earth series index](00-index.md).*

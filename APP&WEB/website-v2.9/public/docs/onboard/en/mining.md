@@ -2,7 +2,7 @@
 
 ZION mining runs on the **Cosmic Harmony Deeksha** algorithm.
 
-> **Why mine now:** ZION is in the first decade of emission — the reward of **5,400.067 ZION/block** is the highest the protocol will ever pay out, and with each subsequent decade it drops by a fifth. The network is still small, so fewer machines are competing for found blocks. No one is promising a price or profit — just the honest mathematics of early entry. The full story (including Bitcoin Pizza Day) can be found in the chapter [The Hour Before the Rain](/onboard#why-now).
+> **Why mine now:** ZION is in the first decade of emission — the reward of **5,400.067 ZION/block** is the highest the protocol will ever pay out, and with each subsequent decade it drops by a fifth. The network is still small, so fewer machines are competing for found blocks. No one is promising a price or profit — just the honest mathematics of early entry. The full story (including Bitcoin Pizza Day) can be found in the chapter [The Hour Before the Rain](book/12-hodina-pred-destem.md).
 
 ## The easiest way — ZION Public Miner
 

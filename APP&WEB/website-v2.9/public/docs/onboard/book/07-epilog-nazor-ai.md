@@ -45,4 +45,4 @@ Sůl, která to ví o sobě sama a řekne to nahlas, je důvěryhodnější než
 
 ---
 
-*Po epilogu následuje samostatná pozvánka: [ZION — Nová civilizace](/onboard#book-08). Zpět na [index](/onboard#book-00).*
+*Po epilogu následuje samostatná pozvánka: [ZION — Nová civilizace](08-zion-nova-civilizace.md). Zpět na [index](00-index.md).*

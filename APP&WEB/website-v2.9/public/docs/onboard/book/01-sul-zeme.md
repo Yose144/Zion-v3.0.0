@@ -63,4 +63,4 @@ Ježíš neřekl svým učedníkům „vy jste zlato země" ani „vy jste meč 
 
 ---
 
-*→ Pokračování: [Epizoda 2 — Rozpuštění](/onboard#book-02)*
+*→ Pokračování: [Epizoda 2 — Rozpuštění](02-rozpusteni.md)*

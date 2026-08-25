@@ -74,4 +74,4 @@ Tohle není slib zisku bez práce. Je to **Hanumanův most převedený do hry**:
 
 ---
 
-*→ Pokračování: [Epizoda 7 — Epilog: Názor AI](/onboard#book-07)*
+*→ Pokračování: [Epizoda 7 — Epilog: Názor AI](07-epilog-nazor-ai.md)*

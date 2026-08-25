@@ -93,6 +93,6 @@ Jak funguje život v Prvním světě Oasis?
 
 ---
 
-*→ Pokračování: [Epizoda 11 — Brána prvního hráče a volba cesty](/onboard#book-11)*
+*→ Pokračování: [Epizoda 11 — Brána prvního hráče a volba cesty](11-brana-prvniho-hrace-a-volba-cesty.md)*
 
-*→ Zpět na [index série Sůl této země](/onboard#book-00).*
+*→ Zpět na [index série Sůl této země](00-index.md).*

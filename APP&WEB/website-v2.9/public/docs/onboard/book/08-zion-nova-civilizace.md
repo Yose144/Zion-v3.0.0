@@ -229,4 +229,4 @@ Začíná tím, že různí lidé — tesař, poutník, pastýř, král v lese, 
 - [Nielsen Norman Group — Mobile-App Onboarding](https://www.nngroup.com/articles/mobile-app-onboarding/) a [Onboarding Tutorials vs. Contextual Help](https://www.nngroup.com/articles/onboarding-tutorials/) — proč má onboarding minimalizovat zbytečnou mentální zátěž a nápovědu dávat v kontextu.
 - [ESMA / MiCA, čl. 7 — Marketing communications](https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mica/article-7-marketing-communications) — krypto marketing má být jasně označený, férový, jasný a neklamavý.
 
-*→ Zpět na [index série Sůl této země](/onboard#book-00).*
+*→ Zpět na [index série Sůl této země](00-index.md).*

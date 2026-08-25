@@ -200,6 +200,6 @@ Oasis must work with traditions as context for story, not as a license to approp
 
 ---
 
-*→ Continuation: [Episode 12 — The Hour Before the Rain](/onboard#book-12)*
+*→ Continuation: [Episode 12 — The Hour Before the Rain](12-hodina-pred-destem.md)*
 
-*→ Back to [the Salt of This Earth series index](/onboard#book-00).*
+*→ Back to [the Salt of This Earth series index](00-index.md).*

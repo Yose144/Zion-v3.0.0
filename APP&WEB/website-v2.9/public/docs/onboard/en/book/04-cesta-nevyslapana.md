@@ -68,4 +68,4 @@ This is precisely the image ZION needs for the road from here onward: **a compas
 
 ---
 
-*→ Continues: [Episode 5 — The Ark](/onboard#book-05)*
+*→ Continues: [Episode 5 — The Ark](05-archa.md)*

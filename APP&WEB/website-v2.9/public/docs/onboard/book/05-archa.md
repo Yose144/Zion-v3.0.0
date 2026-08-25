@@ -56,4 +56,4 @@ Dnešní svět má svou vlastní potopu — ne vody, ale důvěry: inflace, kter
 
 ---
 
-*→ Pokračování: [Epizoda 6 — Kompas a pozvánka do Oasis](/onboard#book-06)*
+*→ Pokračování: [Epizoda 6 — Kompas a pozvánka do Oasis](06-kompas-a-pozvanka-do-oasis.md)*

@@ -56,4 +56,4 @@ Today's world has its own flood — not of water, but of trust: inflation that d
 
 ---
 
-*→ Continuation: [Episode 6 — The Compass and the Invitation to Oasis](/onboard#book-06)*
+*→ Continuation: [Episode 6 — The Compass and the Invitation to Oasis](06-kompas-a-pozvanka-do-oasis.md)*

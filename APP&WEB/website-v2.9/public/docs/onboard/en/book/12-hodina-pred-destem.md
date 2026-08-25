@@ -90,6 +90,6 @@ The compass points north. It does not tell you whether it is raining already, or
 
 ---
 
-*The Book of the Salt of This Earth ends here — not because the story is over, but because the next chapter is written by every builder themselves, hammer in their own hands. Want to start forging? [Download the ZION Public Miner and mine in five minutes →](/onboard#desktop)*
+*The Book of the Salt of This Earth ends here — not because the story is over, but because the next chapter is written by every builder themselves, hammer in their own hands. Want to start forging? [Download the ZION Public Miner and mine in five minutes →](/download)*
 
-*→ Back to [the Salt of This Earth series index](/onboard#book-00).*
+*→ Back to [the Salt of This Earth series index](00-index.md).*

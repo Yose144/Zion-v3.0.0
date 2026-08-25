@@ -2,7 +2,7 @@
 
 Těžba ZION běží na algoritmu **Cosmic Harmony Deeksha**.
 
-> **Proč těžit už teď:** ZION je v první dekádě emise — odměna **5 400,067 ZION/blok** je nejvyšší, jakou kdy protokol vyplatí, a s každou další dekádou klesá o pětinu. Síť je zatím malá, takže o nalezené bloky se dělí míň strojů. Nikdo neslibuje cenu ani zisk — jen poctivou matematiku raného vstupu. Celý příběh (včetně Bitcoin Pizza Day) najdeš v kapitole [Hodina před deštěm](/onboard#why-now).
+> **Proč těžit už teď:** ZION je v první dekádě emise — odměna **5 400,067 ZION/blok** je nejvyšší, jakou kdy protokol vyplatí, a s každou další dekádou klesá o pětinu. Síť je zatím malá, takže o nalezené bloky se dělí míň strojů. Nikdo neslibuje cenu ani zisk — jen poctivou matematiku raného vstupu. Celý příběh (včetně Bitcoin Pizza Day) najdeš v kapitole [Hodina před deštěm](book/12-hodina-pred-destem.md).
 
 ## Nejjednodušší cesta — ZION Public Miner
 
