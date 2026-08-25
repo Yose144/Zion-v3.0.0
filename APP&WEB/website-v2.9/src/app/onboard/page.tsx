@@ -48,10 +48,10 @@ const categories: Category[] = [
     accentText: 'text-zion-cyan',
     papers: [
       {
-        id: 'readme',
-        title: { cs: 'ZION — Vítej na palubě', en: 'ZION — Welcome Aboard' },
-        description: { cs: 'Marketingový přehled: příběh, tři cesty a první krok.', en: 'Marketing overview: story, three paths, and first step.' },
-        file: 'README.md',
+        id: 'massive-onboarding',
+        title: { cs: 'Massive Onboarding — One Love', en: 'Massive Onboarding — One Love' },
+        description: { cs: 'Jedna kniha, jedna síť, jeden riddim — příběh, whitepaper a mining v jednom.', en: 'One book, one network, one riddim — story, whitepaper, and mining in one.' },
+        file: 'MASSIVE_ONBOARDING.md',
         format: 'md',
       },
     ],
@@ -245,7 +245,7 @@ function findCategoryIdByPaper(paperId: string): string | null {
 
 export default function OnboardPage() {
   const { lang } = useLang();
-  const [selectedPaper, setSelectedPaper] = useState('readme');
+  const [selectedPaper, setSelectedPaper] = useState('massive-onboarding');
   const [activeCategory, setActiveCategory] = useState('welcome');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);

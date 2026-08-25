@@ -14,6 +14,7 @@
 | **Onboarding pro širokou veřejnost** (vstupní bod / entry point) | [`ZION_ONBOARDING_PUBLIC_CZ.md`](./ZION_ONBOARDING_PUBLIC_CZ.md) | [`ZION_ONBOARDING_PUBLIC_EN.md`](./ZION_ONBOARDING_PUBLIC_EN.md) |
 | **Hloubkový onboarding 3.2** (technický + narativní / in-depth) | [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](./ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) | [`ZION_ONBOARDING_3.2_ONE_LOVE_EN.md`](./ZION_ONBOARDING_3.2_ONE_LOVE_EN.md) |
 | **Sůl této země / Salt of the Earth** (narativní řada / narrative series) | [`SulZeme/00-README.md`](./SulZeme/00-README.md) | [`SulZeme/00-README_EN.md`](./SulZeme/00-README_EN.md) |
+| **Massive Onboarding** (mining-first + Sůl země + whitepaper v jedné knize) | [`marketing/ZION_ONBOARDING_MASSIVE_MINING_CZ.md`](./marketing/ZION_ONBOARDING_MASSIVE_MINING_CZ.md) | [`marketing/ZION_ONBOARDING_MASSIVE_MINING_EN.md`](./marketing/ZION_ONBOARDING_MASSIVE_MINING_EN.md) |
 | **Technický whitepaper** (referenční doplněk / technical companion) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](./ZION_Technical_Whitepaper_v3.1_CZ.md) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](./ZION_Technical_Whitepaper_v3.1_EN.md) |
 
 ## Marketingové materiály / Marketing materials
