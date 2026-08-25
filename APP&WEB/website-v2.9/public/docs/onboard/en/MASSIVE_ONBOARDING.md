@@ -88,7 +88,7 @@ Jesus did not tell his disciples "you are the gold of the earth" or "you are the
 
 | Claim from the story | What is verifiable on the network |
 |---|---|
-| "Salt is small, but essential." | The ZION genesis block was mined on **January 1, 2026**. No `mint()` for the founder — every coin is born from work. |
+| "Salt is small, but essential." | The ZION genesis block was mined on **August 8, 2026**. No `mint()` for the founder — every coin is born from work. |
 | "The rules hold without words." | Hard cap **144,000,000,000 ZION**, written into consensus, not into a statement. |
 | "Salt is distributed, not hoarded." | Every block: **89% to miners, 5% to the humanitarian fund, 5% to the Issobella fund, 1% burned** — enforced by consensus, not by promise. |
 | "Whoever wants salt must reach for it." | **Fair launch** — no ICO, no presale, no VIP allocation. |
@@ -359,7 +359,7 @@ Today's world has its own flood — not of water, but of trust: inflation that d
 |---|---|
 | "One doorway, not two." | Fair launch: no pair of "animals" (investors, founders, VIPs) entered the network earlier or under different conditions than the rest. |
 | "The ship carries many kinds." | The network today encompasses L1 mining, L2 DeFi/DAO/bridge, a humanitarian fund, and the Issobella fund — more forms of participation than simply "buy and wait." |
-| "It is built in advance, not once the rain begins." | A block is mined every 60 seconds, continuously, regardless of who is watching — the network has been running since the genesis block on January 1, 2026. |
+| "It is built in advance, not once the rain begins." | A block is mined every 60 seconds, continuously, regardless of who is watching — the network has been running since the genesis block on August 8, 2026. |
 | "No one is forced to board." | Participation in the network is purely voluntary — no protocol-enforced KYC, no membership requirement beyond running the software. |
 
 ---
@@ -1169,7 +1169,7 @@ Three things are written into ZION's code in a way that holds regardless of who 
 
 **Network difficulty is governed by how many people are mining right now, not by how many will be mining a year from now.** Difficulty is recalculated by the LWMA algorithm over the last 60 blocks (with a ±25 % clamp) — it responds to current network hashrate, not to the future. The fewer machines searching for a block today, the larger the share of found blocks goes to each individual machine that joins now. When the network fills with more miners (and that is the goal — a network no one mines is not secure), difficulty will rise with them, and the same hashrate will yield a smaller share.
 
-**Entry is the same for everyone who comes — but not equally easy at every moment.** Fair launch means no one got VIP access at the start. It does not mean the start lasts forever. The genesis block fell on January 1, 2026; every day that passes is a day more of history, a day more of miners, and a day closer to the moment when "starting from zero" will no longer be possible — because zero was long ago.
+**Entry is the same for everyone who comes — but not equally easy at every moment.** Fair launch means no one got VIP access at the start. It does not mean the start lasts forever. The genesis block fell on August 8, 2026; every day that passes is a day more of history, a day more of miners, and a day closer to the moment when "starting from zero" will no longer be possible — because zero was long ago.
 
 This is exactly what the blacksmith from the story did: he did not forge hinges because someone guaranteed him a reward. He forged them because he understood the mechanics of rain — that water does not wait for everyone to decide to believe.
 

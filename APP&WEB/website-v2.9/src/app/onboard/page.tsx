@@ -42,8 +42,23 @@ const categories: Category[] = [
       {
         id: 'massive-onboarding',
         title: { cs: 'Massive Onboarding — One Love', en: 'Massive Onboarding — One Love' },
-        description: { cs: 'Jedna kniha, jedna síť, jeden riddim — příběh, whitepaper a mining v jednom.', en: 'One book, one network, one riddim — story, whitepaper, and mining in one.' },
+        description: { cs: 'Jedna kniha, jedna síť, jeden riddim — plný příběh Sůl této země.', en: 'One book, one network, one riddim — the full Salt of the Earth story.' },
         file: 'MASSIVE_ONBOARDING.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
+    id: 'quick',
+    title: { cs: 'Rychlý start', en: 'Quick Start' },
+    icon: FileText,
+    accentText: 'text-zion-gold',
+    papers: [
+      {
+        id: 'lite',
+        title: { cs: 'Onboarding Lite — Rasta vibe', en: 'Onboarding Lite — Rasta vibe' },
+        description: { cs: 'Rychlejší verze onboarding — pro ty, kteří chtějí rychle cítit riddim.', en: 'The quicker onboarding version — for those who want to feel the riddim fast.' },
+        file: 'LITE.md',
         format: 'md',
       },
     ],
@@ -86,7 +101,7 @@ export default function OnboardPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ welcome: true, faq: false });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ welcome: true, quick: true, faq: false });
 
   const currentPaper = allPapers.find(p => p.id === selectedPaper);
   const currentCategory = categories.find(c => c.id === activeCategory);

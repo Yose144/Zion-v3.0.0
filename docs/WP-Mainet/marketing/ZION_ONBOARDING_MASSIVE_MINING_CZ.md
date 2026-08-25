@@ -1207,7 +1207,7 @@ Kompas ukazuje sever. Neukazuje, jestli prší už teď, nebo za rok. To je otá
 
 ### IX. Snadná cesta — ZION Public Miner (desktop)
 
-1. Stáhni **ZION Public Miner** z [zionterranova.com/download](https://app.zionterranova.com/download) — Windows 11, macOS, Linux.
+1. Stáhni **ZION Public Miner** z [zionterranova.com/download](/download) — Windows 11, macOS, Linux.
 2. Vytvoř peněženku přímo v aplikaci. **Zapiš si mnemonic na papír. Drž ho offline. Nikomu ho nedávej — ani nám.**
 3. Pool: `pool.zionterranova.com:8444`.
 4. Zvol CPU vlákna nebo GPU. Klikni **Start Mining**.
@@ -1236,7 +1236,7 @@ Jeden miner umí tři streamy najednou (**Trinity**): ZION přes Ekam Deeksha + 
 |---|---|
 | Pool (Stratum) | `pool.zionterranova.com:8444` |
 | RPC | `rpc.zionterranova.com:8443` |
-| Explorer + web | `https://zionterranova.com` · `https://app.zionterranova.com` |
+| Explorer + web | `` · `` |
 | Kód (MIT) | `github.com/Zion-TerraNova/v3-Mainnet` |
 
 ### XI. Tipy prvního týdne
@@ -1291,7 +1291,7 @@ L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ 
 
 Za řekou, kde les otvírá světlo, roste zahrada. Jmenuje se **OASIS**. U brány stojí dvě ženy — Rádha se směje: *„Pojď dál, tancuj, hraj — ať tvé srdce ucítí, že technologie nemusí být studená jako ocel."* Elizabeth stojí o krok dál s lucernou a ptá se tiše: *„Co po tobě zůstane, až půjdeš dál?"*
 
-Ale řekněme to narovinu, bredda: **zahrada není hotová.** Semínka jsou zasazená, první stromky rostou, brána ještě voní čerstvou barvou. Můžeš vletět do 3D galaxie 400+ světů na [oasis.zionterranova.com](https://oasis.zionterranova.com), projít kolem Stromu Života, otevřít Avatar Codex. Ale nejsi na konci cesty — jsi u prvních záhonů.
+Ale řekněme to narovinu, bredda: **zahrada není hotová.** Semínka jsou zasazená, první stromky rostou, brána ještě voní čerstvou barvou. Můžeš vletět do 3D galaxie 400+ světů na [oasis.zionterranova.com](/oasis), projít kolem Stromu Života, otevřít Avatar Codex. Ale nejsi na konci cesty — jsi u prvních záhonů.
 
 | Co dnes JE | Co dnes NENÍ |
 |---|---|
@@ -1368,8 +1368,8 @@ One love. One chain. One road.
 
 - [Kanonický whitepaper 3.2 „One Love"](/whitepapers#master-3.2-cz) — celá kniha čtyř knih
 - [Technický whitepaper 3.1](/whitepapers#technical-cz) — konsensus, emise, kontrakty do detailu
-- Web onboard: [app.zionterranova.com/onboard](https://app.zionterranova.com/onboard)
-- OASIS: [oasis.zionterranova.com](https://oasis.zionterranova.com)
+- Web onboard: [app.zionterranova.com/onboard](/onboard)
+- OASIS: [oasis.zionterranova.com](/oasis)
 - GitHub: [github.com/Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 Sůl této země — dvanáct zastavení je plně v tomto dokumentu.
