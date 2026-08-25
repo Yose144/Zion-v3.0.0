@@ -615,15 +615,21 @@ async fn wallet_withdraw(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
     Json(req): Json<WalletWithdrawRequest>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let user = resolve_auth_user(state.zis_client.enabled, user).map_err(|status| {
+        (status, Json(serde_json::json!({ "error": "unauthorized" })))
+    })?;
     let user_id = match user {
         Some(u) => u.id,
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err((StatusCode::UNAUTHORIZED, Json(serde_json::json!({ "error": "unauthorized" })))),
     };
 
-    let asset = asset_from_input(&req.asset).map_err(|_| StatusCode::BAD_REQUEST)?;
-    let amount = req.amount.parse::<u128>().map_err(|_| StatusCode::BAD_REQUEST)?;
+    let asset = asset_from_input(&req.asset).map_err(|e| {
+        (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })))
+    })?;
+    let amount = req.amount.parse::<u128>().map_err(|e| {
+        (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": format!("invalid amount: {e}") })))
+    })?;
 
     let details = serde_json::json!({
         "asset_key": asset.id.to_string(),
@@ -665,7 +671,13 @@ async fn wallet_withdraw(
                 Some(&e.to_string()),
             )
             .await;
-            Err(StatusCode::BAD_REQUEST)
+            Err((
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({
+                    "error": e.to_string(),
+                    "message": "withdrawal request failed",
+                })),
+            ))
         }
     }
 }
@@ -847,15 +859,19 @@ async fn swap_execute_v2(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
     Json(req): Json<SwapExecuteV2Request>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let user = resolve_auth_user(state.zis_client.enabled, user).map_err(|status| {
+        (status, Json(serde_json::json!({ "error": "unauthorized" })))
+    })?;
     let user_id = match user {
         Some(u) => u.id,
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err((StatusCode::UNAUTHORIZED, Json(serde_json::json!({ "error": "unauthorized" })))),
     };
 
     let recipient = match &req.recipient {
-        Some(addr) => Some(parse_address_string(addr, req.to.id.chain).map_err(|_| StatusCode::BAD_REQUEST)?),
+        Some(addr) => Some(parse_address_string(addr, req.to.id.chain).map_err(|e| {
+            (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })))
+        })?),
         None => None,
     };
 
@@ -914,7 +930,13 @@ async fn swap_execute_v2(
                 Some(&e.to_string()),
             )
             .await;
-            Err(StatusCode::BAD_REQUEST)
+            Err((
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({
+                    "error": e.to_string(),
+                    "message": "swap execution failed",
+                })),
+            ))
         }
     }
 }
