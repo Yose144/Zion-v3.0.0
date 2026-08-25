@@ -2,7 +2,7 @@
 
 > Location: `APP&WEB/OasisWeb/`  
 > Live URL: https://oasis.zionterranova.com  
-> Edge server: `62.171.141.136` / `oasis.zionterranova.com` → `/var/www/oasis`  
+> Edge server: `zionterranova.com` / `oasis.zionterranova.com` → `/var/www/oasis`  
 > Last update: 2026-08-15 16:00 CEST  
 > Branch: `main` on `origin` (private repo: `Yose144/Zion-v3.0.0`)
 
@@ -314,7 +314,7 @@ bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh
 
 The script will:
 1. Build with `NEXT_PUBLIC_OASIS_API_URL=` (relative API paths for edge).
-2. Rsync `dist/` to `root@62.171.141.136:/var/www/oasis` on port `2222`.
+2. Rsync `dist/` to `root@zionterranova.com:/var/www/oasis` on port `2222`.
 3. Copy `deploy/nginx-oasis.conf` to `/etc/nginx/sites-enabled/oasis.zionterranova.com.conf`.
 4. Run `nginx -t && nginx -s reload`.
 5. Health-check `https://oasis.zionterranova.com/`.
@@ -323,7 +323,7 @@ The script will:
 
 ## 8. Operational Notes for Future Agents
 
-- The old Edge server `77.42.71.94` is **decommissioned**; all deployment uses `62.171.141.136`.
+- The old Edge server `77.42.71.94` is **decommissioned**; all deployment uses `zionterranova.com`.
 - SSH key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, port `2222`.
 - `APP&WEB/` is **private** and must never be pushed to the public `Zion-TerraNova/v3-Mainnet` subtree.
 - `OasisHud` API base is controlled by `NEXT_PUBLIC_OASIS_API_URL`.

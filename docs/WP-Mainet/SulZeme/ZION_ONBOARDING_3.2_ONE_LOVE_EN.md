@@ -50,7 +50,7 @@
 
 > **Verifiable Facts**
 >
-> This document strictly separates narrative from technical claims. In every section discussing numbers, code, or the live network, you will find a table of verifiable facts with exact references to the codebase or the live Edge server `62.171.141.136`. A story may be beautiful, but network facts must be precise. A story is not a promise.
+> This document strictly separates narrative from technical claims. In every section discussing numbers, code, or the live network, you will find a table of verifiable facts with exact references to the codebase or the live Edge server `zionterranova.com`. A story may be beautiful, but network facts must be precise. A story is not a promise.
 
 ---
 
@@ -159,14 +159,14 @@ OASIS Web is live at `https://oasis.zionterranova.com` backed by `zion-v31-oasis
 
 3. **Builder & Miner ("I want to carry part of the bridge")**
    - Download CLI `zion` or miner binary `zion-miner`.
-   - Connect your PC or GPU rig to the public pool `62.171.141.136:8444`.
+   - Connect your PC or GPU rig to the public pool `pool.zionterranova.com:8444`.
    - Run your own P2P node and contribute to network security.
 
 ---
 
 ## 8. Live Edge state and verified numbers
 
-Canonical numbers for the Edge server (`62.171.141.136`) as of 2026-08-09:
+Canonical numbers for the Edge server (`zionterranova.com`) as of 2026-08-09:
 
 - **Chain Height:** 1000+ blocks since 2026-08-06 genesis reset.
 - **Service Health (`/api/health`):** `v31-node`, `v31-pool`, `v31-miner`, `v31-multichain`, `v31-dao`, `v31-oasis`, `website`, `marketplace`, `dashboard` — **all UP**.
@@ -196,7 +196,7 @@ cargo build --release --workspace
 
 ```bash
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...your_address.worker1 \
   --cpu-threads 4
 ```

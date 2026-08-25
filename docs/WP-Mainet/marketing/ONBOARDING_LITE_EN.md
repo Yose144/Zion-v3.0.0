@@ -22,7 +22,7 @@ cargo build --release
 ./target/release/zion --help
 ```
 
-Public pool: `62.171.141.136:8444`
+Public pool: `pool.zionterranova.com:8444`
 
 ## Key numbers
 
@@ -30,7 +30,7 @@ Public pool: `62.171.141.136:8444`
 - Block time: ~60 s
 - Split: 89 % miner, 5 % humanitarian, 5 % future, 1 % burn
 - Public RPC: `rpc.zionterranova.com:8443`
-- Pool: `62.171.141.136:8444`
+- Pool: `pool.zionterranova.com:8444`
 - License: MIT
 - Status: Mainnet Beta
 

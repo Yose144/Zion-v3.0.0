@@ -132,7 +132,7 @@ NOVA ZEME by měla být:
 - Mobil: bez drei OrbitControls (crashne), vlastní MobileTouchControls
 - ErrorBoundary kolem všech komponent
 - Static export (Next.js) — žádné API routes na klientu
-- API volání jdou na Edge server (62.171.141.136)
+- API volání jdou na Edge server (zionterranova.com)
 - Světy: 55 světů v `src/domain/config/worlds.ts`
 - Světy mají: id, name, category, layer, location, vibe, summary, tags, galaxyPosition
 

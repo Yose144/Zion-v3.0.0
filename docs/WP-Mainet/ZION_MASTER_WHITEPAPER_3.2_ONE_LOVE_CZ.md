@@ -251,7 +251,7 @@ Je technická páteř tohoto whitepaperu.
 
 Další živé kontroly: `https://zionterranova.com`, `https://oasis.zionterranova.com`
 a `https://market.zionterranova.com` všechny vrátily HTTP 200. Pool stratum
-port `62.171.141.136:8444` a veřejný RPC `rpc.zionterranova.com:8443`
+port `pool.zionterranova.com:8444` a veřejný RPC `rpc.zionterranova.com:8443`
 byly dosažitelné přes TCP.
 
 | Zdroj | Použito | Celkem | % |

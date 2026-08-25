@@ -45,7 +45,7 @@ while carrying its social riddim too.
 ### 3. You learn on a live network, not a Babylon slideshow
 
 The pool accepts shares, the node produces blocks, the payout-confirmation
-sweep runs, and public Stratum is open at `62.171.141.136:8444`. An early
+sweep runs, and public Stratum is open at `pool.zionterranova.com:8444`. An early
 miner learns wallet hygiene, rig operation, monitoring, worker naming, and
 security before it becomes a crowded sport.
 
@@ -144,7 +144,7 @@ miner, or builder — none stands above the others.
 
 1. Create **your own** ZION wallet address. Never send your mnemonic or private keys to anyone.
 2. Build or download `zion-miner` for your system.
-3. Connect to public pool `62.171.141.136:8444`.
+3. Connect to public pool `pool.zionterranova.com:8444`.
 4. Start conservatively; watch accepted/rejected shares and temperatures.
 5. Only then explore GPU backends, TUI, and Trinity streams.
 
@@ -154,7 +154,7 @@ Example minimal local V31 run:
 cd V31
 cargo build --release --bin zion-miner
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...your_address \
   --worker roots-rig-01 \
   --threads 4
@@ -191,7 +191,7 @@ an instant payout; the pool uses PPLNS and on-chain payout confirmations.
 | Protocol | `zion-v3-node/3.1.0-alpha` |
 | Test gate | `cargo test --workspace`: **2178 pass, 0 failures** |
 | Chain | 1000+ blocks since 2026-08-06 genesis reset |
-| Pool | `62.171.141.136:8444` — public Stratum |
+| Pool | `pool.zionterranova.com:8444` — public Stratum |
 | OASIS Web | `https://oasis.zionterranova.com` — public preview |
 | Market | `https://market.zionterranova.com` — public marketplace |
 | Health | `https://dashboard.zionterranova.com/api/health` — production V31 services report `up` |

@@ -58,7 +58,7 @@ Po prvním spuštění aplikace:
    - Zkopíruj veřejnou adresu (`zion1...`) a vlož ji do nastavení těžby.
 3. Nastav **Pool** na veřejný pool:
    ```
-   62.171.141.136:8444
+   pool.zionterranova.com:8444
    ```
 4. Zvol **Worker Name** — libovolný název tvého zařízení, např. `muj-mac` nebo `pc-doma`.
 5. Nastav počet **CPU vláken** podle počtu jader tvého procesoru.

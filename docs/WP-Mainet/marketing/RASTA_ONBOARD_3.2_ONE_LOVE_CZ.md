@@ -69,7 +69,7 @@ Jah bless.
 |---|---|
 | Mlýn dává první dekádě nejvíc | Bloková odměna 5 400,067 ZION/blok, výšky 1–5 256 000, pak −20 % každou dekádu |
 | Devět z deseti dílů zůstává mlynáři | Fee split 89 % miner / 5 % humanitární / 5 % Issobella / 1 % burn — vynuceno protokolem |
-| Řeka teče už teď | Veřejný pool `62.171.141.136:8444`, veřejný RPC `rpc.zionterranova.com:8443` |
+| Řeka teče už teď | Veřejný pool `pool.zionterranova.com:8444`, veřejný RPC `rpc.zionterranova.com:8443` |
 | Zahrada je otevřená, ale nedostavěná | OASIS preview živý na `https://oasis.zionterranova.com` — není hotová hra |
 | Kód není zamčenej v trezoru | MIT licence, `github.com/Zion-TerraNova/v3-Mainnet` |
 | Síť skutečně běží | `cargo test --workspace` 2178 pass, chain height 1000+ (2026-08-09) |

@@ -171,16 +171,16 @@ Stream 3: XMR (randomx)     450 H/s
 
 ```bash
 # ZION + Boost (vše automaticky, výstup v ZION)
-zion miner start --reward-address zion1TVOJEADRESA --pool-url 62.171.141.136:8444
+zion miner start --reward-address zion1TVOJEADRESA --pool-url pool.zionterranova.com:8444
 
 # Vypnout GPU Boost
-zion miner start --reward-address zion1... --pool-url 62.171.141.136:8444 --no-gpu
+zion miner start --reward-address zion1... --pool-url pool.zionterranova.com:8444 --no-gpu
 
 # Vypnout CPU Boost
-zion miner start --reward-address zion1... --pool-url 62.171.141.136:8444 --no-cpu
+zion miner start --reward-address zion1... --pool-url pool.zionterranova.com:8444 --no-cpu
 
 # Jen ZION, bez Boost (čistý canonical mining)
-zion miner start --reward-address zion1... --pool-url 62.171.141.136:8444 --no-gpu --no-cpu
+zion miner start --reward-address zion1... --pool-url pool.zionterranova.com:8444 --no-gpu --no-cpu
 ```
 
 ### Plná verze (premium unlock — odemčené streamy)
@@ -188,12 +188,12 @@ zion miner start --reward-address zion1... --pool-url 62.171.141.136:8444 --no-g
 ```bash
 # ZION + ERG na GPU + XMR na CPU (manuální volba)
 zion miner start --reward-address zion1... \
-  --pool-url 62.171.141.136:8444 \
+  --pool-url pool.zionterranova.com:8444 \
   --auxpow-pool erg.herominers.com:1180 \
   --worker tvuj_worker
 
 # Vynutit konkrétní CPU minci
-ZION_STREAM3_FORCE_COIN=RTM zion miner start --reward-address zion1... --pool-url 62.171.141.136:8444
+ZION_STREAM3_FORCE_COIN=RTM zion miner start --reward-address zion1... --pool-url pool.zionterranova.com:8444
 
 # Jen externí mince (bez ZION streamu)
 zion miner start --reward-address zion1... --no-zion --auxpow-pool erg.herominers.com:1180

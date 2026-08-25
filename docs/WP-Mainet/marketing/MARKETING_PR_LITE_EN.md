@@ -22,7 +22,7 @@ ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, n
 - **Reward split:** 89 % miner / 5 % humanitarian / 5 % future / 1 % burn
 - **Launch:** testnet from Dec 4, 2025; Mainnet Beta live; public launch Dec 31, 2026
 - **License:** MIT
-- **Public pool:** 62.171.141.136:8444
+- **Public pool:** pool.zionterranova.com:8444
 - **Sites:** https://zionterranova.com, https://app.zionterranova.com, https://oasis.zionterranova.com, https://market.zionterranova.com
 - **GitHub:** https://github.com/Zion-TerraNova/v3-Mainnet
 - **Layers:** L1 blockchain, L2 bridge/DeFi/DAO/DEX, L3 WARP/AI, L4 Oasis game, L5 Free World, L6 Issobella
@@ -45,5 +45,5 @@ ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, n
 
 - Web: https://zionterranova.com
 - GitHub: https://github.com/Zion-TerraNova/v3-Mainnet
-- Pool: 62.171.141.136:8444
+- Pool: pool.zionterranova.com:8444
 - Status: `StatusV3.md`

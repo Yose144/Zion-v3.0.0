@@ -50,7 +50,7 @@
 
 > **Ověřitelná fakta**
 >
-> Tento dokument přísně odděluje vyprávění od technických tvrzení. V každé sekci, kde se mluví o číslech, kódu nebo síti, najdeš tabulku ověřitelných faktů s přesným odkazem do repozitáře nebo na běžící server `62.171.141.136`. Příběh smí být krásný, ale fakta o síti musí být přesná. Příběh není slib.
+> Tento dokument přísně odděluje vyprávění od technických tvrzení. V každé sekci, kde se mluví o číslech, kódu nebo síti, najdeš tabulku ověřitelných faktů s přesným odkazem do repozitáře nebo na běžící server `zionterranova.com`. Příběh smí být krásný, ale fakta o síti musí být přesná. Příběh není slib.
 
 ---
 
@@ -159,14 +159,14 @@ OASIS Web běží živě na `https://oasis.zionterranova.com` s backendem `zion-
 
 3. **Stavitel a Těžař ("Chci nést kus mostu")**
    - Stáhni si CLI `zion` nebo těžařský software `zion-miner`.
-   - Připoj svůj počítač nebo GPU rig k veřejnému poolu `62.171.141.136:8444`.
+   - Připoj svůj počítač nebo GPU rig k veřejnému poolu `pool.zionterranova.com:8444`.
    - Spusť vlastní P2P uzel a zapoj se do zabezpečení sítě.
 
 ---
 
 ## 8. Živý stav Edge a ověřitelná čísla
 
-Kanonické údaje produkčního Edge serveru (`62.171.141.136`) k 2026-08-09:
+Kanonické údaje produkčního Edge serveru (`zionterranova.com`) k 2026-08-09:
 
 - **Výška řetězce:** 1000+ bloků od genesis resetu (2026-08-06).
 - **Stav služeb (`/api/health`):** `v31-node`, `v31-pool`, `v31-miner`, `v31-multichain`, `v31-dao`, `v31-oasis`, `website`, `marketplace`, `dashboard` — **vše UP**.
@@ -196,7 +196,7 @@ cargo build --release --workspace
 
 ```bash
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...vaše_adresa.worker1 \
   --cpu-threads 4
 ```

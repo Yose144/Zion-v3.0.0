@@ -10,7 +10,7 @@ For most users, the easiest way to mine is through the desktop application:
 
 1. Install **ZION Public Miner** (see the **Desktop App** category).
 2. Create a wallet and get your address.
-3. Set the **Pool** to `62.171.141.136:8444`.
+3. Set the **Pool** to `pool.zionterranova.com:8444`.
 4. Choose the number of CPU threads and optionally turn on GPU.
 5. Click **Start Mining**.
 
@@ -35,13 +35,13 @@ The app takes care of everything else — connecting to the pool, tracking hashr
 ## Advanced mining from the command line
 
 ```bash
-zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+zion mine start --backend cpu --threads 4 --pool pool.zionterranova.com:8444
 ```
 
 Alternatively with a specific target algorithm and address (check the specific release docs for `--miner.wallet` and `--miner.algorithm`):
 
 ```bash
-zion mine start --backend cuda --threads 4 --pool 62.171.141.136:8444 \
+zion mine start --backend cuda --threads 4 --pool pool.zionterranova.com:8444 \
   --miner.wallet zion1EXAMPLE_ADDRESS --miner.worker my-rig
 ```
 

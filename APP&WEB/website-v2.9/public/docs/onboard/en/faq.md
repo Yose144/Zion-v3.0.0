@@ -29,7 +29,7 @@ Because the block reward is the highest it will ever be today, and the network i
 1. Download the installer from [GitHub release v3.1.0-desktop](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop).
 2. Install and, if needed, allow it in system settings (Windows SmartScreen / macOS Gatekeeper).
 3. Create a wallet in the **Wallet** tab and write down the seed offline.
-4. Set the pool to `62.171.141.136:8444` and choose a worker name.
+4. Set the pool to `pool.zionterranova.com:8444` and choose a worker name.
 5. Click **Start Mining**.
 
 The app is free. In the public version, all three Trinity streams are automatically routed into **ZION Liquidity & Grow**, so the yields from secondary streams strengthen the growth of the whole network. A future VIP miner will let you configure the remaining two streams yourself.
@@ -42,7 +42,7 @@ cd v3-Mainnet
 cargo build --release --bin zion-miner
 
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...your_address \
   --worker my-first-rig
 ```
@@ -88,7 +88,7 @@ It is a technical option, not a profit calculator. Performance depends on your h
 
 | Service | Address |
 |---|---|
-| Pool (Stratum) | `62.171.141.136:8444` |
+| Pool (Stratum) | `pool.zionterranova.com:8444` |
 | RPC | `rpc.zionterranova.com:8443` |
 | Web | `https://app.zionterranova.com` |
 | wZION on Base | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
@@ -109,8 +109,8 @@ cargo build --release --bin zion-node
 Start with public seed peers:
 
 ```text
-62.171.141.136:8333
-62.171.141.136:8334
+zionterranova.com:8333
+zionterranova.com:8334
 ```
 
 If you don't want a node, use the public RPC:

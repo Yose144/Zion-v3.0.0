@@ -382,7 +382,7 @@ Salt that knows it is salt — and does not call itself gold — is more trustwo
 
 1. **Open** `https://zionterranova.com` and look at the live network.
 2. **Download** the `zion` CLI from [GitHub releases](https://github.com/Zion-TerraNova/v3-Mainnet/releases) and run `zion onboard`.
-3. **Create a wallet** and connect to the public pool `62.171.141.136:8444`.
+3. **Create a wallet** and connect to the public pool `pool.zionterranova.com:8444`.
 
 Nobody will rush you. An ark is not built by shouting — it is built block by block, 60 seconds by 60 seconds, and the doors are open.
 
@@ -424,7 +424,7 @@ The wizard creates `~/.zion/zion.toml`, asks for a topology and optionally sets 
 ```bash
 zion config set node.rpc_host rpc.zionterranova.com
 zion config set node.rpc_port 8443
-zion config set pool.host 62.171.141.136
+zion config set pool.host zionterranova.com
 zion config set pool.port 8444
 ```
 
@@ -456,13 +456,13 @@ zion pool earnings
 
 ```bash
 # CPU
-zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+zion mine start --backend cpu --threads 4 --pool pool.zionterranova.com:8444
 
 # OpenCL GPU
-zion mine start --backend opencl --pool 62.171.141.136:8444
+zion mine start --backend opencl --pool pool.zionterranova.com:8444
 
 # CUDA GPU
-zion mine start --backend cuda --pool 62.171.141.136:8444
+zion mine start --backend cuda --pool pool.zionterranova.com:8444
 ```
 
 To change payout address:
@@ -490,7 +490,7 @@ export ZION_NODE_STATE_PATH="/var/lib/zion/state.db"
 export ZION_P2P_BIND="0.0.0.0:8333"
 export ZION_RPC_BIND="127.0.0.1:8443"
 export ZION_METRICS_BIND="0.0.0.0:9115"
-export ZION_SEED_PEERS="62.171.141.136:8333,62.171.141.136:8334"
+export ZION_SEED_PEERS="zionterranova.com:8333,zionterranova.com:8334"
 export ZION_BLOCK_RETENTION=0
 
 # Optional: the three fee-split wallets must be set all together or not at all
@@ -501,7 +501,7 @@ export ZION_POOL_FEE_WALLET="zion1..."
 ./target/release/node
 ```
 
-> **Note:** The public RPC runs on `http://rpc.zionterranova.com:8443` (plain HTTP, no TLS) and the pool on `62.171.141.136:8444`. Edge P2P ports are `8333`, `8334` and V31 `8335`. For your own node set `ZION_BLOCK_RETENTION=0` so the old block-pruning bug does not repeat.
+> **Note:** The public RPC runs on `http://rpc.zionterranova.com:8443` (plain HTTP, no TLS) and the pool on `pool.zionterranova.com:8444`. Edge P2P ports are `8333`, `8334` and V31 `8335`. For your own node set `ZION_BLOCK_RETENTION=0` so the old block-pruning bug does not repeat.
 
 #### Inspect node via CLI
 
@@ -524,7 +524,7 @@ Easiest path for beginners:
    - macOS Intel: `zion-public-miner-v3.1.0-mac-x64.dmg`
    - Linux: `.AppImage` or `.deb`
 3. Install and allow in system settings.
-4. Create a wallet, set pool `62.171.141.136:8444`, worker name and start mining.
+4. Create a wallet, set pool `pool.zionterranova.com:8444`, worker name and start mining.
 
 > **Source:** `AGENTS.md`, Public Miner & Desktop release build section; `APP&WEB/website-v2.9/public/docs/onboard/desktop.md`.
 
@@ -600,9 +600,9 @@ rpcCall('getChainInfo').then(console.log);
 | **Reward split** | 89 % miners, 5 % humanitarian fund, 5 % Issobella fund, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../V3/README.md) |
 | **Hard cap** | 144,000,000,000 ZION | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | **PoW algorithm** | Ekam Deeksha / CosmicHarmony; 6 phases; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../V3/README.md) |
-| **Public pool** | `62.171.141.136:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), line 114; [`AGENTS.md`](../../../AGENTS.md) |
+| **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), line 114; [`AGENTS.md`](../../../AGENTS.md) |
 | **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` on Edge) | [`StatusV3.md`](../../../StatusV3.md), line 112 |
-| **Edge P2P** | `62.171.141.136:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
+| **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
 | **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../../StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
 | **GitHub** | `https://github.com/Zion-TerraNova/v3-Mainnet` (public, MIT) | [`AGENTS.md`](../../../AGENTS.md), `public/` section |
 | **Web** | `https://zionterranova.com`, dashboard `https://dashboard.zionterranova.com`, market `https://market.zionterranova.com` | [`StatusV3.md`](../../../StatusV3.md), Public Endpoints; [`AGENTS.md`](../../../AGENTS.md) |

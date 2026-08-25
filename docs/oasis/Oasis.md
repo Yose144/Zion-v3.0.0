@@ -2,7 +2,7 @@
 
 > **Poslední update:** 2026-07-31
 > **Aktivní workspace:** `V31/` (3.1.0-alpha.2) — Mainnet Alpha
-> **Produkční runtime:** `V3/` na Edge (`62.171.141.136`)
+> **Produkční runtime:** `V3/` na Edge (`zionterranova.com`)
 > **Lokální OASIS Game:** `cargo run -p zion-oasis` (port 8094) + `APP&WEB/OasisWeb` (Next.js 16, port 3000) — 200 avatarů, live HUD, CORS.
 > **OASIS Web vizuál v0.0.1:** live na `https://oasis.zionterranova.com` — spirálová galaxie 30k částic, 3D Strom života, bloom.
 > **Veřejný web trio:** `https://zionterranova.com` (intro) → `https://oasis.zionterranova.com` (OASIS web) ; `https://app.zionterranova.com` (web2.9).
@@ -81,8 +81,8 @@ Live na: `https://oasis.zionterranova.com`
 
 ### 2.5 Síť / provoz
 
-- Server: `62.171.141.136` (Contabo, IPv6 `2a02:c207:2342:5821::1`).
-- Pool: `62.171.141.136:8444`.
+- Server: `zionterranova.com` (Contabo, IPv6 `2a02:c207:2342:5821::1`).
+- Pool: `pool.zionterranova.com:8444`.
 - Veřejný RPC: `rpc.zionterranova.com:8443` → `127.0.0.1:9443` (nginx, IP allowlist).
 - Web: `https://zionterranova.com`, dashboard: `https://dashboard.zionterranova.com`.
 - Oasis web: `https://oasis.zionterranova.com`.

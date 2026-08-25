@@ -69,7 +69,7 @@ Jah bless.
 |---|---|
 | The mill gives the most in the first decade | Block reward 5,400.067 ZION/block, heights 1–5,256,000, then −20% every decade |
 | Nine parts of ten stay with the miller | Fee split 89% miner / 5% humanitarian / 5% Issobella / 1% burn — protocol-enforced |
-| The river already flows | Public pool `62.171.141.136:8444`, public RPC `rpc.zionterranova.com:8443` |
+| The river already flows | Public pool `pool.zionterranova.com:8444`, public RPC `rpc.zionterranova.com:8443` |
 | The garden is open but unfinished | OASIS preview live at `https://oasis.zionterranova.com` — not a finished game |
 | The code is not locked in a vault | MIT license, `github.com/Zion-TerraNova/v3-Mainnet` |
 | The network truly runs | `cargo test --workspace` 2178 pass, chain height 1000+ (2026-08-09) |

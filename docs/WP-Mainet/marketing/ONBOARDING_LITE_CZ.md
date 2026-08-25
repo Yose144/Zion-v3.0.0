@@ -22,7 +22,7 @@ cargo build --release
 ./target/release/zion --help
 ```
 
-Veřejný pool: `62.171.141.136:8444`
+Veřejný pool: `pool.zionterranova.com:8444`
 
 ## Klíčová čísla
 
@@ -30,7 +30,7 @@ Veřejný pool: `62.171.141.136:8444`
 - Blok: ~60 s
 - Rozdělení: 89 % těžař, 5 % humanitární, 5 % budoucnost, 1 % burn
 - Public RPC: `rpc.zionterranova.com:8443`
-- Pool: `62.171.141.136:8444`
+- Pool: `pool.zionterranova.com:8444`
 - Licence: MIT
 - Status: Mainnet Beta
 

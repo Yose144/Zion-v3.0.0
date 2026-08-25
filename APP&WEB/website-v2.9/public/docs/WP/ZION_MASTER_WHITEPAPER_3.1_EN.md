@@ -463,7 +463,7 @@ It is **living infrastructure + a compass**.
 | Core & pool license | MIT, open source |
 | Source code | https://github.com/Zion-TerraNova/v3-Mainnet |
 | Website / Explorer | https://zionterranova.com · /explorer |
-| Pool | `62.171.141.136:8444` |
+| Pool | `pool.zionterranova.com:8444` |
 | Status | Mainnet Beta · public launch target 31 Dec 2026 |
 
 Do not believe the story. Verify the chronicle. And when the chronicle

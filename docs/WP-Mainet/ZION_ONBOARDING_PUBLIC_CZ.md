@@ -25,7 +25,7 @@
 | Chain | 1000+ bloků od genesis resetu 2026-08-06, ~60 s/blok |
 | Testy | `cargo test --workspace` — **2178 pass, 0 failures** |
 | Služby | node, pool, miner, multichain, DAO, OASIS, dashboard, web, marketplace — vše `up` |
-| Veřejný pool | `62.171.141.136:8444` (Stratum) |
+| Veřejný pool | `pool.zionterranova.com:8444` (Stratum) |
 | Veřejný RPC | `rpc.zionterranova.com:8443` |
 | Web | `https://zionterranova.com` |
 | OASIS preview | `https://oasis.zionterranova.com` |
@@ -79,7 +79,7 @@ git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
 cd v3-Mainnet/V31
 cargo build --release --bin zion-miner
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...tvoje_adresa \
   --worker muj-prvni-stroj
 ```

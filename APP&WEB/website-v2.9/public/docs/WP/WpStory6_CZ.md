@@ -136,7 +136,7 @@ zrychlení.
 | Oficiální miner | ZION v3.0.6-beta — Trinity engine, Zion Grow, Zion Liquidity |
 | Licence jádra a poolu | MIT, otevřený zdrojový kód |
 | Zdrojový kód | https://github.com/Zion-TerraNova/v3-Mainnet |
-| Pool | `62.171.141.136:8444` |
+| Pool | `pool.zionterranova.com:8444` |
 | Web | https://zionterranova.com |
 
 ---

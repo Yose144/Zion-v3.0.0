@@ -142,7 +142,7 @@ this acceleration.
 | Official miner | ZION v3.0.6-beta — Trinity engine, Zion Grow, Zion Liquidity |
 | Core & pool license | MIT, open source |
 | Source code | https://github.com/Zion-TerraNova/v3-Mainnet |
-| Pool | `62.171.141.136:8444` |
+| Pool | `pool.zionterranova.com:8444` |
 | Website | https://zionterranova.com |
 
 ---

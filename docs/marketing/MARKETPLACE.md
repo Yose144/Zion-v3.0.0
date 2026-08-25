@@ -3,7 +3,7 @@
 > One document covering the OASIS Artifact Marketplace, e-shop, admin dashboard, invoices, emails, theming, and deployment.
 > Source: `APP&WEB/MarketPlace/`
 > Live URL: `https://market.zionterranova.com`
-> Runtime: `systemd zion-marketplace.service` on Edge (`62.171.141.136`), port `3100`
+> Runtime: `systemd zion-marketplace.service` on Edge (`zionterranova.com`), port `3100`
 
 ---
 

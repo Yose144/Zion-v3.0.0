@@ -25,7 +25,7 @@
 | Chain | 1000+ blocks since the 2026-08-06 genesis reset, ~60 s/block |
 | Tests | `cargo test --workspace` — **2178 pass, 0 failures** |
 | Services | node, pool, miner, multichain, DAO, OASIS, dashboard, web, marketplace — all `up` |
-| Public pool | `62.171.141.136:8444` (Stratum) |
+| Public pool | `pool.zionterranova.com:8444` (Stratum) |
 | Public RPC | `rpc.zionterranova.com:8443` |
 | Web | `https://zionterranova.com` |
 | OASIS preview | `https://oasis.zionterranova.com` |
@@ -79,7 +79,7 @@ git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
 cd v3-Mainnet/V31
 cargo build --release --bin zion-miner
 ./target/release/zion-miner \
-  --pool 62.171.141.136:8444 \
+  --pool pool.zionterranova.com:8444 \
   --wallet zion1...your_address \
   --worker my-first-rig
 ```
