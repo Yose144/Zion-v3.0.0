@@ -6,6 +6,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 // Lazy-load SDK only in browser
 let sdk: any = null;
@@ -64,7 +65,15 @@ const defaultState: ZionWalletState = {
 
 const ZionWalletContext = createContext<ZionWalletState>(defaultState);
 
+const RELEVANT_PATHS = ['/wallet', '/login', '/dashboard', '/guardian', '/account'];
+
+function isRelevantPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return RELEVANT_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
 export function ZionWalletProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [manager, setManager] = useState<any>(null);
   const [wallets, setWallets] = useState<ZionWalletState['wallets']>([]);
   const [activeWallet, setActiveWallet] = useState<ZionWalletState['activeWallet']>(null);
@@ -84,7 +93,9 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !isRelevantPath(pathname)) return;
+
+    let cancelled = false;
     getSDK().then(async (SDK: any) => {
       const storage = new SDK.WebStorage();
       const m = new SDK.WalletManager(storage, {
@@ -96,11 +107,22 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
         ],
       });
       await m.initialize();
-      setManager(m);
-      refreshWallets(m);
-      setInitialized(true);
+      if (!cancelled) {
+        setManager(m);
+        refreshWallets(m);
+        setInitialized(true);
+      }
+    }).catch((e: any) => {
+      if (!cancelled) {
+        setError(e?.message || 'Wallet SDK failed to initialize');
+        setInitialized(true);
+      }
     });
-  }, [refreshWallets]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, refreshWallets]);
 
   const createWallet = useCallback(async (name: string, password: string) => {
     if (!manager) throw new Error('Wallet manager not initialized');

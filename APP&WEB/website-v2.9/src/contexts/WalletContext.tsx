@@ -270,56 +270,83 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const mounted = useRef(true);
 
+  // Attach/detach event listeners whenever the active provider changes.
+  // This runs only when a provider has been selected by the user or auto-detected.
   useEffect(() => {
-    mounted.current = true;
+    if (!activeProvider) return;
+    const eth = activeProvider;
 
-    const init = async () => {
-      const found = await getProvider();
-      if (!found || !mounted.current) return;
+    const onAccounts = (accs: string[]) => {
+      if (accs.length === 0) {
+        setAccount(null);
+        setChainId(null);
+      } else {
+        setAccount(accs[0]);
+      }
+    };
 
-      const { provider: eth, name } = found;
-      setActiveProvider(eth);
-      setWalletName(name);
+    const onChain = (hexId: string) => {
+      setChainId(parseInt(hexId, 16));
+    };
 
-      const onAccounts = (accs: string[]) => {
-        if (accs.length === 0) {
-          setAccount(null);
-          setChainId(null);
-        } else {
-          setAccount(accs[0]);
-        }
-      };
+    // Some injected providers are EventEmitters with a low default listener limit.
+    if (typeof (eth as any).setMaxListeners === 'function') {
+      try {
+        (eth as any).setMaxListeners(64);
+      } catch {
+        // ignore
+      }
+    }
 
-      const onChain = (hexId: string) => {
-        setChainId(parseInt(hexId, 16));
-      };
+    eth.on('accountsChanged', onAccounts);
+    eth.on('chainChanged', onChain);
 
-      eth.on('accountsChanged', onAccounts);
-      eth.on('chainChanged', onChain);
-
-      // Auto-connect if already authorized (does not prompt)
+    // Auto-detect current account/chain without prompting
+    const sync = async () => {
       try {
         const accounts = (await eth.request({ method: 'eth_accounts' })) as string[];
-        if (accounts[0] && mounted.current) {
-          setAccount(accounts[0]);
-          const chain = (await eth.request({ method: 'eth_chainId' })) as string;
-          if (mounted.current) setChainId(parseInt(chain, 16));
-        }
+        const chain = (await eth.request({ method: 'eth_chainId' })) as string;
+        if (accounts[0]) setAccount(accounts[0]);
+        setChainId(parseInt(chain, 16));
       } catch {
         // silent
       }
+    };
+    sync();
 
-      return () => {
+    return () => {
+      try {
         eth.removeListener('accountsChanged', onAccounts);
         eth.removeListener('chainChanged', onChain);
-      };
+      } catch {
+        // provider may not support removal
+      }
+    };
+  }, [activeProvider]);
+
+  // Auto-connect on mount if a wallet is already authorized, but do not prompt.
+  useEffect(() => {
+    mounted.current = true;
+    let cancelled = false;
+
+    const init = async () => {
+      // Only auto-detect once on the client; no-op on SSR
+      if (typeof window === 'undefined' || !mounted.current) return;
+      const found = await getProvider();
+      if (!found || cancelled || !mounted.current) return;
+
+      const { provider: eth, name } = found;
+      if (!cancelled && mounted.current) {
+        setActiveProvider(eth);
+        setWalletName(name);
+      }
     };
 
-    const cleanupPromise = init();
+    init().catch(() => {});
 
     return () => {
       mounted.current = false;
-      cleanupPromise.then((cleanup) => cleanup?.()).catch(() => {});
+      cancelled = true;
     };
   }, []);
 
