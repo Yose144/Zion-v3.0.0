@@ -1,42 +1,31 @@
 #!/bin/bash
-# ZION Edge Server — Comprehensive L1-L6 Backup
+# ZION Edge Server — Comprehensive L1-L6 Backup (V31-aware)
 # ============================================================================
 # Backs up ALL critical data on the Edge VPS (62.171.141.136):
 #
-#   L1 (Consensus):
-#     - Node 1 state DB (/data/zion/state)
-#     - Node 2 state DB (/data/zion/state-node2)
+#   L1 (Consensus / V31 nodes):
+#     - V31 node DBs: /opt/zion/data/v31/node.db, node2.db, node3.db
+#     - V31 pool DBs: /opt/zion/data/v31/pool.db, pool-store.db
+#     - V31 pool state: /opt/zion/data/v31/pool-pplns.json
 #     - peers.json, pplns-state.json, pplns-state-test.json
 #
 #   L2 (Bridge / DAO / Atomic Swap / DEX):
 #     - bridge-mainnet.db (+WAL/SHM)
-#     - dao-mainnet.db (+WAL/SHM)
-#     - atomic-swap.db (+WAL/SHM)
-#     - ziondex-router.db (+WAL/SHM)
-#     - L2 config TOMLs (bridge, dao, swap, warp)
+#     - dao.db, dao-v31.db (+WAL/SHM)
 #
-#   L3 (WARP):
-#     - warp-mainnet.db (+WAL/SHM)
-#     - chains.toml
+#   L3 (WARP / multichain):
+#     - warp.db, warp_multichain.db, warp-v31.db, warp-v31_multichain.db
 #
-#   L4 (OASIS): oasis.db + game state JSONs (golden_egg, avatars, world, prize_tiers)
+#   L4 (OASIS): oasis-v31.db + game state JSONs
 #   L5 (Free World): free_world.db
 #   L6 (Issobella): issobella.db
 #
 #   Operations:
-#     - /etc/zion/edge-environment.sh (secrets, wallet keys, fee split)
-#     - /etc/zion/edge-node2-environment.sh
-#     - /etc/zion/test-pool-environment.sh, xmr-pool-environment.sh
+#     - /etc/zion/edge-environment.sh and related env files
 #     - /etc/zion/keys/ (if populated)
-#     - /etc/zion/config/*.toml (canonical config copies)
-#     - Systemd service files (zion-edge-*.service)
-#     - nginx site configs (/etc/nginx/sites-enabled/)
-#     - fail2ban configs (/etc/fail2ban/jail.d/)
-#     - Let's Encrypt certs (/etc/letsencrypt/live/ + archive)
-#
-#   Application state:
-#     - /opt/zion/data/dashboard/state.json
-#     - /opt/zion/data/revenue_journal/*.jsonl
+#     - /etc/zion/config/*.toml
+#     - V31 Systemd service files (zion-v31-*.service) + drop-ins + timers
+#     - nginx site configs, fail2ban, Let's Encrypt certs
 #
 # Usage (manual):
 #   sudo /opt/zion/ZION_OS/infra/scripts/backup-edge.sh
@@ -59,7 +48,6 @@ DAY_OF_WEEK=$(date +%u)  # 1=Monday, 7=Sunday
 RETENTION_DAILY=14
 RETENTION_WEEKLY=4
 
-# Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -67,35 +55,25 @@ NC='\033[0m'
 
 log() { echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1"; }
 
-# Copy a database file safely.
-# - SQLite .db files are backed up with the sqlite3 .backup command so the
-#   copy is consistent even if the DB is open in WAL mode. If sqlite3 is not
-#   available, fall back to cp and also copy -wal/-shm sidecar files.
-# - Other files are copied directly.
+# Backup a SQLite DB consistently using sqlite3 .backup if possible.
 backup_db() {
     local src="$1"
     local dest_dir="$2"
-    local basename_src
-    basename_src=$(basename "$src")
-
-    if [[ "$src" == *.db ]]; then
-        if command -v sqlite3 >/dev/null 2>&1; then
-            sqlite3 "$src" ".backup '${dest_dir}/${basename_src}'" 2>/dev/null || true
-            if [[ -f "${dest_dir}/${basename_src}" ]]; then
-                return 0
-            fi
-            log "${YELLOW}  ⚠ sqlite3 .backup failed for ${basename_src}, falling back to cp${NC}"
+    local rel="$3"
+    local dest="${dest_dir}/${rel}"
+    mkdir -p "$(dirname "$dest")"
+    if command -v sqlite3 >/dev/null 2>&1; then
+        sqlite3 "$src" ".backup '${dest}'" 2>/dev/null || true
+        if [[ -f "$dest" ]]; then
+            return 0
         fi
-        # Fallback: copy DB + WAL/shm files as a set (best effort)
-        cp "$src" "${dest_dir}/"
-        if [[ -f "${src}-wal" ]]; then cp "${src}-wal" "${dest_dir}/" 2>/dev/null || true; fi
-        if [[ -f "${src}-shm" ]]; then cp "${src}-shm" "${dest_dir}/" 2>/dev/null || true; fi
-    else
-        cp "$src" "${dest_dir}/"
+        log "${YELLOW}  ⚠ sqlite3 .backup failed for ${rel}, falling back to cp${NC}"
     fi
+    cp "$src" "$dest"
+    if [[ -f "${src}-wal" ]]; then cp "${src}-wal" "$(dirname "$dest")/" 2>/dev/null || true; fi
+    if [[ -f "${src}-shm" ]]; then cp "${src}-shm" "$(dirname "$dest")/" 2>/dev/null || true; fi
 }
 
-# Copy a file if it exists, log warning otherwise.
 copy_if_exists() {
     local src="$1"
     local dest_dir="$2"
@@ -107,7 +85,6 @@ copy_if_exists() {
     fi
 }
 
-# Copy a directory recursively if it exists.
 copy_dir_if_exists() {
     local src="$1"
     local dest_dir="$2"
@@ -127,72 +104,78 @@ log "${GREEN}=== ZION Edge Backup Started ===${NC}"
 log "Repo : ${REPO_ROOT}"
 log "Dest : ${BACKUP_DIR}"
 
-# ── 1. L1 — Node state databases + P2P/PPLNS state ──────────────────────────
-log "Backing up L1 node state databases..."
 NODE_BACKUP="${BACKUP_DIR}/daily/node_state_${TIMESTAMP}"
-mkdir -p "${NODE_BACKUP}"
+V31_BACKUP="${BACKUP_DIR}/daily/v31_data_${TIMESTAMP}"
+APP_BACKUP="${BACKUP_DIR}/daily/app_state_${TIMESTAMP}"
+CONFIG_BACKUP="${BACKUP_DIR}/daily/config_${TIMESTAMP}"
+SYSTEMD_BACKUP="${BACKUP_DIR}/daily/systemd_${TIMESTAMP}"
+NGINX_BACKUP="${BACKUP_DIR}/daily/nginx_${TIMESTAMP}"
+F2B_BACKUP="${BACKUP_DIR}/daily/fail2ban_${TIMESTAMP}"
+CERT_BACKUP="${BACKUP_DIR}/daily/letsencrypt_${TIMESTAMP}"
+mkdir -p "${NODE_BACKUP}" "${V31_BACKUP}" "${APP_BACKUP}" "${CONFIG_BACKUP}" \
+         "${SYSTEMD_BACKUP}" "${NGINX_BACKUP}" "${F2B_BACKUP}" "${CERT_BACKUP}"
 
-for db in "/data/zion/state" "/data/zion/state-node2" \
-          "/opt/zion/data/edge-state.db" "/opt/zion/data/edge2-state.db"; do
-    if [[ -f "$db" ]]; then
-        backup_db "$db" "${NODE_BACKUP}"
-        log "${GREEN}  ✓ $(basename $db)${NC}"
-    else
-        log "${YELLOW}  ⚠  $(basename $db) not found${NC}"
-    fi
+# ── 1. V31 data + all DBs (deduplicated by realpath) ────────────────────────
+log "Backing up V31 /data databases..."
+
+# Collect all .db files under /data/zion and /opt/zion/data, avoiding
+# historical backup/restore directories and symlinks.
+mapfile -t DB_FILES < <(
+    find /data/zion /opt/zion/data \
+        -maxdepth 3 -type f -name '*.db' \
+        ! -path '*/backup-*' \
+        ! -path '*/restore-*' \
+        ! -path '*/pre-*' \
+        -print0 2>/dev/null | \
+    xargs -0 -I{} realpath -e {} 2>/dev/null | \
+    sort -u
+)
+
+for db in "${DB_FILES[@]}"; do
+    # Preserve directory structure under the backup root, e.g.:
+    # /opt/zion/data/v31/node.db -> v31_data/opt/zion/data/v31/node.db
+    rel=$(realpath --relative-to=/ "$db")
+    rel=${rel#/}
+    backup_db "$db" "${V31_BACKUP}" "$rel"
+    log "${GREEN}  ✓ ${rel}${NC}"
 done
 
-# P2P peers + PPLNS state (pool payment tracking)
-for f in "/data/zion/peers.json" \
-         "/data/zion/pplns-state.json" \
-         "/data/zion/pplns-state-test.json"; do
+# ── 2. Node / pool / app state JSONs ────────────────────────────────────────
+log "Backing up node / pool / app state..."
+for f in /data/zion/peers.json /data/zion/pplns-state.json \
+         /data/zion/pplns-state-test.json \
+         /opt/zion/data/v31/peers.json \
+         /opt/zion/data/v31/pplns-state.json \
+         /data/zion/g8_run.json \
+         /opt/zion/data/v31/pool-pplns.json; do
     copy_if_exists "$f" "${NODE_BACKUP}"
 done
 
-# ── 2. L2-L6 — All /data/zion/*.db databases (+WAL/SHM) ─────────────────────
-log "Backing up L2-L6 databases..."
-V3_BACKUP="${BACKUP_DIR}/daily/v3_data_${TIMESTAMP}"
-mkdir -p "${V3_BACKUP}"
-
-# Live server uses /data/zion/ for all DBs; /opt/zion/data is the repo-local fallback.
-# Includes: bridge, dao, atomic-swap, ziondex-router (L2), warp (L3),
-#           oasis (L4), free_world (L5), issobella (L6)
-for data_dir in "/data/zion" "/opt/zion/data"; do
-    if [[ -d "$data_dir" ]]; then
-        for db in "$data_dir"/*.db; do
-            if [[ -f "$db" ]]; then
-                backup_db "$db" "${V3_BACKUP}"
-                log "${GREEN}  ✓ $(basename $db)${NC}"
-            fi
-        done
-    fi
-done
-if [[ ! -d "/data/zion" && ! -d "/opt/zion/data" ]]; then
-    log "${YELLOW}  ⚠  No data directory found${NC}"
-fi
-
-# ── 3. L4 OASIS game state JSONs ────────────────────────────────────────────
-log "Backing up L4 OASIS game state..."
-OASIS_DATA="${V3_BACKUP}/oasis_data"
+# ── 3. OASIS game state JSONs (V31 primary, V3 fallback) ────────────────────
+log "Backing up OASIS game state..."
+OASIS_DATA="${V31_BACKUP}/oasis_data"
 mkdir -p "${OASIS_DATA}"
 for f in golden_egg.json avatars.json world.json prize_tiers.json; do
-    copy_if_exists "${REPO_ROOT}/V3/L4/oasis/data/${f}" "${OASIS_DATA}"
+    if [[ -f "${REPO_ROOT}/V31/L4/oasis/data/${f}" ]]; then
+        cp "${REPO_ROOT}/V31/L4/oasis/data/${f}" "${OASIS_DATA}/"
+        log "${GREEN}  ✓ ${f} (V31)${NC}"
+    elif [[ -f "${REPO_ROOT}/V3/L4/oasis/data/${f}" ]]; then
+        cp "${REPO_ROOT}/V3/L4/oasis/data/${f}" "${OASIS_DATA}/"
+        log "${YELLOW}  ✓ ${f} (V3 fallback)${NC}"
+    else
+        log "${YELLOW}  ⚠  ${f} not found${NC}"
+    fi
 done
 
 # ── 4. Application state (dashboard + revenue journal) ──────────────────────
 log "Backing up application state..."
-APP_BACKUP="${BACKUP_DIR}/daily/app_state_${TIMESTAMP}"
-mkdir -p "${APP_BACKUP}"
-
 copy_if_exists "/opt/zion/data/dashboard/state.json" "${APP_BACKUP}"
+copy_if_exists "/opt/zion/data/v31/dashboard-state.json" "${APP_BACKUP}"
 copy_dir_if_exists "/opt/zion/data/revenue_journal" "${APP_BACKUP}"
+copy_dir_if_exists "/opt/zion/data/v31/revenue_journal" "${APP_BACKUP}"
 
-# ── 5. Critical config files (secrets + TOMLs) ──────────────────────────────
+# ── 5. Critical config files ────────────────────────────────────────────────
 log "Backing up config files..."
-CONFIG_BACKUP="${BACKUP_DIR}/daily/config_${TIMESTAMP}"
-mkdir -p "${CONFIG_BACKUP}"
-
-# /etc/zion/ environment files (secrets, wallet keys, fee split)
 for cfg in \
     "/etc/zion/edge-environment.sh" \
     "/etc/zion/edge-node2-environment.sh" \
@@ -202,112 +185,93 @@ for cfg in \
     copy_if_exists "$cfg" "${CONFIG_BACKUP}"
 done
 
-# /etc/zion/keys/ (private keys directory — usually empty but back up if populated)
-if [[ -d "/etc/zion/keys" ]] && [[ -n "$(ls -A /etc/zion/keys 2>/dev/null)" ]]; then
+if [[ -d /etc/zion/keys ]] && [[ -n "$(ls -A /etc/zion/keys 2>/dev/null)" ]]; then
     cp -r /etc/zion/keys "${CONFIG_BACKUP}/keys"
     log "${GREEN}  ✓ keys/ (populated)${NC}"
 fi
 
-# /etc/zion/config/ canonical TOML copies
-for cfg in \
-    "/etc/zion/config/bridge-mainnet.toml" \
-    "/etc/zion/config/dao-mainnet.toml" \
-    "/etc/zion/config/swap-mainnet.toml" \
-    "/etc/zion/config/warp-mainnet.toml"; do
-    copy_if_exists "$cfg" "${CONFIG_BACKUP}"
+if [[ -d /etc/zion/config ]]; then
+    cp -r /etc/zion/config "${CONFIG_BACKUP}/config"
+    log "${GREEN}  ✓ config/${NC}"
+fi
+
+# Repo-local canonical V31 configs
+if [[ -d "${REPO_ROOT}/V31/L2/multichain/config" ]]; then
+    cp -r "${REPO_ROOT}/V31/L2/multichain/config" "${CONFIG_BACKUP}/multichain-config" 2>/dev/null || true
+fi
+
+# ── 6. V31 Systemd service files and timers ─────────────────────────────────
+log "Backing up V31 systemd service files..."
+
+if ls /etc/systemd/system/zion-v31-*.service >/dev/null 2>&1; then
+    cp /etc/systemd/system/zion-v31-*.service "${SYSTEMD_BACKUP}/" 2>/dev/null || true
+fi
+if ls /etc/systemd/system/zion-v31-*.timer >/dev/null 2>&1; then
+    cp /etc/systemd/system/zion-v31-*.timer "${SYSTEMD_BACKUP}/" 2>/dev/null || true
+fi
+# Drop-ins
+for d in /etc/systemd/system/zion-v31-*.service.d /etc/systemd/system/zion-v31-*.timer.d; do
+    [[ -d "$d" ]] && cp -r "$d" "${SYSTEMD_BACKUP}/" 2>/dev/null || true
 done
 
-# Repo-local config TOMLs (fallback / source of truth)
-for cfg in \
-    "${REPO_ROOT}/V3/L2/bridge/config/bridge-mainnet.toml" \
-    "${REPO_ROOT}/V3/L2/dao/config/dao-mainnet.toml" \
-    "${REPO_ROOT}/V3/L2/atomic-swap/config/swap-mainnet.toml" \
-    "${REPO_ROOT}/V3/L3/warp/config/warp-mainnet.toml" \
-    "${REPO_ROOT}/V3/L3/warp/config/chains.toml"; do
-    copy_if_exists "$cfg" "${CONFIG_BACKUP}"
-done
-
-# ── 6. Systemd service files ────────────────────────────────────────────────
-log "Backing up systemd service files..."
-SYSTEMD_BACKUP="${BACKUP_DIR}/daily/systemd_${TIMESTAMP}"
-mkdir -p "${SYSTEMD_BACKUP}"
-
-# Live deployed service files
+# Legacy V3/V2 service files (keep if still present)
 if ls /etc/systemd/system/zion-edge-*.service >/dev/null 2>&1; then
     cp /etc/systemd/system/zion-edge-*.service "${SYSTEMD_BACKUP}/" 2>/dev/null || true
 fi
-# Timer files
 if ls /etc/systemd/system/zion-edge-*.timer >/dev/null 2>&1; then
     cp /etc/systemd/system/zion-edge-*.timer "${SYSTEMD_BACKUP}/" 2>/dev/null || true
 fi
-# Repo-local service files (canonical source)
-if [[ -d "${REPO_ROOT}/edge-deploy/systemd" ]]; then
-    cp "${REPO_ROOT}/edge-deploy/systemd/"*.service "${SYSTEMD_BACKUP}/" 2>/dev/null || true
-fi
-if [[ -d "${REPO_ROOT}/ZION_OS/infra/systemd" ]]; then
-    cp "${REPO_ROOT}/ZION_OS/infra/systemd/"*.service "${SYSTEMD_BACKUP}/" 2>/dev/null || true
-    cp "${REPO_ROOT}/ZION_OS/infra/systemd/"*.timer "${SYSTEMD_BACKUP}/" 2>/dev/null || true
+
+# Repo-local V31 service files
+if [[ -d "${REPO_ROOT}/V31/deploy/systemd" ]]; then
+    cp "${REPO_ROOT}/V31/deploy/systemd/"zion-v31-* "${SYSTEMD_BACKUP}/" 2>/dev/null || true
 fi
 log "${GREEN}  ✓ $(ls -1 ${SYSTEMD_BACKUP}/ 2>/dev/null | wc -l) service/timer files${NC}"
 
-# ── 7. nginx site configs ───────────────────────────────────────────────────
+# ── 7. nginx / fail2ban / letsencrypt ───────────────────────────────────────
 log "Backing up nginx configs..."
-NGINX_BACKUP="${BACKUP_DIR}/daily/nginx_${TIMESTAMP}"
-mkdir -p "${NGINX_BACKUP}"
-
 if [[ -d "/etc/nginx/sites-enabled" ]]; then
     cp /etc/nginx/sites-enabled/* "${NGINX_BACKUP}/" 2>/dev/null || true
     log "${GREEN}  ✓ nginx sites-enabled${NC}"
 fi
 copy_if_exists "/etc/nginx/nginx.conf" "${NGINX_BACKUP}"
 
-# ── 8. fail2ban configs ─────────────────────────────────────────────────────
 log "Backing up fail2ban configs..."
-F2B_BACKUP="${BACKUP_DIR}/daily/fail2ban_${TIMESTAMP}"
-mkdir -p "${F2B_BACKUP}"
-
 if [[ -d "/etc/fail2ban/jail.d" ]]; then
     cp /etc/fail2ban/jail.d/* "${F2B_BACKUP}/" 2>/dev/null || true
     log "${GREEN}  ✓ fail2ban jail.d${NC}"
 fi
 copy_if_exists "/etc/fail2ban/jail.conf" "${F2B_BACKUP}"
 
-# ── 9. Let's Encrypt certificates ───────────────────────────────────────────
 log "Backing up Let's Encrypt certs..."
-CERT_BACKUP="${BACKUP_DIR}/daily/letsencrypt_${TIMESTAMP}"
-mkdir -p "${CERT_BACKUP}"
-
 if [[ -d "/etc/letsencrypt/live" ]]; then
-    # Back up live symlinks + the actual archive (private keys live here)
     tar -czf "${CERT_BACKUP}/letsencrypt-live.tar.gz" -C /etc/letsencrypt live 2>/dev/null || true
     tar -czf "${CERT_BACKUP}/letsencrypt-archive.tar.gz" -C /etc/letsencrypt archive 2>/dev/null || true
-    if [[ -f "/etc/letsencrypt/options-ssl-nginx.conf" ]]; then
-        cp /etc/letsencrypt/options-ssl-nginx.conf "${CERT_BACKUP}/" 2>/dev/null || true
-    fi
+    copy_if_exists "/etc/letsencrypt/options-ssl-nginx.conf" "${CERT_BACKUP}"
     log "${GREEN}  ✓ Let's Encrypt certs${NC}"
 else
     log "${YELLOW}  ⚠  /etc/letsencrypt/live not found${NC}"
 fi
 
-# ── 10. Compress daily backup ───────────────────────────────────────────────
+# ── 8. Compress daily backup ────────────────────────────────────────────────
 DAILY_TAR="${BACKUP_DIR}/daily/zion-edge-${TIMESTAMP}.tar.gz"
 if tar -czf "${DAILY_TAR}" -C "${BACKUP_DIR}/daily" \
-       "node_state_${TIMESTAMP}" "v3_data_${TIMESTAMP}" \
+       "node_state_${TIMESTAMP}" "v31_data_${TIMESTAMP}" \
        "app_state_${TIMESTAMP}" "config_${TIMESTAMP}" \
        "systemd_${TIMESTAMP}" "nginx_${TIMESTAMP}" \
        "fail2ban_${TIMESTAMP}" "letsencrypt_${TIMESTAMP}"; then
-    # Cleanup uncompressed dirs only after successful tar
-    rm -rf "${NODE_BACKUP}" "${V3_BACKUP}" "${APP_BACKUP}" \
+    rm -rf "${NODE_BACKUP}" "${V31_BACKUP}" "${APP_BACKUP}" \
            "${CONFIG_BACKUP}" "${SYSTEMD_BACKUP}" \
            "${NGINX_BACKUP}" "${F2B_BACKUP}" "${CERT_BACKUP}"
     SIZE=$(du -sh "${DAILY_TAR}" | cut -f1)
+    chown zion:zion "${DAILY_TAR}" 2>/dev/null || true
     log "${GREEN}  ✓ Daily backup: ${DAILY_TAR} (${SIZE})${NC}"
 else
     log "${RED}  ✗ Failed to create daily backup${NC}"
     exit 1
 fi
 
-# ── 11. Weekly snapshot (Sunday) ────────────────────────────────────────────
+# ── 9. Weekly snapshot (Sunday) ─────────────────────────────────────────────
 if [[ "${DAY_OF_WEEK}" == "7" ]]; then
     WEEK_NUM=$(date +%Y_W%V)
     WEEKLY_TAR="${BACKUP_DIR}/weekly/zion-edge-weekly-${WEEK_NUM}.tar.gz"
@@ -317,10 +281,9 @@ if [[ "${DAY_OF_WEEK}" == "7" ]]; then
     fi
 fi
 
-# ── 12. Cleanup old backups ─────────────────────────────────────────────────
+# ── 10. Cleanup old backups ─────────────────────────────────────────────────
 log "Cleaning up old backups..."
 
-# Daily: keep last N
 DAILY_COUNT=$(find "${BACKUP_DIR}/daily" -name 'zion-edge-*.tar.gz' -type f | wc -l)
 if [[ ${DAILY_COUNT} -gt ${RETENTION_DAILY} ]]; then
     find "${BACKUP_DIR}/daily" -name 'zion-edge-*.tar.gz' -type f -printf '%T@ %p\n' | \
@@ -329,7 +292,6 @@ if [[ ${DAILY_COUNT} -gt ${RETENTION_DAILY} ]]; then
     log "${GREEN}  ✓ Rotated daily backups (keep ${RETENTION_DAILY})${NC}"
 fi
 
-# Weekly: keep last N
 WEEKLY_COUNT=$(find "${BACKUP_DIR}/weekly" -name 'zion-edge-*.tar.gz' -type f | wc -l)
 if [[ ${WEEKLY_COUNT} -gt ${RETENTION_WEEKLY} ]]; then
     find "${BACKUP_DIR}/weekly" -name 'zion-edge-*.tar.gz' -type f -printf '%T@ %p\n' | \
