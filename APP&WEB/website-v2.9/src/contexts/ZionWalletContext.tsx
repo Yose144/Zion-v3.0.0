@@ -90,7 +90,6 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
       const m = new SDK.WalletManager(storage, {
         nodes: [
           'https://rpc.zionterranova.com',
-          'http://rpc.zionterranova.com:8443',
           ...(process.env.NEXT_PUBLIC_ZION_RPC_EXTRA_NODES
             ? process.env.NEXT_PUBLIC_ZION_RPC_EXTRA_NODES.split(',').map((s) => s.trim())
             : []),
