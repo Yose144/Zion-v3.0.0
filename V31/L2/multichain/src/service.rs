@@ -522,7 +522,16 @@ impl MultichainService {
     pub async fn wallet_me(&self, user_id: &str) -> MultichainResult<serde_json::Value> {
         let db = self.db.lock().await;
         let addresses = db.load_wallet_addresses_for_user(user_id)?;
-        let balances = db.load_wallet_balances_for_user(user_id)?;
+        let balances = db
+            .load_wallet_balances_for_user(user_id)?
+            .into_iter()
+            .map(|(asset_key, amount)| {
+                serde_json::json!({
+                    "asset_key": asset_key,
+                    "amount": amount.0.to_string(),
+                })
+            })
+            .collect::<Vec<_>>();
         let deposits = db.load_deposits_for_user(user_id)?;
         let withdrawals = db.load_withdrawals_for_user(user_id)?;
         let orders = db.load_dex_orders_for_user(user_id)?;
