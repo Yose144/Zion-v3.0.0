@@ -42,6 +42,8 @@ pub struct Pool {
     pub pending_payouts: Vec<(u64, PayoutEntry)>,
     /// (block_height, address) pairs already submitted to the wallet.
     pub sent_payouts: HashSet<(u64, String)>,
+    /// Block heights that have already been processed for payout (idempotency guard).
+    paid_block_heights: HashSet<u64>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
 }
@@ -79,6 +81,7 @@ impl Pool {
             signing_key,
             pending_payouts: Vec::new(),
             sent_payouts: HashSet::new(),
+            paid_block_heights: HashSet::new(),
             telemetry,
         }
     }
@@ -190,6 +193,9 @@ impl Pool {
 
     /// Record a found block and compute PPLNS payouts for it.
     pub fn on_block_found(&mut self, block_height: u64, block_reward: u64) {
+        if !self.paid_block_heights.insert(block_height) {
+            return;
+        }
         let payouts = self.payouts(block_reward);
         for payout in payouts {
             let key = (block_height, payout.address.clone());

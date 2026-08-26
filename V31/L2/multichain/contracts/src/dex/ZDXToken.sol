@@ -1,42 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
 /// @title ZDXToken
 /// @notice ZionDex governance token — rewards for LPs and stakers
-/// @dev ERC-20 with minting controlled by ZionDexStaking
-contract ZDXToken {
+/// @dev ERC-20 with minting controlled by MINTER_ROLE (e.g. staking contract).
+///      SLASHER_ROLE can burn tokens during slashing (SolverRegistry).
+///      DEFAULT_ADMIN_ROLE manages role assignments (multisig).
+contract ZDXToken is AccessControl {
     string public constant name = "ZionDex Token";
     string public constant symbol = "ZDX";
     uint8 public constant decimals = 18;
-    uint256 public constant MAX_SUPPLY = 100_000_000 * 1e18; // 100M ZDX
+    uint256 public constant MAX_SUPPLY = 100_000_000 * 1e18;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
 
     uint256 public totalSupply;
-    address public immutable owner;
 
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    // ── Events ─────────────────────────────────────────────────────────
-
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Mint(address indexed to, uint256 value);
+    event Burn(address indexed from, uint256 value);
 
-    // ── Modifier ───────────────────────────────────────────────────────
+    constructor(address admin, address minter, address slasher) {
+        if (admin == address(0) || minter == address(0) || slasher == address(0)) {
+            revert("Zero address");
+        }
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, minter);
+        _grantRole(SLASHER_ROLE, slasher);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "NOT_OWNER");
-        _;
+        uint256 initialSupply = 10_000_000 * 1e18;
+        _mint(admin, initialSupply);
     }
-
-    constructor() {
-        owner = msg.sender;
-        // Mint initial supply to deployer
-        uint256 initialSupply = 10_000_000 * 1e18; // 10M ZDX
-        _mint(msg.sender, initialSupply);
-    }
-
-    // ── ERC-20 ─────────────────────────────────────────────────────────
 
     function transfer(address to, uint256 value) external returns (bool) {
         _transfer(msg.sender, to, value);
@@ -59,23 +60,14 @@ contract ZDXToken {
         return true;
     }
 
-    // ── Minting ────────────────────────────────────────────────────────
-
-    /// @notice Mint ZDX rewards (only callable by staking contract)
-    /// @param to Recipient
-    /// @param amount Amount to mint
-    function mint(address to, uint256 amount) external onlyOwner {
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
         require(totalSupply + amount <= MAX_SUPPLY, "MAX_SUPPLY_EXCEEDED");
         _mint(to, amount);
     }
 
-    /// @notice Set new minter (for upgrading staking contract)
-    function setMinter(address newMinter) external onlyOwner {
-        // Transfer ownership to new minter
-        // In production: use Ownable pattern with separate minter role
+    function burn(uint256 amount) external onlyRole(SLASHER_ROLE) {
+        _burn(msg.sender, amount);
     }
-
-    // ── Internal ───────────────────────────────────────────────────────
 
     function _transfer(address from, address to, uint256 value) internal {
         require(balanceOf[from] >= value, "INSUFFICIENT_BALANCE");
@@ -89,5 +81,13 @@ contract ZDXToken {
         balanceOf[to] += amount;
         emit Transfer(address(0), to, amount);
         emit Mint(to, amount);
+    }
+
+    function _burn(address from, uint256 amount) internal {
+        require(balanceOf[from] >= amount, "INSUFFICIENT_BALANCE");
+        balanceOf[from] -= amount;
+        totalSupply -= amount;
+        emit Transfer(from, address(0), amount);
+        emit Burn(from, amount);
     }
 }

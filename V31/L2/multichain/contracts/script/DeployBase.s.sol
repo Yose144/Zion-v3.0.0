@@ -20,33 +20,36 @@ contract DeployBase is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. Deploy ZDX Token
-        ZDXToken zdx = new ZDXToken();
+        address deployer = vm.addr(deployerPrivateKey);
+
+        // 1. Deploy SolverRegistry first (we need its address for ZDX SLASHER_ROLE)
+        SolverRegistry solverRegistry = new SolverRegistry(deployer);
+        console.log("SolverRegistry deployed:", address(solverRegistry));
+
+        // 2. Deploy ZDX Token — admin=deployer, minter=staking(to be set), slasher=SolverRegistry
+        ZDXToken zdx = new ZDXToken(deployer, deployer, address(solverRegistry));
         console.log("ZDXToken deployed:", address(zdx));
 
-        // 2. Deploy Pool Manager
+        // 3. Deploy Pool Manager
         ZionDexPoolManager poolManager = new ZionDexPoolManager(WZION);
         console.log("ZionDexPoolManager deployed:", address(poolManager));
 
-        // 3. Deploy Hooks
+        // 4. Deploy Hooks
         ZionDexHooks hooks = new ZionDexHooks(WZION);
         console.log("ZionDexHooks deployed:", address(hooks));
 
-        // 4. Deploy Router
+        // 5. Deploy Router
         ZionDexRouter router = new ZionDexRouter(address(poolManager), WZION);
         console.log("ZionDexRouter deployed:", address(router));
 
-        // 5. Deploy Staking
+        // 6. Deploy Staking — gets MINTER_ROLE for reward minting
         ZionDexStaking staking = new ZionDexStaking(address(zdx));
         console.log("ZionDexStaking deployed:", address(staking));
 
-        // 6. Transfer ZDX ownership to staking contract (for minting rewards)
-        // Note: ZDXToken.owner is the deployer — transfer to staking
-        // In production: use AccessControl with MINTER_ROLE
-
-        // 7. Deploy SolverRegistry (Phase 4 — Intent-Based Execution)
-        SolverRegistry solverRegistry = new SolverRegistry(address(zdx));
-        console.log("SolverRegistry deployed:", address(solverRegistry));
+        // 7. Grant MINTER_ROLE to staking contract, revoke from deployer
+        zdx.grantRole(zdx.MINTER_ROLE(), address(staking));
+        zdx.revokeRole(zdx.MINTER_ROLE(), deployer);
+        console.log("MINTER_ROLE granted to staking, revoked from deployer");
 
         // 8. Deploy IntentSettlement
         IntentSettlement intentSettlement = new IntentSettlement(address(solverRegistry));
@@ -57,7 +60,7 @@ contract DeployBase is Script {
 
         // 10. Configure IntentSettlement: solverFeeBps = 10 (0.1%), feeRecipient = deployer
         intentSettlement.setSolverFeeBps(10);
-        intentSettlement.setFeeRecipient(msg.sender);
+        intentSettlement.setFeeRecipient(deployer);
         console.log("IntentSettlement configured: solverFeeBps=10, feeRecipient=deployer");
 
         vm.stopBroadcast();

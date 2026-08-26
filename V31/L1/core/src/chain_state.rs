@@ -949,58 +949,59 @@ impl ChainState {
         // ── Checkpoint verification ────────────────────────────────────
         launch::verify_checkpoint(block.height, &block.hash_hex)?;
 
-        // ── PoW verification (when header is available) ────────────────
+        // ── PoW verification (required for non-genesis) ───────────────
         let block_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
-        if !block.header_hex.is_empty() {
-            let header_bytes =
-                parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
-            let header = MiningHeader::from_bytes(header_bytes);
+        if block.header_hex.is_empty() {
+            return Err("peer block missing header_hex — PoW cannot be verified".to_string());
+        }
+        let header_bytes =
+            parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
+        let header = MiningHeader::from_bytes(header_bytes);
 
-            // Header fields must be consistent with block metadata
-            if header.timestamp != block.timestamp {
+        // Header fields must be consistent with block metadata
+        if header.timestamp != block.timestamp {
+            return Err(
+                "peer block header timestamp does not match block timestamp".to_string()
+            );
+        }
+        let expected_target = crate::v3_compat::difficulty_to_target(block.difficulty);
+        let expected_bits = crate::v3_compat::target_to_compact(&expected_target);
+        if header.difficulty_bits != expected_bits {
+            return Err(format!(
+                "peer block header difficulty_bits {} does not match expected {}",
+                header.difficulty_bits, expected_bits
+            ));
+        }
+
+        // Reject inconsistent parent metadata before doing expensive PoW work.
+        if !block.previous_hash_hex.is_empty() {
+            let header_prev = hex(&header.previous_hash);
+            if block.previous_hash_hex != header_prev {
                 return Err(
-                    "peer block header timestamp does not match block timestamp".to_string()
-                );
-            }
-            let expected_target = crate::v3_compat::difficulty_to_target(block.difficulty);
-            let expected_bits = crate::v3_compat::target_to_compact(&expected_target);
-            if header.difficulty_bits != expected_bits {
-                return Err(format!(
-                    "peer block header difficulty_bits {} does not match expected {}",
-                    header.difficulty_bits, expected_bits
-                ));
-            }
-
-            // Reject inconsistent parent metadata before doing expensive PoW work.
-            if !block.previous_hash_hex.is_empty() {
-                let header_prev = hex(&header.previous_hash);
-                if block.previous_hash_hex != header_prev {
-                    return Err(
-                        "peer block previous_hash_hex does not match header previous_hash"
-                            .to_string(),
-                    );
-                }
-            }
-
-            // Verify PoW: recompute hash from header + nonce
-            let candidate = BlockCandidate {
-                header,
-                nonce: block.nonce,
-                height: block.height,
-            };
-            let computed_hash = candidate.hash();
-            if computed_hash != block_hash {
-                return Err(
-                    "peer block hash does not match PoW computation from header and nonce"
+                    "peer block previous_hash_hex does not match header previous_hash"
                         .to_string(),
                 );
             }
+        }
 
-            // Verify hash meets difficulty target
-            let target = crate::v3_compat::difficulty_to_target(block.difficulty);
-            if !target.allows(&computed_hash) {
-                return Err("peer block PoW hash does not meet difficulty target".to_string());
-            }
+        // Verify PoW: recompute hash from header + nonce
+        let candidate = BlockCandidate {
+            header,
+            nonce: block.nonce,
+            height: block.height,
+        };
+        let computed_hash = candidate.hash();
+        if computed_hash != block_hash {
+            return Err(
+                "peer block hash does not match PoW computation from header and nonce"
+                    .to_string(),
+            );
+        }
+
+        // Verify hash meets difficulty target
+        let target = crate::v3_compat::difficulty_to_target(block.difficulty);
+        if !target.allows(&computed_hash) {
+            return Err("peer block PoW hash does not meet difficulty target".to_string());
         }
 
         // ── Timestamp sanity ───────────────────────────────────────────
