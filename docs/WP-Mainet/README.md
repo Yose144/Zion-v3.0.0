@@ -27,6 +27,13 @@
 | **Onboarding Lite** (30 vteřin / 30 seconds) | [`marketing/ONBOARDING_LITE_CZ.md`](./marketing/ONBOARDING_LITE_CZ.md) | [`marketing/ONBOARDING_LITE_EN.md`](./marketing/ONBOARDING_LITE_EN.md) |
 | **PR Lite** | [`marketing/MARKETING_PR_LITE_CZ.md`](./marketing/MARKETING_PR_LITE_CZ.md) | [`marketing/MARKETING_PR_LITE_EN.md`](./marketing/MARKETING_PR_LITE_EN.md) |
 
+## Koncepty a horizont (nekanonické) / Drafts and horizon
+
+Tyto dokumenty nejsou zatím kanonizovány. Jsou to pracovní koncepty a směrové nástřely.
+These documents are not yet canonized. They are working concepts and directional sketches.
+
+- **Nirvana — Příběhy nové země** (dlouhodobý horizont / long-term horizon): [`nirvana/00-README.md`](./nirvana/00-README.md) (CZ) | [`nirvana/00-README_EN.md`](./nirvana/00-README_EN.md) (EN)
+
 ## Historické / superseded verze
 
 Tyto dokumenty zůstávají jako archiv; čísla v nich mohou být zastaralá.
