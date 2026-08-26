@@ -116,13 +116,22 @@ pub struct StratumServer {
 /// We compare these instead of the full V3 job message because the ZION
 /// header timestamp/nonce are updated every second, which would otherwise
 /// force a broadcast every poll cycle.
+///
+/// For the external streams we also include ntime and target. Some upstream
+/// pools (e.g. LuckPool/VRSC) may keep the same job_id while rolling ntime
+/// or retargeting, and the miner must receive the updated ntime/target to
+/// avoid "job not found" / "Job expired" / "low difficulty" rejects.
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct JobFingerprint {
     zion_height: u64,
     zion_previous_hash: String,
     zion_merkle_root: Vec<u8>,
     gpu_external_job_id: Option<String>,
+    gpu_external_ntime: Option<String>,
+    gpu_external_target: Option<String>,
     cpu_external_job_id: Option<String>,
+    cpu_external_ntime: Option<String>,
+    cpu_external_target: Option<String>,
 }
 
 impl StratumServer {
@@ -823,19 +832,25 @@ impl StratumServer {
             }
         }
 
-        let gpu_external_job_id = self
+        let (gpu_external_job_id, gpu_external_ntime, gpu_external_target) = self
             .build_external_stream_gpu()
-            .map(|j| j.job_id);
-        let cpu_external_job_id = self
+            .map(|j| (Some(j.job_id), Some(j.ntime_hex), Some(j.target_hex)))
+            .unwrap_or((None, None, None));
+        let (cpu_external_job_id, cpu_external_ntime, cpu_external_target) = self
             .build_external_stream_cpu()
-            .map(|j| j.job_id);
+            .map(|j| (Some(j.job_id), Some(j.ntime_hex), Some(j.target_hex)))
+            .unwrap_or((None, None, None));
 
         Some(JobFingerprint {
             zion_height: height,
             zion_previous_hash: previous_hash,
             zion_merkle_root: merkle_root,
             gpu_external_job_id,
+            gpu_external_ntime,
+            gpu_external_target,
             cpu_external_job_id,
+            cpu_external_ntime,
+            cpu_external_target,
         })
     }
 
