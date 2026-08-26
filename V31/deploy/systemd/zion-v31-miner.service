@@ -10,7 +10,7 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment=ZION_POOL_ADDR=127.0.0.1:8444
-ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker ${ZION_MINER_WORKER} --threads ${ZION_MINER_THREADS} --no-gpu --no-cpu
+ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker ${ZION_MINER_WORKER} --threads ${ZION_MINER_THREADS} --no-gpu
 Restart=always
 RestartSec=30
 Nice=10
