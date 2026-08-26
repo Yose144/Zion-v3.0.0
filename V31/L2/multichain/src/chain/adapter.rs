@@ -80,6 +80,7 @@ pub struct DepositEvent {
     pub amount: Amount,
     pub memo: Option<String>,
     pub confirmations: u64,
+    pub asset: Option<Asset>,
 }
 
 /// Registry of adapters keyed by `ChainId`.

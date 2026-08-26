@@ -12,7 +12,7 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use zion_core::v31_wallet::{build_htlc_claim, build_htlc_lock, build_htlc_refund, SpendableUtxo};
-use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
+use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
 use crate::chain::adapter::{BlockTemplate, ChainAdapter, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
@@ -436,6 +436,7 @@ impl ChainAdapter for ZionL1Adapter {
                 amount: Amount::new(lock.amount_flowers as u128),
                 memo: Some(lock.memo),
                 confirmations,
+                asset: Some(Asset::native(ChainId::ZionL1, "ZION", 8, "ZION")),
             });
         }
 

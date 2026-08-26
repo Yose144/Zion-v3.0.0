@@ -117,7 +117,10 @@ impl DepositWatcher {
             }
         };
 
-        let asset = native_asset_for_chain(chain, &wallet_address);
+        let asset = event
+            .asset
+            .clone()
+            .unwrap_or_else(|| native_asset_for_chain(chain, &wallet_address));
         let asset_key = asset.id.to_string();
         let deposit_id = format!("{}:{}:{}", wallet_address.user_id, event.tx_hash.to_hex(), asset_key);
 
@@ -295,6 +298,7 @@ mod tests {
             amount: Amount::new(1_000_000),
             memo: None,
             confirmations: 1,
+            asset: None,
         };
 
         let mut adapters = ChainAdapterRegistry::new();

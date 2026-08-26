@@ -303,6 +303,7 @@ async fn cross_chain_intent_executes_bridge_hop() {
         amount: Amount::new(1_000_000),
         memo: Some(format!("bridge:base:{}", target_address.encoded)),
         confirmations: 1,
+        asset: None,
     });
 
     service

@@ -8,7 +8,7 @@
 
 use async_trait::async_trait;
 use ethers::core::abi::{decode, encode, ParamType, Token};
-use ethers::core::types::{Filter, TransactionRequest};
+use ethers::core::types::{Filter, TransactionRequest, ValueOrArray};
 use ethers::core::utils::keccak256;
 use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Middleware, Provider};
@@ -16,7 +16,7 @@ use ethers::signers::{LocalWallet, Signer as _Signer};
 use ethers::types::{Address as EthAddress, H256, U256, U64};
 use std::str::FromStr;
 
-use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
+use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
 use crate::chain::adapter::{ChainAdapter, DepositEvent};
 use crate::contracts::ZionContracts;
@@ -30,6 +30,7 @@ const CONFIRM_BURN_RELEASE_SIG: &str = "confirmBurnRelease(bytes32,address,uint2
 const HAS_ROLE_SIG: &str = "hasRole(bytes32,address)";
 const ERC20_BALANCE_OF_SIG: &str = "balanceOf(address)";
 const ERC20_TRANSFER_SIG: &str = "transfer(address,uint256)";
+const ERC20_TRANSFER_EVENT_SIG: &str = "Transfer(address,address,uint256)";
 const HTLC_LOCK_SIG: &str = "lock(bytes32,bytes32,uint256,address,uint256,address,string,string)";
 const HTLC_CLAIM_SIG: &str = "claim(bytes32,bytes32)";
 const HTLC_REFUND_SIG: &str = "refund(bytes32)";
@@ -81,6 +82,11 @@ impl EvmAdapter {
 
     fn bridge_address(&self) -> Option<EthAddress> {
         self.contracts.as_ref()?.bridge.parse().ok()
+    }
+
+    fn wzion_asset(&self) -> Option<Asset> {
+        let contract = self.contracts.as_ref()?.wzion.clone();
+        Some(Asset::with_contract(self.chain, "wZION", contract, 18, "Wrapped ZION"))
     }
 
     fn atomic_swap_address(&self) -> Option<EthAddress> {
@@ -190,6 +196,8 @@ impl EvmAdapter {
         )
         .ok()?;
 
+        let asset = self.wzion_asset()?;
+
         Some(DepositEvent {
             chain: self.chain,
             tx_hash: log
@@ -200,6 +208,7 @@ impl EvmAdapter {
             amount: Amount::new(amount.as_u128()),
             memo: Some(format!("BRIDGE:zion-l1:{}", l1_recipient)),
             confirmations: 1,
+            asset: Some(asset),
         })
     }
 
@@ -220,6 +229,8 @@ impl EvmAdapter {
         )
         .ok()?;
 
+        let asset = self.wzion_asset()?;
+
         Some(DepositEvent {
             chain: self.chain,
             tx_hash: log
@@ -230,6 +241,40 @@ impl EvmAdapter {
             amount: Amount::new(amount.as_u128()),
             memo: None,
             confirmations: 1,
+            asset: Some(asset),
+        })
+    }
+
+    fn decode_erc20_transfer_log(&self, log: &ethers::types::Log, tip: u64) -> Option<DepositEvent> {
+        let _from = Self::address_from_topic(log.topics.get(1).copied()?);
+        let to = Self::address_from_topic(log.topics.get(2).copied()?);
+
+        let tokens = decode(&[ParamType::Uint(256)], log.data.as_ref()).ok()?;
+        let amount = tokens[0].clone().into_uint()?;
+
+        let recipient_addr = Address::new(
+            self.chain,
+            to.as_bytes().to_vec(),
+            format!("0x{}", hex::encode(to.as_bytes())),
+        )
+        .ok()?;
+
+        let asset = self.wzion_asset()?;
+        let confirmations = log
+            .block_number
+            .map_or(1, |bn| tip.saturating_sub(bn.as_u64()) + 1);
+
+        Some(DepositEvent {
+            chain: self.chain,
+            tx_hash: log
+                .transaction_hash
+                .map(|h| Hash::new(*h.as_fixed_bytes()))
+                .unwrap_or_default(),
+            recipient: recipient_addr,
+            amount: Amount::new(amount.as_u128()),
+            memo: None,
+            confirmations,
+            asset: Some(asset),
         })
     }
 }
@@ -501,6 +546,55 @@ impl ChainAdapter for EvmAdapter {
             .unwrap_or_default()
         {
             if let Some(e) = self.decode_mint_log(&log) {
+                events.push(e);
+            }
+        }
+
+        Ok(events)
+    }
+
+    async fn watch_addresses(&self, addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
+        let wzion = match self.wzion_address() {
+            Some(a) => a,
+            None => return Ok(vec![]),
+        };
+
+        if self.wzion_asset().is_none() {
+            return Ok(vec![]);
+        }
+
+        let tip = self.current_height().await?;
+        let from = tip.saturating_sub(10_000);
+
+        let transfer_topic = Self::topic0(ERC20_TRANSFER_EVENT_SIG);
+        let topic_addresses: Vec<Option<H256>> = addresses
+            .iter()
+            .filter_map(|addr| {
+                self.to_eth_address(addr)
+                    .ok()
+                    .map(|eth_addr| Some(H256::from(eth_addr)))
+            })
+            .collect();
+
+        if topic_addresses.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let filter = Filter::new()
+            .address(wzion)
+            .from_block(U64::from(from))
+            .to_block(U64::from(tip))
+            .topic0(transfer_topic)
+            .topic2(ValueOrArray::Array(topic_addresses));
+
+        let mut events = Vec::new();
+        for log in self
+            .provider
+            .get_logs(&filter)
+            .await
+            .unwrap_or_default()
+        {
+            if let Some(e) = self.decode_erc20_transfer_log(&log, tip) {
                 events.push(e);
             }
         }
