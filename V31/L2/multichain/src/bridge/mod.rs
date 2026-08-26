@@ -319,6 +319,7 @@ mod tests {
             amount: source.amount,
             memo: Some(format!("bridge:{id}")),
             confirmations: 1,
+            asset: None,
         };
         let registry = make_registry(vec![event], vec![]);
         let bridge = Bridge::new(Arc::new(registry));
@@ -378,6 +379,7 @@ mod tests {
             amount: source.amount,
             memo: Some(format!("bridge:{id}")),
             confirmations: 1,
+            asset: None,
         };
         let registry = make_registry(vec![], vec![event]);
         let bridge = Bridge::new(Arc::new(registry));

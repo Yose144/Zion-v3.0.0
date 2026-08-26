@@ -13,7 +13,7 @@ use bitcoin::hashes::Hash as _;
 use serde::Deserialize;
 use std::str::FromStr;
 
-use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
+use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
 use crate::chain::adapter::{ChainAdapter, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
@@ -73,6 +73,7 @@ impl BitcoinAdapter {
                 amount: Amount::new(amount as u128),
                 memo,
                 confirmations: if tx.status.confirmed { 1 } else { 0 },
+                asset: Some(Asset::native(ChainId::Bitcoin, "BTC", 8, "BTC")),
             });
         }
         Ok(events)
