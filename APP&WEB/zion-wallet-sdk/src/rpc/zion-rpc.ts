@@ -10,7 +10,6 @@ export interface RpcConfig {
 
 const DEFAULT_NODES = [
   'https://rpc.zionterranova.com',    // Edge HTTPS RPC (nginx → 127.0.0.1:9445)
-  'http://62.171.141.136:8443',      // Edge direct (nginx stream → 127.0.0.1:9445)
 ];
 
 export class ZionRPC {
