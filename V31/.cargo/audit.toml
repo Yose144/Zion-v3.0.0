@@ -1,0 +1,15 @@
+# Accepted audit advisories for V3.2.
+# These are transitive dependencies from ethers 2.0.14 which will be
+# migrated to alloy in 3.3. The vulnerable code paths are limited to
+# outgoing HTTPS to public RPC endpoints (rustls-webpki, h2) and JWT
+# auth for WebSocket providers (ring) — neither is a critical attack
+# surface in ZION's deployment model.
+
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0258",  # h2 0.3 empty DATA frames — DoS, mitigated by nginx + rate limiting
+    "RUSTSEC-2025-0009",  # ring 0.16 AES panic — only affects JWT auth, not used in production
+    "RUSTSEC-2026-0104",  # rustls-webpki 0.101 CRL panic — outgoing HTTPS only
+    "RUSTSEC-2026-0098",  # rustls-webpki 0.101 name constraints — outgoing HTTPS only
+    "RUSTSEC-2026-0099",  # rustls-webpki 0.101 wildcard — outgoing HTTPS only
+]

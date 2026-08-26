@@ -162,7 +162,7 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
         uint8 _threshold
     ) {
         require(admin != address(0) && guardian != address(0) && wZIONAddr != address(0), "Zero address");
-        require(validators.length >= _threshold && _threshold >= 1, "Invalid threshold");  // testnet: allows 1-of-1
+        require(validators.length >= _threshold && _threshold >= 3, "Threshold must be >= 3 for mainnet");
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(GUARDIAN_ROLE, guardian);
@@ -304,7 +304,7 @@ contract ZIONBridge is AccessControl, Pausable, ReentrancyGuard {
     // ──────────────────────────────────────────────
 
     function updateThreshold(uint8 _threshold) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_threshold < 1 || _threshold > validatorCount) {  // testnet: allows 1-of-1
+        if (_threshold < 3 || _threshold > validatorCount) {
             revert InvalidThreshold(_threshold, validatorCount);
         }
         uint8 old = threshold;

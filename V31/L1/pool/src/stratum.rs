@@ -139,8 +139,8 @@ impl StratumServer {
         let (notify_tx, _notify_rx) = broadcast::channel(256);
 
         let vardiff_config = VarDiffConfig {
-            start_difficulty: env_or("ZION_VARDIFF_START_DIFF", env_or("ZION_VARDIFF_START", 1)),
-            min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1)),
+            start_difficulty: env_or("ZION_VARDIFF_START_DIFF", env_or("ZION_VARDIFF_START", 1000)),
+            min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000)),
             max_difficulty: env_or("ZION_VARDIFF_MAX_DIFF", env_or("ZION_VARDIFF_MAX", 100_000)),
             target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15),
             retarget_shares: env_or("ZION_VARDIFF_RETARGET_SHARES", 8),
@@ -2314,6 +2314,8 @@ mod tests {
     use crate::rate_limit::IpRateLimiter;
 
     fn make_server() -> StratumServer {
+        std::env::set_var("ZION_VARDIFF_MIN_DIFF", "1");
+        std::env::set_var("ZION_VARDIFF_START_DIFF", "1");
         let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
         let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default(), telemetry)));
         StratumServer::new(pool)
@@ -2338,9 +2340,10 @@ mod tests {
     #[test]
     fn handles_zion_submit() {
         let server = make_server();
-        let target = "f".repeat(64);
+        let share_target = crate::vardiff::difficulty_to_target(1000);
+        let share_target_hex = hex::encode(share_target);
         let header = "00".repeat(80);
-        server.job_notification("zion_1", &header, &target, &target, 6_000_000, "");
+        server.job_notification("zion_1", &header, &share_target_hex, &share_target_hex, 6_000_000, "");
         let resp = server.handle_request(
             r#"{"id":3,"method":"mining.submit","params":["worker","zion_1","0000000000000000"]}"#,
         );
@@ -2350,9 +2353,10 @@ mod tests {
     #[test]
     fn handles_auxpow_submit() {
         let server = make_server();
-        let target = "f".repeat(64);
+        let share_target = crate::vardiff::difficulty_to_target(1000);
+        let share_target_hex = hex::encode(share_target);
         let header = "00".repeat(80);
-        server.job_notification("aux_bitcoin_1", &header, &target, &target, 6_000_000, "");
+        server.job_notification("aux_bitcoin_1", &header, &share_target_hex, &share_target_hex, 6_000_000, "");
         let resp = server.handle_request(
             r#"{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","0000000000000000"]}"#,
         );

@@ -154,7 +154,7 @@ mod tests {
             types::{Transfer, TransferDirection, TransferEndpoint, TransferStatus},
         };
 
-        const SECRET: &[u8] = b"zion-smoke-secret";
+        const SECRET: &[u8] = b"zion-smoke-secret-32bytes-long!!";
         const RECIPIENT: &str = "zion1recipient";
 
         let hashlock = Hash::new(Sha256::digest(SECRET).into());
