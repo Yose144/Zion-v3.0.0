@@ -135,6 +135,21 @@ impl EvmAdapter {
         Ok(tokens[0].clone().into_bool().unwrap_or(false))
     }
 
+    fn evm_chain_id(&self) -> u64 {
+        match self.chain {
+            ChainId::Ethereum => 1,
+            ChainId::Base => 8453,
+            ChainId::Arbitrum => 42161,
+            ChainId::Optimism => 10,
+            ChainId::Bsc => 56,
+            ChainId::Polygon => 137,
+            ChainId::Avalanche => 43_114,
+            ChainId::Zksync => 324,
+            ChainId::Linea => 59_144,
+            _ => 1,
+        }
+    }
+
     async fn send_transaction(
         &self,
         to: EthAddress,
@@ -145,13 +160,15 @@ impl EvmAdapter {
             .wallet
             .as_ref()
             .ok_or_else(|| MultichainError::Unsupported("EVM wallet not configured".to_string()))?
-            .clone();
+            .clone()
+            .with_chain_id(self.evm_chain_id());
         let client = SignerMiddleware::new(self.provider.clone(), wallet);
 
         let tx = TransactionRequest::new()
             .to(to)
             .data(data)
             .value(value)
+            .chain_id(self.evm_chain_id())
             .gas(300_000);
 
         let pending = client
