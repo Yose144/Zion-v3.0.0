@@ -9,6 +9,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getMultichainWallet,
@@ -82,14 +83,19 @@ export function formatMultichainAmount(raw: string | number, assetKey?: string):
 }
 
 export function MultichainWalletProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { authenticated } = useAuth();
   const [snapshot, setSnapshot] = useState<MultichainWalletSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Only the dedicated multichain wallet page needs this data; avoid fetching
+  // on the public DeFi hub or other pages.
+  const shouldFetch = authenticated && pathname?.startsWith('/wallet/multichain');
+
   const refresh = useCallback(async () => {
-    if (!authenticated) {
+    if (!shouldFetch) {
       setSnapshot(null);
       setLoading(false);
       return;
@@ -109,11 +115,16 @@ export function MultichainWalletProvider({ children }: { children: ReactNode }) 
       setLoading(false);
       setRefreshing(false);
     }
-  }, [authenticated]);
+  }, [shouldFetch]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (shouldFetch) {
+      void refresh();
+    } else {
+      setSnapshot(null);
+      setLoading(false);
+    }
+  }, [shouldFetch, refresh]);
 
   const withdraw = useCallback(async (input: MultichainWithdrawInput) => {
     setError(null);
