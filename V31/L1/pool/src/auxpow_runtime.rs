@@ -330,14 +330,17 @@ async fn run_bridge_task(
             // promptly. The previous 5s timeout could delay share forwarding
             // by up to 5s, causing "Job expired" rejections on fast-block
             // chains like ZANO (~30s blocks).
+            // wait_for_job now compares the full job content (id/ntime/target/header)
+            // so rolling updates with the same job_id are also picked up.
             match client.wait_for_job(Duration::from_secs(1)).await {
                 Ok(job) => {
                     let pkg = external_job_to_package(&job, coin);
                     tracing::debug!(
-                        "auxpow[{}]: got job id={} height={}",
+                        "auxpow[{}]: got job id={} height={} ntime={}",
                         coin_label,
                         pkg.external_job_id,
-                        pkg.height
+                        pkg.height,
+                        pkg.ntime
                     );
                     tracing::debug!(
                         target: "en1_trace",
@@ -360,14 +363,23 @@ async fn run_bridge_task(
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        // Forward any pending shares (non-blocking drain)
+        // Forward any pending shares (non-blocking drain) in parallel so a
+        // slow upstream submit for one share does not block new jobs or the
+        // rest of the queue. This is especially important for fast-block
+        // coins (VRSC ~60s, ZANO ~30s) where stale shares are rejected.
         while let Ok((req, reply_tx)) = share_rx.try_recv() {
-            let result = forward_share_to_upstream(&client, coin, &req).await;
-            tracing::info!(
-                "auxpow[{}]: share forwarded job={} nonce={} result={:?}",
-                coin_label, req.job_id, req.nonce, result
-            );
-            let _ = reply_tx.send(result);
+            let client = client.clone();
+            tokio::spawn(async move {
+                let result = forward_share_to_upstream(&client, coin, &req).await;
+                tracing::info!(
+                    "auxpow[{}]: share forwarded job={} nonce={} result={:?}",
+                    coin.as_str(),
+                    req.job_id,
+                    req.nonce,
+                    result
+                );
+                let _ = reply_tx.send(result);
+            });
         }
 
         // Refresh the bridge's timestamp for the current upstream job.

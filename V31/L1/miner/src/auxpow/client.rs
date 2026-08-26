@@ -1168,14 +1168,22 @@ impl AuxPowClient {
         Some(job)
     }
 
+    /// Content key for detecting any meaningful job change (not just job_id).
+    /// Upstream pools may re-use the same job_id for a rolling job update
+    /// (ntime/target/header), so we compare the full visible job content.
+    fn external_job_key(job: &ExternalJob) -> String {
+        format!("{}|{}|{}|{}", job.job_id, job.ntime, job.target_hex, job.header_hex)
+    }
+
     /// Wait for the next job from the pool.
     pub async fn wait_for_job(&self, timeout_dur: Duration) -> Result<ExternalJob> {
         loop {
             let current = self.current_job.lock().await.clone();
             if let Some(job) = current {
+                let key = Self::external_job_key(&job);
                 let last = self.last_waited_job_id.lock().await.clone();
-                if last.as_deref() != Some(&job.job_id) {
-                    *self.last_waited_job_id.lock().await = Some(job.job_id.clone());
+                if last.as_deref() != Some(&key) {
+                    *self.last_waited_job_id.lock().await = Some(key);
                     return Ok(job);
                 }
             }
