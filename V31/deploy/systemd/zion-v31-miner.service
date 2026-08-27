@@ -1,5 +1,5 @@
 [Unit]
-Description=ZION V31 Edge CPU miner (ZION-only)
+Description=ZION V31 CPU-only Miner (ZION Stream 1, no GPU/CPU AuxPoW)
 After=network.target zion-v31-pool.service
 Wants=zion-v31-pool.service
 
@@ -9,12 +9,15 @@ User=zion
 Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
-Environment=ZION_POOL_ADDR=127.0.0.1:8444
-ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker ${ZION_MINER_WORKER} --threads ${ZION_MINER_THREADS} --no-gpu
+Environment=RUST_LOG=info
+Environment=ZION_GPU_BACKEND=cpu
+Environment=ZION_MINER_THREADS=4
+ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker ${ZION_MINER_WORKER} --threads ${ZION_MINER_THREADS} --no-gpu --no-cpu
 Restart=always
 RestartSec=30
 Nice=10
 CPUQuota=400%
+MemoryMax=256M
 
 # Security hardening (unprivileged zion user)
 NoNewPrivileges=true
