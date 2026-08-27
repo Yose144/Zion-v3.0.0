@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rusqlite::{Connection, Row};
 use zion_l1_types::{Address, Amount, ChainId};
 
@@ -666,18 +668,19 @@ impl Db {
     pub fn load_all_wallet_balances(&self) -> MultichainResult<Vec<(String, Amount)>> {
         let mut stmt = self
             .conn
-            .prepare("SELECT asset_key, CAST(SUM(amount) AS TEXT) FROM wallet_balances GROUP BY asset_key ORDER BY asset_key")?;
+            .prepare("SELECT asset_key, amount FROM wallet_balances ORDER BY asset_key")?;
         let mut rows = stmt.query([])?;
-        let mut out = Vec::new();
+        let mut totals: HashMap<String, u128> = HashMap::new();
         while let Some(row) = rows.next()? {
             let asset_key: String = row.get(0)?;
             let amount: String = row.get(1)?;
             let amount = amount.parse::<u128>().map_err(|e| {
                 MultichainError::Internal(format!("invalid wallet balance amount: {e}"))
             })?;
-            out.push((asset_key, Amount::new(amount)));
+            let current = totals.entry(asset_key).or_insert(0);
+            *current = current.saturating_add(amount);
         }
-        Ok(out)
+        Ok(totals.into_iter().map(|(k, v)| (k, Amount::new(v))).collect())
     }
 
     // ------------------------------------------------------------------------
