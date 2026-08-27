@@ -256,7 +256,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
   - ✅ systemd/: 13 service files (node1, node2, pool, bridge, dao, warp, miner, watchdog, backup, maintenance) + 4 config files
   - ✅ config/edge-environment.sh — env vars for V31 node
   - ✅ scripts/edge-health-probe.sh — health check for V31 services
-  - ✅ nginx/zion-nginx.conf — reverse proxy + TCP stream for RPC (8443→9443)
+  - ✅ nginx/zion-nginx.conf — reverse proxy + TCP stream for RPC (8443→9445)
   - ✅ fail2ban/zion-p2p.conf + zion-p2p-filter.conf — P2P jail (maxretry=50, bantime=24h)
   - ✅ deploy-edge.sh — main deploy script (V31 paths, binary names)
   - ✅ README.md — deploy structure documentation

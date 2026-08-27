@@ -28,7 +28,7 @@ Fáze A — Parallel shadow run (D-3 až D-1):
 5. Smoke test submitu bloku na V31 pool/miner v izolované síti.
 
 Fáze B — Read-only switch (D-day, H-2):
-1. Přesměrovat RPC/WS proxy z V3 na V31 (nginx stream `rpc.zionterranova.com:8443` → `127.0.0.1:9443` V31).
+1. Přesměrovat RPC/WS proxy z V3 na V31 (nginx stream `rpc.zionterranova.com:8443` → `127.0.0.1:9445` V31).
 2. Web frontend `/api/v3` začne číst z V31 RPC read-only endpointu.
 3. Monitorovat chyby, latence, block height drift. Rollback = přepnout nginx zpět na V3.
 
@@ -39,7 +39,7 @@ Fáze C — Pool switch (H-1):
 
 Fáze D — Full cut-over (H-0):
 1. Vypnout V3 služby (`zion-edge-node1/2`, `zion-edge-pool`, `zion-edge-*` L2).
-2. Přesunout V31 služby na produkční porty (8333/8334, 8444, 8453/8454, 9443).
+2. Přesunout V31 služby na produkční porty (8333/8334, 8444, 8453/8454, 9445).
 3. Aktivovat systemd `zion-v31-*.service` a disable `zion-edge-*.service`.
 4. Oznámení: web banner, Discord/Telegram, pool web status.
 
