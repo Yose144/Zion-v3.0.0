@@ -109,24 +109,29 @@ Kompletní seznam mincí podporovaných Trinity engine. Každá má vlastní alg
 
 ## Autonomous profit router
 
-Trinity se sám rozhoduje, kterou minci těžit na Stream 2 a 3. Nepotřebuješ nic nastavovat.
+Trinity se sám rozhoduje, kterou minci těžit na Stream 2 a 3, pokud je režim zapnutý.
 
 **Jak funguje:**
-1. Fetchuje profit data z WhatToMine API (co `profit_per_unit_usd` pro každou minci)
-2. Spočítá `profit_usd_per_day` pro tvůj konkrétní hashrate
-3. Vybere nejvýnosnější minci pro GPU (Stream 2) a CPU (Stream 3)
-4. **Hysteresis:** přepne jen pokud je nová mince o **15 % ziskovější** (zabraňuje fluktuaci)
-5. Opakuje každých `ZION_PROFIT_INTERVAL` sekund (default 300s)
+1. Načte odhad tržeb (USD/den) z WhatToMine a/nebo NiceHash podle nakonfigurovaných API klíčů; pokud nejsou dostupné, použije `CoinProfile` fallback.
+2. Odečte odhadovanou cenu elektriny (`ZION_ELECTRICITY_PRICE` × spotřeba dle `ExternalCoin::estimated_*_power_watts`) — vybírá podle **čistého zisku**, ne hrubé tržby.
+3. Vyfiltruje mince, které nejsou kompatibilní s detekovaným GPU backendem / VRAM / CPU AES-AVX2.
+4. Vybere nejvýnosnější minci pro GPU (Stream 2) a CPU (Stream 3).
+5. **Hysteresis:** přepne jen pokud je nová mince o **15 % ziskovější** (zabraňuje fluktuaci).
+6. Opakuje každých `ZION_PROFIT_INTERVAL` sekund (default 300s).
 
 **Env vars:**
 ```bash
-ZION_AUTONOMOUS=true          # zapne autonomous router (default: true)
+ZION_AUTONOMOUS=1             # zapne autonomous router (default: 0, tedy vypnuto)
 ZION_PROFIT_INTERVAL=300      # interval přepočtu (sekundy)
-ZION_PROFIT_HYSTERESIS=0.15   # 15% hysteresis
-ZION_STREAM3_FORCE_COIN=XMR   # vynutit konkrétní CPU minci
+ZION_PROFIT_HYSTERESIS=15     # 15% hysteresis (celé procento, ne 0.15)
+ZION_ELECTRICITY_PRICE=0.12   # USD/kWh
+ZION_STREAM2_FORCE_COIN=ZANO  # vynutit konkrétní GPU minci (přepíše autonomous)
+ZION_STREAM3_FORCE_COIN=XMR   # vynutit konkrétní CPU minci (přepíše autonomous)
+WHATTOMAINE_API_KEY=...       # volitelný klíč pro WhatToMine
+NICEHASH_API_KEY=...          # volitelný klíč pro NiceHash
 ```
 
-> **Zdroj:** `V31/L1/miner/src/autonomous.rs` — `AutonomousProfitRouter`, `select_stream2()`, `select_stream3()`
+> **Zdroj:** `V31/L1/miner/src/autonomous.rs` — `AutonomousProfitRouter`, `select_stream2()`, `select_stream3()`; podrobný popis a aktuální omezení viz `docs/3.2/AUTONOMOUS_PROFIT_ROUTER.md`.
 
 ---
 

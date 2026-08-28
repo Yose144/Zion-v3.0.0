@@ -275,8 +275,9 @@ impl MinerRuntime {
 
         #[cfg(feature = "auxpow")]
         {
+            let detected_hw = crate::auto_detect::detect_hardware();
             let mut profit_router =
-                AutonomousProfitRouter::new(HardwareProfile::default_for_features());
+                AutonomousProfitRouter::new(HardwareProfile::from_detected(&detected_hw, &config.gpu_backend));
             profit_router.enabled = autonomous;
             profit_router.set_hysteresis(profit_hysteresis_pct);
             profit_router.set_fetch_interval(profit_interval_sec);
@@ -285,6 +286,39 @@ impl MinerRuntime {
             }
             if let Some(coin) = stream3_force_coin {
                 profit_router.stream3_coin = Some(coin);
+            }
+
+            // Warn at startup if a forced coin is not compatible, disabled, or has
+            // no usable default pool (MIN-001 from SECURITY_AUDIT_3.2.md).
+            if let Some(coin) = stream2_force_coin {
+                if !coin.is_gpu() {
+                    warn!(stream = "stream2", coin = %coin, "forced coin is not a GPU coin");
+                } else if !coin.gpu_kernel_available(&config.gpu_backend) {
+                    warn!(stream = "stream2", coin = %coin, backend = %config.gpu_backend, "forced coin has no kernel for the selected GPU backend");
+                } else {
+                    let profile = zion_cosmic_harmony::CoinProfile::for_coin(coin);
+                    if profile.disabled {
+                        warn!(stream = "stream2", coin = %coin, reason = profile.disabled_reason.as_deref().unwrap_or("unknown"), "forced coin is disabled");
+                    }
+                    let url = profile.pool_address();
+                    if url.is_empty() || url.contains(".example") {
+                        warn!(stream = "stream2", coin = %coin, "forced coin has no known default pool; provide --stream2-url or ZION_STREAM2_URL");
+                    }
+                }
+            }
+            if let Some(coin) = stream3_force_coin {
+                if !coin.is_cpu() {
+                    warn!(stream = "stream3", coin = %coin, "forced coin is not a CPU coin");
+                } else {
+                    let profile = zion_cosmic_harmony::CoinProfile::for_coin(coin);
+                    if profile.disabled {
+                        warn!(stream = "stream3", coin = %coin, reason = profile.disabled_reason.as_deref().unwrap_or("unknown"), "forced coin is disabled");
+                    }
+                    let url = profile.pool_address();
+                    if url.is_empty() || url.contains(".example") {
+                        warn!(stream = "stream3", coin = %coin, "forced coin has no known default pool; provide --stream3-url or ZION_STREAM3_URL");
+                    }
+                }
             }
 
             Self {
@@ -1092,7 +1126,7 @@ impl MinerRuntime {
         // Streams 2 and 3 are compiled only with the `auxpow` feature.
         #[cfg(feature = "auxpow")]
         let (h2, h3): (MinerHandle, MinerHandle) = {
-            let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+            let profiles = zion_cosmic_harmony::CoinProfile::all();
             let _ = self.refresh_auxpow(&profiles).await;
 
             let h2 = if self.config.stream2_enabled && self.config.auxpow_enabled {
@@ -1155,7 +1189,7 @@ impl MinerRuntime {
                     tokio::select! {
                         _ = shutdown.changed() => break,
                         _ = interval.tick() => {
-                            let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+                            let profiles = zion_cosmic_harmony::CoinProfile::all();
                             let (gpu, cpu) = this.refresh_auxpow(&profiles).await;
                             ext_info!(
                                 gpu = ?gpu,
@@ -2396,7 +2430,7 @@ mod tests {
     #[tokio::test]
     async fn auxpow_scheduler_refresh() {
         let runtime = MinerRuntime::new(MinerConfig::new(test_address()));
-        let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+        let profiles = zion_cosmic_harmony::CoinProfile::all();
         let (gpu, cpu) = runtime.refresh_auxpow(&profiles).await;
         assert!(gpu.is_some() || cpu.is_some());
     }
