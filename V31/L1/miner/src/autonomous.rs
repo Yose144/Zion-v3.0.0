@@ -15,7 +15,7 @@
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use zion_cosmic_harmony::ExternalCoin;
+use zion_cosmic_harmony::{CoinProfile, ExternalCoin};
 
 use crate::stream_profit::StreamProfitOracle;
 
@@ -107,6 +107,36 @@ impl HardwareProfile {
             cpu_threads: num_cpus::get().max(1),
         }
     }
+
+    /// Build a hardware profile from the actual auto-detection result.
+    ///
+    /// `effective_gpu_backend` is the resolved backend string (e.g. `cuda`,
+    /// `opencl`, `metal`, `cpu`) and may differ from the detected default when
+    /// `ZION_GPU_BACKEND` overrides it.
+    pub fn from_detected(
+        hw: &crate::auto_detect::HardwareProfile,
+        effective_gpu_backend: &str,
+    ) -> Self {
+        let mut gpu_vram_bytes: u64 = hw
+            .gpu_devices
+            .iter()
+            .map(|g| g.vram_mb * 1024 * 1024)
+            .sum();
+        // Detection can fall back to a name-only path with 0 reported VRAM.
+        // Keep the conservative 6 GiB default in that case.
+        if gpu_vram_bytes == 0 {
+            gpu_vram_bytes = 6 * 1024 * 1024 * 1024;
+        }
+
+        Self {
+            gpu_vram_bytes,
+            gpu_backend: effective_gpu_backend.to_string(),
+            has_gpu: hw.has_gpu,
+            cpu_has_aes: hw.cpu_simd.contains(&"AES-NI"),
+            cpu_has_avx2: hw.cpu_simd.contains(&"AVX2"),
+            cpu_threads: hw.cpu_logical_cores.max(1),
+        }
+    }
 }
 
 impl AutonomousProfitRouter {
@@ -162,6 +192,8 @@ impl AutonomousProfitRouter {
     }
 
     /// Get all GPU-compatible coins for this hardware.
+    ///
+    /// Filters by VRAM, GPU backend kernel, and `CoinProfile::disabled`.
     pub fn gpu_compatible_coins(&self) -> Vec<ExternalCoin> {
         if !self.hw.has_gpu {
             return Vec::new();
@@ -173,17 +205,22 @@ impl AutonomousProfitRouter {
                 coin.is_gpu()
                     && coin.fits_vram(self.hw.gpu_vram_bytes)
                     && coin.gpu_kernel_available(&self.hw.gpu_backend)
+                    && !CoinProfile::for_coin(*coin).disabled
             })
             .collect()
     }
 
     /// Get all CPU-compatible coins for this hardware.
+    ///
+    /// Filters by AES/AVX2 support and `CoinProfile::disabled`.
     pub fn cpu_compatible_coins(&self) -> Vec<ExternalCoin> {
         ExternalCoin::ALL
             .iter()
             .copied()
             .filter(|coin| {
-                coin.is_cpu() && coin.cpu_compatible(self.hw.cpu_has_aes, self.hw.cpu_has_avx2)
+                coin.is_cpu()
+                    && coin.cpu_compatible(self.hw.cpu_has_aes, self.hw.cpu_has_avx2)
+                    && !CoinProfile::for_coin(*coin).disabled
             })
             .collect()
     }
@@ -379,21 +416,7 @@ impl AutonomousProfitRouter {
         self.select_stream2();
         self.select_stream3();
 
-        // Override with forced coins if env vars are set
-        if let Some(forced) = forced_stream2_coin() {
-            self.stream2_coin = Some(forced);
-            self.log.push(format!(
-                "stream2_forced: {} (ZION_STREAM2_FORCE_COIN)",
-                forced.ticker()
-            ));
-        }
-        if let Some(forced) = forced_stream3_coin() {
-            self.stream3_coin = Some(forced);
-            self.log.push(format!(
-                "stream3_forced: {} (ZION_STREAM3_FORCE_COIN)",
-                forced.ticker()
-            ));
-        }
+        self.apply_forced_coins();
 
         self.log.push(format!(
             "selection: stream2={:?}, stream3={:?}",
@@ -424,12 +447,40 @@ impl AutonomousProfitRouter {
         self.select_stream2();
         self.select_stream3();
 
-        // Override with forced coins if env vars are set
+        self.apply_forced_coins();
+    }
+
+    /// Apply forced-coin env overrides, but ignore coins that are disabled in
+    /// their `CoinProfile`. Disabled coins must never be selected (see
+    /// `AGENTS.md` ExternalCoin `disabled_reason` convention).
+    fn apply_forced_coins(&mut self) {
         if let Some(forced) = forced_stream2_coin() {
-            self.stream2_coin = Some(forced);
+            if CoinProfile::for_coin(forced).disabled {
+                self.log.push(format!(
+                    "stream2_forced: {} is disabled — ignoring ZION_STREAM2_FORCE_COIN",
+                    forced.ticker()
+                ));
+            } else {
+                self.stream2_coin = Some(forced);
+                self.log.push(format!(
+                    "stream2_forced: {} (ZION_STREAM2_FORCE_COIN)",
+                    forced.ticker()
+                ));
+            }
         }
         if let Some(forced) = forced_stream3_coin() {
-            self.stream3_coin = Some(forced);
+            if CoinProfile::for_coin(forced).disabled {
+                self.log.push(format!(
+                    "stream3_forced: {} is disabled — ignoring ZION_STREAM3_FORCE_COIN",
+                    forced.ticker()
+                ));
+            } else {
+                self.stream3_coin = Some(forced);
+                self.log.push(format!(
+                    "stream3_forced: {} (ZION_STREAM3_FORCE_COIN)",
+                    forced.ticker()
+                ));
+            }
         }
     }
 
@@ -578,6 +629,9 @@ impl AutonomousProfitRouter {
 mod tests {
     use super::*;
 
+    // Environment variables are global; serialize tests that mutate them.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     fn sample_hw_opencl() -> HardwareProfile {
         HardwareProfile {
             gpu_vram_bytes: 8_000_000_000,
@@ -615,6 +669,7 @@ mod tests {
 
     #[test]
     fn forced_stream3_env_var_works() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_STREAM3_FORCE_COIN", "VRSC");
         assert_eq!(forced_stream3_coin(), Some(ExternalCoin::Verus));
         std::env::remove_var("ZION_STREAM3_FORCE_COIN");
@@ -622,13 +677,43 @@ mod tests {
 
     #[test]
     fn forced_stream2_env_var_works() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_STREAM2_FORCE_COIN", "KAS");
         assert_eq!(forced_stream2_coin(), Some(ExternalCoin::Kaspa));
         std::env::remove_var("ZION_STREAM2_FORCE_COIN");
     }
 
     #[test]
+    fn forced_stream2_ignores_disabled_coin() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::set_var("ZION_AUTONOMOUS", "1");
+        std::env::set_var("ZION_STREAM2_FORCE_COIN", "PRL");
+        let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
+        router.set_profits_and_select(&[(ExternalCoin::Kaspa, 1.0)], &[(ExternalCoin::Verus, 0.6)]);
+        router.apply_forced_coins();
+        assert_eq!(router.stream2_coin, Some(ExternalCoin::Kaspa));
+        assert!(router.log.iter().any(|l| l.contains("PRL") && l.contains("disabled")));
+        std::env::remove_var("ZION_AUTONOMOUS");
+        std::env::remove_var("ZION_STREAM2_FORCE_COIN");
+    }
+
+    #[test]
+    fn forced_stream3_ignores_disabled_coin() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::set_var("ZION_AUTONOMOUS", "1");
+        std::env::set_var("ZION_STREAM3_FORCE_COIN", "PRL");
+        let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
+        router.set_profits_and_select(&[(ExternalCoin::Kaspa, 1.0)], &[(ExternalCoin::Verus, 0.6)]);
+        router.apply_forced_coins();
+        assert_eq!(router.stream3_coin, Some(ExternalCoin::Verus));
+        assert!(router.log.iter().any(|l| l.contains("PRL") && l.contains("disabled")));
+        std::env::remove_var("ZION_AUTONOMOUS");
+        std::env::remove_var("ZION_STREAM3_FORCE_COIN");
+    }
+
+    #[test]
     fn select_stream2_picks_highest_net_profit() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.set_profits_and_select(
@@ -645,6 +730,7 @@ mod tests {
 
     #[test]
     fn select_stream2_hysteresis_keeps_current() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.hysteresis_pct = 15.0;
@@ -674,6 +760,7 @@ mod tests {
 
     #[test]
     fn select_stream3_picks_highest_net_profit() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.set_profits_and_select(
@@ -686,6 +773,7 @@ mod tests {
 
     #[test]
     fn build_coin_preference_returns_message() {
+        let _guard = ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.set_profits_and_select(&[(ExternalCoin::Kaspa, 1.0)], &[(ExternalCoin::Verus, 0.6)]);

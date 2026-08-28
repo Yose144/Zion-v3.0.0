@@ -626,15 +626,34 @@ impl CoinProfile {
             Self::new(ExternalCoin::Verus, 1000.0, 0.018, Device::Cpu),
             Self::new(ExternalCoin::Decred, 1000.0, 0.02, Device::Gpu),
             Self::new(ExternalCoin::Vertcoin, 1000.0, 0.01, Device::Gpu),
+            // Pearl is intentionally disabled until the pool endpoint and kernel
+            // are fully verified (see AGENTS.md ExternalCoin disabled_reason convention).
+            Self::new(ExternalCoin::Pearl, 1000.0, 0.01, Device::Gpu)
+                .with_disabled("not production-ready / placeholder pool and kernel"),
         ]
     }
 
     /// Find the default profile for a specific coin.
+    ///
+    /// Falls back to a generic profile for coins not in `defaults()`,
+    /// inferring the device category from `ExternalCoin::is_cpu()`.
     pub fn for_coin(coin: ExternalCoin) -> Self {
         Self::defaults()
             .into_iter()
             .find(|p| p.coin == coin)
-            .unwrap_or_else(|| Self::new(coin, 1000.0, 0.01, Device::Gpu))
+            .unwrap_or_else(|| {
+                let device = if coin.is_cpu() {
+                    Device::Cpu
+                } else {
+                    Device::Gpu
+                };
+                Self::new(coin, 1000.0, 0.01, device)
+            })
+    }
+
+    /// Return a profile for every known external coin.
+    pub fn all() -> Vec<Self> {
+        ExternalCoin::ALL.iter().copied().map(Self::for_coin).collect()
     }
 
     fn new(

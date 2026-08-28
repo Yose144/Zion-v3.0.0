@@ -68,6 +68,9 @@ RUST_LOG=info ./target/release/zion-node --config config/node.toml
 
 # Vynucená coina na streamu 3
 ZION_STREAM3_FORCE_COIN=MONERO ./target/release/zion-miner --pool 127.0.0.1:3333
+
+# Autonomous profit switching pro Stream 2/3
+ZION_AUTONOMOUS=1 ./target/release/zion-miner --pool 127.0.0.1:3333
 ```
 
 Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `lto = "fat"`, `codegen-units = 1` a strip symbolů. Výsledné binárky najdete v `target/release/`. V3 checkpoint se načítá z nastavení v configu (`checkpoint_dir` nebo ekvivalentní klíč).
@@ -81,7 +84,8 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 - **V3 P2P + RPC** — `zion-core` umí V3 P2P listen/IBD a V3 RPC pro kompatibilitu s Edge.
 - **E2E smoke node+pool+miner** — lokálně vytěžen a přijat block výška 1+; pool posílá `mining.notify`, miner `mining.submit`, node `submitBlock`.
 - **Production P2P hardening** — `PeerManager` sdílený canonical/V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` discovery.
-- **Forced coin override** — proměnná prostředí `ZION_STREAM3_FORCE_COIN` přepíše automatický výběr coiny.
+- **Forced coin override** — proměnné prostředí `ZION_STREAM2_FORCE_COIN` a `ZION_STREAM3_FORCE_COIN` přepíšou automatický výběr coiny.
+- **Autonomous profit switching** — `ZION_AUTONOMOUS=1` vybírá Stream 2/3 podle live WhatToMine/NiceHash nebo fallback odhadů, s 15% hysteresí a odečtem ceny elektriny. Detaily a známá omezení viz `docs/3.2/AUTONOMOUS_PROFIT_ROUTER.md`.
 - **Disabled-coin filtering** — filtr zakázaných coinů v `zion-miner` i `zion-cosmic-harmony`.
 - **DAO skeleton** — `zion-dao` má základní návrh/quorum/timelock typy a smoke test.
 - **HTLC persistence** — `zion-multichain` persistuje HTLC stav do SQLite.
@@ -136,6 +140,7 @@ Klíčové provozní body z `V31/AGENTS.md`:
 
 - [`ALPHA_BUILD_PLAN.md`](./ALPHA_BUILD_PLAN.md)
 - [`AGENTS.md`](./AGENTS.md)
+- [`AUTONOMOUS_PROFIT_ROUTER.md`](../docs/3.2/AUTONOMOUS_PROFIT_ROUTER.md)
 - [`V3.1_MIGRATION_PLAN.md`](../docs/3.0.6/V3.1_MIGRATION_PLAN.md)
 - [`/Users/yeshuae/Projects/2.9.6/AGENTS.md`](../AGENTS.md)
 
