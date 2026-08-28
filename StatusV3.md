@@ -1,6 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-23
+> **Datum poslední aktualizace:** 2026-08-27
+>
+> **Update (2026-08-27):** **Autonomní profit router ztuhnut a kanonicky zdokumentován.** Opraveny všechny čtyři mezery nalezené při md-vs-code review: `HardwareProfile` se nyní staví ze skutečné `auto_detect::detect_hardware()`, `CoinProfile::all()` pokrývá všechny `ExternalCoin`, disabled mince se neobjeví v autonomním výběru ani forced-coin overridech a `ZION_STREAM2/3_FORCE_COIN` se validuje při startu (MIN-001). Nový kanonický popis v [`docs/3.2/AUTONOMOUS_PROFIT_ROUTER.md`](./docs/3.2/AUTONOMOUS_PROFIT_ROUTER.md), aktualizovány `V31/README.md`, `docs/WP-Mainet/Trinity_Engine.md` a `docs/3.2/ROADMAP.md` (E2 ✅ Complete, E3 🔄 code complete + unit tested). Real-data workflow test na reálném GPU stroji zůstává jako další krok. `cargo test -p zion-miner --lib` 105 passed, `cargo test -p zion-cosmic-harmony --lib` 193 passed, `cargo clippy -p zion-miner --lib` bez nových varování.
 >
 > **Update (2026-08-23):** **Reconciliation modul a background task implementovány.** `Reconciler` (`V31/L2/multichain/src/reconciliation.rs`) porovnává on-chain zůstatky L2 hot walletů s interními saldy a AMM pool reserves, ukládá reporty do SQLite a alertuje při překročení thresholdu. Konfigurovatelné přes `MultichainConfig.reconciliation` (`interval_seconds`, `alert_threshold`, `enabled`). HTTP endpointy `GET /v1/admin/reconciliation` (seznam reportů) a `POST /v1/admin/reconciliation/trigger` (manuální spuštění). Spuštěn v `ApiServer::run` jako background task. `cargo test -p zion-multichain` nyní 583 testů (1 ignored), `cargo clippy -p zion-multichain` bez varování v crate.
 >
