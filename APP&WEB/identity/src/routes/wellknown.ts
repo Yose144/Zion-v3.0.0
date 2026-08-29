@@ -8,7 +8,7 @@ export async function wellKnownRoutes(app: FastifyInstance): Promise<void> {
     verify_endpoint: '/api/auth/verify',
     session_endpoint: '/api/session',
     keys_endpoint: '/.well-known/jwks.json',
-    supported_methods: ['ed25519', 'siwe'],
+    supported_methods: ['ed25519', 'siwe', 'google'],
     cookie_domain: '.zionterranova.com',
   }));
 

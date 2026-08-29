@@ -9,6 +9,7 @@ import {
   useMultichainWallet,
   formatMultichainAmount,
 } from '@/contexts/MultichainWalletContext';
+import MetaMaskWalletPanel from '@/components/MetaMaskWalletPanel';
 import {
   Wallet,
   ArrowLeft,
@@ -270,6 +271,10 @@ export default function MultichainWalletPage() {
               </div>
             </div>
           </motion.div>
+        </section>
+
+        <section>
+          <MetaMaskWalletPanel />
         </section>
 
         {showWithdraw && (

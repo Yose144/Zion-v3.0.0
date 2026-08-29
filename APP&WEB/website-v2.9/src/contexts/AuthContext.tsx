@@ -13,6 +13,7 @@ import {
   getChallenge,
   verifyEd25519 as zisVerifyEd25519,
   verifySiwe as zisVerifySiwe,
+  verifyGoogle as zisVerifyGoogle,
   getCurrentUser,
   logout as zisLogout,
   updateProfile as zisUpdateProfile,
@@ -44,6 +45,8 @@ interface AuthState {
   loginWithWallet: (address: string, password: string, exportPrivateKey: (id: string, pw: string) => Promise<string>, walletId: string) => Promise<void>;
   /** Login with Ethereum (MetaMask / EIP-191 SIWE) */
   loginWithSiwe: () => Promise<void>;
+  /** Login with Google (OpenID Connect ID token) */
+  loginWithGoogle: (idToken: string) => Promise<void>;
   /** Logout */
   logout: () => Promise<void>;
   /** Update display name */
@@ -57,6 +60,7 @@ const defaultState: AuthState = {
   checkSession: async () => {},
   loginWithWallet: async () => {},
   loginWithSiwe: async () => {},
+  loginWithGoogle: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
 };
@@ -187,6 +191,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(zisToAuthUser(fullUser));
   }, []);
 
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    await zisVerifyGoogle(idToken);
+    const fullUser = await getCurrentUser();
+    setUser(zisToAuthUser(fullUser));
+  }, []);
+
   const logout = useCallback(async () => {
     await zisLogout();
     setUser(null);
@@ -206,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         checkSession,
         loginWithWallet,
         loginWithSiwe,
+        loginWithGoogle,
         logout,
         updateProfile,
       }}

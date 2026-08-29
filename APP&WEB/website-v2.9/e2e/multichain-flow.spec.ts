@@ -136,7 +136,7 @@ test.describe('Multichain deposit → withdraw E2E (mocked APIs)', () => {
           address: { encoded: mockState.derived.address, bytes: mockState.derived.bytes ?? '0x00' },
           user_id: TEST_USER,
           chain: mockState.derived.chain,
-          chain_id: mockState.derived.chain,
+          chain_id: null,
           purpose: 'deposit',
           public_key: null,
           derivation_path: "m/44'/9999'/0'/0/0",

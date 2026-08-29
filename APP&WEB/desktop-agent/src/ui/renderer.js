@@ -4392,7 +4392,8 @@ function initBridgeView() {
   const resultEl   = document.getElementById('bridge-lock-tx-result');
   const txHashEl   = document.getElementById('bridge-lock-txhash');
 
-  const BRIDGE_VAULT = 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0';
+  // Canonical V31 Mainnet Alpha bridge vault (E4 round-trip, 2026-08-22).
+  const BRIDGE_VAULT = 'zion1j3w3h7k8m635h734y786j5804305m822t5uk546';
 
   // Auto-generate memo when EVM address changes
   function rebuildMemo() {

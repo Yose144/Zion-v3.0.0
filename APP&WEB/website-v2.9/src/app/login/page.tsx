@@ -13,9 +13,10 @@ import { Wallet, Shield, Lock, ArrowRight, Sparkles, Loader2 } from 'lucide-reac
 import { useAuth } from '@/contexts/AuthContext';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
 import LoginModal from '@/components/LoginModal';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
-  const { authenticated, loading, loginWithSiwe } = useAuth();
+  const { authenticated, loading, loginWithSiwe, loginWithGoogle } = useAuth();
   const zionWallet = useZionWallet();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,6 +24,8 @@ export default function LoginPage() {
   const [showModal, setShowModal] = useState(false);
   const [siweLoading, setSiweLoading] = useState(false);
   const [siweError, setSiweError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const [hasMetaMask, setHasMetaMask] = useState(false);
 
   // Already authenticated — redirect
@@ -53,6 +56,19 @@ export default function LoginPage() {
       setSiweError(err.message || 'MetaMask login failed');
     } finally {
       setSiweLoading(false);
+    }
+  };
+
+  const handleGoogle = async (idToken: string) => {
+    setGoogleLoading(true);
+    setGoogleError(null);
+    try {
+      await loginWithGoogle(idToken);
+      router.push(redirect);
+    } catch (err: any) {
+      setGoogleError(err.message || 'Google login failed');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -112,6 +128,30 @@ export default function LoginPage() {
         {siweError && (
           <p className="text-xs text-red-400 text-center mb-3">{siweError}</p>
         )}
+
+        {googleLoading && (
+          <p className="text-xs text-gray-400 text-center mb-3">Signing in with Google...</p>
+        )}
+
+        <div className="mb-3 w-full">
+          <GoogleSignInButton
+            onSuccess={handleGoogle}
+            onError={(err) => setGoogleError(err.message || 'Google sign-in failed')}
+          />
+        </div>
+
+        {googleError && (
+          <p className="text-xs text-red-400 text-center mb-3">{googleError}</p>
+        )}
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-rasta-black px-2 text-[10px] text-gray-500 uppercase">or</span>
+          </div>
+        </div>
 
         <button
           onClick={() => setShowModal(true)}
