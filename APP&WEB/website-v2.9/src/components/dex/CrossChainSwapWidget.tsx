@@ -309,6 +309,11 @@ export default function CrossChainSwapWidget() {
     }
   }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic]);
 
+  // Compute min output from quote and current slippage before any callback uses it.
+  const minOutput = route
+    ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
+    : '0';
+
   // Debounced quote fetch
   useEffect(() => {
     const timer = setTimeout(() => void fetchQuote(), 500);
@@ -352,7 +357,7 @@ export default function CrossChainSwapWidget() {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated, recipient, minOutput]);
+  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated, recipient, slippageBps]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -361,10 +366,6 @@ export default function CrossChainSwapWidget() {
     setSrcToken(destToken);
     setDestToken(srcToken);
   };
-
-  const minOutput = route
-    ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
-    : '0';
 
   const displayOut = route ? (Number(route.expected_out) / 10 ** toAsset.decimals).toFixed(6) : '-';
   const displayMin = route ? (Number(minOutput) / 10 ** toAsset.decimals).toFixed(6) : '-';
