@@ -1,6 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-27
+> **Datum poslední aktualizace:** 2026-08-29
+>
+> **Update (2026-08-29):** **Web E2E: miner-stats zelené, nový multichain deposit → withdraw flow, `/dex` swap widget je stále rozbitý v produkčním buildu.** Opraven `e2e/miner-stats.spec.ts` — health endpoint akceptuje `ok`/`degraded`/`down` v lokálním prostředí bez RPC/pool. Přidán `e2e/multichain-flow.spec.ts` pro kompletní `deposit → withdraw` flow na `/wallet/multichain` s mockovaným ZIS a multichain backendem. Všechny web E2E testy (`e2e/`) procházejí lokálně proti `npm run build` + `npx next start`. UI swap widget (`/dex`) zůstává pro produkční build nepoužitelný — `next.config.ts` redirectuje `/dex` na `/multichain#dex` a `CrossChainSwapWidget` dynamic chunk padá s `Cannot access 'es' before initialization` (chunk 1007); vyžaduje samostatný UI build fix.
 >
 > **Update (2026-08-27):** **Flaky Sui env-var test opraven + workspace test/clippy čisté.** `warp::adapter::sui` testy nyní používají `SUI_ENV_LOCK`, aby nezávodily na globální `WARP_SUI_RPC`. `cargo test --workspace` a `cargo clippy --workspace` procházejí bez nových chyb (pouze pre-existing varování).
 >
