@@ -708,10 +708,19 @@ mod tests {
     use base64::{engine::general_purpose::STANDARD as B64, Engine};
     use sha2::Digest;
 
+    // Several Sui adapter tests mutate the global `WARP_SUI_RPC` env var.
+    // Serialize them so they don't race with each other.
+    static SUI_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn sui_adapter_default() -> SuiAdapter {
+        let _g = SUI_ENV_LOCK.lock().unwrap();
+        std::env::remove_var("WARP_SUI_RPC");
+        SuiAdapter::new()
+    }
+
     #[test]
     fn test_sui_adapter_meta() {
-        std::env::remove_var("WARP_SUI_RPC");
-        let a = SuiAdapter::new();
+        let a = sui_adapter_default();
         assert_eq!(a.name(), "sui");
         assert_eq!(a.family(), ChainFamily::Sui);
         assert_eq!(a.rpc_url, DEFAULT_SUI_RPC);
@@ -719,6 +728,7 @@ mod tests {
 
     #[test]
     fn test_from_env_overrides_rpc_url() {
+        let _g = SUI_ENV_LOCK.lock().unwrap();
         std::env::set_var("WARP_SUI_RPC", "https://example.test/sui");
         let a = SuiAdapter::from_env();
         assert_eq!(a.rpc_url, "https://example.test/sui");
@@ -771,9 +781,13 @@ mod tests {
     #[tokio::test]
     async fn test_health_check_no_network_returns_false() {
         // Point at a non-routable endpoint so the request fails fast.
-        std::env::set_var("WARP_SUI_RPC", "http://127.0.0.1:1/sui");
-        let a = SuiAdapter::from_env();
-        std::env::remove_var("WARP_SUI_RPC");
+        let a = {
+            let _g = SUI_ENV_LOCK.lock().unwrap();
+            std::env::set_var("WARP_SUI_RPC", "http://127.0.0.1:1/sui");
+            let a = SuiAdapter::from_env();
+            std::env::remove_var("WARP_SUI_RPC");
+            a
+        };
         let ok = a.health_check().await.unwrap();
         // No network → health_check returns Ok(false), never errors.
         assert!(!ok);
@@ -784,7 +798,7 @@ mod tests {
         // Combined test to avoid env-var interference between parallel tests.
         // Part 1: no relay key → error mentioning the missing env var.
         std::env::remove_var("WARP_SUI_RELAY_KEY");
-        let a = SuiAdapter::new();
+        let a = sui_adapter_default();
         let inst = MintInstruction {
             dest_chain: "sui".into(),
             recipient: "0xabc".into(),
@@ -879,8 +893,7 @@ mod tests {
 
     #[test]
     fn test_parse_deposit_event_non_warp_returns_none() {
-        std::env::remove_var("WARP_SUI_RPC");
-        let a = SuiAdapter::new();
+        let a = sui_adapter_default();
         let ev = SuiEvent {
             id: SuiEventId {
                 txDigest: "0xabc".into(),
@@ -896,8 +909,7 @@ mod tests {
 
     #[test]
     fn test_parse_deposit_event_warp_with_fields() {
-        std::env::remove_var("WARP_SUI_RPC");
-        let a = SuiAdapter::new();
+        let a = sui_adapter_default();
         let ev = SuiEvent {
             id: SuiEventId {
                 txDigest: "0xdeadbeef".into(),
@@ -924,8 +936,7 @@ mod tests {
 
     #[test]
     fn test_parse_deposit_event_warp_string_amount() {
-        std::env::remove_var("WARP_SUI_RPC");
-        let a = SuiAdapter::new();
+        let a = sui_adapter_default();
         let ev = SuiEvent {
             id: SuiEventId {
                 txDigest: "0xtx".into(),
@@ -946,8 +957,7 @@ mod tests {
 
     #[test]
     fn test_parse_deposit_event_warp_no_parsed_json_returns_none() {
-        std::env::remove_var("WARP_SUI_RPC");
-        let a = SuiAdapter::new();
+        let a = sui_adapter_default();
         let ev = SuiEvent {
             id: SuiEventId {
                 txDigest: "0xtx".into(),
