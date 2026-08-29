@@ -315,6 +315,10 @@ export default function CrossChainSwapWidget() {
     return () => clearTimeout(timer);
   }, [fetchQuote]);
 
+  const minOutput = route
+    ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
+    : '0';
+
   // Execute swap
   const executeSwap = useCallback(async () => {
     if (!route || !srcToken || !destToken) return;
@@ -361,10 +365,6 @@ export default function CrossChainSwapWidget() {
     setSrcToken(destToken);
     setDestToken(srcToken);
   };
-
-  const minOutput = route
-    ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
-    : '0';
 
   const displayOut = route ? (Number(route.expected_out) / 10 ** toAsset.decimals).toFixed(6) : '-';
   const displayMin = route ? (Number(minOutput) / 10 ** toAsset.decimals).toFixed(6) : '-';
