@@ -227,9 +227,14 @@ impl IntentEngine {
     }
 
     fn asset_from_id(id: &zion_l1_types::AssetId) -> Asset {
+        let decimals = if id.contract.is_some() {
+            0 // token decimals require a registry
+        } else {
+            id.chain.decimals()
+        };
         Asset {
             id: id.clone(),
-            decimals: 0,
+            decimals,
             name: id.ticker.clone(),
         }
     }

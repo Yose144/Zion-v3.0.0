@@ -298,7 +298,7 @@ fn native_asset_for_chain(chain: ChainId) -> Asset {
         ChainFamily::Lightning => "BTC",
         ChainFamily::Move => "MOVE",
     };
-    Asset::native(chain, ticker, 8, ticker)
+    Asset::native(chain, ticker, chain.decimals(), ticker)
 }
 
 #[cfg(test)]

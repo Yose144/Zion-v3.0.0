@@ -82,12 +82,32 @@ impl Aggregator {
 
     fn inject_bridge_pools(&self, dex: &mut DexRouter) {
         for (i, edge) in self.bridges.edges().iter().enumerate() {
-            let from = Asset::native(edge.from.chain, &edge.from.ticker, 6, &edge.from.ticker);
-            let to = Asset::native(edge.to.chain, &edge.to.ticker, 6, &edge.to.ticker);
+            // Use the existing AMM pool metadata for this asset if available
+            // (preserves contract + token decimals). Fall back to the chain's
+            // native decimals for bridge-only assets.
+            let from = dex
+                .find_asset(&edge.from)
+                .unwrap_or_else(|| edge_asset(&edge.from));
+            let to = dex
+                .find_asset(&edge.to)
+                .unwrap_or_else(|| edge_asset(&edge.to));
             // Synthetic pool id starting at a high range to avoid collisions.
             let id = u64::MAX - i as u64;
             dex.add_bridge_pool(id, from, to, edge.fee_bps);
         }
+    }
+}
+
+fn edge_asset(id: &AssetId) -> Asset {
+    let decimals = if id.contract.is_some() {
+        0 // token decimals require a registry
+    } else {
+        id.chain.decimals()
+    };
+    Asset {
+        id: id.clone(),
+        decimals,
+        name: id.ticker.clone(),
     }
 }
 

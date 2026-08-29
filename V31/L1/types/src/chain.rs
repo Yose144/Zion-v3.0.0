@@ -110,4 +110,37 @@ impl ChainId {
             ChainId::Zano => "zano",
         }
     }
+
+    /// Native decimal precision for the chain's primary coin.
+    ///
+    /// Token assets may differ; this is a chain-level default.
+    pub const fn decimals(self) -> u8 {
+        match self {
+            ChainId::ZionL1 => 6,
+            ChainId::Bitcoin
+            | ChainId::Decred
+            | ChainId::Monero
+            | ChainId::Zano => 8,
+            ChainId::Ethereum
+            | ChainId::Base
+            | ChainId::Arbitrum
+            | ChainId::Optimism
+            | ChainId::Bsc
+            | ChainId::Polygon
+            | ChainId::Avalanche
+            | ChainId::Zksync
+            | ChainId::Linea
+            | ChainId::EthereumClassic
+            | ChainId::Tron => 18,
+            ChainId::Solana => 9,
+            ChainId::Cosmos => 6,
+            ChainId::Sui => 9,
+            ChainId::Aptos => 8,
+            ChainId::Near => 24,
+            ChainId::Ton => 9,
+            ChainId::Stellar => 7,
+            ChainId::Cardano => 6,
+            ChainId::Lightning => 8,
+        }
+    }
 }
