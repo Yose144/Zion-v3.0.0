@@ -12,7 +12,7 @@
  *     "amount": "123456" }
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { ArrowDownUp, Loader2, Zap, AlertCircle, CheckCircle2, Settings } from 'lucide-react';
 import ChainSelector from './ChainSelector';
@@ -268,9 +268,8 @@ export default function CrossChainSwapWidget() {
     setFromAddress(linkedAddressForChain(user?.linkedAddresses, srcChain));
   }, [srcChain, user]);
 
-  const fromAsset = buildAsset(srcChain, srcToken);
-  const toAsset = buildAsset(destChain, destToken);
-  const amountAtomic = toAtomicAmount(amount, fromAsset.decimals);
+  const fromAsset = useMemo(() => buildAsset(srcChain, srcToken), [srcChain, srcToken]);
+  const toAsset = useMemo(() => buildAsset(destChain, destToken), [destChain, destToken]);
 
   // Fetch quote
   const fetchQuote = useCallback(async () => {
@@ -285,6 +284,7 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
+      const amountAtomic = toAtomicAmount(amount, fromAsset.decimals);
       const body = buildSwapBody(fromAsset, toAsset, amountAtomic, { n: 3, max_hops: 3 });
 
       const resp = await fetch(`${API_BASE}/quote/multi`, {
@@ -307,7 +307,7 @@ export default function CrossChainSwapWidget() {
       setPhase('error');
       setRoute(null);
     }
-  }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic]);
+  }, [srcToken, destToken, amount, fromAsset, toAsset]);
 
   // Compute min output from quote and current slippage before any callback uses it.
   const minOutput = route
@@ -333,6 +333,7 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
+      const amountAtomic = toAtomicAmount(amount, fromAsset.decimals);
       const extra = recipient.trim() ? { recipient: recipient.trim() } : undefined;
       const body = buildSwapBody(fromAsset, toAsset, amountAtomic, extra, {
         min_amount_out: minOutput,
@@ -357,7 +358,7 @@ export default function CrossChainSwapWidget() {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated, recipient, slippageBps]);
+  }, [route, srcToken, destToken, fromAsset, toAsset, amount, authenticated, recipient, minOutput]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -480,7 +481,7 @@ export default function CrossChainSwapWidget() {
                 {phase === 'quoting' && 'Fetching best price...'}
                 {phase === 'quoted' && `Min: ${displayMin}`}
                 {phase === 'idle' && (amount && Number(amount) > 0 ? 'No route found' : 'Enter amount to get quote')}
-                {phase === 'error' && 'Quote failed'}
+                {phase === 'error' && (error?.startsWith('Swap failed') ? 'Swap failed' : 'Quote failed')}
                 {phase === 'success' && 'Swap ready — quote available'}
               </div>
             </div>
