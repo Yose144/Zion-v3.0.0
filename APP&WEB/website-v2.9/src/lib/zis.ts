@@ -14,6 +14,7 @@ import {
   getChallenge as sharedGetChallenge,
   verifyEd25519 as sharedVerifyEd25519,
   verifySiwe as sharedVerifySiwe,
+  verifyGoogle as sharedVerifyGoogle,
   getCurrentUser as sharedGetCurrentUser,
   updateProfile as sharedUpdateProfile,
   logout as sharedLogout,
@@ -114,6 +115,23 @@ export async function verifyEd25519(
 /**
  * Verify a SIWE signature (client-side, via local proxy).
  */
+/**
+ * Verify a Google Sign-In ID token (client-side, via local proxy).
+ */
+export async function verifyGoogle(idToken: string): Promise<ZisSession> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE}/verify/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ idToken }),
+    });
+    if (!res.ok) throw new Error(`Google verify failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedVerifyGoogle(idToken);
+}
+
 export async function verifySiwe(
   address: string,
   message: string,

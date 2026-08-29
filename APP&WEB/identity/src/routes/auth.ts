@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 
 import { createChallenge, verifyEd25519, verifySiwe } from '../lib/challenge.js';
+import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
 
 const ChallengeSchema = z.object({
@@ -21,6 +22,10 @@ const VerifySiweSchema = z.object({
   message: z.string(), // raw SIWE message
   signature: z.string(), // 0x-prefixed hex
   recoveredAddress: z.string().optional(), // deprecated, no longer needed
+});
+
+const VerifyGoogleSchema = z.object({
+  idToken: z.string().min(1),
 });
 
 const UpdateProfileSchema = z.object({
@@ -87,6 +92,61 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
 
     return issueSession(app, req, reply, address, 'evm');
+  });
+
+  // ── POST /verify/google ──────────────────────────────────────────
+  app.post('/verify/google', async (req, reply) => {
+    const parsed = VerifyGoogleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const { idToken } = parsed.data;
+
+    let googleUser;
+    try {
+      googleUser = await verifyGoogleIdToken(idToken);
+    } catch (err) {
+      return reply.code(401).send({
+        error: 'AUTH_FAILED',
+        message: err instanceof Error ? err.message : 'Google verification failed',
+      });
+    }
+
+    const primaryAddress = `google:${googleUser.sub}`;
+    const email = googleUser.email ?? undefined;
+
+    const user = await app.prisma.user.upsert({
+      where: { primaryAddress },
+      update: {
+        lastLogin: new Date(),
+        loginCount: { increment: 1 },
+        ...(email ? { email } : {}),
+        ...(googleUser.name ? { displayName: googleUser.name } : {}),
+        ...(googleUser.picture ? { avatar: googleUser.picture } : {}),
+      },
+      create: {
+        primaryAddress,
+        googleId: googleUser.sub,
+        email: email ?? null,
+        displayName: googleUser.name ?? null,
+        avatar: googleUser.picture ?? null,
+        loginCount: 1,
+        lastLogin: new Date(),
+      },
+    });
+
+    await app.prisma.linkedAddress.upsert({
+      where: { address: primaryAddress },
+      update: {},
+      create: {
+        userId: user.id,
+        address: primaryAddress,
+        chainType: 'google',
+        chainId: 'google',
+      },
+    });
+
+    return issueSessionForUser(app, req, reply, user, primaryAddress, 'google');
   });
 
   // ── GET /me ─────────────────────────────────────────────────────
@@ -201,6 +261,17 @@ async function issueSession(
     create: { primaryAddress: address, loginCount: 1, lastLogin: new Date() },
   });
 
+  return issueSessionForUser(app, req, reply, user, address, chainType);
+}
+
+async function issueSessionForUser(
+  app: FastifyInstance,
+  req: FastifyRequest,
+  reply: import('fastify').FastifyReply,
+  user: { id: string; primaryAddress: string; displayName?: string | null; email?: string | null; avatar?: string | null; bio?: string | null },
+  address: string,
+  chainType: string,
+) {
   // Ensure linked address exists
   await app.prisma.linkedAddress.upsert({
     where: { address },
@@ -230,7 +301,14 @@ async function issueSession(
 
   return {
     token,
-    user: { id: user.id, primaryAddress: user.primaryAddress, displayName: user.displayName },
+    user: {
+      id: user.id,
+      primaryAddress: user.primaryAddress,
+      displayName: user.displayName,
+      email: user.email,
+      avatar: user.avatar,
+      bio: user.bio,
+    },
     expiresAt: expiresAt.toISOString(),
   };
 }

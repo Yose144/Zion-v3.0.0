@@ -41,10 +41,10 @@ test.describe('Multichain /dex swap widget — real Edge', () => {
 
   test('authenticates and executes a same-chain wZION → USDT swap on real backend', async ({ page, context }) => {
     if (!MNEMONIC) {
-      test.skip('No ZION_WALLET_MNEMONIC env var');
+      test.skip(true, 'No ZION_WALLET_MNEMONIC env var');
     }
 
-    const cookie = await loginWithMnemonic(MNEMONIC);
+    const cookie = await loginWithMnemonic(MNEMONIC!);
     await context.addCookies([cookie]);
 
     const errors: string[] = [];

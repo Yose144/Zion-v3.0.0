@@ -245,6 +245,21 @@ export async function verifyEd25519(
 }
 
 /**
+ * Verify a Google Sign-In ID token.
+ * POST /api/auth/verify/google
+ */
+export async function verifyGoogle(
+  idToken: string,
+  options?: { baseUrl?: string },
+): Promise<ZisSession> {
+  return zisFetch<ZisSession>('/api/auth/verify/google', {
+    method: 'POST',
+    body: { idToken },
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
  * Verify a SIWE (Sign-In with Ethereum) signature.
  * POST /api/auth/verify/siwe
  *
