@@ -54,6 +54,17 @@ impl ChainAdapter for MockAdapter {
         Ok(self.events.lock().await.clone())
     }
 
+    async fn watch_addresses(&self, addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
+        Ok(self
+            .events
+            .lock()
+            .await
+            .iter()
+            .filter(|e| addresses.iter().any(|a| a.encoded == e.recipient.encoded))
+            .cloned()
+            .collect())
+    }
+
     async fn execute_outbound(
         &self,
         _transfer: &zion_multichain::Transfer,
@@ -432,4 +443,124 @@ async fn intent_broadcast_collects_and_submits_solver_bids() {
         service.get_intent(id).await.unwrap().status,
         IntentStatus::Executed
     );
+}
+
+#[tokio::test]
+async fn e2e_deposit_swap_withdraw() {
+    let db_path = std::env::temp_dir().join("multichain-e2e-deposit-swap-withdraw-test.db");
+    let _ = std::fs::remove_file(&db_path);
+
+    let mut config = MultichainConfig::default();
+    config.l1_rpc_url = String::new();
+    config.database.path = db_path.to_string_lossy().into();
+
+    // One shared event queue for the ZionL1 mock adapter.
+    let events = Arc::new(Mutex::new(vec![]));
+    let mut registry = ChainAdapterRegistry::new();
+    registry.register(
+        ChainId::ZionL1,
+        Box::new(
+            MockAdapter::new("zion", 100, Amount::new(1_000_000_000_000), ChainFamily::Zion)
+                .with_events(Arc::clone(&events)),
+        ),
+    );
+
+    let service = MultichainService::new_with_adapters(config, registry)
+        .expect("in-memory service builds");
+
+    let user_id = "user1";
+
+    // 1. Derive a deposit address and store it in the wallet DB.
+    let deposit = service
+        .multichain_wallet()
+        .derive_deposit_address(user_id, ChainId::ZionL1)
+        .await
+        .expect("derive deposit address");
+
+    // 2. Simulate an on-chain ZION deposit to that address.
+    events.lock().await.push(DepositEvent {
+        chain: ChainId::ZionL1,
+        tx_hash: Hash::default(),
+        recipient: deposit.address,
+        amount: Amount::new(1_000_000),
+        memo: None,
+        confirmations: 1,
+        asset: None,
+    });
+
+    service
+        .deposit_watcher()
+        .poll_all()
+        .await
+        .expect("poll deposits");
+
+    // 3. Verify the ledger was credited with 1 ZION.
+    let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+    let balance = service
+        .wallet_ledger()
+        .balance(user_id, &zion)
+        .await
+        .expect("ledger balance");
+    assert_eq!(balance.0, 1_000_000);
+
+    // 4. Deploy a ZION/USDC pool on ZionL1.
+    let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
+    service
+        .deploy_pool(Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+        })
+        .await
+        .expect("deploy pool");
+
+    // 5. Swap 1 ZION for USDC (custodial, output stays on ledger).
+    let order = service
+        .swap_execute(
+            user_id,
+            &zion,
+            &usdc,
+            Amount::new(1_000_000),
+            Amount::new(1),
+            None,
+        )
+        .await
+        .expect("swap execute");
+    assert!(order.amount_out.0 > 0);
+
+    let usdc_balance = service
+        .wallet_ledger()
+        .balance(user_id, &usdc)
+        .await
+        .expect("usdc balance");
+    assert_eq!(usdc_balance, order.amount_out);
+
+    // 6. Withdraw the USDC to another derived address.
+    let recipient = service
+        .wallet_address(ChainId::ZionL1, 0, 1)
+        .expect("withdraw address");
+    let withdraw_id = service
+        .request_withdraw(user_id, &usdc, usdc_balance, &recipient.encoded)
+        .await
+        .expect("request withdraw");
+
+    service
+        .withdrawal_processor()
+        .process_pending()
+        .await
+        .expect("process withdrawals");
+
+    let withdrawals = service
+        .withdrawals_for_user(user_id)
+        .await
+        .expect("list withdrawals");
+    let record = withdrawals
+        .iter()
+        .find(|w| w.id == withdraw_id)
+        .expect("withdrawal record");
+    assert_eq!(record.status, zion_multichain::multichain_wallet::types::WithdrawalStatus::Sent);
+    assert!(record.tx_hash.is_some());
 }

@@ -487,9 +487,11 @@ na deploy a validaci.
    a `/wallet/multichain` stránka s přehledem zůstatků, adres, vkladů,
    výběrů a DEX objednávek; prolink z `/wallet`. Rozšíření swap proxy o
    `/api/multichain/[...path]` (mapuje `/v1/wallet/*` a `/v1/swap/*`).
-2. ⏳ E2E testy (Cypress/Playwright) pro celý flow: deposit → swap → withdraw
-   — chybí v repo; připravit buď Playwright flow na `APP&WEB/website-v2.9`
-   nebo Rust E2E v `V31/L2/multichain/tests/e2e` s Anvil/regtest fixture.
+2. ✅ Rust E2E test pro core flow: deposit → swap → withdraw přidán do
+   `V31/L2/multichain/tests/service.rs::e2e_deposit_swap_withdraw`. Používá
+   `MultichainService` s mock `ChainAdapter`, `DepositWatcher`, `SwapExecutor`
+   a `WithdrawalProcessor` na dočasné DB. ⏳ UI E2E (Cypress/Playwright) na
+   `APP&WEB/website-v2.9` a reálný on-chain regtest/testnet E2E ještě chybí.
 3. ✅ Reconciliation: `Reconciler` (`V31/L2/multichain/src/reconciliation.rs`)
    porovnává on-chain zůstatky L2 hot walletů (odvozené z `wallet_keyring`)
    s interními saldy a AMM pool reserves, persistuje reporty do SQLite,
