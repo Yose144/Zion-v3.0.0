@@ -1,6 +1,6 @@
 # ZionDex + ZIS Multichain Wallet — komplexní implementační plán
 
-> **Status (2026-08-27):** Fáze 0–7 jsou ve `main` implementovány (merge `feat/ziondex-zis-multichain-wallet` v `9bfede06c`). `cargo test -p zion-multichain` prochází 583 testy. Reálný cross-chain HTLC workflow vyžaduje mainnet deploy a E2E validaci. Zbývají: E2E testy (Cypress/Playwright) pro flow deposit → swap → withdraw a operátorská dokumentace.
+> **Status (2026-08-27):** Fáze 0–7 jsou ve `main` implementovány (merge `feat/ziondex-zis-multichain-wallet` v `9bfede06c`). `cargo test --workspace` prochází, `cargo clippy --workspace` je čisté (pouze pre-existing warnings). Rust E2E `deposit → swap → withdraw` a Playwright smoke test `/wallet/multichain` jsou v repo. Reálný cross-chain HTLC workflow a plnohodnotný UI E2E flow vyžadují testnet/mainnet deploy, autentizovaný test účet a operátorskou dokumentaci.
 >
 > Cíl: převést `ZionDex` z in-memory AMM quote engine na skutečně E2E fungující
 > multichain DEX a vytvořit v rámci ZIS vlastní `Multichain Wallet`, která
@@ -487,11 +487,14 @@ na deploy a validaci.
    a `/wallet/multichain` stránka s přehledem zůstatků, adres, vkladů,
    výběrů a DEX objednávek; prolink z `/wallet`. Rozšíření swap proxy o
    `/api/multichain/[...path]` (mapuje `/v1/wallet/*` a `/v1/swap/*`).
-2. ✅ Rust E2E test pro core flow: deposit → swap → withdraw přidán do
+2. ✅ Rust E2E test pro core backend flow: deposit → swap → withdraw přidán do
    `V31/L2/multichain/tests/service.rs::e2e_deposit_swap_withdraw`. Používá
    `MultichainService` s mock `ChainAdapter`, `DepositWatcher`, `SwapExecutor`
-   a `WithdrawalProcessor` na dočasné DB. ⏳ UI E2E (Cypress/Playwright) na
-   `APP&WEB/website-v2.9` a reálný on-chain regtest/testnet E2E ještě chybí.
+   a `WithdrawalProcessor` na dočasné DB.
+   ✅ Playwright smoke test `APP&WEB/website-v2.9/e2e/wallet-multichain.spec.ts`
+   ověřuje rendering `/wallet/multichain`, sign-in prompt a navigaci.
+   ⏳ Plnohodnotný UI flow (deposit → swap → withdraw) a reálný on-chain
+   regtest/testnet E2E vyžadují autentizovaný test účet a mock/testnet backend.
 3. ✅ Reconciliation: `Reconciler` (`V31/L2/multichain/src/reconciliation.rs`)
    porovnává on-chain zůstatky L2 hot walletů (odvozené z `wallet_keyring`)
    s interními saldy a AMM pool reserves, persistuje reporty do SQLite,
