@@ -8,7 +8,7 @@
  * session cookie is forwarded through the local proxy).
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -94,6 +94,8 @@ export function MultichainWalletProvider({ children }: { children: ReactNode }) 
   // on the public DeFi hub or other pages.
   const shouldFetch = authenticated && pathname?.startsWith('/wallet/multichain');
 
+  const autoDerived = useRef(false);
+
   const refresh = useCallback(async () => {
     if (!shouldFetch) {
       setSnapshot(null);
@@ -125,6 +127,25 @@ export function MultichainWalletProvider({ children }: { children: ReactNode }) 
       setLoading(false);
     }
   }, [shouldFetch, refresh]);
+
+  // Auto-derive a ZION L1 and Base deposit wallet on first visit so Google
+  // users (or any user without addresses) get a custodial L1 + EVM wallet
+  // immediately after logging in.
+  useEffect(() => {
+    if (!shouldFetch || !snapshot || loading || snapshot.addresses.length > 0 || autoDerived.current) {
+      return;
+    }
+    autoDerived.current = true;
+    (async () => {
+      try {
+        await deriveMultichainAddress({ chain: 'zion', account: 0, index: 0 });
+        await deriveMultichainAddress({ chain: 'base', account: 0, index: 0 });
+        await refresh();
+      } catch (e: any) {
+        setError(e.message || 'Failed to create default wallets');
+      }
+    })();
+  }, [shouldFetch, snapshot, loading, refresh]);
 
   const withdraw = useCallback(async (input: MultichainWithdrawInput) => {
     setError(null);

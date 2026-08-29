@@ -2283,3 +2283,18 @@ MarketPlace can pay customer ZION token bonuses directly on ZION L1.
 - **Configuration:** see `.env.example` (`ZION_L1_RPC_URL`, `ZION_L1_POOL_WALLET_PATH`, `ZION_L1_POOL_WALLET_SECRET_KEY`, `ZION_L1_POOL_WALLET_MNEMONIC`, `ZION_L1_PAYOUT_FEE`, `ZION_CLI_PATH`).
 - **Database:** `prisma/schema.prisma` has new `customerWalletAddress`, `customerWalletSeed`, `customerWalletPublicKey`, `customerWalletSecretKey` columns. Run `npx prisma db push` after deploy.
 - **Security:** pool wallet secret keys / mnemonics must live in `.env` or a 600-permission file, never in git. Customer seeds are custodial; they are stored in the DB and emailed.
+
+## ZIS Google Sign-In + MetaMask Multichain Wallet (2026-08-30)
+
+Implemented Google OAuth login and MetaMask one-click deposit/withdraw for the ZIS-backed multichain wallet.
+
+- **ZIS backend:** `APP&WEB/identity/src/lib/google.ts` verifies Google ID tokens. New route `POST /api/auth/verify/google` creates `google:{sub}` users and stores `email`, `displayName`, `avatar`.
+- **Prisma schema:** `User.googleId` added for Google OpenID linking; run `npx prisma db push` (or `prisma migrate dev`) against the ZIS database after deploy.
+- **Web login:** `APP&WEB/website-v2.9/src/components/GoogleSignInButton.tsx` loads Google Identity Services. Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (web bundle) and `GOOGLE_CLIENT_ID` (ZIS backend). ZIS must have the same Google Client ID.
+- **MetaMask panel:** `APP&WEB/website-v2.9/src/components/MetaMaskWalletPanel.tsx` on `/wallet/multichain` links an EVM address via SIWE, derives a Base deposit address, deposits wZION/USDT/USDC/WETH from MetaMask, and withdraws ledger balances to the linked address.
+- **Multichain deploy checklist:**
+  1. Rsync `APP&WEB/identity/` to Edge, run `npm install && npm run build`.
+  2. Apply DB migration (`User.googleId` column).
+  3. Add `GOOGLE_CLIENT_ID=...` to the ZIS env (`/etc/zion/edge-environment.sh` or systemd `EnvironmentFile`) and restart `zion-zis.service`.
+  4. Add `NEXT_PUBLIC_GOOGLE_CLIENT_ID=...` to the web build env and rebuild/restart `zion-website.service`.
+  5. To enable real ERC-20 withdrawals from the custodial wallet, set a fixed `ZION_WALLET_MNEMONIC` (or `WARP_EVM_RELAY_KEY`) for `zion-v31-multichain` and fund the Base hot wallet with gas (ETH) and the tokens it must send (e.g., USDT from AMM swaps / market makers). Without this, withdrawals will record as `pending` and the `WithdrawalProcessor` will mark them `failed` and re-credit the ledger.
