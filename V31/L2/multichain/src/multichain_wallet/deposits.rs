@@ -339,5 +339,5 @@ fn native_asset_for_chain(chain: ChainId, address: &WalletAddress) -> Asset {
         _ => address.chain.as_str().to_ascii_uppercase(),
     };
     let name = ticker.clone();
-    Asset::native(chain, ticker, 8, name)
+    Asset::native(chain, ticker, chain.decimals(), name)
 }

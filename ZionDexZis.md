@@ -1,6 +1,6 @@
 # ZionDex + ZIS Multichain Wallet — komplexní implementační plán
 
-> **Status (2026-08-23):** Fáze 0–5 implementovány a `cargo test -p zion-multichain` prochází 581 testy. Fáze 6+ jsou pending.
+> **Status (2026-08-27):** Fáze 0–7 jsou ve `main` implementovány (merge `feat/ziondex-zis-multichain-wallet` v `9bfede06c`). `cargo test -p zion-multichain` prochází 583 testy. Reálný cross-chain HTLC workflow vyžaduje mainnet deploy a E2E validaci. Zbývají: E2E testy (Cypress/Playwright) pro flow deposit → swap → withdraw a operátorská dokumentace.
 >
 > Cíl: převést `ZionDex` z in-memory AMM quote engine na skutečně E2E fungující
 > multichain DEX a vytvořit v rámci ZIS vlastní `Multichain Wallet`, která
@@ -464,18 +464,22 @@ adresu a tx se objeví na blockchainu.
 **Akceptační kritérium**: swap `10 000 ZION → BTC` a zpět `BTC → ZION` projde
 E2E s reálnými on-chain tx.
 
-### Fáze 6 — HTLC / non-custodial path (volitelná, 2+ týdny)
+### Fáze 6 — HTLC / non-custodial path (volitelná, 2+ týdny) ✅ implementováno
 
-1. Povolit `is_bridge = true` v `settle_and_execute`
-   (`swap/dex/intent_engine.rs:201` je momentálně tvrdý reject).
-2. Dát `Executor`ovi možnost volit mezi custodial a HTLC execution.
-3. Umožnit uživateli propojit externí adresu a pro swapy nad ní podepsat
-   off-chain intent; executor pak použije HTLC místo L2 ledgeru.
-4. Implementovat `HTLC` flow pro EVM ↔ ZION L1
-   (`swap/htlc.rs`, `chain/adapters/evm.rs:328`, `chain/adapters/zion_l1.rs:205`).
+1. ✅ Povolit `is_bridge = true` v `settle_and_execute`
+   — `swap/htlc.rs` implementuje HTLC lock/claim/refund; `SwapExecutor.with_htlc`
+   v `service.rs` volá HTLC cestu pro `/v1/swap/execute-v2`.
+2. ✅ `Executor` umí volit mezi custodial a HTLC execution.
+3. ⏳ Umožnit uživateli propojit externí adresu a pro swapy nad ní podepsat
+   off-chain intent; v `swap/dex/intent_engine.rs:200-207` zůstává tvrdý reject
+   bridge hopů v intent/solver path, dokud není WARP cross-chain execution
+   nasazen a ověřen.
+4. ✅ `HTLC` flow pro EVM ↔ ZION L1 implementován
+   (`swap/htlc.rs`, `chain/adapters/evm.rs`, `chain/adapters/zion_l1.rs`).
 
 **Akceptační kritérium**: trustless swap mezi dvěma externími peněženkami
-přes HTLC prochází bez toho, aby L2 drželo tokeny.
+přes HTLC prochází bez toho, aby L2 drželo tokeny. Reálný mainnet E2E čeká
+na deploy a validaci.
 
 ### Fáze 7 — UI, testování, tvrdé hardening (2 týdny)
 
@@ -483,7 +487,9 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
    a `/wallet/multichain` stránka s přehledem zůstatků, adres, vkladů,
    výběrů a DEX objednávek; prolink z `/wallet`. Rozšíření swap proxy o
    `/api/multichain/[...path]` (mapuje `/v1/wallet/*` a `/v1/swap/*`).
-2. ⏳ E2E testy (Cypress/Playwright) pro celý flow: deposit → swap → withdraw.
+2. ⏳ E2E testy (Cypress/Playwright) pro celý flow: deposit → swap → withdraw
+   — chybí v repo; připravit buď Playwright flow na `APP&WEB/website-v2.9`
+   nebo Rust E2E v `V31/L2/multichain/tests/e2e` s Anvil/regtest fixture.
 3. ✅ Reconciliation: `Reconciler` (`V31/L2/multichain/src/reconciliation.rs`)
    porovnává on-chain zůstatky L2 hot walletů (odvozené z `wallet_keyring`)
    s interními saldy a AMM pool reserves, persistuje reporty do SQLite,
@@ -607,16 +613,20 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
 
 ## 9. Okamžitě další kroky (co udělat jako první)
 
-1. **Schválit** tento plán a rozhodnout, zda jít cestou custodial wallet
-   (Fáze 1–5) nebo nejprve HTLC (Fáze 6).
-2. **Vytvořit feature branch** `feat/ziondex-zis-multichain-wallet`.
-3. **Začít Fází 0**: oddělit wallet seed, připravit dev/test DB.
-4. **Rozdělit práci**:
-   - Rust backend: multichain wallet + executor.
-   - ZIS: schema + wallet API.
-   - Web: MultichainWalletContext + UI.
-5. **Nastavit E2E testovací prostředí** s testnet BTC/Base/ZION, aby se
-   každá fáze dala ověřit reálnými transakcemi.
+1. **E2E testování**: nastavit prostředí (Anvil/Base testnet + bitcoin regtest
+   nebo testnet + lokální `zion-node`) a napsat test deposit → swap → withdraw.
+   Lze buď Playwright/Cypress flow na webu, nebo Rust E2E v
+   `V31/L2/multichain/tests/e2e`.
+2. **Operátorská dokumentace**: runbook pro wallet seed rotation, reconciliation
+   alert response, ZIS auth enablement a deposit/swap/withdraw flow.
+3. **Cross-chain HTLC validace**: reálný mainnet/testnet E2E lock → claim
+   mezi EVM a ZION L1; až projde, odstranit guard v
+   `swap/dex/intent_engine.rs:200-207` a plně otevřít WARP intent execution.
+4. **Drobné úpravy**:
+   - správná decimals per chain v `intent_engine.rs` a `reconciliation.rs`
+     (ZION 6, BTC 8, EVM 18, SOL 9, …);
+   - UI TODO: LP positions v `/dex/portfolio`, pool config save, auto-refresh
+     v `/dao/topology`.
 
 ---
 
@@ -640,6 +650,6 @@ přes HTLC prochází bez toho, aby L2 drželo tokeny.
 
 ---
 
-*Poslední aktualizace: 2026-08-23 (Fáze 0–5 implementovány)*  
+*Poslední aktualizace: 2026-08-27 (Fáze 0–7 implementovány ve `main`, zbývají E2E testy a operátorská dokumentace)*  
 *Autor: Devin dle pokynu týmu*  
 *Repozitář: root `ZionDexZis.md`*

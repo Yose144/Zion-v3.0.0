@@ -116,5 +116,16 @@ fn bridge_direction(from: ChainId, to: ChainId) -> MultichainResult<TransferDire
 }
 
 fn asset_from_id(id: &zion_l1_types::AssetId) -> Asset {
-    Asset::native(id.chain, &id.ticker, 6, &id.ticker)
+    // Preserve the original AssetId (including contract) and use the chain's
+    // native decimals as a default. Token decimals require a registry.
+    let decimals = if id.contract.is_some() {
+        0
+    } else {
+        id.chain.decimals()
+    };
+    Asset {
+        id: id.clone(),
+        decimals,
+        name: id.ticker.clone(),
+    }
 }

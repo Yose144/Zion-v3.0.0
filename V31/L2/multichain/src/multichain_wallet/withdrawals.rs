@@ -169,10 +169,16 @@ fn asset_from_key(asset_key: &str) -> MultichainResult<Asset> {
     let chain = chain_id_from_str(parts[0])?;
     let ticker = parts[1].to_string();
     let contract = parts.get(2).map(|s| s.to_string());
-    let id = AssetId::new(chain, ticker.clone(), contract);
+    let id = AssetId::new(chain, ticker.clone(), contract.clone());
+    let decimals = if contract.is_none() {
+        chain.decimals()
+    } else {
+        // Token decimals require a registry; default to 0 for unknown tokens.
+        0
+    };
     Ok(Asset {
         id,
-        decimals: 0,
+        decimals,
         name: ticker,
     })
 }

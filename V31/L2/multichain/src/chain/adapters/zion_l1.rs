@@ -436,7 +436,7 @@ impl ChainAdapter for ZionL1Adapter {
                 amount: Amount::new(lock.amount_flowers as u128),
                 memo: Some(lock.memo),
                 confirmations,
-                asset: Some(Asset::native(ChainId::ZionL1, "ZION", 8, "ZION")),
+                asset: Some(Asset::native(ChainId::ZionL1, "ZION", 6, "ZION")),
             });
         }
 

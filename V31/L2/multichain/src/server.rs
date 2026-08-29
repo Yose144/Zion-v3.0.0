@@ -1782,15 +1782,20 @@ fn asset_from_input(key: &str) -> MultichainResult<Asset> {
                 chain,
                 ticker.clone(),
                 c,
-                0,
+                0, // token decimals require a registry; unknown until one exists
                 ticker,
             )),
-            None => Ok(Asset::native(chain, ticker.clone(), 0, ticker)),
+            None => Ok(Asset::native(
+                chain,
+                ticker.clone(),
+                chain.decimals(),
+                ticker,
+            )),
         }
     } else {
         let chain = chain_name_to_id(key)?;
         let ticker = default_ticker(chain);
-        Ok(Asset::native(chain, ticker, 0, ticker))
+        Ok(Asset::native(chain, ticker, chain.decimals(), ticker))
     }
 }
 
