@@ -29,5 +29,5 @@ enabled = true
 [[adapters]]
 chain = "zion-l1"
 # Local ZION node RPC. The public endpoint is rpc.zionterranova.com:8443.
-rpc_url = "http://127.0.0.1:9443"
+rpc_url = "http://127.0.0.1:9445"
 enabled = true

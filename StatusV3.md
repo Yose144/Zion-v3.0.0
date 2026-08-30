@@ -137,27 +137,31 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 1000+, public RPC 8443 → 9445) |
-| zion-v31-pool | 8444 (Stratum), 8080 (HTTP API) | 0.0.0.0 | L1 (V31 PRODUCTION) | ✅ active (shares accepted, payout sweep active) |
-| zion-v31-miner | — | — | L1 (V31 PRODUCTION) | ⚠️ activating (auto-restart crash loop — `zion-miner` gpu-opencl binary panics on `ocl::Platform::list` on CPU-only server; use `zion-universal-miner` for CPU-only) |
-| zion-v31-multichain | 8453 (WARP API), 8454 (DEX API via `warpd`) | 0.0.0.0 | L3 (V31 PRODUCTION) | ⚠️ inactive (dead) since 2026-08-10 10:19 CEST |
-| zion-v31-dao | 8456 (API) | 127.0.0.1 | L2 (V31 PRODUCTION) | ✅ active |
-| zion-v31-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 (V31 PRODUCTION) | ✅ active |
-| zion-edge-python-dashboard | 8766 | 0.0.0.0 | — | ✅ active (Python zero-dep dashboard) |
-| zion-website | 3000 | 127.0.0.1 | — | ✅ active (Next.js, app.zionterranova.com) |
-| zion-oasis-web | 3002 | 127.0.0.1 | — | ✅ active (Next.js standalone; public site served from /var/www/oasis static via nginx) |
-| zion-marketplace | 3100 | 127.0.0.1 | — | ✅ active (Next.js, market.zionterranova.com) |
-| fail2ban.service | — | — | — | ✅ active |
-| zion-watchdog.timer | — | — | — | ✅ active (2 min) |
-| nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
-| zion-agent.service | — | — | — | 🔄 activating (auto-restart) |
-| zion-v31-free-world | 8095 (HTTP API) | 127.0.0.1 | L5 | ✅ active (fund tracker live on Edge) |
-| zion-v31-issobella | 8097 (HTTP API) | 127.0.0.1 | L6 | ✅ active (fund tracker live on Edge) |
-| zion-node (V3 legacy) | — | — | L1 | ⛔ failed (expected after V31 cutover) |
-| zion-pool (V3 legacy) | — | — | L1 | ⛔ failed (expected after V31 cutover) |
-| zion-dashboard-web (legacy Flask) | — | — | — | ⛔ failed (superseded by zion-edge-python-dashboard) |
-| logrotate.service | — | — | — | ⛔ failed (system-level, does not block ZION) |
-| zion-edge-* (V3/edge legacy) | various | — | — | ⛔ disabled / masked (replaced by zion-v31-*) |
+| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | active (height 19173, public RPC 8443 / 443 -> 9445) |
+| zion-v31-node2 | 8336 (P2P), 9446 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | active (follower, sync to node 1) |
+| zion-v31-node3 | 8337 (P2P), 9447 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | active (follower, sync to node 1) |
+| zion-v31-pool | 8444 (Stratum), 8080 (HTTP API) | Stratum 0.0.0.0, HTTP 127.0.0.1 | L1 (V31 PRODUCTION) | active (shares accepted, payout sweep active) |
+| zion-v31-miner | — | — | L1 (V31 PRODUCTION) | active (CPU-only, 4 threads, --no-gpu --no-cpu, ZION accept rate 100%) |
+| zion-v31-multichain | 8453 (WARP API), 8454 (DEX API via `warpd`) | 127.0.0.1 | L2 (V31 PRODUCTION) | active |
+| zion-v31-dao | 8456 (API) | 127.0.0.1 | L2 (V31 PRODUCTION) | active |
+| zion-v31-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 (V31 PRODUCTION) | active |
+| zion-v31-free-world | 8095 (HTTP API) | 127.0.0.1 | L5 | active (fund tracker live on Edge) |
+| zion-v31-issobella | 8097 (HTTP API) | 127.0.0.1 | L6 | active (fund tracker live on Edge) |
+| zion-zis | 8096 (HTTP) | 127.0.0.1 | — | active (ZION Identity Service) |
+| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | active (Python zero-dep dashboard) |
+| zion-website | 3000 | 127.0.0.1 | — | active (Next.js, app.zionterranova.com) |
+| zion-marketplace | 3100 | 127.0.0.1 | — | active (Next.js, market.zionterranova.com) |
+| zion-oasis-web | — | — | — | not installed (OASIS web served statically by nginx from /var/www/oasis/) |
+| zion-v31-watchdog.timer | — | — | — | active (triggers zion-v31-watchdog.service) |
+| zion-agent.service | — | — | — | inactive (dead) |
+| zion-watchdog.service | — | — | — | inactive (legacy) |
+| fail2ban.service | — | — | — | active |
+| nginx | 80, 443 | 0.0.0.0 | — | active |
+| logrotate.service | — | — | — | failed (system-level, does not block ZION) |
+| zion-node (V3 legacy) | — | — | L1 | failed (expected after V31 cutover) |
+| zion-pool (V3 legacy) | — | — | L1 | failed (expected after V31 cutover) |
+| zion-dashboard-web (legacy Flask) | — | — | — | failed (superseded by zion-edge-python-dashboard) |
+| zion-edge-* (V3/edge legacy) | various | — | — | disabled / masked (replaced by zion-v31-*) |
 
 ### Local Backup Node: `zionserver-144` (109.81.27.87)
 

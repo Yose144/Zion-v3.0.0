@@ -126,12 +126,12 @@ Všechny naplánované E2E položky pro `3.1.0-beta` (protokol `3.1.0-alpha`) js
 
 - Síťové/portové pravidla a bezpečnostní postupy pro V31: [`V31/AGENTS.md`](./AGENTS.md).
 - Detailní fázový build plán: [`V31/ALPHA_BUILD_PLAN.md`](./ALPHA_BUILD_PLAN.md).
-- Globální provozní historie, incidenty a topologie: [`/Users/yeshuae/Projects/2.9.6/AGENTS.md`](../AGENTS.md).
+- Globální provozní historie, incidenty a topologie: [`/home/zionserver/2.9.6-main/AGENTS.md`](../AGENTS.md).
 
 Dodržujte default-deny firewall (`ufw`/`nftables`), IP allowlist pro RPC/dashboard a aktuální `ignoreip` v `fail2ban` jail `zion-p2p` před každým lokálním testem backup nody nebo poolu. Detailní seznam portů a operator IP najdete v [`V31/AGENTS.md`](./AGENTS.md).
 
 Klíčové provozní body z `V31/AGENTS.md`:
-- Node RPC `127.0.0.1:9443` nikdy není veřejně dosažitelný; veřejný RPC jde přes nginx `rpc.zionterranova.com:8443` s IP allowlistem.
+- Node RPC `127.0.0.1:9445` nikdy není veřejně dosažitelný; veřejný RPC jde přes nginx `rpc.zionterranova.com:8443` s IP allowlistem.
 - Pool stratum běží na `62.171.141.136:8444` a je primární veřejná služba pro minery.
 - P2P porty `8333`/`8334` mají whitelisted peery a fail2ban ochranu.
 - SSH je povolen pouze pro `OPERATOR_IPS` a běží na portech `22` a `2222`, IPv4 i IPv6.
@@ -142,7 +142,9 @@ Klíčové provozní body z `V31/AGENTS.md`:
 - [`AGENTS.md`](./AGENTS.md)
 - [`AUTONOMOUS_PROFIT_ROUTER.md`](../docs/3.2/AUTONOMOUS_PROFIT_ROUTER.md)
 - [`V3.1_MIGRATION_PLAN.md`](../docs/3.0.6/V3.1_MIGRATION_PLAN.md)
-- [`/Users/yeshuae/Projects/2.9.6/AGENTS.md`](../AGENTS.md)
+- [`/home/zionserver/2.9.6-main/AGENTS.md`](../AGENTS.md)
+- [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) (dlouhodobý roadmap)
+- [`V31/PLAN_TO_3.2.md`](./PLAN_TO_3.2.md) (plán na 3.2)
 
 ---
 

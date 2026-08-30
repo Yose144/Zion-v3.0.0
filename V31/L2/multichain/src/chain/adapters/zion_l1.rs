@@ -65,24 +65,52 @@ impl ZionL1Adapter {
             .await
             .map_err(|e| MultichainError::Internal(format!("zion rpc request failed: {e}")))?;
 
-        if !resp.status().is_success() {
+        let status = resp.status();
+        if !status.is_success() {
             return Err(MultichainError::Internal(format!(
                 "zion rpc returned {}",
-                resp.status()
+                status
             )));
         }
 
-        let envelope = resp
-            .json::<JsonRpcResponse<T>>()
+        // Read the body as text first so we can diagnose malformed responses
+        // and (for `serde_json::Value` targets) fall back to a bare payload.
+        let text = resp
+            .text()
             .await
-            .map_err(|e| MultichainError::Internal(format!("zion rpc decode failed: {e}")))?;
+            .map_err(|e| MultichainError::Internal(format!("zion rpc body read failed: {e}")))?;
+
+        let envelope = serde_json::from_str::<JsonRpcResponse<T>>(&text).or_else(|e| {
+            // Some node responses are bare JSON values instead of a full
+            // JSON-RPC envelope. Try that as a fallback before giving up.
+            if let Ok(bare) = serde_json::from_str::<T>(&text) {
+                return Ok(JsonRpcResponse {
+                    result: Some(bare),
+                    error: None,
+                    _jsonrpc: None,
+                    _id: None,
+                });
+            }
+            let preview = if text.len() > 500 {
+                &text[..500]
+            } else {
+                &text
+            };
+            Err(MultichainError::Internal(format!(
+                "zion rpc decode failed for method {} (status {}): {}. body preview: {}",
+                method, status, e, preview
+            )))
+        })?;
 
         match (envelope.result, envelope.error) {
             (Some(result), _) => Ok(result),
-            (None, Some(err)) => Err(MultichainError::Internal(format!(
-                "zion rpc error {}: {}",
-                err.code, err.message
-            ))),
+            (None, Some(err)) => {
+                let code = err.code.unwrap_or(0);
+                Err(MultichainError::Internal(format!(
+                    "zion rpc error {}: {}",
+                    code, err.message
+                )))
+            }
             (None, None) => Err(MultichainError::Internal(
                 "zion rpc empty response".to_string(),
             )),
@@ -552,8 +580,9 @@ impl ChainAdapter for ZionL1Adapter {
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {
         self.validate_address(address)?;
+        // getAddressInfo returns both balance_flowers and balance_zion.
         let balance: serde_json::Value = self
-            .call("getBalance", json!({"account": address.encoded}))
+            .call("getAddressInfo", json!({"address": address.encoded}))
             .await?;
         let flowers = balance
             .get("balance_flowers")
@@ -621,16 +650,17 @@ struct JsonRpcResponse<T> {
     result: Option<T>,
     error: Option<JsonRpcError>,
     #[allow(dead_code)]
-    #[serde(rename = "jsonrpc")]
-    _jsonrpc: String,
+    #[serde(rename = "jsonrpc", default)]
+    _jsonrpc: Option<String>,
     #[allow(dead_code)]
-    #[serde(rename = "id")]
-    _id: u64,
+    #[serde(rename = "id", default)]
+    _id: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
 struct JsonRpcError {
-    code: i64,
+    // V3 node error responses may omit the code field.
+    code: Option<i64>,
     message: String,
 }
 

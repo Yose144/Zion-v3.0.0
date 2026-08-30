@@ -320,6 +320,10 @@ export default function CrossChainSwapWidget() {
     return () => clearTimeout(timer);
   }, [fetchQuote]);
 
+  const minOutput = route
+    ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
+    : '0';
+
   // Execute swap
   const executeSwap = useCallback(async () => {
     if (!route || !srcToken || !destToken) return;
