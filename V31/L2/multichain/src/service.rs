@@ -109,7 +109,7 @@ impl MultichainService {
             if !cfg.enabled {
                 continue;
             }
-            match build_adapter(cfg, &bridge_keyring) {
+            match build_adapter(cfg, &wallet_keyring) {
                 Ok(adapter) => match chain_id_by_name(&cfg.chain) {
                     Ok(chain_id) => {
                         adapters.register(chain_id, adapter);

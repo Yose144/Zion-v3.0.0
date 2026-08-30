@@ -25,6 +25,7 @@ export const MULTICHAIN_DECIMALS = 1_000_000;
 
 const API_CHAIN_TO_UI: Record<string, string> = {
   zion_l1: 'zion',
+  'zion-l1': 'zion',
 };
 
 function parseAssetKey(assetKey: string): { chain: string; ticker: string } {
@@ -71,7 +72,7 @@ export function formatMultichainAmount(raw: string | number, assetKey?: string):
   const decimals = assetKey ? getMultichainAssetDecimals(assetKey) : 6;
   try {
     const value = BigInt(String(raw));
-    const divisor = BigInt(10 ** decimals);
+    const divisor = BigInt(10) ** BigInt(decimals);
     const whole = value / divisor;
     const frac = value % divisor;
     const fracStr = frac.toString().padStart(decimals, '0').replace(/0+$/, '');
@@ -135,11 +136,14 @@ export function MultichainWalletProvider({ children }: { children: ReactNode }) 
     if (!shouldFetch || !snapshot || loading || snapshot.addresses.length > 0 || autoDerived.current) {
       return;
     }
-    autoDerived.current = true;
     (async () => {
       try {
-        await deriveMultichainAddress({ chain: 'zion', account: 0, index: 0 });
-        await deriveMultichainAddress({ chain: 'base', account: 0, index: 0 });
+        const zion = await deriveMultichainAddress({ chain: 'zion', account: 0, index: 0 });
+        const base = await deriveMultichainAddress({ chain: 'base', account: 0, index: 0 });
+        if (!zion?.address || !base?.address) {
+          throw new Error('Failed to create default wallet addresses');
+        }
+        autoDerived.current = true;
         await refresh();
       } catch (e: any) {
         setError(e.message || 'Failed to create default wallets');

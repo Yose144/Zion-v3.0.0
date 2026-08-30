@@ -71,7 +71,8 @@ export async function ensureBaseNetwork(provider: EthereumProvider): Promise<voi
 /** Minimal ERC-20 transfer data builder (transfer(address,uint256)). */
 export function buildErc20TransferData(recipient: string, amountAtomic: string): string {
   const to = recipient.toLowerCase().replace(/^0x/, '').padStart(64, '0');
-  const value = amountAtomic.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+  const value = ethers.utils.hexZeroPad(ethers.BigNumber.from(amountAtomic).toHexString(), 32)
+    .replace(/^0x/, '');
   return `0xa9059cbb${to}${value}`;
 }
 

@@ -10,6 +10,7 @@ use tokio::sync::Mutex;
 use zion_l1_types::{Address, Amount, Asset, AssetId, ChainId};
 
 use crate::chain::ChainAdapterRegistry;
+use crate::contracts::token_decimals;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::multichain_wallet::ledger::WalletLedger;
@@ -170,12 +171,11 @@ fn asset_from_key(asset_key: &str) -> MultichainResult<Asset> {
     let ticker = parts[1].to_string();
     let contract = parts.get(2).map(|s| s.to_string());
     let id = AssetId::new(chain, ticker.clone(), contract.clone());
-    let decimals = if contract.is_none() {
-        chain.decimals()
-    } else {
-        // Token decimals require a registry; default to 0 for unknown tokens.
-        0
-    };
+    let decimals = token_decimals(
+        chain.as_str(),
+        &ticker,
+        contract.as_deref(),
+    );
     Ok(Asset {
         id,
         decimals,

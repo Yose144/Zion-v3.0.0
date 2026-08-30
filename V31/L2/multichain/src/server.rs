@@ -18,7 +18,7 @@ use zion_l1_types::{Address, Amount, Asset, AssetId, ChainId, Hash};
 use std::net::SocketAddr;
 
 use crate::config::ServerConfig;
-use crate::contracts::ZionContracts;
+use crate::contracts::{token_decimals, ZionContracts};
 use crate::error::{MultichainError, MultichainResult};
 use crate::node_rewards::{HeartbeatRequest, NodeRecord, PayoutRecord, RegisterNodeRequest};
 use crate::audit::{AuditLogger, AuditResult};
@@ -1617,12 +1617,20 @@ async fn solve_intent(
 
     let from = zion_l1_types::Asset {
         id: intent.from_asset.clone(),
-        decimals: 0,
+        decimals: token_decimals(
+            intent.from_asset.chain.as_str(),
+            &intent.from_asset.ticker,
+            intent.from_asset.contract.as_deref(),
+        ),
         name: intent.from_asset.ticker.clone(),
     };
     let to = zion_l1_types::Asset {
         id: intent.to_asset.clone(),
-        decimals: 0,
+        decimals: token_decimals(
+            intent.to_asset.chain.as_str(),
+            &intent.to_asset.ticker,
+            intent.to_asset.contract.as_deref(),
+        ),
         name: intent.to_asset.ticker.clone(),
     };
 
@@ -1778,13 +1786,10 @@ fn asset_from_input(key: &str) -> MultichainResult<Asset> {
     if key.contains(':') {
         let (chain, ticker, contract) = crate::service::parse_asset_key(key)?;
         match contract {
-            Some(c) => Ok(Asset::with_contract(
-                chain,
-                ticker.clone(),
-                c,
-                0, // token decimals require a registry; unknown until one exists
-                ticker,
-            )),
+            Some(c) => {
+                let decimals = token_decimals(chain.as_str(), &ticker, Some(&c));
+                Ok(Asset::with_contract(chain, ticker.clone(), c, decimals, ticker))
+            }
             None => Ok(Asset::native(
                 chain,
                 ticker.clone(),

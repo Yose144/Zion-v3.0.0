@@ -9,6 +9,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { ethers } from 'ethers';
 import {
   getChallenge,
   verifyEd25519 as zisVerifyEd25519,
@@ -148,8 +149,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Request account access.
     const accounts: string[] = await ethereum.request({ method: 'eth_requestAccounts' });
-    const address = accounts[0];
-    if (!address) throw new Error('No EVM account selected');
+    const rawAddress = accounts[0];
+    if (!rawAddress) throw new Error('No EVM account selected');
+    const address = ethers.utils.getAddress(rawAddress);
+
+    // Detect the chain the wallet is currently on for the SIWE message.
+    const chainIdHex: string = await ethereum.request({ method: 'eth_chainId' });
+    const chainId = parseInt(chainIdHex, 16);
 
     // 1. Get ZIS challenge for the EVM address.
     const { challenge } = await getChallenge(address, 'evm');
@@ -170,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       '',
       `URI: ${origin}/login`,
       'Version: 1',
-      'Chain ID: 1',
+      `Chain ID: ${chainId}`,
       `Nonce: ${nonce}`,
       `Issued At: ${issuedAt}`,
       `Expiration Time: ${expirationTime}`,
