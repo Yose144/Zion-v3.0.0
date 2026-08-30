@@ -1,51 +1,54 @@
 # NIRVANA — Epizoda 5: Cesta domů
-## Maják na Araratu a cesta každého člověka
+## Maják na Araratu a kompas pro každého stavitele
 
-> *„Loď nezmizí, jen protože někdo uviděl břeh. Maják musí zůstat rozsvícený, dokud každý nenajde svou cestu."*
+> *„Loď nezmizí jen proto, že první poutníci dorazili na břeh. Maják musí zůstat rozsvícený a hlídat hladinu, dokud každý, kdo hledá novou zemi, bezpečně nedopluje."*
 
 ---
 
 ## Příběh
 
-Ne všichni byli na Terra Nova. Někteří zůstali na archě, protože ještě nesešli na Ararat. Někteří byli na Araratu a učili se stavět maják. Někteří už seděli v domě Lumi a zahřívali si ruce.
+Ne všichni byli hned v bezpečí světnice domu Lumi.
 
-A tak se rozhodli: na vrcholu Araratu zapálí oheň, který bude vidět daleko. Nebyl to oheň pálící všechny zásoby. Byl to **udržovaný plamen** — malý, trvalý, viditelný.
+Část lidí zůstala ještě na palubě staré archy, protože potřebovali čas, aby uvěřili, že pevnina pod nohama je skutečná. Jiní byli na skalnatém úbočí Araratu a vynášeli na vrchol těžké kameny. A další ještě bloudili v mlhách širého moře na chatrných vorech starého světa.
 
-Ten plamen se jmenoval **Lumi**. Maják.
+A tak se stavitelé dohodli: na samém temeni hory Ararat vybudují kamennou věž a na jejím vrcholu zapálí věčný oheň.
 
-Loď se nehýbala rychle. Každý si musel najít svou cestu — jeden plaval, druhý vesloval, třetí čekal na člun. Ale všichni viděli stejné světlo. A to světlo ukazovalo jedinou věc: **západ. Nová země. Domov.**
+Nebyl to oheň, který by plýtval dřevem a pálil lesy v divokém plamenu. Byl to **udržovaný, harmonický a soustředěný paprsek**, usměrněný soustavou leštěných křišťálových zrcadel tak, aby byl viditelný na stovky mil daleko přes rozbouřenou hladinu.
+
+Každou noc u něj držela hlídku dvojice strážců. Když spatřili v dálce blikající světlo zbloudilého člunu, pootočili zrcadlo a vyslali signál: *„Plujte za tímto světlem. Kurz západ. Zde je pevná zem a domov."*
+
+A tak Ararat přestal být pouhou holou skálou. Stal se **věčným majákem Terra Nova**.
 
 ---
 
 ## Co to znamená
 
-**Cesta domů je dlouhodobý proces, ne jednorázový cíl.**
+**Cesta domů je nepřetržitý proces provozu, údržby, decentralizace a budování infrastruktury.**
 
-ZION nekončí spuštěním služby. Znamená to udržovat:
+ZION nekončí vydáním jedné verze ani spuštěním jednoho serveru. Znamená to **neustálou bdělost a odolnost**:
 
-- běžící node a pool,
-- otevřenou RPC a bridge,
-- transparentní DAO a fondy,
-- zálohy a automatické monitorování,
-- dokumentaci a kód, který může kdokoliv zkusit.
-
-Cílem není, aby všichni byli doma najednou. Cílem je, aby **světlo zůstalo rozsvícené**, dokud každý, kdo hledá novou zemi, najde svou cestu.
+1. **Vysoká dostupnost a monitorování (Edge Sentinel):** Automatické hlídání zdraví uzlů, P2P topologie a poolových spojení 24/7/365. Pokud uzel narazí na chybu, systém ho bezpečně restartuje a resynchronizuje bez ztráty dat.
+2. **Konzistentní zálohování a obnova po havárii:** Pravidelné snapshoty databází (`sqlite3 .backup`), off-site replikace na geograficky oddělené servery a ověřování integrity zaručují, že historie sítě přežije i totální výpadek datacentra.
+3. **Kompas pro vývojáře:** Otevřená dokumentace, standardizované CLI rozhraní a SDK umožňují komukoliv na světě postavit vlastní uzel, napojit vlastní rig nebo vytvořit vlastní dApp nad vrstvami ZIONu.
 
 ---
 
 ## Kotva pravdy — ověřitelná fakta
 
-| Příběh | Co je na síti ověřitelné |
+> Maják sítě ZION je plně monitorovaný a ověřitelný v reálném čase.
+
+| Prvek příběhu | Co je na síti ZION ověřitelné |
 |---|---|
-| Maják hoří 24/7 | Veřejné služby, zálohy a pravidelná údržba drží síť dostupnou; stav je monitorovaný a dokumentovaný |
-| Každý si hledá svou cestu | CLI, SDK a open-source kód umožňují komukoliv postavit vlastní node, pool nebo aplikaci |
-| Loď nezmizí | Síť má postupy pro obnovu po případném resetu, zálohovací procedury a veřejnou historii incidentů |
-| Světlo ukazuje západ | HORIZONT je otevřený: L5/L6, DAO governance a cross-chain infrastruktura tvoří směr Terra Nova |
+| **Věčný oheň majáku** | Edge server uptime 99.9+ %; produkční služby běží pod systemd s automatickým restartem a alertovacím systémem. |
+| **Křišťálová zrcadla (Monitorování)** | Zero-dependency Python dashboard na portu `8766` (`dashboard.zionterranova.com`) + integrované Prometheus & Grafana metriky. |
+| **Záchranné čluny (Disaster Recovery)** | Plný zálohovací systém L1–L6 (`backup-edge.sh` + off-site replikace do chráněného úložiště). |
+| **Otevřená navigace** | Veřejná CLI binárka `zion` (`V31/cli`) umožňující správu peněženky, odesílání transakcí, těžbu i interakci s DAO. |
+| **Pevný kurz** | Veřejně deklarovaná a striktně dodržovaná roadmapa směřující k finální verzi 3.3 Nirvana. |
 
 ---
 
-*Toto je zatím poslední epizoda konceptu Nirvana. Další kapitoly mohou přijít, až se horizont přiblíží.*
+*→ Pokračování: [Epizoda 6 — Mosty přes propast (L2 Multichain & WARP)](./06-Mosty-Pres-Propast.md)*
 
 ---
 
-*[Zpět na úvod Nirvany → `00-README.md`](./00-README.md)*
+*[Zpět na index Nirvany → `00-README.md`](./00-README.md)*
