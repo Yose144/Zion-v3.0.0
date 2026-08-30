@@ -12,7 +12,7 @@ WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_pool=debug"
 Environment="ZION_POOL_BIND=0.0.0.0:8444"
-Environment="ZION_NODE_RPC_ADDR=127.0.0.1:9443"
+Environment="ZION_NODE_RPC_ADDR=127.0.0.1:9445"
 Environment="ZION_POOL_LOOP_COUNT=1000000"
 ExecStart=/opt/zion/V31/target/release/zion-pool
 Restart=always

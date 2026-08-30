@@ -130,7 +130,7 @@ Cíl: pool a miner si rozumí, stratum jobs se generují z node block template.
 2. [x] Miner dostává jobs z poolu nebo lokálně těží block pro vlastní node.
    - `MinerConfig.node_rpc_url` — pokud je nastaveno, miner fetchuje `getBlockTemplate` a submituje `submitBlock`.
    - `MinerConfig.pool_url` — rezervováno pro stratum pool client mode.
-   - CLI: `zion miner start --node-rpc-url http://127.0.0.1:9443`.
+   - CLI: `zion miner start --node-rpc-url http://127.0.0.1:9445`.
 3. [x] PPLNS payout se provede přes `MultichainService::execute_payouts`.
 
 ### Fáze 4 — L3–L6, SDK, CLI polish

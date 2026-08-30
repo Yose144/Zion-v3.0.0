@@ -2,7 +2,7 @@
 
 > **Působnost:** Tento soubor je určený pro Devina a operátory pracující s V31 Mainnet Alpha.
 
-Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. V31 cutover je dokončen a produkční Edge běží na V31; historická V3 data zůstávají v `archive/V3/` a `v3_compat` pro checkpoint sync. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
+Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/home/zionserver/2.9.6-main/V31/`. V31 cutover je dokončen a produkční Edge běží na V31; historická V3 data zůstávají v `archive/V3/` a `v3_compat` pro checkpoint sync. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/home/zionserver/2.9.6-main/AGENTS.md`.
 
 > **Update (2026-08-22):** **Public archive Linux build unblocked + CLI wallet send E2E.** `archive/DesktopAgentP3.0.6/scripts/prepare-rust-miner.js` používá per-platform feature matrix místo `full` aliasu (bez `gpu-metal` na Linuxu/Windowsu). `zion-miner` solo-node mining opraven: `getBlockTemplate` dostává `--wallet` reward address místo placeholderu `zion1miner`. CLI `zion node start` má `--soft-fork-activation-height`. `npm run build:linux` prochází a produkuje `zion-public-miner-v3.2.0-linux-x86_64.AppImage` a `.deb`. Lokální `zion wallet send` E2E úspěšně odeslal 0.1 ZION a `submitUtxoTransaction` vrátil `accepted=true` s `model=v31-native`.
 
@@ -10,7 +10,7 @@ Aktuální stav V31 (2026-08-07): workspace verze `3.1.0-beta`, protokol `zion-v
 >
 > **Edge V31 (2026-08-11):** `zion-v31-node` (height 1617+, `getStatus` V31), `zion-v31-pool` (HTTP API `127.0.0.1:8080`), `zion-v31-dao` (`127.0.0.1:8456`), `zion-v31-multichain` (WARP `127.0.0.1:8453`), `zion-v31-oasis` jsou active. `zion-v31-miner` je na Edge zastaven (CPU-only server). Edge secrets zabezpečeny (`chmod 600`, API klíče přesunuty do env), operátorské IP whitelisted v `ufw`/`fail2ban`. `ANKR_API_KEY` je legacy pro starý V3 bridge — `zion-v31-multichain` ho nepotřebuje, běží na veřejných RPC endpointech; doporučeno odstranit z Edge env. Nginx `/api/dao` proxy opraven na `127.0.0.1:8456`; public RPC vrací V31 data.
 >
-> **⚠️ 2026-08-24 Edge CPU miner re-activation:** `zion-v31-miner` je znovu aktivní na Edge v CPU-only režimu. Služba běží jako `zion` user, `--pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker proEricku! --threads 4 --no-gpu`, `ZION_GPU_BACKEND=cpu`, `Nice=10`, `CPUQuota=400%` (max 4 jádra, nezahlušuje ostatní služby). Aktuálně ~60–100 kH/s, `accept_rate=100%`. Peněženka a worker se nastavují v `/etc/zion/edge-environment.sh` (`ZION_MINER_WALLET`, `ZION_MINER_WORKER`). Systemd template: `V31/deploy/systemd/zion-v31-miner.service`. Použitá binárka: `/opt/zion/V31/target/release/zion-miner` (pokud lokální rebuild dává nečekaně nízký hashrate, zkopírovat z `/root/build/V31/target/release/zion-miner`).
+> **⚠️ 2026-08-27 Edge CPU miner re-activation:** `zion-v31-miner` je znovu aktivní na Edge v CPU-only režimu. Služba běží jako `zion` user, `--pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker ${ZION_MINER_WORKER} --threads 4 --no-gpu --no-cpu`, `ZION_GPU_BACKEND=cpu`, `Nice=10`, `CPUQuota=400%` (max 4 jádra, nezahlušuje ostatní služby). Aktuálně ~1.0–1.2 MH/s, `accept_rate=100%`. Peněženka a worker se nastavují v `/etc/zion/edge-environment.sh` (`ZION_MINER_WALLET`, `ZION_MINER_WORKER`). Systemd template: `V31/deploy/systemd/zion-v31-miner.service`. Použitá binárka: `/opt/zion/V31/target/release/zion-miner`.
 >
 > **⚠️ NATIVE TX/ADDRESS INDEX 2026-08-14 (LATEST):** `zion-core` storage (`V31/L1/core/src/storage.rs`) přidává 3 nové SQLite tabulky pro nativní V31 UTXO chain: `tx_index` (tx_hash → height, O(1) lookup — `Node::find_transaction` už neskenuje celý chain od tipu), `output_index` (tx_hash+output_index → address+amount, trvalý — na rozdíl od in-memory `UtxoSet`, který smaže výstup jakmile je utracen) a `address_tx_index` (address → tx history, PK `(address, tx_hash)` — bez `direction` v PK, aby se self-transfery nezdvojovaly). Index se plní automaticky v `Storage::put()` při každém novém bloku; existující DB bez indexu se jednorázově backfillnou při startu (`Node::new` volá `backfill_tx_index()` když `tx_index_is_empty()`, ~25s pro 4850 bloků). `rpc.rs::get_transaction`/`get_native_block` nyní vrací server-side resolvované `input_addresses`/`input_amounts` (žádný N+1 round-trip z exploreru), a `getTransactionHistory` má nativní V31 handler (`get_transaction_history_native`) s fallbackem na V3 account-model handler pro adresy bez nativní aktivity. **Root cause opraveného bugu:** explorer transaction list (`getRecentV3Transactions`) nikdy nevolal input-address enrichment (na rozdíl od `getBlock`), takže `inputs[].address` obsahovalo `previous_output` hash placeholder a `from` bylo prázdné pro transfer transakce — vypadalo to jako poškozená data, ale šlo o chybějící enrichment krok. **Deploy:** Rust toolchain nově nainstalován na Edge (`rustup`, `$HOME/.cargo/env`) — binárky `zion-node` se odteď buildují přímo na Edge (glibc 2.39, Ubuntu 24.04), NE lokálně (lokální dev stroj má glibc 2.43 / Ubuntu 26.04 → binárka by na Edge nešla spustit, `GLIBC_2.4x not found`). Zdroj pro build: `rsync V31/ → /root/build/V31/` na Edge, `cargo build --release --bin zion-node`. Nasazeno postupně node3 → node2 → node1 (atomic binary swap přes `mv`, běžící procesy nedotčeny do restartu), s DB zálohou (`sqlite3 .backup`) před každým krokem. Ověřeno: `PRAGMA integrity_check` OK na zálohách, žádné duplikáty v `getTransactionHistory`, `getTransaction`/`getBlockByHeight` vrací resolvované adresy, pool/website nedotčeny. Testy: 5 nových unit testů ve `storage.rs` (`put_indexes_tx_and_address_history`, `backfill_tx_index_rebuilds_from_scratch`, `address_tx_history_dedupes_self_transfers`), `cargo test --workspace` a `cargo clippy --workspace --all-targets` čisté (jen pre-existing warnings).
 
@@ -20,8 +20,8 @@ Aktuální stav V31 (2026-08-07): workspace verze `3.1.0-beta`, protokol `zion-v
 
 1. V31 je aktivní Mainnet Alpha workspace. Všechny nové funkce, refaktoringy a opravy mainnet-tracku jdou sem.
 2. V3 zůstává produkční běh na Edge. Do V3 sahat jen pro kritické hotfixy.
-3. Zdroje pravdy pro provoz: `/Users/yeshuae/Projects/2.9.6/StatusV3.md`, `/Users/yeshuae/Projects/2.9.6/V31/ROADMAP.md` (pokud existuje), a tento soubor.
-4. Kořenový `/Users/yeshuae/Projects/2.9.6/AGENTS.md` obsahuje historickou topologii, incidenty 2026-07-19 a 2026-07-20 a detailní pokyny k `public/`. Používejte ho jako referenci; toto je zkrácená a V31-specifická verze.
+3. Zdroje pravdy pro provoz: `/home/zionserver/2.9.6-main/StatusV3.md`, `/home/zionserver/2.9.6-main/docs/3.2/ROADMAP.md` (dlouhodobý roadmap), `/home/zionserver/2.9.6-main/V31/PLAN_TO_3.2.md` (plán na 3.2) a tento soubor.
+4. Kořenový `/home/zionserver/2.9.6-main/AGENTS.md` obsahuje historickou topologii, incidenty 2026-07-19 a 2026-07-20 a detailní pokyny k `public/`. Používejte ho jako referenci; toto je zkrácená a V31-specifická verze.
 
 ---
 
@@ -39,13 +39,13 @@ Vše ostatní je uzavřené za firewallem, proxované přes nginx s IP allowlist
 
 - Na serveru `62.171.141.136` (Contabo, IPv6 `2a02:c207:2342:5821::1`) používej default-deny `ufw` nebo `nftables`.
 - Input chain: `DROP` jako výchozí politika, pak explicitní `ALLOW` pro známé služby a zdroje.
-- Nepoužívej `ACCEPT` pro RPC port `9443` z internetu — ten je lokální (`127.0.0.1:9443`) a veřejný přístup jde přes nginx na `rpc.zionterranova.com:8443` s operátorským allowlistem.
+- Nepoužívej `ACCEPT` pro RPC port `9445` z internetu — ten je lokální (`127.0.0.1:9445`) a veřejný přístup jde přes nginx na `rpc.zionterranova.com:8443` s operátorským allowlistem.
 - WARP / multichain API (`warpd`) běží na `127.0.0.1:8453` (WARP routes) a `127.0.0.1:8454` (DEX `/v1/*` routes) — není veřejně dostupné. Veřejný přístup jde přes nginx `location /api/warp/` a `location /v1/` na `zionterranova.com`.
 - P2P porty `8333`/`8334` jsou otevřené jen pro známé peery / bootstrap seznam. Pokud možno filtruj podle whitelisted peer IPs a používej `fail2ban` jail `zion-p2p` pro detekci port scanu / reconnect stormu.
 - SSH autentizace výhradně přes klíč. Žádné root heslo. SSH běží na portech `22` a `2222`, IPv4 i IPv6. Port `22` a `2222` musí mít `AddressFamily any` a správné `ListenStream` v `systemd` drop-ins (`/etc/systemd/system/ssh.socket.d/`), aby nedošlo k IPv6-only situaci.
 - `fail2ban` musí být aktivní se jménem `zion-p2p` (maxretry=50/10min, bantime=24h dle provozní zkušenosti) a s aktuálními `ignoreip`.
 - `fail2ban` `sshd` jail (maxretry=3/10min, bantime=24h) musí mít v `ignoreip` všechny `OPERATOR_IPS` včetně IPv6 — jinak rychlé SSH připojení z Mac/auditu vyvolá 24h lockout.
-- nginx TCP stream pro RPC (`rpc.zionterranova.com:8443` → `127.0.0.1:9443`) musí mít allowlist nad rámec reverse proxy.
+- nginx TCP stream pro RPC (`rpc.zionterranova.com:8443` → `127.0.0.1:9445`) musí mít allowlist nad rámec reverse proxy.
 - Dashboard (`dashboard.zionterranova.com`) a web (`zionterranova.com`) jsou za nginx; používejte Basic Auth nebo IP allowlist dle služby.
 
 ---
@@ -66,6 +66,7 @@ OPERATOR_IPS=(
   46.135.81.225     # Devin session 2026-08-11
   2a00:11b1:10e2:af49:b90b:20ed:4eee:b48b/128  # Devin session IPv6 2026-08-11
   2a02:c207:2342:5821::1/64
+  2a00:102b:5005:3217:ce28:aaff:fe46:f739/128  # Devin session IPv6 2026-08-27
 )
 ```
 
@@ -142,7 +143,7 @@ Nikdy nenahrávejte do repozitáře žádné tajné materiály.
 
 ### 5.3 `.gitignore` a audit
 
-- Ujistěte se, že `/Users/yeshuae/Projects/2.9.6/V31/.gitignore` obsahuje `.env`, `*.env`, `*.key`, `*.pem`, `*.secret`, `*.p12`, `*.gpg`, `*.asc` (soukromé klíče).
+- Ujistěte se, že `/home/zionserver/2.9.6-main/V31/.gitignore` obsahuje `.env`, `*.env`, `*.key`, `*.pem`, `*.secret`, `*.p12`, `*.gpg`, `*.asc` (soukromé klíče).
 - Před každým push do `public/` subtree proveďte audit, že neunikla žádná tajná data ani interní IP adresy kromě veřejně dokumentovaného RPC/pool.
 
 ---
@@ -153,8 +154,8 @@ Zálohy jsou nedílnou součástí bezpečnosti. Používejte kanonické skripty
 
 ### 6.1 Kanonické skripty
 
-- `/Users/yeshuae/Projects/2.9.6/ZION_OS/infra/scripts/backup-edge.sh`
-- `/Users/yeshuae/Projects/2.9.6/ZION_OS/infra/scripts/sync-edge-backups.sh`
+- `/home/zionserver/2.9.6-main/ZION_OS/infra/scripts/backup-edge.sh`
+- `/home/zionserver/2.9.6-main/ZION_OS/infra/scripts/sync-edge-backups.sh`
 
 Tyto skripty jsou autoritativní. Jakýkoliv nový V31 backup skript by měl být jejich odvozeninou nebo je nahradit explicitním rozhodnutím operátora.
 
@@ -178,7 +179,7 @@ Tyto skripty jsou autoritativní. Jakýkoliv nový V31 backup skript by měl bý
 
 ### 6.4 Off-site sync a retence
 
-- [ ] Po lokální záloze spusťte `rsync` off-site pomocí `/Users/yeshuae/Projects/2.9.6/ZION_OS/infra/scripts/sync-edge-backups.sh`.
+- [ ] Po lokální záloze spusťte `rsync` off-site pomocí `/home/zionserver/2.9.6-main/ZION_OS/infra/scripts/sync-edge-backups.sh`.
 - [ ] Preferujte IPv6 fallback spojení (`ssh -6`) kvůli stabilitě při IPv4 banu.
 - [ ] Edge retence: 14 denních + 4 týdenních; lokální retence: 30 denních + 8 týdenních.
 - [ ] Zkontrolujte `tar tzf` a MD5/SHA256 kontrolní součty state souborů proti live Edge.
@@ -188,18 +189,18 @@ Tyto skripty jsou autoritativní. Jakýkoliv nový V31 backup skript by měl bý
 - [ ] Alespoň jednou za 30 dní proveďte testovací restore na samostatný adresář / VM.
 - [ ] Ověřte `PRAGMA integrity_check` na všech obnovených SQLite DB.
 - [ ] Ověřte, že node startuje a dosahuje očekávané výšky bloku.
-- [ ] Výsledek testu zaznamenejte do `/Users/yeshuae/Projects/2.9.6/StatusV3.md` nebo `V31/STATUS.md`.
+- [ ] Výsledek testu zaznamenejte do `/home/zionserver/2.9.6-main/StatusV3.md` nebo `V31/STATUS.md`.
 
 ---
 
 ## 7. Veřejný subtree `public/`
 
-Kořenový adresář `/Users/yeshuae/Projects/2.9.6/public/` je git subtree repozitáře `github.com/Zion-TerraNova/v3-Mainnet` (MIT). Slouží pro publikování kódu, který je bezpečný pro veřejnost.
+Kořenový adresář `/home/zionserver/2.9.6-main/public/` je git subtree repozitáře `github.com/Zion-TerraNova/v3-Mainnet` (MIT). Slouží pro publikování kódu, který je bezpečný pro veřejnost.
 
 ### 7.1 Pravidla pro `public/`
 
 - [ ] Nikdy nepushujte tajnosti: žádné private keys, mnemonics, hesla, interní IP kromě veřejného `62.171.141.136:8444` a `rpc.zionterranova.com:8443`.
-- [ ] Nepushujte cesty jako `/Users/yeshuae/Projects/2.9.6/` nebo osobní adresáře do `public/`.
+- [ ] Nepushujte cesty jako `/home/zionserver/2.9.6-main/` nebo osobní adresáře do `public/`.
 - [ ] Nepushujte deploy konfigurace, systemd env files, nginx configs, fail2ban jails.
 - [ ] Po každé změně v `V31/` kódu nebo dokumentaci, která se dotýká MIT-safe částí, proveďte subtree sync.
 - [ ] Postup:
@@ -222,7 +223,7 @@ Co **není** MIT-safe:
 
 ## 8. Bezpečnostní incidenty a ponaučení
 
-Následující incidenty jsou shrnuty z kořenového `/Users/yeshuae/Projects/2.9.6/AGENTS.md`. Slouží jako ponaučení pro provoz V31.
+Následující incidenty jsou shrnuty z kořenového `/home/zionserver/2.9.6-main/AGENTS.md`. Slouží jako ponaučení pro provoz V31.
 
 ### 8.1 Incident 2026-07-19 — SSH IPv6-only a fail2ban ban
 
@@ -246,7 +247,7 @@ Následující incidenty jsou shrnuty z kořenového `/Users/yeshuae/Projects/2.
 
 **Průběh:**
 
-- V `/Users/yeshuae/Projects/2.9.6/V3/L1/core/src/bin/node.rs:179` byla chyba:
+- V `/home/zionserver/2.9.6-main/V3/L1/core/src/bin/node.rs:179` byla chyba:
   ```rust
   if config.block_retention > 0 { rt.set_block_retention(...) }
   ```
@@ -271,14 +272,14 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 
 ### 9.1 Workspace a přesměrování kódu
 
-- [ ] Všechny nové funkce, refaktoringy a mainnet-track změny patří do `/Users/yeshuae/Projects/2.9.6/V31/`.
+- [ ] Všechny nové funkce, refaktoringy a mainnet-track změny patří do `/home/zionserver/2.9.6-main/V31/`.
 - [ ] V3 se neupravuje, pokud to není kritický hotfix pro produkční Edge.
 - [ ] Pokud je potřeba backport z V31 do V3, vytvořte samostatný commit a dokumentujte důvod v `StatusV3.md`.
 - [ ] Nepřidávejte žádné “náhodné” změny do `AuXpow/`, `ZionDex/`, `APP&WEB/`, `ZION_OS/` — pouze pokud je úkol explicitně zasáhne.
 
 ### 9.2 Testovací brána
 
-- [ ] Před každým PR nebo merge do `V31/` spusťte `cargo test` přímo v `/Users/yeshuae/Projects/2.9.6/V31/`.
+- [ ] Před každým PR nebo merge do `V31/` spusťte `cargo test` přímo v `/home/zionserver/2.9.6-main/V31/`.
 - [ ] Všechny workspace testy musí projít. Žádné `--ignored` skipnutí bez odůvodnění.
 - [ ] Při změnách v `zion-core` ověřte `EkamDeeksha` unit testy (mine/verify + nonce-search stress) i integrační testy.
 - [ ] Při změnách v `zion-pool` ověřte rate limiting reconnect stormu.
@@ -303,7 +304,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 
 ### 9.5 Dokumentace a status
 
-- [ ] Při každé změně portu, RPC, nebo služby aktualizuj tento `V31/AGENTS.md` a `/Users/yeshuae/Projects/2.9.6/StatusV3.md`.
+- [ ] Při každé změně portu, RPC, nebo služby aktualizuj tento `V31/AGENTS.md` a `/home/zionserver/2.9.6-main/StatusV3.md`.
 - [ ] Při každém incidentu založte záznam v kořenovém `AGENTS.md` nebo `StatusV3.md` a sem zkopírujte ponaučení.
 - [ ] Všechny TODO a FIXME v kódu musí mít issue nebo `AGENTS.md` poznámku, aby nezůstávaly zapomenuty před Mainnet Alpha.
 
@@ -317,8 +318,8 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 - [ ] Node RPC `127.0.0.1:9445` není veřejně dosažitelný; nginx `8443` má IP allowlist.
 - [ ] P2P porty `8333/8334` mají whitelisted peery a `fail2ban` `zion-p2p` jail.
 - [ ] Pool stratum `8444` veřejný a funkční.
-- [ ] `cargo test` prošlo v `/Users/yeshuae/Projects/2.9.6/V31/`.
-- [ ] Zálohovací skripty `/Users/yeshuae/Projects/2.9.6/ZION_OS/infra/scripts/backup-edge.sh` a `sync-edge-backups.sh` jsou nastaveny a testovány.
+- [ ] `cargo test` prošlo v `/home/zionserver/2.9.6-main/V31/`.
+- [ ] Zálohovací skripty `/home/zionserver/2.9.6-main/ZION_OS/infra/scripts/backup-edge.sh` a `sync-edge-backups.sh` jsou nastaveny a testovány.
 - [ ] Žádné secrets nejsou v commitu; `public/` subtree audit proveden.
 - [ ] Block retention je explicitně nastaveno a ověřeno logem při startu nodu.
 
@@ -326,15 +327,15 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 
 ## 11. Odkazy a zdroje pravdy
 
-- Kořenový provozní soubor: `/Users/yeshuae/Projects/2.9.6/AGENTS.md`
-- Status a topologie: `/Users/yeshuae/Projects/2.9.6/StatusV3.md`
-- V31 workspace: `/Users/yeshuae/Projects/2.9.6/V31/`
-- V3 produkční workspace: `/Users/yeshuae/Projects/2.9.6/V3/`
-- Backup skripty: `/Users/yeshuae/Projects/2.9.6/ZION_OS/infra/scripts/backup-edge.sh`, `/Users/yeshuae/Projects/2.9.6/ZION_OS/infra/scripts/sync-edge-backups.sh`
+- Kořenový provozní soubor: `/home/zionserver/2.9.6-main/AGENTS.md`
+- Status a topologie: `/home/zionserver/2.9.6-main/StatusV3.md`
+- V31 workspace: `/home/zionserver/2.9.6-main/V31/`
+- V3 produkční workspace: `/home/zionserver/2.9.6-main/V3/`
+- Backup skripty: `/home/zionserver/2.9.6-main/ZION_OS/infra/scripts/backup-edge.sh`, `/home/zionserver/2.9.6-main/ZION_OS/infra/scripts/sync-edge-backups.sh`
 - fail2ban config: `/etc/fail2ban/jail.d/zion-p2p.conf`
 - SSH socket drop-ins: `/etc/systemd/system/ssh.socket.d/`
 - Server: `62.171.141.136` (Contabo), IPv6 `2a02:c207:2342:5821::1`
-- RPC: `rpc.zionterranova.com:8443` → `127.0.0.1:9443`
+- RPC: `rpc.zionterranova.com:8443` → `127.0.0.1:9445`
 - Pool: `62.171.141.136:8444`
 
 ---
