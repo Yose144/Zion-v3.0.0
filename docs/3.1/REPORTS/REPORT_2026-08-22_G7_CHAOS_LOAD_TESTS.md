@@ -9,7 +9,7 @@
 
 ## 1. Summary
 
-This report documents execution of the G7 gate (chaos / load tests) from [`docs/3.2/ROADMAP.md`](../../docs/3.2/ROADMAP.md).
+This report documents execution of the G7 gate (chaos / load tests) from [`docs/3.2/ROADMAP.md`](../../3.2/ROADMAP.md).
 
 | Test | Target | Result | Evidence |
 |---|---|---|---|

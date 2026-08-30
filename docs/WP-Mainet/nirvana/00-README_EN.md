@@ -1,73 +1,75 @@
-# NIRVANA — Stories of the New Land
-## Long-term horizon of ZION TerraNova
+# NIRVANA — Tales of the New Earth
+## The Book of the West: Long-Term Horizon, Global Assimilation of Attention & The Amenti Mission
 
-> **Status:** CONCEPT / HORIZON  
-> **Compass direction:** West (Terra Nova)  
-> **Follows from:** Salt of the Earth, Road to Zion, One Love 3.2
+> **Status:** CANONICAL narrative & visionary series (L6 / MYTH-HORIZON) — companion to [`MiseAmenti`](../../../MiseAmenti/README_EN.md); canonized 2026-08-31 for Version **3.3 "Nirvana"**. The L1–L6 technical mapping here is governed by [`MiseAmenti/07-Registr-Dukazu.md`](../../../MiseAmenti/07-Registr-Dukazu.md) and [`StatusV3.md`](../../../StatusV3.md), not by the story.
+>
+> **Compass Position:** Book of the West (*Terra Nova — Direction and Purpose*)
+>
+> **Preceded by:** [`The Salt of this Earth`](../SulZeme/00-README_EN.md), [`Road to Zion`](../marketing/ROAD_TO_ZION_EN.md), [`One Love 3.2 Master Whitepaper`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md), and [`MiseAmenti/`](../../../MiseAmenti/README_EN.md)
+>
+> **Language:** English — Czech canonical index: [`00-README.md`](./00-README.md)
 
 ---
 
 ## What is Nirvana?
 
-After you sail through the flood, you do not immediately see a new shore. First you see a **ray of light** — then a **mountain** — and only then the land you can step onto.
+When you navigate the flood of the old world, you do not see the entire new shore immediately. First, you see a **single beam of light (Lumi)** — then a solid **mountain (Ararat)** — and then the vast **New Earth (Terra Nova)**, where builders erect a **house with open doors**, bridge chasms with **WARP links**, awaken the **Hiranyagarbha consciousness** and the voice of **Amitabha**, enter the crystalline gardens of **OASIS**, open the **healing springs of Free World**, and ignite the **quantum fire of Issobella**.
 
-**Nirvana** is the West book of the ZION compass. It is not a promise of riches, not a dated roadmap, not marketing. It is a **direction** the ship is turning toward: a long-term horizon where the old land (Babylon) recedes and **Terra Nova** becomes home.
-
-The series rests on five anchors:
-
-- **First Ray** — *Lumi* — proof that after darkness comes light, and that home exists.
-- **Mount Ararat** — the first solid ground where the ark rests.
-- **New Land** — *Terra Nova* — space not yet built, but ready to be planted.
-- **Home** — a place anyone can return to and leave from again.
-- **The Way Home** — the lighthouse on Ararat and each person’s path.
+**Nirvana** is the Western Book of the ZION Compass. It is not an empty promise of quick wealth or a speculative mirage. It is the **direction and grand synthesis** toward which the entire ark sails: the state where the extractive debt economy of Babylon gives way and **the living civilization of Terra Nova becomes humanity's true home.**
 
 ---
 
-## Where it fits in the compass
+## Where does it fit within the Four Books?
 
-The ZION compass has four books and a center:
+The ZION Compass has four cardinal directions and a sacred center:
 
-- **North — Genesis:** Why do we exist at all? ([`../marketing/ROAD_TO_ZION_EN.md`](../marketing/ROAD_TO_ZION_EN.md))
-- **East — Quantum Revolution:** What is broken and what is changing?
-- **South — Ekam Deeksha:** Who am I and what is my role?
-- **West — Terra Nova:** Where is this heading? **← this is where Nirvana stands.**
-- **Center — Salt of the Earth:** Roots, story, strength. ([`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md))
-
----
-
-## How to read this book
-
-Each episode has three parts:
-
-1. **Story** — a myth, a metaphor, an image.
-2. **What it means** — how the image maps onto the network and people’s lives.
-3. **Anchor of truth** — verifiable facts that keep the story grounded.
-
-> **Nirvana is a HORIZON.** It is not a finished landscape. It is the first ray of light above it.
+- **North — Genesis:** Why do we exist? *Born of pure computation without premine corruption.* ([`ROAD_TO_ZION_EN.md`](../marketing/ROAD_TO_ZION_EN.md))
+- **East — Quantum Revolution:** What is broken and transforming? *The dissolution of obsolete monopolies.*
+- **South — Ekam Deeksha:** Who am I and what is my calling? *The consensus of honor and inner fire.*
+- **West — Terra Nova & Nirvana:** Where are we heading and what is the final goal? **← This book stands here.**
+- **Center — Salt of the Earth:** Roots, truth archetypes, the covenant of bread. ([`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md))
 
 ---
 
-## Episodes
+## Twelve Stations on the Road to Nirvana
 
-| # | Episode (CZ) | What it is about |
-|---|--------------|------------------|
-| 1 | [`01-Prvni-Paprsek.md`](./01-Prvni-Paprsek.md) | Lumi — first light after the flood, safety, proof that home exists |
-| 2 | [`02-Hora-Ararat.md`](./02-Hora-Ararat.md) | Mount Ararat — first solid ground where the ark lands |
-| 3 | [`03-Nova-Zeme.md`](./03-Nova-Zeme.md) | Terra Nova — new land not on any old map |
-| 4 | [`04-Domov.md`](./04-Domov.md) | Home — first building, first fire, first door |
-| 5 | [`05-Cesta-Domu.md`](./05-Cesta-Domu.md) | The way home — lighthouse and each person’s path |
+Each episode follows the rule of absolute honesty: **a beautiful archetypal story followed by deep insight and an undeniable box of verifiable facts on the live network.**
 
-Full English translations of the individual episodes are planned. The Czech versions are the current source of truth for this concept.
-
----
-
-## Live sources of truth
-
-- [`../../../StatusV3.md`](../../../StatusV3.md) — live network status
-- [`../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md) — technical and economic framework
-- [`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md) — narrative foundation
-- [`../marketing/ROAD_TO_ZION_EN.md`](../marketing/ROAD_TO_ZION_EN.md) — compass of four books
+| # | Episode | Archetype / Layer | Story Summary |
+|---|---|---|---|
+| 1 | [The First Ray](./01-Prvni-Paprsek.md) | **Lumi** · *L1 Genesis* | The first light after the deluge, piercing the darkness, awakening faith in the journey. |
+| 2 | [Mount Ararat](./02-Hora-Ararat.md) | **Solid Rock** · *L1 Consensus* | Keel touching solid bedrock, 23,600+ blocks, indestructible P2P mesh, and LWMA-60. |
+| 3 | [New Earth](./03-Nova-Zeme.md) | **Terra Nova** · *L1–L6 Overview* | A continent free of Babylonian maps, 144B flowers, space for a pure beginning. |
+| 4 | [House of Lumi](./04-Domov.md) | **Home** · *ZIS & Sovereignty* | The first hearth, salt on the table, doors open to every traveler without passwords or surveillance. |
+| 5 | [The Road Home](./05-Cesta-Domu.md) | **Ararat Lighthouse** · *Sentinel Ops* | The eternal flame, 24/7 network monitoring, resilient disaster recovery, and developer compass. |
+| 6 | [Bridges Across the Chasm](./06-Mosty-Pres-Propast.md) | **WARP & ZionDex** · *L2 Multichain* | Connecting Bitcoin and Ethereum/Base islands, atomic HTLC gateways, frictionless value flow. |
+| 7 | [Golden Womb Hiranyagarbha](./07-Zlate-Luno-Hiranyagarbha.md) | **Maestro & NCL** · *L3 Orchestration 2.4* | Awakening decentralized AI, miner computational power serving life and scientific discovery. |
+| 8 | [Voice of Amitabha](./08-Hlas-Amitabha.md) | **Amitabha & Agents** · *L3 Interface 2.5* | The Voice of Infinite Light, natural intent comprehension, self-sovereign AI agents, and Dharma filter. |
+| 9 | [Crystalline Worlds of OASIS](./09-Krystalicke-Svety-Oasis.md) | **OASIS Metaverse** · *L4 Unreal Engine 5.7* | Nanite/Lumen photorealism, instant WebGPU/Pixel Streaming preview, Dharma Temple, and avatars. |
+| 10 | [Springs of Life](./10-Prameny-Zivota.md) | **Free World** · *L5 Planetary Ecology* | 5% of every block dedicated to clean water, reforestation, seed banks, and community microgrids. |
+| 11 | [Quantum Fire Issobella](./11-Kvantovy-Ohen-Issobella.md) | **Warp Engine** · *L6 Deep Science* | 5% science stream, Alcubierre-Ekam metric, harmonic $\Phi$ resonances, and open DeSci repository. |
+| 12 | [The Grand Unification](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Amenti Mission* | Unification of all six layers, return of global attention to creation, launch 31 Dec 2026. |
 
 ---
 
-*„The flood does not save the ark. The direction you choose saves it."*
+## The Deep Expansion
+
+Readers who want to go beyond this book's concept and horizon into the full cosmology — the six worlds, the bardo of transition, the prophecy of Shambhala, the Halls of Amenti, and the hundred-year plan for Generation Z — should continue into [`NirvanaCloud/`](../NirvanaCloud/00-README_EN.md).
+
+---
+
+## Live Sources of Truth
+
+- **Canonical integration corpus (L1–L6, evidence, ethics, 100 years):** [`../../../MiseAmenti/README_EN.md`](../../../MiseAmenti/README_EN.md)
+- **Canonical Technical Plan 3.3 (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
+- **NirvanaCloud — the deep expansion (six worlds, bardo, Shambhala, Halls of Amenti, Generation Z, hundred-year plan):** [`../NirvanaCloud/00-README_EN.md`](../NirvanaCloud/00-README_EN.md)
+- **Live Network Status:** [`../../../StatusV3.md`](../../../StatusV3.md)
+- **Master Project Roadmap:** [`../../../ROADMAP.md`](../../../ROADMAP.md)
+- **Narrative Foundations:** [`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md)
+- **Master Whitepaper 3.2:** [`../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md)
+
+---
+
+*“The ark is not saved by the drift of the river, but by the conscious direction chosen by its builders. Welcome to Nirvana.”*
+
+*Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*
