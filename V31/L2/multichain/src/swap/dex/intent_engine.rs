@@ -13,6 +13,7 @@ use zion_l1_types::{Amount, Asset};
 
 use super::{DexRouter, MultichainError, MultichainResult};
 use super::intent::{IntentAuction, IntentStatus, SolverBid, SwapIntent};
+use crate::contracts::token_decimals;
 
 /// Off-chain contact / reputation metadata for a registered solver.
 #[derive(Debug, Clone, Default)]
@@ -227,8 +228,8 @@ impl IntentEngine {
     }
 
     fn asset_from_id(id: &zion_l1_types::AssetId) -> Asset {
-        let decimals = if id.contract.is_some() {
-            0 // token decimals require a registry
+        let decimals = if let Some(c) = id.contract.as_deref() {
+            token_decimals(id.chain.as_str(), &id.ticker, Some(c))
         } else {
             id.chain.decimals()
         };

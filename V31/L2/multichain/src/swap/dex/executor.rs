@@ -9,6 +9,7 @@
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 
 use crate::bridge::Bridge;
+use crate::contracts::token_decimals;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::DexRouter;
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
@@ -116,10 +117,8 @@ fn bridge_direction(from: ChainId, to: ChainId) -> MultichainResult<TransferDire
 }
 
 fn asset_from_id(id: &zion_l1_types::AssetId) -> Asset {
-    // Preserve the original AssetId (including contract) and use the chain's
-    // native decimals as a default. Token decimals require a registry.
-    let decimals = if id.contract.is_some() {
-        0
+    let decimals = if let Some(c) = id.contract.as_deref() {
+        token_decimals(id.chain.as_str(), &id.ticker, Some(c))
     } else {
         id.chain.decimals()
     };

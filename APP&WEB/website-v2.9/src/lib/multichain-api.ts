@@ -124,10 +124,14 @@ export async function getMultichainWallet(): Promise<MultichainWalletSnapshot | 
   try {
     const res = await multichainFetch('/wallet/me', { cache: 'no-store' });
     if (res.status === 401 || res.status === 403) return null;
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || data.message || `Wallet load failed: ${res.status}`);
+    }
     return await res.json();
-  } catch {
-    return null;
+  } catch (e: any) {
+    if (e.message === 'unauthenticated' || e.message?.includes('401')) return null;
+    throw e;
   }
 }
 
@@ -183,7 +187,7 @@ export async function requestMultichainWithdraw(
     });
     const data = await res.json();
     if (!res.ok) {
-      return { error: data.message || data.error || 'Withdrawal failed' };
+      return { error: data.error || data.message || 'Withdrawal failed' };
     }
     return data as MultichainWithdrawResult;
   } catch (e: any) {

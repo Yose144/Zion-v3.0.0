@@ -14,6 +14,7 @@ use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Middleware, Provider};
 use ethers::signers::{LocalWallet, Signer as _Signer};
 use ethers::types::{Address as EthAddress, H256, U256, U64};
+use std::collections::HashMap;
 use std::str::FromStr;
 
 use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
@@ -42,6 +43,47 @@ pub struct EvmAdapter {
     provider: Provider<Http>,
     wallet: Option<LocalWallet>,
     contracts: Option<ZionContracts>,
+    token_registry: HashMap<EthAddress, Asset>,
+}
+
+fn build_token_registry(
+    chain: ChainId,
+    contracts: Option<&ZionContracts>,
+) -> HashMap<EthAddress, Asset> {
+    let mut registry = HashMap::new();
+    let Some(contracts) = contracts else {
+        return registry;
+    };
+
+    if let Ok(addr) = EthAddress::from_str(&contracts.wzion) {
+        registry.insert(
+            addr,
+            Asset::with_contract(
+                chain,
+                "wZION",
+                contracts.wzion.clone(),
+                18,
+                "Wrapped ZION",
+            ),
+        );
+    }
+
+    for (ticker, info) in &contracts.tokens {
+        if let Ok(addr) = EthAddress::from_str(&info.contract) {
+            registry.insert(
+                addr,
+                Asset::with_contract(
+                    chain,
+                    ticker.clone(),
+                    info.contract.clone(),
+                    info.decimals,
+                    ticker.clone(),
+                ),
+            );
+        }
+    }
+
+    registry
 }
 
 impl EvmAdapter {
@@ -55,17 +97,20 @@ impl EvmAdapter {
         let provider = Provider::<Http>::try_from(rpc_url)
             .map_err(|e| MultichainError::Config(format!("invalid EVM RPC {rpc_url}: {e}")))?;
 
+        let token_registry = build_token_registry(chain, contracts.as_ref());
+
         Ok(Self {
             name: name.into(),
             chain,
             provider,
             wallet,
             contracts,
+            token_registry,
         })
     }
 
     fn to_eth_address(&self, addr: &Address) -> MultichainResult<EthAddress> {
-        if addr.chain != self.chain && addr.chain.family() != ChainFamily::Evm {
+        if addr.chain != self.chain {
             return Err(MultichainError::Validation(format!(
                 "expected {} EVM address, got {}",
                 self.name,
@@ -182,6 +227,13 @@ impl EvmAdapter {
             })?
             .ok_or_else(|| MultichainError::Internal("transaction receipt missing".to_string()))?;
 
+        if receipt.status.map_or(false, |s| s.as_u64() != 1) {
+            return Err(MultichainError::Internal(format!(
+                "transaction {} reverted on-chain",
+                receipt.transaction_hash
+            )));
+        }
+
         let hash = receipt.transaction_hash;
         Ok(Hash::new(*hash.as_fixed_bytes()))
     }
@@ -262,7 +314,15 @@ impl EvmAdapter {
         })
     }
 
-    fn decode_erc20_transfer_log(&self, log: &ethers::types::Log, tip: u64) -> Option<DepositEvent> {
+    fn decode_erc20_transfer_log(
+        &self,
+        log: &ethers::types::Log,
+        asset: &Asset,
+        tip: u64,
+    ) -> Option<DepositEvent> {
+        if log.topics.len() != 3 {
+            return None;
+        }
         let _from = Self::address_from_topic(log.topics.get(1).copied()?);
         let to = Self::address_from_topic(log.topics.get(2).copied()?);
 
@@ -276,7 +336,6 @@ impl EvmAdapter {
         )
         .ok()?;
 
-        let asset = self.wzion_asset()?;
         let confirmations = log
             .block_number
             .map_or(1, |bn| tip.saturating_sub(bn.as_u64()) + 1);
@@ -291,7 +350,7 @@ impl EvmAdapter {
             amount: Amount::new(amount.as_u128()),
             memo: None,
             confirmations,
-            asset: Some(asset),
+            asset: Some(asset.clone()),
         })
     }
 }
@@ -571,12 +630,7 @@ impl ChainAdapter for EvmAdapter {
     }
 
     async fn watch_addresses(&self, addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
-        let wzion = match self.wzion_address() {
-            Some(a) => a,
-            None => return Ok(vec![]),
-        };
-
-        if self.wzion_asset().is_none() {
+        if self.token_registry.is_empty() {
             return Ok(vec![]);
         }
 
@@ -584,6 +638,7 @@ impl ChainAdapter for EvmAdapter {
         let from = tip.saturating_sub(10_000);
 
         let transfer_topic = Self::topic0(ERC20_TRANSFER_EVENT_SIG);
+        let token_addresses: Vec<EthAddress> = self.token_registry.keys().copied().collect();
         let topic_addresses: Vec<Option<H256>> = addresses
             .iter()
             .filter_map(|addr| {
@@ -593,12 +648,12 @@ impl ChainAdapter for EvmAdapter {
             })
             .collect();
 
-        if topic_addresses.is_empty() {
+        if topic_addresses.is_empty() || token_addresses.is_empty() {
             return Ok(vec![]);
         }
 
         let filter = Filter::new()
-            .address(wzion)
+            .address(ValueOrArray::Array(token_addresses))
             .from_block(U64::from(from))
             .to_block(U64::from(tip))
             .topic0(transfer_topic)
@@ -611,7 +666,11 @@ impl ChainAdapter for EvmAdapter {
             .await
             .unwrap_or_default()
         {
-            if let Some(e) = self.decode_erc20_transfer_log(&log, tip) {
+            let log_token = log.address;
+            let Some(asset) = self.token_registry.get(&log_token) else {
+                continue;
+            };
+            if let Some(e) = self.decode_erc20_transfer_log(&log, asset, tip) {
                 events.push(e);
             }
         }

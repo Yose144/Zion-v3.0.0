@@ -56,7 +56,7 @@ function buildSiweMessage(address: string, nonce: string): string {
     '',
     `URI: ${origin}/wallet/multichain`,
     'Version: 1',
-    'Chain ID: 1',
+    'Chain ID: 8453',
     `Nonce: ${nonce}`,
     `Issued At: ${issuedAt}`,
     `Expiration Time: ${expirationTime}`,
@@ -403,7 +403,8 @@ function getTokenForAssetKey(assetKey: string): { symbol: string; decimals: numb
   const parts = assetKey.split(':');
   const chain = parts[0] ?? '';
   const symbol = parts[1] ?? '';
-  const tokens = TOKENS_BY_CHAIN[chain === 'zion_l1' ? 'zion' : chain];
+  const uiChain = chain.replace(/^zion[-_]l1$/, 'zion');
+  const tokens = TOKENS_BY_CHAIN[uiChain];
   if (!tokens) return null;
   return tokens.find((t) => t.symbol === symbol) ?? null;
 }
