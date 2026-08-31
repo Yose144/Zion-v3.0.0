@@ -75,7 +75,10 @@ fn expand_tilde(p: &str) -> PathBuf {
     PathBuf::from(p)
 }
 
-fn load_or_generate_node_key(node_key: Option<String>, key_file: &str) -> anyhow::Result<SigningKey> {
+fn load_or_generate_node_key(
+    node_key: Option<String>,
+    key_file: &str,
+) -> anyhow::Result<SigningKey> {
     let key_hex = if let Some(k) = node_key {
         if k.len() == 64 && k.chars().all(|c| c.is_ascii_hexdigit()) {
             k
@@ -108,8 +111,7 @@ fn load_or_generate_node_key(node_key: Option<String>, key_file: &str) -> anyhow
         }
     };
 
-    let bytes = hex::decode(key_hex.trim())
-        .with_context(|| "node key is not valid hex")?;
+    let bytes = hex::decode(key_hex.trim()).with_context(|| "node key is not valid hex")?;
     let arr: [u8; 32] = bytes
         .try_into()
         .map_err(|_| anyhow!("node key must be 32 bytes"))?;
@@ -145,24 +147,27 @@ async fn post_json(
             req = req.header("authorization", a);
         }
     }
-    let resp = req.send().await.with_context(|| format!("HTTP POST to {url}"))?;
+    let resp = req
+        .send()
+        .await
+        .with_context(|| format!("HTTP POST to {url}"))?;
     let status = resp.status();
     let text = resp.text().await.unwrap_or_default();
     if !status.is_success() {
         bail!("request failed ({}): {}", status, text);
     }
-    serde_json::from_str(&text)
-        .with_context(|| format!("invalid JSON response: {text}"))
+    serde_json::from_str(&text).with_context(|| format!("invalid JSON response: {text}"))
 }
 
 fn auth_header(args: &RegisterArgs) -> Option<String> {
-    if let Some(api_key) = &args.zis_api_key {
-        Some(format!("Bearer {api_key}"))
-    } else if let Some(session) = &args.zis_session {
-        Some(format!("zion_session={session}"))
-    } else {
-        None
-    }
+    args.zis_api_key
+        .as_ref()
+        .map(|api_key| format!("Bearer {api_key}"))
+        .or_else(|| {
+            args.zis_session
+                .as_ref()
+                .map(|session| format!("zion_session={session}"))
+        })
 }
 
 pub async fn run_register(args: RegisterArgs) -> anyhow::Result<()> {
@@ -188,7 +193,10 @@ pub async fn run_register(args: RegisterArgs) -> anyhow::Result<()> {
         "signature": signature,
     });
 
-    let url = format!("{}/v1/nodes/register", args.multichain_url.trim_end_matches('/'));
+    let url = format!(
+        "{}/v1/nodes/register",
+        args.multichain_url.trim_end_matches('/')
+    );
     let auth = auth_header(&args);
     let resp = post_json(&url, body, auth.as_deref()).await?;
     println!("{}", serde_json::to_string_pretty(&resp)?);
@@ -216,7 +224,10 @@ pub async fn run_heartbeat(args: HeartbeatArgs) -> anyhow::Result<()> {
         "signature": signature,
     });
 
-    let url = format!("{}/v1/nodes/heartbeat", args.multichain_url.trim_end_matches('/'));
+    let url = format!(
+        "{}/v1/nodes/heartbeat",
+        args.multichain_url.trim_end_matches('/')
+    );
     let resp = post_json(&url, body, None).await?;
     println!("{}", serde_json::to_string_pretty(&resp)?);
     Ok(())

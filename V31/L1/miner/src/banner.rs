@@ -17,10 +17,7 @@ pub fn print_banner(threads: usize) {
         "consensus".to_string(),
         zion_core::node_runtime::consensus_profile().to_string(),
     ));
-    rows.push((
-        "protocol".to_string(),
-        "zion-v3-stratum/0.2".to_string(),
-    ));
+    rows.push(("protocol".to_string(), "zion-v3-stratum/0.2".to_string()));
 
     let logical_cpus = num_cpus::get();
     let physical_cpus = num_cpus::get_physical();

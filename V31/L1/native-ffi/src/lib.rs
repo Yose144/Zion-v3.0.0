@@ -774,12 +774,7 @@ pub mod autolykos {
     /// (big-endian byte comparison).
     ///
     /// If `table` is empty, the table is generated internally (slower).
-    pub fn mine(
-        header: &[u8],
-        nonce: u64,
-        table: &[u64],
-        target: &[u8; 32],
-    ) -> ([u8; 32], bool) {
+    pub fn mine(header: &[u8], nonce: u64, table: &[u64], target: &[u8; 32]) -> ([u8; 32], bool) {
         let mut out = [0u8; 32];
         let table_ptr = if table.is_empty() {
             std::ptr::null()
@@ -937,21 +932,12 @@ pub mod kheavyhash {
     }
 
     /// Fallible variant of [`mine`] that rejects empty / oversized inputs.
-    pub fn try_mine(
-        pre_pow_hash: &[u8],
-        timestamp: u64,
-        nonce: u64,
-    ) -> Result<[u8; 32], FfiError> {
+    pub fn try_mine(pre_pow_hash: &[u8], timestamp: u64, nonce: u64) -> Result<[u8; 32], FfiError> {
         safety::validate_input_len(pre_pow_hash)?;
         Ok(mine(pre_pow_hash, timestamp, nonce))
     }
 
-    pub fn verify(
-        pre_pow_hash: &[u8],
-        timestamp: u64,
-        nonce: u64,
-        target: &[u8; 32],
-    ) -> bool {
+    pub fn verify(pre_pow_hash: &[u8], timestamp: u64, nonce: u64, target: &[u8; 32]) -> bool {
         // SAFETY: `pre_pow_hash`/`target` valid; thread-safe.
         unsafe {
             kheavyhash_verify(
@@ -1131,7 +1117,12 @@ pub mod blake3_algo {
         let mut out = [0u8; 32];
         // SAFETY: same as `hash`.
         unsafe {
-            blake3_alph_simple(header_blob.as_ptr(), header_blob.len(), nonce, out.as_mut_ptr());
+            blake3_alph_simple(
+                header_blob.as_ptr(),
+                header_blob.len(),
+                nonce,
+                out.as_mut_ptr(),
+            );
         }
         out
     }
@@ -1355,11 +1346,7 @@ pub mod verushash {
         // then hash_with_nonce for each nonce.
 
         /// Stage 1: Haraka512 chain → 64-byte intermediate (ONCE per job).
-        pub fn verushash_hash_half(
-            data: *const u8,
-            data_len: usize,
-            intermediate64: *mut u8,
-        );
+        pub fn verushash_hash_half(data: *const u8, data_len: usize, intermediate64: *mut u8);
 
         /// Stage 2: GenNewCLKey from intermediate (ONCE per job).
         pub fn verushash_prepare_key(intermediate64: *const u8);
@@ -1390,10 +1377,7 @@ pub mod verushash {
         /// Extract precomputed key (8832 bytes) and blockhash_half (64 bytes)
         /// for GPU kernel upload. Must be called after prepare_key.
         /// Returns 0 on success, -1 if key not prepared.
-        pub fn verushash_get_gpu_keydata(
-            key_out: *mut u8,
-            blockhash_half_out: *mut u8,
-        ) -> i32;
+        pub fn verushash_get_gpu_keydata(key_out: *mut u8, blockhash_half_out: *mut u8) -> i32;
     }
 
     use std::sync::Once;
@@ -1461,9 +1445,8 @@ pub mod verushash {
         init();
         let mut key = [0u8; 8832];
         let mut blockhash_half = [0u8; 64];
-        let ret = unsafe {
-            verushash_get_gpu_keydata(key.as_mut_ptr(), blockhash_half.as_mut_ptr())
-        };
+        let ret =
+            unsafe { verushash_get_gpu_keydata(key.as_mut_ptr(), blockhash_half.as_mut_ptr()) };
         if ret == 0 {
             Some((key, blockhash_half))
         } else {
@@ -1777,7 +1760,9 @@ pub mod ghostrider {
     /// Verify GhostRider hash meets the 32-byte target (LE comparison).
     pub fn verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
         // SAFETY: slice + fixed-size target.
-        unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1 }
+        unsafe {
+            ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1
+        }
     }
 
     /// Debug: call cryptonightdarklite_hash directly with given input.
@@ -1792,8 +1777,9 @@ pub mod ghostrider {
     /// Strict variant of [`verify`] surfacing unexpected C return codes.
     pub fn try_verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> Result<bool, FfiError> {
         safety::validate_input_len(header)?;
-        let code =
-            unsafe { ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) };
+        let code = unsafe {
+            ghostrider_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr())
+        };
         safety::parse_c_bool("ghostrider_zion_verify", code)
     }
 
@@ -2156,7 +2142,10 @@ mod tests {
         assert_ne!(hash, [0u8; 32], "blake3-alph must produce non-zero output");
         // Double hash should differ from single hash
         let single = blake3_algo::mine(&header, 5678);
-        assert_ne!(hash, single, "ALPH double-hash must differ from DCR single hash");
+        assert_ne!(
+            hash, single,
+            "ALPH double-hash must differ from DCR single hash"
+        );
         println!("blake3 alph smoke: {:02x?}", &hash[..8]);
     }
 

@@ -162,8 +162,7 @@ impl ExternalPoolClient {
                     let mut interval = tokio::time::interval(Duration::from_secs(3));
                     loop {
                         interval.tick().await;
-                        let req =
-                            json!({"id": 10, "method": "eth_getWork", "params": []});
+                        let req = json!({"id": 10, "method": "eth_getWork", "params": []});
                         if Self::send_line(&writer_clone, &req).await.is_err() {
                             break;
                         }

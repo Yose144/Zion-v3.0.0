@@ -161,7 +161,10 @@ impl DaoClient {
             proposal_type: ProposalTypeDto::Treasury {
                 recipient: mission.recipient_address.clone(),
                 amount: amount_flowers,
-                purpose: format!("Issobella mission ({}) — {}", mission.mission_type, mission.title),
+                purpose: format!(
+                    "Issobella mission ({}) — {}",
+                    mission.mission_type, mission.title
+                ),
             },
         };
 

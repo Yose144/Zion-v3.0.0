@@ -73,11 +73,7 @@ pub fn enqueue_deferred(queue: &DeferredPayoutQueue, payouts: Vec<PayoutEntry>, 
         retry_count: 0,
     };
     queue.lock().unwrap().push(entry);
-    info!(
-        "payout_deferred_queued height={} miners={}",
-        height,
-        count
-    );
+    info!("payout_deferred_queued height={} miners={}", height, count);
 }
 
 // ── Chain query helpers ────────────────────────────────────────────
@@ -124,15 +120,16 @@ pub async fn check_tx_on_chain(
 /// Get the current chain height from the node.
 pub async fn get_chain_height(rpc_addr: &str) -> anyhow::Result<u64> {
     let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let result = crate::rpc_client::jsonrpc_call(
-        addr,
-        &rpc_request("getChainInfo", json!([])),
-    )
-    .await?;
+    let result =
+        crate::rpc_client::jsonrpc_call(addr, &rpc_request("getChainInfo", json!([]))).await?;
 
     result
         .get("result")
-        .and_then(|r| r.get("native_chain_height").and_then(|v| v.as_u64()).or_else(|| r.get("chain_height").and_then(|v| v.as_u64())))
+        .and_then(|r| {
+            r.get("native_chain_height")
+                .and_then(|v| v.as_u64())
+                .or_else(|| r.get("chain_height").and_then(|v| v.as_u64()))
+        })
         .ok_or_else(|| anyhow::anyhow!("missing chain_height in getChainInfo response"))
 }
 
@@ -219,11 +216,13 @@ pub async fn execute_fee_payout(
     let key_bytes = hex::decode(signing_key_hex.trim_start_matches("0x"))
         .map_err(|e| anyhow::anyhow!("invalid signing key hex: {e}"))?;
     if key_bytes.len() != 32 {
-        return Err(anyhow::anyhow!("signing key must be 32 bytes, got {}", key_bytes.len()));
+        return Err(anyhow::anyhow!(
+            "signing key must be 32 bytes, got {}",
+            key_bytes.len()
+        ));
     }
-    let signing_key = ed25519_dalek::SigningKey::from_bytes(
-        key_bytes.as_slice().try_into().unwrap(),
-    );
+    let signing_key =
+        ed25519_dalek::SigningKey::from_bytes(key_bytes.as_slice().try_into().unwrap());
 
     // Fetch UTXOs
     let utxos = fetch_pool_utxos(rpc_addr, pool_wallet).await?;
@@ -282,7 +281,10 @@ pub async fn execute_fee_payout(
 }
 
 /// Fetch spendable UTXOs for a pool wallet address from the node.
-async fn fetch_pool_utxos(rpc_addr: &str, address: &str) -> anyhow::Result<Vec<zion_core::v31_wallet::SpendableUtxo>> {
+async fn fetch_pool_utxos(
+    rpc_addr: &str,
+    address: &str,
+) -> anyhow::Result<Vec<zion_core::v31_wallet::SpendableUtxo>> {
     use zion_core::v31_wallet::SpendableUtxo;
     let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
     let resp = crate::rpc_client::jsonrpc_call(
@@ -310,7 +312,8 @@ async fn fetch_pool_utxos(rpc_addr: &str, address: &str) -> anyhow::Result<Vec<z
                         output_index: u.get("output_index")?.as_u64()? as u32,
                         amount: u.get("amount")?.as_u64()?,
                         address: address.to_string(),
-                        script: hex::decode(u.get("script_hex")?.as_str().unwrap_or("")).unwrap_or_default(),
+                        script: hex::decode(u.get("script_hex")?.as_str().unwrap_or(""))
+                            .unwrap_or_default(),
                         block_height: u.get("block_height")?.as_u64().unwrap_or(0),
                         is_coinbase: u.get("is_coinbase")?.as_bool().unwrap_or(false),
                     })
@@ -356,7 +359,11 @@ pub fn spawn_deferred_payout_processor(
                 }
                 let deferred = queue_guard.first_mut().unwrap();
                 deferred.retry_count += 1;
-                (deferred.height, deferred.retry_count, deferred.payouts.clone())
+                (
+                    deferred.height,
+                    deferred.retry_count,
+                    deferred.payouts.clone(),
+                )
             };
 
             if retry > max_retries {
@@ -369,7 +376,11 @@ pub fn spawn_deferred_payout_processor(
                     let total: u64 = payouts.iter().map(|p| p.amount).sum();
                     notifier.notify_payout_failed(
                         height,
-                        &format!("max_retries_exceeded ({} miners, {} flowers)", payouts.len(), total),
+                        &format!(
+                            "max_retries_exceeded ({} miners, {} flowers)",
+                            payouts.len(),
+                            total
+                        ),
                     );
                 }
                 queue.lock().unwrap().remove(0);
@@ -429,7 +440,10 @@ pub fn spawn_deferred_payout_processor(
                             };
                             match crate::rpc_client::jsonrpc_call(
                                 addr,
-                                &rpc_request("submitUtxoTransaction", json!({ "transaction": tx_json })),
+                                &rpc_request(
+                                    "submitUtxoTransaction",
+                                    json!({ "transaction": tx_json }),
+                                ),
                             )
                             .await
                             {
@@ -497,12 +511,13 @@ pub fn spawn_deferred_payout_processor(
 /// This is a fallback for nodes where `getTransaction` is not implemented or
 /// returns null.  The UTXO `tx_hash` equals the transaction id, so a matching
 /// unspent output proves the tx is on-chain.
-async fn check_tx_on_chain_via_utxos(rpc_addr: &str, address: &str, tx_id: &str) -> anyhow::Result<bool> {
+async fn check_tx_on_chain_via_utxos(
+    rpc_addr: &str,
+    address: &str,
+    tx_id: &str,
+) -> anyhow::Result<bool> {
     let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let request = rpc_request(
-        "getUtxos",
-        json!({ "address": address }),
-    );
+    let request = rpc_request("getUtxos", json!({ "address": address }));
     let resp = crate::rpc_client::jsonrpc_call(addr, &request).await?;
 
     if let Some(utxos) = resp
@@ -570,7 +585,9 @@ pub fn spawn_payout_confirmation_sweep(
             let payouts = match store.query_unconfirmed_payouts() {
                 Ok(p) => p,
                 Err(e) => {
-                    tracing::debug!("payout_confirmation_sweep: query_unconfirmed_payouts failed: {e}");
+                    tracing::debug!(
+                        "payout_confirmation_sweep: query_unconfirmed_payouts failed: {e}"
+                    );
                     continue;
                 }
             };
@@ -592,7 +609,9 @@ pub fn spawn_payout_confirmation_sweep(
                     Ok(None) => {
                         // Fallback: look for the tx hash in any recipient UTXO set.
                         let representative = &group[0];
-                        match check_tx_on_chain_via_utxos(&rpc, &representative.address, &tx_id).await {
+                        match check_tx_on_chain_via_utxos(&rpc, &representative.address, &tx_id)
+                            .await
+                        {
                             Ok(true) => (representative.height, String::new()),
                             Ok(false) => continue,
                             Err(e) => {
@@ -602,7 +621,10 @@ pub fn spawn_payout_confirmation_sweep(
                         }
                     }
                     Err(e) => {
-                        tracing::debug!("payout_confirmation_sweep: check_tx_on_chain failed for {}: {e}", tx_id);
+                        tracing::debug!(
+                            "payout_confirmation_sweep: check_tx_on_chain failed for {}: {e}",
+                            tx_id
+                        );
                         continue;
                     }
                 };
@@ -617,10 +639,18 @@ pub fn spawn_payout_confirmation_sweep(
                     let confirm = if block_hash.is_empty() {
                         store.confirm_payout(&tx_id, confirmations)
                     } else {
-                        store.confirm_payout_with_block(&tx_id, confirmations, &block_hash, tx_height)
+                        store.confirm_payout_with_block(
+                            &tx_id,
+                            confirmations,
+                            &block_hash,
+                            tx_height,
+                        )
                     };
                     if let Err(e) = confirm {
-                        warn!("payout_confirmation_sweep: confirm_payout failed for {}: {}", tx_id, e);
+                        warn!(
+                            "payout_confirmation_sweep: confirm_payout failed for {}: {}",
+                            tx_id, e
+                        );
                     } else {
                         info!(
                             "payout_confirmed tx_id={} height={} chain_height={} confirmations={} block_hash={}",
@@ -648,7 +678,8 @@ mod tests {
 
     #[test]
     fn fee_payout_recipients_builds_correctly() {
-        let recipients = fee_payout_recipients(100, 50, 200, "human_addr", "issobella_addr", "pool_addr");
+        let recipients =
+            fee_payout_recipients(100, 50, 200, "human_addr", "issobella_addr", "pool_addr");
         assert_eq!(recipients.len(), 3);
         assert_eq!(recipients[0].address, "human_addr");
         assert_eq!(recipients[0].amount, 100);
@@ -660,7 +691,8 @@ mod tests {
 
     #[test]
     fn fee_payout_recipients_skips_zero() {
-        let recipients = fee_payout_recipients(0, 50, 0, "human_addr", "issobella_addr", "pool_addr");
+        let recipients =
+            fee_payout_recipients(0, 50, 0, "human_addr", "issobella_addr", "pool_addr");
         assert_eq!(recipients.len(), 1);
         assert_eq!(recipients[0].address, "issobella_addr");
     }

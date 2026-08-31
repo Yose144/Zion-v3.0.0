@@ -97,14 +97,13 @@ impl MinerConfig {
 
         // ── Resolve GPU backend ──
         // Env override takes priority, then auto-detect
-        let gpu_backend = std::env::var("ZION_GPU_BACKEND").unwrap_or_else(|_| {
-            match auto.gpu_backend {
+        let gpu_backend =
+            std::env::var("ZION_GPU_BACKEND").unwrap_or_else(|_| match auto.gpu_backend {
                 crate::gpu::GpuBackendKind::Cuda => "cuda".to_string(),
                 crate::gpu::GpuBackendKind::OpenCL => "opencl".to_string(),
                 crate::gpu::GpuBackendKind::Metal => "metal".to_string(),
                 _ => "cpu".to_string(),
-            }
-        });
+            });
 
         // ── CPU threads ──
         let miner_threads = std::env::var("ZION_MINER_THREADS")

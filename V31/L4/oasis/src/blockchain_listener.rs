@@ -30,7 +30,7 @@ use tracing::{error, info, warn};
 
 /// Parse an RPC URL into a TCP socket address.
 ///
-/// Accepts `http://host:port`, `host:port` or `host` (defaulting to 9443).
+/// Accepts `http://host:port`, `host:port` or `host` (defaulting to 9445).
 fn parse_rpc_addr(rpc_url: &str) -> Result<SocketAddr, String> {
     let s = rpc_url.trim();
     let s = s
@@ -43,7 +43,7 @@ fn parse_rpc_addr(rpc_url: &str) -> Result<SocketAddr, String> {
         return Ok(addr);
     }
     if !s.contains(':') {
-        return format!("{}:9443", s)
+        return format!("{}:9445", s)
             .parse::<SocketAddr>()
             .map_err(|e| format!("invalid RPC address: {} ({})", rpc_url, e));
     }
@@ -61,7 +61,10 @@ async fn jsonrpc_tcp_call(addr: SocketAddr, request: &Value) -> Result<Value, St
         .write_all(payload.as_bytes())
         .await
         .map_err(|e| format!("TCP write failed: {}", e))?;
-    stream.flush().await.map_err(|e| format!("TCP flush failed: {}", e))?;
+    stream
+        .flush()
+        .await
+        .map_err(|e| format!("TCP flush failed: {}", e))?;
 
     let (reader, _) = stream.split();
     let mut reader = BufReader::new(reader);
@@ -121,7 +124,7 @@ impl L1BlockListener {
     /// Create a new listener targeting a single L1 RPC endpoint.
     pub fn new(rpc_url: String) -> Self {
         let rpc_addr = parse_rpc_addr(&rpc_url).unwrap_or_else(|_| {
-            "127.0.0.1:9443"
+            "127.0.0.1:9445"
                 .parse::<SocketAddr>()
                 .expect("fallback RPC addr")
         });
@@ -442,8 +445,8 @@ mod tests {
 
     #[test]
     fn test_new_listener_defaults() {
-        let l = L1BlockListener::new("http://127.0.0.1:9443".to_string());
-        assert_eq!(l.rpc_url, "http://127.0.0.1:9443");
+        let l = L1BlockListener::new("http://127.0.0.1:9445".to_string());
+        assert_eq!(l.rpc_url, "http://127.0.0.1:9445");
         assert_eq!(l.last_height, 0);
         assert_eq!(l.poll_interval_secs, 10);
     }

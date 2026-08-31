@@ -94,7 +94,10 @@ impl BridgeConsensus {
     ///
     /// Returns the signatures on success, or an error if the local node does
     /// not hold enough keys to reach quorum.
-    pub fn sign_and_verify(&self, transfer: &Transfer) -> MultichainResult<Vec<ValidatorSignature>> {
+    pub fn sign_and_verify(
+        &self,
+        transfer: &Transfer,
+    ) -> MultichainResult<Vec<ValidatorSignature>> {
         let signatures = self.sign_transfer(transfer);
         let sig_tuples: Vec<(String, Vec<u8>)> = signatures
             .iter()
@@ -153,7 +156,7 @@ pub fn bridge_deposit_hash(transfer: &Transfer) -> Hash {
 mod tests {
     use super::*;
     use crate::types::{Transfer, TransferDirection, TransferEndpoint};
-    use zion_l1_types::{Address, Amount, Asset, ChainId, ChainFamily};
+    use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId};
 
     fn endpoint(chain: ChainId, encoded: &str, asset: Asset, amount: Amount) -> TransferEndpoint {
         let bytes = match chain.family() {

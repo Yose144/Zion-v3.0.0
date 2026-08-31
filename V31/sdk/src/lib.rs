@@ -12,7 +12,7 @@
 //! use zion_sdk::node::NodeClient;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let client = NodeClient::new("http://127.0.0.1:9443");
+//! let client = NodeClient::new("http://127.0.0.1:9445");
 //! let status = client.status().await?;
 //! println!("Chain height: {}", status.height);
 //! # Ok(())

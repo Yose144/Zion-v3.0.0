@@ -69,7 +69,11 @@ pub enum UtxoError {
     #[error("transaction is already in the UTXO set")]
     DuplicateTransaction,
     #[error("coinbase output {outpoint:?} is immature: age {age} < {required}")]
-    ImmatureCoinbase { outpoint: Outpoint, age: u64, required: u64 },
+    ImmatureCoinbase {
+        outpoint: Outpoint,
+        age: u64,
+        required: u64,
+    },
     #[error("premine output is locked: {address} ({reason})")]
     PremineLocked { address: String, reason: String },
     #[error("HTLC output script is invalid for input {0}")]
@@ -104,7 +108,10 @@ impl UtxoSet {
     /// Tuple: `(tx_hash, output_index, amount, block_height, block_timestamp,
     /// is_coinbase, script)`.
     #[allow(clippy::type_complexity)]
-    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool, Vec<u8>)> {
+    pub fn get_utxos_for_address(
+        &self,
+        address: &str,
+    ) -> Vec<(Hash, u32, u64, u64, u64, bool, Vec<u8>)> {
         let mut out = Vec::new();
         for (outpoint, output) in &self.outputs {
             if output.address.encoded == address {
@@ -176,7 +183,14 @@ impl UtxoSet {
                 .ok_or(UtxoError::InputNotFound(outpoint))?
                 .clone();
 
-            verify_input(i, input, &signing_hash, &output, block_timestamp, &tx.outputs)?;
+            verify_input(
+                i,
+                input,
+                &signing_hash,
+                &output,
+                block_timestamp,
+                &tx.outputs,
+            )?;
 
             inputs.push((outpoint, output));
         }
@@ -190,23 +204,25 @@ impl UtxoSet {
             if !crypto::is_valid_address(&output.address.encoded) {
                 return Err(UtxoError::InvalidAddress(output.address.encoded.clone()));
             }
-            output_sum = output_sum
-                .checked_add(output.amount.0)
-                .ok_or(UtxoError::InsufficientFunds {
-                    have: 0,
-                    need: u128::MAX,
-                })?;
+            output_sum =
+                output_sum
+                    .checked_add(output.amount.0)
+                    .ok_or(UtxoError::InsufficientFunds {
+                        have: 0,
+                        need: u128::MAX,
+                    })?;
         }
 
         // Remove inputs after all signatures check out.
         let mut input_sum: u128 = 0;
         for (outpoint, output) in &inputs {
-            input_sum = input_sum
-                .checked_add(output.amount.0)
-                .ok_or(UtxoError::InsufficientFunds {
-                    have: u128::MAX,
-                    need: output_sum,
-                })?;
+            input_sum =
+                input_sum
+                    .checked_add(output.amount.0)
+                    .ok_or(UtxoError::InsufficientFunds {
+                        have: u128::MAX,
+                        need: output_sum,
+                    })?;
             self.outputs.remove(outpoint);
         }
 
@@ -218,9 +234,14 @@ impl UtxoSet {
         }
 
         let fee = input_sum - output_sum;
-        let min_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(tx.inputs.len(), tx.outputs.len())) as u128;
+        let min_fee =
+            fee::minimum_fee_for_size(fee::estimate_tx_size(tx.inputs.len(), tx.outputs.len()))
+                as u128;
         if fee < min_fee {
-            return Err(UtxoError::FeeTooLow { fee, minimum: min_fee });
+            return Err(UtxoError::FeeTooLow {
+                fee,
+                minimum: min_fee,
+            });
         }
 
         // Add the new outputs.
@@ -543,7 +564,9 @@ mod tests {
         )
         .unwrap();
 
-        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        utxo_set
+            .apply_transaction(&build.transaction, 2, 100)
+            .unwrap();
 
         let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
         let refund_tx = build_htlc_refund(
@@ -598,7 +621,9 @@ mod tests {
         )
         .unwrap();
 
-        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        utxo_set
+            .apply_transaction(&build.transaction, 2, 100)
+            .unwrap();
         let refund_addr = derive_address(refund_pk.as_bytes());
         let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
 
@@ -646,7 +671,9 @@ mod tests {
         )
         .unwrap();
 
-        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        utxo_set
+            .apply_transaction(&build.transaction, 2, 100)
+            .unwrap();
         let refund_addr = derive_address(refund_pk.as_bytes());
         let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
 
@@ -677,7 +704,12 @@ mod tests {
 
         let hashlock = [7u8; 32];
         let timeout = 5000u64;
-        let script = htlc_output_script(&hashlock, timeout, claimant_pk.as_bytes(), locker_pk.as_bytes());
+        let script = htlc_output_script(
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            locker_pk.as_bytes(),
+        );
 
         let utxo = spendable(&utxo_set, &locker_addr);
         let build = build_htlc_lock(
@@ -693,7 +725,9 @@ mod tests {
         )
         .unwrap();
 
-        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        utxo_set
+            .apply_transaction(&build.transaction, 2, 100)
+            .unwrap();
         let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
         assert_eq!(lock_utxo.script, script);
     }

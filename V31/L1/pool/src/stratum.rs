@@ -17,18 +17,20 @@ use zion_cosmic_harmony::ExternalCoin;
 use crate::auxpow_bridge::{MultiAuxPowBridge, ShareForwardRequest};
 use crate::block_tracker::BlockTracker;
 use crate::config::PoolConfig;
-use crate::notifications::{Notifier, NotificationsConfig};
+use crate::notifications::{NotificationsConfig, Notifier};
 use crate::pool::{Pool, PoolError};
 use crate::rate_limit::{IpRateLimiter, ShareRateLimiter};
 use crate::revenue_scheduler::RevenueScheduler;
+use crate::routing::{resolve_session_group, session_group_name, RoutingStats};
 use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
-use crate::routing::{RoutingStats, resolve_session_group, session_group_name};
 use crate::share::ShareSubmission;
 use crate::share_relay::{relay_share_fire_and_forget, ShareRelayConfig};
-use crate::stratum_v1::{is_stratum_v1, build_set_target, StratumV1Session};
+use crate::stratum_v1::{build_set_target, is_stratum_v1, StratumV1Session};
 use crate::telemetry::MinerTelemetryRegistry;
 use crate::template_cache::TemplateCache;
-use crate::v3_protocol::{decode_message, encode_message, ExternalStreamJob, PoolMessage, PROTOCOL_VERSION};
+use crate::v3_protocol::{
+    decode_message, encode_message, ExternalStreamJob, PoolMessage, PROTOCOL_VERSION,
+};
 use crate::vardiff::{difficulty_to_target, VarDiff, VarDiffConfig};
 
 /// Stored job data:
@@ -51,8 +53,7 @@ pub struct StratumV1Ctx {
 
 impl StratumV1Ctx {
     pub fn new(session_id: u64, vardiff_config: &VarDiffConfig) -> Self {
-        let share_rate_per_sec = env_or_f64("ZION_POOL_SHARE_RATE_PER_SEC", 10.0)
-            .max(1.0);
+        let share_rate_per_sec = env_or_f64("ZION_POOL_SHARE_RATE_PER_SEC", 10.0).max(1.0);
         Self {
             session: StratumV1Session::new(session_id),
             vardiff: VarDiff::new(vardiff_config),
@@ -79,6 +80,9 @@ pub struct StratumServer {
     /// Stored jobs: job_id -> (header bytes, 32-byte network target, reward, template).
     jobs: Arc<Mutex<HashMap<String, JobEntry>>>,
     notify_tx: broadcast::Sender<String>,
+    /// Last V3 Job message broadcasted, so we can push it to new V3 clients
+    /// immediately on connect instead of waiting for the next template change.
+    last_v3_job: Arc<Mutex<Option<String>>>,
     /// Miner telemetry registry — shared with the Pool so the HTTP API can
     /// expose per-worker hashrate and shares.
     telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
@@ -148,7 +152,10 @@ impl StratumServer {
         let (notify_tx, _notify_rx) = broadcast::channel(256);
 
         let vardiff_config = VarDiffConfig {
-            start_difficulty: env_or("ZION_VARDIFF_START_DIFF", env_or("ZION_VARDIFF_START", 1000)),
+            start_difficulty: env_or(
+                "ZION_VARDIFF_START_DIFF",
+                env_or("ZION_VARDIFF_START", 1000),
+            ),
             min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1000)),
             max_difficulty: env_or("ZION_VARDIFF_MAX_DIFF", env_or("ZION_VARDIFF_MAX", 100_000)),
             target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15),
@@ -165,6 +172,7 @@ impl StratumServer {
             config,
             jobs: Arc::new(Mutex::new(HashMap::new())),
             notify_tx,
+            last_v3_job: Arc::new(Mutex::new(None)),
             telemetry,
             block_tracker: Arc::new(Mutex::new(BlockTracker::new())),
             template_cache: Arc::new(Mutex::new(TemplateCache::new(Duration::from_secs(15)))),
@@ -178,7 +186,10 @@ impl StratumServer {
             relay_config: ShareRelayConfig::from_env(),
             notifier: Arc::new(Notifier::new(NotificationsConfig::from_env())),
             revenue_scheduler: Arc::new(Mutex::new(RevenueScheduler::from_env(0.0))),
-            routing_stats: Arc::new(Mutex::new(RoutingStats::new(env_or("ZION_POOL_ROUTING_LOG_EVERY", 1000)))),
+            routing_stats: Arc::new(Mutex::new(RoutingStats::new(env_or(
+                "ZION_POOL_ROUTING_LOG_EVERY",
+                1000,
+            )))),
             share_store: None,
         }
     }
@@ -276,10 +287,7 @@ impl StratumServer {
                 }
 
                 let result = json!([
-                    [
-                        ["mining.set_difficulty", "sv1"],
-                        ["mining.notify", "sv1"]
-                    ],
+                    [["mining.set_difficulty", "sv1"], ["mining.notify", "sv1"]],
                     ctx.session.extranonce1_hex,
                     ctx.session.extranonce2_size
                 ]);
@@ -301,10 +309,12 @@ impl StratumServer {
                     ctx.authorized = true;
 
                     self.pool.lock().unwrap().register_worker(&username);
-                    self.telemetry
-                        .lock()
-                        .unwrap()
-                        .touch_session(&miner_id, &worker_name, &ctx.session.algorithm, &ctx.session.backend);
+                    self.telemetry.lock().unwrap().touch_session(
+                        &miner_id,
+                        &worker_name,
+                        &ctx.session.algorithm,
+                        &ctx.session.backend,
+                    );
                 }
                 success_response(id, Value::Bool(true))
             }
@@ -342,7 +352,10 @@ impl StratumServer {
     fn handle_submit(&self, id: Value, params: Value, ctx: &mut StratumV1Ctx) -> String {
         // Enforce per-session share rate limit.
         if !ctx.share_rate.allow() {
-            tracing::warn!("share rate limited — session={}", ctx.session.extranonce1_hex);
+            tracing::warn!(
+                "share rate limited — session={}",
+                ctx.session.extranonce1_hex
+            );
             return rejected_response(id, "share rate limited");
         }
 
@@ -400,16 +413,21 @@ impl StratumServer {
         let height = template.as_ref().map(|t| t.height).unwrap_or(0);
 
         let result = if job_id.starts_with("zion_") || job_id.starts_with("j") {
-            self.pool
-                .lock()
-                .unwrap()
-                .submit_zion_with_target(submission, &header, height, &share_target)
+            self.pool.lock().unwrap().submit_zion_with_target(
+                submission,
+                &header,
+                height,
+                &share_target,
+            )
         } else if job_id.starts_with("aux_") {
             let coin = parse_aux_coin(&job_id);
-            self.pool
-                .lock()
-                .unwrap()
-                .submit_auxpow_with_target(coin, submission, &header, height, &share_target)
+            self.pool.lock().unwrap().submit_auxpow_with_target(
+                coin,
+                submission,
+                &header,
+                height,
+                &share_target,
+            )
         } else {
             Err(PoolError::UnknownJob)
         };
@@ -422,16 +440,13 @@ impl StratumServer {
                     worker_name,
                     nonce_hex
                 );
-                self.telemetry
-                    .lock()
-                    .unwrap()
-                    .record_job_result(
-                        &miner_id,
-                        &worker_short,
-                        true,
-                        attempted_hashes,
-                        elapsed_ms,
-                    );
+                self.telemetry.lock().unwrap().record_job_result(
+                    &miner_id,
+                    &worker_short,
+                    true,
+                    attempted_hashes,
+                    elapsed_ms,
+                );
                 // Record share for block tracker luck.
                 self.block_tracker.lock().unwrap().record_share();
                 // Check whether the share is also a full block.
@@ -459,16 +474,13 @@ impl StratumServer {
                     worker_name,
                     nonce_hex
                 );
-                self.telemetry
-                    .lock()
-                    .unwrap()
-                    .record_job_result(
-                        &miner_id,
-                        &worker_short,
-                        false,
-                        attempted_hashes,
-                        elapsed_ms,
-                    );
+                self.telemetry.lock().unwrap().record_job_result(
+                    &miner_id,
+                    &worker_short,
+                    false,
+                    attempted_hashes,
+                    elapsed_ms,
+                );
                 rejected_response(id, "low difficulty")
             }
             Err(e) => {
@@ -479,16 +491,13 @@ impl StratumServer {
                     nonce_hex,
                     e
                 );
-                self.telemetry
-                    .lock()
-                    .unwrap()
-                    .record_job_result(
-                        &miner_id,
-                        &worker_short,
-                        false,
-                        attempted_hashes,
-                        elapsed_ms,
-                    );
+                self.telemetry.lock().unwrap().record_job_result(
+                    &miner_id,
+                    &worker_short,
+                    false,
+                    attempted_hashes,
+                    elapsed_ms,
+                );
                 error_response(Some(id), -32000, &format!("share error: {}", e))
             }
         }
@@ -501,16 +510,19 @@ impl StratumServer {
     /// - `[worker, job_id, nonce, hash]`
     /// - `[worker, job_id, extranonce2, ntime, nonce]`
     /// - `[worker, job_id, extranonce2, ntime, nonce, hash, ...]`
-    fn parse_submit_params(params: &Value) -> Result<(String, String, String, String), &'static str> {
-        let arr = params
-            .as_array()
-            .ok_or("invalid params")?;
+    fn parse_submit_params(
+        params: &Value,
+    ) -> Result<(String, String, String, String), &'static str> {
+        let arr = params.as_array().ok_or("invalid params")?;
         if arr.len() < 3 {
             return Err("invalid params");
         }
 
         let worker = arr[0].as_str().unwrap_or("anonymous").to_string();
-        let job_id = arr[1].as_str().ok_or("job_id must be a string")?.to_string();
+        let job_id = arr[1]
+            .as_str()
+            .ok_or("job_id must be a string")?
+            .to_string();
 
         let (nonce_hex, hash_hex) = if arr.len() == 4 {
             // Simplified [worker, job_id, nonce, hash]
@@ -660,7 +672,13 @@ impl StratumServer {
         if let Ok(bytes) = hex::decode(header_trim) {
             self.jobs.lock().unwrap().insert(
                 job_id.to_string(),
-                (bytes, share_target, block_target, block_reward, template.clone()),
+                (
+                    bytes,
+                    share_target,
+                    block_target,
+                    block_reward,
+                    template.clone(),
+                ),
             );
         }
 
@@ -694,6 +712,7 @@ impl StratumServer {
 
         // Also broadcast V3 Job message for V3 protocol clients
         if let Some(v3_msg) = self.build_v3_job_message(job_id, header_hex, template_json) {
+            *self.last_v3_job.lock().unwrap() = Some(v3_msg.clone());
             let _ = self.notify_tx.send(v3_msg);
         }
     }
@@ -708,12 +727,19 @@ impl StratumServer {
         // Parse as generic JSON to avoid requiring full CoreBlockTemplate fields
         let template: Value = serde_json::from_str(template_json).ok()?;
         let height = template.get("height").and_then(Value::as_u64).unwrap_or(0);
+        let network_difficulty = template
+            .get("difficulty")
+            .and_then(Value::as_u64)
+            .unwrap_or(1)
+            .max(1);
         let numeric_job_id: u64 = job_id
             .strip_prefix("zion_")
             .and_then(|s| s.parse().ok())
             .unwrap_or(0);
         let algorithm = algorithm_for_height(height);
-        let vardiff_target = difficulty_to_target(self.vardiff_config.start_difficulty);
+        // Never ask for shares harder than the current network difficulty.
+        let share_difficulty = self.vardiff_config.start_difficulty.min(network_difficulty);
+        let vardiff_target = difficulty_to_target(share_difficulty);
         let vardiff_target_hex = hex::encode(vardiff_target);
 
         // Triple-stream: fetch external jobs from AuxPoW bridge
@@ -747,7 +773,11 @@ impl StratumServer {
             if !self.multi_bridge.is_cpu_coin(coin) {
                 if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
                     if !Self::job_is_fresh(&job) {
-                        tracing::debug!("build_external_stream_gpu: dropping stale {} job {}", coin.as_str(), job.external_job_id);
+                        tracing::debug!(
+                            "build_external_stream_gpu: dropping stale {} job {}",
+                            coin.as_str(),
+                            job.external_job_id
+                        );
                         continue;
                     }
                     return Some(ExternalStreamJob {
@@ -783,7 +813,11 @@ impl StratumServer {
             if self.multi_bridge.is_cpu_coin(coin) {
                 if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
                     if !Self::job_is_fresh(&job) {
-                        tracing::debug!("build_external_stream_cpu: dropping stale {} job {}", coin.as_str(), job.external_job_id);
+                        tracing::debug!(
+                            "build_external_stream_cpu: dropping stale {} job {}",
+                            coin.as_str(),
+                            job.external_job_id
+                        );
                         continue;
                     }
                     return Some(ExternalStreamJob {
@@ -936,7 +970,11 @@ impl StratumServer {
                     let session_id = counter.fetch_add(1, Ordering::Relaxed);
                     let mut ctx = StratumV1Ctx::new(session_id, &server.vardiff_config);
 
-                    if server.flush_stratum_response(&writer, &mut ctx, &first_line).await.is_err() {
+                    if server
+                        .flush_stratum_response(&writer, &mut ctx, &first_line)
+                        .await
+                        .is_err()
+                    {
                         decrement_ip_sessions(&server.ip_sessions, ip);
                         return;
                     }
@@ -963,7 +1001,9 @@ impl StratumServer {
                     }
                 } else {
                     // V3 wire protocol
-                    server.handle_v3_client(&first_line, &mut lines, &writer, ip).await;
+                    server
+                        .handle_v3_client(&first_line, &mut lines, &writer, ip)
+                        .await;
                 }
 
                 decrement_ip_sessions(&server.ip_sessions, ip);
@@ -1020,10 +1060,13 @@ impl StratumServer {
         &self,
         first_line: String,
         mut lines: tokio::io::Lines<BufReader<R>>,
-        writer: &Arc<tokio::sync::Mutex<tokio::io::WriteHalf<tokio_rustls::server::TlsStream<tokio::net::TcpStream>>>>,
+        writer: &Arc<
+            tokio::sync::Mutex<
+                tokio::io::WriteHalf<tokio_rustls::server::TlsStream<tokio::net::TcpStream>>,
+            >,
+        >,
         ip: IpAddr,
-    )
-    where
+    ) where
         R: tokio::io::AsyncRead + Unpin,
     {
         // For now, just handle Hello and forward jobs.
@@ -1061,6 +1104,22 @@ impl StratumServer {
                 };
                 if write_v3_message(writer, &set_diff).await.is_err() {
                     return;
+                }
+
+                // Push the most recent V3 Job immediately so the miner can start
+                // even when the template fingerprint has not changed since the last broadcast.
+                let last_job = self.last_v3_job.lock().unwrap().clone();
+                if let Some(job) = last_job {
+                    let mut w = writer.lock().await;
+                    if w.write_all(job.as_bytes()).await.is_err() {
+                        return;
+                    }
+                    if w.write_all(b"\n").await.is_err() {
+                        return;
+                    }
+                    if w.flush().await.is_err() {
+                        return;
+                    }
                 }
 
                 self.telemetry.lock().unwrap().touch_session(
@@ -1276,6 +1335,22 @@ impl StratumServer {
                 };
                 if write_v3_message(writer, &set_diff).await.is_err() {
                     return;
+                }
+
+                // Push the most recent V3 Job immediately so the miner can start
+                // even when the template fingerprint has not changed since the last broadcast.
+                let last_job = self.last_v3_job.lock().unwrap().clone();
+                if let Some(job) = last_job {
+                    let mut w = writer.lock().await;
+                    if w.write_all(job.as_bytes()).await.is_err() {
+                        return;
+                    }
+                    if w.write_all(b"\n").await.is_err() {
+                        return;
+                    }
+                    if w.flush().await.is_err() {
+                        return;
+                    }
                 }
 
                 // Touch telemetry
@@ -1947,12 +2022,19 @@ impl StratumServer {
                             let reward = result.get("block_reward")
                                 .and_then(Value::as_u64)
                                 .unwrap_or(0);
+                            let network_difficulty = result.get("difficulty")
+                                .and_then(Value::as_u64)
+                                .unwrap_or(1)
+                                .max(1);
                             let template_json = serde_json::to_string(result).unwrap_or_default();
 
                             // The full block target is too hard for frequent shares.
                             // Broadcast a share target derived from the configured starting
-                            // difficulty; the pool keeps the block target for block detection.
-                            let share_target = difficulty_to_target(self.vardiff_config.start_difficulty);
+                            // difficulty, but never harder than the current network difficulty.
+                            // On a fresh low-difficulty chain this lets CPU miners find shares
+                            // before the V3 job TTL expires.
+                            let share_difficulty = self.vardiff_config.start_difficulty.min(network_difficulty);
+                            let share_target = difficulty_to_target(share_difficulty);
                             let share_target_hex = hex::encode(share_target);
 
                             if !header_hex.is_empty() {
@@ -1991,6 +2073,7 @@ impl StratumServer {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn record_block_accepted(
         &self,
         block_height: u64,
@@ -2001,7 +2084,10 @@ impl StratumServer {
         network_difficulty: u64,
         block_hash: &str,
     ) {
-        self.pool.lock().unwrap().on_block_found(block_height, block_reward);
+        self.pool
+            .lock()
+            .unwrap()
+            .on_block_found(block_height, block_reward);
         self.block_tracker.lock().unwrap().record_block_found(
             block_height,
             miner_id,
@@ -2015,7 +2101,8 @@ impl StratumServer {
             .unwrap()
             .record_block_found(miner_id, worker_name);
         self.template_cache.lock().unwrap().invalidate();
-        self.notifier.notify_block_found(miner_id, block_height, worker_name);
+        self.notifier
+            .notify_block_found(miner_id, block_height, worker_name);
 
         if let Some(ref store) = self.share_store {
             let rec = crate::store::BlockRecord {
@@ -2267,13 +2354,11 @@ async fn current_chain_height(rpc_addr: SocketAddr) -> Option<u64> {
     });
     let response = jsonrpc_call(rpc_addr, &request).await.ok()?;
     // Prefer native_chain_height; fall back to chain_height for older nodes.
-    response
-        .get("result")
-        .and_then(|r| {
-            r.get("native_chain_height")
-                .and_then(|v| v.as_u64())
-                .or_else(|| r.get("chain_height").and_then(|v| v.as_u64()))
-        })
+    response.get("result").and_then(|r| {
+        r.get("native_chain_height")
+            .and_then(|v| v.as_u64())
+            .or_else(|| r.get("chain_height").and_then(|v| v.as_u64()))
+    })
 }
 
 /// Submit a solved block to the node RPC.
@@ -2347,8 +2432,8 @@ mod tests {
     #[test]
     fn handles_authorize() {
         let server = make_server();
-        let resp =
-            server.handle_request(r#"{"id":2,"method":"mining.authorize","params":["worker","x"]}"#);
+        let resp = server
+            .handle_request(r#"{"id":2,"method":"mining.authorize","params":["worker","x"]}"#);
         assert!(resp.contains("true"));
     }
 
@@ -2358,7 +2443,14 @@ mod tests {
         let share_target = crate::vardiff::difficulty_to_target(1000);
         let share_target_hex = hex::encode(share_target);
         let header = "00".repeat(80);
-        server.job_notification("zion_1", &header, &share_target_hex, &share_target_hex, 6_000_000, "");
+        server.job_notification(
+            "zion_1",
+            &header,
+            &share_target_hex,
+            &share_target_hex,
+            6_000_000,
+            "",
+        );
         let resp = server.handle_request(
             r#"{"id":3,"method":"mining.submit","params":["worker","zion_1","0000000000000000"]}"#,
         );
@@ -2371,7 +2463,14 @@ mod tests {
         let share_target = crate::vardiff::difficulty_to_target(1000);
         let share_target_hex = hex::encode(share_target);
         let header = "00".repeat(80);
-        server.job_notification("aux_bitcoin_1", &header, &share_target_hex, &share_target_hex, 6_000_000, "");
+        server.job_notification(
+            "aux_bitcoin_1",
+            &header,
+            &share_target_hex,
+            &share_target_hex,
+            6_000_000,
+            "",
+        );
         let resp = server.handle_request(
             r#"{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","0000000000000000"]}"#,
         );
@@ -2467,7 +2566,12 @@ mod tests {
                 assert_eq!(t.transactions[0].outputs.len(), 3);
             }
             Err(e) => {
-                panic!("failed to parse template: {} at line {} col {}", e, e.line(), e.column());
+                panic!(
+                    "failed to parse template: {} at line {} col {}",
+                    e,
+                    e.line(),
+                    e.column()
+                );
             }
         }
     }

@@ -127,7 +127,10 @@ async fn handle_peer(
                     height: status.height,
                     tip_hash: status.tip_hash.to_hex(),
                 };
-                if let Err(_) = timeout(write_timeout, write_message(&mut writer, &reply)).await {
+                if timeout(write_timeout, write_message(&mut writer, &reply))
+                    .await
+                    .is_err()
+                {
                     warn!("P2P peer {} write timeout on Status", peer_addr);
                     break;
                 }
@@ -141,7 +144,10 @@ async fn handle_peer(
                     .get_blocks_range(start_height, end_height)
                     .await?;
                 let reply = Message::Blocks { blocks };
-                if let Err(_) = timeout(write_timeout, write_message(&mut writer, &reply)).await {
+                if timeout(write_timeout, write_message(&mut writer, &reply))
+                    .await
+                    .is_err()
+                {
                     warn!("P2P peer {} write timeout on Blocks", peer_addr);
                     break;
                 }
@@ -149,7 +155,10 @@ async fn handle_peer(
             Message::GetPeers => {
                 let peers = peers.random_peers(8).await;
                 let reply = Message::Peers { peers };
-                if let Err(_) = timeout(write_timeout, write_message(&mut writer, &reply)).await {
+                if timeout(write_timeout, write_message(&mut writer, &reply))
+                    .await
+                    .is_err()
+                {
                     warn!("P2P peer {} write timeout on Peers", peer_addr);
                     break;
                 }

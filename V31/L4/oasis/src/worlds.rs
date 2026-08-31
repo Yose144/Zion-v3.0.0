@@ -87,7 +87,10 @@ impl WorldRegistry {
     }
 
     pub fn star_systems(&self) -> Vec<&WorldDef> {
-        self.worlds.iter().filter(|w| w.category == "star-system").collect()
+        self.worlds
+            .iter()
+            .filter(|w| w.category == "star-system")
+            .collect()
     }
 
     pub fn by_layer(&self, layer: u32) -> Vec<&WorldDef> {
@@ -109,7 +112,10 @@ mod tests {
     #[test]
     fn test_registry_loads_default() {
         let reg = WorldRegistry::load_default();
-        assert!(!reg.all().is_empty(), "Default worlds.json should not be empty");
+        assert!(
+            !reg.all().is_empty(),
+            "Default worlds.json should not be empty"
+        );
     }
 
     #[test]

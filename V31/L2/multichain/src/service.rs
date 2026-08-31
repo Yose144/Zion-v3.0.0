@@ -10,8 +10,8 @@ use zion_pool::telemetry::MinerTelemetryRegistry;
 use zion_pool::Pool as MiningPool;
 
 use crate::audit::AuditLogger;
-use crate::bridge::Bridge;
 use crate::bridge::consensus::BridgeConsensus;
+use crate::bridge::Bridge;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
 use crate::chain::{BlockTemplate, ChainAdapter, ChainAdapterRegistry};
 use crate::config::{AdapterConfig, MultichainConfig, NodeRewardsConfig};
@@ -19,16 +19,18 @@ use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
-use crate::multichain_wallet::{DepositWatcher, DexOrder, MultichainWallet, WalletLedger, WithdrawalProcessor};
-use crate::swap::dex::swap_executor::SwapExecutor;
+use crate::multichain_wallet::{
+    DepositWatcher, DexOrder, MultichainWallet, WalletLedger, WithdrawalProcessor,
+};
 use crate::node_rewards::NodeRewards;
 use crate::reconciliation::{Reconciler, ReconcilerConfig, ReconciliationReport};
-use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
 use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
 use crate::swap::dex::solver_network::{SolverClient, SolverNetwork};
-use crate::swap::IntentEngine;
+use crate::swap::dex::swap_executor::SwapExecutor;
+use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::htlc::HtlcSwap;
+use crate::swap::IntentEngine;
 use crate::types::Transfer;
 use crate::wallet::Keyring;
 use crate::warp::config::WarpConfig;
@@ -134,7 +136,10 @@ impl MultichainService {
 
         // Always register a ZION L1 adapter if an L1 RPC URL is configured.
         if !config.l1_rpc_url.is_empty() {
-            let l1_adapter = Box::new(ZionL1Adapter::new(&config.l1_rpc_url, bridge_keyring.clone()));
+            let l1_adapter = Box::new(ZionL1Adapter::new(
+                &config.l1_rpc_url,
+                bridge_keyring.clone(),
+            ));
             adapters.register(ChainId::ZionL1, l1_adapter);
         }
 
@@ -282,13 +287,19 @@ impl MultichainService {
     /// Validate and deploy a new custom AMM pool. Persists to DB and router.
     pub async fn deploy_pool(&self, mut pool: Pool) -> MultichainResult<()> {
         if pool.fee_bps >= 10_000 {
-            return Err(MultichainError::Validation("fee_bps must be < 10000".to_string()));
+            return Err(MultichainError::Validation(
+                "fee_bps must be < 10000".to_string(),
+            ));
         }
         if pool.reserve_a == Amount::ZERO || pool.reserve_b == Amount::ZERO {
-            return Err(MultichainError::Validation("reserves must be non-zero".to_string()));
+            return Err(MultichainError::Validation(
+                "reserves must be non-zero".to_string(),
+            ));
         }
         if pool.asset_a.id == pool.asset_b.id {
-            return Err(MultichainError::Validation("pool assets must be different".to_string()));
+            return Err(MultichainError::Validation(
+                "pool assets must be different".to_string(),
+            ));
         }
 
         // Auto-assign a unique id when the caller passes 0.
@@ -410,7 +421,10 @@ impl MultichainService {
         n: usize,
         max_hops: usize,
     ) -> MultichainResult<Vec<Quote>> {
-        self.dex.read().await.quote_multi(from, to, amount, n, max_hops)
+        self.dex
+            .read()
+            .await
+            .quote_multi(from, to, amount, n, max_hops)
     }
 
     /// Execute a DEX swap and return the output amount.
@@ -478,7 +492,13 @@ impl MultichainService {
         source_user_address: Option<&Address>,
     ) -> MultichainResult<DexOrder> {
         self.swap_executor
-            .claim_htlc_swap(order_id, secret, source_asset, source_operator_recipient, source_user_address)
+            .claim_htlc_swap(
+                order_id,
+                secret,
+                source_asset,
+                source_operator_recipient,
+                source_user_address,
+            )
             .await
     }
 
@@ -501,19 +521,28 @@ impl MultichainService {
     }
 
     /// List all withdrawals for a user.
-    pub async fn withdrawals_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::WithdrawalRecord>> {
+    pub async fn withdrawals_for_user(
+        &self,
+        user_id: &str,
+    ) -> MultichainResult<Vec<crate::multichain_wallet::types::WithdrawalRecord>> {
         let db = self.db.lock().await;
         db.load_withdrawals_for_user(user_id)
     }
 
     /// List all deposits for a user.
-    pub async fn deposits_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::DepositRecord>> {
+    pub async fn deposits_for_user(
+        &self,
+        user_id: &str,
+    ) -> MultichainResult<Vec<crate::multichain_wallet::types::DepositRecord>> {
         let db = self.db.lock().await;
         db.load_deposits_for_user(user_id)
     }
 
     /// List all DEX orders for a user.
-    pub async fn orders_for_user(&self, user_id: &str) -> MultichainResult<Vec<crate::multichain_wallet::types::DexOrder>> {
+    pub async fn orders_for_user(
+        &self,
+        user_id: &str,
+    ) -> MultichainResult<Vec<crate::multichain_wallet::types::DexOrder>> {
         self.swap_executor.list_orders(user_id).await
     }
 
@@ -627,10 +656,7 @@ impl MultichainService {
     }
 
     /// Settle an intent, persist the new status, and return the winning bid.
-    pub async fn settle_intent(
-        &self,
-        id: uuid::Uuid,
-    ) -> MultichainResult<Option<SolverBid>> {
+    pub async fn settle_intent(&self, id: uuid::Uuid) -> MultichainResult<Option<SolverBid>> {
         let (bid, intent) = {
             let mut engine = self.intent_engine.write().await;
             let bid = engine.settle(id)?;
@@ -644,10 +670,7 @@ impl MultichainService {
     }
 
     /// Settle an intent and execute the winning path via `Executor`.
-    pub async fn execute_intent(
-        &self,
-        id: uuid::Uuid,
-    ) -> MultichainResult<Option<Amount>> {
+    pub async fn execute_intent(&self, id: uuid::Uuid) -> MultichainResult<Option<Amount>> {
         let (out, saved) = {
             let mut engine = self.intent_engine.write().await;
             let mut dex = self.dex.write().await;
@@ -661,7 +684,9 @@ impl MultichainService {
             };
 
             let executor = Executor::new(self.keyring.clone());
-            let amount = executor.execute(&intent, &bid, &self.bridge, &mut dex).await?;
+            let amount = executor
+                .execute(&intent, &bid, &self.bridge, &mut dex)
+                .await?;
 
             let intent = engine.get_intent_mut(id).unwrap();
             intent.status = IntentStatus::Executed;
@@ -962,7 +987,10 @@ fn load_bridge_consensus() -> Option<BridgeConsensus> {
             None
         }
         Err(e) => {
-            tracing::warn!("WARP_VALIDATOR_KEYS not loaded: {}; bridge will run without consensus", e);
+            tracing::warn!(
+                "WARP_VALIDATOR_KEYS not loaded: {}; bridge will run without consensus",
+                e
+            );
             None
         }
     }
@@ -1005,8 +1033,8 @@ fn build_adapter(
                 let wallet = crate::wallet::evm_relay_wallet()
                     .or_else(|_| keyring.evm_wallet(0, 0))
                     .ok();
-                let contracts = ZionContracts::for_chain(&cfg.chain)
-                    .unwrap_or_else(ZionContracts::non_base);
+                let contracts =
+                    ZionContracts::for_chain(&cfg.chain).unwrap_or_else(ZionContracts::non_base);
                 Ok(Box::new(EvmAdapter::new(
                     cfg.chain.clone(),
                     chain_id,

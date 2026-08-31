@@ -60,10 +60,15 @@ impl StratumProtocol {
 
 pub fn coin_to_protocol(coin: ExternalCoin) -> StratumProtocol {
     match coin {
-        ExternalCoin::Ravencoin | ExternalCoin::EthereumClassic
-        | ExternalCoin::Evrmore | ExternalCoin::Meowcoin | ExternalCoin::Clore
+        ExternalCoin::Ravencoin
+        | ExternalCoin::EthereumClassic
+        | ExternalCoin::Evrmore
+        | ExternalCoin::Meowcoin
+        | ExternalCoin::Clore
         | ExternalCoin::Quai => StratumProtocol::EthStratum,
-        ExternalCoin::Verus | ExternalCoin::Zclassic | ExternalCoin::Zcash => StratumProtocol::ZcashStratum,
+        ExternalCoin::Verus | ExternalCoin::Zclassic | ExternalCoin::Zcash => {
+            StratumProtocol::ZcashStratum
+        }
         ExternalCoin::Pearl => StratumProtocol::PearlStratum,
         ExternalCoin::EpicCash => StratumProtocol::EpicStratum,
         ExternalCoin::Beam => StratumProtocol::BeamStratum,
@@ -578,9 +583,7 @@ pub fn select_best_coin(
         if disabled.contains(&entry.coin) || entry.profit_per_day_usd() <= 0.0 {
             continue;
         }
-        if best.is_none_or(|b| {
-            entry.profit_per_day_usd() > b.profit_per_day_usd()
-        }) {
+        if best.is_none_or(|b| entry.profit_per_day_usd() > b.profit_per_day_usd()) {
             best = Some(entry);
         }
     }
@@ -661,7 +664,10 @@ mod tests {
     fn dcr_uses_blake3() {
         assert_eq!(ExternalCoin::Decred.algorithm(), "blake3_dcr");
         assert!(ExternalCoin::Decred.is_blake3());
-        assert_eq!(ExternalCoin::Decred.default_pool(), "pool.woolypooly.com:3152");
+        assert_eq!(
+            ExternalCoin::Decred.default_pool(),
+            "pool.woolypooly.com:3152"
+        );
     }
 
     #[test]
@@ -680,7 +686,10 @@ mod tests {
 
     #[test]
     fn from_str_loose_parses_dcr_aliases() {
-        assert_eq!(ExternalCoin::from_str_loose("dcr"), Some(ExternalCoin::Decred));
+        assert_eq!(
+            ExternalCoin::from_str_loose("dcr"),
+            Some(ExternalCoin::Decred)
+        );
         assert_eq!(
             ExternalCoin::from_str_loose("Decred"),
             Some(ExternalCoin::Decred)
@@ -701,8 +710,14 @@ mod tests {
             ExternalCoin::from_str_loose("alph"),
             Some(ExternalCoin::Alephium)
         );
-        assert_eq!(ExternalCoin::from_str_loose("KAS"), Some(ExternalCoin::Kaspa));
-        assert_eq!(ExternalCoin::from_str_loose("xmr"), Some(ExternalCoin::Monero));
+        assert_eq!(
+            ExternalCoin::from_str_loose("KAS"),
+            Some(ExternalCoin::Kaspa)
+        );
+        assert_eq!(
+            ExternalCoin::from_str_loose("xmr"),
+            Some(ExternalCoin::Monero)
+        );
         assert_eq!(ExternalCoin::from_str_loose("unknown"), None);
     }
 

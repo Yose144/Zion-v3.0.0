@@ -137,72 +137,6 @@ fn env_bool(key: &str, default: bool) -> bool {
         .unwrap_or(default)
 }
 
-/// Convert `zion_miner::stream::StreamStats` → `ui::StreamStats` for the
-/// trinity stats display.
-#[cfg(feature = "tui")]
-fn to_ui_streams(stats: &std::collections::HashMap<StreamId, StreamStats>) -> Vec<zion_miner::ui::StreamStats> {
-    let mut out = Vec::with_capacity(3);
-    for id in [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal] {
-        let s = stats.get(&id).cloned().unwrap_or_else(|| StreamStats::new(id));
-        let (label, coin, algo) = match id {
-            StreamId::Zion => (
-                "ZION",
-                "ZION".to_string(),
-                s.algorithm.clone().unwrap_or_else(|| {
-                    zion_core::node_runtime::consensus_profile().to_string()
-                }),
-            ),
-            StreamId::GpuExternal => (
-                "GPU PROFIT",
-                s.coin.as_ref().map(|c| c.to_string()).unwrap_or_default(),
-                s.algorithm.clone().unwrap_or_else(|| "n/a".to_string()),
-            ),
-            StreamId::CpuExternal => (
-                "CPU PROFIT",
-                s.coin.as_ref().map(|c| c.to_string()).unwrap_or_default(),
-                s.algorithm.clone().unwrap_or_else(|| "n/a".to_string()),
-            ),
-        };
-        out.push(zion_miner::ui::StreamStats {
-            label,
-            coin,
-            algorithm: algo,
-            hashrate_10s: s.hashrate,
-            hashrate_60s: s.hashrate,
-            hashrate_15m: s.hashrate,
-            accepted: s.accepted,
-            rejected: s.rejected,
-            active: s.active,
-        });
-    }
-    out
-}
-
-/// Query GPU details for the trinity stats display.
-#[cfg(feature = "tui")]
-fn gpu_info_tuples() -> Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> {
-    #[cfg(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal"))]
-    {
-        let gpus = zion_miner::gpu::query_gpu_details();
-        gpus.iter()
-            .map(|g| {
-                (
-                    g.name.clone(),
-                    g.compute_units,
-                    g.global_mem_bytes,
-                    g.max_clock_mhz,
-                    g.temp_c,
-                    g.power_w,
-                )
-            })
-            .collect()
-    }
-    #[cfg(not(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal")))]
-    {
-        Vec::new()
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -235,9 +169,15 @@ async fn main() -> Result<()> {
     config.worker = args.worker.clone();
     config.miner_threads = args.threads;
     // CLI --no-* flags override env vars; if flag is absent, keep env var value
-    if args.no_zion { config.stream1_enabled = false; }
-    if args.no_gpu { config.stream2_enabled = false; }
-    if args.no_cpu { config.stream3_enabled = false; }
+    if args.no_zion {
+        config.stream1_enabled = false;
+    }
+    if args.no_gpu {
+        config.stream2_enabled = false;
+    }
+    if args.no_cpu {
+        config.stream3_enabled = false;
+    }
     // GPU backend for Stream 1 (ZION deeksha) — CLI overrides env
     if let Some(ref gpu) = args.gpu {
         config.gpu_backend = gpu.clone();
@@ -253,9 +193,11 @@ async fn main() -> Result<()> {
     };
 
     // ── Startup banner (ZION ASCII art + hardware table) ──
+    // Skip the text-mode banner when the ratatui TUI is active; the TUI
+    // shows the same information in its header and takes over the terminal.
     #[cfg(feature = "tui")]
     {
-        if !env_bool("ZION_NO_FANCY", false) {
+        if !tui_enabled && !env_bool("ZION_NO_FANCY", false) {
             zion_miner::banner::print_banner(args.threads);
             // Print algorithm + pool info below the banner
             let consensus = zion_core::node_runtime::consensus_profile();
@@ -268,20 +210,31 @@ async fn main() -> Result<()> {
             println!("  pool        {}", pool_addr);
             println!("  wallet      {}", args.wallet);
             println!("  worker      {}", args.worker);
-            println!("  streams     ZION={} GPU={} CPU={}",
-                !args.no_zion, !args.no_gpu, !args.no_cpu);
-            let gpu_backend_display = args.gpu.clone()
+            println!(
+                "  streams     ZION={} GPU={} CPU={}",
+                !args.no_zion, !args.no_gpu, !args.no_cpu
+            );
+            let gpu_backend_display = args
+                .gpu
+                .clone()
                 .or_else(|| std::env::var("ZION_GPU_BACKEND").ok())
                 .unwrap_or_else(|| "cpu".to_string());
             println!("  gpu_backend {} (Stream 1 ZION)", gpu_backend_display);
             if args.autonomous {
-                println!("  autonomous  ON (profit switching every {}s)", args.profit_interval);
+                println!(
+                    "  autonomous  ON (profit switching every {}s)",
+                    args.profit_interval
+                );
             }
             println!();
         }
     }
 
-    let (s1, s2, s3) = (config.stream1_enabled, config.stream2_enabled, config.stream3_enabled);
+    let (s1, s2, s3) = (
+        config.stream1_enabled,
+        config.stream2_enabled,
+        config.stream3_enabled,
+    );
     let runtime = MinerRuntime::new(config);
     let pool_addr = runtime
         .config()
@@ -295,11 +248,36 @@ async fn main() -> Result<()> {
     // Start Prometheus endpoint.
     tokio::spawn(serve(metrics.clone(), args.metrics));
 
+    // ── Shutdown signal ──
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+    // ── Ratatui TUI (feature-gated) ──
+    // When --interactive is set, spawn the TUI as a separate task.  It will
+    // draw to the terminal and handle keyboard input (q/Esc to quit).
+    #[cfg(feature = "tui")]
+    {
+        if tui_enabled {
+            let tui_runtime = runtime.clone();
+            let tui_shutdown_rx = shutdown_rx.clone();
+            let tui_shutdown_tx = shutdown_tx.clone();
+            tokio::spawn(async move {
+                if let Err(e) = zion_miner::tui::run_tui(
+                    tui_runtime,
+                    tui_shutdown_rx,
+                    tui_shutdown_tx,
+                )
+                .await
+                {
+                    warn!("TUI error: {e}");
+                }
+            });
+        }
+    }
+
     // ── Background task: poll runtime stats → metrics + TUI + logs ──
     let stats_rt = runtime.clone();
     let stats_metrics = metrics.clone();
-    let stats_pool = pool_addr.clone();
-    let stats_threads = args.threads;
+    let _stats_pool = pool_addr.clone();
     let stats_log_interval = args.log_interval.max(5);
     tokio::spawn(async move {
         const WATCHDOG_GRACE_SEC: u64 = 120;
@@ -311,8 +289,8 @@ async fn main() -> Result<()> {
             sleep(Duration::from_secs(stats_log_interval)).await;
             let stats = stats_rt.stats().await;
             let mut total_hr: f64 = 0.0;
-            let mut total_accepted: u64 = 0;
-            let mut total_rejected: u64 = 0;
+            let mut _total_accepted: u64 = 0;
+            let mut _total_rejected: u64 = 0;
 
             for (id, s) in &stats {
                 let prev = last_stats.get(id).cloned().unwrap_or_else(|| s.clone());
@@ -338,8 +316,8 @@ async fn main() -> Result<()> {
                 if s.active && s.hashrate > 0.0 {
                     total_hr += s.hashrate;
                 }
-                total_accepted += s.accepted;
-                total_rejected += s.rejected;
+                _total_accepted += s.accepted;
+                _total_rejected += s.rejected;
                 let active = if s.active { "active" } else { "idle" };
                 info!(
                     stream = %id.as_str(),
@@ -365,7 +343,8 @@ async fn main() -> Result<()> {
             // to avoid false restarts during slow network or very easy
             // target changes, but still force recovery if no work is done.
             if watchdog_timeout > 0 && start.elapsed().as_secs() >= WATCHDOG_GRACE_SEC {
-                let total_shares = stats_metrics.shares_accepted() + stats_metrics.shares_rejected();
+                let total_shares =
+                    stats_metrics.shares_accepted() + stats_metrics.shares_rejected();
                 let effective_timeout = if total_hr > 0.0 {
                     watchdog_timeout
                 } else {
@@ -382,32 +361,19 @@ async fn main() -> Result<()> {
                     #[cfg(feature = "tui")]
                     {
                         if tui_enabled {
-                            zion_miner::ui::exit_sticky_header();
+                            zion_miner::tui::restore_terminal();
                         }
                     }
                     std::process::exit(1);
                 }
             }
 
-            // ── Claymore-style sticky header TUI ──
+            // ── Ratatui TUI ──
+            // The TUI runs in its own task and draws live stats.  In the
+            // background stats loop we just keep collecting metrics.
             #[cfg(feature = "tui")]
             {
                 if tui_enabled {
-                    let uptime = start.elapsed().as_secs();
-                    let streams = to_ui_streams(&stats);
-                    let gpus = gpu_info_tuples();
-                    zion_miner::ui::print_trinity_stats_sticky(
-                        uptime,
-                        &streams,
-                        total_accepted,
-                        total_rejected,
-                        &stats_pool,
-                        0, // pool_height — unknown from miner side
-                        0.0, // submit_avg_ms
-                        0,   // submit_max_ms
-                        &gpus,
-                    );
-                    // Suppress the plain tui_log line — the sticky header is the display.
                     last_stats = stats;
                     continue;
                 }
@@ -427,7 +393,8 @@ async fn main() -> Result<()> {
         "zion-miner (triple stream) starting"
     );
 
-    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+    // Ctrl-C handler — signals the shutdown channel so the runtime and TUI
+    // both terminate cleanly.
     tokio::spawn(async move {
         if let Err(e) = tokio::signal::ctrl_c().await {
             warn!("ctrl-c handler error: {e}");
@@ -456,15 +423,13 @@ async fn main() -> Result<()> {
         runtime.run(shutdown_rx).await
     };
 
-    // ── Exit sticky header (leave alternate screen buffer) ──
+    // ── Exit TUI / restore terminal ──
     #[cfg(feature = "tui")]
     {
         if tui_enabled {
-            zion_miner::ui::exit_sticky_header();
+            zion_miner::tui::restore_terminal();
         }
     }
-
-    let _ = stats_threads; // suppress unused warning
     result?;
     Ok(())
 }

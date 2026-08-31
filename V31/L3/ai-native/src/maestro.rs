@@ -417,7 +417,7 @@ mod tests {
         let plan = m.plan_for_input("block height?").unwrap();
         let result = m.execute_plan(&plan).await.unwrap();
         // Status depends on environment: on dev machine (no services) → Failed
-        // (step 1 tools fail, step 2 skipped). On edge (node1 up on 9443) → Success.
+        // (step 1 tools fail, step 2 skipped). On edge (node1 up on 9445) → Success.
         assert!(matches!(
             result.status,
             ExecutionStatus::Success | ExecutionStatus::Failed

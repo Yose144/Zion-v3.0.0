@@ -3,8 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Canonical V31 mainnet humanitarian fund address.
-pub const DEFAULT_HUMANITARIAN_FUND_ADDRESS: &str =
-    "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8";
+pub const DEFAULT_HUMANITARIAN_FUND_ADDRESS: &str = "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FreeWorldConfig {

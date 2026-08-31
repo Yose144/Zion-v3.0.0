@@ -297,7 +297,7 @@ pub struct Tool {
     pub sub_agent: SubAgent,
     /// Layer (derived from sub_agent, denormalized for convenience)
     pub layer: Layer,
-    /// Endpoint URL, e.g. "http://127.0.0.1:9443/rpc"
+    /// Endpoint URL, e.g. "http://127.0.0.1:9445/rpc"
     pub endpoint: String,
     /// HTTP method
     pub method: HttpMethod,
@@ -566,7 +566,7 @@ impl Default for ToolExecutor {
 // ============================================================================
 //
 // Endpoints use 127.0.0.1 + canonical Edge ports:
-//   L1 node (primary): 9443 RPC, 8333 P2P
+//   L1 node (primary): 9445 RPC, 8335 P2P
 //   L1 node (follower): 8448 RPC, 8334 P2P
 //   L1 pool: 8444 Stratum, 8080 metrics
 //   L2 bridge: 9101, L2 dao: 8450, L2 swap: 8452
@@ -577,7 +577,7 @@ impl Default for ToolExecutor {
 //
 // Override via env vars in production (see ToolExecutor::with_env).
 
-const NODE_RPC: &str = "http://127.0.0.1:9443/rpc";
+const NODE_RPC: &str = "http://127.0.0.1:9445/rpc";
 const POOL_API: &str = "http://127.0.0.1:8080";
 const BRIDGE_API: &str = "http://127.0.0.1:9101";
 const DAO_API: &str = "http://127.0.0.1:8450";
@@ -596,7 +596,7 @@ const PROMETHEUS_API: &str = "http://127.0.0.1:9090";
 // NEW endpoints for full ecosystem coverage
 const DASHBOARD_API: &str = "http://127.0.0.1:8766";
 #[allow(dead_code)]
-const NODE1_RPC: &str = "http://127.0.0.1:9443/rpc";
+const NODE1_RPC: &str = "http://127.0.0.1:9445/rpc";
 const NODE2_RPC: &str = "http://127.0.0.1:8448/rpc";
 const NODE1_METRICS: &str = "http://127.0.0.1:9100";
 #[allow(dead_code)]

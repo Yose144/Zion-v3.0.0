@@ -94,7 +94,11 @@ pub async fn run(cmd: ComposeCmd) -> Result<()> {
 
 fn find_compose_files() -> Vec<String> {
     let mut files = Vec::new();
-    for path in &["docker-compose.yml", "docker-compose.yaml", "V31/docker-compose.yml"] {
+    for path in &[
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "V31/docker-compose.yml",
+    ] {
         if std::path::Path::new(path).exists() {
             files.push(path.to_string());
         }

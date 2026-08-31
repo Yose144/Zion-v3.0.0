@@ -176,11 +176,18 @@ async fn intent_lifecycle_creates_bids_settles_and_executes() {
     service.submit_bid(bid).await.expect("submit bid");
 
     // Settle and execute the intent against the AMM pool.
-    let out = service.execute_intent(id).await.expect("execute").expect("some output");
+    let out = service
+        .execute_intent(id)
+        .await
+        .expect("execute")
+        .expect("some output");
     assert!(out.0 > 0);
 
     let intent = service.get_intent(id).await.expect("intent exists");
-    assert_eq!(intent.status, zion_multichain::swap::dex::intent::IntentStatus::Executed);
+    assert_eq!(
+        intent.status,
+        zion_multichain::swap::dex::intent::IntentStatus::Executed
+    );
 }
 
 #[tokio::test]
@@ -234,7 +241,10 @@ async fn intent_engine_loads_from_db_on_restart() {
     // Second service: load persisted state from the same file DB.
     let service2 = MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())
         .expect("second service builds");
-    service2.load_intent_engine().await.expect("load intent engine");
+    service2
+        .load_intent_engine()
+        .await
+        .expect("load intent engine");
 
     let loaded = service2.get_intent(id).await.expect("intent loaded");
     assert_eq!(loaded.status, IntentStatus::Pending);
@@ -460,13 +470,18 @@ async fn e2e_deposit_swap_withdraw() {
     registry.register(
         ChainId::ZionL1,
         Box::new(
-            MockAdapter::new("zion", 100, Amount::new(1_000_000_000_000), ChainFamily::Zion)
-                .with_events(Arc::clone(&events)),
+            MockAdapter::new(
+                "zion",
+                100,
+                Amount::new(1_000_000_000_000),
+                ChainFamily::Zion,
+            )
+            .with_events(Arc::clone(&events)),
         ),
     );
 
-    let service = MultichainService::new_with_adapters(config, registry)
-        .expect("in-memory service builds");
+    let service =
+        MultichainService::new_with_adapters(config, registry).expect("in-memory service builds");
 
     let user_id = "user1";
 
@@ -561,6 +576,9 @@ async fn e2e_deposit_swap_withdraw() {
         .iter()
         .find(|w| w.id == withdraw_id)
         .expect("withdrawal record");
-    assert_eq!(record.status, zion_multichain::multichain_wallet::types::WithdrawalStatus::Sent);
+    assert_eq!(
+        record.status,
+        zion_multichain::multichain_wallet::types::WithdrawalStatus::Sent
+    );
     assert!(record.tx_hash.is_some());
 }

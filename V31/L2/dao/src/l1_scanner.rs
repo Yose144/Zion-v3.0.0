@@ -108,7 +108,7 @@ struct BalanceAtHeightInfo {
 
 #[derive(Debug, Clone)]
 pub struct ScannerConfig {
-    /// L1 RPC address, e.g. `127.0.0.1:9443`
+    /// L1 RPC address, e.g. `127.0.0.1:9445`
     pub rpc_url: String,
     /// Poll interval (how often to ask for new blocks)
     pub poll_interval: Duration,
@@ -121,7 +121,7 @@ pub struct ScannerConfig {
 impl Default for ScannerConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "127.0.0.1:9443".to_string(),
+            rpc_url: "127.0.0.1:9445".to_string(),
             poll_interval: Duration::from_secs(30),
             min_vote_weight: 1_000_000, // 1 ZION in flowers (6-decimal)
             finality_blocks: 6,
@@ -225,7 +225,10 @@ impl L1Scanner {
                     let msg = e.to_string();
                     if msg.contains("null result") {
                         // Block was pruned (block retention) — skip and advance cursor
-                        debug!("[DAO-SCANNER] Block {} pruned (null result), skipping", height);
+                        debug!(
+                            "[DAO-SCANNER] Block {} pruned (null result), skipping",
+                            height
+                        );
                         let db = self.db.lock().await;
                         db.set_last_scanned_block(height)?;
                         drop(db);
@@ -387,7 +390,10 @@ impl L1Scanner {
                                     continue;
                                 }
                                 None => {
-                                    debug!("[DAO-SCANNER] Proposal {} not found, ignoring vote", pid);
+                                    debug!(
+                                        "[DAO-SCANNER] Proposal {} not found, ignoring vote",
+                                        pid
+                                    );
                                     continue;
                                 }
                             }
@@ -437,16 +443,18 @@ impl L1Scanner {
                                 );
                                 continue;
                             }
-                            Some(ref r) => match serde_json::from_str::<ProposalType>(&r.proposal_type_json) {
-                                Ok(pt) => pt,
-                                Err(e) => {
-                                    debug!(
-                                        "[DAO-SCANNER] Cannot parse proposal type for {}: {}",
-                                        pid, e
-                                    );
-                                    continue;
+                            Some(ref r) => {
+                                match serde_json::from_str::<ProposalType>(&r.proposal_type_json) {
+                                    Ok(pt) => pt,
+                                    Err(e) => {
+                                        debug!(
+                                            "[DAO-SCANNER] Cannot parse proposal type for {}: {}",
+                                            pid, e
+                                        );
+                                        continue;
+                                    }
                                 }
-                            },
+                            }
                         };
 
                         if !validate_choice(&choice, &proposal_type) {
@@ -573,9 +581,10 @@ fn validate_choice(choice: &VoteChoice, proposal_type: &ProposalType) -> bool {
             VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain,
             ProposalType::ParliamentaryElection { .. },
         ) => false,
-        (VoteChoice::Candidate(ref party), ProposalType::ParliamentaryElection { ref parties, .. }) => {
-            parties.contains(party)
-        }
+        (
+            VoteChoice::Candidate(ref party),
+            ProposalType::ParliamentaryElection { ref parties, .. },
+        ) => parties.contains(party),
         (VoteChoice::Candidate(_), _) => false,
         _ => true,
     }

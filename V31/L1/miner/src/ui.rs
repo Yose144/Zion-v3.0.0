@@ -7,6 +7,9 @@
 #![allow(dead_code)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
+#![allow(clippy::single_char_add_str)]
+#![allow(clippy::needless_borrow)]
+#![allow(clippy::manual_c_str_literals)]
 
 use std::io::{self, Write};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -886,10 +889,26 @@ fn build_trinity_box(
         // Mask labels and coin/algo in public_build
         #[cfg(feature = "public_build")]
         let (display_label, display_coin, display_algo) = match stream.label {
-            "ZION" => (stream.label.to_string(), stream.coin.clone(), stream.algorithm.clone()),
-            "GPU PROFIT" => ("BOOST 1".to_string(), "Boost".to_string(), "Boost".to_string()),
-            "CPU PROFIT" => ("BOOST 2".to_string(), "Boost".to_string(), "Boost".to_string()),
-            _ => ("BOOST".to_string(), "Boost".to_string(), "Boost".to_string()),
+            "ZION" => (
+                stream.label.to_string(),
+                stream.coin.clone(),
+                stream.algorithm.clone(),
+            ),
+            "GPU PROFIT" => (
+                "BOOST 1".to_string(),
+                "Boost".to_string(),
+                "Boost".to_string(),
+            ),
+            "CPU PROFIT" => (
+                "BOOST 2".to_string(),
+                "Boost".to_string(),
+                "Boost".to_string(),
+            ),
+            _ => (
+                "BOOST".to_string(),
+                "Boost".to_string(),
+                "Boost".to_string(),
+            ),
         };
         #[cfg(not(feature = "public_build"))]
         let (display_label, display_coin, display_algo) = (
@@ -917,8 +936,7 @@ fn build_trinity_box(
                 || display_algo.contains("kawpow")
             {
                 "SKIPPED (DAG-based on Metal)"
-            } else if display_algo.contains("zelhash") || display_algo.contains("beamhash")
-            {
+            } else if display_algo.contains("zelhash") || display_algo.contains("beamhash") {
                 "SKIPPED (memory-hard on Metal)"
             } else {
                 "IDLE"

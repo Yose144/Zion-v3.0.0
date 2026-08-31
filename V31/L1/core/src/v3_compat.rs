@@ -11,12 +11,12 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use zion_cosmic_harmony_v3::{
     cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, deeksha_chv3_with_height,
-    deeksha_lite_fire_with_height, deeksha_lite_with_height, CHV3_FORK_HEIGHT,
-    FIRE_FORK_HEIGHT,
+    deeksha_lite_fire_with_height, deeksha_lite_with_height, CHV3_FORK_HEIGHT, FIRE_FORK_HEIGHT,
 };
 
 /// V3-compatible mainnet genesis hash (v3.2 One Love genesis reset 2026-08-06 with V2 mnemonic premine keys).
-pub const V3_GENESIS_HASH: &str = "4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71";
+pub const V3_GENESIS_HASH: &str =
+    "4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71";
 
 /// Re-export the shared `u128` serde helper from `zion_l1_types`.
 /// V3 `amount_zion` is serialized as a decimal string.

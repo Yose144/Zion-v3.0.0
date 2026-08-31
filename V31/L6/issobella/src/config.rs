@@ -3,8 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Canonical V31 mainnet Issobella fund address.
-pub const DEFAULT_ISSOBELLA_FUND_ADDRESS: &str =
-    "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0";
+pub const DEFAULT_ISSOBELLA_FUND_ADDRESS: &str = "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IssobellaConfig {

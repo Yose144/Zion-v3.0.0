@@ -222,6 +222,7 @@ pub fn extract_from_headers(headers: &HeaderMap) -> Result<WalletAuth, AuthError
 pub struct AuthenticatedWallet(pub String);
 
 /// Resolved identity after successful authentication.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 enum ResolvedIdentity {
     Zis(ZisUser),
@@ -279,7 +280,10 @@ fn authorize_player_address(
     };
 
     if !identity.address_matches(address) {
-        tracing::warn!("OASIS auth: identity does not own player address {}", address);
+        tracing::warn!(
+            "OASIS auth: identity does not own player address {}",
+            address
+        );
         return Err(StatusCode::FORBIDDEN);
     }
 

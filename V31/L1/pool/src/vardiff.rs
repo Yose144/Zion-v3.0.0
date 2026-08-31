@@ -115,7 +115,9 @@ impl VarDiff {
         // Clamp the ratio to [0.25, 4.0] to prevent wild swings.
         let ratio = (self.target_secs / avg_secs).clamp(0.25, 4.0);
         let new_diff_f = self.current_difficulty as f64 * ratio;
-        let new_diff = (new_diff_f as u64).max(self.min_difficulty).min(self.max_difficulty);
+        let new_diff = (new_diff_f as u64)
+            .max(self.min_difficulty)
+            .min(self.max_difficulty);
 
         self.shares_since_retarget = 0;
 
@@ -271,7 +273,7 @@ mod tests {
         // Fire shares as fast as possible.
         vd.record_submit(); // ssr 1 → None
         let adjusted = vd.record_submit(); // ssr 2 → retarget
-        // Max increase is 4× → 400.
+                                           // Max increase is 4× → 400.
         assert!(
             vd.current() <= 400,
             "ratio should be clamped to 4.0, got {}",

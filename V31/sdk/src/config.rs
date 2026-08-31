@@ -1,7 +1,7 @@
 /// SDK configuration.
 #[derive(Clone, Debug)]
 pub struct SdkConfig {
-    /// Node RPC URL (e.g. `http://127.0.0.1:9443`).
+    /// Node RPC URL (e.g. `http://127.0.0.1:9445`).
     pub node_rpc_url: String,
     /// Request timeout in seconds.
     pub timeout_secs: u64,
@@ -10,7 +10,7 @@ pub struct SdkConfig {
 impl Default for SdkConfig {
     fn default() -> Self {
         Self {
-            node_rpc_url: "http://127.0.0.1:9443".to_string(),
+            node_rpc_url: "http://127.0.0.1:9445".to_string(),
             timeout_secs: 15,
         }
     }

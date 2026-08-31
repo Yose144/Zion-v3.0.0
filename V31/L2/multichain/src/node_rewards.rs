@@ -338,14 +338,8 @@ impl NodeRewards {
         // 1 ZION per recipient plus a fixed 1 ZION base fee.
         let fee = 1_000_000_u64.saturating_mul(recipients.len() as u64 + 1);
         let signing_key = adapter.zion_signing_key()?;
-        let build = build_batch_payout(
-            &signing_key,
-            &self.pool_address,
-            &recipients,
-            fee,
-            &utxos,
-        )
-        .map_err(|e| MultichainError::Internal(format!("build batch payout: {e:?}")))?;
+        let build = build_batch_payout(&signing_key, &self.pool_address, &recipients, fee, &utxos)
+            .map_err(|e| MultichainError::Internal(format!("build batch payout: {e:?}")))?;
 
         let tx_id = adapter.submit_utxo_transaction(build.transaction).await?;
 
@@ -431,7 +425,10 @@ impl NodeRewards {
         Ok(out)
     }
 
-    fn payout_recipients(conn: &rusqlite::Connection, payout_id: i64) -> MultichainResult<Vec<PayoutRecipient>> {
+    fn payout_recipients(
+        conn: &rusqlite::Connection,
+        payout_id: i64,
+    ) -> MultichainResult<Vec<PayoutRecipient>> {
         let mut stmt = conn.prepare(
             "SELECT node_id, reward_address, score, amount FROM node_reward_payout_recipients WHERE payout_id = ?1",
         )?;
@@ -470,8 +467,9 @@ impl NodeRewards {
             req.bind_host.as_deref().unwrap_or(""),
             req.bind_port.unwrap_or(0)
         );
-        vk.verify(payload.as_bytes(), &sig)
-            .map_err(|_| MultichainError::Validation("register signature verification failed".to_string()))
+        vk.verify(payload.as_bytes(), &sig).map_err(|_| {
+            MultichainError::Validation("register signature verification failed".to_string())
+        })
     }
 
     fn verify_heartbeat_signature(&self, req: &HeartbeatRequest) -> MultichainResult<()> {
@@ -479,15 +477,11 @@ impl NodeRewards {
         let sig = self.decode_signature(&req.signature)?;
         let payload = format!(
             "{}:{}:{}:{}:{}:{}",
-            req.node_id,
-            req.height,
-            req.peer_count,
-            req.bandwidth,
-            req.latency_ms,
-            req.observed_at
+            req.node_id, req.height, req.peer_count, req.bandwidth, req.latency_ms, req.observed_at
         );
-        vk.verify(payload.as_bytes(), &sig)
-            .map_err(|_| MultichainError::Validation("heartbeat signature verification failed".to_string()))
+        vk.verify(payload.as_bytes(), &sig).map_err(|_| {
+            MultichainError::Validation("heartbeat signature verification failed".to_string())
+        })
     }
 
     fn decode_pubkey(&self, hex_str: &str) -> MultichainResult<VerifyingKey> {

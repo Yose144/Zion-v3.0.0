@@ -44,7 +44,14 @@ impl Pool {
         let (reserve_in, reserve_out) = self.reserves_for(from, to)?;
         let in_decimals = self.decimals_for(from)?;
         let out_decimals = self.decimals_for(to)?;
-        compute_out(reserve_in, reserve_out, amount, in_decimals, out_decimals, self.fee_bps)
+        compute_out(
+            reserve_in,
+            reserve_out,
+            amount,
+            in_decimals,
+            out_decimals,
+            self.fee_bps,
+        )
     }
 
     fn execute_by_id(&mut self, from: &AssetId, to: &AssetId, amount: Amount) -> Option<Amount> {
@@ -52,7 +59,14 @@ impl Pool {
         let in_decimals = self.decimals_for(from)?;
         let out_decimals = self.decimals_for(to)?;
         let (reserve_in, reserve_out) = self.reserves_mut_for(from, to)?;
-        let out = compute_out(*reserve_in, *reserve_out, amount, in_decimals, out_decimals, fee_bps)?;
+        let out = compute_out(
+            *reserve_in,
+            *reserve_out,
+            amount,
+            in_decimals,
+            out_decimals,
+            fee_bps,
+        )?;
         *reserve_in = reserve_in.saturating_add(amount);
         *reserve_out = reserve_out.saturating_sub(out);
         Some(out)
@@ -368,10 +382,11 @@ impl DexRouter {
         }
 
         let one_million = BigUint::from(1_000_000u64);
-        let reserve_a = (one_million.clone() * BigUint::from(10u32).pow(native_asset.decimals as u32))
-            .to_u128()
-            .map(Amount::new)
-            .unwrap_or(Amount::new(u128::MAX));
+        let reserve_a = (one_million.clone()
+            * BigUint::from(10u32).pow(native_asset.decimals as u32))
+        .to_u128()
+        .map(Amount::new)
+        .unwrap_or(Amount::new(u128::MAX));
         let reserve_b = (one_million * BigUint::from(10u32).pow(wrapped_asset.decimals as u32))
             .to_u128()
             .map(Amount::new)

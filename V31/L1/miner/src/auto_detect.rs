@@ -290,10 +290,7 @@ pub fn print_hardware_summary(hw: &HardwareProfile) {
     eprintln!("  ╔══════════════════════════════════════════════════════════╗");
     eprintln!("  ║          ZION MINER — HARDWARE DETECTION                 ║");
     eprintln!("  ╠══════════════════════════════════════════════════════════╣");
-    eprintln!(
-        "  ║  CPU:  {:<50}║",
-        truncate(&hw.cpu_model, 50)
-    );
+    eprintln!("  ║  CPU:  {:<50}║", truncate(&hw.cpu_model, 50));
     eprintln!(
         "  ║        cores={}/{} arch={} ram={:<20}║",
         hw.cpu_physical_cores,
@@ -316,11 +313,7 @@ pub fn print_hardware_summary(hw: &HardwareProfile) {
     } else {
         for (i, dev) in hw.gpu_devices.iter().enumerate() {
             let label = if i == 0 { "GPU:" } else { "    " };
-            eprintln!(
-                "  ║  {} {:<44} ║",
-                label,
-                truncate(&dev.name, 44)
-            );
+            eprintln!("  ║  {} {:<44} ║", label, truncate(&dev.name, 44));
             eprintln!(
                 "  ║        backend={} CUs={} VRAM={:<24} ║",
                 dev.backend,
@@ -342,18 +335,15 @@ pub fn print_mine_plan(cfg: &AutoMineConfig) {
     eprintln!("  ╔══════════════════════════════════════════════════════════╗");
     eprintln!("  ║          ZION MINER — AUTO MINE CONFIGURATION            ║");
     eprintln!("  ╠══════════════════════════════════════════════════════════╣");
-    eprintln!(
-        "  ║  Mode:    {:<47}║",
-        truncate(&cfg.mode_name, 47)
-    );
-    eprintln!(
-        "  ║  Backend: {:<47}║",
-        backend_display(cfg.gpu_backend)
-    );
+    eprintln!("  ║  Mode:    {:<47}║", truncate(&cfg.mode_name, 47));
+    eprintln!("  ║  Backend: {:<47}║", backend_display(cfg.gpu_backend));
     eprintln!("  ╠══════════════════════════════════════════════════════════╣");
     eprintln!(
         "  ║  Stream 1 (ZION):     {:<34} ║",
-        stream_status(cfg.stream1_enabled, &format!("threads={}", cfg.miner_threads))
+        stream_status(
+            cfg.stream1_enabled,
+            &format!("threads={}", cfg.miner_threads)
+        )
     );
     #[cfg(feature = "public_build")]
     let stream2_label = "Stream 2 (BOOST 1)";

@@ -68,7 +68,7 @@ impl ZisUser {
     ) -> Option<&ZisLinkedAddress> {
         self.linked_addresses.iter().find(|a| {
             a.chain_type.eq_ignore_ascii_case(chain_type)
-                && chain_id.map_or(true, |c| a.chain_id.as_deref() == Some(c))
+                && chain_id.is_none_or(|c| a.chain_id.as_deref() == Some(c))
         })
     }
 
@@ -86,8 +86,7 @@ impl ZisUser {
             }
         }
         self.linked_addresses.iter().any(|a| {
-            a.chain_type.eq_ignore_ascii_case("zion-l1")
-                && a.address.eq_ignore_ascii_case(address)
+            a.chain_type.eq_ignore_ascii_case("zion-l1") && a.address.eq_ignore_ascii_case(address)
         })
     }
 }
@@ -140,7 +139,10 @@ impl ZisClient {
     }
 
     /// Resolve a ZIS user from a `zion_session` cookie value.
-    pub async fn resolve_session(&self, cookie_value: &str) -> Result<Option<ZisUser>, reqwest::Error> {
+    pub async fn resolve_session(
+        &self,
+        cookie_value: &str,
+    ) -> Result<Option<ZisUser>, reqwest::Error> {
         if !self.enabled {
             return Ok(None);
         }

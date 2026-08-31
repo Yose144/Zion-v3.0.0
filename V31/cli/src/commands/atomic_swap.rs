@@ -2,8 +2,8 @@ use anyhow::Result;
 use clap::Subcommand;
 use sha2::Digest;
 
-use crate::ui;
 use crate::rpc::agent_rpc;
+use crate::ui;
 
 #[derive(Subcommand)]
 pub enum AtomicSwapCmd {
@@ -77,7 +77,13 @@ pub async fn run(cmd: AtomicSwapCmd, swap_url: &str) -> Result<()> {
             }
             println!();
         }
-        AtomicSwapCmd::Create { amount, chain, recipient, preimage, timeout } => {
+        AtomicSwapCmd::Create {
+            amount,
+            chain,
+            recipient,
+            preimage,
+            timeout,
+        } => {
             ui::print_header("Create Atomic Swap");
 
             let (preimage_hex, hash_hex) = match preimage {
@@ -110,9 +116,12 @@ pub async fn run(cmd: AtomicSwapCmd, swap_url: &str) -> Result<()> {
                 Ok(v) => {
                     if let Some(escrow_addr) = v["escrow_address"].as_str() {
                         ui::print_row("Escrow Address", escrow_addr);
-                        let memo = format!("SWAP:LOCK:{}:{}:{}:{}", hash_hex, timeout, chain, recipient);
+                        let memo =
+                            format!("SWAP:LOCK:{}:{}:{}:{}", hash_hex, timeout, chain, recipient);
                         println!();
-                        ui::print_info("To lock funds, send ZION on L1 to the escrow address with this memo:");
+                        ui::print_info(
+                            "To lock funds, send ZION on L1 to the escrow address with this memo:",
+                        );
                         println!("  Address: {}", escrow_addr);
                         println!("  Amount:  {} ZION", amount);
                         println!("  Memo:    {}", memo);
@@ -130,7 +139,12 @@ pub async fn run(cmd: AtomicSwapCmd, swap_url: &str) -> Result<()> {
             }
             println!();
         }
-        AtomicSwapCmd::Claim { hash, preimage, recipient, token } => {
+        AtomicSwapCmd::Claim {
+            hash,
+            preimage,
+            recipient,
+            token,
+        } => {
             ui::print_header("Claim HTLC");
             ui::print_row("Hash", &hash);
             ui::print_row("Recipient", &recipient);
@@ -151,7 +165,10 @@ pub async fn run(cmd: AtomicSwapCmd, swap_url: &str) -> Result<()> {
                     if v["status"] == "ok" {
                         ui::print_ok("Claim submitted successfully");
                     } else {
-                        ui::print_warn(&format!("Claim failed: {}", v["message"].as_str().unwrap_or("unknown")));
+                        ui::print_warn(&format!(
+                            "Claim failed: {}",
+                            v["message"].as_str().unwrap_or("unknown")
+                        ));
                     }
                     println!("{}", serde_json::to_string_pretty(&v)?);
                 }
@@ -175,7 +192,10 @@ pub async fn run(cmd: AtomicSwapCmd, swap_url: &str) -> Result<()> {
                     if v["status"] == "ok" {
                         ui::print_ok("Refund submitted successfully");
                     } else {
-                        ui::print_warn(&format!("Refund failed: {}", v["message"].as_str().unwrap_or("unknown")));
+                        ui::print_warn(&format!(
+                            "Refund failed: {}",
+                            v["message"].as_str().unwrap_or("unknown")
+                        ));
                     }
                     println!("{}", serde_json::to_string_pretty(&v)?);
                 }

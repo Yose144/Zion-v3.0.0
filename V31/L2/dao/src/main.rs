@@ -21,8 +21,7 @@ use zion_dao::types::FLOWERS_PER_ZION;
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -37,20 +36,17 @@ async fn main() -> anyhow::Result<()> {
     let metrics = DaoMetrics::new();
 
     // Build governance runtime, loading persisted state when possible.
-    let mut runtime = GovernanceRuntime::new(config.clone(), circulating_supply)
-        .with_metrics(metrics.clone());
+    let mut runtime =
+        GovernanceRuntime::new(config.clone(), circulating_supply).with_metrics(metrics.clone());
 
-    if let Some(db) = DaoDb::open(&config.db_path)
-        .map(Some)
-        .unwrap_or_else(|e| {
-            tracing::warn!(
-                "Could not open runtime DAO db at {}: {} — running without persistence",
-                config.db_path,
-                e
-            );
-            None
-        })
-    {
+    if let Some(db) = DaoDb::open(&config.db_path).map(Some).unwrap_or_else(|e| {
+        tracing::warn!(
+            "Could not open runtime DAO db at {}: {} — running without persistence",
+            config.db_path,
+            e
+        );
+        None
+    }) {
         let db = Arc::new(StdMutex::new(db));
         runtime = runtime.with_db(db);
         if let Err(e) = runtime.load_from_db() {

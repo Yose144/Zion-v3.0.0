@@ -25,7 +25,10 @@ use std::sync::Arc;
 use clap::Parser;
 use tracing::{error, info};
 
-use zion_multichain::config::{AdapterConfig, DatabaseConfig, MultichainConfig, NodeRewardsConfig, ReconciliationConfig, ServerConfig};
+use zion_multichain::config::{
+    AdapterConfig, DatabaseConfig, MultichainConfig, NodeRewardsConfig, ReconciliationConfig,
+    ServerConfig,
+};
 use zion_multichain::server::ApiServer;
 use zion_multichain::service::MultichainService;
 use zion_multichain::warp::config::WarpConfig;
@@ -69,7 +72,10 @@ fn multichain_db_path(warp_db: &str) -> String {
                 .into_owned();
         }
     }
-    format!("{}_multichain.db", warp_db.strip_suffix(".db").unwrap_or(warp_db))
+    format!(
+        "{}_multichain.db",
+        warp_db.strip_suffix(".db").unwrap_or(warp_db)
+    )
 }
 
 fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
@@ -177,7 +183,11 @@ async fn main() -> ExitCode {
         ..Default::default()
     };
     let api_server = ApiServer::new(dex_config, Arc::clone(&service));
-    let api_bind = format!("{}:{}", config.listen_addr, config.listen_port.wrapping_add(1));
+    let api_bind = format!(
+        "{}:{}",
+        config.listen_addr,
+        config.listen_port.wrapping_add(1)
+    );
 
     tokio::spawn(async move {
         info!("[warpd] Multi-chain DEX API starting on {}", api_bind);

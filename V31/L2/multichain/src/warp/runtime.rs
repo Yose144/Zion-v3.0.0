@@ -110,8 +110,12 @@ impl WarpRuntime {
         });
 
         let watcher_db = self.db.clone();
-        let watcher =
-            WarpWatcher::from_config(self.config.clone(), self.router.clone(), watcher_db);
+        let watcher = WarpWatcher::with_validators(
+            self.config.clone(),
+            self.router.clone(),
+            watcher_db,
+            self.validators.clone(),
+        );
         let watcher_handle = tokio::spawn(watcher.run());
 
         let executor = OutboundExecutor::new(self.router.clone(), self.validators.clone());
@@ -133,6 +137,8 @@ impl WarpRuntime {
     }
 }
 
-fn build_registry_from_config(config: &crate::warp::config::WarpConfig) -> WarpResult<crate::warp::ChainRegistry> {
+fn build_registry_from_config(
+    config: &crate::warp::config::WarpConfig,
+) -> WarpResult<crate::warp::ChainRegistry> {
     crate::warp::ChainRegistry::from_config(&config.chains)
 }

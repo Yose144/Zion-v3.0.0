@@ -2769,7 +2769,9 @@ fn create_gpu_backend_inner(
                         anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash or native-blake3-algo feature", algorithm);
                     }
                 }
-                Ok(Box::new(cuda_deeksha_lite::CudaDeekshaLiteMiner::new(work_size)?))
+                Ok(Box::new(cuda_deeksha_lite::CudaDeekshaLiteMiner::new(
+                    work_size,
+                )?))
             }
             #[cfg(not(feature = "gpu-cuda"))]
             anyhow::bail!("CUDA support not compiled — rebuild with --features gpu-cuda");
@@ -5033,8 +5035,12 @@ pub mod opencl_external {
             self.block_height = height;
             if matches!(
                 self.algorithm.as_str(),
-                "progpow" | "progpow_epic" | "progpow_zano"
-                    | "kawpow" | "kawpow_rvn" | "kawpow_clore"
+                "progpow"
+                    | "progpow_epic"
+                    | "progpow_zano"
+                    | "kawpow"
+                    | "kawpow_rvn"
+                    | "kawpow_clore"
             ) {
                 self.miner.set_block_height(height);
             }
@@ -5058,9 +5064,13 @@ pub mod opencl_external {
             if let Some(ep) = epoch {
                 #[cfg(feature = "native-hashers")]
                 {
-                    if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic" | "progpow_zano") {
+                    if matches!(
+                        self.algorithm.as_str(),
+                        "progpow" | "progpow_epic" | "progpow_zano"
+                    ) {
                         self.miner.generate_progpow_dag_on_gpu(ep)?;
-                    } else if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
+                    } else if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc")
+                    {
                         self.miner.generate_ethash_dag_on_gpu(ep)?;
                     }
                 }
@@ -5086,7 +5096,11 @@ pub mod opencl_external {
             )?;
 
             let nonces_tested = self.miner.last_batch_tested();
-            let nonces_tested = if nonces_tested == 0 { batch_size } else { nonces_tested };
+            let nonces_tested = if nonces_tested == 0 {
+                batch_size
+            } else {
+                nonces_tested
+            };
             if let Some(fs) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(fs.nonce, fs.hash, fs.mix_hash)],
@@ -5121,7 +5135,11 @@ pub mod opencl_external {
             )?;
 
             let nonces_tested = self.miner.last_batch_tested();
-            let nonces_tested = if nonces_tested == 0 { batch_size } else { nonces_tested };
+            let nonces_tested = if nonces_tested == 0 {
+                batch_size
+            } else {
+                nonces_tested
+            };
             if let Some(fs) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(fs.nonce, fs.hash, fs.mix_hash)],
@@ -5146,7 +5164,12 @@ pub mod opencl_external {
             let mut nonces: u64 = 0;
             while start.elapsed().as_secs_f64() < secs {
                 let batch = 65536u64;
-                let _ = self.mine_batch_raw(&header, DifficultyTarget { bytes: target }, nonces, batch)?;
+                let _ = self.mine_batch_raw(
+                    &header,
+                    DifficultyTarget { bytes: target },
+                    nonces,
+                    batch,
+                )?;
                 nonces += batch;
             }
             let elapsed = start.elapsed().as_secs_f64();
@@ -5577,11 +5600,16 @@ mod tests {
         };
 
         let result1 = pipeline.step(&mut gpu, job1, "ekam_deeksha", &[]);
-        assert!(result1.is_none(), "first step should not return a previous result");
+        assert!(
+            result1.is_none(),
+            "first step should not return a previous result"
+        );
 
         let result2 = pipeline.step(&mut gpu, job2, "ekam_deeksha", &[]);
         let outcome = result2.expect("second step should return the first job's result");
-        let sol = outcome.solution.expect("first job should have a solution at max target");
+        let sol = outcome
+            .solution
+            .expect("first job should have a solution at max target");
         assert_eq!(sol.job_id, 1);
         assert_eq!(sol.candidate.nonce, 100);
 

@@ -3,10 +3,13 @@ use std::collections::HashMap;
 use rusqlite::{Connection, Row};
 use zion_l1_types::{Address, Amount, ChainId};
 
+use crate::audit::{AuditLog, AuditResult};
 use crate::error::MultichainError;
 use crate::error::MultichainResult;
-use crate::audit::{AuditLog, AuditResult};
-use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount, WalletAddress, WithdrawalRecord, WithdrawalStatus};
+use crate::multichain_wallet::types::{
+    AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount,
+    WalletAddress, WithdrawalRecord, WithdrawalStatus,
+};
 use crate::reconciliation::ReconciliationReport;
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
@@ -311,9 +314,10 @@ impl Db {
                 .execute("ALTER TABLE htlc_records ADD COLUMN refund_pubkey TEXT", []);
         }
         if !has_claimant_pubkey {
-            let _ = self
-                .conn
-                .execute("ALTER TABLE htlc_records ADD COLUMN claimant_pubkey TEXT", []);
+            let _ = self.conn.execute(
+                "ALTER TABLE htlc_records ADD COLUMN claimant_pubkey TEXT",
+                [],
+            );
         }
 
         Ok(())
@@ -461,12 +465,7 @@ impl Db {
             (intent_id, solver, data_json, created_at)
             VALUES (?1, ?2, ?3, ?4)
             "#,
-            rusqlite::params![
-                bid.intent_id.to_string(),
-                bid.solver,
-                data_json,
-                created_at,
-            ],
+            rusqlite::params![bid.intent_id.to_string(), bid.solver, data_json, created_at,],
         )?;
         Ok(())
     }
@@ -476,8 +475,9 @@ impl Db {
         let mut stmt = self
             .conn
             .prepare("SELECT data_json FROM bids WHERE intent_id = ?1 ORDER BY created_at DESC")?;
-        let rows =
-            stmt.query_map(rusqlite::params![intent_id.to_string()], |row| row.get::<_, String>(0))?;
+        let rows = stmt.query_map(rusqlite::params![intent_id.to_string()], |row| {
+            row.get::<_, String>(0)
+        })?;
         let mut out = Vec::new();
         for r in rows {
             let json = r?;
@@ -504,7 +504,9 @@ impl Db {
 
     /// Load all registered solvers.
     pub fn load_solvers(&self) -> MultichainResult<Vec<String>> {
-        let mut stmt = self.conn.prepare("SELECT solver FROM solvers ORDER BY created_at DESC")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT solver FROM solvers ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
         let mut out = Vec::new();
         for r in rows {
@@ -519,9 +521,9 @@ impl Db {
 
     /// Load a wallet account by user_id.
     pub fn load_wallet_account(&self, user_id: &str) -> MultichainResult<Option<WalletAccount>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT user_id, account_index, created_at FROM wallet_accounts WHERE user_id = ?1")?;
+        let mut stmt = self.conn.prepare(
+            "SELECT user_id, account_index, created_at FROM wallet_accounts WHERE user_id = ?1",
+        )?;
         let mut rows = stmt.query(rusqlite::params![user_id])?;
         if let Some(row) = rows.next()? {
             let created_at: String = row.get(2)?;
@@ -539,7 +541,10 @@ impl Db {
     ///
     /// `Db` is held behind an async mutex, so the max+insert sequence is safe
     /// from races within a single process.
-    pub fn get_or_create_wallet_account(&mut self, user_id: &str) -> MultichainResult<WalletAccount> {
+    pub fn get_or_create_wallet_account(
+        &mut self,
+        user_id: &str,
+    ) -> MultichainResult<WalletAccount> {
         if let Some(account) = self.load_wallet_account(user_id)? {
             return Ok(account);
         }
@@ -620,7 +625,10 @@ impl Db {
     }
 
     /// Load all wallet addresses for a user.
-    pub fn load_wallet_addresses_for_user(&self, user_id: &str) -> MultichainResult<Vec<WalletAddress>> {
+    pub fn load_wallet_addresses_for_user(
+        &self,
+        user_id: &str,
+    ) -> MultichainResult<Vec<WalletAddress>> {
         let mut stmt = self.conn.prepare(
             r#"
             SELECT address, user_id, chain, chain_id, purpose, public_key,
@@ -655,7 +663,12 @@ impl Db {
     }
 
     /// Persist a wallet balance.
-    pub fn save_wallet_balance(&mut self, user_id: &str, asset_key: &str, amount: Amount) -> MultichainResult<()> {
+    pub fn save_wallet_balance(
+        &mut self,
+        user_id: &str,
+        asset_key: &str,
+        amount: Amount,
+    ) -> MultichainResult<()> {
         let updated_at = chrono::Utc::now().to_rfc3339();
         self.conn.execute(
             r#"
@@ -663,20 +676,18 @@ impl Db {
             (user_id, asset_key, amount, updated_at)
             VALUES (?1, ?2, ?3, ?4)
             "#,
-            rusqlite::params![
-                user_id,
-                asset_key,
-                amount.0.to_string(),
-                updated_at,
-            ],
+            rusqlite::params![user_id, asset_key, amount.0.to_string(), updated_at,],
         )?;
         Ok(())
     }
 
     /// Load all wallet balances for a user.
-    pub fn load_wallet_balances_for_user(&self, user_id: &str) -> MultichainResult<Vec<(String, Amount)>> {
+    pub fn load_wallet_balances_for_user(
+        &self,
+        user_id: &str,
+    ) -> MultichainResult<Vec<(String, Amount)>> {
         let mut stmt = self.conn.prepare(
-            "SELECT asset_key, amount FROM wallet_balances WHERE user_id = ?1 ORDER BY asset_key"
+            "SELECT asset_key, amount FROM wallet_balances WHERE user_id = ?1 ORDER BY asset_key",
         )?;
         let mut rows = stmt.query(rusqlite::params![user_id])?;
         let mut out = Vec::new();
@@ -707,7 +718,10 @@ impl Db {
             let current = totals.entry(asset_key).or_insert(0);
             *current = current.saturating_add(amount);
         }
-        Ok(totals.into_iter().map(|(k, v)| (k, Amount::new(v))).collect())
+        Ok(totals
+            .into_iter()
+            .map(|(k, v)| (k, Amount::new(v)))
+            .collect())
     }
 
     // ------------------------------------------------------------------------
@@ -875,7 +889,10 @@ impl Db {
     }
 
     /// Load all withdrawals for a user, newest first.
-    pub fn load_withdrawals_for_user(&self, user_id: &str) -> MultichainResult<Vec<WithdrawalRecord>> {
+    pub fn load_withdrawals_for_user(
+        &self,
+        user_id: &str,
+    ) -> MultichainResult<Vec<WithdrawalRecord>> {
         let mut stmt = self.conn.prepare(
             r#"
             SELECT id, user_id, asset_key, amount, recipient_address, tx_hash,
@@ -1026,9 +1043,10 @@ impl Db {
 
     /// Delete an AMM pool by id.
     pub fn delete_pool(&self, pool_id: u64) -> MultichainResult<usize> {
-        let n = self
-            .conn
-            .execute("DELETE FROM pools WHERE pool_id = ?1", rusqlite::params![pool_id.to_string()])?;
+        let n = self.conn.execute(
+            "DELETE FROM pools WHERE pool_id = ?1",
+            rusqlite::params![pool_id.to_string()],
+        )?;
         Ok(n)
     }
 
@@ -1104,7 +1122,10 @@ impl Db {
     // ------------------------------------------------------------------------
 
     /// Persist a reconciliation report.
-    pub fn save_reconciliation_report(&self, report: &ReconciliationReport) -> MultichainResult<()> {
+    pub fn save_reconciliation_report(
+        &self,
+        report: &ReconciliationReport,
+    ) -> MultichainResult<()> {
         let timestamp = report.timestamp.to_rfc3339();
         self.conn.execute(
             r#"
@@ -1131,7 +1152,10 @@ impl Db {
     }
 
     /// Load the most recent reconciliation reports.
-    pub fn load_reconciliation_reports(&self, limit: usize) -> MultichainResult<Vec<ReconciliationReport>> {
+    pub fn load_reconciliation_reports(
+        &self,
+        limit: usize,
+    ) -> MultichainResult<Vec<ReconciliationReport>> {
         let mut stmt = self.conn.prepare(
             r#"
             SELECT id, timestamp, chain, asset_key, hot_wallet_address,
@@ -1177,9 +1201,9 @@ fn parse_reconciliation_report(row: &Row) -> MultichainResult<ReconciliationRepo
         pool_reserves: Amount::new(pool_reserves.parse::<u128>().map_err(|e| {
             MultichainError::Internal(format!("invalid reconciliation pool_reserves amount: {e}"))
         })?),
-        diff: diff.parse::<i128>().map_err(|e| {
-            MultichainError::Internal(format!("invalid reconciliation diff: {e}"))
-        })?,
+        diff: diff
+            .parse::<i128>()
+            .map_err(|e| MultichainError::Internal(format!("invalid reconciliation diff: {e}")))?,
         alert: alert != 0,
         notes,
     })
@@ -1222,9 +1246,11 @@ fn parse_deposit(row: &Row) -> MultichainResult<DepositRecord> {
         chain_id,
         tx_hash,
         asset_key,
-        amount: Amount::new(amount.parse::<u128>().map_err(|e| {
-            MultichainError::Internal(format!("invalid deposit amount: {e}"))
-        })?),
+        amount: Amount::new(
+            amount
+                .parse::<u128>()
+                .map_err(|e| MultichainError::Internal(format!("invalid deposit amount: {e}")))?,
+        ),
         confirmations: confirmations as u64,
         status,
         created_at: parse_datetime(&created_at)?,
@@ -1251,9 +1277,11 @@ fn parse_withdrawal(row: &Row) -> MultichainResult<WithdrawalRecord> {
         id,
         user_id,
         asset_key,
-        amount: Amount::new(amount.parse::<u128>().map_err(|e| {
-            MultichainError::Internal(format!("invalid withdrawal amount: {e}"))
-        })?),
+        amount: Amount::new(
+            amount.parse::<u128>().map_err(|e| {
+                MultichainError::Internal(format!("invalid withdrawal amount: {e}"))
+            })?,
+        ),
         recipient_address,
         tx_hash,
         status,
@@ -1289,9 +1317,11 @@ fn parse_dex_order(row: &Row) -> MultichainResult<DexOrder> {
         user_id,
         from_asset_key,
         to_asset_key,
-        amount_in: Amount::new(amount_in.parse::<u128>().map_err(|e| {
-            MultichainError::Internal(format!("invalid dex order amount_in: {e}"))
-        })?),
+        amount_in: Amount::new(
+            amount_in.parse::<u128>().map_err(|e| {
+                MultichainError::Internal(format!("invalid dex order amount_in: {e}"))
+            })?,
+        ),
         amount_out: Amount::new(amount_out.parse::<u128>().map_err(|e| {
             MultichainError::Internal(format!("invalid dex order amount_out: {e}"))
         })?),
@@ -1332,16 +1362,22 @@ fn parse_wallet_address(row: &Row) -> MultichainResult<WalletAddress> {
 
     let bytes = match chain.family() {
         zion_l1_types::ChainFamily::Evm => {
-            let s = address.trim_start_matches("0x").trim_start_matches("0X").to_lowercase();
+            let s = address
+                .trim_start_matches("0x")
+                .trim_start_matches("0X")
+                .to_lowercase();
             if s.len() != 40 {
-                return Err(MultichainError::Validation(format!("invalid evm address length: {s}")));
+                return Err(MultichainError::Validation(format!(
+                    "invalid evm address length: {s}"
+                )));
             }
-            hex::decode(&s).map_err(|e| MultichainError::Validation(format!("invalid evm hex: {e}")))?
+            hex::decode(&s)
+                .map_err(|e| MultichainError::Validation(format!("invalid evm hex: {e}")))?
         }
         zion_l1_types::ChainFamily::Solana | zion_l1_types::ChainFamily::Near => {
-            bs58::decode(&address).into_vec().map_err(|e| {
-                MultichainError::Validation(format!("invalid base58 address: {e}"))
-            })?
+            bs58::decode(&address)
+                .into_vec()
+                .map_err(|e| MultichainError::Validation(format!("invalid base58 address: {e}")))?
         }
         _ => Vec::new(),
     };
@@ -1422,7 +1458,9 @@ pub(crate) fn chain_id_from_str(s: &str) -> MultichainResult<ChainId> {
         "ethereum_classic" => Ok(ChainId::EthereumClassic),
         "monero" => Ok(ChainId::Monero),
         "zano" => Ok(ChainId::Zano),
-        _ => Err(MultichainError::Validation(format!("unknown chain id: {s}"))),
+        _ => Err(MultichainError::Validation(format!(
+            "unknown chain id: {s}"
+        ))),
     }
 }
 

@@ -193,8 +193,14 @@ mod tests {
         let next = lwma_next_difficulty(&window);
         let max_allowed = 10_000 * 3 / 2;
         let min_allowed = 10_000 / 2;
-        assert!(next <= max_allowed, "per-block upward clamp violated: {next}");
-        assert!(next >= min_allowed, "per-block downward clamp violated: {next}");
+        assert!(
+            next <= max_allowed,
+            "per-block upward clamp violated: {next}"
+        );
+        assert!(
+            next >= min_allowed,
+            "per-block downward clamp violated: {next}"
+        );
     }
 
     #[test]

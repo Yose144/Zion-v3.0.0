@@ -87,7 +87,9 @@ pub async fn run(cmd: DaoCmd, dao_url: &str) -> Result<()> {
             ui::print_header("DAO Vote (dry-run)");
             ui::print_row("Proposal", &proposal_id);
             ui::print_row("Vote", &vote);
-            ui::print_warn("Full signing + submission coming in Phase 4. No transaction submitted.");
+            ui::print_warn(
+                "Full signing + submission coming in Phase 4. No transaction submitted.",
+            );
             println!();
         }
         DaoCmd::Treasury => {

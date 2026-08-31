@@ -131,11 +131,8 @@ impl NodeHandle {
         let ibd = IbdEngine::new(chain_height);
 
         // 6. Initialize peer manager
-        let peer_manager = PeerManager::new(
-            config.max_inbound,
-            10,
-            std::time::Duration::from_secs(3600),
-        );
+        let peer_manager =
+            PeerManager::new(config.max_inbound, 10, std::time::Duration::from_secs(3600));
 
         // 7. Add seed peers to known set
         for &seed in &config.seed_peers {
@@ -195,11 +192,7 @@ impl NodeHandle {
     }
 
     /// Register a new peer connection.
-    pub async fn register_peer(
-        &mut self,
-        addr: SocketAddr,
-        best_height: u64,
-    ) {
+    pub async fn register_peer(&mut self, addr: SocketAddr, best_height: u64) {
         let peer_id = format!("{addr}");
         self.peer_manager
             .add_known(addr, crate::peer_manager::PeerSource::Outbound)

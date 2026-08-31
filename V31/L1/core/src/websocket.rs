@@ -154,10 +154,7 @@ impl WebSocketServer {
     }
 
     /// Run the WebSocket listener until shutdown is signalled.
-    pub async fn run(
-        &self,
-        addr: SocketAddr,
-    ) -> Result<()> {
+    pub async fn run(&self, addr: SocketAddr) -> Result<()> {
         let listener = TcpListener::bind(addr).await?;
         tracing::info!("WebSocket listening on {}", addr);
 
@@ -222,7 +219,8 @@ impl WebSocketServer {
                         }
                     };
 
-                    let response = Self::handle_client_message(&client_msg, &handler, &clients, peer_addr)?;
+                    let response =
+                        Self::handle_client_message(&client_msg, &handler, &clients, peer_addr)?;
                     if let Some(resp) = response {
                         ws_sender
                             .send(Message::Text(serde_json::to_string(&resp)?))
@@ -268,15 +266,11 @@ impl WebSocketServer {
                     SubscriptionType::PendingTransactions => {
                         Some(json!(handler.pending_transactions()))
                     }
-                    SubscriptionType::Address(addr) => {
-                        Some(json!({
-                            "balance": handler.utxo_balance(addr),
-                            "transactions": handler.address_transactions(addr),
-                        }))
-                    }
-                    SubscriptionType::NetworkStatus => {
-                        Some(handler.network_status())
-                    }
+                    SubscriptionType::Address(addr) => Some(json!({
+                        "balance": handler.utxo_balance(addr),
+                        "transactions": handler.address_transactions(addr),
+                    })),
+                    SubscriptionType::NetworkStatus => Some(handler.network_status()),
                 };
 
                 if let Some(d) = data {
@@ -304,11 +298,7 @@ impl WebSocketServer {
     }
 
     /// Broadcast a notification to all subscribed clients.
-    pub fn broadcast(
-        &self,
-        subscription: &SubscriptionType,
-        data: serde_json::Value,
-    ) {
+    pub fn broadcast(&self, subscription: &SubscriptionType, data: serde_json::Value) {
         let msg = WsMessage::Notification {
             subscription: subscription.clone(),
             data,

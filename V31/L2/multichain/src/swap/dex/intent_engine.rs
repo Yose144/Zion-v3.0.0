@@ -11,8 +11,8 @@ use uuid::Uuid;
 
 use zion_l1_types::{Amount, Asset};
 
-use super::{DexRouter, MultichainError, MultichainResult};
 use super::intent::{IntentAuction, IntentStatus, SolverBid, SwapIntent};
+use super::{DexRouter, MultichainError, MultichainResult};
 use crate::contracts::token_decimals;
 
 /// Off-chain contact / reputation metadata for a registered solver.
@@ -122,7 +122,8 @@ impl IntentEngine {
 
     /// Restore a persisted intent (used at startup).
     pub fn load_intent(&mut self, intent: SwapIntent) {
-        self.auctions.insert(intent.id, (intent, IntentAuction::new()));
+        self.auctions
+            .insert(intent.id, (intent, IntentAuction::new()));
     }
 
     /// Restore a persisted bid (used at startup).
@@ -151,9 +152,7 @@ impl IntentEngine {
             )));
         }
         let Some((intent, auction)) = self.auctions.get_mut(&bid.intent_id) else {
-            return Err(MultichainError::Validation(
-                "intent not found".to_string(),
-            ));
+            return Err(MultichainError::Validation("intent not found".to_string()));
         };
         auction.submit_bid(intent, bid)
     }
@@ -161,9 +160,7 @@ impl IntentEngine {
     /// Settle an intent and return the winning bid, if any.
     pub fn settle(&mut self, id: Uuid) -> MultichainResult<Option<SolverBid>> {
         let Some((intent, auction)) = self.auctions.get_mut(&id) else {
-            return Err(MultichainError::Validation(
-                "intent not found".to_string(),
-            ));
+            return Err(MultichainError::Validation("intent not found".to_string()));
         };
         auction.settle(intent)
     }
@@ -243,8 +240,8 @@ impl IntentEngine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::intent::PathHop;
+    use super::*;
     use zion_l1_types::{AssetId, ChainId};
 
     fn zion_usdc() -> (AssetId, AssetId) {
@@ -311,10 +308,7 @@ mod tests {
         let mut router = DexRouter::new();
         router.add_pool(make_pool(1, zion_asset, usdc_asset));
 
-        let out = engine
-            .settle_and_execute(id, &mut router)
-            .unwrap()
-            .unwrap();
+        let out = engine.settle_and_execute(id, &mut router).unwrap().unwrap();
         assert!(out.0 > 0);
 
         let intent = engine.get_intent(id).unwrap();
@@ -337,14 +331,7 @@ mod tests {
         );
         let id = engine.open_intent(intent);
 
-        let bid = SolverBid::new(
-            id,
-            "rogue",
-            Amount::new(1_100_000),
-            vec![],
-            0,
-            0,
-        );
+        let bid = SolverBid::new(id, "rogue", Amount::new(1_100_000), vec![], 0, 0);
         assert!(engine.submit_bid(bid).is_err());
     }
 }

@@ -203,7 +203,10 @@ impl V3PoolClient {
                                     break;
                                 }
                             }
-                            Ok(PoolMessage::SetDifficulty { difficulty, target_hex }) => {
+                            Ok(PoolMessage::SetDifficulty {
+                                difficulty,
+                                target_hex,
+                            }) => {
                                 debug!(
                                     "V3 set_difficulty: diff={} target={}",
                                     difficulty, target_hex
@@ -359,6 +362,7 @@ impl V3PoolClient {
     /// Submit an AuxPoW (external) share to the pool for forwarding to the
     /// external pool (ZANO, VRSC, etc.).  The `is_vrsc` parameter selects
     /// the correct per-coin result channel.
+    #[allow(clippy::too_many_arguments)]
     pub async fn submit_external_share(
         &self,
         coin: &str,

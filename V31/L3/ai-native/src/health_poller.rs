@@ -202,7 +202,7 @@ pub const SERVICES: &[ServiceProbe] = &[
     ServiceProbe {
         name: "node1-rpc",
         layer: Layer::L1,
-        endpoint: "http://127.0.0.1:9443",
+        endpoint: "http://127.0.0.1:9445",
         health_path: "/health",
         method: ProbeMethod::HttpGet,
     },

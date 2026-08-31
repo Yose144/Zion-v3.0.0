@@ -105,10 +105,7 @@ impl SolverClient for HttpSolverClient {
             req = req.header("X-Solver-Key", key);
         }
         let res = req.send().await.map_err(|e| {
-            MultichainError::Internal(format!(
-                "solver {} HTTP request failed: {}",
-                solver.name, e
-            ))
+            MultichainError::Internal(format!("solver {} HTTP request failed: {}", solver.name, e))
         })?;
 
         if res.status() == reqwest::StatusCode::NO_CONTENT {
@@ -228,14 +225,7 @@ mod tests {
 
     fn sample_bid() -> SolverBid {
         let intent = sample_intent();
-        SolverBid::new(
-            intent.id,
-            "solver-a",
-            Amount::new(950_000),
-            vec![],
-            10,
-            0,
-        )
+        SolverBid::new(intent.id, "solver-a", Amount::new(950_000), vec![], 10, 0)
     }
 
     #[tokio::test]

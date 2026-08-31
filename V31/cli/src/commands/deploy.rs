@@ -13,7 +13,7 @@ pub enum DeployCmd {
         #[arg(short, long)]
         name: String,
         /// Target chain (base, ethereum, arbitrum, optimism, avalanche)
-        #[arg(short, long)]
+        #[arg(long)]
         chain: String,
         /// RPC URL (defaults to chain preset: base→https://mainnet.base.org, etc.)
         #[arg(long)]
@@ -31,7 +31,7 @@ pub enum DeployCmd {
     /// Run the full DeployBase.s.sol script (deploys all ZionDex contracts)
     Script {
         /// Target chain (base, ethereum, etc.)
-        #[arg(short, long)]
+        #[arg(long)]
         chain: String,
         /// RPC URL (defaults to chain preset)
         #[arg(long)]
@@ -125,7 +125,14 @@ pub async fn run(cmd: DeployCmd) -> Result<()> {
     let contracts_dir = contracts_dir();
 
     match cmd {
-        DeployCmd::Contract { name, chain, rpc_url, private_key, args, dry_run } => {
+        DeployCmd::Contract {
+            name,
+            chain,
+            rpc_url,
+            private_key,
+            args,
+            dry_run,
+        } => {
             ui::print_header(&format!("Deploy {} → {}", name, chain));
 
             let path = find_contract_file(&contracts_dir, &name).context(format!(
@@ -203,7 +210,12 @@ pub async fn run(cmd: DeployCmd) -> Result<()> {
             println!();
         }
 
-        DeployCmd::Script { chain, rpc_url, private_key, dry_run } => {
+        DeployCmd::Script {
+            chain,
+            rpc_url,
+            private_key,
+            dry_run,
+        } => {
             ui::print_header(&format!("Deploy Script → {}", chain));
 
             let script_path = "script/DeployBase.s.sol:DeployBase";
@@ -270,7 +282,12 @@ pub async fn run(cmd: DeployCmd) -> Result<()> {
             ui::print_info("Deploy with: zion deploy contract --name <Name> --chain <chain> --private-key <key>");
         }
 
-        DeployCmd::Verify { chain, address, contract, etherscan_api_key } => {
+        DeployCmd::Verify {
+            chain,
+            address,
+            contract,
+            etherscan_api_key,
+        } => {
             ui::print_header("Verify Contract");
             ui::print_row("Chain", &chain);
             ui::print_row("Address", &address);

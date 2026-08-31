@@ -92,8 +92,10 @@ pub mod map {
         value: &HashMap<String, u128>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let as_strings: HashMap<&str, String> =
-            value.iter().map(|(k, v)| (k.as_str(), v.to_string())).collect();
+        let as_strings: HashMap<&str, String> = value
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.to_string()))
+            .collect();
         as_strings.serialize(serializer)
     }
 
@@ -106,10 +108,7 @@ pub mod map {
             f.write_str("a map from strings to u128 values (string or number)")
         }
 
-        fn visit_map<M: MapAccess<'de>>(
-            self,
-            mut access: M,
-        ) -> Result<Self::Value, M::Error> {
+        fn visit_map<M: MapAccess<'de>>(self, mut access: M) -> Result<Self::Value, M::Error> {
             let mut map = HashMap::with_capacity(access.size_hint().unwrap_or(0));
             while let Some((key, U128Value(value))) = access.next_entry::<String, U128Value>()? {
                 map.insert(key, value);

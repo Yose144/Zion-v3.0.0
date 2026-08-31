@@ -24,7 +24,9 @@ enum Commands {
         #[arg(long, help = "Output JSON file (default: stdout)")]
         out: Option<PathBuf>,
     },
-    VerifyDb { db_path: PathBuf },
+    VerifyDb {
+        db_path: PathBuf,
+    },
     /// Dump blocks to JSON
     DumpBlocks {
         db_path: PathBuf,
@@ -34,9 +36,14 @@ enum Commands {
         out: Option<PathBuf>,
     },
     /// Print current tip height
-    TipHeight { db_path: PathBuf },
+    TipHeight {
+        db_path: PathBuf,
+    },
     /// Get a single block by height or hash
-    GetBlock { db_path: PathBuf, id: String },
+    GetBlock {
+        db_path: PathBuf,
+        id: String,
+    },
 }
 
 #[tokio::main]

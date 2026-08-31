@@ -345,7 +345,9 @@ fn main() {
     // -----------------------------------------------------------------------
     if feat("native-verushash") {
         let real_dir = "csrc/verushash/real";
-        let has_real = std::path::Path::new(real_dir).join("verus_hash.cpp").exists();
+        let has_real = std::path::Path::new(real_dir)
+            .join("verus_hash.cpp")
+            .exists();
 
         if has_real {
             // --- Production build: compile real VerusHash C++ sources ---
@@ -763,11 +765,29 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
 
     // sphlib source files (exclude helpers that are #included by other .c files)
     let sph_sources: &[&str] = &[
-        "blake.c", "bmw.c", "cubehash.c", "echo.c", "extra.c",
-        "fugue.c", "gost_streebog.c", "groestl.c", "hamsi.c",
-        "haval.c", "jh.c", "keccak.c", "luffa.c", "lyra2.c",
-        "sha2.c", "shabal.c", "shavite.c", "simd.c", "skein.c",
-        "sph_sha2.c", "sph_sha2big.c", "sponge.c", "tiger.c",
+        "blake.c",
+        "bmw.c",
+        "cubehash.c",
+        "echo.c",
+        "extra.c",
+        "fugue.c",
+        "gost_streebog.c",
+        "groestl.c",
+        "hamsi.c",
+        "haval.c",
+        "jh.c",
+        "keccak.c",
+        "luffa.c",
+        "lyra2.c",
+        "sha2.c",
+        "shabal.c",
+        "shavite.c",
+        "simd.c",
+        "skein.c",
+        "sph_sha2.c",
+        "sph_sha2big.c",
+        "sponge.c",
+        "tiger.c",
         "whirlpool.c",
         // NOTE: aes_helper.c, hamsi_helper.c, haval_helper.c, md_helper.c
         // are #included by other .c files — do NOT compile separately.
@@ -775,15 +795,26 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
 
     // CryptoNight variant source files
     let cn_sources: &[&str] = &[
-        "cryptonight.c", "cryptonight_dark.c", "cryptonight_dark_lite.c",
-        "cryptonight_fast.c", "cryptonight_lite.c", "cryptonight_soft_shell.c",
-        "cryptonight_turtle.c", "cryptonight_turtle_lite.c",
+        "cryptonight.c",
+        "cryptonight_dark.c",
+        "cryptonight_dark_lite.c",
+        "cryptonight_fast.c",
+        "cryptonight_lite.c",
+        "cryptonight_soft_shell.c",
+        "cryptonight_turtle.c",
+        "cryptonight_turtle_lite.c",
     ];
 
     // CryptoNight crypto helper sources
     let cn_crypto_sources: &[&str] = &[
-        "aesb.c", "c_blake256.c", "c_groestl.c", "c_jh.c",
-        "c_keccak.c", "c_skein.c", "hash.c", "oaes_lib.c",
+        "aesb.c",
+        "c_blake256.c",
+        "c_groestl.c",
+        "c_jh.c",
+        "c_keccak.c",
+        "c_skein.c",
+        "hash.c",
+        "oaes_lib.c",
     ];
 
     let mut b = cc::Build::new();
@@ -867,9 +898,15 @@ fn build_ghostrider(target_os: &str, is_msvc: bool) {
     println!("cargo:rerun-if-changed=csrc/ghostrider/real/gr.h");
     // Track all CN source files
     for src in cn_sources.iter() {
-        println!("cargo:rerun-if-changed=csrc/ghostrider/real/cryptonote/{}", src);
+        println!(
+            "cargo:rerun-if-changed=csrc/ghostrider/real/cryptonote/{}",
+            src
+        );
     }
     for src in cn_crypto_sources.iter() {
-        println!("cargo:rerun-if-changed=csrc/ghostrider/real/cryptonote/crypto/{}", src);
+        println!(
+            "cargo:rerun-if-changed=csrc/ghostrider/real/cryptonote/crypto/{}",
+            src
+        );
     }
 }

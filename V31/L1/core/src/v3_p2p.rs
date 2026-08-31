@@ -17,9 +17,7 @@ use tracing::{debug, info, warn};
 use crate::difficulty;
 use crate::peer_manager::{PeerManager, PeerSource};
 use crate::storage::{Storage, StorageError};
-use crate::v3_compat::{
-    validate_v3_block, AccountTransaction, UtxoTransaction, V3AcceptedBlock,
-};
+use crate::v3_compat::{validate_v3_block, AccountTransaction, UtxoTransaction, V3AcceptedBlock};
 
 // ---------------------------------------------------------------------------
 // Wire types
@@ -681,11 +679,7 @@ fn parse_endpoint(addr: &str) -> PeerEndpoint {
 /// V3 peers receiving our blocks don't reject them for zero/empty metadata.
 fn block_to_accepted(block: &crate::v3_compat::V3Block) -> V3AcceptedBlock {
     // Compute total fees from account transactions (non-coinbase).
-    let total_fees_zion: u64 = block
-        .transactions
-        .iter()
-        .map(|t| t.fee_zion)
-        .sum();
+    let total_fees_zion: u64 = block.transactions.iter().map(|t| t.fee_zion).sum();
 
     // Compute body hash from transaction IDs (matches V3 merkle root approach).
     let body_hash_hex = hex::encode(block.header.merkle_root);

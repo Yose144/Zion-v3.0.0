@@ -1,7 +1,7 @@
 //! ZION L1 node binary for Mainnet Alpha.
 //!
 //! Usage:
-//!   zion-node --db-path zion-node.db --rpc 127.0.0.1:9443 --p2p 0.0.0.0:8333
+//!   zion-node --db-path zion-node.db --rpc 127.0.0.1:9445 --p2p 0.0.0.0:8333
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -24,7 +24,7 @@ struct Args {
     db_path: String,
 
     /// RPC bind address.
-    #[arg(long, default_value = "127.0.0.1:9443", env = "ZION_NODE_RPC")]
+    #[arg(long, default_value = "127.0.0.1:9445", env = "ZION_NODE_RPC")]
     rpc: SocketAddr,
 
     /// P2P bind address.
@@ -107,7 +107,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(mh_str) = std::env::var("ZION_MIGRATION_HEIGHT") {
         if let Ok(mh) = mh_str.parse::<u64>() {
             if mh > 0 {
-                info!(migration_height = mh, "pre-fork blocks use legacy 1e12 scale");
+                info!(
+                    migration_height = mh,
+                    "pre-fork blocks use legacy 1e12 scale"
+                );
             }
         }
     }
@@ -180,13 +183,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     );
     if args.soft_fork_activation_height != u64::MAX {
-        info!("soft_fork_activation_height={}", args.soft_fork_activation_height);
+        info!(
+            "soft_fork_activation_height={}",
+            args.soft_fork_activation_height
+        );
     } else {
         info!("soft_fork_activation=disabled");
     }
     if args.node_reward_activation_height != u64::MAX {
         info!("node_reward_address={}", args.node_reward_address);
-        info!("node_reward_activation_height={}", args.node_reward_activation_height);
+        info!(
+            "node_reward_activation_height={}",
+            args.node_reward_activation_height
+        );
     } else {
         info!("node_reward=disabled");
     }

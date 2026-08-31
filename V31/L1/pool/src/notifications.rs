@@ -65,16 +65,32 @@ impl NotificationsConfig {
             .unwrap_or(587);
 
         Self {
-            telegram_bot_token: std::env::var("ZION_TELEGRAM_BOT_TOKEN").ok().filter(|s| !s.is_empty()),
-            telegram_chat_id: std::env::var("ZION_TELEGRAM_CHAT_ID").ok().filter(|s| !s.is_empty()),
-            smtp_host: std::env::var("ZION_SMTP_HOST").ok().filter(|s| !s.is_empty()),
+            telegram_bot_token: std::env::var("ZION_TELEGRAM_BOT_TOKEN")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            telegram_chat_id: std::env::var("ZION_TELEGRAM_CHAT_ID")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            smtp_host: std::env::var("ZION_SMTP_HOST")
+                .ok()
+                .filter(|s| !s.is_empty()),
             smtp_port,
-            smtp_user: std::env::var("ZION_SMTP_USER").ok().filter(|s| !s.is_empty()),
-            smtp_pass: std::env::var("ZION_SMTP_PASS").ok().filter(|s| !s.is_empty()),
-            smtp_from: std::env::var("ZION_SMTP_FROM").ok().filter(|s| !s.is_empty()),
+            smtp_user: std::env::var("ZION_SMTP_USER")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            smtp_pass: std::env::var("ZION_SMTP_PASS")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            smtp_from: std::env::var("ZION_SMTP_FROM")
+                .ok()
+                .filter(|s| !s.is_empty()),
             smtp_to: std::env::var("ZION_SMTP_TO").ok().filter(|s| !s.is_empty()),
-            oasis_api_url: std::env::var("ZION_OASIS_API_URL").ok().filter(|s| !s.is_empty()),
-            block_webhook_url: std::env::var("ZION_BLOCK_WEBHOOK_URL").ok().filter(|s| !s.is_empty()),
+            oasis_api_url: std::env::var("ZION_OASIS_API_URL")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            block_webhook_url: std::env::var("ZION_BLOCK_WEBHOOK_URL")
+                .ok()
+                .filter(|s| !s.is_empty()),
         }
     }
 
@@ -129,7 +145,10 @@ impl Notifier {
             .timeout(Duration::from_secs(10))
             .build()
             .ok();
-        Self { config, http_client }
+        Self {
+            config,
+            http_client,
+        }
     }
 
     // --- composite alert helpers -----------------------------------------
@@ -185,10 +204,7 @@ impl Notifier {
         error!("notify_payout_failed height={} error={}", height, error_msg);
 
         if self.config.telegram_enabled() {
-            let msg = format!(
-                "❌ Payout Failed\nHeight: {}\nError: {}",
-                height, error_msg
-            );
+            let msg = format!("❌ Payout Failed\nHeight: {}\nError: {}", height, error_msg);
             self.send_telegram(&msg);
         }
 
@@ -212,7 +228,10 @@ impl Notifier {
     /// `https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={text}`.
     /// Best-effort: errors are logged, not propagated.
     pub fn send_telegram(&self, text: &str) {
-        let (Some(token), Some(chat_id)) = (&self.config.telegram_bot_token, &self.config.telegram_chat_id) else {
+        let (Some(token), Some(chat_id)) = (
+            &self.config.telegram_bot_token,
+            &self.config.telegram_chat_id,
+        ) else {
             return;
         };
         let Some(client) = &self.http_client else {
@@ -272,12 +291,21 @@ impl Notifier {
             Ok(resp) => {
                 let status = resp.status();
                 if status.is_success() {
-                    info!("block_webhook_sent height={} status={}", block_height, status);
+                    info!(
+                        "block_webhook_sent height={} status={}",
+                        block_height, status
+                    );
                 } else {
-                    warn!("block_webhook_failed height={} status={}", block_height, status);
+                    warn!(
+                        "block_webhook_failed height={} status={}",
+                        block_height, status
+                    );
                 }
             }
-            Err(e) => warn!("block_webhook_unavailable height={} err={}", block_height, e),
+            Err(e) => warn!(
+                "block_webhook_unavailable height={} err={}",
+                block_height, e
+            ),
         }
     }
 
@@ -449,7 +477,10 @@ mod tests {
         let cfg = NotificationsConfig::default();
         let notifier = Notifier::new(cfg.clone());
         assert!(!notifier.config.telegram_enabled());
-        assert!(notifier.http_client.is_some(), "http client should be built");
+        assert!(
+            notifier.http_client.is_some(),
+            "http client should be built"
+        );
     }
 
     /// `notify_block_found` should not panic when all channels are

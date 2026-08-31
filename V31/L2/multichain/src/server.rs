@@ -5,7 +5,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Extension, Path, Query, State},
-    http::{HeaderValue, Method, StatusCode, header::HeaderName},
+    http::{header::HeaderName, HeaderValue, Method, StatusCode},
     response::Json,
     routing::{get, post},
     Router,
@@ -17,19 +17,19 @@ use zion_l1_types::{Address, Amount, Asset, AssetId, ChainId, Hash};
 
 use std::net::SocketAddr;
 
+use crate::audit::{AuditLogger, AuditResult};
 use crate::config::ServerConfig;
 use crate::contracts::{token_decimals, ZionContracts};
 use crate::error::{MultichainError, MultichainResult};
 use crate::node_rewards::{HeartbeatRequest, NodeRecord, PayoutRecord, RegisterNodeRequest};
-use crate::audit::{AuditLogger, AuditResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::reconciliation::ReconciliationReport;
 use crate::service::MultichainService;
-use crate::zis_auth::{address_from_linked, resolve_zis_auth, ZisClient, ZisUser};
 use crate::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
 use crate::swap::dex::solver_network::HttpSolverClient;
 use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
+use crate::zis_auth::{address_from_linked, resolve_zis_auth, ZisClient, ZisUser};
 use zion_pool::StratumServer;
 
 /// Build the CORS allow-origin list for the multichain HTTP gateway.
@@ -103,7 +103,18 @@ async fn record_audit(
     result: AuditResult,
     error: Option<&str>,
 ) {
-    if let Err(e) = audit.log(user_id, action, resource_type, resource_id, details, result, error).await {
+    if let Err(e) = audit
+        .log(
+            user_id,
+            action,
+            resource_type,
+            resource_id,
+            details,
+            result,
+            error,
+        )
+        .await
+    {
         tracing::warn!("failed to record audit log: {e}");
     }
 }
@@ -164,7 +175,8 @@ impl ApiServer {
                     Ok(None) => {
                         let header = "00".repeat(80);
                         let target = "f".repeat(64);
-                        stratum_broadcast.broadcast_job("zion_1", &header, &target, &target, 6_000_000, "");
+                        stratum_broadcast
+                            .broadcast_job("zion_1", &header, &target, &target, 6_000_000, "");
                     }
                     Err(e) => {
                         tracing::warn!("failed to fetch zion block template: {}", e);
@@ -248,7 +260,10 @@ impl ApiServer {
             .route("/v1/swap/execute", post(swap_execute))
             .route("/v1/swap/execute-v2", post(swap_execute_v2))
             .route("/v1/swap/htlc", post(swap_htlc))
-            .route("/v1/swap/order/:id/htlc-source-lock", post(swap_htlc_source_lock))
+            .route(
+                "/v1/swap/order/:id/htlc-source-lock",
+                post(swap_htlc_source_lock),
+            )
             .route("/v1/swap/order/:id/htlc-claim", post(swap_htlc_claim))
             .route("/v1/swap/order/:id", get(get_swap_order))
             .route("/v1/swap/intent", post(create_intent))
@@ -273,7 +288,10 @@ impl ApiServer {
             .route("/v1/nodes", get(list_nodes))
             .route("/v1/nodes/payouts", get(node_reward_payouts))
             .route("/v1/admin/reconciliation", get(get_reconciliation_reports))
-            .route("/v1/admin/reconciliation/trigger", post(trigger_reconciliation))
+            .route(
+                "/v1/admin/reconciliation/trigger",
+                post(trigger_reconciliation),
+            )
             .layer(axum::middleware::from_fn_with_state(
                 state.limiter.clone(),
                 auth_rate_limit,
@@ -382,7 +400,6 @@ async fn health() -> &'static str {
     "ok"
 }
 
-
 async fn pool_stats(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
     match state.service.pool_stats() {
         Some(stats) => Ok(Json(stats)),
@@ -462,9 +479,11 @@ async fn wallet_address(
     let user = resolve_auth_user(state.zis_client.enabled, user)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let addr = match user.as_ref().and_then(|u| u.linked_address_for_chain(chain)) {
-        Some(linked) => address_from_linked(chain, linked)
-            .map_err(|_| StatusCode::BAD_REQUEST)?,
+    let addr = match user
+        .as_ref()
+        .and_then(|u| u.linked_address_for_chain(chain))
+    {
+        Some(linked) => address_from_linked(chain, linked).map_err(|_| StatusCode::BAD_REQUEST)?,
         None => state
             .service
             .wallet_address(chain, req.account, req.index)
@@ -614,19 +633,29 @@ async fn wallet_withdraw(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<WalletWithdrawRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let user = resolve_auth_user(state.zis_client.enabled, user).map_err(|status| {
-        (status, Json(serde_json::json!({ "error": "unauthorized" })))
-    })?;
+    let user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|status| (status, Json(serde_json::json!({ "error": "unauthorized" }))))?;
     let user_id = match user {
         Some(u) => u.id,
-        None => return Err((StatusCode::UNAUTHORIZED, Json(serde_json::json!({ "error": "unauthorized" })))),
+        None => {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({ "error": "unauthorized" })),
+            ))
+        }
     };
 
     let asset = asset_from_input(&req.asset).map_err(|e| {
-        (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })))
+        (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
     })?;
     let amount = req.amount.parse::<u128>().map_err(|e| {
-        (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": format!("invalid amount: {e}") })))
+        (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": format!("invalid amount: {e}") })),
+        )
     })?;
 
     let details = serde_json::json!({
@@ -797,18 +826,26 @@ async fn swap_quote_multi(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     match state
         .service
-        .dex_quote_multi(&req.from, &req.to, Amount::new(req.amount), req.n, req.max_hops)
+        .dex_quote_multi(
+            &req.from,
+            &req.to,
+            Amount::new(req.amount),
+            req.n,
+            req.max_hops,
+        )
         .await
     {
         Ok(paths) => {
             let routes: Vec<serde_json::Value> = paths
                 .iter()
-                .map(|q| serde_json::json!({
-                    "route": q.route,
-                    "expected_out": q.expected_out.0.to_string(),
-                    "slippage_bps": q.slippage_bps,
-                    "total_fee_bps": q.total_fee_bps,
-                }))
+                .map(|q| {
+                    serde_json::json!({
+                        "route": q.route,
+                        "expected_out": q.expected_out.0.to_string(),
+                        "slippage_bps": q.slippage_bps,
+                        "total_fee_bps": q.total_fee_bps,
+                    })
+                })
                 .collect();
             Ok(Json(serde_json::json!({
                 "from": req.from,
@@ -858,17 +895,24 @@ async fn swap_execute_v2(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<SwapExecuteV2Request>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let user = resolve_auth_user(state.zis_client.enabled, user).map_err(|status| {
-        (status, Json(serde_json::json!({ "error": "unauthorized" })))
-    })?;
+    let user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|status| (status, Json(serde_json::json!({ "error": "unauthorized" }))))?;
     let user_id = match user {
         Some(u) => u.id,
-        None => return Err((StatusCode::UNAUTHORIZED, Json(serde_json::json!({ "error": "unauthorized" })))),
+        None => {
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({ "error": "unauthorized" })),
+            ))
+        }
     };
 
     let recipient = match &req.recipient {
         Some(addr) => Some(parse_address_string(addr, req.to.id.chain).map_err(|e| {
-            (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })))
+            (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            )
         })?),
         None => None,
     };
@@ -995,7 +1039,10 @@ async fn deploy_bridge(
     if req.fee_bps >= 10_000 {
         return Err(StatusCode::BAD_REQUEST);
     }
-    state.service.add_bridge_edge(req.from, req.to, req.fee_bps).await;
+    state
+        .service
+        .add_bridge_edge(req.from, req.to, req.fee_bps)
+        .await;
     Ok(Json(serde_json::json!({"ok": true})))
 }
 
@@ -1121,12 +1168,17 @@ fn bad_request(msg: &str) -> (StatusCode, Json<serde_json::Value>) {
     )
 }
 
-fn decode_pubkey_hex(hex: &Option<String>) -> Result<Option<[u8; 32]>, (StatusCode, Json<serde_json::Value>)> {
+fn decode_pubkey_hex(
+    hex: &Option<String>,
+) -> Result<Option<[u8; 32]>, (StatusCode, Json<serde_json::Value>)> {
     match hex.as_deref() {
         None | Some("") => Ok(None),
         Some(s) => {
             let bytes = hex::decode(s).map_err(|_| bad_request("invalid pubkey hex"))?;
-            bytes.try_into().map_err(|_| bad_request("pubkey must be 32 bytes")).map(Some)
+            bytes
+                .try_into()
+                .map_err(|_| bad_request("pubkey must be 32 bytes"))
+                .map(Some)
         }
     }
 }
@@ -1136,11 +1188,11 @@ async fn htlc_lock(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcLockRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
-    let hashlock = Hash::from_hex(&req.hash_hex)
-        .ok_or_else(|| bad_request("invalid hash_hex"))?;
+    let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
 
     let source = build_endpoint(
         state.service.as_ref(),
@@ -1159,7 +1211,12 @@ async fn htlc_lock(
     )
     .map_err(|e| bad_request(&e.to_string()))?;
 
-    let mut transfer = Transfer::new(format!("htlc-lock-{}", req.hash_hex), TransferDirection::Htlc, source, target);
+    let mut transfer = Transfer::new(
+        format!("htlc-lock-{}", req.hash_hex),
+        TransferDirection::Htlc,
+        source,
+        target,
+    );
     transfer.hashlock = Some(hashlock);
     transfer.timelock = Some(req.timelock);
     transfer.source_pubkey = decode_pubkey_hex(&req.source_pubkey_hex)?;
@@ -1189,17 +1246,24 @@ async fn htlc_claim(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcClaimRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
-    let hashlock = Hash::from_hex(&req.hash_hex)
-        .ok_or_else(|| bad_request("invalid hash_hex"))?;
+    let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
         .service
         .htlc()
         .get_record(&req.hash_hex)
         .await
-        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(serde_json::json!({"message": "HTLC not found"}))))?;
-    let recipient = req.target_address.unwrap_or(record.counterparty_addr.clone());
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"message": "HTLC not found"})),
+            )
+        })?;
+    let recipient = req
+        .target_address
+        .unwrap_or(record.counterparty_addr.clone());
 
     let secret = hex::decode(&req.secret_hex).map_err(|_| bad_request("invalid secret_hex"))?;
 
@@ -1221,10 +1285,20 @@ async fn htlc_claim(
     )
     .map_err(|e| bad_request(&e.to_string()))?;
 
-    let mut transfer = Transfer::new(format!("htlc-claim-{}", req.hash_hex), TransferDirection::Htlc, source, target);
+    let mut transfer = Transfer::new(
+        format!("htlc-claim-{}", req.hash_hex),
+        TransferDirection::Htlc,
+        source,
+        target,
+    );
     transfer.hashlock = Some(hashlock);
 
-    match state.service.htlc().claim(&secret, &recipient, &mut transfer).await {
+    match state
+        .service
+        .htlc()
+        .claim(&secret, &recipient, &mut transfer)
+        .await
+    {
         Ok(()) => Ok(Json(serde_json::json!({
             "hash": req.hash_hex,
             "status": transfer.status,
@@ -1247,16 +1321,21 @@ async fn htlc_refund(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcRefundRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
-    let hashlock = Hash::from_hex(&req.hash_hex)
-        .ok_or_else(|| bad_request("invalid hash_hex"))?;
+    let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
         .service
         .htlc()
         .get_record(&req.hash_hex)
         .await
-        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(serde_json::json!({"message": "HTLC not found"}))))?;
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"message": "HTLC not found"})),
+            )
+        })?;
     let locker = req.source_address.unwrap_or(record.locker_address.clone());
 
     let source = build_endpoint(
@@ -1277,7 +1356,12 @@ async fn htlc_refund(
     )
     .map_err(|e| bad_request(&e.to_string()))?;
 
-    let mut transfer = Transfer::new(format!("htlc-refund-{}", req.hash_hex), TransferDirection::Htlc, source, target);
+    let mut transfer = Transfer::new(
+        format!("htlc-refund-{}", req.hash_hex),
+        TransferDirection::Htlc,
+        source,
+        target,
+    );
     transfer.hashlock = Some(hashlock);
     transfer.timelock = Some(record.expires_at as u64);
 
@@ -1327,10 +1411,10 @@ async fn swap_htlc(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcSwapCreateRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
 
-    let hashlock = Hash::from_hex(&req.hash_hex)
-        .ok_or_else(|| bad_request("invalid hash_hex"))?;
+    let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
 
     let operator_target = parse_address_string(&req.operator_target_address, req.to.id.chain)
         .map_err(|e| bad_request(&e.to_string()))?;
@@ -1390,7 +1474,8 @@ async fn swap_htlc_source_lock(
     Path(order_id): Path<String>,
     Json(req): Json<HtlcSwapSourceLockRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
 
     match state
         .service
@@ -1420,12 +1505,14 @@ async fn swap_htlc_claim(
     Path(order_id): Path<String>,
     Json(req): Json<HtlcSwapClaimRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
 
     let secret = hex::decode(&req.secret_hex).map_err(|_| bad_request("invalid secret_hex"))?;
 
-    let source_operator = parse_address_string(&req.source_operator_recipient, req.source_asset.id.chain)
-        .map_err(|e| bad_request(&e.to_string()))?;
+    let source_operator =
+        parse_address_string(&req.source_operator_recipient, req.source_asset.id.chain)
+            .map_err(|e| bad_request(&e.to_string()))?;
     let source_user = req
         .source_user_address
         .as_deref()
@@ -1562,7 +1649,9 @@ async fn execute_intent(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     match state.service.execute_intent(id).await {
-        Ok(Some(out)) => Ok(Json(serde_json::json!({ "executed": true, "out": out.0.to_string() }))),
+        Ok(Some(out)) => Ok(Json(
+            serde_json::json!({ "executed": true, "out": out.0.to_string() }),
+        )),
         Ok(None) => Ok(Json(serde_json::json!({ "executed": false, "out": null }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
@@ -1600,11 +1689,12 @@ async fn solve_intent(
 ) -> Result<Json<SolverBid>, StatusCode> {
     let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     if let Some(expected) = &state.solver_api_key {
-        let provided = headers
-            .get("X-Solver-Key")
-            .and_then(|v| v.to_str().ok());
+        let provided = headers.get("X-Solver-Key").and_then(|v| v.to_str().ok());
         if provided != Some(expected) {
-            tracing::warn!("solver API key mismatch from {:?}", headers.get("x-forwarded-for"));
+            tracing::warn!(
+                "solver API key mismatch from {:?}",
+                headers.get("x-forwarded-for")
+            );
             return Err(StatusCode::UNAUTHORIZED);
         }
     }
@@ -1684,7 +1774,11 @@ async fn broadcast_intent(
         }
     }
     let client = Arc::new(HttpSolverClient::new().with_solver_api_keys(keys));
-    match state.service.broadcast_intent::<HttpSolverClient>(id, client).await {
+    match state
+        .service
+        .broadcast_intent::<HttpSolverClient>(id, client)
+        .await
+    {
         Ok(results) => {
             let out: Vec<serde_json::Value> = results
                 .into_iter()
@@ -1715,7 +1809,9 @@ fn parse_address_string(encoded: &str, chain: ChainId) -> MultichainResult<Addre
             let bytes = hex::decode(hex)
                 .map_err(|_| MultichainError::Internal("invalid evm address hex".to_string()))?;
             if bytes.len() != 20 {
-                return Err(MultichainError::Validation("evm address must be 20 bytes".to_string()));
+                return Err(MultichainError::Validation(
+                    "evm address must be 20 bytes".to_string(),
+                ));
             }
             bytes
         }
@@ -1786,7 +1882,13 @@ fn asset_from_input(key: &str) -> MultichainResult<Asset> {
         match contract {
             Some(c) => {
                 let decimals = token_decimals(chain.as_str(), &ticker, Some(&c));
-                Ok(Asset::with_contract(chain, ticker.clone(), c, decimals, ticker))
+                Ok(Asset::with_contract(
+                    chain,
+                    ticker.clone(),
+                    c,
+                    decimals,
+                    ticker,
+                ))
             }
             None => Ok(Asset::native(
                 chain,
@@ -1808,8 +1910,7 @@ async fn register_node(
     Json(req): Json<RegisterNodeRequest>,
 ) -> Result<Json<NodeRecord>, StatusCode> {
     let user = user.ok_or(StatusCode::UNAUTHORIZED)?;
-    match state.service.node_rewards().register(user.0.id, req).await
-    {
+    match state.service.node_rewards().register(user.0.id, req).await {
         Ok(record) => Ok(Json(record)),
         Err(e) => {
             tracing::warn!("node register failed: {e}");

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{anyhow, bail};
 use clap::{Parser, Subcommand};
 use tokio::sync::watch;
 
@@ -11,10 +11,11 @@ use zion_l1_types::{Address, Amount, Asset, ChainId};
 mod commands;
 mod menu;
 mod rpc;
+mod tui;
 mod ui;
 
-use zion_core::node::{Node, NodeConfig};
 use crate::commands::node_rewards::{HeartbeatArgs, RegisterArgs};
+use zion_core::node::{Node, NodeConfig};
 use zion_miner::config::MinerConfig;
 use zion_miner::runtime::MinerRuntime;
 use zion_multichain::config::MultichainConfig;
@@ -39,6 +40,8 @@ pub struct Cli {
 enum Command {
     /// Open the interactive operator menu (arrow-key navigation).
     Menu,
+    /// Launch an interactive ratatui dashboard.
+    Tui,
     /// Status of the Multi-Chain layer.
     Status,
     /// Wallet commands.
@@ -207,7 +210,7 @@ enum WalletCommand {
     /// Query native balance for an address.
     Balance {
         /// Chain id, e.g. bitcoin, base, zion-l1.
-        #[arg(short, long)]
+        #[arg(long)]
         chain: String,
         /// Encoded address string.
         #[arg(short, long)]
@@ -216,7 +219,7 @@ enum WalletCommand {
     /// Derive a wallet address from the service keyring.
     Address {
         /// Chain id.
-        #[arg(short, long)]
+        #[arg(long)]
         chain: String,
         /// BIP44 account.
         #[arg(short, long, default_value = "0")]
@@ -228,7 +231,7 @@ enum WalletCommand {
     /// Sign a message with the service keyring.
     Sign {
         /// Chain id.
-        #[arg(short, long)]
+        #[arg(long)]
         chain: String,
         /// Message to sign.
         #[arg(short, long)]
@@ -421,7 +424,7 @@ struct NodeStartArgs {
     #[arg(short, long, default_value = "zion-node.db")]
     db_path: String,
     /// RPC bind address.
-    #[arg(short, long, default_value = "127.0.0.1:9443")]
+    #[arg(short, long, default_value = "127.0.0.1:9445")]
     rpc: SocketAddr,
     /// P2P bind address.
     #[arg(short, long, default_value = "0.0.0.0:8333")]
@@ -561,6 +564,9 @@ async fn main() -> anyhow::Result<()> {
         Command::Menu => {
             menu::run_menu(&service).await?;
         }
+        Command::Tui => {
+            tui::run_tui(Arc::clone(&service), "127.0.0.1:9445").await?;
+        }
         Command::Status => {
             println!("Registered chains: {:?}", service.chains());
             let health = service.health().await;
@@ -606,7 +612,10 @@ async fn main() -> anyhow::Result<()> {
                         .join("wallet.json")
                 });
                 if path.exists() && !force {
-                    bail!("wallet file already exists: {} (use --force to overwrite)", path.display());
+                    bail!(
+                        "wallet file already exists: {} (use --force to overwrite)",
+                        path.display()
+                    );
                 }
                 let (sk, pk) = zion_core::crypto::generate_keypair();
                 let address = zion_core::crypto::derive_address(&pk.to_bytes());
@@ -650,7 +659,16 @@ async fn main() -> anyhow::Result<()> {
                 println!("Address:     {}", address);
                 println!("Public key:  {}", public_key);
             }
-            WalletCommand::Send { wallet, secret_key_hex, to, amount, fee, memo, rpc, dry_run } => {
+            WalletCommand::Send {
+                wallet,
+                secret_key_hex,
+                to,
+                amount,
+                fee,
+                memo,
+                rpc,
+                dry_run,
+            } => {
                 // Reconstruct signing key and determine sender address
                 let (signing_key, sender_address) = if let Some(sk_hex) = secret_key_hex {
                     let sk_bytes = zion_core::crypto::from_hex(&sk_hex)
@@ -711,13 +729,35 @@ async fn main() -> anyhow::Result<()> {
                 }
 
                 // Fetch UTXOs from L1 RPC
-                let utxos = fetch_utxos(&rpc, &sender_address).await?;
+                let mut utxos = crate::rpc::node_rpc::fetch_utxos(&rpc, &sender_address).await?;
+
+                // Filter out immature coinbase UTXOs (need 100 confirmations).
+                let chain_info = crate::rpc::node_rpc::call(&rpc, "getChainInfo", serde_json::json!({})).await?;
+                let chain_height = chain_info["result"]["chain_height"].as_u64().unwrap_or(0);
+                let maturity = 100u64;
+                let before = utxos.len();
+                utxos.retain(|u| {
+                    if u.is_coinbase {
+                        let age = chain_height.saturating_sub(u.block_height);
+                        age >= maturity
+                    } else {
+                        true
+                    }
+                });
+                if utxos.len() < before {
+                    println!("Filtered {} immature coinbase UTXOs (age < {} blocks)", before - utxos.len(), maturity);
+                }
+
                 if utxos.is_empty() {
                     bail!("no spendable UTXOs found for address {}", sender_address);
                 }
 
                 let total_available: u64 = utxos.iter().map(|u| u.amount).sum();
-                println!("Available: {} flowers ({} UTXOs)", total_available, utxos.len());
+                println!(
+                    "Available: {} flowers ({} UTXOs)",
+                    total_available,
+                    utxos.len()
+                );
 
                 // Build and sign V31 native UTXO transaction. `--memo` is stored
                 // as raw UTF-8 bytes in the transaction and is part of the
@@ -746,7 +786,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("  TX hash: {}", tx_id);
 
                 // Submit to L1 RPC
-                match submit_utxo_tx_json(&rpc, &tx_json).await {
+                match crate::rpc::node_rpc::submit_utxo_tx_json(&rpc, &tx_json).await {
                     Ok(result) => println!("Broadcast OK. Result: {}", result),
                     Err(e) => bail!("broadcast failed: {}", e),
                 }
@@ -954,12 +994,23 @@ async fn main() -> anyhow::Result<()> {
         },
         Command::Service(svc) => handle_service_command(svc)?,
         Command::Dao(args) => commands::dao::run(args.command, "http://127.0.0.1:8092").await?,
-        Command::AtomicSwap(args) => commands::atomic_swap::run(args.command, "http://127.0.0.1:8093").await?,
+        Command::AtomicSwap(args) => {
+            commands::atomic_swap::run(args.command, "http://127.0.0.1:8093").await?
+        }
         Command::Warp(args) => commands::warp::run(args.command, "http://127.0.0.1:8453").await?,
         Command::Monitor(args) => {
-            commands::monitor::run(args.command, "127.0.0.1:9445", "127.0.0.1:8444", "127.0.0.1:8453", "127.0.0.1:8092").await?;
+            commands::monitor::run(
+                args.command,
+                "127.0.0.1:9445",
+                "127.0.0.1:8444",
+                "127.0.0.1:8453",
+                "127.0.0.1:8092",
+            )
+            .await?;
         }
-        Command::Topology(args) => commands::topology::run(args.command, "127.0.0.1:9445", "127.0.0.1:8453").await?,
+        Command::Topology(args) => {
+            commands::topology::run(args.command, "127.0.0.1:9445", "127.0.0.1:8453").await?
+        }
         Command::Explorer(args) => commands::explorer::run(args.command, "127.0.0.1:9445").await?,
         Command::Onboard(args) => commands::onboard::run(args.command).await?,
         Command::Deploy(args) => commands::deploy::run(args.command).await?,
@@ -1033,42 +1084,6 @@ fn endpoint_from_cli(
     })
 }
 
-/// Strip any URL scheme/path from an RPC endpoint so it can be used
-/// with `tokio::net::TcpStream::connect`.
-fn clean_rpc_url(rpc_url: &str) -> &str {
-    let s = rpc_url.trim();
-    let s = s
-        .strip_prefix("http://")
-        .or(s.strip_prefix("https://"))
-        .unwrap_or(s);
-    s.split_once('/').map(|(h, _)| h).unwrap_or(s)
-}
-
-/// Send a single JSON-RPC request and read the first response line.
-async fn rpc_call_line(rpc_url: &str, request: &serde_json::Value) -> anyhow::Result<serde_json::Value> {
-    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-    use tokio::net::TcpStream;
-
-    let url = clean_rpc_url(rpc_url);
-    let mut stream = TcpStream::connect(url)
-        .await
-        .with_context(|| format!("failed to connect to RPC at {url}"))?;
-
-    let payload = format!("{}\n", serde_json::to_string(request)?);
-    stream.write_all(payload.as_bytes()).await?;
-    stream.flush().await?;
-
-    let (reader, _) = stream.split();
-    let mut reader = BufReader::new(reader);
-    let mut line = String::new();
-    reader
-        .read_line(&mut line)
-        .await
-        .with_context(|| "failed to read RPC response")?;
-
-    serde_json::from_str(&line).with_context(|| "failed to parse RPC response")
-}
-
 fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
     use zion_l1_types::ChainFamily;
     match chain_id.family() {
@@ -1081,72 +1096,6 @@ fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
         }
         _ => Ok(vec![]),
     }
-}
-
-/// Fetch spendable UTXOs for an address from the L1 RPC.
-async fn fetch_utxos(
-    rpc_url: &str,
-    address: &str,
-) -> anyhow::Result<Vec<zion_core::v31_wallet::SpendableUtxo>> {
-    let request = serde_json::json!({
-        "jsonrpc": "2.0",
-        "method": "getUtxos",
-        "params": {"address": address},
-        "id": 1
-    });
-    let response = rpc_call_line(rpc_url, &request).await?;
-
-    if let Some(err) = response["error"]["message"].as_str() {
-        bail!("getUtxos error: {}", err);
-    }
-
-    let utxos = response["result"]["utxos"]
-        .as_array()
-        .ok_or_else(|| anyhow!("no utxos field in RPC response"))?;
-
-    let result: Vec<zion_core::v31_wallet::SpendableUtxo> = utxos
-        .iter()
-        .filter_map(|u| {
-            let tx_hash_hex = u["tx_hash"].as_str()?;
-            let output_index = u["output_index"].as_u64()? as u32;
-            let amount = u["amount"].as_u64()?;
-            let tx_hash = hex::decode(tx_hash_hex).ok()?;
-            if tx_hash.len() != 32 {
-                return None;
-            }
-            let mut hash_arr = [0u8; 32];
-            hash_arr.copy_from_slice(&tx_hash);
-            Some(zion_core::v31_wallet::SpendableUtxo {
-                tx_hash: hash_arr,
-                output_index,
-                amount,
-                address: address.to_string(),
-                script: hex::decode(u["script_hex"].as_str().unwrap_or("")).unwrap_or_default(),
-                block_height: u["block_height"].as_u64().unwrap_or(0),
-                is_coinbase: u["is_coinbase"].as_bool().unwrap_or(false),
-            })
-        })
-        .collect();
-
-    Ok(result)
-}
-
-/// Submit a signed V31 native UTXO transaction to the L1 RPC.
-async fn submit_utxo_tx_json(rpc_url: &str, tx_json: &serde_json::Value) -> anyhow::Result<String> {
-    let request = serde_json::json!({
-        "jsonrpc": "2.0",
-        "method": "submitUtxoTransaction",
-        "params": {"transaction": tx_json},
-        "id": 1
-    });
-    let response = rpc_call_line(rpc_url, &request).await?;
-
-    if let Some(err) = response["error"]["message"].as_str() {
-        bail!("submitUtxoTransaction error: {}", err);
-    }
-
-    let result = response["result"].to_string();
-    Ok(result)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1162,7 +1111,10 @@ fn service_unit(name: &str) -> anyhow::Result<String> {
         "multichain" | "mc" => "zion-v31-multichain.service",
         "dao" => "zion-v31-dao.service",
         "all" => "all",
-        other => bail!("unknown service: {} (valid: node, pool, miner, multichain, dao, all)", other),
+        other => bail!(
+            "unknown service: {} (valid: node, pool, miner, multichain, dao, all)",
+            other
+        ),
     };
     Ok(unit.to_string())
 }

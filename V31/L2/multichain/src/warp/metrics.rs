@@ -69,11 +69,16 @@ impl WarpMetrics {
              # HELP warp_success_rate Ratio of completed to initiated transfers.\n\
              # TYPE warp_success_rate gauge\n\
              warp_success_rate{{node=\"{}\"}} {:.6}\n",
-            node_id, s.transfers_initiated,
-            node_id, s.transfers_completed,
-            node_id, s.transfers_failed,
-            node_id, s.transfers_pending,
-            node_id, s.success_rate,
+            node_id,
+            s.transfers_initiated,
+            node_id,
+            s.transfers_completed,
+            node_id,
+            s.transfers_failed,
+            node_id,
+            s.transfers_pending,
+            node_id,
+            s.success_rate,
         )
     }
 

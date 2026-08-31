@@ -17,11 +17,11 @@ use zion_pool::api::PoolApi;
 use zion_pool::auxpow_bridge::MultiAuxPowBridge;
 use zion_pool::auxpow_runtime;
 use zion_pool::deferred_payout::{
-    spawn_deferred_payout_processor, spawn_payout_confirmation_sweep,
-    DeferredPayoutConfig, DeferredPayoutQueue,
+    spawn_deferred_payout_processor, spawn_payout_confirmation_sweep, DeferredPayoutConfig,
+    DeferredPayoutQueue,
 };
 use zion_pool::ncl_gateway::{NclGatewayClient, NclHeartbeatConfig, NclPricing};
-use zion_pool::notifications::{Notifier, NotificationsConfig};
+use zion_pool::notifications::{NotificationsConfig, Notifier};
 use zion_pool::payout::PayoutSweeper;
 use zion_pool::revenue_scheduler::RevenueScheduler;
 use zion_pool::share_relay::ShareRelayConfig;
@@ -44,7 +44,12 @@ struct Args {
     l1_rpc_url: Option<String>,
 
     /// Pool/miner address for coinbase in block templates.
-    #[arg(short, long, env = "ZION_POOL_MINER_ADDRESS", default_value = "zion1pool")]
+    #[arg(
+        short,
+        long,
+        env = "ZION_POOL_MINER_ADDRESS",
+        default_value = "zion1pool"
+    )]
     miner_address: String,
 
     /// PPLNS state persistence path.
@@ -140,7 +145,11 @@ async fn main() -> anyhow::Result<()> {
         pool_address,
         worker: String::new(),
         password: String::new(),
-        l1_rpc_url: if l1_rpc_url.is_empty() { None } else { Some(l1_rpc_url.clone()) },
+        l1_rpc_url: if l1_rpc_url.is_empty() {
+            None
+        } else {
+            Some(l1_rpc_url.clone())
+        },
         state_path: args.state_path,
         reconnect_rate_limit: Default::default(),
         fee_config,
@@ -164,7 +173,10 @@ async fn main() -> anyhow::Result<()> {
                 Some(Arc::new(s))
             }
             Err(e) => {
-                error!("failed to open share store at {}: {} — block/payout recording disabled", path, e);
+                error!(
+                    "failed to open share store at {}: {} — block/payout recording disabled",
+                    path, e
+                );
                 None
             }
         }
@@ -176,10 +188,16 @@ async fn main() -> anyhow::Result<()> {
     let notif_config = NotificationsConfig::from_env();
     let notifier = Arc::new(Notifier::new(notif_config.clone()));
     if notif_config.telegram_enabled() {
-        info!("notifications: Telegram enabled (chat_id={:?})", notif_config.telegram_chat_id);
+        info!(
+            "notifications: Telegram enabled (chat_id={:?})",
+            notif_config.telegram_chat_id
+        );
     }
     if notif_config.smtp_enabled() {
-        info!("notifications: SMTP enabled (host={:?})", notif_config.smtp_host);
+        info!(
+            "notifications: SMTP enabled (host={:?})",
+            notif_config.smtp_host
+        );
     }
     if notif_config.oasis_enabled() {
         info!("notifications: OASIS webhook enabled");
@@ -194,7 +212,10 @@ async fn main() -> anyhow::Result<()> {
     {
         let rs = revenue_scheduler.lock().unwrap();
         if rs.is_multistream() {
-            info!("revenue_scheduler: multi-stream enabled — {}", rs.describe_plan());
+            info!(
+                "revenue_scheduler: multi-stream enabled — {}",
+                rs.describe_plan()
+            );
         }
     }
     let server = server.with_revenue_scheduler(revenue_scheduler);
@@ -250,11 +271,8 @@ async fn main() -> anyhow::Result<()> {
                     profile.pool_address(),
                     &wallet[..wallet.len().min(12)]
                 );
-                let client = zion_pool::revenue_proxy::client_from_profile(
-                    &profile,
-                    &wallet,
-                    &worker,
-                );
+                let client =
+                    zion_pool::revenue_proxy::client_from_profile(&profile, &wallet, &worker);
                 tokio::spawn(async move {
                     client.run_loop().await;
                 });
@@ -274,10 +292,19 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // ── Deferred payout processor ─────────────────────────────────────────
-    let deferred_queue: DeferredPayoutQueue = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let deferred_queue: DeferredPayoutQueue =
+        std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
     let deferred_cfg = DeferredPayoutConfig::from_env();
-    let deferred_rpc = if l1_rpc_url.is_empty() { None } else { Some(l1_rpc_url.clone()) };
-    let deferred_wallet = if pool_fee_address.is_empty() { None } else { Some(pool_fee_address.clone()) };
+    let deferred_rpc = if l1_rpc_url.is_empty() {
+        None
+    } else {
+        Some(l1_rpc_url.clone())
+    };
+    let deferred_wallet = if pool_fee_address.is_empty() {
+        None
+    } else {
+        Some(pool_fee_address.clone())
+    };
     let deferred_key = pool_wallet_key.clone();
     spawn_deferred_payout_processor(
         deferred_queue.clone(),
@@ -373,7 +400,8 @@ async fn main() -> anyhow::Result<()> {
         match zion_pool::tls::load_tls_acceptor(&tls_cfg.cert_path, &tls_cfg.key_path) {
             Ok(acceptor) => {
                 let tls_bind = tls_cfg.bind.clone();
-                let server_clone = StratumServer::new(pool.clone()).with_share_store(share_store.clone());
+                let server_clone =
+                    StratumServer::new(pool.clone()).with_share_store(share_store.clone());
                 tokio::spawn(async move {
                     match TcpListener::bind(&tls_bind).await {
                         Ok(listener) => {
@@ -386,10 +414,15 @@ async fn main() -> anyhow::Result<()> {
                                         tokio::spawn(async move {
                                             match acceptor.accept(socket).await {
                                                 Ok(tls_stream) => {
-                                                    server.handle_tls_connection(tls_stream, peer).await;
+                                                    server
+                                                        .handle_tls_connection(tls_stream, peer)
+                                                        .await;
                                                 }
                                                 Err(e) => {
-                                                    warn!("tls handshake failed from {}: {}", peer, e);
+                                                    warn!(
+                                                        "tls handshake failed from {}: {}",
+                                                        peer, e
+                                                    );
                                                 }
                                             }
                                         });
@@ -402,7 +435,10 @@ async fn main() -> anyhow::Result<()> {
                             }
                         }
                         Err(e) => {
-                            warn!("tls: failed to bind {}: {} — continuing without TLS", tls_bind, e);
+                            warn!(
+                                "tls: failed to bind {}: {} — continuing without TLS",
+                                tls_bind, e
+                            );
                         }
                     }
                 });

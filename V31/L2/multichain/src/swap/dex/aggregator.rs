@@ -111,10 +111,7 @@ fn edge_asset(id: &AssetId) -> Asset {
     }
 }
 
-fn route_to_hops(
-    route: &[AssetId],
-    registry: &BridgeRegistry,
-) -> MultichainResult<Vec<PathHop>> {
+fn route_to_hops(route: &[AssetId], registry: &BridgeRegistry) -> MultichainResult<Vec<PathHop>> {
     if route.len() < 2 {
         return Err(MultichainError::Validation("route too short".to_string()));
     }
@@ -160,7 +157,9 @@ mod tests {
         let agg = Aggregator::new(dex);
         let from = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
         let to = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
-        let path = agg.find_best_path(&from, &to, Amount::new(1_000_000)).unwrap();
+        let path = agg
+            .find_best_path(&from, &to, Amount::new(1_000_000))
+            .unwrap();
 
         assert_eq!(path.hops.len(), 1);
         assert!(!path.hops[0].is_bridge);
@@ -185,7 +184,9 @@ mod tests {
         let agg = Aggregator::new(dex).with_registry(registry);
         let from = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
         let to = Asset::native(ChainId::Base, "wUSDC", 6, "Wrapped USDC");
-        let path = agg.find_best_path(&from, &to, Amount::new(1_000_000)).unwrap();
+        let path = agg
+            .find_best_path(&from, &to, Amount::new(1_000_000))
+            .unwrap();
 
         assert_eq!(path.hops.len(), 2);
         assert!(!path.hops[0].is_bridge);

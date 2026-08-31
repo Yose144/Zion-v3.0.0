@@ -137,7 +137,10 @@ impl Reconciler {
             let hot_address = match self.hot_wallet_address(chain) {
                 Ok(addr) => addr,
                 Err(e) => {
-                    tracing::debug!("reconciliation: cannot derive hot wallet for {}: {e}", chain.as_str());
+                    tracing::debug!(
+                        "reconciliation: cannot derive hot wallet for {}: {e}",
+                        chain.as_str()
+                    );
                     continue;
                 }
             };
@@ -149,7 +152,10 @@ impl Reconciler {
             let on_chain = match adapter.balance(&hot_address).await {
                 Ok(amount) => amount,
                 Err(e) => {
-                    tracing::warn!("reconciliation: balance query failed for {}: {e}", chain.as_str());
+                    tracing::warn!(
+                        "reconciliation: balance query failed for {}: {e}",
+                        chain.as_str()
+                    );
                     reports.push(ReconciliationReport {
                         id: uuid::Uuid::new_v4().to_string(),
                         timestamp: Utc::now(),
@@ -197,7 +203,8 @@ impl Reconciler {
             .map(|c| native_asset_for_chain(*c).id.to_string())
             .collect();
 
-        let mut token_keys: std::collections::HashSet<String> = ledger_totals.keys().cloned().collect();
+        let mut token_keys: std::collections::HashSet<String> =
+            ledger_totals.keys().cloned().collect();
         token_keys.extend(pool_totals.keys().cloned());
         token_keys.retain(|k| !native_asset_keys.contains(k));
 
@@ -236,7 +243,9 @@ impl Reconciler {
                 pool_reserves: pool,
                 diff: 0,
                 alert: false,
-                notes: Some(format!("token reconciliation not implemented ({ticker}; contract={contract:?})")),
+                notes: Some(format!(
+                    "token reconciliation not implemented ({ticker}; contract={contract:?})"
+                )),
             });
         }
 
@@ -272,9 +281,13 @@ impl Reconciler {
         let mut totals: HashMap<String, Amount> = HashMap::new();
         let guard = self.dex.read().await;
         for pool in guard.pools() {
-            let a = totals.entry(pool.asset_a.id.to_string()).or_insert(Amount::ZERO);
+            let a = totals
+                .entry(pool.asset_a.id.to_string())
+                .or_insert(Amount::ZERO);
             *a = a.saturating_add(pool.reserve_a);
-            let b = totals.entry(pool.asset_b.id.to_string()).or_insert(Amount::ZERO);
+            let b = totals
+                .entry(pool.asset_b.id.to_string())
+                .or_insert(Amount::ZERO);
             *b = b.saturating_add(pool.reserve_b);
         }
         totals
@@ -333,7 +346,10 @@ mod tests {
             Ok(Vec::new())
         }
 
-        async fn execute_outbound(&self, _transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
+        async fn execute_outbound(
+            &self,
+            _transfer: &crate::types::Transfer,
+        ) -> MultichainResult<Hash> {
             Ok(Hash([0u8; 32]))
         }
 
@@ -360,10 +376,18 @@ mod tests {
         let ledger = WalletLedger::new(Arc::clone(&db));
         let asset = Asset::native(ChainId::ZionL1, "ZION", 8, "ZION");
 
-        ledger.credit("user1", &asset, Amount::new(5_000_000)).await.unwrap();
+        ledger
+            .credit("user1", &asset, Amount::new(5_000_000))
+            .await
+            .unwrap();
 
         let mut adapters = ChainAdapterRegistry::new();
-        adapters.register(ChainId::ZionL1, Box::new(MockAdapter { balance: Amount::new(4_000_000) }));
+        adapters.register(
+            ChainId::ZionL1,
+            Box::new(MockAdapter {
+                balance: Amount::new(4_000_000),
+            }),
+        );
 
         let dex = Arc::new(RwLock::new(DexRouter::new()));
         let keyring = Keyring::generate().unwrap();
@@ -383,7 +407,10 @@ mod tests {
         let reports = reconciler.reconcile().await.unwrap();
         assert!(!reports.is_empty());
 
-        let zion_report = reports.iter().find(|r| r.asset_key == asset.id.to_string()).unwrap();
+        let zion_report = reports
+            .iter()
+            .find(|r| r.asset_key == asset.id.to_string())
+            .unwrap();
         assert_eq!(zion_report.on_chain.0, 4_000_000);
         assert_eq!(zion_report.internal.0, 5_000_000);
         assert_eq!(zion_report.diff, -1_000_000);
@@ -404,7 +431,10 @@ mod tests {
         let zion = Asset::native(ChainId::ZionL1, "ZION", 8, "ZION");
         let btc = Asset::native(ChainId::Bitcoin, "BTC", 8, "BTC");
 
-        ledger.credit("user1", &zion, Amount::new(2_000_000)).await.unwrap();
+        ledger
+            .credit("user1", &zion, Amount::new(2_000_000))
+            .await
+            .unwrap();
 
         let pool = Pool {
             id: 1,
@@ -420,7 +450,12 @@ mod tests {
         let dex = Arc::new(RwLock::new(dex));
 
         let mut adapters = ChainAdapterRegistry::new();
-        adapters.register(ChainId::ZionL1, Box::new(MockAdapter { balance: Amount::new(5_000_000) }));
+        adapters.register(
+            ChainId::ZionL1,
+            Box::new(MockAdapter {
+                balance: Amount::new(5_000_000),
+            }),
+        );
 
         let reconciler = Reconciler::new(
             Arc::clone(&db),
@@ -431,7 +466,10 @@ mod tests {
         );
 
         let reports = reconciler.reconcile().await.unwrap();
-        let zion_report = reports.iter().find(|r| r.asset_key == zion.id.to_string()).unwrap();
+        let zion_report = reports
+            .iter()
+            .find(|r| r.asset_key == zion.id.to_string())
+            .unwrap();
         assert_eq!(zion_report.on_chain.0, 5_000_000);
         assert_eq!(zion_report.internal.0, 2_000_000);
         assert_eq!(zion_report.pool_reserves.0, 3_000_000);

@@ -53,7 +53,6 @@ fn default_node_reward_min_blocks() -> u64 {
     1_440 // ~1 day
 }
 
-
 /// Top-level configuration for `zion-multichain`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MultichainConfig {

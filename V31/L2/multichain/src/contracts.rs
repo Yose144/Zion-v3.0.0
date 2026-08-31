@@ -157,7 +157,11 @@ pub fn all_contracts() -> HashMap<String, ZionContracts> {
 pub fn token_decimals(chain: &str, ticker: &str, contract: Option<&str>) -> u8 {
     if let Some(contracts) = ZionContracts::for_chain(chain) {
         if let Some(c) = contract {
-            if let Some(info) = contracts.tokens.values().find(|i| i.contract.eq_ignore_ascii_case(c)) {
+            if let Some(info) = contracts
+                .tokens
+                .values()
+                .find(|i| i.contract.eq_ignore_ascii_case(c))
+            {
                 return info.decimals;
             }
             if c.eq_ignore_ascii_case(&contracts.wzion) {

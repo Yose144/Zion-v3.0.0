@@ -95,9 +95,9 @@ fn select_utxos(
         total = total
             .checked_add(utxo.amount)
             .ok_or(WalletError::InsufficientFunds {
-            available: 0,
-            needed: u64::MAX,
-        })?;
+                available: 0,
+                needed: u64::MAX,
+            })?;
         selected.push(utxo);
         if total >= target {
             return Ok((selected, total));
@@ -115,7 +115,8 @@ fn parse_address(encoded: &str) -> Result<Address, WalletError> {
     if !crypto::is_valid_address(encoded) {
         return Err(WalletError::InvalidAddress(encoded.to_string()));
     }
-    Address::new(ChainId::ZionL1, vec![], encoded).map_err(|_| WalletError::InvalidAddress(encoded.to_string()))
+    Address::new(ChainId::ZionL1, vec![], encoded)
+        .map_err(|_| WalletError::InvalidAddress(encoded.to_string()))
 }
 
 /// Build and sign a multi-recipient batch payout transaction for V31.
@@ -170,12 +171,28 @@ pub fn build_batch_payout(
                 let final_total: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
                 let (sel, tot) = select_utxos(available_utxos, final_total)?;
                 return build_batch_payout_inner(
-                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot, MIN_PAYOUT_AMOUNT, &[], None,
+                    signing_key,
+                    change_address,
+                    &adjusted_recipients,
+                    0,
+                    &sel,
+                    tot,
+                    MIN_PAYOUT_AMOUNT,
+                    &[],
+                    None,
                 );
             }
             let (sel, tot) = select_utxos(available_utxos, new_target)?;
             return build_batch_payout_inner(
-                signing_key, change_address, &adjusted_recipients, fee, &sel, tot, MIN_PAYOUT_AMOUNT, &[], None,
+                signing_key,
+                change_address,
+                &adjusted_recipients,
+                fee,
+                &sel,
+                tot,
+                MIN_PAYOUT_AMOUNT,
+                &[],
+                None,
             );
         }
         Err(e) => return Err(e),
@@ -207,7 +224,15 @@ pub fn build_send(
     fee: u64,
     available_utxos: &[SpendableUtxo],
 ) -> Result<BuildResult, WalletError> {
-    build_send_with_memo(signing_key, change_address, to_address, amount, fee, available_utxos, &[])
+    build_send_with_memo(
+        signing_key,
+        change_address,
+        to_address,
+        amount,
+        fee,
+        available_utxos,
+        &[],
+    )
 }
 
 /// Same as [`build_send`], but attaches an arbitrary memo (e.g. a note or
@@ -227,10 +252,7 @@ pub fn build_send_with_memo(
     memo: &[u8],
 ) -> Result<BuildResult, WalletError> {
     if amount == 0 {
-        return Err(WalletError::FeeTooLow {
-            fee: 0,
-            minimum: 1,
-        });
+        return Err(WalletError::FeeTooLow { fee: 0, minimum: 1 });
     }
 
     let target = amount
@@ -287,7 +309,11 @@ fn build_batch_payout_inner(
                 minimum: min_payout,
             });
         }
-        let script = if i == 0 { output_script.clone().unwrap_or_default() } else { vec![] };
+        let script = if i == 0 {
+            output_script.clone().unwrap_or_default()
+        } else {
+            vec![]
+        };
         outputs.push(TransactionOutput {
             amount: Amount::new(r.amount as u128),
             address: parse_address(&r.address)?,
@@ -622,8 +648,15 @@ mod tests {
 
         // build_send() (no memo) must still produce an empty memo — this is
         // the pre-existing behavior callers without a memo rely on.
-        let build_no_memo =
-            build_send(&sk, &sender_addr, &recipient_addr, 1_000_000, 10_000, &utxos).unwrap();
+        let build_no_memo = build_send(
+            &sk,
+            &sender_addr,
+            &recipient_addr,
+            1_000_000,
+            10_000,
+            &utxos,
+        )
+        .unwrap();
         assert!(build_no_memo.transaction.memo.is_empty());
     }
 }

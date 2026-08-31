@@ -11,8 +11,8 @@ use zion_l1_types::{Address, Amount, Asset, ChainId};
 use crate::bridge::Bridge;
 use crate::contracts::token_decimals;
 use crate::error::{MultichainError, MultichainResult};
-use crate::swap::dex::DexRouter;
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
+use crate::swap::dex::DexRouter;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use crate::wallet::Keyring;
 

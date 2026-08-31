@@ -9,8 +9,8 @@ use zion_l1_types::{Address, ChainId};
 use crate::config::PoolConfig;
 use crate::share::ShareSubmission;
 use crate::telemetry::MinerTelemetryRegistry;
-use crate::validator::ShareValidator;
 use crate::v3_pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
+use crate::validator::ShareValidator;
 
 #[derive(Clone, Copy, Debug, thiserror::Error)]
 pub enum PoolError {
@@ -61,14 +61,11 @@ impl Pool {
                 pplns.restore(snap);
             }
         }
-        let signing_key = config
-            .pool_wallet_key
-            .as_deref()
-            .and_then(|hex_str| {
-                let bytes = hex::decode(hex_str).ok()?;
-                let arr = <[u8; 32]>::try_from(bytes).ok()?;
-                Some(SigningKey::from_bytes(&arr))
-            });
+        let signing_key = config.pool_wallet_key.as_deref().and_then(|hex_str| {
+            let bytes = hex::decode(hex_str).ok()?;
+            let arr = <[u8; 32]>::try_from(bytes).ok()?;
+            Some(SigningKey::from_bytes(&arr))
+        });
         Self {
             config,
             pplns,
@@ -119,7 +116,8 @@ impl Pool {
 
     pub fn register_worker(&mut self, worker: &str) {
         if let Some(addr) = parse_worker_address(worker) {
-            self.worker_addresses.insert(worker.to_string(), addr.clone());
+            self.worker_addresses
+                .insert(worker.to_string(), addr.clone());
             self.pplns.register_address(worker, &addr.encoded);
         }
     }
@@ -203,7 +201,13 @@ impl Pool {
                 self.pending_payouts.push((block_height, payout));
             }
         }
-        self.last_payouts = Some((block_height, self.pending_payouts.iter().map(|(_, p)| p.clone()).collect()));
+        self.last_payouts = Some((
+            block_height,
+            self.pending_payouts
+                .iter()
+                .map(|(_, p)| p.clone())
+                .collect(),
+        ));
     }
 
     pub fn stats(&self) -> (u64, u64) {
@@ -250,7 +254,8 @@ impl Pool {
 
     /// Mark a payout as successfully submitted so it is not re-sent.
     pub fn mark_payout_sent(&mut self, block_height: u64, address: &str) {
-        self.sent_payouts.insert((block_height, address.to_string()));
+        self.sent_payouts
+            .insert((block_height, address.to_string()));
     }
 }
 
@@ -319,10 +324,13 @@ mod tests {
 
     #[test]
     fn rejects_invalid_auxpow_share() {
-        let mut pool = Pool::new(PoolConfig {
-            auxpow_target: [0x00u8; 32],
-            ..config()
-        }, telemetry());
+        let mut pool = Pool::new(
+            PoolConfig {
+                auxpow_target: [0x00u8; 32],
+                ..config()
+            },
+            telemetry(),
+        );
         let submission = ShareSubmission {
             worker: "worker1".into(),
             job_id: "aux_1".into(),
@@ -336,10 +344,13 @@ mod tests {
 
     #[test]
     fn payouts_are_proportional() {
-        let mut pool = Pool::new(PoolConfig {
-            min_payout_flowers: 1,
-            ..config()
-        }, telemetry());
+        let mut pool = Pool::new(
+            PoolConfig {
+                min_payout_flowers: 1,
+                ..config()
+            },
+            telemetry(),
+        );
         let header = b"payout_header";
         for i in 0..4 {
             let submission = ShareSubmission {

@@ -117,10 +117,7 @@ impl ChainId {
     pub const fn decimals(self) -> u8 {
         match self {
             ChainId::ZionL1 => 6,
-            ChainId::Bitcoin
-            | ChainId::Decred
-            | ChainId::Monero
-            | ChainId::Zano => 8,
+            ChainId::Bitcoin | ChainId::Decred | ChainId::Monero | ChainId::Zano => 8,
             ChainId::Ethereum
             | ChainId::Base
             | ChainId::Arbitrum

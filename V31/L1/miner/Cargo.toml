@@ -57,9 +57,9 @@ full = [
     "native-all",
 ]
 
-# TUI — interactive terminal UI (crossterm-based keyboard control, sticky header).
-# Requires `crossterm` dependency.
-tui = ["dep:crossterm"]
+# TUI — interactive terminal UI (ratatui-based keyboard control, sticky header).
+# Requires `ratatui` and `crossterm` dependencies.
+tui = ["dep:ratatui", "dep:crossterm"]
 
 [dependencies]
 zion-l1-types = { workspace = true }
@@ -95,7 +95,8 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 # TUI (optional)
-crossterm = { version = "0.27", optional = true }
+crossterm = { version = "0.28", optional = true }
+ratatui = { version = "0.29", optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4"

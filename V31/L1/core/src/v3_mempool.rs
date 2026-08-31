@@ -8,8 +8,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::v3_chain::Outpoint;
 use crate::fee;
+use crate::v3_chain::Outpoint;
 use crate::v3_tx::Transaction;
 
 /// Maximum number of transactions in the mempool.

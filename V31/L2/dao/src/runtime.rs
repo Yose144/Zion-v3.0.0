@@ -197,7 +197,9 @@ impl GovernanceRuntime {
         self.proposals.insert(id, proposal);
 
         if let Some(metrics) = self.metrics.as_ref() {
-            metrics.proposals_created.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            metrics
+                .proposals_created
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
 
         Ok(id)
@@ -218,7 +220,8 @@ impl GovernanceRuntime {
                 .get_mut(&proposal_id)
                 .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
-            self.voting.cast_vote(proposal, voter, choice, weight, tx_hash)?
+            self.voting
+                .cast_vote(proposal, voter, choice, weight, tx_hash)?
         };
 
         if let Some(proposal) = self.proposals.get(&proposal_id) {
@@ -227,12 +230,22 @@ impl GovernanceRuntime {
         }
 
         if let Some(metrics) = self.metrics.as_ref() {
-            metrics.votes_cast.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            metrics
+                .votes_cast
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             match vote.choice {
-                VoteChoice::Yes => metrics.votes_yes.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
-                VoteChoice::No => metrics.votes_no.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
-                VoteChoice::Abstain => metrics.votes_abstain.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
-                VoteChoice::Candidate(_) => metrics.votes_yes.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::Yes => metrics
+                    .votes_yes
+                    .fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::No => metrics
+                    .votes_no
+                    .fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::Abstain => metrics
+                    .votes_abstain
+                    .fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::Candidate(_) => metrics
+                    .votes_yes
+                    .fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
             };
         }
 
@@ -328,10 +341,7 @@ impl GovernanceRuntime {
                     proposed_value,
                     ..
                 } => {
-                    format!(
-                        "Parameter '{}' set to '{}'",
-                        parameter_name, proposed_value
-                    )
+                    format!("Parameter '{}' set to '{}'", parameter_name, proposed_value)
                 }
                 ProposalType::Treasury {
                     recipient,
@@ -347,9 +357,7 @@ impl GovernanceRuntime {
                     format!("Emergency action: {}", action)
                 }
                 ProposalType::Grant {
-                    recipient,
-                    amount,
-                    ..
+                    recipient, amount, ..
                 } => {
                     format!("Grant: {} flowers to {}", amount, recipient)
                 }
@@ -378,10 +386,8 @@ impl GovernanceRuntime {
                 }
                 ProposalType::ParliamentaryElection { title, .. } => {
                     let seats = proposal.allocate_seats();
-                    let seat_str: Vec<String> = seats
-                        .iter()
-                        .map(|(p, s)| format!("{}: {}", p, s))
-                        .collect();
+                    let seat_str: Vec<String> =
+                        seats.iter().map(|(p, s)| format!("{}: {}", p, s)).collect();
                     format!("Election '{}': {}", title, seat_str.join(", "))
                 }
             }
@@ -391,7 +397,9 @@ impl GovernanceRuntime {
             self.persist_proposal(proposal);
         }
         if let Some(metrics) = self.metrics.as_ref() {
-            metrics.proposals_executed.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            metrics
+                .proposals_executed
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
 
         Ok(summary)
@@ -405,17 +413,15 @@ impl GovernanceRuntime {
                 .get_mut(&proposal_id)
                 .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
-            if proposal.status != ProposalStatus::Active && proposal.status != ProposalStatus::Passed {
+            if proposal.status != ProposalStatus::Active
+                && proposal.status != ProposalStatus::Passed
+            {
                 return Err(DaoError::ProposalNotVotable(proposal_id.to_string()));
             }
 
             // Only proposer or a guardian can cancel
             let is_proposer = proposal.proposer == caller;
-            let is_guardian = self
-                .config
-                .guardians
-                .iter()
-                .any(|g| g.address == caller);
+            let is_guardian = self.config.guardians.iter().any(|g| g.address == caller);
 
             if !is_proposer && !is_guardian {
                 return Err(DaoError::Unauthorized(
@@ -464,9 +470,7 @@ impl GovernanceRuntime {
         let expired_ids: Vec<u64> = self
             .proposals
             .iter()
-            .filter(|(_, p)| {
-                p.status == ProposalStatus::Active && !p.is_voting_open()
-            })
+            .filter(|(_, p)| p.status == ProposalStatus::Active && !p.is_voting_open())
             .map(|(id, _)| *id)
             .collect();
 
@@ -627,7 +631,10 @@ mod tests {
         let id = make_parameter_proposal(&mut rt);
 
         rt.cancel_proposal(id, "zion1proposer").unwrap();
-        assert_eq!(rt.get_proposal(id).unwrap().status, ProposalStatus::Cancelled);
+        assert_eq!(
+            rt.get_proposal(id).unwrap().status,
+            ProposalStatus::Cancelled
+        );
     }
 
     #[test]

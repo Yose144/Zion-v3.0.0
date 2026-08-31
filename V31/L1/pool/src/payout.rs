@@ -99,7 +99,9 @@ impl PayoutSweeper {
         }
 
         let rpc_addr = parse_rpc_addr(&rpc_url)?;
-        let current_height = crate::deferred_payout::get_chain_height(&rpc_url).await.unwrap_or(0);
+        let current_height = crate::deferred_payout::get_chain_height(&rpc_url)
+            .await
+            .unwrap_or(0);
 
         // Self-sends do not require a transaction.
         payouts.retain(|(_, p)| p.address != pool_address.encoded);
@@ -155,14 +157,9 @@ impl PayoutSweeper {
             return Ok(());
         }
 
-        let build_result = build_batch_payout(
-            &signing_key,
-            &pool_encoded,
-            &recipients,
-            fee,
-            &utxos,
-        )
-        .map_err(|e| anyhow!("failed to build batch payout: {}", e))?;
+        let build_result =
+            build_batch_payout(&signing_key, &pool_encoded, &recipients, fee, &utxos)
+                .map_err(|e| anyhow!("failed to build batch payout: {}", e))?;
 
         let tx = build_result.transaction;
         let change = build_result.change_amount;
@@ -241,7 +238,7 @@ impl PayoutSweeper {
         tx_id.len() == 64 && tx_id.chars().all(|c| c.is_ascii_hexdigit())
     }
 
-fn requeue(&self, payouts: Vec<(u64, PayoutEntry)>) {
+    fn requeue(&self, payouts: Vec<(u64, PayoutEntry)>) {
         if payouts.is_empty() {
             return;
         }
@@ -284,7 +281,10 @@ async fn fetch_utxos(
         .and_then(|v| v.as_u64())
         .unwrap_or(0);
 
-    if let Some(utxos) = resp.get("result").and_then(|r| r.get("utxos")).and_then(|v| v.as_array())
+    if let Some(utxos) = resp
+        .get("result")
+        .and_then(|r| r.get("utxos"))
+        .and_then(|v| v.as_array())
     {
         for utxo in utxos {
             let tx_hash_hex = utxo

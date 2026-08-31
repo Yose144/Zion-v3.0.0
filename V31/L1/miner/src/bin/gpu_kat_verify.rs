@@ -4,9 +4,9 @@
 //! the output hash against the CPU KAT vectors from `ekam_deeksha.rs`.
 
 #[cfg(feature = "gpu-cuda")]
-use zion_cosmic_harmony::algorithm::ekam_deeksha::{EkamDeeksha, LITE_KAT, LITE_KAT_HEADER};
-#[cfg(feature = "gpu-cuda")]
 use sha3::{Digest, Keccak256, Sha3_512};
+#[cfg(feature = "gpu-cuda")]
+use zion_cosmic_harmony::algorithm::ekam_deeksha::{EkamDeeksha, LITE_KAT, LITE_KAT_HEADER};
 
 #[cfg(feature = "gpu-cuda")]
 fn main() {
@@ -51,9 +51,7 @@ fn main() {
 
     // Upload state
     let state_buf = dev.htod_copy(state.to_vec()).expect("state upload");
-    let scratchpad_buf = dev
-        .alloc_zeros::<u8>(524_288)
-        .expect("scratchpad alloc");
+    let scratchpad_buf = dev.alloc_zeros::<u8>(524_288).expect("scratchpad alloc");
     let output_buf = dev.alloc_zeros::<u8>(128).expect("output alloc");
 
     let func = dev
@@ -76,10 +74,22 @@ fn main() {
         dev.synchronize().expect("sync");
 
         let gpu_result: Vec<u8> = dev.dtoh_sync_copy(&output_buf).expect("download");
-        let gpu_s1: String = gpu_result[0..32].iter().map(|b| format!("{:02x}", b)).collect();
-        let gpu_hash: String = gpu_result[32..64].iter().map(|b| format!("{:02x}", b)).collect();
-        let gpu_s2: String = gpu_result[64..96].iter().map(|b| format!("{:02x}", b)).collect();
-        let gpu_s3: String = gpu_result[96..128].iter().map(|b| format!("{:02x}", b)).collect();
+        let gpu_s1: String = gpu_result[0..32]
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
+        let gpu_hash: String = gpu_result[32..64]
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
+        let gpu_s2: String = gpu_result[64..96]
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
+        let gpu_s3: String = gpu_result[96..128]
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
 
         // CPU reference
         let cpu_hash = EkamDeeksha::hash_bytes(header, *nonce);
@@ -151,21 +161,39 @@ fn main() {
         let cpu_matches_kat = cpu_hex == *expected_hex;
         let gpu_matches_kat = gpu_hash == *expected_hex;
 
-        let status = if gpu_matches_kat { "✓ PASS" } else { "✗ FAIL" };
+        let status = if gpu_matches_kat {
+            "✓ PASS"
+        } else {
+            "✗ FAIL"
+        };
         if !gpu_matches_kat {
             all_ok = false;
         }
 
-        println!(
-            "nonce={:<20} {}",
-            nonce,
-            status,
-        );
+        println!("nonce={:<20} {}", nonce, status,);
         println!("  KAT:  {}", expected_hex);
-        println!("  CPU:  {} {}", cpu_hex, if cpu_matches_kat { "✓" } else { "✗" });
-        println!("  GPU:  {} {}", gpu_hash, if gpu_matches_cpu { "✓" } else { "✗" });
-        println!("  s1:   GPU={} CPU={} {}", gpu_s1, cpu_s1_hex, if gpu_s1 == cpu_s1_hex { "✓" } else { "✗" });
-        println!("  s2:   GPU={} CPU={} {}", gpu_s2, cpu_s2_hex, if gpu_s2 == cpu_s2_hex { "✓" } else { "✗" });
+        println!(
+            "  CPU:  {} {}",
+            cpu_hex,
+            if cpu_matches_kat { "✓" } else { "✗" }
+        );
+        println!(
+            "  GPU:  {} {}",
+            gpu_hash,
+            if gpu_matches_cpu { "✓" } else { "✗" }
+        );
+        println!(
+            "  s1:   GPU={} CPU={} {}",
+            gpu_s1,
+            cpu_s1_hex,
+            if gpu_s1 == cpu_s1_hex { "✓" } else { "✗" }
+        );
+        println!(
+            "  s2:   GPU={} CPU={} {}",
+            gpu_s2,
+            cpu_s2_hex,
+            if gpu_s2 == cpu_s2_hex { "✓" } else { "✗" }
+        );
         println!("  s3:   {}", gpu_s3);
         println!();
     }

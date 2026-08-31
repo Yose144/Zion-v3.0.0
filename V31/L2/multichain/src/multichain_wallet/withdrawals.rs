@@ -113,13 +113,19 @@ impl WithdrawalProcessor {
             .get(asset.id.chain)
             .ok_or_else(|| MultichainError::AdapterNotFound(asset.id.chain.as_str().to_string()))?;
 
-        let tx_hash = adapter.transfer_token(&asset, &recipient, record.amount).await;
+        let tx_hash = adapter
+            .transfer_token(&asset, &recipient, record.amount)
+            .await;
 
         // Credit the ledger back outside the DB lock. WalletLedger also uses the
         // same DB Mutex, so holding it while calling ledger.credit() would
         // deadlock because tokio::sync::Mutex is not reentrant.
         let credit_back = if tx_hash.is_err() {
-            Some(self.ledger.credit(&record.user_id, &asset, record.amount).await)
+            Some(
+                self.ledger
+                    .credit(&record.user_id, &asset, record.amount)
+                    .await,
+            )
         } else {
             None
         };
@@ -152,7 +158,9 @@ fn parse_recipient(encoded: &str, chain: ChainId) -> MultichainResult<Address> {
             let bytes = hex::decode(hex)
                 .map_err(|_| MultichainError::Validation("invalid evm address hex".to_string()))?;
             if bytes.len() != 20 {
-                return Err(MultichainError::Validation("evm address must be 20 bytes".to_string()));
+                return Err(MultichainError::Validation(
+                    "evm address must be 20 bytes".to_string(),
+                ));
             }
             bytes
         }
@@ -178,11 +186,7 @@ fn asset_from_key(asset_key: &str) -> MultichainResult<Asset> {
     let ticker = parts[1].to_string();
     let contract = parts.get(2).map(|s| s.to_string());
     let id = AssetId::new(chain, ticker.clone(), contract.clone());
-    let decimals = token_decimals(
-        chain.as_str(),
-        &ticker,
-        contract.as_deref(),
-    );
+    let decimals = token_decimals(chain.as_str(), &ticker, contract.as_deref());
     Ok(Asset {
         id,
         decimals,
@@ -256,7 +260,10 @@ mod tests {
             Ok(Amount::ZERO)
         }
 
-        async fn execute_outbound(&self, _transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
+        async fn execute_outbound(
+            &self,
+            _transfer: &crate::types::Transfer,
+        ) -> MultichainResult<Hash> {
             Ok(Hash([0u8; 32]))
         }
     }
@@ -277,21 +284,26 @@ mod tests {
         let user_id = "user1";
         let amount = Amount::new(1_000_000);
 
-        ledger.credit(user_id, &asset, Amount::new(10_000_000)).await.unwrap();
+        ledger
+            .credit(user_id, &asset, Amount::new(10_000_000))
+            .await
+            .unwrap();
 
         let mut adapters = crate::chain::ChainAdapterRegistry::new();
         let mock = MockAdapter::default();
         let calls = mock.calls.clone();
         adapters.register(ChainId::Base, Box::new(mock));
 
-        let processor = WithdrawalProcessor::new(
-            Arc::clone(&db),
-            Arc::new(adapters),
-            ledger.clone(),
-        );
+        let processor =
+            WithdrawalProcessor::new(Arc::clone(&db), Arc::new(adapters), ledger.clone());
 
         processor
-            .request_withdraw(user_id, &asset, amount, "0x0000000000000000000000000000000000000001")
+            .request_withdraw(
+                user_id,
+                &asset,
+                amount,
+                "0x0000000000000000000000000000000000000001",
+            )
             .await
             .unwrap();
 

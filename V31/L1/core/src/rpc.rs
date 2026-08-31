@@ -65,7 +65,12 @@ async fn handle_socket(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeErr
         Err(e) if is_benign_rpc_disconnect(&e) => return Ok(()),
         Err(e) => return Err(e.into()),
     };
-    if n >= 4 && (&peek_buf[..4] == b"POST" || &peek_buf[..4] == b"GET " || &peek_buf[..4] == b"HEAD" || &peek_buf[..4] == b"OPTI") {
+    if n >= 4
+        && (&peek_buf[..4] == b"POST"
+            || &peek_buf[..4] == b"GET "
+            || &peek_buf[..4] == b"HEAD"
+            || &peek_buf[..4] == b"OPTI")
+    {
         handle_http(socket, node).await
     } else {
         handle_raw_tcp(socket, node).await
@@ -137,7 +142,11 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
         }
         return Err(e.into());
     }
-    let method = request_line.split_whitespace().next().unwrap_or("").to_string();
+    let method = request_line
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_string();
 
     // Read headers until empty line
     let mut content_length: usize = 0;
@@ -157,7 +166,10 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
             break;
         }
         // Parse Content-Length
-        if let Some(val) = trimmed.strip_prefix("Content-Length:").or_else(|| trimmed.strip_prefix("content-length:")) {
+        if let Some(val) = trimmed
+            .strip_prefix("Content-Length:")
+            .or_else(|| trimmed.strip_prefix("content-length:"))
+        {
             content_length = val.trim().parse().unwrap_or(0);
         }
     }
@@ -166,10 +178,18 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
     if method == "OPTIONS" {
         let cors_response = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: POST, GET, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\nAccess-Control-Max-Age: 86400\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         if let Err(e) = writer.write_all(cors_response.as_bytes()).await {
-            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+            return if is_benign_rpc_disconnect(&e) {
+                Ok(())
+            } else {
+                Err(e.into())
+            };
         }
         if let Err(e) = writer.flush().await {
-            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+            return if is_benign_rpc_disconnect(&e) {
+                Ok(())
+            } else {
+                Err(e.into())
+            };
         }
         return Ok(());
     }
@@ -184,10 +204,18 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
             health_str
         );
         if let Err(e) = writer.write_all(http_response.as_bytes()).await {
-            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+            return if is_benign_rpc_disconnect(&e) {
+                Ok(())
+            } else {
+                Err(e.into())
+            };
         }
         if let Err(e) = writer.flush().await {
-            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+            return if is_benign_rpc_disconnect(&e) {
+                Ok(())
+            } else {
+                Err(e.into())
+            };
         }
         return Ok(());
     }
@@ -196,7 +224,11 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
     let mut body = vec![0u8; content_length];
     if content_length > 0 {
         if let Err(e) = buf_reader.read_exact(&mut body).await {
-            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+            return if is_benign_rpc_disconnect(&e) {
+                Ok(())
+            } else {
+                Err(e.into())
+            };
         }
     }
 
@@ -212,10 +244,18 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
     );
 
     if let Err(e) = writer.write_all(http_response.as_bytes()).await {
-        return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        return if is_benign_rpc_disconnect(&e) {
+            Ok(())
+        } else {
+            Err(e.into())
+        };
     }
     if let Err(e) = writer.flush().await {
-        return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        return if is_benign_rpc_disconnect(&e) {
+            Ok(())
+        } else {
+            Err(e.into())
+        };
     }
 
     Ok(())
@@ -306,7 +346,11 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         return match get_native_block(node, &params).await {
             Ok(Some(v)) => success_response(id, v),
             Ok(None) => {
-                let v3_method = if method == "getBlock" { "getBlock" } else { method };
+                let v3_method = if method == "getBlock" {
+                    "getBlock"
+                } else {
+                    method
+                };
                 let result = node.v3_rpc.dispatch(v3_method, params).await;
                 wrap_v3_response(id, result)
             }
@@ -428,7 +472,11 @@ async fn sync_bridge_vault_utxos(node: &Node) {
         })
         .collect();
     if let Err(e) = node.storage.put_v3_utxos(&entries).await {
-        warn!("sync_bridge_vault_utxos: failed to sync {} UTXOs: {}", entries.len(), e);
+        warn!(
+            "sync_bridge_vault_utxos: failed to sync {} UTXOs: {}",
+            entries.len(),
+            e
+        );
     }
 }
 
@@ -453,7 +501,10 @@ async fn submit_block_rpc(node: &Node, params: &Value) -> Result<Value, NodeErro
         // are reflected on-chain when a V31 native block is accepted.
         let flushed = node.v3_rpc.flush_utxo_mempool().await;
         if flushed > 0 {
-            info!("flushed {} V3 compat UTXO mempool tx(s) after native block", flushed);
+            info!(
+                "flushed {} V3 compat UTXO mempool tx(s) after native block",
+                flushed
+            );
         }
         return Ok(json!({"accepted": true}));
     }
@@ -535,14 +586,13 @@ async fn get_peer_info(node: &Node) -> Result<Value, NodeError> {
         .collect();
     let active = node.peer_manager.active_peers().await;
     let active_set: HashSet<SocketAddr> = active.iter().cloned().collect();
-    let recent = node.peer_manager.recent_good_peers(Duration::from_secs(60)).await;
+    let recent = node
+        .peer_manager
+        .recent_good_peers(Duration::from_secs(60))
+        .await;
     let known_addrs = node.peer_manager.known_peers_list().await;
     let known_with_metadata = node.peer_manager.known_peers_with_metadata().await;
-    let connected: HashSet<SocketAddr> = active
-        .iter()
-        .chain(recent.iter())
-        .cloned()
-        .collect();
+    let connected: HashSet<SocketAddr> = active.iter().chain(recent.iter()).cloned().collect();
     let connected: Vec<_> = connected.into_iter().collect();
 
     let peer_objects: Vec<Value> = known_addrs
@@ -588,18 +638,20 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
     let utxos = node.get_utxos_for_address(address).await;
     let out: Vec<Value> = utxos
         .into_iter()
-        .map(|(hash, idx, amount, height, timestamp, is_coinbase, script)| {
-            json!({
-                "tx_hash": hash.to_hex(),
-                "output_index": idx,
-                "amount": amount,
-                "block_height": height,
-                "timestamp": timestamp,
-                "is_coinbase": is_coinbase,
-                "script_hex": hex::encode(&script),
-                "memo_hex": hex::encode(&script),
-            })
-        })
+        .map(
+            |(hash, idx, amount, height, timestamp, is_coinbase, script)| {
+                json!({
+                    "tx_hash": hash.to_hex(),
+                    "output_index": idx,
+                    "amount": amount,
+                    "block_height": height,
+                    "timestamp": timestamp,
+                    "is_coinbase": is_coinbase,
+                    "script_hex": hex::encode(&script),
+                    "memo_hex": hex::encode(&script),
+                })
+            },
+        )
         .collect();
     Ok(json!({
         "address": address,
@@ -614,8 +666,8 @@ async fn submit_utxo_tx(node: &Node, params: &Value) -> Result<Value, NodeError>
         .get("transaction")
         .cloned()
         .unwrap_or_else(|| params.clone());
-    let tx: crate::Transaction =
-        serde_json::from_value(tx_value).map_err(|e| NodeError::Task(format!("parse error: {e}")))?;
+    let tx: crate::Transaction = serde_json::from_value(tx_value)
+        .map_err(|e| NodeError::Task(format!("parse error: {e}")))?;
     let tx_hash = node.submit_utxo_transaction(tx).await?;
     Ok(json!({
         "accepted": true,
@@ -657,7 +709,11 @@ async fn get_native_block(node: &Node, params: &Value) -> Result<Option<Value>, 
         .map(|o| o.address.encoded.clone())
         .unwrap_or_default();
 
-    let transaction_ids: Vec<String> = block.transactions.iter().map(|tx| tx.hash().to_hex()).collect();
+    let transaction_ids: Vec<String> = block
+        .transactions
+        .iter()
+        .map(|tx| tx.hash().to_hex())
+        .collect();
     let mut transactions: Vec<Value> = Vec::with_capacity(block.transactions.len());
     for tx in &block.transactions {
         // Resolve each input's spender address server-side via `output_index`
@@ -711,8 +767,8 @@ async fn get_native_block(node: &Node, params: &Value) -> Result<Option<Value>, 
 /// Decode a 32-byte hash from a hex string.
 fn decode_hash_32(hex_str: &str) -> Result<zion_l1_types::Hash, NodeError> {
     let hex_str = hex_str.strip_prefix("0x").unwrap_or(hex_str);
-    let bytes = hex::decode(hex_str)
-        .map_err(|e| NodeError::Task(format!("invalid hash hex: {e}")))?;
+    let bytes =
+        hex::decode(hex_str).map_err(|e| NodeError::Task(format!("invalid hash hex: {e}")))?;
     if bytes.len() != 32 {
         return Err(NodeError::Task(format!(
             "hash must be 32 bytes, got {}",
@@ -786,9 +842,15 @@ async fn get_transaction_history_native(
 
     let mut transactions = Vec::with_capacity(rows.len());
     for (tx_hash_hex, height, _direction) in &rows {
-        let Some(block) = node.block_by_height(*height).await? else { continue };
-        let Some(tx_hash) = decode_hash_32(tx_hash_hex).ok() else { continue };
-        let Some(tx) = block.transactions.iter().find(|t| t.hash() == tx_hash) else { continue };
+        let Some(block) = node.block_by_height(*height).await? else {
+            continue;
+        };
+        let Some(tx_hash) = decode_hash_32(tx_hash_hex).ok() else {
+            continue;
+        };
+        let Some(tx) = block.transactions.iter().find(|t| t.hash() == tx_hash) else {
+            continue;
+        };
 
         let is_coinbase = tx.is_coinbase();
         let mut from_addrs: Vec<String> = Vec::new();
@@ -804,7 +866,11 @@ async fn get_transaction_history_native(
                 }
             }
         }
-        let mut to_addrs: Vec<String> = tx.outputs.iter().map(|o| o.address.encoded.clone()).collect();
+        let mut to_addrs: Vec<String> = tx
+            .outputs
+            .iter()
+            .map(|o| o.address.encoded.clone())
+            .collect();
         to_addrs.dedup();
         let total_out: u128 = tx.outputs.iter().map(|o| o.amount.0).sum();
 

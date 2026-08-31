@@ -7,8 +7,8 @@
 
 #![allow(dead_code, unexpected_cfgs)] // V3 ported modules — used when fully integrated
 
-pub mod autonomous;
 pub mod auto_detect;
+pub mod autonomous;
 #[cfg(feature = "auxpow")]
 pub mod auxpow;
 pub mod b3_verify;
@@ -22,19 +22,15 @@ pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;
 pub mod stream;
-pub mod v3_pool_client;
 pub mod stream_profit;
 pub mod thread_affinity;
+pub mod v3_pool_client;
 
-// TUI modules — interactive terminal UI (feature-gated, requires crossterm).
+// TUI modules — interactive terminal UI (feature-gated, requires crossterm/ratatui).
 #[cfg(feature = "tui")]
 pub mod banner;
 #[cfg(feature = "tui")]
-pub mod interactive;
-#[cfg(feature = "tui")]
-pub mod setup_menu;
-#[cfg(feature = "tui")]
-pub mod tui_compat;
+pub mod tui;
 #[cfg(feature = "tui")]
 pub mod ui;
 

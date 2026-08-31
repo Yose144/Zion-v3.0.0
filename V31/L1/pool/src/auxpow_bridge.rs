@@ -53,7 +53,9 @@ pub struct AuxPowBridge {
 
 impl AuxPowBridge {
     #[allow(clippy::type_complexity)]
-    pub fn new(enabled: bool) -> (
+    pub fn new(
+        enabled: bool,
+    ) -> (
         Self,
         mpsc::Receiver<(ShareForwardRequest, mpsc::Sender<ShareForwardOutcome>)>,
     ) {
@@ -70,7 +72,10 @@ impl AuxPowBridge {
         if !self.enabled {
             return;
         }
-        let mut q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        let mut q = self
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned");
         if let Some(job) = q.iter_mut().find(|j| j.external_job_id == job_id) {
             job.received_at = Some(Instant::now());
         }
@@ -80,7 +85,10 @@ impl AuxPowBridge {
         if !self.enabled {
             return None;
         }
-        let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        let q = self
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned");
         // Return the LATEST job (back of queue), not the oldest.
         // Jobs are push_back'd, so back() is the most recent.
         q.back().cloned()
@@ -90,7 +98,10 @@ impl AuxPowBridge {
         if !self.enabled {
             return None;
         }
-        let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        let q = self
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned");
         q.iter().find(|j| j.external_job_id == job_id).cloned()
     }
 
@@ -98,7 +109,10 @@ impl AuxPowBridge {
         if !self.enabled {
             return;
         }
-        let mut q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        let mut q = self
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned");
         if q.len() >= 5 {
             q.pop_front();
         }
@@ -118,8 +132,7 @@ impl AuxPowBridge {
         // polls shares every 1 second (wait_for_job timeout), so shares are
         // picked up quickly. 15s gives upstream pools with slow RTT (e.g.
         // HeroMiners EU from our Edge) enough time to respond.
-        rx.recv_timeout(std::time::Duration::from_secs(15))
-            .ok()
+        rx.recv_timeout(std::time::Duration::from_secs(15)).ok()
     }
 }
 
@@ -221,10 +234,13 @@ impl MultiAuxPowBridge {
 
     pub fn job_ids_for_coin(&self, coin: &ExternalCoin) -> Vec<String> {
         let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
-        bridges.get(coin).map(|b| {
-            let q = b.job_queue.lock().expect("auxpow job queue lock poisoned");
-            q.iter().map(|j| j.external_job_id.clone()).collect()
-        }).unwrap_or_default()
+        bridges
+            .get(coin)
+            .map(|b| {
+                let q = b.job_queue.lock().expect("auxpow job queue lock poisoned");
+                q.iter().map(|j| j.external_job_id.clone()).collect()
+            })
+            .unwrap_or_default()
     }
 
     pub fn forward(
@@ -364,7 +380,10 @@ mod tests {
             received_at: None,
         });
         let popped = bridge.pop_job().unwrap();
-        assert_eq!(popped.external_job_id, "new", "pop_job should return latest job (back of queue)");
+        assert_eq!(
+            popped.external_job_id, "new",
+            "pop_job should return latest job (back of queue)"
+        );
     }
 
     #[test]

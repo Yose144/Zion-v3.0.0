@@ -844,7 +844,8 @@ mod tests {
         let share = result.expect("GPU should find a share with an all-0xFF target");
         assert_eq!(share.nonce, 0, "first nonce tested should be 0");
 
-        let cpu_hash = zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha::hash_bytes(header, 0);
+        let cpu_hash =
+            zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha::hash_bytes(header, 0);
         assert_eq!(
             share.hash, cpu_hash,
             "GPU hash for nonce 0 must match CPU EkamDeeksha"

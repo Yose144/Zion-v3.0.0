@@ -92,9 +92,9 @@ impl MetalDeekshaLiteMiner {
         let shared_opts = MTLResourceOptions::StorageModeShared;
         let private_opts = MTLResourceOptions::StorageModePrivate;
 
-        let header_buf = device.new_buffer(200, shared_opts);  // precomputed Keccak state, CPU writes
-        let result_nonce_buf = device.new_buffer(12, shared_opts);  // CPU reads result
-        let result_hash_buf = device.new_buffer(32, shared_opts);   // CPU reads result
+        let header_buf = device.new_buffer(200, shared_opts); // precomputed Keccak state, CPU writes
+        let result_nonce_buf = device.new_buffer(12, shared_opts); // CPU reads result
+        let result_hash_buf = device.new_buffer(32, shared_opts); // CPU reads result
 
         let mut batch_size = batch_size;
         let mut scratchpad_buf;
@@ -155,16 +155,30 @@ impl MetalDeekshaLiteMiner {
         let nonce_bytes = nonce_start.to_le_bytes();
         let params_bytes = [count as u32, self.cur_target_u32].map(|v| v.to_le_bytes());
         let params_flat: [u8; 8] = [
-            params_bytes[0][0], params_bytes[0][1], params_bytes[0][2], params_bytes[0][3],
-            params_bytes[1][0], params_bytes[1][1], params_bytes[1][2], params_bytes[1][3],
+            params_bytes[0][0],
+            params_bytes[0][1],
+            params_bytes[0][2],
+            params_bytes[0][3],
+            params_bytes[1][0],
+            params_bytes[1][1],
+            params_bytes[1][2],
+            params_bytes[1][3],
         ];
 
         let cb = self.queue.new_command_buffer();
         let enc = cb.new_compute_command_encoder();
         enc.set_compute_pipeline_state(&self.pipeline);
         enc.set_buffer(0, Some(&self.header_buf), 0);
-        enc.set_bytes(1, params_flat.len() as u64, params_flat.as_ptr() as *const std::ffi::c_void);
-        enc.set_bytes(2, nonce_bytes.len() as u64, nonce_bytes.as_ptr() as *const std::ffi::c_void);
+        enc.set_bytes(
+            1,
+            params_flat.len() as u64,
+            params_flat.as_ptr() as *const std::ffi::c_void,
+        );
+        enc.set_bytes(
+            2,
+            nonce_bytes.len() as u64,
+            nonce_bytes.as_ptr() as *const std::ffi::c_void,
+        );
         enc.set_buffer(3, Some(&self.scratchpad_buf), 0);
         enc.set_buffer(4, Some(&self.result_nonce_buf), 0);
         enc.set_buffer(5, Some(&self.result_hash_buf), 0);
@@ -299,7 +313,7 @@ impl GpuMiner for MetalDeekshaLiteMiner {
             let ptr = self.header_buf.contents() as *mut u64;
             std::ptr::copy_nonoverlapping(keccak_state.as_ptr(), ptr, 25);
         }
-        self.cur_target_u32 = 0;  // benchmark mode
+        self.cur_target_u32 = 0; // benchmark mode
 
         let start = Instant::now();
         let mut total = 0u64;
@@ -321,7 +335,8 @@ impl GpuMiner for MetalDeekshaLiteMiner {
             }
             // Wait for all pipelined batches
             for rx in &receivers {
-                let _ = rx.recv()
+                let _ = rx
+                    .recv()
                     .map_err(|_| anyhow::anyhow!("Metal Lite async wait failed"));
             }
         }

@@ -10,8 +10,8 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use ripemd::Ripemd160;
-use zeroize::Zeroize;
 use sha2::{Digest, Sha256};
+use zeroize::Zeroize;
 
 // ── BLAKE3 general hash ────────────────────────────────────────────────
 

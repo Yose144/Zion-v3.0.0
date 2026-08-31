@@ -12,31 +12,30 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::node_runtime::{
-    self, AcceptedBlock, BlockTemplate, CoreRuntime, RuntimeTransaction, Transaction,
-    SubmittedTransaction, P2pMessage, RpcRequest, RpcResponse, NodeConfig, NodeStatus,
-    NetworkId, PeerEndpoint, ConsensusConfig, RevenueSnapshot,
-    HEADER_SIZE, MAX_MEMPOOL_TRANSACTIONS, MAX_REORG_DEPTH, DEFAULT_BLOCK_RETENTION,
-    MAX_TEMPLATE_TRANSACTIONS, MAX_TEMPLATE_UTXO_TRANSACTIONS,
-};
-use crate::v3_compat::{
-    self as compat, BlockCandidate, DifficultyTarget, MiningHeader, MiningJob,
-    MiningSolution, SealedBlock,
-};
-use crate::v3_tx as tx;
 use crate::crypto;
 use crate::difficulty;
 use crate::emission;
 use crate::fee;
 use crate::launch;
+use crate::node_runtime::{
+    self, AcceptedBlock, BlockTemplate, ConsensusConfig, CoreRuntime, NetworkId, NodeConfig,
+    NodeStatus, P2pMessage, PeerEndpoint, RevenueSnapshot, RpcRequest, RpcResponse,
+    RuntimeTransaction, SubmittedTransaction, Transaction, DEFAULT_BLOCK_RETENTION, HEADER_SIZE,
+    MAX_MEMPOOL_TRANSACTIONS, MAX_REORG_DEPTH, MAX_TEMPLATE_TRANSACTIONS,
+    MAX_TEMPLATE_UTXO_TRANSACTIONS,
+};
 use crate::v3_bridge as bridge;
 use crate::v3_bridge::{
-    BridgeUnlockRequest, BridgeValidatorProof, bridge_operation_message,
-    bridge_unlock_memo_with_proofs, bridge_unlock_replay_key,
+    bridge_operation_message, bridge_unlock_memo_with_proofs, bridge_unlock_replay_key,
     bridge_unlock_replay_key_from_transaction, load_bridge_validator_pubkey_allowlist,
     required_bridge_validator_threshold, validate_bridge_unlock_transaction_shape_with_utxos,
-    verify_bridge_proofs,
+    verify_bridge_proofs, BridgeUnlockRequest, BridgeValidatorProof,
 };
+use crate::v3_compat::{
+    self as compat, BlockCandidate, DifficultyTarget, MiningHeader, MiningJob, MiningSolution,
+    SealedBlock,
+};
+use crate::v3_tx as tx;
 use crate::v3_validation as validation;
 
 use zion_cosmic_harmony_v3::{
@@ -954,15 +953,12 @@ impl ChainState {
         if block.header_hex.is_empty() {
             return Err("peer block missing header_hex — PoW cannot be verified".to_string());
         }
-        let header_bytes =
-            parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
+        let header_bytes = parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
         let header = MiningHeader::from_bytes(header_bytes);
 
         // Header fields must be consistent with block metadata
         if header.timestamp != block.timestamp {
-            return Err(
-                "peer block header timestamp does not match block timestamp".to_string()
-            );
+            return Err("peer block header timestamp does not match block timestamp".to_string());
         }
         let expected_target = crate::v3_compat::difficulty_to_target(block.difficulty);
         let expected_bits = crate::v3_compat::target_to_compact(&expected_target);
@@ -978,8 +974,7 @@ impl ChainState {
             let header_prev = hex(&header.previous_hash);
             if block.previous_hash_hex != header_prev {
                 return Err(
-                    "peer block previous_hash_hex does not match header previous_hash"
-                        .to_string(),
+                    "peer block previous_hash_hex does not match header previous_hash".to_string(),
                 );
             }
         }
@@ -993,8 +988,7 @@ impl ChainState {
         let computed_hash = candidate.hash();
         if computed_hash != block_hash {
             return Err(
-                "peer block hash does not match PoW computation from header and nonce"
-                    .to_string(),
+                "peer block hash does not match PoW computation from header and nonce".to_string(),
             );
         }
 
@@ -2482,7 +2476,10 @@ pub(crate) fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Ve
 /// Compute the confirmed balance for an address from accepted blocks only
 /// (does NOT subtract pending mempool debits, unlike `account_balance_for`).
 /// Used by `filter_balance_sufficient` to pre-validate template transactions.
-pub(crate) fn confirmed_balance_from_blocks(accepted_blocks: &[AcceptedBlock], address: &str) -> u128 {
+pub(crate) fn confirmed_balance_from_blocks(
+    accepted_blocks: &[AcceptedBlock],
+    address: &str,
+) -> u128 {
     let mut balance: i128 = 0;
     for block in accepted_blocks {
         for tx in &block.transactions {
@@ -2534,7 +2531,9 @@ pub(crate) fn filter_balance_sufficient(
         .collect()
 }
 
-pub(crate) fn select_template_utxo_transactions(mempool: &[RuntimeTransaction]) -> Vec<tx::Transaction> {
+pub(crate) fn select_template_utxo_transactions(
+    mempool: &[RuntimeTransaction],
+) -> Vec<tx::Transaction> {
     let mut selected: Vec<tx::Transaction> = mempool
         .iter()
         .filter_map(|transaction| transaction.as_utxo().cloned())
@@ -2629,7 +2628,7 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 /// directly. In V31, `v3_compat::genesis_block()` returns a `V3Block`, so we
 /// rebuild the `AcceptedBlock` here using the same premine outputs.
 pub(crate) fn genesis_accepted_block() -> AcceptedBlock {
-    use crate::v3_compat::{PREMINE_OUTPUTS, GENESIS_TIMESTAMP, GENESIS_MESSAGE};
+    use crate::v3_compat::{GENESIS_MESSAGE, GENESIS_TIMESTAMP, PREMINE_OUTPUTS};
 
     let mut transactions: Vec<Transaction> = Vec::new();
     let mut utxo_transactions: Vec<tx::Transaction> = Vec::new();
@@ -2688,16 +2687,15 @@ pub(crate) fn genesis_accepted_block() -> AcceptedBlock {
     }
 
     let transaction_ids: Vec<String> = transactions.iter().map(|tx| tx.tx_id.clone()).collect();
-    let utxo_transaction_ids: Vec<String> = utxo_transactions
-        .iter()
-        .map(|tx| hex(&tx.id))
-        .collect();
+    let utxo_transaction_ids: Vec<String> =
+        utxo_transactions.iter().map(|tx| hex(&tx.id)).collect();
 
     let genesis_target = crate::v3_compat::difficulty_to_target(difficulty::GENESIS_DIFFICULTY);
     let genesis_bits = crate::v3_compat::target_to_compact(&genesis_target);
 
     // Use BLAKE3 merkle root (V2 body root, always active for genesis)
-    let mut leaves: Vec<[u8; 32]> = Vec::with_capacity(transactions.len() + utxo_transactions.len());
+    let mut leaves: Vec<[u8; 32]> =
+        Vec::with_capacity(transactions.len() + utxo_transactions.len());
     for transaction in &transactions {
         leaves.push(crypto::blake3_hash(transaction.tx_id.as_bytes()));
     }
