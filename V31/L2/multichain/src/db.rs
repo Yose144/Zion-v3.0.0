@@ -289,6 +289,33 @@ impl Db {
                 .execute("ALTER TABLE dex_orders ADD COLUMN htlc_hash TEXT", []);
         }
 
+        // Backfill refund_pubkey / claimant_pubkey columns on htlc_records
+        // created before the columns existed.
+        let mut stmt = self.conn.prepare("PRAGMA table_info(htlc_records)")?;
+        let mut has_refund_pubkey = false;
+        let mut has_claimant_pubkey = false;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let col_name: String = row.get(1)?;
+            match col_name.as_str() {
+                "refund_pubkey" => has_refund_pubkey = true,
+                "claimant_pubkey" => has_claimant_pubkey = true,
+                _ => {}
+            }
+        }
+        drop(rows);
+        drop(stmt);
+        if !has_refund_pubkey {
+            let _ = self
+                .conn
+                .execute("ALTER TABLE htlc_records ADD COLUMN refund_pubkey TEXT", []);
+        }
+        if !has_claimant_pubkey {
+            let _ = self
+                .conn
+                .execute("ALTER TABLE htlc_records ADD COLUMN claimant_pubkey TEXT", []);
+        }
+
         Ok(())
     }
 
