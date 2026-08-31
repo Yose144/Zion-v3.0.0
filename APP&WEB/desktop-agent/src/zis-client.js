@@ -401,7 +401,7 @@ class ZisClient {
       await ed25519.sign(new TextEncoder().encode(payload), key.seed)
     ).toString('hex');
 
-    return publicApi('POST', '/v1/nodes/register', {
+    return publicApi('POST', '/api/multichain/nodes/register', {
       node_id,
       user_id: user.id,
       reward_address: addr,
@@ -420,7 +420,7 @@ class ZisClient {
       await ed25519.sign(new TextEncoder().encode(payload), key.seed)
     ).toString('hex');
 
-    return publicApi('POST', '/v1/nodes/heartbeat', {
+    return publicApi('POST', '/api/multichain/nodes/heartbeat', {
       node_id,
       height,
       peer_count,
@@ -432,11 +432,11 @@ class ZisClient {
   }
 
   async nodeRewardPayouts() {
-    return publicApi('GET', '/v1/nodes/payouts');
+    return publicApi('GET', '/api/multichain/nodes/payouts');
   }
 
   async activeNodes() {
-    return publicApi('GET', '/v1/nodes');
+    return publicApi('GET', '/api/multichain/nodes');
   }
 }
 

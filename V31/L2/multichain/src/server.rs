@@ -328,8 +328,6 @@ impl ApiServer {
                     Ok(height) => {
                         if let Err(e) = node_reward_service
                             .node_rewards()
-                            .lock()
-                            .await
                             .maybe_payout(height)
                             .await
                         {
@@ -1810,13 +1808,7 @@ async fn register_node(
     Json(req): Json<RegisterNodeRequest>,
 ) -> Result<Json<NodeRecord>, StatusCode> {
     let user = user.ok_or(StatusCode::UNAUTHORIZED)?;
-    match state
-        .service
-        .node_rewards()
-        .lock()
-        .await
-        .register(user.0.id, req)
-        .await
+    match state.service.node_rewards().register(user.0.id, req).await
     {
         Ok(record) => Ok(Json(record)),
         Err(e) => {
@@ -1830,7 +1822,7 @@ async fn node_heartbeat(
     State(state): State<AppState>,
     Json(req): Json<HeartbeatRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    match state.service.node_rewards().lock().await.heartbeat(req).await {
+    match state.service.node_rewards().heartbeat(req).await {
         Ok(()) => Ok(Json(serde_json::json!({ "ok": true }))),
         Err(e) => {
             tracing::warn!("node heartbeat failed: {e}");
@@ -1840,7 +1832,7 @@ async fn node_heartbeat(
 }
 
 async fn list_nodes(State(state): State<AppState>) -> Result<Json<Vec<NodeRecord>>, StatusCode> {
-    match state.service.node_rewards().lock().await.list_active_nodes().await {
+    match state.service.node_rewards().list_active_nodes().await {
         Ok(nodes) => Ok(Json(nodes)),
         Err(e) => {
             tracing::warn!("list active nodes failed: {e}");
@@ -1852,7 +1844,7 @@ async fn list_nodes(State(state): State<AppState>) -> Result<Json<Vec<NodeRecord
 async fn node_reward_payouts(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<PayoutRecord>>, StatusCode> {
-    match state.service.node_rewards().lock().await.list_payouts().await {
+    match state.service.node_rewards().list_payouts().await {
         Ok(payouts) => Ok(Json(payouts)),
         Err(e) => {
             tracing::warn!("list node reward payouts failed: {e}");
