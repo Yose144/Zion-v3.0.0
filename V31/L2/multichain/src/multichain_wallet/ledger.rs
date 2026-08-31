@@ -23,7 +23,12 @@ impl WalletLedger {
         db.load_wallet_balance(user_id, &asset_key(asset))
     }
 
-    pub async fn credit(&self, user_id: &str, asset: &Asset, amount: Amount) -> MultichainResult<()> {
+    pub async fn credit(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+    ) -> MultichainResult<()> {
         let mut db = self.db.lock().await;
         let asset_key = asset_key(asset);
         let current = db.load_wallet_balance(user_id, &asset_key)?;
@@ -31,7 +36,12 @@ impl WalletLedger {
         Ok(())
     }
 
-    pub async fn debit(&self, user_id: &str, asset: &Asset, amount: Amount) -> MultichainResult<()> {
+    pub async fn debit(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+    ) -> MultichainResult<()> {
         let mut db = self.db.lock().await;
         let asset_key = asset_key(asset);
         let current = db.load_wallet_balance(user_id, &asset_key)?;
@@ -44,7 +54,12 @@ impl WalletLedger {
         Ok(())
     }
 
-    pub async fn set_balance(&self, user_id: &str, asset: &Asset, amount: Amount) -> MultichainResult<()> {
+    pub async fn set_balance(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+    ) -> MultichainResult<()> {
         let mut db = self.db.lock().await;
         db.save_wallet_balance(user_id, &asset_key(asset), amount)?;
         Ok(())

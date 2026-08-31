@@ -11,9 +11,9 @@
 //! Configuration (env vars):
 //!   ZION_WALLET_SK_HEX  — Ed25519 secret key hex (64 hex chars)
 //!   ZION_WALLET_KEY_FILE — path to file containing secret key hex
-//!   ZION_RPC_ADDR       — node RPC address (default: 127.0.0.1:9443)
-//!                         HTTPS/HTTP JSON-RPC URLs also supported, e.g.
-//!                         https://rpc.zionterranova.com/jsonrpc
+//!   ZION_RPC_ADDR       — node RPC address (default: 127.0.0.1:9445)
+//!                         Any http:// or https:// scheme is stripped before
+//!                         connecting over raw TCP JSON-RPC.
 
 use std::env;
 use std::io::{BufRead, BufReader, Write};
@@ -74,8 +74,8 @@ fn usage() -> ! {
     eprintln!("Environment:");
     eprintln!("  ZION_WALLET_SK_HEX   Secret key (hex)");
     eprintln!("  ZION_WALLET_KEY_FILE File containing secret key hex");
-    eprintln!("  ZION_RPC_ADDR        Node RPC address (default: 127.0.0.1:9443)");
-    eprintln!("                       HTTPS/HTTP JSON-RPC URLs are also supported.");
+    eprintln!("  ZION_RPC_ADDR        Node RPC address (default: 127.0.0.1:9445)");
+    eprintln!("                       http:// or https:// scheme is stripped (raw TCP).");
     eprintln!();
     eprintln!("Confirmation:");
     eprintln!("  send and bridge-lock ask for interactive confirmation by default.");
@@ -118,21 +118,27 @@ fn own_address(sk: &SigningKey) -> String {
 // ── RPC ────────────────────────────────────────────────────────────────
 
 fn rpc_addr() -> String {
-    env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:9443".into())
+    env::var("ZION_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:9445".into())
+}
+
+fn clean_rpc_addr(addr: &str) -> &str {
+    let s = addr.trim();
+    let s = s
+        .strip_prefix("http://")
+        .or(s.strip_prefix("https://"))
+        .unwrap_or(s);
+    s.split_once('/').map(|(h, _)| h).unwrap_or(s)
 }
 
 fn rpc_call(method: &str, params: Value) -> Value {
     let addr = rpc_addr();
-    if addr.starts_with("http://") || addr.starts_with("https://") {
-        rpc_call_http(&addr, method, params)
-    } else {
-        rpc_call_tcp(&addr, method, params)
-    }
+    let addr = clean_rpc_addr(&addr);
+    rpc_call_tcp(addr, method, params)
 }
 
 fn rpc_call_tcp(addr: &str, method: &str, params: Value) -> Value {
-    let mut stream = TcpStream::connect(addr)
-        .unwrap_or_else(|e| die(&format!("cannot connect to {addr}: {e}")));
+    let mut stream =
+        TcpStream::connect(addr).unwrap_or_else(|e| die(&format!("cannot connect to {addr}: {e}")));
     stream.set_read_timeout(Some(Duration::from_secs(30))).ok();
     stream.set_write_timeout(Some(Duration::from_secs(10))).ok();
 
@@ -156,40 +162,6 @@ fn rpc_call_tcp(addr: &str, method: &str, params: Value) -> Value {
         .unwrap_or_else(|e| die(&format!("read from {addr}: {e}")));
 
     parse_response(&resp_line, addr)
-}
-
-fn rpc_call_http(url: &str, method: &str, params: Value) -> Value {
-    let request = json!({
-        "jsonrpc": "2.0",
-        "method": method,
-        "params": params,
-        "id": 1,
-    });
-    let body = serde_json::to_string(&request).expect("json serialize");
-
-    let output = std::process::Command::new("curl")
-        .args([
-            "-s", "-S",
-            "-X", "POST",
-            url,
-            "-H", "Content-Type: application/json",
-            "-d", &body,
-            "-m", "30",
-        ])
-        .output()
-        .unwrap_or_else(|e| die(&format!("cannot run curl: {e}")));
-
-    if !output.status.success() {
-        die(&format!(
-            "curl failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-
-    parse_response(
-        &String::from_utf8_lossy(&output.stdout),
-        url,
-    )
 }
 
 fn parse_response(text: &str, source: &str) -> Value {
@@ -361,13 +333,20 @@ fn fetch_v31_utxos(address: &str) -> Vec<zion_core::v31_wallet::SpendableUtxo> {
         .collect();
 
     if mature.is_empty() {
-        eprintln!("⚠️  All {} UTXOs are immature coinbase (need {} confirmations)", all.len(), COINBASE_MATURITY);
+        eprintln!(
+            "⚠️  All {} UTXOs are immature coinbase (need {} confirmations)",
+            all.len(),
+            COINBASE_MATURITY
+        );
         die("no mature spendable UTXOs for this address");
     }
 
     let filtered = all.len() - mature.len();
     if filtered > 0 {
-        eprintln!("ℹ️  Filtered {filtered} immature coinbase UTXOs, {} mature UTXOs remaining", mature.len());
+        eprintln!(
+            "ℹ️  Filtered {filtered} immature coinbase UTXOs, {} mature UTXOs remaining",
+            mature.len()
+        );
     }
 
     mature
@@ -403,14 +382,7 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64, memo: Option<String>, yes: boo
             memo_bytes,
         )
     } else {
-        zion_core::v31_wallet::build_send(
-            &sk,
-            &address,
-            to,
-            amount_flowers,
-            fee,
-            &available,
-        )
+        zion_core::v31_wallet::build_send(&sk, &address, to, amount_flowers, fee, &available)
     }
     .unwrap_or_else(|e| die(&format!("build failed: {e}")));
 

@@ -105,6 +105,6 @@ mod tests {
 
     #[test]
     fn client_constructs() {
-        let _c = NodeClient::new("http://127.0.0.1:9443");
+        let _c = NodeClient::new("http://127.0.0.1:9445");
     }
 }

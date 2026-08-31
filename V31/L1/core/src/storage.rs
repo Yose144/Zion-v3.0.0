@@ -248,7 +248,12 @@ impl Storage {
                     "INSERT OR REPLACE INTO output_index
                      (tx_hash, output_index, address, amount)
                      VALUES (?1, ?2, ?3, ?4)",
-                    params![tx_hash_bytes, idx as i64, address, output.amount.0.to_string()],
+                    params![
+                        tx_hash_bytes,
+                        idx as i64,
+                        address,
+                        output.amount.0.to_string()
+                    ],
                 )?;
                 conn.execute(
                     "INSERT OR IGNORE INTO address_tx_index
@@ -1007,8 +1012,14 @@ mod tests {
         storage.put(&block1).await.unwrap();
 
         // O(1) tx height lookup.
-        assert_eq!(storage.find_tx_height(&spend_tx_hash).await.unwrap(), Some(1));
-        assert_eq!(storage.find_tx_height(&genesis_tx_hash).await.unwrap(), Some(0));
+        assert_eq!(
+            storage.find_tx_height(&spend_tx_hash).await.unwrap(),
+            Some(1)
+        );
+        assert_eq!(
+            storage.find_tx_height(&genesis_tx_hash).await.unwrap(),
+            Some(0)
+        );
 
         // Output ownership resolution (used to enrich tx inputs server-side).
         let (owner, amount) = storage
@@ -1026,8 +1037,12 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(total, 2);
-        assert!(rows.iter().any(|(h, height, dir)| *h == genesis_tx_hash && *height == 0 && dir == "in"));
-        assert!(rows.iter().any(|(h, height, dir)| *h == spend_tx_hash && *height == 1 && dir == "out"));
+        assert!(rows
+            .iter()
+            .any(|(h, height, dir)| *h == genesis_tx_hash && *height == 0 && dir == "in"));
+        assert!(rows
+            .iter()
+            .any(|(h, height, dir)| *h == spend_tx_hash && *height == 1 && dir == "out"));
 
         // Receiver-side history: the new recipient address should show an
         // 'in' entry at height 1.
@@ -1085,7 +1100,10 @@ mod tests {
             nonce: 0,
             difficulty: genesis.header.difficulty,
         };
-        storage.put(&Block::new(header, vec![self_tx])).await.unwrap();
+        storage
+            .put(&Block::new(header, vec![self_tx]))
+            .await
+            .unwrap();
 
         let (rows, total) = storage.get_address_tx_history(sender, 10, 0).await.unwrap();
         // Exactly 2 distinct transactions touch `sender`: the genesis receipt
@@ -1111,12 +1129,19 @@ mod tests {
             conn.execute("DELETE FROM address_tx_index", []).unwrap();
         }
         assert!(storage.tx_index_is_empty().await.unwrap());
-        assert!(storage.find_tx_height(&spend_tx_hash).await.unwrap().is_none());
+        assert!(storage
+            .find_tx_height(&spend_tx_hash)
+            .await
+            .unwrap()
+            .is_none());
 
         let indexed = storage.backfill_tx_index().await.unwrap();
         assert_eq!(indexed, 2);
         assert!(!storage.tx_index_is_empty().await.unwrap());
-        assert_eq!(storage.find_tx_height(&spend_tx_hash).await.unwrap(), Some(1));
+        assert_eq!(
+            storage.find_tx_height(&spend_tx_hash).await.unwrap(),
+            Some(1)
+        );
 
         let (rows, total) = storage
             .get_address_tx_history("zion1recipientaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 10, 0)

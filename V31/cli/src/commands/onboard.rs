@@ -69,7 +69,10 @@ pub async fn run(cmd: OnboardCmd) -> Result<()> {
                 if active {
                     ui::print_ok(&format!("{} is running", svc));
                 } else {
-                    ui::print_warn(&format!("{} is not running (start with: zion service start {})", svc, svc));
+                    ui::print_warn(&format!(
+                        "{} is not running (start with: zion service start {})",
+                        svc, svc
+                    ));
                 }
             }
 

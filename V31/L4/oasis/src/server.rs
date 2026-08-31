@@ -25,10 +25,9 @@ use crate::combat::{ActionType, CombatAction, CombatEngine, Combatant};
 use crate::config::OasisConfig;
 use crate::db::OasisDb;
 use crate::guild::Guild;
-use crate::zis_auth::ZisClient;
-use crate::player::Player;
 use crate::hiran_bridge::OasisHiranBridge;
 use crate::metrics::{serve_metrics, OasisMetrics};
+use crate::player::Player;
 use crate::quests::QuestManager;
 use crate::rate_limit::{rate_limit_middleware, RateLimiter};
 use crate::rewards::{RewardPool, RewardSlot};
@@ -36,6 +35,7 @@ use crate::territory::TerritoryMap;
 use crate::websocket::{ws_events_handler, ws_leaderboard_handler, WsHub};
 use crate::worlds::WorldRegistry;
 use crate::xp::{XpSource, XpSystem, MAX_WORLD_XP};
+use crate::zis_auth::ZisClient;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -109,9 +109,18 @@ pub fn build_router(state: OasisState) -> Router {
     // Sensitive POST endpoints under rate limit
     let sensitive = Router::new()
         .route("/api/v1/oasis/player/:address/xp", post(award_xp))
-        .route("/api/v1/oasis/player/:address/worlds/:id/scan", post(scan_world))
-        .route("/api/v1/oasis/player/:address/worlds/:id/approach", post(approach_world))
-        .route("/api/v1/oasis/player/:address/worlds/:id/clue", post(discover_world_clue))
+        .route(
+            "/api/v1/oasis/player/:address/worlds/:id/scan",
+            post(scan_world),
+        )
+        .route(
+            "/api/v1/oasis/player/:address/worlds/:id/approach",
+            post(approach_world),
+        )
+        .route(
+            "/api/v1/oasis/player/:address/worlds/:id/clue",
+            post(discover_world_clue),
+        )
         .route("/api/v1/oasis/guild", post(create_guild))
         .route("/api/v1/oasis/guild/:id/join", post(join_guild))
         .route("/api/v1/oasis/raid-team", post(create_raid_team))
@@ -759,9 +768,17 @@ async fn list_guilds(State(state): State<OasisState>) -> impl IntoResponse {
             (StatusCode::OK, Json(ApiResponse::ok(guilds))).into_response()
         }
         _ => {
-            let mut demo1 = Guild::new("demo-guild-1".into(), "Star Forgers".into(), "zion1demo".into());
+            let mut demo1 = Guild::new(
+                "demo-guild-1".into(),
+                "Star Forgers".into(),
+                "zion1demo".into(),
+            );
             demo1.description = "Forging unity in the Celestial Mountains.".into();
-            let mut demo2 = Guild::new("demo-guild-2".into(), "Quantum Monks".into(), "zion1seeker".into());
+            let mut demo2 = Guild::new(
+                "demo-guild-2".into(),
+                "Quantum Monks".into(),
+                "zion1seeker".into(),
+            );
             demo2.description = "Meditation and mining in the Crystal Caves.".into();
             let demo = vec![demo1, demo2];
             (StatusCode::OK, Json(ApiResponse::ok(demo))).into_response()

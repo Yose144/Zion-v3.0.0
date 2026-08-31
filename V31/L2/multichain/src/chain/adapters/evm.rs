@@ -58,13 +58,7 @@ fn build_token_registry(
     if let Ok(addr) = EthAddress::from_str(&contracts.wzion) {
         registry.insert(
             addr,
-            Asset::with_contract(
-                chain,
-                "wZION",
-                contracts.wzion.clone(),
-                18,
-                "Wrapped ZION",
-            ),
+            Asset::with_contract(chain, "wZION", contracts.wzion.clone(), 18, "Wrapped ZION"),
         );
     }
 
@@ -131,7 +125,13 @@ impl EvmAdapter {
 
     fn wzion_asset(&self) -> Option<Asset> {
         let contract = self.contracts.as_ref()?.wzion.clone();
-        Some(Asset::with_contract(self.chain, "wZION", contract, 18, "Wrapped ZION"))
+        Some(Asset::with_contract(
+            self.chain,
+            "wZION",
+            contract,
+            18,
+            "Wrapped ZION",
+        ))
     }
 
     fn atomic_swap_address(&self) -> Option<EthAddress> {
@@ -227,7 +227,7 @@ impl EvmAdapter {
             })?
             .ok_or_else(|| MultichainError::Internal("transaction receipt missing".to_string()))?;
 
-        if receipt.status.map_or(false, |s| s.as_u64() != 1) {
+        if receipt.status.is_some_and(|s| s.as_u64() != 1) {
             return Err(MultichainError::Internal(format!(
                 "transaction {} reverted on-chain",
                 receipt.transaction_hash
@@ -416,21 +416,29 @@ impl EvmAdapter {
             .rsplit_once('-')
             .map(|(_, h)| h)
             .filter(|h| h.len() == 64)
-            .ok_or_else(|| MultichainError::Validation(format!("invalid HTLC transfer id: {id}")))?;
-        let bytes = hex::decode(hash_hex)
-            .map_err(|_| MultichainError::Validation(format!("invalid HTLC hash hex: {hash_hex}")))?;
+            .ok_or_else(|| {
+                MultichainError::Validation(format!("invalid HTLC transfer id: {id}"))
+            })?;
+        let bytes = hex::decode(hash_hex).map_err(|_| {
+            MultichainError::Validation(format!("invalid HTLC hash hex: {hash_hex}"))
+        })?;
         if bytes.len() != 32 {
-            return Err(MultichainError::Validation("HTLC hash must be 32 bytes".to_string()));
+            return Err(MultichainError::Validation(
+                "HTLC hash must be 32 bytes".to_string(),
+            ));
         }
         Ok(H256::from_slice(&bytes))
     }
 
-    fn htlc_token_address(&self, asset: &crate::types::TransferEndpoint) -> MultichainResult<EthAddress> {
+    fn htlc_token_address(
+        &self,
+        asset: &crate::types::TransferEndpoint,
+    ) -> MultichainResult<EthAddress> {
         match asset.asset.id.ticker.as_str() {
             "ETH" => Ok(EthAddress::zero()),
-            "wZION" => self
-                .wzion_address()
-                .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string())),
+            "wZION" => self.wzion_address().ok_or_else(|| {
+                MultichainError::Config("wZION contract not configured".to_string())
+            }),
             _ => Err(MultichainError::Unsupported(format!(
                 "HTLC token {} not supported",
                 asset.asset.id.ticker
@@ -446,11 +454,7 @@ impl EvmAdapter {
         }
     }
 
-    async fn htlc_lock(
-        &self,
-        transfer: &Transfer,
-        swap: EthAddress,
-    ) -> MultichainResult<Hash> {
+    async fn htlc_lock(&self, transfer: &Transfer, swap: EthAddress) -> MultichainResult<Hash> {
         let id = Self::parse_htlc_hash(transfer)?;
         let hashlock = transfer
             .hashlock
@@ -493,19 +497,19 @@ impl EvmAdapter {
         ]);
         data.extend_from_slice(&args);
 
-        let value = if token == EthAddress::zero() { amount } else { U256::zero() };
+        let value = if token == EthAddress::zero() {
+            amount
+        } else {
+            U256::zero()
+        };
         self.send_transaction(swap, data, value).await
     }
 
-    async fn htlc_claim(
-        &self,
-        transfer: &Transfer,
-        swap: EthAddress,
-    ) -> MultichainResult<Hash> {
+    async fn htlc_claim(&self, transfer: &Transfer, swap: EthAddress) -> MultichainResult<Hash> {
         let id = Self::parse_htlc_hash(transfer)?;
-        let preimage = transfer
-            .preimage
-            .ok_or_else(|| MultichainError::Validation("HTLC claim missing preimage".to_string()))?;
+        let preimage = transfer.preimage.ok_or_else(|| {
+            MultichainError::Validation("HTLC claim missing preimage".to_string())
+        })?;
 
         let mut data = Self::function_selector(HTLC_CLAIM_SIG).to_vec();
         let args = encode(&[
@@ -517,11 +521,7 @@ impl EvmAdapter {
         self.send_transaction(swap, data, U256::zero()).await
     }
 
-    async fn htlc_refund(
-        &self,
-        transfer: &Transfer,
-        swap: EthAddress,
-    ) -> MultichainResult<Hash> {
+    async fn htlc_refund(&self, transfer: &Transfer, swap: EthAddress) -> MultichainResult<Hash> {
         let id = Self::parse_htlc_hash(transfer)?;
 
         let mut data = Self::function_selector(HTLC_REFUND_SIG).to_vec();
@@ -660,12 +660,7 @@ impl ChainAdapter for EvmAdapter {
             .topic2(ValueOrArray::Array(topic_addresses));
 
         let mut events = Vec::new();
-        for log in self
-            .provider
-            .get_logs(&filter)
-            .await
-            .unwrap_or_default()
-        {
+        for log in self.provider.get_logs(&filter).await.unwrap_or_default() {
             let log_token = log.address;
             let Some(asset) = self.token_registry.get(&log_token) else {
                 continue;
@@ -698,9 +693,9 @@ impl ChainAdapter for EvmAdapter {
             TransferDirection::LockMint => self.submit_lock_proof(transfer, bridge).await,
             TransferDirection::BurnRelease => self.confirm_burn_release(transfer, bridge).await,
             TransferDirection::Htlc => {
-                let swap = self
-                    .atomic_swap_address()
-                    .ok_or_else(|| MultichainError::Config("atomic swap contract not configured".to_string()))?;
+                let swap = self.atomic_swap_address().ok_or_else(|| {
+                    MultichainError::Config("atomic swap contract not configured".to_string())
+                })?;
                 if transfer.id.starts_with("htlc-lock-") {
                     self.htlc_lock(transfer, swap).await
                 } else if transfer.id.starts_with("htlc-claim-") {
@@ -757,13 +752,18 @@ impl ChainAdapter for EvmAdapter {
             .await
     }
 
-    async fn transfer_token(&self, token: &zion_l1_types::Asset, to: &Address, amount: Amount) -> MultichainResult<Hash> {
+    async fn transfer_token(
+        &self,
+        token: &zion_l1_types::Asset,
+        to: &Address,
+        amount: Amount,
+    ) -> MultichainResult<Hash> {
         let token_addr = match token.id.contract.as_deref() {
             Some(addr) => EthAddress::from_str(addr)
                 .map_err(|e| MultichainError::Validation(format!("invalid token contract: {e}")))?,
-            None if token.id.ticker == "wZION" => self
-                .wzion_address()
-                .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string()))?,
+            None if token.id.ticker == "wZION" => self.wzion_address().ok_or_else(|| {
+                MultichainError::Config("wZION contract not configured".to_string())
+            })?,
             None => {
                 return Err(MultichainError::Validation(format!(
                     "token contract address required for {}",

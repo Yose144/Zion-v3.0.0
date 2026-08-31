@@ -15,34 +15,33 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::chain_state::{
-    self, ChainJournalEntry, ChainState, ChainStateSnapshot, ChainStore, TemplateState,
-    SpendableUtxo, body_hash_hex, hex, is_valid_account_id, now_secs, parse_fixed_hex,
-    derive_template_merkle_root, select_template_transactions, select_template_utxo_transactions,
-    filter_balance_sufficient, confirmed_balance_from_blocks, derive_block_body_hash,
-    encode_json_line, dedup_peers, journal_path, snapshot_temp_path, genesis_accepted_block,
+    self, body_hash_hex, confirmed_balance_from_blocks, dedup_peers, derive_block_body_hash,
+    derive_template_merkle_root, encode_json_line, filter_balance_sufficient,
+    genesis_accepted_block, hex, is_valid_account_id, journal_path, now_secs, parse_fixed_hex,
+    select_template_transactions, select_template_utxo_transactions, snapshot_temp_path,
+    ChainJournalEntry, ChainState, ChainStateSnapshot, ChainStore, SpendableUtxo, TemplateState,
 };
-use crate::v3_compat::{
-    self as compat, BlockCandidate, DifficultyTarget, MiningHeader, MiningJob,
-    MiningSolution, SealedBlock,
-};
-pub use crate::v3_p2p::{NetworkId, PeerEndpoint};
-use crate::v3_tx as tx;
-use crate::websocket::WebSocketServer;
 use crate::crypto;
 use crate::difficulty;
 use crate::emission;
 use crate::fee;
 use crate::launch;
 use crate::v3_bridge as bridge;
-use crate::v3_validation as validation;
 use crate::v3_bridge::{BridgeUnlockRequest, BridgeValidatorProof};
+use crate::v3_compat::{
+    self as compat, BlockCandidate, DifficultyTarget, MiningHeader, MiningJob, MiningSolution,
+    SealedBlock,
+};
+pub use crate::v3_p2p::{NetworkId, PeerEndpoint};
+use crate::v3_tx as tx;
+use crate::v3_validation as validation;
+use crate::websocket::WebSocketServer;
 
 use zion_cosmic_harmony::{EkamDeeksha, CANONICAL_ALGORITHM as EKAM_DEEKSHA_ALGORITHM};
 use zion_cosmic_harmony_v3::{
-    account_tx_memo_v1_active, body_root_v2_active,
-    cosmic_harmony_with_height, profile_name_for_height, tx_hash_v2_active,
-    NclStats, RevenueCollector, RevenueEvent, RevenueStats,
-    CHV3_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT,
+    account_tx_memo_v1_active, body_root_v2_active, cosmic_harmony_with_height,
+    profile_name_for_height, tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent,
+    RevenueStats, CHV3_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -1318,7 +1317,10 @@ impl NodeRuntime {
     /// Import a single peer block. Returns `Ok(Some(block))` if the block
     /// was newly accepted (and should be relayed), `Ok(None)` if it was a
     /// duplicate, or `Err` on validation failure.
-    pub(crate) fn import_peer_block(&mut self, block: AcceptedBlock) -> Result<Option<AcceptedBlock>, String> {
+    pub(crate) fn import_peer_block(
+        &mut self,
+        block: AcceptedBlock,
+    ) -> Result<Option<AcceptedBlock>, String> {
         let height_before = self.chain_state.height;
         self.chain_state
             .import_peer_block(&self.node_id, &self.core, block)?;
@@ -1398,7 +1400,10 @@ impl NodeRuntime {
         }
     }
 
-    pub(crate) fn submit_utxo_transaction_rpc(&mut self, transaction: tx::Transaction) -> RpcResponse {
+    pub(crate) fn submit_utxo_transaction_rpc(
+        &mut self,
+        transaction: tx::Transaction,
+    ) -> RpcResponse {
         let tx_id = hex(&transaction.id);
         match self
             .chain_state

@@ -103,10 +103,7 @@ mod tests {
         std::env::set_var("ZION_UPSTREAM_POOL_ADDR", "127.0.0.1:8444");
         let cfg = ShareRelayConfig::from_env();
         assert!(cfg.enabled());
-        assert_eq!(
-            cfg.upstream_pool_addr.as_deref(),
-            Some("127.0.0.1:8444")
-        );
+        assert_eq!(cfg.upstream_pool_addr.as_deref(), Some("127.0.0.1:8444"));
         std::env::remove_var("ZION_UPSTREAM_POOL_ADDR");
     }
 

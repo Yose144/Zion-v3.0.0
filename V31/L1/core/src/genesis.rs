@@ -76,28 +76,68 @@ pub fn genesis_hash() -> Hash {
     Hash::new(Keccak256::digest(bytes).into())
 }
 
-
 /// Premine allocations in V31 canonical form.
 /// Total: 16,780,000,000 ZION.
 fn premine_outputs() -> Vec<TransactionOutput> {
     vec![
-        output("zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5", 1650000000_u64),
-        output("zion1s7x735r6v86485k7t36008l682g777g3q8pu3q0", 1650000000_u64),
-        output("zion1e0f4h6w3w394d4p355z2r440k4s2f6v5h4rl8f4", 1650000000_u64),
-        output("zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708", 1650000000_u64),
-        output("zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388", 1650000000_u64),
-        output("zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5", 2500000000_u64),
-        output("zion1s27490u7n823g098w42077h8f2n824w0y75w0s3", 1000000000_u64),
-        output("zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238", 500000000_u64),
-        output("zion1k752909323x66062k5j7074096f003z095ax8m7", 1000000000_u64),
-        output("zion1z3a4w726w5u4r4s4z644s8p897v4a2k045rt706", 1000000000_u64),
-        output("zion122v8f8g55398f4g884k7j482h3z845j6c6ta4f8", 590000000_u64),
-        output("zion1h6644748u5x6p4p784n6g2l7j77625w6a0k80s8", 1440000000_u64),
-        output("zion1t6z3c0f0p3h0v233a3h432k5h764j0r3n5ml756", 400000000_u64),
-        output("zion1j3w3h7k8m635h734y786j5804305m822t5uk546", 100000000_u64),
+        output(
+            "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5",
+            1650000000_u64,
+        ),
+        output(
+            "zion1s7x735r6v86485k7t36008l682g777g3q8pu3q0",
+            1650000000_u64,
+        ),
+        output(
+            "zion1e0f4h6w3w394d4p355z2r440k4s2f6v5h4rl8f4",
+            1650000000_u64,
+        ),
+        output(
+            "zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708",
+            1650000000_u64,
+        ),
+        output(
+            "zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388",
+            1650000000_u64,
+        ),
+        output(
+            "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5",
+            2500000000_u64,
+        ),
+        output(
+            "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
+            1000000000_u64,
+        ),
+        output(
+            "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238",
+            500000000_u64,
+        ),
+        output(
+            "zion1k752909323x66062k5j7074096f003z095ax8m7",
+            1000000000_u64,
+        ),
+        output(
+            "zion1z3a4w726w5u4r4s4z644s8p897v4a2k045rt706",
+            1000000000_u64,
+        ),
+        output(
+            "zion122v8f8g55398f4g884k7j482h3z845j6c6ta4f8",
+            590000000_u64,
+        ),
+        output(
+            "zion1h6644748u5x6p4p784n6g2l7j77625w6a0k80s8",
+            1440000000_u64,
+        ),
+        output(
+            "zion1t6z3c0f0p3h0v233a3h432k5h764j0r3n5ml756",
+            400000000_u64,
+        ),
+        output(
+            "zion1j3w3h7k8m635h734y786j5804305m822t5uk546",
+            100000000_u64,
+        ),
     ]
 }
-
 
 fn output(encoded: &str, zion: u64) -> TransactionOutput {
     let address =

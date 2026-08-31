@@ -7,7 +7,7 @@ use tokio::net::TcpStream;
 
 /// Parse an RPC URL into a TCP socket address.
 ///
-/// Accepts `http://host:port`, `host:port` or `host` (defaulting to 9443).
+/// Accepts `http://host:port`, `host:port` or `host` (defaulting to 9445).
 pub fn parse_rpc_addr(rpc_url: &str) -> Result<SocketAddr> {
     let s = rpc_url.trim();
     let s = s
@@ -20,7 +20,7 @@ pub fn parse_rpc_addr(rpc_url: &str) -> Result<SocketAddr> {
         return Ok(addr);
     }
     if !s.contains(':') {
-        return format!("{}:9443", s)
+        return format!("{}:9445", s)
             .parse::<SocketAddr>()
             .with_context(|| format!("invalid RPC address: {}", rpc_url));
     }

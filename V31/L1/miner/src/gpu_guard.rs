@@ -235,13 +235,8 @@ impl GpuAlgorithm {
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         match s.trim().to_ascii_lowercase().as_str() {
-            "ekam_deeksha"
-            | "deeksha_lite_v1"
-            | "deeksha_lite"
-            | "deeksha_chv3"
-            | "lite"
-            | "dl"
-            | "dlv1" => Self::EkamDeeksha,
+            "ekam_deeksha" | "deeksha_lite_v1" | "deeksha_lite" | "deeksha_chv3" | "lite"
+            | "dl" | "dlv1" => Self::EkamDeeksha,
             _ => Self::EkamDeeksha,
         }
     }

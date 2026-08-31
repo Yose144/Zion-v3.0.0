@@ -44,6 +44,8 @@ pub struct WarpWatcher {
     adapters: Vec<(String, Box<dyn ChainAdapter>)>,
     /// Fallback in-memory dedup (used only when db is None).
     seen: HashSet<String>,
+    /// Validator set for checking if we can auto-advance (single-node mode).
+    validators: Arc<Mutex<crate::warp::validator::WarpValidatorSet>>,
 }
 
 impl WarpWatcher {
@@ -53,6 +55,18 @@ impl WarpWatcher {
         config: WarpConfig,
         router: Arc<Mutex<WarpRouter>>,
         db: Option<TransferDb>,
+    ) -> Self {
+        Self::with_validators(config, router, db, Arc::new(Mutex::new(
+            crate::warp::validator::WarpValidatorSet::new(0),
+        )))
+    }
+
+    /// Build a watcher with an explicit validator set (needed for auto-advance).
+    pub fn with_validators(
+        config: WarpConfig,
+        router: Arc<Mutex<WarpRouter>>,
+        db: Option<TransferDb>,
+        validators: Arc<Mutex<crate::warp::validator::WarpValidatorSet>>,
     ) -> Self {
         let mut adapters: Vec<(String, Box<dyn ChainAdapter>)> = Vec::new();
 
@@ -76,6 +90,7 @@ impl WarpWatcher {
             db,
             adapters,
             seen: HashSet::new(),
+            validators,
         }
     }
 
@@ -152,6 +167,10 @@ impl WarpWatcher {
     }
 
     /// Process one `DepositProof`: dedup → route → persist.
+    ///
+    /// Source chain "zion-l1" means an outbound transfer (lock → mint on dest
+    /// chain); any other source chain means an inbound transfer (burn on
+    /// external chain → release on ZION L1).
     async fn handle_proof(&mut self, chain_name: String, proof: DepositProof) {
         // Dedup: skip if we already processed this tx hash
         if self.is_seen(&proof.tx_hash) {
@@ -162,7 +181,55 @@ impl WarpWatcher {
             return;
         }
 
-        // Extract ZION recipient from memo "WARP_INBOUND:<chain>:<zion_addr>"
+        // ZION L1 is the source chain for outbound (lock→mint) transfers.
+        let is_outbound = chain_name == "zion-l1";
+
+        if is_outbound {
+            info!(
+                "[Watcher][{}] Outbound lock tx={} amount={} memo={}",
+                chain_name, proof.tx_hash, proof.amount_flowers, proof.memo
+            );
+
+            let result = {
+                let mut router = self.router.lock().await;
+                router.initiate_outbound(proof.clone())
+            };
+
+            match result {
+                Ok(transfer_id) => {
+                    info!(
+                        "[Watcher][{}] Outbound transfer {} created",
+                        chain_name, transfer_id
+                    );
+                    self.mark_seen(&proof.tx_hash, &chain_name);
+
+                    // Auto-advance through finality → validating → quorum when
+                    // we can sign quorum locally (single-node Alpha mode).
+                    self.try_auto_advance(transfer_id, &chain_name).await;
+
+                    if let Some(db) = &self.db {
+                        let router = self.router.lock().await;
+                        if let Some(transfer) = router.get_transfer(&transfer_id) {
+                            if let Err(e) = db.save(transfer) {
+                                error!("[Watcher][{}] DB save failed: {}", chain_name, e);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!(
+                        "[Watcher][{}] initiate_outbound failed for tx {}: {}",
+                        chain_name, proof.tx_hash, e
+                    );
+                    if is_permanent_error(&e) {
+                        self.mark_seen(&proof.tx_hash, &chain_name);
+                    }
+                }
+            }
+            return;
+        }
+
+        // Inbound: external chain burn → ZION L1 release.
         let zion_recipient = extract_zion_recipient(&proof.memo)
             .unwrap_or_else(|| "zion1warp_unresolved".to_string());
 
@@ -171,7 +238,6 @@ impl WarpWatcher {
             chain_name, proof.tx_hash, proof.amount_flowers, zion_recipient
         );
 
-        // Hand off to the router — 3-arg signature: (chain_name, proof, recipient)
         let result = {
             let mut router = self.router.lock().await;
             router.initiate_inbound(&chain_name, proof.clone(), &zion_recipient)
@@ -185,7 +251,6 @@ impl WarpWatcher {
                 );
                 self.mark_seen(&proof.tx_hash, &chain_name);
 
-                // Persist if DB is available
                 if let Some(db) = &self.db {
                     let router = self.router.lock().await;
                     if let Some(transfer) = router.get_transfer(&transfer_id) {
@@ -200,11 +265,48 @@ impl WarpWatcher {
                     "[Watcher][{}] initiate_inbound failed for tx {}: {}",
                     chain_name, proof.tx_hash, e
                 );
-                // Mark as seen to avoid retry storms on permanent errors
                 if is_permanent_error(&e) {
                     self.mark_seen(&proof.tx_hash, &chain_name);
                 }
             }
+        }
+    }
+
+    /// Auto-advance a transfer through finality → validating → quorum when
+    /// the local validator set can sign quorum (single-node Alpha mode).
+    async fn try_auto_advance(&self, transfer_id: uuid::Uuid, chain_name: &str) {
+        let can_sign = {
+            let validators = self.validators.lock().await;
+            validators.can_sign_quorum_locally()
+        };
+
+        if !can_sign {
+            debug!(
+                "[Watcher][{}] Cannot sign quorum locally — leaving transfer {} in Detected",
+                chain_name, transfer_id
+            );
+            return;
+        }
+
+        let mut router = self.router.lock().await;
+        let advances = [
+            crate::warp::types::WarpStatus::AwaitingFinality,
+            crate::warp::types::WarpStatus::Validating,
+            crate::warp::types::WarpStatus::QuorumReached,
+        ];
+
+        for status in &advances {
+            if let Err(e) = router.advance_transfer(transfer_id, *status) {
+                warn!(
+                    "[Watcher][{}] Auto-advance to {:?} failed for {}: {}",
+                    chain_name, status, transfer_id, e
+                );
+                break;
+            }
+            info!(
+                "[Watcher][{}] Auto-advanced transfer {} to {:?}",
+                chain_name, transfer_id, status
+            );
         }
     }
 }

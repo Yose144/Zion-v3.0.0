@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::thread;
 
 use serde_json::{json, Value};
+use zion_core::consensus::ConsensusEngine;
 
 fn rpc_call(node: &str, method: &str, params: Value) -> Result<Value, String> {
     let mut stream = TcpStream::connect(node).map_err(|e| e.to_string())?;
@@ -18,7 +19,9 @@ fn rpc_call(node: &str, method: &str, params: Value) -> Result<Value, String> {
         "id": 1,
     });
     let line = serde_json::to_string(&req).unwrap() + "\n";
-    stream.write_all(line.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .write_all(line.as_bytes())
+        .map_err(|e| e.to_string())?;
     let mut reader = BufReader::new(stream);
     let mut buf = String::new();
     reader.read_line(&mut buf).map_err(|e| e.to_string())?;
@@ -73,13 +76,8 @@ fn main() {
     eprintln!("Mining with {threads} threads, height={hdr_height}, timestamp={timestamp}");
 
     // Use the consensus engine to mine
-    use zion_core::consensus::ConsensusEngine;
     use zion_core::block::{Block, BlockHeader};
     use zion_l1_types::Hash;
-
-    let consensus = ConsensusEngine::new(std::sync::Arc::new(
-        zion_cosmic_harmony::EkamDeeksha::new(),
-    ));
 
     let mut header = BlockHeader {
         previous_hash: Hash::new(previous_hash),
@@ -107,17 +105,13 @@ fn main() {
         let limit = 1_000_000_000u64;
 
         handles.push(thread::spawn(move || {
-            let engine = ConsensusEngine::new(std::sync::Arc::new(
-                zion_cosmic_harmony::EkamDeeksha::new(),
-            ));
+            let engine =
+                ConsensusEngine::new(std::sync::Arc::new(zion_cosmic_harmony::EkamDeeksha::new()));
             let mut current_start = start_nonce;
             while running.load(std::sync::atomic::Ordering::Relaxed) {
-                if let Some((nonce, hash)) = engine.mine_header_bytes(
-                    &pow_header[..],
-                    &target,
-                    current_start,
-                    limit,
-                ) {
+                if let Some((nonce, hash)) =
+                    engine.mine_header_bytes(&pow_header[..], &target, current_start, limit)
+                {
                     let mut guard = found.lock().unwrap();
                     if guard.is_none() {
                         *guard = Some((nonce, hash));
@@ -149,8 +143,7 @@ fn main() {
 
     // Submit block
     let block_json = serde_json::to_value(&block).unwrap();
-    let result = rpc_call(&node, "submitBlock", block_json)
-        .expect("failed to submit block");
+    let result = rpc_call(&node, "submitBlock", block_json).expect("failed to submit block");
 
     eprintln!("Block submitted: {result}");
     eprintln!("Block height: {}, nonce: {nonce}", header.height);

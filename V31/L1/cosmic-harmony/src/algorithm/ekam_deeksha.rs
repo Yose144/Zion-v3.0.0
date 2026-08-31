@@ -625,12 +625,24 @@ mod tests {
     fn gen_kat_v3_2() {
         // Generates new KAT vectors for the v3.2 ASIC-hardened parameters.
         // Run: cargo test --release -p zion-cosmic-harmony gen_kat_v3_2 -- --nocapture --ignored
-        eprintln!("\n=== v3.2 KAT vectors (scratchpad={}, reads={}, passes={}) ===",
-            SCRATCHPAD_SIZE, RANDOM_READS, PASSES);
+        eprintln!(
+            "\n=== v3.2 KAT vectors (scratchpad={}, reads={}, passes={}) ===",
+            SCRATCHPAD_SIZE, RANDOM_READS, PASSES
+        );
         for &nonce in &[0u64, 1, 42, 0xDEADBEEF, u64::MAX] {
             let hash = EkamDeeksha::hash_bytes(LITE_KAT_HEADER, nonce);
             let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
-            eprintln!("    (\"{}\", {}),", hex, if nonce == u64::MAX { "u64::MAX".to_string() } else if nonce > 1000 { format!("0x{:X}", nonce) } else { nonce.to_string() });
+            eprintln!(
+                "    (\"{}\", {}),",
+                hex,
+                if nonce == u64::MAX {
+                    "u64::MAX".to_string()
+                } else if nonce > 1000 {
+                    format!("0x{:X}", nonce)
+                } else {
+                    nonce.to_string()
+                }
+            );
         }
         // Also the canonical vector
         let header = b"ZION_DEEKSHA_LITE_TEST_V1";

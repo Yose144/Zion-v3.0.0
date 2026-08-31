@@ -1,4 +1,4 @@
-//! ZION L1 adapter — JSON-RPC over HTTP.
+//! ZION L1 adapter — JSON-RPC over raw TCP.
 //!
 //! Mainnet Alpha capabilities:
 //! - read chain height, account balance, tx confirmations,
@@ -22,7 +22,6 @@ use crate::wallet::Keyring;
 /// ZION L1 JSON-RPC adapter.
 pub struct ZionL1Adapter {
     rpc_url: String,
-    client: reqwest::Client,
     request_id: std::sync::atomic::AtomicU64,
     nonce: std::sync::atomic::AtomicU64,
     keyring: Keyring,
@@ -32,14 +31,21 @@ impl ZionL1Adapter {
     pub fn new(rpc_url: impl Into<String>, keyring: Keyring) -> Self {
         Self {
             rpc_url: rpc_url.into(),
-            client: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(20))
-                .build()
-                .expect("valid reqwest client"),
             request_id: std::sync::atomic::AtomicU64::new(1),
             nonce: std::sync::atomic::AtomicU64::new(1),
             keyring,
         }
+    }
+
+    /// Strip any URL scheme/path from an RPC endpoint so it can be used
+    /// with `tokio::net::TcpStream::connect`.
+    fn clean_rpc_url(rpc_url: &str) -> &str {
+        let s = rpc_url.trim();
+        let s = s
+            .strip_prefix("http://")
+            .or(s.strip_prefix("https://"))
+            .unwrap_or(s);
+        s.split_once('/').map(|(h, _)| h).unwrap_or(s)
     }
 
     async fn call<T: serde::de::DeserializeOwned>(
@@ -47,6 +53,9 @@ impl ZionL1Adapter {
         method: &str,
         params: serde_json::Value,
     ) -> MultichainResult<T> {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpStream;
+
         let id = self
             .request_id
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -57,33 +66,36 @@ impl ZionL1Adapter {
             "params": params,
         });
 
-        let resp = self
-            .client
-            .post(&self.rpc_url)
-            .json(&body)
-            .send()
+        let addr = Self::clean_rpc_url(&self.rpc_url);
+        let mut stream = TcpStream::connect(addr)
             .await
-            .map_err(|e| MultichainError::Internal(format!("zion rpc request failed: {e}")))?;
+            .map_err(|e| MultichainError::Internal(format!("zion rpc connect failed: {e}")))?;
 
-        let status = resp.status();
-        if !status.is_success() {
-            return Err(MultichainError::Internal(format!(
-                "zion rpc returned {}",
-                status
-            )));
-        }
+        let payload = serde_json::to_string(&body)
+            .map_err(|e| MultichainError::Internal(format!("zion rpc serialize failed: {e}")))?;
+        let payload = format!("{payload}\n");
+        stream
+            .write_all(payload.as_bytes())
+            .await
+            .map_err(|e| MultichainError::Internal(format!("zion rpc write failed: {e}")))?;
+        stream
+            .flush()
+            .await
+            .map_err(|e| MultichainError::Internal(format!("zion rpc flush failed: {e}")))?;
+
+        let (reader, _) = stream.split();
+        let mut reader = BufReader::new(reader);
+        let mut line = String::new();
+        let _ = AsyncBufReadExt::read_line(&mut reader, &mut line)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("zion rpc read failed: {e}")))?;
 
         // Read the body as text first so we can diagnose malformed responses
         // and (for `serde_json::Value` targets) fall back to a bare payload.
-        let text = resp
-            .text()
-            .await
-            .map_err(|e| MultichainError::Internal(format!("zion rpc body read failed: {e}")))?;
-
-        let envelope = serde_json::from_str::<JsonRpcResponse<T>>(&text).or_else(|e| {
+        let envelope = serde_json::from_str::<JsonRpcResponse<T>>(&line).or_else(|e| {
             // Some node responses are bare JSON values instead of a full
             // JSON-RPC envelope. Try that as a fallback before giving up.
-            if let Ok(bare) = serde_json::from_str::<T>(&text) {
+            if let Ok(bare) = serde_json::from_str::<T>(&line) {
                 return Ok(JsonRpcResponse {
                     result: Some(bare),
                     error: None,
@@ -91,14 +103,13 @@ impl ZionL1Adapter {
                     _id: None,
                 });
             }
-            let preview = if text.len() > 500 {
-                &text[..500]
+            let preview = if line.len() > 500 {
+                &line[..500]
             } else {
-                &text
+                &line
             };
             Err(MultichainError::Internal(format!(
-                "zion rpc decode failed for method {} (status {}): {}. body preview: {}",
-                method, status, e, preview
+                "zion rpc decode failed for method {method}: {e}. body preview: {preview}",
             )))
         })?;
 
@@ -139,12 +150,17 @@ impl ZionL1Adapter {
         self.keyring.address(ChainId::ZionL1, 0, 0)
     }
 
-    pub(crate) async fn get_spendable_utxos(&self, address: &str) -> MultichainResult<Vec<SpendableUtxo>> {
+    pub(crate) async fn get_spendable_utxos(
+        &self,
+        address: &str,
+    ) -> MultichainResult<Vec<SpendableUtxo>> {
         let resp: serde_json::Value = self.call("getUtxos", json!({"address": address})).await?;
         let utxos = resp
             .get("utxos")
             .and_then(|v| v.as_array())
-            .ok_or_else(|| MultichainError::Internal("zion getUtxos missing utxos array".to_string()))?;
+            .ok_or_else(|| {
+                MultichainError::Internal("zion getUtxos missing utxos array".to_string())
+            })?;
 
         let mut out = Vec::with_capacity(utxos.len());
         for u in utxos {
@@ -155,12 +171,15 @@ impl ZionL1Adapter {
             let tx_hash = hex::decode(tx_hash_hex)
                 .map_err(|e| MultichainError::Internal(format!("invalid utxo tx_hash hex: {e}")))?
                 .try_into()
-                .map_err(|_| MultichainError::Internal("utxo tx_hash must be 32 bytes".to_string()))?;
+                .map_err(|_| {
+                    MultichainError::Internal("utxo tx_hash must be 32 bytes".to_string())
+                })?;
 
             let output_index = u
                 .get("output_index")
                 .and_then(|v| v.as_u64())
-                .ok_or_else(|| MultichainError::Internal("utxo missing output_index".to_string()))? as u32;
+                .ok_or_else(|| MultichainError::Internal("utxo missing output_index".to_string()))?
+                as u32;
 
             let amount = u
                 .get("amount")
@@ -168,7 +187,10 @@ impl ZionL1Adapter {
                 .ok_or_else(|| MultichainError::Internal("utxo missing amount".to_string()))?;
 
             let block_height = u.get("block_height").and_then(|v| v.as_u64()).unwrap_or(0);
-            let is_coinbase = u.get("is_coinbase").and_then(|v| v.as_bool()).unwrap_or(false);
+            let is_coinbase = u
+                .get("is_coinbase")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
 
             out.push(SpendableUtxo {
                 tx_hash,
@@ -194,7 +216,10 @@ impl ZionL1Adapter {
             .call("submitUtxoTransaction", json!({"transaction": tx_json}))
             .await?;
 
-        let accepted = resp.get("accepted").and_then(|v| v.as_bool()).unwrap_or(false);
+        let accepted = resp
+            .get("accepted")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         if !accepted {
             let reason = resp
                 .get("reason")
@@ -205,12 +230,12 @@ impl ZionL1Adapter {
             )));
         }
 
-        let tx_id = resp
-            .get("tx_id")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| MultichainError::Internal("submitUtxoTransaction missing tx_id".to_string()))?;
-        Hash::from_hex(tx_id)
-            .ok_or_else(|| MultichainError::Internal("invalid tx_id hex from submitUtxoTransaction".to_string()))
+        let tx_id = resp.get("tx_id").and_then(|v| v.as_str()).ok_or_else(|| {
+            MultichainError::Internal("submitUtxoTransaction missing tx_id".to_string())
+        })?;
+        Hash::from_hex(tx_id).ok_or_else(|| {
+            MultichainError::Internal("invalid tx_id hex from submitUtxoTransaction".to_string())
+        })
     }
 
     pub(crate) fn zion_signing_key(&self) -> MultichainResult<SigningKey> {
@@ -225,9 +250,9 @@ impl ZionL1Adapter {
     }
 
     fn htlc_timelock(transfer: &Transfer) -> MultichainResult<u64> {
-        transfer
-            .timelock
-            .ok_or_else(|| MultichainError::Validation("HTLC transfer missing timelock".to_string()))
+        transfer.timelock.ok_or_else(|| {
+            MultichainError::Validation("HTLC transfer missing timelock".to_string())
+        })
     }
 
     async fn htlc_lock(&self, transfer: &Transfer) -> MultichainResult<Hash> {
@@ -274,9 +299,9 @@ impl ZionL1Adapter {
     async fn htlc_claim(&self, transfer: &Transfer) -> MultichainResult<Hash> {
         let hashlock = Self::htlc_hashlock(transfer)?;
         let timeout = Self::htlc_timelock(transfer)?;
-        let preimage = transfer
-            .preimage
-            .ok_or_else(|| MultichainError::Validation("HTLC claim missing preimage".to_string()))?;
+        let preimage = transfer.preimage.ok_or_else(|| {
+            MultichainError::Validation("HTLC claim missing preimage".to_string())
+        })?;
         let claimant_pk = transfer.target_pubkey.ok_or_else(|| {
             MultichainError::Validation(
                 "HTLC claim missing target_pubkey (claimant key)".to_string(),
@@ -356,12 +381,14 @@ impl ZionL1Adapter {
         })?;
         let refund_address = zion_core::crypto::derive_address(&refund_pk);
         let utxos = self.get_spendable_utxos(&refund_address).await?;
-        let mut matches: Vec<_> = utxos.into_iter().filter(|u| u.tx_hash == lock_hash).collect();
-        matches.sort_by_key(|a| a.output_index);
-        matches
+        let mut matches: Vec<_> = utxos
             .into_iter()
-            .next()
-            .ok_or_else(|| MultichainError::Validation(format!("no UTXO found for lock tx {lock_id}")))
+            .filter(|u| u.tx_hash == lock_hash)
+            .collect();
+        matches.sort_by_key(|a| a.output_index);
+        matches.into_iter().next().ok_or_else(|| {
+            MultichainError::Validation(format!("no UTXO found for lock tx {lock_id}"))
+        })
     }
 
     async fn execute_burn_release(&self, transfer: &Transfer) -> MultichainResult<Hash> {
@@ -706,4 +733,3 @@ struct BridgeLock {
     #[allow(dead_code)]
     confirmed: bool,
 }
-

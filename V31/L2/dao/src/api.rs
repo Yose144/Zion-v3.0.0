@@ -170,9 +170,13 @@ impl From<ProposalTypeDto> for ProposalType {
                 amount,
                 purpose,
             },
-            ProposalTypeDto::Emergency { action, justification } => {
-                ProposalType::Emergency { action, justification }
-            }
+            ProposalTypeDto::Emergency {
+                action,
+                justification,
+            } => ProposalType::Emergency {
+                action,
+                justification,
+            },
             ProposalTypeDto::Grant {
                 recipient,
                 amount,
@@ -431,9 +435,18 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
     let rt = state.runtime.lock().await;
     let all = rt.all_proposals();
     let active = rt.active_proposals();
-    let passed = all.iter().filter(|p| p.status == ProposalStatus::Passed).count();
-    let executed = all.iter().filter(|p| p.status == ProposalStatus::Executed).count();
-    let failed = all.iter().filter(|p| p.status == ProposalStatus::Failed).count();
+    let passed = all
+        .iter()
+        .filter(|p| p.status == ProposalStatus::Passed)
+        .count();
+    let executed = all
+        .iter()
+        .filter(|p| p.status == ProposalStatus::Executed)
+        .count();
+    let failed = all
+        .iter()
+        .filter(|p| p.status == ProposalStatus::Failed)
+        .count();
 
     ok(serde_json::json!({
         "total_proposals": all.len(),
@@ -525,7 +538,10 @@ pub async fn serve(
 
     let app = Router::new()
         .route("/api/dao/health", get(health))
-        .route("/api/dao/proposals", get(list_proposals).post(create_proposal))
+        .route(
+            "/api/dao/proposals",
+            get(list_proposals).post(create_proposal),
+        )
         .route("/api/dao/proposals/:id", get(get_proposal))
         .route("/api/dao/proposals/:id/votes", get(get_votes))
         .route("/api/dao/proposals/:id/vote", post(cast_vote))

@@ -40,10 +40,10 @@ use std::time::Instant;
 // ---------------------------------------------------------------------------
 
 const DAG_CACHE_ROUNDS: usize = 3;
-const CACHE_BYTES_INIT: u64 = 1 << 24;     // 16 MB
-const CACHE_BYTES_GROWTH: u64 = 1 << 17;   // 128 KB
+const CACHE_BYTES_INIT: u64 = 1 << 24; // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17; // 128 KB
 const HASH_BYTES: u64 = 64;
-const DATASET_BYTES_INIT: u64 = 1 << 30;   // 1 GB
+const DATASET_BYTES_INIT: u64 = 1 << 30; // 1 GB
 const DATASET_BYTES_GROWTH: u64 = 1 << 23; // 8 MB
 const MIX_BYTES: u64 = 128;
 
@@ -618,7 +618,9 @@ impl ExtGpuMiner {
 
         crate::ext_info!(
             "auxpow_gpu_opencl platform=\"{}\" device=\"{}\" work_size={}",
-            platform_name, device_name, work_size
+            platform_name,
+            device_name,
+            work_size
         );
 
         Ok(Self {
@@ -1489,10 +1491,12 @@ impl ExtGpuMiner {
             .ok()
             .and_then(|v| v.trim().parse().ok())
             .unwrap_or(1048576);
-        let max_gws = if is_progpow { progpow_max_gws } else { self.work_size };
-        let raw_gws = ((batch_size as usize) / batch_factor)
-            .min(max_gws)
-            .max(1);
+        let max_gws = if is_progpow {
+            progpow_max_gws
+        } else {
+            self.work_size
+        };
+        let raw_gws = ((batch_size as usize) / batch_factor).min(max_gws).max(1);
         let global_work_size = ((raw_gws + wg_size - 1) / wg_size) * wg_size;
         self.last_batch_tested = if is_progpow {
             global_work_size as u64
@@ -1592,7 +1596,9 @@ impl ExtGpuMiner {
         if elapsed_ms > 5000 {
             crate::ext_warn!(
                 "auxpow_gpu_kernel_slow algo={} elapsed_ms={} gws={} — kernel took unusually long",
-                algorithm, elapsed_ms, global_work_size
+                algorithm,
+                elapsed_ms,
+                global_work_size
             );
         }
 
@@ -2347,7 +2353,10 @@ typedef unsigned long ulong;
 
         crate::ext_warn!(
             "dag_manager: generating {} DAG on GPU ({} batches of {} nodes, light_items={})...",
-            algorithm_label, num_batches, batch_size, light_items
+            algorithm_label,
+            num_batches,
+            batch_size,
+            light_items
         );
 
         let start_time = std::time::Instant::now();
@@ -2797,7 +2806,9 @@ typedef unsigned long ulong;
                     "zelhash_prod_kernel.cl" => {
                         include_str!("../../csrc/opencl/zelhash_prod_kernel.cl").to_string()
                     }
-                    "pearl_kernel.cl" => include_str!("../../csrc/opencl/pearl_kernel.cl").to_string(),
+                    "pearl_kernel.cl" => {
+                        include_str!("../../csrc/opencl/pearl_kernel.cl").to_string()
+                    }
                     "pearl_pouw_native.cl" => {
                         include_str!("../../csrc/opencl/pearl_pouw_native.cl").to_string()
                     }
@@ -2813,7 +2824,9 @@ typedef unsigned long ulong;
                     "sha3_512_precompute.cl" => {
                         include_str!("../../csrc/opencl/sha3_512_precompute.cl").to_string()
                     }
-                    "sha3_512_256.cl" => include_str!("../../csrc/opencl/sha3_512_256.cl").to_string(),
+                    "sha3_512_256.cl" => {
+                        include_str!("../../csrc/opencl/sha3_512_256.cl").to_string()
+                    }
                     "equihash_kernel.cl" => {
                         include_str!("../../csrc/opencl/equihash_kernel.cl").to_string()
                     }
@@ -4604,7 +4617,9 @@ typedef unsigned long ulong;
             }
         }
 
-        crate::ext_info!("auxpow_gpu_equihash {nr_sols_capped} solutions checked, none under target");
+        crate::ext_info!(
+            "auxpow_gpu_equihash {nr_sols_capped} solutions checked, none under target"
+        );
         Ok(None)
     }
 
@@ -4714,7 +4729,11 @@ typedef unsigned long ulong;
 
         crate::ext_info!(
             "auxpow_gpu_verthash batch={} verthash_gws={} mdiv={} in18=0x{:08x} target_hi=0x{:08x}",
-            batch_size, verthash_gws, mdiv, in18, target_u32
+            batch_size,
+            verthash_gws,
+            mdiv,
+            in18,
+            target_u32
         );
 
         // --- Allocate GPU buffers ---
@@ -4816,7 +4835,9 @@ typedef unsigned long ulong;
         q.finish()?;
 
         let elapsed_ms = start.elapsed().as_millis();
-        crate::ext_info!("auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})");
+        crate::ext_info!(
+            "auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})"
+        );
 
         // --- Read target results ---
         // targetResults[0] = count of found nonces
@@ -4834,7 +4855,9 @@ typedef unsigned long ulong;
 
         crate::ext_info!(
             "auxpow_gpu_verthash SHARE FOUND gr4id={} nonce={} count={}",
-            potential_gr4id, found_nonce, result_count
+            potential_gr4id,
+            found_nonce,
+            result_count
         );
 
         // --- Read full 32-byte hash for the found nonce ---
@@ -5441,7 +5464,9 @@ impl DagManager {
                     miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    crate::ext_warn!("dag_manager: corrupt Ethash DAG cache, regenerating on GPU: {e}");
+                    crate::ext_warn!(
+                        "dag_manager: corrupt Ethash DAG cache, regenerating on GPU: {e}"
+                    );
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU)
                     miner.generate_ethash_dag_on_gpu(epoch)?;
@@ -5500,7 +5525,9 @@ impl DagManager {
                     miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    crate::ext_warn!("dag_manager: corrupt KawPow DAG cache, regenerating on GPU: {e}");
+                    crate::ext_warn!(
+                        "dag_manager: corrupt KawPow DAG cache, regenerating on GPU: {e}"
+                    );
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU)
                     miner.generate_kawpow_dag_on_gpu(epoch)?;
@@ -5558,7 +5585,9 @@ impl DagManager {
                     miner.set_progpow_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    crate::ext_warn!("dag_manager: corrupt ProgPow DAG cache, regenerating on GPU: {e}");
+                    crate::ext_warn!(
+                        "dag_manager: corrupt ProgPow DAG cache, regenerating on GPU: {e}"
+                    );
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU) — keep it on GPU, do NOT
                     // read back to host memory to avoid CPU RAM pressure and stalls.
@@ -5584,7 +5613,12 @@ impl DagManager {
 
     /// Convenience: ensure the right DAG for the given algorithm.
     /// `epoch` is the pre-computed epoch number (block_number / EPOCH_LENGTH).
-    pub fn ensure_dag(&mut self, miner: &mut ExtGpuMiner, algorithm: &str, epoch: u32) -> Result<()> {
+    pub fn ensure_dag(
+        &mut self,
+        miner: &mut ExtGpuMiner,
+        algorithm: &str,
+        epoch: u32,
+    ) -> Result<()> {
         match algorithm {
             "ethash" | "etchash" | "ethash_etc" => self.ensure_ethash_dag(miner, epoch),
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"

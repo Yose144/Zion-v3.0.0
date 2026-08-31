@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Subcommand;
 
-use crate::ui;
 use crate::rpc::agent_rpc;
+use crate::ui;
 
 /// Network topology — peers, chains, and cross-chain connections.
 #[derive(Subcommand)]

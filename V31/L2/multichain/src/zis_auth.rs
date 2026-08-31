@@ -74,7 +74,11 @@ pub struct ZisUser {
 
 impl ZisUser {
     /// Return the first linked address for a given chain type and optional chain id.
-    pub fn linked_address(&self, chain_type: &str, chain_id: Option<&str>) -> Option<&ZisLinkedAddress> {
+    pub fn linked_address(
+        &self,
+        chain_type: &str,
+        chain_id: Option<&str>,
+    ) -> Option<&ZisLinkedAddress> {
         self.linked_addresses.iter().find(|a| {
             a.chain_type.eq_ignore_ascii_case(chain_type)
                 && chain_id.is_none_or(|c| a.chain_id.as_deref() == Some(c))
@@ -124,23 +128,30 @@ pub fn address_from_linked(chain: ChainId, linked: &ZisLinkedAddress) -> Multich
     let encoded = linked.address.trim().to_string();
     let bytes = match chain.family() {
         ChainFamily::Evm => {
-            let s = encoded.trim_start_matches("0x").trim_start_matches("0X").to_lowercase();
+            let s = encoded
+                .trim_start_matches("0x")
+                .trim_start_matches("0X")
+                .to_lowercase();
             if s.len() != 40 {
                 return Err(crate::error::MultichainError::Validation(format!(
                     "invalid EVM linked address length: {}",
                     encoded
                 )));
             }
-            hex::decode(&s).map_err(|_| crate::error::MultichainError::Validation(format!(
-                "invalid EVM linked address hex: {}",
-                encoded
-            )))?
+            hex::decode(&s).map_err(|_| {
+                crate::error::MultichainError::Validation(format!(
+                    "invalid EVM linked address hex: {}",
+                    encoded
+                ))
+            })?
         }
         ChainFamily::Solana | ChainFamily::Near => {
-            bs58::decode(&encoded).into_vec().map_err(|_| crate::error::MultichainError::Validation(format!(
-                "invalid base58 linked address: {}",
-                encoded
-            )))?
+            bs58::decode(&encoded).into_vec().map_err(|_| {
+                crate::error::MultichainError::Validation(format!(
+                    "invalid base58 linked address: {}",
+                    encoded
+                ))
+            })?
         }
         _ => Vec::new(),
     };
@@ -199,7 +210,10 @@ impl ZisClient {
     }
 
     /// Resolve a ZIS user from a `zion_session` cookie value.
-    pub async fn resolve_session(&self, cookie_value: &str) -> Result<Option<ZisUser>, reqwest::Error> {
+    pub async fn resolve_session(
+        &self,
+        cookie_value: &str,
+    ) -> Result<Option<ZisUser>, reqwest::Error> {
         if !self.enabled {
             return Ok(None);
         }

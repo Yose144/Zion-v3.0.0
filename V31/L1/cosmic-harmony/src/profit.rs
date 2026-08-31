@@ -43,7 +43,9 @@ impl PoolPreference {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Eq, PartialEq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum ExternalCoin {
     #[default]
     Kaspa,
@@ -260,10 +262,13 @@ impl ExternalCoin {
         match backend {
             "opencl" => matches!(
                 self,
-                ExternalCoin::Decred | ExternalCoin::Alephium
+                ExternalCoin::Decred
+                    | ExternalCoin::Alephium
                     | ExternalCoin::Kaspa
                     | ExternalCoin::Ergo
-                    | ExternalCoin::Ravencoin | ExternalCoin::Clore | ExternalCoin::Quai
+                    | ExternalCoin::Ravencoin
+                    | ExternalCoin::Clore
+                    | ExternalCoin::Quai
                     | ExternalCoin::Evrmore
                     | ExternalCoin::Meowcoin
                     | ExternalCoin::EthereumClassic
@@ -287,14 +292,19 @@ impl ExternalCoin {
             ),
             "cuda" => matches!(
                 self,
-                ExternalCoin::Decred | ExternalCoin::Alephium
+                ExternalCoin::Decred
+                    | ExternalCoin::Alephium
                     | ExternalCoin::Kaspa
                     | ExternalCoin::Ergo
-                    | ExternalCoin::Ravencoin | ExternalCoin::Clore | ExternalCoin::Quai
+                    | ExternalCoin::Ravencoin
+                    | ExternalCoin::Clore
+                    | ExternalCoin::Quai
                     | ExternalCoin::EthereumClassic
-                    | ExternalCoin::Evrmore | ExternalCoin::Meowcoin
+                    | ExternalCoin::Evrmore
+                    | ExternalCoin::Meowcoin
                     | ExternalCoin::Flux
-                    | ExternalCoin::EpicCash | ExternalCoin::Zano
+                    | ExternalCoin::EpicCash
+                    | ExternalCoin::Zano
             ),
             "metal" => matches!(
                 self,
@@ -462,7 +472,10 @@ impl ExternalCoin {
             "hk" | "sg" | "asia" => "hk",
             _ => "de",
         };
-        Some(format!("{}.{}.herominers.com:{}", hm_region, subdomain, port))
+        Some(format!(
+            "{}.{}.herominers.com:{}",
+            hm_region, subdomain, port
+        ))
     }
 
     pub fn zpool_pool(&self, region: &str) -> Option<String> {
@@ -653,7 +666,11 @@ impl CoinProfile {
 
     /// Return a profile for every known external coin.
     pub fn all() -> Vec<Self> {
-        ExternalCoin::ALL.iter().copied().map(Self::for_coin).collect()
+        ExternalCoin::ALL
+            .iter()
+            .copied()
+            .map(Self::for_coin)
+            .collect()
     }
 
     fn new(

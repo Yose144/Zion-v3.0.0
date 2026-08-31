@@ -140,10 +140,7 @@ impl DaoDb {
         for (name, ty) in migrations {
             if !columns.iter().any(|c| c == name) {
                 self.conn
-                    .execute(
-                        &format!("ALTER TABLE proposals ADD COLUMN {name} {ty}"),
-                        [],
-                    )
+                    .execute(&format!("ALTER TABLE proposals ADD COLUMN {name} {ty}"), [])
                     .map_err(|e| DaoError::Internal(e.to_string()))?;
             }
         }
@@ -445,11 +442,13 @@ impl DaoDb {
 
                 let voted_at = chrono::DateTime::parse_from_rfc3339(&voted_at_str)
                     .map(|dt| dt.with_timezone(&Utc))
-                    .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
-                        4,
-                        rusqlite::types::Type::Text,
-                        Box::new(e),
-                    ))?;
+                    .map_err(|e| {
+                        rusqlite::Error::FromSqlConversionFailure(
+                            4,
+                            rusqlite::types::Type::Text,
+                            Box::new(e),
+                        )
+                    })?;
 
                 Ok(Vote {
                     proposal_id,
@@ -628,7 +627,11 @@ impl ProposalRow {
             "Executed" => ProposalStatus::Executed,
             "Cancelled" => ProposalStatus::Cancelled,
             "Expired" => ProposalStatus::Expired,
-            other => return Err(DaoError::Internal(format!("Unknown proposal status: {other}"))),
+            other => {
+                return Err(DaoError::Internal(format!(
+                    "Unknown proposal status: {other}"
+                )))
+            }
         };
 
         let proposal_type: ProposalType = serde_json::from_str(&self.proposal_type_json)
@@ -651,11 +654,7 @@ impl ProposalRow {
             .as_ref()
             .map(|s| parse_dt(s))
             .transpose()?;
-        let executed_at = self
-            .executed_at
-            .as_ref()
-            .map(|s| parse_dt(s))
-            .transpose()?;
+        let executed_at = self.executed_at.as_ref().map(|s| parse_dt(s)).transpose()?;
 
         Ok(Proposal {
             id: self.id,

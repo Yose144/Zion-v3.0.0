@@ -8,7 +8,7 @@ use std::fmt::Write;
 
 use zion_cosmic_harmony::revenue::RevenueSource;
 
-use crate::revenue_scheduler::{SessionGroup, revenue_source_name};
+use crate::revenue_scheduler::{revenue_source_name, SessionGroup};
 
 // ── RoutingStats ───────────────────────────────────────────────────
 
@@ -362,8 +362,14 @@ mod tests {
 
     #[test]
     fn extract_group_hint_works() {
-        assert_eq!(extract_group_hint("worker_1/g=zion"), Some(SessionGroup::Zion));
-        assert_eq!(extract_group_hint("group=revenue"), Some(SessionGroup::Revenue));
+        assert_eq!(
+            extract_group_hint("worker_1/g=zion"),
+            Some(SessionGroup::Zion)
+        );
+        assert_eq!(
+            extract_group_hint("group=revenue"),
+            Some(SessionGroup::Revenue)
+        );
         assert_eq!(extract_group_hint("g=ncl"), Some(SessionGroup::Ncl));
         assert_eq!(extract_group_hint("g=auto"), Some(SessionGroup::Auto));
         assert_eq!(extract_group_hint("plain_worker"), None);
@@ -374,7 +380,10 @@ mod tests {
         std::env::remove_var("ZION_POOL_BACKEND_MINER_IDS");
         std::env::remove_var("ZION_POOL_BACKEND_WORKER_HINTS");
         std::env::remove_var("ZION_POOL_DEFAULT_GROUP");
-        assert_eq!(resolve_session_group("miner1", "worker1"), SessionGroup::Zion);
+        assert_eq!(
+            resolve_session_group("miner1", "worker1"),
+            SessionGroup::Zion
+        );
     }
 
     #[test]

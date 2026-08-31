@@ -3,9 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Integer amount in the smallest indivisible unit of an asset.
 /// The associated `Asset` carries the decimal scale.
-#[derive(
-    Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash,
-)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Amount(pub u128);
 
 impl Amount {
@@ -63,10 +61,7 @@ impl<'de> Deserialize<'de> for Amount {
             }
 
             fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
-                value
-                    .parse::<u128>()
-                    .map(Amount)
-                    .map_err(de::Error::custom)
+                value.parse::<u128>().map(Amount).map_err(de::Error::custom)
             }
 
             fn visit_u64<E: de::Error>(self, value: u64) -> Result<Self::Value, E> {

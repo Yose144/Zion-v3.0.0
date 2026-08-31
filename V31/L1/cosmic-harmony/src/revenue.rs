@@ -165,7 +165,9 @@ impl RevenueSource {
             "randomx_external" | "randomx" => Some(Self::RandomXExternal),
             "zelhash_external" | "zelhash" => Some(Self::ZelHashExternal),
             "verushash_external" | "verushash" => Some(Self::VerusHashExternal),
-            "progpow_external" | "progpow" | "progpow_zano" | "progpowz" => Some(Self::ProgPowExternal),
+            "progpow_external" | "progpow" | "progpow_zano" | "progpowz" => {
+                Some(Self::ProgPowExternal)
+            }
             "pearl_external" | "pearl" => Some(Self::PearlExternal),
             "beamhash_external" | "beamhash" => Some(Self::BeamHashExternal),
             "karlsenhash_external" | "karlsenhash" => Some(Self::KarlsenHashExternal),

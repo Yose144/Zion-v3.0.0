@@ -13,17 +13,17 @@ use zion_l1_types::{Address, Amount, Hash};
 
 use crate::block::{Block, BlockHeader};
 use crate::consensus::{ConsensusEngine, ConsensusError};
-use zion_cosmic_harmony::EkamDeeksha;
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
 use crate::emission::{self, block_subsidy, fee_split};
 use crate::fee;
 use crate::genesis;
-use crate::v3_compat::is_premine_transfer_allowed_no_admin;
 use crate::mempool::Mempool;
 use crate::rpc::RpcServer;
 use crate::storage::{Storage, StorageError};
 use crate::transaction::{Transaction, TransactionOutput};
 use crate::utxo::{Outpoint, UtxoError, UtxoSet};
+use crate::v3_compat::is_premine_transfer_allowed_no_admin;
+use zion_cosmic_harmony::EkamDeeksha;
 
 /// Node configuration.
 #[derive(Clone, Debug)]
@@ -70,7 +70,7 @@ impl Default for NodeConfig {
     fn default() -> Self {
         Self {
             db_path: "zion-node.db".into(),
-            rpc_addr: "127.0.0.1:9443".parse().unwrap(),
+            rpc_addr: "127.0.0.1:9445".parse().unwrap(),
             p2p_addr: "0.0.0.0:8333".parse().unwrap(),
             v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
             // V3 mainnet canonical subsidy addresses.
@@ -214,9 +214,10 @@ impl Node {
                 .utxo_transactions
                 .iter()
                 .flat_map(|tx| {
-                    tx.outputs.iter().enumerate().map(move |(i, out)| {
-                        (tx.id, i as u32, out.amount, out.address.clone())
-                    })
+                    tx.outputs
+                        .iter()
+                        .enumerate()
+                        .map(move |(i, out)| (tx.id, i as u32, out.amount, out.address.clone()))
                 })
                 .collect();
             if !utxos.is_empty() {
@@ -319,7 +320,13 @@ impl Node {
         let peers_for_sync = Arc::clone(&peers);
         let v31_seed_peers = seed_peers.clone();
         let sync_handle = tokio::spawn(async move {
-            crate::p2p::sync_loop(Arc::clone(&node), peers_for_sync, v31_seed_peers, sync_shutdown).await;
+            crate::p2p::sync_loop(
+                Arc::clone(&node),
+                peers_for_sync,
+                v31_seed_peers,
+                sync_shutdown,
+            )
+            .await;
             Ok(()) as Result<(), NodeError>
         });
 
@@ -333,7 +340,8 @@ impl Node {
         } else {
             let peers_for_v3_sync = Arc::clone(&peers);
             tokio::spawn(async move {
-                crate::v3_p2p::sync_loop(v3_sync, peers_for_v3_sync, seed_peers, v3_sync_shutdown).await;
+                crate::v3_p2p::sync_loop(v3_sync, peers_for_v3_sync, seed_peers, v3_sync_shutdown)
+                    .await;
                 Ok(()) as Result<(), NodeError>
             })
         };
@@ -545,7 +553,9 @@ impl Node {
 
         // Serialized JSON is the authoritative wire-size bound used for fee
         // market and block-size calculations.
-        let size = serde_json::to_vec(tx).map_err(NodeError::Serialization)?.len();
+        let size = serde_json::to_vec(tx)
+            .map_err(NodeError::Serialization)?
+            .len();
         if size > fee::MAX_TX_SIZE {
             return Err(NodeError::OversizedTransaction {
                 size,
@@ -614,9 +624,7 @@ impl Node {
             if actual != expected {
                 return Err(NodeError::CoinbaseStructure {
                     height: block.header.height,
-                    reason: format!(
-                        "coinbase subsidy mismatch: expected {expected}, got {actual}"
-                    ),
+                    reason: format!("coinbase subsidy mismatch: expected {expected}, got {actual}"),
                 });
             }
             return Ok(());
@@ -673,21 +681,20 @@ impl Node {
             });
         }
 
-        if node_reward_active {
-            if coinbase.outputs[3].amount.0 != node_reward_amt as u128
-                || coinbase.outputs[3].address != self.config.node_reward_address
-            {
-                return Err(NodeError::CoinbaseStructure {
-                    height: block.header.height,
-                    reason: format!(
-                        "node reward output must be {} at {}, got {} at {}",
-                        node_reward_amt,
-                        self.config.node_reward_address.encoded,
-                        coinbase.outputs[3].amount.0,
-                        coinbase.outputs[3].address.encoded
-                    ),
-                });
-            }
+        if node_reward_active
+            && (coinbase.outputs[3].amount.0 != node_reward_amt as u128
+                || coinbase.outputs[3].address != self.config.node_reward_address)
+        {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: format!(
+                    "node reward output must be {} at {}, got {} at {}",
+                    node_reward_amt,
+                    self.config.node_reward_address.encoded,
+                    coinbase.outputs[3].amount.0,
+                    coinbase.outputs[3].address.encoded
+                ),
+            });
         }
 
         Ok(())
@@ -788,15 +795,20 @@ impl Node {
     ///
     /// Excludes outputs already consumed by a mempool transaction so wallets
     /// do not build conflicting transactions while a previous spend is pending.
-    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool, Vec<u8>)> {
+    pub async fn get_utxos_for_address(
+        &self,
+        address: &str,
+    ) -> Vec<(Hash, u32, u64, u64, u64, bool, Vec<u8>)> {
         let set = self.utxo_set.lock().await;
         let mut utxos = set.get_utxos_for_address(address);
         drop(set);
         let spent = self.mempool.spent_outpoints().await;
-        utxos.retain(|(tx_hash, index, _amount, _height, _timestamp, _is_coinbase, _script)| {
-            let outpoint = Outpoint::new(*tx_hash, *index);
-            !spent.contains(&outpoint)
-        });
+        utxos.retain(
+            |(tx_hash, index, _amount, _height, _timestamp, _is_coinbase, _script)| {
+                let outpoint = Outpoint::new(*tx_hash, *index);
+                !spent.contains(&outpoint)
+            },
+        );
         utxos
     }
 
@@ -1036,16 +1048,8 @@ impl Node {
             if block.header.height >= self.config.soft_fork_activation_height {
                 let mut view = set.clone();
                 for tx in &block.transactions {
-                    Self::validate_premine_and_maturity_for_tx(
-                        &view,
-                        tx,
-                        block.header.height,
-                    )?;
-                    view.apply_transaction(
-                        tx,
-                        block.header.height,
-                        block.header.timestamp,
-                    )?;
+                    Self::validate_premine_and_maturity_for_tx(&view, tx, block.header.height)?;
+                    view.apply_transaction(tx, block.header.height, block.header.timestamp)?;
                 }
                 *set = view;
             } else {
@@ -1331,15 +1335,13 @@ mod tests {
             }],
             outputs: vec![TransactionOutput {
                 amount: Amount::new(1),
-                address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test")
-                    .unwrap(),
+                address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test").unwrap(),
                 ..Default::default()
             }],
             memo: vec![],
         };
 
-        let err =
-            Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend, 1100).unwrap_err();
+        let err = Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend, 1100).unwrap_err();
         assert!(
             matches!(err, UtxoError::PremineLocked { .. }),
             "expected premine lock error, got {:?}",

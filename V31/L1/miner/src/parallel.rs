@@ -265,7 +265,10 @@ fn hash_auxpow(
         let mut h32 = [0u8; 32];
         let copy_len = header.len().min(32);
         h32[..copy_len].copy_from_slice(&header[..copy_len]);
-        return (crate::auxpow::hasher::hash_ethash(&h32, nonce, height as u32), None);
+        return (
+            crate::auxpow::hasher::hash_ethash(&h32, nonce, height as u32),
+            None,
+        );
     }
 
     if algorithm.contains("kawpow")
@@ -280,7 +283,10 @@ fn hash_auxpow(
         return (hash, Some(mix));
     }
 
-    (dispatch_algorithm(coin, header, nonce, height, extranonce, algorithm), None)
+    (
+        dispatch_algorithm(coin, header, nonce, height, extranonce, algorithm),
+        None,
+    )
 }
 
 /// Find a valid share for an AuxPoW `Job` using the CPU parallel scanner.
@@ -352,7 +358,12 @@ pub fn find_auxpow_share_from(
         } else {
             (1u64 << ((8 - en1_len) * 8)).saturating_sub(1)
         };
-        (base, shift, max_suffix, nonce_count.min(max_suffix.saturating_add(1)))
+        (
+            base,
+            shift,
+            max_suffix,
+            nonce_count.min(max_suffix.saturating_add(1)),
+        )
     } else {
         (0u64, 0usize, u64::MAX, nonce_count)
     };
@@ -538,11 +549,7 @@ mod tests {
             height: 0,
         };
 
-        let seq = sequential_scan(
-            job,
-            &AtomicBool::new(false),
-            "ekam_deeksha",
-        );
+        let seq = sequential_scan(job, &AtomicBool::new(false), "ekam_deeksha");
         let par = parallel_scan_nonce_range(job, 4, "ekam_deeksha");
 
         assert!(seq.is_some());
@@ -563,11 +570,7 @@ mod tests {
             height: 0,
         };
 
-        let seq = sequential_scan(
-            job,
-            &AtomicBool::new(false),
-            "ekam_deeksha",
-        );
+        let seq = sequential_scan(job, &AtomicBool::new(false), "ekam_deeksha");
         let par = parallel_scan_nonce_range(job, 1, "ekam_deeksha");
 
         assert_eq!(seq.unwrap().candidate.nonce, par.unwrap().candidate.nonce,);

@@ -63,14 +63,20 @@ impl ChainRegistry {
         let mut reg = Self::new();
         for chain in chains {
             let chain_id = ChainId::from_config(&chain.name, &chain.family, chain.finality_blocks)
-                .ok_or_else(|| WarpError::Config(format!(
-                    "unsupported chain family '{}' for chain '{}' in WARP config",
-                    chain.family, chain.name
-                )))?;
+                .ok_or_else(|| {
+                    WarpError::Config(format!(
+                        "unsupported chain family '{}' for chain '{}' in WARP config",
+                        chain.family, chain.name
+                    ))
+                })?;
             reg.register_with_reason(
                 chain_id,
                 chain.enabled,
-                if chain.enabled { None } else { chain.disabled_reason.clone() },
+                if chain.enabled {
+                    None
+                } else {
+                    chain.disabled_reason.clone()
+                },
             );
         }
         Ok(reg)
@@ -297,6 +303,9 @@ mod tests {
         let status = reg.list_chain_status();
         let aptos = status.iter().find(|s| s.name == "aptos").unwrap();
         assert!(!aptos.enabled);
-        assert_eq!(aptos.disabled_reason.as_deref(), Some("BCS not implemented"));
+        assert_eq!(
+            aptos.disabled_reason.as_deref(),
+            Some("BCS not implemented")
+        );
     }
 }

@@ -94,8 +94,7 @@ mod tests {
         player.add_xp(profile.oasis_xp);
 
         // The player level derived from scaled XP must match the bridge mapping.
-        let expected_oasis_level =
-            zion_oasis::ConsciousnessLevel::from_xp(profile.oasis_xp);
+        let expected_oasis_level = zion_oasis::ConsciousnessLevel::from_xp(profile.oasis_xp);
         assert_eq!(
             player.level, expected_oasis_level,
             "Oasis player level must be consistent with scaled bridge XP"
@@ -106,7 +105,10 @@ mod tests {
         );
 
         oasis_db.save_player(&player).unwrap();
-        let loaded = oasis_db.get_player(ADDRESS).unwrap().expect("player exists");
+        let loaded = oasis_db
+            .get_player(ADDRESS)
+            .unwrap()
+            .expect("player exists");
         assert_eq!(loaded.total_xp, profile.oasis_xp);
         assert_eq!(loaded.address, ADDRESS);
 

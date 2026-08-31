@@ -108,11 +108,15 @@ impl V3RpcHandler {
         for tx in &txs {
             // Mark inputs as spent.
             for input in &tx.inputs {
-                let _ = self.storage.spend_v3_utxo(&input.prev_tx_hash, input.output_index).await;
+                let _ = self
+                    .storage
+                    .spend_v3_utxo(&input.prev_tx_hash, input.output_index)
+                    .await;
             }
             // Create new outputs.
             for (idx, output) in tx.outputs.iter().enumerate() {
-                let _ = self.storage
+                let _ = self
+                    .storage
                     .create_v3_utxo(&tx.id, idx as u32, output.amount, &output.address)
                     .await;
             }
@@ -489,9 +493,10 @@ impl V3RpcHandler {
                 }
                 for utxo_tx in &block.utxo_transactions {
                     let is_recipient = utxo_tx.outputs.iter().any(|o| o.address == address);
-                    let is_sender = utxo_tx.inputs.iter().any(|input| {
-                        crate::crypto::derive_address(&input.public_key) == address
-                    });
+                    let is_sender = utxo_tx
+                        .inputs
+                        .iter()
+                        .any(|input| crate::crypto::derive_address(&input.public_key) == address);
                     if is_recipient || is_sender {
                         let received: u128 = utxo_tx
                             .outputs
@@ -548,11 +553,7 @@ impl V3RpcHandler {
         if address.is_empty() {
             return Err(V3RpcError::Validation("empty address".to_string()));
         }
-        let (account_balance, nonce) = self
-            .storage
-            .v3_account(address)
-            .await?
-            .unwrap_or((0, 0));
+        let (account_balance, nonce) = self.storage.v3_account(address).await?.unwrap_or((0, 0));
         let utxos = self.storage.v3_utxos_by_address(address).await?;
         let utxo_balance: u128 = utxos.iter().map(|(_, _, amt)| *amt as u128).sum();
         let utxo_count = utxos.len() as u64;
@@ -639,8 +640,8 @@ impl V3RpcHandler {
             let mut sum: u128 = 0;
             let mut h: u64 = 1;
             while h <= height {
-                let decade_end =
-                    ((h - 1) / crate::emission::BLOCKS_PER_DECADE + 1) * crate::emission::BLOCKS_PER_DECADE;
+                let decade_end = ((h - 1) / crate::emission::BLOCKS_PER_DECADE + 1)
+                    * crate::emission::BLOCKS_PER_DECADE;
                 let blocks_in_range = decade_end.min(height) - h + 1;
                 sum += crate::emission::block_subsidy(h) as u128 * blocks_in_range as u128;
                 h = decade_end + 1;
@@ -769,7 +770,8 @@ impl V3RpcHandler {
         } else {
             format!("{:.2} H/s", estimated_hashrate)
         };
-        let mempool_size = self.mempool_account.lock().await.len() + self.mempool_utxo.lock().await.len();
+        let mempool_size =
+            self.mempool_account.lock().await.len() + self.mempool_utxo.lock().await.len();
         Ok(json!({
             "chain_height": height,
             "average_block_time": avg_block_time,
@@ -790,7 +792,8 @@ impl V3RpcHandler {
             .or_else(|| params.get(0))
             .and_then(Value::as_u64)
             .ok_or_else(|| V3RpcError::Parse("from_height required".to_string()))?;
-        let chain_height = self.storage.v3_height().await?;
+        // Use V31 native chain height (not v3_height which is 0 for V31-only chains).
+        let chain_height = self.storage.height().await?;
         let to_height = params
             .get("to_height")
             .or_else(|| params.get(1))
@@ -803,37 +806,55 @@ impl V3RpcHandler {
             ));
         }
         let mut locks = Vec::new();
-        for h in from_height..=to_height {
-            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
-                for utxo_tx in &block.utxo_transactions {
-                    let sender = utxo_tx
-                        .inputs
-                        .first()
-                        .map(|input| crate::crypto::derive_address(&input.public_key))
-                        .unwrap_or_default();
-                    let txid = hex(&utxo_tx.id);
-                    for output in &utxo_tx.outputs {
-                        if output.address != crate::fee::BRIDGE_VAULT_ADDRESS {
-                            continue;
+        // Use V31 native blocks (get_blocks_range) instead of V3 blocks.
+        let blocks = self
+            .storage
+            .get_blocks_range(from_height, to_height)
+            .await?;
+        for block in &blocks {
+            for tx in &block.transactions {
+                // Extract sender pubkey from first input script (last 32 bytes of 96-byte P2PKH script).
+                let sender = tx
+                    .inputs
+                    .first()
+                    .and_then(|input| {
+                        if input.script.len() >= 32 {
+                            let pk = &input.script[input.script.len() - 32..];
+                            let arr: [u8; 32] = pk.try_into().ok()?;
+                            Some(crate::crypto::derive_address(&arr))
+                        } else {
+                            None
                         }
-                        let Some(memo) = output.memo.as_deref() else { continue };
-                        let Some(rest) = memo.strip_prefix("BRIDGE:") else { continue };
-                        let Some((chain, recipient)) = rest.split_once(':') else { continue };
-                        if chain.is_empty() || recipient.is_empty() {
-                            continue;
-                        }
-                        locks.push(json!({
-                            "txid": txid,
-                            "block_height": block.height,
-                            "sender": sender,
-                            "recipient_chain": chain,
-                            "recipient": recipient,
-                            "amount_flowers": output.amount,
-                            "amount_zion": format_zion(output.amount as u128),
-                            "memo": memo,
-                            "confirmed": true,
-                        }));
+                    })
+                    .unwrap_or_default();
+                let txid = hex(&tx.hash().0);
+                // V31 memo is at transaction level, not per-output.
+                let memo_str = String::from_utf8_lossy(&tx.memo);
+                for output in &tx.outputs {
+                    if output.address.encoded != crate::fee::BRIDGE_VAULT_ADDRESS {
+                        continue;
                     }
+                    // V31 memo is transaction-level; check for BRIDGE: prefix.
+                    let Some(rest) = memo_str.strip_prefix("BRIDGE:") else {
+                        continue;
+                    };
+                    let Some((chain, recipient)) = rest.split_once(':') else {
+                        continue;
+                    };
+                    if chain.is_empty() || recipient.is_empty() {
+                        continue;
+                    }
+                    locks.push(json!({
+                        "txid": txid,
+                        "block_height": block.header.height,
+                        "sender": sender,
+                        "recipient_chain": chain,
+                        "recipient": recipient,
+                        "amount_flowers": output.amount.0,
+                        "amount_zion": format_zion(output.amount.0),
+                        "memo": memo_str,
+                        "confirmed": true,
+                    }));
                 }
             }
         }
@@ -869,7 +890,8 @@ impl V3RpcHandler {
             .unwrap_or(0);
         let base_fee = 1_000_000u64;
         let amount_fee = (amount_zion / 10000).max(base_fee);
-        let mempool_size = self.mempool_account.lock().await.len() + self.mempool_utxo.lock().await.len();
+        let mempool_size =
+            self.mempool_account.lock().await.len() + self.mempool_utxo.lock().await.len();
         let congestion_multiplier = if mempool_size > 1000 {
             2.0
         } else if mempool_size > 500 {
@@ -1015,14 +1037,13 @@ impl V3RpcHandler {
     /// using bridge vault UTXOs, embed the proofs in the memo, and submit
     /// it to the mempool.
     async fn submit_bridge_unlock_relay_format(&self, params: &Value) -> Result<Value, V3RpcError> {
+        use crate::fee;
         use crate::v3_bridge::{
-            bridge_operation_message, bridge_unlock_memo_with_proofs,
-            bridge_unlock_replay_key, load_bridge_validator_pubkey_allowlist,
-            required_bridge_validator_threshold, verify_bridge_proofs,
-            BridgeValidatorProof,
+            bridge_operation_message, bridge_unlock_memo_with_proofs, bridge_unlock_replay_key,
+            load_bridge_validator_pubkey_allowlist, required_bridge_validator_threshold,
+            verify_bridge_proofs, BridgeValidatorProof,
         };
         use crate::v3_tx::{self, Transaction as V3Tx, TxInput, TxOutput};
-        use crate::fee;
 
         // Parse request fields
         let recipient = params
@@ -1032,7 +1053,9 @@ impl V3RpcHandler {
         let amount_flowers = params
             .get("amount_flowers")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| V3RpcError::Parse("missing or invalid 'amount_flowers' field".to_string()))?;
+            .ok_or_else(|| {
+                V3RpcError::Parse("missing or invalid 'amount_flowers' field".to_string())
+            })?;
         let burn_id = params
             .get("burn_id")
             .and_then(|v| v.as_str())
@@ -1064,28 +1087,27 @@ impl V3RpcHandler {
                 .get("validator_public_key")
                 .or_else(|| p.get("pubkey"))
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| V3RpcError::Parse(format!("proof {i}: missing 'validator_public_key'")))?;
+                .ok_or_else(|| {
+                    V3RpcError::Parse(format!("proof {i}: missing 'validator_public_key'"))
+                })?;
             let signature = p
                 .get("signature")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| V3RpcError::Parse(format!("proof {i}: missing 'signature'")))?;
-            proofs.push(BridgeValidatorProof::new(validator_id, pubkey, signature).map_err(|e| {
-                V3RpcError::Parse(format!("proof {i}: {e}"))
-            })?);
+            proofs.push(
+                BridgeValidatorProof::new(validator_id, pubkey, signature)
+                    .map_err(|e| V3RpcError::Parse(format!("proof {i}: {e}")))?,
+            );
         }
 
         // Verify proofs against the canonical operation message
-        let operation_message = bridge_operation_message(
-            recipient,
-            amount_flowers,
-            evm_chain,
-            burn_id,
-            evm_tx_hash,
-        );
+        let operation_message =
+            bridge_operation_message(recipient, amount_flowers, evm_chain, burn_id, evm_tx_hash);
         let allowed_pubkeys = load_bridge_validator_pubkey_allowlist();
         let threshold = required_bridge_validator_threshold();
-        verify_bridge_proofs(&proofs, &operation_message, &allowed_pubkeys, threshold)
-            .map_err(|e| V3RpcError::Validation(format!("bridge proof verification failed: {e}")))?;
+        verify_bridge_proofs(&proofs, &operation_message, &allowed_pubkeys, threshold).map_err(
+            |e| V3RpcError::Validation(format!("bridge proof verification failed: {e}")),
+        )?;
 
         // Replay protection is enforced at block acceptance time via the
         // memo-embedded replay key (ChainState::bridge_unlock_replay_keys).
@@ -1118,8 +1140,7 @@ impl V3RpcHandler {
 
         // Select UTXOs to cover amount + fee
         let pending_height = block_height.saturating_add(1);
-        let scale_fix_active =
-            crate::v3_bridge::bridge_unlock_scale_fix_active(pending_height);
+        let scale_fix_active = crate::v3_bridge::bridge_unlock_scale_fix_active(pending_height);
 
         let mut selected = Vec::new();
         let mut total_input = 0u64;
@@ -1188,8 +1209,11 @@ impl V3RpcHandler {
             inputs: selected
                 .into_iter()
                 .map(|utxo| TxInput {
-                    prev_tx_hash: crate::chain_state::parse_fixed_hex::<32>(&utxo.tx_hash, "bridge vault utxo hash")
-                        .unwrap_or([0u8; 32]),
+                    prev_tx_hash: crate::chain_state::parse_fixed_hex::<32>(
+                        &utxo.tx_hash,
+                        "bridge vault utxo hash",
+                    )
+                    .unwrap_or([0u8; 32]),
                     output_index: utxo.output_index,
                     signature: Vec::new(),
                     public_key: Vec::new(),
@@ -1415,7 +1439,11 @@ mod tests {
         let fee = 100_000u64;
 
         let operation_message = crate::v3_bridge::bridge_operation_message(
-            &recipient, amount, source_chain, burn_id, evm_tx_hash,
+            &recipient,
+            amount,
+            source_chain,
+            burn_id,
+            evm_tx_hash,
         );
 
         // Build 3 validator proofs and collect pubkeys for the allowlist.
@@ -1431,9 +1459,8 @@ mod tests {
             proof_chunks.push(format!("val{i}:{pubkey_hex}:{signature_hex}"));
         }
         let proofs_str = proof_chunks.join(",");
-        let memo = format!(
-            "BRIDGE_UNLOCK:{source_chain}:{burn_id}:{evm_tx_hash}|PROOFS={proofs_str}"
-        );
+        let memo =
+            format!("BRIDGE_UNLOCK:{source_chain}:{burn_id}:{evm_tx_hash}|PROOFS={proofs_str}");
 
         // Build and hash the bridge-unlock UTXO transaction.
         let mut tx = UtxoTransaction {

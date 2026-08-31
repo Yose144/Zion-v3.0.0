@@ -1,8 +1,9 @@
 use anyhow::Result;
 use clap::Subcommand;
+use serde_json::Value;
 
+use crate::rpc::{agent_rpc, node_rpc};
 use crate::ui;
-use crate::rpc::agent_rpc;
 
 /// Monitor ZION services health in real-time.
 #[derive(Subcommand)]
@@ -20,15 +21,30 @@ pub enum MonitorCmd {
     },
 }
 
-pub async fn run(cmd: MonitorCmd, node_rpc: &str, pool_url: &str, mc_url: &str, dao_url: &str) -> Result<()> {
+pub async fn run(
+    cmd: MonitorCmd,
+    node_rpc: &str,
+    pool_url: &str,
+    mc_url: &str,
+    dao_url: &str,
+) -> Result<()> {
     match cmd {
         MonitorCmd::Health => {
             ui::print_header("ZION V31 Service Health");
+
+            let node_alive = node_rpc::call(node_rpc, "getStatus", Value::Null)
+                .await
+                .is_ok();
+            if node_alive {
+                ui::print_ok("Node L1 — online");
+            } else {
+                ui::print_err(&format!("Node L1 — unreachable ({})", node_rpc));
+            }
+
             let endpoints = [
-                ("Node L1",    format!("http://{}", node_rpc)),
-                ("Pool",       format!("http://{}", pool_url)),
+                ("Pool", format!("http://{}", pool_url)),
                 ("Multichain", format!("http://{}", mc_url)),
-                ("DAO",        format!("http://{}", dao_url)),
+                ("DAO", format!("http://{}", dao_url)),
             ];
             for (name, url) in &endpoints {
                 let alive = agent_rpc::health(url).await.unwrap_or(false);
@@ -51,9 +67,7 @@ pub async fn run(cmd: MonitorCmd, node_rpc: &str, pool_url: &str, mc_url: &str, 
         }
         MonitorCmd::Sync => {
             ui::print_header("Node Sync Status");
-            let url = format!("http://{}", node_rpc);
-            let req = serde_json::json!({"jsonrpc":"2.0","method":"getStatus","params":null,"id":1});
-            match agent_rpc::post(&url, "", req).await {
+            match node_rpc::call(node_rpc, "getStatus", Value::Null).await {
                 Ok(v) => {
                     if let Some(h) = v["result"]["chain_height"].as_u64() {
                         ui::print_row("Chain height", &h.to_string());
@@ -70,15 +84,29 @@ pub async fn run(cmd: MonitorCmd, node_rpc: &str, pool_url: &str, mc_url: &str, 
             ui::print_header("Watch mode (Ctrl-C to stop)");
             loop {
                 print!("\x1b[2J\x1b[H"); // clear screen
+
+                let node_alive = node_rpc::call(node_rpc, "getStatus", Value::Null)
+                    .await
+                    .is_ok();
+                let node_status = if node_alive {
+                    "✓ online"
+                } else {
+                    "✗ unreachable"
+                };
+                println!("  {:12} {}", "Node L1", node_status);
+
                 let endpoints = [
-                    ("Node L1",    format!("http://{}", node_rpc)),
-                    ("Pool",       format!("http://{}", pool_url)),
+                    ("Pool", format!("http://{}", pool_url)),
                     ("Multichain", format!("http://{}", mc_url)),
-                    ("DAO",        format!("http://{}", dao_url)),
+                    ("DAO", format!("http://{}", dao_url)),
                 ];
                 for (name, url) in &endpoints {
                     let alive = agent_rpc::health(url).await.unwrap_or(false);
-                    let status = if alive { "✓ online" } else { "✗ unreachable" };
+                    let status = if alive {
+                        "✓ online"
+                    } else {
+                        "✗ unreachable"
+                    };
                     println!("  {:12} {}", name, status);
                 }
                 println!("\n  Refreshing every {}s...", interval);

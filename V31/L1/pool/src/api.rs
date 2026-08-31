@@ -40,7 +40,10 @@ impl PoolApi {
         }
     }
 
-    pub fn with_routing_stats(mut self, stats: Arc<std::sync::Mutex<crate::routing::RoutingStats>>) -> Self {
+    pub fn with_routing_stats(
+        mut self,
+        stats: Arc<std::sync::Mutex<crate::routing::RoutingStats>>,
+    ) -> Self {
         self.routing_stats = Some(stats);
         self
     }
@@ -189,7 +192,11 @@ impl PoolApi {
                     }
                     None => {
                         let body = "{\"ok\":false,\"error\":\"database not configured\"}";
-                        ("503 Service Unavailable", "application/json", body.to_string())
+                        (
+                            "503 Service Unavailable",
+                            "application/json",
+                            body.to_string(),
+                        )
                     }
                 }
             }
@@ -207,7 +214,11 @@ impl PoolApi {
                     }
                     None => {
                         let body = "{\"ok\":false,\"error\":\"database not configured\"}";
-                        ("503 Service Unavailable", "application/json", body.to_string())
+                        (
+                            "503 Service Unavailable",
+                            "application/json",
+                            body.to_string(),
+                        )
                     }
                 }
             }
@@ -222,7 +233,11 @@ impl PoolApi {
                     }
                     None => {
                         let body = "{\"ok\":false,\"error\":\"database not configured\"}";
-                        ("503 Service Unavailable", "application/json", body.to_string())
+                        (
+                            "503 Service Unavailable",
+                            "application/json",
+                            body.to_string(),
+                        )
                     }
                 }
             }
@@ -300,7 +315,11 @@ impl PoolApi {
         let fees = pool.pplns.fee_stats();
 
         let auxpow_json = if let Some(ref bridge) = self.auxpow_bridge {
-            let coins: Vec<String> = bridge.enabled_coins().iter().map(|c| c.as_str().to_string()).collect();
+            let coins: Vec<String> = bridge
+                .enabled_coins()
+                .iter()
+                .map(|c| c.as_str().to_string())
+                .collect();
             json!({"enabled":true,"coins":coins})
         } else {
             json!({"enabled":false})
@@ -436,19 +455,33 @@ impl PoolApi {
         let profiles = zion_cosmic_harmony::CoinProfile::defaults();
         let gpu_coins: Vec<serde_json::Value> = profiles
             .iter()
-            .filter(|p| matches!(p.device, zion_cosmic_harmony::Device::Gpu | zion_cosmic_harmony::Device::Both))
-            .map(|p| json!({
-                "coin": p.coin.as_str(),
-                "profit_usd_day": p.estimate_profit(1.0),
-            }))
+            .filter(|p| {
+                matches!(
+                    p.device,
+                    zion_cosmic_harmony::Device::Gpu | zion_cosmic_harmony::Device::Both
+                )
+            })
+            .map(|p| {
+                json!({
+                    "coin": p.coin.as_str(),
+                    "profit_usd_day": p.estimate_profit(1.0),
+                })
+            })
             .collect();
         let cpu_coins: Vec<serde_json::Value> = profiles
             .iter()
-            .filter(|p| matches!(p.device, zion_cosmic_harmony::Device::Cpu | zion_cosmic_harmony::Device::Both))
-            .map(|p| json!({
-                "coin": p.coin.as_str(),
-                "profit_usd_day": p.estimate_profit(1.0),
-            }))
+            .filter(|p| {
+                matches!(
+                    p.device,
+                    zion_cosmic_harmony::Device::Cpu | zion_cosmic_harmony::Device::Both
+                )
+            })
+            .map(|p| {
+                json!({
+                    "coin": p.coin.as_str(),
+                    "profit_usd_day": p.estimate_profit(1.0),
+                })
+            })
             .collect();
 
         json!({
@@ -474,10 +507,7 @@ impl PoolApi {
     fn build_miner_detail_payload(&self, miner_id: &str) -> String {
         let (worker_addresses, telemetry) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
-            (
-                pool.worker_addresses.clone(),
-                pool.telemetry.clone(),
-            )
+            (pool.worker_addresses.clone(), pool.telemetry.clone())
         };
 
         let (full_worker, address) = worker_addresses
@@ -490,7 +520,9 @@ impl PoolApi {
                 } else {
                     format!("{m}.{w}")
                 };
-                worker_addresses.get(&full).map(|addr| (full, addr.encoded.clone()))
+                worker_addresses
+                    .get(&full)
+                    .map(|addr| (full, addr.encoded.clone()))
             })
             .unwrap_or_else(|| {
                 let (m, w) = split_worker(miner_id);
@@ -547,10 +579,7 @@ impl PoolApi {
     fn build_miners_payload(&self, limit: usize) -> String {
         let (worker_addresses, telemetry) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
-            (
-                pool.worker_addresses.clone(),
-                pool.telemetry.clone(),
-            )
+            (pool.worker_addresses.clone(), pool.telemetry.clone())
         };
 
         let now_s = now_unix_seconds();

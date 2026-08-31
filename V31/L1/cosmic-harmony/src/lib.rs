@@ -11,7 +11,7 @@ pub mod algorithm;
 pub mod algorithms_npu;
 pub mod algorithms_opt;
 pub mod deeksha;
-pub mod deeksha_lite;   // legacy, kept for tests
+pub mod deeksha_lite; // legacy, kept for tests
 pub mod deeksha_lite_fire; // legacy, kept for tests
 pub mod gpu;
 pub mod hic;

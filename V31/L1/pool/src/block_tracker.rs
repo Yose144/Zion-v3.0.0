@@ -326,7 +326,10 @@ mod tests {
 
         // total expected = 200, total actual = 200 → luck = 100%
         let luck = tracker.pool_luck_pct(10).expect("luck should be Some");
-        assert!((luck - 100.0).abs() < 0.01, "expected 100% luck, got {luck}");
+        assert!(
+            (luck - 100.0).abs() < 0.01,
+            "expected 100% luck, got {luck}"
+        );
     }
 
     #[test]

@@ -36,7 +36,8 @@ fn build_request(method: &str, uri: &str, body: String) -> Request<Body> {
         .header("content-type", "application/json")
         .body(Body::from(body))
         .expect("valid request");
-    req.extensions_mut().insert(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 1234))));
+    req.extensions_mut()
+        .insert(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 1234))));
     req
 }
 
@@ -132,7 +133,11 @@ async fn http_solver_client_bids_and_buyer_executes() {
     });
     let response = buyer_app
         .clone()
-        .oneshot(build_request("POST", "/v1/swap/intent", create_body.to_string()))
+        .oneshot(build_request(
+            "POST",
+            "/v1/swap/intent",
+            create_body.to_string(),
+        ))
         .await
         .expect("request ok");
     assert_eq!(response.status(), StatusCode::OK);
@@ -154,10 +159,7 @@ async fn http_solver_client_bids_and_buyer_executes() {
     assert_eq!(response.status(), StatusCode::OK);
     let json = read_json(response).await;
     let results = json["results"].as_array().expect("results array");
-    let bids = results
-        .iter()
-        .filter(|r| r["status"] == "bid")
-        .count();
+    let bids = results.iter().filter(|r| r["status"] == "bid").count();
     assert_eq!(bids, 1, "exactly one solver should bid");
 
     // Execute the winning bid.
@@ -173,8 +175,15 @@ async fn http_solver_client_bids_and_buyer_executes() {
     assert_eq!(response.status(), StatusCode::OK);
     let json = read_json(response).await;
     assert!(json["executed"].as_bool().unwrap_or(false));
-    let out = json["out"].as_str().and_then(|s| s.parse::<u128>().ok()).unwrap_or(0);
-    assert!(out >= 900_000, "executed output {} should meet minimum", out);
+    let out = json["out"]
+        .as_str()
+        .and_then(|s| s.parse::<u128>().ok())
+        .unwrap_or(0);
+    assert!(
+        out >= 900_000,
+        "executed output {} should meet minimum",
+        out
+    );
 
     // Confirm intent is marked executed.
     let response = buyer_app
@@ -191,13 +200,21 @@ async fn http_solver_client_bids_and_buyer_executes() {
     assert_eq!(json["intent"]["status"], "executed");
 
     // Verify the buyer received the expected output amount.
-    let intent = buyer_service.get_intent(intent_id.parse().unwrap()).await.unwrap();
+    let intent = buyer_service
+        .get_intent(intent_id.parse().unwrap())
+        .await
+        .unwrap();
     let executed = zion_l1_types::Amount::new(out);
     assert!(executed >= Amount::new(900_000));
-    assert_eq!(intent.status, zion_multichain::swap::dex::intent::IntentStatus::Executed);
+    assert_eq!(
+        intent.status,
+        zion_multichain::swap::dex::intent::IntentStatus::Executed
+    );
 }
 
-fn build_service_with_solver(config: zion_multichain::config::SolverConfig) -> Arc<MultichainService> {
+fn build_service_with_solver(
+    config: zion_multichain::config::SolverConfig,
+) -> Arc<MultichainService> {
     let mut mc_config = zion_multichain::config::MultichainConfig::default();
     mc_config.l1_rpc_url = String::new();
     mc_config.database.path = ":memory:".to_string();
@@ -234,7 +251,11 @@ async fn solver_solve_endpoint_requires_api_key() {
     });
     let response = solver_app
         .clone()
-        .oneshot(build_request("POST", "/v1/swap/pool/deploy", pool_body.to_string()))
+        .oneshot(build_request(
+            "POST",
+            "/v1/swap/pool/deploy",
+            pool_body.to_string(),
+        ))
         .await
         .expect("request ok");
     assert_eq!(response.status(), StatusCode::OK);
@@ -281,7 +302,11 @@ async fn solver_solve_endpoint_requires_api_key() {
     // Missing key -> 401.
     let response = solver_app
         .clone()
-        .oneshot(build_request("POST", "/v1/swap/solve", serde_json::to_string(&intent).unwrap()))
+        .oneshot(build_request(
+            "POST",
+            "/v1/swap/solve",
+            serde_json::to_string(&intent).unwrap(),
+        ))
         .await
         .expect("request ok");
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -307,7 +332,11 @@ async fn solver_solve_endpoint_requires_api_key() {
         .insert("X-Solver-Key", "solver-secret".parse().unwrap());
     let response = solver_app.clone().oneshot(req).await.expect("request ok");
     assert_eq!(response.status(), StatusCode::OK);
-    let bid: SolverBid =
-        serde_json::from_slice(&axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    let bid: SolverBid = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(bid.intent_id.to_string(), intent_id);
 }

@@ -10,10 +10,10 @@
 //!     --keys 0xkey1,0xkey2,0xkey3 --rpc 127.0.0.1:9445
 
 use clap::Parser;
-use k256::ecdsa::{SigningKey, VerifyingKey, Signature};
 use k256::ecdsa::signature::{Signer as _, Verifier as _};
+use k256::ecdsa::{Signature, SigningKey, VerifyingKey};
 use serde_json::{json, Value};
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::TcpStream;
 use std::time::Duration;
 
@@ -51,15 +51,26 @@ fn main() -> anyhow::Result<()> {
     println!("Operation message: {}", operation_message);
 
     // Parse validator keys and IDs
-    let keys: Vec<String> = args.keys.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+    let keys: Vec<String> = args
+        .keys
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
     let ids: Vec<String> = if args.ids.is_empty() {
-        (0..keys.len()).map(|i| format!("validator-{}", i + 1)).collect()
+        (0..keys.len())
+            .map(|i| format!("validator-{}", i + 1))
+            .collect()
     } else {
         args.ids.split(',').map(|s| s.trim().to_string()).collect()
     };
 
     if keys.len() != ids.len() {
-        anyhow::bail!("Number of keys ({}) doesn't match number of IDs ({})", keys.len(), ids.len());
+        anyhow::bail!(
+            "Number of keys ({}) doesn't match number of IDs ({})",
+            keys.len(),
+            ids.len()
+        );
     }
 
     // Sign with each validator key
@@ -82,10 +93,16 @@ fn main() -> anyhow::Result<()> {
         let pubkey_hex = hex::encode(pubkey_bytes);
 
         // Verify locally
-        verifying_key.verify(operation_message.as_bytes(), &signature)
+        verifying_key
+            .verify(operation_message.as_bytes(), &signature)
             .map_err(|e| anyhow::anyhow!("Local verify failed for {}: {}", validator_id, e))?;
 
-        println!("  {}: pubkey=0x{}, sig=0x{}... — local verify OK", validator_id, pubkey_hex, &sig_hex[..20]);
+        println!(
+            "  {}: pubkey=0x{}, sig=0x{}... — local verify OK",
+            validator_id,
+            pubkey_hex,
+            &sig_hex[..20]
+        );
 
         proofs.push(json!({
             "validator_id": validator_id,
@@ -120,10 +137,7 @@ fn main() -> anyhow::Result<()> {
     println!("Sending to {}...", args.rpc);
 
     // Send via TCP
-    let mut stream = TcpStream::connect_timeout(
-        &args.rpc.parse()?,
-        Duration::from_secs(10),
-    )?;
+    let mut stream = TcpStream::connect_timeout(&args.rpc.parse()?, Duration::from_secs(10))?;
     stream.set_read_timeout(Some(Duration::from_secs(30)))?;
     stream.set_write_timeout(Some(Duration::from_secs(10)))?;
     stream.write_all(request_str.as_bytes())?;

@@ -131,7 +131,9 @@ impl PoolProfitSwitchState {
             if should_switch {
                 tracing::info!(
                     "profit_switch: CPU {} → {} (profit: {:.2} → {:.2} USD/day)",
-                    self.current_cpu_coin.map(|c| c.as_str().to_string()).unwrap_or_else(|| "none".into()),
+                    self.current_cpu_coin
+                        .map(|c| c.as_str().to_string())
+                        .unwrap_or_else(|| "none".into()),
                     best_cpu.coin.as_str(),
                     self.last_cpu_profit,
                     best_cpu.profit_usd_per_day
@@ -249,7 +251,7 @@ mod tests {
     #[test]
     fn profit_switcher_should_check_after_interval() {
         let state = PoolProfitSwitchState::new(15.0, 0); // 0 second interval
-        // Should always be ready to check with 0 interval
+                                                         // Should always be ready to check with 0 interval
         assert!(state.should_check());
     }
 

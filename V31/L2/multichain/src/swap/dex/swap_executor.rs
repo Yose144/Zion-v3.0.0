@@ -197,10 +197,9 @@ impl SwapExecutor {
                 )));
             }
 
-            let adapter = self
-                .adapters
-                .get(to.id.chain)
-                .ok_or_else(|| MultichainError::AdapterNotFound(to.id.chain.as_str().to_string()))?;
+            let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
+                MultichainError::AdapterNotFound(to.id.chain.as_str().to_string())
+            })?;
 
             match adapter.transfer_token(to, &recipient, amount_out).await {
                 Ok(tx_hash) => {
@@ -254,10 +253,9 @@ impl SwapExecutor {
         to: &Asset,
         req: &HtlcSwapRequest,
     ) -> MultichainResult<DexOrder> {
-        let htlc = self
-            .htlc
-            .as_ref()
-            .ok_or_else(|| MultichainError::Unsupported("HTLC swap coordinator not configured".to_string()))?;
+        let htlc = self.htlc.as_ref().ok_or_else(|| {
+            MultichainError::Unsupported("HTLC swap coordinator not configured".to_string())
+        })?;
 
         if req.operator_target_address.chain != to.id.chain {
             return Err(MultichainError::Validation(format!(
@@ -385,7 +383,9 @@ impl SwapExecutor {
                     )
                 })?
                 .try_into()
-                .map_err(|_| MultichainError::Validation("source timelock out of range".to_string()))?;
+                .map_err(|_| {
+                    MultichainError::Validation("source timelock out of range".to_string())
+                })?;
             htlc.set_source_lock(&req.hashlock.to_hex(), source_lock_tx_id, source_expires_at)
                 .await?;
         }
@@ -400,10 +400,9 @@ impl SwapExecutor {
         source_lock_tx_id: &str,
         source_expires_at: u64,
     ) -> MultichainResult<DexOrder> {
-        let htlc = self
-            .htlc
-            .as_ref()
-            .ok_or_else(|| MultichainError::Unsupported("HTLC swap coordinator not configured".to_string()))?;
+        let htlc = self.htlc.as_ref().ok_or_else(|| {
+            MultichainError::Unsupported("HTLC swap coordinator not configured".to_string())
+        })?;
 
         let order = self
             .get_order(order_id)
@@ -423,9 +422,9 @@ impl SwapExecutor {
         htlc.set_source_lock(
             hash_hex,
             source_lock_tx_id,
-            source_expires_at
-                .try_into()
-                .map_err(|_| MultichainError::Validation("source_expires_at out of range".to_string()))?,
+            source_expires_at.try_into().map_err(|_| {
+                MultichainError::Validation("source_expires_at out of range".to_string())
+            })?,
         )
         .await?;
 
@@ -441,10 +440,9 @@ impl SwapExecutor {
         source_operator_recipient: &Address,
         source_user_address: Option<&Address>,
     ) -> MultichainResult<DexOrder> {
-        let htlc = self
-            .htlc
-            .as_ref()
-            .ok_or_else(|| MultichainError::Unsupported("HTLC swap coordinator not configured".to_string()))?;
+        let htlc = self.htlc.as_ref().ok_or_else(|| {
+            MultichainError::Unsupported("HTLC swap coordinator not configured".to_string())
+        })?;
 
         let mut order = self
             .get_order(order_id)
@@ -476,8 +474,12 @@ impl SwapExecutor {
         let source_endpoint = TransferEndpoint {
             address: source_user_address.cloned().unwrap_or_else(|| {
                 // Fallback: a placeholder on the source chain is enough for the adapter.
-                Address::new(source_asset.id.chain, Vec::new(), &source_operator_recipient.encoded)
-                    .unwrap_or_else(|_| source_operator_recipient.clone())
+                Address::new(
+                    source_asset.id.chain,
+                    Vec::new(),
+                    &source_operator_recipient.encoded,
+                )
+                .unwrap_or_else(|_| source_operator_recipient.clone())
             }),
             asset: source_asset.clone(),
             amount: order.amount_in,
@@ -583,10 +585,11 @@ mod tests {
             to: &Address,
             amount: Amount,
         ) -> MultichainResult<Hash> {
-            self.transfer_token_calls
-                .lock()
-                .unwrap()
-                .push((token.id.to_string(), to.encoded.clone(), amount.0));
+            self.transfer_token_calls.lock().unwrap().push((
+                token.id.to_string(),
+                to.encoded.clone(),
+                amount.0,
+            ));
             Ok(Hash([0u8; 32]))
         }
 
@@ -594,7 +597,10 @@ mod tests {
             Ok(Amount::ZERO)
         }
 
-        async fn execute_outbound(&self, _transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
+        async fn execute_outbound(
+            &self,
+            _transfer: &crate::types::Transfer,
+        ) -> MultichainResult<Hash> {
             Ok(Hash([0u8; 32]))
         }
     }
@@ -625,7 +631,10 @@ mod tests {
         });
 
         let user_id = "user1";
-        ledger.credit(user_id, &zion, Amount::new(10_000_000)).await.unwrap();
+        ledger
+            .credit(user_id, &zion, Amount::new(10_000_000))
+            .await
+            .unwrap();
 
         let adapters = ChainAdapterRegistry::new();
         let executor = SwapExecutor::new(
@@ -676,7 +685,8 @@ mod tests {
         });
 
         let user_id = "user1";
-        ledger.credit(user_id, &wzion, Amount::new(10_000_000_000_000_000_000u128))
+        ledger
+            .credit(user_id, &wzion, Amount::new(10_000_000_000_000_000_000u128))
             .await
             .unwrap();
 
@@ -858,13 +868,7 @@ mod tests {
             18,
             "Wrapped ZION",
         );
-        let usdc = Asset::with_contract(
-            ChainId::Base,
-            "USDC",
-            "0xA0b86a33E6B8",
-            6,
-            "USD Coin",
-        );
+        let usdc = Asset::with_contract(ChainId::Base, "USDC", "0xA0b86a33E6B8", 6, "USD Coin");
 
         // Bridge edge: ZION (ZionL1) <-> wZION (Base)
         dex.add_bridge_edge(zion.clone(), wzion.clone(), 10);
@@ -950,7 +954,10 @@ mod tests {
 
         let mut adapters = ChainAdapterRegistry::new();
         adapters.register(ChainId::Base, Box::new(MockAdapter::new(ChainFamily::Evm)));
-        adapters.register(ChainId::Bitcoin, Box::new(MockAdapter::new(ChainFamily::Utxo)));
+        adapters.register(
+            ChainId::Bitcoin,
+            Box::new(MockAdapter::new(ChainFamily::Utxo)),
+        );
 
         let adapters = Arc::new(adapters);
         let htlc = HtlcSwap::with_db(Arc::clone(&adapters), Arc::clone(&db));

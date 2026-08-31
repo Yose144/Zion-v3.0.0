@@ -529,12 +529,9 @@ impl HtlcSwap {
 
         // 4. Select source- or target-side parameters.
         let (lock_tx_id, expires_at, refund_pubkey, claimant_pubkey) = if is_source {
-            let lock_tx_id = record
-                .source_lock_tx_id
-                .as_deref()
-                .ok_or_else(|| {
-                    MultichainError::Validation("HTLC missing source_lock_tx_id".to_string())
-                })?;
+            let lock_tx_id = record.source_lock_tx_id.as_deref().ok_or_else(|| {
+                MultichainError::Validation("HTLC missing source_lock_tx_id".to_string())
+            })?;
             (
                 lock_tx_id.to_string(),
                 record.source_expires_at,

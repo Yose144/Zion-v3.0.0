@@ -22,16 +22,16 @@ pub enum UpdateCmd {
     Version,
 }
 
-const GITHUB_RELEASES_URL: &str = "https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases/latest";
-const GITHUB_TAGGED_URL: &str = "https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases/tags/";
+const GITHUB_RELEASES_URL: &str =
+    "https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases/latest";
+const GITHUB_TAGGED_URL: &str =
+    "https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases/tags/";
 
 pub async fn run(cmd: UpdateCmd) -> Result<()> {
     match cmd {
         UpdateCmd::Check => {
             ui::print_header("Checking for updates...");
-            let client = reqwest::Client::builder()
-                .user_agent("zion-cli")
-                .build()?;
+            let client = reqwest::Client::builder().user_agent("zion-cli").build()?;
             match client.get(GITHUB_RELEASES_URL).send().await {
                 Ok(resp) => {
                     if resp.status().is_success() {
@@ -60,9 +60,7 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
             let target_version = version.unwrap_or_else(|| "latest".to_string());
             ui::print_row("Target", &target_version);
 
-            let client = reqwest::Client::builder()
-                .user_agent("zion-cli")
-                .build()?;
+            let client = reqwest::Client::builder().user_agent("zion-cli").build()?;
 
             // Fetch release info
             let url = if target_version == "latest" {
@@ -71,15 +69,18 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
                 format!("{}{}", GITHUB_TAGGED_URL, target_version)
             };
 
-            let resp = client.get(&url).send().await
+            let resp = client
+                .get(&url)
+                .send()
+                .await
                 .context("Failed to fetch release info from GitHub")?;
 
             if !resp.status().is_success() {
                 anyhow::bail!("GitHub API returned: {}", resp.status());
             }
 
-            let release: serde_json::Value = resp.json().await
-                .context("Failed to parse release JSON")?;
+            let release: serde_json::Value =
+                resp.json().await.context("Failed to parse release JSON")?;
 
             let tag = release["tag_name"].as_str().unwrap_or("unknown");
             ui::print_row("Release", tag);
@@ -100,9 +101,12 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
             };
 
             // Find matching asset
-            let assets = release["assets"].as_array().context("No assets in release")?;
+            let assets = release["assets"]
+                .as_array()
+                .context("No assets in release")?;
             let asset = assets.iter().find(|a| {
-                a["name"].as_str()
+                a["name"]
+                    .as_str()
                     .map(|n| n.contains(platform))
                     .unwrap_or(false)
             });
@@ -111,7 +115,10 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
                 Some(a) => a,
                 None => {
                     // List available assets
-                    ui::print_warn(&format!("No pre-built binary found for platform '{}'.", platform));
+                    ui::print_warn(&format!(
+                        "No pre-built binary found for platform '{}'.",
+                        platform
+                    ));
                     ui::print_info("Available assets:");
                     for a in assets {
                         if let Some(name) = a["name"].as_str() {
@@ -127,7 +134,8 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
             };
 
             let asset_name = asset["name"].as_str().context("Asset has no name")?;
-            let download_url = asset["browser_download_url"].as_str()
+            let download_url = asset["browser_download_url"]
+                .as_str()
                 .context("Asset has no download URL")?;
             let size = asset["size"].as_u64().unwrap_or(0);
 
@@ -142,21 +150,25 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
 
             // Download
             ui::print_info("Downloading...");
-            let dl_resp = client.get(download_url).send().await
+            let dl_resp = client
+                .get(download_url)
+                .send()
+                .await
                 .context("Failed to start download")?;
 
             if !dl_resp.status().is_success() {
                 anyhow::bail!("Download failed: HTTP {}", dl_resp.status());
             }
 
-            let bytes = dl_resp.bytes().await
+            let bytes = dl_resp
+                .bytes()
+                .await
                 .context("Failed to read download body")?;
 
             // Write to temp file
             let tmp = std::env::temp_dir().join("zion-update-download");
             {
-                let mut file = std::fs::File::create(&tmp)
-                    .context("Failed to create temp file")?;
+                let mut file = std::fs::File::create(&tmp).context("Failed to create temp file")?;
                 file.write_all(&bytes)
                     .context("Failed to write download to temp file")?;
             }
@@ -171,8 +183,8 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
             }
 
             // Determine install path
-            let current_exe = std::env::current_exe()
-                .context("Failed to determine current executable path")?;
+            let current_exe =
+                std::env::current_exe().context("Failed to determine current executable path")?;
             let install_path = current_exe.clone();
 
             ui::print_row("Install path", &install_path.display().to_string());
@@ -180,8 +192,7 @@ pub async fn run(cmd: UpdateCmd) -> Result<()> {
             // Backup current binary
             let backup = install_path.with_extension("bak");
             if install_path.exists() {
-                std::fs::copy(&install_path, &backup)
-                    .context("Failed to backup current binary")?;
+                std::fs::copy(&install_path, &backup).context("Failed to backup current binary")?;
                 ui::print_info(&format!("Backed up to {}", backup.display()));
             }
 

@@ -220,7 +220,10 @@ mod tests {
             assert!(result.is_some(), "mine should succeed at height {height}");
 
             let verify = engine.verify_header(&header, &previous, &target);
-            assert!(verify.is_ok(), "verify should pass at height {height}: {verify:?}");
+            assert!(
+                verify.is_ok(),
+                "verify should pass at height {height}: {verify:?}"
+            );
         }
     }
 
@@ -235,8 +238,15 @@ mod tests {
                 .find_nonce(&header, 0, 500, &target)
                 .unwrap_or_else(|| panic!("easy target should mine at height {height}"));
 
-            assert_eq!(hash, algo.hash(&header, nonce), "hash mismatch at height {height}");
-            assert!(hash.0 <= target, "found nonce must meet target at height {height}");
+            assert_eq!(
+                hash,
+                algo.hash(&header, nonce),
+                "hash mismatch at height {height}"
+            );
+            assert!(
+                hash.0 <= target,
+                "found nonce must meet target at height {height}"
+            );
         }
     }
 }

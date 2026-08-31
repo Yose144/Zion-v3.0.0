@@ -26,12 +26,12 @@ pub async fn run(cmd: AuxpowCmd) -> Result<()> {
         AuxpowCmd::Algorithms => {
             ui::print_header("Supported AuxPoW Algorithms");
             let algorithms = [
-                ("etchash",        "Ethereum Classic"),
-                ("kawpow",         "Ravencoin"),
-                ("autolykos",      "Ergo"),
+                ("etchash", "Ethereum Classic"),
+                ("kawpow", "Ravencoin"),
+                ("autolykos", "Ergo"),
                 ("cosmic-harmony", "ZION Cosmic Harmony"),
-                ("randomx",        "Monero / RandomX"),
-                ("ghostrider",     "Ravencoin GhostRider"),
+                ("randomx", "Monero / RandomX"),
+                ("ghostrider", "Ravencoin GhostRider"),
             ];
             for (id, name) in &algorithms {
                 println!("  {:20} {}", id, name);

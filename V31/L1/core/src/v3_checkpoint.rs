@@ -116,8 +116,7 @@ pub async fn import_checkpoint(
 
     let mut utxos = Vec::with_capacity(checkpoint.utxos.len());
     for u in &checkpoint.utxos {
-        let tx_hash =
-            hex_to_array32(&u.tx_hash_hex).map_err(CheckpointError::InvalidCheckpoint)?;
+        let tx_hash = hex_to_array32(&u.tx_hash_hex).map_err(CheckpointError::InvalidCheckpoint)?;
         utxos.push((tx_hash, u.output_index, u.amount, u.address.clone()));
     }
     storage.put_v3_utxos(&utxos).await?;

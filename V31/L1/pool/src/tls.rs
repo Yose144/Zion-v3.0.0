@@ -13,8 +13,8 @@ use tokio_rustls::TlsAcceptor;
 pub fn load_tls_acceptor(cert_path: &str, key_path: &str) -> Result<TlsAcceptor> {
     let cert_pem = std::fs::read(cert_path)
         .with_context(|| format!("failed to read TLS cert: {}", cert_path))?;
-    let key_pem = std::fs::read(key_path)
-        .with_context(|| format!("failed to read TLS key: {}", key_path))?;
+    let key_pem =
+        std::fs::read(key_path).with_context(|| format!("failed to read TLS key: {}", key_path))?;
 
     let cert_chain: Vec<rustls::pki_types::CertificateDer> =
         rustls_pemfile::certs(&mut cert_pem.as_slice())
@@ -134,9 +134,8 @@ mod tests {
 
     #[test]
     fn parse_extra_ports() {
-        let ports = ExtraPortConfig::parse(
-            "8445:gpu:5000:100:50000,0.0.0.0:8446:farm:50000:1000:0",
-        );
+        let ports =
+            ExtraPortConfig::parse("8445:gpu:5000:100:50000,0.0.0.0:8446:farm:50000:1000:0");
         assert_eq!(ports.len(), 2);
         assert_eq!(ports[0].bind_addr, "0.0.0.0:8445");
         assert_eq!(ports[0].label, "gpu");

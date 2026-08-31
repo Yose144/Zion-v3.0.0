@@ -10,7 +10,7 @@
 #[test]
 #[ignore = "requires an OpenCL GPU and kernel build"]
 fn opencl_gpu_go_no_go() {
-    use zion_miner::gpu::{GpuBackendKind, create_gpu_backend};
+    use zion_miner::gpu::{create_gpu_backend, GpuBackendKind};
 
     let mut backend = create_gpu_backend(GpuBackendKind::Auto, 4096, "ekam_deeksha", "")
         .expect("OpenCL backend should enumerate and initialize a GPU");
@@ -22,8 +22,7 @@ fn opencl_gpu_go_no_go() {
         backend.backend_kind().as_str(),
     );
 
-    let (hashes, elapsed, khps) =
-        backend.benchmark(1.0).expect("OpenCL benchmark should run");
+    let (hashes, elapsed, khps) = backend.benchmark(1.0).expect("OpenCL benchmark should run");
 
     eprintln!(
         "opencl_go_no_go hashes={} elapsed={:.2}s khps={:.2}",

@@ -2157,7 +2157,11 @@ pub(crate) fn draw_dashboard_redesign(
     #[cfg(feature = "public_build")]
     let (gpu_label, gpu_desc) = (
         "BOOST 1",
-        if gpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+        if gpu_active {
+            "Boost / Boost".to_string()
+        } else {
+            "idle".to_string()
+        },
     );
     #[cfg(not(feature = "public_build"))]
     let (gpu_label, gpu_desc) = (
@@ -2182,7 +2186,11 @@ pub(crate) fn draw_dashboard_redesign(
     #[cfg(feature = "public_build")]
     let (cpu_label, cpu_desc) = (
         "BOOST 2",
-        if cpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+        if cpu_active {
+            "Boost / Boost".to_string()
+        } else {
+            "idle".to_string()
+        },
     );
     #[cfg(not(feature = "public_build"))]
     let (cpu_label, cpu_desc) = (

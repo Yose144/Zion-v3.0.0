@@ -31,7 +31,8 @@ fn build_request(method: &str, uri: &str, body: String) -> Request<Body> {
         .header("content-type", "application/json")
         .body(Body::from(body))
         .expect("valid request");
-    req.extensions_mut().insert(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 1234))));
+    req.extensions_mut()
+        .insert(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 1234))));
     req
 }
 
@@ -170,10 +171,7 @@ async fn intent_http_lifecycle_happy_path() {
         .await
         .expect("read body");
     let json: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
-    assert_eq!(
-        json["intent"]["status"],
-        "executed"
-    );
+    assert_eq!(json["intent"]["status"], "executed");
 }
 
 #[tokio::test]

@@ -44,7 +44,11 @@ pub struct PeerGuard {
 
 impl Drop for PeerGuard {
     fn drop(&mut self) {
-        let mut active = self.manager.active.lock().unwrap_or_else(|e| e.into_inner());
+        let mut active = self
+            .manager
+            .active
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         active.remove(&self.addr);
     }
 }
@@ -161,7 +165,13 @@ impl PeerManager {
             if info.bad >= self.ban_threshold {
                 let until = Instant::now() + self.ban_duration;
                 warn!(%addr, %ip, until = ?self.ban_duration, "banning peer");
-                banned.insert(ip, BanInfo { until, score: info.bad });
+                banned.insert(
+                    ip,
+                    BanInfo {
+                        until,
+                        score: info.bad,
+                    },
+                );
                 peers.remove(&addr);
             }
         } else {
@@ -195,7 +205,11 @@ impl PeerManager {
         // Prune stale known peers so we do not advertise dead endpoints.
         self.prune_stale_peers(Duration::from_secs(300)).await;
         let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
-        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let banned = self
+            .banned
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         let peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
         peers
             .iter()
@@ -230,7 +244,11 @@ impl PeerManager {
     /// forever with ephemeral health-check connections.
     pub async fn prune_stale_peers(&self, max_age: Duration) {
         let now = Instant::now();
-        let active = self.active.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let active = self
+            .active
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         let mut peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
         peers.retain(|addr, info| {
             active.contains(addr) || now.duration_since(info.last_seen) <= max_age
@@ -255,7 +273,11 @@ impl PeerManager {
     /// Return all known peer addresses with their metadata.
     pub async fn known_peers_with_metadata(&self) -> HashMap<SocketAddr, PeerInfo> {
         let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
-        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let banned = self
+            .banned
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         self.peers
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -270,7 +292,11 @@ impl PeerManager {
     pub async fn recent_peers(&self, window: Duration) -> Vec<SocketAddr> {
         let now = Instant::now();
         let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
-        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let banned = self
+            .banned
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         self.peers
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -287,7 +313,11 @@ impl PeerManager {
     pub async fn recent_good_peers(&self, window: Duration) -> Vec<SocketAddr> {
         let now = Instant::now();
         let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
-        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let banned = self
+            .banned
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         self.peers
             .lock()
             .unwrap_or_else(|e| e.into_inner())

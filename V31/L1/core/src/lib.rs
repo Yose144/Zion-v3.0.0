@@ -63,18 +63,17 @@ pub mod node_runtime;
 #[cfg(feature = "v3-binaries")]
 pub mod launch;
 #[cfg(feature = "v3-binaries")]
+pub mod v3_bridge; // needs k256, hex(), SpendableUtxo, MIGRATION_DIVISOR
+#[cfg(feature = "v3-binaries")]
 pub mod v3_node_builder;
 #[cfg(feature = "v3-binaries")]
-pub mod v3_wallet;
-#[cfg(feature = "v3-binaries")]
-pub mod v3_bridge;   // needs k256, hex(), SpendableUtxo, MIGRATION_DIVISOR
-#[cfg(feature = "v3-binaries")]
 pub mod v3_validation; // needs crate::tx, crate::genesis::validate_premine
+#[cfg(feature = "v3-binaries")]
+pub mod v3_wallet;
 pub mod websocket;
 
 pub use block::{Block, BlockHeader};
 pub use consensus::{ConsensusEngine, ConsensusError};
-pub use zion_cosmic_harmony::EkamDeeksha;
 pub use difficulty::{difficulty_to_target, lwma_next_difficulty, target_to_difficulty, BlockInfo};
 pub use emission::{block_subsidy, fee_split, flowers_to_zion, format_zion, zion_to_flowers};
 pub use genesis::{genesis_block, genesis_hash, GENESIS_DIFFICULTY, GENESIS_TIMESTAMP};
@@ -89,9 +88,10 @@ pub use v31_wallet::{
     build_send_with_memo, htlc_output_script, BatchRecipient, BuildResult, SpendableUtxo,
     WalletError, MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT,
 };
+pub use zion_cosmic_harmony::EkamDeeksha;
 
 #[cfg(feature = "v3-binaries")]
 pub use v3_compat::{
     BlockCandidate, DifficultyTarget as V3DifficultyTarget, MiningHeader, MiningJob,
-    MiningSolution, PremineOutput, PREMINE_OUTPUTS, SealedBlock, V3Block,
+    MiningSolution, PremineOutput, SealedBlock, V3Block, PREMINE_OUTPUTS,
 };

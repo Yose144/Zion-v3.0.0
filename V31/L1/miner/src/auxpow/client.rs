@@ -24,8 +24,8 @@ use tokio::net::TcpStream;
 use tokio::sync::{oneshot, Mutex, Notify};
 use tokio::time::timeout;
 
-use crate::{ext_debug, ext_info, ext_warn};
 use super::hasher;
+use crate::{ext_debug, ext_info, ext_warn};
 use zion_cosmic_harmony::{CoinProfile, ExternalCoin};
 
 /// JSON-RPC id used for `eth_getWork` polls.
@@ -287,7 +287,9 @@ impl AuxPowClient {
                     Err(e) => {
                         ext_warn!(
                             "auxpow_client: poll loop ended for {}: {} — reconnecting in {}s",
-                            profile_clone.coin, e, backoff_secs
+                            profile_clone.coin,
+                            e,
+                            backoff_secs
                         );
                         *client_clone.connected.lock().await = false;
                         tokio::time::sleep(Duration::from_secs(backoff_secs)).await;
@@ -300,7 +302,8 @@ impl AuxPowClient {
                                 backoff_secs = (backoff_secs * 2).min(600);
                                 ext_warn!(
                                     "auxpow_client: reconnect failed: {} — retry in {}s",
-                                    re_err, backoff_secs
+                                    re_err,
+                                    backoff_secs
                                 );
                                 *client_clone.reader.lock().await = None;
                                 *client_clone.stream.lock().await = None;
@@ -553,7 +556,10 @@ impl AuxPowClient {
                 let en1_len = e1.len();
                 *self.extranonce1.lock().await = e1;
                 *self.extranonce2_size.lock().await = Some(4);
-                ext_info!(extranonce2_size = 4, "stratum subscribed (2-field response)");
+                ext_info!(
+                    extranonce2_size = 4,
+                    "stratum subscribed (2-field response)"
+                );
                 crate::ext_debug!(
                     target: "en1_trace",
                     en1_hex = %en1_hex,
@@ -622,7 +628,11 @@ impl AuxPowClient {
                 "params": []
             });
             if let Err(e) = self.send_notification(&ex_req).await {
-                ext_warn!("mining.extranonce.subscribe failed for {}: {}", self.config.coin, e);
+                ext_warn!(
+                    "mining.extranonce.subscribe failed for {}: {}",
+                    self.config.coin,
+                    e
+                );
             }
         }
         Ok(())
@@ -686,7 +696,11 @@ impl AuxPowClient {
                 "params": []
             });
             if let Err(e) = self.send_notification(&ex_req).await {
-                ext_warn!("mining.extranonce.subscribe (inline) failed for {}: {}", self.config.coin, e);
+                ext_warn!(
+                    "mining.extranonce.subscribe (inline) failed for {}: {}",
+                    self.config.coin,
+                    e
+                );
             }
         }
         Ok(())
@@ -914,12 +928,8 @@ impl AuxPowClient {
                 let nbits = params[6]
                     .as_str()
                     .map(|s| s.to_string())
-                    .or_else(|| {
-                        params[6].as_u64().map(|n| format!("{:08x}", n))
-                    })
-                    .or_else(|| {
-                        params[6].as_i64().map(|n| format!("{:08x}", n))
-                    })
+                    .or_else(|| params[6].as_u64().map(|n| format!("{:08x}", n)))
+                    .or_else(|| params[6].as_i64().map(|n| format!("{:08x}", n)))
                     .unwrap_or_default();
                 let mut solution = parse_hex_value(&params[8]).unwrap_or_default();
                 // Pad solution to VERUS_SOLUTION_SIZE (1344 bytes) — the pool
@@ -937,13 +947,13 @@ impl AuxPowClient {
                     // against.  Falling back to difficulty_to_target would
                     // produce a different (easier) target and shares would be
                     // rejected as "low difficulty share".
-                    let set_target = self.current_target_bytes.lock().await.clone();
+                    let set_target = *self.current_target_bytes.lock().await;
                     if let Some(t) = set_target {
                         t
                     } else {
                         // Fallback: compute from mining.set_difficulty, or use
                         // a reasonable minimum if the pool hasn't set either.
-                        let diff = self.current_difficulty.lock().await.clone();
+                        let diff = *self.current_difficulty.lock().await;
                         let effective_diff = if diff > 1.0 && diff.is_finite() {
                             diff
                         } else {
@@ -987,9 +997,15 @@ impl AuxPowClient {
 
                 let varint = hasher::zcash_varint_for_len(solution.len());
                 let mut header = Vec::with_capacity(
-                    version.len() + prevhash.len() + merkle.len() + reserved.len()
-                        + ntime_bytes.len() + nbits_bytes.len() + nonce_field.len()
-                        + varint.len() + solution.len(),
+                    version.len()
+                        + prevhash.len()
+                        + merkle.len()
+                        + reserved.len()
+                        + ntime_bytes.len()
+                        + nbits_bytes.len()
+                        + nonce_field.len()
+                        + varint.len()
+                        + solution.len(),
                 );
                 header.extend_from_slice(&version);
                 header.extend_from_slice(&prevhash);
@@ -1130,8 +1146,8 @@ impl AuxPowClient {
         let target_hex = arr[2].as_str().unwrap_or("");
         let height_hex = arr.get(3).and_then(|v| v.as_str());
 
-        let block_number = height_hex
-            .and_then(|h| u64::from_str_radix(h.trim_start_matches("0x"), 16).ok());
+        let block_number =
+            height_hex.and_then(|h| u64::from_str_radix(h.trim_start_matches("0x"), 16).ok());
 
         let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
         let target = hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
@@ -1172,7 +1188,10 @@ impl AuxPowClient {
     /// Upstream pools may re-use the same job_id for a rolling job update
     /// (ntime/target/header), so we compare the full visible job content.
     fn external_job_key(job: &ExternalJob) -> String {
-        format!("{}|{}|{}|{}", job.job_id, job.ntime, job.target_hex, job.header_hex)
+        format!(
+            "{}|{}|{}|{}",
+            job.job_id, job.ntime, job.target_hex, job.header_hex
+        )
     }
 
     /// Wait for the next job from the pool.
@@ -1200,6 +1219,7 @@ impl AuxPowClient {
     /// ProgPoW-style `eth_submitWork` submissions. If not provided, the
     /// EthStratum path falls back to the `job_id` (expected to be the header
     /// hash) and a zero mix hash.
+    #[allow(clippy::too_many_arguments)]
     pub async fn submit_share(
         &self,
         job_id: &str,
@@ -1230,11 +1250,29 @@ impl AuxPowClient {
         };
 
         let header_hex = header_hash
-            .map(|h| if h.starts_with("0x") { h.to_string() } else { format!("0x{}", h) })
-            .unwrap_or_else(|| if job_id.starts_with("0x") { job_id.to_string() } else { format!("0x{}", job_id) });
+            .map(|h| {
+                if h.starts_with("0x") {
+                    h.to_string()
+                } else {
+                    format!("0x{}", h)
+                }
+            })
+            .unwrap_or_else(|| {
+                if job_id.starts_with("0x") {
+                    job_id.to_string()
+                } else {
+                    format!("0x{}", job_id)
+                }
+            });
 
         let mix_hex = mix_hash
-            .map(|m| if m.starts_with("0x") { m.to_string() } else { format!("0x{}", m) })
+            .map(|m| {
+                if m.starts_with("0x") {
+                    m.to_string()
+                } else {
+                    format!("0x{}", m)
+                }
+            })
             .unwrap_or_else(|| format!("0x{}", "0".repeat(64)));
 
         let req = match self.protocol {
@@ -1325,10 +1363,7 @@ impl AuxPowClient {
     /// Returns `None` if no job has been received yet.
     /// Used for time-based staleness detection on fast-block coins.
     pub async fn latest_job_age(&self) -> Option<Duration> {
-        self.latest_job_time
-            .lock()
-            .await
-            .map(|t| t.elapsed())
+        self.latest_job_time.lock().await.map(|t| t.elapsed())
     }
 
     pub fn config(&self) -> &AuxPowClientConfig {
@@ -1591,7 +1626,9 @@ impl StratumClient {
                 tokio::sync::mpsc::error::TrySendError::Full(s) => ("submit queue full", s),
                 tokio::sync::mpsc::error::TrySendError::Closed(s) => ("submit channel closed", s),
             };
-            let _ = submit.response.send(ShareResult::Rejected(reason.to_string()));
+            let _ = submit
+                .response
+                .send(ShareResult::Rejected(reason.to_string()));
             return Ok(ShareResult::Rejected(reason.to_string()));
         }
 
@@ -1650,7 +1687,17 @@ async fn run_stratum_loop(
     pending: Arc<Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>>,
 ) {
     loop {
-        if let Err(e) = stratum_session(&url, &worker, &password, coin, &job_tx, &mut submit_rx, &state, &pending).await
+        if let Err(e) = stratum_session(
+            &url,
+            &worker,
+            &password,
+            coin,
+            &job_tx,
+            &mut submit_rx,
+            &state,
+            &pending,
+        )
+        .await
         {
             ext_warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
         } else {
@@ -1660,7 +1707,9 @@ async fn run_stratum_loop(
         // Reject any outstanding submissions before reconnecting.
         let mut p = pending.lock().await;
         for (_, sender) in p.drain() {
-            let _ = sender.send(ShareResult::Rejected("stratum connection reset".to_string()));
+            let _ = sender.send(ShareResult::Rejected(
+                "stratum connection reset".to_string(),
+            ));
         }
 
         tokio::time::sleep(Duration::from_secs(5)).await;
@@ -1905,14 +1954,16 @@ fn parse_eth_getwork(value: &Value) -> Option<StratumJob> {
     }
 
     let header = parse_hex_value(&params[0]).unwrap_or_default();
-    let target = hasher::parse_target_hex(params[2].as_str().unwrap_or(""))
-        .unwrap_or([0xFF; 32]);
-    let height = params.get(3).and_then(|v| {
-        v.as_u64().or_else(|| {
-            v.as_str()
-                .and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+    let target = hasher::parse_target_hex(params[2].as_str().unwrap_or("")).unwrap_or([0xFF; 32]);
+    let height = params
+        .get(3)
+        .and_then(|v| {
+            v.as_u64().or_else(|| {
+                v.as_str()
+                    .and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+            })
         })
-    }).unwrap_or(0);
+        .unwrap_or(0);
 
     Some(StratumJob {
         job_id: height.to_string(),
@@ -2130,11 +2181,7 @@ fn build_submit_params(worker: &str, share: &super::Share, id: i64) -> Value {
     // DAG-based Ethash / ProgPoW variants: EthereumStratum uses eth_submitWork
     // with [nonce, header_hash, mix_hash]. The original 32-byte header hash is
     // required, not the final PoW hash; the pool recomputes the final hash.
-    if algo.contains("ethash")
-        || algo == "etchash"
-        || algo == "progpowz"
-        || algo == "epic"
-    {
+    if algo.contains("ethash") || algo == "etchash" || algo == "progpowz" || algo == "epic" {
         let nonce = format!("0x{nonce}");
         let header = format!("0x{}", hex::encode(share.header_hash));
         let mix = mix.unwrap_or_else(|| format!("0x{}", hex::encode([0u8; 32])));
@@ -2260,8 +2307,12 @@ mod tests {
             }
         });
 
-        let mut client =
-            StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x", ExternalCoin::Kaspa);
+        let mut client = StratumClient::new(
+            format!("127.0.0.1:{}", port),
+            "worker",
+            "x",
+            ExternalCoin::Kaspa,
+        );
         let job = client
             .next_job(ExternalCoin::Kaspa, Duration::from_secs(5))
             .await
@@ -2295,8 +2346,12 @@ mod tests {
             }
         });
 
-        let client =
-            StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x", ExternalCoin::Kaspa);
+        let client = StratumClient::new(
+            format!("127.0.0.1:{}", port),
+            "worker",
+            "x",
+            ExternalCoin::Kaspa,
+        );
         let share = super::super::Share {
             job_id: "mock_job".to_string(),
             coin: ExternalCoin::Kaspa,
@@ -2398,13 +2453,7 @@ mod tests {
         // Nonce is masked to 32 bits.
         assert_eq!(cryptonote_nonce_hex(0x1_1234abcd), "1234abcd");
 
-        assert_eq!(
-            cryptonote_result_hex("0xABCD1234"),
-            "abcd1234"
-        );
-        assert_eq!(
-            cryptonote_result_hex("  0xABCD1234  "),
-            "abcd1234"
-        );
+        assert_eq!(cryptonote_result_hex("0xABCD1234"), "abcd1234");
+        assert_eq!(cryptonote_result_hex("  0xABCD1234  "), "abcd1234");
     }
 }

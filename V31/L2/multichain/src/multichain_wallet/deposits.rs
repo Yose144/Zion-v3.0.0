@@ -15,7 +15,9 @@ use crate::chain::ChainAdapterRegistry;
 use crate::db::Db;
 use crate::error::MultichainResult;
 use crate::multichain_wallet::ledger::WalletLedger;
-use crate::multichain_wallet::types::{AddressPurpose, DepositRecord, DepositStatus, WalletAddress};
+use crate::multichain_wallet::types::{
+    AddressPurpose, DepositRecord, DepositStatus, WalletAddress,
+};
 
 /// Deposit watcher for all known deposit addresses.
 #[derive(Clone)]
@@ -122,7 +124,12 @@ impl DepositWatcher {
             .clone()
             .unwrap_or_else(|| native_asset_for_chain(chain, &wallet_address));
         let asset_key = asset.id.to_string();
-        let deposit_id = format!("{}:{}:{}", wallet_address.user_id, event.tx_hash.to_hex(), asset_key);
+        let deposit_id = format!(
+            "{}:{}:{}",
+            wallet_address.user_id,
+            event.tx_hash.to_hex(),
+            asset_key
+        );
 
         let existing = {
             let db = self.db.lock().await;
@@ -204,8 +211,8 @@ fn group_by_chain(addresses: Vec<WalletAddress>) -> HashMap<ChainId, Vec<Address
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
     use crate::chain::ChainAdapter;
+    use async_trait::async_trait;
     use zion_l1_types::{Address, Amount, ChainFamily, Hash};
 
     #[derive(Default)]
@@ -259,7 +266,10 @@ mod tests {
             Ok(Amount::ZERO)
         }
 
-        async fn execute_outbound(&self, _transfer: &crate::types::Transfer) -> MultichainResult<Hash> {
+        async fn execute_outbound(
+            &self,
+            _transfer: &crate::types::Transfer,
+        ) -> MultichainResult<Hash> {
             Ok(Hash([0u8; 32]))
         }
     }
@@ -302,14 +312,15 @@ mod tests {
         };
 
         let mut adapters = ChainAdapterRegistry::new();
-        adapters.register(chain, Box::new(MockAdapter { events: vec![event] }));
+        adapters.register(
+            chain,
+            Box::new(MockAdapter {
+                events: vec![event],
+            }),
+        );
 
-        let watcher = DepositWatcher::new(
-            Arc::clone(&db),
-            Arc::new(adapters),
-            ledger.clone(),
-        )
-        .with_poll_interval(Duration::from_millis(1));
+        let watcher = DepositWatcher::new(Arc::clone(&db), Arc::new(adapters), ledger.clone())
+            .with_poll_interval(Duration::from_millis(1));
 
         watcher.poll_all().await.unwrap();
 

@@ -141,7 +141,11 @@ fn external_job_to_package(job: &ExternalJob, coin: ExternalCoin) -> JobPackage 
         height: job.block_number.unwrap_or(0),
         algorithm: job.algorithm.clone(),
         extranonce1_hex: hex::encode(&job.extranonce1),
-        ntime: if job.ntime.is_empty() { "00000000".to_string() } else { job.ntime.clone() },
+        ntime: if job.ntime.is_empty() {
+            "00000000".to_string()
+        } else {
+            job.ntime.clone()
+        },
         received_at: Some(Instant::now()),
     }
 }
@@ -154,10 +158,7 @@ fn external_job_to_package(job: &ExternalJob, coin: ExternalCoin) -> JobPackage 
 /// 3. Fetches jobs and pushes them into the bridge job queue
 /// 4. Forwards shares from `share_rx` to the upstream pool
 /// 5. Reconnects with exponential backoff on failure
-pub fn spawn_auxpow_runtime(
-    multi_bridge: MultiAuxPowBridge,
-    cfg: AuxPowRuntimeConfig,
-) {
+pub fn spawn_auxpow_runtime(multi_bridge: MultiAuxPowBridge, cfg: AuxPowRuntimeConfig) {
     if cfg.enabled_coins.is_empty() {
         tracing::info!("auxpow_runtime: no coins enabled, skipping");
         return;
@@ -171,10 +172,7 @@ pub fn spawn_auxpow_runtime(
         let profile = match profile {
             Some(p) => p.clone(),
             None => {
-                tracing::warn!(
-                    "auxpow_runtime: no CoinProfile for {:?}, skipping",
-                    coin
-                );
+                tracing::warn!("auxpow_runtime: no CoinProfile for {:?}, skipping", coin);
                 continue;
             }
         };
@@ -420,7 +418,11 @@ async fn forward_share_to_upstream(
     } else {
         Some(format!("0x{}", hex::encode(&req.header_bytes)))
     };
-    let ntime_val = if req.ntime.is_empty() { "00000000" } else { &req.ntime };
+    let ntime_val = if req.ntime.is_empty() {
+        "00000000"
+    } else {
+        &req.ntime
+    };
     // For VRSC (ZcashStratum PBaaS v7+), the extranonce2 must match the
     // extranonce2_size from the upstream pool's subscription response.
     // LuckPool typically sets extranonce2_size=4, so extranonce2 = "00000000".
@@ -446,7 +448,11 @@ async fn forward_share_to_upstream(
             req.nonce,
             req.mix_hash_hex.as_deref().unwrap_or("(none)"),
             header_hash_opt.as_deref().unwrap_or("(none)"),
-            if req.hash_hex.is_empty() { "(empty)" } else { &req.hash_hex[..req.hash_hex.len().min(16)] }
+            if req.hash_hex.is_empty() {
+                "(empty)"
+            } else {
+                &req.hash_hex[..req.hash_hex.len().min(16)]
+            }
         );
     }
     match client
@@ -454,7 +460,11 @@ async fn forward_share_to_upstream(
             &req.job_id,
             req.nonce,
             &extranonce2,
-            if req.ntime.is_empty() { "00000000" } else { &req.ntime },
+            if req.ntime.is_empty() {
+                "00000000"
+            } else {
+                &req.ntime
+            },
             req.mix_hash_hex.as_deref(),
             header_hash_opt.as_deref(),
             &req.solution_hex,
@@ -467,7 +477,8 @@ async fn forward_share_to_upstream(
         Ok(zion_miner::auxpow::client::ShareResult::Rejected(reason)) => {
             ShareForwardOutcome::Result(ShareForwardResult::Rejected(reason))
         }
-        Ok(zion_miner::auxpow::client::ShareResult::Unknown) | Ok(zion_miner::auxpow::client::ShareResult::NoShare) => {
+        Ok(zion_miner::auxpow::client::ShareResult::Unknown)
+        | Ok(zion_miner::auxpow::client::ShareResult::NoShare) => {
             ShareForwardOutcome::Result(ShareForwardResult::Unknown)
         }
         Err(e) => {

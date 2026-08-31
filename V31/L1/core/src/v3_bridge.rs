@@ -530,7 +530,10 @@ pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
         if !seen_inputs.insert((input.prev_tx_hash, input.output_index)) {
             return Err("bridge unlock transaction contains duplicate inputs".to_string());
         }
-        let Some(utxo) = utxos.get(&(crate::v3_compat::hex(&input.prev_tx_hash), input.output_index)) else {
+        let Some(utxo) = utxos.get(&(
+            crate::v3_compat::hex(&input.prev_tx_hash),
+            input.output_index,
+        )) else {
             return Err(format!(
                 "bridge unlock input {}:{} does not exist or is already spent",
                 crate::v3_compat::hex(&input.prev_tx_hash),

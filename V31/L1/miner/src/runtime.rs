@@ -39,7 +39,7 @@ use zion_core::V3DifficultyTarget as DifficultyTarget;
 // GPU mining for Stream 1 (ZION) — available even without the `auxpow` feature
 // so that a CUDA/OpenCL build can GPU-mine ZION blocks in pool mode.
 use crate::gpu::GpuMiner;
-use zion_core::v3_compat::{MiningHeader, DifficultyTarget as V3DiffTarget};
+use zion_core::v3_compat::{DifficultyTarget as V3DiffTarget, MiningHeader};
 
 /// Parallel CPU nonce search for ZION (Ekam Deeksha).
 ///
@@ -101,31 +101,29 @@ fn parallel_zion_find_nonce(
     let cancelled = std::sync::Arc::new(AtomicBool::new(false));
     let chunk_size = remaining_count / threads as u64;
 
-    (0..threads)
-        .into_par_iter()
-        .find_map_any(|thread_idx| {
-            let start = remaining_start.wrapping_add(thread_idx as u64 * chunk_size);
-            let this_count = if thread_idx == threads - 1 {
-                remaining_count - (thread_idx as u64 * chunk_size)
-            } else {
-                chunk_size
-            };
+    (0..threads).into_par_iter().find_map_any(|thread_idx| {
+        let start = remaining_start.wrapping_add(thread_idx as u64 * chunk_size);
+        let this_count = if thread_idx == threads - 1 {
+            remaining_count - (thread_idx as u64 * chunk_size)
+        } else {
+            chunk_size
+        };
 
-            let mut pad = vec![0u8; SCRATCHPAD_SIZE];
+        let mut pad = vec![0u8; SCRATCHPAD_SIZE];
 
-            for offset in 0..this_count {
-                if offset % 256 == 0 && cancelled.load(Ordering::Relaxed) {
-                    return None;
-                }
-                let nonce = start.wrapping_add(offset);
-                let h = hash_with_scratchpad(header, nonce, &mut pad);
-                if meets_target(&h, target) {
-                    cancelled.store(true, Ordering::Relaxed);
-                    return Some((nonce, Hash::new(h)));
-                }
+        for offset in 0..this_count {
+            if offset % 256 == 0 && cancelled.load(Ordering::Relaxed) {
+                return None;
             }
-            None
-        })
+            let nonce = start.wrapping_add(offset);
+            let h = hash_with_scratchpad(header, nonce, &mut pad);
+            if meets_target(&h, target) {
+                cancelled.store(true, Ordering::Relaxed);
+                return Some((nonce, Hash::new(h)));
+            }
+        }
+        None
+    })
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -243,9 +241,8 @@ impl MinerRuntime {
         // with a smaller work_size to coexist on the same GPU. The 1070 Ti
         // has 8GB VRAM: ZANO DAG ~2GB + ZION scratchpad at 4096*512KB=2GB = 4GB.
         // The GPU time-slices between kernels — both are much faster than CPU.
-        let sharing_gpu = config.stream2_enabled
-            && gpu_backend_str != "cpu"
-            && !gpu_backend_str.is_empty();
+        let sharing_gpu =
+            config.stream2_enabled && gpu_backend_str != "cpu" && !gpu_backend_str.is_empty();
         let skip_zion_gpu = false; // Always try GPU for ZION — CPU fallback handles failures
         if !skip_zion_gpu && gpu_backend_str != "cpu" && !gpu_backend_str.is_empty() {
             let kind = parse_gpu_backend(&gpu_backend_str);
@@ -276,8 +273,10 @@ impl MinerRuntime {
         #[cfg(feature = "auxpow")]
         {
             let detected_hw = crate::auto_detect::detect_hardware();
-            let mut profit_router =
-                AutonomousProfitRouter::new(HardwareProfile::from_detected(&detected_hw, &config.gpu_backend));
+            let mut profit_router = AutonomousProfitRouter::new(HardwareProfile::from_detected(
+                &detected_hw,
+                &config.gpu_backend,
+            ));
             profit_router.enabled = autonomous;
             profit_router.set_hysteresis(profit_hysteresis_pct);
             profit_router.set_fetch_interval(profit_interval_sec);
@@ -404,7 +403,8 @@ impl MinerRuntime {
             .mine(&mut header, &target, 0, batch_size)
             .ok_or_else(|| MinerError::Consensus("no nonce found in batch".to_string()))?;
         let elapsed = t_start.elapsed().as_secs_f64();
-        self.update_hashrate(StreamId::Zion, batch_size, elapsed).await;
+        self.update_hashrate(StreamId::Zion, batch_size, elapsed)
+            .await;
 
         Ok(Block::new(header, transactions))
     }
@@ -490,10 +490,14 @@ impl MinerRuntime {
                 let copy_len = header_for_gpu.len().min(80);
                 header_bytes[..copy_len].copy_from_slice(&header_for_gpu[..copy_len]);
                 let mining_header = MiningHeader::from_bytes(header_bytes);
-                let target = V3DiffTarget { bytes: target_for_gpu };
+                let target = V3DiffTarget {
+                    bytes: target_for_gpu,
+                };
                 match gpu.mine_batch(mining_header, target, 0, batch_for_gpu) {
                     Ok(result) => {
-                        if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
+                        if let Some((found_nonce, found_hash, _mix)) =
+                            result.solutions.into_iter().next()
+                        {
                             return Some(Some((found_nonce, found_hash)));
                         }
                         // GPU ran, tested full batch, no solution found.
@@ -509,48 +513,50 @@ impl MinerRuntime {
         .await
         .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
 
-        let (nonce, _hash, nonces_searched) = if let Some(Some((found_nonce, found_hash))) = gpu_result {
-            // GPU found a solution — report batch_size for stable hashrate.
-            // GPU processes nonces in parallel; using only the chunk where
-            // the solution was found causes wild hashrate fluctuations.
-            (found_nonce, Hash::new(found_hash), batch_size)
-        } else if gpu_result == Some(None) {
-            // GPU ran and tested the full batch_size but found no solution.
-            // CPU re-tests the same [0, batch_size) range as fallback.
-            // Total unique nonces = batch_size (NOT batch_size + cpu_searched).
-            let header = job.header.clone();
-            let target = job.target;
-            let threads = self.config.miner_threads.max(1);
-            let result = task::spawn_blocking(move || {
-                parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
-            })
-            .await
-            .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
-            .ok_or(MinerError::NoAuxPoWSolution)?;
-            let (found_nonce, found_hash) = result;
-            // GPU already tested batch_size nonces; CPU found within that range.
-            // Do NOT add cpu_searched — that would double-count the same nonces.
-            (found_nonce, found_hash, batch_size)
-        } else {
-            // No GPU available — CPU is the only miner.
-            // CPU searches [0, batch_size) and finds at found_nonce.
-            // Total nonces = found_nonce + 1 (linear search stops at solution).
-            let header = job.header.clone();
-            let target = job.target;
-            let threads = self.config.miner_threads.max(1);
-            let result = task::spawn_blocking(move || {
-                parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
-            })
-            .await
-            .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
-            .ok_or(MinerError::NoAuxPoWSolution)?;
-            let (found_nonce, found_hash) = result;
-            let cpu_searched = found_nonce.saturating_sub(0) + 1;
-            (found_nonce, found_hash, cpu_searched)
-        };
+        let (nonce, _hash, nonces_searched) =
+            if let Some(Some((found_nonce, found_hash))) = gpu_result {
+                // GPU found a solution — report batch_size for stable hashrate.
+                // GPU processes nonces in parallel; using only the chunk where
+                // the solution was found causes wild hashrate fluctuations.
+                (found_nonce, Hash::new(found_hash), batch_size)
+            } else if gpu_result == Some(None) {
+                // GPU ran and tested the full batch_size but found no solution.
+                // CPU re-tests the same [0, batch_size) range as fallback.
+                // Total unique nonces = batch_size (NOT batch_size + cpu_searched).
+                let header = job.header.clone();
+                let target = job.target;
+                let threads = self.config.miner_threads.max(1);
+                let result = task::spawn_blocking(move || {
+                    parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
+                })
+                .await
+                .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
+                .ok_or(MinerError::NoAuxPoWSolution)?;
+                let (found_nonce, found_hash) = result;
+                // GPU already tested batch_size nonces; CPU found within that range.
+                // Do NOT add cpu_searched — that would double-count the same nonces.
+                (found_nonce, found_hash, batch_size)
+            } else {
+                // No GPU available — CPU is the only miner.
+                // CPU searches [0, batch_size) and finds at found_nonce.
+                // Total nonces = found_nonce + 1 (linear search stops at solution).
+                let header = job.header.clone();
+                let target = job.target;
+                let threads = self.config.miner_threads.max(1);
+                let result = task::spawn_blocking(move || {
+                    parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
+                })
+                .await
+                .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
+                .ok_or(MinerError::NoAuxPoWSolution)?;
+                let (found_nonce, found_hash) = result;
+                let cpu_searched = found_nonce.saturating_sub(0) + 1;
+                (found_nonce, found_hash, cpu_searched)
+            };
 
         let elapsed = t_start.elapsed().as_secs_f64();
-        self.update_hashrate(StreamId::Zion, nonces_searched, elapsed).await;
+        self.update_hashrate(StreamId::Zion, nonces_searched, elapsed)
+            .await;
 
         let mut header_hash = [0u8; 32];
         let copy_len = job.header.len().min(32);
@@ -697,8 +703,8 @@ impl MinerRuntime {
         let share = task::spawn_blocking(move || {
             crate::parallel::find_auxpow_share_from(&job, threads, batch, nonce_start)
         })
-            .await
-            .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?;
+        .await
+        .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?;
         let elapsed = start.elapsed().as_secs_f64();
 
         if let Some(share) = share {
@@ -708,10 +714,7 @@ impl MinerRuntime {
             // in parallel, so each scanned approximately the same number of
             // nonces before one found a share.
             let chunk_size = (batch / threads as u64).max(1);
-            let offset_in_chunk = share
-                .nonce
-                .saturating_sub(nonce_start)
-                .min(chunk_size);
+            let offset_in_chunk = share.nonce.saturating_sub(nonce_start).min(chunk_size);
             let nonces_per_thread = offset_in_chunk + 1;
             let total_nonces = nonces_per_thread * threads as u64;
 
@@ -794,14 +797,20 @@ impl MinerRuntime {
             };
             if need_recreate {
                 ext_info!(
-                    algorithm, coin = coin_ticker, work_size,
+                    algorithm,
+                    coin = coin_ticker,
+                    work_size,
                     shared_cuda = shared_cuda_dev.is_some(),
                     "GPU ext: creating persistent backend"
                 );
                 let miner = create_gpu_backend_with_cuda_device(
-                    kind, work_size, algorithm, coin_ticker, shared_cuda_dev,
+                    kind,
+                    work_size,
+                    algorithm,
+                    coin_ticker,
+                    shared_cuda_dev,
                 )
-                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
                 *gpu_ext.lock().unwrap() = Some(miner);
                 *gpu_ext_algo.lock().unwrap() = Some(algorithm.to_string());
                 ext_info!(algorithm, "GPU ext: backend ready");
@@ -822,8 +831,8 @@ impl MinerRuntime {
             // We fetch inside the worker so we can correct the cursor if the
             // GPU actually tests fewer nonces than requested (e.g. ProgPoW
             // caps global work size for TTD avoidance).
-            let nonce_start = gpu_ext_nonce_cursor
-                .fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
+            let nonce_start =
+                gpu_ext_nonce_cursor.fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
 
             let result = gpu
                 .mine_batch_raw(&header, target, nonce_start, batch)
@@ -831,10 +840,8 @@ impl MinerRuntime {
 
             let tested = result.nonces_tested.min(batch);
             if tested < batch {
-                gpu_ext_nonce_cursor.fetch_sub(
-                    batch - tested,
-                    std::sync::atomic::Ordering::Relaxed,
-                );
+                gpu_ext_nonce_cursor
+                    .fetch_sub(batch - tested, std::sync::atomic::Ordering::Relaxed);
             }
 
             Ok(Some(result))
@@ -845,7 +852,8 @@ impl MinerRuntime {
         match gpu_result {
             Ok(Ok(Some(gpu_result))) => {
                 let nonces_tested = gpu_result.nonces_tested.min(batch);
-                self.update_hashrate(StreamId::GpuExternal, nonces_tested, elapsed).await;
+                self.update_hashrate(StreamId::GpuExternal, nonces_tested, elapsed)
+                    .await;
                 if let Some((nonce, hash, mix)) = gpu_result.solutions.into_iter().next() {
                     let solution =
                         if algorithm == "verushash" || algorithm.starts_with("verushash_") {
@@ -951,8 +959,10 @@ impl MinerRuntime {
 
     /// Spawn a background task that logs a periodic metrics summary every 30s.
     /// Includes per-stream hashrate, share counts, and accept rate.
-    fn spawn_periodic_metrics(&self, shutdown: watch::Receiver<bool>) -> tokio::task::JoinHandle<()>
-    {
+    fn spawn_periodic_metrics(
+        &self,
+        shutdown: watch::Receiver<bool>,
+    ) -> tokio::task::JoinHandle<()> {
         let stats = self.stats.clone();
         let mut shutdown = shutdown;
         tokio::spawn(async move {
@@ -1234,10 +1244,7 @@ impl MinerRuntime {
     /// miner connected separately to external pools. All revenue flows
     /// through the pool's AuxPoW bridge and revenue system.
     #[cfg(feature = "auxpow")]
-    pub async fn run_v3_trinity(
-        &self,
-        shutdown: watch::Receiver<bool>,
-    ) -> Result<(), MinerError> {
+    pub async fn run_v3_trinity(&self, shutdown: watch::Receiver<bool>) -> Result<(), MinerError> {
         // Spawn periodic metrics summary task (every 30s)
         let h_metrics = self.spawn_periodic_metrics(shutdown.clone());
 
@@ -1476,7 +1483,12 @@ impl MinerRuntime {
                     this.mark_active(StreamId::GpuExternal).await;
                     if let Some(ref ext) = bundle.gpu_external {
                         match this
-                            .mine_v3_external_share(client.clone(), StreamId::GpuExternal, ext.clone(), &job_rx)
+                            .mine_v3_external_share(
+                                client.clone(),
+                                StreamId::GpuExternal,
+                                ext.clone(),
+                                &job_rx,
+                            )
                             .await
                         {
                             Ok(true) => {}
@@ -1549,7 +1561,12 @@ impl MinerRuntime {
                     this.mark_active(StreamId::CpuExternal).await;
                     if let Some(ref ext) = bundle.cpu_external {
                         match this
-                            .mine_v3_external_share(client.clone(), StreamId::CpuExternal, ext.clone(), &job_rx)
+                            .mine_v3_external_share(
+                                client.clone(),
+                                StreamId::CpuExternal,
+                                ext.clone(),
+                                &job_rx,
+                            )
                             .await
                         {
                             Ok(true) => {}
@@ -1616,10 +1633,9 @@ impl MinerRuntime {
         // Advance nonce cursor — don't always scan from 0.
         // The pool sends start_nonce=0 + nonce_count=0xFFFFFFFF (full range),
         // so we track our own cursor and advance it by batch_size each iteration.
-        let start_nonce = self.zion_nonce_cursor.fetch_add(
-            batch_size,
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        let start_nonce = self
+            .zion_nonce_cursor
+            .fetch_add(batch_size, std::sync::atomic::Ordering::Relaxed);
 
         // Try GPU first, fall back to CPU.
         //
@@ -1640,11 +1656,15 @@ impl MinerRuntime {
                 let copy_len = header_for_gpu.len().min(80);
                 header_bytes[..copy_len].copy_from_slice(&header_for_gpu[..copy_len]);
                 let mining_header = zion_core::MiningHeader::from_bytes(header_bytes);
-                let target = zion_core::V3DifficultyTarget { bytes: target_for_gpu };
+                let target = zion_core::V3DifficultyTarget {
+                    bytes: target_for_gpu,
+                };
                 match gpu.mine_batch(mining_header, target, start_nonce, batch_size) {
                     Ok(result) => {
                         let nonces_tested = result.nonces_tested;
-                        if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
+                        if let Some((found_nonce, found_hash, _mix)) =
+                            result.solutions.into_iter().next()
+                        {
                             return Some(Some((found_nonce, found_hash, nonces_tested)));
                         }
                         // GPU ran, tested full batch, no solution found.
@@ -1669,8 +1689,13 @@ impl MinerRuntime {
             // actual_nonces = chunks_processed * work_size
             // This gives stable hashrate regardless of luck.
             let offset = n.saturating_sub(start_nonce);
-            let gpu_work_size = self.gpu_zion.lock().unwrap()
-                .as_ref().map(|g| g.work_size()).unwrap_or(8192);
+            let gpu_work_size = self
+                .gpu_zion
+                .lock()
+                .unwrap()
+                .as_ref()
+                .map(|g| g.work_size())
+                .unwrap_or(8192);
             let chunks_processed = (offset / gpu_work_size as u64) + 1;
             let estimated_nonces = (chunks_processed * gpu_work_size as u64).min(batch_size);
             (n, h, estimated_nonces.max(tested.min(batch_size)))
@@ -1710,7 +1735,8 @@ impl MinerRuntime {
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();
-        self.update_hashrate(StreamId::Zion, nonces_searched, elapsed).await;
+        self.update_hashrate(StreamId::Zion, nonces_searched, elapsed)
+            .await;
 
         let hash_hex = hex::encode(hash_bytes);
         let elapsed_ms = (elapsed * 1000.0) as u64;
@@ -1718,9 +1744,12 @@ impl MinerRuntime {
         // Verify locally with the same EkamDeeksha reference the pool uses.
         // GPU kernels can produce false positives under VRAM pressure or
         // concurrent execution; skip submission if local verification fails.
-        let local_ok = zion_cosmic_harmony::EkamDeeksha::new().verify(&header, nonce, &target_bytes);
+        let local_ok =
+            zion_cosmic_harmony::EkamDeeksha::new().verify(&header, nonce, &target_bytes);
         tracing::debug!(
-            job = job.job_id, height = job.height, nonce,
+            job = job.job_id,
+            height = job.height,
+            nonce,
             local_verify = local_ok,
             "ZION share candidate"
         );
@@ -1734,7 +1763,14 @@ impl MinerRuntime {
         }
 
         let result = client
-            .submit_zion_share(job.job_id, nonce, &hash_hex, None, nonces_searched, elapsed_ms)
+            .submit_zion_share(
+                job.job_id,
+                nonce,
+                &hash_hex,
+                None,
+                nonces_searched,
+                elapsed_ms,
+            )
             .await
             .map_err(|e| MinerError::Connection(format!("V3 submit: {e}")))?;
 
@@ -2086,9 +2122,18 @@ impl MinerRuntime {
             let worker = if self.config.reward_address.as_str().is_empty() {
                 self.config.worker.clone()
             } else {
-                format!("{}.{}", self.config.reward_address.as_str(), self.config.worker)
+                format!(
+                    "{}.{}",
+                    self.config.reward_address.as_str(),
+                    self.config.worker
+                )
             };
-            *guard = Some(StratumClient::new(&url, &worker, &self.config.password, coin));
+            *guard = Some(StratumClient::new(
+                &url,
+                &worker,
+                &self.config.password,
+                coin,
+            ));
         }
         let client = guard
             .as_mut()
@@ -2286,7 +2331,10 @@ struct NodeTemplate {
 }
 
 /// Call `getBlockTemplate` on the node and parse the response.
-async fn fetch_block_template(rpc_url: &str, reward_address: &str) -> Result<NodeTemplate, MinerError> {
+async fn fetch_block_template(
+    rpc_url: &str,
+    reward_address: &str,
+) -> Result<NodeTemplate, MinerError> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .build()
@@ -2622,11 +2670,21 @@ mod tests {
             while let Ok(Some(line)) = lines.next_line().await {
                 if let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) {
                     if msg.get("method").and_then(|m| m.as_str()) == Some("mining.submit") {
-                        let params = msg.get("params").and_then(|p| p.as_array()).cloned().unwrap_or_default();
+                        let params = msg
+                            .get("params")
+                            .and_then(|p| p.as_array())
+                            .cloned()
+                            .unwrap_or_default();
                         if params.len() >= 3 {
                             let nonce_hex = params[2].as_str().unwrap_or("");
-                            let full = u64::from_str_radix(nonce_hex, 16).unwrap_or(0).to_le_bytes();
-                            assert_eq!(&full[..2], hex::decode(en1).unwrap().as_slice(), "KAS nonce must start with extranonce1");
+                            let full = u64::from_str_radix(nonce_hex, 16)
+                                .unwrap_or(0)
+                                .to_le_bytes();
+                            assert_eq!(
+                                &full[..2],
+                                hex::decode(en1).unwrap().as_slice(),
+                                "KAS nonce must start with extranonce1"
+                            );
                         }
                         let resp = r#"{"id":100,"result":true,"error":null}"#;
                         let _ = writer.write_all(resp.as_bytes()).await;

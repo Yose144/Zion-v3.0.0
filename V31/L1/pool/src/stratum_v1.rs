@@ -122,7 +122,9 @@ pub fn read_stratum_request(reader: &mut impl BufRead) -> Result<StratumRequest>
 pub fn write_stratum_response(writer: &mut impl Write, resp: &StratumResponse) -> Result<()> {
     let mut line = serde_json::to_string(resp)?;
     line.push('\n');
-    writer.write_all(line.as_bytes()).context("stratum write failed")?;
+    writer
+        .write_all(line.as_bytes())
+        .context("stratum write failed")?;
     writer.flush().context("stratum flush failed")?;
     Ok(())
 }
@@ -134,7 +136,9 @@ pub fn write_stratum_notification(
 ) -> Result<()> {
     let mut line = serde_json::to_string(notif)?;
     line.push('\n');
-    writer.write_all(line.as_bytes()).context("stratum notify write failed")?;
+    writer
+        .write_all(line.as_bytes())
+        .context("stratum notify write failed")?;
     writer.flush().context("stratum notify flush failed")?;
     Ok(())
 }
@@ -224,7 +228,11 @@ impl StratumV1Session {
 /// Build a simplified `mining.notify` notification from a ZION MiningJob.
 ///
 /// Format: `[job_id, header_hex, target_hex, height, clean_jobs]`
-pub fn build_mining_notify(job: &MiningJob, stratum_job_id: &str, clean_jobs: bool) -> StratumNotification {
+pub fn build_mining_notify(
+    job: &MiningJob,
+    stratum_job_id: &str,
+    clean_jobs: bool,
+) -> StratumNotification {
     let header_hex = hex::encode(&job.header.to_bytes());
     let target_hex = hex::encode(&job.target.bytes);
     StratumNotification {
@@ -306,16 +314,15 @@ pub fn parse_mining_submit(
     } else {
         // Standard 5+ param: [worker, job_id, extranonce2, time, nonce, ...]
         // nonce is arr[4] in standard format
-        let nonce_hex = arr.get(4)
+        let nonce_hex = arr
+            .get(4)
             .and_then(|v| v.as_str())
             .or_else(|| arr.get(2).and_then(|v| v.as_str())) // fallback to arr[2]
             .ok_or_else(|| anyhow!("mining.submit: cannot find nonce param"))?;
         let nonce = u64::from_str_radix(nonce_hex.trim_start_matches("0x"), 16)
             .context("failed to parse nonce hex")?;
         // hash_hex — some protocols don't send it; use empty string
-        let hash = arr.get(5)
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let hash = arr.get(5).and_then(|v| v.as_str()).unwrap_or("");
         (nonce, hash.to_string())
     };
 
@@ -346,7 +353,9 @@ mod tests {
 
     #[test]
     fn is_stratum_v1_detects_method_field() {
-        assert!(is_stratum_v1(r#"{"id":1,"method":"mining.subscribe","params":[]}"#));
+        assert!(is_stratum_v1(
+            r#"{"id":1,"method":"mining.subscribe","params":[]}"#
+        ));
         assert!(!is_stratum_v1(r#"{"type":"Hello","miner_id":"abc"}"#));
         assert!(!is_stratum_v1(""));
         assert!(!is_stratum_v1("not json at all"));

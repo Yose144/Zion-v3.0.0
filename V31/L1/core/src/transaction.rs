@@ -27,8 +27,12 @@ impl Default for TransactionOutput {
     fn default() -> Self {
         Self {
             amount: Amount::new(0),
-            address: Address::new(ChainId::ZionL1, vec![], "zion1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-                .expect("default dummy address is valid"),
+            address: Address::new(
+                ChainId::ZionL1,
+                vec![],
+                "zion1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            )
+            .expect("default dummy address is valid"),
             script: vec![],
         }
     }

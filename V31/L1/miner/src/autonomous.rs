@@ -117,11 +117,7 @@ impl HardwareProfile {
         hw: &crate::auto_detect::HardwareProfile,
         effective_gpu_backend: &str,
     ) -> Self {
-        let mut gpu_vram_bytes: u64 = hw
-            .gpu_devices
-            .iter()
-            .map(|g| g.vram_mb * 1024 * 1024)
-            .sum();
+        let mut gpu_vram_bytes: u64 = hw.gpu_devices.iter().map(|g| g.vram_mb * 1024 * 1024).sum();
         // Detection can fall back to a name-only path with 0 reported VRAM.
         // Keep the conservative 6 GiB default in that case.
         if gpu_vram_bytes == 0 {
@@ -692,7 +688,10 @@ mod tests {
         router.set_profits_and_select(&[(ExternalCoin::Kaspa, 1.0)], &[(ExternalCoin::Verus, 0.6)]);
         router.apply_forced_coins();
         assert_eq!(router.stream2_coin, Some(ExternalCoin::Kaspa));
-        assert!(router.log.iter().any(|l| l.contains("PRL") && l.contains("disabled")));
+        assert!(router
+            .log
+            .iter()
+            .any(|l| l.contains("PRL") && l.contains("disabled")));
         std::env::remove_var("ZION_AUTONOMOUS");
         std::env::remove_var("ZION_STREAM2_FORCE_COIN");
     }
@@ -706,7 +705,10 @@ mod tests {
         router.set_profits_and_select(&[(ExternalCoin::Kaspa, 1.0)], &[(ExternalCoin::Verus, 0.6)]);
         router.apply_forced_coins();
         assert_eq!(router.stream3_coin, Some(ExternalCoin::Verus));
-        assert!(router.log.iter().any(|l| l.contains("PRL") && l.contains("disabled")));
+        assert!(router
+            .log
+            .iter()
+            .any(|l| l.contains("PRL") && l.contains("disabled")));
         std::env::remove_var("ZION_AUTONOMOUS");
         std::env::remove_var("ZION_STREAM3_FORCE_COIN");
     }

@@ -3,9 +3,9 @@
 //! Mines a single batch on Metal GPU with an easy target, then compares
 //! the GPU hash against the CPU reference for the same nonce.
 
-use zion_miner::gpu::{create_gpu_backend, GpuBackendKind};
 use zion_core::{MiningHeader, V3DifficultyTarget};
 use zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha;
+use zion_miner::gpu::{create_gpu_backend, GpuBackendKind};
 
 fn main() {
     let header = MiningHeader {
@@ -33,8 +33,11 @@ fn main() {
         .mine_batch(header, target, 0, batch_size)
         .expect("mine_batch failed");
 
-    println!("GPU batch result: {} solutions, {} nonces tested",
-             result.solutions.len(), result.nonces_tested);
+    println!(
+        "GPU batch result: {} solutions, {} nonces tested",
+        result.solutions.len(),
+        result.nonces_tested
+    );
 
     if result.solutions.is_empty() {
         eprintln!("ERROR: No solutions found with 0xFF target — GPU kernel bug!");

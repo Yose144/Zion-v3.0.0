@@ -4,16 +4,19 @@
 //! sent to the WARP vault address with WARP memos, which signal outbound
 //! cross-chain transfers.
 
+#![allow(dead_code)]
+
 use crate::warp::adapter::ChainAdapter;
 use crate::warp::config::WarpConfig;
 use crate::warp::error::{WarpError, WarpResult};
 use crate::warp::protocol::DepositProof;
 use crate::warp::types::ChainFamily;
 use async_trait::async_trait;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Duration;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpStream;
 use tracing::{debug, info, warn};
 
 const RPC_TIMEOUT_SECS: u64 = 10;
@@ -63,23 +66,27 @@ struct L1Transaction {
 pub struct ZionL1Adapter {
     rpc_url: String,
     vault_address: String,
-    client: Client,
-    last_polled_height: u64,
+    last_polled_height: std::sync::atomic::AtomicU64,
 }
 
 impl ZionL1Adapter {
+    /// Strip any URL scheme/path from an RPC endpoint so it can be used
+    /// with `tokio::net::TcpStream::connect`.
+    fn clean_rpc_url(rpc_url: &str) -> &str {
+        let s = rpc_url.trim();
+        let s = s
+            .strip_prefix("http://")
+            .or(s.strip_prefix("https://"))
+            .unwrap_or(s);
+        s.split_once('/').map(|(h, _)| h).unwrap_or(s)
+    }
+
     /// Create a new adapter with explicit RPC URL and vault address
     pub fn new(rpc_url: String, vault_address: String) -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(RPC_TIMEOUT_SECS))
-            .build()
-            .expect("Failed to build HTTP client");
-
         Self {
             rpc_url,
             vault_address,
-            client,
-            last_polled_height: 0,
+            last_polled_height: std::sync::atomic::AtomicU64::new(0),
         }
     }
 
@@ -90,8 +97,8 @@ impl ZionL1Adapter {
 
     /// Create adapter from environment variables
     pub fn from_env() -> Self {
-        let rpc_url = std::env::var("WARP_L1_RPC_URL")
-            .unwrap_or_else(|_| "http://127.0.0.1:9443".to_string());
+        let rpc_url =
+            std::env::var("WARP_L1_RPC_URL").unwrap_or_else(|_| "127.0.0.1:9445".to_string());
         let vault_address = std::env::var("WARP_L1_VAULT_ADDRESS")
             .unwrap_or_else(|_| "zion1warpvaultaddress".to_string());
         Self::new(rpc_url, vault_address)
@@ -105,21 +112,42 @@ impl ZionL1Adapter {
             id: 1,
         };
 
-        let response: RpcResponse = self
-            .client
-            .post(&self.rpc_url)
-            .json(&request)
-            .send()
+        let addr = Self::clean_rpc_url(&self.rpc_url);
+        let mut stream = TcpStream::connect(addr)
             .await
             .map_err(|e| WarpError::AdapterError {
                 chain: "zion-l1".into(),
-                reason: format!("HTTP error: {}", e),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
+                reason: format!("connect error: {e}"),
+            })?;
+
+        let payload = serde_json::to_string(&request).map_err(|e| WarpError::AdapterError {
+            chain: "zion-l1".into(),
+            reason: format!("serialize error: {e}"),
+        })?;
+        let payload = format!("{payload}\n");
+        let text = tokio::time::timeout(Duration::from_secs(RPC_TIMEOUT_SECS), async {
+            stream.write_all(payload.as_bytes()).await?;
+            stream.flush().await?;
+            let (reader, _) = stream.split();
+            let mut reader = BufReader::new(reader);
+            let mut line = String::new();
+            AsyncBufReadExt::read_line(&mut reader, &mut line).await?;
+            Ok::<_, std::io::Error>(line)
+        })
+        .await
+        .map_err(|e| WarpError::AdapterError {
+            chain: "zion-l1".into(),
+            reason: format!("RPC timeout: {e}"),
+        })?
+        .map_err(|e| WarpError::AdapterError {
+            chain: "zion-l1".into(),
+            reason: format!("RPC read failed: {e}"),
+        })?;
+
+        let response: RpcResponse =
+            serde_json::from_str(&text).map_err(|e| WarpError::AdapterError {
                 chain: "zion-l1".into(),
-                reason: format!("JSON parse error: {}", e),
+                reason: format!("JSON parse error: {e}"),
             })?;
 
         if let Some(err) = response.error {
@@ -213,56 +241,63 @@ impl ChainAdapter for ZionL1Adapter {
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let tip = self.get_tip_height().await?;
-        let from = self.last_polled_height.max(1);
-        // Wait for L1 finality (60 blocks default)
-        let to = tip.saturating_sub(60);
+        let last = self.last_polled_height.load(std::sync::atomic::Ordering::Relaxed);
+        // Scan a wider window (last 200 blocks) for bridge locks.
+        let from = last.max(1).max(tip.saturating_sub(200));
+        let to = tip;
 
         if from > to {
             debug!("[WARP][zion-l1] No new blocks to scan ({} to {})", from, to);
             return Ok(vec![]);
         }
 
-        info!(
-            "[WARP][zion-l1] Scanning blocks {} to {} for WARP burns",
-            from, to
-        );
+        // Use getBridgeLocks RPC (V31 native) instead of scanning V3 blocks.
+        let locks_result = self
+            .rpc_call(
+                "getBridgeLocks",
+                serde_json::json!([from, to]),
+            )
+            .await?;
+
+        let empty = Vec::new();
+        let locks = locks_result
+            .get("locks")
+            .and_then(|v| v.as_array())
+            .unwrap_or(&empty);
 
         let mut proofs = Vec::new();
+        for lock in locks {
+            let txid = lock.get("txid").and_then(|v| v.as_str()).unwrap_or("");
+            let sender = lock.get("sender").and_then(|v| v.as_str()).unwrap_or("");
+            let amount_flowers = lock.get("amount_flowers").and_then(|v| v.as_u64()).unwrap_or(0);
+            let memo = lock.get("memo").and_then(|v| v.as_str()).unwrap_or("");
+            let block_height = lock.get("block_height").and_then(|v| v.as_u64()).unwrap_or(0);
 
-        for height in from..=to {
-            match self.get_block(height).await {
-                Ok(block) => {
-                    for tx in &block.transactions {
-                        if self.is_warp_burn(tx) {
-                            if let Some(memo) = &tx.memo {
-                                if let Some((dest_chain, dest_addr)) = self.parse_warp_memo(memo) {
-                                    // Amount is in ZION (u128), convert to flowers (6 decimals)
-                                    let amount_flowers = (tx.amount_zion * 1_000_000) as u64;
-
-                                    let proof = DepositProof {
-                                        tx_hash: tx.tx_id.clone(),
-                                        block_height: block.height,
-                                        block_hash: block.hash_hex.clone(),
-                                        sender: tx.from.clone(),
-                                        amount_flowers,
-                                        memo: format!("WARP_INBOUND:{}:{}", dest_chain, dest_addr),
-                                        confirmations: tip.saturating_sub(block.height),
-                                    };
-                                    proofs.push(proof);
-                                    info!(
-                                        "[WARP][zion-l1] Found WARP burn: tx={} amount={} chain={} addr={}",
-                                        tx.tx_id, amount_flowers, dest_chain, dest_addr
-                                    );
-                                }
-                            }
-                        }
+            // Parse BRIDGE:<chain>:<recipient> memo
+            if let Some(rest) = memo.strip_prefix("BRIDGE:") {
+                if let Some((dest_chain, dest_addr)) = rest.split_once(':') {
+                    if !dest_chain.is_empty() && !dest_addr.is_empty() {
+                        let proof = DepositProof {
+                            tx_hash: txid.to_string(),
+                            block_height,
+                            block_hash: String::new(),
+                            sender: sender.to_string(),
+                            amount_flowers,
+                            memo: format!("WARP:1:{}:{}", dest_chain, dest_addr),
+                            confirmations: tip.saturating_sub(block_height) + 1,
+                        };
+                        proofs.push(proof);
+                        info!(
+                            "[WARP][zion-l1] Found bridge lock: tx={} amount={} chain={} addr={}",
+                            txid, amount_flowers, dest_chain, dest_addr
+                        );
                     }
-                }
-                Err(e) => {
-                    warn!("[WARP][zion-l1] Failed to fetch block {}: {}", height, e);
                 }
             }
         }
+
+        // Update last polled height
+        self.last_polled_height.store(to + 1, std::sync::atomic::Ordering::Relaxed);
 
         Ok(proofs)
     }

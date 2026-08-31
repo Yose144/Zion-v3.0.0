@@ -179,7 +179,10 @@ impl Player {
         let first = !self.has_scanned_world(world_id);
         *self.stats.entry("world_scans".to_string()).or_insert(0) += 1;
         if first {
-            *self.stats.entry("unique_worlds_scanned".to_string()).or_insert(0) += 1;
+            *self
+                .stats
+                .entry("unique_worlds_scanned".to_string())
+                .or_insert(0) += 1;
             self.stats.insert(format!("scanned:{}", world_id), 1);
         }
         first
@@ -188,9 +191,15 @@ impl Player {
     /// Record a world approach in player stats and return true if it was the first one.
     pub fn record_world_approach(&mut self, world_id: &str) -> bool {
         let first = !self.has_approached_world(world_id);
-        *self.stats.entry("world_approaches".to_string()).or_insert(0) += 1;
+        *self
+            .stats
+            .entry("world_approaches".to_string())
+            .or_insert(0) += 1;
         if first {
-            *self.stats.entry("unique_worlds_approached".to_string()).or_insert(0) += 1;
+            *self
+                .stats
+                .entry("unique_worlds_approached".to_string())
+                .or_insert(0) += 1;
             self.stats.insert(format!("approached:{}", world_id), 1);
         }
         first
@@ -315,7 +324,14 @@ mod tests {
         assert!(player.has_scanned_world("ALPHA_CENTAURI"));
         assert!(!player.record_world_scan("ALPHA_CENTAURI"));
         assert_eq!(player.stats.get("world_scans").copied().unwrap_or(0), 2);
-        assert_eq!(player.stats.get("unique_worlds_scanned").copied().unwrap_or(0), 1);
+        assert_eq!(
+            player
+                .stats
+                .get("unique_worlds_scanned")
+                .copied()
+                .unwrap_or(0),
+            1
+        );
     }
 
     #[test]
@@ -323,8 +339,18 @@ mod tests {
         let mut player = Player::new("zion1".to_string());
         assert!(player.record_world_approach("NOVA_ZEME"));
         assert!(!player.record_world_approach("NOVA_ZEME"));
-        assert_eq!(player.stats.get("world_approaches").copied().unwrap_or(0), 2);
-        assert_eq!(player.stats.get("unique_worlds_approached").copied().unwrap_or(0), 1);
+        assert_eq!(
+            player.stats.get("world_approaches").copied().unwrap_or(0),
+            2
+        );
+        assert_eq!(
+            player
+                .stats
+                .get("unique_worlds_approached")
+                .copied()
+                .unwrap_or(0),
+            1
+        );
     }
 
     #[test]

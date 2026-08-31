@@ -333,12 +333,7 @@ impl MinerTelemetryRegistry {
     }
 
     /// Mark a batch of pending payouts as submitted to the node with a tx id.
-    pub fn record_submitted_payouts(
-        &mut self,
-        height: u64,
-        payouts: &[PayoutEntry],
-        tx_id: &str,
-    ) {
+    pub fn record_submitted_payouts(&mut self, height: u64, payouts: &[PayoutEntry], tx_id: &str) {
         for payout in payouts {
             let Some(miner) = self.miners.get_mut(&payout.miner_id) else {
                 continue;
@@ -358,12 +353,7 @@ impl MinerTelemetryRegistry {
     }
 
     /// Mark a batch of pending payouts as failed with an error message.
-    pub fn record_failed_payouts(
-        &mut self,
-        height: u64,
-        payouts: &[PayoutEntry],
-        error: &str,
-    ) {
+    pub fn record_failed_payouts(&mut self, height: u64, payouts: &[PayoutEntry], error: &str) {
         for payout in payouts {
             let Some(miner) = self.miners.get_mut(&payout.miner_id) else {
                 continue;
