@@ -261,7 +261,9 @@ impl NodeRewards {
 
     /// List all currently active registered nodes.
     pub async fn list_active_nodes(&self) -> MultichainResult<Vec<NodeRecord>> {
+        tracing::info!("list_active_nodes: acquiring db lock");
         let guard = self.db.lock().await;
+        tracing::info!("list_active_nodes: db lock acquired");
         let mut stmt = guard.conn().prepare(
             "SELECT id, user_id, reward_address, bind_host, bind_port, created_at, last_heartbeat_at, epoch_score, active FROM node_reward_nodes WHERE active = 1",
         )?;
@@ -280,6 +282,7 @@ impl NodeRewards {
                 active: row.get::<_, i64>(8)? != 0,
             });
         }
+        tracing::info!("list_active_nodes: returning {} nodes", out.len());
         Ok(out)
     }
 
