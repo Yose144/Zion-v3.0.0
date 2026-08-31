@@ -58,7 +58,7 @@ pub struct MultichainService {
     intent_engine: RwLock<IntentEngine>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
-    node_rewards: Arc<Mutex<NodeRewards>>,
+    node_rewards: Arc<NodeRewards>,
     reconciler: Reconciler,
 }
 
@@ -95,7 +95,7 @@ impl MultichainService {
         &self.config
     }
 
-    pub fn node_rewards(&self) -> Arc<Mutex<NodeRewards>> {
+    pub fn node_rewards(&self) -> Arc<NodeRewards> {
         Arc::clone(&self.node_rewards)
     }
 
@@ -264,7 +264,7 @@ impl MultichainService {
             intent_engine: RwLock::new(intent_engine),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
-            node_rewards: Arc::new(Mutex::new(node_rewards)),
+            node_rewards: Arc::new(node_rewards),
             reconciler,
         }
     }

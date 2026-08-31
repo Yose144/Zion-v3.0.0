@@ -26,6 +26,10 @@ function buildUpstreamUrl(request: Request, path: string[]) {
     return `${MULTICHAIN_UPSTREAM_BASE.replace(/\/$/, '')}/v1/${suffix}${incoming.search}`;
   }
 
+  if (suffix.startsWith('nodes/') || suffix === 'nodes') {
+    return `${MULTICHAIN_UPSTREAM_BASE.replace(/\/$/, '')}/v1/${suffix}${incoming.search}`;
+  }
+
   return `${MULTICHAIN_UPSTREAM_BASE.replace(/\/$/, '')}/v1/multichain/${suffix}${incoming.search}`;
 }
 
