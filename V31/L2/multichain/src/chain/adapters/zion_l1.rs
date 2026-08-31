@@ -346,8 +346,16 @@ impl ZionL1Adapter {
             .try_into()
             .map_err(|_| MultichainError::Validation("lock_tx_id must be 32 bytes".to_string()))?;
 
-        let from = self.adapter_address()?.encoded;
-        let utxos = self.get_spendable_utxos(&from).await?;
+        // The HTLC lock output is sent to the refund address (derived from
+        // source_pubkey) so the UTXO is discoverable by the locker.  Query
+        // UTXOs at that address, not the adapter/escrow address.
+        let refund_pk = transfer.source_pubkey.ok_or_else(|| {
+            MultichainError::Validation(
+                "HTLC lock_utxo lookup missing source_pubkey (refund key)".to_string(),
+            )
+        })?;
+        let refund_address = zion_core::crypto::derive_address(&refund_pk);
+        let utxos = self.get_spendable_utxos(&refund_address).await?;
         let mut matches: Vec<_> = utxos.into_iter().filter(|u| u.tx_hash == lock_hash).collect();
         matches.sort_by_key(|a| a.output_index);
         matches
