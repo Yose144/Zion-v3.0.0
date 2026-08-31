@@ -2,7 +2,7 @@
 ## Jak se z Mise Amenti stane ověřitelná práce: workstreamy, závislosti, hranice a release gates
 
 > **Status:** Kanonický prováděcí rámec pro 3.3 „Nirvana“.  
-> **Doplňuje:** [`V33_NIRVANA_MASTER_PLAN.md`](../V33_NIRVANA_MASTER_PLAN.md) a nikoliv jej mechanicky neduplikuje.  
+> **Doplňuje:** [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) a nikoliv jej mechanicky neduplikuje.  
 > **Zásada:** Úspěch 3.3 se neměří cenou tokenu, velikostí publika ani hlasitostí příběhu. Měří se bezpečností, ověřitelností, dobrovolností, odolností a doloženým přínosem.
 
 ---

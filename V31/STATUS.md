@@ -52,7 +52,7 @@
 
 > **3.2.0 "One Love" genesis reset (2026-08-06):** Kanonická sada klíčů `V31_PREMINE_V2_KEYS_2026-08-06.json` (38 klíčů: 14 premine, 5 canonical, 3 admin, 7 DAO guardian, 5 EVM validator, 1 escrow). Všechny adresy byly aktualizovány v `zion-core`, `zion-dao`, CLI a deploy konfiguracích. Genesis hashe: V31 native `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`, V3 compat `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
 >
-> **Genesis reset postup:** Viz [`HARD_RESET_PLAYBOOK.md`](../HARD_RESET_PLAYBOOK.md). Klíče jsou uloženy v `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700, owner-only).
+> **Genesis reset postup:** Viz [`HARD_RESET_PLAYBOOK.md`](../docs/3.2/3.2.8-Reset-Migration-and-Tooling/HARD_RESET_PLAYBOOK.md). Klíče jsou uloženy v `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700, owner-only).
 
 ## Update 2026-08-07 (Trinity session) — Stream 1 ZION block production GREEN, 3 critical bug fixes
 

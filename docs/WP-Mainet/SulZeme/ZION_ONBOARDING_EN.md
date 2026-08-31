@@ -13,12 +13,12 @@
 
 This document is one entry point. The detailed truth lives in these sources:
 
-- [`V3/docs/USER_ONBOARDING.md`](../../../V3/docs/USER_ONBOARDING.md) — basic CLI guide for new users
+- [`V3/docs/USER_ONBOARDING.md`](../../../archive/V3/docs/USER_ONBOARDING.md) — basic CLI guide for new users
 - [`StatusV3.md`](../../../StatusV3.md) — live topology, chain height, ports and service status
 - [`AGENTS.md`](../../../AGENTS.md) — operating rules, incidents and migrations
-- [`V3/docs/CLI_REFERENCE.md`](../../../V3/docs/CLI_REFERENCE.md) — complete `zion` command reference
+- [`V3/docs/CLI_REFERENCE.md`](../../../archive/V3/docs/CLI_REFERENCE.md) — complete `zion` command reference
 - [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md) — consensus, emission, smart contracts, architecture
-- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../V3/docs/DEV_TEAM/ONBOARDING.md) — developer onboarding
+- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../archive/V3/docs/DEV_TEAM/ONBOARDING.md) — developer onboarding
 - [`SulZeme/00-README.md`](./00-README.md) — the twelve episodes of the book *Sůl této země (Salt of this Earth)*
 - [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md) — gateway to the Oasis game layer
 - [`Onboarding.md`](./Onboarding.md) — short marketing version
@@ -85,10 +85,10 @@ This document is one entry point. The detailed truth lives in these sources:
 | New block every 60 s | Block time 60 s, DAA LWMA 60 blocks, target interval 30–120 s, ±25 % clamp | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | Genesis block 1 Jan 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; after a block-retention bug fix a hard genesis reset happened on 2026-07-20; blocks 0–~10913 of the old chain are lost, from the fix onward all blocks are retained | [`StatusV3.md`](../../../StatusV3.md), lines 6–9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | Reward 5,400.067 ZION/block | Decade 1 (2026–2036): 5,400.067 ZION/block; never higher; Decade Decay −20 % per decade; tail 724.784723 ZION/block from ~2126 | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
-| 89/5/5/1 % split | `MINER_SHARE_PERCENT = 0.89`; humanitarian 5 %; Issobella 5 %; pool fee / burn 1 %; nodes reject blocks with a different ratio | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../V3/README.md) |
+| 89/5/5/1 % split | `MINER_SHARE_PERCENT = 0.89`; humanitarian 5 %; Issobella 5 %; pool fee / burn 1 %; nodes reject blocks with a different ratio | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../README.md) |
 | Hard cap 144 billion ZION | `max_supply = 144_000_000_000`; premine 16.78 B (11.65 %), rest by mining | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | No ICO / VIP access | Fair launch: no team `mint()`, no presale; genesis allocation is publicly listed in coinbase | [`12-Hodina-Pred-Destem.md`](./12-Hodina-Pred-Destem.md), Verifiable facts |
-| PoW: Ekam Deeksha / CosmicHarmony | Canonical algorithm in `V3/L1/cosmic-harmony`; six-phase pipeline Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi; LWMA 60 blocks, ±25 % clamp | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../V3/README.md) |
+| PoW: Ekam Deeksha / CosmicHarmony | Canonical algorithm in `V3/L1/cosmic-harmony`; six-phase pipeline Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi; LWMA 60 blocks, ±25 % clamp | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../README.md) |
 
 ---
 
@@ -390,7 +390,7 @@ Nobody will rush you. An ark is not built by shouting — it is built block by b
 
 ## Technical quickstart
 
-This section contains exact commands from canonical sources. For a detailed explanation of each step see [`V3/docs/USER_ONBOARDING.md`](../../../V3/docs/USER_ONBOARDING.md).
+This section contains exact commands from canonical sources. For a detailed explanation of each step see [`V3/docs/USER_ONBOARDING.md`](../../../archive/V3/docs/USER_ONBOARDING.md).
 
 ### CLI installation
 
@@ -597,9 +597,9 @@ rpcCall('getChainInfo').then(console.log);
 | **First-decade reward** | 5,400.067 ZION/block (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
 | **Decade Decay** | Factor 0.8 (−20 %) every ~10 years (5,256,000 blocks) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
 | **Tail emission** | 724.784723 ZION/block from ~2126, forever | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
-| **Reward split** | 89 % miners, 5 % humanitarian fund, 5 % Issobella fund, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../V3/README.md) |
+| **Reward split** | 89 % miners, 5 % humanitarian fund, 5 % Issobella fund, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../README.md) |
 | **Hard cap** | 144,000,000,000 ZION | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
-| **PoW algorithm** | Ekam Deeksha / CosmicHarmony; 6 phases; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../V3/README.md) |
+| **PoW algorithm** | Ekam Deeksha / CosmicHarmony; 6 phases; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../README.md) |
 | **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), line 114; [`AGENTS.md`](../../../AGENTS.md) |
 | **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` on Edge) | [`StatusV3.md`](../../../StatusV3.md), line 112 |
 | **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
@@ -621,13 +621,13 @@ rpcCall('getChainInfo').then(console.log);
 
 ## For developers and further resources
 
-- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../V3/docs/DEV_TEAM/ONBOARDING.md) — how to join the dev team, build, tests, workflow
-- [`V3/README.md`](../../../V3/README.md) — workspace overview, current status, full L1–L6 scope
-- [`V3/docs/CLI_REFERENCE.md`](../../../V3/docs/CLI_REFERENCE.md) — all `zion` commands
-- [`V3/docs/CLI_TROUBLESHOOTING.md`](../../../V3/docs/CLI_TROUBLESHOOTING.md) — common problem solving
-- [`V3/docs/MINING_GUIDE.md`](../../../V3/docs/MINING_GUIDE.md) — deeper mining guide
-- [`V3/docs/NODE_OPERATOR_GUIDE.md`](../../../V3/docs/NODE_OPERATOR_GUIDE.md) — node operation
-- [`V3/L5/docs/TECH/zion-node-spec.md`](../../../V3/L5/docs/TECH/zion-node-spec.md) — Guardian node specification
+- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../archive/V3/docs/DEV_TEAM/ONBOARDING.md) — how to join the dev team, build, tests, workflow
+- [`V3/README.md`](../../../README.md) — workspace overview, current status, full L1–L6 scope
+- [`V3/docs/CLI_REFERENCE.md`](../../../archive/V3/docs/CLI_REFERENCE.md) — all `zion` commands
+- [`V3/docs/CLI_TROUBLESHOOTING.md`](../../../archive/V3/docs/CLI_TROUBLESHOOTING.md) — common problem solving
+- [`V3/docs/MINING_GUIDE.md`](../../../archive/V3/docs/MINING_GUIDE.md) — deeper mining guide
+- [`V3/docs/NODE_OPERATOR_GUIDE.md`](../../../archive/V3/docs/NODE_OPERATOR_GUIDE.md) — node operation
+- [`V3/L5/docs/TECH/zion-node-spec.md`](../../../archive/V3/L5/docs/TECH/zion-node-spec.md) — Guardian node specification
 - [`StatusV3.md`](../../../StatusV3.md) — live topology and network status
 - [`AGENTS.md`](../../../AGENTS.md) — agent rules, incidents, ports
 - [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md) — technical whitepaper 3.1

@@ -9,11 +9,11 @@
 
 > **Last updated: 2026-08-22 (V31 soft-fork premine/coinbase maturity, wallet-sdk + mobile-app UTXO native format, website swap proxy, CLI `--soft-fork-activation-height`; 311 core tests pass, website build OK)**
 
-- **ZionDex + ZIS Multichain Wallet plan:** The end-to-end DEX, ZIS-backed multichain wallet, and settlement roadmap is captured in [`ZionDexZis.md`](ZionDexZis.md).
+- **ZionDex + ZIS Multichain Wallet plan:** The end-to-end DEX, ZIS-backed multichain wallet, and settlement roadmap is captured in [`ZionDexZis.md`](docs/3.2/3.2.4-Multichain-and-DEX/ZionDexZis.md).
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
-- **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
+- **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](docs/3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
-- **Hard genesis reset (2026-08-06):** Complete key rotation — new premine, canonical, admin, DAO guardian, and EVM validator keys. All addresses updated across codebase + Edge server. See [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) for the full procedure.
+- **Hard genesis reset (2026-08-06):** Complete key rotation — new premine, canonical, admin, DAO guardian, and EVM validator keys. All addresses updated across codebase + Edge server. See [`HARD_RESET_PLAYBOOK.md`](docs/3.2/3.2.8-Reset-Migration-and-Tooling/HARD_RESET_PLAYBOOK.md) for the full procedure.
 - **Edge production is V31 (2026-08-17):**
   - Public RPC: `rpc.zionterranova.com:8443`
   - Public pool stratum: `62.171.141.136:8444`
@@ -42,7 +42,7 @@
 | **V31 workspace entry** | [`V31/README.md`](V31/README.md) |
 | **V31 build / cutover plan** | [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md) |
 | **V31 operational rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
-| **3.2 "One Love" launch & marketing plan** | [`OneLoveV3.2.md`](OneLoveV3.2.md) |
+| **3.2 "One Love" launch & marketing plan** | [`OneLoveV3.2.md`](docs/3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md) |
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
 | **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
 | **Live status + topology** | [`StatusV3.md`](StatusV3.md) |
@@ -50,9 +50,9 @@
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive (read-only)** | [`archive/V3/`](archive/V3/) |
 | **Historical incidents + public-subtree rules** | [`AGENTS.md`](AGENTS.md) |
-| **Hard reset procedure (genesis + keys)** | [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) |
+| **Hard reset procedure (genesis + keys)** | [`HARD_RESET_PLAYBOOK.md`](docs/3.2/3.2.8-Reset-Migration-and-Tooling/HARD_RESET_PLAYBOOK.md) |
 | **Public (MIT) subtree** | [`public/`](public/) |
-| **ZionDex + ZIS Multichain Wallet plan** | [`ZionDexZis.md`](ZionDexZis.md) |
+| **ZionDex + ZIS Multichain Wallet plan** | [`ZionDexZis.md`](docs/3.2/3.2.4-Multichain-and-DEX/ZionDexZis.md) |
 
 ---
 
@@ -141,7 +141,7 @@ This repository has one source of truth per topic:
 | **Live operational status** | [`StatusV3.md`](StatusV3.md) |
 | **V31 workspace + build notes** | [`V31/README.md`](V31/README.md) |
 | **V31 security / ops rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
-| **3.2 "One Love" launch plan** | [`OneLoveV3.2.md`](OneLoveV3.2.md) |
+| **3.2 "One Love" launch plan** | [`OneLoveV3.2.md`](docs/3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md) |
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
 | **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
 | **3.1 archived reports** | [`docs/3.1/README.md`](docs/3.1/README.md) |

@@ -82,7 +82,7 @@ Dvě doplňkové registry značky nejsou stavy produktu: **NEDOLOŽENO** znamen�
 
 Tato pravidla nevyžadují mazání předchozího kreativního materiálu. Znamenají, že jeho budoucí čtení se řídí následujícím:
 
-1. Předchozí „canonical plan“ [`V33_NIRVANA_MASTER_PLAN.md`](../V33_NIRVANA_MASTER_PLAN.md) je **technický companion / zdroj práce**, zatímco `MiseAmenti/` je integrační canon a registr pravdy.
+1. Předchozí „canonical plan“ [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) je **technický companion / zdroj práce**, zatímco `MiseAmenti/` je integrační canon a registr pravdy.
 2. Všechny formulace „Passkeys“, „plný multichain“, „autonomní agenti“, „UE 5.7“, „WebGPU/Pixel Streaming“ a „quantum/warp engine“ se čtou jako **STAVBA/HORIZONT/HYPOTÉZA**, podle tabulek výše.
 3. „Global Assimilation“ znamená pouze **dobrovolnou interoperabilitu a spolupráci**; nikdy ne imperativ, nábor nebo kulturní nadřazenost.
 4. Příběhy `nirvana/` a `NirvanaCloud/` zůstávají hodnotnou narativní vrstvou, ale jejich „Kotva pravdy“ se při rozporu aktualizuje na základě tohoto registru.

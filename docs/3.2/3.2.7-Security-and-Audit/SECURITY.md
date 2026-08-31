@@ -69,7 +69,7 @@ We commit to:
 ## Known Vulnerabilities (Disclosed)
 
 All previously identified vulnerabilities have been remediated. See:
-- [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](docs/security/SECURITY_DISCLOSURE_2026-07.md) — ZION-2026-001 through ZION-2026-005
+- [`docs/security/SECURITY_DISCLOSURE_2026-07.md`](../../security/SECURITY_DISCLOSURE_2026-07.md) — ZION-2026-001 through ZION-2026-005
 - [`docs/security/vulnerabilities.json`](docs/security/vulnerabilities.json) — Machine-readable vulnerability data
 
 | ID | Title | Status |

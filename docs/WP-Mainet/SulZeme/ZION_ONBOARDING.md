@@ -13,12 +13,12 @@
 
 Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zdrojích:
 
-- [`V3/docs/USER_ONBOARDING.md`](../../../V3/docs/USER_ONBOARDING.md) — základní CLI návod pro nové uživatele
+- [`V3/docs/USER_ONBOARDING.md`](../../../archive/V3/docs/USER_ONBOARDING.md) — základní CLI návod pro nové uživatele
 - [`StatusV3.md`](../../../StatusV3.md) — živá topologie, výška chainu, porty a stav služeb
 - [`AGENTS.md`](../../../AGENTS.md) — operační pravidla, incidenty a migrace
-- [`V3/docs/CLI_REFERENCE.md`](../../../V3/docs/CLI_REFERENCE.md) — kompletní reference příkazů `zion`
+- [`V3/docs/CLI_REFERENCE.md`](../../../archive/V3/docs/CLI_REFERENCE.md) — kompletní reference příkazů `zion`
 - [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md) — konsensus, emise, smart kontrakty, architektura
-- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../V3/docs/DEV_TEAM/ONBOARDING.md) — příručka pro vývojáře
+- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../archive/V3/docs/DEV_TEAM/ONBOARDING.md) — příručka pro vývojáře
 - [`SulZeme/00-README.md`](./00-README.md) — dvanáct zastavení knihy *Sůl této země*
 - [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md) — brána do herní vrstvy Oasis
 - [`Onboarding.md`](./Onboarding.md) — zkrácená marketingová verze
@@ -84,7 +84,7 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 | Nový blok každých 60 s | Block time 60 s, DAA LWMA 60 bloků, cílový interval 30–120 s, ±25 % clamp | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | Genesis blok 1. 1. 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; po fixu retence bloků proběhl hard genesis reset 2026-07-20; bloky 0–~10913 starého řetězce jsou ztraceny, od fixu se uchovávají všechny | [`StatusV3.md`](../../../StatusV3.md), řádky 6–9; [`AGENTS.md`](../../../AGENTS.md), sekce BLOCK RETENTION FIX |
 | Odměna 5 400,067 ZION/blok | Dekáda 1 (2026–2036): 5 400,067 ZION/blok; nikdy vyšší; Decade Decay −20 % každou dekádu; tail 724,784723 ZION/blok od ~2126 | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
-| Rozdělení 89/5/5/1 % | `MINER_SHARE_PERCENT = 0,89`; humanitární 5 %; Issobella 5 %; pool fee / burn 1 %; uzly odmítnou blok s jiným poměrem | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../V3/README.md) |
+| Rozdělení 89/5/5/1 % | `MINER_SHARE_PERCENT = 0,89`; humanitární 5 %; Issobella 5 %; pool fee / burn 1 %; uzly odmítnou blok s jiným poměrem | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../README.md) |
 | Hard cap 144 miliard ZION | `max_supply = 144_000_000_000`; premine 16,78 mld. (11,65 %), zbytek těžbou | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | Žádné ICO / VIP vstup | Fair launch: žádný `mint()` pro tým, žádný předprodej; genesis alokace je veřejně vypsaná v coinbase | [`12-Hodina-Pred-Destem.md`](./12-Hodina-Pred-Destem.md), Ověřitelná fakta |
 | PoW: Ekam Deeksha / CosmicHarmony | Kanonický algoritmus v `V3/L1/cosmic-harmony`; šestifázový pipeline Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi; LWMA 60 bloků, ±25 % clamp | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta |
@@ -353,7 +353,7 @@ Nikdo tě nebude honit. Archa se nestaví křikem — staví se blok po bloku, 6
 
 ## Technický quickstart
 
-Tato sekce obsahuje přesné příkazy z kanonických zdrojů. Pro detailní vysvětlení každého kroku viz [`V3/docs/USER_ONBOARDING.md`](../../../V3/docs/USER_ONBOARDING.md).
+Tato sekce obsahuje přesné příkazy z kanonických zdrojů. Pro detailní vysvětlení každého kroku viz [`V3/docs/USER_ONBOARDING.md`](../../../archive/V3/docs/USER_ONBOARDING.md).
 
 ### Instalace CLI
 
@@ -560,9 +560,9 @@ rpcCall('getChainInfo').then(console.log);
 | **Odměna v 1. dekádě** | 5 400,067 ZION/blok (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
 | **Decade Decay** | Faktor 0,8 (−20 %) každých ~10 let (5 256 000 bloků) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
 | **Tail emission** | 724,784723 ZION/blok od ~2126, věčně | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
-| **Rozdělení odměny** | 89 % těžaři, 5 % humanitární fond, 5 % Issobella fond, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../V3/README.md) |
+| **Rozdělení odměny** | 89 % těžaři, 5 % humanitární fond, 5 % Issobella fond, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../README.md) |
 | **Hard cap** | 144 000 000 000 ZION | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
-| **PoW algoritmus** | Ekam Deeksha / CosmicHarmony; 6 fází; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`V3/README.md`](../../../V3/README.md) |
+| **PoW algoritmus** | Ekam Deeksha / CosmicHarmony; 6 fází; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`V3/README.md`](../../../README.md) |
 | **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), řádek 114; [`AGENTS.md`](../../../AGENTS.md) |
 | **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` na Edge) | [`StatusV3.md`](../../../StatusV3.md), řádek 112 |
 | **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
@@ -584,13 +584,13 @@ rpcCall('getChainInfo').then(console.log);
 
 ## Pro vývojáře a další zdroje
 
-- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../V3/docs/DEV_TEAM/ONBOARDING.md) — jak se připojit k dev týmu, build, testy, workflow
-- [`V3/README.md`](../../../V3/README.md) — přehled workspace, aktuální status, kompletní L1–L6 scope
-- [`V3/docs/CLI_REFERENCE.md`](../../../V3/docs/CLI_REFERENCE.md) — všechny příkazy `zion`
-- [`V3/docs/CLI_TROUBLESHOOTING.md`](../../../V3/docs/CLI_TROUBLESHOOTING.md) — řešení běžných problémů
-- [`V3/docs/MINING_GUIDE.md`](../../../V3/docs/MINING_GUIDE.md) — hlubší návod na těžbu
-- [`V3/docs/NODE_OPERATOR_GUIDE.md`](../../../V3/docs/NODE_OPERATOR_GUIDE.md) — provoz uzlu
-- [`V3/L5/docs/TECH/zion-node-spec.md`](../../../V3/L5/docs/TECH/zion-node-spec.md) — specifikace Guardian uzlu
+- [`V3/docs/DEV_TEAM/ONBOARDING.md`](../../../archive/V3/docs/DEV_TEAM/ONBOARDING.md) — jak se připojit k dev týmu, build, testy, workflow
+- [`V3/README.md`](../../../README.md) — přehled workspace, aktuální status, kompletní L1–L6 scope
+- [`V3/docs/CLI_REFERENCE.md`](../../../archive/V3/docs/CLI_REFERENCE.md) — všechny příkazy `zion`
+- [`V3/docs/CLI_TROUBLESHOOTING.md`](../../../archive/V3/docs/CLI_TROUBLESHOOTING.md) — řešení běžných problémů
+- [`V3/docs/MINING_GUIDE.md`](../../../archive/V3/docs/MINING_GUIDE.md) — hlubší návod na těžbu
+- [`V3/docs/NODE_OPERATOR_GUIDE.md`](../../../archive/V3/docs/NODE_OPERATOR_GUIDE.md) — provoz uzlu
+- [`V3/L5/docs/TECH/zion-node-spec.md`](../../../archive/V3/L5/docs/TECH/zion-node-spec.md) — specifikace Guardian uzlu
 - [`StatusV3.md`](../../../StatusV3.md) — live topologie a stav sítě
 - [`AGENTS.md`](../../../AGENTS.md) — pravidla pro agenty, incidenty, porty
 - [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md) — technický whitepaper 3.1

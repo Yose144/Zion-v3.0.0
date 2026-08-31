@@ -35,10 +35,10 @@ Source documents remain in their original locations to prevent stale copies. Mis
 | Priority | Source | What it decides |
 |---|---|---|
 | 1 | Running network, on-chain data, verified builds, and source code | What actually works, is in consensus, or has been deployed |
-| 2 | [`StatusV3.md`](../StatusV3.md), [`V31/STATUS.md`](../V31/STATUS.md), security reports, and `AGENTS.md` | Operational state, incidents, active configuration, and limitations |
+| 2 | [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md), security reports, and `AGENTS.md` | Operational state, incidents, active configuration, and limitations |
 | 3 | [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md) and [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md) | Curated representation of 3.3's actual baseline and evidence |
 | 4 | [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) | What may be called active work, target, or release gate |
-| 5 | [`../V33_NIRVANA_MASTER_PLAN.md`](../V33_NIRVANA_MASTER_PLAN.md) | Technical predecessor and detailed working material for 3.3 |
+| 5 | [`../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) | Technical predecessor and detailed working material for 3.3 |
 | 6 | `docs/WP-Mainet/` whitepapers, onboarding, Salt of the Earth, Nirvana, and NirvanaCloud | Explanation, public invitation, story, and inspiration |
 
 **Code and operations always win over this corpus.** A contradiction is a documentation defect to correct, not a spiritual or political dispute.

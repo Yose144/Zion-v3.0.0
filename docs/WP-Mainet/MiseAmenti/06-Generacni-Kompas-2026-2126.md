@@ -2,7 +2,7 @@
 ## Stoletý závazek pro Generaci Z, jejich děti a lidi, kteří přijdou po nich
 
 > **Status:** Dlouhodobý **HORIZONT**, ne predikce a ne slib výsledku.  
-> **Navazuje na:** [`NirvanaCloud — Manifest pro Generaci Z`](../docs/WP-Mainet/NirvanaCloud/06-Generace-Z-Manifest.md) a [`Stoletý plán`](../docs/WP-Mainet/NirvanaCloud/07-Stoleti-Plan-2026-2126.md).  
+> **Navazuje na:** [`NirvanaCloud — Manifest pro Generaci Z`](../NirvanaCloud/06-Generace-Z-Manifest.md) a [`Stoletý plán`](../NirvanaCloud/07-Stoleti-Plan-2026-2126.md).  
 > **Základní věta:** Nikdo dnes nemůže slíbit svět roku 2126. Můžeme ale postavit infrastrukturu a institucionální paměť, které dávají lidem v roce 2126 větší možnost volby než měli jejich předkové.
 
 ---
@@ -113,7 +113,7 @@ Pokud se tyto věci nedají udělat v praxi, není Mise Amenti důvěryhodná, j
 - [World Economic Forum — Global Risks 2034: Over the limit](https://www.weforum.org/publications/global-risks-report-2024/in-full/global-risks-2034-over-the-limit/) — vhodný pro mapu vnímaných globálních rizik; není predikce konkrétních událostí.
 - [Global Challenges Foundation — Global Catastrophic Risks 2026](https://globalchallenges.org/app/uploads/2025/12/Global-Catastrophic-Risks-2026.pdf) — rámec vzájemně propojených katastrofických rizik; ne instrukce pro jednotlivý projekt.
 - [The Millennium Project — State of the Future 20.0 Executive Summary](https://www.millennium-project.org/publications/state-of-the-future-executive-summary/) — mezigenerační perspektiva; není technologická roadmapa ZIONu.
-- [`NirvanaCloud/06`](../docs/WP-Mainet/NirvanaCloud/06-Generace-Z-Manifest.md) a [`NirvanaCloud/07`](../docs/WP-Mainet/NirvanaCloud/07-Stoleti-Plan-2026-2126.md) — hlubší narativní verze; jejich tvrzení se řídí ústavou [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md).
+- [`NirvanaCloud/06`](../NirvanaCloud/06-Generace-Z-Manifest.md) a [`NirvanaCloud/07`](../NirvanaCloud/07-Stoleti-Plan-2026-2126.md) — hlubší narativní verze; jejich tvrzení se řídí ústavou [`01-Kanon-a-Ustava.md`](./01-Kanon-a-Ustava.md).
 
 ---
 

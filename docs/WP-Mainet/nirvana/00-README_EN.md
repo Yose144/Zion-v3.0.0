@@ -1,11 +1,11 @@
 # NIRVANA — Tales of the New Earth
 ## The Book of the West: Long-Term Horizon, Global Assimilation of Attention & The Amenti Mission
 
-> **Status:** CANONICAL narrative & visionary series (L6 / MYTH-HORIZON) — companion to [`MiseAmenti`](../../../MiseAmenti/README_EN.md); canonized 2026-08-31 for Version **3.3 "Nirvana"**. The L1–L6 technical mapping here is governed by [`MiseAmenti/07-Registr-Dukazu.md`](../../../MiseAmenti/07-Registr-Dukazu.md) and [`StatusV3.md`](../../../StatusV3.md), not by the story.
+> **Status:** CANONICAL narrative & visionary series (L6 / MYTH-HORIZON) — companion to [`MiseAmenti`](../MiseAmenti/README_EN.md); canonized 2026-08-31 for Version **3.3 "Nirvana"**. The L1–L6 technical mapping here is governed by [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) and [`StatusV3.md`](../../../StatusV3.md), not by the story.
 >
 > **Compass Position:** Book of the West (*Terra Nova — Direction and Purpose*)
 >
-> **Preceded by:** [`The Salt of this Earth`](../SulZeme/00-README_EN.md), [`Road to Zion`](../marketing/ROAD_TO_ZION_EN.md), [`One Love 3.2 Master Whitepaper`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md), and [`MiseAmenti/`](../../../MiseAmenti/README_EN.md)
+> **Preceded by:** [`The Salt of this Earth`](../SulZeme/00-README_EN.md), [`Road to Zion`](../marketing/ROAD_TO_ZION_EN.md), [`One Love 3.2 Master Whitepaper`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md), and [`MiseAmenti/`](../MiseAmenti/README_EN.md)
 >
 > **Language:** English — Czech canonical index: [`00-README.md`](./00-README.md)
 
@@ -60,7 +60,7 @@ Readers who want to go beyond this book's concept and horizon into the full cosm
 
 ## Live Sources of Truth
 
-- **Canonical integration corpus (L1–L6, evidence, ethics, 100 years):** [`../../../MiseAmenti/README_EN.md`](../../../MiseAmenti/README_EN.md)
+- **Canonical integration corpus (L1–L6, evidence, ethics, 100 years):** [`../../../MiseAmenti/README_EN.md`](../MiseAmenti/README_EN.md)
 - **Canonical Technical Plan 3.3 (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
 - **NirvanaCloud — the deep expansion (six worlds, bardo, Shambhala, Halls of Amenti, Generation Z, hundred-year plan):** [`../NirvanaCloud/00-README_EN.md`](../NirvanaCloud/00-README_EN.md)
 - **Live Network Status:** [`../../../StatusV3.md`](../../../StatusV3.md)

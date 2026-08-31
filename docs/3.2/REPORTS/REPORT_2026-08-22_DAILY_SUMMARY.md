@@ -73,7 +73,7 @@ Kompletní bridge round-trip test úspěšně dokončen: **Lock → Mint → Bur
 - Bridge `/v1/bridge/submit` overload 1 793 req/s bez pádu
 - P2P reconnect storm OK
 - 10-minutový transaction fuzz preview (2 280 požadavků, 0 health fail)
-- **Report:** [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md)
+- **Report:** [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md)
 
 ### 1.5 Další dnes dokončené práce (z předchozích session)
 

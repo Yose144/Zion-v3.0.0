@@ -69,7 +69,7 @@ Hlavní komponenty:
 | API client | [`APP&WEB/OasisWeb/src/lib/api.ts`](APP&WEB/OasisWeb/src/lib/api.ts) |
 | Game store | [`APP&WEB/OasisWeb/src/store/gameStore.ts`](APP&WEB/OasisWeb/src/store/gameStore.ts) |
 | 3D scéna | [`APP&WEB/OasisWeb/src/components/OasisScene.tsx`](APP&WEB/OasisWeb/src/components/OasisScene.tsx) |
-| Deník | [`docs/oasis/OASIS_WEB_JOURNAL.md`](docs/oasis/OASIS_WEB_JOURNAL.md) |
+| Deník | [`docs/oasis/OASIS_WEB_JOURNAL.md`](../../oasis/OASIS_WEB_JOURNAL.md) |
 | Archiv (world lore) | [`docs/docs2.9/ZION_OASIS/`](docs/docs2.9/ZION_OASIS/) |
 
 ---
@@ -120,4 +120,4 @@ bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh
 
 ---
 
-*Report vygenerován 2026-08-15. Pro detailní deník viz [`docs/oasis/OASIS_WEB_JOURNAL.md`](docs/oasis/OASIS_WEB_JOURNAL.md).*
+*Report vygenerován 2026-08-15. Pro detailní deník viz [`docs/oasis/OASIS_WEB_JOURNAL.md`](../../oasis/OASIS_WEB_JOURNAL.md).*

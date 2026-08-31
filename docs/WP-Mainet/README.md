@@ -49,7 +49,7 @@ These documents remain as archive; their numbers may be outdated.
 - [`../../StatusV3.md`](../../StatusV3.md) — živý stav sítě / live network status
 - [`../../V31/STATUS.md`](../../V31/STATUS.md) — V31 workspace status
 - [`../../V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) — technický plán 3.2 / technical plan
-- [`../../OneLoveV3.2.md`](../../OneLoveV3.2.md) — root launch & marketing plán
+- [`../../OneLoveV3.2.md`](../3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md) — root launch & marketing plán
 - [`../../AGENTS.md`](../../AGENTS.md) — provozní pravidla / operational rules
 
 ---

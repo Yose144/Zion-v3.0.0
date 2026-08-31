@@ -1,11 +1,11 @@
 # NIRVANA — Příběhy Nové Země
 ## Kniha Západu: Dlouhodobý horizont, Globální Asimilace Pozornosti & Mise Amenti
 
-> **Stav:** KANONICKÁ narativní a vizionářská řada (L6 / MÝTUS-HORIZONT) — společník k [`MiseAmenti`](../../../MiseAmenti/README.md); zkanonizováno 2026-08-31 pro verzi **3.3 „Nirvana"**. Technické mapování L1–L6 zde se řídí [`MiseAmenti/07-Registr-Dukazu.md`](../../../MiseAmenti/07-Registr-Dukazu.md) a [`StatusV3.md`](../../../StatusV3.md), nikoli příběhem.
+> **Stav:** KANONICKÁ narativní a vizionářská řada (L6 / MÝTUS-HORIZONT) — společník k [`MiseAmenti`](../MiseAmenti/README.md); zkanonizováno 2026-08-31 pro verzi **3.3 „Nirvana"**. Technické mapování L1–L6 zde se řídí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) a [`StatusV3.md`](../../../StatusV3.md), nikoli příběhem.
 >
 > **Místo v kompasu:** Západní kniha (*Terra Nova — Směr a Cíl*)
 >
-> **Navazuje na:** [`Sůl této země`](../SulZeme/00-README.md), [`Road to Zion`](../marketing/ROAD_TO_ZION_CZ.md), [`One Love 3.2`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) a [`MiseAmenti/`](../../../MiseAmenti/README.md)
+> **Navazuje na:** [`Sůl této země`](../SulZeme/00-README.md), [`Road to Zion`](../marketing/ROAD_TO_ZION_CZ.md), [`One Love 3.2`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) a [`MiseAmenti/`](../MiseAmenti/README.md)
 >
 > **Jazyk:** Čeština — English canonical index: [`00-README_EN.md`](./00-README_EN.md)
 
@@ -60,7 +60,7 @@ Kdo chce jít za koncept a horizont této knihy do plné kosmologie — šest sv
 
 ## Živé zdroje pravdy
 
-- **Kanonický integrační corpus (L1–L6, evidence, etika, 100 let):** [`../../../MiseAmenti/README.md`](../../../MiseAmenti/README.md)
+- **Kanonický integrační corpus (L1–L6, evidence, etika, 100 let):** [`../../../MiseAmenti/README.md`](../MiseAmenti/README.md)
 - **Kanonický technický plán 3.3 (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
 - **NirvanaCloud — hluboké rozšíření (šest světů, bardo, Šambhala, Síně Amenti, Generace Z, stoletý plán):** [`../NirvanaCloud/00-README.md`](../NirvanaCloud/00-README.md)
 - **Aktuální stav sítě v reálném čase:** [`../../../StatusV3.md`](../../../StatusV3.md)

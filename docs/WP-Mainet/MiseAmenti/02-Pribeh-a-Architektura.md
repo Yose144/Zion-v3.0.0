@@ -25,7 +25,7 @@ ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z o
 
 ## 2. Čtyři knihy jako kompas, ne jako dogma
 
-[`Road to Zion`](../docs/WP-Mainet/marketing/ROAD_TO_ZION_CZ.md) používá čtyři světové strany. `MiseAmenti/` je nepřepisuje — pouze je zavádí jako standard pro rozhodování:
+[`Road to Zion`](../marketing/ROAD_TO_ZION_CZ.md) používá čtyři světové strany. `MiseAmenti/` je nepřepisuje — pouze je zavádí jako standard pro rozhodování:
 
 ```text
                                SEVER
@@ -64,7 +64,7 @@ Pokud návrh neprojde některou otázkou, není připravený k propagaci ani k p
 
 Základní onboarding není funnel, který má člověka udržet co nejdéle. Je to **Hanumanův most**: dostatečně jednoduchý, aby po něm mohl přejít nováček; dostatečně poctivý, aby na něm neztratil orientaci.
 
-Kanonická cesta z [`ZION — Nová civilizace`](../docs/WP-Mainet/SulZeme/08-ZION-Nova-Civilizace.md) je zachována:
+Kanonická cesta z [`ZION — Nová civilizace`](../SulZeme/08-ZION-Nova-Civilizace.md) je zachována:
 
 | Cesta | První bezpečný krok | Co nesmí být vyžadováno |
 |---|---|---|
@@ -81,11 +81,11 @@ Kanonická cesta z [`ZION — Nová civilizace`](../docs/WP-Mainet/SulZeme/08-ZI
 
 ### Nirvana — západní horizont
 
-[`docs/WP-Mainet/nirvana/`](../docs/WP-Mainet/nirvana/00-README.md) je kniha cesty od paprsku Lumi přes Ararat a dům až ke globálnímu horizontu. Jejím úkolem je odpovědět na otázku: **„Jak vypadá svět, který stojí za dlouhodobé stavění?“**
+[`docs/WP-Mainet/nirvana/`](../nirvana/00-README.md) je kniha cesty od paprsku Lumi přes Ararat a dům až ke globálnímu horizontu. Jejím úkolem je odpovědět na otázku: **„Jak vypadá svět, který stojí za dlouhodobé stavění?“**
 
 ### NirvanaCloud — hluboká mapa stavů
 
-[`docs/WP-Mainet/NirvanaCloud/`](../docs/WP-Mainet/NirvanaCloud/00-README.md) přidává Bhavačakru, pět Buddhů moudrosti, Bardo Thödol, Šambhalu a Síně Amenti jako **mapy stavů a přechodů**, ne jako doktrínu ani historickou autoritu.
+[`docs/WP-Mainet/NirvanaCloud/`](../NirvanaCloud/00-README.md) přidává Bhavačakru, pět Buddhů moudrosti, Bardo Thödol, Šambhalu a Síně Amenti jako **mapy stavů a přechodů**, ne jako doktrínu ani historickou autoritu.
 
 Následující je kanonické rozlišení:
 
