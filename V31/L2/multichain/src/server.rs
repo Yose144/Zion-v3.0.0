@@ -1832,6 +1832,7 @@ async fn node_heartbeat(
 }
 
 async fn list_nodes(State(state): State<AppState>) -> Result<Json<Vec<NodeRecord>>, StatusCode> {
+    tracing::info!("list_nodes handler called");
     match state.service.node_rewards().list_active_nodes().await {
         Ok(nodes) => Ok(Json(nodes)),
         Err(e) => {

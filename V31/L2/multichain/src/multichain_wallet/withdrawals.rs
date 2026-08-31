@@ -115,15 +115,22 @@ impl WithdrawalProcessor {
 
         let tx_hash = adapter.transfer_token(&asset, &recipient, record.amount).await;
 
+        // Credit the ledger back outside the DB lock. WalletLedger also uses the
+        // same DB Mutex, so holding it while calling ledger.credit() would
+        // deadlock because tokio::sync::Mutex is not reentrant.
+        let credit_back = if tx_hash.is_err() {
+            Some(self.ledger.credit(&record.user_id, &asset, record.amount).await)
+        } else {
+            None
+        };
+
         let mut db = self.db.lock().await;
         match tx_hash {
             Ok(hash) => {
                 db.update_withdrawal(&record.id, WithdrawalStatus::Sent, Some(&hash.to_hex()))?;
             }
             Err(e) => {
-                // Credit the amount back to the user's ledger on failure so it
-                // can be retried or withdrawn to a different address.
-                if let Err(credit_err) = self.ledger.credit(&record.user_id, &asset, record.amount).await {
+                if let Some(Err(credit_err)) = credit_back {
                     tracing::error!(
                         "withdrawal {} failed and ledger credit back also failed: {}",
                         record.id,
