@@ -35,10 +35,10 @@ To neznamená, že se sem kopíruje celý repozitář. Naopak: **zdrojové dokum
 | Priorita | Zdroj | O čem rozhoduje |
 |---|---|---|
 | 1 | Běžící síť, on-chain data, verifikovaný build a zdrojový kód | Co opravdu funguje, co je v konsensu, co bylo nasazeno |
-| 2 | [`StatusV3.md`](../StatusV3.md), [`V31/STATUS.md`](../V31/STATUS.md), bezpečnostní reporty a `AGENTS.md` | Provozní stav, incidenty, aktivní konfigurace a limity |
+| 2 | [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md), bezpečnostní reporty a `AGENTS.md` | Provozní stav, incidenty, aktivní konfigurace a limity |
 | 3 | [`03-Zivy-Zaklad-3.3.md`](./03-Zivy-Zaklad-3.3.md) a [`07-Registr-Dukazu.md`](./07-Registr-Dukazu.md) | Kurátorovaný obraz skutečného stavu 3.3 a podkladů |
 | 4 | [`04-Exekucni-Charta-3.3.md`](./04-Exekucni-Charta-3.3.md) | Co se smí označit jako aktivní práce, cíl nebo release gate |
-| 5 | [`../V33_NIRVANA_MASTER_PLAN.md`](../V33_NIRVANA_MASTER_PLAN.md) | Technický předchůdce a detailní pracovní materiál pro 3.3 |
+| 5 | [`../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) | Technický předchůdce a detailní pracovní materiál pro 3.3 |
 | 6 | `docs/WP-Mainet/` — whitepapery, onboarding, Sůl Země, Nirvana a NirvanaCloud | Výklad, veřejné pozvání, příběh a inspirace |
 
 **Kód a provoz vždy vítězí nad tímto corpus.** Pokud je zde rozpor, je to dokumentační chyba, kterou je třeba opravit — ne duchovní či politický spor.

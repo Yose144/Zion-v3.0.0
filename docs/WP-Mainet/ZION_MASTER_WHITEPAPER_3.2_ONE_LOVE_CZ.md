@@ -468,9 +468,9 @@ Jedna planeta. Jeden lid. One Love.
 
 - Live status: [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
 - Execuční plán: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
-- Launch a marketing plán: [`OneLoveV3.2.md`](../../OneLoveV3.2.md)
+- Launch a marketing plán: [`OneLoveV3.2.md`](../3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md)
 - Pravidla pro agenty: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
-- Playbook hard resetu: [`HARD_RESET_PLAYBOOK.md`](../../HARD_RESET_PLAYBOOK.md)
+- Playbook hard resetu: [`HARD_RESET_PLAYBOOK.md`](../3.2/3.2.8-Reset-Migration-and-Tooling/HARD_RESET_PLAYBOOK.md)
 - Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../docs/3.1/REPORTS/V31_3.2.0_SESSION_REPORT.md)
 - Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../docs/3.1/REPORTS/REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
 

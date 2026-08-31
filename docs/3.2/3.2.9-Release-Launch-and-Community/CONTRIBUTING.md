@@ -119,7 +119,7 @@ All PRs must include:
 
 ## Security Vulnerabilities
 
-**Do NOT open a PR or public issue for security vulnerabilities.** See [SECURITY.md](./SECURITY.md) for responsible disclosure process.
+**Do NOT open a PR or public issue for security vulnerabilities.** See [SECURITY.md](../3.2.7-Security-and-Audit/SECURITY.md) for responsible disclosure process.
 
 ## Code of Conduct
 

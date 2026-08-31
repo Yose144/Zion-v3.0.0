@@ -4,11 +4,11 @@
 > **Verze:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — plánovací a architektonický track  
 > **Předchůdce:** 3.2.0 "One Love" (stabilní produktový baseline; skutečná runtime verze se vždy ověřuje podle `StatusV3.md`)  
 > **Datum publikace:** 2026-08-31  
-> **Kanonický integrační corpus:** [`MiseAmenti/`](./MiseAmenti/README.md)  
+> **Kanonický integrační corpus:** [`MiseAmenti/`](docs/WP-Mainet/MiseAmenti/README.md)  
 > **Status:** Technický execution companion pro kanon 3.3; nenahrazuje živý kód, provozní stav ani evidence registr v `MiseAmenti/`.  
 > **Cílový milník:** 2026-12-31 je aspirativní veřejný horizont, ne garantované datum release ani výsledek.
 >
-> **Čtecí smlouva:** Každý nárok v tomto dokumentu se interpretuje podle značek **ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS** a podle evidence registru [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md). Pokud je zde rozpor s kódem, on-chain daty nebo `StatusV3.md`, má vždy přednost skutečnost.
+> **Čtecí smlouva:** Každý nárok v tomto dokumentu se interpretuje podle značek **ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS** a podle evidence registru [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md). Pokud je zde rozpor s kódem, on-chain daty nebo `StatusV3.md`, má vždy přednost skutečnost.
 
 ---
 
@@ -59,7 +59,7 @@ Zachranná Mise Amenti je hlubinným duchovním motivem architektury ZION:
 
 ## 2. Architektonický plán po vrstvách (L1–L6)
 
-> **Statusový kontext:** Popisky vrstev L2–L6 v tomto diagramu jsou **plánovací a architektonický horizont (STAVBA / HORIZONT)**, nikoli souhrn nasazených produkčních funkcí. Skutečný stav každé vrstvy je v [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md) a [`StatusV3.md`](./StatusV3.md).
+> **Statusový kontext:** Popisky vrstev L2–L6 v tomto diagramu jsou **plánovací a architektonický horizont (STAVBA / HORIZONT)**, nikoli souhrn nasazených produkčních funkcí. Skutečný stav každé vrstvy je v [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md) a [`StatusV3.md`](./StatusV3.md).
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
@@ -81,7 +81,7 @@ Zachranná Mise Amenti je hlubinným duchovním motivem architektury ZION:
 
 ## 3. L2: Multichain, ZionDex & ZIS (Decentralized Financial Nervous System & Identity Sovereignty)
 
-> **Status:** L2 je ve **STAVBA / HORIZONT**; základní multichain kód (`V31/L2/`) a ZIS existují, ale plná cross-chain AMM settlement, WARP relay síť, federovaní solvéři a WebAuthn/Passkey univerzální SSO nejsou nasazeny jako hotová produkce. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md).
+> **Status:** L2 je ve **STAVBA / HORIZONT**; základní multichain kód (`V31/L2/`) a ZIS existují, ale plná cross-chain AMM settlement, WARP relay síť, federovaní solvéři a WebAuthn/Passkey univerzální SSO nejsou nasazeny jako hotová produkce. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
 
 L2 vrstva propojuje izolovaný L1 UTXO blockchain se zbytkem kryptoekosystému a poskytuje bezpečný, biometricky ověřený přístup pro miliony uživatelů.
 
@@ -134,7 +134,7 @@ L2 vrstva propojuje izolovaný L1 UTXO blockchain se zbytkem kryptoekosystému a
 
 ## 4. L3: Hiranyagarbha (AI-Native Consciousness, Orchestrace & Amitabha Interface)
 
-> **Status:** L3 je většinou **HORIZONT / HYPOTÉZA**. Maestro / NCL / Amitabha jsou v rané stavbě nebo konceptu; žádná autonomní agentura dnes neprovádí finanční či právně závazné operace bez lidského schválení. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md).
+> **Status:** L3 je většinou **HORIZONT / HYPOTÉZA**. Maestro / NCL / Amitabha jsou v rané stavbě nebo konceptu; žádná autonomní agentura dnes neprovádí finanční či právně závazné operace bez lidského schválení. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
 
 L3 vrstva je živým mozkem systému. Překonává koncept pouhého "LLM chatbota" a stává se autonomním operačním systémem vědomí s přímou schopností jednat v reálném světě.
 
@@ -188,7 +188,7 @@ L3 vrstva je živým mozkem systému. Překonává koncept pouhého "LLM chatbot
 
 ## 5. L4: OASIS Metaverse (Unreal Engine 5.7 & High-Fidelity Web Preview)
 
-> **Status:** L4 je **HORIZONT / MÝTUS**. OASIS existuje jako web/metaverse koncept a starší verze; Unreal Engine 5.7, fotorealismus Nanite/Lumen a produkční MetaHumans nejsou nasazeny. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md).
+> **Status:** L4 je **HORIZONT / MÝTUS**. OASIS existuje jako web/metaverse koncept a starší verze; Unreal Engine 5.7, fotorealismus Nanite/Lumen a produkční MetaHumans nejsou nasazeny. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
 
 L4 OASIS je vizuální a interaktivní ztělesnění ZIONu — virtuální svět Nové Země, kde se setkávají lidé, avataři a AI entity.
 
@@ -240,7 +240,7 @@ L4 OASIS je vizuální a interaktivní ztělesnění ZIONu — virtuální svět
 
 ## 6. L5: Free World (Humanitarian & Planetary Regeneration Portal)
 
-> **Status:** L5 je **STAVBA / HORIZONT**. 5 % L1 coinbase stream a fondové trackery jsou živé na úrovni kódu/měření, ale dedikovaný veřejný portál, globální projekty a voda/permakultura jsou v přípravě. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md).
+> **Status:** L5 je **STAVBA / HORIZONT**. 5 % L1 coinbase stream a fondové trackery jsou živé na úrovni kódu/měření, ale dedikovaný veřejný portál, globální projekty a voda/permakultura jsou v přípravě. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
 
 L5 je vrstvou záchrany a obnovy fyzického světa. Realizuje princip, že 5 % z každého vytěženého bloku na L1 je trvale a nezměnitelně alokováno na humanitární a ekologické projekty.
 
@@ -284,7 +284,7 @@ L5 je vrstvou záchrany a obnovy fyzického světa. Realizuje princip, že 5 % z
 
 ## 7. L6: Issobella (Science, Quantum Engine & Warp Dynamics)
 
-> **Status:** L6 je **HORIZONT / HYPOTÉZA**. 5 % L1 coinbase vědecký stream může být živý na úrovni kódu, ale kvantový motor, Alcubierre-Ekam metrika a fyzikální warp výzkum jsou čistě teoretický horizont / spekulativní výzkum. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](./MiseAmenti/07-Registr-Dukazu.md).
+> **Status:** L6 je **HORIZONT / HYPOTÉZA**. 5 % L1 coinbase vědecký stream může být živý na úrovni kódu, ale kvantový motor, Alcubierre-Ekam metrika a fyzikální warp výzkum jsou čistě teoretický horizont / spekulativní výzkum. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
 
 L6 ztělesňuje lidskou touhu po poznání vesmíru, hluboké vědě a překonání gravitačních a energetických limitů současné civilizace (financováno 5 % L1 coinbase streamem).
 

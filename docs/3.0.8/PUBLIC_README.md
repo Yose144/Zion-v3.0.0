@@ -178,7 +178,7 @@ cargo run --release -p zion-core --bin zion-node
 
 ## Security
 
-- **Reporting vulnerabilities:** See [SECURITY.md](../../SECURITY.md)
+- **Reporting vulnerabilities:** See [SECURITY.md](../3.2/3.2.7-Security-and-Audit/SECURITY.md)
 - **Known vulnerabilities:** [docs/security/SECURITY_DISCLOSURE_2026-07.md](../security/SECURITY_DISCLOSURE_2026-07.md)
 - **All disclosed vulnerabilities (F1-F5, C1-C8) have been remediated**
 
@@ -199,10 +199,10 @@ cargo run --release -p zion-core --bin zion-node
 ## Documentation
 
 - [Architecture](../../V3/docs) — L1/L2 architecture docs
-- [Mainnet Constants](../../V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
+- [Mainnet Constants](../../archive/V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
 - [Security Disclosures](../security) — Public vulnerability disclosures
-- [Contributing](../../CONTRIBUTING.md) — How to contribute
-- [Code of Conduct](../../CODE_OF_CONDUCT.md) — Community standards
+- [Contributing](../3.2/3.2.9-Release-Launch-and-Community/CONTRIBUTING.md) — How to contribute
+- [Code of Conduct](../3.2/3.2.9-Release-Launch-and-Community/CODE_OF_CONDUCT.md) — Community standards
 
 ## License
 

@@ -56,7 +56,7 @@ Tato kapitola shrnuje na jedno místo etické mantinely, které se jinak objevuj
 
 ## 6. Vztah k živému kódu a whitepaperu
 
-Kdykoliv se mytologický popis v této sérii rozejde s aktuálním stavem kódu, whitepaperu, `StatusV3.md` nebo [`MiseAmenti/07-Registr-Dukazu.md`](../../../MiseAmenti/07-Registr-Dukazu.md), **platí vždy živý kód a evidence registr.** Mytologie je vrstva vysvětlení, ne vrstva pravdy o technických faktech. Pokud čtenář najde rozpor, správný postup je nahlásit ho jako běžnou chybu v dokumentaci (GitHub issue), ne jako teologický spor.
+Kdykoliv se mytologický popis v této sérii rozejde s aktuálním stavem kódu, whitepaperu, `StatusV3.md` nebo [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), **platí vždy živý kód a evidence registr.** Mytologie je vrstva vysvětlení, ne vrstva pravdy o technických faktech. Pokud čtenář najde rozpor, správný postup je nahlásit ho jako běžnou chybu v dokumentaci (GitHub issue), ne jako teologický spor.
 
 ---
 

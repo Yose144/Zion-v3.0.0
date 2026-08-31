@@ -1,11 +1,11 @@
 # NirvanaCloud
 ## Hluboké rozšíření knihy Nirvana — Šest světů, Bardo, Šambhala a dokončení Mise Amenti pro Generaci Z a příštích sto let
 
-> **Status:** Narativně-mytilogická vrstva (L6 pohled) a kanonický společník; její tvrzení o technickém stavu nejsou samostatnou pravdou — pro ně platí [`MiseAmenti/`](../../../MiseAmenti/README.md), [`StatusV3.md`](../../../StatusV3.md) a živý kód.  
+> **Status:** Narativně-mytilogická vrstva (L6 pohled) a kanonický společník; její tvrzení o technickém stavu nejsou samostatnou pravdou — pro ně platí [`MiseAmenti/`](../MiseAmenti/README.md), [`StatusV3.md`](../../../StatusV3.md) a živý kód.  
 > **Datum zkanonizování:** 2026-08-31  
 > **Určeno pro:** Generaci Z a všechny další generace, které zdědí Terra Nova.  
 > **Horizont:** 100 let (2026–2126) — HORIZONT / MÝTUS, nikoli živý provozní plán.  
-> **Pravidlo textu:** stejné jako ve zbytku série — příběh a archetyp jsou **inspirace, ne dogma**; kde text mluví o síti, číslech nebo kódu, platí [`MiseAmenti/07-Registr-Dukazu.md`](../../../MiseAmenti/07-Registr-Dukazu.md), živý repozitář a whitepaper, ne mytologie.
+> **Pravidlo textu:** stejné jako ve zbytku série — příběh a archetyp jsou **inspirace, ne dogma**; kde text mluví o síti, číslech nebo kódu, platí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), živý repozitář a whitepaper, ne mytologie.
 
 ---
 
@@ -67,7 +67,7 @@ Každá kapitola má tři vrstvy, stejně jako zbytek série Nirvana a Sůl Zem�
 
 ## Živé zdroje pravdy
 
-- **Kanonický integrační corpus (L1–L6, pravda, etika, 100 let):** [`../../../MiseAmenti/README.md`](../../../MiseAmenti/README.md)
+- **Kanonický integrační corpus (L1–L6, pravda, etika, 100 let):** [`../../../MiseAmenti/README.md`](../MiseAmenti/README.md)
 - **Kanonický technický plán 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
 - **Narativní kniha Nirvana (koncept/horizont):** [`../nirvana/00-README.md`](../nirvana/00-README.md)
 - **Sůl této země (kořeny):** [`../SulZeme/00-README.md`](../SulZeme/00-README.md)

@@ -2,7 +2,7 @@
 ## Věcný baseline L1–L6: co skutečně běží, co se staví a co je pouze horizont
 
 > **Snapshot:** 2026-08-31.  
-> **Pravidlo aktualizace:** Tento dokument je kurátorovaný rozcestník, ne live telemetry. Při každém rozporu platí [`StatusV3.md`](../StatusV3.md), [`V31/STATUS.md`](../V31/STATUS.md), on-chain data a aktuální kód.  
+> **Pravidlo aktualizace:** Tento dokument je kurátorovaný rozcestník, ne live telemetry. Při každém rozporu platí [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md), on-chain data a aktuální kód.  
 > **Verzovací poznámka:** V tomto canon se „3.3 Nirvana“ používá jako plánovací název. Běžící workspace/protocol metadata mají vlastní zdroje pravdy a nesmí se přepisovat narativem.
 
 ---
