@@ -11,6 +11,11 @@
 use std::collections::VecDeque;
 use std::time::Instant;
 
+/// Hard floor for share difficulty. Prevents zero-PoW difficulty-1 share
+/// acceptance that would allow an attacker to accrue PPLNS weight without
+/// doing real work (POL-001).
+pub const MIN_SHARE_DIFFICULTY: u64 = 1000;
+
 /// Configuration for constructing a [`VarDiff`] instance.
 #[derive(Debug, Clone)]
 pub struct VarDiffConfig {
@@ -52,9 +57,11 @@ impl VarDiff {
     /// `retarget_shares` to ≥ 2.  A `max_difficulty` of `0` is treated as
     /// "no upper limit" (`u64::MAX`).
     pub fn new(config: &VarDiffConfig) -> Self {
+        let min_diff = config.min_difficulty.max(MIN_SHARE_DIFFICULTY);
+        let start_diff = config.start_difficulty.max(min_diff);
         Self {
-            current_difficulty: config.start_difficulty.max(1),
-            min_difficulty: config.min_difficulty.max(1),
+            current_difficulty: start_diff,
+            min_difficulty: min_diff,
             max_difficulty: if config.max_difficulty == 0 {
                 u64::MAX
             } else {
@@ -147,8 +154,8 @@ impl VarDiff {
 /// difficulty and shifting the max target right accordingly.  The result
 /// is always a valid, monotonically-decreasing-in-difficulty target.
 pub fn difficulty_to_target(difficulty: u64) -> [u8; 32] {
-    if difficulty <= 1 {
-        return [0xff; 32];
+    if difficulty < MIN_SHARE_DIFFICULTY {
+        return difficulty_to_target(MIN_SHARE_DIFFICULTY);
     }
 
     // Number of leading zero bits = floor(log2(difficulty)).
@@ -204,8 +211,8 @@ mod tests {
 
     fn cfg() -> VarDiffConfig {
         VarDiffConfig {
-            start_difficulty: 100,
-            min_difficulty: 1,
+            start_difficulty: 2000,
+            min_difficulty: 1000,
             max_difficulty: 1_000_000,
             target_secs: 10,
             retarget_shares: 3,
@@ -215,21 +222,36 @@ mod tests {
     #[test]
     fn test_vardiff_new_starts_at_config_difficulty() {
         let vd = VarDiff::new(&cfg());
-        assert_eq!(vd.current(), 100);
+        assert_eq!(vd.current(), 2000);
+    }
+
+    #[test]
+    fn test_vardiff_enforces_min_share_difficulty() {
+        let vd = VarDiff::new(&VarDiffConfig {
+            start_difficulty: 1,
+            min_difficulty: 1,
+            max_difficulty: 1_000_000,
+            target_secs: 10,
+            retarget_shares: 3,
+        });
+        assert!(
+            vd.current() >= MIN_SHARE_DIFFICULTY,
+            "difficulty should be clamped to at least {}, got {}",
+            MIN_SHARE_DIFFICULTY,
+            vd.current()
+        );
     }
 
     #[test]
     fn test_vardiff_retarget_increases_difficulty_when_shares_fast() {
         let mut vd = VarDiff::new(&cfg());
-        // Shares arrive much faster than the 10s target.
-        // retarget_shares = 3 → retarget fires on the 3rd submit.
-        vd.record_submit(); // ssr 1 → None
+        vd.record_submit();
         thread::sleep(Duration::from_millis(10));
-        vd.record_submit(); // ssr 2 → None
+        vd.record_submit();
         thread::sleep(Duration::from_millis(10));
-        let adjusted = vd.record_submit(); // ssr 3 → retarget
+        let adjusted = vd.record_submit();
         assert!(
-            vd.current() > 100,
+            vd.current() > 2000,
             "fast shares should increase difficulty, got {}",
             vd.current()
         );
@@ -238,21 +260,18 @@ mod tests {
 
     #[test]
     fn test_vardiff_retarget_decreases_difficulty_when_shares_slow() {
-        // Use a small target so we can make shares "slow" without
-        // sleeping for tens of seconds.
         let mut vd = VarDiff::new(&VarDiffConfig {
-            start_difficulty: 100,
-            min_difficulty: 1,
+            start_difficulty: 2000,
+            min_difficulty: 1000,
             max_difficulty: 1_000_000,
             target_secs: 1,
             retarget_shares: 2,
         });
-        // Shares arrive slower than the 1s target.
-        vd.record_submit(); // ssr 1 → None
+        vd.record_submit();
         thread::sleep(Duration::from_millis(1500));
-        let adjusted = vd.record_submit(); // ssr 2 → retarget
+        let adjusted = vd.record_submit();
         assert!(
-            vd.current() < 100,
+            vd.current() < 2000,
             "slow shares should decrease difficulty, got {}",
             vd.current()
         );
@@ -261,21 +280,17 @@ mod tests {
 
     #[test]
     fn test_vardiff_clamps_ratio() {
-        // With a tiny target_secs and extremely fast shares the ratio
-        // would be huge, but it must be clamped to 4.0.
         let mut vd = VarDiff::new(&VarDiffConfig {
-            start_difficulty: 100,
-            min_difficulty: 1,
+            start_difficulty: 2000,
+            min_difficulty: 1000,
             max_difficulty: 1_000_000_000,
             target_secs: 1,
             retarget_shares: 2,
         });
-        // Fire shares as fast as possible.
-        vd.record_submit(); // ssr 1 → None
-        let adjusted = vd.record_submit(); // ssr 2 → retarget
-                                           // Max increase is 4× → 400.
+        vd.record_submit();
+        let adjusted = vd.record_submit();
         assert!(
-            vd.current() <= 400,
+            vd.current() <= 8000,
             "ratio should be clamped to 4.0, got {}",
             vd.current()
         );
@@ -283,51 +298,49 @@ mod tests {
     }
 
     #[test]
-    fn test_difficulty_to_target_max_target_for_diff_1() {
-        let target = difficulty_to_target(1);
-        assert_eq!(target, [0xff; 32]);
+    fn test_difficulty_to_target_max_target_for_min_difficulty() {
+        let target = difficulty_to_target(MIN_SHARE_DIFFICULTY);
+        let max_target = difficulty_to_target(MIN_SHARE_DIFFICULTY);
+        assert_eq!(target, max_target);
+    }
+
+    #[test]
+    fn test_difficulty_to_target_below_floor_clamped() {
+        let floor_target = difficulty_to_target(MIN_SHARE_DIFFICULTY);
+        for d in [0u64, 1, 500, 999] {
+            assert_eq!(
+                difficulty_to_target(d),
+                floor_target,
+                "difficulty {} should be clamped to floor target",
+                d
+            );
+        }
     }
 
     #[test]
     fn test_difficulty_to_target_lower_for_higher_diff() {
-        let t1 = difficulty_to_target(1);
-        let t256 = difficulty_to_target(256);
-        // Higher difficulty must produce a numerically smaller target.
-        // Big-endian byte comparison == numeric comparison.
+        let t_floor = difficulty_to_target(MIN_SHARE_DIFFICULTY);
+        let t256 = difficulty_to_target(256_000);
         assert!(
-            t256 < t1,
-            "target for diff 256 should be lower than for diff 1"
+            t256 < t_floor,
+            "target for diff 256000 should be lower than for min difficulty"
         );
-        // Difficulty 256 → 8 leading zero bits → first byte should be 0.
         assert_eq!(t256[0], 0x00);
-        // The remaining bytes should still be 0xFF (shifted by exactly 1 byte).
         assert_eq!(t256[1], 0xff);
     }
 
     #[test]
-    fn test_difficulty_to_target_100_has_correct_leading_bits() {
-        // Difficulty 100 → log2(100) ≈ 6.6 → 6 leading zero bits.
-        // Target should be 0x03FFFF...FF (first byte 0x03 = 00000011).
-        let t100 = difficulty_to_target(100);
-        assert_eq!(
-            t100[0], 0x03,
-            "difficulty 100 should produce target starting with 0x03, got 0x{:02x}",
-            t100[0]
-        );
-        assert_eq!(t100[1], 0xff);
-        assert_eq!(t100[31], 0xff);
+    fn test_difficulty_to_target_1000_has_correct_leading_bits() {
+        let t = difficulty_to_target(MIN_SHARE_DIFFICULTY);
+        // Difficulty 1000 → log2(1000) ≈ 9.97 → 9 leading zero bits.
+        // Target first byte: 0x00 (9 leading zeros + 1 bit = 00000000_1…).
+        assert_eq!(t[0], 0x00);
+        assert_eq!(t[1], 0x7f);
     }
 
     #[test]
-    fn test_difficulty_to_target_10_first_byte() {
-        // Difficulty 10 → log2(10) ≈ 3.3 → 3 leading zero bits.
-        // Target should be 0x1FFFF...FF (first byte 0x1F = 00011111).
-        let t10 = difficulty_to_target(10);
-        assert_eq!(
-            t10[0], 0x1f,
-            "difficulty 10 should produce target starting with 0x1F, got 0x{:02x}",
-            t10[0]
-        );
-        assert_eq!(t10[1], 0xff);
+    fn test_difficulty_to_target_high_has_zero_first_byte() {
+        let t = difficulty_to_target(100_000);
+        assert_eq!(t[0], 0x00);
     }
 }

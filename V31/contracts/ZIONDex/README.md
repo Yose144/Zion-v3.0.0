@@ -20,14 +20,13 @@ The contracts are self-contained (no external libraries) and compile with
 | `ZIONDexRouter.sol` | User-facing router: multi-hop swap, add/remove liquidity, quotes. |
 | `ZIONDexZISGate.sol` | Optional ZIS-backed access control (whitelist / open mode). |
 
-## Contract Addresses (to be filled after deployment)
+## Contract Addresses (Base Mainnet — deployed 2026-08-31)
 
 | Contract | Address | Chain |
 |----------|---------|-------|
-| `ZIONDexFactory`  | `0x____________` | _ |
-| `ZIONDexRouter`   | `0x____________` | _ |
-| `ZIONDexZISGate`  | `0x____________` | _ |
-| Pair: wZION/USDC  | `0x____________` | _ |
+| `ZIONDexFactory`  | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | Base |
+| `ZIONDexRouter`   | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | Base |
+| `ZIONDexZISGate`  | _(not deployed — optional, deploy when needed)_ | Base |
 | Pair: wZION/USDT  | `0x____________` | _ |
 
 > Deployment happens on the Edge server. Update this table after the
