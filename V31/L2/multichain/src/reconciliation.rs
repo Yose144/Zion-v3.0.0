@@ -52,6 +52,21 @@ impl ReconcilerConfig {
         let alert_threshold = c.alert_threshold.parse::<u128>().map_err(|e| {
             MultichainError::Validation(format!("invalid reconciliation alert_threshold: {e}"))
         })?;
+        // FIND-023: bounds-check the alert threshold.  Must be > 0 (otherwise
+        // every reconciliation triggers an alert) and <= 21M ZION (total supply
+        // in atomic units with 8 decimals) so a misconfigured huge threshold
+        // doesn't silently suppress all alerts.
+        if alert_threshold == 0 {
+            return Err(MultichainError::Validation(
+                "reconciliation alert_threshold must be > 0".into(),
+            ));
+        }
+        const MAX_ZION_SUPPLY: u128 = 21_000_000 * 100_000_000;
+        if alert_threshold > MAX_ZION_SUPPLY {
+            return Err(MultichainError::Validation(format!(
+                "reconciliation alert_threshold {alert_threshold} exceeds MAX_ZION_SUPPLY ({MAX_ZION_SUPPLY})"
+            )));
+        }
         Ok(Self {
             interval: Duration::from_secs(c.interval_seconds),
             alert_threshold: Amount::new(alert_threshold),
@@ -175,11 +190,10 @@ impl Reconciler {
 
             let internal = *ledger_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
             let pool = *pool_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
-            // FIND-022 fix: pool reserves are already included in the internal ledger
-            // (the ledger records AMM deposits as credits). Adding them again would
-            // double-count. Compare on_chain against internal only; report pool
-            // reserves separately for observability.
-            let expected = internal;
+            // The on-chain hot wallet holds both user balances (tracked in the
+            // internal ledger) and AMM pool reserves (tracked separately in the
+            // DEX).  Both must be summed to match the on-chain balance.
+            let expected = internal.saturating_add(pool);
             let diff = on_chain.0 as i128 - expected.0 as i128;
             let alert = diff.abs() > self.config.alert_threshold.0 as i128;
 
@@ -199,9 +213,8 @@ impl Reconciler {
         }
 
         // Reconcile token assets that appear in the ledger or pools but are not the
-        // chain native asset. For now we record an informational report because
-        // the generic `ChainAdapter` does not yet expose token balance queries for
-        // every chain.
+        // chain native asset. Uses `ChainAdapter::token_balance` to query ERC-20
+        // (or analogous) balances on the hot wallet.
         let native_asset_keys: std::collections::HashSet<String> = chains
             .iter()
             .map(|c| native_asset_for_chain(*c).id.to_string())
@@ -236,20 +249,67 @@ impl Reconciler {
             let internal = *ledger_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
             let pool = *pool_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
 
+            // Build the Asset descriptor for the token balance query.
+            let asset = Asset {
+                id: zion_l1_types::AssetId {
+                    chain,
+                    contract,
+                    ticker: ticker.clone(),
+                },
+                decimals: chain.decimals(),
+                name: ticker.clone(),
+            };
+
+            let (on_chain, hot_address_opt, notes) = match self.hot_wallet_address(chain) {
+                Ok(hot_address) => {
+                    let Some(adapter) = self.adapters.get(chain) else {
+                        reports.push(ReconciliationReport {
+                            id: uuid::Uuid::new_v4().to_string(),
+                            timestamp: Utc::now(),
+                            chain: chain.as_str().to_string(),
+                            asset_key: asset_key.clone(),
+                            hot_wallet_address: Some(hot_address.encoded),
+                            on_chain: Amount::ZERO,
+                            internal,
+                            pool_reserves: pool,
+                            diff: 0,
+                            alert: false,
+                            notes: Some("adapter not registered for token chain".to_string()),
+                        });
+                        continue;
+                    };
+                    match adapter.token_balance(&asset, &hot_address).await {
+                        Ok(amt) => (amt, Some(hot_address.encoded), None),
+                        Err(e) => (
+                            Amount::ZERO,
+                            Some(hot_address.encoded),
+                            Some(format!("token_balance failed: {e}")),
+                        ),
+                    }
+                }
+                Err(e) => (
+                    Amount::ZERO,
+                    None,
+                    Some(format!("cannot derive hot wallet: {e}")),
+                ),
+            };
+
+            let expected = internal.saturating_add(pool);
+            let diff = on_chain.0 as i128 - expected.0 as i128;
+            let alert = diff.abs() > self.config.alert_threshold.0 as i128;
+
             reports.push(ReconciliationReport {
                 id: uuid::Uuid::new_v4().to_string(),
                 timestamp: Utc::now(),
                 chain: chain.as_str().to_string(),
                 asset_key: asset_key.clone(),
-                hot_wallet_address: None,
-                on_chain: Amount::ZERO,
+                hot_wallet_address: hot_address_opt,
+                on_chain,
                 internal,
                 pool_reserves: pool,
-                diff: 0,
-                alert: false,
-                notes: Some(format!(
-                    "token reconciliation not implemented ({ticker}; contract={contract:?})"
-                )),
+                diff,
+                alert,
+                notes,
             });
         }
 

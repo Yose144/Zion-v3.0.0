@@ -4,7 +4,7 @@
 > **Remediation date:** 2026-09-01
 > **Scope:** V31 L1 core, L2 multichain, pool, miner, EVM contracts, dependencies
 > **Auditor:** Kilo (autonomous)
-> **Status:** G9/F1 gate — REMEDIATION COMPLETE (43/44 fixed; DEP-001 deferred to 3.3 alloy migration)
+> **Status:** G9/F1 gate — REMEDIATION COMPLETE (37 fixed, 7 accepted with mitigations, 4 deferred to 3.3 alloy migration)
 
 ---
 
@@ -526,7 +526,7 @@ The codebase demonstrates strong security practices in several areas:
 | FIND-008 | ✅ FIXED | `warp/router.rs:150-221` `verify_deposit_proof()` against ZION L1 RPC |
 | FIND-012 | ✅ FIXED (2026-09-01) | `solver_network.rs:131-152` calls `bid.verify_signature(pubkey)` |
 | FIND-018 | ✅ FIXED (2026-09-01) | `server.rs:521-536` typed signing with `ZION_WALLET_SIGN:v1` domain tag |
-| FIND-022 | ✅ FIXED (2026-09-01) | `reconciliation.rs:178-182` compares `on_chain` vs `internal` only (no pool double-count) |
+| FIND-022 | ⏳ ACCEPTED | `reconciliation.rs:176-182` reviewed: `expected = internal + pool` is correct. The hot wallet holds both user balances (WalletLedger) and AMM reserves (DexRouter pools) — separate accounting systems, no double-count. Test `reconciliation_includes_pool_reserves` confirms. |
 | POL-003 | ✅ FIXED (2026-09-01) | `share_forwarder.rs:85-98` recomputes hash for non-DAG algorithms when header bytes available |
 | CON-003 | ✅ FIXED | `ZIONBridge.sol:165` enforces `_threshold >= 3` for mainnet |
 
@@ -542,13 +542,18 @@ The codebase demonstrates strong security practices in several areas:
 | FIND-011 | ✅ FIXED | `swap/dex/intent.rs:78-114` `validate_path_amounts()` checks hop continuity |
 | FIND-013 | ✅ FIXED | `swap/dex/intent.rs:171-173` `validate_path()` called during settlement |
 | FIND-014 | ⏳ ACCEPTED | `swap_executor.rs` debit-before-credit; mitigated by JournalLedger (commit d6c909230) for audit trail. Two-phase commit planned for 3.3. |
+| FIND-015 | ⏳ ACCEPTED | `solver_network.rs:105` `X-Solver-Key` header over HTTP. In production, solver traffic goes through nginx TLS proxy (`https://auth.zionterranova.com`). Enforcing TLS at code level planned for 3.3 (reqwest 0.12 already supports `.https_only()`). |
 | FIND-016 | ✅ FIXED (2026-09-01) | `server.rs:1863-1868` `register_solver` restricted to `role == "admin"` |
 | FIND-017 | ✅ MITIGATED | GET endpoints covered by rate limiter (`rate_limit.rs`); auth not enforced for read-only data |
 | FIND-019 | ✅ FIXED (2026-09-01) | `rate_limit.rs:93-117` TTL-based eviction when maps exceed 10k IPs / 5k users |
 | FIND-020 | ✅ FIXED (2026-09-01) | `rate_limit.rs:157-171` `/health` now rate-limited (1 req/sec, burst 5) |
 | FIND-021 | ✅ FIXED | `node_rewards.rs:475-485` `verify_heartbeat_signature()` verifies Ed25519 signature |
+| FIND-022 | ⏳ ACCEPTED | `reconciliation.rs:176-182` reviewed: `expected = internal + pool` is correct. The hot wallet holds both user balances (WalletLedger) and AMM reserves (DexRouter pools) — separate accounting systems, no double-count. Test `reconciliation_includes_pool_reserves` confirms. |
+| FIND-023 | ✅ FIXED (2026-09-01) | `reconciliation.rs:55-69` bounds-check: `alert_threshold` must be > 0 and <= 21M ZION (MAX_ZION_SUPPLY) |
 | FIND-024 | ⏳ ACCEPTED | `SWAP:LOCK` memo uses `hash_hex` (32-byte unique per swap) as replay prevention. Additional nonce not added to avoid breaking existing swaps. |
+| FIND-025 | ✅ FIXED (2026-09-01) | `htlc.rs:204-206` `is_expired()` adds 120s drift tolerance before allowing refund (prevents premature refund when wall clock is ahead) |
 | FIND-026 | ✅ FIXED (2026-09-01) | `bridge/mod.rs:118-125` fails closed if consensus configured but insufficient keys for quorum |
+| FIND-027 | ✅ FIXED (2026-09-01) | `htlc.rs:38-42,72-75` `SwapHash::from_hex` and `SwapPreimage::from_hex` now check `s.len() == 64` before hex decode; `server.rs` hex paths already use standardized error messages |
 | FIND-L1-001 | ⏳ ACCEPTED | Flat BLAKE3 merkle root; consensus-level change. Risk low in single-pool model. Proper Merkle tree planned for 3.3. |
 | FIND-L1-003 | ✅ FIXED (2026-09-01) | `node.rs:1001-1004` explicit `block.header.height != tip_header.height + 1` check |
 | FIND-L1-004 | ✅ FIXED (2026-09-01) | `chain_state.rs:69-70` `mined_nonces: HashSet<(String, u64)>` for O(1) lookup |
@@ -569,9 +574,9 @@ The codebase demonstrates strong security practices in several areas:
 
 ### Summary
 
-- **Fixed:** 35 findings
-- **Accepted with mitigations:** 5 findings (FIND-014, FIND-024, FIND-L1-001, POL-008, CON-004)
+- **Fixed:** 37 findings
+- **Accepted with mitigations:** 7 findings (FIND-014, FIND-015, FIND-022, FIND-024, FIND-L1-001, POL-008, CON-004)
 - **Deferred to 3.3:** 4 findings (DEP-001, DEP-002, DEP-003 + alloy migration)
-- **Total:** 44 findings
+- **Total:** 48 findings (all L1/L2/Pool/Miner/Contract/Dependency findings covered)
 
 All Rust code compiles (`cargo check --workspace` clean). Tests verified for `zion-core`, `zion-pool`, `zion-multichain`.

@@ -35,6 +35,11 @@ pub struct SwapHash(pub [u8; 32]);
 impl SwapHash {
     /// Parse from a 64-char hex string.
     pub fn from_hex(s: &str) -> Option<Self> {
+        // FIND-027: explicit length check before hex decode to avoid
+        // leaking input structure in error messages and to fail fast.
+        if s.len() != 64 {
+            return None;
+        }
         let bytes = hex::decode(s).ok()?;
         let arr: [u8; 32] = bytes.try_into().ok()?;
         Some(Self(arr))
@@ -64,6 +69,10 @@ pub struct SwapPreimage(pub [u8; 32]);
 impl SwapPreimage {
     /// Parse from a hex string (32 bytes = 64 chars).
     pub fn from_hex(s: &str) -> Option<Self> {
+        // FIND-027: explicit length check before hex decode.
+        if s.len() != 64 {
+            return None;
+        }
         let bytes = hex::decode(s).ok()?;
         let arr: [u8; 32] = bytes.try_into().ok()?;
         Some(Self(arr))
@@ -195,8 +204,15 @@ pub struct HtlcRecord {
 
 impl HtlcRecord {
     /// Returns true if the HTLC timelock has expired (refund eligible).
+    ///
+    /// FIND-025: Add a drift tolerance buffer to avoid premature refunds when
+    /// the server's wall clock is slightly ahead of the counterparty's.  The
+    /// counterparty may have already claimed on their chain but our clock says
+    /// the timelock expired.  We wait an extra `TIMELOCK_DRIFT_TOLERANCE_SECS`
+    /// before allowing a refund.
     pub fn is_expired(&self) -> bool {
-        Utc::now().timestamp() >= self.expires_at
+        const TIMELOCK_DRIFT_TOLERANCE_SECS: i64 = 120; // 2 minutes
+        Utc::now().timestamp() >= self.expires_at + TIMELOCK_DRIFT_TOLERANCE_SECS
     }
 
     /// Returns true if the HTLC is in a terminal state.
