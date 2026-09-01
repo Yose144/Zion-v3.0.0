@@ -132,27 +132,30 @@ function detectPlatformFeatures(workspaceRoot, resourcesDir) {
   // so the TUI/banner/logs show only ZION + BOOST streams.
   const publicFlag = 'public_build';
 
+  // Always bundle the built-in ratatui TUI so `npm run tui` can use --interactive.
+  const tuiFlag = 'tui';
+
   if (platform === 'darwin') {
     if (arch === 'arm64') {
-      console.log('[prepare-v31] Apple Silicon detected -> enabling public build with Metal + OpenCL + all native hashers');
-      return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
+      console.log('[prepare-v31] Apple Silicon detected -> enabling public build with Metal + OpenCL + all native hashers + TUI');
+      return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
     }
-    console.log('[prepare-v31] Intel Mac detected -> enabling public build with OpenCL + Metal + all native hashers');
-    return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
+    console.log('[prepare-v31] Intel Mac detected -> enabling public build with OpenCL + Metal + all native hashers + TUI');
+    return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
   }
 
   if (platform === 'win32') {
     const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
+    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> building public build with CUDA backend');
+      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> building public build with CUDA backend + TUI');
       return `${base},gpu-cuda`;
     }
     if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only public build (place nvrtc64_*.dll in resources for CUDA)');
+      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only public build + TUI (place nvrtc64_*.dll in resources for CUDA)');
     } else {
-      console.log('[prepare-v31] Windows detected -> enabling public build with OpenCL + native hashers');
+      console.log('[prepare-v31] Windows detected -> enabling public build with OpenCL + native hashers + TUI');
     }
     return base;
   }
@@ -160,17 +163,17 @@ function detectPlatformFeatures(workspaceRoot, resourcesDir) {
   if (platform === 'linux') {
     const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
+    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> building public build with CUDA backend');
+      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> building public build with CUDA backend + TUI');
       return `${base},gpu-cuda`;
     }
-    console.log('[prepare-v31] Linux detected -> enabling public build with OpenCL + native hashers');
+    console.log('[prepare-v31] Linux detected -> enabling public build with OpenCL + native hashers + TUI');
     return base;
   }
 
-  console.log('[prepare-v31] Unknown platform -> enabling public build with OpenCL + native hashers');
-  return `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
+  console.log('[prepare-v31] Unknown platform -> enabling public build with OpenCL + native hashers + TUI');
+  return `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
 }
 
 function parseArgs(argv) {
@@ -211,7 +214,7 @@ function buildV31Workspace(workspaceRoot, features) {
       );
     }
     if (features && features !== 'default') {
-      const fallbackFeatures = 'public_build,native-all';
+      const fallbackFeatures = 'public_build,native-all,tui';
       console.warn(`[prepare-v31] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
       const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--bin', 'zion-miner', '--bin', 'zion-universal-miner', '--features', fallbackFeatures];
       const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
