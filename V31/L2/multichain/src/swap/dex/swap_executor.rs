@@ -18,6 +18,7 @@ use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
 use crate::chain::ChainAdapterRegistry;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
+use crate::multichain_wallet::journal::JournalLedger;
 use crate::multichain_wallet::ledger::WalletLedger;
 use crate::multichain_wallet::types::{DexOrder, DexOrderStatus};
 use crate::swap::dex::DexRouter;
@@ -30,6 +31,10 @@ pub struct SwapExecutor {
     db: Arc<Mutex<Db>>,
     adapters: Arc<ChainAdapterRegistry>,
     ledger: WalletLedger,
+    /// Optional journal ledger for atomic credit/debit with audit trail.
+    /// When set, all swap-related balance changes use atomic journal entries
+    /// instead of the plain `WalletLedger`.
+    journal: Option<JournalLedger>,
     router: Arc<RwLock<DexRouter>>,
     htlc: Option<HtlcSwap>,
 }
@@ -69,9 +74,16 @@ impl SwapExecutor {
             db,
             adapters,
             ledger,
+            journal: None,
             router,
             htlc: None,
         }
+    }
+
+    /// Attach a `JournalLedger` for atomic credit/debit with audit trail.
+    pub fn with_journal(mut self, journal: JournalLedger) -> Self {
+        self.journal = Some(journal);
+        self
     }
 
     /// Attach an `HtlcSwap` coordinator to enable non-custodial HTLC swaps.
@@ -98,7 +110,7 @@ impl SwapExecutor {
     ) -> MultichainResult<DexOrder> {
         let order_id = uuid::Uuid::new_v4().to_string();
         let mut order = DexOrder {
-            id: order_id,
+            id: order_id.clone(),
             user_id: user_id.to_string(),
             from_asset_key: from.id.to_string(),
             to_asset_key: to.id.to_string(),
@@ -114,8 +126,8 @@ impl SwapExecutor {
             executed_at: None,
         };
 
-        // 1. Debit input from the user's ledger.
-        self.ledger.debit(user_id, from, amount).await?;
+        // 1. Debit input from the user's ledger (atomic journal if available).
+        self.debit(user_id, from, amount, "swap", Some(&order_id)).await?;
 
         // 2. Quote and execute against the router.
         let mut router = self.router.write().await;
@@ -125,7 +137,7 @@ impl SwapExecutor {
             })?,
             Err(e) => {
                 drop(router);
-                self.ledger.credit(user_id, from, amount).await?;
+                self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
                 return Err(e);
@@ -134,7 +146,7 @@ impl SwapExecutor {
 
         if quote.expected_out < min_amount_out {
             drop(router);
-            self.ledger.credit(user_id, from, amount).await?;
+            self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
             return Err(MultichainError::Validation(format!(
@@ -199,7 +211,7 @@ impl SwapExecutor {
                     out
                 }
                 Err(e) => {
-                    self.ledger.credit(user_id, from, amount).await?;
+                    self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
                     order.status = DexOrderStatus::Failed;
                     self.save_order(&order).await?;
                     return Err(e);
@@ -221,7 +233,7 @@ impl SwapExecutor {
                     Ok(out) => out,
                     Err(e) => {
                         drop(router);
-                        self.ledger.credit(user_id, from, amount).await?;
+                        self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
                         order.status = DexOrderStatus::Failed;
                         self.save_order(&order).await?;
                         return Err(e);
@@ -234,7 +246,7 @@ impl SwapExecutor {
 
         if amount_out < min_amount_out {
             // This should not happen after the quote check, but keep the user safe.
-            self.ledger.credit(user_id, from, amount).await?;
+            self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
             return Err(MultichainError::Validation(
@@ -250,7 +262,7 @@ impl SwapExecutor {
         // 3. On-chain settlement if a recipient was supplied.
         if let Some(recipient) = recipient {
             if recipient.chain != to.id.chain {
-                self.ledger.credit(user_id, from, amount).await?;
+                self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
                 return Err(MultichainError::Validation(format!(
@@ -278,7 +290,7 @@ impl SwapExecutor {
                     Err(e) => {
                         // Credit the output token to the user's internal ledger so
                         // the swap is not lost; the operator can retry withdrawal.
-                        self.ledger.credit(user_id, to, amount_out).await?;
+                        self.credit(user_id, to, amount_out, "swap_output", Some(&order.id)).await?;
                         order.status = DexOrderStatus::Failed;
                         self.save_order(&order).await?;
                         return Err(e);
@@ -287,7 +299,7 @@ impl SwapExecutor {
             }
         } else {
             // 4. Keep the output on the internal ledger.
-            self.ledger.credit(user_id, to, amount_out).await?;
+            self.credit(user_id, to, amount_out, "swap_output", Some(&order.id)).await?;
         }
 
         self.save_order(&order).await?;
@@ -297,6 +309,40 @@ impl SwapExecutor {
     async fn save_order(&self, order: &DexOrder) -> MultichainResult<()> {
         let db = self.db.lock().await;
         db.save_dex_order(order)
+    }
+
+    /// Debit using journal ledger (atomic + audit trail) if available,
+    /// otherwise fall back to the plain WalletLedger.
+    async fn debit(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+        reason: &str,
+        reference_id: Option<&str>,
+    ) -> MultichainResult<()> {
+        if let Some(ref journal) = self.journal {
+            journal.debit(user_id, asset, amount, reason, reference_id).await
+        } else {
+            self.ledger.debit(user_id, asset, amount).await
+        }
+    }
+
+    /// Credit using journal ledger (atomic + audit trail) if available,
+    /// otherwise fall back to the plain WalletLedger.
+    async fn credit(
+        &self,
+        user_id: &str,
+        asset: &Asset,
+        amount: Amount,
+        reason: &str,
+        reference_id: Option<&str>,
+    ) -> MultichainResult<()> {
+        if let Some(ref journal) = self.journal {
+            journal.credit(user_id, asset, amount, reason, reference_id).await
+        } else {
+            self.ledger.credit(user_id, asset, amount).await
+        }
     }
 
     /// Load a previously created swap order.
