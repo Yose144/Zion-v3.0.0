@@ -238,11 +238,13 @@ mod tests {
                 name: "solver-a".into(),
                 url: Some("http://solver-a/bid".into()),
                 reputation: 100,
+                pubkey: None,
             },
             SolverInfo {
                 name: "solver-b".into(),
                 url: Some("http://solver-b/bid".into()),
                 reputation: 50,
+                pubkey: None,
             },
         ];
 

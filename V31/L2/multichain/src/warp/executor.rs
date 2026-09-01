@@ -10,6 +10,7 @@ use crate::warp::router::WarpRouter;
 use crate::warp::types::WarpStatus;
 use crate::warp::validator::WarpValidatorSet;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -23,6 +24,7 @@ pub struct OutboundExecutor {
     router: Arc<Mutex<WarpRouter>>,
     validators: Arc<Mutex<WarpValidatorSet>>,
     adapters: HashMap<String, Box<dyn ChainAdapter>>,
+    nonce_counter: AtomicU64,
 }
 
 impl OutboundExecutor {
@@ -61,6 +63,7 @@ impl OutboundExecutor {
             router,
             validators,
             adapters,
+            nonce_counter: AtomicU64::new(0),
         }
     }
 
@@ -134,7 +137,7 @@ impl OutboundExecutor {
                 recipient: transfer.recipient.clone(),
                 amount_flowers: transfer.amount_flowers,
                 fee_flowers: transfer.fee_flowers,
-                nonce: 0, // Would be managed by validator set in production
+                nonce: self.nonce_counter.fetch_add(1, Ordering::SeqCst),
                 timestamp: chrono::Utc::now().timestamp() as u64,
                 deposit_proof_hash: transfer.source_tx_hash.clone().unwrap_or_default(),
             };

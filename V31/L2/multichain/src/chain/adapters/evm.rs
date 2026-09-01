@@ -32,6 +32,11 @@ const HAS_ROLE_SIG: &str = "hasRole(bytes32,address)";
 const ERC20_BALANCE_OF_SIG: &str = "balanceOf(address)";
 const ERC20_TRANSFER_SIG: &str = "transfer(address,uint256)";
 const ERC20_TRANSFER_EVENT_SIG: &str = "Transfer(address,address,uint256)";
+const AMM_SWAP_SIG: &str = "swap(uint256,uint256,address)";
+const AMM_GET_RESERVES_SIG: &str = "getReserves()";
+const AMM_TOKEN0_SIG: &str = "token0()";
+const AMM_TOKEN1_SIG: &str = "token1()";
+const AMM_GET_AMOUNT_OUT_SIG: &str = "getAmountOut(uint256,uint256,uint256)";
 const HTLC_LOCK_SIG: &str = "lock(bytes32,bytes32,uint256,address,uint256,address,string,string)";
 const HTLC_CLAIM_SIG: &str = "claim(bytes32,bytes32)";
 const HTLC_REFUND_SIG: &str = "refund(bytes32)";
@@ -778,6 +783,151 @@ impl ChainAdapter for EvmAdapter {
         data.extend_from_slice(&args);
 
         self.send_transaction(token_addr, data, U256::zero()).await
+    }
+
+    /// Execute an on-chain AMM swap through a ZIONAMM pair contract.
+    ///
+    /// This performs a single-hop swap: `amount_in` of `token_in` is sent to the
+    /// pair contract, then `swap()` is called to send the output to `recipient`.
+    /// Returns the tx hash and the actual output amount.
+    async fn amm_swap(
+        &self,
+        pair_address: &str,
+        token_in: &Asset,
+        token_out: &Asset,
+        amount_in: Amount,
+        recipient: &Address,
+    ) -> MultichainResult<(Hash, Amount)> {
+        let pair = EthAddress::from_str(pair_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid pair address: {e}")))?;
+
+        let token_in_addr = match token_in.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "token_in contract address required for {}",
+                    token_in.id
+                )))
+            }
+        };
+
+        let _token_out_addr = match token_out.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_out contract: {e}")))?,
+            None => {
+                return Err(MultichainError::Validation(format!(
+                    "token_out contract address required for {}",
+                    token_out.id
+                )))
+            }
+        };
+
+        let recipient_eth = if recipient.encoded.is_empty() {
+            // Custodial swap: send output back to the hot wallet itself.
+            self.wallet
+                .as_ref()
+                .map(|w| EthAddress::from(w.address()))
+                .ok_or_else(|| {
+                    MultichainError::Unsupported(
+                        "amm_swap: no wallet configured for custodial recipient".to_string(),
+                    )
+                })?
+        } else {
+            self.to_eth_address(recipient)?
+        };
+
+        // 1. Query token0 to determine swap direction
+        let token0_data = Self::function_selector(AMM_TOKEN0_SIG).to_vec();
+        let token0_result = self
+            .provider
+            .call(&ethers::types::TransactionRequest::new()
+                .to(pair)
+                .data(token0_data.clone())
+                .into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("token0() call failed: {e}")))?;
+        let token0 = decode(&[ParamType::Address], &token0_result)
+            .map_err(|e| MultichainError::Internal(format!("token0() decode failed: {e}")))?
+            .into_iter()
+            .next()
+            .and_then(|t| t.into_address())
+            .ok_or_else(|| MultichainError::Internal("token0() returned no address".to_string()))?;
+
+        let token_in_is_token0 = token0 == token_in_addr;
+
+        // 2. Query reserves to calculate expected output
+        let reserves_data = Self::function_selector(AMM_GET_RESERVES_SIG).to_vec();
+        let reserves_result = self
+            .provider
+            .call(&ethers::types::TransactionRequest::new()
+                .to(pair)
+                .data(reserves_data.clone())
+                .into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("getReserves() call failed: {e}")))?;
+        let reserves_tokens = decode(&[ParamType::Uint(112), ParamType::Uint(112), ParamType::Uint(32)], &reserves_result)
+            .map_err(|e| MultichainError::Internal(format!("getReserves() decode failed: {e}")))?;
+        let reserve0: U256 = reserves_tokens.get(0).and_then(|t| t.clone().into_uint()).unwrap_or_default();
+        let reserve1: U256 = reserves_tokens.get(1).and_then(|t| t.clone().into_uint()).unwrap_or_default();
+
+        let reserve_in = if token_in_is_token0 { reserve0 } else { reserve1 };
+        let reserve_out = if token_in_is_token0 { reserve1 } else { reserve0 };
+
+        // 3. Calculate expected output via getAmountOut
+        let amount_out = {
+            let mut data = Self::function_selector(AMM_GET_AMOUNT_OUT_SIG).to_vec();
+            data.extend_from_slice(&encode(&[
+                Token::Uint(U256::from(amount_in.0)),
+                Token::Uint(reserve_in),
+                Token::Uint(reserve_out),
+            ]));
+            let result = self
+                .provider
+                .call(&ethers::types::TransactionRequest::new()
+                    .to(pair)
+                    .data(data.clone())
+                    .into(), None)
+                .await
+                .map_err(|e| MultichainError::Internal(format!("getAmountOut() call failed: {e}")))?;
+            let tokens = decode(&[ParamType::Uint(256)], &result)
+                .map_err(|e| MultichainError::Internal(format!("getAmountOut() decode failed: {e}")))?;
+            let out: U256 = tokens.get(0).and_then(|t| t.clone().into_uint()).unwrap_or_default();
+            Amount(out.as_u128())
+        };
+
+        if amount_out.0 == 0 {
+            return Err(MultichainError::Validation("AMM swap: zero output".to_string()));
+        }
+
+        // 4. Transfer input token to the pair contract
+        {
+            let mut transfer_data = Self::function_selector(ERC20_TRANSFER_SIG).to_vec();
+            transfer_data.extend_from_slice(&encode(&[
+                Token::Address(pair),
+                Token::Uint(U256::from(amount_in.0)),
+            ]));
+            self.send_transaction(token_in_addr, transfer_data, U256::zero())
+                .await?;
+        }
+
+        // 5. Call swap on the pair contract
+        let (amount0_out, amount1_out) = if token_in_is_token0 {
+            (U256::zero(), U256::from(amount_out.0))
+        } else {
+            (U256::from(amount_out.0), U256::zero())
+        };
+
+        let mut swap_data = Self::function_selector(AMM_SWAP_SIG).to_vec();
+        swap_data.extend_from_slice(&encode(&[
+            Token::Uint(amount0_out),
+            Token::Uint(amount1_out),
+            Token::Address(recipient_eth),
+        ]));
+
+        let tx_hash = self.send_transaction(pair, swap_data, U256::zero()).await?;
+
+        Ok((tx_hash, amount_out))
     }
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {

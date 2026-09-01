@@ -443,6 +443,8 @@ mod tests {
             reserve_a: Amount::new(3_000_000),
             reserve_b: Amount::new(1_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         };
 
         let mut dex = DexRouter::new();

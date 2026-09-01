@@ -31,6 +31,13 @@ pub struct Pool {
     pub reserve_a: Amount,
     pub reserve_b: Amount,
     pub fee_bps: u16,
+    /// On-chain AMM pair contract address (if this pool is backed by a real
+    /// on-chain AMM). When set, swaps can be settled on-chain.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amm_pair: Option<String>,
+    /// AMM factory contract address.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub amm_factory: Option<String>,
 }
 
 impl Pool {
@@ -399,6 +406,8 @@ impl DexRouter {
             reserve_a,
             reserve_b,
             fee_bps,
+            amm_pair: None,
+            amm_factory: None,
         });
         self.bridges.add(BridgeEdge {
             from: native_asset.id,
@@ -512,6 +521,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000), // 100k ZION
             reserve_b: Amount::new(1_000_000_000_000), // 1M USDC
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let amount = Amount::new(1_000_000); // 1 ZION
@@ -537,6 +548,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(10_000_000_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
         router.add_pool(Pool {
             id: 2,
@@ -545,6 +558,8 @@ mod tests {
             reserve_a: Amount::new(1_000_000_000_000_000_000),
             reserve_b: Amount::new(4_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let amount = Amount::new(1_000_000);
@@ -568,6 +583,8 @@ mod tests {
             reserve_a: Amount::new(50_000_000_000),
             reserve_b: Amount::new(500_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
         // ZION→ETH pool
         router.add_pool(Pool {
@@ -577,6 +594,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(10_000_000_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
         // ETH→USDC pool
         router.add_pool(Pool {
@@ -586,6 +605,8 @@ mod tests {
             reserve_a: Amount::new(1_000_000_000_000_000_000),
             reserve_b: Amount::new(4_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let amount = Amount::new(1_000_000);
@@ -617,6 +638,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(1_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let amount = Amount::new(1_000_000);

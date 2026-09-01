@@ -3,10 +3,11 @@
 //! The `Bridge` coordinates `Transfer`s with `TransferDirection::LockMint` or
 //! `BurnRelease` between two `ChainAdapter`s registered in the system.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 
-use sha3::{Digest, Keccak256};
+use tokio::sync::Mutex;
 use zion_l1_types::{ChainId, Hash};
 
 use crate::bridge::consensus::BridgeConsensus;
@@ -22,6 +23,7 @@ const POLL_INTERVAL_MS: u64 = 10;
 pub struct Bridge {
     adapters: Arc<ChainAdapterRegistry>,
     consensus: Option<BridgeConsensus>,
+    processed_tx_hashes: Arc<Mutex<HashSet<Hash>>>,
 }
 
 impl Bridge {
@@ -29,6 +31,7 @@ impl Bridge {
         Self {
             adapters,
             consensus: None,
+            processed_tx_hashes: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -37,6 +40,7 @@ impl Bridge {
         Self {
             adapters,
             consensus: Some(consensus),
+            processed_tx_hashes: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -68,16 +72,13 @@ impl Bridge {
                     transfer.status = TransferStatus::Completed;
                     return Ok(hash);
                 }
-                Err(MultichainError::Unsupported(_)) => {
-                    transfer.status = TransferStatus::Completed;
-                    return Ok(placeholder_hash(transfer));
-                }
                 Err(e) => return Err(e),
             }
         }
 
-        transfer.status = TransferStatus::Completed;
-        Ok(placeholder_hash(transfer))
+        Err(MultichainError::Validation(
+            "no deposit event detected on source chain".to_string(),
+        ))
     }
 
     async fn burn_release(&self, transfer: &mut Transfer) -> MultichainResult<Hash> {
@@ -97,16 +98,13 @@ impl Bridge {
                     transfer.status = TransferStatus::Completed;
                     return Ok(hash);
                 }
-                Err(MultichainError::Unsupported(_)) => {
-                    transfer.status = TransferStatus::Completed;
-                    return Ok(placeholder_hash(transfer));
-                }
                 Err(e) => return Err(e),
             }
         }
 
-        transfer.status = TransferStatus::Completed;
-        Ok(placeholder_hash(transfer))
+        Err(MultichainError::Validation(
+            "no burn event detected on source chain".to_string(),
+        ))
     }
 
     /// If a `BridgeConsensus` is configured, sign the transfer locally and
@@ -142,6 +140,11 @@ impl Bridge {
                         && e.amount == expected.amount
                         && bridge_memo_matches(transfer, &e.memo)
                 }) {
+                    let mut processed = self.processed_tx_hashes.lock().await;
+                    if processed.contains(&event.tx_hash) {
+                        continue;
+                    }
+                    processed.insert(event.tx_hash.clone());
                     return Some(event.clone());
                 }
             }
@@ -195,10 +198,6 @@ fn chain_name_to_id(name: &str) -> MultichainResult<ChainId> {
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
         _ => Err(MultichainError::AdapterNotFound(name.to_string())),
     }
-}
-
-fn placeholder_hash(transfer: &Transfer) -> Hash {
-    Hash::new(Keccak256::digest(transfer.id.as_bytes()).into())
 }
 
 #[cfg(test)]
@@ -332,7 +331,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn lock_mint_falls_back_when_no_event() {
+    async fn lock_mint_errors_when_no_event() {
         let id = "lock-mint-fallback";
         let source = endpoint(
             ChainId::ZionL1,
@@ -352,9 +351,10 @@ mod tests {
 
         let result = bridge.submit(&mut transfer).await;
 
-        assert!(result.is_ok());
-        assert_eq!(transfer.status, TransferStatus::Completed);
-        assert_eq!(result.unwrap(), placeholder_hash(&transfer));
+        assert!(matches!(
+            result,
+            Err(MultichainError::Validation(_))
+        ));
     }
 
     #[tokio::test]

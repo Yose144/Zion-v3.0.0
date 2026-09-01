@@ -43,6 +43,9 @@ pub enum WarpError {
     #[error("Invalid memo format: {0}")]
     InvalidMemo(String),
 
+    #[error("Validation error: {0}")]
+    Validation(String),
+
     #[error("Invalid destination address for {chain}: {address}")]
     InvalidAddress { chain: String, address: String },
 
