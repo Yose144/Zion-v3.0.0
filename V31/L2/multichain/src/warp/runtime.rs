@@ -60,7 +60,20 @@ impl WarpRuntime {
         let db = transfer_db.clone().ok_or_else(|| {
             crate::warp::error::WarpError::Internal("WARP database not available".to_string())
         })?;
-        let mut router = WarpRouter::with_db(registry, fee_engine, validators.clone(), db.clone())?;
+        let finality_blocks = config
+            .chains
+            .iter()
+            .find(|c| c.name == "zion-l1")
+            .map(|c| c.finality_blocks)
+            .unwrap_or(12);
+        let mut router = WarpRouter::with_db(
+            registry,
+            fee_engine,
+            validators.clone(),
+            db.clone(),
+            Some(config.l1_rpc_url.clone()),
+            finality_blocks,
+        )?;
         router.daily_limit = config.daily_limit_flowers();
         router.timelock_threshold = config.timelock_threshold_flowers();
 

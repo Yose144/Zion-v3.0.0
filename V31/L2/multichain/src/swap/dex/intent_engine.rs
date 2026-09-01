@@ -21,6 +21,9 @@ pub struct SolverInfo {
     pub name: String,
     pub url: Option<String>,
     pub reputation: u64,
+    /// Ed25519 public key (32 bytes) for verifying signed bids.
+    /// `None` means unsigned bids are accepted (development mode).
+    pub pubkey: Option<Vec<u8>>,
 }
 
 /// Whitelist of solvers allowed to submit bids in this engine.
@@ -50,12 +53,23 @@ impl SolverRegistry {
             .is_none()
     }
 
-    /// Register a solver with an optional URL and initial reputation.
+    /// Register a solver with an optional URL, initial reputation, and pubkey.
     pub fn register_with_info(
         &mut self,
         name: impl Into<String>,
         url: Option<String>,
         reputation: u64,
+    ) -> bool {
+        self.register_with_pubkey(name, url, reputation, None)
+    }
+
+    /// Register a solver with Ed25519 pubkey for bid signature verification.
+    pub fn register_with_pubkey(
+        &mut self,
+        name: impl Into<String>,
+        url: Option<String>,
+        reputation: u64,
+        pubkey: Option<Vec<u8>>,
     ) -> bool {
         let name = name.into();
         let is_new = !self.solvers.contains_key(&name);
@@ -65,6 +79,7 @@ impl SolverRegistry {
             info.url = url;
         }
         info.reputation = reputation;
+        info.pubkey = pubkey;
         self.solvers.insert(name, info);
         is_new
     }
@@ -144,13 +159,22 @@ impl IntentEngine {
     }
 
     /// Submit a bid for an intent. The solver must be on the whitelist.
+    /// If the solver has a registered pubkey, the bid signature is verified (FIND-012).
     pub fn submit_bid(&mut self, bid: SolverBid) -> MultichainResult<bool> {
-        if !self.registry.is_registered(&bid.solver) {
-            return Err(MultichainError::Validation(format!(
-                "solver {} is not registered",
-                bid.solver
-            )));
+        let solver_info = self
+            .registry
+            .get(&bid.solver)
+            .ok_or_else(|| MultichainError::Validation(format!("solver {} is not registered", bid.solver)))?;
+
+        if let Some(pubkey) = &solver_info.pubkey {
+            if !bid.verify_signature(pubkey) {
+                return Err(MultichainError::Validation(format!(
+                    "solver {} bid signature verification failed",
+                    bid.solver
+                )));
+            }
         }
+
         let Some((intent, auction)) = self.auctions.get_mut(&bid.intent_id) else {
             return Err(MultichainError::Validation("intent not found".to_string()));
         };
@@ -258,6 +282,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(1_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         }
     }
 

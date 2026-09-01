@@ -6,7 +6,9 @@
 //! self-contained so the router and solver can evolve independently.
 
 use chrono::Utc;
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -105,6 +107,49 @@ impl SolverBid {
         }
         let fee = self.amount_out.0 * u128::from(self.fee_bps) / 10_000;
         Amount::new(self.amount_out.0 - fee)
+    }
+
+    /// Deterministic signing hash over the immutable bid fields.
+    /// The solver signs this hash with its Ed25519 key.
+    pub fn signing_hash(&self) -> Vec<u8> {
+        let mut hasher = Sha256::new();
+        hasher.update(self.intent_id.as_bytes());
+        hasher.update(self.solver.as_bytes());
+        hasher.update(self.amount_out.0.to_le_bytes());
+        hasher.update(self.fee_bps.to_le_bytes());
+        hasher.update(self.timestamp.to_le_bytes());
+        // Include path length + hop data for determinism.
+        hasher.update(self.path.len().to_le_bytes());
+        for hop in &self.path {
+            hasher.update(hop.chain.as_bytes());
+            hasher.update(hop.dex.as_bytes());
+            hasher.update(hop.from_token.to_string().as_bytes());
+            hasher.update(hop.to_token.to_string().as_bytes());
+            hasher.update([if hop.is_bridge { 1u8 } else { 0u8 }]);
+        }
+        hasher.finalize().to_vec()
+    }
+
+    /// Verify the embedded Ed25519 signature against `pubkey` (32-byte X25519).
+    /// Returns `false` if the signature is empty or verification fails.
+    pub fn verify_signature(&self, pubkey: &[u8]) -> bool {
+        if self.signature.is_empty() {
+            return false;
+        }
+        if pubkey.len() != 32 {
+            return false;
+        }
+        let verifying_key = match VerifyingKey::from_bytes(pubkey.try_into().unwrap()) {
+            Ok(k) => k,
+            Err(_) => return false,
+        };
+        let sig = match Signature::from_slice(&self.signature) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        verifying_key
+            .verify(self.signing_hash().as_slice(), &sig)
+            .is_ok()
     }
 }
 
@@ -349,5 +394,81 @@ mod tests {
 
         assert!(auction.settle(&mut intent).unwrap().is_none());
         assert_eq!(intent.status, IntentStatus::Pending);
+    }
+
+    #[test]
+    fn test_bid_signature_roundtrip() {
+        use crate::swap::dex::intent_engine::IntentEngine;
+        use ed25519_dalek::{Signature, SigningKey, Signer, Verifier, VerifyingKey};
+        use rand::rngs::OsRng;
+
+        let (zion, usdc) = zion_usdc();
+        let intent = SwapIntent::new(
+            "zion1user",
+            zion.clone(),
+            usdc,
+            Amount::new(1_000_000),
+            Amount::new(900_000),
+            u64::MAX,
+            1,
+        );
+
+        let signing_key = SigningKey::generate(&mut OsRng);
+        let verifying_key = signing_key.verifying_key();
+        let pubkey = verifying_key.to_bytes().to_vec();
+
+        let mut bid = SolverBid::new(
+            intent.id,
+            "solver-a",
+            Amount::new(950_000),
+            vec![PathHop {
+                chain: "zion".into(),
+                dex: "amm".into(),
+                from_token: zion.clone(),
+                to_token: zion,
+                is_bridge: false,
+            }],
+            30,
+            0,
+        );
+
+        let msg_hash = bid.signing_hash();
+        bid.signature = signing_key.sign(msg_hash.as_slice()).to_vec();
+
+        // Valid signature + correct pubkey → OK
+        assert!(bid.verify_signature(&pubkey));
+
+        // Tamper with the bid → verification fails
+        let mut tampered = bid.clone();
+        tampered.amount_out = Amount::new(2_000_000);
+        assert!(!tampered.verify_signature(&pubkey));
+
+        // Empty signature → false
+        let mut unsigned = bid.clone();
+        unsigned.signature.clear();
+        assert!(!unsigned.verify_signature(&pubkey));
+
+        // Wrong pubkey → false
+        let wrong_key = SigningKey::generate(&mut OsRng).verifying_key().to_bytes().to_vec();
+        assert!(!bid.verify_signature(&wrong_key));
+
+        // Submit with registered pubkey and correct signature → accepted
+        let mut engine = IntentEngine::new();
+        engine.registry_mut().register_with_pubkey(
+            "solver-a",
+            None,
+            100,
+            Some(pubkey.clone()),
+        );
+         engine.open_intent(intent.clone());
+        assert!(engine.submit_bid(bid.clone()).unwrap());
+        assert_eq!(intent.status, IntentStatus::Pending);
+
+        // Submit with wrong signature → rejected
+        let mut bad_bid = bid.clone();
+        bad_bid.signature = SigningKey::generate(&mut OsRng).sign(bid.signing_hash().as_slice()).to_vec();
+        let mut intent2 = SwapIntent::new("zion1user", zion_usdc().0, zion_usdc().1, Amount::new(1_000_000), Amount::new(900_000), u64::MAX, 2);
+        engine.open_intent(intent2.clone());
+        assert!(engine.submit_bid(bad_bid).is_err());
     }
 }

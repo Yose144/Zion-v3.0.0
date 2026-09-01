@@ -1489,6 +1489,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000),
             reserve_b: Amount::new(1_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         };
 
         db.save_pool(&pool).unwrap();

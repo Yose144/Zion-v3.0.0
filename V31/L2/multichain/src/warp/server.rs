@@ -60,7 +60,13 @@ impl WarpState {
         });
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
-        let router = WarpRouter::new(registry, fee_engine, validator_set);
+        let router = WarpRouter::with_options(
+            registry,
+            fee_engine,
+            validator_set.clone(),
+            Some(config.l1_rpc_url.clone()),
+            12,
+        );
 
         Self {
             router: Arc::new(Mutex::new(router)),
@@ -76,7 +82,20 @@ impl WarpState {
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
         // WarpRouter::with_db loads existing transfers from the DB.
-        let router = WarpRouter::with_db(registry, fee_engine, validator_set, db.clone())?;
+        let finality_blocks = config
+            .chains
+            .iter()
+            .find(|c| c.name == "zion-l1")
+            .map(|c| c.finality_blocks)
+            .unwrap_or(12);
+        let router = WarpRouter::with_db(
+            registry,
+            fee_engine,
+            validator_set,
+            db.clone(),
+            Some(config.l1_rpc_url.clone()),
+            finality_blocks,
+        )?;
         Ok(Self {
             router: Arc::new(Mutex::new(router)),
             config,

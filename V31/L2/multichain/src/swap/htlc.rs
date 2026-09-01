@@ -170,6 +170,9 @@ pub struct HtlcRecord {
     /// User source-side amount in atomic units.
     #[serde(default)]
     pub source_amount: u64,
+    /// True once the source-side lock has been confirmed on-chain.
+    #[serde(default)]
+    pub source_confirmed: bool,
     /// User source-side timelock (UNIX seconds).
     #[serde(default)]
     pub source_expires_at: i64,
@@ -414,7 +417,18 @@ impl HtlcSwap {
             }
         }
         let lock_tx = if let Some(adapter) = self.adapters.get(source_chain) {
-            adapter.execute_outbound(transfer).await?
+            let tx = adapter.execute_outbound(transfer).await?;
+            let confirmed = adapter
+                .confirmations(&tx)
+                .await
+                .unwrap_or(0)
+                >= 1;
+            if !confirmed {
+                return Err(MultichainError::Validation(
+                    "HTLC source lock not confirmed on-chain".to_string(),
+                ));
+            }
+            tx
         } else {
             // Offline mode (tests): synthesize a fake tx hash.
             Hash::new(Sha256::digest(format!("lock:{hash_hex}").as_bytes()).into())
@@ -437,6 +451,7 @@ impl HtlcSwap {
             source_address: None,
             source_lock_tx_id: None,
             source_amount: 0,
+            source_confirmed: false,
             source_expires_at: 0,
             source_refund_pubkey: None,
             source_claimant_pubkey: None,
@@ -539,6 +554,11 @@ impl HtlcSwap {
                 record.source_claimant_pubkey,
             )
         } else {
+            if !record.source_confirmed {
+                return Err(MultichainError::Validation(
+                    "HTLC source lock not confirmed on-chain".to_string(),
+                ));
+            }
             (
                 record.lock_tx_id.clone(),
                 record.expires_at,
@@ -651,6 +671,7 @@ impl HtlcSwap {
     }
 
     /// Set the user's source-side lock transaction id and timelock.
+    /// Marks the source lock as confirmed, allowing target-side claims.
     pub async fn set_source_lock(
         &self,
         hash_hex: &str,
@@ -663,6 +684,7 @@ impl HtlcSwap {
             .ok_or_else(|| MultichainError::TransferNotFound(hash_hex.to_string()))?;
         record.source_lock_tx_id = Some(source_lock_tx_id.to_string());
         record.source_expires_at = source_expires_at;
+        record.source_confirmed = true;
         record.updated_at = Utc::now();
         let record = record.clone();
         drop(records);
@@ -819,6 +841,13 @@ mod tests {
         swap.initiate(&mut transfer).await.unwrap();
         assert_eq!(transfer.status, TransferStatus::Executing);
 
+        // Mark source lock as confirmed (offline mode skips on-chain check).
+        {
+            let hash_hex = hash_sha256(&secret).to_hex();
+            let mut records = swap.records.lock().await;
+            records.get_mut(&hash_hex).unwrap().source_confirmed = true;
+        }
+
         swap.claim(&secret, "0xdead", &mut transfer).await.unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);
 
@@ -831,12 +860,31 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn htlc_claim_fails_without_source_confirmation() {
+        let secret = [0xAB; 32];
+        let mut transfer = htlc_transfer(secret);
+        let swap = HtlcSwap::new_offline();
+
+        swap.initiate(&mut transfer).await.unwrap();
+
+        // source_confirmed stays false in offline mode.
+        let err = swap.claim(&secret, "0xdead", &mut transfer).await;
+        assert!(matches!(err, Err(MultichainError::Validation(_))));
+    }
+
+    #[tokio::test]
     async fn htlc_claim_fails_with_invalid_secret() {
         let secret = [0xAB; 32];
         let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
+        // Mark source confirmed so the check passes and we reach preimage verify.
+        {
+            let hash_hex = hash_sha256(&secret).to_hex();
+            let mut records = swap.records.lock().await;
+            records.get_mut(&hash_hex).unwrap().source_confirmed = true;
+        }
         let wrong = [0x42; 32];
         let err = swap.claim(&wrong, "0xdead", &mut transfer).await;
         assert!(matches!(err, Err(MultichainError::Validation(_))));
@@ -926,19 +974,20 @@ mod tests {
 
         swap.initiate(&mut transfer).await.unwrap();
 
-        // Inject a pre-committed claimant Ed25519 public key.
+        let hash_hex = hash_sha256(&secret).to_hex();
+
+        // Inject a pre-committed claimant Ed25519 public key + confirm source lock.
         let mut csprng = OsRng;
         let claimant_sk = SigningKey::generate(&mut csprng);
         let claimant_pk = claimant_sk.verifying_key().to_bytes();
         let claimant_addr = derive_address(&claimant_pk);
 
-        let hash_hex = hash_sha256(&secret).to_hex();
-        swap.records
-            .lock()
-            .await
-            .get_mut(&hash_hex)
-            .unwrap()
-            .claimant_pubkey = Some(claimant_pk);
+        {
+            let mut records = swap.records.lock().await;
+            let rec = records.get_mut(&hash_hex).unwrap();
+            rec.claimant_pubkey = Some(claimant_pk);
+            rec.source_confirmed = true;
+        }
 
         // Wrong recipient → rejected.
         let err = swap.claim(&secret, "zion1wrong", &mut transfer).await;

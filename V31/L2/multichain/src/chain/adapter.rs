@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
-use crate::error::MultichainResult;
+use crate::error::{MultichainError, MultichainResult};
 use crate::types::Transfer;
 
 /// Mining / PoW block template for pool job generation.
@@ -60,6 +60,21 @@ pub trait ChainAdapter: Send + Sync {
         amount: Amount,
     ) -> MultichainResult<Hash> {
         self.send_payment(to, amount).await
+    }
+
+    /// Execute an on-chain AMM swap through a pair contract.
+    /// Returns (tx_hash, amount_out). Default: not supported.
+    async fn amm_swap(
+        &self,
+        _pair_address: &str,
+        _token_in: &Asset,
+        _token_out: &Asset,
+        _amount_in: Amount,
+        _recipient: &Address,
+    ) -> MultichainResult<(Hash, Amount)> {
+        Err(MultichainError::Unsupported(
+            "amm_swap not supported on this chain".to_string(),
+        ))
     }
 
     /// Query the spendable balance for `address` of the native asset.

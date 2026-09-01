@@ -144,31 +144,96 @@ impl SwapExecutor {
         }
 
         // Phase 5: execute the full route hop-by-hop (AMM or 1:1 bridge pools).
-        let mut current = amount;
-        for window in quote.route.windows(2) {
-            let from_id = &window[0];
-            let to_id = &window[1];
-            let hop_from = router.find_asset(from_id).ok_or_else(|| {
-                MultichainError::Unsupported(format!("unknown hop asset {from_id}"))
+        //
+        // If the route is a single hop and the matching pool has an on-chain
+        // `amm_pair` contract, execute the swap on-chain via the AMM and send
+        // the output directly to the recipient (or hot wallet if custodial).
+        // Otherwise, fall back to the in-memory AMM execution.
+        let on_chain_pair = if quote.route.len() == 2 {
+            router.find_pool(&quote.route[0], &quote.route[1])
+        } else {
+            None
+        };
+
+        let on_chain_amm = on_chain_pair
+            .as_ref()
+            .and_then(|p| p.amm_pair.clone())
+            .filter(|_| {
+                // Only use on-chain AMM for same-chain swaps on EVM chains.
+                from.id.chain == to.id.chain
+            });
+
+        let amount_out = if let Some(ref pair_addr) = on_chain_amm {
+            // On-chain AMM swap: send input from hot wallet to the pair
+            // contract, swap, and send output to the recipient or back to
+            // the hot wallet (custodial case).
+            drop(router);
+
+            let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
+                MultichainError::AdapterNotFound(to.id.chain.as_str().to_string())
             })?;
-            let hop_to = router.find_asset(to_id).ok_or_else(|| {
-                MultichainError::Unsupported(format!("unknown hop asset {to_id}"))
-            })?;
-            current = match router.execute(&hop_from, &hop_to, current) {
-                Ok(out) => out,
+
+            // The recipient for on-chain swap output: user-supplied recipient
+            // or the hot wallet itself (custodial — output stays on hot
+            // wallet, internal ledger is credited separately).
+            let swap_recipient = match &recipient {
+                Some(r) => r.clone(),
+                None => {
+                    // Custodial: send output back to the hot wallet address.
+                    // We use a zero address placeholder; the adapter will use
+                    // its own wallet address as the recipient.
+                    Address {
+                        chain: to.id.chain,
+                        bytes: Vec::new(),
+                        encoded: String::new(),
+                    }
+                }
+            };
+
+            match adapter
+                .amm_swap(&pair_addr, from, to, amount, &swap_recipient)
+                .await
+            {
+                Ok((tx_hash, out)) => {
+                    order.tx_hash = Some(tx_hash.to_hex());
+                    out
+                }
                 Err(e) => {
-                    drop(router);
                     self.ledger.credit(user_id, from, amount).await?;
                     order.status = DexOrderStatus::Failed;
                     self.save_order(&order).await?;
                     return Err(e);
                 }
-            };
-        }
-
-        if current < min_amount_out {
-            // This should not happen after the quote check, but keep the user safe.
+            }
+        } else {
+            // In-memory AMM execution (custodial).
+            let mut current = amount;
+            for window in quote.route.windows(2) {
+                let from_id = &window[0];
+                let to_id = &window[1];
+                let hop_from = router.find_asset(from_id).ok_or_else(|| {
+                    MultichainError::Unsupported(format!("unknown hop asset {from_id}"))
+                })?;
+                let hop_to = router.find_asset(to_id).ok_or_else(|| {
+                    MultichainError::Unsupported(format!("unknown hop asset {to_id}"))
+                })?;
+                current = match router.execute(&hop_from, &hop_to, current) {
+                    Ok(out) => out,
+                    Err(e) => {
+                        drop(router);
+                        self.ledger.credit(user_id, from, amount).await?;
+                        order.status = DexOrderStatus::Failed;
+                        self.save_order(&order).await?;
+                        return Err(e);
+                    }
+                };
+            }
             drop(router);
+            current
+        };
+
+        if amount_out < min_amount_out {
+            // This should not happen after the quote check, but keep the user safe.
             self.ledger.credit(user_id, from, amount).await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
@@ -177,12 +242,10 @@ impl SwapExecutor {
             ));
         }
 
-        let amount_out = current;
         order.amount_out = amount_out;
         order.route = quote.route.iter().map(|a| a.to_string()).collect();
         order.status = DexOrderStatus::Executed;
         order.executed_at = Some(chrono::Utc::now());
-        drop(router);
 
         // 3. On-chain settlement if a recipient was supplied.
         if let Some(recipient) = recipient {
@@ -197,22 +260,29 @@ impl SwapExecutor {
                 )));
             }
 
-            let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
-                MultichainError::AdapterNotFound(to.id.chain.as_str().to_string())
-            })?;
+            // If the swap was already executed on-chain via the AMM, the
+            // output was sent directly to the recipient — no additional
+            // transfer needed.
+            if order.tx_hash.is_some() && on_chain_amm.is_some() {
+                order.status = DexOrderStatus::Settled;
+            } else {
+                let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
+                    MultichainError::AdapterNotFound(to.id.chain.as_str().to_string())
+                })?;
 
-            match adapter.transfer_token(to, &recipient, amount_out).await {
-                Ok(tx_hash) => {
-                    order.tx_hash = Some(tx_hash.to_hex());
-                    order.status = DexOrderStatus::Settled;
-                }
-                Err(e) => {
-                    // Credit the output token to the user's internal ledger so
-                    // the swap is not lost; the operator can retry withdrawal.
-                    self.ledger.credit(user_id, to, amount_out).await?;
-                    order.status = DexOrderStatus::Failed;
-                    self.save_order(&order).await?;
-                    return Err(e);
+                match adapter.transfer_token(to, &recipient, amount_out).await {
+                    Ok(tx_hash) => {
+                        order.tx_hash = Some(tx_hash.to_hex());
+                        order.status = DexOrderStatus::Settled;
+                    }
+                    Err(e) => {
+                        // Credit the output token to the user's internal ledger so
+                        // the swap is not lost; the operator can retry withdrawal.
+                        self.ledger.credit(user_id, to, amount_out).await?;
+                        order.status = DexOrderStatus::Failed;
+                        self.save_order(&order).await?;
+                        return Err(e);
+                    }
                 }
             }
         } else {
@@ -628,6 +698,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(1_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let user_id = "user1";
@@ -682,6 +754,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000_000_000_000_000u128),
             reserve_b: Amount::new(1_000_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let user_id = "user1";
@@ -746,6 +820,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(10_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let user_id = "user1";
@@ -809,6 +885,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000),
             reserve_b: Amount::new(10_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let user_id = "user1";
@@ -881,6 +959,8 @@ mod tests {
             reserve_a: Amount::new(100_000_000_000_000_000_000_000u128),
             reserve_b: Amount::new(1_000_000_000_000),
             fee_bps: 30,
+            amm_pair: None,
+            amm_factory: None,
         });
 
         let user_id = "user1";
