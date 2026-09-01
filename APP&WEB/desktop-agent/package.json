@@ -40,7 +40,6 @@
     "@noble/ed25519": "^3.0.0",
     "@noble/hashes": "^1.7.0",
     "bip39": "^3.1.0",
-    "blessed": "^0.1.81",
     "electron-updater": "^6.8.3",
     "ethers": "^5.8.0",
     "qrcode": "^1.5.4"

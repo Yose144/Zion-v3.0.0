@@ -174,6 +174,11 @@ impl App {
                 (KeyCode::Char('q' | 'Q'), _) | (KeyCode::Esc, _) => {
                     self.should_quit = true;
                     let _ = self.shutdown_tx.send(true);
+                    // Spawned tokio::task::spawn_blocking CPU workers cannot be
+                    // cancelled, so a graceful async shutdown can hang for many
+                    // seconds. Restore the terminal and exit immediately.
+                    restore_terminal();
+                    std::process::exit(0);
                 }
                 (KeyCode::Char('p' | 'P'), _) => {
                     self.paused = !self.paused;
