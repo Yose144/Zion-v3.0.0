@@ -50,6 +50,7 @@ const DexPoolList     = dynamic(() => import('@/components/dex/DexPoolList'), { 
 
 import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
+import TestingPhaseBanner from '@/components/TestingPhaseBanner';
 
 const DefiCopy = {
   defiHubBaseMainnet: { cs: `Multichain Hub · Base Mainnet`, en: `Multichain Hub · Base Mainnet` },
@@ -68,8 +69,7 @@ const DefiCopy = {
   switch: { cs: `Přepnout`, en: `Switch` },
   connectWallet: { cs: `Připojit peněženku`, en: `Connect Wallet` },
   openUniswapUsdt: { cs: `Otevřít Uniswap (USDT)`, en: `Open Uniswap (USDT)` },
-  defiHubEarlyBeta: { cs: `Multichain & DeFi — fáze testování`, en: `Multichain & DeFi — Testing Phase` },
-  wzionContractsAreDeployedOnBas: { cs: `Multichain služby, bridge, DEX a peněženka jsou v testovací fázi. Používejte pouze malé částky a očekávejte změny.`, en: `Multichain services, bridge, DEX, and wallet are in a testing phase. Use only small amounts and expect changes.` },
+
   defiSections: { cs: `Multichain sekce`, en: `Multichain sections` },
   lowDexLiquidity: { cs: `Nízká DEX likvidita`, en: `Low DEX Liquidity` },
   telemetry: { cs: `Telemetrie`, en: `Telemetry` },
@@ -770,21 +770,7 @@ export default function DefiPage() {
       </section>
 
       {/* ═══════ Early Beta Banner ═══════ */}
-      <section className="zion-container relative z-10 mb-6">
-        <div className="zion-rainbow-card p-4 border-zion-gold/30 bg-zion-gold/10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-200">
-                {DefiCopy.defiHubEarlyBeta[cs ? 'cs' : 'en']}
-              </p>
-              <p className="text-xs text-amber-200/70 mt-1">
-                {DefiCopy.wzionContractsAreDeployedOnBas[cs ? 'cs' : 'en']}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <TestingPhaseBanner type="multichain" className="zion-container relative z-10 mb-6" />
 
       {/* ═══════ Multichain SECTION TABS ═══════ */}
       <section className="zion-container relative z-10 mb-8">
