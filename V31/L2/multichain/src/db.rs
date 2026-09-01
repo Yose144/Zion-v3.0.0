@@ -10,6 +10,7 @@ use crate::multichain_wallet::types::{
     AddressPurpose, DepositRecord, DepositStatus, DexOrder, DexOrderStatus, WalletAccount,
     WalletAddress, WithdrawalRecord, WithdrawalStatus,
 };
+use crate::multichain_wallet::journal::{parse_journal_entry, JournalEntry};
 use crate::reconciliation::ReconciliationReport;
 use crate::swap::dex::intent::{SolverBid, SwapIntent};
 use crate::swap::dex::Pool;
@@ -270,6 +271,20 @@ impl Db {
             );
             CREATE INDEX IF NOT EXISTS idx_reconciliation_alert ON reconciliation_reports(alert, timestamp DESC);
             CREATE INDEX IF NOT EXISTS idx_reconciliation_asset ON reconciliation_reports(asset_key, timestamp DESC);
+
+            -- Append-only journal ledger (audit trail + atomic balance updates)
+            CREATE TABLE IF NOT EXISTS ledger_entries (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                asset_key TEXT NOT NULL,
+                entry_type TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                reference_id TEXT,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_ledger_user ON ledger_entries(user_id);
+            CREATE INDEX IF NOT EXISTS idx_ledger_user_asset ON ledger_entries(user_id, asset_key);
             "#,
         )?;
 
@@ -722,6 +737,189 @@ impl Db {
             .into_iter()
             .map(|(k, v)| (k, Amount::new(v)))
             .collect())
+    }
+
+    // ------------------------------------------------------------------------
+    // Journal ledger (atomic credit / debit + audit trail)
+    // ------------------------------------------------------------------------
+
+    /// Insert a journal entry row.
+    pub fn insert_ledger_entry(&self, entry: &JournalEntry) -> MultichainResult<()> {
+        let created_at = entry.created_at.to_rfc3339();
+        self.conn.execute(
+            r#"
+            INSERT OR IGNORE INTO ledger_entries
+            (id, user_id, asset_key, entry_type, amount, reason, reference_id, created_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+            "#,
+            rusqlite::params![
+                entry.id,
+                entry.user_id,
+                entry.asset_key,
+                entry.entry_type.as_str(),
+                entry.amount.0.to_string(),
+                entry.reason,
+                entry.reference_id,
+                created_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Load the most recent `limit` journal entries for `user_id`, newest
+    /// first.
+    pub fn load_ledger_entries(
+        &self,
+        user_id: &str,
+        limit: u32,
+    ) -> MultichainResult<Vec<JournalEntry>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT id, user_id, asset_key, entry_type, amount, reason, reference_id, created_at
+            FROM ledger_entries
+            WHERE user_id = ?1
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?2
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![user_id, limit as i64])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            let id: String = row.get(0)?;
+            let user_id: String = row.get(1)?;
+            let asset_key: String = row.get(2)?;
+            let entry_type: String = row.get(3)?;
+            let amount: String = row.get(4)?;
+            let reason: String = row.get(5)?;
+            let reference_id: Option<String> = row.get(6)?;
+            let created_at: String = row.get(7)?;
+            out.push(parse_journal_entry(
+                &id,
+                &user_id,
+                &asset_key,
+                &entry_type,
+                &amount,
+                &reason,
+                reference_id.as_deref(),
+                &created_at,
+            )?);
+        }
+        Ok(out)
+    }
+
+    /// Atomically insert a credit journal entry and increase the user's
+    /// `wallet_balances` row by `amount`. Both operations run inside a single
+    /// `rusqlite` transaction.
+    pub fn atomic_credit(
+        &mut self,
+        user_id: &str,
+        asset_key: &str,
+        amount: &str,
+        entry_id: &str,
+        reason: &str,
+        reference_id: Option<&str>,
+    ) -> MultichainResult<()> {
+        let tx = self.conn.transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        tx.execute(
+            r#"
+            INSERT INTO ledger_entries
+            (id, user_id, asset_key, entry_type, amount, reason, reference_id, created_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+            "#,
+            rusqlite::params![
+                entry_id,
+                user_id,
+                asset_key,
+                "credit",
+                amount,
+                reason,
+                reference_id,
+                now,
+            ],
+        )?;
+
+        let amount_val = amount.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid credit amount: {e}"))
+        })?;
+
+        // Current balance (0 if none).
+        let current = read_balance(&tx, user_id, asset_key)?;
+
+        let new_balance = current.saturating_add(amount_val);
+        tx.execute(
+            r#"
+            INSERT OR REPLACE INTO wallet_balances
+            (user_id, asset_key, amount, updated_at)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+            rusqlite::params![user_id, asset_key, new_balance.to_string(), now],
+        )?;
+
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Atomically insert a debit journal entry and decrease the user's
+    /// `wallet_balances` row by `amount`. Both operations run inside a single
+    /// `rusqlite` transaction. Returns a validation error if the balance is
+    /// insufficient; in that case no row is written.
+    pub fn atomic_debit(
+        &mut self,
+        user_id: &str,
+        asset_key: &str,
+        amount: &str,
+        entry_id: &str,
+        reason: &str,
+        reference_id: Option<&str>,
+    ) -> MultichainResult<()> {
+        let tx = self.conn.transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        let amount_val = amount.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid debit amount: {e}"))
+        })?;
+
+        // Current balance (0 if none).
+        let current = read_balance(&tx, user_id, asset_key)?;
+
+        if current < amount_val {
+            return Err(MultichainError::Validation(format!(
+                "insufficient balance for {user_id} {asset_key}: have {current}, need {amount_val}"
+            )));
+        }
+
+        tx.execute(
+            r#"
+            INSERT INTO ledger_entries
+            (id, user_id, asset_key, entry_type, amount, reason, reference_id, created_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+            "#,
+            rusqlite::params![
+                entry_id,
+                user_id,
+                asset_key,
+                "debit",
+                amount,
+                reason,
+                reference_id,
+                now,
+            ],
+        )?;
+
+        let new_balance = current - amount_val;
+        tx.execute(
+            r#"
+            INSERT OR REPLACE INTO wallet_balances
+            (user_id, asset_key, amount, updated_at)
+            VALUES (?1, ?2, ?3, ?4)
+            "#,
+            rusqlite::params![user_id, asset_key, new_balance.to_string(), now],
+        )?;
+
+        tx.commit()?;
+        Ok(())
     }
 
     // ------------------------------------------------------------------------
@@ -1344,6 +1542,35 @@ fn parse_datetime(s: &str) -> MultichainResult<chrono::DateTime<chrono::Utc>> {
         .map_err(|e| MultichainError::Internal(format!("parse datetime: {e}")))
 }
 
+/// Public wrapper around [`parse_datetime`] for cross-module use (e.g. the
+/// journal ledger reconstructing `JournalEntry` rows).
+pub(crate) fn parse_datetime_pub(
+    s: &str,
+) -> MultichainResult<chrono::DateTime<chrono::Utc>> {
+    parse_datetime(s)
+}
+
+/// Read the current `wallet_balances` amount for `(user_id, asset_key)` from
+/// a transaction/connection, returning `0` when no row exists.
+fn read_balance(
+    conn: &rusqlite::Connection,
+    user_id: &str,
+    asset_key: &str,
+) -> MultichainResult<u128> {
+    let mut stmt = conn.prepare(
+        "SELECT amount FROM wallet_balances WHERE user_id = ?1 AND asset_key = ?2",
+    )?;
+    let mut rows = stmt.query(rusqlite::params![user_id, asset_key])?;
+    if let Some(row) = rows.next()? {
+        let s: String = row.get(0)?;
+        Ok(s.parse::<u128>().map_err(|e| {
+            MultichainError::Internal(format!("invalid wallet balance amount: {e}"))
+        })?)
+    } else {
+        Ok(0)
+    }
+}
+
 fn parse_wallet_address(row: &Row) -> MultichainResult<WalletAddress> {
     let address: String = row.get(0)?;
     let user_id: String = row.get(1)?;
@@ -1534,6 +1761,8 @@ mod tests {
                 from_token: zion.clone(),
                 to_token: usdc.clone(),
                 is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(1_100_000),
             }],
             10,
             0,

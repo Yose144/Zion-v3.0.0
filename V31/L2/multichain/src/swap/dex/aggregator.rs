@@ -127,6 +127,8 @@ fn route_to_hops(route: &[AssetId], registry: &BridgeRegistry) -> MultichainResu
             from_token: from.clone(),
             to_token: to.clone(),
             is_bridge,
+            amount_in: Amount::ZERO,
+            amount_out: Amount::ZERO,
         });
     }
     Ok(hops)

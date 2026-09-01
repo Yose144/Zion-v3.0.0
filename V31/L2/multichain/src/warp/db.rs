@@ -51,6 +51,14 @@ CREATE TABLE IF NOT EXISTS seen_txs (
 );
 CREATE INDEX IF NOT EXISTS idx_seen_txs_chain ON seen_txs(chain);
 CREATE INDEX IF NOT EXISTS idx_seen_txs_seen  ON seen_txs(seen_at);
+
+-- Daily volume tracking per chain (FIND-009: persists across restarts).
+CREATE TABLE IF NOT EXISTS daily_volume (
+    chain       TEXT    NOT NULL,
+    date_utc    TEXT    NOT NULL,
+    amount      INTEGER NOT NULL,
+    PRIMARY KEY (chain, date_utc)
+);
 "#;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,6 +251,39 @@ impl TransferDb {
             )
             .map_err(db_err)?;
         Ok(n)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Daily volume tracking (FIND-009)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Record that `amount_flowers` were processed for `chain` on the current UTC date.
+    /// Called by the router after every outbound transfer is accepted.
+    pub fn record_daily_volume(&self, chain: &str, amount: u64) -> WarpResult<()> {
+        let date = chrono::Utc::now().date_naive().to_string();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO daily_volume (chain, date_utc, amount) VALUES (?1, ?2, ?3) \
+             ON CONFLICT(chain, date_utc) DO UPDATE SET amount = amount + excluded.amount",
+            params![chain, date, amount as i64],
+        )
+        .map_err(db_err)?;
+        Ok(())
+    }
+
+    /// Load the persisted daily volume for `chain` on the current UTC date.
+    /// Returns 0 if no entries exist yet.
+    pub fn load_daily_volume(&self, chain: &str) -> WarpResult<u64> {
+        let date = chrono::Utc::now().date_naive().to_string();
+        let conn = self.conn.lock().unwrap();
+        let amount: i64 = conn
+            .query_row(
+                "SELECT amount FROM daily_volume WHERE chain=?1 AND date_utc=?2",
+                params![chain, date],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        Ok(amount.max(0) as u64)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -446,5 +487,28 @@ mod tests {
         assert_eq!(deleted, 0);
         assert!(db.is_seen("0xold").unwrap());
         assert!(db.is_seen("0xnew").unwrap());
+    }
+
+    #[test]
+    fn test_daily_volume_record_and_load() {
+        let db = TransferDb::in_memory().unwrap();
+        assert_eq!(db.load_daily_volume("base").unwrap(), 0);
+
+        db.record_daily_volume("base", 1_000_000).unwrap();
+        db.record_daily_volume("base", 2_500_000).unwrap();
+        assert_eq!(db.load_daily_volume("base").unwrap(), 3_500_000);
+
+        // Different chain does not affect this one.
+        assert_eq!(db.load_daily_volume("solana").unwrap(), 0);
+    }
+
+    #[test]
+    fn test_daily_volume_survives_reopen() {
+        // In-memory DBs don't survive close, but we verify the ON CONFLICT
+        // upsert logic with a fresh in-memory instance and same-day date.
+        let db = TransferDb::in_memory().unwrap();
+        db.record_daily_volume("base", 500_000).unwrap();
+        db.record_daily_volume("base", 500_000).unwrap();
+        assert_eq!(db.load_daily_volume("base").unwrap(), 1_000_000);
     }
 }

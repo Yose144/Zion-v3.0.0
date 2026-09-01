@@ -24,6 +24,10 @@ use crate::error::{MultichainError, MultichainResult};
 pub struct Keyring {
     mnemonic: Mnemonic,
     seed: Option<[u8; 64]>,
+    /// `true` when the keyring was generated ephemerally (no mnemonic
+    /// configured by the operator). Used by the startup guard / health check
+    /// to surface that user deposit addresses will change on every restart.
+    ephemeral: bool,
 }
 
 impl std::fmt::Debug for Keyring {
@@ -56,6 +60,7 @@ impl Keyring {
         Ok(Self {
             mnemonic,
             seed: Some(seed),
+            ephemeral: true,
         })
     }
 
@@ -67,12 +72,20 @@ impl Keyring {
         Ok(Self {
             mnemonic,
             seed: Some(seed),
+            ephemeral: false,
         })
     }
 
     /// Return the mnemonic phrase.
     pub fn mnemonic(&self) -> String {
         self.mnemonic.to_string()
+    }
+
+    /// Whether this keyring was generated ephemerally (no operator-configured
+    /// mnemonic). Ephemeral keyrings produce different addresses on every
+    /// restart and should be flagged in health checks.
+    pub fn is_ephemeral(&self) -> bool {
+        self.ephemeral
     }
 
     /// Derive a chain-specific address for `account` / `index`.

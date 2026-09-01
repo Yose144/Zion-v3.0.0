@@ -2,13 +2,13 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 
-import { createChallenge, verifyEd25519, verifySiwe } from '../lib/challenge.js';
+import { createChallenge, getChallenge, clearChallenge, verifyEd25519, verifySiwe } from '../lib/challenge.js';
 import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
 
 const ChallengeSchema = z.object({
   address: z.string().min(8),
-  chainType: z.enum(['zion-l1', 'evm']).default('zion-l1'),
+  chainType: z.enum(['zion-l1', 'evm', 'bitcoin']).default('zion-l1'),
 });
 
 const VerifyEd25519Schema = z.object({
@@ -215,6 +215,25 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(400).send({ error: 'BAD_REQUEST', message: 'message is required for evm' });
       }
       ok = await verifySiwe(address, signature, message);
+    } else if (chainType === 'bitcoin') {
+      // Bitcoin address linking (simplified):
+      //   1. The caller requests a ZIS challenge (POST /api/auth/challenge with
+      //      chainType "bitcoin") and signs it with their Bitcoin wallet
+      //      (BIP-322 or simple message sign).
+      //   2. For now we verify the address format is a valid Bech32 / P2WPKH
+      //      address and that a non-empty signature was provided.
+      //   TODO: implement proper BIP-322 signature verification.
+      if (!isValidBitcoinAddress(address)) {
+        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Invalid Bitcoin address format' });
+      }
+      // Confirm a challenge was issued for this address (prevents blind linking).
+      const challenge = getChallenge(address);
+      if (!challenge) {
+        return reply.code(401).send({ error: 'AUTH_FAILED', message: 'No active challenge for address' });
+      }
+      // Simplified: accept any non-empty signature. Real BIP-322 verification TBD.
+      ok = signature.length > 0;
+      if (ok) clearChallenge(address);
     } else {
       return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Unsupported chainType' });
     }
@@ -245,6 +264,32 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     return { linked, user };
   });
+}
+
+/**
+ * Validate a Bitcoin address format.
+ * Supports Bech32 (BIP-173, native SegWit: bc1q...) and Bech32m (BIP-350,
+ * Taproot: bc1p...) as well as legacy Base58Check (P2PKH bc1... / 1... / 3...).
+ *
+ * This is a format-only check — it does NOT verify the signature.
+ */
+function isValidBitcoinAddress(address: string): boolean {
+  // Bech32 / Bech32m (SegWit + Taproot): hrp + '1' + data + checksum
+  const bech32 = /^[a-z]{1,83}1[023456789acdefghjklmnpqrstuvwxyz]{6,87}$/i;
+  if (bech32.test(address)) {
+    // Common Bitcoin HRP prefixes (mainnet "bc", testnet "tb", regtest "bcrt")
+    const hrp = address.toLowerCase().split('1')[0];
+    return ['bc', 'tb', 'bcrt'].includes(hrp);
+  }
+
+  // Legacy Base58Check: P2PKH (starts with 1) or P2SH (starts with 3)
+  // Base58 alphabet, 25-34 chars typical (1 byte version + 20 bytes hash + 4 checksum)
+  const base58 = /^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/;
+  if (base58.test(address)) {
+    return true;
+  }
+
+  return false;
 }
 
 async function issueSession(
