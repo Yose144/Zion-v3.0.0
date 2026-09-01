@@ -11,8 +11,8 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_bridge=debug"
-Environment="ZION_BRIDGE_CONFIG=/opt/zion/V31/L2/multichain/bridge/config/bridge-mainnet.toml"
-ExecStart=/opt/zion/V31/target/release/zion-bridge --config /opt/zion/V31/L2/multichain/bridge/config/bridge-mainnet.toml
+Environment="ZION_BRIDGE_CONFIG=/etc/zion/bridge-mainnet.toml"
+ExecStart=/opt/zion/V31/target/release/zion-bridge --config /etc/zion/bridge-mainnet.toml
 Restart=always
 RestartSec=10
 KillMode=process
