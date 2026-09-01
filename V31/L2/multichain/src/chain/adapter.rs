@@ -77,6 +77,72 @@ pub trait ChainAdapter: Send + Sync {
         ))
     }
 
+    /// Execute an on-chain AMM swap through a Router contract (multi-hop).
+    /// Returns (tx_hash, amount_out). Default: not supported.
+    async fn amm_router_swap(
+        &self,
+        _router_address: &str,
+        _path: &[Asset],
+        _amount_in: Amount,
+        _amount_out_min: Amount,
+        _recipient: &Address,
+        _deadline: u64,
+    ) -> MultichainResult<(Hash, Amount)> {
+        Err(MultichainError::Unsupported(
+            "amm_router_swap not supported on this chain".to_string(),
+        ))
+    }
+
+    /// Add liquidity to an on-chain AMM pair via a Router contract.
+    /// Returns (tx_hash, amount_a, amount_b, lp_tokens). Default: not supported.
+    async fn amm_add_liquidity(
+        &self,
+        _router_address: &str,
+        _token_a: &Asset,
+        _token_b: &Asset,
+        _amount_a_desired: Amount,
+        _amount_b_desired: Amount,
+        _amount_a_min: Amount,
+        _amount_b_min: Amount,
+        _recipient: &Address,
+        _deadline: u64,
+    ) -> MultichainResult<(Hash, Amount, Amount, Amount)> {
+        Err(MultichainError::Unsupported(
+            "amm_add_liquidity not supported on this chain".to_string(),
+        ))
+    }
+
+    /// Remove liquidity from an on-chain AMM pair via a Router contract.
+    /// Returns (tx_hash, amount_a, amount_b). Default: not supported.
+    async fn amm_remove_liquidity(
+        &self,
+        _router_address: &str,
+        _token_a: &Asset,
+        _token_b: &Asset,
+        _liquidity: Amount,
+        _amount_a_min: Amount,
+        _amount_b_min: Amount,
+        _recipient: &Address,
+        _deadline: u64,
+    ) -> MultichainResult<(Hash, Amount, Amount)> {
+        Err(MultichainError::Unsupported(
+            "amm_remove_liquidity not supported on this chain".to_string(),
+        ))
+    }
+
+    /// Get the pair address for two tokens from a Factory contract.
+    /// Default: not supported.
+    async fn amm_get_pair(
+        &self,
+        _factory_address: &str,
+        _token_a: &Asset,
+        _token_b: &Asset,
+    ) -> MultichainResult<Option<String>> {
+        Err(MultichainError::Unsupported(
+            "amm_get_pair not supported on this chain".to_string(),
+        ))
+    }
+
     /// Query the spendable balance for `address` of the native asset.
     async fn balance(&self, address: &Address) -> MultichainResult<Amount>;
 

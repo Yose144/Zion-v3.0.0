@@ -352,6 +352,124 @@ impl MultichainService {
         self.dex.read().await.pools().to_vec()
     }
 
+    /// Set the on-chain AMM pair address for an existing pool.
+    /// This enables on-chain settlement for swaps through this pool.
+    pub async fn set_amm_pair(
+        &self,
+        pool_id: u64,
+        amm_pair: Option<String>,
+        amm_factory: Option<String>,
+    ) -> MultichainResult<Pool> {
+        let mut dex = self.dex.write().await;
+        let pool = dex
+            .pools_mut()
+            .into_iter()
+            .find(|p| p.id == pool_id)
+            .ok_or_else(|| {
+                MultichainError::Validation(format!("pool id {} not found", pool_id))
+            })?;
+
+        pool.amm_pair = amm_pair;
+        pool.amm_factory = amm_factory;
+        let updated = pool.clone();
+
+        // Persist the updated pool.
+        self.db.lock().await.save_pool(&updated)?;
+
+        Ok(updated)
+    }
+
+    /// Add liquidity to an on-chain AMM pair via a ZIONDexRouter.
+    pub async fn add_liquidity(
+        &self,
+        chain: ChainId,
+        router_address: &str,
+        token_a: &Asset,
+        token_b: &Asset,
+        amount_a_desired: Amount,
+        amount_b_desired: Amount,
+        amount_a_min: Amount,
+        amount_b_min: Amount,
+        recipient: Option<Address>,
+        deadline: u64,
+    ) -> MultichainResult<(Hash, Amount, Amount, Amount)> {
+        let adapter = self.adapters.get(chain).ok_or_else(|| {
+            MultichainError::AdapterNotFound(chain.as_str().to_string())
+        })?;
+
+        let recipient_addr = recipient.unwrap_or(Address {
+            chain,
+            bytes: Vec::new(),
+            encoded: String::new(),
+        });
+
+        adapter
+            .amm_add_liquidity(
+                router_address,
+                token_a,
+                token_b,
+                amount_a_desired,
+                amount_b_desired,
+                amount_a_min,
+                amount_b_min,
+                &recipient_addr,
+                deadline,
+            )
+            .await
+    }
+
+    /// Remove liquidity from an on-chain AMM pair via a ZIONDexRouter.
+    pub async fn remove_liquidity(
+        &self,
+        chain: ChainId,
+        router_address: &str,
+        token_a: &Asset,
+        token_b: &Asset,
+        liquidity: Amount,
+        amount_a_min: Amount,
+        amount_b_min: Amount,
+        recipient: Option<Address>,
+        deadline: u64,
+    ) -> MultichainResult<(Hash, Amount, Amount)> {
+        let adapter = self.adapters.get(chain).ok_or_else(|| {
+            MultichainError::AdapterNotFound(chain.as_str().to_string())
+        })?;
+
+        let recipient_addr = recipient.unwrap_or(Address {
+            chain,
+            bytes: Vec::new(),
+            encoded: String::new(),
+        });
+
+        adapter
+            .amm_remove_liquidity(
+                router_address,
+                token_a,
+                token_b,
+                liquidity,
+                amount_a_min,
+                amount_b_min,
+                &recipient_addr,
+                deadline,
+            )
+            .await
+    }
+
+    /// Get the on-chain pair address for two tokens from a ZIONDexFactory.
+    pub async fn get_amm_pair(
+        &self,
+        chain: ChainId,
+        factory_address: &str,
+        token_a: &Asset,
+        token_b: &Asset,
+    ) -> MultichainResult<Option<String>> {
+        let adapter = self.adapters.get(chain).ok_or_else(|| {
+            MultichainError::AdapterNotFound(chain.as_str().to_string())
+        })?;
+
+        adapter.amm_get_pair(factory_address, token_a, token_b).await
+    }
+
     /// Returns a snapshot of health for every registered chain.
     pub async fn health(&self) -> HashMap<String, bool> {
         let mut out = HashMap::new();

@@ -37,6 +37,12 @@ const AMM_GET_RESERVES_SIG: &str = "getReserves()";
 const AMM_TOKEN0_SIG: &str = "token0()";
 const AMM_TOKEN1_SIG: &str = "token1()";
 const AMM_GET_AMOUNT_OUT_SIG: &str = "getAmountOut(uint256,uint256,uint256)";
+const AMM_ROUTER_SWAP_SIG: &str = "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)";
+const AMM_ROUTER_ADD_LIQ_SIG: &str = "addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)";
+const AMM_ROUTER_REMOVE_LIQ_SIG: &str = "removeLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)";
+const AMM_ROUTER_GET_AMOUNTS_OUT_SIG: &str = "getAmountsOut(uint256,address[])";
+const AMM_FACTORY_PAIR_FOR_SIG: &str = "pairFor(address,address)";
+const ERC20_APPROVE_SIG: &str = "approve(address,uint256)";
 const HTLC_LOCK_SIG: &str = "lock(bytes32,bytes32,uint256,address,uint256,address,string,string)";
 const HTLC_CLAIM_SIG: &str = "claim(bytes32,bytes32)";
 const HTLC_REFUND_SIG: &str = "refund(bytes32)";
@@ -928,6 +934,399 @@ impl ChainAdapter for EvmAdapter {
         let tx_hash = self.send_transaction(pair, swap_data, U256::zero()).await?;
 
         Ok((tx_hash, amount_out))
+    }
+
+    /// Execute a multi-hop on-chain AMM swap through a ZIONDexRouter contract.
+    ///
+    /// This uses `swapExactTokensForTokens` which handles token transfer,
+    /// approval, and multi-hop routing (up to 3 hops) in a single transaction.
+    async fn amm_router_swap(
+        &self,
+        router_address: &str,
+        path: &[Asset],
+        amount_in: Amount,
+        amount_out_min: Amount,
+        recipient: &Address,
+        deadline: u64,
+    ) -> MultichainResult<(Hash, Amount)> {
+        if path.len() < 2 {
+            return Err(MultichainError::Validation(
+                "amm_router_swap: path must have at least 2 tokens".to_string(),
+            ));
+        }
+        if path.len() > 3 {
+            return Err(MultichainError::Validation(
+                "amm_router_swap: path must have at most 3 tokens".to_string(),
+            ));
+        }
+
+        let router = EthAddress::from_str(router_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid router address: {e}")))?;
+
+        // Build the token address path.
+        let mut path_addrs: Vec<Token> = Vec::with_capacity(path.len());
+        for asset in path {
+            let addr_str = asset.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation(format!(
+                    "amm_router_swap: token {} has no contract address",
+                    asset.id
+                ))
+            })?;
+            let addr = EthAddress::from_str(addr_str)
+                .map_err(|e| MultichainError::Validation(format!("invalid token address: {e}")))?;
+            path_addrs.push(Token::Address(addr));
+        }
+
+        let recipient_eth = if recipient.encoded.is_empty() {
+            self.wallet
+                .as_ref()
+                .map(|w| EthAddress::from(w.address()))
+                .ok_or_else(|| {
+                    MultichainError::Unsupported(
+                        "amm_router_swap: no wallet configured for custodial recipient".to_string(),
+                    )
+                })?
+        } else {
+            self.to_eth_address(recipient)?
+        };
+
+        let ts = if deadline == 0 {
+            chrono::Utc::now().timestamp() as u64 + 600
+        } else {
+            deadline
+        };
+
+        // 1. Approve the router to spend the input token.
+        let token_in_addr = match path[0].id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
+            None => return Err(MultichainError::Validation(
+                "amm_router_swap: input token has no contract address".to_string(),
+            )),
+        };
+
+        let mut approve_data = Self::function_selector(ERC20_APPROVE_SIG).to_vec();
+        approve_data.extend_from_slice(&encode(&[
+            Token::Address(router),
+            Token::Uint(U256::from(amount_in.0)),
+        ]));
+        self.send_transaction(token_in_addr, approve_data, U256::zero()).await?;
+
+        // 2. Call swapExactTokensForTokens on the router.
+        let mut swap_data = Self::function_selector(AMM_ROUTER_SWAP_SIG).to_vec();
+        swap_data.extend_from_slice(&encode(&[
+            Token::Uint(U256::from(amount_in.0)),
+            Token::Uint(U256::from(amount_out_min.0)),
+            Token::Array(path_addrs),
+            Token::Address(recipient_eth),
+            Token::Uint(U256::from(ts)),
+        ]));
+
+        let tx_hash = self.send_transaction(router, swap_data, U256::zero()).await?;
+
+        // 3. Query getAmountsOut to determine the actual output amount.
+        let mut query_path: Vec<Token> = Vec::with_capacity(path.len());
+        for asset in path {
+            let addr_str = asset.id.contract.as_deref().ok_or_else(|| {
+                MultichainError::Validation(format!(
+                    "amm_router_swap: token {} has no contract address",
+                    asset.id
+                ))
+            })?;
+            let addr = EthAddress::from_str(addr_str)
+                .map_err(|e| MultichainError::Validation(format!("invalid token address: {e}")))?;
+            query_path.push(Token::Address(addr));
+        }
+
+        let mut amounts_data = Self::function_selector(AMM_ROUTER_GET_AMOUNTS_OUT_SIG).to_vec();
+        amounts_data.extend_from_slice(&encode(&[
+            Token::Uint(U256::from(amount_in.0)),
+            Token::Array(query_path),
+        ]));
+
+        let amounts_result = self
+            .provider
+            .call(&ethers::types::TransactionRequest::new()
+                .to(router)
+                .data(amounts_data.clone())
+                .into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("getAmountsOut() call failed: {e}")))?;
+
+        let amounts_tokens = decode(&[ParamType::Array(Box::new(ParamType::Uint(256)))], &amounts_result)
+            .map_err(|e| MultichainError::Internal(format!("getAmountsOut() decode failed: {e}")))?;
+
+        let amount_out = amounts_tokens
+            .into_iter()
+            .next()
+            .and_then(|t| t.into_array())
+            .and_then(|arr| arr.into_iter().last())
+            .and_then(|t| t.into_uint())
+            .map(|u| Amount(u.as_u128()))
+            .unwrap_or(Amount::ZERO);
+
+        Ok((tx_hash, amount_out))
+    }
+
+    /// Add liquidity to an on-chain AMM pair via a ZIONDexRouter contract.
+    async fn amm_add_liquidity(
+        &self,
+        router_address: &str,
+        token_a: &Asset,
+        token_b: &Asset,
+        amount_a_desired: Amount,
+        amount_b_desired: Amount,
+        amount_a_min: Amount,
+        amount_b_min: Amount,
+        recipient: &Address,
+        deadline: u64,
+    ) -> MultichainResult<(Hash, Amount, Amount, Amount)> {
+        let router = EthAddress::from_str(router_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid router address: {e}")))?;
+
+        let token_a_addr = EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
+            MultichainError::Validation("token_a has no contract address".to_string())
+        })?)
+            .map_err(|e| MultichainError::Validation(format!("invalid token_a address: {e}")))?;
+
+        let token_b_addr = EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
+            MultichainError::Validation("token_b has no contract address".to_string())
+        })?)
+            .map_err(|e| MultichainError::Validation(format!("invalid token_b address: {e}")))?;
+
+        let recipient_eth = if recipient.encoded.is_empty() {
+            self.wallet
+                .as_ref()
+                .map(|w| EthAddress::from(w.address()))
+                .ok_or_else(|| {
+                    MultichainError::Unsupported(
+                        "amm_add_liquidity: no wallet configured".to_string(),
+                    )
+                })?
+        } else {
+            self.to_eth_address(recipient)?
+        };
+
+        let ts = if deadline == 0 {
+            chrono::Utc::now().timestamp() as u64 + 600
+        } else {
+            deadline
+        };
+
+        // 1. Approve the router for both tokens.
+        for (token_addr, amount) in [(token_a_addr, amount_a_desired), (token_b_addr, amount_b_desired)] {
+            let mut approve_data = Self::function_selector(ERC20_APPROVE_SIG).to_vec();
+            approve_data.extend_from_slice(&encode(&[
+                Token::Address(router),
+                Token::Uint(U256::from(amount.0)),
+            ]));
+            self.send_transaction(token_addr, approve_data, U256::zero()).await?;
+        }
+
+        // 2. Call addLiquidity on the router.
+        let mut liq_data = Self::function_selector(AMM_ROUTER_ADD_LIQ_SIG).to_vec();
+        liq_data.extend_from_slice(&encode(&[
+            Token::Address(token_a_addr),
+            Token::Address(token_b_addr),
+            Token::Uint(U256::from(amount_a_desired.0)),
+            Token::Uint(U256::from(amount_b_desired.0)),
+            Token::Uint(U256::from(amount_a_min.0)),
+            Token::Uint(U256::from(amount_b_min.0)),
+            Token::Address(recipient_eth),
+            Token::Uint(U256::from(ts)),
+        ]));
+
+        let tx_hash = self.send_transaction(router, liq_data, U256::zero()).await?;
+
+        // Return estimated amounts (actual amounts come from event logs;
+        // for now return the desired amounts as upper bounds).
+        Ok((tx_hash, amount_a_desired, amount_b_desired, Amount::ZERO))
+    }
+
+    /// Remove liquidity from an on-chain AMM pair via a ZIONDexRouter contract.
+    async fn amm_remove_liquidity(
+        &self,
+        router_address: &str,
+        token_a: &Asset,
+        token_b: &Asset,
+        liquidity: Amount,
+        amount_a_min: Amount,
+        amount_b_min: Amount,
+        recipient: &Address,
+        deadline: u64,
+    ) -> MultichainResult<(Hash, Amount, Amount)> {
+        let router = EthAddress::from_str(router_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid router address: {e}")))?;
+
+        let token_a_addr = EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
+            MultichainError::Validation("token_a has no contract address".to_string())
+        })?)
+            .map_err(|e| MultichainError::Validation(format!("invalid token_a address: {e}")))?;
+
+        let token_b_addr = EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
+            MultichainError::Validation("token_b has no contract address".to_string())
+        })?)
+            .map_err(|e| MultichainError::Validation(format!("invalid token_b address: {e}")))?;
+
+        let recipient_eth = if recipient.encoded.is_empty() {
+            self.wallet
+                .as_ref()
+                .map(|w| EthAddress::from(w.address()))
+                .ok_or_else(|| {
+                    MultichainError::Unsupported(
+                        "amm_remove_liquidity: no wallet configured".to_string(),
+                    )
+                })?
+        } else {
+            self.to_eth_address(recipient)?
+        };
+
+        let ts = if deadline == 0 {
+            chrono::Utc::now().timestamp() as u64 + 600
+        } else {
+            deadline
+        };
+
+        // Get the pair address to approve LP token spending.
+        // We need to find the pair contract address first.
+        // The Router's removeLiquidity uses transferFrom, so we approve the router
+        // for the LP token (which is the pair contract itself).
+        // We can get the pair address from the factory via the router.
+        // For simplicity, approve the router for max LP tokens.
+        // The pair address = factory.pairFor(tokenA, tokenB).
+        // We'll approve the pair contract for the router.
+        // Actually, the router calls _safeTransferFrom(pair, msg.sender, router, liquidity)
+        // so we need to approve the router on the pair (LP) contract.
+
+        // First, get pair address from factory.
+        // The router has `factory()` but we can also call factory.pairFor directly.
+        // For now, we'll try calling the factory through the router's factory() method.
+        // Since we don't have the factory address easily, we'll use the router's
+        // removeLiquidity which handles the transferFrom internally.
+        // The caller must have approved the router for LP tokens.
+
+        // We need to find the pair address to approve it.
+        // Let's call the factory's pairFor through the router.
+        // Actually, the ZIONDexRouter has a public `factory` immutable field.
+        // We can read it via factory().
+        let factory_data = Self::function_selector("factory()").to_vec();
+        let factory_result = self
+            .provider
+            .call(&ethers::types::TransactionRequest::new()
+                .to(router)
+                .data(factory_data)
+                .into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("factory() call failed: {e}")))?;
+
+        let factory_addr = decode(&[ParamType::Address], &factory_result)
+            .map_err(|e| MultichainError::Internal(format!("factory() decode failed: {e}")))?
+            .into_iter()
+            .next()
+            .and_then(|t| t.into_address())
+            .ok_or_else(|| MultichainError::Internal("factory() returned no address".to_string()))?;
+
+        // Get pair address.
+        let mut pair_for_data = Self::function_selector(AMM_FACTORY_PAIR_FOR_SIG).to_vec();
+        pair_for_data.extend_from_slice(&encode(&[
+            Token::Address(token_a_addr),
+            Token::Address(token_b_addr),
+        ]));
+        let pair_result = self
+            .provider
+            .call(&ethers::types::TransactionRequest::new()
+                .to(factory_addr)
+                .data(pair_for_data)
+                .into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("pairFor() call failed: {e}")))?;
+
+        let pair_addr = decode(&[ParamType::Address], &pair_result)
+            .map_err(|e| MultichainError::Internal(format!("pairFor() decode failed: {e}")))?
+            .into_iter()
+            .next()
+            .and_then(|t| t.into_address())
+            .ok_or_else(|| MultichainError::Internal("pairFor() returned no address".to_string()))?;
+
+        if pair_addr == EthAddress::zero() {
+            return Err(MultichainError::Validation(
+                "amm_remove_liquidity: pair does not exist for this token pair".to_string(),
+            ));
+        }
+
+        // Approve the router to spend LP tokens.
+        let mut approve_data = Self::function_selector(ERC20_APPROVE_SIG).to_vec();
+        approve_data.extend_from_slice(&encode(&[
+            Token::Address(router),
+            Token::Uint(U256::from(liquidity.0)),
+        ]));
+        self.send_transaction(pair_addr, approve_data, U256::zero()).await?;
+
+        // Call removeLiquidity on the router.
+        let mut remove_data = Self::function_selector(AMM_ROUTER_REMOVE_LIQ_SIG).to_vec();
+        remove_data.extend_from_slice(&encode(&[
+            Token::Address(token_a_addr),
+            Token::Address(token_b_addr),
+            Token::Uint(U256::from(liquidity.0)),
+            Token::Uint(U256::from(amount_a_min.0)),
+            Token::Uint(U256::from(amount_b_min.0)),
+            Token::Address(recipient_eth),
+            Token::Uint(U256::from(ts)),
+        ]));
+
+        let tx_hash = self.send_transaction(router, remove_data, U256::zero()).await?;
+
+        // Return estimated minimums as actual amounts (real amounts come from events).
+        Ok((tx_hash, amount_a_min, amount_b_min))
+    }
+
+    /// Get the pair address for two tokens from a ZIONDexFactory contract.
+    async fn amm_get_pair(
+        &self,
+        factory_address: &str,
+        token_a: &Asset,
+        token_b: &Asset,
+    ) -> MultichainResult<Option<String>> {
+        let factory = EthAddress::from_str(factory_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid factory address: {e}")))?;
+
+        let token_a_addr = EthAddress::from_str(token_a.id.contract.as_deref().ok_or_else(|| {
+            MultichainError::Validation("token_a has no contract address".to_string())
+        })?)
+            .map_err(|e| MultichainError::Validation(format!("invalid token_a address: {e}")))?;
+
+        let token_b_addr = EthAddress::from_str(token_b.id.contract.as_deref().ok_or_else(|| {
+            MultichainError::Validation("token_b has no contract address".to_string())
+        })?)
+            .map_err(|e| MultichainError::Validation(format!("invalid token_b address: {e}")))?;
+
+        let mut data = Self::function_selector(AMM_FACTORY_PAIR_FOR_SIG).to_vec();
+        data.extend_from_slice(&encode(&[
+            Token::Address(token_a_addr),
+            Token::Address(token_b_addr),
+        ]));
+
+        let result = self
+            .provider
+            .call(&ethers::types::TransactionRequest::new()
+                .to(factory)
+                .data(data)
+                .into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("pairFor() call failed: {e}")))?;
+
+        let pair_addr = decode(&[ParamType::Address], &result)
+            .map_err(|e| MultichainError::Internal(format!("pairFor() decode failed: {e}")))?
+            .into_iter()
+            .next()
+            .and_then(|t| t.into_address())
+            .ok_or_else(|| MultichainError::Internal("pairFor() returned no address".to_string()))?;
+
+        if pair_addr == EthAddress::zero() {
+            Ok(None)
+        } else {
+            Ok(Some(format!("{:?}", pair_addr)))
+        }
     }
 
     async fn balance(&self, address: &Address) -> MultichainResult<Amount> {

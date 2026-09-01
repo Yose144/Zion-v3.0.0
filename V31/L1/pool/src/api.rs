@@ -148,19 +148,22 @@ impl PoolApi {
                 stream.write_all(response.as_bytes())?;
                 return Ok(());
             }
-        } else if path.starts_with("/api")
-            && api_key.is_some()
-            && api_key_header.as_deref() != api_key.as_deref()
-            && auth_bearer.as_deref() != api_key.as_deref()
-        {
-            let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
-            let response = format!(
-                "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                body.len(),
-                body
-            );
-            stream.write_all(response.as_bytes())?;
-            return Ok(());
+        } else if path.starts_with("/api") {
+            // POL-004 fix: default-deny. If no API key is configured, reject
+            // all /api/* requests rather than leaving them open.
+            let api_ok = api_key.as_deref().is_some()
+                && (api_key_header.as_deref() == api_key.as_deref()
+                    || auth_bearer.as_deref() == api_key.as_deref());
+            if !api_ok {
+                let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
+                let response = format!(
+                    "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes())?;
+                return Ok(());
+            }
         }
 
         let (status, content_type, body) = match path {

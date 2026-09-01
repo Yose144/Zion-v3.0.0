@@ -261,6 +261,23 @@ contract WZION is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausable {
         if (b[0] != 'z' || b[1] != 'i' || b[2] != 'o' || b[3] != 'n' || b[4] != '1') {
             return false;
         }
+
+        // CON-006 fix: validate bech32 charset for the data part (after "zion1").
+        // Valid charset: 023456789acdefghjklmnpqrstuvwxyz (excludes 1, b, i, o).
+        for (uint256 i = 5; i < b.length; i++) {
+            bytes1 ch = b[i];
+            if (
+                ch != '0' && ch != '2' && ch != '3' && ch != '4' && ch != '5' &&
+                ch != '6' && ch != '7' && ch != '8' && ch != '9' &&
+                ch != 'a' && ch != 'c' && ch != 'd' && ch != 'e' && ch != 'f' &&
+                ch != 'g' && ch != 'h' && ch != 'j' && ch != 'k' && ch != 'l' &&
+                ch != 'm' && ch != 'n' && ch != 'p' && ch != 'q' && ch != 'r' &&
+                ch != 's' && ch != 't' && ch != 'u' && ch != 'v' && ch != 'w' &&
+                ch != 'x' && ch != 'y' && ch != 'z'
+            ) {
+                return false;
+            }
+        }
         return true;
     }
 

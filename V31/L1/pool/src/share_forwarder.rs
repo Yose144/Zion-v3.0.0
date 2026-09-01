@@ -82,7 +82,27 @@ impl ShareForwarder {
             } else {
                 (*hash, false)
             }
+        } else if !header_bytes.is_empty() {
+            // POL-003 fix: recompute hash for non-DAG algorithms too, so the
+            // miner-supplied hash cannot be trusted blindly. If header bytes
+            // are available, always recompute.
+            let real_hash = hash_for_coin(self.coin, header_bytes, nonce);
+            if real_hash != *hash {
+                tracing::debug!(
+                    "auxpow: non_dag_hash_recomputed algo={} nonce={} supplied={:.16} real={:.16}",
+                    algorithm, nonce,
+                    hash_to_hex(hash),
+                    hash_to_hex(&real_hash),
+                );
+            }
+            (real_hash, true)
         } else {
+            // No header bytes available (legacy path) — trust the hash but
+            // log a warning so operators know recomputation was skipped.
+            tracing::warn!(
+                "auxpow: no header_bytes for algo={} nonce={} — hash not recomputed (POL-003)",
+                algorithm, nonce,
+            );
             (*hash, false)
         };
 

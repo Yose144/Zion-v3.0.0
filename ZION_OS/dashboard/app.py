@@ -73,14 +73,14 @@ if not LOG_DIR.exists():
 # Final fallback for legacy deployments
 if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
-DATA_DIR = REPO_ROOT / "V3" / "data"
+DATA_DIR = REPO_ROOT / "V31" / "data"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 V2_DIST = SCRIPT_DIR / "v2" / "dist"
 SERVICES_MANIFEST = SCRIPT_DIR / "services.json"
 DOTENV_FILE = SCRIPT_DIR / ".env"
 CONFIG_FILE = SCRIPT_DIR / "config.json"
 # Cross-platform release binary directory + executable suffix
-RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
+RELEASE_BIN_DIR = REPO_ROOT / "V31" / "target" / "release"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 
 # Cache for deriving V31 banner shares/sec from the Edge pool total-shares counter
@@ -2055,6 +2055,14 @@ DB_LOCATIONS = [
     (Path("/data/zion/atomic-swap.db"),        "sqlite", "atomic-swap", "Atomic Swap"),
     (Path("/data/zion/ziondex-router.db"),     "sqlite", "ncl",   "NCL Gateway"),
     (Path("/data/zion/oasis.db"),              "sqlite", "oasis", "OASIS Avatar Hub"),
+    # Local V31 data (after Edge so Edge wins on Edge, local wins when Edge absent)
+    (REPO_ROOT / "V31" / "data" / "v31-backup-node.db", "sqlite", "v31-node", "V31 Node state"),
+    (REPO_ROOT / "V31" / "data" / "dao-v31.db",        "sqlite", "v31-dao", "V31 DAO"),
+    (REPO_ROOT / "V31" / "data" / "warp.db",           "sqlite", "v31-multichain", "V31 WARP"),
+    (REPO_ROOT / "V31" / "data" / "warp_multichain.db", "sqlite", "v31-multichain", "V31 Multichain"),
+    (REPO_ROOT / "V31" / "data" / "oasis-v31.db",      "sqlite", "v31-oasis", "V31 OASIS"),
+    (REPO_ROOT / "V31" / "data" / "free_world-v31.db", "sqlite", "v31-free-world", "V31 Free World"),
+    (REPO_ROOT / "V31" / "data" / "issobella-v31.db",  "sqlite", "v31-issobella", "V31 Issobella"),
 ]
 
 def list_databases() -> list:
@@ -2082,8 +2090,8 @@ def get_bridge_db_path() -> Path:
         if sid == "bridge" and kind == "sqlite":
             if path.exists():
                 return path
-    # Fallback to legacy local path
-    return REPO_ROOT / "V3" / "data" / "bridge.db"
+    # Fallback to V31 local path
+    return REPO_ROOT / "V31" / "data" / "bridge.db"
 
 def get_dao_db_path() -> Path:
     """Return the live DAO SQLite DB path (Edge or local)."""
@@ -2091,7 +2099,7 @@ def get_dao_db_path() -> Path:
         if sid == "dao" and kind == "sqlite":
             if path.exists():
                 return path
-    return REPO_ROOT / "V3" / "data" / "dao.db"
+    return REPO_ROOT / "V31" / "data" / "dao-v31.db"
 
 def _build_bridge_transfers(db_path: Path, limit: int = 50) -> list:
     """Read L1 locks and EVM burns from the bridge DB and normalize for the UI."""
@@ -8929,7 +8937,8 @@ def get_pool_miner_detail(address: str) -> dict:
 
 def get_backup_status() -> dict:
     r"""List backups + datadir sizes + last backup time.
-    Reads both manual backups (repo/backups) and auto-backups (repo/backups/auto)."""
+    Reads manual backups (repo/backups), auto-backups (repo/backups/auto)
+    and off-site Edge backups synced to repo/backups/edge/{daily,weekly}."""
     manual_backups = []
     manual_dir = REPO_ROOT / "backups"
     total_backup_mb = 0
@@ -8943,27 +8952,36 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Auto-backups (Linux path — was C:/ZION-AutoBackups on Windows)
+    # Auto-backups: legacy auto/ plus off-site Edge sync
     auto_dir = REPO_ROOT / "backups" / "auto"
     auto_backups = []
-    for sub_dir in (auto_dir, REPO_ROOT / "backups" / "daily", REPO_ROOT / "backups" / "weekly"):
+    for sub_dir in (auto_dir, REPO_ROOT / "backups" / "edge" / "daily", REPO_ROOT / "backups" / "edge" / "weekly"):
         if sub_dir.exists():
             for f in sorted(sub_dir.glob("*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
                 s = f.stat()
                 size_mb = round(s.st_size / (1024*1024), 2)
                 total_backup_mb += size_mb
+                try:
+                    rel = f.relative_to(REPO_ROOT / "backups")
+                    auto_name = str(rel)
+                except ValueError:
+                    auto_name = f.name
                 auto_backups.append({
-                    "name": f"{sub_dir.name}/{f.name}" if f.parent != REPO_ROOT / "backups" / "auto" else f.name,
+                    "name": auto_name,
                     "size_mb": size_mb,
                     "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
                 })
-    # Datadir sizes — per-service DB files (not all pointing to V3/data)
-    _data_dir = REPO_ROOT / "V3" / "data"
+    # Datadir sizes — V31 per-service DB files
+    _data_dir = REPO_ROOT / "V31" / "data"
     datadirs = {}
     _db_map = {
-        "node1": "zion-node-state.db",
-        "node2": "zion-node2-state.db",
-        "pool": None,  # pool uses edge-state, tracked via node1
+        "v31-node": "v31-backup-node.db",
+        "v31-dao": "dao-v31.db",
+        "v31-oasis": "oasis-v31.db",
+        "v31-free-world": "free_world-v31.db",
+        "v31-issobella": "issobella-v31.db",
+        "v31-warp": "warp.db",
+        "v31-multichain": "warp_multichain.db",
         "dashboard": None,
     }
     for name, dbfile in _db_map.items():
@@ -8979,7 +8997,7 @@ def get_backup_status() -> dict:
                 datadirs[name] = None
         elif dbfile:
             fpath = _data_dir / dbfile
-            if fpath.exists():
+            if fpath.exists() and not fpath.is_symlink():
                 try:
                     datadirs[name] = round(fpath.stat().st_size / (1024*1024), 2)
                 except Exception:
@@ -8990,6 +9008,7 @@ def get_backup_status() -> dict:
             datadirs[name] = None
     all_backups = sorted(manual_backups + auto_backups, key=lambda x: x["created"], reverse=True)
     last_backup = all_backups[0]["created"] if all_backups else None
+    auto_backup_enabled = auto_dir.exists() or (REPO_ROOT / "backups" / "edge" / "daily").exists()
     return {
         "backups": all_backups[:10],
         "manual_backups": manual_backups[:5],
@@ -8998,8 +9017,8 @@ def get_backup_status() -> dict:
         "datadir_mb": datadirs,
         "last_backup": last_backup,
         "backup_dir": str(manual_dir),
-        "auto_backup_dir": str(auto_dir),
-        "auto_backup_enabled": auto_dir.exists(),
+        "auto_backup_dir": str(REPO_ROOT / "backups" / "edge"),
+        "auto_backup_enabled": auto_backup_enabled,
     }
 
 # ── Emission helpers (mirror V3/L1/core/src/emission.rs) ───────────────
@@ -10241,7 +10260,7 @@ def run_zion_cli(command: str) -> dict:
         return {"ok": False, "error": str(e)}
 
 
-def run_cli_core_util(cmd: str, db: str = "V3/data/zion-node-state.db") -> dict:
+def run_cli_core_util(cmd: str, db: str = "V31/data/v31-backup-node.db") -> dict:
     """Run a core-util subcommand and return stdout/stderr/returncode."""
     if not cmd:
         return {"ok": False, "error": "cmd required"}
@@ -13001,7 +13020,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_zion_cli(cmd))
         elif route == "/api/cli/core-util":
             cmd = params.get("cmd", [""])[0].strip()
-            db = params.get("db", ["V3/data/zion-node-state.db"])[0].strip()
+            db = params.get("db", ["V31/data/v31-backup-node.db"])[0].strip()
             self._json(run_cli_core_util(cmd, db))
         elif route == "/api/chain-info":
             info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=5.0)
@@ -13270,8 +13289,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             "size_mb": round(s.st_size / (1024*1024), 2),
                             "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
                         })
-                # Daily / weekly subdirectories used by the edge backup system
-                for sub in ("daily", "weekly"):
+                # Daily / weekly subdirectories used by the off-site Edge backup sync
+                for sub in ("edge/daily", "edge/weekly"):
                     sub_dir = backup_dir / sub
                     if sub_dir.exists():
                         for f in sorted(sub_dir.glob("*.tar.gz"), key=lambda p: p.stat().st_mtime, reverse=True):
@@ -14113,7 +14132,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": str(e), "cli_connected": False})
         elif route == "/api/cli/core-util":
             cmd = payload.get("cmd", "").strip()
-            db = payload.get("db", "V3/data/zion-node-state.db").strip()
+            db = payload.get("db", "V31/data/v31-backup-node.db").strip()
             self._json(run_cli_core_util(cmd, db))
         elif route == "/api/ncl/submit":
             # Proxy NCL job submit to Hiranyagarbha on port 8001

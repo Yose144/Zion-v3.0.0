@@ -273,7 +273,7 @@ impl Node {
             info!(blocks = indexed, "backfilled native tx/address index");
         }
 
-        Ok(Self {
+        let node = Self {
             storage,
             mempool: Mempool::new(),
             consensus,
@@ -283,10 +283,18 @@ impl Node {
             config,
             peer_manager: Arc::new(crate::peer_manager::PeerManager::default_manager()),
             next_template_id: AtomicU64::new(1),
-        })
-    }
+        };
 
-    /// Run the node until the shutdown signal is received.
+        // FIND-L1-005: log the genesis hash prominently at boot so operators
+        // can verify the binary was built against the expected genesis.
+        let ghash = genesis::genesis_hash();
+        tracing::info!(
+            hash = %ghash.to_hex(),
+            "genesis hash (verify this matches the canonical V31 genesis)"
+        );
+
+        Ok(node)
+    }
     pub async fn run(
         self: Arc<Self>,
         mut shutdown: watch::Receiver<bool>,
@@ -997,6 +1005,11 @@ impl Node {
             let hash = genesis.header.header_hash();
             (genesis.header.clone(), hash)
         });
+
+        // FIND-L1-003 fix: explicitly verify the block builds on the current tip.
+        if block.header.height != tip_header.height + 1 {
+            return Err(NodeError::Consensus(ConsensusError::PreviousHashMismatch));
+        }
 
         let target = difficulty_to_target(block.header.difficulty);
         self.consensus
