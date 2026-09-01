@@ -26,6 +26,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import TestingPhaseBanner from '@/components/TestingPhaseBanner';
 import {
   getEscrowAddress,
   getHtlcStatus,
@@ -471,6 +472,8 @@ export default function SwapPage() {
         <div className="absolute top-40 -right-24 h-[420px] w-[420px] rounded-full bg-zion-purple/14 blur-3xl" />
         <div className="absolute bottom-0 left-1/3 h-[420px] w-[620px] rounded-full bg-zion-cyan/10 blur-3xl" />
       </div>
+
+      <TestingPhaseBanner type="dex" className="zion-container relative z-10 mt-4" />
 
       {/* ── Hero ── */}
       <section className="zion-container relative z-10 mb-10">

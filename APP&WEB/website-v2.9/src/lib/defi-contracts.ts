@@ -96,6 +96,8 @@ export const CONTRACTS = {
   // ZIONDex AMM (Uniswap V2 fork) — deployed 2026-08-31 on Base Mainnet
   ZIONDexFactory:             '0x9F57998CC5Cb2a53426068c707Beac110966F351',
   ZIONDexRouter:              '0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662',
+  // ZISGate — not deployed yet (deploy when ETH funded; gas ~586k, cost ~0.000004 ETH)
+  ZIONDexZISGate:             '' as string,
 } as const;
 
 /** PancakeSwap V3 config on Base */

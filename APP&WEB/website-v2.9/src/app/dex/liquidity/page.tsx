@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from '@/components/LoginModal';
 import { usePathname } from 'next/navigation';
+import TestingPhaseBanner from '@/components/TestingPhaseBanner';
 import {
   fetchPools,
   addLiquidity,
@@ -189,6 +190,8 @@ export default function LiquidityPage() {
           </motion.div>
         </div>
       </div>
+
+      <TestingPhaseBanner type="dex" className="max-w-6xl mx-auto px-6 pt-4" />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Tabs */}

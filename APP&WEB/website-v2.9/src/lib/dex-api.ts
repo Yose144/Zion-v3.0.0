@@ -119,6 +119,7 @@ export interface EvmAddress {
 
 export const ZIONDEX_FACTORY = CONTRACTS.ZIONDexFactory;
 export const ZIONDEX_ROUTER = CONTRACTS.ZIONDexRouter;
+export const ZIONDEX_ZIS_GATE = CONTRACTS.ZIONDexZISGate;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
