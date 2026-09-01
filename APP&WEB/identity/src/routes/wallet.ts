@@ -9,6 +9,34 @@ import { requireAuth } from '../lib/auth.js';
 
 const L2_API_URL = process.env.L2_MULTICHAIN_URL || 'http://127.0.0.1:8454';
 
+// ── Token metadata for building Asset structs ──────────────────────────
+// Maps asset ID string ("chain:ticker" or "chain:ticker:contract") to
+// the full Asset struct expected by the L2 API.
+interface TokenMeta { decimals: number; name: string; }
+const TOKEN_REGISTRY: Record<string, TokenMeta> = {
+  'zion-l1:ZION': { decimals: 6, name: 'ZION' },
+  'base:tZION:0xC5E79b8C6475137aC3a982651097a219B63b0c33': { decimals: 18, name: 'Test ZION' },
+  'base:tUSDT:0x677693fbFDe6a9EeA655033fffF93054B559552C': { decimals: 6, name: 'Test USDT' },
+  'base:tWETH:0xcE5Df8e83B87f462835b51Ac6B2A4c53fafA620F': { decimals: 18, name: 'Test WETH' },
+  'base:tSOL:0xcD30a4f1657f6378c9b2F337785B93505Cd81cC8': { decimals: 9, name: 'Test SOL' },
+};
+
+/// Parse an asset ID string ("chain:ticker" or "chain:ticker:contract") into
+/// the L2 Asset struct: { id: { chain, ticker, contract? }, decimals, name }.
+function parseAssetId(id: string): { id: { chain: string; ticker: string; contract: string | null }; decimals: number; name: string } | null {
+  const parts = id.split(':');
+  if (parts.length < 2) return null;
+  const chain = parts[0];
+  const ticker = parts[1];
+  const contract = parts.length >= 3 ? parts.slice(2).join(':') : null;
+  const meta = TOKEN_REGISTRY[id];
+  return {
+    id: { chain, ticker, contract: contract ?? null },
+    decimals: meta?.decimals ?? 18,
+    name: meta?.name ?? ticker,
+  };
+}
+
 // ── Schemas ────────────────────────────────────────────────────────────
 
 const DeriveSchema = z.object({
@@ -40,12 +68,11 @@ const QuoteQuerySchema = z.object({
 // ── Plugin ─────────────────────────────────────────────────────────────
 
 export async function walletRoutes(app: FastifyInstance): Promise<void> {
-  // All wallet routes require authentication. The /quote route opts out
-  // below by not using the preHandler (it's public for API consistency).
-  app.addHook('preHandler', requireAuth);
+  // All wallet routes require authentication except /quote (public).
+  // We use a preHandler that checks auth for all routes except /quote.
 
   // ── GET /me — full wallet snapshot ──────────────────────────────────
-  app.get('/me', async (req, reply) => {
+  app.get('/me', { preHandler: [requireAuth] }, async (req, reply) => {
     const payload = req.user as { sub: string; addr: string };
     const token = extractToken(req);
 
@@ -87,7 +114,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── POST /derive — derive deposit address for a chain ──────────────
-  app.post('/derive', async (req, reply) => {
+  app.post('/derive', { preHandler: [requireAuth] }, async (req, reply) => {
     const parsed = DeriveSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
@@ -141,7 +168,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /balances — all balances ───────────────────────────────────
-  app.get('/balances', async (req, reply) => {
+  app.get('/balances', { preHandler: [requireAuth] }, async (req, reply) => {
     const payload = req.user as { sub: string };
     const token = extractToken(req);
 
@@ -167,7 +194,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── POST /swap — execute DEX swap ──────────────────────────────────
-  app.post('/swap', async (req, reply) => {
+  app.post('/swap', { preHandler: [requireAuth] }, async (req, reply) => {
     const parsed = SwapSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
@@ -176,13 +203,19 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
     const token = extractToken(req);
     const { from, to, amount, minAmountOut, recipient } = parsed.data;
 
+    const fromAsset = parseAssetId(from);
+    const toAsset = parseAssetId(to);
+    if (!fromAsset || !toAsset) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Invalid asset ID format' });
+    }
+
     let result: any;
     try {
       result = await l2Request('POST', '/v1/swap/execute-v2', {
-        from,
-        to,
-        amount,
-        ...(minAmountOut ? { minAmountOut } : {}),
+        from: fromAsset,
+        to: toAsset,
+        amount: Number(amount),
+        ...(minAmountOut ? { min_amount_out: Number(minAmountOut) } : {}),
         ...(recipient ? { recipient } : {}),
       }, token);
     } catch (err) {
@@ -219,7 +252,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /orders — order history ────────────────────────────────────
-  app.get('/orders', async (req, reply) => {
+  app.get('/orders', { preHandler: [requireAuth] }, async (req, reply) => {
     const payload = req.user as { sub: string };
     const token = extractToken(req);
 
@@ -282,7 +315,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── POST /withdraw — execute withdrawal ────────────────────────────
-  app.post('/withdraw', async (req, reply) => {
+  app.post('/withdraw', { preHandler: [requireAuth] }, async (req, reply) => {
     const parsed = WithdrawSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
@@ -301,7 +334,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /deposits — deposit history ────────────────────────────────
-  app.get('/deposits', async (req, reply) => {
+  app.get('/deposits', { preHandler: [requireAuth] }, async (req, reply) => {
     const token = extractToken(req);
     let result: any;
     try {
@@ -313,7 +346,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /withdrawals — withdrawal history ──────────────────────────
-  app.get('/withdrawals', async (req, reply) => {
+  app.get('/withdrawals', { preHandler: [requireAuth] }, async (req, reply) => {
     const token = extractToken(req);
     let result: any;
     try {
@@ -325,18 +358,25 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ── GET /quote — DEX quote (public, no auth) ───────────────────────
-  // Registered without the preHandler auth hook by clearing it for this route.
-  app.get('/quote', { preHandler: [] }, async (req, reply) => {
+  // L2 swap/quote is a POST endpoint expecting Asset structs.
+  // We translate the GET query params (asset ID strings) into the full
+  // Asset struct format expected by L2.
+  app.get('/quote', async (req, reply) => {
     const parsed = QuoteQuerySchema.safeParse(req.query);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
     const { from, to, amount } = parsed.data;
 
-    const qs = new URLSearchParams({ from, to, amount });
+    const fromAsset = parseAssetId(from);
+    const toAsset = parseAssetId(to);
+    if (!fromAsset || !toAsset) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Invalid asset ID format' });
+    }
+
     let result: any;
     try {
-      result = await l2Request('GET', `/v1/swap/quote?${qs.toString()}`, undefined, '');
+      result = await l2Request('POST', '/v1/swap/quote', { from: fromAsset, to: toAsset, amount: Number(amount) }, '');
     } catch (err) {
       return reply.code(502).send(l2Error(err));
     }
