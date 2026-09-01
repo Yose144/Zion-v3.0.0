@@ -261,21 +261,32 @@ The audit covered all V31 workspace crates, the EVM contracts, and the full Rust
 
 ## 3. Pool / Payout
 
-### POL-001: Pool accepts zero-PoW difficulty-1 shares → fund drain
-- **File:** `V31/L1/pool/src/stratum.rs:142-147`, `vardiff.rs:147-150`, `pool.rs:134-150`
+### POL-001: Pool accepts zero-PoW difficulty-1 shares → fund drain  ✅ FIXED (2026-08-28)
+- **File:** `V31/L1/pool/src/stratum.rs:157-159`, `vardiff.rs`, `pool.rs:98-104`
 - **Severity:** Critical
 - **Category:** Validation Bypass / Fund Drain
-- **Description:** `difficulty_to_target(1)` returns `[0xFF;32]` (maximum target). Every hash satisfies it. Default `ZION_VARDIFF_START_DIFF=1` and `min_difficulty=1` mean a fresh miner can submit any nonce as a valid share. Each share adds PPLNS weight → attacker accrues payout without doing work.
-- **Impact:** Direct fund drain from pool wallet. Public pool makes this trivially exploitable.
-- **Recommendation:** Enforce a meaningful minimum share difficulty (e.g. `ZION_VARDIFF_START_DIFF >= 1000`). Reject shares weaker than the floor. Cap weight per share.
+- **Description:** `difficulty_to_target(1)` returned `[0xFF;32]` (maximum target). Every hash satisfied it. Default `ZION_VARDIFF_START_DIFF=1` and `min_difficulty=1` meant a fresh miner could submit any nonce as a valid share. Each share added PPLNS weight → attacker accrued payout without doing work.
+- **Impact:** Direct fund drain from pool wallet. Public pool made this trivially exploitable.
+- **Remediation:**
+  - Added `MIN_SHARE_DIFFICULTY = 1000` constant in `vardiff.rs`.
+  - `VarDiff::new()` now clamps `min_difficulty` to `max(MIN_SHARE_DIFFICULTY)` and `start_difficulty` to `max(start_difficulty, min_difficulty)`, so even if an operator sets `ZION_VARDIFF_START_DIFF=1` or `ZION_VARDIFF_MIN_DIFF=1` via env, the pool enforces the 1000 floor.
+  - `difficulty_to_target()` now returns `difficulty_to_target(MIN_SHARE_DIFFICULTY)` for any input below 1000, ensuring the share target is always at or above the floor regardless of caller.
+  - Updated stratum test helpers to use `ZION_VARDIFF_START_DIFF=1000` and brute-force valid nonces for share submission tests.
+  - Added `test_vardiff_enforces_min_share_difficulty` and `test_difficulty_to_target_below_floor_clamped` unit tests.
+- **Status:** COMPLETE — all pool tests pass (168 passed, 0 failed).
 
-### POL-002: Pool block-found payout not idempotent → double block-reward payout
-- **File:** `V31/L1/pool/src/stratum.rs:1979-1989`, `pool.rs:192-201,246-248`, `payout.rs:218-235`
+### POL-002: Pool block-found payout not idempotent → double block-reward payout  ✅ FIXED (2026-08-28)
+- **File:** `V31/L1/pool/src/pool.rs:192-211`, `payout.rs:215-220`
 - **Severity:** Critical
 - **Category:** Fund Drain / Double Payment
-- **Description:** `on_block_found` calls `compute_miner_payouts` → `distribute_to_miners`, which *additively mutates* `self.unpaid` and pushes a full payout batch per call. No dedup guard before the sweep completes. Triggers: replay of winning `mining.submit`, or same block via v1/v3-plain/v3-TLS handlers (all three call `record_block_accepted`).
-- **Impact:** Pool pays N× block reward for one found block.
-- **Recommendation:** Add `paid_block_heights: HashSet<u64>` checked at the start of `on_block_found`. Dedup `pending_payouts` by `(height, address)`.
+- **Description:** `on_block_found` called `compute_miner_payouts` → `distribute_to_miners`, which additively mutated `self.unpaid` and pushed a full payout batch per call. No dedup guard before the sweep completed. Triggers: replay of winning `mining.submit`, or same block via v1/v3-plain/v3-TLS handlers (all three call `record_block_accepted`).
+- **Impact:** Pool would pay N× block reward for one found block.
+- **Remediation (already present in V31 code, verified + test added):**
+  - `on_block_found()` checks `paid_block_heights.insert(block_height)` and early-returns if the height was already processed (pool.rs:194-196).
+  - `sent_payouts: HashSet<(u64, String)>` keyed by `(block_height, address)` prevents duplicate entries in `pending_payouts` (pool.rs:200).
+  - `payout.rs` marks payouts as sent via `pool.mark_payout_sent()` after successful submission (payout.rs:218), preventing re-sending on crash recovery.
+  - Added `on_block_found_is_idempotent` unit test verifying duplicate calls produce zero additional pending payouts.
+- **Status:** COMPLETE — idempotency guard verified with test.
 
 ### POL-003: AuxPoW share hash trusted from miner for non-DAG algorithms
 - **File:** `V31/L1/pool/src/share_forwarder.rs:66-87,101-117`
@@ -344,24 +355,36 @@ No critical/high findings. The miner's profit switching, GPU/CPU stream separati
 
 ## 5. Solidity Contracts
 
-### CON-001: `ZDXToken.setMinter()` is a no-op; owner is immutable single-key
-- **File:** `V31/L2/multichain/contracts/src/dex/ZDXToken.sol:73-76`
+### CON-001: `ZDXToken.setMinter()` is a no-op; owner is immutable single-key  ✅ FIXED (2026-08-28)
+- **File:** `V31/L2/multichain/contracts/src/dex/ZDXToken.sol`
 - **Severity:** High
 - **Category:** Access Control / Broken Upgrade Path
-- **Description:** `setMinter(address newMinter)` has an empty body — it only has a comment. The `owner` is set to `msg.sender` in the constructor and never changes. The `mint()` function uses `onlyOwner`. This means:
-  1. The deployer (a single EOA) is the permanent minter — no multisig, no upgrade path.
-  2. If the staking contract is upgraded, the old contract retains minting power forever.
-  3. There is no way to transfer minter rights.
+- **Description:** `setMinter(address newMinter)` had an empty body — it only had a comment. The `owner` was set to `msg.sender` in the constructor and never changed. The `mint()` function used `onlyOwner`. This means:
+  1. The deployer (a single EOA) was the permanent minter — no multisig, no upgrade path.
+  2. If the staking contract was upgraded, the old contract retained minting power forever.
+  3. There was no way to transfer minter rights.
 - **Impact:** Single-key compromise → infinite ZDX inflation. Broken upgradeability.
-- **Recommendation:** Use `AccessControl` with `MINTER_ROLE`; grant to staking contract; add `renounceMinter()` and `transferMinter()` with two-step or timelock.
+- **Remediation:**
+  - `ZDXToken` now uses `AccessControl` (OpenZeppelin) with `MINTER_ROLE`, `SLASHER_ROLE`, and `DEFAULT_ADMIN_ROLE`.
+  - Constructor takes `admin`, `minter`, and `slasher` addresses; the admin holds `DEFAULT_ADMIN_ROLE` and can manage all roles.
+  - `mint()` is gated on `MINTER_ROLE` (not `onlyOwner`).
+  - Added `setMinter(address newMinter)` convenience function that atomically transfers `MINTER_ROLE` from the current minter to the new one via `grantRole`/`revokeRole`. Only callable by `DEFAULT_ADMIN_ROLE` (multisig).
+  - Added `getMinter()` view helper.
+  - Role management via standard AccessControl `grantRole`/`revokeRole` provides the multisig-controlled upgradeability path.
+- **Status:** COMPLETE — all ZDXToken/IZDXToken/SolverRegistry tests pass.
 
-### CON-002: `SolverRegistry.slash()` calls `zdxToken.burn()` but `ZDXToken` has no `burn` function
-- **File:** `V31/L2/multichain/contracts/src/dex/SolverRegistry.sol:161`
+### CON-002: `SolverRegistry.slash()` calls `zdxToken.burn()` but `ZDXToken` has no `burn` function  ✅ FIXED (2026-08-28)
+- **File:** `V31/L2/multichain/contracts/src/dex/ZDXToken.sol`, `interfaces/IZDXToken.sol`, `SolverRegistry.sol:161`
 - **Severity:** High
 - **Category:** Broken Functionality / Stuck Funds
-- **Description:** `slash()` calls `zdxToken.burn(slashAmount)` but `ZDXToken` does not implement `burn`. The `IZDXToken` interface does not expose it. This will either revert (if the interface is strict) or silently fail, bricking the slashing mechanism.
-- **Impact:** Slashing is inoperative; misbehaving solvers cannot be penalized.
-- **Recommendation:** Add `burn(uint256 amount)` to `ZDXToken` (only callable by `SolverRegistry` via a `SLASHER_ROLE`), and update the interface.
+- **Description:** `slash()` calls `zdxToken.burn(slashAmount)` but `ZDXToken` did not implement `burn`. The `IZDXToken` interface did not expose it.
+- **Impact:** Slashing was inoperative; misbehaving solvers could not be penalized.
+- **Remediation:**
+  - Added `burn(uint256 amount)` to `ZDXToken`, restricted to `SLASHER_ROLE`.
+  - Added `burn(uint256 amount)` to the `IZDXToken` interface.
+  - `SolverRegistry` (which holds the `SLASHER_ROLE`) calls `zdxToken.burn(slashAmount)` to burn tokens from its own balance (where staked tokens are held).
+  - Added Solidity tests: `ZDXToken_burn_from_slasher` and `ZDXToken_burn_reverts_without_role`.
+- **Status:** COMPLETE — burn function implemented, interface updated, slash path verified.
 
 ### CON-003: `ZIONBridge` constructor allows 1-of-1 threshold (testnet comment)
 - **File:** `V31/L2/multichain/contracts/src/evm/ZIONBridge.sol:165`

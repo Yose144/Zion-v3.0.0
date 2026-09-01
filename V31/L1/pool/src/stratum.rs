@@ -2414,8 +2414,8 @@ mod tests {
     use crate::rate_limit::IpRateLimiter;
 
     fn make_server() -> StratumServer {
-        std::env::set_var("ZION_VARDIFF_MIN_DIFF", "1");
-        std::env::set_var("ZION_VARDIFF_START_DIFF", "1");
+        std::env::set_var("ZION_VARDIFF_MIN_DIFF", "1000");
+        std::env::set_var("ZION_VARDIFF_START_DIFF", "1000");
         let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
         let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default(), telemetry)));
         StratumServer::new(pool)
@@ -2442,7 +2442,18 @@ mod tests {
         let server = make_server();
         let share_target = crate::vardiff::difficulty_to_target(1000);
         let share_target_hex = hex::encode(share_target);
-        let header = "00".repeat(80);
+        let header_bytes = vec![0u8; 80];
+        let algo = zion_cosmic_harmony::EkamDeeksha::new();
+        let nonce = zion_cosmic_harmony::PowAlgorithm::find_nonce(
+            &algo,
+            &header_bytes,
+            0,
+            100_000,
+            &share_target,
+        )
+        .expect("should find a nonce meeting difficulty 1000");
+        let nonce_hex = format!("{:016x}", nonce.0);
+        let header = hex::encode(&header_bytes);
         server.job_notification(
             "zion_1",
             &header,
@@ -2452,7 +2463,10 @@ mod tests {
             "",
         );
         let resp = server.handle_request(
-            r#"{"id":3,"method":"mining.submit","params":["worker","zion_1","0000000000000000"]}"#,
+            &format!(
+                r#"{{"id":3,"method":"mining.submit","params":["worker","zion_1","{}"]}}"#,
+                nonce_hex
+            ),
         );
         assert!(resp.contains("true"));
     }
@@ -2462,7 +2476,17 @@ mod tests {
         let server = make_server();
         let share_target = crate::vardiff::difficulty_to_target(1000);
         let share_target_hex = hex::encode(share_target);
-        let header = "00".repeat(80);
+        let header_bytes = vec![0u8; 80];
+        let coin = zion_cosmic_harmony::ExternalCoin::Bitcoin;
+        let nonce = (0..100_000u64)
+            .find(|&n| {
+                let hash =
+                    zion_miner::auxpow::hasher::hash_for_coin(coin, &header_bytes, n);
+                zion_miner::auxpow::hasher::meets_target(&hash, &share_target)
+            })
+            .expect("should find a nonce meeting difficulty 1000 for Bitcoin");
+        let nonce_hex = format!("{:016x}", nonce);
+        let header = hex::encode(&header_bytes);
         server.job_notification(
             "aux_bitcoin_1",
             &header,
@@ -2472,7 +2496,10 @@ mod tests {
             "",
         );
         let resp = server.handle_request(
-            r#"{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","0000000000000000"]}"#,
+            &format!(
+                r#"{{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","{}"]}}"#,
+                nonce_hex
+            ),
         );
         assert!(resp.contains("true"));
     }
