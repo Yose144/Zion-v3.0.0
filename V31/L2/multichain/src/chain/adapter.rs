@@ -146,6 +146,24 @@ pub trait ChainAdapter: Send + Sync {
     /// Query the spendable balance for `address` of the native asset.
     async fn balance(&self, address: &Address) -> MultichainResult<Amount>;
 
+    /// Query the balance of a specific token (ERC-20 / analogous) for `address`.
+    /// For native assets (no contract), this falls back to `balance()`.
+    async fn token_balance(
+        &self,
+        asset: &Asset,
+        address: &Address,
+    ) -> MultichainResult<Amount> {
+        if asset.id.contract.is_none() {
+            return self.balance(address).await;
+        }
+        let _ = address;
+        Err(MultichainError::Unsupported(format!(
+            "token_balance not supported for {} on {}",
+            asset.id,
+            self.name()
+        )))
+    }
+
     /// Return a mining block template, if this chain supports PoW job generation.
     async fn block_template(&self) -> MultichainResult<Option<BlockTemplate>> {
         Ok(None)

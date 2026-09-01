@@ -66,6 +66,7 @@ pub struct MultichainService {
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
     node_rewards: Arc<NodeRewards>,
     reconciler: Reconciler,
+    solvency_guard: Option<crate::solvency::SolvencyGuard>,
 }
 
 fn load_bridge_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
@@ -234,13 +235,25 @@ impl MultichainService {
             Arc::clone(&adapters),
             wallet_ledger.clone(),
         );
-        let withdrawal_processor = WithdrawalProcessor::new(
-            Arc::clone(&db),
-            Arc::clone(&adapters),
-            wallet_ledger.clone(),
-        );
         let dex = Arc::new(RwLock::new(DexRouter::new()));
         let journal_ledger = JournalLedger::new(Arc::clone(&db));
+
+        // Solvency guard: check on-chain hot wallet balance before swaps/withdrawals.
+        // In dev/test environments with empty hot wallets, set `[solvency] enforce = false`
+        // in the config to allow operations with warnings.
+        let solvency_margin = config.solvency.margin.parse::<u128>().unwrap_or(0);
+        let solvency_config = crate::solvency::SolvencyConfig {
+            enforce: config.solvency.enforce,
+            margin: Amount::new(solvency_margin),
+        };
+        let solvency_guard = crate::solvency::SolvencyGuard::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_keyring.clone(),
+            Arc::clone(&dex),
+            solvency_config,
+        );
+
         let swap_executor = SwapExecutor::new(
             Arc::clone(&db),
             Arc::clone(&adapters),
@@ -248,7 +261,15 @@ impl MultichainService {
             Arc::clone(&dex),
         )
         .with_journal(journal_ledger)
-        .with_htlc(htlc.clone());
+        .with_htlc(htlc.clone())
+        .with_solvency(solvency_guard.clone());
+
+        let withdrawal_processor = WithdrawalProcessor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            wallet_ledger.clone(),
+        )
+        .with_solvency(solvency_guard.clone());
 
         let reconciler_config = ReconcilerConfig::from_config(&config.reconciliation)
             .unwrap_or_else(|e| {
@@ -285,6 +306,7 @@ impl MultichainService {
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
             node_rewards: Arc::new(node_rewards),
             reconciler,
+            solvency_guard: Some(solvency_guard),
         }
     }
 
@@ -908,6 +930,11 @@ impl MultichainService {
     /// Access the on-chain/internal reconciliation engine.
     pub fn reconciler(&self) -> Reconciler {
         self.reconciler.clone()
+    }
+
+    /// Access the solvency guard (if configured).
+    pub fn solvency_guard(&self) -> Option<&crate::solvency::SolvencyGuard> {
+        self.solvency_guard.as_ref()
     }
 
     /// Load the most recent reconciliation reports from the database.

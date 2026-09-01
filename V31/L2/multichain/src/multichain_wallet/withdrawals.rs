@@ -15,6 +15,7 @@ use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::multichain_wallet::ledger::WalletLedger;
 use crate::multichain_wallet::types::{WithdrawalRecord, WithdrawalStatus};
+use crate::solvency::SolvencyGuard;
 
 /// Withdrawal processor.
 #[derive(Clone)]
@@ -23,6 +24,9 @@ pub struct WithdrawalProcessor {
     adapters: Arc<ChainAdapterRegistry>,
     ledger: WalletLedger,
     poll_interval: Duration,
+    /// Optional solvency guard — when set, withdrawals are blocked if the hot
+    /// wallet has insufficient on-chain balance.
+    solvency: Option<SolvencyGuard>,
 }
 
 impl WithdrawalProcessor {
@@ -36,11 +40,19 @@ impl WithdrawalProcessor {
             adapters,
             ledger,
             poll_interval: Duration::from_secs(30),
+            solvency: None,
         }
     }
 
     pub fn with_poll_interval(mut self, interval: Duration) -> Self {
         self.poll_interval = interval;
+        self
+    }
+
+    /// Attach a `SolvencyGuard` to block withdrawals when the hot wallet has
+    /// insufficient on-chain balance.
+    pub fn with_solvency(mut self, guard: SolvencyGuard) -> Self {
+        self.solvency = Some(guard);
         self
     }
 
@@ -65,6 +77,13 @@ impl WithdrawalProcessor {
     ) -> MultichainResult<String> {
         let recipient = parse_recipient(recipient_address, asset.id.chain)?;
         let id = uuid::Uuid::new_v4().to_string();
+
+        // Pre-flight solvency check: verify the hot wallet has enough on-chain
+        // balance before debiting the user. This prevents creating withdrawals
+        // that would fail at settlement time.
+        if let Some(ref guard) = self.solvency {
+            guard.verify_withdrawal(asset, amount).await?;
+        }
 
         // Debit immediately so the balance is reserved.
         self.ledger.debit(user_id, asset, amount).await?;

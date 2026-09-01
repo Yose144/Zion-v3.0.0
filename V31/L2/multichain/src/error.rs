@@ -26,6 +26,14 @@ pub enum MultichainError {
 
     #[error("L1 type error: {0}")]
     L1Types(#[from] zion_l1_types::L1Error),
+
+    #[error("insufficient solvency for {asset}: on-chain {on_chain} < required {required} (deficit {deficit})")]
+    InsufficientSolvency {
+        asset: String,
+        on_chain: u128,
+        required: u128,
+        deficit: u128,
+    },
 }
 
 pub type MultichainResult<T> = Result<T, MultichainError>;

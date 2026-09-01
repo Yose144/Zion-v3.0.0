@@ -27,7 +27,7 @@ use tracing::{error, info};
 
 use zion_multichain::config::{
     AdapterConfig, DatabaseConfig, MultichainConfig, NodeRewardsConfig, ReconciliationConfig,
-    ServerConfig,
+    ServerConfig, SolvencyConfig,
 };
 use zion_multichain::server::ApiServer;
 use zion_multichain::service::MultichainService;
@@ -107,6 +107,7 @@ fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
         solvers: warp.solvers.clone(),
         node_rewards: NodeRewardsConfig::default(),
         reconciliation: ReconciliationConfig::default(),
+        solvency: SolvencyConfig::default(),
     }
 }
 
