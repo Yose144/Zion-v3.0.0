@@ -87,9 +87,9 @@ export default function ZionDexDashboard() {
           <div className="flex items-start gap-3 rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
             <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-amber-200">ZionDex — Under Construction / Early Beta</p>
+              <p className="text-sm font-medium text-amber-200">ZionDex — Beta Live (Test Tokens)</p>
               <p className="text-xs text-amber-200/70 mt-1">
-                The ZionDex AMM and cross-chain router service are still being deployed. Current quotes may route through external liquidity. Use small amounts and expect changes.
+                ZionDex AMM is deployed on Base. Try swaps with test tokens (tZION, tUSDT, tWETH) — select them from the token dropdown. Real token pairs (wZION/USDT) will be activated once liquidity is added.
               </p>
             </div>
           </div>
