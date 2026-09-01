@@ -23,6 +23,7 @@ pub mod node_rewards;
 pub mod rate_limit;
 pub mod reconciliation;
 pub mod server;
+pub mod solvency;
 pub mod service;
 pub mod swap;
 pub mod types;

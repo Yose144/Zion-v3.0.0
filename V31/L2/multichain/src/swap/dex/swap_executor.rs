@@ -21,6 +21,7 @@ use crate::error::{MultichainError, MultichainResult};
 use crate::multichain_wallet::journal::JournalLedger;
 use crate::multichain_wallet::ledger::WalletLedger;
 use crate::multichain_wallet::types::{DexOrder, DexOrderStatus};
+use crate::solvency::SolvencyGuard;
 use crate::swap::dex::DexRouter;
 use crate::swap::htlc::HtlcSwap;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
@@ -37,6 +38,9 @@ pub struct SwapExecutor {
     journal: Option<JournalLedger>,
     router: Arc<RwLock<DexRouter>>,
     htlc: Option<HtlcSwap>,
+    /// Optional solvency guard — when set, swap output settlement is blocked
+    /// if the hot wallet has insufficient on-chain balance.
+    solvency: Option<SolvencyGuard>,
 }
 
 /// Parameters for a non-custodial two-sided HTLC swap.
@@ -77,6 +81,7 @@ impl SwapExecutor {
             journal: None,
             router,
             htlc: None,
+            solvency: None,
         }
     }
 
@@ -89,6 +94,13 @@ impl SwapExecutor {
     /// Attach an `HtlcSwap` coordinator to enable non-custodial HTLC swaps.
     pub fn with_htlc(mut self, htlc: HtlcSwap) -> Self {
         self.htlc = Some(htlc);
+        self
+    }
+
+    /// Attach a `SolvencyGuard` to block on-chain settlement when the hot
+    /// wallet has insufficient balance.
+    pub fn with_solvency(mut self, guard: SolvencyGuard) -> Self {
+        self.solvency = Some(guard);
         self
     }
 
@@ -125,6 +137,26 @@ impl SwapExecutor {
             created_at: chrono::Utc::now(),
             executed_at: None,
         };
+
+        // 0. Pre-flight solvency check: if the swap output will be settled
+        // on-chain (recipient is Some), verify the hot wallet has enough of
+        // the output token before debiting the user. This uses a read-only
+        // quote to estimate the output amount.
+        if let Some(ref guard) = self.solvency {
+            if recipient.is_some() {
+                let router_read = self.router.read().await;
+                if let Ok(quotes) = router_read.quote_multi(from, to, amount, 1, 4) {
+                    if let Some(quote) = quotes.last() {
+                        if let Err(e) = guard.verify_swap_output(to, quote.expected_out).await {
+                            order.status = DexOrderStatus::Failed;
+                            self.save_order(&order).await?;
+                            return Err(e);
+                        }
+                    }
+                }
+                drop(router_read);
+            }
+        }
 
         // 1. Debit input from the user's ledger (atomic journal if available).
         self.debit(user_id, from, amount, "swap", Some(&order_id)).await?;
@@ -1162,5 +1194,307 @@ mod tests {
 
         assert_eq!(order.status, DexOrderStatus::HtlcSettled);
         assert!(order.tx_hash.is_some());
+    }
+
+    // ─── E2E: deposit → swap → withdraw ───────────────────────────────────
+
+    /// Mock adapter that simulates on-chain deposits for a specific address
+    /// and records outbound transfers. Used for the E2E deposit→swap→withdraw
+    /// test.
+    struct EvmDepositMockAdapter {
+        family: ChainFamily,
+        /// Deposits to emit when `watch_addresses` is called.
+        pending_deposits: std::sync::Arc<
+            std::sync::Mutex<Vec<DepositEvent>>,
+        >,
+        /// Recorded outbound `transfer_token` calls.
+        transfer_calls: std::sync::Arc<
+            std::sync::Mutex<Vec<(String, String, u128)>>,
+        >,
+    }
+
+    impl EvmDepositMockAdapter {
+        fn new() -> Self {
+            Self {
+                family: ChainFamily::Evm,
+                pending_deposits: std::sync::Arc::new(
+                    std::sync::Mutex::new(Vec::new()),
+                ),
+                transfer_calls: std::sync::Arc::new(
+                    std::sync::Mutex::new(Vec::new()),
+                ),
+            }
+        }
+
+        fn deposits_handle(&self) -> std::sync::Arc<std::sync::Mutex<Vec<DepositEvent>>> {
+            self.pending_deposits.clone()
+        }
+
+        fn transfers_handle(
+            &self,
+        ) -> std::sync::Arc<std::sync::Mutex<Vec<(String, String, u128)>>> {
+            self.transfer_calls.clone()
+        }
+    }
+
+    #[async_trait]
+    impl ChainAdapter for EvmDepositMockAdapter {
+        fn name(&self) -> &str {
+            "evm-deposit-mock"
+        }
+
+        fn family(&self) -> ChainFamily {
+            self.family
+        }
+
+        async fn health_check(&self) -> MultichainResult<bool> {
+            Ok(true)
+        }
+
+        async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
+            Ok(Vec::new())
+        }
+
+        async fn watch_addresses(
+            &self,
+            _addresses: &[Address],
+        ) -> MultichainResult<Vec<DepositEvent>> {
+            let mut deps = self.pending_deposits.lock().unwrap();
+            let drained = deps.drain(..).collect::<Vec<_>>();
+            Ok(drained)
+        }
+
+        async fn current_height(&self) -> MultichainResult<u64> {
+            Ok(10_000)
+        }
+
+        async fn confirmations(&self, _tx_hash: &Hash) -> MultichainResult<u64> {
+            Ok(100)
+        }
+
+        async fn send_payment(
+            &self,
+            _to: &Address,
+            _amount: Amount,
+        ) -> MultichainResult<Hash> {
+            Ok(Hash([0xAA; 32]))
+        }
+
+        async fn transfer_token(
+            &self,
+            token: &Asset,
+            to: &Address,
+            amount: Amount,
+        ) -> MultichainResult<Hash> {
+            self.transfer_calls.lock().unwrap().push((
+                token.id.to_string(),
+                to.encoded.clone(),
+                amount.0,
+            ));
+            Ok(Hash([0xBB; 32]))
+        }
+
+        async fn balance(&self, _address: &Address) -> MultichainResult<Amount> {
+            Ok(Amount::ZERO)
+        }
+
+        async fn execute_outbound(
+            &self,
+            _transfer: &crate::types::Transfer,
+        ) -> MultichainResult<Hash> {
+            Ok(Hash([0xCC; 32]))
+        }
+    }
+
+    /// Full E2E flow:
+    /// 1. User gets a deposit address on Base.
+    /// 2. A deposit of tZION arrives → DepositWatcher credits the ledger.
+    /// 3. User swaps tZION → tUSDT via SwapExecutor (in-memory AMM).
+    /// 4. User requests a withdrawal of tUSDT to an external address.
+    /// 5. WithdrawalProcessor processes the pending withdrawal → adapter
+    ///    `transfer_token` is called.
+    #[tokio::test]
+    async fn e2e_deposit_swap_withdraw_flow() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+
+        // --- Setup DEX with tZION/tUSDT AMM pool ---
+        let base = ChainId::Base;
+        let tzion = evm_asset(
+            base,
+            "tZION",
+            "0xC5E79b8C6475137aC3a982651097a219B63b0c33",
+        );
+        let tusdt = evm_asset(
+            base,
+            "tUSDT",
+            "0x677693fbFDe6a9EeA655033fffF93054B559552C",
+        );
+
+        let mut dex = DexRouter::new();
+        dex.add_pool(Pool {
+            id: 1,
+            asset_a: tzion.clone(),
+            asset_b: tusdt.clone(),
+            reserve_a: Amount::new(1_000_000_000_000_000_000_000), // 1000 tZION
+            reserve_b: Amount::new(1_000_000_000_000_000_000_000), // 1000 tUSDT
+            fee_bps: 30,
+            amm_pair: None, // in-memory AMM for this test
+            amm_factory: None,
+        });
+
+        // --- Setup mock adapter with deposit simulation ---
+        let mut adapters = ChainAdapterRegistry::new();
+        let mock = EvmDepositMockAdapter::new();
+        let deposits_handle = mock.deposits_handle();
+        let transfers_handle = mock.transfers_handle();
+        adapters.register(base, Box::new(mock));
+        let adapters = Arc::new(adapters);
+
+        // --- Setup SwapExecutor ---
+        let executor = SwapExecutor::new(
+            Arc::clone(&db),
+            Arc::clone(&adapters),
+            ledger.clone(),
+            Arc::new(RwLock::new(dex)),
+        );
+
+        // --- Setup DepositWatcher ---
+        let deposit_watcher =
+            crate::multichain_wallet::deposits::DepositWatcher::new(
+                Arc::clone(&db),
+                Arc::clone(&adapters),
+                ledger.clone(),
+            );
+
+        // --- Setup WithdrawalProcessor ---
+        let withdrawal_processor =
+            crate::multichain_wallet::withdrawals::WithdrawalProcessor::new(
+                Arc::clone(&db),
+                Arc::clone(&adapters),
+                ledger.clone(),
+            );
+
+        let user_id = "e2e_user";
+
+        // --- Step 1: Register a deposit address for the user ---
+        let deposit_address = Address::new(
+            base,
+            vec![0x11u8; 20],
+            "0x1111111111111111111111111111111111111111",
+        )
+        .unwrap();
+        {
+            let db_lock = db.lock().await;
+            db_lock
+                .save_wallet_address(&crate::multichain_wallet::types::WalletAddress {
+                    address: deposit_address.clone(),
+                    user_id: user_id.to_string(),
+                    chain: base,
+                    chain_id: None,
+                    purpose: crate::multichain_wallet::types::AddressPurpose::Deposit,
+                    public_key: None,
+                    derivation_path: "m/44'/60'/0'/0/0".to_string(),
+                    is_external: false,
+                    created_at: chrono::Utc::now(),
+                })
+                .unwrap();
+        }
+
+        // --- Step 2: Simulate a deposit of 100 tZION (18 decimals) ---
+        let deposit_amount = Amount::new(100_000_000_000_000_000_000u128); // 100 tZION
+        {
+            let mut deps = deposits_handle.lock().unwrap();
+            deps.push(DepositEvent {
+                chain: base,
+                tx_hash: Hash([0x42; 32]),
+                recipient: deposit_address.clone(),
+                amount: deposit_amount,
+                memo: None,
+                confirmations: 100, // above finality threshold
+                asset: Some(tzion.clone()),
+            });
+        }
+
+        // Run deposit watcher poll — should credit the ledger.
+        deposit_watcher.poll_all().await.unwrap();
+
+        // Verify the user's tZION balance was credited.
+        let tzion_balance = ledger.balance(user_id, &tzion).await.unwrap();
+        assert_eq!(
+            tzion_balance.0, deposit_amount.0,
+            "tZION should be credited after deposit"
+        );
+
+        // --- Step 3: Swap tZION → tUSDT (custodial, no recipient) ---
+        let swap_amount = Amount::new(50_000_000_000_000_000_000u128); // 50 tZION
+        let order = executor
+            .execute_swap(
+                user_id,
+                &tzion,
+                &tusdt,
+                swap_amount,
+                Amount::ZERO,
+                None, // custodial — output stays on ledger
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(order.status, DexOrderStatus::Executed);
+        assert!(order.amount_out.0 > 0, "swap should produce output");
+
+        // Verify ledger: tZION decreased, tUSDT increased.
+        let tzion_after_swap = ledger.balance(user_id, &tzion).await.unwrap();
+        assert_eq!(
+            tzion_after_swap.0,
+            deposit_amount.0 - swap_amount.0,
+            "tZION should be debited by swap amount"
+        );
+
+        let tusdt_after_swap = ledger.balance(user_id, &tusdt).await.unwrap();
+        assert_eq!(
+            tusdt_after_swap.0,
+            order.amount_out.0,
+            "tUSDT should be credited with swap output"
+        );
+
+        // --- Step 4: Request withdrawal of tUSDT to an external address ---
+        let withdraw_recipient = "0x2222222222222222222222222222222222222222";
+        let withdraw_amount = order.amount_out;
+        let withdrawal_id = withdrawal_processor
+            .request_withdraw(user_id, &tusdt, withdraw_amount, withdraw_recipient)
+            .await
+            .unwrap();
+
+        assert!(!withdrawal_id.is_empty(), "withdrawal ID should be set");
+
+        // Verify ledger: tUSDT debited immediately (reserved).
+        let tusdt_after_withdraw_req = ledger.balance(user_id, &tusdt).await.unwrap();
+        assert_eq!(
+            tusdt_after_withdraw_req.0, 0,
+            "tUSDT should be debited after withdrawal request"
+        );
+
+        // --- Step 5: Process pending withdrawals → adapter transfer_token ---
+        withdrawal_processor.process_pending().await.unwrap();
+
+        // Verify the adapter was called with the right parameters.
+        let transfers = transfers_handle.lock().unwrap();
+        assert_eq!(transfers.len(), 1, "one outbound transfer should occur");
+        assert_eq!(transfers[0].0, tusdt.id.to_string());
+        assert_eq!(transfers[0].1, withdraw_recipient);
+        assert_eq!(transfers[0].2, withdraw_amount.0);
+
+        // Verify the withdrawal record is now marked as sent.
+        let withdrawals = {
+            let db_lock = db.lock().await;
+            db_lock.load_withdrawals_for_user(user_id).unwrap()
+        };
+        assert_eq!(withdrawals.len(), 1);
+        assert_eq!(
+            withdrawals[0].status,
+            crate::multichain_wallet::types::WithdrawalStatus::Sent
+        );
+        assert!(withdrawals[0].tx_hash.is_some());
     }
 }

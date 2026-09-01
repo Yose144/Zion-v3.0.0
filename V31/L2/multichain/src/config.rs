@@ -82,6 +82,8 @@ pub struct MultichainConfig {
     pub node_rewards: NodeRewardsConfig,
     #[serde(default)]
     pub reconciliation: ReconciliationConfig,
+    #[serde(default)]
+    pub solvency: SolvencyConfig,
 }
 
 impl Default for MultichainConfig {
@@ -99,6 +101,7 @@ impl Default for MultichainConfig {
             solvers: Vec::new(),
             node_rewards: NodeRewardsConfig::default(),
             reconciliation: ReconciliationConfig::default(),
+            solvency: SolvencyConfig::default(),
         }
     }
 }
@@ -140,6 +143,29 @@ fn default_reconciliation_interval() -> u64 {
 
 fn default_reconciliation_threshold() -> String {
     "1000000".to_string()
+}
+
+/// Solvency guard configuration.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SolvencyConfig {
+    /// When `true`, the solvency guard rejects swaps/withdrawals that would
+    /// over-spend the hot wallet. When `false`, it logs warnings but allows
+    /// the operation. Default: `true`.
+    #[serde(default = "default_true")]
+    pub enforce: bool,
+    /// Safety margin (in atomic units) added to the requested amount when
+    /// checking solvency. Default: 0.
+    #[serde(default)]
+    pub margin: String,
+}
+
+impl Default for SolvencyConfig {
+    fn default() -> Self {
+        Self {
+            enforce: true,
+            margin: "0".to_string(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]

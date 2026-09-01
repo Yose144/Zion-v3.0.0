@@ -1340,4 +1340,35 @@ impl ChainAdapter for EvmAdapter {
         // never exceed u128 in practice, so this cast is safe for Mainnet Alpha.
         Ok(Amount::new(wei.as_u128()))
     }
+
+    async fn token_balance(
+        &self,
+        asset: &Asset,
+        address: &Address,
+    ) -> MultichainResult<Amount> {
+        // Native asset (no contract) → fall back to ETH balance.
+        let contract_str = match asset.id.contract.as_ref() {
+            Some(c) => c.as_str(),
+            None => return self.balance(address).await,
+        };
+        let token: EthAddress = contract_str
+            .parse()
+            .map_err(|e| MultichainError::Validation(format!("invalid token contract: {e}")))?;
+        let owner_eth = self.to_eth_address(address)?;
+
+        let mut call = Self::function_selector(ERC20_BALANCE_OF_SIG).to_vec();
+        let args = encode(&[Token::Address(owner_eth)]);
+        call.extend_from_slice(&args);
+
+        let tx = TransactionRequest::new().to(token).data(call);
+        let bytes = self
+            .provider
+            .call(&tx.into(), None)
+            .await
+            .map_err(|e| MultichainError::Internal(format!("ERC20 balanceOf failed: {e}")))?;
+        let tokens = decode(&[ParamType::Uint(256)], &bytes)
+            .map_err(|e| MultichainError::Internal(format!("decode ERC20 balance: {e}")))?;
+        let raw = tokens[0].clone().into_uint().unwrap_or_default();
+        Ok(Amount::new(raw.as_u128()))
+    }
 }

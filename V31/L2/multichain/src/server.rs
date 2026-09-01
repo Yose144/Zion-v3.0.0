@@ -296,6 +296,7 @@ impl ApiServer {
                 "/v1/admin/reconciliation/trigger",
                 post(trigger_reconciliation),
             )
+            .route("/v1/admin/solvency", get(get_solvency_status))
             .layer(axum::middleware::from_fn_with_state(
                 state.limiter.clone(),
                 auth_rate_limit,
@@ -2192,6 +2193,53 @@ async fn trigger_reconciliation(
         Ok(reports) => Ok(Json(reports)),
         Err(e) => {
             tracing::warn!("manual reconciliation failed: {e}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn get_solvency_status(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let guard = match state.service.solvency_guard() {
+        Some(g) => g,
+        None => {
+            return Ok(Json(serde_json::json!({
+                "enabled": false,
+                "checks": {}
+            })));
+        }
+    };
+    match crate::solvency::check_all(guard).await {
+        Ok(checks) => {
+            let config = guard.config();
+            let json_checks: serde_json::Map<String, serde_json::Value> = checks
+                .into_iter()
+                .map(|(k, v)| {
+                    (
+                        k,
+                        serde_json::json!({
+                            "asset_key": v.asset_key,
+                            "on_chain": v.on_chain.0.to_string(),
+                            "ledger_claims": v.ledger_claims.0.to_string(),
+                            "pool_reserves": v.pool_reserves.0.to_string(),
+                            "pending_withdrawals": v.pending_withdrawals.0.to_string(),
+                            "new_amount": v.new_amount.0.to_string(),
+                            "total_required": v.total_required().0.to_string(),
+                            "solvent": v.solvent,
+                        }),
+                    )
+                })
+                .collect();
+            Ok(Json(serde_json::json!({
+                "enabled": true,
+                "enforce": config.enforce,
+                "margin": config.margin.0.to_string(),
+                "checks": json_checks,
+            })))
+        }
+        Err(e) => {
+            tracing::warn!("solvency status check failed: {e}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
