@@ -23,6 +23,9 @@ const TOKENS_BY_CHAIN: Record<string, TokenOption[]> = {
     { symbol: 'USDT', name: 'Tether USD', decimals: 6 },
     { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
     { symbol: 'WETH', name: 'Wrapped Ether', decimals: 18 },
+    { symbol: 'tZION', name: 'Test ZION (Beta)', decimals: 18 },
+    { symbol: 'tUSDT', name: 'Test USDT (Beta)', decimals: 6 },
+    { symbol: 'tWETH', name: 'Test WETH (Beta)', decimals: 18 },
   ],
   arbitrum: [
     { symbol: 'wZION', name: 'Wrapped ZION', decimals: 18 },

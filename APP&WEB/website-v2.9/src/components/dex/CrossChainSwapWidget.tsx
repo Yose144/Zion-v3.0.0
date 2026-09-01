@@ -32,6 +32,10 @@ const TOKEN_CONTRACTS: Record<string, Record<string, string | null>> = {
     USDT: CONTRACTS.USDT,
     USDC: CONTRACTS.USDC,
     WETH: CONTRACTS.WETH,
+    // Beta test tokens — have active AMM pools with liquidity
+    tZION: '0xC5E79b8C6475137aC3a982651097a219B63b0c33',
+    tUSDT: '0x677693fbFDe6a9EeA655033fffF93054B559552C',
+    tWETH: '0xcE5Df8e83B87f462835b51Ac6B2A4c53fafA620F',
   },
   arbitrum: {
     wZION: CONTRACTS.wZION,
