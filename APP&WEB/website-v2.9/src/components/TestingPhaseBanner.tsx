@@ -18,10 +18,10 @@ const bannerCopy = {
     },
   },
   multichain: {
-    title: { cs: 'Multichain — fáze testování', en: 'Multichain — Testing Phase' },
+    title: { cs: 'Multichain & DeFi — fáze testování', en: 'Multichain & DeFi — Testing Phase' },
     body: {
-      cs: 'Multichain služby, bridge a peněženka jsou v testovací fázi. Necostujte a neobchodujte víc, než si můžete dovolit ztratit.',
-      en: 'Multichain services, bridge, and wallet are in a testing phase. Do not deposit or trade more than you can afford to lose.',
+      cs: 'Multichain služby, bridge, DEX a peněženka jsou v testovací fázi. Používejte pouze malé částky a očekávejte změny.',
+      en: 'Multichain services, bridge, DEX, and wallet are in a testing phase. Use only small amounts and expect changes.',
     },
   },
 };
