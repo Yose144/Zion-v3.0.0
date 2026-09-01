@@ -8,11 +8,12 @@
 import { useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers, AlertTriangle } from 'lucide-react';
+import { Zap, Globe, Shield, TrendingUp, ArrowRight, Info, Layers } from 'lucide-react';
 import RecentSwaps from '@/components/dex/RecentSwaps';
 import TransactionStatus from '@/components/dex/TransactionStatus';
 import PriceChart from '@/components/dex/PriceChart';
 import Link from 'next/link';
+import TestingPhaseBanner from '@/components/TestingPhaseBanner';
 
 const CrossChainSwapWidget = dynamic(() => import('@/components/dex/CrossChainSwapWidget'), {
   ssr: false,
@@ -66,20 +67,7 @@ export default function DexPage() {
         </div>
       </div>
 
-      {/* Early Beta / Under Construction Banner */}
-      <div className="max-w-6xl mx-auto px-6 pt-6">
-        <div className="rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-200">ZionDex — Under Construction / Early Beta</p>
-              <p className="text-xs text-amber-200/70 mt-1">
-                Cross-chain routing and the ZionDex AMM pools are still being deployed. Swaps currently route via existing external liquidity (e.g. Uniswap V3 on Base). Expect changes and use small amounts.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TestingPhaseBanner type="dex" className="max-w-6xl mx-auto px-6 pt-6" />
 
       {/* Main content */}
       <div className="max-w-6xl mx-auto px-6 py-8">

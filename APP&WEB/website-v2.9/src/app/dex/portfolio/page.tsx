@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Droplets, Activity, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { fetchPools, getAmmPair, ZIONDEX_FACTORY } from '@/lib/dex-api';
+import TestingPhaseBanner from '@/components/TestingPhaseBanner';
 
 const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
@@ -106,6 +107,8 @@ export default function PortfolioPage() {
           </motion.div>
         </div>
       </div>
+
+      <TestingPhaseBanner type="dex" className="max-w-6xl mx-auto px-6 pt-4" />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats cards */}

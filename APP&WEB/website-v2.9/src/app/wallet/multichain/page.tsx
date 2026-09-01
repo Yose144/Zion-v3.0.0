@@ -10,6 +10,7 @@ import {
   formatMultichainAmount,
 } from '@/contexts/MultichainWalletContext';
 import MetaMaskWalletPanel from '@/components/MetaMaskWalletPanel';
+import TestingPhaseBanner from '@/components/TestingPhaseBanner';
 import {
   Wallet,
   ArrowLeft,
@@ -187,6 +188,7 @@ export default function MultichainWalletPage() {
     return (
       <div className="zion-page text-white">
         <div className="zion-container max-w-7xl">
+          <TestingPhaseBanner type="multichain" className="pt-4" />
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center max-w-lg">
               <Wallet className="w-12 h-12 mx-auto mb-4 text-zion-gold" />
@@ -206,6 +208,7 @@ export default function MultichainWalletPage() {
     return (
       <div className="zion-page text-white">
         <div className="zion-container max-w-7xl">
+          <TestingPhaseBanner type="multichain" className="pt-4" />
           <div className="flex items-center justify-center min-h-[50vh]">
             <div className="text-center">
               <RefreshCw className="w-12 h-12 mx-auto mb-4 text-zion-gold animate-spin" />
@@ -224,6 +227,8 @@ export default function MultichainWalletPage() {
         <div className="absolute top-40 -left-24 h-[420px] w-[420px] rounded-full bg-zion-cyan/14 blur-3xl" />
         <div className="absolute bottom-0 right-1/3 h-[420px] w-[620px] rounded-full bg-zion-gold/10 blur-3xl" />
       </div>
+
+      <TestingPhaseBanner type="multichain" className="zion-container relative z-10 max-w-7xl pt-4" />
 
       <div className="zion-container relative z-10 max-w-7xl space-y-8">
         <section>
