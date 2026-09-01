@@ -31,13 +31,13 @@ const t = {
     title: 'Plán letu k veřejnému launchi',
     subtitle: 'One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Cíl veřejného launchi zůstává ',
     subtitleStrong: '31. 12. 2026',
-    updated: 'Aktualizováno 6. 8. 2026',
+    updated: 'Aktualizováno 1. 9. 2026',
     publicLaunch: 'Cíl veřejného launchi · 31. 12. 2026',
     testsPassing: '2 155+ testů prochází',
     heroStats: [
       { label: 'Rust LOC', value: '176 000+', descriptor: 'workspace' },
       { label: 'Testů', value: '2 155+', descriptor: '100 % pass rate' },
-      { label: 'Síť', value: 'MainNet', descriptor: 'Edge topologie' },
+      { label: 'Síť', value: 'MainNet', descriptor: 'Mainnet topologie' },
       { label: 'Status', value: 'Genesis 11. 6. 2026', descriptor: 'Launch 31. 12. 2026' },
     ],
     componentStatus: 'Stav komponent',
@@ -63,7 +63,7 @@ const t = {
     phase1Title: 'Controlled Testnet & MainNet Genesis',
     phase1Period: 'Únor — Červen 2026',
     phase1Priority: 'P0 Blocker → ✅ DONE',
-    phase1Desc: 'TestNet genesis 4. 12. 2025. 168h stabilita PASS. Ekam Deekša Tier 1+2 nasazen. Edge topologie v provozu. MainNet Genesis TerraNova 6. 8. 2026 (One Love).',
+    phase1Desc: 'TestNet genesis 4. 12. 2025. 168h stabilita PASS. Ekam Deekša Tier 1+2 nasazen. Mainnet topologie v provozu. MainNet Genesis TerraNova 6. 8. 2026 (One Love).',
     phase2Title: 'Node UX & Těžba',
     phase2Period: 'Duben — Červen 2026',
     phase2Priority: 'P1 Important → ✅ DONE',
@@ -95,6 +95,11 @@ const t = {
     documentation: 'Dokumentace',
     liveDashboard: 'Live Dashboard',
     lastUpdated: 'Poslední aktualizace',
+    nirvana: 'Horizont · 3.3 Nirvana',
+    nirvanaSub: 'Aspirativní architektonický cíl po stabilním vydání 3.2.',
+    nirvanaTitle: '3.3 Nirvana — Global Assimilation & Attention',
+    nirvanaDisclaimer: 'Nirvana je dlouhodobý aspirativní cíl, nikoli zaručené datum vydání. Představuje Velké Sjednocení celého ZION ekosystému.',
+    nirvanaCta: 'Detailní roadmapa v dokumentaci',
   },
   en: {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
@@ -102,13 +107,13 @@ const t = {
     title: 'Flight plan to public launch',
     subtitle: 'One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. Public launch target remains ',
     subtitleStrong: '31 Dec 2026',
-    updated: 'Updated 6 Aug 2026',
+    updated: 'Updated 1 Sep 2026',
     publicLaunch: 'Public launch target · 31 Dec 2026',
     testsPassing: '2,155+ tests passing',
     heroStats: [
       { label: 'Rust LOC', value: '176,000+', descriptor: 'workspace' },
       { label: 'Tests', value: '2,155+', descriptor: '100% pass rate' },
-      { label: 'Network', value: 'MainNet', descriptor: 'Edge topology' },
+      { label: 'Network', value: 'MainNet', descriptor: 'Mainnet topology' },
       { label: 'Status', value: 'Genesis 11 Jun 2026', descriptor: 'Launch 31 Dec 2026' },
     ],
     componentStatus: 'Component Status',
@@ -134,7 +139,7 @@ const t = {
     phase1Title: 'Controlled Testnet & MainNet Genesis',
     phase1Period: 'Feb – Jun 2026',
     phase1Priority: 'P0 Blocker → ✅ DONE',
-    phase1Desc: 'TestNet genesis 4 Dec 2025. 168h stability PASS. Ekam Deeksha Tier 1+2 deployed. Edge topology operational. MainNet Genesis TerraNova 6 Aug 2026 (One Love).',
+    phase1Desc: 'TestNet genesis 4 Dec 2025. 168h stability PASS. Ekam Deeksha Tier 1+2 deployed. Mainnet topology operational. MainNet Genesis TerraNova 6 Aug 2026 (One Love).',
     phase2Title: 'Node UX & Mining',
     phase2Period: 'Apr – Jun 2026',
     phase2Priority: 'P1 Important → ✅ DONE',
@@ -166,6 +171,11 @@ const t = {
     documentation: 'Documentation',
     liveDashboard: 'Live Dashboard',
     lastUpdated: 'Last updated',
+    nirvana: 'Horizon · 3.3 Nirvana',
+    nirvanaSub: 'An aspirational architectural target after a stable 3.2 release.',
+    nirvanaTitle: '3.3 Nirvana — Global Assimilation & Attention',
+    nirvanaDisclaimer: 'Nirvana is a long-term aspirational target, not a committed release date. It represents the grand unification of the whole ZION ecosystem.',
+    nirvanaCta: 'Detailed roadmap in docs',
   },
 };
 
@@ -382,6 +392,22 @@ export default function RoadmapPage() {
       ],
     },
   ];
+
+  const nirvanaPillars = cs
+    ? [
+        { title: 'L2 Multichain & ZIS Passkeys', desc: 'wZION/ETH a ZION/BTC AMM settlement, univerzální WebAuthn/Passkey SSO napříč všemi aplikacemi, agent sub-accounts.' },
+        { title: 'L3 Hiranyagarbha 2.4 & 2.5', desc: 'Maestro multi-agent DAG orchestrace, NCL distribuovaný compute broker, Amitabha natural intent interface a self-sovereign autonomní AI agenti.' },
+        { title: 'L4 OASIS Metaverse', desc: 'Unreal Engine 5.7 fotorealistický engine (Nanite/Lumen/MetaHumans), nízko-latenční WebGPU / Pixel Streaming preview.' },
+        { title: 'L5 Free World', desc: 'Dedikovaný webový portál, live 5 % L1 coinbase treasury tracker a globální vodní a permakulturní projekty.' },
+        { title: 'L6 Issobella', desc: 'Kvantový warp engine teoretický výzkum, DeSci repository a NCL-powered fyzikální simulace.' },
+      ]
+    : [
+        { title: 'L2 Multichain & ZIS Passkeys', desc: 'wZION/ETH & ZION/BTC AMM settlement, universal WebAuthn/Passkey SSO across all apps, agent sub-accounts.' },
+        { title: 'L3 Hiranyagarbha 2.4 & 2.5', desc: 'Maestro multi-agent DAG orchestration, NCL distributed compute broker, Amitabha natural intent interface, self-sovereign autonomous AI agents.' },
+        { title: 'L4 OASIS Metaverse', desc: 'Unreal Engine 5.7 photorealistic engine (Nanite/Lumen/MetaHumans), low-latency WebGPU / Pixel Streaming preview.' },
+        { title: 'L5 Free World', desc: 'A dedicated web portal, live 5% L1 coinbase treasury tracker, and global water & permaculture projects.' },
+        { title: 'L6 Issobella', desc: 'Quantum warp engine theoretical research, DeSci repository, and NCL-powered physics simulations.' },
+      ];
 
   const postLaunch = [
     {
@@ -707,6 +733,46 @@ export default function RoadmapPage() {
           </div>
         </motion.section>
 
+        {/* NIRVANA HORIZON */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '80, 6, 105' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.nirvana}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Sparkles className="h-7 w-7 text-zion-purple" />
+              {copy.nirvanaTitle}
+            </h2>
+            <p className="text-sm text-gray-400">{copy.nirvanaSub}</p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {nirvanaPillars.map((pillar, idx) => (
+              <motion.div
+                key={pillar.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.05 }}
+                className="zion-rainbow-sub p-5"
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
+              >
+                <h3 className="text-base font-semibold text-white">{pillar.title}</h3>
+                <p className="text-sm text-gray-300 mt-3">{pillar.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+          <p className="mt-6 text-sm text-gray-500">{copy.nirvanaDisclaimer}</p>
+          <div className="mt-6">
+            <Link href="/docs" className="zion-button-secondary">
+              <BookOpen className="h-4 w-4" /> {copy.nirvanaCta}
+            </Link>
+          </div>
+        </motion.section>
+
         {/* CONSTITUTION + GENESIS RESERVE */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -851,7 +917,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-08-06
+          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-09-01
         </p>
       </div>
     </div>

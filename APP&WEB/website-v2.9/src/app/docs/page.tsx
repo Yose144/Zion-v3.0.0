@@ -104,6 +104,7 @@ const categoryTitles: Record<string, LocalizedText> = {
   'v320-overview': { cs: 'Přehled', en: 'Overview' },
   'v320-security': { cs: 'Bezpečnost', en: 'Security' },
   'v320-dex': { cs: 'ZionDEX', en: 'ZionDEX' },
+  'v320-roadmap': { cs: 'Roadmap', en: 'Roadmap' },
   'v301-overview': { cs: 'Přehled', en: 'Overview' },
   'v300-overview': { cs: 'Přehled', en: 'Overview' },
   'v299-overview': { cs: 'Přehled', en: 'Overview' },
@@ -140,6 +141,7 @@ const docTitles: Record<string, LocalizedText> = {
   'v320-readme': { cs: 'v3.2.0 — přehled', en: 'v3.2.0 Overview' },
   'v320-audit': { cs: 'Bezpečnostní audit 3.2', en: 'Security Audit 3.2' },
   'v320-ziondex': { cs: 'ZionDEX — průvodce', en: 'ZionDEX User Guide' },
+  'v320-roadmap': { cs: 'Roadmap 3.2 → 3.3', en: 'Roadmap 3.2 → 3.3' },
   'v301-readme': { cs: 'v3.0.1 Genesis — historický přehled', en: 'v3.0.1 Genesis Overview (historical)' },
   'mainnet-public-release': { cs: 'Veřejný release — jak použít', en: 'Public Release — How to Use' },
   'v301-launch-sequence': { cs: 'MainNet Launch sekvence', en: 'MainNet Launch Sequence' },
@@ -253,6 +255,14 @@ const versions: Version[] = [
         icon: Coins,
         docs: [
           { id: 'v320-ziondex', title: 'ZionDEX User Guide', file: 'v3.2.0/ziondex.md' },
+        ]
+      },
+      {
+        id: 'v320-roadmap',
+        title: 'Roadmap',
+        icon: Map,
+        docs: [
+          { id: 'v320-roadmap', title: 'Roadmap 3.2 → 3.3', file: 'v3.2.0/roadmap.md' },
         ]
       },
     ]
