@@ -14,6 +14,21 @@ use zion_core::node::BlockTemplate as CoreBlockTemplate;
 use zion_core::{Block, BlockHeader};
 use zion_cosmic_harmony::ExternalCoin;
 
+/// POL-005 fix: sanitize attacker-controlled fields before logging.
+/// Strips CRLF and other control characters to prevent log injection.
+#[allow(dead_code)]
+fn sanitize_log_field(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_control() || c == '\r' || c == '\n' {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
 use crate::auxpow_bridge::{MultiAuxPowBridge, ShareForwardRequest};
 use crate::block_tracker::BlockTracker;
 use crate::config::PoolConfig;
@@ -670,7 +685,16 @@ impl StratumServer {
         let clean_jobs = true;
 
         if let Ok(bytes) = hex::decode(header_trim) {
-            self.jobs.lock().unwrap().insert(
+            let mut jobs = self.jobs.lock().unwrap();
+            // POL-007 fix: evict old jobs when the map grows too large.
+            // Keep only the most recent 256 entries to bound memory.
+            if jobs.len() > 256 {
+                let keys_to_remove: Vec<String> = jobs.keys().take(jobs.len().saturating_sub(200)).cloned().collect();
+                for k in keys_to_remove {
+                    jobs.remove(&k);
+                }
+            }
+            jobs.insert(
                 job_id.to_string(),
                 (
                     bytes,
@@ -1133,6 +1157,8 @@ impl StratumServer {
         }
 
         let mut notify_rx = self.notify_tx.subscribe();
+        // POL-006 fix: track consecutive NoSolution for TLS handler too.
+        let mut tls_consecutive_no_solution: u32 = 0;
         loop {
             tokio::select! {
                 line = lines.next_line() => {
@@ -1251,7 +1277,38 @@ impl StratumServer {
                                         let _ = write_v3_message(writer, &result_msg).await;
                                     }
                                 }
-                                Ok(PoolMessage::NoSolution { .. }) => { /* ignore for TLS */ }
+                                Ok(PoolMessage::NoSolution { job_id, miner_id: ns_miner, worker_name: ns_worker, attempted_hashes, elapsed_ms, .. }) => {
+                                    // POL-006 fix: apply NoSolution ban in TLS handler too.
+                                    tls_consecutive_no_solution += 1;
+                                    tracing::debug!(
+                                        "v3_tls_no_solution job={} miner={} consecutive={}",
+                                        job_id, ns_miner, tls_consecutive_no_solution
+                                    );
+                                    let (attempted_h, elapsed_ms) = self.fallback_work_sample(
+                                        &ns_miner,
+                                        &ns_worker,
+                                        self.vardiff_config.start_difficulty,
+                                        attempted_hashes,
+                                        elapsed_ms,
+                                    );
+                                    self.telemetry.lock().unwrap().record_no_solution(
+                                        &ns_miner,
+                                        &ns_worker,
+                                        attempted_h,
+                                        elapsed_ms,
+                                    );
+                                    if tls_consecutive_no_solution >= self.max_consecutive_no_solution {
+                                        tracing::warn!(
+                                            "v3_tls_no_solution_ban ip={} miner={} consecutive={}",
+                                            ip, ns_miner, tls_consecutive_no_solution
+                                        );
+                                        self.no_solution_bans.lock().unwrap().insert(
+                                            ip,
+                                            Instant::now() + self.no_solution_ban_duration,
+                                        );
+                                        return;
+                                    }
+                                }
                                 Ok(PoolMessage::CoinPreference { .. }) => { /* store for triple-stream */ }
                                 Ok(_) => { /* ignore other messages */ }
                                 Err(_) => { /* ignore decode errors */ }

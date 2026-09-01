@@ -1,104 +1,103 @@
 #!/usr/bin/env bash
+# ZION V31 — Local Backup System
 # ============================================================================
-#  ZION V3 — Backup System (local + edge server)
-#  Timer: zion-backup.timer (every 4 hours)
+# Backs up the LOCAL V31 databases + state on this machine.
 #
-#  1. Local backup:  chain state DB + peers → backups/backup_local_<ts>.tar.gz
-#  2. Edge backup:   SSH download all Edge DBs + config → backups/backup_edge_<ts>.tar.gz
-#  3. Retention:     keep last 20 local + 20 edge backups
+#   V31 data:  V31/data/*.db (SQLite, backed up consistently via .backup)
+#              V31/data/*.json, V31/data/*.toml
+#              V31/data/revenue_journal/
 #
-#  Edge files backed up:
-#    /data/zion/state              — Node 1 chain state
-#    /data/zion/state-node2        — Node 2 chain state
-#    /data/zion/bridge-mainnet.db  — Bridge watcher
-#    /data/zion/dao-mainnet.db     — DAO governance
-#    /data/zion/atomic-swap.db     — Atomic swap escrow
-#    /data/zion/warp-mainnet.db    — WARP relay
-#    /data/zion/pplns-state.json   — PPLNS pool state
-#    /data/zion/oasis.db           — L4 Oasis
-#    /data/zion/free_world.db      — L5 Free World
-#    /data/zion/issobella.db       — L6 Issobella
-#    /data/zion/peers.json         — P2P peers
-#    /root/zion/edge-environment.sh — Secrets, wallet keys, fee split
+# Uses sqlite3 .backup for each DB so the archive is consistent even while
+# services are running. Keeps the last 20 local backups.
+#
+# Timer: zion-backup.timer (every 4 hours)
+# Output: backups/backup_local_<timestamp>.tar.gz
+#
+# Edge/off-site backups are handled separately by:
+#   ZION_OS/infra/scripts/sync-edge-backups.sh (zion-offsite-sync.timer)
 # ============================================================================
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DATA_DIR="${REPO_ROOT}/V31/data"
 BACKUP_DIR="${REPO_ROOT}/backups"
 LOG_FILE="${REPO_ROOT}/logs/backup.log"
-EDGE_SSH="zion-new"
-EDGE_DATA_DIR="/data/zion"
-EDGE_ENV_FILE="/root/zion/edge-environment.sh"
-
-mkdir -p "$BACKUP_DIR" "${REPO_ROOT}/logs"
 TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
-# ── 1. Local chain state backup ────────────────────────────────────────────
-log "=== Backup started ==="
+mkdir -p "$BACKUP_DIR" "${REPO_ROOT}/logs"
 
-LOCAL_ARCHIVE="${BACKUP_DIR}/backup_local_${TIMESTAMP}.tar.gz"
-LOCAL_ITEMS=()
-if [[ -f "${REPO_ROOT}/V3/data/zion-node-state.db" ]]; then
-    LOCAL_ITEMS+=("V3/data/zion-node-state.db")
-fi
-if [[ -f "${REPO_ROOT}/V3/data/peers.json" ]]; then
-    LOCAL_ITEMS+=("V3/data/peers.json")
-fi
-if [[ ${#LOCAL_ITEMS[@]} -gt 0 ]]; then
-    tar -czf "$LOCAL_ARCHIVE" -C "${REPO_ROOT}" "${LOCAL_ITEMS[@]}" 2>/dev/null
-    SIZE=$(du -m "$LOCAL_ARCHIVE" | cut -f1)
-    log "Local backup: ${LOCAL_ARCHIVE} (${SIZE} MB) — ${LOCAL_ITEMS[*]}"
-else
-    log "WARN: No local state files found, skipping local backup"
+log "=== V31 local backup started ==="
+
+if [[ ! -d "$DATA_DIR" ]]; then
+    log "ERROR: Data directory not found: $DATA_DIR"
+    exit 1
 fi
 
-# ── 2. Edge server full backup (download via SSH) ──────────────────────────
-EDGE_ARCHIVE="${BACKUP_DIR}/backup_edge_${TIMESTAMP}.tar.gz"
+STAGING_DIR="${BACKUP_DIR}/.staging/v31_local_${TIMESTAMP}"
+rm -rf "$STAGING_DIR" 2>/dev/null || true
+mkdir -p "$STAGING_DIR"
 
-# Check if Edge is reachable
-if ssh -o ConnectTimeout=5 -o BatchMode=yes "$EDGE_SSH" "true" 2>/dev/null; then
-    # Build a remote script that tars all existing Edge data files.
-    # We use a heredoc to avoid local variable expansion.
-    ssh -o ConnectTimeout=10 -o BatchMode=yes "$EDGE_SSH" 'bash -s' <<'REMOTE_SCRIPT' > "$EDGE_ARCHIVE" 2>/dev/null
-files=""
-for f in /data/zion/state /data/zion/state-node2 /data/zion/bridge-mainnet.db \
-         /data/zion/dao-mainnet.db /data/zion/atomic-swap.db /data/zion/warp-mainnet.db \
-         /data/zion/pplns-state.json /data/zion/oasis.db /data/zion/free_world.db \
-         /data/zion/issobella.db /data/zion/peers.json /root/zion/edge-environment.sh; do
-    if [ -f "$f" ]; then
-        files="$files $f"
+# ── 1. Consistent SQLite backups of every .db in V31/data ───────────────────
+log "Backing up V31 SQLite databases..."
+DB_COUNT=0
+for db in "$DATA_DIR"/*.db; do
+    [[ -e "$db" ]] || continue
+    base=$(basename "$db")
+    # Skip symlinks and stale copies
+    if [[ -L "$db" ]] || [[ "$base" == *.stale-* ]]; then
+        log "  skipping $base (symlink/stale)"
+        continue
     fi
-done
-if [ -n "$files" ]; then
-    tar -czf - -C / $files
-fi
-REMOTE_SCRIPT
-
-    if [[ -s "$EDGE_ARCHIVE" ]]; then
-        SIZE=$(du -m "$EDGE_ARCHIVE" | cut -f1)
-        log "Edge backup: ${EDGE_ARCHIVE} (${SIZE} MB) — all DBs + config"
+    dest="${STAGING_DIR}/${base}"
+    if command -v sqlite3 >/dev/null 2>&1; then
+        if sqlite3 "$db" ".backup '${dest}'" 2>/dev/null; then
+            log "  ✓ $base"
+            DB_COUNT=$((DB_COUNT + 1))
+        else
+            log "  ⚠ sqlite3 .backup failed for $base, falling back to cp"
+            cp "$db" "$dest" 2>/dev/null || true
+        fi
     else
-        log "WARN: Edge backup failed (empty archive)"
-        rm -f "$EDGE_ARCHIVE"
-    fi
-else
-    log "WARN: Edge server unreachable, skipping edge backup"
-fi
-
-# ── 3. Retention — keep last 20 of each ────────────────────────────────────
-for prefix in "backup_local_" "backup_edge_"; do
-    mapfile -t OLD < <(ls -1t "${BACKUP_DIR}"/${prefix}*.tar.gz 2>/dev/null | tail -n +21)
-    if [[ ${#OLD[@]} -gt 0 ]]; then
-        log "Cleanup: removing ${#OLD[@]} old ${prefix} backup(s)"
-        rm -f "${OLD[@]}"
+        cp "$db" "$dest" 2>/dev/null || true
     fi
 done
 
-# ── Summary ────────────────────────────────────────────────────────────────
+# ── 2. JSON / TOML state files ──────────────────────────────────────────────
+log "Backing up state files..."
+for f in "$DATA_DIR"/*.json "$DATA_DIR"/*.toml; do
+    [[ -e "$f" ]] || continue
+    [[ -L "$f" ]] && continue
+    cp "$f" "$STAGING_DIR/"
+    log "  ✓ $(basename "$f")"
+done
+
+# ── 3. Revenue journal directory ────────────────────────────────────────────
+if [[ -d "$DATA_DIR/revenue_journal" ]]; then
+    cp -r "$DATA_DIR/revenue_journal" "$STAGING_DIR/"
+    log "  ✓ revenue_journal/"
+fi
+
+# ── 4. Create archive (paths relative to REPO_ROOT for portability) ─────────
+LOCAL_ARCHIVE="${BACKUP_DIR}/backup_local_${TIMESTAMP}.tar.gz"
+
+tar -czf "$LOCAL_ARCHIVE" -C "$STAGING_DIR" .
+SIZE_MB=$(du -m "$LOCAL_ARCHIVE" | cut -f1)
+
+log "Local backup: ${LOCAL_ARCHIVE} (${SIZE_MB} MB) — ${DB_COUNT} DBs"
+
+# ── 5. Cleanup staging ──────────────────────────────────────────────────────
+rm -rf "$STAGING_DIR"
+
+# ── 6. Retention — keep last 20 local backups ───────────────────────────────
+mapfile -t OLD < <(ls -1t "${BACKUP_DIR}"/backup_local_*.tar.gz 2>/dev/null | tail -n +21)
+if [[ ${#OLD[@]} -gt 0 ]]; then
+    log "Cleanup: removing ${#OLD[@]} old local backup(s)"
+    rm -f "${OLD[@]}"
+fi
+
 LOCAL_COUNT=$(ls -1 "${BACKUP_DIR}"/backup_local_*.tar.gz 2>/dev/null | wc -l)
-EDGE_COUNT=$(ls -1 "${BACKUP_DIR}"/backup_edge_*.tar.gz 2>/dev/null | wc -l)
-TOTAL_SIZE=$(du -sh "$BACKUP_DIR" 2>/dev/null | cut -f1)
-log "Done. Local: ${LOCAL_COUNT}, Edge: ${EDGE_COUNT}, Total: ${TOTAL_SIZE}"
+TOTAL_SIZE=$(du -sh "$BACKUP_DIR" 2>/dev/null | cut -f1 || echo "?")
+log "Done. Local backups: ${LOCAL_COUNT}, Total backup dir: ${TOTAL_SIZE}"

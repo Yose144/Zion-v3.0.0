@@ -110,8 +110,19 @@ impl Bridge {
     /// If a `BridgeConsensus` is configured, sign the transfer locally and
     /// demand a quorum.  If no consensus is configured, the bridge operates in
     /// single-node / Alpha mode and the check is a no-op.
+    ///
+    /// FIND-026 fix: if consensus IS configured but the local node cannot
+    /// produce a quorum (not enough validator keys), fail closed rather than
+    /// silently degrading. This prevents the bridge from operating in an
+    /// unsafe sub-quorum mode.
     fn verify_consensus(&self, transfer: &Transfer) -> MultichainResult<()> {
         if let Some(consensus) = &self.consensus {
+            // Fail closed if we don't have enough keys for quorum.
+            if !consensus.can_sign_quorum_locally() {
+                return Err(MultichainError::Validation(
+                    "bridge consensus: insufficient local validator keys for quorum (FIND-026)".to_string(),
+                ));
+            }
             consensus
                 .sign_and_verify(transfer)
                 .map(|_| ())

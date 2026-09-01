@@ -175,7 +175,11 @@ impl Reconciler {
 
             let internal = *ledger_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
             let pool = *pool_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
-            let expected = internal.saturating_add(pool);
+            // FIND-022 fix: pool reserves are already included in the internal ledger
+            // (the ledger records AMM deposits as credits). Adding them again would
+            // double-count. Compare on_chain against internal only; report pool
+            // reserves separately for observability.
+            let expected = internal;
             let diff = on_chain.0 as i128 - expected.0 as i128;
             let alert = diff.abs() > self.config.alert_threshold.0 as i128;
 

@@ -2,12 +2,14 @@
 
 /**
  * ZionDex Portfolio — user's LP positions and swap history
+ * Fetches swap history from the DEX API and AMM pair info from ZIONDexFactory.
  */
 
 import { useState, useEffect, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Droplets, Activity, Loader2, AlertTriangle } from 'lucide-react';
+import { Wallet, TrendingUp, Droplets, Activity, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { fetchPools, getAmmPair, ZIONDEX_FACTORY } from '@/lib/dex-api';
 
 const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
@@ -21,37 +23,61 @@ interface SwapRecord {
   created_at: string;
 }
 
-interface Position {
+interface LpPosition {
   pool: string;
   chain: string;
   token_a: string;
   token_b: string;
-  liquidity: string;
+  pair_address: string;
   fee_tier: number;
-  uncollected_fees: string;
+  enabled: boolean;
 }
 
 export default function PortfolioPage() {
   const [swaps, setSwaps] = useState<SwapRecord[]>([]);
-  const [positions, setPositions] = useState<Position[]>([]);
+  const [lpPositions, setLpPositions] = useState<LpPosition[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch user's swap history
+        // Fetch swap history
         const swapsResp = await fetch(`${ROUTER_URL}/swaps?limit=20`);
         if (swapsResp.ok) {
           const data = await swapsResp.json();
-          setSwaps(Array.isArray(data) ? data : []);
+          setSwaps(Array.isArray(data) ? data : (data.swaps || []));
         }
 
-        // TODO: Fetch LP positions from ZionDexPoolManager
-        // For now: placeholder
-        setPositions([]);
+        // Fetch pools and look up AMM pair addresses for each
+        const poolData = await fetchPools();
+
+        // For each pool, look up the on-chain AMM pair address
+        const positions: LpPosition[] = [];
+        for (const pool of poolData) {
+          if (!pool.enabled) continue;
+          try {
+            const pairRes = await getAmmPair(
+              pool.chain || 'base',
+              ZIONDEX_FACTORY,
+              pool.token_a,
+              pool.token_b,
+            );
+            positions.push({
+              pool: `${pool.token_a}/${pool.token_b}`,
+              chain: pool.chain || 'base',
+              token_a: pool.token_a,
+              token_b: pool.token_b,
+              pair_address: pairRes.pair_address || '0x0',
+              fee_tier: pool.fee_bps,
+              enabled: pool.enabled,
+            });
+          } catch {
+            // skip on error
+          }
+        }
+        setLpPositions(positions);
       } catch {
         setSwaps([]);
-        setPositions([]);
       } finally {
         setLoading(false);
       }
@@ -81,21 +107,6 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Under Construction Notice */}
-      <div className="max-w-6xl mx-auto px-6 pt-6">
-        <div className="rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-200">ZionDex Portfolio — Early Beta</p>
-              <p className="text-xs text-amber-200/70 mt-1">
-                Swap history is fetched from the ZionDex Router API. LP positions are not yet available because the ZionDex PoolManager is not deployed. Connect a wallet in the future to see on-chain positions.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -118,9 +129,9 @@ export default function PortfolioPage() {
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
               <Droplets className="w-4 h-4 text-zion-purple" />
-              <span className="text-xs text-zinc-500 uppercase tracking-wider">LP Positions</span>
+              <span className="text-xs text-zinc-500 uppercase tracking-wider">AMM Pools</span>
             </div>
-            <div className="text-2xl font-bold text-white">{positions.length}</div>
+            <div className="text-2xl font-bold text-white">{lpPositions.length}</div>
           </div>
 
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
@@ -132,14 +143,18 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* LP Positions */}
+        {/* LP Positions / AMM Pools */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">Liquidity Positions</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">AMM Liquidity Pools</h2>
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-            {positions.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin mx-auto text-zinc-500" />
+              </div>
+            ) : lpPositions.length === 0 ? (
               <div className="text-center py-12 text-zinc-500">
                 <Droplets className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>No active liquidity positions</p>
+                <p>No active AMM pools found</p>
                 <Link href="/dex/liquidity" className="text-sm text-zion-gold hover:text-zion-gold mt-2 inline-block">
                   Add liquidity →
                 </Link>
@@ -150,17 +165,31 @@ export default function PortfolioPage() {
                   <tr className="border-b border-zinc-700/30">
                     <th className="text-left px-4 py-3 text-xs text-zinc-400 uppercase">Pool</th>
                     <th className="text-left px-4 py-3 text-xs text-zinc-400 uppercase">Chain</th>
-                    <th className="text-right px-4 py-3 text-xs text-zinc-400 uppercase">Liquidity</th>
-                    <th className="text-right px-4 py-3 text-xs text-zinc-400 uppercase">Fees</th>
+                    <th className="text-left px-4 py-3 text-xs text-zinc-400 uppercase">AMM Pair</th>
+                    <th className="text-right px-4 py-3 text-xs text-zinc-400 uppercase">Fee</th>
+                    <th className="text-center px-4 py-3 text-xs text-zinc-400 uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {positions.map((pos, i) => (
-                    <tr key={i} className="border-b border-zinc-800/30">
-                      <td className="px-4 py-3 text-sm text-white">{pos.token_a}/{pos.token_b}</td>
+                  {lpPositions.map((pos, i) => (
+                    <tr key={i} className="border-b border-zinc-800/30 hover:bg-zinc-800/30">
+                      <td className="px-4 py-3 text-sm text-white font-medium">{pos.pool}</td>
                       <td className="px-4 py-3 text-sm text-zinc-300 capitalize">{pos.chain}</td>
-                      <td className="px-4 py-3 text-sm text-white text-right">{pos.liquidity}</td>
-                      <td className="px-4 py-3 text-sm text-zion-gold text-right">{pos.uncollected_fees}</td>
+                      <td className="px-4 py-3 text-sm text-zion-cyan font-mono">
+                        {pos.pair_address !== '0x0' ? (
+                          <span>{pos.pair_address.slice(0, 10)}…{pos.pair_address.slice(-6)}</span>
+                        ) : (
+                          <span className="text-zinc-600">Not deployed</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-zinc-300 text-right">
+                        {(pos.fee_tier / 100).toFixed(2)}%
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={pos.enabled ? 'zion-badge zion-badge-green' : 'zion-badge'}>
+                          {pos.enabled ? 'Active' : 'Pending'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

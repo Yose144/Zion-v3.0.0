@@ -66,6 +66,12 @@ pub struct RateLimiter {
     user_rate: f64,
     user_burst: f64,
     api_key: Option<String>,
+    /// Maximum number of tracked IPs before eviction (FIND-019).
+    max_ip_entries: usize,
+    /// Maximum number of tracked users before eviction (FIND-019).
+    max_user_entries: usize,
+    /// Last eviction sweep timestamp.
+    last_eviction: Arc<Mutex<Instant>>,
 }
 
 impl RateLimiter {
@@ -78,11 +84,41 @@ impl RateLimiter {
             user_rate: config.rate_limit.user_requests_per_second,
             user_burst: f64::from(config.rate_limit.user_burst),
             api_key: config.auth.api_key.clone(),
+            max_ip_entries: 10_000,
+            max_user_entries: 5_000,
+            last_eviction: Arc::new(Mutex::new(Instant::now())),
         }
+    }
+
+    /// Evict entries with exhausted buckets when the map grows too large (FIND-019).
+    /// Called periodically from `check` / `check_user`.
+    async fn maybe_evict(&self) {
+        let should_evict = {
+            let last = self.last_eviction.lock().await;
+            last.elapsed().as_secs() > 60
+        };
+        if !should_evict {
+            return;
+        }
+        // Evict IP buckets with very low token counts (idle clients).
+        {
+            let mut buckets = self.ip_buckets.lock().await;
+            if buckets.len() > self.max_ip_entries {
+                buckets.retain(|_, b| b.tokens > 0.5);
+            }
+        }
+        {
+            let mut buckets = self.user_buckets.lock().await;
+            if buckets.len() > self.max_user_entries {
+                buckets.retain(|_, b| b.tokens > 0.5);
+            }
+        }
+        *self.last_eviction.lock().await = Instant::now();
     }
 
     /// Check (and record) a request from `addr`. Returns `true` if allowed.
     pub async fn check(&self, addr: SocketAddr) -> bool {
+        self.maybe_evict().await;
         let mut buckets = self.ip_buckets.lock().await;
         let bucket = buckets
             .entry(addr)
@@ -92,6 +128,7 @@ impl RateLimiter {
 
     /// Check (and record) a request from an authenticated `user_id`.
     pub async fn check_user(&self, user_id: &str) -> bool {
+        self.maybe_evict().await;
         let mut buckets = self.user_buckets.lock().await;
         let bucket = buckets
             .entry(user_id.to_string())
@@ -117,8 +154,19 @@ pub async fn auth_rate_limit(
 ) -> Result<Response, StatusCode> {
     let path = req.uri().path();
 
-    // Health endpoint is always public and unthrottled.
+    // Health endpoint: apply a separate, stricter rate limit (FIND-020).
+    // This prevents unbounded health-check polling while still allowing
+    // load balancers to probe at a reasonable rate.
     if path == "/health" || path == "/v1/multichain/health" {
+        // Health checks share the IP bucket but with a lower effective burst.
+        // We consume a token but use a stricter limit: 1 req/sec, burst 5.
+        let mut buckets = limiter.ip_buckets.lock().await;
+        let bucket = buckets.entry(addr).or_insert_with(|| {
+            TokenBucket::new(limiter.rate.min(1.0), limiter.burst.min(5.0))
+        });
+        if !bucket.try_consume() {
+            return Err(StatusCode::TOO_MANY_REQUESTS);
+        }
         return Ok(next.run(req).await);
     }
 

@@ -262,6 +262,10 @@ contract IntentSettlement {
         if (uint256(s) > 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0) {
             return (address(0), ECDSAError.InvalidSignatureS, bytes32(0));
         }
+        // CON-005 fix: reject degenerate signatures with zero r or s.
+        if (r == 0 || s == 0) {
+            return (address(0), ECDSAError.InvalidSignatureS, bytes32(0));
+        }
         if (v != 27 && v != 28) {
             return (address(0), ECDSAError.InvalidSignatureV, bytes32(0));
         }

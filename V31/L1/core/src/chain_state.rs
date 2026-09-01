@@ -66,6 +66,8 @@ pub(crate) struct ChainState {
     pub(crate) accepted_by_template_id: HashMap<u64, AcceptedBlock>,
     pub(crate) mempool: Vec<RuntimeTransaction>,
     pub(crate) mempool_by_id: HashMap<String, RuntimeTransaction>,
+    /// FIND-L1-004 fix: O(1) lookup for mined (sender, nonce) pairs.
+    pub(crate) mined_nonces: HashSet<(String, u64)>,
     /// Address to credit in coinbase transactions. Empty = no coinbase generated.
     pub(crate) miner_address: String,
     /// Humanitarian fund address (5% of coinbase). Empty = portion goes to miner.
@@ -365,6 +367,7 @@ impl ChainState {
             accepted_by_template_id: HashMap::new(),
             mempool,
             mempool_by_id: HashMap::new(),
+            mined_nonces: HashSet::new(),
             miner_address: String::new(),
             humanitarian_address: String::new(),
             issobella_address: String::new(),
@@ -446,6 +449,7 @@ impl ChainState {
                 )
                 .collect(),
             mempool_by_id: HashMap::new(),
+            mined_nonces: HashSet::new(),
             miner_address: String::new(),
             humanitarian_address: String::new(),
             issobella_address: String::new(),
@@ -634,6 +638,15 @@ impl ChainState {
         self.accepted_by_template_id
             .insert(accepted_block.template_id, accepted_block.clone());
         self.accepted_blocks.push(accepted_block);
+        // FIND-L1-004: index (sender, nonce) pairs from the accepted block
+        // for O(1) duplicate-nonce detection.
+        if let Some(block) = self.accepted_blocks.last() {
+            for tx in &block.transactions {
+                if !tx.from.is_empty() {
+                    self.mined_nonces.insert((tx.from.clone(), tx.nonce));
+                }
+            }
+        }
         // Index the newly accepted block by all involved addresses.
         let new_idx = self.accepted_blocks.len() - 1;
         self.index_block_addresses(new_idx);
@@ -1492,12 +1505,11 @@ impl ChainState {
                 transaction.nonce, transaction.from
             ));
         }
-        if self.accepted_blocks.iter().any(|block| {
-            block
-                .transactions
-                .iter()
-                .any(|known| known.from == transaction.from && known.nonce == transaction.nonce)
-        }) {
+        // FIND-L1-004 fix: use O(1) HashSet lookup instead of O(n) scan.
+        if self
+            .mined_nonces
+            .contains(&(transaction.from.clone(), transaction.nonce))
+        {
             return Err(format!(
                 "transaction nonce {} for sender {} is already mined",
                 transaction.nonce, transaction.from
@@ -1712,6 +1724,13 @@ impl ChainState {
             // Remove from height and template_id indexes
             self.accepted_by_height.remove(&removed.height);
             self.accepted_by_template_id.remove(&removed.template_id);
+
+            // FIND-L1-004: remove mined nonce entries from the pruned block.
+            for tx in &removed.transactions {
+                if !tx.from.is_empty() {
+                    self.mined_nonces.remove(&(tx.from.clone(), tx.nonce));
+                }
+            }
 
             // Adjust address_tx_index: remove the pruned index from all entries,
             // then decrement all indices greater than it.

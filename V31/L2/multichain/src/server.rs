@@ -253,8 +253,12 @@ impl ApiServer {
             .route("/v1/wallet/withdrawals", get(wallet_withdrawals))
             .route("/v1/wallet/sign", post(wallet_sign))
             .route("/v1/swap/pool/deploy", post(deploy_pool))
+            .route("/v1/swap/pool/amm", post(set_amm_pair))
             .route("/v1/swap/bridge", post(deploy_bridge))
             .route("/v1/swap/pools", get(list_pools))
+            .route("/v1/swap/amm/pair", post(get_amm_pair))
+            .route("/v1/swap/liquidity/add", post(add_liquidity))
+            .route("/v1/swap/liquidity/remove", post(remove_liquidity))
             .route("/v1/swap/quote", post(swap_quote))
             .route("/v1/swap/quote/multi", post(swap_quote_multi))
             .route("/v1/swap/execute", post(swap_execute))
@@ -517,9 +521,27 @@ async fn wallet_sign(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    // FIND-018 fix: enforce typed signing with a ZION domain tag to prevent
+    // signature phishing. The raw user message is wrapped in a structured
+    // envelope before signing, so the resulting signature cannot be replayed
+    // to authorize fund transfers on other chains or protocols.
+    const ZION_SIGN_DOMAIN: &str = "ZION_WALLET_SIGN:v1";
+    const MAX_MESSAGE_LEN: usize = 4096;
+    if req.message.len() > MAX_MESSAGE_LEN {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let typed_message = format!(
+        "{}\nchain={}\nlen={}\n{}",
+        ZION_SIGN_DOMAIN,
+        chain.as_str(),
+        req.message.len(),
+        req.message
+    );
+
     match state
         .service
-        .wallet_sign(chain, req.message.as_bytes(), req.account, req.index)
+        .wallet_sign(chain, typed_message.as_bytes(), req.account, req.index)
     {
         Ok(sig) => Ok(Json(serde_json::json!({
             "chain": req.chain,
@@ -1024,6 +1046,170 @@ async fn deploy_pool(
 async fn list_pools(State(state): State<AppState>) -> Json<serde_json::Value> {
     let pools = state.service.list_dex_pools().await;
     Json(serde_json::json!({"pools": pools}))
+}
+
+#[derive(Deserialize)]
+struct SetAmmPairRequest {
+    pool_id: u64,
+    amm_pair: Option<String>,
+    amm_factory: Option<String>,
+}
+
+async fn set_amm_pair(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<SetAmmPairRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    match state
+        .service
+        .set_amm_pair(req.pool_id, req.amm_pair, req.amm_factory)
+        .await
+    {
+        Ok(pool) => Ok(Json(serde_json::json!({"ok": true, "pool": pool}))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+        }))),
+    }
+}
+
+#[derive(Deserialize)]
+struct AddLiquidityRequest {
+    chain: String,
+    router_address: String,
+    token_a: Asset,
+    token_b: Asset,
+    amount_a_desired: Amount,
+    amount_b_desired: Amount,
+    amount_a_min: Option<Amount>,
+    amount_b_min: Option<Amount>,
+    recipient: Option<Address>,
+    deadline: Option<u64>,
+}
+
+async fn add_liquidity(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<AddLiquidityRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let amount_a_min = req.amount_a_min.unwrap_or(Amount::ZERO);
+    let amount_b_min = req.amount_b_min.unwrap_or(Amount::ZERO);
+    let deadline = req.deadline.unwrap_or(0);
+    match state
+        .service
+        .add_liquidity(
+            chain,
+            &req.router_address,
+            &req.token_a,
+            &req.token_b,
+            req.amount_a_desired,
+            req.amount_b_desired,
+            amount_a_min,
+            amount_b_min,
+            req.recipient,
+            deadline,
+        )
+        .await
+    {
+        Ok((hash, amount_a, amount_b, lp)) => Ok(Json(serde_json::json!({
+            "ok": true,
+            "tx_hash": hash.to_hex(),
+            "amount_a": amount_a,
+            "amount_b": amount_b,
+            "lp_tokens": lp,
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+        }))),
+    }
+}
+
+#[derive(Deserialize)]
+struct RemoveLiquidityRequest {
+    chain: String,
+    router_address: String,
+    token_a: Asset,
+    token_b: Asset,
+    liquidity: Amount,
+    amount_a_min: Option<Amount>,
+    amount_b_min: Option<Amount>,
+    recipient: Option<Address>,
+    deadline: Option<u64>,
+}
+
+async fn remove_liquidity(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<RemoveLiquidityRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let amount_a_min = req.amount_a_min.unwrap_or(Amount::ZERO);
+    let amount_b_min = req.amount_b_min.unwrap_or(Amount::ZERO);
+    let deadline = req.deadline.unwrap_or(0);
+    match state
+        .service
+        .remove_liquidity(
+            chain,
+            &req.router_address,
+            &req.token_a,
+            &req.token_b,
+            req.liquidity,
+            amount_a_min,
+            amount_b_min,
+            req.recipient,
+            deadline,
+        )
+        .await
+    {
+        Ok((hash, amount_a, amount_b)) => Ok(Json(serde_json::json!({
+            "ok": true,
+            "tx_hash": hash.to_hex(),
+            "amount_a": amount_a,
+            "amount_b": amount_b,
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+        }))),
+    }
+}
+
+#[derive(Deserialize)]
+struct GetAmmPairRequest {
+    chain: String,
+    factory_address: String,
+    token_a: Asset,
+    token_b: Asset,
+}
+
+async fn get_amm_pair(
+    State(state): State<AppState>,
+    Json(req): Json<GetAmmPairRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
+    match state
+        .service
+        .get_amm_pair(chain, &req.factory_address, &req.token_a, &req.token_b)
+        .await
+    {
+        Ok(Some(pair_addr)) => Ok(Json(serde_json::json!({
+            "ok": true,
+            "pair_address": pair_addr,
+        }))),
+        Ok(None) => Ok(Json(serde_json::json!({
+            "ok": true,
+            "pair_address": null,
+        }))),
+        Err(e) => Ok(Json(serde_json::json!({
+            "ok": false,
+            "error": e.to_string(),
+        }))),
+    }
 }
 
 #[derive(Deserialize)]
@@ -1673,7 +1859,13 @@ async fn register_solver(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<RegisterSolverRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    // FIND-016 fix: restrict solver registration to admin users.
+    if let Some(ref u) = user {
+        if u.role != "admin" {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
     match state
         .service
         .register_solver(req.solver, req.url, req.reputation)

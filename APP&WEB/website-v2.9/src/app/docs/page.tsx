@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument [Mainnet Status](#mainnet). Pool aktivní, mining live, 5/5 služeb green. Veřejný launch zůstává 31. prosince 2026.',
-    en: 'The current public line is v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document [Mainnet Status](#mainnet). Pool active, mining live, 5/5 services green. Public launch remains 31 December 2026.',
+    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument [v3.2.0 Přehled](#v320-readme). Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch zůstává 31. prosince 2026.',
+    en: 'The current public line is v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document [v3.2.0 Overview](#v320-readme). Pool active, mining live, DEX and bridge deployed. Public launch remains 31 December 2026.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
@@ -52,7 +52,7 @@ const docsPageCopy = {
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
   'v3.2.0': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Current public line — v3.2.0 "One Love" Mainnet Stable, nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 5/5 služeb active, kanonický Ekam Deeksha PoW', en: 'Current public line — v3.2.0 "One Love" Mainnet Stable, new genesis hash after the August hard reset (complete key rotation), 5/5 services active, canonical Ekam Deeksha PoW' },
+    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love" Mainnet Stable, nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love" Mainnet Stable, new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
   },
   'v3.1.0': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
@@ -101,6 +101,9 @@ const versionText: Record<string, { tag?: LocalizedText; description?: Localized
 };
 
 const categoryTitles: Record<string, LocalizedText> = {
+  'v320-overview': { cs: 'Přehled', en: 'Overview' },
+  'v320-security': { cs: 'Bezpečnost', en: 'Security' },
+  'v320-dex': { cs: 'ZionDEX', en: 'ZionDEX' },
   'v301-overview': { cs: 'Přehled', en: 'Overview' },
   'v300-overview': { cs: 'Přehled', en: 'Overview' },
   'v299-overview': { cs: 'Přehled', en: 'Overview' },
@@ -134,6 +137,9 @@ const sectionTitles: Record<string, LocalizedText> = {
 };
 
 const docTitles: Record<string, LocalizedText> = {
+  'v320-readme': { cs: 'v3.2.0 — přehled', en: 'v3.2.0 Overview' },
+  'v320-audit': { cs: 'Bezpečnostní audit 3.2', en: 'Security Audit 3.2' },
+  'v320-ziondex': { cs: 'ZionDEX — průvodce', en: 'ZionDEX User Guide' },
   'v301-readme': { cs: 'v3.0.1 Genesis — historický přehled', en: 'v3.0.1 Genesis Overview (historical)' },
   'mainnet-public-release': { cs: 'Veřejný release — jak použít', en: 'Public Release — How to Use' },
   'v301-launch-sequence': { cs: 'MainNet Launch sekvence', en: 'MainNet Launch Sequence' },
@@ -219,11 +225,44 @@ function resolveMappedLabel<T extends string>(mapping: Record<string, LocalizedT
 
 const versions: Version[] = [
   {
+    id: 'v3.2.0',
+    label: 'v3.2.0',
+    tag: 'CURRENT',
+    tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
+    description: 'Current public line — v3.2.0 "One Love" Mainnet Stable, DEX and bridge deployed',
+    categories: [
+      {
+        id: 'v320-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v320-readme', title: 'v3.2.0 Overview', file: 'v3.2.0/README.md' },
+        ]
+      },
+      {
+        id: 'v320-security',
+        title: 'Security',
+        icon: Shield,
+        docs: [
+          { id: 'v320-audit', title: 'Security Audit 3.2', file: 'v3.2.0/security-audit.md' },
+        ]
+      },
+      {
+        id: 'v320-dex',
+        title: 'ZionDEX',
+        icon: Coins,
+        docs: [
+          { id: 'v320-ziondex', title: 'ZionDEX User Guide', file: 'v3.2.0/ziondex.md' },
+        ]
+      },
+    ]
+  },
+  {
     id: 'v3.0.6',
     label: 'v3.0.6',
     tag: 'CURRENT',
     tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
-    description: 'Current public line — MainNet Edge server live, pool active, mining running',
+    description: 'MainNet Edge server live, pool active, mining running',
     categories: [
       {
         id: 'v301-overview',
@@ -397,17 +436,17 @@ function findCategoryIdByDoc(docId: string): string | null {
 }
 
 export default function DocsPage() {
-  const [activeVersion, setActiveVersion] = useState('v3.0.6');
-  const [selectedDoc, setSelectedDoc] = useState('live-index');
-  const [activeCategory, setActiveCategory] = useState('live-ops');
+  const [activeVersion, setActiveVersion] = useState('v3.2.0');
+  const [selectedDoc, setSelectedDoc] = useState('v320-readme');
+  const [activeCategory, setActiveCategory] = useState('v320-overview');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v3.0.6': true, 'v3.0.0': false, 'v2.9.9': false, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': false, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v3.2.0': true, 'v3.0.6': false, 'v3.0.0': false, 'v2.9.9': false, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': false, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': false, 'ai-native': false, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const currentLang = lang === 'cs' ? 'cs' : 'en';
-  const primaryVersions = versions.filter((version) => version.id === 'v3.0.6');
+  const primaryVersions = versions.filter((version) => version.id === 'v3.2.0');
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[0];

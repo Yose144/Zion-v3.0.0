@@ -2,80 +2,176 @@
 
 /**
  * ZionDex Liquidity — add/remove liquidity page
- * Shows pool list and add liquidity form
+ * Connected to the V31 multichain DEX API via the Next.js /api/swap proxy.
+ * Uses ZIONDexRouter (Base Mainnet) for real on-chain AMM liquidity.
  */
 
-import { useState, useEffect, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Droplets, Plus, Minus, ExternalLink, Loader2, AlertTriangle } from 'lucide-react';
+import { Droplets, Plus, Minus, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import ChainSelector from '@/components/dex/ChainSelector';
 import TokenSelector from '@/components/dex/TokenSelector';
 import Link from 'next/link';
-
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
-
-interface Pool {
-  chain: string;
-  dex: string;
-  token_a: string;
-  token_b: string;
-  address: string;
-  fee_bps: number;
-  enabled: boolean;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import LoginModal from '@/components/LoginModal';
+import { usePathname } from 'next/navigation';
+import {
+  fetchPools,
+  addLiquidity,
+  removeLiquidity,
+  getAmmPair,
+  toAtomicAmount,
+  fromAtomicAmount,
+  buildAsset,
+  ZIONDEX_FACTORY,
+  ZIONDEX_ROUTER,
+  type Pool,
+} from '@/lib/dex-api';
 
 export default function LiquidityPage() {
+  const pathname = usePathname();
+  const { authenticated } = useAuth();
   const [pools, setPools] = useState<Pool[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'add' | 'remove' | 'list'>('list');
+  const [showLogin, setShowLogin] = useState(false);
 
   // Add liquidity form state
   const [chain, setChain] = useState('base');
-  const [tokenA, setTokenA] = useState('wZION');
-  const [tokenB, setTokenB] = useState('USDT');
+  const [tokenA, setTokenA] = useState('tZION');
+  const [tokenB, setTokenB] = useState('tUSDT');
   const [amountA, setAmountA] = useState('');
   const [amountB, setAmountB] = useState('');
-  const [tickLower, setTickLower] = useState('-887220');
-  const [tickUpper, setTickUpper] = useState('887220');
+  const [recipient, setRecipient] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Remove liquidity form state
+  const [rmTokenA, setRmTokenA] = useState('tZION');
+  const [rmTokenB, setRmTokenB] = useState('tUSDT');
+  const [rmLiquidity, setRmLiquidity] = useState('');
+  const [rmRecipient, setRmRecipient] = useState('');
+  const [rmSubmitting, setRmSubmitting] = useState(false);
+  const [rmResult, setRmResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // AMM pair lookup
+  const [pairAddress, setPairAddress] = useState<string | null>(null);
+  const [pairLoading, setPairLoading] = useState(false);
 
   useEffect(() => {
-    const fetchPools = async () => {
+    const load = async () => {
       try {
-        const resp = await fetch(`${ROUTER_URL}/pools`);
-        if (resp.ok) {
-          const data = await resp.json();
-          setPools(data.pools || []);
-        } else {
-          // Placeholder pools
-          setPools([
-            { chain: 'base', dex: 'uniswap-v3', token_a: 'wZION', token_b: 'USDT', address: '0x186b46c2...', fee_bps: 30, enabled: true },
-            { chain: 'base', dex: 'uniswap-v3', token_a: 'wZION', token_b: 'WETH', address: '0x18c0DaeF...', fee_bps: 100, enabled: true },
-            { chain: 'base', dex: 'ziondex-amm', token_a: 'wZION', token_b: 'USDT', address: '0x0', fee_bps: 15, enabled: false },
-          ]);
-        }
+        const data = await fetchPools();
+        setPools(data);
       } catch {
         setPools([]);
       } finally {
         setLoading(false);
       }
     };
-    void fetchPools();
+    void load();
   }, []);
 
+  // Look up AMM pair address when tokens change
+  const lookupPair = useCallback(async () => {
+    setPairAddress(null);
+    if (!tokenA || !tokenB || tokenA === tokenB) return;
+    setPairLoading(true);
+    try {
+      const res = await getAmmPair(chain, ZIONDEX_FACTORY, tokenA, tokenB);
+      setPairAddress(res.pair_address);
+    } catch {
+      setPairAddress(null);
+    } finally {
+      setPairLoading(false);
+    }
+  }, [chain, tokenA, tokenB]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => void lookupPair(), 400);
+    return () => clearTimeout(timer);
+  }, [lookupPair]);
+
   const handleAddLiquidity = async () => {
+    if (!authenticated) {
+      setShowLogin(true);
+      return;
+    }
     setSubmitting(true);
     setResult(null);
     try {
-      // In production: call ZionDexRouter.addLiquidity() via ethers
-      // For now: simulate
-      await new Promise(r => setTimeout(r, 1500));
-      setResult(`[Simulation] Liquidity added: ${amountA} ${tokenA} + ${amountB} ${tokenB} on ${chain}. No real transaction was submitted — ZionDex AMM is not deployed yet.`);
+      const assetA = buildAsset(chain, tokenA);
+      const assetB = buildAsset(chain, tokenB);
+      const atomicA = toAtomicAmount(amountA, assetA.decimals);
+      const atomicB = toAtomicAmount(amountB, assetB.decimals);
+      const deadline = Math.floor(Date.now() / 1000) + 1200; // 20 min
+
+      const res = await addLiquidity({
+        chain,
+        routerAddress: ZIONDEX_ROUTER,
+        tokenA,
+        tokenB,
+        amountADesired: atomicA,
+        amountBDesired: atomicB,
+        recipient: recipient.trim() || undefined,
+        deadline,
+      });
+
+      if (res.ok) {
+        const displayA = fromAtomicAmount(res.amount_a || atomicA, assetA.decimals);
+        const displayB = fromAtomicAmount(res.amount_b || atomicB, assetB.decimals);
+        const lpDisplay = res.lp_tokens ? fromAtomicAmount(res.lp_tokens, 18) : '0';
+        setResult({
+          ok: true,
+          msg: `Liquidity added: ${displayA} ${tokenA} + ${displayB} ${tokenB}. LP tokens: ${lpDisplay}. Tx: ${res.tx_hash?.slice(0, 18)}…`,
+        });
+      } else {
+        setResult({ ok: false, msg: res.error || 'Unknown error' });
+      }
     } catch (e: any) {
-      setResult(`Error: ${e.message}`);
+      setResult({ ok: false, msg: e.message || 'Request failed' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRemoveLiquidity = async () => {
+    if (!authenticated) {
+      setShowLogin(true);
+      return;
+    }
+    setRmSubmitting(true);
+    setRmResult(null);
+    try {
+      const assetA = buildAsset(chain, rmTokenA);
+      const assetB = buildAsset(chain, rmTokenB);
+      const atomicLiq = toAtomicAmount(rmLiquidity, 18);
+      const deadline = Math.floor(Date.now() / 1000) + 1200;
+
+      const res = await removeLiquidity({
+        chain,
+        routerAddress: ZIONDEX_ROUTER,
+        tokenA: rmTokenA,
+        tokenB: rmTokenB,
+        liquidity: atomicLiq,
+        recipient: rmRecipient.trim() || undefined,
+        deadline,
+      });
+
+      if (res.ok) {
+        const displayA = fromAtomicAmount(res.amount_a || '0', assetA.decimals);
+        const displayB = fromAtomicAmount(res.amount_b || '0', assetB.decimals);
+        setRmResult({
+          ok: true,
+          msg: `Liquidity removed: ${displayA} ${rmTokenA} + ${displayB} ${rmTokenB}. Tx: ${res.tx_hash?.slice(0, 18)}…`,
+        });
+      } else {
+        setRmResult({ ok: false, msg: res.error || 'Unknown error' });
+      }
+    } catch (e: any) {
+      setRmResult({ ok: false, msg: e.message || 'Request failed' });
+    } finally {
+      setRmSubmitting(false);
     }
   };
 
@@ -89,23 +185,8 @@ export default function LiquidityPage() {
               <Droplets className="w-6 h-6 text-zion-cyan" />
               <h1 className="text-2xl font-bold text-white">Liquidity Pools</h1>
             </div>
-            <p className="text-zinc-400 text-sm">Provide liquidity to ZionDex AMM pools and earn ZDX rewards</p>
+            <p className="text-zinc-400 text-sm">Provide liquidity to ZionDex AMM pools on Base and earn LP rewards</p>
           </motion.div>
-        </div>
-      </div>
-
-      {/* Under Construction Notice */}
-      <div className="max-w-6xl mx-auto px-6 pt-6">
-        <div className="rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-200">ZionDex Liquidity — Under Construction</p>
-              <p className="text-xs text-amber-200/70 mt-1">
-                Native ZionDex AMM pools are not deployed yet (addresses shown as 0x0). Adding liquidity here is currently simulated and will not create a real on-chain position. Use Uniswap V3 pools via /multichain for real liquidity.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -140,19 +221,20 @@ export default function LiquidityPage() {
                   <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">DEX</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Pair</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Fee</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">AMM Pair</th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-zinc-500">
+                    <td colSpan={6} className="text-center py-8 text-zinc-500">
                       <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                     </td>
                   </tr>
                 ) : pools.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-zinc-500">No pools found</td>
+                    <td colSpan={6} className="text-center py-8 text-zinc-500">No pools found</td>
                   </tr>
                 ) : (
                   pools.map((pool, i) => (
@@ -164,6 +246,13 @@ export default function LiquidityPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-zinc-300 text-right">
                         {(pool.fee_bps / 100).toFixed(2)}%
+                      </td>
+                      <td className="px-4 py-3 text-sm text-zinc-400 font-mono">
+                        {pool.amm_pair ? (
+                          <span className="text-zion-cyan">{pool.amm_pair.slice(0, 10)}…{pool.amm_pair.slice(-6)}</span>
+                        ) : (
+                          <span className="text-zinc-600">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={pool.enabled ? 'zion-badge zion-badge-green' : 'zion-badge'}>
@@ -195,6 +284,23 @@ export default function LiquidityPage() {
                   <TokenSelector label="Token B" chain={chain} value={tokenB} onChange={setTokenB} />
                 </div>
 
+                {/* AMM Pair lookup result */}
+                <div className="zion-rainbow-sub p-3 text-xs" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                  {pairLoading ? (
+                    <span className="text-zinc-400 flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Looking up AMM pair…
+                    </span>
+                  ) : pairAddress ? (
+                    <span className="text-zion-cyan flex items-center gap-2">
+                      <CheckCircle2 className="w-3 h-3" /> AMM Pair: <span className="font-mono">{pairAddress.slice(0, 10)}…{pairAddress.slice(-6)}</span>
+                    </span>
+                  ) : (
+                    <span className="text-zinc-500 flex items-center gap-2">
+                      <AlertCircle className="w-3 h-3" /> No AMM pair found for this token pair. A new pair will be created.
+                    </span>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Amount A</label>
@@ -218,41 +324,31 @@ export default function LiquidityPage() {
                   </div>
                 </div>
 
-                {/* Tick range (concentrated liquidity) */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Tick Lower</label>
-                    <input
-                      type="number"
-                      value={tickLower}
-                      onChange={e => setTickLower(e.target.value)}
-                      className="w-full px-4 py-2.5 border-white/10 bg-white/5 rounded-xl text-sm text-white focus:border-zion-cyan/50 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Tick Upper</label>
-                    <input
-                      type="number"
-                      value={tickUpper}
-                      onChange={e => setTickUpper(e.target.value)}
-                      className="w-full px-4 py-2.5 border-white/10 bg-white/5 rounded-xl text-sm text-white focus:border-zion-cyan/50 focus:outline-none"
-                    />
-                  </div>
+                <div>
+                  <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Recipient (optional)</label>
+                  <input
+                    type="text"
+                    value={recipient}
+                    onChange={e => setRecipient(e.target.value)}
+                    placeholder="0x... (defaults to signer)"
+                    className="w-full px-4 py-2.5 border-white/10 bg-white/5 rounded-xl text-sm text-white font-mono placeholder-zinc-600 focus:border-zion-cyan/50 focus:outline-none"
+                  />
                 </div>
 
                 <div className="zion-rainbow-sub p-3 text-xs text-zinc-500" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                  💡 Full range (-887220 to 887220) provides liquidity across all prices.
-                  Narrow ranges concentrate liquidity for higher returns but more risk.
+                  Router: <span className="font-mono text-zinc-400">{ZIONDEX_ROUTER.slice(0, 10)}…{ZIONDEX_ROUTER.slice(-6)}</span>
+                  {' · '}
+                  Factory: <span className="font-mono text-zinc-400">{ZIONDEX_FACTORY.slice(0, 10)}…{ZIONDEX_FACTORY.slice(-6)}</span>
                 </div>
 
                 {result && (
                   <div
                     className="zion-rainbow-sub p-3 text-sm"
                     style={{
-                      '--rc': result.startsWith('Error') ? '228, 30, 43' : '6, 105, 40',
+                      '--rc': result.ok ? '6, 105, 40' : '228, 30, 43',
                     } as CSSProperties}
                   >
-                    <span className={result.startsWith('Error') ? 'text-zion-purple' : 'text-zion-cyan'}>{result}</span>
+                    <span className={result.ok ? 'text-zion-cyan' : 'text-zion-purple'}>{result.msg}</span>
                   </div>
                 )}
 
@@ -262,7 +358,7 @@ export default function LiquidityPage() {
                   className="zion-button-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {submitting ? 'Adding...' : 'Add Liquidity'}
+                  {submitting ? 'Adding...' : !authenticated ? 'Connect to Add Liquidity' : 'Add Liquidity'}
                 </button>
               </div>
             </div>
@@ -277,9 +373,60 @@ export default function LiquidityPage() {
                 <Minus className="w-5 h-5 text-zion-gold" />
                 <h2 className="text-lg font-bold text-white">Remove Liquidity</h2>
               </div>
-              <div className="text-center py-12 text-zinc-500">
-                <p>Connect your wallet to view and remove your liquidity positions.</p>
-                <p className="text-xs mt-2">Requires ethers.js wallet connection.</p>
+
+              <div className="space-y-4">
+                <ChainSelector label="Chain" value={chain} onChange={setChain} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <TokenSelector label="Token A" chain={chain} value={rmTokenA} onChange={setRmTokenA} />
+                  <TokenSelector label="Token B" chain={chain} value={rmTokenB} onChange={setRmTokenB} />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">LP Token Amount</label>
+                  <input
+                    type="number"
+                    value={rmLiquidity}
+                    onChange={e => setRmLiquidity(e.target.value)}
+                    placeholder="0.0"
+                    className="w-full px-4 py-3 border-white/10 bg-white/5 rounded-xl text-lg font-bold text-white placeholder-zinc-600 focus:border-zion-cyan/50 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Recipient (optional)</label>
+                  <input
+                    type="text"
+                    value={rmRecipient}
+                    onChange={e => setRmRecipient(e.target.value)}
+                    placeholder="0x... (defaults to signer)"
+                    className="w-full px-4 py-2.5 border-white/10 bg-white/5 rounded-xl text-sm text-white font-mono placeholder-zinc-600 focus:border-zion-cyan/50 focus:outline-none"
+                  />
+                </div>
+
+                <div className="zion-rainbow-sub p-3 text-xs text-zinc-500" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                  Router: <span className="font-mono text-zinc-400">{ZIONDEX_ROUTER.slice(0, 10)}…{ZIONDEX_ROUTER.slice(-6)}</span>
+                </div>
+
+                {rmResult && (
+                  <div
+                    className="zion-rainbow-sub p-3 text-sm"
+                    style={{
+                      '--rc': rmResult.ok ? '6, 105, 40' : '228, 30, 43',
+                    } as CSSProperties}
+                  >
+                    <span className={rmResult.ok ? 'text-zion-cyan' : 'text-zion-purple'}>{rmResult.msg}</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleRemoveLiquidity}
+                  disabled={!rmLiquidity || rmSubmitting}
+                  className="zion-button-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {rmSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {rmSubmitting ? 'Removing...' : !authenticated ? 'Connect to Remove Liquidity' : 'Remove Liquidity'}
+                </button>
               </div>
             </div>
           </div>
@@ -292,6 +439,12 @@ export default function LiquidityPage() {
           </Link>
         </div>
       </div>
+
+      <LoginModal
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+        redirectTo={pathname}
+      />
     </div>
   );
 }

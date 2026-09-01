@@ -128,6 +128,29 @@ impl SolverClient for HttpSolverClient {
             ))
         })?;
 
+        // FIND-012 fix: verify the bid signature against the solver's
+        // registered public key. If a pubkey is configured but the
+        // signature is missing or invalid, reject the bid.
+        if let Some(ref pubkey) = solver.pubkey {
+            if !bid.verify_signature(pubkey) {
+                tracing::warn!(
+                    "solver {} bid for intent {} rejected: signature verification failed (FIND-012)",
+                    solver.name,
+                    bid.intent_id
+                );
+                return Err(MultichainError::Validation(format!(
+                    "solver {} bid signature verification failed",
+                    solver.name
+                )));
+            }
+        } else if !bid.signature.is_empty() {
+            // Signature present but no pubkey configured — accept but log.
+            tracing::debug!(
+                "solver {} provided signed bid but no pubkey configured — accepting (dev mode)",
+                solver.name
+            );
+        }
+
         tracing::debug!(
             "solver {} returned bid for intent {}: amount_out={}",
             solver.name,

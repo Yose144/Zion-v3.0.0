@@ -181,6 +181,11 @@ impl DexRouter {
         &self.pools
     }
 
+    /// Mutable access to pools for updating amm_pair addresses etc.
+    pub fn pools_mut(&mut self) -> &mut [Pool] {
+        &mut self.pools
+    }
+
     /// Return the asset metadata for an `AssetId` known to the router.
     pub fn find_asset(&self, id: &AssetId) -> Option<Asset> {
         self.pools.iter().find_map(|p| {
