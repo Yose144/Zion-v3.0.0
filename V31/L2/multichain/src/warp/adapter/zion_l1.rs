@@ -163,15 +163,16 @@ impl ZionL1Adapter {
         })
     }
 
-    /// Get current tip height
+    /// Get current confirmed tip height (not the next block template height).
     async fn get_tip_height(&self) -> WarpResult<u64> {
-        let result = self.rpc_call("getBlockTemplate", Value::Null).await?;
+        let result = self.rpc_call("getChainInfo", Value::Null).await?;
         let height = result
-            .get("height")
+            .get("native_chain_height")
+            .or_else(|| result.get("chain_height"))
             .and_then(|v| v.as_u64())
             .ok_or_else(|| WarpError::AdapterError {
                 chain: "zion-l1".into(),
-                reason: "getBlockTemplate missing height".into(),
+                reason: "getChainInfo missing chain height".into(),
             })?;
         Ok(height)
     }
@@ -242,8 +243,13 @@ impl ChainAdapter for ZionL1Adapter {
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let tip = self.get_tip_height().await?;
         let last = self.last_polled_height.load(std::sync::atomic::Ordering::Relaxed);
-        // Scan a wider window (last 200 blocks) for bridge locks.
-        let from = last.max(1).max(tip.saturating_sub(200));
+        // On first run catch up from genesis; otherwise scan from last poll or
+        // the last 200 blocks (whichever is lower) to handle small reorgs.
+        let from = if last == 0 {
+            1
+        } else {
+            last.max(tip.saturating_sub(200))
+        };
         let to = tip;
 
         if from > to {
@@ -296,8 +302,13 @@ impl ChainAdapter for ZionL1Adapter {
             }
         }
 
-        // Update last polled height
-        self.last_polled_height.store(to + 1, std::sync::atomic::Ordering::Relaxed);
+        // Update last polled height to the actual to_height returned by the node,
+        // so we never jump ahead of the confirmed chain tip.
+        let to_height = locks_result
+            .get("to_height")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(to);
+        self.last_polled_height.store(to_height + 1, std::sync::atomic::Ordering::Relaxed);
 
         Ok(proofs)
     }
@@ -333,7 +344,7 @@ impl ChainAdapter for ZionL1Adapter {
         }
 
         let tip = self.get_tip_height().await?;
-        Ok(tip.saturating_sub(tx_height))
+        Ok(tip.saturating_sub(tx_height) + 1)
     }
 }
 

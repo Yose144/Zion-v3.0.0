@@ -165,7 +165,7 @@ impl WarpRouter {
 
         // --- getTransaction -------------------------------------------------
         let tx_info: serde_json::Value =
-            match self.rpc_call_sync(addr, "getTransaction", serde_json::json!({"hash": &proof.tx_hash})) {
+            match self.rpc_call_sync(addr, "getTransaction", serde_json::json!({"txid": &proof.tx_hash})) {
                 Ok(v) => v,
                 Err(e) => return Err(WarpError::Validation(format!(
                     "deposit proof verification failed: getTransaction error: {e}"
@@ -251,17 +251,18 @@ impl WarpRouter {
             .flush()
             .map_err(|e| format!("flush to {addr} failed: {e}"))?;
 
-        use std::io::Read;
-        let mut buf = Vec::new();
+        use std::io::BufRead;
         let timeout = std::time::Duration::from_secs(10);
         stream
             .set_read_timeout(Some(timeout))
             .map_err(|e| format!("set_read_timeout failed: {e}"))?;
-        stream
-            .read_to_end(&mut buf)
+
+        let mut reader = std::io::BufReader::new(stream);
+        let mut line = String::new();
+        reader
+            .read_line(&mut line)
             .map_err(|e| format!("read from {addr} failed: {e}"))?;
 
-        let line = String::from_utf8_lossy(&buf);
         let resp: serde_json::Value = serde_json::from_str(line.trim())
             .map_err(|e| format!("decode response for {method}: {e}. body: {line:.200}"))?;
 
