@@ -26,7 +26,7 @@ The contracts are self-contained (no external libraries) and compile with
 |----------|---------|-------|
 | `ZIONDexFactory`  | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | Base |
 | `ZIONDexRouter`   | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | Base |
-| `ZIONDexZISGate`  | _(not deployed — optional, deploy when needed)_ | Base |
+| `ZIONDexZISGate`  | _(not deployed — gas estimate ready: ~586k gas, ~0.000004 ETH)_ | Base |
 | Pair: wZION/USDT  | `0x____________` | _ |
 
 > Deployment happens on the Edge server. Update this table after the
@@ -63,6 +63,11 @@ ROUTER=$(cast send --private-key $KEY --create $(cat build/ZIONDexRouter_sol_ZIO
 
 # 3. (Optional) Deploy the ZIS gate.
 GATE=$(cast send --private-key $KEY --create $(cat build/ZIONDexZISGate_sol_ZIONDexZISGate.bin) | jq -r .contractAddress)
+
+# Or use the Node.js deploy script (includes gas estimate + post-deploy config):
+#   node deploy-zisgate.js                    # gas estimate only
+#   DEPLOYER_KEY=0x... node deploy-zisgate.js # deploy + configure
+#   DEPLOYER_KEY=0x... ZIS_RELAY=0x... node deploy-zisgate.js  # deploy + set relay
 
 # 4. (Optional) Configure the protocol fee recipient.
 cast send --private-key $KEY $FACTORY "setFeeTo(address)" $TREASURY
