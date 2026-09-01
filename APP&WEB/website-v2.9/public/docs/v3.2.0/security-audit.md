@@ -3,7 +3,7 @@
 > **Audit date:** 26 August 2026  
 > **Remediation complete:** 1 September 2026  
 > **Scope:** Core consensus, multi-chain service, pool, contracts, dependencies  
-> **Status:** 43 of 44 findings fixed or accepted with mitigations
+> **Status:** 48 findings reviewed in total: 37 fixed, 7 accepted with mitigations, 4 deferred to v3.3
 
 ---
 
@@ -23,14 +23,16 @@ An internal security audit of the ZION 3.2 "One Love" codebase was completed in 
 | High | 10 |
 | Medium | 20 |
 | Low / Info | 12 |
-| **Total** | **44** |
+| **Severity-graded total** | **44** |
+
+Severity ratings are assigned to 44 findings. Four additional dependency/deferred items bring the audited total to 48.
 
 | Outcome | Count |
 |---------|-------|
-| Fixed | 35 |
-| Accepted with mitigation | 5 |
+| Fixed | 37 |
+| Accepted with mitigation | 7 |
 | Deferred to v3.3 | 4 |
-| **Total addressed** | **44** |
+| **Total addressed** | **48** |
 
 ---
 
@@ -55,14 +57,21 @@ An internal security audit of the ZION 3.2 "One Love" codebase was completed in 
 
 ## Items accepted or deferred
 
-A small number of findings were accepted with documented mitigations or deferred to v3.3:
+A number of findings were accepted with documented mitigations or deferred to v3.3:
 
-| Finding | Reason |
-|---------|--------|
-| Merkle root construction | Non-standard flat hash; risk low in the current single-pool model. Proper Merkle tree planned for v3.3. |
-| Dependency advisories | Selected Rust networking dependencies carry known advisories. Compensating controls (reverse proxy, rate limiting, minimal external exposure) are in place. Full migration to the successor library stack is planned for v3.3. |
-| HTLC memo replay | `SWAP:LOCK` memo uses a unique hashlock per swap. Additional explicit nonce deferred to avoid breaking existing swaps. |
-| Swap executor atomicity | Two-phase commit deferred to v3.3; current flow is protected by an audit journal and idempotent order states. |
+| ID | Status | Reason |
+|----|--------|--------|
+| FIND-014 | Accepted | `swap_executor` debit-before-credit is not atomic; mitigated by `JournalLedger` for a full audit trail. A two-phase commit is planned for v3.3. |
+| FIND-015 | Accepted | `X-Solver-Key` travels over HTTP. In production, solver traffic is proxied through nginx with TLS. Enforcing `.https_only()` at code level is planned for v3.3. |
+| FIND-022 | Accepted | Reconciliation `expected = internal + pool` was reviewed and confirmed correct. The hot wallet holds both user ledger balances and AMM reserves as separate accounting systems. |
+| FIND-024 | Accepted | `SWAP:LOCK` memo uses a unique 32-byte hashlock per swap as replay prevention. An additional explicit nonce is deferred to avoid breaking existing swaps. |
+| FIND-L1-001 | Accepted | Flat BLAKE3 Merkle root is non-standard. Risk is low in the current single-pool model; a proper Merkle tree is planned for v3.3. |
+| POL-008 | Accepted | Per-session rate limit is adequate for current scale; an IP-global budget is planned for v3.3. |
+| CON-004 | Accepted | `IntentSettlement` deploys with a single EOA owner. Docs recommend a multisig or timelock for mainnet deployments. |
+| DEP-001 | Deferred | `ethers 2.0.14` pulls in known CVEs via `ring 0.16`, `h2 0.3`, and `rustls-webpki 0.101`. Resolved by migrating to `alloy` in v3.3. |
+| DEP-002 | Deferred | Unmaintained crates (`instant`, `fxhash`, `paste`, `rustls-pemfile`) are cleaned up by the `alloy` migration in v3.3. |
+| DEP-003 | Deferred | 18 duplicate crate versions coexist because of `ethers 2.0.14`. Resolved by the `alloy` migration in v3.3. |
+| Alloy migration | Deferred | The umbrella dependency migration to `alloy` and the modern networking stack is scheduled for v3.3. |
 
 ---
 
