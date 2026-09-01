@@ -1,8 +1,8 @@
 # On-Chain Internal ZionDex with ZIS — Design Document
 
-**Date:** 2026-08-31
+**Date:** 2026-08-31 (updated 2026-09-01)
 **Author:** Devin + Operator
-**Status:** Design Proposal
+**Status:** Implemented + Deployed on Base (see [ZIONDEX_AMM_REPORT.md](ZIONDEX_AMM_REPORT.md))
 
 ## Vision
 

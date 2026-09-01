@@ -1,7 +1,7 @@
 # Zion Multichain Wallet + ZionDex Engine — Master Architecture
 
-**Date:** 2026-08-31
-**Status:** Active Design + Implementation
+**Date:** 2026-08-31 (updated 2026-09-01)
+**Status:** Deployed on Base + E2E workflow live (see [ZIONDEX_AMM_REPORT.md](ZIONDEX_AMM_REPORT.md) for full status)
 **Vision:** ZION L1 as settlement hub for cross-chain operations. Custodial multichain wallet in L2. On-chain ZionDex with real liquidity. ZIS as identity layer. Zion becomes a multichain platform for other chains.
 
 ---

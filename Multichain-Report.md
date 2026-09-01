@@ -2,7 +2,7 @@
 
 > **Účel:** Stručný report o stavu multichain walletu a ZionDexu. Detailní plány jsou v `docs/3.2/3.2.4-Multichain-and-DEX/`.
 >
-> **Poslední aktualizace:** 2026-08-31
+> **Poslední aktualizace:** 2026-09-01 — Deployed on Base + E2E live (see [ZIONDEX_AMM_REPORT.md](ZIONDEX_AMM_REPORT.md))
 
 ---
 
