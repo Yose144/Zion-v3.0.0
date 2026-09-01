@@ -369,6 +369,23 @@ mod tests {
     }
 
     #[test]
+    fn on_block_found_is_idempotent() {
+        let mut pool = Pool::new(config(), telemetry());
+        pool.on_block_found(100, 1_000_000);
+        let pending1 = pool.take_pending_payouts();
+        pool.on_block_found(100, 1_000_000);
+        let pending2 = pool.take_pending_payouts();
+        assert_eq!(pending2.len(), 0, "duplicate block height must not produce new payouts");
+        pool.requeue_payouts(pending1);
+        let pending3 = pool.take_pending_payouts();
+        assert_eq!(
+            pending3.len(),
+            0,
+            "requeue of drained payouts after idempotent on_block_found should not duplicate"
+        );
+    }
+
+    #[test]
     fn next_job_id_increments() {
         let pool = Pool::new(config(), telemetry());
         assert_eq!(pool.next_job_id(), 2);
