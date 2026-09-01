@@ -59,12 +59,18 @@ contract ZIONDexPair {
     // ── Initialization ─────────────────────────────────────────────────
 
     /// @notice Called once by the factory right after creation.
+    /// @dev    Restricted to the factory deployer to prevent front-running.
     function initialize(address _token0, address _token1, address _factory) external {
         require(token0 == address(0) && token1 == address(0), "ZIONDex: ALREADY_INITIALIZED");
+        require(msg.sender == _factory, "ZIONDex: FORBIDDEN");
         token0 = _token0;
         token1 = _token1;
         factory = _factory;
+        emit Initialized(_token0, _token1, _factory);
     }
+
+    /// @notice Emitted when the pair is initialized by the factory.
+    event Initialized(address indexed token0, address indexed token1, address indexed factory);
 
     // ── Reserves ───────────────────────────────────────────────────────
 
@@ -198,6 +204,8 @@ contract ZIONDexPair {
     ///         The input tokens must already be transferred to this pair
     ///         before calling. The K invariant is verified after the swap.
     ///         A protocol fee share of LP tokens is minted to `feeTo`.
+    /// @dev    Uses checks-effects-interactions pattern: reserves are updated
+    ///         BEFORE external token transfers to prevent reentrancy.
     function swap(uint256 amount0Out, uint256 amount1Out, address to) external {
         require(amount0Out > 0 || amount1Out > 0, "ZIONDex: INSUFFICIENT_OUTPUT_AMOUNT");
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
@@ -208,10 +216,6 @@ contract ZIONDexPair {
 
         uint256 balance0 = _balanceOfThis(token0) - amount0Out;
         uint256 balance1 = _balanceOfThis(token1) - amount1Out;
-
-        // Send output tokens.
-        if (amount0Out > 0) _safeTransfer(token0, to, amount0Out);
-        if (amount1Out > 0) _safeTransfer(token1, to, amount1Out);
 
         // Compute input amounts (tokens sent in beyond the reserves).
         uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
@@ -227,7 +231,12 @@ contract ZIONDexPair {
             "ZIONDex: K"
         );
 
+        // Effects: update reserves BEFORE interactions (reentrancy guard).
         _update(uint112(balance0), uint112(balance1), _reserve0, _reserve1);
+
+        // Interactions: send output tokens after state is committed.
+        if (amount0Out > 0) _safeTransfer(token0, to, amount0Out);
+        if (amount1Out > 0) _safeTransfer(token1, to, amount1Out);
 
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
