@@ -3,7 +3,7 @@
 > **Datum auditu:** 26. srpna 2026  
 > **Remediation dokončeno:** 1. září 2026  
 > **Rozsah:** Core consensus, multichain služba, pool, kontrakty, závislosti  
-> **Stav:** 43 z 44 findings opraveno nebo akceptováno s mitigacemi
+> **Stav:** 48 findings reviewováno celkem: 37 opraveno, 7 akceptováno s mitigacemi, 4 odloženo na v3.3
 
 ---
 
@@ -23,14 +23,16 @@ Interní bezpečnostní audit kódové báze ZION 3.2 "One Love" byl dokončen k
 | High | 10 |
 | Medium | 20 |
 | Low / Info | 12 |
-| **Celkem** | **44** |
+| **Celkem se severity** | **44** |
+
+Severity rating má přiřazeno 44 findings. Další 4 závislostní/odložené položky celkový počet navýšily na 48.
 
 | Výsledek | Počet |
 |----------|-------|
-| Opraveno | 35 |
-| Akceptováno s mitigací | 5 |
+| Opraveno | 37 |
+| Akceptováno s mitigací | 7 |
 | Odloženo na v3.3 | 4 |
-| **Celkem řešeno** | **44** |
+| **Celkem řešeno** | **48** |
 
 ---
 
@@ -55,14 +57,21 @@ Interní bezpečnostní audit kódové báze ZION 3.2 "One Love" byl dokončen k
 
 ## Akceptované a odložené položky
 
-Malý počet findings byl akceptován s dokumentovanými mitigacemi nebo odložen na v3.3:
+Část findings byla akceptována s dokumentovanými mitigacemi nebo odložena na v3.3:
 
-| Finding | Důvod |
-|---------|-------|
-| Merkle root construction | Nestandardní plochý hash; riziko nízké v současném single-pool modelu. Proper Merkle tree je v plánu pro v3.3. |
-| Dependency advisories | Vybrané Rust networking závislosti mají známá advisories. Kompenzační opatření (reverse proxy, rate limiting, minimální externí expozice) jsou nasazena. Plná migrace na nástupnický stack je v plánu pro v3.3. |
-| HTLC memo replay | `SWAP:LOCK` memo používá unikátní hashlock per swap. Další explicitní nonce odložen, aby se nerozbily existující swapy. |
-| Swap executor atomicity | Two-phase commit odložen na v3.3; současný tok je chráněn audit journal a idempotentními order stavy. |
+| ID | Stav | Důvod |
+|----|------|-------|
+| FIND-014 | Akceptováno | `swap_executor` debit-before-credit není atomický; mitigováno přes `JournalLedger` pro audit trail. Two-phase commit je v plánu pro v3.3. |
+| FIND-015 | Akceptováno | `X-Solver-Key` putuje přes HTTP. V produkci jde solver traffic přes nginx s TLS. Vynucení `.https_only()` v kódu je v plánu pro v3.3. |
+| FIND-022 | Akceptováno | Reconciliation `expected = internal + pool` bylo reviewováno a potvrzeno jako správné. Hot wallet drží user ledger balances a AMM rezervy jako oddělené účetní systémy. |
+| FIND-024 | Akceptováno | `SWAP:LOCK` memo používá unikátní 32-bajtový hashlock per swap jako prevenci replay. Další explicitní nonce je odložen, aby se nerozbily existující swapy. |
+| FIND-L1-001 | Akceptováno | Plochý BLAKE3 Merkle root je nestandardní. Riziko je nízké v současném single-pool modelu; proper Merkle tree je v plánu pro v3.3. |
+| POL-008 | Akceptováno | Per-session rate limit je pro současné měřítko dostačující; IP-global budget je v plánu pro v3.3. |
+| CON-004 | Akceptováno | `IntentSettlement` se deployuje se single EOA ownerem. Dokumentace doporučuje pro mainnet multisig nebo timelock. |
+| DEP-001 | Odloženo | `ethers 2.0.14` táhne známá CVE přes `ring 0.16`, `h2 0.3` a `rustls-webpki 0.101`. Vyřešeno migrací na `alloy` ve v3.3. |
+| DEP-002 | Odloženo | Unmaintained crates (`instant`, `fxhash`, `paste`, `rustls-pemfile`) se vyčistí migrací na `alloy` ve v3.3. |
+| DEP-003 | Odloženo | 18 duplicitních verzí crate koexistuje kvůli `ethers 2.0.14`. Vyřešeno migrací na `alloy` ve v3.3. |
+| Alloy migration | Odloženo | Deštníková migrace závislostí na `alloy` a moderní networking stack je naplánována na v3.3. |
 
 ---
 
