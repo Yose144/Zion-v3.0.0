@@ -20,7 +20,7 @@ use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::multichain_wallet::{
-    DepositWatcher, DexOrder, MultichainWallet, WalletLedger, WithdrawalProcessor,
+    DepositWatcher, DexOrder, JournalLedger, MultichainWallet, WalletLedger, WithdrawalProcessor,
 };
 use crate::node_rewards::NodeRewards;
 use crate::reconciliation::{Reconciler, ReconcilerConfig, ReconciliationReport};
@@ -240,12 +240,14 @@ impl MultichainService {
             wallet_ledger.clone(),
         );
         let dex = Arc::new(RwLock::new(DexRouter::new()));
+        let journal_ledger = JournalLedger::new(Arc::clone(&db));
         let swap_executor = SwapExecutor::new(
             Arc::clone(&db),
             Arc::clone(&adapters),
             wallet_ledger.clone(),
             Arc::clone(&dex),
         )
+        .with_journal(journal_ledger)
         .with_htlc(htlc.clone());
 
         let reconciler_config = ReconcilerConfig::from_config(&config.reconciliation)
