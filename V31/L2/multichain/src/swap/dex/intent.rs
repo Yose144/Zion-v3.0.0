@@ -57,6 +57,61 @@ pub struct PathHop {
     pub to_token: AssetId,
     /// True if this hop crosses chains via the WARP bridge.
     pub is_bridge: bool,
+    /// Expected input amount for this hop (smallest units).
+    /// For the first hop this should equal the intent's `amount_in`.
+    /// For subsequent hops it should equal the previous hop's `amount_out`.
+    #[serde(default)]
+    pub amount_in: Amount,
+    /// Expected output amount from this hop (smallest units).
+    /// For the last hop this should equal the bid's `amount_out`.
+    #[serde(default)]
+    pub amount_out: Amount,
+}
+
+impl PathHop {
+    /// Validate that a path's intermediate amounts are self-consistent.
+    ///
+    /// Returns `Ok(())` if:
+    /// - The first hop's `amount_in` equals `intent_amount_in`.
+    /// - Each hop's `amount_in` equals the previous hop's `amount_out`.
+    /// - The last hop's `amount_out` equals the bid's `amount_out`.
+    pub fn validate_path_amounts(
+        path: &[PathHop],
+        intent_amount_in: Amount,
+        bid_amount_out: Amount,
+    ) -> MultichainResult<()> {
+        if path.is_empty() {
+            return Err(MultichainError::Validation(
+                "cannot validate amounts for empty path".to_string(),
+            ));
+        }
+
+        if path[0].amount_in != intent_amount_in {
+            return Err(MultichainError::Validation(format!(
+                "first hop amount_in ({}) does not match intent amount_in ({})",
+                path[0].amount_in.0, intent_amount_in.0
+            )));
+        }
+
+        for window in path.windows(2) {
+            if window[0].amount_out != window[1].amount_in {
+                return Err(MultichainError::Validation(format!(
+                    "path discontinuity: hop amount_out ({}) != next hop amount_in ({})",
+                    window[0].amount_out.0, window[1].amount_in.0
+                )));
+            }
+        }
+
+        let last = path.len() - 1;
+        if path[last].amount_out != bid_amount_out {
+            return Err(MultichainError::Validation(format!(
+                "last hop amount_out ({}) does not match bid amount_out ({})",
+                path[last].amount_out.0, bid_amount_out.0
+            )));
+        }
+
+        Ok(())
+    }
 }
 
 /// A solver's competing offer to fulfill a swap intent.
@@ -107,6 +162,14 @@ impl SolverBid {
         }
         let fee = self.amount_out.0 * u128::from(self.fee_bps) / 10_000;
         Amount::new(self.amount_out.0 - fee)
+    }
+
+    /// Validate the bid's execution path has self-consistent intermediate amounts (FIND-011).
+    /// The first hop `amount_in` must equal `intent_amount_in`, consecutive hops must
+    /// chain (prev out = next in), and the last hop `amount_out` must equal the bid's
+    /// `amount_out`.
+    pub fn validate_path(&self, intent_amount_in: Amount) -> MultichainResult<()> {
+        PathHop::validate_path_amounts(&self.path, intent_amount_in, self.amount_out)
     }
 
     /// Deterministic signing hash over the immutable bid fields.
@@ -258,6 +321,7 @@ impl IntentAuction {
         let bids = self.bids.get(&intent.id)?;
         bids.iter()
             .filter(|b| intent.bid_meets_min(b))
+            .filter(|b| b.validate_path(intent.amount_in).is_ok())
             .max_by_key(|b| b.net_amount_out())
             .cloned()
     }
@@ -331,6 +395,8 @@ mod tests {
                 from_token: zion.clone(),
                 to_token: usdc.clone(),
                 is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(950_000),
             }],
             30,
             0,
@@ -346,6 +412,8 @@ mod tests {
                 from_token: zion,
                 to_token: usdc,
                 is_bridge: true,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(1_100_000),
             }],
             10,
             0,
@@ -386,6 +454,8 @@ mod tests {
                 from_token: zion,
                 to_token: usdc,
                 is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(1_100_000),
             }],
             0,
             0,
@@ -427,6 +497,8 @@ mod tests {
                 from_token: zion.clone(),
                 to_token: zion,
                 is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(950_000),
             }],
             30,
             0,
@@ -467,8 +539,126 @@ mod tests {
         // Submit with wrong signature → rejected
         let mut bad_bid = bid.clone();
         bad_bid.signature = SigningKey::generate(&mut OsRng).sign(bid.signing_hash().as_slice()).to_vec();
-        let mut intent2 = SwapIntent::new("zion1user", zion_usdc().0, zion_usdc().1, Amount::new(1_000_000), Amount::new(900_000), u64::MAX, 2);
+        let intent2 = SwapIntent::new("zion1user", zion_usdc().0, zion_usdc().1, Amount::new(1_000_000), Amount::new(900_000), u64::MAX, 2);
         engine.open_intent(intent2.clone());
         assert!(engine.submit_bid(bad_bid).is_err());
+    }
+
+    #[test]
+    fn test_path_amount_validation_valid() {
+        let (zion, usdc) = zion_usdc();
+        // Two-hop path: ZION → USDT → USDC
+        // amount_in chain: 1_000_000 → 950_000 → 940_000 (=bid amount_out)
+        let path = vec![
+            PathHop {
+                chain: "zion".into(),
+                dex: "amm".into(),
+                from_token: zion.clone(),
+                to_token: zion.clone(),
+                is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(950_000),
+            },
+            PathHop {
+                chain: "base".into(),
+                dex: "amm".into(),
+                from_token: usdc.clone(),
+                to_token: usdc.clone(),
+                is_bridge: true,
+                amount_in: Amount::new(950_000),
+                amount_out: Amount::new(940_000),
+            },
+        ];
+        assert!(PathHop::validate_path_amounts(
+            &path,
+            Amount::new(1_000_000),
+            Amount::new(940_000)
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn test_path_amount_validation_discontinuity() {
+        let (zion, usdc) = zion_usdc();
+        // Second hop amount_in (500_000) != first hop amount_out (950_000)
+        let path = vec![
+            PathHop {
+                chain: "zion".into(),
+                dex: "amm".into(),
+                from_token: zion.clone(),
+                to_token: zion.clone(),
+                is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(950_000),
+            },
+            PathHop {
+                chain: "base".into(),
+                dex: "amm".into(),
+                from_token: usdc.clone(),
+                to_token: usdc.clone(),
+                is_bridge: true,
+                amount_in: Amount::new(500_000),
+                amount_out: Amount::new(490_000),
+            },
+        ];
+        let err = PathHop::validate_path_amounts(
+            &path,
+            Amount::new(1_000_000),
+            Amount::new(490_000),
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("discontinuity"));
+    }
+
+    #[test]
+    fn test_path_amount_validation_first_hop_mismatch() {
+        let (zion, usdc) = zion_usdc();
+        let path = vec![PathHop {
+            chain: "zion".into(),
+            dex: "amm".into(),
+            from_token: zion.clone(),
+            to_token: usdc.clone(),
+            is_bridge: false,
+            amount_in: Amount::new(500_000),  // != intent amount_in (1_000_000)
+            amount_out: Amount::new(950_000),
+        }];
+        let err = PathHop::validate_path_amounts(
+            &path,
+            Amount::new(1_000_000),
+            Amount::new(950_000),
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("first hop"));
+    }
+
+    #[test]
+    fn test_path_amount_validation_last_hop_mismatch() {
+        let (zion, usdc) = zion_usdc();
+        let path = vec![PathHop {
+            chain: "zion".into(),
+            dex: "amm".into(),
+            from_token: zion,
+            to_token: usdc,
+            is_bridge: false,
+            amount_in: Amount::new(1_000_000),
+            amount_out: Amount::new(900_000),  // != bid amount_out (950_000)
+        }];
+        let err = PathHop::validate_path_amounts(
+            &path,
+            Amount::new(1_000_000),
+            Amount::new(950_000),
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("last hop"));
+    }
+
+    #[test]
+    fn test_path_amount_validation_empty_path() {
+        let result = PathHop::validate_path_amounts(
+            &[],
+            Amount::new(1_000_000),
+            Amount::new(1_000_000),
+        );
+        assert!(result.is_err());
     }
 }

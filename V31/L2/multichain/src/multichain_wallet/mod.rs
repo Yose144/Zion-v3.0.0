@@ -6,12 +6,14 @@
 
 pub mod deposits;
 pub mod derivation;
+pub mod journal;
 pub mod ledger;
 pub mod types;
 pub mod withdrawals;
 
 pub use deposits::DepositWatcher;
 pub use derivation::MultichainWallet;
+pub use journal::{JournalEntry, JournalEntryType, JournalLedger};
 pub use ledger::{asset_key, WalletLedger};
 pub use types::*;
 pub use withdrawals::WithdrawalProcessor;

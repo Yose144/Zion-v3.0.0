@@ -112,3 +112,47 @@ export class ZionWalletSDK {
     await this.manager.initialize();
   }
 }
+
+// ─── Multichain ──────────────────────────────────────────────────────────
+export type {
+  ChainFamily,
+  ChainId,
+  AssetId,
+  Asset,
+  Amount,
+  Balance,
+  DepositAddress,
+  Quote,
+  SwapParams,
+  SwapResult,
+  WithdrawParams,
+  WithdrawResult,
+  BridgeParams,
+  BridgeResult,
+  WalletSnapshot,
+  PoolInfo,
+} from './multichain/types.js';
+
+export { MultichainWalletClient } from './multichain/wallet-client.js';
+export type { MultichainWalletClientConfig } from './multichain/wallet-client.js';
+export { SwapHelper } from './multichain/swap.js';
+export type { HumanQuote } from './multichain/swap.js';
+export { BridgeHelper } from './multichain/bridge.js';
+
+// ─── EVM ─────────────────────────────────────────────────────────────────
+export { EvmWallet } from './evm/evm-wallet.js';
+export { SiweHelper } from './evm/siwe.js';
+export type { SiweMessageFields } from './evm/siwe.js';
+export { AmmClient } from './evm/amm.js';
+
+// ─── ZIS ─────────────────────────────────────────────────────────────────
+export { ZisClient } from './zis/zis-client.js';
+export type {
+  ZisUser,
+  LinkedAddress,
+  AuthResult,
+  ChallengeResult,
+  ApiKeyVerifyResult,
+  AddressProof,
+} from './zis/zis-client.js';
+export { SessionManager } from './zis/session.js';

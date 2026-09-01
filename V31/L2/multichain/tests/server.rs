@@ -124,6 +124,8 @@ async fn intent_http_lifecycle_happy_path() {
             "from_token": zion.id,
             "to_token": usdc.id,
             "is_bridge": false,
+            "amount_in": 1_000_000_u64,
+            "amount_out": 1_100_000_u64,
         }],
     });
     let response = app

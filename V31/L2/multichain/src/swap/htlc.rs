@@ -1158,6 +1158,9 @@ mod tests {
             assert_eq!(record.state, SwapState::Pending);
 
             // Advance to claimed with same preimage.
+            swap.set_source_lock(&hash.to_hex(), "source_tx", 4_077_782_400)
+                .await
+                .unwrap();
             swap.claim(&secret, "recipient1", &mut transfer)
                 .await
                 .unwrap();

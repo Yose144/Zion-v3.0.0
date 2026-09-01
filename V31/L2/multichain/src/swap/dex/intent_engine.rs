@@ -325,6 +325,8 @@ mod tests {
                 from_token: zion.clone(),
                 to_token: usdc.clone(),
                 is_bridge: false,
+                amount_in: Amount::new(1_000_000),
+                amount_out: Amount::new(1_100_000),
             }],
             10,
             0,

@@ -49,6 +49,10 @@ pub struct MultichainService {
     keyring: Keyring,
     /// Custodial multichain wallet keyring. Separate from the bridge seed.
     wallet_keyring: Keyring,
+    /// Whether `wallet_keyring` was generated ephemerally (no
+    /// `ZION_WALLET_MNEMONIC` / `wallet_mnemonic` configured). Surfaced via
+    /// the health check so operators can detect misconfiguration.
+    wallet_keyring_ephemeral: bool,
     multichain_wallet: MultichainWallet,
     wallet_ledger: WalletLedger,
     deposit_watcher: DepositWatcher,
@@ -177,6 +181,13 @@ impl MultichainService {
         keyring: Keyring,
         wallet_keyring: Keyring,
     ) -> Self {
+        let wallet_keyring_ephemeral = wallet_keyring.is_ephemeral();
+        if wallet_keyring_ephemeral {
+            tracing::warn!(
+                "custodial wallet keyring is ephemeral; user deposit addresses will change on restart. \
+                 Set ZION_WALLET_MNEMONIC or config.wallet_mnemonic to persist them."
+            );
+        }
         let bridge = match load_bridge_consensus() {
             Some(consensus) => Bridge::with_consensus(Arc::clone(&adapters), consensus),
             None => Bridge::new(Arc::clone(&adapters)),
@@ -258,6 +269,7 @@ impl MultichainService {
             htlc,
             keyring,
             wallet_keyring,
+            wallet_keyring_ephemeral,
             multichain_wallet,
             wallet_ledger,
             deposit_watcher,
@@ -764,6 +776,13 @@ impl MultichainService {
     /// Access the custodial multichain wallet keyring.
     pub fn wallet_keyring(&self) -> &Keyring {
         &self.wallet_keyring
+    }
+
+    /// Whether the custodial wallet keyring was generated ephemerally (no
+    /// operator-configured mnemonic). When `true`, user deposit addresses
+    /// change on every restart.
+    pub fn wallet_keyring_is_ephemeral(&self) -> bool {
+        self.wallet_keyring_ephemeral
     }
 
     /// Access the on-chain/internal reconciliation engine.

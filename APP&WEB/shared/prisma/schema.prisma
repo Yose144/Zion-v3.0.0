@@ -51,6 +51,12 @@ model User {
   daoVotes        DaoVote[]
   notifications   Notification[]
 
+  // Multichain wallet (ZIS → L2 multichain API proxy)
+  multichainWalletAccount MultichainWalletAccount?
+  multichainAddresses     MultichainWalletAddress[]
+  multichainBalances      MultichainBalance[]
+  multichainOrders        MultichainOrder[]
+
   @@index([role])
 }
 
@@ -365,4 +371,71 @@ model Notification {
 
   @@index([userId, read])
   @@index([createdAt])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §9  Multichain Wallet  (ZIS → L2 multichain API proxy + cache)
+// ════════════════════════════════════════════════════════════════════
+
+// Multichain wallet account — links ZIS user to L2 wallet
+model MultichainWalletAccount {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accountIndex Int      @unique
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Deposit/withdraw addresses for each chain
+model MultichainWalletAddress {
+  id             String   @id @default(cuid())
+  userId         String
+  chain          String // "zion-l1" | "base" | "bitcoin" | ...
+  chainId        String? // specific chain ID
+  address        String
+  purpose        String   @default("deposit") // "deposit" | "withdraw" | "linked"
+  publicKey      String?
+  derivationPath String?
+  isExternal     Boolean  @default(false)
+  verifiedAt     DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chain, chainId, purpose])
+  @@index([userId])
+}
+
+// Internal balance snapshot (cached from L2)
+model MultichainBalance {
+  id        String   @id @default(cuid())
+  userId    String
+  assetKey  String // e.g. "base:tUSDT:0x..."
+  amount    BigInt
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetKey])
+  @@index([userId])
+}
+
+// DEX order history (cached from L2)
+model MultichainOrder {
+  id         String    @id @default(cuid())
+  userId     String
+  orderId    String    @unique // L2 order ID
+  fromAsset  String
+  toAsset    String
+  amountIn   BigInt
+  amountOut  BigInt?
+  status     String    @default("pending")
+  txHash     String?
+  createdAt  DateTime  @default(now())
+  executedAt DateTime?
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
 }

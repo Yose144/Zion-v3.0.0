@@ -107,6 +107,14 @@ impl WarpRouter {
             router.state_machines.insert(id, sm);
         }
 
+        // Load persisted daily volumes (FIND-009): seeds in-memory map from DB
+        // so limits are enforced correctly after restart.
+        for (chain, _) in router.registry.list_all() {
+            if let Ok(vol) = db.load_daily_volume(chain) {
+                router.daily_volume.insert(chain.clone(), vol);
+            }
+        }
+
         info!(
             "[Router] Loaded {} transfer(s) from database",
             router.transfers.len()
@@ -310,13 +318,13 @@ impl WarpRouter {
 
         let transfer_id = transfer.id;
 
-        // 6. Check timelock
-        if transfer.net_amount() > self.timelock_threshold {
+        // 6. Check timelock on GROSS amount (before fee subtraction) — FIND-010
+        if proof.amount_flowers > self.timelock_threshold {
             transfer.status = WarpStatus::TimelockHold;
             info!(
                 transfer_id = %transfer_id,
-                amount = transfer.amount_flowers,
-                "Transfer exceeds timelock threshold — entering 24h hold"
+                amount = proof.amount_flowers,
+                "Transfer exceeds timelock threshold (gross) — entering 24h hold"
             );
         } else {
             transfer.status = WarpStatus::Detected;
@@ -326,10 +334,16 @@ impl WarpRouter {
         let sm = TransferStateMachine::new(transfer.status);
         self.transfers.insert(transfer_id, transfer.clone());
         self.state_machines.insert(transfer_id, sm);
-        *self.daily_volume.entry(chain_name).or_insert(0) += proof.amount_flowers;
+        *self.daily_volume.entry(chain_name.clone()).or_insert(0) += proof.amount_flowers;
 
         // Persist to DB
         self.save_transfer(&transfer);
+        // Persist daily volume so it survives restarts (FIND-009).
+        if let Some(db) = &self.db {
+            if let Err(e) = db.record_daily_volume(&chain_name, proof.amount_flowers) {
+                warn!(chain = %chain_name, "[Router] DB daily_volume record failed: {}", e);
+            }
+        }
 
         self.metrics.record_transfer_initiated();
         info!(transfer_id = %transfer_id, "Outbound WARP transfer initiated");

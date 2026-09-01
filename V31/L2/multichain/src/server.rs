@@ -418,7 +418,10 @@ async fn pool_payouts(
 
 async fn service_health(State(state): State<AppState>) -> Json<serde_json::Value> {
     let health = state.service.health().await;
-    Json(serde_json::json!({ "status": health }))
+    Json(serde_json::json!({
+        "status": health,
+        "wallet_keyring_ephemeral": state.service.wallet_keyring_is_ephemeral(),
+    }))
 }
 
 async fn list_chains(State(state): State<AppState>) -> Json<Vec<String>> {
@@ -1742,7 +1745,18 @@ async fn solve_intent(
             from_token,
             to_token,
             is_bridge,
+            amount_in: Amount::ZERO,
+            amount_out: Amount::ZERO,
         });
+    }
+
+    // Set the chain amounts so the path passes validation (FIND-011):
+    // first hop input = intent amount_in, last hop output = quote expected_out.
+    if let Some(first) = path.first_mut() {
+        first.amount_in = intent.amount_in;
+    }
+    if let Some(last) = path.last_mut() {
+        last.amount_out = quote.expected_out;
     }
 
     let now = SystemTime::now()
