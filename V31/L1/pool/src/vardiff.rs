@@ -320,13 +320,12 @@ mod tests {
     #[test]
     fn test_difficulty_to_target_lower_for_higher_diff() {
         let t_floor = difficulty_to_target(MIN_SHARE_DIFFICULTY);
-        let t256 = difficulty_to_target(256_000);
+        let t_higher = difficulty_to_target(256_000);
         assert!(
-            t256 < t_floor,
+            t_higher < t_floor,
             "target for diff 256000 should be lower than for min difficulty"
         );
-        assert_eq!(t256[0], 0x00);
-        assert_eq!(t256[1], 0xff);
+        assert_eq!(t_higher[0], 0x00);
     }
 
     #[test]

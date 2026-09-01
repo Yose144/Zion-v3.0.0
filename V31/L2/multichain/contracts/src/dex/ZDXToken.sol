@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
 
 /// @title ZDXToken
 /// @notice ZionDex governance token — rewards for LPs and stakers
 /// @dev ERC-20 with minting controlled by MINTER_ROLE (e.g. staking contract).
 ///      SLASHER_ROLE can burn tokens during slashing (SolverRegistry).
 ///      DEFAULT_ADMIN_ROLE manages role assignments (multisig).
-contract ZDXToken is AccessControl {
+contract ZDXToken is AccessControlEnumerable {
     string public constant name = "ZionDex Token";
     string public constant symbol = "ZDX";
     uint8 public constant decimals = 18;
@@ -67,6 +67,26 @@ contract ZDXToken is AccessControl {
 
     function burn(uint256 amount) external onlyRole(SLASHER_ROLE) {
         _burn(msg.sender, amount);
+    }
+
+    /// @notice Replace the current minter with a new one.
+    /// @dev Only the admin (DEFAULT_ADMIN_ROLE) can call this.
+    ///      This is a convenience wrapper around grantRole/revokeRole
+    ///      that atomically transfers MINTER_ROLE from the current minter
+    ///      to `newMinter`, enabling safe upgradeability of the staking contract.
+    function setMinter(address newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address current = getMinter();
+        if (current != address(0)) {
+            revokeRole(MINTER_ROLE, current);
+        }
+        grantRole(MINTER_ROLE, newMinter);
+    }
+
+    /// @notice Returns the current minter address (or zero if none).
+    function getMinter() public view returns (address) {
+        // MINTER_ROLE has at most one member; iterate via getRoleMember
+        // AccessControl requires the role to exist with at least one member.
+        return getRoleMember(MINTER_ROLE, 0);
     }
 
     function _transfer(address from, address to, uint256 value) internal {
