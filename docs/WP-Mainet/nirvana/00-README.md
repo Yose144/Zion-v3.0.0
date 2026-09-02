@@ -56,6 +56,8 @@ Každá epizoda zachovává pravidlo absolutní poctivosti: **krásný archetyp�
 
 Kdo chce jít za koncept a horizont této knihy do plné kosmologie — šest světů, bardo přechodu, proroctví Šambhaly, Síně Amenti a stoletý plán pro Generaci Z — pokračuje do [`NirvanaCloud/`](../NirvanaCloud/00-README.md).
 
+Kdo chce z epizody 10 (*Prameny Života*) sestoupit až k hlíně — ke třem fyzickým zahradám L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), jejich protokolům, onboardingu a úplné kotvě pravdy — pokračuje do [`BodhiGaia/` — Kniha Země](../BodhiGaia/00-README.md) (DRAFT pro 3.3).
+
 ---
 
 ## Živé zdroje pravdy

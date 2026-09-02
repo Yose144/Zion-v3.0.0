@@ -58,6 +58,7 @@ const t = {
     terranova_public: { cs: 'Veřejná edice', en: 'Public edition' },
     terra_garden_genesis: { cs: 'Zahrada Genesis', en: 'Garden of Genesis' },
     terra_dharma_temple: { cs: 'Dharma Temple', en: 'Dharma Temple' },
+    terra_te_piko_ora: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
     mission_control: { cs: 'Mission Control', en: 'Mission Control' },

@@ -240,7 +240,7 @@ L4 OASIS je vizuální a interaktivní ztělesnění ZIONu — virtuální svět
 
 ## 6. L5: Free World (Humanitarian & Planetary Regeneration Portal)
 
-> **Status:** L5 je **STAVBA / HORIZONT**. 5 % L1 coinbase stream a fondové trackery jsou živé na úrovni kódu/měření, ale dedikovaný veřejný portál, globální projekty a voda/permakultura jsou v přípravě. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
+> **Status:** L5 je **STAVBA / HORIZONT**. 5 % L1 coinbase stream a fondové trackery jsou živé na úrovni kódu/měření, ale dedikovaný veřejný portál, globální projekty a voda/permakultura jsou v přípravě. Důkazy a aktuální stav: [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md). Narativně-technická sada „Bodhi Gaia — Kniha Země" (tři fyzické zahrady L5, protokoly Země, registr pravdy L5) je dostupná jako **DRAFT** v [`docs/WP-Mainet/BodhiGaia/`](docs/WP-Mainet/BodhiGaia/00-README.md).
 
 L5 je vrstvou záchrany a obnovy fyzického světa. Realizuje princip, že 5 % z každého vytěženého bloku na L1 je trvale a nezměnitelně alokováno na humanitární a ekologické projekty.
 

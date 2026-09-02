@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Jedna cesta, osm bran
+## 1. Jedna cesta, devět bran
 
-ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z osmi propojených bran. Každá má jinou roli; žádná sama o sobě nestačí.
+ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z devíti propojených bran. Každá má jinou roli; žádná sama o sobě nestačí.
 
 | Brána | Otázka | Přínos pro člověka | Technický protějšek |
 |---|---|---|---|
@@ -20,6 +20,7 @@ ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z o
 | **Onboarding** | *Jak vstoupím bezpečně?* | Dává novému člověku postup: nejdřív pozorovat, ptát se, ověřit, až pak volit účast. | Explorer, lokální peněženka, node/miner, dokumentace a nápověda v kontextu. |
 | **Nirvana a NirvanaCloud** | *Kam směřujeme, když nestavíme jen na příští kvartál?* | Představuje horizont Terra Nova, bardo změny, Šambhalu a Amenti jako obrazy dlouhé odpovědnosti. | Horizont L1–L6 a 2026–2126; nikdy release claim. |
 | **Mise Amenti** | *Jak to vše držíme pohromadě přes generace?* | Převádí příběh na měřitelné závazky pravdy, svobody, péče, odolnosti a předání dál. | Tento corpus, evidence registr, release gates, bezpečnost a změnový protokol. |
+| **Bodhi Gaia / Kniha Země** | *Jak se L5 dotkne hlíny?* | Sjednocuje tři fyzické zahrady L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), protokoly Země a úplný registr pravdy L5. | `docs/WP-Mainet/BodhiGaia/` (DRAFT); zrcadlí `public/V3/L5/docs/`, web `/terranova/*`, OASIS `WorldPanel`/`worlds.ts`. |
 
 ---
 

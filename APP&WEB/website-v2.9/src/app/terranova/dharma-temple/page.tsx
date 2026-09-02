@@ -19,6 +19,19 @@ import {
   Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
+
+const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'), { ssr: false });
+
+const DharmaTemplePreviewLazy = dynamic(
+  () => import('@/components/DharmaTemplePreviewLazy'),
+  { ssr: false, loading: () => (
+    <div className="flex h-[420px] md:h-[520px] items-center justify-center rounded-3xl border border-white/10 bg-black/40">
+      <span className="text-xs uppercase tracking-widest text-white/60">Loading 3D preview…</span>
+    </div>
+  ) }
+);
 
 const TerranovaDharmaTempleCopy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
@@ -53,6 +66,14 @@ const TerranovaDharmaTempleCopy = {
   areYouAGuardianWhoHearsLaPalma: { cs: `Jsi Guardian, který slyší volání La Palmy? Napiš nám.`, en: `Are you a Guardian who hears La Palma\'s call? Reach out.` },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   zahradaGenesis: { cs: `Zahrada Genesis`, en: `Zahrada Genesis` },
+  threeDPreview: { cs: `3D koncept`, en: `3D concept` },
+  threeDPreviewSubtitle: { cs: `Interaktivní náhled posvátné geometrie – 7 kopulí, Strom života a Merkaba.`, en: `Interactive preview of sacred geometry – 7 domes, Tree of Life and Merkaba.` },
+  sitePlan: { cs: `Architektonický návrh`, en: `Architectural plan` },
+  sitePlanSubtitle: { cs: `Půdorys, řezy a materiály prvního návrhu chrámu Dharma Temple.`, en: `Site plan, sections and materials of the first Dharma Temple draft.` },
+  documentation: { cs: `Dokumentace`, en: `Documentation` },
+  documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Dharma Temple.`, en: `Complete plan, concept and specification of Dharma Temple.` },
+  documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
+  documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
 };
 
 type FeatureItem = {
@@ -175,6 +196,20 @@ export default function DharmaTemplePage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
+  const [doc, setDoc] = useState<string | null>(null);
+  const [docError, setDocError] = useState(false);
+
+  useEffect(() => {
+    const file = cs ? '/docs/terranova/dharma-temple.cs.md' : '/docs/terranova/dharma-temple.en.md';
+    fetch(file)
+      .then((res) => {
+        if (!res.ok) throw new Error('not found');
+        return res.text();
+      })
+      .then((text) => setDoc(text))
+      .catch(() => setDocError(true));
+  }, [cs]);
+
   return (
     <div className="zion-page">
       <div className="relative z-10 zion-container max-w-5xl">
@@ -257,6 +292,59 @@ export default function DharmaTemplePage() {
             </div>
           </div>
         </motion.header>
+
+        {/* ═══ 3D PREVIEW ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.05, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaDharmaTempleCopy.threeDPreview[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaDharmaTempleCopy.threeDPreviewSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <DharmaTemplePreviewLazy lang={cs ? 'cs' : 'en'} className="w-full" />
+          </div>
+        </motion.section>
+
+        {/* ═══ SITE PLAN / CONCEPT ART ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaDharmaTempleCopy.sitePlan[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaDharmaTempleCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/dharma-temple/concept-og.png"
+                alt={cs ? 'Návrh Dharma Temple' : 'Dharma Temple concept'}
+                className="w-full object-contain"
+              />
+            </div>
+            <p className="relative z-10 mt-4 text-center text-xs text-white/50">
+              {cs
+                ? 'První konceptový board: půdorysy, řezy, legenda a energetický systém.'
+                : 'First concept board: floor plans, sections, legend and energy system.'}
+            </p>
+          </div>
+        </motion.section>
 
         {/* ═══ LA PALMA INFO ═══ */}
         <motion.section
@@ -486,6 +574,35 @@ export default function DharmaTemplePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ DOCUMENTATION ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.42, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaDharmaTempleCopy.documentation[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaDharmaTempleCopy.documentationSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <div className="relative z-10 rounded-2xl border border-white/10 bg-black/40 p-4 md:p-6">
+              {docError ? (
+                <p className="text-sm text-zion-red">{TerranovaDharmaTempleCopy.documentationError[cs ? 'cs' : 'en']}</p>
+              ) : doc ? (
+                <DocMarkdownArticle content={doc} className="zion-docs-prose max-w-4xl mx-auto" />
+              ) : (
+                <p className="text-sm text-white/60">{TerranovaDharmaTempleCopy.documentationLoading[cs ? 'cs' : 'en']}</p>
+              )}
             </div>
           </div>
         </motion.section>

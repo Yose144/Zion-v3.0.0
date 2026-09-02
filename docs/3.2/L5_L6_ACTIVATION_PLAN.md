@@ -428,6 +428,8 @@ Run locally against a local node and verify:
 - `V31/L5/free-world/src/` and `V31/L6/issobella/src/` — current crate implementations.
 - `V31/L2/dao/src/api.rs` and `runtime.rs` — DAO proposal API and execution model.
 - `archive/V3/L5/docs/` and `archive/V3/L6/issobella/docs/` — historical vision and governance docs.
+- `public/V3/L5/docs/` — current L5 engineering directory (communities, protocols, governance, tech specs).
+- `docs/WP-Mainet/BodhiGaia/` — **DRAFT** narrative + L5 truth anchor (Kniha Země): unifies the three communities, protocols of Earth, OASIS/web mirror, onboarding to L5, and a full L5 evidence registry with status of every claim and known discrepancies to fix. Companion to this plan; does not supersede it.
 - `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` and `l6-issobella/page.tsx` — public web pages.
 - `HARD_RESET_PLAYBOOK.md` — address rotation checklist.
 
