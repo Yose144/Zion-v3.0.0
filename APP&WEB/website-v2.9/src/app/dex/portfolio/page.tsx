@@ -5,12 +5,14 @@
  * Fetches swap history from the DEX API and AMM pair info from ZIONDexFactory.
  */
 
-import { useState, useEffect, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, Droplets, Activity, Loader2 } from 'lucide-react';
+import { Wallet, TrendingUp, Droplets, Activity, Loader2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { fetchPools, getAmmPair, ZIONDEX_FACTORY } from '@/lib/dex-api';
+import { CONTRACTS } from '@/lib/defi-contracts';
 import TestingPhaseBanner from '@/components/TestingPhaseBanner';
+import TokenIcon from '@/components/dex/TokenIcon';
 
 const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
@@ -34,57 +36,94 @@ interface LpPosition {
   enabled: boolean;
 }
 
+// Known ZIONDex pair addresses (deployed on Base Mainnet)
+const KNOWN_PAIRS: Record<string, string> = {
+  'wZION/USDC': CONTRACTS.ZIONDexPairWZionUSDC,
+  'tZION/tUSDT': CONTRACTS.ZIONDexPairTZionTUsdt,
+};
+
 export default function PortfolioPage() {
   const [swaps, setSwaps] = useState<SwapRecord[]>([]);
   const [lpPositions, setLpPositions] = useState<LpPosition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch swap history
-        const swapsResp = await fetch(`${ROUTER_URL}/swaps?limit=20`);
-        if (swapsResp.ok) {
-          const data = await swapsResp.json();
-          setSwaps(Array.isArray(data) ? data : (data.swaps || []));
-        }
+  const fetchData = useCallback(async () => {
+    try {
+      // Fetch swap history
+      const swapsResp = await fetch(`${ROUTER_URL}/swaps?limit=20`);
+      if (swapsResp.ok) {
+        const data = await swapsResp.json();
+        setSwaps(Array.isArray(data) ? data : (data.swaps || []));
+      }
 
-        // Fetch pools and look up AMM pair addresses for each
-        const poolData = await fetchPools();
+      // Fetch pools and look up AMM pair addresses for each
+      const poolData = await fetchPools();
 
-        // For each pool, look up the on-chain AMM pair address
-        const positions: LpPosition[] = [];
-        for (const pool of poolData) {
-          if (!pool.enabled) continue;
-          try {
+      // For each pool, look up the on-chain AMM pair address
+      const positions: LpPosition[] = [];
+      for (const pool of poolData) {
+        if (!pool.enabled) continue;
+        try {
+          // Check known pairs first (faster than API call)
+          const poolKey = `${pool.token_a}/${pool.token_b}`;
+          let pairAddr = KNOWN_PAIRS[poolKey] || '0x0';
+
+          if (pairAddr === '0x0') {
             const pairRes = await getAmmPair(
               pool.chain || 'base',
               ZIONDEX_FACTORY,
               pool.token_a,
               pool.token_b,
             );
-            positions.push({
-              pool: `${pool.token_a}/${pool.token_b}`,
-              chain: pool.chain || 'base',
-              token_a: pool.token_a,
-              token_b: pool.token_b,
-              pair_address: pairRes.pair_address || '0x0',
-              fee_tier: pool.fee_bps,
-              enabled: pool.enabled,
-            });
-          } catch {
-            // skip on error
+            pairAddr = pairRes.pair_address || '0x0';
           }
+
+          positions.push({
+            pool: `${pool.token_a}/${pool.token_b}`,
+            chain: pool.chain || 'base',
+            token_a: pool.token_a,
+            token_b: pool.token_b,
+            pair_address: pairAddr,
+            fee_tier: pool.fee_bps,
+            enabled: pool.enabled,
+          });
+        } catch {
+          // skip on error
         }
-        setLpPositions(positions);
-      } catch {
-        setSwaps([]);
-      } finally {
-        setLoading(false);
       }
-    };
-    void fetchData();
+
+      // Also add known pairs that aren't in the API response
+      for (const [poolKey, addr] of Object.entries(KNOWN_PAIRS)) {
+        if (addr && !positions.some(p => p.pair_address === addr)) {
+          const [tokenA, tokenB] = poolKey.split('/');
+          positions.push({
+            pool: poolKey,
+            chain: 'base',
+            token_a: tokenA,
+            token_b: tokenB,
+            pair_address: addr,
+            fee_tier: 30, // 0.3% default
+            enabled: true,
+          });
+        }
+      }
+
+      setLpPositions(positions);
+    } catch {
+      setSwaps([]);
+    } finally {
+      setLoading(false);
+      setLastRefresh(new Date());
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchData();
+    // Auto-refresh every 30s
+    const interval = setInterval(() => void fetchData(), 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   // Calculate stats
   const totalSwaps = swaps.length;
@@ -148,7 +187,19 @@ export default function PortfolioPage() {
 
         {/* LP Positions / AMM Pools */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">AMM Liquidity Pools</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">AMM Liquidity Pools</h2>
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span>Updated {lastRefresh.toLocaleTimeString()}</span>
+              <button
+                onClick={() => void fetchData()}
+                className="p-1 hover:text-zion-gold transition-colors"
+                disabled={loading}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
           <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             {loading ? (
               <div className="text-center py-8">
@@ -176,7 +227,13 @@ export default function PortfolioPage() {
                 <tbody>
                   {lpPositions.map((pos, i) => (
                     <tr key={i} className="border-b border-zinc-800/30 hover:bg-zinc-800/30">
-                      <td className="px-4 py-3 text-sm text-white font-medium">{pos.pool}</td>
+                      <td className="px-4 py-3 text-sm text-white font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <TokenIcon symbol={pos.token_a} size={18} />
+                          <span>/{pos.token_b}</span>
+                          <TokenIcon symbol={pos.token_b} size={18} />
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm text-zinc-300 capitalize">{pos.chain}</td>
                       <td className="px-4 py-3 text-sm text-zion-cyan font-mono">
                         {pos.pair_address !== '0x0' ? (

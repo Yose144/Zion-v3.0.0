@@ -20,18 +20,27 @@ The contracts are self-contained (no external libraries) and compile with
 | `ZIONDexRouter.sol` | User-facing router: multi-hop swap, add/remove liquidity, quotes. |
 | `ZIONDexZISGate.sol` | Optional ZIS-backed access control (whitelist / open mode). |
 
-## Contract Addresses (Base Mainnet — deployed 2026-08-31)
+## Contract Addresses (Base Mainnet — deployed 2026-08-31 / 2026-09-02)
 
-| Contract | Address | Chain |
-|----------|---------|-------|
-| `ZIONDexFactory`  | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | Base |
-| `ZIONDexRouter`   | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | Base |
-| `ZIONDexZISGate`  | `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5` | Base |
-| Pair: tZION/tUSDT | `0x1fE64df93226b8434877D5826aE2DCEda171e39E` | Base |
-| Pair: wZION/USDT  | `0x____________` | _ |
+| Contract | Address | Chain | Status |
+|----------|---------|-------|--------|
+| `ZIONDexFactory`  | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | Base | ✅ Verified |
+| `ZIONDexRouter`   | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | Base | ✅ Verified |
+| `ZIONDexZISGate`  | `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5` | Base | ✅ Configured (relay + pubkey set) |
+| Pair: tZION/tUSDT | `0x1fE64df93226b8434877D5826aE2DCEda171e39E` | Base | ✅ 100k tZION + 1k tUSDT |
+| Pair: wZION/USDC  | `0x86ac36B7A38DB42a96E2205AFc79415e58904D63` | Base | ✅ 1000 wZION + 0.5487 USDC |
 
-> Deployment happens on the Edge server. Update this table after the
-> `Deploy.s.sol` / cast script is run.
+### ZISGate Configuration (2026-09-02)
+
+| Parameter | Value |
+|-----------|-------|
+| Admin | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` (validator-1) |
+| ZIS Relay | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` |
+| ZIS Public Key | `0xf272298cc6ee0d48b42cfce87151a3a6e4ca1a9c7e23ed52c9ef4e6b2920f757` |
+| Gate Enabled | `false` (open access — all users can swap) |
+
+> To enable gated access: `gate.setGateEnabled(true)` + `gate.whitelist(user, true)`.
+> To verify a ZIS user on-chain: `gate.verifyZISProof(proof)` (called by admin or relay).
 
 ## How to deploy (solcjs)
 

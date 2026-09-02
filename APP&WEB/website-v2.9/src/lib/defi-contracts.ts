@@ -98,6 +98,8 @@ export const CONTRACTS = {
   ZIONDexRouter:              '0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662',
   // tZION/tUSDT pair — created 2026-09-02, 100k tZION + 1k tUSDT liquidity
   ZIONDexPairTZionTUsdt:      '0x1fE64df93226b8434877D5826aE2DCEda171e39E',
+  // wZION/USDC pair — created 2026-09-02, 1000 wZION + 0.5487 USDC liquidity
+  ZIONDexPairWZionUSDC:       '0x86ac36B7A38DB42a96E2205AFc79415e58904D63',
   // ZISGate — deployed 2026-09-02 on Base Mainnet (tx 0x0cff45...)
   ZIONDexZISGate:             '0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5',
 } as const;
