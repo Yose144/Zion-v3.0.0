@@ -1,5 +1,8 @@
 # ZIONDex — On-chain AMM DEX (Uniswap V2 fork)
 
+> **Canonical contract addresses:** See [`L2contracts.md`](../../../L2contracts.md) in repo root.
+> This README covers ZIONDex-specific deploy/usage details only.
+
 ZIONDex is a Uniswap V2–style AMM DEX written in Solidity 0.8.20 with two
 additions over the original Uniswap V2 design:
 

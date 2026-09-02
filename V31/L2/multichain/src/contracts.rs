@@ -1,5 +1,6 @@
 //! V3 Mainnet contract addresses reused by V31 Mainnet Alpha.
 //!
+//! Canonical source of truth: `L2contracts.md` in repo root.
 //! These are the canonical deployments from ZION 3.0.4 / 3.0.5; V31 starts by
 //! pointing adapters and dashboards at the same contracts before migrating to
 //! V31-specific deployments.
