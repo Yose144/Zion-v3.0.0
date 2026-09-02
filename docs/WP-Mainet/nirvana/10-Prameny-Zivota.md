@@ -53,6 +53,8 @@ ZION 3.3 přetavuje abstraktní krypto-ekonomiku v **konkrétní hmatatelný dop
 
 ---
 
+*→ Hlubší sestup k hlíně: [Bodhi Gaia — Kniha Země](../BodhiGaia/00-README.md) — tři fyzické zahrady L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), protokoly Země a úplná kotva pravdy (DRAFT pro 3.3).*
+
 *→ Pokračování: [Epizoda 11 — Kvantový oheň Issobella (L6 Hluboká věda & Warp dynamika)](./11-Kvantovy-Ohen-Issobella.md)*
 
 ---

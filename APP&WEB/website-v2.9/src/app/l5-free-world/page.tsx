@@ -65,14 +65,16 @@ const getCommunities = (cs: boolean) => [
     status: 'planned',
     desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
+    href: '/terranova/genesis',
   },
   {
     name: 'Dharma Temple',
-    location: L5FreeWorldCopy.southAsia[cs ? 'cs' : 'en'],
+    location: 'La Palma — Terra Nova Sanctuary',
     status: 'planned',
     desc: L5FreeWorldCopy.educationalAndMeditationCenter[cs ? 'cs' : 'en'],
     tags: ['Education', 'Free Energy', 'Meditation'],
     href: '/terranova/dharma-temple',
+    cover: '/images/dharma-temple/concept-og.png',
   },
   {
     name: 'Te Pīko Ora',
@@ -233,6 +235,11 @@ export default function L5FreeWorldPage() {
             {communities.map((community) => {
               const Card = (
                 <div className={`zion-rainbow-sub p-5 transition-all duration-300 ${community.href ? 'cursor-pointer' : ''}`} style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  {community.cover && (
+                    <div className="-m-1 mb-3 overflow-hidden rounded-t-xl">
+                      <img src={community.cover} alt={community.name} className="h-36 w-full object-cover" />
+                    </div>
+                  )}
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-semibold text-white">{community.name}</h3>

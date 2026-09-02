@@ -72,7 +72,15 @@ export default function Navigation() {
       items: [
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
-        { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang) },
+        {
+          href: '/l5-free-world',
+          label: tr('nav', 'l5_free_world', lang),
+          children: [
+            { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
+            { href: '/terranova/dharma-temple', label: tr('nav', 'terra_dharma_temple', lang) },
+            { href: '/terranova/te-piko-ora', label: tr('nav', 'terra_te_piko_ora', lang) },
+          ],
+        },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
       ],
     },

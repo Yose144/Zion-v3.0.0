@@ -56,6 +56,8 @@ Each episode follows the rule of absolute honesty: **a beautiful archetypal stor
 
 Readers who want to go beyond this book's concept and horizon into the full cosmology — the six worlds, the bardo of transition, the prophecy of Shambhala, the Halls of Amenti, and the hundred-year plan for Generation Z — should continue into [`NirvanaCloud/`](../NirvanaCloud/00-README_EN.md).
 
+Readers who want to descend from episode 10 (*Springs of Life*) all the way to the soil — to the three physical L5 gardens (Genesis Garden, Dharma Temple / New Bodhi Gaia, Te Pīko Ora), their shared protocols, onboarding and a full truth anchor — should continue into [`BodhiGaia/` — The Book of Earth](../BodhiGaia/00-README_EN.md) (DRAFT for 3.3).
+
 ---
 
 ## Live Sources of Truth
