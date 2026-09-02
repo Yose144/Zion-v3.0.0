@@ -756,7 +756,7 @@ mod tests {
     fn evm_asset(chain: ChainId, ticker: &str, contract: &str) -> Asset {
         Asset {
             id: AssetId::new(chain, ticker, Some(contract.to_string())),
-            decimals: 18,
+            decimals: crate::contracts::token_decimals(chain.as_str(), ticker, Some(contract)),
             name: ticker.to_string(),
         }
     }

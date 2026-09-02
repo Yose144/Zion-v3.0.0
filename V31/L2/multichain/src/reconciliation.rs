@@ -54,7 +54,7 @@ impl ReconcilerConfig {
         })?;
         // FIND-023: bounds-check the alert threshold.  Must be > 0 (otherwise
         // every reconciliation triggers an alert) and <= 21M ZION (total supply
-        // in atomic units with 8 decimals) so a misconfigured huge threshold
+        // in atomic units with 6 decimals) so a misconfigured huge threshold
         // doesn't silently suppress all alerts.
         if alert_threshold == 0 {
             return Err(MultichainError::Validation(

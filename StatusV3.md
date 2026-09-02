@@ -243,8 +243,9 @@
 |----------|---------|--------|
 | ZIONDexFactory | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | ✅ Verified |
 | ZIONDexRouter | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | ✅ Verified |
-| ZIONDexZISGate | `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5` | ✅ Deployed 2026-09-02 |
+| ZIONDexZISGate | `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5` | ✅ Configured (relay + pubkey set, gate open) |
 | Pair: tZION/tUSDT | `0x1fE64df93226b8434877D5826aE2DCEda171e39E` | ✅ 100k tZION + 1k tUSDT liquidity |
+| Pair: wZION/USDC | `0x86ac36B7A38DB42a96E2205AFc79415e58904D63` | ✅ 1000 wZION + 0.5487 USDC liquidity |
 | tZION (test token) | `0xC5E79b8C6475137aC3a982651097a219B63b0c33` | ✅ 18 decimals |
 | tUSDT (test token) | `0x677693fbFDe6a9EeA655033fffF93054B559552C` | ✅ 6 decimals |
 | tWETH (test token) | `0xcE5Df8e83B87f462835b51Ac6B2A4c53fafA620F` | ✅ 18 decimals |
