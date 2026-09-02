@@ -67,6 +67,29 @@ impl ZionContracts {
                 decimals: 18,
             },
         );
+        // Beta test tokens (Base mainnet, ERC-20 faucets) — tracked so the
+        // deposit watcher credits custodial balances for the ZionDex beta.
+        tokens.insert(
+            "tZION".to_string(),
+            TokenInfo {
+                contract: "0xC5E79b8C6475137aC3a982651097a219B63b0c33".to_string(),
+                decimals: 18,
+            },
+        );
+        tokens.insert(
+            "tUSDT".to_string(),
+            TokenInfo {
+                contract: "0x677693fbFDe6a9EeA655033fffF93054B559552C".to_string(),
+                decimals: 6,
+            },
+        );
+        tokens.insert(
+            "tWETH".to_string(),
+            TokenInfo {
+                contract: "0xcE5Df8e83B87f462835b51Ac6B2A4c53fafA620F".to_string(),
+                decimals: 18,
+            },
+        );
         let mut v3_dex = HashMap::new();
         v3_dex.insert(
             "uniswap".to_string(),
@@ -175,8 +198,8 @@ pub fn token_decimals(chain: &str, ticker: &str, contract: Option<&str>) -> u8 {
 
     let t = ticker.to_uppercase();
     match t.as_str() {
-        "WZION" | "WETH" | "ETH" => 18,
-        "USDC" | "USDT" | "USDB" => 6,
+        "WZION" | "WETH" | "ETH" | "TZION" | "TWETH" => 18,
+        "USDC" | "USDT" | "USDB" | "TUSDT" => 6,
         "DAI" => 18,
         _ => 0,
     }

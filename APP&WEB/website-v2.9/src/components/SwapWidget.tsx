@@ -12,6 +12,7 @@ import { ArrowDownUp, Loader2, ExternalLink, AlertCircle, CheckCircle2 } from 'l
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, WZION_ABI, SWAP_ROUTER02_ABI, QUOTER_V2_ABI } from '@/lib/defi-contracts';
+import TokenIcon from '@/components/dex/TokenIcon';
 
 const SwapWidgetCopy = {
   swap: { cs: `Swap`, en: `Swap` },
@@ -278,7 +279,8 @@ export default function SwapWidget() {
                 disabled={isBusy}
                 className="flex-1 bg-transparent text-2xl font-mono text-white placeholder:text-gray-600 outline-none disabled:opacity-50"
               />
-              <span className="text-sm font-semibold text-gray-300 bg-white/10 px-3 py-1.5 rounded-lg">
+              <span className="text-sm font-semibold text-gray-300 bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <TokenIcon symbol={inputToken} size={16} />
                 {inputToken}
               </span>
             </div>
@@ -310,7 +312,8 @@ export default function SwapWidget() {
                   <span className="text-gray-600">0.0</span>
                 )}
               </div>
-              <span className="text-sm font-semibold text-gray-300 bg-white/10 px-3 py-1.5 rounded-lg">
+              <span className="text-sm font-semibold text-gray-300 bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <TokenIcon symbol={outputToken} size={16} />
                 {outputToken}
               </span>
             </div>

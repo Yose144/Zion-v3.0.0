@@ -6,6 +6,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
+import TokenIcon from './TokenIcon';
 
 export interface TokenOption {
   symbol: string;
@@ -138,6 +139,7 @@ export default function TokenSelector({ label, chain, value, onChange }: Props) 
           className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl hover:border-zion-gold/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <div className="flex items-center gap-2">
+            {selected && <TokenIcon symbol={selected.symbol} size={20} />}
             <span className="text-sm font-bold text-white">
               {selected ? selected.symbol : 'Select token'}
             </span>
@@ -160,6 +162,7 @@ export default function TokenSelector({ label, chain, value, onChange }: Props) 
                 className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-800/80 transition-colors first:rounded-t-xl last:rounded-b-xl"
               >
                 <div className="flex items-center gap-2">
+                  <TokenIcon symbol={token.symbol} size={20} />
                   <span className="text-sm font-bold text-white">{token.symbol}</span>
                   <span className="text-xs text-zinc-500">{token.name}</span>
                 </div>

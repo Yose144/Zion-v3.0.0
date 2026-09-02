@@ -17,6 +17,7 @@ import { usePathname } from 'next/navigation';
 import { ArrowDownUp, Loader2, Zap, AlertCircle, CheckCircle2, Settings } from 'lucide-react';
 import ChainSelector from './ChainSelector';
 import TokenSelector, { TOKENS_BY_CHAIN } from './TokenSelector';
+import TokenIcon from './TokenIcon';
 import SwapPathVisual from './SwapPathVisual';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from '@/components/LoginModal';
@@ -478,8 +479,11 @@ export default function CrossChainSwapWidget() {
 
           <div className="relative">
             <div className="w-full px-4 py-4 bg-zinc-900/40 border border-zinc-700/30 rounded-xl">
-              <div className="text-2xl font-bold text-zion-gold">
-                {phase === 'quoting' ? '…' : displayOut}
+              <div className="flex items-center gap-2">
+                <TokenIcon symbol={destToken} size={24} />
+                <span className="text-2xl font-bold text-zion-gold">
+                  {phase === 'quoting' ? '…' : displayOut}
+                </span>
               </div>
               <div className="text-xs text-zinc-500 mt-1">
                 {phase === 'quoting' && 'Fetching best price...'}

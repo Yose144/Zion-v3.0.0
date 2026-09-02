@@ -6,6 +6,7 @@
  */
 
 import { ArrowRight, ArrowDown, Repeat, Globe } from 'lucide-react';
+import TokenIcon from './TokenIcon';
 
 interface SwapStep {
   type: 'same_chain_swap' | 'bridge';
@@ -113,8 +114,10 @@ export default function SwapPathVisual({
                 <>
                   <ChainDot chain={step.chain || ''} />
                   <Repeat className="w-3.5 h-3.5 text-zinc-500" />
+                  {step.from_token && <TokenIcon symbol={step.from_token} size={16} />}
                   <span className="text-white font-medium">{step.from_token}</span>
                   <ArrowRight className="w-3 h-3 text-zinc-500" />
+                  {step.to_token && <TokenIcon symbol={step.to_token} size={16} />}
                   <span className="text-white font-medium">{step.to_token}</span>
                   <span className="text-xs text-zinc-500">via {step.dex}</span>
                 </>
@@ -124,6 +127,7 @@ export default function SwapPathVisual({
                 <>
                   <ChainDot chain={step.from_chain || ''} />
                   <Globe className="w-3.5 h-3.5 text-zion-gold" />
+                  {step.asset && <TokenIcon symbol={step.asset} size={16} />}
                   <span className="text-white font-medium">{step.asset}</span>
                   <ArrowRight className="w-3 h-3 text-zinc-500" />
                   <ChainDot chain={step.to_chain || ''} />

@@ -26,7 +26,8 @@ The contracts are self-contained (no external libraries) and compile with
 |----------|---------|-------|
 | `ZIONDexFactory`  | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | Base |
 | `ZIONDexRouter`   | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | Base |
-| `ZIONDexZISGate`  | _(not deployed — gas estimate ready: ~586k gas, ~0.000004 ETH)_ | Base |
+| `ZIONDexZISGate`  | `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5` | Base |
+| Pair: tZION/tUSDT | `0x1fE64df93226b8434877D5826aE2DCEda171e39E` | Base |
 | Pair: wZION/USDT  | `0x____________` | _ |
 
 > Deployment happens on the Edge server. Update this table after the

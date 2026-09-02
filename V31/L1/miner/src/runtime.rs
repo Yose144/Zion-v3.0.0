@@ -538,8 +538,11 @@ impl MinerRuntime {
                 (found_nonce, found_hash, batch_size)
             } else {
                 // No GPU available — CPU is the only miner.
-                // CPU searches [0, batch_size) and finds at found_nonce.
-                // Total nonces = found_nonce + 1 (linear search stops at solution).
+                // CPU searches [0, batch_size) in parallel across `threads` workers.
+                // Each worker scans its own chunk concurrently, so the total nonces
+                // searched is ~batch_size (not just found_nonce+1, which would only
+                // count the winning thread's linear position and underreport
+                // hashrate by up to `threads`×).
                 let header = job.header.clone();
                 let target = job.target;
                 let threads = self.config.miner_threads.max(1);
@@ -550,8 +553,7 @@ impl MinerRuntime {
                 .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
                 .ok_or(MinerError::NoAuxPoWSolution)?;
                 let (found_nonce, found_hash) = result;
-                let cpu_searched = found_nonce.saturating_sub(0) + 1;
-                (found_nonce, found_hash, cpu_searched)
+                (found_nonce, found_hash, batch_size)
             };
 
         let elapsed = t_start.elapsed().as_secs_f64();
@@ -1718,8 +1720,11 @@ impl MinerRuntime {
             (n, h.0, batch_size)
         } else {
             // No GPU available — CPU is the only miner.
-            // CPU searches [start_nonce, start_nonce + batch_size) and finds at n.
-            // Total nonces = (n - start_nonce) + 1 (linear search stops at solution).
+            // CPU searches [start_nonce, start_nonce + batch_size) in parallel
+            // across `threads` workers. Each worker scans its own chunk
+            // concurrently, so total nonces searched is ~batch_size (not just
+            // (n - start_nonce) + 1, which would only count the winning thread's
+            // linear position and underreport hashrate by up to `threads`×).
             let threads = self.config.miner_threads.max(1);
             let header_cpu = header.clone();
             let target_cpu = target_bytes;
@@ -1730,8 +1735,7 @@ impl MinerRuntime {
             .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
             .ok_or(MinerError::NoAuxPoWSolution)?;
             let (n, h) = result;
-            let cpu_nonces = n.saturating_sub(start_nonce) + 1;
-            (n, h.0, cpu_nonces)
+            (n, h.0, batch_size)
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();

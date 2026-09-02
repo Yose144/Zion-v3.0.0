@@ -1,6 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-29
+> **Datum poslední aktualizace:** 2026-09-02
+>
+> **Update (2026-09-02):** **ZIONDex AMM LIVE na Base Mainnet + miner hashrate fix + token icons + dashboard/marketplace ZIS auth.** ZISGate deploynut na `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5`. AMM pair tZION/tUSDT (`0x1fE64df93226b8434877D5826aE2DCEda171e39E`) s 100k tZION + 1k tUSDT likviditou. E2E swap: 1000 tZION → 9.87 tUSDT. Miner hashrate fix: `parallel_zion_find_nonce` počítal `found_nonce + 1` místo `batch_size` → po opravě 84.45 kH/s. Token icons (ZION logo 128x128) integrovány napříč webem i marketplace. Dashboard `/api/me` endpoint + ZIS SSO auth. Marketplace `AuthContext` + `ConnectButton` ZIS integrace. Všechny Edge služby active. Report: [`docs/3.1/REPORTS/REPORT_2026-09-02_ZIONDEX_MAINNET_HASHRATE_FIX.md`](./docs/3.1/REPORTS/REPORT_2026-09-02_ZIONDEX_MAINNET_HASHRATE_FIX.md).
 >
 > **Update (2026-08-29):** **Web UI `/dex` swap widget nasazen na Edge a real E2E proti živému backendu prošel.** Opraven TDZ `Cannot access 'es' before initialization` a stabilizován debounce quote (`fromAsset`/`toAsset` přes `useMemo`, `amountAtomic` počítán uvnitř callbacků). Na Edge upraven nginx rate-limiting — odstraněn `limit_req` z `location /` (blokoval statické JS chunky) a zvýšen burst pro `/api/`. Přidán `e2e/multichain-dex-real.spec.ts`: nepřihlášený test dostane reálnou `/api/swap/quote/multi` odpověď, přihlášený test provede reálný `/api/swap/execute-v2` (selže dle očekávání `insufficient balance`, protože testovací peněženka nemá wZION). Přidán `e2e/lib/zis-login.ts` pro programatické ZIS přihlášení z Playwright. Mockované web E2E (`e2e/`) 8/8 passed. Build a clippy workspace jsou čisté.
 >
@@ -141,7 +143,7 @@
 | zion-v31-node2 | 8336 (P2P), 9446 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | active (follower, sync to node 1) |
 | zion-v31-node3 | 8337 (P2P), 9447 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | active (follower, sync to node 1) |
 | zion-v31-pool | 8444 (Stratum), 8080 (HTTP API) | Stratum 0.0.0.0, HTTP 127.0.0.1 | L1 (V31 PRODUCTION) | active (shares accepted, payout sweep active) |
-| zion-v31-miner | — | — | L1 (V31 PRODUCTION) | active (CPU-only, 4 threads, --no-gpu --no-cpu, ZION accept rate 100%) |
+| zion-v31-miner | — | — | L1 (V31 PRODUCTION) | active (CPU-only, 4 threads, 84.45 kH/s post-hashrate-fix, ZION accept rate 100%) |
 | zion-v31-multichain | 8453 (WARP API), 8454 (DEX API via `warpd`) | 127.0.0.1 | L2 (V31 PRODUCTION) | active |
 | zion-v31-dao | 8456 (API) | 127.0.0.1 | L2 (V31 PRODUCTION) | active |
 | zion-v31-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 (V31 PRODUCTION) | active |
@@ -235,6 +237,17 @@
 | ZIONStaking (12% APR) | `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` | ✅ Verified |
 | ZIONFarm (1 wZION/s) | `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` | ✅ Verified |
 | ZIONAtomicSwap | `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` (escrow funded 100K ZION) | ✅ Verified |
+
+### ZIONDex AMM (Uniswap V2 fork, deployed 2026-08-31 / 2026-09-02)
+| Contract | Address | Status |
+|----------|---------|--------|
+| ZIONDexFactory | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | ✅ Verified |
+| ZIONDexRouter | `0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662` | ✅ Verified |
+| ZIONDexZISGate | `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5` | ✅ Deployed 2026-09-02 |
+| Pair: tZION/tUSDT | `0x1fE64df93226b8434877D5826aE2DCEda171e39E` | ✅ 100k tZION + 1k tUSDT liquidity |
+| tZION (test token) | `0xC5E79b8C6475137aC3a982651097a219B63b0c33` | ✅ 18 decimals |
+| tUSDT (test token) | `0x677693fbFDe6a9EeA655033fffF93054B559552C` | ✅ 6 decimals |
+| tWETH (test token) | `0xcE5Df8e83B87f462835b51Ac6B2A4c53fafA620F` | ✅ 18 decimals |
 
 ### Uniswap V3 Pools (Base)
 | Pair | Fee | Pool Address |

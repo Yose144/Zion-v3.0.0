@@ -4,6 +4,7 @@ import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { useState, useRef, useEffect } from 'react';
 import { useLangT } from '@/lib/useTranslation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' | 'rasta' } = {}) {
   const { t } = useLangT();
@@ -14,7 +15,9 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
   const chainId = useChainId();
   const [open, setOpen] = useState(false);
   const [walletMenu, setWalletMenu] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { user, authenticated, loginWithSiwe, logout: zisLogout } = useAuth();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -26,6 +29,17 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const handleSignIn = async () => {
+    try {
+      setSigningIn(true);
+      await loginWithSiwe();
+    } catch (e) {
+      console.error('ZIS SIWE login failed:', e);
+    } finally {
+      setSigningIn(false);
+    }
+  };
 
   if (!isConnected || !address) {
     return (
@@ -69,7 +83,41 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
 
   const wrongChain = chainId !== base.id;
   const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
+  const displayName = user?.displayName || short;
 
+  // Wallet connected but not yet ZIS-authenticated — show Sign In button
+  if (!authenticated) {
+    return (
+      <div ref={ref} className="relative flex items-center gap-2">
+        <button
+          onClick={handleSignIn}
+          disabled={signingIn}
+          className={isRasta ? 'rasta-wallet-btn' : 'zion-button-primary text-sm'}
+        >
+          {signingIn ? 'Signing…' : 'Sign In'}
+        </button>
+        <button
+          onClick={() => setWalletMenu(!walletMenu)}
+          className={isRasta ? 'rasta-wallet-ghost' : 'zion-button-secondary text-sm'}
+          aria-label="Wallet menu"
+        >
+          <span className="font-mono text-xs">{short}</span>
+        </button>
+        {walletMenu && (
+          <div className="absolute right-0 top-full mt-2 w-48 zion-section p-2 z-50">
+            <button
+              onClick={() => { disconnect(); setWalletMenu(false); }}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-rasta-red hover:bg-rasta-red/10"
+            >
+              {t('nav.disconnect')}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fully authenticated — show user menu
   return (
     <div ref={ref} className="relative">
       <button
@@ -78,7 +126,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
         data-wrong={wrongChain}
       >
         <span className={`status-dot ${wrongChain ? 'status-inactive' : 'status-active'}`} />
-        <span className="font-mono text-sm">{short}</span>
+        <span className="text-sm max-w-[120px] truncate">{displayName}</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 9l6 6 6-6" />
         </svg>
@@ -88,6 +136,11 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
           {wrongChain && (
             <div className="px-3 py-2 text-xs text-rasta-red border-b border-white/5 mb-1">
               {t('nav.wrongNetwork')}
+            </div>
+          )}
+          {user && (
+            <div className="px-3 py-2 text-xs text-gray-500 border-b border-white/5 mb-1">
+              {user.email ? `${user.displayName} · ${user.email}` : user.displayName}
             </div>
           )}
           <a
@@ -105,7 +158,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
             {t('nav.myProfile')}
           </a>
           <button
-            onClick={() => { disconnect(); setOpen(false); }}
+            onClick={() => { zisLogout(); setOpen(false); }}
             className="w-full text-left px-3 py-2 rounded-lg text-sm text-rasta-red hover:bg-rasta-red/10"
           >
             {t('nav.disconnect')}
