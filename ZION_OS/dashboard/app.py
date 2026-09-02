@@ -11311,7 +11311,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
         pass
 
     def _check_auth(self):
-        """HTTP Basic Auth check (multi-user). Returns True if authorized, sends 401 if not."""
+        """Auth check: ZIS SSO cookie first, then HTTP Basic Auth fallback.
+
+        Returns True if authorized, sends 401 if not.
+        """
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         # Skip auth for health checks and static assets
@@ -11323,7 +11326,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
             "127.0.0.1", "::1", "localhost"
         ):
             return True
-        # Check Authorization header
+
+        # ── ZIS SSO: check zion_session cookie ──────────────────────────
+        # The cookie is scoped to .zionterranova.com and shared across all
+        # ZION sub-domains. If present and valid, the user is authenticated
+        # via ZIS (auth.zionterranova.com) — no Basic Auth needed.
+        try:
+            from zis_auth import get_current_user
+            zis_user = get_current_user(self)
+            if zis_user is not None:
+                # Store the ZIS user on the handler for downstream use
+                self._zis_user = zis_user
+                return True
+        except Exception:
+            pass  # ZIS unavailable — fall through to Basic Auth
+
+        # ── HTTP Basic Auth (operator fallback) ──────────────────────────
         auth_header = self.headers.get("Authorization", "")
         if auth_header.startswith("Basic "):
             try:
@@ -13103,6 +13121,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())
+        elif route == "/api/me":
+            # Return the current authenticated user (ZIS SSO or Basic Auth).
+            # Frontend uses this to show the user's display name and role.
+            zis_user = getattr(self, "_zis_user", None)
+            if zis_user is not None:
+                self._json({
+                    "authenticated": True,
+                    "source": "zis",
+                    "id": zis_user.get("id"),
+                    "address": zis_user.get("primaryAddress"),
+                    "displayName": zis_user.get("displayName"),
+                    "role": zis_user.get("role", "user"),
+                })
+            else:
+                # Basic Auth — we don't have the username here, but the
+                # frontend can read it from the Authorization header response.
+                self._json({
+                    "authenticated": True,
+                    "source": "basic",
+                    "displayName": None,
+                    "role": "operator",
+                })
         elif route == "/api/systemd":
             # Local systemd user service status — autonomous monitoring
             try:
@@ -14703,6 +14743,7 @@ if __name__ == "__main__":
     print(f"  Log directory : {LOG_DIR.absolute()}")
     print(f"  URL           : http://{HOST}:{PORT}")
     print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
+    print(f"  ZIS SSO       : auth.zionterranova.com (zion_session cookie)")
     if not DASHBOARD_USERS_ENV and not (_legacy_user and _legacy_pass):
         print("  Auth source   : compiled defaults (set DASHBOARD_USERS env var for production)")
     print("  Press Ctrl+C to stop")

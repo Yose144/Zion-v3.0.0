@@ -21,6 +21,7 @@ import { deriveMultichainAddress, requestMultichainWithdraw } from '@/lib/multic
 import { getEthereumProvider, requestAccount, ensureBaseNetwork, sendErc20Token, sendNativeEth, baseTokenContract } from '@/lib/metamask';
 import { CONTRACTS } from '@/lib/defi-contracts';
 import { TOKENS_BY_CHAIN } from '@/components/dex/TokenSelector';
+import TokenIcon from '@/components/dex/TokenIcon';
 
 const BASE_TOKENS = TOKENS_BY_CHAIN['base'] ?? [];
 const NATIVE_SYMBOLS = new Set(['ETH']);
@@ -309,17 +310,20 @@ export default function MetaMaskWalletPanel({ showTitle = true }: Props) {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <select
-            value={depositToken}
-            onChange={(e) => setDepositToken(e.target.value)}
-            className="rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-zion-gold focus:outline-none"
-          >
-            {BASE_TOKENS.map((t) => (
-              <option key={t.symbol} value={t.symbol}>
-                {t.symbol}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+            <TokenIcon symbol={depositToken} size={20} />
+            <select
+              value={depositToken}
+              onChange={(e) => setDepositToken(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-white focus:outline-none cursor-pointer"
+            >
+              {BASE_TOKENS.map((t) => (
+                <option key={t.symbol} value={t.symbol} className="bg-zinc-900">
+                  {t.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
           <input
             type="number"
             step="0.000001"
@@ -350,20 +354,26 @@ export default function MetaMaskWalletPanel({ showTitle = true }: Props) {
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <select
-            value={withdrawToken ?? ''}
-            onChange={(e) => setWithdrawToken(e.target.value)}
-            className="rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-zion-gold focus:outline-none"
-          >
-            <option value="" disabled>
-              Select asset
-            </option>
-            {snapshot?.balances?.map((b) => (
-              <option key={b.asset_key} value={b.asset_key}>
-                {b.asset_key} — {ethers.utils.formatUnits(b.amount, getTokenForAssetKey(b.asset_key)?.decimals ?? 6)}
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+            {withdrawToken && (() => {
+              const t = getTokenForAssetKey(withdrawToken);
+              return t ? <TokenIcon symbol={t.symbol} size={20} /> : null;
+            })()}
+            <select
+              value={withdrawToken ?? ''}
+              onChange={(e) => setWithdrawToken(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-white focus:outline-none cursor-pointer"
+            >
+              <option value="" disabled className="bg-zinc-900">
+                Select asset
               </option>
-            ))}
-          </select>
+              {snapshot?.balances?.map((b) => (
+                <option key={b.asset_key} value={b.asset_key} className="bg-zinc-900">
+                  {b.asset_key} — {ethers.utils.formatUnits(b.amount, getTokenForAssetKey(b.asset_key)?.decimals ?? 6)}
+                </option>
+              ))}
+            </select>
+          </div>
           <input
             type="number"
             step="0.000001"

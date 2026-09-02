@@ -96,8 +96,10 @@ export const CONTRACTS = {
   // ZIONDex AMM (Uniswap V2 fork) — deployed 2026-08-31 on Base Mainnet
   ZIONDexFactory:             '0x9F57998CC5Cb2a53426068c707Beac110966F351',
   ZIONDexRouter:              '0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662',
-  // ZISGate — not deployed yet (deploy when ETH funded; gas ~586k, cost ~0.000004 ETH)
-  ZIONDexZISGate:             '' as string,
+  // tZION/tUSDT pair — created 2026-09-02, 100k tZION + 1k tUSDT liquidity
+  ZIONDexPairTZionTUsdt:      '0x1fE64df93226b8434877D5826aE2DCEda171e39E',
+  // ZISGate — deployed 2026-09-02 on Base Mainnet (tx 0x0cff45...)
+  ZIONDexZISGate:             '0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5',
 } as const;
 
 /** PancakeSwap V3 config on Base */

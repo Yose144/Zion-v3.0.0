@@ -7,7 +7,7 @@
     "minor": 0,
     "patch": 1
   },
-  "logoURI": "https://zionterranova.com/symbol-200x200.png",
+  "logoURI": "https://zionterranova.com/tokens/zion.png",
   "keywords": [
     "zion",
     "wzion",
@@ -32,7 +32,7 @@
       "name": "Wrapped ZION",
       "symbol": "wZION",
       "decimals": 18,
-      "logoURI": "https://zionterranova.com/symbol-200x200.png",
+      "logoURI": "https://zionterranova.com/tokens/zion.png",
       "tags": [
         "official",
         "bridge"
