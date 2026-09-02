@@ -34,6 +34,7 @@ const MAX_FLIGHT_SPEED = 18;
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>('intro');
+  const inGame = phase === 'scene';
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
   const [activeLayers, setActiveLayers] = useState<WorldLayer[]>(ALL_LAYERS);
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
@@ -142,9 +143,9 @@ export default function OasisClient() {
   }, []);
 
   // Auto-hide panels when user interacts with 3D scene (scroll/drag/touch)
-  // Panels return after 2.5s of inactivity. Doesn't affect flight mode, intro, or stargate.
+  // Panels return after 2.5s of inactivity. Only active during the main game scene.
   useEffect(() => {
-    if (phase === 'intro' || phase === 'stargate' || flightMode) return;
+    if (!inGame || flightMode) return;
     const canvas = document.querySelector('canvas');
     if (!canvas) return;
 
@@ -160,7 +161,7 @@ export default function OasisClient() {
       events.forEach((evt) => canvas.removeEventListener(evt, triggerHide));
       if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
     };
-  }, [phase, flightMode]);
+  }, [inGame, flightMode]);
 
   useEffect(() => {
     if (flightMode) {
@@ -198,7 +199,7 @@ export default function OasisClient() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (phase === 'intro' || phase === 'stargate') return;
+      if (!inGame) return;
       if (e.key.toLowerCase() === 'h') {
         setUiHidden((h) => !h);
         return;
@@ -219,7 +220,7 @@ export default function OasisClient() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase, flightMode, view]);
+  }, [inGame, flightMode, view]);
 
   if (!mounted) {
     return (
@@ -254,6 +255,7 @@ export default function OasisClient() {
   };
 
   const handleWorldSelect = (world: World) => {
+    if (!inGame) return;
     if (flightMode) setFlightMode(false);
     setSelectedWorld(world);
     setView('galaxy');
@@ -261,28 +263,28 @@ export default function OasisClient() {
   };
 
   const handleCloseWorld = () => {
+    if (!inGame) return;
     setSelectedWorld(null);
     setView('galaxy');
     setWarping(false);
   };
 
   const handleEnterWorld = async () => {
-    if (selectedWorld) {
-      playWarp();
-      playScanComplete();
-      setWarping(true);
-      setView('world');
-      const xp = 75 + shipLoadout.scanner * 25;
-      const firstScan = !scannedWorlds.includes(selectedWorld.id);
-      scanWorld(selectedWorld.id);
-      addXp(xp);
-      addToast(`Entering ${selectedWorld.name}: +${xp} XP`, 'info', 3000);
-      if (address) {
-        await apiScanWorld(address, selectedWorld.id, xp);
-        await syncPlayer();
-      }
-      setTimeout(() => setWarping(false), 1500);
+    if (!inGame || !selectedWorld) return;
+    playWarp();
+    playScanComplete();
+    setWarping(true);
+    setView('world');
+    const xp = 75 + shipLoadout.scanner * 25;
+    const firstScan = !scannedWorlds.includes(selectedWorld.id);
+    scanWorld(selectedWorld.id);
+    addXp(xp);
+    addToast(`Entering ${selectedWorld.name}: +${xp} XP`, 'info', 3000);
+    if (address) {
+      await apiScanWorld(address, selectedWorld.id, xp);
+      await syncPlayer();
     }
+    setTimeout(() => setWarping(false), 1500);
   };
 
   const handleExitFlight = () => {
@@ -300,6 +302,7 @@ export default function OasisClient() {
   };
 
   const handleApproachWorld = async (world: World) => {
+    if (!inGame) return;
     playApproach();
     playWarp();
     setFlightMode(false);
@@ -320,29 +323,34 @@ export default function OasisClient() {
   return (
     <>
       <div className="fixed inset-0 overflow-hidden bg-oasis-black">
-        <OasisScene
-          started={phase !== 'intro'}
-          onArrived={handleArrived}
-          activeCategories={activeCategories}
-          activeLayers={activeLayers}
-          selectedWorld={selectedWorld}
-          worlds={worlds}
-          onWorldSelect={handleWorldSelect}
-          view={view}
-          flightMode={flightMode}
-          onExitFlight={handleExitFlight}
-          flightControlsRef={flightControlsRef}
-          onFlightSpeedChange={handleFlightSpeedChange}
-          flightSpeed={flightSpeed}
-          onCanLand={handleCanLand}
-          onApproach={handleApproachWorld}
-          onBoost={playBoost}
-          baseSpeed={flightBaseSpeed}
-          mobileInputRef={isMobile ? mobileInputRef : undefined}
-          isMobile={isMobile}
-          compassRef={compassRef}
-        />
-        {phase !== 'intro' && (
+        <div
+          className="absolute inset-0"
+          style={{ pointerEvents: inGame ? 'auto' : 'none' }}
+        >
+          <OasisScene
+            started={phase === 'arrival' || phase === 'rite' || phase === 'scene'}
+            onArrived={handleArrived}
+            activeCategories={activeCategories}
+            activeLayers={activeLayers}
+            selectedWorld={selectedWorld}
+            worlds={worlds}
+            onWorldSelect={handleWorldSelect}
+            view={view}
+            flightMode={flightMode}
+            onExitFlight={handleExitFlight}
+            flightControlsRef={flightControlsRef}
+            onFlightSpeedChange={handleFlightSpeedChange}
+            flightSpeed={flightSpeed}
+            onCanLand={handleCanLand}
+            onApproach={handleApproachWorld}
+            onBoost={playBoost}
+            baseSpeed={flightBaseSpeed}
+            mobileInputRef={isMobile ? mobileInputRef : undefined}
+            isMobile={isMobile}
+            compassRef={compassRef}
+          />
+        </div>
+        {inGame && (
           <MainMenu
             activeCategories={activeCategories}
             onCategoriesChange={setActiveCategories}
@@ -365,11 +373,11 @@ export default function OasisClient() {
             isMobile={isMobile}
           />
         )}
-        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
+        {inGame && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
+        {inGame && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
 
         <AnimatePresence>
-          {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
+          {inGame && selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
             <WorldPanel
               world={selectedWorld}
               onClose={handleCloseWorld}
@@ -379,7 +387,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && !panelsMinimized && (
+          {inGame && !flightMode && view === 'galaxy' && !uiHidden && !panelsMinimized && (
             <ControlHud
               compassRef={compassRef}
               target={compassTarget.pos}
@@ -404,7 +412,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {view === 'world' && !flightMode && !uiHidden && (
+          {inGame && view === 'world' && !flightMode && !uiHidden && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -426,7 +434,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {flightMode && !uiHidden && (
+          {inGame && flightMode && !uiHidden && (
             <ControlHud
               compassRef={compassRef}
               target={compassTarget.pos}
@@ -449,7 +457,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {flightMode && isMobile && <MobileControls inputRef={mobileInputRef} onExit={handleExitFlight} />}
+          {inGame && flightMode && isMobile && <MobileControls inputRef={mobileInputRef} onExit={handleExitFlight} />}
         </AnimatePresence>
       </div>
 
