@@ -461,7 +461,10 @@ export default function OasisScene({
 
 /** Calls onArrived once on mount — replaces CameraRig flight on mobile */
 function MobileArrivalTrigger({ onArrived }: { onArrived?: () => void }) {
+  const firedRef = useRef(false);
   useEffect(() => {
+    if (firedRef.current) return;
+    firedRef.current = true;
     const t = setTimeout(() => onArrived?.(), 100);
     return () => clearTimeout(t);
   }, [onArrived]);

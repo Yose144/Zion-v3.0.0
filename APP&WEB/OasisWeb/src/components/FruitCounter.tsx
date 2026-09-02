@@ -16,12 +16,12 @@ export default function FruitCounter() {
   const isComplete = count >= fruitThreshold;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-4 z-30 select-none sm:bottom-5 sm:left-5">
+    <div className="pointer-events-none fixed bottom-4 left-4 z-30 hidden select-none md:block sm:bottom-5">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="zion-rainbow-card w-40 p-2.5 sm:w-48 sm:p-3"
+        className="zion-rainbow-card w-36 p-2.5 sm:p-3 lg:w-40"
         style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
       >
         <div className="mb-1.5 flex items-center justify-between">
