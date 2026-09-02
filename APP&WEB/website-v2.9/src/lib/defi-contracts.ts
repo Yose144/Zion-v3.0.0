@@ -1,6 +1,7 @@
 /**
  * ZION L2 DeFi Contract Registry
  *
+ * Canonical source of truth: L2contracts.md in repo root.
  * All deployed contract addresses, ABIs (minimal), and chain config
  * for Base Sepolia (testnet) and Base mainnet.
  */

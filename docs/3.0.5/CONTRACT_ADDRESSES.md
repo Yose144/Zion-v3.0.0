@@ -1,5 +1,8 @@
 # ZION WARP — Contract Addresses & Configuration
 
+> **⚠️ DEPRECATED (2026-09-02):** This file is superseded by [`L2contracts.md`](../../L2contracts.md) in repo root.
+> Kept for historical reference only. Do NOT update this file — update `L2contracts.md` instead.
+
 > **Status:** 🟢 EVM + LND + ZionDex deployed · 🟡 Non-EVM contracts ready, pending deploy
 > **Last updated:** 2026-07-13
 > **Purpose:** Jednotné místo pro všechny kontrakt adresy, relay klíče, RPC endpointy a env vars pro WARP bridge
