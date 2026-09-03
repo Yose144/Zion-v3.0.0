@@ -17,6 +17,10 @@ import {
   Heart,
   Shield,
   Compass,
+  Crown,
+  Landmark,
+  TreePine,
+  Flower,
   LucideIcon,
 } from 'lucide-react';
 
@@ -119,6 +123,52 @@ const PROJECTS: ProjectCardData[] = [
       { value: 'Raiatea', labelCs: 'Lokalita', labelEn: 'Location' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'PF', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/golden-republic-bohemia',
+    title: 'Golden Republic Bohemia',
+    location: 'Čechy · Česká republika',
+    eyebrow: 'L5 · Governance Lab',
+    statusCs: 'Plánováno',
+    statusEn: 'Planned',
+    descriptionCs:
+      'Čtvrtý uzel L5 Trinity — governance laboratoř Zlaté republiky v srdci Evropy. Kruh rozhodování, česká moudrost a ZION protokol.',
+    descriptionEn:
+      'The fourth L5 Trinity node — governance laboratory for the Golden Republic in the heart of Europe. Decision circle, Czech wisdom and ZION protocol.',
+    features: [
+      { icon: Crown, labelCs: 'Governance kruh', labelEn: 'Governance circle' },
+      { icon: Landmark, labelCs: 'Tři pavilony', labelEn: 'Three pavilions' },
+      { icon: Network, labelCs: 'ZION node', labelEn: 'ZION node' },
+      { icon: Leaf, labelCs: 'Permakultura', labelEn: 'Permaculture' },
+    ],
+    metrics: [
+      { value: 'Říp', labelCs: 'Osa', labelEn: 'Axis' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'CZ', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/bodhi-lanka',
+    title: 'Bodhi Lanka',
+    location: 'Srí Lanka',
+    eyebrow: 'L5 · Akasha Node',
+    statusCs: 'Plánováno',
+    statusEn: 'Planned',
+    descriptionCs:
+      'Pátý uzel L5 Trinity — Akáša, prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.',
+    descriptionEn:
+      'The fifth L5 Trinity node — Akasha, the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
+    features: [
+      { icon: TreePine, labelCs: 'Bodhi strom', labelEn: 'Bodhi tree' },
+      { icon: Heart, labelCs: 'Bhakti · láska', labelEn: 'Bhakti · love' },
+      { icon: Flower, labelCs: 'Ayurvedská zahrada', labelEn: 'Ayurvedic garden' },
+      { icon: Network, labelCs: 'ZION node', labelEn: 'ZION node' },
+    ],
+    metrics: [
+      { value: 'Anuradhapura', labelCs: 'Osa', labelEn: 'Axis' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'LK', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];

@@ -4634,6 +4634,30 @@ export const WORLDS: World[] = [
       goldenEggClue: 7,
       galaxyPosition: { x: -16.2, y: 0.2, z: 31.8 }
   },
+  {
+      id: "GOLDEN_REPUBLIC_BOHEMIA",
+      name: "Golden Republic Bohemia",
+      category: "world",
+      layer: 5,
+      location: "Bohemia — Terra Nova L5 governance laboratory",
+      vibe: "Circle without a throne. Salt on the table. A bridge between myth and protocol.",
+      summary: "Sacred L5 governance node in Bohemia — a circle of stones, three pavilions (Bridge, University, Golden Bull), and the Golden Republic protocol laboratory.",
+      tags: ["world", "layer 5", "terranova", "governance", "bohemia"],
+      goldenEggClue: 8,
+      galaxyPosition: { x: 12.5, y: 0.15, z: 28.3 }
+  },
+  {
+      id: "BODHI_LANKA",
+      name: "Bodhi Lanka",
+      category: "world",
+      layer: 5,
+      location: "Sri Lanka — Terra Nova L5 Akasha node",
+      vibe: "Love is the element fire cannot burn. The bridge did not connect islands — it connected hearts.",
+      summary: "Sacred L5 Akasha node in Sri Lanka — the oldest living Bodhi tree, Rama Setu bridge, lotus pond, and the Bhakti protocol laboratory.",
+      tags: ["world", "layer 5", "terranova", "akasha", "bodhi", "sri lanka"],
+      goldenEggClue: 9,
+      galaxyPosition: { x: 28.7, y: 0.18, z: 35.2 }
+  },
 ];
 
 export const WORLD_IDS = [
@@ -4673,6 +4697,7 @@ export const WORLD_IDS = [
   "BENZAITEN",
   "BETELGEUSE",
   "BILE_PERO",
+  "BODHI_LANKA",
   "BOLON_YOKTE_TRANSITION",
   "BRIGID_TRIPLE_FLAME",
   "BRONU_CHRIST",
@@ -4751,6 +4776,7 @@ export const WORLD_IDS = [
   "GATOTKACA",
   "GC_SUN_STEWARD",
   "GEB_FOUNDATION",
+  "GOLDEN_REPUBLIC_BOHEMIA",
   "GUAN_YU",
   "HACHIMAN",
   "HANUMAN",

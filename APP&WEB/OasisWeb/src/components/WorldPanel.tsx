@@ -51,6 +51,24 @@ const NOVA_ZEME_PROJECTS = [
     desc: 'Tichomořský uzel — ochrana mořského i pozemského dědictví, regenerativní komunita, kulturní most mezi Polynésií a ZION.',
     href: 'https://app.zionterranova.com/terranova/te-piko-ora',
   },
+  {
+    id: 'bohemia',
+    name: 'Golden Republic Bohemia',
+    location: 'Čechy · Česká republika',
+    color: '#ffd700',
+    status: 'Planned',
+    desc: 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost (sůl, most, Zlatá bula) a ZION protokol v srdci Evropy.',
+    href: 'https://app.zionterranova.com/terranova/golden-republic-bohemia',
+  },
+  {
+    id: 'bodhi-lanka',
+    name: 'Bodhi Lanka',
+    location: 'Srí Lanka',
+    color: '#f59e0b',
+    status: 'Planned',
+    desc: 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.',
+    href: 'https://app.zionterranova.com/terranova/bodhi-lanka',
+  },
 ];
 
 interface WorldPanelProps {
