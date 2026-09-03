@@ -59,6 +59,8 @@ const t = {
     terra_garden_genesis: { cs: 'Zahrada Genesis', en: 'Garden of Genesis' },
     terra_dharma_temple: { cs: 'Dharma Temple', en: 'Dharma Temple' },
     terra_te_piko_ora: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora' },
+    terra_golden_republic_bohemia: { cs: 'Golden Republic Bohemia', en: 'Golden Republic Bohemia' },
+    terra_bodhi_lanka: { cs: 'Bodhi Lanka', en: 'Bodhi Lanka' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
     mission_control: { cs: 'Mission Control', en: 'Mission Control' },

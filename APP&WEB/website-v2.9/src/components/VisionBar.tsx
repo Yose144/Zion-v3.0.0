@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -37,6 +37,22 @@ const VISIONS = [
     rc: '228, 30, 43', // rasta red
     accent: 'text-zion-purple',
   },
+  {
+    href: '/terranova/golden-republic-bohemia',
+    icon: Scale,
+    label: 'Golden Republic Bohemia',
+    desc: 'Srdce L5 — governance laboratoř Zlaté republiky, kruh rozhodování.',
+    rc: '147, 51, 234', // purple
+    accent: 'text-zion-purple',
+  },
+  {
+    href: '/terranova/bodhi-lanka',
+    icon: TreePalm,
+    label: 'Bodhi Lanka',
+    desc: 'Akáša L5 — nekonečná láska, Bodhi strom, Rama a Sita, Ajurvéda.',
+    rc: '6, 182, 212', // cyan
+    accent: 'text-zion-cyan',
+  },
 ];
 
 export default function VisionBar() {
@@ -47,7 +63,7 @@ export default function VisionBar() {
       transition={{ duration: 0.9, delay: 0.3 }}
       className="w-full max-w-5xl mx-auto px-3 sm:px-4"
     >
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
         {VISIONS.map((v, i) => (
           <motion.div
             key={v.href}
