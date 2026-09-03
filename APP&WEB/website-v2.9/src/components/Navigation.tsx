@@ -79,6 +79,8 @@ export default function Navigation() {
             { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
             { href: '/terranova/dharma-temple', label: tr('nav', 'terra_dharma_temple', lang) },
             { href: '/terranova/te-piko-ora', label: tr('nav', 'terra_te_piko_ora', lang) },
+            { href: '/terranova/golden-republic-bohemia', label: tr('nav', 'terra_golden_republic_bohemia', lang) },
+            { href: '/terranova/bodhi-lanka', label: tr('nav', 'terra_bodhi_lanka', lang) },
           ],
         },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
