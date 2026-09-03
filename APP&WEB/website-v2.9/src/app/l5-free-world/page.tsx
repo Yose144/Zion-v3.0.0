@@ -127,7 +127,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
     href: '/terranova/genesis',
-    cover: '/images/genesis-garden/concept-og.png',
+    cover: '/images/genesis-garden/hero.png',
   },
   {
     name: 'Dharma Temple',
@@ -136,7 +136,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.educationalAndMeditationCenter[cs ? 'cs' : 'en'],
     tags: ['Education', 'Off-grid', 'Meditation'],
     href: '/terranova/dharma-temple',
-    cover: '/images/dharma-temple/concept-og.png',
+    cover: '/images/dharma-temple/hero.png',
   },
   {
     name: 'Te Pīko Ora',
