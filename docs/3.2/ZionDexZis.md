@@ -1,5 +1,11 @@
 # ZionDex + ZIS Multichain Wallet — komplexní implementační plán
 
+> **⚠️ SUPERSEDED (2026-09-03):** Tento dokument byl nahrazen
+> [`ZIS_WALLET_PLAN.md`](../../ZIS_WALLET_PLAN.md) v rootu repa.
+> ZIONDex AMM je deprecated — swapy se provádějí přes Uniswap V3.
+> Architektura byla radikálně zjednodušena (z 8 fází na 3 kontrakty).
+> Tento soubor je zachován pro historickou referenci.
+
 > **Status (2026-08-29):** Fáze 0–7 jsou ve `main` implementovány. `cargo test --workspace` prochází, `cargo clippy --workspace` je čisté (pouze pre-existing warnings). Přidán Playwright test `e2e/multichain-dex-real.spec.ts` proti živému Edge backendu (`https://app.zionterranova.com`) — neautorizovaný test získává reálný quote wZION → USDT, autorizovaný test (via `e2e/lib/zis-login.ts`) volá reálný `/api/swap/execute-v2` a backend dle očekávání odmítne s `insufficient balance` (testovací peněženka nemá wZION). UI swap widget `CrossChainSwapWidget` byl stabilizován (`useMemo` pro `fromAsset`/`toAsset`, `amountAtomic` uvnitř callbacků, TDZ fix). Mockované web E2E (`e2e/`) 8/8 passed. Nginx rate-limiting na Edge upraven — `location /` již není omezeno (blokovalo statické JS chunky), `/api/` má burst 50. Reálný E2E úspěšný při spuštění s `ZION_WALLET_MNEMONIC` a `--workers=1`; pro plnohodnotnou swap settlement je třeba do testovací peněženky vložit wZION.
 >
 > Cíl: převést `ZionDex` z in-memory AMM quote engine na skutečně E2E fungující

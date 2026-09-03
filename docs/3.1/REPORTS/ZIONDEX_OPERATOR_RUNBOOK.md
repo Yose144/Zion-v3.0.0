@@ -1,5 +1,9 @@
 # ZIONDex Operator Runbook
 
+> **⚠️ DEPRECATED (2026-09-03):** ZIONDex AMM je deprecated. Swapy se provádějí přes
+> Uniswap V3 na Base. Tento runbook je zachován pro historickou referenci.
+> Viz [`L2contracts.md`](../../L2contracts.md) §2 a [`ZIS_WALLET_PLAN.md`](../../ZIS_WALLET_PLAN.md).
+
 > **Version:** 2026-09-02
 > **Scope:** ZIONDex AMM (Uniswap V2 fork) on Base Mainnet, ZISGate, liquidity management, swap monitoring, and incident response.
 
