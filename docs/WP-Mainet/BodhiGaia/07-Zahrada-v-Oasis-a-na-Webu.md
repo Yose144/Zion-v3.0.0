@@ -1,5 +1,5 @@
 # BODHI GAIA — Kapitola 7: Zahrada v OASIS a na webu
-## Zrcadlo L4 ↔ L5 — jak se tři fyzické zahrady odrážejí v OASIS, na webu a v avatarech, a kde zrcadlo končí
+## Zrcadlo L4 ↔ L5 — jak se pět fyzických zahrad odráží v OASIS, na webu a v avatarech, a kde zrcadlo končí
 
 > *„Virtuální svět nesmí být únikem před realitou, ale architektonickým modelem a posvátnou laboratoří pro znovustvoření světa fyzického."* — Nirvana, epizoda 9
 
@@ -9,7 +9,7 @@
 
 Rybář z epizody 9 knihy Nirvana — ten, který na dřevěné lodičce vytáhl z kapsy sklíčko a během tří vteřin vstoupil do OASIS — jednoho dne doplul až do zátoky pod Domem Lumi.
 
-V OASIS znal Novou zemi dobře. Chodil tam každý večer. Znal Prastarý strom v Zahradě Hiranyagarbha s devíti patry vědomí, znal osm Genesis teritorií, hledal stopy Zlatého vejce. A od jisté doby na mapě galaxie viděl nový bod: **Dharma Temple — La Palma**, sedm kopulí a Strom života, s sedmou stopou Zlatého vejce ukrytou někde v jeho zahradách. A na panelu „Nová Země" tři karty: Zahrada Genesis — *aktivní*, Dharma Temple — *příprava*, Te Pīko Ora — *plánováno*.
+V OASIS znal Novou zemi dobře. Chodil tam každý večer. Znal Prastarý strom v Zahradě Hiranyagarbha s devíti patry vědomí, znal osm Genesis teritorií, hledal stopy Zlatého vejce. A od jisté doby na mapě galaxie viděl nový bod: **Dharma Temple — La Palma**, sedm kopulí a Strom života, s sedmou stopou Zlatého vejce ukrytou někde v jeho zahradách. A na panelu „Nová Země" karty: Zahrada Genesis — *aktivní*, Dharma Temple — *příprava*, Te Pīko Ora — *plánováno*. A později přibyly další dva: Golden Republic Bohemia — *příprava*, Bodhi Lanka — *plánováno*.
 
 Když vystoupil na břeh, čekal, že uvidí to, co znal ze sklíčka: kopule z bílého mramoru, avatary z čistého světla, vodopády s dokonalým prouděním.
 
@@ -35,7 +35,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 
 ## Co to znamená
 
-**L4 OASIS a web `app.zionterranova.com` jsou zrcadlem L5 — místem, kde se tři fyzické zahrady poprvé ukazují lidem, kteří nikdy nebyli v Algarve, na La Palmě ani na Raiatea.** Zrcadlo má tři legitimní funkce a jednu zakázanou:
+**L4 OASIS a web `app.zionterranova.com` jsou zrcadlem L5 — místem, kde se pět fyzických zahrad poprvé ukazují lidem, kteří nikdy nebyli v Algarve, na La Palmě, na Raiatea, v Čechách ani na Srí Lance.** Zrcadlo má tři legitimní funkce a jednu zakázanou:
 
 | Funkce zrcadla | Správně | Zakázáno |
 |---|---|---|
@@ -48,17 +48,21 @@ Nechal sklíčko v kapse a šel si pro motyku.
 
 **Web — Terra Nova (`/terranova`)**
 - Kniha TerraNova s kapitolami a edicemi (`TerraNovaBookClient`, `generatedEditions.ts`).
-- **Pioneer Projects L5** — tři karty (`PioneerProjectCards.tsx`): Zahrada Genesis (*Aktivní rozvoj*, EU), Dharma Temple (*V přípravě*, ES, UNESCO), Te Pīko Ora (*Plánováno*, PF).
+- **Pioneer Projects L5** — karty (`PioneerProjectCards.tsx`): Zahrada Genesis (*Aktivní rozvoj*, EU), Dharma Temple (*V přípravě*, ES, UNESCO), Te Pīko Ora (*Plánováno*, PF), Golden Republic Bohemia (*V přípravě*, CZ), Bodhi Lanka (*Plánováno*, LK).
 - `/terranova/genesis` — charakter místa, fáze 0–4 (0 hotová, 1 aktivní), rysy (glamping, farma, stromy, surf, solar, setkání), integrace ZION (node *planned*, wallet *tbd*, Medical Table *planned*, mesh *planned*, Seed Library *active*, Proof-of-Care DAO *planned*), humanitární závazek 10 % z node odměn.
 - `/terranova/dharma-temple` — La Palma, koncept, rysy, fáze (0 aktivní), **3D koncept** (7 kopulí, Strom života, Merkaba), **architektonický návrh**, **dokumentace** načítaná z `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`, otevřené otázky, Discord.
 - `/terranova/te-piko-ora` — Polynésie, Raiatea, rysy (wayfinding škola, mořská permakultura, kulturní obnova, solar, humanitární fond, ochrana dědictví *vision*), **lekce Rapa Nui**, fáze 0–3 (0 aktivní), integrace (node *planned*, DAO *planned*, fond *planned*, ledger dědictví *tbd*, wayfinding NFT *tbd*, mořská semenná knihovna *tbd*).
+- `/terranova/golden-republic-bohemia` — Čechy, governance lab, rysy (kruh rozhodování, česká moudrost — sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV), protokol Zlatá republika, fáze 0 (příprava), integrace (node *planned*, DAO *planned*, governance lab *planned*).
+- `/terranova/bodhi-lanka` — Srí Lanka, rysy (Bhakti protokol, Ajurvéda Medical Table, Sri Maha Bodhi — nejstarší žijící strom 288 př. n. l., Rama Setu most), fáze 0 (plánováno 2027–2028), integrace (node *planned*, DAO *planned*, Bhakti protokol *planned*, Ajurvéda Medical Table *planned*).
 
 **Web — L5 Free World (`/l5-free-world`)**
 - Vysvětlení L5 jako fyzické vrstvy, kanonická fondová adresa, 5 % z každého bloku, sdílené protokoly, komunity.
 
 **OASIS Web (`oasis.zionterranova.com`)**
-- Panel **„Nová Země"** (`WorldPanel.tsx`, `NOVA_ZEME_PROJECTS`) — tři L5 projekty s barvou, statusem a odkazem na web.
+- Panel **„Nová Země"** (`WorldPanel.tsx`, `NOVA_ZEME_PROJECTS`) — L5 projekty s barvou, statusem a odkazem na web.
 - Svět **`DHARMA_TEMPLE_LA_PALMA`** v galaxii (`worlds.ts`): „Sacred L5 sanctuary on La Palma — a geodesic temple of enlightenment, education and community", `goldenEggClue: 7`, pozice `(-16.2, 0.2, 31.8)`.
+- Svět **`GOLDEN_REPUBLIC_BOHEMIA`** v galaxii (`worlds.ts`): governance lab, kruh rozhodování, česká moudrost — most mezi tradicí a experimentem.
+- Svět **`BODHI_LANKA`** v galaxii (`worlds.ts`): Bhakti protokol, Sri Maha Bodhi, Rama Setu most — láska jako kořen, nejstarší žijící strom.
 - Planeta **SAMANTABHADRA** (layer 5, „Nekonečná Zahrada", deset velkých slibů) — buddhistický archetyp všeobjímající praxe.
 
 **OASIS backend (`V31/L4/oasis`)**
@@ -95,11 +99,11 @@ Nechal sklíčko v kapse a šel si pro motyku.
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
-| **Tři karty na panelu „Nová Země"** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` (genesis *Active*, dharma *Prep*, piko-ora *Planned*) s odkazy na `app.zionterranova.com/terranova/*`. | Statusy nejsou napojené na L5 API. |
-| **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`. | Svět má `layer: 3` místo L5; není označen jako koncept. |
+| **Karty na panelu „Nová Země"** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` (genesis *Active*, dharma *Prep*, piko-ora *Planned*, bohemia *Prep*, lanka *Planned*) s odkazy na `app.zionterranova.com/terranova/*`. | Statusy nejsou napojené na L5 API. |
+| **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`; `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`. | Svět `DHARMA_TEMPLE_LA_PALMA` má `layer: 3` místo L5; není označen jako koncept; nové světy Bohemia a Lanka v přípravě. |
 | **Sítá a Hanuman jako avataři** | **ŽIVÉ** (dokument) / **HORIZONT** (mechanika) | `docs/WP-Mainet/SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md` §II — role a questy směřující do L5. | Implementace questů „spojení s L5" v `V31/L4/oasis` (quests.rs) není doložena. |
 | **Sliby bódhisattvy v OASIS** | **ŽIVÉ** (data) | `V31/L4/oasis/data/avatars.json` — Samantabhadra, Avalokiteśvara, Mañjuśrī, *Bodhicitta Spark*. | Vazba na L5 Consciousness Admission = HORIZONT. |
-| **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (`/l5-free-world`: Střední Evropa vs Algarve). |
+| **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`, `golden-republic-bohemia`, `bodhi-lanka`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (`/l5-free-world`: Střední Evropa vs Algarve). |
 | **3D koncept chrámu** | **ŽIVÉ** (web) / **HORIZONT** (stavba) | `DharmaTemplePreviewLazy` na `/terranova/dharma-temple`; dokument `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`. | Na webu chybí explicitní štítek „koncept — nestojí". |
 | **Rybář se sklíčkem (instant preview)** | **HORIZONT** | Nirvana ep. 9; `MiseAmenti/07` řadí WebGPU / Pixel Streaming / UE 5.7 do HORIZONT. | POC klienta, licenční a výkonová analýza (M4). |
 | **„Quest, který posílá do zahrady"** | **HORIZONT** | Nápad „Silence Quest" v `dharma-temple.md` §15 a „quest rewards for visits" v `genesis-garden.md` §11.2 jako marketingový kanál. | Mechanika, ověření, privacy review, M5 gate. |

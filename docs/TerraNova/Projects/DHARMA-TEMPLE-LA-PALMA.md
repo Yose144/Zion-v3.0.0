@@ -18,9 +18,9 @@
 
 Dharma Temple je navržen jako **spirituální a vzdělávací uzel** sítě Terra Nova — místo, kde fyzická soběstačnost a vnitřní praxe rostou ze stejných kořenů. Na La Palmě, ostrově s mimořádnou energií vulkanické krajiny, husté vegetace a čistého vzduchu, vzniká prostor pro meditaci, tělesnou práci a komunitní dharmu.
 
-Zatímco Zahrada Genesis je **Base Camp** (vstupní brána, zemědělství, ocean energy), Dharma Temple je **Sanctuary** — místo hlubšího zastavení, vnitřního cvičení a duchovní inkubace pro ty, kteří potřebují víc než farmu.
+Zatímco Zahrada Genesis je **Base Camp** (vstupní brána, zemědělství, ocean energy), Dharma Temple je **Sanctuary** — místo hlubšího zastavení, vnitřního cvičení a duchovní inkubace pro ty, kteří potřebují víc než farmu. Golden Republic Bohemia je **governance lab** (vzduch, srdce) a Bodhi Lanka je **Bhakti** (akasha, éter, láska).
 
-Oba projekty jsou uzly téže sítě: různá energie, stejný záměr.
+Všech pět uzlů L5 Pentagramu je uzly téže sítě: různá energie, stejný záměr.
 
 > *"Dharma není cesta od světa. Je to způsob, jak být ve světě jinak."*
 
@@ -210,17 +210,18 @@ Dharma Temple tento dar nepovažuje za výhodu, ale za **odpovědnost** — star
 
 ## Propojení se Zahradou Genesis
 
-Zahrada Genesis (Portugalsko) a Dharma Temple (La Palma) jsou **komplementární uzly** téže sítě:
+Zahrada Genesis (Portugalsko) a Dharma Temple (La Palma) jsou **komplementární uzly** L5 Pentagramu:
 
-| Dimenze | Zahrada Genesis | Dharma Temple |
-|---------|----------------|---------------|
-| **Energie místa** | Atlantický vítr, oceán, pohyb | Vulkanická ticho, hory, vnitřní praxe |
-| **Primární role** | Base Camp — vstupní brána | Sanctuary — hlubší zastavení |
-| **Klíčová aktivita** | Farma, surf, community events | Meditace, vzdělávání, dharma |
-| **Klimatická zóna** | Mediteránní atlantická | Subtropická oceánská |
-| **Sdílené protokoly** | ZION node, seed library, Medical Table, LoRa | ← stejné |
+| Dimenze | Zahrada Genesis | Dharma Temple | Te Pīko Ora | Golden Republic Bohemia | Bodhi Lanka |
+|---------|----------------|---------------|-------------|------------------------|-------------|
+| **Prvek** | Země | Oheň | Voda | Vzduch | Akasha |
+| **Energie místa** | Atlantický vítr, oceán, pohyb | Vulkanická ticho, hory, vnitřní praxe | Laguna, oceán, hojnost | Česká moudrost, most, sůl | Láska, Bodhi strom, Ayurveda |
+| **Primární role** | Base Camp — vstupní brána | Sanctuary — hlubší zastavení | Paradise — dokončení | Governance lab — rozhodnutí | Bhakti — propojení |
+| **Klíčová aktivita** | Farma, surf, community events | Meditace, vzdělávání, dharma | Mořská permakultura, wayfinding | Kruh rozhodnutí, Zlatá republika | Sri Maha Bodhi, Rama Setu, Ayurveda |
+| **Klimatická zóna** | Mediteránní atlantická | Subtropická oceánská | Tropická oceánská | Kontinentální mírné | Tropická monzunová |
+| **Sdílené protokoly** | ZION node, seed library, Medical Table, LoRa | ← stejné | ← stejné | ← stejné | ← stejné |
 
-Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance.
+Všechny uzly sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance.
 
 ---
 

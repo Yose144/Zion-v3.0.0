@@ -148,6 +148,8 @@ Osm principů:
 
 Zlatá republika neřeší starý systém revolucí. Nabízí alternativu — a nechává lidi vybírat.
 
+> **Golden Republic Bohemia** (Česká republika) je první fyzický uzel, který Zlatá republika prototypuje v praxi — governance lab a kruh rozhodnutí ukotvený v české moudrosti: sůl, most, Zlatá bula, Přemysl Oráč, Libuše, Karel IV. Paralelně **Bodhi Lanka** (Srí Lanka) prototypuje **Bhakti protokol** — lásku (Rama-Sita), Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most a Ayurvedu jako živou páteř péče.
+
 *Dobrovolně. Postupně. Jeden Guardian, jedna komunita, jedna síť po druhé.*
 
 ---

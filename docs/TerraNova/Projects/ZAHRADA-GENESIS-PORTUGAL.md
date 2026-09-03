@@ -195,7 +195,7 @@ Výstavba trvalých budov je klíčový přechod z kempingové fáze do skutečn
 | 0 — Zárodek | Pozemek, legal základ, první Guardian | ✅ Hotovo |
 | 1 — Kořeny | Solar, voda, organická zahrada, glamping | 🟡 Probíhá |
 | 2 — Komunita | Stálí obyvatelé, ZION node, governance | 🔵 Plánováno |
-| 3 — Síť | Propojení s Dharma Temple, dalšími L5 uzly | 🔵 Plánováno |
+| 3 — Síť | Propojení s Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka a dalšími L5 uzly | 🔵 Plánováno |
 | 4 — Výzařování | Surf škola, retreaty, vzdělávací centrum | 🔵 Vize |
 
 ---
@@ -215,7 +215,7 @@ Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, 
 - [ ] Právní forma projektu (s.r.o., kooperativa, spolek?)
 - [ ] Timeline surf školy
 - [ ] ZION node instalace — koordinátor?
-- [ ] Propojení s Dharma Temple La Palma — sdílené protokoly?
+- [ ] Propojení s Dharma Temple La Palma, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka — sdílené protokoly?
 - [ ] Seed library — jaké odrůdy? Výměna se kterými projekty?
 
 ---

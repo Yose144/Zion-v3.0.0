@@ -318,6 +318,8 @@ Je to **dobrovolný protokol soužití** — jako Bitcoin pro peníze, ale pro s
 
 Zlatá republika nezrušila staré státy. Nenabídla jim válku. Nabídla lepší alternativu — a lidé si postupně, jeden po druhém, vybrali.
 
+> **Golden Republic Bohemia** (Česká republika) je první fyzický uzel L5 Pentagramu, který Zlatá republika prototypuje v praxi — governance lab a kruh rozhodnutí ukotvený v české moudrosti: sůl, most, Zlatá bula, Přemysl Oráč, Libuše, Karel IV. Paralelně **Bodhi Lanka** (Srí Lanka) prototypuje **Bhakti protokol** — lásku (Rama-Sita), Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most a Ayurvedu jako živou páteř péče.
+
 *Dobrovolně. Postupně. Jeden Guardian, jedna komunita, jedna síť po druhé.*
 
 To je jak se mění civilizace — ne revolucí, ale nahrazením. Ne zničením starého, ale vybudováním nového, které je zjevně lepší.

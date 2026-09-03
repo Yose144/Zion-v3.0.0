@@ -1,5 +1,5 @@
 # BODHI GAIA — Kapitola 6: Protokoly Země
-## Sdílený kód tří zahrad — Guardian Node, semenná knihovna, Medical Table, mesh, sociokracie, slib péče a cesta od fondu k doloženému dopadu
+## Sdílený kód pěti zahrad — Guardian Node, semenná knihovna, Medical Table, mesh, sociokracie, slib péče a cesta od fondu k doloženému dopadu
 
 > *„Komunita bez protokolu je nálada. Protokol bez komunity je papír. Země potřebuje obojí — a k tomu někoho, kdo nosí vodu."*
 
@@ -7,17 +7,17 @@
 
 ## Příběh
 
-Když se poutníci vrátili z Raiatea, sešli se v Domě Lumi všichni, kdo kdy pracovali v některé z tří zahrad: Ana od moře, Sádhu z hor, Hina od vody, tesař, Hanuman — a k překvapení všech i Sítá, která se objevila u ohně, jako by nikdy neodešla.
+Když se poutníci vrátili z Raiatea, sešli se v Domě Lumi všichni, kdo kdy pracovali v některé z pěti zahrad: Ana od moře, Sádhu z hor, Hina od vody, tesař, Hanuman — a k překvapení všech i Sítá, která se objevila u ohně, jako by nikdy neodešla. Později, když se rozšířila zahrada o kruh v Čechách a o strom v Lanké, přišli i ti, kdo nesli vzduch a éter.
 
-*„Máme tři místa,"* řekla Ana. *„Každé jiné. V Zahradě děláme věci po svém, v chrámu po svém, v laguně po svém. To je správně. Ale když k nám přijde člověk z chrámu, nerozumí naším kruhům. Když od nás někdo odejde k vodě, neví, jak se tam rozhoduje. A když chce strážce z hor pomoct se semínky, nevíme, jak si je vyměnit, aby cestou neuhnila."*
+*„Máme pět míst,"* řekla Ana. *„Každé jiné. V Zahradě děláme věci po svém, v chrámu po svém, v laguně po svém, v kruhu v Čechách po svém, pod stromem v Lanké po svém. To je správně. Ale když k nám přijde člověk z chrámu, nerozumí naším kruhům. Když od nás někdo odejde k vodě, neví, jak se tam rozhoduje. A když chce strážce z hor pomoct se semínky, nevíme, jak si je vyměnit, aby cestou neuhnila."*
 
-Sítá se dívala do ohně. *„Kolik věcí musí být stejných, aby tři zahrady byly jednou zahradou?"*
+Sítá se dívala do ohně. *„Kolik věcí musí být stejných, aby pět zahrad bylo jednou zahradou?"*
 
 Dlouho mlčeli. Pak tesař vzal uhel a začal psát na dubový stůl — ne pravidla, ale **otázky**:
 
 *„Kdo hlídá noc? Kde jsou semínka? Kdo ošetří ránu? Jak se domluvíme, když nejde telefon? Jak se rozhodujeme? Koho pustíme dovnitř? A jak víme, že to, co děláme, opravdu pomáhá — a nejen že se nám to zdá?"*
 
-Sedm otázek. Sedm odpovědí, které musely platit ve všech třech zahradách stejně, i když všechno ostatní mohlo být jinak.
+Sedm otázek. Sedm odpovědí, které musely platit ve všech pěti zahradách stejně, i když všechno ostatní mohlo být jinak.
 
 Hanuman, který celou dobu mlčel, se zvedl a přinesl svá dvě vědra. Postavil je na stůl vedle sedmi otázek.
 
@@ -110,6 +110,13 @@ Komunitní pokladna (DAO řízená)
 
 Te Pīko Ora se zavazuje k 15 % z celkového přebytku (viz [kap. 5](./05-Te-Piko-Ora.md)).
 
+### Specifické protokoly nových uzlů
+
+Původní trinity tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Každý přináší vlastní protokol nad sdílený kód:
+
+- **Golden Republic Bohemia (Vzduch / Srdce)** — **protokol Zlatá republika**: governance lab a kruh rozhodování, kde se česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV) setkává s experimentem sociokratické DAO. Zlatá republika zkouší, jak se rozhoduje, když nikdo není nad druhým — kruh jako protokol, ne jako dekorace.
+- **Bodhi Lanka (Akáša / Éter)** — **Bhakti protokol** a **Ajurvéda Medical Table**: láska (Rama-Sita) jako most, Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.) jako archetyp kořene, Rama Setu most jako paměť spojení. Bhakti protokol přidává k sedmi sdíleným protokolům osmou dimenzi — péči jako lásku, ne jako povinnost. Ajurvéda Medical Table rozšiřuje `TECH/medical-table.md` o kontinuitu péče starou tisíce let.
+
 ### Vstup do komunity: čtyři brány a slib péče
 
 `consciousness-admission-framework.md` popisuje vstup ne jako KYC, ale jako **čtyři brány**: písemné zrcadlo (kdo jsem, proč přicházím), živý kruh (setkání s komunitou), zkušební pobyt, souhlas kruhu. Děti do 18 let vstupují zdarma. Strážci skládají **slib bódhisattvy** (chránit všechny bytosti dřív než sebe) — a v mapě Zohar slib péče: *„I vow to care for this land as I would care for my own body."*
@@ -147,6 +154,8 @@ Te Pīko Ora se zavazuje k 15 % z celkového přebytku (viz [kap. 5](./05-Te-Pik
 | **Zvuk před rozhodnutím** | **MÝTUS / HORIZONT** | `PROTOCOLS/resonance-protocol.md`. | Označeno v `L5_L6_ACTIVATION_PLAN.md` jako ceremoniální / vizionářské; technické háčky post-3.2. |
 | **Tři svědci každého vědra** | **STAVBA** (rámec) | M5 impact packet v `MiseAmenti/04-Exekucni-Charta-3.3.md`; exit gate M5 = jeden pilot celým cyklem. | Žádný impact packet dosud nevznikl; první pilot není vybrán. |
 | **Sedm otázek na dubovém stole** | **MÝTUS** | Rámec vytvořený pro tuto knihu nad sedmi protokoly z `public/V3/L5/docs/README.md`. | — |
+| **Zlatá republika (Bohemia)** | **HORIZONT** | Protokol governance labu — kruh rozhodování, česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV); web `/terranova/golden-republic-bohemia`. | Komunitní dokument, právní entita, pozemek, zakládající kruh. |
+| **Bhakti protokol + Ajurvéda (Lanka)** | **HORIZONT** | Bhakti protokol (péče jako láska), Ajurvéda Medical Table rozšiřující `TECH/medical-table.md`; Sri Maha Bodhi (288 př. n. l.), Rama Setu most; web `/terranova/bodhi-lanka`. | Komunitní dokument, právní entita, partner v Srí Lance, tým. |
 
 ---
 

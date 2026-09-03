@@ -1,5 +1,5 @@
 # BODHI GAIA — Kapitola 2: Tři stromy, jedna zahrada
-## Kořen, kmen a koruna — L5 Trinity jako architektura, ne jako dekorace
+## Kořen, kmen a koruna — L5 Pentagram jako architektura, ne jako dekorace
 
 > *„Strom nevyroste na jednom místě najednou. Nejdřív kořen ve tmě, pak kmen, který vydrží vítr, a teprve nakonec koruna, která nese plody. Kdo chce korunu bez kořene, dostane květinu ve váze."*
 
@@ -35,23 +35,27 @@ Na jaře vyryl tesař do trámu nad dveřmi vedle semene tři malé čárky. Ko�
 
 ## Co to znamená
 
-**L5 Free World není jeden projekt. Je to síť fyzických komunit, které sdílí protokoly, ale liší se místem, rolí a energií.** První tři uzly tvoří **L5 Trinity**:
+**L5 Free World není jeden projekt. Je to síť fyzických komunit, které sdílí protokoly, ale liší se místem, rolí a energií.** Původní trinity tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Pět uzlů tvoří **L5 Pentagram**:
 
 | Uzel | Element | Archetyp stromu | Role v síti | Místo | Energie |
 |---|---|---|---|---|---|
 | **Zahrada Genesis** | Země | **Kořen** | Base Camp — vstupní brána, farma, práce, oceán | Algarve, Portugalsko | Pohyb, surf, ranní světlo |
 | **Dharma Temple** | Oheň | **Kmen** | Svatyně — ticho, praxe, vzdělání, hloubka | La Palma, Kanárské ostrovy | Klid sopky, noc, hvězdy |
 | **Te Pīko Ora** | Voda | **Koruna** | Naplnění — hojnost, integrace, mořská permakultura | Raiatea, Francouzská Polynésie | Tok, věčné poledne |
+| **Golden Republic Bohemia** | Vzduch | **Srdce** | Governance lab — kruh rozhodování, česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV), protokol Zlatá republika | Čechy, Česká republika | Most, most mezi tradicí a experimentem |
+| **Bodhi Lanka** | Akáša / Éter | **Éter** | Láska — Rama-Sita, Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most, Bhakti protokol, Ajurvéda | Srí Lanka | Láska, bhakti, nejstarší kořen |
 
-Proč zrovna tato trojice:
+Proč zrovna těchto pět:
 
 1. **Kořen musí být první a nejblíž.** Zahrada Genesis je v EU, dostupná autem i letadlem, s mírným klimatem a nízkou právní bariérou (portugalská `Associação`). Kdo se má do L5 dostat poprvé, potřebuje místo, kde se dá přijet na týden, spát ve stanu, kopat záhon a odjet. Proto je Genesis *Base Camp*.
 2. **Kmen dává tvar.** Dharma Temple není farma s meditací navíc. Je to místo, kde se **ticho stává protokolem**: 21denní tichý retreat pro každého strážce před převzetím role, žádná elektronika v Dharma Circle, 48 hodin reflexe před každým velkým rozhodnutím. Tvar, který drží, když přijde vítr.
 3. **Koruna přichází naposled — a nesmí být slíbena dřív.** Te Pīko Ora je nejdál, právně nejsložitější (cizinci v Polynésii nemohou přímo vlastnit půdu) a kulturně nejcitlivější (posvátná Raiatea, marae Taputapuātea). Proto je označena jako **Vize / Příprava** a její fáze začínají nejpozději (2027–2028). Kdo by ji prodával jako hotový ráj, lže.
+4. **Srdce spojuje.** Golden Republic Bohemia je governance lab — kruh rozhodování, kde se česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV) setkává s experimentem. Protokol Zlatá republika zkouší, jak se rozhoduje, když nikdo není nad druhým. Vzduch je element, který nese hlas — a hlas je to, co komunita potřebuje, aby neztuchla.
+5. **Éter je nejstarší kořen.** Bodhi Lanka je místo, kde strom, pod kterým se probudil Buddha, stojí dodnes — Sri Maha Bodhi, zasazený 288 př. n. l., nejstarší žijící strom s dokumentovaným původem. Rama-Sita a Rama Setu most jsou paměť lásky jako mostu. Bhakti protokol a Ajurvéda přinášejí, co žádný jiný uzel nemá: kontinuitu péče starou tisíce let. Akáša je element, který drží všechny ostatní — prostor, ve kterém stromy rostou.
 
-### Jeden kořen, tři místa — sdílený kód
+### Jeden kořen, pět míst — sdílený kód
 
-Všechny tři uzly implementují **stejné základní protokoly** (podrobně v [kapitole 6](./06-Protokoly-Zeme.md)): Guardian Node s dělením 90/10, semennou knihovnu, Medical Table, LoRa/Meshtastic mesh, sociokratickou DAO, vědomé přijímání členů a slib péče. To je „jeden kořen": kdo se naučí governance v Genesis, rozumí governance na La Palmě. Kdo si vymění semínka v Portugalsku, může si je vyměnit na Raiatea.
+Všechny pět uzlů implementují **stejné základní protokoly** (podrobně v [kapitole 6](./06-Protokoly-Zeme.md)): Guardian Node s dělením 90/10, semennou knihovnu, Medical Table, LoRa/Meshtastic mesh, sociokratickou DAO, vědomé přijímání členů a slib péče. To je „jeden kořen": kdo se naučí governance v Genesis, rozumí governance na La Palmě. Kdo si vymění semínka v Portugalsku, může si je vyměnit na Raiatea. A kdo se naučí kruh rozhodování v Bohemii, rozumí kruhu v Lankě.
 
 ### Stejné fáze pro každý uzel
 
@@ -73,17 +77,19 @@ V [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../Zohar/01-SEFIROT-VRSTVY.md) odpovíd
 
 ## Kotva pravdy — ověřitelná fakta
 
-> Tři sazenice existují. Žádná z nich není strom.
+> Pět sazenic existuje. Žádná z nich není strom.
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
-| **Tři uzly jedné sítě** | **STAVBA** | Živé komunitní dokumenty `public/V3/L5/docs/COMMUNITIES/{genesis-garden,dharma-temple,te-piko-ora}.md` s právní formou, infrastrukturou, rozpočty, riziky a fázemi; index v `public/V3/L5/docs/README.md`. | Dokumenty datovány 2026-05-21 — vyžadují refresh stavů (fáze, rozpočty, kontakty). |
+| **Pět uzlů jedné sítě** | **STAVBA** | Živé komunitní dokumenty `public/V3/L5/docs/COMMUNITIES/{genesis-garden,dharma-temple,te-piko-ora}.md` s právní formou, infrastrukturou, rozpočty, riziky a fázemi; index v `public/V3/L5/docs/README.md`. | Dokumenty datovány 2026-05-21 — vyžadují refresh stavů (fáze, rozpočty, kontakty); komunitní dokumenty pro Bohemia a Lanka v přípravě. |
 | **Kořen — Zahrada Genesis** | **STAVBA** | Status 🟡 *Active development*; Fáze 0 (tým, scouting, právní rešerše, rozpočet, zkušební záhony 0,1 ha) označena hotová; Fáze 1 aktivní. Web `/terranova/genesis`. | Pozemek (koupě/nájem), registrace entity, GPS, nezávislý důkaz. |
 | **Kmen — Dharma Temple** | **STAVBA / HORIZONT** | Status 🔵 *Preparation*; architektonický koncept (Merkaba, 7 kopulí) a kurikulum retreatů; web `/terranova/dharma-temple` s 3D náhledem a dokumentací. | Pozemek, právní entita, zakládající strážci, financování Fáze 0–1. |
 | **Koruna — Te Pīko Ora** | **HORIZONT** | Status 🔵 *Vision / Preparation*; právní a kulturní analýza, agrolesnický a mořský model; web `/terranova/te-piko-ora`. | Polynéský partner, ostrov, právní forma, tým; Fáze 0 plánována 2026–2027. |
-| **Sdílené fáze 0–4** | **ŽIVÉ** (rámec) | Tabulka fází v `public/V3/L5/docs/README.md` a shodně na webových stránkách všech tří projektů. | Evidence přechodu mezi fázemi pro každý uzel (impact packet). |
+| **Srdce — Golden Republic Bohemia** | **HORIZONT** | Governance lab, protokol Zlatá republika; web `/terranova/golden-republic-bohemia`. | Pozemek, právní entita, zakládající kruh, kurikulum governance retreatů. |
+| **Éter — Bodhi Lanka** | **HORIZONT** | Bhakti protokol, Ajurvéda, Sri Maha Bodhi jako archetyp; web `/terranova/bodhi-lanka`. | Pozemek, právní entita, partner v Srí Lance, tým; Fáze 0 plánována 2027–2028. |
+| **Sdílené fáze 0–4** | **ŽIVÉ** (rámec) | Tabulka fází v `public/V3/L5/docs/README.md` a shodně na webových stránkách všech projektů. | Evidence přechodu mezi fázemi pro každý uzel (impact packet). |
 | **„Jeden kořen" — sdílené protokoly** | **HORIZONT** | Specifikace v `public/V3/L5/docs/{TECH,GOVERNANCE,PROTOCOLS}/`. | Žádný Guardian Node ani mesh v L5 komunitě dnes neběží (instalace plánována Fáze 2: 2027–2028). |
-| **Panel „Nová Země" v OASIS** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` se třemi uzly, statusy `Active / Prep / Planned` a odkazy na web. | Statusy jsou ručně psané konstanty; nemají zdroj v L5 API. |
+| **Panel „Nová Země" v OASIS** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` s uzly, statusy `Active / Prep / Planned` a odkazy na web. | Statusy jsou ručně psané konstanty; nemají zdroj v L5 API. |
 | **Hanuman zalévá tři sazenice** | **MÝTUS** | Archetyp Služebníka Života (Seva) ze Sůl této země, ep. 10. | — |
 | **Yesod ↔ L5** | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`, sekce 9. | — |
 
