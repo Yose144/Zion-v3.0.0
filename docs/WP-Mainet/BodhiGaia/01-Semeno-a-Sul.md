@@ -81,7 +81,7 @@ Konkrétně:
 
 ---
 
-*→ Pokračování: [Kapitola 2 — Tři stromy, jedna zahrada (L5 Trinity)](./02-Tri-Stromy-Jedna-Zahrada.md)*
+*→ Pokračování: [Kapitola 2 — Tři stromy, jedna zahrada (L5 Free World)](./02-Tri-Stromy-Jedna-Zahrada.md)*
 
 ---
 

@@ -1,7 +1,7 @@
 # BODHI GAIA — Kapitola 8: Cesta poutníka — onboarding do L5
 ## Sedm bran do zahrad Nové země — co potřebuješ, co po tobě nikdo nesmí chtít a co ti nikdo nesmí slíbit
 
-> Původní trinity tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Brány platí pro všech pět zahrad stejně; níže jsou uvedeny i nové vstupní body.
+> Původní trojice tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Brány platí pro všech pět zahrad stejně; níže jsou uvedeny i nové vstupní body.
 
 > *„Kdo sem přijde, nemusí věřit v nic. Musí jen umět přiložit ruku k dílu a vydržet vítr."* — Ana, Zahrada Genesis
 

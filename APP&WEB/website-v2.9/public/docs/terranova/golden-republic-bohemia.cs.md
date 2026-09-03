@@ -1,6 +1,6 @@
 # Golden Republic Bohemia — Srdce · Čechy, Česká republika
 
-Čtvrtý uzel L5 Trinity Terra Nova — governance laboratoř Zlaté republiky v zemi, kde se narodila sůl země, kde král byl oráč, a kde císař postavil most mezi nebem a zemí.
+Čtvrtý uzel L5 Free World Terra Nova — governance laboratoř Zlaté republiky v zemi, kde se narodila sůl země, kde král byl oráč, a kde císař postavil most mezi nebem a zemí.
 
 Golden Republic Bohemia je navržena jako **regenerativní governance sanctuary** v srdci Evropy. Jejím srdcem není farma, ani chrám, ani laguna — je jím **kruh**, kde se rozhoduje. Místo, kde se protíná česká moudrost (sůl, most, univerzita, Zlatá bula) a ZION protokol (DAO, Guardian Node, Proof-of-Care).
 

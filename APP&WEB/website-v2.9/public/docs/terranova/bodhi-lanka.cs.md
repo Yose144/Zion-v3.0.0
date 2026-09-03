@@ -1,6 +1,6 @@
 # Bodhi Lanka — Akáša · Srí Lanka
 
-Pátý uzel L5 Trinity Terra Nova — kde nekonečná láska Ramy a Sity potkává nejstarší žijící strom na Zemi a ZION protokol.
+Pátý uzel L5 Free World Terra Nova — kde nekonečná láska Ramy a Sity potkává nejstarší žijící strom na Zemi a ZION protokol.
 
 Bodhi Lanka je navržena jako **probuzená svatyně éteru** v srdci Indického oceánu. Jejím srdcem není farma, ani chrám, ani laguna — je jím **strom**, který žije 2300 let. Místo, kde se protíná srílanská moudrost (Bodhi strom, Rámájana, ajurvéda, Rama Setu) a ZION protokol (DAO, Guardian Node, Proof-of-Care).
 
@@ -102,7 +102,7 @@ Mezi pavilony vedou kryté chodby (evokace chrámových koridorů) a pěší ces
 | **Sri Maha Bodhi** | **ŽIVÉ** (reálný strom, reálné místo) | Sri Maha Bodhi v Anuradhapura — nejstarší žijící zasazený strom na světě, zasazen 288 př. n. l., řízek z původního Bodhi stromu z Buddhagaya. Veřejně ověřitelné, národní památka Srí Lanky, poutní místo. | — |
 | **Rámájana, Rama a Sita** | **MÝTUS / kulturní fakt** | Rámájana (Valmiki) — staroindický epos, veřejně doložený; příběh Ramy a Sity je kulturní dědictví Indie a Srí Lanky. | — |
 | **Rama Setu (Adam's Bridge)** | **MÝTUS + geologický útvar** | Rama Setu — pás pískových břehů a kamenných bloků mezi Indií a Srí Lankou; geologicky ověřitelný útvar, kulturně spojovaný s Rámájanou. NASA satelitní snímky veřejně dostupné. | — |
-| **Bodhi Gaia jako koncept** | **MÝTUS** (narrativní rámec) | `docs/WP-Mainet/BodhiGaia/` — kniha Země, probuzená Země jako narativní rámec pro L5 Trinity. | — |
+| **Bodhi Gaia jako koncept** | **MÝTUS** (narrativní rámec) | `docs/WP-Mainet/BodhiGaia/` — kniha Země, probuzená Země jako narativní rámec pro L5 Free World. | — |
 | **Bodhi Lanka projekt** | **HORIZONT** (dokumentace) | Tento dokument; `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — protokol soužití, horizont 2027–2030. | Fyzický uzel, tým, protokol v praxi, pozemek. |
 | **Guardian Node, DAO, multisig** | **HORIZONT** | Specifikace `public/V3/L5/docs/TECH/zion-node-spec.md`; split 90/10 v komunitních dokumentech. | Žádný L5 node na Srí Lance neběží; instalace Fáze 2 (2028). |
 | **Ayurvedská partnerství** | **HORIZONT** | Ayurvedské instituce Srí Lanky (University of Colombo, Gampaha Wickramarachchi) — veřejně existující instituce. | Žádný kontakt není doložen; MOU není podepsáno. |

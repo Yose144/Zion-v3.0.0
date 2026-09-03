@@ -35,7 +35,7 @@ Na jaře vyryl tesař do trámu nad dveřmi vedle semene tři malé čárky. Ko�
 
 ## Co to znamená
 
-**L5 Free World není jeden projekt. Je to síť fyzických komunit, které sdílí protokoly, ale liší se místem, rolí a energií.** Původní trinity tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Pět uzlů tvoří **L5 Pentagram**:
+**L5 Free World není jeden projekt. Je to síť fyzických komunit, které sdílí protokoly, ale liší se místem, rolí a energií.** Původní trojice tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Pět uzlů tvoří **L5 Pentagram**:
 
 | Uzel | Element | Archetyp stromu | Role v síti | Místo | Energie |
 |---|---|---|---|---|---|

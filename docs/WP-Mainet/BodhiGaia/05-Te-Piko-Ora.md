@@ -41,7 +41,7 @@ Tesař vyřezal do stěžně kánoe kruh s tečkou uprostřed — pupek — a na
 
 ## Co to znamená
 
-**Te Pīko Ora je třetí uzel L5 Trinity — Koruna, naplnění, „plně projevený ZION". Kde Zahrada Genesis je kořen (země, začátek) a Dharma Temple kmen (oheň, cesta), Te Pīko Ora je květ a plod (voda, dovršení).** A zároveň je to uzel, který je nejdál, nejsložitější a nejcitlivější — proto je označen jako **Vize / Příprava** a **ne** jako hotový ráj.
+**Te Pīko Ora je třetí uzel L5 Free World — Koruna, naplnění, „plně projevený ZION". Kde Zahrada Genesis je kořen (země, začátek) a Dharma Temple kmen (oheň, cesta), Te Pīko Ora je květ a plod (voda, dovršení).** A zároveň je to uzel, který je nejdál, nejsložitější a nejcitlivější — proto je označen jako **Vize / Příprava** a **ne** jako hotový ráj.
 
 ### Jméno a kosmologie
 

@@ -39,7 +39,7 @@ Když odcházeli, dostal každý semínko z místní odrůdy a malou dřevěnou 
 
 ## Co to znamená
 
-**Dharma Temple je spirituální a vzdělávací uzel sítě Terra Nova — Svatyně, Kmen L5 Trinity. Místo, kde fyzická soběstačnost a vnitřní praxe rostou ze stejného kořene.** Zatímco Zahrada Genesis je brána (pohyb, práce, oceán), Dharma Temple je hlubší zastavení pro ty, kdo potřebují víc než farmu. Oba projekty jsou uzly téže sítě: jiná energie, stejný záměr.
+**Dharma Temple je spirituální a vzdělávací uzel sítě Terra Nova — Svatyně, Kmen L5 Free World. Místo, kde fyzická soběstačnost a vnitřní praxe rostou ze stejného kořene.** Zatímco Zahrada Genesis je brána (pohyb, práce, oceán), Dharma Temple je hlubší zastavení pro ty, kdo potřebují víc než farmu. Oba projekty jsou uzly téže sítě: jiná energie, stejný záměr.
 
 ### La Palma — La Isla Bonita
 

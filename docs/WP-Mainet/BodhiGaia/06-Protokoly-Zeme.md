@@ -112,7 +112,7 @@ Te Pīko Ora se zavazuje k 15 % z celkového přebytku (viz [kap. 5](./05-Te-Pik
 
 ### Specifické protokoly nových uzlů
 
-Původní trinity tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Každý přináší vlastní protokol nad sdílený kód:
+Původní trojice tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Každý přináší vlastní protokol nad sdílený kód:
 
 - **Golden Republic Bohemia (Vzduch / Srdce)** — **protokol Zlatá republika**: governance lab a kruh rozhodování, kde se česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV) setkává s experimentem sociokratické DAO. Zlatá republika zkouší, jak se rozhoduje, když nikdo není nad druhým — kruh jako protokol, ne jako dekorace.
 - **Bodhi Lanka (Akáša / Éter)** — **Bhakti protokol** a **Ajurvéda Medical Table**: láska (Rama-Sita) jako most, Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.) jako archetyp kořene, Rama Setu most jako paměť spojení. Bhakti protokol přidává k sedmi sdíleným protokolům osmou dimenzi — péči jako lásku, ne jako povinnost. Ajurvéda Medical Table rozšiřuje `TECH/medical-table.md` o kontinuitu péče starou tisíce let.
