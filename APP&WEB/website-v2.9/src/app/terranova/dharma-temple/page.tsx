@@ -288,6 +288,14 @@ export default function DharmaTemplePage() {
                     );
                   })}
                 </div>
+
+                <div className="relative z-10 mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img
+                    src="/images/dharma-temple/hero.png"
+                    alt={cs ? 'Dharma Temple — koncept' : 'Dharma Temple — concept render'}
+                    className="w-full object-cover"
+                  />
+                </div>
               </div>
             </div>
           </div>

@@ -371,6 +371,14 @@ export default function ZahradaGenesisPage() {
                     );
                   })}
                 </div>
+
+                <div className="relative z-10 mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img
+                    src="/images/genesis-garden/hero.png"
+                    alt={cs ? 'Genesis Garden — koncept' : 'Genesis Garden — concept render'}
+                    className="w-full object-cover"
+                  />
+                </div>
               </div>
             </div>
           </div>
