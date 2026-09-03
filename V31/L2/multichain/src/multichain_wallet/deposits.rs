@@ -47,6 +47,7 @@ impl DepositWatcher {
         finality.insert(ChainId::Avalanche, 12);
         finality.insert(ChainId::Zksync, 12);
         finality.insert(ChainId::Linea, 12);
+        finality.insert(ChainId::Solana, 32); // ~32 slots ≈ 13s at 400ms/slot
 
         Self {
             db,
@@ -347,6 +348,7 @@ fn native_asset_for_chain(chain: ChainId, address: &WalletAddress) -> Asset {
         ChainId::Avalanche => "AVAX".to_string(),
         ChainId::Zksync => "ETH".to_string(),
         ChainId::Linea => "ETH".to_string(),
+        ChainId::Solana => "SOL".to_string(),
         _ => address.chain.as_str().to_ascii_uppercase(),
     };
     let name = ticker.clone();
