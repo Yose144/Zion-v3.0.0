@@ -101,7 +101,7 @@ const PROJECTS: ProjectCardData[] = [
   {
     href: '/terranova/te-piko-ora',
     title: 'Te Pīko Ora',
-    location: 'Tahiti · Francouzská Polynésie',
+    location: 'Raiatea · Francouzská Polynésie',
     eyebrow: 'L5 · Paradise Node',
     statusCs: 'Plánováno',
     statusEn: 'Planned',
@@ -116,7 +116,7 @@ const PROJECTS: ProjectCardData[] = [
       { icon: Waves, labelCs: 'Oceán & útesy', labelEn: 'Ocean & reefs' },
     ],
     metrics: [
-      { value: 'Tahiti', labelCs: 'Lokalita', labelEn: 'Location' },
+      { value: 'Raiatea', labelCs: 'Lokalita', labelEn: 'Location' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'PF', labelCs: 'Region', labelEn: 'Region' },
     ],

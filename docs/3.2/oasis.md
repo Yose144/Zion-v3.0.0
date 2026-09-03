@@ -60,17 +60,17 @@ Hlavní komponenty:
 
 | Co | Kde |
 |---|---|
-| Backend crate | [`V31/L4/oasis/`](V31/L4/oasis/) |
-| World data (JSON) | [`V31/L4/oasis/data/worlds.json`](V31/L4/oasis/data/worlds.json) |
-| Backend server | [`V31/L4/oasis/src/server.rs`](V31/L4/oasis/src/server.rs) |
-| WebSocket hub | [`V31/L4/oasis/src/websocket.rs`](V31/L4/oasis/src/websocket.rs) |
-| World registry modul | [`V31/L4/oasis/src/worlds.rs`](V31/L4/oasis/src/worlds.rs) |
-| Frontend | [`APP&WEB/OasisWeb/`](APP&WEB/OasisWeb/) |
-| API client | [`APP&WEB/OasisWeb/src/lib/api.ts`](APP&WEB/OasisWeb/src/lib/api.ts) |
-| Game store | [`APP&WEB/OasisWeb/src/store/gameStore.ts`](APP&WEB/OasisWeb/src/store/gameStore.ts) |
-| 3D scéna | [`APP&WEB/OasisWeb/src/components/OasisScene.tsx`](APP&WEB/OasisWeb/src/components/OasisScene.tsx) |
-| Deník | [`docs/oasis/OASIS_WEB_JOURNAL.md`](../../oasis/OASIS_WEB_JOURNAL.md) |
-| Archiv (world lore) | [`docs/docs2.9/ZION_OASIS/`](docs/docs2.9/ZION_OASIS/) |
+| Backend crate | [`V31/L4/oasis/`](../../V31/L4/oasis/) |
+| World data (JSON) | [`V31/L4/oasis/data/worlds.json`](../../V31/L4/oasis/data/worlds.json) |
+| Backend server | [`V31/L4/oasis/src/server.rs`](../../V31/L4/oasis/src/server.rs) |
+| WebSocket hub | [`V31/L4/oasis/src/websocket.rs`](../../V31/L4/oasis/src/websocket.rs) |
+| World registry modul | [`V31/L4/oasis/src/worlds.rs`](../../V31/L4/oasis/src/worlds.rs) |
+| Frontend | [`APP&WEB/OasisWeb/`](../../APP&WEB/OasisWeb/) |
+| API client | [`APP&WEB/OasisWeb/src/lib/api.ts`](../../APP&WEB/OasisWeb/src/lib/api.ts) |
+| Game store | [`APP&WEB/OasisWeb/src/store/gameStore.ts`](../../APP&WEB/OasisWeb/src/store/gameStore.ts) |
+| 3D scéna | [`APP&WEB/OasisWeb/src/components/OasisScene.tsx`](../../APP&WEB/OasisWeb/src/components/OasisScene.tsx) |
+| Deník | [`docs/oasis/OASIS_WEB_JOURNAL.md`](../oasis/OASIS_WEB_JOURNAL.md) |
+| Archiv (world lore) | [`docs/docs2.9/ZION_OASIS/`](../docs2.9/ZION_OASIS/) |
 
 ---
 
@@ -120,4 +120,4 @@ bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh
 
 ---
 
-*Report vygenerován 2026-08-15. Pro detailní deník viz [`docs/oasis/OASIS_WEB_JOURNAL.md`](../../oasis/OASIS_WEB_JOURNAL.md).*
+*Report vygenerován 2026-08-15. Pro detailní deník viz [`docs/oasis/OASIS_WEB_JOURNAL.md`](../oasis/OASIS_WEB_JOURNAL.md).*

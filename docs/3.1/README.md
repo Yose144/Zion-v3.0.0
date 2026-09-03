@@ -4,7 +4,7 @@
 > **Timeframe:** August 2026
 > **Status:** historical / archived
 >
-> Active planning for **3.2.0 "One Love" (Mainnet Stable)** lives in [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) and the public launch plan [`OneLoveV3.2.md`](../3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md).  
+> Active planning for **3.2.0 "One Love" (Mainnet Stable)** lives in [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) and the public launch plan [`OneLoveV3.2.md`](../3.2/OneLoveV3.2.md).  
 > Live status is tracked in [`StatusV3.md`](../../StatusV3.md) and [`V31/STATUS.md`](../../V31/STATUS.md).
 
 This directory contains the canonical 3.1 planning documents and the archived reports from the V31 Mainnet Alpha hardening phase. These reports were originally written to the repository root and have been moved here to keep the root README, AGENTS, and status files as the primary landing surface.

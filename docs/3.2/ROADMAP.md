@@ -7,7 +7,7 @@
 > **Daily summary:** [`REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md`](./REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md)
 >
 > **Canonical plans:**
-> - Launch & marketing plan: [`OneLoveV3.2.md`](3.2.9-Release-Launch-and-Community/OneLoveV3.2.md)
+> - Launch & marketing plan: [`OneLoveV3.2.md`](OneLoveV3.2.md)
 > - Technical execution plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
 > - Live status: [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
 
@@ -178,4 +178,4 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 ---
 
-*Generated from [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md), [`OneLoveV3.2.md`](3.2.9-Release-Launch-and-Community/OneLoveV3.2.md) and live status in [`StatusV3.md`](../../StatusV3.md).*
+*Generated from [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md), [`OneLoveV3.2.md`](OneLoveV3.2.md) and live status in [`StatusV3.md`](../../StatusV3.md).*

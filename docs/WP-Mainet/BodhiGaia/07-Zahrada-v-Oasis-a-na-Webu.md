@@ -50,7 +50,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 - Kniha TerraNova s kapitolami a edicemi (`TerraNovaBookClient`, `generatedEditions.ts`).
 - **Pioneer Projects L5** — tři karty (`PioneerProjectCards.tsx`): Zahrada Genesis (*Aktivní rozvoj*, EU), Dharma Temple (*V přípravě*, ES, UNESCO), Te Pīko Ora (*Plánováno*, PF).
 - `/terranova/genesis` — charakter místa, fáze 0–4 (0 hotová, 1 aktivní), rysy (glamping, farma, stromy, surf, solar, setkání), integrace ZION (node *planned*, wallet *tbd*, Medical Table *planned*, mesh *planned*, Seed Library *active*, Proof-of-Care DAO *planned*), humanitární závazek 10 % z node odměn.
-- `/terranova/dharma-temple` — La Palma, koncept, rysy, fáze (0 aktivní), **3D koncept** (7 kopulí, Strom života, Merkaba), **architektonický návrh**, **dokumentace** načítaná z `public/docs/terranova/dharma-temple.{cs,en}.md`, otevřené otázky, Discord.
+- `/terranova/dharma-temple` — La Palma, koncept, rysy, fáze (0 aktivní), **3D koncept** (7 kopulí, Strom života, Merkaba), **architektonický návrh**, **dokumentace** načítaná z `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`, otevřené otázky, Discord.
 - `/terranova/te-piko-ora` — Polynésie, Raiatea, rysy (wayfinding škola, mořská permakultura, kulturní obnova, solar, humanitární fond, ochrana dědictví *vision*), **lekce Rapa Nui**, fáze 0–3 (0 aktivní), integrace (node *planned*, DAO *planned*, fond *planned*, ledger dědictví *tbd*, wayfinding NFT *tbd*, mořská semenná knihovna *tbd*).
 
 **Web — L5 Free World (`/l5-free-world`)**
@@ -100,7 +100,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | **Sítá a Hanuman jako avataři** | **ŽIVÉ** (dokument) / **HORIZONT** (mechanika) | `docs/WP-Mainet/SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md` §II — role a questy směřující do L5. | Implementace questů „spojení s L5" v `V31/L4/oasis` (quests.rs) není doložena. |
 | **Sliby bódhisattvy v OASIS** | **ŽIVÉ** (data) | `V31/L4/oasis/data/avatars.json` — Samantabhadra, Avalokiteśvara, Mañjuśrī, *Bodhicitta Spark*. | Vazba na L5 Consciousness Admission = HORIZONT. |
 | **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (`/l5-free-world`: Střední Evropa vs Algarve). |
-| **3D koncept chrámu** | **ŽIVÉ** (web) / **HORIZONT** (stavba) | `DharmaTemplePreviewLazy` na `/terranova/dharma-temple`; dokument `public/docs/terranova/dharma-temple.{cs,en}.md`. | Na webu chybí explicitní štítek „koncept — nestojí". |
+| **3D koncept chrámu** | **ŽIVÉ** (web) / **HORIZONT** (stavba) | `DharmaTemplePreviewLazy` na `/terranova/dharma-temple`; dokument `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`. | Na webu chybí explicitní štítek „koncept — nestojí". |
 | **Rybář se sklíčkem (instant preview)** | **HORIZONT** | Nirvana ep. 9; `MiseAmenti/07` řadí WebGPU / Pixel Streaming / UE 5.7 do HORIZONT. | POC klienta, licenční a výkonová analýza (M4). |
 | **„Quest, který posílá do zahrady"** | **HORIZONT** | Nápad „Silence Quest" v `dharma-temple.md` §15 a „quest rewards for visits" v `genesis-garden.md` §11.2 jako marketingový kanál. | Mechanika, ověření, privacy review, M5 gate. |
 | **Trám se zuby a vědrem** | **MÝTUS** | Obraz této knihy pro pravidlo „každý prvek zrcadla má kotvu pravdy". | — |
