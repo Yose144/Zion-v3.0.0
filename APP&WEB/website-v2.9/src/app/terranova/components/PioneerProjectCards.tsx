@@ -133,9 +133,9 @@ const PROJECTS: ProjectCardData[] = [
     statusCs: 'Plánováno',
     statusEn: 'Planned',
     descriptionCs:
-      'Čtvrtý uzel L5 Trinity — governance laboratoř Zlaté republiky v srdci Evropy. Kruh rozhodování, česká moudrost a ZION protokol.',
+      'Čtvrtý uzel L5 Free World — governance laboratoř Zlaté republiky v srdci Evropy. Kruh rozhodování, česká moudrost a ZION protokol.',
     descriptionEn:
-      'The fourth L5 Trinity node — governance laboratory for the Golden Republic in the heart of Europe. Decision circle, Czech wisdom and ZION protocol.',
+      'The fourth L5 Free World node — governance laboratory for the Golden Republic in the heart of Europe. Decision circle, Czech wisdom and ZION protocol.',
     features: [
       { icon: Crown, labelCs: 'Governance kruh', labelEn: 'Governance circle' },
       { icon: Landmark, labelCs: 'Tři pavilony', labelEn: 'Three pavilions' },
@@ -156,9 +156,9 @@ const PROJECTS: ProjectCardData[] = [
     statusCs: 'Plánováno',
     statusEn: 'Planned',
     descriptionCs:
-      'Pátý uzel L5 Trinity — Akáša, prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.',
+      'Pátý uzel L5 Free World — Akáša, prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.',
     descriptionEn:
-      'The fifth L5 Trinity node — Akasha, the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
+      'The fifth L5 Free World node — Akasha, the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
     features: [
       { icon: TreePine, labelCs: 'Bodhi strom', labelEn: 'Bodhi tree' },
       { icon: Heart, labelCs: 'Bhakti · láska', labelEn: 'Bhakti · love' },

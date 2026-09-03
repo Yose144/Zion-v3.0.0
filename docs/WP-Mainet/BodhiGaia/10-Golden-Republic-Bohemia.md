@@ -51,7 +51,7 @@ Oráč se zasmál. *„To je jediná věta, kterou potřebuje každá ústava."*
 
 ## Co to znamená
 
-**Golden Republic Bohemia je čtvrtý uzel L5 Trinity — Srdce, governance laboratoř. Kde Zahrada Genesis je Kořen (země, začátek), Dharma Temple je Kmen (oheň, cesta) a Te Pīko Ora je Koruna (voda, dovršení), Bohemia je Srdce — místo, kde se rozhoduje.** Ne farma, ne svatyně, ne laguna — kruh. Místo, kde se protéká česká moudrost (sůl, most, univerzita, Zlatá bula) a ZION protokol (DAO, Guardian Node, Proof-of-Care), a kde se z dobrovolného protokolu soužití stane živá praxe.
+**Golden Republic Bohemia je čtvrtý uzel L5 Free World — Srdce, governance laboratoř. Kde Zahrada Genesis je Kořen (země, začátek), Dharma Temple je Kmen (oheň, cesta) a Te Pīko Ora je Koruna (voda, dovršení), Bohemia je Srdce — místo, kde se rozhoduje.** Ne farma, ne svatyně, ne laguna — kruh. Místo, kde se protéká česká moudrost (sůl, most, univerzita, Zlatá bula) a ZION protokol (DAO, Guardian Node, Proof-of-Care), a kde se z dobrovolného protokolu soužití stane živá praxe.
 
 ### Jméno a kosmologie
 
@@ -149,7 +149,7 @@ Srdcem areálu není žádný pavilon. Je jím **centrální kruh rozhodování*
 | **Dharma Temple** (Kmen) | Strážce po 21denním tichu → do kruhu Bohemia; subtropické ovoce, léčivé byliny | Governance protokoly zpět do chrámu; české byliny, lipový med |
 | **Te Pīko Ora** (Koruna) | Wayfinding jako konsensus → kruh Bohemia jako konsensus; polynéské governance mapy | České governance protokoly; semenná výměna (české × tropické odrůdy) |
 
-Všech čtyři uzly tvoří L5 Trinity + Srdce: Kořen (země) → Kmen (oheň) → Koruna (voda) → Srdce (rozhodování). Kruh bez trůnu je to, co drží ostatní tři pohromadě.
+Všech čtyři uzly tvoří L5 Free World + Srdce: Kořen (země) → Kmen (oheň) → Koruna (voda) → Srdce (rozhodování). Kruh bez trůnu je to, co drží ostatní tři pohromadě.
 
 ### Fáze
 

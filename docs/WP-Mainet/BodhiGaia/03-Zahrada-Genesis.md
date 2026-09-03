@@ -33,7 +33,7 @@ Tesař vyřezal do kůlu u brány tři znaky: vlnu, motyku a olivový list. Pod 
 
 ## Co to znamená
 
-**Zahrada Genesis je první fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se protíná organické zemědělství, surf, off-grid technologie a komunitní život. Její role v L5 Trinity je Kořen: Base Camp, vstupní brána, místo, kam se dá přijet poprvé.**
+**Zahrada Genesis je první fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se protíná organické zemědělství, surf, off-grid technologie a komunitní život. Její role v L5 Free World je Kořen: Base Camp, vstupní brána, místo, kam se dá přijet poprvé.**
 
 Záměrem není dokonalost. Záměrem je **reálný provoz otevřený lidem** — farma, která roste spolu s lidmi, ne bez nich.
 

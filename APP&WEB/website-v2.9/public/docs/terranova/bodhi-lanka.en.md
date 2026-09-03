@@ -1,6 +1,6 @@
 # Bodhi Lanka — Akasha · Sri Lanka
 
-The fifth node of the L5 Trinity Terra Nova — where the infinite love of Rama and Sita meets the oldest living tree on Earth and the ZION protocol.
+The fifth node of the L5 Free World Terra Nova — where the infinite love of Rama and Sita meets the oldest living tree on Earth and the ZION protocol.
 
 Bodhi Lanka is designed as an **awakened sanctuary of ether** in the heart of the Indian Ocean. Its heart is not a farm, nor a temple, nor a lagoon — it is a **tree** that has lived for 2,300 years. A place where Sri Lankan wisdom (Bodhi tree, Ramayana, Ayurveda, Rama Setu) meets the ZION protocol (DAO, Guardian Node, Proof-of-Care).
 
@@ -102,7 +102,7 @@ Covered corridors (evoking temple passageways) and walking paths connect the pav
 | **Sri Maha Bodhi** | **LIVE** (real tree, real place) | Sri Maha Bodhi in Anuradhapura — the oldest living planted tree in the world, planted 288 BCE, a cutting from the original Bodhi tree at Buddhagaya. Publicly verifiable, national monument of Sri Lanka, pilgrimage site. | — |
 | **Ramayana, Rama and Sita** | **MYTH / cultural fact** | Ramayana (Valmiki) — ancient Indian epic, publicly documented; the story of Rama and Sita is the cultural heritage of India and Sri Lanka. | — |
 | **Rama Setu (Adam's Bridge)** | **MYTH + geological feature** | Rama Setu — a chain of sandbanks and stone blocks between India and Sri Lanka; geologically verifiable feature, culturally linked to the Ramayana. NASA satellite imagery publicly available. | — |
-| **Bodhi Gaia as a concept** | **MYTH** (narrative frame) | `docs/WP-Mainet/BodhiGaia/` — Book of the Earth, awakened Earth as the narrative frame for the L5 Trinity. | — |
+| **Bodhi Gaia as a concept** | **MYTH** (narrative frame) | `docs/WP-Mainet/BodhiGaia/` — Book of the Earth, awakened Earth as the narrative frame for the L5 Free World. | — |
 | **Bodhi Lanka project** | **HORIZON** (documentation) | This document; `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — protocol of coexistence, horizon 2027–2030. | Physical node, team, protocol in practice, land. |
 | **Guardian Node, DAO, multisig** | **HORIZON** | Specification `public/V3/L5/docs/TECH/zion-node-spec.md`; 90/10 split in community documents. | No L5 node runs in Sri Lanka; installation Phase 2 (2028). |
 | **Ayurvedic partnerships** | **HORIZON** | Sri Lankan Ayurvedic institutions (University of Colombo, Gampaha Wickramarachchi) — publicly existing institutions. | No contact documented; no MOU signed. |

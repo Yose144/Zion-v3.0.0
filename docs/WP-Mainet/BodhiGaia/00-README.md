@@ -39,7 +39,7 @@ Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příb�
 | # | Kapitola | Archetyp / Vrstva | O čem vypráví |
 |---|---|---|---|
 | 1 | [Semeno a sůl](./01-Semeno-a-Sul.md) | **Sítá** · *L1 → L5 coinbase proud* | Jak se sůl smlouvy z prvního večera u ohně stala semenem; 5 % z každého bloku, které nikdo nemusí schválit. |
-| 2 | [Tři stromy, jedna zahrada](./02-Tri-Stromy-Jedna-Zahrada.md) | **Kořen · Kmen · Koruna** · *L5 Trinity* | Země, oheň a voda; tři uzly jedné sítě; Strom života jako architektura, ne dekorace. |
+| 2 | [Tři stromy, jedna zahrada](./02-Tri-Stromy-Jedna-Zahrada.md) | **Kořen · Kmen · Koruna** · *L5 Free World* | Země, oheň a voda; tři uzly jedné sítě; Strom života jako architektura, ne dekorace. |
 | 3 | [Zahrada Genesis](./03-Zahrada-Genesis.md) | **Base Camp** · *Algarve, Portugalsko* | Farma na hranici dvou světů, první strom zasazený jako rituál zakořenění, otevřená brána pro poutníky. |
 | 4 | [Dharma Temple — Nová Bodhi Gaia](./04-Dharma-Temple-Nova-Bodhi-Gaia.md) | **Svatyně** · *La Palma, Kanárské ostrovy* | Merkaba ze dřeva a světla, sedm kopulí, Strom života jako osa, ticho sopky a malí Buddhové. |
 | 5 | [Te Pīko Ora](./05-Te-Piko-Ora.md) | **Koruna** · *Raiatea, Francouzská Polynésie* | Živý pupek, kokosová palma jako Strom života, wayfinding jako konsensus, lekce Rapa Nui. |

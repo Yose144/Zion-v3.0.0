@@ -27,7 +27,7 @@ It is also the strictest book of the series. **Soil does not know marketing.** A
 | # | Chapter (CZ) | Archetype / Layer | Summary |
 |---|---|---|---|
 | 1 | [Seed and Salt](./01-Semeno-a-Sul.md) | **Sītā** · *L1 → L5 coinbase stream* | The salt of the covenant becomes a seed; 5 % of every block that nobody has to approve. |
-| 2 | [Three Trees, One Garden](./02-Tri-Stromy-Jedna-Zahrada.md) | **Root · Trunk · Crown** · *L5 Trinity* | Earth, fire and water; three nodes of one network; shared phases 0–4. |
+| 2 | [Three Trees, One Garden](./02-Tri-Stromy-Jedna-Zahrada.md) | **Root · Trunk · Crown** · *L5 Free World* | Earth, fire and water; three nodes of one network; shared phases 0–4. |
 | 3 | [Genesis Garden](./03-Zahrada-Genesis.md) | **Base Camp** · *Algarve, Portugal* | A farm on the edge of two worlds; the first tree planted as a ritual of rooting; the open gate. |
 | 4 | [Dharma Temple — New Bodhi Gaia](./04-Dharma-Temple-Nova-Bodhi-Gaia.md) | **Sanctuary** · *La Palma, Canary Islands* | A Merkaba of wood and light, seven domes, the Tree of Life as axis, the silence of the volcano. |
 | 5 | [Te Pīko Ora](./05-Te-Piko-Ora.md) | **Crown** · *Raiatea, French Polynesia* | The living navel, the coconut palm as Tree of Life, wayfinding as consensus, the lessons of Rapa Nui. |

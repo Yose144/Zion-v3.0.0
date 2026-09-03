@@ -1,6 +1,6 @@
 # Golden Republic Bohemia — Heart · Bohemia, Czech Republic
 
-The fourth node of the L5 Trinity Terra Nova — a governance laboratory for the Golden Republic in the land where the salt of the earth was born, where the king was a ploughman, and where an emperor built a bridge between heaven and earth.
+The fourth node of the L5 Free World Terra Nova — a governance laboratory for the Golden Republic in the land where the salt of the earth was born, where the king was a ploughman, and where an emperor built a bridge between heaven and earth.
 
 Golden Republic Bohemia is designed as a **regenerative governance sanctuary** in the heart of Europe. Its heart is not a farm, nor a temple, nor a lagoon — it is the **circle**, where decisions are made. A place where Czech wisdom (salt, bridge, university, Golden Bull) meets the ZION protocol (DAO, Guardian Node, Proof-of-Care).
 
