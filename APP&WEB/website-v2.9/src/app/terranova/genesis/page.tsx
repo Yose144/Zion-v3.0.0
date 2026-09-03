@@ -418,6 +418,14 @@ export default function ZahradaGenesisPage() {
               </h2>
             </div>
 
+            <div className="relative z-10 mb-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/genesis-garden/concept-og.png"
+                alt={cs ? 'Návrh Genesis Garden' : 'Genesis Garden concept'}
+                className="w-full object-contain"
+              />
+            </div>
+
             <div className="relative z-10 grid gap-6 md:grid-cols-2">
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-zion-gold">
