@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **⚠️ 2026-09-03 DASHBOARD 403 + UFW/FAIL2BAN IP UPDATE:** `https://dashboard.zionterranova.com` vracel 403 kvůli kombinaci nginx operator IP allowlistu v `/etc/nginx/sites-enabled/zion-nginx.conf` a `ufw` (port 8766 povolen pouze pro známé Devin/operator IP). Přidány IP `109.81.31.171` a `2a00:102b:5005:5db3:7cca:8777:6e6c:4adf` do nginx allow listy, `ufw` pravidel a `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` a `/etc/fail2ban/jail.d/zion-sshd.conf`. Nginx a fail2ban reloadnuty. Dashboard nyní vrací 401 (Basic Auth required) místo 403/Connection refused, tj. je dostupný pro přihlášené operátory. Při přístupu z jiné/dynamické IP je potřeba přidat novou IP do všech tří míst: nginx allow list, `ufw` a fail2ban `ignoreip`.
+>
 > **⚠️ 2026-09-03 DASHBOARD 403 + OPERATOR IP UPDATE (LATEST):** `https://dashboard.zionterranova.com` vracel 403 kvůli nginx operator IP allowlistu v `/etc/nginx/sites-enabled/zion-nginx.conf` (live Edge konfig obsahuje `allow`/`deny all`, repo `V31/deploy/nginx/zion-nginx.conf` ne). Přidána IP `109.81.31.156` do nginx allow listy a do `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` a `/etc/fail2ban/jail.d/zion-sshd.conf`. Nginx reloadnut — dashboard nyní vrací 401 (Basic Auth required) místo 403, tj. je dostupný. Při přístupu z jiné/dynamické IP je potřeba přidat novou IP do allow listy a fail2ban `ignoreip`.
 >
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
