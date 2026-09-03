@@ -47,6 +47,11 @@ const HTLC_LOCK_SIG: &str = "lock(bytes32,bytes32,uint256,address,uint256,addres
 const HTLC_CLAIM_SIG: &str = "claim(bytes32,bytes32)";
 const HTLC_REFUND_SIG: &str = "refund(bytes32)";
 
+// Uniswap V3 function signatures
+const V3_QUOTE_EXACT_INPUT_SINGLE_SIG: &str = "quoteExactInputSingle((address,address,uint256,uint24,uint160))";
+const V3_EXACT_INPUT_SINGLE_SIG: &str = "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))";
+const V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG: &str = "quoteExactInputSingle(address,address,uint256,uint24,uint160)";
+
 /// EVM adapter configured for a specific RPC, optional signer and contracts.
 pub struct EvmAdapter {
     name: String,
@@ -1064,6 +1069,186 @@ impl ChainAdapter for EvmAdapter {
             .and_then(|t| t.into_uint())
             .map(|u| Amount(u.as_u128()))
             .unwrap_or(Amount::ZERO);
+
+        Ok((tx_hash, amount_out))
+    }
+
+    /// Quote a swap through Uniswap V3 QuoterV2.
+    ///
+    /// Calls `quoteExactInputSingle` with the new struct-encoded signature
+    /// (QuoterV2). Falls back to the legacy flat-args signature (QuoterV1).
+    async fn v3_quote(
+        &self,
+        quoter_address: &str,
+        token_in: &Asset,
+        token_out: &Asset,
+        amount_in: Amount,
+        fee: u32,
+    ) -> MultichainResult<Amount> {
+        let quoter = EthAddress::from_str(quoter_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid quoter address: {e}")))?;
+
+        let token_in_addr = match token_in.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
+            None => return Err(MultichainError::Validation(format!(
+                "v3_quote: token_in {} has no contract address",
+                token_in.id
+            ))),
+        };
+
+        let token_out_addr = match token_out.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_out contract: {e}")))?,
+            None => return Err(MultichainError::Validation(format!(
+                "v3_quote: token_out {} has no contract address",
+                token_out.id
+            ))),
+        };
+
+        // Try QuoterV2 struct-encoded signature first.
+        let params = Token::Tuple(vec![
+            Token::Address(token_in_addr),
+            Token::Address(token_out_addr),
+            Token::Uint(U256::from(amount_in.0)),
+            Token::Uint(U256::from(fee)),
+            Token::Uint(U256::zero()), // sqrtPriceLimitX96 = 0 (no limit)
+        ]);
+
+        let mut data = Self::function_selector(V3_QUOTE_EXACT_INPUT_SINGLE_SIG).to_vec();
+        data.extend_from_slice(&encode(&[params]));
+
+        let result = self
+            .provider
+            .call(&TransactionRequest::new().to(quoter).data(data.clone()).into(), None)
+            .await;
+
+        let bytes = match result {
+            Ok(b) => b,
+            Err(_) => {
+                // Fallback: QuoterV1 flat-args signature.
+                let mut legacy_data = Self::function_selector(V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG).to_vec();
+                legacy_data.extend_from_slice(&encode(&[
+                    Token::Address(token_in_addr),
+                    Token::Address(token_out_addr),
+                    Token::Uint(U256::from(amount_in.0)),
+                    Token::Uint(U256::from(fee)),
+                    Token::Uint(U256::zero()),
+                ]));
+                self.provider
+                    .call(&TransactionRequest::new().to(quoter).data(legacy_data).into(), None)
+                    .await
+                    .map_err(|e| MultichainError::Internal(format!("v3_quote: both quoter signatures failed: {e}")))?
+            }
+        };
+
+        // QuoterV2 returns (uint256 amount_out, uint160 sqrtPriceX96_after, uint32 initializedTicksCrossed, uint256 gasEstimate).
+        // QuoterV1 returns (uint256 amount_out, uint160 sqrtPriceX96_after, uint32 initializedTicksCrossed, uint256 gasEstimate).
+        // In both cases the first return value is the output amount.
+        let tokens = decode(&[ParamType::Uint(256), ParamType::Uint(160), ParamType::Uint(32), ParamType::Uint(256)], &bytes)
+            .or_else(|_| decode(&[ParamType::Uint(256)], &bytes))
+            .map_err(|e| MultichainError::Internal(format!("v3_quote: decode failed: {e}")))?;
+
+        let amount_out = tokens
+            .first()
+            .and_then(|t| t.clone().into_uint())
+            .map(|u| Amount(u.as_u128()))
+            .unwrap_or(Amount::ZERO);
+
+        Ok(amount_out)
+    }
+
+    /// Execute a swap through Uniswap V3 SwapRouter02 `exactInputSingle`.
+    ///
+    /// 1. Approve the router to spend `amount_in` of `token_in`.
+    /// 2. Call `exactInputSingle` with the given fee tier.
+    /// 3. Return the tx hash and quoted output amount.
+    async fn v3_swap(
+        &self,
+        router_address: &str,
+        token_in: &Asset,
+        token_out: &Asset,
+        amount_in: Amount,
+        amount_out_min: Amount,
+        recipient: &Address,
+        fee: u32,
+        deadline: u64,
+    ) -> MultichainResult<(Hash, Amount)> {
+        let router = EthAddress::from_str(router_address)
+            .map_err(|e| MultichainError::Validation(format!("invalid V3 router address: {e}")))?;
+
+        let token_in_addr = match token_in.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_in contract: {e}")))?,
+            None => return Err(MultichainError::Validation(format!(
+                "v3_swap: token_in {} has no contract address",
+                token_in.id
+            ))),
+        };
+
+        let token_out_addr = match token_out.id.contract.as_deref() {
+            Some(addr) => EthAddress::from_str(addr)
+                .map_err(|e| MultichainError::Validation(format!("invalid token_out contract: {e}")))?,
+            None => return Err(MultichainError::Validation(format!(
+                "v3_swap: token_out {} has no contract address",
+                token_out.id
+            ))),
+        };
+
+        let recipient_eth = if recipient.encoded.is_empty() {
+            self.wallet
+                .as_ref()
+                .map(|w| EthAddress::from(w.address()))
+                .ok_or_else(|| MultichainError::Unsupported(
+                    "v3_swap: no wallet configured for custodial recipient".to_string(),
+                ))?
+        } else {
+            self.to_eth_address(recipient)?
+        };
+
+        let ts = if deadline == 0 {
+            chrono::Utc::now().timestamp() as u64 + 600
+        } else {
+            deadline
+        };
+
+        // 1. Approve the router to spend the input token.
+        let mut approve_data = Self::function_selector(ERC20_APPROVE_SIG).to_vec();
+        approve_data.extend_from_slice(&encode(&[
+            Token::Address(router),
+            Token::Uint(U256::from(amount_in.0)),
+        ]));
+        self.send_transaction(token_in_addr, approve_data, U256::zero()).await?;
+
+        // 2. Call exactInputSingle on the router.
+        let params = Token::Tuple(vec![
+            Token::Address(token_in_addr),
+            Token::Address(token_out_addr),
+            Token::Uint(U256::from(fee)),
+            Token::Address(recipient_eth),
+            Token::Uint(U256::from(ts)),
+            Token::Uint(U256::from(amount_in.0)),
+            Token::Uint(U256::from(amount_out_min.0)),
+            Token::Uint(U256::zero()), // sqrtPriceLimitX96 = 0 (no limit)
+        ]);
+
+        let mut swap_data = Self::function_selector(V3_EXACT_INPUT_SINGLE_SIG).to_vec();
+        swap_data.extend_from_slice(&encode(&[params]));
+
+        let tx_hash = self.send_transaction(router, swap_data, U256::zero()).await?;
+
+        // 3. Quote the output amount using the quoter (best-effort).
+        let amount_out = if let Some(contracts) = &self.contracts {
+            if let Some(v3) = contracts.v3_dex.get("uniswap") {
+                self.v3_quote(&v3.quoter, token_in, token_out, amount_in, fee)
+                    .await
+                    .unwrap_or(amount_out_min)
+            } else {
+                amount_out_min
+            }
+        } else {
+            amount_out_min
+        };
 
         Ok((tx_hash, amount_out))
     }

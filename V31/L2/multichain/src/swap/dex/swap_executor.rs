@@ -13,9 +13,10 @@
 use std::sync::Arc;
 
 use tokio::sync::{Mutex, RwLock};
-use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
+use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
 use crate::chain::ChainAdapterRegistry;
+use crate::contracts::ZionContracts;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::multichain_wallet::journal::JournalLedger;
@@ -189,58 +190,91 @@ impl SwapExecutor {
 
         // Phase 5: execute the full route hop-by-hop (AMM or 1:1 bridge pools).
         //
-        // If the route is a single hop and the matching pool has an on-chain
-        // `amm_pair` contract, execute the swap on-chain via the AMM and send
-        // the output directly to the recipient (or hot wallet if custodial).
-        // Otherwise, fall back to the in-memory AMM execution.
-        let on_chain_pair = if quote.route.len() == 2 {
-            router.find_pool(&quote.route[0], &quote.route[1])
-        } else {
-            None
-        };
+        // For same-chain EVM swaps, try Uniswap V3 first (exactInputSingle).
+        // If no V3 pool is configured, fall back to the in-memory AMM execution.
+        // The deprecated V2 `amm_swap` path is no longer used.
+        let same_chain_evm = from.id.chain == to.id.chain
+            && from.id.chain.family() == ChainFamily::Evm;
 
-        let on_chain_amm = on_chain_pair
-            .as_ref()
-            .and_then(|p| p.amm_pair.clone())
-            .filter(|_| {
-                // Only use on-chain AMM for same-chain swaps on EVM chains.
-                from.id.chain == to.id.chain
-            });
+        let v3_config = ZionContracts::for_chain(from.id.chain.as_str())
+            .and_then(|c| c.v3_dex.get("uniswap").cloned());
 
-        let amount_out = if let Some(ref pair_addr) = on_chain_amm {
-            // On-chain AMM swap: send input from hot wallet to the pair
-            // contract, swap, and send output to the recipient or back to
-            // the hot wallet (custodial case).
+        let amount_out = if same_chain_evm && v3_config.is_some() && quote.route.len() == 2 {
+            // Uniswap V3 on-chain swap.
             drop(router);
 
+            let v3 = v3_config.as_ref().unwrap();
             let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
                 MultichainError::AdapterNotFound(to.id.chain.as_str().to_string())
             })?;
 
-            // The recipient for on-chain swap output: user-supplied recipient
-            // or the hot wallet itself (custodial — output stays on hot
-            // wallet, internal ledger is credited separately).
             let swap_recipient = match &recipient {
                 Some(r) => r.clone(),
-                None => {
-                    // Custodial: send output back to the hot wallet address.
-                    // We use a zero address placeholder; the adapter will use
-                    // its own wallet address as the recipient.
-                    Address {
-                        chain: to.id.chain,
-                        bytes: Vec::new(),
-                        encoded: String::new(),
-                    }
-                }
+                None => Address {
+                    chain: to.id.chain,
+                    bytes: Vec::new(),
+                    encoded: String::new(),
+                },
             };
 
+            // Select fee tier: 1% (10000) for wZION pairs, 0.3% (3000) otherwise.
+            let fee = if from.id.ticker.contains("wZION") || to.id.ticker.contains("wZION") {
+                10000
+            } else {
+                3000
+            };
+
+            // Quote via V3 quoter for min_amount_out check.
+            let v3_quote_out = adapter
+                .v3_quote(&v3.quoter, from, to, amount, fee)
+                .await
+                .unwrap_or(Amount::ZERO);
+
+            if v3_quote_out.0 > 0 && v3_quote_out < min_amount_out {
+                self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
+                order.status = DexOrderStatus::Failed;
+                self.save_order(&order).await?;
+                return Err(MultichainError::Validation(format!(
+                    "v3 slippage: expected {} but min was {}",
+                    v3_quote_out.0, min_amount_out.0
+                )));
+            }
+
             match adapter
-                .amm_swap(&pair_addr, from, to, amount, &swap_recipient)
+                .v3_swap(
+                    &v3.swap_router,
+                    from,
+                    to,
+                    amount,
+                    min_amount_out,
+                    &swap_recipient,
+                    fee,
+                    0, // deadline = 0 → auto (now + 600s)
+                )
                 .await
             {
                 Ok((tx_hash, out)) => {
                     order.tx_hash = Some(tx_hash.to_hex());
                     out
+                }
+                Err(MultichainError::Unsupported(_)) => {
+                    // V3 not supported by this adapter (e.g. MockAdapter in tests).
+                    // Fall back to in-memory AMM execution.
+                    let mut router = self.router.write().await;
+                    let mut current = amount;
+                    for window in quote.route.windows(2) {
+                        let from_id = &window[0];
+                        let to_id = &window[1];
+                        let hop_from = router.find_asset(from_id).ok_or_else(|| {
+                            MultichainError::Unsupported(format!("unknown hop asset {from_id}"))
+                        })?;
+                        let hop_to = router.find_asset(to_id).ok_or_else(|| {
+                            MultichainError::Unsupported(format!("unknown hop asset {to_id}"))
+                        })?;
+                        current = router.execute(&hop_from, &hop_to, current)?;
+                    }
+                    drop(router);
+                    current
                 }
                 Err(e) => {
                     self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
@@ -250,7 +284,7 @@ impl SwapExecutor {
                 }
             }
         } else {
-            // In-memory AMM execution (custodial).
+            // In-memory AMM execution (custodial, for non-EVM or multi-hop).
             let mut current = amount;
             for window in quote.route.windows(2) {
                 let from_id = &window[0];
@@ -304,10 +338,15 @@ impl SwapExecutor {
                 )));
             }
 
-            // If the swap was already executed on-chain via the AMM, the
+            // If the swap was already executed on-chain via Uniswap V3, the
             // output was sent directly to the recipient — no additional
-            // transfer needed.
-            if order.tx_hash.is_some() && on_chain_amm.is_some() {
+            // transfer needed. We detect this by checking if tx_hash was set
+            // during the V3 swap (not the fallback in-memory path).
+            if order.tx_hash.is_some() && same_chain_evm && v3_config.is_some() && quote.route.len() == 2 {
+                // Verify the tx_hash was set by V3 (not by transfer_token below).
+                // In the V3 path, tx_hash is set before settlement. In the
+                // fallback in-memory path, tx_hash is None at this point.
+                // This check is safe because transfer_token hasn't run yet.
                 order.status = DexOrderStatus::Settled;
             } else {
                 let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
