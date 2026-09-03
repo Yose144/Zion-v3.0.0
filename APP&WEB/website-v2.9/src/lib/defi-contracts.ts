@@ -94,15 +94,13 @@ export const CONTRACTS = {
   PancakeV3SmartRouter:       '0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86',
   // PancakeSwap V3 wZION/USDT pool — deployed 2026-06-30 on Base Mainnet
   PancakeV3PoolUSDT:          '0x46cc98dec9d2a60f2850225c942d6017b82b6f47', // 0.25% fee, NFT #2054747
-  // ZIONDex AMM (Uniswap V2 fork) — deployed 2026-08-31 on Base Mainnet
-  ZIONDexFactory:             '0x9F57998CC5Cb2a53426068c707Beac110966F351',
-  ZIONDexRouter:              '0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662',
-  // tZION/tUSDT pair — created 2026-09-02, 100k tZION + 1k tUSDT liquidity
-  ZIONDexPairTZionTUsdt:      '0x1fE64df93226b8434877D5826aE2DCEda171e39E',
-  // wZION/USDC pair — created 2026-09-02, 1000 wZION + 0.5487 USDC liquidity
-  ZIONDexPairWZionUSDC:       '0x86ac36B7A38DB42a96E2205AFc79415e58904D63',
-  // ZISGate — deployed 2026-09-02 on Base Mainnet (tx 0x0cff45...)
-  ZIONDexZISGate:             '0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5',
+  // ── DEPRECATED (2026-09-03): ZIONDex AMM — use Uniswap V3 instead ──
+  // See L2contracts.md §2 and ZIS_WALLET_PLAN.md
+  ZIONDexFactory:             '0x9F57998CC5Cb2a53426068c707Beac110966F351', // DEPRECATED
+  ZIONDexRouter:              '0x7A2Ef5dDCD6278E2500F34a0cd1F241a6Da76662', // DEPRECATED
+  ZIONDexPairTZionTUsdt:      '0x1fE64df93226b8434877D5826aE2DCEda171e39E', // DEPRECATED
+  ZIONDexPairWZionUSDC:       '0x86ac36B7A38DB42a96E2205AFc79415e58904D63', // DEPRECATED
+  ZIONDexZISGate:             '0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5', // DEPRECATED
 } as const;
 
 /** PancakeSwap V3 config on Base */

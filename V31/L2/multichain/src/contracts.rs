@@ -26,14 +26,21 @@ pub struct V3Dex {
 }
 
 /// Contract addresses for a single EVM chain.
+///
+/// Only `wzion`, `bridge`, and `staking` are actively maintained.
+/// The other fields are deprecated (see L2contracts.md §6).
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ZionContracts {
     pub wzion: String,
     pub bridge: String,
+    /// DEPRECATED — HTLC handled in L2 code, not on-chain contract.
     pub atomic_swap: String,
     pub staking: String,
+    /// DEPRECATED — redundant with staking.
     pub farm: String,
+    /// DEPRECATED — not needed for wallet.
     pub governance: String,
+    /// DEPRECATED — manage via multisig directly.
     pub treasury: String,
     /// ERC-20 token contracts that the wallet should detect as deposits.
     #[serde(default)]
@@ -68,8 +75,8 @@ impl ZionContracts {
                 decimals: 18,
             },
         );
-        // Beta test tokens (Base mainnet, ERC-20 faucets) — tracked so the
-        // deposit watcher credits custodial balances for the ZionDex beta.
+        // DEPRECATED test tokens (Base mainnet, ERC-20 faucets) — tracked so the
+        // deposit watcher credits legacy custodial balances. Use wZION/USDC/USDT/WETH instead.
         tokens.insert(
             "tZION".to_string(),
             TokenInfo {
