@@ -240,8 +240,13 @@ export default function OasisClient() {
 
   const handleStargateEnter = () => {
     // Babylon stargate done → warp to arrival
-    start();
-    playWarp();
+    // Audio is optional for the transition; never block entering the game.
+    try {
+      start();
+      playWarp();
+    } catch (e) {
+      console.warn('[OasisClient] audio init failed on stargate enter:', e);
+    }
     setPhase('arrival');
   };
 

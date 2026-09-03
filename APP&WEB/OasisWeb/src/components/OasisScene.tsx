@@ -459,14 +459,18 @@ export default function OasisScene({
   );
 }
 
-/** Calls onArrived once on mount — replaces CameraRig flight on mobile */
+/** Calls onArrived once on mount — replaces CameraRig flight on mobile.
+    Uses refs so re-renders from a changing parent callback don't cancel or
+    skip the one-shot notification. */
 function MobileArrivalTrigger({ onArrived }: { onArrived?: () => void }) {
+  const onArrivedRef = useRef(onArrived);
+  onArrivedRef.current = onArrived;
   const firedRef = useRef(false);
   useEffect(() => {
     if (firedRef.current) return;
     firedRef.current = true;
-    const t = setTimeout(() => onArrived?.(), 100);
+    const t = setTimeout(() => onArrivedRef.current?.(), 100);
     return () => clearTimeout(t);
-  }, [onArrived]);
+  }, []);
   return null;
 }
