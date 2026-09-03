@@ -127,6 +127,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
     href: '/terranova/genesis',
+    cover: '/images/genesis-garden/concept-og.png',
   },
   {
     name: 'Dharma Temple',
