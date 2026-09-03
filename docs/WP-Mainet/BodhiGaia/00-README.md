@@ -1,5 +1,5 @@
 # BODHI GAIA — Kniha Země
-## Zahrada Genesis · Dharma Temple (Nová Bodhi Gaia) · Te Pīko Ora — příběh a dokumentace vrstvy L5 pro 3.3 „Nirvana"
+## Zahrada Genesis · Dharma Temple (Nová Bodhi Gaia) · Te Pīko Ora · Golden Republic Bohemia · Bodhi Lanka — příběh a dokumentace vrstvy L5 pro 3.3 „Nirvana"
 
 > **Stav:** DRAFT narativně-technická řada (L5 / STAVBA · HORIZONT · MÝTUS), navržená ke kanonizaci podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (třída E — kulturní/veřejná komunikace; části o fondu a governance třída C).
 > **Vytvořeno:** 2026-09-02 pro verzi **3.3 „Nirvana"**.
@@ -16,7 +16,7 @@
 
 > **Bodhi Gaia není jiná planeta. Je to tato Země, o kterou se někdo začal starat jinak.**
 
-Kniha Nirvana vypráví, jak poutníci po potopě přistáli na Nové zemi, postavili Dům Lumi, klenuli mosty WARP a otevřeli prameny Free World. Tato kniha je o tom, **co se stane, když poutníci vezmou do dlaní hlínu**. Je to kniha o třech zahradách na třech skutečných místech starého světa — na atlantickém pobřeží Portugalska, na vulkanickém ostrově La Palma a v laguně Raiatea — a o tom, jak se z abstraktního 5 % L1 coinbase proudu stane studna, strom, kopule a kánoe.
+Kniha Nirvana vypráví, jak poutníci po potopě přistáli na Nové zemi, postavili Dům Lumi, klenuli mosty WARP a otevřeli prameny Free World. Tato kniha je o tom, **co se stane, když poutníci vezmou do dlaní hlínu**. Je to kniha o pěti uzlech na pěti skutečných místech starého světa — na atlantickém pobřeží Portugalska, na vulkanickém ostrově La Palma, v laguně Raiatea, v srdci Čech a na ostrově Srí Lanka — a o tom, jak se z abstraktního 5 % L1 coinbase proudu stane studna, strom, kopule, kánoe, kruh a prostor, který je všechny drží.
 
 Je to zároveň nejpřísnější kniha celé řady. **Půda nezná marketing.** Strom buď roste, nebo ne. Studna buď dává vodu, nebo ne. Proto má každá kapitola delší kotvu pravdy než kdekoli jinde: přesně říká, co z L5 dnes běží na síti, co se staví, co je jen horizont a co je pouze krásný obraz.
 
@@ -32,7 +32,7 @@ Je to zároveň nejpřísnější kniha celé řady. **Půda nezná marketing.**
 
 ---
 
-## Devět kapitol Knihy Země
+## Jedenáct kapitol Knihy Země
 
 Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příběh → hluboký výklad → tabulka ověřitelných faktů se stavovou značkou.**
 
@@ -47,6 +47,8 @@ Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příb�
 | 7 | [Zahrada v OASIS a na webu](./07-Zahrada-v-Oasis-a-na-Webu.md) | **Zrcadlo** · *L4 ↔ L5* | Jak se tři fyzické zahrady odrážejí v OASIS, na webu a v avatarech Sítá a Hanuman — a kde zrcadlo končí. |
 | 8 | [Cesta poutníka — onboarding do L5](./08-Cesta-Poutnika-Onboarding-L5.md) | **Sedm bran** · *Onboarding* | Návštěvník, pracovní pobyt, strážce, vzdálený technik, hlasující, dárce, hráč — co potřebuješ a co po tobě nikdo nesmí chtít. |
 | 9 | [Kotva pravdy a hranice](./09-Kotva-Pravdy-a-Hranice.md) | **Registr** · *Mise Amenti M5* | Úplná evidence tabulka L5, co Bodhi Gaia není, známé rozpory v dokumentaci a další kroky. |
+| 10 | [Golden Republic Bohemia](./10-Golden-Republic-Bohemia.md) | **Srdce** · *Čechy, Česká republika* | Kruh bez trůnu, sůl na stole, most mezi mýtem a protokolem; Říp, Přemysl oráč, Zlatá bula jako proto-DAO, governance laboratoř Zlaté republiky. |
+| 11 | [Bodhi Lanka](./11-Bodhi-Lanka.md) | **Akáša** · *Srí Lanka* | Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi (Sri Maha Bodhi, Anurádhapura, 288 př. n. l.), Ráma Setu jako most mezi ostrovy, akáša jako pátý element — prostor, který drží všechny ostatní; bhakti jako governance. |
 
 ---
 
@@ -63,7 +65,7 @@ Tato kniha nevytváří nový svět. **Sjednocuje to, co už v repozitáři, na 
 | **Web — Terra Nova** | Stránky `/terranova`, `/terranova/genesis`, `/terranova/dharma-temple` (3D koncept, architektonický návrh, dokumentace), `/terranova/te-piko-ora`; karty Pioneer Projects | `APP&WEB/website-v2.9/src/app/terranova/`, `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md` | **ŽIVÉ** (web), obsah = STAVBA/HORIZONT |
 | **Web — L5 Free World** | Stránka `/l5-free-world` s fondovou adresou, protokoly a komunitami | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` | **ŽIVÉ** (web) |
 | **OASIS** | Panel „Nová Země" s třemi L5 projekty; svět `DHARMA_TEMPLE_LA_PALMA` v galaxii; avataři se sliby bódhisattvy | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx`, `src/domain/config/worlds.ts`, `V31/L4/oasis/data/avatars.json` | **ŽIVÉ** (klient), gameplay vazba = HORIZONT |
-| **Příběhové kořeny** | Sítá — Matka Země, Hanuman — Seva; kapitola Komunity a L5 Svoboda; havajská linie KNIHA-LEHUA | `SulZeme/04`, `SulZeme/10`, `docs/TerraNova/03-KOMUNITY.md`, `06-L5-SVOBODA.md`, `docs/TerraNova/hawaii/KNIHA-LEHUA/` | **MÝTUS** (archetypy) |
+| **Příběhové kořeny** | Sítá — Matka Země, Hanuman — Seva, Ráma — dharma/láska; Rámájana a Sri Maha Bodhi; kapitola Komunity a L5 Svoboda; havajská linie KNIHA-LEHUA | `SulZeme/04`, `SulZeme/10`, `docs/TerraNova/03-KOMUNITY.md`, `06-L5-SVOBODA.md`, `docs/TerraNova/hawaii/KNIHA-LEHUA/` | **MÝTUS** (archetypy) |
 | **Governance rámec** | Rozhodnutí G10: L5/L6 jako pasivní read-only trackery + DAO proposal bridge; žádná automatická výplata | `docs/3.2/L5_L6_ACTIVATION_PLAN.md`, `docs/3.2/ROADMAP.md` | **ŽIVÉ** (rozhodnutí) |
 | **Exekuční rámec 3.3** | Workstream **M5** — od fondu k doloženému dopadu; impact packet; exit gate = jeden pilot celým auditovatelným cyklem | `MiseAmenti/04-Exekucni-Charta-3.3.md` | **STAVBA** |
 | **Mystická mapa** | Yesod (Základ) ↔ L5; slib péče *„I vow to care for this land as I would care for my own body"* | `docs/Zohar/01-SEFIROT-VRSTVY.md` | **MÝTUS** |
@@ -78,7 +80,7 @@ Tato kniha nevytváří nový svět. **Sjednocuje to, co už v repozitáři, na 
 | **STAVBA** | Existuje kód, dokument, tým nebo pozemek v jednání; chybí produkční nebo nezávislý důkaz. |
 | **HORIZONT** | Legitimní směr (kopule, kánoe, mesh, portál), který dnes nikdo nemá právo prezentovat jako hotový. |
 | **HYPOTÉZA** | Tvrzení, které může být vyvráceno (např. že model komunity funguje ekonomicky). |
-| **MÝTUS** | Archetyp a obraz — Sítá, Hanuman, Strom života, Merkaba. Inspirace, ne doktrína. |
+| **MÝTUS** | Archetyp a obraz — Sítá, Hanuman, Ráma, Strom života, Merkaba, Sri Maha Bodhi. Inspirace, ne doktrína. |
 
 > **Žádná fotografie studny, stromu ani dítěte není důkazem dopadu bez souhlasu, původu a nezávislého ověření.** ([`MiseAmenti/04`, M5](../MiseAmenti/04-Exekucni-Charta-3.3.md))
 

@@ -46,7 +46,9 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Dharma Temple je připravovaná svatyně na La Palmě. | **STAVBA (dokumentace) / HORIZONT (fyzicky)** | `dharma-temple.md` (🔵 Preparation; Fáze 0 2026 Q2–Q4 🔵); web `/terranova/dharma-temple` (3D koncept, půdorys, dokumentace). | Pozemek, entita, 5 zakládajících strážců, financování 60 000 EUR Fáze 1. |
 | Architektura Dharma Temple: Merkaba, 7 kopulí, Strom života. | **HORIZONT** (koncept) | `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`; `DharmaTemplePreviewLazy`; `/images/dharma-temple/concept-og.png`. | Statika, povolení, rozpočet stavby. |
 | Te Pīko Ora je plánovaný pacifický uzel. | **HORIZONT** | `te-piko-ora.md` (🔵 Vision / Preparation; Fáze 0 2026–2027); web `/terranova/te-piko-ora` (*Plánováno 2027+*). | Polynéský partner, ostrov, entita, tým, rozpočet 80 000 EUR. |
-| Komunity provozují Guardian node. | **NEPLATNÝ NÁROK** (dnes) | Všechny tři dokumenty: instalace Fáze 2 (2027 / 2028 / 2028). | Hardware, konektivita, pokladna. |
+| Golden Republic Bohemia je plánovaný governance uzel v Čechách. | **HORIZONT** | `APP&WEB/website-v2.9/public/docs/terranova/golden-republic-bohemia.cs.md` (koncept, půdorys, fáze); [Kapitola 10](./10-Golden-Republic-Bohemia.md); `docs/TerraNova/06-L5-SVOBODA.md` §6.6 (Zlatá republika, 8 principů). | Pozemek (Říp region / Vysočina), entita (z.s. / z.ú.), tým 3–5 strážců, rozpočet 60 000 EUR, kulturní review. |
+| Bodhi Lanka je plánovaný akáša uzel na Srí Lance. | **HORIZONT** | [Kapitola 11](./11-Bodhi-Lanka.md); Sri Maha Bodhi (Anurádhapura, UNESCO, 288 př. n. l.) — veřejně ověřitelné; Rámájana a Ráma Setu (Adamův most) — veřejně doložené. | Pozemek (Anurádhapura vs hill country vs south coast), entita (srí lanská NGO), tým 3–5 strážců, rozpočet 80 000 EUR, kulturní review Rámájany a buddhistických motivů, partnerství s buddhistickou sáňghou. |
+| Komunity provozují Guardian node. | **NEPLATNÝ NÁROK** (dnes) | Všech pět dokumentů: instalace Fáze 2 (2027 / 2028 / 2028 / 2028 / 2029). | Hardware, konektivita, pokladna. |
 | Komunity mají multisig pokladnu 3-z-5. | **HORIZONT** | Struktura v §5.2 každého dokumentu. | Skutečné peněženky, podepisovatelé, transparentní účet. |
 | Semenná knihovna funguje. | **STAVBA (Genesis) / HORIZONT (síť)** | Genesis: „informal exchange → catalogued"; web *Seed Library — active*. | Katalog, partneři, první výměna mezi uzly (2028). |
 | Medical Table, LoRa mesh, Resonance Protocol jsou nasazeny. | **HORIZONT / MÝTUS** | Specifikace `TECH/`, `PROTOCOLS/`; `L5_L6_ACTIVATION_PLAN.md` §5 bod 13: vizionářské, neimplementované. | — |
@@ -67,9 +69,9 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 
 | Nárok | Stav | Poznámka |
 |---|---|---|
-| Sítá, Hanuman, Sádhu, Ana, Hina, tesař, rybář. | **MÝTUS** | Archetypy (Sůl země) a postavy vytvořené pro tuto knihu. Nikdo netvrdí historickou ani duchovní autoritu. |
+| Sítá, Hanuman, Sádhu, Ana, Hina, tesař, rybář, oráč, žena s lipovou větví, Ráma. | **MÝTUS** | Archetypy (Sůl země, Rámájana) a postavy vytvořené pro tuto knihu. Nikdo netvrdí historickou ani duchovní autoritu. |
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
-| Merkaba, 7 čaker, piko, tatau, wayfinding. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské prvky — souhlas místních komunit. |
+| Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
 
 ---
@@ -112,7 +114,11 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 
 **Te Pīko Ora:** Raiatea vs Tahiti; místní *mā'ohi* partner a způsob oslovení; customary vs státní půda; cyklonové pojištění; zdravotní evakuace; povolení na perly; partnerství s *Fa'afaite*; *tatau* mistr pro symbolické návrhy; havajská linie (KNIHA-LEHUA); expertiza mořské permakultury.
 
-**Síť L5:** DAO UI/UX pro L5 návrhy (J4/J6); výplatní tx flow a guardian multisig; API key middleware; veřejný portál (N5); zdroj pravdy pro statusy komunit; první impact packet; Sybil-resistance pro quadratic voting; kulturní review polynéských a buddhistických prvků.
+**Golden Republic Bohemia:** Říp region vs Vysočina vs střední Čechy (přesná lokalita a výměra); právní forma (z.s. / z.ú. / komunitní nadace / hybrid); partnerství s českými eko-komunitami (permaculture sítě, Transition Towns, ekovesnice); MOU s Charles University a ČZU pro governance výzkum; semenná knihovna (Genobanka Praha, SEMO, lokální šlechtitelé); kulturní review Přemysl/Libuše mytologie (mýtus vs nacionalismus); kulturní review Karel IV / Zlatá bula motivů (inspirace, ne nárok na historickou autoritu); koordinátor Tech Guardian s vazbou na českou developer komunitu; EU funding (LEADER, CAP, Erasmus+, LIFE, Horizon Europe — governance research).
+
+**Bodhi Lanka:** Anurádhapura vs hill country (Kandy / Nuwara Eliya) vs south coast (přesná lokalita a výměra); právní forma (srí lanská NGO / trust / hybrid); partnerství s buddhistickou sáňghou (Sri Maha Bodhi chrám, Anurádhapura); partnerství s ayurvedickou univerzitou (např. University of Kelaniya, Gampaha Wickramarachchi Ayurveda Institute); kulturní review Rámájany (Ráma/Sítá motivy — posvátné pro hinduisty, buddhisty i Srí Lankance) a buddhistických motivů (Sri Maha Bodhi jako živý náboženský objekt, ne turistická atrakce); visa/residency pro zahraniční strážce (Srí Lanka visa policy, dlouhodobé pobytové povolení); monzunové pojištění (Yala + Maha sezóny); elefanti konflikty (zónování, ploty, respekt ke koridorům); politická stabilita (ekonomická krize 2022, monitoring).
+
+**Síť L5:** DAO UI/UX pro L5 návrhy (J4/J6); výplatní tx flow a guardian multisig; API key middleware; veřejný portál (N5); zdroj pravdy pro statusy komunit; první impact packet; Sybil-resistance pro quadratic voting; kulturní review polynéských, buddhistických, hinduistických a českých prvků.
 
 ---
 
@@ -129,7 +135,9 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 | 7 | DAO UI pro L5 návrhy + výplatní tx flow + guardian multisig (bez toho fond nerozdává). | M5 (+ J4/J6) | ❌ |
 | 8 | Definovat šablonu **impact packetu** a vybrat **jeden pilot** (nejblíž: Zahrada Genesis Fáze 1). | M5 exit gate | ❌ |
 | 9 | Kulturní review polynéských (Te Pīko Ora) a buddhistických (Dharma Temple) prvků před veřejným vydáním. | třída E | ❌ |
-| 10 | Kanonizace této řady po review (technika + bezpečnost + fakta + kultura). | `MiseAmenti/08` | 🔄 DRAFT |
+| 10 | Kulturní review českých (Golden Republic Bohemia) prvků — Přemysl/Libuše mytologie a Karel IV / Zlatá bula motivy — před veřejným vydáním. | třída E | ❌ |
+| 11 | Kulturní review srí lanských (Bodhi Lanka) prvků — Rámájana (Ráma/Sítá), Sri Maha Bodhi (živý náboženský objekt), buddhistické a hinduistické motivy — před veřejným vydáním. | třída E | ❌ |
+| 12 | Kanonizace této řady po review (technika + bezpečnost + fakta + kultura). | `MiseAmenti/08` | 🔄 DRAFT |
 
 ---
 
@@ -138,11 +146,11 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 ```markdown
 ## Záměr
 Sjednotit vizi a dokumentaci vrstvy L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia,
-Te Pīko Ora) do jedné narativně-technické řady navazující na Onboarding, Sůl země a Nirvanu,
+Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka) do jedné narativně-technické řady navazující na Onboarding, Sůl země a Nirvanu,
 s úplnou kotvou pravdy pro každý nárok.
 
 ## Stav tvrzení
-Protokol/fond/služba: ŽIVÉ. Komunity: STAVBA (Genesis) / HORIZONT (Dharma Temple, Te Pīko Ora).
+Protokol/fond/služba: ŽIVÉ. Komunity: STAVBA (Genesis) / HORIZONT (Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka).
 Sdílené protokoly: HORIZONT. Příběh a symbolika: MÝTUS.
 
 ## Důkaz
@@ -152,7 +160,7 @@ APP&WEB/OasisWeb (WorldPanel, worlds.ts); docs/3.2/L5_L6_ACTIVATION_PLAN.md;
 MiseAmenti/03, 04 (M5), 05, 07; StatusV3.md.
 
 ## Rizika
-Kulturní (polynéské a buddhistické prvky), finanční framing (dar vs investice),
+Kulturní (polynéské, buddhistické, hinduistické, srí lanské a české prvky), finanční framing (dar vs investice),
 privacy (údaje o strážcích a hostech), nadsazení stavu (koncept vs stavba),
 bezpečnost (API bez klíče, DAO exekuce).
 
@@ -162,7 +170,7 @@ Netvrdí, že komunity fungují, že fond vyplácí, že uzly běží, že OASIS
 
 ## Review
 Technický reviewer (L1/L5 fakta), bezpečnostní reviewer (fond/DAO/API), factual editor,
-kulturní konzultant pro Polynésii a buddhismus, public-copy review před jakýmkoli výňatkem do public/.
+kulturní konzultant pro Polynésii, buddhismus, hinduismus (Rámájana), Srí Lanku a české tradice, public-copy review před jakýmkoli výňatkem do public/.
 
 ## Rollback / oprava
 Řada zůstává DRAFT do dokončení review; každý nárok lze snížit změnou štítku bez mazání textu;

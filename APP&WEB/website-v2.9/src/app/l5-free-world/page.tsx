@@ -146,6 +146,28 @@ const getCommunities = (cs: boolean) => [
     tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
     href: '/terranova/te-piko-ora',
   },
+  {
+    name: 'Golden Republic Bohemia',
+    location: cs ? 'Čechy, Česká republika' : 'Bohemia, Czech Republic',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.'
+      : 'Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.',
+    tags: ['Governance', 'DAO Circle', 'Golden Republic'],
+    href: '/terranova/golden-republic-bohemia',
+    cover: '/images/golden-republic-bohemia/hero.png',
+  },
+  {
+    name: 'Bodhi Lanka',
+    location: cs ? 'Srí Lanka' : 'Sri Lanka',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.'
+      : 'Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
+    tags: ['Bhakti', 'Ayurveda', 'Bodhi Tree'],
+    href: '/terranova/bodhi-lanka',
+    cover: '/images/bodhi-lanka/hero.png',
+  },
 ];
 
 const getProtocols = (cs: boolean) => [
