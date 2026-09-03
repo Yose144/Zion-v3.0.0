@@ -17,7 +17,7 @@
 
 ## Vize a záměr
 
-Projekt Venus je třetím uzlem Terra Nova sítě — komplementárním doplňkem Zahrady Genesis (Atlantic Base Camp) a Dharma Temple (Sanctuary). Zatímco Genesis je o pohybu, práci a oceánu, a Dharma Temple o tichu a duchovní praxi, Venus je o **obnově, kráse, ženském principu a regeneraci**.
+Projekt Venus je dalším uzlem Terra Nova sítě — komplementárním doplňkem Zahrady Genesis (Atlantic Base Camp), Dharma Temple (Sanctuary), Te Pīko Ora (Paradise), Golden Republic Bohemia (Governance lab) a Bodhi Lanka (Bhakti). Zatímco Genesis je o pohybu, práci a oceánu, Dharma Temple o tichu a duchovní praxi, Venus je o **obnově, kráse, ženském principu a regeneraci**.
 
 Venus není "ženský projekt" v exkluzivním smyslu — je to prostor, kde **ženský princip** (péče, intuice, tvořivost, vztahovost, cykličnost) je architektonickým záměrem. Přijímá všechny, kteří chtějí tyto kvality prohloubit.
 
@@ -187,21 +187,21 @@ Venus má nejdůslednější principy přírodní architektury ze všech L5 uzl�
 | 0 — Zárodek | Identifikace lokality, zakládající Guardians, právní základ | 🔵 Nyní |
 | 1 — Kořeny | Základní infrastruktura, 3 glamping stany, bylinkový zárodek | 🔵 Plánováno |
 | 2 — Komunita | Stálé bydlení, kreativní dílna, retreat programy, ZION node | 🔵 Plánováno |
-| 3 — Síť | Propojení s Genesis a Dharma Temple — sdílené protokoly | 🔵 Plánováno |
+| 3 — Síť | Propojení s Genesis, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka — sdílené protokoly | 🔵 Plánováno |
 | 4 — Výzařování | Vzdělávací centrum, rodinné retreaty, mezinárodní hosté | 🔵 Vize |
 
 ---
 
 ## Propojení s ostatními L5 uzly
 
-| Dimenze | Zahrada Genesis | Dharma Temple | Projekt Venus |
-|---------|----------------|---------------|---------------|
-| **Energie místa** | Atlantický vítr & oceán | Vulkanické ticho & hory | Ženský princip, voda, byliny |
-| **Primární role** | Base Camp | Sanctuary | Obnova & Kreativita |
-| **Klíčová aktivita** | Farma, surf, community | Meditace, dharma | Byliny, tvořivost, ženský kruh |
-| **Stavební materiál** | Adobe, rammed earth | Lávová cihla, kámen | Cob, přírodní omítky |
-| **Cílová skupina** | Farmáři, surfeři, nomádi | Meditující, studenti dharmy | Ženy, rodiny, tvůrci, léčitelé |
-| **Sdílené protokoly** | ZION node, seed library, Medical Table, LoRa | ← stejné | ← stejné |
+| Dimenze | Zahrada Genesis | Dharma Temple | Te Pīko Ora | Golden Republic Bohemia | Bodhi Lanka | Projekt Venus |
+|---------|----------------|---------------|-------------|------------------------|-------------|---------------|
+| **Energie místa** | Atlantický vítr & oceán | Vulkanické ticho & hory | Laguna, oceán, hojnost | Česká moudrost, most, sůl | Láska, Bodhi strom, Ayurveda | Ženský princip, voda, byliny |
+| **Primární role** | Base Camp | Sanctuary | Paradise | Governance lab | Bhakti | Obnova & Kreativita |
+| **Klíčová aktivita** | Farma, surf, community | Meditace, dharma | Mořská permakultura, wayfinding | Kruh rozhodnutí, Zlatá republika | Sri Maha Bodhi, Rama Setu, Ayurveda | Byliny, tvořivost, ženský kruh |
+| **Stavební materiál** | Adobe, rammed earth | Lávová cihla, kámen | Bambus, fare pote'e | Kámen, dřevo, cob | Cob, bambus | Cob, přírodní omítky |
+| **Cílová skupina** | Farmáři, surfeři, nomádi | Meditující, studenti dharmy | Navigátoři, mořští farmáři | Guardians, governance praktici | Léčitelé, bhakta, ayurvédi | Ženy, rodiny, tvůrci, léčitelé |
+| **Sdílené protokoly** | ZION node, seed library, Medical Table, LoRa | ← stejné | ← stejné | ← stejné | ← stejné | ← stejné |
 
 ---
 
@@ -211,7 +211,7 @@ Venus má nejdůslednější principy přírodní architektury ze všech L5 uzl�
 - [ ] Zakládající ženský core team — kdo jsou průkopnice?
 - [ ] Právní forma — spolky, asociace, nebo kooperativa?
 - [ ] Financování fáze 0–1 — ZION fond? Crowdfunding? Partnerství s retreatovými platformami?
-- [ ] Propojení se Zahradou Genesis a Dharma Temple — sdílené seed library protokoly
+- [ ] Propojení se Zahradou Genesis, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia a Bodhi Lanka — sdílené seed library protokoly
 - [ ] Cob stavba — je potřeba stavební povolení pro organické stavby v cílové zemi?
 - [ ] Rodinné programy — věkové limity? Bezpečnostní protokoly pro děti?
 

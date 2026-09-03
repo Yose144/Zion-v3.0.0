@@ -17,9 +17,9 @@
 
 ## Vize a záměr
 
-Te Pīko Ora je **třetí uzel** sítě Terra Nova L5 — **koruna**, **plnost**, **plně manifestovaný ráj**.
+Te Pīko Ora je **třetí uzel** L5 Pentagramu sítě Terra Nova — **koruna**, **plnost**, **plně manifestovaný ráj**.
 
-Kde Zahrada Genesis je **kořen** (země, začátek, semeno) a Dharma Temple je **kmen** (oheň, praxe, cesta), Te Pīko Ora je **květ** (voda, dokončení, živý strom).
+Kde Zahrada Genesis je **kořen** (země, začátek, semeno), Dharma Temple je **kmen** (oheň, praxe, cesta), Golden Republic Bohemia je **srdce** (vzduch, governance) a Bodhi Lanka je **éter** (akasha, láska), Te Pīko Ora je **květ** (voda, dokončení, živý strom).
 
 > *„Piko" (pupení šňůra, střed) je v polynéské tradici posvátný. Když se narodí dítě, piko se pohřbívá a na něj se sází strom. Strom pak roste jako živý most mezi člověkem, jeho předky a zemí. Te Pīko Ora je toto místo — kde ZION dosáhne plného projevu.*
 
@@ -33,14 +33,14 @@ Záměr je vytvořit **fyzický důkaz, že ráj není iluze** — místo, kde:
 
 ## Archetype: Koruna
 
-| Dimense | Zahrada Genesis | Dharma Temple | **Te Pīko Ora** |
-|---------|----------------|---------------|-----------------|
-| **Prvek** | Země | Oheň | **Voda** |
-| **Fáze** | Kořen | Kmen | **Koruna / Květ** |
-| **Role** | Base Camp | Sanctuary | **Paradise / Dokončení** |
-| **Energie** | Pohyb, práce, surf | Ticho, meditace, sopka | **Proud, hojnost, integrace** |
-| **Strom** | Dub / oliva | Ceiba / dračí strom | **Kokosová palma (*nī*)** |
-| **Čas** | Ráno | Noc | **Věčné poledne** |
+| Dimense | Zahrada Genesis | Dharma Temple | **Te Pīko Ora** | Golden Republic Bohemia | Bodhi Lanka |
+|---------|----------------|---------------|-----------------|------------------------|-------------|
+| **Prvek** | Země | Oheň | **Voda** | Vzduch | Akasha |
+| **Fáze** | Kořen | Kmen | **Koruna / Květ** | Srdce | Éter |
+| **Role** | Base Camp | Sanctuary | **Paradise / Dokončení** | Governance lab | Bhakti |
+| **Energie** | Pohyb, práce, surf | Ticho, meditace, sopka | **Proud, hojnost, integrace** | Rozhodování, moudrost | Láska, propojení |
+| **Strom** | Dub / oliva | Ceiba / dračí strom | **Kokosová palma (*nī*)** | Lípa | Sri Maha Bodhi |
+| **Čas** | Ráno | Noc | **Věčné poledne** | Soumrak | Úsvit |
 
 ---
 
@@ -177,6 +177,8 @@ Polynéská navigace (*fa'atere*) — plavba tisíce km bez přístrojů:
 | **Zahrada Genesis** | Základní tábor — země, začátek, semeno. Společný ZION kód. |
 | **Dharma Temple** | Sanctuary — oheň, praxe, cesta. Společné protokoly. |
 | **Te Pīko Ora** | Koruna — voda, plnost, integrace. Marine permakultura, wayfinding. |
+| **Golden Republic Bohemia** | Srdce — vzduch, governance lab, Zlatá republika protokol. |
+| **Bodhi Lanka** | Éter — akasha, Bhakti protokol, láska, Sri Maha Bodhi. |
 | **KNIHA-LEHUA (Hawaii)** | Pacifická linie — sdílené protokoly, výměna osiva, společná navigace. |
 
 ---

@@ -239,6 +239,8 @@ It is a **voluntary protocol for coexistence** — like Bitcoin for money, but f
 
 The Golden Republic did not abolish old states. It did not offer them war. It offered a better alternative — and people gradually chose it.
 
+> **Golden Republic Bohemia** (Czech Republic) is the first physical node prototyping the Golden Republic protocol in practice — a governance lab and circle of decision rooted in Czech wisdom: salt, bridge, Golden Bull, Přemysl the Ploughman, Libuše, Charles IV. In parallel, **Bodhi Lanka** (Sri Lanka) prototypes the **Bhakti protocol** — love (Rama-Sita), Sri Maha Bodhi (the oldest living tree, 288 BCE), Rama Setu bridge, and Ayurveda as a living backbone of care.
+
 *Voluntarily. Gradually. One Guardian, one community, one network at a time.*
 
 That is how civilization changes — not by revolution, but by replacement. Not by destroying the old, but by building the new.

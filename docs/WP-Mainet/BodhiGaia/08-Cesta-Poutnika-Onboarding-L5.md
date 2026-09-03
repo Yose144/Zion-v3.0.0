@@ -1,6 +1,8 @@
 # BODHI GAIA — Kapitola 8: Cesta poutníka — onboarding do L5
 ## Sedm bran do zahrad Nové země — co potřebuješ, co po tobě nikdo nesmí chtít a co ti nikdo nesmí slíbit
 
+> Původní trinity tří stromů se rozšířila na pentagram pěti uzlů — přibylo Srdce (Bohemia) a Akáša (Lanka). Brány platí pro všech pět zahrad stejně; níže jsou uvedeny i nové vstupní body.
+
 > *„Kdo sem přijde, nemusí věřit v nic. Musí jen umět přiložit ruku k dílu a vydržet vítr."* — Ana, Zahrada Genesis
 
 ---
@@ -56,9 +58,9 @@ Muž stál dlouho před deskou. Pak ukázal na první dveře. *„Začnu tady."*
 | # | Brána | První bezpečný krok | Co je dostupné dnes | Co nesmí být vyžadováno |
 |---|---|---|---|---|
 | 1 | **Pozorovatel** | Přečíst tuto knihu a komunitní dokumenty; ověřit fondovou adresu v exploreru; porovnat web s chainem; nahlásit rozpor. | **ŽIVÉ** — explorer, adresa fondu, `public/V3/L5/docs/`, web `/l5-free-world`, `/terranova/*`. | Registrace, nákup, odevzdání identity, víra. |
-| 2 | **Host / návštěvník** | Přijet do Zahrady Genesis na pobyt (glamping) nebo — až bude — na retreat do Dharma Temple. | **STAVBA** — Genesis Fáze 1: první platící hosté cíl Q3 2026; ceník a kanály v `genesis-garden.md` §11; Dharma Temple první retreat Q4 2027 (HORIZONT); Te Pīko Ora Q4 2028 (HORIZONT). | Členství, token, závazek. Jasná cena, pravidla, pojištění a rizika. |
+| 2 | **Host / návštěvník** | Přijet do Zahrady Genesis na pobyt (glamping) nebo — až bude — na retreat do Dharma Temple, na governance retreat do Golden Republic Bohemia, nebo na Bhakti/meditační retreat do Bodhi Lanka. | **STAVBA** — Genesis Fáze 1: první platící hosté cíl Q3 2026; ceník a kanály v `genesis-garden.md` §11; Dharma Temple první retreat Q4 2027 (HORIZONT); Te Pīko Ora Q4 2028 (HORIZONT); Golden Republic Bohemia governance retreat (HORIZONT); Bodhi Lanka Bhakti/meditation retreat (HORIZONT). | Členství, token, závazek. Jasná cena, pravidla, pojištění a rizika. |
 | 3 | **Pracovní výměna** | 25 h/týden (Genesis) nebo 30 h/týden (Dharma Temple) → ubytování + jídlo (+ program). | **STAVBA** — pravidla a poměry (2 pracovní : 4 platící; 3 : 6) v komunitních dokumentech; kanály WWOOF / Workaway v plánu. | Neplacená práce bez jasného poměru, bez volna, bez odchodu kdykoliv. |
-| 4 | **Strážce (Guardian) na místě** | Čtyři brány vstupu: písemné zrcadlo → živý kruh → zkušební pobyt → souhlas kruhu. Genesis 6 měsíců on-site; Dharma Temple 12 měsíců + 21denní tichý retreat + 30denní zkušební retreat. | **STAVBA** (Genesis: tým 3 strážců) / **HORIZONT** (Dharma Temple: hledá se 5 zakládajících; Te Pīko Ora: 5 vč. polynéského stařešiny). | Zkouška z víry, poplatek za vstup, přístup ke klíčům před souhlasem kruhu. |
+| 4 | **Strážce (Guardian) na místě** | Čtyři brány vstupu: písemné zrcadlo → živý kruh → zkušební pobyt → souhlas kruhu. Genesis 6 měsíců on-site; Dharma Temple 12 měsíců + 21denní tichý retreat + 30denní zkušební retreat; Golden Republic Bohemia governance retreat onboarding (HORIZONT); Bodhi Lanka Bhakti/meditation retreat onboarding (HORIZONT). | **STAVBA** (Genesis: tým 3 strážců) / **HORIZONT** (Dharma Temple: hledá se 5 zakládajících; Te Pīko Ora: 5 vč. polynéského stařešiny; Bohemia: zakládající kruh; Lanka: partner v Srí Lance). | Zkouška z víry, poplatek za vstup, přístup ke klíčům před souhlasem kruhu. |
 | 5 | **Vzdálený strážce (Tech / Finance)** | Pomoc s uzlem, meshem, solarem, rozpočtem, granty, dokumentací; čtvrtletní návštěvy / měsíční hovory. | **STAVBA** — role definované; **Guardian node dnes v žádné komunitě neběží** (Fáze 2). Reálná pomoc teď: dokumentace, grantové žádosti (LEADER, Erasmus+, LIFE), web/OASIS opravy. | Přístup k produkčním klíčům bez potřeby; tvrzení, že „provozuje node komunity". |
 | 6 | **Hlasující / DAO** | Číst L5 návrhy; až bude DAO UI, hlasovat o alokaci fondu. | **HORIZONT** — fond L5 dnes nerozdává (G10); DAO UI chybí; exekuce je summary-only. | Kupování hlasů; hlasování bez čtení impact packetu. |
 | 7 | **Dárce / podporovatel** | Peníze, semínka, nářadí, čas — komunitě přímo (Associação / Asociación / Association), ne „protokolu". | **STAVBA** — právní entity komunit jsou v přípravě; do jejich registrace je dar možný jen neformálně a bez daňové uznatelnosti. | **Investiční framing** — žádný podíl, výnos, tokenizovaná půda, „poslední šance". |
@@ -69,14 +71,14 @@ Muž stál dlouho před deskou. Pak ukázal na první dveře. *„Začnu tady."*
 - **KYC, kádrový posudek, geografickou blokaci.** Vstup do komunity je konsent kruhu, ne identifikační dokument. (Právní entity samozřejmě dodržují místní zákony — to je jiná věc než blockchainová identita.)
 - **Nákup ZIONu.** Žádná brána nevyžaduje držení tokenu. Guardian node je dobrovolný projekt komunity, ne podmínka členství.
 - **Víru.** Bodhi, Dharma, piko, Merkaba jsou obrazy. Zkouška je z uklizené kuchyně, ne z doktríny.
-- **Mlčení o rizicích.** Požár v Algarve, sopka na La Palmě, cyklon na Raiatea, evakuace, pojištění, volatilita — všechno je v komunitních dokumentech a musí být i v každém rezervačním toku.
+- **Mlčení o rizicích.** Požár v Algarve, sopka na La Palmě, cyklon na Raiatea, povodeň v Čechách, monzun na Srí Lance, evakuace, pojištění, volatilita — všechno je v komunitních dokumentech a musí být i v každém rezervačním toku.
 
 ### Co ti nikdo v L5 nesmí slíbit
 
 - **Výnos.** Nic v této knize není investice.
 - **Dopad.** Dokud projekt nemá impact packet, nikdo nesmí říct „tvůj pobyt / dar zaplatil studnu".
 - **Ráj.** Viz Te Pīko Ora: skutečnost je lepší než ráj — a skutečnost zatím nestojí.
-- **Hotové dveře.** Genesis: stan a záhon (Fáze 1). Dharma Temple: koncept a kurikulum (Fáze 0). Te Pīko Ora: mapa a otázky (Fáze 0 od 2026–2027).
+- **Hotové dveře.** Genesis: stan a záhon (Fáze 1). Dharma Temple: koncept a kurikulum (Fáze 0). Te Pīko Ora: mapa a otázky (Fáze 0 od 2026–2027). Golden Republic Bohemia: protokol Zlatá republika a hledání kruhu (Fáze 0). Bodhi Lanka: Bhakti protokol a hledání partnera (Fáze 0 od 2027–2028).
 
 ### Custody — kdo drží co
 
@@ -113,10 +115,10 @@ Tato kapitola nenahrazuje [`ZION_ONBOARDING_PUBLIC_CZ.md`](../ZION_ONBOARDING_PU
 | **Dveře 2 — pobyt ve stanu** | **STAVBA** | Ubytování a ceník Fáze 1 v `genesis-garden.md` §3.4 / §11.3; web `/terranova/genesis` (glamping *open*). | Rezervační tok, potvrzené termíny, pojištění zveřejněné hostům. |
 | **Dveře 3 — pracovní výměna 25 h** | **STAVBA** | `genesis-garden.md` §11.3 (25 h/týden, max 2 : 4); `dharma-temple.md` §12.3 (30 h/týden, max 3 : 6). | Zveřejněná pravidla CZ/EN, smlouva o výměně. |
 | **Dveře 4 — čtyři brány strážce, 21 dní ticha** | **HORIZONT** (praxe) | `GOVERNANCE/consciousness-admission-framework.md`; `dharma-temple.md` §6.3 (21denní retreat), §6.2 (30denní zkušební); `genesis-garden.md` §6.3 (6 měsíců). | Žádný strážce dosud neprošel formálními čtyřmi branami; Dharma Temple tým neexistuje. |
-| **Dveře 5 — uzel, který ještě nestojí** | **HORIZONT** | Role Tech / Finance Guardian ve všech třech dokumentech; instalace node Fáze 2 (2027 / 2028 / 2028). | Hardware, konektivita, pokladna. |
+| **Dveře 5 — uzel, který ještě nestojí** | **HORIZONT** | Role Tech / Finance Guardian ve všech komunitních dokumentech; instalace node Fáze 2 (2027 / 2028 / 2028). | Hardware, konektivita, pokladna. |
 | **Dveře 6 — hlasování o fondu** | **HORIZONT** | G10 (`docs/3.2/L5_L6_ACTIVATION_PLAN.md`): žádná výplata; `V31/L2/dao` API bez UI. | DAO UI (J4/J6), první L5 návrh, impact packet. |
-| **Dveře 7 — dar bez investice** | **STAVBA** | Právní entity: Genesis `Associação` 🟡 v přípravě; Dharma Temple `Asociación` 🔵 rešerše; Te Pīko Ora `Association Loi 1901` 🔵. | Registrace, transparentní účet, daňová uznatelnost. |
-| **Zrcadlo (OASIS)** | **ŽIVÉ** | OASIS Web, panel „Nová Země", svět Dharma Temple, avataři Sítá / Hanuman (Sůl země ep. 10). | Vazba na fyzický svět (kap. 7). |
+| **Dveře 7 — dar bez investice** | **STAVBA** | Právní entity: Genesis `Associação` 🟡 v přípravě; Dharma Temple `Asociación` 🔵 rešerše; Te Pīko Ora `Association Loi 1901` 🔵; Golden Republic Bohemia `z. ú.` / občanské sdružení 🔵 v přípravě; Bodhi Lanka právní forma 🔵 rešerše. | Registrace, transparentní účet, daňová uznatelnost. |
+| **Zrcadlo (OASIS)** | **ŽIVÉ** | OASIS Web, panel „Nová Země", svět Dharma Temple, svět Golden Republic Bohemia, svět Bodhi Lanka, avataři Sítá / Hanuman (Sůl země ep. 10). | Vazba na fyzický svět (kap. 7). |
 | **„Nic z toho není investice"** | **ŽIVÉ** (zásada) | `MiseAmenti/08` §5 (žádná finanční manipulace), `public/docs/TOKEN_DISCLOSURE.md`, web `/roadmap` („mined, not sold"). | — |
 | **Deska se sedmi dveřmi, mladý muž s telefonem** | **MÝTUS** | Obraz této knihy nad cestami z `MiseAmenti/02` §3 (Pozorovatel / Hráč / Stavitel / Strážce). | — |
 

@@ -11,15 +11,19 @@ Každý projekt je "živý dokument" — průběžně se zpřesňuje s tím, jak
 | **Zahrada Genesis** | Algarve, Portugalsko | 🟡 Aktivní rozvoj | [ZAHRADA-GENESIS-PORTUGAL.md](ZAHRADA-GENESIS-PORTUGAL.md) |
 | **Dharma Temple** | La Palma, Kanárské ostrovy | 🔵 Příprava | [DHARMA-TEMPLE-LA-PALMA.md](DHARMA-TEMPLE-LA-PALMA.md) |
 | **Te Pīko Ora** | Raiatea / Tahiti, Francouzská Polynésie | 🔵 Vize / Příprava | [TE-PIKO-ORA.md](TE-PIKO-ORA.md) |
+| **Golden Republic Bohemia** | Čechy, Česká republika | 🔵 Vize / Příprava | [GOLDEN-REPUBLIC-BOHEMIA.md](GOLDEN-REPUBLIC-BOHEMIA.md) |
+| **Bodhi Lanka** | Srí Lanka | 🔵 Vize / Příprava | [BODHI-LANKA.md](BODHI-LANKA.md) |
 | **Projekt Venus** | TBD | 🔵 Konceptuální fáze | [PROJEKT-VENUS.md](PROJEKT-VENUS.md) |
 
 ## Archetypová role každého uzlu
 
 ```
-Zahrada Genesis  →  Base Camp  →  Pohyb, práce, oceán, farma
-Dharma Temple    →  Sanctuary  →  Ticho, meditace, dharma, sopka
-Te Pīko Ora      →  Paradise   →  Koruna, plnost, mořská permakultura, wayfinding
-Projekt Venus    →  Regenerace →  Ženský princip, byliny, tvořivost, obnova krajiny
+Zahrada Genesis          →  Base Camp   →  Země / Kořen   →  Pohyb, práce, oceán, farma
+Dharma Temple            →  Sanctuary   →  Oheň / Kmen    →  Ticho, meditace, dharma, sopka
+Te Pīko Ora              →  Paradise    →  Voda / Koruna  →  Plnost, mořská permakultura, wayfinding
+Golden Republic Bohemia  →  Governance  →  Vzduch / Srdce →  Governance lab, kruh rozhodnutí, česká moudrost
+Bodhi Lanka              →  Bhakti      →  Akasha / Éter  →  Láska, Sri Maha Bodhi, Rama Setu, Ayurveda
+Projekt Venus            →  Regenerace  →  Ženský princip →  Byliny, tvořivost, obnova krajiny
 ```
 
 ## Sdílené protokoly (všechny L5 uzly)

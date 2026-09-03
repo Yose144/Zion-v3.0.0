@@ -30,13 +30,17 @@ Tato kapitola je o té vlně.
 
 ## Třetí uzel: Te Pīko Ora
 
-V síti Terra Nova L5 existují tři uzly.
+V síti Terra Nova L5 existuje pět uzlů Pentagramu.
 
 **Zahrada Genesis** (Portugal) — kořen. Země. Semeno. Začátek.
 
 **Dharma Temple** (La Palma) — kmen. Oheň. Praxe. Cesta.
 
-A **Te Pīko Ora** (Francouzská Polynésie) — koruna. Voda. Plnost. Ráj manifestovaný.
+**Te Pīko Ora** (Francouzská Polynésie) — koruna. Voda. Plnost. Ráj manifestovaný.
+
+**Golden Republic Bohemia** (Česká republika) — srdce. Vzduch. Governance lab. Zlatá republika prototypovaná v praxi — kruh rozhodnutí ukotvený v české moudrosti: sůl, most, Zlatá bula, Přemysl Oráč, Libuše, Karel IV.
+
+**Bodhi Lanka** (Srí Lanka) — éter. Akasha. Bhakti protokol — láska (Rama-Sita), Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most, Ayurveda jako živá páteř péče.
 
 🟢 **REALITA 2026:** Te Pīko Ora je třetí projekt Terra Nova L5 — záměrná komunita na Raiatea nebo Tahiti, navržená jako plně soběstačný uzel s marine permakulturou, wayfinding školou a polynéskou governance. Detail v projektovém listu.
 

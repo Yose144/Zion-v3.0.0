@@ -189,6 +189,8 @@ Principy Zlaté republiky:
 
 *Zlatá republika nezrušila staré státy. Nabídla lepší alternativu — a lidé si vybrali.*
 
+> **Golden Republic Bohemia** (Česká republika) je první fyzický uzel L5 Pentagramu, který tento protokol prototypuje v praxi — governance lab a kruh rozhodnutí ukotvený v české moudrosti: sůl, most, Zlatá bula, Přemysl Oráč, Libuše, Karel IV. Paralelně **Bodhi Lanka** (Srí Lanka) prototypuje **Bhakti protokol** — lásku (Rama-Sita), Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most a Ayurvedu jako živou páteř péče.
+
 ---
 
 *[← Kapitola 5: L1-L4](./05-L1-L4.md)* | *[→ Kapitola 7: L6 Issobella — Cesta ke hvězdám](./07-ISSOBELLA.md)*
