@@ -95,7 +95,7 @@ The miner build in `start-local-miner.sh` already includes `native-randomx`, so 
 
 ## 4. H5 — Local AuxPoW E2E harness
 
-A dedicated E2E script, [`scripts/ops/auxpow_e2e_test.py`](../../scripts/ops/auxpow_e2e_test.py), closes the loop locally:
+A dedicated E2E script, [`scripts/ops/auxpow_e2e_test.py`](../../../scripts/ops/auxpow_e2e_test.py), closes the loop locally:
 
 - It starts a mock CryptonoteStratum upstream on a free port.
 - It launches `zion-pool` with `ZION_POOL_AUXPOW_POOL_XMR` pointing at the mock upstream (using the new `CoinProfile::with_pool_address` helper).

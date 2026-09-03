@@ -1,11 +1,11 @@
 # Sefirot Vow — Zohar Validator Pledge
 
 > *"Ne ten kdo má největší sílu, ale ten kdo nejlépe opékuje, ten bude vést."*
-> — Protokol Péče, [evoluZion.md](../../../docs/3.0.3/evoluZion.md)
+> — Protokol Péče, [evoluZion.md](../../../../../docs/3.0.3/evoluZion.md)
 
 > **Scope:** All ZION validators — L1 miners, L2 DAO guardians, L3 WARP bridge
 > validators, L3 AI/Hiran care-proof producers, future Proof-of-Care validators.
-> **Status:** 🟡 Active development (Fáze 2 of [Zohar roadmap](../../../docs/Zohar/02-ROADMAP.md))
+> **Status:** 🟡 Active development (Fáze 2 of [Zohar roadmap](../../../../../docs/Zohar/02-ROADMAP.md))
 > **Last modified:** 2026-07-03
 > **Relation to existing vow:** Extends the [Bodhisattva Vow](./consciousness-admission-framework.md#6-the-bodhisattva-vow-of-guardians)
 > (L5 community entry) into a **technical validator pledge** structured by the
@@ -102,26 +102,26 @@ to Malkhut (long-horizon stewardship).
 
 ## 3. Who May Take the Sefirot Vow
 
-| Validator class | Requirement | When |
-|-----------------|-------------|------|
-| **L1 miner** | Active block production for ≥ 30 days, no slash events | Optional — public commitment |
-| **L2 DAO guardian** | Already passed Bodhisattva Vow OR sponsored by 2 existing guardians | Required for treasury multisig role |
-| **L3 WARP bridge validator** | Active relay for ≥ 14 days, 3/5 quorum participant | Required for `submitBridgeUnlock` signing key |
-| **L3 AI / Hiran care-proof producer** | Care proof accuracy ≥ 95% over 100 proofs | Required for care-proof acceptance (Fáze 3) |
-| **Future PoC validator** | TBD per Protokol Péče spec | TBD |
+|| Validator class | Requirement | When |
+||-----------------|-------------|------|
+|| **L1 miner** | Active block production for ≥ 30 days, no slash events | Optional — public commitment |
+|| **L2 DAO guardian** | Already passed Bodhisattva Vow OR sponsored by 2 existing guardians | Required for treasury multisig role |
+|| **L3 WARP bridge validator** | Active relay for ≥ 14 days, 3/5 quorum participant | Required for `submitBridgeUnlock` signing key |
+|| **L3 AI / Hiran care-proof producer** | Care proof accuracy ≥ 95% over 100 proofs | Required for care-proof acceptance (Fáze 3) |
+|| **Future PoC validator** | TBD per Protokol Péče spec | TBD |
 
 ### 3.1 Relation to Bodhisattva Vow
 
 The Sefirot Vow **does not replace** the Bodhisattva Vow. They are
 complementary:
 
-| Bodhisattva Vow | Sefirot Vow |
-|-----------------|-------------|
-| For L5 community Guardians | For technical validators |
-| 8 vows — land, life, teaching, death, joy | 11 vows — constitution, compute, validation, yield, lock, bridge, care, culture, ground, horizon, bridge-of-meaning |
-| Ceremony: physical, sacred space | Ceremony: on-chain signature + optional physical |
-| Recorded in Book of Guardians + DAO | Recorded in DAO + validator registry |
-| Required for T5 Guardian tier | Required for technical validator roles |
+|| Bodhisattva Vow | Sefirot Vow |
+||-----------------|-------------|
+|| For L5 community Guardians | For technical validators |
+|| 8 vows — land, life, teaching, death, joy | 11 vows — constitution, compute, validation, yield, lock, bridge, care, culture, ground, horizon, bridge-of-meaning |
+|| Ceremony: physical, sacred space | Ceremony: on-chain signature + optional physical |
+|| Recorded in Book of Guardians + DAO | Recorded in DAO + validator registry |
+|| Required for T5 Guardian tier | Required for technical validator roles |
 
 A person may take **both** — a Guardian who also runs a validator takes the
 Bodhisattva Vow for the land and the Sefirot Vow for the protocol.
@@ -183,19 +183,19 @@ empty. The Sefirot Vow is **designed to be renewed**.
 
 ### 5.1 What counts as breaking
 
-| Sephira | Breaking the vow |
-|---------|------------------|
-| Keter | Signing a block that violates the emission schedule or fee split |
-| Chokmah | Producing care proofs that are fabricated or waste-only |
-| Binah | Signing an invalid block, concealing a double-spend, exploiting a reorg |
-| Chesed | Withholding liquidity maliciously, censoring swap routes |
-| Gevurah | Bypassing the treasury lock, multisig collusion, fee theft |
-| Tiferet | Censoring WARP messages, favoring one chain maliciously |
-| Netzach | Falsifying care proof data, sleeping on monitoring duty |
-| Hod | Using protocol visibility for cruelty, vanity, or spectacle |
-| Yesod | Treating L5 communities as abstractions, ignoring real-world impact |
-| Malkhut | Short-term optimization against the long horizon |
-| Da'at | Letting protocol and myth separate — code without meaning or meaning without code |
+|| Sephira | Breaking the vow |
+||---------|------------------|
+|| Keter | Signing a block that violates the emission schedule or fee split |
+|| Chokmah | Producing care proofs that are fabricated or waste-only |
+|| Binah | Signing an invalid block, concealing a double-spend, exploiting a reorg |
+|| Chesed | Withholding liquidity maliciously, censoring swap routes |
+|| Gevurah | Bypassing the treasury lock, multisig collusion, fee theft |
+|| Tiferet | Censoring WARP messages, favoring one chain maliciously |
+|| Netzach | Falsifying care proof data, sleeping on monitoring duty |
+|| Hod | Using protocol visibility for cruelty, vanity, or spectacle |
+|| Yesod | Treating L5 communities as abstractions, ignoring real-world impact |
+|| Malkhut | Short-term optimization against the long horizon |
+|| Da'at | Letting protocol and myth separate — code without meaning or meaning without code |
 
 ### 5.2 What happens when broken
 
@@ -224,22 +224,22 @@ validator. They are a learning one.
 ## 6. The 11 Vows as Care Task Categories (Fáze 3 preview)
 
 When the Protokol Péče (Proof-of-Care) consensus activates
-([evoluZion.md Fáze 3](../../../docs/3.0.3/evoluZion.md)), the 11 vows
+([evoluZion.md Fáze 3](../../../../../docs/3.0.3/evoluZion.md)), the 11 vows
 become **11 categories of care tasks** that validators may be assigned:
 
-| Vow | Care task category |
-|-----|---------------------|
-| Keter | Constitutional audit (emission, fee split consistency) |
-| Chokmah | NPU inference quality (care proof accuracy) |
-| Binah | L1 anomaly detection (double-spend, reorg attempts) |
-| Chesed | Liquidity rebalancing (yield health across chains) |
-| Gevurah | DAO proposal audit (governance sanity, multisig integrity) |
-| Tiferet | WARP bridge audit (cross-chain consistency, message liveness) |
-| Netzach | AI inference for Hiran (continuous care, monitoring) |
-| Hod | Smart contract verification (Oasis/culture integrity) |
-| Yesod | Community health check (L5 community telemetry) |
-| Malkhut | Long-horizon monitoring (Issobella stream, future-generation indicators) |
-| Da'at | Myth-code consistency audit (does the protocol still match the vision?) |
+|| Vow | Care task category |
+||-----|---------------------|
+|| Keter | Constitutional audit (emission, fee split consistency) |
+|| Chokmah | NPU inference quality (care proof accuracy) |
+|| Binah | L1 anomaly detection (double-spend, reorg attempts) |
+|| Chesed | Liquidity rebalancing (yield health across chains) |
+|| Gevurah | DAO proposal audit (governance sanity, multisig integrity) |
+|| Tiferet | WARP bridge audit (cross-chain consistency, message liveness) |
+|| Netzach | AI inference for Hiran (continuous care, monitoring) |
+|| Hod | Smart contract verification (Oasis/culture integrity) |
+|| Yesod | Community health check (L5 community telemetry) |
+|| Malkhut | Long-horizon monitoring (Issobella stream, future-generation indicators) |
+|| Da'at | Myth-code consistency audit (does the protocol still match the vision?) |
 
 A validator who has taken the Sefirot Vow is **eligible to be assigned care
 tasks in any of the 11 categories**. Their vow is a public commitment that
@@ -249,19 +249,19 @@ they will perform the care work honestly.
 
 ## 7. Implementation status
 
-| Component | Status | Path |
-|-----------|--------|------|
-| Vow text (this document) | ✅ Done | `V3/L5/docs/GOVERNANCE/sefirot-vow.md` |
-| `SefirotVowToken` soulbound ERC-721 | ✅ Compiled + 19 tests pass | `V3/L2/contracts/hardhat/sol/SefirotVowToken.sol` |
-| `SefirotVowRegistry` on-chain proposal lifecycle | ✅ Compiled + 10 tests pass | `V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol` |
-| Deploy script (token) | ✅ Done | `V3/L2/contracts/hardhat/scripts/deploy-sefirot-vow.ts` |
-| Deploy script (registry) | ✅ Done | `V3/L2/contracts/hardhat/scripts/deploy-sefirot-vow-registry.ts` |
-| Test suite (token) | ✅ 19 passing | `V3/L2/contracts/hardhat/test/SefirotVowToken.test.ts` |
-| Test suite (registry) | ✅ 10 passing | `V3/L2/contracts/hardhat/test/SefirotVowRegistry.test.ts` |
-| Deploy on Base mainnet | 🔴 Pending | Requires owner approval + gas |
-| Bootstrap validators | 🔴 Pending | First 2-3 validators to authorize |
-| Annual renewal flow | 🟡 Implemented in contract | `SefirotVowToken.renew()` |
-| Care task dispatch (Fáze 3) | 🔴 Horizon | Depends on Protokol Péče consensus |
+|| Component | Status | Path |
+||-----------|--------|------|
+|| Vow text (this document) | ✅ Done | `V3/L5/docs/GOVERNANCE/sefirot-vow.md` |
+|| `SefirotVowToken` soulbound ERC-721 | ✅ Compiled + 19 tests pass | `V3/L2/contracts/hardhat/sol/SefirotVowToken.sol` |
+|| `SefirotVowRegistry` on-chain proposal lifecycle | ✅ Compiled + 10 tests pass | `V3/L2/contracts/hardhat/sol/SefirotVowRegistry.sol` |
+|| Deploy script (token) | ✅ Done | `V3/L2/contracts/hardhat/scripts/deploy-sefirot-vow.ts` |
+|| Deploy script (registry) | ✅ Done | `V3/L2/contracts/hardhat/scripts/deploy-sefirot-vow-registry.ts` |
+|| Test suite (token) | ✅ 19 passing | `V3/L2/contracts/hardhat/test/SefirotVowToken.test.ts` |
+|| Test suite (registry) | ✅ 10 passing | `V3/L2/contracts/hardhat/test/SefirotVowRegistry.test.ts` |
+|| Deploy on Base mainnet | 🔴 Pending | Requires owner approval + gas |
+|| Bootstrap validators | 🔴 Pending | First 2-3 validators to authorize |
+|| Annual renewal flow | 🟡 Implemented in contract | `SefirotVowToken.renew()` |
+|| Care task dispatch (Fáze 3) | 🔴 Horizon | Depends on Protokol Péče consensus |
 
 ### 7.1 Contract architecture
 
@@ -322,14 +322,14 @@ they will perform the care work honestly.
 
 ## 8. References
 
-| Source | Path | Why |
-|--------|------|-----|
-| Zohar README | [`docs/Zohar/README.md`](../../../docs/Zohar/README.md) | Manifest of the Zohar layer |
-| Sefirot → vrstvy mapping | [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../../docs/Zohar/01-SEFIROT-VRSTVY.md) | 10 sefirot + Da'at mapped to L1-L6 |
-| Zohar roadmap | [`docs/Zohar/02-ROADMAP.md`](../../../docs/Zohar/02-ROADMAP.md) | Fáze 2 = this vow |
-| evoluZion.md | [`docs/3.0.3/evoluZion.md`](../../../docs/3.0.3/evoluZion.md) | Strom života metafora, Protokol Péče |
-| Bodhisattva Vow | [`V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md`](./consciousness-admission-framework.md) §6 | Sister vow for L5 Guardians |
-| AGENTS.md L1 Protocol | [`AGENTS.md`](../../../AGENTS.md) §L1 Protocol Security | Constraints on Fáze 3 |
+|| Source | Path | Why |
+||--------|------|-----|
+|| Zohar README | [`docs/Zohar/README.md`](../../../../../docs/Zohar/README.md) | Manifest of the Zohar layer |
+|| Sefirot → vrstvy mapping | [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../../../../docs/Zohar/01-SEFIROT-VRSTVY.md) | 10 sefirot + Da'at mapped to L1-L6 |
+|| Zohar roadmap | [`docs/Zohar/02-ROADMAP.md`](../../../../../docs/Zohar/02-ROADMAP.md) | Fáze 2 = this vow |
+|| evoluZion.md | [`docs/3.0.3/evoluZion.md`](../../../../../docs/3.0.3/evoluZion.md) | Strom života metafora, Protokol Péče |
+|| Bodhisattva Vow | [`V3/L5/docs/GOVERNANCE/consciousness-admission-framework.md`](./consciousness-admission-framework.md) §6 | Sister vow for L5 Guardians |
+|| AGENTS.md L1 Protocol | [`AGENTS.md`](../../../../../AGENTS.md) §L1 Protocol Security | Constraints on Fáze 3 |
 
 ---
 

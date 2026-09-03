@@ -9,11 +9,11 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 
 const L5FreeWorldCopy = {
-  centralEurope: { cs: `Střední Evropa`, en: `Central Europe` },
+  algarvePortugal: { cs: `Algarve, Portugalsko`, en: `Algarve, Portugal` },
   pioneerL5CommunityPermaculture: { cs: `Pionýrská L5 komunita — pernakulturní zahrada, lokální governance a ZION guardian node.`, en: `Pioneer L5 community — permaculture garden, local governance and ZION guardian node.` },
   southAsia: { cs: `Jižní Asie`, en: `South Asia` },
   educationalAndMeditationCenter: { cs: `Vzdělávací a meditační centrum s decentralizovanou správou a free energy projekty.`, en: `Educational and meditation center with decentralized governance and free energy projects.` },
-  rapaNuiCulturalRevivalThroughZ: { cs: `Kulturní obnova Rapa Nui skrze ZION protokol, místní fond a ochranu dědictví.`, en: `Rapa Nui cultural revival through ZION protocol, local fund, and heritage protection.` },
+  tePikoOraPolynesianRevival: { cs: `Marine permakultura, wayfinding škola a polynéská kulturní obnova.`, en: `Marine permaculture, wayfinding school and Polynesian cultural revival.` },
   guardianNode: { cs: `Guardian Node`, en: `Guardian Node` },
   everyL5CommunityValidatesBlock: { cs: `Každá L5 komunita validuje bloky — 10 % odměn do komunitní pokladny.`, en: `Every L5 community validates blocks — 10% of rewards go to the community treasury.` },
   sociocraticDao: { cs: `Sociocratic DAO`, en: `Sociocratic DAO` },
@@ -61,7 +61,7 @@ const HUMANITARIAN_WALLET = 'zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8';
 const getCommunities = (cs: boolean) => [
   {
     name: 'Genesis Garden',
-    location: L5FreeWorldCopy.centralEurope[cs ? 'cs' : 'en'],
+    location: L5FreeWorldCopy.algarvePortugal[cs ? 'cs' : 'en'],
     status: 'planned',
     desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
@@ -78,9 +78,9 @@ const getCommunities = (cs: boolean) => [
   },
   {
     name: 'Te Pīko Ora',
-    location: 'Rapa Nui',
+    location: 'Raiatea · French Polynesia',
     status: 'vision',
-    desc: L5FreeWorldCopy.rapaNuiCulturalRevivalThroughZ[cs ? 'cs' : 'en'],
+    desc: L5FreeWorldCopy.tePikoOraPolynesianRevival[cs ? 'cs' : 'en'],
     tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
     href: '/terranova/te-piko-ora',
   },

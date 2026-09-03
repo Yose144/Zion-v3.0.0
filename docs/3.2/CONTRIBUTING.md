@@ -119,7 +119,7 @@ All PRs must include:
 
 ## Security Vulnerabilities
 
-**Do NOT open a PR or public issue for security vulnerabilities.** See [SECURITY.md](../3.2.7-Security-and-Audit/SECURITY.md) for responsible disclosure process.
+**Do NOT open a PR or public issue for security vulnerabilities.** See [SECURITY.md](./SECURITY.md) for responsible disclosure process.
 
 ## Code of Conduct
 
@@ -127,4 +127,4 @@ All contributors are expected to adhere to our [Code of Conduct](./CODE_OF_CONDU
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](./LICENSE).
+By contributing, you agree that your contributions will be licensed under the [MIT License](../../LICENSE).

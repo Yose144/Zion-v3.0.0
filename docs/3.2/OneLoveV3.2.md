@@ -5,9 +5,9 @@
 > **Date:** 2026-08-07  
 > **Status:** canonical root plan for the 3.2.0 public-mainnet-ready push  
 > **One source of truth:** this file  
-> **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md)  
-> **Live status:** [`StatusV3.md`](../../../StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)  
-> **Agent rules:** [`AGENTS.md`](../../../AGENTS.md) · [`V31/AGENTS.md`](../../../V31/AGENTS.md)
+> **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)  
+> **Live status:** [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)  
+> **Agent rules:** [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
 
 ---
 
@@ -46,7 +46,7 @@ And **Oasis** is the center of the compass. There you stand.
 
 ## 3. 3.2 Mainnet Stable Technical Roadmap (Summary)
 
-The full engineering plan lives in [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md). This section is the public summary.
+The full engineering plan lives in [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md). This section is the public summary.
 
 ### 3.1 What is already verified
 
@@ -63,7 +63,7 @@ The full engineering plan lives in [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3
 
 ### 3.2 What "One Love" must close
 
-The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../../3.1/PLAN_TO_3.1_RECONCILED.md) showed that many "complete" items meant *library modules ported*, not *production binaries exercised*. 3.2.0 closes the remaining gaps:
+The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../3.1/PLAN_TO_3.1_RECONCILED.md) showed that many "complete" items meant *library modules ported*, not *production binaries exercised*. 3.2.0 closes the remaining gaps:
 
 | ID | Gap | 3.2 Gate |
 |----|-----|----------|
@@ -145,7 +145,7 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../../3.1/PLA
 - H13 B2B revenue sharing
 - H14 True AuxPoW consensus integration
 
-> **Full gap analysis:** [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md) §10 (V3→V31 Migration Gap Analysis)
+> **Full gap analysis:** [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) §10 (V3→V31 Migration Gap Analysis)
 
 **Phase I — ZION Identity Service (ZIS)**
 - I1 Design ZIS API (OpenAPI)
@@ -178,13 +178,13 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../../3.1/PLA
 - K6 Dashboard mining panel
 - K7 Dashboard bridge/DeFi panel
 
-> **Full ecosystem plan:** [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md) §14 (Unified Ecosystem — Auth, Database & Cross-App Integration)
+> **Full ecosystem plan:** [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) §14 (Unified Ecosystem — Auth, Database & Cross-App Integration)
 
 ---
 
 ## 4. Marketing & Public Positioning
 
-Full marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md).
+Full marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md).
 
 ### 4.1 Elevator Pitch (20 seconds)
 
@@ -233,9 +233,9 @@ ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, n
 
 ## 5. Onboarding
 
-Full onboarding guide: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md).  
-Czech version: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING.md`](../../WP-Mainet/SulZeme/ZION_ONBOARDING.md).  
-Oasis onboarding: [`docs/WP-Mainet/SulZeme/OASIS_ONBOARDING.md`](../../WP-Mainet/SulZeme/OASIS_ONBOARDING.md).
+Full onboarding guide: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md).  
+Czech version: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING.md).  
+Oasis onboarding: [`docs/WP-Mainet/SulZeme/OASIS_ONBOARDING.md`](../WP-Mainet/SulZeme/OASIS_ONBOARDING.md).
 
 ### 5.1 What is ZION in 30 seconds
 
@@ -288,7 +288,7 @@ Public pool: `62.171.141.136:8444`
 
 ### 6.1 CoinGecko
 
-Full packet: [`docs/listings/COINGECKO.md`](../../listings/COINGECKO.md).
+Full packet: [`docs/listings/COINGECKO.md`](../listings/COINGECKO.md).
 
 | Field | Value |
 |-------|-------|
@@ -305,7 +305,7 @@ Full packet: [`docs/listings/COINGECKO.md`](../../listings/COINGECKO.md).
 
 ### 6.2 CoinMarketCap
 
-Full packet: [`docs/listings/COINMARKETCAP.md`](../../listings/COINMARKETCAP.md).
+Full packet: [`docs/listings/COINMARKETCAP.md`](../listings/COINMARKETCAP.md).
 
 CMC submission: https://support.coinmarketcap.com/hc/en-us/requests/new (select "Add an Asset / Update an Asset").
 
@@ -336,7 +336,7 @@ CMC submission: https://support.coinmarketcap.com/hc/en-us/requests/new (select 
 
 ## 7. Bitcointalk ANN
 
-Full announcement: [`docs/3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md`](../../3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md).
+Full announcement: [`docs/3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md`](../3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md).
 
 ### 7.1 Recommended Title
 
@@ -461,9 +461,9 @@ The network is in Mainnet Beta and may contain bugs. This is not financial advic
 
 ### Whitepapers
 
-- [`docs/WP-Mainet/ZION_Technical_Whitepaper_v3.1_EN.md`](../../WP-Mainet/ZION_Technical_Whitepaper_v3.1_EN.md)
-- [`docs/WP-Mainet/ZION_MASTER_WHITEPAPER_3.1_EN.md`](../../WP-Mainet/ZION_MASTER_WHITEPAPER_3.1_EN.md)
-- [`docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../../WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
+- [`docs/WP-Mainet/ZION_Technical_Whitepaper_v3.1_EN.md`](../WP-Mainet/ZION_Technical_Whitepaper_v3.1_EN.md)
+- [`docs/WP-Mainet/ZION_MASTER_WHITEPAPER_3.1_EN.md`](../WP-Mainet/ZION_MASTER_WHITEPAPER_3.1_EN.md)
+- [`docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md`](../WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md)
 
 ---
 
@@ -497,16 +497,16 @@ The network is in Mainnet Beta and may contain bugs. This is not financial advic
 
 ## 10. Canonical References
 
-- Technical plan: [`V31/PLAN_TO_3.2.md`](../../../V31/PLAN_TO_3.2.md)
-- Live status: [`StatusV3.md`](../../../StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
-- 3.1 plan archive: [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../../3.1/PLAN_TO_3.1_RECONCILED.md)
-- Marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md)
-- Onboarding: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md)
-- Oasis onboarding: [`docs/WP-Mainet/SulZeme/OASIS_ONBOARDING.md`](../../WP-Mainet/SulZeme/OASIS_ONBOARDING.md)
-- CoinGecko: [`docs/listings/COINGECKO.md`](../../listings/COINGECKO.md)
-- CoinMarketCap: [`docs/listings/COINMARKETCAP.md`](../../listings/COINMARKETCAP.md)
-- Bitcointalk ANN: [`docs/3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md`](../../3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md)
-- Agent rules: [`AGENTS.md`](../../../AGENTS.md) · [`V31/AGENTS.md`](../../../V31/AGENTS.md)
+- Technical plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
+- Live status: [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
+- 3.1 plan archive: [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../3.1/PLAN_TO_3.1_RECONCILED.md)
+- Marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md)
+- Onboarding: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md)
+- Oasis onboarding: [`docs/WP-Mainet/SulZeme/OASIS_ONBOARDING.md`](../WP-Mainet/SulZeme/OASIS_ONBOARDING.md)
+- CoinGecko: [`docs/listings/COINGECKO.md`](../listings/COINGECKO.md)
+- CoinMarketCap: [`docs/listings/COINMARKETCAP.md`](../listings/COINMARKETCAP.md)
+- Bitcointalk ANN: [`docs/3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md`](../3.0.5/archive-root-md/BITCOINTALK_ANNOUNCEMENT.md)
+- Agent rules: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
 
 ---
 

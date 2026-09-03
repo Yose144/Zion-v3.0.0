@@ -4626,11 +4626,11 @@ export const WORLDS: World[] = [
       id: "DHARMA_TEMPLE_LA_PALMA",
       name: "Dharma Temple",
       category: "world",
-      layer: 3,
+      layer: 5,
       location: "La Palma — Terra Nova L5 sanctuary",
       vibe: "Merkaba geodesic temple with 7 domes, Tree of Life and meditation gardens on La Palma.",
       summary: "Sacred L5 sanctuary on La Palma — a geodesic temple of enlightenment, education and community.",
-      tags: ["world", "layer 3", "terranova", "sanctuary", "la palma"],
+      tags: ["world", "layer 5", "terranova", "sanctuary", "la palma"],
       goldenEggClue: 7,
       galaxyPosition: { x: -16.2, y: 0.2, z: 31.8 }
   },

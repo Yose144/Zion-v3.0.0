@@ -22,11 +22,11 @@
 >
 > **Detailní plán 3.2.1–3.2.9:** [`docs/3.2/3.2.1-3.2.9_PLAN.md`](./docs/3.2/3.2.1-3.2.9_PLAN.md)
 >
-> **Marketing / launch plan:** [`OneLoveV3.2.md`](./docs/3.2/3.2.9-Release-Launch-and-Community/OneLoveV3.2.md)
+> **Marketing / launch plan:** [`OneLoveV3.2.md`](./docs/3.2/OneLoveV3.2.md)
 >
 > **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md)
 >
-> **ZionDex + ZIS Multichain Wallet plan:** [`ZionDexZis.md`](./docs/3.2/3.2.4-Multichain-and-DEX/ZionDexZis.md)
+> **ZionDex + ZIS Multichain Wallet plan:** [`ZionDexZis.md`](./docs/3.2/ZionDexZis.md)
 >
 > **Live status:** [`StatusV3.md`](./StatusV3.md) · [`V31/STATUS.md`](./V31/STATUS.md)
 
