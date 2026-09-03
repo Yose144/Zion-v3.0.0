@@ -143,6 +143,41 @@ pub trait ChainAdapter: Send + Sync {
         ))
     }
 
+    /// Quote a swap through a Uniswap V3–compatible DEX (QuoterV2).
+    /// Returns the expected output amount for a single-hop swap.
+    /// `fee` is the pool fee in hundredths of a bip (e.g. 3000 = 0.3%, 10000 = 1%).
+    async fn v3_quote(
+        &self,
+        _quoter_address: &str,
+        _token_in: &Asset,
+        _token_out: &Asset,
+        _amount_in: Amount,
+        _fee: u32,
+    ) -> MultichainResult<Amount> {
+        Err(MultichainError::Unsupported(
+            "v3_quote not supported on this chain".to_string(),
+        ))
+    }
+
+    /// Execute a swap through a Uniswap V3–compatible DEX (SwapRouter02).
+    /// Returns (tx_hash, amount_out).
+    /// `fee` is the pool fee in hundredths of a bip (e.g. 3000 = 0.3%, 10000 = 1%).
+    async fn v3_swap(
+        &self,
+        _router_address: &str,
+        _token_in: &Asset,
+        _token_out: &Asset,
+        _amount_in: Amount,
+        _amount_out_min: Amount,
+        _recipient: &Address,
+        _fee: u32,
+        _deadline: u64,
+    ) -> MultichainResult<(Hash, Amount)> {
+        Err(MultichainError::Unsupported(
+            "v3_swap not supported on this chain".to_string(),
+        ))
+    }
+
     /// Query the spendable balance for `address` of the native asset.
     async fn balance(&self, address: &Address) -> MultichainResult<Amount>;
 
