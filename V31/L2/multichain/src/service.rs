@@ -12,7 +12,7 @@ use zion_pool::Pool as MiningPool;
 use crate::audit::AuditLogger;
 use crate::bridge::consensus::BridgeConsensus;
 use crate::bridge::Bridge;
-use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
+use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, SolanaAdapter, ZionL1Adapter};
 use crate::chain::{BlockTemplate, ChainAdapter, ChainAdapterRegistry};
 use crate::config::{AdapterConfig, MultichainConfig, NodeRewardsConfig};
 use crate::contracts::ZionContracts;
@@ -1194,6 +1194,10 @@ fn build_adapter(
         "zion-l1" | "zion" | "zionl1" => {
             Ok(Box::new(ZionL1Adapter::new(&cfg.rpc_url, keyring.clone())))
         }
+        "solana" => {
+            let rpc = if cfg.rpc_url.is_empty() { None } else { Some(cfg.rpc_url.as_str()) };
+            Ok(Box::new(SolanaAdapter::new(rpc, None)?))
+        }
         _ => {
             if let Some(chain_id) = evm_chain_id(&name_lower) {
                 let wallet = crate::wallet::evm_relay_wallet()
@@ -1241,6 +1245,7 @@ fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {
     match name_lower.as_str() {
         "bitcoin" | "btc" => Ok(ChainId::Bitcoin),
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
+        "solana" => Ok(ChainId::Solana),
         _ => Err(MultichainError::AdapterNotFound(format!(
             "unknown chain id mapping for '{}': add it to chain_id_by_name()",
             name
