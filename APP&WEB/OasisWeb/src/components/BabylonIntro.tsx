@@ -64,8 +64,13 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     sun.diffuse = new Color3(1, 0.95, 0.85);
 
     // Glow for emissive objects
-    const glow = new GlowLayer('glow', scene);
-    glow.intensity = 0.9;
+    let glow: GlowLayer | null = null;
+    try {
+      glow = new GlowLayer('glow', scene);
+      glow.intensity = 0.9;
+    } catch (e) {
+      console.warn('[BabylonIntro] GlowLayer not supported on this device, continuing without bloom:', e);
+    }
 
     // Central star / galaxy core
     const core = MeshBuilder.CreateSphere('core', { diameter: 1.6, segments: 32 }, scene);
@@ -173,9 +178,9 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     enterBtn.onPointerOutObservable.add(() => {
       enterBtn.background = 'rgba(7, 137, 48, 0.25)';
     });
-    enterBtn.onPointerClickObservable.add(() => {
-      setWarping(true);
-    });
+    const handleEnter = () => setWarping(true);
+    enterBtn.onPointerClickObservable.add(handleEnter);
+    enterBtn.onPointerUpObservable.add(handleEnter);
     uiTexture.addControl(enterBtn);
 
     const hint = new TextBlock('hint');
@@ -200,9 +205,17 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
       window.removeEventListener('resize', resize);
       // Stop render loop first
       engine.stopRenderLoop();
-      // Dispose Babylon scene + engine
-      scene.dispose();
-      engine.dispose();
+      // Dispose Babylon scene + engine (defensive: context may already be lost)
+      try {
+        scene.dispose();
+      } catch (e) {
+        console.warn('[BabylonIntro] scene dispose failed:', e);
+      }
+      try {
+        engine.dispose();
+      } catch (e) {
+        console.warn('[BabylonIntro] engine dispose failed:', e);
+      }
       // Force WebGL context release immediately
       try {
         const gl = canvas.getContext('webgl2') as WebGL2RenderingContext | null;
@@ -225,6 +238,14 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black">
       <canvas ref={canvasRef} className="h-full w-full touch-none" />
+      {/* DOM fallback for the Babylon GUI button — ensures the threshold is
+          clickable on every device, even when the canvas GUI loses pointer events. */}
+      <button
+        type="button"
+        aria-label="Cross the Threshold"
+        onClick={() => onEnterRef.current?.()}
+        className="absolute bottom-[16%] left-1/2 z-10 h-14 w-60 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-xl bg-transparent hover:bg-white/5 focus:bg-white/10 focus:outline-none"
+      />
       <AnimatePresence>
         {!warping && (
           <motion.div
