@@ -55,6 +55,7 @@ const CopyText = {
   recipient: { cs: `Příjemce`, en: `Recipient` },
   withdraw: { cs: `Vybrat`, en: `Withdraw` },
   newWithdrawal: { cs: `Nový výběr`, en: `New withdrawal` },
+  staking: { cs: `Staking`, en: `Staking` },
   withdrawAsset: { cs: `Asset`, en: `Asset` },
   withdrawAmount: { cs: `Částka (atomické jednotky)`, en: `Amount (atomic units)` },
   withdrawRecipient: { cs: `Adresa příjemce`, en: `Recipient address` },
@@ -258,6 +259,13 @@ export default function MultichainWalletPage() {
               </div>
 
               <div className="flex items-center gap-3">
+                <Link
+                  href="/wallet/staking"
+                  className="zion-button-secondary inline-flex items-center gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  {t('staking')}
+                </Link>
                 <button
                   onClick={() => refresh()}
                   disabled={refreshing}
