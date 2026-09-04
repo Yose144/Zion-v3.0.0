@@ -5,6 +5,9 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
+  Calendar,
+  Circle,
+  Dot,
   Droplets,
   Flower,
   Heart,
@@ -13,6 +16,7 @@ import {
   LucideIcon,
   MapPin,
   Network,
+  PlayCircle,
   Shield,
   Sparkles,
   Sun,
@@ -57,6 +61,11 @@ const TerranovaBodhiLankaCopy = {
   bhaktiProtocolDesignHowDevotio: { cs: `Bhakti Protocol design — jak se oddanost (bhakti) překládá do governance struktury`, en: `Bhakti Protocol design — how devotion (bhakti) translates into governance structure` },
   doYouHearTheCallOfTheBodhiTree: { cs: `Slyšíš volání Bodhi stromu? Jsi Guardian, který chce stavět prostor lásky v srdci Indického oceánu?`, en: `Do you hear the call of the Bodhi tree? Are you a Guardian who wants to build a space of love in the heart of the Indian Ocean?` },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  terraNovaNetwork: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
+  connectionWithSisterProjects: { cs: `Propojení se sesterskými projekty`, en: `Connection with sister projects` },
+  dimension: { cs: `Dimenze`, en: `Dimension` },
+  bothProjectsShareSourceCodeTer: { cs: `Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance a seed library.`, en: `Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance and seed library.` },
   terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
   sitePlan: { cs: `Architektonický koncept`, en: `Architectural concept` },
   sitePlanSubtitle: { cs: `První konceptový board: půdorysy, řezy a energetický systém.`, en: `First concept board: floor plans, sections and energy system.` },
@@ -252,6 +261,13 @@ const SYMBOLISM = [
   },
 ];
 
+const COMPARE = [
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, bodhi: { cs: 'Bodhi strom & Indický oceán', en: 'Bodhi tree & Indian Ocean' } },
+  { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, bodhi: { cs: 'Akasha Node', en: 'Akasha Node' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, bodhi: { cs: 'Ayurveda, meditace, bhakti governance', en: 'Ayurveda, meditation, bhakti governance' } },
+  { dim: { cs: 'Architektonický symbol', en: 'Architectural symbol' }, genesis: { cs: '3 pyramidy — Memory / Consciousness / Future', en: '3 pyramids — Memory / Consciousness / Future' }, bodhi: { cs: 'Tři pavilony — Bodhi / Ayurveda / Bhakti', en: 'Three Pavilions — Bodhi / Ayurveda / Bhakti' } },
+];
+
 export default function BodhiLankaPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -276,25 +292,17 @@ export default function BodhiLankaPage() {
 
         {/* Back nav */}
         <motion.div
-          initial={{ opacity: 0, x: -12 }}
+          initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-8 flex items-center gap-4"
+          className="mb-10"
         >
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>{TerranovaBodhiLankaCopy.home[cs ? 'cs' : 'en']}</span>
-          </Link>
-          <span className="text-zion-gold/45">|</span>
-          <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-cyan transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Terra Nova</span>
+            {TerranovaBodhiLankaCopy.backToTerraNova[cs ? 'cs' : 'en']}
           </Link>
         </motion.div>
 
@@ -317,8 +325,8 @@ export default function BodhiLankaPage() {
             <div className="relative z-10 p-6 md:p-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Lotus symbol */}
-                <div className="shrink-0 w-20 h-20 flex items-center justify-center text-4xl zion-rainbow-sub" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
-                  🪷
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+                  <TreePine className="h-10 w-10 text-zion-gold" />
                 </div>
 
                 {/* Text column */}
@@ -327,8 +335,9 @@ export default function BodhiLankaPage() {
                     <span className="zion-badge">
                       L5 · Terra Nova Akasha Node
                     </span>
-                    <span className="zion-badge-gold">
-                      📋 {TerranovaBodhiLankaCopy.planned2027[cs ? 'cs' : 'en']}
+                    <span className="zion-badge-gold inline-flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {TerranovaBodhiLankaCopy.planned2027[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 
@@ -572,10 +581,13 @@ export default function BodhiLankaPage() {
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
                       </span>
-                      {p.active && (
-                        <span className="text-zion-cyan text-xs animate-pulse">
-                          ⚡ {TerranovaBodhiLankaCopy.exploringNow[cs ? 'cs' : 'en']}
+                      {p.active ? (
+                        <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          {TerranovaBodhiLankaCopy.exploringNow[cs ? 'cs' : 'en']}
                         </span>
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-white/30" />
                       )}
                     </div>
                     <p className="text-zion-gold/65 text-xs">{cs ? p.descCs : p.descEn}</p>
@@ -584,6 +596,46 @@ export default function BodhiLankaPage() {
               ))}
             </div>
           </div>
+        </motion.section>
+
+        {/* ═══ TERRA NOVA NETWORK ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+              {TerranovaBodhiLankaCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {TerranovaBodhiLankaCopy.connectionWithSisterProjects[cs ? 'cs' : 'en']}
+            </h2>
+          </div>
+
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            {/* Header row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
+              <div className="p-3 text-zion-gold/65">{TerranovaBodhiLankaCopy.dimension[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
+              <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Bodhi Lanka</span></div>
+            </div>
+            {COMPARE.map((row, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 sm:grid-cols-3 text-sm border-b border-white/5 last:border-0"
+              >
+                <div className="p-3 text-zion-gold/65 text-xs">{cs ? row.dim.cs : row.dim.en}</div>
+                <div className="p-3 text-white/85 text-xs sm:border-l border-white/5">{cs ? row.genesis.cs : row.genesis.en}</div>
+                <div className="p-3 text-white/85 text-xs sm:border-l border-white/5">{cs ? row.bodhi.cs : row.bodhi.en}</div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-zion-gold/55 text-xs text-center mt-4">
+            {TerranovaBodhiLankaCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+          </p>
         </motion.section>
 
         {/* ═══ ZION INTEGRATION ═══ */}
@@ -676,7 +728,7 @@ export default function BodhiLankaPage() {
                 TerranovaBodhiLankaCopy.bhaktiProtocolDesignHowDevotio[cs ? 'cs' : 'en'],
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
-                  <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
+                  <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
                   {q}
                 </li>
               ))}

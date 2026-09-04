@@ -5,13 +5,18 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
+  Calendar,
+  Circle,
   Crown,
+  Dot,
   Heart,
   Landmark,
   Leaf,
   LucideIcon,
   MapPin,
   Network,
+  PlayCircle,
+  Scale,
   Shield,
   Sparkles,
   Sun,
@@ -55,6 +60,11 @@ const TerranovaGoldenRepublicBohemiaCopy = {
   seedLibraryWhichCzechHeritageV: { cs: `Semenná knihovna: které české odrůdy a partneři výměny (Genobanka Praha, SEMO, lokální šlechtitelé)`, en: `Seed library: which Czech heritage varieties and exchange partners (Genobanka Praha, SEMO, local breeders)` },
   doYouHearTheCallOfTheCircleAre: { cs: `Slyšíš volání kruhu? Jsi Guardian, který chce stavět governance laboratoř v srdci Evropy?`, en: `Do you hear the call of the circle? Are you a Guardian who wants to build a governance laboratory in the heart of Europe?` },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
+  terraNovaNetwork: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
+  connectionWithSisterProjects: { cs: `Propojení se sesterskými projekty`, en: `Connection with sister projects` },
+  dimension: { cs: `Dimenze`, en: `Dimension` },
+  bothProjectsShareSourceCodeTer: { cs: `Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance a seed library.`, en: `Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance and seed library.` },
   terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Golden Republic Bohemia.`, en: `Complete plan, concept and specification of Golden Republic Bohemia.` },
@@ -250,6 +260,13 @@ const CZECH_WISDOM = [
   },
 ];
 
+const COMPARE = [
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, bohemia: { cs: 'Říp & labské údolí', en: 'Říp & Elbe valley' } },
+  { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, bohemia: { cs: 'Governance Lab', en: 'Governance Lab' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, bohemia: { cs: 'Governance kruhy, vzdělávání', en: 'Governance circles, education' } },
+  { dim: { cs: 'Architektonický symbol', en: 'Architectural symbol' }, genesis: { cs: '3 pyramidy — Memory / Consciousness / Future', en: '3 pyramids — Memory / Consciousness / Future' }, bohemia: { cs: 'Tři pavilony — Most / Univerzita / Zlatá bula', en: 'Three Pavilions — Bridge / University / Golden Bull' } },
+];
+
 export default function GoldenRepublicBohemiaPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -274,25 +291,17 @@ export default function GoldenRepublicBohemiaPage() {
 
         {/* Back nav */}
         <motion.div
-          initial={{ opacity: 0, x: -12 }}
+          initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-8 flex items-center gap-4"
+          className="mb-10"
         >
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>{TerranovaGoldenRepublicBohemiaCopy.home[cs ? 'cs' : 'en']}</span>
-          </Link>
-          <span className="text-zion-gold/45">|</span>
-          <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-white/85 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Terra Nova</span>
+            {TerranovaGoldenRepublicBohemiaCopy.backToTerraNova[cs ? 'cs' : 'en']}
           </Link>
         </motion.div>
 
@@ -315,8 +324,8 @@ export default function GoldenRepublicBohemiaPage() {
             <div className="relative z-10 p-6 md:p-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Crown symbol */}
-                <div className="shrink-0 w-20 h-20 flex items-center justify-center text-4xl zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  👑
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Scale className="h-10 w-10 text-zion-gold" />
                 </div>
 
                 {/* Text column */}
@@ -325,8 +334,9 @@ export default function GoldenRepublicBohemiaPage() {
                     <span className="zion-badge">
                       L5 · Terra Nova Governance Lab
                     </span>
-                    <span className="zion-badge-gold">
-                      📋 {TerranovaGoldenRepublicBohemiaCopy.planned2027[cs ? 'cs' : 'en']}
+                    <span className="zion-badge-gold inline-flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {TerranovaGoldenRepublicBohemiaCopy.planned2027[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 
@@ -570,10 +580,13 @@ export default function GoldenRepublicBohemiaPage() {
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
                       </span>
-                      {p.active && (
-                        <span className="text-zion-cyan text-xs animate-pulse">
-                          ⚡ {TerranovaGoldenRepublicBohemiaCopy.exploringNow[cs ? 'cs' : 'en']}
+                      {p.active ? (
+                        <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          {TerranovaGoldenRepublicBohemiaCopy.exploringNow[cs ? 'cs' : 'en']}
                         </span>
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-white/30" />
                       )}
                     </div>
                     <p className="text-zion-gold/65 text-xs">{cs ? p.descCs : p.descEn}</p>
@@ -582,6 +595,46 @@ export default function GoldenRepublicBohemiaPage() {
               ))}
             </div>
           </div>
+        </motion.section>
+
+        {/* ═══ TERRA NOVA NETWORK ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
+              {TerranovaGoldenRepublicBohemiaCopy.terraNovaNetwork[cs ? 'cs' : 'en']}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {TerranovaGoldenRepublicBohemiaCopy.connectionWithSisterProjects[cs ? 'cs' : 'en']}
+            </h2>
+          </div>
+
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+            {/* Header row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
+              <div className="p-3 text-zion-gold/65">{TerranovaGoldenRepublicBohemiaCopy.dimension[cs ? 'cs' : 'en']}</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
+              <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Golden Republic Bohemia</span></div>
+            </div>
+            {COMPARE.map((row, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 sm:grid-cols-3 text-sm border-b border-white/5 last:border-0"
+              >
+                <div className="p-3 text-zion-gold/65 text-xs">{cs ? row.dim.cs : row.dim.en}</div>
+                <div className="p-3 text-white/85 text-xs sm:border-l border-white/5">{cs ? row.genesis.cs : row.genesis.en}</div>
+                <div className="p-3 text-white/85 text-xs sm:border-l border-white/5">{cs ? row.bohemia.cs : row.bohemia.en}</div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-zion-gold/55 text-xs text-center mt-4">
+            {TerranovaGoldenRepublicBohemiaCopy.bothProjectsShareSourceCodeTer[cs ? 'cs' : 'en']}
+          </p>
         </motion.section>
 
         {/* ═══ ZION INTEGRATION ═══ */}
@@ -673,7 +726,7 @@ export default function GoldenRepublicBohemiaPage() {
                 TerranovaGoldenRepublicBohemiaCopy.seedLibraryWhichCzechHeritageV[cs ? 'cs' : 'en'],
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
-                  <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
+                  <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
                   {q}
                 </li>
               ))}
