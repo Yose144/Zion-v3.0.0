@@ -5,6 +5,9 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
+  Circle,
+  Clock,
+  Dot,
   Droplets,
   Globe,
   Landmark,
@@ -13,6 +16,7 @@ import {
   Mountain,
   Network,
   Orbit,
+  PlayCircle,
   Sprout,
   Trees,
   Users,
@@ -242,7 +246,7 @@ export default function DharmaTemplePage() {
               {/* Icon column */}
               <div className="shrink-0">
                 <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <Orbit className="relative z-10 h-10 w-10 text-zion-gold" />
+                  <Landmark className="relative z-10 h-10 w-10 text-zion-gold" />
                   <Mountain className="absolute bottom-5 right-5 h-4 w-4 text-zion-cyan" />
                 </div>
               </div>
@@ -253,8 +257,9 @@ export default function DharmaTemplePage() {
                   <span className="zion-badge">
                     L5 · Terra Nova Pioneer
                   </span>
-                  <span className="zion-badge-gold">
-                    🔵 {TerranovaDharmaTempleCopy.planning[cs ? 'cs' : 'en']}
+                  <span className="zion-badge-gold inline-flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {TerranovaDharmaTempleCopy.planning[cs ? 'cs' : 'en']}
                   </span>
                 </div>
 
@@ -496,7 +501,14 @@ export default function DharmaTemplePage() {
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
                       </span>
-                      {p.active && <span className="text-zion-cyan text-xs animate-pulse">⚡ {TerranovaDharmaTempleCopy.now[cs ? 'cs' : 'en']}</span>}
+                      {p.active ? (
+                        <span className="inline-flex items-center gap-1 text-zion-cyan text-xs animate-pulse">
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          {TerranovaDharmaTempleCopy.now[cs ? 'cs' : 'en']}
+                        </span>
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-white/30" />
+                      )}
                     </div>
                     <p className="text-zion-gold/65 text-xs">{cs ? p.descCs : p.descEn}</p>
                   </div>
@@ -526,8 +538,8 @@ export default function DharmaTemplePage() {
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-zion-gold/65">{TerranovaDharmaTempleCopy.dimension[cs ? 'cs' : 'en']}</div>
-              <div className="p-3 text-white/85 sm:border-l border-white/10">🌿 Zahrada Genesis</div>
-              <div className="p-3 text-zion-gold sm:border-l border-white/10">🕌 Dharma Temple</div>
+              <div className="p-3 text-white/85 sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Zahrada Genesis</span></div>
+              <div className="p-3 text-zion-gold sm:border-l border-white/10"><span className="inline-flex items-center gap-1"><Network className="w-3 h-3" /> Dharma Temple</span></div>
             </div>
             {COMPARE.map((row, i) => (
               <div
@@ -635,7 +647,7 @@ export default function DharmaTemplePage() {
                 TerranovaDharmaTempleCopy.seedLibraryCoordinationWithZah[cs ? 'cs' : 'en'],
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-white/70">
-                  <span className="text-zion-gold shrink-0 mt-0.5">◇</span>
+                  <Dot className="w-4 h-4 text-zion-gold shrink-0 mt-0.5" />
                   {q}
                 </li>
               ))}
