@@ -67,6 +67,10 @@ OPERATOR_IPS=(
   2a00:11b1:10e2:af49:b90b:20ed:4eee:b48b/128  # Devin session IPv6 2026-08-11
   2a02:c207:2342:5821::1/64
   2a00:102b:5005:3217:ce28:aaff:fe46:f739/128  # Devin session IPv6 2026-08-27
+  109.81.31.156     # added 2026-09-03 (dashboard 403 fix)
+  109.81.31.171     # Devin session IPv4 2026-09-04
+  2a00:102b:5005:5db3:7cca:8777:6e6c:4adf/128  # Devin session IPv6 2026-09-03
+  2a00:102b:5005:5db3::/64                       # Devin session IPv6 prefix 2026-09-04
 )
 ```
 
