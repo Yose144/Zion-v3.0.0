@@ -306,15 +306,24 @@ export default function TePikoOraPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
-              {/* Ocean symbol */}
-              <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <Compass className="h-10 w-10 text-zion-gold" />
-              </div>
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative h-48 md:h-64 overflow-hidden">
+              <img
+                src="/images/te-piko-ora/hero.png"
+                alt="Te Pīko Ora"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            </div>
+            <div className="relative z-10 p-6 md:p-10">
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                {/* Ocean symbol */}
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Compass className="h-10 w-10 text-zion-gold" />
+                </div>
 
-              {/* Text column */}
-              <div className="space-y-3 flex-1">
+                {/* Text column */}
+                <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="zion-badge">
                     L5 · Terra Nova Pioneer
@@ -360,6 +369,7 @@ export default function TePikoOraPage() {
               </div>
             </div>
           </div>
+          </div>
         </motion.header>
 
         {/* ═══ POLYNÉSIE INFO ═══ */}
@@ -395,6 +405,32 @@ export default function TePikoOraPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ ARCHITECTURAL CONCEPT ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaTePikoOraCopy.sitePlan[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaTePikoOraCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/te-piko-ora/concept-og.png"
+                alt={cs ? 'Návrh Te Pīko Ora' : 'Te Pīko Ora concept'}
+                className="w-full object-contain"
+              />
             </div>
           </div>
         </motion.section>
