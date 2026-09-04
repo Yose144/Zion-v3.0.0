@@ -58,6 +58,8 @@ const TerranovaGoldenRepublicBohemiaCopy = {
   terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Golden Republic Bohemia.`, en: `Complete plan, concept and specification of Golden Republic Bohemia.` },
+  sitePlan: { cs: `Architektonický koncept`, en: `Architectural concept` },
+  sitePlanSubtitle: { cs: `První konceptový board: půdorysy, řezy a energetický systém.`, en: `First concept board: floor plans, sections and energy system.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
 };
@@ -304,7 +306,7 @@ export default function GoldenRepublicBohemiaPage() {
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="relative h-48 md:h-64 overflow-hidden">
               <img
-                src="/images/golden-republic-bohemia/hero.png"
+                src="/images/golden-republic-bohemia/hero.jpg"
                 alt="Golden Republic Bohemia"
                 className="w-full h-full object-cover"
               />
@@ -399,6 +401,32 @@ export default function GoldenRepublicBohemiaPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ ARCHITECTURAL CONCEPT ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaGoldenRepublicBohemiaCopy.sitePlan[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaGoldenRepublicBohemiaCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/golden-republic-bohemia/concept-og.jpg"
+                alt={cs ? 'Návrh Golden Republic Bohemia' : 'Golden Republic Bohemia concept'}
+                className="w-full object-contain"
+              />
             </div>
           </div>
         </motion.section>

@@ -58,6 +58,8 @@ const TerranovaBodhiLankaCopy = {
   doYouHearTheCallOfTheBodhiTree: { cs: `Slyšíš volání Bodhi stromu? Jsi Guardian, který chce stavět prostor lásky v srdci Indického oceánu?`, en: `Do you hear the call of the Bodhi tree? Are you a Guardian who wants to build a space of love in the heart of the Indian Ocean?` },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
+  sitePlan: { cs: `Architektonický koncept`, en: `Architectural concept` },
+  sitePlanSubtitle: { cs: `První konceptový board: půdorysy, řezy a energetický systém.`, en: `First concept board: floor plans, sections and energy system.` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Bodhi Lanka.`, en: `Complete plan, concept and specification of Bodhi Lanka.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
@@ -306,7 +308,7 @@ export default function BodhiLankaPage() {
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="relative h-48 md:h-64 overflow-hidden">
               <img
-                src="/images/bodhi-lanka/hero.png"
+                src="/images/bodhi-lanka/hero.jpg"
                 alt="Bodhi Lanka"
                 className="w-full h-full object-cover"
               />
@@ -401,6 +403,32 @@ export default function BodhiLankaPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ ARCHITECTURAL CONCEPT ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaBodhiLankaCopy.sitePlan[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {TerranovaBodhiLankaCopy.sitePlanSubtitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/bodhi-lanka/concept-og.jpg"
+                alt={cs ? 'Návrh Bodhi Lanka' : 'Bodhi Lanka concept'}
+                className="w-full object-contain"
+              />
             </div>
           </div>
         </motion.section>

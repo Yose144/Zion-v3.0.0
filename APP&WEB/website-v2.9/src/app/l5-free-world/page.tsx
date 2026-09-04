@@ -155,7 +155,7 @@ const getCommunities = (cs: boolean) => [
       : 'Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.',
     tags: ['Governance', 'DAO Circle', 'Golden Republic'],
     href: '/terranova/golden-republic-bohemia',
-    cover: '/images/golden-republic-bohemia/hero.png',
+    cover: '/images/golden-republic-bohemia/hero.jpg',
   },
   {
     name: 'Bodhi Lanka',
@@ -166,7 +166,7 @@ const getCommunities = (cs: boolean) => [
       : 'Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
     tags: ['Bhakti', 'Ayurveda', 'Bodhi Tree'],
     href: '/terranova/bodhi-lanka',
-    cover: '/images/bodhi-lanka/hero.png',
+    cover: '/images/bodhi-lanka/hero.jpg',
   },
 ];
 
