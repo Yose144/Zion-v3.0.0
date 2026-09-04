@@ -145,6 +145,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.tePikoOraPolynesianRevival[cs ? 'cs' : 'en'],
     tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
     href: '/terranova/te-piko-ora',
+    cover: '/images/te-piko-ora/hero.png',
   },
   {
     name: 'Golden Republic Bohemia',
