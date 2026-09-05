@@ -6,15 +6,11 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
-  Clock,
-  Coins,
-  Copy,
+  Box,
   Hash,
   Layers,
   Shield,
   Cpu,
-  Box,
   Code,
   Wallet,
 } from "lucide-react";
@@ -22,6 +18,11 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
+import { default as InfoRow } from '@/components/explorer/v4/shared/ExplorerDetailRow';
+import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
+import ExplorerJsonView from '@/components/explorer/v4/shared/ExplorerJsonView';
+import ExplorerSkeleton from '@/components/explorer/v4/shared/ExplorerSkeleton';
+import ExplorerEmptyState from '@/components/explorer/v4/shared/ExplorerEmptyState';
 
 const ExplorerBlockBlockDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -129,40 +130,6 @@ const fmtSize = (b: number) => {
 const truncHash = (h: string, n = 12) =>
   h && h.length > n * 2 ? `${h.slice(0, n)}…${h.slice(-n)}` : h || "—";
 
-function CopyBtn({ text, label }: { text: string; label?: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0" title={`Copy ${label || ""}`}
-      aria-label={ok ? 'Copied' : `Copy ${label || 'value'}`}
-    >
-      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Copy className="h-3.5 w-3.5" />}
-    </button>
-  );
-}
-
-function InfoRow({ label, value, copyable, mono, color, link, badge }: {
-  label: string; value: string; copyable?: boolean; mono?: boolean; color?: string; link?: string; badge?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-white/[0.04] last:border-0 gap-1">
-      <span className="text-[12px] uppercase tracking-[0.1em] text-gray-500 font-medium flex-shrink-0">{label}</span>
-      <div className="flex items-center gap-2 min-w-0">
-        {badge}
-        {link ? (
-          <Link href={link} className={`${mono ? "font-mono" : ""} ${color || "text-zion-cyan"} text-sm hover:text-white transition break-all truncate`}>
-            {value}
-          </Link>
-        ) : (
-          <span className={`${mono ? "font-mono" : ""} ${color || "text-white"} text-sm break-all`}>{value}</span>
-        )}
-        {copyable && <CopyBtn text={value} label={label} />}
-      </div>
-    </div>
-  );
-}
-
 export default function BlockDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -214,36 +181,16 @@ export default function BlockDetailClient() {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="relative min-h-screen pb-24">
-        <div className="zion-container py-20 pt-6 max-w-6xl">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 w-48 bg-white/5 rounded" />
-            <div className="h-12 w-80 bg-white/5 rounded" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-[400px] zion-section" />
-              <div className="h-[400px] zion-section" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <ExplorerSkeleton statCount={4} />;
 
   if (error || !block) {
     return (
-      <div className="relative min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-center max-w-md px-4">
-          <Box className="h-16 w-16 text-zion-purple/50 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">{ExplorerBlockBlockDetailClientCopy.blockNotFound[cs ? 'cs' : 'en']}</h1>
-          <p className="text-gray-500 text-sm mb-6">{error || (ExplorerBlockBlockDetailClientCopy.thisBlockDoesNotExistOnTheZion[cs ? 'cs' : 'en'])}</p>
-          <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 
-            text-sm text-white hover:bg-white/10 transition">
-            <ArrowLeft className="h-4 w-4" /> {ExplorerBlockBlockDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
-          </Link>
-        </div>
-      </div>
+      <ExplorerEmptyState
+        title={ExplorerBlockBlockDetailClientCopy.blockNotFound[cs ? 'cs' : 'en']}
+        message={error || (ExplorerBlockBlockDetailClientCopy.thisBlockDoesNotExistOnTheZion[cs ? 'cs' : 'en'])}
+        backHref="/explorer"
+        backLabel={ExplorerBlockBlockDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
+      />
     );
   }
 
@@ -327,19 +274,7 @@ export default function BlockDetailClient() {
 
         {/* Raw JSON View */}
         {showRaw && rawJson && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Code className="h-4 w-4 text-zion-purple" />
-                <span className="text-sm font-semibold text-white">Raw JSON</span>
-              </div>
-              <CopyBtn text={rawJson} label="JSON" />
-            </div>
-            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 m-4 overflow-x-auto text-[12px] leading-relaxed font-mono text-gray-300 max-h-[600px]">
-              {rawJson}
-            </pre>
-          </motion.div>
+          <ExplorerJsonView json={rawJson} fileName={`block-${block.height}.json`} />
         )}
 
         {/* Block Info Cards */}
@@ -355,14 +290,14 @@ export default function BlockDetailClient() {
             </div>
             <InfoRow label={ExplorerBlockBlockDetailClientCopy.height[cs ? 'cs' : 'en']} value={block.height.toLocaleString(locale)} />
             <InfoRow label={ExplorerBlockBlockDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
-            <InfoRow label="Hash" value={block.hash} mono copyable />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.previousHash[cs ? 'cs' : 'en']} value={truncHash(block.prev_hash, 16)} mono copyable
-              link={block.prev_hash ? `/explorer/block?id=${block.height - 1}` : undefined} />
+            <InfoRow label="Hash" value={block.hash} mono copy truncate />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.previousHash[cs ? 'cs' : 'en']} value={block.prev_hash} mono copy truncate
+              link={block.height > 0 ? `/explorer/block?id=${block.height - 1}` : undefined} />
             <InfoRow
               label={ExplorerBlockBlockDetailClientCopy.merkleRoot[cs ? 'cs' : 'en']}
               value={block.merkle_root || block.tx_hash_list_merkle_root || "—"}
               mono
-              copyable={!!(block.merkle_root || block.tx_hash_list_merkle_root)}
+              copy={!!(block.merkle_root || block.tx_hash_list_merkle_root)}
               color={!(block.merkle_root || block.tx_hash_list_merkle_root) ? "text-gray-600" : undefined}
               badge={!(block.merkle_root || block.tx_hash_list_merkle_root) ? (
                 <span title={ExplorerBlockBlockDetailClientCopy.merkleRootIsNotExposedByTheCur[cs ? 'cs' : 'en']} className="text-gray-600 cursor-help">
@@ -392,8 +327,9 @@ export default function BlockDetailClient() {
               <InfoRow
                 label={ExplorerBlockBlockDetailClientCopy.coinbaseRecipient[cs ? 'cs' : 'en']}
                 value={block.miner_label || truncHash(block.miner)}
+                copyValue={block.miner}
                 mono={!block.miner_label}
-                copyable
+                copy
                 color={block.is_pool_block ? 'text-zion-cyan' : undefined}
                 link={`/explorer/address?addr=${block.miner}`}
                 badge={block.is_pool_block ? (
@@ -403,7 +339,7 @@ export default function BlockDetailClient() {
                 ) : undefined}
               />
             )}
-            <InfoRow label="Coinbase TX" value={truncHash(block.miner_tx_hash)} mono copyable />
+            <InfoRow label="Coinbase TX" value={block.miner_tx_hash} mono copy truncate />
           </motion.div>
         </div>
 
@@ -483,7 +419,7 @@ export default function BlockDetailClient() {
               </thead>
               <tbody>
                 {(block.txs || []).map((tx, i) => (
-                  <tr key={tx.tx_hash || i} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                  <tr key={tx.tx_hash || i} className="group border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${
                         tx.type === "coinbase"
@@ -499,7 +435,9 @@ export default function BlockDetailClient() {
                           className="text-zion-cyan hover:text-white transition font-mono text-xs">
                           {truncHash(tx.tx_hash, 10)}
                         </Link>
-                        {tx.tx_hash && !tx.tx_hash.startsWith("coinbase_") && <CopyBtn text={tx.tx_hash} />}
+                        {tx.tx_hash && !tx.tx_hash.startsWith("coinbase_") && (
+                          <ExplorerCopyButton text={tx.tx_hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
                       </div>
                     </td>
                     <td className="px-3 py-3 hidden lg:table-cell">

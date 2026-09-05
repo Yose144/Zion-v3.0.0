@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRightLeft, ChevronRight, Copy, Check, Loader2, X, Download, AlertTriangle } from "lucide-react";
+import { ArrowRightLeft, ChevronRight, Loader2, X, Download, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
+import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
 const ExplorerTransactionsTransactionsPageClientCopy = {
   payout: { cs: `výplata`, en: `payout` },
@@ -30,20 +31,6 @@ const ExplorerTransactionsTransactionsPageClientCopy = {
 };
 
 /* ── helpers ─────────────────────────────────────────────────── */
-
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-white/20 hover:text-white/60 transition-colors"
-      aria-label={ok ? 'Copied' : 'Copy'}
-      title={ok ? 'Copied' : 'Copy'}
-    >
-      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
-    </button>
-  );
-}
 
 function StatusDot({ status }: { status: string }) {
   if (status === "pending") return <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zion-gold opacity-75" /><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-zion-gold" /></span>;
@@ -270,7 +257,7 @@ export default function TransactionsPageClient() {
                 <span className="text-[13px] font-mono text-zion-cyan group-hover:text-cyan-200 truncate transition-colors">
                   {tx.hash.slice(0, 16)}…{tx.hash.slice(-8)}
                 </span>
-                <CopyBtn text={tx.hash} />
+                <ExplorerCopyButton text={tx.hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
 
               {/* type */}

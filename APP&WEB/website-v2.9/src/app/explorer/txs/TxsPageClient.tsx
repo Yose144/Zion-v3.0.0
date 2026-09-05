@@ -22,7 +22,7 @@ import { SITE_RELEASE_LABEL } from "@/lib/site";
 import { formatAge, formatZion, truncateHash } from "@/lib/explorer/format";
 import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
-import CopyButton from "@/components/explorer/v4/shared/CopyButton";
+import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
 const ExplorerTxsTxsPageClientCopy = {
   payout: { cs: `výplata`, en: `payout` },
@@ -438,7 +438,7 @@ export default function TxsPageClient() {
                     <span className="text-[13px] font-mono text-zion-cyan group-hover:text-cyan-200 truncate transition-colors">
                       {tx.hash.slice(0, 16)}…{tx.hash.slice(-8)}
                     </span>
-                    <CopyButton text={tx.hash} />
+                    <ExplorerCopyButton text={tx.hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
 
                   {/* type */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Box, ChevronDown, Copy, Check, ArrowLeft, Download, AlertCircle } from "lucide-react";
+import { Box, ChevronDown, Download, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
@@ -9,6 +9,7 @@ import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
 import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
+import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
 const ExplorerBlocksCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -59,18 +60,6 @@ const fmtDiff = (d: number): string => {
   if (d >= 1e3) return `${(d / 1e3).toFixed(1)}k`;
   return d.toLocaleString();
 };
-
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-gray-600 hover:text-white transition ml-1.5 shrink-0"
-      aria-label={ok ? 'Copied' : 'Copy'}
-      title={ok ? 'Copied' : 'Copy'}>
-      {ok ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
-    </button>
-  );
-}
 
 export default function BlocksPage() {
   const { lang } = useLang();
@@ -254,7 +243,7 @@ export default function BlocksPage() {
                       </tr>
                     ))
                   : blocks.map((block) => (
-                      <tr key={block.height} className="border-b border-white/3 hover:bg-white/3 transition-colors">
+                      <tr key={block.height} className="group border-b border-white/3 hover:bg-white/3 transition-colors">
                         <td className="px-6 py-3">
                           <Link href={`/explorer/block?id=${block.height}`}
                             className="text-zion-cyan hover:text-white transition font-mono font-semibold text-sm">
@@ -270,7 +259,9 @@ export default function BlocksPage() {
                               className="text-gray-500 hover:text-gray-300 transition font-mono text-xs">
                               {block.hash ? `${block.hash.slice(0, 10)}…${block.hash.slice(-8)}` : "—"}
                             </Link>
-                            {block.hash && <CopyBtn text={block.hash} />}
+                            {block.hash && (
+                              <ExplorerCopyButton text={block.hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
                           </div>
                         </td>
                         <td className="px-3 py-3 text-right">

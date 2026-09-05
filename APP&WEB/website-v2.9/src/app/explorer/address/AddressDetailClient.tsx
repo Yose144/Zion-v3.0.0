@@ -5,23 +5,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Activity,
-  Check,
   ChevronDown,
   ChevronRight,
-  Copy,
   Cpu,
-  Loader2,
   Pickaxe,
   Sparkles,
   Star,
   Wallet,
-  XCircle,
   Layers,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { FLOWERS_PER_ZION } from '@/lib/constants';
 import QRCode from "@/components/explorer/QRCode";
+import { default as InfoRow } from '@/components/explorer/v4/shared/ExplorerDetailRow';
+import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
+import ExplorerSkeleton from '@/components/explorer/v4/shared/ExplorerSkeleton';
+import ExplorerEmptyState from '@/components/explorer/v4/shared/ExplorerEmptyState';
 
 const ExplorerAddressAddressDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -81,32 +81,6 @@ const ExplorerAddressAddressDetailClientCopy = {
 };
 
 /* ── helpers ─────────────────────────────────────────────────── */
-
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-white/20 hover:text-white/60 transition-colors"
-      aria-label={ok ? 'Copied' : 'Copy'}
-      title={ok ? 'Copied' : 'Copy'}
-    >
-      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
-    </button>
-  );
-}
-
-function InfoRow({ label, value, mono, color, copy }: { label: string; value: string; mono?: boolean; color?: string; copy?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-0">
-      <span className="text-[11px] text-white/40 uppercase tracking-wider">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className={`text-[13px] ${mono ? "font-mono" : ""} ${color || "text-white/80"} text-right break-all max-w-[300px]`}>{value}</span>
-        {copy && <CopyBtn text={value} />}
-      </div>
-    </div>
-  );
-}
 
 function formatDate(ts: number, locale: string) {
   if (!ts) return "—";
@@ -283,35 +257,17 @@ export default function AddressDetailClient() {
   }, [addr, cs]);
 
   /* ── loading ─────────────────────────────────────────────── */
-  if (loading) {
-    return (
-      <div className="relative min-h-screen pb-24 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-white/30 animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <ExplorerSkeleton statCount={4} />;
 
   /* ── error ───────────────────────────────────────────────── */
   if (error || !data) {
     return (
-      <div className="relative min-h-screen pb-24 overflow-x-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zion-purple/5 via-transparent to-transparent" />
-        <div className="relative z-10 zion-container max-w-3xl py-12 pt-6">
-          <nav className="flex items-center gap-1.5 text-[11px] text-white/40 mb-6">
-            <Link href="/explorer" className="hover:text-white/70 transition-colors">Explorer</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white/70">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</span>
-          </nav>
-          <div className="zion-rainbow-card rounded-[28px] bg-black/60 border border-zion-purple/20 p-5 sm:p-8 md:p-10 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <XCircle className="h-10 w-10 text-zion-purple/60 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-white mb-2">{ExplorerAddressAddressDetailClientCopy.addressNotFound[cs ? 'cs' : 'en']}</h1>
-            <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>
-            <button onClick={() => router.push("/explorer")} className="px-5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] transition-colors text-sm text-white/60 hover:text-white/90">
-              {ExplorerAddressAddressDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
-            </button>
-          </div>
-        </div>
-      </div>
+      <ExplorerEmptyState
+        title={ExplorerAddressAddressDetailClientCopy.addressNotFound[cs ? 'cs' : 'en']}
+        message={error || addr}
+        backHref="/explorer"
+        backLabel={ExplorerAddressAddressDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
+      />
     );
   }
 
@@ -367,9 +323,9 @@ export default function AddressDetailClient() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <div className="group flex items-center gap-2 mt-1 flex-wrap">
               <p className="text-zion-purple/70 font-mono text-sm break-all">{addr}</p>
-              <CopyBtn text={addr} />
+              <ExplorerCopyButton text={addr} iconSize={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
               <button
                 onClick={toggleWatch}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
@@ -603,7 +559,7 @@ export default function AddressDetailClient() {
                         <span className="text-[13px] font-mono text-zion-cyan group-hover:text-cyan-200 truncate transition-colors">
                           {t.tx_hash.slice(0, 16)}…{t.tx_hash.slice(-8)}
                         </span>
-                        <CopyBtn text={t.tx_hash} />
+                        <ExplorerCopyButton text={t.tx_hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
 
                       {/* age */}
@@ -686,7 +642,7 @@ export default function AddressDetailClient() {
                     <span className="text-[13px] font-mono text-zion-cyan group-hover:text-cyan-200 truncate transition-colors">
                       {u.tx_hash.slice(0, 16)}…{u.tx_hash.slice(-8)}
                     </span>
-                    <CopyBtn text={u.tx_hash} />
+                    <ExplorerCopyButton text={u.tx_hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.output_index}</div>
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.height > 0 ? u.height.toLocaleString(locale) : '—'}</div>
