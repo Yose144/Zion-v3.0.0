@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   ArrowRight,
-  Check,
-  Copy,
   Hash,
   Layers,
   Shield,
@@ -19,6 +16,11 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
+import { default as InfoRow } from '@/components/explorer/v4/shared/ExplorerDetailRow';
+import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
+import ExplorerJsonView from '@/components/explorer/v4/shared/ExplorerJsonView';
+import ExplorerSkeleton from '@/components/explorer/v4/shared/ExplorerSkeleton';
+import ExplorerEmptyState from '@/components/explorer/v4/shared/ExplorerEmptyState';
 
 const ExplorerTxTxDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -94,36 +96,6 @@ const decodeMemo = (bytes: number[]) => {
   return { text, hex, isText: text.length > 0 && text.length === printable.length };
 };
 
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0"
-      aria-label={ok ? 'Copied' : 'Copy'}
-      title={ok ? 'Copied' : 'Copy'}>
-      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Copy className="h-3.5 w-3.5" />}
-    </button>
-  );
-}
-
-function InfoRow({ label, value, copyable, mono, color, link }: {
-  label: string; value: string; copyable?: boolean; mono?: boolean; color?: string; link?: string;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-white/[0.04] last:border-0 gap-1">
-      <span className="text-[12px] uppercase tracking-[0.1em] text-gray-500 font-medium flex-shrink-0">{label}</span>
-      <div className="flex items-center gap-2 min-w-0">
-        {link ? (
-          <Link href={link} className={`${mono ? "font-mono" : ""} ${color || "text-zion-cyan"} text-sm hover:text-white transition break-all truncate`}>{value}</Link>
-        ) : (
-          <span className={`${mono ? "font-mono" : ""} ${color || "text-white"} text-sm break-all`}>{value}</span>
-        )}
-        {copyable && <CopyBtn text={value} />}
-      </div>
-    </div>
-  );
-}
-
 function AddressList({ addrs, max = 3 }: { addrs: string; max?: number }) {
   const list = addrs.split(',').map((s) => s.trim()).filter(Boolean);
   if (!list.length) return <span className="text-gray-600">—</span>;
@@ -135,7 +107,7 @@ function AddressList({ addrs, max = 3 }: { addrs: string; max?: number }) {
         const label = KNOWN_ADDRESS_MAP.get(a)?.label;
         const isAddr = a.startsWith('zion1');
         return (
-          <div key={i} className="flex items-center gap-2 min-w-0">
+          <div key={i} className="group flex items-center gap-2 min-w-0">
             {label && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/10">{label}</span>}
             {isAddr ? (
               <Link href={`/explorer/address?addr=${a}`} className="text-sm font-mono text-zion-cyan hover:text-white transition break-all truncate" title={a}>
@@ -144,7 +116,7 @@ function AddressList({ addrs, max = 3 }: { addrs: string; max?: number }) {
             ) : (
               <span className="text-sm font-mono text-white break-all truncate" title={a}>{a}</span>
             )}
-            <CopyBtn text={a} />
+            <ExplorerCopyButton text={a} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         );
       })}
@@ -162,9 +134,9 @@ function AddressRow({ label, addrs }: { label: string; addrs: string }) {
   );
 }
 
-function MiniInfo({ label, value, copyable, mono, link, color }: { label: string; value: string; copyable?: boolean; mono?: boolean; link?: string; color?: string }) {
+function MiniInfo({ label, value, copy, mono, link, color }: { label: string; value: string; copy?: boolean; mono?: boolean; link?: string; color?: string }) {
   return (
-    <div className="flex items-start justify-between gap-3 py-1.5 border-b border-white/[0.04] last:border-0">
+    <div className="group flex items-start justify-between gap-3 py-1.5 border-b border-white/[0.04] last:border-0">
       <span className="text-[10px] uppercase tracking-wider text-white/40 pt-1">{label}</span>
       <div className="flex items-center gap-2 min-w-0 justify-end">
         {link ? (
@@ -172,7 +144,7 @@ function MiniInfo({ label, value, copyable, mono, link, color }: { label: string
         ) : (
           <span className={`text-[11px] ${mono ? "font-mono" : ""} ${color || "text-white"} break-all truncate`} title={value}>{value}</span>
         )}
-        {copyable && <CopyBtn text={value} />}
+        {copy && <ExplorerCopyButton text={value} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />}
       </div>
     </div>
   );
@@ -182,7 +154,6 @@ export default function TxDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const locale = ExplorerTxTxDetailClientCopy.enUs[cs ? 'cs' : 'en'];
-  const router = useRouter();
   const searchParams = useSearchParams();
   const hash = useMemo(() => String(searchParams.get("hash") || "").trim(), [searchParams]);
 
@@ -205,36 +176,16 @@ export default function TxDetailClient() {
     })();
   }, [hash, cs]);
 
-  if (loading) {
-    return (
-      <div className="relative min-h-screen pb-24">
-        <div className="zion-container py-20 pt-6 max-w-6xl">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 w-48 bg-white/5 rounded" />
-            <div className="h-12 w-96 bg-white/5 rounded" />
-            <div className="h-[300px] zion-section" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-[250px] zion-section" />
-              <div className="h-[250px] zion-section" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <ExplorerSkeleton statCount={4} />;
 
   if (error || !tx) {
     return (
-      <div className="relative min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-center max-w-md px-4">
-          <ArrowRightLeft className="h-16 w-16 text-zion-purple/50 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">{ExplorerTxTxDetailClientCopy.transactionNotFound[cs ? 'cs' : 'en']}</h1>
-          <p className="text-gray-500 text-sm mb-6">{error || `Hash: ${hash}`}</p>
-          <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 transition">
-            <ArrowLeft className="h-4 w-4" /> {ExplorerTxTxDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
-          </Link>
-        </div>
-      </div>
+      <ExplorerEmptyState
+        title={ExplorerTxTxDetailClientCopy.transactionNotFound[cs ? 'cs' : 'en']}
+        message={error || `Hash: ${hash}`}
+        backHref="/explorer"
+        backLabel={ExplorerTxTxDetailClientCopy.backToExplorer[cs ? 'cs' : 'en']}
+      />
     );
   }
 
@@ -296,19 +247,7 @@ export default function TxDetailClient() {
 
         {/* Raw JSON View */}
         {showRaw && rawJson && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Code className="h-4 w-4 text-zion-purple" />
-                <span className="text-sm font-semibold text-white">Raw JSON</span>
-              </div>
-              <CopyBtn text={rawJson} />
-            </div>
-            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 m-4 overflow-x-auto text-[12px] leading-relaxed font-mono text-gray-300 max-h-[600px]">
-              {rawJson}
-            </pre>
-          </motion.div>
+          <ExplorerJsonView json={rawJson} fileName={`tx-${tx.tx_hash.slice(0, 16)}.json`} />
         )}
 
         {/* Summary cards */}
@@ -340,7 +279,7 @@ export default function TxDetailClient() {
             </div>
             <h2 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.transactionDetails[cs ? 'cs' : 'en']}</h2>
           </div>
-          <InfoRow label="TX Hash" value={tx.tx_hash} mono copyable />
+          <InfoRow label="TX Hash" value={tx.tx_hash} mono copy truncate />
           <InfoRow label={ExplorerTxTxDetailClientCopy.status[cs ? 'cs' : 'en']} value={tx.in_pool ? (ExplorerTxTxDetailClientCopy.pendingMempool[cs ? 'cs' : 'en']) : (ExplorerTxTxDetailClientCopy.confirmed[cs ? 'cs' : 'en'])}
             color={tx.in_pool ? "text-zion-gold" : "text-zion-cyan"} />
           {tx.block_height > 0 && (
@@ -360,8 +299,8 @@ export default function TxDetailClient() {
           {isV3Account && (
             <>
               <InfoRow label="Nonce" value={`${tx.nonce ?? 0}`} />
-              {tx.public_key && <InfoRow label={ExplorerTxTxDetailClientCopy.publicKey[cs ? 'cs' : 'en']} value={tx.public_key} mono copyable />}
-              {tx.signature && <InfoRow label={ExplorerTxTxDetailClientCopy.signature[cs ? 'cs' : 'en']} value={truncHash(tx.signature, 16)} mono copyable />}
+              {tx.public_key && <InfoRow label={ExplorerTxTxDetailClientCopy.publicKey[cs ? 'cs' : 'en']} value={tx.public_key} mono copy truncate />}
+              {tx.signature && <InfoRow label={ExplorerTxTxDetailClientCopy.signature[cs ? 'cs' : 'en']} value={truncHash(tx.signature, 16)} copyValue={tx.signature} mono copy truncate />}
             </>
           )}
           {!isV3Account && (
@@ -378,7 +317,7 @@ export default function TxDetailClient() {
                   label={ExplorerTxTxDetailClientCopy.memo[cs ? 'cs' : 'en']}
                   value={memo.isText ? memo.text : `${memo.hex.slice(0, 64)}${memo.hex.length > 64 ? '…' : ''}`}
                   mono={!memo.isText}
-                  copyable
+                  copy
                 />
               );
             })()
@@ -418,7 +357,7 @@ export default function TxDetailClient() {
                           <MiniInfo
                             label={ExplorerTxTxDetailClientCopy.previousOutput[cs ? 'cs' : 'en']}
                             value={inp.previous_output}
-                            copyable
+                            copy
                             mono
                             link={`/explorer/tx?hash=${inp.previous_output}`}
                           />
@@ -434,7 +373,7 @@ export default function TxDetailClient() {
                           <MiniInfo
                             label={ExplorerTxTxDetailClientCopy.script[cs ? 'cs' : 'en']}
                             value={inp.script}
-                            copyable
+                            copy
                             mono
                           />
                         )}
@@ -442,7 +381,7 @@ export default function TxDetailClient() {
                           <MiniInfo
                             label="Address"
                             value={inp.address}
-                            copyable
+                            copy
                             mono
                             link={`/explorer/address?addr=${inp.address}`}
                           />
@@ -484,7 +423,7 @@ export default function TxDetailClient() {
                       <MiniInfo
                         label="Address"
                         value={out.address || out.key}
-                        copyable
+                        copy
                         mono
                         link={(out.address || out.key).startsWith('zion1') ? `/explorer/address?addr=${out.address || out.key}` : undefined}
                       />

@@ -13,8 +13,6 @@ import { motion } from "framer-motion";
 import {
   ArrowDownUp,
   ChevronRight,
-  Copy,
-  Check,
   Flame,
   Hash,
   Loader2,
@@ -27,6 +25,7 @@ import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { usePendingTransactions } from "@/hooks/useWebSocketSubscription";
+import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
 const ExplorerMempoolMempoolPageClientCopy = {
   feeDistribution: { cs: `Distribuce poplatků`, en: `Fee Distribution` },
@@ -96,26 +95,6 @@ function formatAge(seconds: number, cs: boolean) {
   if (seconds < 3600) return cs ? `${Math.floor(seconds / 60)} min` : `${Math.floor(seconds / 60)}m`;
   if (seconds < 86400) return cs ? `${Math.floor(seconds / 3600)} h` : `${Math.floor(seconds / 3600)}h`;
   return cs ? `${Math.floor(seconds / 86400)} d` : `${Math.floor(seconds / 86400)}d`;
-}
-
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        navigator.clipboard.writeText(text);
-        setOk(true);
-        setTimeout(() => setOk(false), 1500);
-      }}
-      className="text-white/20 hover:text-white/60 transition-colors"
-      aria-label={ok ? 'Copied' : 'Copy'}
-      title={ok ? 'Copied' : 'Copy'}
-    >
-      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
-    </button>
-  );
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -477,7 +456,7 @@ export default function MempoolPageClient() {
                   <span className="text-[13px] font-mono text-zion-gold group-hover:text-amber-200 truncate transition-colors">
                     {truncate(tx.tx_hash)}
                   </span>
-                  <CopyBtn text={tx.tx_hash} />
+                  <ExplorerCopyButton text={tx.tx_hash} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
 
                 {/* age */}

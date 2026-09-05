@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   FileCode,
-  Copy,
-  Check,
   ExternalLink,
   Shield,
   Globe,
@@ -29,6 +27,7 @@ import { CONTRACTS, CHAINS, ACTIVE_CHAIN } from '@/lib/defi-contracts';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 import { usePolling } from '@/hooks/usePolling';
 import { formatNumber } from '@/lib/explorer/format';
+import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
 
 type Category =
   | 'Token'
@@ -335,32 +334,6 @@ function getContractStats(
   }
 }
 
-function CopyButton({ text, cs }: { text: string; cs: boolean }) {
-  const [ok, setOk] = useState(false);
-
-  const handleCopy = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-    }
-    setOk(true);
-    setTimeout(() => setOk(false), 1500);
-  };
-
-  const label = ok ? copy.copied[cs ? 'cs' : 'en'] : copy.copy[cs ? 'cs' : 'en'];
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      title={label}
-      aria-label={label}
-      className="text-white/30 hover:text-white/70 transition-colors"
-    >
-      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
-    </button>
-  );
-}
-
 function ContractStats({
   contractKey,
   defi,
@@ -449,7 +422,7 @@ function ContractCard({
           <span className="text-zion-cyan">Base</span>
         </div>
         <div className="flex items-center gap-2">
-          <CopyButton text={entry.address} cs={cs} />
+          <ExplorerCopyButton text={entry.address} iconSize={14} title={copy.copy[cs ? 'cs' : 'en']} />
           <a
             href={`${baseUrl}/${entry.address}`}
             target="_blank"

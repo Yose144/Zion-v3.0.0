@@ -8,8 +8,6 @@ import {
   Award,
   BarChart3,
   ChevronLeft,
-  Copy,
-  Check,
   Crown,
   Download,
   Droplets,
@@ -26,6 +24,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { exportToCsv } from "@/lib/csv-export";
+import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
 const ExplorerRichlistRichListClientCopy = {
   holder: { cs: `Držitel`, en: `Holder` },
@@ -85,28 +84,6 @@ interface RichListData {
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
-
-function CopyBtn({ text }: { text: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(text);
-        setOk(true);
-        setTimeout(() => setOk(false), 1500);
-      }}
-      className="text-white/20 hover:text-white/60 transition-colors"
-      aria-label={ok ? 'Copied' : 'Copy'}
-      title={ok ? 'Copied' : 'Copy'}
-    >
-      {ok ? (
-        <Check className="w-3.5 h-3.5 text-zion-cyan" />
-      ) : (
-        <Copy className="w-3.5 h-3.5" />
-      )}
-    </button>
-  );
-}
 
 function truncAddr(addr: string) {
   if (addr.length <= 20) return addr;
@@ -421,7 +398,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: Math.min(i * 0.02, 0.6) }}
-                  className="grid grid-cols-[60px_1fr_1fr_120px_100px] min-w-[420px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors items-center"
+                  className="group grid grid-cols-[60px_1fr_1fr_120px_100px] min-w-[420px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors items-center"
                 >
                   {/* Rank */}
                   <div className="flex items-center gap-1.5">
@@ -444,7 +421,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                     >
                       {truncAddr(entry.address)}
                     </Link>
-                    <CopyBtn text={entry.address} />
+                    <ExplorerCopyButton text={entry.address} iconSize={14} stopPropagation className="opacity-0 group-hover:opacity-100 transition-opacity" />
                     {entry.label && (
                       <span className="hidden md:inline text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full truncate max-w-[180px]">
                         {entry.label}

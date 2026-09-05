@@ -5,9 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   AlertCircle,
-  Check,
   Coins,
-  Copy,
   ExternalLink,
   Layers,
   Loader2,
@@ -19,6 +17,7 @@ import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { CONTRACTS, ACTIVE_CHAIN, SEED_PRICE_USD, PANCAKE_V3 } from "@/lib/defi-contracts";
 import { type DexMarketData, type DexPairDetail } from "@/lib/market";
+import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
 /* ── i18n copy ───────────────────────────────────────────────── */
 const TokensPageClientCopy = {
@@ -138,29 +137,6 @@ function dexDisplayName(dex: string, cs: boolean): string {
   return dex;
 }
 
-/* ── Copy button ─────────────────────────────────────────────── */
-function CopyBtn({ text, label }: { text: string; label: string }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(text);
-        setOk(true);
-        setTimeout(() => setOk(false), 1500);
-      }}
-      title={label}
-      aria-label={ok ? 'Copied' : label}
-      className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-    >
-      {ok ? (
-        <Check className="w-3.5 h-3.5 text-zion-cyan" />
-      ) : (
-        <Copy className="w-3.5 h-3.5" />
-      )}
-    </button>
-  );
-}
-
 /* ── Stat tile ───────────────────────────────────────────────── */
 function Stat({
   label,
@@ -274,9 +250,11 @@ function TokenCard({ token, cs }: { token: TokenDisplay; cs: boolean }) {
               <span className="font-mono text-sm text-zion-cyan break-all">
                 {token.address}
               </span>
-              <CopyBtn
+              <ExplorerCopyButton
                 text={token.address}
-                label={TokensPageClientCopy.contractOrAddress[cs ? "cs" : "en"]}
+                iconSize={14}
+                title={TokensPageClientCopy.contractOrAddress[cs ? "cs" : "en"]}
+                className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
               />
               {token.scanUrl && (
                 <a
