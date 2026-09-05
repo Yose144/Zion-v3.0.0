@@ -25,9 +25,11 @@ const ExplorerSearchSearchResultsClientCopy = {
   searching: { cs: `Hledám…`, en: `Searching…` },
   nothingFound: { cs: `Nic nebylo nalezeno`, en: `Nothing found` },
   trySearchingByBlockHeightTrans: { cs: `Zkuste hledat podle výšky bloku, hashe transakce nebo ZION adresy.`, en: `Try searching by block height, transaction hash, or ZION address.` },
+  all: { cs: `Vše`, en: `All` },
   blocks: { cs: `Bloky`, en: `Blocks` },
   transactions: { cs: `Transakce`, en: `Transactions` },
   addresses: { cs: `Adresy`, en: `Addresses` },
+  filterByType: { cs: `Filtrovat podle typu`, en: `Filter by type` },
 };
 
 interface SearchResult {
@@ -47,6 +49,7 @@ export default function SearchResultsClient() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'block' | 'transaction' | 'address'>('all');
 
   const fetchResults = useCallback(async () => {
     if (!query.trim()) {
@@ -71,10 +74,19 @@ export default function SearchResultsClient() {
     void fetchResults();
   }, [fetchResults]);
 
+  const filteredResults = filter === "all" ? results : results.filter((r) => r.type === filter);
+
   const grouped: Record<string, SearchResult[]> = {
-    block: results.filter((r) => r.type === "block"),
-    transaction: results.filter((r) => r.type === "transaction"),
-    address: results.filter((r) => r.type === "address"),
+    block: filteredResults.filter((r) => r.type === "block"),
+    transaction: filteredResults.filter((r) => r.type === "transaction"),
+    address: filteredResults.filter((r) => r.type === "address"),
+  };
+
+  const counts: Record<string, number> = {
+    all: results.length,
+    block: results.filter((r) => r.type === "block").length,
+    transaction: results.filter((r) => r.type === "transaction").length,
+    address: results.filter((r) => r.type === "address").length,
   };
 
   const icons = {
@@ -112,6 +124,38 @@ export default function SearchResultsClient() {
               <span className="text-sm text-white font-mono">{query || "—"}</span>
             </div>
             {loading && <Loader2 className="h-5 w-5 text-zion-cyan animate-spin" />}
+          </div>
+
+          {/* Type filter */}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            {(['all', 'block', 'transaction', 'address'] as const).map((f) => {
+              const active = filter === f;
+              const label = f === 'all' ? ExplorerSearchSearchResultsClientCopy.all[cs ? 'cs' : 'en']
+                : f === 'block' ? ExplorerSearchSearchResultsClientCopy.blocks[cs ? 'cs' : 'en']
+                : f === 'transaction' ? ExplorerSearchSearchResultsClientCopy.transactions[cs ? 'cs' : 'en']
+                : ExplorerSearchSearchResultsClientCopy.addresses[cs ? 'cs' : 'en'];
+              const count = counts[f] ?? 0;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  disabled={count === 0 && !active}
+                  className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${
+                    active
+                      ? 'zion-rainbow-sub text-white'
+                      : count === 0
+                        ? 'border border-white/5 bg-white/3 text-gray-600 cursor-not-allowed'
+                        : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
+                  }`}
+                  style={active ? ({ '--rc': '6, 105, 40' } as React.CSSProperties) : undefined}
+                >
+                  <span>{label}</span>
+                  <span className={`text-[10px] rounded-md px-1.5 py-0.5 ${active ? 'bg-black/30 text-white' : 'bg-white/5 text-gray-500'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </motion.section>
 

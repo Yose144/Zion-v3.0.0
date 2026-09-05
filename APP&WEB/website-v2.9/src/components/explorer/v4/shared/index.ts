@@ -5,6 +5,7 @@
 export { default as CopyButton } from "./CopyButton";
 export { default as ExplorerCopyButton } from "./ExplorerCopyButton";
 export { default as ExplorerDetailRow } from "./ExplorerDetailRow";
+export { default as ExplorerCommandPalette } from "./ExplorerCommandPalette";
 export { default as ExplorerEmptyState } from "./ExplorerEmptyState";
 export { default as ExplorerJsonView } from "./ExplorerJsonView";
 export { default as ExplorerSkeleton } from "./ExplorerSkeleton";

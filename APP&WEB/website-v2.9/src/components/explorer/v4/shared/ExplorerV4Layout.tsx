@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ExplorerTicker from "./ExplorerTicker";
+import ExplorerCommandPalette from "./ExplorerCommandPalette";
 
 const ExplorerV4layoutCopy = {
   explorerSections: { cs: `Explorer sekce`, en: `Explorer sections` },
@@ -126,6 +127,9 @@ export default function ExplorerV4Layout({ children, showTicker = true }: Explor
                 </span>
               );
             })}
+            <div className="ml-auto hidden sm:flex items-center">
+              <ExplorerCommandPalette />
+            </div>
           </div>
         </div>
       </motion.section>
