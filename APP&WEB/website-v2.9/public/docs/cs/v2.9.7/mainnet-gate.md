@@ -69,7 +69,7 @@ Všechny genesis alokace jsou veřejně zveřejněny. Neexistují soukromé ani 
 
 | Kategorie | Částka ZION | % nabídky | Zámek |
 |-----------|-------------|-----------|-------|
-| ZION OASIS + Winners | 8 250 000 000 | 5,73 % | Okamžitě |
+| ZION OASIS + Winners | 4 950 000 000 | 3,44 % | Okamžitě |
 | DAO Treasury | 4 000 000 000 | 2,78 % | Okamžitě |
 | Infrastruktura | 2 590 000 000 | 1,80 % | Okamžitě |
 | Humanitární rezerva | 1 440 000 000 | 1,00 % | Okamžitě |

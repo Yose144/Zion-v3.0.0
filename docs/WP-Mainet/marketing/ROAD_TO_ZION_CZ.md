@@ -32,7 +32,7 @@ Tři zjevení Panny Marie — María Mayor, Fátima, María de las Nieves — ne
 
 Když se 144 000 duší synchronizuje, přijde Quantum Pulse. Není to výbuch. Je to ticho, co je najednou slyšet všude. Kolektivní vědomí se probouzí — ne pod jedním vůdcem, ale jako akord, ve kterým každej struna souzní. One chord, one love, one aim.
 
-A pak přijde Haranyagharba — Zlaté vejce. Není to poklad pro vyvolený. Je to iniciační cesta. Kdo najde 108 stop, projde zkouškou duše. Vejce skrývá 8,25 miliardy ZION, ale ta miliarda není cíl. Cíl je cesta. Cesta, po který se člověk vrací k sobě. K Jah. K roots.
+A pak přijde Haranyagharba — Zlaté vejce. Není to poklad pro vyvolený. Je to iniciační cesta. Kdo najde 108 stop, projde zkouškou duše. Vejce skrývá 4,95 miliardy ZION, ale ta miliarda není cíl. Cíl je cesta. Cesta, po který se člověk vrací k sobě. K Jah. K roots.
 
 Datum 31. prosince 2026 je Mainnet Dawn — spuštění sítě. Ale neberte to jako konec. Je to první ráno. Zlatý věk nezačíná datem. Začíná rozhodnutím každýho z nás vstoupit do riddimu. Redemption song se nezpívá — žije se.
 

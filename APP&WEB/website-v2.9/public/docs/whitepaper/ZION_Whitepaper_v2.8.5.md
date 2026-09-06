@@ -99,7 +99,7 @@
 - **Consensus:** RandomX Proof of Work (CPU-friendly, ASIC-resistant)
 - **Privacy:** CryptoNote ring signatures a stealth addresses
 - **Multi-Chain:** Rainbow Bridge 44.44 Hz pro cross-chain interoperabilitu
-- **Consciousness Gaming:** 9-level systém s 8.25B ZION distribucí přes 10 let
+- **Consciousness Gaming:** 9-level systém s 4.95B ZION distribucí přes 10 let
 - **DAO Governance:** 20-letá community transition (2025-2045)
 - **Humanitarian:** 10-25% fee na children's future a global aid
 - **Philosophy:** Dharma principles + Liberation Manifesto + Sacred Technology
@@ -1800,7 +1800,7 @@ const status = await bridge.getTransferStatus(tx.id);
 │ PREMINE ALLOCATION (15.78B TOTAL)                   │
 ├──────────────────────────────────────────────────────┤
 │                                                       │
-│ 🔧 MINING OPERATORS (8.25B ZION) - 52.3%            │
+│ 🔧 MINING OPERATORS (4.95B ZION) - 52.3%            │
 │    ├─ Sacred Mining Operator:      1.65B            │
 │    ├─ Quantum Mining Operator:     1.65B            │
 │    ├─ Cosmic Mining Operator:      1.65B            │
@@ -1825,7 +1825,7 @@ const status = await bridge.getTransferStatus(tx.id);
 └──────────────────────────────────────────────────────┘
 ```
 
-### 1. Mining Operators (8.25B) - Consciousness Game
+### 1. Mining Operators (4.95B) - Consciousness Game
 
 **Účel:** Distribute přes 10-year consciousness mining game (2025-2035)
 
@@ -2781,7 +2781,7 @@ Next Reward Tier Unlock: 14,211 XP away
 ### Annual Breakdown
 
 ```
-Consciousness Game Distribution (8.25B ZION over 10 years)
+Consciousness Game Distribution (4.95B ZION over 10 years)
 
 Year 2025: 825M ZION
 ├─ Avg Daily: 2.26M ZION

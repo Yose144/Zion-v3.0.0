@@ -89,7 +89,8 @@ Total Supply: 144,000,000,000 Dharma Credits
 Genesis Premine: 16,280,000,000 (11.31%)
 
 Breakdown:
-├─ Mining Operators: 8,250,000,000 (50.7%)
+├─ Mining Operators (OASIS): 4,950,000,000 (29.5%)
+├─ L5 Free World Projects: 3,300,000,000 (19.7%)
 ├─ DAO Winners: 1,750,000,000 (10.7%)
 ├─ ZION OASIS: 1,440,000,000 (8.8%) - 3-year vesting
 ├─ Presale: 500,000,000 (3.1%)

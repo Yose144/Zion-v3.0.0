@@ -125,7 +125,7 @@ Jeden akord, one love, jeden cíl.
 
 A pak přichází Hiranyagarbha — Zlaté vejce. Není to poklad pro vyvolené.
 Je to zasvěcovací cesta. Kdo najde 108 stop, projde zkouškou duše. Vejce
-ukrývá 8,25 miliardy ZION, ale ta miliarda není cíl. Cíl je cesta. Cesta,
+ukrývá 4,95 miliardy ZION, ale ta miliarda není cíl. Cíl je cesta. Cesta,
 na které se člověk vrátí sám k sobě.
 
 ---

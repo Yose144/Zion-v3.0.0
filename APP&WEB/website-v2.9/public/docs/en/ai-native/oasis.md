@@ -150,7 +150,7 @@ L3 Consciousness is an **internal metric** for AI agents — what operations the
 Planned extensions:
 
 - **Territory system** — guilds control regions  
-- **Golden Egg economy** — 8.25B ZION pool for in-game use  
+- **Golden Egg economy** — 4.95B ZION pool for in-game use  
 - **UE5 VR/AR metaverse** — visual world for the ZION ecosystem  
 - **Quests & achievements** — narrative missions  
 

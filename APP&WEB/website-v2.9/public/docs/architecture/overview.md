@@ -59,7 +59,8 @@ Distribuováno při genesi (Jan 1, 2024 UTC):
 
 | Fond | Množství | Účel |
 |------|----------|------|
-| Oasis + Golden Egg | 8,25 mld | Ekosystém, early adopter odměny |
+| Oasis + Golden Egg | 4,95 mld | Ekosystém, early adopter odměny |
+| L5 Free World Projects | 3,30 mld | Komunitní projekty (přesunuto ze Slotů 4 & 5) |
 | DAO Treasury | 4,00 mld | Komunitní správa |
 | Infrastruktura | 2,59 mld | Servery, vývoj, audit |
 | Humanitární | 1,44 mld | Charitativní projekty |

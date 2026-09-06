@@ -160,7 +160,7 @@ ZION je organizován jako zásobník šesti vrstev, každá nezávisle funkční
 
 ### L4–L6 — Dlouhý horizont
 
-- **L4 (OASIS):** Unreal Engine 5 open-world hra propojená s blockchainem, s 9 úrovněmi vědomí a 8,25B ZION reward poolem distribuovaným přes 10 let
+- **L4 (OASIS):** Unreal Engine 5 open-world hra propojená s blockchainem, s 9 úrovněmi vědomí a 4,95B ZION reward poolem distribuovaným přes 10 let (3 sloty × 1,65B; sloty 4 a 5 repurposed na L5 Free World Projects)
 - **L5 (Free World):** Humanitární a vědecká nadace financovaná z 5 % alokace odměn za blok, s cílem spuštění v roce 2030
 - **L6 (Issobella):** Dlouhodobá vize decentralizované vědecké výzkumné stanice na LEO (Low Earth Orbit), financované věčně tail emission od roku 2126
 
@@ -273,7 +273,8 @@ Genesis blok (height 0) obsahuje 12 výstupů s celkem 16,28 miliardy ZION:
 
 | # | Kategorie | Množství (ZION) | Lock |
 |---|-----------|-----------------|------|
-| 1–5 | OASIS Golden Egg / XP (5 slotů) | 8 250 000 000 | Žádný |
+| 1–3 | OASIS Golden Egg / XP (3 sloty) | 4 950 000 000 | Žádný |
+| 4–5 | L5 Free World Projects (repurposed z OASIS) | 3 300 000 000 | Žádný |
 | 6 | DAO Treasury (hlavní rezerva) | 2 500 000 000 | 525 600 bloků (~1 rok) |
 | 7 | DAO Grants & Bounties | 1 000 000 000 | 525 600 bloků (~1 rok) |
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | 525 600 bloků (~1 rok) |
@@ -374,7 +375,7 @@ OASIS je Unreal Engine 5 open-world hra propojená se ZION blockchainem. Předst
 
 - **8 Genesis Territories** s unikátními ekonomikami
 - **9 úrovní vědomí** (inspirováno Kabbalah Sefira: Malkuth až Keter)
-- **8,25 miliard ZION reward pool** distribuovaný přes 10 let
+- **4,95 miliard ZION reward pool** distribuovaný přes 10 let (3 sloty × 1,65 mld.; sloty 4 a 5 repurposed na L5 Free World Projects)
 - XP je sledováno off-chain v SQLite; L1 konsensus zůstává čistý PoW
 
 **Consciousness Period (2026–2035):** Během první dekády OASIS přidává bonusové odměny nad rámec základní těžby:

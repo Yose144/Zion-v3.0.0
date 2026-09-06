@@ -82,11 +82,11 @@ Public docs references:
 
 ZION uses a **16.28B ZION genesis reserve** to bootstrap the ecosystem. Public docs intentionally avoid wallet-level operational detail in the main entry document.
 
-**Primary strategic envelope:** **8.5B ZION** is reserved for L4 OASIS and game-development bootstrap.
+**Primary strategic envelope:** **5.2B ZION** is reserved for L4 OASIS and game-development bootstrap (4.95B direct OASIS slots + 0.25B ecosystem allocation). An additional **3.3B ZION** (2 slots × 1.65B, repurposed from Slots 4 & 5) is allocated to L5 Free World Projects.
 
 | Bucket | ZION | Purpose |
 |--------|------|---------|
-| OASIS Golden Egg | 8.25B | L4 reward pool and game-economy reserve |
+| OASIS Golden Egg | 4.95B | L4 reward pool and game-economy reserve |
 | Ecosystem bootstrap | 0.25B | Game-dev execution envelope |
 | DAO Treasury total | 4.00B | Governance, grants, ecosystem coordination |
 | Core development + infrastructure | 2.59B | Runtime, operations, delivery |

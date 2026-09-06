@@ -87,7 +87,7 @@ impl Default for OasisConfig {
             territory_mining_bonus_pct: 10,
             territory_capacity: 50,
 
-            reward_pool_total: 8_250_000_000,
+            reward_pool_total: 4_950_000_000,
             reward_slot_allocation: 1_650_000_000,
 
             l1_rpc_endpoints: Vec::new(),
@@ -135,7 +135,7 @@ mod tests {
     fn test_default_config() {
         let config = OasisConfig::default();
         assert_eq!(config.port, 8094);
-        assert_eq!(config.reward_pool_total, 8_250_000_000);
+        assert_eq!(config.reward_pool_total, 4_950_000_000);
         assert!(config.l1_rpc_endpoints.is_empty());
     }
 
@@ -186,6 +186,6 @@ metrics_port = 9102
     fn test_load_missing_file_uses_defaults() {
         let config = OasisConfig::load("/nonexistent/path/oasis.toml").unwrap();
         assert_eq!(config.port, 8094);
-        assert_eq!(config.reward_pool_total, 8_250_000_000);
+        assert_eq!(config.reward_pool_total, 4_950_000_000);
     }
 }

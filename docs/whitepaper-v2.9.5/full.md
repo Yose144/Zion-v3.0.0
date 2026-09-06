@@ -1157,7 +1157,8 @@ Genesis Block Distribution:
 
 | Alokace | ZION | % z Premine | % z Total | Účel |
 |---------|------|-------------|-----------|------|
-| **ZION OASIS + Winners Golden Egg/Xp** | 8,250,000,000 | 50.7% | 5.73% | OASIS rewards + Golden Egg/Xp |
+| **ZION OASIS + Winners Golden Egg/Xp** | 4,950,000,000 | 29.5% | 3.44% | OASIS rewards + Golden Egg/Xp (3 slots) |
+| **L5 Free World Projects** | 3,300,000,000 | 19.7% | 2.29% | Slots 4 & 5 repurposed to L5 Free World Projects |
 | **DAO Treasury** | 4,000,000,000 | 24.6% | 2.78% | Komunitní governance |
 | **Infrastructure** | 2,500,000,000 | 15.4% | 1.74% | Servery, vývoj, audit |
 | **Humanitarian Fund** | 1,530,000,000 | 9.4% | 1.06% | Tithe iniciální alokace |
@@ -1618,8 +1619,14 @@ Genesis Block Distribution (16.28B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Mining Operators Pool: 8,250,000,000 ZION (50.7%)       │ │
-│ │ └── Pro consciousness bonus (2025-2035)                 │ │
+│ │ Mining Operators Pool: 4,950,000,000 ZION (29.5%)       │ │
+│ │ └── Pro consciousness bonus (2025-2035) (3 OASIS slots) │ │
+│ │ └── Time-locked: postupné uvolňování 10 let             │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ L5 Free World Projects: 3,300,000,000 ZION (19.7%)      │ │
+│ │ └── Slots 4 & 5 repurposed to L5 Free World Projects    │ │
 │ │ └── Time-locked: postupné uvolňování 10 let             │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │

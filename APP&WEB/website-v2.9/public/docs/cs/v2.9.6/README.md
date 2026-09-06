@@ -35,7 +35,8 @@ ZION je decentralizovaný Layer 1 blockchain postavený od základu v **Rustu**.
 
 | Kategorie | Částka | Zámek |
 |----------|--------|-------|
-| ZION OASIS + Winners Golden Egg/Xp | 8,25 mld. | Okamžitě |
+| ZION OASIS + Winners Golden Egg/Xp | 4,95 mld. | Okamžitě |
+| L5 Free World Projects | 3,30 mld. | Okamžitě |
 | DAO Treasury | 4,0 mld. | Okamžitě |
 | Infrastruktura | 2,59 mld. | Okamžitě |
 | Humanitární | 1,44 mld. | Okamžitě |

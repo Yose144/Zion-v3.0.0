@@ -246,7 +246,8 @@ genesis message.
 
 | Category | Amount (ZION) | % of Premine |
 |----------|---------------|--------------|
-| OASIS + Golden Egg (5 slots) | 8,250,000,000 | 49.2% |
+| OASIS + Golden Egg (3 slots) | 4,950,000,000 | 29.5% |
+| L5 Free World Projects (2 slots, repurposed from OASIS Slots 4 & 5) | 3,300,000,000 | 19.7% |
 | DAO Treasury (3 slots) | 4,000,000,000 | 23.8% |
 | Infrastructure (3 slots) | 2,590,000,000 | 15.4% |
 | Humanitarian (1 slot) | 1,440,000,000 | 8.6% |
@@ -257,6 +258,9 @@ genesis message.
 All premine outputs are **admin-locked** (require 3-of-3 multisig + DAO
 vote to unlock). DAO Treasury slots are additionally **time-locked** until
 block 144,000 (~100 days).
+
+> **L5 Free World Projects:** Slots 4 & 5 (3.3B ZION) repurposed to L5 Free
+> World Projects: 5 humanitarian projects × 500M + 800M reserve.
 
 ---
 

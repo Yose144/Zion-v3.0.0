@@ -40,7 +40,7 @@
 | `L3/warp/README.md` | L3 WARP | 7 chain families (EVM/Solana/Tron/Stellar/Cardano/Cosmos/BTC), 215 testů |
 | `L3/ncl/README.md` | L3 Neural Compute | 6 task types, 4 backendy (ONNX/CoreML/TensorRT/ROCm), 70/20/10 revenue |
 | `L3/ai-native/README.md` | L3 AI Agents | 9 consciousness levels, memory/reasoning/SDK, skeleton stav |
-| `L4/oasis/README.md` | L4 OASIS Game | 9 úrovní, guildy, territory, premine 8.25B, skeleton stav |
+| `L4/oasis/README.md` | L4 OASIS Game | 9 úrovní, guildy, territory, premine 4.95B (3 sloty; Slots 4 & 5 → L5), skeleton stav |
 
 ---
 
@@ -293,7 +293,7 @@ Kompletní organizace vícevrstvé architektury — **jasná separace L1 (blockc
 | `guild.rs` | Guildy (max 100 členů, officers, questy, 5 typů QuestType) |
 | `territory.rs` | 8 genesis regionů (Mount Zion, Cedar Forest, ..., Babel Nexus), kontrola, obrana |
 | `challenges.rs` | 4 kategorie (Quiz, Technical, Meditation, Humanitarian), difficulty multipliers |
-| `rewards.rs` | 8.25B pool (5 slotů × 1.65B: Mining/Challenge/Guild/LevelUp/Reserve), 10-letá distribuce |
+| `rewards.rs` | 4.95B pool (3 sloty × 1.65B: Mining/Challenge/Guild; Slots 4 & 5 repurposed to L5 Free World Projects), 10-letá distribuce |
 | `leaderboard.rs` | 7 typů žebříčků (GlobalXP, BlocksMined, TopTithers, GuildXP, ...) |
 | `tithe.rs` | Humanitární desátek — 7 kategorií, L1 TX memo `TITHE:category:amount:addr` |
 | `api.rs` | REST API pro UE5 klient + mobile (20+ endpointů) |

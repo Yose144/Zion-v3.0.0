@@ -43,7 +43,7 @@
 | `consciousness.rs` | `ConsciousnessLevel` enum (9 úrovní), XP prahy, Sefiry |
 | `guild.rs` | `Guild` struct — zakládání, správa členů (max 100), guild XP |
 | `territory.rs` | `TerritoryMap` + `Territory` — 8 genesis regionů, claims/contests |
-| `rewards.rs` | `RewardPool` + `RewardSlot` — 8.25B ZION distribuce (5 slotů) |
+| `rewards.rs` | `RewardPool` + `RewardSlot` — 4.95B ZION distribuce (3 sloty; Slots 4 & 5 repurposed to L5 Free World Projects) |
 | `challenges.rs` | Výzvy za XP odměny, genesis sada 8 výzev |
 | `tithe.rs` | Humanitární tithe tracking, top tithers leaderboard |
 | `leaderboard.rs` | `LeaderboardManager` — XP + guild + territory rankingy |
@@ -132,7 +132,7 @@ Guild {
 
 ---
 
-## 5. Reward Pool — 8.25B ZION
+## 5. Reward Pool — 4.95B ZION
 
 ```
 RewardSlot → RewardPool {
@@ -148,9 +148,9 @@ RewardSlot → RewardPool {
 | `GoldenEgg` | 🥇 | 1. místo celkového XP žebříčku | 1.65B |
 | `Winners` | 🏆 | Top 100 hráči | 1.65B |
 | `GuildPool` | 🏰 | Top 10 guild | 1.65B |
-| `TerritoryPool` | 🗺️ | Ovládané territory | 1.65B |
-| `HumanitarianPool` | 🕊️ | Humanitární tithe top | 1.65B |
-| **Celkem** | | | **8.25B ZION** |
+| **Celkem** | | | **4.95B ZION** |
+
+> **Poznámka:** Slots 4 & 5 (`TerritoryPool`, `HumanitarianPool`) byly repurposed to L5 Free World Projects (3.3B ZION).
 
 ---
 

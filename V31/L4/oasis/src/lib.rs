@@ -31,7 +31,7 @@
 //!                  ┌─────────────────┴──────────────────┐
 //!                  │  L3 AI Native (consciousness eval)  │
 //!                  │  L3 NCL (compute for challenges)    │
-//!                  │  L1 (mining rewards, premine 8.25B) │
+//!                  │  L1 (mining rewards, premine 4.95B) │
 //!                  └─────────────────────────────────────┘
 //! ```
 //!
@@ -44,8 +44,8 @@
 //!
 //! ## Premine Allocation
 //!
-//! 8,250,000,000 ZION (8.25B) distributed over 10+ years:
-//!   - 5 slots × 1.65B ZION each
+//! 4,950,000,000 ZION (4.95B) distributed over 10+ years:
+//!   - 3 slots × 1.65B ZION each (Slots 4 & 5 repurposed to L5 Free World Projects)
 //!   - Unlocked based on consciousness level achievements
 //!   - Controlled by OASIS game engine + DAO governance
 

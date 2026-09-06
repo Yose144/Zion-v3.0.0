@@ -69,7 +69,7 @@ Tohle není slib zisku bez práce. Je to **Hanumanův most převedený do hry**:
 | „Práce se počítá, i mimo mining." | XP systém sbírá aktivitu z L1 (mining), L3 (AI compute, bridge), L2 (DAO, DeFi) a komunity (bug reporty, kód, dokumentace, provoz uzlu) — bez vlivu na konsensus. |
 | „Aktivita bez použití ztrácí smysl." | XP decay: 1 % za den po 7 dnech nečinnosti, max. 50 % pokles — mechanismus proti pasivnímu farmingu. |
 | „Avataři a questy existují už dnes." | 51 core + 151 extended avatarů, každý s 5 questy; REST API `/avatars` a `/quests` je aktivní. |
-| „Golden Egg je konkrétní, ne abstraktní slib." | 108 stop, cílová odměna 8,25 miliardy ZION (50,7 % genesis rezervy), plánovaný start 2027 — status **STAVBA/HORIZONT**, ne živý systém dnes. |
+| „Golden Egg je konkrétní, ne abstraktní slib." | 108 stop, cílová odměna 4,95 miliardy ZION (29,5 % genesis rezervy; Slots 4 & 5 repurposed to L5 Free World Projects), plánovaný start 2027 — status **STAVBA/HORIZONT**, ne živý systém dnes. |
 | „Mining zůstává čistý, Oasis je vrstva navrch." | Block rewards jsou striktně proporcionální hashrate a PPLNS podílu — Oasis XP nikdy neovlivňuje konsensus ani odměnu za blok. |
 
 ---

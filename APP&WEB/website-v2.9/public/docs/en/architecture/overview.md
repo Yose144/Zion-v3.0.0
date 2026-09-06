@@ -59,7 +59,7 @@ Distributed at genesis (Jan 1, 2024 UTC):
 
 | Fund | Amount | Purpose |
 |------|--------|---------|
-| Oasis + Golden Egg | 8.25B | Ecosystem, early-adopter rewards |
+| Oasis + Golden Egg | 4.95B | Ecosystem, early-adopter rewards |
 | DAO Treasury | 4.00B | Community governance |
 | Infrastructure | 2.59B | Servers, development, audits |
 | Humanitarian | 1.44B | Charitable projects |

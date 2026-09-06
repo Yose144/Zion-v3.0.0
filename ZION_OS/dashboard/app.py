@@ -5057,8 +5057,8 @@ def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> li
         "OASIS + Winners Golden Egg/Xp (Slot 1)",
         "OASIS + Winners Golden Egg/Xp (Slot 2)",
         "OASIS + Winners Golden Egg/Xp (Slot 3)",
-        "OASIS + Winners Golden Egg/Xp (Slot 4)",
-        "OASIS + Winners Golden Egg/Xp (Slot 5)",
+        "L5 Free World Projects (repurposed from OASIS Slot 4)",
+        "L5 Free World Projects (repurposed from OASIS Slot 5)",
         "DAO Treasury — Community Governance (main)",
         "DAO Treasury — Grants & Bounties",
         "DAO Treasury — Ecosystem Bootstrap",
@@ -10357,12 +10357,12 @@ MAINNET_CONSTANTS = {
 
 PREMINE_OUTPUTS = [
     # V31 mainnet premine (14 outputs, 16.78B ZION). Matches V31/L1/core/src/v3_compat.rs.
-    # OASIS + Golden Egg (5 slots × 1.65B = 8.25B)
+    # OASIS + Golden Egg (3 slots × 1.65B = 4.95B) — Slots 4 & 5 repurposed to L5 Free World Projects (3.3B)
     {"address": "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     {"address": "zion1s7x735r6v86485k7t36008l682g777g3q8pu3q0", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     {"address": "zion1e0f4h6w3w394d4p355z2r440k4s2f6v5h4rl8f4", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708", "purpose": "L5 Free World Projects (repurposed from OASIS Slot 4)", "amount_zion": 1_650_000_000, "category": "l5_free_world", "unlock_height": None},
+    {"address": "zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388", "purpose": "L5 Free World Projects (repurposed from OASIS Slot 5)", "amount_zion": 1_650_000_000, "category": "l5_free_world", "unlock_height": None},
     # DAO Treasury (3 slots = 4.0B) — locked until block 144,000
     {"address": "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     {"address": "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 144_000},

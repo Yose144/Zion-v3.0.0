@@ -4,12 +4,13 @@
 # Total: 16,780,000,000 ZION (11.65% of max supply)
 # Distribution matches MAINNET_CONSTITUTION.md
 
-# 1–5: OASIS + Winners Golden Egg/Xp (5 slots × 1.65B = 8.25B ZION)
+# 1–3: OASIS + Winners Golden Egg/Xp (3 slots × 1.65B = 4.95B ZION)
 1  zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5    OASIS_Winner_1       1,650,000,000
 2  zion1s7x735r6v86485k7t36008l682g777g3q8pu3q0    OASIS_Winner_2       1,650,000,000
 3  zion1e0f4h6w3w394d4p355z2r440k4s2f6v5h4rl8f4    OASIS_Winner_3       1,650,000,000
-4  zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708    OASIS_Winner_4       1,650,000,000
-5  zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388    OASIS_Winner_5       1,650,000,000
+# 4–5: L5 Free World Projects (2 slots × 1.65B = 3.3B ZION — repurposed from OASIS Slots 4 & 5)
+4  zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708    L5_Free_World_Reserve    1,650,000,000
+5  zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388    L5_Free_World_Projects   1,650,000,000
 
 # 6–8: DAO Treasury (main + grants + bootstrap = 4B ZION) [LOCKED height 144,000]
 6  zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5    DAO_Treasury_Main    2,500,000,000

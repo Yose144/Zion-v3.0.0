@@ -294,7 +294,7 @@ The root cause was the use of TeamViewer remote desktop software on the primary 
 
 After the TeamViewer compromise, **all cryptographic material must be considered burned**:
 
-- 14 premine wallet keypairs (8.25B + 4B + 2.59B + 1.44B + 0.5B ZION)
+- 14 premine wallet keypairs (4.95B OASIS + 3.3B L5 + 4B + 2.59B + 1.44B + 0.5B ZION)
 - 5 canonical subsidy wallet keypairs (block reward recipients)
 - Bridge vault seed (100M ZION)
 - Pool payout signing key

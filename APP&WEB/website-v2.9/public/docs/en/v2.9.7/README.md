@@ -44,7 +44,7 @@ The remaining **88.69%** (127.72B ZION) is emitted entirely through Proof-of-Wor
 
 | Category | ZION | % of Supply |
 |----------|------|-------------|
-| ZION OASIS + Winners | 8,250,000,000 | 5.73% |
+| ZION OASIS + Winners | 4,950,000,000 | 3.44% |
 | DAO Treasury | 4,000,000,000 | 2.78% |
 | Infrastructure | 2,590,000,000 | 1.80% |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% |

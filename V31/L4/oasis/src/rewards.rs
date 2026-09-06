@@ -1,23 +1,24 @@
-//! Rewards — 8.25B OASIS pool distribution system.
+//! Rewards — 4.95B OASIS pool distribution system.
 //!
-//! OASIS premine allocation: 8.25B ZION (5 slots × 1.65B)
+//! OASIS premine allocation: 4.95B ZION (3 slots × 1.65B)
+//! Slots 4 & 5 (3.3B) repurposed to L5 Free World Projects (see v3_compat.rs).
 //! Distributed over 10 years via mining rewards, challenges, and bonuses.
 //!
 //! ┌──────────────────────────────────────────┐
 //! │          OASIS REWARD POOL               │
-//! │         8,250,000,000 ZION               │
+//! │         4,950,000,000 ZION               │
 //! │                                          │
-//! │  Slot 1: Mining Rewards     1.65B (20%)  │
-//! │  Slot 2: Challenge Rewards  1.65B (20%)  │
-//! │  Slot 3: Guild & Territory  1.65B (20%)  │
-//! │  Slot 4: Level-Up Bonuses   1.65B (20%)  │
-//! │  Slot 5: Reserve / Future   1.65B (20%)  │
+//! │  Slot 1: Mining Rewards     1.65B (33%)  │
+//! │  Slot 2: Challenge Rewards  1.65B (33%)  │
+//! │  Slot 3: Guild & Territory  1.65B (33%)  │
+//! │  Slot 4: → L5 Free World (repurposed)    │
+//! │  Slot 5: → L5 Free World (repurposed)    │
 //! └──────────────────────────────────────────┘
 
 use serde::{Deserialize, Serialize};
 
-/// Total OASIS premine allocation (ZION)
-pub const OASIS_TOTAL: u64 = 8_250_000_000;
+/// Total OASIS premine allocation (ZION) — 3 slots after Slots 4 & 5 repurposed to L5
+pub const OASIS_TOTAL: u64 = 4_950_000_000;
 /// Per-slot allocation (ZION)
 pub const SLOT_ALLOCATION: u64 = 1_650_000_000;
 /// Distribution period (10 years in seconds)
@@ -32,10 +33,6 @@ pub enum RewardSlot {
     ChallengeRewards,
     /// Slot 3: Guild and territory bonuses
     GuildTerritory,
-    /// Slot 4: Level-up bonus payouts
-    LevelUpBonuses,
-    /// Slot 5: Reserve for future features
-    Reserve,
 }
 
 impl RewardSlot {
@@ -48,8 +45,6 @@ impl RewardSlot {
             RewardSlot::MiningRewards,
             RewardSlot::ChallengeRewards,
             RewardSlot::GuildTerritory,
-            RewardSlot::LevelUpBonuses,
-            RewardSlot::Reserve,
         ]
     }
 }
@@ -210,14 +205,14 @@ mod tests {
 
     #[test]
     fn test_pool_exhaustion() {
-        let mut pool = RewardPool::new(RewardSlot::Reserve);
+        let mut pool = RewardPool::new(RewardSlot::GuildTerritory);
         pool.distributed = SLOT_ALLOCATION; // exhaust it
         assert!(pool.distribute(1).is_err());
     }
 
     #[test]
     fn test_locked_pool() {
-        let mut pool = RewardPool::new(RewardSlot::Reserve);
+        let mut pool = RewardPool::new(RewardSlot::GuildTerritory);
         pool.locked = true;
         assert!(pool.distribute(1).is_err());
     }
@@ -226,7 +221,7 @@ mod tests {
     fn test_summary() {
         let manager = RewardManager::new();
         let summary = manager.summary();
-        assert_eq!(summary.len(), 5);
+        assert_eq!(summary.len(), 3);
         assert!(summary.iter().all(|s| s.percentage == 0.0));
     }
 }

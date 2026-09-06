@@ -282,11 +282,11 @@ ZION lze získat **těžbou** nebo přijetím v transakci.
 
 **16 280 000 000 ZION** (11,31 % celkové nabídky) je v genesis rezervováno na bootstrap ekosystému.
 
-**Strategický obal:** **8 500 000 000 ZION** pro vývoj L4 OASIS / hry a bootstrap herního hospodářství (8,25B přímé OASIS sloty + 0,25B ekosystém pro game-dev).
+**Strategický obal:** **5 200 000 000 ZION** pro vývoj L4 OASIS / hry a bootstrap herního hospodářství (4,95B přímé OASIS sloty + 0,25B ekosystém pro game-dev). Další **3,3B ZION** (2 sloty × 1,65B, přesunuto ze Slotů 4 & 5) je alokováno na L5 Free World Projects.
 
 | # | Alokace | ZION | Účel |
 |---|-----------|------|---------|
-| 1-5 | OASIS Golden Egg | 8 250 000 000 | Odměny herního světa L4 (5 slotů × 1,65B, vesting 10 let) |
+| 1-3 | OASIS Golden Egg | 4 950 000 000 | Odměny herního světa L4 (3 sloty × 1,65B (Sloty 4 & 5 → L5 Free World), vesting 10 let) |
 | 6 | DAO Treasury (hlavní) | 2 500 000 000 | Rezerva pro governance |
 | 7 | DAO Grants & Bounties | 1 000 000 000 | Granty vývojářům |
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | Rozvoj ekosystému |
@@ -514,7 +514,7 @@ Vrstva AI-native implementuje agenty jako protokolové objekty: registr modelů 
 
 - **8 genesis teritorií** (Mount Zion, Cedar Forest, …)
 - **9 úrovní vědomí** (Kabala: Malkuth → Keter)
-- **8,25B ZION odměn** (5 genesis slotů × 1,65B, rozložení 10 let)
+- **4,95B ZION odměn** (3 genesis sloty × 1,65B (Sloty 4 & 5 → L5 Free World: 3,3B), rozložení 10 let)
 - **XP off-chain** — SQLite `oasis.db`, L1 zůstává čisté
 
 **REST API** (port 8094): health, hráč, XP, žebříček, guildy, mapa teritorií, reward pooly — 9 endpointů.

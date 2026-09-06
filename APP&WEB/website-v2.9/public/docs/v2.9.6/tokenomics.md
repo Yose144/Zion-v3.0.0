@@ -34,7 +34,7 @@
 | **Block Time** | 60 sekund | Konsenzuální parametr |
 | **Fee Burn** | 100% fees spalováno | Deflační mechanismus |
 | **Tithe** | 10% block reward | Humanitární závazek |
-| **Premine alokace** | Oasis 8.25B, DAO 4B, Infra 2.59B, Human 1.44B | Již distribuováno |
+| **Premine alokace** | Oasis 4.95B, DAO 4B, Infra 2.59B, Human 1.44B | Již distribuováno |
 
 ---
 
@@ -286,7 +286,7 @@ Kde:
 
 | Fond | Částka | Primární účel |
 |------|--------|---------------|
-| ZION Oasis + Golden Egg/Xp | 8.25B | L4 Oasis ekosystém |
+| ZION Oasis + Golden Egg/Xp | 4.95B | L4 Oasis ekosystém |
 | DAO Treasury | 4.0B | Governance, granty, vývoj |
 | Infrastructure | 2.59B | Servery, nody, audity |
 | Humanitarian | 1.44B | Humanitární programy |

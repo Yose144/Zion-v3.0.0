@@ -220,7 +220,8 @@
 ║      ├── UE5 open-world (consciousness mining as gameplay)           ║
 ║      ├── XP / Consciousness Level (9 Kabbalah Sefira, offchain)      ║
 ║      ├── Guildy, territory wars, challenges                          ║
-║      └── 8.25B reward pool (5 slotů × 1.65B, 10-letá distribuce)    ║
+║      └── 4.95B reward pool (3 sloty × 1.65B, 10-letá distribuce;     ║
+║          Slots 4 & 5 → L5 Free World Projects — 3.3B ZION)          ║
 ║                          ▲                                           ║
 ║  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┤ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ║
 ║                          │                                           ║
@@ -301,7 +302,8 @@ PRAVIDLA:
 
 | Kategorie | ZION | Podíl | Lock |
 |-----------|------|-------|------|
-| ZION OASIS + Winners Golden Egg/XP | 8,250,000,000 | 50.7% | Okamžitě |
+| ZION OASIS + Winners Golden Egg/XP | 4,950,000,000 | 29.5% | Okamžitě |
+| L5 Free World Projects | 3,300,000,000 | 19.7% | Okamžitě |
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě |
 | Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě |
 | Humanitarian Fund | 1,530,000,000 | 9.4% | Okamžitě |
@@ -404,7 +406,7 @@ PRAVIDLA:
 | L4-M0: OASIS Skeleton | 2026 Q1 | ✅ 2,335 LOC, 13 modulů |
 | L4-M1: XP Service | 2029 Q1 | 🏗️ Skeleton |
 | L4-M2: Consciousness Calculator | 2029 Q1 | 🏗️ Skeleton |
-| L4-M3: Pool bonus (8.25B premine) | 2029 Q2 | 🏗️ Skeleton |
+| L4-M3: Pool bonus (4.95B premine; Slots 4 & 5 → L5) | 2029 Q2 | 🏗️ Skeleton |
 | L4-M4: Oasis UE5 prototyp | 2029 Q2 | ⬜ |
 | L4-M5: Wallet integration | 2029 Q3 | ⬜ |
 | L4-M6: Quest system + NPC AI | 2029 Q3 | 🏗️ Skeleton |

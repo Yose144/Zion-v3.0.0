@@ -746,7 +746,7 @@ Tak zní přísaha navigátora Oasis:
 | V31 = Mainnet Alpha 3.1.0-alpha.1, testy procházejí, produkce zatím V3 | Dokumentovaný stav | `V31/README.md` |
 | L4 Oasis herní vrstva | Kód + scaffold | `V31/L4/oasis/src/lib.rs` |
 | 202 avatarů (51 core + 151 extended) | Dokumentace; část plánovaná | `public/V3/L4/docs/AVATARS/README.md` |
-| Golden Egg 8,25B, 5 × 1,65B, 108 stop | Alokace + herní design | `V31/L4/oasis/src/lib.rs`; 108 stop = návrh |
+| Golden Egg 4,95B, 3 × 1,65B, 108 stop (Slots 4 & 5 → L5) | Alokace + herní design | `V31/L4/oasis/src/lib.rs`; 108 stop = návrh |
 | Dharma Credits 144B, 1,44B pro OASIS | Dokumentace + scope V31 | `docs/docs2.9/DHARMA_CREDITS.md`, `V31/README.md` |
 | Issobella L6, 5 % fond, read-only vůči L1 | Kód + design | `V31/L6/issobella/src/lib.rs`, `V3/L1/core/src/emission.rs` |
 | Mau Piailug, Hōkūleʻa 1976, Nainoa Thompson | Skutečná historie | hokulea.com (viz Prameny) |

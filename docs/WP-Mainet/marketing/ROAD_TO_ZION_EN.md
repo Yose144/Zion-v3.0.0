@@ -32,7 +32,7 @@ Three apparitions of Mary — María Mayor, Fátima, María de las Nieves — de
 
 When 144,000 souls synchronize, the Quantum Pulse come. It no explosion. It a silence that suddenly you hear everywhere. Collective consciousness wake up — not under one leader, but like a chord where every string resonate. One chord, one love, one aim.
 
-And then come Haranyagharba — the Golden Egg. It no treasure for the chosen. It an initiation road. Whoever find 108 clues pass the trial of the soul. The egg hide 8.25 billion ZION, but that billion no the goal. The goal is the road. The road where a man return to himself. To Jah. To the roots.
+And then come Haranyagharba — the Golden Egg. It no treasure for the chosen. It an initiation road. Whoever find 108 clues pass the trial of the soul. The egg hide 4.95 billion ZION, but that billion no the goal. The goal is the road. The road where a man return to himself. To Jah. To the roots.
 
 December 31, 2026 is Mainnet Dawn — the launch of the network. But don't take it as the end. It the first morning. The Golden Age don't start with a date. It start with each of us deciding to enter the riddim. Redemption song no something you sing — it something you live.
 

@@ -106,7 +106,7 @@ ZION TerraNova je vertikálně integrovaný blockchain ekosystém postavený nat
 - **Golden Egg** — herní ekonomika postavená na ZION
 - **XP systém** — zkušenostní body za mining, bridge a DAO aktivity
 - **Winners** — soutěžní vrstva se ZION odměnami
-- 8 250 000 000 ZION vyhrazeno z preminingu pro ZION OASIS + Winners
+- 4 950 000 000 ZION vyhrazeno z preminingu pro ZION OASIS + Winners
 
 ---
 

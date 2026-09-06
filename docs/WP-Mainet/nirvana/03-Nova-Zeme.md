@@ -39,7 +39,7 @@ Znamená to, že ZION není pouhou kopií stávajících kryptoměn ani hračkou
 ## Kotva pravdy — ověřitelná fakta
 
 > Každá vrstva Terra Nova má své zrcadlo v kódu repozitáře ZION.
-
+a
 | Prvek příběhu | Co je na síti ZION ověřitelné |
 |---|---|
 | **Pevný strop bez inflačního tisku** | Přísný limit **144 000 000 000 ZION** (144 miliard flowers) — žádné dodatečné ražení mincí. |

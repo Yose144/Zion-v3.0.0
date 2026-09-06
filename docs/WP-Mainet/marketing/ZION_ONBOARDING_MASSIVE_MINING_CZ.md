@@ -436,7 +436,7 @@ Tohle není slib zisku bez práce. Je to **Hanumanův most převedený do hry**:
 | „Práce se počítá, i mimo mining." | XP systém sbírá aktivitu z L1 (mining), L3 (AI compute, bridge), L2 (DAO, DeFi) a komunity (bug reporty, kód, dokumentace, provoz uzlu) — bez vlivu na konsensus. |
 | „Aktivita bez použití ztrácí smysl." | XP decay: 1 % za den po 7 dnech nečinnosti, max. 50 % pokles — mechanismus proti pasivnímu farmingu. |
 | „Avataři a questy existují už dnes." | 51 core + 151 extended avatarů, každý s 5 questy; REST API `/avatars` a `/quests` je aktivní. |
-| „Golden Egg je konkrétní, ne abstraktní slib." | 108 stop, cílová odměna 8,25 miliardy ZION (50,7 % genesis rezervy), plánovaný start 2027 — status **STAVBA/HORIZONT**, ne živý systém dnes. |
+| „Golden Egg je konkrétní, ne abstraktní slib." | 108 stop, cílová odměna 4,95 miliardy ZION (3 genesis sloty × 1,65 mld.; sloty 4 a 5 repurposed na L5 Free World Projects), plánovaný start 2027 — status **STAVBA/HORIZONT**, ne živý systém dnes. |
 | „Mining zůstává čistý, Oasis je vrstva navrch." | Block rewards jsou striktně proporcionální hashrate a PPLNS podílu — Oasis XP nikdy neovlivňuje konsensus ani odměnu za blok. |
 
 ---
@@ -796,7 +796,7 @@ To je kompletní mapa cesty pro každého nového příchozího:
 | **Avataři v Oasis** | L4 rozhraní plánuje profilové avatary (Neo, Trinity, Morpheus, Sádhu...) s vlastnostmi spojenými s typem komunitní aktivity. | **VÝSTAVBA / L4 OASIS** |
 | **9 úrovní vědomí (Consciousness Levels)** | Od Dormant po Cosmic, definované v `dokumentace` a na webu v sekci Oasis. | **SPECIÁLNÍ L4 DOCK** |
 | **XP za reálné činy** | Reputační systém v L4 Oasis za pomoc komunitě, PRs, nahlášené chyby a mining uptime. | **VE VÝVOJI (L4)** |
-| **Golden Egg (108 stop)** | Gamifikovaná honba za pokladem s 8,25 miliardami ZION z genesis rezervy. | **HORIZONT (2027)** |
+| **Golden Egg (108 stop)** | Gamifikovaná honba za pokladem s 4,95 miliardami ZION z genesis rezervy (3 sloty × 1,65 mld.; sloty 4 a 5 repurposed na L5 Free World Projects). | **HORIZONT (2027)** |
 
 ---
 
@@ -882,7 +882,7 @@ Jak funguje život v Prvním světě Oasis?
    - Od *Level 1 (Physical)* po *Level 5 (Cosmic)* až k *Level 9 (OnTheStar)*.
    - S vyšší úrovní získává tůj Avatar nový vzhled, přístup k hlubším questům a právo hlasovat v DAO governance.
 3. **Hledej 108 stop Golden Egg:**
-   - 8,25 miliardy ZION z genesis rezervy je uzamčeno v 5 odměnových poolech (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool).
+   - 4,95 miliardy ZION z genesis rezervy je uzamčeno v 5 odměnových poolech (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool). *(Sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects.)*
    - Stopy jsou ukryté v blocích L1 řetězce, ve smart kontraktech na Base/EVM, v knihách TerraNova i v reálných geografických lokacích.
 
 ---
@@ -892,7 +892,7 @@ Jak funguje život v Prvním světě Oasis?
 | Tvrzení v příběhu | Realita v kódu / sítě | Status |
 |---|---|---|
 | **8 Genesis Teritorií** | Třída `TerritoryMap` v `zion-oasis` definuje 8 počátečních regionů a pravidla jejich správy. | **KÓD V `zion-oasis` (L4)** |
-| **5 Reward Poolů (8.25B ZION)** | Genesis alokace 8 250 000 000 ZION (50,7 % genesis rezervy) vyhrazená pro OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALOKACE** |
+| **5 Reward Poolů (4.95B ZION)** | Genesis alokace 4 950 000 000 ZION (3 sloty × 1,65 mld.; sloty 4 a 5 — 3,3 mld — repurposed na L5 Free World Projects) vyhrazená pro OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALOKACE** |
 | **9 Úrovní Vědomí (Consciousness Levels)** | Enum `ConsciousnessLevel` v L3/L4 (Physical, Emotional, Mental, Awakened, Cosmic...) s násobiteli a XP hranicemi. | **KÓD V L3/L4 (`oasis_bridge.rs`)** |
 | **Guild systém (max 100 členů)** | Třída `Guild` v `zion-oasis` podporuje vytváření guild, zakladatele, důstojníky a členy. | **KÓD V `zion-oasis` (40 testů)** |
 | **REST API pro Oasis** | Port `8094` s endpointy `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNKČNÍ SKELETON (port 8094)** |

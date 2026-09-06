@@ -69,7 +69,7 @@ All genesis allocations are publicly disclosed. No private or hidden allocations
 
 | Category | ZION Amount | % of Supply | Lock |
 |----------|-------------|-------------|------|
-| ZION OASIS + Winners | 8,250,000,000 | 5.73% | Immediate |
+| ZION OASIS + Winners | 4,950,000,000 | 3.44% | Immediate |
 | DAO Treasury | 4,000,000,000 | 2.78% | Immediate |
 | Infrastructure | 2,590,000,000 | 1.80% | Immediate |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% | Immediate |

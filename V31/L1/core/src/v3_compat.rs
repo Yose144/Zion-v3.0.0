@@ -408,7 +408,7 @@ pub struct PremineOutput {
 
 /// V3 premine allocations (14 outputs).
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
-    // --- OASIS + Golden Egg (5 × 1.65B = 8.25B) ---
+    // --- OASIS + Golden Egg (3 × 1.65B = 4.95B) + L5 Free World Projects (2 × 1.65B = 3.3B) ---
     PremineOutput {
         address: "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 1)",
@@ -438,19 +438,19 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     PremineOutput {
         address: "zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708",
-        purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 4)",
+        purpose: "L5 Free World Projects — Humanitarian & Permaculture Reserve (repurposed from OASIS Slot 4)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
-        category: "oasis_golden_egg",
+        category: "l5_free_world",
         unlock_height: None,
         admin_locked: true,
     },
     PremineOutput {
         address: "zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388",
-        purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 5)",
+        purpose: "L5 Free World Projects — Humanitarian & Permaculture (repurposed from OASIS Slot 5)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
-        category: "oasis_golden_egg",
+        category: "l5_free_world",
         unlock_height: None,
         admin_locked: true,
     },

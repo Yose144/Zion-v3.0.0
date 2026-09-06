@@ -205,7 +205,7 @@ Kovář ho ten večer vzal za archu, tam, kde les přecházel v něco, co vypada
 
 „Můžu vstoupit?"
 
-„Můžeš se podívat," řekl kovář. **„Oasis Web běží — 3D galaxie, 55 světů, avataři, questy. Ale je to preview, ne hotová hra.** Dashboard je raný. Golden Egg je zatím sbírka nápověd, ne aktivní poklad. 108 stop a 8,25 miliardy ZION v odměnových poolech čekají — ale ne dnes."
+„Můžeš se podívat," řekl kovář. **„Oasis Web běží — 3D galaxie, 55 světů, avataři, questy. Ale je to preview, ne hotová hra.** Dashboard je raný. Golden Egg je zatím sbírka nápověd, ne aktivní poklad. 108 stop a 4,95 miliardy ZION v odměnových poolech čekají — ale ne dnes."
 
 „A co dnes?"
 
@@ -229,7 +229,7 @@ Kovář ho ten večer vzal za archu, tam, kde les přecházel v něco, co vypada
 > - Dharma Credits eShop
 >
 > **HORIZONT (směr, ne datum):**
-> - Golden Egg: 108 stop, 8,25 mld ZION v 5 poolech, plánovaný start 2027
+> - Golden Egg: 108 stop, 4,95 mld ZION v 3 poolech (Slots 4 & 5 repurposed to L5 Free World Projects), plánovaný start 2027
 > - L5 Free World: humanitární mise s on-chain auditovatelným dopadem
 > - L6 Issobella: orbitální výzkumný horizont
 >

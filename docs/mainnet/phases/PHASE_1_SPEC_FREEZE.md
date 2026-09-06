@@ -46,7 +46,7 @@ pub const PREMINE_TOTAL: u64 = 16_282_857_143_000_000;  // 16.28B ZION
 pub const BASE_BLOCK_REWARD_ATOMIC: u64 = 5_479_450_000;  // ~5,479.45 ZION
 
 // NO HALVING - Consciousness bonus instead
-// Bonus pool: 8.25B ZION distributed over consciousness levels
+// Bonus pool: 4.95B ZION distributed over consciousness levels (3 OASIS slots; Slots 4 & 5 repurposed to L5 Free World Projects)
 ```
 
 ### 5. DAA Parameters

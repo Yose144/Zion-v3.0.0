@@ -270,7 +270,7 @@ První svět Oasis je strukturován do **8 Genesis Teritorií**. Zatím jsou pop
 
 ### Golden Egg a 108 stop
 
-Uprostřed Oasis stojí **Strom života**. V jeho kořenech leží **první ze 108 stop Zlatého Vejce**. Golden Egg není jen poklad — je to **pedagogický příběh**. V rezervě je uzamčeno **8,25 miliardy ZION** z genesis alokace, rozdělených do pěti odměnových poolů:
+Uprostřed Oasis stojí **Strom života**. V jeho kořenech leží **první ze 108 stop Zlatého Vejce**. Golden Egg není jen poklad — je to **pedagogický příběh**. V rezervě je uzamčeno **4,95 miliardy ZION** z genesis alokace, rozdělených do pěti odměnových poolů (sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects: 5 humanitárních projektů × 500M + 800M rezerva):
 
 - Player Pool
 - Guild Pool
@@ -574,7 +574,7 @@ rpcCall('getChainInfo').then(console.log);
 | **Avataři** | 202 avatárů v 17 kruzích | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 10 |
 | **Consciousness Levels** | 9 úrovní (CL1–CL9) s multiplikátory 1,0x–10,0x | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 11 |
 | **Genesis Teritorií** | 8 počátečních regionů v Oasis, definováno v `TerritoryMap` | [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
-| **Golden Egg** | 5 reward poolů; 8,25 miliardy ZION; 108 stop | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 12; [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
+| **Golden Egg** | 5 reward poolů; 4,95 miliardy ZION; 108 stop (sloty 4 a 5 repurposed na L5 Free World Projects) | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 12; [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
 | **Sedm cest** | 7 questových cest v Oasis | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 11 |
 | **L1–L6 architektura** | L1 blockchain, L2 DeFi/bridge/DAO, L3 AI/WARP, L4 Oasis, L5 Free World, L6 Issobella | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`StatusV3.md`](../../../StatusV3.md) |
 | **V31 Alpha** | V31 node `3.1.0-alpha.2` je LIVE na Edge, synchronizuje se s V3 mainnet přes V3-compatible P2P, port 8335, RPC 9445 | [`StatusV3.md`](../../../StatusV3.md), řádky 8; [`AGENTS.md`](../../../AGENTS.md) |
