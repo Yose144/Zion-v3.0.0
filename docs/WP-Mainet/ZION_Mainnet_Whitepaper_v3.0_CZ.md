@@ -153,7 +153,8 @@ Při spuštění sítě bylo vytvořeno 16,28 miliardy ZION. Rozdělení je veř
 
 | # | Kategorie | Množství (ZION) | Účel |
 |---|-----------|-----------------|------|
-| 1–5 | OASIS + Golden Egg/XP | 8 250 000 000 | Herní odměny v L4 |
+| 1–3 | OASIS + Golden Egg/XP | 4 950 000 000 | Herní odměny v L4 |
+| 4–5 | L5 Free World Projects (repurposed) | 3 300 000 000 | 5 humanitárních projektů × 500M + 800M rezerva |
 | 6 | DAO Treasury (hlavní) | 2 500 000 000 | Rezerva pro komunitní governance |
 | 7 | DAO Grants & Bounties | 1 000 000 000 | Vývojářské granty |
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | Růst ekosystému |
@@ -230,7 +231,7 @@ wZION    ──[burn]──→  Bridge Contract  ──[unlock]──→  ZION L
 
 ### L4 — ZION OASIS Game World
 
-OASIS je open-world herní zážitek v Unreal Engine 5, propojený s L1 tokeny. 8 Genesis území. 9 úrovní vědomí (Malkuth → Keter). 8,25 miliardy ZION odměn pro první hráče. XP zůstává off-chain; L1 zůstává čisté.
+OASIS je open-world herní zážitek v Unreal Engine 5, propojený s L1 tokeny. 8 Genesis území. 9 úrovní vědomí (Malkuth → Keter). 4,95 miliardy ZION odměn pro první hráče. XP zůstává off-chain; L1 zůstává čisté. *(Sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects.)*
 
 **Bonusové odměny v první dekádě (2026–2035):**
 
@@ -368,7 +369,7 @@ OASIS není jen hra. Je to vrstva, kde herní ekonomika potkává reálné L1 to
 **Klíčové koncepty:**
 - 8 Genesis území (Mount Zion, Cedar Forest, …)
 - 9 úrovní vědomí (Kabbalah Sefira: Malkuth → Keter)
-- 8,25 miliardy ZION odměn (5 genesis slotů × 1,65 miliardy, 10letá distribuce)
+- 4,95 miliardy ZION odměn (3 genesis sloty × 1,65 miliardy, 10letá distribuce; sloty 4 a 5 repurposed na L5 Free World Projects)
 - XP off-chain — SQLite `oasis.db`; L1 zůstává čisté
 
 **REST API** (port 8094): zdraví, hráč, udělení XP, žebříček, guilda CRUD, mapa území, odměnové pooly — 9 endpointů.

@@ -76,7 +76,7 @@ How does life in the First World of Oasis work?
    - From *Level 1 (Physical)* through *Level 5 (Cosmic)* to *Level 9 (OnTheStar)*.
    - With each higher level, your Avatar gains a new appearance, access to deeper quests, and the right to vote in DAO governance.
 3. **Search for the 108 traces of the Golden Egg:**
-   - 8.25 billion ZION from the genesis reserve is locked in 5 reward pools (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool).
+   - 4.95 billion ZION from the genesis reserve is locked in 3 reward pools (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool). Slots 4 & 5 (3.3B ZION) were repurposed to L5 Free World Projects.
    - The traces are hidden in blocks of the L1 chain, in smart contracts on Base/EVM, in the books of TerraNova, and in real geographic locations.
 
 ---
@@ -86,7 +86,7 @@ How does life in the First World of Oasis work?
 | Claim in the Story | Reality in the Code / Network | Status |
 |---|---|---|
 | **8 Genesis Territories** | The `TerritoryMap` class in `zion-oasis` defines 8 initial regions and the rules for their governance. | **CODE IN `zion-oasis` (L4)** |
-| **5 Reward Pools (8.25B ZION)** | Genesis allocation of 8 250 000 000 ZION (50.7 % of the genesis reserve) dedicated to OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALLOCATION** |
+| **3 OASIS Reward Pools (4.95B ZION) + L5 Free World (3.3B ZION)** | Genesis allocation of 4 950 000 000 ZION (30.4 % of the genesis reserve) for OASIS + Golden Egg / XP. Slots 4 & 5 (3.3B) repurposed to L5 Free World Projects. | **ON-CHAIN GENESIS ALLOCATION** |
 | **9 Levels of Consciousness (Consciousness Levels)** | The `ConsciousnessLevel` enum in L3/L4 (Physical, Emotional, Mental, Awakened, Cosmic...) with multipliers and XP thresholds. | **CODE IN L3/L4 (`oasis_bridge.rs`)** |
 | **Guild system (max 100 members)** | The `Guild` class in `zion-oasis` supports creating guilds, founders, officers, and members. | **CODE IN `zion-oasis` (40 tests)** |
 | **REST API for Oasis** | Port `8094` with endpoints `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNCTIONAL SKELETON (port 8094)** |

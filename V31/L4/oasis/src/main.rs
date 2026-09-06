@@ -90,7 +90,7 @@ async fn main() -> anyhow::Result<()> {
     let ws_hub = WsHub::new();
 
     info!("Consciousness levels: 9 (Physical → OnTheStar)");
-    info!("Reward pool: 8,250,000,000 ZION over 10 years");
+    info!("Reward pool: 4,950,000,000 ZION over 10 years (3 OASIS slots; Slots 4 & 5 repurposed to L5 Free World Projects)");
     if config.hiran_enabled {
         info!(
             "🤖 Hiran AI enabled — endpoint: {}",

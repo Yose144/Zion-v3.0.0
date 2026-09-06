@@ -84,7 +84,7 @@ Source of truth: `docs/mainnet/MAINNET_CONSTITUTION.md` (frozen SHA-256: c76aa00
 
 | # | Category | Amount |
 |---|----------|--------|
-| 1–5 | OASIS + Winners Golden Egg/Xp (5 slots × 1.65B) | 8,250,000,000 ZION |
+| 1–5 | OASIS + Winners Golden Egg/Xp (3 slots × 1.65B (Slots 4 & 5 → L5 Free World)) | 4,950,000,000 ZION |
 | 6–8 | DAO Treasury (main 2.5B + grants 1B + bootstrap 0.5B) | 4,000,000,000 ZION |
 | 9–11 | Infrastructure (core dev 1B + seed nodes 1B + creator 0.59B) | 2,590,000,000 ZION |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 ZION |
@@ -1063,7 +1063,7 @@ Clamp                  = ±25%
 ```
 DAO_TREASURY_LOCK_HEIGHT = 525_600
 12 addresses, 4 categories:
-  oasis_golden_egg:  5 × 1.65B = 8.25B ZION
+  oasis_golden_egg:  3 × 1.65B = 4.95B ZION (Slots 4 & 5 → L5 Free World: 3.3B)
   dao_treasury:      3 slots   = 4.00B ZION (locked until 525,600)
   infrastructure:    3 slots   = 2.59B ZION
   humanitarian:      1 × 1.44B = 1.44B ZION

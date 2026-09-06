@@ -51,7 +51,7 @@ All genesis allocations are on-chain verifiable from the genesis block.
 
 | Category | ZION Amount | % of Supply | Purpose |
 |----------|-------------|-------------|---------|
-| ZION OASIS + Winners | 8,250,000,000 | 5.73% | OASIS rewards, Golden Egg/Xp events |
+| ZION OASIS + Winners | 4,950,000,000 | 3.44% | OASIS rewards, Golden Egg/Xp events |
 | DAO Treasury | 4,000,000,000 | 2.78% | Community governance + grants |
 | Infrastructure | 2,590,000,000 | 1.80% | Servers, development, security audit |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% | L5 — clean water, education, healthcare |

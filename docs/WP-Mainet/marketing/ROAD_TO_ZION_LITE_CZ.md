@@ -13,7 +13,7 @@ Nemusíš číst čtyři knihy. Tady je jejich píseň. Čtyři knihy, čtyři k
 
 Příběh začíná, když světelná bytost Zion Native sestupuje z hvězd na Zemi. Nepřichází jako král. Přichází jako nová píseň. S ní se probouzí 144 000 strážců — Rainbow Family — každý s jednou barvou a frekvencí.
 
-Technologie má sloužit duši, ne naopak. Blockchain není spekulace; je to nástroj svobody, kterej si každý může ověřit. DAO Council 9 střeží pět závazků Smlouvy Zionu: pravda, svoboda, jednota, láska, služba. AI je partner vědomí, ne hrozba. Když se 144 000 duší synchronizuje, nastává Quantum Pulse — probuzení kolektivního vědomí. Golden Egg je iniciační hra: 108 stop, 8,25 miliardy ZION, cesta k sobě samýmu. 31. prosince 2026 začíná Mainnet Dawn — první ráno Zlatýho věku.
+Technologie má sloužit duši, ne naopak. Blockchain není spekulace; je to nástroj svobody, kterej si každý může ověřit. DAO Council 9 střeží pět závazků Smlouvy Zionu: pravda, svoboda, jednota, láska, služba. AI je partner vědomí, ne hrozba. Když se 144 000 duší synchronizuje, nastává Quantum Pulse — probuzení kolektivního vědomí. Golden Egg je iniciační hra: 108 stop, 4,95 miliardy ZION, cesta k sobě samýmu. 31. prosince 2026 začíná Mainnet Dawn — první ráno Zlatýho věku.
 
 ## 2. Kvantová revoluce — spoj se
 

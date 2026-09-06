@@ -76,7 +76,7 @@ Jak funguje život v Prvním světě Oasis?
    - Od *Level 1 (Physical)* po *Level 5 (Cosmic)* až k *Level 9 (OnTheStar)*.
    - S vyšší úrovní získává tůj Avatar nový vzhled, přístup k hlubším questům a právo hlasovat v DAO governance.
 3. **Hledej 108 stop Golden Egg:**
-   - 8,25 miliardy ZION z genesis rezervy je uzamčeno v 5 odměnových poolech (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool).
+   - 4,95 miliardy ZION z genesis rezervy je uzamčeno v 5 odměnových poolech (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool). *(Sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects.)*
    - Stopy jsou ukryté v blocích L1 řetězce, ve smart kontraktech na Base/EVM, v knihách TerraNova i v reálných geografických lokacích.
 
 ---
@@ -86,7 +86,7 @@ Jak funguje život v Prvním světě Oasis?
 | Tvrzení v příběhu | Realita v kódu / sítě | Status |
 |---|---|---|
 | **8 Genesis Teritorií** | Třída `TerritoryMap` v `zion-oasis` definuje 8 počátečních regionů a pravidla jejich správy. | **KÓD V `zion-oasis` (L4)** |
-| **5 Reward Poolů (8.25B ZION)** | Genesis alokace 8 250 000 000 ZION (50,7 % genesis rezervy) vyhrazená pro OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALOKACE** |
+| **5 Reward Poolů (4.95B ZION)** | Genesis alokace 4 950 000 000 ZION (3 sloty × 1,65 mld.; sloty 4 a 5 — 3,3 mld — repurposed na L5 Free World Projects) vyhrazená pro OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALOKACE** |
 | **9 Úrovní Vědomí (Consciousness Levels)** | Enum `ConsciousnessLevel` v L3/L4 (Physical, Emotional, Mental, Awakened, Cosmic...) s násobiteli a XP hranicemi. | **KÓD V L3/L4 (`oasis_bridge.rs`)** |
 | **Guild systém (max 100 členů)** | Třída `Guild` v `zion-oasis` podporuje vytváření guild, zakladatele, důstojníky a členy. | **KÓD V `zion-oasis` (40 testů)** |
 | **REST API pro Oasis** | Port `8094` s endpointy `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNKČNÍ SKELETON (port 8094)** |

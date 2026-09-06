@@ -133,8 +133,14 @@ Genesis Block Distribution (16.28B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ ZION OASIS + Winners Golden Egg/Xp: 8,250,000,000 (50.7%) │ │
-│ │ └── OASIS rewards + Winners Golden Egg/Xp                    │ │
+│ │ ZION OASIS + Winners Golden Egg/Xp: 4,950,000,000 (29.5%)│ │
+│ │ └── OASIS rewards + Winners Golden Egg/Xp (3 slots)      │ │
+│ │ └── Okamžitě dostupné od genesis                           │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ L5 Free World Projects: 3,300,000,000 (19.7%)            │ │
+│ │ └── Slots 4 & 5 repurposed to L5 Free World Projects     │ │
 │ │ └── Okamžitě dostupné od genesis                           │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │

@@ -189,7 +189,7 @@ Karta Síly nezobrazuje bojovníka s mečem. Zobrazuje ženu, která jemně, bez
 
 To je přesně obraz, který patří k **Zlatému vejci**. Vrať se na chvíli k Ernestu Clinovi a jeho OASIS: Halliday ukryje vejce a slíbí vládu nad celou korporací tomu, kdo ho najde. Motivace gunterů je čistá — kdo najde vejce první, ovládne svět všech ostatních.
 
-ZION dělá u týhle brány jednu vědomou, hlasitou odbočku: **Zlaté vejce v Oasis nikomu nedává vlastnictví sítě.** Je to 8,25 miliardy ZION z genesis alokace, rozdělených do pěti odměnových poolů — ne trůn. Sto osm stop není soutěž o nadvládu, je to sdílená hra, kterou může vyhrát komunita jako celek, i když jednotlivé odměny míří ke konkrétním lidem. Kdo najde poslední stopu, nezíská kontrolu nad tím, kdo smí a nesmí do Oasis vstoupit.
+ZION dělá u týhle brány jednu vědomou, hlasitou odbočku: **Zlaté vejce v Oasis nikomu nedává vlastnictví sítě.** Je to 4,95 miliardy ZION z genesis alokace, rozdělených do tří odměnových poolů (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION) — ne trůn. Sto osm stop není soutěž o nadvládu, je to sdílená hra, kterou může vyhrát komunita jako celek, i když jednotlivé odměny míří ke konkrétním lidem. Kdo najde poslední stopu, nezíská kontrolu nad tím, kdo smí a nesmí do Oasis vstoupit.
 
 Nula se ptá, proč to autoři takhle omezili — proč nenechali vítěze vyhrát úplně všechno, jako v knize. Odpověď, kterou najde v dokumentaci, je jednoduchá: **protokol, který dovolí jednomu člověku ovládnout všechny ostatní, přestává být sítí a stává se královstvím.** A království je přesně ten starý svět, kvůli kterému lidé začali hledat něco jiného.
 
@@ -263,7 +263,7 @@ Tahle verze onboardingu nechce nahradit kanonickou knihu ani sci-fi odyseu. Chce
 | Ekam Deeksha PoW | Šest fází: Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi | `V31/L1/cosmic-harmony-v3/src/deeksha.rs` |
 | 9 úrovní vědomí | CL1–CL9, multiplikátory 1.0×–10.0× | `consciousness_mining_game.py`, `xp_tracker.rs` |
 | 202 avatarů | Katalog archetypů napříč kulturami | `public/V3/L4/docs/AVATARS/` |
-| Golden Egg | 8,25 mld ZION, 5 reward poolů, 108 stop | Genesis alokace / herní design |
+| Golden Egg | 4,95 mld ZION, 3 reward pooly, 108 stop (Slots 4 & 5 → L5) | Genesis alokace / herní design |
 | Dharma Credits | 144 mld strop, bonus za službu, eShop tiery | `docs/docs2.9/DHARMA_CREDITS.md` |
 | 3.1.0 Mainnet Alpha | V31 workspace, Triple Stream miner, L2 multichain | `V31/README.md` |
 | Issobella / L6 | Symbolický název vrstvy + 5% fond na dlouhodobý výzkum | `rewards.rs`, StatusV3/AGENTS.md |

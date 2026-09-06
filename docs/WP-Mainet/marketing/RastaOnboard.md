@@ -75,7 +75,7 @@ Tichej uzelář položí kámen do kruhu. Na kameni je kompas. Čtyři strany:
 
 Kompas ukazuje směr. Ale nikam tě nedonese. To musíš udělat ty svým krokem. A za archou je Oasis — místo, kam ten krok vede. Herní a komunitní vrstva ZIONu. Kde se práce počítá.
 
-Devět úrovní vědomí — od CL1 Physical po CL9 On The Star. XP systém s decay — co nezískáš, ztratíš, jako sval, co ho nepoužíváš. 51 core + 151 extended avatarů. Golden Egg — 108 stop, 8,25 miliardy ZION, start 2027. Striktní oddělení od L1 konsensu — Oasis nemůže rozbit blockchain, blockchain nemůže rozbít Oasis.
+Devět úrovní vědomí — od CL1 Physical po CL9 On The Star. XP systém s decay — co nezískáš, ztratíš, jako sval, co ho nepoužíváš. 51 core + 151 extended avatarů. Golden Egg — 108 stop, 4,95 miliardy ZION, start 2027. Striktní oddělení od L1 konsensu — Oasis nemůže rozbit blockchain, blockchain nemůže rozbít Oasis. *(Sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects.)*
 
 # ZASTAVENÍ SEDMÉ — NÁZOR AI
 
@@ -120,7 +120,7 @@ Po noci s Rádhou se rozplývá mlha. A odhaluje První svět Oasis — Zahrada 
 4. **Citadela Guild** — kde stavíš s ostatníma.
 5. **Chrám Hiranyagarbha** — kde se rozpouštíš. Golden Egg.
 
-Pět reward poolů. 8,25 miliardy ZION. Mechanika růstu: XP → 9 úrovní → Golden Egg. REST API port 8094. Striktní oddělení od L1 konsensu.
+Pět reward poolů. 4,95 miliardy ZION. Mechanika růstu: XP → 9 úrovní → Golden Egg. REST API port 8094. Striktní oddělení od L1 konsensu. *(Sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects.)*
 
 Zahrada nezačíná plná, brácho. Začíná prázdná. Aby v ní bylo kam růst. Vstupuješ do světa, kde každej tvůj čin zanechává stopu v paměti. Co uděláš, se počítá. Co neuděláš, taky.
 
@@ -182,7 +182,7 @@ ZION není cíl. Je to sůl. Je to loď. Je to cesta. Můžeš být pozorovatel,
 | L1 | TerraNova blockchain, Proof-of-Work, živé |
 | L2 | Bridge, DAO, DeFi na Base — stavba |
 | L3 | WARP, AI Native, NCL — stavba |
-| L4 | Oasis — 9 CL, 202 avatarů, Golden Egg 8,25B ZION, start 2027 — stavba |
+| L4 | Oasis — 9 CL, 202 avatarů, Golden Egg 4,95B ZION, start 2027 — stavba |
 | L5 | Free World — komunity, medicína, volná energie — horizont |
 | L6 | Issobella — orbitální stanice, 420 km, 2040 — horizont |
 | Humanitární fond | Vynucený konsensem, v každém bloku, dnes |

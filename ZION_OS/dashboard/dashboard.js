@@ -4375,6 +4375,7 @@ async function loadWallets(){
     if(catDisplay){
       const catMeta = {
         oasis: { label: '🌸 OASIS', color: 'text-zion-gold', bg: 'bg-zion-gold/10' },
+        l5_free_world: { label: '🌍 L5 Free World', color: 'text-teal-400', bg: 'bg-teal-500/10' },
         dao:   { label: '🗳️ DAO Treasury', color: 'text-zion-purple', bg: 'bg-zion-purple/10' },
         infrastructure: { label: '🏗️ Infrastructure', color: 'text-zion-cyan', bg: 'bg-zion-cyan/10' },
         humanitarian: { label: '💝 Humanitarian', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
@@ -4403,6 +4404,7 @@ async function loadWallets(){
     if(catBars && summary.total_premine_zion){
       const catMeta = {
         oasis: { label: '🌸 OASIS + Winners', color: '#fcd116' },
+        l5_free_world: { label: '🌍 L5 Free World', color: '#14b8a6' },
         dao:   { label: '🗳️ DAO Treasury', color: '#e41e2b' },
         infrastructure: { label: '🏗️ Infrastructure', color: '#078930' },
         humanitarian: { label: '💝 Humanitarian', color: '#078930' },
@@ -7184,13 +7186,14 @@ async function loadGenesis(){
   // Premine table
   const catColors = {
     oasis_golden_egg: 'border-pink-500/30 bg-pink-500/5',
+    l5_free_world: 'border-teal-500/30 bg-teal-500/5',
     dao_treasury: 'border-blue-500/30 bg-blue-500/5',
     infrastructure: 'border-zion-cyan/30 bg-cyan-500/5',
     humanitarian: 'border-emerald-500/30 bg-emerald-500/5',
     bridge_seed: 'border-amber-500/30 bg-amber-500/5',
     bridge_vault_utxo: 'border-orange-500/30 bg-orange-500/5',
   };
-  const catIcons = { oasis_golden_egg: '🌸', dao_treasury: '🗳️', infrastructure: '🏗️', humanitarian: '💝', bridge_seed: '🌉', bridge_vault_utxo: '🔒' };
+  const catIcons = { oasis_golden_egg: '🌸', l5_free_world: '🌍', dao_treasury: '🗳️', infrastructure: '🏗️', humanitarian: '💝', bridge_seed: '🌉', bridge_vault_utxo: '🔒' };
   document.getElementById('premine-table').innerHTML = res.premine.map((p, i) => `
     <div class="zion-panel-soft border ${catColors[p.category] || 'border-white/10'} rounded-xl p-3 flex items-center gap-3">
       <div class="text-2xl">${catIcons[p.category] || '⚪'}</div>

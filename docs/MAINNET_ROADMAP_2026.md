@@ -374,10 +374,11 @@ Cíl: Vytvořit čisté repo, dostat core blockchain do souladu s WP2.9.5 a MAIN
 
 | Kategorie | Částka ZION | Podíl z premine | Lock |
 |-----------|-------------|-----------------|------|
-| Mining Operators (OASIS, bonusy) | 8,250,000,000 | 50.7% | Okamžitě dostupné |
+| Mining Operators (OASIS, bonusy) | 4,950,000,000 | 30.4% | Okamžitě dostupné (3 slots × 1.65B) |
+| L5 Free World Projects | 3,300,000,000 | 20.3% | Okamžitě dostupné (Slots 4 & 5 repurposed from OASIS) |
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné |
 | Infrastructure & Development | 2,500,000,000 | 15.4% | Okamžitě dostupné |
-| Humanitarian Fund | 1,530,000,000 | 9.4% | Okamžitě dostupné |
+| Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné |
 | **Celkem** | **16,280,000,000** | **100%** | — |
 
 **Emission Parametry:**
@@ -996,10 +997,11 @@ GENESIS BLOCK VERIFICATION:
 
 | Kategorie | ZION | Podíl | Lock | Použití |
 |-----------|------|-------|------|--------|
-| ZION OASIS + Winners Golden Egg/Xp | 8,250,000,000 | 50.7% | Okamžitě dostupné | Pool bonusy, XP rewards (L4) |
+| ZION OASIS + Winners Golden Egg/Xp | 4,950,000,000 | 30.4% | Okamžitě dostupné | Pool bonusy, XP rewards (L4) — 3 slots × 1.65B |
+| L5 Free World Projects | 3,300,000,000 | 20.3% | Okamžitě dostupné | Slots 4 & 5 repurposed from OASIS — L5 humanitární projekty |
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné | Granty, bounty, ekosystém |
 | Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě dostupné | Servery, AI, vývoj, audity |
-| Humanitarian Fund | 1,530,000,000 | 9.4% | Okamžitě dostupné | Humanitární iniciativy |
+| Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné | Humanitární iniciativy |
 | **Celkem** | **16,280,000,000** | **100%** | — | — |
 
 ### Funding Model (bez firmy)
@@ -1205,7 +1207,7 @@ REPOZITÁŘE:
 ### Co NENÍ na L1 (patří do vyšších layerů)
 - ❌ XP / Consciousness Level systém → **L4 Oasis**
 - ❌ NCL (Neural Compute Layer) → **L3 Warp/AI**
-- ❌ Consciousness bonus v coinbase → **L4 Pool Bonus (z 8.25B premine)**
+- ❌ Consciousness bonus v coinbase → **L4 Pool Bonus (z 4.95B premine)**
 - ❌ DEX / Atomic Swaps → **L2 DeFi**
 - ❌ AI Orchestrátor → **L3 AI Native**
 - ❌ Gamifikace → **L4 Oasis**
@@ -1277,7 +1279,7 @@ REPOZITÁŘE:
 XP je OFFCHAIN (pool-level databáze, NE na L1 blockchainu).
 L1 zůstává čistý — žádné XP v konsensus pravidlech.
 
-1. POOL BONUS    — z Mining Operators premine 8.25B ZION
+1. POOL BONUS    — z Mining Operators premine 4.95B ZION (3 OASIS sloty; Sloty 4 & 5 repurposed to L5 Free World Projects)
                    Bonus = base_share × consciousness_multiplier
 2. DAO WEIGHT    — vote_weight = zion_balance × xp_multiplier
 3. OASIS PERKS   — lepší avatar, větší území, rare items

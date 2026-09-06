@@ -69,7 +69,7 @@ This is not a promise of profit without work. It is **Hanuman's bridge translate
 | "Work counts, even outside mining." | The XP system collects activity from L1 (mining), L3 (AI compute, bridge), L2 (DAO, DeFi), and the community (bug reports, code, documentation, node operation) — without affecting consensus. |
 | "Activity unused loses its meaning." | XP decay: 1% per day after 7 days of inactivity, max. 50% decline — a mechanism against passive farming. |
 | "Avatars and quests already exist today." | 51 core + 151 extended avatars, each with 5 quests; REST API `/avatars` and `/quests` is active. |
-| "Golden Egg is concrete, not an abstract promise." | 108 clues, target reward 8.25 billion ZION (50.7% of the genesis reserve), planned launch 2027 — status **BUILD/HORIZON**, not a live system today. |
+| "Golden Egg is concrete, not an abstract promise." | 108 clues, target reward 4.95 billion ZION (30.4% of the genesis reserve), planned launch 2027 — status **BUILD/HORIZON**, not a live system today. |
 | "Mining remains pure; Oasis is a layer on top." | Block rewards are strictly proportional to hashrate and PPLNS share — Oasis XP never influences consensus or block reward. |
 
 ---

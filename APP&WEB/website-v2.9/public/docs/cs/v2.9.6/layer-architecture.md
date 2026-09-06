@@ -127,7 +127,7 @@ ZION Oasis je kompletní ekonomický ekosystém zahrnující herní vrstvu, NFT,
 
 | Fond | Alokace | Účel |
 |------|---------|------|
-| Oasis + Golden Egg/Xp | 8.25B ZION | Ekosystém, rewards, winners |
+| Oasis + Golden Egg/Xp | 4.95B ZION | Ekosystém, rewards, winners |
 
 ### Ekonomický dopad
 - Oasis vytváří **reálnou poptávku** po ZION tokenu

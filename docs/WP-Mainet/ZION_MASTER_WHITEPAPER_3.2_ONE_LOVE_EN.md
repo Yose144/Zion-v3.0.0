@@ -131,9 +131,9 @@ every string resonates. One chord, one love, one aim.
 
 And then comes Hiranyagarbha — the Golden Egg. It is no treasure for the
 chosen. It is an initiation road. Whoever finds 108 clues passes the
-trial of the soul. The egg hides 8.25 billion ZION, but that billion is
+trial of the soul. The egg hides 4.95 billion ZION, but that billion is
 not the goal. The goal is the road. The road where a man returns to
-himself.
+himself. *(Slots 4 & 5 of the original OASIS premine — 3.3B ZION — were repurposed to L5 Free World Projects: 5 humanitarian projects × 500M + 800M reserve.)*
 
 ---
 

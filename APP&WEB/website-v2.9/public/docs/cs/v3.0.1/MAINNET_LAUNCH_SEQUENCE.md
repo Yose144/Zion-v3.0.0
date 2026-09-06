@@ -15,7 +15,8 @@
   - Pool fee: 1%
 
 - ✅ **Genesis premine nakonfigurován** (13 outputů, 16,28B ZION)
-  - 5× OASIS + Golden Egg (8,25B ZION)
+  - 3× OASIS + Golden Egg (4,95B ZION)
+  - 2× L5 Free World Projects (3,3B ZION, přesunuto ze Slotů 4 & 5)
   - 3× DAO Treasury (4,0B ZION, uzamčeno 1 rok)
   - 3× Infrastruktura (2,59B ZION)
   - 1× Humanitární (1,44B ZION)

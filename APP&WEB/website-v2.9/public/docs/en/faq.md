@@ -39,7 +39,7 @@ Distribution: 89% miner, 5% humanitarian, 5% L5/L6 Issobella fund, 1% pool fee.
 
 | Fund | Amount | Share |
 |------|--------|-------|
-| ZION Oasis + Golden Egg | 8.25B | 50.7% |
+| ZION Oasis + Golden Egg | 4.95B | 30.4% |
 | DAO Treasury | 4.00B | 24.6% |
 | Infrastructure | 2.59B | 15.9% |
 | Humanitarian Fund | 1.44B | 8.8% |

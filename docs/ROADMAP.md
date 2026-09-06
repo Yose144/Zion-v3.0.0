@@ -143,7 +143,7 @@
 
 | Komponenta | LOC | Moduly | Stav | Readiness |
 |-----------|-----|--------|------|-----------|
-| `L4/oasis/` (consciousness game) | 2,335 | 13 | ✅ Skeleton kompiluje — XP, guilds, territories, challenges, 8.25B rewards | 10% |
+| `L4/oasis/` (consciousness game) | 2,335 | 13 | ✅ Skeleton kompiluje — XP, guilds, territories, challenges, 4.95B rewards (3 OASIS slots; Slots 4 & 5 repurposed to L5 Free World Projects) | 10% |
 
 #### L5 — ZION Free World (vize 🟠)
 
@@ -209,10 +209,11 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 
 | Kategorie | ZION | Podíl | Lock |
 |-----------|------|-------|------|
-| ZION OASIS + Winners Golden Egg/Xp | 8,250,000,000 | 50.7% | Okamžitě dostupné |
+| ZION OASIS + Winners Golden Egg/Xp | 4,950,000,000 | 30.4% | Okamžitě dostupné (3 slots × 1.65B) |
+| L5 Free World Projects | 3,300,000,000 | 20.3% | Okamžitě dostupné (Slots 4 & 5 repurposed from OASIS) |
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné |
 | Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě dostupné |
-| Humanitarian Fund | 1,530,000,000 | 9.4% | Okamžitě dostupné |
+| Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné |
 | **Celkem** | **16,280,000,000** | **100%** | — |
 
 ---
@@ -611,15 +612,15 @@ Alice (ZION)                              Bob (BTC)
 
 > **XP je offchain** (pool-level DB). L1 zůstává čistý — žádné XP v konsensus pravidlech.
 
-### OASIS Reward Pool (8.25B ZION) — implementováno v `L4/oasis/src/rewards.rs`
+### OASIS Reward Pool (4.95B ZION) — implementováno v `L4/oasis/src/rewards.rs`
 
 | Slot | Alokace | Účel |
 |------|---------|------|
-| Slot 1 | 1.65B (20%) | Mining rewards (XP-boosted) |
-| Slot 2 | 1.65B (20%) | Challenge completion rewards |
-| Slot 3 | 1.65B (20%) | Guild & territory bonuses |
-| Slot 4 | 1.65B (20%) | Level-up bonus payouty |
-| Slot 5 | 1.65B (20%) | Reserve / budoucí features |
+| Slot 1 | 1.65B (33%) | Mining rewards (XP-boosted) |
+| Slot 2 | 1.65B (33%) | Challenge completion rewards |
+| Slot 3 | 1.65B (33%) | Guild & territory bonuses |
+| Slot 4 | — | Repurposed to L5 Free World Projects |
+| Slot 5 | — | Repurposed to L5 Free World Projects |
 
 ### Genesis Territory Map — implementováno v `L4/oasis/src/territory.rs`
 
@@ -641,7 +642,7 @@ Alice (ZION)                              Bob (BTC)
 | L4-M0: OASIS Skeleton Crate | 2026 Q1 | — | ✅ `d06e4db` (2335 LOC, 13 modulů) |
 | L4-M1: XP Service (offchain) | 2029 Q1 | L1 stable | 🏗️ Skeleton (xp.rs, player.rs) |
 | L4-M2: Consciousness Calculator | 2029 Q1 | L4-M1 | 🏗️ Skeleton (consciousness.rs, levels.rs) |
-| L4-M3: Pool bonus (z 8.25B premine) | 2029 Q2 | L4-M2 | 🏗️ Skeleton (rewards.rs — 5 slotů) |
+| L4-M3: Pool bonus (z 4.95B premine) | 2029 Q2 | L4-M2 | 🏗️ Skeleton (rewards.rs — 3 OASIS sloty; Sloty 4 & 5 repurposed to L5) |
 | L4-M4: Oasis UE5 prototyp | 2029 Q2 | — | ⬜ |
 | L4-M5: Wallet integration | 2029 Q3 | L4-M4 + L1 | ⬜ |
 | L4-M6: Quest system + NPC AI | 2029 Q3 | L4-M4 + L3 | 🏗️ Skeleton (challenges.rs, guild.rs quests) |
@@ -913,7 +914,7 @@ External Mining (ETC/RVN/XMR/FLUX...)
 ## Layer Stack Summary
 
 ```
-L4  🎮 OASIS      — oasis/     2335 LOC 🏗️ 13 modulů (XP, guilds, territories, 8.25B pool)  [2029+]
+L4  🎮 OASIS      — oasis/     2335 LOC 🏗️ 13 modulů (XP, guilds, territories, 4.95B pool)  [2029+]
 L3  🧠 WARP/AI    — warp/      4854 LOC 🏗️ 22 files (7 chain adapterů)                      [2027 Q3+]
                    ncl/       1034 LOC 🏗️ 11 modulů (task scheduler, 4 runtime backendy)
                    ai-native/  752 LOC 🏗️ 10 modulů (7 agent typů, memory, consciousness)

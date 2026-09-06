@@ -304,7 +304,7 @@ ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"chain_get_block\",\"params
 ```bash
 # Query each premine address balance — must match the amounts in genesis.rs
 ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"address_get_balance\",\"params\":[\"zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5\"],\"id\":1}' | nc 127.0.0.1 9445"
-# Expected: 8,250,000,000 ZION (slot 1, OASIS+GoldenEgg)
+# Expected: 1,650,000,000 ZION (slot 1, OASIS+GoldenEgg — 1 of 3 OASIS slots; total OASIS = 4.95B; Slots 4 & 5 repurposed to L5 Free World Projects)
 ```
 
 ### 7.3 Pool fee split correct
@@ -420,7 +420,7 @@ The 7 DAO guardian keys must be loaded into the DAO governance runtime config (`
 
 | Script | Output | Keys |
 |--------|--------|------|
-| `gen-premine-wallets.rs` | 14 premine keypairs | OASIS (5), DAO treasury (3), Infrastructure (3), Humanitarian (1), Bridge (2) |
+| `gen-premine-wallets.rs` | 14 premine keypairs | OASIS (3), L5 Free World Projects (2, repurposed from OASIS Slots 4 & 5), DAO treasury (3), Infrastructure (3), Humanitarian (1), Bridge (2) |
 | `gen-canonical-wallets.rs` | 5 subsidy keypairs | humanitarian, issobella, pool_fee, default_miner, pool_payout |
 | `gen-admin-keys.rs` | 3 admin keypairs (L1 + EVM) | Rama, Sita, Hanuman |
 | `gen-dao-guardians.rs` | 7 guardian keypairs | Guardian-1 through Guardian-7 |

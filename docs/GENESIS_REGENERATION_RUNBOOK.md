@@ -240,7 +240,7 @@ Replace all 14 premine addresses with newly generated ones:
 
 ```rust
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
-    // --- OASIS + Golden Egg (5 slots) ---
+    // --- OASIS + Golden Egg (3 slots; Slots 4 & 5 repurposed to L5 Free World Projects) ---
     PremineOutput {
         address: "NEW_ADDRESS_1",  // Replace with new address
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 1)",
@@ -359,7 +359,8 @@ Replace all addresses with new ones:
 # Generated: 2026-06-03 (Genesis Regeneration)
 # Total: 16,780,000,000 ZION (11.65% of max supply)
 
-# 1–5: OASIS + Golden Egg/Xp (5 slots × 1.65B = 8.25B ZION)
+# 1–3: OASIS + Golden Egg/Xp (3 slots × 1.65B = 4.95B ZION)
+# 4–5: L5 Free World Projects (2 slots × 1.65B = 3.3B ZION — repurposed from OASIS Slots 4 & 5)
 1  NEW_ADDRESS_1    OASIS_Winner_1       1,650,000,000
 2  NEW_ADDRESS_2    OASIS_Winner_2       1,650,000,000
 ...

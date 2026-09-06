@@ -3247,7 +3247,8 @@ export default function MissionControlDashboard() {
                 </div>
                 <div className="space-y-4">
                   {[
-                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '8,250,000,000', pct: 49.2, lock: cs ? 'Admin-locked · 5 slotů' : 'Admin-locked · 5 slots', lockColor: 'text-zion-cyan' },
+                    { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '4,950,000,000', pct: 29.5, lock: cs ? 'Admin-locked · 3 slotů (Sloty 4 & 5 → L5 Free World)' : 'Admin-locked · 3 slots (Slots 4 & 5 → L5 Free World)', lockColor: 'text-zion-cyan' },
+                    { cat: cs ? 'L5 Free World Projects' : 'L5 Free World Projects', Icon: Globe2, amount: '3,300,000,000', pct: 19.7, lock: cs ? 'Trustee-managed · 2 slotů' : 'Trustee-managed · 2 slots', lockColor: 'text-zion-gold' },
                     { cat: 'DAO Treasury', Icon: Database, amount: '4,000,000,000', pct: 23.8, lock: cs ? 'Time-lock do bloku 144,000' : 'Time-locked until block 144,000', lockColor: 'text-zion-gold' },
                     { cat: MissionControlDashboardCopy.infrastructureDev[cs ? 'cs' : 'en'], Icon: Wrench, amount: '2,590,000,000', pct: 15.4, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
                     { cat: MissionControlDashboardCopy.humanitarianFund[cs ? 'cs' : 'en'], Icon: Heart, amount: '1,440,000,000', pct: 8.6, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },

@@ -199,7 +199,8 @@ const constitution = [
 ];
 
 const premineAllocation = [
-  { category: 'OASIS Golden Egg reserve', zion: '8,250,000,000', share: '50.7%', lock: 'Public summary only' },
+  { category: 'OASIS Golden Egg reserve (3 slots × 1.65B)', zion: '4,950,000,000', share: '30.4%', lock: 'Public summary only' },
+  { category: 'L5 Free World Projects (2 slots × 1.65B, repurposed from Slots 4 & 5)', zion: '3,300,000,000', share: '20.3%', lock: 'Trustee-managed' },
   { category: 'DAO Treasury', zion: '4,000,000,000', share: '24.6%', lock: 'Immediately available' },
   { category: 'Infrastructure & development', zion: '2,590,000,000', share: '15.9%', lock: 'Operational envelope' },
   { category: 'Humanitarian seed', zion: '1,440,000,000', share: '8.8%', lock: 'Immediately available' },

@@ -35,7 +35,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 | Category | Amount | Lock |
 |----------|--------|------|
-| ZION OASIS + Winners Golden Egg/Xp | 8.25B | Immediate |
+| ZION OASIS + Winners Golden Egg/Xp | 4.95B | Immediate |
 | DAO Treasury | 4.0B | Immediate |
 | Infrastructure | 2.59B | Immediate |
 | Humanitarian | 1.44B | Immediate |

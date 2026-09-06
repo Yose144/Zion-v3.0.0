@@ -44,7 +44,7 @@ Zbývajících **88,69 %** (127,72 mld. ZION) se emituje výhradně těžbou PoW
 
 | Kategorie | ZION | % nabídky |
 |-----------|------|-----------|
-| ZION OASIS + Winners | 8 250 000 000 | 5,73 % |
+| ZION OASIS + Winners | 4 950 000 000 | 3,44 % |
 | DAO Treasury | 4 000 000 000 | 2,78 % |
 | Infrastruktura | 2 590 000 000 | 1,80 % |
 | Humanitární rezerva | 1 440 000 000 | 1,00 % |

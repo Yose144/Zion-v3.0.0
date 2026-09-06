@@ -76,7 +76,7 @@ Celkový premine: **16 280 000 000 ZION** (11.31% z total supply) — on-chain v
 
 | Kategorie | Částka | Podíl |
 |-----------|--------|-------|
-| ZION OASIS + Winners Golden Egg/Xp | 8 250 000 000 ZION | 50.7% |
+| ZION OASIS + Winners Golden Egg/Xp | 4 950 000 000 ZION | 30.4% |
 | DAO Treasury | 4 000 000 000 ZION | 24.6% |
 | Infrastructure | 2 590 000 000 ZION | 15.9% |
 | Humanitarian | 1 440 000 000 ZION | 8.8% |

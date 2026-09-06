@@ -306,7 +306,7 @@ The First World of Oasis is structured into **8 Genesis Territories**. Some desc
 
 ### Golden Egg and 108 clues
 
-In the center of Oasis stands the **Tree of Life**. In its roots lies the **first of 108 clues of the Golden Egg**. The Golden Egg is not just treasure — it is a **pedagogical story**. A reserve of **8.25 billion ZION** from the genesis allocation is locked in five reward pools:
+In the center of Oasis stands the **Tree of Life**. In its roots lies the **first of 108 clues of the Golden Egg**. The Golden Egg is not just treasure — it is a **pedagogical story**. A reserve of **4.95 billion ZION** from the genesis allocation is locked in five reward pools (Slots 4 & 5 — 3.3B ZION — repurposed to L5 Free World Projects: 5 humanitarian projects × 500M + 800M reserve):
 
 - Player Pool
 - Guild Pool
@@ -611,7 +611,7 @@ rpcCall('getChainInfo').then(console.log);
 | **Avatars** | 202 avatars in 17 circles | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 10 |
 | **Consciousness Levels** | 9 levels (CL1–CL9) with multipliers 1.0x–10.0x | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 11 |
 | **Genesis Territories** | 8 initial regions in Oasis, defined in `TerritoryMap` | [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
-| **Golden Egg** | 5 reward pools; 8.25 billion ZION; 108 clues | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 12; [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
+| **Golden Egg** | 5 reward pools; 4.95 billion ZION; 108 clues (Slots 4 & 5 repurposed to L5 Free World Projects) | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 12; [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
 | **Seven paths** | 7 quest paths in Oasis | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 11 |
 | **L1–L6 architecture** | L1 blockchain, L2 DeFi/bridge/DAO, L3 AI/WARP, L4 Oasis, L5 Free World, L6 Issobella | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`StatusV3.md`](../../../StatusV3.md) |
 | **V31 Alpha** | V31 node `3.1.0-alpha.2` is LIVE on Edge, syncs with V3 mainnet over V3-compatible P2P, port 8335, RPC 9445 | [`StatusV3.md`](../../../StatusV3.md), line 8; [`AGENTS.md`](../../../AGENTS.md) |

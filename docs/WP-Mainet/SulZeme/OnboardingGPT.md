@@ -799,7 +799,7 @@ Každá dobrá vlastnost se stává nebezpečná, když zůstane sama.
 
 [KÓD]
 
-V L4 Oasis se dokumentuje premine alokace **8,25 miliardy ZION**, rozdělená do pěti slotů po 1,65 miliardy ZION.
+V L4 Oasis se dokumentuje premine alokace **4,95 miliardy ZION**, rozdělená do tří slotů po 1,65 miliardy ZION (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION).
 
 Dokumentace spojuje odemykání s herními mechanismy, Consciousness Level úspěchy a DAO governance.
 
@@ -1599,7 +1599,7 @@ Je to jen dobře navržená klec.
 | Zahrada tisíce dveří | Vyprávěcí podoba L4 | `zion-oasis`, game systémy, avatar dokumentace |
 | 202 avatarů | Herní/narativní katalog | 51 core + 151 extended roster; ne vše je hotové live rozšíření |
 | Devět nebes | Poetický popis CL1–CL9 | Consciousness Levels a multiplikátory v herní dokumentaci/kódu |
-| Zlaté vejce | Hra a designová architektura | 8,25B alokace popsaná v L4; 108 stop je návrhová část |
+| Zlaté vejce | Hra a designová architektura | 4,95B alokace popsaná v L4 (3 sloty; Slots 4 & 5 → L5); 108 stop je návrhová část |
 | Dharma Credits | Ekonomický a herní koncept | Dokumentovaná specifikace + scope ve V31 multichain; aktuální runtime ověřuj podle release stavu |
 | Issobella jako stanice | Horizont a příběh | L6 crate, mission/observatory/fund design; fyzická stanice není hotová infrastruktura |
 | Sedmá bílá vrstva | Čistý návrh tohoto atlasu | Nic — je to místo pro budoucí příspěvky lidí |

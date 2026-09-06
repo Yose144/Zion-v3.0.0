@@ -282,11 +282,11 @@ The only way to acquire ZION is to **mine it** or receive it in a transaction.
 
 A total of **16,280,000,000 ZION** (11.31 % of total supply) is reserved at genesis to bootstrap the ecosystem.
 
-**Primary strategic envelope:** **8,500,000,000 ZION** is dedicated to L4 OASIS/game development and game-economy bootstrap (8.25B direct OASIS slots + 0.25B ecosystem allocation for game-dev execution).
+**Primary strategic envelope:** **5,200,000,000 ZION** is dedicated to L4 OASIS/game development and game-economy bootstrap (4.95B direct OASIS slots + 0.25B ecosystem allocation for game-dev execution).
 
 | # | Allocation | ZION | Purpose |
 |---|-----------|------|---------|
-| 1-5 | OASIS Golden Egg | 8,250,000,000 | L4 game world reward pool (5 slots × 1.65B, 10-year vesting) |
+| 1-3 | OASIS Golden Egg | 4,950,000,000 | L4 game world reward pool (3 slots × 1.65B (Slots 4 & 5 → L5 Free World), 10-year vesting) |
 | 6 | DAO Treasury (main) | 2,500,000,000 | Community governance reserve |
 | 7 | DAO Grants & Bounties | 1,000,000,000 | Developer grants |
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development (includes game-dev execution envelope) |
@@ -516,7 +516,7 @@ The AI-native layer implements AI agents as first-class protocol objects: on-cha
 
 - **8 Genesis Territories** (Mount Zion, Cedar Forest, ...)
 - **9 Consciousness Levels** (Kabbalah Sefira: Malkuth → Keter)
-- **8.25B ZION reward pool** (5 genesis slots × 1.65B, 10-year distribution)
+- **4.95B ZION reward pool** (3 genesis slots × 1.65B, 10-year distribution; Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION)
 - **XP off-chain** — SQLite `oasis.db`, L1 remains pure
 
 **REST API** (port 8094): health, player, XP award, leaderboard, guild CRUD, territory map, reward pools — 9 endpoints.

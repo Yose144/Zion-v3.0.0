@@ -150,7 +150,7 @@ L3 Consciousness je **interní metrika** pro AI agenty — určuje, jaké operac
 Plánované rozšíření:
 
 - **Territory systém** — guildy kontrolují oblasti
-- **Golden Egg ekonomika** — 8.25B ZION pool pro in-game
+- **Golden Egg ekonomika** — 4.95B ZION pool pro in-game
 - **UE5 VR/AR metaverse** — vizuální svět ZION ekosystému
 - **Quests & achievements** — narativní mise
 

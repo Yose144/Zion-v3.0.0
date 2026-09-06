@@ -266,7 +266,8 @@ pub const TOTAL_SUPPLY: u64 = 144_000_000_000_000_000; // 144B ZION
 **Distribuce preminu:**
 | Kategorie | Částka | Podíl |
 |-----------|--------|-------|
-| Mining Operators | 8.25B | 50.7% |
+| Mining Operators (OASIS) | 4.95B | 29.5% |
+| L5 Free World Projects | 3.3B | 19.7% |
 | DAO Winners | 1.75B | 10.7% |
 | ZION OASIS | 1.44B | 8.8% |
 | Infrastructure | 4.34B | 26.7% |

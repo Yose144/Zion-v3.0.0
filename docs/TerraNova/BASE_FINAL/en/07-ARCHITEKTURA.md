@@ -115,7 +115,8 @@ These numbers are the result of asking: *What values do we want to encode so dee
 ```
 GENESIS RESERVE — 16.28B ZION:
 
-8.25B  → OASIS Golden Egg (education through play)
+4.95B  → OASIS Golden Egg (education through play, 3 slots)
+3.30B  → L5 Free World Projects (Slots 4 & 5 repurposed from OASIS)
 4.00B  → DAO Treasury (governance, projects, grants)
 2.59B  → Infrastructure:
 │  1.00B  Core development

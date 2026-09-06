@@ -160,7 +160,7 @@ ZION is organized as a stack of six layers, each independently functional and ea
 
 ### L4–L6 — The Long Horizon
 
-- **L4 (OASIS):** Unreal Engine 5 open-world game linked to the blockchain, with 9 consciousness levels and an 8.25B ZION reward pool distributed over 10 years
+- **L4 (OASIS):** Unreal Engine 5 open-world game linked to the blockchain, with 9 consciousness levels and a 4.95B ZION reward pool distributed over 10 years (3 slots × 1.65B; Slots 4 & 5 repurposed to L5 Free World Projects)
 - **L5 (Free World):** Humanitarian and scientific foundation funded by the 5 % block reward allocation, targeting launch in 2030
 - **L6 (Issobella):** Long-term vision for a decentralized scientific research station in Low Earth Orbit, funded perpetually by tail emission after 2126
 
@@ -273,7 +273,8 @@ The genesis block (height 0) contains 12 outputs with a total of 16.28 billion Z
 
 | # | Category | Amount (ZION) | Lock |
 |---|----------|---------------|------|
-| 1–5 | OASIS Golden Egg / XP (5 slots) | 8,250,000,000 | None |
+| 1–3 | OASIS Golden Egg / XP (3 slots) | 4,950,000,000 | None |
+| 4–5 | L5 Free World Projects (repurposed from OASIS) | 3,300,000,000 | None |
 | 6 | DAO Treasury (main reserve) | 2,500,000,000 | 525,600 blocks (~1 year) |
 | 7 | DAO Grants & Bounties | 1,000,000,000 | 525,600 blocks (~1 year) |
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | 525,600 blocks (~1 year) |
@@ -374,7 +375,7 @@ OASIS is an Unreal Engine 5 open-world game linked to the ZION blockchain. It in
 
 - **8 Genesis Territories** with unique economies
 - **9 Consciousness Levels** (inspired by Kabbalah Sefira: Malkuth to Keter)
-- **8.25 billion ZION reward pool** distributed over 10 years
+- **4.95 billion ZION reward pool** distributed over 10 years (3 slots × 1.65B; Slots 4 & 5 repurposed to L5 Free World Projects)
 - XP is tracked off-chain in SQLite; L1 consensus remains pure PoW
 
 **Consciousness Period (2026–2035):** During the first decade, OASIS adds bonus rewards on top of base mining:

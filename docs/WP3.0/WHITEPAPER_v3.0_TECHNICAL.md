@@ -718,7 +718,7 @@ OASIS je Unreal Engine 5 open-world propojený s ZION blockchainem. Je to vrstva
 **Klíčové koncepty:**
 - **8 Genesis Territories** (Mount Zion, Cedar Forest, …)
 - **9 Consciousness Levels** (Kabbalah Sefira: Malkuth → Keter)
-- **8,25B ZION reward pool** (5 slotů × 1,65B, 10letá distribuce)
+- **4,95B ZION reward pool** (3 sloty × 1,65B, 10letá distribuce; Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION)
 - **XP off-chain** — SQLite `oasis.db`, L1 zůstává čistý
 
 **REST API** (port 8094): health, player, XP award, leaderboard, guild CRUD, territory map, reward pools — celkem 9 endpointů.

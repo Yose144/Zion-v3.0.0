@@ -118,7 +118,7 @@ To je kompletní mapa cesty pro každého nového příchozího:
 | **Avataři v Oasis** | L4 rozhraní plánuje profilové avatary (Neo, Trinity, Morpheus, Sádhu...) s vlastnostmi spojenými s typem komunitní aktivity. | **VÝSTAVBA / L4 OASIS** |
 | **9 úrovní vědomí (Consciousness Levels)** | Od Dormant po Cosmic, definované v `docs/ai-native/oasis.md` a na webu v sekci Oasis. | **SPECIÁLNÍ L4 DOCK** |
 | **XP za reálné činy** | Reputační systém v L4 Oasis za pomoc komunitě, PRs, nahlášené chyby a mining uptime. | **VE VÝVOJI (L4)** |
-| **Golden Egg (108 stop)** | Gamifikovaná honba za pokladem s 8,25 miliardami ZION z genesis rezervy. | **HORIZONT (2027)** |
+| **Golden Egg (108 stop)** | Gamifikovaná honba za pokladem s 4,95 miliardami ZION z genesis rezervy. | **HORIZONT (2027)** |
 
 ---
 

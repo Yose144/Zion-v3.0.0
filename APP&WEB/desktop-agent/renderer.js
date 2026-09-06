@@ -3638,8 +3638,8 @@ const OASIS_REWARD_SLOTS = [
   { name: 'Mining',     icon: '▶',  amount: '1.65B' },
   { name: 'Challenges', icon: '◎', amount: '1.65B' },
   { name: 'Guild',      icon: '×',  amount: '1.65B' },
-  { name: 'Level-Up',   icon: '↑',  amount: '1.65B' },
-  { name: 'Reserve',    icon: '●', amount: '1.65B' },
+  { name: '→ L5 Free World Projects',   icon: '↑',  amount: '1.65B (repurposed)' },
+  { name: '→ L5 Free World Projects',    icon: '●', amount: '1.65B (repurposed)' },
 ];
 
 /** Sample guild quests — mirrors L4/oasis/src/guild.rs QuestType */

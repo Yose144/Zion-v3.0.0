@@ -118,7 +118,7 @@ Here is the complete roadmap for every newcomer:
 | **Avatars in Oasis** | The L4 interface plans profile avatars (Neo, Trinity, Morpheus, Sádhu...) with qualities tied to the type of community activity. | **UNDER CONSTRUCTION / L4 OASIS** |
 | **9 Levels of Consciousness (Consciousness Levels)** | From Dormant to Cosmic, defined in `docs/ai-native/oasis.md` and on the website in the Oasis section. | **SPECIAL L4 DOCK** |
 | **XP for real actions** | Reputation system in L4 Oasis for helping the community, PRs, reported bugs, and mining uptime. | **IN DEVELOPMENT (L4)** |
-| **Golden Egg (108 traces)** | Gamified treasure hunt with 8.25 billion ZION from the genesis reserve. | **HORIZON (2027)** |
+| **Golden Egg (108 traces)** | Gamified treasure hunt with 4.95 billion ZION from the genesis reserve. | **HORIZON (2027)** |
 
 ---
 

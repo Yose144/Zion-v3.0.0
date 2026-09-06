@@ -571,7 +571,7 @@ A v jeho kořenech leží **první ze 108 stop Zlatého Vejce**.
 
 Golden Egg není jen poklad.
 Je to **pedagogický příběh**.
-V rezervě je uzamčeno **8,25 miliardy ZION** z genesis alokace, rozdělených do pěti odměnových poolů: Player Pool, Guild Pool, Territory Pool, Golden Egg Pool a Winners Pool.
+V rezervě je uzamčeno **4,95 miliardy ZION** z genesis alokace, rozdělených do tří odměnových poolů (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION): Golden Egg Pool, Winners Pool a Guild Pool.
 Stopy jsou ukryté v blocích L1, ve smart kontraktech na Base/EVM, v knihách TerraNova i ve skutečných geografických lokacích.
 
 108 je magické číslo.
@@ -735,7 +735,7 @@ To je smysl celé knihy: **příběh končí tam, kde začíná tvůj.**
 | **Ekam Deeksha PoW** | Šestifázový pipeline: Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi. | `V31/L1/cosmic-harmony-v3/src/deeksha.rs` |
 | **9 Consciousness Levels** | Enum `ConsciousnessLevel` s multiplikátory 1.0× až 10.0× a XP hranicemi. | `consciousness_mining_game.py`, `xp_tracker.rs`, `oasis_bridge.rs` |
 | **202 avatáři v Oasis** | 51 core avatars + 15 rozšiřujících kruhů po 10 + Maya #202. | `public/V3/L4/docs/AVATARS/README.md`, `AVATAR_ROSTER.md` |
-| **Golden Egg — 8,25B ZION** | 5 reward poolů z genesis alokace: Player, Guild, Territory, Golden Egg, Winners. | Genesis premine alokace |
+| **Golden Egg — 4,95B ZION** | 3 reward pooly z genesis alokace: Golden Egg, Winners, Guild (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION). | Genesis premine alokace |
 | **108 stop** | Gamifikovaná honba za pokladem se stopami v blocích, kontraktech, knihách i reálném světě. | Horizont / design |
 | **Dharma Credits 144B** | Total supply 144 miliard, eShop bonus tiers, OASIS alokace 1,44B (1 %). | `docs/docs2.9/DHARMA_CREDITS.md` |
 | **3.1.0 Mainnet Alpha** | V31 clean workspace: Triple Stream miner, unified L2 multichain, Dharma Credits ledger. | Ve výstavbě / `V31/README.md`, `docs/3.0.6/3.1.0.md` |

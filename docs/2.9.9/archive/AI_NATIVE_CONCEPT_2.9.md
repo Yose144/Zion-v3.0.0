@@ -238,7 +238,7 @@ AI Native je filozofie i architektura. Nejde jen o "přidání AI" do blockchain
 │       Free energy research, self-sustaining komunity             │
 ├──────────────────────────────────────────────────────────────────┤
 │  L4  🎮 OASIS — Consciousness Mining Game                       │
-│       9 úrovní vědomí, guildy, territory, 8.25B ZION pool       │
+│       9 úrovní vědomí, guildy, territory, 4.95B ZION pool       │
 │       XP z mining/AI/quiz/meditation/tithe                       │
 │       UE5 VR/AR metaverse (budoucí)                              │
 ├──────────────────────────────────────────────────────────────────┤
@@ -654,17 +654,15 @@ total       = 50..275 XP
 
 8 genesis regionů, claims/contests systém.
 
-### 7.4 Reward Pool — 8.25B ZION
+### 7.4 Reward Pool — 4.95B ZION
 
-5 slotů × 1.65B ZION:
+3 sloty × 1.65B ZION (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION):
 
 | Slot | Příjemci |
 |------|----------|
 | Golden Egg 🥇 | 1. místo celkového XP |
 | Winners 🏆 | Top 100 hráčů |
 | Guild Pool 🏰 | Top 10 guild |
-| Territory 🗺️ | Držitelé territory |
-| Humanitarian 💚 | Tithing leaders |
 
 ### 7.5 Challenges
 
@@ -782,7 +780,8 @@ Electron main.js
 | Kategorie | Množství | % |
 |-----------|----------|---|
 | Mining Rewards | 127.72B | 88.69% |
-| Oasis + Winners (5 slotů × 1.65B) | 8.25B | 5.73% |
+| Oasis + Winners (3 sloty × 1.65B) | 4.95B | 3.44% |
+| L5 Free World Projects (Slots 4 & 5) | 3.3B | 2.29% |
 | DAO Treasury (main + grants + bootstrap) | 4.0B | 2.78% |
 | Infrastructure (core dev + seed nodes + creator) | 2.59B | 1.80% |
 | Humanitarian | 1.44B | 1.00% |

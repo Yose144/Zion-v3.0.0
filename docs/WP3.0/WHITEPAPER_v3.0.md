@@ -322,7 +322,7 @@ RPC backend: Ankr ($299/měsíc premium, pokrývá 23 mainnet chainů).
 - 9 úrovní vědomí s XP systémem
 - NFT certifikáty za milníky
 - Humanitární gamifikace (donace = XP)
-- Golden Egg reward pool (8,25B ZION vyhrazeno)
+- Golden Egg reward pool (4,95B ZION vyhrazeno; Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION)
 
 OASIS je navržen jako **opt-in** — síť funguje plně bez L4. OASIS přidává engagement vrstvu pro komunitu.
 

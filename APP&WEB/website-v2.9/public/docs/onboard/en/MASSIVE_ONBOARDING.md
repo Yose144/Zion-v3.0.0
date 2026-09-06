@@ -436,7 +436,7 @@ This is not a promise of profit without work. It is **Hanuman's bridge translate
 | "Work counts, even outside mining." | The XP system collects activity from L1 (mining), L3 (AI compute, bridge), L2 (DAO, DeFi), and the community (bug reports, code, documentation, node operation) — without affecting consensus. |
 | "Activity unused loses its meaning." | XP decay: 1% per day after 7 days of inactivity, max. 50% decline — a mechanism against passive farming. |
 | "Avatars and quests already exist today." | 51 core + 151 extended avatars, each with 5 quests; REST API `/avatars` and `/quests` is active. |
-| "Golden Egg is concrete, not an abstract promise." | 108 clues, target reward 8.25 billion ZION (50.7% of the genesis reserve), planned launch 2027 — status **BUILD/HORIZON**, not a live system today. |
+| "Golden Egg is concrete, not an abstract promise." | 108 clues, target reward 4.95 billion ZION (30.4% of the genesis reserve), planned launch 2027 — status **BUILD/HORIZON**, not a live system today. |
 | "Mining remains pure; Oasis is a layer on top." | Block rewards are strictly proportional to hashrate and PPLNS share — Oasis XP never influences consensus or block reward. |
 
 ---
@@ -796,7 +796,7 @@ Here is the complete roadmap for every newcomer:
 | **Avatars in Oasis** | The L4 interface plans profile avatars (Neo, Trinity, Morpheus, Sádhu...) with qualities tied to the type of community activity. | **UNDER CONSTRUCTION / L4 OASIS** |
 | **9 Levels of Consciousness (Consciousness Levels)** | From Dormant to Cosmic, defined in `dokumentace` and on the website in the Oasis section. | **SPECIAL L4 DOCK** |
 | **XP for real actions** | Reputation system in L4 Oasis for helping the community, PRs, reported bugs, and mining uptime. | **IN DEVELOPMENT (L4)** |
-| **Golden Egg (108 traces)** | Gamified treasure hunt with 8.25 billion ZION from the genesis reserve. | **HORIZON (2027)** |
+| **Golden Egg (108 traces)** | Gamified treasure hunt with 4.95 billion ZION from the genesis reserve. | **HORIZON (2027)** |
 
 ---
 
@@ -882,7 +882,7 @@ How does life in the First World of Oasis work?
    - From *Level 1 (Physical)* through *Level 5 (Cosmic)* to *Level 9 (OnTheStar)*.
    - With each higher level, your Avatar gains a new appearance, access to deeper quests, and the right to vote in DAO governance.
 3. **Search for the 108 traces of the Golden Egg:**
-   - 8.25 billion ZION from the genesis reserve is locked in 5 reward pools (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool).
+   - 4.95 billion ZION from the genesis reserve is locked in 3 reward pools (Player Pool, Guild Pool, Territory Pool, Golden Egg Pool, Winners Pool). Slots 4 & 5 (3.3B ZION) were repurposed to L5 Free World Projects.
    - The traces are hidden in blocks of the L1 chain, in smart contracts on Base/EVM, in the books of TerraNova, and in real geographic locations.
 
 ---
@@ -892,7 +892,7 @@ How does life in the First World of Oasis work?
 | Claim in the Story | Reality in the Code / Network | Status |
 |---|---|---|
 | **8 Genesis Territories** | The `TerritoryMap` class in `zion-oasis` defines 8 initial regions and the rules for their governance. | **CODE IN `zion-oasis` (L4)** |
-| **5 Reward Pools (8.25B ZION)** | Genesis allocation of 8 250 000 000 ZION (50.7 % of the genesis reserve) dedicated to OASIS + Golden Egg / XP. | **ON-CHAIN GENESIS ALLOCATION** |
+| **3 OASIS Reward Pools (4.95B ZION) + L5 Free World (3.3B ZION)** | Genesis allocation of 4 950 000 000 ZION (30.4 % of the genesis reserve) for OASIS + Golden Egg / XP. Slots 4 & 5 (3.3B) repurposed to L5 Free World Projects. | **ON-CHAIN GENESIS ALLOCATION** |
 | **9 Levels of Consciousness (Consciousness Levels)** | The `ConsciousnessLevel` enum in L3/L4 (Physical, Emotional, Mental, Awakened, Cosmic...) with multipliers and XP thresholds. | **CODE IN L3/L4 (`oasis_bridge.rs`)** |
 | **Guild system (max 100 members)** | The `Guild` class in `zion-oasis` supports creating guilds, founders, officers, and members. | **CODE IN `zion-oasis` (40 tests)** |
 | **REST API for Oasis** | Port `8094` with endpoints `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNCTIONAL SKELETON (port 8094)** |

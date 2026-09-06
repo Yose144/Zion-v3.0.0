@@ -2333,7 +2333,7 @@ Přidán nový navigační item **OASIS** do desktop agenta — kompletní hern�
 | Unity | Da'at | 2 000 000 | 12.0× |
 | OnTheStar | Keter | 10 000 000 | 15.0× |
 
-**Reward Pool:** 8.25B ZION (5 slotů × 1.65B, 10letá distribuce)  
+**Reward Pool:** 4.95B ZION (3 sloty × 1.65B, 10letá distribuce; Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B ZION)  
 **XP Sources:** 7 zdrojů (BlockMined, AiChallenge, Quiz, Meditation, Tithe, GuildQuest, Referral)  
 **Leaderboards:** 7 typů (GlobalXp, BlocksMined, TopTithers, GuildXp, GuildTerritories, Challenges, LongestStreak)
 

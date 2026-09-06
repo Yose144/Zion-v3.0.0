@@ -52,8 +52,8 @@ const L4OasisCopy = {
   avatarSystemActive: { cs: `Avatar systém — Active`, en: `Avatar System — Active` },
   k51Core151ExtendedAvatarsEachHa: { cs: `51 core + 151 extended avatarů. Každý má 5 questů. REST API endpointy /avatars a /quests jsou aktivní.`, en: `51 core + 151 extended avatars. Each has 5 quests. REST API endpoints /avatars and /quests are active.` },
   treasure: { cs: `Poklad`, en: `Treasure` },
-  goldenEgg108Clues825bZion: { cs: `Golden Egg — 108 stop, 8.25B ZION`, en: `Golden Egg — 108 Clues, 8.25B ZION` },
-  goldenEggIsAMassiveTreasureHun: { cs: `Golden Egg je masivní honba za pokladem napříč celým ZION ekosystémem. 108 kryptických stop je ukryto v blockchainu, smart kontraktech, knihách TerraNova a fyzických lokacích. Vítěz získá 8,25 miliardy ZION — 50,7 % genesis rezervy. Start plánován na 2027.`, en: `Golden Egg is a massive treasure hunt across the entire ZION ecosystem. 108 cryptic clues are hidden in the blockchain, smart contracts, TerraNova books, and physical locations. The winner receives 8.25 billion ZION — 50.7% of the genesis reserve. Launch planned for 2027.` },
+  goldenEgg108Clues825bZion: { cs: `Golden Egg — 108 stop, 4.95B ZION`, en: `Golden Egg — 108 Clues, 4.95B ZION` },
+  goldenEggIsAMassiveTreasureHun: { cs: `Golden Egg je masivní honba za pokladem napříč celým ZION ekosystémem. 108 kryptických stop je ukryto v blockchainu, smart kontraktech, knihách TerraNova a fyzických lokacích. Vítěz získá 4,95 miliardy ZION — 30,4 % genesis rezervy. Start plánován na 2027.`, en: `Golden Egg is a massive treasure hunt across the entire ZION ecosystem. 108 cryptic clues are hidden in the blockchain, smart contracts, TerraNova books, and physical locations. The winner receives 4.95 billion ZION — 30.4% of the genesis reserve. Launch planned for 2027.` },
   baselineProtocols: { cs: `Baseline protokoly`, en: `Baseline Protocols` },
   oasisGameProtocols: { cs: `Oasis Game Protocols`, en: `Oasis Game Protocols` },
   coreGameProtocolsForInteropera: { cs: `Základní herní protokoly pro interoperabilitu napříč ZION Oasis ekosystémem.`, en: `Core game protocols for interoperability across the ZION Oasis ecosystem.` },
@@ -67,7 +67,7 @@ const L4OasisCopy = {
 const AVATAR_COUNT_CORE = 51;
 const AVATAR_COUNT_EXTENDED = 151;
 const GOLDEN_EGG_CLUES = 108;
-const GOLDEN_EGG_PRIZE = '8,250,000,000';
+const GOLDEN_EGG_PRIZE = '4,950,000,000';
 
 const getFeatures = (cs: boolean) => [
   {
