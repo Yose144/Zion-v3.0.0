@@ -93,5 +93,5 @@ These parameters are identical to the original design and remain unchanged throu
 - LWMA DAA: 60-block window
 - 100% fee burn
 - UTXO transaction model
-- Genesis premine: 16.28B ZION (11.31%)
+- Genesis premine: 16.78B ZION (11.65%)
 - No presale — Fair Launch

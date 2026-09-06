@@ -113,8 +113,8 @@ Zdrojový stav uvádí tuto sadu:
 
 - [HOTOVO — REPO] `V31/L1/core/src/emission.rs` a `V31/L1/core/src/genesis.rs` uvádějí: **genesis premine 16 780 000 000 ZION**.
 - [HOTOVO — REPO] Celková supply je **144 000 000 000 ZION**; mining emission podle kódu je **127 220 000 000 ZION**.
-- [BLOKÁTOR] `docs/LEGAL/PREMINE_DISCLOSURE.md` stále uvádí **16 280 000 000 ZION** a mining supply **127 720 000 000 ZION**. Před právním nebo veřejným použitím částky dokumentaci rekonciliovat.
-- [BLOKÁTOR] `docs/LEGAL/INFRASTRUCTURE_FUNDING.md` také používá starší částku 16,28 mld.; nesmí být použit jako aktuální finanční rozpis.
+- [BLOKÁTOR] `docs/LEGAL/PREMINE_DISCLOSURE.md` stále uvádí **16 780 000 000 ZION** a mining supply **127 220 000 000 ZION**. Před právním nebo veřejným použitím částky dokumentaci rekonciliovat.
+- [BLOKÁTOR] `docs/LEGAL/INFRASTRUCTURE_FUNDING.md` také používá starší částku 16,78 mld.; nesmí být použit jako aktuální finanční rozpis.
 - [BLOKÁTOR] Veřejné právní dokumenty mají nekonzistentní status (v3.0.4/v3.0.5 vs. aktuální V31/3.2.0-beta) a některé relativní odkazy vypadají rozbité. Před zveřejněním opravit nebo výslovně označit jako archiv.
 - [OVĚŘIT LIVE] Při předání vytvořit snapshot aktuálních genesis adres, UTXO a zůstatků; zdrojový kód sám nepotvrzuje aktuální neutracený stav chainu.
 

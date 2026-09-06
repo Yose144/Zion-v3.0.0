@@ -258,13 +258,13 @@ Contract: ZIONToken
 | **DAO Winners** | 1.22% | 1,75 mld | Governance distribution |
 | **ZION OASIS Fund** | 1.00% | 1,44 mld | Kulturní projekty |
 | **Infrastructure** | 3.01% | 4,34 mld | Rozvoj sítě |
-| **Mining Supply (Staking)** | 88.69% | 127,72 mld | Proof-of-Consciousness mining |
+| **Mining Supply (Staking)** | 88.35% | 127,22 mld | Proof-of-Consciousness mining |
 
-**Celkem Premine:** 11.31% = 16,28 mld ZION  
-**Celkem Mining:** 88.69% = 127,72 mld ZION  
+**Celkem Premine:** 11.65% = 16,78 mld ZION  
+**Celkem Mining:** 88.35% = 127,22 mld ZION  
 **Grand Total:** 100% = 144 000 000 000 ZION
 
-*Poznámka: ZION používá unikátní Proof-of-Consciousness model, kde většina tokenů (88.69%) je distribuována přes mining po dobu 50 let. Předprodej reprezentuje pouze 0.347% total supply.*
+*Poznámka: ZION používá unikátní Proof-of-Consciousness model, kde většina tokenů (88.35%) je distribuována přes mining po dobu 50 let. Předprodej reprezentuje pouze 0.347% total supply.*
 
 ### **Struktura předprodeje**
 

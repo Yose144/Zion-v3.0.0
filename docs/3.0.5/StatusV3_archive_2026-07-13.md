@@ -2700,7 +2700,7 @@ Pool nyní správně redistribuuje 89% miner reward mezi připojené minery:
 
 | Test | Původní chyba | Oprava |
 |------|--------------|--------|
-| `emission::constants_consistency` | MINING_EMISSION 127.72B ≠ výpočet | Aktualizováno na 127.22B |
+| `emission::constants_consistency` | MINING_EMISSION 127.22B ≠ výpočet | Aktualizováno na 127.22B |
 | `genesis::canonical_mainnet_addresses_are_valid_zion1` | Humanitarian adresa ≠ premine | Test přepsán na validaci místo shody |
 | `genesis::canonical_subsidy_wallets_are_distinct` | Kontroloval humanitarian = premine | Odstraněn hardcoded check |
 | `genesis::canonical_mainnet_subsidy_wallets_track_label_derivation` | Label derivace ≠ kanonické adresy | Test přepsán na validaci místo shody |
@@ -2708,7 +2708,7 @@ Pool nyní správně redistribuuje 89% miner reward mezi připojené minery:
 | `node_builder::bootstrap_fresh_node` | launch_ready selhal | launch_ready nyní prochází |
 | `launch::launch_readiness_all_pass` | Premine count = 12 ≠ 14 + další | Aktualizováno na 14 |
 | `launch::readiness_report_shows_authorized` | Report ukazoval "blocked" | Nyní prochází |
-| `rpc::live_get_supply_info` | premine_zion 16.28B ≠ 16.78B | Aktualizováno na 16.78B |
+| `rpc::live_get_supply_info` | premine_zion 16.78B ≠ 16.78B | Aktualizováno na 16.78B |
 | `tests::node_config_mainnet_defaults_are_stable` | Seed peer 204.168.245.175 ≠ 77.42.71.94 | Aktualizováno na Edge IP |
 
 ### Skripty aktualizovány
@@ -4044,7 +4044,7 @@ nebo má konkrétní aktivační plán v
 | Parametr | Hodnota |
 |---|---|
 | Total supply | 144 000 000 000 ZION (= `144_000_000_000 × FLOWERS_PER_ZION`) |
-| Premine | 16 280 000 000 ZION (11.31 %), 12 outputů s timelockem |
+| Premine | 16 780 000 000 ZION (11.65 %), 12 outputů s timelockem |
 | Block reward | 5 400.067 ZION → -20 % / dekádu, tail `724_784_723_787_776` flowers (≈ 724.785 ZION) |
 | Block time | 60 s, LWMA-60, ±25 % clamp, 30–120 s solve clamp |
 | Fee policy | 100 % burn (miner nedostává tx fees) |

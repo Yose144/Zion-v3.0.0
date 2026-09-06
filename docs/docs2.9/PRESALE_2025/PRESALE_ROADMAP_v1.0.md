@@ -480,9 +480,9 @@ Daň (21%):                    €357,000
     }
   ],
   
-  "total_premine": 16_280_000_000,  # 15.78B + 500M
-  "percentage_of_supply": 11.31,  # (16.28B / 144B) × 100
-  "mining_supply_remaining": 127_720_000_000
+  "total_premine": 16_780_000_000,  # 15.78B + 500M
+  "percentage_of_supply": 11.65,  # (16.78B / 144B) × 100
+  "mining_supply_remaining": 127_220_000_000
 }
 ```
 

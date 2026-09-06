@@ -225,7 +225,7 @@ All REST endpoints are **public (no auth)** unless marked 🔒.
 
 **Response — premine_total:**
 ```json
-{ "total_atomic": 16280000000000000, "total_zion": 16280000000 }
+{ "total_atomic": 16780000000000000, "total_zion": 16780000000 }
 ```
 
 **Response — premine_summary:**

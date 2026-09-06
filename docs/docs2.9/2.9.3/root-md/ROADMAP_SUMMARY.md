@@ -119,8 +119,8 @@
 Base Block Reward:      50 ZION (constant, no halving)
 Consciousness Bonus:    1,569.63 ZION × multiplier (whitelisted)
 Total Supply:           144,000,000,000 ZION (144B)
-Genesis Premine:        16,280,000,000 ZION (11.31%)
-Mining Emission:        127,720,000,000 ZION (88.69%)
+Genesis Premine:        16,780,000,000 ZION (11.65%)
+Mining Emission:        127,220,000,000 ZION (88.35%)
 Mining Duration:        45 let (2025-2070)
 
 Distribuce per block:

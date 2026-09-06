@@ -19,7 +19,7 @@
 
 **Klíčové vlastnosti:**
 ```python
-- 500M ZION allocation (3.1% z 16.28B premine)
+- 500M ZION allocation (3.1% z 16.78B premine)
 - Batch processing: 50 TX/batch
 - Rate limiting: 2s delay mezi batchi
 - Validace všech adres před odesláním

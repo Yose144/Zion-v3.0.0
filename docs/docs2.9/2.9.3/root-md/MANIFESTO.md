@@ -82,7 +82,7 @@ Algorithm:        RandomX + Cosmic Harmony (CPU/GPU friendly)
 Privacy:          CryptoNote protocol
 ```
 
-### Genesis Alokace (Premine 11.31%)
+### Genesis Alokace (Premine 11.65%)
 ```
 Mining Operators:    2,070,000,000 ZION (1.44%) - 10 let consciousness distribuce
 DAO Winners:         1,750,000,000 ZION (1.22%) - unlock Říjen 2035
@@ -90,8 +90,8 @@ ZION OASIS:          1,440,000,000 ZION (1.00%) - 3 roky vesting
 Infrastructure:      4,340,000,000 ZION (3.01%) - vývoj, marketing, likvidita
 Community Bonus:     6,680,000,000 ZION (4.64%) - e-shop, software rewards
 ────────────────────────────────────────────────────────────────────────
-Total Premine:      16,280,000,000 ZION (11.31%)
-Mining Supply:     127,720,000,000 ZION (88.69%)
+Total Premine:      16,780,000,000 ZION (11.65%)
+Mining Supply:     127,220,000,000 ZION (88.35%)
 ```
 
 ---

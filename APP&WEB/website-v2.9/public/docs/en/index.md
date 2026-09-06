@@ -80,7 +80,7 @@ Public docs references:
 
 ## Public genesis reserve summary
 
-ZION uses a **16.28B ZION genesis reserve** to bootstrap the ecosystem. Public docs intentionally avoid wallet-level operational detail in the main entry document.
+ZION uses a **16.78B ZION genesis reserve** to bootstrap the ecosystem. Public docs intentionally avoid wallet-level operational detail in the main entry document.
 
 **Primary strategic envelope:** **5.2B ZION** is reserved for L4 OASIS and game-development bootstrap (4.95B direct OASIS slots + 0.25B ecosystem allocation). An additional **3.3B ZION** (2 slots × 1.65B, repurposed from Slots 4 & 5) is allocated to L5 Free World Projects.
 

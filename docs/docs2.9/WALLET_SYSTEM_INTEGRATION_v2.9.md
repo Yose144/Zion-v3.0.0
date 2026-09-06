@@ -99,7 +99,7 @@ class WalletType(Enum):
     PRESALE = "presale"                   # Phase 1-3, 500M total
     DAO_REWARD = "dao_reward"             # Governance participation
     MINING_PAYOUT = "mining_payout"       # Block rewards
-    GENESIS_PREMINE = "genesis_premine"   # 16.28B distribution
+    GENESIS_PREMINE = "genesis_premine"   # 16.78B distribution
     AIRDROP = "airdrop"                   # Community drops
     STAKING_REWARD = "staking_reward"     # Future staking
 ```
@@ -561,7 +561,7 @@ class MainnetLaunchOrchestrator:
     Coordinates mainnet launch on December 31, 2026.
     Orchestrates:
     - Genesis block activation
-    - Premine distribution (16.28B)
+    - Premine distribution (16.78B)
     - Presale payout (500M)
     - Wallet migration (pre_mainnet → mainnet)
     - Exchange listings prep
@@ -573,7 +573,7 @@ class MainnetLaunchOrchestrator:
         
         Phase 1: Genesis (00:00-00:10)
         ├─ Activate genesis block
-        ├─ Distribute 16.28B premine
+        ├─ Distribute 16.78B premine
         └─ Verify blockchain health
         
         Phase 2: Presale (00:10-02:00)
@@ -588,7 +588,7 @@ class MainnetLaunchOrchestrator:
         
         Phase 4: Validation (04:00-06:00)
         ├─ Audit all balances
-        ├─ Verify total supply = 16.28B
+        ├─ Verify total supply = 16.78B
         └─ Check blockchain consistency
         
         Phase 5: Go Live (06:00+)

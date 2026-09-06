@@ -824,7 +824,7 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728
 ```
 
-**Premine Distribution (16.28B total):**
+**Premine Distribution (16.78B total):**
 - ZION OASIS (Slots 1-3): 1.65B each → 4.95B total (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B total)
 - DAO Treasury - Governance (Slot 6): 2.5B (LOCKED height 525,600)
 - DAO Treasury - Grants (Slot 7): 1B (LOCKED height 525,600)

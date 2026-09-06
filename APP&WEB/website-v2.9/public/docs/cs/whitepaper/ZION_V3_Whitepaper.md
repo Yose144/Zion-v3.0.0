@@ -280,7 +280,7 @@ ZION lze získat **těžbou** nebo přijetím v transakci.
 
 ### 7.2 Genesis rezerva (veřejné shrnutí)
 
-**16 280 000 000 ZION** (11,31 % celkové nabídky) je v genesis rezervováno na bootstrap ekosystému.
+**16 780 000 000 ZION** (11,65 % celkové nabídky) je v genesis rezervováno na bootstrap ekosystému.
 
 **Strategický obal:** **5 200 000 000 ZION** pro vývoj L4 OASIS / hry a bootstrap herního hospodářství (4,95B přímé OASIS sloty + 0,25B ekosystém pro game-dev). Další **3,3B ZION** (2 sloty × 1,65B, přesunuto ze Slotů 4 & 5) je alokováno na L5 Free World Projects.
 
@@ -341,7 +341,7 @@ Multi-sig: **5 ze 7** podpisů pro každou transakci z treasury.
 DAO **nemůže** změnit:
 
 - Celkovou nabídku (144B ZION)
-- Genesis alokaci (16,28B ZION)
+- Genesis alokaci (16,78B ZION)
 - Čas bloku (60 sekund)
 - Těžební algoritmus (Ekam Deeksha v2)
 - Typ konsenzu (Proof-of-Work)

@@ -113,7 +113,7 @@ These numbers are the result of asking: *What values do we want to encode so dee
 ### Genesis Reserve — The Reservoir of Intent
 
 ```
-GENESIS RESERVE — 16.28B ZION:
+GENESIS RESERVE — 16.78B ZION:
 
 4.95B  → OASIS Golden Egg (education through play, 3 slots)
 3.30B  → L5 Free World Projects (Slots 4 & 5 repurposed from OASIS)

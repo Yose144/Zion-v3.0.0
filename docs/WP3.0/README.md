@@ -36,7 +36,7 @@ Block reward:    5 400,067 ZION (Decade Decay −20 % / 10 let)
 Tail reward:     724,785 ZION/blok (od 2126 navěky)
 Block time:      60 sekund
 Mining horizon:  100+ let + perpetual tail emission
-Premine:         16 280 000 000 ZION (11,31 %)
+Premine:         16 780 000 000 ZION (11,65 %)
 Unit (spec):     1 ZION = 1 000 000 000 000 flower (12 des. míst)
 Unit (runtime):  1 ZION = 1 000 000 atomic units (aktuální API/L1)
 Consensus:       CosmicHarmony v3 (PoW, ASIC-resistant)

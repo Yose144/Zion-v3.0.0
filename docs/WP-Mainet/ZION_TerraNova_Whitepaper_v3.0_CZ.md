@@ -90,7 +90,7 @@ Bitcoinův SHA-256 i Ethash byly původně těženy CPU a později GPU. V obou p
 
 Mnoho významných blockchain projektů alokovalo 15–50 % celkové nabídky zakladatelům, raným investorům a VC fondům před veřejným spuštěním. To vytváří strukturální nerovnost: insiderům prodávají za ceny, které veřejnost nemůže dorovnat, a komunita začíná svou účast již znevýhodněná.
 
-**Odpověď ZION:** Fair Launch. Nebylo žádné ICO, žádný pre-sale, žádný SAFT a žádná alokace pro poradce. Jediný způsob, jak získat ZION, je vytěžit ho nebo obdržet v transakci. 11,31 % genesis premine je plně transparentní, časově uzamčeno kde je to vhodné, a jeho adresy jsou publikovány před spuštěním.
+**Odpověď ZION:** Fair Launch. Nebylo žádné ICO, žádný pre-sale, žádný SAFT a žádná alokace pro poradce. Jediný způsob, jak získat ZION, je vytěžit ho nebo obdržet v transakci. 11,65 % genesis premine je plně transparentní, časově uzamčeno kde je to vhodné, a jeho adresy jsou publikovány před spuštěním.
 
 ### 3. Nulový protokolární sociální dopad
 
@@ -234,7 +234,7 @@ ZION nahrazuje tento model **Decade Decay**: odměna za blok klesá o 20 % každ
 | 10 | 2116–2126 | 724,785 | ~3,81 miliard |
 | **Tail** | **2126+** | **724,785** | **Navěky** |
 
-Celková těžební emise za 100 let je přibližně 126,67 miliard ZION. Spolu s 16,28 miliardy genesis premine to zůstává v rámci hard capu 144 miliard.
+Celková těžební emise za 100 let je přibližně 126,67 miliard ZION. Spolu s 16,78 miliardy genesis premine to zůstává v rámci hard capu 144 miliard.
 
 ### Tail emission
 
@@ -263,13 +263,13 @@ Hard cap je **144 000 000 000 ZION** — nastaven v genesis a neměnný. Žádn�
 
 | Kategorie | Množství (ZION) | Podíl |
 |-----------|-----------------|-------|
-| Těžební emise (100 let + tail) | ~127 720 000 000 | 88,69 % |
-| Genesis premine | 16 280 000 000 | 11,31 % |
+| Těžební emise (100 let + tail) | ~127 220 000 000 | 88,35 % |
+| Genesis premine | 16 780 000 000 | 11,65 % |
 | **Celkem** | **144 000 000 000** | **100 %** |
 
 ### Rozdělení Genesis Premine
 
-Genesis blok (height 0) obsahuje 12 výstupů s celkem 16,28 miliardy ZION:
+Genesis blok (height 0) obsahuje 12 výstupů s celkem 16,78 miliardy ZION:
 
 | # | Kategorie | Množství (ZION) | Lock |
 |---|-----------|-----------------|------|
@@ -485,7 +485,7 @@ Multi-sig ochrana: **5-of-7 podpisů** vyžadováno pro každou treasury transak
 DAO **nemůže** změnit následující bez community-wide hard forku:
 
 - Celková nabídka (144 miliard ZION)
-- Genesis alokace (16,28 miliardy ZION)
+- Genesis alokace (16,78 miliardy ZION)
 - Block time (60 sekund)
 - Těžební algoritmus (Ekam Deeksha v3.2)
 - Typ konsensu (Proof-of-Work)
@@ -594,7 +594,7 @@ Od května 2026 je následující infrastruktura provozuschopná:
 | Zdroj | Cesta | Popis |
 |-------|-------|-------|
 | Emisní konstanty | `V3/L1/core/src/emission.rs` | Decade Decay, fee split, tail reward |
-| Genesis blok | `V3/L1/core/src/genesis.rs` | 12 premine výstupů, DAO lock, genesis message |
+| Genesis blok | `V3/L1/core/src/genesis.rs` | 14 premine výstupů, DAO lock, genesis message |
 | PoW algoritmus | `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v3.2 kanonický pipeline |
 | Obtížnost | `V3/L1/core/src/difficulty.rs` | LWMA DAA |
 | Validace | `V3/L1/core/src/validation.rs` | 11-kroková validace bloků |

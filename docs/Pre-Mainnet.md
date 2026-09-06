@@ -237,8 +237,8 @@ zion-2.9.5-mainnet/
 
 **Ekonomický model:**
 Total Supply:        144,000,000,000 ZION (144B)
-Premine:              16,280,000,000 ZION (11.3%)
-Mineable:            127,720,000,000 ZION (88.7%)
+Premine:              16,780,000,000 ZION (11.65%)
+Mineable:            127,220,000,000 ZION (88.35%)
 
 Block Time:          60 seconds
 Blocks per Day:      1,440
@@ -762,7 +762,7 @@ A hlavně:
 žádné unlocky
 žádný governance print
 🟡 Není killer argument, ale není to dealbreaker
-3️⃣ „Premine 11.3 %? Aha… takže začínáme.“
+3️⃣ „Premine 11.65%? Aha… takže začínáme.“
 „Tady většinou končím čtení.“
 Útok:
 Premine = red flag

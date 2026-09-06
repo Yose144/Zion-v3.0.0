@@ -62,8 +62,8 @@ Základ celého ekosystému. Proof-of-Work blockchain postavený v Rustu s vlast
 |----------|---------|
 | Total Supply | 144,000,000,000 ZION |
 | Block Reward | 5,400.067 ZION |
-| Mining Alokace | 127.72B (88.7%) |
-| Genesis Premine | 16.28B (11.3%) |
+| Mining Alokace | 127.22B (88.35%) |
+| Genesis Premine | 16.78B (11.65%) |
 | Block Time | 60s |
 | Storage | LMDB |
 

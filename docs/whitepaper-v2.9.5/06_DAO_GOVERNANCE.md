@@ -468,7 +468,7 @@ IMMUTABLE (nelze změnit):
 ═══════════════════════════════════════════════════════════════
 
 ❌ Total Supply (144B ZION)
-❌ Genesis allocation (16.28B)
+❌ Genesis allocation (16.78B)
 ❌ Block time (60s)
 ❌ Mining algorithm (Cosmic Harmony)
 ❌ Consensus mechanism (PoW)

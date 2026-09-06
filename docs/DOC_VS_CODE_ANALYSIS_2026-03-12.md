@@ -189,7 +189,7 @@ Některé oblasti **odpovídají** mezi docs a kódem:
 | **Desktop agent M1 benchmark** (5575.5 H/s) | ✅ Docs = STATUS_REPORT |
 | **Single-host topologie** (91.98.122.165) | ✅ site.ts, STATUS_REPORT konzistentní |
 | **Fee policy** (100% burn) | ✅ Docs = kód |
-| **Premine** (16.28B ZION, 11.31%) | ✅ Docs = Genesis = PREMINE_ADDRESSES |
+| **Premine** (16.78B ZION, 11.65%) | ✅ Docs = Genesis = PREMINE_ADDRESSES |
 | **Legal docs** (7 files) | ✅ Kompletní |
 
 ---

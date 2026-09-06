@@ -54,9 +54,9 @@ Máme **3 separátní systémy** které musí fungovat dohromady:
 
 ┌──────────────────────────────────────────┐
 │  MAINNET BLOCKCHAIN (odděleně!)          │
-│  - Genesis block (16.28B premine)        │
+│  - Genesis block (16.78B premine)        │
 │  - 500M presale escrow contract          │
-│  - Mining (127.72B supply)               │
+│  - Mining (127.22B supply)               │
 │  - POTŘEBUJE REDEMPTION BRIDGE!          │
 └──────────────────────────────────────────┘
 ```

@@ -36,8 +36,8 @@
 | Parametr | Hodnota |
 |----------|---------|
 | Celková emise (max, neměnná) | 144 000 000 000 ZION |
-| Mining supply | 127 720 000 000 ZION (88,69 %) |
-| Genesis premine | 16 280 000 000 ZION (11,31 %) |
+| Mining supply | 127 220 000 000 ZION (88,35 %) |
+| Genesis premine | 16 780 000 000 ZION (11,65 %) |
 | Atomická jednotka | 1 ZION = 1 000 000 000 000 flowers (u64) |
 | Počáteční block reward | 5 400,067 ZION |
 | Model emise | Decade Decay: ×(4/5) každých 5 256 000 bloků |

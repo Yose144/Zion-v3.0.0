@@ -143,7 +143,7 @@ Všechny L2/L3 Rust crates jsou migrovány do V3. Zbývá pouze L2/contracts (So
 | Riziko | Přepisuje historii — musí být koordinováno |
 | Blokuje | Public launch, open-source fork |
 
-**VAROVÁNÍ:** Bez tohoto kroku NESMÍ být repo zpřístupněno veřejnosti. Private keys by umožnily krádež celého 16.28B ZION premineu.
+**VAROVÁNÍ:** Bez tohoto kroku NESMÍ být repo zpřístupněno veřejnosti. Private keys by umožnily krádež celého 16.78B ZION premineu.
 
 ### A.3 Genesis Ceremony
 

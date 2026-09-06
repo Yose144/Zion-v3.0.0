@@ -1286,7 +1286,7 @@ export default function GenesisPage() {
 
                 <div className="flex items-center justify-center gap-3 mb-6">
                   <Zap className="w-8 h-8 text-zion-cyan" />
-                  <h3 className="text-2xl font-bold text-zion-cyan mb-0">16,28 Miliard Zion Tokenů</h3>
+                  <h3 className="text-2xl font-bold text-zion-cyan mb-0">16,78 Miliard Zion Tokenů</h3>
                 </div>
 
                 <ul className="space-y-3 list-none pl-0 flex flex-col items-center max-w-2xl mx-auto">

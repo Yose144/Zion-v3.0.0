@@ -15,7 +15,7 @@ v3.0.0 byl **MainNet Ready** milník. Veškerý L1 konsenzus kód byl zamrzl, ge
 - ✅ **Docker Compose profily** — `dev`, `mainnet`, `monitoring`
 - ✅ **systemd jednotky** — hardened service definice pro Edge
 - ✅ **Fee split 89/5/5/1** — konstituční on-chain vymáhání
-- ✅ **Genesis freeze** — neměnný genesis blok, 13 premine outputů
+- ✅ **Genesis freeze** — neměnný genesis blok, 14 premine outputů
 - ✅ **Edge topologie** — Core + Edge dvouvrstvá architektura
 - ✅ **Bridge mainnet** — wZION, ZIONBridge, ZIONAtomicSwap na Base
 - ✅ **DAO governance** — životní cyklus návrhů, hlasování, treasury

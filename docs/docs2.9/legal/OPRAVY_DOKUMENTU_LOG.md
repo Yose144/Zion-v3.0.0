@@ -43,8 +43,8 @@ Premine: 14,34 mld (68%)
 Mining: 6,66 mld (32%)
 
 PO:
-Genesis Premine: 16,28 mld (11,31%)
-Mining Emission: 127,72 mld (88,69%)
+Genesis Premine: 16,78 mld (11,65%)
+Mining Emission: 127,22 mld (88,35 %)
 
 Zdroj: ECONOMIC_CALCULATIONS_CORRECT.md, lines 12-14
 ```

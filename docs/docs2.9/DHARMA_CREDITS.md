@@ -33,7 +33,7 @@
 | **ZION OASIS** | 1,440,000,000 | 1.00% | Game development (3-year unlock 2026-2028) |
 | **Presale** | 500,000,000 | 0.35% | Early adopters (€0.008-0.012) |
 | **Infrastructure** | 4,340,000,000 | 3.01% | Servers, development, marketing |
-| **Genesis Premine Total** | **16,280,000,000** | **11.31%** | **Total Genesis allocation** |
+| **Genesis Premine Total** | **16,780,000,000** | **11.65%** | **Total Genesis allocation** |
 | **Mining Rewards** | 100,000,000,000 | 69.44% | PoW miners (50 years, halving) |
 | **DAO Treasury** | 10,000,000,000 | 6.94% | Governance, grants, bounties |
 | **Staking Rewards** | 17,720,000,000 | 12.31% | Validators, delegators |
