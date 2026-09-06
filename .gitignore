@@ -14,9 +14,6 @@ newzionssh.md
 zion-edge-*-2026-07-29
 zion-edge-*-2026-07-29.pub
 
-# Private succession / estate plans — do not commit to public
-docs/private/
-
 # Scripts with hardcoded private keys / mnemonics — DO NOT COMMIT
 revoke_old_bridge.js
 APP&WEB/desktop-agent/atomic-swap-e2e.js
