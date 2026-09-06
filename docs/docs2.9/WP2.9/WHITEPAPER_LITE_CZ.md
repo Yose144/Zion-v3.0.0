@@ -152,8 +152,8 @@ Představ si to jako **chytrého rozhodčího**, který sleduje:
 | Co | Kolik |
 |----|-------|
 | **Celkem** | 144 miliard ZION |
-| **Pro těžaře** | 127 miliard (88.7%) |
-| **Rezerva na start** | 16 miliard (11.3%) |
+| **Pro těžaře** | 127 miliard (88.35%) |
+| **Rezerva na start** | 16,78 miliard (11,65 %) |
 
 ### Kam jde startovní rezerva?
 
@@ -313,7 +313,7 @@ Po spuštění hlavní sítě (prosinec 2027) a zalistování na burzách (leden
 ║     Kryptoměna s povinným humanitárním desátkem               ║
 ║                                                               ║
 ║  ✅ Kolik existuje?                                           ║
-║     144 miliard tokenů (88.7% pro těžaře)                    ║
+║     144 miliard tokenů (88.35% pro těžaře)                    ║
 ║                                                               ║
 ║  ✅ Kam jde desátek?                                          ║
 ║     60% lidem v nouzi, 40% zvířatům                          ║

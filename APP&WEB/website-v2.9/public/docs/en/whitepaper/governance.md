@@ -23,7 +23,7 @@ Hard-coded and not changeable by governance vote:
 | Halving | None | Stable miner incentives in that era |
 | Fee policy | Burn | Deflationary pressure |
 | Genesis timestamp | Jan 1, 2024 UTC | Historical integrity |
-| Premine allocation | 16.28B | Transparent categories |
+| Premine allocation | 16.78B | Transparent categories |
 
 *(Later releases adjust reward *schedule* via protocol rules such as decade decay — follow the active version docs for current economics.)*
 

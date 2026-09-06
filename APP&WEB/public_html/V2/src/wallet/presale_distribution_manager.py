@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 # CONSTANTS
 # ============================================
 
-PRESALE_ALLOCATION = 500_000_000  # 500M ZION (3.1% of 16.28B premine)
+PRESALE_ALLOCATION = 500_000_000  # 500M ZION (~3.0% of 16.78B premine)
 PRESALE_DB_PATH = "data/presale.db"
 PRESALE_PREMINE_ADDRESS = None  # Will be loaded from premine.py
 

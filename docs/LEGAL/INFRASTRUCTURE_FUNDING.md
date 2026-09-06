@@ -8,7 +8,7 @@ This document discloses how ZION protocol infrastructure is funded and maintaine
 
 ### 1. Genesis Premine — Infrastructure & Development Allocation
 
-From the 16,280,000,000 ZION genesis premine:
+From the 16,780,000,000 ZION genesis premine:
 
 | Allocation | ZION | Percentage | Purpose |
 |-----------|------|------------|---------|

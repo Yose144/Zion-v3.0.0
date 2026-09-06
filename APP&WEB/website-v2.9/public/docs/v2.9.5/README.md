@@ -75,7 +75,7 @@ See [tokenomics.md](tokenomics.md) for full economic model with mathematical der
 
 **Brief:**  
 - Total supply: 144B ZION (hard cap, immutable)  
-- Genesis premine: 16.28B ZION (11.31%) — all categories transparent  
+- Genesis premine: 16.78B ZION (11.65%) — all categories transparent  
 - Mining emission: 127.72B ZION over ~45 years at 5,400.067 ZION/block  
 - Fee burn: 100% of all transaction fees destroyed  
 - No developer fee, no foundation pre-tax  

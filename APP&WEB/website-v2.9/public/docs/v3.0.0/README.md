@@ -15,7 +15,7 @@ v3.0.0 was the **MainNet Ready** milestone. All L1 consensus code was frozen, ge
 - ✅ **Docker Compose profiles** — `dev`, `mainnet`, `monitoring`
 - ✅ **systemd units** — hardened service definitions for Edge
 - ✅ **Fee split 89/5/5/1** — constitutional on-chain enforcement
-- ✅ **Genesis freeze** — immutable genesis block, 13 premine outputs
+- ✅ **Genesis freeze** — immutable genesis block, 14 premine outputs
 - ✅ **Edge topology** — Core + Edge two-tier architecture
 - ✅ **Bridge mainnet** — wZION, ZIONBridge, ZIONAtomicSwap on Base
 - ✅ **DAO governance** — proposal lifecycle, voting, treasury

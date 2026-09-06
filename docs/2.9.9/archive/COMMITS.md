@@ -32,7 +32,7 @@ Sprint 0.0 complete:
 - cargo check PASSES cleanly (warnings only)
 
 Emission: 5,400.067 ZION/block constant (127.72B over 45 years)
-Genesis premine: 16.28B ZION (11.3% of supply)
+Genesis premine: 16.78B ZION (11.65% of supply)
 Distribution: 89% miner, 10% humanitarian, 1% pool fee
 
 Next: Sprint 0.1 ÔÇö Rewrite reward.rs + genesis.rs
@@ -57,12 +57,12 @@ reward.rs ÔÇö COMPLETE REWRITE:
   - Constant emission: 5,400.067 ZION/block (5,400,067,000 atomic)
   - Genesis block (height 0) returns 0 (premine only)
   - Emission ends at block 23,652,000 (45 years ├Ś 525,600 blocks/year)
-  - Total mining supply: 127.72B ZION
+  - Total mining supply: 127.22B ZION
   - Distribution helpers: miner_reward (89%), tithe_reward (10%), pool_fee (1%)
   - 15 comprehensive tests ÔÇö all passing
 
 premine.rs ÔÇö CLEAN L1 REWRITE:
-  - Total premine: 16,280,000,000 ZION (was 16,282,857,143 ÔÇö rounded)
+  - Total premine: 16,780,000,000 ZION (was 16,282,857,143 ÔÇö rounded)
   - Removed: Presale (500M) ÔÇö cancelled January 2026
   - Removed: DAO Winners (1.75B) ÔÇö merged into DAO Treasury
   - Removed: OASIS game allocation ÔÇö renamed to Humanitarian

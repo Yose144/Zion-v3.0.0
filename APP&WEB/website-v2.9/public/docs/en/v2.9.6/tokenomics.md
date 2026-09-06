@@ -17,7 +17,7 @@
 | Parameter | Value |
 |-----------|-------|
 | Total supply | 144,000,000,000 ZION |
-| Genesis premine | 16,280,000,000 ZION (11.31%) |
+| Genesis premine | 16,780,000,000 ZION (11.65%) |
 | Block time | 60 s |
 | Fee policy | 100% burn |
 | Premine buckets | Oasis 4.95B, DAO 4B, Infra 2.59B, Humanitarian 1.44B |

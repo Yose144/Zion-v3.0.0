@@ -115,7 +115,7 @@ Simple tiers: Standard, Premium, VIP
 ### New System (Dharma Credits)
 ```
 eShop bonuses: 1-1,000,000 Dharma Credits
-Presale: 500M Dharma Credits (exact, 3.1% of 16.28B premine)
+Presale: 500M Dharma Credits (exact, 3.1% of 16.78B premine)
 5 tiers: MICRO, STANDARD, PREMIUM, VIP, MEGA
 
 MICRO:    1-100          (Coffee karma ☕)
@@ -190,12 +190,12 @@ Connection Pool: 10 connections (WAL mode)
 
 ### Automation Capabilities
 ```
-Presale: 500M Dharma Credits (3.1% of 16.28B genesis premine)
+Presale: 500M Dharma Credits (3.1% of 16.78B genesis premine)
 Bonuses: Up to 100M Dharma Credits reserve
 Batch Size: 50-200 tx/batch
 Rate Limiting: 1-2s delay between batches
 Confirmations: 3-6 blocks
-Genesis Premine: 16.28B Dharma Credits total (11.31% of 144B supply)
+Genesis Premine: 16.78B Dharma Credits total (11.65% of 144B supply)
 ```
 
 ---
@@ -265,7 +265,7 @@ Genesis Premine: 16.28B Dharma Credits total (11.31% of 144B supply)
 1. Deploy escrow smart contract (500M allocation)
 2. Setup DAO treasury wallet
 3. Configure production RPC nodes
-4. Create genesis block (16.28B premine)
+4. Create genesis block (16.78B premine)
 5. Test blockchain wallet generation
 6. Prepare support documentation
 

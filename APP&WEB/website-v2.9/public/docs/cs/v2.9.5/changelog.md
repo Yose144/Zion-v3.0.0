@@ -93,5 +93,5 @@ Tyto parametry jsou shodné s původním designem a zůstávají neměnné ve v�
 - LWMA DAA: okno 60 bloků
 - 100% burn poplatků
 - transakční model UTXO
-- genesis premine: 16,28B ZION (11,31 %)
+- genesis premine: 16,78B ZION (11,65 %)
 - žádná presale — Fair Launch

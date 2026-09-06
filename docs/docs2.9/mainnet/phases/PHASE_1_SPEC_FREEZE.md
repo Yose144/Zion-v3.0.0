@@ -29,7 +29,7 @@ pub const DECIMALS: u8 = 8;
 
 ### 3. Premine Distribution
 ```rust
-pub const PREMINE_TOTAL: u64 = 16_282_857_143_000_000;  // 16.28B ZION
+pub const PREMINE_TOTAL: u64 = 16_282_857_143_000_000;  // 16.78B ZION
 
 // Distribution (IMMUTABLE):
 // 4.5B - Sacred Treasury (dao governance)
@@ -187,7 +187,7 @@ Calculate ZION emission over time.
 
 # Constants (IMMUTABLE)
 TOTAL_SUPPLY = 144_000_000_000  # 144B ZION
-PREMINE = 16_282_857_143       # 16.28B ZION
+PREMINE = 16_282_857_143       # 16.78B ZION
 MINEABLE = TOTAL_SUPPLY - PREMINE  # ~127.7B ZION
 BASE_REWARD = 5_479.45          # ZION per block
 BLOCK_TIME = 60                 # seconds

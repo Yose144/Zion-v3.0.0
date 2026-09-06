@@ -58,7 +58,7 @@ Tento dokument rozlišuje:
 | Metrika | Požadavek |
 |---------|-----------|
 | `genesis.json` vytvořen OFFLINE | Soubor existuje, hash SHA-256 publikován |
-| Premine suma | = 16,280,000,000 ZION (ověřeno `test_premine_grand_total`) |
+| Premine suma | = 16,780,000,000 ZION (ověřeno `test_premine_grand_total`) |
 | Premine kategorie | 4 kategorie, součet = PREMINE_TOTAL (ověřeno testy) |
 | Adresy premine | Unikátní, validní bech32 `zion1…` formát |
 | On-chain time-lock | Aktivován pro mainnet build (nebo formální WAIVER) |

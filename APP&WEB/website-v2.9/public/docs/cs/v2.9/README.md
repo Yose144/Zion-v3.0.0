@@ -93,7 +93,7 @@ Návrh algoritmu byl koncem v2.9 zralý — struktura bloku, 4-fázový hash a p
 Na začátku v2.9 byla odměna za blok zkoumána v rámci tokenomiky. Matematická odvodnění:
 
 ```
-MINING_EMISSION = 127 720 000 000 ZION
+MINING_EMISSION = 127 220 000 000 ZION
 TOTAL_BLOCKS    = 23 652 000 (45 let × 525 600 bloků/rok)
 BLOCK_REWARD    = 127 720 000 000 / 23 652 000 = 5 400,067 ZION
 ```

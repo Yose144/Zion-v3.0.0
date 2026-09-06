@@ -779,7 +779,7 @@ Electron main.js
 
 | Kategorie | Množství | % |
 |-----------|----------|---|
-| Mining Rewards | 127.72B | 88.69% |
+| Mining Rewards | 127.22B | 88.35% |
 | Oasis + Winners (3 sloty × 1.65B) | 4.95B | 3.44% |
 | L5 Free World Projects (Slots 4 & 5) | 3.3B | 2.29% |
 | DAO Treasury (main + grants + bootstrap) | 4.0B | 2.78% |

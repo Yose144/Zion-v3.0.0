@@ -52,8 +52,8 @@ Source of truth: `docs/mainnet/MAINNET_CONSTITUTION.md` (frozen SHA-256: c76aa00
 | Parameter | Value |
 |-----------|-------|
 | Total supply (max, immutable) | 144,000,000,000 ZION |
-| Mining supply | 127,720,000,000 ZION (88.69%) |
-| Genesis premine | 16,280,000,000 ZION (11.31%) |
+| Mining supply | 127,220,000,000 ZION (88.35%) |
+| Genesis premine | 16,780,000,000 ZION (11.65%) |
 | Atomic unit | 1 ZION = 1,000,000,000,000 flowers (u64) |
 | Initial block reward | 5,400.067 ZION = 5,400,067,000,000,000 flowers |
 | Emission model | Decade Decay: ×(4/5) every 5,256,000 blocks |
@@ -339,7 +339,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G1 | **Emission / Decade Decay** | Decade Decay (×4/5 per 5,256,000 blocks), tail ~724.785 ZION | ✅ `emission.rs` — 16 tests | `L1/core/src/blockchain/reward.rs` |
 | G2 | **Atomic units (flowers)** | 1 ZION = 1e12 flowers; reward = 5,400,067,000,000,000 flowers | ✅ Integrated in `emission.rs` | Same as G1 |
 | G3 | **LWMA DAA** | 60-block window, ±25% max change, 30–120 s solve-time clamp | ✅ `difficulty.rs` — 31 tests (+10 auto-tuning: stats, predict, hashrate), integer-only ±25% clamp | `L1/core/src/blockchain/consensus.rs` |
-| G4 | **Genesis block + premine** | 16.28B ZION into 12 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 12 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
+| G4 | **Genesis block + premine** | 16.78B ZION into 14 addresses as coinbase outputs in block 0 | ✅ `genesis.rs` — 17 tests, 14 premine outputs, frozen hash, ChainState init | `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
 | G5 | **Block propagation** | Flood-fill relay to all connected peers on new block accept | ✅ `propagation.rs` — SeenBlocks dedup, plan_relay(), node binary relay on announce+submit | ~~Phase 5d~~ done |
 
 #### CRITICAL — cryptographic & transaction foundation (added 2026-03-13 from L1 audit)
@@ -479,7 +479,7 @@ Exit criteria:
 - `block_reward(0)` returns `5_400_067_000_000_000`
 - `block_reward(5_256_000)` returns 80% of initial
 - `block_reward(52_560_000)` returns tail emission
-- cumulative emission across all decades stays within 127.72B ZION mining supply
+- cumulative emission across all decades stays within 127.22B ZION mining supply
 - all existing tests remain green
 
 Migration source: `L1/core/src/blockchain/reward.rs` (audit, extract logic, rewrite clean)
@@ -518,12 +518,12 @@ Status: done
 
 ### Phase 5c: Genesis Block & Premine (G4)
 
-Goal: construct the canonical genesis block with all 12 premine outputs.
+Goal: construct the canonical genesis block with all 14 premine outputs.
 
 Required work:
 
-- define genesis block structure: header (height 0, prev_hash 0x00…, timestamp TBD, nonce TBD) + coinbase with 12 outputs
-- embed 12 addresses and amounts from `PREMINE_ADDRESSES_PUBLIC.txt` (total 16,280,000,000 ZION = 16,280,000,000,000,000,000,000 flowers)
+- define genesis block structure: header (height 0, prev_hash 0x00…, timestamp TBD, nonce TBD) + coinbase with 14 outputs
+- embed 14 addresses and amounts from `PREMINE_ADDRESSES_PUBLIC.txt` (total 16,780,000,000 ZION = 16,780,000,000,000,000,000,000 flowers)
 - set DAO Treasury outputs with `unlock_height = 525_600`
 - compute and freeze genesis block hash
 - add genesis block as chain initialization default in ChainState
@@ -531,10 +531,10 @@ Required work:
 
 Exit criteria:
 
-- `ChainState::new()` starts with genesis block containing 12 premine outputs
+- `ChainState::new()` starts with genesis block containing 14 premine outputs
 - genesis hash is deterministic and matches frozen constant
 - node starts from genesis when no chain snapshot exists
-- total premine amount sums to exactly 16,280,000,000 ZION in flowers
+- total premine amount sums to exactly 16,780,000,000 ZION in flowers
 
 Migration source: `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` (data only; genesis builder is new V3 code)
 
@@ -984,7 +984,7 @@ Completed:
 
 1. ~~**Phase 5a: Emission** — flowers + decade decay (`emission.rs`).~~ ✅ done
 2. ~~**Phase 5b: LWMA DAA** — difficulty adjustment (`difficulty.rs`).~~ ✅ done
-3. ~~**Phase 5c: Genesis** — genesis block with 12 premine outputs (`genesis.rs`).~~ ✅ done
+3. ~~**Phase 5c: Genesis** — genesis block with 14 premine outputs (`genesis.rs`).~~ ✅ done
 4. ~~**Phase 5e: Crypto** — Ed25519 + BLAKE3 + `zion1...` addresses (`crypto.rs`).~~ ✅ done
 5. ~~**Phase 5f: Tx Model** — UTXO transactions + fee enforcement (`tx.rs`, `fee.rs`).~~ ✅ done
 6. ~~**Phase 5g: Wallet** — coin selection, build & sign (`wallet.rs`).~~ ✅ done
@@ -1041,7 +1041,7 @@ PoW hash               = Ekam Deeksha (cosmic_harmony)
 ```
 FLOWERS_PER_ZION       = 1_000_000_000_000
 TOTAL_SUPPLY           = 144_000_000_000 × FLOWERS_PER_ZION
-GENESIS_PREMINE        = 16_280_000_000 × FLOWERS_PER_ZION
+GENESIS_PREMINE        = 16_780_000_000 × FLOWERS_PER_ZION
 BASE_BLOCK_REWARD      = 5_400_067_000_000_000
 TAIL_REWARD            = 724_784_723_787_776
 BLOCKS_PER_DECADE      = 5_256_000
@@ -1062,12 +1062,12 @@ Clamp                  = ±25%
 ### Genesis (V3 genesis.rs ✅)
 ```
 DAO_TREASURY_LOCK_HEIGHT = 525_600
-12 addresses, 4 categories:
+14 addresses, 7 categories:
   oasis_golden_egg:  3 × 1.65B = 4.95B ZION (Slots 4 & 5 → L5 Free World: 3.3B)
   dao_treasury:      3 slots   = 4.00B ZION (locked until 525,600)
   infrastructure:    3 slots   = 2.59B ZION
   humanitarian:      1 × 1.44B = 1.44B ZION
-  TOTAL:                        16.28B ZION
+  TOTAL:                        16.78B ZION
 ```
 
 ### Chain Safety (V3 chain.rs + validation.rs ✅)

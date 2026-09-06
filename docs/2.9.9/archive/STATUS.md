@@ -44,7 +44,7 @@
 - ✅ Ekam Deeksha PoW (`cosmic_harmony_ekam_deeksha`) — test vector frozen: `6339f2fb...`
 - ✅ Decade Decay emission (`BASE_REWARD = 5 400 067 ZION`, tail `~724.785 ZION`, max 144B supply)
 - ✅ LWMA DAA — 60-block window, ±25% clamp, 30–120s solve-time bounds
-- ✅ Genesis blok — 12 premine výstupů, 16.28B ZION, frozen hash
+- ✅ Genesis blok — 12 premine výstupů, 16.78B ZION, frozen hash
 - ✅ UTXO transakční model (TxInput/TxOutput, Ed25519, BLAKE3 txid)
 - ✅ 11-step block validation (struktura, PoW, diff, timestamp, Merkle, signatury, double-spend, coinbase maturity, fees, subsidy, DAO lock)
 - ✅ Fork choice (highest total_work), reorg (MAX_REORG_DEPTH=10), SOFT_FINALITY=60

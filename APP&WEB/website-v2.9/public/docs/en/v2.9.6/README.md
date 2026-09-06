@@ -31,7 +31,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 ### Genesis Premine (unchanged from v2.9.5)
 
-11.31% of total supply (16.28B ZION) is created in the genesis block:
+11.65% of total supply (16.78B ZION) is created in the genesis block:
 
 | Category | Amount | Lock |
 |----------|--------|------|
@@ -114,7 +114,7 @@ The emission schedule is subject to DAO governance vote. Five proposals:
 | Parameter | Value |
 |-----------|-------|
 | Total Supply | 144,000,000,000 ZION |
-| Genesis Premine | 16,280,000,000 ZION (11.31%) |
+| Genesis Premine | 16,780,000,000 ZION (11.65%) |
 | Block Time | 60 seconds |
 | Fee Policy | 100% burn (deflationary) |
 | Humanitarian Tithe | 5% of block reward |

@@ -90,7 +90,7 @@ Bitcoin's SHA-256 and Ethereum's Ethash were both initially mined by CPUs and th
 
 Many prominent blockchain projects allocated 15–50 % of total supply to founders, early investors, and venture capital before public launch. This creates structural inequality: insiders sell at prices the public cannot match, and the community begins its participation already disadvantaged.
 
-**ZION's response:** Fair Launch. There was no ICO, no pre-sale, no SAFT, and no advisor token allocation. The only way to acquire ZION is to mine it or receive it in a transaction. The 11.31 % genesis premine is fully transparent, time-locked where appropriate, and its addresses are published before launch.
+**ZION's response:** Fair Launch. There was no ICO, no pre-sale, no SAFT, and no advisor token allocation. The only way to acquire ZION is to mine it or receive it in a transaction. The 11.65 % genesis premine is fully transparent, time-locked where appropriate, and its addresses are published before launch.
 
 ### 3. Zero Protocol-Level Social Impact
 
@@ -234,7 +234,7 @@ ZION replaces this with a **Decade Decay** model: the block reward decreases by 
 | 10 | 2116–2126 | 724.785 | ~3.81 billion |
 | **Tail** | **2126+** | **724.785** | **Perpetual** |
 
-The total mining emission over 100 years is approximately 126.67 billion ZION. Combined with the 16.28 billion genesis premine, this stays within the 144 billion hard cap.
+The total mining emission over 100 years is approximately 126.67 billion ZION. Combined with the 16.78 billion genesis premine, this stays within the 144 billion hard cap.
 
 ### Tail Emission
 
@@ -263,13 +263,13 @@ The hard cap is **144,000,000,000 ZION** — set in genesis and immutable. No go
 
 | Category | Amount (ZION) | Share |
 |----------|---------------|-------|
-| Mining emission (100 years + tail) | ~127,720,000,000 | 88.69 % |
-| Genesis premine | 16,280,000,000 | 11.31 % |
+| Mining emission (100 years + tail) | ~127,220,000,000 | 88.35% |
+| Genesis premine | 16,780,000,000 | 11.65 % |
 | **Total** | **144,000,000,000** | **100 %** |
 
 ### Genesis Premine Distribution
 
-The genesis block (height 0) contains 12 outputs with a total of 16.28 billion ZION:
+The genesis block (height 0) contains 14 outputs with a total of 16.78 billion ZION:
 
 | # | Category | Amount (ZION) | Lock |
 |---|----------|---------------|------|
@@ -485,7 +485,7 @@ Multi-sig protection: **5-of-7 signatures** required for any treasury transactio
 The DAO **cannot** change the following without a community-wide hard fork:
 
 - Total supply (144 billion ZION)
-- Genesis allocation (16.28 billion ZION)
+- Genesis allocation (16.78 billion ZION)
 - Block time (60 seconds)
 - Mining algorithm (Ekam Deeksha v3.2)
 - Consensus type (Proof-of-Work)
@@ -594,7 +594,7 @@ As of May 2026, the following infrastructure is operational:
 | Resource | Path | Description |
 |----------|------|-------------|
 | Emission constants | `V3/L1/core/src/emission.rs` | Decade Decay, fee split, tail reward |
-| Genesis block | `V3/L1/core/src/genesis.rs` | 12 premine outputs, DAO lock, genesis message |
+| Genesis block | `V3/L1/core/src/genesis.rs` | 14 premine outputs, DAO lock, genesis message |
 | PoW algorithm | `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v3.2 canonical pipeline |
 | Difficulty | `V3/L1/core/src/difficulty.rs` | LWMA DAA |
 | Validation | `V3/L1/core/src/validation.rs` | 11-step block validation |

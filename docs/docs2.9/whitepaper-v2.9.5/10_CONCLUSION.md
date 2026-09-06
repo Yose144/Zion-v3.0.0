@@ -90,7 +90,7 @@ ZION is Different:
 | **Block Reward** | 5,400 ZION (MainNet) |
 | **Mining Duration** | 45 let (2025-2070) |
 | **Humanitarian Tithe** | 10-25% |
-| **Genesis Premine** | 11.31% (transparentní) |
+| **Genesis Premine** | 11.65% (transparentní) |
 | **VC Allocation** | 0% |
 | **Team Allocation** | 0% |
 | **MainNet Launch** | 31.12.2026 |

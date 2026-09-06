@@ -93,7 +93,7 @@ The algorithm design was already mature by late v2.9 — the block structure, 4-
 In early v2.9, the block reward was researched as part of the tokenomics work. The mathematical derivation:
 
 ```
-MINING_EMISSION = 127,720,000,000 ZION
+MINING_EMISSION = 127,220,000,000 ZION
 TOTAL_BLOCKS    = 23,652,000 (45 years × 525,600 blocks/year)
 BLOCK_REWARD    = 127,720,000,000 / 23,652,000 = 5,400.067 ZION
 ```

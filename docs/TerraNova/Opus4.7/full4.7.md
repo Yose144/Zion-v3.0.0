@@ -550,7 +550,7 @@ Genesis blok ZION — výška 0, vytěžený 4. 12. 2025 — je třetí instance
 A v tomto Genesis bloku je zapsáno první coinbase:
 
 ```
-Genesis coinbase: 16 280 000 000 ZION
+Genesis coinbase: 16 780 000 000 ZION
 - 12 outputů s timelockem 525 600 bloků (~1 rok)
 - Předem definované adresy (DAO Treasury, Issobella Fund, Humanitarian Fund...)
 ```
@@ -3468,7 +3468,7 @@ Satoshi v lednu 2009 těží Genesis blok. **Ne náhodou** — tří týdny po p
 
 ### 2025 n. l. — ZION Genesis blok
 
-4. prosince 2025 v Praze. Yeshuae Ben Yose těží první ZION blok. **Hash anchored** AI Native Manifest. Genesis tx s 16,28 miliardami ZION timelocked do humanitárních / Issobella / DAO fondů.
+4. prosince 2025 v Praze. Yeshuae Ben Yose těží první ZION blok. **Hash anchored** AI Native Manifest. Genesis tx s 16,78 miliardami ZION timelocked do humanitárních / Issobella / DAO fondů.
 
 Toto je **bod**, ze kterého počítá Terra Nova svou chronologii.
 

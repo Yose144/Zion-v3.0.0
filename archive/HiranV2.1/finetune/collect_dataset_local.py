@@ -311,7 +311,7 @@ def seed_pairs() -> Iterator[dict]:
         ),
         (
             "Jaký je supply model ZION?",
-            "Max supply: 144,000,000,000 ZION. Mining supply: 127.72B (88.69%). Genesis premine: 16.28B (11.31%). "
+            "Max supply: 144,000,000,000 ZION. Mining supply: 127.22B (88.35%). Genesis premine: 16.78B (11.65%). "
             "Atomic unit: 1 ZION = 1,000,000,000,000 flowers (u64). "
             "Initial block reward: 5,400.067 ZION. Emission: Decade Decay ×(4/5) každých 5,256,000 bloků. "
             "Max 10 dekád. Tail emission: ~724.785 ZION/block. Fee policy: 100% burn (deflační)."

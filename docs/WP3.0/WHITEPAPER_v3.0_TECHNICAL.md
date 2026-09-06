@@ -63,7 +63,7 @@ Síť je implementována v jazyce **Rust** na vrstvách L1–L4:
 | Tail emission | 724,785 ZION/blok od roku 2126 (navěky) |
 | Block time | 60 sekund |
 | Mining horizon | 100+ let + tail emission |
-| Premine | 16 280 000 000 ZION (11,31 %) |
+| Premine | 16 780 000 000 ZION (11,65 %) |
 | Nejmenší jednotka | 1 ZION = 1 000 000 000 000 flower (12 des. míst) |
 | Konsensus | CosmicHarmony v3 (paměťově náročný PoW) |
 | Algoritmus DAA | LWMA, okno 60 bloků, max. ±25 % |
@@ -238,8 +238,8 @@ Ekonomické parametry jsou ověřitelné v kódu: `V3/L1/core/src/genesis.rs` (p
 
 ```
 Base Supply Target: 144 000 000 000 ZION (144B)
-Legacy Mining Param: 127 720 000 000 ZION (88,69 %)
-Genesis Premine:     16 280 000 000 ZION (11,31 %)
+Legacy Mining Param: 127 220 000 000 ZION (88,35 %)
+Genesis Premine:     16 780 000 000 ZION (11,65 %)
 
 Block Reward (dekáda 1):   5 400,067 ZION
 Block Time:                60 sekund
@@ -252,7 +252,7 @@ Flower units:           1 000 000 000 000 flower/ZION (12 des. míst)
 ### 5.2 Matematický důkaz emise (Dekáda 1)
 
 ```python
-MINING_EMISSION = 127_720_000_000          # ZION  
+MINING_EMISSION = 127_220_000_000          # ZION  
 BLOCKS_PER_DECADE = 5_256_000             # 10 let × 525 600 bloků/rok
 
 BASE_BLOCK_REWARD = 5_400.067 ZION        # Dekáda 1 (z reward_calculator.rs)
@@ -301,7 +301,7 @@ Tail od 2126:             724,785 ZION/blok navěky
 | DAO Treasury | 4 000 000 000 | 24,6 % | Komunitní governance, granty |
 | Infrastructure | 2 590 000 000 | 15,9 % | Vývoj, seed nodes, audit |
 | Humanitarian Fund | 1 440 000 000 | 8,8 % | Iniciální seed humanitárního fondu |
-| **Celkem** | **16 280 000 000** | **100 %** | — |
+| **Celkem** | **16 780 000 000** | **100 %** | — |
 
 #### Zablokování DAO Treasury
 
@@ -367,10 +367,10 @@ Block Reward = base + consciousness_bonus × multiplier
 
 ```
 Kumulativní mining emise (dekáda 1–10):
-  2036: ~28,38B + 16,28B premine = ~44,66B  (31 %)
-  2046: ~51,09B + 16,28B        = ~67,37B  (47 %)
-  2056: ~69,25B + 16,28B        = ~85,53B  (59 %)
-  2126: ~126,67B + 16,28B       = ~142,95B (99 %)
+  2036: ~28,38B + 16,78B premine = ~44,66B  (31 %)
+  2046: ~51,09B + 16,78B        = ~67,37B  (47 %)
+  2056: ~69,25B + 16,78B        = ~85,53B  (59 %)
+  2126: ~126,67B + 16,78B       = ~142,95B (99 %)
   2126+: tail 724.785 ZION/blok navěky
 ```
 
@@ -385,7 +385,7 @@ Kumulativní mining emise (dekáda 1–10):
 | ASIC resistant | Ne | Ano | N/A | **Ano (CHv3, score 90/100)** |
 | Humanitární | Ne | Ne | Ne | **5 % tithe + 5 % L5/L6** |
 | Fair Launch | ✅ | ✅ | ⚠️ | **✅** |
-| Premine | 0 % | 0 % | ~7 % | **11,31 %** |
+| Premine | 0 % | 0 % | ~7 % | **11,65 %** |
 
 **Proč Decade Decay místo halvingu?** Postupné snížení o 20 % každých 10 let zajišťuje předvídatelný security budget pro těžaře, eliminuje prudké cenové šoky a financuje L5 Free World i L6 Issobella po celou dobu existence sítě.
 
@@ -538,7 +538,7 @@ Multi-sig ochrana: **5 z 7 podpisů** nutných pro jakoukoliv transakci z treasu
 
 DAO **nemůže** změnit:
 - Total supply (144B ZION)
-- Genesis allocation (16,28B)  
+- Genesis allocation (16,78B)  
 - Block time (60s)
 - Mining algoritmus
 - Konsensus typ (PoW)

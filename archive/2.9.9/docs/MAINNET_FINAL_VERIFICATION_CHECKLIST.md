@@ -8,7 +8,7 @@
 
 ### Genesis Konfigurace
 - [x] **Genesis hash konzistentní** (`003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923`)
-- [x] **Premine adresy aktualizovány** (12 výstupů, 16.28B ZION)
+- [x] **Premine adresy aktualizovány** (12 výstupů, 16.78B ZION)
 - [x] **OASIS + Golden Egg** (5 × 1.65B = 8.25B ZION)
 - [x] **DAO Treasury** (3 × 4.0B ZION, locked 1 rok)
 - [x] **Infrastructure** (3 × 2.59B ZION)

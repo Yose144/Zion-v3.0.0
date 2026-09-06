@@ -62,13 +62,13 @@ tímto v souladu s **článkem 4 nařízení Evropského parlamentu a Rady (EU) 
 **Fixní:** Ano (immutable, nelze navýšit)  
 
 **Distribuce:**
-- **Genesis Premine:** 16,280,000,000 ZION (11,31%)
+- **Genesis Premine:** 16,780,000,000 ZION (11,65%)
   - Presale: 500M ZION (0,35%)
   - Mining Operators: 8,25B ZION (consciousness mining game)
   - DAO Winners: 1,75B ZION (Golden Egg Game, locked do 2035)
   - ZION OASIS: 1,44B ZION (UE5 game)
   - Infrastructure: 4,34B ZION (development, liquidity)
-- **Mining Emission:** 127,720,000,000 ZION (88,69% přes 45 let)
+- **Mining Emission:** 127,220,000,000 ZION (88,35 % přes 45 let)
 
 ---
 

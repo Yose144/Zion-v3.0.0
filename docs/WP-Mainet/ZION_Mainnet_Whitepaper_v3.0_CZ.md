@@ -108,8 +108,8 @@ Celková nabídka je **144 000 000 000 ZION**. Je to napevno zapsáno v genesis 
 
 | Kategorie | Množství | Podíl |
 |-----------|----------|-------|
-| Těžební nabídka | 127 720 000 000 ZION | 88,69 % |
-| Genesis premine | 16 280 000 000 ZION | 11,31 % |
+| Těžební nabídka | 127 220 000 000 ZION | 88,35 % |
+| Genesis premine | 16 780 000 000 ZION | 11,65 % |
 | **Celkem** | **144 000 000 000 ZION** | **100 %** |
 
 Atomická jednotka se jmenuje **flower**: **1 ZION = 1 000 000 000 000 flower** (12 desetinných míst). Veškeré účetnictví na řetězci pracuje s flowers jako `u64`.
@@ -149,7 +149,7 @@ Toto rozdělení je vynucováno on-chain od prvních bloků. První explicitně 
 
 ### Genesis premine — transparentně
 
-Při spuštění sítě bylo vytvořeno 16,28 miliardy ZION. Rozdělení je veřejné, adresy jsou v souboru `PREMINE_ADDRESSES_PUBLIC.txt`:
+Při spuštění sítě bylo vytvořeno 16,78 miliardy ZION. Rozdělení je veřejné, adresy jsou v souboru `PREMINE_ADDRESSES_PUBLIC.txt`:
 
 | # | Kategorie | Množství (ZION) | Účel |
 |---|-----------|-----------------|------|
@@ -454,7 +454,7 @@ Multi-sig ochrana: **5 z 7 podpisů** nutných pro jakoukoliv treasury transakci
 
 DAO **nemůže** změnit:
 - Celkovou nabídku (144B ZION)
-- Genesis alokaci (16,28B ZION)
+- Genesis alokaci (16,78B ZION)
 - Čas bloku (60 sekund)
 - Těžební algoritmus (Ekam Deeksha v3.2)
 - Typ konsensu (Proof-of-Work)

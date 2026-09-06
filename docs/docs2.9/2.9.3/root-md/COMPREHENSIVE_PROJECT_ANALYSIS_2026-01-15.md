@@ -54,7 +54,7 @@ Hlavní Komponenty:
 │   ├── new_zion_blockchain.py - Main blockchain engine
 │   ├── algorithms.py - 34,000 LOC! (4 mining algos)
 │   ├── crypto_utils.py - Ed25519 signatures
-│   ├── premine.py - Genesis 16.28B ZION
+│   ├── premine.py - Genesis 16.78B ZION
 │   └── zion_rpc_server.py - JSON-RPC (port 8545/18081)
 │
 ├── Mining Pool (src/pool/) - 6,500+ LOC
@@ -172,13 +172,13 @@ src/bridges/
 | **Block Time** | 60 sekund |
 | **Block Reward (Base)** | 50 ZION (MainNet: 5,400 ZION) |
 | **Consciousness Bonus** | 392.857 ZION × multiplier (první 20 let) |
-| **Mining Emission** | 127.72B (88.69%) přes 45 let |
-| **Genesis Premine** | 16.28B (11.31%) |
+| **Mining Emission** | 127.22B (88.35%) přes 45 let |
+| **Genesis Premine** | 16.78B (11.65%) |
 
 ### Token Distribuce
 
 ```
-Mining Emission      ████████████████████████████████  88.69%  (127.72B)
+Mining Emission      ████████████████████████████████  88.35%  (127.22B)
 Mining Operators     ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░   5.73%  (8.25B)
 Infrastructure       ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░   3.01%  (4.34B)
 DAO Winners          █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   1.22%  (1.75B)

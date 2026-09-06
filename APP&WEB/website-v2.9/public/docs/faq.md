@@ -27,7 +27,7 @@ Distribuce: 89% miner, 5% humanitarian, 5% L5/L6 Issobella fund, 1% pool fee.
 | Parametr | Hodnota |
 |----------|---------|
 | Celková emise | 144 mld ZION |
-| Premine | 16,28 mld ZION (11,3 %) |
+| Premine | 16,78 mld ZION (11,65%) |
 | Block reward (D1) | 5 400,067 ZION |
 | Emisní model | Decade Decay (-20%/10 let) |
 | Tail emission | 724,785 ZION/blok (od 2126) |

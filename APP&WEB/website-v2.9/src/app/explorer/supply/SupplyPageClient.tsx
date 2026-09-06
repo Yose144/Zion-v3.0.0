@@ -453,7 +453,7 @@ export default function SupplyPageClient() {
     humanitarian: { rate: 0.05, per_block: 0, estimated_total: 0 },
   } : null);
 
-  const premine = stats?.premine_supply ?? 16_280_000_000;
+  const premine = stats?.premine_supply ?? 16_780_000_000;
   const mined = data?.total_emission ?? 0;
   const circ = data?.circulating_supply ?? premine;
   const max = data?.max_supply ?? 144_000_000_000;

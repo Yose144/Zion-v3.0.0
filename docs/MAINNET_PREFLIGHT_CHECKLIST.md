@@ -38,7 +38,7 @@ Hloubkový audit (12. února 2026) odhalil **14 kritických (P0) nálezů**, **2
 | DAO Treasury | 4,000,000,000 | ✅ | ⬜ Finální audit |
 | Infrastructure | 2,590,000,000 | ✅ | ⬜ Finální audit |
 | Humanitarian | 1,440,000,000 | ✅ | ⬜ Finální audit |
-| **CELKEM** | **16,280,000,000** | **✅** | ⬜ `cargo test` pass |
+| **CELKEM** | **16,780,000,000** | **✅** | ⬜ `cargo test` pass |
 
 ### 1.3 Genesis timestamp
 
@@ -228,7 +228,7 @@ Hloubkový audit (12. února 2026) odhalil **14 kritických (P0) nálezů**, **2
 
 | # | Problém | Kde | Závažnost | Akce |
 |---|---------|-----|-----------|------|
-| ⬜ | **12 kompletních premine privátních klíčů V REPO** — 16.28B ZION | `PREMINE_WALLETS_BACKUP.json` | 🔴 P0 IHNED | **BFG Repo-Cleaner → smazat z git historie. Vygenerovat NOVÉ klíče. Považovat stávající za kompromitované!** |
+| ⬜ | **12 kompletních premine privátních klíčů V REPO** — 16.78B ZION | `PREMINE_WALLETS_BACKUP.json` | 🔴 P0 IHNED | **BFG Repo-Cleaner → smazat z git historie. Vygenerovat NOVÉ klíče. Považovat stávající za kompromitované!** |
 | ✅ | **Hardcoded SMTP heslo v plaintextu** `<REDACTED>` | `2.9-History/debug_email_template.py`, deploy skripty | 🔴 P0 IHNED | **Wave 6: Přesunuto do env var `SMTP_PASSWORD`** |
 | ✅ | **Redis hesla v Docker Compose** — default fallbacky odstraněny | `docker-compose.*.yml` | 🔴 P0 | **Wave 6: Vyžaduje `.env` soubor (viz `docker/.env.example`)** |
 | ✅ | **Grafana admin heslo** — default fallback odstraněn | `docker/monitoring/` | 🔴 P0 | **Wave 6: Vyžaduje `GRAFANA_ADMIN_PASSWORD` env var** |
@@ -352,7 +352,7 @@ Toto se provede **jednou** a pak se genesis block **zamkne navždy**.
 | ⬜ | Zálohovat private keys offline (min. 2 geografické lokace) | |
 | ⬜ | Aktualizovat `premine.rs` s finálními adresami | |
 | ⬜ | Aktualizovat `burn.rs` — finální `DAO_ADDRESS` (multisig) | |
-| ⬜ | Run `cargo test` — ověřit PREMINE_TOTAL = 16,280,000,000 ZION | |
+| ⬜ | Run `cargo test` — ověřit PREMINE_TOTAL = 16,780,000,000 ZION | |
 | ⬜ | Sestavit genesis block na čistém stroji | |
 | ⬜ | Hash genesis bloku → zapsat do dokumentace | |
 | ⬜ | Distribute genesis block na všechny seed nody | |

@@ -35,7 +35,7 @@
 | | |
 |---|---|
 | Total supply | **144 000 000 000 ZION** (nikdy víc) |
-| Premine (genesis) | 16,28 mld ZION (11,31 %), v 12 účelových peněženkách |
+| Premine (genesis) | 16,78 mld ZION (11,65 %), v 12 účelových peněženkách |
 | Block reward | 5 400 ZION → klesá o **20 % každých 10 let**, tail ~724 ZION/blok navždy |
 | Block time | **60 s** |
 | Fee policy | **100 % burn** (deflationary) |
@@ -141,7 +141,7 @@ Pokud něco nevíš, vrať se sem.
 
 ## 4. Premine peněženky
 
-V genesis bloku je předem vytvořeno **16,28 mld ZION** (11,31 %) ve **12 peněženkách**. Plus 3 operační peněženky (Issobella, Pool fee, Pool payout) plněné odměnami za těžbu.
+V genesis bloku je předem vytvořeno **16,78 mld ZION** (11,65 %) ve **12 peněženkách**. Plus 3 operační peněženky (Issobella, Pool fee, Pool payout) plněné odměnami za těžbu.
 
 Veřejné adresy: **`PREMINE_ADDRESSES_PUBLIC.txt`** v rootu repa.
 

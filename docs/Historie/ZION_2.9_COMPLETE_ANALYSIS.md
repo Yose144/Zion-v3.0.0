@@ -68,7 +68,7 @@
 
 **Features Implemented:**
 ```python
-✅ Genesis Block with 16.28B Premine
+✅ Genesis Block with 16.78B Premine
 ✅ Multi-Algorithm Mining (4 algos)
    - Cosmic Harmony (primary)
    - RandomX (CPU)
@@ -86,7 +86,7 @@
 **Genesis Distribution (from blockchain source):**
 ```
 Total Supply: 144,000,000,000 Dharma Credits
-Genesis Premine: 16,280,000,000 (11.31%)
+Genesis Premine: 16,780,000,000 (11.65%)
 
 Breakdown:
 ├─ Mining Operators (OASIS): 4,950,000,000 (29.5%)
@@ -875,7 +875,7 @@ Mainnet Launch:     🎯 December 31, 2026
 ### Current Supply
 ```
 Total Supply:     144,000,000,000 Credits (12×12×1B)
-Genesis Premine:  16,280,000,000 Credits (11.31%)
+Genesis Premine:  16,780,000,000 Credits (11.65%)
 Circulating:      ~45,000,000 Credits (presale sold)
 Mining Rate:      50 Credits/block (~60s)
 Daily Emission:   ~72,000 Credits/day (1,440 blocks)

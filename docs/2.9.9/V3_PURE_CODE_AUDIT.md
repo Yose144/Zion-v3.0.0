@@ -126,7 +126,7 @@ Pipeline: `header+nonce → Keccak-256 → SHA3-512 → GoldenMatrix → Blake3 
 | **G1** | Emission / Decade Decay | ×(4/5) every 5,256,000 blocks, 10 decades, tail ~724.785 ZION | `DEFAULT_BLOCK_REWARD_ZION = 5_400` — constant, no decay | Legacy `L1/core/src/blockchain/reward.rs` |
 | **G2** | Atomic units (flowers) | 1 ZION = 1,000,000,000,000 flowers; precise reward = 5,400,067,000,000,000 flowers | Integer `5_400` only — no sub-ZION precision | Same as G1 |
 | **G3** | LWMA DAA | 60-block window, ±25% max change, ±120 s timestamp clamp | Hardcoded `difficulty_bits: 0x1f00ffff`, no adjustment algorithm | Legacy `L1/core/src/blockchain/difficulty.rs` |
-| **G4** | Genesis block + premine | Block 0 with 12 coinbase outputs totaling 16,280,000,000 ZION | No genesis builder, no premine module | Legacy `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
+| **G4** | Genesis block + premine | Block 0 with 12 coinbase outputs totaling 16,780,000,000 ZION | No genesis builder, no premine module | Legacy `L1/core/src/blockchain/premine.rs` + `PREMINE_ADDRESSES_PUBLIC.txt` |
 | **G5** | Block propagation | Flood-fill relay to all connected peers on new block | Single request/response TCP, no outbound push | New code |
 
 ### 3.2 HIGH — Network security before production
@@ -158,8 +158,8 @@ Pipeline: `header+nonce → Keccak-256 → SHA3-512 → GoldenMatrix → Blake3 
 | Parameter | Value |
 |-----------|-------|
 | Total supply (max, immutable) | 144,000,000,000 ZION |
-| Mining supply | 127,720,000,000 ZION (88.69%) |
-| Genesis premine | 16,280,000,000 ZION (11.31%) |
+| Mining supply | 127,220,000,000 ZION (88.35%) |
+| Genesis premine | 16,780,000,000 ZION (11.65%) |
 | Atomic unit | 1 ZION = 1,000,000,000,000 flowers |
 | Chain ID | `zion-mainnet-1` |
 

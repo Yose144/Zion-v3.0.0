@@ -28,6 +28,15 @@ const L5FreeWorldCopy = {
   fundWallet: { cs: `Adresa fondu`, en: `Fund wallet` },
   fundDisbursementNote: { cs: `Fond roste s každým blokem. Výplata je možná až po DAO návrhu, hlasování, timelocku a guardian multisig.`, en: `The fund grows with every block. Disbursement requires a DAO proposal, vote, timelock, and guardian multisig.` },
 
+  genesisAllocation: { cs: `Genesis alokace`, en: `Genesis allocation` },
+  l5PremineTitle: { cs: `L5 Free World — 3,3 mld ZION z genesis`, en: `L5 Free World — 3.3B ZION from genesis` },
+  l5PremineIntro: { cs: `Nad rámec průběžného 5% podílu z každého bloku má L5 vlastní alokaci přímo v genesis bloku. Sloty 4 a 5 (2 × 1,65 mld ZION) byly převedeny z OASIS na L5 Free World Projects — pět zakládajících komunit a rezervní fond.`, en: `Beyond the ongoing 5% share of every block, L5 has its own allocation directly in the genesis block. Slots 4 and 5 (2 × 1.65B ZION) were repurposed from OASIS to L5 Free World Projects — five founding communities and a reserve fund.` },
+  perProjectAmount: { cs: `na projekt`, en: `per project` },
+  l5ReserveFund: { cs: `L5 rezervní fond`, en: `L5 reserve fund` },
+  l5ReserveFundDesc: { cs: `Nealokovaná rezerva pro budoucí uzly a rozvoj stávajících komunit.`, en: `Unallocated reserve for future nodes and growth of existing communities.` },
+  totalL5Allocation: { cs: `Celkem L5`, en: `Total L5` },
+  l5PremineNote: { cs: `Alokace je admin-locked — uvolnění vyžaduje DAO návrh, hlasování a guardian multisig. Správce jednotlivých projektů jmenuje Trustee; jména budou zveřejněna při dosažení bodu globální expanze.`, en: `The allocation is admin-locked — release requires a DAO proposal, vote, and guardian multisig. Project stewards are appointed by the Trustee; names will be published once the global expansion milestone is reached.` },
+
   sharedProtocols: { cs: `Sdílené protokoly`, en: `Shared Protocols` },
   baselineL5Protocols: { cs: `Baseline L5 protokoly`, en: `Baseline L5 Protocols` },
   everyL5CommunityImplementsThes: { cs: `Každá L5 komunita implementuje tyto sdílené protokoly pro interoperabilitu.`, en: `Every L5 community implements these shared protocols for interoperability.` },
@@ -171,6 +180,14 @@ const getCommunities = (cs: boolean) => [
   },
 ];
 
+const getPremineAllocation = (cs: boolean) => [
+  { name: 'Genesis Garden', amount: cs ? '500 mil.' : '500M', href: '/terranova/genesis' },
+  { name: 'Dharma Temple', amount: cs ? '500 mil.' : '500M', href: '/terranova/dharma-temple' },
+  { name: 'Te Pīko Ora', amount: cs ? '500 mil.' : '500M', href: '/terranova/te-piko-ora' },
+  { name: 'Golden Republic Bohemia', amount: cs ? '500 mil.' : '500M', href: '/terranova/golden-republic-bohemia' },
+  { name: 'Bodhi Lanka', amount: cs ? '500 mil.' : '500M', href: '/terranova/bodhi-lanka' },
+];
+
 const getProtocols = (cs: boolean) => [
   {
     title: L5FreeWorldCopy.guardianNode[cs ? 'cs' : 'en'],
@@ -309,6 +326,7 @@ export default function L5FreeWorldPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const communities = getCommunities(cs);
+  const premineAllocation = getPremineAllocation(cs);
   const protocols = getProtocols(cs);
   const onboarding = getOnboardingGates(cs);
   const rules = ONBOARDING_RULES[cs ? 'cs' : 'en'];
@@ -382,6 +400,45 @@ export default function L5FreeWorldPage() {
           </div>
           <p className="mt-4 text-xs text-gray-500">
             {L5FreeWorldCopy.fundDisbursementNote[cs ? 'cs' : 'en']}
+          </p>
+        </motion.section>
+
+        {/* ── Genesis premine allocation ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.genesisAllocation[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Wallet className="h-7 w-7 text-teal-300" />
+              {L5FreeWorldCopy.l5PremineTitle[cs ? 'cs' : 'en']}
+            </h2>
+            <p className="text-sm text-gray-400">{L5FreeWorldCopy.l5PremineIntro[cs ? 'cs' : 'en']}</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {premineAllocation.map((item) => (
+              <Link key={item.name} href={item.href} className="zion-rainbow-sub p-5 group hover:bg-white/5 transition-colors" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <h3 className="font-semibold text-white text-sm">{item.name}</h3>
+                  <ArrowRight className="h-4 w-4 text-teal-300/60 group-hover:translate-x-1 transition-transform" />
+                </div>
+                <p className="text-2xl font-bold text-teal-300">{item.amount}</p>
+                <p className="text-xs text-gray-500 mt-1">ZION · {L5FreeWorldCopy.perProjectAmount[cs ? 'cs' : 'en']}</p>
+              </Link>
+            ))}
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+              <div className="flex items-center gap-2 mb-2">
+                <Sprout className="h-4 w-4 text-teal-300" />
+                <h3 className="font-semibold text-white text-sm">{L5FreeWorldCopy.l5ReserveFund[cs ? 'cs' : 'en']}</h3>
+              </div>
+              <p className="text-2xl font-bold text-teal-300">{cs ? '800 mil.' : '800M'}</p>
+              <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.l5ReserveFundDesc[cs ? 'cs' : 'en']}</p>
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 zion-rainbow-sub p-4" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{L5FreeWorldCopy.totalL5Allocation[cs ? 'cs' : 'en']}</p>
+            <p className="text-2xl font-bold text-teal-300">{cs ? '3 300 000 000 ZION' : '3,300,000,000 ZION'}</p>
+          </div>
+          <p className="mt-4 text-xs text-gray-500">
+            {L5FreeWorldCopy.l5PremineNote[cs ? 'cs' : 'en']}
           </p>
         </motion.section>
 

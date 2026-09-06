@@ -20,8 +20,8 @@
 
 ```
 TOTAL_SUPPLY     = 144,000,000,000 ZION
-GENESIS_PREMINE  =  16,280,000,000 ZION
-MINING_EMISSION  = 127,720,000,000 ZION
+GENESIS_PREMINE  =  16,780,000,000 ZION
+MINING_EMISSION  = 127,220,000,000 ZION
 
 MINING_YEARS     = 45
 BLOCKS_PER_YEAR  = 525,600
@@ -32,7 +32,7 @@ BASE_BLOCK_REWARD = 127,720,000,000 / 23,652,000
 
 Verification:
   5,400.067 × 23,652,000 = 127,720,384,400 ZION
-+ Genesis premine:          16,280,000,000 ZION
++ Genesis premine:          16,780,000,000 ZION
                            ──────────────────────
   Total:                   144,000,384,400 ZION
 
@@ -45,7 +45,7 @@ The 5,400.067 figure is mathematically derived — not arbitrary.
 
 ---
 
-## Genesis Premine (16.28B ZION — 11.31%)
+## Genesis Premine (16.78B ZION — 11.65%)
 
 All genesis allocations are on-chain verifiable from the genesis block.
 
@@ -55,11 +55,11 @@ All genesis allocations are on-chain verifiable from the genesis block.
 | DAO Treasury | 4,000,000,000 | 2.78% | Community governance + grants |
 | Infrastructure | 2,590,000,000 | 1.80% | Servers, development, security audit |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% | L5 — clean water, education, healthcare |
-| **Total Genesis** | **16,280,000,000** | **11.31%** | — |
+| **Total Genesis** | **16,780,000,000** | **11.65%** | — |
 
 **Note:** An initial 500M ZION presale allocation existed in the design spec. It was cancelled in January 2026 and the tokens were added to the DAO Treasury. No presale ever took place.
 
-The remaining **88.69%** (127.72B ZION) is emitted exclusively through Proof-of-Work mining.
+The remaining **88.35%** (127.22B ZION) is emitted exclusively through Proof-of-Work mining.
 
 ---
 

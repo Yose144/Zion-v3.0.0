@@ -661,7 +661,7 @@ class DAOCouncil:
 GENESIS_BLOCK_TIMESTAMP = "2026-12-31T00:00:00Z"
 
 DISTRIBUTION_PLAN = {
-    "total_supply": 16_280_000_000,  # 16.28 billion ZION
+    "total_supply": 16_780_000_000,  # 16.78 billion ZION
     
     "premine_allocation": {
         "miners": 8_250_000_000,           # 50.7% - Consciousness mining rewards

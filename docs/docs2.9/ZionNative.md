@@ -1744,7 +1744,7 @@ V tento okamžik se aktivuje **Genesis Block**.
 První blok Zion Mainnet.
 První krok do nové éry.
 
-16,28 miliard Zion Tokenů se rozlije do světa:
+16,78 miliard Zion Tokenů se rozlije do světa:
 - 8,25 miliard pro těžaře
 - 1,75 miliard pro DAO
 - 1,44 miliard pro OASIS

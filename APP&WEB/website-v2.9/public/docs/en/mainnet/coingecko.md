@@ -50,7 +50,7 @@ CoinGecko needs a live endpoint for circulating supply:
 
 ```
 GET https://zionterranova.com/api/supply
-→ { "circulating": 16280000000, "total": 144000000000, "max": 144000000000 }
+→ { "circulating": 16780000000, "total": 144000000000, "max": 144000000000 }
 ```
 
 **Implementation:**  
@@ -81,7 +81,7 @@ bloom phase to ensure continued CPU/GPU mining accessibility.
 Key features:
 - No halving — constant 5,400 ZION/block + Decade Decay model
 - Decade Decay: -20% every 10 years, tail emission 725 ZION/block (permanent)
-- Total supply: 144 billion ZION (88.7% fair-mined, 11.3% premine for dev/humanitarian)
+- Total supply: 144 billion ZION (88.35% fair-mined, 11.65% premine for dev/humanitarian)
 - Native 6-layer architecture: L1 TerraNova → L2 NCL → L3 DAO → L4 Oasis → L5 Free World → L6 Issobella
 - wZION ERC-20 bridge to Ethereum Base and other EVM chains
 - Ed25519 signatures, LMDB storage, LWMA difficulty adjustment

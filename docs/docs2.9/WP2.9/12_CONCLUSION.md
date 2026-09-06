@@ -77,7 +77,7 @@ You've journeyed through the complete ZION v2.9 "Quantum Leap" whitepaper. From 
 
 | Feature | Value |
 |---------|-------|
-| **Genesis Premine** | 16.28B ZION (11.31%) |
+| **Genesis Premine** | 16.78B ZION (11.65%) |
 | **Presale 2026** | €3-4M target |
 | **MainNet** | December 2027 |
 | **OASIS Game** | $50M budget, Q4 2028 |
@@ -114,7 +114,7 @@ You've journeyed through the complete ZION v2.9 "Quantum Leap" whitepaper. From 
 │     crypto philanthropy emerging. Perfect timing.              │
 │                                                                 │
 │  6. FAIR TOKENOMICS                                            │
-│  └─ 88.69% mineable, low premine, 4-year vesting on          │
+│  └─ 88.35% mineable, low premine, 4-year vesting on          │
 │     founder tokens. Aligned incentives.                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘

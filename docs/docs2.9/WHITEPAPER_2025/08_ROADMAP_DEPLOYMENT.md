@@ -14,7 +14,7 @@ ZION vývoj není "move fast and break things". Je to **methodical, dharma-align
 
 ```yaml
 Blockchain Core: ✅ 95% COMPLETE (16,309 LOC)
-  ✅ Genesis block with 16.28B premine (DONE)
+  ✅ Genesis block with 16.78B premine (DONE)
   ✅ Block reward: 50 Dharma Credits (DONE)
   ✅ Multi-algorithm support (4 algorithms) (DONE)
   ✅ Difficulty adjustment (DONE)

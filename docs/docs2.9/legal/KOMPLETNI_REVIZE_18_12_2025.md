@@ -36,8 +36,8 @@
 
 **Opraveno na:**
 ```markdown
-**Vlastní tokeny (premine 16,28 mld):**
-16.28B × kurz  112 - Materiál (aktivum)
+**Vlastní tokeny (premine 16,78 mld):**
+16.78B × kurz  112 - Materiál (aktivum)
 ```
 
 ---
@@ -285,7 +285,7 @@ Fio: 2901809148/2010
 2. **DIČ CZ09120050** - odvozeno z IČO (standard CZ prefix) ✅
 3. **Adresa** - z `public_html/V2/about.html` line 116 ✅
 4. **Bankovní spojení** - z `public_html/V2/about.html` line 131 ✅
-5. **Premine 16,28B** - z `docs/WHITEPAPER_2025/04_ECONOMIC_MODEL.md` ✅
+5. **Premine 16,78B** - z `docs/WHITEPAPER_2025/04_ECONOMIC_MODEL.md` ✅
 6. **MainNet 31.12.2027** - z `ROADMAP_REALISTIC_v2.9_2025-2027.md` line 3 ✅
 7. **Jednatel Yosef Hubálek** - z `public_html/V2/about.html` line 245 ✅
 
@@ -294,7 +294,7 @@ Fio: 2901809148/2010
 ## 🎯 KRITICKÉ ZÁVĚRY
 
 ### ✅ Co bylo opraveno:
-1. **16,28 miliard ZION premine** (nikoli 14,34B) - opraveno ve 3 dokumentech
+1. **16,78 miliard ZION premine** (nikoli 14,34B) - opraveno ve 3 dokumentech
 2. **IČO 09120050** (nikoli 19828748) - opraveno v 8 dokumentech
 3. **Horní Čermná, 561 56** (nikoli Praha) - opraveno v 7 dokumentech
 4. **MainNet 31.12.2027** (nikoli 2026) - opraveno ve 2 dokumentech
@@ -322,8 +322,8 @@ Fio: 2901809148/2010
 
 ✅ **Tokenomika:**
 - Total supply: 144 miliard ZION
-- Genesis premine: 16,28 miliard ZION (11,31%)
-- Mining emission: 127,72 miliard ZION (88,69%)
+- Genesis premine: 16,78 miliard ZION (11,65%)
+- Mining emission: 127,72 miliard ZION (88,35 %)
 
 ✅ **Timeline:**
 - TestNet: 31.12.2025 (13 dní!)
@@ -346,7 +346,7 @@ Fio: 2901809148/2010
 **Všechny dokumenty ve složce `docs/legal/` jsou nyní:**
 - ✅ Aktualizovány s SPRÁVNÝM IČO (09120050)
 - ✅ Aktualizovány se SPRÁVNOU adresou (Horní Čermná 561 56)
-- ✅ Opraveny s SPRÁVNOU premine částkou (16,28B ZION)
+- ✅ Opraveny s SPRÁVNOU premine částkou (16,78B ZION)
 - ✅ Opraveny se SPRÁVNÝM MainNet datem (31.12.2027)
 - ✅ Zbaveny placeholderů (nahrazeno reálnými údaji)
 - ✅ Připraveny pro oficiální použití (konzultace s účetní, ČNB notifikace)

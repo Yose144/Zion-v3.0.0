@@ -39,8 +39,8 @@ v2.9.7 is the **Pre-MainNet Gate** release — a stability and documentation ite
 
 ## Genesis Premine
 
-11.31% of total supply (16.28B ZION) was created in the genesis block.  
-The remaining **88.69%** (127.72B ZION) is emitted entirely through Proof-of-Work mining.
+11.65% of total supply (16.78B ZION) was created in the genesis block.  
+The remaining **88.35%** (127.22B ZION) is emitted entirely through Proof-of-Work mining.
 
 | Category | ZION | % of Supply |
 |----------|------|-------------|
@@ -48,7 +48,7 @@ The remaining **88.69%** (127.72B ZION) is emitted entirely through Proof-of-Wor
 | DAO Treasury | 4,000,000,000 | 2.78% |
 | Infrastructure | 2,590,000,000 | 1.80% |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% |
-| **Total** | **16,280,000,000** | **11.31%** |
+| **Total** | **16,780,000,000** | **11.65%** |
 
 All premine addresses are publicly disclosed in `/PREMINE_ADDRESSES_PUBLIC.txt` and verifiable on-chain from the genesis block.  
 No private or hidden allocations. Governance of DAO Treasury is community-controlled.

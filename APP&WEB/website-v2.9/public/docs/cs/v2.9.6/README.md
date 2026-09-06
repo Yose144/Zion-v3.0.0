@@ -31,7 +31,7 @@ ZION je decentralizovaný Layer 1 blockchain postavený od základu v **Rustu**.
 
 ### Genesis premine (beze změny oproti v2.9.5)
 
-11,31 % celkové nabídky (16,28 mld. ZION) vzniká v genesis bloku:
+11,65 % celkové nabídky (16,78 mld. ZION) vzniká v genesis bloku:
 
 | Kategorie | Částka | Zámek |
 |----------|--------|-------|
@@ -98,7 +98,7 @@ Emisní plán podléhá hlasování DAO. Pět návrhů: A Decade Decay, B Golden
 | Parametr | Hodnota |
 |----------|---------|
 | Celková nabídka | 144 000 000 000 ZION |
-| Genesis premine | 16 280 000 000 ZION (11,31 %) |
+| Genesis premine | 16 780 000 000 ZION (11,65 %) |
 | Čas bloku | 60 s |
 | Politika poplatků | 100 % burn |
 | Humanitární příspěvek | 5 % z odměny za blok (po přechodu z 10 %) |

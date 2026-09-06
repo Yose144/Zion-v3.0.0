@@ -742,7 +742,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ### 🎊 **31. prosince 2026** — Mainnet Launch
 - 🔥 **Mainnet aktivován**
-- 💰 Genesis Block (16.28B ZION distribuce)
+- 💰 Genesis Block (16.78B ZION distribuce)
 - 🌟 Zlatý věk začíná oficiálně
 - 🏆 ZION OASIS game ($10B Golden Egg)
 

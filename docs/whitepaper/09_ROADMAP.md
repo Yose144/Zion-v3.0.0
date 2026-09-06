@@ -219,7 +219,7 @@ NOVEMBER 2026
 
 DECEMBER 31, 2026 — GENESIS BLOCK 🌟
 ├── 🚀 MainNet Genesis at 23:59:59 UTC
-├── 🚀 Genesis premine distributed (16.28B ZION)
+├── 🚀 Genesis premine distributed (16.78B ZION)
 ├── 🚀 Mining officially begins
 ├── 🚀 First block mined
 └── 🎆 Global celebration
@@ -242,7 +242,7 @@ Genesis Night (Dec 31, 2026):
 Block #0:
 ├── Timestamp: 2026-12-31 23:59:59 UTC
 ├── Coinbase: "Where Technology Meets Spirit"
-├── Genesis allocation: 16,280,000,000 ZION
+├── Genesis allocation: 16,780,000,000 ZION
 └── Difficulty: Initial calibrated value
 
 00:00:01 UTC (Jan 1, 2027):

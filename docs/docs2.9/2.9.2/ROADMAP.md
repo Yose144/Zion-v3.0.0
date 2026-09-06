@@ -243,8 +243,8 @@ Tato fáze transformuje ZION z hybridní Python architektury na plně nativní R
 | Parametr | Hodnota |
 |----------|---------|
 | Total Supply | 144,000,000,000 ZION |
-| Genesis Premine | 16,280,000,000 (11.31%) |
-| Mining Emission | 127,720,000,000 (88.69%) |
+| Genesis Premine | 16,780,000,000 (11.65%) |
+| Mining Emission | 127,220,000,000 (88.35%) |
 | Mining Duration | 45 let (2025-2070) |
 | Block Time | 60 sekund |
 
