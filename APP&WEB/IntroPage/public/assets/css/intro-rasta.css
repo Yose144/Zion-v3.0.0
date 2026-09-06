@@ -734,6 +734,22 @@ html body textarea:focus {
   }
 }
 
+/* Decorative One Love glyph strip under the hero logo */
+.hero-glyph {
+  display: block;
+  width: 15rem;
+  height: auto;
+  margin: 0.4rem auto 0;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.3)) drop-shadow(0 0 30px rgba(7, 137, 48, 0.14));
+}
+
+@media screen and (max-width: 736px) {
+  .hero-glyph {
+    width: 11rem;
+  }
+}
+
 /* Mobile: keep the button small and panel compact */
 @media screen and (max-width: 736px) {
   .floating-menu {
