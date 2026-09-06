@@ -739,7 +739,7 @@ html body textarea:focus {
   display: block;
   width: 15rem;
   height: auto;
-  margin: 0.4rem auto 0;
+  margin: 1.1rem auto 0;
   opacity: 0.95;
   filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.3)) drop-shadow(0 0 30px rgba(7, 137, 48, 0.14));
 }
