@@ -734,12 +734,12 @@ html body textarea:focus {
   }
 }
 
-/* Decorative One Love glyph strip under the hero logo */
+/* Decorative One Love glyph strip under the CTA buttons */
 .hero-glyph {
   display: block;
   width: 15rem;
   height: auto;
-  margin: 1.1rem auto 0;
+  margin: 0 auto;
   opacity: 0.95;
   filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.3)) drop-shadow(0 0 30px rgba(7, 137, 48, 0.14));
 }
