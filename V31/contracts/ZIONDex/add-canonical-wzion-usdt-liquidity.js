@@ -17,8 +17,12 @@
 
 const { ethers } = require('ethers');
 
+const fs = require('fs');
+
 const RPC_URL = process.env.RPC_URL || 'https://mainnet.base.org';
-const DEPLOYER_KEY = process.env.DEPLOYER_KEY;
+const DEPLOYER_KEY = process.env.DEPLOYER_KEY || (
+  process.env.DEPLOYER_KEY_FILE ? fs.readFileSync(process.env.DEPLOYER_KEY_FILE, 'utf8').trim() : undefined
+);
 const USDT_AMOUNT = process.env.USDT_AMOUNT; // human units, e.g. 1000
 
 const POOL_ADDRESS = '0x186b46c2f04153999d44D25179cD623fD62Bfda2';
