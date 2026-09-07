@@ -110,17 +110,19 @@ Volitelně další admin-locked premine adresy (všechny vyžadují 3-of-3 admin
 
 ## 11. Initial Token Allocation
 
-Alokace genesis premine (% z max supply 144B; TGE % = podíl uvolněný při TGE):
+⚠️ **Formulář vyžaduje součet přesně 100.00%** — použij tyto hodnoty:
 
-| # | Allocation Name | % of max supply | TGE % | Cliff (měs.) | Vesting (měs.) | Release Schedule |
-|---|-----------------|-----------------|-------|--------------|----------------|------------------|
-| 1 | OASIS Reward Pool | 3.44% | 100% (on-chain locked) | 0 | 0 | Programmatic distribution over ~10 years via OASIS reward contract |
-| 2 | L5 Free World Projects | 2.29% | 100% (on-chain locked) | 0 | 0 | DAO-governed release to humanitarian projects |
-| 3 | DAO Treasury | 2.78% | 0% | ~3.3 (block 144,000) | 0 | Full unlock at cliff; then DAO-vote controlled |
-| 4 | Infrastructure & Core Dev | 1.80% | 100% (admin-locked) | 0 | 0 | 3-of-3 multisig + DAO vote per spend |
-| 5 | Children Future Fund | 1.00% | 100% (admin-locked) | 0 | 0 | DAO-governed humanitarian release |
-| 6 | Bridge Liquidity Funds | 0.35% | 100% (admin-locked) | 0 | 0 | Used for EVM bridge liquidity |
-| 7 | Public Mining Emission | 88.35% | 0% | 0 | ~1,200 | Continuous PoW emission, Decade Decay −20%/decade + perpetual tail |
+| # | Allocation Name | Percentage of Allocation (%) | TGE % | Cliff (měs.) | Vesting (měs.) | Release Schedule |
+|---|-----------------|------------------------------|-------|--------------|----------------|------------------|
+| 1 | OASIS Reward Pool | **3.44** | 100 | 0 | 0 | Programmatic distribution over ~10 years |
+| 2 | L5 Free World Projects | **2.29** | 100 | 0 | 0 | DAO-governed release |
+| 3 | DAO Treasury | **2.78** | 0 | 3.3 | 0 | Full unlock at block 144,000 |
+| 4 | Infrastructure & Core Dev | **1.80** | 100 | 0 | 0 | Multisig + DAO per spend |
+| 5 | Children Future Fund | **1.00** | 100 | 0 | 0 | DAO-governed |
+| 6 | Bridge Liquidity Funds | **0.35** | 100 | 0 | 0 | EVM bridge liquidity |
+| 7 | Public Mining Emission | **88.34** | 0 | 0 | 1200 | Continuous PoW, Decade Decay |
+
+**Součet: 100.00%** ✓
 
 ## 12. Additional Supply Information
 
