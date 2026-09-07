@@ -121,11 +121,12 @@ Tato čísla nejsou výsledkem marketingového rozhodnutí. Jsou výsledkem otá
 
 ### Genesis Reserve — zásobník záměru
 
-Z celkového zásobníku 144 miliard ZION je 16,28 miliardy vyhrazeno v Genesis Reserve:
+Z celkového zásobníku 144 miliard ZION je 16,78 miliardy vyhrazeno v Genesis Reserve:
 
 ```
-GENESIS RESERVE (16.28B ZION):
-├── 8.25B  → OASIS Golden Egg (L4 — vzdělávání skrze hru)
+GENESIS RESERVE (16.78B ZION):
+├── 4.95B  → OASIS Golden Egg (L4 — vzdělávání skrze hru, 3 sloty)
+├── 3.30B  → L5 Free World Projects (sloty 4 a 5 přesunuty z OASIS)
 ├── 4.00B  → DAO Treasury (governance, projekty, granty)
 ├── 2.59B  → Infrastruktura:
 │   ├── 1.00B Core development

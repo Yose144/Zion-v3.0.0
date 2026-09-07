@@ -45,7 +45,7 @@
 |-----------|-------|
 | Block reward | 5,400.067 ZION |
 | Halving | No (constant reward) |
-| Mining supply | 127.72B ZION |
+| Mining supply | 127.22B ZION |
 | Max mining blocks | 23,652,000 (~45 years) |
 | Total emission | 144B ZION |
 | Atomic units | 1 ZION = 1,000,000 |
@@ -53,7 +53,7 @@
 
 ---
 
-## Premine (16.28B ZION)
+## Premine (16.78B ZION)
 
 Distributed at genesis (Jan 1, 2024 UTC):
 

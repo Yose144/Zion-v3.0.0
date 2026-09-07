@@ -44,8 +44,8 @@ Core node and pool independently performed the 89/5/5/1 fee split:
 | Metric | Value |
 |---|---|
 | Total supply | 144,000,000,000 ZION |
-| Genesis premine | 16,280,000,000 ZION |
-| Mining emission (100%) | 127,720,000,000 ZION |
+| Genesis premine | 16,780,000,000 ZION |
+| Mining emission (100%) | 127,220,000,000 ZION |
 | **Mining emission (99% minted)** | **126,442,800,000 ZION** |
 | **Total burned** | **1,277,200,000 ZION** |
 | **Max circulating supply** | **142,722,800,000 ZION** |

@@ -65,7 +65,7 @@ Block #0: Genesis
 Coinbase Message:
 "Where Technology Meets Spirit - ZION TerraNova Genesis 2026"
 
-Genesis Allocation: 16,280,000,000 ZION
+Genesis Allocation: 16,780,000,000 ZION
 ═══════════════════════════════════════════════════════════════
 ```
 
@@ -122,14 +122,14 @@ cargo build --release -p zion-miner
 
 ---
 
-## 5.4 Genesis Distribuce (16.28B)
+## 5.4 Genesis Distribuce (16.78B)
 
 ### Alokace v genesis bloku
 
-Genesis block obsahuje **16.28B ZION** (11.31% total supply) distribuovaných takto:
+Genesis block obsahuje **16.78B ZION** (11.65% total supply) distribuovaných takto:
 
 ```
-Genesis Block Distribution (16.28B ZION):
+Genesis Block Distribution (16.78B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
@@ -234,7 +234,7 @@ GENESIS_ADDRESSES = {
 |----------|---------|---------|
 | **Status** | ✅ Aktivní | 📅 31.12.2026 |
 | **Block Reward** | 50 ZION | 5,400.067 ZION |
-| **Genesis Premine** | Mock data | 16.28B skutečné |
+| **Genesis Premine** | Mock data | 16.78B skutečné |
 | **Tokeny** | Bezcenné (test) | Skutečné |
 | **Reset** | Možný kdykoliv | Nikdy |
 

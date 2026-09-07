@@ -27,7 +27,7 @@ Architektura ZION TerraNova je **solidní** — LWMA difficulty adjustment, Ed25
 
 | Oblast | Problém |
 |--------|---------|
-| 🚨 **Secrets** | 12 privátních klíčů premine (16.28B ZION) v git repo |
+| 🚨 **Secrets** | 12 privátních klíčů premine (16.78B ZION) v git repo |
 | 🔴 **Algoritmus** | 3 různé Cosmic Harmony implementace — miner vs. validátor mismatch |
 | 🔴 **Consensus** | Race condition v process_block, neatomické UTXO operace |
 | 🔴 **Pool** | Unsafe Arc mutace, žádný rate limiting, hardcoded test wallet |
@@ -109,7 +109,7 @@ Architektura ZION TerraNova je **solidní** — LWMA difficulty adjustment, Ed25
 |---|---|
 | **Soubor** | `PREMINE_WALLETS_BACKUP.json` |
 | **Závažnost** | 🚨 KRITICKÁ — OKAMŽITÁ AKCE |
-| **Popis** | Soubor obsahuje **12 kompletních peněženek** s mnemonic frázemi, `secret_key_hex` a veřejnými klíči. Celková hodnota: **16,280,000,000 ZION**. Soubor je v `.gitignore`, ale pokud byl kdykoli commitnutý, klíče jsou v git historii. |
+| **Popis** | Soubor obsahuje **12 kompletních peněženek** s mnemonic frázemi, `secret_key_hex` a veřejnými klíči. Celková hodnota: **16,780,000,000 ZION**. Soubor je v `.gitignore`, ale pokud byl kdykoli commitnutý, klíče jsou v git historii. |
 | **Dopad** | Kdokoli s přístupem k repo (nebo jeho forkům) může ukrást celý premine supply. |
 | **Oprava** | 1) `bfg --delete-files PREMINE_WALLETS_BACKUP.json` na celou git historii. 2) Vygenerovat **NOVÉ klíče** — stávající považovat za kompromitované. 3) Přesunout do offline cold storage (min. 2 geografické lokace). |
 
@@ -396,7 +396,7 @@ Architektura ZION TerraNova je **solidní** — LWMA difficulty adjustment, Ed25
 - Ed25519 kryptografie — `ed25519-dalek` v2, self-verification po podpisu
 - Fee burning — `coinbase ≤ block_reward` enforced v `validation.rs`, fees se pálí
 - Burn address — `zion1burn...dead` UTXOs trvale neutratitelné
-- Premine alokace — 16.28B ZION, 12 kategorií, 4 hlavní skupiny
+- Premine alokace — 16.78B ZION, 12 kategorií, 4 hlavní skupiny
 - 14 consensus testů, 20+ burn testů, spec freeze guard testy
 
 **❌ Problémy:** P0-02 až P0-07, P1-01 až P1-06

@@ -62,7 +62,7 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. Live 
 
 ### Genesis Premine
 
-11.31% of total supply (16.28B ZION) — on-chain verifiable, fully unlocked from genesis:
+11.65% of total supply (16.78B ZION) — on-chain verifiable, fully unlocked from genesis:
 
 | Category | Amount |
 |----------|--------|

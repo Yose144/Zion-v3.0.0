@@ -45,7 +45,7 @@
 |----------|---------|
 | Block reward | 5 400,067 ZION |
 | Halving | Ne (konstantní) |
-| Mining supply | 127,72 mld ZION |
+| Mining supply | 127,22 mld ZION |
 | Max mining bloků | 23 652 000 (~45 let) |
 | Celková emise | 144 mld ZION |
 | Atomické jednotky | 1 ZION = 1 000 000 |
@@ -53,7 +53,7 @@
 
 ---
 
-## Premine (16,28 mld ZION)
+## Premine (16,78 mld ZION)
 
 Distribuováno při genesi (Jan 1, 2024 UTC):
 

@@ -11,14 +11,14 @@
 Tento dokument používá aktuálně zveřejněné parametry z premine disclosure:
 
 - Total supply (aktuální model): `144,000,000,000 ZION`
-- Genesis premine: `16,280,000,000 ZION`
-- Premine podíl: `11.31 %`
-- Mining supply: `127,720,000,000 ZION` (`88.69 %`)
+- Genesis premine: `16,780,000,000 ZION`
+- Premine podíl: `11.65 %`
+- Mining supply: `127,220,000,000 ZION` (`88.35%`)
 - Drobné jednotky: `1 ZION = 10^12 Flowers`
 
 Pro variantu `144M` porovnáváme dvě podvarianty:
 
-- **B1 (proporcionální):** zachovat stejné procenta (11.31 % / 88.69 %)
+- **B1 (proporcionální):** zachovat stejné procenta (11.65 % / 88.35 %)
 - **B2 (fixní absolutní):** ponechat původní absolutní premine čísla (prakticky nedává smysl, protože by přesahovala supply)
 
 > Poznámka: B2 je uvedeno pouze pro úplnost; realistická je pouze B1 nebo kompletně nový návrh distribuce.
@@ -30,14 +30,14 @@ Pro variantu `144M` porovnáváme dvě podvarianty:
 ### Varianta A — 144B (aktuální)
 
 - Total supply: `144,000,000,000`
-- Premine (11.31 %): `16,280,000,000`
-- Mining supply (88.69 %): `127,720,000,000`
+- Premine (11.65 %): `16,780,000,000`
+- Mining supply (88.35%): `127,220,000,000`
 
 ### Varianta B1 — 144M (proporcionální)
 
 - Total supply: `144,000,000`
-- Premine (11.31 %): `16,286,400`
-- Mining supply (88.69 %): `127,713,600`
+- Premine (11.65 %): `16,286,400`
+- Mining supply (88.35%): `127,713,600`
 
 ### Přepočet faktorů
 

@@ -25,7 +25,7 @@ Historical target window in this snapshot: **31 December 2026**
 - [x] Cosmic Harmony v3 PoW — ASIC-resistant, CPU-friendly
 - [x] UTXO model + Ed25519 signatures
 - [x] Decade Decay emission (5,400 → 725 ZION/block over 100+ years)
-- [x] 16.28B genesis premine — all categories defined and transparent
+- [x] 16.78B genesis premine — all categories defined and transparent
 - [x] LWMA DAA (60-block, ±25%) — temperature-stable
 - [x] 100% fee burn — deflationary by design
 - [x] Dual mining: ZION (CHv3) + VRSC (VerusHash)
@@ -73,9 +73,9 @@ All genesis allocations are publicly disclosed. No private or hidden allocations
 | DAO Treasury | 4,000,000,000 | 2.78% | Immediate |
 | Infrastructure | 2,590,000,000 | 1.80% | Immediate |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% | Immediate |
-| **Total Genesis** | **16,280,000,000** | **11.31%** | — |
+| **Total Genesis** | **16,780,000,000** | **11.65%** | — |
 
-The remaining **88.69%** (127.72B ZION) is emitted via Proof-of-Work mining over 100+ years.
+The remaining **88.35%** (127.22B ZION) is emitted via Proof-of-Work mining over 100+ years.
 
 Full premine addresses are published at:
 - `/PREMINE_ADDRESSES_PUBLIC.txt` in the public repository

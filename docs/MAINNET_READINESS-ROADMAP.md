@@ -92,7 +92,7 @@
 | Sprint | Obsah | Commit | Stav |
 |--------|-------|--------|------|
 | 0.0 | Repo migrace, workspace, Docker | `c1d8e34` | ✅ |
-| 0.1 | Emission 5,400.067 + genesis 16.28B | `cad8a62` | ✅ |
+| 0.1 | Emission 5,400.067 + genesis 16.78B | `cad8a62` | ✅ |
 | 0.2 | LWMA DAA, fork-choice, timestamp | `be0beb0` | ✅ |
 | 0.3 | Fee burning, double-spend, mempool | `4ed3a04` | ✅ |
 | 0.4 | UTXO wallet, Ed25519, broadcast | `b8112eb` | ✅ |
@@ -281,8 +281,8 @@ PRAVIDLA:
 |----------|---------|-------|
 | Chain ID | `zion-mainnet-1` | `config/mainnet.toml` |
 | Total Supply | 144,000,000,000 ZION | 🔒 |
-| Mining Supply | 127,720,000,000 ZION | 🔒 |
-| Genesis Premine | 16,280,000,000 ZION | 🔒 |
+| Mining Supply | 127,220,000,000 ZION | 🔒 |
+| Genesis Premine | 16,780,000,000 ZION | 🔒 |
 | Block Reward | 5,400.067 ZION (konstantní, žádný halving) | 🔒 |
 | Block Time | 60 sekund | 🔒 |
 | DAA | LWMA (60 bloků, ±25%) | 🔒 |
@@ -298,7 +298,7 @@ PRAVIDLA:
 | Max Peers | 128 (96 in / 32 out) | `mainnet.toml` |
 | Storage | LMDB, max 100 GB | `mainnet.toml` |
 
-### Genesis Premine — 16.28B ZION
+### Genesis Premine — 16.78B ZION
 
 | Kategorie | ZION | Podíl | Lock |
 |-----------|------|-------|------|

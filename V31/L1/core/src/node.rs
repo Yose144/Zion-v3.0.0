@@ -259,7 +259,7 @@ impl Node {
         let height = storage.height().await?;
         for h in 0..=height {
             if let Some(block) = storage.get_by_height(h).await? {
-                utxo_set.apply_block(&block)?;
+                utxo_set.apply_block_unchecked(&block)?;
             }
         }
         let utxo_set = Arc::new(tokio::sync::Mutex::new(utxo_set));

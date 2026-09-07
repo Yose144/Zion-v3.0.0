@@ -199,7 +199,7 @@ def build_pdf(lang):
         )
         pdf.golden_box("Co DAO nemůže změnit (neměnné parametry)", [
             "Celkovou nabídku (144B ZION)",
-            "Genesis alokaci (16,28B ZION)",
+            "Genesis alokaci (16,78B ZION)",
             "Čas bloku (60 sekund)",
             "Těžební algoritmus (Ekam Deeksha v3.2)",
             "Typ konsensu (Proof-of-Work)",
@@ -415,7 +415,7 @@ def build_pdf(lang):
         )
         pdf.golden_box("What the DAO cannot change (immutable parameters)", [
             "Total supply (144B ZION)",
-            "Genesis allocation (16.28B ZION)",
+            "Genesis allocation (16.78B ZION)",
             "Block time (60 seconds)",
             "Mining algorithm (Ekam Deeksha v3.2)",
             "Consensus type (Proof-of-Work)",

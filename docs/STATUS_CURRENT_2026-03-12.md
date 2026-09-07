@@ -73,7 +73,7 @@ ZION TerraNova je kryptoměnový ekosystém se 4 hlavními vrstvami (L1–L4), v
 
 ### Tokenomics
 
-- Premine: **16 280 000 000 ZION** (11,31 % z celkového supply)
+- Premine: **16 780 000 000 ZION** (11,65 % z celkového supply)
 - Adresy: Viz `PREMINE_ADDRESSES_PUBLIC.txt`
 - Kontrakty: wZION, ZIONBridge, ZIONAtomicSwap, ZIONGovernance, ZIONStaking, ZIONTreasury, ZIONFarm
 
@@ -165,7 +165,7 @@ Tyto oblasti odpovídají mezi dokumentací a kódem — nebyly upravovány:
 - ✅ Konsenzus parametry (scratchpad 64 KiB, 1024 blocks, 2 passes, 64 reads)
 - ✅ Solidity kontrakty (7 vlastních)
 - ✅ Fee policy (100 % burn)
-- ✅ Premine (16.28B ZION, 11.31 %)
+- ✅ Premine (16.78B ZION, 11.65 %)
 - ✅ Legal dokumenty (7 souborů)
 - ✅ Desktop agent benchmark (5575.5 H/s na M1)
 - ✅ Single-host topologie v site.ts a STATUS_REPORT

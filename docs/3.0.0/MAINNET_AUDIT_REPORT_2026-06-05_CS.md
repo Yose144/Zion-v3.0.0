@@ -183,7 +183,7 @@ Byla provedena rotace genesis (změna adres v `genesis.rs` working directory), a
 
 **Selhání jsou očekávaná důsledkem nedávných změn:**
 - `emission::tests::constants_consistency` — Bridge Seed Fund +0.5B ZION změnil total supply
-- `rpc::tests::live_get_supply_info` — supply se změnil z 16.28B na 16.78B
+- `rpc::tests::live_get_supply_info` — supply se změnil z 16.78B na 16.78B
 - `tests::node_config_mainnet_defaults_are_stable` — seed peer adresa změněna
 - `launch::tests::*` — readiness checky selhávají kvůli seed peers / genesis změnám
 
@@ -274,7 +274,7 @@ Hash `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3` uvedený
 
 ### 8.2 Krátkodobá opatření (P1)
 
-1. Aktualizovat testy aby reflektovaly nový supply (16.78B místo 16.28B)
+1. Aktualizovat testy aby reflektovaly nový supply (16.78B místo 16.78B)
 2. Aktualizovat seed peer adresy v testech
 3. Opravit launch readiness checky
 4. Provést plnou verifikaci po nasazení nového genesis

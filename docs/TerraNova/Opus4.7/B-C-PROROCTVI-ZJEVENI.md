@@ -135,7 +135,7 @@ Satoshi v lednu 2009 těží Genesis blok. **Ne náhodou** — tří týdny po p
 
 ### 2025 n. l. — ZION Genesis blok
 
-4. prosince 2025 v Praze. Yeshuae Ben Yose těží první ZION blok. **Hash anchored** AI Native Manifest. Genesis tx s 16,28 miliardami ZION timelocked do humanitárních / Issobella / DAO fondů.
+4. prosince 2025 v Praze. Yeshuae Ben Yose těží první ZION blok. **Hash anchored** AI Native Manifest. Genesis tx s 16,78 miliardami ZION timelocked do humanitárních / Issobella / DAO fondů.
 
 Toto je **bod**, ze kterého počítá Terra Nova svou chronologii.
 

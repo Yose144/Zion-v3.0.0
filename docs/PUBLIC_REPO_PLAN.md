@@ -113,7 +113,7 @@ Zveřejnit čistou verzi ZION TerraNova v2.9.6 jako workspace baseline pro souč
 
 | Soubor | Důvod |
 |--------|-------|
-| `PREMINE_WALLETS_BACKUP.json` | **Privátní klíče + seed fráze 16.28B ZION** — NIKDY nezveřejnit |
+| `PREMINE_WALLETS_BACKUP.json` | **Privátní klíče + seed fráze 16.78B ZION** — NIKDY nezveřejnit |
 | `docker/.env.example` | Hardcoded seed peer IP |
 | `config/testnet.toml` | Hardcoded IP jako seed peer |
 | `config/ch3_revenue_settings.json` | BTC/XMR payout wallet adresy |

@@ -44,8 +44,8 @@ Tento dokument slouží jako:
 | Kategorie | Hodnota | Podíl |
 |-----------|---------|-------|
 | **Total supply (max)** | 144,000,000,000 ZION | 100% |
-| **Mining supply** | 127,720,000,000 ZION | 88.69% |
-| **Genesis premine** | 16,280,000,000 ZION | 11.31% |
+| **Mining supply** | 127,220,000,000 ZION | 88.35% |
+| **Genesis premine** | 16,780,000,000 ZION | 11.65% |
 
 ### 2.2 Emise
 

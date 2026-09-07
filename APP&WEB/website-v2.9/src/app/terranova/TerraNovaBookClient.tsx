@@ -74,7 +74,7 @@ const TerranovaTerraNovaBookClientCopy = {
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   terraNovaOverlay: { cs: `Terra Nova overlay`, en: `Terra Nova Overlay` },
   genesisPanelInsideTerraNova: { cs: `Genesis panel uvnitř Terra Novy`, en: `Genesis Panel Inside Terra Nova` },
-  genesisPremine16280000000Zion: { cs: `Genesis premine · 16 280 000 000 ZION`, en: `Genesis Premine · 16,280,000,000 ZION` },
+  genesisPremine16780000000Zion: { cs: `Genesis premine · 16 780 000 000 ZION`, en: `Genesis Premine · 16,780,000,000 ZION` },
   daoTreasury: { cs: `DAO Pokladna`, en: `DAO Treasury` },
   infrastructureDev: { cs: `Infrastruktura + Vývoj`, en: `Infrastructure + Dev` },
   genesisProjectsDharmaTemplePik: { cs: `Genesis Projects (Dharma Temple, Piko de Ora + DAO)`, en: `Genesis Projects (Dharma Temple, Piko de Ora + DAO)` },
@@ -84,7 +84,7 @@ const TerranovaTerraNovaBookClientCopy = {
   whyItLivesHere: { cs: `Proč je to tady`, en: `Why It Lives Here` },
   openFullGenesisPage: { cs: `Přejít na plnou Genesis stránku`, en: `Open Full Genesis Page` },
   manualCommands: { cs: `Ruční příkazy`, en: `Manual Commands` },
-  genesisPremine1628bZion: { cs: `Genesis Premine · 16.28B ZION`, en: `Genesis Premine · 16.28B ZION` },
+  genesisPremine1628bZion: { cs: `Genesis Premine · 16.78B ZION`, en: `Genesis Premine · 16.78B ZION` },
   oasisGoldenEgg5: { cs: `OASIS Golden Egg ×3`, en: `OASIS Golden Egg ×3` },
   l5FreeWorld2: { cs: `L5 Free World ×2`, en: `L5 Free World ×2` },
   daoTreasury3: { cs: `DAO Pokladna ×3`, en: `DAO Treasury ×3` },
@@ -2224,7 +2224,7 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine Genesis ── */}
                       <div className="mt-5 zion-rainbow-sub px-4 py-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                         <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
-                          {TerranovaTerraNovaBookClientCopy.genesisPremine16280000000Zion[cs ? 'cs' : 'en']}
+                          {TerranovaTerraNovaBookClientCopy.genesisPremine16780000000Zion[cs ? 'cs' : 'en']}
                         </p>
                         <div className="space-y-1.5 font-mono text-[10px] text-white/70">
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">OASIS Golden Egg ×3</span><span className="text-zion-gold/80">4.95B ZION</span></div>
@@ -2233,7 +2233,7 @@ export default function TerraNovaBookClient() {
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.infrastructureDev[cs ? 'cs' : 'en']} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.humanitarianDao[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
-                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-white/70 font-semibold">{TerranovaTerraNovaBookClientCopy.totalGenesis[cs ? 'cs' : 'en']}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
+                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-white/70 font-semibold">{TerranovaTerraNovaBookClientCopy.totalGenesis[cs ? 'cs' : 'en']}</span><span className="text-zion-gold font-bold">16.78B ZION</span></div>
                         </div>
                         <p className="mt-3 text-[9px] uppercase tracking-[0.24em] text-zion-gold/55">
                           {TerranovaTerraNovaBookClientCopy.blockSplit89Miner5Humanitarian[cs ? 'cs' : 'en']}
@@ -2343,7 +2343,7 @@ export default function TerraNovaBookClient() {
                           ))}
                           <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2">
                             <span className="text-white/70 font-semibold">{TerranovaTerraNovaBookClientCopy.total[cs ? 'cs' : 'en']}</span>
-                            <span className="text-zion-gold font-bold tabular-nums">16.28B ZION</span>
+                            <span className="text-zion-gold font-bold tabular-nums">16.78B ZION</span>
                           </div>
                         </div>
                         <div className="mt-3 zion-rainbow-sub px-3 py-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>

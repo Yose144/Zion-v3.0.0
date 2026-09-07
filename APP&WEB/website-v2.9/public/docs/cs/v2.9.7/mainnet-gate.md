@@ -25,7 +25,7 @@ Historické cílové okno v tomto snapshotu: **31. prosince 2026**
 - [x] Cosmic Harmony v3 PoW — odolnost vůči ASIC, šetrnost k CPU
 - [x] Model UTXO + podpisy Ed25519
 - [x] Emise Decade Decay (5 400 → 725 ZION/blok přes 100+ let)
-- [x] 16,28 mld. genesis premine — všechny kategorie definované a transparentní
+- [x] 16,78 mld. genesis premine — všechny kategorie definované a transparentní
 - [x] LWMA DAA (60 bloků, ±25 %)
 - [x] 100 % burn poplatků
 - [x] Dual mining: ZION (CHv3) + VRSC (VerusHash)
@@ -73,9 +73,9 @@ Všechny genesis alokace jsou veřejně zveřejněny. Neexistují soukromé ani 
 | DAO Treasury | 4 000 000 000 | 2,78 % | Okamžitě |
 | Infrastruktura | 2 590 000 000 | 1,80 % | Okamžitě |
 | Humanitární rezerva | 1 440 000 000 | 1,00 % | Okamžitě |
-| **Celkem genesis** | **16 280 000 000** | **11,31 %** | — |
+| **Celkem genesis** | **16 780 000 000** | **11,65 %** | — |
 
-Zbývajících **88,69 %** (127,72 mld. ZION) se emituje těžbou PoW přes 100+ let.
+Zbývajících **88,35 %** (127,22 mld. ZION) se emituje těžbou PoW přes 100+ let.
 
 Plný seznam premine adres:
 - `/PREMINE_ADDRESSES_PUBLIC.txt` ve veřejném repozitáři

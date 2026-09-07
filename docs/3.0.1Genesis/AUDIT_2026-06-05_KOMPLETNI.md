@@ -239,7 +239,7 @@ ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 
 **Selhání v zion-core (všechna očekávaná po změnách):**
 
-1. `emission::tests::constants_consistency` — Supply 16.78B místo 16.28B (Bridge Seed Fund +0.5B)
+1. `emission::tests::constants_consistency` — Supply 16.78B místo 16.78B (Bridge Seed Fund +0.5B)
 2. `rpc::tests::live_get_supply_info` — Stejný důvod
 3. `rpc::tests::live_get_bridge_vault_balance_defaults_to_zero` — Bridge vault balance parsing
 4. `rpc::tests::live_submit_bridge_unlock_rejects_when_vault_is_empty` — Bridge vault logika

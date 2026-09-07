@@ -326,7 +326,7 @@ pool/src/stratum/
 #### 1. **Premine Module** (`core/src/blockchain/premine.rs`) - 417 LOC
 
 **Features:**
-- ✅ REAL 16.28B ZION genesis distribution
+- ✅ REAL 16.78B ZION genesis distribution
 - ✅ All addresses from Python reference (`src/core/premine.py`)
 - ✅ Full validation (`validate_premine()` checks all totals)
 - ✅ WP2.9 compliance verified
@@ -339,7 +339,7 @@ ZION OASIS:        1.44B  (8.8%)  - Game dev, 3-year vesting 2026-2028
 Presale:           500M   (3.1%)  - 3 phases €0.004/€0.008/€0.012
 Infrastructure:    4.34B  (26.7%) - Dev, charity, admin, network
 ──────────────────────────────────
-TOTAL:            16.28B  (verified ✓)
+TOTAL:            16.78B  (verified ✓)
 ```
 
 **Sources:**

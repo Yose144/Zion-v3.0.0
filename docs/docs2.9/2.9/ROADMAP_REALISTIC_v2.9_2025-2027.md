@@ -631,7 +631,7 @@ Vytvořit plně funkční TestNet v2.9 do ledna 2026, spustit presale v Q1 2026,
    Environment: Staging network (identical to MainNet)
    
    Tests:
-   - Genesis block creation (16.28B premine)
+   - Genesis block creation (16.78B premine)
    - Initial distribution (presale, DAO, mining)
    - 1000+ blocks (sustained mining)
    - High transaction load (100+ TX/block)
@@ -682,7 +682,7 @@ Vytvořit plně funkční TestNet v2.9 do ledna 2026, spustit presale v Q1 2026,
    Participants: Limited (core team + early supporters)
    
    Launch checklist:
-   1. Deploy genesis block (16.28B premine)
+   1. Deploy genesis block (16.78B premine)
    2. Distribute presale tokens (170M Credits)
    3. Fund DAO treasury (1.75B Credits)
    4. Initialize mining operators (8.25B Credits)

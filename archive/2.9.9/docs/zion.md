@@ -116,7 +116,7 @@ Terra Nova je první knihou komplexu, ktera se **nespokojuje s vizí ani s diagn
  1 % → Sitova infrastruktura (realismus — bez zakladu nic nestoji)
 ```
 - Total supply: **144 000 000 000 ZION** (posvatne cislo 12×12, 144 000 z Zjeveni Janova)
-- Premine: 16.28B ZION (11.31 %) s timelockem ~1 rok
+- Premine: 16.78B ZION (11.65 %) s timelockem ~1 rok
 - Block time: 60 sekund, LWMA-60 DAA
 - Tail emission: 724.78 ZION/blok od ~2126 (vecna motivace pro mining)
 - TX poplatky: 100 % burn (deflacni tlak)

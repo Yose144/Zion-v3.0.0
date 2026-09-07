@@ -24,7 +24,7 @@ První krok do **nové éry**.
 
 ---
 
-## 📊 16,28 Miliard Zion Tokenů Se Rozlije Do Světa
+## 📊 16,78 Miliard Zion Tokenů Se Rozlije Do Světa
 
 - **8,25 miliard** pro těžaře 🪙  
 - **1,75 miliard** pro DAO 🏛️  
@@ -198,7 +198,7 @@ Síť žije.
 
 - **Genesis Block** míněn  
 - **Mainnet** spuštěn  
-- **16,28B Zion** distribuováno  
+- **16,78B Zion** distribuováno  
 - **Zlatý Věk** začíná
 
 **Zapiš si tento datum.**  

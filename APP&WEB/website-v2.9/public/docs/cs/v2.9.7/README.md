@@ -39,8 +39,8 @@ v2.9.7 je release **Pre-MainNet Gate** — iterace stability a dokumentace nad v
 
 ## Genesis premine
 
-11,31 % celkové nabídky (16,28 mld. ZION) vzniklo v genesis bloku.  
-Zbývajících **88,69 %** (127,72 mld. ZION) se emituje výhradně těžbou PoW.
+11,65 % celkové nabídky (16,78 mld. ZION) vzniklo v genesis bloku.  
+Zbývajících **88,35 %** (127,22 mld. ZION) se emituje výhradně těžbou PoW.
 
 | Kategorie | ZION | % nabídky |
 |-----------|------|-----------|
@@ -48,7 +48,7 @@ Zbývajících **88,69 %** (127,72 mld. ZION) se emituje výhradně těžbou PoW
 | DAO Treasury | 4 000 000 000 | 2,78 % |
 | Infrastruktura | 2 590 000 000 | 1,80 % |
 | Humanitární rezerva | 1 440 000 000 | 1,00 % |
-| **Celkem** | **16 280 000 000** | **11,31 %** |
+| **Celkem** | **16 780 000 000** | **11,65 %** |
 
 Všechny premine adresy jsou veřejně uvedeny v `/PREMINE_ADDRESSES_PUBLIC.txt` a ověřitelné on-chain z genesis bloku.  
 Žádné skryté alokace. Správa DAO Treasury je komunitně řízená.

@@ -19,10 +19,10 @@ export const ATOMIC_UNITS_PER_ZION = 1_000_000; // 1 ZION = 1e6 flowers (6 des. 
 /** Total supply: 144,000,000,000 ZION */
 export const TOTAL_SUPPLY = 144_000_000_000;
 
-/** Genesis premine: 16,280,000,000 ZION (11.31%) */
-export const GENESIS_PREMINE = 16_280_000_000;
+/** Genesis premine: 16,780,000,000 ZION (11.65%) */
+export const GENESIS_PREMINE = 16_780_000_000;
 
-/** Mining emission: 127,720,000,000 ZION (88.69%) */
+/** Mining emission: 127,220,000,000 ZION (88.35%) */
 export const MINING_EMISSION = TOTAL_SUPPLY - GENESIS_PREMINE;
 
 // ---------------------------------------------------------------------------
@@ -90,16 +90,19 @@ export const ISSOBELLA_REWARD_ZION = BLOCK_REWARD_ZION * ISSOBELLA_PCT / 100;
 /** Pool fee per block: 54.00067 ZION */
 export const POOL_FEE_ZION = BLOCK_REWARD_ZION * POOL_FEE_PERCENT / 100;
 
-/** Canonical fee-split addresses (mainnet) — matches V3/L1/core/src/genesis.rs */
+/** Canonical fee-split addresses (mainnet) — matches V31/L1/core/src/v3_compat.rs */
 export const FEE_SPLIT_ADDRESSES = {
-  MINER: 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790',
-  HUMANITARIAN: 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4',
-  ISSOBELLA: 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702',
-  POOL_FEE: 'zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342',
+  MINER: 'zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2',
+  HUMANITARIAN: 'zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8',
+  ISSOBELLA: 'zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0',
+  POOL_FEE: 'zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0',
 };
 
-/** Frozen genesis block hash — all nodes must agree */
-export const GENESIS_HASH = '003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923';
+/** Frozen genesis block hash (V31 native) — all nodes must agree */
+export const GENESIS_HASH = '96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb';
+
+/** V3-compatible genesis hash — matches V31/L1/core/src/v3_compat.rs V3_GENESIS_HASH */
+export const V3_COMPAT_GENESIS_HASH = '4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71';
 
 // ---------------------------------------------------------------------------
 // Genesis premine allocation
@@ -108,31 +111,52 @@ export const GENESIS_HASH = '003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857da
 export const PREMINE_ALLOCATION = [
   {
     category: 'ZION OASIS + Winners Golden Egg/Xp',
-    amount: 8_250_000_000,
-    percent: 50.7,
-    slots: 5,
-    lock: 'Immediate',
+    amount: 4_950_000_000,
+    percent: 29.5,
+    slots: 3,
+    lock: 'Admin-locked',
+  },
+  {
+    category: 'L5 Free World Projects',
+    amount: 3_300_000_000,
+    percent: 19.7,
+    slots: 2,
+    lock: 'Admin-locked',
   },
   {
     category: 'DAO Treasury',
     amount: 4_000_000_000,
-    percent: 24.6,
+    percent: 23.8,
     slots: 3,
-    lock: 'Immediate',
+    lock: 'Locked until height 144,000',
   },
   {
     category: 'Infrastructure & Dev',
     amount: 2_590_000_000,
-    percent: 15.9,
+    percent: 15.4,
     slots: 3,
-    lock: 'Immediate',
+    lock: 'Admin-locked',
   },
   {
     category: 'Humanitarian Fund',
     amount: 1_440_000_000,
-    percent: 8.8,
+    percent: 8.6,
     slots: 1,
-    lock: 'Immediate',
+    lock: 'Admin-locked',
+  },
+  {
+    category: 'Bridge Seed Fund',
+    amount: 400_000_000,
+    percent: 2.4,
+    slots: 1,
+    lock: 'Admin-locked',
+  },
+  {
+    category: 'Bridge Vault UTXO',
+    amount: 100_000_000,
+    percent: 0.6,
+    slots: 1,
+    lock: 'Admin-locked',
   },
 ];
 

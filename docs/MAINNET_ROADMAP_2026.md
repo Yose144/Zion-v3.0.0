@@ -48,7 +48,7 @@ Zion-2.9.5/
 │       │   ├── block.rs               # Block structure
 │       │   ├── chain.rs               # Chain management
 │       │   ├── consensus.rs           # LWMA DAA (±25%, 60-blok)
-│       │   ├── genesis.rs             # 🆕 Genesis block + 16.28B premine
+│       │   ├── genesis.rs             # 🆕 Genesis block + 16.78B premine
 │       │   ├── reward.rs              # 🔄 5,400.067 ZION konstantní
 │       │   ├── reorg.rs               # Max reorg depth = 10
 │       │   └── validation.rs          # Block/TX validation (čistý L1)
@@ -299,7 +299,7 @@ Po úspěšné migraci:
 |------------|------|--------|
 | Čisté repo `Zion-2.9.5` na GitHubu | ✅ Sprint 0.0 | `c1d8e34` |
 | Konstantní emise 5,400.067 ZION/blok | ✅ Sprint 0.1 | `cad8a62` |
-| Genesis premine 16.28B (4 UTXOs, immediately unlocked) | ✅ Sprint 0.1 | `cad8a62` |
+| Genesis premine 16.78B (4 UTXOs, immediately unlocked) | ✅ Sprint 0.1 | `cad8a62` |
 | LWMA DAA (60-blok, ±25%) | ✅ Sprint 0.2 | `be0beb0` |
 | Fee Market + Fee Burning | ✅ Sprint 0.3 | `4ed3a04` |
 | Wallet Send (UTXO select + Ed25519 sign) | ✅ Sprint 0.4 | `b8112eb` |
@@ -332,7 +332,7 @@ Po úspěšné migraci:
 | Block reward | 50 ZION + halving | 5,400.067 ZION konstantní | ✅ Opraveno (Sprint 0.1) |
 | Consciousness bonus | 30% v `validation.rs` | Žádný na L1 | ✅ Odstraněno (Sprint 0.1) |
 | DAA | Max 4x / Min 0.25x | LWMA ±25%, 60-block window | ✅ Opraveno (Sprint 0.2) |
-| Genesis premine | Neexistoval | 16.28B ve 4 kategoriích | ✅ Implementováno (Sprint 0.1) |
+| Genesis premine | Neexistoval | 16.78B ve 4 kategoriích | ✅ Implementováno (Sprint 0.1) |
 | Max reorg depth | Neimplementováno | 10 bloků | ✅ Implementováno (Sprint 0.5) |
 | Coinbase maturity | Neimplementováno | 100 bloků | ✅ Implementováno (Sprint 0.5) |
 | Fee market | Základní | Fees burned by default | ✅ Opraveno (Sprint 0.3) |
@@ -365,7 +365,7 @@ Cíl: Vytvořit čisté repo, dostat core blockchain do souladu s WP2.9.5 a MAIN
 |---|------|--------|------|
 | 0.1.1 | **Přepsat `reward.rs`** — 5,400.067 ZION/blok konstantní, žádný halving, mining strop 23,652,000 bloků | `core/src/blockchain/reward.rs` | ✅ |
 | 0.1.2 | **Aktualizovat `validation.rs`** — odstranit 30% consciousness bonus, nový reward limit | `core/src/blockchain/validation.rs` | ✅ |
-| 0.1.3 | **Vytvořit `genesis.rs`** — Genesis blok s 16.28B premine | `core/src/blockchain/genesis.rs` | ✅ |
+| 0.1.3 | **Vytvořit `genesis.rs`** — Genesis blok s 16.78B premine | `core/src/blockchain/genesis.rs` | ✅ |
 | 0.1.4 | **Implementovat time-lock** — premine UTXOs uzamčeny na block height | `core/src/blockchain/genesis.rs` | ✅ |
 | 0.1.5 | **Coinbase maturity** — 100-blok lock na coinbase výstupy | `core/src/blockchain/validation.rs` | ✅ *(Sprint 0.5, commit `19787a7`)* |
 | 0.1.6 | Aktualizovat všechny unit testy pro nový reward model | `core/src/blockchain/reward.rs` tests | ✅ |
@@ -379,7 +379,7 @@ Cíl: Vytvořit čisté repo, dostat core blockchain do souladu s WP2.9.5 a MAIN
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné |
 | Infrastructure & Development | 2,500,000,000 | 15.4% | Okamžitě dostupné |
 | Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné |
-| **Celkem** | **16,280,000,000** | **100%** | — |
+| **Celkem** | **16,780,000,000** | **100%** | — |
 
 **Emission Parametry:**
 ```
@@ -387,7 +387,7 @@ Block Reward:       5,400.067 ZION (konstantní)
 Block Reward (flowers): 5,400,067,000 (1 ZION = 1,000,000 flowers) *(updated to 6-decimal in 3.0.3 fork)*
 FLOWERS_PER_ZION:   10⁶ (6 decimals)  -- canonical, viz docs/CANONICAL_UNITS_AUDIT.md
 Block Time:         60 sekund
-Mining Supply:      127,720,000,000 ZION
+Mining Supply:      127,220,000,000 ZION
 Mining Horizon:     23,652,000 bloků (~45 let)
 Halving:            ŽÁDNÝ
 ```
@@ -433,7 +433,7 @@ Halving:            ŽÁDNÝ
 
 ### 🚪 Fáze 0 Exit Criteria
 - [x] Všechny unit testy pro nový reward model procházejí ✅ *(155 testů)*
-- [x] Genesis blok generuje správný premine (16.28B) ✅ *(Sprint 0.1)*
+- [x] Genesis blok generuje správný premine (16.78B) ✅ *(Sprint 0.1)*
 - [x] LWMA DAA funguje deterministicky ✅ *(Sprint 0.2)*
 - [x] Max reorg depth = 10 je enforcován ✅ *(Sprint 0.5)*
 - [x] Coinbase maturity = 100 je enforcována ✅ *(Sprint 0.5)*
@@ -857,7 +857,7 @@ LAUNCH CHECKLIST:
 GENESIS BLOCK VERIFICATION:
 - Chain ID:     zion-mainnet-1
 - Block 0 hash: [SHA-256 bude zveřejněn]
-- Premine:      16,280,000,000 ZION (4 UTXOs, time-locked)
+- Premine:      16,780,000,000 ZION (4 UTXOs, time-locked)
 - Block 1+:     5,400.067 ZION/blok → miners
 - Fees:         burned by default
 
@@ -869,8 +869,8 @@ GENESIS BLOCK VERIFICATION:
 |----------|---------|--------|
 | Chain ID | `zion-mainnet-1` | 🔒 LOCKED |
 | Total Supply | 144,000,000,000 ZION | 🔒 LOCKED |
-| Mining Supply | 127,720,000,000 ZION | 🔒 LOCKED |
-| Genesis Premine | 16,280,000,000 ZION | 🔒 LOCKED |
+| Mining Supply | 127,220,000,000 ZION | 🔒 LOCKED |
+| Genesis Premine | 16,780,000,000 ZION | 🔒 LOCKED |
 | Block Reward | 5,400.067 ZION (konstantní) | 🔒 LOCKED |
 | Block Time | 60 sekund | 🔒 LOCKED |
 | DAA | LWMA (60 bloků, ±25%) | 🔒 LOCKED |
@@ -993,7 +993,7 @@ GENESIS BLOCK VERIFICATION:
 
 ## 💰 Premine Allocation & Funding Model
 
-### Genesis Premine — 16,280,000,000 ZION
+### Genesis Premine — 16,780,000,000 ZION
 
 | Kategorie | ZION | Podíl | Lock | Použití |
 |-----------|------|-------|------|--------|
@@ -1002,7 +1002,7 @@ GENESIS BLOCK VERIFICATION:
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné | Granty, bounty, ekosystém |
 | Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě dostupné | Servery, AI, vývoj, audity |
 | Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné | Humanitární iniciativy |
-| **Celkem** | **16,280,000,000** | **100%** | — | — |
+| **Celkem** | **16,780,000,000** | **100%** | — | — |
 
 ### Funding Model (bez firmy)
 
@@ -1172,7 +1172,7 @@ REPOZITÁŘE:
 ║      ├── PoW Cosmic Harmony v3 — ASIC-resistant                      ║
 ║      ├── UTXO model + Ed25519 signatures                             ║
 ║      ├── 5,400.067 ZION/block konstantní emise                       ║
-║      ├── 16.28B genesis premine (time-locked)                        ║
+║      ├── 16.78B genesis premine (time-locked)                        ║
 ║      ├── LWMA DAA (60-block, ±25%)                                   ║
 ║      ├── Fee burning — ALL fees destroyed                            ║
 ║      ├── Max reorg 10 bloků, soft finality 60                        ║
@@ -1197,7 +1197,7 @@ REPOZITÁŘE:
 - ✅ PoW mining (Cosmic Harmony v3)
 - ✅ UTXO model s Ed25519 signaturami
 - ✅ 5,400.067 ZION konstantní emise
-- ✅ 16.28B genesis premine (time-locked)
+- ✅ 16.78B genesis premine (time-locked)
 - ✅ LWMA DAA (±25%, 60-blok okno)
 - ✅ Fee burning
 - ✅ P2P decentralizovaná síť
@@ -1383,7 +1383,7 @@ Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4
 |------|------|------|------|
 | **P0-0** | 🆕 Vytvořit čisté repo `Zion-2.9.5` + migrace kódu | 0.0 | ✅ HOTOVO (`c1d8e34`) |
 | **P0-1** | Přepsat `reward.rs` (5,400 ZION konstantní) | 0.1 | ✅ HOTOVO (`cad8a62`) |
-| **P0-2** | Vytvořit `genesis.rs` (16.28B premine) | 0.1 | ✅ HOTOVO (`cad8a62`) |
+| **P0-2** | Vytvořit `genesis.rs` (16.78B premine) | 0.1 | ✅ HOTOVO (`cad8a62`) |
 | **P0-3** | Coinbase maturity (100 bloků) | 0.5 | ✅ HOTOVO (`19787a7`) |
 | **P0-4** | Přepsat DAA na LWMA (±25%) | 0.2 | ✅ HOTOVO (`be0beb0`) |
 | **P0-5** | Max reorg depth = 10 | 0.5 | ✅ HOTOVO (`19787a7`) |

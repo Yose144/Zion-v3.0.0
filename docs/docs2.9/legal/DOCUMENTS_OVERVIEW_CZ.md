@@ -334,14 +334,14 @@
 ```
 Total Supply: 144,000,000,000 ZION
 
-Genesis Block Premine: 16,280,000,000 ZION (11.31%)
+Genesis Block Premine: 16,780,000,000 ZION (11.65%)
 ├─ Presale:           500,000,000 ZION (0.347%) ✅
 ├─ Mining Operators: 8,250,000,000 ZION (5.73%)
 ├─ DAO Winners:      1,750,000,000 ZION (1.22%)
 ├─ ZION OASIS Fund:  1,440,000,000 ZION (1.00%)
 └─ Infrastructure:   4,340,000,000 ZION (3.01%)
 
-Mining Supply: 127,720,000,000 ZION (88.69%)
+Mining Supply: 127,220,000,000 ZION (88.35%)
 └─ Proof-of-Consciousness mining (50 let)
 ```
 

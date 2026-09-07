@@ -30,7 +30,7 @@
 | Parametr | Hodnota | Důvod |
 |----------|---------|-------|
 | **Total Supply** | 144,000,000,000 ZION | Základní sociální kontrakt |
-| **Genesis Premine** | 16,280,000,000 ZION (11.31%) | Již vytvořeno v genesis bloku |
+| **Genesis Premine** | 16,780,000,000 ZION (11.65%) | Již vytvořeno v genesis bloku |
 | **Block Time** | 60 sekund | Konsenzuální parametr |
 | **Fee Burn** | 100% fees spalováno | Deflační mechanismus |
 | **Tithe** | 10% block reward | Humanitární závazek |
@@ -63,7 +63,7 @@ Každých 10 let (5,256,000 bloků) se block reward sníží o 20%. Po dekádě 
 ### Celková emise
 
 ```
-100 let:  ~122.86B ZION (z 127.72B max mining supply)
+100 let:  ~122.86B ZION (z 127.22B max mining supply)
 Zbývá:    ~4.86B ZION v tail emission bufferu
 + Fee burn: přirozená deflace eliminuje rozdíl
 ```
@@ -148,16 +148,16 @@ Zachovat konstantní block reward, ale snížit ho tak, aby emise trvala 100 let
 ### Výpočet
 
 ```
-Mining Supply: 127,720,000,000 ZION
+Mining Supply: 127,220,000,000 ZION
 Bloky za 100 let: 52,560,000
-Nový block reward: 127,720,000,000 / 52,560,000 = 2,430.021 ZION/block
+Nový block reward: 127,220,000,000 / 52,560,000 = 2,430.021 ZION/block
 ```
 
 ### Schedule
 
 | Období | Roky | Block Reward | Emise |
 |--------|------|-------------|-------|
-| Konstantní | 2026–2126 | 2,430 ZION | 127.72B |
+| Konstantní | 2026–2126 | 2,430 ZION | 127.22B |
 | Tail | 2126+ | 243 ZION (10%) | ∞ |
 
 ### ✅ Výhody

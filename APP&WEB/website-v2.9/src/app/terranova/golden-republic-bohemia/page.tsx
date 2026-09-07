@@ -22,6 +22,7 @@ import {
   Sun,
   TreePine,
   Users,
+  Vote,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import dynamic from 'next/dynamic';
@@ -106,6 +107,16 @@ const FEATURES: FeatureItem[] = [
     descCs: 'Kamenný amfiteátr pod širým nebem — kruh rozhodování bez trůnu. Sůl na dubovém stole, oheň uprostřed. Sociokratické kruhy a ZION DAO jako primární governance.',
     descEn: 'Stone amphitheater under the open sky — a decision circle without a throne. Salt on an oak table, fire in the middle. Sociocratic circles and ZION DAO as primary governance.',
     status: 'planned' as const,
+    color: '#F59E0B',
+    rgb: '252, 209, 22',
+  },
+  {
+    icon: Vote,
+    titleCs: 'Zlatý dům — DAO parlament',
+    titleEn: 'Golden House — DAO Parliament',
+    descCs: 'Tak jako mají USA Bílý dům, Zlatá republika má Zlatý dům — sídlo DAO parlamentu a veřejné správy. Každé hlasování on-chain, každé zasedání veřejné, každé rozhodnutí navždy zapsané v blockchainu.',
+    descEn: 'Just as the USA has the White House, the Golden Republic has the Golden House — the seat of the DAO parliament and public administration. Every vote on-chain, every session public, every decision recorded forever on the blockchain.',
+    status: 'vision' as const,
     color: '#F59E0B',
     rgb: '252, 209, 22',
   },
@@ -204,8 +215,8 @@ const PHASES = [
     num: '4',
     cs: 'Vyzařování',
     en: 'Radiance',
-    descCs: 'Governance retreat centrum 40+ hostů, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první prototyp Zlaté republiky v praxi.',
-    descEn: 'Governance retreat center 40+ guests, ZION payments as default, knowledge commons, 1% surplus → L6, first working prototype of the Golden Republic in practice.',
+    descCs: 'Governance retreat centrum 40+ hostů, Zlatý dům jako sídlo DAO parlamentu, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první prototyp Zlaté republiky v praxi.',
+    descEn: 'Governance retreat center 40+ guests, Golden House as the seat of the DAO parliament, ZION payments as default, knowledge commons, 1% surplus → L6, first working prototype of the Golden Republic in practice.',
     active: false,
   },
 ];

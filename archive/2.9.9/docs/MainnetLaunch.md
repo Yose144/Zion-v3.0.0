@@ -43,7 +43,7 @@ Tento dokument je jediným zdrojem pravdy pro go/no-go rozhodnutí o spuštění
 
 | Soubor | Původní exposure | Stav |
 |--------|-----------------|------|
-| `PREMINE_WALLETS_BACKUP.json` | 12 BIP-39 seedů, 16.28B ZION | ✅ Odstraněno z historie (0 commits) |
+| `PREMINE_WALLETS_BACKUP.json` | 12 BIP-39 seedů, 16.78B ZION | ✅ Odstraněno z historie (0 commits) |
 | `test_api_keys.json` | API klíče | ✅ Odstraněno z historie (0 commits) |
 | `secret.yaml` | Deployment secrets | ✅ Odstraněno z historie (0 commits) |
 | `config.php.backup` | DB config backup | ✅ Odstraněno z historie (0 commits) |

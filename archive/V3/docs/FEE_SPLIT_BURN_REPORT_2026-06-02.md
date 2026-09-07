@@ -69,8 +69,8 @@ Toto přesahovalo zůstatek walletu, což na fresh chainu (bez akumulovaného bu
 | Parametr | Hodnota |
 |---|---|
 | Total supply | 144,000,000,000 ZION |
-| Genesis premine | 16,280,000,000 ZION |
-| Mining emission (100%) | 127,720,000,000 ZION |
+| Genesis premine | 16,780,000,000 ZION |
+| Mining emission (100%) | 127,220,000,000 ZION |
 | **Mining emission (99% minted)** | **126,442,800,000 ZION** |
 | **Total burned** | **1,277,200,000 ZION** |
 | **Max circulating supply** | **142,722,800,000 ZION** |

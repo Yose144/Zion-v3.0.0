@@ -21,7 +21,7 @@
 - ⚠️ `genesis.json` / `genesis.rs` — GENESIS_MESSAGE.txt placeholder existuje; formální genesis blok NENAPLNĚN před mainnet
 - ✅ Emission křivka implementována — `reward.rs` (decade decay, tail 724 ZION, 100+ let)
 - ✅ On-chain reward split enforcement ověřen ve V3 core — live potvrzené coinbase rozdělení `89/5/5/1`
-- ✅ Premine rozdělení finální — `premine.rs` (4 kategorie, 16.28B ZION)
+- ✅ Premine rozdělení finální — `premine.rs` (4 kategorie, 16.78B ZION)
 - ⚠️ Time-lock mechanismus — pole `unlock_height` v kódu existuje; on-chain enforcement **není aktivní v v2.9.5**, řídí DAO governance
 - [ ] Hash genesis souboru publikován — blokováno do vytvoření genesis bloku OFFLINE
 

@@ -68,7 +68,7 @@ Genesis blok ZION — výška 0, vytěžený 4. 12. 2025 — je třetí instance
 A v tomto Genesis bloku je zapsáno první coinbase:
 
 ```
-Genesis coinbase: 16 280 000 000 ZION
+Genesis coinbase: 16 780 000 000 ZION
 - 12 outputů s timelockem 525 600 bloků (~1 rok)
 - Předem definované adresy (DAO Treasury, Issobella Fund, Humanitarian Fund...)
 ```

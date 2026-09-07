@@ -193,7 +193,7 @@ Environment: Staging network (identical to MainNet)
 Duration: 3 měsíce
 
 Tests:
-  - Genesis block creation (16.28B premine)
+  - Genesis block creation (16.78B premine)
   - Initial distribution (presale, DAO, mining)
   - 1000+ blocks sustained mining
   - High transaction load (100+ TX/block)

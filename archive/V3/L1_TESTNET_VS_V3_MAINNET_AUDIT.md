@@ -199,7 +199,7 @@ PoW hash           = Ekam Deeksha (cosmic_harmony)
 ```
 FLOWERS_PER_ZION        = 1_000_000  (updated to 6-decimal in 3.0.3 fork)
 TOTAL_SUPPLY            = 144_000_000_000 × FLOWERS_PER_ZION
-GENESIS_PREMINE         = 16_280_000_000 × FLOWERS_PER_ZION
+GENESIS_PREMINE         = 16_780_000_000 × FLOWERS_PER_ZION
 BASE_BLOCK_REWARD       = 5_400_067_000_000_000
 TAIL_REWARD             = 724_784_723_787_776
 BLOCKS_PER_DECADE       = 5_256_000
@@ -245,7 +245,7 @@ DAO_TREASURY_LOCK_HEIGHT = 525_600
   infrastructure:    3 slots    = 2.59B ZION
   humanitarian:      1 × 1.44B  = 1.44B ZION
                                 ----------
-  TOTAL:                         16.28B ZION
+  TOTAL:                         16.78B ZION
 ```
 
 ### Reward distribution (V3 ✅ — emission.rs, node.rs)

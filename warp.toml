@@ -1,0 +1,145 @@
+# V31 WARP minimal local config — only zion-l1 enabled for dev/backup node.
+# Other chains are explicitly disabled with reasons.
+node_id = "local-warp-node-1"
+listen_addr = "127.0.0.1"
+listen_port = 8453
+database_path = "/home/zionserver/2.9.6-main/V31/data/warp.db"
+
+quorum = 3
+daily_limit_zion = 10000000
+timelock_threshold_zion = 1000000
+
+l1_rpc_url = "http://127.0.0.1:9445"
+l1_vault_address = "zion1warp_vault_address"
+
+poll_interval_secs = 15
+
+[[chains]]
+name = "zion-l1"
+family = "zion-l1"
+enabled = true
+rpc_url = "http://127.0.0.1:9445"
+contract_address = "zion1warp_vault_address"
+finality_blocks = 60
+
+[[chains]]
+name = "base"
+family = "evm"
+enabled = false
+disabled_reason = "Local dev node: Base bridge contract not configured"
+rpc_url = "https://mainnet.base.org"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 12
+
+[[chains]]
+name = "bitcoin"
+family = "bitcoin"
+enabled = false
+disabled_reason = "Local dev node: Bitcoin HTLC not configured"
+rpc_url = "https://mempool.space/api"
+contract_address = "bc1qplaceholderhtlcaddress"
+finality_blocks = 0
+
+[[chains]]
+name = "solana"
+family = "solana"
+enabled = false
+disabled_reason = "Local dev node: Solana SPL mint not configured"
+rpc_url = "https://api.mainnet-beta.solana.com"
+contract_address = "HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H"
+finality_blocks = 31
+
+[[chains]]
+name = "arbitrum"
+family = "evm"
+enabled = false
+disabled_reason = "Local dev node: Arbitrum bridge contract not configured"
+rpc_url = "https://arb1.arbitrum.io/rpc"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+[[chains]]
+name = "optimism"
+family = "evm"
+enabled = false
+disabled_reason = "Local dev node: Optimism bridge contract not configured"
+rpc_url = "https://mainnet.optimism.io"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+[[chains]]
+name = "cardano"
+family = "cardano"
+enabled = false
+disabled_reason = "Local dev node: Cardano policy not configured"
+rpc_url = "https://cardano-mainnet.blockfrost.io/api/v0"
+contract_address = "5a71011c726573745a494f4e"
+finality_blocks = 20
+
+[[chains]]
+name = "cosmos"
+family = "cosmos"
+enabled = false
+disabled_reason = "Local dev node: Cosmos CW20 not configured"
+rpc_url = "https://api.cosmos.network"
+contract_address = "cosmos1placeholder"
+finality_blocks = 3
+
+[[chains]]
+name = "tron"
+family = "tron"
+enabled = false
+disabled_reason = "Local dev node: Tron TRC-20 not configured"
+rpc_url = "https://api.trongrid.io"
+contract_address = "TPlaceholderTronContract"
+finality_blocks = 20
+
+[[chains]]
+name = "sui"
+family = "sui"
+enabled = false
+disabled_reason = "Local dev node: Sui bridge package not configured"
+rpc_url = "https://fullnode.mainnet.sui.io:443"
+contract_address = "0x2"
+finality_blocks = 3
+
+[[chains]]
+name = "aptos"
+family = "aptos"
+enabled = false
+disabled_reason = "Local dev node: Aptos bridge module not configured"
+rpc_url = "https://fullnode.mainnet.aptoslabs.com"
+contract_address = "0x0000000000000000000000000000000000000000000000000000000000000001"
+finality_blocks = 3
+
+[[chains]]
+name = "near"
+family = "near"
+enabled = false
+disabled_reason = "Local dev node: NEAR NEP-141 not configured"
+rpc_url = "https://rpc.mainnet.near.org"
+contract_address = "warp.near"
+finality_blocks = 3
+
+[[chains]]
+name = "ton"
+family = "ton"
+enabled = false
+disabled_reason = "Local dev node: TON jetton bridge not configured"
+rpc_url = "https://toncenter.com/api/v2/jsonRPC"
+contract_address = "EQPlaceholderTonJettonMaster"
+finality_blocks = 3
+
+[[chains]]
+name = "lightning"
+family = "lightning"
+enabled = false
+disabled_reason = "Local dev node: Lightning LND not configured"
+rpc_url = "https://localhost:8080"
+contract_address = "hexmacaroonplaceholder"
+finality_blocks = 0
+
+[solver]
+enabled = false
+name = "zion-solver"
+fee_bps = 10

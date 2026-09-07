@@ -1,0 +1,32 @@
+[Unit]
+Description=ZION V31 DAO Governance API
+After=network-online.target zion-v31-node.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion
+EnvironmentFile=/etc/zion/edge-environment.sh
+Environment="RUST_LOG=info,zion_dao=debug"
+Environment=DAO_API_PORT=8456
+Environment=DAO_L1_RPC=127.0.0.1:9445
+ExecStart=/opt/zion/V31/target/release/zion-dao
+Restart=always
+RestartSec=10
+KillMode=process
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/data/zion /opt/zion/data /opt/zion/logs /var/log/zion
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

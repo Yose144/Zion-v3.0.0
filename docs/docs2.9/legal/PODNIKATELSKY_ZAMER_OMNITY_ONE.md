@@ -74,10 +74,10 @@ Vytváříme **digitální měnu zvanou ZION**, podobně jako Bitcoin nebo Ether
 
 | Kategorie | Počet tokenů | % | Účel |
 |-----------|--------------|---|------|
-| **Genesis Premine** (předem vytvořeno) | 16,28 mld | 11,31% | Ekosystém, DAO, vývoj, presale |
-| **Mining Emission** (těžba) | 127,72 mld | 88,69% | Odměny pro těžaře (45 let) |
+| **Genesis Premine** (předem vytvořeno) | 16,78 mld | 11,65% | Ekosystém, DAO, vývoj, presale |
+| **Mining Emission** (těžba) | 127,22 mld | 88,35 % | Odměny pro těžaře (45 let) |
 
-**Genesis Premine rozdělení (16,28 mld ZION):**
+**Genesis Premine rozdělení (16,78 mld ZION):**
 - 8,25 mld (50,7%) - Mining Operators (consciousness mining game, 10-year distribution)
 - 1,75 mld (10,7%) - DAO Winners (Golden Egg Game, lock do 10.10.2035)
 - 1,44 mld (8,8%) - ZION OASIS (UE5 game, 3-year vesting 2026-2028)
@@ -139,7 +139,7 @@ Vytváříme **digitální měnu zvanou ZION**, podobně jako Bitcoin nebo Ether
 - Potenciální režim: Zásoba → prodej → příjem
 - Příjem vznikne až po MainNet launch (ne v 2026!)
 
-**Vlastní tokeny (premine 16,28 mld):**
+**Vlastní tokeny (premine 16,78 mld):**
 - Společnost vlastní tokeny pro distribuci
 - ⚠️ **Jak vést v účetnictví?**
   - Varanta A: Inventář (jako výrobky na skladě)
@@ -429,17 +429,17 @@ Zisk před zdaněním:  €  592.000
 
 ### 8.3 Vlastní tokeny (premine)
 
-**Máme 16,28 mld ZION v treasury**
+**Máme 16,78 mld ZION v treasury**
 
 ```
 Varianta 1: Jako výrobky
 ───────────────────────────────
-16.28B × kurz  112 - Materiál (aktivum)
+16.78B × kurz  112 - Materiál (aktivum)
                × 500 - Materiálové náklady? (logika neplatí)
 
 Varianta 2: Jako finanční aktiva
 ───────────────────────────────
-16.28B × kurz  06x - Finanční majetek
+16.78B × kurz  06x - Finanční majetek
                × 411 - Základní kapitál (emise)
 
 Varianta 3: Off-balance (dokud neprodáno)
@@ -681,7 +681,7 @@ Příjem teprve při prodeji/použití
 - **Block time** = Čas mezi bloky (u nás 60 sekund)
 - **Block reward** = Odměna za vytěžený blok (5,400 ZION base + consciousness bonus)
 - **Consciousness Mining** = Herní systém s 9 levely (PHYSICAL → ON_THE_STAR, multiplier až 15x)
-- **Premine** = Tokeny vytvořené hned na začátku (16,28 miliard, 11,31% total supply)
+- **Premine** = Tokeny vytvořené hned na začátku (16,78 miliard, 11,65% total supply)
 - **Genesis Block** = První blok v blockchainu (obsahuje všechen premine)
 
 **Pro účetní důležité:**

@@ -79,7 +79,7 @@ Not deployed yet:
 
 **1. Blockchain Core** (src/core/new_zion_blockchain.py - 1,638 LOC)
 ```python
-✅ Genesis block creation (16.28B premine)
+✅ Genesis block creation (16.78B premine)
 ✅ Block structure & validation
 ✅ Transaction processing
 ✅ Balance management
@@ -398,7 +398,7 @@ Blocker: TestNet must be functional first ✅ (correct priority)
 ### MainNet Economics (Based on Genesis)
 ```
 Total Supply: 144,000,000,000 Dharma Credits
-Genesis Premine: 16,280,000,000 (11.31%)
+Genesis Premine: 16,780,000,000 (11.65%)
 
 Distribution:
 ├─ Mining Operators: 8,250,000,000 (50.7%)

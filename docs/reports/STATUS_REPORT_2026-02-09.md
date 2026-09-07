@@ -89,7 +89,7 @@
 | Storage | LMDB |
 | Fee policy | **Burn** (deflační) |
 | Coinbase maturity | 100 bloků |
-| Premine | 11.31% (16.28B ZION), immediately unlocked |
+| Premine | 11.65% (16.78B ZION), immediately unlocked |
 
 ---
 

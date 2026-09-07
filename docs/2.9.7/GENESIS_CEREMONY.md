@@ -89,7 +89,7 @@ diff /tmp/code_addrs.txt /tmp/public_addrs.txt
 | DAO Treasury | 3 | 4,000,000,000 | blok 525,600 (~1 rok) |
 | Infrastructure | 3 | 2,590,000,000 | okamžitě |
 | Humanitarian | 1 | 1,440,000,000 | okamžitě |
-| **Celkem** | **12** | **16,280,000,000** | |
+| **Celkem** | **12** | **16,780,000,000** | |
 
 ---
 
@@ -155,7 +155,7 @@ addrs = [
   ('Humanitarian', 1_440_000_000_000_000),
 ]
 total = sum(v for _, v in addrs)
-assert total == 16_280_000_000_000_000, f'FAIL: {total}'
+assert total == 16_780_000_000_000_000, f'FAIL: {total}'
 print(f'OK: {total:,} atomic = {total//1_000_000:,} ZION')
 "
 ```

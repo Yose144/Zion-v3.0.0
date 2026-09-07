@@ -15,7 +15,7 @@ Presale Fáze:
 - Phase 1: €0.008/Credit, 150M allocation, +20% bonus
 - Phase 2: €0.010/Credit, 200M allocation, +15% bonus
 - Phase 3: €0.012/Credit, 150M allocation, +10% bonus
-Total: 500M Dharma Credits (3.1% of 16.28B premine)
+Total: 500M Dharma Credits (3.1% of 16.78B premine)
 
 Bezpečnost:
 - Multi-signature escrow contract (500M Dharma Credits allocation)
@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 # ============================================
 
 # Genesis allocation
-GENESIS_PREMINE_TOTAL = 16_280_000_000  # 16.28B Dharma Credits
+GENESIS_PREMINE_TOTAL = 16_780_000_000  # 16.78B Dharma Credits
 PRESALE_ALLOCATION = 500_000_000         # 500M Dharma Credits (3.1% of premine)
 
 # Presale phase configuration (from blockchain source)

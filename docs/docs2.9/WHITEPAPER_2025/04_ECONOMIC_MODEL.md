@@ -12,8 +12,8 @@
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
 │ 📊 TOTAL SUPPLY:      144,000,000,000 Credits (144B)   │
-│ 🎯 GENESIS PREMINE:   16,280,000,000 Credits (11.31%)  │
-│ ⛏️  MINING EMISSION:   127,720,000,000 Credits (88.69%) │
+│ 🎯 GENESIS PREMINE:   16,780,000,000 Credits (11.65%)  │
+│ ⛏️  MINING EMISSION:   127,220,000,000 Credits (88.35%) │
 │                                                          │
 │ ⏱️  BLOCK TIME:        ~60 seconds                       │
 │ 💎 BLOCK REWARD:       50 Credits (fixed, no halving)   │
@@ -50,7 +50,7 @@
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│ GENESIS PREMINE DISTRIBUTION (16.28B Dharma Credits)      │
+│ GENESIS PREMINE DISTRIBUTION (16.78B Dharma Credits)      │
 ├───────────────────────────────────────────────────────────┤
 │ Source: src/core/new_zion_blockchain.py (lines 6-12)     │
 │                                                           │
@@ -80,8 +80,8 @@
 │    Development, marketing, partnerships, liquidity       │
 │    Controlled release via DAO governance                 │
 │                                                           │
-│ TOTAL: 16,280,000,000 Dharma Credits ✅                  │
-│ Percentage of Supply: 11.31%                             │
+│ TOTAL: 16,780,000,000 Dharma Credits ✅                  │
+│ Percentage of Supply: 11.65%                             │
 └───────────────────────────────────────────────────────────┘
 ```
 

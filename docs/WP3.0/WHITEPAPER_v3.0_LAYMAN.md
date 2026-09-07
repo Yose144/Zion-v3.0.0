@@ -88,7 +88,7 @@ Každých 60 sekund přibyde nový blok a s ním 5 400 nových ZION. Každých 
 
 ### Genesis: Co bylo na začátku?
 
-Při spuštění sítě bylo vytvořeno 16,28 miliardy ZION předem (tzv. premine — 11,31 % celkové nabídky). Tato část se rozdělila takto:
+Při spuštění sítě bylo vytvořeno 16,78 miliardy ZION předem (tzv. premine — 11,65 % celkové nabídky). Tato část se rozdělila takto:
 
 | Část | Kolik | Proč |
 |------|-------|------|
@@ -209,7 +209,7 @@ Výsledek: **vaše GPU těží ZION a zároveň pomáhá AI světu** — a vy do
 
 Tým za ZIONem **nevlastní žádné tokeny z předprodeje**. Pokud zakladatelé chtějí ZION, musí si ho vytěžit jako kdokoli jiný.
 
-Genesis premine (16,28 miliard) je transparentně rozdělen na čtyři kategorie s veřejnými adresami — každý si může ověřit, kde tyto peníze jsou, a sledovat jejich pohyb.
+Genesis premine (16,78 miliard) je transparentně rozdělen na čtyři kategorie s veřejnými adresami — každý si může ověřit, kde tyto peníze jsou, a sledovat jejich pohyb.
 
 To je záměrný kontrast s projekty, kde insideři mají miliony tokenů před veřejným spuštěním, prodávají je na vrcholu a komunita platí za jejich zisky.
 

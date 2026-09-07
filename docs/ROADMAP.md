@@ -71,7 +71,7 @@
 ║      ├── PoW Cosmic Harmony v3 — ASIC-resistant                      ║
 ║      ├── UTXO model + Ed25519 signatures                             ║
 ║      ├── 5,400.067 ZION/block konstantní emise                       ║
-║      ├── 16.28B genesis premine (immediately unlocked)                ║
+║      ├── 16.78B genesis premine (immediately unlocked)                ║
 ║      ├── LWMA DAA (60-block, ±25%)                                   ║
 ║      ├── Fee burning — ALL fees destroyed                            ║
 ║      ├── Max reorg 10 bloků, soft finality 60                        ║
@@ -191,8 +191,8 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 |----------|---------|--------|
 | Chain ID | `zion-mainnet-1` | 🔒 LOCKED |
 | Total Supply | 144,000,000,000 ZION | 🔒 LOCKED |
-| Mining Supply | 127,720,000,000 ZION | 🔒 LOCKED |
-| Genesis Premine | 16,280,000,000 ZION | 🔒 LOCKED |
+| Mining Supply | 127,220,000,000 ZION | 🔒 LOCKED |
+| Genesis Premine | 16,780,000,000 ZION | 🔒 LOCKED |
 | Block Reward | 5,400.067 ZION (konstantní) | 🔒 LOCKED |
 | Block Time | 60 sekund | 🔒 LOCKED |
 | DAA | LWMA (60 bloků, ±25%) | 🔒 LOCKED |
@@ -205,7 +205,7 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 | Sub-unit (flowers) | 1 ZION = 1,000,000 flowers (6 decimals, `FLOWERS_PER_ZION = 10⁶`) *(updated to 6-decimal in 3.0.3 fork)* | 🔒 LOCKED |
 | Mining Horizon | 23,652,000 bloků (~45 let) | 🔒 LOCKED |
 
-### Genesis Premine — 16,280,000,000 ZION
+### Genesis Premine — 16,780,000,000 ZION
 
 | Kategorie | ZION | Podíl | Lock |
 |-----------|------|-------|------|
@@ -214,7 +214,7 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 | DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné |
 | Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě dostupné |
 | Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné |
-| **Celkem** | **16,280,000,000** | **100%** | — |
+| **Celkem** | **16,780,000,000** | **100%** | — |
 
 ---
 
@@ -227,7 +227,7 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 | Sprint | Obsah | Stav |
 |--------|-------|------|
 | **0.0** Repo Migrace | Čisté repo, workspace, migrace kódu, Docker, CI/CD | ✅ `c1d8e34` |
-| **0.1** Emission & Genesis | 5,400.067 ZION/block, genesis 16.28B premine | ✅ `cad8a62` |
+| **0.1** Emission & Genesis | 5,400.067 ZION/block, genesis 16.78B premine | ✅ `cad8a62` |
 | **0.2** DAA & Consensus | LWMA 60-blok, ±25%, fork-choice, timestamp sanity | ✅ `be0beb0` |
 | **0.3** Fee Market & Mempool | Fee burning, double-spend detection, min fee, eviction | ✅ `4ed3a04` |
 | **0.4** Wallet & TX | UTXO select, Ed25519 sign, broadcast, change address, E2E test | ✅ `b8112eb` |
@@ -235,7 +235,7 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 
 **Exit Criteria — VŠECHNY SPLNĚNY:**
 - [x] Unit testy pro nový reward model ✅
-- [x] Genesis generuje 16.28B premine ✅
+- [x] Genesis generuje 16.78B premine ✅
 - [x] LWMA DAA deterministická ✅
 - [x] Max reorg depth = 10 enforcován ✅
 - [x] Coinbase maturity = 100 enforcována ✅
@@ -476,7 +476,7 @@ MAINNET LAUNCH — DEN 0
 GENESIS BLOCK VERIFICATION:
 - Chain ID:     zion-mainnet-1
 - Block 0 hash: [SHA-256 bude zveřejněn]
-- Premine:      16,280,000,000 ZION (4 UTXOs, immediately unlocked)
+- Premine:      16,780,000,000 ZION (4 UTXOs, immediately unlocked)
 - Block 1+:     5,400.067 ZION/blok → miners
 - Fees:         burned by default
 
@@ -805,7 +805,7 @@ Block Reward:       5,400.067 ZION (konstantní, žádný halving)
 Block Time:         60 sekund
 Blocks per Day:     1,440
 Daily Emission:     7,776,096 ZION
-Mining Supply:      127,720,000,000 ZION
+Mining Supply:      127,220,000,000 ZION
 Mining Horizon:     23,652,000 bloků (~45 let)
 ```
 

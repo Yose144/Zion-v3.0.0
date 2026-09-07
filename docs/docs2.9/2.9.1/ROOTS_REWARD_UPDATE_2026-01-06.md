@@ -12,5 +12,5 @@
 - docs/2.9.1/PROJECT_MAP_v2.9.1.md (root entry added)
 
 ## Open Items
-- Supply math at the top of WP2.9 still reflects legacy 144B/127.72B split; needs re-cut to stay consistent with the new 50 ZION base model.
+- Supply math at the top of WP2.9 still reflects legacy 144B/127.22B split; needs re-cut to stay consistent with the new 50 ZION base model.
 - Confirm chain/pool configs and Rust/Python reward constants align to 50 + 392.857 before deployment notes are marked final.

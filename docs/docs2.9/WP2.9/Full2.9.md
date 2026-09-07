@@ -1916,10 +1916,10 @@ Access AI challenges through:
 │              ZION TOKEN DISTRIBUTION (144B Total)               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ⛏️  MINING EMISSION (127.72B - 88.69%)                        │
+│  ⛏️  MINING EMISSION (127.22B - 88.35%)                        │
 │  └─ Distributed over 45 years (2025-2070) through PoW mining   │
 │                                                                 │
-│  🔒 GENESIS PREMINE (16.28B - 11.31%)                          │
+│  🔒 GENESIS PREMINE (16.78B - 11.65%)                          │
 │      │                                                          │
 │      ├─ Mining Operators:    2.07B  (12.7% of premine)         │
 │      │  └─ 5 pools × 413.53M, 10-year consciousness distribution │
@@ -1942,7 +1942,7 @@ Access AI challenges through:
 ### Visual Distribution
 
 ```
-Mining Emission ████████████████████████████████████░░░░ 88.69%
+Mining Emission ████████████████████████████████████░░░░ 88.35%
 Mining Operators ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  5.73%
 Infrastructure ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  3.01%
 DAO Winners █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  1.22%
@@ -1977,7 +1977,7 @@ Presale ░░░░░░░░░░░░░░░░░░░░░░░░
 
 ```python
 TOTAL_SUPPLY = 144_000_000_000  # ZION
-PREMINE = 16_280_000_000       # Already distributed
+PREMINE = 16_780_000_000       # Already distributed
 MINING_POOL = 1_182_600_000  # ZION allocated for base emission at 50 ZION/block
 
 BLOCK_TIME = 60  # seconds

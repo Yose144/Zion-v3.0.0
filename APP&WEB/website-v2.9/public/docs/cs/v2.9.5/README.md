@@ -75,8 +75,8 @@ v2.9.5 zavedlo první prototyp NCL — volitelné rozšíření protokolu, kde t
 
 **Stručně:**  
 - celková emise: 144B ZION (tvrdý strop, neměnný)  
-- genesis premine: 16,28B ZION (11,31 %) — všechny kategorie transparentní  
-- těžební emise: 127,72B ZION přes ~45 let při 5 400,067 ZION/blok  
+- genesis premine: 16,78B ZION (11,65 %) — všechny kategorie transparentní  
+- těžební emise: 127,22B ZION přes ~45 let při 5 400,067 ZION/blok  
 - burn poplatků: 100 % transakčních poplatků zničeno  
 - bez developer fee, bez „foundation pre-tax“  
 

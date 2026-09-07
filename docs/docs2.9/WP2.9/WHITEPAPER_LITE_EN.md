@@ -152,8 +152,8 @@ Think of it as a **smart referee** that monitors:
 | What | How Much |
 |------|----------|
 | **Total** | 144 billion ZION |
-| **For miners** | 127 billion (88.7%) |
-| **Initial reserve** | 16 billion (11.3%) |
+| **For miners** | 127 billion (88.35%) |
+| **Initial reserve** | 16.78 billion (11.65%) |
 
 ### Where does the initial reserve go?
 
@@ -313,7 +313,7 @@ After MainNet launch (December 2027) and exchange listings (January 2028).
 ║     Cryptocurrency with mandatory humanitarian tithe          ║
 ║                                                               ║
 ║  ✅ How much exists?                                          ║
-║     144 billion tokens (88.7% for miners)                    ║
+║     144 billion tokens (88.35% for miners)                    ║
 ║                                                               ║
 ║  ✅ Where does the tithe go?                                  ║
 ║     60% people in need, 40% animals                          ║

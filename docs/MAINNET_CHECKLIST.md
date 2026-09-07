@@ -89,7 +89,7 @@ Další krok: DNS seed1-3 + health-check automatizace
 
 | # | Úkol | Odhad | Deadline | Stav | Poznámka |
 |---|------|-------|----------|------|----------|
-| **P0-07** | Genesis block test (staging, reálné premine adresy) | 2 dny | říjen 2026 | ⬜ | Ověřit 16.28B premine správně rozděleno |
+| **P0-07** | Genesis block test (staging, reálné premine adresy) | 2 dny | říjen 2026 | ⬜ | Ověřit 16.78B premine správně rozděleno |
 | **P0-08** | 168h (7-day) stability run na staging s mainnet configem | 7+ dní | říjen 2026 | ⬜ | Mainnet config, 5+ nodů, reálný mining |
 | **P0-09** | 1000 miners load test | 2 dny | říjen 2026 | ⬜ | 60 ✅, potřeba škálovat skript |
 | **P0-10** | Disaster recovery test (pád 50% nodů) | 1 den | říjen 2026 | ⬜ | Partition test ✅, disaster = větší scope |

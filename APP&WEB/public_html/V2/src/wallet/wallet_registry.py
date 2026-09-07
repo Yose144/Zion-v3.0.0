@@ -9,7 +9,7 @@ Podporuje:
 - Presale nákupy (500M Dharma Credits celkem, 3 fáze) 
 - DAO odměny
 - Mining payouts
-- Genesis premine wallets (16.28B total)
+- Genesis premine wallets (16.78B total)
 
 Integrace:
 - Python blockchain (src/core/)
@@ -72,7 +72,7 @@ class WalletType(Enum):
     PRESALE = 'presale'                   # Presale nákupy (500M celkem)
     DAO_REWARD = 'dao_reward'            # DAO governance odměny
     MINING_PAYOUT = 'mining_payout'      # Mining pool výplaty
-    GENESIS_PREMINE = 'genesis_premine'  # Premine alokace (16.28B)
+    GENESIS_PREMINE = 'genesis_premine'  # Premine alokace (16.78B)
     AIRDROP = 'airdrop'                  # Community airdrops
     STAKING_REWARD = 'staking_reward'    # Staking rewards
 

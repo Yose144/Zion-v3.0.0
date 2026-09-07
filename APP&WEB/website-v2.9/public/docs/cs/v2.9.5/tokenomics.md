@@ -20,8 +20,8 @@
 
 ```
 TOTAL_SUPPLY     = 144 000 000 000 ZION
-GENESIS_PREMINE  =  16 280 000 000 ZION
-MINING_EMISSION  = 127 720 000 000 ZION
+GENESIS_PREMINE  =  16 780 000 000 ZION
+MINING_EMISSION  = 127 220 000 000 ZION
 
 MINING_YEARS     = 45
 BLOCKS_PER_YEAR  = 525 600
@@ -32,7 +32,7 @@ BASE_BLOCK_REWARD = 127 720 000 000 / 23 652 000
 
 Ověření:
   5 400,067 × 23 652 000 = 127 720 384 400 ZION
-+ Genesis premine:          16 280 000 000 ZION
++ Genesis premine:          16 780 000 000 ZION
                            ──────────────────────
   Celkem:                   144 000 384 400 ZION
 
@@ -45,7 +45,7 @@ Hodnota 5 400,067 je matematicky odvozená — není libovolná.
 
 ---
 
-## Genesis premine (16,28B ZION — 11,31 %)
+## Genesis premine (16,78B ZION — 11,65 %)
 
 Všechny genesis alokace jsou na řetězci ověřitelné z genesis bloku.
 
@@ -55,11 +55,11 @@ Všechny genesis alokace jsou na řetězci ověřitelné z genesis bloku.
 | DAO Treasury | 4 000 000 000 | 2,78 % | governance komunity + granty |
 | Infrastructure | 2 590 000 000 | 1,80 % | servery, vývoj, bezpečnostní audit |
 | Humanitarian Reserve | 1 440 000 000 | 1,00 % | L5 — voda, vzdělání, zdravotnictví |
-| **Celkem genesis** | **16 280 000 000** | **11,31 %** | — |
+| **Celkem genesis** | **16 780 000 000** | **11,65 %** | — |
 
 **Pozn.:** Ve specifikaci existovala počáteční alokace presale 500M ZION. Byla zrušena v lednu 2026 a tokeny přidány do DAO Treasury. Presale se nikdy neuskutečnila.
 
-Zbývajících **88,69 %** (127,72B ZION) je emitováno výhradně prostřednictvím PoW těžby.
+Zbývajících **88,35 %** (127,22B ZION) je emitováno výhradně prostřednictvím PoW těžby.
 
 ---
 

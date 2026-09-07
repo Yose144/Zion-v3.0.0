@@ -24,8 +24,8 @@ ZION Dharma Credits představují **consciousness-based economy** založenou na 
 │ ⚡ BLOCK REWARD:   50 Credits (fixed)             │
 │ ⏱️  BLOCK TIME:    ~60 seconds                    │
 │ 📅 DAILY EMISSION: ~72,000 Credits                │
-│ 🎯 PREMINE:       16,280,000,000 (11.31%)        │
-│ ⛏️  MINING:        127,720,000,000 (88.69%)       │
+│ 🎯 PREMINE:       16,780,000,000 (11.65%)        │
+│ ⛏️  MINING:        127,220,000,000 (88.35%)       │
 │                                                    │
 └────────────────────────────────────────────────────┘
 ```
@@ -53,15 +53,15 @@ Sustainability:    7,000+ years emission
 
 ---
 
-## 🎁 GENESIS PREMINE (16.28B Credits)
+## 🎁 GENESIS PREMINE (16.78B Credits)
 
 ### Official Blockchain Distribution
 
 **Source:** `src/core/new_zion_blockchain.py`
 
 ```python
-# Genesis premine distribution (11.31% of total supply)
-GENESIS_PREMINE = 16_280_000_000  # 16.28 billion Dharma Credits
+# Genesis premine distribution (11.65% of total supply)
+GENESIS_PREMINE = 16_780_000_000  # 16.78 billion Dharma Credits
 
 DISTRIBUTION = {
     "mining_operators": 8_250_000_000,    # 50.7% (5 operators × 1.65B)
@@ -203,7 +203,7 @@ TOTAL:                    4,340,000,000 Credits
 
 ---
 
-## ⛏️ MINING EMISSION (127.72B Credits)
+## ⛏️ MINING EMISSION (127.22B Credits)
 
 ### Block Rewards
 
@@ -214,7 +214,7 @@ BLOCKS_PER_DAY = 1440
 DAILY_EMISSION = 72_000  # Credits
 
 # Emission schedule (no halving)
-TOTAL_MINING_SUPPLY = 127_720_000_000
+TOTAL_MINING_SUPPLY = 127_220_000_000
 EMISSION_PERIOD = TOTAL_MINING_SUPPLY / (DAILY_EMISSION * 365)
 # = 4,867 years (rounded to ~7,000 years with difficulty adjustments)
 ```
@@ -371,7 +371,7 @@ Tournament Prizes:  1,000-100,000 Credits
 ```
 Year    Circulating Supply        % of Total
 ─────────────────────────────────────────────
-2026    16.28B (premine)          11.31%
+2026    16.78B (premine)          11.65%
 2027    16.31B (+26M mined)       11.33%
 2028    16.33B (+26M mined)       11.35%
 2030    16.38B (+79M mined)       11.37%
@@ -386,7 +386,7 @@ Year    Circulating Supply        % of Total
 ```
 Year    Annual Inflation    vs Circulating
 ────────────────────────────────────────────
-2026    0.16%               26M ÷ 16.28B
+2026    0.16%               26M ÷ 16.78B
 2027    0.16%               26M ÷ 16.31B
 2028    0.16%               26M ÷ 16.33B
 2030    0.16%               (decreasing as supply grows)
@@ -501,8 +501,8 @@ Top 20 Crypto:      Realistic goal
 ├────────────────────────────────────────────────┤
 │                                                │
 │ Total Supply:          144,000,000,000         │
-│ Genesis Premine:       16,280,000,000 (11.31%) │
-│ Mining Supply:         127,720,000,000 (88.69%)│
+│ Genesis Premine:       16,780,000,000 (11.65%) │
+│ Mining Supply:         127,220,000,000 (88.35%)│
 │ Block Reward:          50 Credits (fixed)      │
 │ Daily Emission:        72,000 Credits          │
 │ Annual Inflation:      0.16% (stable)          │

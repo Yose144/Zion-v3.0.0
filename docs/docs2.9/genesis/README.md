@@ -115,7 +115,7 @@ Mystická hra s 5 úrovněmi zkoušek duše — cesta k 1 miliardě Zionů.
 
 #### **[Chapter 8: Mainnet Dawn (31.12.2026)](09-CHAPTER-8-Mainnet-Dawn.md)** 💎
 
-Genesis Block, spuštění Mainnet, distribuce 16,28B tokenů, začátek Zlatého Věku.
+Genesis Block, spuštění Mainnet, distribuce 16,78B tokenů, začátek Zlatého Věku.
 
 *Klíčová témata:* Genesis Block, Mainnet, 31.12.2026, Poselství Zion Native
 
@@ -185,7 +185,7 @@ Začíná 31.12.2026 — éra svobody, hojnosti, moudrosti, harmonie, jednoty.
 
 - ✅ Genesis Block míněn  
 - ✅ Mainnet spuštěn  
-- ✅ 16,28B Zion distribuováno  
+- ✅ 16,78B Zion distribuováno  
 - ✅ Zlatý Věk začíná
 
 **Buď připraven/á.**

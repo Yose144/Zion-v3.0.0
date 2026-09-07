@@ -425,9 +425,9 @@ Tohle je nejdůležitější věc, bez které nelze jít na MainNet, i kdyby byl
 1.1 Genesis & Supply (musí být 100 % uzamčeno)
 Z WP máš jasná čísla (to je dobré):
 Total supply: 144,000,000,000 ZION
-Genesis premine: 16,280,000,000 ZION (11.31 %) 
+Genesis premine: 16,780,000,000 ZION (11.65 %) 
 full
-Mining emission: 127,720,000,000 ZION
+Mining emission: 127,220,000,000 ZION
 Block reward: 5,400.067 ZION
 Block time: 60 s
 Mining horizon: 45 let
@@ -567,9 +567,9 @@ Genesis timestamp: (fixní UTC, vyhlášeno před launch)
 2. Supply & Ekonomika
 2.1 Celková nabídka
 Total supply (max): 144,000,000,000 ZION
-Mining supply: 127,720,000,000 ZION
-Genesis premine: 16,280,000,000 ZION
-(11.31 % celkové nabídky)
+Mining supply: 127,220,000,000 ZION
+Genesis premine: 16,780,000,000 ZION
+(11.65 % celkové nabídky)
 2.2 Emise
 Initial block reward: 5,400.067 ZION
 Block interval: 60 s

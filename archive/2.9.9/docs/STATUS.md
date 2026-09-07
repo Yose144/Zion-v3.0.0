@@ -15,7 +15,7 @@
 ## Chain State
 
 - **Genesis reset**: Clean block #0, fresh chain data
-- **Premine**: 16,280,000,000 ZION across 12 outputs — verified correct
+- **Premine**: 16,780,000,000 ZION across 12 outputs — verified correct
 - **Fee split**: 89% miner / 5% humanitarian / 5% issobella / 1% pool — verified
 - **Fee policy**: 100% burn (miners do NOT receive tx fees)
 - **Algorithm**: Ekam Deeksha v2 (6-stage pipeline, 256 KiB scratchpad)
@@ -62,7 +62,7 @@
 | Tail emission | 724.784723787776 ZION | `TAIL_REWARD = 724_784_723_787_776` | ✅ |
 | Fee split | 89/5/5/1 | `MINER_PCT=89, HUMANITARIAN=5, ISSOBELLA=5, POOL=1` | ✅ |
 | Fee burn | 100% burn | `fee.rs: All fees burned` | ✅ |
-| Premine | 16.28B (11.31%) | `GENESIS_PREMINE = 16_280_000_000 × 10¹²` | ✅ |
+| Premine | 16.78B (11.65%) | `GENESIS_PREMINE = 16_780_000_000 × 10¹²` | ✅ |
 | DAO lock | 525,600 blocks | `DAO_TREASURY_LOCK_HEIGHT = 525_600` | ✅ |
 | Coinbase maturity | 100 blocks | `COINBASE_MATURITY = 100` | ✅ |
 | DAA | LWMA 60-block ±25% | `LWMA_WINDOW=60, clamp 3/4–5/4` | ✅ |

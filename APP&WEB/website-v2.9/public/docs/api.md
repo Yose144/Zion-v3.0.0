@@ -62,8 +62,8 @@ curl -s localhost:8444/jsonrpc \
   "result": {
     "total_supply": 144000000000,
     "circulating_supply": 18791031,
-    "mining_supply": 127720000000,
-    "premine": 16280000000,
+    "mining_supply": 127220000000,
+    "premine": 16780000000,
     "block_reward": 5400.067,
     "blocks_mined": 465
   }

@@ -205,7 +205,7 @@ PRESALE_BACKEND_REPORT.md           - NEW (this file)
 requirements.txt                    - UPDATED (added stripe, qrcode, pillow)
 src/core/premine.py                 - UPDATED (added 500M presale allocation)
 docker-compose-simple.yml           - UPDATED (ZION_RESET_GENESIS flag)
-src/core/new_zion_blockchain.py     - UPDATED (genesis reset logic, 16.28B header)
+src/core/new_zion_blockchain.py     - UPDATED (genesis reset logic, 16.78B header)
 ```
 
 ### Generated Data Files
@@ -1091,7 +1091,7 @@ ZION Presale backend musí být plně integrován s existujícím **V2 PHP API s
          ▼
 ┌─────────────────────────────────────────────┐
 │           ZION Blockchain v2.9.0            │
-│  • 16.28B premine (500M presale alloc)      │
+│  • 16.78B premine (500M presale alloc)      │
 │  • Genesis block s presale walletem        │
 │  • MainNet launch: Dec 31, 2026            │
 └─────────────────────────────────────────────┘

@@ -27,7 +27,7 @@ Distribution: 89% miner, 5% humanitarian, 5% L5/L6 Issobella fund, 1% pool fee.
 | Parameter | Value |
 |-----------|-------|
 | Total emission | 144B ZION |
-| Premine | 16.28B ZION (11.3%) |
+| Premine | 16.78B ZION (11.65%) |
 | Block reward (D1) | 5,400.067 ZION |
 | Emission model | Decade Decay (-20% / 10 years) |
 | Tail emission | 724.785 ZION/block (from 2126) |
