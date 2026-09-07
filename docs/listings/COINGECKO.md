@@ -1,10 +1,10 @@
 # ZION TerraNova — CoinGecko Listing Application
 
 > Submission packet for listing **ZION** on CoinGecko. All values are verified against the
-> open-source `V31/` codebase and the live Edge node (height 28,500+ as of 2026-09-03).
+> open-source `V31/` codebase and the live Edge node (height 33,646 as of 2026-09-07).
 > Internal infrastructure details (server IPs, keys, operational endpoints) are omitted.
 >
-> **Last verified: 2026-09-03** — V31 Mainnet Alpha, protocol `3.1.0-alpha`.
+> **Last verified: 2026-09-07** — V31 Mainnet Alpha, protocol `3.1.0-alpha`.
 
 ---
 
@@ -55,8 +55,8 @@ All values verified from `V31/L1/core/src/emission.rs` and live API `app.zionter
 | Tail emission | ~724.785 ZION/block, perpetual (from decade 11, ~year 100) | `TAIL_REWARD` const |
 | Reward split | 89 % miner / 5 % humanitarian / 5 % science / 1 % burned or node reward | `fee_split()` fn |
 | Coinbase maturity | 100 blocks | `COINBASE_MATURITY` const |
-| Mined supply (live) | ~153,940,000 ZION (height 28,500+) | live API |
-| Circulating supply (live) | ~16,933,940,000 ZION (premine + mined) | live API |
+| Mined supply (live) | ~181,690,654 ZION (height 33,646) | live API |
+| Circulating supply (live) | ~16,961,690,654 ZION (premine + mined) | live API |
 
 ### Fee model
 The 1 % pool-fee portion of each block subsidy is **not minted** (burned) before the node-reward
@@ -79,7 +79,8 @@ Supply is verifiable via the public API:
 
 | # | Amount (B ZION) | Label (from richlist API) | Lock |
 |---|-----------------|---------------------------|------|
-| 1–5 | 1.65 each | ZION OASIS + Winners Golden Egg/XP (Slots 1–5) | admin-locked |
+| 1–3 | 1.65 each | ZION OASIS + Winners Golden Egg/XP (Slots 1–3, active reward pool) | admin-locked |
+| 4–5 | 1.65 each | L5 Free World Projects (Slots 4–5, repurposed from OASIS reserve) | admin-locked |
 | 6 | 2.50 | DAO Treasury — Community Governance | time-locked (blk 144k) + admin-locked |
 | 7 | 1.00 | DAO Treasury — Grants & Bounties | time-locked (blk 144k) + admin-locked |
 | 8 | 0.50 | DAO fund | time-locked (blk 144k) + admin-locked |
