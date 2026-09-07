@@ -40,7 +40,7 @@ ZION Core je postaven na osvědčené CryptoNote architektuře s moderními vyle
 │                                                    │
 │  Layer 1: Blockchain Core (Python, 1,589 LOC)     │
 │  ├─ ZION Blockchain v2.9                         │
-│  │   ├─ Genesis: 16.28B premine                  │
+│  │   ├─ Genesis: 16.78B premine                  │
 │  │   ├─ Block Reward: 50 Credits                 │
 │  │   ├─ Difficulty Adjustment                    │
 │  │   └─ SQLite + WAL mode                        │
@@ -104,8 +104,8 @@ AMD Threadripper (32-core) ~20,000 H/s      ~300 ZION
 | **Block Time** | 60 sekund | Unified target |
 | **Block Reward** | **50 Dharma Credits** | Fixed (no halving) |
 | **Daily Emission** | **~72,000 Credits/day** | 1,440 blocks × 50 |
-| **Genesis Premine** | **16,280,000,000 Credits** | 11.31% of supply |
-| **Mining Supply** | **127,720,000,000 Credits** | 88.69% of supply |
+| **Genesis Premine** | **16,780,000,000 Credits** | 11.65% of supply |
+| **Mining Supply** | **127,220,000,000 Credits** | 88.35% of supply |
 | **Presale Allocation** | **500,000,000 Credits** | 3.1% of premine |
 | **Emission Period** | ~7,000 years | Long-term sustainability |
 

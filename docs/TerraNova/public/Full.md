@@ -1327,8 +1327,9 @@ KAŽDÝ NALEZENÝ BLOK (každých ~60 sekund):
 ├──  5% → Issobella fund (hvězdy)
 └──  1% → Pool fee (infrastruktura)
 
-GENESIS RESERVE (16.28B ZION z 144B):
-├── 8.25B  → OASIS Golden Egg (L4)
+GENESIS RESERVE (16.78B ZION z 144B):
+├── 4.95B  → OASIS Golden Egg (L4, 3 sloty)
+├── 3.30B  → L5 Free World Projects (sloty 4 a 5 přesunuty z OASIS)
 ├── 4.00B  → DAO Treasury (L2/L3 governance)
 ├── 2.59B  → Infrastructure
 │            ├── 1.00B Core development

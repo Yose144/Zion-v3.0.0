@@ -36,7 +36,7 @@
 | 4 | **Premine adresy = testnet** — 12 walletů s testnet klíči | `core/src/blockchain/premine.rs` | 🔴 Nahradit cold-storage adresami |
 | 5 | **DAO_ADDRESS = placeholder** — `zion1dao...treasury` | `core/src/blockchain/burn.rs` | 🔴 Nahradit multisig adresou |
 | 6 | **Pouze 2 seed nody** — DNS záznamy neresolvují | `core/src/p2p/seeds.rs` | 🔴 Minimum 3 pro mainnet |
-| 7 | **PREMINE_WALLETS_BACKUP.json na disku** — 16.28B ZION privátní klíče | kořen workspace | 🔴 Přesunout do offline vault |
+| 7 | **PREMINE_WALLETS_BACKUP.json na disku** — 16.78B ZION privátní klíče | kořen workspace | 🔴 Přesunout do offline vault |
 
 ### 🟡 Zbývající Pro Exit Fáze 1
 
@@ -109,7 +109,7 @@ CÍL:
 
 | # | Úkol | Proč | Effort |
 |---|------|------|--------|
-| **I** | **BFG Repo-Cleaner** — smazat premine klíče z git historie | 16.28B ZION v plaintextu v historii! | 2h |
+| **I** | **BFG Repo-Cleaner** — smazat premine klíče z git historie | 16.78B ZION v plaintextu v historii! | 2h |
 | **J** | **DNS seed nody** (seed1/2/3.zionterranova.com) | Minimum 3 pro mainnet, aktuálně 2 IP | 1 den |
 | **K** | **Block Explorer backend** (Sprint 2.3) | Bez exploreru žádný CMC/CoinGecko listing | 1 týden |
 | **L** | **Bech32 validace miner adres** v poolu | Pool přijme neplatné adresy bez kontroly | 4h |
@@ -192,7 +192,7 @@ CÍL:
 | LWMA DAA 60-block | ✅ Hotovo, 18 testů | — |
 | Fee burning | ✅ Implementováno | — |
 | Mining pool Stratum v2 + PPLNS | ✅ Funguje | 🟡 Revenue vrstva nestabilní |
-| 16.28B genesis premine | ✅ V kódu | 🔴 Testnet adresy |
+| 16.78B genesis premine | ✅ V kódu | 🔴 Testnet adresy |
 | Config runtime loading | ⚠️ TOML existují | 🟡 Nečtou se runtime |
 | Block Explorer | ❌ Neexistuje | 🔴 Kritické pro listing |
 | DNS seed nody | ❌ Neresolvují | 🔴 Kritické pro mainnet |

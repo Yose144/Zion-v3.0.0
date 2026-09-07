@@ -56,7 +56,7 @@ src/core/presale_db.py                   ~500 LOC   ✅ Presale database
 ```
 
 **Features:**
-- ✅ Genesis block with 16.28B premine
+- ✅ Genesis block with 16.78B premine
 - ✅ Multi-algorithm mining (4 algorithms)
 - ✅ Block reward: 50 Dharma Credits
 - ✅ Difficulty adjustment

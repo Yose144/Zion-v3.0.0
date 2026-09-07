@@ -197,7 +197,7 @@ Kompletní vize:
 ### **31. prosince 2026 — MAINNET DAWN** 💎
 
 - Genesis Block míněn (00:00 UTC)  
-- 16.28B tokenů distribuováno  
+- 16.78B tokenů distribuováno  
 - Zlatý věk začíná  
 - Zion Native se zjevuje veřejně
 

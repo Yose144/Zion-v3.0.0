@@ -280,7 +280,7 @@ The only way to acquire ZION is to **mine it** or receive it in a transaction.
 
 ### 7.2 Genesis Reserve (Public Summary)
 
-A total of **16,280,000,000 ZION** (11.31 % of total supply) is reserved at genesis to bootstrap the ecosystem.
+A total of **16,780,000,000 ZION** (11.65 % of total supply) is reserved at genesis to bootstrap the ecosystem.
 
 **Primary strategic envelope:** **5,200,000,000 ZION** is dedicated to L4 OASIS/game development and game-economy bootstrap (4.95B direct OASIS slots + 0.25B ecosystem allocation for game-dev execution).
 
@@ -341,7 +341,7 @@ Multi-sig protection: **5-of-7 signatures** required for any treasury transactio
 The DAO **cannot** change:
 
 - Total supply (144B ZION)
-- Genesis allocation (16.28B ZION)
+- Genesis allocation (16.78B ZION)
 - Block time (60 seconds)
 - Mining algorithm (Ekam Deeksha v2)
 - Consensus type (Proof-of-Work)

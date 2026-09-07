@@ -48,7 +48,7 @@
 ║      ├── PoW Cosmic Harmony v3 — ASIC-resistant                      ║
 ║      ├── UTXO model + Ed25519 signatures                             ║
 ║      ├── 5,400.067 ZION/block konstantní emise                       ║
-║      ├── 16.28B genesis premine (immediately unlocked)               ║
+║      ├── 16.78B genesis premine (immediately unlocked)               ║
 ║      ├── LWMA DAA (60-block, ±25%)                                   ║
 ║      ├── Fee burning — ALL fees destroyed                            ║
 ║      ├── Max reorg 10 bloků, soft finality 60                        ║
@@ -77,7 +77,7 @@
 ### Co JE L1:
 - ✅ Nativní Rust blockchain (PoW, UTXO, Ed25519)
 - ✅ Konstantní emise 5,400.067 ZION/block (žádný halving)
-- ✅ Genesis premine 16.28B (4 UTXOs, immediately unlocked)
+- ✅ Genesis premine 16.78B (4 UTXOs, immediately unlocked)
 - ✅ LWMA DAA (60-block window, ±25%)
 - ✅ Fee burning (all fees destroyed)
 - ✅ Mining pool (Stratum v2, PPLNS)
@@ -307,8 +307,8 @@ zion-2.9.5-mainnet/
 **Ekonomický model:**
 ```
 Total Supply:        144,000,000,000 ZION (144B)
-Premine:              16,280,000,000 ZION (11.3%)
-Mineable:            127,720,000,000 ZION (88.7%)
+Premine:              16,780,000,000 ZION (11.65%)
+Mineable:            127,220,000,000 ZION (88.35%)
 
 Block Time:          60 seconds
 Blocks per Day:      1,440
@@ -1036,7 +1036,7 @@ Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4
 Máme **funkční blockchain** na 3 serverech:
 - ✅ 155 unit testů passing
 - ✅ Konstantní emise 5,400.067 ZION/block
-- ✅ Genesis premine 16.28B (immediately unlocked)
+- ✅ Genesis premine 16.78B (immediately unlocked)
 - ✅ LWMA DAA, fee burning, coinbase maturity
 - ✅ Max reorg 10, soft finality 60, fork-choice
 - ✅ 3 nody online — Helsinki, USA, Singapore

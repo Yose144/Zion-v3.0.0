@@ -40,8 +40,8 @@ Most PoW cryptocurrencies face three fundamental structural problems:
 | Category | Amount | Percentage |
 |----------|--------|------------|
 | **Total Supply** | 144 000 000 000 ZION | 100% |
-| Mining Supply | 127 720 000 000 ZION | 88.7% |
-| Premine | 16 280 000 000 ZION | 11.3% |
+| Mining Supply | 127 220 000 000 ZION | 88.35% |
+| Premine | 16 780 000 000 ZION | 11.65% |
 
 ### 2.2 Mathematical Derivation of Block Reward
 
@@ -72,7 +72,7 @@ Starting at block **5,256,000** (approximately year 10 from genesis):
 
 ### 2.5 Premine Allocation
 
-Celkový premine: **16 280 000 000 ZION** (11.31% z total supply) — on-chain verifikovatelné, plně odčlokováno od genesis.
+Celkový premine: **16 780 000 000 ZION** (11.65% z total supply) — on-chain verifikovatelné, plně odčlokováno od genesis.
 
 | Kategorie | Částka | Podíl |
 |-----------|--------|-------|

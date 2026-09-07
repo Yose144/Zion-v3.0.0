@@ -41,7 +41,7 @@ Mining Supply: 128,220,000,000 ZION (89.04%)
 ```
 TOTAL SUPPLY: 144,000,000,000 ZION (unchanged)
 
-UPDATED PREMINE: 16,280,000,000 ZION (11.31%)
+UPDATED PREMINE: 16,780,000,000 ZION (11.65%)
 ├─ Original Premine:  15,780,000,000 ZION (96.93% of premine)
 │   ├─ Mining Operators:  8,250,000,000 ZION
 │   ├─ DAO Winners:       1,750,000,000 ZION
@@ -51,7 +51,7 @@ UPDATED PREMINE: 16,280,000,000 ZION (11.31%)
 └─ PRESALE ALLOCATION:    500,000,000 ZION (3.07% of premine)
     └─ Escrow Contract:   500,000,000 ZION (locked until redemption)
 
-MINING SUPPLY: 127,720,000,000 ZION (88.69%)
+MINING SUPPLY: 127,220,000,000 ZION (88.35%)
 ```
 
 **Key Changes:**
@@ -524,8 +524,8 @@ def validate_genesis_supply():
     
     mining_supply = total_supply - premine_total
     
-    assert premine_total == 16_280_000_000, "Premine mismatch"
-    assert mining_supply == 127_720_000_000, "Mining supply mismatch"
+    assert premine_total == 16_780_000_000, "Premine mismatch"
+    assert mining_supply == 127_220_000_000, "Mining supply mismatch"
     assert premine_total + mining_supply == total_supply, "Total supply mismatch"
     
     print("✅ Genesis supply validated")
@@ -718,7 +718,7 @@ Block Height:          12,345
 Difficulty:            1,234,567
 Hashrate:              123 GH/s
 Presale Escrow TX:     625 (lifetime)
-Total Premine Spent:   2.5% (of 16.28B)
+Total Premine Spent:   2.5% (of 16.78B)
 Mining Rewards Issued: 67,890,000 ZION (blocks 1-12,345)
 ```
 
@@ -806,7 +806,7 @@ def cleanup_unredeemed_tokens():
 
 **Launch Date:** June 1, 2026, 00:00 UTC
 **Block Hash:** 0x1234567890abcdef...
-**Genesis Supply:** 16,280,000,000 ZION (11.31% premine)
+**Genesis Supply:** 16,780,000,000 ZION (11.65% premine)
 
 ## Presale Allocation
 - Total: 500,000,000 ZION

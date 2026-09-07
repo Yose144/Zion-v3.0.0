@@ -21,8 +21,8 @@ To znamena:
 | Parametr | Hodnota |
 |----------|---------|
 | Celkova emise | 144 000 000 000 ZION |
-| Mining supply | 127 720 000 000 ZION |
-| Premine | 16 280 000 000 ZION |
+| Mining supply | 127 220 000 000 ZION |
+| Premine | 16 780 000 000 ZION |
 | Block time target | 60 sekund |
 | Fee policy | Burn |
 | Aktualni public runtime | CHv3-line rehearsal |

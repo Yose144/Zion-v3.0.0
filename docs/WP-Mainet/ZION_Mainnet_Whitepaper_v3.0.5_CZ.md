@@ -345,7 +345,7 @@ Tvrdý strop je **144 000 000 000 ZION** — zapsáno v genesis a neměnné. Ž�
 
 | Kategorie | Množství | Podíl |
 |-----------|----------|-------|
-| Těžební nabídka | 127 720 000 000 ZION | 88,35 % |
+| Těžební nabídka | 127 220 000 000 ZION | 88,35 % |
 | Genesis premine | 16 780 000 000 ZION | 11,65 % |
 | **Celkem** | **144 000 000 000 ZION** | **100 %** |
 

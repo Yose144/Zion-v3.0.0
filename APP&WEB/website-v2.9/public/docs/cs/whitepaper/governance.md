@@ -23,7 +23,7 @@ Tyto parametry jsou pevně zakódované a nelze je změnit žádným hlasování
 | Halving | Ne | Konstantní odměna pro minery |
 | Fee policy | Burn | Deflační mechanismus |
 | Genesis timestamp | Jan 1, 2024 | Historická integrita |
-| Premine distribuce | 16,28 mld | Transparentní alokace |
+| Premine distribuce | 16,78 mld | Transparentní alokace |
 
 ---
 

@@ -197,8 +197,8 @@ difficulty = u32::MAX / state0
 | Parametr | Hodnota |
 |----------|---------|
 | Total supply | 144 000 000 000 ZION |
-| Premine (genesis) | 16 280 000 000 ZION (11.3%) |
-| Mining emission | 127 720 000 000 ZION |
+| Premine (genesis) | 16 780 000 000 ZION (11.65%) |
+| Mining emission | 127 220 000 000 ZION |
 | Block reward | 5 400.067 ZION |
 | Emise trvání | 45 let |
 | Bloků ročně | 525 600 |

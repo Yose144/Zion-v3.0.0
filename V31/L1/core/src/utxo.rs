@@ -302,6 +302,18 @@ impl UtxoSet {
         Ok(())
     }
 
+    /// Apply an entire block to the set in-place, without cloning.
+    /// Used for the one-time UTXO rebuild at startup, where every block is
+    /// already known to be valid and stored in our own database.
+    pub fn apply_block_unchecked(&mut self, block: &Block) -> Result<(), UtxoError> {
+        let block_height = block.header.height;
+        let block_timestamp = block.header.timestamp;
+        for tx in &block.transactions {
+            self.apply_transaction(tx, block_height, block_timestamp)?;
+        }
+        Ok(())
+    }
+
     /// True if the transaction hash is already present as an unspent output.
     ///
     /// This catches exact transaction duplicates; it does not detect

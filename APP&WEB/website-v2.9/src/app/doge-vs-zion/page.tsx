@@ -226,7 +226,7 @@ interface ZionStats {
 
 const ZION_DEFAULT: ZionStats = {
   priceUsd: 0.0002,
-  circulatingSupply: 16_280_000_000,
+  circulatingSupply: 16_780_000_000,
   maxSupply: 144_000_000_000,
   blockTime: 60,
   algorithm: 'Deeksha Lite v1',

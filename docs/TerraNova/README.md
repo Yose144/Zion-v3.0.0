@@ -109,7 +109,7 @@ Každá vrstva vize v této knize má přímý technický protějšek v ZION cod
 | Vize | Kód |
 |------|-----|
 | 144B ZION jako celková zásoba | `TOTAL_SUPPLY = 144_000_000_000` |
-| Genesis reserve 16.28B ZION | `GENESIS_PREMINE` + `PREMINE_OUTPUTS` |
+| Genesis reserve 16.78B ZION | `GENESIS_PREMINE` + `PREMINE_OUTPUTS` |
 | On-chain rozdělení odměny 89/5/5/1 | `MINER_PCT`, `HUMANITARIAN_PCT`, `ISSOBELLA_PCT`, `POOL_FEE_PCT`, `fee_split()` |
 | Hybridní balance surface pro `zion1...` adresy | live JSON-RPC v `V3/L1/core/src/rpc.rs` |
 | Prague-only bootstrap jako aktivní realita | V3 runtime + mainnet dokumentace + runbook |

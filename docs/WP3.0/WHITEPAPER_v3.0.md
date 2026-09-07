@@ -334,8 +334,8 @@ OASIS je navržen jako **opt-in** — síť funguje plně bez L4. OASIS přidáv
 
 ```
 Total supply:    144 000 000 000 ZION  (144 miliard)
-  ├── Mining supply:  127 720 000 000 ZION  (88.7%)
-  └── Premine:         16 280 000 000 ZION  (11.3%)
+  ├── Mining supply:  127 220 000 000 ZION  (88.35%)
+  └── Premine:         16 780 000 000 ZION  (11.65%)
 ```
 
 ### 8.2 Emise

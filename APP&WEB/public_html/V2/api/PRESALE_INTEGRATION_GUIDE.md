@@ -28,7 +28,7 @@
 | **Python API** | FastAPI + SQLite (presale_endpoints.py) | Objednávky, statistiky |
 | **Database** | SQLite + JSON files | Data persistence |
 | **Payments** | Stripe API | Platební brána |
-| **Blockchain** | ZION v3.1.0 | 16.28B premine, 500M presale |
+| **Blockchain** | ZION v3.1.0 | 16.78B premine, 500M presale |
 
 ### Data Flow
 

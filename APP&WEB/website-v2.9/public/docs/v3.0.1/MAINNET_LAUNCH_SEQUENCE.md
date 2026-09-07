@@ -14,7 +14,7 @@
   - Issobella: 5%
   - Pool Fee: 1%
 
-- ✅ **Genesis premine configured** (13 outputs, 16.28B ZION)
+- ✅ **Genesis premine configured** (14 outputs, 16.78B ZION)
   - 3× OASIS + Golden Egg (4.95B ZION)
   - 2× L5 Free World Projects (3.3B ZION, repurposed from Slots 4 & 5)
   - 3× DAO Treasury (4.0B ZION, locked 1 year)

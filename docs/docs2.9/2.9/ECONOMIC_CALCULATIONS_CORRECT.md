@@ -2,7 +2,7 @@
 
 ## 🎯 ROZHODNUTÍ: BASE_BLOCK_REWARD = 5,400.067 ZION
 
-**Zdůvodnění:** Presale/premine (16.28B ZION) je **již distribuován** v genesis bloku. Proto musíme zpětně vypočítat base reward tak, aby celková emise byla přesně **144B ZION**.
+**Zdůvodnění:** Presale/premine (16.78B ZION) je **již distribuován** v genesis bloku. Proto musíme zpětně vypočítat base reward tak, aby celková emise byla přesně **144B ZION**.
 
 ---
 
@@ -10,8 +10,8 @@
 
 ```
 Total Supply:       144,000,000,000 ZION (144B) ← IMMUTABLE
-Genesis Premine:     16,280,000,000 ZION (11.31%) ← ALREADY DISTRIBUTED
-Mining Emission:    127,720,000,000 ZION (88.69%) ← MUST BE EXACT
+Genesis Premine:     16,780,000,000 ZION (11.65%) ← ALREADY DISTRIBUTED
+Mining Emission:    127,220,000,000 ZION (88.35%) ← MUST BE EXACT
 
 Mining Duration:    45 let (2025-2070)
 Block Time:         60 sekund
@@ -24,8 +24,8 @@ Total blocks:       23,652,000 bloků (45 let)
 ```python
 # Protože premine je JIŽ DISTRIBUOVÁN, musíme vypočítat base reward:
 TOTAL_SUPPLY = 144_000_000_000  # ZION (immutable)
-PREMINE_DISTRIBUTED = 16_280_000_000  # ZION (cannot change!)
-MINING_EMISSION = 144B - 16.28B = 127_720_000_000  # ZION (must match)
+PREMINE_DISTRIBUTED = 16_780_000_000  # ZION (cannot change!)
+MINING_EMISSION = 144B - 16.78B = 127_220_000_000  # ZION (must match)
 
 TOTAL_BLOCKS = 23_652_000  # bloků (45 let × 525,600 bloků/rok)
 
@@ -36,7 +36,7 @@ BASE_BLOCK_REWARD = MINING_EMISSION / TOTAL_BLOCKS
 
 # Ověření:
 5,400.067 × 23,652,000 = 127,720,384,400 ZION ≈ 127.72B ✅
-+ Premine: 16,280,000,000 ZION
++ Premine: 16,780,000,000 ZION
 = Total: 144,000,384,400 ZION ≈ 144B ✅ (zaokrouhlovací chyba <0.0003%)
 ```
 
@@ -47,12 +47,12 @@ Whitepaper říká: 5,479.45 ZION per block
 Ověření: 5,479.45 × 23,652,000 = 129,600,021,000 ZION (129.6B)
 
 Total supply s touto hodnotou:
-129,600,021,000 + 16,280,000,000 = 145,880,021,000 ZION (145.88B)
+129,600,021,000 + 16,780,000,000 = 145,880,021,000 ZION (145.88B)
 
 ❌ PROBLÉM: Překračuje 144B total supply o 1.88B ZION (1.3%)!
 ```
 
-**Důvod nesrovnalosti:** Whitepaper pravděpodobně počítal s jiným presale, nebo hodnota 5,479.45 byla zaokrouhlena/upravena před finalizací presale. Nyní, když je presale hotový (16.28B), musíme použít matematicky přesný výpočet.
+**Důvod nesrovnalosti:** Whitepaper pravděpodobně počítal s jiným presale, nebo hodnota 5,479.45 byla zaokrouhlena/upravena před finalizací presale. Nyní, když je presale hotový (16.78B), musíme použít matematicky přesný výpočet.
 
 ---
 
@@ -61,8 +61,8 @@ Total supply s touto hodnotou:
 Z whitepaper str. 4:
 ```yaml
 📊 TOTAL SUPPLY:      144,000,000,000 Credits (144B)
-🎯 GENESIS PREMINE:   16,280,000,000 Credits (11.31%)
-⛏️  MINING EMISSION:   127,720,000,000 Credits (88.69%)
+🎯 GENESIS PREMINE:   16,780,000,000 Credits (11.65%)
+⛏️  MINING EMISSION:   127,220,000,000 Credits (88.35%)
 
 💎 BLOCK REWARD:       50 Credits (fixed, no halving)  ❌ STARÁ HODNOTA!
 📅 DAILY EMISSION:     ~72,000 Credits (~1,440 blocks)
@@ -77,10 +77,10 @@ To by znamenalo: 26.28M × 45 let = 1,182,600,000 (1.18B) ❌
 ```python
 # Z ekonomického modelu (whitepaper str. 4 - správně):
 TOTAL_SUPPLY = 144_000_000_000  # ZION
-PREMINE = 16_280_000_000  # ZION (11.31%)
+PREMINE = 16_780_000_000  # ZION (11.65%)
 MINING_POOL = TOTAL_SUPPLY - PREMINE
-            = 144_000_000_000 - 16_280_000_000
-            = 127_720_000_000  # ZION ✅ CORRECT!
+            = 144_000_000_000 - 16_780_000_000
+            = 127_220_000_000  # ZION ✅ CORRECT!
 
 # Base block reward (aby vyšla správná suma):
 MINING_DURATION_YEARS = 45
@@ -156,17 +156,17 @@ Whitepaper uvádí:
 Ale matematika:
 - 5,479.45 × 525,600 = **2,880,000,120 ZION/rok**
 - 2,880,000,120 × 45 = **129,600,005,400 ZION total**
-- To je **129.6B** místo **127.72B!**
+- To je **129.6B** místo **127.22B!**
 
 **Rozdíl:** 1,880,005,400 ZION (1.88B navíc)
 
 ## 💡 MOŽNÁ ŘEŠENÍ:
 
 1. **Base reward je 5,400 ZION** (nikoliv 5,479.45)
-   - Sedí s 127.72B mining emission ✅
+   - Sedí s 127.22B mining emission ✅
    
-2. **Mining emission je 129.6B ZION** (nikoliv 127.72B)
-   - Znamená: Premine 14.4B (ne 16.28B) ❌
+2. **Mining emission je 129.6B ZION** (nikoliv 127.22B)
+   - Znamená: Premine 14.4B (ne 16.78B) ❌
    
 3. **Consciousness bonus JE SOUČÁSTÍ base** 
    - Base = 5,479.45 - 1,569.63 = 3,909.82 ZION
@@ -177,7 +177,7 @@ Ale matematika:
 
 **KONZERVATIVNÍ PŘÍSTUP:**
 ```python
-BASE_BLOCK_REWARD = 5_400  # Zaokrouhleno, sedí s 127.72B emission
+BASE_BLOCK_REWARD = 5_400  # Zaokrouhleno, sedí s 127.22B emission
 CONSCIOUSNESS_BONUS_BASE = 1_569.63  # Z premine pool
 
 # 2025-2035:
@@ -200,7 +200,7 @@ total_reward = 5_479.45  # non-whitelisted
 # 2036-2070:
 total_reward = 5_479.45  # všichni
 
-# ⚠️ Warning: Total emission bude 129.6B místo 127.72B!
+# ⚠️ Warning: Total emission bude 129.6B místo 127.22B!
 ```
 
 ## ✅ ZÁVĚR

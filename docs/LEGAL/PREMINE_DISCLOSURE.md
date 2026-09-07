@@ -30,10 +30,10 @@ All premine allocations are **transparent and verifiable on-chain**.
 | Metric | Value |
 |--------|-------|
 | **Total Supply** | 144,000,000,000 ZION |
-| **Genesis Premine** | 16,280,000,000 ZION |
-| **Premine Percentage** | 11.31% |
-| **Mining Supply** | 127,720,000,000 ZION |
-| **Mining Percentage** | 88.69% |
+| **Genesis Premine** | 16,780,000,000 ZION |
+| **Premine Percentage** | 11.65% |
+| **Mining Supply** | 127,220,000,000 ZION |
+| **Mining Percentage** | 88.35% |
 
 ## Allocation Categories
 
@@ -97,7 +97,7 @@ All participation is voluntary and at the participant's own risk.
 
 ## Short Version (For Exchanges)
 
-> ZION includes a limited genesis premine (11.31%) used exclusively for protocol development, infrastructure, and community support.
+> ZION includes a limited genesis premine (11.65%) used exclusively for protocol development, infrastructure, and community support.
 >
 > No tokens were sold. No fundraising occurred. No investment rights are associated with the premine.
 >

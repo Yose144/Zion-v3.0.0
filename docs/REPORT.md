@@ -1818,7 +1818,7 @@ core/src/blockchain/reorg.rs    +31 / -1    is_stronger_chain: equal work tiebre
 | Total Supply | 144,000,000,000 ZION |
 | Block Reward | 5,400.067 ZION (konstantní, žádný halving) |
 | Block Time | 60s |
-| Genesis Premine | 16,280,000,000 ZION (11.3%) |
+| Genesis Premine | 16,780,000,000 ZION (11.65%) |
 | Fee model | 100% ALL fees burned |
 | Mining horizon | ~45 let (23.6M bloků) |
 | MainNet target | **31. prosince 2026** |

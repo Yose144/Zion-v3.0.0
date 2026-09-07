@@ -381,7 +381,7 @@ AI must learn:
 
 1. **Blockchain Architecture**
    - Genesis block structure
-   - Premine distribution (16.28B ZION)
+   - Premine distribution (16.78B ZION)
    - PoW algorithm (Cosmic Harmony)
    - TestNet vs MainNet differences
 

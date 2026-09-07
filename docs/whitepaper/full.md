@@ -1132,7 +1132,7 @@ Tyto hodnoty jsou **immutable** — zakódované v genesis bloku a protokolu:
 
 ## 4.2 Token Distribuce
 
-### Genesis Allocation (16.28B ZION)
+### Genesis Allocation (16.78B ZION)
 
 ```
 Genesis Block Distribution:
@@ -1141,19 +1141,19 @@ Genesis Block Distribution:
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │ ┌──────────────────────────────────────────────────────┐   │
-│ │ MINING EMISSION: 127,720,000,000 ZION (88.69%)       │   │
+│ │ MINING EMISSION: 127,220,000,000 ZION (88.35%)       │   │
 │ │ → Distribuováno těžbou během 45 let                  │   │
 │ └──────────────────────────────────────────────────────┘   │
 │                                                            │
 │ ┌──────────────────────────────────────────────────────┐   │
-│ │ GENESIS PREMINE: 16,280,000,000 ZION (11.31%)        │   │
+│ │ GENESIS PREMINE: 16,780,000,000 ZION (11.65%)        │   │
 │ │ → Alokováno v genesis bloku                          │   │
 │ └──────────────────────────────────────────────────────┘   │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```
 
-### Premine Breakdown (16.28B)
+### Premine Breakdown (16.78B)
 
 | Alokace | ZION | % z Premine | % z Total | Účel |
 |---------|------|-------------|-----------|------|
@@ -1174,9 +1174,9 @@ Genesis Block Distribution:
 ```python
 # Vstupní hodnoty (immutable):
 TOTAL_SUPPLY = 144_000_000_000        # ZION
-GENESIS_PREMINE = 16_280_000_000      # ZION
+GENESIS_PREMINE = 16_780_000_000      # ZION
 MINING_EMISSION = TOTAL_SUPPLY - GENESIS_PREMINE
-                = 127_720_000_000      # ZION
+                = 127_220_000_000      # ZION
 
 # Mining parametry:
 MINING_YEARS = 45                      # 2025-2070
@@ -1194,7 +1194,7 @@ BASE_BLOCK_REWARD = MINING_EMISSION / TOTAL_BLOCKS
 
 ```
 5,400.067 × 23,652,000 = 127,720,384,400 ZION
-+ Genesis premine:        16,280,000,000 ZION
++ Genesis premine:        16,780,000,000 ZION
 ────────────────────────────────────────────────
 = Total:                 144,000,384,400 ZION
 
@@ -1217,18 +1217,18 @@ Block Reward = BASE_REWARD + CONSCIOUSNESS_BONUS
 
 Kde:
 - BASE_REWARD = 5,400.067 ZION (z mining emission)
-- CONSCIOUSNESS_BONUS = 1,569.63 ZION × multiplier (z premine pool)
+- CONSCIOUSNESS_BONUS = 941.78 ZION × multiplier (z premine pool)
 ```
 
 **Consciousness Bonus:**
 ```python
-CONSCIOUSNESS_POOL = 8_250_000_000    # ZION (OASIS + Winners Golden Egg/Xp pool)
+CONSCIOUSNESS_POOL = 4_950_000_000    # ZION (OASIS + Winners Golden Egg/Xp pool, 3 sloty)
 CONSCIOUSNESS_YEARS = 10              # 2025-2035
 CONSCIOUSNESS_BLOCKS = 10 * 525_600 = 5_256_000
 
 CONSCIOUSNESS_BONUS_BASE = CONSCIOUSNESS_POOL / CONSCIOUSNESS_BLOCKS
-                         = 8_250_000_000 / 5_256_000
-                         = 1,569.63 ZION per block
+                         = 4_950_000_000 / 5_256_000
+                         = 941.78 ZION per block
 ```
 
 **Výsledná odměna (Consciousness Period):**
@@ -1236,9 +1236,9 @@ CONSCIOUSNESS_BONUS_BASE = CONSCIOUSNESS_POOL / CONSCIOUSNESS_BLOCKS
 | Miner Type | Base | Bonus | Multiplier | Total |
 |------------|------|-------|------------|-------|
 | Non-whitelisted | 5,400.07 | 0 | N/A | 5,400.07 ZION |
-| Whitelisted L1 | 5,400.07 | 1,569.63 | 1.0× | 6,969.70 ZION |
-| Whitelisted L5 | 5,400.07 | 7,848.15 | 5.0× | 13,248.22 ZION |
-| Whitelisted L9 | 5,400.07 | 15,696.30 | 10.0× | 21,096.37 ZION |
+| Whitelisted L1 | 5,400.07 | 941.78 | 1.0× | 6,341.85 ZION |
+| Whitelisted L5 | 5,400.07 | 4,708.90 | 5.0× | 10,108.97 ZION |
+| Whitelisted L9 | 5,400.07 | 9,417.80 | 10.0× | 14,817.87 ZION |
 
 #### Režim 2: Post-Consciousness (2036-2070)
 
@@ -1268,7 +1268,7 @@ if TESTNET_MODE:
 | Parametr | TestNet | MainNet |
 |----------|---------|---------|
 | Block Reward | 50 ZION | 5,400.067 ZION |
-| Consciousness Bonus | 0 | 1,569.63 × level |
+| Consciousness Bonus | 0 | 941.78 × level |
 | Humanitarian Tithe | 0% | 10% |
 | Pool Fee | 1% | 1% |
 
@@ -1333,12 +1333,12 @@ Mining Emission per Year:
 
 | Rok | Mining Emission | Cumulative | % of Total |
 |-----|-----------------|------------|------------|
-| 2025 | 2.84B | 2.84B + 16.28B = 19.12B | 13.3% |
-| 2030 | 2.84B | 14.2B + 16.28B = 30.48B | 21.2% |
-| 2035 | 2.84B | 28.4B + 16.28B = 44.68B | 31.0% |
-| 2040 | 2.84B | 42.6B + 16.28B = 58.88B | 40.9% |
-| 2050 | 2.84B | 71.0B + 16.28B = 87.28B | 60.6% |
-| 2070 | 2.84B | 127.72B + 16.28B = 144B | 100% |
+| 2025 | 2.84B | 2.84B + 16.78B = 19.12B | 13.3% |
+| 2030 | 2.84B | 14.2B + 16.78B = 30.48B | 21.2% |
+| 2035 | 2.84B | 28.4B + 16.78B = 44.68B | 31.0% |
+| 2040 | 2.84B | 42.6B + 16.78B = 58.88B | 40.9% |
+| 2050 | 2.84B | 71.0B + 16.78B = 87.28B | 60.6% |
+| 2070 | 2.84B | 127.22B + 16.78B = 144B | 100% |
 
 ### Vizualizace
 
@@ -1426,7 +1426,7 @@ Whitelist **přestává platit**. Všichni minéři dostávají stejnou odměnu 
 | Block Time | 10 min | 12 sec | 2 min | **60 sec** |
 | Block Reward | 3.125 BTC | ~2 ETH | ~0.6 XMR | **5,400 ZION** |
 | Halving | Yes | No | Tail emission | **No** |
-| Premine | 0% | ~72M ETH | 0% | **11.31%** |
+| Premine | 0% | ~72M ETH | 0% | **11.65%** |
 | Mining End | ~2140 | N/A | Never | **2070** |
 
 ---
@@ -1440,7 +1440,7 @@ Whitelist **přestává platit**. Všichni minéři dostávají stejnou odměnu 
 | **Nízký hashrate** | Nedostatek minerů | Consciousness bonus incentive |
 | **Inflace** | 2.84B ZION/rok | Utility (DAO, NCL, fees) |
 | **Whitelist centralizace** | 5 adres má bonus | Pouze 10 let, pak fair |
-| **Premine kritika** | 11.31% v genesis | Transparentní, auditovatelné |
+| **Premine kritika** | 11.65% v genesis | Transparentní, auditovatelné |
 
 ### Co NEZARUČUJEME
 
@@ -1465,7 +1465,7 @@ Všechny ekonomické parametry jsou definovány v:
 ```
 src/pool/blockchain/reward_calculator.py
 ├── BASE_BLOCK_REWARD = 5,400.067 ZION
-├── CONSCIOUSNESS_BONUS_BASE = 1,569.63 ZION
+├── CONSCIOUSNESS_BONUS_BASE = 941.78 ZION
 ├── HUMANITARIAN_TITHE = 10%
 ├── POOL_FEE = 1%
 ├── CONSCIOUSNESS_START_YEAR = 2025
@@ -1551,7 +1551,7 @@ Block #0: Genesis
 Coinbase Message:
 "Where Technology Meets Spirit - ZION TerraNova Genesis 2026"
 
-Genesis Allocation: 16,280,000,000 ZION
+Genesis Allocation: 16,780,000,000 ZION
 ═══════════════════════════════════════════════════════════════
 ```
 
@@ -1608,14 +1608,14 @@ cargo build --release -p zion-miner
 
 ---
 
-## 5.4 Genesis Distribuce (16.28B)
+## 5.4 Genesis Distribuce (16.78B)
 
 ### Alokace v genesis bloku
 
-Genesis block obsahuje **16.28B ZION** (11.31% total supply) distribuovaných takto:
+Genesis block obsahuje **16.78B ZION** (11.65% total supply) distribuovaných takto:
 
 ```
-Genesis Block Distribution (16.28B ZION):
+Genesis Block Distribution (16.78B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
@@ -1720,7 +1720,7 @@ GENESIS_ADDRESSES = {
 |----------|---------|---------|
 | **Status** | ✅ Aktivní | 📅 31.12.2026 |
 | **Block Reward** | 50 ZION | 5,400.067 ZION |
-| **Genesis Premine** | Mock data | 16.28B skutečné |
+| **Genesis Premine** | Mock data | 16.78B skutečné |
 | **Tokeny** | Bezcenné (test) | Skutečné |
 | **Reset** | Možný kdykoliv | Nikdy |
 
@@ -2317,7 +2317,7 @@ IMMUTABLE (nelze změnit):
 ═══════════════════════════════════════════════════════════════
 
 ❌ Total Supply (144B ZION)
-❌ Genesis allocation (16.28B)
+❌ Genesis allocation (16.78B)
 ❌ Block time (60s)
 ❌ Mining algorithm (Cosmic Harmony)
 ❌ Consensus mechanism (PoW)
@@ -3769,7 +3769,7 @@ NOVEMBER 2026
 
 DECEMBER 31, 2026 — GENESIS BLOCK 🌟
 ├── 🚀 MainNet Genesis at 23:59:59 UTC
-├── 🚀 Genesis premine distributed (16.28B ZION)
+├── 🚀 Genesis premine distributed (16.78B ZION)
 ├── 🚀 Mining officially begins
 ├── 🚀 First block mined
 └── 🎆 Global celebration
@@ -3792,7 +3792,7 @@ Genesis Night (Dec 31, 2026):
 Block #0:
 ├── Timestamp: 2026-12-31 23:59:59 UTC
 ├── Coinbase: "Where Technology Meets Spirit"
-├── Genesis allocation: 16,280,000,000 ZION
+├── Genesis allocation: 16,780,000,000 ZION
 └── Difficulty: Initial calibrated value
 
 00:00:01 UTC (Jan 1, 2027):
@@ -4164,7 +4164,7 @@ ZION is Different:
 | **Block Reward** | 5,400 ZION (MainNet) |
 | **Mining Duration** | 45 let (2025-2070) |
 | **Humanitarian Tithe** | 10-25% |
-| **Genesis Premine** | 11.31% (transparentní) |
+| **Genesis Premine** | 11.65% (transparentní) |
 | **VC Allocation** | 0% |
 | **Team Allocation** | 0% |
 | **MainNet Launch** | 31.12.2026 |

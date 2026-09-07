@@ -52,8 +52,8 @@ End-2026 remains a **target window**, not a claim that launch is already live.
 | Parameter | Public state |
 |-----------|--------------|
 | Total supply | 144,000,000,000 ZION |
-| Mining supply | 127,720,000,000 ZION |
-| Premine | 16,280,000,000 ZION |
+| Mining supply | 127,220,000,000 ZION |
+| Premine | 16,780,000,000 ZION |
 | Block time | 60s target |
 | Fee policy | burn |
 | Current public runtime | CHv3-line public rehearsal |

@@ -109,7 +109,7 @@ Základní blockchain vrstva — PoW mining, UTXO transakce, consensus, síťov�
 | DAA | LWMA ±25%, 60 bloků | MAINNET_CONSTITUTION.md |
 | TX model | UTXO | WP2.9.5 |
 | Fee burning | 100% fees → burn 🔥 | MAINNET_CONSTITUTION.md |
-| Premine | 16.28B (transparentní) | PREMINE_DISCLOSURE.md |
+| Premine | 16.78B (transparentní) | PREMINE_DISCLOSURE.md |
 | Max supply | ∞ (deflationary via burn) | WP2.9.5 |
 | Reorg depth | max 10 bloků | core/src/blockchain |
 | Coinbase maturity | 100 bloků | core/src/tx |
