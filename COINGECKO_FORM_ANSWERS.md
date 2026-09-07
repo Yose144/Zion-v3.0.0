@@ -143,3 +143,79 @@ bridged representation, not additional issuance.
 ```
 
 (≈1,190 znaků — zkrať dle limitu pole)
+
+---
+
+## 13. Community Information
+
+| Pole | Hodnota |
+|------|---------|
+| X Profile Link | https://x.com/ZionTerraNova |
+| Telegram Channel Link | https://t.me/zionterranova |
+| Discord Invitation URL | https://discord.gg/eatGYDbd |
+| Facebook / YouTube / Subreddit / Medium | _zatím nemáme — nech prázdné_ |
+| Other Social Media Link | https://app.zionterranova.com/news |
+
+## 14. Coin/Token Category (max 3, reason min. 250 znaků)
+
+**Category 1:** `Layer 1 (L1)` / `Proof of Work (PoW)`
+
+```
+ZION is a native Layer-1 coin on its own Proof-of-Work blockchain (EkamDeeksha,
+memory-hard), not a token on another chain. It has a public explorer, public RPC,
+public mining pool and on-chain verifiable supply. Sources:
+https://app.zionterranova.com/explorer · https://github.com/Zion-TerraNova/v3-Mainnet
+```
+
+**Category 2:** `Smart Contract Platform` / `DeFi`
+
+```
+The ecosystem includes an L2 DeFi layer with a DAO treasury, an EVM bridge issuing
+the wZION ERC-20 representation on Base, and a live Uniswap V3 wZION/USDT pool with
+on-chain liquidity tracked on GeckoTerminal.
+Sources: https://www.geckoterminal.com/base/pools/0x186b46c2f04153999d44D25179cD623fD62Bfda2
+· https://app.zionterranova.com/defi
+```
+
+**Category 3:** `Social Impact` / `Charity` (nebo `Mineable` pokud Social Impact není v seznamu)
+
+```
+10% of every block reward is hardcoded in consensus to a humanitarian fund (5%)
+and a science fund (5%) - enforced by protocol code, not governance. A dedicated
+3.3B ZION on-chain allocation funds L5 humanitarian projects.
+Sources: https://app.zionterranova.com/l5-free-world ·
+https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/LEGAL/PREMINE_DISCLOSURE.md
+```
+
+## 15. Developer Information
+
+| Pole | Hodnota |
+|------|---------|
+| GitHub | https://github.com/Zion-TerraNova/v3-Mainnet |
+| GitLab | _ne_ |
+| Bitbucket | _ne_ |
+
+## 16. Attachments
+
+| Pole | Soubor k nahrání |
+|------|------------------|
+| Token Image (200×200 PNG, transparent) | `APP&WEB/website-v2.9/public/brand/zion/icon-on-dark-200.png` |
+| Project Banner (min 1360×430, PNG, <2MB) | `LOGO/banner/zion-banner-1360x714.png` ✅ vygenerováno (1360×714, 996 KB) |
+
+## 17. Additional Information
+
+**Remarks:**
+
+```
+ZION is a native Layer-1 coin (own chain, own explorer, public pool); wZION is
+a 1:1 bridged ERC-20 on Base used for DeFi liquidity. Please list ZION as a
+Layer-1 coin. Supply APIs: /api/supply/total, /api/supply/circulating (plain
+numbers) and /api/blockchain/stats (JSON). All 14 genesis premine outputs are
+publicly disclosed and locked (3-of-3 multisig + DAO vote; DAO treasury is
+time-locked until block 144,000). No ICO, no presale, MIT license.
+```
+
+**Public Verification Post** — ⚠️ po odeslání: publikuj post z oficiálního účtu (X/Telegram) obsahující (i) **request ID** a (ii) **GeckoTerminal URL**:
+`https://www.geckoterminal.com/base/pools/0x186b46c2f04153999d44D25179cD623fD62Bfda2`
+
+**Checkboxy:** Listing Terms / Support Terms / Accuracy Declaration / Information Usage — zaškrtni všechny 4.
