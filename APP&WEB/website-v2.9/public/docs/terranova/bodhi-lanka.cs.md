@@ -67,7 +67,7 @@ Mezi pavilony vedou kryté chodby (evokace chrámových koridorů) a pěší ces
 | 0 | Zárodek (2026 Q3–Q4) | Core team 3–5 strážců, scouting Srí Lanka (Anuradhapura / hill country / south coast), právní rešerše (NGO vs company vs cooperative), rozpočet 80 000 EUR, zkušební záhony 0,3 ha, partnerství s buddhistickou sanghou. |
 | 1 | Kořeny (2027) | Pozemek (dlouhodobý nájem / partnerství), registrace, solar 10 kWp, cisterna, eko-chaty 4–6 jednotek, 1,5 ha, první hosté Q4 2027, ZION wallet + DAO rámec, výsadba Bodhi aleje. |
 | 2 | Komunita (2028) | Guardian node, stálé bydlení 3–5 chat, měsíční governance program, LoRa mesh, Medical Table pavilon (Ayurveda), propojení s Genesis Garden, Dharma Temple a Te Pīko Ora. |
-| 3 | Síť (2029) | 4 ha, semenná síť 3+ uzlů, ayurvedské vzdělávací centrum, wayfinding bhakti škola, druhý uzel v Asii. |
+| 3 | Síť (2029) | 4 ha, semenná síť 3+ uzlů, univerzita a škola (ayurvedské vzdělávací centrum + Bhakti Governance akademie), druhý uzel v Asii. |
 | 4 | Výzařování (2030+) | Probuzené retreat centrum 40+ hostů, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první protokol Bhakti Governance v praxi. |
 
 ## ZION integrace

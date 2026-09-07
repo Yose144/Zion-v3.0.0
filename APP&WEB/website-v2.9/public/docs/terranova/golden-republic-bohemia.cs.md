@@ -69,7 +69,7 @@ Mezi pavilony vedou kryté chodby (evokace karlštejnských koridorů) a pěší
 | 1 | Kořeny (2027) | Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2027, ZION wallet + DAO rámec. |
 | 2 | Komunita (2028) | Guardian node, stálé bydlení 3–5 chat, měsíční governance program, LoRa mesh, Medical Table pavilon, propojení s Genesis Garden a Dharma Temple. |
 | 3 | Síť (2029) | 3 ha, semenná síť 3+ uzlů, vzdělávací centrum (Wayfinding Governance škola), druhý uzel v Čechách nebo na Slovensku. |
-| 4 | Výzařování (2030+) | Governance retreat centrum 40+ hostů, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první prototyp Zlaté republiky v praxi. |
+| 4 | Výzařování (2030+) | Governance retreat centrum 40+ hostů, Zlatý dům jako sídlo DAO parlamentu, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první prototyp Zlaté republiky v praxi. |
 
 ## ZION integrace
 
@@ -81,6 +81,7 @@ Mezi pavilony vedou kryté chodby (evokace karlštejnských koridorů) a pěší
 - **Proof-of-Care** — odměny za skutečnou péči o půdu, komunitu a governance dokumentaci.
 - **Humanitarian Tithe** — 10 % z node odměn směřuje do místních a globálních humanitárních projektů.
 - **Zlatá republika protokol** — governance laboratoř: první fyzický uzel, kde se prototypuje dobrovolný protokol soužití z `TerraNova/06-L5-SVOBODA` §6.6.
+- **Zlatý dům — DAO parlament** — tak jako mají USA Bílý dům, Zlatá republika má Zlatý dům: sídlo DAO parlamentu a veřejné správy. Každé hlasování on-chain, každé zasedání veřejné, každé rozhodnutí navždy zapsané v blockchainu.
 
 ## Otevřené otázky
 

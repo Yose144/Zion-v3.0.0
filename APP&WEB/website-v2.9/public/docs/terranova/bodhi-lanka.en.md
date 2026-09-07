@@ -67,7 +67,7 @@ Covered corridors (evoking temple passageways) and walking paths connect the pav
 | 0 | Seed (2026 Q3–Q4) | Core team 3–5 guardians, scouting Sri Lanka (Anuradhapura / hill country / south coast), legal research (NGO vs company vs cooperative), budget 80 000 EUR, trial plots 0.3 ha, partnership with Buddhist sangha. |
 | 1 | Roots (2027) | Land (long-term lease / partnership), registration, solar 10 kWp, cistern, eco-cabins 4–6 units, 1.5 ha, first guests Q4 2027, ZION wallet + DAO framework, planting of Bodhi avenue. |
 | 2 | Community (2028) | Guardian node, permanent housing 3–5 cabins, monthly governance program, LoRa mesh, Medical Table pavilion (Ayurveda), connection with Genesis Garden, Dharma Temple, and Te Pīko Ora. |
-| 3 | Network (2029) | 4 ha, seed network 3+ nodes, Ayurvedic education center, wayfinding bhakti school, second node in Asia. |
+| 3 | Network (2029) | 4 ha, seed network 3+ nodes, university and school (Ayurvedic education center + Bhakti Governance academy), second node in Asia. |
 | 4 | Radiance (2030+) | Awakened retreat center 40+ guests, ZION payments as default, knowledge commons, 1% surplus → L6, first Bhakti Governance protocol in practice. |
 
 ## ZION Integration
