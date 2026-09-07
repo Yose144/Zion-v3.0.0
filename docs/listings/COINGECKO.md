@@ -199,3 +199,79 @@ All URLs verified live on 2026-09-03.
 ZION is open-source, experimental technology released under the MIT license. It is not a security,
 not an investment product, and not a licensed financial instrument. Token value is not guaranteed.
 This document is informational and not financial advice.
+
+---
+
+## 9. Form Answers — CoinGecko Sections 7–12
+
+Ready-to-paste answers for the submission form (also in `/COINGECKO_FORM_ANSWERS.md`).
+
+### 7. Coin Holders & Distribution Schedule
+
+| Field | Value |
+|-------|-------|
+| **Top Holder List URL** | https://app.zionterranova.com/explorer/richlist |
+| **Distribution Schedule** | https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/LEGAL/PREMINE_DISCLOSURE.md |
+
+### 8. Coin/Token Supply Information
+
+| Field | Value |
+|-------|-------|
+| **Token Generation Date (TGE)** | 2026-08-06 (V31 "One Love" genesis) |
+| **Max Supply Amount** | 144,000,000,000 |
+| **Is Infinite Supply** | No — hard cap 144B |
+
+### 9. Total Supply
+
+| Field | Value |
+|-------|-------|
+| **Total Supply Amount** | 144,000,000,000 |
+| **Total Supply API** | https://app.zionterranova.com/api/supply/total (plain number) |
+| **Burned Wallet** | `zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0` (canonical 1% pool-fee burn address; the share is never minted and all tx fees are burned) |
+
+### 10. Circulating Supply
+
+| Field | Value |
+|-------|-------|
+| **Circulating Supply Amount** | ~16,961,804,055 (live; +~5,400 ZION/block) |
+| **Circulating Supply API** | https://app.zionterranova.com/api/supply/circulating (plain number) |
+
+Vested/Locked wallets (DAO treasury, time-locked until block 144,000):
+
+| Address | Amount (ZION) |
+|---------|---------------|
+| `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5` | 2,500,000,000 |
+| `zion1s27490u7n823g098w42077h8f2n824w0y75w0s3` | 1,000,000,000 |
+| `zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238` | 500,000,000 |
+
+All 14 genesis premine outputs are additionally admin-locked (3-of-3 multisig + DAO vote) — full list in `docs/PREMINE_ADDRESSES_PUBLIC.txt`.
+
+### 11. Initial Token Allocation
+
+| # | Allocation | % of max supply | TGE % | Cliff | Vesting | Release |
+|---|-----------|-----------------|-------|-------|---------|---------|
+| 1 | OASIS Reward Pool | 3.44% | 100% (locked) | 0 | 0 | Programmatic, ~10 yrs |
+| 2 | L5 Free World Projects | 2.29% | 100% (locked) | 0 | 0 | DAO-governed |
+| 3 | DAO Treasury | 2.78% | 0% | ~3.3 mo (blk 144k) | 0 | Full unlock at cliff |
+| 4 | Infrastructure & Core Dev | 1.80% | 100% (admin-locked) | 0 | 0 | Multisig + DAO per spend |
+| 5 | Children Future Fund | 1.00% | 100% (admin-locked) | 0 | 0 | DAO-governed |
+| 6 | Bridge Liquidity Funds | 0.35% | 100% (admin-locked) | 0 | 0 | Bridge liquidity |
+| 7 | Public Mining Emission | 88.35% | 0% | 0 | ~1,200 mo | Continuous PoW emission |
+
+### 12. Additional Supply Information
+
+```
+ZION is a PoW chain, not a minted token: 88.35% of max supply (127.22B) is
+emitted only through mining over ~100+ years via Decade Decay (-20%/decade)
+plus perpetual tail emission (~724.785 ZION/block). The genesis premine
+(16.78B, 11.65%) consists of 14 transparent on-chain outputs - all publicly
+listed in the distribution document. 3 DAO treasury outputs (4.0B) are
+time-locked until block 144,000; all premine outputs additionally require
+3-of-3 admin multisig plus DAO governance approval to move. Under a strict
+methodology the currently unlocked circulating supply equals mined emission
+(~181.8M ZION); our API reports premine+mined since all outputs are
+transparently disclosed and on-chain verifiable. The 1% pool-fee share of
+each block is never minted (burned at source) and all transaction fees are
+burned, making supply mildly deflationary. wZION (ERC-20 on Base) is a 1:1
+bridged representation, not additional issuance.
+```
