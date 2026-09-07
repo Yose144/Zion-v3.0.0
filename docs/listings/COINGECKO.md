@@ -248,15 +248,19 @@ All 14 genesis premine outputs are additionally admin-locked (3-of-3 multisig + 
 
 ### 11. Initial Token Allocation
 
-| # | Allocation | % of max supply | TGE % | Cliff | Vesting | Release |
+⚠️ Percentages must sum to exactly **100.00** — use these values:
+
+| # | Allocation | % of Allocation | TGE % | Cliff | Vesting | Release |
 |---|-----------|-----------------|-------|-------|---------|---------|
-| 1 | OASIS Reward Pool | 3.44% | 100% (locked) | 0 | 0 | Programmatic, ~10 yrs |
-| 2 | L5 Free World Projects | 2.29% | 100% (locked) | 0 | 0 | DAO-governed |
-| 3 | DAO Treasury | 2.78% | 0% | ~3.3 mo (blk 144k) | 0 | Full unlock at cliff |
-| 4 | Infrastructure & Core Dev | 1.80% | 100% (admin-locked) | 0 | 0 | Multisig + DAO per spend |
-| 5 | Children Future Fund | 1.00% | 100% (admin-locked) | 0 | 0 | DAO-governed |
-| 6 | Bridge Liquidity Funds | 0.35% | 100% (admin-locked) | 0 | 0 | Bridge liquidity |
-| 7 | Public Mining Emission | 88.35% | 0% | 0 | ~1,200 mo | Continuous PoW emission |
+| 1 | OASIS Reward Pool | 3.44 | 100 | 0 | 0 | Programmatic, ~10 yrs |
+| 2 | L5 Free World Projects | 2.29 | 100 | 0 | 0 | DAO-governed |
+| 3 | DAO Treasury | 2.78 | 0 | 3.3 mo (blk 144k) | 0 | Full unlock at cliff |
+| 4 | Infrastructure & Core Dev | 1.80 | 100 | 0 | 0 | Multisig + DAO per spend |
+| 5 | Children Future Fund | 1.00 | 100 | 0 | 0 | DAO-governed |
+| 6 | Bridge Liquidity Funds | 0.35 | 100 | 0 | 0 | Bridge liquidity |
+| 7 | Public Mining Emission | 88.34 | 0 | 0 | ~1,200 mo | Continuous PoW emission |
+
+**Sum: 100.00** ✓
 
 ### 12. Additional Supply Information
 
