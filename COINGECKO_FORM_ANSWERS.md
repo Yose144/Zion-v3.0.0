@@ -45,6 +45,10 @@ ZION is the native coin of its own Layer-1 chain. It pays transaction fees, rewa
 
 ---
 
+## 6. (sekce 6 ve formuláři nebyla poskytnuta — pokud existuje, pošli její pole)
+
+---
+
 ## 7. Coin Holders & Distribution Schedule
 
 | Field | Value |
