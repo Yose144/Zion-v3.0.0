@@ -105,7 +105,7 @@ This 89/5/5/1 split is hardcoded in consensus and cannot be altered by governanc
 | Whitepaper (CZ) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md |
 | Source code / GitHub | https://github.com/Zion-TerraNova/v3-Mainnet |
 | Announcement / blog | https://zionterranova.com/blog (TBD) |
-| Discord | https://discord.gg/zion-terranova |
+| Discord | https://discord.gg/wvxJ7DhZ8 |
 | Telegram | https://t.me/zionterranova |
 | Support email | support@zion-blockchain.org |
 | Logo (PNG) | https://zionterranova.com/zion_logo.png |

@@ -1024,7 +1024,7 @@ It's a **prophecy** - 10 million souls awakening through play.
 
 **Contact:**
 - **Email:** gamedev@zion.foundation
-- **Discord:** discord.gg/zionoasis
+- **Discord:** discord.gg/wvxJ7DhZ8
 - **Twitter:** @ZIONOasisMMO
 
 ---

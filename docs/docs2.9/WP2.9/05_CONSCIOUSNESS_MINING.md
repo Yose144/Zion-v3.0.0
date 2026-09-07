@@ -445,7 +445,7 @@ Access AI challenges through:
 
 ### Step 4: Engage Community
 
-- Join Discord: discord.gg/zion
+- Join Discord: discord.gg/wvxJ7DhZ8
 - Help newcomers in #mining-support
 - Create tutorials and content
 - Report bugs and suggest features

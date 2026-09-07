@@ -1022,7 +1022,7 @@ Core Team:
   devops: TBD
   
 Community:
-  discord: discord.gg/ziondharma
+  discord: discord.gg/wvxJ7DhZ8
   telegram: t.me/ziondharma_official
   twitter: @ZIONDharma
   

@@ -152,7 +152,7 @@ bridged representation, not additional issuance.
 |------|---------|
 | X Profile Link | https://x.com/ZionTerraNova |
 | Telegram Channel Link | https://t.me/zionterranova |
-| Discord Invitation URL | https://discord.gg/eatGYDbd |
+| Discord Invitation URL | https://discord.gg/wvxJ7DhZ8 |
 | Facebook / YouTube / Subreddit / Medium | _zatím nemáme — nech prázdné_ |
 | Other Social Media Link | https://app.zionterranova.com/news |
 

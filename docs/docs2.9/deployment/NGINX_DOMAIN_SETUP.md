@@ -841,7 +841,7 @@ sudo apt list --upgradable | grep security
 ### Contacts
 - **Technical Issues:** dev@zionterranova.com
 - **Security Issues:** security@zionterranova.com
-- **Discord:** https://discord.gg/zion
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 
 ### Užitečné odkazy
 - **Nginx Docs:** https://nginx.org/en/docs/

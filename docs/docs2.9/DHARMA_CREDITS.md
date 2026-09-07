@@ -340,7 +340,7 @@ contract DharmaCredits is ERC20 {
 ## 📞 Community
 
 - 🌐 Website: https://zion.blockchain (coming soon)
-- 💬 Discord: discord.gg/zion
+- 💬 Discord: discord.gg/wvxJ7DhZ8
 - 🐦 Twitter: @ZionDharma
 - 📧 Email: yosef.hubalek@gmail.com
 - 📚 Docs: docs.zion.blockchain

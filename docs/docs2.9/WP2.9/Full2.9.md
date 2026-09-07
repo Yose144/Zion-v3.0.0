@@ -1857,7 +1857,7 @@ Access AI challenges through:
 
 ### Step 4: Engage Community
 
-- Join Discord: discord.gg/zion
+- Join Discord: discord.gg/wvxJ7DhZ8
 - Help newcomers in #mining-support
 - Create tutorials and content
 - Report bugs and suggest features
@@ -2990,7 +2990,7 @@ DAO Winners aren't just rewarded — they're given responsibilities:
 ### How to Get Involved (Now)
 
 1. **Join Community**
-   - Discord: discord.gg/zion
+   - Discord: discord.gg/wvxJ7DhZ8
    - Telegram: t.me/zionterranova
    - Twitter: @ZionTerraNova
 

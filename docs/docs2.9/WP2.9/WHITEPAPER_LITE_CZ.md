@@ -295,7 +295,7 @@ Po spuštění hlavní sítě (prosinec 2027) a zalistování na burzách (leden
 |----|-----|
 | **Webové stránky** | [zionterranova.com](https://zionterranova.com) |
 | **Těžební pool** | [pool.zionterranova.com](https://pool.zionterranova.com) |
-| **Discord** | [discord.gg/zion](https://discord.gg/zion) |
+| **Discord** | [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8) |
 | **Telegram** | [t.me/zionterranova](https://t.me/zionterranova) |
 | **Twitter/X** | [@ZionTerraNova](https://twitter.com/ZionTerraNova) |
 

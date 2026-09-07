@@ -709,7 +709,7 @@ Dle článku 4(2) MiCA:
 
 **Sociální média:**
 - **Telegram:** https://t.me/ZionTerraNova
-- **Discord:** https://discord.gg/zionterranova
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 - **Twitter/X:** @ZionTerraNova
 - **GitHub:** https://github.com/Zion-TerraNova
 - **Medium:** https://medium.com/@zionterranova
