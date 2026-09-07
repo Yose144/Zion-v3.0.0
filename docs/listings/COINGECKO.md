@@ -148,6 +148,8 @@ All values verified from source code and live chain.
 | Public RPC | `rpc.zionterranova.com:8443` (TCP proxy → localhost:9445) | live |
 | Public mining pool | `62.171.141.136:8444` (Stratum) | live |
 | Blockchain stats API | https://app.zionterranova.com/api/blockchain/stats | live (JSON) |
+| DEX pair (wZION/USDT) | Uniswap V3 on Base `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | live liquidity (NFT #5952162) |
+| GeckoTerminal | https://www.geckoterminal.com/base/pools/0x186b46c2f04153999d44D25179cD623fD62Bfda2 | indexed, live price |
 
 > **Note for reviewers:** ZION is a native Layer-1 coin with its own blockchain and explorer; the
 > ERC-20 **wZION** is a bridged representation on Base for DeFi liquidity. Please list ZION as a
