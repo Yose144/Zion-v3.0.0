@@ -162,14 +162,14 @@ contract ZIONBridgeTest is Test {
 
     function test_UpdateThreshold() public {
         vm.prank(admin);
-        bridge.updateThreshold(2);
-        assertEq(bridge.threshold(), 2);
+        bridge.updateThreshold(3);
+        assertEq(bridge.threshold(), 3);
     }
 
     function test_UpdateThreshold_RevertNotAdmin() public {
         vm.prank(val1);
         vm.expectRevert();
-        bridge.updateThreshold(2);
+        bridge.updateThreshold(3);
     }
 
     // ── Pause / Unpause ──────────────────────────────────────────────
