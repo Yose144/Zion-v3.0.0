@@ -24,6 +24,7 @@ const DEPLOYER_KEY = process.env.DEPLOYER_KEY || (
   process.env.DEPLOYER_KEY_FILE ? fs.readFileSync(process.env.DEPLOYER_KEY_FILE, 'utf8').trim() : undefined
 );
 const USDT_AMOUNT = process.env.USDT_AMOUNT; // human units, e.g. 1000
+const ETH_MIN_ETH = process.env.ETH_MIN ? Number(process.env.ETH_MIN) : 0.0005; // Base gas is cheap
 
 const POOL_ADDRESS = '0x186b46c2f04153999d44D25179cD623fD62Bfda2';
 const NFT_POSITION_MANAGER = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
@@ -82,8 +83,8 @@ async function main() {
   const ethBal = await provider.getBalance(deployer.address);
   console.log('ETH:', ethers.formatEther(ethBal));
 
-  if (ethBal < ethers.parseEther('0.001')) {
-    console.error('Need >= 0.001 ETH for gas');
+  if (ethBal < ethers.parseEther(String(ETH_MIN_ETH))) {
+    console.error(`Need >= ${ETH_MIN_ETH} ETH for gas`);
     process.exit(1);
   }
 
