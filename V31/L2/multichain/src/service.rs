@@ -554,16 +554,14 @@ impl MultichainService {
     }
 
     /// Return the best DEX quote for swapping `amount` of `from` into `to`.
+    /// Falls back to an on-chain Uniswap V3 quote for same-chain EVM pairs.
     pub async fn dex_quote(
         &self,
         from: &Asset,
         to: &Asset,
         amount: Amount,
     ) -> MultichainResult<Quote> {
-        let quotes = self.dex.read().await.quote_multi(from, to, amount, 1, 3)?;
-        quotes.into_iter().next().ok_or_else(|| {
-            MultichainError::Unsupported(format!("no route from {} to {}", from.id, to.id))
-        })
+        self.swap_executor.quote(from, to, amount).await
     }
 
     /// Return the top-N DEX routes for a swap (multi-path quote).

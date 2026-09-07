@@ -85,7 +85,7 @@ const DefiCopy = {
   bridge: { cs: `Bridge`, en: `Bridge` },
   online: { cs: `Online`, en: `Online` },
   offline: { cs: `Offline`, en: `Offline` },
-  k55Validators: { cs: `5/5 validátorů`, en: `5/5 validators` },
+  k55Validators: { cs: `5 validátorů, threshold 4/5`, en: `5 validators, 4/5 threshold` },
   validators: { cs: `Validátoři`, en: `Validators` },
   guardianRelay: { cs: `Guardian relay`, en: `Guardian relay` },
   auction: { cs: `Aukce`, en: `Auction` },
