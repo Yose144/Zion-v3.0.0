@@ -18,7 +18,7 @@ export default function CtaSection() {
           {t('cta.ctaOasis')}
           <ExternalLink className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </a>
-        <a href="https://discord.gg/uq4Az97hG" className="rasta-hero-btn rasta-hero-btn-ghost inline-flex items-center gap-2">
+        <a href="https://discord.gg/wvxJ7DhZ8" className="rasta-hero-btn rasta-hero-btn-ghost inline-flex items-center gap-2">
           <MessageCircle className="w-4 h-4" />
           {t('cta.ctaDiscord')}
         </a>

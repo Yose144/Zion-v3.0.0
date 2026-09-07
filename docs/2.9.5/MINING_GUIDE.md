@@ -305,7 +305,7 @@ Warning: Stale share rate > 5%
 
 ## 📞 Support
 
-- **Discord:** discord.gg/zionterranova
+- **Discord:** discord.gg/wvxJ7DhZ8
 - **Telegram:** t.me/zionterranova
 - **GitHub Issues:** github.com/Yose144/Zion-2.9/issues
 - **Email:** support@zionterranova.com

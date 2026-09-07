@@ -264,7 +264,7 @@ Nezvládl jsem to. Byly tam bugy, bottlenecks, edge cases, které jsem nepředv�
 
 ## 💬 Join Community
 
-- **Discord**: [discord.gg/ZionTerraNova](https://discord.gg/ZionTerraNova) (primary chat)
+- **Discord**: [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8) (primary chat)
 - **Telegram**: [t.me/ZionTerraNova](https://t.me/ZionTerraNova) (announcements)
 - **Twitter/X**: [@ZionTerraNova](https://twitter.com/ZionTerraNova) (updates)
 - **Reddit**: [r/ZionTerraNova](https://reddit.com/r/ZionTerraNova) (discussions)

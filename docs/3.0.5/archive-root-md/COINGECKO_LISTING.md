@@ -128,7 +128,7 @@ Supply is verifiable on-chain via RPC `getSupply` endpoint.
 |----------|------|
 | **GitHub (public)** | https://github.com/Zion-TerraNova/v3-Mainnet |
 | **GitHub (private)** | https://github.com/Yose144/Zion-v3.0.0 |
-| **Discord** | https://discord.gg/zion-terranova |
+| **Discord** | https://discord.gg/wvxJ7DhZ8 |
 | **Telegram** | https://t.me/zionterranova |
 | **Twitter / X** | https://x.com/ZionTerraNova |
 | **Bitcointalk ANN** | [To be posted on Mainnet Beta day] |

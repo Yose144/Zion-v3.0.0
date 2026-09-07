@@ -281,7 +281,7 @@ Level 7 │ ON THE STAR ⭐ │ 2,500,000  │ 15.0× reward 🔥
 
 **Get Help | Share Wins | Connect**
 
-- 💬 **Discord:** [discord.gg/zion](https://discord.gg/zion) *(Main hub)*
+- 💬 **Discord:** [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8) *(Main hub)*
 - 🐦 **Twitter/X:** [@ZionBlockchain](https://twitter.com/ZionBlockchain)
 - 📱 **Telegram:** [t.me/zionterranova](https://t.me/zionterranova)
 - 📺 **YouTube:** Tutorials & updates *(coming soon)*
@@ -591,7 +591,7 @@ Categories:
 - 🗺️ **Roadmap:** https://zionterranova.com/roadmap
 
 **Community:**
-- Discord: discord.gg/zion
+- Discord: discord.gg/wvxJ7DhZ8
 - Telegram: t.me/zionterranova
 - Twitter: @ZionBlockchain
 
@@ -878,7 +878,7 @@ See you in the pool! ⛏️
 Peace & One Love,
 — ZION Core Team
 
-P.S. Join Discord for mining support: discord.gg/zion
+P.S. Join Discord for mining support: discord.gg/wvxJ7DhZ8
 
 ---
 ZION v2.9.0 "Quantum Leap"
@@ -942,7 +942,7 @@ To celebrate the TestNet launch, ZION is hosting a mining competition with a 100
 
 **Media Contact:**
 
-Discord: discord.gg/zion  
+Discord: discord.gg/wvxJ7DhZ8  
 Telegram: t.me/zionterranova  
 Twitter: @ZionBlockchain  
 Email: contact@zionterranova.com (if available)
@@ -1122,7 +1122,7 @@ This is how we start the new year.
 🕐 **Time:** 00:00 UTC (midnight)  
 🌐 **Portal:** https://zionterranova.com  
 ⛏️ **Pool:** pool.zionterranova.com:3333  
-💬 **Command:** discord.gg/zion  
+💬 **Command:** discord.gg/wvxJ7DhZ8  
 
 **STATUS:** 🔴 **READY FOR IGNITION**
 

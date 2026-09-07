@@ -217,7 +217,7 @@ Všechny právní dokumenty obsahují:
 
 - **Email:** hello@zionterranova.com
 - **GDPR:** gdpr@zionterranova.com
-- **Discord:** https://discord.gg/eatGYDbd
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 
 ---
 

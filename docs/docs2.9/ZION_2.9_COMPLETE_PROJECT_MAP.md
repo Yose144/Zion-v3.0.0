@@ -726,4 +726,4 @@ npm run dev
 **Licence:** MIT  
 **Web:** https://zionterranova.com  
 **GitHub:** https://github.com/Yose144/Zion-2.9  
-**Discord:** https://discord.gg/zion
+**Discord:** https://discord.gg/wvxJ7DhZ8

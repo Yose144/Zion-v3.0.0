@@ -41,7 +41,7 @@
 ### Official Channels
 - **Twitter/X:** https://twitter.com/zionterranova
 - **Telegram:** https://t.me/zionblockchain
-- **Discord:** https://discord.gg/zion
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 - **GitHub:** https://github.com/estrelaisabellazion3/Zion-2.8
 - **Medium:** https://medium.com/@zionterranova
 - **YouTube:** https://youtube.com/@zionterranova

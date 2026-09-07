@@ -296,7 +296,7 @@ export default function DownloadPage() {
               <p className="text-sm text-gray-300">
                 <span className="text-zion-gold font-semibold">💡 {DownloadCopy.desktopNeedHelp[cs ? 'cs' : 'en']}</span>{' '}
                 {DownloadCopy.desktopJoinDiscordForSupport[cs ? 'cs' : 'en']}{' '}
-                <Link href="https://discord.gg/zion-terranova" target="_blank" className="text-zion-gold underline hover:no-underline">
+                <Link href="https://discord.gg/wvxJ7DhZ8" target="_blank" className="text-zion-gold underline hover:no-underline">
                   Discord
                 </Link>
               </p>
@@ -391,7 +391,7 @@ export default function DownloadPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="https://discord.gg/zion-terranova"
+              href="https://discord.gg/wvxJ7DhZ8"
               target="_blank"
               rel="noreferrer"
               className="zion-button-primary text-sm"

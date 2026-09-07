@@ -470,7 +470,7 @@ Every mined block automatically contributes **10% of rewards** to global humanit
 
 - **Telegram**: [@ZionBlockchain](https://t.me/ZionBlockchain)
 
-- **Discord**: [ZION Community](https://discord.gg/zion-blockchain)- **❤️ Humanitarian Aid**: Global community support and development
+- **Discord**: [ZION Community](https://discord.gg/wvxJ7DhZ8)- **❤️ Humanitarian Aid**: Global community support and development
 
 - **Twitter**: [@ZionBlockchain](https://twitter.com/ZionBlockchain)  - Wallet: `ZION1HumanitarianAid2024GlobalCommunitySupport`
 

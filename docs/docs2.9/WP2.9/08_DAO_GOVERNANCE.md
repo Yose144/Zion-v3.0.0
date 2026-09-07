@@ -314,7 +314,7 @@ DAO Winners aren't just rewarded — they're given responsibilities:
 ### How to Get Involved (Now)
 
 1. **Join Community**
-   - Discord: discord.gg/zion
+   - Discord: discord.gg/wvxJ7DhZ8
    - Telegram: t.me/zionterranova
    - Twitter: @ZionTerraNova
 

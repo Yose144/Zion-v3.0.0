@@ -488,7 +488,7 @@ sudo iptables -L -v -n
 ## 📞 Support
 
 - **Documentation**: [docs.zionterranova.com](https://docs.zionterranova.com)
-- **Discord**: [discord.gg/zionterranova](https://discord.gg/zionterranova)
+- **Discord**: [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8)
 - **GitHub Issues**: [github.com/Yose144/Zion-2.9/issues](https://github.com/Yose144/Zion-2.9/issues)
 
 ---

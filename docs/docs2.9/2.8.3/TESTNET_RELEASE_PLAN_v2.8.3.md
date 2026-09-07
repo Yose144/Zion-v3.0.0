@@ -584,7 +584,7 @@ https://www.zionterranova.com/testnet/mining
 
 ## Support
 
-Discord: https://discord.gg/zion
+Discord: https://discord.gg/wvxJ7DhZ8
 Telegram: https://t.me/zionblockchain
 Website: https://www.zionterranova.com
 ```
@@ -949,7 +949,7 @@ Visit: https://www.zionterranova.com/testnet/faucet
 ⚠️ Do NOT use mainnet wallets or keys
 
 ## Support
-- Discord: https://discord.gg/zion
+- Discord: https://discord.gg/wvxJ7DhZ8
 - Telegram: https://t.me/zionblockchain
 - Website: https://www.zionterranova.com
 EOF
@@ -1103,7 +1103,7 @@ Warning: All testnet tokens WILL BE DELETED
 - **Website:** https://www.zionterranova.com
 
 ### Post-Launch
-- **Discord:** https://discord.gg/zion
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 - **Telegram:** https://t.me/zionblockchain
 - **GitHub Issues:** https://github.com/estrelaisabellazion3/ZION-Testnet-Public/issues
 

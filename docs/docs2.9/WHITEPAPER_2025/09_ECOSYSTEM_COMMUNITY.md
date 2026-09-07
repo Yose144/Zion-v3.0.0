@@ -345,7 +345,7 @@ Community Organizer (Regional):
 ### Official Platforms
 
 ```yaml
-Discord: https://discord.gg/zion (primary)
+Discord: https://discord.gg/wvxJ7DhZ8 (primary)
   Channels:
     #announcements: Official updates only
     #general: Community chat

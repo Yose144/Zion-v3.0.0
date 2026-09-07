@@ -250,7 +250,7 @@ open books/ZION_Consciousness_Tree_Interactive.html
 
 For issues or questions:
 - GitHub: https://github.com/zionterranova/zion-2.9
-- Discord: https://discord.gg/zionterranova
+- Discord: https://discord.gg/wvxJ7DhZ8
 - Email: support@zionterranova.com
 
 ---

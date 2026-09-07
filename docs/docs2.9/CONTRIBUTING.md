@@ -651,7 +651,7 @@ Pokud objevíte bezpečnostní problém:
 **Potřebujete pomoc?**
 
 - 📖 **Dokumentace**: [docs/](docs/)
-- 💬 **Discord**: [Join server](https://discord.gg/zion)
+- 💬 **Discord**: [Join server](https://discord.gg/wvxJ7DhZ8)
 - 📧 **Email**: admin@zionterranova.com
 - 🐛 **GitHub Issues**: [Open issue](https://github.com/Yose144/Zion-2.9/issues)
 

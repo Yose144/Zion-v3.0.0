@@ -549,7 +549,7 @@ cd C:\zion-miner\V31; .\target\release\zion-miner.exe --pool "62.171.141.136:844
 
 ## Support
 
-- **Discord:** [ZION community](https://discord.gg/zion)
+- **Discord:** [ZION community](https://discord.gg/wvxJ7DhZ8)
 - **Docs:** [`StatusV3.md`](../../StatusV3.md), [`AGENTS.md`](../../AGENTS.md)
 - **Reports:** [`REPORT_2026-08-10_TRINITY_HASHRATE_OPTIMIZATION.md`](../3.1/REPORTS/REPORT_2026-08-10_TRINITY_HASHRATE_OPTIMIZATION.md)
 - **GitHub:** https://github.com/Yose144/Zion-v3.0.0

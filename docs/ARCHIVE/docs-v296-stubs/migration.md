@@ -46,7 +46,7 @@ systemctl start zion-node
 
 Máte otázky ohledně migrace?
 
-- [Discord](https://discord.gg/zion-terranova) — #migration kanál
+- [Discord](https://discord.gg/wvxJ7DhZ8) — #migration kanál
 - [GitHub Issues](https://github.com/Zion-TerraNova/2.9.5-NativeAwakening/issues)
 
 ---

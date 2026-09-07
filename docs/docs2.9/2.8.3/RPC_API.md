@@ -780,7 +780,7 @@ ws.onmessage = (event) => {
 ### Community
 - **GitHub:** [API Issues](https://github.com/estrelaisabellazion3/Zion-2.8/issues)
 - **Forum:** [Developer Discussions](https://forum.zionterranova.com/c/developers)
-- **Discord:** [Dev Chat](https://discord.gg/zion-dev)
+- **Discord:** [Dev Chat](https://discord.gg/wvxJ7DhZ8)
 
 ---
 

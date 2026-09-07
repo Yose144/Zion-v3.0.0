@@ -193,7 +193,7 @@ Apply: humanitarian.zionterranova.com
 | **Explorer** | [explorer.zionterranova.com](https://explorer.zionterranova.com) |
 | **Pool** | [pool.zionterranova.com](https://pool.zionterranova.com) |
 | **GitHub** | [github.com/zion-terranova](https://github.com/zion-terranova) |
-| **Discord** | [discord.gg/zion](https://discord.gg/zion) |
+| **Discord** | [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8) |
 | **Telegram** | [t.me/zionterranova](https://t.me/zionterranova) |
 | **Twitter** | [@ZionTerraNova](https://twitter.com/ZionTerraNova) |
 

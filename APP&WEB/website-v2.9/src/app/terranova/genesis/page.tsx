@@ -931,7 +931,7 @@ export default function ZahradaGenesisPage() {
               ))}
             </ul>
             <a
-              href="https://discord.gg/eatGYDbd"
+              href="https://discord.gg/wvxJ7DhZ8"
               target="_blank"
               rel="noopener noreferrer"
               className="zion-button-secondary"
@@ -972,7 +972,7 @@ export default function ZahradaGenesisPage() {
                 <Zap className="w-4 h-4" /> GitHub
               </a>
               <a
-                href="https://discord.gg/eatGYDbd"
+                href="https://discord.gg/wvxJ7DhZ8"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="zion-button-secondary"

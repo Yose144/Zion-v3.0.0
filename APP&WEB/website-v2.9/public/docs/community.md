@@ -6,7 +6,7 @@
 
 - **Web**: [zionterranova.com](https://www.zionterranova.com)
 - **GitHub**: [github.com/Zion-TerraNova](https://github.com/Zion-TerraNova)
-- **Discord**: [discord.gg/zion-terranova](https://discord.gg/zion-terranova)
+- **Discord**: [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8)
 - **Explorer**: [zionterranova.com/explorer](https://www.zionterranova.com/explorer)
 
 ---
@@ -69,7 +69,7 @@ Více v [ZION Oasis →](#zion-oasis).
 ## Kontakt
 
 - Otevři issue na [GitHub](https://github.com/Zion-TerraNova)
-- Přidej se na [Discord](https://discord.gg/zion-terranova)
+- Přidej se na [Discord](https://discord.gg/wvxJ7DhZ8)
 
 ---
 

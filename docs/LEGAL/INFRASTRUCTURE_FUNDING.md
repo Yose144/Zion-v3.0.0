@@ -83,7 +83,7 @@ These contributions are **voluntary** and do not create employment, partnership,
 
 For questions about infrastructure funding:
 - GitHub: [github.com/Yose144/Zion-2.9.5](https://github.com/Yose144/Zion-2.9.5)
-- Discord: [discord.gg/zion-terranova](https://discord.gg/zion-terranova)
+- Discord: [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8)
 
 ---
 

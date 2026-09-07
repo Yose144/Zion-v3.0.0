@@ -748,7 +748,7 @@ export default function BodhiLankaPage() {
               {TerranovaBodhiLankaCopy.doYouHearTheCallOfTheBodhiTree[cs ? 'cs' : 'en']}
             </p>
             <a
-              href="https://discord.gg/eatGYDbd"
+              href="https://discord.gg/wvxJ7DhZ8"
               target="_blank"
               rel="noopener noreferrer"
               className="zion-button-secondary"

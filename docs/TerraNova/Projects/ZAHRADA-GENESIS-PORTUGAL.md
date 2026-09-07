@@ -224,6 +224,6 @@ Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, 
 
 - **Web:** https://www.newearth.cz/V2/camp.html
 - **Instagram:** @terranova_project
-- **Discord:** https://discord.gg/eatGYDbd
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 - **GitHub:** https://github.com/Zion-TerraNova
 - **Koordinátor:** Terra Nova ® PT team

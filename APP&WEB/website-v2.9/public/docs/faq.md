@@ -108,7 +108,7 @@ Na GitHubu organizace [Zion-TerraNova](https://github.com/Zion-TerraNova):
 
 - Těžbou — každý node pomáhá decentralizaci
 - Kódem — pošli PR na [GitHub](https://github.com/Zion-TerraNova)
-- Komunitou — přidej se na [Discord](https://discord.gg/zion-terranova)
+- Komunitou — přidej se na [Discord](https://discord.gg/wvxJ7DhZ8)
 
 ---
 
