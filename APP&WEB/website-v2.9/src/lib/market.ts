@@ -12,6 +12,7 @@
  */
 
 const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex/tokens';
+const GECKOTERMINAL_API = 'https://api.geckoterminal.com/api/v2/networks/base/pools';
 
 // wZION on Base (canonical EVM wrapper)
 export const WZION_TOKEN = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
@@ -23,6 +24,8 @@ export const CANONICAL_POOLS = new Set([
   '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699', // wZION/WETH 1.0%  (secondary)
   '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3', // wZION/SOL  0.01% (tertiary)
 ]);
+
+const PRIMARY_POOL = '0x186b46c2f04153999d44d25179cd623fd62bfda2';
 
 export const FALLBACK_PRICE_USD = 0.0002;
 
@@ -61,7 +64,7 @@ export interface DexPairDetail {
 }
 
 export interface DexMarketData {
-  source: 'dexscreener' | 'fallback';
+  source: 'dexscreener' | 'geckoterminal' | 'fallback';
   pairs: number;
   total_volume_24h: number;
   total_liquidity_usd: number;
@@ -123,13 +126,46 @@ function weightedChange(basePairs: DexPairRaw[], field: 'h24' | 'h1'): number {
   return weighted / totalVolume;
 }
 
-export async function fetchDexMarketData(): Promise<DexMarketData> {
-  const rawPairs = await fetchDexPairsRaw();
+interface GeckoPoolRaw {
+  attributes?: {
+    name?: string;
+    base_token_price_usd?: string;
+    base_token_price_native_currency?: string;
+    reserve_in_usd?: string;
+    volume_usd?: { h24?: string; h6?: string; h1?: string };
+    price_change_percentage?: { h24?: string; h1?: string };
+    transactions?: { h24?: { buys?: number; sells?: number } };
+    fdv_usd?: string;
+    market_cap_usd?: string;
+    pool_created_at?: string;
+  };
+}
 
-  // Filter to canonical Base chain pairs only — exclude rogue/dust pools
-  const basePairs = rawPairs.filter(isCanonicalBasePair);
+async function fetchGeckoTerminalPool(): Promise<GeckoPoolRaw | null> {
+  try {
+    const res = await fetch(`${GECKOTERMINAL_API}/${PRIMARY_POOL}`, {
+      signal: AbortSignal.timeout(8000),
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch {
+    return null;
+  }
+}
 
-  if (basePairs.length === 0) {
+function num(v: string | undefined): number {
+  const n = parseFloat(v ?? '0');
+  return Number.isFinite(n) ? n : 0;
+}
+
+async function geckoTerminalMarketData(): Promise<DexMarketData> {
+  const pool = await fetchGeckoTerminalPool();
+  const a = pool?.attributes;
+  const price = num(a?.base_token_price_usd);
+  if (!a || price <= 0) {
     return {
       source: 'fallback',
       pairs: 0,
@@ -143,6 +179,53 @@ export async function fetchDexMarketData(): Promise<DexMarketData> {
       price_change_1h: 0,
       pairs_detail: [],
     };
+  }
+
+  const buys = a.transactions?.h24?.buys ?? 0;
+  const sells = a.transactions?.h24?.sells ?? 0;
+  return {
+    source: 'geckoterminal',
+    pairs: 1,
+    total_volume_24h: num(a.volume_usd?.h24),
+    total_liquidity_usd: num(a.reserve_in_usd),
+    total_txns_24h: buys + sells,
+    total_buys_24h: buys,
+    total_sells_24h: sells,
+    best_price_usd: price,
+    price_change_24h: num(a.price_change_percentage?.h24),
+    price_change_1h: num(a.price_change_percentage?.h1),
+    pairs_detail: [
+      {
+        address: PRIMARY_POOL,
+        dex: 'uniswap',
+        pair: a.name ?? 'wZION/USDT',
+        price_usd: price,
+        price_native: a.base_token_price_native_currency ?? '0',
+        liquidity_usd: num(a.reserve_in_usd),
+        volume_24h: num(a.volume_usd?.h24),
+        volume_6h: num(a.volume_usd?.h6),
+        volume_1h: num(a.volume_usd?.h1),
+        price_change_24h: num(a.price_change_percentage?.h24),
+        price_change_1h: num(a.price_change_percentage?.h1),
+        txns_24h: { buys, sells },
+        fdv: num(a.fdv_usd),
+        market_cap: num(a.market_cap_usd),
+        created_at: a.pool_created_at ? Date.parse(a.pool_created_at) : 0,
+      },
+    ],
+  };
+}
+
+export async function fetchDexMarketData(): Promise<DexMarketData> {
+  const rawPairs = await fetchDexPairsRaw();
+
+  // Filter to canonical Base chain pairs only — exclude rogue/dust pools
+  const basePairs = rawPairs.filter(isCanonicalBasePair);
+
+  if (basePairs.length === 0) {
+    // DexScreener may not have indexed the pool yet — try GeckoTerminal,
+    // which already tracks the canonical wZION/USDT pool on Base.
+    return geckoTerminalMarketData();
   }
 
   const totalVolume24h = basePairs.reduce((acc, p) => acc + (p.volume?.h24 ?? 0), 0);
