@@ -176,9 +176,10 @@ const CONTRACT_META: Record<string, ContractMeta> = {
   ZIONBridge: { category: 'Bridge', publicName: 'ZION Bridge' },
   ZIONAtomicSwap: { category: 'Bridge', publicName: 'ZION Atomic Swap' },
   UniV3Factory: { category: 'DEX', publicName: 'Uniswap V3 Factory' },
-  UniV3PoolWETH: { category: 'DEX', publicName: 'Uniswap V3 wZION/WETH Pool' },
-  UniV3PoolUSDT: { category: 'DEX', publicName: 'Uniswap V3 wZION/USDT Pool' },
-  UniV3PoolSOL: { category: 'DEX', publicName: 'Uniswap V3 wZION/SOL Pool' },
+  UniV3PoolWETH: { category: 'DEX', publicName: 'Uniswap V3 wZION/WETH Pool (empty)' },
+  UniV3PoolUSDC: { category: 'DEX', publicName: 'Uniswap V3 wZION/USDC Pool (empty)' },
+  UniV3PoolUSDT: { category: 'DEX', publicName: 'Uniswap V3 wZION/USDT Pool (active)' },
+  UniV3PoolSOL: { category: 'DEX', publicName: 'Uniswap V3 wZION/SOL Pool (empty)' },
   UniV3Router: { category: 'DEX', publicName: 'Uniswap V3 Swap Router' },
   QuoterV2: { category: 'DEX', publicName: 'Uniswap V3 Quoter V2' },
   PositionManager: { category: 'DEX', publicName: 'Uniswap V3 Position Manager (NFT)' },
@@ -311,12 +312,15 @@ function getContractStats(
       ];
     case 'UniV3PoolUSDT':
     case 'UniV3PoolWETH':
+    case 'UniV3PoolUSDC':
     case 'UniV3PoolSOL': {
       const poolKey =
         key === 'UniV3PoolUSDT'
           ? 'wzion_usdt'
           : key === 'UniV3PoolWETH'
           ? 'wzion_weth'
+          : key === 'UniV3PoolUSDC'
+          ? 'wzion_usdc'
           : 'wzion_sol';
       const pool = d.pools?.[poolKey as keyof typeof d.pools] as
         | { active?: boolean; price_usd?: number; liquidity?: string; feeLabel?: string }

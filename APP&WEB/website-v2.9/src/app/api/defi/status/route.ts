@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { CONTRACTS } from '@/lib/defi-contracts';
 
 const HEADERS = { 'Cache-Control': 'no-store, max-age=0' };
 
@@ -32,25 +33,9 @@ const CALLS = {
   govVotingPeriod:        '0x02a251a3', // votingPeriod()
 };
 
-// Updated 2026-08-18 — active bridge + pool addresses
-const CONTRACTS: Record<string, string> = {
-  wZION:          '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-  WETH:           '0x4200000000000000000000000000000000000006',
-  USDT:           '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
-  SOL:            '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82',
-  ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
-  ZIONStaking:    '0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B',
-  ZIONFarm:       '0x167B2753F5D8D9F8e62875cc9e379d7804308B08',
-  ZIONGovernance: '0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8',
-  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // wZION/WETH 1%
-  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2', // wZION/USDT 0.3% — primary
-  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3', // wZION/SOL 0.01%
-  UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
-  UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
-};
+// Contract addresses are imported from the canonical registry in src/lib/defi-contracts.ts
+// (source of truth: L2contracts.md). POOL_WETH_USDC is an external Uniswap pool used for ETH/USD.
 
-const CHAINLINK_WETH_USD = '0x71041dddad3595F9CEdDCDcF2012034b68dF6aFA'; // DEPRECATED — no code at this address on Base
-const LATEST_ROUND_DATA = '0xfeaf968c';
 const POOL_WETH_USDC = '0x6c561B446416E1A00E8E93E221854d6eA4171372'; // WETH/USDC 0.3% — live ETH/USD price
 
 async function ethCall(to: string, data: string): Promise<string | null> {
