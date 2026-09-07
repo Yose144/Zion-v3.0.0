@@ -68,8 +68,13 @@ export async function GET() {
         description: {
           en: 'ZION TerraNova is a PoW Layer-1 blockchain with Decade Decay emission, fee burning, and public explorer APIs.',
         },
-        genesis_date: null,
-        hashing_algorithm: 'Cosmic Harmony v3',
+        image: {
+          thumb: `${SITE_APP_URL}/brand/zion/icon-on-dark-64.png`,
+          small: `${SITE_APP_URL}/brand/zion/icon-on-dark-200.png`,
+          large: `${SITE_APP_URL}/brand/zion/favicon.png`,
+        },
+        genesis_date: '2026-08-06',
+        hashing_algorithm: 'EkamDeeksha',
         market_cap_rank: null,
         coingecko_rank: null,
         coingecko_score: null,

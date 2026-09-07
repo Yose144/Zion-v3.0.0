@@ -62,7 +62,7 @@ export async function GET() {
           description:
             'ZION TerraNova is a PoW Layer-1 blockchain with Decade Decay emission, fee burning, and public explorer APIs.',
           slug: 'zion-terranova',
-          logo: null,
+          logo: `${SITE_APP_URL}/brand/zion/icon-on-dark-200.png`,
           subreddit: null,
           notice: '',
           tags: ['layer-1', 'pow', 'utxo'],
@@ -83,7 +83,7 @@ export async function GET() {
           date_added: null,
           twitter_username: null,
           is_hidden: 0,
-          date_launched: null,
+          date_launched: '2026-08-06',
           self_reported_circulating_supply: circulating,
           self_reported_market_cap: marketCap,
           infinite_supply: false,
