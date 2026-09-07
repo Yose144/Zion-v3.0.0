@@ -251,10 +251,11 @@
 | tWETH (test token) | `0xcE5Df8e83B87f462835b51Ac6B2A4c53fafA620F` | ✅ 18 decimals |
 
 ### Uniswap V3 Pools (Base)
-| Pair | Fee | Pool Address |
-|------|-----|--------------|
-| wZION/USDC | 0.3% | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` |
-| wZION/WETH | 1.0% | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` (ACTIVE) |
+| Pair | Fee | Pool Address | Status |
+|------|-----|--------------|--------|
+| wZION/USDT | 0.3% | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | ✅ ACTIVE — 19 USDT + 151,867.25 wZION, NFT #5952162 |
+| wZION/USDC | 0.3% | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | — empty |
+| wZION/WETH | 1.0% | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | — empty |
 
 ### Multi-Chain wZION
 Deployed on: Base, Arbitrum, Optimism, BSC, Polygon, Avalanche (6 chains live)
