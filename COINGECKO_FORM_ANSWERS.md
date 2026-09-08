@@ -72,7 +72,7 @@ ZION is the native coin of its own Layer-1 chain. It pays transaction fees, rewa
 |-------|-------|
 | **Total Supply Amount** | **144,000,000,000** (fixed cap; dosud vytěženo ~181.8M + premine 16.78B) |
 | **Total Supply API** | https://app.zionterranova.com/api/supply/total → `144000000000` |
-| **Burned Wallet** | `zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0` (canonical pool-fee burn address) |
+| **Burned Wallet** | ⚠️ NEPOUŽÍVAT - nechat prázdné (formulář vyžaduje balance > 0; 1% pool fee se nemintuje, burn adresa má balance 0) |
 
 > Poznámka pro pole Burned Wallet: 1% podíl z každého bloku se do ledgeru vůbec nemintuje (burned at source) + transakční fees se pálí. Adresa výše je kanonická burn adresa protokolu.
 

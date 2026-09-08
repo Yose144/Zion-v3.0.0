@@ -227,7 +227,7 @@ Ready-to-paste answers for the submission form (also in `/COINGECKO_FORM_ANSWERS
 |-------|-------|
 | **Total Supply Amount** | 144,000,000,000 |
 | **Total Supply API** | https://app.zionterranova.com/api/supply/total (plain number) |
-| **Burned Wallet** | `zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0` (canonical 1% pool-fee burn address; the share is never minted and all tx fees are burned) |
+| **Burned Wallet** | Leave empty - no burn address exists (1% pool fee is never minted, fees burned at source) |
 
 ### 10. Circulating Supply
 
