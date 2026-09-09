@@ -89,7 +89,7 @@ type FeatureItem = {
 
 type IntegrationItem = {
   label: string;
-  status: 'active' | 'planned' | 'tbd';
+  status: 'active' | 'planned' | 'tbd' | 'vision';
   icon: LucideIcon;
 };
 
@@ -327,8 +327,13 @@ export default function BodhiLankaPage() {
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="relative h-48 md:h-64 overflow-hidden">
               <img
-                src="/images/bodhi-lanka/hero.jpg"
+                src="/images/bodhi-lanka/hero.webp"
                 alt="Bodhi Lanka"
+                width={1168}
+                height={784}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -445,8 +450,12 @@ export default function BodhiLankaPage() {
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/bodhi-lanka/concept-og.jpg"
+                src="/images/bodhi-lanka/concept-og.webp"
                 alt={cs ? 'Návrh Bodhi Lanka' : 'Bodhi Lanka concept'}
+                width={1168}
+                height={784}
+                loading="lazy"
+                decoding="async"
                 className="w-full object-contain"
               />
             </div>
@@ -680,6 +689,8 @@ export default function BodhiLankaPage() {
                         ? TerranovaBodhiLankaCopy.active[cs ? 'cs' : 'en']
                         : item.status === 'planned'
                         ? TerranovaBodhiLankaCopy.planned[cs ? 'cs' : 'en']
+                        : item.status === 'vision'
+                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
                         : 'TBD'}
                     </p>
                   </div>
