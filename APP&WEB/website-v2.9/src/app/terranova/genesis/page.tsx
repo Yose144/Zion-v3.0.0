@@ -131,7 +131,7 @@ type FeatureItem = {
 
 type IntegrationItem = {
   label: string;
-  status: 'active' | 'planned' | 'tbd';
+  status: 'active' | 'planned' | 'tbd' | 'vision';
   icon: LucideIcon;
 };
 
@@ -256,6 +256,7 @@ const STATUS_LABEL = {
   active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(6, 105, 40,0.1)', border: 'rgba(6, 105, 40,0.25)' },
   planned: { cs: 'Plánováno', en: 'Planned', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
   concept: { cs: 'Koncept', en: 'Concept', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
+  vision: { cs: 'Vize', en: 'Vision', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.25)' },
 };
 
 const COMPARE = [
@@ -379,8 +380,13 @@ export default function ZahradaGenesisPage() {
 
                 <div className="relative z-10 mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                   <img
-                    src="/images/genesis-garden/hero.png"
+                    src="/images/genesis-garden/hero.webp"
                     alt={cs ? 'Genesis Garden — koncept' : 'Genesis Garden — concept render'}
+                    width={1616}
+                    height={973}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                     className="w-full object-cover"
                   />
                 </div>
@@ -433,8 +439,12 @@ export default function ZahradaGenesisPage() {
 
             <div className="relative z-10 mb-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/genesis-garden/concept-og.png"
+                src="/images/genesis-garden/concept-og.webp"
                 alt={cs ? 'Návrh Genesis Garden' : 'Genesis Garden concept'}
+                width={1568}
+                height={1003}
+                loading="lazy"
+                decoding="async"
                 className="w-full object-contain"
               />
             </div>
@@ -872,6 +882,8 @@ export default function ZahradaGenesisPage() {
                         ? (TerranovaGenesisCopy.active[cs ? 'cs' : 'en'])
                         : item.status === 'planned'
                         ? (TerranovaGenesisCopy.planned[cs ? 'cs' : 'en'])
+                        : item.status === 'vision'
+                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
                         : 'TBD'}
                     </p>
                   </div>
