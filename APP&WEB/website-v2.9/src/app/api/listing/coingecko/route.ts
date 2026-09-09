@@ -55,7 +55,7 @@ export async function GET() {
           official_forum_url: [`${SITE_APP_URL}/docs`],
           chat_url: ['https://discord.gg/wvxJ7DhZ8'],
           announcement_url: [`${SITE_APP_URL}/roadmap`],
-          twitter_screen_name: 'ZionTerraNova',
+          twitter_screen_name: '', // TODO: create real @ZionTerraNova account before CG re-submit
           facebook_username: '',
           telegram_channel_identifier: 'zionterranova',
           subreddit_url: '',

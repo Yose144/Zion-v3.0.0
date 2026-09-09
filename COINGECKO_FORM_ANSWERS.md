@@ -150,7 +150,7 @@ bridged representation, not additional issuance.
 
 | Pole | Hodnota |
 |------|---------|
-| X Profile Link | https://x.com/ZionTerraNova |
+| X Profile Link | ⚠️ **NUTNO VYTVOŘIT** — https://x.com/ZionTerraNova (momentálně 404, bez reálného účtu CG zamítá) |
 | Telegram Channel Link | https://t.me/zionterranova |
 | Discord Invitation URL | https://discord.gg/wvxJ7DhZ8 |
 | Facebook / YouTube / Subreddit / Medium | _zatím nemáme — nech prázdné_ |
