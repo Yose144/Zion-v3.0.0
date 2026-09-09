@@ -208,7 +208,7 @@ export default function ConsensusClient() {
 
   const fetchConsensus = useCallback(async () => {
     try {
-      const result = await apiClient<ExplorerConsensus>("/blockchain/consensus?range=7d");
+      const result = await apiClient<ExplorerConsensus>("/blockchain/consensus?range=7d&chart=true");
       setConsensus(result);
     } catch {
       /* silent */

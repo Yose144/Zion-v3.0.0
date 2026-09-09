@@ -589,6 +589,10 @@ function parseHostPort(urlOrHost: string | undefined, fallbackHost: string, fall
 class ZionRpcClient {
   private nodes: SeedNodeConfig[];
   private primaryIndex: number = 0;
+  private infoCache: { value: ZionNetworkInfo; timestamp: number } | null = null;
+  private infoPromise: Promise<ZionNetworkInfo> | null = null;
+  private poolStatsCache: { value: any; timestamp: number } | null = null;
+  private poolStatsPromise: Promise<any> | null = null;
 
   constructor() {
     this.nodes = getSeedNodesConfig();
@@ -799,6 +803,31 @@ class ZionRpcClient {
 
   /** Get network info by combining V3 getChainInfo + getNodeInfo + tip block + getPeerInfo */
   async getInfo(): Promise<ZionNetworkInfo> {
+    const now = Date.now();
+    if (this.infoCache && now - this.infoCache.timestamp < 3_000) {
+      return this.infoCache.value;
+    }
+    if (this.infoPromise) {
+      return this.infoPromise;
+    }
+
+    const stale = this.infoCache;
+    const request = this.fetchInfo().then((value) => {
+      this.infoCache = { value, timestamp: Date.now() };
+      return value;
+    }).catch((error) => {
+      if (stale && now - stale.timestamp < 30_000) return stale.value;
+      throw error;
+    });
+    this.infoPromise = request;
+    try {
+      return await request;
+    } finally {
+      if (this.infoPromise === request) this.infoPromise = null;
+    }
+  }
+
+  private async fetchInfo(): Promise<ZionNetworkInfo> {
     const [chainInfo, nodeInfo, peerInfo] = await Promise.all([
       this.rpcCall<any>('getChainInfo'),
       this.rpcCall<any>('getNodeInfo').catch(() => null),
@@ -1244,11 +1273,36 @@ class ZionRpcClient {
 
   /** Get pool routing statistics via TCP from the pool metrics port */
   async getPoolStats(): Promise<any> {
+    const now = Date.now();
+    if (this.poolStatsCache && now - this.poolStatsCache.timestamp < 5_000) {
+      return this.poolStatsCache.value;
+    }
+    if (this.poolStatsPromise) {
+      return this.poolStatsPromise;
+    }
+
+    const stale = this.poolStatsCache;
+    const request = this.fetchPoolStats().then((value) => {
+      if (value) this.poolStatsCache = { value, timestamp: Date.now() };
+      return value ?? stale?.value ?? null;
+    }).catch((error) => {
+      if (stale && now - stale.timestamp < 60_000) return stale.value;
+      throw error;
+    });
+    this.poolStatsPromise = request;
+    try {
+      return await request;
+    } finally {
+      if (this.poolStatsPromise === request) this.poolStatsPromise = null;
+    }
+  }
+
+  private async fetchPoolStats(): Promise<any> {
     // Try HTTP pool API first (V31 pool exposes /stats, /metrics, /miners)
     const [statsPayload, metricsText, minersPayload] = await Promise.all([
-      this.poolHttpGet<any>('/stats', 10000),
-      this.poolHttpGet<string>('/metrics', 10000),
-      this.poolHttpGet<any>('/miners?limit=200', 10000),
+      this.poolHttpGet<any>('/stats', 5000),
+      this.poolHttpGet<string>('/metrics', 5000),
+      this.poolHttpGet<any>('/miners?limit=200', 5000),
     ]);
 
     const metrics = this.parsePrometheusMetrics(metricsText || '');
