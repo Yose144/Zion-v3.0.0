@@ -123,21 +123,27 @@ export function getApiUrl(path: string): string {
  */
 export async function apiClient<T = any>(
   path: string,
-  options?: RequestInit & { retries?: number; retryDelay?: number },
+  options?: RequestInit & { retries?: number; retryDelay?: number; timeoutMs?: number },
 ): Promise<T> {
   const url = getApiUrl(path);
-  const maxRetries = options?.retries ?? 1;
-  const baseDelay = options?.retryDelay ?? 400;
+  const {
+    retries: maxRetries = 1,
+    retryDelay: baseDelay = 400,
+    timeoutMs = 8_000,
+    ...requestInit
+  } = options ?? {};
 
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const requestSignal = createRequestSignal(requestInit.signal, timeoutMs);
     try {
       const response = await fetch(url, {
-        ...options,
+        ...requestInit,
+        signal: requestSignal.signal,
         headers: {
           'Content-Type': 'application/json',
-          ...options?.headers,
+          ...requestInit.headers,
         },
       });
 
@@ -170,11 +176,32 @@ export async function apiClient<T = any>(
         await delay(baseDelay * Math.pow(2, attempt));
         continue;
       }
+    } finally {
+      requestSignal.cleanup();
     }
   }
 
   console.error(`API call failed after ${maxRetries + 1} attempts: ${url}`, lastError);
   throw lastError ?? new Error(`API call failed: ${url}`);
+}
+
+function createRequestSignal(source: AbortSignal | null | undefined, timeoutMs: number) {
+  const controller = new AbortController();
+  const abortFromSource = () => controller.abort(source?.reason);
+  if (source?.aborted) abortFromSource();
+  else source?.addEventListener('abort', abortFromSource, { once: true });
+
+  const timeout = timeoutMs > 0
+    ? setTimeout(() => controller.abort(new Error(`Request timed out after ${timeoutMs}ms`)), timeoutMs)
+    : null;
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      if (timeout) clearTimeout(timeout);
+      source?.removeEventListener('abort', abortFromSource);
+    },
+  };
 }
 
 function delay(ms: number): Promise<void> {

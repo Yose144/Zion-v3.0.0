@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { estimateCirculatingSupplyAtHeight } from '@/lib/supply';
-import { getZionRpc } from '@/lib/zion-rpc';
+import { getBlockHistory } from '@/lib/block-history';
 
 type ChartType = 'difficulty' | 'blocktime' | 'hashrate' | 'emission' | 'blocksize' | 'txcount';
 
@@ -18,13 +18,13 @@ const CACHE_TTL = 10_000; // 10 seconds
 const chartCache = new Map<string, { json: any; ts: number }>();
 
 export async function GET(request: NextRequest) {
-  const rpc = getZionRpc();
-
   try {
     const searchParams = request.nextUrl.searchParams;
     const chart = (searchParams.get('type') || 'difficulty') as ChartType;
-    const rangeParam = searchParams.get('range') || '24h';
-    const resolution = parseInt(searchParams.get('resolution') || '0');
+    const requestedRange = searchParams.get('range') || '24h';
+    const rangeParam = ['1h', '6h', '24h', '7d', '30d', 'all'].includes(requestedRange) ? requestedRange : '24h';
+    const requestedResolution = Number.parseInt(searchParams.get('resolution') || '0', 10);
+    const resolution = Number.isFinite(requestedResolution) ? Math.min(10_000, Math.max(0, requestedResolution)) : 0;
 
     // Check cache
     const cacheKey = `${chart}:${rangeParam}:${resolution}`;
@@ -37,43 +37,15 @@ export async function GET(request: NextRequest) {
 
     // Determine how many blocks to fetch based on range
     // Assume ~60s block time; cap "all" so the API stays fast as the chain grows.
-    const MAX_HISTORY_BLOCKS = 100_000;
-    const rangeBlocks: Record<string, number> = {
-      '1h': 60,
-      '6h': 360,
-      '24h': 1440,
-      '7d': 10080,
-      '30d': 43200,
-      'all': MAX_HISTORY_BLOCKS,
-    };
-
-    const info = await rpc.getInfo();
-    const chainHeight = info.height;
-
-    let blocksToFetch = rangeBlocks[rangeParam] || 1440;
-    if (rangeParam === 'all') blocksToFetch = Math.min(blocksToFetch, chainHeight);
-    blocksToFetch = Math.min(blocksToFetch, chainHeight);
+    const history = await getBlockHistory(rangeParam, resolution);
+    const { info, chainHeight, headers: sampledHeaders } = history;
 
     // Apply resolution (sample every Nth block for large ranges)
-    const step = resolution || Math.max(1, Math.floor(blocksToFetch / 200));
-    
-    const startHeight = Math.max(0, chainHeight - blocksToFetch);
-    const endHeight = chainHeight;
+    const step = history.resolution;
 
     // Fetch headers in batches (RPC may limit range)
-    const BATCH_SIZE = 500;
-    let allHeaders: any[] = [];
-
-    for (let batchStart = startHeight; batchStart <= endHeight; batchStart += BATCH_SIZE) {
-      const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, endHeight);
-      const headers = await rpc.getBlockHeaders(batchStart, batchEnd);
-      allHeaders = allHeaders.concat(headers);
-    }
 
     // Sample headers at resolution
-    const sampledHeaders = step > 1
-      ? allHeaders.filter((_, i) => i % step === 0 || i === allHeaders.length - 1)
-      : allHeaders;
 
     // Generate chart data based on type
     let data: { labels: string[]; values: number[]; secondary?: number[] };
@@ -137,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     const responseBody = {
       chart,
-      range: rangeParam,
+      range: history.range,
       resolution: step,
       data_points: data.values.length,
       chain_height: chainHeight,

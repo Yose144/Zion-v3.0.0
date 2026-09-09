@@ -7,7 +7,8 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { ethers } from 'ethers';
+import { usePathname } from 'next/navigation';
+import type { providers, Signer } from 'ethers';
 
 // ─── Base Mainnet ──────────────────────────────────────────────────────────────
 
@@ -30,8 +31,8 @@ interface WalletState {
   account: string | null;
   chainId: number | null;
   isBaseMainnet: boolean;
-  provider: ethers.providers.Web3Provider | null;
-  signer: ethers.Signer | null;
+  provider: providers.Web3Provider | null;
+  signer: Signer | null;
   walletName: string | null;
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -56,7 +57,7 @@ const defaultState: WalletState = {
 
 const WalletContext = createContext<WalletState>(defaultState);
 
-interface EthereumProvider extends ethers.providers.ExternalProvider {
+interface EthereumProvider extends providers.ExternalProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on(event: 'accountsChanged', handler: (accounts: string[]) => void): void;
   on(event: 'chainChanged', handler: (chainId: string) => void): void;
@@ -158,22 +159,46 @@ async function getProvider(preferMetaMaskWallet = true): Promise<{
   return null;
 }
 
+const EVM_PATHS = ['/multichain', '/defi', '/dex', '/bridge', '/swap', '/warp', '/wallet', '/account'];
+
+function needsEvmWallet(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return EVM_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 // ─── Provider component ────────────────────────────────────────────────────────
 
 export function WalletProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const shouldInitialize = needsEvmWallet(pathname);
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeProvider, setActiveProvider] = useState<EthereumProvider | null>(null);
+  const [provider, setProvider] = useState<providers.Web3Provider | null>(null);
   const [walletName, setWalletName] = useState<string | null>(null);
 
   const connected = !!account;
   const isBaseMainnet = chainId === BASE_MAINNET_CHAIN_ID;
 
-  const provider = useMemo(() => {
-    if (!activeProvider) return null;
-    return new ethers.providers.Web3Provider(activeProvider as ethers.providers.ExternalProvider, 'any');
+  useEffect(() => {
+    if (!activeProvider) {
+      setProvider(null);
+      return;
+    }
+
+    let cancelled = false;
+    void import('ethers').then(({ ethers }) => {
+      if (!cancelled) {
+        setProvider(new ethers.providers.Web3Provider(activeProvider, 'any'));
+      }
+    }).catch(() => {
+      if (!cancelled) setProvider(null);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [activeProvider]);
 
   const signer = useMemo(() => {
@@ -331,7 +356,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     const init = async () => {
       // Only auto-detect once on the client; no-op on SSR
-      if (typeof window === 'undefined' || !mounted.current) return;
+      if (typeof window === 'undefined' || !mounted.current || !shouldInitialize) return;
       const found = await getProvider();
       if (!found || cancelled || !mounted.current) return;
 
@@ -348,7 +373,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       mounted.current = false;
       cancelled = true;
     };
-  }, []);
+  }, [shouldInitialize]);
 
   return (
     <WalletContext.Provider
