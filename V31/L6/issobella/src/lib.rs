@@ -1,4 +1,4 @@
-//! # ZION Issobella — V3 L6 Space Layer
+//! # ZION Issobella — V31 L6 Space Layer
 //!
 //! > *"The star is not the destination — it is the beginning."*
 //!
@@ -46,6 +46,9 @@ pub mod metrics;
 
 // Re-exports
 pub use config::IssobellaConfig;
-pub use db::{FundBalance, IssobellaDb, MissionRecord, ResearchProposal};
+pub use db::{
+    DisbursementRecord, FundBalance, IssobellaDb, MissionRecord, ObservationRecord,
+    ResearchProposal,
+};
 pub use error::{IssobellaError, IssobellaResult};
 pub use l1_scanner::{L1Scanner, ScannerConfig};

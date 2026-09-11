@@ -16,11 +16,23 @@ pub enum IssobellaError {
     #[error("Invalid mission status transition: {from} -> {to}")]
     InvalidMissionTransition { from: String, to: String },
 
+    #[error("Invalid proposal status transition: {from} -> {to}")]
+    InvalidProposalTransition { from: String, to: String },
+
     #[error("Mission not found: {0}")]
     MissionNotFound(String),
 
     #[error("Observation not found: {0}")]
     ObservationNotFound(String),
+
+    #[error("Proposal not found: {0}")]
+    ProposalNotFound(String),
+
+    #[error("Disbursement not found: {0}")]
+    DisbursementNotFound(String),
+
+    #[error("Invalid status value: {0}")]
+    InvalidStatus(String),
 
     #[error("Insufficient funds: required {required}, available {available}")]
     InsufficientFunds { required: u64, available: u64 },

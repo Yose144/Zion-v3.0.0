@@ -1,6 +1,6 @@
 //! SQLite persistence for zion-issobella.
 
-use crate::error::IssobellaResult;
+use crate::error::{IssobellaError, IssobellaResult};
 use chrono::{DateTime, Utc};
 use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
@@ -46,6 +46,15 @@ impl IssobellaDb {
                 published INTEGER NOT NULL DEFAULT 0
             );
 
+            CREATE TABLE IF NOT EXISTS disbursements (
+                id TEXT PRIMARY KEY,
+                mission_id TEXT NOT NULL,
+                amount_zion INTEGER NOT NULL,
+                recipient TEXT,
+                tx_hash TEXT,
+                disbursed_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS research_proposals (
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -86,6 +95,14 @@ impl IssobellaDb {
         Ok(())
     }
 
+    pub fn get_mission(&self, id: &str) -> IssobellaResult<MissionRecord> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, description, mission_type, budget_zion, spent_zion, status, target_launch_date, started_at, completed_at, orbit_altitude_km, satellite_count, funding_address FROM missions WHERE id = ?1"
+        )?;
+        let row = stmt.query_row([id], row_to_mission).optional()?;
+        row.ok_or_else(|| IssobellaError::MissionNotFound(id.to_string()))
+    }
+
     pub fn list_missions(&self, status: Option<&str>) -> IssobellaResult<Vec<MissionRecord>> {
         let sql = match status {
             Some(_s) => "SELECT id, name, description, mission_type, budget_zion, spent_zion, status, target_launch_date, started_at, completed_at, orbit_altitude_km, satellite_count, funding_address FROM missions WHERE status = ?1 ORDER BY started_at DESC",
@@ -99,17 +116,140 @@ impl IssobellaDb {
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
-    pub fn update_mission_status(&self, id: &str, status: &str) -> IssobellaResult<()> {
-        let completed = if status == "completed" {
+    pub fn update_mission_status(&self, id: &str, status: &str) -> IssobellaResult<MissionRecord> {
+        let current = self.get_mission(id)?;
+        if !is_valid_mission_transition(&current.status, status) {
+            return Err(IssobellaError::InvalidMissionTransition {
+                from: current.status,
+                to: status.to_string(),
+            });
+        }
+
+        let started_at = if status == "operational" || status == "launched" {
             Some(Utc::now().to_rfc3339())
         } else {
             None
         };
+        let completed_at = if status == "completed" {
+            Some(Utc::now().to_rfc3339())
+        } else {
+            None
+        };
+
         self.conn.execute(
-            "UPDATE missions SET status = ?1, completed_at = ?2 WHERE id = ?3",
-            (status, &completed, id),
+            "UPDATE missions SET status = ?1, started_at = COALESCE(started_at, ?2), completed_at = COALESCE(completed_at, ?3) WHERE id = ?4",
+            (status, &started_at, &completed_at, id),
+        )?;
+        self.get_mission(id)
+    }
+
+    pub fn update_mission_spent_and_satellites(
+        &self,
+        id: &str,
+        spent_delta: u64,
+        satellite_count: Option<i64>,
+    ) -> IssobellaResult<MissionRecord> {
+        let mission = self.get_mission(id)?;
+        let new_spent = mission.spent_zion.saturating_add(spent_delta);
+        if new_spent > mission.budget_zion {
+            return Err(IssobellaError::InsufficientFunds {
+                required: new_spent,
+                available: mission.budget_zion,
+            });
+        }
+        let satellite_count = satellite_count.unwrap_or(mission.satellite_count);
+
+        self.conn.execute(
+            "UPDATE missions SET spent_zion = ?1, satellite_count = ?2 WHERE id = ?3",
+            (new_spent, satellite_count, id),
+        )?;
+        self.get_mission(id)
+    }
+
+    // ── Observations ──
+
+    pub fn insert_observation(&self, o: &ObservationRecord) -> IssobellaResult<()> {
+        self.conn.execute(
+            "INSERT INTO observations (id, mission_id, observation_type, data_url, metadata, recorded_at, published)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            (&o.id, &o.mission_id, &o.observation_type, &o.data_url, &o.metadata, &o.recorded_at.to_rfc3339(), &o.published),
         )?;
         Ok(())
+    }
+
+    pub fn get_observation(&self, id: &str) -> IssobellaResult<ObservationRecord> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, mission_id, observation_type, data_url, metadata, recorded_at, published FROM observations WHERE id = ?1"
+        )?;
+        let row = stmt.query_row([id], row_to_observation).optional()?;
+        row.ok_or_else(|| IssobellaError::ObservationNotFound(id.to_string()))
+    }
+
+    pub fn list_observations(
+        &self,
+        mission_id: Option<&str>,
+    ) -> IssobellaResult<Vec<ObservationRecord>> {
+        let sql = match mission_id {
+            Some(_s) => "SELECT id, mission_id, observation_type, data_url, metadata, recorded_at, published FROM observations WHERE mission_id = ?1 ORDER BY recorded_at DESC",
+            None => "SELECT id, mission_id, observation_type, data_url, metadata, recorded_at, published FROM observations ORDER BY recorded_at DESC",
+        };
+        let mut stmt = self.conn.prepare(sql)?;
+        let rows = match mission_id {
+            Some(s) => stmt.query_map([s], row_to_observation)?,
+            None => stmt.query_map([], row_to_observation)?,
+        };
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    pub fn update_observation(&self, o: &ObservationRecord) -> IssobellaResult<()> {
+        self.conn.execute(
+            "UPDATE observations SET mission_id = ?1, observation_type = ?2, data_url = ?3, metadata = ?4, recorded_at = ?5, published = ?6 WHERE id = ?7",
+            (&o.mission_id, &o.observation_type, &o.data_url, &o.metadata, &o.recorded_at.to_rfc3339(), &o.published, &o.id),
+        )?;
+        Ok(())
+    }
+
+    // ── Disbursements ──
+
+    pub fn record_disbursement(&self, d: &DisbursementRecord) -> IssobellaResult<()> {
+        self.conn.execute(
+            "INSERT INTO disbursements (id, mission_id, amount_zion, recipient, tx_hash, disbursed_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            (&d.id, &d.mission_id, &d.amount_zion, &d.recipient, &d.tx_hash, &d.disbursed_at.to_rfc3339()),
+        )?;
+        Ok(())
+    }
+
+    pub fn get_disbursement(&self, id: &str) -> IssobellaResult<DisbursementRecord> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, mission_id, amount_zion, recipient, tx_hash, disbursed_at FROM disbursements WHERE id = ?1"
+        )?;
+        let row = stmt.query_row([id], row_to_disbursement).optional()?;
+        row.ok_or_else(|| IssobellaError::DisbursementNotFound(id.to_string()))
+    }
+
+    pub fn list_disbursements(
+        &self,
+        mission_id: Option<&str>,
+    ) -> IssobellaResult<Vec<DisbursementRecord>> {
+        let sql = match mission_id {
+            Some(_s) => "SELECT id, mission_id, amount_zion, recipient, tx_hash, disbursed_at FROM disbursements WHERE mission_id = ?1 ORDER BY disbursed_at DESC",
+            None => "SELECT id, mission_id, amount_zion, recipient, tx_hash, disbursed_at FROM disbursements ORDER BY disbursed_at DESC",
+        };
+        let mut stmt = self.conn.prepare(sql)?;
+        let rows = match mission_id {
+            Some(s) => stmt.query_map([s], row_to_disbursement)?,
+            None => stmt.query_map([], row_to_disbursement)?,
+        };
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    pub fn add_disbursement_to_fund_balance(&self, amount: u64) -> IssobellaResult<FundBalance> {
+        let mut balance = self.get_fund_balance()?;
+        balance.total_disbursed = balance.total_disbursed.saturating_add(amount);
+        balance.updated_at = Utc::now().to_rfc3339();
+        self.update_fund_balance(&balance)?;
+        Ok(balance)
     }
 
     // ── Research proposals ──
@@ -123,6 +263,14 @@ impl IssobellaDb {
         Ok(())
     }
 
+    pub fn get_proposal(&self, id: &str) -> IssobellaResult<ResearchProposal> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, title, researcher, institution, abstract_text, requested_budget, status, submitted_at, reviewed_at, reviewer_notes FROM research_proposals WHERE id = ?1"
+        )?;
+        let row = stmt.query_row([id], row_to_proposal).optional()?;
+        row.ok_or_else(|| IssobellaError::ProposalNotFound(id.to_string()))
+    }
+
     pub fn list_proposals(&self, status: Option<&str>) -> IssobellaResult<Vec<ResearchProposal>> {
         let sql = match status {
             Some(_s) => "SELECT id, title, researcher, institution, abstract_text, requested_budget, status, submitted_at, reviewed_at, reviewer_notes FROM research_proposals WHERE status = ?1 ORDER BY submitted_at DESC",
@@ -134,6 +282,30 @@ impl IssobellaDb {
             None => stmt.query_map([], row_to_proposal)?,
         };
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    pub fn update_proposal_status(
+        &self,
+        id: &str,
+        status: &str,
+        reviewer_notes: Option<&str>,
+    ) -> IssobellaResult<ResearchProposal> {
+        let current = self.get_proposal(id)?;
+        if !is_valid_proposal_transition(&current.status, status) {
+            return Err(IssobellaError::InvalidProposalTransition {
+                from: current.status,
+                to: status.to_string(),
+            });
+        }
+
+        let reviewed_at = Some(Utc::now().to_rfc3339());
+        let notes = reviewer_notes.map(|s| s.to_string());
+
+        self.conn.execute(
+            "UPDATE research_proposals SET status = ?1, reviewed_at = ?2, reviewer_notes = ?3 WHERE id = ?4",
+            (status, &reviewed_at, &notes, id),
+        )?;
+        self.get_proposal(id)
     }
 
     // ── Fund balance ──
@@ -164,6 +336,38 @@ impl IssobellaDb {
     }
 }
 
+fn is_valid_mission_transition(from: &str, to: &str) -> bool {
+    let allowed: &[&str] = match from {
+        "planning" => &["approved", "launched", "cancelled"],
+        "approved" => &["operational", "cancelled"],
+        "launched" => &["operational", "cancelled"],
+        "operational" => &["completed", "cancelled"],
+        _ => &[],
+    };
+    allowed.contains(&to)
+}
+
+fn is_valid_proposal_transition(from: &str, to: &str) -> bool {
+    let allowed: &[&str] = match from {
+        "submitted" => &["under_review", "approved", "rejected"],
+        "under_review" => &["approved", "rejected"],
+        "approved" => &["funded"],
+        _ => &[],
+    };
+    allowed.contains(&to)
+}
+
+fn parse_utc(s: &str) -> DateTime<Utc> {
+    DateTime::parse_from_rfc3339(s)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now())
+}
+
+fn parse_utc_opt(s: Option<&str>) -> Option<DateTime<Utc>> {
+    s.and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc))
+}
+
 fn row_to_mission(row: &rusqlite::Row) -> Result<MissionRecord, rusqlite::Error> {
     Ok(MissionRecord {
         id: row.get(0)?,
@@ -174,17 +378,34 @@ fn row_to_mission(row: &rusqlite::Row) -> Result<MissionRecord, rusqlite::Error>
         spent_zion: row.get(5)?,
         status: row.get(6)?,
         target_launch_date: row.get(7)?,
-        started_at: row
-            .get::<_, Option<String>>(8)?
-            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
-            .map(|dt| dt.with_timezone(&Utc)),
-        completed_at: row
-            .get::<_, Option<String>>(9)?
-            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
-            .map(|dt| dt.with_timezone(&Utc)),
+        started_at: parse_utc_opt(row.get::<_, Option<String>>(8)?.as_deref()),
+        completed_at: parse_utc_opt(row.get::<_, Option<String>>(9)?.as_deref()),
         orbit_altitude_km: row.get(10)?,
         satellite_count: row.get(11)?,
         funding_address: row.get(12)?,
+    })
+}
+
+fn row_to_observation(row: &rusqlite::Row) -> Result<ObservationRecord, rusqlite::Error> {
+    Ok(ObservationRecord {
+        id: row.get(0)?,
+        mission_id: row.get(1)?,
+        observation_type: row.get(2)?,
+        data_url: row.get(3)?,
+        metadata: row.get(4)?,
+        recorded_at: parse_utc(&row.get::<_, String>(5)?),
+        published: row.get(6)?,
+    })
+}
+
+fn row_to_disbursement(row: &rusqlite::Row) -> Result<DisbursementRecord, rusqlite::Error> {
+    Ok(DisbursementRecord {
+        id: row.get(0)?,
+        mission_id: row.get(1)?,
+        amount_zion: row.get(2)?,
+        recipient: row.get(3)?,
+        tx_hash: row.get(4)?,
+        disbursed_at: parse_utc(&row.get::<_, String>(5)?),
     })
 }
 
@@ -197,13 +418,8 @@ fn row_to_proposal(row: &rusqlite::Row) -> Result<ResearchProposal, rusqlite::Er
         abstract_text: row.get(4)?,
         requested_budget: row.get(5)?,
         status: row.get(6)?,
-        submitted_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(7)?)
-            .map(|dt| dt.with_timezone(&Utc))
-            .unwrap_or_else(|_| Utc::now()),
-        reviewed_at: row
-            .get::<_, Option<String>>(8)?
-            .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
-            .map(|dt| dt.with_timezone(&Utc)),
+        submitted_at: parse_utc(&row.get::<_, String>(7)?),
+        reviewed_at: parse_utc_opt(row.get::<_, Option<String>>(8)?.as_deref()),
         reviewer_notes: row.get(9)?,
     })
 }
@@ -241,6 +457,54 @@ impl MissionRecord {
             orbit_altitude_km: None,
             satellite_count: 0,
             funding_address: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ObservationRecord {
+    pub id: String,
+    pub mission_id: String,
+    pub observation_type: String, // image | spectroscopy | telemetry | radar
+    pub data_url: Option<String>,
+    pub metadata: Option<String>,
+    pub recorded_at: DateTime<Utc>,
+    pub published: bool,
+}
+
+impl ObservationRecord {
+    pub fn new(mission_id: &str, observation_type: &str) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            mission_id: mission_id.to_string(),
+            observation_type: observation_type.to_string(),
+            data_url: None,
+            metadata: None,
+            recorded_at: Utc::now(),
+            published: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DisbursementRecord {
+    pub id: String,
+    pub mission_id: String,
+    pub amount_zion: u64,
+    pub recipient: Option<String>,
+    pub tx_hash: Option<String>,
+    pub disbursed_at: DateTime<Utc>,
+}
+
+impl DisbursementRecord {
+    pub fn new(mission_id: &str, amount_zion: u64) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            mission_id: mission_id.to_string(),
+            amount_zion,
+            recipient: None,
+            tx_hash: None,
+            disbursed_at: Utc::now(),
         }
     }
 }
