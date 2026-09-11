@@ -596,13 +596,10 @@ export default function L6IssobellaPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {qmRoadmap.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zion-cyan/30 bg-zion-cyan/10 text-xs font-bold text-zion-cyan">
-                    {item.year.replace('+', '')}
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zion-cyan/30 bg-zion-cyan/10 text-[10px] font-bold text-zion-cyan leading-none text-center">
+                    {item.year}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{item.year}</p>
-                    <p className="text-sm text-gray-400">{item.label}</p>
-                  </div>
+                  <p className="text-sm text-gray-400">{item.label}</p>
                 </div>
               ))}
             </div>
