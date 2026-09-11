@@ -1758,154 +1758,159 @@ impl StratumServer {
                                 // LuckPool's subscribe response), not from the miner's submit.
                                 // This matches the V3 reference implementation which builds the
                                 // solution at submit time, not at mining time.
-                                let (ntime_hex, solution_hex_final, en1_hex_final) = {
-                                    let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
-                                    let job_pkg = coin_enum
-                                        .as_ref()
-                                        .and_then(|c| self.multi_bridge.latest_job_for_coin(c));
+                                // Look up the exact upstream job the miner claims to have solved.
+                                // Using the latest bridge job (latest_job_for_coin) caused the pool
+                                // to forward a share for job A with the ntime/solution of the current
+                                // job B, producing "job not found" / invalid-solution rejects.
+                                let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
+                                let job_pkg_opt = if external_job_id.is_empty() {
+                                    // Old/stratum-style submissions may not include an upstream job
+                                    // id; fall back to the most recent bridge job.
+                                    coin_enum.as_ref().and_then(|c| self.multi_bridge.latest_job_for_coin(c))
+                                } else {
+                                    coin_enum.as_ref().and_then(|c| self.multi_bridge.job_for_coin_and_id(c, &external_job_id))
+                                };
 
-                                    let ntime = if !submit_ntime_hex.is_empty() {
-                                        submit_ntime_hex
-                                    } else if let Some(ref pkg) = job_pkg {
-                                        pkg.ntime.clone()
-                                    } else { String::new() };
+                                let bridge_result = match job_pkg_opt {
+                                    Some(job_pkg) => {
+                                        // Build ntime/solution/extranonce1 from the matching bridge job.
+                                        let ntime_hex = if !submit_ntime_hex.is_empty() {
+                                            submit_ntime_hex
+                                        } else {
+                                            job_pkg.ntime.clone()
+                                        };
 
-                                    // Use the extranonce1 from the JobPackage (authoritative,
-                                    // from LuckPool subscribe) if available. Fall back to the
-                                    // miner's extranonce1_hex only if the job_pkg is unavailable.
-                                    let en1_hex = if let Some(ref pkg) = job_pkg {
-                                        if !pkg.extranonce1_hex.is_empty() {
-                                            pkg.extranonce1_hex.clone()
+                                        // Use the extranonce1 from the JobPackage (authoritative,
+                                        // from LuckPool subscribe) if available. Fall back to the
+                                        // miner's extranonce1_hex only if the job_pkg is unavailable.
+                                        let en1_hex_final = if !job_pkg.extranonce1_hex.is_empty() {
+                                            job_pkg.extranonce1_hex.clone()
                                         } else {
                                             extranonce1_hex.clone()
-                                        }
-                                    } else {
-                                        extranonce1_hex.clone()
-                                    };
+                                        };
 
-                                    let is_verushash = submit_algorithm.contains("verushash")
-                                        || coin.eq_ignore_ascii_case("VRSC");
+                                        let is_verushash = submit_algorithm.contains("verushash")
+                                            || coin.eq_ignore_ascii_case("VRSC");
 
-                                    let sol = if is_verushash {
-                                        // Rebuild the solution at the pool side for VRSC.
-                                        // 1. Get the original solution (with MMR roots) from the
-                                        //    job_pkg header_hex, or from the miner's solution_hex.
-                                        // 2. Overwrite the nonceSpace (solution bytes 1329-1343)
-                                        //    with [en1][miner_nonce(4B LE)][padding].
-                                        // 3. Prepend the varint prefix (fd4005 for 1344 bytes).
-                                        const VERUS_SOLUTION_SIZE: usize = 1344;
-                                        const VERUS_NONCE_SPACE_SIZE: usize = 15;
-                                        const VERUS_NONCE_SPACE_OFFSET: usize = 1329; // within solution
-                                        const VERUS_SOLUTION_OFFSET_IN_HEADER: usize = 143;
+                                        let solution_hex_final = if is_verushash {
+                                            // Rebuild the solution at the pool side for VRSC.
+                                            // 1. Get the original solution (with MMR roots) from the
+                                            //    job_pkg header_hex, or from the miner's solution_hex.
+                                            // 2. Overwrite the nonceSpace (solution bytes 1329-1343)
+                                            //    with [en1][miner_nonce(4B LE)][padding].
+                                            // 3. Prepend the varint prefix (fd4005 for 1344 bytes).
+                                            const VERUS_SOLUTION_SIZE: usize = 1344;
+                                            const VERUS_NONCE_SPACE_SIZE: usize = 15;
+                                            const VERUS_NONCE_SPACE_OFFSET: usize = 1329; // within solution
+                                            const VERUS_SOLUTION_OFFSET_IN_HEADER: usize = 143;
 
-                                        let en1_bytes = hex::decode(&en1_hex).unwrap_or_default();
+                                            let en1_bytes = hex::decode(&en1_hex_final).unwrap_or_default();
 
-                                        // Get the original 1344-byte solution (without varint)
-                                        let mut sol_1344: Vec<u8> = if !solution_hex.is_empty() {
-                                            // Miner sent a solution with varint prefix (1347 bytes = 2694 hex)
-                                            let sol_bytes = hex::decode(&solution_hex).unwrap_or_default();
-                                            if sol_bytes.len() == 3 + VERUS_SOLUTION_SIZE {
-                                                sol_bytes[3..].to_vec()
-                                            } else if sol_bytes.len() == VERUS_SOLUTION_SIZE {
-                                                sol_bytes
-                                            } else {
-                                                // Fallback: extract from job_pkg header
-                                                if let Some(ref pkg) = job_pkg {
-                                                    let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
+                                            // Get the original 1344-byte solution (without varint)
+                                            let mut sol_1344: Vec<u8> = if !solution_hex.is_empty() {
+                                                // Miner sent a solution with varint prefix (1347 bytes = 2694 hex)
+                                                let sol_bytes = hex::decode(&solution_hex).unwrap_or_default();
+                                                if sol_bytes.len() == 3 + VERUS_SOLUTION_SIZE {
+                                                    sol_bytes[3..].to_vec()
+                                                } else if sol_bytes.len() == VERUS_SOLUTION_SIZE {
+                                                    sol_bytes
+                                                } else {
+                                                    // Fallback: extract from job_pkg header
+                                                    let header_hex_stripped = job_pkg.header_hex.strip_prefix("0x").unwrap_or(&job_pkg.header_hex);
                                                     if let Ok(header) = hex::decode(header_hex_stripped) {
                                                         if header.len() >= VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE {
                                                             header[VERUS_SOLUTION_OFFSET_IN_HEADER..VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE].to_vec()
                                                         } else { vec![0u8; VERUS_SOLUTION_SIZE] }
                                                     } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                                }
+                                            } else {
+                                                // Extract solution from header_hex
+                                                let header_hex_stripped = job_pkg.header_hex.strip_prefix("0x").unwrap_or(&job_pkg.header_hex);
+                                                if let Ok(header) = hex::decode(header_hex_stripped) {
+                                                    if header.len() >= VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE {
+                                                        header[VERUS_SOLUTION_OFFSET_IN_HEADER..VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE].to_vec()
+                                                    } else { vec![0u8; VERUS_SOLUTION_SIZE] }
                                                 } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                            };
+
+                                            // Ensure solution is exactly 1344 bytes
+                                            if sol_1344.len() < VERUS_SOLUTION_SIZE {
+                                                sol_1344.resize(VERUS_SOLUTION_SIZE, 0);
+                                            } else if sol_1344.len() > VERUS_SOLUTION_SIZE {
+                                                sol_1344.truncate(VERUS_SOLUTION_SIZE);
                                             }
-                                        } else if let Some(ref pkg) = job_pkg {
-                                            // Extract solution from header_hex
-                                            let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
-                                            if let Ok(header) = hex::decode(header_hex_stripped) {
-                                                if header.len() >= VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE {
-                                                    header[VERUS_SOLUTION_OFFSET_IN_HEADER..VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE].to_vec()
-                                                } else { vec![0u8; VERUS_SOLUTION_SIZE] }
-                                            } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+
+                                            // Overwrite nonceSpace: [en1][miner_nonce(4B LE)][padding]
+                                            let en1_len = en1_bytes.len().min(VERUS_NONCE_SPACE_SIZE - 4);
+                                            let nonce_le = (nonce as u32).to_le_bytes();
+                                            let mut nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
+                                            if en1_len > 0 {
+                                                nonce_space[..en1_len].copy_from_slice(&en1_bytes[..en1_len]);
+                                            }
+                                            nonce_space[en1_len..en1_len + 4].copy_from_slice(&nonce_le);
+                                            sol_1344[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
+                                                .copy_from_slice(&nonce_space);
+
+                                            // Prepend varint: fd4005 = 1344 in Zcash compact varint
+                                            let mut solution_with_varint = vec![0xfd, 0x40, 0x05];
+                                            solution_with_varint.extend_from_slice(&sol_1344);
+                                            hex::encode(&solution_with_varint)
+                                        } else if !solution_hex.is_empty() {
+                                            solution_hex
                                         } else {
-                                            vec![0u8; VERUS_SOLUTION_SIZE]
+                                            // Extract solution (WITH varint prefix) from header_hex
+                                            // for ZcashStratum (VRSC).
+                                            // Header: version(4)+prevhash(32)+merkle(32)+reserved(32)+
+                                            //         ntime(4)+nbits(4)+nonce(32)+varint+solution
+                                            // Varint starts at offset 140. LuckPool expects the
+                                            // full solution including the CompactSize varint prefix.
+                                            let is_vrsc = coin == "VRSC";
+                                            let header_hex_stripped = job_pkg.header_hex.strip_prefix("0x").unwrap_or(&job_pkg.header_hex);
+                                            if let Ok(header) = hex::decode(header_hex_stripped) {
+                                                if header.len() > 141 && is_vrsc {
+                                                    // Include varint prefix in the solution
+                                                    hex::encode(&header[140..])
+                                                } else { String::new() }
+                                            } else { String::new() }
                                         };
 
-                                        // Ensure solution is exactly 1344 bytes
-                                        if sol_1344.len() < VERUS_SOLUTION_SIZE {
-                                            sol_1344.resize(VERUS_SOLUTION_SIZE, 0);
-                                        } else if sol_1344.len() > VERUS_SOLUTION_SIZE {
-                                            sol_1344.truncate(VERUS_SOLUTION_SIZE);
-                                        }
+                                        tracing::debug!(
+                                            target: "en1_trace",
+                                            final_en1 = %en1_hex_final,
+                                            miner_en1 = %extranonce1_hex,
+                                            sol_hex_len = solution_hex_final.len(),
+                                            coin = %coin,
+                                            "en1_trace pool-side final extranonce1 for forwarding"
+                                        );
 
-                                        // Overwrite nonceSpace: [en1][miner_nonce(4B LE)][padding]
-                                        let en1_len = en1_bytes.len().min(VERUS_NONCE_SPACE_SIZE - 4);
-                                        let nonce_le = (nonce as u32).to_le_bytes();
-                                        let mut nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
-                                        if en1_len > 0 {
-                                            nonce_space[..en1_len].copy_from_slice(&en1_bytes[..en1_len]);
-                                        }
-                                        nonce_space[en1_len..en1_len + 4].copy_from_slice(&nonce_le);
-                                        sol_1344[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
-                                            .copy_from_slice(&nonce_space);
+                                        let req = ShareForwardRequest {
+                                            job_id: job_pkg.external_job_id.clone(),
+                                            nonce,
+                                            hash_hex: hash_hex.clone(),
+                                            mix_hash_hex: mix_hash_hex.clone(),
+                                            algorithm: submit_algorithm.clone(),
+                                            header_bytes: Vec::new(),
+                                            ntime: ntime_hex,
+                                            solution_hex: solution_hex_final,
+                                            extranonce1_hex: en1_hex_final,
+                                        };
 
-                                        // Prepend varint: fd4005 = 1344 in Zcash compact varint
-                                        let mut solution_with_varint = vec![0xfd, 0x40, 0x05];
-                                        solution_with_varint.extend_from_slice(&sol_1344);
-                                        hex::encode(&solution_with_varint)
-                                    } else if !solution_hex.is_empty() {
-                                        solution_hex
-                                    } else if let Some(ref pkg) = job_pkg {
-                                        // Extract solution (WITH varint prefix) from header_hex
-                                        // for ZcashStratum (VRSC).
-                                        // Header: version(4)+prevhash(32)+merkle(32)+reserved(32)+
-                                        //         ntime(4)+nbits(4)+nonce(32)+varint+solution
-                                        // Varint starts at offset 140. LuckPool expects the
-                                        // full solution including the CompactSize varint prefix.
-                                        // Check coin == VRSC (not algorithm — rigs may report
-                                        // ekam_deeksha as their algo but still mine VRSC).
-                                        let is_vrsc = coin == "VRSC";
-                                        let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
-                                        if let Ok(header) = hex::decode(header_hex_stripped) {
-                                            if header.len() > 141 && is_vrsc {
-                                                // Include varint prefix in the solution
-                                                hex::encode(&header[140..])
-                                            } else { String::new() }
-                                        } else { String::new() }
-                                    } else { String::new() };
-                                    (ntime, sol, en1_hex)
+                                        let bridge = self.multi_bridge.clone();
+                                        let coin_clone = coin.clone();
+                                        tokio::task::spawn_blocking(move || {
+                                            bridge.forward_by_ticker(&coin_clone, req)
+                                        }).await.unwrap_or(None)
+                                    }
+                                    None => {
+                                        tracing::info!(
+                                            "v3_external_stale miner={} coin={} job={} nonce={} reason=unknown_or_stale_bridge_job",
+                                            sub_miner_id, coin, external_job_id, nonce
+                                        );
+                                        Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
+                                            crate::share_forwarder::ShareForwardResult::Rejected("stale".to_string()),
+                                        ))
+                                    }
                                 };
-
-                                tracing::debug!(
-                                    target: "en1_trace",
-                                    final_en1 = %en1_hex_final,
-                                    miner_en1 = %extranonce1_hex,
-                                    sol_hex_len = solution_hex_final.len(),
-                                    coin = %coin,
-                                    "en1_trace pool-side final extranonce1 for forwarding"
-                                );
-
-                                // V3 philosophy: forward ALL VRSC shares to LuckPool.
-                                // No recent-jobs-only check — V3 didn't have this and
-                                // achieved 95% accept rate by forwarding everything.
-
-                                let req = ShareForwardRequest {
-                                    job_id: external_job_id.clone(),
-                                    nonce,
-                                    hash_hex: hash_hex.clone(),
-                                    mix_hash_hex: mix_hash_hex.clone(),
-                                    algorithm: submit_algorithm.clone(),
-                                    header_bytes: Vec::new(),
-                                    ntime: ntime_hex,
-                                    solution_hex: solution_hex_final,
-                                    extranonce1_hex: en1_hex_final,
-                                };
-
-                                let bridge = self.multi_bridge.clone();
-                                let coin_clone = coin.clone();
-                                let bridge_result = tokio::task::spawn_blocking(move || {
-                                    bridge.forward_by_ticker(&coin_clone, req)
-                                }).await.unwrap_or(None);
 
                                 tracing::info!(
                                     "v3_external_forward miner={} coin={} job={} nonce={} result={:?} status={}",
