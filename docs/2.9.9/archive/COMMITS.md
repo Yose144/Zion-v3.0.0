@@ -4797,7 +4797,7 @@ Fixed 14 occurrences across 12 files:
 - GitHub links: Yose144/Zion-2.9.5 Ôćĺ Zion-TerraNova
 - git clone URLs: github.com/Yose144/... Ôćĺ github.com/Zion-TerraNova/...
 - Docker images: ghcr.io/yose144/... Ôćĺ ghcr.io/zion-terranova/...
-- Discord: discord.gg/zion Ôćĺ discord.gg/zion-terranova
+- Discord: discord.gg/wvxJ7DhZ8 Ôćĺ discord.gg/wvxJ7DhZ8
 
 Files: Footer, Hero, NodeSetup, PoolDashboard, MiningClient,
 MiningGuidesClient, Explorer, Docs, API Reference, Network,

@@ -90,7 +90,7 @@ type FeatureItem = {
 
 type IntegrationItem = {
   label: string;
-  status: 'active' | 'planned' | 'tbd';
+  status: 'active' | 'planned' | 'tbd' | 'vision';
   icon: LucideIcon;
 };
 
@@ -309,8 +309,13 @@ export default function TePikoOraPage() {
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative h-48 md:h-64 overflow-hidden">
               <img
-                src="/images/te-piko-ora/hero.png"
+                src="/images/te-piko-ora/hero.webp"
                 alt="Te Pīko Ora"
+                width={1536}
+                height={1024}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -427,8 +432,12 @@ export default function TePikoOraPage() {
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/te-piko-ora/concept-og.png"
+                src="/images/te-piko-ora/concept-og.webp"
                 alt={cs ? 'Návrh Te Pīko Ora' : 'Te Pīko Ora concept'}
+                width={1536}
+                height={1024}
+                loading="lazy"
+                decoding="async"
                 className="w-full object-contain"
               />
             </div>
@@ -718,6 +727,8 @@ export default function TePikoOraPage() {
                         ? TerranovaTePikoOraCopy.active[cs ? 'cs' : 'en']
                         : item.status === 'planned'
                         ? TerranovaTePikoOraCopy.planned[cs ? 'cs' : 'en']
+                        : item.status === 'vision'
+                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
                         : 'TBD'}
                     </p>
                   </div>
@@ -756,7 +767,7 @@ export default function TePikoOraPage() {
               {TerranovaTePikoOraCopy.doYouHearTheCallOfThePacificAr[cs ? 'cs' : 'en']}
             </p>
             <a
-              href="https://discord.gg/eatGYDbd"
+              href="https://discord.gg/wvxJ7DhZ8"
               target="_blank"
               rel="noopener noreferrer"
               className="zion-button-secondary"

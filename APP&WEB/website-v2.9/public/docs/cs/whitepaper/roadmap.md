@@ -100,7 +100,7 @@
 ## Sleduj nás
 
 - [GitHub](https://github.com/Zion-TerraNova) — kód a releases
-- [Discord](https://discord.gg/zion-terranova) — diskuse
+- [Discord](https://discord.gg/wvxJ7DhZ8) — diskuse
 - [Web](https://www.zionterranova.com) — novinky
 
 ---

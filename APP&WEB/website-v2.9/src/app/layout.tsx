@@ -12,8 +12,6 @@ import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MultichainWalletProvider } from "@/contexts/MultichainWalletContext";
 import HeroSection from "@/components/HeroSection";
-import BackgroundToggle from "@/components/BackgroundToggle";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import PerformanceShell from "@/components/PerformanceShell";
 import { SITE_APP_URL, SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
@@ -71,7 +69,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://api.spotify.com" />
       </head>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
-        <ServiceWorkerRegistration />
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
@@ -81,7 +78,6 @@ export default function RootLayout({
                     <AuthProvider>
                     <MultichainWalletProvider>
                     <PerformanceShell />
-                    <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <Navigation />
                       <div className="site-hero">

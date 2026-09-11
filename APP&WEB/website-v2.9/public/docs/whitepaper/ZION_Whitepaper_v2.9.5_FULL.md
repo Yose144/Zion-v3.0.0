@@ -4273,7 +4273,7 @@ Official Links:
    stratum+tcp://pool.zionterranova.com:3333
 
 💬 DISCORD
-   https://discord.gg/zionterranova
+   https://discord.gg/wvxJ7DhZ8
 
 📖 DOCUMENTATION
    https://docs.zionterranova.com

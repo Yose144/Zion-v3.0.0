@@ -76,7 +76,7 @@ PHYSICAL (1×) → EMOTIONAL (1.15×) → MENTAL (1.25×) → ASTRAL (1.5×) →
 2️⃣ **Připoj se k poolu:** pool.zionterranova.com:3333  
 3️⃣ **Klikni START** → začni minovat! ⛏️
 
-**Join Discord:** discord.gg/ZionTerraNova  
+**Join Discord:** discord.gg/wvxJ7DhZ8  
 **Follow Twitter:** @ZionTerraNova  
 **Read full article:** projektnewearth.blogspot.com
 
@@ -110,7 +110,7 @@ Není to náhoda. Symbolika je důležitá:
 🌐 **Web:** https://zionterranova.com  
 📊 **Explorer:** zionterranova.com/explorer  
 ⛏️ **Pool Stats:** pool.zionterranova.com:8080  
-💬 **Discord:** discord.gg/ZionTerraNova  
+💬 **Discord:** discord.gg/wvxJ7DhZ8  
 📱 **Telegram:** t.me/ZionTerraNova  
 🐦 **Twitter:** @ZionTerraNova  
 📖 **Blog:** projektnewearth.blogspot.com  
@@ -134,7 +134,7 @@ Nemusíš investovat tisíce.
 **Are you ready?**
 
 🔥 Share this post!  
-⭐ Join Discord: discord.gg/ZionTerraNova  
+⭐ Join Discord: discord.gg/wvxJ7DhZ8  
 ⛏️ Download miner: zionterranova.com/download  
 
 **#ZionQuantumLeap #ConsciousnessMining #NewEarthBlockchain #CryptoLaunch #Silvestr2025 #BlockchainWithPurpose**

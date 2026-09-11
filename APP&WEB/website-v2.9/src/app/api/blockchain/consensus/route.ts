@@ -9,70 +9,47 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { getBlockHistory } from '@/lib/block-history';
 import { CONSENSUS_PARAMS } from '@/lib/consensus/helpers';
 
 const CACHE_TTL = 10_000;
-let cache: { json: any; ts: number } | null = null;
+const cache = new Map<string, { json: any; ts: number }>();
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const rangeParam = searchParams.get('range') || '7d';
-    const includeChart = searchParams.get('chart') !== 'false';
+    const requestedRange = searchParams.get('range') || '7d';
+    const rangeParam = ['1h', '6h', '24h', '7d', '30d', 'all'].includes(requestedRange) ? requestedRange : '7d';
+    const includeChart = searchParams.get('chart') === 'true';
 
-    if (cache && Date.now() - cache.ts < CACHE_TTL) {
-      return NextResponse.json(cache.json, {
+    const cacheKey = `${rangeParam}:${includeChart}`;
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return NextResponse.json(cached.json, {
         headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60' },
       });
     }
 
     const rpc = getZionRpc();
-    const [info, lastBlock] = await Promise.all([
-      rpc.getInfo().catch(() => null),
-      rpc.getLastBlockHeader().catch(() => null),
-    ]);
+    const history = includeChart
+      ? await getBlockHistory(rangeParam).catch(() => null)
+      : null;
+    const [info, lastBlock] = history
+      ? [history.info, history.headers.at(-1) ?? null]
+      : await Promise.all([
+          rpc.getInfo().catch(() => null),
+          rpc.getLastBlockHeader().catch(() => null),
+        ]);
 
     const chainHeight = info?.height ?? 0;
     const currentDifficulty = lastBlock?.difficulty ?? info?.difficulty ?? 0;
 
-    let difficultyChart: { labels: string[]; values: number[] } | null = null;
-
-    if (includeChart && chainHeight > 0) {
-      const MAX_HISTORY_BLOCKS = 100_000;
-      const rangeBlocks: Record<string, number> = {
-        '1h': 60,
-        '6h': 360,
-        '24h': 1440,
-        '7d': 10080,
-        '30d': 43200,
-        'all': MAX_HISTORY_BLOCKS,
-      };
-
-      let blocksToFetch = rangeBlocks[rangeParam] || 10080;
-      blocksToFetch = Math.min(blocksToFetch, chainHeight);
-
-      const startHeight = Math.max(0, chainHeight - blocksToFetch);
-      const endHeight = chainHeight;
-      const step = Math.max(1, Math.floor(blocksToFetch / 200));
-
-      const BATCH_SIZE = 500;
-      let allHeaders: any[] = [];
-
-      for (let batchStart = startHeight; batchStart <= endHeight; batchStart += BATCH_SIZE) {
-        const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, endHeight);
-        const headers = await rpc.getBlockHeaders(batchStart, batchEnd);
-        allHeaders = allHeaders.concat(headers);
-      }
-
-      const sampled = step > 1
-        ? allHeaders.filter((_, i) => i % step === 0 || i === allHeaders.length - 1)
-        : allHeaders;
-
-      difficultyChart = {
-        labels: sampled.map((h) => new Date(h.timestamp * 1000).toISOString()),
-        values: sampled.map((h) => h.difficulty),
-      };
-    }
+    const difficultyChart = history
+      ? {
+          labels: history.headers.map((header) => new Date(header.timestamp * 1000).toISOString()),
+          values: history.headers.map((header) => header.difficulty),
+        }
+      : null;
 
     const responseBody = {
       protocol: 'ZION TerraNova',
@@ -89,7 +66,7 @@ export async function GET(request: NextRequest) {
       fetched_at: Date.now(),
     };
 
-    cache = { json: responseBody, ts: Date.now() };
+    cache.set(cacheKey, { json: responseBody, ts: Date.now() });
 
     return NextResponse.json(responseBody, {
       headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60' },

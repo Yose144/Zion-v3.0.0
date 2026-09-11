@@ -136,7 +136,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
     href: '/terranova/genesis',
-    cover: '/images/genesis-garden/hero.png',
+    cover: '/images/genesis-garden/hero.webp',
   },
   {
     name: 'Dharma Temple',
@@ -145,7 +145,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.educationalAndMeditationCenter[cs ? 'cs' : 'en'],
     tags: ['Education', 'Off-grid', 'Meditation'],
     href: '/terranova/dharma-temple',
-    cover: '/images/dharma-temple/hero.png',
+    cover: '/images/dharma-temple/hero.webp',
   },
   {
     name: 'Te Pīko Ora',
@@ -154,7 +154,7 @@ const getCommunities = (cs: boolean) => [
     desc: L5FreeWorldCopy.tePikoOraPolynesianRevival[cs ? 'cs' : 'en'],
     tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
     href: '/terranova/te-piko-ora',
-    cover: '/images/te-piko-ora/hero.png',
+    cover: '/images/te-piko-ora/hero.webp',
   },
   {
     name: 'Golden Republic Bohemia',
@@ -535,7 +535,15 @@ export default function L5FreeWorldPage() {
                 <div className={`zion-rainbow-sub p-5 transition-all duration-300 ${community.href ? 'cursor-pointer' : ''}`} style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   {community.cover && (
                     <div className="-m-1 mb-3 overflow-hidden rounded-t-xl">
-                      <img src={community.cover} alt={community.name} className="h-36 w-full object-cover" />
+                      <img
+                        src={community.cover}
+                        alt={community.name}
+                        width={1400}
+                        height={900}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-36 w-full object-cover"
+                      />
                     </div>
                   )}
                   <div className="flex items-start justify-between mb-3">

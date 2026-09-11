@@ -21,24 +21,12 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { CONTRACTS, SEED_PRICE_USD, SEED_ETH_USD, SEED_SQRT_PRICE_X96, SEED_TICK } from '@/lib/defi-contracts';
 
 const RPC_URL = process.env.BASE_RPC_URL || 'https://base.publicnode.com';
 
-// Contracts on Base Mainnet — updated 2026-07-11
-const POOL_USDT       = '0x186b46c2f04153999d44D25179cD623fD62Bfda2';  // wZION/USDT 0.3% fee — PRIMARY (only pool with liquidity)
-const POOL_WETH_USDC  = '0x6c561B446416E1A00E8E93E221854d6eA4171372';  // WETH/USDC 0.3% fee — for live ETH/USD price
-const WZION      = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
-const WETH       = '0x4200000000000000000000000000000000000006';
-const USDT       = '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2';
-const USDC       = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-
-// ── Seed price constants ─────────────────────────────────────────────────────
-// Primary price source is wZION/USDT (USDT ≈ $1), so the seed sqrtPriceX96
-// for that pool is sqrt(0.0002) * 2^96 = 1120455419495722778624, tick = -361501.
-const SEED_PRICE_USD       = 0.0002;
-const SEED_ETH_USD         = 2000;
-const SEED_SQRT_PRICE_X96  = '1120455419495722778624';
-const SEED_TICK            = -361501;
+// External (non-ZION) reference pool for live ETH/USD price
+const POOL_WETH_USDC = '0x6c561B446416E1A00E8E93E221854d6eA4171372'; // WETH/USDC 0.3% fee
 
 // Minimum liquidity threshold — pools below this are considered empty/stale
 const MIN_LIQUIDITY = 1n;
@@ -125,7 +113,7 @@ function seedPriceResponse(wethUsd: number, source: 'seed-uninitialized' | 'seed
     ok: true,
     network: 'base-mainnet',
     chainId: 8453,
-    pool: POOL_USDT,
+    pool: CONTRACTS.UniV3PoolUSDT,
     pool_fallback: null,
     source,
     price: {
@@ -226,9 +214,9 @@ export async function GET() {
   // 1. Try primary USDT pool (USDT ≈ $1, most reliable)
   //    This is the ONLY wZION pool with active liquidity on Base.
   //    Empty pools (WETH, USDC, SOL) are skipped by tryPoolSnapshot due to liquidity check.
-  const usdtSnapshot = await tryPoolSnapshot(POOL_USDT, WZION, USDT, DECIMALS.wzion, DECIMALS.usdt);
+  const usdtSnapshot = await tryPoolSnapshot(CONTRACTS.UniV3PoolUSDT, CONTRACTS.wZION, CONTRACTS.USDT, DECIMALS.wzion, DECIMALS.usdt);
   if (usdtSnapshot) {
-    return buildPriceResponse(POOL_USDT, usdtSnapshot.sqrtPriceX96, usdtSnapshot.tick, usdtSnapshot.liquidity, 1, 'live-usdt', wethUsd, DECIMALS.wzion, DECIMALS.usdt, usdtSnapshot.balance0, usdtSnapshot.balance1);
+    return buildPriceResponse(CONTRACTS.UniV3PoolUSDT, usdtSnapshot.sqrtPriceX96, usdtSnapshot.tick, usdtSnapshot.liquidity, 1, 'live-usdt', wethUsd, DECIMALS.wzion, DECIMALS.usdt, usdtSnapshot.balance0, usdtSnapshot.balance1);
   }
 
   // 2. Seed fallback — no pool with active liquidity found

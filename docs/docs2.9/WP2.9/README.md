@@ -135,7 +135,7 @@ v3.0.0 "MainNet Genesis"    (December 2027)
 |----------|------|
 | **Website** | [https://zionterranova.com](https://zionterranova.com) |
 | **GitHub** | [https://github.com/Yose144/Zion-2.9](https://github.com/Yose144/Zion-2.9) |
-| **Discord** | [Join Community](https://discord.gg/zion) |
+| **Discord** | [Join Community](https://discord.gg/wvxJ7DhZ8) |
 | **Twitter/X** | [@ZionTerraNova](https://twitter.com/ZionTerraNova) |
 | **Email** | contact@zionterranova.com |
 | **Mining Pool** | stratum+tcp://pool.zionterranova.com:3333 |

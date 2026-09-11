@@ -90,7 +90,7 @@ Website:        https://zionterranova.com
 Explorer:       https://zionterranova.com/explorer
 Whitepaper:     https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/V3/docs/ZION_Mainnet_Whitepaper_v3.0.5_Canonical.md
 GitHub:         https://github.com/Zion-TerraNova/v3-Mainnet
-Discord:        https://discord.gg/zion-terranova
+Discord:        https://discord.gg/wvxJ7DhZ8
 Telegram:       https://t.me/zionterranova
 Support:        support@zion-blockchain.org
 

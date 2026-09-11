@@ -109,7 +109,7 @@ In the [Zion-TerraNova](https://github.com/Zion-TerraNova) GitHub organisation:
 
 - By mining — every node helps decentralisation
 - By code — submit a PR on [GitHub](https://github.com/Zion-TerraNova)
-- By community work — join [Discord](https://discord.gg/zion-terranova)
+- By community work — join [Discord](https://discord.gg/wvxJ7DhZ8)
 
 ---
 

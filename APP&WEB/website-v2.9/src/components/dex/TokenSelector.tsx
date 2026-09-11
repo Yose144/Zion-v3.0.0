@@ -13,6 +13,7 @@ export interface TokenOption {
   name: string;
   decimals: number;
   isNative?: boolean;
+  isTest?: boolean;
 }
 
 const TOKENS_BY_CHAIN: Record<string, TokenOption[]> = {
@@ -24,9 +25,10 @@ const TOKENS_BY_CHAIN: Record<string, TokenOption[]> = {
     { symbol: 'USDT', name: 'Tether USD', decimals: 6 },
     { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
     { symbol: 'WETH', name: 'Wrapped Ether', decimals: 18 },
-    { symbol: 'tZION', name: 'Test ZION (Beta)', decimals: 18 },
-    { symbol: 'tUSDT', name: 'Test USDT (Beta)', decimals: 6 },
-    { symbol: 'tWETH', name: 'Test WETH (Beta)', decimals: 18 },
+    // Test tokens with live ZIONDex AMM liquidity; not canonical Uniswap V3 production
+    { symbol: 'tZION', name: 'Test ZION (ZIONDex AMM)', decimals: 18, isTest: true },
+    { symbol: 'tUSDT', name: 'Test USDT (ZIONDex AMM)', decimals: 6, isTest: true },
+    { symbol: 'tWETH', name: 'Test WETH (ZIONDex AMM)', decimals: 18, isTest: true },
   ],
   arbitrum: [
     { symbol: 'wZION', name: 'Wrapped ZION', decimals: 18 },
@@ -110,9 +112,10 @@ interface Props {
   chain: string;
   value: string;
   onChange: (symbol: string) => void;
+  showTest?: boolean;
 }
 
-export default function TokenSelector({ label, chain, value, onChange }: Props) {
+export default function TokenSelector({ label, chain, value, onChange, showTest = true }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -126,7 +129,8 @@ export default function TokenSelector({ label, chain, value, onChange }: Props) 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const tokens = TOKENS_BY_CHAIN[chain] || [];
+  const allTokens = TOKENS_BY_CHAIN[chain] || [];
+  const tokens = showTest ? allTokens : allTokens.filter(t => !t.isTest);
   const selected = tokens.find(t => t.symbol === value);
 
   return (

@@ -10,6 +10,7 @@ import {
   Dot,
   Droplets,
   Flower,
+  GraduationCap,
   Heart,
   Landmark,
   Leaf,
@@ -88,7 +89,7 @@ type FeatureItem = {
 
 type IntegrationItem = {
   label: string;
-  status: 'active' | 'planned' | 'tbd';
+  status: 'active' | 'planned' | 'tbd' | 'vision';
   icon: LucideIcon;
 };
 
@@ -139,6 +140,16 @@ const FEATURES: FeatureItem[] = [
     status: 'planned' as const,
     color: '#8B5CF6',
     rgb: '139, 92, 246',
+  },
+  {
+    icon: GraduationCap,
+    titleCs: 'Univerzita & Škola',
+    titleEn: 'University & School',
+    descCs: 'Vzdělávací srdce Bodhi Lanka — škola pro děti komunity a univerzita pro Guardians. Bhakti governance, ayurveda, permakultura, svatá geometrie a ZION protokol. Vzdělání jako právo, ne komodita.',
+    descEn: 'The educational heart of Bodhi Lanka — a school for community children and a university for Guardians. Bhakti governance, Ayurveda, permaculture, sacred geometry and the ZION protocol. Education as a right, not a commodity.',
+    status: 'vision' as const,
+    color: '#A78BFA',
+    rgb: '167, 139, 250',
   },
   {
     icon: Droplets,
@@ -197,8 +208,8 @@ const PHASES = [
     num: '3',
     cs: 'Síť',
     en: 'Network',
-    descCs: '3 ha, semenná síť 3+ uzlů, vzdělávací centrum (Bhakti Governance škola), druhý uzel v Indii nebo jihovýchodní Asii.',
-    descEn: '3 ha, seed network 3+ nodes, education center (Bhakti Governance school), second node in India or Southeast Asia.',
+    descCs: '3 ha, semenná síť 3+ uzlů, univerzita a škola (Bhakti Governance akademie), druhý uzel v Indii nebo jihovýchodní Asii.',
+    descEn: '3 ha, seed network 3+ nodes, university and school (Bhakti Governance academy), second node in India or Southeast Asia.',
     active: false,
   },
   {
@@ -316,8 +327,13 @@ export default function BodhiLankaPage() {
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
             <div className="relative h-48 md:h-64 overflow-hidden">
               <img
-                src="/images/bodhi-lanka/hero.jpg"
+                src="/images/bodhi-lanka/hero.webp"
                 alt="Bodhi Lanka"
+                width={1168}
+                height={784}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -434,8 +450,12 @@ export default function BodhiLankaPage() {
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/bodhi-lanka/concept-og.jpg"
+                src="/images/bodhi-lanka/concept-og.webp"
                 alt={cs ? 'Návrh Bodhi Lanka' : 'Bodhi Lanka concept'}
+                width={1168}
+                height={784}
+                loading="lazy"
+                decoding="async"
                 className="w-full object-contain"
               />
             </div>
@@ -669,6 +689,8 @@ export default function BodhiLankaPage() {
                         ? TerranovaBodhiLankaCopy.active[cs ? 'cs' : 'en']
                         : item.status === 'planned'
                         ? TerranovaBodhiLankaCopy.planned[cs ? 'cs' : 'en']
+                        : item.status === 'vision'
+                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
                         : 'TBD'}
                     </p>
                   </div>
@@ -737,7 +759,7 @@ export default function BodhiLankaPage() {
               {TerranovaBodhiLankaCopy.doYouHearTheCallOfTheBodhiTree[cs ? 'cs' : 'en']}
             </p>
             <a
-              href="https://discord.gg/eatGYDbd"
+              href="https://discord.gg/wvxJ7DhZ8"
               target="_blank"
               rel="noopener noreferrer"
               className="zion-button-secondary"

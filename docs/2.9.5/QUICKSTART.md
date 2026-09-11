@@ -58,7 +58,7 @@ You're now mining ZION and earning:
 
 ## 🆘 Need Help?
 
-- Discord: discord.gg/zionterranova
+- Discord: discord.gg/wvxJ7DhZ8
 - Telegram: t.me/zionterranova
 - GitHub: github.com/Yose144/Zion-2.9/issues
 

@@ -15,7 +15,7 @@ Most read-only endpoints are public. Write operations require API key authentica
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Request API key via [Discord](https://discord.gg/zion) or [Telegram](https://t.me/zionterranova).
+Request API key via [Discord](https://discord.gg/wvxJ7DhZ8) or [Telegram](https://t.me/zionterranova).
 
 ---
 
@@ -472,7 +472,7 @@ curl -X GET \
 ## Support
 
 - **Documentation:** [zionterranova.com/docs](https://zionterranova.com/docs)
-- **Discord:** [discord.gg/zion](https://discord.gg/zion)
+- **Discord:** [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8)
 - **Telegram:** [t.me/zionterranova](https://t.me/zionterranova)
 - **GitHub:** [github.com/zionterranova](https://github.com/zionterranova)
 

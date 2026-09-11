@@ -346,7 +346,7 @@ Pull requesty vítány! Pro větší změny nejdřív otevři issue.
 ## 💬 Support
 
 - **Issues:** [GitHub Issues](https://github.com/zion-project/issues)
-- **Discord:** [ZION Community](https://discord.gg/zion)
+- **Discord:** [ZION Community](https://discord.gg/wvxJ7DhZ8)
 - **Docs:** [Full Documentation](https://docs.zion-project.io)
 
 ---

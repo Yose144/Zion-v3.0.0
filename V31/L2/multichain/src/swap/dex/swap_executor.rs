@@ -23,7 +23,7 @@ use crate::multichain_wallet::journal::JournalLedger;
 use crate::multichain_wallet::ledger::WalletLedger;
 use crate::multichain_wallet::types::{DexOrder, DexOrderStatus};
 use crate::solvency::SolvencyGuard;
-use crate::swap::dex::DexRouter;
+use crate::swap::dex::{DexRouter, Quote};
 use crate::swap::htlc::HtlcSwap;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 
@@ -105,6 +105,58 @@ impl SwapExecutor {
         self
     }
 
+    /// Return the best quote for a swap, falling back to an on-chain Uniswap V3
+    /// quote for same-chain EVM pairs when no in-memory AMM route exists.
+    pub async fn quote(
+        &self,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+    ) -> MultichainResult<Quote> {
+        {
+            let router = self.router.read().await;
+            match router.quote_multi(from, to, amount, 1, 4) {
+                Ok(mut quotes) => {
+                    if let Some(q) = quotes.pop() {
+                        return Ok(q);
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+
+        // No AMM route: try a direct Uniswap V3 quote for same-chain EVM pairs.
+        if from.id.chain == to.id.chain && from.id.chain.family() == ChainFamily::Evm {
+            let contracts = ZionContracts::for_chain(from.id.chain.as_str())
+                .ok_or_else(|| MultichainError::Unsupported(format!("no contracts for {}", from.id.chain.as_str())))?;
+            let v3 = contracts
+                .v3_dex
+                .get("uniswap")
+                .ok_or_else(|| MultichainError::Unsupported("uniswap config missing".to_string()))?;
+            let adapter = self
+                .adapters
+                .get(from.id.chain)
+                .ok_or_else(|| MultichainError::AdapterNotFound(from.id.chain.as_str().to_string()))?;
+            let fee = contracts.v3_fee_for_pair(&from.id.ticker, &to.id.ticker);
+            let expected_out = adapter
+                .v3_quote(&v3.quoter, from, to, amount, fee)
+                .await?;
+            if expected_out.0 > 0 {
+                return Ok(Quote {
+                    route: vec![from.id.clone(), to.id.clone()],
+                    expected_out,
+                    slippage_bps: 0,
+                    total_fee_bps: fee as u16,
+                });
+            }
+        }
+
+        Err(MultichainError::Unsupported(format!(
+            "no route from {} to {}",
+            from.id, to.id
+        )))
+    }
+
     /// Execute a swap for `user_id`.
     ///
     /// 1. Debit `from` from the user's ledger.
@@ -162,14 +214,10 @@ impl SwapExecutor {
         // 1. Debit input from the user's ledger (atomic journal if available).
         self.debit(user_id, from, amount, "swap", Some(&order_id)).await?;
 
-        // 2. Quote and execute against the router.
-        let mut router = self.router.write().await;
-        let quote = match router.quote_multi(from, to, amount, 1, 4) {
-            Ok(mut quotes) => quotes.pop().ok_or_else(|| {
-                MultichainError::Unsupported(format!("no route from {} to {}", from.id, to.id))
-            })?,
+        // 2. Quote and execute against the router or Uniswap V3.
+        let quote = match self.quote(from, to, amount).await {
+            Ok(q) => q,
             Err(e) => {
-                drop(router);
                 self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
@@ -178,7 +226,6 @@ impl SwapExecutor {
         };
 
         if quote.expected_out < min_amount_out {
-            drop(router);
             self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
@@ -196,13 +243,13 @@ impl SwapExecutor {
         let same_chain_evm = from.id.chain == to.id.chain
             && from.id.chain.family() == ChainFamily::Evm;
 
-        let v3_config = ZionContracts::for_chain(from.id.chain.as_str())
+        let chain_contracts = ZionContracts::for_chain(from.id.chain.as_str());
+        let v3_config = chain_contracts
+            .as_ref()
             .and_then(|c| c.v3_dex.get("uniswap").cloned());
 
         let amount_out = if same_chain_evm && v3_config.is_some() && quote.route.len() == 2 {
             // Uniswap V3 on-chain swap.
-            drop(router);
-
             let v3 = v3_config.as_ref().unwrap();
             let adapter = self.adapters.get(to.id.chain).ok_or_else(|| {
                 MultichainError::AdapterNotFound(to.id.chain.as_str().to_string())
@@ -217,12 +264,11 @@ impl SwapExecutor {
                 },
             };
 
-            // Select fee tier: 1% (10000) for wZION pairs, 0.3% (3000) otherwise.
-            let fee = if from.id.ticker.contains("wZION") || to.id.ticker.contains("wZION") {
-                10000
-            } else {
-                3000
-            };
+            // Select canonical Uniswap V3 fee tier for this pair.
+            let fee = chain_contracts
+                .as_ref()
+                .map(|c| c.v3_fee_for_pair(&from.id.ticker, &to.id.ticker))
+                .unwrap_or(3000);
 
             // Quote via V3 quoter for min_amount_out check.
             let v3_quote_out = adapter
@@ -273,7 +319,6 @@ impl SwapExecutor {
                         })?;
                         current = router.execute(&hop_from, &hop_to, current)?;
                     }
-                    drop(router);
                     current
                 }
                 Err(e) => {
@@ -285,6 +330,7 @@ impl SwapExecutor {
             }
         } else {
             // In-memory AMM execution (custodial, for non-EVM or multi-hop).
+            let mut router = self.router.write().await;
             let mut current = amount;
             for window in quote.route.windows(2) {
                 let from_id = &window[0];
@@ -298,7 +344,6 @@ impl SwapExecutor {
                 current = match router.execute(&hop_from, &hop_to, current) {
                     Ok(out) => out,
                     Err(e) => {
-                        drop(router);
                         self.credit(user_id, from, amount, "swap_refund", Some(&order.id)).await?;
                         order.status = DexOrderStatus::Failed;
                         self.save_order(&order).await?;
@@ -306,7 +351,6 @@ impl SwapExecutor {
                     }
                 };
             }
-            drop(router);
             current
         };
 
@@ -478,13 +522,9 @@ impl SwapExecutor {
         };
 
         // 1. Price the swap. The target output is what the operator will lock.
-        let router = self.router.write().await;
-        let quote = match router.quote_multi(from, to, req.amount_in, 1, 4) {
-            Ok(mut quotes) => quotes.pop().ok_or_else(|| {
-                MultichainError::Unsupported(format!("no route from {} to {}", from.id, to.id))
-            })?,
+        let quote = match self.quote(from, to, req.amount_in).await {
+            Ok(q) => q,
             Err(e) => {
-                drop(router);
                 order.status = DexOrderStatus::Failed;
                 self.save_order(&order).await?;
                 return Err(e);
@@ -492,7 +532,6 @@ impl SwapExecutor {
         };
 
         if quote.expected_out < req.min_amount_out {
-            drop(router);
             order.status = DexOrderStatus::Failed;
             self.save_order(&order).await?;
             return Err(MultichainError::Validation(format!(
@@ -504,7 +543,6 @@ impl SwapExecutor {
         let amount_out = quote.expected_out;
         order.amount_out = amount_out;
         order.route = quote.route.iter().map(|a| a.to_string()).collect();
-        drop(router);
 
         // 2. Record the order before attempting the on-chain target lock.
         self.save_order(&order).await?;

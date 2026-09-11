@@ -54,9 +54,9 @@ We do NOT run our own AMM. We use Uniswap V3 — it already has wZION liquidity.
 
 | Pair | Fee | Pool Address | Status |
 |------|-----|--------------|--------|
-| wZION/WETH | 1.0% | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | ✅ Active |
-| wZION/USDC | 0.3% | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | — |
-| wZION/USDT | 0.3% | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | — |
+| wZION/WETH | 1.0% | `0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699` | — (empty) |
+| wZION/USDC | 0.3% | `0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d` | — (empty) |
+| wZION/USDT | 0.3% | `0x186b46c2f04153999d44D25179cD623fD62Bfda2` | ✅ Active — 19 USDT + 151,867.25 wZION, NFT #5952162, tx `0x0d4194f21c2a7c78055af34be24ac50406e5b1cbd94ca3d5c223311c00ca6c69` |
 
 ---
 

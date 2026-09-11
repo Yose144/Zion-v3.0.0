@@ -930,7 +930,7 @@ Settings → General:
 ## 📞 Support & Contact
 
 - **Documentation:** https://docs.zionterranova.com
-- **Discord:** https://discord.gg/zionterranova
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 - **GitHub Issues:** https://github.com/Zion-TerraNova/zion-desktop-miner/issues
 - **Email:** support@zionterranova.com
 

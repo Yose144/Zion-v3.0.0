@@ -285,7 +285,7 @@ qrencode -o wallet_qr.png < cold_wallet.txt
 - **Website**: https://zion.network
 - **Explorer**: https://explorer.zion.network
 - **GitHub**: https://github.com/zion-network
-- **Discord**: https://discord.gg/zion
+- **Discord**: https://discord.gg/wvxJ7DhZ8
 - **Twitter**: https://twitter.com/zionnetwork
 
 ### Seed Nodes
@@ -396,7 +396,7 @@ zion_wallet import --file=wallet-backup.dat
 ## 📞 Support Channels
 
 - **Technical Support**: support@zion.network
-- **Discord**: https://discord.gg/zion
+- **Discord**: https://discord.gg/wvxJ7DhZ8
 - **Telegram**: https://t.me/zionnetwork
 - **GitHub Issues**: https://github.com/zion-network/zion-cryptocurrency/issues
 

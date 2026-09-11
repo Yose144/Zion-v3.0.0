@@ -64,7 +64,7 @@ export default function FaqPage() {
 
       <h3>Kde najdu komunitu?</h3>
       <ul>
-        <li>Discord: <a href="https://discord.gg/eatGYDbd" target="_blank" rel="noopener noreferrer">discord.gg/eatGYDbd</a> — hlavní hub, 24/7 podpora</li>
+        <li>Discord: <a href="https://discord.gg/wvxJ7DhZ8" target="_blank" rel="noopener noreferrer">discord.gg/wvxJ7DhZ8</a> — hlavní hub, 24/7 podpora</li>
         <li>Twitter/X: @ZionTerraNova</li>
         <li>GitHub: <a href="https://github.com/Zion-TerraNova" target="_blank" rel="noopener noreferrer">github.com/Zion-TerraNova</a></li>
       </ul>

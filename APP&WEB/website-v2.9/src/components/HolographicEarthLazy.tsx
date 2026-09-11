@@ -68,6 +68,7 @@ function EarthStaticFallback({ className }: { className?: string }) {
 function HolographicEarthLazy({ className }: { className?: string }) {
   const [webglOk, setWebglOk] = useState<boolean | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [enhanced, setEnhanced] = useState(false);
 
   useEffect(() => {
     setWebglOk(isWebGLAvailable());
@@ -78,12 +79,20 @@ function HolographicEarthLazy({ className }: { className?: string }) {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!webglOk || isMobile || reduceMotion || connection?.saveData) return;
+    const timer = window.setTimeout(() => setEnhanced(true), 1_200);
+    return () => window.clearTimeout(timer);
+  }, [isMobile, webglOk]);
+
   if (webglOk === null) {
     return <EarthSkeleton className={className} />;
   }
 
   // Always try 3D if WebGL is available; only fallback for no WebGL or very small screens
-  if (!webglOk || isMobile) {
+  if (!webglOk || isMobile || !enhanced) {
     return <EarthStaticFallback className={className} />;
   }
 

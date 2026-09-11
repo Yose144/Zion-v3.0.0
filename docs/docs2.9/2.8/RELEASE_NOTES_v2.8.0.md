@@ -204,7 +204,7 @@ Special thanks to:
 - **License:** MIT (code), CC BY-NC-SA 4.0 (docs)
 - **GitHub:** https://github.com/estrelaisabellazion3/Zion-2.8
 - **Website:** https://zionchain.io (coming soon)
-- **Discord:** https://discord.gg/zionchain
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 
 ---
 

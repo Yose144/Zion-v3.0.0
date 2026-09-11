@@ -53,11 +53,11 @@ export async function GET() {
           homepage: [SITE_INTRO_URL],
           blockchain_site: [`${SITE_APP_URL}/explorer`],
           official_forum_url: [`${SITE_APP_URL}/docs`],
-          chat_url: [],
+          chat_url: ['https://discord.gg/wvxJ7DhZ8'],
           announcement_url: [`${SITE_APP_URL}/roadmap`],
-          twitter_screen_name: '',
+          twitter_screen_name: '', // TODO: create real @ZionTerraNova account before CG re-submit
           facebook_username: '',
-          telegram_channel_identifier: '',
+          telegram_channel_identifier: 'zionterranova',
           subreddit_url: '',
           repos_url: {
             github: [GITHUB_REPO_URL],
@@ -68,8 +68,13 @@ export async function GET() {
         description: {
           en: 'ZION TerraNova is a PoW Layer-1 blockchain with Decade Decay emission, fee burning, and public explorer APIs.',
         },
-        genesis_date: null,
-        hashing_algorithm: 'Cosmic Harmony v3',
+        image: {
+          thumb: `${SITE_APP_URL}/brand/zion/icon-on-dark-64.png`,
+          small: `${SITE_APP_URL}/brand/zion/icon-on-dark-200.png`,
+          large: `${SITE_APP_URL}/brand/zion/favicon.png`,
+        },
+        genesis_date: '2026-08-06',
+        hashing_algorithm: 'EkamDeeksha',
         market_cap_rank: null,
         coingecko_rank: null,
         coingecko_score: null,

@@ -4,23 +4,31 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Globe, Orbit, Radio, Sparkles, Palette } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
+import { useLang } from '@/contexts/LanguageContext';
 
-const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
-  'maintenance': { icon: Sparkles, label: 'Maintenance Starfield', description: 'Gold starfield — clean and fast', color: '252, 209, 22' },
-  'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '6, 105, 40' },
-  'galaxy-core': { icon: Sparkles, label: 'Galaxy Core', description: 'Contact approach — inward starflow', color: '252, 209, 22' },
-  'desktop-agent': { icon: Radio, label: 'Desktop Agent', description: 'Purple starfield — desktop agent match', color: '228, 30, 43' },
-  'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '6, 105, 40' },
+const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: { cs: string; en: string }; description: { cs: string; en: string }; color: string }> = {
+  'maintenance': { icon: Sparkles, label: { cs: 'Hvězdné pole', en: 'Starfield' }, description: { cs: 'Čisté a rychlé zlaté hvězdné pole', en: 'Clean and fast gold starfield' }, color: '252, 209, 22' },
+  'planet-orbit': { icon: Globe, label: { cs: 'Tyrkysové jádro', en: 'Turquoise Core' }, description: { cs: 'Výchozí tyrkysová atmosféra', en: 'Default turquoise atmosphere' }, color: '6, 105, 40' },
+  'galaxy-core': { icon: Sparkles, label: { cs: 'Galaktické jádro', en: 'Galaxy Core' }, description: { cs: 'Proud hvězd směrem dovnitř', en: 'Inward starflow' }, color: '252, 209, 22' },
+  'desktop-agent': { icon: Radio, label: { cs: 'Desktop Agent', en: 'Desktop Agent' }, description: { cs: 'Fialové hvězdné pole aplikace', en: 'Desktop app purple starfield' }, color: '228, 30, 43' },
+  'warp-speed': { icon: Orbit, label: { cs: 'WARP', en: 'WARP' }, description: { cs: 'Efekt warp tunelu', en: 'Warp tunnel effect' }, color: '6, 105, 40' },
+};
+
+const backgroundCopy = {
+  menu: { cs: 'Režim pozadí', en: 'Background mode' },
+  switch: { cs: 'Přepnout režim pozadí', en: 'Toggle background mode' },
+  instant: { cs: 'Přepnutí je okamžité', en: 'Switches instantly' },
 };
 
 export default function BackgroundToggle() {
   const { mode, setMode } = useObservatory();
+  const { lang } = useLang();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const CurrentIcon = backgroundConfig[mode]?.icon || Sparkles;
   const currentColor = backgroundConfig[mode]?.color || '6, 105, 40';
-  const currentLabel = backgroundConfig[mode]?.label || mode;
+  const currentLabel = backgroundConfig[mode]?.label[lang] || mode;
 
   /* Close on click outside */
   useEffect(() => {
@@ -54,7 +62,7 @@ export default function BackgroundToggle() {
           borderColor: `rgba(${currentColor}, 0.5)`,
           boxShadow: `0 0 20px rgba(${currentColor}, 0.3), 0 8px 24px rgba(0,0,0,0.4)`,
         }}
-        aria-label="Toggle background menu"
+        aria-label={backgroundCopy.switch[lang]}
       >
         {/* Rotating aura */}
         <motion.span
@@ -101,7 +109,7 @@ export default function BackgroundToggle() {
             {/* Header */}
             <div className="flex items-center gap-2 px-4 pt-3 pb-2">
               <Palette className="w-4 h-4 text-zion-gold/70" />
-              <span className="text-[10px] uppercase tracking-[0.35em] text-zion-gold/70 font-semibold">Background Mode</span>
+              <span className="text-[10px] uppercase tracking-[0.35em] text-zion-gold/70 font-semibold">{backgroundCopy.menu[lang]}</span>
             </div>
 
             {/* Options */}
@@ -121,8 +129,8 @@ export default function BackgroundToggle() {
                       <Icon className="w-4 h-4" style={{ color: isActive ? `rgb(${config.color})` : 'rgba(255,255,255,0.5)' }} />
                     </div>
                     <div className="flex-1 text-left min-w-0">
-                      <div className="font-semibold text-sm text-white truncate">{config.label}</div>
-                      <div className="text-xs text-zion-gold/80 truncate">{config.description}</div>
+                      <div className="font-semibold text-sm text-white truncate">{config.label[lang]}</div>
+                      <div className="text-xs text-zion-gold/80 truncate">{config.description[lang]}</div>
                     </div>
                     {isActive && <Check className="w-4 h-4 shrink-0" style={{ color: `rgb(${config.color})` }} />}
                   </button>
@@ -132,7 +140,7 @@ export default function BackgroundToggle() {
 
             {/* Footer */}
             <div className="border-t border-white/8 px-4 py-2.5 bg-black/40">
-              <p className="text-[10px] text-zion-gold/70 text-center uppercase tracking-wider">Switches instantly</p>
+              <p className="text-[10px] text-zion-gold/70 text-center uppercase tracking-wider">{backgroundCopy.instant[lang]}</p>
             </div>
           </motion.div>
         )}

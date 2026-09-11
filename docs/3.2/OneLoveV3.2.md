@@ -413,7 +413,7 @@ Website:    https://zionterranova.com
 Explorer:   https://zionterranova.com/explorer
 Whitepaper: https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md
 GitHub:     https://github.com/Zion-TerraNova/v3-Mainnet
-Discord:    https://discord.gg/zion-terranova
+Discord:    https://discord.gg/wvxJ7DhZ8
 Telegram:   https://t.me/zionterranova
 
 ═══════════════════════════════════════════════════════════════
@@ -454,7 +454,7 @@ The network is in Mainnet Beta and may contain bugs. This is not financial advic
 | Public RPC | `rpc.zionterranova.com:8443` |
 | Public pool | `62.171.141.136:8444` |
 | GitHub (public) | https://github.com/Zion-TerraNova/v3-Mainnet |
-| Discord | https://discord.gg/zion-terranova |
+| Discord | https://discord.gg/wvxJ7DhZ8 |
 | Telegram | https://t.me/zionterranova |
 | Twitter / X | https://x.com/ZionTerraNova |
 | Email | support@zion-blockchain.org |
