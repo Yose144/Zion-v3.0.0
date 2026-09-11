@@ -3,7 +3,7 @@
 > **Vydáno:** 6. srpna 2026  
 > **Aktuální veřejná linka:** v3.2.0 "One Love"  
 > **Stav:** Mainnet Stable — live, pool aktivní, těžba běží, bridge a DEX nasazeny  
-> **Oficiální veřejný launch:** 31. prosince 2026  
+> **Oficiální veřejný launch:** odložen (TBD)  
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
 ---
@@ -141,7 +141,7 @@ Přímé odkazy najdeš na stránce [Stáhnout](/download).
 
 ## Důležitá upozornění
 
-- Síť je **Mainnet Stable**, ale do oficiálního veřejného launchi 31. 12. 2026 je stále v předlaunch fázi.
+- Síť je **Mainnet Stable**, ale veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), zajistit základní likviditu a sestavit tým dobrovolných vývojářů, než oznámíme nové datum.
 - OASIS je **živý preview ve výstavbě** — obsah, questy i progrese se mohou během vývoje měnit nebo resetovat.
 - Těžba, bridge, swap a účast probíhají **na vlastní riziko**.
 - Jde o experimentální open-source protokol, nikoliv investiční produkt.

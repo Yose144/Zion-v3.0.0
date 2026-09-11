@@ -91,7 +91,7 @@ Before every bigger action:
 ## Is ZION in production?
 
 ZION is in **Mainnet Beta** — the network is running and producing blocks, but it may contain bugs.
-Mine and transact at your own risk. Official public launch: **31 December 2026**.
+Mine and transact at your own risk. Official public launch: **postponed (TBD)**.
 
 The genesis chain is **permanent** — it will not be reset.
 

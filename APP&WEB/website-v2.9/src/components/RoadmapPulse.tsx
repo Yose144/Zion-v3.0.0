@@ -7,7 +7,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const RoadmapPulseCopy = {
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
   currentStatus: { cs: `Aktuální stav`, en: `Current status` },
-  v31CutoverComplete: { cs: `One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Zbývá finální bezpečnostní audit, bridge validator provisioning a komunitní příprava na veřejný launch 31. 12. 2026.`, en: `One Love Mainnet Stable — node, pool, and multichain are production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. Final security audit, bridge validator provisioning, and community preparation for public launch 31 Dec 2026 remain.` },
+  v31CutoverComplete: { cs: `One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch 31. 12. 2026 se odkládá. Aktuálně hledáme dobrovolné vývojáře, pracujeme na Maturity Gate (Maturitě) a zajišťujeme základní likviditu.`, en: `One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch on 31 Dec 2026 is postponed. We are currently seeking volunteer developers, working toward the Maturity Gate, and securing basic liquidity.` },
   fullRoadmap: { cs: `Celá roadmapa`, en: `Full Roadmap` },
   blockExplorer: { cs: `Průzkumník blockchainu`, en: `Block Explorer` },
   phases: {
@@ -42,13 +42,13 @@ const RoadmapPulseCopy = {
       ],
     },
     phase4: {
-      name: { cs: `Fáze 4 · Public Launch Gate`, en: `Phase 4 · Public Launch Gate` },
-      window: { cs: `Cíl: 31. 12. 2026`, en: `Target: 31 Dec 2026` },
+      name: { cs: `Fáze 4 · Public Launch Gate (odloženo)`, en: `Phase 4 · Public Launch Gate (postponed)` },
+      window: { cs: `Odloženo (TBD)`, en: `Postponed (TBD)` },
       progress: 35,
       highlights: [
-        { cs: `Bezpečnostní audit — externí firma booked`, en: `Security audit — external firm booked` },
-        { cs: `Bridge validator provisioning 3/5 threshold`, en: `Bridge validator provisioning 3/5 threshold` },
-        { cs: `Finální dokumentace a komunitní příprava`, en: `Final documentation and community preparation` },
+        { cs: `Tým dobrovolných vývojářů`, en: `Team of volunteer developers` },
+        { cs: `Maturity Gate (Maturita) — připravenostní přezkoušení`, en: `Maturity Gate readiness review` },
+        { cs: `Základní likvidita a veřejný listing`, en: `Basic liquidity and public listing` },
       ],
     },
   },

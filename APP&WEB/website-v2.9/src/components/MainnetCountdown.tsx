@@ -1,68 +1,64 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, Calendar } from 'lucide-react';
+import {
+  AlertTriangle,
+  Clock,
+  Coins,
+  Construction,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 
 const MainnetCountdownCopy = {
-  days: { cs: `Dnů`, en: `Days` },
-  hours: { cs: `Hodin`, en: `Hours` },
-  minutes: { cs: `Minut`, en: `Minutes` },
-  seconds: { cs: `Sekund`, en: `Seconds` },
-  l2BridgeL3AiDefi: { cs: `L2 Bridge · L3 AI · DeFi`, en: `L2 Bridge · L3 AI · DeFi` },
-  launchCountdown: { cs: `Odpočet launchu`, en: `Launch Countdown` },
+  title: { cs: `Stav launchu`, en: `Launch status` },
+  badge: { cs: `Veřejný launch odložen`, en: `Public launch postponed` },
+  body: {
+    cs: `Projekt ZION TerraNova zůstává ve vývoji. Veřejný start bude možný až po splnění následujících podmínek:`,
+    en: `The ZION TerraNova project remains in development. A public start will only be possible once the following conditions are met:`,
+  },
+  conditions: {
+    team: {
+      cs: `Tým dobrovolných vývojářů`,
+      en: `Team of volunteer developers`,
+    },
+    maturity: {
+      cs: `Úspěšné Maturity Gate (Maturita)`,
+      en: `Maturity Gate passed`,
+    },
+    liquidity: {
+      cs: `Základní likvidita`,
+      en: `Basic liquidity`,
+    },
+    listing: {
+      cs: `Schválený veřejný listing`,
+      en: `Approved public listing`,
+    },
+  },
+  note: {
+    cs: `Nové datum neoznámíme, dokud nebudeme připraveni.`,
+    en: `No new date will be announced until we are ready.`,
+  },
+  cta: { cs: `Číst oznámení`, en: `Read the announcement` },
 };
 
-const LAUNCH_DATE = new Date('2026-12-31T00:00:00Z');
-const GENESIS_DATE = new Date('2026-06-11T00:00:00Z');
-const BRIDGE_DATE = new Date('2026-06-18T00:00:00Z');
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  total: number;
+function Condition({
+  icon: Icon,
+  label,
+}: {
+  icon: typeof Users;
+  label: string;
+}) {
+  return (
+    <li className="flex items-center gap-2.5 text-xs text-gray-300">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+        <Icon className="h-3.5 w-3.5 text-zion-cyan" />
+      </div>
+      <span className="leading-tight">{label}</span>
+    </li>
+  );
 }
-
-function getTimeLeft(target: Date): TimeLeft {
-  const total = target.getTime() - Date.now();
-  const seconds = Math.max(0, Math.floor((total / 1000) % 60));
-  const minutes = Math.max(0, Math.floor((total / 1000 / 60) % 60));
-  const hours = Math.max(0, Math.floor((total / (1000 * 60 * 60)) % 24));
-  const days = Math.max(0, Math.floor(total / (1000 * 60 * 60 * 24)));
-  return { days, hours, minutes, seconds, total };
-}
-
-function pad(n: number) {
-  return n.toString().padStart(2, '0');
-}
-
-const RASTA_BOX_STYLES = [
-  {
-    name: 'red',
-    text: 'text-zion-purple',
-    border: 'border-zion-purple/30',
-    bg: 'bg-zion-purple/10',
-    rgb: '228, 30, 43',
-  },
-  {
-    name: 'gold',
-    text: 'text-zion-gold',
-    border: 'border-zion-gold/30',
-    bg: 'bg-zion-gold/10',
-    rgb: '252, 209, 22',
-  },
-  {
-    name: 'green',
-    text: 'text-zion-cyan',
-    border: 'border-zion-cyan/30',
-    bg: 'bg-zion-cyan/10',
-    rgb: '6, 105, 40',
-  },
-] as const;
 
 function Wrap({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
   if (embedded) return <>{children}</>;
@@ -76,78 +72,13 @@ function Wrap({ embedded, children }: { embedded: boolean; children: React.React
 export default function MainnetCountdown({ embedded = false }: { embedded?: boolean }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const [time, setTime] = useState<TimeLeft>(getTimeLeft(LAUNCH_DATE));
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    const id = setInterval(() => {
-      setTime(getTimeLeft(LAUNCH_DATE));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const units = [
-    { value: time.days, label: MainnetCountdownCopy.days[cs ? 'cs' : 'en'] },
-    { value: time.hours, label: MainnetCountdownCopy.hours[cs ? 'cs' : 'en'] },
-    { value: time.minutes, label: MainnetCountdownCopy.minutes[cs ? 'cs' : 'en'] },
-    { value: time.seconds, label: MainnetCountdownCopy.seconds[cs ? 'cs' : 'en'] },
+  const conditions = [
+    { icon: Users, label: MainnetCountdownCopy.conditions.team[cs ? 'cs' : 'en'] },
+    { icon: ShieldCheck, label: MainnetCountdownCopy.conditions.maturity[cs ? 'cs' : 'en'] },
+    { icon: Coins, label: MainnetCountdownCopy.conditions.liquidity[cs ? 'cs' : 'en'] },
+    { icon: Construction, label: MainnetCountdownCopy.conditions.listing[cs ? 'cs' : 'en'] },
   ];
-
-  const tMinus = time.total > 0 ? `T-${time.days}` : 'LIVE';
-  const isLive = time.total <= 0;
-
-  if (!mounted) {
-    return (
-      <Wrap embedded={embedded}>
-        <div className="zion-panel-soft zion-panel-hover p-6 min-h-[140px]" />
-      </Wrap>
-    );
-  }
-
-  if (isLive) {
-    return (
-      <Wrap embedded={embedded}>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
-          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
-        >
-            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
-
-            <div className="relative flex items-center gap-3">
-              <div className="flex-none w-10 h-10 rounded-lg bg-zion-gold/15 flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-zion-gold animate-pulse" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-sm font-bold text-white">Mainnet LIVE</h2>
-                <p className="text-[11px] text-gray-400">Edge server · Mining · Bridge</p>
-              </div>
-              <span
-                className="text-xs font-bold text-zion-cyan bg-zion-cyan/10 border border-zion-cyan/20 rounded-full px-2.5 py-1"
-                style={{ boxShadow: '0 0 12px rgba(6, 105, 40, 0.15)' }}
-              >
-                GO
-              </span>
-            </div>
-
-            <div className="relative mt-3">
-              <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan"
-                  initial={{ width: 0 }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
-                />
-              </div>
-            </div>
-          </motion.div>
-      </Wrap>
-    );
-  }
 
   return (
     <Wrap embedded={embedded}>
@@ -158,84 +89,52 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
         className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
         style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
       >
-          {/* rasta ambient glows */}
-          <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-zion-cyan/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
 
-          <div className="relative flex flex-col gap-3">
-            {/* Phase badge — compact, rasta red */}
-            <div
-              className="flex items-center gap-2 text-[10px] text-zion-purple bg-zion-purple/10 border border-zion-purple/20 rounded-full px-2.5 py-1 self-start"
-              style={{ boxShadow: '0 0 12px rgba(228, 30, 43, 0.15)' }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-zion-purple animate-pulse" />
-              {MainnetCountdownCopy.l2BridgeL3AiDefi[cs ? 'cs' : 'en']}
-            </div>
-
-            {/* Title row */}
-            <div className="flex items-center gap-2.5">
-              <div className="flex-none w-8 h-8 rounded-lg bg-zion-gold/15 flex items-center justify-center">
-                <Rocket className="w-4 h-4 text-zion-gold animate-pulse" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-white leading-tight">
-                  {MainnetCountdownCopy.launchCountdown[cs ? 'cs' : 'en']}
-                </h2>
-                <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-                  <Calendar className="w-3 h-3 text-zion-cyan shrink-0" />
-                  <span className="truncate">31 Dec 2026</span>
-                  <span className="text-zion-gold font-semibold shrink-0">{tMinus}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Countdown digits — rasta red/gold/green rotation */}
-            <div className="flex items-center justify-center gap-1.5">
-              {units.map((unit, i) => {
-                const s = RASTA_BOX_STYLES[i % 3];
-                return (
-                  <motion.div
-                    key={unit.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: i * 0.06 }}
-                    className="flex flex-col items-center"
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-lg border ${s.border} ${s.bg} backdrop-blur-md flex items-center justify-center`}
-                      style={{ boxShadow: `0 0 18px rgba(${s.rgb}, 0.22)` }}
-                    >
-                      <span
-                        className={`text-base font-bold tabular-nums ${s.text}`}
-                        style={{ textShadow: `0 0 10px rgba(${s.rgb}, 0.55)` }}
-                      >
-                        {pad(unit.value)}
-                      </span>
-                    </div>
-                    <span className="text-[8px] uppercase tracking-wider text-gray-500 mt-1">
-                      {unit.label}
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            {/* Progress bar */}
-            <div className="relative">
-              <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, (29 - time.days) / 29 * 100)}%` }}
-                  transition={{ duration: 1.2, ease: 'easeOut' }}
-                />
-              </div>
-              <p className="text-[9px] text-gray-500 mt-1.5 text-center leading-tight">
-                {tr('countdown', 'subtitle', lang)}
-              </p>
-            </div>
+        <div className="relative flex flex-col gap-3">
+          {/* Status badge */}
+          <div
+            className="flex items-center gap-2 text-[10px] text-zion-gold bg-zion-gold/10 border border-zion-gold/20 rounded-full px-2.5 py-1 self-start"
+            style={{ boxShadow: '0 0 12px rgba(252, 209, 22, 0.12)' }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-zion-gold animate-pulse" />
+            {MainnetCountdownCopy.badge[cs ? 'cs' : 'en']}
           </div>
+
+          {/* Title */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zion-purple/15">
+              <AlertTriangle className="h-4 w-4 text-zion-purple" />
+            </div>
+            <h2 className="text-sm font-bold text-white leading-tight">
+              {MainnetCountdownCopy.title[cs ? 'cs' : 'en']}
+            </h2>
+          </div>
+
+          <p className="text-xs text-gray-400 leading-relaxed">
+            {MainnetCountdownCopy.body[cs ? 'cs' : 'en']}
+          </p>
+
+          {/* Conditions list */}
+          <ul className="space-y-2 mt-1">
+            {conditions.map((c, i) => (
+              <Condition key={i} icon={c.icon} label={c.label} />
+            ))}
+          </ul>
+
+          <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1.5">
+            <Clock className="h-3 w-3" />
+            {MainnetCountdownCopy.note[cs ? 'cs' : 'en']}
+          </p>
+
+          <a
+            href="/news/launch-postponed"
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-2 text-xs font-medium text-zion-cyan hover:bg-zion-cyan/20 transition"
+          >
+            {MainnetCountdownCopy.cta[cs ? 'cs' : 'en']}
+          </a>
+        </div>
       </motion.div>
     </Wrap>
   );
