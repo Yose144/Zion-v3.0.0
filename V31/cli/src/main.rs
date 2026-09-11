@@ -91,7 +91,7 @@ enum Command {
     Agent(AgentArgs),
     /// Hiran AI oracle commands (L4 — not yet migrated).
     Hiran(HiranArgs),
-    /// Issobella layer commands (L5 — not yet migrated).
+    /// Issobella layer commands (L6 — space science and research funding).
     Issobella(IssobellaArgs),
     /// Free World layer commands (L5 — not yet migrated).
     FreeWorld(FreeWorldArgs),
@@ -732,7 +732,8 @@ async fn main() -> anyhow::Result<()> {
                 let mut utxos = crate::rpc::node_rpc::fetch_utxos(&rpc, &sender_address).await?;
 
                 // Filter out immature coinbase UTXOs (need 100 confirmations).
-                let chain_info = crate::rpc::node_rpc::call(&rpc, "getChainInfo", serde_json::json!({})).await?;
+                let chain_info =
+                    crate::rpc::node_rpc::call(&rpc, "getChainInfo", serde_json::json!({})).await?;
                 let chain_height = chain_info["result"]["chain_height"].as_u64().unwrap_or(0);
                 let maturity = 100u64;
                 let before = utxos.len();
@@ -745,7 +746,11 @@ async fn main() -> anyhow::Result<()> {
                     }
                 });
                 if utxos.len() < before {
-                    println!("Filtered {} immature coinbase UTXOs (age < {} blocks)", before - utxos.len(), maturity);
+                    println!(
+                        "Filtered {} immature coinbase UTXOs (age < {} blocks)",
+                        before - utxos.len(),
+                        maturity
+                    );
                 }
 
                 if utxos.is_empty() {
@@ -1019,7 +1024,9 @@ async fn main() -> anyhow::Result<()> {
         Command::Completions { shell } => commands::completions::run(shell)?,
         Command::Agent(args) => commands::agent::run(args.command).await?,
         Command::Hiran(args) => commands::hiran::run(args.command).await?,
-        Command::Issobella(args) => commands::issobella::run(args.command).await?,
+        Command::Issobella(args) => {
+            commands::issobella::run(args.command, "http://127.0.0.1:8097").await?
+        }
         Command::FreeWorld(args) => commands::free_world::run(args.command).await?,
         Command::Ncl(args) => commands::ncl::run(args.command).await?,
         Command::Auxpow(args) => commands::auxpow::run(args.command).await?,

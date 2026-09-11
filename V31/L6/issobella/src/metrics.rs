@@ -18,6 +18,51 @@ impl IssobellaMetrics {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn inc_blocks_scanned(&self) {
+        self.blocks_scanned.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn inc_missions_planning(&self) {
+        self.missions_planning.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn dec_missions_planning(&self) {
+        self.missions_planning.fetch_sub(1, Ordering::Relaxed);
+    }
+
+    pub fn inc_missions_launched(&self) {
+        self.missions_launched.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn dec_missions_launched(&self) {
+        self.missions_launched.fetch_sub(1, Ordering::Relaxed);
+    }
+
+    pub fn inc_missions_operational(&self) {
+        self.missions_operational.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn dec_missions_operational(&self) {
+        self.missions_operational.fetch_sub(1, Ordering::Relaxed);
+    }
+
+    pub fn inc_observations_recorded(&self) {
+        self.observations_recorded.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn inc_proposals_submitted(&self) {
+        self.proposals_submitted.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn set_total_accumulated_zion(&self, value: u64) {
+        self.total_accumulated_zion.store(value, Ordering::Relaxed);
+    }
+
+    pub fn add_total_disbursed_zion(&self, amount: u64) {
+        self.total_disbursed_zion
+            .fetch_add(amount, Ordering::Relaxed);
+    }
 }
 
 /// Serve Prometheus-style metrics text.
