@@ -2126,8 +2126,8 @@ export default function MissionControlDashboard() {
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
                   <Sparkles className="h-3 w-3" /> Network · public pool + consensus
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
-                  <Rocket className="h-3 w-3" /> Mainnet launch countdown T-{Math.max(0, Math.ceil((new Date('2026-12-31T00:00:00Z').getTime() - Date.now()) / 86400000))} days
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
+                  <Rocket className="h-3 w-3" /> Public launch postponed (TBD)
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-zion-cyan" /> {allHealthy ? (MissionControlDashboardCopy.allSystemsHealthy[cs ? 'cs' : 'en']) : anyHealthy ? (MissionControlDashboardCopy.partialSystemsUp[cs ? 'cs' : 'en']) : (MissionControlDashboardCopy.systemsMonitoring[cs ? 'cs' : 'en'])}
@@ -2139,7 +2139,7 @@ export default function MissionControlDashboard() {
                 { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'live mainnet chain tip' },
                 { label: 'Pool Hashrate', value: fmtHash(v3?.minerHashrate ?? primaryNode?.pool?.hashrate?.pool ?? null), descriptor: 'current mining hashrate' },
                 { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
-                { label: 'Mainnet Status', value: 'TBD', descriptor: 'target 31 December 2026' },
+                { label: 'Mainnet Status', value: 'In Dev', descriptor: 'public launch postponed (TBD)' },
               ].map((chip) => (
                 <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
@@ -2239,8 +2239,8 @@ export default function MissionControlDashboard() {
                 </h2>
                 <p className="text-sm text-gray-400">
                   {cs
-                    ? 'Síťová topologie aktivní. Mainnet Alpha live, G8 30denní kontinuální běh aktivní, genesis artefakty potvrzeny. Veřejný mainnet launch countdown aktivní.'
-                    : 'Network topology active. Mainnet Alpha live, G8 30-day continuous run active, genesis artifacts confirmed. Public mainnet launch countdown active.'
+                    ? 'Síťová topologie aktivní. Mainnet Alpha live, G8 30denní kontinuální běh aktivní, genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.'
+                    : 'Network topology active. Mainnet Alpha live, G8 30-day continuous run active, genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.'
                   }
                 </p>
               </div>
@@ -2250,7 +2250,7 @@ export default function MissionControlDashboard() {
                 <Stat label="Tip Agreement" value={tipAgreement ? 'LOCKED' : (anyHealthy ? 'SYNCING' : '—')} color={tipAgreement ? 'text-zion-cyan' : 'text-zion-gold'} />
                 <Stat label="Pool Accept" value={poolAcceptRate != null ? `${poolAcceptRate}%` : (primaryNode?.pool?.ok ? '100%' : '—')} color={(poolAcceptRate ?? 100) >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} mono />
                 <Stat label="Security Gate" value="TBD" color="text-zion-gold" sub="audit pending" />
-                <Stat label="Launch Gate" value="TBD" color="text-zion-gold" sub="31 December 2026" />
+                <Stat label="Launch Gate" value="TBD" color="text-zion-gold" sub="postponed (TBD)" />
               </div>
               <div className="mt-4">
                 <G8RunCard run={g8} />
@@ -2337,7 +2337,7 @@ export default function MissionControlDashboard() {
                 <Stat label="Network" value="ZION" sub="One Love · L1–L6" color="text-zion-cyan" />
                 <Stat label="Tests" value="2,100+" sub="workspace passing / 0 failing" color="text-zion-cyan" />
                 <Stat label="Launch Mode" value="G8 RUNNING" sub="30-day run · uptime ≥99.9%" color="text-zion-gold" />
-                <Stat label="Mainnet Status" value="ALPHA LIVE" sub="public launch target 31 December 2026" color="text-zion-gold" />
+                <Stat label="Mainnet Status" value="ALPHA LIVE" sub="public launch postponed (TBD)" color="text-zion-gold" />
               </div>
             </motion.section>
 
@@ -3052,11 +3052,11 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Mainnet Alpha live. Gates G1–G5, G7 a G11 hotové, G8 30denní kontinuální běh probíhá. Veřejný launch cíl 31. prosince 2026 (Silvestr).' : 'Mainnet Alpha live. Gates G1–G5, G7 and G11 complete, G8 30-day continuous run in progress. Public launch target 31 December 2026 (New Year\'s Eve).'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Mainnet Alpha live. Gates G1–G5, G7 a G11 hotové, G8 30denní kontinuální běh probíhá. Veřejný launch je odložen (TBD).' : 'Mainnet Alpha live. Gates G1–G5, G7 and G11 complete, G8 30-day continuous run in progress. Public launch is postponed (TBD).'}</p>
               </div>
               <div className="relative h-9 zion-section overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-zion-gold via-zion-cyan to-zion-purple" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · MAINNET ALPHA LIVE · G8 30-DAY RUN · PUBLIC LAUNCH 31 DEC 2026</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · MAINNET ALPHA LIVE · G8 30-DAY RUN · PUBLIC LAUNCH POSTPONED (TBD)</span>
               </div>
             </motion.section>
 
@@ -3120,16 +3120,16 @@ export default function MissionControlDashboard() {
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-zion-gold" />} title={cs ? 'Fáze 5 — G9/G10 & Public Launch' : 'Phase 5 — G9/G10 & Public Launch'} pct={20} status="31. 12. 2026" statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
+              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-zion-gold" />} title={cs ? 'Fáze 5 — G9/G10 & Public Launch (odloženo)' : 'Phase 5 — G9/G10 & Public Launch (postponed)'} pct={20} status="TBD" statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
                 <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Gate</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Aktivita' : 'Activity'}</th></tr></thead><tbody>
                   {[
                     ['G9', cs ? 'Externí bezpečnostní audit (L1/L2) — plánován před launchem' : 'External security audit (L1/L2) — planned before launch'],
                     ['G10', cs ? 'L5/L6 rozhodnutí — treasury, humanitární fond, Issobella governance' : 'L5/L6 decision — treasury, humanitarian fund, Issobella governance'],
                     ['F2', cs ? 'Dokončení 24h transaction fuzz evidence' : '24h transaction fuzz evidence completion'],
                     ['I', cs ? 'ZIS identity service — finální public auth flows' : 'ZIS identity service — final public auth flows'],
-                    ['LAUNCH', cs ? 'Public launch — One Love Mainnet · 31. prosince 2026' : 'Public launch — One Love Mainnet · 31 December 2026'],
+                    ['LAUNCH', cs ? 'Public launch — One Love Mainnet · odložen (TBD)' : 'Public launch — One Love Mainnet · postponed (TBD)'],
                   ].map(([day, act]) => <tr key={day}><td className="py-2.5 px-4 text-sm font-semibold text-white rounded-l-lg">{day}</td><td className="py-2.5 px-4 text-sm text-gray-400 rounded-r-lg">{act}</td></tr>)}
-                  <tr className="bg-zion-purple/5"><td className="py-2.5 px-4 text-sm font-semibold text-zion-purple rounded-l-lg"><span className="inline-flex items-center gap-1">T-0 <Rocket className="h-3.5 w-3.5" /></span></td><td className="py-2.5 px-4 text-sm font-bold text-zion-purple rounded-r-lg">PUBLIC MAINNET LAUNCH · 31 DEC 2026</td></tr>
+                  <tr className="bg-zion-purple/5"><td className="py-2.5 px-4 text-sm font-semibold text-zion-purple rounded-l-lg"><span className="inline-flex items-center gap-1">T-0 <Rocket className="h-3.5 w-3.5" /></span></td><td className="py-2.5 px-4 text-sm font-bold text-zion-purple rounded-r-lg">PUBLIC MAINNET LAUNCH · POSTPONED (TBD)</td></tr>
                 </tbody></table></div>
               </PhaseAccordion>
             </motion.section>
@@ -3163,7 +3163,7 @@ export default function MissionControlDashboard() {
                   { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-zion-purple/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : 'UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-zion-purple', active: false, Icon: Gamepad2 },
                   { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-zion-purple/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP chain registry config-driven (G2 uzavřen), non-EVM chainy gated, NCL gateway a AI Native SDK navazují' : 'WARP chain registry config-driven (G2 closed), non-EVM chains gated, NCL gateway and AI Native SDK follow', tags: ['WARP Registry', 'NCL Gateway', cs ? 'AI Orchestrátor' : 'AI Orchestrator', cs ? 'GPU za ZION' : 'GPU for ZION'], date: cs ? '2026 Q3 — gated (G2 ✅)' : '2026 Q3 — gated (G2 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Brain },
                   { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 lock → mint → burn → unlock round-trip ověřen' : 'wZION bridge live on Base mainnet — E4 lock → mint → burn → unlock round-trip verified', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅)', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },
-                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Alpha live · public launch 31. 12. 2026' : 'Mainnet Alpha live · public launch 31 Dec 2026', labelColor: 'text-zion-cyan', active: true, Icon: Link },
+                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Alpha live · public launch odložen (TBD)' : 'Mainnet Alpha live · public launch postponed (TBD)', labelColor: 'text-zion-cyan', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
                     key={l.label}
@@ -3454,7 +3454,7 @@ export default function MissionControlDashboard() {
                       { done: true, date: cs ? '6. srpna 2026' : '6 August 2026', title: 'v3.2.0 ONE LOVE RESET', desc: cs ? 'Nová genesis, kompletní rotace klíčů (BIP39), přechod na mainnet' : 'New genesis, full key rotation (BIP39), mainnet cutover', color: 'text-zion-cyan' },
                       { done: true, date: cs ? '22. srpna 2026' : '22 August 2026', title: 'GATES G1–G5/G7/G11 + E4', desc: cs ? 'Rigy E2E, chaos/load, bridge round-trip, migrace na veřejný mainnet uzavřeny' : 'Rigs E2E, chaos/load, bridge round-trip, public mainnet migration closed', color: 'text-zion-cyan' },
                       { active: true, date: cs ? '23. 8. — 22. 9. 2026' : '23 Aug — 22 Sep 2026', title: 'G8 30-DAY RUN', desc: cs ? 'Kontinuální běh ZION sítě — uptime cíl ≥ 99,9 %' : 'Continuous run of the ZION network — uptime target ≥ 99.9%', color: 'text-zion-gold' },
-                      { active: true, date: cs ? '31. prosince 2026' : '31 December 2026', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — po uzavření G8/G9/G10' : 'One Love Mainnet public GO — after G8/G9/G10 closure', color: 'text-zion-cyan' },
+                      { active: true, date: cs ? 'TBD' : 'TBD', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : 'One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', color: 'text-zion-cyan' },
                     ].map((item, i) => (
                       <div key={i} className="relative">
                         <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-zion-cyan border-zion-cyan' : item.active ? 'bg-zion-cyan border-zion-cyan shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />
@@ -3596,7 +3596,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · One Love Mainnet · launch countdown · 31 December 2026<br />
+          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · One Love Mainnet · public launch postponed (TBD)<br />
           <em>6-layer architecture · operations-first web shell</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>

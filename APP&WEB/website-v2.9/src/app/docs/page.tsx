@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument [v3.2.0 Přehled](#v320-readme). Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch zůstává 31. prosince 2026.',
-    en: 'The current public line is v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document [v3.2.0 Overview](#v320-readme). Pool active, mining live, DEX and bridge deployed. Public launch remains 31 December 2026.',
+    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument [v3.2.0 Přehled](#v320-readme). Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch 31. prosince 2026 je odložen. Projekt potřebuje projít Maturity Gate (Maturitou), získat základní likviditu a sestavit tým dobrovolných vývojářů.',
+    en: 'The current public line is v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document [v3.2.0 Overview](#v320-readme). Pool active, mining live, DEX and bridge deployed. The public launch on 31 December 2026 is postponed. The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a team of volunteer developers.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },

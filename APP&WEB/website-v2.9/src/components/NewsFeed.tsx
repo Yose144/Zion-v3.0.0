@@ -32,6 +32,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'public-launch-postponed-sep-2026',
+    date: '2026-09-11',
+    tag: { cs: 'Oznámení', en: 'Announcement' },
+    tagColor: 'text-zion-purple',
+    title: {
+      cs: 'Veřejný launch ZION TerraNova se odkládá',
+      en: 'ZION TerraNova public launch is postponed',
+    },
+    summary: {
+      cs: 'Plánovaný veřejný launch 31. 12. 2026 se neuskuteční. CoinGecko listing neprošel, projekt zůstává ve vývoji a hledáme tým dobrovolných vývojářů. Veřejný start bude možný až po Maturity Gate (Maturitě) a zajištění základní likvidity. Nové datum neoznámíme, dokud nebudeme připraveni.',
+      en: 'The planned public launch on 31 December 2026 will not happen. The CoinGecko listing was not approved, the project remains in development, and we are looking for a team of volunteer developers. A public start will only be possible after passing the Maturity Gate and securing basic liquidity. No new date will be announced until we are ready.',
+    },
+    href: '/news/launch-postponed',
+  },
+  {
     slug: 'massive-onboarding-32-one-love-released',
     date: '2026-08-25',
     tag: { cs: 'Onboard', en: 'Onboard' },
@@ -45,6 +60,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'We launched the unified ZION TerraNova onboarding: story, whitepaper, technical facts, and mining guide in one document. Plus a new single-page FAQ and the updated timeline: final genesis 8 August 2026, Mainnet Launch 31 December 2026, OASIS preview with 400+ worlds. One love, one chain, one road.',
     },
     href: '/onboard?v=2',
+    homepage: false,
   },
   {
     slug: 'zion-v320-public-release-miner-cli-desktop',
@@ -92,6 +108,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION TerraNova v3.2.0 "One Love" is officially Mainnet Stable. Node, pool, multichain, DAO, and OASIS are running in production on the Edge server. New genesis after a hard reset (complete key rotation), canonical Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge on Base Mainnet, ZionDex multi-path routing, and OASIS game API. Public launch remains 31 December 2026 — continuous testing and security audit are underway until then. One love, one chain, one road.',
     },
     href: '/roadmap',
+    homepage: false,
   },
   {
     slug: 'zion-v310-mainnet-alpha-unified-update',
@@ -107,6 +124,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'After the genesis hard reset, the network is running stably and mining is available again. We are completing phase 3.0.7–3.1.0 on the backend, fixing binaries, and shipping the first OASIS preview. A five-month testing period follows until New Year\'s Eve — if no serious bugs or incidents occur, the current genesis will remain permanent. We apologize to users for the complications and thank you for your patience.',
     },
     href: '/docs',
+    homepage: false,
   },
   {
     slug: 'nvidia-cuda-gpu-benchmark-300khs',
@@ -138,6 +156,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'We are building the ZION Marketplace — a central marketplace for the entire ecosystem. The first phase covers OASIS artefacts: 3D avatars, worlds, guild plots, Golden Egg keys, and visual collections from 55 worlds. The second phase will add NFTs from L4/L5 layers, AI models from L3 Hiran, and community content. The marketplace will be integrated with the ZION wallet and ZION Liquidity — purchases in ZION without an exchange. Target launch: Q4 2026 alongside the public network launch.',
     },
     href: '/l4-oasis',
+    homepage: false,
   },
 
   {
@@ -155,6 +174,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta',
     external: true,
+    homepage: false,
   },
   {
     slug: 'v3.0.5-beta-simplified-community-cli',
@@ -187,6 +207,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/tree/main',
     external: true,
+    homepage: false,
   },
   {
     slug: 'multichain-ecosystem-live',
@@ -278,6 +299,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'The Genesis chain hard reset was successfully completed. The network is stable, Edge server topology is running, pool and mining are active. Public access remains scheduled for New Year\'s Eve 31 Dec 2026.',
     },
     href: '/terranova',
+    homepage: false,
   },
   {
     slug: 'fire-hard-fork-5000',

@@ -235,7 +235,7 @@ const NetworkCopy = {
   whatPoolFeeDoesZionCharge: { cs: `Jaký pool fee si ZION účtuje?`, en: `What pool fee does ZION charge?` },
   k89GoesToTheMiner5ToTheHumanita: { cs: `89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.`, en: `89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.` },
   isTheNetworkPubliclyLaunched: { cs: `Je síť veřejně spuštěna?`, en: `Is the network publicly launched?` },
-  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.2.0 "One Love" běží na veřejném P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year's Eve). v3.2.0 "One Love" runs on a public P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.` },
+  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch 31. prosince 2026 (Silvestr) je odložen. v3.2.0 "One Love" běží na veřejném P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752. Projekt zůstává ve vývoji, hledáme tým dobrovolných vývojářů a potřebujeme projít Maturity Gate a získat základní likviditu.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch on 31 December 2026 (New Year's Eve) is postponed. v3.2.0 "One Love" runs on a public P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752. The project remains in development; we are seeking a team of volunteer developers and need to pass the Maturity Gate and secure basic liquidity.` },
 };
 
 const NetworkStatus = dynamic(() => import('@/components/NetworkStatus'), {
@@ -1153,7 +1153,7 @@ export default function NetworkPage() {
             {NetworkCopy.nativeRustInfrastructureRunnin[cs ? 'cs' : 'en']}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch target 31.12.2026
+            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch postponed (TBD)
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[

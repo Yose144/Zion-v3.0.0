@@ -81,7 +81,7 @@ const networkConfigs = [
     name: "Mainnet",
     file: "mainnet.toml",
     badge: "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20",
-    description: "Mainnet launch line — countdown to 31 December 2026",
+    description: "Mainnet launch line — public launch postponed (TBD)",
   },
   {
     name: "Testnet",

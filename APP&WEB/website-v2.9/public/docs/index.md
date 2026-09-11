@@ -3,7 +3,7 @@
 > *"In code we trust. 144B ZION. Not one satoshi more."*
 > **Current public line: v3.2.0 One Love / Mainnet Stable.**
 > Genesis #0: 1 January 2026 (block timestamp); One Love hard reset 6 August 2026.
-> Official public launch: 31 December 2026.
+> Official public launch: postponed (TBD).
 
 ---
 

@@ -1,7 +1,7 @@
 # ZION Roadmap — from 3.2 "One Love" toward 3.3 "Nirvana"
 
 > **Current stable baseline:** 3.2.0 "One Love"  
-> **Public launch target:** 31 December 2026  
+> **Public launch target:** postponed (TBD)  
 > **Development horizon:** 3.3.0 "Nirvana"  
 > **Last updated:** 1 September 2026
 

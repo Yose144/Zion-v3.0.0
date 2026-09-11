@@ -83,4 +83,4 @@ All Rust code compiles cleanly and the relevant test suites pass:
 - Pool tests
 - Multi-chain tests
 
-The audit report is part of the open-source repository. External review before the 31 December 2026 public launch is still recommended.
+The audit report is part of the open-source repository. External review before the postponed public launch is still recommended.

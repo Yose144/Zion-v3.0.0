@@ -3,7 +3,7 @@
 > **Released:** 6 August 2026  
 > **Current public line:** v3.2.0 "One Love"  
 > **Status:** Mainnet Stable — live, pool active, mining running, bridge and DEX deployed  
-> **Official public launch:** 31 December 2026  
+> **Official public launch:** postponed (TBD)  
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
 ---
@@ -141,7 +141,7 @@ See the [Download](/download) page for direct links.
 
 ## Important notices
 
-- The network is **Mainnet Stable** but still in a pre-launch phase until the public launch on 31 December 2026.
+- The network is **Mainnet Stable** but the public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a volunteer developer team before announcing a new date.
 - OASIS is a **live preview under construction** — content, quests, and progression can change or reset.
 - Mine, bridge, swap, and participate **at your own risk**.
 - This is an experimental open-source protocol, not an investment product.

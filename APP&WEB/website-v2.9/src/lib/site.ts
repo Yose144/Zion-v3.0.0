@@ -6,9 +6,9 @@ export const SITE_RUNTIME_VERSION = 'v3.2.0';
 export const SITE_RUNTIME_NAME = 'One Love · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'One Love Mainnet Stable';
-export const SITE_PUBLIC_LAUNCH_STATUS = 'Mainnet Stable';
-export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
-export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
+export const SITE_PUBLIC_LAUNCH_STATUS = 'In Development · Launch Postponed';
+export const SITE_LAUNCH_DATE = 'TBD';
+export const SITE_LAUNCH_DATE_DISPLAY = 'Postponed (TBD)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
 
 // app.zionterranova.com is the actual Next.js web app (explorer, pool, defi,

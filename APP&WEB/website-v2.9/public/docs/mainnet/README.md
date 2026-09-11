@@ -4,7 +4,7 @@
 > **Current public line:** v3.0.6 (Trinity)
 > **Runtime:** v3.0.6 Ekam Deeksha — canonical, 6-decimal flowers
 > **Status:** Mainnet Beta — live, pool active, mining operational
-> **Official public launch:** 31 December 2026
+> **Official public launch:** postponed (TBD)
 > **Network:** `zion-mainnet-1`
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
@@ -20,7 +20,7 @@ In practical terms:
 - ✅ Mining is active and earns real block rewards.
 - ✅ DeFi, bridge, DAO and WARP services are deployed.
 - ⚠️ The network may still contain bugs. Mine, bridge and participate **at your own risk**.
-- 🗓️ The **official public launch** and broader exchange / marketing push remains **31 December 2026**.
+- 🗓️ The **official public launch** and broader exchange / marketing push is **postponed (TBD)**.
 
 > **Why Beta and not final launch?** The June 2026 genesis was a clean start, but several security incidents (F1 forged signatures, F5 unlimited-inflation bug, server compromise) forced a hard reset and rebuild. v3.0.5 is the verified, all-green recovery state. We are keeping the "Beta" label until the security audit, key-rotation and external validator set milestones planned for Q4 2026 are complete.
 
