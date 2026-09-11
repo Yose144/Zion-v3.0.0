@@ -113,7 +113,7 @@ impl AuxPowBridge {
             .job_queue
             .lock()
             .expect("auxpow job queue lock poisoned");
-        if q.len() >= 5 {
+        if q.len() >= 20 {
             q.pop_front();
         }
         q.push_back(job);
@@ -334,9 +334,9 @@ mod tests {
     }
 
     #[test]
-    fn bridge_queue_caps_at_five() {
+    fn bridge_queue_caps_at_twenty() {
         let (bridge, _rx) = AuxPowBridge::new(true);
-        for i in 0..7 {
+        for i in 0..25 {
             bridge.push_job(JobPackage {
                 external_job_id: format!("job{i}"),
                 coin: ExternalCoin::Decred,
@@ -350,8 +350,8 @@ mod tests {
             });
         }
         let q = bridge.job_queue.lock().unwrap();
-        assert_eq!(q.len(), 5);
-        assert_eq!(q.front().unwrap().external_job_id, "job2");
+        assert_eq!(q.len(), 20);
+        assert_eq!(q.front().unwrap().external_job_id, "job5");
     }
 
     #[test]
