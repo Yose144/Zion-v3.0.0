@@ -16,7 +16,7 @@ A hard genesis reset is a **destructive, irreversible** operation. It discards t
 - **A consensus-level bug** requires a fresh chain (e.g., the 2026-07-20 block-retention bug that pruned blocks 0–~10913).
 - **A governance vote** mandates a reset (post-public-launch, this is the only legitimate trigger).
 
-> **⚠️ Post-public-launch (after 2026-12-31):** A hard reset is no longer acceptable. Use on-chain key rotation, governance proposals, and bridge validator re-keying instead. This playbook is for the **pre-public-launch alpha/beta** window only.
+> **⚠️ Post-public-launch (after postponed (TBD)):** A hard reset is no longer acceptable. Use on-chain key rotation, governance proposals, and bridge validator re-keying instead. This playbook is for the **pre-public-launch alpha/beta** window only.
 
 ---
 

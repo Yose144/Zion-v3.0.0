@@ -12699,11 +12699,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "pool_fee": True,  # burn model — empty address is correct
             }
             
-            # Launch countdown (31.12.2026 12:00 UTC)
-            launch_date = datetime(2026, 12, 31, 12, 0, 0)
-            now = datetime.now()
-            days_to_launch = (launch_date - now).days if launch_date > now else 0
-            is_launch_day = (launch_date.date() == now.date())
+            # Launch countdown is TBD / postponed; no fixed launch date
+            launch_date = 'TBD'
+            days_to_launch = None
+            is_launch_day = False
             
             # Git status — use -uno to ignore untracked files (common on edge deploy).
             # On edge-primary topology, an `edge-sync-*` branch is treated as clean.
@@ -12731,7 +12730,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "node_addresses": node_addresses,
                 "fee_split_match": fee_split_match,
                 "fee_split_all_match": all(fee_split_match.values()),
-                "launch_date": launch_date.isoformat(),
+                "launch_date": launch_date,
                 "days_to_launch": days_to_launch,
                 "is_launch_day": is_launch_day,
                 "checklist_pass_rate": checklist["pct"],

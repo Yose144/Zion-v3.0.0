@@ -12,7 +12,7 @@
 - 💫 **144 000 Strážcích** — prastarých duších probouzejících lidstvo
 - 🔗 **Blockchain & AI** — technologii sloužící vědomí
 - 🎮 **Hře Haranyagharba** — iniciační cestě duše
-- 🌅 **Zlatém Věku** — začínajícím 31.12.2026
+- 🌅 **Zlatém Věku** — začínajícím odložen (TBD)
 
 ---
 
@@ -101,7 +101,7 @@ Kolektivní vědomí se probouzí, komunity se spojují, příprava na Mainnet.
 
 5 vizí budoucnosti — konec otroctví, hojnost, děti hvězd, harmonie s přírodou.
 
-*Klíčová témata:* 5 vizí, 31.12.2026, Zlatý Věk
+*Klíčová témata:* 5 vizí, odložen (TBD), Zlatý Věk
 
 ---
 
@@ -113,11 +113,11 @@ Mystická hra s 5 úrovněmi zkoušek duše — cesta k 1 miliardě Zionů.
 
 ---
 
-#### **[Chapter 8: Mainnet Dawn (31.12.2026)](09-CHAPTER-8-Mainnet-Dawn.md)** 💎
+#### **[Chapter 8: Mainnet Dawn (postponed (TBD))](09-CHAPTER-8-Mainnet-Dawn.md)** 💎
 
 Genesis Block, spuštění Mainnet, distribuce 16,78B tokenů, začátek Zlatého Věku.
 
-*Klíčová témata:* Genesis Block, Mainnet, 31.12.2026, Poselství Zion Native
+*Klíčová témata:* Genesis Block, Mainnet, odložen (TBD), Poselství Zion Native
 
 ---
 
@@ -175,13 +175,13 @@ Rada 9 světelných architektů — strážci rovnováhy, ne vládci.
 
 ### 🌅 **Zlatý Věk**
 
-Začíná 31.12.2026 — éra svobody, hojnosti, moudrosti, harmonie, jednoty.
+Začíná odložen (TBD) — éra svobody, hojnosti, moudrosti, harmonie, jednoty.
 
 ---
 
 ## 📅 Důležitá Data
 
-### **31. prosince 2026 — 00:00 UTC**
+### **odložen (TBD) — 00:00 UTC**
 
 - ✅ Genesis Block míněn  
 - ✅ Mainnet spuštěn  

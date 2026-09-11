@@ -448,7 +448,7 @@ chmod 600 /home/html/newearth.cz/V2/data/eshop_wallets/master.key
 **Timeline:**
 - 🟢 **eShop System**: Live now (19.12.2025)
 - 🟡 **TestNet**: 31.12.2025 (12 days)
-- 🟡 **MainNet**: 31.12.2026 (1 year)
+- 🟡 **MainNet**: postponed (TBD) (1 year)
 
 **Key Features:**
 - 🔐 Military-grade AES-256 encryption

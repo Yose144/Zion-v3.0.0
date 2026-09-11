@@ -276,7 +276,7 @@ chmod 600 /home/html/newearth.cz/V2/data/eshop_wallets/master.key
 
 - ✅ **19.12.2025** - eShop wallet system LIVE
 - 🟡 **31.12.2025** - TestNet launch (12 dní)
-- 🟡 **31.12.2026** - MainNet launch (1 rok)
+- 🟡 **odložen (TBD)** - MainNet launch (1 rok)
 - 🟢 **TBD** - Wallet claim & airdrop
 
 ---
@@ -293,7 +293,7 @@ chmod 600 /home/html/newearth.cz/V2/data/eshop_wallets/master.key
 
 ## 🌟 Next: MainNet
 
-Až přijde MainNet (31.12.2026):
+Až přijde MainNet (odložen (TBD)):
 1. Zákazníci si "claim" svou peněženku
 2. Mnemonica jsou revealed (SMS/email verification)
 3. Tokeny se transferují do MainNet

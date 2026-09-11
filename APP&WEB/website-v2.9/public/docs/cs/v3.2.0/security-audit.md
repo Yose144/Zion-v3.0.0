@@ -83,4 +83,4 @@ Veškerý Rust kód se kompiluje čistě a příslušné testové sady procháze
 - Pool testy
 - Multichain testy
 
-Audit report je součástí open-source repozitáře. Externí review před veřejným launchi 31. prosince 2026 je stále doporučeno.
+Audit report je součástí open-source repozitáře. Externí review před veřejným launchi odložen (TBD) je stále doporučeno.

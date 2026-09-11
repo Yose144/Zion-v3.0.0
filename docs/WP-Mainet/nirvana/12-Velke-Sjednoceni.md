@@ -47,7 +47,7 @@ Tímto krokem ZION dosahuje svého plného poslání:
 | **Jedno světelné pole (L1–L6)** | Všech 6 vrstev běží plně synchronizováno v jediném workspace repozitáře `V31/`. |
 | **Pevný strop 144 miliard** | Konsensuální pravidlo v `V31/L1/core/src/genesis.rs` zaručuje neměnnost maximální zásoby. |
 | **Nezávislost na zakladateli** | DAO Governance Runtime (`V31/L1/dao`) řídí parametry sítě a alokaci fondů bez jediného privilegovaného klíče. |
-| **Oficiální veřejný start** | Cílové datum celosvětového spuštění verze 3.3 Nirvana: **31. prosince 2026**. |
+| **Oficiální veřejný start** | Cílové datum celosvětového spuštění verze 3.3 Nirvana: **odložen (TBD)**. |
 | **Věčná evoluce** | Zdrojový kód pod MIT licencí zůstává navždy otevřený celému lidstvu. |
 
 ---

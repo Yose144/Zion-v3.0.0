@@ -376,7 +376,7 @@ tar -czf ~/backups/qr_codes_$DATE.tar.gz ~/api/presale/data/presale_qr_codes/
 - [ ] Verify email deliverability
 - [ ] Monitor disk space
 
-### Before MainNet (Dec 31, 2026)
+### Before MainNet (postponed (TBD))
 
 - [ ] Export all paid orders:
   ```sql

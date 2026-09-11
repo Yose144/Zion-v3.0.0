@@ -2,7 +2,7 @@
 
 **Datum:** 8. února 2026 (aktualizováno)  
 **Verze:** 2.9.5 "Clean L1 → Full Stack"  
-**Target:** L1 MainNet Launch 31.12.2026  
+**Target:** L1 MainNet Launch odložen (TBD)  
 **Nové repo:** [github.com/Yose144/Zion-2.9.5](https://github.com/Yose144/Zion-2.9.5)  
 **Stav L1:** ✅ Fáze 0 DOKONČENA — 3 nody online, 155 testů
 
@@ -548,7 +548,7 @@ External Mining (ETC/RVN/XMR/FLUX...)
   M7: Genesis  │████████░░│          │          │          │  7 dní
   M7: TestNet  │░░████████│██████████│          │          │  TestNet soak
   M8: Release  │          │          │          │████████░│  5 dní
-  🚀 MAINNET   │          │          │          │░░░░░░░░█│  31.12.2026
+  🚀 MAINNET   │          │          │          │░░░░░░░░█│  odložen (TBD)
                └──────────┴──────────┴──────────┴──────────┘
 ```
 
@@ -563,7 +563,7 @@ External Mining (ETC/RVN/XMR/FLUX...)
 | **M6: Buyback** | 20.3.2026 | 22.3.2026 | 3 dny |
 | **M7: Genesis + TestNet** | 1.6.2026 | 30.11.2026 | 6 měsíců soak |
 | **M8: Release** | 1.12.2026 | 5.12.2026 | 5 dní |
-| **🚀 MAINNET** | **31.12.2026** | — | — |
+| **🚀 MAINNET** | **odložen (TBD)** | — | — |
 
 ---
 
@@ -986,7 +986,7 @@ Benefity XP:
 2026                            2027                           2028
 Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4
 ╔════════════════════╗
-║ L1 BLOCKCHAIN      ║ ← MainNet Launch 31.12.2026
+║ L1 BLOCKCHAIN      ║ ← MainNet Launch odložen (TBD)
 ║ Fáze 0-5 HOTOVO ✅ ║
 ║ Fáze 1-4 TestNet   ║
 ╚════════════════════╝
@@ -1047,7 +1047,7 @@ Máme **funkční blockchain** na 3 serverech:
 |----------|----|----|  
 | **L1 Fáze 1** | Hardened TestNet (stability, stress) | Únor–Duben 2026 |
 | **L1 Fáze 2-4** | Node UX, Explorer, Audit, Freeze | Květen–Listopad 2026 |
-| **L1 🚀** | **MAINNET LAUNCH** | **31.12.2026** |
+| **L1 🚀** | **MAINNET LAUNCH** | **odložen (TBD)** |
 | **L2** | DEX, Atomic Swaps, wZION | 2027 Q1-Q2 |
 | **L3** | NCL, Warp, AI Native | 2027 Q3-Q4 |
 | **L4** | ZION Oasis, XP System | 2029+ |

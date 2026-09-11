@@ -8,7 +8,7 @@ ZION je otevřený blockchainový ekosystém zaměřený na:
 - Energeticky úsporný těžební model (bonusy za eco‑algoritmy)  
 - Spravedlivé zapojení běžných uživatelů (CPU & dostupné GPU)  
 - Postupnou transformaci do multi‑chain architektury (Core + rychlé / finanční / governance / kreativní vrstvy)  
-- Transparentní, komunitně řízenou technologii s cílem spustit MainNet do **31. 12. 2026** (symbolický „Silvestr Start“).  
+- Transparentní, komunitně řízenou technologii s cílem spustit MainNet do **odložen (TBD)**.  
 Verze **2.7.1** přinesla klíčový zlom: perzistentní databázi, REST API monitoring a univerzální multi‑algoritmový mining pool připravený pro další škálování.
 
 ---
@@ -109,7 +109,7 @@ Etika: AI asistuje – **nerozhoduje autonomně o kritických odměnách** (audi
 | DoS ochrana | Jednoduchost kódu | Reverse proxy + WAF (nginx / traefik) |
 
 ---
-## 12. Roadmap k MainNet (cílové datum: 31. 12. 2026)
+## 12. Roadmap k MainNet (cílové datum: odložen (TBD))
 | Q | Milník | Popis |
 |---|--------|-------|
 | Q4 2025 | Dashboard MVP | Web UI + real-time grafy |
@@ -179,7 +179,7 @@ Ano, postupně – některé skripty v přípravě.
 ## 17. Závěrečný pohled
 ZION 2.7.1 = **přechod od „laboratorního experimentu“ k robustnímu základu**.  
 Další krok: vizualizace dat, škálovatelnost a zapojení širší komunity.  
-**Silvestr 2026** není marketingová fráze, ale realistický cíl při udržení modulu‑driven vývoje.
+**Odložený termín (TBD)** není marketingová fráze, ale realistický cíl při udržení modulu‑driven vývoje.
 
 > „Technologie bez smyslu je hluk. Smysl bez technologie je nevyužitá možnost. ZION je most.“
 

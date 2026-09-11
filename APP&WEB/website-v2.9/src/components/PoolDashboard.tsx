@@ -258,7 +258,7 @@ const PoolDashboardCopy = {
   criticalMustBeAValid44CharZion: { cs: `Kritické: musí být platná 44-znaková zion1... adresa. Pool odmítne spojení ("pool closed the connection") bez ní — fallback na miner_id není povolen.`, en: `Critical: must be a valid 44-char zion1... address. The pool rejects the connection ("pool closed the connection") without it — fallback to miner_id is not allowed.` },
   zionMiningPool: { cs: `ZION těžební pool`, en: `ZION Mining Pool` },
   mineZionWithDeekshaPowAFairTra: { cs: `Těžte ZION s Deeksha PoW — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.`, en: `Mine ZION with Deeksha PoW — a fair, transparent PoW pool with humanitarian impact built into every block.` },
-  k89Miner5Humanitarian5Issobella: { cs: `89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.6 Trinity · Public launch 31. prosince 2026`, en: `89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.6 Trinity · Public launch 31 December 2026` },
+  k89Miner5Humanitarian5Issobella: { cs: `89 % miner · 5 % humanitarian · 5 % Issobella fund · 1 % pool fee · PPLNS · v3.0.6 Trinity · Public launch odložen (TBD)`, en: `89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · v3.0.6 Trinity · Public launch postponed (TBD)` },
   startMining: { cs: `Začít těžit`, en: `Start Mining` },
   lastUpdate: { cs: `Poslední aktualizace`, en: `Last update` },
   enUs: { cs: `cs-CZ`, en: `en-US` },

@@ -2,7 +2,7 @@
 
 > **Hlavní roadmapa projektu — jediný autoritativní dokument pro plánování a sledování postupu.**
 >
-> **Cíl:** MainNet Genesis **31. prosince 2026**  
+> **Cíl:** MainNet Genesis **odložen (TBD)**  
 > **Repo:** [github.com/Yose144/Zion-2.9.5](https://github.com/Yose144/Zion-2.9.5)  
 > **Verze:** 2.9.6 "Clean L1 → Full Stack"  
 > **Poslední aktualizace:** 17. února 2026
@@ -442,7 +442,7 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 ## 🚀 Fáze 5 — MainNet Launch
 
 **📅 Prosinec 2026**  
-**🎯 Cílové datum: 31. 12. 2026**
+**🎯 Cílové datum: odložen (TBD)**
 
 ### Launch Countdown
 
@@ -734,7 +734,7 @@ Vrchol 6-vrstvé "On the Star" architektury — orbitální stanice, vědecká o
 2026                            2027                           2028-2030+
 Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4    Q1   Q2   ...   Q1+
 ╔════════════════════╗
-║ L1 BLOCKCHAIN      ║ ← MainNet Launch 31.12.2026
+║ L1 BLOCKCHAIN      ║ ← MainNet Launch odložen (TBD)
 ║ Fáze 0 ✅          ║
 ║ Fáze 1 🔄          ║
 ║ Fáze 2-4           ║

@@ -58,7 +58,7 @@
 
 9-16. **ROADMAP_v2.7-v2.9.md** (various versions)
    - **Status:** Archived, superseded by ROADMAP.md
-   - **Conflicts:** Old dates (31.12.2026 for MainNet) ⚠️
+   - **Conflicts:** Old dates (postponed (TBD) for MainNet) ⚠️
 
 ---
 
@@ -332,7 +332,7 @@
 ### Conflict 1: MainNet Date ⚠️
 
 **Conflicting Dates Found:**
-- ❌ **31.12.2026** — Old roadmaps (ROADMAP_v2.8.md, archive)
+- ❌ **postponed (TBD)** — Old roadmaps (ROADMAP_v2.8.md, archive)
 - ✅ **31.12.2027** — Current canonical (ROADMAP.md, ROADMAP_SUMMARY.md)
 
 **Resolution:** **31.12.2027** is authoritative ✅

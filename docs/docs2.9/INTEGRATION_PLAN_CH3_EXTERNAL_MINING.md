@@ -334,7 +334,7 @@ DALŠÍ KROKY:
   🔧 První ACCEPTED share na 2miners → BTC earnings start
   🔧 Auto-buyback aktivace po DEX launch
 
-Po TestNet (31.12.2026):
+Po TestNet (odložen (TBD)):
   🔧 Fáze 5.2: Auto-buyback na DEX/CEX
   🔧 Fáze 5.3: Dashboard transparentnost
 ```

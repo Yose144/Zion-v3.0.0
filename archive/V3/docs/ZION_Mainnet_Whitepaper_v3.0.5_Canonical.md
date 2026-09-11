@@ -4,7 +4,7 @@
 **Date:** July 2026  
 **Authors:** ZION Open-Source Contributors  
 **License:** MIT  
-**Status:** Mainnet Beta — 11/11 services active, protocol `zion-v3-node/3.0.5`, public launch 31 December 2026
+**Status:** Mainnet Beta — 11/11 services active, protocol `zion-v3-node/3.0.5`, public launch postponed (TBD)
 
 > **Canonical source of truth:** This document supersedes all prior whitepaper drafts, including `V3/docs/ZION_Mainnet_Whitepaper_v3.0_Canonical.md`, `docs/WP3.0/WHITEPAPER_v3.0.md` and legacy v2.9.x whitepapers. For implementation truth, verify against `StatusV3.md`, `V3/ROADMAP.md`, `3.0.5.md` and `V3/` code.
 
@@ -67,7 +67,7 @@ Key parameters at a glance:
 | **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Live height** | 827+ and growing |
 | **Live server** | `62.171.141.136` |
-| **Public launch target** | 31 December 2026 |
+| **Public launch target** | postponed (TBD) |
 
 ZION allocates **10 %** of every block reward automatically to humanitarian and scientific purposes: 5 % to a Humanitarian Fund and 5 % to the L5/L6 Issobella Fund. An additional 1 % is protocol-burned. This distribution is enforced at the protocol level and cannot be altered by governance.
 
@@ -859,7 +859,7 @@ On failure, fees are restored via `restore_fees()` and retried next round.
 | v3.0.4 | 2026-07-06 | Live | Hard genesis reset, DeFi deploy, security fixes |
 | **v3.0.5** | **2026-07-09** | **Mainnet Beta** | **All Green — 11/11 services active** |
 | v3.1.0 | Q4 2026 | Planned | Wallet SDK, mobile app, L4 OASIS backend, external audit |
-| **v3.x Public Launch** | **2026-12-31** | **Target** | **Public mainnet launch** |
+| **v3.x Public Launch** | **postponed (TBD)** | **Target** | **Public mainnet launch** |
 
 ### 18.2 Key Milestones
 
@@ -872,7 +872,7 @@ On failure, fees are restored via `restore_fees()` and retried next round.
 | Non-EVM Solana + Stellar | 2026-07-13 | SPL token + native asset live |
 | Security audit | Q4 2026 | No critical vulnerabilities |
 | Mobile wallet | Q4 2026 | iOS + Android App Store submission |
-| **Public Mainnet Launch** | **31 Dec 2026** | **General public mining and usage** |
+| **Public Mainnet Launch** | **postponed (TBD)** | **General public mining and usage** |
 | 1st Decade Decay | 2036 | Block reward → 4,320 ZION |
 | L5 Free World | 2030 | Foundation + research lab |
 | L6 Issobella start | 2040 | Space Division initiated |

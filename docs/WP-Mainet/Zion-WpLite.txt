@@ -78,7 +78,7 @@ Napadlo ho **semeno**.
 >
 > - **Fair launch:** žádné ICO, žádný předprodej, žádné tokeny pro zakladatele schované v kódu. První vodu nedostal nikdo — každý ZION musí být vytěžen prací nebo získán od někoho, kdo ho vytěžil.
 > - **Hard cap:** 144 000 000 000 ZION. Ne jeden navíc. Zapsáno v `emission.rs` jako konstanta, ne jako slib.
-> - **Stav dnes:** Mainnet Beta, protokol `zion-v3-node/3.1.0-alpha`, veřejný launch cíl 31. 12. 2026.
+> - **Stav dnes:** Mainnet Beta, protokol `zion-v3-node/3.1.0-alpha`, cíl veřejného launchu: odložen (TBD).
 > - **Licence:** MIT. Kdokoli smí semeno prozkoumat, zasadit vlastní, nebo dokázat, že je shnilé. Zatím to nikdo nedokázal — a přesně proto je otevřenost silnější než reklama.
 
 

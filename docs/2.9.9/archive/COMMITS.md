@@ -1204,7 +1204,7 @@ Economic model updates:
 
 ---
 
-### 43. `0b4d2d7` — docs: add unified ROADMAP.md ÔÇö master plan L1ÔćĺL4, mainnet 31.12.2026
+### 43. `0b4d2d7` — docs: add unified ROADMAP.md ÔÇö master plan L1ÔćĺL4, mainnet postponed (TBD)
 
 | | |
 |---|---|
@@ -1220,7 +1220,7 @@ Synthesized from 5+ planning documents into single authoritative roadmap:
 - Phase 0 (Spec Freeze): DONE ÔÇö 155 tests, genesis+reward+DAA+wallet
 - Phase 1 (Hardened TestNet): 90% done ÔÇö 420 tests, sprints 1.0-1.9
 - Phase 2-4: Node UX, Infrastructure, Dress Rehearsal (Jun-Nov 2026)
-- Phase 5: MainNet Launch 31.12.2026
+- Phase 5: MainNet Launch postponed (TBD)
 - Phase 6: Post-launch exchange strategy (2027)
 - L2 DEX/DeFi, L3 AI/Warp, L4 Oasis (2027-2028)
 - Constitution parameters locked, premine allocation documented

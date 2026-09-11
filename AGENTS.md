@@ -66,7 +66,7 @@ The `public/` directory is a **git subtree** of the public repository `github.co
 - **Remote name:** `public` → `https://github.com/Zion-TerraNova/v3-Mainnet.git` (public, MIT license)
 - **Remote name:** `origin` → `https://github.com/Yose144/Zion-v3.0.0.git` (private)
 - **Local path:** `public/` (in repo root, tracked by `origin`)
-- **Current status:** **Mainnet Beta** — v3.0.5-beta live, official public launch 2026-12-31
+- **Current status:** **Mainnet Beta** — v3.0.5-beta live, official public launch postponed (TBD)
 - **Network status badge:** `![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)`
 
 ### Subtree commands
@@ -189,7 +189,7 @@ public/ README files (EN + 4 translations) include a **Network Status** section 
 - Mining is active **at your own risk**
 - Network may contain bugs — no warranty
 - Genesis block and chain history are **permanent** (will not be reset if network passes security verification)
-- Official public launch: **31 December 2026**
+- Official public launch: **postponed (TBD)**
 - LEGAL_DISCLAIMER.md §2.1 covers the Beta status legally
 
 ## Existing guidance files to know

@@ -3,7 +3,7 @@
 
 **The quick invitation to ZION TerraNova: story + whitepaper + mining in one document.**
 **Network:** Mainnet Alpha `3.1.0-beta` / protocol `zion-v3-node/3.1.0-alpha` → **3.2.0 "One Love" (Mainnet Stable)**
-**Last genesis:** August 8, 2026 (after two hard resets) — this chain is the **Mainnet Launch for December 31, 2026** · **License:** MIT for code
+**Last genesis:** August 8, 2026 (after two hard resets) — this chain is the **Mainnet Launch — postponed (TBD)** · **License:** MIT for code
 **Language:** English — Česká verze v záložce *Lite* při přepnutí jazyka
 
 > *"One good thing about music — when it hits you, you feel no pain.*

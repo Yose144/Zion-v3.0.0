@@ -39,13 +39,13 @@
 
 ---
 
-## ✅ R3 — Mainnet datum: 31.12.2026 vs 31.12.2027
+## ✅ R3 — Mainnet datum: postponed (TBD) vs 31.12.2027
 
 **Původní rozpor:** `ROADMAP_2025-2026.md` vs `ROADMAP_REALISTIC.md`
 
 **Řešení (2.1.2026):**
 - **Kanonický termín:** **31.12.2027** (realistic)
-- **Stretch goal:** 31.12.2026 (ambiciózní)
+- **Stretch goal:** odložen (TBD) (ambiciózní)
 - **Závislosti:** Security audit, P2P network stability, DAO governance
 
 **Aktualizované soubory:**

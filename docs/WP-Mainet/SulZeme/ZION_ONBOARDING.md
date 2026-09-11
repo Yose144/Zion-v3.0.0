@@ -553,7 +553,7 @@ rpcCall('getChainInfo').then(console.log);
 
 | Tvrzení | Realita v kódu / síti | Zdroj |
 |---|---|---|
-| **Status sítě** | Mainnet Beta; oficiální public launch 2026-12-31 | [`StatusV3.md`](../../../StatusV3.md), řádky 7–8 |
+| **Status sítě** | Mainnet Beta; oficiální public launch odložen (TBD) | [`StatusV3.md`](../../../StatusV3.md), řádky 7–8 |
 | **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../../StatusV3.md), řádek 6; [`AGENTS.md`](../../../AGENTS.md) |
 | **Genesis příběh / kódová realita** | 1. ledna 2026 (příběh) / hard genesis reset 2026-08-06 (po fixu retence bloků) | [`StatusV3.md`](../../../StatusV3.md), řádky 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 bloků; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |

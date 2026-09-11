@@ -1,7 +1,7 @@
 # ZION V3 — Plán upgradu 3.0.1
 
 > **Datum:** 3. 6. 2026
-> **Cíl:** Uzavřít známé mezery, aktivovat nevyužitý kód a dodat CI/CD před veřejným mainnet launch (31. 12. 2026).
+> **Cíl:** Uzavřít známé mezery, aktivovat nevyužitý kód a dodat CI/CD před veřejným mainnet launch (odložen (TBD)).
 > **Princip:** Žádné nové L4/L5/L6 funkce, dokud L1/L2/L3 nejsou 100% production-ready.
 
 ---

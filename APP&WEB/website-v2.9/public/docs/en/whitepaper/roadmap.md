@@ -64,7 +64,7 @@
 
 ### Q4 2026 — Historical launch target window 📅
 
-- Archived **December 31, 2026** window referenced in docs  
+- Archived **postponed (TBD)** window referenced in docs  
 - Listings depend on readiness + jurisdictional realities  
 - DAO treasury activation timelines subject to governance  
 

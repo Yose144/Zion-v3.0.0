@@ -3261,7 +3261,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 | Komponenta | Stav |
 |---|---|
 | **Dashboard** | ✅ **HOTOVÉ** — Python Flask app, port 8766, 6 tabů |
-| **Launch Day tab** | ✅ **HOTOVÉ** — automatizace pro 31.12.2026 12:00 UTC |
+| **Launch Day tab** | ✅ **HOTOVÉ** — automatizace pro odložené spuštění (TBD) 12:00 UTC |
 | **Mainnet readiness** | ✅ **HOTOVÉ** — 8 status karet, auto-refresh 3s |
 | **Backup system** | ✅ **HOTOVÉ** — lokální `backups/launch-day-TIMESTAMP/` |
 | **Auto-start (Windows)** | ✅ **HOTOVÉ** — Scheduled Task při loginu |
@@ -3309,7 +3309,7 @@ Dashboard: 8766             WebSocket: 8445
 
 ### Mainnet Launch Plán
 
-**Cílový datum:** **31.12.2026** (New Year's Eve / Silvestr)
+**Cílový datum:** **odložen (TBD)**
 
 **Předpoklady pro launch:**
 - ✅ Genesis hash konzistentní
@@ -4179,7 +4179,7 @@ Clean gate 2026-05-02:
         └─────────────────┬───────────────────────────────┘
                           │
         ┌─────────────────▼───────────────────────────────┐
-        │ Q4 2026 (cíl 2026-12-31)                        │
+        │ Q4 2026 (cíl odložen (TBD))                        │
         │  □ MainNet Genesis #0 (nový řetězec) + oznámení │
         │  □ Public node binaries release                  │
         │  □ Exchange listing prep                         │

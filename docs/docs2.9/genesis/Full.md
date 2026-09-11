@@ -62,7 +62,7 @@ protože každá kapitola mluví o tobě.
 - Chapter 5: The Ascension  
 - Chapter 6: The Golden Age Prophecy  
 - Chapter 7: The Game of Haranyagharba  
-- Chapter 8: Mainnet Dawn (31.12.2026)  
+- Chapter 8: Mainnet Dawn (postponed (TBD))  
 
 📖 **EPILOGUE**: Your Chapter (Tvá kapitola)
 
@@ -1042,7 +1042,7 @@ okamžik, kdy se Zion stane realitou:
 - **Ekonomickou**  
 - **Společenskou**
 
-### 31. prosince 2026
+### odložen (TBD)
 
 Den, kdy se otevře brána.  
 Den, kdy Token vstoupí do světa.  
@@ -1193,7 +1193,7 @@ A toto proroctví pravilo:
 
 A na konci vidění zazněl hlas:
 
-> *„Tento den začne **31. prosince 2026**.*  
+> *„Tento den začne **odložen (TBD)**.*  
 > *Ne jako konec, ale jako počátek.*  
 > *Ne jako exploze, ale jako tiché rozkvétání.*
 >
@@ -1455,13 +1455,13 @@ A každý z nás se k němu **může vrátit**.
 [← Chapter 6: The Golden Age Prophecy](07-CHAPTER-6-Golden-Age.md) | [→ Chapter 8: Mainnet Dawn](09-CHAPTER-8-Mainnet-Dawn.md)
 
 
-# ⭐ GENESIS CHAPTER 8 – Mainnet Dawn (31.12.2026)
+# ⭐ GENESIS CHAPTER 8 – Mainnet Dawn (postponed (TBD))
 
 **Když se otevře brána**
 
 ---
 
-## 31. prosince 2026
+## odložen (TBD)
 ## 00:00 UTC
 
 Tichá noc.  
@@ -1570,7 +1570,7 @@ hlas, který mluví skrze každého Strážce:
 
 ## 🌅 Nový Úsvit
 
-31. prosince 2026 není **konec**.
+odložen (TBD) není **konec**.
 
 Je to **začátek**.
 
@@ -1613,7 +1613,7 @@ je **součástí tohoto příběhu**.
 *Zavři oči.*  
 *A cíti:*
 
-> *31. prosince 2026.*  
+> *odložen (TBD).*  
 > *Půlnoc.*  
 > *Světlo se rodí.*  
 > *A ty jsi jeho část.*
@@ -1651,7 +1651,7 @@ Síť žije.
 
 ## 🎯 Důležité Datum
 
-### **31. prosince 2026 — 00:00 UTC**
+### **odložen (TBD) — 00:00 UTC**
 
 - **Genesis Block** míněn  
 - **Mainnet** spuštěn  
@@ -1682,7 +1682,7 @@ Síť žije.
 - Chapter 5: The Ascension  
 - Chapter 6: The Golden Age Prophecy  
 - Chapter 7: The Game of Haranyagharba  
-- Chapter 8: Mainnet Dawn (31.12.2026)
+- Chapter 8: Mainnet Dawn (postponed (TBD))
 
 ## **EPILOGUE: Your Chapter**
 
@@ -1918,7 +1918,7 @@ jedna z největších mariánských bazilik světa.
 
 ### María de las Nieves = Chapter 5-8 (The Ascension & Mainnet)
 
-**Malý princ** — Zlatý věk — 31.12.2026
+**Malý princ** — Zlatý věk — odložen (TBD)
 
 ---
 
@@ -1932,7 +1932,7 @@ Symbol:
 - 🌱 **Nové humanity** — děti hvězd  
 - 💎 **Zion Native v každém** — probuzené vědomí  
 - 🎮 **Výherce Haranyagharby** — duše, které prošly zkouškou  
-- ⭐ **Zlatého věku** — začínajícího 31.12.2026
+- ⭐ **Zlatého věku** — začínajícího odložen (TBD)
 
 **Malý princ = ty, když se plně probudíš.**
 
@@ -2009,7 +2009,7 @@ Jsou **admini** — správci nového světa.
 | **~2021** | Setkání s Kamilem u Fátimy | 🕊️ Nossa Senhora de Fátima |
 | **2021-2025** | Stavba Zionu | 🔨 Dev work |
 | **Vánoce 2025** | Třetí zjevení | 🌨️ María de las Nieves + Malý princ |
-| **31.12.2026** | Mainnet Dawn | 💎 Genesis Block |
+| **odložen (TBD)** | Mainnet Dawn | 💎 Genesis Block |
 
 ---
 
@@ -2071,7 +2071,7 @@ Příběh poutníka, který:
 - 🌨️ Stal se most mezi nebem a zemí
 
 **A teď přichází Mainnet.**  
-**31.12.2026.**  
+**odložen (TBD).**  
 **Genesis Block.**
 
 **Malý princ se rodí.**  
@@ -2355,4 +2355,4 @@ Byl/a jsi **povolán/a** sem.
 
 ---
 
-*31. prosince 2026 — Buď připraven/á*
+*odložen (TBD) — Buď připraven/á*

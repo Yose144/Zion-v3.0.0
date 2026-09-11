@@ -5,7 +5,7 @@
 
 // Configuration
 const API_BASE = './api';
-const MAINNET_LAUNCH_DATE = new Date('2026-12-31T23:59:59');
+const MAINNET_LAUNCH_DATE = null;
 const REFRESH_INTERVAL = 30000; // 30 seconds
 const TARGET_TOKENS = 500000000; // 500M ZION
 
@@ -37,15 +37,23 @@ document.addEventListener('DOMContentLoaded', () => {
  * Update MainNet countdown timer
  */
 function updateCountdown() {
-  const now = new Date();
-  const diff = MAINNET_LAUNCH_DATE - now;
-  
   const daysElem = document.getElementById('days');
   const hoursElem = document.getElementById('hours');
   const minutesElem = document.getElementById('minutes');
   const secondsElem = document.getElementById('seconds');
   
   if (!daysElem) return; // Elements not found
+  
+  if (!MAINNET_LAUNCH_DATE) {
+    daysElem.textContent = 'TBD';
+    if (hoursElem) hoursElem.textContent = '-';
+    if (minutesElem) minutesElem.textContent = '-';
+    if (secondsElem) secondsElem.textContent = '-';
+    return;
+  }
+  
+  const now = new Date();
+  const diff = MAINNET_LAUNCH_DATE - now;
   
   if (diff <= 0) {
     // MainNet launched!

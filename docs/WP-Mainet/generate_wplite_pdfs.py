@@ -71,7 +71,7 @@ def build_pdf(lang):
             "Semeno se jmenuje ZION TerraNova. Je to nativní Layer-1 blockchain napsaný od nuly v jazyce Rust.",
             "Fair launch: žádné ICO, žádný předprodej, žádné tokeny pro zakladatele. První vodu nedostal nikdo — každý ZION musí být vytěžen prací nebo získán od někoho, kdo ho vytěžil.",
             "Hard cap: 144 000 000 000 ZION. Ne jeden navíc. Zapsáno v emission.rs jako konstanta, ne jako slib.",
-            "Stav dnes: Mainnet Beta, protokol zion-v3-node/3.1.0-alpha, veřejný launch cíl 31. 12. 2026.",
+            "Stav dnes: Mainnet Beta, protokol zion-v3-node/3.1.0-alpha, veřejný launch cíl odložen (TBD).",
             "Licence: MIT. Kdokoli smí semeno prozkoumat, zasadit vlastní, nebo dokázat, že je shnilé.",
         ])
         pdf.section_break()
@@ -295,7 +295,7 @@ def build_pdf(lang):
             "The seed is called ZION TerraNova. It is a native Layer-1 blockchain written from scratch in Rust.",
             "Fair launch: no ICO, no pre-sale, no founder tokens. No one got the first water — every ZION must be mined by work or received from someone who mined it.",
             "Hard cap: 144,000,000,000 ZION. Not one more. Written in emission.rs as a constant, not as a promise.",
-            "Status today: Mainnet Beta, protocol zion-v3-node/3.1.0-alpha, public launch target 31 Dec 2026.",
+            "Status today: Mainnet Beta, protocol zion-v3-node/3.1.0-alpha, public launch target postponed (TBD).",
             "License: MIT. Anyone may examine the seed, plant their own, or prove it is rotten.",
         ])
         pdf.section_break()

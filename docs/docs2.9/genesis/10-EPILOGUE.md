@@ -210,4 +210,4 @@ Byl/a jsi **povolán/a** sem.
 
 ---
 
-*31. prosince 2026 — Buď připraven/á*
+*odložen (TBD) — Buď připraven/á*

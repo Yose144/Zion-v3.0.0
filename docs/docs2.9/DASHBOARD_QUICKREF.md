@@ -139,7 +139,7 @@ grep 'href="./dashboard.html"' dashboard-en.html
 **Řešení:**
 ```javascript
 // DevTools Console (F12)
-console.log(MAINNET_LAUNCH_DATE); // Should be: 2026-12-31T00:00:00
+console.log(MAINNET_LAUNCH_DATE); // Should be: postponed (TBD)
 
 // Check if updateCountdown() runs
 setInterval(() => console.log('Countdown:', document.getElementById('days').textContent), 5000);
@@ -240,4 +240,4 @@ Před nasazením na terranova.one:
 ---
 
 **Status: READY FOR TESTING ✅**  
-**MainNet Launch: 394 dní (31. 12. 2026) 🦁**
+**MainNet Launch: 394 dní (odložen (TBD)) 🦁**

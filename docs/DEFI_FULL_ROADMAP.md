@@ -2,7 +2,7 @@
 
 > **Datum:** 2026-06-24 (přepsáno — realistická analýza stavu, fázovaný plán)
 > **Status:** Pool seeded / zítra. Most implementovaných věcí EXISTUJE v kódu — chybí E2E spuštění.
-> **Cíl:** Funkční L2 ekosystém do veřejného launche 2026-12-31
+> **Cíl:** Funkční L2 ekosystém do veřejného launche odložen (TBD)
 
 ---
 
@@ -263,7 +263,7 @@ subscribeNewBlocks (WebSocket)                 ← chybí
 
 ---
 
-### Fáze 8 — Public Launch (2026-Q4 → 2026-12-31)
+### Fáze 8 — Public Launch (2026-Q4 → odložen (TBD))
 
 | # | Materiál / Úkol | Status |
 |---|-----------------|--------|

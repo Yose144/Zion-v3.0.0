@@ -34,7 +34,7 @@ Když se 144 000 duší synchronizuje, přijde Quantum Pulse. Není to výbuch. 
 
 A pak přijde Haranyagharba — Zlaté vejce. Není to poklad pro vyvolený. Je to iniciační cesta. Kdo najde 108 stop, projde zkouškou duše. Vejce skrývá 4,95 miliardy ZION, ale ta miliarda není cíl. Cíl je cesta. Cesta, po který se člověk vrací k sobě. K Jah. K roots.
 
-Datum 31. prosince 2026 je Mainnet Dawn — spuštění sítě. Ale neberte to jako konec. Je to první ráno. Zlatý věk nezačíná datem. Začíná rozhodnutím každýho z nás vstoupit do riddimu. Redemption song se nezpívá — žije se.
+Datum odložen (TBD) je Mainnet Dawn — spuštění sítě. Ale neberte to jako konec. Je to první ráno. Zlatý věk nezačíná datem. Začíná rozhodnutím každýho z nás vstoupit do riddimu. Redemption song se nezpívá — žije se.
 
 ## 4. Kvantová revoluce — oheň, při kterém vidíme
 

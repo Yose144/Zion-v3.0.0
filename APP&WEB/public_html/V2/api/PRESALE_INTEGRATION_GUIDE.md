@@ -57,7 +57,7 @@ presale.js (validation)
          │
          ▼
 ┌─────────────────────────────────┐
-│  MainNet Launch (Dec 31, 2026)  │
+│  MainNet Launch (postponed (TBD))  │
 │  • Native wallet polls ledger   │
 │  • Execute on-chain transfers   │
 │  • Mark as sent (txHash)        │
@@ -492,7 +492,7 @@ PRESALE_ENCRYPTION_KEY_PATH=data/presale_encryption_key.bin
 
 # Network
 ZION_NETWORK=Mainnet
-MAINNET_LAUNCH_DATE=2026-12-31
+MAINNET_LAUNCH_DATE=postponed (TBD)
 
 # API
 API_BASE_URL=https://terranova.one

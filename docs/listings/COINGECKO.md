@@ -23,7 +23,7 @@
 | Consensus | Proof-of-Work — EkamDeeksha (memory-hard) | `algorithm/ekam_deeksha.rs` |
 | Protocol version | `3.1.0-alpha` (workspace `3.1.0-beta`) | live `getStatus` RPC |
 | Mainnet genesis | 2026-08-06 (V31 "One Love" genesis reset) | `genesis.rs` |
-| Public launch target | 31 December 2026 | `README.md`, app meta tags |
+| Public launch target | postponed (TBD) | `README.md`, app meta tags |
 
 ### What is the project about? (326 chars, CoinGecko ≤ 400 limit)
 > ZION TerraNova is an open-source, memory-hard Proof-of-Work blockchain written in Rust. It

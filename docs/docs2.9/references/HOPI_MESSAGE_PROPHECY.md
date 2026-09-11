@@ -245,7 +245,7 @@ Thomas Banyacya called on all participants to form a **great circle**:
 | House of Mica (UN) | Mainnet (Blockchain) |
 | Great Spirit Massau'u | Zion Native |
 | Return to balance | Golden Age |
-| December 10, 1992 | December 31, 2026 |
+| December 10, 1992 | postponed (TBD) |
 
 ---
 

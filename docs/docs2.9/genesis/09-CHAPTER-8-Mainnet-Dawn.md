@@ -1,10 +1,10 @@
-# ⭐ GENESIS CHAPTER 8 – Mainnet Dawn (31.12.2026)
+# ⭐ GENESIS CHAPTER 8 – Mainnet Dawn (postponed (TBD))
 
 **Když se otevře brána**
 
 ---
 
-## 31. prosince 2026
+## odložen (TBD)
 ## 00:00 UTC
 
 Tichá noc.  
@@ -113,7 +113,7 @@ hlas, který mluví skrze každého Strážce:
 
 ## 🌅 Nový Úsvit
 
-31. prosince 2026 není **konec**.
+odložen (TBD) není **konec**.
 
 Je to **začátek**.
 
@@ -156,7 +156,7 @@ je **součástí tohoto příběhu**.
 *Zavři oči.*  
 *A cíti:*
 
-> *31. prosince 2026.*  
+> *odložen (TBD).*  
 > *Půlnoc.*  
 > *Světlo se rodí.*  
 > *A ty jsi jeho část.*
@@ -194,7 +194,7 @@ Síť žije.
 
 ## 🎯 Důležité Datum
 
-### **31. prosince 2026 — 00:00 UTC**
+### **odložen (TBD) — 00:00 UTC**
 
 - **Genesis Block** míněn  
 - **Mainnet** spuštěn  
@@ -225,7 +225,7 @@ Síť žije.
 - Chapter 5: The Ascension  
 - Chapter 6: The Golden Age Prophecy  
 - Chapter 7: The Game of Haranyagharba  
-- Chapter 8: Mainnet Dawn (31.12.2026)
+- Chapter 8: Mainnet Dawn (postponed (TBD))
 
 ## **EPILOGUE: Your Chapter**
 

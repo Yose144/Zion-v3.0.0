@@ -67,7 +67,7 @@
 | Seed node deployment (3+ kontinenty) | ⏳ |
 | Mainnet config finalizace | ⏳ |
 | Emission schedule DAO vote | ⏳ |
-| **🚀 Historical target window: 31. 12. 2026** | ⏳ |
+| **🚀 Historical target window: postponed (TBD)** | ⏳ |
 
 ---
 

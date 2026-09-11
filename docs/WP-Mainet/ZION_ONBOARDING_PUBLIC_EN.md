@@ -5,7 +5,7 @@
 > Supersedes [`SulZeme/ZION_ONBOARDING_EN.md`](./SulZeme/ZION_ONBOARDING_EN.md) (2026-08-03) as the main public onboarding.
 > **Date:** 2026-08-09
 > **Network:** Mainnet Alpha `3.1.0-beta` / protocol `zion-v3-node/3.1.0-alpha` → target **3.2.0 "One Love" (Mainnet Stable)**
-> **Public launch:** December 31, 2026
+> **Public launch:** postponed (TBD)
 > **Language:** English — [Česká verze](./ZION_ONBOARDING_PUBLIC_CZ.md)
 
 ---

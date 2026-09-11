@@ -6,7 +6,7 @@
 > **Datum publikace:** 2026-08-31  
 > **Kanonický integrační corpus:** [`MiseAmenti/`](docs/WP-Mainet/MiseAmenti/README.md)  
 > **Status:** Technický execution companion pro kanon 3.3; nenahrazuje živý kód, provozní stav ani evidence registr v `MiseAmenti/`.  
-> **Cílový milník:** 2026-12-31 je aspirativní veřejný horizont, ne garantované datum release ani výsledek.
+> **Cílový milník:** odložen (TBD) je aspirativní veřejný horizont, ne garantované datum release ani výsledek.
 >
 > **Čtecí smlouva:** Každý nárok v tomto dokumentu se interpretuje podle značek **ŽIVÉ / STAVBA / HORIZONT / HYPOTÉZA / MÝTUS** a podle evidence registru [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md). Pokud je zde rozpor s kódem, on-chain daty nebo `StatusV3.md`, má vždy přednost skutečnost.
 
@@ -43,7 +43,7 @@
 ### 1.1 Od 3.2 "One Love" k 3.3 "Nirvana"
 Verze **3.2 "One Love"** stabilizovala základy sítě: kanonický hybridní UTXO v2 chain s Ekam Deeksha v3.2 konsensem, Trinity Mining (ZION, VRSC, ZANO), produkční deployment na Edge serveru a základní multichain architekturu. Byla to fáze *sjednocení, harmonizace a překonání rozkolu*.
 
-Verze **3.3 "Nirvana" (Global Assimilation / Attention)** je aspirativní cílový stav — **Grand Unification (Velké Sjednocení)** celého technologicko-duchovního ekosystému ZION. Je to HORIZONT, nikoli dosažený release; časová osa 2026-12-31 je veřejný cíl, nikoli závazek.
+Verze **3.3 "Nirvana" (Global Assimilation / Attention)** je aspirativní cílový stav — **Grand Unification (Velké Sjednocení)** celého technologicko-duchovního ekosystému ZION. Je to HORIZONT, nikoli dosažený release; časová osa odložen (TBD) je veřejný cíl, nikoli závazek.
 
 * **Nirvana:** Stav překonání entropie, chaosu a iluze nedostatku. V informatickém smyslu jde o stav nulové frikce při přenosu hodnoty, výpočetního výkonu a vědomí.
 * **Global Attention:** Pozornost je nejcennější komodita vesmíru. ZION 3.3 přesměrovává lidskou a strojovou pozornost od destruktivních modelů (sociální sítě generující dopaminovou závislost, spekulativní krypto bez reálné hodnoty) k tvůrčímu stavitelství Nové Země (TerraNova).
@@ -348,7 +348,7 @@ L6 ztělesňuje lidskou touhu po poznání vesmíru, hluboké vědě a překoná
 | **N4** | **L4 OASIS UE 5.7 & Web Preview** | Port do Unreal Engine 5.7, Nanite 2.0 / Lumen, WebGPU instant browser preview, WebRTC pixel streaming | Měsíc 2–4 (Říjen–Prosinec) |
 | **N5** | **L5 Free World Web UI & Projekty** | Nový webový portál `freeworld.zionterranova.com`, interaktivní mapa planety, globální katalog vody a permakultury | Měsíc 3–4 (Listopad–Prosinec) |
 | **N6** | **L6 Issobella Quantum & DeSci** | Publikace teoretického modelu Alcubierre-Ekam metriky, DeSci repozitář, NCL kvantové simulace, grantový systém | Měsíc 4 (Prosinec 2026) |
-| **FIN**| **GRAND LAUNCH V3.3 NIRVANA** | Globální sjednocení všech vrstev, přechod do plně decentralizovaného a autonomního chodu | **2026-12-31** |
+| **FIN**| **GRAND LAUNCH V3.3 NIRVANA** | Globální sjednocení všech vrstev, přechod do plně decentralizovaného a autonomního chodu | **odložen (TBD)** |
 
 ---
 

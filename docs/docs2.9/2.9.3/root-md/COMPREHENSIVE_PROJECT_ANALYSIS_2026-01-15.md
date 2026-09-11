@@ -610,7 +610,7 @@ Podle `docs/WP2.9/02_LIBERATION_MANIFESTO.md`:
 
 ### MainNet Timeline Realita Check
 
-**Original Goal:** 31.12.2026 (optimistický)  
+**Original Goal:** odložen (TBD) (optimistický)  
 **Realistic Goal:** 31.12.2027 (80% achievable)  
 **Worst Case:** Q1 2028 (pokud security issues)
 

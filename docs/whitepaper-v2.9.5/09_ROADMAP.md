@@ -217,7 +217,7 @@ NOVEMBER 2026
 ├── 📅 Bug bounty escalation
 └── 📅 24/7 monitoring activated
 
-DECEMBER 31, 2026 — GENESIS BLOCK 🌟
+postponed (TBD) — GENESIS BLOCK 🌟
 ├── 🚀 MainNet Genesis at 23:59:59 UTC
 ├── 🚀 Genesis premine distributed (16.78B ZION)
 ├── 🚀 Mining officially begins
@@ -230,7 +230,7 @@ DECEMBER 31, 2026 — GENESIS BLOCK 🌟
 ### Genesis Timeline
 
 ```
-Genesis Night (Dec 31, 2026):
+Genesis Night (postponed (TBD)):
 ═══════════════════════════════════════════════════════════════
 
 23:00 UTC — Final TestNet shutdown
@@ -240,7 +240,7 @@ Genesis Night (Dec 31, 2026):
 23:59:59 UTC — GENESIS BLOCK MINED 🚀
 
 Block #0:
-├── Timestamp: 2026-12-31 23:59:59 UTC
+├── Timestamp: postponed (TBD) UTC
 ├── Coinbase: "Where Technology Meets Spirit"
 ├── Genesis allocation: 16,780,000,000 ZION
 └── Difficulty: Initial calibrated value
@@ -483,7 +483,7 @@ ROADMAP SUMMARY:
 ├── Q1: Documentation, GPU mining, wallets
 ├── Q2: Security audit, NCL expansion, DAO alpha
 ├── Q3: MainNet preparation, feature freeze
-└── Q4: 🚀 MAINNET GENESIS (Dec 31, 2026)
+└── Q4: 🚀 MAINNET GENESIS (postponed (TBD))
 
 2027:
 ├── Q1: Stabilization, first humanitarian projects
@@ -505,7 +505,7 @@ Q1        Q2        Q3        Q4                   Q1-Q4
 │         │         │         │                       │
 │ TestNet │ Audit   │ Prep    │ 🚀 MAINNET          │ Growth
 │ Polish  │ NCL     │ Freeze  │ GENESIS             │ Scale
-│ Wallets │ DAO     │ Ready   │ 31.12.2026          │ Evolve
+│ Wallets │ DAO     │ Ready   │ postponed (TBD)          │ Evolve
 │         │         │         │                       │
 └─────────┴─────────┴─────────┴───────────────────────┘
 ```
@@ -519,4 +519,4 @@ Q1        Q2        Q3        Q4                   Q1-Q4
 *"The best time to plant a tree was 20 years ago. The second best time is now."*  
 **— Chinese Proverb**
 
-**MainNet Genesis: December 31, 2026** 🚀
+**MainNet Genesis: postponed (TBD)** 🚀

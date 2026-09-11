@@ -188,7 +188,7 @@ Full marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../WP-M
 
 ### 4.1 Elevator Pitch (20 seconds)
 
-ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, no ICO, every block splits its reward 89/5/5/1 between the miner, humanitarian fund, and future. It has a miner, pool, bridge, DAO, and game world Oasis. Live Mainnet Beta, public launch Dec 31, 2026.
+ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, no ICO, every block splits its reward 89/5/5/1 between the miner, humanitarian fund, and future. It has a miner, pool, bridge, DAO, and game world Oasis. Live Mainnet Beta, public launch postponed (TBD).
 
 ### 4.2 Taglines
 
@@ -208,7 +208,7 @@ ZION is an independent Layer 1 blockchain in Rust: Proof-of-Work, fair launch, n
 | Hard cap | 144 billion ZION |
 | Block time | ~60 seconds |
 | Reward split | 89 % miner / 5 % humanitarian / 5 % future / 1 % burn |
-| Launch | testnet from Dec 4, 2025; Mainnet Beta live; public launch Dec 31, 2026 |
+| Launch | testnet from Dec 4, 2025; Mainnet Beta live; public launch postponed (TBD) |
 | License | MIT |
 | Public pool | `62.171.141.136:8444` |
 | Sites | https://zionterranova.com, https://app.zionterranova.com, https://oasis.zionterranova.com, https://market.zionterranova.com |
@@ -316,7 +316,7 @@ CMC submission: https://support.coinmarketcap.com/hc/en-us/requests/new (select 
 | Asset type | Coin (own Layer-1 blockchain) |
 | Consensus | Proof-of-Work (Nakamoto-style) |
 | Mining algorithm | Ekam Deeksha / CosmicHarmony |
-| Mainnet genesis | 2026-07-06; public launch 2026-12-31 |
+| Mainnet genesis | 2026-07-06; public launch postponed (TBD) |
 | Max supply | 144,000,000,000 ZION |
 | Block explorer | https://zionterranova.com/explorer |
 | Whitepaper (EN) | https://raw.githubusercontent.com/Zion-TerraNova/v3-Mainnet/main/docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0.5_CZ.md |
@@ -377,7 +377,7 @@ Every block reward is split 89/5/5/1:
 Live Mainnet Beta
 
 Network:        ZION TerraNova Mainnet Beta
-Public launch:  31 December 2026
+Public launch:  postponed (TBD)
 
 Services:
 • Website:      https://zionterranova.com

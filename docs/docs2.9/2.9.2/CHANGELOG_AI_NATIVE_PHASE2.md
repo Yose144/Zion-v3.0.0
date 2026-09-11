@@ -273,6 +273,6 @@ Built with ❤️ by ZION Team using:
 
 **Status:** ✅ Phase 2 Complete - Production Ready  
 **Next:** Phase 3 - LLM Integration & Pool Protocol  
-**Target:** TestNet 31.12.2025 | Mainnet 31.12.2026
+**Target:** TestNet 31.12.2025 | Mainnet postponed (TBD)
 
 🌌 **"Where mining meets intelligence"** 🌌

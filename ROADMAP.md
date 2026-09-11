@@ -10,7 +10,7 @@
 >
 > **Vývojový horizont:** 3.3.0 "Nirvana" (Global Assimilation / Attention) — cíl, nikoli dosažený release; status a evidence v [`MiseAmenti/07-Registr-Dukazu.md`](docs/WP-Mainet/MiseAmenti/07-Registr-Dukazu.md).
 >
-> **Aspirativní veřejný horizont:** 31. 12. 2026 — není závazný datum launchi.
+> **Aspirativní veřejný horizont:** odložen (TBD) — není závazný datum launchi.
 >
 > **Naposledy upraveno:** 2026-08-31
 >

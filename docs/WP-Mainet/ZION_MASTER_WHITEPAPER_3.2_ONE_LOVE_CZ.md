@@ -3,7 +3,7 @@
 
 **Hlavní příběh a marketingová edice**
 **Syntéza čtyř knih: Genesis · Quantum Revolution · Ekam Deeksha · Terra Nova**
-**Stav sítě: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Cíl veřejného launchi: 31. 12. 2026**
+**Stav sítě: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Cíl veřejného launchi: odložen (TBD)**
 **Licence: MIT pro core a pool · Tento text je manifest, kronika a průvodce**
 **Kanonický zdroj: 2026-08-09**
 

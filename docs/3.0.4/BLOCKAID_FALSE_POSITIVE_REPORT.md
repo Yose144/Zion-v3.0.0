@@ -58,7 +58,7 @@ These are the same security patterns used by major bridge tokens (WBTC, wstETH, 
 
 Please review the wZION contract and remove the "Potential Honeypot" flag. The token is a legitimate cross-chain bridge token with standard security patterns (role-gated mint, guardian pause) identical to WBTC and other major wrapped tokens.
 
-The "Not listed on leading U.S. exchanges" warning is expected — ZION is a new Layer-1 project with public launch scheduled for 31 December 2026. Exchange listings will follow post-launch.
+The "Not listed on leading U.S. exchanges" warning is expected — ZION is a new Layer-1 project with public launch postponed (TBD). Exchange listings will follow post-launch.
 
 ## Contact
 

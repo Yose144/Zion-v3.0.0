@@ -351,7 +351,7 @@ From the master roadmap (`ROADMAP.md`):
   - Buyback pipeline (BTC → ZION via MoneroOcean)
   - DAO treasury contributions from pool fees
 
-**Target:** MainNet Genesis — 31 December 2026
+**Target:** MainNet Genesis — postponed (TBD)
 
 ---
 

@@ -13,7 +13,7 @@
         ┌───────────┐    ┌───────────┐    ┌───────────┐    ┌───────────┐
   Feb   │ CHv3      │    │ Audit +   │    │ Exchange  │    │ MAINNET   │
         │ unification│    │ bounty    │    │ prep      │    │ WINDOW    │
-  Mar   │ Dual VRSC │    │           │    │           │    │ 31 Dec   │
+  Mar   │ Dual VRSC │    │           │    │           │    │ postponed (TBD)   │
         └───────────┘    └───────────┘    └───────────┘    │ 2026      │
                                                            └───────────┘
 ```
@@ -36,7 +36,7 @@ Listings prep, CoinGecko/CMC, whitepaper EN, mobile wallet, third-party pools, c
 
 ### Phase 4 — Historical mainnet window (Oct–Dec 2026)
 
-Genesis finalisation, premine distribution, seeds, mainnet config, DAO vote on emission, **historical target 31 Dec 2026**.
+Genesis finalisation, premine distribution, seeds, mainnet config, DAO vote on emission, **historical target postponed (TBD)**.
 
 ---
 

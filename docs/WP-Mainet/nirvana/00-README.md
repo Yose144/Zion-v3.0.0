@@ -48,7 +48,7 @@ Každá epizoda zachovává pravidlo absolutní poctivosti: **krásný archetyp�
 | 9 | [Krystalické světy OASIS](./09-Krystalicke-Svety-Oasis.md) | **OASIS Metaverse** · *L4 Unreal Engine 5.7* | Nanite/Lumen fotorealismus, okamžitý WebGPU/Pixel Streaming preview, Dharma Temple a avataři. |
 | 10 | [Prameny Života](./10-Prameny-Zivota.md) | **Free World** · *L5 Planetární obnova* | 5 % z každého bloku pro čistou vodu, znovuzalesňování, semenné banky a komunitní mikrosítě. |
 | 11 | [Kvantový oheň Issobella](./11-Kvantovy-Ohen-Issobella.md) | **Warp Engine** · *L6 Hluboká věda* | 5 % vědecký fond, Alcubierre-Ekam metrika, harmonické rezonance $\Phi$ a otevřená věda DeSci. |
-| 12 | [Velké Sjednocení](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Mise Amenti* | Sjednocení všech šesti vrstev, návrat globální pozornosti k tvoření, start 31. 12. 2026. |
+| 12 | [Velké Sjednocení](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Mise Amenti* | Sjednocení všech šesti vrstev, návrat globální pozornosti k tvoření, start odložen (TBD). |
 
 ---
 

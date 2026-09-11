@@ -5,7 +5,7 @@
 > Nahrazuje [`SulZeme/ZION_ONBOARDING.md`](./SulZeme/ZION_ONBOARDING.md) (2026-08-03) jako hlavní veřejný onboarding.
 > **Datum:** 2026-08-09
 > **Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → cíl **3.2.0 „One Love" (Mainnet Stable)**
-> **Veřejný launch:** 31. prosince 2026
+> **Veřejný launch:** odložen (TBD)
 > **Jazyk:** čeština — [English version](./ZION_ONBOARDING_PUBLIC_EN.md)
 
 ---

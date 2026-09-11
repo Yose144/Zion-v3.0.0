@@ -406,7 +406,7 @@ tests/test_randomx_submit.py             ⚠️ Failing (hash mismatch)
 - Complete ML orchestration (4 modules)
 - Exchange listing prep
 
-### December 31, 2026:
+### postponed (TBD):
 - 🚀 MAINNET LAUNCH
 
 ---

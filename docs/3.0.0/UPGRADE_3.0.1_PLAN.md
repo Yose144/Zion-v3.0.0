@@ -1,7 +1,7 @@
 # ZION V3 — Upgrade Plan 3.0.1
 
 > **Datum:** 2026-06-03
-> **Cíl:** Zavřít známé TODO/placeholder gapy, aktivovat dead code, a dodat CI/CD před veřejným mainnet launch (31.12.2026).
+> **Cíl:** Zavřít známé TODO/placeholder gapy, aktivovat dead code, a dodat CI/CD před veřejným mainnet launch (odložen (TBD)).
 > **Zakázáno:** Nepřidávat nové L4/L5/L6 funkce dokud L1/L2/L3 nejsou 100% production-ready.
 
 ---
@@ -175,7 +175,7 @@
 - **3.1.0** — Bridge 3/5 validator provisioning, cross-chain swap UI
 - **3.2.0** — Full NCL compute marketplace (ONNX + GPU offload)
 - **3.3.0** — OASIS avatar runtime (L4 activation)
-- **3.5.0** — Public mainnet Genesis #0 launch (31.12.2026)
+- **3.5.0** — Public mainnet Genesis #0 launch (postponed (TBD))
 
 ---
 

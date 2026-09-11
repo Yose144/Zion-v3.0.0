@@ -388,7 +388,7 @@ Jako strom, který se umí vracet k péči.
 | Emise | Decade Decay, −20 % každých 5,256,000 bloků |
 | Tail reward | 724.784723 ZION / blok po desetileté degressi |
 | Split odměny | 89 % miner / 5 % humanitární / 5 % Issobella / 1 % protocol burn |
-| Mainnet stav | Mainnet Beta; veřejný launch cíl 31. 12. 2026 |
+| Mainnet stav | Mainnet Beta; cíl veřejného launchu: odložen (TBD) |
 
 ## Redakční zdroje tohoto návrhu
 

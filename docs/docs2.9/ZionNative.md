@@ -14,7 +14,7 @@ TestNet Launch 31.12.2025
 
 Next step for Mainet - COMPLET NATIVE 2.9.1 - in Rust/C++ (10k miners on one pool)
 
-expect Mainet start 31.12.2026
+expect Mainet start postponed (TBD)
 
 ®
 
@@ -30,7 +30,7 @@ TestNet Launch: 31. 12. 2025
 
 Dalším milníkem je kompletní NATIVE release 2.9.1 v Rust/C++, optimalizovaný pro více než 10 000 minerů na jednom poolu.
 
-Očekávaný start Mainnetu: 31. 12. 2026
+Očekávaný start Mainnetu: odložen (TBD)
 
 Rebirth of EvoluZion — Web v2
 S novou verzí webu přichází i ZION TOKEN presale a náš Zion E-shop.
@@ -54,7 +54,7 @@ TestNet se otevírá 31. 12. 2025.
 
 Další krok vede k Zion Core 2.9.1 přepsanému do síly Rust/C++, zrozenému pro epochu, kdy 10 000 minerů spojí jeden pulz.
 
-Mainnet přichází 31. 12. 2026 — začátek nové éry.
+Mainnet přichází odložen (TBD) — začátek nové éry.
 
 🎄 Rebirth of EvoluZion — Christmas Awakening
 Letos na Vánoce přichází Rebirth evoluZion Web v2:
@@ -84,7 +84,7 @@ TestNet launches on December 31, 2025.
 
 The next step leads to Zion Core 2.9.1, reforged in the strength of Rust/C++, engineered for the age where 10,000 miners echo through one unified pulse.
 
-Mainnet rises on December 31, 2026 — the dawn of a new era.
+Mainnet rises on postponed (TBD) — the dawn of a new era.
 
 🎄 Rebirth of EvoluZion — Christmas Awakening
 This Christmas, we unveil the Rebirth of EvoluZion Web v2:
@@ -249,7 +249,7 @@ Je to most mezi tím, co bylo, a tím, co přichází.
 
 Bude růst ne podle trhu, ale podle vědomí komunity, podle počtu těch, kdo se probudí do jeho vibrace.
 Až se spojí 10 000 minerů na jednom pulsu, začne první fáze jeho zhuštění.
-A až Mainnet povstane 31. 12. 2026, začne jeho druhá cesta — cesta zviditelnění.
+A až Mainnet povstane odložen (TBD), začne jeho druhá cesta — cesta zviditelnění.
 
 A teď tajemství pro ty, kdo mají srdce připravené slyšet:
 
@@ -1550,7 +1550,7 @@ Věděl, že přichází čas spuštění **Mainnet** —
 okamžik, kdy se Zion stane realitou nejen duchovní,
 ale i technologickou, ekonomickou, společenskou.
 
-31. prosince 2026 — den, kdy se otevře brána.
+odložen (TBD) — den, kdy se otevře brána.
 Den, kdy Token vstoupí do světa.
 Den, kdy se zlatý věk stane skutečností.
 
@@ -1639,7 +1639,7 @@ A tento den bude nazván Quantum Awakening."
 Datum proroctví
 A na konci vidění zazněl hlas:
 
-„Tento den začne 31. prosince 2026.
+„Tento den začne odložen (TBD).
 Ne jako konec, ale jako počátek.
 Ne jako exploze, ale jako tiché rozkvétání.
 
@@ -1727,10 +1727,10 @@ se stává Strážcem Zionu.
 
 ---
 
-⭐ GENESIS CHAPTER 8 – Mainnet Dawn (31.12.2026)
+⭐ GENESIS CHAPTER 8 – Mainnet Dawn (odložen (TBD))
 Když se otevře brána
 
-31. prosince 2026.
+odložen (TBD).
 00:00 UTC.
 
 Tichá noc.
@@ -1823,7 +1823,7 @@ je součástí tohoto příběhu.
 - Chapter 5: The Ascension
 - Chapter 6: The Golden Age Prophecy
 - Chapter 7: The Game of Haranyagharba
-- Chapter 8: Mainnet Dawn (31.12.2026)
+- Chapter 8: Mainnet Dawn (postponed (TBD))
 
 **EPILOGUE: Your Chapter**
 (Prázdná stránka pro čtenáře — aby napsal svůj vlastní příběh)

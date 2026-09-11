@@ -3,7 +3,7 @@
 > **Datum:** 17. února 2026 (aktualizováno 12. března 2026)  
 > **Verze:** 2.9.6 → 2.9.8 Deeksha  
 > **Branch:** `main`  
-> **Cíl:** MainNet Genesis **31. prosince 2026**  
+> **Cíl:** MainNet Genesis **odložen (TBD)**  
 > **Repo:** [github.com/Zion-TerraNova/2.9.6](https://github.com/Zion-TerraNova/2.9.6)  
 > **Sjednocuje:** `ROADMAP.md` + `docs/L1-L4_ROADMAP.md` (oba dokumenty zůstávají jako reference)
 
@@ -373,7 +373,7 @@ PRAVIDLA:
 | T-3 | Mining guide publikován |
 | T-2 | Final node software release |
 | T-1 | Genesis block vytvořen OFFLINE (air-gapped) |
-| **T-0** | **🚀 MAINNET GENESIS — 31. 12. 2026** |
+| **T-0** | **🚀 MAINNET GENESIS — odložen (TBD)** |
 
 ---
 
@@ -581,7 +581,7 @@ L1 Detail:
 | 23 | Security audit — průběh + opravy | 🔴 P0 | 4-6 týdnů |
 | 24 | Code freeze + tag `v2.9.6-mainnet` | 🔴 P0 | 1 den |
 | 25 | Binary builds + SHA-256 publikace | 🔴 P0 | 2 dny |
-| 26 | 🚀 **MAINNET GENESIS** | 🔴 | **31. 12. 2026** |
+| 26 | 🚀 **MAINNET GENESIS** | 🔴 | **postponed (TBD)** |
 
 ---
 

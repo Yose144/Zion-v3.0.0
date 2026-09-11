@@ -110,7 +110,7 @@ class WalletType(Enum):
 class NetworkMode(Enum):
     PRE_MAINNET = "pre_mainnet"    # QR codes, no blockchain
     TESTNET = "testnet"            # Test blockchain
-    MAINNET = "mainnet"            # Production blockchain (Dec 31, 2026)
+    MAINNET = "mainnet"            # Production blockchain (postponed (TBD))
 ```
 
 ### Database Schema
@@ -558,7 +558,7 @@ class EshopBonusAutomation:
 ```python
 class MainnetLaunchOrchestrator:
     """
-    Coordinates mainnet launch on December 31, 2026.
+    Coordinates mainnet launch on postponed (TBD).
     Orchestrates:
     - Genesis block activation
     - Premine distribution (16.78B)
@@ -569,7 +569,7 @@ class MainnetLaunchOrchestrator:
     
     async def execute_launch_sequence(self) -> dict:
         """
-        Main launch sequence (runs on Dec 31, 2026, 00:00 UTC):
+        Main launch sequence (runs on postponed (TBD), 00:00 UTC):
         
         Phase 1: Genesis (00:00-00:10)
         ├─ Activate genesis block
@@ -769,7 +769,7 @@ Testing:
 - Hardware wallet support
 - Advanced analytics dashboard
 
-### Dec 31, 2026
+### postponed (TBD)
 - 🚀 MAINNET LAUNCH
 - Presale payout (500M Credits)
 - Wallet migration (pre_mainnet → mainnet)
@@ -788,6 +788,6 @@ Testing:
 
 **Status:** 🟢 **PRODUCTION READY (91%)**  
 **Test Coverage:** 90.91% (20/22)  
-**Mainnet:** December 31, 2026 🎯
+**Mainnet:** postponed (TBD) 🎯
 
 🕉️ **JAI RAM - Unified wallet system for conscious economy!** 🕉️

@@ -106,7 +106,7 @@ const Roadmap295Copy = {
   multiChainBridge: { cs: `Multi-chain bridge`, en: `Multi-chain bridge` },
   criticalVulnerabilities: { cs: `kritických zranitelností`, en: `critical vulnerabilities` },
   historicalMainnetVision2026: { cs: `Historická MainNet vize 2026`, en: `Historical MainNet Vision 2026` },
-  december312026: { cs: `31. prosince 2026`, en: `December 31, 2026` },
+  december312026: { cs: `odložen (TBD)`, en: `postponed (TBD)` },
   historicalTarget: { cs: `Historický cíl`, en: `Historical target` },
   globalNetwork: { cs: `Globální síť`, en: `Global Network` },
   towardTheStar: { cs: `SMĚREM KE HVĚZDĚ`, en: `TOWARD THE STAR` },
@@ -234,7 +234,7 @@ export default function Roadmap295Page() {
     { date: '30.06.2025', title: Roadmap295Copy.blockchainNativeComplete[lang === 'cs' ? 'cs' : 'en'], status: 'pending', color: 'purple', icon: Layers },
     { date: '30.09.2025', title: Roadmap295Copy.bridgeWalletComplete[lang === 'cs' ? 'cs' : 'en'], status: 'pending', color: 'gold', icon: Link2 },
     { date: '31.12.2025', title: Roadmap295Copy.historicalV3LaunchTarget[lang === 'cs' ? 'cs' : 'en'], status: 'pending', color: 'green', icon: Rocket },
-    { date: '31.12.2026', title: Roadmap295Copy.historicalMainnetTarget[lang === 'cs' ? 'cs' : 'en'], status: 'future', color: 'white', icon: Sparkles }
+    { date: 'postponed (TBD)', title: Roadmap295Copy.historicalMainnetTarget[lang === 'cs' ? 'cs' : 'en'], status: 'future', color: 'white', icon: Sparkles }
   ];
 
   return (

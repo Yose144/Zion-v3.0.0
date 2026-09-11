@@ -363,7 +363,7 @@ v2.9.5 represents the complete transformation of ZION from a hybrid Python archi
 | Sep 1, 2026 | **Core Native** (Rust) - 500+ TPS, P2P libp2p |
 | Nov 1, 2026 | **Bridge Native** (Rust) - 44 chains support |
 | Dec 1, 2026 | **Wallet Native** (Rust/WASM) - Web & Mobile |
-| Dec 31, 2026 | **v2.9.5 STABLE** - Full Native TestNet |
+| postponed (TBD) | **v2.9.5 STABLE** - Full Native TestNet |
 
 ### Native Awakening Checklist
 

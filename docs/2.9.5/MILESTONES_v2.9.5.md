@@ -1,7 +1,7 @@
 # ZION v2.9.5 Milestones — Roadmap k TestNet
 
 **Datum:** 20. ledna 2026  
-**Cíl:** Produkčně připravený TestNet do 31.12.2026
+**Cíl:** Produkčně připravený TestNet do odložen (TBD)
 
 ---
 

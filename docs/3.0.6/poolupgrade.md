@@ -111,7 +111,7 @@ Všechny sdílené struktury používají `std::sync::Mutex`:
 ```
 
 **Žádný externí miner (ccminer, xmrig, lolminer, trex, bzminer, teamread) tento protokol neumí.**
-Pro Mainnet Beta to je OK (pouze vlastní `zion-miner`), ale pro veřejný launch 2026-12-31 musíme podporovat **Stratum v1** (`mining.subscribe`/`mining.authorize`/`mining.notify`/`mining.submit`), jinak nepřijdou externí mineri.
+Pro Mainnet Beta to je OK (pouze vlastní `zion-miner`), ale pro veřejný launch (odložen (TBD)) musíme podporovat **Stratum v1** (`mining.subscribe`/`mining.authorize`/`mining.notify`/`mining.submit`), jinak nepřijdou externí mineri.
 
 ### 2.4 Persistenci (kritické)
 
@@ -324,7 +324,7 @@ Fáze 2 (Stratum v1) ──┤                    │
                               Fáze 8 (Notify) ┘
 ```
 
-**Kritická cesta:** F1 → F2 → F3 → F4 (pro veřejný launch 2026-12-31)
+**Kritická cesta:** F1 → F2 → F3 → F4 (pro veřejný launch — odložen (TBD))
 **Paralelizovatelné:** F5, F6, F7, F8 (po F3)
 
 ## 5. Nové závislosti (Cargo.toml)
@@ -446,7 +446,7 @@ ZION_POOL_SMTP_URL=smtp://...
 
 ## 11. Úspěšné kritéria
 
-Po implementaci F1–F6 (před veřejným launchem 2026-12-31):
+Po implementaci F1–F6 (před veřejným launchem odložen (TBD)):
 
 - [ ] Pool běží 30 dní bez restartu, žádný lock poisoning
 - [ ] PPLNS state přežije `kill -9` bez ztráty (> 5s starých) shares

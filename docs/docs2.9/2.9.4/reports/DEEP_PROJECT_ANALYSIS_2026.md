@@ -354,7 +354,7 @@ CRITICAL: Potřebuješ hodnotu ZION tokenu!
 PŮVODNÍ PLÁN:
 - TestNet: Q1 2026 ✅ (téměř hotovo)
 - Rust migration: Q2-Q3 2026
-- Mainnet: Dec 31, 2026
+- Mainnet: postponed (TBD)
 
 REALITA:
 - Solo: Téměř nemožné (burn-out risk)

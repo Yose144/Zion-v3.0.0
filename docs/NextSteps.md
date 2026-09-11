@@ -3,7 +3,7 @@
 > **Datum:** 15. února 2026  
 > **Aktualizace:** 12. března 2026  
 > **Stav:** Historický planning snapshot z poloviny února 2026. Aktuální verified stav je 114,520 Rust LOC a 1,379 Rust testů; viz `docs/STATUS_CURRENT_2026-03-12.md`.  
-> **Cíl:** L1 MainNet Genesis — 31. prosince 2026  
+> **Cíl:** L1 MainNet Genesis — odložen (TBD)  
 > **Vygenerováno z:** Deep Scan projektu (14.2.2026)
 
 ---
@@ -176,7 +176,7 @@ CÍL:
 ║  LISTOPAD    📢 Announcement, miner downloads, guides             ║
 ║                                                                  ║
 ║  PROSINEC    🟢 MAINNET GENESIS LAUNCH                           ║
-║              🎄 31. 12. 2026 — L1 goes live                      ║
+║              🎄 postponed (TBD) — L1 goes live                      ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```

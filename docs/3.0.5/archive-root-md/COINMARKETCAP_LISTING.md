@@ -17,7 +17,7 @@
 | Consensus mechanism | Proof-of-Work (Nakamoto-style) |
 | Mining algorithm | Ekam Deeksha / CosmicHarmony — memory-hard, ASIC-resistant (`deeksha_lite_v1`) |
 | Source code | Open source, MIT license |
-| Mainnet genesis | **2026-07-06** (3.0.4 hard genesis reset); public launch scheduled **31 December 2026** |
+| Mainnet genesis | **2026-07-06** (3.0.4 hard genesis reset); public launch scheduled **postponed (TBD)** |
 | Country of origin | Decentralized open-source community |
 
 ### Project description (long form)

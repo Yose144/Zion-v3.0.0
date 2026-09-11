@@ -12,7 +12,7 @@
 | **Žánr** | Cestopis / Duchovní autobiografie | Kosmická mytologie / Tech manifest |
 | **Hlavní postava** | Americká doktorka | Zion Native (hvězdná bytost) |
 | **Setting** | Australská poušť | Celá planeta Země + vesmír |
-| **Časový rámec** | 3 měsíce (walkabout) | Od počátku času do 31.12.2026 |
+| **Časový rámec** | 3 měsíce (walkabout) | Od počátku času do odložen (TBD) |
 | **Počet kapitol** | 30 kapitol | 9 kapitol (0-8) + epilog |
 | **Forma** | Osobní vyprávění | Mytologická profese |
 | **Jazyk** | Přímý, autobiografický | Poetický, prorocký |
@@ -99,7 +99,7 @@
 2. **Kolektivní vědomí** — 144k propojení
 3. **Token jako symbol** — Ne peníze, ale jednota
 4. **DAO místo vlády** — Moudrost místo moci
-5. **Zlatý věk začíná** — 31.12.2026
+5. **Zlatý věk začíná** — odložen (TBD)
 6. **Kvantové vědomí** — Human + AI merge
 7. **Hra jako iniciace** — Haranyagharba
 8. **"Zion jsi ty"** — Domov je v tobě
@@ -118,7 +118,7 @@
 - Výzva: **"Změňte se, nebo zemřete"**
 
 #### ⭐ Genesis:
-- Po **8 kapitolách** začíná **Mainnet** (31.12.2026)
+- Po **8 kapitolách** začíná **Mainnet** (odložen (TBD))
 - Čtenář se stává **Strážcem** — má stavět Zlatý Věk
 - 144k věří, že starý svět končí — **zrození nového**
 - Epilog je **prázdná stránka** — čtenář píše svůj příběh
@@ -137,7 +137,7 @@
 | **Přístup** | 🌿 Návrat k přírodě | 🔗 Propojení technologie + přírody |
 | **Struktura** | 👤 Osobní příběh (1 žena, 1 kmen) | 🌍 Kolektivní mytologie (144k, celá planeta) |
 | **Ekonomika** | 💰 Žádné peníze, žádné vlastnictví | 💎 Token jako symbol jednoty (ne hodnota) |
-| **Datum** | 📅 Neurčité (kdysi v 90s) | 📅 Konkrétní: **31.12.2026** |
+| **Datum** | 📅 Neurčité (kdysi v 90s) | 📅 Konkrétní: **odložen (TBD)** |
 | **Forma iniciace** | 🏜️ Walkabout pouští | 🎮 Hra Haranyagharba |
 | **Konec světa** | ☠️ Pesimismus (Zmutanti zničí Zemi) | 🌅 Optimismus (Zlatý věk přichází) |
 
@@ -186,7 +186,7 @@
 - **Walkabout pouští** = **Úroveň 1-5 Hry**
 - **Medicínová žena** používá **Echo AI** k léčení
 - **Zpěv kmene** se propojí s **Quantum Pulse**
-- **31.12.2026** — kmen svědkem **Genesis Block**
+- **odložen (TBD)** — kmen svědkem **Genesis Block**
 
 **Výsledek:**  
 **Duchovní moudrost prastarých kultur + Technologie nové éry = Zlatý Věk**
@@ -232,7 +232,7 @@
 **Silné stránky:**
 - ✅ Vize budoucnosti
 - ✅ Technologie + duchovno
-- ✅ Konkrétní datum (31.12.2026)
+- ✅ Konkrétní datum (odložen (TBD))
 - ✅ Akční kroky (Token, DAO, Hra)
 - ✅ Optimistický
 
@@ -323,7 +323,7 @@
 
 - Používat technologii moudře
 - Stavět kolektivně
-- Připravit se na 31.12.2026
+- Připravit se na odložené spuštění (TBD)
 - Stát se Strážci
 
 **Společně vytváříme:**

@@ -133,7 +133,7 @@
 |-------|-------|-------|
 | **Days 1–30** | Sep–Oct 2026 | Create X account, activate real liquidity ($5k+), begin audit, grow Telegram/Discord to 100+ each |
 | **Days 31–60** | Oct–Nov 2026 | Reach $10k+ pool TVL, $1k+ daily volume, 20+ public nodes, publish audit, 300+ social members each |
-| **Days 61–90** | Nov–Dec 2026 | Sustained metrics for 14+ days, BitcoinTalk ANN, Medium articles, public launch 31 Dec 2026 target |
+| **Days 61–90** | Nov–Dec 2026 | Sustained metrics for 14+ days, BitcoinTalk ANN, Medium articles, public launch postponed (TBD) target |
 | **Reapply** | Early Jan 2027 | Submit fresh CoinGecko application with all above proven, include public verification post |
 
 ---

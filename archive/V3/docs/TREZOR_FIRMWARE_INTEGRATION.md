@@ -252,7 +252,7 @@ async signTransaction(txHash: Uint8Array, path: string = DEFAULT_TREZOR_PATH): P
 
 ## 7. Conclusion & Recommendation
 
-**For mainnet launch (2026-12-31):**
+**For mainnet launch (postponed (TBD)):**
 
 1. **Keep Trezor as watch-only** (current implementation). Users verify addresses on-device and monitor balances via RPC.
 2. **Prioritize Ledger track** — Ledger SDK is more accessible; custom app store submission is feasible.

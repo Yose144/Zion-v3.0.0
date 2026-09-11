@@ -37,7 +37,7 @@ Development began in 2025 as an open-source Proof-of-Work chain built entirely f
 
 ## 4. What's next for your project? (563 chars)
 
-The immediate roadmap leads to the public launch targeted for 31 December 2026: an external security audit, a larger seed and validator network, activation of the protocol-level node-reward system (1% of block subsidy routed to full nodes), and growth of the public mining pool. In parallel the project is building the L4 OASIS world, deploying the L5 humanitarian program funded by a dedicated 3.3B ZION on-chain allocation, deepening wZION liquidity on Base and other EVM chains, and pursuing tracker and exchange listings including CoinGecko and CoinMarketCap.
+The immediate roadmap leads to the public launch, postponed (TBD): an external security audit, a larger seed and validator network, activation of the protocol-level node-reward system (1% of block subsidy routed to full nodes), and growth of the public mining pool. In parallel the project is building the L4 OASIS world, deploying the L5 humanitarian program funded by a dedicated 3.3B ZION on-chain allocation, deepening wZION liquidity on Base and other EVM chains, and pursuing tracker and exchange listings including CoinGecko and CoinMarketCap.
 
 ## 5. What can your coin/token be used for? (600 chars)
 

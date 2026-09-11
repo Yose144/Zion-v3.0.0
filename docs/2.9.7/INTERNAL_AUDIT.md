@@ -321,7 +321,7 @@ Toto jsou automatické gate podmínky. **Ceremonie NESMÍ proběhnout** dokud ne
 | Findings review + opravy | 2026-03-08 → 2026-03-12 | — |
 | Audit uzavřen — všechny kritické ✅ | ~2026-03-13 | Gate pro ceremonii |
 | **C-01/C-02 Genesis Ceremony** | Po auditu ✅ | 🚫 Blocked |
-| **MainNet v3.0** | 31. 12. 2026 | — |
+| **MainNet v3.0** | postponed (TBD) | — |
 
 ---
 

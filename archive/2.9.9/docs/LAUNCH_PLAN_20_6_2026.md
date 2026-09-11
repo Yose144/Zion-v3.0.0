@@ -1,7 +1,7 @@
-# ZION V3 Mainnet Launch Plan - 31.12.2026
-**New Year's Eve Launch**
-**Launch Date:** Thursday, December 31, 2026
-**Launch Time:** 12:00 UTC (14:00 CEST)
+# ZION V3 Mainnet Launch Plan — postponed (TBD)
+**Public Launch**
+**Launch Date:** postponed (TBD)
+**Launch Time:** 12:00 UTC (14:00 CEST) — to be confirmed
 **Genesis Hash:** `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923`
 
 ---
@@ -9,9 +9,8 @@
 ## 🎯 LAUNCH OVERVIEW
 
 ### Symbolický Význam
-- **New Year's Eve**: Přechod do nového roku - symbol nového začátku
+- **Postponed public launch (TBD)**: Nový začátek proběhne až po splnění Maturity Gate a zajištění základní likvidity
 - **Cosmic Harmony**: Zarovnání s kosmickými cykly
-- **31.12.2026**: Astrologicky významný den pro nový začátek
 
 ### Technical Cíle
 - Spuštění L1 mainnet s novým genesis blokem
@@ -37,7 +36,7 @@
 - [ ] Team připravenost check
 - [ ] Emergency plán review
 
-**31.12.2026 (Thursday) - 06:00 UTC (T-MINUS 6 HODIN)**
+**odložen (TBD) (Thursday) - 06:00 UTC (T-MINUS 6 HODIN)**
 - [ ] Stop všech testovacích služeb
 - [ ] Clean data directories
 - [ ] Final configuration check
@@ -45,7 +44,7 @@
 
 ---
 
-## 🚀 LAUNCH SEQUENCE (31.12.2026)
+## 🚀 LAUNCH SEQUENCE (postponed (TBD))
 
 ### T-MINUS 1 HODINA (11:00 UTC)
 
@@ -233,13 +232,13 @@ tail -f logs/node1.log | grep "relay_block"
 - **Twitter/X:** Teaser posts
 - **Email:** Newsletter update
 
-### Launch Moment (31.12.2026 12:00 UTC)
+### Launch Moment (postponed (TBD) 12:00 UTC)
 - **Website:** "MAINNET LIVE" banner
 - **Discord:** Live launch party
 - **Twitter/X:** "ZION Mainnet is LIVE!"
 - **GitHub:** Release tag v3.0.0-mainnet
 
-### Post-Launch (31.12.2026+)
+### Post-Launch (postponed (TBD)+)
 - **Website:** Live statistics
 - **Discord:** Mining support
 - **Twitter/X:** Progress updates
@@ -299,7 +298,7 @@ Pokud launch proběhne úspěšně:
 
 **Dokument připraven:** 23.5.2026
 **Final review:** 15.12.2026
-**Launch execution:** 31.12.2026 12:00 UTC
+**Launch execution:** postponed (TBD) 12:00 UTC
 
 **V případě problémů kontaktuj:**
 - Technical Lead: [TBD]

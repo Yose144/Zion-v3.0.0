@@ -1,7 +1,7 @@
 # ZION V3 Bridge — 100% Readiness Plan
 
 > **Verze:** 3.0.1+
-> **Cíl:** Plně funkční cross-chain bridge pro veřejný mainnet launch (31.12.2026)
+> **Cíl:** Plně funkční cross-chain bridge pro veřejný mainnet launch (odložen (TBD))
 > **Ověřeno:** 2026-06-03 — Base Sepolia testnet kontrakty LIVE
 
 ---

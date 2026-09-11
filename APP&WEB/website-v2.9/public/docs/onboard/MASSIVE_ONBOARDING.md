@@ -3,7 +3,7 @@
 
 **Kompletní pozvánka do ZION TerraNova: příběh + whitepaper + mining v jednom dokumentu.**
 **Síť:** Mainnet Alpha `3.1.0-beta` / protokol `zion-v3-node/3.1.0-alpha` → **3.2.0 „One Love" (Mainnet Stable)**
-**Poslední genesis:** 8. 8. 2026 (po dvou hard resetech) — tento chain je **Mainnet Launch pro odložený veřejný start (TBD)** · **Licence:** MIT pro kód
+**Poslední genesis:** 8. 8. 2026 (po dvou hard resetech) — tento chain je **Mainnet Launch — odložený veřejný start (TBD)** · **Licence:** MIT pro kód
 **Jazyk:** čeština — English version
 
 > *„One good thing about music — when it hits you, you feel no pain.*

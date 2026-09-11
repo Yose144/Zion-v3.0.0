@@ -2,7 +2,7 @@
 
 > **Version:** 1.0  
 > **Last Updated:** 11. března 2026  
-> **Environment:** TestNet (transition to MainNet planned 31.12.2026)
+> **Environment:** TestNet (transition to MainNet planned odložen (TBD))
 
 > **Archival note:** This docs copy is retained for historical context. The canonical operational source is `ops/runbook.md`, and the current live topology is the single-host Zion2 model on `91.98.122.165`.
 
