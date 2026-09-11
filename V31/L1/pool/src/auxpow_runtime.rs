@@ -322,6 +322,7 @@ async fn run_bridge_task(
     // Main loop: fetch jobs + forward shares + touch timestamps.
     // The AuxPowClient background task handles all reconnects, so this loop
     // just waits for the next job and drains the share/touch channels.
+    let mut timeout_counter = 0u64;
     loop {
         if client.is_connected().await {
             // Short 1-second timeout so shares in the channel are forwarded
@@ -353,7 +354,16 @@ async fn run_bridge_task(
                 }
                 Err(e) => {
                     // No new job within the timeout; not a fatal error.
-                    tracing::debug!("auxpow[{}]: wait_for_job timeout: {}", coin_label, e);
+                    // ZANO/VRSC blocks are much longer than 1s, so this fires
+                    // constantly while the upstream block is unchanged.
+                    // Emit at TRACE to avoid log flooding; emit DEBUG only
+                    // periodically so operators can still see the loop is alive.
+                    timeout_counter += 1;
+                    if timeout_counter % 30 == 0 {
+                        tracing::debug!("auxpow[{}]: still polling upstream ({}x timeout)", coin_label, timeout_counter);
+                    } else {
+                        tracing::trace!("auxpow[{}]: wait_for_job timeout: {}", coin_label, e);
+                    }
                 }
             }
         } else {
