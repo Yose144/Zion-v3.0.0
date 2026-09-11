@@ -3,7 +3,7 @@
 **Mine ZION. Earn ZION. Grow ZION.**
 
 > **⚠️ Mainnet Beta — mine and transact at your own risk**
-> The network is live and producing blocks. Genesis chain is permanent. Official public launch: **31 December 2026**.
+> The network is live and producing blocks. Genesis chain is permanent. Official public launch: **postponed (TBD)**.
 
 ---
 

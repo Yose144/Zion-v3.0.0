@@ -4,7 +4,7 @@
 
 > *Pokračování knihy Sůl této země. Čte se samostatně — ale kdo četl dvanáct zastavení, ví, kde stojí.*
 
-> **Status:** Mainnet Alpha 3.1 · V31 3.1.0-alpha.2 · veřejný launch 31. 12. 2026
+> **Status:** Mainnet Alpha 3.1 · V31 3.1.0-alpha.2 · veřejný launch odložen (TBD)
 > **Licence:** MIT · **Jazyk:** čeština · **Účel:** pozvat tě na palubu — ne slibem, ale kladivem
 
 ---

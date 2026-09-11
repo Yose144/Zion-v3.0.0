@@ -31,7 +31,7 @@
   - Legacy/expected failed: `zion-node` (V3), `zion-pool` (V3), `zion-dashboard-web` (superseded)
 - **Latest wins:** 2026-08-10 ZANO ProgPoW duplicate-share root-cause fixed in `V31/L1/miner/src/runtime.rs` (unique 64-bit nonce base per new job) and CUDA DAG disk cache added to `V31/L1/miner/src/gpu/cuda_external.rs`; local miner rebuilt, restarted, and validated: `progpow_epoch126.bin` (2.0 GB) generated/saved in 2.7 s, subsequent start loaded from disk and ZANO share accepted with no duplicate rejects. 2026-08-10 stale Edge `zion-pool` binary rebuild/redeploy with `pop_job()` + `touch_job_timestamp` fixes and AuxPoW worker-name simplification (commit `a5b3aa2c6`) — VRSC/ZANO shares now accepted upstream. V31 pool reaches full V3 parity with payout confirmation sweep + UTXO fallback, DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native) with Ekam Deeksha v3.2 (512 KiB scratchpad, 128 random reads, 2 AES passes), cross-chain DEX multi-path routing + HTTP solver network, CLI with 21 subcommands (DAO/WARP/HTLC/monitor/topology/explorer/onboard), Rasta/One Love desktop and web UI theme, OASIS RPC fixed (raw TCP JSON-RPC).
 - **Test gate:** `cargo test --workspace` passes, `cargo clippy --workspace` is clean (pre-existing warnings only).
-- **Public launch target:** 31 December 2026.
+- **Public launch target:** postponed (TBD).
 
 ---
 

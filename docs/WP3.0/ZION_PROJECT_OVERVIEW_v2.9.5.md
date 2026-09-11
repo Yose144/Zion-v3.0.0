@@ -451,7 +451,7 @@ Task Types:
 | M4: Profit Router | 21.02.2026 | ✅ Done |
 | M5: Miner Integration | 07.03.2026 | ✅ Done |
 | **M6: TestNet Launch** | **31.03.2026** | ⏳ Pending |
-| M7: Mainnet Genesis | 31.12.2026 | ⏳ Planned |
+| M7: Mainnet Genesis | postponed (TBD) | ⏳ Planned |
 
 ## 5.2 Q1 2026: The Awakening (AKTUÁLNÍ)
 
@@ -472,7 +472,7 @@ Task Types:
 
 ## 5.4 Q4 2026
 
-- [ ] **Mainnet Genesis** (31.12.2026)
+- [ ] **Mainnet Genesis** (postponed (TBD))
 
 ---
 

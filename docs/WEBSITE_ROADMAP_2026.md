@@ -9,7 +9,7 @@
 ## Přehled cíle
 
 Cílem je mít plně lokalizovaný, profesionální web připravený pro:
-- **MainNet Launch** (cíl: 31. 12. 2026)
+- **MainNet Launch** (cíl: odložen (TBD))
 - **CoinGecko / CoinMarketCap listingovou registraci** (Q2–Q3 2026)
 - **Komunitu** (CZ primárně, EN pro mezinárodní investory)
 

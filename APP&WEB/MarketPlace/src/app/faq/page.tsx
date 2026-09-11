@@ -25,7 +25,7 @@ export default function FaqPage() {
       <p>Maximální nabídka je 144 miliard ZION (12×12×1B), inspirováno posvátnou geometrií a kosmickými cykly.</p>
 
       <h3>Kdy je naplánován MainNet launch?</h3>
-      <p>Mainnet je aktivní od ledna 2026. Veřejný launch je naplánován na 31. prosince 2026. Sledujte náš <a href="https://app.zionterranova.com/roadmap" target="_blank" rel="noopener noreferrer">roadmap</a>.</p>
+      <p>Mainnet je aktivní od ledna 2026. Veřejný launch byl odložen (TBD). Sledujte náš <a href="https://app.zionterranova.com/roadmap" target="_blank" rel="noopener noreferrer">roadmap</a>.</p>
 
       <h2>Těžba a odměny</h2>
 

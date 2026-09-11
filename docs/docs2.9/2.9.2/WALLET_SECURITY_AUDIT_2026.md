@@ -598,7 +598,7 @@ npm run android && npm run ios
    - IP whitelist pro production
 
 ### Fáze 2: HIGH (před MainNet launch)
-**Deadline:** 31.12.2026 (1 rok)
+**Deadline:** odložen (TBD) (1 rok)
 
 4. **React Native upgrade** (2 dny)
    - 0.73 → 0.83

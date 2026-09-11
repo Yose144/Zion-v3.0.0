@@ -49,7 +49,7 @@
 - 🔄 P2P Network (20% complete - skeleton only, 392 LOC)
 
 **Pending:**
-- ⏰ Mainnet Launch (December 31, 2026)
+- ⏰ Mainnet Launch (postponed (TBD))
 - ⏰ Exchange Listings
 - ⏰ Community Marketing
 
@@ -352,7 +352,7 @@ Price: €0.008 per Credit
 Bonus: +20%
 Sold: 45,000,000 Credits (9%)
 Target: 500M (€4-5M funding)
-Launch Date: December 31, 2026
+Launch Date: postponed (TBD)
 ```
 
 **Packages:**
@@ -864,7 +864,7 @@ Testnet Launch:     ✅ LIVE (November 2025)
 Block Fix:          🔄 December 4-5, 2025
 P2P Network:        🔄 December 2025
 Security Audit:     ⏰ January 2026
-Mainnet Launch:     🎯 December 31, 2026
+Mainnet Launch:     🎯 postponed (TBD)
 ```
 
 ---
@@ -1013,7 +1013,7 @@ Burn Mechanism:   None (yet)
 5. 🎮 ZION OASIS demo
 
 ### Long Term (2026)
-1. 🚀 Mainnet launch (December 31, 2026)
+1. 🚀 Mainnet launch (postponed (TBD))
 2. 🌉 WARP 2.0 bridges (BTC, ETH, SOL)
 3. 🏦 DeFi ecosystem
 4. 🎯 Consciousness mining v2.0
@@ -1035,7 +1035,7 @@ Burn Mechanism:   None (yet)
 - ✅ Security: "Multi-sig implemented, ready for audit"
 - ✅ Performance: "Native compilation ready"
 - 🎯 TestNet Launch: 31. prosince 2025 (17 dní!)
-- 🎯 MainNet Launch: 31. prosince 2026
+- 🎯 MainNet Launch: odložen (TBD)
 
 **Skutečný stav (prosinec 2025):**
 - ❌ WARP 2.0: **60% complete** (6/16 souborů NotImplementedError)
@@ -1127,7 +1127,7 @@ Burn Mechanism:   None (yet)
 31. prosinec 2025:  TestNet Launch ❌ (17 dní, nelze stihnout)
 31. leden 2026:     Security Audit ❌ (audit trvá 2 měsíce)
 31. březen 2026:    Bridge Testnet ❌ (bridges 60% hotové)
-31. prosinec 2026:  MainNet Launch ❌ (P0 blockers neřešené)
+odložen (TBD):  MainNet Launch ❌ (P0 blockers neřešené)
 ```
 
 **Proč nereálné:**
@@ -1454,7 +1454,7 @@ v4.0 (2029):
 | **Single-Node TestNet** | Dec 31, 2025 | ✅ Dec 20, 2025 | ACHIEVABLE |
 | **Multi-Node TestNet** | Jan 31, 2026 | ✅ Jan 31, 2026 | ACHIEVABLE |
 | **Security Audit Done** | Feb 28, 2026 | ✅ Mar 31, 2026 | REALISTIC |
-| **MainNet Launch** | Dec 31, 2026 | 🎯 Jul 1, 2026 | **NEW TARGET** |
+| **MainNet Launch** | postponed (TBD) | 🎯 Jul 1, 2026 | **NEW TARGET** |
 | **Bridges Launch** | Q1 2026 | Aug 2026 (v2.1) | POSTPONED |
 | **Native Rewrite** | Q4 2025 | 2027 (v3.0) | **CANCELLED for v2.9** |
 
@@ -1654,7 +1654,7 @@ src/network/chain_sync.py          # 400 LOC
 
 **Original Promise (Roadmaps):**
 - TestNet: Dec 31, 2025 (17 days) ❌ UNREALISTIC
-- MainNet: Dec 31, 2026 (1 year) ❌ TOO TIGHT
+- MainNet: postponed (TBD) (1 year) ❌ TOO TIGHT
 
 **Reality Check (December 14, 2025):**
 - Single-node mining: BROKEN (P0 fix: 2-3 days)

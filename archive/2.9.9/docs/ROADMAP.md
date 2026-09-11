@@ -1,6 +1,6 @@
 # ZION TerraNova — Master Roadmap
 
-> **Cíl:** MainNet Genesis — **31. prosince 2026**  
+> **Cíl:** MainNet Genesis — **odložen (TBD)**  
 > **Poslední aktualizace:** 12. května 2026  
 > **Aktivní kódová linie:** `V3/` (clean-room mainnet)  
 > **Provozní pravda:** [`StatusV3.md`](StatusV3.md) + [`V3/ROADMAP.md`](V3/ROADMAP.md)

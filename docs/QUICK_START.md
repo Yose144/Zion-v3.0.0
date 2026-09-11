@@ -256,7 +256,7 @@ Every node strengthens ZION. By running a node you:
 - ✅ Help decentralize the network
 - ✅ Validate transactions independently
 - ✅ Earn mining rewards (5,400+ ZION/block)
-- ✅ Support the path to Mainnet (31.12.2026)
+- ✅ Support the path to Mainnet (postponed (TBD))
 
 **Welcome aboard!** 🌟
 

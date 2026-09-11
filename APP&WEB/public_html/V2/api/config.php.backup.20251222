@@ -47,7 +47,7 @@ define('BONUS_TIERS', json_encode([
 define('WALLET_EXPIRY_HOURS', 720); // 30 days
 
 // MainNet distribution date
-define('MAINNET_LAUNCH_DATE', '2026-12-31 23:59:59');
+define('MAINNET_LAUNCH_DATE', 'postponed (TBD)');
 
 // ============================================
 // STRIPE CONFIGURATION

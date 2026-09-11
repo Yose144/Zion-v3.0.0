@@ -558,7 +558,7 @@ $ BOLOS_SDK=$NANOSP_SDK make load
 
 ## 8. Recommendation
 
-**For mainnet launch (2026-12-31):**
+**For mainnet launch (postponed (TBD)):**
 
 1. **Phase 1 (Now–Q3 2026):** Complete Ledger app development + internal testing.
 2. **Phase 2 (Q3–Q4 2026):** Submit to Ledger for security audit + store review.

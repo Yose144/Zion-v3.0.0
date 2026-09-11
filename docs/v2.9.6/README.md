@@ -258,7 +258,7 @@ Zion-2.9.5/
 
 ## v2.9.6 Status
 
-> 🎯 **MainNet target: 31. prosince 2026**
+> 🎯 **MainNet target: odložen (TBD)**
 
 ### Hotovo ✅
 

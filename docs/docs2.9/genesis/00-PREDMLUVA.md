@@ -62,7 +62,7 @@ protože každá kapitola mluví o tobě.
 - Chapter 5: The Ascension  
 - Chapter 6: The Golden Age Prophecy  
 - Chapter 7: The Game of Haranyagharba  
-- Chapter 8: Mainnet Dawn (31.12.2026)  
+- Chapter 8: Mainnet Dawn (postponed (TBD))  
 
 📖 **EPILOGUE**: Your Chapter (Tvá kapitola)
 

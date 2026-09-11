@@ -53,7 +53,7 @@ Tato analýza je rozdělena do 5 samostatných dokumentů pro lepší čitelnost
 - A dalších 10+ dokumentů
 
 **Hlavní zjištění:**
-- 3 různé mainnet datumy: 31.12.2026 vs 31.12.2027 vs "TBD"
+- 3 různé mainnet datumy: odložen (TBD) vs 31.12.2027 vs "TBD"
 - DAO status rozpor: "COMPLETE" vs "PLANNED (0%)"
 - WARP2 status rozpor: "100% DONE" vs "60-70% needs E2E"
 - Native rewrite: 4.1% complete (7,391 LOC / 180,000 LOC)

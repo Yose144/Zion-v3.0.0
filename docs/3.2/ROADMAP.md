@@ -3,7 +3,7 @@
 > **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
 > **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
 > **Last updated:** 2026-08-23  
-> **Public launch target:** 31 December 2026  
+> **Public launch target:** postponed (TBD)  
 > **Daily summary:** [`REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md`](./REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md)
 >
 > **Canonical plans:**
@@ -174,7 +174,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | Bridge mainnet round-trip loses funds | test small amount first; 5/7 multisig; pause on any `BurnRelease` failure |
 | 30d run interrupted by non-critical bug | only critical incidents (consensus, payout, bridge safety) reset clock |
 | Public subtree push reveals secret | always `--dry-run` first; `git secrets --scan` |
-| External audit finds critical issue | keep 4-week buffer before 31.12.2026 launch |
+| External audit finds critical issue | keep 4-week buffer before postponed (TBD) launch |
 
 ---
 

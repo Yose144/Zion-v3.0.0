@@ -7,7 +7,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const RoadmapPulseCopy = {
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
   currentStatus: { cs: `Aktuální stav`, en: `Current status` },
-  v31CutoverComplete: { cs: `One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch 31. 12. 2026 se odkládá. Aktuálně hledáme dobrovolné vývojáře, pracujeme na Maturity Gate (Maturitě) a zajišťujeme základní likviditu.`, en: `One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch on 31 Dec 2026 is postponed. We are currently seeking volunteer developers, working toward the Maturity Gate, and securing basic liquidity.` },
+  v31CutoverComplete: { cs: `One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch je odložen (TBD). Aktuálně hledáme dobrovolné vývojáře, pracujeme na Maturity Gate (Maturitě) a zajišťujeme základní likviditu.`, en: `One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch is postponed (TBD). We are currently seeking volunteer developers, working toward the Maturity Gate, and securing basic liquidity.` },
   fullRoadmap: { cs: `Celá roadmapa`, en: `Full Roadmap` },
   blockExplorer: { cs: `Průzkumník blockchainu`, en: `Block Explorer` },
   phases: {

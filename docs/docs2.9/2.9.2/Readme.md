@@ -9,7 +9,7 @@
 
 [![Version](https://img.shields.io/badge/version-2.9.5-blue.svg)](https://github.com/Yose144/Zion-2.9/releases)
 [![TestNet](https://img.shields.io/badge/TestNet-LIVE-brightgreen.svg)](https://zionterranova.com)
-[![Mainnet](https://img.shields.io/badge/Mainnet-31.12.2026-gold.svg)](https://zionterranova.com)
+[![Mainnet](https://img.shields.io/badge/Mainnet-postponed (TBD)-gold.svg)](https://zionterranova.com)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![AI Native](https://img.shields.io/badge/AI-Native-cyan.svg)](docs/AI-NATIVE-MANIFEST.md)
 [![Production Ready](https://img.shields.io/badge/status-95%25%20complete-brightgreen.svg)](docs/2.9/ROADMAP_NEXT_STEPS_v2.9.5.md)
@@ -552,7 +552,7 @@ total_reward = (base_reward + bonus_pool) * consciousness_multiplier
 - 📅 Community testing
 - 📅 Exchange partnerships
 
-### 🎆 **Phase 4: Mainnet Launch (Dec 31, 2026)**
+### 🎆 **Phase 4: Mainnet Launch (postponed (TBD))**
 - 🎆 Genesis block creation
 - 🎆 Public mining begins
 - 🎆 DAO governance activation
@@ -657,7 +657,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 🌼🌼🌼🌼🌼🌼❤️🌼🌼🌼🌼🌼🌼
 
-**TestNet: 31.12.2025** | **Mainnet: 31.12.2026**
+**TestNet: 31.12.2025** | **Mainnet: postponed (TBD)**
 
 ---
 
@@ -740,7 +740,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - 💎 První bloky
 - 🎁 Odměny pro early adopters
 
-### 🎊 **31. prosince 2026** — Mainnet Launch
+### 🎊 **odložen (TBD)** — Mainnet Launch
 - 🔥 **Mainnet aktivován**
 - 💰 Genesis Block (16.78B ZION distribuce)
 - 🌟 Zlatý věk začíná oficiálně
@@ -1186,7 +1186,7 @@ MIT License — volně použitelné, upravitelné, šířitelné.
 
 🌼🌼🌼🌼🌼🌼❤️🌼🌼🌼🌼🌼🌼
 
-**TestNet: 31.12.2025** | **Mainnet: 31.12.2026**
+**TestNet: 31.12.2025** | **Mainnet: postponed (TBD)**
 
 ---
 
@@ -1487,7 +1487,7 @@ zion-security firewall
 
 ### Production Readiness
 - **Services:** 9/16 modules (56%)
-- **Mainnet ETA:** 395 days (Dec 31, 2026)
+- **Mainnet ETA:** 395 days (postponed (TBD))
 - **Critical Blockers:** 3 (P0: Block submission, P1: P2P + Bridges)
 - **Presale Progress:** 45M/500M Credits (9%)
 
@@ -1513,7 +1513,7 @@ zion-security firewall
 - [ ] 100+ successful cross-chain transfers
 - [ ] $1M+ TVL achieved
 
-### Phase 5: Mainnet Launch 🎯 (Dec 31, 2026)
+### Phase 5: Mainnet Launch 🎯 (postponed (TBD))
 - [ ] Genesis block activated
 - [ ] 500M presale Credits distributed
 - [ ] 3+ exchanges trading

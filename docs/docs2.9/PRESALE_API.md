@@ -27,7 +27,7 @@ Complete Python-based presale backend for ZION cryptocurrency presale campaign. 
 - `presale_orders` - Customer orders with payment tracking
 - `presale_wallets` - Generated wallets with encrypted private keys
 - `presale_payments` - Payment event log (Stripe webhooks)
-- `presale_distributions` - MainNet distribution tracking (Dec 31, 2026)
+- `presale_distributions` - MainNet distribution tracking (postponed (TBD))
 - `presale_analytics` - Real-time statistics
 - `presale_metadata` - Schema version and config
 
@@ -51,13 +51,13 @@ Complete Python-based presale backend for ZION cryptocurrency presale campaign. 
 - **Bonus:** 10%
 - **Period:** Q3 2025 (Jul - Sep 2025)
 
-**Launch Price (DEX/CEX):** €0.015 (Dec 31, 2026)
+**Launch Price (DEX/CEX):** €0.015 (postponed (TBD))
 
 ## Token Unlock Schedule
 
 Tokens are distributed in 4 phases after MainNet launch:
 
-1. **MainNet Launch (Dec 31, 2026):** 40% of purchased tokens
+1. **MainNet Launch (postponed (TBD)):** 40% of purchased tokens
 2. **Q1 2027 (Mar 31, 2027):** +20% of purchased tokens
 3. **Q2 2027 (Jun 30, 2027):** +20% of purchased tokens
 4. **Q3 2027 (Sep 30, 2027):** +20% of purchased tokens (final)
@@ -118,7 +118,7 @@ Returns current presale statistics, active phase, and unlock schedule.
     {
       "name": "mainnet_launch",
       "percentage": 40,
-      "unlock_date": "2026-12-31T00:00:00",
+      "unlock_date": "postponed (TBD)",
       "description": "MainNet Launch - Initial unlock (40%)"
     }
   ]
@@ -477,7 +477,7 @@ PRESALE_PHASES = [
 - ✅ `data/presale_encryption_key.bin` (CRITICAL!)
 - ✅ `data/presale_qr_codes/` (QR code images)
 
-**Before MainNet Distribution (Dec 31, 2026):**
+**Before MainNet Distribution (postponed (TBD)):**
 - ✅ Export all orders: `SELECT * FROM presale_orders WHERE payment_status='paid'`
 - ✅ Export all wallets: `SELECT * FROM presale_wallets WHERE status='active'`
 - ✅ Verify total tokens sold matches blockchain allocation

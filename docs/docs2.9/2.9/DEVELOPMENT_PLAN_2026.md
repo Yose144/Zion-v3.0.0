@@ -6,7 +6,7 @@
 - **Zbývající práce:** ~180 hodin (4 týdny)
 - **Aktuální datum:** 16. prosince 2025
 - **TestNet launch:** Cíl - 31. ledna 2026
-- **MainNet launch:** Cíl - 31. prosince 2026
+- **MainNet launch:** Cíl - odložen (TBD)
 
 ---
 
@@ -265,7 +265,7 @@
 - ✅ 0 critical vulnerabilities
 - ✅ 95%+ test coverage
 
-### MainNet Success (31.12.2026):
+### MainNet Success (postponed (TBD)):
 - ✅ 1,000+ active wallets
 - ✅ 500+ active miners
 - ✅ $5M+ market cap

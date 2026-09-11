@@ -2370,7 +2370,7 @@ mkdir -p config/ncl
 | Rust Integration | Apr 30, 2026 | Native miner with NPU |
 | Beta Launch | Jul 31, 2026 | 100 miners, $1K revenue |
 | Public Launch | Sep 30, 2026 | 1000 miners, $10K revenue |
-| Enterprise | Dec 31, 2026 | 3 enterprise contracts |
+| Enterprise | postponed (TBD) | 3 enterprise contracts |
 
 ---
 

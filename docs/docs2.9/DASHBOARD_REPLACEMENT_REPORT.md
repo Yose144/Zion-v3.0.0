@@ -38,7 +38,7 @@ public_html/V2/
 
 ### CZ verze (`dashboard.html`)
 - ✅ Rasta design (red/gold/green)
-- ✅ Countdown do MainNet (31.12.2026)
+- ✅ Countdown do MainNet (odložen (TBD))
 - ✅ Progress bar s Rasta gradientem
 - ✅ Stats grid (5 karet)
 - ✅ Phase indicator (3 fáze presale)
@@ -256,4 +256,4 @@ mv dashboard-en-old.html dashboard-en.html
 
 ---
 
-**MainNet Launch: 394 dní (31. 12. 2026) 🦁🔴🟡🟢**
+**MainNet Launch: 394 dní (odložen (TBD)) 🦁🔴🟡🟢**

@@ -2,7 +2,7 @@
 
 **Verze**: 2.9.0 "Quantum Leap"  
 **Cílové datum**: 31. prosince 2025  
-**Mainnet**: 31. prosince 2026  
+**Mainnet**: odložen (TBD)  
 
 ---
 

@@ -1,6 +1,6 @@
 # ZION TerraNova — CoinGecko Listing Submission
 
-> **Status:** Mainnet Beta (2026-07-06 genesis reset) · **Public launch target:** 31 December 2026  
+> **Status:** Mainnet Beta (2026-07-06 genesis reset) · **Public launch target:** postponed (TBD)  
 > **Submitted by:** ZION TerraNova Core Team · **Contact:** support@zion-blockchain.org
 
 ---
@@ -18,7 +18,7 @@
 | **License** | MIT (open source) |
 | **Launch model** | Fair Launch — no ICO, no pre-sale, no private round, no VC allocation |
 | **Genesis date** | 2026-07-06 (3.0.4 Hard Genesis Reset) |
-| **Public launch** | 2026-12-31 |
+| **Public launch** | postponed (TBD) |
 
 ---
 
@@ -118,7 +118,7 @@ Supply is verifiable on-chain via RPC `getSupply` endpoint.
 |--------|------|-----------------|--------|
 | **Uniswap V4 (Base)** | wZION / USDT + wZION / WETH | `0xcCEaD51568E8d701f7db7e6699F3986031F07C7B` | Live, concentrated liquidity |
 | **ZionDex (L3 WARP)** | Cross-chain AMM router | `https://zionterranova.com/dex-api` | Beta |
-| **CEX listings** | — | — | Targeting post public launch (2026-12-31) |
+| **CEX listings** | — | — | Targeting post public launch (postponed (TBD)) |
 
 ---
 

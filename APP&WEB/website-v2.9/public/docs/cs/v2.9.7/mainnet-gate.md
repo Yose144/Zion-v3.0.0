@@ -14,7 +14,7 @@
 
 **Spuštění MainNetu je podmíněno tím, že VŠECHNA kritéria B-CRIT budou UZAVŘENÁ (zelená).**
 
-Historické cílové okno v tomto snapshotu: **31. prosince 2026**
+Historické cílové okno v tomto snapshotu: **odložen (TBD)**
 
 ---
 
@@ -102,4 +102,4 @@ Plný seznam premine adres:
 | Bezpečnostní audit | Q2 2026 | 📋 Plán |
 | Bridge Mainnet | Q3 2026 | 📋 Plán |
 | Okno stability TestNetu | Q3–Q4 2026 | 📋 Plán |
-| **Spuštění MainNetu** | **31. 12. 2026** | Historické cílové okno |
+| **Spuštění MainNetu** | **odložen (TBD)** | Historické cílové okno |

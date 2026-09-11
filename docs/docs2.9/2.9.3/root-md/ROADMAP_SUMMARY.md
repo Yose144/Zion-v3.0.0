@@ -263,7 +263,7 @@ python zion_native_miner_v2_9.py \
 
 ### Kanonický cíl Mainnet
 - **Mainnet target:** **31.12.2027** (realistická varianta)  
-  - Pozn.: existuje i cíl 31.12.2026 v `docs/ROADMAP_2025-2026.md`, ale dokud se nesjednotí závislosti (P2P, audit, governance, mosty), bereme to jako ambiciózní.
+  - Pozn.: existuje i cíl odložen (TBD) v `docs/ROADMAP_2025-2026.md`, ale dokud se nesjednotí závislosti (P2P, audit, governance, mosty), bereme to jako ambiciózní.
 
 ---
 
@@ -365,9 +365,9 @@ python zion_native_miner_v2_9.py \
 - **Zdroj rozporu:** `docs/roadmaps/DAO_GOVERNANCE_COMPLETE_v2.0.md` vs `docs/roadmaps/ROADMAP_STATUS_REPORT.md`
 - **Rozhodnutí v masteru:** brát jako „neověřeno“; ověřit existenci souborů/contractů/testů v repu a stav v CI.
 
-### R3 — Mainnet datum: 31.12.2026 vs 31.12.2027
+### R3 — Mainnet datum: postponed (TBD) vs 31.12.2027
 - **Zdroj rozporu:** `docs/ROADMAP_2025-2026.md` vs `docs/2.9/ROADMAP_REALISTIC_v2.9_2025-2027.md`
-- **Rozhodnutí v masteru:** kanonický termín je 31.12.2027; 31.12.2026 je ambiciózní stretch.
+- **Rozhodnutí v masteru:** kanonický termín je 31.12.2027; odložen (TBD) je ambiciózní stretch.
 
 ### R4 — WARP2/AI3: „complete“ vs „implementation plan“
 - **Zdroj rozporu:** `docs/roadmaps/COMPLETE_WARP2_AI_v3.0.md` vs `docs/roadmaps/IMPLEMENTATION_PLAN_WARP2_AI3.md`

@@ -17,7 +17,7 @@
 
 ### Automation Scripts (2 soubory)
 - ✅ **expire-wallets.php** (150 řádků) - Cron: denní expiration check (3:00 AM)
-- ✅ **distribute-tokens.php** (400 řádků) - MainNet distribution 31.12.2026 s dry-run mode
+- ✅ **distribute-tokens.php** (400 řádků) - MainNet distribution odložen (TBD) s dry-run mode
 
 ### Frontend (2 soubory)
 - ✅ **dashboard-presale.html** (600 řádků) - Live dashboard s countdown, progress bar, stats, lookup
@@ -124,7 +124,7 @@ dashboard-presale.html (customer lookup)
   ↓
 admin/index.php (admin management)
   ↓
-31.12.2026: distribute-tokens.php (MainNet)
+postponed (TBD): distribute-tokens.php (MainNet)
 ```
 
 ---
@@ -171,7 +171,7 @@ admin/index.php (admin management)
 
 ### Stored Procedures:
 1. **sp_expire_unpaid_wallets()** - Expiruje wallets s pending_payment > 30 days
-2. **sp_queue_distributions()** - Batch preparation pro Dec 31 2026
+2. **sp_queue_distributions()** - Batch preparation pro postponed (TBD)
 
 ---
 
@@ -360,7 +360,7 @@ curl http://localhost/api/presale/presale-stats.php | jq
 - ✅ Live dashboard s real-time stats
 - ✅ Admin panel pro management
 - ✅ Automated wallet expiration
-- ✅ MainNet distribution script (ready for Dec 31 2026)
+- ✅ MainNet distribution script (ready for public launch, postponed (TBD))
 - ✅ Professional email templates
 - ✅ Comprehensive documentation
 
@@ -376,7 +376,7 @@ curl http://localhost/api/presale/presale-stats.php | jq
 # Change default passwords BEFORE going live!
 ```
 
-**Countdown to MainNet: 390 dní (31. 12. 2026) 🚀**
+**Countdown to MainNet: 390 dní (odložen (TBD)) 🚀**
 
 ---
 

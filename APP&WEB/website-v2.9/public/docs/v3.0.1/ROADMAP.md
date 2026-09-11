@@ -13,7 +13,7 @@ Operational + security **canonical status**: [`StatusV3.md`](../StatusV3.md). Th
 
 - **TestNet genesis**: 4 December 2025 — first block, intent, architecture, germ of the network.
 - **MainNet Genesis TerraNova**: 11 June 2026 — controlled Core + Edge mainnet launch.
-- **Public launch for everyone**: 31 December 2026 (New Year's Eve).
+- **Public launch for everyone**: postponed (TBD).
 
 ### June 2026 hot fixes (miner hardening)
 

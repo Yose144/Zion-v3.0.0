@@ -172,7 +172,7 @@ bdd0bf4 feat: koala.md status report + L5/L6 vision + cleanup
 9. **L3 NCL ONNX backend**: Reálný inference engine
 10. **L5/L6 coinbase fund**: Implementace v `reward.rs`
 11. **3rd party security audit**
-12. **MainNet fork activation** (target: 31. 12. 2026)
+12. **MainNet fork activation** (target: postponed (TBD))
 
 ---
 

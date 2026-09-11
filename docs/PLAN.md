@@ -3,7 +3,7 @@
 > **Vytvořeno**: 9. února 2026  
 > **Autor**: yeshuae + AI copilot  
 > **Stav**: Fáze 1 DOKONČENA — Error 21 fix deployed, GPU mining stable  
-> **Cíl**: Přechod do Fáze 2 a příprava na Mainnet 31.12.2026  
+> **Cíl**: Přechod do Fáze 2 a příprava na Mainnet odložen (TBD)  
 > **Poslední commit**: `d3fbd0d` — fix: resolve Stratum Error 21 (Job not found)
 
 ---
@@ -218,7 +218,7 @@ Květen–Červen 2026
 ├── Final freeze
 └── Community onboarding
 │
-31. Prosince 2026
+odložen (TBD)
 └── 🚀 MAINNET GENESIS
 ```
 

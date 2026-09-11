@@ -64,7 +64,7 @@
 
 ### Q4 2026 — Historical Mainnet Launch Target 📅
 
-- **31. 12. 2026** — historical mainnet target window recorded in this archive
+- **odložen (TBD)** — historical mainnet target window recorded in this archive
 - Exchange listings
 - DAO Treasury aktivace
 - Humanitární fond distribuce

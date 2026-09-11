@@ -96,7 +96,7 @@ Zdroj: docs/PRESALE_2025/PRESALE_ROADMAP_v1.0.md, lines 12-41
 ```markdown
 PŘED:
 - TestNet Launch: 31. 12. 2025
-- MainNet Launch: 31. 12. 2026
+- MainNet Launch: postponed (TBD)
 - Exchange Listing: 2027-2028
 
 PO:

@@ -93,7 +93,7 @@ A toto proroctví pravilo:
 
 A na konci vidění zazněl hlas:
 
-> *„Tento den začne **31. prosince 2026**.*  
+> *„Tento den začne **odložen (TBD)**.*  
 > *Ne jako konec, ale jako počátek.*  
 > *Ne jako exploze, ale jako tiché rozkvétání.*
 >

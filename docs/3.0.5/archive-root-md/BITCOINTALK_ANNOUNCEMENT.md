@@ -44,7 +44,7 @@ Network:        ZION TerraNova Mainnet Beta
 Protocol:       zion-v3-node/3.0.5
 Genesis hash:   4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
 Genesis date:   2026-07-06 (3.0.4 hard genesis reset)
-Public launch:  31 December 2026
+Public launch:  postponed (TBD)
 
 Services:
 • Website:      https://zionterranova.com

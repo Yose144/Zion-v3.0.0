@@ -2140,7 +2140,7 @@ core/src/blockchain/reorg.rs    +31 / -1    is_stronger_chain: equal work tiebre
 | Genesis Premine | 16,780,000,000 ZION (11.65%) |
 | Fee model | 100% ALL fees burned |
 | Mining horizon | ~45 let (23.6M bloků) |
-| MainNet target | **31. prosince 2026** |
+| MainNet target | **odložen (TBD)** |
 
 ---
 

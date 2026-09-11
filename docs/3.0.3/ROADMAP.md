@@ -19,7 +19,7 @@
 | **3.0.3 Decimal Fork** | 27 June 2026 | ✅ **DEPLOYED** (Edge, MIGRATION_HEIGHT=18850) |
 | **Pool Persistence + TX Index** | 28 June 2026 | ✅ **DEPLOYED** (Session 3, Edge) |
 | **Uniswap V3 Pools + Liquidity** | 29 June 2026 | ✅ **DEPLOYED** (Session 4, Base mainnet) |
-| **Mainnet Genesis #0** | 31 December 2026 | Ready for launch |
+| **Mainnet Genesis #0** | postponed (TBD) | Ready for launch |
 | **Summer Solstice rehearsal** | 20 June 2026 | Completed (internal) |
 
 ---

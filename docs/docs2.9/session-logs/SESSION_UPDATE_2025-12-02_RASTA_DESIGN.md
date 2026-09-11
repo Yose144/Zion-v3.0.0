@@ -24,7 +24,7 @@
 - Rasta footer s gradient border
 
 #### Zachovaná funkcionalita:
-- ✅ Countdown timer (MainNet 31.12.2026)
+- ✅ Countdown timer (MainNet odložen (TBD))
 - ✅ Progress bar (tokens sold / 500M)
 - ✅ Stats cards (total orders, paid, wallets, revenue, avg)
 - ✅ Phase indicator (Phase 1/2/3 pricing)
@@ -51,7 +51,7 @@
 
 #### Hero Section:
 - Background image `org1.jpg` (stejné jako main dashboard)
-- Version badge "Token Presale · MainNet 31.12.2026"
+- Version badge "Token Presale · MainNet odložen (TBD)"
 - Countdown timer s gold borders
 - CTA buttons: "Koupit ZION Tokeny" + "Whitepaper"
 
@@ -232,4 +232,4 @@ open http://localhost/V2/dashboard-presale.html
 
 ---
 
-**Countdown to MainNet: 394 dní (31. 12. 2026) 🦁**
+**Countdown to MainNet: 394 dní (odložen (TBD)) 🦁**

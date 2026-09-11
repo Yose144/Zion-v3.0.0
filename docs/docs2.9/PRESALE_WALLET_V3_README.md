@@ -298,7 +298,7 @@ python3 wallet_api_v3.py &
 
 ## MainNet Airdrop
 
-Po spuštění ZION MainNetu (31.12.2026):
+Po spuštění ZION MainNetu (odložen (TBD)):
 
 ### 1. Export všech pending walletů
 

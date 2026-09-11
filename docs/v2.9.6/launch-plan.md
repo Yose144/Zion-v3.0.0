@@ -1,6 +1,6 @@
 # 🚀 Mainnet Launch plán
 
-> *Cíl: 31. prosince 2026. Od testnetu k mainnetu.*
+> *Cíl: odložen (TBD). Od testnetu k mainnetu.*
 
 ---
 
@@ -65,7 +65,7 @@
 | Seed node deployment (3+ kontinenty) | ⏳ |
 | Mainnet config finalizace | ⏳ |
 | Emission schedule DAO vote | ⏳ |
-| **🚀 MAINNET LIVE: 31. 12. 2026** | ⏳ |
+| **🚀 MAINNET LIVE: postponed (TBD)** | ⏳ |
 
 ---
 

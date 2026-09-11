@@ -1538,14 +1538,14 @@ FAIR LAUNCH MODEL (aktivní):
 | **Q2 2025** | TestNet beta (veřejný) | ✅ Done |
 | **31.12.2025** | TestNet v2.9.5 launch | ✅ Live |
 | **Q1-Q3 2026** | TestNet stabilizace, audity | ⏳ In Progress |
-| **31.12.2026** | **MainNet Genesis** | 📅 Plánováno |
+| **odložen (TBD)** | **MainNet Genesis** | 📅 Plánováno |
 
 ### Genesis Block
 
 ```
 ZION MainNet Genesis Block
 ═══════════════════════════════════════════════════════════════
-Timestamp: 2026-12-31 23:59:59 UTC
+Timestamp: postponed (TBD) UTC
 Block #0: Genesis
 
 Coinbase Message:
@@ -1718,7 +1718,7 @@ GENESIS_ADDRESSES = {
 
 | Parametr | TestNet | MainNet |
 |----------|---------|---------|
-| **Status** | ✅ Aktivní | 📅 31.12.2026 |
+| **Status** | ✅ Aktivní | 📅 odložen (TBD) |
 | **Block Reward** | 50 ZION | 5,400.067 ZION |
 | **Genesis Premine** | Mock data | 16.78B skutečné |
 | **Tokeny** | Bezcenné (test) | Skutečné |
@@ -1836,7 +1836,7 @@ ZION FAIR LAUNCH PRINCIPLES:
 ═══════════════════════════════════════════════════════════════
 ```
 
-**MainNet Genesis:** 31. prosince 2026, 23:59:59 UTC
+**MainNet Genesis:** odložen (TBD), 23:59:59 UTC
 
 ---
 
@@ -3767,7 +3767,7 @@ NOVEMBER 2026
 ├── 📅 Bug bounty escalation
 └── 📅 24/7 monitoring activated
 
-DECEMBER 31, 2026 — GENESIS BLOCK 🌟
+postponed (TBD) — GENESIS BLOCK 🌟
 ├── 🚀 MainNet Genesis at 23:59:59 UTC
 ├── 🚀 Genesis premine distributed (16.78B ZION)
 ├── 🚀 Mining officially begins
@@ -3780,7 +3780,7 @@ DECEMBER 31, 2026 — GENESIS BLOCK 🌟
 ### Genesis Timeline
 
 ```
-Genesis Night (Dec 31, 2026):
+Genesis Night (postponed (TBD)):
 ═══════════════════════════════════════════════════════════════
 
 23:00 UTC — Final TestNet shutdown
@@ -3790,7 +3790,7 @@ Genesis Night (Dec 31, 2026):
 23:59:59 UTC — GENESIS BLOCK MINED 🚀
 
 Block #0:
-├── Timestamp: 2026-12-31 23:59:59 UTC
+├── Timestamp: postponed (TBD) UTC
 ├── Coinbase: "Where Technology Meets Spirit"
 ├── Genesis allocation: 16,780,000,000 ZION
 └── Difficulty: Initial calibrated value
@@ -4033,7 +4033,7 @@ ROADMAP SUMMARY:
 ├── Q1: Documentation, GPU mining, wallets
 ├── Q2: Security audit, NCL expansion, DAO alpha
 ├── Q3: MainNet preparation, feature freeze
-└── Q4: 🚀 MAINNET GENESIS (Dec 31, 2026)
+└── Q4: 🚀 MAINNET GENESIS (postponed (TBD))
 
 2027:
 ├── Q1: Stabilization, first humanitarian projects
@@ -4055,7 +4055,7 @@ Q1        Q2        Q3        Q4                   Q1-Q4
 │         │         │         │                       │
 │ TestNet │ Audit   │ Prep    │ 🚀 MAINNET          │ Growth
 │ Polish  │ NCL     │ Freeze  │ GENESIS             │ Scale
-│ Wallets │ DAO     │ Ready   │ 31.12.2026          │ Evolve
+│ Wallets │ DAO     │ Ready   │ postponed (TBD)          │ Evolve
 │         │         │         │                       │
 └─────────┴─────────┴─────────┴───────────────────────┘
 ```
@@ -4069,7 +4069,7 @@ Q1        Q2        Q3        Q4                   Q1-Q4
 *"The best time to plant a tree was 20 years ago. The second best time is now."*  
 **— Chinese Proverb**
 
-**MainNet Genesis: December 31, 2026** 🚀
+**MainNet Genesis: postponed (TBD)** 🚀
 
 
 # 🌟 Kapitola 10: Závěr & Výzva k akci
@@ -4167,7 +4167,7 @@ ZION is Different:
 | **Genesis Premine** | 11.65% (transparentní) |
 | **VC Allocation** | 0% |
 | **Team Allocation** | 0% |
-| **MainNet Launch** | 31.12.2026 |
+| **MainNet Launch** | postponed (TBD) |
 
 ---
 
@@ -4450,7 +4450,7 @@ Chapter 8: NCL NEURAL COMPUTE
 └── AI inference as additional miner revenue stream
 
 Chapter 9: ROADMAP
-└── TestNet now → MainNet Dec 31, 2026 → Scale 2027+
+└── TestNet now → MainNet postponed (TBD) → Scale 2027+
 
 Chapter 10: CONCLUSION
 └── Join us. Mine with purpose. Build the future.
@@ -4462,7 +4462,7 @@ Chapter 10: CONCLUSION
                     🌟 ZION TERRANOVA 🌟
 
                     MainNet Launch:
-                  December 31, 2026
+                  postponed (TBD)
                     23:59:59 UTC
 
 ═══════════════════════════════════════════════════════════════

@@ -7312,16 +7312,14 @@ async function loadLaunchDayStatus(){
       badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-600 text-white';
     }
 
-    // countdown
+    // countdown (no fixed launch date — TBD / postponed)
     const daysEl = document.getElementById('ld-days');
     if(daysEl){
       if(res.is_launch_day){
         daysEl.textContent = 'TODAY!';
         daysEl.className = 'text-3xl font-bold text-emerald-400 mb-1 animate-pulse';
       } else {
-        const ms = new Date('2026-12-31T12:00:00Z') - Date.now();
-        const days = Math.ceil(ms / 86400000);
-        daysEl.textContent = days > 0 ? days + ' days' : 'LAUNCH!';
+        daysEl.textContent = 'TBD';
         daysEl.className = 'text-3xl font-bold text-amber-400 mb-1';
       }
     }
@@ -9415,24 +9413,12 @@ function logSelectAndOpen(svcId) {
   document.getElementById('log-terminal-output')?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// ── Launch Day countdown ───────────────────────────────────────────────
+// ── Launch Day countdown (TBD / postponed — no fixed launch date) ─────
 function startLaunchCountdown(){
   const el = document.getElementById('launch-countdown');
   if(!el) return;
-  const target = new Date('2026-12-31T12:00:00Z');
-  function tick(){
-    const now = new Date();
-    const diff = target - now;
-    if(diff <= 0){ el.textContent = '🚀 LAUNCH NOW'; return; }
-    const d = Math.floor(diff/86400000);
-    const h = Math.floor((diff%86400000)/3600000);
-    const m = Math.floor((diff%3600000)/60000);
-    const s = Math.floor((diff%60000)/1000);
-    el.textContent = `${d}d ${h}h ${m}m ${s}s`;
-  }
-  tick();
   if(_countdownTimer) clearInterval(_countdownTimer);
-  _countdownTimer = setInterval(tick, 1000);
+  el.textContent = 'TBD';
 }
 
 // ── Hook into switchTab for logs ─────────────────────────────────────────

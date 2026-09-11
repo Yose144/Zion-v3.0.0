@@ -2,7 +2,7 @@
 
 **Status:** ✅ Active  
 **Launch Date:** 10.01.2026  
-**Network Type:** TestNet (Bridge to MainNet 31.12.2026)
+**Network Type:** TestNet (Bridge to MainNet postponed (TBD))
 
 ---
 
@@ -272,11 +272,11 @@ ssh root@77.42.31.72 \
 - Fast block production (easy PoW)
 - No consciousness multipliers
 - Focus on infrastructure testing
-- Preparing for MainNet launch 31.12.2026
+- Preparing for MainNet launch postponed (TBD)
 
 ---
 
 **Last Updated:** 10.01.2026 07:00 UTC  
 **Maintained by:** ZION Core Team  
 **TestNet Launch:** 31.12.2025  
-**MainNet Launch:** 31.12.2026
+**MainNet Launch:** postponed (TBD)

@@ -48,7 +48,7 @@ Each episode follows the rule of absolute honesty: **a beautiful archetypal stor
 | 9 | [Crystalline Worlds of OASIS](./09-Krystalicke-Svety-Oasis.md) | **OASIS Metaverse** · *L4 Unreal Engine 5.7* | Nanite/Lumen photorealism, instant WebGPU/Pixel Streaming preview, Dharma Temple, and avatars. |
 | 10 | [Springs of Life](./10-Prameny-Zivota.md) | **Free World** · *L5 Planetary Ecology* | 5% of every block dedicated to clean water, reforestation, seed banks, and community microgrids. |
 | 11 | [Quantum Fire Issobella](./11-Kvantovy-Ohen-Issobella.md) | **Warp Engine** · *L6 Deep Science* | 5% science stream, Alcubierre-Ekam metric, harmonic $\Phi$ resonances, and open DeSci repository. |
-| 12 | [The Grand Unification](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Amenti Mission* | Unification of all six layers, return of global attention to creation, launch 31 Dec 2026. |
+| 12 | [The Grand Unification](./12-Velke-Sjednoceni.md) | **Grand Unification** · *Amenti Mission* | Unification of all six layers, return of global attention to creation, launch postponed (TBD). |
 
 ---
 

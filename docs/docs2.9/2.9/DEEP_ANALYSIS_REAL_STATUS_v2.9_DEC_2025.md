@@ -9,7 +9,7 @@
 ## 🎯 EXECUTIVE SUMMARY - HARD TRUTH
 
 ### MainNet Timeline
-- **Original promise:** 31. prosince 2026
+- **Original promise:** odložen (TBD)
 - **Updated by user:** 31. prosince 2027 ✅ (CORRECT DECISION)
 - **Realistic ETA:** Červenec 2027 (s 6 měsíčním bufferem)
 
@@ -337,7 +337,7 @@ Priority: P1 (Important for cross-chain, not launch blocker)
 ### Original Promise (UNREALISTIC)
 ```
 Dec 31, 2025: TestNet launch ❌ (17 dní, nemožné)
-Dec 31, 2026: MainNet launch ❌ (bez P2P, bez auditů)
+postponed (TBD): MainNet launch ❌ (bez P2P, bez auditů)
 ```
 
 ### User's Decision (REALISTIC)
@@ -364,7 +364,7 @@ Sep 30, 2026:  WARP bridges testnet (BTC, ETH)
 
 📅 PHASE 4: MainNet Prep (Q4 2026 - Q2 2027)
 Oct 1, 2026:   Exchange integration testing
-Dec 31, 2026:  Bug bounty program ($100k)
+postponed (TBD):  Bug bounty program ($100k)
 Mar 31, 2027:  MainNet dress rehearsal
 Jun 30, 2027:  Final go/no-go decision
 

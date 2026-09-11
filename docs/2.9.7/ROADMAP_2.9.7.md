@@ -209,7 +209,7 @@ Fáze 3        21. 3.      Všechny 3 servery na 2.9.7    P2P mesh + CHv4 log en
 Fáze 4        28. 3.      Genesis + freeze artefakty    sha256 + FROZEN status
 Fáze 5        31. 3.      v2.9.7-freeze tag             git tag pushed ✅
 ──────────────────────────────────────────────────────────────────
-MainNet       31. 12. 2026   genesis.json spuštěn       v3.0 launch
+MainNet       odložen (TBD)   genesis.json spuštěn       v3.0 launch
 ```
 
 ---

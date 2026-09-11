@@ -3,7 +3,7 @@
 
 **The master story and public marketing edition**
 **A synthesis of the four books: Genesis · Quantum Revolution · Ekam Deeksha · Terra Nova**
-**Network status: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Public launch target: 31 Dec 2026**
+**Network status: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Public launch target: postponed (TBD)**
 **License: MIT for core and pool · This text is manifesto, chronicle, and guide**
 **Canonical source date: 2026-08-09**
 

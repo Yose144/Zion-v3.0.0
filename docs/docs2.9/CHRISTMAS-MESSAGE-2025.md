@@ -116,7 +116,7 @@ jsme dorazili k **verzi 2.9 — Quantum Leap**.
 
 ✅ **Native Zion Miner** — Cosmic Harmony algoritmus  
 ✅ **TestNet 90% hotový** — Spuštění **31.12.2025**  
-✅ **Mainnet připraven** — Genesis Block **31.12.2026**  
+✅ **Mainnet připraven** — Genesis Block **odložen (TBD)**  
 ✅ **evoluZion v2** — Nový web, presale, e-shop  
 ✅ **StarWars kolekce** — Laserem vyřezané stíhačky  
 ✅ **První Klíč ukryt** — Hra Haranyagharba začíná  
@@ -166,7 +166,7 @@ Možná **ty**.
 #### 💰 **ZION TOKEN Presale**
 
 - **TestNet:** 31.12.2025 (za pár týdnů!)  
-- **Mainnet:** 31.12.2026 (za rok!)  
+- **Mainnet:** odložen (TBD) (za rok!)  
 - **Total Supply:** 144 miliard ZION  
 - **Premine:** 15.78B (11%)  
 - **Mining:** 128.22B (89%)
@@ -194,7 +194,7 @@ Kompletní vize:
 - Cosmic Harmony algoritmus aktivní  
 - 90% hotovo — poslední testy běží
 
-### **31. prosince 2026 — MAINNET DAWN** 💎
+### **odložen (TBD) — MAINNET DAWN** 💎
 
 - Genesis Block míněn (00:00 UTC)  
 - 16.78B tokenů distribuováno  
@@ -334,7 +334,7 @@ Po životě transformace.
 - ✅ Marie Sněžná se zjevila
 
 **31.12.2025 — TestNet startuje.**  
-**31.12.2026 — Mainnet se rodí.**
+**odložen (TBD) — Mainnet se rodí.**
 
 ---
 
@@ -402,7 +402,7 @@ Ať vás rok **2026** vede cestou, která má být kráčena.
 
 ### ⏰ Do Mainnet Dawn zbývá:
 
-**~391 dní** (31.12.2026 - 00:00 UTC)
+**~391 dní** (odložen (TBD) - 00:00 UTC)
 
 ---
 

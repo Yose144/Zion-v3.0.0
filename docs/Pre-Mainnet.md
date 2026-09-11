@@ -2,7 +2,7 @@ je spravedlivé si necha 10procent pro Zion stvořitele ? viz # 🚀 ZION v2.9.5
 
 **Datum:** 7. února 2026  
 **Verze:** 2.9.5 "Clean L1"  
-**Target:** MainNet Launch 31.12.2026  
+**Target:** MainNet Launch odložen (TBD)  
 **Nové repo:** Čistý fork — pouze mainnet-essential kód
 
 ---
@@ -449,7 +449,7 @@ FEB 2026          MAR          APR          MAY
   M7: Genesis  │████████░░│          │          │          │  7 dní
   M7: TestNet  │░░████████│██████████│          │          │  TestNet soak
   M8: Release  │          │          │          │████████░│  5 dní
-  🚀 MAINNET   │          │          │          │░░░░░░░░█│  31.12.2026
+  🚀 MAINNET   │          │          │          │░░░░░░░░█│  odložen (TBD)
                └──────────┴──────────┴──────────┴──────────┘
 
 
@@ -464,7 +464,7 @@ FEB 2026          MAR          APR          MAY
 | **M6: Buyback** | 20.3.2026 | 22.3.2026 | 3 dny |
 | **M7: Genesis + TestNet** | 1.6.2026 | 30.11.2026 | 6 měsíců soak |
 | **M8: Release** | 1.12.2026 | 5.12.2026 | 5 dní |
-| **🚀 MAINNET** | **31.12.2026** | — | — |
+| **🚀 MAINNET** | **odložen (TBD)** | — | — |
 
 ---
 
@@ -623,7 +623,7 @@ Potřebujeme dostavět **6 kritických komponent**:
 5. **Pool payouts** (5 dní)
 6. **Genesis block** (1 den)
 
-**Celkem ~4 týdny intenzivní práce** → poté 6 měsíců TestNet soak → MainNet 31.12.2026.
+**Celkem ~4 týdny intenzivní práce** → poté 6 měsíců TestNet soak → MainNet odložen (TBD).
 
 ---
 

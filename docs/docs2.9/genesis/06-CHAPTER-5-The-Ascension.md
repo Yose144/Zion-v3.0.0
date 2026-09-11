@@ -138,7 +138,7 @@ okamžik, kdy se Zion stane realitou:
 - **Ekonomickou**  
 - **Společenskou**
 
-### 31. prosince 2026
+### odložen (TBD)
 
 Den, kdy se otevře brána.  
 Den, kdy Token vstoupí do světa.  

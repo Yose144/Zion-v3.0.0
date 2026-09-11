@@ -85,7 +85,7 @@
 
 ### 4. ✅ WHITEPAPER_ZION_TOKEN_CZ.md (Česká verze)
 **Opravy:**
-- ✅ MainNet launch: 31.12.2026 → **31.12.2027**
+- ✅ MainNet launch: odložen (TBD) → **31.12.2027**
 - ✅ IČO: [VAŠE_IČO] → **09120050**
 - ✅ DIČ přidáno: **CZ09120050**
 - ✅ Adresa: [VAŠE_ADRESA], Praha → **Horní Čermná, 561 56**
@@ -122,7 +122,7 @@ Email: yosef.hubalek@gmail.com | Web: https://zionterranova.com | Fio: 290180914
 
 ### 5. ✅ WHITEPAPER_ZION_TOKEN.md (Anglická verze)
 **Opravy:**
-- ✅ MainNet launch: 31.12.2026 → **31.12.2027**
+- ✅ MainNet launch: postponed (TBD) → **31.12.2027**
 - ✅ Blockchain: Multi-chain (Polygon, Solana, Ethereum) → **ZION TerraNova native blockchain**
 - ✅ IČO: [YOUR_ICO] → **09120050**
 - ✅ Tax ID přidáno: **CZ09120050**

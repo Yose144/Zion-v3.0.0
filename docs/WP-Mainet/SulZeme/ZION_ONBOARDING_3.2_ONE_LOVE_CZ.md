@@ -2,7 +2,7 @@
 ## Onboarding & Sůl Země — Kanonický průvodce pro Mainnet Stable 3.2 "One Love"
 
 **Příběh, který si můžeš ověřit. Síť, na kterou můžeš vstoupit dnes.**
-**Stav sítě: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Cíl veřejného launchi: 31. 12. 2026**
+**Stav sítě: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Cíl veřejného launchi: odložen (TBD)**
 **Jazyk:** čeština — [English version](./ZION_ONBOARDING_3.2_ONE_LOVE_EN.md)
 **Kanonický zdroj:** 2026-08-09
 

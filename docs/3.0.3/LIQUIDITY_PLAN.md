@@ -433,7 +433,7 @@ Fáze 3 (2027-Q2): Odemknutí + First Proposals
 | 20 | DAO treasury UI on-chain | 2027-Q1 |
 | 21 | DAO treasury cliff + first proposals | 2027-Q2 |
 | 22 | WARP Solana + Cosmos adapters | 2027 |
-| 23 | Plný veřejný launch (31.12.2026) | 2026-12-31 |
+| 23 | Plný veřejný launch (odložen (TBD)) | odložen (TBD) |
 
 ---
 

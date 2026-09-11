@@ -11,7 +11,7 @@ ZION is a **proof-of-work blockchain** that wants to be a compass for a new econ
 - **Hard cap:** 144,000,000,000 ZION
 - **Block time:** ~60 s
 - **Block reward (Decade 1, 2026–2036):** 5,400.067 ZION — the highest in the network's history
-- **Genesis:** August 8, 2026 — after two hard resets, the third and final genesis; this chain is the **Mainnet Launch for December 31, 2026**
+- **Genesis:** August 8, 2026 — after two hard resets, the third and final genesis; this chain is the **Mainnet Launch — postponed (TBD)**
 - **Code license:** MIT
 
 ---

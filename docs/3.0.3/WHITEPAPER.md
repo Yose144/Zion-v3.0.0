@@ -3,7 +3,7 @@
 ### Proof-of-Work for the next 100 years. From blockchain to the stars.
 
 **Version:** 3.0.2 (Public Edition) · **Date:** June 2026 · **License:** MIT (open source)
-**Status:** Mainnet code line active · Genesis launch **31 December 2026**
+**Status:** Mainnet code line active · Genesis launch **postponed (TBD)**
 
 > *"In code we trust. 144 billion ZION. Not one satoshi more."*
 
@@ -307,7 +307,7 @@ Governance decentralizes in phases: off-chain signaling (2025–2026) → on-cha
 | L3 WARP + NCL + AI-Native | Complete |
 | External security audit | Q3 2026 |
 | Mobile wallet (iOS + Android) | Q3 2026 |
-| **Mainnet Genesis #0** | **31 December 2026** |
+| **Mainnet Genesis #0** | **postponed (TBD)** |
 | wZION multi-chain (Base / Arbitrum / BSC) | Q4 2026 |
 | L4 OASIS XP rollout | 2028 |
 | L5 Free World foundation | 2030 |

@@ -11,7 +11,7 @@ const Article = {
     date: '11. září 2026',
     title: 'Veřejný launch ZION TerraNova se odkládá',
     intro:
-      'Přátelé, komunito, podporovatelé. Musíme k vám být upřímní: plánovaný veřejný launch ZION TerraNova na 31. prosince 2026 se neuskuteční v původně avizované podobě. Toto rozhodnutí nebylo snadné, ale považujeme ho za odpovědné. Projekt ještě není připraven na plnohodnotný veřejný start a my raději pošleme do světa něco, na čem skutečně stojíme, než abychom spěchali kvůli datu v kalendáři.',
+      'Přátelé, komunito, podporovatelé. Musíme k vám být upřímní: plánovaný veřejný launch ZION TerraNova je odložen (TBD); neuskuteční se v původně avizované podobě. Toto rozhodnutí nebylo snadné, ale považujeme ho za odpovědné. Projekt ještě není připraven na plnohodnotný veřejný start a my raději pošleme do světa něco, na čem skutečně stojíme, než abychom spěchali kvůli datu v kalendáři.',
     apologyTitle: 'Omlouváme se a děkujeme za trpělivost',
     apologyBody:
       'Víme, že mnozí z vás čekali na otevřenou síť, plnohodnotnou burzovní likviditu a uvedení na CoinGecko. Nestalo se. Důvodem není jedna konkrétní chyba, ale soubor požadavků, které ZION ještě nesplňuje na úrovni, jakou považujeme za nezbytnou pro veřejný launch bez rizika pro uživatele a reputaci projektu. Omlouváme se za zklamání, které to přináší. Zároveň děkujeme každému, kdo do ZION vkládal čas, hashrate, zpětnou vazbu i víru.',
@@ -56,7 +56,7 @@ const Article = {
     date: '11 September 2026',
     title: 'ZION TerraNova public launch is postponed',
     intro:
-      'Friends, community, supporters. We need to be honest with you: the planned public launch of ZION TerraNova on 31 December 2026 will not happen in the form we announced. This decision was not easy, but we believe it is the responsible one. The project is not yet ready for a full public start, and we would rather deliver something we truly stand behind than rush to meet a date on the calendar.',
+      'Friends, community, supporters. We need to be honest with you: the planned public launch of ZION TerraNova is postponed (TBD); it will not happen in the form we announced. This decision was not easy, but we believe it is the responsible one. The project is not yet ready for a full public start, and we would rather deliver something we truly stand behind than rush to meet a date on the calendar.',
     apologyTitle: 'Our apology and thanks for your patience',
     apologyBody:
       'We know that many of you were waiting for the open network, full exchange liquidity, and a CoinGecko listing. It did not happen. The reason is not a single bug, but a set of requirements that ZION has not yet met at the level we consider essential for a public launch without risk to users and to the project’s reputation. We are sorry for the disappointment this brings. At the same time, we thank everyone who has put time, hashrate, feedback, and belief into ZION.',

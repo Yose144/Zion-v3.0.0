@@ -4,7 +4,7 @@
 **Datum:** Červenec 2026  
 **Autoři:** ZION Open-Source Contributors  
 **Licence kódu:** MIT  
-**Stav:** Mainnet Beta — 11/11 služeb aktivních, protocol `zion-v3-node/3.1.0-alpha`, veřejný launch 31. prosince 2026  
+**Stav:** Mainnet Beta — 11/11 služeb aktivních, protocol `zion-v3-node/3.1.0-alpha`, veřejný launch odložen (TBD)  
 **Jazyk:** Čeština
 
 > **Kanonický zdroj pravdy:** Tento dokument nahrazuje všechny předchozí drafty whitepaperů, včetně `docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0_CZ.md`, `docs/WP3.0/WHITEPAPER_v3.0.md` a legacy verzí 2.9.x. Pro aktuální technickou pravdu ověřujte `StatusV3.md`, `V3/ROADMAP.md`, `3.0.5.md` a kód v `V3/`.
@@ -68,7 +68,7 @@ Klíčové parametry na první pohled:
 | **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | **Živá výška** | 827+ a roste |
 | **Produkční server** | `zionterranova.com` |
-| **Cíl veřejného launchi** | 31. prosince 2026 |
+| **Cíl veřejného launchi** | odložen (TBD) |
 
 Z každé odměny za blok putuje **10 %** automaticky na humanitární a vědecké účely: 5 % do Humanitárního fondu a 5 % do fondu L5/L6 Issobella. Dalších 1 % je protokolem spáleno. Toto rozdělení vynucuje samotný protokol a nelze jej změnit hlasováním DAO.
 
@@ -859,7 +859,7 @@ Při selhání se poplatky obnoví přes `restore_fees()` a retry se provede př
 | v3.0.4 | 6. 7. 2026 | Live | Hard genesis reset, DeFi deploy, bezpečnostní fixy |
 | **v3.0.5** | **9. 7. 2026** | **Mainnet Beta** | **All Green — 11/11 služeb aktivních** |
 | v3.1.0 | Q4 2026 | Plánováno | Wallet SDK, mobilní appka, L4 OASIS backend, externí audit |
-| **v3.x veřejný launch** | **31. 12. 2026** | **Cíl** | **Veřejný mainnet launch** |
+| **v3.x veřejný launch** | **odložen (TBD)** | **Cíl** | **Veřejný mainnet launch** |
 
 ### 18.2 Klíčové milníky
 
@@ -872,7 +872,7 @@ Při selhání se poplatky obnoví přes `restore_fees()` a retry se provede př
 | Non-EVM Solana + Stellar | 13. 7. 2026 | SPL token + native asset live |
 | Bezpečnostní audit | Q4 2026 | Žádné kritické zranitelnosti |
 | Mobilní wallet | Q4 2026 | iOS + Android App Store submission |
-| **Veřejný mainnet launch** | **31. 12. 2026** | **Veřejné těžba a používání** |
+| **Veřejný mainnet launch** | **odložen (TBD)** | **Veřejné těžba a používání** |
 | 1. Decade Decay | 2036 | Block reward → 4 320 ZION |
 | L5 Free World | 2030 | Nadace + výzkumné laboratoře |
 | L6 Issobella start | 2040 | Space Division iniciován |

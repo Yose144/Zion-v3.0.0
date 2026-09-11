@@ -4509,7 +4509,7 @@ November 2026:
     - Portable mining stats
 ```
 
-### Success Criteria (by Dec 31, 2026)
+### Success Criteria (by postponed (TBD))
 
 ```yaml
 Participation:

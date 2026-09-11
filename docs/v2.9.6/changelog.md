@@ -1,6 +1,6 @@
 # 🚀 ZION v2.9.6 Changelog — Pre-Mainnet Fork
 
-> *Co je nového od v2.9.5. Cílový mainnet: 31. prosince 2026.*
+> *Co je nového od v2.9.5. Cílový mainnet: odložen (TBD).*
 
 ---
 

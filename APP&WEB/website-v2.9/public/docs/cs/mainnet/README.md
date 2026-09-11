@@ -4,7 +4,7 @@
 > **Aktuální veřejná linka:** v3.0.6 (Trinity)
 > **Runtime:** v3.0.6 Ekam Deeksha — kanonický, 6-desetinné flowers
 > **Stav:** Mainnet Beta — live, pool aktivní, mining v provozu
-> **Oficiální veřejný launch:** 31. prosince 2026
+> **Oficiální veřejný launch:** odložen (TBD)
 > **Síť:** `zion-mainnet-1`
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
@@ -20,7 +20,7 @@ V praxi to znamená:
 - ✅ Mining je aktivní a generuje reálné block rewards.
 - ✅ DeFi, bridge, DAO a WARP služby jsou nasazeny.
 - ⚠️ Síť může stále obsahovat chyby. Těžte, bridgujte a participujte **na vlastní riziko**.
-- 🗓️ **Oficiální veřejné spuštění** a širší exchange / marketingová kampaň zůstávají **31. prosince 2026**.
+- 🗓️ **Oficiální veřejné spuštění** a širší exchange / marketingová kampaň zůstávají **odloženy (TBD)**.
 
 > **Proč Beta a ne finální spuštění?** Genesis v červnu 2026 byl čistý start, ale několik bezpečnostních incidentů (F1 padělané podpisy, F5 chyba neomezené inflace, kompromitace serveru) vynutilo hard reset a přestavbu. v3.0.5 je ověřený, all-green recovery stav. Nálepku „Beta“ držíme, dokud nebudou dokončeny milníky bezpečnostního auditu, rotace klíčů a externího validátor setu naplánované na Q4 2026.
 

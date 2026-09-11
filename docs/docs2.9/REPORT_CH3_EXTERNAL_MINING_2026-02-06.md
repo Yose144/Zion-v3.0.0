@@ -396,6 +396,6 @@ Status: ČEKÁ NA GPU HARDWARE
 **BTC Dashboard:** https://etc.2miners.com/account/bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw
 
 **ZION TerraNova v2.9.5 — "Quantum Leap"**
-*TestNet: 31.12.2025 → Mainnet: 31.12.2026*
+*TestNet: 31.12.2025 → Mainnet: postponed (TBD)*
 
 🌟 *"Where technology meets spirit — and hashpower meets revenue."* 🌟

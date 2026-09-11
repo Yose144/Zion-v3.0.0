@@ -9,12 +9,12 @@ content = re.sub(r"^([ \t]+)(\d[^:\s]*):", r"\1'\2':", content, flags=re.MULTILI
 
 # Fix unfinished New Year's Eve strings
 content = content.replace(
-    "en: 'V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\\' }",
-    'en: "V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\'s Eve). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet." }'
+    "en: 'V3 Mainnet is in preparation — target launch postponed (TBD) }",
+    'en: "V3 Mainnet is in preparation — target launch postponed (TBD). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet." }'
 )
 content = content.replace(
-    "en: 'Target: 31 December 2026 (New Year\\' }",
-    'en: "Target: 31 December 2026 (New Year\'s Eve)" }'
+    "en: 'Target: postponed (TBD) }",
+    'en: "Target: postponed (TBD)" }'
 )
 
 # Fix what's next string

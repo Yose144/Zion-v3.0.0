@@ -484,4 +484,4 @@ S 50/50 GPU split byly nalezeny **bloky 12-16** v ~2 minutách. Node přijal blo
 3. **Pearl PoUW** — deferred to 3.1.0 (GPU thread not yet debugged)
 4. **V3.1 migration** — clean `V31/` tree (plán hotový v `V3.1_MIGRATION_PLAN.md`)
 5. **Explorer V4** — SSE live block feed (Phase 4 done, další fáze pending)
-6. **Public launch** — 2026-12-31 (official)
+6. **Public launch** — odložen (TBD) (official)

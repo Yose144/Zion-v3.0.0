@@ -508,7 +508,7 @@ public class ZionExample {
 ---
 
 ### **Phase 4: Mainnet Preparation (Q3-Q4 2026)**
-**Duration:** July 1 - December 31, 2026
+**Duration:** July 1 - postponed (TBD)
 
 - [ ] **Mainnet SDK Features**
   - [ ] Smart contract integration (if v3.0 includes)

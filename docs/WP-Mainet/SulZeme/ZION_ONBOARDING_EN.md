@@ -590,7 +590,7 @@ rpcCall('getChainInfo').then(console.log);
 
 | Claim | Reality in code / network | Source |
 |---|---|---|
-| **Network status** | Mainnet Beta; official public launch 2026-12-31 | [`StatusV3.md`](../../../StatusV3.md), lines 7–8 |
+| **Network status** | Mainnet Beta; official public launch postponed (TBD) | [`StatusV3.md`](../../../StatusV3.md), lines 7–8 |
 | **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../../StatusV3.md), line 6; [`AGENTS.md`](../../../AGENTS.md) |
 | **Genesis story / code reality** | 4 December 2025 (story) / hard genesis reset 2026-07-20 (after block retention fix) | [`StatusV3.md`](../../../StatusV3.md), line 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 blocks; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |

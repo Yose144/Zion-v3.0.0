@@ -402,4 +402,4 @@ Phase 3 - Node 3 & USA:
 **Last Updated:** 10.01.2026 07:15 UTC  
 **Maintained by:** ZION Core Team  
 **Network Type:** TestNet  
-**MainNet Launch:** 31.12.2026
+**MainNet Launch:** postponed (TBD)

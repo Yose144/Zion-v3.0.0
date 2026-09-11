@@ -17,7 +17,7 @@
 | Consensus mechanism | Proof-of-Work (Nakamoto) |
 | Hashing / mining algorithm | Ekam Deeksha (ASIC-resistant, memory-hard) |
 | Source code | Open source (MIT) |
-| Date launched / genesis | Mainnet Genesis: 31 December 2026 |
+| Date launched / genesis | Mainnet Genesis: postponed (TBD) |
 | Country of origin | Decentralized / open-source community |
 
 ### Project description (long form)

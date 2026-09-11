@@ -166,7 +166,7 @@ COSMIC level: 3,189.26 ZION per block
 - External audit (Trail of Bits)
 - Bug Bounty ($100k)
 
-### 🎆 Phase 5: Mainnet Launch (Dec 31, 2026)
+### 🎆 Phase 5: Mainnet Launch (postponed (TBD))
 - Genesis block
 - Exchange listings
 - ZION OASIS game
@@ -242,7 +242,7 @@ COSMIC level: 3,189.26 ZION per block
 
 🌼🌼🌼🌼🌼🌼❤️🌼🌼🌼🌼🌼🌼
 
-**TestNet: 31.12.2025** | **Mainnet: 31.12.2026**
+**TestNet: 31.12.2025** | **Mainnet: postponed (TBD)**
 
 ---
 

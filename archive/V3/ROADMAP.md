@@ -299,7 +299,7 @@ Viz [`docs/DEFI_FULL_ROADMAP.md`](../docs/DEFI_FULL_ROADMAP.md) pro kompletní r
 | NCL ONNX backend | ⏳ | AI compute marketplace live |
 | WARP Bitcoin adapter | ⏳ | Cross-chain BTC bridge |
 | CoinGecko / CMC listing | ⏳ | `docs/listings/` připraveno |
-| Public launch | 2026-12-31 | New Year's Eve |
+| Public launch | odložen (TBD) | — |
 
 ---
 
@@ -311,7 +311,7 @@ Operational + security **canonical status**: [`StatusV3.md`](../StatusV3.md). Th
 
 - **TestNet genesis**: 4 December 2025 — first block, intent, architecture, germ of the network.
 - **MainNet Genesis TerraNova**: 11 June 2026 — controlled Core + Edge mainnet launch.
-- **Public launch for everyone**: 31 December 2026 (New Year's Eve).
+- **Public launch for everyone**: postponed (TBD).
 
 ### June 2026 hot fixes (miner hardening)
 

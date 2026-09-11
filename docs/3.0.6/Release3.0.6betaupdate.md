@@ -424,7 +424,7 @@ nc -zv 62.171.141.136 8444
 - [ ] ARM64 build (Raspberry Pi) — target v3.0.7
 - [ ] External security audit (Trail of Bits / Halborn / OtterSec) — Q3 2026
 - [ ] Mobile wallet (iOS + Android) — Q3 2026
-- [ ] Mainnet Alpha 3.1 public launch — 31 December 2026
+- [ ] Mainnet Alpha 3.1 public launch — postponed (TBD)
 
 ---
 

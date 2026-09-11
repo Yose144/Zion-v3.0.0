@@ -1,7 +1,7 @@
 # 📋 ZION TerraNova — TODO (Konsolidovaný po hloubkové analýze)
 
 > **Aktualizace:** 30. března 2026 (AI Native v1.0 live, Hiranyagarbha nasazen)  
-> **Cíl:** L1 MainNet Genesis **31. 12. 2026**  
+> **Cíl:** L1 MainNet Genesis **odložen (TBD)**  
 > **Scope analýzy:** všechny hlavní mainnet roadmapy + reporty + live server check přes SSH
 
 ---

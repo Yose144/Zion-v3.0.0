@@ -2,7 +2,7 @@
 
 > **One vision. One source of truth. Six layers.**
 >
-> Version: **3.0.2** · Status: **Mainnet code line active** · Launch: **31 December 2026**
+> Version: **3.0.2** · Status: **Mainnet code line active** · Launch: **postponed (TBD)**
 > Canonical code: [`V3/`](V3/) · Operational status: [`StatusV3.md`](StatusV3.md) · Plan: [`ZION_3.0.2_PLAN.md`](ZION_3.0.2_PLAN.md)
 
 This document is the **canonical, code-grounded reference** for ZION v3.0.2. Where any other

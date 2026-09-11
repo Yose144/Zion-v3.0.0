@@ -283,7 +283,7 @@ Issobella je koruna hvězd, ke které se míza může jednou zvednout.
 - **Konsensus dnes:** Proof-of-Work (Ekam Deeksha / CosmicHarmony)  
 - **Launch model:** Fair Launch  
 - **Licence kódu:** MIT  
-- **Stav:** Mainnet Beta (`3.0.5`), veřejný launch cíl 31. 12. 2026  
+- **Stav:** Mainnet Beta (`3.0.5`), cíl veřejného launchu: odložen (TBD)  
 
 ### 6.2 Ekonomika
 

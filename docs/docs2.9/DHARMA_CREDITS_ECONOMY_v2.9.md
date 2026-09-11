@@ -147,7 +147,7 @@ Sold:         45,000,000 Credits (9%)
 Raised:       €360,000
 Target:       €4,000,000 - €5,000,000
 Remaining:    455,000,000 Credits (91%)
-Launch:       December 31, 2026 (mainnet)
+Launch:       postponed (TBD) (mainnet)
 ```
 
 **Investment Examples:**
@@ -302,8 +302,8 @@ Event                   Date              Credits Released
 Presale Phase 1         Dec 2025          45M (sold so far)
 Presale Phase 2         Mar 2026          TBD
 Presale Phase 3         Sep 2026          TBD
-Mainnet Launch          Dec 31, 2026      500M (all presale)
-TGE (Token Generation)  Dec 31, 2026      Unlock wallets
+Mainnet Launch          postponed (TBD)      500M (all presale)
+TGE (Token Generation)  postponed (TBD)      Unlock wallets
 Exchange Listings       Q1 2027           Trading begins
 ```
 
@@ -515,7 +515,7 @@ Top 20 Crypto:      Realistic goal
 │                                                │
 │ Code Complete:         85%                     │
 │ Production Ready:      60%                     │
-│ Mainnet Launch:        Dec 31, 2026           │
+│ Mainnet Launch:        postponed (TBD)           │
 │                                                │
 └────────────────────────────────────────────────┘
 ```
@@ -554,6 +554,6 @@ Top 20 Crypto:      Realistic goal
 
 **Status:** 🟢 **PRESALE PHASE 1 ACTIVE**  
 **Next Phase:** Phase 2 launch when Phase 1 reaches 80% sold  
-**Mainnet:** December 31, 2026 🎯
+**Mainnet:** postponed (TBD) 🎯
 
 🕉️ **JAI RAM - Join the consciousness-based economy!** 🕉️

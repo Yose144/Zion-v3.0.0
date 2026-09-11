@@ -164,7 +164,7 @@ try {
             'dataUrl' => null, // Could generate base64 data URL if needed
             'payload' => $qrPayload
         ],
-        'warning' => 'Keep this QR code secure. It will be required to claim tokens on MainNet launch (Dec 31 2026).'
+        'warning' => 'Keep this QR code secure. It will be required to claim tokens on MainNet launch (postponed (TBD)).'
     ]);
     
 } catch (PDOException $e) {

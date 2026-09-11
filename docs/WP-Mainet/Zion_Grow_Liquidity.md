@@ -204,7 +204,7 @@ ZION je **open source pod MIT licencí**. Jádro, pool, miner, CLI — vše veř
 | v3.0.6-beta | Trinity engine, Triple Stream, Boost Streams | ✅ ŽIVÉ |
 | v3.0.7 | Zion Grow dashboard (vizuální růst pozice) | ⏳ PLÁN |
 | v3.0.8 | Zion Liquidity metrics (hloubka likvidity) | ⏳ PLÁN |
-| v3.1.0 | Plná pool-side konverze na ZION, veřejný launch | ⏳ PLÁN (31. 12. 2026) |
+| v3.1.0 | Plná pool-side konverze na ZION, veřejný launch | ⏳ PLÁN (odložen (TBD)) |
 | v3.1.0+ | Desktop App premium unlock (NFT/stake/licence) | ⏳ PLÁN |
 
 ---

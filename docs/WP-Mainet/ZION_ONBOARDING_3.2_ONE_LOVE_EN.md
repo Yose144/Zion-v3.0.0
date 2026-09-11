@@ -2,7 +2,7 @@
 ## Onboarding & Salt of the Earth — Canonical Guide for Mainnet Stable 3.2 "One Love"
 
 **A story you can verify. A network you can enter today.**
-**Network status: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Public launch target: 31 Dec 2026**
+**Network status: Mainnet Alpha 3.1.0-beta / `zion-v3-node/3.1.0-alpha` → Mainnet Stable 3.2.0 "One Love" · Public launch target: postponed (TBD)**
 **Language:** English — [Česká verze](./ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md)
 **Canonical source date:** 2026-08-09
 

@@ -1,13 +1,13 @@
 # ✅ ZION TerraNova — MainNet Launch Checklist
 
-> **Cíl:** MainNet Genesis **31. prosince 2026**  
+> **Cíl:** MainNet Genesis **odložen (TBD)**  
 > **Dokument:** Operační go/no-go checklist — aktualizuje se průběžně  
 > **Zdroj pravdy:** Sjednocuje `ROADMAP.md` Fáze 1-5 + `docs/MAINNET_READINESS-ROADMAP.md`  
 > **Poslední aktualizace:** 17. února 2026
 
 ---
 
-## 🔴 STAV: 72% ready | 11 blokerů | 12 důležitých | cíl 31.12.2026
+## 🔴 STAV: 72% ready | 11 blokerů | 12 důležitých | cíl odložen (TBD)
 
 ```
 CELKOVÝ PROGRESS:
@@ -268,7 +268,7 @@ PROSINEC:
   ├── T-3: Mining guide
   ├── T-2: Final software release
   ├── T-1: P0-14: Genesis block OFFLINE
-  └── T-0: 🚀 MAINNET GENESIS — 31. 12. 2026
+  └── T-0: 🚀 MAINNET GENESIS — postponed (TBD)
 ```
 
 ---
@@ -362,4 +362,4 @@ Na konci každé fáze se kontrolují tyto metriky:
 
 ---
 
-*Generováno: 17. února 2026 | L1 readiness ~94% | 14 P0 blokerů (3 hotovo, 11 zbývá) | Cíl: 🚀 31.12.2026*
+*Generováno: 17. února 2026 | L1 readiness ~94% | 14 P0 blokerů (3 hotovo, 11 zbývá) | Cíl: 🚀 odložen (TBD)*

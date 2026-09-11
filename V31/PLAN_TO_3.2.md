@@ -188,7 +188,7 @@ Week 10: G2-G7 release and launch readiness
 | Bridge mainnet round-trip loses funds | Test with small amount first; use 5/7 multisig; pause and investigate any `BurnRelease` failure. |
 | 30d run interrupted by non-critical bug | Distinguish critical vs non-critical incidents; only critical (consensus, payout, bridge safety) resets the clock. |
 | Public subtree push reveals secret | Always `--dry-run` first; run manual IP/key scan; use `git secrets --scan`. |
-| External audit finds critical issue | Keep 4-week buffer before 31.12.2026 public launch; fix or accept as documented deferred risk. |
+| External audit finds critical issue | Keep 4-week buffer before postponed (TBD) public launch; fix or accept as documented deferred risk. |
 | Desktop App bundle delays release | Ship CLI + web first; desktop can follow in 3.2.x. |
 
 ---

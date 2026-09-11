@@ -3,7 +3,7 @@
 > **Datum:** 24. února 2026  
 > **Aktualizace:** 20. března 2026  
 > **Verze:** workspace 2.9.6 / release line 2.9.8 Deeksha / V3 workspace 3.0.0  
-> **MainNet cíl:** 31. prosince 2026
+> **MainNet cíl:** odložen (TBD)
 
 > **Poznámka:** Tento report obsahuje historické session logy z února 2026. Aktuální kanonický stav metrik a topologie je v `docs/STATUS_CURRENT_2026-03-19.md`.
 

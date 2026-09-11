@@ -11,7 +11,7 @@
 
 - **TestNet genesis:** 4. prosince 2025 — první blok, záměr, architektura, zárodek sítě
 - **MainNet Genesis TerraNova:** 11. června 2026 — kontrolovaný Core + Edge mainnet launch
-- **Veřejný launch pro všechny:** 31. prosince 2026 (Silvestr)
+- **Veřejný launch pro všechny:** odložen (TBD)
 
 ### Červnové hot fixy 2026 (hardening mineru)
 

@@ -146,7 +146,7 @@ Před spuštěním MainNetu musí být splněna tři blokující kritéria:
 
 Další cíle: 50+ distribuovaných seed uzlů, pool testovaný na 100+ MH/s, audit bridge.
 
-Historické cílové okno v tomto snapshotu: **31. prosince 2026**
+Historické cílové okno v tomto snapshotu: **odložen (TBD)**
 
 ---
 

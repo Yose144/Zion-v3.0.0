@@ -35,7 +35,7 @@ Successfully implemented complete Python-based presale backend for ZION cryptocu
 | Phase 2: Builder | €0.010 | 200M ZION | 25% | Q2 2025 |
 | Phase 3: Final | €0.012 | 150M ZION | 10% | Q3 2025 |
 
-**Launch Price:** €0.015 (MainNet: Dec 31, 2026)
+**Launch Price:** €0.015 (MainNet: postponed (TBD))
 
 **ROI Example (Phase 1):**
 - Investment: €1,000
@@ -49,7 +49,7 @@ Successfully implemented complete Python-based presale backend for ZION cryptocu
 
 Purchased tokens unlock in 4 stages post-MainNet:
 
-1. **Dec 31, 2026** - 40% immediately at launch
+1. **postponed (TBD)** - 40% immediately at launch
 2. **Mar 31, 2027** - 20% (3 months later)
 3. **Jun 30, 2027** - 20% (6 months later)
 4. **Sep 30, 2027** - 20% (9 months later, final)
@@ -173,7 +173,7 @@ INFO:__main__:
    - QR code generated: `data/presale_qr_codes/PRESALE-TEST-20251202170016.png`
 
 6. ✅ **Unlock Schedule**
-   - Dec 31, 2026: 37,500 ZION (40%)
+   - postponed (TBD): 37,500 ZION (40%)
    - Mar 31, 2027: 18,750 ZION (20%)
    - Jun 30, 2027: 18,750 ZION (20%)
    - Sep 30, 2027: 18,750 ZION (20%)
@@ -1093,7 +1093,7 @@ ZION Presale backend musí být plně integrován s existujícím **V2 PHP API s
 │           ZION Blockchain v2.9.0            │
 │  • 16.78B premine (500M presale alloc)      │
 │  • Genesis block s presale walletem        │
-│  • MainNet launch: Dec 31, 2026            │
+│  • MainNet launch: postponed (TBD)            │
 └─────────────────────────────────────────────┘
 ```
 
@@ -1129,7 +1129,7 @@ ZION Presale backend musí být plně integrován s existujícím **V2 PHP API s
    - Generuje wallet + QR pomocí wallet-lib.php
    - Zapíše do wallet-ledger.php (pending payout)
    ↓
-6. MainNet Launch (Dec 31, 2026):
+6. MainNet Launch (postponed (TBD)):
    - Nativní ZION wallet načte ledger.json
    - GET /V2/api/wallet-ledger.php?status=pending
    - Provede on-chain transfer

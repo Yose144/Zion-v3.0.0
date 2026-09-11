@@ -264,7 +264,7 @@ High Priority Issues:   5 (hashrate, native, audit)
 **Issue:**
 - DAO status: "COMPLETE (100%)" vs "0% backend"
 - WARP2 status: "COMPLETE (100%)" vs "0% deployment"
-- MainNet date: 31.12.2026 vs 31.12.2027
+- MainNet date: postponed (TBD) vs 31.12.2027
 
 **Root Cause:**
 - Multiple roadmap files (16 documents)
@@ -282,7 +282,7 @@ High Priority Issues:   5 (hashrate, native, audit)
    - [ ] Update ROADMAP.md (canonical)
    - [ ] Clarify DAO status (80% UI, 0% backend)
    - [ ] Clarify WARP2 status (100% code, 0% deployment)
-   - [ ] Remove 31.12.2026 claims (everywhere)
+   - [ ] Remove postponed (TBD) claims (everywhere)
 
 3. **Process (ongoing):**
    - [ ] Single source of truth (ROADMAP.md)

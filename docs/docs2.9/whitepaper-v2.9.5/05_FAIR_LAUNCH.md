@@ -52,14 +52,14 @@ FAIR LAUNCH MODEL (aktivní):
 | **Q2 2025** | TestNet beta (veřejný) | ✅ Done |
 | **31.12.2025** | TestNet v2.9.5 launch | ✅ Live |
 | **Q1-Q3 2026** | TestNet stabilizace, audity | ⏳ In Progress |
-| **31.12.2026** | **MainNet Genesis** | 📅 Plánováno |
+| **odložen (TBD)** | **MainNet Genesis** | 📅 Plánováno |
 
 ### Genesis Block
 
 ```
 ZION MainNet Genesis Block
 ═══════════════════════════════════════════════════════════════
-Timestamp: 2026-12-31 23:59:59 UTC
+Timestamp: postponed (TBD) UTC
 Block #0: Genesis
 
 Coinbase Message:
@@ -226,7 +226,7 @@ GENESIS_ADDRESSES = {
 
 | Parametr | TestNet | MainNet |
 |----------|---------|---------|
-| **Status** | ✅ Aktivní | 📅 31.12.2026 |
+| **Status** | ✅ Aktivní | 📅 odložen (TBD) |
 | **Block Reward** | 50 ZION | 5,400.067 ZION |
 | **Genesis Premine** | Mock data | 16.78B skutečné |
 | **Tokeny** | Bezcenné (test) | Skutečné |
@@ -344,7 +344,7 @@ ZION FAIR LAUNCH PRINCIPLES:
 ═══════════════════════════════════════════════════════════════
 ```
 
-**MainNet Genesis:** 31. prosince 2026, 23:59:59 UTC
+**MainNet Genesis:** odložen (TBD), 23:59:59 UTC
 
 ---
 

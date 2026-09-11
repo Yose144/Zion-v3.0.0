@@ -93,7 +93,7 @@ ZION is Different:
 | **Genesis Premine** | 11.65% (transparentní) |
 | **VC Allocation** | 0% |
 | **Team Allocation** | 0% |
-| **MainNet Launch** | 31.12.2026 |
+| **MainNet Launch** | postponed (TBD) |
 
 ---
 
@@ -376,7 +376,7 @@ Chapter 8: NCL NEURAL COMPUTE
 └── AI inference as additional miner revenue stream
 
 Chapter 9: ROADMAP
-└── TestNet now → MainNet Dec 31, 2026 → Scale 2027+
+└── TestNet now → MainNet postponed (TBD) → Scale 2027+
 
 Chapter 10: CONCLUSION
 └── Join us. Mine with purpose. Build the future.
@@ -388,7 +388,7 @@ Chapter 10: CONCLUSION
                     🌟 ZION TERRANOVA 🌟
 
                     MainNet Launch:
-                  December 31, 2026
+                  postponed (TBD)
                     23:59:59 UTC
 
 ═══════════════════════════════════════════════════════════════

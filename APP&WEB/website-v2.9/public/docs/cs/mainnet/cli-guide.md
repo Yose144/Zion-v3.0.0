@@ -138,7 +138,7 @@ zion wallet import --file my-wallet.json
 ## Důležitá realita pro rok 2026
 
 ZION je v **Mainnet Beta** — síť běží a produkuje bloky, ale může obsahovat chyby.
-Těž a transakuj na vlastní riziko. Oficiální veřejné spuštění: **31. prosince 2026**.
+Těž a transakuj na vlastní riziko. Oficiální veřejné spuštění: **odložen (TBD)**.
 
 Genesis chain je **permanentní** — nebude resetována.
 

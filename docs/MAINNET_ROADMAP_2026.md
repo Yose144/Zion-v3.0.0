@@ -1,11 +1,11 @@
 # 🚀 ZION MainNet Roadmap 2026
 
 **Verze: 2.0 | Datum: 23. května 2026**  
-**Cíl: L1 MainNet Genesis — 31. prosince 2026 (New Year's Eve / Silvestr)**  
+**Cíl: L1 MainNet Genesis — odložen (TBD)**  
 **Full Stack: L1 Blockchain → L2 DEX → L3 Warp/AI → L4 Oasis**  
 **Kódová verze: v2.9.6 → v2.9.6-mainnet**  
 **GitHub: [github.com/Yose144/Zion-2.9.5](https://github.com/Yose144/Zion-2.9.5)**  
-**Aktuální stav: ✅ GENESIS + FEE SPLIT KONFIGURACE DOKONČENA | ✅ CORE+EDGE TOPOLOGIE AKTIVNÍ | ✅ READY FOR MAINNET LAUNCH 31.12.2026**
+**Aktuální stav: ✅ GENESIS + FEE SPLIT KONFIGURACE DOKONČENA | ✅ CORE+EDGE TOPOLOGIE AKTIVNÍ | ✅ READY FOR MAINNET LAUNCH odložen (TBD)**
 
 > *Tento dokument je hlavní řídící roadmapa od současného stavu TestNetu k produkčnímu MainNet launchi.*  
 > *Autoritativní zdroj: WP2.9.5, MAINNET_CONSTITUTION.md*
@@ -826,7 +826,7 @@ Cíl: Plná simulace mainnet launche, code freeze, security review.
 
 ## 🎆 FÁZE 5 — MAINNET LAUNCH
 **📅 Prosinec 2026**  
-**Cílové datum: 31. 12. 2026**
+**Cílové datum: odložen (TBD)**
 
 ### Launch Countdown (T-14 dní)
 | Den | Aktivita |
@@ -1354,7 +1354,7 @@ L1 zůstává čistý — žádné XP v konsensus pravidlech.
 2026                            2027                           2028
 Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4    Q1   Q2   Q3   Q4
 ╔════════════════════╗
-║ L1 BLOCKCHAIN      ║ ← MainNet Launch 31.12.2026
+║ L1 BLOCKCHAIN      ║ ← MainNet Launch odložen (TBD)
 ║ Fáze 0-5 HOTOVO ✅ ║
 ║ Fáze 1-4 TestNet   ║
 ╚════════════════════╝

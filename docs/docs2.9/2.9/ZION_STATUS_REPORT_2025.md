@@ -249,7 +249,7 @@ ZION Stack v2.9:
 - ✅ Performance optimization
 - ✅ Agent ecosystem beta
 - ✅ Community testing program
-- 🎯 **MainNet Launch**: 31. prosince 2026
+- 🎯 **MainNet Launch**: odložen (TBD)
 
 ### Q2 2026 - MainNet Preparation
 - ✅ Enterprise features
@@ -318,7 +318,7 @@ ZION Stack v2.9:
 
 **"Where technology meets spirit"** 🌟
 
-**MainNet Launch:** 31. 12. 2026
+**MainNet Launch:** postponed (TBD)
 **TestNet Launch:** Q1 2026
 
 ---

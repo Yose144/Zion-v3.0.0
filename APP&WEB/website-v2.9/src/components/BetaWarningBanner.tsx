@@ -42,11 +42,11 @@ export default function BetaWarningBanner() {
           <p className="text-sm text-amber-200/90 leading-relaxed">
             {cs ? (
               <>
-                <strong className="font-semibold text-zion-gold">Veřejný launch odložen</strong> — ZION TerraNova zůstává v aktivním vývoji. Těžba a transakce probíhají na vlastní nebezpečí. Oficiální veřejný launch 31. 12. 2026 se neuskuteční; nové datum oznámíme, až projekt projde Maturity Gate (Maturitou), získá základní likviditu a sestavíme tým dobrovolných vývojářů. <a href="/news/launch-postponed" className="underline hover:text-white">Číst oznámení</a>.
+                <strong className="font-semibold text-zion-gold">Veřejný launch odložen</strong> — ZION TerraNova zůstává v aktivním vývoji. Těžba a transakce probíhají na vlastní nebezpečí. Oficiální veřejný launch je odložen (TBD); nové datum oznámíme, až projekt projde Maturity Gate (Maturitou), získá základní likviditu a sestavíme tým dobrovolných vývojářů. <a href="/news/launch-postponed" className="underline hover:text-white">Číst oznámení</a>.
               </>
             ) : (
               <>
-                <strong className="font-semibold text-zion-gold">Public launch postponed</strong> — ZION TerraNova remains in active development. Mining and transactions are at your own risk. The official public launch on 31 December 2026 will not take place; a new date will be announced once the project passes the Maturity Gate, secures basic liquidity, and assembles a team of volunteer developers. <a href="/news/launch-postponed" className="underline hover:text-white">Read the announcement</a>.
+                <strong className="font-semibold text-zion-gold">Public launch postponed</strong> — ZION TerraNova remains in active development. Mining and transactions are at your own risk. The official public launch is postponed (TBD); a new date will be announced once the project passes the Maturity Gate, secures basic liquidity, and assembles a team of volunteer developers. <a href="/news/launch-postponed" className="underline hover:text-white">Read the announcement</a>.
               </>
             )}
           </p>
