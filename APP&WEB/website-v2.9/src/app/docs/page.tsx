@@ -134,6 +134,7 @@ const sectionTitles: Record<string, LocalizedText> = {
   'listing': { cs: 'Listing / CoinGecko', en: 'Listing / CoinGecko' },
   'ai-native': { cs: 'AI / výzkumný archiv', en: 'AI / Research Archive' },
   'lumi-language': { cs: 'Lumi — jazyk světla', en: 'Lumi — Light Language' },
+  'l6-issobella': { cs: 'L6 — Issobella', en: 'L6 — Issobella' },
   'legal': { cs: 'Právní rámec', en: 'Legal' },
 };
 
@@ -215,6 +216,12 @@ const docTitles: Record<string, LocalizedText> = {
   'legal-disclaimer': { cs: 'Disclaimer', en: 'Disclaimer' },
   'legal-risk': { cs: 'Risk Disclosure', en: 'Risk Disclosure' },
   'legal-token': { cs: 'Token Not Security', en: 'Token Not Security' },
+  'l6-readme': { cs: 'L6 — přehled', en: 'L6 Overview' },
+  'l6-architecture': { cs: 'Architektura stanice', en: 'Station Architecture' },
+  'l6-quantum-motor': { cs: 'Kvantový motor', en: 'Quantum Motor' },
+  'l6-artificial-gravity': { cs: 'Umělá gravitace', en: 'Artificial Gravity' },
+  'l6-human-factors': { cs: 'Lidské faktory', en: 'Human Factors' },
+  'l6-history': { cs: 'Historie vesmírných stanic', en: 'Space Station History' },
 };
 
 function resolveLabel(value: string | LocalizedText, lang: 'cs' | 'en') {
@@ -432,6 +439,21 @@ const sections: Section[] = [
       { id: 'lumi-phonetics', title: 'Phonetics & Tones', file: 'lumi/phonetics.md' },
       { id: 'lumi-core-108', title: 'Core Dictionary 108', file: 'lumi/core-108.md' },
       { id: 'lumi-light-tones', title: 'Light Language Tones', file: 'lumi/light-tones.md' },
+    ],
+  },
+  {
+    id: 'l6-issobella',
+    title: 'L6 — Issobella',
+    icon: Rocket,
+    accentText: 'text-zion-purple',
+    accentBorder: 'border-zion-purple/30',
+    docs: [
+      { id: 'l6-readme', title: 'L6 — přehled', file: 'l6/README.md' },
+      { id: 'l6-architecture', title: 'Architektura stanice', file: 'l6/Architektura.md' },
+      { id: 'l6-quantum-motor', title: 'Kvantový motor', file: 'l6/Kvantovy_Motor.md' },
+      { id: 'l6-artificial-gravity', title: 'Umělá gravitace', file: 'l6/Umela_Gravitace.md' },
+      { id: 'l6-human-factors', title: 'Lidské faktory', file: 'l6/Lidske_Faktory.md' },
+      { id: 'l6-history', title: 'Historie vesmírných stanic', file: 'l6/Histori.md' },
     ],
   },
 ];
