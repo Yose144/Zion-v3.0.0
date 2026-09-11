@@ -10,6 +10,7 @@ import {
   Cpu, Radio, Scale, ChevronRight, Compass, Gauge
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import L6StationPreviewLazy from '@/components/L6StationPreviewLazy';
 
 const L6IssobellaCopy = {
   badge: { cs: 'L6 · Issobella · Space', en: 'L6 · Issobella · Space' },
@@ -467,17 +468,7 @@ export default function L6IssobellaPage() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-              <img
-                src="/docs/l6/img/oa9d8jviznw51.jpg"
-                alt={cs ? 'Interiér orbitální stanice' : 'Orbital station interior'}
-                width={1200}
-                height={800}
-                loading="lazy"
-                decoding="async"
-                className="w-full object-cover"
-              />
-            </div>
+            <L6StationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full rounded-2xl" />
           </div>
         </motion.section>
 
