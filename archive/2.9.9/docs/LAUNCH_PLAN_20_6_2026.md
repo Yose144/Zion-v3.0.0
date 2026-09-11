@@ -232,7 +232,7 @@ tail -f logs/node1.log | grep "relay_block"
 - **Twitter/X:** Teaser posts
 - **Email:** Newsletter update
 
-### Launch Moment (postponed (TBD) 12:00 UTC)
+### Launch Moment (postponed (TBD), 12:00 UTC)
 - **Website:** "MAINNET LIVE" banner
 - **Discord:** Live launch party
 - **Twitter/X:** "ZION Mainnet is LIVE!"
@@ -298,7 +298,7 @@ Pokud launch proběhne úspěšně:
 
 **Dokument připraven:** 23.5.2026
 **Final review:** 15.12.2026
-**Launch execution:** postponed (TBD) 12:00 UTC
+**Launch execution:** postponed (TBD), 12:00 UTC
 
 **V případě problémů kontaktuj:**
 - Technical Lead: [TBD]
