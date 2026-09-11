@@ -16,7 +16,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { proxyToZis, type ZisProxyCtx } from '@/lib/zis-proxy';
 
 function authCtx(ctx: { params: Promise<{ zis: string[] }> }): ZisProxyCtx {
@@ -29,7 +29,16 @@ export async function GET(
   req: NextRequest,
   ctx: { params: Promise<{ zis: string[] }> },
 ) {
-  return proxyToZis(req, authCtx(ctx), '/api/auth');
+  const path = (await ctx.params).zis.join('/');
+  if (path === 'me' && !req.cookies.has('zion_session')) {
+    return NextResponse.json(null, { headers: { 'Cache-Control': 'private, no-store' } });
+  }
+
+  const response = await proxyToZis(req, authCtx(ctx), '/api/auth');
+  if (path === 'me' && (response.status === 401 || response.status === 403)) {
+    return NextResponse.json(null, { headers: { 'Cache-Control': 'private, no-store' } });
+  }
+  return response;
 }
 
 export async function POST(

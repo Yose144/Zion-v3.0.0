@@ -99,7 +99,7 @@
 ## Follow
 
 - [GitHub](https://github.com/Zion-TerraNova) — source + releases  
-- [Discord](https://discord.gg/zion-terranova) — community  
+- [Discord](https://discord.gg/wvxJ7DhZ8) — community  
 - [Website](https://www.zionterranova.com) — announcements  
 
 ---

@@ -453,7 +453,7 @@ print(f"Available: {COSMIC_HARMONY_AVAILABLE}")
 ## 📞 Support
 
 **Issues:** https://github.com/ZionCrypto/zion/issues  
-**Discord:** https://discord.gg/zion  
+**Discord:** https://discord.gg/wvxJ7DhZ8  
 **Email:** dev@zioncrypto.io
 
 **Documentation Owner:** ZION Core Team  

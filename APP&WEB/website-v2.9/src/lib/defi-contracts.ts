@@ -66,10 +66,12 @@ export const CONTRACTS = {
   ZIONBridge:     '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
   ZIONAtomicSwap: '0x3DE9Ad42716854083ab837706E3961d10B0e63Eb',
   // Uniswap V3 — canonical (only source of real DEX liquidity)
+  // Source of truth: L2contracts.md
   UniV3Factory:   '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
-  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699',
-  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2',
-  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3',
+  UniV3PoolWETH:  '0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699', // empty
+  UniV3PoolUSDC:  '0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d', // empty
+  UniV3PoolUSDT:  '0x186b46c2f04153999d44D25179cD623fD62Bfda2', // ACTIVE (0.3%, 19 USDT + 151,867.25 wZION)
+  UniV3PoolSOL:   '0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3', // empty
   UniV3Router:    '0x2626664c2603336E57B271c5C0b26F421741e481',
   QuoterV2:       '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
   PositionManager:'0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1',
@@ -103,7 +105,7 @@ export const CONTRACTS = {
   ZIONDexZISGate:             '0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5', // DEPRECATED
 } as const;
 
-/** PancakeSwap V3 config on Base */
+/** PancakeSwap V3 config on Base — DEPRECATED, kept for reference. Use Uni V3. */
 export const PANCAKE_V3 = {
   factory:             '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
   nftPositionManager:  '0x46A15B0b27311cedF172AB29E4f4766fbE7F4364',
@@ -140,7 +142,7 @@ export const GOVERNANCE_DEPLOYED = (CONTRACTS.ZIONGovernance as string) !== '0x0
 export const DEPLOYER = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
 export const VALIDATOR2 = '0x8cc6F931edDAf5F14D0071727Ed1640752B5c787';
 
-/** Base Mainnet ZIONBridge guardian validators (5/5 multisig) */
+/** Base Mainnet ZIONBridge guardian validators (5 validators, 4/5 threshold) */
 export const BRIDGE_VALIDATORS = [
   '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186',
   '0x24d986841E56e5571489B25951eE8C1Ae761FA82',
@@ -149,44 +151,39 @@ export const BRIDGE_VALIDATORS = [
   '0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2',
 ] as const;
 
-// ─── Seed price constants ($0.0002 / ZION) ───────────────────────────────────
+// ─── Seed price constants ($0.0002 / wZION) — USDT POOL FALLBACK ─────────────
 //
-// These are used as fallback values while the Uni V3 pool has no liquidity yet,
-// or while ETH/USD Chainlink data is temporarily unavailable.
+// Canonical fallback for the wZION/USDT Uniswap V3 0.3% pool. The pool is now
+// live and price is normally discovered on-chain from slot0()/QuoterV2.
+// Use these seed values only as a last-resort fallback while RPC data is unavailable.
 //
-// Updated 2026-06-29: Pools created on Base mainnet at $0.0002/ZION.
-// wZION/WETH pool (1% fee, tickSpacing=200): sqrtPriceX96 = 25054144837504793613172736, tick = -161190
-// wZION/USDC pool (0.3% fee, tickSpacing=60): sqrtPriceX96 = 1120455419495722778624, tick = -361501
+// 2026-09-07 live wZION/USDT pool: sqrtPriceX96 = 0x300a49039f683c3d3d,
+//   tick = -366192, price ≈ $0.000125 / wZION (1 USDT ≈ 7,993 wZION).
 //
-// Derivation (2026-06-29, ETH = $2000):
-//   price_eth_per_wzion = $0.0002 / $2000  = 1e-7 ETH/wZION
-//   sqrtPriceX96 = floor(sqrt(1e-7) × 2^96) = 25054144837504793613172736
-//   tick = floor(log(1e-7) / log(1.0001)) = -161190
+// 2026-06-29 seed target ($0.0002 / wZION, USDT pool):
+//   wZION/USDT 0.3% pool (tickSpacing=60): sqrtPriceX96 = 1120455419495722778624, tick = -361501
 //
-// wZION (token0) < WETH (token1) by address — so price = WETH per wZION.
+// wZION (token0) < USDT (token1) by address — so price = USDT per wZION.
 
 /** Seed price in USD for 1 wZION = 1 ZION on the L2 */
 export const SEED_PRICE_USD = 0.0002;
 
-/** ETH/USD reference rate used to derive SEED_SQRT_PRICE_X96 */
+/** ETH/USD reference rate (fallback for WETH price oracle) */
 export const SEED_ETH_USD = 2000;
 
-/** Seed price expressed in ETH (WETH per wZION) */
-export const SEED_PRICE_ETH = SEED_PRICE_USD / SEED_ETH_USD; // = 1e-7
+/** sqrtPriceX96 for the canonical wZION/USDT 0.3% pool at $0.0002/wZION seed price */
+export const SEED_SQRT_PRICE_X96 = '1120455419495722778624';
 
-/** sqrtPriceX96 for the Uni V3 wZION/WETH 1% pool at seed price */
-export const SEED_SQRT_PRICE_X96 = '25054144837504793613172736';
+/** Tick corresponding to the wZION/USDT 0.3% seed price */
+export const SEED_TICK = -361501;
 
-/** Tick corresponding to the seed price (wZION is token0, WETH is token1) */
-export const SEED_TICK = -161190;
+/** Full-range tick bounds for the 0.3% pool (tickSpacing = 60) */
+export const TICK_LOWER_FULL = -887220;
+export const TICK_UPPER_FULL = 887220;
 
-/** Full-range tick bounds for the 1% pool (tickSpacing = 200) */
-export const TICK_LOWER_FULL = -887200;
-export const TICK_UPPER_FULL = 887200;
-
-/** Concentrated-range tick bounds for two-sided WETH position */
-export const TICK_LOWER_CONC = -162000; // snapped to tickSpacing=200
-export const TICK_UPPER_CONC = -160000; // snapped to tickSpacing=200
+/** Concentrated-range tick bounds — historical WETH 1% reference, not used for USDT */
+export const TICK_LOWER_CONC = -162000;
+export const TICK_UPPER_CONC = -160000;
 
 // ─── Minimal ABIs ────────────────────────────────────────────────────────────
 
@@ -337,14 +334,14 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     id: 'dex',
     name: 'wZION DEX Pools',
     nameCs: 'wZION DEX Pooly',
-    description: 'Uniswap V3 concentrated liquidity pools on Base. Primary USDT pair (0.3% fee), secondary WETH pair (1% fee), and SOL pair (0.01% fee). All seeded at $0.0002/ZION.',
-    descriptionCs: 'Uniswap V3 pooly s koncentrovanou likviditou na Base. Primární USDT pár (0.3% poplatek), sekundární WETH pár (1% poplatek) a SOL pár (0.01% poplatek). Všechny seednuté na $0.0002/ZION.',
+    description: 'Uniswap V3 concentrated liquidity pools on Base. The canonical wZION/USDT pair (0.3% fee) is live with 19 USDT + 151,867.25 wZION full-range liquidity. wZION/WETH, wZION/USDC, and wZION/SOL pools exist but are currently empty.',
+    descriptionCs: 'Uniswap V3 pooly s koncentrovanou likviditou na Base. Kanonický pár wZION/USDT (0.3% poplatek) je live s 19 USDT + 151,867.25 wZION full-range likvidity. Pooly wZION/WETH, wZION/USDC a wZION/SOL existují, ale jsou zatím prázdné.',
     contract: CONTRACTS.UniV3PoolUSDT,
     href: '/defi',
     status: 'live',
     icon: 'dex',
     color: 'from-zion-cyan to-zion-purple',
-    tags: ['Uniswap V3', 'USDT Primary', 'WETH', 'SOL', 'Active Liquidity'],
+    tags: ['Uniswap V3', 'USDT Primary', 'wZION/USDT', 'Active Liquidity'],
   },
   {
     id: 'farming',

@@ -125,7 +125,7 @@ To run without inference (PoW only):
 
 * **Website:** [keryx-labs.com](https://keryx-labs.com)
 * **X (Twitter):** [@Keryx_Labs](https://x.com/Keryx_Labs)
-* **Discord:** [Join the Community](https://discord.gg/U9eDmBUKTF)
+* **Discord:** [Join the Community](https://discord.gg/wvxJ7DhZ8)
 
 ---
 

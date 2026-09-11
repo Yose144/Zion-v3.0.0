@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZION TerraNova — One Love. One Chain. One Road.</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+    :root {
+      /* Rasta theme (web2.9 / intro-rasta.css) — same palette as zion-social-banner */
+      --rasta-red: #e41e2b;
+      --rasta-gold: #fcd116;
+      --rasta-green: #078930;
+      --rasta-black: #0d0d0d;
+      --stroke: rgba(255, 255, 255, 0.09);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 1080px;
+      height: 1080px;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #fff;
+      background: #050505;
+    }
+
+    .banner {
+      width: 1080px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 15% -6%, rgba(228, 30, 43, 0.24), transparent 30rem),
+        radial-gradient(circle at 88% 4%, rgba(7, 137, 48, 0.20), transparent 30rem),
+        radial-gradient(circle at 50% 42%, rgba(252, 209, 22, 0.09), transparent 44rem),
+        radial-gradient(ellipse at bottom, #0c0c0c 0%, #000 100%);
+    }
+
+    canvas.warp-background {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.95;
+    }
+
+    .rasta-stripes {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        repeating-linear-gradient(
+          115deg,
+          transparent 0px,
+          transparent 116px,
+          rgba(228, 30, 43, 0.05) 116px,
+          rgba(252, 209, 22, 0.05) 124px,
+          rgba(7, 137, 48, 0.05) 132px,
+          transparent 140px
+        );
+      mask-image: linear-gradient(to bottom, black 0%, black 62%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 0%, black 62%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .warp-grid {
+      position: absolute;
+      inset: -12%;
+      background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 110px 110px;
+      opacity: 0.25;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .warp-bubbles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      mix-blend-mode: screen;
+    }
+    .bubble { position: absolute; border-radius: 50%; opacity: 0.75; }
+    .bubble-1 { width: 380px; height: 380px; left: -6%; top: 6%;  background: radial-gradient(circle at 38% 35%, rgba(252, 209, 22, 0.16), transparent 68%); }
+    .bubble-2 { width: 340px; height: 340px; left: 58%; top: 16%; background: radial-gradient(circle at 35% 35%, rgba(7, 137, 48, 0.18), transparent 70%); }
+    .bubble-3 { width: 300px; height: 300px; left: 72%; top: 62%; background: radial-gradient(circle at 35% 35%, rgba(228, 30, 43, 0.17), transparent 70%); }
+    .bubble-4 { width: 240px; height: 240px; left: 8%;  top: 70%; background: radial-gradient(circle at 35% 35%, rgba(252, 209, 22, 0.12), transparent 70%); }
+    .bubble-5 { width: 170px; height: 170px; left: 86%; top: 10%; background: radial-gradient(circle at 35% 35%, rgba(7, 137, 48, 0.14), transparent 70%); }
+
+    .gradient-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(30, 30, 34, 0.28), rgba(0, 0, 0, 0.72)),
+        radial-gradient(ellipse at 50% 112%, rgba(0, 0, 0, 0.55), transparent 60%);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* ── Centered square layout ── */
+    .content {
+      position: relative;
+      z-index: 5;
+      height: 100%;
+      padding: 58px 72px 86px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(252, 209, 22, 0.22);
+      background:
+        linear-gradient(90deg, rgba(228,30,43,0.14), rgba(252,209,22,0.10), rgba(7,137,48,0.14)),
+        rgba(255, 255, 255, 0.04);
+      letter-spacing: 0.32em;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--rasta-gold);
+      text-transform: uppercase;
+      box-shadow: 0 0 28px rgba(252, 209, 22, 0.12);
+    }
+    .badge span {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+      box-shadow: 0 0 14px rgba(252, 209, 22, 0.7);
+    }
+
+    .logo-wrap {
+      position: relative;
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-wrap::before {
+      content: "";
+      position: absolute;
+      width: 340px; height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252, 209, 22, 0.24), rgba(252, 209, 22, 0.05) 55%, transparent 72%);
+      filter: blur(12px);
+    }
+    .logo-wrap img {
+      width: 210px;
+      height: 210px;
+      position: relative;
+      filter: drop-shadow(0 0 30px rgba(252, 209, 22, 0.42)) drop-shadow(0 8px 34px rgba(0, 0, 0, 0.55));
+    }
+
+    .title {
+      margin-top: 34px;
+      font-size: 96px;
+      line-height: 0.98;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .title .l { display: block; }
+    .title .l1 {
+      background: linear-gradient(92deg, #0abf55 0%, var(--rasta-green) 55%, #06a03a 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 22px rgba(7, 137, 48, 0.35));
+    }
+    .title .l2 {
+      background: linear-gradient(92deg, #ffe57a 0%, var(--rasta-gold) 55%, #e6b800 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 22px rgba(252, 209, 22, 0.32));
+    }
+    .title .l3 {
+      background: linear-gradient(92deg, #ff5a64 0%, var(--rasta-red) 55%, #b3121e 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 22px rgba(228, 30, 43, 0.35));
+    }
+
+    .desc {
+      margin-top: 26px;
+      font-size: 19.5px;
+      line-height: 1.58;
+      color: rgba(255, 255, 255, 0.66);
+      max-width: 720px;
+    }
+    .desc b { color: rgba(255, 255, 255, 0.88); font-weight: 700; }
+    .desc .gold { color: var(--rasta-gold); font-weight: 700; }
+
+    .facts {
+      margin-top: 30px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .facts .fact {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.85);
+      border: 1px solid var(--stroke);
+      background: rgba(255, 255, 255, 0.045);
+    }
+    .facts .fact::before {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--rasta-gold);
+      box-shadow: 0 0 9px rgba(252, 209, 22, 0.7);
+    }
+    .facts .fact:nth-child(2)::before { background: #0abf55; box-shadow: 0 0 9px rgba(10, 191, 85, 0.7); }
+    .facts .fact:nth-child(3)::before { background: #ff4d5a; box-shadow: 0 0 9px rgba(255, 77, 90, 0.7); }
+
+    .cta {
+      margin-top: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 40px;
+      border-radius: 999px;
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: #0d0d0d;
+      text-decoration: none;
+      background: linear-gradient(92deg, #ffe57a, var(--rasta-gold) 55%, #eab400);
+      box-shadow:
+        0 10px 40px rgba(252, 209, 22, 0.32),
+        0 0 60px rgba(252, 209, 22, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .cta .arrow { font-weight: 900; }
+
+    .glyph-strip {
+      margin-top: 34px;
+      height: 40px;
+      width: auto;
+      object-fit: contain;
+      opacity: 0.95;
+      filter: drop-shadow(0 0 14px rgba(252, 209, 22, 0.32)) drop-shadow(0 0 34px rgba(7, 137, 48, 0.14));
+    }
+
+    .footer {
+      position: absolute;
+      left: 72px;
+      right: 72px;
+      bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      z-index: 6;
+    }
+    .footer .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+    }
+    .footer .brand .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--rasta-gold);
+      box-shadow: 0 0 10px rgba(252, 209, 22, 0.8);
+    }
+    .footer .url {
+      background: linear-gradient(90deg, var(--rasta-gold), #ffe57a);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <canvas
+      class="warp-background"
+      data-density="420"
+      data-speed="5.2"
+      data-trail="0.05"
+    ></canvas>
+    <div class="rasta-stripes"></div>
+    <div class="warp-grid"></div>
+    <div class="warp-bubbles">
+      <div class="bubble bubble-1"></div>
+      <div class="bubble bubble-2"></div>
+      <div class="bubble bubble-3"></div>
+      <div class="bubble bubble-4"></div>
+      <div class="bubble bubble-5"></div>
+    </div>
+    <div class="gradient-overlay"></div>
+
+    <div class="content">
+      <div class="badge"><span></span> v3.2.0 · Mainnet Alpha · One Love</div>
+
+      <div class="logo-wrap">
+        <img src="symbol-512x512.png" alt="ZION logo" />
+      </div>
+
+      <h1 class="title">
+        <span class="l l1">One Love.</span>
+        <span class="l l2">One Chain.</span>
+        <span class="l l3">One Road.</span>
+      </h1>
+
+      <p class="desc" id="desc"></p>
+
+      <div class="facts" id="facts"></div>
+
+      <a class="cta" id="cta" href="https://app.zionterranova.com/onboard#lite">
+        <span id="cta-label"></span><span class="arrow">→</span>
+      </a>
+
+      <img class="glyph-strip" src="glyph-transparent.png" alt="ZION glyph" />
+    </div>
+
+    <div class="footer">
+      <div class="brand"><span class="dot"></span>ZION TerraNova®</div>
+      <span class="url">zionterranova.com</span>
+    </div>
+  </div>
+
+  <script>
+  /* ── Copy variants: ?lang=en (default) / ?lang=cz ── */
+  (function applyLang() {
+    const lang = new URLSearchParams(location.search).get('lang') === 'cz' ? 'cz' : 'en';
+    const copy = {
+      en: {
+        desc: 'The network is still small and today\u2019s <span class="gold">block reward is the highest it will ever be</span>. Read why — no price promises, just the facts. <b>One book, one riddim.</b>',
+        facts: ['Genesis · Aug 8 2026', 'Mainnet · Dec 31 2026', 'PoW · No ICO'],
+        cta: 'zionterranova.com/onboard',
+      },
+      cz: {
+        desc: 'Síť je pořád malá a <span class="gold">odměna za blok je dnes nejvyšší, jakou kdy bude</span>. Přečti si proč — beze slibů ceny, jen fakta. <b>Jedna kniha, jeden riddim.</b>',
+        facts: ['Genesis · 8. 8. 2026', 'Mainnet · 31. 12. 2026', 'PoW · Bez ICO'],
+        cta: 'zionterranova.com/onboard',
+      },
+    }[lang];
+
+    document.documentElement.lang = lang === 'cz' ? 'cs' : 'en';
+    document.getElementById('desc').innerHTML = copy.desc;
+    document.getElementById('cta-label').textContent = copy.cta;
+    const facts = document.getElementById('facts');
+    for (const f of copy.facts) {
+      const el = document.createElement('span');
+      el.className = 'fact';
+      el.textContent = f;
+      facts.appendChild(el);
+    }
+  })();
+
+  /* Multi-color rasta warp starfield — same as zion-social-banner. */
+  (function initRastaWarp() {
+    const canvas = document.querySelector('.warp-background');
+    if (!canvas) return;
+    const container = canvas.closest('.banner') || canvas.parentElement;
+    const ctx = canvas.getContext('2d');
+    if (!container || !ctx) return;
+
+    const density = Number(canvas.dataset.density) || 380;
+    const speed = Number(canvas.dataset.speed) || 3.6;
+    const trail = Math.min(Math.max(Number(canvas.dataset.trail) || 0.045, 0.02), 0.3);
+
+    const palette = [
+      [252, 209, 22],
+      [252, 209, 22],
+      [252, 209, 22],
+      [255, 229, 122],
+      [7, 160, 60],
+      [0, 200, 90],
+      [228, 30, 43],
+      [235, 235, 245],
+    ];
+
+    let width = 0, height = 0;
+    const stars = [];
+
+    const seedStars = () => {
+      stars.length = 0;
+      if (!width) return;
+      for (let i = 0; i < density; i++) {
+        stars.push({
+          x: Math.random() * width - width / 2,
+          y: Math.random() * height - height / 2,
+          z: Math.random() * width,
+          size: Math.random() * 3.0 + 0.6,
+          c: palette[Math.floor(Math.random() * palette.length)],
+        });
+      }
+    };
+
+    const resize = () => {
+      width = canvas.clientWidth || container.clientWidth;
+      height = canvas.clientHeight || container.clientHeight;
+      canvas.width = width || 1;
+      canvas.height = height || 1;
+      seedStars();
+    };
+
+    const step = () => {
+      for (const star of stars) {
+        const pz = star.z + speed * 4;
+        star.z -= speed;
+        if (star.z <= 0.5) {
+          star.z = width;
+          star.x = Math.random() * width - width / 2;
+          star.y = Math.random() * height - height / 2;
+          continue;
+        }
+        const x = (star.x / star.z) * width + width / 2;
+        const y = (star.y / star.z) * height + height / 2;
+        const px2 = (star.x / pz) * width + width / 2;
+        const py2 = (star.y / pz) * height + height / 2;
+        const size = Math.max((1 - star.z / width) * star.size * 2.2, 0.4);
+        const brightness = 1 - star.z / width;
+        const alpha = Math.min(1, 0.22 + brightness * 0.78);
+        ctx.strokeStyle = `rgba(${star.c[0]}, ${star.c[1]}, ${star.c[2]}, ${alpha})`;
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(px2, py2);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(0, 0, 0, ${trail * 0.4})`;
+      ctx.fillRect(0, 0, width, height);
+    };
+
+    const render = () => { step(); requestAnimationFrame(render); };
+
+    resize();
+    // Pre-warm: render ~160 frames synchronously so static screenshots
+    // show developed warp trails (same trick as the OG banner).
+    for (let i = 0; i < 160; i++) step();
+    render();
+    window.addEventListener('resize', resize);
+  })();
+  </script>
+</body>
+</html>

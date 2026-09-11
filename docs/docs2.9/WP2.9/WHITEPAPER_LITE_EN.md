@@ -295,7 +295,7 @@ After MainNet launch (December 2027) and exchange listings (January 2028).
 |------|-------|
 | **Website** | [zionterranova.com](https://zionterranova.com) |
 | **Mining Pool** | [pool.zionterranova.com](https://pool.zionterranova.com) |
-| **Discord** | [discord.gg/zion](https://discord.gg/zion) |
+| **Discord** | [discord.gg/wvxJ7DhZ8](https://discord.gg/wvxJ7DhZ8) |
 | **Telegram** | [t.me/zionterranova](https://t.me/zionterranova) |
 | **Twitter/X** | [@ZionTerraNova](https://twitter.com/ZionTerraNova) |
 

@@ -48,7 +48,7 @@ Verze **v2.9.6 Pre-Mainnet** je momentálně ve vývoji. Tato verze představuje
 ## Jak se zapojit
 
 - Sleduj vývoj na [GitHub](https://github.com/Zion-TerraNova)
-- Připoj se na [Discord](https://discord.gg/zion-terranova)
+- Připoj se na [Discord](https://discord.gg/wvxJ7DhZ8)
 - Testuj na testnet síti
 
 ---

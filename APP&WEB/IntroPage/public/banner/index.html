@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZION TerraNova — Proof-of-Work Layer 1 · Decade Decay Emission</title>
+  <title>ZION — One Love. One Chain. One Road. · Proof-of-Work Layer 1</title>
   <meta name="description" content="Open-source, memory-hard Proof-of-Work blockchain written in Rust. Decade Decay emission, perpetual tail emission, 10% of every block reward hardcoded to humanitarian & science funds." />
 
   <!-- Open Graph -->
@@ -266,6 +266,34 @@
       50% { background-position: 100% 50%; }
     }
 
+    /* ── One Love tagline — 3 stacked rasta lines under ZION ── */
+    .onelove {
+      display: block;
+      font-size: 0.41em; /* ~38px at 92px title, scales with responsive clamp */
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      margin-top: 12px;
+    }
+    .onelove span { display: block; }
+    .onelove .ol-green {
+      background: linear-gradient(92deg, #0abf55 0%, var(--rasta-green) 60%, #06a03a 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 3px 14px rgba(7, 137, 48, 0.4));
+    }
+    .onelove .ol-gold {
+      background: linear-gradient(92deg, #ffe57a 0%, var(--rasta-gold) 60%, #e6b800 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 3px 14px rgba(252, 209, 22, 0.38));
+    }
+    .onelove .ol-red {
+      background: linear-gradient(92deg, #ff5a64 0%, var(--rasta-red) 60%, #b3121e 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 3px 14px rgba(228, 30, 43, 0.4));
+    }
+
     .subtitle {
       margin-top: 16px;
       font-size: 17px;
@@ -337,6 +365,10 @@
     .links a:nth-child(3)::before {
       background: #ff4d5a;
       box-shadow: 0 0 9px rgba(255, 77, 90, 0.7);
+    }
+    .links a:nth-child(4)::before {
+      background: #ebebf5;
+      box-shadow: 0 0 9px rgba(235, 235, 245, 0.7);
     }
 
     .links a::after {
@@ -566,7 +598,11 @@
         <div class="badge"><span></span> v3.2.0 · Mainnet Alpha · One Love</div>
         <h1 class="title">
           <strong>ZION</strong>
-          TerraNova
+          <span class="onelove">
+            <span class="ol-green">One Love.</span>
+            <span class="ol-gold">One Chain.</span>
+            <span class="ol-red">One Road.</span>
+          </span>
         </h1>
         <div class="subtitle">Proof-of-Work Layer 1 · Decade Decay Emission</div>
         <p class="desc">
@@ -579,6 +615,7 @@
         </p>
         <img class="glyph-strip" src="glyph-transparent.png" alt="ZION glyph" />
         <nav class="links">
+          <a href="https://app.zionterranova.com/onboard#lite" target="_blank" rel="noopener">Onboard</a>
           <a href="https://app.zionterranova.com/explorer" target="_blank" rel="noopener">Explorer</a>
           <a href="https://oasis.zionterranova.com" target="_blank" rel="noopener">Oasis</a>
           <a href="https://zionterranova.com/download/" target="_blank" rel="noopener">Download</a>

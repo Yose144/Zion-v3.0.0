@@ -562,7 +562,7 @@ Visit [zionminingcalc.com](https://zionminingcalc.com) for:
 ### Community
 - **GitHub:** [Report issues](https://github.com/estrelaisabellazion3/Zion-2.8/issues)
 - **Forum:** [Community discussions](https://forum.zionterranova.com)
-- **Discord:** [Live chat](https://discord.gg/zion)
+- **Discord:** [Live chat](https://discord.gg/wvxJ7DhZ8)
 
 ### Tools & Utilities
 - **Mining Calculator:** [zionminingcalc.com](https://zionminingcalc.com)

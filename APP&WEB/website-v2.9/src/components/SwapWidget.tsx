@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * SwapWidget — real Uniswap V3 swap interface for wZION/WETH on Base Mainnet.
+ * SwapWidget — real Uniswap V3 swap interface for wZION/USDT on Base Mainnet.
  * Uses SwapRouter02 for execution and QuoterV2 for price quotes.
- * wZION → ETH swaps unwrap the WETH output to native ETH in the same tx.
+ * Canonical pool: 0x186b46c2f04153999d44D25179cD623fD62Bfda2 (0.3% fee).
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import { ArrowDownUp, Loader2, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
-import { CONTRACTS, WZION_ABI, SWAP_ROUTER02_ABI, QUOTER_V2_ABI } from '@/lib/defi-contracts';
+import { CONTRACTS, WZION_ABI, SWAP_ROUTER02_ABI, QUOTER_V2_ABI, ERC20_ABI } from '@/lib/defi-contracts';
 import TokenIcon from '@/components/dex/TokenIcon';
 
 const SwapWidgetCopy = {
@@ -29,15 +29,12 @@ const SwapWidgetCopy = {
   swapping: { cs: `Swapuji…`, en: `Swapping…` },
 };
 
-/** wZION/WETH pool fee tier = 1% */
-const POOL_FEE = 10000;
+/** wZION/USDT canonical pool fee tier = 0.3% */
+const POOL_FEE = 3000;
 const SLIPPAGE_BPS = 100; // 1% slippage tolerance
 const DEADLINE_SECONDS = 300;
 
-/** Sentinel for SwapRouter02's `address(this)` */
-const ADDRESS_THIS = '0x0000000000000000000000000000000000000002';
-
-type Direction = 'eth-to-wzion' | 'wzion-to-eth';
+type Direction = 'usdt-to-wzion' | 'wzion-to-usdt';
 type SwapPhase = 'idle' | 'quoting' | 'approving' | 'swapping' | 'success' | 'error';
 
 export default function SwapWidget() {
@@ -45,13 +42,13 @@ export default function SwapWidget() {
   const cs = lang === 'cs';
   const { connected, account, signer, provider, isBaseMainnet, connect, switchToBase } = useWallet();
 
-  const [direction, setDirection] = useState<Direction>('eth-to-wzion');
+  const [direction, setDirection] = useState<Direction>('usdt-to-wzion');
   const [inputAmount, setInputAmount] = useState('');
   const [quote, setQuote] = useState<string | null>(null);
   const [phase, setPhase] = useState<SwapPhase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
-  const [ethBalance, setEthBalance] = useState<string | null>(null);
+  const [usdtBalance, setUsdtBalance] = useState<string | null>(null);
   const [wzionBalance, setWzionBalance] = useState<string | null>(null);
 
   // ── Fetch balances ─────────────────────────────────────────────────────────
@@ -60,8 +57,10 @@ export default function SwapWidget() {
     if (!provider || !account) return;
     try {
       const readProvider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
-      const ethBal = await readProvider.getBalance(account);
-      setEthBalance(parseFloat(ethers.utils.formatEther(ethBal)).toFixed(6));
+
+      const usdt = new ethers.Contract(CONTRACTS.USDT, ERC20_ABI, readProvider);
+      const usdtBal = await usdt.balanceOf(account);
+      setUsdtBalance(parseFloat(ethers.utils.formatUnits(usdtBal, 6)).toFixed(2));
 
       const wzion = new ethers.Contract(CONTRACTS.wZION, WZION_ABI, readProvider);
       const wzBal = await wzion.balanceOf(account);
@@ -94,9 +93,11 @@ export default function SwapWidget() {
         const readProvider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
         const quoter = new ethers.Contract(CONTRACTS.QuoterV2, QUOTER_V2_ABI, readProvider);
 
-        const tokenIn = direction === 'eth-to-wzion' ? CONTRACTS.WETH : CONTRACTS.wZION;
-        const tokenOut = direction === 'eth-to-wzion' ? CONTRACTS.wZION : CONTRACTS.WETH;
-        const amountIn = ethers.utils.parseEther(inputAmount);
+        const isUsdtIn = direction === 'usdt-to-wzion';
+        const tokenIn = isUsdtIn ? CONTRACTS.USDT : CONTRACTS.wZION;
+        const tokenOut = isUsdtIn ? CONTRACTS.wZION : CONTRACTS.USDT;
+        const decimalsIn = isUsdtIn ? 6 : 18;
+        const amountIn = ethers.utils.parseUnits(inputAmount, decimalsIn);
 
         const result = await quoter.callStatic.quoteExactInputSingle({
           tokenIn,
@@ -106,9 +107,9 @@ export default function SwapWidget() {
           sqrtPriceLimitX96: 0,
         });
 
-        const amountOut = ethers.utils.formatEther(result.amountOut);
-        const decimals = direction === 'eth-to-wzion' ? 2 : 6;
-        setQuote(parseFloat(amountOut).toFixed(decimals));
+        const decimalsOut = isUsdtIn ? 18 : 6;
+        const amountOut = ethers.utils.formatUnits(result.amountOut, decimalsOut);
+        setQuote(parseFloat(amountOut).toFixed(decimalsOut === 18 ? 4 : 2));
         setPhase('idle');
       } catch {
         setQuote(null);
@@ -122,7 +123,7 @@ export default function SwapWidget() {
   // ── Flip direction ─────────────────────────────────────────────────────────
 
   const flip = () => {
-    setDirection(d => d === 'eth-to-wzion' ? 'wzion-to-eth' : 'eth-to-wzion');
+    setDirection(d => d === 'usdt-to-wzion' ? 'wzion-to-usdt' : 'usdt-to-wzion');
     setInputAmount('');
     setQuote(null);
     setTxHash(null);
@@ -141,67 +142,40 @@ export default function SwapWidget() {
     if (!amount || amount <= 0) return;
 
     try {
-      const amountIn = ethers.utils.parseEther(inputAmount);
+      const isUsdtIn = direction === 'usdt-to-wzion';
+      const tokenIn = isUsdtIn ? CONTRACTS.USDT : CONTRACTS.wZION;
+      const tokenOut = isUsdtIn ? CONTRACTS.wZION : CONTRACTS.USDT;
+      const decimalsIn = isUsdtIn ? 6 : 18;
+      const amountIn = ethers.utils.parseUnits(inputAmount, decimalsIn);
 
       // Calculate minimum output with slippage
-      const quoteWei = ethers.utils.parseEther(quote ?? '0');
-      const amountOutMin = quoteWei.mul(10000 - SLIPPAGE_BPS).div(10000);
+      const quoteDecimals = isUsdtIn ? 18 : 6;
+      const quoteRaw = ethers.utils.parseUnits(quote ?? '0', quoteDecimals);
+      const amountOutMin = quoteRaw.mul(10000 - SLIPPAGE_BPS).div(10000);
 
       const router = new ethers.Contract(CONTRACTS.UniV3Router, SWAP_ROUTER02_ABI, signer);
-      const deadline = Math.floor(Date.now() / 1000) + DEADLINE_SECONDS;
 
-      if (direction === 'eth-to-wzion') {
-        // ETH → wZION: send ETH as value, tokenIn = WETH
-        setPhase('swapping');
-        const tx = await router.exactInputSingle(
-          {
-            tokenIn: CONTRACTS.WETH,
-            tokenOut: CONTRACTS.wZION,
-            fee: POOL_FEE,
-            recipient: account,
-            amountIn,
-            amountOutMinimum: amountOutMin,
-            sqrtPriceLimitX96: 0,
-          },
-          { value: amountIn }
-        );
-        setTxHash(tx.hash);
-        await tx.wait();
-        setPhase('success');
-      } else {
-        // wZION → ETH: swap wZION for WETH, then unwrap to ETH in a single multicall
-        setPhase('approving');
-        const wzion = new ethers.Contract(CONTRACTS.wZION, WZION_ABI, signer);
-        const allowance = await wzion.allowance(account, CONTRACTS.UniV3Router);
-        if (allowance.lt(amountIn)) {
-          const approveTx = await wzion.approve(CONTRACTS.UniV3Router, amountIn);
-          await approveTx.wait();
-        }
-
-        setPhase('swapping');
-
-        const swapCalldata = router.interface.encodeFunctionData('exactInputSingle', [
-          {
-            tokenIn: CONTRACTS.wZION,
-            tokenOut: CONTRACTS.WETH,
-            fee: POOL_FEE,
-            recipient: ADDRESS_THIS,
-            amountIn,
-            amountOutMinimum: amountOutMin,
-            sqrtPriceLimitX96: 0,
-          },
-        ]);
-
-        const unwrapCalldata = router.interface.encodeFunctionData('unwrapWETH9', [
-          amountOutMin,
-          account,
-        ]);
-
-        const tx = await router.multicall(deadline, [swapCalldata, unwrapCalldata]);
-        setTxHash(tx.hash);
-        await tx.wait();
-        setPhase('success');
+      setPhase('approving');
+      const tokenInContract = new ethers.Contract(tokenIn, ERC20_ABI, signer);
+      const allowance = await tokenInContract.allowance(account, CONTRACTS.UniV3Router);
+      if (allowance.lt(amountIn)) {
+        const approveTx = await tokenInContract.approve(CONTRACTS.UniV3Router, amountIn);
+        await approveTx.wait();
       }
+
+      setPhase('swapping');
+      const tx = await router.exactInputSingle({
+        tokenIn,
+        tokenOut,
+        fee: POOL_FEE,
+        recipient: account,
+        amountIn,
+        amountOutMinimum: amountOutMin,
+        sqrtPriceLimitX96: 0,
+      });
+      setTxHash(tx.hash);
+      await tx.wait();
+      setPhase('success');
 
       refreshBalances();
     } catch (e: unknown) {
@@ -214,9 +188,9 @@ export default function SwapWidget() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const isBusy = phase === 'quoting' || phase === 'approving' || phase === 'swapping';
-  const inputToken = direction === 'eth-to-wzion' ? 'ETH' : 'wZION';
-  const outputToken = direction === 'eth-to-wzion' ? 'wZION' : 'ETH';
-  const inputBal = direction === 'eth-to-wzion' ? ethBalance : wzionBalance;
+  const inputToken = direction === 'usdt-to-wzion' ? 'USDT' : 'wZION';
+  const outputToken = direction === 'usdt-to-wzion' ? 'wZION' : 'USDT';
+  const inputBal = direction === 'usdt-to-wzion' ? usdtBalance : wzionBalance;
 
   return (
     <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -322,10 +296,10 @@ export default function SwapWidget() {
           {/* Price info */}
           {quote && inputAmount && parseFloat(inputAmount) > 0 && (
             <div className="text-xs text-gray-500 text-center">
-              1 wZION ≈ {direction === 'eth-to-wzion'
-                ? (parseFloat(inputAmount) / parseFloat(quote)).toFixed(8)
-                : (parseFloat(quote) / parseFloat(inputAmount)).toFixed(8)
-              } ETH · {SwapWidgetCopy.fee[cs ? 'cs' : 'en']} 1% · slippage 1%
+              1 wZION ≈ {direction === 'usdt-to-wzion'
+                ? (parseFloat(inputAmount) / parseFloat(quote)).toFixed(6)
+                : (parseFloat(quote) / parseFloat(inputAmount)).toFixed(6)
+              } USDT · {SwapWidgetCopy.fee[cs ? 'cs' : 'en']} 0.3% · slippage 1%
             </div>
           )}
 
@@ -373,9 +347,9 @@ export default function SwapWidget() {
 
           {/* Pool info */}
           <div className="flex items-center justify-between text-[10px] text-gray-500 pt-2">
-            <span>Uniswap V3 · Base Mainnet · 1% fee</span>
+            <span>Uniswap V3 · Base Mainnet · wZION/USDT 0.3% fee</span>
             <a
-              href={`https://basescan.org/address/${CONTRACTS.UniV3PoolWETH}`}
+              href={`https://basescan.org/address/${CONTRACTS.UniV3PoolUSDT}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 hover:text-gray-300 transition-colors"

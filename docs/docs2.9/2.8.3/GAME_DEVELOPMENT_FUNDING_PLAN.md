@@ -591,7 +591,7 @@ Year 3 ($1.00):    Remaining 300M ZION = $300M (5× return on held tokens alone!
 **ZION Game Studio (Development Team):**
 - Email: studio@zionoasis.game
 - GitHub: https://github.com/ZION-Game-Studio
-- Discord: https://discord.gg/zionoasis
+- Discord: https://discord.gg/wvxJ7DhZ8
 
 **Community Governance (DAO):**
 - Voting Platform: https://dao.zion.foundation

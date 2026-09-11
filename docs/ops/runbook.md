@@ -455,7 +455,7 @@ ssh -i ~/.ssh/zion_hetzner_key root@77.42.31.72 'docker run --rm -v /opt/nkn/dat
 | Role | Contact |
 |------|---------|
 | Infrastructure | GitHub Issues |
-| Community | Discord: discord.gg/zion-terranova |
+| Community | Discord: discord.gg/wvxJ7DhZ8 |
 | Source Code | github.com/Yose144/Zion-2.9.5 |
 
 ---

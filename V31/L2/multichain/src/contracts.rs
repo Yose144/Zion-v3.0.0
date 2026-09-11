@@ -182,6 +182,43 @@ pub fn all_contracts() -> HashMap<String, ZionContracts> {
     ZionContracts::all()
 }
 
+/// Canonical Uniswap V3 pool metadata for Base Mainnet wZION pairs.
+/// Source of truth: L2contracts.md / defi-contracts.ts.
+const WZION_V3_POOLS: &[(&str, &str, u32)] = &[
+    // (counter ticker, pool address, fee bps)
+    ("WETH", "0x18c0DaeF295E63F1bfBC7C39e71d0fabf4600699", 10000), // 1%
+    ("USDT", "0x186b46c2f04153999d44D25179cD623fD62Bfda2", 3000),  // 0.3% — active
+    ("USDC", "0x5eBdC6E1D516f42EEB54f14faCF8715AbD5B9d8d", 3000),  // 0.3%
+    ("SOL", "0xF38c56bbBBBC6d9FA11E7DE84bF7Bb70e1e8D2b3", 100),    // 0.01%
+];
+
+impl ZionContracts {
+    fn wzion_pair_lookup<'a>(ticker_a: &'a str, ticker_b: &'a str) -> Option<&'static (&'static str, &'static str, u32)> {
+        let a = ticker_a.to_ascii_uppercase();
+        let b = ticker_b.to_ascii_uppercase();
+        let has_wzion = a == "WZION" || b == "WZION";
+        if !has_wzion {
+            return None;
+        }
+        let other = if a == "WZION" { &b } else { &a };
+        WZION_V3_POOLS.iter().find(|(t, _, _)| *t == other)
+    }
+
+    /// Return the canonical Uniswap V3 fee (bps) for a token pair.
+    /// Defaults to 0.3% (3000) when no specific canonical tier is known.
+    pub fn v3_fee_for_pair(&self, ticker_a: &str, ticker_b: &str) -> u32 {
+        Self::wzion_pair_lookup(ticker_a, ticker_b)
+            .map(|(_, _, fee)| *fee)
+            .unwrap_or(3000)
+    }
+
+    /// Return the canonical Uniswap V3 pool address for a token pair, if known.
+    pub fn v3_pool_address(&self, ticker_a: &str, ticker_b: &str) -> Option<String> {
+        Self::wzion_pair_lookup(ticker_a, ticker_b)
+            .map(|(_, addr, _)| addr.to_string())
+    }
+}
+
 /// Best-effort decimals for a token on a given chain.
 /// Falls back to well-known defaults (wZION = 18, USDC/USDT = 6, ETH/WETH = 18)
 /// and finally to 0 if the token is unknown.

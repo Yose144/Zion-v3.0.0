@@ -93,7 +93,7 @@ type FeatureItem = {
 
 type IntegrationItem = {
   label: string;
-  status: 'active' | 'planned' | 'tbd';
+  status: 'active' | 'planned' | 'tbd' | 'vision';
   icon: LucideIcon;
 };
 
@@ -194,6 +194,7 @@ const STATUS_LABEL = {
   active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(6, 105, 40,0.1)', border: 'rgba(6, 105, 40,0.25)' },
   planned: { cs: 'Plánováno', en: 'Planned', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
   place: { cs: 'Místo', en: 'Place', color: '#F97316', bg: 'rgba(252, 209, 22,0.1)', border: 'rgba(252, 209, 22,0.25)' },
+  vision: { cs: 'Vize', en: 'Vision', color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.25)' },
 };
 
 export default function DharmaTemplePage() {
@@ -296,8 +297,13 @@ export default function DharmaTemplePage() {
 
                 <div className="relative z-10 mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                   <img
-                    src="/images/dharma-temple/hero.png"
+                    src="/images/dharma-temple/hero.webp"
                     alt={cs ? 'Dharma Temple — koncept' : 'Dharma Temple — concept render'}
+                    width={1568}
+                    height={1003}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                     className="w-full object-cover"
                   />
                 </div>
@@ -346,8 +352,12 @@ export default function DharmaTemplePage() {
             </div>
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/dharma-temple/concept-og.png"
+                src="/images/dharma-temple/concept-og.webp"
                 alt={cs ? 'Návrh Dharma Temple' : 'Dharma Temple concept'}
+                width={1536}
+                height={1024}
+                loading="lazy"
+                decoding="async"
                 className="w-full object-contain"
               />
             </div>
@@ -589,6 +599,8 @@ export default function DharmaTemplePage() {
                         ? (TerranovaDharmaTempleCopy.active[cs ? 'cs' : 'en'])
                         : item.status === 'planned'
                         ? (TerranovaDharmaTempleCopy.planned[cs ? 'cs' : 'en'])
+                        : item.status === 'vision'
+                        ? STATUS_LABEL.vision[cs ? 'cs' : 'en']
                         : 'TBD'}
                     </p>
                   </div>
@@ -656,7 +668,7 @@ export default function DharmaTemplePage() {
               {TerranovaDharmaTempleCopy.areYouAGuardianWhoHearsLaPalma[cs ? 'cs' : 'en']}
             </p>
             <a
-              href="https://discord.gg/eatGYDbd"
+              href="https://discord.gg/wvxJ7DhZ8"
               target="_blank"
               rel="noopener noreferrer"
               className="zion-button-secondary"

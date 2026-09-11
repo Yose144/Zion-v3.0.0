@@ -9,7 +9,6 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { ethers } from 'ethers';
 import {
   getChallenge,
   verifyEd25519 as zisVerifyEd25519,
@@ -151,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const accounts: string[] = await ethereum.request({ method: 'eth_requestAccounts' });
     const rawAddress = accounts[0];
     if (!rawAddress) throw new Error('No EVM account selected');
+    const { ethers } = await import('ethers');
     const address = ethers.utils.getAddress(rawAddress);
 
     // Detect the chain the wallet is currently on for the SIWE message.

@@ -262,7 +262,7 @@ ssh -L 10009:localhost:10009 root@91.98.122.165
 
 - 📖 Documentation: [ZION Docs](https://github.com/Maitreya-ZionNet/Zion-v2.5-Testnet)
 - 🐛 Issues: [GitHub Issues](https://github.com/Maitreya-ZionNet/Zion-v2.5-Testnet/issues)
-- 💬 Community: [ZION Discord](https://discord.gg/zion)
+- 💬 Community: [ZION Discord](https://discord.gg/wvxJ7DhZ8)
 
 ---
 

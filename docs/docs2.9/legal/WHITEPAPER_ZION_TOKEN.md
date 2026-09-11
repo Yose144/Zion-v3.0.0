@@ -685,7 +685,7 @@ Under MiCA Article 4(2):
 
 **Social Media:**
 - **Telegram:** https://t.me/ZionTerraNova
-- **Discord:** https://discord.gg/zionterranova
+- **Discord:** https://discord.gg/wvxJ7DhZ8
 - **Twitter/X:** @ZionTerraNova
 - **GitHub:** https://github.com/Zion-TerraNova
 - **Medium:** https://medium.com/@zionterranova

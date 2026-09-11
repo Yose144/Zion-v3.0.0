@@ -5,13 +5,26 @@
  */
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogIn, LogOut, LayoutDashboard, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import LoginModal from './LoginModal';
+import { useLang } from '@/contexts/LanguageContext';
+
+const LoginModal = dynamic(() => import('./LoginModal'), { ssr: false });
+
+const NavAuthCopy = {
+  login: { cs: 'Přihlásit', en: 'Login' },
+  account: { cs: 'Můj účet', en: 'My Account' },
+  wallet: { cs: 'Moje peněženka', en: 'My Wallet' },
+  privateDashboard: { cs: 'Soukromý přehled', en: 'Private Dashboard' },
+  logout: { cs: 'Odhlásit', en: 'Logout' },
+  user: { cs: 'Uživatel ZION', en: 'ZION User' },
+};
 
 export default function NavAuthButton() {
   const { user, authenticated, loading, logout } = useAuth();
+  const { lang } = useLang();
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
@@ -31,15 +44,16 @@ export default function NavAuthButton() {
           className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/15 bg-black/85 text-sm font-semibold text-white hover:border-zion-cyan/40 hover:text-zion-cyan transition-colors"
         >
           <LogIn className="w-4 h-4" />
-          Login
+          {NavAuthCopy.login[lang]}
         </button>
         <button
           onClick={() => setShowLogin(true)}
           className="sm:hidden p-2 rounded-xl border border-white/15 bg-black/85 text-white"
+          aria-label={NavAuthCopy.login[lang]}
         >
           <LogIn className="w-4 h-4" />
         </button>
-        <LoginModal open={showLogin} onClose={() => setShowLogin(false)} redirectTo={pathname} />
+        {showLogin && <LoginModal open onClose={() => setShowLogin(false)} redirectTo={pathname} />}
       </>
     );
   }
@@ -67,7 +81,7 @@ export default function NavAuthButton() {
             <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[rgba(13,13,13,0.95)] backdrop-blur-xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5">
                 <p className="text-xs font-semibold text-white truncate">
-                  {user?.displayName || 'ZION User'}
+                  {user?.displayName || NavAuthCopy.user[lang]}
                 </p>
                 <p className="text-[10px] font-mono text-zion-gold/70 truncate">{user?.address}</p>
               </div>
@@ -78,7 +92,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <LayoutDashboard className="w-3.5 h-3.5" /> My Account
+                <LayoutDashboard className="w-3.5 h-3.5" /> {NavAuthCopy.account[lang]}
               </button>
               <button
                 onClick={() => {
@@ -87,7 +101,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <User className="w-3.5 h-3.5" /> My Wallet
+                <User className="w-3.5 h-3.5" /> {NavAuthCopy.wallet[lang]}
               </button>
               <button
                 onClick={() => {
@@ -96,7 +110,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <Shield className="w-3.5 h-3.5" /> Private Dashboard
+                <Shield className="w-3.5 h-3.5" /> {NavAuthCopy.privateDashboard[lang]}
               </button>
               <div className="h-px bg-white/5" />
               <button
@@ -107,7 +121,7 @@ export default function NavAuthButton() {
                 }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-purple hover:bg-zion-purple/10 transition-colors"
               >
-                <LogOut className="w-3.5 h-3.5" /> Logout
+                <LogOut className="w-3.5 h-3.5" /> {NavAuthCopy.logout[lang]}
               </button>
             </div>
           </>

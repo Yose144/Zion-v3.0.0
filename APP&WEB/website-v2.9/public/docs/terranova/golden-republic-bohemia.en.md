@@ -69,7 +69,7 @@ Covered corridors (evoking Karlštejn's passageways) and walking paths connect t
 | 1 | Roots (2027) | Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2027, ZION wallet + DAO framework. |
 | 2 | Community (2028) | Guardian node, permanent housing 3–5 cabins, monthly governance program, LoRa mesh, Medical Table pavilion, connection with Genesis Garden and Dharma Temple. |
 | 3 | Network (2029) | 3 ha, seed network 3+ nodes, education center (Wayfinding Governance school), second node in Bohemia or Slovakia. |
-| 4 | Radiance (2030+) | Governance retreat center 40+ guests, ZION payments as default, knowledge commons, 1% surplus → L6, first working prototype of the Golden Republic in practice. |
+| 4 | Radiance (2030+) | Governance retreat center 40+ guests, Golden House as the seat of the DAO parliament, ZION payments as default, knowledge commons, 1% surplus → L6, first working prototype of the Golden Republic in practice. |
 
 ## ZION Integration
 
@@ -81,6 +81,7 @@ Covered corridors (evoking Karlštejn's passageways) and walking paths connect t
 - **Proof-of-Care** — rewards for genuine care of soil, community, and governance documentation.
 - **Humanitarian Tithe** — 10% of node rewards goes to local and global humanitarian projects.
 - **Golden Republic protocol** — governance laboratory: the first physical node where the voluntary protocol of coexistence from `TerraNova/06-L5-SVOBODA` §6.6 is prototyped.
+- **Golden House — DAO parliament** — just as the USA has the White House, the Golden Republic has the Golden House: the seat of the DAO parliament and public administration. Every vote on-chain, every session public, every decision recorded forever on the blockchain.
 
 ## Open Questions
 

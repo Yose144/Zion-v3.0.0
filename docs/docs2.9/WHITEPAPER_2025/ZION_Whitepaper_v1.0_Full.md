@@ -5222,7 +5222,7 @@ Community Organizer (Regional):
 ### Official Platforms
 
 ```yaml
-Discord: https://discord.gg/zion (primary)
+Discord: https://discord.gg/wvxJ7DhZ8 (primary)
   Channels:
     #announcements: Official updates only
     #general: Community chat
@@ -6769,7 +6769,7 @@ Start Mining in 10 Minutes:
      - Check pool stats: https://91.98.122.165:8080 (if live)
   
   5. Level Up (Consciousness Game):
-     - Join Discord: https://discord.gg/zion
+     - Join Discord: https://discord.gg/wvxJ7DhZ8
      - Complete AI challenges (quiz, conversation, meditation)
      - Earn XP → Level up → Multiply rewards (up to 10×)
 
@@ -6906,7 +6906,7 @@ Investment Thesis:
 
 ```yaml
 Join the Movement:
-  1. Discord: https://discord.gg/zion
+  1. Discord: https://discord.gg/wvxJ7DhZ8
      - Introduce yourself in #introductions
      - Ask questions in #support
      - Share memes in #fun
@@ -7209,7 +7209,7 @@ GitHub: https://github.com/estrelaisabellazion3/Zion-TestNet-2.7.5
 Block Explorer: https://explorer.zion.network
 
 Social Media:
-  Discord: https://discord.gg/zion
+  Discord: https://discord.gg/wvxJ7DhZ8
   Telegram: https://t.me/zion_blockchain
   Twitter: @ZionBlockchain
   Reddit: r/ZionBlockchain

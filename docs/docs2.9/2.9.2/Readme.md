@@ -1530,7 +1530,7 @@ zion-security firewall
 
 [Website](https://zionterranova.com) •
 [Dokumentace](https://docs.zionterranova.com) •
-[Discord](https://discord.gg/zion) •
+[Discord](https://discord.gg/wvxJ7DhZ8) •
 [Twitter](https://twitter.com/zionblockchain)
 
 </div>

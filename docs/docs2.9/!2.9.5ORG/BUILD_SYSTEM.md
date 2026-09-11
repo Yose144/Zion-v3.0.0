@@ -274,7 +274,7 @@ build_target "x86_64-unknown-freebsd" "zion-miner-freebsd-x64" "FreeBSD x86_64"
 ## 📞 Support
 
 - **Build Issues**: [GitHub Issues](https://github.com/zionterranova/zion/issues)
-- **Discord**: [#development](https://discord.gg/zionterranova)
+- **Discord**: [#development](https://discord.gg/wvxJ7DhZ8)
 
 ---
 
