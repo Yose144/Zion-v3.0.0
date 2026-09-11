@@ -43,9 +43,9 @@ const Article = {
       'Veřejný launch nebyl zrušen — byl odložen. Do té doby zůstává ZION v aktivním vývoji. Spustíme otevřenou výzvu pro dobrovolné vývojáře, pokračujeme v testování, zdokonalujeme explorer, peněženku a bridge, a budeme hledat cesty k získání základní likvidity. Jakmile projdeme Maturity Gate a budeme mít splněné uvedené podmínky, oznámíme nový termín. Do té doby nebudeme uvádět žádné nové pevné datum.',
     volunteerTitle: 'Hledáme dobrovolné vývojáře',
     volunteerBody:
-      'Pokud máte zkušenosti s Rust, blockchainem, smart kontrakty, webovým vývojem, testováním, dokumentací nebo DevOps a chcete pomoci ZION dorůst do skutečně veřejného projektu, přidejte se. Hledáme lidi, kteří chtějí pracet na něčem smysluplném, ne honit quick wins. Kontaktujte nás přes GitHub nebo e-mail uvedený níže.',
+      'Pokud máte zkušenosti s Rust, blockchainem, smart kontrakty, webovým vývojem, testováním, dokumentací nebo DevOps a chcete pomoci ZION dorůst do skutečně veřejného projektu, přidejte se. Hledáme lidi, kteří chtějí spolupracovat na něčem smysluplném, ne honit quick wins. Kontaktujte nás přes GitHub nebo e-mail uvedený níže.',
     contactGithub: 'Zion-TerraNova/v3-Mainnet',
-    contactEmail: 'core@zionterranova.com',
+    contactEmail: 'omnity.company@gmail.com',
     closing:
       'Děkujeme za pochopení. ZION nevznikl proto, aby býval první den na burze. Vznikl proto, aby býval dlouhodobě udržitelným, transparentním a komunitním blockchainem. Dáváme si na to čas, který potřebujeme.',
     backToHome: 'Zpět na hlavní stránku',
@@ -90,7 +90,7 @@ const Article = {
     volunteerBody:
       'If you have experience with Rust, blockchain, smart contracts, web development, testing, documentation, or DevOps and want to help ZION grow into a truly public project, join us. We are looking for people who want to work on something meaningful, not chase quick wins. Contact us via GitHub or the email below.',
     contactGithub: 'Zion-TerraNova/v3-Mainnet',
-    contactEmail: 'core@zionterranova.com',
+    contactEmail: 'omnity.company@gmail.com',
     closing:
       'Thank you for understanding. ZION was not created to be listed on day one. It was created to be a long-term, transparent, community blockchain. We are giving ourselves the time we need.',
     backToHome: 'Back to homepage',
