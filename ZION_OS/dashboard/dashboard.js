@@ -7187,13 +7187,14 @@ async function loadGenesis(){
   const catColors = {
     oasis_golden_egg: 'border-pink-500/30 bg-pink-500/5',
     l5_free_world: 'border-teal-500/30 bg-teal-500/5',
+    l6_issobella: 'border-violet-500/30 bg-violet-500/5',
     dao_treasury: 'border-blue-500/30 bg-blue-500/5',
     infrastructure: 'border-zion-cyan/30 bg-cyan-500/5',
     humanitarian: 'border-emerald-500/30 bg-emerald-500/5',
     bridge_seed: 'border-amber-500/30 bg-amber-500/5',
     bridge_vault_utxo: 'border-orange-500/30 bg-orange-500/5',
   };
-  const catIcons = { oasis_golden_egg: '🌸', l5_free_world: '🌍', dao_treasury: '🗳️', infrastructure: '🏗️', humanitarian: '💝', bridge_seed: '🌉', bridge_vault_utxo: '🔒' };
+  const catIcons = { oasis_golden_egg: '🌸', l5_free_world: '🌍', l6_issobella: '🛰️', dao_treasury: '🗳️', infrastructure: '🏗️', humanitarian: '💝', bridge_seed: '🌉', bridge_vault_utxo: '🔒' };
   document.getElementById('premine-table').innerHTML = res.premine.map((p, i) => `
     <div class="zion-panel-soft border ${catColors[p.category] || 'border-white/10'} rounded-xl p-3 flex items-center gap-3">
       <div class="text-2xl">${catIcons[p.category] || '⚪'}</div>
@@ -8287,7 +8288,7 @@ async function loadDaoStats() {
     if(el('dao-stat-active')) el('dao-stat-active').textContent = d.active ?? '0';
     if(el('dao-stat-passed')) el('dao-stat-passed').textContent = d.passed ?? '0';
     if(el('dao-stat-executed')) el('dao-stat-executed').textContent = d.executed ?? '0';
-    if(el('dao-stat-treasury')) el('dao-stat-treasury').textContent = d.treasury_total_zion ? (Number(d.treasury_total_zion) / 1e9).toFixed(1) + ' B' : '4 B';
+    if(el('dao-stat-treasury')) el('dao-stat-treasury').textContent = d.treasury_total_zion ? (Number(d.treasury_total_zion) / 1e9).toFixed(1) + ' B' : '1.5 B';
     if(el('dao-stat-quorum')) el('dao-stat-quorum').textContent = (d.quorum_percent ?? 10) + '%';
     if(el('dao-stat-multisig')) el('dao-stat-multisig').textContent = d.multisig ?? '5-of-7';
   } catch(e) { /* DAO offline */ }
@@ -8477,7 +8478,7 @@ async function loadDaoTreasury() {
     const d = r.data || r;
     const el = id => document.getElementById(id);
     if(el('dao-treas-available')) el('dao-treas-available').textContent = d.available_zion ? Number(d.available_zion).toLocaleString() : '—';
-    if(el('dao-treas-total')) el('dao-treas-total').textContent = d.total_zion ? Number(d.total_zion).toLocaleString() : '4,000,000,000';
+    if(el('dao-treas-total')) el('dao-treas-total').textContent = d.total_zion ? Number(d.total_zion).toLocaleString() : '1,500,000,000';
     if(el('dao-treas-multisig')) el('dao-treas-multisig').textContent = d.multisig ?? '5-of-7';
     if(el('dao-treas-pending')) el('dao-treas-pending').textContent = d.pending_operations ?? '0';
     // DAO Treasury lock countdown — locked until block 144,000

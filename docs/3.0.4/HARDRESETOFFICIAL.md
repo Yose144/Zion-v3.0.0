@@ -115,9 +115,9 @@ V3/target/release/gen-premine-wallets > /home/zionserver/zion-keys-2026-07-03/pr
 | 1 | oasis_golden_egg | OASIS + Golden Egg (Slot 1) | 1,650,000,000 |
 | 2 | oasis_golden_egg | OASIS + Golden Egg (Slot 2) | 1,650,000,000 |
 | 3 | oasis_golden_egg | OASIS + Golden Egg (Slot 3) | 1,650,000,000 |
-| 4 | oasis_golden_egg | OASIS + Golden Egg (Slot 4) | 1,650,000,000 |
-| 5 | oasis_golden_egg | OASIS + Golden Egg (Slot 5) | 1,650,000,000 |
-| 6 | dao_treasury | Community Governance (main) | 2,500,000,000 |
+| 4 | l5_free_world | L5 Free World Projects (repurposed z OASIS Slot 4) | 1,650,000,000 |
+| 5 | l5_free_world | L5 Free World Projects (repurposed z OASIS Slot 5) | 1,650,000,000 |
+| 6 | l6_issobella | L6 Issobella — Orbital Station & Quantum Research Fund (repurposed z DAO Community Governance) | 2,500,000,000 |
 | 7 | dao_treasury | Grants & Bounties | 1,000,000,000 |
 | 8 | dao_treasury | Ecosystem Bootstrap | 500,000,000 |
 | 9 | infrastructure | Core Development Fund | 1,000,000,000 |
@@ -569,7 +569,7 @@ systemctl start zion-edge-agent zion-edge-dashboard
 
 ### 7.5 L2/L3 services
 - [ ] Bridge — `bridge_address` == nová vault
-- [ ] DAO — `treasury_addresses` == nové premine sloty 6,7,8
+- [ ] DAO — `treasury_addresses` == nové premine sloty 7,8 (slot 6 = L6 Issobella)
 - [ ] Atomic swap — escrow key funkční
 - [ ] WARP — `l1_vault_address` == nová vault
 

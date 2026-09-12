@@ -80,16 +80,20 @@ Source of truth: `docs/mainnet/MAINNET_CONSTITUTION.md` (frozen SHA-256: c76aa00
 
 ### Genesis Premine Distribution
 
-12 wallets defined in `PREMINE_ADDRESSES_PUBLIC.txt`:
+14 premine outputs defined in `PREMINE_ADDRESSES_PUBLIC.txt`:
 
 | # | Category | Amount |
 |---|----------|--------|
-| 1–5 | OASIS + Winners Golden Egg/Xp (3 slots × 1.65B (Slots 4 & 5 → L5 Free World)) | 4,950,000,000 ZION |
-| 6–8 | DAO Treasury (main 2.5B + grants 1B + bootstrap 0.5B) | 4,000,000,000 ZION |
+| 1–3 | OASIS + Winners Golden Egg/Xp (3 slots × 1.65B) | 4,950,000,000 ZION |
+| 4–5 | L5 Free World Projects (2 slots × 1.65B) | 3,300,000,000 ZION |
+| 6 | L6 Issobella — Orbital Station & Quantum Research Fund | 2,500,000,000 ZION |
+| 7–8 | DAO Treasury (grants 1B + bootstrap 0.5B) | 1,500,000,000 ZION |
 | 9–11 | Infrastructure (core dev 1B + seed nodes 1B + creator 0.59B) | 2,590,000,000 ZION |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 ZION |
+| 13 | Bridge Seed | 400,000,000 ZION |
+| 14 | Bridge Vault UTXO | 100,000,000 ZION |
 
-Lock: DAO Treasury cliff at ~525,600 blocks (~1 year). All others: immediate unlock.
+Lock: L6 Issobella (slot 6) + DAO Treasury (slots 7–8) cliff at ~144,000 blocks (~100 days). All others: immediate unlock.
 
 ### Security Note
 
@@ -212,7 +216,7 @@ This roadmap follows the release progression already defined in the repository d
   - **157 tests** (111 lib + 45 integration + 1 doctest)
 - `L2/dao` **(Sprint 8 — migrated from legacy `L2/dao/`)**
   - DAO governance daemon: proposal lifecycle, voting, treasury, timelock, humanitarian tithe
-  - 12-decimal flowers, u128 treasury amounts (4B ZION scale)
+  - 12-decimal flowers, u128 treasury amounts (multi-billion ZION scale)
   - **65 tests** (40 lib + 25 integration)
 - `L2/atomic-swap` **(Sprint 8 — migrated from legacy `L2/atomic-swap/`)**
   - HTLC cross-chain atomic swaps with `amount_flowers`/`min_lock_flowers`
@@ -360,7 +364,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G7 | Coinbase maturity | 100 blocks | ✅ `validation.rs` — COINBASE_MATURITY=100, enforced in validate_block | ~~Phase 6b~~ done |
 | G8 | Fee burn | 100% of fees burned | ✅ `fee.rs` — 100% burn, BURN_ADDRESS defined | ~~Phase 6b~~ done |
 | G9 | Seed peers | 5+ required for eclipse resistance | ⚠️ Current runtime uses Core + Edge topology; audited multi-seed expansion must be reintroduced before broader public rollout | re-opened |
-| G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | ✅ `validation.rs` Step 11: `validate_premine_locks()` calls `genesis::is_premine_transfer_allowed()` | ~~Phase 8~~ done |
+| G10 | Premine unlock_height | L6 Issobella + DAO Treasury cliff at ~144,000 | ✅ `validation.rs` Step 11: `validate_premine_locks()` calls `genesis::is_premine_transfer_allowed()` | ~~Phase 8~~ done |
 
 #### MEDIUM — required before production launch, not for testnet
 
@@ -524,7 +528,7 @@ Required work:
 
 - define genesis block structure: header (height 0, prev_hash 0x00…, timestamp TBD, nonce TBD) + coinbase with 14 outputs
 - embed 14 addresses and amounts from `PREMINE_ADDRESSES_PUBLIC.txt` (total 16,780,000,000 ZION = 16,780,000,000,000,000,000,000 flowers)
-- set DAO Treasury outputs with `unlock_height = 525_600`
+- set L6 Issobella + DAO Treasury outputs with `unlock_height = 525_600`
 - compute and freeze genesis block hash
 - add genesis block as chain initialization default in ChainState
 - add validation: block at height 0 must equal frozen genesis hash
@@ -1062,11 +1066,14 @@ Clamp                  = ±25%
 ### Genesis (V3 genesis.rs ✅)
 ```
 DAO_TREASURY_LOCK_HEIGHT = 525_600
-14 addresses, 7 categories:
-  oasis_golden_egg:  3 × 1.65B = 4.95B ZION (Slots 4 & 5 → L5 Free World: 3.3B)
-  dao_treasury:      3 slots   = 4.00B ZION (locked until 525,600)
+14 addresses, 8 categories:
+  oasis_golden_egg:  3 × 1.65B = 4.95B ZION
+  l5_free_world:     2 × 1.65B = 3.30B ZION (repurposed slots 4 & 5)
+  l6_issobella:      1 × 2.50B = 2.50B ZION (slot 6, locked until 144,000)
+  dao_treasury:      2 slots   = 1.50B ZION (slots 7–8, locked until 144,000)
   infrastructure:    3 slots   = 2.59B ZION
   humanitarian:      1 × 1.44B = 1.44B ZION
+  bridge_seed+vault: 2 slots   = 0.50B ZION
   TOTAL:                        16.78B ZION
 ```
 
@@ -1211,7 +1218,7 @@ Completed work:
 - **V3/L2/dao migration** from legacy `L2/dao/`:
   - 16 src files + 1 integration test file
   - Decimal fix: `amount_atomic` → `amount_flowers`, `fee_atomic` → `fee_flowers`
-  - Treasury amounts use `u128` for 4B ZION supply scale
+  - Treasury amounts use `u128` for multi-billion ZION supply scale
   - Config `daily_spend_limit` stored as whole ZION, converted via `FLOWERS_PER_ZION`
   - **65 tests pass** (40 lib + 25 integration)
 - **V3/L2/atomic-swap migration** from legacy `L2/atomic-swap/`:

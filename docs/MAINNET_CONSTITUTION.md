@@ -83,16 +83,19 @@ Premine je rozdělen na následující logické skupiny:
 
 | Kategorie | Účel |
 |-----------|------|
-| **ZION OASIS + Winners Golden Egg/Xp** | OASIS herní odměny + Winners Golden Egg/Xp |
-| **DAO / Governance** | Decentralizované rozhodování |
-| **Humanitarian Fund** | Podpora humanitárních projektů |
-| **Infrastructure** | Core development & maintenance |
+| **ZION OASIS + Winners Golden Egg/Xp** | OASIS herní odměny + Winners Golden Egg/Xp (4.95B, sloty 1–3) |
+| **L5 Free World Projects** | Humanitární projekty (3.3B, sloty 4–5) |
+| **L6 Issobella** | Orbital Station & Quantum Research Fund (2.5B, slot 6) |
+| **DAO / Governance** | Decentralizované rozhodování (1.5B, sloty 7–8) |
+| **Humanitarian Fund** | Podpora humanitárních projektů (1.44B) |
+| **Infrastructure** | Core development & maintenance (2.59B) |
+| **Bridge Seed + Vault** | EVM bridge likvidita (0.5B) |
 
-### 3.2 Okamžitý Unlock
+### 3.2 Time-lock pravidla
 
 - ✅ Všechny premine prostředky jsou **on-chain sledovatelné**
-- ✅ Veškerý premine je **okamžitě odemčen od genesis bloku**
-- ✅ Žádné time-locky, žádný vesting
+- ✅ Sloty 6–8 (L6 Issobella 2.5B + DAO Treasury 1.5B) jsou **časově uzamčeny do bloku 144 000**
+- ✅ Ostatní sloty jsou admin-locked (3-of-3 multisig + DAO vote) od genesis bloku
 - ✅ Správa prostředků je řízena **DAO governance**
 
 > **Plná transparentnost. Governance přes DAO.**

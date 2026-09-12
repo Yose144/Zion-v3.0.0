@@ -52,9 +52,12 @@ All genesis allocations are on-chain verifiable from the genesis block.
 | Category | ZION Amount | % of Supply | Purpose |
 |----------|-------------|-------------|---------|
 | ZION OASIS + Winners | 4,950,000,000 | 3.44% | OASIS rewards, Golden Egg/Xp events |
-| DAO Treasury | 4,000,000,000 | 2.78% | Community governance + grants |
+| L5 Free World Projects | 3,300,000,000 | 2.29% | L5 humanitarian & energy projects |
+| L6 Issobella | 2,500,000,000 | 1.74% | Orbital Station & Quantum Research Fund (time-locked, block 144,000) |
+| DAO Treasury | 1,500,000,000 | 1.04% | Community governance + grants (time-locked, block 144,000) |
 | Infrastructure | 2,590,000,000 | 1.80% | Servers, development, security audit |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% | L5 — clean water, education, healthcare |
+| Bridge Seed + Vault | 500,000,000 | 0.35% | wZION bridge seed + vault |
 | **Total Genesis** | **16,780,000,000** | **11.65%** | — |
 
 **Note:** An initial 500M ZION presale allocation existed in the design spec. It was cancelled in January 2026 and the tokens were added to the DAO Treasury. No presale ever took place.

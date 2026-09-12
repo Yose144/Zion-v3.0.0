@@ -24,8 +24,10 @@ Hloubkový audit (12. února 2026) odhalil **14 kritických (P0) nálezů**, **2
 
 | # | Co | Soubor | Aktuální stav | Mainnet akce |
 |---|---|---|---|---|
-| ⬜ | **OASIS + Golden Egg** wallety (5×) | `core/src/blockchain/premine.rs` | Testnet adresy `zion166e...`, `zion1l2h...` etc. | **VYMĚNIT za produkční cold-storage adresy** |
-| ⬜ | **DAO Treasury** wallety (3×) | `core/src/blockchain/premine.rs` | Testnet adresy `zion176u...`, `zion1264...`, `zion1k8w...` | **Multisig DAO adresa, cold-storage** |
+| ⬜ | **OASIS + Golden Egg** wallety (3×) | `core/src/blockchain/premine.rs` | Testnet adresy `zion166e...`, `zion1l2h...` etc. | **VYMĚNIT za produkční cold-storage adresy** |
+| ⬜ | **L5 Free World** wallety (2×, repurposed z OASIS 4–5) | `core/src/blockchain/premine.rs` | Testnet adresy | **Produkční L5 adresy** |
+| ⬜ | **L6 Issobella** wallet (1×, repurposed z DAO slot 6) | `core/src/blockchain/premine.rs` | Testnet adresa | **Produkční L6 adresa, time-lock blok 144 000** |
+| ⬜ | **DAO Treasury** wallety (2×) | `core/src/blockchain/premine.rs` | Testnet adresy `zion176u...`, `zion1264...` | **Multisig DAO adresa, cold-storage, time-lock blok 144 000** |
 | ⬜ | **Infrastructure** wallety (3×) | `core/src/blockchain/premine.rs` | Testnet adresy `zion1q54...`, `zion1h4w...`, `zion1x63...` | **Produkční infra wallety** |
 | ⬜ | **Humanitarian Fund** wallet (1×) | `core/src/blockchain/premine.rs` | Testnet adresa `zion1m4v...` | **Veřejná, transparentní adresa** |
 | ⬜ | **Záloha private keys** | `PREMINE_WALLETS_BACKUP.json` | Existuje v repo (!) | **PŘESUNOUT DO OFFLINE VAULT, SMAZAT Z REPO** |
@@ -34,10 +36,14 @@ Hloubkový audit (12. února 2026) odhalil **14 kritických (P0) nálezů**, **2
 
 | Kategorie | Plánované (ZION) | V kódu | Status |
 |-----------|-----------------|--------|--------|
-| OASIS + Winners Golden Egg/Xp | 8,250,000,000 | ✅ | ⬜ Finální audit |
-| DAO Treasury | 4,000,000,000 | ✅ | ⬜ Finální audit |
+| OASIS + Winners Golden Egg/Xp | 4,950,000,000 | ✅ | ⬜ Finální audit |
+| L5 Free World Projects | 3,300,000,000 | ✅ | ⬜ Finální audit |
+| L6 Issobella | 2,500,000,000 | ✅ | ⬜ Finální audit |
+| DAO Treasury | 1,500,000,000 | ✅ | ⬜ Finální audit |
 | Infrastructure | 2,590,000,000 | ✅ | ⬜ Finální audit |
 | Humanitarian | 1,440,000,000 | ✅ | ⬜ Finální audit |
+| Bridge Seed | 400,000,000 | ✅ | ⬜ Finální audit |
+| Bridge Vault UTXO | 100,000,000 | ✅ | ⬜ Finální audit |
 | **CELKEM** | **16,780,000,000** | **✅** | ⬜ `cargo test` pass |
 
 ### 1.3 Genesis timestamp

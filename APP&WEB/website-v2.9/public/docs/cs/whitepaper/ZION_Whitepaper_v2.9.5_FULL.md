@@ -1157,10 +1157,13 @@ Genesis Block Distribution:
 
 | Alokace | ZION | % z Premine | % z Total | Účel |
 |---------|------|-------------|-----------|------|
-| **ZION OASIS + Winners Golden Egg/Xp** | 4,950,000,000 | 50.7% | 5.73% | OASIS rewards + Golden Egg/Xp |
-| **DAO Treasury** | 4,000,000,000 | 24.6% | 2.78% | Komunitní governance |
-| **Infrastructure** | 2,500,000,000 | 15.4% | 1.74% | Servery, vývoj, audit |
-| **Humanitarian Fund** | 1,530,000,000 | 9.4% | 1.06% | Tithe iniciální alokace |
+| **ZION OASIS + Winners Golden Egg/Xp** | 4,950,000,000 | 29.5% | 3.44% | OASIS rewards + Golden Egg/Xp |
+| **L5 Free World** | 3,300,000,000 | 19.7% | 2.29% | L5 humanitární a energetické projekty |
+| **L6 Issobella** | 2,500,000,000 | 14.9% | 1.74% | Vesmírná stanice a fond kvantového výzkumu |
+| **DAO Treasury** | 1,500,000,000 | 8.9% | 1.04% | Komunitní governance |
+| **Infrastructure** | 2,590,000,000 | 15.4% | 1.80% | Servery, vývoj, audit |
+| **Humanitarian Fund** | 1,440,000,000 | 8.6% | 1.00% | Tithe iniciální alokace |
+| **Bridge Seed + Vault** | 500,000,000 | 3.0% | 0.35% | wZION bridge seed + vault |
 
 **Poznámka:** Presale alokace (500M ZION) byla **zrušena** v lednu 2026. Tyto tokeny zůstávají v DAO Treasury.
 
@@ -1618,26 +1621,44 @@ Genesis Block Distribution (16.78B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Mining Operators Pool: 4,950,000,000 ZION (30.4%)       │ │
-│ │ └── Pro consciousness bonus (2025-2035)                 │ │
+│ │ OASIS + Golden Egg: 4,950,000,000 ZION (29.5%)          │ │
+│ │ └── Odměny L4 herního světa + consciousness bonus       │ │
 │ │ └── Time-locked: postupné uvolňování 10 let             │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ DAO Treasury: 4,000,000,000 ZION (24.6%)                │ │
-│ │ └── Komunitní governance                                │ │
-│ │ └── Vesting: 4 roky lineární                           │ │
+│ │ L5 Free World Projects: 3,300,000,000 ZION (19.7%)      │ │
+│ │ └── Humanitární a energetické projekty (sloty 4–5)      │ │
+│ │ └── Unlocked (okamžitě použitelné)                      │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Infrastructure Fund: 2,500,000,000 ZION (15.4%)         │ │
+│ │ L6 Issobella: 2,500,000,000 ZION (14.9%)                │ │
+│ │ └── Vesmírná stanice + fond kvantového výzkumu          │ │
+│ │ └── Time-locked: blok 144 000                           │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ DAO Treasury: 1,500,000,000 ZION (8.9%)                 │ │
+│ │ └── Komunitní governance (sloty 7–8)                    │ │
+│ │ └── Time-locked: blok 144 000                           │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Infrastructure Fund: 2,590,000,000 ZION (15.4%)         │ │
 │ │ └── Servery, vývoj, audit, marketing                    │ │
 │ │ └── Vesting: 2 roky lineární                           │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Humanitarian Fund: 1,530,000,000 ZION (9.4%)            │ │
+│ │ Humanitarian Fund: 1,440,000,000 ZION (8.6%)            │ │
 │ │ └── Iniciální seed pro humanitární projekty             │ │
+│ │ └── Unlocked (okamžitě použitelné)                      │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Bridge Seed + Vault: 500,000,000 ZION (3.0%)            │ │
+│ │ └── wZION bridge seed + vault                           │ │
 │ │ └── Unlocked (okamžitě použitelné)                      │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
@@ -1649,9 +1670,12 @@ Genesis Block Distribution (16.78B ZION):
 | Alokace | Unlock Model | Status |
 |---------|--------------|--------|
 | ZION OASIS + Winners Golden Egg/Xp | Okamžitě dostupné | Od genesis |
-| DAO Treasury | Okamžitě dostupné | Od genesis |
+| L5 Free World Projects | Okamžitě dostupné | Od genesis |
+| L6 Issobella | Time-locked | Blok 144 000 |
+| DAO Treasury | Time-locked | Blok 144 000 |
 | Infrastructure | Okamžitě dostupné | Od genesis |
 | Humanitarian | Okamžitě dostupné | Od genesis |
+| Bridge Seed + Vault | Okamžitě dostupné | Od genesis |
 
 ---
 
@@ -1798,7 +1822,7 @@ ZION JE:
 ### "Jak zaplatíte vývoj?"
 
 **Odpověď:** 
-- Infrastructure Fund (2.5B ZION) = vývoj po MainNet
+- Infrastructure Fund (2.59B ZION) = vývoj po MainNet
 - Dobrovolná práce před MainNet
 - Alternativní revenue streams (knihy, consulting)
 
@@ -1956,43 +1980,43 @@ Timelock: 48 hodin mezi QUEUED a EXECUTED
 
 ## 6.4 Treasury Management
 
-### DAO Treasury (4B ZION)
+### DAO Treasury (1.5B ZION)
 
-Z genesis premine je **4,000,000,000 ZION** alokováno do DAO Treasury.
+Z genesis premine je **1,500,000,000 ZION** alokováno do DAO Treasury (sloty 7–8). Dřívější hlavní slot 6 (2,5 mld. ZION) byl přealokován na **L6 Issobella — vesmírnou stanici a fond kvantového výzkumu**.
 
 ### Budget Categories
 
 ```
-DAO Treasury Allocation (4B ZION):
+DAO Treasury Allocation (1.5B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Reserved: 2,150,000,000 ZION (53.75%)                   │ │
+│ │ Reserved: 550,000,000 ZION (36.7%)                      │ │
 │ │ └── Pro budoucí rozhodnutí komunity                     │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Infrastructure: 600,000,000 ZION (15%)                  │ │
+│ │ Infrastructure: 300,000,000 ZION (20%)                  │ │
 │ │ └── Servery, RPC nodes, block explorers                 │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Developer Grants: 500,000,000 ZION (12.5%)              │ │
+│ │ Developer Grants: 300,000,000 ZION (20%)                │ │
 │ │ └── Odměny pro open-source vývojáře                     │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Marketing: 350,000,000 ZION (8.75%)                     │ │
+│ │ Marketing: 150,000,000 ZION (10%)                       │ │
 │ │ └── Awareness, vzdělávání, eventy                       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Research: 200,000,000 ZION (5%)                         │ │
+│ │ Research: 100,000,000 ZION (6.7%)                       │ │
 │ │ └── R&D, security audity, akademická spolupráce         │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Emergency: 200,000,000 ZION (5%)                        │ │
+│ │ Emergency: 100,000,000 ZION (6.7%)                      │ │
 │ │ └── Bug bounty, krizové situace                         │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
@@ -2280,7 +2304,7 @@ Total Votes Cast:       847
 Unique Voters:          156
 Average Turnout:        23.4%
 
-Treasury Balance:       4,000,000,000 ZION
+Treasury Balance:       1,500,000,000 ZION
 ├── Spent:              0 ZION (TestNet)
 └── Committed:          0 ZION
 
@@ -2740,13 +2764,13 @@ Skutečná hodnota závisí na aktivitě sítě.
 
 ### Genesis Seed
 
-Z premine je **1.53B ZION** alokováno jako iniciální seed:
+Z premine je **1.44B ZION** alokováno jako iniciální seed:
 
 ```
 Humanitarian Fund Genesis:
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│ Initial Allocation: 1,530,000,000 ZION                      │
+│ Initial Allocation: 1,440,000,000 ZION                      │
 │                                                             │
 │ Purpose:                                                    │
 │ ├── Emergency response capability                           │

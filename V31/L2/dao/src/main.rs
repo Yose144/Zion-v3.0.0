@@ -27,11 +27,11 @@ async fn main() -> anyhow::Result<()> {
 
     let config = DaoConfig::load(None);
 
-    // Circulating supply from env or default (4B ZION)
+    // Circulating supply from env or default (1.5B ZION)
     let circulating_supply = env::var("DAO_CIRCULATING_SUPPLY")
         .ok()
         .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(4_000_000_000 * FLOWERS_PER_ZION);
+        .unwrap_or(1_500_000_000 * FLOWERS_PER_ZION);
 
     let metrics = DaoMetrics::new();
 

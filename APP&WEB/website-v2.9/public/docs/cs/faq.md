@@ -39,11 +39,12 @@ Distribuce: 89 % miner, 5 % humanitarian, 5 % L5/L6 Issobella fund, 1 % pool fee
 
 | Fond | Množství | Podíl |
 |------|----------|-------|
-| ZION Oasis + Golden Egg | 4,95 mld | 30,4 % |
-| L5 Free World Projects | 3,30 mld | 20,3 % |
-| DAO Treasury | 4,00 mld | 24,6 % |
-| Infrastruktura | 2,59 mld | 15,9 % |
-| Humanitární fond | 1,44 mld | 8,8 % |
+| ZION Oasis + Golden Egg | 4,95 mld | 29,5 % |
+| L5 Free World Projects | 3,30 mld | 19,7 % |
+| L6 Issobella | 2,50 mld | 14,9 % |
+| DAO Treasury | 1,50 mld | 8,9 % |
+| Infrastruktura | 2,59 mld | 15,4 % |
+| Humanitární fond | 1,44 mld | 8,6 % |
 
 Vše je distribuováno ihned při genesi. Mimo mining neprobíhá žádný další minting.
 

@@ -37,11 +37,13 @@ ZION je decentralizovaný Layer 1 blockchain postavený od základu v **Rustu**.
 |----------|--------|-------|
 | ZION OASIS + Winners Golden Egg/Xp | 4,95 mld. | Okamžitě |
 | L5 Free World Projects | 3,30 mld. | Okamžitě |
-| DAO Treasury | 4,0 mld. | Okamžitě |
+| L6 Issobella — vesmírná stanice a fond kvantového výzkumu | 2,50 mld. | Time-lock blok 144 000 |
+| DAO Treasury | 1,50 mld. | Time-lock blok 144 000 |
 | Infrastruktura | 2,59 mld. | Okamžitě |
 | Humanitární | 1,44 mld. | Okamžitě |
+| Bridge Seed + Vault | 0,50 mld. | Okamžitě |
 
-Veškerý premine je ověřitelný on-chain a od genesis odemčen. Správu řídí DAO.
+Veškerý premine je ověřitelný on-chain a od genesis odemčen — kromě slotů L6 Issobella a DAO Treasury, které jsou time-locknuté do bloku 144 000. Správu řídí DAO.
 
 ---
 
@@ -74,7 +76,7 @@ v2.9.6 zavádí vrstvenou civilizační infrastrukturu — od blockchainu po orb
 |--------|-------|-----|------|
 | **L1** | **ZION TerraNova** | 2026 | PoW blockchain — Cosmic Harmony v3, UTXO, burn poplatků, LWMA DAA |
 | **L2** | **NCL** (Neural Conscious Layer) | 2028 | AI-nativní protokol, registr modelů on-chain |
-| **L3** | **ZION DAO** | 2027 | Decentralizovaná správa, Treasury (4 mld. ZION) |
+| **L3** | **ZION DAO** | 2027 | Decentralizovaná správa, Treasury (1,5 mld. ZION) |
 | **L4** | **ZION Oasis** | 2029 | Ekonomický ekosystém — Golden Egg, Winners, NFT, hra |
 | **L5** | **ZION Free World** 🌍 | 2030 | Kvantová volná energie, humanitární mise, komunity |
 | **L6** | **ZION Issobella** 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |

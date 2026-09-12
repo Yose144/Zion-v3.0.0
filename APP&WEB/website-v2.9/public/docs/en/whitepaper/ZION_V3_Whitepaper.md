@@ -287,15 +287,18 @@ A total of **16,780,000,000 ZION** (11.65 % of total supply) is reserved at gene
 | # | Allocation | ZION | Purpose |
 |---|-----------|------|---------|
 | 1-3 | OASIS Golden Egg | 4,950,000,000 | L4 game world reward pool (3 slots × 1.65B (Slots 4 & 5 → L5 Free World), 10-year vesting) |
-| 6 | DAO Treasury (main) | 2,500,000,000 | Community governance reserve |
+| 4-5 | L5 Free World Projects | 3,300,000,000 | Humanitarian & energy projects (2 slots × 1.65B) |
+| 6 | L6 Issobella | 2,500,000,000 | Orbital Station & Quantum Research Fund |
 | 7 | DAO Grants & Bounties | 1,000,000,000 | Developer grants |
 | 8 | DAO Ecosystem Bootstrap | 500,000,000 | Ecosystem development (includes game-dev execution envelope) |
 | 9 | Core Development Fund | 1,000,000,000 | Ongoing development |
 | 10 | Network Infrastructure | 1,000,000,000 | P2P seed nodes & infrastructure |
 | 11 | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 590,000,000 | Dharma Temple, Piko de Ora + DAO |
 | 12 | Humanitarian DAO | 1,440,000,000 | Immediate humanitarian seed |
+| 13 | Bridge Seed | 400,000,000 | wZION bridge seed |
+| 14 | Bridge Vault UTXO | 100,000,000 | Bridge vault UTXO |
 
-**DAO Treasury time-lock:** All 4,000,000,000 ZION in the DAO treasury (#6-8) is locked until block height **525,600** (~1 year after genesis).
+**Time-lock:** Items #6–8 (total **4,000,000,000 ZION** — L6 Issobella 2,500,000,000 + DAO Treasury 1,500,000,000) are locked until block height **144,000** (~100 days after genesis).
 
 ### 7.3 Security & Transparency
 
@@ -315,9 +318,10 @@ TestNet tokens have no value and will not be carried over. MainNet begins with a
 
 | Allocation | ZION | Purpose |
 |------------|------|---------|
-| Community Governance (main) | 2,500,000,000 | Primary reserve |
 | Grants & Bounties | 1,000,000,000 | Developer grants |
 | Ecosystem Bootstrap | 500,000,000 | Ecosystem growth |
+
+*Note:* The former main governance reserve (slot 6, 2,500,000,000 ZION) was repurposed to **L6 Issobella** — Orbital Station & Quantum Research Fund. DAO Treasury therefore totals **1,500,000,000 ZION** (slots 7–8).
 
 ### 8.2 Voting Mechanism
 

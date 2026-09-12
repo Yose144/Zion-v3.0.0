@@ -40,7 +40,8 @@
 | UniV3Pool | wZION/WETH 0.3% | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | ✅ deployed, seed pending |
 | ZIONStaking | 12% APR | deployed na Base | ✅ deployed, seed pending |
 | ZIONFarm | MasterChef | deployed na Base | ✅ deployed, seed pending |
-| DAO Treasury | 4,000,000,000 ZION | genesis slot 6-8 | ⏳ cliff ~červen 2027 |
+| L6 Issobella | 2,500,000,000 ZION | genesis slot 6 | ⏳ locked do bloku 144,000 |
+| DAO Treasury | 1,500,000,000 ZION | genesis slot 7-8 | ⏳ locked do bloku 144,000 |
 
 ---
 
@@ -84,8 +85,8 @@ Toto je zásadní rozhodnutí — nastavit příliš nízko = nedoceněno, pří
 #### Klíč: FDV vs. reálný float
 
 ZION má **144B max supply** (kategorie Kaspy/Nexy), ale k likviditě je jen **~100M wZION
-(0,069 % supply)**; většina premine je v programových/locked peněženkách (4B DAO locked, 8,25B
-OASIS, dev/infra). Reálný obchodovatelný float na startu je řádově **~100–200M ZION**, ne 144B.
+(0,069 % supply)**; většina premine je v programových/locked peněženkách (4B locked na slotech
+6–8 — L6 2,5B + DAO 1,5B, 4,95B OASIS, 3,3B L5, dev/infra). Reálný obchodovatelný float na startu je řádově **~100–200M ZION**, ne 144B.
 
 - **FDV** = cena × 144B → číslo, které ukáže CoinGecko/CMC.
 - **Reálný market cap** = cena × skutečný float → realita dne 1.
@@ -352,11 +353,11 @@ Tento gas budget je zahrnut v kompletním ETH budget (sekce 2B výše).
 
 | Parametr | Hodnota |
 |----------|---------|
-| Celková treasury | 4,000,000,000 ZION (genesis premine) |
-| Adresy | Sloty 6, 7, 8 z genesis (`PREMINE_ADDRESSES_PUBLIC.txt`) |
+| Celková treasury | 1,500,000,000 ZION (genesis premine, sloty 7–8; slot 6 = L6 Issobella 2.5B) |
+| Adresy | Sloty 7 a 8 z genesis (`PREMINE_ADDRESSES_PUBLIC.txt`) |
 | Multi-sig | 5 z 7 signatářů |
-| Cliff | `DAO_TREASURY_LOCK_HEIGHT` ≈ 525,600 bloků (∼1 rok od genesis) |
-| Cliff datum (odhad) | červen 2027 (genesis byl 2026-06-11) |
+| Cliff | `DAO_TREASURY_LOCK_HEIGHT` = 144,000 bloků (∼100 dní od genesis) |
+| Cliff datum (odhad) | září 2026 (genesis byl 2026-06-11) |
 | Denní limit výdajů | 100,000,000 ZION |
 
 ### Fáze aktivace
@@ -368,12 +369,12 @@ Fáze 1 (2026-Q3/Q4): Příprava
   - Snapshot off-chain voting (diskuze bez bind. hlasování)
   - Sestavit první grant program proposal
 
-Fáze 2 (2027-Q1/Q2): Cliff přiblíže
+Fáze 2 (2026-Q3): Cliff přiblíže
   - Ověřit DAO_TREASURY_LOCK_HEIGHT on-chain
   - Audit treasury balance a addresses
   - Technická zkouška multi-sig flow
 
-Fáze 3 (2027-Q2): Odemknutí + First Proposals
+Fáze 3 (2026-Q3/Q4): Odemknutí + First Proposals
   - Cliff dosažen → treasury odemčena
   - Submit první governance proposal
   - Quorum hlasování (10% oběžného množství)

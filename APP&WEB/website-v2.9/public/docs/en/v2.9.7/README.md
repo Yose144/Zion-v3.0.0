@@ -45,10 +45,13 @@ The remaining **88.35%** (127.22B ZION) is emitted entirely through Proof-of-Wor
 | Category | ZION | % of Supply |
 |----------|------|-------------|
 | ZION OASIS + Winners | 4,950,000,000 | 3.44% |
-| DAO Treasury | 4,000,000,000 | 2.78% |
+| L5 Free World Projects | 3,300,000,000 | 2.29% |
+| L6 Issobella | 2,500,000,000 | 1.74% |
+| DAO Treasury | 1,500,000,000 | 1.04% |
 | Infrastructure | 2,590,000,000 | 1.80% |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% |
-| **Total** | **16,780,000,000** | **11.65% |
+| Bridge Seed + Vault | 500,000,000 | 0.35% |
+| **Total** | **16,780,000,000** | **11.65%** |
 
 All premine addresses are publicly disclosed in `/PREMINE_ADDRESSES_PUBLIC.txt` and verifiable on-chain from the genesis block.  
 No private or hidden allocations. Governance of DAO Treasury is community-controlled.

@@ -155,15 +155,17 @@ Při spuštění sítě bylo vytvořeno 16,78 miliardy ZION. Rozdělení je veř
 |---|-----------|-----------------|------|
 | 1–3 | OASIS + Golden Egg/XP | 4 950 000 000 | Herní odměny v L4 |
 | 4–5 | L5 Free World Projects (repurposed) | 3 300 000 000 | 5 humanitárních projektů × 500M + 800M rezerva |
-| 6 | DAO Treasury (hlavní) | 2 500 000 000 | Rezerva pro komunitní governance |
-| 7 | DAO Grants & Bounties | 1 000 000 000 | Vývojářské granty |
-| 8 | DAO Ecosystem Bootstrap | 500 000 000 | Růst ekosystému |
+| 6 | L6 Issobella — Orbital Station & Quantum Research Fund | 2 500 000 000 | Repurposed z DAO Treasury (Community Governance); lock do bloku 144 000 |
+| 7 | DAO Grants & Bounties | 1 000 000 000 | Vývojářské granty; lock do bloku 144 000 |
+| 8 | DAO Ecosystem Bootstrap | 500 000 000 | Růst ekosystému; lock do bloku 144 000 |
 | 9 | Core Development Fund | 1 000 000 000 | Průběžný vývoj |
 | 10 | Network Infrastructure | 1 000 000 000 | Seed nody a infrastruktura |
 | 11 | Genesis Projects Steward | 590 000 000 | Doživotní péče o projekt |
 | 12 | Humanitární — Children Future Fund | 1 440 000 000 | Okamžitý humanitární seed |
+| 13 | Bridge Seed Fund | 400 000 000 | EVM bridge likvidita |
+| 14 | Bridge Vault UTXO Seed | 100 000 000 | UTXO likvidita pro bridge unlocky |
 
-**Časová pojistka:** Veškerých 4 000 000 000 ZION v DAO treasury (#6–8) je uzamčeno do bloku **525 600** (přibližně jeden rok po genesis). On-chain vynucení v `V3/L1/core/src/validation.rs` krok 11.
+**Časová pojistka:** Veškerých 4 000 000 000 ZION ve slotech #6–8 (L6 Issobella 2,5B + DAO Treasury 1,5B) je uzamčeno do bloku **144 000** (přibližně 100 dní po genesis). On-chain vynucení v `V3/L1/core/src/validation.rs` krok 11.
 
 ---
 
@@ -429,9 +431,10 @@ L5 je humanitární a vědecká vrstva financovaná přímo blockchain protokole
 
 | Alokace | ZION | Účel |
 |---------|------|------|
-| Community Governance (hlavní) | 2 500 000 000 | Primární rezerva |
-| Grants & Bounties | 1 000 000 000 | Vývojářské granty |
-| Ecosystem Bootstrap | 500 000 000 | Růst ekosystému |
+| Grants & Bounties (slot 7) | 1 000 000 000 | Vývojářské granty |
+| Ecosystem Bootstrap (slot 8) | 500 000 000 | Růst ekosystému |
+
+> Bývalý slot 6 — Community Governance hlavní rezerva (2 500 000 000 ZION) — byl repurposed na **L6 Issobella — Orbital Station & Quantum Research Fund** (lock do bloku 144 000).
 
 ### Hlasování
 

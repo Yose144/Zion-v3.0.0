@@ -50,7 +50,7 @@ export async function getDAOStats() {
       active          : d.active ?? 0,
       passed          : d.passed ?? 0,
       executed        : d.executed ?? 0,
-      treasury_total_zion : d.treasury_total_zion ?? 4_000_000_000,
+      treasury_total_zion : d.treasury_total_zion ?? 1_500_000_000,
       quorum_percent       : d.quorum_percent ?? 10,
       multisig             : d.multisig ?? '5-of-7',
       voting_period_days   : d.voting_period_days ?? 7,

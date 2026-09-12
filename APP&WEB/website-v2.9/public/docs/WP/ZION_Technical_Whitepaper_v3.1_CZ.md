@@ -249,7 +249,8 @@ genesis zprávu.
 |-----------|---------------|-----------|
 | OASIS + Zlaté vejce (3 sloty) | 4 950 000 000 | 29,5 % |
 | L5 Free World Projects (2 sloty, přesunuto ze Slotů 4 & 5) | 3 300 000 000 | 19,7 % |
-| DAO Treasury (3 sloty) | 4 000 000 000 | 23,8 % |
+| L6 Issobella (1 slot) | 2 500 000 000 | 14,9 % |
+| DAO Treasury (2 sloty) | 1 500 000 000 | 8,9 % |
 | Infrastruktura (3 sloty) | 2 590 000 000 | 15,4 % |
 | Humanitární (1 slot) | 1 440 000 000 | 8,6 % |
 | Bridge Seed (1 slot) | 400 000 000 | 2,4 % |
@@ -257,8 +258,8 @@ genesis zprávu.
 | **Celkem** | **16 780 000 000** | **100 %** |
 
 Všechny premine výstupy jsou **admin-locked** (vyžadují 3-z-3 multisig +
-DAO hlasování pro odemčení). DAO Treasury sloty jsou navíc **time-locked**
-do bloku 144 000 (~100 dní).
+DAO hlasování pro odemčení). L6 Issobella a DAO Treasury sloty jsou navíc
+**time-locked** do bloku 144 000 (~100 dní).
 
 ---
 
@@ -371,8 +372,8 @@ Všechny premine výstupy jsou **admin-locked** — transfery vyžadují:
 1. 3-z-3 admin multisig schválení
 2. DAO hlasování
 
-DAO Treasury sloty navíc vyžadují výšku bloku ≥ 144 000 (~100 dní po
-genesis).
+L6 Issobella a DAO Treasury sloty navíc vyžadují výšku bloku ≥ 144 000
+(~100 dní po genesis).
 
 ### 10.3 Neměnné parametry (konstituční)
 

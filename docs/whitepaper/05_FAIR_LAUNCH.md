@@ -145,21 +145,33 @@ Genesis Block Distribution (16.78B ZION):
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ DAO Treasury: 4,000,000,000 ZION (24.6%)                │ │
-│ │ └── Komunitní governance                                │ │
-│ │ └── Okamžitě dostupné od genesis                       │ │
+│ │ L6 Issobella: 2,500,000,000 ZION (14.9%)                │ │
+│ │ └── Orbital Station & Quantum Research (slot 6)         │ │
+│ │ └── Time-locked do bloku 144 000                        │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Infrastructure Fund: 2,500,000,000 ZION (15.4%)         │ │
+│ │ DAO Treasury: 1,500,000,000 ZION (8.9%)                 │ │
+│ │ └── Komunitní governance (sloty 7–8)                    │ │
+│ │ └── Time-locked do bloku 144 000                        │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Infrastructure Fund: 2,590,000,000 ZION (15.4%)         │ │
 │ │ └── Servery, vývoj, audit, marketing                    │ │
 │ │ └── Okamžitě dostupné od genesis                       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Humanitarian Fund: 1,530,000,000 ZION (9.4%)            │ │
+│ │ Humanitarian Fund: 1,440,000,000 ZION (8.6%)            │ │
 │ │ └── Iniciální seed pro humanitární projekty             │ │
 │ │ └── Unlocked (okamžitě použitelné)                      │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Bridge Seed + Vault: 500,000,000 ZION (3.0%)            │ │
+│ │ └── EVM bridge likvidita                                │ │
+│ │ └── Okamžitě dostupné od genesis                        │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -170,7 +182,8 @@ Genesis Block Distribution (16.78B ZION):
 | Alokace | Unlock Model | Délka |
 |---------|--------------|-------|
 | ZION OASIS + Winners Golden Egg/Xp | Okamžitě dostupné | Od genesis |
-| DAO Treasury | Okamžitě dostupné | Od genesis |
+| L6 Issobella | Time-locked | Do bloku 144 000 |
+| DAO Treasury | Time-locked | Do bloku 144 000 |
 | Infrastructure | Okamžitě dostupné | Od genesis |
 | Humanitarian | Okamžitě dostupné | Od genesis |
 

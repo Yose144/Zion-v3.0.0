@@ -70,9 +70,12 @@ Všechny genesis alokace jsou veřejně zveřejněny. Neexistují soukromé ani 
 | Kategorie | Částka ZION | % nabídky | Zámek |
 |-----------|-------------|-----------|-------|
 | ZION OASIS + Winners | 4 950 000 000 | 3,44 % | Okamžitě |
-| DAO Treasury | 4 000 000 000 | 2,78 % | Okamžitě |
+| L5 Free World Projects | 3 300 000 000 | 2,29 % | Okamžitě |
+| L6 Issobella | 2 500 000 000 | 1,74 % | Time-lock blok 144 000 |
+| DAO Treasury | 1 500 000 000 | 1,04 % | Time-lock blok 144 000 |
 | Infrastruktura | 2 590 000 000 | 1,80 % | Okamžitě |
 | Humanitární rezerva | 1 440 000 000 | 1,00 % | Okamžitě |
+| Bridge Seed + Vault | 500 000 000 | 0,35 % | Okamžitě |
 | **Celkem genesis** | **16 780 000 000** | **11,65 %** | — |
 
 Zbývajících **88,35 %** (127,22 mld. ZION) se emituje těžbou PoW přes 100+ let.

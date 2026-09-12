@@ -13,12 +13,15 @@
   - Issobella: `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702`
   - Pool Fee: BURNED (žádná peněženka)
 
-- [x] **Genesis premine adresy aktualizovány** (12 výstupů, 16.78B ZION)
+- [x] **Genesis premine adresy aktualizovány** (14 výstupů, 16.78B ZION)
   - 3× OASIS + Golden Egg (4.95B ZION)
   - 2× L5 Free World Projects (3.3B ZION — Slots 4 & 5 repurposed from OASIS)
-  - 3× DAO Treasury (4.0B ZION, locked 1 rok)
+  - 1× L6 Issobella (2.5B ZION — repurposed z DAO Treasury slotu 6, locked do bloku 144 000)
+  - 2× DAO Treasury (1.5B ZION, locked do bloku 144 000)
   - 3× Infrastructure (2.59B ZION)
   - 1× Humanitarian (1.44B ZION)
+  - 1× Bridge Seed (0.4B ZION)
+  - 1× Bridge Vault UTXO (0.1B ZION)
 
 - [x] **Genesis hash ověřen** na obou serverech
 - [x] **Všechny launch skripty aktualizovány** s novými adresami

@@ -57,7 +57,7 @@ V OASIS avatar není maskou pro ukrývání identity. Je to **herní rozhraní**
 Největší výzvou v OASIS je **Golden Egg** — legandární honba za pokladem inspirovaná největšími sci-fi příběhy:
 
 - **108 Kódových Stop:** Po celém vesmíru OASIS, v blocích blockchainu, ve smart kontraktech na L2 i v textech je ukryto 108 šifrovaných vodítek.
-- **8,25 Miliardy ZION:** V genesis rezervě je alokován obří bank rozdělený do 5 odměnových poolů (Player, Guild, Territory, Golden Egg, Winners).
+- **4,95 Miliardy ZION:** V genesis rezervě je alokován obří bank rozdělený do 5 odměnových poolů (Player, Guild, Territory, Golden Egg, Winners).
 - **Klíče k Branám:** Abys otevřel finální bránu k Vejci, nestačí mít rychlé prsty. Musíš prokázat porozumění kódu, historii, etice a spolupráci.
 
 ---

@@ -131,10 +131,10 @@ const PLACEHOLDER_STATS: DAOStats = {
   governance: {
     total_proposals: 0,
     active_voters: 0,
-    treasury_balance: '4,000,000,000 ZION',
+    treasury_balance: '1,500,000,000 ZION',
     grants_funded: 0,
     total_spent: 0,
-    dao_reserve: '4,000,000,000 ZION',
+    dao_reserve: '1,500,000,000 ZION',
   },
   humanitarian: {
     total_proposals: 0,
@@ -142,7 +142,7 @@ const PLACEHOLDER_STATS: DAOStats = {
     total_funded: 0,
     total_beneficiaries: 0,
   },
-  treasury_balance: 4_000_000_000,
+  treasury_balance: 1_500_000_000,
   active: 0,
   passed: 0,
   executed: 0,
@@ -223,10 +223,10 @@ export async function getDAOStats(): Promise<DAOStats> {
       governance: {
         total_proposals: d.total_proposals ?? 0,
         active_voters: d.active ?? 0,
-        treasury_balance: `${(d.treasury_total_zion ?? 4_000_000_000).toLocaleString()} ZION`,
+        treasury_balance: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString()} ZION`,
         grants_funded: d.executed ?? 0,
         total_spent: 0,
-        dao_reserve: `${(d.treasury_total_zion ?? 4_000_000_000).toLocaleString()} ZION`,
+        dao_reserve: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString()} ZION`,
       },
       humanitarian: {
         total_proposals: 0,
@@ -234,7 +234,7 @@ export async function getDAOStats(): Promise<DAOStats> {
         total_funded: 0,
         total_beneficiaries: 0,
       },
-      treasury_balance: d.treasury_total_zion ?? 4_000_000_000,
+      treasury_balance: d.treasury_total_zion ?? 1_500_000_000,
       active: d.active ?? 0,
       passed: d.passed ?? 0,
       executed: d.executed ?? 0,

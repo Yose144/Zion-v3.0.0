@@ -108,7 +108,7 @@ ZION jako kosmický Strom Života — kořeny v pradávné moudrosti (Védy, Bib
 
 - Decentralizované rozhodování bez centrální autority
 - On-chain voting — každý Guardian má hlas
-- Treasury 4B ZION spravovaný komunitou
+- Treasury 1.5B ZION spravovaný komunitou
 - Governance power rozložen fair — ne whales, ale stake + consciousness level
 
 ### Kapitola 9: Roadmapa ke Hvězdám
@@ -119,7 +119,7 @@ ZION jako kosmický Strom Života — kořeny v pradávné moudrosti (Védy, Bib
 |-----|--------|-------|
 | 2026 | L1 TerraNova — Mainnet Genesis, Cosmic Harmony v3/v4, 144B supply | 🟡 In Progress |
 | 2027 | L2 NCL — Neural Conscious Layer, AI-native protocol, wZION bridge | 🔵 Planned |
-| 2028 | L3 DAO — Community governance, Treasury 4B ZION, on-chain voting | 🔵 Planned |
+| 2028 | L3 DAO — Community governance, Treasury 1.5B ZION, on-chain voting | 🔵 Planned |
 | 2029 | L4 Oasis — Golden Egg, XP economy, Winners program, game layer | 🔵 Planned |
 | 2030 | L5 Free World — Humanitarian missions, free energy R&D | 🔵 Planned |
 | 2040+ | L6 Issobella — Orbital observatory, LEO research station | 🔵 Vision |

@@ -5059,7 +5059,7 @@ def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> li
         "OASIS + Winners Golden Egg/Xp (Slot 3)",
         "L5 Free World Projects (repurposed from OASIS Slot 4)",
         "L5 Free World Projects (repurposed from OASIS Slot 5)",
-        "DAO Treasury — Community Governance (main)",
+        "L6 Issobella — Orbital Station & Quantum Research Fund (repurposed from DAO Treasury)",
         "DAO Treasury — Grants & Bounties",
         "DAO Treasury — Ecosystem Bootstrap",
         "Core Development Fund",
@@ -10350,7 +10350,7 @@ MAINNET_CONSTANTS = {
     },
     "special_addresses": {
         "burn": "zion1burn0000000000000000000000000000000dead",
-        "dao": "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5",
+        "dao": "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
         "bridge_vault": "zion1j3w3h7k8m635h734y786j5804305m822t5uk546",
     },
 }
@@ -10363,8 +10363,9 @@ PREMINE_OUTPUTS = [
     {"address": "zion1e0f4h6w3w394d4p355z2r440k4s2f6v5h4rl8f4", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     {"address": "zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708", "purpose": "L5 Free World Projects (repurposed from OASIS Slot 4)", "amount_zion": 1_650_000_000, "category": "l5_free_world", "unlock_height": None},
     {"address": "zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388", "purpose": "L5 Free World Projects (repurposed from OASIS Slot 5)", "amount_zion": 1_650_000_000, "category": "l5_free_world", "unlock_height": None},
-    # DAO Treasury (3 slots = 4.0B) — locked until block 144,000
-    {"address": "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
+    # L6 Issobella (1 slot = 2.5B) — repurposed from DAO Treasury, locked until block 144,000
+    {"address": "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5", "purpose": "L6 Issobella — Orbital Station & Quantum Research Fund (repurposed from DAO Treasury)", "amount_zion": 2_500_000_000, "category": "l6_issobella", "unlock_height": 144_000},
+    # DAO Treasury (2 slots = 1.5B) — locked until block 144,000
     {"address": "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     {"address": "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 144_000},
     # Infrastructure (3 slots = 2.59B)
@@ -11086,11 +11087,13 @@ ATTACKER_ADDRESSES = [
 
 # Premine wallets to guard (alert if balance drops below expected)
 PREMINE_GUARD = [
-    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "label": "Genesis Projects (Dharma Temple, Piko de Ora + DAO)", "min_balance_zion": 589_000_000},
-    {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "label": "Bridge Seed (Slot 13)", "min_balance_zion": 399_000_000},
-    {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
-    {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
-    {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
+    {"address": "zion122v8f8g55398f4g884k7j482h3z845j6c6ta4f8", "label": "Genesis Projects (Dharma Temple, Piko de Ora + DAO)", "min_balance_zion": 589_000_000},
+    {"address": "zion1t6z3c0f0p3h0v233a3h432k5h764j0r3n5ml756", "label": "Bridge Seed (Slot 13)", "min_balance_zion": 399_000_000},
+    {"address": "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5", "label": "L6 Issobella Fund", "min_balance_zion": 2_400_000_000},
+    {"address": "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3", "label": "DAO Treasury — Grants", "min_balance_zion": 900_000_000},
+    {"address": "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238", "label": "DAO Treasury — Bootstrap", "min_balance_zion": 400_000_000},
+    {"address": "zion1k752909323x66062k5j7074096f003z095ax8m7", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
+    {"address": "zion1h6644748u5x6p4p784n6g2l7j77625w6a0k80s8", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
     {"address": V31_CANONICAL_POOL_PAYOUT_WALLET, "label": "Pool Wallet", "min_balance_zion": 0},
 ]
 

@@ -88,7 +88,8 @@ ZION uses a **16.78B ZION genesis reserve** to bootstrap the ecosystem. Public d
 |--------|------|---------|
 | OASIS Golden Egg | 4.95B | L4 reward pool and game-economy reserve |
 | Ecosystem bootstrap | 0.25B | Game-dev execution envelope |
-| DAO Treasury total | 4.00B | Governance, grants, ecosystem coordination |
+| L6 Issobella | 2.50B | Orbital station & quantum research fund (repurposed from DAO Treasury) |
+| DAO Treasury total | 1.50B | Grants & ecosystem bootstrap |
 | Core development + infrastructure | 2.59B | Runtime, operations, delivery |
 | Humanitarian seed | 1.44B | Immediate humanitarian deployment |
 

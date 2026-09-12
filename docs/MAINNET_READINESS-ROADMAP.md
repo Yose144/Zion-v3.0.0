@@ -239,7 +239,7 @@
 ║      🏛️ DAO              L2/dao/      1,549 LOC   18 testů             ║
 ║      ├── wZION ERC-20 + ZIONBridge.sol (Hardhat, Base/Arbitrum)      ║
 ║      ├── Rust relay (8 modulů, decimal ×1e12, validator consensus)   ║
-║      └── DAO Governance (treasury 4B, voting, 7 humanitarian cats)   ║
+║      └── DAO Governance (treasury 1.5B, voting, 7 humanitarian cats) ║
 ║                          ▲                                           ║
 ║  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┤ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ║
 ║                          │                                           ║
@@ -304,9 +304,12 @@ PRAVIDLA:
 |-----------|------|-------|------|
 | ZION OASIS + Winners Golden Egg/XP | 4,950,000,000 | 29.5% | Okamžitě |
 | L5 Free World Projects | 3,300,000,000 | 19.7% | Okamžitě |
-| DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě |
-| Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě |
-| Humanitarian Fund | 1,530,000,000 | 9.4% | Okamžitě |
+| L6 Issobella — Orbital Station & Quantum Research Fund | 2,500,000,000 | 14.9% | Time-lock blok 144,000 (slot 6, repurposed z DAO) |
+| DAO Treasury | 1,500,000,000 | 8.9% | Time-lock blok 144,000 (sloty 7–8) |
+| Infrastructure & Dev | 2,590,000,000 | 15.4% | Okamžitě |
+| Humanitarian Fund | 1,440,000,000 | 8.6% | Okamžitě |
+| Bridge Seed Fund | 400,000,000 | 2.4% | Okamžitě |
+| Bridge Vault UTXO | 100,000,000 | 0.6% | Okamžitě |
 
 ---
 

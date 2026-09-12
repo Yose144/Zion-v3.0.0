@@ -3249,7 +3249,8 @@ export default function MissionControlDashboard() {
                   {[
                     { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '4,950,000,000', pct: 29.5, lock: cs ? 'Admin-locked · 3 slotů (Sloty 4 & 5 → L5 Free World)' : 'Admin-locked · 3 slots (Slots 4 & 5 → L5 Free World)', lockColor: 'text-zion-cyan' },
                     { cat: cs ? 'L5 Free World Projects' : 'L5 Free World Projects', Icon: Globe2, amount: '3,300,000,000', pct: 19.7, lock: cs ? 'Trustee-managed · 2 slotů' : 'Trustee-managed · 2 slots', lockColor: 'text-zion-gold' },
-                    { cat: 'DAO Treasury', Icon: Database, amount: '4,000,000,000', pct: 23.8, lock: cs ? 'Time-lock do bloku 144,000' : 'Time-locked until block 144,000', lockColor: 'text-zion-gold' },
+                    { cat: 'L6 Issobella', Icon: Rocket, amount: '2,500,000,000', pct: 14.9, lock: cs ? 'Repurposed z DAO Treasury · Time-lock do bloku 144,000' : 'Repurposed from DAO Treasury · Time-locked until block 144,000', lockColor: 'text-zion-purple' },
+                    { cat: 'DAO Treasury', Icon: Database, amount: '1,500,000,000', pct: 8.9, lock: cs ? 'Time-lock do bloku 144,000' : 'Time-locked until block 144,000', lockColor: 'text-zion-gold' },
                     { cat: MissionControlDashboardCopy.infrastructureDev[cs ? 'cs' : 'en'], Icon: Wrench, amount: '2,590,000,000', pct: 15.4, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
                     { cat: MissionControlDashboardCopy.humanitarianFund[cs ? 'cs' : 'en'], Icon: Heart, amount: '1,440,000,000', pct: 8.6, lock: 'Admin-locked', lockColor: 'text-zion-cyan' },
                     { cat: 'Bridge Seed + Vault', Icon: ArrowLeftRight, amount: '500,000,000', pct: 3.0, lock: cs ? 'EVM bridge likvidita' : 'EVM bridge liquidity', lockColor: 'text-zion-purple' },

@@ -108,10 +108,11 @@ pub fn total_fees_burned(fees: &[u64]) -> u64 {
 /// Provable-burn address (no known private key).
 pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
 
-/// DAO treasury address (main — Community Governance, 2.5B ZION).
+/// DAO treasury address (main — Grants & Bounties, 1B ZION).
 ///
-/// This is premine wallet slot 6 from `V31_PREMINE_V2_KEYS_2026-08-06.json`.
-pub const DAO_ADDRESS: &str = "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5";
+/// This is premine wallet slot 7 from `V31_PREMINE_V2_KEYS_2026-08-06.json`.
+/// (Former slot 6, 2.5B, was repurposed to L6 Issobella.)
+pub const DAO_ADDRESS: &str = "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3";
 
 /// Bridge vault address.
 ///

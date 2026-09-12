@@ -3,13 +3,12 @@
 use serde::{Deserialize, Serialize};
 
 pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
-    "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5",
     "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
     "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238",
 ];
 
 pub const FLOWERS_PER_ZION: u64 = 1_000_000;
-pub const DAO_TREASURY_TOTAL: u128 = 4_000_000_000_u128 * FLOWERS_PER_ZION as u128;
+pub const DAO_TREASURY_TOTAL: u128 = 1_500_000_000_u128 * FLOWERS_PER_ZION as u128;
 pub const PROPOSAL_THRESHOLD: u64 = 1_000_000 * FLOWERS_PER_ZION;
 pub const VOTING_PERIOD_SECS: u64 = 7 * 24 * 60 * 60;
 pub const TIMELOCK_SECS: u64 = 48 * 60 * 60;
@@ -243,7 +242,7 @@ mod tests {
     #[test]
     fn test_constants() {
         assert_eq!(FLOWERS_PER_ZION, 1_000_000);
-        assert_eq!(DAO_TREASURY_TOTAL, 4_000_000_000_000_000_u128);
+        assert_eq!(DAO_TREASURY_TOTAL, 1_500_000_000_000_000_u128);
         assert_eq!(PROPOSAL_THRESHOLD, 1_000_000_000_000);
         assert_eq!(DAILY_SPEND_LIMIT, 100_000_000_000_000_u128);
         assert_eq!(VOTING_PERIOD_SECS, 604_800);

@@ -12,10 +12,11 @@ From the 16,780,000,000 ZION genesis premine:
 
 | Allocation | ZION | Percentage | Purpose |
 |-----------|------|------------|---------|
-| Infrastructure & Dev | 2,500,000,000 | 15.4% | Server hosting, development, operations |
-| DAO Treasury | 4,000,000,000 | 24.6% | Community-governed fund |
+| Infrastructure & Dev | 2,590,000,000 | 15.4% | Server hosting, development, operations |
+| DAO Treasury | 1,500,000,000 | 8.9% | Community-governed fund (slots 7–8, time-locked until block 144,000) |
+| L6 Issobella — Orbital Station & Quantum Research Fund | 2,500,000,000 | 14.9% | Slot 6, repurposed from DAO Treasury (time-locked until block 144,000) |
 
-These allocations are **immediately unlocked** at genesis and fully transparent on-chain.
+The Infrastructure allocation is **immediately unlocked** at genesis; DAO Treasury and L6 Issobella are **time-locked until block 144,000**. All allocations are fully transparent on-chain.
 
 ### 2. External Mining Revenue (DAO Treasury)
 

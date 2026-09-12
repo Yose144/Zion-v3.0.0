@@ -828,9 +828,9 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 
 **Premine Distribution (16.78B total):**
 - ZION OASIS (Slots 1-3): 1.65B each → 4.95B total (Slots 4 & 5 repurposed to L5 Free World Projects — 3.3B total)
-- DAO Treasury - Governance (Slot 6): 2.5B (LOCKED height 525,600)
-- DAO Treasury - Grants (Slot 7): 1B (LOCKED height 525,600)
-- DAO Treasury - Bootstrap (Slot 8): 0.5B (LOCKED height 525,600)
+- L6 Issobella — Orbital Station & Quantum Research (Slot 6): 2.5B (repurposed from DAO Treasury; LOCKED height 144,000)
+- DAO Treasury - Grants (Slot 7): 1B (LOCKED height 144,000)
+- DAO Treasury - Bootstrap (Slot 8): 0.5B (LOCKED height 144,000)
 - Core Development Fund (Slot 9): 1B
 - Network Infrastructure (Slot 10): 1B
 - Genesis Projects (Slot 11): 590M (0.59B)

@@ -124,10 +124,17 @@ export const PREMINE_ALLOCATION = [
     lock: 'Admin-locked',
   },
   {
+    category: 'L6 Issobella — Orbital Station & Quantum Research',
+    amount: 2_500_000_000,
+    percent: 14.9,
+    slots: 1,
+    lock: 'Locked until height 144,000',
+  },
+  {
     category: 'DAO Treasury',
-    amount: 4_000_000_000,
-    percent: 23.8,
-    slots: 3,
+    amount: 1_500_000_000,
+    percent: 8.9,
+    slots: 2,
     lock: 'Locked until height 144,000',
   },
   {

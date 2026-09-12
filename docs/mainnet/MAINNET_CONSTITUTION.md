@@ -76,10 +76,13 @@ Premine je rozdělen na následující logické skupiny:
 
 | Kategorie | Účel |
 |-----------|------|
-| **DAO / Governance** | Decentralizované rozhodování |
-| **Humanitarian Fund** | Podpora humanitárních projektů |
-| **Infrastructure** | Core development & maintenance |
-| **Ecosystem Bootstrap** | Granty, bounties, tooling |
+| **ZION OASIS + Golden Egg** | OASIS reward pool (4.95B, sloty 1–3) |
+| **L5 Free World Projects** | Humanitární projekty (3.3B, sloty 4–5) |
+| **L6 Issobella** | Orbital Station & Quantum Research Fund (2.5B, slot 6, time-lock 144 000) |
+| **DAO / Governance** | Decentralizované rozhodování (1.5B, sloty 7–8, time-lock 144 000) |
+| **Humanitarian Fund** | Podpora humanitárních projektů (1.44B) |
+| **Infrastructure** | Core development & maintenance (2.59B) |
+| **Bridge Seed + Vault** | EVM bridge likvidita (0.5B) |
 
 ### 3.2 Lock & Unlock pravidla
 

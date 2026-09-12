@@ -117,12 +117,15 @@ GENESIS RESERVE — 16.78B ZION:
 
 4.95B  → OASIS Golden Egg (vzdělávání skrze hru, 3 sloty)
 3.30B  → L5 Free World Projects (sloty 4 a 5 přesunuty z OASIS)
-4.00B  → DAO Treasury (governance, projekty, granty)
+2.50B  → L6 Issobella — Orbital Station & Quantum Research Fund (slot 6, repurposed z DAO Treasury; time-lock blok 144 000)
+1.50B  → DAO Treasury (governance, projekty, granty — sloty 7–8, time-lock blok 144 000)
 2.59B  → Infrastruktura:
 │  1.00B  Core development
 │  1.00B  Síťová infrastruktura / seed nody
 │  0.59B  Celoživotní renta zakladatele
 1.44B  → Humanitární zárodek (okamžitá pomoc od startu)
+0.40B  → Bridge Seed (EVM bridge likvidita)
+0.10B  → Bridge Vault UTXO
 ```
 
 **1.44B humanitárního zárodku** = 1/100 zásobníku. Symbol: od prvního dne má péče o svět rezervu.

@@ -215,7 +215,7 @@ subscribeNewBlocks (WebSocket)                 ← chybí
 
 ### Fáze 6 — DAO Aktivace (měsíc 3–12 + 2027)
 
-> DAO treasury cliff = ~525 600 bloků od genesis (červen 2027). Do té doby: příprava infrastruktury.
+> DAO treasury cliff = ~144 000 bloků od genesis (~100 dní). Do té doby: příprava infrastruktury.
 
 | # | Úkol | ETA |
 |---|------|-----|
@@ -232,7 +232,7 @@ subscribeNewBlocks (WebSocket)                 ← chybí
 - Hlasovací období: 7 dní
 - Timelock: 48h
 - Quorum: 10 % oběžného množství
-- Treasury cliff: DAO_TREASURY_LOCK_HEIGHT ≈ 525 600 bloků (~červen 2027)
+- Treasury cliff: DAO_TREASURY_LOCK_HEIGHT = 144 000 bloků (~100 dní od genesis)
 
 ---
 

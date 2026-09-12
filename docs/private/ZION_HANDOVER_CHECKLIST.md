@@ -124,7 +124,8 @@ Zdrojový stav uvádí tuto sadu:
 ||-----------|-------------:|------------:|------------------|
 || OASIS + Golden Egg | 3 | 4 950 000 000 | admin-locked |
 || **L5 Free World Projects** | **2** | **3 300 000 000** | **admin-locked (přepsáno z OASIS Slot 4 + 5)** |
-|| DAO Treasury | 3 | 4 000 000 000 | admin-locked + time-lock do výšky 144 000 |
+|| **L6 Issobella — Orbital Station & Quantum Research Fund** | **1** | **2 500 000 000** | **admin-locked + time-lock do výšky 144 000 (přepsáno z DAO Treasury slotu 6)** |
+| DAO Treasury | 2 | 1 500 000 000 | admin-locked + time-lock do výšky 144 000 |
 || Infrastruktura / Genesis Projects | 3 | 2 590 000 000 | admin-locked |
 || Humanitární / Children Future Fund | 1 | 1 440 000 000 | admin-locked |
 || Bridge Seed | 1 | 400 000 000 | admin-locked |
@@ -133,7 +134,7 @@ Zdrojový stav uvádí tuto sadu:
 
 - [HOTOVO — REPO] `V31/L1/core/src/v3_compat.rs` uvádí u všech 14 premine outputů `admin_locked = true`. Sloty 4 i 5 nyní `category: "l5_free_world"`.
 - [HOTOVO — REPO] `V31/L4/oasis/src/rewards.rs` aktualizováno: OASIS pool je nyní 3 sloty = 4.95B (Sloty 4 + 5 repurposed na L5).
-- [HOTOVO — REPO] Premine transfer lock podle kódu vyžaduje 3-of-3 admin multisig a DAO vote; u DAO Treasury existuje navíc výškový time-lock 144 000.
+- [HOTOVO — REPO] Premine transfer lock podle kódu vyžaduje 3-of-3 admin multisig a DAO vote; u DAO Treasury (sloty 7–8) a L6 Issobella (slot 6) existuje navíc výškový time-lock 144 000.
 - [BLOKÁTOR] Nesměšovat premine transfer lock (3-of-3 admin + DAO) s provozním treasury thresholdem 5-of-7 nebo s bridge unlock thresholdem. Jde o různé pravomoci.
 - [HOTOVO — ZÁMĚR] UTXO se nyní nemají přesouvat. Rodinný plán řeší správu klíčů a oprávnění, nikoli okamžitý on-chain převod.
 - [BLOKÁTOR] „Třetina pro každého" není v aktuálním chainu automaticky implementována. Zakládací listina musí říct, zda se týká všech premine fondů, pouze soukromě spravovaných podílů, nebo vůbec ne veřejně účelových fondů (DAO, humanitární, infrastruktura, bridge, L5).

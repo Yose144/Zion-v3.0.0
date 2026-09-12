@@ -172,7 +172,7 @@ Mission
 
 Stacks  
 ├── Warp (WARP Protocol · L3 DAO 2028)
-├── DAO (L3 ZION DAO · Treasury 4B)
+├── DAO (L3 ZION DAO · Treasury 1.5B)
 ├── Bridge (wZION ↔ ETH · L2 NCL)
 ├── Pool (mining pool)
 ├── Mining & Node

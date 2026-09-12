@@ -114,43 +114,43 @@ Timelock: 48 hodin mezi QUEUED a EXECUTED
 
 ## 6.4 Treasury Management
 
-### DAO Treasury (4B ZION)
+### DAO Treasury (1.5B ZION)
 
-Z genesis premine je **4,000,000,000 ZION** alokováno do DAO Treasury.
+Z genesis premine je **1,500,000,000 ZION** alokováno do DAO Treasury (sloty 7–8, time-locked do bloku 144 000). Dalších **2,500,000,000 ZION** z bývalého DAO slotu 6 bylo repurposed na **L6 Issobella — Orbital Station & Quantum Research Fund** (stejný time-lock do bloku 144 000).
 
 ### Budget Categories
 
 ```
-DAO Treasury Allocation (4B ZION):
+DAO Treasury Allocation (1.5B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Reserved: 2,150,000,000 ZION (53.75%)                   │ │
+│ │ Reserved: 806,250,000 ZION (53.75%)                     │ │
 │ │ └── Pro budoucí rozhodnutí komunity                     │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Infrastructure: 600,000,000 ZION (15%)                  │ │
+│ │ Infrastructure: 225,000,000 ZION (15%)                  │ │
 │ │ └── Servery, RPC nodes, block explorers                 │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Developer Grants: 500,000,000 ZION (12.5%)              │ │
+│ │ Developer Grants: 187,500,000 ZION (12.5%)              │ │
 │ │ └── Odměny pro open-source vývojáře                     │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Marketing: 350,000,000 ZION (8.75%)                     │ │
+│ │ Marketing: 131,250,000 ZION (8.75%)                     │ │
 │ │ └── Awareness, vzdělávání, eventy                       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Research: 200,000,000 ZION (5%)                         │ │
+│ │ Research: 75,000,000 ZION (5%)                          │ │
 │ │ └── R&D, security audity, akademická spolupráce         │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Emergency: 200,000,000 ZION (5%)                        │ │
+│ │ Emergency: 75,000,000 ZION (5%)                         │ │
 │ │ └── Bug bounty, krizové situace                         │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
@@ -438,7 +438,7 @@ Total Votes Cast:       847
 Unique Voters:          156
 Average Turnout:        23.4%
 
-Treasury Balance:       4,000,000,000 ZION
+Treasury Balance:       1,500,000,000 ZION
 ├── Spent:              0 ZION (TestNet)
 └── Committed:          0 ZION
 

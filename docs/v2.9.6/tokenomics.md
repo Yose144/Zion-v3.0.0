@@ -288,7 +288,8 @@ Kde:
 |------|--------|---------------|
 | ZION Oasis + Golden Egg/Xp | 4.95B | L4 Oasis ekosystém (3 slots) |
 | L5 Free World Projects | 3.3B | L5 Free World Projects (Slots 4 & 5 repurposed) |
-| DAO Treasury | 4.0B | Governance, granty, vývoj |
+| L6 Issobella — Orbital Station & Quantum Research Fund | 2.5B | Slot 6, repurposed z DAO Treasury (time-lock blok 144 000) |
+| DAO Treasury | 1.5B | Governance, granty, vývoj (sloty 7–8, time-lock blok 144 000) |
 | Infrastructure | 2.59B | Servery, nody, audity |
 | Humanitarian | 1.44B | Humanitární programy |
 
@@ -298,7 +299,7 @@ Kde:
 |-------|-------------|----------------|
 | **Humanitarian Tithe** | 10% z každého block reward | ~2.84B ZION |
 | **Fee Burn** | 100% fees spalováno → deflace | Závisí na aktivitě |
-| **DAO Granty** | Hlasování komunity z Treasury | Až 4B k dispozici |
+| **DAO Granty** | Hlasování komunity z Treasury | Až 1.5B k dispozici |
 
 ### Nové zdroje (návrhy pro v2.9.6)
 

@@ -18,7 +18,7 @@
 │  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  │
 │  ┃  L4  🎮 OASIS — Consciousness Mining Game                    ┃  │
 │  ┃  Crates: oasis/                                               ┃  │
-│  ┃  XP · Levels · Guilds · Territories · UE5 · 8.25B pool       ┃  │
+│  ┃  XP · Levels · Guilds · Territories · UE5 · 4.95B pool       ┃  │
 │  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛  │
 │                         ↕ XP rewards, level multipliers             │
 │  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  │
@@ -314,7 +314,7 @@ oasis/
     ├── guild.rs            # Guild system (create, join, quests)
     ├── territory.rs        # Territory control (mining zones)
     ├── challenges.rs       # AI challenges, quizzes, meditation
-    ├── rewards.rs          # Reward distribution (8.25B pool, 10-year)
+    ├── rewards.rs          # Reward distribution (4.95B pool, 10-year)
     ├── leaderboard.rs      # Global + guild leaderboards
     ├── tithe.rs            # Humanitarian tithe (7 categories)
     ├── api.rs              # OASIS API (for UE5 client + mobile)
@@ -327,7 +327,7 @@ oasis/
 - `2.9.5OLD/zion-native/pool/src/consciousness/xp_tracker.rs` (522 ř.)
 - `2.9.5OLD/zion-native/pool/src/consciousness/tithe.rs` (271 ř.)
 - `miner/src/consciousness/` — level tracker (production)
-- `core/src/blockchain/premine.rs` — 8.25B OASIS alokace
+- `core/src/blockchain/premine.rs` — 4.95B OASIS alokace (sloty 4–5 repurposed na L5 Free World)
 
 ### Consciousness Levels (9 stupňů)
 ```
@@ -339,11 +339,11 @@ Level  Name              XP Threshold    Multiplier    Premine Slot
   4    INTUITIONAL       15,000          2.0×          ↑
   5    SPIRITUAL         50,000          3.0×          Slot 3: 1.65B
   6    COSMIC            150,000         5.0×          ↑
-  7    DIVINE            500,000         8.0×          Slot 4: 1.65B
+  7    DIVINE            500,000         8.0×          ↑
   8    UNITY             2,000,000       12.0×         ↑
-  9    ON THE STAR       10,000,000      15.0×         Slot 5: 1.65B
+  9    ON THE STAR       10,000,000      15.0×         ↑
                                                     ─────────────
-                                                    Total: 8.25B
+                              Total: 4.95B (sloty 4–5 repurposed na L5)
 ```
 
 ### L4 Timeline
@@ -356,7 +356,7 @@ Level  Name              XP Threshold    Multiplier    Premine Slot
 | 4.1.5 | Territory + Leaderboard | oasis/ | ⬜ |
 | 4.2.1 | OASIS API (REST) | oasis/ | ⬜ |
 | 4.2.2 | UE5 integration | ZionOasis_UE5/ | ⬜ |
-| 4.3.1 | 8.25B reward distribution | oasis/ | ⬜ |
+| 4.3.1 | 4.95B reward distribution | oasis/ | ⬜ |
 | 4.3.2 | Humanitarian tithe | oasis/ | ⬜ |
 
 ---
@@ -451,7 +451,7 @@ L3     warp/            4854    ~40     🟡 Skeleton    Chain deployment (7 ada
 L3     ncl/             1034    ~10     🟡 Skeleton ✅ Scheduler, 4 runtimes, marketplace
 L3     ai-native/       752     ~8      🟡 Skeleton ✅ 7 agent types, memory, consciousness
 ─────  ───────────────  ──────  ──────  ────────────  ──────────────────
-L4     oasis/           2335    ~20     🟡 Skeleton ✅ XP, guilds, territories, 8.25B pool
+L4     oasis/           2335    ~20     🟡 Skeleton ✅ XP, guilds, territories, 4.95B pool
 
 TOTAL: 70,991 LOC Rust · 10 crates · ALL compile clean · 377 tests passing
 ```

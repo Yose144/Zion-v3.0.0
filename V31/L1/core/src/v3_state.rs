@@ -678,7 +678,7 @@ mod tests {
 
         let dao = crate::fee::DAO_ADDRESS;
         let (balance, _) = storage.v3_account(dao).await.unwrap().unwrap();
-        assert_eq!(balance, 2_500_000_000_000_000_000_000u128);
+        assert_eq!(balance, 1_000_000_000_000_000_000_000u128);
     }
 
     #[tokio::test]

@@ -231,14 +231,18 @@ All REST endpoints are **public (no auth)** unless marked 🔒.
 **Response — premine_summary:**
 ```json
 {
-  "oasis_golden_egg":  { "total_zion": 8250000000, "count": 5 },
-  "dao_treasury":      { "total_zion": 4000000000, "count": 3, "unlock_height": 525600 },
+  "oasis_golden_egg":  { "total_zion": 4950000000, "count": 3 },
+  "l5_free_world":     { "total_zion": 3300000000, "count": 2 },
+  "l6_issobella":      { "total_zion": 2500000000, "count": 1, "unlock_height": 144000 },
+  "dao_treasury":      { "total_zion": 1500000000, "count": 2, "unlock_height": 144000 },
   "infrastructure":    { "total_zion": 2590000000, "count": 3 },
-  "humanitarian":      { "total_zion": 1440000000, "count": 1 }
+  "humanitarian":      { "total_zion": 1440000000, "count": 1 },
+  "bridge_seed":       { "total_zion": 400000000, "count": 1 },
+  "bridge_vault":      { "total_zion": 100000000, "count": 1 }
 }
 ```
 
-> `dao_treasury.unlock_height` = 525 600 (≈ 1 year at 1 block/min).
+> `dao_treasury.unlock_height` / `l6_issobella.unlock_height` = 144 000 (≈ 100 days at 1 block/min).
 > Enforced via `premine::is_transfer_allowed()` — see B-01.
 
 ---

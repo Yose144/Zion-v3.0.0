@@ -70,9 +70,12 @@ All genesis allocations are publicly disclosed. No private or hidden allocations
 | Category | ZION Amount | % of Supply | Lock |
 |----------|-------------|-------------|------|
 | ZION OASIS + Winners | 4,950,000,000 | 3.44% | Immediate |
-| DAO Treasury | 4,000,000,000 | 2.78% | Immediate |
+| L5 Free World Projects | 3,300,000,000 | 2.29% | Immediate |
+| L6 Issobella | 2,500,000,000 | 1.74% | Time-locked until block 144,000 |
+| DAO Treasury | 1,500,000,000 | 1.04% | Time-locked until block 144,000 |
 | Infrastructure | 2,590,000,000 | 1.80% | Immediate |
 | Humanitarian Reserve | 1,440,000,000 | 1.00% | Immediate |
+| Bridge Seed + Vault | 500,000,000 | 0.35% | Immediate |
 | **Total Genesis** | **16,780,000,000** | **11.65%** | — |
 
 The remaining **88.35%** (127.22B ZION) is emitted via Proof-of-Work mining over 100+ years.

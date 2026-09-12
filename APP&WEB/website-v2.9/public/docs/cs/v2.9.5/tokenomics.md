@@ -52,9 +52,12 @@ Všechny genesis alokace jsou na řetězci ověřitelné z genesis bloku.
 | Kategorie | Částka ZION | % emise | Účel |
 |-----------|-------------|---------|------|
 | ZION OASIS + Winners | 4 950 000 000 | 3,44 % | odměny OASIS, Golden Egg/Xp události |
-| DAO Treasury | 4 000 000 000 | 2,78 % | governance komunity + granty |
+| L5 Free World Projects | 3 300 000 000 | 2,29 % | L5 humanitární a energetické projekty |
+| L6 Issobella | 2 500 000 000 | 1,74 % | vesmírná stanice a fond kvantového výzkumu (time-lock blok 144 000) |
+| DAO Treasury | 1 500 000 000 | 1,04 % | governance komunity + granty (time-lock blok 144 000) |
 | Infrastructure | 2 590 000 000 | 1,80 % | servery, vývoj, bezpečnostní audit |
 | Humanitarian Reserve | 1 440 000 000 | 1,00 % | L5 — voda, vzdělání, zdravotnictví |
+| Bridge Seed + Vault | 500 000 000 | 0,35 % | wZION bridge seed + vault |
 | **Celkem genesis** | **16 780 000 000** | **11,65 %** | — |
 
 **Pozn.:** Ve specifikaci existovala počáteční alokace presale 500M ZION. Byla zrušena v lednu 2026 a tokeny přidány do DAO Treasury. Presale se nikdy neuskutečnila.

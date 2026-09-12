@@ -273,7 +273,7 @@ Key steps:
 | Raid teams (108 pillars, roles, leaderboard) | ✅ Active | Now |
 | Consciousness levels (9 tiers, Physical→OnTheStar) | ✅ Active | Now |
 | Tithe system (humanitarian contributions) | ✅ Active | Now |
-| Golden Egg treasure hunt (108 clues, 8.25B ZION prize) | ✅ Active | Now |
+| Golden Egg treasure hunt (108 clues, 4.95B ZION prize) | ✅ Active | Now |
 | Guild wars (declaration + resolution) | 🔵 Needs design | Q4 2026 |
 | Raid boss combat (HP, abilities, 108 pillars) | 🔵 Needs design | Q4 2026 |
 | OASIS token bridge (L4→L1) | 🔵 In design | Q4 2026 |

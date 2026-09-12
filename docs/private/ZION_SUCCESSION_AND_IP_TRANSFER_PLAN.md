@@ -54,7 +54,7 @@ Kanonický technický stav premine podle `V31/L1/core/src/genesis.rs` a `V31/L1/
 | 3 | OASIS + Golden Egg (Slot 3) | `zion1e0f4h6w3w394d4p355z2r440k4s2f6v5h4rl8f4` | 1 650 000 000 | admin-locked | OASIS game rewards |
 | **4** | **L5 Free World Projects (Rezerva)** | `zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708` | **1 650 000 000** | **admin-locked** | **L5 rezerva (přepsáno z OASIS Slot 4)** |
 | **5** | **L5 Free World Projects** | `zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388` | **1 650 000 000** | **admin-locked** | **L5 humanitární projekty (přepsáno z OASIS Slot 5)** |
-| 6 | DAO Treasury (main) | `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5` | 2 500 000 000 | admin + time-lock (144k) | Community governance |
+| **6** | **L6 Issobella — Orbital Station & Quantum Research Fund** | `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5` | **2 500 000 000** | **admin + time-lock (144k)** | **Přepsáno z DAO Treasury (Community Governance)** |
 | 7 | DAO Treasury (Grants) | `zion1s27490u7n823g098w42077h8f2n824w0y75w0s3` | 1 000 000 000 | admin + time-lock (144k) | Grants & bounties |
 | 8 | DAO Treasury (Bootstrap) | `zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238` | 500 000 000 | admin + time-lock (144k) | Ecosystem bootstrap |
 | 9 | Infrastructure (Core Dev) | `zion1k752909323x66062k5j7074096f003z095ax8m7` | 1 000 000 000 | admin-locked | Core development fund |

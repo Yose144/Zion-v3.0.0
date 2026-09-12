@@ -354,19 +354,23 @@ Konstantní emise bez halvingu byl záměrný design choice: předvídatelná in
 
 | Kategorie | ZION | % z preminingu | Použití |
 |-----------|------|----------------|---------|
-| OASIS Golden Egg | 8 250 000 000 | 50,7% | Reward pool pro L4 winners + XP holdery |
-| DAO Treasury | 4 000 000 000 | 24,6% | Governance fund (time-locked 525 600 bloků = 1 rok) |
-| Infrastructure | 2 590 000 000 | 15,9% | Servery, vývoj, ops |
-| Humanitarian | 1 440 000 000 | 8,8% | Permanentní humanitární fond |
+| OASIS Golden Egg | 4 950 000 000 | 29,5% | Reward pool pro L4 winners + XP holdery (3 sloty) |
+| L5 Free World Projects | 3 300 000 000 | 19,7% | Sloty 4 & 5 repurposed z OASIS — humanitární projekty |
+| L6 Issobella | 2 500 000 000 | 14,9% | Orbital Station & Quantum Research Fund (slot 6, repurposed z DAO Treasury; time-locked 144 000 bloků) |
+| DAO Treasury | 1 500 000 000 | 8,9% | Governance fund (sloty 7–8, time-locked 144 000 bloků ≈ 100 dní) |
+| Infrastructure | 2 590 000 000 | 15,4% | Servery, vývoj, ops |
+| Humanitarian | 1 440 000 000 | 8,6% | Permanentní humanitární fond |
+| Bridge Seed | 400 000 000 | 2,4% | EVM bridge likvidita |
+| Bridge Vault UTXO | 100 000 000 | 0,6% | Bridge unlock likvidita |
 
-**Time-lock:** DAO Treasury je uzamčen na bloky 0–525 600 (`DAO_TREASURY_LOCK_HEIGHT`). Jakýkoliv pokus o transfer před dosažením výšky je odmítnut on-chain v `premine.rs::is_transfer_allowed()`.
+**Time-lock:** L6 Issobella a DAO Treasury jsou uzamčeny na bloky 0–144 000 (`DAO_TREASURY_LOCK_HEIGHT`). Jakýkoliv pokus o transfer před dosažením výšky je odmítnut on-chain v `premine.rs::is_transfer_allowed()`.
 
 ### 8.4 Cirkulační nabídka — Year 1
 
 ```
 Rok 1 po spuštění mainnetu (525 600 bloků, ~12 měsíců):
   Mining output:  ~2 840 M ZION (524 K bloků × 5 400)
-  Premine unlock: 0 (DAO locked), ostatní ihned
+  Premine unlock: 0 (DAO + L6 locked), ostatní ihned
   Celkem v oběhu: ~14 570 M ZION (10,1% z total supply)
 ```
 
@@ -392,7 +396,7 @@ CHv3 obsahuje fork mechanismus aktivovaný při detekci centralizace hashrate (t
 
 ### 9.3 Premine bezpečnost
 
-- DAO Treasury time-lock: on-chain enforcement v `premine.rs`
+- DAO Treasury + L6 Issobella time-lock (blok 144 000): on-chain enforcement v `premine.rs`
 - Premine adresy publikovány v `PREMINE_ADDRESSES_PUBLIC.txt` před genesis
 - Genesis ceremonie: offline generování klíčů, 2-party nezávislé ověření
 - Ceremonie postup: `docs/2.9.7/GENESIS_CEREMONY.md`
@@ -425,7 +429,7 @@ V prvním roce po spuštění mainnetu (525 600 bloků) spravuje síť **Core Te
 
 ### 10.2 DAO aktivace (Year 1+)
 
-Po dosažení výšky 525 600 bloků DAO Treasury se odemkne a spustí se:
+Po dosažení výšky 144 000 bloků (~100 dní) DAO Treasury se odemkne a spustí se:
 - **On-chain hlasování** — token-weighted (1 ZION = 1 hlas)
 - **Proposal systém** — min. 1M ZION stake pro vytvoření návrhu
 - **Execution timelock** — 7 dní mezi schválením a provedením

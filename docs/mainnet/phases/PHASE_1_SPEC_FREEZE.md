@@ -29,16 +29,17 @@ pub const DECIMALS: u8 = 8;
 
 ### 3. Premine Distribution
 ```rust
-pub const PREMINE_TOTAL: u64 = 16_282_857_143_000_000;  // 16.78B ZION
+pub const PREMINE_TOTAL: u64 = 16_780_000_000_000_000;  // 16.78B ZION
 
-// Distribution (IMMUTABLE):
-// 4.5B - Sacred Treasury (dao governance)
-// 4.5B - Quantum Shield (future development)
-// 3.0B - Consciousness Mining Pool
-// 2.0B - Humanitarian Fund
-// 1.5B - Team (immediately unlocked)
-// 0.5B - Emergency Reserve
-// 0.28B - Bug bounty & security
+// Distribution (IMMUTABLE) — 14 outputs, canonical v V31 `v3_compat.rs` PREMINE_OUTPUTS:
+// 4.95B - OASIS + Golden Egg reward pool (sloty 1–3 × 1.65B)
+// 3.3B  - L5 Free World Projects (sloty 4–5 × 1.65B, repurposed z OASIS)
+// 2.5B  - L6 Issobella — Orbital Station & Quantum Research Fund (slot 6, time-lock 144 000)
+// 1.5B  - DAO Treasury (sloty 7–8: Grants 1B + Bootstrap 0.5B, time-lock 144 000)
+// 2.59B - Infrastructure (Core Dev 1B + Network Infra 1B + Genesis Projects 0.59B)
+// 1.44B - Humanitarian — Children Future Fund
+// 0.4B  - Bridge Seed Fund
+// 0.1B  - Bridge Vault UTXO (keyless)
 ```
 
 ### 4. Block Reward
@@ -95,14 +96,14 @@ for wallet_name in ["sacred_treasury", "quantum_shield", "consciousness_pool",
 # 4. Destroy machine / wipe securely
 ```
 
-**Output:** 7 unique bech32 addresses
+**Output:** 14 unique bech32 addresses
 
 ### Task 1.2: Genesis Block Definition
 
 **Čas:** 4h
 
 ```json
-// config/genesis.json
+// config/genesis.json — canonical 14-output premine (V31 v3_compat.rs PREMINE_OUTPUTS)
 {
   "chain_id": "zion-mainnet-1",
   "genesis_time": "2026-XX-XXTXX:XX:XXZ",
@@ -114,45 +115,87 @@ for wallet_name in ["sacred_treasury", "quantum_shield", "consciousness_pool",
   "app_state": {
     "balances": [
       {
-        "address": "zion1sacred...",
-        "amount": "4500000000000000000",
-        "name": "Sacred Treasury",
+        "address": "zion1oasis1...",
+        "amount": "1650000000000000000",
+        "name": "OASIS Golden Egg 1",
         "locked_until": null
       },
       {
-        "address": "zion1quantum...",
-        "amount": "4500000000000000000",
-        "name": "Quantum Shield",
+        "address": "zion1oasis2...",
+        "amount": "1650000000000000000",
+        "name": "OASIS Golden Egg 2",
         "locked_until": null
       },
       {
-        "address": "zion1consciousness...",
-        "amount": "3000000000000000000",
-        "name": "Consciousness Mining Pool",
+        "address": "zion1oasis3...",
+        "amount": "1650000000000000000",
+        "name": "OASIS Golden Egg 3",
         "locked_until": null
       },
       {
-        "address": "zion1humanitarian...",
-        "amount": "2000000000000000000",
-        "name": "Humanitarian Fund",
+        "address": "zion1l5free1...",
+        "amount": "1650000000000000000",
+        "name": "L5 Free World 1",
         "locked_until": null
       },
       {
-        "address": "zion1team...",
-        "amount": "1500000000000000000",
-        "name": "Team (4yr lock)",
-        "locked_until": "2030-01-01T00:00:00Z"
+        "address": "zion1l5free2...",
+        "amount": "1650000000000000000",
+        "name": "L5 Free World 2",
+        "locked_until": null
       },
       {
-        "address": "zion1emergency...",
+        "address": "zion1l6issobella...",
+        "amount": "2500000000000000000",
+        "name": "L6 Issobella",
+        "locked_until": "block 144000"
+      },
+      {
+        "address": "zion1daogrants...",
+        "amount": "1000000000000000000",
+        "name": "DAO Grants",
+        "locked_until": "block 144000"
+      },
+      {
+        "address": "zion1daobootstrap...",
         "amount": "500000000000000000",
-        "name": "Emergency Reserve",
+        "name": "DAO Bootstrap",
+        "locked_until": "block 144000"
+      },
+      {
+        "address": "zion1coredev...",
+        "amount": "1000000000000000000",
+        "name": "Core Dev Fund",
         "locked_until": null
       },
       {
-        "address": "zion1bounty...",
-        "amount": "282857143000000000",
-        "name": "Bug Bounty",
+        "address": "zion1netinfra...",
+        "amount": "1000000000000000000",
+        "name": "Network Infrastructure",
+        "locked_until": null
+      },
+      {
+        "address": "zion1genesisprojects...",
+        "amount": "590000000000000000",
+        "name": "Genesis Projects Steward",
+        "locked_until": null
+      },
+      {
+        "address": "zion1childrenfuture...",
+        "amount": "1440000000000000000",
+        "name": "Humanitarian — Children Future Fund",
+        "locked_until": null
+      },
+      {
+        "address": "zion1bridgeseed...",
+        "amount": "400000000000000000",
+        "name": "Bridge Seed Fund",
+        "locked_until": null
+      },
+      {
+        "address": "zion1bridgevault...",
+        "amount": "100000000000000000",
+        "name": "Bridge Vault UTXO",
         "locked_until": null
       }
     ]
@@ -187,7 +230,7 @@ Calculate ZION emission over time.
 
 # Constants (IMMUTABLE)
 TOTAL_SUPPLY = 144_000_000_000  # 144B ZION
-PREMINE = 16_282_857_143       # 16.78B ZION
+PREMINE = 16_780_000_000       # 16.78B ZION
 MINEABLE = TOTAL_SUPPLY - PREMINE  # ~127.7B ZION
 BASE_REWARD = 5_479.45          # ZION per block
 BLOCK_TIME = 60                 # seconds
@@ -326,9 +369,9 @@ Dokumentovat rozhodnutí:
 5. **Cryptographic proof** of address generation
 
 ### Key Storage
-- Sacred Treasury: Multi-sig (3-of-5)
-- Team Locked: Time-lock contract
-- Emergency: Multi-sig (4-of-7) with legal entity
+- DAO Treasury (sloty 7–8): Multi-sig (5-of-7 guardians)
+- L6 Issobella (slot 6): Time-lock do bloku 144 000
+- Premine admin: 3-of-3 admin multisig
 
 ---
 

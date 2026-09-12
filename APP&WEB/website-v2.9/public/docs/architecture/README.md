@@ -21,7 +21,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built in native *
 │       Golden Egg · XP ekonomika · Herní vrstva · 2029     │
 ├─────────────────────────────────────────────────────────┤
 │  L3  🏛️  ZION DAO                                         │
-│       Governance · Treasury 4B ZION · proposals · 2028    │
+│       Governance · Treasury 1,5B ZION · proposals · 2028  │
 ├─────────────────────────────────────────────────────────┤
 │  L2  🧠 NCL — Neural Conscious Layer                      │
 │       AI-native protokol · wZION bridge · on-chain · 2027 │
@@ -91,7 +91,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built in native *
 **Target:** 2028
 
 - On-chain governance smart kontrakty (`L2/dao/`)
-- Treasury: 4 000 000 000 ZION (DAO fond z preminingu)
+- Treasury: 1 500 000 000 ZION (DAO fond z preminingu — sloty 7–8, time-lock do bloku 144 000)
 - Proposal lifecycle: Draft → Vote → Execute
 - Quorum: 10% staked ZION supply
 - Komunitní granty, protokolové upgrady, treasury alokace
@@ -133,7 +133,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built in native *
 - Open data — veškerá pozorování veřejná a on-chain
 - **ZION Space Network** — satelitní mesh síť pro P2P redundanci
 - **Název**: kombinace ISS (International Space Station) + vlastní jméno Issobella
-- Fond: 1% block reward (Issobella Fund) + sdílený fond s L5
+- Fond: 1% block reward (Issobella Fund) + sdílený fond s L5 + 2 500 000 000 ZION z preminingu (slot 6 — Vesmírná stanice a fond kvantového výzkumu, time-lock do bloku 144 000)
 
 ---
 
@@ -143,7 +143,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built in native *
 |--------|-------|-----|------|
 | **L1** | ZION TerraNova ⛏️ | 2026 | PoW blockchain — CHv3/CHv4, UTXO, fee burn, LWMA |
 | **L2** | NCL 🧠 | 2027 | Neural Conscious Layer — AI-native, wZION bridge |
-| **L3** | ZION DAO 🏛️ | 2028 | Governance, Treasury 4B ZION, community grants |
+| **L3** | ZION DAO 🏛️ | 2028 | Governance, Treasury 1,5B ZION, community grants |
 | **L4** | ZION Oasis 🎮 | 2029 | Golden Egg, XP sytém, Winners, herní vrstva |
 | **L5** | ZION Free World 🌍 | 2030 | Kwantová energie, humanitární mise, free komunity |
 | **L6** | ZION Issobella 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |

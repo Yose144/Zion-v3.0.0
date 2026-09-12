@@ -224,7 +224,7 @@ The UTXO model is inherently safe — `validate_inputs_exist()` and `validate_va
 
 **Description:** Prior to F4.7, there was no upper bound on the `amount_zion` field in account-model transactions beyond the F5 balance check. While F5 prevents inflation from zero-balance addresses, F4.7 adds a hard cap equal to `emission::TOTAL_SUPPLY` (144 billion ZION) as a second layer of defense. Any transaction attempting to move more than the entire money supply is rejected outright, before the F5 balance check runs.
 
-**Design decision:** The cap is set to `TOTAL_SUPPLY` (not 100M as initially proposed) to avoid colliding with legitimate premine-scale transfers (DAO treasury: 2.5B ZION, OASIS: 1.65B ZION). The cap is a supply-invariant: no legitimate transaction can exceed it, but inflationary garbage (e.g., `u64::MAX` or `u128::MAX`) is blocked.
+**Design decision:** The cap is set to `TOTAL_SUPPLY` (not 100M as initially proposed) to avoid colliding with legitimate premine-scale transfers (L6 Issobella: 2.5B ZION, DAO treasury: 1.5B ZION, OASIS: 1.65B ZION). The cap is a supply-invariant: no legitimate transaction can exceed it, but inflationary garbage (e.g., `u64::MAX` or `u128::MAX`) is blocked.
 
 **Exceptions:** `from == "genesis"` and `from == "coinbase"` are exempt (genesis premine allocation and block rewards).
 

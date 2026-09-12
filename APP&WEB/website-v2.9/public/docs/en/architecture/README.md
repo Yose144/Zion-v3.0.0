@@ -21,7 +21,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built natively in
 │      Golden Egg · XP economy · Game layer · 2029       │
 ├─────────────────────────────────────────────────────────┤
 │  L3  🏛️ ZION DAO                                       │
-│      Governance · Treasury 4B ZION · proposals · 2028  │
+│      Governance · Treasury 1.5B ZION · proposals · 2028  │
 ├─────────────────────────────────────────────────────────┤
 │  L2  🧠 NCL — Neural Conscious Layer                   │
 │      AI-native protocol · wZION bridge · on-chain      │
@@ -91,7 +91,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built natively in
 **Target:** 2028
 
 - On-chain governance smart contracts (`L2/dao/`)
-- Treasury: 4,000,000,000 ZION (DAO fund from premine)
+- Treasury: 1,500,000,000 ZION (DAO fund from premine)
 - Proposal lifecycle: Draft -> Vote -> Execute
 - Quorum: 10% of staked ZION supply
 - Community grants, protocol upgrades, treasury allocations
@@ -143,7 +143,7 @@ ZION TerraNova is a vertically integrated blockchain ecosystem built natively in
 |-------|------|------|---------|
 | **L1** | ZION TerraNova ⛏️ | 2026 | PoW blockchain — CHv3/CHv4, UTXO, fee burn, LWMA |
 | **L2** | NCL 🧠 | 2027 | Neural Conscious Layer — AI-native, wZION bridge |
-| **L3** | ZION DAO 🏛️ | 2028 | Governance, 4B ZION treasury, community grants |
+| **L3** | ZION DAO 🏛️ | 2028 | Governance, 1.5B ZION treasury, community grants |
 | **L4** | ZION Oasis 🎮 | 2029 | Golden Egg, XP system, Winners, game layer |
 | **L5** | ZION Free World 🌍 | 2030 | Quantum energy, humanitarian missions, free communities |
 | **L6** | ZION Issobella 🔭 | 2040+ | Orbital observatory and research station |

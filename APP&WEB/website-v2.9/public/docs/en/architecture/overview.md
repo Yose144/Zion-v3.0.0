@@ -60,7 +60,9 @@ Distributed at genesis (Jan 1, 2024 UTC):
 | Fund | Amount | Purpose |
 |------|--------|---------|
 | Oasis + Golden Egg | 4.95B | Ecosystem, early-adopter rewards |
-| DAO Treasury | 4.00B | Community governance |
+| L5 Free World Projects | 3.30B | Community projects (moved from Slots 4 & 5) |
+| L6 Issobella | 2.50B | Orbital station & quantum research (repurposed from DAO Treasury) |
+| DAO Treasury | 1.50B | Grants & ecosystem bootstrap |
 | Infrastructure | 2.59B | Servers, development, audits |
 | Humanitarian | 1.44B | Charitable projects |
 

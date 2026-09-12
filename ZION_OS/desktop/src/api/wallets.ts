@@ -15,16 +15,18 @@ const FLOWERS_PER_ZION = 1_000_000;
 const PREMINE_LABELS = [
   'OASIS + Winners Golden Egg/Xp (Slot 1)',
   'OASIS + Winners Golden Egg/Xp (Slot 2)',
-  'OASII + Winners Golden Egg/Xp (Slot 3)',
-  'OASIS + Winners Golden Egg/Xp (Slot 4)',
-  'OASIS + Winners Golden Egg/Xp (Slot 5)',
-  'DAO Treasury — Community Governance (main)',
+  'OASIS + Winners Golden Egg/Xp (Slot 3)',
+  'L5 Free World Projects (repurposed from OASIS Slot 4)',
+  'L5 Free World Projects (repurposed from OASIS Slot 5)',
+  'L6 Issobella — Orbital Station & Quantum Research Fund (repurposed from DAO Treasury)',
   'DAO Treasury — Grants & Bounties',
   'DAO Treasury — Ecosystem Bootstrap',
   'Core Development Fund',
   'Network Infrastructure — P2P Seed Nodes',
   'Genesis Projects — Dharma Temple, Piko de Ora + DAO',
   'Children Future Fund — Humanitarian DAO',
+  'Bridge Seed Fund — EVM Bridge Liquidity',
+  'Bridge Vault UTXO — EVM Bridge Unlock Liquidity',
 ];
 
 function flowersToZion(flowers: number | string | undefined): number {

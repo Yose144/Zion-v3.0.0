@@ -199,11 +199,12 @@ const constitution = [
 ];
 
 const premineAllocation = [
-  { category: 'OASIS Golden Egg reserve (3 slots × 1.65B)', zion: '4,950,000,000', share: '30.4%', lock: 'Public summary only' },
-  { category: 'L5 Free World Projects (2 slots × 1.65B, repurposed from Slots 4 & 5)', zion: '3,300,000,000', share: '20.3%', lock: 'Trustee-managed' },
-  { category: 'DAO Treasury', zion: '4,000,000,000', share: '24.6%', lock: 'Immediately available' },
-  { category: 'Infrastructure & development', zion: '2,590,000,000', share: '15.9%', lock: 'Operational envelope' },
-  { category: 'Humanitarian seed', zion: '1,440,000,000', share: '8.8%', lock: 'Immediately available' },
+  { category: 'OASIS Golden Egg reserve (3 slots × 1.65B)', zion: '4,950,000,000', share: '29.5%', lock: 'Public summary only' },
+  { category: 'L5 Free World Projects (2 slots × 1.65B, repurposed from Slots 4 & 5)', zion: '3,300,000,000', share: '19.7%', lock: 'Trustee-managed' },
+  { category: 'L6 Issobella (Slot 6, repurposed from DAO Treasury)', zion: '2,500,000,000', share: '14.9%', lock: 'Locked until block 144,000' },
+  { category: 'DAO Treasury', zion: '1,500,000,000', share: '8.9%', lock: 'Locked until block 144,000' },
+  { category: 'Infrastructure & development', zion: '2,590,000,000', share: '15.4%', lock: 'Operational envelope' },
+  { category: 'Humanitarian seed', zion: '1,440,000,000', share: '8.6%', lock: 'Immediately available' },
 ];
 
 interface PhaseData {

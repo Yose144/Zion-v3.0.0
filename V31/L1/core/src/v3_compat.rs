@@ -454,16 +454,17 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
         admin_locked: true,
     },
-    // --- DAO Treasury (3 slots = 4.0B) — locked until height 144,000 ---
+    // --- L6 Issobella (1 slot = 2.5B) — repurposed from DAO Treasury, locked until height 144,000 ---
     PremineOutput {
         address: "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5",
-        purpose: "DAO Treasury — Community Governance (main)",
+        purpose: "L6 Issobella — Orbital Station & Quantum Research Fund (repurposed from DAO Treasury — Community Governance)",
         amount_zion: 2_500_000_000,
         amount_flowers: 2_500_000_000_000_000_000_000,
-        category: "dao_treasury",
+        category: "l6_issobella",
         unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT),
         admin_locked: true,
     },
+    // --- DAO Treasury (2 slots = 1.5B) — locked until height 144,000 ---
     PremineOutput {
         address: "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
         purpose: "DAO Treasury — Grants & Bounties",
