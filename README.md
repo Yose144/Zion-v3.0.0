@@ -7,7 +7,7 @@
 
 ## Status
 
-> **Last updated: 2026-08-22 (V31 soft-fork premine/coinbase maturity, wallet-sdk + mobile-app UTXO native format, website swap proxy, CLI `--soft-fork-activation-height`; 311 core tests pass, website build OK)**
+> **Last updated: 2026-09-12 (Premine repurpose: DAO Treasury slot 6 → L6 Issobella 2.5B — Orbital Station & Quantum Research Fund; DAO Treasury nyní 1.5B na slotech 7–8; premine 16.78B / 14 výstupů; `cargo test -p zion-core` 316 pass, website build OK, nasazeno na Edge)**
 
 - **ZionDex + ZIS Multichain Wallet plan:** The end-to-end DEX, ZIS-backed multichain wallet, and settlement roadmap is captured in [`ZionDexZis.md`](docs/3.2/3.2.4-Multichain-and-DEX/ZionDexZis.md).
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.

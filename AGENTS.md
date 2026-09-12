@@ -836,6 +836,7 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - Genesis Projects (Slot 11): 590M (0.59B)
 - Bridge Seed Fund (Slot 12): 0.4B
 - Humanitarian (Slot 13): 1.44B
+- Bridge Vault UTXO (Slot 14): 0.1B
 
 **Canonical Addresses (V2 JSON 2026-08-06):**
 - Humanitarian: `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`

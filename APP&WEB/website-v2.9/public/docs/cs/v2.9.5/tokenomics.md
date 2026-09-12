@@ -27,16 +27,17 @@ MINING_YEARS     = 45
 BLOCKS_PER_YEAR  = 525 600
 TOTAL_BLOCKS     = 23 652 000
 
-BASE_BLOCK_REWARD = 127 720 000 000 / 23 652 000
-                  = 5 400,067 ZION / blok
+BASE_BLOCK_REWARD = 127 720 000 000 / 23 652 000   (původní derivace, éra premine 16,28 mld)
+                  = 5 400,067 ZION / blok   (konstanta zachována; Decade Decay + tail určují reálnou emisi)
 
-Ověření:
+Ověření (původní 45letý konstantní model, premine tehdy 16,28 mld):
   5 400,067 × 23 652 000 = 127 720 384 400 ZION
-+ Genesis premine:          16 780 000 000 ZION
++ Genesis premine:          16 280 000 000 ZION
                            ──────────────────────
   Celkem:                   144 000 384 400 ZION
 
-Zaokrouhlovací delta: 384 400 ZION = 0,00027 % emise ✅
+Kanonicky dnes (premine 16,78 mld, emise = TOTAL_SUPPLY − PREMINE):
+  127 220 000 000 + 16 780 000 000 = 144 000 000 000 ZION  ✅ PŘESNĚ
 ```
 
 Hodnota 5 400,067 je matematicky odvozená — není libovolná.

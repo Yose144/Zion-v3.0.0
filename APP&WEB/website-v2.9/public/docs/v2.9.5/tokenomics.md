@@ -27,16 +27,17 @@ MINING_YEARS     = 45
 BLOCKS_PER_YEAR  = 525,600
 TOTAL_BLOCKS     = 23,652,000
 
-BASE_BLOCK_REWARD = 127,720,000,000 / 23,652,000
-                  = 5,400.067 ZION / block
+BASE_BLOCK_REWARD = 127,720,000,000 / 23,652,000   (original derivation, premine 16.28B era)
+                  = 5,400.067 ZION / block   (constant kept; Decade Decay + tail define the real emission)
 
-Verification:
+Verification (original 45-yr constant model, premine was 16.28B):
   5,400.067 × 23,652,000 = 127,720,384,400 ZION
-+ Genesis premine:          16,780,000,000 ZION
++ Genesis premine:          16,280,000,000 ZION
                            ──────────────────────
   Total:                   144,000,384,400 ZION
 
-Rounding delta: 384,400 ZION = 0.00027% of supply ✅
+Canonical today (premine 16.78B, emission = TOTAL_SUPPLY − PREMINE):
+  127,220,000,000 + 16,780,000,000 = 144,000,000,000 ZION ✅ EXACT
 ```
 
 The 5,400.067 figure is mathematically derived — not arbitrary.
