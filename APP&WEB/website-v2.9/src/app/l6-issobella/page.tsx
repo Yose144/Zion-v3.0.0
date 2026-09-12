@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   Rocket, Star, Globe2, Wallet, Shield, Sparkles, ArrowRight,
@@ -278,17 +279,17 @@ export default function L6IssobellaPage() {
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="absolute inset-0">
-            <img
-              src="/docs/l6/img/torsss1.jpg"
+            <Image
+              src="/docs/l6/img/Issabela1stSkelet.png"
               alt={cs ? 'ZION Issobella — koncept orbitální stanice' : 'ZION Issobella — orbital station concept'}
-              width={1600}
-              height={1000}
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              className="h-full w-full object-cover"
+              fill
+              priority
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              quality={90}
+              className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/70 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-transparent" />
           </div>
 
           <div className="relative z-10 p-6 md:p-10 lg:p-14">
@@ -472,12 +473,15 @@ export default function L6IssobellaPage() {
             <div className="space-y-6">
               <L6StationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full rounded-2xl" />
               <figure className="space-y-2">
-                <img
+                <Image
                   src="/docs/l6/img/1stMock.png"
                   alt={cs ? 'První vizualizace stanice Issobella' : 'First visualization of the Issobella station'}
+                  width={1200}
+                  height={675}
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  quality={85}
                   loading="lazy"
-                  decoding="async"
-                  className="w-full rounded-2xl border border-white/10"
+                  className="w-full h-auto rounded-2xl border border-white/10"
                 />
                 <figcaption className="text-center text-[10px] uppercase tracking-widest text-gray-500">
                   {L6IssobellaCopy.stationMockupCaption[cs ? 'cs' : 'en']}
