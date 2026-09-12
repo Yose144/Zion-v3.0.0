@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import L6StationPreviewLazy from '@/components/L6StationPreviewLazy';
+import FundBalance, { BalanceText } from '@/components/FundBalance';
 
 const L6IssobellaCopy = {
   badge: { cs: 'L6 · Issobella · Space', en: 'L6 · Issobella · Space' },
@@ -36,6 +37,7 @@ const L6IssobellaCopy = {
   genesisPremine: { cs: 'Genesis alokace', en: 'Genesis allocation' },
   genesisPremineAmount: { cs: '2,5 mld ZION', en: '2.5B ZION' },
   genesisPremineDesc: { cs: 'Premine slot 6 — převeden z DAO Treasury (Community Governance) na L6 Issobella. Time-lock do bloku 144 000 + admin multisig (3-of-3) + DAO vote.', en: 'Premine slot 6 — repurposed from DAO Treasury (Community Governance) to L6 Issobella. Time-locked until block 144,000 + admin multisig (3-of-3) + DAO vote.' },
+  liveBalance: { cs: 'Aktuální zůstatek', en: 'Live balance' },
 
   missionsAndVision: { cs: 'Mise & vize', en: 'Missions & vision' },
   cosmicMissions: { cs: 'Kosmické mise', en: 'Cosmic missions' },
@@ -102,6 +104,7 @@ const L6IssobellaCopy = {
 } as const;
 
 const ISSOBELLA_WALLET = 'zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0';
+const ISSOBELLA_PREMINE_WALLET = 'zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5';
 
 const HERO_STARS = [
   { x: 6, y: 18, size: 2, d: 2.4, delay: 0 },
@@ -395,7 +398,7 @@ export default function L6IssobellaPage() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.blockShare[cs ? 'cs' : 'en']}</p>
               <p className="text-4xl font-bold text-zion-cyan">5%</p>
@@ -411,6 +414,7 @@ export default function L6IssobellaPage() {
               <p className="text-3xl font-bold text-zion-cyan">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{L6IssobellaCopy.l6Council[cs ? 'cs' : 'en']}</p>
             </div>
+            <FundBalance address={ISSOBELLA_WALLET} rc="6, 182, 212" />
           </div>
 
           <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
@@ -424,7 +428,10 @@ export default function L6IssobellaPage() {
               <p className="text-xl font-bold text-zion-purple">{L6IssobellaCopy.genesisPremineAmount[cs ? 'cs' : 'en']}</p>
             </div>
             <p className="text-sm text-gray-400">{L6IssobellaCopy.genesisPremineDesc[cs ? 'cs' : 'en']}</p>
-            <p className="text-xs font-mono text-gray-500 break-all mt-2">zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5</p>
+            <p className="text-xs font-mono text-gray-500 break-all mt-2">{ISSOBELLA_PREMINE_WALLET}</p>
+            <p className="text-xs text-gray-400 mt-2">
+              {L6IssobellaCopy.liveBalance[cs ? 'cs' : 'en']}: <BalanceText address={ISSOBELLA_PREMINE_WALLET} className="text-zion-purple font-semibold" compact /> <span className="text-gray-500">ZION</span>
+            </p>
           </div>
         </motion.section>
 
