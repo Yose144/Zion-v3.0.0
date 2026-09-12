@@ -35,12 +35,15 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. It us
 
 | Category | Amount | Lock |
 |----------|--------|------|
-| ZION OASIS + Winners Golden Egg/Xp | 4.95B | Immediate |
-| DAO Treasury | 4.0B | Immediate |
-| Infrastructure | 2.59B | Immediate |
-| Humanitarian | 1.44B | Immediate |
+| ZION OASIS + Winners Golden Egg/Xp | 4.95B | Admin-locked |
+| L5 Free World Projects | 3.3B | Admin-locked |
+| L6 Issobella | 2.5B | Time-locked to block 144,000 |
+| DAO Treasury | 1.5B | Time-locked to block 144,000 |
+| Infrastructure + Genesis | 2.59B | Admin-locked |
+| Humanitarian | 1.44B | Admin-locked |
+| Bridge Seed + Vault | 0.5B | Admin-locked |
 
-All premine is on-chain verifiable and fully unlocked from genesis. Governance managed by DAO.
+All premine is on-chain verifiable and admin-locked (3-of-3 multisig + DAO vote). L6 Issobella and DAO Treasury outputs are additionally time-locked until block 144,000.
 
 ---
 
@@ -73,7 +76,7 @@ v2.9.6 introduces a layered civilization infrastructure — from blockchain to E
 |-------|------|------|---------|
 | **L1** | **ZION TerraNova** | 2026 | PoW blockchain — Cosmic Harmony v3, UTXO, fee burn, LWMA DAA |
 | **L2** | **NCL** (Neural Conscious Layer) | 2028 | AI-native protocol layer, on-chain model registry |
-| **L3** | **ZION DAO** | 2027 | Decentralized governance, Treasury (4B ZION), community grants |
+| **L3** | **ZION DAO** | 2027 | Decentralized governance, Treasury (1.5B ZION), community grants |
 | **L4** | **ZION Oasis** | 2029 | Economic ecosystem — Golden Egg, Winners, NFT, Game layer |
 | **L5** | **ZION Free World** 🌍 | 2030 | Quantum free energy engine, humanitarian missions, free communities |
 | **L6** | **ZION Issobella** 🔭 | 2040+ | Earth orbital observatory & research station |

@@ -41,7 +41,7 @@ The immediate roadmap leads to the public launch, postponed (TBD): an external s
 
 ## 5. What can your coin/token be used for? (600 chars)
 
-ZION is the native coin of its own Layer-1 chain. It pays transaction fees, rewards Proof-of-Work miners and - after the scheduled activation - full node operators from a dedicated 1% block subsidy. It is the governance asset of the DAO treasury (4.0B ZION in time-locked community, grants and ecosystem funds). The bridged wZION (ERC-20 on Base) enables DeFi trading and liquidity. Within the ecosystem ZION powers the OASIS world economy and the artifact marketplace, and on-chain it funds L5 humanitarian projects and the L6 science program - 10% of every block flows to these funds automatically.
+ZION is the native coin of its own Layer-1 chain. It pays transaction fees, rewards Proof-of-Work miners and - after the scheduled activation - full node operators from a dedicated 1% block subsidy. It is the governance asset of the DAO treasury (1.5B ZION in time-locked grants and ecosystem funds). The bridged wZION (ERC-20 on Base) enables DeFi trading and liquidity. Within the ecosystem ZION powers the OASIS world economy and the artifact marketplace, and on-chain it funds L5 humanitarian projects and the L6 science program - 10% of every block flows to these funds automatically.
 
 ---
 
@@ -132,8 +132,8 @@ ZION is a PoW chain, not a minted token: 88.35% of max supply (127.22B) is
 emitted only through mining over ~100+ years via Decade Decay (-20%/decade)
 plus perpetual tail emission (~724.785 ZION/block). The genesis premine
 (16.78B, 11.65%) consists of 14 transparent on-chain outputs - all publicly
-listed in the distribution document. 3 DAO treasury outputs (4.0B) are
-time-locked until block 144,000; all premine outputs additionally require
+listed in the distribution document. The L6 Issobella slot (2.5B) and the 2 DAO
+treasury outputs (1.5B) — 3 outputs totaling 4.0B — are time-locked until block 144,000; all premine outputs additionally require
 3-of-3 admin multisig plus DAO governance approval to move. Under a strict
 methodology the currently unlocked circulating supply equals mined emission
 (~181.8M ZION); our API reports premine+mined since all outputs are

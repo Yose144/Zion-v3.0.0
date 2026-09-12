@@ -34,7 +34,7 @@
 | **Block Time** | 60 sekund | Konsenzuální parametr |
 | **Fee Burn** | 100% fees spalováno | Deflační mechanismus |
 | **Tithe** | 10% block reward | Humanitární závazek |
-| **Premine alokace** | Oasis 4.95B, DAO 4B, Infra 2.59B, Human 1.44B | Již distribuováno |
+| **Premine alokace** | Oasis 4.95B, L5 3.3B, L6 Issobella 2.5B, DAO 1.5B, Infra 2.59B, Human 1.44B, Bridge 0.5B | Již distribuováno |
 
 ---
 
@@ -287,9 +287,12 @@ Kde:
 | Fond | Částka | Primární účel |
 |------|--------|---------------|
 | ZION Oasis + Golden Egg/Xp | 4.95B | L4 Oasis ekosystém |
-| DAO Treasury | 4.0B | Governance, granty, vývoj |
+| L5 Free World Projects | 3.3B | L5 komunitní projekty |
+| L6 Issobella | 2.5B | Orbital Station & Quantum Research (time-lock 144 000) |
+| DAO Treasury | 1.5B | Governance, granty, vývoj (time-lock 144 000) |
 | Infrastructure | 2.59B | Servery, nody, audity |
 | Humanitarian | 1.44B | Humanitární programy |
+| Bridge Seed + Vault | 0.5B | EVM bridge likvidita |
 
 ### Průběžné zdroje
 
@@ -297,7 +300,7 @@ Kde:
 |-------|-------------|----------------|
 | **Humanitarian Tithe** | 10% z každého block reward | ~2.84B ZION |
 | **Fee Burn** | 100% fees spalováno → deflace | Závisí na aktivitě |
-| **DAO Granty** | Hlasování komunity z Treasury | Až 4B k dispozici |
+| **DAO Granty** | Hlasování komunity z Treasury | Až 1.5B k dispozici |
 
 ### Nové zdroje (návrhy pro v2.9.6)
 

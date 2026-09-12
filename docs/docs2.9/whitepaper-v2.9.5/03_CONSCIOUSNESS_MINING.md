@@ -174,6 +174,15 @@ Step 4: Apply consciousness multiplier
 
 ## 3.5 Consciousness Bonus Pool
 
+> **Poznámka (překonáno, 2026-09):** Tato sekce dokumentuje původní ekonomický model
+> před kanonickým 144B tokenomics. Samostatný „Consciousness Bonus Pool" (5.5B)
+> v kanonickém premine neexistuje — consciousness/OASIS odměny jsou financovány
+> z premine **OASIS + Golden Egg (4.95B, sloty 1–3)** a podílů na emisi/fees.
+> Kanonický premine: 16.78B ve 14 výstupech — OASIS 4.95B, L5 Free World 3.3B,
+> L6 Issobella 2.5B (slot 6), DAO Treasury 1.5B (sloty 7–8), Infrastructure+Genesis
+> 2.59B, Humanitarian 1.44B, Bridge 0.5B.
+
+
 ### Kde se bere bonus?
 
 Z Genesis bloku bylo alokováno **5.5 miliard ZION** do Consciousness Bonus Pool:

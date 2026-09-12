@@ -20,7 +20,7 @@
 | Genesis premine | 16,780,000,000 ZION (11.65%) |
 | Block time | 60 s |
 | Fee policy | 100% burn |
-| Premine buckets | Oasis 4.95B, DAO 4B, Infra 2.59B, Humanitarian 1.44B |
+| Premine buckets | Oasis 4.95B, L5 3.3B, L6 Issobella 2.5B, DAO 1.5B, Infra 2.59B, Humanitarian 1.44B, Bridge 0.5B |
 
 ---
 
