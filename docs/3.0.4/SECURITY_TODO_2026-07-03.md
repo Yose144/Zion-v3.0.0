@@ -218,7 +218,7 @@ git push origin --force --tags
 
 ### 8. Max TX Amount Cap (F4.7) — L1 consensus — ✅ IMPLEMENTOVÁNO 2026-07-07
 **Co:** Sanity cap na TX amount jako defense-in-depth nad F5.
-**Klíčová oprava návrhu:** Původní „100M ZION cap" by **kolidoval s premine** (DAO treasury 2,5 mld, OASIS 1,65 mld) i s budoucími legitimními platbami. Cap proto NENÍ 100M — je nastaven na **`emission::TOTAL_SUPPLY` (144 mld ZION)**, což je supply-invarianta: žádná legitimní transakce ji nepřekročí, ale inflační smetí (např. `u64::MAX`) padne.
+**Klíčová oprava návrhu:** Původní „100M ZION cap" by **kolidoval s premine** (L6 Issobella 2,5 mld, OASIS 1,65 mld) i s budoucími legitimními platbami. Cap proto NENÍ 100M — je nastaven na **`emission::TOTAL_SUPPLY` (144 mld ZION)**, což je supply-invarianta: žádná legitimní transakce ji nepřekročí, ale inflační smetí (např. `u64::MAX`) padne.
 **Implementace (code-ready, height-gated, defaultně vypnuto):**
 - `cosmic-harmony/src/deeksha.rs`: `set_max_tx_amount_height` / `max_tx_amount_activation_height` / `max_tx_amount_active` (mirror F5 pattern, default `u64::MAX`)
 - `core/src/lib.rs`: pole `max_tx_amount_height`, metoda `max_tx_amount_active_at`, setter `set_max_tx_amount_height`, validace v **obou** cestách (`insert_transaction` + `validate_peer_block`)

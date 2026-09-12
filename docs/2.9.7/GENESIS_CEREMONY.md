@@ -85,11 +85,15 @@ diff /tmp/code_addrs.txt /tmp/public_addrs.txt
 
 | Premine kategorie | Počet adres | Celkem ZION | Unlock |
 |-------------------|-------------|-------------|--------|
-| OASIS Golden Egg | 5 | 8,250,000,000 | okamžitě (OASIS DAO) |
-| DAO Treasury | 3 | 4,000,000,000 | blok 525,600 (~1 rok) |
+| OASIS Golden Egg | 3 | 4,950,000,000 | okamžitě (OASIS DAO) |
+| L5 Free World Projects | 2 | 3,300,000,000 | okamžitě |
+| L6 Issobella | 1 | 2,500,000,000 | blok 144,000 (~100 dní) |
+| DAO Treasury | 2 | 1,500,000,000 | blok 144,000 (~100 dní) |
 | Infrastructure | 3 | 2,590,000,000 | okamžitě |
 | Humanitarian | 1 | 1,440,000,000 | okamžitě |
-| **Celkem** | **12** | **16,780,000,000** | |
+| Bridge Seed | 1 | 400,000,000 | okamžitě |
+| Bridge Vault UTXO | 1 | 100,000,000 | okamžitě |
+| **Celkem** | **14** | **16,780,000,000** | |
 
 ---
 

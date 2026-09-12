@@ -82,13 +82,13 @@ ZION is the native coin of its own Layer-1 chain. It pays transaction fees, rewa
 |-------|-------|
 | **Circulating Supply Amount** | **16,961,804,055** (live; roste o ~5,400 ZION/blok) |
 | **Circulating Supply API** | https://app.zionterranova.com/api/supply/circulating → plain number |
-| **Vested/Locked Wallets** | DAO Treasury — 3 adresy, time-locked do bloku 144,000 (~100 dnů): |
+| **Vested/Locked Wallets** | L6 Issobella — 1 adresa + DAO Treasury — 2 adresy, time-locked do bloku 144,000 (~100 dnů): |
 
 Vested/Locked wallets (přidat jednotlivě přes "Add Vested/Locked Wallet"):
 
 | Address | Amount | Lock |
 |---------|--------|------|
-| `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5` | 2,500,000,000 | time-locked → block 144,000 |
+| `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5` | 2,500,000,000 | L6 Issobella — time-locked → block 144,000 |
 | `zion1s27490u7n823g098w42077h8f2n824w0y75w0s3` | 1,000,000,000 | time-locked → block 144,000 |
 | `zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238` | 500,000,000 | time-locked → block 144,000 |
 
@@ -116,7 +116,8 @@ Volitelně další admin-locked premine adresy (všechny vyžadují 3-of-3 admin
 |---|-----------------|------------------------------|-------|--------------|----------------|------------------|
 | 1 | OASIS Reward Pool | **3.44** | 100 | 0 | 0 | Programmatic distribution over ~10 years |
 | 2 | L5 Free World Projects | **2.29** | 100 | 0 | 0 | DAO-governed release |
-| 3 | DAO Treasury | **2.78** | 0 | 3.3 | 0 | Full unlock at block 144,000 |
+| 3 | L6 Issobella | **1.74** | 0 | 3.3 | 0 | Full unlock at block 144,000 |
+| 3b | DAO Treasury | **1.04** | 0 | 3.3 | 0 | Full unlock at block 144,000 |
 | 4 | Infrastructure & Core Dev | **1.80** | 100 | 0 | 0 | Multisig + DAO per spend |
 | 5 | Children Future Fund | **1.00** | 100 | 0 | 0 | DAO-governed |
 | 6 | Bridge Liquidity Funds | **0.35** | 100 | 0 | 0 | EVM bridge liquidity |

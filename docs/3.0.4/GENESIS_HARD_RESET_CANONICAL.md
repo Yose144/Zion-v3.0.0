@@ -26,9 +26,9 @@ Kanonicky zdroj: `V3/L1/core/src/genesis.rs` → `PREMINE_OUTPUTS`
 | 1 | `zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0` | OASIS Winner 1 | 1,650,000,000 |
 | 2 | `zion16854w6h7a800k6h8n052s0h4k2v625x0w0z2320` | OASIS Winner 2 | 1,650,000,000 |
 | 3 | `zion1j8s2d6s6f248j7z3m80676p6m074x2q5p5er3w2` | OASIS Winner 3 | 1,650,000,000 |
-| 4 | `zion155k300w6x726p4x0w473s704d5k35865r2q75z8` | OASIS Winner 4 | 1,650,000,000 |
-| 5 | `zion1y293r8c6l5p3u0y7j8q8366372t7y070n3rp5r8` | OASIS Winner 5 | 1,650,000,000 |
-| 6 | `zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0` | DAO Treasury Main | 2,500,000,000 |
+| 4 | `zion155k300w6x726p4x0w473s704d5k35865r2q75z8` | L5 Free World 1 | 1,650,000,000 |
+| 5 | `zion1y293r8c6l5p3u0y7j8q8366372t7y070n3rp5r8` | L5 Free World 2 | 1,650,000,000 |
+| 6 | `zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0` | L6 Issobella | 2,500,000,000 |
 | 7 | `zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6` | DAO Grants | 1,000,000,000 |
 | 8 | `zion102s8k4k0w783d657j255z865e47054s342u87v3` | DAO Bootstrap | 500,000,000 |
 | 9 | `zion1e8j5z6v8e4c6s5x7r0w7e2r673h8k3a6d4xx877` | Core Dev Fund | 1,000,000,000 |

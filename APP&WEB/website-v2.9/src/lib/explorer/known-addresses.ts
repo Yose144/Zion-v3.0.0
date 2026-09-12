@@ -19,8 +19,8 @@ export const KNOWN_ADDRESSES: KnownAddress[] = [
   { address: 'zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708', type: 'premine', label: 'L5 Free World Projects (Slot 4 — repurposed from OASIS)', expected_balance_zion: 1_650_000_000, category: 'l5_free_world' },
   { address: 'zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388', type: 'premine', label: 'L5 Free World Projects (Slot 5 — repurposed from OASIS)', expected_balance_zion: 1_650_000_000, category: 'l5_free_world' },
 
-  // DAO Treasury (3 slots = 4.0B)
-  { address: 'zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5', type: 'dao', label: 'DAO Treasury — Community Governance', expected_balance_zion: 2_500_000_000, category: 'dao_treasury' },
+  // L6 Issobella (1 slot = 2.5B, repurposed from DAO Treasury) + DAO Treasury (2 slots = 1.5B)
+  { address: 'zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5', type: 'premine', label: 'L6 Issobella — Orbital Station & Quantum Research Fund (Slot 6 — repurposed from DAO Treasury)', expected_balance_zion: 2_500_000_000, category: 'l6_issobella' },
   { address: 'zion1s27490u7n823g098w42077h8f2n824w0y75w0s3', type: 'dao', label: 'DAO Treasury — Grants & Bounties', expected_balance_zion: 1_000_000_000, category: 'dao_treasury' },
   { address: 'zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238', type: 'dao', label: 'DAO Treasury — Ecosystem Bootstrap', expected_balance_zion: 500_000_000, category: 'dao_treasury' },
 

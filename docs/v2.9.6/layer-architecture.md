@@ -93,7 +93,7 @@ AI nativní vrstva integrovaná přímo do protokolu. NCL není "AI jako služba
 
 > **Status:** 🟡 V PŘÍPRAVĚ (2027)
 
-Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasury (4B ZION z genesis) slouží jako komunitní pokladna.
+Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasury (1.5B ZION z genesis, sloty 7–8) slouží jako komunitní pokladna; dalších 2.5B z bývalého slotu 6 drží L6 Issobella fond.
 
 ### Pravomoci DAO
 - Hlasování o protokolových změnách
@@ -105,7 +105,8 @@ Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasur
 
 | Fond | Alokace | Účel |
 |------|---------|------|
-| DAO Treasury | 4.0B ZION | Governance, granty, vývoj |
+| DAO Treasury | 1.5B ZION | Governance, granty, vývoj (sloty 7–8, time-lock blok 144 000) |
+| L6 Issobella | 2.5B ZION | Orbital Station & Quantum Research (slot 6, repurposed z DAO; time-lock blok 144 000) |
 | Humanitarian | 1.44B ZION | Humanitární projekty |
 | 10% Tithe (ongoing) | ~540 ZION/block | Průběžný humanitární desátek |
 

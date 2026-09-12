@@ -67,7 +67,8 @@ reward. (`emission.rs` lines 65–71, `chain_state.rs` lines 1049–1065.)
 ### Circulating supply methodology
 Circulating supply = mined coinbase emission to date + unlocked premine outputs − burned fees.
 All 14 genesis premine outputs are **admin-locked** (require 3-of-3 admin multisig + DAO vote to
-transfer). Additionally, 3 DAO treasury outputs (totaling 4.0B ZION: 2.5B + 1.0B + 0.5B) are
+transfer). Additionally, 3 outputs on slots 6–8 (totaling 4.0B ZION: L6 Issobella 2.5B + DAO
+treasury grants 1.0B + DAO bootstrap 0.5B) are
 **time-locked** until block 144,000 (~100 days at 60 s block time). These locked premine outputs
 should be treated as **non-circulating** until unlocked. (`v3_compat.rs` lines 397–628,
 `DAO_TREASURY_LOCK_HEIGHT = 144_000`.)
@@ -81,7 +82,7 @@ Supply is verifiable via the public API:
 |---|-----------------|---------------------------|------|
 | 1–3 | 1.65 each | ZION OASIS + Winners Golden Egg/XP (Slots 1–3, active reward pool) | admin-locked |
 | 4–5 | 1.65 each | L5 Free World Projects (Slots 4–5, repurposed from OASIS reserve) | admin-locked |
-| 6 | 2.50 | DAO Treasury — Community Governance | time-locked (blk 144k) + admin-locked |
+| 6 | 2.50 | L6 Issobella — Orbital Station & Quantum Research (repurposed from DAO Treasury) | time-locked (blk 144k) + admin-locked |
 | 7 | 1.00 | DAO Treasury — Grants & Bounties | time-locked (blk 144k) + admin-locked |
 | 8 | 0.50 | DAO fund | time-locked (blk 144k) + admin-locked |
 | 9 | 1.00 | Network Infrastructure — P2P Seed Nodes | admin-locked |
@@ -236,7 +237,7 @@ Ready-to-paste answers for the submission form (also in `/COINGECKO_FORM_ANSWERS
 | **Circulating Supply Amount** | ~16,961,804,055 (live; +~5,400 ZION/block) |
 | **Circulating Supply API** | https://app.zionterranova.com/api/supply/circulating (plain number) |
 
-Vested/Locked wallets (DAO treasury, time-locked until block 144,000):
+Vested/Locked wallets (L6 Issobella slot 6 + DAO treasury slots 7–8, time-locked until block 144,000):
 
 | Address | Amount (ZION) |
 |---------|---------------|
@@ -254,7 +255,8 @@ All 14 genesis premine outputs are additionally admin-locked (3-of-3 multisig + 
 |---|-----------|-----------------|-------|-------|---------|---------|
 | 1 | OASIS Reward Pool | 3.44 | 100 | 0 | 0 | Programmatic, ~10 yrs |
 | 2 | L5 Free World Projects | 2.29 | 100 | 0 | 0 | DAO-governed |
-| 3 | DAO Treasury | 2.78 | 0 | 3.3 mo (blk 144k) | 0 | Full unlock at cliff |
+| 3 | L6 Issobella | 1.74 | 0 | 3.3 mo (blk 144k) | 0 | Full unlock at cliff |
+| 3b | DAO Treasury | 1.04 | 0 | 3.3 mo (blk 144k) | 0 | Full unlock at cliff |
 | 4 | Infrastructure & Core Dev | 1.80 | 100 | 0 | 0 | Multisig + DAO per spend |
 | 5 | Children Future Fund | 1.00 | 100 | 0 | 0 | DAO-governed |
 | 6 | Bridge Liquidity Funds | 0.35 | 100 | 0 | 0 | Bridge liquidity |
@@ -269,7 +271,8 @@ ZION is a PoW chain, not a minted token: 88.35% of max supply (127.22B) is
 emitted only through mining over ~100+ years via Decade Decay (-20%/decade)
 plus perpetual tail emission (~724.785 ZION/block). The genesis premine
 (16.78B, 11.65%) consists of 14 transparent on-chain outputs - all publicly
-listed in the distribution document. 3 DAO treasury outputs (4.0B) are
+listed in the distribution document. 3 slot 6–8 outputs (4.0B: L6 Issobella
+2.5B + DAO treasury 1.5B) are
 time-locked until block 144,000; all premine outputs additionally require
 3-of-3 admin multisig plus DAO governance approval to move. Under a strict
 methodology the currently unlocked circulating supply equals mined emission

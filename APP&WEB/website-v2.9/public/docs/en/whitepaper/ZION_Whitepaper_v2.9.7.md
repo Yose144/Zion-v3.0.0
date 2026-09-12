@@ -72,14 +72,17 @@ Starting at block **5,256,000** (approximately year 10 from genesis):
 
 ### 2.5 Premine Allocation
 
-Celkový premine: **16 780 000 000 ZION** (11.65% z total supply) — on-chain verifikovatelné, plně odčlokováno od genesis.
+Celkový premine: **16 780 000 000 ZION** (11.65% z total supply) — on-chain verifikovatelné; L6 Issobella a DAO Treasury sloty jsou time-locked do bloku 144 000.
 
 | Kategorie | Částka | Podíl |
 |-----------|--------|-------|
-| ZION OASIS + Winners Golden Egg/Xp | 4 950 000 000 ZION | 30.4% |
-| DAO Treasury | 4 000 000 000 ZION | 24.6% |
-| Infrastructure | 2 590 000 000 ZION | 15.9% |
-| Humanitarian | 1 440 000 000 ZION | 8.8% |
+| ZION OASIS + Winners Golden Egg/Xp | 4 950 000 000 ZION | 29.5% |
+| L5 Free World Projects | 3 300 000 000 ZION | 19.7% |
+| L6 Issobella | 2 500 000 000 ZION | 14.9% |
+| DAO Treasury | 1 500 000 000 ZION | 8.9% |
+| Infrastructure | 2 590 000 000 ZION | 15.4% |
+| Humanitarian | 1 440 000 000 ZION | 8.6% |
+| Bridge Seed + Vault | 500 000 000 ZION | 3.0% |
 
 Veškeré preminové adresy jsou veřejně zveřejněny na https://zionterranova.com/docs a v genesis bloku.
 
@@ -168,7 +171,7 @@ $$D_{\text{new}} = D_{\text{ref}} \cdot \frac{T_{\text{target}} \cdot N(N+1)}{2 
 |-------|------|--------|-------------|
 | L1 | ZION TerraNova ⛏️ | ✅ Live | Rust blockchain, CHv3/CHv4, pool |
 | L2 | NCL — Neural Conscious Layer 🧠 | 🔄 Dev | AI-native protokol, wZION bridge, on-chain inference |
-| L3 | ZION DAO 🏛️ | 📋 Design | Governance, Treasury 4B ZION, community grants |
+| L3 | ZION DAO 🏛️ | 📋 Design | Governance, Treasury 1.5B ZION, community grants |
 | L4 | ZION Oasis 🎮 | 📋 Design | Golden Egg, XP economy, winners, gaming layer |
 | L5 | ZION Free World 🌍 | 📋 Vision | Humanitarian, free energy, off-grid communities |
 | L6 | ZION Issobella 🔭 | 📋 2040+ | Orbitní observatoř, výzkumná stanice, LEO orbit |
@@ -182,7 +185,7 @@ $$D_{\text{new}} = D_{\text{ref}} \cdot \frac{T_{\text{target}} \cdot N(N+1)}{2 
 
 ### L3 — ZION DAO & WARP Protocol
 
-- DAO governance: on-chain voting, 10% quorum, Treasury 4B ZION
+- DAO governance: on-chain voting, 10% quorum, Treasury 1.5B ZION
 - WARP: cross-chain message passing (beyond token bridging)
 - NCL (Native Contract Language): domain-specific, compiled to ZION bytecode
 - AI inference nodes: proof-of-inference → L1 transaction

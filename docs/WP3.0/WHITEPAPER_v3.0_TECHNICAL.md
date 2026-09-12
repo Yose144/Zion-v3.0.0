@@ -297,15 +297,19 @@ Tail od 2126:             724,785 ZION/blok navěky
 
 | Kategorie | ZION | % z premine | Účel |
 |-----------|------|-------------|------|
-| OASIS + Golden Egg/XP | 8 250 000 000 | 50,7 % | OASIS herní odměny, early-adopter incentives |
-| DAO Treasury | 4 000 000 000 | 24,6 % | Komunitní governance, granty |
-| Infrastructure | 2 590 000 000 | 15,9 % | Vývoj, seed nodes, audit |
-| Humanitarian Fund | 1 440 000 000 | 8,8 % | Iniciální seed humanitárního fondu |
+| OASIS + Golden Egg/XP (3 sloty) | 4 950 000 000 | 29,5 % | OASIS herní odměny, early-adopter incentives |
+| L5 Free World Projects (2 sloty) | 3 300 000 000 | 19,7 % | Sloty 4 & 5 repurposed z OASIS — humanitární projekty |
+| L6 Issobella (1 slot) | 2 500 000 000 | 14,9 % | Orbital Station & Quantum Research Fund (slot 6, repurposed z DAO Treasury) |
+| DAO Treasury (2 sloty) | 1 500 000 000 | 8,9 % | Komunitní governance, granty (sloty 7–8) |
+| Infrastructure (3 sloty) | 2 590 000 000 | 15,4 % | Vývoj, seed nodes, audit |
+| Humanitarian Fund (1 slot) | 1 440 000 000 | 8,6 % | Iniciální seed humanitárního fondu |
+| Bridge Seed (1 slot) | 400 000 000 | 2,4 % | EVM bridge likvidita |
+| Bridge Vault UTXO (1 slot) | 100 000 000 | 0,6 % | Bridge unlock likvidita |
 | **Celkem** | **16 780 000 000** | **100 %** | — |
 
 #### Zablokování DAO Treasury
 
-DAO Treasury (4B ZION) je zablokováno na **525 600 bloků ≈ 1 rok** od genesis. Toto je vynuceno na protokolové úrovni v `premine.rs::DAO_TREASURY_LOCK_HEIGHT`.
+DAO Treasury (1,5B ZION, sloty 7–8) a L6 Issobella (2,5B ZION, slot 6) jsou zablokovány na **144 000 bloků ≈ 100 dní** od genesis. Toto je vynuceno na protokolové úrovni v `premine.rs::DAO_TREASURY_LOCK_HEIGHT`.
 
 ### 5.5 Distribuce odměny za blok (aktuální v2.9.6)
 
@@ -330,26 +334,26 @@ pub const DEFAULT_POOL_FEE_PERCENT:       Decimal = dec!(1.0);
 V první dekádě existence sítě jsou dostupné **bonusové odměny z OASIS poolu**:
 
 ```
-OASIS Pool: 8 250 000 000 ZION
+OASIS Pool: 4 950 000 000 ZION
 Trvání:     10 let = 5 256 000 bloků (2025–2035)
-Bonus/blok: 8 250 000 000 / 5 256 000 = 1 569,63 ZION
+Bonus/blok: 4 950 000 000 / 5 256 000 = 941,78 ZION
 
 Výsledná odměna (consciousness period):
   Celková = base_reward + consciousness_bonus × level_multiplier
-  Celková = 5 400,067 + 1 569,63 × multiplier
+  Celková = 5 400,067 + 941,78 × multiplier
 ```
 
 | Consciousness Level | Multiplier | Celková odměna/blok |
 |--------------------|------------|---------------------|
 | Physical (L1) | 1,0× | 5 400,07 ZION |
-| Mental (L2) | 1,1× | 7 127,67 ZION |
-| Aware (L3) | 1,2× | 7 283,82 ZION |
-| Conscious (L4) | 1,3× | 7 440,00 ZION |
-| Awakened (L5) | 1,5× | 7 754,51 ZION |
-| Enlightened (L6) | 2,0× | 8 539,33 ZION |
-| Transcendent (L7) | 3,0× | 10 108,96 ZION |
-| Cosmic (L8) | 5,0× | 13 248,22 ZION |
-| On The Star (L9) | 10,0× | 21 096,37 ZION |
+| Mental (L2) | 1,1× | 6 436,03 ZION |
+| Aware (L3) | 1,2× | 6 530,20 ZION |
+| Conscious (L4) | 1,3× | 6 624,38 ZION |
+| Awakened (L5) | 1,5× | 6 812,74 ZION |
+| Enlightened (L6) | 2,0× | 7 283,63 ZION |
+| Transcendent (L7) | 3,0× | 8 225,41 ZION |
+| Cosmic (L8) | 5,0× | 10 108,97 ZION |
+| On The Star (L9) | 10,0× | 14 817,87 ZION |
 
 Po roce 2035: Bonus pool vyčerpán. Veškeré mining odbaveno pouze base reward 5 400,067 ZION.
 
@@ -512,11 +516,12 @@ TestNet tokeny jsou bezcenné a nebudou převedeny. MainNet začne novým blokem
 
 | Část | ZION | Účel |
 |------|------|------|
-| Community Governance (main) | 2 500 000 000 | Hlavní rezerva |
-| Grants & Bounties | 1 000 000 000 | Vývojářské granty |
-| Ecosystem Bootstrap | 500 000 000 | Ekosystémový rozvoj |
+| Grants & Bounties (slot 7) | 1 000 000 000 | Vývojářské granty |
+| Ecosystem Bootstrap (slot 8) | 500 000 000 | Ekosystémový rozvoj |
 
-Time-lock: Veškerý DAO Treasury zablokován do výšky bloku 525 600 (~1 rok po genesis).
+> Bývalý slot 6 — Community Governance main (2 500 000 000 ZION) byl repurposed na **L6 Issobella — Orbital Station & Quantum Research Fund**.
+
+Time-lock: Veškerý DAO Treasury a L6 Issobella zablokovány do výšky bloku 144 000 (~100 dní po genesis).
 
 ### 8.2 Hlasovací mechanismus
 

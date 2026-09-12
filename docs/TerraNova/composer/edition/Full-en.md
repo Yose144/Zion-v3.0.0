@@ -1760,12 +1760,15 @@ GENESIS RESERVE — 16.78B ZION:
 
 4.95B  → OASIS Golden Egg (education through play, 3 slots)
 3.30B  → L5 Free World Projects (Slots 4 & 5 repurposed from OASIS)
-4.00B  → DAO Treasury (governance, projects, grants)
+2.50B  → L6 Issobella — Orbital Station & Quantum Research Fund (slot 6, repurposed from DAO Treasury; time-locked to block 144,000)
+1.50B  → DAO Treasury (governance, projects, grants — slots 7–8, time-locked to block 144,000)
 2.59B  → Infrastructure:
 │  1.00B  Core development
 │  1.00B  Network infrastructure / seed nodes
 │  0.59B  Founder's lifetime stipend
 1.44B  → Humanitarian seed (immediate care from day one)
+0.40B  → Bridge Seed (EVM bridge liquidity)
+0.10B  → Bridge Vault UTXO
 ```
 
 **1.44B humanitarian seed** = 1/100 of the total supply. The symbol: from the very first day, care for the world has a reserve.

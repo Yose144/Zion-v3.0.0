@@ -48,7 +48,8 @@ a v [`genesis.md`](./genesis.md). Žádná část není skrytá.
 |-----------|---------------|---|------|
 | OASIS + Golden Egg (3 sloty) | 4 950 000 000 | 29,5 % | admin-locked |
 | L5 Free World Projects (2 sloty, přesunuto ze Slotů 4 & 5) | 3 300 000 000 | 19,7 % | trustee-managed |
-| DAO Treasury (3 sloty) | 4 000 000 000 | 23,8 % | admin + time-locked (blok 144 000) |
+| L6 Issobella (1 slot) | 2 500 000 000 | 14,9 % | admin + time-locked (blok 144 000) |
+| DAO Treasury (2 sloty) | 1 500 000 000 | 8,9 % | admin + time-locked (blok 144 000) |
 | Infrastruktura (3 sloty) | 2 590 000 000 | 15,4 % | admin-locked |
 | Humanitární (Children Future Fund) | 1 440 000 000 | 8,6 % | admin-locked |
 | Bridge Seed | 400 000 000 | 2,4 % | admin-locked |
@@ -173,9 +174,12 @@ prostředky.
 
 | Slot | Adresa | Částka | Lock |
 |------|--------|--------|------|
-| 6 | `zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6` | 4,0B | blok 144 000 + admin + DAO |
+| 7–8 | `zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6` | 1,5B | blok 144 000 + admin + DAO |
 
-DAO treasury (4B ZION) je **trojí zámek**:
+Slot 6 (2,5B ZION) byl přealokován na **L6 Issobella — vesmírnou stanici
+a fond kvantového výzkumu** — se stejným zámkem (blok 144 000 + admin + DAO).
+
+DAO treasury (1,5B ZION) je **trojí zámek**:
 1. Time-lock: blok 144 000 (~100 dní)
 2. Admin multisig: 3-of-3
 3. DAO vote: quorum 15 %, 14d

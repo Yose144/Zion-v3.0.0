@@ -883,11 +883,11 @@ L1 zůstává čistý — žádné XP v konsensus pravidlech.
 Benefity XP:
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│  1. POOL BONUS (z Mining Operators premine 8.25B)       │
+│  1. POOL BONUS (z Mining Operators premine 4.95B)       │
 │     └── Pool distribuuje bonus ZION z premine           │
 │         proporcionálně k XP multiplieru                 │
 │         Bonus = base_share × consciousness_multiplier   │
-│         Zdroj: 8,250,000,000 ZION over 10 let           │
+│         Zdroj: 4,950,000,000 ZION over 10 let           │
 │                                                         │
 │  2. DAO GOVERNANCE WEIGHT                               │
 │     └── Vyšší consciousness = silnější hlas             │
@@ -960,7 +960,7 @@ Benefity XP:
 |-----------|--------|-------|-------------|
 | L4-M1: XP Service (offchain, pool-integrated) | 2027 Q2 | 4 týdny | L1 stable |
 | L4-M2: Consciousness Level Calculator | 2027 Q2 | 2 týdny | L4-M1 |
-| L4-M3: Pool bonus distribution (z 8.25B premine) | 2027 Q3 | 4 týdny | L4-M2 |
+| L4-M3: Pool bonus distribution (z 4.95B premine) | 2027 Q3 | 4 týdny | L4-M2 |
 | L4-M4: Oasis UE5 prototyp (terrain + avatar) | 2027 Q3 | 12 týdnů | — |
 | L4-M5: Oasis wallet integration | 2027 Q4 | 4 týdny | L4-M4 + L1 |
 | L4-M6: Quest system + NPC AI | 2027 Q4 | 8 týdnů | L4-M4 + L3 |

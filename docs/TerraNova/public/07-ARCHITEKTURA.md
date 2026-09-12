@@ -50,12 +50,15 @@ KAŽDÝ NALEZENÝ BLOK (každých ~60 sekund):
 GENESIS RESERVE (16.78B ZION z 144B):
 ├── 4.95B  → OASIS Golden Egg (L4, 3 sloty)
 ├── 3.30B  → L5 Free World Projects (sloty 4 a 5 přesunuty z OASIS)
-├── 4.00B  → DAO Treasury (L2/L3 governance)
+├── 2.50B  → L6 Issobella (orbital station & quantum research — slot 6, time-lock blok 144 000)
+├── 1.50B  → DAO Treasury (L2/L3 governance — sloty 7–8, time-lock blok 144 000)
 ├── 2.59B  → Infrastructure
 │            ├── 1.00B Core development
 │            ├── 1.00B Network infrastructure / seed nodes
 │            └── 0.59B Genesis creator lifetime rent
-└── 1.44B  → Humanitarian seed
+├── 1.44B  → Humanitarian seed
+├── 0.40B  → Bridge Seed (EVM bridge likvidita)
+└── 0.10B  → Bridge Vault UTXO
 ```
 
 *Každá tisícina procenta má jméno a záměr. Nic není náhodné.*

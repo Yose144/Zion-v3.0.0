@@ -353,13 +353,13 @@ Skutečná hodnota závisí na aktivitě sítě.
 
 ### Genesis Seed
 
-Z premine je **1.53B ZION** alokováno jako iniciální seed:
+Z premine je **1.44B ZION** alokováno jako iniciální seed:
 
 ```
 Humanitarian Fund Genesis:
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│ Initial Allocation: 1,530,000,000 ZION                      │
+│ Initial Allocation: 1,440,000,000 ZION                      │
 │                                                             │
 │ Purpose:                                                    │
 │ ├── Emergency response capability                           │

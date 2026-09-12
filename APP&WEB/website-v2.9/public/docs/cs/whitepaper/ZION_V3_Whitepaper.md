@@ -287,15 +287,18 @@ ZION lze získat **těžbou** nebo přijetím v transakci.
 | # | Alokace | ZION | Účel |
 |---|-----------|------|---------|
 | 1-3 | OASIS Golden Egg | 4 950 000 000 | Odměny herního světa L4 (3 sloty × 1,65B (Sloty 4 & 5 → L5 Free World), vesting 10 let) |
-| 6 | DAO Treasury (hlavní) | 2 500 000 000 | Rezerva pro governance |
+| 4-5 | L5 Free World Projects | 3 300 000 000 | Humanitární a energetické projekty (2 sloty × 1,65B) |
+| 6 | L6 Issobella | 2 500 000 000 | Vesmírná stanice a fond kvantového výzkumu |
 | 7 | DAO Grants & Bounties | 1 000 000 000 | Granty vývojářům |
 | 8 | DAO Ecosystem Bootstrap | 500 000 000 | Rozvoj ekosystému |
 | 9 | Core Development Fund | 1 000 000 000 | Běžný vývoj |
 | 10 | Network Infrastructure | 1 000 000 000 | Seed uzly a infrastruktura |
 | 11 | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 590 000 000 | Dharma Temple, Piko de Ora + DAO |
 | 12 | Humanitarian DAO | 1 440 000 000 | Humanitární seed |
+| 13 | Bridge Seed | 400 000 000 | wZION bridge seed |
+| 14 | Bridge Vault UTXO | 100 000 000 | Bridge vault UTXO |
 
-**Časový zámek DAO Treasury:** Všech **4 000 000 000 ZION** v položkách #6–8 je uzamčeno do výšky bloku **525 600** (~1 rok po genesis).
+**Časový zámek:** Položky #6–8 (celkem **4 000 000 000 ZION** — L6 Issobella 2 500 000 000 + DAO Treasury 1 500 000 000) jsou uzamčeny do výšky bloku **144 000** (~100 dní po genesis).
 
 ### 7.3 Bezpečnost a transparentnost
 
@@ -315,9 +318,10 @@ Tokeny TestNet nemají hodnotu a nepřenášejí se. MainNet začíná novým bl
 
 | Alokace | ZION | Účel |
 |------------|------|---------|
-| Community Governance (hlavní) | 2 500 000 000 | Primární rezerva |
 | Grants & Bounties | 1 000 000 000 | Granty vývojářům |
 | Ecosystem Bootstrap | 500 000 000 | Růst ekosystému |
+
+*Pozn.:* Dřívější hlavní governance rezerva (slot 6, 2 500 000 000 ZION) byla přealokována na **L6 Issobella** — vesmírnou stanici a fond kvantového výzkumu. DAO Treasury tak činí **1 500 000 000 ZION** (sloty 7–8).
 
 ### 8.2 Mechanismus hlasování
 

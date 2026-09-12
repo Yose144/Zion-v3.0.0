@@ -275,15 +275,17 @@ The genesis block (height 0) contains 14 outputs with a total of 16.78 billion Z
 |---|----------|---------------|------|
 | 1–3 | OASIS Golden Egg / XP (3 slots) | 4,950,000,000 | None |
 | 4–5 | L5 Free World Projects (repurposed from OASIS) | 3,300,000,000 | None |
-| 6 | DAO Treasury (main reserve) | 2,500,000,000 | 525,600 blocks (~1 year) |
-| 7 | DAO Grants & Bounties | 1,000,000,000 | 525,600 blocks (~1 year) |
-| 8 | DAO Ecosystem Bootstrap | 500,000,000 | 525,600 blocks (~1 year) |
+| 6 | L6 Issobella — Orbital Station & Quantum Research Fund (repurposed from DAO Treasury) | 2,500,000,000 | 144,000 blocks (~100 days) |
+| 7 | DAO Grants & Bounties | 1,000,000,000 | 144,000 blocks (~100 days) |
+| 8 | DAO Ecosystem Bootstrap | 500,000,000 | 144,000 blocks (~100 days) |
 | 9 | Core Development Fund | 1,000,000,000 | None |
 | 10 | Network Infrastructure | 1,000,000,000 | None |
 | 11 | Genesis Projects Steward | 590,000,000 | None |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 | None |
+| 13 | Bridge Seed Fund | 400,000,000 | None |
+| 14 | Bridge Vault UTXO | 100,000,000 | None |
 
-The DAO Treasury lock is enforced on-chain in `V3/L1/core/src/validation.rs` Step 11. Any transaction spending DAO Treasury outputs before block 525,600 is rejected by consensus.
+The DAO Treasury and L6 Issobella lock is enforced on-chain in `V3/L1/core/src/validation.rs` Step 11. Any transaction spending these outputs before block 144,000 is rejected by consensus.
 
 ### Fee Model
 
@@ -455,13 +457,12 @@ The codebase includes approximately **1,470 automated tests** across 13 crates, 
 
 ### DAO Treasury
 
-The DAO Treasury holds 4 billion ZION (24.6 % of the premine), locked until block 525,600 (~1 year after genesis):
+The DAO Treasury holds 1.5 billion ZION (8.9 % of the premine), locked until block 144,000 (~100 days after genesis). Former slot 6 — Community Governance main reserve (2.5B ZION) — was repurposed to **L6 Issobella — Orbital Station & Quantum Research Fund** under the same lock:
 
 | Allocation | ZION | Purpose |
 |------------|------|---------|
-| Community Governance | 2,500,000,000 | Primary reserve |
-| Grants & Bounties | 1,000,000,000 | Developer grants |
-| Ecosystem Bootstrap | 500,000,000 | Ecosystem growth |
+| Grants & Bounties (slot 7) | 1,000,000,000 | Developer grants |
+| Ecosystem Bootstrap (slot 8) | 500,000,000 | Ecosystem growth |
 
 ### Voting
 

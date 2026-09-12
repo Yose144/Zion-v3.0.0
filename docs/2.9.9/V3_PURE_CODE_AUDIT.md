@@ -203,6 +203,8 @@ Pipeline: `header+nonce → Keccak-256 → SHA3-512 → GoldenMatrix → Blake3 
 | 9–11 | Infrastructure | core dev 1B + seeds 1B + creator 0.59B | 2,590,000,000 ZION | Immediate |
 | 12 | Humanitarian | Children Future Fund | 1,440,000,000 ZION | Immediate |
 
+> **Note (superseded):** This table documents the audited V3 code state as of 2026-03-12. The canonical V31 premine (`V31/L1/core/src/v3_compat.rs`) now has **14 outputs**: OASIS slots 4–5 repurposed to L5 Free World Projects (3.3B), DAO slot 6 (2.5B) repurposed to **L6 Issobella — Orbital Station & Quantum Research Fund**, DAO Treasury reduced to slots 7–8 (1.5B), plus Bridge Seed (0.4B) and Bridge Vault UTXO (0.1B); the time-lock is block **144,000**.
+
 All 12 public addresses listed in `PREMINE_ADDRESSES_PUBLIC.txt`.
 
 ---

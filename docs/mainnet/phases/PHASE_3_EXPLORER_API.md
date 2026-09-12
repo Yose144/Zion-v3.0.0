@@ -559,10 +559,10 @@ pub async fn get_supply(
     let total_mined = mined_base + bonus_estimate;
     
     // Premine
-    let premine = 16_282_857_143_000_000u64;
+    let premine = 16_780_000_000_000_000u64;
     
-    // Locked amount (team wallet until 2030)
-    let locked = 1_500_000_000_000_000u64;
+    // Locked amount (sloty 6–8: L6 Issobella 2.5B + DAO Treasury 1.5B do bloku 144 000)
+    let locked = 4_000_000_000_000_000u64;
     
     // Circulating = premine - locked + mined
     let circulating = premine - locked + total_mined;

@@ -209,11 +209,14 @@ Tyto hodnoty jsou zmrazeny a **nemohou být změněny** bez hard forku a konsens
 
 | Kategorie | ZION | Podíl | Lock |
 |-----------|------|-------|------|
-| ZION OASIS + Winners Golden Egg/Xp | 4,950,000,000 | 30.4% | Okamžitě dostupné (3 slots × 1.65B) |
-| L5 Free World Projects | 3,300,000,000 | 20.3% | Okamžitě dostupné (Slots 4 & 5 repurposed from OASIS) |
-| DAO Treasury | 4,000,000,000 | 24.6% | Okamžitě dostupné |
-| Infrastructure & Dev | 2,500,000,000 | 15.4% | Okamžitě dostupné |
-| Humanitarian Fund | 1,530,000,000 | 9.3% | Okamžitě dostupné |
+| ZION OASIS + Winners Golden Egg/Xp | 4,950,000,000 | 29.5% | Okamžitě dostupné (3 slots × 1.65B) |
+| L5 Free World Projects | 3,300,000,000 | 19.7% | Okamžitě dostupné (Slots 4 & 5 repurposed from OASIS) |
+| L6 Issobella — Orbital Station & Quantum Research Fund | 2,500,000,000 | 14.9% | Time-locked do bloku 144,000 (slot 6, repurposed z DAO Treasury) |
+| DAO Treasury | 1,500,000,000 | 8.9% | Time-locked do bloku 144,000 (sloty 7–8) |
+| Infrastructure & Dev | 2,590,000,000 | 15.4% | Okamžitě dostupné |
+| Humanitarian Fund | 1,440,000,000 | 8.6% | Okamžitě dostupné |
+| Bridge Seed Fund | 400,000,000 | 2.4% | Okamžitě dostupné |
+| Bridge Vault UTXO | 100,000,000 | 0.6% | Okamžitě dostupné |
 | **Celkem** | **16,780,000,000** | **100%** | — |
 
 ---

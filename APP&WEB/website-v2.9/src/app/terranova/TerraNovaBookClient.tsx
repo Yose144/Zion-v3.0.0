@@ -87,7 +87,8 @@ const TerranovaTerraNovaBookClientCopy = {
   genesisPremine1628bZion: { cs: `Genesis Premine · 16.78B ZION`, en: `Genesis Premine · 16.78B ZION` },
   oasisGoldenEgg5: { cs: `OASIS Golden Egg ×3`, en: `OASIS Golden Egg ×3` },
   l5FreeWorld2: { cs: `L5 Free World ×2`, en: `L5 Free World ×2` },
-  daoTreasury3: { cs: `DAO Pokladna ×3`, en: `DAO Treasury ×3` },
+  daoTreasury2: { cs: `DAO Pokladna ×2`, en: `DAO Treasury ×2` },
+  l6Issobella1: { cs: `L6 Issobella ×1`, en: `L6 Issobella ×1` },
   infrastructureDev2: { cs: `Infrastruktura + Vývoj ×2`, en: `Infrastructure + Dev ×2` },
   total: { cs: `Celkem`, en: `Total` },
   perBlockSplit89Miner5Humanitar: { cs: `split/blok: 89% miner · 5% humanitární · 5% issobella · 1% pool`, en: `per-block split: 89% miner · 5% humanitarian · 5% issobella · 1% pool` },
@@ -2229,7 +2230,8 @@ export default function TerraNovaBookClient() {
                         <div className="space-y-1.5 font-mono text-[10px] text-white/70">
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">OASIS Golden Egg ×3</span><span className="text-zion-gold/80">4.95B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">L5 Free World ×2</span><span className="text-zion-gold/80">3.30B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.daoTreasury[cs ? 'cs' : 'en']} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">L6 Issobella ×1</span><span className="text-zion-gold/80">2.50B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.daoTreasury[cs ? 'cs' : 'en']} ×2</span><span className="text-zion-gold/80">1.50B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.infrastructureDev[cs ? 'cs' : 'en']} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
                           <div className="flex justify-between gap-2"><span className="text-zion-gold/65">{TerranovaTerraNovaBookClientCopy.humanitarianDao[cs ? 'cs' : 'en']}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
@@ -2328,7 +2330,8 @@ export default function TerraNovaBookClient() {
                           {[
                             { label: TerranovaTerraNovaBookClientCopy.oasisGoldenEgg5[cs ? 'cs' : 'en'], amount: '4.95B' },
                             { label: TerranovaTerraNovaBookClientCopy.l5FreeWorld2[cs ? 'cs' : 'en'], amount: '3.30B' },
-                            { label: TerranovaTerraNovaBookClientCopy.daoTreasury3[cs ? 'cs' : 'en'], amount: '4.00B' },
+                            { label: TerranovaTerraNovaBookClientCopy.l6Issobella1[cs ? 'cs' : 'en'], amount: '2.50B' },
+                            { label: TerranovaTerraNovaBookClientCopy.daoTreasury2[cs ? 'cs' : 'en'], amount: '1.50B' },
                             { label: TerranovaTerraNovaBookClientCopy.infrastructureDev2[cs ? 'cs' : 'en'], amount: '2.00B' },
                             { label: TerranovaTerraNovaBookClientCopy.humanitarianDao[cs ? 'cs' : 'en'], amount: '1.44B' },
                             { label: TerranovaTerraNovaBookClientCopy.genesisProjectsDharmaTemplePik[cs ? 'cs' : 'en'], amount: '0.59B' },

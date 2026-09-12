@@ -58,8 +58,9 @@ Celkový genesis premine činí **16 780 000 000 ZION** (14 slotů) a zůstává
    - **Project Bohemia:** 500 000 000 ZION (správce: Andrea Kalousová)  
    - **Project Bodhi Lanka:** 500 000 000 ZION (správce: Annicka Purkertová)  
    - **L5 rezervní fond:** 800 000 000 ZION (správce: Erika Imlaufová / náhradník: Petra Tkácová)
-3. **DAO Treasury (4 000 000 000 ZION):** komunitní správa a granty.
-4. **Infrastruktura a Humanitární fondy (4 530 000 000 ZION):** vývoj sítě, bridge likvidita a dětský fond.
+3. **L6 Issobella — Orbital Station & Quantum Research Fund (2 500 000 000 ZION):** orbitalní stanice a kvantový výzkum (repurposed z DAO Treasury slotu 6, time-lock blok 144 000).
+4. **DAO Treasury (1 500 000 000 ZION):** komunitní správa a granty (sloty 7–8, time-lock blok 144 000).
+5. **Infrastruktura a Humanitární fondy (4 530 000 000 ZION):** vývoj sítě, bridge likvidita a dětský fond.
 
 ---
 

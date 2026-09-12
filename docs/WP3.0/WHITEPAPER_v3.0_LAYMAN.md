@@ -92,10 +92,13 @@ Při spuštění sítě bylo vytvořeno 16,78 miliardy ZION předem (tzv. premin
 
 | Část | Kolik | Proč |
 |------|-------|------|
-| OASIS/Golden Egg | 8,25 miliard | Odměny pro první hráče a těžaře |
-| DAO pokladna | 4 miliardy | Rozhoduje komunita (zamknuto 1 rok) |
+| OASIS/Golden Egg | 4,95 miliardy | Odměny pro první hráče a těžaře |
+| L5 Free World Projects | 3,3 miliardy | Humanitární projekty (přesunuto z OASIS) |
+| L6 Issobella fond | 2,5 miliardy | Vesmírná stanice a kvantový výzkum (zamknuto ~100 dní) |
+| DAO pokladna | 1,5 miliardy | Rozhoduje komunita (zamknuto ~100 dní) |
 | Infrastruktura | 2,59 miliardy | Servery, vývoj, bezpečnostní audit |
 | Humanitární fond | 1,44 miliardy | Okamžitý seed pro humanitární projekty |
+| Bridge Seed + Vault | 0,5 miliardy | Likvidita pro EVM bridge |
 
 ---
 
@@ -209,7 +212,7 @@ Výsledek: **vaše GPU těží ZION a zároveň pomáhá AI světu** — a vy do
 
 Tým za ZIONem **nevlastní žádné tokeny z předprodeje**. Pokud zakladatelé chtějí ZION, musí si ho vytěžit jako kdokoli jiný.
 
-Genesis premine (16,78 miliard) je transparentně rozdělen na čtyři kategorie s veřejnými adresami — každý si může ověřit, kde tyto peníze jsou, a sledovat jejich pohyb.
+Genesis premine (16,78 miliard) je transparentně rozdělen na sedm kategorií s veřejnými adresami — každý si může ověřit, kde tyto peníze jsou, a sledovat jejich pohyb.
 
 To je záměrný kontrast s projekty, kde insideři mají miliony tokenů před veřejným spuštěním, prodávají je na vrcholu a komunita platí za jejich zisky.
 

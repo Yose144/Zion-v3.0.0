@@ -12,8 +12,9 @@
 4  zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708    L5_Free_World_Reserve    1,650,000,000
 5  zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388    L5_Free_World_Projects   1,650,000,000
 
-# 6–8: DAO Treasury (main + grants + bootstrap = 4B ZION) [LOCKED height 144,000]
-6  zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5    DAO_Treasury_Main    2,500,000,000
+# 6: L6 Issobella — Orbital Station & Quantum Research Fund (2.5B ZION — repurposed from DAO Treasury) [LOCKED height 144,000]
+6  zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5    L6_Issobella_Fund    2,500,000,000
+# 7–8: DAO Treasury (grants + bootstrap = 1.5B ZION) [LOCKED height 144,000]
 7  zion1s27490u7n823g098w42077h8f2n824w0y75w0s3    DAO_Grants           1,000,000,000
 8  zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238    DAO_Bootstrap        500,000,000
 
@@ -31,7 +32,7 @@
 # 14: Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity (0.1B ZION)
 14 zion1j3w3h7k8m635h734y786j5804305m822t5uk546    Bridge_Vault_UTXO    100,000,000
 
-# Lock: DAO Treasury (wallets 6–8) cliff at height 144,000 (~1 year).
+# Lock: L6 Issobella (wallet 6) + DAO Treasury (wallets 7–8) cliff at height 144,000 (~100 days).
 # All others: immediate unlock at Genesis #0.
 
 # Canonical V31 Subsidy Addresses (89/5/5/1 fee split — NOT genesis outputs)

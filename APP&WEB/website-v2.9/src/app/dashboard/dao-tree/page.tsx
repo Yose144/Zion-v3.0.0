@@ -125,7 +125,6 @@ const upcoming = [
 ];
 
 const DAO_TREASURY_ADDRESSES = [
-  "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5",
   "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
   "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238",
 ];

@@ -259,7 +259,7 @@ pub fn from_height(_height: u64) -> Self {
 pub const BASE_BLOCK_REWARD_ATOMIC: u64 = 5_479_450_000; // ~5,479 ZION
 
 // src/blockchain/premine.rs
-pub const PREMINE_TOTAL: u64 = 16_282_857_143_000_000; // 16.78B ZION
+pub const PREMINE_TOTAL: u64 = 16_780_000_000_000_000; // 16.78B ZION
 pub const TOTAL_SUPPLY: u64 = 144_000_000_000_000_000; // 144B ZION
 ```
 
@@ -268,9 +268,11 @@ pub const TOTAL_SUPPLY: u64 = 144_000_000_000_000_000; // 144B ZION
 |-----------|--------|-------|
 | Mining Operators (OASIS) | 4.95B | 29.5% |
 | L5 Free World Projects | 3.3B | 19.7% |
-| DAO Winners | 1.75B | 10.7% |
-| ZION OASIS | 1.44B | 8.8% |
-| Infrastructure | 4.34B | 26.7% |
+| L6 Issobella | 2.5B | 14.9% |
+| DAO Treasury | 1.5B | 8.9% |
+| Infrastructure | 2.59B | 15.4% |
+| Humanitarian — Children Future Fund | 1.44B | 8.6% |
+| Bridge Seed + Vault | 0.5B | 3.0% |
 | **TOTAL** | **16.78B** | **11.65%** |
 
 **⚠️ PROBLÉM:** Premine addresses jsou placeholder (ne reálné bech32)

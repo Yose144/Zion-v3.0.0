@@ -269,21 +269,23 @@ Hard cap je **144 000 000 000 ZION** — nastaven v genesis a neměnný. Žádn�
 
 ### Rozdělení Genesis Premine
 
-Genesis blok (height 0) obsahuje 12 výstupů s celkem 16,78 miliardy ZION:
+Genesis blok (height 0) obsahuje 14 výstupů s celkem 16,78 miliardy ZION:
 
 | # | Kategorie | Množství (ZION) | Lock |
 |---|-----------|-----------------|------|
 | 1–3 | OASIS Golden Egg / XP (3 sloty) | 4 950 000 000 | Žádný |
 | 4–5 | L5 Free World Projects (repurposed z OASIS) | 3 300 000 000 | Žádný |
-| 6 | DAO Treasury (hlavní rezerva) | 2 500 000 000 | 525 600 bloků (~1 rok) |
-| 7 | DAO Grants & Bounties | 1 000 000 000 | 525 600 bloků (~1 rok) |
-| 8 | DAO Ecosystem Bootstrap | 500 000 000 | 525 600 bloků (~1 rok) |
+| 6 | L6 Issobella — Orbital Station & Quantum Research Fund (repurposed z DAO Treasury) | 2 500 000 000 | 144 000 bloků (~100 dní) |
+| 7 | DAO Grants & Bounties | 1 000 000 000 | 144 000 bloků (~100 dní) |
+| 8 | DAO Ecosystem Bootstrap | 500 000 000 | 144 000 bloků (~100 dní) |
 | 9 | Core Development Fund | 1 000 000 000 | Žádný |
 | 10 | Network Infrastructure | 1 000 000 000 | Žádný |
 | 11 | Genesis Projects Steward | 590 000 000 | Žádný |
 | 12 | Humanitární — Children Future Fund | 1 440 000 000 | Žádný |
+| 13 | Bridge Seed Fund | 400 000 000 | Žádný |
+| 14 | Bridge Vault UTXO | 100 000 000 | Žádný |
 
-DAO Treasury lock je vynucen on-chain v `V3/L1/core/src/validation.rs` krok 11. Jakákoliv transakce utrácející DAO Treasury výstupy před blokem 525 600 je konsensem zamítnuta.
+DAO Treasury a L6 Issobella lock je vynucen on-chain v `V3/L1/core/src/validation.rs` krok 11. Jakákoliv transakce utrácející tyto výstupy před blokem 144 000 je konsensem zamítnuta.
 
 ### Fee model
 
@@ -455,13 +457,12 @@ Kódová základna obsahuje přibližně **1 470 automatizovaných testů** nap�
 
 ### DAO Treasury
 
-DAO Treasury drží 4 miliardy ZION (24,6 % premine), uzamčeno do bloku 525 600 (~1 rok po genesis):
+DAO Treasury drží 1,5 miliardy ZION (8,9 % premine), uzamčeno do bloku 144 000 (~100 dní po genesis). Bývalý slot 6 — Community Governance hlavní rezerva (2,5B ZION) — byl repurposed na **L6 Issobella — Orbital Station & Quantum Research Fund** pod stejným zámkem:
 
 | Alokace | ZION | Účel |
 |---------|------|------|
-| Community Governance | 2 500 000 000 | Primární rezerva |
-| Grants & Bounties | 1 000 000 000 | Vývojářské granty |
-| Ecosystem Bootstrap | 500 000 000 | Růst ekosystému |
+| Grants & Bounties (slot 7) | 1 000 000 000 | Vývojářské granty |
+| Ecosystem Bootstrap (slot 8) | 500 000 000 | Růst ekosystému |
 
 ### Hlasování
 

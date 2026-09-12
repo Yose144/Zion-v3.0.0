@@ -45,9 +45,12 @@ Zbývajících **88,35 %** (127,22 mld. ZION) se emituje výhradně těžbou PoW
 | Kategorie | ZION | % nabídky |
 |-----------|------|-----------|
 | ZION OASIS + Winners | 4 950 000 000 | 3,44 % |
-| DAO Treasury | 4 000 000 000 | 2,78 % |
+| L5 Free World Projects | 3 300 000 000 | 2,29 % |
+| L6 Issobella | 2 500 000 000 | 1,74 % |
+| DAO Treasury | 1 500 000 000 | 1,04 % |
 | Infrastruktura | 2 590 000 000 | 1,80 % |
 | Humanitární rezerva | 1 440 000 000 | 1,00 % |
+| Bridge Seed + Vault | 500 000 000 | 0,35 % |
 | **Celkem** | **16 780 000 000** | **11,65 %** |
 
 Všechny premine adresy jsou veřejně uvedeny v `/PREMINE_ADDRESSES_PUBLIC.txt` a ověřitelné on-chain z genesis bloku.  

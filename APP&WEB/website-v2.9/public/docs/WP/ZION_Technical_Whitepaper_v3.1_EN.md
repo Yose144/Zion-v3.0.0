@@ -248,7 +248,8 @@ genesis message.
 |----------|---------------|--------------|
 | OASIS + Golden Egg (3 slots) | 4,950,000,000 | 29.5% |
 | L5 Free World Projects (2 slots, repurposed from Slots 4 & 5) | 3,300,000,000 | 19.7% |
-| DAO Treasury (3 slots) | 4,000,000,000 | 23.8% |
+| L6 Issobella (1 slot) | 2,500,000,000 | 14.9% |
+| DAO Treasury (2 slots) | 1,500,000,000 | 8.9% |
 | Infrastructure (3 slots) | 2,590,000,000 | 15.4% |
 | Humanitarian (1 slot) | 1,440,000,000 | 8.6% |
 | Bridge Seed (1 slot) | 400,000,000 | 2.4% |
@@ -256,8 +257,8 @@ genesis message.
 | **Total** | **16,780,000,000** | **100%** |
 
 All premine outputs are **admin-locked** (require 3-of-3 multisig + DAO
-vote to unlock). DAO Treasury slots are additionally **time-locked** until
-block 144,000 (~100 days).
+vote to unlock). L6 Issobella and DAO Treasury slots are additionally
+**time-locked** until block 144,000 (~100 days).
 
 ---
 
@@ -369,8 +370,8 @@ All premine outputs are **admin-locked** — transfers require:
 1. 3-of-3 admin multisig approval
 2. DAO vote
 
-DAO Treasury slots additionally require block height ≥ 144,000 (~100 days
-after genesis).
+L6 Issobella and DAO Treasury slots additionally require block height
+≥ 144,000 (~100 days after genesis).
 
 ### 10.3 Immutable Parameters (Constitutional)
 

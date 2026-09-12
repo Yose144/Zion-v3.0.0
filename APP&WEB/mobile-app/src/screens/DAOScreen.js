@@ -118,7 +118,7 @@ const DAOScreen = () => {
   // ── Treasury ──────────────────────────────────────────────────────────
   function renderTreasury() {
     // DAO API returns: { total_zion, available_zion, available_flowers, multisig, pending_operations, ... }
-    const balanceZion = treasury?.total_zion ?? treasury?.treasury_total_zion ?? stats?.treasury_total_zion ?? 4_000_000_000;
+    const balanceZion = treasury?.total_zion ?? treasury?.treasury_total_zion ?? stats?.treasury_total_zion ?? 1_500_000_000;
     const multisig = treasury?.multisig ?? stats?.multisig ?? '5-of-7';
     const pendingOps = treasury?.pending_operations ?? 0;
     return (

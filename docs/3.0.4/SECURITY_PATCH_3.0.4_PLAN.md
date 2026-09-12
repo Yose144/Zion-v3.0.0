@@ -65,7 +65,7 @@ Vše implementováno, otestováno, zdokumentováno v `SECURITY_TODO_2026-07-03.m
 
 ### Design (schváleno ownerem 2026-07-07)
 
-- **Cap = `emission::TOTAL_SUPPLY` (144 mld ZION), NE 100M.** Původní návrh 100M by kolidoval s premine (DAO treasury 2,5 mld, OASIS 1,65 mld) a budoucími legitimními platbami.
+- **Cap = `emission::TOTAL_SUPPLY` (144 mld ZION), NE 100M.** Původní návrh 100M by kolidoval s premine (L6 Issobella 2,5 mld, OASIS 1,65 mld) a budoucími legitimními platbami.
 - **Výjimky:** `from == "genesis"`, `from == "coinbase"`.
 - **Height-gate:** default `u64::MAX` (vypnuto). Genesis (height 0) je pod jakoukoli aktivační výškou = dvojitá ochrana.
 - **Obě cesty:** RPC `insert_transaction` i P2P `validate_peer_block` (parita — P2P nesmí být slabší).

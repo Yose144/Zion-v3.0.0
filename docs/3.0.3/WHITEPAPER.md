@@ -182,15 +182,17 @@ before launch and verifiable on-chain.
 
 | Category | Amount | Lock |
 |----------|--------|------|
-| OASIS + Golden Egg / XP reward pool (5 slots) | 8.25B | None |
-| DAO Treasury (governance + grants + bootstrap) | 4.0B | ~1 year (block 525,600) |
+| OASIS + Golden Egg / XP reward pool (3 slots) | 4.95B | None |
+| L5 Free World (2 slots) | 3.3B | None |
+| L6 Issobella — Orbital Station & Quantum Research Fund (1 slot) | 2.5B | block 144,000 |
+| DAO Treasury (governance + grants + bootstrap, 2 slots) | 1.5B | block 144,000 |
 | Core Development + Network Infrastructure | 2.0B | None |
 | Genesis Projects Steward (lifetime stewardship) | 0.59B | None |
 | Humanitarian — Children Future Fund | 1.44B | None |
 | Bridge Seed + Vault liquidity | 0.5B | None |
 
-The 4B DAO Treasury allocation is **time-locked on-chain** until ~1 year after genesis; consensus
-rejects any attempt to spend it earlier.
+The L6 Issobella (2.5B) and DAO Treasury (1.5B) allocations are **time-locked on-chain** until
+block 144,000; consensus rejects any attempt to spend them earlier.
 
 ### Fair Launch
 
@@ -252,7 +254,7 @@ V3 concentrated liquidity, HTLC atomic swaps, and on-chain DAO governance.
 ## 10. L4–L6 — The Long Horizon
 
 - **L4 — ZION OASIS.** An Unreal Engine 5 open-world linked to the chain, with a "consciousness
-  mining" XP economy and an 8.25B ZION reward pool distributed over a decade. XP is tracked
+  mining" XP economy and a 4.95B ZION reward pool distributed over a decade. XP is tracked
   off-chain; L1 stays pure PoW. (Specification and build: 2026–2028.)
 - **L5 — ZION Free World (target 2030).** A humanitarian and scientific foundation funded by the
   5 % block allocation: clean water, education, healthcare, free-energy research, and
@@ -284,7 +286,7 @@ resolved.
 
 ## 12. Governance
 
-ZION is governed by a **DAO** with a treasury of 4B ZION (time-locked for the first year).
+ZION is governed by a **DAO** with a treasury of 1.5B ZION (time-locked until block 144,000).
 
 - **Voting:** 1 ZION = 1 vote (snapshot-weighted), with a 48-hour pre-execution lock.
 - **Treasury:** multi-signature protected; the DAO funds grants, ecosystem growth, and

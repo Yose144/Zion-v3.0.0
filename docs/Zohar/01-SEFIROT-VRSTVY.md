@@ -41,7 +41,7 @@ To co ZION **dává**:
 
 To co ZION **omezuje**:
 - **Binah (L1 Validation):** 11-krokový validační pipeline — každý blok musí projít formou
-- **Gevurah (L2 DAO):** Treasury Lock (`DAO_TREASURY_LOCK_HEIGHT=525600`), 3-of-3 multisig, governance pravidla
+- **Gevurah (L2 DAO):** Treasury Lock (`DAO_TREASURY_LOCK_HEIGHT=144000`), 3-of-3 multisig, governance pravidla
 - **Hod (L4 Oasis):** herní pravidla, consciousness levels, struktura virtuálního světa
 
 *Bez tohoto pilíře je ZION chaos — nic není platné, nic není svázané.*
@@ -151,7 +151,7 @@ možnost směny. Ale — Chesed bez Gevurah je plýtvání. Proto je treasury lo
 
 **ZION protějšek:** L2 DAO / Treasury Lock / Governance
 - **Kód:** `V3/L2/dao/`, `V3/L2/contracts/hardhat/sol/ZIONGovernance.sol`, `ZIONTreasury.sol`
-- **Lock:** `DAO_TREASURY_LOCK_HEIGHT = 525600` (Step 11 v `validate_block()`)
+- **Lock:** `DAO_TREASURY_LOCK_HEIGHT = 144000` (Step 11 v `validate_block()`)
 - **Multisig:** 3-of-3 ZIONTreasury, 5 DAO guardians
 - **Fee burn:** 100% fee burn (MIN_TX_FEE=1000) — Gevurah jako zničení, ne akumulace
 
@@ -160,7 +160,7 @@ možnost směny. Ale — Chesed bez Gevurah je plýtvání. Proto je treasury lo
 která dělá Chesed udržitelným.
 
 **Otázka kterou vyvolává:** *Co se nesmí utratit?* Gevurah odpovídá: treasury do
-height 525600, fee vždy, genesis premine bez lidského klíče. Přísnost = ochrana
+height 144000, fee vždy, genesis premine bez lidského klíče. Přísnost = ochrana
 před tím, kdo by vzal vše.
 
 **Zdroj v docs:** [`3.0.4.md`](../3.0.4.md) §3 TX unification, AGENTS.md L1 Protocol §3

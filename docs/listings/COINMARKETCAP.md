@@ -45,7 +45,7 @@ pre-sale, or insider allocation, ZION's entire stack is open-source under the MI
 |-------|-------|
 | Maximum supply | **144,000,000,000 ZION** (hard cap, immutable) |
 | Total supply | Mined emission + unlocked premine − burned fees (live, on-chain) |
-| Circulating supply | Total supply − time-locked DAO Treasury (4B until block 525,600) |
+| Circulating supply | Total supply − time-locked L6 Issobella + DAO Treasury (4B until block 144,000) |
 | Mining emission | 127,220,000,000 ZION (88.35 %) over 100+ years |
 | Genesis premine | 16,780,000,000 ZION (11.65 %), 14 transparent outputs |
 | Decimals | 12 (native ZION); 18 (wZION ERC-20) |
@@ -54,9 +54,9 @@ pre-sale, or insider allocation, ZION's entire stack is open-source under the MI
 
 ### Supply verification
 ZION supply is verifiable on-chain through the node's JSON-RPC supply endpoint. CMC reviewers can
-query total and circulating supply directly from a node. The 4B DAO Treasury premine is
-time-locked in consensus (block 525,600, ~1 year post-genesis) and excluded from circulating
-supply until unlock.
+query total and circulating supply directly from a node. The 4B locked premine — L6 Issobella
+(2.5B, slot 6) + DAO Treasury (1.5B, slots 7–8) — is time-locked in consensus (block 144,000,
+~100 days post-genesis) and excluded from circulating supply until unlock.
 
 ---
 

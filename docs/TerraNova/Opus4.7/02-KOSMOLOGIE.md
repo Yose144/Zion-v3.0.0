@@ -69,11 +69,11 @@ A v tomto Genesis bloku je zapsáno první coinbase:
 
 ```
 Genesis coinbase: 16 780 000 000 ZION
-- 12 outputů s timelockem 525 600 bloků (~1 rok)
+- 14 outputů; sloty 6–8 (L6 Issobella + DAO Treasury) s timelockem 144 000 bloků (~100 dní)
 - Předem definované adresy (DAO Treasury, Issobella Fund, Humanitarian Fund...)
 ```
 
-To není „premine pro zakladatele". To je **rezerva pro civilizaci** — která je viditelná v genesis bloku, je zamčená na rok, je rozdělená podle předem zveřejněných pravidel a kterou nikdo nemůže přesunout, dokud ji DAO nehlasováním neuvolní.
+To není „premine pro zakladatele". To je **rezerva pro civilizaci** — která je viditelná v genesis bloku, je zamčená na ~100 dní, je rozdělená podle předem zveřejněných pravidel a kterou nikdo nemůže přesunout, dokud ji DAO nehlasováním neuvolní.
 
 To je první moment, kdy se v této knize liší ZION od všeho ostatního: **transparentnost počátku**.
 

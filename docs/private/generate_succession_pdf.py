@@ -144,7 +144,7 @@ def build_pdf():
         "    - Project Bohemia: 500 000 000 ZION (správce: Andrea Kalousová)\n"
         "    - Project Bodhi Lanka: 500 000 000 ZION (správce: Annicka Purkertová)\n"
         "    - L5 rezervní fond: 800 000 000 ZION (správce: Erika Imlaufová / náhradník: Petra Tkácová)\n"
-        "• DAO Treasury (4 000 000 000 ZION) a Infrastruktura + Humanitární fondy (4 530 000 000 ZION): slouží výhradně svým určeným cílům."
+        "• L6 Issobella (2 500 000 000 ZION), DAO Treasury (1 500 000 000 ZION) a Infrastruktura + Humanitární fondy (4 530 000 000 ZION): slouží výhradně svým určeným cílům."
     )
     pdf.multi_cell(0, 4.3, p4)
     pdf.ln(2)

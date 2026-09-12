@@ -292,7 +292,7 @@ pdf.section_break()
 pdf.chapter_title("Kapitola VI", "O DAO a o tom, kdo drží klíče")
 
 pdf.body_text(
-    "DAO Treasury obsahuje 4 miliardy ZION. Je uzamčeno do bloku 525 600 — přibližně jeden rok po genesis. "
+    "DAO Treasury obsahuje 1,5 miliardy ZION (sloty 7–8); dalších 2,5 miliardy drží L6 Issobella fond (slot 6, repurposed z DAO). Oba jsou uzamčeny do bloku 144 000 — přibližně 100 dní po genesis. "
     "Nikdo nemůže utratit jediný ZION dříve, než komunita bude připravena."
 )
 

@@ -72,15 +72,17 @@ version strings (`V3/Cargo.toml`, bridge configs, READMEs, roadmap) are unified 
 
 | Category | Amount | Lock |
 |----------|--------|------|
-| OASIS + Golden Egg/XP (slots 1–5) | 8.25B | None |
-| DAO Treasury (governance + grants + bootstrap) | 4.0B | Height 525,600 (~1 yr) |
+| OASIS + Golden Egg/XP (slots 1–3) | 4.95B | None |
+| L5 Free World (slots 4–5) | 3.3B | None |
+| L6 Issobella — Orbital Station & Quantum Research Fund (slot 6) | 2.5B | Height 144,000 |
+| DAO Treasury (governance + grants + bootstrap, slots 7–8) | 1.5B | Height 144,000 |
 | Core Dev + Network Infrastructure | 2.0B | None |
 | Genesis Projects (Dharma Temple, Piko de Ora + DAO) | 0.59B | None |
 | Humanitarian — Children Future Fund | 1.44B | None |
 | Bridge Seed Fund (account) | 0.4B | None |
 | Bridge Vault UTXO Seed | 0.1B | None |
 
-The DAO Treasury time-lock (4B until height 525,600) is enforced on-chain in
+The slot 6–8 time-lock (4B total: L6 2.5B + DAO 1.5B, until height 144,000) is enforced on-chain in
 `V3/L1/core/src/validation.rs` Step 11. Public addresses are listed in
 `PREMINE_ADDRESSES_PUBLIC.txt`.
 

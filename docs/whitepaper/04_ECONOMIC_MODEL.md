@@ -47,9 +47,12 @@ Genesis Block Distribution:
 |---------|------|-------------|-----------|------|
 | **ZION OASIS + Winners Golden Egg/Xp** | 4,950,000,000 | 29.5% | 3.44% | OASIS rewards + Golden Egg/Xp (3 slots) |
 | **L5 Free World Projects** | 3,300,000,000 | 19.7% | 2.29% | Slots 4 & 5 repurposed to L5 Free World Projects |
-| **DAO Treasury** | 4,000,000,000 | 24.6% | 2.78% | Komunitní governance |
-| **Infrastructure** | 2,500,000,000 | 15.4% | 1.74% | Servery, vývoj, audit |
-| **Humanitarian Fund** | 1,530,000,000 | 9.4% | 1.06% | Tithe iniciální alokace |
+| **L6 Issobella** | 2,500,000,000 | 14.9% | 1.74% | Orbital Station & Quantum Research (repurposed from DAO Treasury) |
+| **DAO Treasury** | 1,500,000,000 | 8.9% | 1.04% | Granty & Bootstrap |
+| **Infrastructure** | 2,590,000,000 | 15.4% | 1.80% | Servery, vývoj, audit |
+| **Humanitarian Fund** | 1,440,000,000 | 8.6% | 1.00% | Children Future Fund |
+| **Bridge Seed Fund** | 400,000,000 | 2.4% | 0.28% | EVM bridge likvidita |
+| **Bridge Vault UTXO** | 100,000,000 | 0.6% | 0.07% | Bridge unlock likvidita |
 
 **Poznámka:** Presale alokace (500M ZION) byla **zrušena** v lednu 2026. Tyto tokeny zůstávají v DAO Treasury.
 
@@ -278,9 +281,9 @@ Na rozdíl od Bitcoinu, ZION **nemá halving**. Block reward je konstantní:
 
 ## 4.9 Whitelist System
 
-### ZION OASIS + Winners Golden Egg/Xp (5 adres)
+### ZION OASIS + Winners Golden Egg/Xp (3 adresy)
 
-Pro MainNet existuje **whitelist** 5 OASIS + Golden Egg adres, které dostávají consciousness bonus:
+Pro MainNet existuje **whitelist** 3 OASIS + Golden Egg adres (sloty 1–3), které dostávají consciousness bonus:
 
 ```python
 # Z premine.py
@@ -288,8 +291,6 @@ OASIS_GOLDEN_EGG = [
     "ZION_SACRED_B0FA7E2A234D8C2F08545F02295C98",
     "ZION_QUANTUM_89D80B129682D41AD76DAE3F90C3E2",
     "ZION_COSMIC_397B032D6E2D3156F6F709E8179D36",
-    "ZION_ENLIGHTENED_004A5DBD12FDCAACEDCB5384DDC035",
-    "ZION_TRANSCENDENT_6BD30CB1835013503A8167D9CD86E0",
 ]
 ```
 
@@ -327,7 +328,7 @@ Whitelist **přestává platit**. Všichni minéři dostávají stejnou odměnu 
 |--------|-------|----------|
 | **Nízký hashrate** | Nedostatek minerů | Consciousness bonus incentive |
 | **Inflace** | 2.84B ZION/rok | Utility (DAO, NCL, fees) |
-| **Whitelist centralizace** | 5 adres má bonus | Pouze 10 let, pak fair |
+| **Whitelist centralizace** | 3 adresy mají bonus | Pouze 10 let, pak fair |
 | **Premine kritika** | 11.65% v genesis | Transparentní, auditovatelné |
 
 ### Co NEZARUČUJEME
