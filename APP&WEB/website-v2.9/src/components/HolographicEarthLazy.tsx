@@ -47,17 +47,19 @@ function EarthStaticFallback({ className }: { className?: string }) {
         ZION Terra Nova · Earth · Solar System
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 flex items-center justify-center sm:top-10">
-        <div className="relative h-[80%] w-[80%]">
-          <Image
-            src="/textures/earth-blue-marble.webp"
-            alt="ZION Terra Nova — holographic Earth"
-            fill
-            className="object-contain opacity-95"
-            loading="lazy"
-            decoding="async"
-            sizes="(max-width: 768px) 100vw, 400px"
-          />
-          <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(252,209,22,0.20),transparent_50%)]" />
+        <div className="relative aspect-square h-[80%]">
+          <div className="absolute inset-0 overflow-hidden rounded-full shadow-[inset_-18px_-14px_40px_rgba(0,0,0,0.55),inset_10px_8px_24px_rgba(255,255,255,0.08)]">
+            <Image
+              src="/textures/earth-blue-marble.webp"
+              alt="ZION Terra Nova — holographic Earth"
+              fill
+              className="object-cover opacity-95"
+              loading="lazy"
+              decoding="async"
+              sizes="(max-width: 768px) 80vw, 340px"
+            />
+          </div>
+          <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(252,209,22,0.16),transparent_50%)]" />
           <div className="pointer-events-none absolute -inset-2 rounded-full border border-rasta-gold/20 shadow-[0_0_40px_rgba(252,209,22,0.15)]" />
         </div>
       </div>
@@ -67,32 +69,29 @@ function EarthStaticFallback({ className }: { className?: string }) {
 
 function HolographicEarthLazy({ className }: { className?: string }) {
   const [webglOk, setWebglOk] = useState<boolean | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [enhanced, setEnhanced] = useState(false);
 
   useEffect(() => {
     setWebglOk(isWebGLAvailable());
-    const mq = window.matchMedia('(max-width: 640px)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setBlocked(reduceMotion || !!connection?.saveData);
   }, []);
 
   useEffect(() => {
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!webglOk || isMobile || reduceMotion || connection?.saveData) return;
-    const timer = window.setTimeout(() => setEnhanced(true), 1_200);
+    if (!webglOk || blocked) return;
+    const timer = window.setTimeout(() => setEnhanced(true), 900);
     return () => window.clearTimeout(timer);
-  }, [isMobile, webglOk]);
+  }, [blocked, webglOk]);
 
   if (webglOk === null) {
     return <EarthSkeleton className={className} />;
   }
 
-  // Always try 3D if WebGL is available; only fallback for no WebGL or very small screens
-  if (!webglOk || isMobile || !enhanced) {
+  // Static 2D globe only when 3D can't run: no WebGL, reduced motion or save-data.
+  // Mobile devices get the real scene — it self-throttles via useLowPower.
+  if (!webglOk || blocked || !enhanced) {
     return <EarthStaticFallback className={className} />;
   }
 
