@@ -24,7 +24,7 @@ const L6IssobellaCopy = {
 
   k5OfEveryBlock: { cs: '5 % z každého bloku', en: '5% of every block' },
   approxMonth: { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' },
-  unlockedBlock: { cs: 'Odemčeno blok ~525 600', en: 'Unlocked at block ~525,600' },
+  unlockedBlock: { cs: 'Genesis fond 2,5 mld · time-lock blok 144 000', en: '2.5B genesis fund · time-locked until block 144,000' },
 
   spaceFund: { cs: 'Vesmírný fond', en: 'Space Fund' },
   fundTitle: { cs: 'Fond L6 Issobella', en: 'L6 Issobella Fund' },
@@ -33,6 +33,9 @@ const L6IssobellaCopy = {
   governedBy: { cs: 'Správa', en: 'Governed by' },
   l6Council: { cs: 'L6 Rada', en: 'L6 Council' },
   fundWallet: { cs: 'Adresa fondu', en: 'Fund wallet' },
+  genesisPremine: { cs: 'Genesis alokace', en: 'Genesis allocation' },
+  genesisPremineAmount: { cs: '2,5 mld ZION', en: '2.5B ZION' },
+  genesisPremineDesc: { cs: 'Premine slot 6 — převeden z DAO Treasury (Community Governance) na L6 Issobella. Time-lock do bloku 144 000 + admin multisig (3-of-3) + DAO vote.', en: 'Premine slot 6 — repurposed from DAO Treasury (Community Governance) to L6 Issobella. Time-locked until block 144,000 + admin multisig (3-of-3) + DAO vote.' },
 
   missionsAndVision: { cs: 'Mise & vize', en: 'Missions & vision' },
   cosmicMissions: { cs: 'Kosmické mise', en: 'Cosmic missions' },
@@ -99,6 +102,20 @@ const L6IssobellaCopy = {
 } as const;
 
 const ISSOBELLA_WALLET = 'zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0';
+
+const HERO_STARS = [
+  { x: 6, y: 18, size: 2, d: 2.4, delay: 0 },
+  { x: 14, y: 42, size: 1.5, d: 3.2, delay: 0.4 },
+  { x: 24, y: 10, size: 2, d: 2.8, delay: 0.9 },
+  { x: 38, y: 30, size: 1.5, d: 3.6, delay: 0.2 },
+  { x: 52, y: 12, size: 2, d: 2.6, delay: 1.1 },
+  { x: 66, y: 40, size: 1.5, d: 3.4, delay: 0.6 },
+  { x: 78, y: 18, size: 2, d: 2.9, delay: 0.8 },
+  { x: 88, y: 36, size: 1.5, d: 3.1, delay: 0.3 },
+  { x: 94, y: 8, size: 2, d: 2.5, delay: 1.4 },
+  { x: 32, y: 58, size: 1.5, d: 3.3, delay: 1.0 },
+  { x: 70, y: 64, size: 1.5, d: 2.7, delay: 0.5 },
+] as const;
 
 const getMissions = (cs: boolean) => [
   {
@@ -269,17 +286,29 @@ export default function L6IssobellaPage() {
 
   return (
     <div className="zion-page overflow-x-hidden">
-      <div className="zion-container max-w-7xl space-y-20 pb-24">
+      <div className="zion-container max-w-7xl space-y-14 pb-24 md:space-y-20">
 
         {/* ── HERO ── */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
           className="zion-rainbow-card relative flex flex-col overflow-hidden p-0"
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
-          <div className="relative z-10 bg-black/50 p-6 md:p-10 lg:p-14">
-            <div className="max-w-3xl space-y-5">
+          <div className="relative z-10 bg-black/50 p-6 md:p-8 lg:p-10">
+            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+              {HERO_STARS.map((star, i) => (
+                <motion.span
+                  key={i}
+                  className="absolute rounded-full bg-white/70"
+                  style={{ left: `${star.x}%`, top: `${star.y}%`, width: star.size, height: star.size }}
+                  animate={{ opacity: [0.15, 0.9, 0.15] }}
+                  transition={{ duration: star.d, repeat: Infinity, delay: star.delay, ease: 'easeInOut' }}
+                />
+              ))}
+            </div>
+            <div className="relative max-w-3xl space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <Rocket className="h-4 w-4" />
                 {L6IssobellaCopy.badge[cs ? 'cs' : 'en']}
@@ -297,7 +326,7 @@ export default function L6IssobellaPage() {
             </div>
           </div>
 
-          <div className="relative w-full aspect-video max-h-[80vh]">
+          <div className="relative w-full aspect-video max-h-[80vh] bg-black">
             <Image
               src="/docs/l6/img/Issabela1stSkelet.png"
               alt={cs ? 'ZION Issobella — koncept orbitální stanice' : 'ZION Issobella — orbital station concept'}
@@ -309,7 +338,7 @@ export default function L6IssobellaPage() {
             />
           </div>
 
-          <div className="relative z-10 bg-black/50 p-6 md:p-10 lg:p-14">
+          <div className="relative z-10 bg-black/50 p-6 md:p-8 lg:p-10">
             <div className="max-w-3xl space-y-6">
               <p className="text-lg text-gray-300">
                 {L6IssobellaCopy.heroBody[cs ? 'cs' : 'en']}
@@ -354,7 +383,8 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-8"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
@@ -366,17 +396,17 @@ export default function L6IssobellaPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.blockShare[cs ? 'cs' : 'en']}</p>
               <p className="text-4xl font-bold text-zion-cyan">5%</p>
               <p className="text-xs text-gray-500 mt-1">{L6IssobellaCopy.everyBlockForever[cs ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.approxMonth[cs ? 'cs' : 'en']}</p>
               <p className="text-4xl font-bold text-zion-gold">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.governedBy[cs ? 'cs' : 'en']}</p>
               <p className="text-3xl font-bold text-zion-cyan">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{L6IssobellaCopy.l6Council[cs ? 'cs' : 'en']}</p>
@@ -387,6 +417,15 @@ export default function L6IssobellaPage() {
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{L6IssobellaCopy.fundWallet[cs ? 'cs' : 'en']}</p>
             {ISSOBELLA_WALLET}
           </div>
+
+          <div className="zion-rainbow-sub p-4 mt-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+              <p className="text-xs uppercase tracking-wider text-gray-500">{L6IssobellaCopy.genesisPremine[cs ? 'cs' : 'en']}</p>
+              <p className="text-xl font-bold text-zion-purple">{L6IssobellaCopy.genesisPremineAmount[cs ? 'cs' : 'en']}</p>
+            </div>
+            <p className="text-sm text-gray-400">{L6IssobellaCopy.genesisPremineDesc[cs ? 'cs' : 'en']}</p>
+            <p className="text-xs font-mono text-gray-500 break-all mt-2">zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5</p>
+          </div>
         </motion.section>
 
         {/* ── MISSIONS ── */}
@@ -394,6 +433,7 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.missionsAndVision[cs ? 'cs' : 'en']}</p>
@@ -407,7 +447,7 @@ export default function L6IssobellaPage() {
             {missions.map((mission) => (
               <div
                 key={mission.name}
-                className={`zion-rainbow-card overflow-hidden p-0 ${mission.color}`}
+                className={`zion-rainbow-card group overflow-hidden p-0 transition-transform duration-300 hover:-translate-y-1 ${mission.color}`}
                 style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
               >
                 <div className="relative h-44 overflow-hidden">
@@ -418,7 +458,7 @@ export default function L6IssobellaPage() {
                     height={350}
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                   <span className={`absolute right-3 top-3 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${mission.badgeColor}`}>
@@ -444,7 +484,8 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-8"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
           style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           <div className="grid lg:grid-cols-2 gap-8 items-start">
@@ -461,7 +502,7 @@ export default function L6IssobellaPage() {
               </p>
               <div className="grid sm:grid-cols-2 gap-4">
                 {modules.map((m) => (
-                  <div key={m.title} className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <div key={m.title} className="zion-rainbow-sub p-4 transition-colors hover:bg-white/5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 mb-2">
                       <m.icon className={`h-5 w-5 ${m.color}`} />
                       <h3 className="font-semibold text-white">{m.title}</h3>
@@ -474,7 +515,7 @@ export default function L6IssobellaPage() {
 
             <div className="space-y-6">
               <L6StationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full rounded-2xl" />
-              <figure className="space-y-2">
+              <figure className="group space-y-2">
                 <Image
                   src="/docs/l6/img/1stMock.png"
                   alt={cs ? 'První vizualizace stanice Issobella' : 'First visualization of the Issobella station'}
@@ -483,7 +524,7 @@ export default function L6IssobellaPage() {
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   quality={85}
                   loading="lazy"
-                  className="w-full h-auto rounded-2xl border border-white/10"
+                  className="w-full h-auto rounded-2xl border border-white/10 transition-transform duration-500 group-hover:scale-[1.02]"
                 />
                 <figcaption className="text-center text-[10px] uppercase tracking-widest text-gray-500">
                   {L6IssobellaCopy.stationMockupCaption[cs ? 'cs' : 'en']}
@@ -498,7 +539,8 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-8"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
@@ -543,7 +585,7 @@ export default function L6IssobellaPage() {
             </div>
 
             <div className="space-y-5">
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                 <img
                   src="/docs/l6/img/Von_braun_station_2.jpg"
                     alt={cs ? 'Rotační orbitální stanice' : 'Rotating orbital station'}
@@ -551,11 +593,11 @@ export default function L6IssobellaPage() {
                     height={700}
                     loading="lazy"
                     decoding="async"
-                    className="w-full object-cover"
+                    className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
               </div>
 
-              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-5 transition-colors hover:bg-white/5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">{L6IssobellaCopy.agRecommended[cs ? 'cs' : 'en']}</p>
                 <div className="space-y-3">
                   {agConfig.map((cfg) => (
@@ -578,7 +620,8 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-8"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
           style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
@@ -592,7 +635,7 @@ export default function L6IssobellaPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {qmTracks.map((track) => (
-              <div key={track.name} className={`zion-rainbow-sub p-5 ${track.accent}`} style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+              <div key={track.name} className={`zion-rainbow-sub p-5 transition-colors hover:bg-white/5 ${track.accent}`} style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-3">
                   <track.icon className={`h-6 w-6 ${track.color}`} />
                   <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold border ${track.badge}`}>{track.trl}</span>
@@ -623,7 +666,8 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-8"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
           style={{ '--rc': '236, 72, 153' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
@@ -665,6 +709,7 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.researchLibrary[cs ? 'cs' : 'en']}</p>
@@ -680,7 +725,7 @@ export default function L6IssobellaPage() {
               <Link
                 key={doc.id}
                 href={`/docs#${doc.id}`}
-                className="zion-rainbow-sub group block p-5 transition-colors hover:bg-white/5"
+                className="zion-rainbow-sub group block p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/5"
                 style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -699,7 +744,8 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="zion-rainbow-card p-8"
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="zion-rainbow-card p-5 md:p-8"
           style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-8">
@@ -736,6 +782,7 @@ export default function L6IssobellaPage() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
           className="zion-cta-banner"
         >
           <Sparkles className="h-12 w-12 text-zion-purple mx-auto mb-4" />
