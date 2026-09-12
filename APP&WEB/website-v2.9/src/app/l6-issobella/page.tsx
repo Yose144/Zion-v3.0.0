@@ -297,7 +297,7 @@ export default function L6IssobellaPage() {
             </div>
           </div>
 
-          <div className="relative h-[400px] w-full md:h-[500px] lg:h-[560px]">
+          <div className="relative w-full aspect-video max-h-[80vh]">
             <Image
               src="/docs/l6/img/Issabela1stSkelet.png"
               alt={cs ? 'ZION Issobella — koncept orbitální stanice' : 'ZION Issobella — orbital station concept'}
@@ -305,7 +305,7 @@ export default function L6IssobellaPage() {
               priority
               sizes="(max-width: 1280px) 100vw, 1280px"
               quality={90}
-              className="object-cover"
+              className="object-contain object-center"
             />
           </div>
 
