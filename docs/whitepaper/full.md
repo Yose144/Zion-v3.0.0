@@ -858,6 +858,8 @@ Step 4: Apply consciousness multiplier
 
 ## 3.5 Consciousness Bonus Pool
 
+> **⚠️ Historický model:** Čísla v této sekci pochází z původního v2.9.x návrhu (5.5B pool, base 50 ZION). Kanonický stav: premine 16.78B (14 výstupů, viz §"Genesis Allocation"), base reward 5,400.067 ZION/blok s Decade Decay, těžební emise 127.22B ZION.
+
 ### Kde se bere bonus?
 
 Z Genesis bloku bylo alokováno **5.5 miliard ZION** do Consciousness Bonus Pool:

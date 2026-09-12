@@ -2,6 +2,8 @@
 
 > *"Těžba není jen o hashrate. Je o tom, kým se stáváš."*
 
+> **⚠️ Poznámka (historický design):** Tato kapitola dokumentuje původní v2.9.x ekonomický model (base reward 50 ZION, Consciousness Bonus Pool 5.5B, DAO 2B). Kanonický model od v2.9.6/V31: base reward **5,400.067 ZION/blok** s Decade Decay (−20 %/dekáda, tail 725 ZION), genesis premine **16.78B ZION / 14 výstupů** (OASIS+Golden Egg 4.95B, L5 Free World 3.3B, L6 Issobella 2.5B, DAO Treasury 1.5B, Infrastructure 2.59B, Humanitarian 1.44B, Bridge 0.5B), těžební emise **127.22B**. Consciousness-level multiplikátory jako koncept zůstávají; čísla níže jsou historická.
+
 ---
 
 ## 3.1 Co je Consciousness Mining?

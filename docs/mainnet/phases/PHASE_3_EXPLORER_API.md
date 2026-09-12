@@ -264,7 +264,7 @@ Implementovat REST API endpointy potřebné pro:
   "total_supply": "144000000000.00000000",
   "circulating_supply": "16358857143.12345678",
   "max_supply": "144000000000.00000000",
-  "premine": "16282857143.00000000",
+  "premine": "16780000000.00000000",
   "mined": "76000000.12345678",
   "burned": "0.00000000",
   "locked": "1500000000.00000000",
