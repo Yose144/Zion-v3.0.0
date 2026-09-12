@@ -93,7 +93,7 @@ AI nativní vrstva integrovaná přímo do protokolu. NCL není "AI jako služba
 
 > **Status:** 🟡 V PŘÍPRAVĚ (2028)
 
-Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasury (4B ZION z genesis) slouží jako komunitní pokladna.
+Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasury (1.5B ZION z genesis — sloty 7–8) slouží jako komunitní pokladna.
 
 ### Pravomoci DAO
 - Hlasování o protokolových změnách
@@ -105,7 +105,7 @@ Decentralizovaná autonomní organizace řídící celý ekosystém. DAO Treasur
 
 | Fond | Alokace | Účel |
 |------|---------|------|
-| DAO Treasury | 4.0B ZION | Governance, granty, vývoj |
+| DAO Treasury | 1.5B ZION | Governance, granty, vývoj |
 | Humanitarian | 1.44B ZION | Humanitární projekty |
 | 10% Tithe (ongoing) | ~540 ZION/block | Průběžný humanitární desátek |
 

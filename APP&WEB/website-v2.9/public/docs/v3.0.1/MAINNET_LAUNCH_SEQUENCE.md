@@ -17,10 +17,11 @@
 - ✅ **Genesis premine configured** (14 outputs, 16.78B ZION)
   - 3× OASIS + Golden Egg (4.95B ZION)
   - 2× L5 Free World Projects (3.3B ZION, repurposed from Slots 4 & 5)
-  - 3× DAO Treasury (4.0B ZION, locked 1 year)
+  - 1× L6 Issobella — Orbital Station & Quantum Research (2.5B ZION, repurposed from DAO, locked to block 144,000)
+  - 2× DAO Treasury (1.5B ZION, locked to block 144,000)
   - 3× Infrastructure (2.59B ZION)
   - 1× Humanitarian (1.44B ZION)
-  - 1× Bridge Seed Fund (0.5B ZION)
+  - 2× Bridge Seed + Vault (0.5B ZION)
 
 - ✅ **Genesis hash verified** across all nodes
 - ✅ **All launch scripts updated** with new addresses

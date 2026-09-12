@@ -133,27 +133,40 @@ Genesis Block Distribution (16.78B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Mining Operators Pool: 8,250,000,000 ZION (50.7%)       │ │
-│ │ └── Pro consciousness bonus (2025-2035)                 │ │
-│ │ └── Time-locked: postupné uvolňování 10 let             │ │
+│ │ OASIS + Golden Egg: 4,950,000,000 ZION (29.5%)          │ │
+│ │ └── OASIS odměny + výherní ceny (sloty 1–3)             │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ DAO Treasury: 4,000,000,000 ZION (24.6%)                │ │
-│ │ └── Komunitní governance                                │ │
-│ │ └── Vesting: 4 roky lineární                           │ │
+│ │ L5 Free World Projects: 3,300,000,000 ZION (19.7%)      │ │
+│ │ └── 6 komunitních projektů + rezerva (sloty 4–5)        │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Infrastructure Fund: 2,500,000,000 ZION (15.4%)         │ │
-│ │ └── Servery, vývoj, audit, marketing                    │ │
-│ │ └── Vesting: 2 roky lineární                           │ │
+│ │ L6 Issobella: 2,500,000,000 ZION (14.9%)                │ │
+│ │ └── Orbital Station & Quantum Research Fund (slot 6)    │ │
+│ │ └── Time-lock: blok 144 000 (~100 dní)                  │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Humanitarian Fund: 1,530,000,000 ZION (9.4%)            │ │
-│ │ └── Iniciální seed pro humanitární projekty             │ │
-│ │ └── Unlocked (okamžitě použitelné)                      │ │
+│ │ DAO Treasury: 1,500,000,000 ZION (8.9%)                 │ │
+│ │ └── Granty 1B (slot 7) + Bootstrap 0.5B (slot 8)        │ │
+│ │ └── Time-lock: blok 144 000 (~100 dní)                  │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Infrastructure + Genesis: 2,590,000,000 ZION (15.4%)    │ │
+│ │ └── Core dev 1B + P2P seed 1B + Genesis 0.59B (9–11)    │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Humanitarian Fund: 1,440,000,000 ZION (8.6%)            │ │
+│ │ └── Children Future Fund — Humanitarian DAO (slot 12)   │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Bridge Seed + Vault: 500,000,000 ZION (3.0%)            │ │
+│ │ └── EVM bridge likvidita (sloty 13–14)                  │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -163,10 +176,8 @@ Genesis Block Distribution (16.78B ZION):
 
 | Alokace | Unlock Model | Délka |
 |---------|--------------|-------|
-| Mining Operators | Block-by-block (1,569.63/blok) | 10 let |
-| DAO Treasury | Lineární vesting | 4 roky |
-| Infrastructure | Lineární vesting | 2 roky |
-| Humanitarian | Immediate unlock | N/A |
+| Všechny premine výstupy | Admin lock (3-of-3 multisig + DAO hlasování) | do schválení DAO |
+| L6 Issobella + DAO Treasury (sloty 6–8) | + Time-lock blok 144 000 | ~100 dní |
 
 ---
 

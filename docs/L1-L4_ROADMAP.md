@@ -166,7 +166,7 @@ dao/
     ├── lib.rs              # Module exports
     ├── proposal.rs         # Proposal types (Parameter, Treasury, Emergency, Grant)
     ├── voting.rs           # Token-weighted voting (1 ZION = 1 vote)
-    ├── treasury.rs         # Multi-sig treasury management (4B ZION)
+    ├── treasury.rs         # Multi-sig treasury management (1.5B ZION)
     ├── timelock.rs         # 48h execution timelock
     ├── quorum.rs           # Quorum rules (10% participation)
     ├── executor.rs         # Proposal execution engine

@@ -177,7 +177,7 @@ Zero nových Cargo dependencí — vše postaveno nad již existujícími craty.
   - 157 testů (`zion-bridge`) — E2E mock testy, AnkrClient unit testy
 - **L2/dao** — 65 testů
   - `governance.rs` — Proposal lifecycle (Draft→Active→Passed/Failed→Executed)
-  - `treasury.rs` — Treasury 4B ZION, allokace, emergency withdrawal
+  - `treasury.rs` — Treasury 1.5B ZION (sloty 7–8; slot 6 repurposed na L6 Issobella), allokace, emergency withdrawal
   - `humanitarian.rs` — Humanitarian fund tracking, verified recipients
   - `voting.rs` — Weighted voting, quorum 20%, majority 60%
   - REST API (Axum, port 8093) + SQLite persistence

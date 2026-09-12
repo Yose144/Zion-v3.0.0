@@ -45,10 +45,13 @@ Genesis Block Distribution:
 
 | Alokace | ZION | % z Premine | % z Total | Účel |
 |---------|------|-------------|-----------|------|
-| **Mining Operators Pool** | 8,250,000,000 | 50.7% | 5.73% | Consciousness bonus (10 let) |
-| **DAO Treasury** | 4,000,000,000 | 24.6% | 2.78% | Komunitní governance |
-| **Infrastructure** | 2,500,000,000 | 15.4% | 1.74% | Servery, vývoj, audit |
-| **Humanitarian Fund** | 1,530,000,000 | 9.4% | 1.06% | Tithe iniciální alokace |
+| **OASIS + Golden Egg** | 4,950,000,000 | 29.5% | 3.44% | OASIS odměny + výherní ceny (sloty 1–3) |
+| **L5 Free World Projects** | 3,300,000,000 | 19.7% | 2.29% | Humanitární/komunitní projekty (sloty 4–5) |
+| **L6 Issobella** | 2,500,000,000 | 14.9% | 1.74% | Orbital Station & Quantum Research Fund (slot 6, time-lock 144 000) |
+| **DAO Treasury** | 1,500,000,000 | 8.9% | 1.04% | Komunitní governance (sloty 7–8, time-lock 144 000) |
+| **Infrastructure + Genesis** | 2,590,000,000 | 15.4% | 1.80% | Core dev, P2P seed nody, Genesis Projects (sloty 9–11) |
+| **Humanitarian Fund** | 1,440,000,000 | 8.6% | 1.00% | Children Future Fund (slot 12) |
+| **Bridge Seed + Vault** | 500,000,000 | 3.0% | 0.35% | EVM bridge likvidita (sloty 13–14) |
 
 **Poznámka:** Presale alokace (500M ZION) byla **zrušena** v lednu 2026. Tyto tokeny zůstávají v DAO Treasury.
 

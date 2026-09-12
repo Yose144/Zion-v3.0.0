@@ -14,7 +14,7 @@ ZION TerraNova is not only a blockchain but a **layered civilisation stack**: de
 |-------|------|--------|------|
 | **L1** | ZION TerraNova | 2026 | PoW chain — CHv3, UTXO, fee burn, LWMA |
 | **L2** | NCL — Neural Conscious Layer | 2027 | On-chain AI registry, protocol-native agents |
-| **L3** | ZION DAO | 2028 | Treasury (4B ZION), grants, parameter votes |
+| **L3** | ZION DAO | 2028 | Treasury (1.5B ZION), grants, parameter votes |
 | **L4** | ZION Oasis | 2029 | Golden Egg, Winners, NFT, game economy |
 | **L5** | ZION Free World 🌍 | 2030 | Clean energy R&D, humanitarian programmes, resilient communities |
 | **L6** | ZION Issobella 🔭 | 2040+ | Orbital observatory & research station |

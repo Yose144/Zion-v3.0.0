@@ -34,7 +34,7 @@
 | **Block Time** | 60 sekund | Konsenzuální parametr |
 | **Fee Burn** | 100% fees spalováno | Deflační mechanismus |
 | **Tithe** | 10% block reward | Humanitární závazek |
-| **Premine alokace** | Oasis 4.95B, L5 3.3B, DAO 4B, Infra 2.59B, Human 1.44B | Již distribuováno |
+| **Premine alokace** | Oasis 4.95B, L5 3.3B, L6 Issobella 2.5B, DAO 1.5B, Infra 2.59B, Human 1.44B, Bridge 0.5B | Již distribuováno |
 
 ---
 

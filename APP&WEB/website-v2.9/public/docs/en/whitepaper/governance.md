@@ -6,7 +6,7 @@
 
 ZION uses a hybrid model:
 
-1. **On-chain** — DAO Treasury (4B ZION) governed by votes  
+1. **On-chain** — DAO Treasury (1.5B ZION) governed by votes  
 2. **Off-chain** — community discussion (GitHub Issues, Discord)  
 3. **Immutable core** — foundational parameters cannot be changed by vote alone  
 

@@ -858,6 +858,15 @@ Step 4: Apply consciousness multiplier
 
 ## 3.5 Consciousness Bonus Pool
 
+> **Poznámka (překonáno, 2026-09):** Tato sekce dokumentuje původní ekonomický model
+> před kanonickým 144B tokenomics. Samostatný „Consciousness Bonus Pool" (5.5B)
+> v kanonickém premine neexistuje — consciousness/OASIS odměny jsou financovány
+> z premine **OASIS + Golden Egg (4.95B, sloty 1–3)** a podílů na emisi/fees.
+> Kanonický premine: 16.78B ve 14 výstupech — OASIS 4.95B, L5 Free World 3.3B,
+> L6 Issobella 2.5B (slot 6), DAO Treasury 1.5B (sloty 7–8), Infrastructure+Genesis
+> 2.59B, Humanitarian 1.44B, Bridge 0.5B.
+
+
 > **⚠️ Historický model:** Čísla v této sekci pochází z původního v2.9.x návrhu (5.5B pool, base 50 ZION). Kanonický stav: premine 16.78B (14 výstupů, viz §"Genesis Allocation"), base reward 5,400.067 ZION/blok s Decade Decay, těžební emise 127.22B ZION.
 
 ### Kde se bere bonus?
@@ -1622,15 +1631,15 @@ Genesis Block Distribution (16.78B ZION):
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ Mining Operators Pool: 4,950,000,000 ZION (29.5%)       │ │
-│ │ └── Pro consciousness bonus (2025-2035) (3 OASIS slots) │ │
-│ │ └── Time-locked: postupné uvolňování 10 let             │ │
+│ │ OASIS + Golden Egg: 4,950,000,000 ZION (29.5%)          │ │
+│ │ └── OASIS odměny + výherní ceny (sloty 1–3)             │ │
+│ │ └── Admin lock (3-of-3 multisig + DAO hlasování)        │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
 │ │ L5 Free World Projects: 3,300,000,000 ZION (19.7%)      │ │
 │ │ └── Slots 4 & 5 repurposed to L5 Free World Projects    │ │
-│ │ └── Time-locked: postupné uvolňování 10 let             │ │
+│ │ └── Admin lock (3-of-3 multisig + DAO hlasování)        │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │ ┌─────────────────────────────────────────────────────────┐ │
