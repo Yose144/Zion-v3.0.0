@@ -275,25 +275,11 @@ export default function L6IssobellaPage() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="zion-rainbow-card relative overflow-hidden p-0"
+          className="zion-rainbow-card relative flex flex-col overflow-hidden p-0"
           style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
         >
-          <div className="absolute inset-0">
-            <Image
-              src="/docs/l6/img/Issabela1stSkelet.png"
-              alt={cs ? 'ZION Issobella — koncept orbitální stanice' : 'ZION Issobella — orbital station concept'}
-              fill
-              priority
-              sizes="(max-width: 1280px) 100vw, 1280px"
-              quality={90}
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/70 to-black/30" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-transparent" />
-          </div>
-
-          <div className="relative z-10 p-6 md:p-10 lg:p-14">
-            <div className="max-w-3xl space-y-6">
+          <div className="relative z-10 bg-black/50 p-6 md:p-10 lg:p-14">
+            <div className="max-w-3xl space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <Rocket className="h-4 w-4" />
                 {L6IssobellaCopy.badge[cs ? 'cs' : 'en']}
@@ -308,7 +294,23 @@ export default function L6IssobellaPage() {
                   <span className="text-white"> {L6IssobellaCopy.titleAccent[cs ? 'cs' : 'en']}</span>
                 </h1>
               </div>
+            </div>
+          </div>
 
+          <div className="relative h-[400px] w-full md:h-[500px] lg:h-[560px]">
+            <Image
+              src="/docs/l6/img/Issabela1stSkelet.png"
+              alt={cs ? 'ZION Issobella — koncept orbitální stanice' : 'ZION Issobella — orbital station concept'}
+              fill
+              priority
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              quality={90}
+              className="object-cover"
+            />
+          </div>
+
+          <div className="relative z-10 bg-black/50 p-6 md:p-10 lg:p-14">
+            <div className="max-w-3xl space-y-6">
               <p className="text-lg text-gray-300">
                 {L6IssobellaCopy.heroBody[cs ? 'cs' : 'en']}
               </p>
@@ -325,12 +327,12 @@ export default function L6IssobellaPage() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-3 pt-2">
+              <div className="flex flex-wrap gap-3">
                 <Link
                   href="/docs#l6-issobella"
                   className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                   style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
-                >
+              >
                   <BookOpen className="h-4 w-4 text-zion-cyan" />
                   {L6IssobellaCopy.ctaDocs[cs ? 'cs' : 'en']}
                   <ChevronRight className="h-4 w-4" />
