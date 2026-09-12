@@ -643,7 +643,7 @@ function AuroraBorealis({ low }: { low?: boolean }) {
     }
 
     return { positions: pos, colors: col };
-  }, []);
+  }, [low]);
 
   useFrame((state) => {
     if (!ref.current) return;
@@ -762,9 +762,9 @@ function TerraNovaMarkers() {
   );
 }
 
-function StarField() {
+function StarField({ low }: { low?: boolean }) {
   const geometry = useMemo(() => {
-    const count = 1200;
+    const count = low ? 500 : 1200;
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const r = 18 + Math.random() * 22;
@@ -777,7 +777,7 @@ function StarField() {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     return geo;
-  }, []);
+  }, [low]);
 
   return (
     <points geometry={geometry}>
@@ -803,19 +803,19 @@ function Scene() {
       <pointLight position={[0, 6, 2]} intensity={0.7} color="#fcd116" />
       <pointLight position={[0, -4, 0]} intensity={0.5} color="#066928" />
       <hemisphereLight color="#fcd116" groundColor="#1a1a1a" intensity={1.4} />
-      <MilkyWay />
-      <OrionNebula />
-      <StarField />
-      <BrightStars />
+      <MilkyWay low={low} />
+      <OrionNebula low={low} />
+      <StarField low={low} />
+      <BrightStars low={low} />
       <Sun low={low} />
-      <Planets />
+      <Planets low={low} />
       <group rotation={[0, -Math.PI / 2, 0]}>
         <EarthGlobe low={low} />
         <TerraNovaMarkers />
       </group>
       <Moon low={low} />
-      <IssobellaStation />
-      <HologramShell />
+      <IssobellaStation low={low} />
+      <HologramShell low={low} />
       <OrbitControls
         makeDefault
         enablePan={false}
@@ -838,6 +838,7 @@ export type HolographicEarthProps = {
 
 function HolographicEarth({ className }: HolographicEarthProps) {
   const [webglOk, setWebglOk] = useState(false);
+  const low = useLowPower();
 
   useEffect(() => {
     setWebglOk(isWebGLAvailable());
@@ -858,16 +859,16 @@ function HolographicEarth({ className }: HolographicEarthProps) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
       <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
-        Holographic Earth · Solar System · Milky Way · Orion · Bright Stars · Terra Nova · drag orbit
+        Holographic Earth <span className="hidden sm:inline">· Solar System · Milky Way · Orion · Bright Stars</span> · Terra Nova · <span className="sm:hidden">drag</span><span className="hidden sm:inline">drag orbit</span>
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">
         {webglOk ? (
           <Canvas
             className="h-full w-full !block"
-            dpr={typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : [1, 1.5]}
+            dpr={low ? 1 : [1, 1.5]}
             gl={{
               alpha: true,
-              antialias: typeof window === 'undefined' || window.innerWidth >= 768,
+              antialias: !low,
               powerPreference: 'high-performance',
             }}
             onCreated={({ gl }) => {
