@@ -9,6 +9,7 @@ import {
   Eye, Home, Wrench,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import FundBalance, { FundBalanceSum } from '@/components/FundBalance';
 
 const L5FreeWorldCopy = {
   physicalLayerOfTheZionEcosyste: { cs: `Fyzická vrstva ZION ekosystému`, en: `Physical layer of the ZION ecosystem` },
@@ -27,6 +28,8 @@ const L5FreeWorldCopy = {
   l5Council: { cs: `L5 Radou`, en: `L5 Council` },
   fundWallet: { cs: `Adresa fondu`, en: `Fund wallet` },
   fundDisbursementNote: { cs: `Fond roste s každým blokem. Výplata je možná až po DAO návrhu, hlasování, timelocku a guardian multisig.`, en: `The fund grows with every block. Disbursement requires a DAO proposal, vote, timelock, and guardian multisig.` },
+  liveBalance: { cs: `Aktuální zůstatek`, en: `Live balance` },
+  liveGenesisBalance: { cs: `Live genesis zůstatek`, en: `Live genesis balance` },
 
   genesisAllocation: { cs: `Genesis alokace`, en: `Genesis allocation` },
   l5PremineTitle: { cs: `L5 Free World — 3,3 mld ZION z genesis`, en: `L5 Free World — 3.3B ZION from genesis` },
@@ -87,6 +90,10 @@ const L5FreeWorldCopy = {
 };
 
 const HUMANITARIAN_WALLET = 'zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8';
+const L5_PREMINE_WALLETS = [
+  'zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708',
+  'zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388',
+] as const;
 
 type CommunityStatus = 'development' | 'preparation' | 'vision';
 type OnboardingStatus = 'live' | 'building' | 'horizon';
@@ -377,22 +384,23 @@ export default function L5FreeWorldPage() {
               {L5FreeWorldCopy.l5Fund5BlockReward[cs ? 'cs' : 'en']}
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L5FreeWorldCopy.blockShare[cs ? 'cs' : 'en']}</p>
               <p className="text-3xl font-bold text-zion-gold">5%</p>
               <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.everyBlockForever[cs ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L5FreeWorldCopy.approxMonth[cs ? 'cs' : 'en']}</p>
               <p className="text-3xl font-bold text-zion-cyan">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
-            <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4 text-center transition-colors hover:bg-white/5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L5FreeWorldCopy.governedBy[cs ? 'cs' : 'en']}</p>
               <p className="text-2xl font-bold text-zion-cyan">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.l5Council[cs ? 'cs' : 'en']}</p>
             </div>
+            <FundBalance address={HUMANITARIAN_WALLET} rc="252, 209, 22" label={L5FreeWorldCopy.liveBalance[cs ? 'cs' : 'en']} />
           </div>
           <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{L5FreeWorldCopy.fundWallet[cs ? 'cs' : 'en']}</p>
@@ -433,9 +441,12 @@ export default function L5FreeWorldPage() {
               <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.l5ReserveFundDesc[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
-          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 zion-rainbow-sub p-4" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{L5FreeWorldCopy.totalL5Allocation[cs ? 'cs' : 'en']}</p>
-            <p className="text-2xl font-bold text-teal-300">{cs ? '3 300 000 000 ZION' : '3,300,000,000 ZION'}</p>
+          <div className="mt-6 grid sm:grid-cols-2 gap-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-3 zion-rainbow-sub p-4" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{L5FreeWorldCopy.totalL5Allocation[cs ? 'cs' : 'en']}</p>
+              <p className="text-2xl font-bold text-teal-300">{cs ? '3 300 000 000 ZION' : '3,300,000,000 ZION'}</p>
+            </div>
+            <FundBalanceSum addresses={[...L5_PREMINE_WALLETS]} rc="20, 184, 166" label={L5FreeWorldCopy.liveGenesisBalance[cs ? 'cs' : 'en']} />
           </div>
           <p className="mt-4 text-xs text-gray-500">
             {L5FreeWorldCopy.l5PremineNote[cs ? 'cs' : 'en']}
