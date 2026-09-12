@@ -45,6 +45,7 @@ const L6IssobellaCopy = {
   stationArchitecture: { cs: 'Architektura stanice', en: 'Station architecture' },
   modularStation: { cs: 'Modulární stanice LEO', en: 'Modular LEO station' },
   stationBody: { cs: `Issobella je modulární platforma na oběžné dráze 400–550 km. Integruje ZION ekosystém s kosmickým výzkumem, umělou gravitací a kvantovými technologiemi.`, en: `Issobella is a modular platform in a 400–550 km orbit. It integrates the ZION ecosystem with space research, artificial gravity, and quantum technologies.` },
+  stationMockupCaption: { cs: 'První koncept vizualizace stanice Issobella nad Zemí', en: 'First concept render of the Issobella station above Earth' },
   coreModule: { cs: 'Core Module', en: 'Core Module' },
   coreModuleDesc: { cs: 'Velení, komunikace, navigace, ADCS a ZION Space Node na radiačně odolném FPGA.', en: 'Command, communications, navigation, ADCS, and the ZION Space Node on radiation-hardened FPGA.' },
   scienceLab: { cs: 'Science Lab', en: 'Science Lab' },
@@ -443,7 +444,7 @@ export default function L6IssobellaPage() {
           className="zion-rainbow-card p-8"
           style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
         >
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 items-start">
             <div className="space-y-5">
               <div className="flex flex-col gap-2">
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.stationArchitecture[cs ? 'cs' : 'en']}</p>
@@ -468,7 +469,21 @@ export default function L6IssobellaPage() {
               </div>
             </div>
 
-            <L6StationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full rounded-2xl" />
+            <div className="space-y-6">
+              <L6StationPreviewLazy lang={cs ? 'cs' : 'en'} className="w-full rounded-2xl" />
+              <figure className="space-y-2">
+                <img
+                  src="/docs/l6/img/1stMock.png"
+                  alt={cs ? 'První vizualizace stanice Issobella' : 'First visualization of the Issobella station'}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full rounded-2xl border border-white/10"
+                />
+                <figcaption className="text-center text-[10px] uppercase tracking-widest text-gray-500">
+                  {L6IssobellaCopy.stationMockupCaption[cs ? 'cs' : 'en']}
+                </figcaption>
+              </figure>
+            </div>
           </div>
         </motion.section>
 
