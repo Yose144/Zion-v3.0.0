@@ -17,6 +17,17 @@ function isWebGLAvailable() {
   }
 }
 
+/* Adaptive quality — low power on mobile / weak devices */
+function useLowPower() {
+  const [low, setLow] = useState(false);
+  useEffect(() => {
+    const small = window.matchMedia('(max-width: 768px)').matches;
+    const weak = (navigator.hardwareConcurrency ?? 8) <= 4;
+    setLow(small || weak);
+  }, []);
+  return low;
+}
+
 /* Real Earth texture + Moon orbit + Sun glow + starfield */
 
 const HOLO_VERT = /* glsl */ `
@@ -59,7 +70,7 @@ void main() {
 }
 `;
 
-function EarthGlobe() {
+function EarthGlobe({ low }: { low?: boolean }) {
   const [maps, setMaps] = useState<{
     color?: THREE.Texture;
     bump?: THREE.Texture;
@@ -84,7 +95,7 @@ function EarthGlobe() {
   return (
     <group>
       <mesh castShadow={false} receiveShadow={false}>
-        <sphereGeometry args={[1, 64, 64]} />
+        <sphereGeometry args={[1, low ? 48 : 64, low ? 48 : 64]} />
         <meshStandardMaterial
           map={maps.color}
           bumpMap={maps.bump}
@@ -99,7 +110,7 @@ function EarthGlobe() {
       </mesh>
       {/* Atmosphere glow — day side */}
       <mesh scale={1.018}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, low ? 24 : 32, low ? 24 : 32]} />
         <meshBasicMaterial
           color="#066928"
           transparent
@@ -111,7 +122,7 @@ function EarthGlobe() {
       </mesh>
       {/* Atmosphere rim — fresnel-like bright ring */}
       <mesh scale={1.045}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, low ? 24 : 32, low ? 24 : 32]} />
         <meshBasicMaterial
           color="#fcd116"
           transparent
@@ -125,7 +136,7 @@ function EarthGlobe() {
   );
 }
 
-function Moon() {
+function Moon({ low }: { low?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(Math.PI * 0.3);
 
@@ -144,19 +155,19 @@ function Moon() {
   return (
     <group ref={groupRef}>
       <mesh>
-        <sphereGeometry args={[0.27, 32, 32]} />
+        <sphereGeometry args={[0.27, low ? 20 : 32, low ? 20 : 32]} />
         <meshStandardMaterial color="#d4d4d4" roughness={0.92} metalness={0.05} />
       </mesh>
       {/* faint moon glow */}
       <mesh scale={1.35}>
-        <sphereGeometry args={[0.27, 16, 16]} />
+        <sphereGeometry args={[0.27, low ? 10 : 16, low ? 10 : 16]} />
         <meshBasicMaterial color="#fcd116" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
 }
 
-function Sun() {
+function Sun({ low }: { low?: boolean }) {
   const sunRef = useRef<THREE.Mesh>(null);
 
   useFrame((_state, delta) => {
@@ -169,17 +180,17 @@ function Sun() {
     <group position={[18, 6, -14]}>
       {/* core sun */}
       <mesh ref={sunRef}>
-        <sphereGeometry args={[2.8, 32, 32]} />
+        <sphereGeometry args={[2.8, low ? 20 : 32, low ? 20 : 32]} />
         <meshBasicMaterial color="#fcd116" />
       </mesh>
       {/* inner corona */}
       <mesh scale={1.4}>
-        <sphereGeometry args={[2.8, 24, 24]} />
+        <sphereGeometry args={[2.8, low ? 16 : 24, low ? 16 : 24]} />
         <meshBasicMaterial color="#e41e2b" transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       {/* outer corona */}
       <mesh scale={2.2}>
-        <sphereGeometry args={[2.8, 16, 16]} />
+        <sphereGeometry args={[2.8, low ? 12 : 16, low ? 12 : 16]} />
         <meshBasicMaterial color="#fcd116" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
@@ -209,7 +220,7 @@ const PLANETS: PlanetData[] = [
   { name: 'Neptune', color: '#e41e2b', emissive: '#e41e2b', radius: 0.065, orbitRadius: 23.0, orbitSpeed: 0.05, orbitTilt: 0.18, startAngle: 5.7 },
 ];
 
-function Planet({ data }: { data: PlanetData }) {
+function Planet({ data, low }: { data: PlanetData; low?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(data.startAngle);
 
@@ -229,7 +240,7 @@ function Planet({ data }: { data: PlanetData }) {
   return (
     <group ref={groupRef}>
       <mesh>
-        <sphereGeometry args={[data.radius, 16, 16]} />
+        <sphereGeometry args={[data.radius, low ? 10 : 16, low ? 10 : 16]} />
         <meshStandardMaterial
           color={data.color}
           emissive={data.emissive}
@@ -240,7 +251,7 @@ function Planet({ data }: { data: PlanetData }) {
       </mesh>
       {/* faint glow */}
       <mesh scale={1.6}>
-        <sphereGeometry args={[data.radius, 12, 12]} />
+        <sphereGeometry args={[data.radius, low ? 8 : 12, low ? 8 : 12]} />
         <meshBasicMaterial
           color={data.emissive}
           transparent
@@ -251,7 +262,7 @@ function Planet({ data }: { data: PlanetData }) {
       </mesh>
       {data.hasRing && (
         <mesh rotation={[Math.PI / 2.5, 0, 0]}>
-          <ringGeometry args={[data.radius * 1.6, data.radius * 2.4, 32]} />
+          <ringGeometry args={[data.radius * 1.6, data.radius * 2.4, low ? 20 : 32]} />
           <meshBasicMaterial
             color={data.ringColor}
             transparent
@@ -266,17 +277,17 @@ function Planet({ data }: { data: PlanetData }) {
   );
 }
 
-function Planets() {
+function Planets({ low }: { low?: boolean }) {
   return (
     <>
       {PLANETS.map((p) => (
-        <Planet key={p.name} data={p} />
+        <Planet key={p.name} data={p} low={low} />
       ))}
     </>
   );
 }
 
-function IssobellaStation() {
+function IssobellaStation({ low }: { low?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(Math.PI * 0.85);
 
@@ -298,24 +309,24 @@ function IssobellaStation() {
       <group scale={1.45}>
       {/* Habitat ring — metal hull */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.16, 0.028, 12, 40]} />
+        <torusGeometry args={[0.16, 0.028, 10, low ? 24 : 40]} />
         <meshStandardMaterial color="#c8d2de" emissive="#fcd116" emissiveIntensity={0.35} roughness={0.3} metalness={0.8} />
       </mesh>
       {/* Parkland band on top of the ring */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.014, 0]}>
-        <torusGeometry args={[0.16, 0.02, 10, 40]} />
+        <torusGeometry args={[0.16, 0.02, 8, low ? 24 : 40]} />
         <meshStandardMaterial color="#22c55e" emissive="#066928" emissiveIntensity={0.6} roughness={0.7} metalness={0.1} />
       </mesh>
       {/* Biodomes on the ring */}
       {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((a, i) => (
         <mesh key={i} position={[Math.cos(a) * 0.16, 0.035, Math.sin(a) * 0.16]}>
-          <sphereGeometry args={[0.022, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <sphereGeometry args={[0.022, low ? 8 : 12, low ? 6 : 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
           <meshStandardMaterial color="#dbeafe" emissive="#fcd116" emissiveIntensity={0.9} transparent opacity={0.85} roughness={0.1} metalness={0.1} />
         </mesh>
       ))}
       {/* Central hub + dome */}
       <mesh>
-        <sphereGeometry args={[0.055, 16, 16]} />
+        <sphereGeometry args={[0.055, low ? 10 : 16, low ? 10 : 16]} />
         <meshStandardMaterial color="#066928" emissive="#066928" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
       </mesh>
       {/* Spire */}
@@ -347,7 +358,7 @@ function IssobellaStation() {
   );
 }
 
-function HologramShell() {
+function HologramShell({ low }: { low?: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
 
   const uniforms = useMemo(
@@ -370,7 +381,7 @@ function HologramShell() {
     <group>
       {/* Wireframe shell — ultra subtle */}
       <mesh scale={1.028}>
-        <sphereGeometry args={[1, 24, 24]} />
+        <sphereGeometry args={[1, low ? 16 : 24, low ? 16 : 24]} />
         <meshBasicMaterial
           color="#066928"
           wireframe
@@ -382,7 +393,7 @@ function HologramShell() {
       </mesh>
       {/* Atmosphere glow */}
       <mesh scale={1.06}>
-        <sphereGeometry args={[1, 16, 16]} />
+        <sphereGeometry args={[1, low ? 12 : 16, low ? 12 : 16]} />
         <shaderMaterial
           ref={matRef}
           transparent
@@ -425,7 +436,7 @@ const BRIGHT_STARS: BrightStar[] = [
   { name: 'Pollux',     color: '#fcd116', emissive: '#fcd116', radius: 0.068, distance: 35, theta: 2.9,  phi: 1.55, pulseSpeed: 1.0 },
 ];
 
-function BrightStars() {
+function BrightStars({ low }: { low?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
@@ -453,7 +464,7 @@ function BrightStars() {
         return (
           <group key={s.name} position={[x, y, z]}>
             <mesh>
-              <sphereGeometry args={[s.radius, 16, 16]} />
+              <sphereGeometry args={[s.radius, low ? 10 : 16, low ? 10 : 16]} />
               <meshStandardMaterial
                 color={s.color}
                 emissive={s.emissive}
@@ -464,7 +475,7 @@ function BrightStars() {
             </mesh>
             {/* star glow */}
             <mesh scale={3}>
-              <sphereGeometry args={[s.radius, 12, 12]} />
+              <sphereGeometry args={[s.radius, low ? 8 : 12, low ? 8 : 12]} />
               <meshBasicMaterial
                 color={s.emissive}
                 transparent
@@ -475,7 +486,7 @@ function BrightStars() {
             </mesh>
             {/* distant halo */}
             <mesh scale={6}>
-              <sphereGeometry args={[s.radius, 8, 8]} />
+              <sphereGeometry args={[s.radius, low ? 6 : 8, low ? 6 : 8]} />
               <meshBasicMaterial
                 color={s.color}
                 transparent
@@ -494,9 +505,9 @@ function BrightStars() {
 /* ═══════════════════════════════════════════════════════════
    MILKY WAY — galactic disk in the background
    ═══════════════════════════════════════════════════════════ */
-function MilkyWay() {
+function MilkyWay({ low }: { low?: boolean }) {
   const geometry = useMemo(() => {
-    const count = 4000;
+    const count = low ? 1600 : 4000;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
 
@@ -544,7 +555,7 @@ function MilkyWay() {
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     return geo;
-  }, []);
+  }, [low]);
 
   return (
     <points geometry={geometry}>
@@ -564,7 +575,7 @@ function MilkyWay() {
 /* ═══════════════════════════════════════════════════════════
    ORION NEBULA — diffuse pink/violet gas clouds
    ═══════════════════════════════════════════════════════════ */
-function OrionNebula() {
+function OrionNebula({ low }: { low?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
 
   const clouds = useMemo(() => [
@@ -582,6 +593,8 @@ function OrionNebula() {
       child.rotation.x += delta * 0.004 * dir;
     });
   });
+
+  if (low) return null;
 
   return (
     <group ref={groupRef}>
@@ -605,11 +618,11 @@ function OrionNebula() {
 /* ═══════════════════════════════════════════════════════════
    AURORA BOREALIS — lite particle curtain above north pole
    ═══════════════════════════════════════════════════════════ */
-function AuroraBorealis() {
+function AuroraBorealis({ low }: { low?: boolean }) {
   const ref = useRef<THREE.Points>(null);
 
   const { positions, colors } = useMemo(() => {
-    const count = 300;
+    const count = low ? 120 : 300;
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
 
@@ -781,6 +794,7 @@ function StarField() {
 }
 
 function Scene() {
+  const low = useLowPower();
   return (
     <>
       <ambientLight intensity={2.0} />
@@ -793,13 +807,13 @@ function Scene() {
       <OrionNebula />
       <StarField />
       <BrightStars />
-      <Sun />
+      <Sun low={low} />
       <Planets />
       <group rotation={[0, -Math.PI / 2, 0]}>
-        <EarthGlobe />
+        <EarthGlobe low={low} />
         <TerraNovaMarkers />
       </group>
-      <Moon />
+      <Moon low={low} />
       <IssobellaStation />
       <HologramShell />
       <OrbitControls
