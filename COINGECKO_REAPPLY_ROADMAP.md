@@ -6,6 +6,10 @@
 >
 > This document is a tactical, measurable roadmap to satisfy those three areas before resubmitting to CoinGecko.
 
+
+https://chatgpt.com/share/6aa2c93f-7b44-83eb-aeca-cbff424513d3 
+
+
 ---
 
 ## Executive Summary
