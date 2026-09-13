@@ -58,6 +58,8 @@ Kdo chce jít za koncept a horizont této knihy do plné kosmologie — šest sv
 
 Kdo chce z epizody 10 (*Prameny Života*) sestoupit až k hlíně — k pěti fyzickým zahradám L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka), jejich protokolům, onboardingu a úplné kotvě pravdy — pokračuje do [`BodhiGaia/` — Kniha Země](../BodhiGaia/00-README.md) (DRAFT pro 3.3).
 
+Kdo chce z epizody 11 (*Kvantový oheň Issobella*) vystoupit až k oběžné dráze — k architektuře stanice, umělé gravitaci, lidským faktorům, dědictví stanic, fondu a slibu, hlídači na okraji a úplné kotvě pravdy — pokračuje do [`Issobella/` — Kniha Nebe](../Issobella/00-README.md) (DRAFT pro 3.3).
+
 ---
 
 ## Živé zdroje pravdy
