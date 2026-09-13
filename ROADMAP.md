@@ -26,7 +26,7 @@
 >
 > **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md)
 >
-> **ZionDex + ZIS Multichain Wallet plan:** [`ZionDexZis.md`](./docs/3.2/ZionDexZis.md)
+> **ZIS Multichain Wallet plan:** [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md) (canonical; předchozí [`ZionDexZis.md`](./docs/3.2/ZionDexZis.md) je superseded — historický)
 >
 > **Live status:** [`StatusV3.md`](./StatusV3.md) · [`V31/STATUS.md`](./V31/STATUS.md)
 

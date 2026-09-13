@@ -662,9 +662,9 @@ It begins when different people — the carpenter, the pilgrim, the shepherd, th
 
 ### Canonical ZION Sources
 
-- [ZION Technical Whitepaper v3.1 (CZ)](/whitepapers#technical-cz)
-- [ZION Master Whitepaper v3.1 (CZ)](/whitepapers#master-cz)
-- [L4 Oasis — Consciousness Levels & XP](/l4-oasis)
+- [ZION Technical Whitepaper v3.1 (CZ)](https://zionterranova.com/whitepapers)
+- [ZION Master Whitepaper v3.1 (CZ)](https://zionterranova.com/whitepapers)
+- [L4 Oasis — Consciousness Levels & XP](https://zionterranova.com/l4-oasis)
 - [Public repository](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 ### Independent and Regulatory Sources Used for the Invitation's Principles
@@ -1201,13 +1201,13 @@ The compass points north. It does not tell you whether it is raining already, or
 
 ---
 
-*The Book of the Salt of This Earth ends here — not because the story is over, but because the next chapter is written by every builder themselves, hammer in their own hands. Want to start forging? [Download the ZION Public Miner and mine in five minutes →](/download)*
+*The Book of the Salt of This Earth ends here — not because the story is over, but because the next chapter is written by every builder themselves, hammer in their own hands. Want to start forging? [Download the ZION Public Miner and mine in five minutes →](https://zionterranova.com/download)*
 # PART THREE — BOARDING
 ## Five minutes from decision to first share
 
 ### IX. The easy way — ZION Public Miner (desktop)
 
-1. Download **ZION Public Miner** from [zionterranova.com/download](/download) — Windows 11, macOS, Linux.
+1. Download **ZION Public Miner** from [zionterranova.com/download](https://zionterranova.com/download) — Windows 11, macOS, Linux.
 2. Create your wallet inside the app. **Write the mnemonic on paper. Keep it offline. Give it to no one — not even us.**
 3. Pool: `pool.zionterranova.com:8444`.
 4. Choose CPU threads or GPU. Click **Start Mining**.
@@ -1291,7 +1291,7 @@ L1 — CORE             PoW blockchain, Ekam Deeksha, 60s blocks       LIVE (v3.
 
 Beyond the river, where the forest opens into light, a garden grows. Its name is **OASIS**. Two women stand at the gate — Radha laughs: *"Come in, dance, play — let your heart feel that technology need not be cold as steel."* Elizabeth stands one step further with a lantern and asks softly: *"And what will remain of you, once you walk on?"*
 
-But let us say it plain, bredda: **the garden is not finished.** The seeds are planted, the first saplings are growing, the gate still smells of fresh paint. You can fly into the 3D galaxy of 400+ worlds at [oasis.zionterranova.com](/oasis), pass the Tree of Life, open the Avatar Codex. But you are not at the end of the road — you are at the first rows.
+But let us say it plain, bredda: **the garden is not finished.** The seeds are planted, the first saplings are growing, the gate still smells of fresh paint. You can fly into the 3D galaxy of 400+ worlds at [oasis.zionterranova.com](https://oasis.zionterranova.com), pass the Tree of Life, open the Avatar Codex. But you are not at the end of the road — you are at the first rows.
 
 | What EXISTS today | What it is NOT today |
 |---|---|
@@ -1366,10 +1366,10 @@ One love. One chain. One road.
 
 ### Deeper layers
 
-- [Canonical Whitepaper 3.2 "One Love"](/whitepapers#master-3.2-en) — the whole book of four books
-- [Technical Whitepaper 3.1](/whitepapers#technical-en) — consensus, emission, contracts in detail
-- Web onboard: [app.zionterranova.com/onboard](/onboard)
-- OASIS: [oasis.zionterranova.com](/oasis)
+- [Canonical Whitepaper 3.2 "One Love"](https://zionterranova.com/whitepapers) — the whole book of four books
+- [Technical Whitepaper 3.1](https://zionterranova.com/whitepapers) — consensus, emission, contracts in detail
+- Web onboard: [app.zionterranova.com/onboard](https://app.zionterranova.com/onboard)
+- OASIS: [oasis.zionterranova.com](https://oasis.zionterranova.com)
 - GitHub: [github.com/Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 Salt of the Earth — the twelve stops are fully in this document.

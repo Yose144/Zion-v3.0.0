@@ -318,9 +318,9 @@ One love. One chain. One road.
 
 ### Hlubší vrstvy
 
-- **Kanonický whitepaper 3.2 „One Love"** — celá kniha čtyř knih: [/whitepapers](/whitepapers)
-- **Technický whitepaper 3.1** — konsensus, emise, kontrakty do detailu: [/whitepapers](/whitepapers)
-- **Sůl této země — jedenáct zastavení v plném znění**: [/onboard#massive-onboarding](/onboard#massive-onboarding)
+- **Kanonický whitepaper 3.2 „One Love"** — celá kniha čtyř knih: [zionterranova.com/whitepapers](https://zionterranova.com/whitepapers)
+- **Technický whitepaper 3.1** — konsensus, emise, kontrakty do detailu: [zionterranova.com/whitepapers](https://zionterranova.com/whitepapers)
+- **Sůl této země — jedenáct zastavení v plném znění**: [zionterranova.com/onboard#massive-onboarding](https://zionterranova.com/onboard#massive-onboarding)
 - **Rasta příběh u ohně a strukturovaný Rasta onboarding** — právě čteš jeho Lite verzi
 - **Web onboard:** https://app.zionterranova.com/onboard
 

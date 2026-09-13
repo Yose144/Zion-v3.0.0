@@ -18,10 +18,10 @@ These are the only contracts we maintain. Everything else is external or depreca
 | # | Contract | Address | Chain | Purpose |
 |---|----------|---------|-------|---------|
 | 1 | **wZION** (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | All EVM (deterministic deploy) | Wrapped ZION token — 1:1 peg with L1 ZION |
-| 2 | **ZIONBridge** (5/5 multisig) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | Base | Lock ZION on L1 → mint wZION; burn wZION → unlock L1 |
+| 2 | **ZIONBridge** (4/5 multisig) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | Base | Lock ZION on L1 → mint wZION; burn wZION → unlock L1 |
 | 3 | **ZIONStaking** | `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` | Base | 12% APR staking, cooldown-based unstake |
 
-### Bridge Validators (5/5 multisig)
+### Bridge Validators (4/5 multisig)
 
 | # | Address |
 |---|---------|

@@ -1,5 +1,7 @@
 # On-Chain Internal ZionDex with ZIS — Design Document
 
+> **⚠️ DEPRECATED (2026-09-03):** This custom-AMM design was superseded by [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md) — no custom AMM, swaps via Uniswap V3. Canonical contract registry: [`L2contracts.md`](./L2contracts.md). Kept for historical reference.
+
 **Date:** 2026-08-31 (updated 2026-09-01)
 **Author:** Devin + Operator
 **Status:** Implemented + Deployed on Base (see [ZIONDEX_AMM_REPORT.md](ZIONDEX_AMM_REPORT.md))

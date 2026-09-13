@@ -11,6 +11,8 @@ const EDITIONS = [
 ];
 
 const OUT_PATH = path.join(ROOT, 'APP&WEB/website-v2.9/src/app/terranova/generatedEditions.ts');
+// Live data consumed by TerraNovaBookClient via fetch('/terranova-editions.json')
+const OUT_JSON_PATH = path.join(ROOT, 'APP&WEB/website-v2.9/public/terranova-editions.json');
 
 function parseMarkdownToSections(text) {
   // Spiliting by ##, > limits, etc. Simplest is split by \n\n and making them sections
@@ -150,6 +152,9 @@ export const EDITIONS_DATA: Record<string, BookChapter[]> = ${JSON.stringify(res
 
   fs.writeFileSync(OUT_PATH, fileContent, 'utf8');
   console.log(`Generated: ${OUT_PATH}`);
+
+  fs.writeFileSync(OUT_JSON_PATH, JSON.stringify(result), 'utf8');
+  console.log(`Generated: ${OUT_JSON_PATH}`);
 }
 
 main();
