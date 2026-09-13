@@ -40,13 +40,16 @@ ZION 3.3 otevírá cestu k technologickému skoku lidstva:
 
 | Prvek příběhu | Co je na síti ZION ověřitelné |
 |---|---|
-| **Vědecký fond (Issobella)** | Kanonická adresa `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` přijímá 5 % z každého vytěženého bloku. |
+| **Vědecký fond — tečící titík (Issobella)** | Kanonická adresa `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` přijímá 5 % z každého vytěženého bloku (`ISSOBELLA_PCT = 5` v `V31/L1/core/src/emission.rs`). |
+| **Nadační fond — čekající nádoba (Issobella)** | Premine slot 6 drží 2,5 mld ZION na `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, time-lock do bloku 144 000 + admin multisig (3-of-3) + DAO vote. Dva odlišné proudy — viz [`Issobella/06-Pet-Procent-Nahoru`](../Issobella/06-Pet-Procent-Nahoru.md). |
 | **Běžící služba trackeru** | `zion-v31-issobella.service` běží na portu `8097` a zaznamenává všechny transakce vědeckého fondu. |
 | **Webový portál** | Rozhraní na `/l6-issobella` na `app.zionterranova.com` s přehledem vědeckých iniciativ. |
 | **Matematický základ v kódu** | Algoritmy kosmické harmonie v `V31/L1/cosmic-harmony` s přesnou implementací posvátných konstant a fibonacciovských matic. |
 | **DeSci integrace** | NCL výpočetní scheduler připravený pro distribuované vědecké tasky zadané přes DAO. |
 
 ---
+
+*→ Vzestup k nebi: [Issobella — Kniha Nebe](../Issobella/00-README.md) — architektura stanice, kvantový motor, umělá gravitace, posádka, dědictví stanic, fond a slib, hlídač na okraji a úplná kotva pravdy (DRAFT pro 3.3).*
 
 *→ Pokračování: [Epizoda 12 — Velké Sjednocení (Nirvana & Globální Asimilace Pozornosti)](./12-Velke-Sjednoceni.md)*
 
