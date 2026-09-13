@@ -4,7 +4,7 @@
 >
 > **Update (2026-09-12):** **Premine repurpose — DAO Treasury slot 6 (2.5B) přepsán na L6 Issobella (Orbital Station & Quantum Research Fund).** DAO Treasury nyní 2 sloty (7–8) = 1.5B, L6 Issobella 1 slot (6) = 2.5B, oba time-lock blok 144,000. Premine 16.78B / 14 výstupů beze změny celkové částky — metadata-only změna (`purpose`/`category`), genesis hashe nezměněny. Propagováno přes celý ekosystém: V31 core (`v3_compat.rs`, `fee.rs` DAO_ADDRESS→slot 7, `v3_state` test), `zion-dao` (treasury 1.5B), web (known-addresses, dao-api, dao-tree, roadmap, MissionControl L6 karta, `/l6-issobella` premine karta, TerraNova knihy, faq cs/en), dashboard (`app.py`, `dashboard.html/js/min.js`), mobile-app + desktop-agent fallbacky, root docs + `public/`/`PUBLIC/` mirrory (~170 souborů). Lock-height copy sjednocena na 144,000. Archivy (`archive/`, `V3/`, `public/V3/`, `docs/docs2.9/`, `docs/3.0.5/`, `docs/3.1/REPORTS/`) zůstaly jako historické záznamy. `cargo test -p zion-core` 316/316 + `zion-dao` 76 pass; `next build` OK; nasazeno na Edge (`zion-website` + `zion-edge-python-dashboard` restartovány, `/l6-issobella` `/genesis` `/roadmap` `/terranova` 200). Commit `e99540281`. Changelog: [`CHANGES_L6_ISSOBELLA.md`](./CHANGES_L6_ISSOBELLA.md).
 >
-> **Update (2026-09-02):** **ZIONDex AMM LIVE na Base Mainnet + miner hashrate fix + token icons + dashboard/marketplace ZIS auth.** ZISGate deploynut na `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5`. AMM pair tZION/tUSDT (`0x1fE64df93226b8434877D5826aE2DCEda171e39E`) s 100k tZION + 1k tUSDT likviditou. E2E swap: 1000 tZION → 9.87 tUSDT. Miner hashrate fix: `parallel_zion_find_nonce` počítal `found_nonce + 1` místo `batch_size` → po opravě 84.45 kH/s. Token icons (ZION logo 128x128) integrovány napříč webem i marketplace. Dashboard `/api/me` endpoint + ZIS SSO auth. Marketplace `AuthContext` + `ConnectButton` ZIS integrace. Všechny Edge služby active. Report: [`docs/3.1/REPORTS/REPORT_2026-09-02_ZIONDEX_MAINNET_HASHRATE_FIX.md`](./docs/3.1/REPORTS/REPORT_2026-09-02_ZIONDEX_MAINNET_HASHRATE_FIX.md).
+> **Update (2026-09-02, AMM DEPRECATED 2026-09-03):** **ZIONDex AMM LIVE na Base Mainnet + miner hashrate fix + token icons + dashboard/marketplace ZIS auth.** *(ZIONDex AMM byl 2026-09-03 deprecated — kanonický DEX je Uniswap V3 wZION/USDT, viz [`L2contracts.md`](./L2contracts.md) §2 a §6.)* ZISGate deploynut na `0x55160347B33Bb56F0ea99499072Ba5bf8D2862A5`. AMM pair tZION/tUSDT (`0x1fE64df93226b8434877D5826aE2DCEda171e39E`) s 100k tZION + 1k tUSDT likviditou. E2E swap: 1000 tZION → 9.87 tUSDT. Miner hashrate fix: `parallel_zion_find_nonce` počítal `found_nonce + 1` místo `batch_size` → po opravě 84.45 kH/s. Token icons (ZION logo 128x128) integrovány napříč webem i marketplace. Dashboard `/api/me` endpoint + ZIS SSO auth. Marketplace `AuthContext` + `ConnectButton` ZIS integrace. Všechny Edge služby active. Report: [`docs/3.1/REPORTS/REPORT_2026-09-02_ZIONDEX_MAINNET_HASHRATE_FIX.md`](./docs/3.1/REPORTS/REPORT_2026-09-02_ZIONDEX_MAINNET_HASHRATE_FIX.md).
 >
 > **Update (2026-08-29):** **Web UI `/dex` swap widget nasazen na Edge a real E2E proti živému backendu prošel.** Opraven TDZ `Cannot access 'es' before initialization` a stabilizován debounce quote (`fromAsset`/`toAsset` přes `useMemo`, `amountAtomic` počítán uvnitř callbacků). Na Edge upraven nginx rate-limiting — odstraněn `limit_req` z `location /` (blokoval statické JS chunky) a zvýšen burst pro `/api/`. Přidán `e2e/multichain-dex-real.spec.ts`: nepřihlášený test dostane reálnou `/api/swap/quote/multi` odpověď, přihlášený test provede reálný `/api/swap/execute-v2` (selže dle očekávání `insufficient balance`, protože testovací peněženka nemá wZION). Přidán `e2e/lib/zis-login.ts` pro programatické ZIS přihlášení z Playwright. Mockované web E2E (`e2e/`) 8/8 passed. Build a clippy workspace jsou čisté.
 >
@@ -232,7 +232,7 @@
 | Contract | Address | Status |
 |----------|---------|--------|
 | wZION (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ Verified |
-| ZIONBridge (5/5 multisig) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | ✅ Verified |
+| ZIONBridge (4/5 multisig) | `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` | ✅ Verified |
 | BridgeValidator | `0x9C138dC6ebA8A883AB3802F6Dcb79C772a835627` | ✅ Verified |
 | ZIONGovernance | `0xB77eB4ab9468Ce03FBd7eCec70e976EFCfa623E8` | ✅ Verified |
 | ZIONTreasury (3/3 multisig) | `0x455f465ac7e14fdA97dC46fdd74bCa78bfC0aEeD` | ✅ Verified |
@@ -240,7 +240,10 @@
 | ZIONFarm (1 wZION/s) | `0x167B2753F5D8D9F8e62875cc9e379d7804308B08` | ✅ Verified |
 | ZIONAtomicSwap | `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` (escrow funded 100K ZION) | ✅ Verified |
 
-### ZIONDex AMM (Uniswap V2 fork, deployed 2026-08-31 / 2026-09-02)
+### ZIONDex AMM (Uniswap V2 fork, deployed 2026-08-31 / 2026-09-02) — DEPRECATED
+
+> ⚠️ **Deprecated 2026-09-03** — kanonický DEX je Uniswap V3 (wZION/USDT níže). Kontrakty zůstávají on-chain, ale nejsou udržovány — viz [`L2contracts.md`](./L2contracts.md) §6.
+
 | Contract | Address | Status |
 |----------|---------|--------|
 | ZIONDexFactory | `0x9F57998CC5Cb2a53426068c707Beac110966F351` | ✅ Verified |

@@ -1,5 +1,7 @@
 # ZionDex On-Chain AMM Integration Report
 
+> **⚠️ DEPRECATED (2026-09-03):** ZIONDex AMM is no longer maintained. The canonical DEX is the Uniswap V3 wZION/USDT pool — see [`L2contracts.md`](./L2contracts.md) §2/§6 and [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md). This report is kept for historical reference.
+
 **Date:** 2026-08-31 (updated 2026-09-01)
 **Status:** Deployed on Base + E2E workflow live
 

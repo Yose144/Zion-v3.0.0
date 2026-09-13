@@ -90,6 +90,6 @@ Kompas ukazuje sever. Neukazuje, jestli prší už teď, nebo za rok. To je otá
 
 ---
 
-*Kniha Sůl této země končí tady — ne proto, že příběh skončil, ale protože další kapitolu už píše každý stavitel sám, kladivem ve vlastní ruce. Chceš začít kout? [Stáhni ZION Public Miner a těž za pět minut →](/onboard#desktop)*
+*Kniha Sůl této země končí tady — ne proto, že příběh skončil, ale protože další kapitolu už píše každý stavitel sám, kladivem ve vlastní ruce. Chceš začít kout? [Stáhni ZION Public Miner a těž za pět minut →](https://zionterranova.com/download)*
 
 *→ Zpět na [index série Sůl této země](./00-README.md).*

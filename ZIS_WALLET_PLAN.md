@@ -35,8 +35,8 @@ ZIS → L2 multichain API
 | **L2 Multichain** (`V31/L2/multichain/`) | Adresy, ledger, deposits, swaps, withdrawals, reconciliation | ✅ Implementováno |
 | **Wallet SDK** (`APP&WEB/zion-wallet-sdk/`) | TS SDK — WalletManager, ZisClient, MultichainWalletClient | ✅ Build ready |
 | **Web UI** (`/wallet/multichain`) | React — balanc, swap, send, receive | ✅ Implementováno |
-| **Uniswap V3** (external) | wZION/WETH pool s likviditou | ✅ Aktivní |
-| **ZIONBridge** (contract) | L1↔L2 bridge, 5/5 multisig | ✅ Deployed, verified |
+| **Uniswap V3** (external) | wZION/USDT pool s likviditou | ✅ Aktivní |
+| **ZIONBridge** (contract) | L1↔L2 bridge, 4/5 multisig | ✅ Deployed, verified |
 | **ZIONStaking** (contract) | 12% APR staking | ✅ Deployed, verified |
 
 ---
@@ -69,7 +69,7 @@ ZIS → L2 multichain API
    - Credit `to` asset do ledger
 4. UI ukáže výsledek
 
-**Žádný vlastní AMM.** Uniswap V3 má už wZION/WETH pool.
+**Žádný vlastní AMM.** Uniswap V3 má už wZION/USDT pool.
 
 ### 2d. Send (withdraw)
 
@@ -155,7 +155,7 @@ ZIS → L2 multichain API
 - Wallet SDK (WalletManager, ZisClient, MultichainWalletClient)
 - ZIONBridge contract (deployed, verified)
 - ZIONStaking contract (deployed, verified)
-- Uniswap V3 wZION/WETH pool (aktivní)
+- Uniswap V3 wZION/USDT pool (aktivní)
 
 ### Chybí 🔴
 

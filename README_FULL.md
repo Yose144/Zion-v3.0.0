@@ -92,7 +92,7 @@ ZION is a multi-layer blockchain infrastructure built on proof-of-work consensus
 
 - **L1 Consensus** — Rust-based PoW node with Ed25519 signatures, BLAKE3 hashing, LWMA difficulty adjustment, UTXO + account transaction models, and P2P networking
 - **L2 DeFi** — Smart contracts on Base Mainnet (Governance, Treasury, Staking, Farm) + cross-chain bridge relay + atomic swap + DAO governance
-- **L2 Bridge** — ZION L1 ↔ EVM bridge with validator quorum (5/5 threshold), deployed on 6 EVM chains
+- **L2 Bridge** — ZION L1 ↔ EVM bridge with validator quorum (4/5 threshold), deployed on 6 EVM chains
 - **L3 WARP** — Cross-chain protocol with 12 chain adapters registered (EVM, Solana, Aptos, Sui, Cardano, TON, etc.; 11 fully functional, TON currently watch-only)
 - **L3 Hiran** — AI-native agent framework (Hiranyagarbha) with multi-modal language model, Dharma validator, and consciousness engine
 - **L4 Oasis** — AAA spiritual MMORPG: consciousness mining game with 199 sacred avatars, 9 consciousness levels, guild warfare, and the Golden Egg treasure hunt
@@ -162,7 +162,7 @@ ZION is a multi-layer blockchain infrastructure built on proof-of-work consensus
 - **Dual-algo PoW** — Ekam Deeksha consensus with GPU mining
 - **Ed25519 signatures** — all transactions signed with Ed25519
 - **BLAKE3 hashing** — fast, secure hashing for tx IDs and block Merkle roots
-- **LWMA difficulty** — 60-block window, ±25% clamp, 30-120s solve time
+- **LWMA difficulty** — 60-block window, ±50% per-block clamp, 6-360s solve time
 - **UTXO + Account models** — dual transaction models with memo support
 - **P2P networking** — Quinn/QUIC-based with rate limiting, ban system, orphan pool
 - **LMDB storage** — persistent on-disk storage with atomic writes
@@ -170,16 +170,17 @@ ZION is a multi-layer blockchain infrastructure built on proof-of-work consensus
 
 ### L2 DeFi (Base Mainnet)
 - **wZION** — ERC-20 wrapped ZION token (`0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`)
-- **ZIONBridge** — 5/5 validator threshold bridge (`0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`)
+- **ZIONBridge** — 4/5 validator threshold bridge (`0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467`)
 - **ZIONGovernance** — Token-weighted voting, 15% quorum, 14d period
 - **ZIONTreasury** — 3-of-3 multisig
 - **ZIONStaking** — 12% APR, 7d cooldown
 - **ZIONFarm** — 1 wZION/s, 90d halving
 - **All 7 contracts verified on Basescan**
+- **Canonical registry:** [`L2contracts.md`](./L2contracts.md) — only wZION, ZIONBridge and ZIONStaking are actively maintained; Governance/Treasury/Farm/ZIONDex contracts are deployed but deprecated (DEX swaps go through Uniswap V3)
 
 ### Bridge
 - 6 EVM chains: Base, BSC, Polygon, Arbitrum, Optimism, Avalanche
-- Validator quorum: 5/5 threshold
+- Validator quorum: 4/5 threshold
 - L1 RPC: `getBridgeLocks`, `submitBridgeUnlock`, `getBridgeVaultBalance`
 
 ### L3 WARP — Cross-Chain Protocol

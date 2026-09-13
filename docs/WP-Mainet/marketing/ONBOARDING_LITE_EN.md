@@ -318,9 +318,9 @@ One love. One chain. One road.
 
 ### Deeper layers
 
-- **Canonical Whitepaper 3.2 "One Love"** — the whole book of four books: [/whitepapers](/whitepapers)
-- **Technical Whitepaper 3.1** — consensus, emission, contracts in detail: [/whitepapers](/whitepapers)
-- **Salt of the Earth — the eleven stops in full**: [/onboard#massive-onboarding](/onboard#massive-onboarding)
+- **Canonical Whitepaper 3.2 "One Love"** — the whole book of four books: [zionterranova.com/whitepapers](https://zionterranova.com/whitepapers)
+- **Technical Whitepaper 3.1** — consensus, emission, contracts in detail: [zionterranova.com/whitepapers](https://zionterranova.com/whitepapers)
+- **Salt of the Earth — the eleven stops in full**: [zionterranova.com/onboard#massive-onboarding](https://zionterranova.com/onboard#massive-onboarding)
 - **Rasta Fireside Story and Structured Rasta Onboarding** — you are reading its Lite version
 - **Web onboard:** https://app.zionterranova.com/onboard
 

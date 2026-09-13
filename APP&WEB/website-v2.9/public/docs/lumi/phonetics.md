@@ -1,108 +1,158 @@
-# Lumi — Fonetika a Tóny
+# Lumi — Fonetika a Vokály
 
-> **Stav:** Draft v0.1  
-> **Cíl:** Definovat základní zvukovou paletu Lumi — samohlásky, souhlásky a frekvenční rozsahy.
+> **Stav:** Specifikace v1.0 — kanonická verze
+> **Cíl:** Základní zvuková paleta Lumi — 5 samohlásek, 15 souhlásek, jednoduchá slabičná struktura.
 
----
-
-## 1. Vokální základ (7 Světelných Tónů)
-
-Lumi používá 7 základních samohlásek, které odpovídají frekvencím viditelného spektra + jedné transdimenzionální:
-
-| Znak | Výslovnost | Frekvence | Barva | Oblast těla |
-|---|---|---|---|---|
-| **A** | [aː] — otevřené "á" | 396 Hz | Červená | Kořenová čakra |
-| **E** | [eː] — jasné "é" | 417 Hz | Oranžová | Sakrální čakra |
-| **I** | [iː] — vysoké "í" | 528 Hz | Žlutá | Solar plexus |
-| **O** | [oː] — hluboké "ó" | 639 Hz | Zelená | Srdeční čakra |
-| **U** | [uː] — zavřené "ú" | 741 Hz | Modrá | Hrdelní čakra |
-| **Y** | [yː] — písklavé "ý" | 852 Hz | Indigo | Třetí oko |
-| **Ω** | [ɔː] — transdimenzionální | 963 Hz | Fialová/Bílá | Korunní čakra |
-
-> **Poznámka:** Ω (Omega) se nevyslovuje běžnými hlasivkami. Je to **vnitřní tón** — zvuk, který slyšíš, když ztišíš mysl.
+> *„Jak to zní — tak to vypadá. Jak to vypadá — tak to zní. Lumi píše, jak mluví."*
 
 ---
 
-## 2. Souhláskové nosiče (12 základních)
+## 1. Inventář zvuků
 
-Souhlásky v Lumi nejsou samy o sobě nositeli významu — slouží jako **frekvenční modulátory** mezi vokály:
+Lumi má **20 fonémů**:
 
-| Znak | Výslovnost | Funkce | Příklad |
+- **5 vokálů** — a, e, i, o, u
+- **15 souhlásek** — p, t, k, b, d, g, m, n, s, š, h, l, r, v, y
+
+Žádné tónové rozdíly (jako čínština). Žádné dlouhé vs. krátké vokály (jako čeština). Žádný pitch accent (jako japonština). **Jedna výslovnost, jeden význam.**
+
+---
+
+## 2. Pět vokálů
+
+| Lumi | IPA | Jako v češtině | Jako v angličtině |
 |---|---|---|---|
-| **L** | [l] — měkké "l" | Spojení, tok | Lu = proud světla |
-| **M** | [m] — zavřené "m" | Hluboká vibrace, grounding | Ma = zemská frekvence |
-| **N** | [n] — nosové "n" | Most mezi světy | Na = portál |
-| **R** | [r] — vibrující "r" | Aktivace energie | Ra = sluneční impuls |
-| **S** | [s] — svistivé "s" | Rychlost, přenos | Sa = signál |
-| **T** | [t] — ostré "t" | Uzavření, bod | Ta = zaostření |
-| **V** | [v] — proudící "v" | Transformace | Va = proměna |
-| **K** | [k] — krátké "k" | Impuls, start | Ka = iniciace |
-| **H** | [h] — výdech "h" | Uvolnění, odevzdání | Ha = vzdych osvobození |
-| **Z** | [z] — bzučivé "z" | Rezonance, pole | Za = energetický štít |
-| **Sh** | [ʃ] — šumivé "š" | Ochrana, závoj | Sha = světelný štít |
-| **Th** | [θ] — jemné "th" | Průchod, brána | Tha = dimenzní brána |
+| **a** | /a/ | „mapa" | „father" |
+| **e** | /e/ | „debata" | „bed" |
+| **i** | /i/ | „vila" | „machine" |
+| **o** | /o/ | „pokoj" | „story" |
+| **u** | /u/ | „mouka" | „moon" |
+
+**Důležité:** žádné *y* (české), žádná schwa (/ə/), žádné diftongy jako vlastní fonémy. Všechny vokály jsou otevřené, jasné, stejně dlouhé.
+
+**Proč těchto 5?** Jsou nejběžnější vokály napříč lidskými jazyky — ~91 % světových jazyků používá všech 5 nebo jejich podmnožinu. Japonština, italština, havajština, lakotština — všechny mají přesně těchto 5.
+
+### Sekvence vokálů
+
+Lumi umožňuje dvojice vokálů (V1-V2), ale **každý se vyslovuje zřetelně**:
+
+- **ai** = /a.i/ (dvě slabiky, ne „ay")
+- **au** = /a.u/
+- **ei** = /e.i/
+- **ou** = /o.u/
+- **ui** = /u.i/
+
+Příklad: *aloha* = a-lo-ha (3 slabiky), *ohana* = o-ha-na (3 slabiky).
 
 ---
 
-## 3. Tónové rozmezí Lumi
+## 3. Patnáct souhlásek
 
-Lumi mluvený jazyk operuje v rozsahu **85 Hz – 1 100 Hz** (lidský hlasivkový rozsah). Light Language Tóny mohou přesahovat až do **4 000+ Hz** (sípání, ultrazvukové harmolálie).
+Vybrané z univerzálního inventáře — souhlásky vyskytující se v 95 %+ jazyků:
 
-### Tři základní registrační pásmá:
-
-| Pásmo | Rozsah | Vlastnosti |
+| Lumi | IPA | Jako v češtině |
 |---|---|---|
-| **Hlboké (Earth)** | 85–250 Hz | Grounding, léčení těla, spojení s Gaia |
-| **Střední (Heart)** | 250–650 Hz | Emoční komunikace, empatie, soucit |
-| **Vysoké (Cosmic)** | 650–1 100+ Hz | Mentální jasnost, intuice, channeling |
+| **p** | /p/ | „pozor" |
+| **t** | /t/ | „táta" |
+| **k** | /k/ | „koza" |
+| **b** | /b/ | „bota" |
+| **d** | /d/ | „dům" |
+| **g** | /g/ | „gól" |
+| **m** | /m/ | „máma" |
+| **n** | /n/ | „nos" |
+| **s** | /s/ | „sen" |
+| **š** | /ʃ/ | „šíp" — lze psát i **sh** |
+| **h** | /h/ | „hora" |
+| **l** | /l/ | „láska" |
+| **r** | /r/ | „ruka" |
+| **v** | /v/ | „voda" |
+| **y** | /j/ | „jaro" — jako v *yoga* |
+
+### Čeho se Lumi zbavuje — a proč
+
+- **f** — není v japonštině, v klasické arabštině není samostatný foném
+- **z** — rozlišení s/z je v mnoha jazycích nestabilní; Lumi používá **s** pro všechny sykavky
+- **c, č** — afrikáty jsou pro mnoho mluvčích obtížné; náhrada je sekvence **ts**
+- **ř** — české specifikum
+- **th** /θ/ — příliš málo rozšířené
+
+### Souhláskové kombinace
+
+- Maximálně **2 souhlásky** za sebou (CC)
+- Preferované: **stop + liquid** (pr, tr, kr, pl, kl), **nasal + stop** (mp, nt, nk), **s + stop** (sp, st, sk)
+- Složitější clustery nejsou povolené
 
 ---
 
-## 4. Pravidla kombinace
+## 4. Přízvuk
 
-### 4.1 Jednoduchá slabika (CV nebo V)
-- `Lu` = světelný proud
-- `Ma` = zemská matka
-- `Ra` = sluneční paprsek
+Přízvuk padá vždy na **předposlední slabiku** — univerzální pravidlo bez výjimek (jako havajština, polština, italština, svahilština).
 
-### 4.2 Dvojitá slabika (CVCV)
-- `Lu-ma` = světlo země (spojení nebe–země)
-- `Ra-ta` = zaostřený sluneční impuls
-- `Sha-ra` = ochranný sluneční štít
-
-### 4.3 Mantrická sekvence (3+ slabik)
-- `Lu-ma-ra` = "Světlo země vystřeluje" — oživení, aktivace
-- `Sha-ra-ta` = "Ochrana slunce zaostřena" — ochranný impuls
-
----
-
-## 5. Výslovnostní klíč
-
-- **Dlouhé samohlásky** (> 250 ms) = důraz, důležitost
-- **Krátké samohlásky** (< 100 ms) = rychlý přechod, spojka
-- **Aspirace na začátku** (H-) = odevzdání, pokora
-- **Nosné koncovky** (-m, -n) = ukončení, grounding
-- **Vibrace** (R-, Z-) = aktivace, energie
-
----
-
-## 6. Příklady prvních frází
-
-| Lumi | Doslovný překlad | Význam |
+| Slovo | Slabiky | Přízvuk |
 |---|---|---|
-| **Lu na** | Světlo + most | "Jsem most světla" |
-| **Ma ra ta** | Země + slunce + zaostření | "Zemi ozařuje slunce" |
-| **Sha lu ma** | Štít + světlo + země | "Ochranné světlo země" |
-| **Ω a** | Transdimenze + kořen | "Pravda je v kořeni" |
+| **lumi** | lu-mi | **LU**-mi |
+| **aloha** | a-lo-ha | a-**LO**-ha |
+| **ohana** | o-ha-na | o-**HA**-na |
+| **namaste** | na-ma-ste | na-ma-**STE** |
+| **pono** | po-no | **PO**-no |
+| **shanti** | šan-ti | **ŠAN**-ti |
+| **aum** | a-um | a-**UM** *(dvojslabičné!)* |
+
+**Pozor na „aum":** nevyslovuje se jako diftong „om", ale jako dvě slabiky **a-UM** s přízvukem na druhé.
 
 ---
 
-## 7. Další kroky
+## 5. Slabičná struktura
 
-1. Audio nahrávky každého základního tónu (vzorky)
-2. Interaktivní fonetický průvodce
-3. AI syntéza — generování Lumi tónů na základě záměru
+Slabika má formu **(C)(C)V(C)** — maximálně:
+
+- nic nebo 1–2 souhlásky na začátku
+- 1 vokál ve středu (povinný)
+- nic nebo 1 souhláska na konci
+
+Validní: *a* (V), *lo* (CV), *an* (VC), *lan* (CVC), *kra* (CCV).
+Nevalidní: *strm* (žádný vokál), *trkp* (3 souhlásky).
 
 ---
 
-*„Každý tón je brána. Každá slabika je klíč. Každá mantra je cesta domů."*
+## 6. Psaní
+
+- Standardní latinka: a, b, d, e, g, h, i, k, l, m, n, o, p, r, s, t, u, v, y
+- Jedno speciální písmeno: **š** (alternativně **sh**) pro /ʃ/
+- **Pravopis = výslovnost 1:1.** Vidíš slovo → víš, jak ho vyslovit. Bez výjimek.
+
+---
+
+## 7. Rezonance s posvátnými frekvencemi
+
+Každý Lumi vokál rezonuje se specifickou frekvencí ze systému 70 Light Tones (viz `light-tones.md`):
+
+| Vokál | Frekvence | Vlastnost |
+|---|---|---|
+| **a** | **432 Hz** (Crystal_Gate) | Otevřenost, prvotnost, přítomnost |
+| **e** | **639 Hz** (Truth_Healing_Green) | Láska, vztah |
+| **i** | **528 Hz** (DNA_Repair) | Zaměření, transformace |
+| **o** | **963 Hz** (Unity_Divine) | Jednota, nekonečno |
+| **u** | **174 Hz** (Liberation) | Uzemnění, tělo |
+
+Když zpíváš Lumi mantru, aktivuješ tyto frekvence — slyšitelná stránka systému Light Tones.
+
+---
+
+## 8. Cvičení
+
+Vyslov každé 3×:
+
+1. **aloha** — a-**LO**-ha
+2. **mitakuye** — mi-ta-**KU**-ye
+3. **namaste** — na-ma-**STE**
+4. **ohana** — o-**HA**-na
+5. **pono** — **PO**-no
+6. **shanti** — **ŠAN**-ti
+7. **lumi** — **LU**-mi
+8. **sona** — **SO**-na
+9. **aumani** — au-**MA**-ni
+
+---
+
+*„Každá slabika je klíč. Každý vokál je brána."*

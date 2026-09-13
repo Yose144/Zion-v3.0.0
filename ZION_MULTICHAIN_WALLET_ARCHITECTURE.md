@@ -1,5 +1,7 @@
 # Zion Multichain Wallet + ZionDex Engine — Master Architecture
 
+> **⚠️ SUPERSEDED (2026-09-03):** This architecture (custom ZionDex AMM) was replaced by the simplified [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md) — no custom AMM, swaps via Uniswap V3. Canonical contract registry: [`L2contracts.md`](./L2contracts.md). Kept for historical reference.
+
 **Date:** 2026-08-31 (updated 2026-09-01)
 **Status:** Deployed on Base + E2E workflow live (see [ZIONDEX_AMM_REPORT.md](ZIONDEX_AMM_REPORT.md) for full status)
 **Vision:** ZION L1 as settlement hub for cross-chain operations. Custodial multichain wallet in L2. On-chain ZionDex with real liquidity. ZIS as identity layer. Zion becomes a multichain platform for other chains.

@@ -662,9 +662,9 @@ Začíná tím, že různí lidé — tesař, poutník, pastýř, král v lese, 
 
 ### Kanonické zdroje ZIONu
 
-- [ZION Technical Whitepaper v3.1 (CZ)](/whitepapers#technical-cz)
-- [ZION Master Whitepaper v3.1 (CZ)](/whitepapers#master-3.2-cz)
-- [L4 Oasis — Consciousness Levels & XP](`dokumentace Oasis`
+- [ZION Technical Whitepaper v3.1 (CZ)](https://zionterranova.com/whitepapers)
+- [ZION Master Whitepaper v3.1 (CZ)](https://zionterranova.com/whitepapers)
+- [L4 Oasis — Consciousness Levels & XP](https://zionterranova.com/l4-oasis)
 - [Veřejný repozitář](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 ### Nezávislé a regulační zdroje použité pro principy pozvánky
@@ -1201,13 +1201,13 @@ Kompas ukazuje sever. Neukazuje, jestli prší už teď, nebo za rok. To je otá
 
 ---
 
-*Kniha Sůl této země končí tady — ne proto, že příběh skončil, ale protože další kapitolu už píše každý stavitel sám, kladivem ve vlastní ruce. Chceš začít kout? [Stáhni ZION Public Miner a těž za pět minut →](/download)*
+*Kniha Sůl této země končí tady — ne proto, že příběh skončil, ale protože další kapitolu už píše každý stavitel sám, kladivem ve vlastní ruce. Chceš začít kout? [Stáhni ZION Public Miner a těž za pět minut →](https://zionterranova.com/download)*
 # ČÁST TŘETÍ — NÁSTUP NA PALUBU
 ## Pět minut od rozhodnutí k prvnímu share
 
 ### IX. Snadná cesta — ZION Public Miner (desktop)
 
-1. Stáhni **ZION Public Miner** z [zionterranova.com/download](/download) — Windows 11, macOS, Linux.
+1. Stáhni **ZION Public Miner** z [zionterranova.com/download](https://zionterranova.com/download) — Windows 11, macOS, Linux.
 2. Vytvoř peněženku přímo v aplikaci. **Zapiš si mnemonic na papír. Drž ho offline. Nikomu ho nedávej — ani nám.**
 3. Pool: `pool.zionterranova.com:8444`.
 4. Zvol CPU vlákna nebo GPU. Klikni **Start Mining**.
@@ -1291,7 +1291,7 @@ L1 — JÁDRO            PoW blockchain, Ekam Deeksha, 60s bloky         ŽIVÉ 
 
 Za řekou, kde les otvírá světlo, roste zahrada. Jmenuje se **OASIS**. U brány stojí dvě ženy — Rádha se směje: *„Pojď dál, tancuj, hraj — ať tvé srdce ucítí, že technologie nemusí být studená jako ocel."* Elizabeth stojí o krok dál s lucernou a ptá se tiše: *„Co po tobě zůstane, až půjdeš dál?"*
 
-Ale řekněme to narovinu, bredda: **zahrada není hotová.** Semínka jsou zasazená, první stromky rostou, brána ještě voní čerstvou barvou. Můžeš vletět do 3D galaxie 400+ světů na [oasis.zionterranova.com](/oasis), projít kolem Stromu Života, otevřít Avatar Codex. Ale nejsi na konci cesty — jsi u prvních záhonů.
+Ale řekněme to narovinu, bredda: **zahrada není hotová.** Semínka jsou zasazená, první stromky rostou, brána ještě voní čerstvou barvou. Můžeš vletět do 3D galaxie 400+ světů na [oasis.zionterranova.com](https://oasis.zionterranova.com), projít kolem Stromu Života, otevřít Avatar Codex. Ale nejsi na konci cesty — jsi u prvních záhonů.
 
 | Co dnes JE | Co dnes NENÍ |
 |---|---|
@@ -1366,10 +1366,10 @@ One love. One chain. One road.
 
 ### Hlubší vrstvy
 
-- [Kanonický whitepaper 3.2 „One Love"](/whitepapers#master-3.2-cz) — celá kniha čtyř knih
-- [Technický whitepaper 3.1](/whitepapers#technical-cz) — konsensus, emise, kontrakty do detailu
-- Web onboard: [app.zionterranova.com/onboard](/onboard)
-- OASIS: [oasis.zionterranova.com](/oasis)
+- [Kanonický whitepaper 3.2 „One Love"](https://zionterranova.com/whitepapers) — celá kniha čtyř knih
+- [Technický whitepaper 3.1](https://zionterranova.com/whitepapers) — konsensus, emise, kontrakty do detailu
+- Web onboard: [app.zionterranova.com/onboard](https://app.zionterranova.com/onboard)
+- OASIS: [oasis.zionterranova.com](https://oasis.zionterranova.com)
 - GitHub: [github.com/Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 Sůl této země — dvanáct zastavení je plně v tomto dokumentu.
