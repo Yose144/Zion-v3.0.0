@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
 import GuardiansTreeClient from '@/components/GuardiansTreeClient';
@@ -107,6 +108,8 @@ const DaoCopy = {
   voteOnProtocolDecisions: { cs: `Hlasuj o rozhodnutích`, en: `Vote on protocol decisions` },
   createProposal: { cs: `Vytvořit návrh`, en: `Create Proposal` },
   loadingProposals: { cs: `Načítám návrhy…`, en: `Loading proposals…` },
+  signInToVote: { cs: `Pro hlasování a vytváření návrhů se přihlas přes ZIS. Hlasovací síla se počítá z tvého reálného ZION zůstatku.`, en: `Sign in with ZIS to vote and create proposals. Voting power is computed from your real ZION balance.` },
+  signInRequired: { cs: `Nejdřív se přihlas přes ZIS účet.`, en: `Please sign in with your ZIS account first.` },
   noProposalsYet: { cs: `Zatím žádné návrhy`, en: `No proposals yet` },
   beTheFirstToCreateAGovernanceP: { cs: `Buď první, kdo vytvoří governance návrh!`, en: `Be the first to create a governance proposal!` },
   treasuryOverview: { cs: `Přehled treasury`, en: `Treasury overview` },
@@ -287,6 +290,8 @@ const getFaqs = (cs: boolean) => [
 export default function DaoPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
+  const { user, authenticated } = useAuth();
+  const zionAddress = user?.linkedAddresses?.find((a) => a.chainType === 'zion-l1')?.address ?? user?.address ?? '';
 
   const [stats, setStats] = useState<DAOStatsType | null>(null);
   const [treasury, setTreasury] = useState<DAOTreasuryOverview | null>(null);
@@ -339,9 +344,15 @@ export default function DaoPage() {
   }
 
   async function handleVote(proposalId: string, voteType: string) {
+    if (!authenticated) {
+      alert(DaoCopy.signInRequired[cs ? 'cs' : 'en']);
+      return;
+    }
     try {
-      const demoWallet = 'zion1demo' + Math.random().toString(36).substring(2, 10);
-      await castGovernanceVote(parseInt(proposalId, 10), demoWallet, voteType as 'for' | 'against');
+      // Voter + weight are resolved server-side from the ZIS session and the
+      // L1 balance at the proposal snapshot block — the address passed here is
+      // only a hint; the API replaces it with the authenticated identity.
+      await castGovernanceVote(parseInt(proposalId, 10), zionAddress, voteType as 'for' | 'against');
       await loadDAOData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Vote failed');
@@ -351,13 +362,17 @@ export default function DaoPage() {
   async function handleCreateProposal(e: React.FormEvent) {
     e.preventDefault();
     setCreateError(null);
+    if (!authenticated) {
+      setCreateError(DaoCopy.signInRequired[cs ? 'cs' : 'en']);
+      return;
+    }
     if (!createTitle.trim() || !createDesc.trim()) {
       setCreateError(DaoCopy.pleaseEnterATitleAndDescriptio[cs ? 'cs' : 'en']);
       return;
     }
     setCreateBusy(true);
     try {
-      const proposer = createProposer.trim() || 'zion1demo' + Math.random().toString(36).substring(2, 10);
+      const proposer = zionAddress;
       await createGovernanceProposal({
         proposer,
         title: createTitle.trim(),
@@ -681,13 +696,19 @@ export default function DaoPage() {
                     <h2 className="text-3xl font-semibold text-white">{DaoCopy.voteOnProtocolDecisions[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <button
-                    onClick={() => setCreateOpen(true)}
+                    onClick={() => authenticated ? setCreateOpen(true) : alert(DaoCopy.signInRequired[cs ? 'cs' : 'en'])}
                     className="zion-button-primary"
                   >
                     <Plus className="h-4 w-4" />
                     {DaoCopy.createProposal[cs ? 'cs' : 'en']}
                   </button>
                 </div>
+                {!authenticated && (
+                  <div className="zion-rainbow-card p-4 mb-6 flex items-center gap-3" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                    <Info className="h-5 w-5 text-zion-purple shrink-0" />
+                    <p className="text-sm text-gray-300">{DaoCopy.signInToVote[cs ? 'cs' : 'en']}</p>
+                  </div>
+                )}
                 {loading ? (
                   <div className="text-center py-12">
                     <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zion-gold border-r-transparent" />

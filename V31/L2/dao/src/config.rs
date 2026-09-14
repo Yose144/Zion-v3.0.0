@@ -29,6 +29,12 @@ pub struct DaoConfig {
     pub guardians: Vec<GuardianConfig>,
     #[serde(default)]
     pub co_admins: Vec<CoAdminConfig>,
+    /// ZIS base URL for session-authenticated governance (votes, proposals).
+    #[serde(default = "default_zis_url")]
+    pub zis_url: String,
+    /// When true, `zion_session` cookies are accepted for vote/proposal auth.
+    #[serde(default = "default_true")]
+    pub zis_enabled: bool,
     #[serde(default = "default_true")]
     pub cross_layer_veto_enabled: bool,
     #[serde(default = "default_cross_layer_threshold")]
@@ -61,6 +67,10 @@ fn default_true() -> bool {
     true
 }
 
+fn default_zis_url() -> String {
+    "http://127.0.0.1:8096".into()
+}
+
 fn default_cross_layer_threshold() -> u8 {
     2
 }
@@ -83,14 +93,16 @@ impl Default for DaoConfig {
             voting_period_days: 7,
             timelock_hours: 48,
             treasury_addresses: vec![
-                "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3".into(),
-                "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238".into(),
+                "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3".into(), // Grants & Bounties — 1.0B ZION (premine slot 7)
+                "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238".into(), // Ecosystem Bootstrap — 0.5B ZION (premine slot 8)
             ],
             daily_spend_limit: 100_000_000,
             multisig_threshold: 5,
             multisig_total: 7,
             guardians: vec![],
             co_admins: vec![],
+            zis_url: default_zis_url(),
+            zis_enabled: true,
             cross_layer_veto_enabled: true,
             cross_layer_consent_threshold: 2,
         }

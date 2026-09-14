@@ -47,20 +47,23 @@ use zion_core::v3_compat::{DifficultyTarget as V3DiffTarget, MiningHeader};
 /// allocates its own 512 KiB scratchpad once and reuses it for all nonces
 /// in its chunk, eliminating per-nonce allocation.
 ///
-/// Fast path: tries the first 64 nonces sequentially before launching the
+/// Fast path: tries the first few nonces sequentially before launching the
 /// rayon thread pool. This avoids thread pool overhead when the target is
 /// trivially easy (e.g. pool max-difficulty target where nonce=0 passes).
 ///
-/// Returns the first solution found (cancelling other workers via AtomicBool).
+/// Returns `(solution, nonces_evaluated)`. The count is the real number of
+/// PoW evaluations performed — including partial progress of cancelled
+/// workers — NOT the batch size. Reporting batch_size on an early-exit hit
+/// inflates hashrate by roughly `batch_size / share_position`.
 fn parallel_zion_find_nonce(
     header: &[u8],
     target: &[u8; 32],
     start_nonce: u64,
     count: u64,
     threads: usize,
-) -> Option<(u64, Hash)> {
+) -> (Option<(u64, Hash)>, u64) {
     use rayon::prelude::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
     use zion_cosmic_harmony::algorithm::ekam_deeksha::{
         hash, hash_with_scratchpad, meets_target, SCRATCHPAD_SIZE,
     };
@@ -68,12 +71,14 @@ fn parallel_zion_find_nonce(
     // Fast path: try first few nonces with the original hash() function.
     // This avoids scratchpad allocation + rayon overhead when the target is
     // trivially easy (e.g. pool max-difficulty target where nonce=0 passes).
+    let mut searched = 0u64;
     let fast_count = count.min(8);
     for offset in 0..fast_count {
         let nonce = start_nonce.wrapping_add(offset);
         let h = hash(header, nonce);
+        searched += 1;
         if meets_target(&h, target) {
-            return Some((nonce, Hash::new(h)));
+            return (Some((nonce, Hash::new(h))), searched);
         }
     }
 
@@ -81,7 +86,7 @@ fn parallel_zion_find_nonce(
     let remaining_start = start_nonce.wrapping_add(fast_count);
     let remaining_count = count.saturating_sub(fast_count);
     if remaining_count == 0 {
-        return None;
+        return (None, searched);
     }
 
     let threads = threads.max(1);
@@ -91,17 +96,20 @@ fn parallel_zion_find_nonce(
         for offset in 0..remaining_count {
             let nonce = remaining_start.wrapping_add(offset);
             let h = hash_with_scratchpad(header, nonce, &mut scratchpad);
+            searched += 1;
             if meets_target(&h, target) {
-                return Some((nonce, Hash::new(h)));
+                return (Some((nonce, Hash::new(h))), searched);
             }
         }
-        return None;
+        return (None, searched);
     }
 
     let cancelled = std::sync::Arc::new(AtomicBool::new(false));
+    let searched_atomic = std::sync::Arc::new(AtomicU64::new(searched));
+    let searched_worker = searched_atomic.clone();
     let chunk_size = remaining_count / threads as u64;
 
-    (0..threads).into_par_iter().find_map_any(|thread_idx| {
+    let found = (0..threads).into_par_iter().find_map_any(|thread_idx| {
         let start = remaining_start.wrapping_add(thread_idx as u64 * chunk_size);
         let this_count = if thread_idx == threads - 1 {
             remaining_count - (thread_idx as u64 * chunk_size)
@@ -110,20 +118,27 @@ fn parallel_zion_find_nonce(
         };
 
         let mut pad = vec![0u8; SCRATCHPAD_SIZE];
+        let mut local = 0u64;
 
         for offset in 0..this_count {
             if offset % 256 == 0 && cancelled.load(Ordering::Relaxed) {
+                searched_worker.fetch_add(local, Ordering::Relaxed);
                 return None;
             }
             let nonce = start.wrapping_add(offset);
             let h = hash_with_scratchpad(header, nonce, &mut pad);
+            local += 1;
             if meets_target(&h, target) {
                 cancelled.store(true, Ordering::Relaxed);
+                searched_worker.fetch_add(local, Ordering::Relaxed);
                 return Some((nonce, Hash::new(h)));
             }
         }
+        searched_worker.fetch_add(local, Ordering::Relaxed);
         None
-    })
+    });
+
+    (found, searched_atomic.load(Ordering::Relaxed))
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -522,38 +537,34 @@ impl MinerRuntime {
             } else if gpu_result == Some(None) {
                 // GPU ran and tested the full batch_size but found no solution.
                 // CPU re-tests the same [0, batch_size) range as fallback.
-                // Total unique nonces = batch_size (NOT batch_size + cpu_searched).
+                // Total work = batch_size (GPU) + cpu_searched (CPU re-test).
                 let header = job.header.clone();
                 let target = job.target;
                 let threads = self.config.miner_threads.max(1);
-                let result = task::spawn_blocking(move || {
+                let (result, cpu_searched) = task::spawn_blocking(move || {
                     parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
                 })
                 .await
-                .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
-                .ok_or(MinerError::NoAuxPoWSolution)?;
-                let (found_nonce, found_hash) = result;
-                // GPU already tested batch_size nonces; CPU found within that range.
-                // Do NOT add cpu_searched — that would double-count the same nonces.
-                (found_nonce, found_hash, batch_size)
+                .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?;
+                let (found_nonce, found_hash) =
+                    result.ok_or(MinerError::NoAuxPoWSolution)?;
+                (found_nonce, found_hash, batch_size + cpu_searched)
             } else {
                 // No GPU available — CPU is the only miner.
-                // CPU searches [0, batch_size) in parallel across `threads` workers.
-                // Each worker scans its own chunk concurrently, so the total nonces
-                // searched is ~batch_size (not just found_nonce+1, which would only
-                // count the winning thread's linear position and underreport
-                // hashrate by up to `threads`×).
+                // parallel_zion_find_nonce returns the real number of nonces
+                // evaluated across all workers (including cancelled progress),
+                // which keeps the reported hashrate honest on early-exit hits.
                 let header = job.header.clone();
                 let target = job.target;
                 let threads = self.config.miner_threads.max(1);
-                let result = task::spawn_blocking(move || {
+                let (result, cpu_searched) = task::spawn_blocking(move || {
                     parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
                 })
                 .await
-                .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
-                .ok_or(MinerError::NoAuxPoWSolution)?;
-                let (found_nonce, found_hash) = result;
-                (found_nonce, found_hash, batch_size)
+                .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?;
+                let (found_nonce, found_hash) =
+                    result.ok_or(MinerError::NoAuxPoWSolution)?;
+                (found_nonce, found_hash, cpu_searched)
             };
 
         let elapsed = t_start.elapsed().as_secs_f64();
@@ -1704,38 +1715,32 @@ impl MinerRuntime {
         } else if gpu_result == Some(None) {
             // GPU ran and tested the full batch_size but found no solution.
             // CPU re-tests the same [start_nonce, start_nonce + batch_size) range.
-            // Total unique nonces = batch_size (NOT batch_size + cpu_nonces).
+            // Total work = batch_size (GPU) + cpu_tested (CPU re-test).
             let threads = self.config.miner_threads.max(1);
             let header_cpu = header.clone();
             let target_cpu = target_bytes;
-            let result = task::spawn_blocking(move || {
+            let (result, cpu_tested) = task::spawn_blocking(move || {
                 parallel_zion_find_nonce(&header_cpu, &target_cpu, start_nonce, batch_size, threads)
             })
             .await
-            .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
-            .ok_or(MinerError::NoAuxPoWSolution)?;
-            let (n, h) = result;
-            // GPU already tested batch_size nonces; CPU found within that range.
-            // Do NOT add cpu_nonces — that would double-count the same nonces.
-            (n, h.0, batch_size)
+            .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?;
+            let (n, h) = result.ok_or(MinerError::NoAuxPoWSolution)?;
+            (n, h.0, batch_size + cpu_tested)
         } else {
             // No GPU available — CPU is the only miner.
-            // CPU searches [start_nonce, start_nonce + batch_size) in parallel
-            // across `threads` workers. Each worker scans its own chunk
-            // concurrently, so total nonces searched is ~batch_size (not just
-            // (n - start_nonce) + 1, which would only count the winning thread's
-            // linear position and underreport hashrate by up to `threads`×).
+            // parallel_zion_find_nonce returns the real number of nonces
+            // evaluated across all workers (including cancelled progress),
+            // which keeps the reported hashrate honest on early-exit hits.
             let threads = self.config.miner_threads.max(1);
             let header_cpu = header.clone();
             let target_cpu = target_bytes;
-            let result = task::spawn_blocking(move || {
+            let (result, cpu_tested) = task::spawn_blocking(move || {
                 parallel_zion_find_nonce(&header_cpu, &target_cpu, start_nonce, batch_size, threads)
             })
             .await
-            .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
-            .ok_or(MinerError::NoAuxPoWSolution)?;
-            let (n, h) = result;
-            (n, h.0, batch_size)
+            .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?;
+            let (n, h) = result.ok_or(MinerError::NoAuxPoWSolution)?;
+            (n, h.0, cpu_tested)
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();
@@ -1762,6 +1767,21 @@ impl MinerRuntime {
                 job = job.job_id,
                 nonce,
                 "V3 Trinity: ZION share failed local verification — skipping submit (GPU false positive)"
+            );
+            return Ok(false);
+        }
+
+        // Stale-share race: if the pool has already pushed a newer ZION job
+        // while we were searching, it has dropped this job and the share
+        // would be rejected as `unknown_job`.  Skip the submit and let the
+        // loop pick up the fresh job instead.  Compare job ids so a bundle
+        // pushed only for an AuxPoW stream change does not drop valid work.
+        if client.latest_zion_job_id() != job.job_id {
+            tracing::debug!(
+                job = job.job_id,
+                latest = client.latest_zion_job_id(),
+                nonce,
+                "V3 Trinity: ZION share superseded by newer job — skipping submit"
             );
             return Ok(false);
         }

@@ -134,11 +134,27 @@ impl Reconciler {
         }
 
         let mut ledger_totals: HashMap<String, Amount> = HashMap::new();
+        let mut deposit_addrs: HashMap<ChainId, Vec<Address>> = HashMap::new();
         {
             let db = self.db.lock().await;
             for (asset_key, amount) in db.load_all_wallet_balances()? {
                 let current = ledger_totals.entry(asset_key).or_insert(Amount::ZERO);
                 *current = current.saturating_add(amount);
+            }
+            // Custodial deposits are credited to per-user derived addresses and
+            // are never swept to the hot wallet automatically, so the
+            // service-controlled on-chain total must include them. Only funded
+            // addresses are queried — unfunded ones contribute zero and just
+            // burn public RPC rate-limit budget.
+            match db.load_funded_deposit_addresses() {
+                Ok(list) => {
+                    for w in list {
+                        deposit_addrs.entry(w.chain).or_default().push(w.address);
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("reconciliation: cannot load deposit addresses: {e}");
+                }
             }
         }
 
@@ -164,29 +180,54 @@ impl Reconciler {
                 continue;
             };
 
-            let on_chain = match adapter.balance(&hot_address).await {
-                Ok(amount) => amount,
-                Err(e) => {
-                    tracing::warn!(
-                        "reconciliation: balance query failed for {}: {e}",
-                        chain.as_str()
-                    );
-                    reports.push(ReconciliationReport {
-                        id: uuid::Uuid::new_v4().to_string(),
-                        timestamp: Utc::now(),
-                        chain: chain.as_str().to_string(),
-                        asset_key: asset_key.clone(),
-                        hot_wallet_address: Some(hot_address.encoded),
-                        on_chain: Amount::ZERO,
-                        internal: *ledger_totals.get(&asset_key).unwrap_or(&Amount::ZERO),
-                        pool_reserves: *pool_totals.get(&asset_key).unwrap_or(&Amount::ZERO),
-                        diff: 0,
-                        alert: false,
-                        notes: Some(format!("balance query failed: {e}")),
-                    });
-                    continue;
+            // Sum the balance over every service-controlled address: the hot
+            // wallet plus all derived deposit addresses. Custodial deposits
+            // are credited per-user and not swept automatically, so checking
+            // only the hot wallet under-reports on-chain funds.
+            let service_addrs = self.service_addresses(chain, &hot_address, &deposit_addrs);
+            let mut on_chain = Amount::ZERO;
+            let mut first_err: Option<String> = None;
+            for addr in &service_addrs {
+                let res = match adapter.balance(addr).await {
+                    Err(e) if is_rate_limit(&e) => {
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        adapter.balance(addr).await
+                    }
+                    other => other,
+                };
+                match res {
+                    Ok(amount) => on_chain = on_chain.saturating_add(amount),
+                    Err(e) => {
+                        tracing::warn!(
+                            "reconciliation: balance query failed for {} {}: {e}",
+                            chain.as_str(),
+                            addr.encoded
+                        );
+                        if first_err.is_none() {
+                            first_err = Some(format!("balance query failed: {e}"));
+                        }
+                    }
                 }
-            };
+                // Public RPC endpoints rate-limit bursts; pace the per-address
+                // queries so a full service sweep stays under the limit.
+                tokio::time::sleep(Duration::from_millis(150)).await;
+            }
+            if on_chain == Amount::ZERO && first_err.is_some() {
+                reports.push(ReconciliationReport {
+                    id: uuid::Uuid::new_v4().to_string(),
+                    timestamp: Utc::now(),
+                    chain: chain.as_str().to_string(),
+                    asset_key: asset_key.clone(),
+                    hot_wallet_address: Some(hot_address.encoded),
+                    on_chain: Amount::ZERO,
+                    internal: *ledger_totals.get(&asset_key).unwrap_or(&Amount::ZERO),
+                    pool_reserves: *pool_totals.get(&asset_key).unwrap_or(&Amount::ZERO),
+                    diff: 0,
+                    alert: false,
+                    notes: first_err,
+                });
+                continue;
+            }
 
             let internal = *ledger_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
             let pool = *pool_totals.get(&asset_key).unwrap_or(&Amount::ZERO);
@@ -208,7 +249,7 @@ impl Reconciler {
                 pool_reserves: pool,
                 diff,
                 alert,
-                notes: None,
+                notes: first_err,
             });
         }
 
@@ -278,14 +319,37 @@ impl Reconciler {
                         });
                         continue;
                     };
-                    match adapter.token_balance(&asset, &hot_address).await {
-                        Ok(amt) => (amt, Some(hot_address.encoded), None),
-                        Err(e) => (
-                            Amount::ZERO,
-                            Some(hot_address.encoded),
-                            Some(format!("token_balance failed: {e}")),
-                        ),
+                    // Sum over the hot wallet plus all derived deposit
+                    // addresses — custodial deposits stay on per-user
+                    // addresses until a withdrawal (or a future sweep).
+                    let mut total = Amount::ZERO;
+                    let mut first_err: Option<String> = None;
+                    for addr in self.service_addresses(chain, &hot_address, &deposit_addrs) {
+                        let res = match adapter.token_balance(&asset, &addr).await {
+                            Err(e) if is_rate_limit(&e) => {
+                                tokio::time::sleep(Duration::from_secs(2)).await;
+                                adapter.token_balance(&asset, &addr).await
+                            }
+                            other => other,
+                        };
+                        match res {
+                            Ok(amt) => total = total.saturating_add(amt),
+                            Err(e) => {
+                                tracing::warn!(
+                                    "reconciliation: token_balance failed for {} {}: {e}",
+                                    chain.as_str(),
+                                    addr.encoded
+                                );
+                                if first_err.is_none() {
+                                    first_err = Some(format!("token_balance failed: {e}"));
+                                }
+                            }
+                        }
+                        // Public RPC endpoints rate-limit bursts; pace the
+                        // per-address queries.
+                        tokio::time::sleep(Duration::from_millis(150)).await;
                     }
+                    (total, Some(hot_address.encoded), first_err)
                 }
                 Err(e) => (
                     Amount::ZERO,
@@ -340,6 +404,25 @@ impl Reconciler {
         self.keyring.address(chain, 0, 0)
     }
 
+    /// All service-controlled addresses on `chain`: the hot wallet first,
+    /// then every derived deposit address (deduplicated).
+    fn service_addresses(
+        &self,
+        chain: ChainId,
+        hot: &Address,
+        deposits: &HashMap<ChainId, Vec<Address>>,
+    ) -> Vec<Address> {
+        let mut out = vec![hot.clone()];
+        if let Some(list) = deposits.get(&chain) {
+            for addr in list {
+                if !out.contains(addr) {
+                    out.push(addr.clone());
+                }
+            }
+        }
+        out
+    }
+
     /// Aggregate AMM pool reserves by asset key.
     async fn pool_reserves(&self) -> HashMap<String, Amount> {
         let mut totals: HashMap<String, Amount> = HashMap::new();
@@ -356,6 +439,13 @@ impl Reconciler {
         }
         totals
     }
+}
+
+/// True when an adapter error is a public-RPC rate-limit response worth a
+/// single retry (e.g. mainnet.base.org `over rate limit`, code -32016).
+fn is_rate_limit(e: &MultichainError) -> bool {
+    let msg = e.to_string();
+    msg.contains("rate limit") || msg.contains("-32016") || msg.contains("429")
 }
 
 /// Map a chain to its native asset.
@@ -486,6 +576,91 @@ mod tests {
         };
         assert_eq!(saved.len(), 1);
         assert!(saved[0].alert);
+    }
+
+    #[tokio::test]
+    async fn reconciliation_includes_deposit_addresses() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let asset = Asset::native(ChainId::ZionL1, "ZION", 8, "ZION");
+
+        // User owes 8 ZION; funds are split between the hot wallet (5) and
+        // the user's unswept deposit address (3).
+        ledger
+            .credit("user1", &asset, Amount::new(8_000_000))
+            .await
+            .unwrap();
+
+        {
+            let db_guard = db.lock().await;
+            db_guard
+                .save_wallet_address(&crate::multichain_wallet::types::WalletAddress {
+                    address: Address {
+                        chain: ChainId::ZionL1,
+                        bytes: vec![0x42; 32],
+                        encoded: "zion1deposit".to_string(),
+                    },
+                    user_id: "user1".to_string(),
+                    chain: ChainId::ZionL1,
+                    chain_id: None,
+                    purpose: crate::multichain_wallet::types::AddressPurpose::Deposit,
+                    public_key: None,
+                    derivation_path: "m/44'/9999'/0'/0/0".to_string(),
+                    is_external: false,
+                    created_at: Utc::now(),
+                })
+                .unwrap();
+            // The reconciliation query only covers *funded* deposit
+            // addresses, so record a deposit for this user.
+            db_guard
+                .record_deposit(&crate::multichain_wallet::types::DepositRecord {
+                    id: "dep1".to_string(),
+                    user_id: "user1".to_string(),
+                    chain: ChainId::ZionL1,
+                    chain_id: None,
+                    tx_hash: "deadbeef".to_string(),
+                    asset_key: asset.id.to_string(),
+                    amount: Amount::new(3_000_000),
+                    confirmations: 10,
+                    status: crate::multichain_wallet::types::DepositStatus::Credited,
+                    created_at: Utc::now(),
+                    credited_at: Some(Utc::now()),
+                })
+                .unwrap();
+        }
+
+        // MockAdapter returns the same per-address balance for every query,
+        // so hot wallet (4) + deposit address (4) = 8 total.
+        let mut adapters = ChainAdapterRegistry::new();
+        adapters.register(
+            ChainId::ZionL1,
+            Box::new(MockAdapter {
+                balance: Amount::new(4_000_000),
+            }),
+        );
+
+        let dex = Arc::new(RwLock::new(DexRouter::new()));
+        let reconciler = Reconciler::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            Keyring::generate().unwrap(),
+            Arc::clone(&dex),
+            ReconcilerConfig {
+                interval: Duration::from_secs(1),
+                alert_threshold: Amount::new(1),
+                enabled: true,
+            },
+        );
+
+        let reports = reconciler.reconcile().await.unwrap();
+        let zion_report = reports
+            .iter()
+            .find(|r| r.asset_key == asset.id.to_string())
+            .unwrap();
+        // 4 (hot) + 4 (deposit address) = 8 — matches the ledger exactly.
+        assert_eq!(zion_report.on_chain.0, 8_000_000);
+        assert_eq!(zion_report.diff, 0);
+        assert!(!zion_report.alert);
     }
 
     #[tokio::test]

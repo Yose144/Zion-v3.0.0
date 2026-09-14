@@ -2,12 +2,16 @@
 
 use serde::{Deserialize, Serialize};
 
+/// DAO treasury = genesis premine slots 7+8 (Grants & Bounties 1.0B +
+/// Ecosystem Bootstrap 0.5B). Slot 6 (2.5B) was repurposed to L6 Issobella
+/// on 2026-09-12 — see StatusV3.md.
 pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
     "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
     "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238",
 ];
 
 pub const FLOWERS_PER_ZION: u64 = 1_000_000;
+/// DAO treasury = genesis premine slots 7+8 (1.0B + 0.5B ZION).
 pub const DAO_TREASURY_TOTAL: u128 = 1_500_000_000_u128 * FLOWERS_PER_ZION as u128;
 pub const PROPOSAL_THRESHOLD: u64 = 1_000_000 * FLOWERS_PER_ZION;
 pub const VOTING_PERIOD_SECS: u64 = 7 * 24 * 60 * 60;
@@ -59,6 +63,7 @@ pub enum DaoMemo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum VoteChoice {
     Yes,
     No,

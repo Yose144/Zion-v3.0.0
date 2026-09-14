@@ -31,6 +31,18 @@ pub struct DaoDb {
     conn: Connection,
 }
 
+/// A persisted treasury multisig operation.
+#[derive(Debug, Clone)]
+pub struct TreasuryOpRow {
+    pub op_id: String,
+    pub proposal_id: Option<u64>,
+    pub operation: String, // JSON-encoded TreasuryOperation
+    pub submitted_by: String,
+    pub status: String,
+    pub created_at: String,
+    pub executed_at: Option<String>,
+}
+
 impl DaoDb {
     /// Open (or create) the SQLite database at `path`.
     pub fn open<P: AsRef<Path>>(path: P) -> DaoResult<Self> {
@@ -101,6 +113,13 @@ impl DaoDb {
                 status        TEXT NOT NULL DEFAULT 'pending',  -- pending|signed|executed|rejected
                 created_at    TEXT NOT NULL,
                 executed_at   TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS treasury_sigs (
+                op_id      TEXT NOT NULL REFERENCES treasury_ops(op_id),
+                guardian   TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE(op_id, guardian)
             );
 
             CREATE TABLE IF NOT EXISTS scan_state (
@@ -563,6 +582,76 @@ impl DaoDb {
         Ok(())
     }
 
+    /// Load a single treasury operation row.
+    pub fn get_treasury_op(&self, op_id: &str) -> DaoResult<Option<TreasuryOpRow>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at
+                 FROM treasury_ops WHERE op_id=?1",
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let mut rows = stmt
+            .query_map(params![op_id], |row| {
+                Ok(TreasuryOpRow {
+                    op_id: row.get(0)?,
+                    proposal_id: row.get(1)?,
+                    operation: row.get(2)?,
+                    submitted_by: row.get(3)?,
+                    status: row.get(4)?,
+                    created_at: row.get(5)?,
+                    executed_at: row.get(6)?,
+                })
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        match rows.next() {
+            Some(Ok(r)) => Ok(Some(r)),
+            Some(Err(e)) => Err(DaoError::Internal(e.to_string())),
+            None => Ok(None),
+        }
+    }
+
+    /// Count treasury operations, optionally filtered by status.
+    pub fn count_treasury_ops(&self, status: &str) -> DaoResult<usize> {
+        let n: i64 = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM treasury_ops WHERE status=?1",
+                params![status],
+                |row| row.get(0),
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(n as usize)
+    }
+
+    /// Record a guardian signature on a treasury operation (idempotent).
+    pub fn add_treasury_sig(&self, op_id: &str, guardian: &str) -> DaoResult<()> {
+        self.conn
+            .execute(
+                "INSERT OR IGNORE INTO treasury_sigs (op_id, guardian, created_at)
+                 VALUES (?1, ?2, datetime('now'))",
+                params![op_id, guardian],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// List guardian addresses that signed a treasury operation.
+    pub fn list_treasury_sigs(&self, op_id: &str) -> DaoResult<Vec<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT guardian FROM treasury_sigs WHERE op_id=?1 ORDER BY created_at")
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map(params![op_id], |row| row.get(0))
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(|e| DaoError::Internal(e.to_string()))?);
+        }
+        Ok(out)
+    }
+
     // ── L1 Scan State ─────────────────────────────────────────────────────────
 
     /// Return last scanned L1 block height.
@@ -771,5 +860,41 @@ mod tests {
         db.record_vote(3, "zion1voter", VoteChoice::Yes, 100, None)
             .unwrap();
         assert!(db.has_voted(3, "zion1voter").unwrap());
+    }
+
+    #[test]
+    fn test_treasury_ops_and_sigs() {
+        let db = make_db();
+        let op = TreasuryOperation::Spend {
+            recipient: "zion1abc".into(),
+            amount: 5_000_000,
+            purpose: "test grant".into(),
+            proposal_id: 7,
+        };
+
+        db.insert_treasury_op("op-1", None, &op, "guardian-1")
+            .unwrap();
+        db.add_treasury_sig("op-1", "guardian-1").unwrap();
+        db.add_treasury_sig("op-1", "guardian-2").unwrap();
+        db.add_treasury_sig("op-1", "guardian-2").unwrap(); // duplicate ignored
+
+        let row = db.get_treasury_op("op-1").unwrap().unwrap();
+        assert_eq!(row.status, "pending");
+        assert_eq!(row.proposal_id, None);
+        assert_eq!(row.submitted_by, "guardian-1");
+
+        let parsed: TreasuryOperation = serde_json::from_str(&row.operation).unwrap();
+        assert_eq!(parsed, op);
+
+        assert_eq!(db.list_treasury_sigs("op-1").unwrap().len(), 2);
+        assert_eq!(db.count_treasury_ops("pending").unwrap(), 1);
+        assert_eq!(db.count_treasury_ops("executed").unwrap(), 0);
+
+        db.update_treasury_op_status("op-1", "executed").unwrap();
+        let row = db.get_treasury_op("op-1").unwrap().unwrap();
+        assert_eq!(row.status, "executed");
+        assert!(row.executed_at.is_some());
+
+        assert!(db.get_treasury_op("op-missing").unwrap().is_none());
     }
 }

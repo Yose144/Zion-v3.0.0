@@ -62,6 +62,11 @@ impl GovernanceRuntime {
         self
     }
 
+    /// Access the attached SQLite database, if any.
+    pub fn db(&self) -> Option<Arc<Mutex<DaoDb>>> {
+        self.db.clone()
+    }
+
     /// Load proposals and votes from the attached database.
     pub fn load_from_db(&mut self) -> DaoResult<()> {
         let db = match self.db.as_ref() {

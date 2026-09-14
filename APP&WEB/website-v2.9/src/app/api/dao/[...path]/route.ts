@@ -23,16 +23,20 @@ async function proxyDao(request: Request, path: string[]) {
   const contentType = request.headers.get('content-type');
   const method = request.method.toUpperCase();
   const apiKey = request.headers.get('x-dao-key');
+  const cookie = request.headers.get('cookie');
+  const hasZisSession = !!cookie && /zion_session=[^;]+/.test(cookie);
 
   // GET requests are public (read-only: proposals, treasury, guardians)
-  // POST/PUT/DELETE require API key (mutations: vote, create proposal, etc.)
-  if (method !== 'GET' && !apiKey) {
-    return NextResponse.json({ success: false, error: 'DAO API key required for mutations' }, { status: 401 });
+  // POST/PUT/DELETE require either an API key (operator) or a ZIS session
+  // cookie (regular user — the DAO service resolves it to a ZION address).
+  if (method !== 'GET' && !apiKey && !hasZisSession) {
+    return NextResponse.json({ success: false, error: 'Sign in with ZIS or provide a DAO API key' }, { status: 401 });
   }
 
   if (accept) headers.set('accept', accept);
   if (contentType) headers.set('content-type', contentType);
   if (apiKey) headers.set('x-dao-key', apiKey);
+  if (cookie) headers.set('cookie', cookie);
 
   const body = method === 'POST' ? await request.text() : undefined;
 

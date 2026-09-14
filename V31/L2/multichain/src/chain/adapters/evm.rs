@@ -11,11 +11,14 @@ use ethers::core::abi::{decode, encode, ParamType, Token};
 use ethers::core::types::{Filter, TransactionRequest, ValueOrArray};
 use ethers::core::utils::keccak256;
 use ethers::middleware::SignerMiddleware;
-use ethers::providers::{Http, Middleware, Provider};
+use ethers::providers::{
+    Http, HttpRateLimitRetryPolicy, Middleware, Provider, RetryClient, RetryClientBuilder,
+};
 use ethers::signers::{LocalWallet, Signer as _Signer};
 use ethers::types::{Address as EthAddress, H256, U256, U64};
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 
@@ -56,7 +59,7 @@ const V3_QUOTE_EXACT_INPUT_SINGLE_LEGACY_SIG: &str = "quoteExactInputSingle(addr
 pub struct EvmAdapter {
     name: String,
     chain: ChainId,
-    provider: Provider<Http>,
+    provider: Provider<Arc<RetryClient<Http>>>,
     wallet: Option<LocalWallet>,
     contracts: Option<ZionContracts>,
     token_registry: HashMap<EthAddress, Asset>,
@@ -104,8 +107,17 @@ impl EvmAdapter {
         wallet: Option<LocalWallet>,
         contracts: Option<ZionContracts>,
     ) -> MultichainResult<Self> {
-        let provider = Provider::<Http>::try_from(rpc_url)
+        // Wrap the HTTP transport in a RetryClient so public-RPC rate limits
+        // (HTTP 429 / `over rate limit` JSON-RPC errors) are retried with
+        // exponential backoff instead of failing the call outright.
+        let http = Http::from_str(rpc_url)
             .map_err(|e| MultichainError::Config(format!("invalid EVM RPC {rpc_url}: {e}")))?;
+        let client = RetryClientBuilder::default()
+            .rate_limit_retries(10)
+            .timeout_retries(3)
+            .initial_backoff(std::time::Duration::from_millis(400))
+            .build(http, Box::new(HttpRateLimitRetryPolicy));
+        let provider = Provider::new(std::sync::Arc::new(client));
 
         let token_registry = build_token_registry(chain, contracts.as_ref());
 
