@@ -15,7 +15,7 @@ import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../lib/categoryColors';
 
 const WORLD_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
-const LAYERS = [1, 2, 3, 4, 5] as const;
+const LAYERS = [1, 2, 3, 4, 5, 6] as const;
 
 interface MainMenuProps {
   activeCategories: WorldCategory[];

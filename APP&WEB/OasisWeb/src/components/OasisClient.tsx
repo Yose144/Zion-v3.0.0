@@ -28,7 +28,7 @@ const OasisScene = dynamic(() => import('./OasisScene'), { ssr: false });
 import WorldPanel from './WorldPanel';
 
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
-const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5];
+const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5, 6];
 const MAX_FLIGHT_SPEED = 18;
 
 export default function OasisClient() {
@@ -51,6 +51,7 @@ export default function OasisClient() {
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
     return isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
   });
+  const [lowPower, setLowPower] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
   const [panelsMinimized, setPanelsMinimized] = useState(false);
   const autoHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,6 +141,20 @@ export default function OasisClient() {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Detect low-power devices (few cores / little RAM / data-saver) so the
+  // scene can drop bloom, matrix core and heavy particle counts.
+  useEffect(() => {
+    try {
+      const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+      const cores = nav.hardwareConcurrency ?? 8;
+      const memory = nav.deviceMemory ?? 8;
+      const saveData = nav.connection?.saveData === true;
+      setLowPower(cores <= 4 || memory <= 4 || saveData);
+    } catch {
+      // detection is best-effort
+    }
   }, []);
 
   // Auto-hide panels when user interacts with 3D scene (scroll/drag/touch)
@@ -352,6 +367,7 @@ export default function OasisClient() {
             baseSpeed={flightBaseSpeed}
             mobileInputRef={isMobile ? mobileInputRef : undefined}
             isMobile={isMobile}
+            lowPower={lowPower}
             compassRef={compassRef}
           />
         </div>

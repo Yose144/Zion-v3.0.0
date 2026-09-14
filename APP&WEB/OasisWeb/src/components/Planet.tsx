@@ -206,9 +206,9 @@ export default function Planet({
 }
 
 /**
- * Nova Zeme — Earth-like planet with Issobela satellite orbiting.
- * Clickable — opens WorldPanel with 3 L5 pioneer projects.
- * Bright, with 3 project markers on surface.
+ * Nova Zeme — Earth-like planet with Issobella satellite orbiting.
+ * Clickable — opens WorldPanel with the L5 pioneer projects.
+ * Bright, with 5 project markers on surface.
  */
 
 interface PioneerProject {
@@ -257,6 +257,28 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     lat: -17,
     lon: -149,
   },
+  {
+    id: 'bohemia',
+    name: 'Golden Republic Bohemia',
+    location: 'Česko',
+    color: '#f59e0b',
+    rgb: '245, 158, 11',
+    descCs: 'Governance uzel — kruh bez trůnu, Zlatá bula, most mezi mýtem a protokolem.',
+    descEn: 'Governance node — circle without a throne, Golden Bull, bridge between myth and protocol.',
+    lat: 50,
+    lon: 15,
+  },
+  {
+    id: 'bodhi-lanka',
+    name: 'Bodhi Lanka',
+    location: 'Srí Lanka',
+    color: '#84cc16',
+    rgb: '132, 204, 22',
+    descCs: 'Akasha uzel — nejstarší živý Bodhi strom, Rama Setu, Bhakti protokol.',
+    descEn: 'Akasha node — oldest living Bodhi tree, Rama Setu bridge, Bhakti protocol.',
+    lat: 8,
+    lon: 80,
+  },
 ];
 
 function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {
@@ -272,13 +294,15 @@ export function NovaZeme({
   position = [0, 0, 8] as [number, number, number],
   isMobile = false,
   onSelect,
+  onIssobellaSelect,
 }: {
   position?: [number, number, number];
   isMobile?: boolean;
   onSelect?: () => void;
+  onIssobellaSelect?: () => void;
 }) {
   const radius = isMobile ? 0.7 : 0.9;
-  const issobelaRef = useRef<THREE.Mesh>(null);
+  const issobelaRef = useRef<THREE.Group>(null);
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const issobelaOrbit = radius + 0.4;
@@ -379,15 +403,62 @@ export function NovaZeme({
         })}
       </group>
 
-      {/* Issobela — small glowing satellite (L6) */}
-      <mesh ref={issobelaRef}>
-        <boxGeometry args={[0.08, 0.08, 0.08]} />
-        <meshStandardMaterial
-          color="#38bdf8"
-          emissive="#38bdf8"
-          emissiveIntensity={1.5}
-        />
-      </mesh>
+      {/* Issobella — small glowing L6 station satellite; clicking it opens
+          the Issobella world panel (separate from the Nova Zeme surface). */}
+      <group
+        ref={issobelaRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          onIssobellaSelect?.();
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      >
+        <mesh>
+          <boxGeometry args={[0.08, 0.08, 0.08]} />
+          <meshStandardMaterial
+            color="#f0abfc"
+            emissive="#f0abfc"
+            emissiveIntensity={1.5}
+          />
+        </mesh>
+        {/* Glow halo so the tiny satellite reads as a station beacon */}
+        <mesh scale={2.4}>
+          <sphereGeometry args={[0.08, 12, 12]} />
+          <meshBasicMaterial
+            color="#f0abfc"
+            transparent
+            opacity={0.22}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+        {!isMobile && (
+          <Html position={[0, 0.18, 0]} center distanceFactor={4} style={{ pointerEvents: 'none' }}>
+            <div
+              style={{
+                background: 'rgba(240, 171, 252, 0.16)',
+                color: '#f0abfc',
+                padding: '2px 8px',
+                borderRadius: '8px',
+                fontSize: '9px',
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                whiteSpace: 'nowrap',
+                border: '1px solid rgba(240,171,252,0.45)',
+                boxShadow: '0 0 12px rgba(240,171,252,0.4)',
+              }}
+            >
+              ISSOBELLA · L6
+            </div>
+          </Html>
+        )}
+      </group>
 
       {/* Millennium Falcon-style ship in orbit around Nova Zeme */}
       {!isMobile && (
