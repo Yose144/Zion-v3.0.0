@@ -5,9 +5,12 @@ import { Send, Brain, User, Loader2, Sparkles } from 'lucide-react';
 
 const HiranyagarbhaChatCopy = {
   failedToConnectToAiPleaseTryAg: { cs: `Nepodařilo se spojit s AI. Zkuste to znovu.`, en: `Failed to connect to AI. Please try again.` },
-  zionAiNativeZionExpertModel: { cs: `ZION AI Native · zion-expert model`, en: `ZION AI Native · zion-expert model` },
+  zionAiNativeZionExpertModel: { cs: `ZION AI Native · Hiran model`, en: `ZION AI Native · Hiran model` },
   askHiranyagarbhaAnythingAboutZ: { cs: `Zeptejte se Hiranyagarbhy na cokoliv o ZIONu`, en: `Ask Hiranyagarbha anything about ZION` },
   typeAMessage: { cs: `Napište zprávu...`, en: `Type a message...` },
+  online: { cs: `Online`, en: `Online` },
+  offline: { cs: `Offline`, en: `Offline` },
+  offlineHint: { cs: `Inference uzel je momentálně offline — zkuste to později.`, en: `The inference node is currently offline — please try again later.` },
 };
 
 type Message = {
@@ -26,12 +29,29 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [online, setOnline] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch('/api/ai-chat', { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled) setOnline(res.ok && data.available === true);
+      } catch {
+        if (!cancelled) setOnline(false);
+      }
+    };
+    check();
+    const id = setInterval(check, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
 
   const sendMessage = useCallback(async (text: string) => {
     const prompt = text.trim();
@@ -95,8 +115,10 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
           </p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse" />
-          <span className="text-xs text-zion-cyan">Online</span>
+          <span className={`w-2 h-2 rounded-full ${online === false ? 'bg-zion-purple' : 'bg-zion-cyan animate-pulse'}`} />
+          <span className={`text-xs ${online === false ? 'text-zion-purple' : 'text-zion-cyan'}`}>
+            {online === null ? '…' : online ? HiranyagarbhaChatCopy.online[lang === 'cs' ? 'cs' : 'en'] : HiranyagarbhaChatCopy.offline[lang === 'cs' ? 'cs' : 'en']}
+          </span>
         </div>
       </div>
 
@@ -119,6 +141,11 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
                 </button>
               ))}
             </div>
+            {online === false && (
+              <p className="mt-4 text-xs text-zion-purple/80">
+                {HiranyagarbhaChatCopy.offlineHint[lang === 'cs' ? 'cs' : 'en']}
+              </p>
+            )}
           </div>
         )}
 

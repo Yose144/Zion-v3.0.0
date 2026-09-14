@@ -93,6 +93,50 @@ async function tryOllama(prompt: string, maxTokens: number, temp: number) {
   return { response: d.response ?? '', backend: 'ollama' };
 }
 
+/**
+ * GET /api/ai-chat — lightweight availability probe for the chat widget.
+ * Returns whether the Hiran inference backend (or a fallback) is reachable.
+ */
+export async function GET() {
+  const probe = async (url: string) => {
+    try {
+      const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } }, 4_000);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  if (await probe(`${HIRAN_API_URL}/health`)) {
+    return NextResponse.json(
+      { available: true, backend: 'hiran', model: MODEL_NAME },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  if (await probe(`${HIRAN_API_URL}/v1/models`)) {
+    return NextResponse.json(
+      { available: true, backend: 'hiran', model: MODEL_NAME },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  if (await probe(`${LMSTUDIO_URL}/v1/models`)) {
+    return NextResponse.json(
+      { available: true, backend: 'lmstudio' },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  if (await probe(`${OLLAMA_URL}/api/tags`)) {
+    return NextResponse.json(
+      { available: true, backend: 'ollama' },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  return NextResponse.json(
+    { available: false },
+    { status: 503, headers: { 'Cache-Control': 'no-store' } },
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -140,12 +184,8 @@ export async function POST(req: NextRequest) {
     }
 
     console.error('[ai-chat] All backends failed:', errors);
-    const isProd = !HIRAN_API_URL.includes('127.0.0.1') && !HIRAN_API_URL.includes('localhost');
-    const message = isProd
-      ? 'Hiran inference server is unreachable. Verify HIRAN_API_URL and ensure the inference container is running.'
-      : 'AI model is currently unavailable. Start Hiran Inference locally (llama-server on :8002, LM Studio on :1234, or Ollama on :11434), or set HIRAN_API_URL / NEXT_PUBLIC_HIRAN_API to a remote inference endpoint.';
     return NextResponse.json(
-      { error: message, backends_tried: errors, source: 'fallback' },
+      { error: 'Hiran is currently offline — the inference node is not reachable. Please try again later.', source: 'fallback' },
       { status: 503 },
     );
   } catch (err) {
