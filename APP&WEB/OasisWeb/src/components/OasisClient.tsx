@@ -52,6 +52,7 @@ export default function OasisClient() {
     return isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
   });
   const [lowPower, setLowPower] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
   const [panelsMinimized, setPanelsMinimized] = useState(false);
   const autoHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -215,6 +216,18 @@ export default function OasisClient() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!inGame) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      if (e.key === 'Escape') {
+        if (menuOpen) setMenuOpen(false);
+        else if (flightMode) handleExitFlight();
+        else if (selectedWorld) handleCloseWorld();
+        return;
+      }
+      if (e.key.toLowerCase() === 'm') {
+        setMenuOpen((o) => !o);
+        return;
+      }
       if (e.key.toLowerCase() === 'h') {
         setUiHidden((h) => !h);
         return;
@@ -235,7 +248,7 @@ export default function OasisClient() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [inGame, flightMode, view]);
+  }, [inGame, flightMode, view, selectedWorld, menuOpen]);
 
   if (!mounted) {
     return (
@@ -277,9 +290,13 @@ export default function OasisClient() {
   const handleWorldSelect = (world: World) => {
     if (!inGame) return;
     if (flightMode) setFlightMode(false);
+    const firstDiscovery = !discoveredWorlds.includes(world.id);
     setSelectedWorld(world);
     setView('galaxy');
     discoverWorld(world.id);
+    if (firstDiscovery) {
+      addToast(`New world discovered: ${world.name}`, 'success', 2500);
+    }
   };
 
   const handleCloseWorld = () => {
@@ -373,6 +390,8 @@ export default function OasisClient() {
         </div>
         {inGame && (
           <MainMenu
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
             activeCategories={activeCategories}
             onCategoriesChange={setActiveCategories}
             activeLayers={activeLayers}

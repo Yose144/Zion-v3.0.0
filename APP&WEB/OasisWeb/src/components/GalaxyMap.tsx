@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
+import { useGameStore } from '../store/gameStore';
 import WorldNode from './World';
 import Hyperlanes from './Hyperlanes';
 
@@ -29,6 +30,8 @@ interface GalaxyMapProps {
 export default function GalaxyMap({ worlds, activeCategories, activeLayers, selectedWorldId, onWorldSelect, isMobile = false }: GalaxyMapProps) {
   const groupRef = useRef<THREE.Group>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
+  const discoveredWorlds = useGameStore((s) => s.discoveredWorlds);
+  const discoveredSet = useMemo(() => new Set(discoveredWorlds), [discoveredWorlds]);
 
   const visibleWorlds = useMemo(
     () => worlds.filter((w) => {
@@ -93,6 +96,7 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
             category={w.category}
             showLabel={isSelected}
             isSelected={isSelected}
+            isDiscovered={discoveredSet.has(w.id)}
             isMobile={isMobile}
             onSelect={() => onWorldSelect?.(w)}
           />

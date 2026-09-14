@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { createRandom } from '../domain/ports/random';
+import { useGameStore } from '../store/gameStore';
 
 interface WarpIntroProps {
   speed?: number;
@@ -18,6 +19,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [warping, setWarping] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const worldCount = useGameStore((s) => s.worlds.length);
 
   const currentSpeed = useRef(speed);
   const targetSpeed = useRef(speed);
@@ -233,8 +235,8 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
               <p className="mt-4 text-xs tracking-wider text-white/45">— CARL SAGAN, CONTACT</p>
 
               <p className="mt-6 text-xs text-white/50 leading-relaxed max-w-md">
-                OASIS Preview — explore 55 worlds across the galaxy.
-                Find Nova Zeme, discover the Tree of Life, search for the Golden Egg.
+                OASIS Preview — explore {worldCount} worlds across six galactic layers.
+                Find Nova Zeme, dock at Issobella, search for the Golden Egg.
               </p>
 
               <motion.button
@@ -247,7 +249,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </motion.button>
 
-              <p className="mt-3 text-[10px] text-white/30">55 worlds · Golden Egg · Nova Zeme · Issobella</p>
+              <p className="mt-3 text-[10px] text-white/30">{worldCount} worlds · 6 layers · Golden Egg · Nova Zeme · Issobella</p>
             </motion.div>
           )}
         </AnimatePresence>

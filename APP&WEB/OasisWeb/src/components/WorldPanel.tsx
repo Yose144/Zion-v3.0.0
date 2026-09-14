@@ -9,7 +9,8 @@ import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { discoverWorldClue, scanWorld as apiScanWorld, approachWorld as apiApproachWorld, awardPlayerXp, completePlayerQuest } from '../lib/api';
 import { useAudio } from './AudioEngine';
 import { useToastStore } from '../store/toastStore';
-import { CATEGORY_COLORS, CATEGORY_RGB, CATEGORY_LABELS } from '../lib/categoryColors';
+import { CATEGORY_COLORS, CATEGORY_RGB, CATEGORY_LABELS, LAYER_NAMES } from '../lib/categoryColors';
+import { NOVA_ZEME_PROJECTS } from '../lib/novaZemeProjects';
 
 const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   exploration: Compass,
@@ -22,54 +23,8 @@ const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
 /* Re-export for backwards compatibility; authoritative values live in ../lib/categoryColors */
 export { CATEGORY_COLORS, CATEGORY_RGB, CATEGORY_LABELS };
 
-/* ── Nova Zeme L5 Pioneer Projects (from web2.9 TerraNova) ── */
-const NOVA_ZEME_PROJECTS = [
-  {
-    id: 'genesis',
-    name: 'Zahrada Genesis',
-    location: 'Algarve · Portugalsko',
-    color: '#10b981',
-    status: 'Active',
-    desc: 'Atlantický uzel Terra Nova — organická farma, glamping, solar off-grid, surf a sázení stromů. První dlouhodobá komunitní infrastruktura.',
-    href: 'https://app.zionterranova.com/terranova/genesis',
-  },
-  {
-    id: 'dharma',
-    name: 'Dharma Temple',
-    location: 'La Palma · Kanárské ostrovy',
-    color: '#8b5cf6',
-    status: 'Prep',
-    desc: 'Spirituální a vzdělávací uzel — meditace, syntropic zahrada, dharma governance, vulkanická krajina, off-grid voda. UNESCO Biosphere Reserve.',
-    href: 'https://app.zionterranova.com/terranova/dharma-temple',
-  },
-  {
-    id: 'piko-ora',
-    name: 'Te Pīko Ora',
-    location: 'Tahiti · Francouzská Polynésie',
-    color: '#06b6d4',
-    status: 'Planned',
-    desc: 'Tichomořský uzel — ochrana mořského i pozemského dědictví, regenerativní komunita, kulturní most mezi Polynésií a ZION.',
-    href: 'https://app.zionterranova.com/terranova/te-piko-ora',
-  },
-  {
-    id: 'bohemia',
-    name: 'Golden Republic Bohemia',
-    location: 'Čechy · Česká republika',
-    color: '#ffd700',
-    status: 'Planned',
-    desc: 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost (sůl, most, Zlatá bula) a ZION protokol v srdci Evropy.',
-    href: 'https://app.zionterranova.com/terranova/golden-republic-bohemia',
-  },
-  {
-    id: 'bodhi-lanka',
-    name: 'Bodhi Lanka',
-    location: 'Srí Lanka',
-    color: '#f59e0b',
-    status: 'Planned',
-    desc: 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.',
-    href: 'https://app.zionterranova.com/terranova/bodhi-lanka',
-  },
-];
+/* Nova Zeme L5 Pioneer Projects live in ../lib/novaZemeProjects.ts —
+   shared with the in-world beacon markers in WorldEnvironment. */
 
 interface WorldPanelProps {
   world: World;
@@ -264,7 +219,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
           </h2>
           <div className="mt-1 flex items-center gap-2 text-xs text-white/70">
             <Layers className="h-3 w-3" style={{ color }} />
-            <span>Layer {world.layer}</span>
+            <span>Layer {world.layer} · {LAYER_NAMES[world.layer] ?? 'Unknown'}</span>
           </div>
           <div className="mt-2 w-24">
             <div className="flex items-center justify-between text-[10px] text-white/70">
@@ -583,19 +538,24 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
           </button>
         </div>
 
-        <button
-          onClick={onEnter}
-          className="group mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-all"
-          style={{
-            backgroundColor: color,
-            boxShadow: `0 0 28px ${color}44`,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.boxShadow = `0 0 44px ${color}66`)}
-          onMouseLeave={(e) => (e.currentTarget.style.boxShadow = `0 0 28px ${color}44`)}
+        {/* Sticky CTA — stays visible while the panel scrolls */}
+        <div className="sticky bottom-0 -mx-4 mt-3 px-4 pb-1 pt-6 sm:-mx-5 sm:px-5"
+          style={{ background: 'linear-gradient(to top, rgba(8,10,20,0.95) 55%, transparent)' }}
         >
-          <Sparkles className="h-4 w-4" />
-          Enter this world
-        </button>
+          <button
+            onClick={onEnter}
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-all"
+            style={{
+              backgroundColor: color,
+              boxShadow: `0 0 28px ${color}44`,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.boxShadow = `0 0 44px ${color}66`)}
+            onMouseLeave={(e) => (e.currentTarget.style.boxShadow = `0 0 28px ${color}44`)}
+          >
+            <Sparkles className="h-4 w-4" />
+            Enter this world
+          </button>
+        </div>
       </div>
     </motion.div>
   );

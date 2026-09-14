@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mouse, Keyboard, Plane, CircleDot, Egg, Wallet } from 'lucide-react';
+import { useGameStore } from '../store/gameStore';
 
 const SEEN_KEY = 'oasis-onboarding-seen';
 
@@ -17,6 +18,7 @@ const HINTS = [
 
 export default function OnboardingHint({ onClose }: { onClose?: () => void }) {
   const [visible, setVisible] = useState(false);
+  const worldCount = useGameStore((s) => s.worlds.length);
 
   useEffect(() => {
     const seen = typeof window !== 'undefined' ? localStorage.getItem(SEEN_KEY) : null;
@@ -53,7 +55,7 @@ export default function OnboardingHint({ onClose }: { onClose?: () => void }) {
               <span className="zion-kicker text-[9px] py-1 px-2">Onboarding</span>
               <h2 className="mt-1.5 text-lg font-bold text-white">Welcome, Pilgrim</h2>
               <p className="mt-0.5 text-[11px] leading-relaxed text-white/80">
-                Explore 55 OASIS worlds, complete quests, and collect Golden Eggs.
+                Explore {worldCount} OASIS worlds, complete quests, and collect Golden Eggs.
               </p>
             </div>
             <button

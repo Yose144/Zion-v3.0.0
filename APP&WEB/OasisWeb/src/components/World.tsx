@@ -97,6 +97,7 @@ export interface WorldNodeProps {
   category: string;
   showLabel?: boolean;
   isSelected?: boolean;
+  isDiscovered?: boolean;
   isMobile?: boolean;
   onSelect?: (id: string) => void;
 }
@@ -111,6 +112,7 @@ export default function World({
   category,
   showLabel = false,
   isSelected = false,
+  isDiscovered = true,
   isMobile = false,
   onSelect,
 }: WorldNodeProps) {
@@ -183,10 +185,15 @@ export default function World({
           map={surfaceTexture ?? undefined}
           color={surfaceTexture ? '#ffffff' : color}
           emissive={color}
-          emissiveIntensity={surfaceTexture ? (hovered || selected ? 0.55 : 0.3) : hovered || selected ? 0.9 : 0.55}
+          emissiveIntensity={
+            (surfaceTexture ? (hovered || selected ? 0.55 : 0.3) : hovered || selected ? 0.9 : 0.55)
+            * (isDiscovered || hovered || selected ? 1 : 0.45)
+          }
           roughness={0.4}
           metalness={0.1}
           toneMapped={false}
+          transparent={!isDiscovered}
+          opacity={isDiscovered || hovered || selected ? 1 : 0.55}
         />
       </mesh>
 
@@ -223,7 +230,7 @@ export default function World({
       {/* Rotating ring */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[displaySize * 1.45, displaySize * 1.5, 24]} />
-        <meshBasicMaterial color={color} transparent opacity={hovered || selected ? 0.55 : 0.22} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={(hovered || selected ? 0.55 : isDiscovered ? 0.22 : 0.08)} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Warp gate ring (star systems + selected) */}
@@ -245,11 +252,12 @@ export default function World({
         </group>
       )}
 
-      {/* Permanent small label for selected / star systems */}
-      {((showLabel || selected) && (!isMobile || selected)) && (
+      {/* Name label — always on for selected/star systems, and on hover
+          (desktop only) so players can identify worlds before clicking. */}
+      {((showLabel || selected || hovered) && (!isMobile || selected)) && (
         <Html distanceFactor={isDistant ? undefined : 14} center position={[0, displaySize + 0.65, 0]}>
           <div className="pointer-events-none select-none rounded border border-white/10 bg-black/70 px-2 py-1 text-center shadow-lg backdrop-blur-sm">
-            <span className="text-[9px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{name}</span>
+            <span className="whitespace-nowrap text-[9px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{name}</span>
           </div>
         </Html>
       )}
