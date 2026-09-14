@@ -345,32 +345,46 @@ export default function L5FreeWorldPage() {
 
         {/* ── HERO ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-          <div className="space-y-5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
-              <Globe2 className="h-4 w-4" />
-              L5 · Terra Nova · Free World
-            </div>
-            <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {L5FreeWorldCopy.physicalLayerOfTheZionEcosyste[cs ? 'cs' : 'en']}
+          <div className="space-y-5">
+            <div className="space-y-5 max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
+                <Globe2 className="h-4 w-4" />
+                L5 · Terra Nova · Free World
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
+                  {L5FreeWorldCopy.physicalLayerOfTheZionEcosyste[cs ? 'cs' : 'en']}
+                </p>
+                <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
+                  {L5FreeWorldCopy.freeWorldL5[cs ? 'cs' : 'en']}
+                </h1>
+              </div>
+              <p className="text-lg text-gray-300">
+                {L5FreeWorldCopy.l5IsThePhysicalLayerOfZionWher[cs ? 'cs' : 'en']}
               </p>
-              <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {L5FreeWorldCopy.freeWorldL5[cs ? 'cs' : 'en']}
-              </h1>
+              <div className="flex flex-wrap gap-3 text-xs">
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
+                  <Heart className="h-3 w-3" /> {L5FreeWorldCopy.k5OfEveryBlockL5Fund[cs ? 'cs' : 'en']}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
+                  <CheckCircle2 className="h-3 w-3" /> {L5FreeWorldCopy.k117mZionMonth[cs ? 'cs' : 'en']}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
+                  <Sparkles className="h-3 w-3" /> {L5FreeWorldCopy.fundActiveFromGenesis[cs ? 'cs' : 'en']}
+                </span>
+              </div>
             </div>
-            <p className="text-lg text-gray-300">
-              {L5FreeWorldCopy.l5IsThePhysicalLayerOfZionWher[cs ? 'cs' : 'en']}
-            </p>
-            <div className="flex flex-wrap gap-3 text-xs">
-              <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
-                <Heart className="h-3 w-3" /> {L5FreeWorldCopy.k5OfEveryBlockL5Fund[cs ? 'cs' : 'en']}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-emerald-200">
-                <CheckCircle2 className="h-3 w-3" /> {L5FreeWorldCopy.k117mZionMonth[cs ? 'cs' : 'en']}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Sparkles className="h-3 w-3" /> {L5FreeWorldCopy.fundActiveFromGenesis[cs ? 'cs' : 'en']}
-              </span>
+            <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/l5-free-world/hero.webp"
+                alt={cs ? 'L5 Free World — pět komunit Terra Nova ve fyzickém světě' : 'L5 Free World — the five Terra Nova communities in the physical world'}
+                width={1280}
+                height={720}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
             </div>
           </div>
         </motion.section>
