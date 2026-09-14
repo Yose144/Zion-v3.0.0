@@ -1,6 +1,13 @@
 import type { World } from '../domain/types/world';
 
-const API = process.env.NEXT_PUBLIC_OASIS_API_URL ?? 'http://127.0.0.1:8094';
+// API base. Explicit env var wins. Otherwise: same-origin in production
+// (nginx proxies /api/ + /health to the OASIS backend on the same domain);
+// direct backend URL on localhost dev.
+const API =
+  process.env.NEXT_PUBLIC_OASIS_API_URL ??
+  (typeof window !== 'undefined' && !['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? ''
+    : 'http://127.0.0.1:8094');
 
 export interface ApiResponse<T> {
   success: boolean;
