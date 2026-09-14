@@ -46,6 +46,9 @@ export const CORE = {
 
   /** WARP daemon — runs locally on Edge (port 8453) */
   warp: `http://127.0.0.1:8453`,
+
+  /** OASIS game backend (L4) — runs locally on Edge (port 8094) */
+  oasis: `http://127.0.0.1:8094`,
 } as const;
 
 /** Resolve a Core endpoint, allowing env-var override for dev/test. */
