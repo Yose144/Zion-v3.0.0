@@ -159,16 +159,17 @@ ZIS → L2 multichain API
 
 ### Chybí 🔴
 
-| # | Co | Priorita | Effort |
-|---|----|---------|--------|
-| 1 | **Swap executor → Uniswap V3** — přepnout z vlastního AMM na Uni V3 SwapRouter02 | High | 2d |
-| 2 | **Staking UI** — `/wallet/staking` page se stake/unstake/claim | High | 1d |
-| 3 | **Bridge UI** — `/wallet/bridge` page (L1→L2 deposit instrukce, L2→L1 burn) | Medium | 1d |
-| 4 | **Solana deposit watching** — L2 adapter pro Solana SPL transfers | Medium | 2d |
-| 5 | **Wallet SDK npm publish** — nový npm token, publish `zion-wallet-sdk` | Medium | 30min |
-| 6 | **Desktop app** — Electron + zion-wallet-sdk (non-custodial) | Low | 1-2t |
-| 7 | **Mobile app** — React Native + zion-wallet-sdk | Low | 2-3t |
-| 8 | **HSM/Vault pro L2 seed** — security hardening | Low | 1t |
+| # | Co | Priorita | Effort | Stav (2026-09-14) |
+|---|----|---------|--------|-------------------|
+| 1 | **Swap executor → Uniswap V3** — přepnout z vlastního AMM na Uni V3 SwapRouter02 | High | 2d | ✅ Hotovo — `swap_executor.rs` routuje přes `v3_swap`/SwapRouter02 |
+| 2 | **Staking UI** — `/wallet/staking` page se stake/unstake/claim | High | 1d | ✅ Hotovo — `StakingPanel`, non-custodial přes MetaMask |
+| 3 | **Bridge UI** — `/wallet/bridge` page (L1→L2 deposit instrukce, L2→L1 burn) | Medium | 1d | ✅ Hotovo — `/wallet/bridge` + bridge/validator panely v `/multichain#bridge` |
+| 4 | **Solana deposit watching** — L2 adapter pro Solana SPL transfers | Medium | 2d | 🟡 Kód hotový (`solana.rs`: ATA discovery, outer+inner SPL parsing, slot confirmations, DB dedup); `enabled=false` v `warp.toml` — čeká na deploy reálného ZION SPL mintu; outbound = `Unsupported` |
+| 5 | **Wallet SDK npm publish** — nový npm token, publish `zion-wallet-sdk` | Medium | 30min | ⛔ Blokováno — expired npm token, potřeba nový |
+| 6 | **Desktop app** — Electron + zion-wallet-sdk (non-custodial) | Low | 1-2t | ❌ Odloženo |
+| 7 | **Mobile app** — React Native + zion-wallet-sdk | Low | 2-3t | ❌ Odloženo |
+| 8 | **HSM/Vault pro L2 seed** — security hardening | Low | 1t | ❌ Post-3.2 |
+| 9 | **Dedikovaný Base RPC** — Alchemy/QuickNode klíč do `warp.toml` | Medium | 15min | ⛔ Blokováno — public `mainnet.base.org` sdílí rate-limit budget; interní retry+backoff v `EvmAdapter` nasazen jako mitigace |
 
 ---
 
