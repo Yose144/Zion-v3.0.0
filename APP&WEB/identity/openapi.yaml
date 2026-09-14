@@ -1,0 +1,446 @@
+openapi: 3.0.3
+info:
+  title: ZIS — ZION Identity Service
+  version: 3.2.0
+  description: |
+    ZION Identity Service (auth.zionterranova.com). Issues `zion_session`
+    httpOnly JWT cookies scoped to `.zionterranova.com`, manages linked
+    chain addresses (zion-l1, EVM, bitcoin), API keys, and proxies
+    custodial wallet operations to the L2 multichain service.
+
+    Authentication: `zion_session` cookie (browser) or `Authorization:
+    Bearer <jwt>` / API key for programmatic access.
+servers:
+  - url: https://auth.zionterranova.com
+  - url: http://127.0.0.1:8096
+    description: Edge local
+
+tags:
+  - name: auth
+  - name: session
+  - name: keys
+  - name: wallet
+  - name: meta
+
+paths:
+  /health:
+    get:
+      tags: [meta]
+      summary: Liveness
+      security: []
+      responses:
+        '200': { description: Service alive }
+  /health/live:
+    get:
+      tags: [meta]
+      security: []
+      responses:
+        '200': { description: '{ "status": "alive" }' }
+  /health/ready:
+    get:
+      tags: [meta]
+      security: []
+      responses:
+        '200': { description: Ready (DB reachable) }
+        '503': { description: Not ready }
+
+  /.well-known/zion-identity:
+    get:
+      tags: [meta]
+      summary: Service discovery document
+      security: []
+      responses:
+        '200': { description: ZIS identity metadata }
+  /.well-known/jwks.json:
+    get:
+      tags: [meta]
+      summary: JWKS for session JWT verification
+      security: []
+      responses:
+        '200': { description: JSON Web Key Set }
+
+  /api/auth/challenge:
+    post:
+      tags: [auth]
+      summary: Request a sign-in challenge for an address
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address: { type: string, minLength: 8 }
+                chainType:
+                  type: string
+                  enum: [zion-l1, evm, bitcoin]
+                  default: zion-l1
+      responses:
+        '200':
+          description: Challenge to sign
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  challenge: { type: string }
+                  chainType: { type: string }
+                  expiresInMs: { type: integer, example: 300000 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /api/auth/verify/ed25519:
+    post:
+      tags: [auth]
+      summary: Verify ZION L1 wallet signature, issue session cookie
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, publicKey, signature]
+              properties:
+                address: { type: string, example: zion1... }
+                publicKey: { type: string, description: hex Ed25519 pubkey }
+                signature: { type: string, description: hex signature over the challenge }
+      responses:
+        '200': { description: Session issued; `zion_session` cookie set; returns user object }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/verify/siwe:
+    post:
+      tags: [auth]
+      summary: Verify SIWE (EIP-4361) message, issue session cookie
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, message, signature]
+              properties:
+                address: { type: string, example: '0x…' }
+                message: { type: string, description: raw SIWE message }
+                signature: { type: string, description: 0x-prefixed hex }
+                recoveredAddress: { type: string, deprecated: true }
+      responses:
+        '200': { description: Session issued; returns user object }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/verify/google:
+    post:
+      tags: [auth]
+      summary: Verify Google ID token, issue session cookie
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken: { type: string }
+      responses:
+        '200': { description: Session issued; returns user object }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      summary: Current authenticated user (incl. linkedAddresses, oasisPlayer)
+      responses:
+        '200': { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [auth]
+      summary: Update profile fields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName: { type: string, maxLength: 64 }
+                email: { type: string, format: email, nullable: true }
+                avatar: { type: string, format: uri, nullable: true }
+                bio: { type: string, maxLength: 512, nullable: true }
+      responses:
+        '200': { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      summary: Revoke current session, clear cookie
+      responses:
+        '200': { description: '{ "ok": true }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/link:
+    post:
+      tags: [auth]
+      summary: Link an additional chain address to the account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, chainType, signature]
+              properties:
+                address: { type: string }
+                chainType: { type: string, enum: [zion-l1, evm, bitcoin] }
+                chainId: { type: string }
+                publicKey: { type: string, description: Ed25519 linking }
+                signature: { type: string }
+                message: { type: string, description: SIWE linking }
+      responses:
+        '200': { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/session:
+    get:
+      tags: [session]
+      summary: List active sessions
+      responses:
+        '200': { description: Session list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/session/{jti}:
+    delete:
+      tags: [session]
+      summary: Revoke one session by JWT id
+      parameters:
+        - name: jti
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found }
+  /api/session/revoke-all:
+    post:
+      tags: [session]
+      summary: Revoke all sessions except the current one
+      responses:
+        '200': { description: Revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/keys:
+    post:
+      tags: [keys]
+      summary: Create an API key (shown once)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label: { type: string, maxLength: 64 }
+      responses:
+        '200': { description: '{ id, label, key }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    get:
+      tags: [keys]
+      summary: List API keys (metadata only)
+      responses:
+        '200': { description: Key list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/keys/{id}:
+    delete:
+      tags: [keys]
+      summary: Revoke an API key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/keys/verify:
+    post:
+      tags: [keys]
+      summary: Verify an API key (service-to-service)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [apiKey]
+              properties:
+                apiKey: { type: string, minLength: 16 }
+      responses:
+        '200': { description: '{ valid: true, userId, ... }' }
+        '401': { description: Invalid key }
+
+  /api/wallet/me:
+    get:
+      tags: [wallet]
+      summary: Wallet overview for the authenticated user
+      responses:
+        '200': { description: Wallet snapshot }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/derive:
+    post:
+      tags: [wallet]
+      summary: Derive a per-user deposit address for a chain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chain]
+              properties:
+                chain: { type: string, example: base }
+                chainId: { type: string }
+                purpose: { type: string, enum: [deposit, withdraw, linked], default: deposit }
+      responses:
+        '200': { description: Derived address }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/balances:
+    get:
+      tags: [wallet]
+      summary: Custodial balances across chains
+      responses:
+        '200': { description: Balance list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/swap:
+    post:
+      tags: [wallet]
+      summary: Execute a custodial swap (proxied to L2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to, amount]
+              properties:
+                from: { type: string }
+                to: { type: string }
+                amount: { type: string }
+                minAmountOut: { type: string }
+                recipient: { type: string }
+      responses:
+        '200': { description: Swap result }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/orders:
+    get:
+      tags: [wallet]
+      summary: Swap/order history
+      responses:
+        '200': { description: Order list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/withdraw:
+    post:
+      tags: [wallet]
+      summary: Withdraw to an external address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset, amount, recipient]
+              properties:
+                asset: { type: string }
+                amount: { type: string }
+                recipient: { type: string }
+      responses:
+        '200': { description: Withdrawal submitted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/deposits:
+    get:
+      tags: [wallet]
+      summary: Deposit history
+      responses:
+        '200': { description: Deposit list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/withdrawals:
+    get:
+      tags: [wallet]
+      summary: Withdrawal history
+      responses:
+        '200': { description: Withdrawal list }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/wallet/quote:
+    get:
+      tags: [wallet]
+      summary: Swap quote (public)
+      security: []
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: amount, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Quote }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: zion_session
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        primaryAddress: { type: string }
+        displayName: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        avatar: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+        role: { type: string, example: user }
+        loginCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        linkedAddresses:
+          type: array
+          items:
+            type: object
+            properties:
+              address: { type: string }
+              chainType: { type: string, enum: [zion-l1, evm, bitcoin, google] }
+              chainId: { type: string, nullable: true }
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: BAD_REQUEST }
+              details: { type: array, items: { type: object } }
+    Unauthorized:
+      description: Missing or invalid session
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: UNAUTHORIZED }
+
+security:
+  - sessionCookie: []
+  - bearerAuth: []

@@ -54,7 +54,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G4** | Public subtree diff = 0 | Public MIT repo out of sync | ✅ Complete (`git push public public-split:main --dry-run` = "Everything up-to-date" at `fbc5e02f2`) |
 | **G5** | XMR / RandomX path (reach pool or `disabled_reason`) | No reachable pure-RandomX pool from Edge datacenter | ✅ Complete — MoneroOcean `gulf.moneroocean.stream:10001` reachable over plain TCP; CryptonoteStratum handshake returns `rx/0` jobs; `zion-miner` CryptonoteStratum job parsing, compact target parsing, worker login, and share formatting fixed; `cargo test -p zion-miner --lib` 103 pass | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md`](./REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md) |
 | **G6** | PRL (Pearl PoUW) deferred and excluded | Must remain documented and excluded from profit switching | ✅ Documented |
-| **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ✅ Complete — 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived with real rigs unaffected, DEX quote overload 1 972 req/s 100 % 200, bridge submit overload 1 793 req/s no crash, P2P reconnect storm OK; 10-minute transaction fuzz preview passed (2 280 requests, 0 health fails); full 24h fuzzing pending per F2 | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
+| **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ✅ Complete — 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived with real rigs unaffected, DEX quote overload 1 972 req/s 100 % 200, bridge submit overload 1 793 req/s no crash, P2P reconnect storm OK; 10-minute transaction fuzz preview passed (2 280 requests, 0 health fails); full 24h fuzz evidence complete per F2 (305 170 req, 0 health fails) | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | 🔄 In progress — started 2026-08-23 07:00 CET; target end 2026-09-22 07:00 CET; public status UI at `https://app.zionterranova.com/g8`; monitoring tracked via dashboard `/api/g8` |
 | **G9** | External security audit (L1/L2) — planned before launch | Internal tests pass; no formal review on record | ❌ Not started — external review scheduled before public launch |
 | **G10** | L5/L6 decision — treasury, humanitarian fund, Issobella governance | Must have defined run mode or explicit post-3.2 deferral | ✅ Decision made — activate as passive read-only fund trackers + DAO proposal bridge; active on Edge as passive read-only fund trackers on `127.0.0.1:8095` (L5) and `127.0.0.1:8097` (L6); not a 3.2.0 blocker; full disbursement/UI post-3.2 (see [`L5_L6_ACTIVATION_PLAN.md`](./L5_L6_ACTIVATION_PLAN.md)) |
@@ -118,14 +118,14 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 | # | Task | Status |
 |---|------|--------|
-| I1 | ZIS OpenAPI design | 🔄 In progress — Fastify routes (`/api/auth`, `/api/session`, `/api/keys`, `/health`, `/.well-known`) implemented; formal OpenAPI spec still to be committed |
+| I1 | ZIS OpenAPI design | ✅ Complete — `APP&WEB/identity/openapi.yaml` covers all live routes (auth, session, keys, wallet proxy, health, well-known) |
 | I2 | ZIS server implementation (`APP&WEB/identity/`) | ✅ Complete — Fastify 4 server with Ed25519 + SIWE verify, sessions, API keys, rate limiting deployed on Edge |
 | I3 | Unified Prisma schema | ✅ Complete — `APP&WEB/shared/prisma/schema.prisma` covers User, LinkedAddress, Session, ApiKey, OASIS, Marketplace, DAO, Mining, Bridge, DEX, Notifications |
 | I4 | Deploy ZIS on Edge | ✅ Complete — `zion-zis.service` active, `https://auth.zionterranova.com/health` 200 |
 | I5 | Cross-domain cookie SSO | ✅ Complete — `zion_session` cookie on `.zionterranova.com`, httpOnly, secure, signed, 7-day expiry |
 | I6 | EVM wallet auth (SIWE) | ✅ Complete — `POST /api/auth/verify/siwe` verifies EIP-4361 messages with `siwe` library |
 | I7 | Link EVM + ZION addresses | ✅ Complete — `POST /api/auth/link` binds additional addresses to a user after signed challenge |
-| I8 | API keys for programmatic access | 🔄 In progress — `APP&WEB/identity/src/routes/apikey.ts` implemented; final public CLI/script flows need evidence |
+| I8 | API keys for programmatic access | ✅ Complete — E2E na produkci 2026-09-14: ed25519 challenge → session → `POST /api/keys` (`zis_…` key, shown once) → `/api/keys/verify` (valid, správný owner, `lastUsed` aktualizováno) → list → revoke → verify po revoku 401 → logout |
 
 ### Phase J — Cross-App Integration (parallel with E–F)
 
