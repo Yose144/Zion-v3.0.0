@@ -15,6 +15,7 @@ import {
   createCoronaTexture,
   planetSecondaryColor,
 } from '../lib/planetTexture';
+import { NOVA_ZEME_PROJECTS } from '../lib/novaZemeProjects';
 
 /**
  * Fresnel-based atmosphere glow — the rim brightens with viewing angle like
@@ -316,6 +317,50 @@ function IssobellaStation({ color, size, seed, isMobile }: { color: string; size
   );
 }
 
+/** lat/lon → position on a sphere of radius r (three.js Y-up). */
+function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lon + 180) * (Math.PI / 180);
+  return [
+    -r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta),
+  ];
+}
+
+/** L5 pioneer project beacons on the Nova Zeme globe — one glowing
+ *  marker per real-world Terra Nova node, labelled on desktop. */
+function NovaZemeBeacons({ size, isMobile }: { size: number; isMobile: boolean }) {
+  const glowTex = useMemo(() => createGlowTexture('#ffffff'), []);
+
+  return (
+    <group>
+      {NOVA_ZEME_PROJECTS.map((p) => {
+        const pos = latLonToVec3(p.lat, p.lon, size * 1.02);
+        return (
+          <group key={p.id} position={pos}>
+            {/* Beacon spike — points outward from the surface */}
+            <mesh>
+              <octahedronGeometry args={[size * 0.055]} />
+              <meshBasicMaterial color={p.color} toneMapped={false} />
+            </mesh>
+            <sprite scale={[size * 0.35, size * 0.35, 1]}>
+              <spriteMaterial map={glowTex} color={p.color} transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} />
+            </sprite>
+            {!isMobile && (
+              <Html position={[0, size * 0.16, 0]} center distanceFactor={8}>
+                <div className="pointer-events-none select-none whitespace-nowrap rounded border border-white/10 bg-black/70 px-1.5 py-0.5 text-center shadow-lg backdrop-blur-sm">
+                  <span className="text-[8px] font-bold tracking-wide" style={{ color: p.color }}>{p.name}</span>
+                </div>
+              </Html>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 function AvatarHologram({ world, color, size }: { world: World; color: string; size: number }) {
   const { realQuests, avatars } = useGameStore();
   const spriteRef = useRef<THREE.Sprite>(null);
@@ -443,6 +488,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
           <AtmosphereSphere color={color} size={size} />
           <OrbitRing radius={size * 2.2} color={color} texture={ringTexture} />
           {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#d4d4d4" distance={size * 2.4} sizeBase={0.06} />}
+          {world.id === 'NOVA_ZEME' && <NovaZemeBeacons size={size} isMobile={isMobile} />}
           <WorldParticles count={Math.floor(200 * mobileFactor)} color={color} seed={seed} radius={6} />
           <AvatarHologram world={world} color={color} size={size} />
         </>

@@ -22,8 +22,10 @@ const COLORS = {
 export default function ToastContainer() {
   const { toasts, remove } = useToastStore();
 
+  // Top-center — keeps toasts clear of the world panel CTA (bottom-right)
+  // and mobile controls (bottom).
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[70] flex w-full max-w-xs flex-col gap-2 sm:bottom-6 sm:right-6">
+    <div className="pointer-events-none fixed left-1/2 top-14 z-[70] flex w-full max-w-xs -translate-x-1/2 flex-col items-center gap-2 sm:top-16">
       <AnimatePresence>
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onRemove={remove} />
@@ -43,7 +45,7 @@ function ToastItem({ toast, onRemove }: { toast: ReturnType<typeof useToastStore
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: 40, scale: 0.95 }}
       className={`pointer-events-auto flex items-start gap-2.5 rounded-xl border p-3 shadow-lg backdrop-blur-md ${COLORS[toast.type]}`}

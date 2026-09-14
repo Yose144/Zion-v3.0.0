@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Stars, Environment } from '@react-three/drei';
+import { OrbitControls, Stars, Environment, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
@@ -150,6 +150,17 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
   );
 }
 
+/** Fallback renderer — CameraRig's useFrame runs at priority 1, which puts
+ *  R3F in manual-render mode. When EffectComposer is mounted it does the
+ *  rendering; when it's unmounted (reduced-effects path) nothing would draw
+ *  and the canvas would freeze on its last frame. This takes over then. */
+function DirectRenderer() {
+  useFrame(({ gl, scene, camera }) => {
+    gl.render(scene, camera);
+  }, 1);
+  return null;
+}
+
 function UniverseRotator({
   groupRef,
   flightMode,
@@ -217,9 +228,13 @@ export default function OasisScene({
   const universeRef = useRef<THREE.Group>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const getWorldById = (id: string) => worlds.find((w) => w.id === id);
+  // Adaptive quality: if fps drops below the lower bound for a while,
+  // degrade effects for the rest of the session (one-way — avoids
+  // oscillating bloom on/off which would itself cost frames).
+  const [perfLow, setPerfLow] = useState(false);
   // Reduce heavy effects on mobile and on low-power devices (few cores,
   // little RAM, or data-saver). Keeps the scene fluid everywhere.
-  const reduceEffects = isMobile || lowPower;
+  const reduceEffects = isMobile || lowPower || perfLow;
 
   return (
     <div
@@ -244,10 +259,12 @@ export default function OasisScene({
           toneMappingExposure: 1.15,
           failIfMajorPerformanceCaveat: false,
         }}
-        onCreated={({ gl, camera }) => {
+        onCreated={({ gl, camera, scene }) => {
           gl.setClearColor(new THREE.Color('#05060a'), 1);
-          // Expose camera for debugging/testing — lets E2E verify position.
+          // Expose camera/scene for debugging/testing — lets E2E verify position.
           (window as unknown as { __oasisCamera?: THREE.Camera }).__oasisCamera = camera;
+          (window as unknown as { __oasisScene?: THREE.Scene }).__oasisScene = scene;
+          (window as unknown as { __oasisGl?: THREE.WebGLRenderer }).__oasisGl = gl;
           if (isMobile) {
             camera.lookAt(0, 0.5, 0);
           }
@@ -459,16 +476,29 @@ export default function OasisScene({
 
         {flightMode && <PilgrimShip speed={flightSpeed} />}
 
-        {!reduceEffects && (
+        {!reduceEffects ? (
           <EffectComposer multisampling={2}>
             <Bloom intensity={0.62} luminanceThreshold={0.35} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
             <HueSaturation saturation={0.28} />
             <BrightnessContrast brightness={0.02} contrast={0.12} />
             <Vignette eskil={false} offset={0.22} darkness={0.7} />
           </EffectComposer>
+        ) : (
+          <DirectRenderer />
         )}
 
         {compassRef && <CameraCompassTracker compassRef={compassRef} />}
+
+        {/* Adaptive quality — one-way degrade to the light pipeline when
+            sustained fps falls below ~40% of refresh rate. */}
+        {!reduceEffects && (
+          <PerformanceMonitor
+            ms={350}
+            iterations={8}
+            bounds={(refreshrate) => [Math.max(24, refreshrate * 0.4), refreshrate * 0.85]}
+            onDecline={() => setPerfLow(true)}
+          />
+        )}
       </Canvas>
     </div>
   );

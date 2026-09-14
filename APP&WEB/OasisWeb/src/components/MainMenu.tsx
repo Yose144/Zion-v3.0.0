@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Rocket, User, Music, Radio, Settings, Globe, Map as MapIcon,
-  Compass, Volume2, VolumeX, Eye, EyeOff, Plane, LogIn,
+  Compass, Volume2, VolumeX, Eye, EyeOff, Plane, LogIn, Search,
 } from 'lucide-react';
 import { ShipTab, IdentityTab, AudioTab, OasisTab, type Tab } from './GamePanel';
 import MiniMap from './MiniMap';
@@ -18,6 +18,8 @@ const WORLD_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'w
 const LAYERS = [1, 2, 3, 4, 5, 6] as const;
 
 interface MainMenuProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   activeCategories: WorldCategory[];
   onCategoriesChange: (cats: WorldCategory[]) => void;
   activeLayers: WorldLayer[];
@@ -35,6 +37,8 @@ interface MainMenuProps {
 }
 
 function MainMenu({
+  open,
+  onOpenChange,
   activeCategories,
   onCategoriesChange,
   activeLayers,
@@ -51,13 +55,12 @@ function MainMenu({
   isMobile,
 }: MainMenuProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab | 'worlds'>('worlds');
   const { xp, credits, discoveredWorlds, scannedWorlds, collectedEggs, completedQuests, address, shipLoadout, worlds } = useGameStore();
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
 
-  const onClose = () => setOpen(false);
+  const onClose = () => onOpenChange(false);
 
   const toggleCategory = (cat: WorldCategory) => {
     onCategoriesChange(
@@ -81,7 +84,7 @@ function MainMenu({
       <motion.button
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        onClick={() => setOpen(true)}
+        onClick={() => onOpenChange(true)}
         className="pointer-events-auto fixed left-2 top-2 z-[75] flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/70 text-white/80 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:left-5 sm:top-5"
         title="Main menu (M)"
       >
@@ -256,8 +259,72 @@ function WorldsTab({
   isMobile: boolean;
   worlds: World[];
 }) {
+  const [query, setQuery] = useState('');
+  const discoveredWorlds = useGameStore((s) => s.discoveredWorlds);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return worlds
+      .filter((w) =>
+        w.name.toLowerCase().includes(q) ||
+        w.location.toLowerCase().includes(q) ||
+        w.tags.some((t) => t.toLowerCase().includes(q))
+      )
+      .slice(0, 12);
+  }, [worlds, query]);
+
   return (
     <div className="space-y-4">
+      {/* World search */}
+      <div>
+        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+          <Search className="h-3.5 w-3.5 shrink-0 text-white/50" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${worlds.length} worlds…`}
+            className="w-full bg-transparent text-xs text-white placeholder-white/40 outline-none"
+          />
+          {query && (
+            <button onClick={() => setQuery('')} className="text-white/50 hover:text-white">
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        {query.trim().length >= 2 && (
+          <div className="mt-1.5 max-h-56 space-y-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            {results.length === 0 && (
+              <p className="px-2 py-2 text-[10px] text-white/50">No worlds match “{query.trim()}”.</p>
+            )}
+            {results.map((w) => {
+              const color = CATEGORY_COLORS[w.category] || '#ffffff';
+              const found = discoveredWorlds.includes(w.id);
+              return (
+                <button
+                  key={w.id}
+                  onClick={() => { onWorldSelect(w); setQuery(''); }}
+                  className="flex w-full items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-2 text-left transition hover:bg-white/10"
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: color, boxShadow: `0 0 6px ${color}` }}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[11px] font-semibold text-white">{w.name}</span>
+                    <span className="block truncate text-[9px] text-white/50">{w.location}</span>
+                  </span>
+                  <span className="shrink-0 rounded px-1 py-0.5 font-mono text-[8px] text-white/60" style={{ border: `1px solid ${color}40` }}>
+                    L{w.layer}
+                  </span>
+                  {found && <span className="shrink-0 text-[8px] text-rasta-green">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Minimap */}
       <div className="zion-hud-panel !relative p-2.5">
         <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70">

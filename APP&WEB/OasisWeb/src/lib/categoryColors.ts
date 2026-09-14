@@ -41,6 +41,16 @@ export const LAYER_COLORS: Record<number, { color: string; rgb: string }> = {
   6: { color: '#f0abfc', rgb: '240, 171, 252' }, // Orbital — Issobella council layer
 };
 
+/** Human-readable layer names for UI labels. */
+export const LAYER_NAMES: Record<number, string> = {
+  1: 'Core Galaxy',
+  2: 'Inner Rim',
+  3: 'Temporal',
+  4: 'Mythic',
+  5: 'Creative',
+  6: 'Orbital Council',
+};
+
 /** The TreeOfLife-only rasta triad. Kept in one place for clarity. */
 export const RASTA = {
   green: '#078930',
