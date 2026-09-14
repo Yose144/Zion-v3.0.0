@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Ecosystem — ZION Dashboard</title>
+<style>
+  :root { --bg:#0a0e14; --panel:#111827; --border:#1f2937; --fg:#e5e7eb; --dim:#9ca3af; --accent:#7c3aed; --ok:#34d399; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; padding:2rem; }
+  h1 { font-size:1.4rem; margin-bottom:.25rem; }
+  h1 .accent { color:var(--accent); }
+  .sub { color:var(--dim); font-size:.8rem; margin-bottom:1.5rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; max-width:1100px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.1rem 1.2rem; }
+  .card h2 { font-size:.75rem; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin-bottom:.8rem; }
+  .big { font-size:1.6rem; font-weight:700; color:var(--ok); }
+  .row { display:flex; justify-content:space-between; font-size:.8rem; padding:.35rem 0; border-bottom:1px solid var(--border); }
+  .row:last-child { border-bottom:none; }
+  .row .k { color:var(--dim); }
+  .mono { font-size:.7rem; word-break:break-all; color:var(--dim); }
+  .tag { display:inline-block; padding:.1rem .5rem; border-radius:99px; font-size:.65rem; background:#1e293b; color:#93c5fd; margin:.15rem .15rem 0 0; }
+  #state { color:var(--dim); font-size:.85rem; margin:2rem 0; }
+  a { color:#93c5fd; }
+</style>
+</head>
+<body>
+<h1>My <span class="accent">Ecosystem</span></h1>
+<div class="sub">Your cross-service ZION footprint — identity, L1, mining, DAO, marketplace</div>
+<div id="state">Loading…</div>
+<div class="grid" id="grid" style="display:none">
+  <div class="card"><h2>Identity (ZIS)</h2><div id="ident"></div></div>
+  <div class="card"><h2>ZION L1 Balance</h2><div class="big" id="l1total">—</div><div id="l1rows"></div></div>
+  <div class="card"><h2>Mining</h2><div class="big" id="mpaid">—</div><div id="mrows"></div></div>
+  <div class="card"><h2>DAO Governance</h2><div id="dao"></div></div>
+  <div class="card"><h2>Marketplace</h2><div id="mkt"></div></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString('en-US', {maximumFractionDigits: 6});
+
+(async () => {
+  const r = await fetch('/api/ecosystem', {credentials: 'include'});
+  if (r.status === 401 || r.status === 403) {
+    $('state').textContent = 'Sign in required — visit https://auth.zionterranova.com first.';
+    return;
+  }
+  const d = await r.json();
+  if (!d.ecosystem && d.source === 'basic') {
+    $('state').innerHTML = 'Signed in as <b>operator</b> (Basic Auth). ' + (d.note || '');
+    return;
+  }
+  if (d.source !== 'zis' || !d.user) {
+    $('state').textContent = 'Sign in with ZIS to see your ecosystem view.';
+    return;
+  }
+
+  $('state').style.display = 'none';
+  $('grid').style.display = 'grid';
+  const u = d.user;
+
+  $('ident').innerHTML =
+    `<div class="row"><span class="k">Name</span><span>${u.displayName || '—'}</span></div>` +
+    `<div class="row"><span class="k">Role</span><span>${u.role}</span></div>` +
+    `<div class="row"><span class="k">User ID</span><span class="mono">${u.id}</span></div>` +
+    (u.linkedAddresses || []).map(a => `<span class="tag">${a.chainType}: ${(a.address||'').slice(0,14)}…</span>`).join('');
+
+  $('l1total').textContent = fmt(d.l1.total_zion) + ' ZION';
+  $('l1rows').innerHTML = (d.l1.balances || []).map(b =>
+    `<div class="row"><span class="k mono">${b.address.slice(0,18)}…</span><span>${fmt(b.balance_zion)} (${b.utxo_count} utxo)</span></div>`
+  ).join('') || '<div class="mono">no zion-l1 addresses linked</div>';
+
+  $('mpaid').textContent = fmt(d.mining.total_paid_zion) + ' ZION paid';
+  $('mrows').innerHTML = `<div class="row"><span class="k">Accepted shares</span><span>${fmt(d.mining.accepted_shares)}</span></div>` +
+    (d.mining.miners || []).map(m =>
+      `<div class="row"><span class="k mono">${m.miner_id.slice(0,26)}…</span><span>${fmt(m.paid_zion)} ZION</span></div>`
+    ).join('');
+
+  $('dao').innerHTML =
+    `<div class="row"><span class="k">Votes cast</span><span>${d.dao.votes_cast}</span></div>` +
+    `<div class="row"><span class="k">Active proposals</span><span>${d.dao.active_proposals}</span></div>` +
+    (d.dao.recent_votes || []).map(v =>
+      `<div class="row"><span class="k">#${v.proposal_id}</span><span>${v.choice} (${fmt(v.weight_zion)})</span></div>`
+    ).join('');
+
+  $('mkt').innerHTML =
+    `<div class="row"><span class="k">Active listings</span><span>${d.marketplace.listings_active}</span></div>` +
+    `<div class="row"><span class="k">Sales (as seller)</span><span>${d.marketplace.sales_as_seller}</span></div>` +
+    `<div class="row"><span class="k">Purchases</span><span>${d.marketplace.purchases}</span></div>`;
+})().catch(e => { $('state').textContent = 'Failed to load ecosystem data: ' + e; });
+</script>
+</body>
+</html>

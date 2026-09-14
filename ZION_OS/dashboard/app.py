@@ -11598,6 +11598,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route in ("/legacy", "/legacy.html"):
             self._serve_html_file(SCRIPT_DIR / "legacy.html", "legacy.html not found")
             return
+        elif route in ("/ecosystem", "/ecosystem.html"):
+            self._serve_html_file(SCRIPT_DIR / "ecosystem.html", "ecosystem.html not found")
+            return
         elif route.startswith("/assets/") or route in ("/manifest.json", "/sw.js", "/offline.html", "/favicon.svg", "/icons.svg"):
             v2_file = V2_DIST / route.lstrip("/")
             if v2_file.exists():
@@ -13145,6 +13148,140 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "displayName": None,
                     "role": "operator",
                 })
+        elif route == "/api/ecosystem":
+            # J6 — "My Ecosystem": aggregate the signed-in ZIS user's
+            # footprint across L1 balances, pool mining and DAO governance.
+            zis_user = getattr(self, "_zis_user", None)
+            if zis_user is None:
+                self._json({
+                    "authenticated": True,
+                    "source": "basic",
+                    "ecosystem": None,
+                    "note": "sign in with ZIS to see your ecosystem view",
+                })
+                return
+
+            zion_addrs = []
+            for a in (zis_user.get("linkedAddresses") or []):
+                if a.get("chainType") == "zion-l1" and a.get("address"):
+                    zion_addrs.append(a["address"])
+            prim = zis_user.get("primaryAddress")
+            if isinstance(prim, str) and prim.startswith("zion1") and prim not in zion_addrs:
+                zion_addrs.append(prim)
+
+            # L1 balances — sum UTXOs per address (premine-aware).
+            host, port = _get_node_rpc_addr()
+            balances = []
+            for addr in zion_addrs:
+                res = rpc_call(host, port, "getUtxos", {"address": addr}, timeout=3.0)
+                utxos = res.get("utxos", []) if isinstance(res, dict) else []
+                flowers = sum(int(u.get("amount", 0)) for u in utxos if isinstance(u, dict))
+                balances.append({
+                    "address": addr,
+                    "balance_zion": flowers / 1_000_000,
+                    "utxo_count": len(utxos),
+                })
+
+            # Mining — pool-store.db miners are keyed "<address>.<worker>".
+            mining = {"miners": [], "total_paid_zion": 0.0, "accepted_shares": 0}
+            try:
+                pool_db = "/opt/zion/data/v31/pool-store.db"
+                if os.path.exists(pool_db):
+                    pconn = sqlite3.connect(f"file:{pool_db}?mode=ro", uri=True)
+                    try:
+                        for addr in zion_addrs:
+                            for row in pconn.execute(
+                                "SELECT miner_id, accepted_shares, rejected_shares, total_paid_flowers "
+                                "FROM miners WHERE miner_id = ? OR miner_id LIKE ?",
+                                (addr, addr + ".%"),
+                            ):
+                                mining["miners"].append({
+                                    "miner_id": row[0],
+                                    "accepted_shares": row[1],
+                                    "rejected_shares": row[2],
+                                    "paid_zion": (row[3] or 0) / 1_000_000,
+                                })
+                                mining["accepted_shares"] += row[1] or 0
+                                mining["total_paid_zion"] += (row[3] or 0) / 1_000_000
+                    finally:
+                        pconn.close()
+            except Exception as e:
+                mining["error"] = str(e)[:120]
+
+            # DAO — votes cast by the user's addresses + open proposals.
+            dao = {"votes_cast": 0, "recent_votes": [], "active_proposals": 0}
+            try:
+                dao_db = "/opt/zion/data/dao.db"
+                if os.path.exists(dao_db) and zion_addrs:
+                    dconn = sqlite3.connect(f"file:{dao_db}?mode=ro", uri=True)
+                    try:
+                        marks = ",".join("?" * len(zion_addrs))
+                        dao["votes_cast"] = dconn.execute(
+                            f"SELECT COUNT(*) FROM votes WHERE voter IN ({marks})",
+                            zion_addrs,
+                        ).fetchone()[0]
+                        dao["recent_votes"] = [
+                            {"proposal_id": r[0], "choice": r[1], "weight_zion": (r[2] or 0) / 1_000_000, "voted_at": r[3]}
+                            for r in dconn.execute(
+                                f"SELECT proposal_id, choice, weight, voted_at FROM votes "
+                                f"WHERE voter IN ({marks}) ORDER BY voted_at DESC LIMIT 10",
+                                zion_addrs,
+                            )
+                        ]
+                        dao["active_proposals"] = dconn.execute(
+                            "SELECT COUNT(*) FROM proposals WHERE status = 'Active'"
+                        ).fetchone()[0]
+                    finally:
+                        dconn.close()
+            except Exception as e:
+                dao["error"] = str(e)[:120]
+
+            # Marketplace — listings/sales per linked address (Postgres via psql).
+            # Seller/buyer may be EVM addresses, so query all linked addresses.
+            market = {"listings_active": 0, "sales_as_seller": 0, "purchases": 0}
+            try:
+                all_addrs = [a.get("address") for a in (zis_user.get("linkedAddresses") or []) if a.get("address")]
+                if isinstance(prim, str) and prim and not prim.startswith("google:") and prim not in all_addrs:
+                    all_addrs.append(prim)
+                if all_addrs:
+                    quoted = ",".join("'%s'" % a.replace("'", "''") for a in all_addrs)
+                    proc = subprocess.run(
+                        ["psql", "-U", "zion", "-d", "zion_marketplace", "-At", "-c",
+                         f"SELECT (SELECT COUNT(*) FROM \"Listing\" WHERE seller IN ({quoted}) AND status='active'),"
+                         f"(SELECT COUNT(*) FROM \"Sale\" WHERE seller IN ({quoted})),"
+                         f"(SELECT COUNT(*) FROM \"Sale\" WHERE buyer IN ({quoted}))"],
+                        capture_output=True, text=True, timeout=4,
+                    )
+                    if proc.returncode == 0 and "|" in proc.stdout:
+                        parts = proc.stdout.strip().split("|")
+                        market = {
+                            "listings_active": int(parts[0]),
+                            "sales_as_seller": int(parts[1]),
+                            "purchases": int(parts[2]),
+                        }
+            except Exception:
+                pass  # psql unavailable — marketplace section stays zeroed
+
+            self._json({
+                "authenticated": True,
+                "source": "zis",
+                "user": {
+                    "id": zis_user.get("id"),
+                    "displayName": zis_user.get("displayName"),
+                    "role": zis_user.get("role", "user"),
+                    "primaryAddress": prim,
+                    "zion_addresses": zion_addrs,
+                    "linkedAddresses": zis_user.get("linkedAddresses") or [],
+                },
+                "l1": {
+                    "balances": balances,
+                    "total_zion": sum(b["balance_zion"] for b in balances),
+                },
+                "mining": mining,
+                "dao": dao,
+                "marketplace": market,
+            })
+            return
         elif route == "/api/systemd":
             # Local systemd user service status — autonomous monitoring
             try:
