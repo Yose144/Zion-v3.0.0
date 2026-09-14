@@ -32,6 +32,7 @@ Cílová délka: **cca 9 minut animace + oddělený osobní epilog.**
 | [15 — Storyboard a animatik](./15-Storyboard-Plan.md) | — | 12 klíčových obrazů, thumbnail plán, workflow. |
 | [16 — Návaznost na OASIS](./16-OASIS-Navaznost.md) | — | HORIZONT: interaktivní adaptace, hranice sdílení. |
 | [17 — Produkce](./17-Produkce.md) | — | Pipeline, milníky, rozhodnutí, organizace souborů. |
+| [18 — AI prompty K01–K12](./18-AI-Prompty-K01-K12.md) | — | Prompt list pro klíčové obrazy; sdílené token bloky, parametry pro MJ/Flux/LTX/Kling. |
 
 ## Jak s balíčkem pracovat
 

@@ -11,9 +11,20 @@
 | **Klíčové gesto** | Naklonění hlavy, dotek vody, posazení na zem — **naslouchá, ne káže**. |
 | **Rekvizita** | Lucerna — pomůcka k naslouchání a vzpomínání, **ne znak vlády**. |
 
+### Kanonická opora v OASIS (z živého API + BabylonIntro)
+
+- Avatar **id 40 „Elizabet"**: subtitle „Royal Healer", **Pink ray**, role „Compassionate Leader", quest „The Queen's Heart", teaching „Rule with love, not fear", rarity Rare.
+- `BabylonIntro.tsx`: „At the gate to Oasis stand two priestesses — Radha and Elizabeth. One holds salt and honey; **the other, a lantern of the future.**"
+- Lumi = **malá Elizabet**: ve filmu je to dětská podoba té strážkyně — proto růžová šerpa/růžový tón lucerny a „priestess of the gate".
+
+### Schválená podoba (Yose, 2025-09)
+
+- **Věk ~6 let**, blond vlásky (jemné vlnité vlasy), **bosá**, malá postava.
+- Kanon: dětská podoba strážkyně Elizabet (OASIS avatar id 40, Pink ray) — růžová šerpa, lucerna budoucnosti.
+
 ### Výtvarný návrh (pracovní)
 
-- **Silueta:** lehká, pohyblivá; postava menšího vzrůstu (je „z budoucnosti", ale není hrdinka v brnění).
+- **Silueta:** drobná ~6letá dívka; lehká, pohyblivá; není hrdinka v brnění — je „z budoucnosti", ale malá a měkká.
 - **Oblečení:** jednoduché, vrstvené, s kapsami/praktickými detaily; **žádný kostým „strážkyně"** — její funkce je v jednání, ne v insigniích.
 - **Barva:** teplé tóny proti chladnému světu; jeden výrazný detail (např. šátek/brož), který se vrátí v závěru.
 - **Výrazy:** malé přirozené reakce; **ne každou emoci zdůrazňovat slzou**.
