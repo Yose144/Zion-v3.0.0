@@ -250,6 +250,11 @@ export default function OasisClient() {
     return () => window.removeEventListener('keydown', onKey);
   }, [inGame, flightMode, view, selectedWorld, menuOpen]);
 
+  // Expose phase for E2E/debug tooling.
+  useEffect(() => {
+    (window as unknown as { __oasisPhase?: string }).__oasisPhase = phase;
+  }, [phase]);
+
   if (!mounted) {
     return (
       <div className="flex h-full w-full items-center justify-center text-white/60">
@@ -460,7 +465,8 @@ export default function OasisClient() {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="pointer-events-auto absolute bottom-6 left-1/2 z-30 -translate-x-1/2 sm:bottom-8"
             >
-              <motion.div
+              <motion.button
+                type="button"
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleCloseWorld}
@@ -468,7 +474,7 @@ export default function OasisClient() {
               >
                 Return to Galaxy
                 <ChevronRight className="h-4 w-4 rotate-180 transition-transform group-hover:-translate-x-1" />
-              </motion.div>
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
