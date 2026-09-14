@@ -247,7 +247,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </motion.button>
 
-              <p className="mt-3 text-[10px] text-white/30">55 worlds · Golden Egg · Nova Zeme · Issobela</p>
+              <p className="mt-3 text-[10px] text-white/30">55 worlds · Golden Egg · Nova Zeme · Issobella</p>
             </motion.div>
           )}
         </AnimatePresence>

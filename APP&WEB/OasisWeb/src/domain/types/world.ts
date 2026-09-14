@@ -5,7 +5,7 @@ import { Vec3 } from '../math/vec3';
  * Keep this file free of React, Three.js, DOM, or browser APIs.
  */
 
-export type WorldLayer = 1 | 2 | 3 | 4 | 5;
+export type WorldLayer = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type WorldCategory =
   | 'star-system'

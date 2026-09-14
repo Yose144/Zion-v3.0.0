@@ -207,6 +207,115 @@ function StarCorona({ color, size }: { color: string; size: number }) {
   );
 }
 
+/** Issobella — L6 orbital council station. A rotating habitat ring around a
+ *  crystalline core, four solar sails, and docking spires. Rendered instead of
+ *  the generic planet environment when the player enters ISSOBELA_GUARDIAN. */
+function IssobellaStation({ color, size, seed, isMobile }: { color: string; size: number; seed: number; isMobile: boolean }) {
+  const ringRef = useRef<THREE.Group>(null);
+  const coreRef = useRef<THREE.Mesh>(null);
+  const sailsRef = useRef<THREE.Group>(null);
+
+  useFrame((state, delta) => {
+    if (ringRef.current) ringRef.current.rotation.z += delta * 0.25;
+    if (sailsRef.current) sailsRef.current.rotation.y += delta * 0.06;
+    if (coreRef.current) {
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * 1.6) * 0.03;
+      coreRef.current.scale.setScalar(pulse);
+    }
+  });
+
+  const sailColor = '#f0abfc';
+  const hullColor = '#cbd5e1';
+
+  return (
+    <group>
+      {/* Crystalline core */}
+      <mesh ref={coreRef}>
+        <icosahedronGeometry args={[size * 0.55, 1]} />
+        <meshPhysicalMaterial
+          color={hullColor}
+          emissive={sailColor}
+          emissiveIntensity={0.5}
+          roughness={0.2}
+          metalness={0.7}
+          clearcoat={0.8}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh>
+        <icosahedronGeometry args={[size * 0.62, 1]} />
+        <meshBasicMaterial color={sailColor} wireframe transparent opacity={0.28} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+
+      {/* Habitat ring */}
+      <group ref={ringRef} rotation={[Math.PI / 2.4, 0, 0]}>
+        <mesh>
+          <torusGeometry args={[size * 1.7, size * 0.14, 12, isMobile ? 48 : 96]} />
+          <meshStandardMaterial color={hullColor} emissive={sailColor} emissiveIntensity={0.3} roughness={0.35} metalness={0.6} toneMapped={false} />
+        </mesh>
+        {/* Ring habitat modules */}
+        {Array.from({ length: isMobile ? 8 : 14 }).map((_, i) => {
+          const a = (i / (isMobile ? 8 : 14)) * Math.PI * 2;
+          return (
+            <mesh key={i} position={[Math.cos(a) * size * 1.7, Math.sin(a) * size * 1.7, 0]}>
+              <boxGeometry args={[size * 0.16, size * 0.16, size * 0.24]} />
+              <meshStandardMaterial color={hullColor} emissive={sailColor} emissiveIntensity={0.55} roughness={0.4} toneMapped={false} />
+            </mesh>
+          );
+        })}
+      </group>
+
+      {/* Solar sails — four glowing wings */}
+      <group ref={sailsRef}>
+        {[0, 1, 2, 3].map((i) => {
+          const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+          const d = size * 2.6;
+          return (
+            <group key={i} rotation={[0, a, 0]}>
+              <mesh position={[d, 0, 0]} rotation={[0, 0, 0.12]}>
+                <boxGeometry args={[size * 1.5, size * 0.02, size * 0.7]} />
+                <meshStandardMaterial
+                  color={sailColor}
+                  emissive={sailColor}
+                  emissiveIntensity={0.7}
+                  roughness={0.3}
+                  metalness={0.4}
+                  transparent
+                  opacity={0.9}
+                  toneMapped={false}
+                />
+              </mesh>
+              {/* Sail mast */}
+              <mesh position={[d * 0.5, 0, 0]}>
+                <cylinderGeometry args={[size * 0.03, size * 0.03, d, 6]} />
+                <meshStandardMaterial color={hullColor} roughness={0.4} metalness={0.7} toneMapped={false} />
+              </mesh>
+            </group>
+          );
+        })}
+      </group>
+
+      {/* Docking spires top/bottom */}
+      <mesh position={[0, size * 1.1, 0]}>
+        <cylinderGeometry args={[size * 0.05, size * 0.09, size * 0.9, 8]} />
+        <meshStandardMaterial color={hullColor} emissive={sailColor} emissiveIntensity={0.4} metalness={0.7} roughness={0.3} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, size * 1.6, 0]}>
+        <sphereGeometry args={[size * 0.1, 12, 12]} />
+        <meshBasicMaterial color={sailColor} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, -size * 1.1, 0]}>
+        <cylinderGeometry args={[size * 0.09, size * 0.05, size * 0.9, 8]} />
+        <meshStandardMaterial color={hullColor} emissive={sailColor} emissiveIntensity={0.4} metalness={0.7} roughness={0.3} toneMapped={false} />
+      </mesh>
+
+      {/* Ambient particles + drone ring */}
+      <WorldParticles count={isMobile ? 120 : 240} color={sailColor} seed={seed} radius={7} />
+      <SatelliteRing count={Math.max(2, Math.floor(6 * (isMobile ? 0.5 : 1)))} color={sailColor} distance={size * 3.4} sizeBase={0.05} />
+    </group>
+  );
+}
+
 function AvatarHologram({ world, color, size }: { world: World; color: string; size: number }) {
   const { realQuests, avatars } = useGameStore();
   const spriteRef = useRef<THREE.Sprite>(null);
@@ -312,7 +421,11 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
         </>
       )}
 
-      {(world.category === 'planet' || world.category === 'world') && (
+      {world.id === 'ISSOBELA_GUARDIAN' && (
+        <IssobellaStation color={color} size={size} seed={seed} isMobile={isMobile} />
+      )}
+
+      {(world.id !== 'ISSOBELA_GUARDIAN' && (world.category === 'planet' || world.category === 'world')) && (
         <>
           <mesh geometry={centralGeometry}>
             <meshPhysicalMaterial

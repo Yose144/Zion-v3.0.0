@@ -38,6 +38,7 @@ export const LAYER_COLORS: Record<number, { color: string; rgb: string }> = {
   3: { color: '#06b6d4', rgb: '6, 182, 212' },  // Temporal
   4: { color: '#a855f7', rgb: '168, 85, 247' }, // Mythic
   5: { color: '#f472b6', rgb: '244, 114, 182' }, // Creative
+  6: { color: '#f0abfc', rgb: '240, 171, 252' }, // Orbital — Issobella council layer
 };
 
 /** The TreeOfLife-only rasta triad. Kept in one place for clarity. */

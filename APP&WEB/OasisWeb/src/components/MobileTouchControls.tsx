@@ -47,15 +47,23 @@ export default function MobileTouchControls({
   const targetSpherical = useRef(new THREE.Spherical());
   const targetTarget = useRef(target.clone());
   const dampingFactor = 0.12;
+  // Spherical is initialized on the FIRST useFrame tick — not in useEffect.
+  // The render loop can tick before effects flush, and with the default
+  // Spherical(1,0,0) the first lerp would yank the camera to the origin
+  // (inside the TreeOfLife) and trap it there.
+  const initialized = useRef(false);
 
   useEffect(() => {
     const canvas = gl.domElement;
 
-    // Initialize spherical from camera position relative to target
-    const offset = new THREE.Vector3().subVectors(cam.position, targetRef.current);
-    spherical.current.setFromVector3(offset);
-    targetSpherical.current.copy(spherical.current);
-    targetTarget.current.copy(targetRef.current);
+    const initFromCamera = () => {
+      const offset = new THREE.Vector3().subVectors(cam.position, targetRef.current);
+      spherical.current.setFromVector3(offset);
+      targetSpherical.current.copy(spherical.current);
+      targetTarget.current.copy(targetRef.current);
+      initialized.current = true;
+    };
+    initFromCamera();
 
     const onTouchStart = (e: TouchEvent) => {
       e.preventDefault();
@@ -145,6 +153,12 @@ export default function MobileTouchControls({
 
   // Smooth damping toward target spherical each frame
   useFrame(() => {
+    if (!initialized.current) {
+      const offset = new THREE.Vector3().subVectors(cam.position, targetRef.current);
+      spherical.current.setFromVector3(offset);
+      targetSpherical.current.copy(spherical.current);
+      initialized.current = true;
+    }
     // Lerp spherical
     spherical.current.theta += (targetSpherical.current.theta - spherical.current.theta) * dampingFactor;
     spherical.current.phi += (targetSpherical.current.phi - spherical.current.phi) * dampingFactor;

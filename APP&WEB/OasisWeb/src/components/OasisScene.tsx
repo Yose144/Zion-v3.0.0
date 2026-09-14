@@ -39,17 +39,21 @@ const GALAXY_HOME = { position: new THREE.Vector3(0, 2.4, 15), lookAt: new THREE
 const WORLD_VIEW = { position: new THREE.Vector3(0, 0.35, 4.5), lookAt: new THREE.Vector3(0, 0, 0), fov: 38 };
 const FOCUS_FOV = 42;
 
+function isValidTarget(t?: { x: number; y: number; z: number } | null): t is { x: number; y: number; z: number } {
+  return !!t && isFinite(t.x) && isFinite(t.y) && isFinite(t.z);
+}
+
 function planKey(view: 'galaxy' | 'world', focusTarget?: { x: number; y: number; z: number } | null) {
   if (view === 'world') return 'world';
-  return `galaxy:${focusTarget ? `${focusTarget.x.toFixed(3)},${focusTarget.y.toFixed(3)},${focusTarget.z.toFixed(3)}` : 'home'}`;
+  return `galaxy:${isValidTarget(focusTarget) ? `${focusTarget.x.toFixed(3)},${focusTarget.y.toFixed(3)},${focusTarget.z.toFixed(3)}` : 'home'}`;
 }
 
 function computeFocusPlan(focusTarget: { x: number; y: number; z: number }) {
   const core = new THREE.Vector3(0, 0.4, 0);
-  const target = new THREE.Vector3(focusTarget.x, focusTarget.y, focusTarget.z);
+  const target = isValidTarget(focusTarget) ? new THREE.Vector3(focusTarget.x, focusTarget.y, focusTarget.z) : core.clone();
   const toTarget = new THREE.Vector3().subVectors(target, core);
   const distance = toTarget.length();
-  const dir = toTarget.normalize();
+  const dir = distance > 0.001 ? toTarget.normalize() : new THREE.Vector3(0, 0.2, 1).normalize();
   const dist = Math.max(1.8, distance - 3.2);
   const position = new THREE.Vector3().copy(core).add(dir.multiplyScalar(dist));
   return { position, lookAt: target };
@@ -88,7 +92,7 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
 
     if (view === 'world') {
       startFlight(WORLD_VIEW.position, WORLD_VIEW.lookAt, WORLD_VIEW.fov);
-    } else if (focusTarget) {
+    } else if (isValidTarget(focusTarget)) {
       const plan = computeFocusPlan(focusTarget);
       startFlight(plan.position, plan.lookAt, FOCUS_FOV);
     } else {
@@ -183,6 +187,7 @@ interface OasisSceneProps {
   baseSpeed?: number;
   mobileInputRef?: React.RefObject<import('./MobileControls').MobileInput | null>;
   isMobile?: boolean;
+  lowPower?: boolean;
   compassRef?: React.RefObject<CompassData | null>;
 }
 
@@ -206,11 +211,15 @@ export default function OasisScene({
   baseSpeed = 3.5,
   mobileInputRef,
   isMobile = false,
+  lowPower = false,
   compassRef,
 }: OasisSceneProps) {
   const universeRef = useRef<THREE.Group>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const getWorldById = (id: string) => worlds.find((w) => w.id === id);
+  // Reduce heavy effects on mobile and on low-power devices (few cores,
+  // little RAM, or data-saver). Keeps the scene fluid everywhere.
+  const reduceEffects = isMobile || lowPower;
 
   return (
     <div
@@ -237,6 +246,8 @@ export default function OasisScene({
         }}
         onCreated={({ gl, camera }) => {
           gl.setClearColor(new THREE.Color('#05060a'), 1);
+          // Expose camera for debugging/testing — lets E2E verify position.
+          (window as unknown as { __oasisCamera?: THREE.Camera }).__oasisCamera = camera;
           if (isMobile) {
             camera.lookAt(0, 0.5, 0);
           }
@@ -267,15 +278,15 @@ export default function OasisScene({
         {view === 'galaxy' && (
           <group ref={universeRef}>
             <R3FErrorBoundary label="Stars">
-              <Stars radius={250} depth={160} count={isMobile ? 1500 : 3000} factor={4.5} saturation={0.65} fade speed={0.4} />
+              <Stars radius={250} depth={160} count={reduceEffects ? 1500 : 3000} factor={4.5} saturation={0.65} fade speed={0.4} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="TwinkleStars">
-              <TwinkleStars count={isMobile ? 600 : 1500} radius={150} />
+              <TwinkleStars count={reduceEffects ? 600 : 1500} radius={150} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="ShootingStars">
-              <ShootingStars count={isMobile ? 2 : 3} isMobile={isMobile} />
+              <ShootingStars count={reduceEffects ? 2 : 3} isMobile={reduceEffects} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="DistantGalaxies">
@@ -283,21 +294,21 @@ export default function OasisScene({
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="Galaxy">
-              <Galaxy isMobile={isMobile} />
+              <Galaxy isMobile={reduceEffects} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="GalaxyCore">
               <GalaxyCore />
             </R3FErrorBoundary>
 
-            {!isMobile && (
+            {!reduceEffects && (
               <R3FErrorBoundary label="MatrixCore">
                 <MatrixCore />
               </R3FErrorBoundary>
             )}
 
             <R3FErrorBoundary label="Nebula">
-              <Nebula isMobile={isMobile} />
+              <Nebula isMobile={reduceEffects} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="TreeOfLife">
@@ -326,13 +337,17 @@ export default function OasisScene({
               />
             </R3FErrorBoundary>
 
-            {/* Nova Zeme — centrální planeta s Issobelou na oběžné dráze */}
+            {/* Nova Zeme — centrální planeta s Issobellou na oběžné dráze */}
             <R3FErrorBoundary label="NovaZeme">
               <NovaZeme
                 position={[0, -0.5, 8]}
                 isMobile={isMobile}
                 onSelect={() => {
                   const w = getWorldById('NOVA_ZEME');
+                  if (w) onWorldSelect(w);
+                }}
+                onIssobellaSelect={() => {
+                  const w = getWorldById('ISSOBELA_GUARDIAN');
                   if (w) onWorldSelect(w);
                 }}
               />
@@ -444,7 +459,7 @@ export default function OasisScene({
 
         {flightMode && <PilgrimShip speed={flightSpeed} />}
 
-        {!isMobile && (
+        {!reduceEffects && (
           <EffectComposer multisampling={2}>
             <Bloom intensity={0.62} luminanceThreshold={0.35} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
             <HueSaturation saturation={0.28} />

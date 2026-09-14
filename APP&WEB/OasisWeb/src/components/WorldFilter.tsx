@@ -23,6 +23,7 @@ const LAYERS: { id: WorldLayer; label: string; color: string; rgb: string; desc:
   { id: 3, label: 'Layer 3', color: LAYER_COLORS[3].color, rgb: LAYER_COLORS[3].rgb, desc: 'Temporal' },
   { id: 4, label: 'Layer 4', color: LAYER_COLORS[4].color, rgb: LAYER_COLORS[4].rgb, desc: 'Mythic' },
   { id: 5, label: 'Layer 5', color: LAYER_COLORS[5].color, rgb: LAYER_COLORS[5].rgb, desc: 'Creative' },
+  { id: 6, label: 'Layer 6', color: LAYER_COLORS[6].color, rgb: LAYER_COLORS[6].rgb, desc: 'Orbital' },
 ];
 
 const MINIMIZED_KEY = 'oasis-filter-minimized';

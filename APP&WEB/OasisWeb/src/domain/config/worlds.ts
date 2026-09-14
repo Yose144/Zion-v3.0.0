@@ -1548,15 +1548,15 @@ export const WORLDS: World[] = [
   },
   {
       id: "ISSOBELA_GUARDIAN",
-      name: "ISSOBELA",
+      name: "Issobella",
       category: "planet",
-      layer: 3,
-      location: "OASIS archive realm",
-      vibe: "---",
-      summary: "---",
-      tags: ["planet", "layer 3"],
+      layer: 6,
+      location: "Nova Zeme orbit — L6 council station",
+      vibe: "The station above the garden. Every L5 sanctuary reports here; every pilgrim's vow is archived in light.",
+      summary: "L6 orbital station circling Nova Zeme — Issobella is the guardian archive and council hub where Terra Nova's L5 sanctuaries converge and pilgrims receive their mandate.",
+      tags: ["planet", "layer 6", "orbital", "station", "issobella", "terranova"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 13.895, y: -0.073, z: 37.986 }
+      galaxyPosition: { x: 0, y: 2.2, z: 8 }
   },
   {
       id: "IZANAMI",
@@ -2286,7 +2286,7 @@ export const WORLDS: World[] = [
       layer: 5,
       location: "L5 — fyzická vrstva ZION ekosystému, centrální planeta blízko stromu života",
       vibe: "Nová Země — domov L4 OASIS, L5 Free World a L6 Issobella. Kde blockchain potkává půdu, vodu a vesmír.",
-      summary: "Nova Zeme je centrální planeta OASIS — fyzické ztělesnění ZION ekosystému. Na jejím povrchu stojí Strom života (L4 OASIS), rozprostírají se permaculture komunity (L5 Free World) a nad ní obíhá orbitální stanice Issobela (L6). Je to most mezi digitálním a fyzickým světem, kde blockchainový konsenzus potkává půdu, vodu a lidskou správu.",
+      summary: "Nova Zeme je centrální planeta OASIS — fyzické ztělesnění ZION ekosystému. Na jejím povrchu stojí Strom života (L4 OASIS), rozprostírají se permaculture komunity (L5 Free World) a nad ní obíhá orbitální stanice Issobella (L6). Je to most mezi digitálním a fyzickým světem, kde blockchainový konsenzus potkává půdu, vodu a lidskou správu.",
       tags: ["planet", "layer 5", "nova zeme", "home", "central"],
       galaxyPosition: { x: 0, y: 0, z: 8 }
   },
@@ -4658,6 +4658,28 @@ export const WORLDS: World[] = [
       goldenEggClue: 9,
       galaxyPosition: { x: 28.7, y: 0.18, z: 35.2 }
   },
+  {
+      id: "GENESIS_GARDEN",
+      name: "Zahrada Genesis",
+      category: "world",
+      layer: 5,
+      location: "Algarve, Portugal — Terra Nova L5 Atlantic node",
+      vibe: "The first garden. Food, water, energy and community woven into one living protocol.",
+      summary: "Founding L5 Terra Nova node in the Algarve — regenerative farm, glamping sanctuary, water and energy systems, and the living community where the L5 network began.",
+      tags: ["world", "layer 5", "terranova", "genesis", "algarve", "sanctuary"],
+      galaxyPosition: { x: -4.2, y: 0.4, z: 14.6 }
+  },
+  {
+      id: "TE_PIKO_ORA",
+      name: "Te Pīko Ora",
+      category: "world",
+      layer: 5,
+      location: "Tahiti, French Polynesia — Terra Nova L5 Pacific node",
+      vibe: "The navel of life. Ocean memory, voyaging canoes, and a community that breathes with the reef.",
+      summary: "Pacific L5 Terra Nova node on Tahiti — marine heritage protection, regenerative community, and the ocean-facing sanctuary of the L5 network.",
+      tags: ["world", "layer 5", "terranova", "te piko ora", "tahiti", "ocean"],
+      galaxyPosition: { x: 5.4, y: 0.5, z: 16.8 }
+  },
 ];
 
 export const WORLD_IDS = [
@@ -4776,6 +4798,7 @@ export const WORLD_IDS = [
   "GATOTKACA",
   "GC_SUN_STEWARD",
   "GEB_FOUNDATION",
+  "GENESIS_GARDEN",
   "GOLDEN_REPUBLIC_BOHEMIA",
   "GUAN_YU",
   "HACHIMAN",
@@ -4986,6 +5009,7 @@ export const WORLD_IDS = [
   "TAWHIRIMATEA",
   "TECHNICAL_SPECIFICATIONS",
   "TELLURIK_SOUL_BRIDGE",
+  "TE_PIKO_ORA",
   "THE_CHRIST_KRISHNA_CONNECTION_DEEP_DIVE",
   "THE_COSMIC_EGG_UNIVERSAL_CREATION_MYTH",
   "THE_COSMIC_FOUNDATION_TRINITY_IN_ALL_TRADITIONS",
