@@ -37,7 +37,7 @@ const L3HiranCopy = {
   hybridInference: { cs: `Hybrid Inference`, en: `Hybrid Inference` },
   combinesFineTunedModelRetrieve: { cs: `Kombinace fine-tuned modelu + retrieved context v jednom inference kroku — váhy pro ZION, citace pro svět.`, en: `Combines the fine-tuned model + retrieved context in a single inference step — weights for ZION, citations for the world.` },
   domainSpecificFineTunedModelFo: { cs: `Domain-specific fine-tuned model pro ZION ekosystém. 5fázové QLoRA curriculum, 22 181 párů.`, en: `Domain-specific fine-tuned model for the ZION ecosystem. 5-stage QLoRA curriculum, 22,181 pairs.` },
-  fullFineTuningWithHybridRag48k: { cs: `Full fine-tuning s hybridním RAG — cíl 48K párů, 9 fází, multi-GPU.`, en: `Full fine-tuning with hybrid RAG — target 48K pairs, 9 stages, multi-GPU.` },
+  hiranV23MarketplaceDesc: { cs: `Natrénovaný 32B model — Qwen3-32B + QLoRA r=64/α=128, 20 517 párů, Q5_K_M GGUF (22 GB).`, en: `Trained 32B model — Qwen3-32B + QLoRA r=64/α=128, 20,517 pairs, Q5_K_M GGUF (22 GB).` },
   knowledgeDocumentsForHybridRet: { cs: `Kurátorované znalostní dokumenty pro hybrid retrieval — ZION docs, OASIS korpus, světová literatura.`, en: `Curated knowledge documents for hybrid retrieval — ZION docs, OASIS corpus, world literature.` },
   aiLayerOfTheZionEcosystem: { cs: `AI vrstva ZION ekosystému`, en: `AI layer of the ZION ecosystem` },
   hiranyagarbhaL3: { cs: `Hiranyagarbha — L3`, en: `Hiranyagarbha — L3` },
@@ -179,6 +179,8 @@ const L3HiranCopy = {
   hiranVersionRoadmap: { cs: `Verze Hiranyagarbhy`, en: `Hiranyagarbha Versions` },
   v22Title: { cs: `Domain AI Native`, en: `Domain AI Native` },
   v22Desc: { cs: `Fine-tuned 8B model (GGUF), OpenAI-kompatibilní inference, RAG paměť, live chat, tool execution — běží dnes.`, en: `Fine-tuned 8B model (GGUF), OpenAI-compatible inference, RAG memory, live chat, tool execution — running today.` },
+  v23Title: { cs: `Qwen3-32B domain fine-tune`, en: `Qwen3-32B Domain Fine-tune` },
+  v23Desc: { cs: `Natrénovaný doménový model — 20 517 instrukčních párů, QLoRA + LoRA r=64/α=128 (rank-stabilized) na všech 7 projekcích, trénink na 2× A100-80GB, checkpoint-8000 zmergován do 22 GB Q5_K_M GGUF. Vyžaduje ~24 GB VRAM — čeká na GPU deployment.`, en: `The trained domain model — 20,517 instruction pairs, QLoRA + LoRA r=64/α=128 (rank-stabilized) across all 7 projections, trained on 2× A100-80GB, checkpoint-8000 merged into a 22 GB Q5_K_M GGUF. Needs ~24 GB VRAM — awaiting GPU deployment.` },
   v24Title: { cs: `Maestro & NCL 2.0`, en: `Maestro & NCL 2.0` },
   v24Desc: { cs: `Multi-agent DAG orchestrace — záměr se rozpadne na subtasky pro specializované agenty (analytik, vývojář, auditor, likviditní manažer, strážce sítě). Mineri vykonávají int8/fp16 tensor ops pro L3 modely za NCL odměny. Síť se sama monitoruje a léčí — detekce DDoS, forků, zahlcení mempoolu, návrhy DAO záplat.`, en: `Multi-agent DAG orchestration — an intent decomposes into subtasks for specialized agents (analyst, developer, auditor, liquidity manager, network guardian). Miners run int8/fp16 tensor ops for L3 models earning NCL rewards. The network monitors and heals itself — DDoS, fork and mempool-congestion detection, DAO patch proposals.` },
   v25Title: { cs: `Amitabha — rozhraní nekonečného světla`, en: `Amitabha — the Infinite Light Interface` },
@@ -187,6 +189,7 @@ const L3HiranCopy = {
   dharmaConstraintDesc: { cs: `Etické mantinely hardcoded v jádře agentů — kryptograficky a logicky ověřované. Žádný agent nemůže provést akci porušující Ahimsa (ubližování), Satya (klam, manipulace trhu) nebo Asteya (krádež, neautorizované odčerpání prostředků).`, en: `Ethical guardrails hardcoded into the agent core — cryptographically and logically verified. No agent can execute an action violating Ahimsa (harm), Satya (deception, market manipulation), or Asteya (theft, unauthorized draining of funds).` },
   horizon: { cs: `Horizont`, en: `Horizon` },
   building: { cs: `Ve výstavbě`, en: `Building` },
+  statusTrained: { cs: `Natrénováno`, en: `Trained` },
 };
 
 type L3Status = 'checking' | 'online' | 'offline';
@@ -270,6 +273,13 @@ const getEvolution = (cs: boolean) => [
     chips: ['8B GGUF', 'RAG + Memory', 'Live chat'],
   },
   {
+    version: '2.3',
+    title: L3HiranCopy.v23Title[cs ? 'cs' : 'en'],
+    desc: L3HiranCopy.v23Desc[cs ? 'cs' : 'en'],
+    status: 'trained' as const,
+    chips: ['Qwen3-32B', '20,517 pairs', 'Q5_K_M · 22 GB'],
+  },
+  {
     version: '2.4',
     title: L3HiranCopy.v24Title[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.v24Desc[cs ? 'cs' : 'en'],
@@ -314,7 +324,7 @@ const getModalities = (cs: boolean) => [
 
 const getModelCards = (cs: boolean) => [
   {
-    name: 'Hiran — 8B',
+    name: 'Hiran — 8B (v2.2)',
     status: 'live' as const,
     base: 'Meta-Llama-3.1-8B-Instruct',
     method: 'QLoRA · dynamic rank 16–64',
@@ -327,16 +337,16 @@ const getModelCards = (cs: boolean) => [
     color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
   {
-    name: 'Hiran — 32B',
-    status: 'wip' as const,
-    base: 'OpenReasoning 32B class',
-    method: 'Full fine-tuning + hybrid RAG',
-    size: '32B params · BF16',
+    name: 'Hiran — 32B (v2.3)',
+    status: 'trained' as const,
+    base: 'Qwen3-32B',
+    method: 'QLoRA + LoRA r=64/α=128 · rsLoRA',
+    size: 'Q5_K_M GGUF · 22 GB',
     speed: 'TBD',
-    vram: 'multi-GPU',
-    hardware: '4× A100 80GB target',
-    dataset: '48K pairs · 9 stages',
-    tags: ['LLM', 'Full FT', '32B', 'RAG'],
+    vram: '22–24 GB',
+    hardware: 'RTX 3090/4090 · A100',
+    dataset: '20,517 pairs',
+    tags: ['LLM', 'QLoRA', '32B', 'GGUF'],
     color: 'border-zion-purple/30 bg-zion-purple/5',
   },
 ];
@@ -431,11 +441,11 @@ const getMarketplace = (cs: boolean) => [
     color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
   {
-    name: 'Hiran 32B',
-    version: 'Full FT · 32B',
-    status: 'planned',
-    desc: L3HiranCopy.fullFineTuningWithHybridRag48k[cs ? 'cs' : 'en'],
-    tags: ['LLM', 'Full FT', '32B'],
+    name: 'Hiran 32B (v2.3)',
+    version: 'QLoRA · Q5_K_M · 22 GB',
+    status: 'trained',
+    desc: L3HiranCopy.hiranV23MarketplaceDesc[cs ? 'cs' : 'en'],
+    tags: ['LLM', 'QLoRA', '32B'],
     color: 'border-zion-purple/30 bg-zion-purple/5',
   },
   {
@@ -801,7 +811,7 @@ export default function L3HiranPage() {
               {L3HiranCopy.hiranVersionRoadmap[cs ? 'cs' : 'en']}
             </h2>
           </div>
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2">
             {evolution.map((v) => (
               <div key={v.version} className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
@@ -814,13 +824,17 @@ export default function L3HiranPage() {
                       ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20'
                       : v.status === 'building'
                         ? 'bg-zion-gold/10 text-zion-gold border-zion-gold/20'
-                        : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
+                        : v.status === 'trained'
+                          ? 'bg-white/10 text-white border-white/20'
+                          : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
                     {v.status === 'live'
                       ? L3HiranCopy.statusLive[cs ? 'cs' : 'en']
                       : v.status === 'building'
                         ? L3HiranCopy.building[cs ? 'cs' : 'en']
-                        : L3HiranCopy.horizon[cs ? 'cs' : 'en']}
+                        : v.status === 'trained'
+                          ? L3HiranCopy.statusTrained[cs ? 'cs' : 'en']
+                          : L3HiranCopy.horizon[cs ? 'cs' : 'en']}
                   </span>
                 </div>
                 <p className="text-sm text-gray-400 leading-relaxed mb-4">{v.desc}</p>
@@ -941,9 +955,15 @@ export default function L3HiranPage() {
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
                     model.status === 'live'
                       ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20'
-                      : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
+                      : model.status === 'trained'
+                        ? 'bg-white/10 text-white border-white/20'
+                        : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
-                    {model.status === 'live' ? L3HiranCopy.statusLive[cs ? 'cs' : 'en'] : 'WIP'}
+                    {model.status === 'live'
+                      ? L3HiranCopy.statusLive[cs ? 'cs' : 'en']
+                      : model.status === 'trained'
+                        ? L3HiranCopy.statusTrained[cs ? 'cs' : 'en']
+                        : 'WIP'}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
@@ -1191,9 +1211,15 @@ export default function L3HiranPage() {
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
                     item.status === 'live'
                       ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20'
-                      : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
+                      : item.status === 'trained'
+                        ? 'bg-white/10 text-white border-white/20'
+                        : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
-                    {item.status === 'live' ? L3HiranCopy.statusLive[cs ? 'cs' : 'en'] : (L3HiranCopy.planned[cs ? 'cs' : 'en'])}
+                    {item.status === 'live'
+                      ? L3HiranCopy.statusLive[cs ? 'cs' : 'en']
+                      : item.status === 'trained'
+                        ? L3HiranCopy.statusTrained[cs ? 'cs' : 'en']
+                        : (L3HiranCopy.planned[cs ? 'cs' : 'en'])}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{item.version}</p>
