@@ -287,6 +287,15 @@ impl ChainAdapter for SolanaAdapter {
     async fn watch_addresses(&self, addresses: &[Address]) -> MultichainResult<Vec<DepositEvent>> {
         let mut events = Vec::new();
 
+        // Current slot — needed to compute confirmations per signature.
+        let current_slot = match self.get_slot().await {
+            Ok(s) => Some(s),
+            Err(e) => {
+                warn!("[multichain][solana] getSlot failed: {e}");
+                None
+            }
+        };
+
         for addr in addresses {
             if addr.chain != self.chain {
                 continue;
@@ -357,13 +366,21 @@ impl ChainAdapter for SolanaAdapter {
                     arr.copy_from_slice(&digest);
                     let tx_hash = Hash::new(arr);
 
+                    // Confirmations = current_slot - tx_slot + 1. If either
+                    // slot is unknown we report 0 so the deposit stays Pending
+                    // rather than being credited with no finality check.
+                    let confirmations = match (current_slot, sig.slot) {
+                        (Some(cur), Some(tx_slot)) => cur.saturating_sub(tx_slot) + 1,
+                        _ => 0,
+                    };
+
                     events.push(DepositEvent {
                         chain: self.chain,
                         tx_hash,
                         recipient: addr.clone(),
                         amount,
                         memo: None,
-                        confirmations: 1, // Solana slots are ~400ms; we use "confirmed" commitment
+                        confirmations,
                         asset: Some(self.zion_asset()),
                     });
                 }

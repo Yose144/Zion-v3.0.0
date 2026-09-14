@@ -16,6 +16,10 @@
 //! | POST   | /api/dao/proposals/:id/execute | Execute proposal (auth)       |
 //! | POST   | /api/dao/proposals/:id/cancel  | Cancel proposal (auth)        |
 //! | GET    | /api/dao/stats               | Global DAO statistics           |
+//! | GET    | /api/dao/treasury            | Treasury overview (public)      |
+//! | POST   | /api/dao/treasury/submit     | Submit treasury op (auth)       |
+//! | POST   | /api/dao/treasury/:op_id/sign    | Guardian signature (auth)   |
+//! | POST   | /api/dao/treasury/:op_id/execute | Execute signed op (auth)    |
 //! | GET    | /metrics                     | Prometheus text metrics         |
 //!
 //! ## Auth
@@ -32,14 +36,20 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpStream;
 use tokio::sync::Mutex as TokioMutex;
 use tracing::info;
+use zion_l1_types::normalize_rpc_addr;
 
 use crate::config::DaoConfig;
+use crate::error::DaoError;
 use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::runtime::GovernanceRuntime;
-use crate::types::VoteChoice;
+use crate::treasury::TreasuryOperation;
+use crate::types::{VoteChoice, DAO_TREASURY_TOTAL, FLOWERS_PER_ZION};
+use crate::zis::{self, ZisClient, ZisUser};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App State
@@ -50,6 +60,7 @@ pub struct AppState {
     pub runtime: Arc<TokioMutex<GovernanceRuntime>>,
     pub api_key: String,
     pub metrics: Arc<DaoMetrics>,
+    pub zis: ZisClient,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -271,6 +282,19 @@ pub struct CancelRequest {
     pub caller: String,
 }
 
+#[derive(Deserialize)]
+pub struct TreasurySubmitRequest {
+    pub op_id: String,
+    pub guardian: String,
+    pub operation: serde_json::Value,
+    pub proposal_id: Option<u64>,
+}
+
+#[derive(Deserialize)]
+pub struct TreasuryGuardianRequest {
+    pub guardian: String,
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Route handlers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -313,17 +337,40 @@ async fn create_proposal(
     headers: HeaderMap,
     Json(req): Json<CreateProposalRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
-    check_auth(&state, &headers)?;
+    let caller = resolve_caller(&state, &headers)
+        .await
+        .ok_or_else(unauthorized)?;
 
     let proposal_type: ProposalType = req.proposal_type.into();
+
+    let (proposer, proposer_balance, snapshot_block) = match caller {
+        CallerAuth::Operator => (req.proposer, req.proposer_balance, req.snapshot_block),
+        CallerAuth::Zis(user) => {
+            // Identity and balance come from ZIS + L1, never from the client.
+            let proposer = user.zion_address().to_string();
+            let rpc_url = {
+                let rt = state.runtime.lock().await;
+                rt.config().l1_rpc_url.clone()
+            };
+            let snapshot_block = match req.snapshot_block {
+                0 => l1_chain_height(&rpc_url).await.map_err(db_err)?,
+                h => h,
+            };
+            let balance = l1_balance_at_height(&rpc_url, &proposer, snapshot_block)
+                .await
+                .map_err(db_err)?;
+            (proposer, balance, snapshot_block)
+        }
+    };
+
     let mut rt = state.runtime.lock().await;
     match rt.create_proposal(
         req.title,
         req.description,
         proposal_type,
-        req.proposer,
-        req.proposer_balance,
-        req.snapshot_block,
+        proposer,
+        proposer_balance,
+        snapshot_block,
     ) {
         Ok(id) => Ok(ok(serde_json::json!({"proposal_id": id}))),
         Err(e) => Err(err(&e.to_string())),
@@ -364,10 +411,48 @@ async fn cast_vote(
     Path(id): Path<u64>,
     Json(req): Json<CastVoteRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
-    check_auth(&state, &headers)?;
+    let caller = resolve_caller(&state, &headers)
+        .await
+        .ok_or_else(unauthorized)?;
+
+    let (voter, weight) = match caller {
+        CallerAuth::Operator => (req.voter, req.weight),
+        CallerAuth::Zis(user) => {
+            // Voter = the user's linked ZION L1 address; weight = its real
+            // balance at the proposal snapshot block (client can't fake it).
+            let voter = user.zion_address().to_string();
+            let (snapshot_block, rpc_url, min_weight) = {
+                let rt = state.runtime.lock().await;
+                match rt.get_proposal(id) {
+                    Some(p) => (
+                        p.snapshot_block,
+                        rt.config().l1_rpc_url.clone(),
+                        rt.config().min_vote_weight,
+                    ),
+                    None => return Err(err(&format!("proposal {id} not found"))),
+                }
+            };
+            let weight = l1_balance_at_height(&rpc_url, &voter, snapshot_block)
+                .await
+                .map_err(db_err)?;
+            if weight < min_weight {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    Json(ApiErr {
+                        success: false,
+                        error: format!(
+                            "insufficient ZION balance for voting (min {} flowers)",
+                            min_weight
+                        ),
+                    }),
+                ));
+            }
+            (voter, weight)
+        }
+    };
 
     let mut rt = state.runtime.lock().await;
-    match rt.cast_vote(id, req.voter, req.choice, req.weight, req.tx_hash) {
+    match rt.cast_vote(id, voter, req.choice, weight, req.tx_hash) {
         Ok(vote) => Ok(ok(serde_json::json!({
             "proposal_id": vote.proposal_id,
             "voter": vote.voter,
@@ -451,11 +536,202 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
     ok(serde_json::json!({
         "total_proposals": all.len(),
         "active_proposals": active.len(),
+        "active": active.len(),
         "passed": passed,
         "executed": executed,
         "failed": failed,
         "circulating_supply": rt.circulating_supply(),
+        "treasury_total_zion": (DAO_TREASURY_TOTAL / FLOWERS_PER_ZION as u128) as u64,
     }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Treasury handlers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// GET /api/dao/treasury — live treasury overview.
+///
+/// Balances are read from the L1 UTXO set (genesis premine outputs) so the
+/// numbers reflect the actual chain, not a static config value.
+async fn treasury_overview(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    let (rpc_url, addresses, threshold, total, daily_limit, db) = {
+        let rt = state.runtime.lock().await;
+        let cfg = rt.config();
+        (
+            cfg.l1_rpc_url.clone(),
+            cfg.treasury_addresses.clone(),
+            cfg.multisig_threshold,
+            cfg.multisig_total,
+            cfg.daily_spend_limit,
+            rt.db(),
+        )
+    };
+
+    // Sum confirmed UTXOs across all treasury addresses (amounts in flowers).
+    let mut available: u128 = 0;
+    for addr in &addresses {
+        available += l1_utxo_balance(&rpc_url, addr).await.map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(ApiErr {
+                    success: false,
+                    error: format!("L1 RPC unreachable: {e}"),
+                }),
+            )
+        })?;
+    }
+
+    let pending = match db {
+        Some(db) => {
+            let db = db
+                .lock()
+                .map_err(|e| err(&format!("db lock: {e}")))?;
+            db.count_treasury_ops("pending").map_err(db_err)?
+                + db.count_treasury_ops("signed").map_err(db_err)?
+        }
+        None => 0,
+    };
+
+    Ok(ok(serde_json::json!({
+        "total_zion": (available / FLOWERS_PER_ZION as u128) as u64,
+        "available_atomic": available.to_string(),
+        "available_zion": available as f64 / FLOWERS_PER_ZION as f64,
+        "addresses": addresses,
+        "multisig": format!("{threshold}-of-{total}"),
+        "pending_operations": pending,
+        "daily_spend_limit_zion": daily_limit,
+        "note": format!(
+            "Balances are live L1 UTXO sums of the genesis treasury addresses. \
+             Spending requires a passed proposal plus {threshold}-of-{total} guardian multisig."
+        ),
+    })))
+}
+
+/// POST /api/dao/treasury/submit — guardian submits a multisig operation.
+/// The submitter's approval counts as the first signature.
+async fn submit_treasury_op(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<TreasurySubmitRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    check_auth(&state, &headers)?;
+
+    let operation: TreasuryOperation = serde_json::from_value(req.operation.clone())
+        .map_err(|e| err(&format!("invalid treasury operation: {e}")))?;
+
+    let rt = state.runtime.lock().await;
+    require_guardian(rt.config(), &req.guardian)?;
+    let db = rt.db().ok_or_else(|| err("database not configured"))?;
+    let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
+
+    if db.get_treasury_op(&req.op_id).map_err(db_err)?.is_some() {
+        return Err(err(&format!("operation {} already exists", req.op_id)));
+    }
+
+    db.insert_treasury_op(&req.op_id, req.proposal_id, &operation, &req.guardian)
+        .map_err(db_err)?;
+    db.add_treasury_sig(&req.op_id, &req.guardian)
+        .map_err(db_err)?;
+
+    let signatures = db.list_treasury_sigs(&req.op_id).map_err(db_err)?.len() as u32;
+    let threshold = rt.config().multisig_threshold;
+    Ok(ok(serde_json::json!({
+        "op_id": req.op_id,
+        "signatures": signatures,
+        "threshold": threshold,
+        "ready": signatures >= threshold,
+    })))
+}
+
+/// POST /api/dao/treasury/:op_id/sign — add a guardian signature.
+async fn sign_treasury_op(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(op_id): Path<String>,
+    Json(req): Json<TreasuryGuardianRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    check_auth(&state, &headers)?;
+
+    let rt = state.runtime.lock().await;
+    require_guardian(rt.config(), &req.guardian)?;
+    let db = rt.db().ok_or_else(|| err("database not configured"))?;
+    let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
+
+    let op = db
+        .get_treasury_op(&op_id)
+        .map_err(db_err)?
+        .ok_or_else(|| err(&format!("treasury operation {op_id} not found")))?;
+    if op.status != "pending" && op.status != "signed" {
+        return Err(err(&format!(
+            "operation {op_id} is {status} — not open for signatures",
+            status = op.status
+        )));
+    }
+
+    db.add_treasury_sig(&op_id, &req.guardian).map_err(db_err)?;
+    let signatures = db.list_treasury_sigs(&op_id).map_err(db_err)?.len() as u32;
+    let threshold = rt.config().multisig_threshold;
+    let ready = signatures >= threshold;
+    if ready && op.status == "pending" {
+        db.update_treasury_op_status(&op_id, "signed").map_err(db_err)?;
+    }
+
+    Ok(ok(serde_json::json!({
+        "op_id": op_id,
+        "signatures": signatures,
+        "threshold": threshold,
+        "ready": ready,
+    })))
+}
+
+/// POST /api/dao/treasury/:op_id/execute — execute a fully-signed operation.
+async fn execute_treasury_op(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(op_id): Path<String>,
+    Json(req): Json<TreasuryGuardianRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    check_auth(&state, &headers)?;
+
+    let rt = state.runtime.lock().await;
+    require_guardian(rt.config(), &req.guardian)?;
+    let db = rt.db().ok_or_else(|| err("database not configured"))?;
+    let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
+
+    let op = db
+        .get_treasury_op(&op_id)
+        .map_err(db_err)?
+        .ok_or_else(|| err(&format!("treasury operation {op_id} not found")))?;
+    if op.status == "executed" {
+        return Err(err(&format!("operation {op_id} already executed")));
+    }
+    if op.status == "rejected" {
+        return Err(err(&format!("operation {op_id} was rejected")));
+    }
+
+    let signatures = db.list_treasury_sigs(&op_id).map_err(db_err)?.len() as u32;
+    let threshold = rt.config().multisig_threshold;
+    if signatures < threshold {
+        return Err(err(&format!(
+            "insufficient signatures: {signatures}/{threshold} required"
+        )));
+    }
+
+    db.update_treasury_op_status(&op_id, "executed").map_err(db_err)?;
+
+    let parsed: Option<TreasuryOperation> = serde_json::from_str(&op.operation).ok();
+    let amount = parsed.as_ref().map(treasury_op_amount).unwrap_or(0);
+
+    Ok(ok(serde_json::json!({
+        "op_id": op_id,
+        "executed_by": req.guardian,
+        "signatures": signatures,
+        "threshold": threshold,
+        "amount_atomic": amount,
+        "amount_zion": amount as f64 / FLOWERS_PER_ZION as f64,
+    })))
 }
 
 use axum::response::Response;
@@ -471,6 +747,180 @@ async fn prometheus(State(state): State<AppState>) -> Response<String> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+fn db_err(e: DaoError) -> (StatusCode, Json<ApiErr>) {
+    err(&e.to_string())
+}
+
+fn unauthorized() -> (StatusCode, Json<ApiErr>) {
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(ApiErr {
+            success: false,
+            error: "unauthorized: sign in with ZIS or provide a valid X-DAO-Key".into(),
+        }),
+    )
+}
+
+/// How the caller authenticated: operator API key or a resolved ZIS session.
+enum CallerAuth {
+    Operator,
+    Zis(ZisUser),
+}
+
+/// Resolve caller identity: operator `X-DAO-Key` first, then `zion_session`.
+/// Returns `None` when neither is valid.
+async fn resolve_caller(state: &AppState, headers: &HeaderMap) -> Option<CallerAuth> {
+    if state.api_key.is_empty() {
+        return Some(CallerAuth::Operator); // dev mode: no key configured
+    }
+    if let Some(key) = headers
+        .get("x-dao-key")
+        .and_then(|v| v.to_str().ok())
+    {
+        if key == state.api_key {
+            return Some(CallerAuth::Operator);
+        }
+    }
+    if let Some(cookie) = headers.get("cookie").and_then(|v| v.to_str().ok()) {
+        if let Some(sess) = zis::session_cookie(cookie) {
+            if let Some(user) = state.zis.resolve_session(sess).await {
+                return Some(CallerAuth::Zis(user));
+            }
+        }
+    }
+    None
+}
+
+/// Whole-chain height via L1 `getChainInfo`.
+async fn l1_chain_height(rpc_url: &str) -> Result<u64, DaoError> {
+    #[derive(Deserialize)]
+    struct Info {
+        chain_height: u64,
+    }
+    let info: Info = l1_rpc(rpc_url, "getChainInfo", serde_json::json!({})).await?;
+    Ok(info.chain_height)
+}
+
+/// Address balance at a given height, returned in flowers.
+async fn l1_balance_at_height(rpc_url: &str, address: &str, height: u64) -> Result<u64, DaoError> {
+    #[derive(Deserialize)]
+    struct Bal {
+        #[serde(default)]
+        balance_zion: String,
+        #[serde(default)]
+        balance_flowers: u64,
+    }
+    let b: Bal = l1_rpc(
+        rpc_url,
+        "getBalanceAtHeight",
+        serde_json::json!({ "address": address, "height": height }),
+    )
+    .await?;
+    if let Ok(z) = b.balance_zion.parse::<u64>() {
+        return Ok(z.saturating_mul(FLOWERS_PER_ZION));
+    }
+    Ok(b.balance_flowers)
+}
+
+/// Check that `address` belongs to a configured DAO guardian.
+/// If no guardians are configured (dev/testnet), any authenticated caller passes.
+fn require_guardian(
+    cfg: &DaoConfig,
+    address: &str,
+) -> Result<(), (StatusCode, Json<ApiErr>)> {
+    if cfg.guardians.is_empty() {
+        return Ok(());
+    }
+    if cfg.guardians.iter().any(|g| g.address == address) {
+        Ok(())
+    } else {
+        Err((
+            StatusCode::FORBIDDEN,
+            Json(ApiErr {
+                success: false,
+                error: "forbidden: not a DAO guardian address".into(),
+            }),
+        ))
+    }
+}
+
+fn treasury_op_amount(op: &TreasuryOperation) -> u64 {
+    match op {
+        TreasuryOperation::Spend { amount, .. }
+        | TreasuryOperation::HumanitarianGrant { amount, .. }
+        | TreasuryOperation::Rebalance { amount, .. }
+        | TreasuryOperation::GoldenEggPrize { amount, .. } => *amount,
+    }
+}
+
+// ── L1 RPC (line-delimited JSON-RPC over TCP, same transport the scanner uses) ──
+
+#[derive(Debug, Deserialize)]
+struct L1RpcResponse<T> {
+    result: Option<T>,
+    error: Option<serde_json::Value>,
+}
+
+async fn l1_rpc<T: for<'de> Deserialize<'de>>(
+    rpc_url: &str,
+    method: &str,
+    params: serde_json::Value,
+) -> Result<T, DaoError> {
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": method,
+        "params": params,
+    })
+    .to_string();
+
+    let mut stream = TcpStream::connect(normalize_rpc_addr(rpc_url))
+        .await
+        .map_err(|e| DaoError::Internal(format!("RPC connect failed: {e}")))?;
+    stream
+        .write_all(request.as_bytes())
+        .await
+        .map_err(|e| DaoError::Internal(format!("RPC write failed: {e}")))?;
+    stream
+        .write_all(b"\n")
+        .await
+        .map_err(|e| DaoError::Internal(format!("RPC newline write failed: {e}")))?;
+
+    let mut reader = BufReader::new(stream);
+    let mut line = String::new();
+    reader
+        .read_line(&mut line)
+        .await
+        .map_err(|e| DaoError::Internal(format!("RPC read failed: {e}")))?;
+
+    let resp: L1RpcResponse<T> = serde_json::from_str(line.trim())
+        .map_err(|e| DaoError::Internal(format!("RPC parse error: {e}")))?;
+    if let Some(e) = resp.error {
+        return Err(DaoError::Internal(format!("RPC error: {e}")));
+    }
+    resp.result
+        .ok_or_else(|| DaoError::Internal("RPC returned null result".into()))
+}
+
+/// Sum confirmed UTXOs for `address` on L1 (returns flowers, u128).
+async fn l1_utxo_balance(rpc_url: &str, address: &str) -> Result<u128, DaoError> {
+    #[derive(Deserialize)]
+    struct Utxo {
+        amount: u128,
+    }
+    #[derive(Deserialize)]
+    struct UtxoResult {
+        utxos: Vec<Utxo>,
+    }
+    let res: UtxoResult = l1_rpc(
+        rpc_url,
+        "getUtxos",
+        serde_json::json!({ "address": address }),
+    )
+    .await?;
+    Ok(res.utxos.iter().map(|u| u.amount).sum())
+}
 
 fn check_auth(state: &AppState, headers: &HeaderMap) -> Result<(), (StatusCode, Json<ApiErr>)> {
     if state.api_key.is_empty() {
@@ -529,11 +979,13 @@ pub async fn serve(
 ) -> anyhow::Result<()> {
     let api_key = config.api_key.clone();
     let port = config.api_port;
+    let zis = ZisClient::new(config.zis_enabled, config.zis_url.clone());
 
     let state = AppState {
         runtime,
         api_key,
         metrics,
+        zis,
     };
 
     let app = Router::new()
@@ -549,6 +1001,10 @@ pub async fn serve(
         .route("/api/dao/proposals/:id/execute", post(execute_proposal))
         .route("/api/dao/proposals/:id/cancel", post(cancel_proposal))
         .route("/api/dao/stats", get(stats))
+        .route("/api/dao/treasury", get(treasury_overview))
+        .route("/api/dao/treasury/submit", post(submit_treasury_op))
+        .route("/api/dao/treasury/:op_id/sign", post(sign_treasury_op))
+        .route("/api/dao/treasury/:op_id/execute", post(execute_treasury_op))
         .route("/metrics", get(prometheus))
         .with_state(state);
 

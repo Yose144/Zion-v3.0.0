@@ -969,6 +969,29 @@ impl Db {
         Ok(out)
     }
 
+    /// Load deposit addresses that have actually received at least one
+    /// deposit. Reconciliation only needs to query funded addresses —
+    /// unfunded deposit addresses contribute zero and just burn RPC quota.
+    pub fn load_funded_deposit_addresses(&self) -> MultichainResult<Vec<WalletAddress>> {
+        let mut stmt = self.conn.prepare(
+            r#"
+            SELECT DISTINCT wa.address, wa.user_id, wa.chain, wa.chain_id,
+                   wa.purpose, wa.public_key, wa.derivation_path, wa.is_external,
+                   wa.created_at
+            FROM wallet_addresses wa
+            WHERE wa.purpose = ?1
+              AND wa.user_id IN (SELECT DISTINCT user_id FROM deposits)
+            ORDER BY wa.created_at DESC
+            "#,
+        )?;
+        let mut rows = stmt.query(rusqlite::params![AddressPurpose::Deposit.to_string()])?;
+        let mut out = Vec::new();
+        while let Some(row) = rows.next()? {
+            out.push(parse_wallet_address(row)?);
+        }
+        Ok(out)
+    }
+
     /// Record a new deposit or return the existing id for the same tx/asset/user.
     pub fn record_deposit(&self, deposit: &DepositRecord) -> MultichainResult<()> {
         let created_at = deposit.created_at.to_rfc3339();

@@ -98,6 +98,10 @@ struct TxOutput {
 
 #[derive(Debug, Deserialize)]
 struct BalanceAtHeightInfo {
+    /// Whole-ZION balance as a string (v3 hybrid model response).
+    #[serde(default)]
+    balance_zion: String,
+    /// Legacy field kept for nodes that report flowers directly.
     #[serde(default)]
     balance_flowers: u64,
 }
@@ -570,6 +574,10 @@ impl L1Scanner {
                 serde_json::json!({ "address": address, "height": block }),
             )
             .await?;
+        // The node reports whole ZION in `balance_zion`; convert to flowers.
+        if let Ok(zion) = bal.balance_zion.parse::<u64>() {
+            return Ok(zion.saturating_mul(crate::types::FLOWERS_PER_ZION));
+        }
         Ok(bal.balance_flowers)
     }
 }

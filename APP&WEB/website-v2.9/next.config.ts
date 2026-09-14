@@ -133,7 +133,7 @@ const nextConfig: NextConfig = {
       { source: '/dex', destination: '/multichain#dex', permanent: true },
       { source: '/dex/:path*', destination: '/multichain#dex', permanent: true },
       { source: '/ziondex', destination: '/multichain#dex', permanent: true },
-      { source: '/dao', destination: '/multichain#governance', permanent: true },
+      // /dao is a real page — no redirect to /multichain#governance
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.

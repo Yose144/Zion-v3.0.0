@@ -78,6 +78,9 @@ pub struct V3PoolClient {
     // Becomes true when the read loop detects the pool has closed the
     // connection.  Used to fail fast on subsequent submits.
     conn_closed: watch::Receiver<bool>,
+    // Latest ZION job_id pushed by the pool.  The pool drops superseded jobs,
+    // so a share mined for an older job_id is guaranteed `unknown_job`.
+    latest_zion_job_id: std::sync::Arc<std::sync::atomic::AtomicU64>,
 }
 
 impl V3PoolClient {
@@ -154,6 +157,12 @@ impl V3PoolClient {
         // Watch channel to signal when the pool closes the connection.
         let (conn_closed_tx, conn_closed_rx) = watch::channel(false);
 
+        // Tracks the newest ZION job_id seen by the read loop so the mining
+        // path can detect a stale share before submitting it.
+        let latest_zion_job_id =
+            std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let latest_zion_in_loop = latest_zion_job_id.clone();
+
         // Spawn the read loop
         tokio::spawn(async move {
             loop {
@@ -197,6 +206,8 @@ impl V3PoolClient {
                                     gpu_external: external_stream,
                                     cpu_external: external_stream_cpu,
                                 };
+                                latest_zion_in_loop
+                                    .store(job_id, std::sync::atomic::Ordering::Relaxed);
                                 if job_tx.send(bundle).await.is_err() {
                                     warn!("V3 read loop: job channel closed, exiting");
                                     let _ = conn_closed_tx.send(true);
@@ -302,6 +313,7 @@ impl V3PoolClient {
             vrsc_result_rx: Mutex::new(vrsc_result_rx),
             zano_result_rx: Mutex::new(zano_result_rx),
             conn_closed: conn_closed_rx,
+            latest_zion_job_id,
         })
     }
 
@@ -321,6 +333,18 @@ impl V3PoolClient {
     pub async fn try_next_job(&self) -> Option<V3JobBundle> {
         let mut rx = self.job_rx.lock().await;
         rx.try_recv().ok()
+    }
+
+    /// The most recent ZION job_id received from the pool.
+    ///
+    /// Used before submitting a share: the pool drops superseded jobs, so a
+    /// share mined for an older job_id is guaranteed to come back
+    /// `unknown_job`.  Comparing job ids is precise — a new bundle pushed
+    /// only because an AuxPoW stream changed keeps the same ZION job_id and
+    /// the share remains valid.
+    pub fn latest_zion_job_id(&self) -> u64 {
+        self.latest_zion_job_id
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 
     /// Submit a ZION share to the pool.

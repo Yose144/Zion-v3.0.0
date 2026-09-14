@@ -15,8 +15,16 @@ Environment=ZION_MINER_THREADS=4
 ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --wallet ${ZION_MINER_WALLET} --worker ${ZION_MINER_WORKER} --threads ${ZION_MINER_THREADS} --no-gpu --no-cpu --v3-trinity
 Restart=always
 RestartSec=30
-Nice=10
+# Miner runs on spare cycles only: lowest scheduling priority, minimal cgroup
+# share under contention (~9% vs services at weight 100), idle disk class, and
+# first OOM-kill target so co-located services are never starved. CPUQuota is
+# only a hard safety ceiling — idle capacity is still fully usable.
+Nice=19
+CPUWeight=10
 CPUQuota=400%
+IOSchedulingClass=idle
+IOWeight=10
+OOMScoreAdjust=900
 MemoryMax=256M
 
 # Security hardening (unprivileged zion user)

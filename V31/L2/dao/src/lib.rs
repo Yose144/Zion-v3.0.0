@@ -22,6 +22,7 @@ pub mod timelock;
 pub mod treasury;
 pub mod types;
 pub mod voting;
+pub mod zis;
 
 pub use co_admin::CoAdminRegistry;
 pub use config::DaoConfig;
