@@ -133,9 +133,9 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 |---|------|--------|
 | J1 | Web 2.9 → ZIS | ✅ Complete — `AuthContext`/`useAuth()` přes `zion_session` napříč webem (wallet, DAO governance, marketplace proxy) |
 | J2 | Marketplace → ZIS | ✅ Complete — `AuthContext` + `ConnectButton` ZIS integrace live (2026-09-02) |
-| J3 | OASIS → server + ZIS | ❌ Not started |
+| J3 | OASIS → server + ZIS | ✅ Complete — `zis_auth.rs` + `ZisClient` v OASIS (ZIS session → wallet-sig fallback), `OASIS_ZIS_AUTH=1` zapnuto na Edge (2026-09-14) |
 | J4 | Dashboard → ZIS | ✅ Complete — ZIS SSO cookie v `_check_auth()` + `/api/me` endpoint (2026-09-02) |
-| J5 | OASIS ↔ Marketplace artifact sync | ❌ Not started |
+| J5 | OASIS ↔ Marketplace artifact sync | ✅ Complete — `/api/oasis/sync` + `/api/oasis/reverse-sync` live na marketplace (3100); ověřeno 2026-09-14: `sync?type=avatars` → 200 avatars do Prisma DB |
 | J6 | Dashboard "My Ecosystem" view | ✅ Complete — `/ecosystem` page + `/api/ecosystem` na dashboardu (8766): ZIS user → linked zion-l1 adresy → L1 UTXO balances, pool mining payouts (`pool-store.db`), DAO votes (`dao.db`), marketplace counts (Postgres). Basic-auth operátoři dostanou "sign in with ZIS" (2026-09-14) |
 | J7 | Mining / DAO → shared DB | ❌ Not started |
 
