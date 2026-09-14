@@ -364,14 +364,14 @@ export default function L4OasisPage() {
             </div>
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/nebula.jpg"
-                alt={cs ? 'ZION Oasis — spirálová galaxie' : 'ZION Oasis — spiral galaxy'}
+                src="/images/l4-oasis/hero.webp"
+                alt={cs ? 'ZION Oasis — Strom života a Zlaté vejce ve spirální galaxii' : 'ZION Oasis — the Tree of Life and the Golden Egg in a spiral galaxy'}
                 width={1280}
-                height={1280}
+                height={720}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
-                className="w-full max-h-[480px] object-cover"
+                className="w-full object-cover"
               />
             </div>
           </div>
