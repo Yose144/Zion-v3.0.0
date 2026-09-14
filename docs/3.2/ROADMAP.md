@@ -136,7 +136,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | J3 | OASIS → server + ZIS | ❌ Not started |
 | J4 | Dashboard → ZIS | ✅ Complete — ZIS SSO cookie v `_check_auth()` + `/api/me` endpoint (2026-09-02) |
 | J5 | OASIS ↔ Marketplace artifact sync | ❌ Not started |
-| J6 | Dashboard "My Ecosystem" view | ❌ Not started |
+| J6 | Dashboard "My Ecosystem" view | ✅ Complete — `/ecosystem` page + `/api/ecosystem` na dashboardu (8766): ZIS user → linked zion-l1 adresy → L1 UTXO balances, pool mining payouts (`pool-store.db`), DAO votes (`dao.db`), marketplace counts (Postgres). Basic-auth operátoři dostanou "sign in with ZIS" (2026-09-14) |
 | J7 | Mining / DAO → shared DB | ❌ Not started |
 
 ---
