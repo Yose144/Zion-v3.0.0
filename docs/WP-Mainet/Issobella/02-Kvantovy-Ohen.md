@@ -9,7 +9,7 @@
 
 Když se jedenáctá epizoda Nirvany dovyprávěla, zůstala v poutnících otázka, kterou si nesli jako tlející uhlík: *dá se ten oheň skutečně rozdělat?*
 
-Učili se to od lidí, kteří si říkali *tiskaři pravdy* — výzkumníci, kteří neslibovali rakety, ale **otázky dobře položené**. V jejich stanech nad stolem nevisely obrázky lodí, ale tabulky: *co víme, co nevíme, co bychom věděli, kdyby se to ukázalo pravdivé, a co by to stálo, kdyby se ukázalo nepravdivé.*
+Učili se to od lidí, kteří si říkali *tiskaři pravdy* — výzkumníci, kteří neslibovali rakety, ale **otázky dobře položené**. V jejich stanech nad stolem nevisely obrázky lodí, ale tabulky: *co vímnae, co nevíme, co bychom věděli, kdyby se to ukázalo pravdivé, a co by to stálo, kdyby se ukázalo nepravdivé.*
 
 *„Poslouchejte,"* řekla jednoho večera žena jménem Draha, která vedla kruh. *„Oheň má tři povahy. První je plamen — to, co vidíte v obrazech a snech. Druhá je uhlí — to, co drží teplo dlouho po setmění. Třetí je popel — to, co zbyde, když všechno shoří, a z čeho se zase rodí půda. Kdo chce zapálit kvantový oheň, musí být ochoten počítat i s popelem."*
 

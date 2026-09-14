@@ -29,7 +29,7 @@ V31 Mainnet Alpha is **live and producing blocks on Edge**. The workspace compil
 | V31 node on Edge | ✅ Active | height 7000+, protocol 3.1.0-alpha |
 | V31 pool on Edge | ✅ Active | stratum 8444, shares accepted, PPLNS payout confirmation sweep active |
 | V31 multichain | ✅ Active | `/health` 200, DEX + HTLC endpoints wired |
-| V31 DAO | ✅ Active | runtime, L1 scanner, HTTP API + metrics |
+| V31 DAO | ✅ Active | runtime, L1 scanner, HTTP API + metrics, live treasury endpoints (UTXO sum over genesis slots 7+8 = 1.5B ZION), guardian multisig 5-of-7, ZIS session auth for votes/proposals, `/dao` UI live on app.zionterranova.com, proposal #1 active |
 | V31 OASIS | ✅ Active | raw TCP RPC, blockchain listener fixed |
 | V31 dashboard | ✅ Active | V31 service metrics, Grafana, `/health` |
 | Trinity mining (ZION + ZANO + VRSC) | ✅ Production | 22–24 MH/s total, 100% accept rate on Edge pool |
@@ -86,7 +86,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | F2 | Complete 24h transaction fuzz evidence | QA | 🔄 10-min preview passed (2 280 req, 0 health fails); full 24h run started 2026-08-22 22:34 CET but is not currently active and `docs/3.2/REPORTS/fuzz_logs/tx_fuzz_24h_stdout.log` is empty; evidence must be completed/restarted before gate close |
 | F3 | Chaos tests | QA/ops | ✅ Rounds 1–5 preview executed (network, process, data, resource, L2 bridge); no crashes | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F4 | 1000+ miner simulation | pool/QA | ✅ 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived; no panics | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
-| F5 | Backup / DR drill | ops | restore from off-site backup, sync to tip |
+| F5 | Backup / DR drill | ops | 🔄 Partial — 2026-09-14: latest daily archive (`zion-edge-20260914_091911.tar.gz`, 150 MB) extracted and verified: `dao.db`/`node.db`/`warp.db` pass `PRAGMA integrity_check`, proposal #1 present, configs + systemd units included. Backup timer runs every ~4 h. Still pending: full off-site restore + sync to tip |
 | F6 | 30-day continuous run | ops | uptime ≥99.9%, no critical incidents | 🔄 Started 2026-08-23 07:00 CET; public status UI at `https://app.zionterranova.com/g8`; tracked via dashboard `/api/g8` |
 
 ### Phase G — Release & Launch Readiness (weeks 9–10)
@@ -131,10 +131,10 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 | # | Task | Status |
 |---|------|--------|
-| J1 | Web 2.9 → ZIS | ❌ Not started |
-| J2 | Marketplace → ZIS | ❌ Not started |
+| J1 | Web 2.9 → ZIS | ✅ Complete — `AuthContext`/`useAuth()` přes `zion_session` napříč webem (wallet, DAO governance, marketplace proxy) |
+| J2 | Marketplace → ZIS | ✅ Complete — `AuthContext` + `ConnectButton` ZIS integrace live (2026-09-02) |
 | J3 | OASIS → server + ZIS | ❌ Not started |
-| J4 | Dashboard → ZIS | ❌ Not started |
+| J4 | Dashboard → ZIS | ✅ Complete — ZIS SSO cookie v `_check_auth()` + `/api/me` endpoint (2026-09-02) |
 | J5 | OASIS ↔ Marketplace artifact sync | ❌ Not started |
 | J6 | Dashboard "My Ecosystem" view | ❌ Not started |
 | J7 | Mining / DAO → shared DB | ❌ Not started |
