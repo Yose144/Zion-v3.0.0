@@ -2168,6 +2168,18 @@ export default function MissionControlDashboard() {
               </div>
             </div>
           </div>
+          <div className="relative z-10 mt-8 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+            <img
+              src="/images/mission-control/hero.webp"
+              alt={cs ? 'ZION Mission Control — Terra Nova dashboard se Stromem života a vrstvami L1–L6' : 'ZION Mission Control — Terra Nova dashboard with the Tree of Life and layers L1–L6'}
+              width={1672}
+              height={941}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="w-full object-cover"
+            />
+          </div>
         </motion.section>
 
         {/* ══════════════ TAB NAVIGATION ══════════════ */}
