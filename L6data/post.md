@@ -68,4 +68,4 @@ Mějte se rádi.
 
 A nebuďte retardi. 🙏
 
-**Peace and One Love ✌️❤️🌍**
+**Peace and One Love ✌️❤️🌍** 

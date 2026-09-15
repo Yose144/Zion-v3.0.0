@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Jedna cesta, devět bran
+## 1. Jedna cesta, deset bran
 
-ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z devíti propojených bran. Každá má jinou roli; žádná sama o sobě nestačí.
+ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z deseti propojených bran. Každá má jinou roli; žádná sama o sobě nestačí.
 
 | Brána | Otázka | Přínos pro člověka | Technický protějšek |
 |---|---|---|---|
@@ -21,6 +21,7 @@ ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z d
 | **Nirvana a NirvanaCloud** | *Kam směřujeme, když nestavíme jen na příští kvartál?* | Představuje horizont Terra Nova, bardo změny, Šambhalu a Amenti jako obrazy dlouhé odpovědnosti. | Horizont L1–L6 a 2026–2126; nikdy release claim. |
 | **Mise Amenti** | *Jak to vše držíme pohromadě přes generace?* | Převádí příběh na měřitelné závazky pravdy, svobody, péče, odolnosti a předání dál. | Tento corpus, evidence registr, release gates, bezpečnost a změnový protokol. |
 | **Bodhi Gaia / Kniha Země** | *Jak se L5 dotkne hlíny?* | Sjednocuje tři fyzické zahrady L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), protokoly Země a úplný registr pravdy L5. | `docs/WP-Mainet/BodhiGaia/` (DRAFT); zrcadlí `public/V3/L5/docs/`, web `/terranova/*`, OASIS `WorldPanel`/`worlds.ts`. |
+| **Lumi / Cesta domů** | *Jak se všechny brány stanou jednou cestou?* | Sjednocuje Nirvanu, Knihu Země a Knihu Nebe do příběhu jednoho dítěte s lucernou, které prochází L1–L6 a stoletým horizontem; každá kapitola ukazuje zjevenou budoucnost i skutečný dnešek. | `docs/WP-Mainet/Lumi/` (DRAFT); navazuje na onboarding, `BodhiGaia/09`, `Issobella/10`, `07-Registr-Dukazu.md`. |
 
 ---
 

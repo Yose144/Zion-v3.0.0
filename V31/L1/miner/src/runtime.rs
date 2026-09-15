@@ -1786,6 +1786,13 @@ impl MinerRuntime {
             return Ok(false);
         }
 
+        info!(
+            job = job.job_id,
+            nonce,
+            nonces_searched,
+            elapsed_ms,
+            "V3_SUBMIT_ZION_SHARE"
+        );
         let result = client
             .submit_zion_share(
                 job.job_id,

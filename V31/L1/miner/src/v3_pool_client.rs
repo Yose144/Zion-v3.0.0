@@ -357,7 +357,15 @@ impl V3PoolClient {
         attempted_hashes: u64,
         elapsed_ms: u64,
     ) -> Result<V3ShareResult> {
+        info!("V3_SUBMIT_ENTER job_id={} nonce={}", job_id, nonce);
         self.ensure_connected()?;
+        info!(
+            job_id = job_id,
+            nonce = nonce,
+            attempted_hashes = attempted_hashes,
+            elapsed_ms = elapsed_ms,
+            "V3_SUBMIT_ZION_SHARE"
+        );
         let msg = PoolMessage::Submit {
             job_id,
             miner_id: self.miner_id.clone(),
