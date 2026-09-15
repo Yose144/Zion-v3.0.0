@@ -94,6 +94,7 @@ export default function Navigation() {
         { href: '/whitepapers', label: tr('nav', 'whitepapers', lang) },
         { href: '/news', label: tr('nav', 'news', lang) },
         { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
+        { href: '/team', label: tr('nav', 'team', lang) },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
         { href: '/tree-of-life', label: tr('nav', 'tree_of_life', lang), children: [
