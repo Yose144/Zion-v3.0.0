@@ -62,6 +62,7 @@ const t = {
     terra_golden_republic_bohemia: { cs: 'Golden Republic Bohemia', en: 'Golden Republic Bohemia' },
     terra_bodhi_lanka: { cs: 'Bodhi Lanka', en: 'Bodhi Lanka' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
+    team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
     mission_control: { cs: 'Mission Control', en: 'Mission Control' },
     wallet: { cs: 'Peněženka', en: 'Wallet' },
