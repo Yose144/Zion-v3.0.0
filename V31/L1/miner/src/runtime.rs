@@ -1632,7 +1632,6 @@ impl MinerRuntime {
         client: &V3PoolClient,
         job: &crate::v3_pool_client::V3ZionJob,
     ) -> Result<bool, MinerError> {
-        info!("MINE_V3_ZION_SHARE job={} height={}", job.job_id, job.height);
         let header = hex::decode(&job.header_hex)
             .map_err(|e| MinerError::Consensus(format!("V3 header decode: {e}")))?;
         let target = hex::decode(&job.target_hex)
@@ -1787,13 +1786,6 @@ impl MinerRuntime {
             return Ok(false);
         }
 
-        info!(
-            job = job.job_id,
-            nonce,
-            nonces_searched,
-            elapsed_ms,
-            "V3_SUBMIT_ZION_SHARE"
-        );
         let result = client
             .submit_zion_share(
                 job.job_id,

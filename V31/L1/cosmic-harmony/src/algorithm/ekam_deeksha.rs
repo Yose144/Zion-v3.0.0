@@ -153,35 +153,6 @@ fn step1_keccak(header: &[u8], nonce: u64) -> [u8; 32] {
 }
 
 // ============================================================
-// XOR helper — 32-byte block XOR with AVX2 fast path
-// ============================================================
-#[inline(always)]
-fn xor_32(dest: &mut [u8], src: &[u8]) {
-    debug_assert!(dest.len() >= BLOCK_SIZE && src.len() >= BLOCK_SIZE);
-    #[cfg(target_arch = "x86_64")]
-    {
-        if std::is_x86_feature_detected!("avx2") {
-            unsafe { xor_32_avx2(dest.as_mut_ptr(), src.as_ptr()) };
-            return;
-        }
-    }
-    for j in 0..BLOCK_SIZE {
-        dest[j] ^= src[j];
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-#[target_feature(enable = "avx2")]
-unsafe fn xor_32_avx2(dest: *mut u8, src: *const u8) {
-    use std::arch::x86_64::{
-        __m256i, _mm256_loadu_si256, _mm256_storeu_si256, _mm256_xor_si256,
-    };
-    let l = _mm256_loadu_si256(src as *const __m256i);
-    let r = _mm256_loadu_si256(dest as *const __m256i);
-    _mm256_storeu_si256(dest as *mut __m256i, _mm256_xor_si256(l, r));
-}
-
-// ============================================================
 // Step 2: Memory-hard scratchpad (512 KiB) → acc[32]
 // ============================================================
 // OPTIMIZED: Takes a reusable scratchpad buffer instead of allocating
@@ -203,18 +174,23 @@ fn step2_memory_hard_with_scratchpad(seed: &[u8; 32], scratchpad: &mut [u8]) -> 
     }
 
     // Phase B: forward sequential XOR pass (+ backward when PASSES >= 2)
-    let mut src_block = [0u8; 32];
     for i in 0..BLOCK_COUNT {
         let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
-        src_block.copy_from_slice(&scratchpad[prev * BLOCK_SIZE..prev * BLOCK_SIZE + 32]);
-        xor_32(&mut scratchpad[i * BLOCK_SIZE..], &src_block);
+        let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE {
+            let pv = scratchpad[prv + j];
+            scratchpad[cur + j] ^= pv;
+        }
     }
     // Backward pass (v3.2: PASSES=2, enabled for ASIC hardening)
     if PASSES >= 2 {
         for i in (0..BLOCK_COUNT).rev() {
             let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
-            src_block.copy_from_slice(&scratchpad[next * BLOCK_SIZE..next * BLOCK_SIZE + 32]);
-            xor_32(&mut scratchpad[i * BLOCK_SIZE..], &src_block);
+            let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
+            for j in 0..BLOCK_SIZE {
+                let nv = scratchpad[nxt + j];
+                scratchpad[cur + j] ^= nv;
+            }
         }
     }
 
