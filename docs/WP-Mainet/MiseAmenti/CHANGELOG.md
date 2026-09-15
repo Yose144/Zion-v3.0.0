@@ -70,6 +70,32 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ---
 
+## 2026-09-14 — Lumi: Cesta domů (sjednocující kniha L1–L6) — DRAFT navržený ke kanonizaci
+
+### Změněno
+
+- Přidána nová narativně-technická řada [`docs/WP-Mainet/Lumi/`](../Lumi/00-README.md) (CZ, README + 13 kapitol): sjednocuje `nirvana/` (L1–L6 horizont), `BodhiGaia/` (L5) a `Issobella/` (L6) do jednoho příběhu navazujícího na kanonický onboarding (`ZION_ONBOARDING_PUBLIC_CZ.md`, `ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md` §6). Osou je postava Lumi / Elizabeth — dítě na přídi (`nirvana/01`), rybářova dcera (`Issobella/01`) a kněžka s lucernou u brány OASIS — čtená jako jedna postava napříč časem. Kapitoly: archa (L1), Dům jmen (ZIS), mosty (L2), hlas bez klíče (L3), brána (L4), dvě kapitoly L5, tři kapitoly L6, 3.3 + šest epoch 2026–2126, návrat k bráně (onboarding), registr.
+- Zavedeno zařízení „lucerna ukazuje dnešek": kapitoly 05–10 se odehrávají ve „zjevené budoucnosti" (HORIZONT / MÝTUS, nikdy termín ani slib) a každá kapitola 02–12 obsahuje odstavec se skutečným stavem sítě ke snímku 2026-09-14 plus kotvu pravdy se štítky.
+- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
+- `docs/WP-Mainet/nirvana/00-README.md`, `00-README_EN.md` — odkaz „celá cesta jako jeden příběh" a řádek ve zdrojích pravdy.
+- `02-Pribeh-a-Architektura.md` — přidána desátá brána „Lumi / Cesta domů" do mapy bran („devět bran" → „deset bran").
+
+### Důkaz
+
+- Technické nároky převzaty beze změny stavu z `07-Registr-Dukazu.md`, `BodhiGaia/09`, `Issobella/10`; zdroje: `V31/L1/core/src/{emission,v3_template,v3_compat,difficulty}.rs`, `V31/L1/cosmic-harmony`, `APP&WEB/identity`, `APP&WEB/zion-wallet-sdk`, `L2contracts.md`, `warp.example.toml`, `V31/L3/ai-native` + `docs/3.0.6/HIRAN_OVERVIEW.md`, `V31/L4/oasis/data/avatars.json` (avatar id 40 „Elizabet"), `APP&WEB/OasisWeb` (`BabylonIntro.tsx`, `worlds.ts` `ELIZABET`), `V31/L5/free-world`, `V31/L6/issobella`, `L6data/`, `docs/3.2/L5_L6_ACTIVATION_PLAN.md` (G10), `docs/3.2/ROADMAP.md` (G8/G9), `docs/genesis.md`, `StatusV3.md`, `AGENTS.md` (2026-08-22, 2026-09-07, 2026-09-14); přímý probe `getStatus` na Edge 2026-09-14 (výška 43 500+, 7 aktivních peerů).
+- Jazykový fakt Isabel = Elizabeth: veřejná etymologie; v repozitáři `docs/docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md`.
+
+### Dopad na stav tvrzení
+
+- Žádný technický nárok se nepovyšuje. Nové nároky knihy: ztotožnění Lumi = rybářova dcera = kněžka s lucernou = avatar 40 / svět ELIZABET → **MÝTUS** (kanonické rozhodnutí příběhu, ne tvrzení o datech ani o skutečných osobách); Isabel = Elizabeth → **ŽIVÉ (jazykový fakt)**; obrazy zjevené budoucnosti → **HORIZONT / MÝTUS**; historický původ názvu „Issobella" zůstává **NEDOLOŽENO** (kniha ho netvrdí).
+- Nalezené rozpory k opravě (registr v `Lumi/13` §3, #1–#10): `nirvana/01` statické číslo bloků; `nirvana/04` Passkeys/WebAuthn jako současnost a statická čísla poolu; `nirvana/11` „fond a služba plně aktivní", NCL „připravený pro DeSci", nadsazená formulace o `cosmic-harmony`; `nirvana/12` „všech 6 vrstev synchronizováno", „bez privilegovaného klíče"; `Issobella/06` „devadesát procent"; `Issobella/10` otevřená etymologie (vyřešeno na úrovni mýtu); `worlds.ts` `ELIZABET` `layer: 3`; `nirvana/00-README` popis ep. 9 bez štítku HORIZONT; `NirvanaCloud/00-README` „stovky uzlů". Původní soubory nebyly měněny.
+
+### Review
+
+- Autor: Devin (AI) na základě čtení kódu, dokumentace, OASIS dat a live probe. **Řada je DRAFT** — vyžaduje factual review (L1–L6 proti registrům), bezpečnostní review pasáží o custody, fondech a DAO (kap. 02, 03, 06, 10 — třída C), kulturní konzultaci (třída E: původ a význam jména; převzaté hinduistické, buddhistické, polynéské a české motivy) a public-copy review před jakýmkoli výňatkem do `public/` nebo na web, podle `08-Protokol-Zmen.md` §2. Anglický index vznikne až po českém review (`08` §5.7).
+
+---
+
 ## Formát budoucích položek
 
 ```markdown

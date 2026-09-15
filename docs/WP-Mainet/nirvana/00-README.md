@@ -60,6 +60,8 @@ Kdo chce z epizody 10 (*Prameny Života*) sestoupit až k hlíně — k pěti fy
 
 Kdo chce z epizody 11 (*Kvantový oheň Issobella*) vystoupit až k oběžné dráze — k architektuře stanice, umělé gravitaci, lidským faktorům, dědictví stanic, fondu a slibu, hlídači na okraji a úplné kotvě pravdy — pokračuje do [`Issobella/` — Kniha Nebe](../Issobella/00-README.md) (DRAFT pro 3.3).
 
+Kdo chce celou cestu — od dítěte na přídi (ep. 1) přes zahrady Země a strom nad Zemí až k bráně, u které stojí kněžka s lucernou — číst jako jeden příběh, pokračuje do [`Lumi/` — Cesta domů](../Lumi/00-README.md) (DRAFT pro 3.3): sjednocení Nirvany, Bodhi Gaii a Issobelly kolem děvčátka Lumi / Elizabeth.
+
 ---
 
 ## Živé zdroje pravdy
@@ -67,6 +69,7 @@ Kdo chce z epizody 11 (*Kvantový oheň Issobella*) vystoupit až k oběžné dr
 - **Kanonický integrační corpus (L1–L6, evidence, etika, 100 let):** [`../../../MiseAmenti/README.md`](../MiseAmenti/README.md)
 - **Kanonický technický plán 3.3 (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
 - **NirvanaCloud — hluboké rozšíření (šest světů, bardo, Šambhala, Síně Amenti, Generace Z, stoletý plán):** [`../NirvanaCloud/00-README.md`](../NirvanaCloud/00-README.md)
+- **Lumi — Cesta domů (sjednocující kniha, DRAFT):** [`../Lumi/00-README.md`](../Lumi/00-README.md)
 - **Aktuální stav sítě v reálném čase:** [`../../../StatusV3.md`](../../../StatusV3.md)
 - **Hlavní roadmapa projektu:** [`../../../ROADMAP.md`](../../../ROADMAP.md)
 - **Narativní kořeny:** [`../SulZeme/00-README.md`](../SulZeme/00-README.md)

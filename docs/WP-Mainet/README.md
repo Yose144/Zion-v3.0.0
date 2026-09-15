@@ -35,6 +35,7 @@ These documents are not yet canonized. They are working concepts and directional
 - **Nirvana — Příběhy nové země** (dlouhodobý horizont / long-term horizon): [`nirvana/00-README.md`](./nirvana/00-README.md) (CZ) | [`nirvana/00-README_EN.md`](./nirvana/00-README_EN.md) (EN)
 - **Bodhi Gaia — Kniha Země** (L5: Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka; DRAFT pro 3.3 / draft for 3.3): [`BodhiGaia/00-README.md`](./BodhiGaia/00-README.md) (CZ) | [`BodhiGaia/00-README_EN.md`](./BodhiGaia/00-README_EN.md) (EN)
 - **Issobella — Kniha Nebe** (L6: orbitální stanice, kvantový motor, umělá gravitace, posádka, fond a slib; DRAFT pro 3.3 / draft for 3.3): [`Issobella/00-README.md`](./Issobella/00-README.md) (CZ) | [`Issobella/00-README_EN.md`](./Issobella/00-README_EN.md) (EN)
+- **Lumi — Cesta domů** (Kniha Lucerny: sjednocení Nirvany, Bodhi Gaii a Issobelly kolem děvčátka Lumi/Elizabeth; L1–L6, 3.3 a horizont 2026–2126; DRAFT pro 3.3 / draft for 3.3): [`Lumi/00-README.md`](./Lumi/00-README.md) (CZ)
 
 ## Historické / superseded verze
 

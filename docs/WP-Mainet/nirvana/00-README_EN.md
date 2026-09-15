@@ -58,6 +58,8 @@ Readers who want to go beyond this book's concept and horizon into the full cosm
 
 Readers who want to descend from episode 10 (*Springs of Life*) all the way to the soil — to the five physical L5 gardens (Genesis Garden, Dharma Temple / New Bodhi Gaia, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka), their shared protocols, onboarding and a full truth anchor — should continue into [`BodhiGaia/` — The Book of Earth](../BodhiGaia/00-README_EN.md) (DRAFT for 3.3).
 
+Readers who want to follow the whole path as one story — from the child at the bow (episode 1) through the gardens of Earth and the tree above the Earth to the gate where a priestess stands with a lantern — should continue into [`Lumi/` — The Way Home](../Lumi/00-README.md) (DRAFT for 3.3; Czech only for now): a unification of Nirvana, Bodhi Gaia and Issobella around the girl Lumi / Elizabeth.
+
 ---
 
 ## Live Sources of Truth
@@ -65,6 +67,7 @@ Readers who want to descend from episode 10 (*Springs of Life*) all the way to t
 - **Canonical integration corpus (L1–L6, evidence, ethics, 100 years):** [`../../../MiseAmenti/README_EN.md`](../MiseAmenti/README_EN.md)
 - **Canonical Technical Plan 3.3 (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
 - **NirvanaCloud — the deep expansion (six worlds, bardo, Shambhala, Halls of Amenti, Generation Z, hundred-year plan):** [`../NirvanaCloud/00-README_EN.md`](../NirvanaCloud/00-README_EN.md)
+- **Lumi — The Way Home (unifying book, DRAFT, Czech):** [`../Lumi/00-README.md`](../Lumi/00-README.md)
 - **Live Network Status:** [`../../../StatusV3.md`](../../../StatusV3.md)
 - **Master Project Roadmap:** [`../../../ROADMAP.md`](../../../ROADMAP.md)
 - **Narrative Foundations:** [`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md)
