@@ -36,20 +36,20 @@ use tracing::{debug, info};
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[derive(Deserialize, Clone)]
-struct MempoolUtxo {
-    txid: String,
-    vout: u32,
-    value: u64,
-    status: Option<UtxoStatus>,
+pub(crate) struct MempoolUtxo {
+    pub(crate) txid: String,
+    pub(crate) vout: u32,
+    pub(crate) value: u64,
+    pub(crate) status: Option<UtxoStatus>,
 }
 
 #[derive(Deserialize, Clone)]
-struct UtxoStatus {
-    confirmed: bool,
+pub(crate) struct UtxoStatus {
+    pub(crate) confirmed: bool,
 }
 
 impl MempoolUtxo {
-    fn is_confirmed(&self) -> bool {
+    pub(crate) fn is_confirmed(&self) -> bool {
         self.status.as_ref().map(|s| s.confirmed).unwrap_or(false)
     }
 }
@@ -114,6 +114,26 @@ impl BtcSigner {
     /// The relay wallet's P2WPKH address (used for UTXO lookup).
     pub fn address(&self) -> &Address {
         &self.address
+    }
+
+    /// The relay wallet's `bitcoin::PublicKey` (compressed).
+    pub fn public_key_btc(&self) -> &PublicKey {
+        &self.public_key
+    }
+
+    /// Raw compressed pubkey bytes.
+    pub fn public_key_bytes(&self) -> Vec<u8> {
+        self.public_key.to_bytes()
+    }
+
+    /// Access the private key (crate-internal; used by HTLC spend paths).
+    pub(crate) fn private_key_inner(&self) -> &PrivateKey {
+        &self.private_key
+    }
+
+    /// The configured Bitcoin network.
+    pub fn network(&self) -> Network {
+        self.network
     }
 
     /// Fetch confirmed UTXOs for the relay wallet, select enough to cover
@@ -265,7 +285,7 @@ fn p2wpkh_address(pubkey: &PublicKey, network: Network) -> WarpResult<Address> {
     })
 }
 
-async fn fetch_utxos(
+pub(crate) async fn fetch_utxos(
     client: &reqwest::Client,
     api_url: &str,
     address: &str,
@@ -289,7 +309,7 @@ async fn fetch_utxos(
 }
 
 /// Greedy UTXO selection: sort largest-first, select until amount + estimated fee is covered.
-fn select_utxos(
+pub(crate) fn select_utxos(
     utxos: &[MempoolUtxo],
     amount: u64,
     feerate: u64,
@@ -367,7 +387,7 @@ fn build_unsigned_tx(
     })
 }
 
-async fn broadcast_tx(
+pub(crate) async fn broadcast_tx(
     client: &reqwest::Client,
     api_url: &str,
     raw_hex: &str,
