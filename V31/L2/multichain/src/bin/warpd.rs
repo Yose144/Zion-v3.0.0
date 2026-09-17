@@ -23,7 +23,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use clap::Parser;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use zion_multichain::config::{
     AdapterConfig, DatabaseConfig, MultichainConfig, NodeRewardsConfig, ReconciliationConfig,
