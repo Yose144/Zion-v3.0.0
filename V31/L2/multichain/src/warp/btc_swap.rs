@@ -156,6 +156,35 @@ pub struct BtcSwapRecord {
     pub updated_at: chrono::DateTime<Utc>,
 }
 
+impl BtcSwapRecord {
+    /// JSON projection for API responses.
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "swap_id": self.swap_id,
+            "direction": self.direction,
+            "phase": self.phase,
+            "hashlock": hex::encode(self.btc_htlc.hashlock),
+            "btc_htlc_address": self.btc_htlc.address.to_string(),
+            "btc_cltv_timeout": self.btc_htlc.cltv_timeout,
+            "btc_sats": self.btc_sats,
+            "zion_flowers": self.zion_flowers,
+            "zion_timeout_ts": self.zion_timeout_ts,
+            "user_zion_address": self.user_zion_address,
+            "btc_lock": self.btc_lock.as_ref().map(|l| serde_json::json!({
+                "txid": l.txid,
+                "vout": l.vout,
+                "value_sats": l.value_sats,
+                "confirmations": l.confirmations,
+                "block_height": l.block_height,
+            })),
+            "zion_lock_tx": self.zion_lock_tx,
+            "btc_settle_tx": self.btc_settle_tx,
+            "created_at": self.created_at.to_rfc3339(),
+            "updated_at": self.updated_at.to_rfc3339(),
+        })
+    }
+}
+
 /// Flow configuration.
 #[derive(Debug, Clone)]
 pub struct BtcSwapConfig {
@@ -448,6 +477,11 @@ impl BtcSwapFlow {
             .filter(|r| !r.phase.is_terminal())
             .cloned()
             .collect()
+    }
+
+    /// All records including terminal ones (for status/listing).
+    pub async fn all_records(&self) -> Vec<BtcSwapRecord> {
+        self.records.lock().await.values().cloned().collect()
     }
 
     // ── Poll loop ────────────────────────────────────────────────────────
