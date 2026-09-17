@@ -41,7 +41,7 @@
 | C7 | **warp.toml enable** — `bitcoin.enabled=true` s reálnými parametry | `/etc/zion/warp.toml`, `warp.example.toml` | config |
 | ~~C7b~~ | ✅ **Persistence `BtcSwapRecord`** — `btc_swap_records` tabulka (snapshot JSON, witness-script round-trip), `set_db`/`load_from_db`/`persist`, reload v `warpd` startu — 3 testy | `db.rs`, `warp/btc_swap.rs`, `warpd.rs` | hotovo |
 | ~~C7c~~ | ✅ **HTTP expozice** — `POST /swaps/btc/offer` (auth), `GET /swaps/btc/list`, `GET /swaps/btc/:id` + `start_btc_swap_loop` v `warpd` | `server.rs`, `service.rs`, `bin/warpd.rs` | hotovo |
-| C8 | 🟡 **E2E test** — ✅ **BTC-leg ověřen na regtestu** (docker `blockstream/esplora` na Edge): claim path lock→detect(3 confs)→claim→preimage extraction + refund path CLTV expiry→refund→Refund classification, oba 2026-09-17 PASS; zbývá cross-leg (ZION) E2E + signet/mainnet run | `tests/btc_swap_signet.rs` | částečně |
+| ~~C8~~ | ✅ **E2E ověřen na regtestu** (docker `blockstream/esplora` na Edge, 2026-09-17) — BTC-leg: claim + refund path; **cross-leg flow: `tests/btc_swap_flow.rs` OBA směry PASS** — BtcToZion (user BTC lock → orchestrátor ZION lock → user ZION claim → on-chain BTC claim, 13s) + ZionToBtc (on-chain BTC lock → user claim → `claim_source` ZION claim, 11s) včetně preimage propagace přes produkční `HtlcSwap` cestu; zbývá jen signet/mainnet run | `tests/btc_swap_signet.rs`, `tests/btc_swap_flow.rs` | hotovo |
 | ~~C9~~ | ✅ **CLI lifecycle** — `zion warp btc-swap offer|list|status` (DEX port = warp+1, `--zis-api-key` auth) | `V31/cli/src/commands/warp.rs`, `rpc/agent_rpc.rs` | hotovo |
 
 ## BLOCKER ⛔
