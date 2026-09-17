@@ -198,6 +198,13 @@ async fn main() -> ExitCode {
     });
 
     // WARP Beta — ZION↔BTC atomic swap poll loop (env-gated).
+    if let Some(flow) = service.btc_swap() {
+        match flow.load_from_db().await {
+            Ok(n) if n > 0 => info!("[warpd] BTC swap: reloaded {n} record(s) from DB"),
+            Ok(_) => {}
+            Err(e) => warn!("[warpd] BTC swap DB load failed: {e}"),
+        }
+    }
     if service.start_btc_swap_loop().is_some() {
         info!("[warpd] BTC swap flow enabled — poll loop started");
     }
