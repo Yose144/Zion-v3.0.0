@@ -197,6 +197,11 @@ async fn main() -> ExitCode {
         }
     });
 
+    // WARP Beta — ZION↔BTC atomic swap poll loop (env-gated).
+    if service.start_btc_swap_loop().is_some() {
+        info!("[warpd] BTC swap flow enabled — poll loop started");
+    }
+
     info!("[warpd] Starting WARP daemon");
     if let Err(e) = runtime.run().await {
         error!("[warpd] Runtime error: {}", e);

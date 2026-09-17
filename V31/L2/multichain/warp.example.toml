@@ -11,6 +11,8 @@
 #   WARP_NEAR_BRIDGE_CONTRACT, WARP_NEAR_RELAY_KEY
 #   WARP_CARDANO_ZION_ASSET, WARP_CARDANO_PAYMENT_KEY
 #   WARP_BITCOIN_HTLC_ADDRESS, WARP_BTC_RELAY_KEY
+#   WARP_BTC_SWAP_ENABLED, WARP_BTC_MIN_CONFS, WARP_BTC_MARGIN_BLOCKS,
+#   WARP_BTC_SWAP_POLL_SECS, BITCOIN_NETWORK, WARP_BITCOIN_API
 #   WARP_LN_NODE_URL, WARP_LN_MACAROON
 #   WARP_EVM_RELAY_KEY, WARP_VALIDATOR_KEYS
 # See V31/L2/multichain/src/warp/adapter/*.rs for the complete env-var surface.
@@ -132,6 +134,17 @@ rpc_url = "https://mempool.space/api"
 # HTLC / watch address for inbound proofs.
 contract_address = "bc1qplaceholderhtlcaddress"
 finality_blocks = 0
+
+# ── WARP Beta: native ZION↔BTC atomic swaps (BtcSwapFlow) ────────────────────
+# Enabled ONLY via environment — keep disabled until signet E2E passes:
+#   WARP_BTC_SWAP_ENABLED=1        # master switch (default off)
+#   WARP_BTC_RELAY_KEY=<wif>       # relay BTC key (BtcSigner::from_env)
+#   BITCOIN_NETWORK=signet|testnet|bitcoin
+#   WARP_BITCOIN_API=https://mempool.space/signet/api   # esplora backend
+#   WARP_BTC_MIN_CONFS=2           # confs before counter-locking ZION
+#   WARP_BTC_MARGIN_BLOCKS=36      # CLTV safety margin (~6h)
+#   WARP_BTC_SWAP_POLL_SECS=30     # poll loop interval (min 5)
+# API: POST /v1/multichain/swaps/btc/offer, GET /swaps/btc/list, GET /swaps/btc/:id
 
 # ── Solver network (optional) ───────────────────────────────────────────────
 # Configure this warpd instance as an off-chain intent solver, and/or list

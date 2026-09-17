@@ -33,6 +33,7 @@ use crate::swap::htlc::HtlcSwap;
 use crate::swap::IntentEngine;
 use crate::types::Transfer;
 use crate::wallet::Keyring;
+use crate::warp::btc_swap::{BtcSwapConfig, BtcSwapFlow};
 use crate::warp::config::WarpConfig;
 use crate::warp::runtime::WarpRuntime;
 
@@ -67,6 +68,9 @@ pub struct MultichainService {
     node_rewards: Arc<NodeRewards>,
     reconciler: Reconciler,
     solvency_guard: Option<crate::solvency::SolvencyGuard>,
+    /// WARP Beta — ZION↔BTC atomic swap flow. `None` unless
+    /// `WARP_BTC_SWAP_ENABLED=1` and `WARP_BTC_RELAY_KEY` (WIF) are set.
+    btc_swap: Option<Arc<BtcSwapFlow>>,
 }
 
 fn load_bridge_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
@@ -284,6 +288,8 @@ impl MultichainService {
             reconciler_config,
         );
 
+        let btc_swap = build_btc_swap(&htlc, &keyring);
+
         Self {
             config,
             db,
@@ -307,6 +313,7 @@ impl MultichainService {
             node_rewards: Arc::new(node_rewards),
             reconciler,
             solvency_guard: Some(solvency_guard),
+            btc_swap,
         }
     }
 
@@ -888,6 +895,43 @@ impl MultichainService {
         &self.htlc
     }
 
+    /// The WARP Beta ZION↔BTC swap flow, if enabled (`WARP_BTC_SWAP_ENABLED`
+    /// + `WARP_BTC_RELAY_KEY`).
+    pub fn btc_swap(&self) -> Option<Arc<BtcSwapFlow>> {
+        self.btc_swap.as_ref().map(Arc::clone)
+    }
+
+    /// Spawn the BTC swap poll loop. Returns `Some(handle)` when the flow is
+    /// enabled; the task ticks every `WARP_BTC_SWAP_POLL_SECS` (default 30s).
+    pub fn start_btc_swap_loop(&self) -> Option<tokio::task::JoinHandle<()>> {
+        let flow = self.btc_swap.as_ref()?.clone();
+        let secs = std::env::var("WARP_BTC_SWAP_POLL_SECS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(30)
+            .max(5);
+        Some(tokio::spawn(async move {
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(secs));
+            loop {
+                tick.tick().await;
+                let outcomes = flow.poll_once().await;
+                for o in outcomes {
+                    if !matches!(
+                        o.action,
+                        crate::warp::btc_swap::NextAction::Wait
+                    ) {
+                        tracing::info!(
+                            "[WARP][btc-swap] {} → {:?} {}",
+                            o.swap_id,
+                            o.action,
+                            o.detail.unwrap_or_default()
+                        );
+                    }
+                }
+            }
+        }))
+    }
+
     /// Access the custodial multichain wallet.
     pub fn multichain_wallet(&self) -> &MultichainWallet {
         &self.multichain_wallet
@@ -1137,6 +1181,78 @@ impl MultichainService {
         WarpRuntime::new(config)
             .map_err(|e| MultichainError::Internal(format!("WARP runtime init failed: {e}")))
     }
+}
+
+/// Construct the WARP Beta BTC swap flow when explicitly enabled.
+///
+/// Requirements (all env-driven, nothing hard-coded):
+/// - `WARP_BTC_SWAP_ENABLED=1`
+/// - `WARP_BTC_RELAY_KEY` — funded P2WPKH WIF (operator BTC key)
+/// - `BITCOIN_NETWORK` / `WARP_BITCOIN_API` — network + esplora endpoint
+/// - `WARP_BTC_MIN_CONFS` (default 2), `WARP_BTC_MARGIN_BLOCKS` (default 36)
+///
+/// The operator ZION identity comes from the bridge keyring (account 0).
+fn build_btc_swap(htlc: &HtlcSwap, keyring: &Keyring) -> Option<Arc<BtcSwapFlow>> {
+    use crate::warp::adapter::bitcoin::BitcoinAdapter as WarpBitcoinAdapter;
+    use crate::warp::btc_signer::BtcSigner;
+
+    let enabled = std::env::var("WARP_BTC_SWAP_ENABLED")
+        .map(|v| matches!(v.trim(), "1" | "true" | "yes"))
+        .unwrap_or(false);
+    if !enabled {
+        return None;
+    }
+    let signer = match BtcSigner::from_env() {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!("[WARP][btc-swap] disabled: {e}");
+            return None;
+        }
+    };
+    let operator_zion_pubkey = match keyring
+        .zion_public_key(0, 0)
+        .ok()
+        .and_then(|h| hex::decode(h).ok())
+        .and_then(|b| <[u8; 32]>::try_from(b.as_slice()).ok())
+    {
+        Some(pk) => pk,
+        None => {
+            tracing::warn!("[WARP][btc-swap] disabled: cannot derive operator zion pubkey");
+            return None;
+        }
+    };
+    let operator_zion_address = keyring
+        .address(ChainId::ZionL1, 0, 0)
+        .map(|a| a.encoded)
+        .unwrap_or_default();
+
+    let network = signer.network();
+    let cfg = BtcSwapConfig {
+        btc_network: network,
+        min_btc_confs: std::env::var("WARP_BTC_MIN_CONFS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(2),
+        margin_blocks: std::env::var("WARP_BTC_MARGIN_BLOCKS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(crate::warp::btc_htlc::DEFAULT_MARGIN_BLOCKS),
+        operator_zion_pubkey,
+        operator_zion_address,
+        operator_btc_dest: None,
+    };
+    tracing::info!(
+        "[WARP][btc-swap] enabled — network {:?}, relay {}, min_confs {}",
+        network,
+        signer.address(),
+        cfg.min_btc_confs
+    );
+    Some(Arc::new(BtcSwapFlow::new(
+        Arc::new(WarpBitcoinAdapter::new()),
+        Arc::new(signer),
+        Arc::new(htlc.clone()),
+        cfg,
+    )))
 }
 
 fn load_bridge_consensus() -> Option<BridgeConsensus> {

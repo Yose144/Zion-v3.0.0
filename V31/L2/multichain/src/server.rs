@@ -285,6 +285,9 @@ impl ApiServer {
             .route("/v1/multichain/swaps/htlc/pending", get(htlc_pending))
             .route("/v1/multichain/swaps/htlc/escrow", get(htlc_escrow))
             .route("/v1/multichain/swaps/htlc/:hash", get(htlc_get))
+            .route("/v1/multichain/swaps/btc/offer", post(btc_swap_offer))
+            .route("/v1/multichain/swaps/btc/list", get(btc_swap_list))
+            .route("/v1/multichain/swaps/btc/:id", get(btc_swap_get))
             .route("/v1/pool/stats", get(pool_stats))
             .route("/v1/pool/payouts", get(pool_payouts))
             .route("/v1/nodes/register", post(register_node))
@@ -1561,6 +1564,132 @@ async fn htlc_refund(
             "status": transfer.status,
         }))),
         Err(e) => Err(bad_request(&e.to_string())),
+    }
+}
+
+// ── WARP Beta: native BTC↔ZION atomic swaps ─────────────────────────
+
+#[derive(Deserialize)]
+struct BtcSwapOfferRequest {
+    /// `btc_to_zion` (user deposits BTC, receives ZION) or
+    /// `zion_to_btc` (user deposits ZION, receives BTC).
+    direction: String,
+    /// 32-byte hashlock hex — SHA-256 of the user's preimage.
+    hash_hex: String,
+    btc_sats: u64,
+    zion_flowers: u64,
+    /// User's compressed secp256k1 BTC pubkey (33-byte hex).
+    user_btc_pubkey_hex: String,
+    /// User's ZION Ed25519 pubkey (32-byte hex).
+    user_zion_pubkey_hex: String,
+    user_zion_address: String,
+    /// Required for `zion_to_btc`: txid of the user's ZION lock.
+    #[serde(default)]
+    user_zion_lock_txid: Option<String>,
+    /// ZION-leg timeout (UNIX seconds).
+    zion_timeout_ts: u64,
+}
+
+fn btc_swap_flow(
+    state: &AppState,
+) -> Result<Arc<crate::warp::btc_swap::BtcSwapFlow>, (StatusCode, Json<serde_json::Value>)> {
+    state.service.btc_swap().ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "message": "BTC swap flow disabled — set WARP_BTC_SWAP_ENABLED=1 and WARP_BTC_RELAY_KEY"
+            })),
+        )
+    })
+}
+
+fn decode_btc_pubkey(
+    s: &str,
+) -> Result<bitcoin::PublicKey, (StatusCode, Json<serde_json::Value>)> {
+    let bytes = hex::decode(s.trim()).map_err(|_| bad_request("invalid user_btc_pubkey_hex"))?;
+    bitcoin::PublicKey::from_slice(&bytes).map_err(|e| {
+        bad_request(&format!("invalid BTC pubkey: {e}"))
+    })
+}
+
+async fn btc_swap_offer(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<BtcSwapOfferRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)
+        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    let flow = btc_swap_flow(&state)?;
+
+    let hashlock: [u8; 32] = hex::decode(&req.hash_hex)
+        .ok()
+        .and_then(|b| b.try_into().ok())
+        .ok_or_else(|| bad_request("hash_hex must be 32-byte hex"))?;
+    let user_btc = decode_btc_pubkey(&req.user_btc_pubkey_hex)?;
+    let user_zion: [u8; 32] = hex::decode(&req.user_zion_pubkey_hex)
+        .ok()
+        .and_then(|b| b.try_into().ok())
+        .ok_or_else(|| bad_request("user_zion_pubkey_hex must be 32-byte hex"))?;
+
+    let rec = match req.direction.as_str() {
+        "btc_to_zion" => {
+            flow.offer_btc_to_zion_live(crate::warp::btc_swap::OfferBtcToZion {
+                hashlock,
+                btc_sats: req.btc_sats,
+                zion_flowers: req.zion_flowers,
+                user_btc_refund: user_btc,
+                user_zion_claim: user_zion,
+                user_zion_address: req.user_zion_address,
+                zion_timeout_ts: req.zion_timeout_ts,
+            })
+            .await
+        }
+        "zion_to_btc" => {
+            let lock_txid = req
+                .user_zion_lock_txid
+                .ok_or_else(|| bad_request("user_zion_lock_txid required for zion_to_btc"))?;
+            flow.offer_zion_to_btc_live(crate::warp::btc_swap::OfferZionToBtc {
+                hashlock,
+                zion_flowers: req.zion_flowers,
+                btc_sats: req.btc_sats,
+                user_btc_claim: user_btc,
+                user_zion_refund: user_zion,
+                user_zion_lock_txid: lock_txid,
+                user_zion_address: req.user_zion_address,
+                zion_timeout_ts: req.zion_timeout_ts,
+            })
+            .await
+        }
+        other => return Err(bad_request(&format!("unknown direction '{other}'"))),
+    }
+    .map_err(|e| bad_request(&e.to_string()))?;
+
+    Ok(Json(rec.to_json()))
+}
+
+async fn btc_swap_list(State(state): State<AppState>) -> Json<serde_json::Value> {
+    match state.service.btc_swap() {
+        Some(flow) => {
+            let records: Vec<serde_json::Value> = flow
+                .all_records()
+                .await
+                .iter()
+                .map(|r| r.to_json())
+                .collect();
+            Json(serde_json::json!({ "enabled": true, "swaps": records }))
+        }
+        None => Json(serde_json::json!({ "enabled": false, "swaps": [] })),
+    }
+}
+
+async fn btc_swap_get(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let flow = state.service.btc_swap().ok_or(StatusCode::NOT_FOUND)?;
+    match flow.record(&id).await {
+        Some(rec) => Ok(Json(rec.to_json())),
+        None => Err(StatusCode::NOT_FOUND),
     }
 }
 
