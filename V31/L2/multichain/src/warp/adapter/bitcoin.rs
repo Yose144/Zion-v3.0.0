@@ -104,7 +104,7 @@ struct MempoolVin {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// A confirmed (or mempool) funding output paying into a per-swap P2WSH HTLC.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BtcHtlcLock {
     pub txid: String,
     pub vout: u32,

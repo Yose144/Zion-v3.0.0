@@ -91,6 +91,15 @@ impl Db {
             );
             CREATE INDEX IF NOT EXISTS idx_htlc_state ON htlc_records(state);
 
+            CREATE TABLE IF NOT EXISTS btc_swap_records (
+                swap_id TEXT PRIMARY KEY,
+                direction TEXT NOT NULL,
+                phase TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                data_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_btc_swap_phase ON btc_swap_records(phase);
+
             CREATE TABLE IF NOT EXISTS pools (
                 pool_id TEXT PRIMARY KEY,
                 data_json TEXT NOT NULL,
@@ -424,6 +433,55 @@ impl Db {
             let record: HtlcRecord = serde_json::from_str(&json)
                 .map_err(|e| MultichainError::Internal(format!("deserialize HTLC record: {e}")))?;
             out.push(record);
+        }
+        Ok(out)
+    }
+
+    // ------------------------------------------------------------------------
+    // BTC swap persistence (WARP Beta)
+    // ------------------------------------------------------------------------
+
+    /// Persist a BTC swap snapshot (insert or replace).
+    pub fn save_btc_swap(
+        &self,
+        snap: &crate::warp::btc_swap::BtcSwapSnapshot,
+    ) -> MultichainResult<()> {
+        let data_json = serde_json::to_string(snap)
+            .map_err(|e| MultichainError::Internal(format!("serialize BTC swap: {e}")))?;
+        self.conn.execute(
+            r#"
+            INSERT OR REPLACE INTO btc_swap_records
+            (swap_id, direction, phase, updated_at, data_json)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+            "#,
+            rusqlite::params![
+                snap.swap_id,
+                serde_json::to_string(&snap.direction)
+                    .unwrap_or_default()
+                    .trim_matches('"')
+                    .to_string(),
+                snap.phase_tag(),
+                snap.updated_at.to_rfc3339(),
+                data_json,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// List all BTC swap snapshots, newest first.
+    pub fn list_btc_swaps(
+        &self,
+    ) -> MultichainResult<Vec<crate::warp::btc_swap::BtcSwapSnapshot>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT data_json FROM btc_swap_records ORDER BY updated_at DESC")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        let mut out = Vec::new();
+        for r in rows {
+            let json = r?;
+            let snap = serde_json::from_str(&json)
+                .map_err(|e| MultichainError::Internal(format!("deserialize BTC swap: {e}")))?;
+            out.push(snap);
         }
         Ok(out)
     }

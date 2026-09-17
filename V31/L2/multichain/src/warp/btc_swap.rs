@@ -156,7 +156,113 @@ pub struct BtcSwapRecord {
     pub updated_at: chrono::DateTime<Utc>,
 }
 
+/// Serializable snapshot of a [`BtcSwapRecord`] for SQLite persistence.
+/// The `BtcHtlc` is represented by its canonical witness script hex and is
+/// rebuilt via `BtcHtlc::from_witness_script` on load (round-trip validated).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BtcSwapSnapshot {
+    pub swap_id: String,
+    pub direction: BtcSwapDirection,
+    pub phase: BtcSwapPhase,
+    pub witness_script_hex: String,
+    pub btc_network: String,
+    pub btc_sats: u64,
+    pub zion_flowers: u64,
+    pub zion_timeout_ts: u64,
+    pub user_zion_pubkey_hex: String,
+    pub user_zion_address: String,
+    pub user_zion_lock_txid: Option<String>,
+    pub btc_lock: Option<BtcHtlcLock>,
+    pub zion_lock_tx: Option<String>,
+    pub preimage_hex: Option<String>,
+    pub btc_settle_tx: Option<String>,
+    pub created_at: chrono::DateTime<Utc>,
+    pub updated_at: chrono::DateTime<Utc>,
+}
+
+impl BtcSwapSnapshot {
+    /// Phase label for the DB index column.
+    pub fn phase_tag(&self) -> String {
+        match &self.phase {
+            BtcSwapPhase::AwaitingUserLock => "awaiting_user_lock".into(),
+            BtcSwapPhase::Locked => "locked".into(),
+            BtcSwapPhase::Settled => "settled".into(),
+            BtcSwapPhase::Refunded => "refunded".into(),
+            BtcSwapPhase::Failed(_) => "failed".into(),
+        }
+    }
+}
+
 impl BtcSwapRecord {
+    /// Snapshot for persistence.
+    pub fn to_snapshot(&self) -> BtcSwapSnapshot {
+        BtcSwapSnapshot {
+            swap_id: self.swap_id.clone(),
+            direction: self.direction,
+            phase: self.phase.clone(),
+            witness_script_hex: hex::encode(self.btc_htlc.witness_script.as_bytes()),
+            btc_network: self.btc_htlc.address.network().to_string(),
+            btc_sats: self.btc_sats,
+            zion_flowers: self.zion_flowers,
+            zion_timeout_ts: self.zion_timeout_ts,
+            user_zion_pubkey_hex: hex::encode(self.user_zion_pubkey),
+            user_zion_address: self.user_zion_address.clone(),
+            user_zion_lock_txid: self.user_zion_lock_txid.clone(),
+            btc_lock: self.btc_lock.clone(),
+            zion_lock_tx: self.zion_lock_tx.clone(),
+            preimage_hex: self.preimage.map(hex::encode),
+            btc_settle_tx: self.btc_settle_tx.clone(),
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+        }
+    }
+
+    /// Rebuild a record from a persisted snapshot. Fails on malformed script
+    /// or network mismatch (strict round-trip, same as `from_witness_script`).
+    pub fn from_snapshot(snap: &BtcSwapSnapshot) -> WarpResult<Self> {
+        let network: Network = snap
+            .btc_network
+            .parse()
+            .map_err(|e| err(format!("btc network '{}': {e}", snap.btc_network)))?;
+        let script_bytes = hex::decode(&snap.witness_script_hex)
+            .map_err(|e| err(format!("witness_script_hex: {e}")))?;
+        let btc_htlc = BtcHtlc::from_witness_script(&script_bytes, network)?;
+        if hex::encode(btc_htlc.hashlock) != snap.swap_id {
+            return Err(err("snapshot hashlock/swap_id mismatch"));
+        }
+        let user_zion_pubkey: [u8; 32] = hex::decode(&snap.user_zion_pubkey_hex)
+            .ok()
+            .and_then(|b| b.try_into().ok())
+            .ok_or_else(|| err("bad user_zion_pubkey_hex"))?;
+        let preimage = match &snap.preimage_hex {
+            Some(h) => Some(
+                hex::decode(h)
+                    .ok()
+                    .and_then(|b| <[u8; 32]>::try_from(b.as_slice()).ok())
+                    .ok_or_else(|| err("bad preimage_hex"))?,
+            ),
+            None => None,
+        };
+        Ok(Self {
+            swap_id: snap.swap_id.clone(),
+            direction: snap.direction,
+            phase: snap.phase.clone(),
+            btc_htlc,
+            btc_sats: snap.btc_sats,
+            zion_flowers: snap.zion_flowers,
+            zion_timeout_ts: snap.zion_timeout_ts,
+            user_zion_pubkey,
+            user_zion_address: snap.user_zion_address.clone(),
+            user_zion_lock_txid: snap.user_zion_lock_txid.clone(),
+            btc_lock: snap.btc_lock.clone(),
+            zion_lock_tx: snap.zion_lock_tx.clone(),
+            preimage,
+            btc_settle_tx: snap.btc_settle_tx.clone(),
+            created_at: snap.created_at,
+            updated_at: snap.updated_at,
+        })
+    }
+
     /// JSON projection for API responses.
     pub fn to_json(&self) -> serde_json::Value {
         serde_json::json!({
@@ -326,6 +432,8 @@ pub struct BtcSwapFlow {
     swaps: Arc<HtlcSwap>,
     cfg: BtcSwapConfig,
     records: Arc<Mutex<HashMap<String, BtcSwapRecord>>>,
+    /// Optional SQLite persistence — set via [`Self::set_db`].
+    db: Option<Arc<Mutex<crate::db::Db>>>,
 }
 
 /// Outcome of one poll iteration for a swap.
@@ -349,6 +457,42 @@ impl BtcSwapFlow {
             swaps,
             cfg,
             records: Arc::new(Mutex::new(HashMap::new())),
+            db: None,
+        }
+    }
+
+    /// Attach SQLite persistence (records survive restarts).
+    pub fn set_db(&mut self, db: Arc<Mutex<crate::db::Db>>) {
+        self.db = Some(db);
+    }
+
+    /// Load persisted records into memory (idempotent — later snapshots win).
+    pub async fn load_from_db(&self) -> WarpResult<usize> {
+        let Some(db) = &self.db else { return Ok(0) };
+        let snaps = db
+            .lock()
+            .await
+            .list_btc_swaps()
+            .map_err(|e| err(format!("load btc swaps: {e}")))?;
+        let n = snaps.len();
+        let mut records = self.records.lock().await;
+        for snap in &snaps {
+            match BtcSwapRecord::from_snapshot(snap) {
+                Ok(rec) => {
+                    records.insert(rec.swap_id.clone(), rec);
+                }
+                Err(e) => warn!("[WARP][btc-swap] skipping corrupt record {}: {e}", snap.swap_id),
+            }
+        }
+        Ok(n)
+    }
+
+    /// Persist one record (no-op when no db attached; logs errors).
+    async fn persist(&self, rec: &BtcSwapRecord) {
+        if let Some(db) = &self.db {
+            if let Err(e) = db.lock().await.save_btc_swap(&rec.to_snapshot()) {
+                warn!("[WARP][btc-swap] persist {} failed: {e}", rec.swap_id);
+            }
         }
     }
 
@@ -459,6 +603,7 @@ impl BtcSwapFlow {
     }
 
     pub async fn insert_record(&self, rec: BtcSwapRecord) {
+        self.persist(&rec).await;
         self.records
             .lock()
             .await
@@ -612,6 +757,7 @@ impl BtcSwapFlow {
         }
 
         rec.updated_at = Utc::now();
+        self.persist(&rec).await;
         self.records
             .lock()
             .await
@@ -1093,5 +1239,78 @@ mod tests {
             850_000,
         );
         assert!(err.is_err());
+    }
+
+    // ── Persistence (C7b) ────────────────────────────────────────────────
+
+    #[test]
+    fn snapshot_roundtrip_preserves_record() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.btc_lock = lock(3);
+        rec.preimage = Some([0x42; 32]);
+        rec.zion_lock_tx = Some("bb".repeat(32));
+
+        let snap = rec.to_snapshot();
+        let json = serde_json::to_string(&snap).unwrap();
+        let snap2: BtcSwapSnapshot = serde_json::from_str(&json).unwrap();
+        let rec2 = BtcSwapRecord::from_snapshot(&snap2).unwrap();
+
+        assert_eq!(rec2.swap_id, rec.swap_id);
+        assert_eq!(rec2.direction, rec.direction);
+        assert_eq!(rec2.phase, rec.phase);
+        // Witness script round-trips byte-exact → same address + params.
+        assert_eq!(
+            rec2.btc_htlc.witness_script.as_bytes(),
+            rec.btc_htlc.witness_script.as_bytes()
+        );
+        assert_eq!(rec2.btc_htlc.address.to_string(), rec.btc_htlc.address.to_string());
+        assert_eq!(rec2.btc_htlc.cltv_timeout, rec.btc_htlc.cltv_timeout);
+        assert_eq!(rec2.btc_lock.unwrap().txid, "aa".repeat(32));
+        assert_eq!(rec2.preimage, Some([0x42; 32]));
+        assert_eq!(rec2.zion_lock_tx, Some("bb".repeat(32)));
+    }
+
+    #[test]
+    fn snapshot_rejects_corrupt_script() {
+        let s = signer();
+        let c = cfg();
+        let rec = btc_to_zion_rec(&s, &c);
+        let mut snap = rec.to_snapshot();
+        snap.witness_script_hex = "deadbeef".into();
+        assert!(BtcSwapRecord::from_snapshot(&snap).is_err());
+    }
+
+    #[tokio::test]
+    async fn db_persist_and_reload() {
+        use crate::db::Db;
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let s = signer();
+        let c = cfg();
+
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c.clone(),
+        );
+        flow.set_db(db.clone());
+        let rec = btc_to_zion_rec(&s, &c);
+        let swap_id = rec.swap_id.clone();
+        flow.insert_record(rec).await;
+
+        // Fresh flow on the same DB reloads the record.
+        let mut flow2 = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        flow2.set_db(db);
+        assert_eq!(flow2.load_from_db().await.unwrap(), 1);
+        let rec2 = flow2.record(&swap_id).await.unwrap();
+        assert_eq!(rec2.phase, BtcSwapPhase::AwaitingUserLock);
+        assert_eq!(rec2.btc_sats, 100_000);
     }
 }

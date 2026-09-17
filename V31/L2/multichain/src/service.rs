@@ -288,7 +288,7 @@ impl MultichainService {
             reconciler_config,
         );
 
-        let btc_swap = build_btc_swap(&htlc, &keyring);
+        let btc_swap = build_btc_swap(&htlc, &keyring, &db);
 
         Self {
             config,
@@ -1192,7 +1192,11 @@ impl MultichainService {
 /// - `WARP_BTC_MIN_CONFS` (default 2), `WARP_BTC_MARGIN_BLOCKS` (default 36)
 ///
 /// The operator ZION identity comes from the bridge keyring (account 0).
-fn build_btc_swap(htlc: &HtlcSwap, keyring: &Keyring) -> Option<Arc<BtcSwapFlow>> {
+fn build_btc_swap(
+    htlc: &HtlcSwap,
+    keyring: &Keyring,
+    db: &Arc<Mutex<crate::db::Db>>,
+) -> Option<Arc<BtcSwapFlow>> {
     use crate::warp::adapter::bitcoin::BitcoinAdapter as WarpBitcoinAdapter;
     use crate::warp::btc_signer::BtcSigner;
 
@@ -1247,12 +1251,14 @@ fn build_btc_swap(htlc: &HtlcSwap, keyring: &Keyring) -> Option<Arc<BtcSwapFlow>
         signer.address(),
         cfg.min_btc_confs
     );
-    Some(Arc::new(BtcSwapFlow::new(
+    let mut flow = BtcSwapFlow::new(
         Arc::new(WarpBitcoinAdapter::new()),
         Arc::new(signer),
         Arc::new(htlc.clone()),
         cfg,
-    )))
+    );
+    flow.set_db(Arc::clone(db));
+    Some(Arc::new(flow))
 }
 
 fn load_bridge_consensus() -> Option<BridgeConsensus> {
