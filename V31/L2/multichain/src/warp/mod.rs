@@ -9,6 +9,7 @@ pub mod bcs;
 pub mod bolt11;
 pub mod btc_htlc;
 pub mod btc_signer;
+pub mod btc_swap;
 pub mod cardano_signer;
 pub mod cbor;
 pub mod config;

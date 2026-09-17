@@ -226,6 +226,38 @@ pub fn cltv_from_zion_timeout(
     target.min(u32::MAX as u64) as u32
 }
 
+/// Inverse conversion for the ZION→BTC direction: the **BTC leg expires
+/// earlier** so the user must reveal the preimage before its CLTV and we keep
+/// a margin to claim the ZION leg afterwards.
+///
+/// Errors if the ZION timeout is too close to fit a safe BTC expiry
+/// (`zion_blocks <= margin_blocks` or the result is not in the future).
+pub fn cltv_before_zion_timeout(
+    zion_timeout_ts: u64,
+    now_ts: u64,
+    btc_tip: u64,
+    margin_blocks: u32,
+) -> WarpResult<u32> {
+    let remaining = zion_timeout_ts.saturating_sub(now_ts);
+    // Floor (not ceil) — conservative: BTC must expire *before* the ZION
+    // timeout even if block production runs fast.
+    let zion_blocks = remaining / BTC_BLOCK_SECS;
+    if zion_blocks <= margin_blocks as u64 {
+        return Err(err(format!(
+            "zion timeout too close for safe BTC expiry ({remaining}s left, \
+             need > {}s)",
+            margin_blocks as u64 * BTC_BLOCK_SECS
+        )));
+    }
+    let target = btc_tip
+        .saturating_add(zion_blocks)
+        .saturating_sub(margin_blocks as u64);
+    if target <= btc_tip {
+        return Err(err("computed cltv not in the future"));
+    }
+    Ok(target.min(u32::MAX as u64) as u32)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Spending
 // ─────────────────────────────────────────────────────────────────────────────
