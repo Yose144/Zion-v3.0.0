@@ -75,6 +75,7 @@ fn estimate_vbytes(n_in: usize, n_out: usize) -> u64 {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Holds the relay wallet's private key + derived address.
+#[derive(Clone)]
 pub struct BtcSigner {
     private_key: PrivateKey,
     public_key: PublicKey,

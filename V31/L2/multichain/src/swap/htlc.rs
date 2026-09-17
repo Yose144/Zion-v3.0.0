@@ -482,6 +482,71 @@ impl HtlcSwap {
         Ok(hashlock)
     }
 
+    /// Register a swap record whose operator-side lock lives on a chain this
+    /// coordinator does not drive (e.g. a BTC P2WSH HTLC managed by
+    /// `warp::btc_swap`). The lock fields are bookkeeping only — the user's
+    /// counterparty lock is later annotated via `set_source_details` /
+    /// `set_source_lock` and released with `claim_source`.
+    pub async fn register_external_lock(
+        &self,
+        hashlock: Hash,
+        locker_address: &str,
+        amount: u64,
+        lock_tx_id: &str,
+        expires_at: i64,
+        counterparty_chain: &str,
+        counterparty_addr: &str,
+        refund_pubkey: Option<[u8; 32]>,
+        claimant_pubkey: Option<[u8; 32]>,
+    ) -> MultichainResult<()> {
+        let hash_hex = hashlock.to_hex();
+        let mut records = self.records.lock().await;
+        if records.contains_key(&hash_hex) {
+            return Err(MultichainError::Validation(format!(
+                "HTLC {hash_hex} already registered"
+            )));
+        }
+        let record = HtlcRecord {
+            hash_hex: hash_hex.clone(),
+            locker_address: locker_address.to_string(),
+            amount,
+            lock_tx_id: lock_tx_id.to_string(),
+            lock_block_height: 0,
+            expires_at,
+            counterparty_chain: counterparty_chain.to_string(),
+            counterparty_addr: counterparty_addr.to_string(),
+            refund_pubkey,
+            claimant_pubkey,
+            source_chain: None,
+            source_address: None,
+            source_lock_tx_id: None,
+            source_amount: 0,
+            source_confirmed: false,
+            source_expires_at: 0,
+            source_refund_pubkey: None,
+            source_claimant_pubkey: None,
+            state: SwapState::Pending,
+            release_tx_id: None,
+            release_recipient: None,
+            preimage_hex: None,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        records.insert(hash_hex.clone(), record.clone());
+        drop(records);
+        self.persist(&record).await;
+        Ok(())
+    }
+
+    /// Return the revealed 32-byte preimage for a claimed record, if any.
+    /// Handles the FIND-002 `enc:` at-rest encryption transparently.
+    pub async fn revealed_preimage(&self, hash_hex: &str) -> Option<[u8; 32]> {
+        let stored = self.records.lock().await.get(hash_hex)?.preimage_hex.clone()?;
+        let plain = decrypt_preimage_at_rest(&stored);
+        let bytes = hex::decode(plain).ok()?;
+        bytes.try_into().ok()
+    }
+
     // ── Claim (release funds after preimage verification) ───────────────
 
     /// Claim the target-side HTLC by revealing the preimage.

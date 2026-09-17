@@ -1,4 +1,5 @@
 use crate::warp::adapter::ChainAdapter;
+use crate::warp::btc_htlc::{extract_preimage, BtcHtlc};
 use crate::warp::btc_signer::BtcSigner;
 use crate::warp::config::ChainConfig;
 use crate::warp::error::{WarpError, WarpResult};
@@ -6,7 +7,9 @@ use crate::warp::protocol::{DepositProof, MintInstruction};
 use crate::warp::types::ChainFamily;
 use async_trait::async_trait;
 use bitcoin::Network;
+use bitcoin::Witness;
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use tracing::{debug, info, warn};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,21 +81,123 @@ struct MempoolTxStatus {
 #[allow(dead_code)]
 struct MempoolVout {
     value: u64,
+    scriptpubkey: Option<String>,
     scriptpubkey_type: Option<String>,
     scriptpubkey_asm: Option<String>,
+    scriptpubkey_address: Option<String>,
 }
 
 #[derive(Deserialize)]
 #[allow(dead_code)]
 struct MempoolVin {
+    /// Txid of the outpoint being spent.
+    txid: Option<String>,
+    /// Vout index of the outpoint being spent.
+    vout: Option<u32>,
     prevout: Option<MempoolVout>,
     scriptsig_asm: Option<String>,
     witness: Option<Vec<String>>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adapter
+// Per-swap HTLC detection (WARP Beta)
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// A confirmed (or mempool) funding output paying into a per-swap P2WSH HTLC.
+#[derive(Debug, Clone)]
+pub struct BtcHtlcLock {
+    pub txid: String,
+    pub vout: u32,
+    pub value_sats: u64,
+    pub confirmations: u64,
+    pub block_height: u64,
+}
+
+/// A spend of the HTLC funding outpoint — claim reveals the preimage,
+/// refund returns funds to the locker after CLTV expiry.
+#[derive(Debug, Clone)]
+pub enum BtcHtlcSpend {
+    Claim { txid: String, preimage: [u8; 32] },
+    Refund { txid: String },
+}
+
+/// Scan `txs` (as returned by mempool.space `/address/{addr}/txs`) for the
+/// best-confirmed output paying at least `min_sats` to `want_spk` (hex
+/// scriptPubKey). Returns the candidate regardless of confirmation depth;
+/// callers decide the required `min_confs`.
+fn find_lock_output(
+    txs: &[MempoolTx],
+    want_spk: &str,
+    min_sats: u64,
+    tip: u64,
+) -> Option<BtcHtlcLock> {
+    let mut best: Option<BtcHtlcLock> = None;
+    for tx in txs {
+        let Some(status) = &tx.status else { continue };
+        if !status.confirmed {
+            continue;
+        }
+        let block_height = status.block_height.unwrap_or(0);
+        let confirmations = tip.saturating_sub(block_height) + 1;
+        for (i, v) in tx.vout.iter().flatten().enumerate() {
+            if v.scriptpubkey.as_deref() == Some(want_spk) && v.value >= min_sats {
+                let cand = BtcHtlcLock {
+                    txid: tx.txid.clone(),
+                    vout: i as u32,
+                    value_sats: v.value,
+                    confirmations,
+                    block_height,
+                };
+                if best
+                    .as_ref()
+                    .map(|b| confirmations > b.confirmations)
+                    .unwrap_or(true)
+                {
+                    best = Some(cand);
+                }
+            }
+        }
+    }
+    best
+}
+
+/// Scan `txs` for a transaction spending the `lock` outpoint. If the witness
+/// carries our exact HTLC script on the claim branch, extract the preimage;
+/// a spend through the else-branch (or an unparseable witness) is a refund.
+fn classify_htlc_spend(txs: &[MempoolTx], lock: &BtcHtlcLock, htlc: &BtcHtlc) -> Option<BtcHtlcSpend> {
+    for tx in txs {
+        for vin in tx.vin.iter().flatten() {
+            if vin.txid.as_deref() == Some(lock.txid.as_str()) && vin.vout == Some(lock.vout) {
+                let items: Vec<Vec<u8>> = vin
+                    .witness
+                    .iter()
+                    .flatten()
+                    .filter_map(|h| hex::decode(h).ok())
+                    .collect();
+                let witness = Witness::from_slice(&items);
+                // Only accept a claim if the revealed script is *our* HTLC
+                // script and the preimage really opens our hashlock.
+                let our_script = items.last().map(|s| s.as_slice())
+                    == Some(htlc.witness_script.as_bytes());
+                if our_script {
+                    if let Some(preimage) = extract_preimage(&witness) {
+                        if Sha256::digest(preimage)[..] == htlc.hashlock[..] {
+                            return Some(BtcHtlcSpend::Claim {
+                                txid: tx.txid.clone(),
+                                preimage,
+                            });
+                        }
+                    }
+                }
+                return Some(BtcHtlcSpend::Refund {
+                    txid: tx.txid.clone(),
+                });
+            }
+        }
+    }
+    None
+}
+
 
 /// Bitcoin adapter — HTLC watch + OP_RETURN memo parsing via mempool.space API.
 pub struct BitcoinAdapter {
@@ -135,6 +240,16 @@ impl BitcoinAdapter {
             }
         }
         adapter
+    }
+
+    /// The mempool.space-compatible API base URL this adapter polls.
+    pub fn api_url(&self) -> &str {
+        &self.api_url
+    }
+
+    /// Shared HTTP client (used by the swap flow for signer broadcasts).
+    pub fn client(&self) -> &reqwest::Client {
+        &self.client
     }
 
     async fn get_tip_height(&self) -> WarpResult<u64> {
@@ -181,6 +296,32 @@ impl BitcoinAdapter {
                 reason: e.to_string(),
             })?;
         Ok(txs)
+    }
+
+    /// Detect a funding output paying `min_sats` to the per-swap HTLC
+    /// address. Returns the best-confirmed candidate (or `None`).
+    /// Callers compare `confirmations` against their required depth.
+    pub async fn detect_htlc_lock(
+        &self,
+        htlc: &BtcHtlc,
+        min_sats: u64,
+    ) -> WarpResult<Option<BtcHtlcLock>> {
+        let tip = self.get_tip_height().await?;
+        let txs = self.get_address_txs(&htlc.address.to_string()).await?;
+        let want_spk = hex::encode(htlc.address.script_pubkey().as_bytes());
+        Ok(find_lock_output(&txs, &want_spk, min_sats, tip))
+    }
+
+    /// Detect a spend of a previously seen HTLC lock. A claim-path spend
+    /// yields the revealed preimage (verified against `htlc.hashlock` and
+    /// the exact witness script); anything else is treated as a refund.
+    pub async fn detect_htlc_spend(
+        &self,
+        htlc: &BtcHtlc,
+        lock: &BtcHtlcLock,
+    ) -> WarpResult<Option<BtcHtlcSpend>> {
+        let txs = self.get_address_txs(&htlc.address.to_string()).await?;
+        Ok(classify_htlc_spend(&txs, lock, htlc))
     }
 
     /// Decode hex-encoded OP_RETURN data and look for WARP_INBOUND prefix.
@@ -428,13 +569,17 @@ mod tests {
             vout: Some(vec![
                 MempoolVout {
                     value: 100_000,
+                    scriptpubkey: None,
                     scriptpubkey_type: Some("p2wpkh".into()),
                     scriptpubkey_asm: None,
+                    scriptpubkey_address: None,
                 },
                 MempoolVout {
                     value: 0,
+                    scriptpubkey: None,
                     scriptpubkey_type: Some("op_return".into()),
                     scriptpubkey_asm: Some(format!("OP_RETURN OP_PUSHBYTES_38 {}", hex_memo)),
+                    scriptpubkey_address: None,
                 },
             ]),
             vin: None,
@@ -458,6 +603,201 @@ mod tests {
             vin: None,
         };
         assert!(adapter.tx_to_proof(&tx, 840_000).is_none());
+    }
+
+    // ── Per-swap HTLC detection tests ────────────────────────────────────
+
+    fn test_htlc() -> (BtcHtlc, [u8; 32]) {
+        use bitcoin::secp256k1::{Secp256k1, SecretKey};
+        use bitcoin::PrivateKey;
+        let preimage = [0x42u8; 32];
+        let hashlock: [u8; 32] = Sha256::digest(preimage).into();
+        let secp = Secp256k1::new();
+        let claimant =
+            PrivateKey::new(SecretKey::from_slice(&[0x03; 32]).unwrap(), Network::Bitcoin)
+                .public_key(&secp);
+        let refund =
+            PrivateKey::new(SecretKey::from_slice(&[0x04; 32]).unwrap(), Network::Bitcoin)
+                .public_key(&secp);
+        (
+            BtcHtlc::new(hashlock, claimant, refund, 850_000, Network::Bitcoin).unwrap(),
+            preimage,
+        )
+    }
+
+    fn funding_tx(htlc: &BtcHtlc, sats: u64, height: u64, confirmed: bool) -> MempoolTx {
+        MempoolTx {
+            txid: "ff".repeat(32),
+            status: Some(MempoolTxStatus {
+                confirmed,
+                block_height: if confirmed { Some(height) } else { None },
+                block_hash: Some("bb".repeat(32)),
+            }),
+            vout: Some(vec![MempoolVout {
+                value: sats,
+                scriptpubkey: Some(hex::encode(htlc.address.script_pubkey().as_bytes())),
+                scriptpubkey_type: Some("v0_p2wsh".into()),
+                scriptpubkey_asm: None,
+                scriptpubkey_address: Some(htlc.address.to_string()),
+            }]),
+            vin: None,
+        }
+    }
+
+    #[test]
+    fn find_lock_output_detects_confirmed_funding() {
+        let (htlc, _) = test_htlc();
+        let txs = vec![funding_tx(&htlc, 150_000, 840_000, true)];
+        let want = hex::encode(htlc.address.script_pubkey().as_bytes());
+        let lock = find_lock_output(&txs, &want, 100_000, 840_005).unwrap();
+        assert_eq!(lock.vout, 0);
+        assert_eq!(lock.value_sats, 150_000);
+        assert_eq!(lock.confirmations, 6);
+    }
+
+    #[test]
+    fn find_lock_output_rejects_low_value_and_unconfirmed() {
+        let (htlc, _) = test_htlc();
+        let want = hex::encode(htlc.address.script_pubkey().as_bytes());
+        // Below min_sats.
+        let low = vec![funding_tx(&htlc, 50_000, 840_000, true)];
+        assert!(find_lock_output(&low, &want, 100_000, 840_005).is_none());
+        // Unconfirmed.
+        let unconf = vec![funding_tx(&htlc, 150_000, 840_000, false)];
+        assert!(find_lock_output(&unconf, &want, 100_000, 840_005).is_none());
+        // Different scriptPubKey.
+        let mut other = funding_tx(&htlc, 150_000, 840_000, true);
+        other.vout.as_mut().unwrap()[0].scriptpubkey = Some("0014aaaa".into());
+        assert!(find_lock_output(&[other], &want, 100_000, 840_005).is_none());
+    }
+
+    fn spend_tx(lock: &BtcHtlcLock, witness_items: Vec<Vec<u8>>) -> MempoolTx {
+        MempoolTx {
+            txid: "ee".repeat(32),
+            status: Some(MempoolTxStatus {
+                confirmed: true,
+                block_height: Some(840_001),
+                block_hash: None,
+            }),
+            vout: None,
+            vin: Some(vec![MempoolVin {
+                txid: Some(lock.txid.clone()),
+                vout: Some(lock.vout),
+                prevout: None,
+                scriptsig_asm: None,
+                witness: Some(witness_items.iter().map(hex::encode).collect()),
+            }]),
+        }
+    }
+
+    #[test]
+    fn classify_spend_extracts_claim_preimage() {
+        use crate::warp::btc_htlc::{spend_htlc_tx, HtlcPath, HtlcUtxo};
+        use bitcoin::secp256k1::SecretKey;
+        use bitcoin::{Address, OutPoint, PrivateKey, Txid};
+        use std::str::FromStr;
+
+        let (htlc, preimage) = test_htlc();
+        let lock = BtcHtlcLock {
+            txid: "ff".repeat(32),
+            vout: 0,
+            value_sats: 150_000,
+            confirmations: 3,
+            block_height: 840_000,
+        };
+        let claim_key =
+            PrivateKey::new(SecretKey::from_slice(&[0x03; 32]).unwrap(), Network::Bitcoin);
+        let dest = Address::from_str("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
+            .unwrap()
+            .assume_checked();
+        let tx = spend_htlc_tx(
+            &HtlcUtxo {
+                outpoint: OutPoint::new(Txid::from_str(&lock.txid).unwrap(), 0),
+                value_sats: lock.value_sats,
+            },
+            &htlc,
+            HtlcPath::Claim(preimage),
+            &dest,
+            &claim_key,
+            5,
+        )
+        .unwrap();
+        let items: Vec<Vec<u8>> = tx.input[0].witness.iter().map(|w| w.to_vec()).collect();
+        let txs = vec![funding_tx(&htlc, 150_000, 840_000, true), spend_tx(&lock, items)];
+        match classify_htlc_spend(&txs, &lock, &htlc) {
+            Some(BtcHtlcSpend::Claim { preimage: p, .. }) => assert_eq!(p, preimage),
+            other => panic!("expected claim, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn classify_spend_detects_refund() {
+        use crate::warp::btc_htlc::{spend_htlc_tx, HtlcPath, HtlcUtxo};
+        use bitcoin::secp256k1::SecretKey;
+        use bitcoin::{Address, OutPoint, PrivateKey, Txid};
+        use std::str::FromStr;
+
+        let (htlc, _) = test_htlc();
+        let lock = BtcHtlcLock {
+            txid: "ff".repeat(32),
+            vout: 0,
+            value_sats: 150_000,
+            confirmations: 3,
+            block_height: 840_000,
+        };
+        let refund_key =
+            PrivateKey::new(SecretKey::from_slice(&[0x04; 32]).unwrap(), Network::Bitcoin);
+        let dest = Address::from_str("bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
+            .unwrap()
+            .assume_checked();
+        let tx = spend_htlc_tx(
+            &HtlcUtxo {
+                outpoint: OutPoint::new(Txid::from_str(&lock.txid).unwrap(), 0),
+                value_sats: lock.value_sats,
+            },
+            &htlc,
+            HtlcPath::Refund,
+            &dest,
+            &refund_key,
+            5,
+        )
+        .unwrap();
+        let items: Vec<Vec<u8>> = tx.input[0].witness.iter().map(|w| w.to_vec()).collect();
+        let txs = vec![spend_tx(&lock, items)];
+        match classify_htlc_spend(&txs, &lock, &htlc) {
+            Some(BtcHtlcSpend::Refund { .. }) => {}
+            other => panic!("expected refund, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn classify_spend_ignores_unrelated_txs() {
+        let (htlc, _) = test_htlc();
+        let lock = BtcHtlcLock {
+            txid: "ff".repeat(32),
+            vout: 0,
+            value_sats: 150_000,
+            confirmations: 3,
+            block_height: 840_000,
+        };
+        // A tx spending a different outpoint.
+        let spend = MempoolTx {
+            txid: "dd".repeat(32),
+            status: Some(MempoolTxStatus {
+                confirmed: true,
+                block_height: Some(840_001),
+                block_hash: None,
+            }),
+            vout: None,
+            vin: Some(vec![MempoolVin {
+                txid: Some("99".repeat(32)),
+                vout: Some(1),
+                prevout: None,
+                scriptsig_asm: None,
+                witness: None,
+            }]),
+        };
+        assert!(classify_htlc_spend(&[spend], &lock, &htlc).is_none());
     }
 
     #[tokio::test]
