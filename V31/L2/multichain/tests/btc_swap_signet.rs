@@ -1,8 +1,21 @@
-//! WARP Beta — BTC-leg E2E on Bitcoin signet (WARP Beta C8).
+//! WARP Beta — BTC-leg E2E (WARP Beta C8).
 //!
-//! These tests are `#[ignore]`d by default — they hit the real network and
-//! spend real (test) coins. Run manually with funded signet keys:
+//! These tests are `#[ignore]`d by default — they hit a real Bitcoin network
+//! and spend real (test) coins. Two modes:
 //!
+//! **regtest** (verified 2026-09-17) — docker `blockstream/esplora`:
+//! ```bash
+//! docker run -d -p 50002:80 blockstream/esplora \
+//!   bash -c "/srv/explorer/run.sh bitcoin-regtest explorer"
+//! # generate keys: BITCOIN_NETWORK=regtest cargo test ... gen_keys
+//! # fund: bitcoin-cli -regtest generatetoaddress 105 <addr>
+//! BITCOIN_NETWORK=regtest \
+//! WARP_BITCOIN_API=http://127.0.0.1:50002/regtest/api \
+//! WARP_BTC_OPERATOR_WIF=.. WARP_BTC_USER_WIF=.. \
+//! cargo test -p zion-multichain --test btc_swap_signet -- --ignored --nocapture
+//! ```
+//!
+//! **signet** (public network) — funded signet keys:
 //! ```bash
 //! BITCOIN_NETWORK=signet \
 //! WARP_BITCOIN_API=https://mempool.space/signet/api \
@@ -29,17 +42,24 @@ use zion_multichain::warp::adapter::ChainAdapter;
 use zion_multichain::warp::btc_htlc::{BtcHtlc, HtlcUtxo};
 use zion_multichain::warp::btc_signer::BtcSigner;
 
-const POLL_SECS: u64 = 20;
+const POLL_SECS: u64 = 5;
 const WAIT_TIMEOUT: Duration = Duration::from_secs(60 * 30); // signet blocks are irregular
 
 fn env_or_skip() -> Option<(BtcSigner, BtcSigner, Arc<BitcoinAdapter>)> {
     let op_wif = std::env::var("WARP_BTC_OPERATOR_WIF").ok()?;
     let user_wif = std::env::var("WARP_BTC_USER_WIF").ok()?;
-    std::env::set_var("BITCOIN_NETWORK", "signet");
-    let op = BtcSigner::from_wif(&op_wif, Network::Signet).expect("operator WIF");
-    let user = BtcSigner::from_wif(&user_wif, Network::Signet).expect("user WIF");
+    let network: Network = std::env::var("BITCOIN_NETWORK")
+        .unwrap_or_else(|_| "signet".into())
+        .parse()
+        .expect("BITCOIN_NETWORK");
+    let op = BtcSigner::from_wif(&op_wif, network).expect("operator WIF");
+    let user = BtcSigner::from_wif(&user_wif, network).expect("user WIF");
     let btc = Arc::new(BitcoinAdapter::new());
-    eprintln!("[e2e] operator {} / user {}", op.address(), user.address());
+    eprintln!(
+        "[e2e] network={network} operator {} / user {}",
+        op.address(),
+        user.address()
+    );
     Some((op, user, btc))
 }
 
@@ -58,6 +78,55 @@ where
         assert!(start.elapsed() < WAIT_TIMEOUT, "timed out waiting for {what}");
         eprintln!("[e2e] waiting for {what}…");
         tokio::time::sleep(Duration::from_secs(POLL_SECS)).await;
+    }
+}
+
+/// One-off helper: request testnet4 faucet funds for an address.
+#[tokio::test]
+#[ignore]
+async fn faucet_request() {
+    let addr = std::env::var("FAUCET_ADDRESS").expect("FAUCET_ADDRESS");
+    let client = reqwest::Client::new();
+    let bal = client
+        .get("https://api.testnet4.dev/faucetwalletbalance")
+        .send()
+        .await;
+    eprintln!("balance: {:?}", bal.map(|r| r.status()));
+    let resp = client
+        .post("https://api.testnet4.dev/dispensefunds")
+        .json(&serde_json::json!({
+            "btcAddress": addr,
+            "hCaptchaToken": "",
+            "amount": 0.001,
+        }))
+        .send()
+        .await;
+    match resp {
+        Ok(r) => eprintln!("dispense: {} {}", r.status(), r.text().await.unwrap_or_default()),
+        Err(e) => eprintln!("dispense error: {e}"),
+    }
+}
+
+/// Generate two fresh signet keypairs and print WIF + address.
+/// Run once: `cargo test -p zion-multichain --test btc_swap_signet gen_keys -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn gen_keys() {
+    use bitcoin::secp256k1::SecretKey;
+    use bitcoin::PrivateKey;
+    let network: Network = std::env::var("BITCOIN_NETWORK")
+        .unwrap_or_else(|_| "signet".into())
+        .parse()
+        .expect("BITCOIN_NETWORK");
+    for role in ["OPERATOR", "USER"] {
+        let mut sk_bytes = [0u8; 32];
+        rand::RngCore::fill_bytes(&mut rand::rngs::OsRng, &mut sk_bytes);
+        let sk = SecretKey::from_slice(&sk_bytes).unwrap();
+        let pk = PrivateKey::new(sk, network);
+        let signer = BtcSigner::from_wif(&pk.to_wif(), network).unwrap();
+        eprintln!("WARP_BTC_{role}_WIF={}", pk.to_wif());
+        eprintln!("{role}_ADDRESS={}", signer.address());
+        eprintln!();
     }
 }
 
@@ -85,7 +154,7 @@ async fn e2e_signet_claim_path() {
         *op.public_key_btc(),
         *user.public_key_btc(),
         (tip + 144) as u32,
-        Network::Signet,
+        op.network(),
     )
     .unwrap();
     eprintln!("[e2e] HTLC address {}", htlc.address);
@@ -174,7 +243,7 @@ async fn e2e_signet_refund_path() {
         *op.public_key_btc(),
         *user.public_key_btc(),
         (tip + 2) as u32,
-        Network::Signet,
+        op.network(),
     )
     .unwrap();
     eprintln!("[e2e] HTLC address {} (cltv {})", htlc.address, tip + 2);
