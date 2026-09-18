@@ -412,6 +412,35 @@ impl HtlcSwap {
 
         let hash_hex = hashlock.to_hex();
 
+        // Idempotent resume: a record for this hashlock already exists when a
+        // previous `initiate` broadcast but crashed (or returned an
+        // awaiting-confirmation error) before the caller recorded the result.
+        // Adopt the on-chain lock instead of broadcasting a duplicate.
+        let existing_lock = {
+            let records = self.records.lock().await;
+            records.get(&hash_hex).and_then(|r| {
+                (!r.lock_tx_id.is_empty() && r.lock_tx_id != Hash::default().to_hex())
+                    .then(|| r.lock_tx_id.clone())
+            })
+        };
+        if let Some(lock_tx_id) = existing_lock {
+            let tx = Hash::from_hex(&lock_tx_id).unwrap_or_default();
+            if let Some(adapter) = self.adapters.get(transfer.source.address.chain) {
+                if adapter.confirmations(&tx).await.unwrap_or(0) >= 1 {
+                    transfer.lock_tx_id = Some(lock_tx_id);
+                    transfer.status = TransferStatus::Executing;
+                    return Ok(hashlock);
+                }
+                return Err(MultichainError::Validation(format!(
+                    "HTLC lock {lock_tx_id} broadcast, awaiting confirmation"
+                )));
+            }
+            // Offline mode: adopt without a confirmation check.
+            transfer.lock_tx_id = Some(lock_tx_id);
+            transfer.status = TransferStatus::Executing;
+            return Ok(hashlock);
+        }
+
         // Execute the lock on the source chain via adapter.
         let source_chain = transfer.source.address.chain;
         if source_chain == ChainId::ZionL1 {
@@ -426,22 +455,14 @@ impl HtlcSwap {
                 ));
             }
         }
-        let lock_tx = if let Some(adapter) = self.adapters.get(source_chain) {
-            let tx = adapter.execute_outbound(transfer).await?;
-            let confirmed = adapter
-                .confirmations(&tx)
-                .await
-                .unwrap_or(0)
-                >= 1;
-            if !confirmed {
-                return Err(MultichainError::Validation(
-                    "HTLC source lock not confirmed on-chain".to_string(),
-                ));
-            }
-            tx
+        let (lock_tx, live_adapter) = if let Some(adapter) = self.adapters.get(source_chain) {
+            (adapter.execute_outbound(transfer).await?, Some(adapter))
         } else {
             // Offline mode (tests): synthesize a fake tx hash.
-            Hash::new(Sha256::digest(format!("lock:{hash_hex}").as_bytes()).into())
+            (
+                Hash::new(Sha256::digest(format!("lock:{hash_hex}").as_bytes()).into()),
+                None,
+            )
         };
 
         transfer.lock_tx_id = Some(lock_tx.to_hex());
@@ -479,6 +500,23 @@ impl HtlcSwap {
             .insert(hash_hex.clone(), record.clone());
         self.persist(&record).await;
         transfer.status = TransferStatus::Executing;
+
+        // Persist BEFORE the confirmation check: if the tx is still
+        // unconfirmed, the record lets the next `initiate` adopt this lock
+        // (entry check above) instead of broadcasting a duplicate.
+        if let Some(adapter) = live_adapter {
+            let confirmed = adapter
+                .confirmations(&lock_tx)
+                .await
+                .unwrap_or(0)
+                >= 1;
+            if !confirmed {
+                return Err(MultichainError::Validation(format!(
+                    "HTLC lock {} broadcast, awaiting confirmation",
+                    lock_tx.to_hex()
+                )));
+            }
+        }
         Ok(hashlock)
     }
 
@@ -501,9 +539,16 @@ impl HtlcSwap {
     ) -> MultichainResult<()> {
         let hash_hex = hashlock.to_hex();
         let mut records = self.records.lock().await;
-        if records.contains_key(&hash_hex) {
+        if let Some(existing) = records.get(&hash_hex) {
+            // Idempotent re-registration (e.g. warpd restarted mid-swap and
+            // re-runs `exec_lock_btc`): identical parameters are fine, a
+            // conflicting lock txid means a real double-lock attempt.
+            if existing.lock_tx_id == lock_tx_id && existing.amount == amount {
+                return Ok(());
+            }
             return Err(MultichainError::Validation(format!(
-                "HTLC {hash_hex} already registered"
+                "HTLC {hash_hex} already registered with lock {}",
+                existing.lock_tx_id
             )));
         }
         let record = HtlcRecord {
