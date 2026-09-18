@@ -988,6 +988,8 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         operator_zion_pubkey: op_zion_pk,
         operator_zion_address: op_zion_addr.clone(),
         operator_btc_dest: None,
+        // Exercise the on-chain user-lock verification against the real node.
+        zion_rpc_url: Some(rpc.clone()),
         ..BtcSwapConfig::default()
     };
     let flow = BtcSwapFlow::new(btc.clone(), Arc::new(op), swaps_flow, cfg);

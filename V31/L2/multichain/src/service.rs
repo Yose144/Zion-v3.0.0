@@ -288,7 +288,7 @@ impl MultichainService {
             reconciler_config,
         );
 
-        let btc_swap = build_btc_swap(&htlc, &keyring, &db);
+        let btc_swap = build_btc_swap(&htlc, &keyring, &db, &config);
 
         Self {
             config,
@@ -1198,6 +1198,7 @@ fn build_btc_swap(
     htlc: &HtlcSwap,
     keyring: &Keyring,
     db: &Arc<Mutex<crate::db::Db>>,
+    config: &MultichainConfig,
 ) -> Option<Arc<BtcSwapFlow>> {
     use crate::warp::adapter::bitcoin::BitcoinAdapter as WarpBitcoinAdapter;
     use crate::warp::btc_signer::BtcSigner;
@@ -1258,6 +1259,13 @@ fn build_btc_swap(
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(32),
+        // Required for on-chain verification of the user's ZION lock before
+        // the operator counter-locks BTC.
+        zion_rpc_url: (!config.l1_rpc_url.is_empty()).then(|| config.l1_rpc_url.clone()),
+        min_zion_lock_confs: std::env::var("WARP_ZION_LOCK_MIN_CONFS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(2),
     };
     tracing::info!(
         "[WARP][btc-swap] enabled — network {:?}, relay {}, min_confs {}",

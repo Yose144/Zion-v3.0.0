@@ -147,6 +147,9 @@ finality_blocks = 0
 #   WARP_BTC_SWAP_MIN_SATS=2000    # min BTC leg size (dust guard)
 #   WARP_BTC_SWAP_MAX_SATS=10000000  # max BTC leg size (0.1 BTC beta cap)
 #   WARP_BTC_SWAP_MAX_ACTIVE=32    # max concurrent non-terminal swaps
+#   WARP_ZION_LOCK_MIN_CONFS=2     # confs required on the user's ZION lock
+#                                # before the operator counter-locks BTC
+#                                # (uses l1_rpc_url for the on-chain check)
 # API: POST /v1/multichain/swaps/btc/offer, GET /swaps/btc/list, GET /swaps/btc/:id
 
 # ── Solver network (optional) ───────────────────────────────────────────────
