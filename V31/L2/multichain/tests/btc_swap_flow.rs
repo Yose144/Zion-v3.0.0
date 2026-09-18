@@ -736,23 +736,118 @@ async fn e2e_flow_btc_to_zion_restart() {
     let _ = std::fs::remove_file(&db_path);
 }
 
+/// Raw zion-node JSON-RPC over HTTP POST (the node also accepts a bare
+/// JSON body line). Returns the `result` field.
+async fn zion_rpc_call(
+    client: &reqwest::Client,
+    rpc: &str,
+    method: &str,
+    params: serde_json::Value,
+) -> serde_json::Value {
+    let resp = client
+        .post(format!("http://{rpc}"))
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": method,
+            "params": params,
+        }))
+        .send()
+        .await
+        .expect("zion rpc send")
+        .text()
+        .await
+        .expect("zion rpc body");
+    let env: serde_json::Value = serde_json::from_str(resp.trim()).expect("zion rpc parse");
+    env.get("result").cloned().unwrap_or(env)
+}
+
+/// `getUtxos` → `SpendableUtxo` list (mirrors the adapter parsing, plus the
+/// immature-coinbase exclusion).
+async fn zion_rpc_utxos(
+    client: &reqwest::Client,
+    rpc: &str,
+    address: &str,
+) -> Vec<zion_core::v31_wallet::SpendableUtxo> {
+    let tip = zion_rpc_call(client, rpc, "getChainInfo", serde_json::json!({}))
+        .await
+        .get("chain_height")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let r = zion_rpc_call(client, rpc, "getUtxos", serde_json::json!({"address": address})).await;
+    r.get("utxos")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|u| zion_core::v31_wallet::SpendableUtxo {
+            tx_hash: hex::decode(u["tx_hash"].as_str().unwrap_or_default())
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
+            amount: u["amount"].as_u64().unwrap_or(0),
+            address: address.to_string(),
+            script: hex::decode(u["script_hex"].as_str().unwrap_or_default())
+                .unwrap_or_default(),
+            block_height: u["block_height"].as_u64().unwrap_or(0),
+            is_coinbase: u["is_coinbase"].as_bool().unwrap_or(false),
+        })
+        .filter(|u| {
+            !u.is_coinbase
+                || tip.saturating_sub(u.block_height)
+                    >= zion_core::emission::COINBASE_MATURITY
+        })
+        .collect()
+}
+
+/// `submitUtxoTransaction` → tx_id hex, or the rejection reason.
+async fn zion_rpc_submit(
+    client: &reqwest::Client,
+    rpc: &str,
+    tx: &zion_core::Transaction,
+) -> Result<String, String> {
+    let tx_json = serde_json::to_value(tx).map_err(|e| e.to_string())?;
+    let r = zion_rpc_call(
+        client,
+        rpc,
+        "submitUtxoTransaction",
+        serde_json::json!({"transaction": tx_json}),
+    )
+    .await;
+    if !r.get("accepted").and_then(|v| v.as_bool()).unwrap_or(false) {
+        return Err(format!(
+            "submitUtxoTransaction rejected: {}",
+            r.get("reason").and_then(|v| v.as_str()).unwrap_or("unknown")
+        ));
+    }
+    r.get("tx_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "submitUtxoTransaction missing tx_id".to_string())
+}
+
 /// LIVE-ZION variant: the ZION leg runs on the real ZION L1 chain through
 /// `ZionL1Adapter` (real `build_htlc_lock`/`build_htlc_claim` txs), while the
 /// BTC leg runs on regtest/signet. Requires — in addition to the BTC env:
 ///
 /// ```bash
 /// WARP_ZION_LIVE=1 \
-/// WARP_ZION_RPC=127.0.0.1:9445 \            # zion-node JSON-RPC (TCP)
-/// WARP_ZION_OPERATOR_MNEMONIC="<24 words>"  # funded operator ZION keyring
-/// # or a raw Ed25519 secret instead:
-/// WARP_ZION_OPERATOR_SECRET="<64-hex>"      # funded operator ZION key
+/// WARP_ZION_RPC=127.0.0.1:9445 \           # zion-node JSON-RPC (TCP)
+/// WARP_ZION_USER_SECRET="<64-hex>" \       # funded ZION key = the "user"
+/// # (or WARP_ZION_USER_MNEMONIC="<24 words>")
 /// ```
 ///
-/// Flow: a fresh user keyring is generated and funded by the operator
-/// (send_payment) → the user broadcasts a real L1 HTLC lock (claimant =
-/// operator) via `execute_outbound` → orchestrator locks BTC → user claims
-/// BTC → orchestrator `claim_source` broadcasts the real ZION claim and
-/// settles. Net cost ≈ a few ZION in fees; locked funds return to operator.
+/// Roles: the funded wallet plays the USER — it broadcasts the real L1 HTLC
+/// lock (claimant = ephemeral operator). The operator keyring is generated
+/// fresh: `build_htlc_claim` spends only the lock UTXO (fee deducted from the
+/// claimed amount), so the operator needs **no balance**. The operator
+/// mnemonic is printed so the claimed ~lock amount is recoverable.
+/// Net cost ≈ lock amount + 1 ZION fee to the ephemeral operator address.
+///
+/// NOTE: `send_payment` (account-model `submitTransaction`) is legacy V3 and
+/// does NOT confirm on the v31-native UTXO chain — the lock path must use
+/// `execute_outbound`/`submitUtxoTransaction`.
 #[tokio::test]
 #[ignore]
 async fn e2e_flow_zion_to_btc_live_zion() {
@@ -767,26 +862,17 @@ async fn e2e_flow_zion_to_btc_live_zion() {
     let client = reqwest::Client::new();
     let api = btc.api_url().to_string();
     let rpc = std::env::var("WARP_ZION_RPC").expect("WARP_ZION_RPC");
-    // Operator identity: BIP39 mnemonic or a raw Ed25519 secret (hex).
-    let op_keyring = |()| -> Keyring {
-        if let Ok(m) = std::env::var("WARP_ZION_OPERATOR_MNEMONIC") {
-            Keyring::from_mnemonic(&m).expect("operator keyring (mnemonic)")
+    // Funded USER identity: BIP39 mnemonic or a raw Ed25519 secret (hex).
+    let user_keyring = |()| -> Keyring {
+        if let Ok(m) = std::env::var("WARP_ZION_USER_MNEMONIC") {
+            Keyring::from_mnemonic(&m).expect("user keyring (mnemonic)")
         } else {
-            let s = std::env::var("WARP_ZION_OPERATOR_SECRET").expect(
-                "WARP_ZION_OPERATOR_MNEMONIC or WARP_ZION_OPERATOR_SECRET",
-            );
-            Keyring::from_zion_secret(&s).expect("operator keyring (secret)")
+            let s = std::env::var("WARP_ZION_USER_SECRET")
+                .expect("WARP_ZION_USER_MNEMONIC or WARP_ZION_USER_SECRET");
+            Keyring::from_zion_secret(&s).expect("user keyring (secret)")
         }
     };
-    let op_kr = op_keyring(());
-    let op_zion_pk: [u8; 32] = hex::decode(op_kr.zion_public_key(0, 0).unwrap())
-        .unwrap()
-        .try_into()
-        .unwrap();
-    let op_zion_addr = op_kr.address(ChainId::ZionL1, 0, 0).unwrap().encoded;
-
-    // Fresh ephemeral user keyring (its lock is claimed back to operator).
-    let user_kr = Keyring::generate().expect("user keyring");
+    let user_kr = user_keyring(());
     let user_zion_pk: [u8; 32] = hex::decode(user_kr.zion_public_key(0, 0).unwrap())
         .unwrap()
         .try_into()
@@ -795,63 +881,50 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         .address(ChainId::ZionL1, 0, 0)
         .unwrap()
         .encoded;
-    eprintln!("[e2e] zion operator {op_zion_addr} / user {user_zion_addr}");
 
-    // Sanity: operator balance must cover funding + claim fees.
-    let op_addr_t = Address::new(
-        ChainId::ZionL1,
-        op_zion_addr.as_bytes().to_vec(),
-        op_zion_addr.clone(),
-    )
-    .unwrap();
-    let op_side_probe = ZionL1Adapter::new(rpc.clone(), op_keyring(()));
-    let op_bal = op_side_probe
-        .balance(&op_addr_t)
-        .await
-        .expect("operator balance query");
-    eprintln!("[e2e] operator zion balance: {} flowers", op_bal.0);
-    assert!(
-        op_bal.0 >= 20_000_000,
-        "operator zion balance too low for live test"
-    );
+    // Ephemeral operator — claim spends only the lock UTXO, no balance needed.
+    // Mnemonic printed so the claimed amount stays recoverable.
+    let op_kr = Keyring::generate().expect("operator keyring");
+    eprintln!("[e2e] operator (ephemeral) mnemonic: {}", op_kr.mnemonic());
+    let op_zion_pk: [u8; 32] = hex::decode(op_kr.zion_public_key(0, 0).unwrap())
+        .unwrap()
+        .try_into()
+        .unwrap();
+    let op_zion_addr = op_kr.address(ChainId::ZionL1, 0, 0).unwrap().encoded;
+    eprintln!("[e2e] zion user {user_zion_addr} / operator {op_zion_addr}");
 
-    // Coordinator sees a live ZionL1 adapter (operator keyring).
-    let mut registry = ChainAdapterRegistry::new();
-    registry.register(
-        ChainId::ZionL1,
-        Box::new(ZionL1Adapter::new(rpc.clone(), op_keyring(()))),
-    );
-    let swaps = Arc::new(HtlcSwap::new(Arc::new(registry)));
-
-    // Test-side adapters (separate instances; adapters are not Clone).
-    let op_side = ZionL1Adapter::new(rpc.clone(), op_kr);
-    let user_side = ZionL1Adapter::new(rpc.clone(), user_kr);
-
-    const ZION_LOCK_FLOWERS: u64 = 5_000_000; // 5 ZION
-    const ZION_FUND_FLOWERS: u64 = 12_000_000; // lock + fees + slack
-    const ZION_FEE: u64 = 1_000_000;
-
-    // 0. Fund the fresh user wallet (real tx).
-    let fund_to = Address::new(
+    // Sanity: user balance must cover lock + fee.
+    let user_addr_t = Address::new(
         ChainId::ZionL1,
         user_zion_addr.as_bytes().to_vec(),
         user_zion_addr.clone(),
     )
     .unwrap();
-    let fund_tx = op_side
-        .send_payment(&fund_to, Amount::new(ZION_FUND_FLOWERS as u128))
+    let user_probe = ZionL1Adapter::new(rpc.clone(), user_keyring(()));
+    let user_bal = user_probe
+        .balance(&user_addr_t)
         .await
-        .expect("fund user wallet");
-    eprintln!("[e2e] funded user {ZION_FUND_FLOWERS} flowers → {}", fund_tx.to_hex());
-    wait_for("user funding conf", {
-        let op_side = &op_side;
-        let fund_tx = fund_tx;
-        move || async move {
-            op_side.confirmations(&fund_tx).await.ok().filter(|c| *c >= 1)
-        }
-    })
-    .await;
-    eprintln!("[e2e] user funding confirmed");
+        .expect("user balance query");
+    eprintln!("[e2e] user zion balance: {} flowers", user_bal.0);
+    const ZION_LOCK_FLOWERS: u64 = 2_000_000; // 2 ZION
+    const ZION_FEE: u64 = 1_000_000;
+    assert!(
+        user_bal.0 >= (ZION_LOCK_FLOWERS + ZION_FEE) as u128,
+        "user zion balance too low for live test"
+    );
+
+    // Coordinator sees a live ZionL1 adapter (ephemeral operator keyring).
+    let mut registry = ChainAdapterRegistry::new();
+    registry.register(
+        ChainId::ZionL1,
+        Box::new(ZionL1Adapter::new(rpc.clone(), op_kr.clone())),
+    );
+    let swaps = Arc::new(HtlcSwap::new(Arc::new(registry)));
+
+    // Test-side adapters (separate instances; adapters are not Clone).
+    let signing_key = user_kr.zion_signing_key(0, 0).unwrap();
+    let op_side = ZionL1Adapter::new(rpc.clone(), op_kr);
+    let user_side = ZionL1Adapter::new(rpc.clone(), user_kr);
 
     let (preimage, hashlock) = fresh_preimage();
     let now = std::time::SystemTime::now()
@@ -860,22 +933,43 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         .as_secs();
     let zion_timeout = now + 7 * 24 * 3600;
 
-    // 1. User broadcasts a real L1 HTLC lock (claimant = operator).
-    let mut user_lock_t = Transfer::new(
-        format!("htlc-lock-{}", hex::encode(hashlock)),
-        TransferDirection::Htlc,
-        zion_endpoint(&user_zion_addr, ZION_LOCK_FLOWERS),
-        zion_endpoint(&op_zion_addr, ZION_LOCK_FLOWERS),
+    // 1. User broadcasts a real L1 HTLC lock (claimant = operator). Built
+    //    manually with UTXOs *past* the largest-first range — the funded
+    //    wallet's payout daemon uses the same largest-first selection, so the
+    //    top UTXOs are raced continuously; picking mid-range inputs avoids
+    //    the double-spend eviction.
+    let skip: usize = std::env::var("WARP_ZION_UTXO_SKIP")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(64);
+    let mut utxos = zion_rpc_utxos(&client, &rpc, &user_zion_addr).await;
+    utxos.sort_by(|a, b| {
+        b.amount
+            .cmp(&a.amount)
+            .then(a.tx_hash.cmp(&b.tx_hash))
+    });
+    let spend_utxos: Vec<zion_core::v31_wallet::SpendableUtxo> =
+        utxos.into_iter().skip(skip).collect();
+    eprintln!(
+        "[e2e] building lock from {} utxos (skipped top {skip})",
+        spend_utxos.len()
     );
-    user_lock_t.hashlock = Some(Hash::new(hashlock));
-    user_lock_t.timelock = Some(zion_timeout);
-    user_lock_t.source_pubkey = Some(user_zion_pk); // user refund key
-    user_lock_t.target_pubkey = Some(op_zion_pk); // operator claim key
-    let zion_lock_hash = user_side
-        .execute_outbound(&user_lock_t)
+    let build = zion_core::v31_wallet::build_htlc_lock(
+        &signing_key,
+        &user_zion_addr,
+        ZION_LOCK_FLOWERS,
+        ZION_FEE,
+        &spend_utxos,
+        &hashlock,
+        zion_timeout,
+        &op_zion_pk,
+        &user_zion_pk,
+    )
+    .expect("build htlc lock");
+    let zion_lock_txid = zion_rpc_submit(&client, &rpc, &build.transaction)
         .await
         .expect("user htlc lock broadcast");
-    let zion_lock_txid = zion_lock_hash.to_hex();
+    let zion_lock_hash = Hash::from_hex(&zion_lock_txid).expect("lock txid hex");
     eprintln!("[e2e] user locked {ZION_LOCK_FLOWERS} flowers on L1 → {zion_lock_txid}");
     wait_for("user zion lock conf", {
         let user_side = &user_side;
