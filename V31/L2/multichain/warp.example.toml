@@ -150,6 +150,17 @@ finality_blocks = 0
 #   WARP_ZION_LOCK_MIN_CONFS=2     # confs required on the user's ZION lock
 #                                # before the operator counter-locks BTC
 #                                # (uses l1_rpc_url for the on-chain check)
+#   WARP_BTC_SWAP_ZION_SECRET=<hex>  # DEDICATED operator ZION wallet (raw
+#                                # Ed25519 secret hex) — RECOMMENDED for
+#                                # production. Without it the operator signs
+#                                # with the shared bridge keyring, which races
+#                                # other spenders on largest-first UTXO
+#                                # selection (observed: double-spend eviction
+#                                # vs the pool payout builder).
+#   WARP_BTC_SWAP_ZION_MNEMONIC    # alternative: BIP39 mnemonic for the
+#                                # dedicated wallet (SECRET wins if both set)
+# The dedicated keyring gets its own ZionL1 adapter + HTLC coordinator, so
+# WARP swap locks/claims never share UTXO selection with the bridge/pool.
 # API: POST /v1/multichain/swaps/btc/offer, GET /swaps/btc/list, GET /swaps/btc/:id
 
 # ── Solver network (optional) ───────────────────────────────────────────────

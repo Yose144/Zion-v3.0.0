@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-18 (update: **audit-prep pass** — P1: on-chain verifikace user ZION locku před LockBtc; fail-closed auth na offer API; +5 testů → 639 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-18 (update: **R3 dedicated wallet** — `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` → vlastní keyring+adapter+coordinator pro btc-swap; coordinator restart hydration fix; +5 testů → 646 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -26,6 +26,8 @@
 | **Audit P1: on-chain verifikace user ZION locku** | `warp/btc_swap.rs`, `service.rs` | `offer_zion_to_btc` dřív přešel `AwaitingUserLock→LockBtc` jen na přítomnosti txid — fake txid = ztráta BTC. Nově `verify_user_zion_lock` před každým `LockBtc`: `getUtxos` (confirmed+unspent), parse 105B HTLC scriptu, kontrola hashlock/claimant=operator/refund=user/timeout/amount + `min_zion_lock_confs` depth check (env `WARP_ZION_LOCK_MIN_CONFS`, default 2). `NotFound→Wait`, `Invalid→Fail`, offer-time reject na `Invalid` — 5 unit testů |
 | Audit: fail-closed auth na offer API | `server.rs` | `POST /swaps/btc/offer` → 403 když není nakonfigurována ani ZIS auth ani `ZION_MULTICHAIN_API_KEY` (offer může odysílat reálné BTC locky) |
 | **Audit P2: crash-recovery / double-lock** | `warp/btc_swap.rs`, `swap/htlc.rs` | Crash mezi broadcast a persist → restart znovu broadcastoval. Fix: `initiate` má entry-dedupe (record existuje → adopt po conf checku, jinak "awaiting confirmation"), record se persistuje PŘED conf checkem; `poll_one` adoptuje `view.btc_lock` místo re-locku; `register_external_lock` idempotentní (stejný txid=Ok, konflikt=Err); `decide` respektuje `coordinator_claimed`/`coordinator_refunded` → Mark* bez re-claim/re-refund — +2 testy |
+| **R3: dedikovaný WARP ZION wallet** | `service.rs`, `wallet/mod.rs`, `warpd.rs` | `WARP_BTC_SWAP_ZION_SECRET` (raw Ed25519 hex) / `WARP_BTC_SWAP_ZION_MNEMONIC` → dedikovaný keyring → vlastní `ZionL1Adapter` + registry + `HtlcSwap::with_db` coordinator pro btc-swap (žádný shared UTXO race s bridge/pool wallet); bez env → fallback na bridge keyring + warn; operator pubkey/address z téhož keyringu (identity=signer konzistence) — 5 unit testů. **Zbývá ops: vygenerovat+nabít klíč na Edge při enable** |
+| Bugfix: coordinator restart hydration | `warpd.rs`, `warp/btc_swap.rs` | `HtlcSwap::load_from_db` se nikdy nevolal → po restartu prázdná coordinator memory → `claim_source`/`refund` na in-flight swapu = `TransferNotFound` stuck. Fix: `warpd` volá `service.htlc().load_from_db()` při startu + `BtcSwapFlow::load_from_db` hydratuje `self.swaps` |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 

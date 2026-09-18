@@ -43,13 +43,23 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 
 `getTransaction` param `hash` → node vyžaduje `txid` → vždy Err → `.ok()` swallow → nekonečný wait. Fixnuto.
 
+### P2 — Coordinator restart hydration chyběla ✅ (R3 commit)
+
+`HtlcSwap::load_from_db` existoval, ale `warpd` ho nikdy nevolal → po restartu byla coordinator memory prázdná → `claim_source`/`refund` na in-flight swapu = `TransferNotFound` → stuck swap. Restart E2E to nechytilo (coordinator zůstal in-memory sdílený).
+
+**Fix:** `warpd` volá `service.htlc().load_from_db()` při startu + `BtcSwapFlow::load_from_db` hydratuje `self.swaps` (pokryje dedikovaný coordinator).
+
+### R3 — Dedicated WARP ZION wallet ✅ (code)
+
+`WARP_BTC_SWAP_ZION_SECRET` (raw Ed25519 hex) / `WARP_BTC_SWAP_ZION_MNEMONIC` → dedikovaný keyring → vlastní `ZionL1Adapter` + `ChainAdapterRegistry` + `HtlcSwap::with_db` coordinator pro btc-swap. Operator pubkey/address se derivuje ze stejného keyringu (identity = signer konzistence). Bez env → fallback na bridge keyring + warn. 5 unit testů (`service::tests::warp_operator_keyring_*`).
+
 ## Findings — OPEN / residual risk
 
 | # | Severity | Item | Poznámka |
 |---|---|---|---|
 | R1 | low | Broadcast-window residual | Crash přesně mezi submit a persist bez jakéhokoliv záznamu — ms-scale okno, duplicitní lock refundovatelný. Uzavřít vyžaduje persistovaný txid před submit (adapter internals). |
 | R2 | low | `AwaitingUserLock` bez TTL | Swap může čekat donekonečna (user nikdy nezavře lock). Slot spotřebuje kapacitu — mitigováno `max_active_swaps` + auth na offer. Zvážit offer TTL → `Failed`. |
-| R3 | med | Shared hot wallet UTXO race | Largest-first selection koliduje s pool payout builderem na sdílené peněžence (live test: double-spend race). **Před Edge enable: dedikovaný WARP wallet nebo UTXO reservation.** |
+| R3 | med | Shared hot wallet UTXO race | Largest-first selection koliduje s pool payout builderem na sdílené peněžence (live test: double-spend race). **FIXED (code):** `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` → dedikovaný keyring + vlastní `ZionL1Adapter` + vlastní `HtlcSwap` coordinator pro btc-swap; fallback na bridge keyring s warn. **Zbývá: nasadit key na Edge při enable.** |
 | R4 | med | Public esplora | mempool.space rate limits + availability → produkce potřebuje vlastní esplora/electrum. Beta OK. |
 | R5 | low | `getUtxos` reorg hloubka | UTXO set hit ≠ finalita; mitigováno `min_zion_lock_confs=2`. |
 | R6 | info | BTC dust/change | `lock_htlc` UTXO select — zkontrolovat dust-limit change output (auditor: ověřit v `btc_signer.rs`). |
@@ -80,7 +90,7 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 Blokuje `WARP_BTC_SWAP_ENABLED=1`:
 
 1. ☐ Externí audit tohoto dokumentu + kódu
-2. ☐ R3: dedikovaný WARP ZION wallet (ne pool hot wallet) + UTXO strategy
+2. ☑ R3 (code): dedikovaný WARP ZION wallet implementován — ☐ zbývá vygenerovat + nasadit `WARP_BTC_SWAP_ZION_SECRET` na Edge a nabít jej
 3. ☐ R4: vlastní esplora/bitcoind backend (ne public mempool.space)
 4. ☐ Edge binary = HEAD (všechny audit fixy), verify `git log`
 5. ☐ `WARP_BTC_RELAY_KEY` = produkční WIF (ne test), network match

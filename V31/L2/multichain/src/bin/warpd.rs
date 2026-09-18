@@ -197,6 +197,12 @@ async fn main() -> ExitCode {
         }
     });
 
+    // Hydrate the HTLC coordinator from SQLite — required for claim/refund
+    // context on in-flight swaps after a restart.
+    if let Err(e) = service.htlc().load_from_db().await {
+        warn!("[warpd] HTLC coordinator DB load failed: {e}");
+    }
+
     // WARP Beta — ZION↔BTC atomic swap poll loop (env-gated).
     if let Some(flow) = service.btc_swap() {
         match flow.load_from_db().await {

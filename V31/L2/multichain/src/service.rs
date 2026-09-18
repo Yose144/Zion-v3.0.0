@@ -1193,7 +1193,23 @@ impl MultichainService {
 /// - `WARP_BTC_SWAP_MIN_SATS` (default 2_000), `WARP_BTC_SWAP_MAX_SATS`
 ///   (default 10_000_000 = 0.1 BTC), `WARP_BTC_SWAP_MAX_ACTIVE` (default 32)
 ///
-/// The operator ZION identity comes from the bridge keyring (account 0).
+/// The operator ZION identity comes from a dedicated keyring when
+/// `WARP_BTC_SWAP_ZION_SECRET` / `WARP_BTC_SWAP_ZION_MNEMONIC` is set
+/// (recommended — avoids the shared-wallet UTXO race), otherwise it falls
+/// back to the bridge keyring (account 0) with a warning.
+fn resolve_warp_operator_keyring(
+    secret: Option<&str>,
+    mnemonic: Option<&str>,
+) -> crate::error::MultichainResult<Option<Keyring>> {
+    if let Some(s) = secret.filter(|s| !s.trim().is_empty()) {
+        return Keyring::from_zion_secret(s.trim()).map(Some);
+    }
+    if let Some(m) = mnemonic.filter(|s| !s.trim().is_empty()) {
+        return Keyring::from_mnemonic(m.trim()).map(Some);
+    }
+    Ok(None)
+}
+
 fn build_btc_swap(
     htlc: &HtlcSwap,
     keyring: &Keyring,
@@ -1216,7 +1232,42 @@ fn build_btc_swap(
             return None;
         }
     };
-    let operator_zion_pubkey = match keyring
+    // Dedicated WARP operator wallet — recommended for production: a ZION
+    // wallet shared with other spenders (e.g. the pool payout builder)
+    // races on largest-first UTXO selection and can double-spend our locks.
+    // `WARP_BTC_SWAP_ZION_SECRET` (raw Ed25519 hex) or
+    // `WARP_BTC_SWAP_ZION_MNEMONIC` gives the swap flow its own keyring —
+    // its own adapter and coordinator included — instead of the bridge keyring.
+    let dedicated_kr = resolve_warp_operator_keyring(
+        std::env::var("WARP_BTC_SWAP_ZION_SECRET").ok().as_deref(),
+        std::env::var("WARP_BTC_SWAP_ZION_MNEMONIC").ok().as_deref(),
+    );
+    let (operator_kr, swaps) = match dedicated_kr {
+        Ok(Some(kr)) => {
+            let mut registry = crate::chain::adapter::ChainAdapterRegistry::new();
+            registry.register(
+                ChainId::ZionL1,
+                Box::new(ZionL1Adapter::new(&config.l1_rpc_url, kr.clone())),
+            );
+            (
+                kr,
+                Arc::new(HtlcSwap::with_db(Arc::new(registry), Arc::clone(db))),
+            )
+        }
+        Err(e) => {
+            tracing::warn!("[WARP][btc-swap] disabled: invalid dedicated zion key: {e}");
+            return None;
+        }
+        Ok(None) => {
+            tracing::warn!(
+                "[WARP][btc-swap] no WARP_BTC_SWAP_ZION_SECRET/_MNEMONIC — \
+                 operator shares the bridge keyring (shared-wallet UTXO race risk)"
+            );
+            (keyring.clone(), Arc::new(htlc.clone()))
+        }
+    };
+
+    let operator_zion_pubkey = match operator_kr
         .zion_public_key(0, 0)
         .ok()
         .and_then(|h| hex::decode(h).ok())
@@ -1228,7 +1279,7 @@ fn build_btc_swap(
             return None;
         }
     };
-    let operator_zion_address = keyring
+    let operator_zion_address = operator_kr
         .address(ChainId::ZionL1, 0, 0)
         .map(|a| a.encoded)
         .unwrap_or_default();
@@ -1276,7 +1327,7 @@ fn build_btc_swap(
     let mut flow = BtcSwapFlow::new(
         Arc::new(WarpBitcoinAdapter::new()),
         Arc::new(signer),
-        Arc::new(htlc.clone()),
+        swaps,
         cfg,
     );
     flow.set_db(Arc::clone(db));
@@ -1392,5 +1443,78 @@ fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {
             "unknown chain id mapping for '{}': add it to chain_id_by_name()",
             name
         ))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_MNEMONIC: &str =
+        "legal winner thank year wave sausage worth useful legal winner thank yellow";
+
+    #[test]
+    fn warp_operator_keyring_none_without_env() {
+        assert!(resolve_warp_operator_keyring(None, None).unwrap().is_none());
+        assert!(
+            resolve_warp_operator_keyring(Some(""), Some("  "))
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn warp_operator_keyring_dedicated_secret_deterministic() {
+        let secret = hex::encode([7u8; 32]);
+        let a = resolve_warp_operator_keyring(Some(&secret), None)
+            .unwrap()
+            .unwrap();
+        let b = resolve_warp_operator_keyring(Some(&secret), None)
+            .unwrap()
+            .unwrap();
+        let pa = a.zion_public_key(0, 0).unwrap();
+        let pb = b.zion_public_key(0, 0).unwrap();
+        assert_eq!(pa, pb);
+        assert_eq!(
+            a.address(ChainId::ZionL1, 0, 0).unwrap().encoded,
+            b.address(ChainId::ZionL1, 0, 0).unwrap().encoded
+        );
+    }
+
+    #[test]
+    fn warp_operator_keyring_dedicated_differs_from_bridge() {
+        let secret = hex::encode([9u8; 32]);
+        let dedicated = resolve_warp_operator_keyring(Some(&secret), None)
+            .unwrap()
+            .unwrap();
+        let bridge = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        assert_ne!(
+            dedicated.zion_public_key(0, 0).unwrap(),
+            bridge.zion_public_key(0, 0).unwrap()
+        );
+    }
+
+    #[test]
+    fn warp_operator_keyring_secret_wins_over_mnemonic() {
+        let secret = hex::encode([5u8; 32]);
+        let kr = resolve_warp_operator_keyring(Some(&secret), Some(TEST_MNEMONIC))
+            .unwrap()
+            .unwrap();
+        let secret_only = resolve_warp_operator_keyring(Some(&secret), None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            kr.zion_public_key(0, 0).unwrap(),
+            secret_only.zion_public_key(0, 0).unwrap()
+        );
+    }
+
+    #[test]
+    fn warp_operator_keyring_invalid_rejected() {
+        assert!(resolve_warp_operator_keyring(Some("nothex"), None).is_err());
+        assert!(
+            resolve_warp_operator_keyring(Some(&hex::encode([1u8; 16])), None).is_err()
+        );
+        assert!(resolve_warp_operator_keyring(None, Some("bogus mnemonic words")).is_err());
     }
 }
