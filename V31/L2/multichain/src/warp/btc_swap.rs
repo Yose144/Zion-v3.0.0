@@ -571,7 +571,12 @@ impl BtcSwapFlow {
     }
 
     /// Load persisted records into memory (idempotent — later snapshots win).
+    /// Also hydrates the coordinator's records — without them, a restarted
+    /// daemon loses `claim_source`/`refund` context for in-flight swaps.
     pub async fn load_from_db(&self) -> WarpResult<usize> {
+        if let Err(e) = self.swaps.load_from_db().await {
+            warn!("[WARP][btc-swap] coordinator db load failed: {e}");
+        }
         let Some(db) = &self.db else { return Ok(0) };
         let snaps = db
             .lock()
