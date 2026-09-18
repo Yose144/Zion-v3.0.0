@@ -144,6 +144,9 @@ finality_blocks = 0
 #   WARP_BTC_MIN_CONFS=2           # confs before counter-locking ZION
 #   WARP_BTC_MARGIN_BLOCKS=36      # CLTV safety margin (~6h)
 #   WARP_BTC_SWAP_POLL_SECS=30     # poll loop interval (min 5)
+#   WARP_BTC_SWAP_MIN_SATS=2000    # min BTC leg size (dust guard)
+#   WARP_BTC_SWAP_MAX_SATS=10000000  # max BTC leg size (0.1 BTC beta cap)
+#   WARP_BTC_SWAP_MAX_ACTIVE=32    # max concurrent non-terminal swaps
 # API: POST /v1/multichain/swaps/btc/offer, GET /swaps/btc/list, GET /swaps/btc/:id
 
 # ── Solver network (optional) ───────────────────────────────────────────────

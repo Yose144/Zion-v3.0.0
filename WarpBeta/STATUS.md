@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-17 (update po service/API integraci — `btc_htlc.rs`, `btc_swap.rs`, per-swap detekce, `MultichainService` wiring, HTTP endpointy). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-17 (update: refund + restart E2E PASS na regtestu, hardening guardrails, live-ZION scaffolding). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -18,6 +18,8 @@
 | Per-swap BTC detekce | `warp/adapter/bitcoin.rs` | `detect_htlc_lock` (funding output → `BtcHtlcLock` s confs) + `detect_htlc_spend` (vin outpoint match → Claim/Refund, preimage z witnessu ověřena proti scriptu i hashlocku) — 5 unit testů |
 | Swap orchestrátor | `warp/btc_swap.rs` | `BtcSwapFlow` — oba směry (BTC→ZION, ZION→BTC), čistá `decide()` tranzitivní tabulka, `poll_once` loop, wiring do `HtlcSwap` (`initiate`, `claim_source`, `register_external_lock`, `revealed_preimage`) — 9 unit testů |
 | BTC swap service + API | `service.rs`, `server.rs`, `bin/warpd.rs` | env-gated (`WARP_BTC_SWAP_ENABLED=1` + `WARP_BTC_RELAY_KEY`), `build_btc_swap` v `from_parts`, `start_btc_swap_loop` poll v `warpd` (default 30 s, min 5 s, `WARP_BTC_SWAP_POLL_SECS`), endpointy `/v1/multichain/swaps/btc/{offer,list,:id}`, SQLite persistence `btc_swap_records` |
+| Hardening guardrails | `warp/btc_swap.rs`, `service.rs` | `min_btc_sats`/`max_btc_sats`/`max_active` (env `WARP_BTC_SWAP_{MIN,MAX}_SATS`, `WARP_BTC_SWAP_MAX_ACTIVE`), duplicate-hashlock rejection, amount check v `offer_*`, admission check v `_live` — 3 unit testy |
+| Raw-key ZION keyring | `wallet/mod.rs` | `Keyring::from_zion_secret(hex)` — imported Ed25519 secret override pro ZION (0,0); pro relay/pool hot wallets bez BIP39 |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 
@@ -41,7 +43,7 @@
 | C7 | **warp.toml enable** — `bitcoin.enabled=true` s reálnými parametry | `/etc/zion/warp.toml`, `warp.example.toml` | config |
 | ~~C7b~~ | ✅ **Persistence `BtcSwapRecord`** — `btc_swap_records` tabulka (snapshot JSON, witness-script round-trip), `set_db`/`load_from_db`/`persist`, reload v `warpd` startu — 3 testy | `db.rs`, `warp/btc_swap.rs`, `warpd.rs` | hotovo |
 | ~~C7c~~ | ✅ **HTTP expozice** — `POST /swaps/btc/offer` (auth), `GET /swaps/btc/list`, `GET /swaps/btc/:id` + `start_btc_swap_loop` v `warpd` | `server.rs`, `service.rs`, `bin/warpd.rs` | hotovo |
-| ~~C8~~ | ✅ **E2E ověřen na regtestu** (docker `blockstream/esplora` na Edge, 2026-09-17) — BTC-leg: claim + refund path; **cross-leg flow: `tests/btc_swap_flow.rs` OBA směry PASS** — BtcToZion (user BTC lock → orchestrátor ZION lock → user ZION claim → on-chain BTC claim, 13s) + ZionToBtc (on-chain BTC lock → user claim → `claim_source` ZION claim, 11s) včetně preimage propagace přes produkční `HtlcSwap` cestu; zbývá jen signet/mainnet run | `tests/btc_swap_signet.rs`, `tests/btc_swap_flow.rs` | hotovo |
+| ~~C8~~ | ✅ **E2E ověřen na regtestu** (docker `blockstream/esplora` na Edge, 2026-09-17) — BTC-leg: claim + refund path; **cross-leg flow: `tests/btc_swap_flow.rs` OBA směry PASS** — BtcToZion (user BTC lock → orchestrátor ZION lock → user ZION claim → on-chain BTC claim, 13s) + ZionToBtc (on-chain BTC lock → user claim → `claim_source` ZION claim, 11s) včetně preimage propagace přes produkční `HtlcSwap` cestu; **refund paths PASS** — ZionToBtc: orchestrátor RefundBtc on-chain po CLTV, BtcToZion: RefundZion + user BTC refund; **restart recovery PASS** — mid-swap kill → `Db::open` reload → dokončení do Settled; zbývá jen signet/mainnet run | `tests/btc_swap_signet.rs`, `tests/btc_swap_flow.rs` | hotovo |
 | ~~C9~~ | ✅ **CLI lifecycle** — `zion warp btc-swap offer|list|status` (DEX port = warp+1, `--zis-api-key` auth) | `V31/cli/src/commands/warp.rs`, `rpc/agent_rpc.rs` | hotovo |
 
 ## BLOCKER ⛔

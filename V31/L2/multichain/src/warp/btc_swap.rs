@@ -306,6 +306,12 @@ pub struct BtcSwapConfig {
     pub operator_zion_address: String,
     /// BTC destination for our claims/refunds (default: relay wallet).
     pub operator_btc_dest: Option<BtcAddress>,
+    /// Minimum accepted BTC leg size (below this the HTLC is dust-risk).
+    pub min_btc_sats: u64,
+    /// Maximum accepted BTC leg size (beta safety cap).
+    pub max_btc_sats: u64,
+    /// Maximum number of non-terminal swaps tracked at once.
+    pub max_active_swaps: usize,
 }
 
 impl Default for BtcSwapConfig {
@@ -317,6 +323,9 @@ impl Default for BtcSwapConfig {
             operator_zion_pubkey: [0u8; 32],
             operator_zion_address: String::new(),
             operator_btc_dest: None,
+            min_btc_sats: 2_000,
+            max_btc_sats: 10_000_000,
+            max_active_swaps: 32,
         }
     }
 }
@@ -496,6 +505,33 @@ impl BtcSwapFlow {
         }
     }
 
+    /// Reject offers outside the configured BTC size band (dust / beta cap).
+    fn check_amount(&self, sats: u64) -> WarpResult<()> {
+        if sats < self.cfg.min_btc_sats || sats > self.cfg.max_btc_sats {
+            return Err(err(format!(
+                "btc_sats {sats} outside limits [{}, {}]",
+                self.cfg.min_btc_sats, self.cfg.max_btc_sats
+            )));
+        }
+        Ok(())
+    }
+
+    /// Reject a duplicate hashlock and cap concurrent active swaps.
+    async fn check_offer_admission(&self, swap_id: &str) -> WarpResult<()> {
+        let records = self.records.lock().await;
+        if records.contains_key(swap_id) {
+            return Err(err(format!("swap {swap_id} already registered")));
+        }
+        let active = records.values().filter(|r| !r.phase.is_terminal()).count();
+        if active >= self.cfg.max_active_swaps {
+            return Err(err(format!(
+                "active swap cap reached ({}/{})",
+                active, self.cfg.max_active_swaps
+            )));
+        }
+        Ok(())
+    }
+
     /// Register a BTC→ZION offer and return the swap record (the user sends
     /// BTC to `record.btc_htlc.address`).
     ///
@@ -507,6 +543,7 @@ impl BtcSwapFlow {
         now_ts: u64,
         btc_tip: u64,
     ) -> WarpResult<BtcSwapRecord> {
+        self.check_amount(p.btc_sats)?;
         if p.zion_timeout_ts <= now_ts {
             return Err(err("zion_timeout_ts must be in the future"));
         }
@@ -546,6 +583,7 @@ impl BtcSwapFlow {
 
     /// Same as [`Self::offer_btc_to_zion`] but fetches the BTC tip itself.
     pub async fn offer_btc_to_zion_live(&self, p: OfferBtcToZion) -> WarpResult<BtcSwapRecord> {
+        self.check_offer_admission(&hex::encode(p.hashlock)).await?;
         let tip = self.btc.current_height().await?;
         let rec = self.offer_btc_to_zion(p, Utc::now().timestamp() as u64, tip)?;
         self.insert_record(rec.clone()).await;
@@ -559,6 +597,7 @@ impl BtcSwapFlow {
         now_ts: u64,
         btc_tip: u64,
     ) -> WarpResult<BtcSwapRecord> {
+        self.check_amount(p.btc_sats)?;
         // Our BTC leg must expire strictly *before* the user's ZION timeout.
         let cltv = cltv_before_zion_timeout(
             p.zion_timeout_ts,
@@ -596,6 +635,7 @@ impl BtcSwapFlow {
 
     /// Same as [`Self::offer_zion_to_btc`] but fetches the BTC tip itself.
     pub async fn offer_zion_to_btc_live(&self, p: OfferZionToBtc) -> WarpResult<BtcSwapRecord> {
+        self.check_offer_admission(&hex::encode(p.hashlock)).await?;
         let tip = self.btc.current_height().await?;
         let rec = self.offer_zion_to_btc(p, Utc::now().timestamp() as u64, tip)?;
         self.insert_record(rec.clone()).await;
@@ -1004,6 +1044,7 @@ mod tests {
             operator_zion_pubkey: [0x11; 32],
             operator_zion_address: "zion1operator".into(),
             operator_btc_dest: None,
+            ..BtcSwapConfig::default()
         }
     }
 
@@ -1312,5 +1353,123 @@ mod tests {
         let rec2 = flow2.record(&swap_id).await.unwrap();
         assert_eq!(rec2.phase, BtcSwapPhase::AwaitingUserLock);
         assert_eq!(rec2.btc_sats, 100_000);
+    }
+
+    // ── Offer admission guards (hardening) ─────────────────────────────
+
+    #[test]
+    fn offer_rejects_out_of_band_amount() {
+        let s = signer();
+        let c = cfg(); // default limits: [2_000, 10_000_000]
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c.clone(),
+        );
+        let mut preimage = [0u8; 32];
+        rand::rngs::OsRng.fill_bytes(&mut preimage);
+        let hashlock: [u8; 32] = sha2::Sha256::digest(preimage).into();
+        for bad in [546u64, 1_999, 10_000_001, u64::MAX] {
+            let r = flow.offer_btc_to_zion(
+                OfferBtcToZion {
+                    hashlock,
+                    btc_sats: bad,
+                    zion_flowers: 50_000_000,
+                    user_btc_refund: user_btc_key(),
+                    user_zion_claim: [0x22; 32],
+                    user_zion_address: "zion1user".into(),
+                    zion_timeout_ts: 1_800_000_000,
+                },
+                1_700_000_000,
+                850_000,
+            );
+            assert!(r.is_err(), "amount {bad} should be rejected");
+        }
+        let ok = flow.offer_btc_to_zion(
+            OfferBtcToZion {
+                hashlock,
+                btc_sats: 10_000_000,
+                zion_flowers: 50_000_000,
+                user_btc_refund: user_btc_key(),
+                user_zion_claim: [0x22; 32],
+                user_zion_address: "zion1user".into(),
+                zion_timeout_ts: 1_800_000_000,
+            },
+            1_700_000_000,
+            850_000,
+        );
+        assert!(ok.is_ok());
+    }
+
+    #[tokio::test]
+    async fn offer_rejects_duplicate_hashlock() {
+        let s = signer();
+        let c = cfg();
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        let mut preimage = [0u8; 32];
+        rand::rngs::OsRng.fill_bytes(&mut preimage);
+        let hashlock: [u8; 32] = sha2::Sha256::digest(preimage).into();
+        flow.insert_record(btc_to_zion_rec_at(&signer(), &cfg(), hashlock)).await;
+        let dup = flow
+            .check_offer_admission(&hex::encode(hashlock))
+            .await;
+        assert!(dup.is_err());
+    }
+
+    #[tokio::test]
+    async fn offer_caps_active_swaps() {
+        let s = signer();
+        let mut c = cfg();
+        c.max_active_swaps = 2;
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        for i in 0..2u8 {
+            let mut rec = btc_to_zion_rec(&s, &cfg());
+            rec.swap_id = format!("swap-{i}");
+            flow.insert_record(rec).await;
+        }
+        let full = flow.check_offer_admission(&"ff".repeat(32)).await;
+        assert!(full.is_err());
+        // Terminal records don't count towards the cap.
+        let mut done = btc_to_zion_rec(&s, &cfg());
+        done.swap_id = "swap-0".into();
+        done.phase = BtcSwapPhase::Settled;
+        flow.insert_record(done).await;
+        let ok = flow.check_offer_admission(&"ee".repeat(32)).await;
+        assert!(ok.is_ok());
+    }
+
+    /// Helper: build a BtcToZion record with an explicit hashlock.
+    fn btc_to_zion_rec_at(s: &BtcSigner, cfg: &BtcSwapConfig, hashlock: [u8; 32]) -> BtcSwapRecord {
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg.clone(),
+        );
+        flow.offer_btc_to_zion(
+            OfferBtcToZion {
+                hashlock,
+                btc_sats: 100_000,
+                zion_flowers: 50_000_000,
+                user_btc_refund: user_btc_key(),
+                user_zion_claim: [0x22; 32],
+                user_zion_address: "zion1user".into(),
+                zion_timeout_ts: 1_800_000_000,
+            },
+            1_700_000_000,
+            850_000,
+        )
+        .unwrap()
     }
 }
