@@ -239,12 +239,18 @@ impl SolvencyGuard {
 
     /// Convenience: check solvency for a withdrawal of `amount` of `asset`.
     /// Returns `Ok(())` if solvent (or enforcement disabled), `Err` otherwise.
+    ///
+    /// Verify a withdrawal can be honored. The user's claim is already part of
+    /// `ledger_claims` (the check runs before the ledger debit), so passing the
+    /// amount again would double-count it — a full-balance withdrawal would
+    /// always fail on an exactly-solvent wallet. `Amount::ZERO` still applies
+    /// the configured margin headroom.
     pub async fn verify_withdrawal(
         &self,
         asset: &Asset,
-        amount: Amount,
+        _amount: Amount,
     ) -> MultichainResult<()> {
-        self.check(asset, amount).await.map(|_| ())
+        self.check(asset, Amount::ZERO).await.map(|_| ())
     }
 
     /// Convenience: check solvency for a swap output of `amount_out` of `asset`.
@@ -574,7 +580,8 @@ mod tests {
         dex_router.add_pool(pool);
         let dex = Arc::new(RwLock::new(dex_router));
 
-        // On-chain: 12M USDC. Claims 10M + new 3M = 13M → insufficient.
+        // On-chain: 12M USDC vs claims 10M → solvent; a withdrawal merely
+        // relocates an existing claim (no new liability) so it is allowed.
         let token_balances = std::sync::Arc::new(std::sync::Mutex::new(HashMap::new()));
         token_balances
             .lock()
@@ -583,7 +590,7 @@ mod tests {
 
         let adapter = SolvencyMockAdapter {
             native_balance: Amount::ZERO,
-            token_balances,
+            token_balances: Arc::clone(&token_balances),
         };
 
         let mut adapters = ChainAdapterRegistry::new();
@@ -599,10 +606,14 @@ mod tests {
         );
 
         let result = guard.verify_withdrawal(&usdc, Amount::new(3_000_000)).await;
-        assert!(result.is_err(), "should reject when pool reserves + ledger + new > on-chain");
+        assert!(result.is_ok(), "withdrawal relocates an existing claim — solvent");
 
-        // 2M withdrawal: 10M + 2M = 12M == on-chain 12M → OK (>=).
-        let result = guard.verify_withdrawal(&usdc, Amount::new(2_000_000)).await;
-        assert!(result.is_ok(), "should allow when exactly matching");
+        // Drop on-chain to 9M < claims 10M → insolvent even for a small withdrawal.
+        token_balances
+            .lock()
+            .unwrap()
+            .insert(usdc.id.to_string(), Amount::new(9_000_000));
+        let result = guard.verify_withdrawal(&usdc, Amount::new(1_000_000)).await;
+        assert!(result.is_err(), "should reject when claims exceed on-chain balance");
     }
 }
