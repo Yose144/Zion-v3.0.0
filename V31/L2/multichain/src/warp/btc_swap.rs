@@ -347,6 +347,9 @@ pub struct SwapView {
     pub btc_spend: Option<BtcHtlcSpend>,
     /// Coordinator state (present once the ZION leg was initiated/registered).
     pub coordinator_claimed: bool,
+    /// Coordinator record is `Refunded` — our ZION refund already landed
+    /// (crash recovery: don't broadcast it twice).
+    pub coordinator_refunded: bool,
     /// Preimage revealed through the coordinator (user claimed our ZION lock).
     pub preimage: Option<[u8; 32]>,
     pub btc_tip: u64,
@@ -404,7 +407,10 @@ pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAct
                 Some(BtcHtlcSpend::Claim { .. }) => NextAction::MarkSettled,
                 Some(BtcHtlcSpend::Refund { .. }) => NextAction::MarkRefunded,
                 None => {
-                    if v.preimage.is_some() {
+                    if v.coordinator_refunded {
+                        // Our ZION refund already landed (crash recovery).
+                        NextAction::MarkRefunded
+                    } else if v.preimage.is_some() {
                         NextAction::ClaimBtc
                     } else if v.now_ts >= rec.zion_timeout_ts {
                         NextAction::RefundZion
@@ -423,6 +429,9 @@ pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAct
                 NextAction::Wait
             }
         }
+        // Our ZION claim already landed (crash recovery) — done.
+        (ZionToBtc, Locked) if v.coordinator_claimed => NextAction::MarkSettled,
+        (ZionToBtc, Locked) if v.coordinator_refunded => NextAction::MarkRefunded,
         (ZionToBtc, Locked) => match &v.btc_spend {
             // User claimed our BTC lock → the preimage is public; claim their
             // ZION lock before it expires.
@@ -830,6 +839,10 @@ impl BtcSwapFlow {
                 .as_ref()
                 .map(|r| r.state == SwapState::Claimed)
                 .unwrap_or(false),
+            coordinator_refunded: coord
+                .as_ref()
+                .map(|r| r.state == SwapState::Refunded)
+                .unwrap_or(false),
             preimage,
             btc_tip,
             now_ts,
@@ -872,7 +885,15 @@ impl BtcSwapFlow {
                 detail = Some(txid);
             }
             NextAction::LockBtc => {
-                let lock = self.exec_lock_btc(&rec).await?;
+                // Adopt an already-broadcast lock (e.g. we crashed between
+                // `lock_htlc` and the persist below) instead of funding the
+                // same HTLC twice. `register_coordinator` is idempotent, so
+                // re-running it on the adopted lock is safe.
+                let lock = match view.btc_lock.clone() {
+                    Some(l) => l,
+                    None => self.exec_lock_btc(&rec).await?,
+                };
+                self.register_coordinator(&rec, &lock).await?;
                 rec.btc_lock = Some(lock.clone());
                 rec.phase = BtcSwapPhase::Locked;
                 detail = Some(lock.txid);
@@ -973,27 +994,9 @@ impl BtcSwapFlow {
         Ok(t.lock_tx_id.clone().unwrap_or_default())
     }
 
-    /// Broadcast the operator's BTC HTLC lock.
-    async fn exec_lock_btc(&self, rec: &BtcSwapRecord) -> WarpResult<BtcHtlcLock> {
-        let (txid, vout, value) = self
-            .signer
-            .lock_htlc(
-                self.btc.client(),
-                self.btc.api_url(),
-                &rec.btc_htlc,
-                rec.btc_sats,
-            )
-            .await?;
-        let lock = BtcHtlcLock {
-            txid,
-            vout,
-            value_sats: value,
-            confirmations: 0,
-            block_height: 0,
-        };
-
-        // Register with the coordinator (bookkeeping for our external lock)
-        // and annotate the user's ZION source lock so `claim_source` can run.
+    /// Coordinator bookkeeping for the operator's BTC lock — idempotent, safe
+    /// to re-run after a crash/restart.
+    async fn register_coordinator(&self, rec: &BtcSwapRecord, lock: &BtcHtlcLock) -> WarpResult<()> {
         let hash = Hash::new(rec.btc_htlc.hashlock);
         self.swaps
             .register_external_lock(
@@ -1026,6 +1029,28 @@ impl BtcSwapFlow {
                 .await
                 .map_err(mc_err)?;
         }
+        Ok(())
+    }
+
+    /// Broadcast the operator's BTC HTLC lock.
+    async fn exec_lock_btc(&self, rec: &BtcSwapRecord) -> WarpResult<BtcHtlcLock> {
+        let (txid, vout, value) = self
+            .signer
+            .lock_htlc(
+                self.btc.client(),
+                self.btc.api_url(),
+                &rec.btc_htlc,
+                rec.btc_sats,
+            )
+            .await?;
+        let lock = BtcHtlcLock {
+            txid,
+            vout,
+            value_sats: value,
+            confirmations: 0,
+            block_height: 0,
+        };
+        self.register_coordinator(rec, &lock).await?;
         Ok(lock)
     }
 
@@ -1451,6 +1476,67 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(decide(&rec, &v, &c), NextAction::ClaimZion);
+    }
+
+    #[test]
+    fn zion_to_btc_settles_when_coordinator_already_claimed() {
+        // Crash recovery: our ZION claim broadcast+persisted, but warpd died
+        // before the swap phase was persisted. Decide must not re-claim.
+        let s = signer();
+        let c = cfg();
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c.clone(),
+        );
+        let mut rec = flow
+            .offer_zion_to_btc(
+                OfferZionToBtc {
+                    hashlock: [0x33; 32],
+                    zion_flowers: 50_000_000,
+                    btc_sats: 100_000,
+                    user_btc_claim: user_btc_key(),
+                    user_zion_refund: [0x22; 32],
+                    user_zion_lock_txid: "cc".repeat(32),
+                    user_zion_address: "zion1user".into(),
+                    zion_timeout_ts: 1_800_000_000,
+                },
+                1_700_000_000,
+                850_000,
+            )
+            .unwrap();
+        rec.phase = BtcSwapPhase::Locked;
+        rec.btc_lock = lock(2);
+        let v = SwapView {
+            coordinator_claimed: true,
+            btc_tip: 850_100,
+            now_ts: 1_700_000_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::MarkSettled);
+        let v = SwapView {
+            coordinator_refunded: true,
+            btc_tip: 850_100,
+            now_ts: 1_700_000_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::MarkRefunded);
+    }
+
+    #[test]
+    fn btc_to_zion_refunds_when_coordinator_already_refunded() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.phase = BtcSwapPhase::Locked;
+        let v = SwapView {
+            coordinator_refunded: true,
+            btc_tip: 850_100,
+            now_ts: 1_700_000_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::MarkRefunded);
     }
 
     #[test]
