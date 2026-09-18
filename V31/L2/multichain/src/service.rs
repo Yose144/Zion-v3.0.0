@@ -1190,6 +1190,8 @@ impl MultichainService {
 /// - `WARP_BTC_RELAY_KEY` — funded P2WPKH WIF (operator BTC key)
 /// - `BITCOIN_NETWORK` / `WARP_BITCOIN_API` — network + esplora endpoint
 /// - `WARP_BTC_MIN_CONFS` (default 2), `WARP_BTC_MARGIN_BLOCKS` (default 36)
+/// - `WARP_BTC_SWAP_MIN_SATS` (default 2_000), `WARP_BTC_SWAP_MAX_SATS`
+///   (default 10_000_000 = 0.1 BTC), `WARP_BTC_SWAP_MAX_ACTIVE` (default 32)
 ///
 /// The operator ZION identity comes from the bridge keyring (account 0).
 fn build_btc_swap(
@@ -1244,6 +1246,18 @@ fn build_btc_swap(
         operator_zion_pubkey,
         operator_zion_address,
         operator_btc_dest: None,
+        min_btc_sats: std::env::var("WARP_BTC_SWAP_MIN_SATS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(2_000),
+        max_btc_sats: std::env::var("WARP_BTC_SWAP_MAX_SATS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10_000_000),
+        max_active_swaps: std::env::var("WARP_BTC_SWAP_MAX_ACTIVE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(32),
     };
     tracing::info!(
         "[WARP][btc-swap] enabled — network {:?}, relay {}, min_confs {}",

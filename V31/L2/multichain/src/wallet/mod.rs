@@ -28,6 +28,10 @@ pub struct Keyring {
     /// configured by the operator). Used by the startup guard / health check
     /// to surface that user deposit addresses will change on every restart.
     ephemeral: bool,
+    /// Optional raw Ed25519 secret that overrides ZION account (0, 0).
+    /// Used when the operator wallet is a single imported key rather than a
+    /// BIP39-derived account (e.g. a pool hot wallet key).
+    zion_secret_override: Option<[u8; 32]>,
 }
 
 impl std::fmt::Debug for Keyring {
@@ -61,6 +65,7 @@ impl Keyring {
             mnemonic,
             seed: Some(seed),
             ephemeral: true,
+            zion_secret_override: None,
         })
     }
 
@@ -73,7 +78,24 @@ impl Keyring {
             mnemonic,
             seed: Some(seed),
             ephemeral: false,
+            zion_secret_override: None,
         })
+    }
+
+    /// Build a keyring around a single raw Ed25519 secret (hex, 32 bytes)
+    /// used for all ZION account-(0,0) operations — address derivation,
+    /// public key, and signing. Other chains/accounts fall back to an
+    /// internally generated (ephemeral) mnemonic.
+    pub fn from_zion_secret(secret_hex: &str) -> MultichainResult<Self> {
+        let raw = hex::decode(secret_hex.trim().trim_start_matches("0x"))
+            .map_err(|e| MultichainError::Config(format!("invalid zion secret hex: {e}")))?;
+        let secret: [u8; 32] = raw
+            .try_into()
+            .map_err(|_| MultichainError::Config("zion secret must be 32 bytes".to_string()))?;
+        let mut kr = Self::generate()?;
+        kr.ephemeral = false;
+        kr.zion_secret_override = Some(secret);
+        Ok(kr)
     }
 
     /// Return the mnemonic phrase.
@@ -156,6 +178,11 @@ impl Keyring {
     }
 
     pub fn zion_signing_key(&self, account: u32, index: u32) -> MultichainResult<EdSigningKey> {
+        if account == 0 && index == 0 {
+            if let Some(secret) = self.zion_secret_override {
+                return Ok(EdSigningKey::from_bytes(&secret));
+            }
+        }
         let seed = self.zion_seed(account, index);
         Ok(EdSigningKey::from_bytes(&seed))
     }
