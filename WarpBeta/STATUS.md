@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-17 (update: refund + restart E2E PASS na regtestu, hardening guardrails, live-ZION scaffolding). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-18 (update: **LIVE-ZION E2E PASS na mainnetu** — plný atomický swap ZION↔BTC, +2 produkční bugfixy nalezené live testem). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -20,6 +20,9 @@
 | BTC swap service + API | `service.rs`, `server.rs`, `bin/warpd.rs` | env-gated (`WARP_BTC_SWAP_ENABLED=1` + `WARP_BTC_RELAY_KEY`), `build_btc_swap` v `from_parts`, `start_btc_swap_loop` poll v `warpd` (default 30 s, min 5 s, `WARP_BTC_SWAP_POLL_SECS`), endpointy `/v1/multichain/swaps/btc/{offer,list,:id}`, SQLite persistence `btc_swap_records` |
 | Hardening guardrails | `warp/btc_swap.rs`, `service.rs` | `min_btc_sats`/`max_btc_sats`/`max_active` (env `WARP_BTC_SWAP_{MIN,MAX}_SATS`, `WARP_BTC_SWAP_MAX_ACTIVE`), duplicate-hashlock rejection, amount check v `offer_*`, admission check v `_live` — 3 unit testy |
 | Raw-key ZION keyring | `wallet/mod.rs` | `Keyring::from_zion_secret(hex)` — imported Ed25519 secret override pro ZION (0,0); pro relay/pool hot wallets bez BIP39 |
+| **LIVE-ZION E2E (mainnet)** | `tests/btc_swap_flow.rs` `e2e_flow_zion_to_btc_live_zion` | ✅ **SETTLED 2026-09-18** — user ZION HTLC lock `d77f837a` (blok ~47635) → orchestrátor BTC lock → user BTC claim (preimage) → orchestrátor ZION claim `8c60d064` confirmed; celá produkční cesta `HtlcSwap`+`ZionL1Adapter`+`BtcSwapFlow` na reálném mainnet konsensu |
+| Bugfix: immature coinbase | `chain/adapters/zion_l1.rs` | `get_spendable_utxos` filtruje coinbase `< COINBASE_MATURITY` (100 blk) — jinak largest-first selection bere unspendable inputy → tx přijata do mempoolu, zamítnuta v template, tichá eviction. Nalezeno live testem (pool wallet, 100 immature coinbase z 9146 UTXOs) |
+| Bugfix: `confirmations()` | `chain/adapters/zion_l1.rs` | `getTransaction` param `hash`→`txid` — node vracel "invalid address: txid required", confirmations vždy Err → žádný confirm nikdy neviditelný |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 
