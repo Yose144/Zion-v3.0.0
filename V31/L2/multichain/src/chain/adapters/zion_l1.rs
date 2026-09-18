@@ -547,7 +547,7 @@ impl ChainAdapter for ZionL1Adapter {
 
     async fn confirmations(&self, tx_hash: &Hash) -> MultichainResult<u64> {
         let tx: TransactionInfo = self
-            .call("getTransaction", json!({"hash": tx_hash.to_hex()}))
+            .call("getTransaction", json!({"txid": tx_hash.to_hex()}))
             .await?;
         if !tx.confirmed {
             return Ok(0);
