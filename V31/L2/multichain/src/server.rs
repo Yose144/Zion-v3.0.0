@@ -1619,6 +1619,17 @@ async fn btc_swap_offer(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let _user = resolve_auth_user(state.zis_client.enabled, user)
         .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    // Fail closed: an offer can make the operator lock real BTC, so the
+    // endpoint must never be reachable without SOME configured auth —
+    // a ZIS session, or the bearer key enforced by `auth_rate_limit`.
+    if !state.zis_client.enabled && state.limiter.api_key().is_none() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "message": "btc swap api requires auth — set ZION_MULTICHAIN_API_KEY or enable ZIS"
+            })),
+        ));
+    }
     let flow = btc_swap_flow(&state)?;
 
     let hashlock: [u8; 32] = hex::decode(&req.hash_hex)

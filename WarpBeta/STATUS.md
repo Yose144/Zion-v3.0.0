@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-18 (update: **LIVE-ZION E2E PASS na mainnetu** — plný atomický swap ZION↔BTC, +2 produkční bugfixy nalezené live testem). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-18 (update: **audit-prep pass** — P1: on-chain verifikace user ZION locku před LockBtc; fail-closed auth na offer API; +5 testů → 639 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -23,6 +23,8 @@
 | **LIVE-ZION E2E (mainnet)** | `tests/btc_swap_flow.rs` `e2e_flow_zion_to_btc_live_zion` | ✅ **SETTLED 2026-09-18** — user ZION HTLC lock `d77f837a` (blok ~47635) → orchestrátor BTC lock → user BTC claim (preimage) → orchestrátor ZION claim `8c60d064` confirmed; celá produkční cesta `HtlcSwap`+`ZionL1Adapter`+`BtcSwapFlow` na reálném mainnet konsensu |
 | Bugfix: immature coinbase | `chain/adapters/zion_l1.rs` | `get_spendable_utxos` filtruje coinbase `< COINBASE_MATURITY` (100 blk) — jinak largest-first selection bere unspendable inputy → tx přijata do mempoolu, zamítnuta v template, tichá eviction. Nalezeno live testem (pool wallet, 100 immature coinbase z 9146 UTXOs) |
 | Bugfix: `confirmations()` | `chain/adapters/zion_l1.rs` | `getTransaction` param `hash`→`txid` — node vracel "invalid address: txid required", confirmations vždy Err → žádný confirm nikdy neviditelný |
+| **Audit P1: on-chain verifikace user ZION locku** | `warp/btc_swap.rs`, `service.rs` | `offer_zion_to_btc` dřív přešel `AwaitingUserLock→LockBtc` jen na přítomnosti txid — fake txid = ztráta BTC. Nově `verify_user_zion_lock` před každým `LockBtc`: `getUtxos` (confirmed+unspent), parse 105B HTLC scriptu, kontrola hashlock/claimant=operator/refund=user/timeout/amount + `min_zion_lock_confs` depth check (env `WARP_ZION_LOCK_MIN_CONFS`, default 2). `NotFound→Wait`, `Invalid→Fail`, offer-time reject na `Invalid` — 5 unit testů |
+| Audit: fail-closed auth na offer API | `server.rs` | `POST /swaps/btc/offer` → 403 když není nakonfigurována ani ZIS auth ani `ZION_MULTICHAIN_API_KEY` (offer může odysílat reálné BTC locky) |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 

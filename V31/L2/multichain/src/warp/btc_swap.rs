@@ -312,6 +312,14 @@ pub struct BtcSwapConfig {
     pub max_btc_sats: u64,
     /// Maximum number of non-terminal swaps tracked at once.
     pub max_active_swaps: usize,
+    /// zion-node JSON-RPC endpoint (`host:port`, TCP line protocol) used to
+    /// verify the user's ZION HTLC lock on-chain before `LockBtc`. `None`
+    /// skips verification — intended only for offline tests; production
+    /// wiring always sets it from `l1_rpc_url`.
+    pub zion_rpc_url: Option<String>,
+    /// Minimum confirmations required on the user's ZION lock before we
+    /// counter-lock BTC (shallow-reorg protection).
+    pub min_zion_lock_confs: u64,
 }
 
 impl Default for BtcSwapConfig {
@@ -326,6 +334,8 @@ impl Default for BtcSwapConfig {
             min_btc_sats: 2_000,
             max_btc_sats: 10_000_000,
             max_active_swaps: 32,
+            zion_rpc_url: None,
+            min_zion_lock_confs: 2,
         }
     }
 }
@@ -364,7 +374,7 @@ pub enum NextAction {
     /// Move to `Refunded` without broadcasting.
     MarkRefunded,
     /// Move to `Failed`.
-    Fail(&'static str),
+    Fail(String),
 }
 
 /// Pure transition table — the heart of the orchestrator.
@@ -379,7 +389,7 @@ pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAct
                 // passed (user locked very late), initiating would produce an
                 // invalid/expired lock — fail instead.
                 if v.now_ts >= rec.zion_timeout_ts {
-                    NextAction::Fail("zion timeout passed before btc lock confirmed")
+                    NextAction::Fail("zion timeout passed before btc lock confirmed".into())
                 } else {
                     NextAction::LockZion
                 }
@@ -429,6 +439,82 @@ pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAct
         },
         _ => NextAction::Wait,
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User ZION lock verification
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Result of verifying the user's ZION HTLC lock against the chain.
+#[derive(Debug)]
+enum LockCheck {
+    /// Lock output found in the UTXO set and all fields match the offer.
+    Verified,
+    /// No matching output yet — keep waiting (tx may be unconfirmed/propagating).
+    NotFound,
+    /// Output exists but a field mismatches — never lock BTC against it.
+    Invalid(String),
+}
+
+/// Parse a native V31 HTLC output script.
+///
+/// Layout: `[0x01][32B hashlock][8B timeout LE][32B claimant pk][32B refund pk]`
+/// (mirrors `zion_core::v31_wallet::htlc_output_script`; kept local so the
+/// wire format is verified byte-for-byte, not via a builder round-trip).
+fn parse_htlc_script(script: &[u8]) -> Option<([u8; 32], u64, [u8; 32], [u8; 32])> {
+    if script.len() != 105 || script[0] != 0x01 {
+        return None;
+    }
+    Some((
+        script[1..33].try_into().ok()?,
+        u64::from_le_bytes(script[33..41].try_into().ok()?),
+        script[41..73].try_into().ok()?,
+        script[73..105].try_into().ok()?,
+    ))
+}
+
+/// Minimal zion-node JSON-RPC call (TCP newline-delimited, same wire protocol
+/// as `ZionL1Adapter::call`). Kept standalone so the orchestrator can verify
+/// user locks without reaching through the adapter registry.
+async fn zion_rpc_call(rpc: &str, method: &str, params: serde_json::Value) -> WarpResult<serde_json::Value> {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    use tokio::net::TcpStream;
+
+    let addr = {
+        let s = rpc.trim();
+        let s = s
+            .strip_prefix("http://")
+            .or_else(|| s.strip_prefix("https://"))
+            .unwrap_or(s);
+        s.split('/').next().unwrap_or(s).to_string()
+    };
+    let mut stream = TcpStream::connect(&addr)
+        .await
+        .map_err(|e| err(format!("zion rpc connect failed: {e}")))?;
+    let body = serde_json::json!({"jsonrpc": "2.0", "id": 1, "method": method, "params": params});
+    stream
+        .write_all(format!("{body}\n").as_bytes())
+        .await
+        .map_err(|e| err(format!("zion rpc write failed: {e}")))?;
+    stream
+        .flush()
+        .await
+        .map_err(|e| err(format!("zion rpc flush failed: {e}")))?;
+
+    let mut line = String::new();
+    BufReader::new(&mut stream)
+        .read_line(&mut line)
+        .await
+        .map_err(|e| err(format!("zion rpc read failed: {e}")))?;
+    let env: serde_json::Value = serde_json::from_str(line.trim())
+        .map_err(|e| err(format!("zion rpc decode failed: {e}")))?;
+    if let Some(e) = env.get("error").filter(|e| !e.is_null()) {
+        return Err(err(format!("zion rpc {method} error: {e}")));
+    }
+    env.get("result")
+        .cloned()
+        .or(Some(env))
+        .ok_or_else(|| err("zion rpc missing result"))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -634,10 +720,24 @@ impl BtcSwapFlow {
     }
 
     /// Same as [`Self::offer_zion_to_btc`] but fetches the BTC tip itself.
+    /// When a ZION RPC is configured, a provably-invalid user lock is rejected
+    /// immediately; `NotFound`/RPC errors are tolerated here because the poll
+    /// loop re-verifies before `LockBtc`.
     pub async fn offer_zion_to_btc_live(&self, p: OfferZionToBtc) -> WarpResult<BtcSwapRecord> {
         self.check_offer_admission(&hex::encode(p.hashlock)).await?;
         let tip = self.btc.current_height().await?;
         let rec = self.offer_zion_to_btc(p, Utc::now().timestamp() as u64, tip)?;
+        if self.cfg.zion_rpc_url.is_some() {
+            match self.verify_user_zion_lock(&rec).await {
+                Ok(LockCheck::Invalid(reason)) => {
+                    return Err(err(format!("invalid user zion lock: {reason}")));
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    warn!("[WARP][btc-swap] user zion lock pre-check failed ({e}); deferring to poll loop");
+                }
+            }
+        }
         self.insert_record(rec.clone()).await;
         Ok(rec)
     }
@@ -743,8 +843,25 @@ impl BtcSwapFlow {
             rec.preimage = Some(p);
         }
 
-        let action = decide(&rec, &view, &self.cfg);
+        let mut action = decide(&rec, &view, &self.cfg);
         let mut detail = None;
+
+        // Never broadcast our BTC lock against a user ZION lock we have not
+        // independently verified on-chain — a fake or malformed
+        // `user_zion_lock_txid` would let the user claim our BTC while we
+        // hold nothing claimable.
+        if action == NextAction::LockBtc {
+            match self.verify_user_zion_lock(&rec).await? {
+                LockCheck::Verified => {}
+                LockCheck::NotFound => {
+                    action = NextAction::Wait;
+                    detail = Some("user zion lock not yet visible on-chain".into());
+                }
+                LockCheck::Invalid(reason) => {
+                    action = NextAction::Fail(format!("invalid user zion lock: {reason}"));
+                }
+            }
+        }
 
         match &action {
             NextAction::Wait => {}
@@ -791,7 +908,7 @@ impl BtcSwapFlow {
                 warn!("[WARP][btc-swap] {swap_id} refunded (spend already on-chain)");
             }
             NextAction::Fail(reason) => {
-                rec.phase = BtcSwapPhase::Failed((*reason).to_string());
+                rec.phase = BtcSwapPhase::Failed(reason.clone());
                 warn!("[WARP][btc-swap] {swap_id} failed: {reason}");
             }
         }
@@ -910,6 +1027,86 @@ impl BtcSwapFlow {
                 .map_err(mc_err)?;
         }
         Ok(lock)
+    }
+
+    /// Verify the user's ZION HTLC lock exists on-chain and matches the offer
+    /// before we counter-lock BTC. `getUtxos` only returns confirmed unspent
+    /// outputs, so a hit proves the lock is mined and still spendable.
+    async fn verify_user_zion_lock(&self, rec: &BtcSwapRecord) -> WarpResult<LockCheck> {
+        let Some(rpc) = self.cfg.zion_rpc_url.as_deref() else {
+            // Offline/test path — production wiring always sets the URL.
+            warn!("[WARP][btc-swap] {} zion_rpc_url unset — user lock NOT verified", rec.swap_id);
+            return Ok(LockCheck::Verified);
+        };
+        let Some(txid) = rec.user_zion_lock_txid.as_deref() else {
+            return Ok(LockCheck::Invalid("missing user_zion_lock_txid".into()));
+        };
+
+        let resp = zion_rpc_call(
+            rpc,
+            "getUtxos",
+            serde_json::json!({"address": rec.user_zion_address}),
+        )
+        .await?;
+        let utxos = resp
+            .get("utxos")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        let Some(u) = utxos
+            .iter()
+            .find(|u| u.get("tx_hash").and_then(|h| h.as_str()) == Some(txid))
+        else {
+            return Ok(LockCheck::NotFound);
+        };
+
+        // Confirmation-depth check — a shallow reorg could otherwise evict a
+        // 1-block lock after we already broadcast our BTC leg.
+        let lock_height = u.get("block_height").and_then(|v| v.as_u64()).unwrap_or(0);
+        let tip = zion_rpc_call(rpc, "getChainInfo", serde_json::json!([]))
+            .await?
+            .get("chain_height")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        if tip.saturating_sub(lock_height) < self.cfg.min_zion_lock_confs.saturating_sub(1) {
+            return Ok(LockCheck::NotFound);
+        }
+
+        let script_hex = u
+            .get("script_hex")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let script = hex::decode(script_hex).unwrap_or_default();
+        let Some((hashlock, timeout, claimant, refund)) = parse_htlc_script(&script) else {
+            return Ok(LockCheck::Invalid("lock output is not an HTLC script".into()));
+        };
+        if hashlock != rec.btc_htlc.hashlock {
+            return Ok(LockCheck::Invalid("hashlock mismatch".into()));
+        }
+        if claimant != self.cfg.operator_zion_pubkey {
+            return Ok(LockCheck::Invalid(
+                "claimant pubkey is not the operator".into(),
+            ));
+        }
+        if refund != rec.user_zion_pubkey {
+            return Ok(LockCheck::Invalid(
+                "refund pubkey is not the user's".into(),
+            ));
+        }
+        if timeout != rec.zion_timeout_ts {
+            return Ok(LockCheck::Invalid(format!(
+                "timeout {timeout} != agreed {}",
+                rec.zion_timeout_ts
+            )));
+        }
+        let amount = u.get("amount").and_then(|v| v.as_u64()).unwrap_or(0);
+        if amount < rec.zion_flowers {
+            return Ok(LockCheck::Invalid(format!(
+                "lock amount {amount} < agreed {}",
+                rec.zion_flowers
+            )));
+        }
+        Ok(LockCheck::Verified)
     }
 
     /// Claim the user's BTC lock with the revealed preimage.
@@ -1471,5 +1668,205 @@ mod tests {
             850_000,
         )
         .unwrap()
+    }
+
+    // ── User ZION lock verification (audit P1) ───────────────────────
+
+    fn zion_to_btc_rec(s: &BtcSigner, c: &BtcSwapConfig, lock_txid: &str) -> BtcSwapRecord {
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c.clone(),
+        );
+        flow.offer_zion_to_btc(
+            OfferZionToBtc {
+                hashlock: [0x33; 32],
+                zion_flowers: 50_000_000,
+                btc_sats: 10_000,
+                user_btc_claim: user_btc_key(),
+                user_zion_refund: [0x22; 32],
+                user_zion_lock_txid: lock_txid.into(),
+                user_zion_address: "zion1user".into(),
+                zion_timeout_ts: 1_800_000_000,
+            },
+            1_700_000_000,
+            850_000,
+        )
+        .unwrap()
+    }
+
+    fn utxo_json(txid: &str, script: &[u8], amount: u64) -> serde_json::Value {
+        serde_json::json!({
+            "tx_hash": txid,
+            "output_index": 0,
+            "amount": amount,
+            "address": "zion1user",
+            "script_hex": hex::encode(script),
+            "block_height": 100,
+            "is_coinbase": false,
+        })
+    }
+
+    /// `getUtxos`/`getChainInfo` responder on an ephemeral port; returns `addr`.
+    /// Reports tip height 1_000 so `block_height: 100` UTXOs pass the confs check.
+    async fn mock_zion_rpc(utxos: serde_json::Value) -> String {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        tokio::spawn(async move {
+            while let Ok((mut s, _)) = listener.accept().await {
+                let mut line = String::new();
+                let _ = BufReader::new(&mut s).read_line(&mut line).await;
+                let method = serde_json::from_str::<serde_json::Value>(&line)
+                    .ok()
+                    .and_then(|v| v.get("method").and_then(|m| m.as_str()).map(str::to_string))
+                    .unwrap_or_default();
+                let result = if method == "getChainInfo" {
+                    serde_json::json!({"chain_height": 1_000})
+                } else {
+                    serde_json::json!({"utxos": utxos.clone()})
+                };
+                let resp = serde_json::json!({"jsonrpc": "2.0", "id": 1, "result": result});
+                let _ = s.write_all(format!("{resp}\n").as_bytes()).await;
+                let _ = s.flush().await;
+            }
+        });
+        addr
+    }
+
+    #[test]
+    fn htlc_script_parse_roundtrip() {
+        let (hashlock, claimant, refund) = ([0x11; 32], [0x22; 32], [0x33; 32]);
+        let script = zion_core::v31_wallet::htlc_output_script(
+            &hashlock, 1_800_000_000, &claimant, &refund,
+        );
+        let (h, t, c, r) = parse_htlc_script(&script).unwrap();
+        assert_eq!(h, hashlock);
+        assert_eq!(t, 1_800_000_000);
+        assert_eq!(c, claimant);
+        assert_eq!(r, refund);
+        // Wrong length / wrong opcode are rejected.
+        assert!(parse_htlc_script(&script[..104]).is_none());
+        let mut bad = script.clone();
+        bad[0] = 0x00;
+        assert!(parse_htlc_script(&bad).is_none());
+    }
+
+    #[tokio::test]
+    async fn verify_accepts_valid_user_lock() {
+        let s = signer();
+        let mut c = cfg();
+        let rec = zion_to_btc_rec(&s, &c, &"ab".repeat(32));
+        let script = zion_core::v31_wallet::htlc_output_script(
+            &rec.btc_htlc.hashlock,
+            rec.zion_timeout_ts,
+            &c.operator_zion_pubkey,
+            &rec.user_zion_pubkey,
+        );
+        let rpc = mock_zion_rpc(serde_json::json!([
+            utxo_json(&"ab".repeat(32), &script, rec.zion_flowers)
+        ]))
+        .await;
+        c.zion_rpc_url = Some(rpc);
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        let check = flow.verify_user_zion_lock(&rec).await.unwrap();
+        assert!(matches!(check, LockCheck::Verified));
+    }
+
+    #[tokio::test]
+    async fn verify_waits_for_unseen_lock() {
+        let s = signer();
+        let mut c = cfg();
+        // Fake txid → not in the UTXO set → keep waiting (never LockBtc).
+        let rec = zion_to_btc_rec(&s, &c, &"ff".repeat(32));
+        let rpc = mock_zion_rpc(serde_json::json!([])).await;
+        c.zion_rpc_url = Some(rpc);
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        let check = flow.verify_user_zion_lock(&rec).await.unwrap();
+        assert!(matches!(check, LockCheck::NotFound));
+    }
+
+    #[tokio::test]
+    async fn verify_rejects_malformed_locks() {
+        let s = signer();
+        let mut c = cfg();
+        let rec = zion_to_btc_rec(&s, &c, &"ab".repeat(32));
+        let good = zion_core::v31_wallet::htlc_output_script(
+            &rec.btc_htlc.hashlock,
+            rec.zion_timeout_ts,
+            &c.operator_zion_pubkey,
+            &rec.user_zion_pubkey,
+        );
+        let wrong_hashlock = zion_core::v31_wallet::htlc_output_script(
+            &[0x99; 32],
+            rec.zion_timeout_ts,
+            &c.operator_zion_pubkey,
+            &rec.user_zion_pubkey,
+        );
+        let wrong_claimant = zion_core::v31_wallet::htlc_output_script(
+            &rec.btc_htlc.hashlock,
+            rec.zion_timeout_ts,
+            &[0x99; 32],
+            &rec.user_zion_pubkey,
+        );
+        let wrong_refund = zion_core::v31_wallet::htlc_output_script(
+            &rec.btc_htlc.hashlock,
+            rec.zion_timeout_ts,
+            &c.operator_zion_pubkey,
+            &[0x99; 32],
+        );
+        let wrong_timeout = zion_core::v31_wallet::htlc_output_script(
+            &rec.btc_htlc.hashlock,
+            rec.zion_timeout_ts + 600,
+            &c.operator_zion_pubkey,
+            &rec.user_zion_pubkey,
+        );
+        let txid = "ab".repeat(32);
+        let cases: Vec<(Vec<u8>, u64)> = vec![
+            (vec![0x00; 20], rec.zion_flowers),   // not an HTLC script
+            (wrong_hashlock, rec.zion_flowers),
+            (wrong_claimant, rec.zion_flowers),
+            (wrong_refund, rec.zion_flowers),
+            (wrong_timeout, rec.zion_flowers),
+            (good.clone(), rec.zion_flowers - 1), // underfunded
+        ];
+        for (i, (script, amount)) in cases.into_iter().enumerate() {
+            let rpc = mock_zion_rpc(serde_json::json!([utxo_json(&txid, &script, amount)])).await;
+            c.zion_rpc_url = Some(rpc);
+            let flow = BtcSwapFlow::new(
+                Arc::new(BitcoinAdapter::new()),
+                Arc::new(s.clone()),
+                Arc::new(HtlcSwap::new_offline()),
+                c.clone(),
+            );
+            let check = flow.verify_user_zion_lock(&rec).await.unwrap();
+            assert!(matches!(check, LockCheck::Invalid(_)), "case {i} must be Invalid");
+        }
+    }
+
+    #[tokio::test]
+    async fn verify_skips_without_rpc() {
+        let s = signer();
+        let c = cfg(); // zion_rpc_url: None
+        let rec = zion_to_btc_rec(&s, &c, &"ab".repeat(32));
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        let check = flow.verify_user_zion_lock(&rec).await.unwrap();
+        assert!(matches!(check, LockCheck::Verified));
     }
 }
