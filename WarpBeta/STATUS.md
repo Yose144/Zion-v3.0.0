@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-18 (update: **R3 dedicated wallet** — `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` → vlastní keyring+adapter+coordinator pro btc-swap; coordinator restart hydration fix; +5 testů → 646 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-19 (update: **R3 dedicated wallet** `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` + coordinator restart hydration + **Edge redeploy na HEAD** — warpd rebuild z `54257422b`, swap stále disabled; +5 testů → 646 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -28,6 +28,7 @@
 | **Audit P2: crash-recovery / double-lock** | `warp/btc_swap.rs`, `swap/htlc.rs` | Crash mezi broadcast a persist → restart znovu broadcastoval. Fix: `initiate` má entry-dedupe (record existuje → adopt po conf checku, jinak "awaiting confirmation"), record se persistuje PŘED conf checkem; `poll_one` adoptuje `view.btc_lock` místo re-locku; `register_external_lock` idempotentní (stejný txid=Ok, konflikt=Err); `decide` respektuje `coordinator_claimed`/`coordinator_refunded` → Mark* bez re-claim/re-refund — +2 testy |
 | **R3: dedikovaný WARP ZION wallet** | `service.rs`, `wallet/mod.rs`, `warpd.rs` | `WARP_BTC_SWAP_ZION_SECRET` (raw Ed25519 hex) / `WARP_BTC_SWAP_ZION_MNEMONIC` → dedikovaný keyring → vlastní `ZionL1Adapter` + registry + `HtlcSwap::with_db` coordinator pro btc-swap (žádný shared UTXO race s bridge/pool wallet); bez env → fallback na bridge keyring + warn; operator pubkey/address z téhož keyringu (identity=signer konzistence) — 5 unit testů. **Zbývá ops: vygenerovat+nabít klíč na Edge při enable** |
 | Bugfix: coordinator restart hydration | `warpd.rs`, `warp/btc_swap.rs` | `HtlcSwap::load_from_db` se nikdy nevolal → po restartu prázdná coordinator memory → `claim_source`/`refund` na in-flight swapu = `TransferNotFound` stuck. Fix: `warpd` volá `service.htlc().load_from_db()` při startu + `BtcSwapFlow::load_from_db` hydratuje `self.swaps` |
+| **Edge redeploy na HEAD** | Edge `62.171.141.136` | 2026-09-19: rsync `V31/` → `/root/build/V31/` → `cargo build --release -p zion-multichain --bin warpd` (10m) → atomic swap do `/opt/zion/V31/target/release/warpd` (backup `warpd.bak-20260919`) → restart `zion-v31-multichain`. Smoke: `/health` ok, `/swaps/btc/list` = `{"enabled":false}` (nový kód běží, swap disabled), `NRestarts=0`, watchers aktivní. `warp.db` perms 644→640. Deployed = `54257422b` |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 
