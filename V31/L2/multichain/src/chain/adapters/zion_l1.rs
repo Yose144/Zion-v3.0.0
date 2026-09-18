@@ -203,6 +203,16 @@ impl ZionL1Adapter {
                 is_coinbase,
             });
         }
+
+        // Exclude immature coinbase outputs (< COINBASE_MATURITY blocks) —
+        // they are rejected at block-template validation and silently
+        // evicted from mempool. Without this filter, wallets that receive
+        // mining rewards produce transactions that never confirm.
+        let tip = self.current_height().await.unwrap_or(0);
+        out.retain(|u| {
+            !u.is_coinbase
+                || tip.saturating_sub(u.block_height) >= zion_core::emission::COINBASE_MATURITY
+        });
         Ok(out)
     }
 
