@@ -90,7 +90,7 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 Blokuje `WARP_BTC_SWAP_ENABLED=1`:
 
 1. ☐ Externí audit tohoto dokumentu + kódu
-2. ☑ R3 (code): dedikovaný WARP ZION wallet implementován — ☐ zbývá vygenerovat + nasadit `WARP_BTC_SWAP_ZION_SECRET` na Edge a nabít jej
+2. ☑ R3 (code+ops-prep): `WARP_BTC_SWAP_ZION_SECRET` nasazen v `/etc/zion/edge-environment.sh` (wallet `/etc/zion/keys/warp-operator.json`, 600) — ☐ zbývá NABÍT adresu `zion125w5f5w6w8n067g83846d7g8k630c43432rk3e6` před enable
 3. ☐ R4 (ops): vlastní esplora/bitcoind jako primary v `WARP_BITCOIN_API` comma-list (failover code hotový, defaults = 2 public backends)
 4. ☐ Edge binary = HEAD (všechny audit fixy), verify `git log`
 5. ☐ `WARP_BTC_RELAY_KEY` = produkční WIF (ne test), network match
