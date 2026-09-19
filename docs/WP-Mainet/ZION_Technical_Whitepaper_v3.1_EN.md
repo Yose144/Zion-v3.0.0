@@ -261,7 +261,7 @@ vote to unlock). DAO Treasury slots (7–8) and the L6 Issobella slot 6 are
 additionally **time-locked** until block 144,000 (~100 days).
 
 > **L5 Free World Projects:** Slots 4 & 5 (3.3B ZION) repurposed to L5 Free
-> World Projects: 5 humanitarian projects × 500M + 800M reserve.
+> World Projects: 6 humanitarian projects × 500M + 300M reserve.
 
 ---
 

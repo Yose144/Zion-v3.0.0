@@ -47,6 +47,8 @@ const L6IssobellaCopy = {
   setiDesc: { cs: `Decentralizovaný SETI program financovaný L6 fondem — komunita hlasuje o výzkumných projektech.`, en: `A decentralized SETI program funded by the L6 fund — the community votes on research projects.` },
   orbitalMining: { cs: 'Orbital Mining', en: 'Orbital Mining' },
   orbitalMiningDesc: { cs: `Vesmírná těžba zdrojů — asteroidy, regolit. ZION jako ekonomická vrstva pro off-world operace.`, en: `Space resource mining — asteroids, regolith. ZION as the economic layer for off-world operations.` },
+  groundStation: { cs: 'Pozemní stanice Kostarika', en: 'Costa Rica Ground Station' },
+  groundStationDesc: { cs: `První fyzická stopa L6 na Zemi — výzkumný kampus, TT&C antény a observatoř na středobodu Amerik, na pozemku sdíleném s L5 komunitou Nová Amerika.`, en: `The first physical footprint of L6 on Earth — a research campus, TT&C antennas and an observatory at the midpoint of the Americas, on land shared with the L5 community Nová Amerika.` },
 
   stationArchitecture: { cs: 'Architektura stanice', en: 'Station architecture' },
   modularStation: { cs: 'Modulární stanice LEO', en: 'Modular LEO station' },
@@ -121,6 +123,16 @@ const HERO_STARS = [
 ] as const;
 
 const getMissions = (cs: boolean) => [
+  {
+    id: 'ground',
+    name: L6IssobellaCopy.groundStation[cs ? 'cs' : 'en'],
+    phase: cs ? 'Vize 2027+' : 'Vision 2027+',
+    desc: L6IssobellaCopy.groundStationDesc[cs ? 'cs' : 'en'],
+    image: '/docs/l6/img/l6iii.jpeg',
+    tags: cs ? ['Kostarika', 'TT&C', 'Observatoř'] : ['Costa Rica', 'TT&C', 'Observatory'],
+    color: 'border-teal-400/30 bg-teal-400/5',
+    badgeColor: 'border-teal-400/30 bg-teal-400/10 text-teal-300',
+  },
   {
     id: 'station',
     name: L6IssobellaCopy.orbitalStation[cs ? 'cs' : 'en'],
@@ -264,6 +276,7 @@ const getLibraryDocs = (cs: boolean) => [
   { id: 'l6-artificial-gravity', title: cs ? 'Umělá gravitace' : 'Artificial gravity', file: 'Umela_Gravitace.md', desc: cs ? 'Fyzika rotace, konfigurace, Coriolis, design.' : 'Physics of rotation, configurations, Coriolis, design.', icon: Orbit },
   { id: 'l6-human-factors', title: cs ? 'Lidské faktory' : 'Human factors', file: 'Lidske_Faktory.md', desc: cs ? 'Biomedicína, psychologie, ECLSS, etika.' : 'Biomedicine, psychology, ECLSS, ethics.', icon: Heart },
   { id: 'l6-history', title: cs ? 'Historie stanic' : 'Station history', file: 'Histori.md', desc: cs ? 'Von Braun, ISS, Skylab, Saljut, Freedom.' : 'Von Braun, ISS, Skylab, Saljut, Freedom.', icon: Clock },
+  { id: 'l6-ground-station', title: cs ? 'Pozemní stanice Kostarika' : 'Costa Rica Ground Station', file: 'Pozemni_Stanice_Kostarika.md', desc: cs ? 'Ground segment L6 — kampus, TT&C, observatoř, sdílený pozemek s L5.' : 'L6 ground segment — campus, TT&C, observatory, land shared with L5.', icon: Radar },
 ];
 
 const getTimeline = (cs: boolean) => [

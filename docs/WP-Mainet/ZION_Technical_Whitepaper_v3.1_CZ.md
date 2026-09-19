@@ -262,7 +262,7 @@ DAO hlasování pro odemčení). DAO Treasury sloty (7–8) a L6 Issobella slot 
 jsou navíc **time-locked** do bloku 144 000 (~100 dní).
 
 > **L5 Free World Projects:** Sloty 4 a 5 (3,3 mld ZION) repurposed na L5
-> Free World Projects: 5 humanitárních projektů × 500M + 800M rezerva.
+> Free World Projects: 6 humanitárních projektů × 500M + 300M rezerva.
 
 ---
 

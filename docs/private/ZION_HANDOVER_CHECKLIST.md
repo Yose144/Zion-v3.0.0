@@ -144,8 +144,8 @@ Zdrojový stav uvádí tuto sadu:
 
 ### 5.3 L5 Free World Projects — rozdělení Slot 4 + 5 (3.3B ZION)
 
-- [HOTOVO — REPO] Rozdělení 3.3B ZION mezi 5 L5 projektů + 800M rezerva (viz §3.2 v `ZION_SUCCESSION_AND_IP_TRANSFER_PLAN.md`).
-- [HOTOVO — REPO] Správci (zástupci) pro každý L5 projekt určeni.
+- [HOTOVO — REPO] Rozdělení 3.3B ZION mezi 6 L5 projektů + 300M rezerva (viz §3.2 v `ZION_SUCCESSION_AND_IP_TRANSFER_PLAN.md`).
+- [HOTOVO — REPO] Správci (zástupci) pro každý L5 projekt určeni; Nová Amerika (Kostarika) zatím bez správce — TBD před první akvizicí.
 - [PENDING] Ověřit, že L5 Free World scanner (`zion-v31-free-world.service`) je aktivní a sleduje humanitarian tithe.
 - [HOTOVO — REPO] L5 scanner je read-only tracker — nemá disbursement pravomoc.
 
@@ -158,7 +158,8 @@ Zdrojový stav uvádí tuto sadu:
 | Projekt Te Piko Ora | Vahine Fierro | 500 000 000 |
 | Project Bohemia | Andrea Kalousová | 500 000 000 |
 | Project Bodhi Lanka | Annicka Purkertová | 500 000 000 |
-| L5 rezervní fond | Erika Imlaufová (Trustee) | 800 000 000 |
+| Projekt Nová Amerika (Kostarika) | TBD — záměr z rezervy | 500 000 000 |
+| L5 rezervní fond | Erika Imlaufová (Trustee) | 300 000 000 |
 | **Celkem** | | **3 300 000 000** |
 
 ### 5.4 L6 Issobella — správa fondu (2.5B ZION, Slot 6)
@@ -166,6 +167,7 @@ Zdrojový stav uvádí tuto sadu:
 - [HOTOVO — ROZHODNUTÍ 2026-09-19] Správkyní fondu **L6 Issobella** (Orbital Station & Quantum Research Fund, slot 6, adresa `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`) je **Aelan Vaast** — profesionální surfařka z Tahiti, ambasadorka Alpina Watches (Instagram [@aelanvaast](https://www.instagram.com/aelanvaast/), LinkedIn [aelan-vaast](https://www.linkedin.com/in/aelan-vaast)). Fotografie: `docs/private/aelan_vaast.jpg`.
 - [HOTOVO — ROZHODNUTÍ] Aelan řídí projekt do 18. narozenin **Sarah Hubalkové**; poté Sarah a Aelan fond spravují společně.
 - [HOTOVO — REPO] Utrácení ze slotu 6 vyžaduje 3-of-3 admin multisig + DAO vote + time-lock 144 000 — správkyně fondu sama o sobě nemá disbursement pravomoc.
+- [HOTOVO — ROZHODNUTÍ 2026-09-20] Do rozsahu L6 zařazen **pozemní segment v Kostarice** — výzkumný kampus a budoucí TT&C ground station na pozemku sdíleném s L5 uzlem Nová Amerika (HORIZONT; `L6data/Pozemni_Stanice_Kostarika.md`, `docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`). První fyzická doména správkyně fondu.
 - [PENDING] Ověřit, že `zion-v31-issobella` tracker (port 8097) je aktivní a read-only.
 - [PENDING] Doplnit bydliště Aelan Vaast a získat její podpis na prohlášení o přijetí v `ZION_DAROVACI_LISTINA_A_PLNA_MOC.md`.
 

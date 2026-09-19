@@ -68,7 +68,7 @@ Kanonický technický stav premine podle `V31/L1/core/src/genesis.rs` a `V31/L1/
 
 ### 3.2 L5 Free World Projects — rozdělení Slot 4 + 5 (3.3B ZION)
 
-Sloty 4 a 5 (`zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708` + `zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388`, celkem 3 300 000 000 ZION) byly přepsány z OASIS Reserve na L5 Free World Projects. Rozdělení mezi 5 projektů + rezerva:
+Sloty 4 a 5 (`zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708` + `zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388`, celkem 3 300 000 000 ZION) byly přepsány z OASIS Reserve na L5 Free World Projects. Rozdělení mezi 6 projektů + rezerva:
 
 > **Správa:** Erika Imlaufová jako hlavní Trustee + zástupci pro jednotlivé projekty.
 > **Utrácení:** Vyžaduje 3-of-3 admin multisig + DAO vote (admin_locked = true).
@@ -80,16 +80,21 @@ Sloty 4 a 5 (`zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708` + `zion1x535z563d3p6
 | Projekt Te Piko Ora | Vahine Fierro | 500 000 000 | Slot 4/5 |
 | Project Bohemia | Andrea Kalousová | 500 000 000 | Slot 4/5 |
 | Project Bodhi Lanka | Annicka Purkertová | 500 000 000 | Slot 4/5 |
-| **L5 rezervní fond** | **Erika Imlaufová (Trustee)** | **800 000 000** | **Slot 4/5** |
+| Projekt Nová Amerika (Kostarika) | TBD — záměr (správce zatím neurčen) | 500 000 000 | Slot 4/5 (z rezervy) |
+| **L5 rezervní fond** | **Erika Imlaufová (Trustee)** | **300 000 000** | **Slot 4/5** |
 | **Celkem** | | **3 300 000 000** | |
 
-> **L5 rezervní fond (800M ZION):** Spravuje Erika Imlaufová jako Trustee. Slouží pro budoucí L5 projekty, nouzové granty a rozšiřování stávajících projektů. Utrácení vyžaduje 3-of-3 admin multisig + DAO vote.
+> **L5 rezervní fond (300M ZION):** Spravuje Erika Imlaufová jako Trustee. Slouží pro nouzové granty a rozšiřování stávajících projektů. Utrácení vyžaduje 3-of-3 admin multisig + DAO vote.
+>
+> **Projekt Nová Amerika (Kostarika):** Šestý a poslední uzel L5 — projekt pro nativní kultury Amerik na zeměpisném středobodu kontinentů (Bribri, Cabécar, Boruca a další). 500M je záměr financovaný z L5 rezervy (800M → 300M). Dokumentace: `docs/TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md`, kapitola 13 Knihy Země (`docs/WP-Mainet/BodhiGaia/13-Nova-Amerika.md`), svět `NOVA_AMERIKA` v OASIS. Na stejném pozemku se plánuje pozemní segment L6 Issobella (výzkumný kampus, TT&C, observatoř). Stav: HORIZONT — žádný pozemek ani právní subjekt zatím neexistuje; správce projektu se určí před první akvizicí.
 >
 > **Poznámka:** UTRÁCENÍ z Slot 4/5 adres vyžaduje admin unlock (3-of-3 Rama + Sita + Hanuman) + DAO vote — to je pojistka proti neřízenému výdaji. Rozdělení částek mezi projekty je účelové označení v této listině; on-chain zůstávají UTXO na dvou adresách slotů 4 a 5, dokud se neprovede konkrétní transfer.
 
 ### 3.3 L6 Issobella — správa fondu (2.5B ZION, Slot 6)
 
 Slot 6 (`zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, 2 500 000 000 ZION, admin + time-lock 144k) je určen pro **L6 Issobella — Orbital Station & Quantum Research Fund**.
+
+Součástí rozsahu L6 je nově i **pozemní segment v Kostarice** — výzkumný kampus a budoucí TT&C ground station na pozemku sdíleném s L5 uzlem Nová Amerika (HORIZONT; dokumentace `L6data/Pozemni_Stanice_Kostarika.md`, kapitola 11 Knihy Nebe `docs/WP-Mainet/Issobella/11-Pozemni-Uzel-Kostarika.md`). Je to první fyzická doména fondu — kampus, který se dá stavět zaživa, zatímco orbitální stanice zůstává horizontem.
 
 | Role | Osoba / pravidlo |
 |------|------------------|

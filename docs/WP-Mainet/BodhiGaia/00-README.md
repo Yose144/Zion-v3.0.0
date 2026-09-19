@@ -16,7 +16,7 @@
 
 > **Bodhi Gaia není jiná planeta. Je to tato Země, o kterou se někdo začal starat jinak.**
 
-Kniha Nirvana vypráví, jak poutníci po potopě přistáli na Nové zemi, postavili Dům Lumi, klenuli mosty WARP a otevřeli prameny Free World. Tato kniha je o tom, **co se stane, když poutníci vezmou do dlaní hlínu**. Je to kniha o pěti uzlech na pěti skutečných místech starého světa — na atlantickém pobřeží Portugalska, na vulkanickém ostrově La Palma, v laguně Raiatea, v srdci Čech a na ostrově Srí Lanka — a o tom, jak se z abstraktního 5 % L1 coinbase proudu stane studna, strom, kopule, kánoe, kruh a prostor, který je všechny drží.
+Kniha Nirvana vypráví, jak poutníci po potopě přistáli na Nové zemi, postavili Dům Lumi, klenuli mosty WARP a otevřeli prameny Free World. Tato kniha je o tom, **co se stane, když poutníci vezmou do dlaní hlínu**. Je to kniha o šesti uzlech na šesti skutečných místech — na atlantickém pobřeží Portugalska, na vulkanickém ostrově La Palma, v laguně Raiatea, v srdci Čech, na ostrově Srí Lanka a na pevninském můstku Amerik v Kostarice — a o tom, jak se z abstraktního 5 % L1 coinbase proudu stane studna, strom, kopule, kánoe, kruh, most a prostor, který je všechny drží.
 
 Je to zároveň nejpřísnější kniha celé řady. **Půda nezná marketing.** Strom buď roste, nebo ne. Studna buď dává vodu, nebo ne. Proto má každá kapitola delší kotvu pravdy než kdekoli jinde: přesně říká, co z L5 dnes běží na síti, co se staví, co je jen horizont a co je pouze krásný obraz.
 
@@ -32,7 +32,7 @@ Je to zároveň nejpřísnější kniha celé řady. **Půda nezná marketing.**
 
 ---
 
-## Dvanáct kapitol Knihy Země
+## Třináct kapitol Knihy Země
 
 Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příběh → hluboký výklad → tabulka ověřitelných faktů se stavovou značkou.**
 
@@ -50,6 +50,7 @@ Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příb�
 | 10 | [Golden Republic Bohemia](./10-Golden-Republic-Bohemia.md) | **Srdce** · *Čechy, Česká republika* | Kruh bez trůnu, sůl na stole, most mezi mýtem a protokolem; Říp, Přemysl oráč, Zlatá bula jako proto-DAO, governance laboratoř Zlaté republiky. |
 | 11 | [Bodhi Lanka](./11-Bodhi-Lanka.md) | **Akáša** · *Srí Lanka* | Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi (Sri Maha Bodhi, Anurádhapura, 288 př. n. l.), Ráma Setu jako most mezi ostrovy, akáša jako pátý element — prostor, který drží všechny ostatní; bhakti jako governance. |
 | 12 | [Růže v Zahradě Genesis](./12-Ruze-v-Zahrade-Genesis.md) | **Průsečík** · *Růže / L5* | Literární semínko z *Příběhu Růže* vstoupí do Zahrady Genesis — příběh je MÝTUS, fyzický pilot `GENESIS-ROSE-001` je HORIZONT a žádné zasazení se nestalo. |
+| 13 | [Nová Amerika](./13-Nova-Amerika.md) | **Most & Paměť** · *Kostarika* | Šestý a poslední uzel L5 — projekt pro nativní kultury Amerik na zeměpisném středobodu kontinentů; FPIC, kruh starších a sdílený pozemek s pozemní stanicí Issobella. |
 
 ---
 
@@ -68,6 +69,7 @@ Tato kniha nevytváří nový svět. **Sjednocuje to, co už v repozitáři, na 
 | **OASIS** | Panel „Nová Země" s třemi L5 projekty; svět `DHARMA_TEMPLE_LA_PALMA` v galaxii; avataři se sliby bódhisattvy | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx`, `src/domain/config/worlds.ts`, `V31/L4/oasis/data/avatars.json` | **ŽIVÉ** (klient), gameplay vazba = HORIZONT |
 | **Příběhové kořeny** | Sítá — Matka Země, Hanuman — Seva, Ráma — dharma/láska; Rámájana a Sri Maha Bodhi; kapitola Komunity a L5 Svoboda; havajská linie KNIHA-LEHUA | `SulZeme/04`, `SulZeme/10`, `docs/TerraNova/03-KOMUNITY.md`, `06-L5-SVOBODA.md`, `docs/TerraNova/hawaii/KNIHA-LEHUA/` | **MÝTUS** (archetypy) |
 | **Růže v Zahradě Genesis** | Epilog *Příběhu Růže* (Lumi + Ana, druhé semínko u Atlantiku); Rose lore ve světě `GENESIS_GARDEN`; návrh fyzického pilotu s gaty A–D | `Ruze/Epilog-Zahrada-Genesis.md`, `BodhiGaia/12`, `BodhiGaia/pilots/GENESIS-ROSE-001.md`, `worlds.ts` | **MÝTUS** (příběh) · **HORIZONT** (pilot) · fyzická růže **NEDOLOŽENO** |
+| **Nová Amerika (Kostarika)** | Šestý uzel L5 pro nativní kultury; projektový list, kapitola 13, svět v OASIS, alokační záměr 500M z L5 rezervy | `TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md`, `BodhiGaia/13`, `worlds.ts` (`NOVA_AMERIKA`), `docs/private/` | **HORIZONT** (projekt) · **ZÁMĚR** (alokace) · pozemek/FPIC **NEDOLOŽENO** |
 | **Governance rámec** | Rozhodnutí G10: L5/L6 jako pasivní read-only trackery + DAO proposal bridge; žádná automatická výplata | `docs/3.2/L5_L6_ACTIVATION_PLAN.md`, `docs/3.2/ROADMAP.md` | **ŽIVÉ** (rozhodnutí) |
 | **Exekuční rámec 3.3** | Workstream **M5** — od fondu k doloženému dopadu; impact packet; exit gate = jeden pilot celým auditovatelným cyklem | `MiseAmenti/04-Exekucni-Charta-3.3.md` | **STAVBA** |
 | **Mystická mapa** | Yesod (Základ) ↔ L5; slib péče *„I vow to care for this land as I would care for my own body"* | `docs/Zohar/01-SEFIROT-VRSTVY.md` | **MÝTUS** |

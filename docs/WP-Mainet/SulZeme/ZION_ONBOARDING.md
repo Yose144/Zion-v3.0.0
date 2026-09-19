@@ -270,7 +270,7 @@ První svět Oasis je strukturován do **8 Genesis Teritorií**. Zatím jsou pop
 
 ### Golden Egg a 108 stop
 
-Uprostřed Oasis stojí **Strom života**. V jeho kořenech leží **první ze 108 stop Zlatého Vejce**. Golden Egg není jen poklad — je to **pedagogický příběh**. V rezervě je uzamčeno **4,95 miliardy ZION** z genesis alokace, rozdělených do pěti odměnových poolů (sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects: 5 humanitárních projektů × 500M + 800M rezerva):
+Uprostřed Oasis stojí **Strom života**. V jeho kořenech leží **první ze 108 stop Zlatého Vejce**. Golden Egg není jen poklad — je to **pedagogický příběh**. V rezervě je uzamčeno **4,95 miliardy ZION** z genesis alokace, rozdělených do pěti odměnových poolů (sloty 4 a 5 — 3,3 mld ZION — repurposed na L5 Free World Projects: 6 humanitárních projektů × 500M + 300M rezerva):
 
 - Player Pool
 - Guild Pool

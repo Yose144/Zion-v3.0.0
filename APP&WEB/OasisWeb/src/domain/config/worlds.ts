@@ -4680,6 +4680,17 @@ export const WORLDS: World[] = [
       tags: ["world", "layer 5", "terranova", "te piko ora", "tahiti", "ocean"],
       galaxyPosition: { x: 5.4, y: 0.5, z: 16.8 }
   },
+  {
+      id: "NOVA_AMERIKA",
+      name: "Nová Amerika",
+      category: "world",
+      layer: 5,
+      location: "Costa Rica — Terra Nova L5 Americas bridge node",
+      vibe: "The bridge between two continents and two oceans. A circle of elders, a living seed library, and the first ground beneath the sky station.",
+      summary: "Sixth L5 Terra Nova node in Costa Rica — a project honouring the native cultures of the Americas (Bribri, Cabécar, Boruca and others), governed through FPIC dialogue, sharing its land with the future Issobella L6 ground station. Vision status — no land acquired yet.",
+      tags: ["world", "layer 5", "terranova", "nova amerika", "costa rica", "native cultures", "bridge"],
+      galaxyPosition: { x: -19.4, y: 0.24, z: 9.8 }
+  },
 ];
 
 export const WORLD_IDS = [
@@ -4885,6 +4896,7 @@ export const WORLD_IDS = [
   "NEO_THE_ONE",
   "NEZHA",
   "NICHIREN",
+  "NOVA_AMERIKA",
   "NOVA_ZEME",
   "NUT_STELLAR_VAULT",
   "NYAI_RORO_KIDUL",

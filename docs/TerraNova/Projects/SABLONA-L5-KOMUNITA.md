@@ -13,6 +13,7 @@ Každý projekt je "živý dokument" — průběžně se zpřesňuje s tím, jak
 | **Te Pīko Ora** | Raiatea / Tahiti, Francouzská Polynésie | 🔵 Vize / Příprava | [TE-PIKO-ORA.md](TE-PIKO-ORA.md) |
 | **Golden Republic Bohemia** | Čechy, Česká republika | 🔵 Vize / Příprava | [GOLDEN-REPUBLIC-BOHEMIA.md](GOLDEN-REPUBLIC-BOHEMIA.md) |
 | **Bodhi Lanka** | Srí Lanka | 🔵 Vize / Příprava | [BODHI-LANKA.md](BODHI-LANKA.md) |
+| **Nová Amerika** | Kostarika | 🔵 Vize / Příprava | [NOVA-AMERIKA-KOSTARIKA.md](NOVA-AMERIKA-KOSTARIKA.md) |
 | **Projekt Venus** | TBD | 🔵 Konceptuální fáze | [PROJEKT-VENUS.md](PROJEKT-VENUS.md) |
 
 ## Archetypová role každého uzlu
@@ -23,6 +24,7 @@ Dharma Temple            →  Sanctuary   →  Oheň / Kmen    →  Ticho, medit
 Te Pīko Ora              →  Paradise    →  Voda / Koruna  →  Plnost, mořská permakultura, wayfinding
 Golden Republic Bohemia  →  Governance  →  Vzduch / Srdce →  Governance lab, kruh rozhodnutí, česká moudrost
 Bodhi Lanka              →  Bhakti      →  Akasha / Éter  →  Láska, Sri Maha Bodhi, Rama Setu, Ayurveda
+Nová Amerika             →  Most        →  Paměť          →  Nativní kultury, Kostarika, středobod Amerik (+ L6 pozemní stanice)
 Projekt Venus            →  Regenerace  →  Ženský princip →  Byliny, tvořivost, obnova krajiny
 ```
 
