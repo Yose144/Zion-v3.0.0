@@ -143,7 +143,7 @@ impl BtcSigner {
     pub async fn send_btc(
         &self,
         client: &reqwest::Client,
-        api_url: &str,
+        api_urls: &[String],
         recipient: &str,
         amount_sats: u64,
     ) -> WarpResult<String> {
@@ -153,7 +153,7 @@ impl BtcSigner {
             .unwrap_or(5);
 
         // 1. Fetch + filter confirmed UTXOs
-        let utxos = fetch_utxos(client, api_url, &self.address.to_string()).await?;
+        let utxos = fetch_utxos(client, api_urls, &self.address.to_string()).await?;
         let confirmed: Vec<MempoolUtxo> = utxos.into_iter().filter(|u| u.is_confirmed()).collect();
 
         if confirmed.is_empty() {
@@ -246,7 +246,7 @@ impl BtcSigner {
             fee
         );
 
-        let txid = broadcast_tx(client, api_url, &raw_hex).await?;
+        let txid = broadcast_tx(client, api_urls, &raw_hex).await?;
 
         info!("[WARP][bitcoin] TX broadcast OK: {}", txid);
         Ok(txid)
@@ -286,27 +286,57 @@ fn p2wpkh_address(pubkey: &PublicKey, network: Network) -> WarpResult<Address> {
     })
 }
 
+/// GET `path` against each endpoint in `api_urls` until one returns a
+/// successful body (failover for public esplora backends).
+pub(crate) async fn get_text_failover(
+    client: &reqwest::Client,
+    api_urls: &[String],
+    path: &str,
+) -> WarpResult<String> {
+    let mut last_err = WarpError::AdapterError {
+        chain: "bitcoin".into(),
+        reason: "no bitcoin API endpoints configured".into(),
+    };
+    for base in api_urls {
+        let url = format!("{base}{path}");
+        match client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => match resp.text().await {
+                Ok(text) => return Ok(text),
+                Err(e) => {
+                    last_err = WarpError::AdapterError {
+                        chain: "bitcoin".into(),
+                        reason: format!("{url}: body read: {e}"),
+                    };
+                }
+            },
+            Ok(resp) => {
+                last_err = WarpError::AdapterError {
+                    chain: "bitcoin".into(),
+                    reason: format!("{url}: HTTP {}", resp.status()),
+                };
+            }
+            Err(e) => {
+                last_err = WarpError::AdapterError {
+                    chain: "bitcoin".into(),
+                    reason: format!("{url}: {e}"),
+                };
+            }
+        }
+    }
+    Err(last_err)
+}
+
 pub(crate) async fn fetch_utxos(
     client: &reqwest::Client,
-    api_url: &str,
+    api_urls: &[String],
     address: &str,
 ) -> WarpResult<Vec<MempoolUtxo>> {
-    let url = format!("{}/address/{}/utxo", api_url, address);
-    let utxos: Vec<MempoolUtxo> = client
-        .get(&url)
-        .send()
-        .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })?
-        .json()
-        .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })?;
-    Ok(utxos)
+    let text =
+        get_text_failover(client, api_urls, &format!("/address/{address}/utxo")).await?;
+    serde_json::from_str(&text).map_err(|e| WarpError::AdapterError {
+        chain: "bitcoin".into(),
+        reason: e.to_string(),
+    })
 }
 
 /// Greedy UTXO selection: sort largest-first, select until amount + estimated fee is covered.
@@ -388,35 +418,48 @@ fn build_unsigned_tx(
     })
 }
 
+/// Broadcast a raw tx via each endpoint in `api_urls` until one accepts it.
+/// Submitting to multiple backends is harmless — the txid is identical.
 pub(crate) async fn broadcast_tx(
     client: &reqwest::Client,
-    api_url: &str,
+    api_urls: &[String],
     raw_hex: &str,
 ) -> WarpResult<String> {
-    let url = format!("{}/tx", api_url);
-    let resp = client
-        .post(&url)
-        .header("Content-Type", "text/plain")
-        .body(raw_hex.to_string())
-        .send()
-        .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })?;
-
-    let status = resp.status();
-    let body = resp.text().await.unwrap_or_default();
-
-    if !status.is_success() {
-        return Err(WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: format!("Broadcast failed HTTP {}: {}", status, body.trim()),
-        });
+    let mut last_err = WarpError::AdapterError {
+        chain: "bitcoin".into(),
+        reason: "no bitcoin API endpoints configured".into(),
+    };
+    for base in api_urls {
+        let url = format!("{base}/tx");
+        let resp = match client
+            .post(&url)
+            .header("Content-Type", "text/plain")
+            .body(raw_hex.to_string())
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                last_err = WarpError::AdapterError {
+                    chain: "bitcoin".into(),
+                    reason: format!("{url}: {e}"),
+                };
+                continue;
+            }
+        };
+        let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            last_err = WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: format!("Broadcast failed HTTP {}: {}", status, body.trim()),
+            };
+            continue;
+        }
+        // mempool.space returns the txid as plain text on success
+        return Ok(body.trim().to_string());
     }
-
-    // mempool.space returns the txid as plain text on success
-    Ok(body.trim().to_string())
+    Err(last_err)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -96,6 +96,59 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ---
 
+## 2026-09-19 — Miriam: Kniha Růže (Kniha Linie — osa času) — DRAFT navržený ke kanonizaci
+
+### Změněno
+
+- Přidána nová narativní řada [`docs/WP-Mainet/Miriam/`](../Miriam/00-README.md) (CZ, README + 13 kapitol): kniha vodoravné osy korpusu — paměť, linie a svědectví skrze dvacet století — jako protějšek svislé osy `Lumi/` (světlo skrze vrstvy). Rámcový příběh: stará Miriam v jeskyni nad mořem vypráví dívce Sáře (Sara e Kali) tři oblouky — **U jezera** (01–04: Magdala, alabastrová nádobka, zahradník u hrobu, Evangelium podle Marie), **Podzemní řeka** (05–09: Řehořovo slití 591 / opravy 1969 a 2016, provensálská legenda o lodi a Sáře, desposyni s mozoly před Domitianem, grálové romance a podvrh Prieuré de Sion, žena oděná sluncem Zj 12) a **Město, které sestupuje** (10–13: svatba Beránkova, město jako nevěsta, řeka a strom života, setkání s Lumi na břehu, registr pravdy).
+- Zaveden mechanismus „kámen / hlína / sen" — každá kapitola rozděluje příběh na doložený text (listina), živou tradici (legenda) a literární sen — s tabulkou Kotva pravdy a štítky ŽIVÉ / NEDOLOŽENO / NEPLATNÝ NÁROK / MÝTUS ve stejném významu jako `07-Registr-Dukazu.md`.
+- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)".
+- `07-Registr-Dukazu.md` §6 — přidáno pravidlo 6: příběh Miriam se čte podle vlastních štítků; narativní „fakta" z ní nesmí vstupovat do provozních dokumentů.
+
+### Důkaz
+
+- Historické kořeny knihy: evangelia (Mk 15–16; Lk 7–8, 24; Jan 12, 19–20; Mt 1, 26–28) · Evangelium podle Marie (Berlínský kodex 8502 + P.Oxy. 3525 + P.Ryl. 463) · Evangelium Filipovo (NHC II) · Pistis Sofia · Hippolytos (~235, „apostola apostolorum") · Eusebios III.19–20 (Hegesippos o desposyni) · Řehoř Veliký Homilie 33 (591) · liturgická reforma 1969 / dekret 10. 6. 2016 · *Legenda aurea* (~1260) a provensálská/romská tradice · grálové romance (Chrétien ~1180, Wolfram, Robert de Boron) · Dossiers secrets / Prieuré de Sion (prokázaný podvod, přiznání 1993) · Zjevení 12, 19, 21–22.
+- Repo kotvy: `docs/genesis.md` (jméno Meriam v genesis zprávě), `V31/L4/oasis/data/avatars.json` (avatar 18 Meriam Rose), `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/18_MERIAM_ROSE.md`, `docs/TerraNova/public/Full.md` (příloha C — Zjevení jako blueprints), `V31/L1/core/src/emission.rs` (TOTAL_SUPPLY 144 mld, split 89/5/5/1), `WarpBeta/ARCHITECTURE.md` (HTLC preimage), kontinuita `SulZeme/`, `nirvana/`, `BodhiGaia/`, `Issobella/`, `Lumi/`.
+
+### Dopad na stav tvrzení
+
+- Žádný technický nárok se nepovyšuje; kniha nepřidává provozní nároky.
+- Nové nároky knihy se štítky: doložené listiny → **ŽIVÉ (doložený text)**; pomazání = Miriam, manželství, krevní linie, „koinónos" = manželka → **NEDOLOŽENO**; Miriam jako „hříšnice", Prieuré de Sion / merovejská linie, Zjevení jako předpověď ZIONU → **NEPLATNÝ NÁROK**; provensálská legenda, relikvie, černé madony, čtení ženy Zj 12 → **Hlína/MÝTUS**; rámcový příběh a setkání s Lumi → **MÝTUS (autorské)**; 144 miliard jako ozvěna Zj čísla → **ŽIVÉ (designová volba, ne nárok)**.
+
+### Review
+
+- Autor: Devin (AI) na základě čtení korpusu, pramenů a webové rešerše. **Řada je DRAFT** — vyžaduje factual review historických pasáží (třída E — kulturní/veřejná komunikace; křesťanské, gnostické, židovské a romské prvky vyžadují kulturního konzultanta), českou jazykovou korekturu, link check (proveden — všechny relativní odkazy resolvují) a public-copy review před jakýmkoli výňatkem, podle `08-Protokol-Zmen.md` §2. Pasáže o fondu/emisi jsou pouze kotvící odkazy, žádný nárok na prostředky — třída C se neuplatňuje, pokud se neobjeví nároky na custody/governance.
+
+---
+
+## 2026-09-19 — Příběh Růže: Co nelze vlastnit — DRAFT navržený ke kanonizaci
+
+### Změněno
+
+- Přidána nová samostatná literární bajka [`docs/WP-Mainet/Ruze/`](../Ruze/00-README.md) (CZ, README + 9 souvislých kapitol + kotvící kapitola 10): malá kniha o Lumi a růži u řeky za otevřenou bránou. V kompasu korpusu zaujímá **průsečík — vztah**: roste mezi vodorovnou osou Miriam (paměť/čas) a svislou osou Lumi (světlo/vrstvy); **není dvanáctou branou** ani technologickou vrstvou. Oblouk: prázdná nádoba od Sáry, jméno bez titulu, trn jako hranice, zahradník zrcadel, kupec s vůní, zahrada mnoha růží, vzájemná péče za sucha, svoboda odejít, návrat na oba břehy.
+- Literární klíč: *Malý princ* je přiznanou vzdálenou inspirací pouze formou (filosofická bajka, dítě a růže); žádná postava, scéna ani věta není převzata. Etika knihy: péče bez vlastnění, souhlas, svoboda, vzájemnost — vztah bez svobody je klec (`SulZeme/11`).
+- `docs/WP-Mainet/README.md` — řada přidána do sekce „Koncepty a horizont (nekanonické)" za Miriam.
+- `Miriam/13-Kotva-Pravdy-a-Hranice.md` — do poslední navigace přidán odkaz na Příběh Růže; jinak beze změny.
+- `02-Pribeh-a-Architektura.md` — za tabulku bran přidán odstavec „Příběh Růže není dvanáctá brána" (počet bran beze změny).
+- `07-Registr-Dukazu.md` §6 — přidáno pravidlo 7: `Ruze/` je celý literární MÝTUS a nepovyšuje starší Meriam Rose / esoterické nároky.
+
+### Důkaz
+
+- Repo kotvy: `docs/WP-Mainet/Miriam/13` (předání prázdné nádoby Sáře), `Miriam/12` (setkání u řeky, semínko růže), `Lumi/12` (otevřená brána, lucerna), `SulZeme/11` (růžová zahrada, „vztah bez svobody je klec"), `V31/L4/oasis/data/avatars.json` (avatar id 18 „Meriam Rose", Jerusalem Garden, „True devotion sees beyond form").
+- Existence těchto řádků je repozitářový fakt, ne historická/duchovní pravda — roztříděno v `Ruze/10-Kotva-Pribehu.md`.
+
+### Dopad na stav tvrzení
+
+- Žádný nový technický nárok; kniha nepřidává provozní ani finanční claimy.
+- Celý děj, postavy i dialogy → **MÝTUS**. Doložená kontinuita → pouze existence řádků/textů (**ŽIVÉ** jako repozitářový fakt).
+- Starší `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/18_MERIAM_ROSE.md` **není validován**: jeho nároky (twin flame, tajný svazek, grál-lůno, tajné kódy, škola, council, fondy) zůstávají MÝTUS/NEDOLOŽENO/HORIZONT/NEPLATNÝ NÁROK; konkrétní štítek závisí na konkrétním tvrzení a nový příběh žádné z nich nevaliduje.
+
+### Review
+
+- Autor: Devin (AI) na základě čtení korpusu a pramenů. **Řada je DRAFT** — vyžaduje českou literární a jazykovou korekturu a public-copy review podle `08-Protokol-Zmen.md` §2 (třída E; žádné custody/finance/governance nároky — třída C se neuplatňuje). Link check a `git diff --check` provedeny při vytvoření.
+
+---
+
 ## Formát budoucích položek
 
 ```markdown

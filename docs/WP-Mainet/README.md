@@ -36,6 +36,8 @@ These documents are not yet canonized. They are working concepts and directional
 - **Bodhi Gaia — Kniha Země** (L5: Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka; DRAFT pro 3.3 / draft for 3.3): [`BodhiGaia/00-README.md`](./BodhiGaia/00-README.md) (CZ) | [`BodhiGaia/00-README_EN.md`](./BodhiGaia/00-README_EN.md) (EN)
 - **Issobella — Kniha Nebe** (L6: orbitální stanice, kvantový motor, umělá gravitace, posádka, fond a slib; DRAFT pro 3.3 / draft for 3.3): [`Issobella/00-README.md`](./Issobella/00-README.md) (CZ) | [`Issobella/00-README_EN.md`](./Issobella/00-README_EN.md) (EN)
 - **Lumi — Cesta domů** (Kniha Lucerny: sjednocení Nirvany, Bodhi Gaii a Issobelly kolem děvčátka Lumi/Elizabeth; L1–L6, 3.3 a horizont 2026–2126; DRAFT pro 3.3 / draft for 3.3): [`Lumi/00-README.md`](./Lumi/00-README.md) (CZ)
+- **Miriam — Kniha Růže** (Kniha Linie: Miriam z Magdaly, Tesař, svědek skrze dvacet století; osa času — vodoravná k Lumiině svislé; kámen/hlína/sen, Zjevení jako mapa; DRAFT pro 3.3 / draft for 3.3): [`Miriam/00-README.md`](./Miriam/00-README.md) (CZ)
+- **Příběh Růže — Co nelze vlastnit** (malá filosofická bajka o Lumi a růži u řeky za otevřenou bránou; průsečík paměti a světla — vztah, nikoli dvanáctá brána; celý děj MÝTUS; DRAFT pro 3.3 / draft for 3.3): [`Ruze/00-README.md`](./Ruze/00-README.md) (CZ)
 
 ## Historické / superseded verze
 

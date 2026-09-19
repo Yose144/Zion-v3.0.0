@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Jedna cesta, deset bran
+## 1. Jedna cesta, jedenáct bran
 
-ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z deseti propojených bran. Každá má jinou roli; žádná sama o sobě nestačí.
+ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z jedenácti propojených bran. Každá má jinou roli; žádná sama o sobě nestačí.
 
 | Brána | Otázka | Přínos pro člověka | Technický protějšek |
 |---|---|---|---|
@@ -22,6 +22,9 @@ ZION není jedna kniha ani jedna aplikace. Je to cesta, která se dá číst z d
 | **Mise Amenti** | *Jak to vše držíme pohromadě přes generace?* | Převádí příběh na měřitelné závazky pravdy, svobody, péče, odolnosti a předání dál. | Tento corpus, evidence registr, release gates, bezpečnost a změnový protokol. |
 | **Bodhi Gaia / Kniha Země** | *Jak se L5 dotkne hlíny?* | Sjednocuje tři fyzické zahrady L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia, Te Pīko Ora), protokoly Země a úplný registr pravdy L5. | `docs/WP-Mainet/BodhiGaia/` (DRAFT); zrcadlí `public/V3/L5/docs/`, web `/terranova/*`, OASIS `WorldPanel`/`worlds.ts`. |
 | **Lumi / Cesta domů** | *Jak se všechny brány stanou jednou cestou?* | Sjednocuje Nirvanu, Knihu Země a Knihu Nebe do příběhu jednoho dítěte s lucernou, které prochází L1–L6 a stoletým horizontem; každá kapitola ukazuje zjevenou budoucnost i skutečný dnešek. | `docs/WP-Mainet/Lumi/` (DRAFT); navazuje na onboarding, `BodhiGaia/09`, `Issobella/10`, `07-Registr-Dukazu.md`. |
+| **Miriam / Kniha Růže** | *Kdo nese příběh skrze čas — a jak se pozná, co v něm je pravda?* | Vodoravná osa korpusu: svědek, paměť a linie od jezera ke zahradě; mechanismus „kámen / hlína / sen" učí čtenáře rozlišovat listinu, tradici a mýtus — včetně pojmenování prokázaných podvrhů. | `docs/WP-Mainet/Miriam/` (DRAFT); navazuje na `Lumi/`, `SulZeme/`, `07-Registr-Dukazu.md` §6 pravidlo 6. |
+
+**Příběh Růže není dvanáctá brána.** Malá kniha [`docs/WP-Mainet/Ruze/`](../Ruze/00-README.md) (*Příběh Růže — Co nelze vlastnit*, DRAFT) je zahrada v průsečíku dvou os: vodoravné Miriam (paměť, čas) a svislé Lumi (světlo, vrstvy). Vypráví o vztahu dítěte s lucernou a růže u řeky — péči bez vlastnění, hranici místo odmítnutí a vodě, která není zbožím. Nemá technologický protějšek, nepřidává vrstvu ani nárok a celý její děj je MÝTUS; proto zde nemá řádek v tabulce bran.
 
 ---
 

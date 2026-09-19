@@ -94,6 +94,8 @@ Tato pravidla nevyžadují mazání předchozího kreativního materiálu. Zname
 3. „Global Assimilation“ znamená pouze **dobrovolnou interoperabilitu a spolupráci**; nikdy ne imperativ, nábor nebo kulturní nadřazenost.
 4. Příběhy `nirvana/` a `NirvanaCloud/` zůstávají hodnotnou narativní vrstvou, ale jejich „Kotva pravdy“ se při rozporu aktualizuje na základě tohoto registru.
 5. Tokenomické tvrzení o 1 % se vždy doplní podmínkou activation height: **node reward až po aktivaci; jinak burn**.
+6. Příběh [`Miriam/`](../Miriam/00-README.md) (*Kniha Růže*, DRAFT) je narativní vrstva se stejným režimem jako pravidlo 4: její „Kotva pravdy“ označuje historické vrstvy **kámen / hlína / sen** a používá i značky **NEDOLOŽENO** a **NEPLATNÝ NÁROK** ve stejném významu jako tento registr. Historické, biblické a genealogické nároky v ní se čtou jen podle jejích štítků — narativní „fakta“ z ní nesmí vstupovat do provozních dokumentů ani se prezentovat jako ověřená historie.
+7. Příběh [`Ruze/`](../Ruze/00-README.md) (*Příběh Růže — Co nelze vlastnit*, DRAFT) je celý literární **MÝTUS** — bajka o Lumi a růži u řeky za otevřenou bránou, bez technického protějšku. Její existence **nepovyšuje** starší materiál kolem avatara „Meriam Rose“ (`V31/L4/oasis/data/avatars.json`, id 18) ani esoterické nároky dokumentu `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/18_MERIAM_ROSE.md` na historickou, duchovní, technickou či provozní pravdu; jejich hranice drží [`Ruze/10-Kotva-Pribehu.md`](../Ruze/10-Kotva-Pribehu.md) a `Miriam/13`.
 
 ---
 

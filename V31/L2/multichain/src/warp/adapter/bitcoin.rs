@@ -49,11 +49,21 @@ fn htlc_address(network: &str) -> Option<String> {
     htlc_address_with_override(network, None)
 }
 
-fn default_api(network: &str) -> &'static str {
+/// Default esplora-compatible endpoints per network — two independent public
+/// backends where available (failover on transport/HTTP error). All responses
+/// are untrusted-verified downstream (script parsing, confs, preimage), so
+/// heterogeneous backends are safe to mix.
+fn default_apis(network: &str) -> Vec<String> {
     match network {
-        "testnet" => "https://mempool.space/testnet/api",
-        "signet" => "https://mempool.space/signet/api",
-        _ => "https://mempool.space/api",
+        "testnet" => vec![
+            "https://mempool.space/testnet/api".into(),
+            "https://blockstream.info/testnet/api".into(),
+        ],
+        "signet" => vec!["https://mempool.space/signet/api".into()],
+        _ => vec![
+            "https://mempool.space/api".into(),
+            "https://blockstream.info/api".into(),
+        ],
     }
 }
 
@@ -202,7 +212,8 @@ fn classify_htlc_spend(txs: &[MempoolTx], lock: &BtcHtlcLock, htlc: &BtcHtlc) ->
 /// Bitcoin adapter — HTLC watch + OP_RETURN memo parsing via mempool.space API.
 pub struct BitcoinAdapter {
     network: String,
-    api_url: String,
+    api_urls: Vec<String>,
+    primary: std::sync::atomic::AtomicUsize,
     client: reqwest::Client,
     htlc_override: Option<String>,
 }
@@ -213,14 +224,27 @@ impl Default for BitcoinAdapter {
     }
 }
 
+/// Parse a comma-separated endpoint list into normalized base URLs.
+fn parse_endpoints(raw: &str) -> Vec<String> {
+    raw.split(',')
+        .map(|s| s.trim().trim_end_matches('/'))
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect()
+}
+
 impl BitcoinAdapter {
     pub fn new() -> Self {
         let network = std::env::var("BITCOIN_NETWORK").unwrap_or_else(|_| "mainnet".into());
-        let api_url =
-            std::env::var("WARP_BITCOIN_API").unwrap_or_else(|_| default_api(&network).to_string());
+        let api_urls = std::env::var("WARP_BITCOIN_API")
+            .ok()
+            .map(|v| parse_endpoints(&v))
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| default_apis(&network));
         Self {
             network,
-            api_url,
+            api_urls,
+            primary: std::sync::atomic::AtomicUsize::new(0),
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(20))
                 .build()
@@ -232,7 +256,10 @@ impl BitcoinAdapter {
     pub fn from_config(cfg: &ChainConfig) -> Self {
         let mut adapter = Self::new();
         if !cfg.rpc_url.is_empty() {
-            adapter.api_url = cfg.rpc_url.clone();
+            let urls = parse_endpoints(&cfg.rpc_url);
+            if !urls.is_empty() {
+                adapter.api_urls = urls;
+            }
         }
         if let Some(addr) = &cfg.contract_address {
             if !addr.is_empty() {
@@ -242,9 +269,15 @@ impl BitcoinAdapter {
         adapter
     }
 
-    /// The mempool.space-compatible API base URL this adapter polls.
+    /// The currently-primary mempool.space-compatible API base URL.
     pub fn api_url(&self) -> &str {
-        &self.api_url
+        &self.api_urls[self.primary.load(std::sync::atomic::Ordering::Relaxed)]
+    }
+
+    /// All configured endpoints (failover order). `WARP_BITCOIN_API` accepts a
+    /// comma-separated list — e.g. a local esplora first, public backends after.
+    pub fn api_urls(&self) -> &[String] {
+        &self.api_urls
     }
 
     /// Shared HTTP client (used by the swap flow for signer broadcasts).
@@ -252,23 +285,60 @@ impl BitcoinAdapter {
         &self.client
     }
 
+    /// GET `path` against the configured endpoints with failover: the current
+    /// primary is tried first; on transport/HTTP error the next endpoint is
+    /// tried and promoted to primary for subsequent calls.
+    pub(crate) async fn request(&self, path: &str) -> WarpResult<String> {
+        use std::sync::atomic::Ordering;
+        let n = self.api_urls.len();
+        if n == 0 {
+            return Err(WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: "no bitcoin API endpoints configured".into(),
+            });
+        }
+        let start = self.primary.load(Ordering::Relaxed) % n;
+        let mut last_err = WarpError::AdapterError {
+            chain: "bitcoin".into(),
+            reason: "no endpoints".into(),
+        };
+        for i in 0..n {
+            let idx = (start + i) % n;
+            let url = format!("{}{}", self.api_urls[idx], path);
+            match self.client.get(&url).send().await {
+                Ok(resp) if resp.status().is_success() => match resp.text().await {
+                    Ok(text) => {
+                        if idx != start {
+                            self.primary.store(idx, Ordering::Relaxed);
+                        }
+                        return Ok(text);
+                    }
+                    Err(e) => {
+                        last_err = WarpError::AdapterError {
+                            chain: "bitcoin".into(),
+                            reason: format!("{url}: body read: {e}"),
+                        };
+                    }
+                },
+                Ok(resp) => {
+                    last_err = WarpError::AdapterError {
+                        chain: "bitcoin".into(),
+                        reason: format!("{url}: HTTP {}", resp.status()),
+                    };
+                }
+                Err(e) => {
+                    last_err = WarpError::AdapterError {
+                        chain: "bitcoin".into(),
+                        reason: format!("{url}: {e}"),
+                    };
+                }
+            }
+        }
+        Err(last_err)
+    }
+
     async fn get_tip_height(&self) -> WarpResult<u64> {
-        let url = format!("{}/blocks/tip/height", self.api_url);
-        let text = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "bitcoin".into(),
-                reason: e.to_string(),
-            })?
-            .text()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "bitcoin".into(),
-                reason: e.to_string(),
-            })?;
+        let text = self.request("/blocks/tip/height").await?;
         text.trim()
             .parse::<u64>()
             .map_err(|_| WarpError::AdapterError {
@@ -279,23 +349,13 @@ impl BitcoinAdapter {
 
     async fn get_address_txs(&self, address: &str) -> WarpResult<Vec<MempoolTx>> {
         // mempool.space returns max 50 confirmed + unconfirmed txs
-        let url = format!("{}/address/{}/txs", self.api_url, address);
-        let txs: Vec<MempoolTx> = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "bitcoin".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "bitcoin".into(),
-                reason: e.to_string(),
-            })?;
-        Ok(txs)
+        let text = self
+            .request(&format!("/address/{address}/txs"))
+            .await?;
+        serde_json::from_str(&text).map_err(|e| WarpError::AdapterError {
+            chain: "bitcoin".into(),
+            reason: e.to_string(),
+        })
     }
 
     /// Detect a funding output paying `min_sats` to the per-swap HTLC
@@ -479,7 +539,7 @@ impl ChainAdapter for BitcoinAdapter {
         signer
             .send_btc(
                 &self.client,
-                &self.api_url,
+                self.api_urls(),
                 &instruction.recipient,
                 amount_sats,
             )
@@ -491,19 +551,9 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        let url = format!("{}/tx/{}/status", self.api_url, tx_hash);
-        let status: MempoolTxStatus = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| WarpError::AdapterError {
-                chain: "bitcoin".into(),
-                reason: e.to_string(),
-            })?
-            .json()
-            .await
-            .map_err(|e| WarpError::AdapterError {
+        let text = self.request(&format!("/tx/{tx_hash}/status")).await?;
+        let status: MempoolTxStatus =
+            serde_json::from_str(&text).map_err(|e| WarpError::AdapterError {
                 chain: "bitcoin".into(),
                 reason: e.to_string(),
             })?;
@@ -810,5 +860,63 @@ mod tests {
             warp_message_hash: String::new(),
         };
         assert!(BitcoinAdapter::new().execute_mint(&inst).await.is_err());
+    }
+}
+
+#[cfg(test)]
+mod failover_tests {
+    use super::*;
+    use std::sync::atomic::Ordering;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    async fn mock_server(body: &'static str) -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            while let Ok((mut sock, _)) = listener.accept().await {
+                tokio::spawn(async move {
+                    let mut buf = [0u8; 4096];
+                    let _ = sock.read(&mut buf).await;
+                    let resp = format!(
+                        "HTTP/1.1 200 OK\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = sock.write_all(resp.as_bytes()).await;
+                });
+            }
+        });
+        format!("http://127.0.0.1:{port}")
+    }
+
+    #[tokio::test]
+    async fn failover_promotes_working_endpoint() {
+        let dead = "http://127.0.0.1:1".to_string(); // port 1 — refused
+        let live = mock_server("12345").await;
+        let mut adapter = BitcoinAdapter::new();
+        adapter.api_urls = vec![dead, live];
+        adapter.primary.store(0, Ordering::Relaxed);
+
+        let h = adapter.get_tip_height().await.expect("failover to live");
+        assert_eq!(h, 12345);
+        assert_eq!(adapter.primary.load(Ordering::Relaxed), 1, "live promoted");
+
+        let h2 = adapter.get_tip_height().await.expect("sticky primary");
+        assert_eq!(h2, 12345);
+    }
+
+    #[tokio::test]
+    async fn failover_all_dead_errors() {
+        let mut adapter = BitcoinAdapter::new();
+        adapter.api_urls = vec!["http://127.0.0.1:1".into(), "http://127.0.0.1:2".into()];
+        adapter.primary.store(0, Ordering::Relaxed);
+        assert!(adapter.get_tip_height().await.is_err());
+    }
+
+    #[test]
+    fn parse_endpoints_normalizes() {
+        let urls = parse_endpoints(" https://a.example/api/ ,https://b.example/api ,, ");
+        assert_eq!(urls, vec!["https://a.example/api", "https://b.example/api"]);
+        assert!(parse_endpoints(" , ,").is_empty());
     }
 }
