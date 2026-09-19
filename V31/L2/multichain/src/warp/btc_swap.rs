@@ -320,6 +320,10 @@ pub struct BtcSwapConfig {
     /// Minimum confirmations required on the user's ZION lock before we
     /// counter-lock BTC (shallow-reorg protection).
     pub min_zion_lock_confs: u64,
+    /// Max seconds an offer may sit in `AwaitingUserLock` with no user lock
+    /// evidence before it is failed. Frees `max_active_swaps` capacity;
+    /// env `WARP_BTC_SWAP_OFFER_TTL_SECS` (default 14400 = 4h).
+    pub offer_ttl_secs: u64,
 }
 
 impl Default for BtcSwapConfig {
@@ -336,6 +340,7 @@ impl Default for BtcSwapConfig {
             max_active_swaps: 32,
             zion_rpc_url: None,
             min_zion_lock_confs: 2,
+            offer_ttl_secs: 14_400,
         }
     }
 }
@@ -380,6 +385,14 @@ pub enum NextAction {
     Fail(String),
 }
 
+/// Whether an offer has sat in `AwaitingUserLock` past its TTL. Records
+/// restored from old DBs may carry a future/zero `created_at` — clamp at 0
+/// so they expire immediately rather than linger forever.
+fn offer_expired(rec: &BtcSwapRecord, now_ts: u64, ttl_secs: u64) -> bool {
+    let created = rec.created_at.timestamp().max(0) as u64;
+    now_ts >= created.saturating_add(ttl_secs)
+}
+
 /// Pure transition table — the heart of the orchestrator.
 pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAction {
     use BtcSwapDirection::*;
@@ -397,7 +410,15 @@ pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAct
                     NextAction::LockZion
                 }
             }
-            _ => NextAction::Wait,
+            None => {
+                if offer_expired(rec, v.now_ts, cfg.offer_ttl_secs) {
+                    NextAction::Fail("offer ttl expired awaiting user btc lock".into())
+                } else {
+                    NextAction::Wait
+                }
+            }
+            // Lock seen but below required depth — keep waiting.
+            Some(_) => NextAction::Wait,
         },
         (BtcToZion, Locked) => {
             // A spend on the *user's* BTC lock: only our claim can succeed
@@ -425,6 +446,8 @@ pub fn decide(rec: &BtcSwapRecord, v: &SwapView, cfg: &BtcSwapConfig) -> NextAct
         (ZionToBtc, AwaitingUserLock) => {
             if rec.user_zion_lock_txid.is_some() {
                 NextAction::LockBtc
+            } else if offer_expired(rec, v.now_ts, cfg.offer_ttl_secs) {
+                NextAction::Fail("offer ttl expired awaiting user zion lock".into())
             } else {
                 NextAction::Wait
             }
@@ -1364,6 +1387,94 @@ mod tests {
             ..Default::default()
         };
         assert!(matches!(decide(&rec, &v, &c), NextAction::Fail(_)));
+    }
+
+    #[test]
+    fn btc_to_zion_offer_waits_before_ttl() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.created_at = chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap();
+        let v = SwapView {
+            now_ts: 1_700_000_000 + c.offer_ttl_secs - 1, // just inside TTL
+            btc_tip: 850_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::Wait);
+    }
+
+    #[test]
+    fn btc_to_zion_offer_fails_after_ttl() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.created_at = chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap();
+        let v = SwapView {
+            now_ts: 1_700_000_000 + c.offer_ttl_secs, // TTL boundary
+            btc_tip: 850_000,
+            ..Default::default()
+        };
+        assert!(matches!(decide(&rec, &v, &c), NextAction::Fail(_)));
+    }
+
+    #[test]
+    fn btc_to_zion_ttl_does_not_preempt_valid_lock() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.created_at = chrono::DateTime::from_timestamp(1_600_000_000, 0).unwrap(); // ancient offer
+        let v = SwapView {
+            btc_lock: lock(3), // user locked anyway — proceed
+            now_ts: 1_700_000_000,
+            btc_tip: 850_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::LockZion);
+    }
+
+    #[test]
+    fn zion_to_btc_offer_waits_before_ttl() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = zion_to_btc_rec(&s, &c, &"cc".repeat(32));
+        rec.user_zion_lock_txid = None; // user hasn't supplied lock evidence
+        rec.created_at = chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap();
+        let v = SwapView {
+            now_ts: 1_700_000_000 + c.offer_ttl_secs - 1,
+            btc_tip: 850_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::Wait);
+    }
+
+    #[test]
+    fn zion_to_btc_offer_fails_after_ttl() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = zion_to_btc_rec(&s, &c, &"cc".repeat(32));
+        rec.user_zion_lock_txid = None;
+        rec.created_at = chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap();
+        let v = SwapView {
+            now_ts: 1_700_000_000 + c.offer_ttl_secs,
+            btc_tip: 850_000,
+            ..Default::default()
+        };
+        assert!(matches!(decide(&rec, &v, &c), NextAction::Fail(_)));
+    }
+
+    #[test]
+    fn zion_to_btc_ttl_does_not_preempt_valid_lock() {
+        let s = signer();
+        let c = cfg();
+        let mut rec = zion_to_btc_rec(&s, &c, &"cc".repeat(32));
+        // txid present (from offer) — proceed even though the offer is ancient.
+        rec.created_at = chrono::DateTime::from_timestamp(1_600_000_000, 0).unwrap();
+        let v = SwapView {
+            now_ts: 1_700_000_000,
+            btc_tip: 850_000,
+            ..Default::default()
+        };
+        assert_eq!(decide(&rec, &v, &c), NextAction::LockBtc);
     }
 
     #[test]

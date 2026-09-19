@@ -1317,6 +1317,10 @@ fn build_btc_swap(
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(2),
+        offer_ttl_secs: std::env::var("WARP_BTC_SWAP_OFFER_TTL_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(14_400),
     };
     tracing::info!(
         "[WARP][btc-swap] enabled — network {:?}, relay {}, min_confs {}",
