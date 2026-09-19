@@ -4664,9 +4664,9 @@ export const WORLDS: World[] = [
       category: "world",
       layer: 5,
       location: "Algarve, Portugal — Terra Nova L5 Atlantic node",
-      vibe: "The first garden. Food, water, energy and community woven into one living protocol.",
-      summary: "Founding L5 Terra Nova node in the Algarve — regenerative farm, glamping sanctuary, water and energy systems, and the living community where the L5 network began.",
-      tags: ["world", "layer 5", "terranova", "genesis", "algarve", "sanctuary"],
+      vibe: "The first garden. In its story layer, Lumi plants the Rose — care without ownership, an open gate, and water shared with the thirsty.",
+      summary: "L5 story-world mirroring the Genesis Garden project in the Algarve: regenerative land, water, energy and community. The Rose is explicitly literary lore (MYTH), not evidence that a flower or infrastructure exists at the physical site.",
+      tags: ["world", "layer 5", "terranova", "genesis", "algarve", "sanctuary", "rose", "lore", "myth"],
       galaxyPosition: { x: -4.2, y: 0.4, z: 14.6 }
   },
   {

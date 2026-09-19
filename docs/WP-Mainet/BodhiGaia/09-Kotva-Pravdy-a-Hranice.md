@@ -43,6 +43,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Zahrada Genesis existuje jako fyzické místo v aktivním rozvoji. | **STAVBA** | `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (🟡 Active development; Fáze 0 ✅, Fáze 1 🟡); web `/terranova/genesis`; OASIS panel *Active*. | Pozemek (koupě/nájem), registrovaná entita, GPS, evidence realizace (solar, vrt, stany), nezávislé ověření. |
 | Zahrada Genesis má tým strážců. | **STAVBA** | Fáze 0: „core team formation (3 Guardians)" ✅. | Veřejná (privacy-respektující) identifikace koordinátora; role podle §6.3. |
 | Zahrada Genesis přijímá hosty. | **STAVBA** | Plán: první platící hosté Q3 2026; kanály a ceník §11. | Potvrzené rezervace, pojištění, pravidla výměny. |
+| Fyzická růže byla v Zahradě Genesis zasazena. | **NEDOLOŽENO** | Žádný Day 0 packet ani jiná evidence výsadby neexistuje; scéna v epilogu *Příběhu Růže* je MÝTUS. | Splnění Gate A–C návrhu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) (**HORIZONT / NEZAHÁJENO**) + kompletní Day 0 packet. |
 | Dharma Temple je připravovaná svatyně na La Palmě. | **STAVBA (dokumentace) / HORIZONT (fyzicky)** | `dharma-temple.md` (🔵 Preparation; Fáze 0 2026 Q2–Q4 🔵); web `/terranova/dharma-temple` (3D koncept, půdorys, dokumentace). | Pozemek, entita, 5 zakládajících strážců, financování 60 000 EUR Fáze 1. |
 | Architektura Dharma Temple: Merkaba, 7 kopulí, Strom života. | **HORIZONT** (koncept) | `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`; `DharmaTemplePreviewLazy`; `/images/dharma-temple/concept-og.png`. | Statika, povolení, rozpočet stavby. |
 | Te Pīko Ora je plánovaný pacifický uzel. | **HORIZONT** | `te-piko-ora.md` (🔵 Vision / Preparation; Fáze 0 2026–2027); web `/terranova/te-piko-ora` (*Plánováno 2027+*). | Polynéský partner, ostrov, entita, tým, rozpočet 80 000 EUR. |
@@ -64,6 +65,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Avataři Sítá a Hanuman mají questy do L5. | **ŽIVÉ (dokument) / HORIZONT (mechanika)** | `SulZeme/10` §II. | Implementace v `V31/L4/oasis`. |
 | OASIS quest odměňuje fyzickou návštěvu zahrady. | **HORIZONT** | Nápad v `genesis-garden.md` §11.2, `dharma-temple.md` §15. | Ověření, privacy, M5 gate. |
 | OASIS je fotorealistický UE 5.7 svět s instant preview. | **HORIZONT** | `MiseAmenti/07` §5. | POC (M4). |
+| Svět `GENESIS_GARDEN` v OASIS obsahuje Rose lore. | **ŽIVÉ** (klientská data) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH); [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md). | Lore nesmí být čtena jako evidence fyzické rostliny ani infrastruktury; fyzická růže = NEDOLOŽENO, pilot = HORIZONT. |
 
 ### 2.5 Příběh a symbolika
 
@@ -73,6 +75,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
 | Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
+| Lumi, Ana a zasazení druhého semínka u Atlantiku. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
 
 ---
 
@@ -138,6 +141,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 | 10 | Kulturní review českých (Golden Republic Bohemia) prvků — Přemysl/Libuše mytologie a Karel IV / Zlatá bula motivy — před veřejným vydáním. | třída E | ❌ |
 | 11 | Kulturní review srí lanských (Bodhi Lanka) prvků — Rámájana (Ráma/Sítá), Sri Maha Bodhi (živý náboženský objekt), buddhistické a hinduistické motivy — před veřejným vydáním. | třída E | ❌ |
 | 12 | Kanonizace této řady po review (technika + bezpečnost + fakta + kultura). | `MiseAmenti/08` | 🔄 DRAFT |
+| 13 | Pilot [`GENESIS-ROSE-001`](./pilots/GENESIS-ROSE-001.md) — fyzické zasazení růže smí začít až po splnění Gate A–C (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení); nenahrazuje M5 exit gate. | Gate A–C pilotu | ❌ NEZAHÁJENO |
 
 ---
 

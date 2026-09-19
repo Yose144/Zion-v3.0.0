@@ -149,6 +149,33 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ---
 
+## 2026-09-20 — Růže v Zahradě Genesis — MÝTUS / HORIZONT
+
+### Změněno
+
+- `docs/WP-Mainet/Ruze/` — přidán epilog [`Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) mezi kapitolu 9 a kotvu 10: Lumi s alabastrovou nádobou dorazí do skromné Zahrady Genesis u Atlantiku a s Anou zasadí druhé semínko na okraj záhonu; `00-README` (tabulka + řád E), navigace v `09`, registry a review v `10-Kotva-Pribehu.md`.
+- `docs/WP-Mainet/BodhiGaia/` — nová [kapitola 12](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) (Ana, následující ráno, odmítnutí „posvátné růže", zápis do pracovního sešitu) + návrh fyzického pilotu [`pilots/GENESIS-ROSE-001.md`](../BodhiGaia/pilots/GENESIS-ROSE-001.md): gaty A–D (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení), záznamová pole, evidence Day 0, prahy D30/D90/D365, stavové přechody; integrace v `00-README` (dvanáct kapitol + mapa zdrojů), `03` (most + kotva), `07` (OASIS zrcadlo + kotva), `09` (registry + krok 13), `11` a `full.md`.
+- `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa `GENESIS_GARDEN` nesou výslovně označenou Rose lore (MYTH): změněny pouze `vibe`, `summary`, `tags`; žádný deploy.
+- `docs/WP-Mainet/README.md` (položka Příběh Růže + epilog), `MiseAmenti/02` (věta: OASIS zrcadlí MÝTUS, pilot HORIZONT, žádná nová brána), `MiseAmenti/07` (nový řádek L5 evidence + rozšířené pravidlo 7).
+
+### Důkaz
+
+- `Ruze/Epilog-Zahrada-Genesis.md` + `Ruze/10-Kotva-Pribehu.md` §2/§6; `BodhiGaia/12`, `BodhiGaia/03` (most + kotva), `BodhiGaia/07` (OASIS metadata), `BodhiGaia/09` (registry + krok 13); `BodhiGaia/pilots/GENESIS-ROSE-001.md`; `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`GENESIS_GARDEN`).
+
+### Dopad na stav tvrzení
+
+- Narativní lore (epilog, scéna Lumi + Ana, OASIS copy) = **MÝTUS** — žádná událost, žádný fyzický čin.
+- Existence OASIS metadat `GENESIS_GARDEN` = **ŽIVÉ** (klientská data); jejich obsah = **MÝTUS**.
+- Fyzická růže zasazená v Algarve = **NEDOLOŽENO** — žádné zasazení se nestalo.
+- Pilot `GENESIS-ROSE-001` = **HORIZONT / NEZAHÁJENO** — nesmí začít bez Gate A–C, nenahrazuje M5 exit gate.
+- Žádný deploy, žádný L5/DAO spend, žádný token/NFT/reward, žádné finance, žádné „posvátné" ani genealogické nároky; Zahrada Genesis zůstává **STAVBA**.
+
+### Review
+
+- Autor: Devin (AI). **DRAFT** — vyžaduje českou literární/jazykovou korekturu, public-copy review (třída E), review OASIS kopie (lore musí zůstat MÝTUS) a před jakýmkoli fyzickým krokem botanickou/lokální kontrolu a souhlas místa podle Gate A–C pilotního rámce.
+
+---
+
 ## Formát budoucích položek
 
 ```markdown

@@ -63,6 +63,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 - Svět **`DHARMA_TEMPLE_LA_PALMA`** v galaxii (`worlds.ts`): „Sacred L5 sanctuary on La Palma — a geodesic temple of enlightenment, education and community", `goldenEggClue: 7`, pozice `(-16.2, 0.2, 31.8)`.
 - Svět **`GOLDEN_REPUBLIC_BOHEMIA`** v galaxii (`worlds.ts`): governance lab, kruh rozhodování, česká moudrost — most mezi tradicí a experimentem.
 - Svět **`BODHI_LANKA`** v galaxii (`worlds.ts`): Bhakti protokol, Sri Maha Bodhi, Rama Setu most — láska jako kořen, nejstarší žijící strom.
+- Svět **`GENESIS_GARDEN`** v galaxii (`worlds.ts`, layer 5): story-world zrcadlící projekt Zahrady Genesis v Algarve — jeho metadata nesou **Rose lore** (Lumi sází Růži z *Příběhu Růže*), výslovně označenou jako literární **MÝTUS** (tagy `rose`, `lore`, `myth`), ne evidence rostliny ani infrastruktury na místě.
 - Planeta **SAMANTABHADRA** (layer 5, „Nekonečná Zahrada", deset velkých slibů) — buddhistický archetyp všeobjímající praxe.
 
 **OASIS backend (`V31/L4/oasis`)**
@@ -108,6 +109,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | **Rybář se sklíčkem (instant preview)** | **HORIZONT** | Nirvana ep. 9; `MiseAmenti/07` řadí WebGPU / Pixel Streaming / UE 5.7 do HORIZONT. | POC klienta, licenční a výkonová analýza (M4). |
 | **„Quest, který posílá do zahrady"** | **HORIZONT** | Nápad „Silence Quest" v `dharma-temple.md` §15 a „quest rewards for visits" v `genesis-garden.md` §11.2 jako marketingový kanál. | Mechanika, ověření, privacy review, M5 gate. |
 | **Trám se zuby a vědrem** | **MÝTUS** | Obraz této knihy pro pravidlo „každý prvek zrcadla má kotvu pravdy". | — |
+| **Rose lore ve světě `GENESIS_GARDEN`** | **ŽIVÉ** (klientská data) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — vibe/summary světa nesou Růži výslovně jako literární lore (MYTH), tagy `rose`, `lore`, `myth`. | Fyzická růže v Algarve = NEDOLOŽENO; pilot [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) = HORIZONT / NEZAHÁJENO. |
 
 ---
 

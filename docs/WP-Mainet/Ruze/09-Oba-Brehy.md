@@ -31,4 +31,4 @@ Růže nebyla jediná. Byla první, o kterou se někdo staral, aniž si ji přiv
 
 ---
 
-**Navigace:** [← VIII. Dovolení odejít](./08-Dovoleni-Odejit.md) · [Index knihy](./00-README.md) · [X. Kotva příběhu →](./10-Kotva-Pribehu.md)
+**Navigace:** [← VIII. Dovolení odejít](./08-Dovoleni-Odejit.md) · [Index knihy](./00-README.md) · [Epilog: Zahrada Genesis →](./Epilog-Zahrada-Genesis.md)

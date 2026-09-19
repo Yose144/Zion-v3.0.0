@@ -191,7 +191,7 @@ Monzun (dvě sezóny — Yala květen–září, Maha říjen–leden; stavby od
 
 ---
 
-*→ Pokračování: [Kapitola 12 …]*
+*→ Pokračování: [Kapitola 12 — Růže v Zahradě Genesis](./12-Ruze-v-Zahrade-Genesis.md)*
 
 ---
 
