@@ -23,6 +23,7 @@ const CHAINS: ChainOption[] = [
   { id: 'polygon', name: 'Polygon', symbol: 'MATIC', color: '#8247e5' },
   { id: 'optimism', name: 'Optimism', symbol: 'OP', color: '#ff0420' },
   { id: 'avalanche', name: 'Avalanche', symbol: 'AVAX', color: '#e84142' },
+  { id: 'robinhood', name: 'Robinhood Chain', symbol: 'ETH', color: '#c8f53f' },
   { id: 'solana', name: 'Solana', symbol: 'SOL', color: '#14f195' },
   { id: 'tron', name: 'Tron', symbol: 'TRX', color: '#ff060a' },
   { id: 'stellar', name: 'Stellar', symbol: 'XLM', color: '#7d5fff' },

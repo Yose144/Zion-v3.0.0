@@ -46,6 +46,10 @@ export const TOKEN_CONTRACTS: Record<string, Record<string, string | null>> = {
     USDC: '0xB97EF9Ef8734C71904D800722F4eF32e8f4A1B44',
     WAVAX: '0xB31f66AA3C1e785abF6950e3C83D0d7b48bb84a9',
   },
+  // Robinhood Chain (4663, Arbitrum Orbit) — wZION pending deploy
+  robinhood: {
+    wZION: null,
+  },
   solana: {
     ZION: null,
     USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
@@ -78,6 +82,7 @@ export const CHAIN_API_NAMES: Record<string, string> = {
   polygon: 'polygon',
   optimism: 'optimism',
   avalanche: 'avalanche',
+  robinhood: 'robinhood',
   solana: 'solana',
   tron: 'tron',
   stellar: 'stellar',

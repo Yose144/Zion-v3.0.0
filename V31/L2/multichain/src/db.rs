@@ -1752,6 +1752,7 @@ pub(crate) fn chain_id_from_str(s: &str) -> MultichainResult<ChainId> {
         "avalanche" => Ok(ChainId::Avalanche),
         "zksync" => Ok(ChainId::Zksync),
         "linea" => Ok(ChainId::Linea),
+        "robinhood" => Ok(ChainId::Robinhood),
         "solana" => Ok(ChainId::Solana),
         "tron" => Ok(ChainId::Tron),
         "stellar" => Ok(ChainId::Stellar),

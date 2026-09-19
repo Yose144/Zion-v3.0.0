@@ -74,9 +74,11 @@ pub fn create_adapter_from_config(
     let contract = cfg.contract_address.as_deref();
     match name {
         "ethereum" | "base" | "arbitrum" | "optimism" | "bsc" | "polygon" | "avalanche"
-        | "zksync" | "linea" => Some(Box::new(evm::EvmAdapter::new_with_config(
-            name, rpc, contract,
-        ))),
+        | "zksync" | "linea" | "robinhood" | "robinhood-testnet" => {
+            Some(Box::new(evm::EvmAdapter::new_with_config(
+                name, rpc, contract,
+            )))
+        }
         "solana" => Some(Box::new(solana::SolanaAdapter::from_config(cfg))),
         "tron" => Some(Box::new(tron::TronAdapter::from_config(cfg))),
         "stellar" => Some(Box::new(stellar::StellarAdapter::from_config(cfg))),
@@ -108,6 +110,8 @@ mod tests {
         assert!(create_adapter("avalanche").is_some());
         assert!(create_adapter("zksync").is_some());
         assert!(create_adapter("linea").is_some());
+        assert!(create_adapter("robinhood").is_some());
+        assert!(create_adapter("robinhood-testnet").is_some());
     }
 
     #[test]

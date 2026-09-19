@@ -56,6 +56,10 @@ const TOKENS_BY_CHAIN: Record<string, TokenOption[]> = {
     { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
     { symbol: 'WAVAX', name: 'Wrapped AVAX', decimals: 18 },
   ],
+  robinhood: [
+    { symbol: 'wZION', name: 'Wrapped ZION', decimals: 18 },
+    { symbol: 'ETH', name: 'Ether (native gas)', decimals: 18, isNative: true },
+  ],
   solana: [
     { symbol: 'ZION', name: 'ZION (SPL)', decimals: 9 },
     { symbol: 'USDC', name: 'USD Coin (SPL)', decimals: 6 },

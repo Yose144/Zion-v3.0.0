@@ -35,6 +35,7 @@ pub enum ChainId {
     Avalanche,
     Zksync,
     Linea,
+    Robinhood,
     Solana,
     Tron,
     Stellar,
@@ -68,7 +69,8 @@ impl ChainId {
             | ChainId::Polygon
             | ChainId::Avalanche
             | ChainId::Zksync
-            | ChainId::Linea => ChainFamily::Evm,
+            | ChainId::Linea
+            | ChainId::Robinhood => ChainFamily::Evm,
             ChainId::Solana => ChainFamily::Solana,
             ChainId::Cosmos => ChainFamily::Cosmos,
             ChainId::Sui | ChainId::Aptos => ChainFamily::Move,
@@ -94,6 +96,7 @@ impl ChainId {
             ChainId::Avalanche => "avalanche",
             ChainId::Zksync => "zksync",
             ChainId::Linea => "linea",
+            ChainId::Robinhood => "robinhood",
             ChainId::Solana => "solana",
             ChainId::Tron => "tron",
             ChainId::Stellar => "stellar",
@@ -127,6 +130,7 @@ impl ChainId {
             | ChainId::Avalanche
             | ChainId::Zksync
             | ChainId::Linea
+            | ChainId::Robinhood
             | ChainId::EthereumClassic
             | ChainId::Tron => 18,
             ChainId::Solana => 9,
