@@ -53,6 +53,11 @@ const Copy = {
     en: `The same plot is planned to host the L6 Issobella ground segment — a research campus with TT&C antennas, a lab and an observatory. L5 underfoot, L6 overhead: shared land, water, energy and mesh — but separate fund, governance and budget.`,
   },
   l6Link: { cs: `Pozemní stanice Kostarika → L6 Issobella`, en: `Costa Rica Ground Station → L6 Issobella` },
+  conceptTitle: { cs: `Koncept kampusu`, en: `Campus concept` },
+  conceptSub: {
+    cs: `Vizualizace sdíleného L5 + L6 kampusu — vize, ne realita`,
+    en: `Shared L5 + L6 campus visualization — a vision, not reality`,
+  },
   openTitle: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   openItems: {
     cs: [
@@ -255,6 +260,19 @@ export default function NovaAmerikaPage() {
           className="mb-16"
         >
           <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="relative h-48 md:h-64 overflow-hidden">
+              <img
+                src="/images/nova-amerika/hero.webp"
+                alt="LUMI — Nová Amerika"
+                width={1672}
+                height={941}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            </div>
             <div className="relative z-10 p-6 md:p-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
@@ -412,6 +430,36 @@ export default function NovaAmerikaPage() {
             >
               {Copy.l6Link[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
             </Link>
+          </div>
+        </motion.section>
+
+        {/* ═══ CAMPUS CONCEPT ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="relative z-10 mb-4 text-center">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {Copy.conceptTitle[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {Copy.conceptSub[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/nova-amerika/concept-og.webp"
+                alt={cs ? 'Koncept sdíleného kampusu LUMI a Issobella' : 'LUMI and Issobella shared campus concept'}
+                width={1671}
+                height={941}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-contain"
+              />
+            </div>
           </div>
         </motion.section>
 

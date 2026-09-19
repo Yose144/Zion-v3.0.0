@@ -194,6 +194,7 @@ const getCommunities = (cs: boolean) => [
       : 'Americas bridge — a project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station.',
     tags: cs ? ['Nativní kultury', 'FPIC', 'Most Amerik'] : ['Native Cultures', 'FPIC', 'Americas Bridge'],
     href: '/terranova/nova-amerika',
+    cover: '/images/nova-amerika/hero.webp',
   },
 ];
 
