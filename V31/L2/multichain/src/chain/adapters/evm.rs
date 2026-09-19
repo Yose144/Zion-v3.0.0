@@ -219,6 +219,7 @@ impl EvmAdapter {
             ChainId::Avalanche => 43_114,
             ChainId::Zksync => 324,
             ChainId::Linea => 59_144,
+            ChainId::Robinhood => 4_663,
             _ => 1,
         }
     }

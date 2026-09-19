@@ -150,9 +150,8 @@ impl ZionContracts {
     pub fn for_chain(chain: &str) -> Option<Self> {
         match chain.to_lowercase().as_str() {
             "base" => Some(Self::base_mainnet()),
-            "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" | "avax" => {
-                Some(Self::non_base())
-            }
+            "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" | "avax"
+            | "robinhood" => Some(Self::non_base()),
             _ => None,
         }
     }
@@ -166,6 +165,7 @@ impl ZionContracts {
             ("polygon".to_string(), Self::non_base()),
             ("optimism".to_string(), Self::non_base()),
             ("avalanche".to_string(), Self::non_base()),
+            ("robinhood".to_string(), Self::non_base()),
         ]
         .into_iter()
         .collect()

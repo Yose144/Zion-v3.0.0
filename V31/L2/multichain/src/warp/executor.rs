@@ -41,6 +41,7 @@ impl OutboundExecutor {
             "avalanche",
             "zksync",
             "linea",
+            "robinhood",
             "ethereum",
             "solana",
             "tron",

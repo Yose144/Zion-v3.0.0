@@ -1370,6 +1370,7 @@ fn evm_chain_id(name: &str) -> Option<ChainId> {
         "avalanche" | "avax" => Some(ChainId::Avalanche),
         "zksync" => Some(ChainId::Zksync),
         "linea" => Some(ChainId::Linea),
+        "robinhood" | "robinhood-chain" => Some(ChainId::Robinhood),
         _ => None,
     }
 }

@@ -44,6 +44,8 @@ fn wzion_contract_with_override(chain: &str, override_addr: Option<&str>) -> Opt
         }
     }
     // All deployed EVM chains share the same wZION address.
+    // NOTE: "robinhood" is intentionally absent — wZION is not yet deployed on
+    // Robinhood Chain; add it (and to `wzion_contract` test) after the deploy.
     match chain {
         "base" | "base-sepolia" | "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" => {
             Some(DEFAULT_WZION.to_string())
@@ -61,6 +63,8 @@ fn default_rpc(chain: &str) -> &'static str {
         "polygon" => "https://polygon-rpc.com",
         "optimism" => "https://mainnet.optimism.io",
         "avalanche" => "https://api.avax.network/ext/bc/C/rpc",
+        "robinhood" => "https://rpc.mainnet.chain.robinhood.com",
+        "robinhood-testnet" => "https://rpc.testnet.chain.robinhood.com",
         _ => "https://mainnet.base.org",
     }
 }
@@ -74,6 +78,8 @@ fn evm_chain_id(chain: &str) -> u64 {
         "polygon" => 137,
         "optimism" => 10,
         "avalanche" => 43114,
+        "robinhood" => 4663,
+        "robinhood-testnet" => 46630,
         _ => 1,
     }
 }
@@ -539,6 +545,8 @@ mod tests {
         assert!(default_rpc("polygon").contains("polygon"));
         assert!(default_rpc("optimism").contains("optimism"));
         assert!(default_rpc("avalanche").contains("avax"));
+        assert!(default_rpc("robinhood").contains("robinhood"));
+        assert!(default_rpc("robinhood-testnet").contains("testnet"));
     }
 
     #[test]
@@ -550,6 +558,8 @@ mod tests {
         assert_eq!(evm_chain_id("polygon"), 137);
         assert_eq!(evm_chain_id("optimism"), 10);
         assert_eq!(evm_chain_id("avalanche"), 43114);
+        assert_eq!(evm_chain_id("robinhood"), 4663);
+        assert_eq!(evm_chain_id("robinhood-testnet"), 46630);
     }
 
     /// Integration test — only runs if WARP_BASE_RPC is set in env.

@@ -129,6 +129,7 @@ fn chain_id_by_warp_name(name: &str) -> Option<ChainId> {
         "avalanche" => Some(ChainId::Avalanche),
         "zksync" => Some(ChainId::Zksync),
         "linea" => Some(ChainId::Linea),
+        "robinhood" => Some(ChainId::Robinhood),
         "solana" => Some(ChainId::Solana),
         "tron" => Some(ChainId::Tron),
         "stellar" => Some(ChainId::Stellar),

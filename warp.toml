@@ -41,6 +41,15 @@ contract_address = "bc1qplaceholderhtlcaddress"
 finality_blocks = 0
 
 [[chains]]
+name = "robinhood"
+family = "evm"
+enabled = false
+disabled_reason = "Local dev node: Robinhood Chain bridge contract not deployed (chain_id 4663)"
+rpc_url = "https://rpc.mainnet.chain.robinhood.com"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+[[chains]]
 name = "solana"
 family = "solana"
 enabled = false

@@ -94,6 +94,23 @@ rpc_url = "https://api.avax.network/ext/bc/C/rpc"
 contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 20
 
+[[chains]]
+name = "robinhood"
+family = "evm"
+enabled = false
+disabled_reason = "wZION/Bridge contract not deployed on Robinhood Chain (Arbitrum Orbit L2, chain_id 4663); set contract_address after deployment"
+rpc_url = "https://rpc.mainnet.chain.robinhood.com"
+contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+finality_blocks = 20
+
+# Robinhood Chain testnet (chain_id 46630) — for pre-mainnet rehearsal:
+# [[chains]]
+# name = "robinhood-testnet"
+# family = "evm"
+# enabled = false
+# rpc_url = "https://rpc.testnet.chain.robinhood.com"
+# finality_blocks = 20
+
 # DISABLED non-EVM chains — deploy contracts / infrastructure and remove `disabled_reason` to activate
 [[chains]]
 name = "solana"

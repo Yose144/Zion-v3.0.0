@@ -36,6 +36,9 @@ impl ChainRegistry {
         reg.register(ChainId::evm("avalanche", 43114, 20));
         reg.register(ChainId::evm("zksync", 324, 20));
         reg.register(ChainId::evm("linea", 59144, 20));
+        // Robinhood Chain — Arbitrum Orbit L2, ~100ms blocks; finality is
+        // sequencer-soft, hard finality follows Ethereum batch posting.
+        reg.register(ChainId::evm("robinhood", 4663, 20));
         // Non-EVM
         reg.register(ChainId::solana());
         reg.register(ChainId::tron());
@@ -196,7 +199,7 @@ mod tests {
     #[test]
     fn test_registry_defaults() {
         let reg = ChainRegistry::with_defaults();
-        assert_eq!(reg.chain_count(), 21); // 9 EVM + 11 non-EVM + ZION L1
+        assert_eq!(reg.chain_count(), 22); // 10 EVM + 11 non-EVM + ZION L1
     }
 
     #[test]
@@ -268,7 +271,7 @@ mod tests {
     fn test_registry_list_all() {
         let reg = ChainRegistry::with_defaults();
         let all = reg.list_all();
-        assert_eq!(all.len(), 21);
+        assert_eq!(all.len(), 22);
         assert!(all.iter().all(|(_, enabled)| *enabled));
     }
 

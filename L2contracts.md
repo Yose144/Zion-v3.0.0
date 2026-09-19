@@ -88,6 +88,10 @@ We do NOT run our own AMM. We use Uniswap V3 — it already has wZION liquidity.
 | Polygon | 137 | `https://polygon-rpc.com` |
 | Optimism | 10 | `https://mainnet.optimism.io` |
 | Avalanche | 43114 | `https://api.avax.network/ext/bc/C/rpc` |
+| Robinhood Chain | 4663 | `https://rpc.mainnet.chain.robinhood.com` |
+| Robinhood Chain Testnet | 46630 | `https://rpc.testnet.chain.robinhood.com` |
+
+> **Robinhood Chain (2026-09-20):** Arbitrum Orbit L2 (mainnet live 2026-07-01, ~100ms blocks, ETH gas). Chain registered across the V31 multichain stack (`ChainId::Robinhood`, WARP registry + EVM adapter, deposit watcher, executor). **wZION/ZIONBridge NOT yet deployed** — chain stays `enabled=false` in `warp.toml` until contracts are deployed and the relayer is funded with ETH on chain 4663. Explorer: `https://robinhoodchain.blockscout.com`.
 
 ---
 
