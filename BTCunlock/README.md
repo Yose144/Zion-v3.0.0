@@ -1,77 +1,115 @@
 # BTCunlock
 
-Recovery toolkit pro **vlastní** ztracené/nedostupné BTC walletů.
+**Offline GPU-accelerated recovery toolkit for your own lost BTC wallets.**
 
-> **Právní hranice:** nástroj je určený výhradně pro recovery walletů, které
-> vlastníš (zapomenutá passphrase, chybně opsaná seed slova, neznámá
-> derivation path). Nikdy ho nepoužívej na cizí seeds/klíče.
+Everything is computed locally. `recover` never touches the network —
+no APIs, no telemetry, no address leakage. (`scan` is offline by default;
+`--online` opts into esplora balance checks explicitly.)
 
-## Co umí
-
-| Příkaz | Use case |
-|---|---|
-| `fix-mnemonic` | Chybí ti 1–2 slova z BIP39 phrase — `?` placeholder se doplní z wordlistu, projdou jen checksum-validní kandidáti |
-| `scan` | Máš seed, ale nevíš jakou derivation path / script type wallet používal — projede BIP44/49/84 × account × receive/change × index a zkontroluje balance přes esplora |
-| `wif` | Decoduje WIF privátní klíč → síť, pubkey, P2PKH + P2WPKH adresy |
+> Recover wallets **you own**. If the mnemonic isn't yours, this tool is
+> not for you — full-entropy brute force is impossible by design (2^128+).
 
 ## Build
 
 ```bash
 cd BTCunlock
-cargo build --release
-./target/release/btcunlock --help
+cargo build --release                  # CPU only
+cargo build --release --features gpu   # + OpenCL GPU backend
 ```
 
-## Použití
+`./target/release/btcunlock --help`
 
-### Mnemonic s chybějícím slovem
+## `recover` — GPU mnemonic brute-force
+
+You know your address, some mnemonic words are missing/illegible:
 
 ```bash
-# 1 neznámé slovo (2048 kandidátů, ~sekundy)
-btcunlock fix-mnemonic "track wool dawn filter recipe attack install mutual heavy flash ? truck illness strategy add morning pull clay afraid palace plunge vanish stove gasp"
-
-# 2 neznámá slova (~4.2M kombinací, minuty)
-btcunlock fix-mnemonic "track wool ? filter recipe attack install mutual heavy flash ankle truck illness strategy add morning pull clay afraid palace ? stove gasp" --derive
+btcunlock recover "legal ? thank ? shrimp ... ... ?" \
+    --target bc1qYourKnownAddress... \
+    --gpu                          # OpenCL (NVIDIA/AMD/Intel/Apple)
+    --pass "optional-25th-word"
 ```
 
-`--derive` u každého validního kandidátu rovnou ukáže první BIP84 adresu
-(`m/84'/0'/0'/0/0`) — poznáš správnou phrase podle známé adresy.
+- `?`, `_`, `x` mark unknown words (up to 6 holes)
+- `--target` repeatable, or `--target-file addrs.txt` (one per line);
+  accepts P2PKH / P2SH / P2WPKH addresses or raw 40-hex hash160
+- per candidate: checksum → PBKDF2 → BIP32 derive → **target match**
+- default paths: `m/{84,49,44}'/c'/0'/0/0`; widen with
+  `--purposes`, `--accounts`, `--max-index`, `--change-chain`
+- `--checkpoint f.ckpt --resume` — survives restarts (progress saved
+  every batch; a checkpoint is bound to its phrase template)
 
-### Path scan (seed je správně, adresu neznáš)
+Hits print the full mnemonic + path + address to stdout.
+
+## `fix-mnemonic` — quick listing (≤2 holes)
 
 ```bash
-# online — kontrola balance přes mempool.space
-btcunlock scan "24 slov…" --network mainnet --max-index 20
-
-# offline — jen výpis adres (žádné API cally)
-btcunlock scan "…" --offline --max-index 5
-
-# vlastní esplora
-btcunlock scan "…" --api http://localhost:3002/api
+btcunlock fix-mnemonic "word ... ? ... word" --derive
 ```
 
-Scan pokrývá: `m/{44,49,84}'/{coin}'/{account}'/{0,1}/{0..max_index}`
-— P2PKH, P2SH-P2WPKH, P2WPKH; accounts 0..2; receive i change chain.
-Vypíše jen adresy s historií/balancem.
+Prints every checksum-valid completion (+ first BIP84 address) — for eyeballing
+a one-word slip. For bigger gaps use `recover` with a `--target`.
 
-### WIF decode
+## `scan` — derivation-path scanner
+
+The seed is right but the wallet used a different path/script type:
 
 ```bash
-btcunlock wif cTWXPL7qHTroFaqbPNgpKZ6QRuygT3gTDDZjFQsdqXAn8hGbPRMg
+btcunlock scan "<full mnemonic>" --network mainnet
+    --max-index 20 --accounts 2          # offline: prints every address
+    --online                             # + esplora balance check
+    --api http://localhost:3002/api      # own node (implies --online)
 ```
 
-## Roadmap (další fáze)
+Walks BIP44 (P2PKH) / BIP49 (P2SH-P2WPKH) / BIP84 (P2WPKH) × accounts ×
+receive/change × indices. `--online` reveals which addresses you look up —
+prefer your own esplora.
 
-- [ ] BIP39 passphrase (25. slovo) recovery — `scan --passphrase-file`
-- [ ] `wallet.dat` dump + extraction (BerkeleyDB)
-- [ ] Partial-key recovery (známé znaky WIF)
-- [ ] Watch-only balance check přes vlastní bitcoind/esplora
-- [ ] Checkpoint/resume pro dlouhé scany
-- [ ] GPU mnemonic fix (3+ missing words — momentálně zamítnuto záměrně)
+## `wif` — inspect a WIF key
 
-## Bezpečnost
+```bash
+btcunlock wif Kx...   # network, compression, pubkey, P2PKH + P2WPKH
+```
 
-- Mnemonic/WIF zůstává lokálně — jediné síťové volání je `GET /address/{addr}`
-  na esplora (adresa je derivovaná, seed nikam neodchází).
-- Pro citlivé recovery použij `--offline` a balance dohledej ručně.
-- Soubor s recovery výstupy drž mimo git (`warp-btc-wallet.txt` pattern).
+## `bench` / `gpu-list`
+
+```bash
+btcunlock gpu-list          # OpenCL devices
+btcunlock bench --gpu       # combos/s + seeds/s on the real pipeline
+```
+
+## GPU pipeline (src/gpu/kernel.cl)
+
+```
+per combo (1 work-item):  word indices → entropy → SHA-256 checksum
+                          → phrase → U1 = HMAC-SHA512(phrase, salt‖1)
+pbkdf2_step (×4 launches): Uᵢ = HMAC(Uᵢ₋₁); T ⊕= Uᵢ   (512 iters/launch)
+host (rayon):            seed → BIP32 path → hash160 → target set
+```
+
+PBKDF2 is chunked across launches because a 2048-round HMAC loop inside a
+single work-item trips per-item execution limits on Apple OpenCL
+(~75 % of items silently die — measured; chunked loses zero). GPU↔CPU
+seed parity is covered by `gpu::tests::gpu_cpu_parity` (run with
+`cargo test --features gpu -- --ignored`).
+
+Measured on Apple M1 (8 CUs, iGPU): ~0.7 M combos/s. Discrete GPUs
+(1070 Ti class) land ~10–50× higher — the whole hot path is SHA-512.
+
+## Feasibility
+
+| missing words | combos        | checksum-valid | M1 GPU   | dGPU     |
+|---------------|---------------|----------------|----------|----------|
+| 1             | 2 048         | ~8             | instant  | instant  |
+| 2             | 4.2 M         | ~16 K          | seconds  | seconds  |
+| 3             | 8.6 G         | ~33 M          | ~hours   | ~10 min  |
+| 4             | 17.6 T        | ~68 G          | days     | ~day     |
+
+(24-word phrase, 8-bit checksum; 12-word phrases pass ~1/16 — more seeds.)
+
+## Roadmap
+
+- GPU-side secp256k1 + BIP32 (removes the host stage entirely)
+- Metal backend (Apple native — OpenCL is deprecated there)
+- word-edit-distance mode (typo'd word, not just missing)
+- P2TR/xonly target matching, wallet.dat extraction

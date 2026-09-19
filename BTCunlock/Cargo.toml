@@ -2,21 +2,28 @@
 name = "btcunlock"
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
 publish = false
-description = "Recovery toolkit for YOUR OWN lost/inaccessible BTC wallets (BIP39 mnemonic repair, derivation path scan, balance lookup)"
 
-# Standalone crate — deliberately not a member of the root meta-workspace.
 [workspace]
+
+[features]
+default = []
+gpu = ["dep:opencl3"]
 
 [dependencies]
 bip39 = "2"
 bitcoin = { version = "0.31", default-features = false, features = ["std", "rand"] }
 clap = { version = "4", features = ["derive"] }
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde_json = "1"
+serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
+hmac = "0.12"
+pbkdf2 = { version = "0.12", features = ["hmac"] }
 hex = "0.4"
 rand = "0.8"
 anyhow = "1"
-serde = { version = "1", features = ["derive"] }
+rayon = "1"
+opencl3 = { version = "0.6", features = ["CL_VERSION_2_1", "CL_VERSION_2_2", "CL_VERSION_3_0"], optional = true }
+
+# esplora balance lookups — runtime opt-in only (`scan --online`)
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
