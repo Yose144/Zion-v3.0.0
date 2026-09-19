@@ -27,7 +27,12 @@ const REMAINING: u32 = 2048 - 1;
 /// State record size — must match kernel.cl STATE_SIZE.
 const STATE_SIZE: usize = 392;
 const OFF_COMBO: usize = 0;
+const OFF_PLEN: usize = 8;
+const OFF_PHRASE: usize = 12;
 const OFF_T: usize = 324;
+const OFF_TAG: usize = 388;
+const TAG_C: u32 = 0x9E3779B9;
+const MAX_PHRASE: usize = 248;
 /// Result ceiling per batch: worst pass rate is 1/16 (12-word checksum).
 const RESULT_SLACK: usize = 1024;
 
@@ -39,6 +44,7 @@ pub struct Gpu {
     queue: CommandQueue,
     k_filter: Kernel,
     k_step: Kernel,
+    k_perm: Kernel,
     max_batch: usize,
     max_results: usize,
     salt_len: Cell<u32>,
@@ -46,9 +52,13 @@ pub struct Gpu {
     wl_off: Buffer<u16>,
     templ: Buffer<u16>,
     hole_pos: Buffer<u8>,
+    words: Buffer<u16>,
     salt: Buffer<u8>,
     count: Buffer<u32>,
     states: Buffer<u8>,
+    /// Host copy of "mnemonic{pass}" — CPU-repairs records whose GPU
+    /// work-item died mid-PBKDF2 (detected via the chain tag).
+    salt_bytes: Vec<u8>,
     pub device_name: String,
 }
 
@@ -76,6 +86,7 @@ impl Gpu {
             .map_err(|e| anyhow::anyhow!("opencl kernel build: {e}"))?;
         let k_filter = Kernel::create(&program, "bip39_filter").map_err(cl_err)?;
         let k_step = Kernel::create(&program, "pbkdf2_step").map_err(cl_err)?;
+        let k_perm = Kernel::create(&program, "permute_filter").map_err(cl_err)?;
 
         // wordlist blob + offsets (u16 — total < 16 KiB)
         let mut blob = Vec::with_capacity(16 * 1024);
@@ -110,6 +121,9 @@ impl Gpu {
             let hole_pos =
                 Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, MAX_HOLES, std::ptr::null_mut())
                     .map_err(cl_err)?;
+            let words =
+                Buffer::<u16>::create(&context, CL_MEM_READ_ONLY, MAX_WORDS, std::ptr::null_mut())
+                    .map_err(cl_err)?;
             let salt = Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, 128, std::ptr::null_mut())
                 .map_err(cl_err)?;
             let count =
@@ -133,6 +147,7 @@ impl Gpu {
                 queue,
                 k_filter,
                 k_step,
+                k_perm,
                 max_batch,
                 max_results,
                 salt_len: Cell::new(0),
@@ -140,9 +155,11 @@ impl Gpu {
                 wl_off,
                 templ,
                 hole_pos,
+                words,
                 salt,
                 count,
                 states,
+                salt_bytes: Vec::new(),
                 device_name,
             })
         }
@@ -176,7 +193,121 @@ impl Gpu {
             self.queue.finish().map_err(cl_err)?;
         }
         self.salt_len.set(salt.len() as u32);
+        self.salt_bytes = salt.into_bytes();
         Ok(())
+    }
+
+    /// Upload constants for a permutation job: sorted word indices + salt.
+    /// `words` must be sorted ascending — host `perm_indices` decodes the
+    /// same numbering the kernel uses.
+    pub fn bind_permute(&mut self, words: &[u16], passphrase: &str) -> Result<()> {
+        if words.len() > MAX_WORDS {
+            bail!("{} words exceeds MAX_WORDS", words.len());
+        }
+        let mut w = [0u16; MAX_WORDS];
+        w[..words.len()].copy_from_slice(words);
+        let salt = format!("mnemonic{passphrase}");
+        if salt.len() > 128 {
+            bail!("passphrase too long (max 120 bytes)");
+        }
+        let mut sbuf = [0u8; 128];
+        sbuf[..salt.len()].copy_from_slice(salt.as_bytes());
+        #[allow(unused_unsafe)]
+        unsafe {
+            self.queue
+                .enqueue_write_buffer(&mut self.words, CL_NON_BLOCKING, 0, &w, &[])
+                .map_err(cl_err)?;
+            self.queue
+                .enqueue_write_buffer(&mut self.salt, CL_NON_BLOCKING, 0, &sbuf, &[])
+                .map_err(cl_err)?;
+            self.queue.finish().map_err(cl_err)?;
+        }
+        self.salt_len.set(salt.len() as u32);
+        self.salt_bytes = salt.into_bytes();
+        Ok(())
+    }
+
+    /// Stage 2 + readback shared by derive_batch/derive_perm_batch:
+    /// runs the remaining PBKDF2 chunks on `got` state records and returns
+    /// `(record_id, seed)` pairs. Each step launch extends a chain tag in
+    /// the record; records whose GPU work-item died mid-chain fail the
+    /// final tag check and are recomputed on CPU from their stored phrase.
+    #[allow(unused_unsafe)]
+    unsafe fn finish_batch(&mut self, got: usize) -> Result<Vec<(u64, [u8; 64])>> {
+        // remaining 2047 PBKDF2 iterations in chunks
+        // (512, 512, 512, 511 — never overshoot the count)
+        let mut left = REMAINING;
+        let mut seq = 0u32;
+        while left > 0 {
+            let it = STEP_ITERS.min(left);
+            seq += 1;
+            let mut ex = ExecuteKernel::new(&self.k_step);
+            ex.set_arg(&self.states).set_arg(&it).set_arg(&seq);
+            ex.set_global_work_size(got)
+                .enqueue_nd_range(&self.queue)
+                .map_err(cl_err)?;
+            left -= it;
+        }
+        self.queue.finish().map_err(cl_err)?;
+
+        // read back state records → verify chain tag → (record_id, seed=T)
+        let mut raw = vec![0u8; got * STATE_SIZE];
+        self.queue
+            .enqueue_read_buffer(&mut self.states, CL_BLOCKING, 0, &mut raw, &[])
+            .map_err(cl_err)?;
+        let want_tail = seq.wrapping_mul(TAG_C);
+        let mut repaired = 0u64;
+        let mut dropped = 0u64;
+        let out = raw
+            .chunks_exact(STATE_SIZE)
+            .filter_map(|st| {
+                let id = u64::from_le_bytes(st[OFF_COMBO..OFF_COMBO + 8].try_into().unwrap());
+                let seed: [u8; 64] = st[OFF_T..OFF_T + 64].try_into().unwrap();
+                let tag = u32::from_le_bytes(st[OFF_TAG..OFF_TAG + 4].try_into().unwrap());
+                let head = u32::from_le_bytes(st[OFF_T..OFF_T + 4].try_into().unwrap());
+                if tag == (head ^ want_tail) {
+                    return Some((id, seed));
+                }
+                // GPU item died mid-chain — recompute from the stored phrase
+                let plen =
+                    u32::from_le_bytes(st[OFF_PLEN..OFF_PLEN + 4].try_into().unwrap()) as usize;
+                if plen == 0 || plen > MAX_PHRASE {
+                    dropped += 1;
+                    return None;
+                }
+                let phrase = &st[OFF_PHRASE..OFF_PHRASE + plen];
+                let Ok(phrase) = std::str::from_utf8(phrase) else {
+                    dropped += 1;
+                    return None;
+                };
+                let mut s = [0u8; 64];
+                pbkdf2::pbkdf2_hmac::<sha2::Sha512>(
+                    phrase.as_bytes(),
+                    &self.salt_bytes,
+                    2048,
+                    &mut s,
+                );
+                repaired += 1;
+                Some((id, s))
+            })
+            .collect();
+        if repaired + dropped > 0 {
+            eprintln!("gpu: repaired {repaired} / dropped {dropped} dead-item records");
+        }
+        Ok(out)
+    }
+
+    /// Reads the filter result count, bails on overflow.
+    #[allow(unused_unsafe)]
+    unsafe fn result_count(&mut self) -> Result<usize> {
+        let mut cnt = [0u32];
+        self.queue
+            .enqueue_read_buffer(&self.count, CL_BLOCKING, 0, &mut cnt, &[])
+            .map_err(cl_err)?;
+        if cnt[0] as usize > self.max_results {
+            bail!("result overflow ({}) — reduce --batch", cnt[0]);
+        }
+        Ok(cnt[0] as usize)
     }
 
     /// One batch: combos `base .. base+n` → `(combo, seed)` pairs.
@@ -213,45 +344,51 @@ impl Gpu {
                 .map_err(cl_err)?;
             self.queue.finish().map_err(cl_err)?;
 
-            let mut cnt = [0u32];
-            self.queue
-                .enqueue_read_buffer(&self.count, CL_BLOCKING, 0, &mut cnt, &[])
-                .map_err(cl_err)?;
-            let got = (cnt[0] as usize).min(self.max_results);
+            let got = self.result_count()?;
             if got == 0 {
                 return Ok(Vec::new());
             }
-            if cnt[0] as usize > self.max_results {
-                bail!("result overflow ({}) — reduce --batch", cnt[0]);
-            }
+            self.finish_batch(got)
+        }
+    }
 
-            // stage 2 — remaining 2047 PBKDF2 iterations in chunks
-            // (512, 512, 512, 511 — never overshoot the count)
-            let mut left = REMAINING;
-            while left > 0 {
-                let it = STEP_ITERS.min(left);
-                let mut ex = ExecuteKernel::new(&self.k_step);
-                ex.set_arg(&self.states).set_arg(&it);
-                ex.set_global_work_size(got)
-                    .enqueue_nd_range(&self.queue)
-                    .map_err(cl_err)?;
-                left -= it;
-            }
+    /// One batch of the permutation domain: perm numbers `base .. base+n`
+    /// → `(perm, seed)` pairs. `n_words` = length of the bound word list.
+    pub fn derive_perm_batch(
+        &mut self,
+        n_words: usize,
+        base: u64,
+        n: usize,
+    ) -> Result<Vec<(u64, [u8; 64])>> {
+        if n > self.max_batch {
+            bail!("batch {n} exceeds GPU max_batch {}", self.max_batch);
+        }
+        #[allow(unused_unsafe)]
+        unsafe {
+            self.queue
+                .enqueue_write_buffer(&mut self.count, CL_NON_BLOCKING, 0, &[0u32], &[])
+                .map_err(cl_err)?;
+            let mut ex = ExecuteKernel::new(&self.k_perm);
+            ex.set_arg(&self.wl_blob)
+                .set_arg(&self.wl_off)
+                .set_arg(&self.words)
+                .set_arg(&(n_words as cl_uint))
+                .set_arg(&(base as cl_ulong))
+                .set_arg(&self.salt)
+                .set_arg(&self.salt_len.get())
+                .set_arg(&(self.max_results as cl_uint))
+                .set_arg(&self.count)
+                .set_arg(&self.states);
+            ex.set_global_work_size(n)
+                .enqueue_nd_range(&self.queue)
+                .map_err(cl_err)?;
             self.queue.finish().map_err(cl_err)?;
 
-            // read back state records → (combo, seed=T)
-            let mut raw = vec![0u8; got * STATE_SIZE];
-            self.queue
-                .enqueue_read_buffer(&mut self.states, CL_BLOCKING, 0, &mut raw, &[])
-                .map_err(cl_err)?;
-            Ok(raw
-                .chunks_exact(STATE_SIZE)
-                .map(|st| {
-                    let combo = u64::from_le_bytes(st[OFF_COMBO..OFF_COMBO + 8].try_into().unwrap());
-                    let seed: [u8; 64] = st[OFF_T..OFF_T + 64].try_into().unwrap();
-                    (combo, seed)
-                })
-                .collect())
+            let got = self.result_count()?;
+            if got == 0 {
+                return Ok(Vec::new());
+            }
+            self.finish_batch(got)
         }
     }
 }
@@ -308,6 +445,57 @@ cpu={}", g.0, hex::encode(g.1), hex::encode(c.1)); break; }
         for (g, c) in gpu_out.iter().zip(cpu_sorted.iter()) {
             assert_eq!(g.0, c.0, "combo order differs");
             assert_eq!(g.1, c.1, "seed mismatch at combo {}", g.0);
+        }
+    }
+
+    /// GPU vs CPU on the permutation domain — same perm numbers, byte-exact
+    /// seeds. Run: cargo test --features gpu gpu::tests -- --ignored
+    #[test]
+    #[ignore]
+    fn gpu_cpu_permute_parity() {
+        use crate::engine::{perm_seeds, word_index};
+        // canonical valid 12-word vector is abandon×11 + "about" — every
+        // perm number that leaves "about" in the last slot passes checksum
+        let mut widx: Vec<u16> = "abandon abandon abandon abandon abandon abandon \
+            abandon abandon abandon abandon abandon about"
+            .split_whitespace()
+            .map(|w| word_index(w).unwrap())
+            .collect();
+        widx.sort_unstable();
+        let mut g = Gpu::init(0, 1 << 20).unwrap();
+        g.bind_permute(&widx, "").unwrap();
+        let gpu_out = g.derive_perm_batch(widx.len(), 0, 1 << 16).unwrap();
+        // CPU dedupes repeated phrases (dup words) pre-PBKDF2; compare the
+        // unique seed sets — GPU emits every valid perm incl. dup phrases.
+        let cpu_out = perm_seeds(&widx, "", 0, 1 << 16, None);
+        // diagnostics: group GPU output by seed, show minority records
+        {
+            use std::collections::HashMap;
+            let mut by_seed: HashMap<[u8; 64], Vec<u64>> = HashMap::new();
+            for (p, s) in &gpu_out {
+                by_seed.entry(*s).or_default().push(*p);
+            }
+            let mut groups: Vec<_> = by_seed.iter().collect();
+            groups.sort_by_key(|(_, v)| std::cmp::Reverse(v.len()));
+            for (i, (seed, ids)) in groups.iter().take(4).enumerate() {
+                eprintln!(
+                    "  gpu-seed[{i}] ×{} — first ids {:?} — seed[..8]={:02x?}",
+                    ids.len(),
+                    &ids[..ids.len().min(8)],
+                    &seed[..8]
+                );
+            }
+        }
+        let mut gpu_seeds: Vec<[u8; 64]> = gpu_out.iter().map(|x| x.1).collect();
+        gpu_seeds.sort();
+        gpu_seeds.dedup();
+        let mut cpu_seeds: Vec<[u8; 64]> = cpu_out.iter().map(|x| x.1).collect();
+        cpu_seeds.sort();
+        cpu_seeds.dedup();
+        eprintln!("perm gpu={} cpu={} uniq_gpu={}", gpu_out.len(), cpu_out.len(), gpu_seeds.len());
+        assert_eq!(gpu_seeds.len(), cpu_seeds.len(), "perm unique-seed count mismatch");
+        for (gs, cs) in gpu_seeds.iter().zip(cpu_seeds.iter()) {
+            assert_eq!(gs, cs, "perm seed mismatch");
         }
     }
 }

@@ -262,6 +262,98 @@ pub fn match_seed(
     hits
 }
 
+/// Number of permutations of `n` word slots (n!, saturating at u64::MAX).
+pub fn perm_total(n: usize) -> u64 {
+    (1..=n as u64).try_fold(1u64, |a, b| a.checked_mul(b)).unwrap_or(u64::MAX)
+}
+
+/// Decode permutation number `p` (0 ≤ p < n!) into word indices via the
+/// factoradic/Lehmer scheme. `words` must be the full known word list —
+/// every p yields a distinct arrangement (duplicates produce dup phrases).
+pub fn perm_indices(words: &[u16], mut p: u64, out: &mut [u16; MAX_WORDS]) {
+    let n = words.len();
+    let mut pool: Vec<u16> = words.to_vec();
+    for (k, slot) in out.iter_mut().enumerate().take(n) {
+        let m = (n - k) as u64;
+        let i = (p % m) as usize;
+        *slot = pool.remove(i);
+        p /= m;
+    }
+}
+
+/// Fast 64-bit FNV-1a over a word-index slice — phrase identity key for
+/// dedupe (duplicate input words make many perm ids produce one phrase).
+fn idx_key(idx: &[u16]) -> u64 {
+    let mut h = 0xcbf29ce484222325u64;
+    for &w in idx {
+        h ^= w as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    h
+}
+
+/// CPU batch over the permutation domain: `base..base+count` permutation
+/// numbers → checksum → dedupe → PBKDF2 → `(perm, seed)`.
+/// `dedup` (when given) persists across batches so repeated phrases from
+/// duplicate input words are PBKDF2'd only once per run.
+pub fn perm_seeds(
+    words: &[u16],
+    pass: &str,
+    base: u64,
+    count: u32,
+    dedup: Option<&mut std::collections::HashSet<u64>>,
+) -> Vec<(u64, [u8; 64])> {
+    use rayon::prelude::*;
+    let n = words.len();
+    // stage 1: parallel factoradic decode + checksum filter
+    let cands: Vec<(u64, [u16; MAX_WORDS])> = (0..count as u64)
+        .into_par_iter()
+        .filter_map(|off| {
+            let p = base + off;
+            let mut idx = [0u16; MAX_WORDS];
+            perm_indices(words, p, &mut idx);
+            if !indices_checksum_ok(&idx[..n]) {
+                return None;
+            }
+            Some((p, idx))
+        })
+        .collect();
+    // stage 2: drop duplicate phrases, then PBKDF2 the survivors
+    let mut dedup = dedup;
+    let mut uniq: Vec<(u64, [u16; MAX_WORDS])> = Vec::with_capacity(cands.len());
+    for (p, idx) in cands {
+        if let Some(set) = dedup.as_deref_mut() {
+            if !set.insert(idx_key(&idx[..n])) {
+                continue;
+            }
+        }
+        uniq.push((p, idx));
+    }
+    uniq.into_par_iter()
+        .map(|(p, idx)| {
+            let phrase = idx[..n]
+                .iter()
+                .map(|&i| word_at(i))
+                .collect::<Vec<_>>()
+                .join(" ");
+            let mut seed = [0u8; 64];
+            phrase_seed(&phrase, pass, &mut seed);
+            (p, seed)
+        })
+        .collect()
+}
+
+/// Rebuild the phrase for a given permutation number (hit reporting).
+pub fn perm_phrase(words: &[u16], p: u64) -> String {
+    let mut idx = [0u16; MAX_WORDS];
+    perm_indices(words, p, &mut idx);
+    idx[..words.len()]
+        .iter()
+        .map(|&i| word_at(i))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// CPU batch: combos `base..base+count` → checksum+PBKDF2 → `(combo, seed)`.
 /// Rayon-parallel; the GPU backend runs the same two stages in-kernel.
 pub fn cpu_seeds(tpl: &Template, pass: &str, base: u64, count: u32) -> Vec<(u64, [u8; 64])> {
