@@ -1,6 +1,6 @@
 # WARP Beta — ZION ↔ BTC Native Atomic Swap
 
-> **Status:** koncept / early design (2026-09-17)
+> **Status:** **implementováno + audit-prep hotový** (2026-09-20) — regtest E2E oba směry + refundy + restart recovery zelené, live mainnet ZION leg SETTLED (`d77f837a` lock → `8c60d064` claim). Na Edge běží env-gated (`WARP_BTC_SWAP_ENABLED`); mainnet enable čeká na externí audit + produkční `WARP_BTC_RELAY_KEY`.
 > **Zdroj konceptu:** [`Lithing.md`](./Lithing.md) + ChatGPT výzkum „Zion L6" (strategický závěr: před bullrunem prioritizovat nativní ZION/BTC WARP před dalšími vrstvami)
 
 ## Cíl
@@ -34,7 +34,7 @@ Atomarita je kryptografická, ne důvěryhodná — nikdo nemůže ztratit prost
 | In scope | Out of scope (zatím) |
 |---|---|
 | ZION ↔ BTC on-chain HTLC swap | Lightning Network (až WARP 0.3) |
-| Signet/testnet → mainnet E2E | EVM/Solana/další chainy |
+| Regtest → testnet/mainnet pilot E2E | EVM/Solana/další chainy (wZION bridge je separátní stack) |
 | `warpd` orchestrace + CLI | DEX UI, marketplace integrace |
 | Per-swap P2WSH adresy | Automatický solver/market-maker |
 
@@ -45,6 +45,7 @@ Atomarita je kryptografická, ne důvěryhodná — nikdo nemůže ztratit prost
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Technický design: oba HTLC scripty, swap flow, timeout parametry, API |
 | [`STATUS.md`](./STATUS.md) | Gap analýza — HOTOVO / ROZPRACOVÁNO / CHYBÍ / BLOCKER |
 | [`ROADMAP.md`](./ROADMAP.md) | Fáze WARP 0.1 → 0.2 → 0.3 → 1.0, milníky, testnet plán |
+| [`AUDIT_PREP.md`](./AUDIT_PREP.md) | Self-audit findings log + auditor checklist + pre-mainnet checklist |
 
 ## Klíčové soubory v repo
 
@@ -53,8 +54,11 @@ Atomarita je kryptografická, ne důvěryhodná — nikdo nemůže ztratit prost
 | L1 HTLC konsensus | `V31/L1/core/src/utxo.rs` (`verify_input`, script `0x01`) | ✅ mainnet |
 | L1 HTLC buildery | `V31/L1/core/src/v31_wallet.rs` (`build_htlc_{lock,claim,refund}`) | ✅ |
 | Swap koordinátor | `V31/L2/multichain/src/swap/htlc.rs` (`HtlcSwap`) | ✅ |
+| Swap orchestrátor | `V31/L2/multichain/src/warp/btc_swap.rs` (`BtcSwapFlow`, oba směry) | ✅ |
 | ZION adapter | `V31/L2/multichain/src/chain/adapters/zion_l1.rs` | ✅ |
-| BTC adapter (watch) | `V31/L2/multichain/src/warp/adapter/bitcoin.rs` | 🟡 skeleton |
-| BTC signer | `V31/L2/multichain/src/warp/btc_signer.rs` (jen P2WPKH) | 🟡 bez HTLC |
-| LN klient | `V31/L2/multichain/src/warp/adapter/lightning.rs` + `docker/lightning/` | 🟡 disabled |
+| BTC HTLC modul | `V31/L2/multichain/src/warp/btc_htlc.rs` (P2WSH 13-op script) | ✅ |
+| BTC adapter (watch) | `V31/L2/multichain/src/warp/adapter/bitcoin.rs` (per-swap detekce + multi-endpoint failover) | ✅ |
+| BTC signer | `V31/L2/multichain/src/warp/btc_signer.rs` (P2WPKH + HTLC claim/refund) | ✅ |
+| BTC swap API | `warpd` :8454 `/v1/multichain/swaps/btc/*` (fail-closed auth) | ✅ live na Edge |
+| LN klient | `V31/L2/multichain/src/warp/adapter/lightning.rs` + `docker/lightning/` | 🟡 disabled (WARP 0.3) |
 | HTLC HTTP API | `warpd` :8454 `/v1/multichain/swaps/htlc/*` | ✅ live na Edge |

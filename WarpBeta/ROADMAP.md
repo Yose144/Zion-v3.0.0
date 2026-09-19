@@ -18,38 +18,36 @@
 
 ### Tasky
 
-- [ ] **T1 — `btc_htlc.rs` builder** (`V31/L2/multichain/src/warp/`)
-  - `build_htlc_script(hashlock, claimant_pk, refund_pk, cltv_height) -> (witnessScript, p2wsh_address)`
-  - unit testy: známý script → známá adresa (test vector)
-- [ ] **T2 — BTC spend paths** (`btc_signer.rs`)
-  - `claim_htlc(utxo, preimage, sig)` — witness `[sig, preimage, witnessScript]`
-  - `refund_htlc(utxo, sig)` — witness `[sig, OP_FALSE, witnessScript]`, `nLockTime = cltv`
-  - BIP143 sighash, fee pro větší witness
-- [ ] **T3 — Per-swap detekce** (`warp/adapter/bitcoin.rs`)
-  - `watch_p2wsh(address)` — poll mempool.space `/address/:addr/txs`, parse witnessScript → verify `H` a pubkey odpovídají dohodě
-  - confirmations ≥ 1 (signet) / ≥ 2 (mainnet) před pokračováním
-- [ ] **T4 — Preimage propagation**
-  - BTC claim tx witness → preimage → `HtlcSwap` feed → ZION claim (nebo naopak dle směru)
-- [ ] **T5 — Timeout policy**
-  - `T_btc_blocks = ceil((T_zion_ts - now + Δ) / 600)`; `Δ = 6 h` default, konfigurovatelné
-- [ ] **T6 — E2E signet**
-  - test: Bob lock BTC (signet) → Alice lock ZION → Bob claim ZION → Alice claim BTC
-  - refund test: expire → oba refundují
-  - cíl: skript `scripts/warp_beta_e2e_signet.sh`
+- [x] **T1 — `btc_htlc.rs` builder** (`V31/L2/multichain/src/warp/`) ✅ hotovo
+  - `build_htlc_script` → kanonický 13-op witness script + P2WSH adresa; strict parser + byte-exact round-trip; 10 unit testů vč. sighash verifikace
+- [x] **T2 — BTC spend paths** (`btc_signer.rs` + `btc_htlc.rs`) ✅ hotovo
+  - `lock_htlc`/`claim_htlc`/`refund_htlc` na `BtcSigner`; BIP143 sighash; claim `[sig, preimage, OP_TRUE, script]`, refund `[sig, Ø, script]`
+- [x] **T3 — Per-swap detekce** (`warp/adapter/bitcoin.rs`) ✅ hotovo
+  - `detect_htlc_lock` (funding output → `BtcHtlcLock` s confs) + `detect_htlc_spend` (Claim/Refund + preimage z witnessu ověřena proti scriptu i hashlocku); multi-endpoint failover (`WARP_BITCOIN_API` comma-list)
+- [x] **T4 — Preimage propagation** ✅ hotovo
+  - `extract_preimage` → `revealed_preimage`/`claim_source` v `BtcSwapFlow` orchestrátoru
+- [x] **T5 — Timeout policy** ✅ hotovo
+  - `cltv_from_zion_timeout` + `cltv_before_zion_timeout`; `Δ` margin konvence
+- [~] **T6 — E2E** ✅ regtest + live-ZION / ❌ signet dead-end
+  - regtest docker esplora na Edge (2026-09-17): cross-leg oba směry, refund paths, restart recovery — PASS
+  - **live mainnet ZION leg SETTLED 2026-09-18** (`d77f837a` lock → `8c60d064` claim)
+  - signet/testnet3: faucety nedoručily funding (ověřeno 2026-09-20) → nahrazeno **mainnet dust pilotem**
 
-### Kritéria dokončení 0.1
+### Kritéria dokončení 0.1 — stav 2026-09-20
 
-- 2× úspěšný swap (oba směry) na signet + ZION mainnet s malou částkou
-- 1× úspěšný refund na každé straně
-- `cargo test -p zion-multichain` zelené + nové unit testy btc_htlc
-- žádné secrets v repo; `warp.toml` dokumentované
+- [x] 2× úspěšný swap (oba směry) — regtest E2E + live ZION mainnet leg SETTLED
+- [x] 1× úspěšný refund na každé straně — regtest (ZionToBtc: RefundBtc po CLTV; BtcToZion: RefundZion + user BTC refund)
+- [x] `cargo test -p zion-multichain` zelené (655 testů) + unit testy btc_htlc
+- [x] žádné secrets v repo; `warp.toml` dokumentované
+- [ ] **mainnet dust pilot** (náhrada za signet) — čeká na produkční `WARP_BTC_RELAY_KEY` + ~100k sats funding `bc1q53gn9…5n6k` + Edge redeploy na HEAD (R2 TTL + R4 failover chybí v `50df05d54`)
 
-## WARP 0.2 — Automated swap
+## WARP 0.2 — Automated swap — ✅ hotovo (2026-09-19)
 
-- `BtcSwapFlow` state machine v `warpd` (autonomní: detect → lock → claim/refund)
-- CLI: `zion warp offer --btc 0.001 --zion 10000`, `zion warp accept <id>`, `zion warp status`
-- Offer discovery: minimálně sdílený JSON (manuálně/paste), později solver network (`/v1/swap/intent` už existuje pro EVM — znovupoužít pattern)
-- Keyring: `WARP_BTC_WIF` env, per-swap key derivation
+- ✅ `BtcSwapFlow` state machine v `warpd` (autonomní: detect → lock → claim/refund, `poll_once` loop, offer TTL, admission guards)
+- ✅ CLI: `zion warp btc-swap offer|list|status` (`--zis-api-key` auth)
+- ✅ HTTP API: `POST /swaps/btc/offer` (fail-closed auth), `GET /list`, `GET /:id`
+- ✅ Keyring: `WARP_BTC_RELAY_KEY` (WIF) + dedikovaný `WARP_BTC_SWAP_ZION_SECRET` keyring (funded 500 ZION)
+- ⏳ Offer discovery: zatím manuální (API inject), později solver network (`/v1/swap/intent` pattern existuje pro EVM)
 
 ## WARP 0.3 — Lightning
 

@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-19 (update: **TESTNET rehearsal LIVE** — BTC wallet vygenerován, Edge enabled `network Testnet`, test offer `dbc91da9…` v `awaiting_user_lock`, čeká na faucet funding HTLC `tb1qwps3v5w…j4fp`). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-20 (**TESTNET rehearsal STALLED** — offer `dbc91da9…` pořád `awaiting_user_lock`; testnet3 faucety nedoručily nic — HTLC `tb1qwps3v5w…j4fp` ani operator wallet `tb1qmy6czt…` nemají jedinou tx; offer po 4h TTL přejde do `Failed`. Doporučená cesta: přeskočit testnet3 → **mainnet dust pilot** (~100k sats na `bc1q53gn9…5n6k`), regtest + live-ZION leg už pathy pokryly). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -31,16 +31,13 @@
 | **Edge redeploy na HEAD** | Edge `62.171.141.136` | 2026-09-19: rsync `V31/` → `/root/build/V31/` → `cargo build --release -p zion-multichain --bin warpd` (10m) → atomic swap do `/opt/zion/V31/target/release/warpd` (backup `warpd.bak-20260919`) → restart `zion-v31-multichain`. Smoke: `/health` ok, `/swaps/btc/list` = `{"enabled":false}` (nový kód běží, swap disabled), `NRestarts=0`, watchers aktivní. `warp.db` perms 644→640. Deployed = `50df05d54` (+ solvency fix) |
 | **R4: multi-endpoint esplora failover** | `warp/adapter/bitcoin.rs`, `btc_signer.rs`, `btc_htlc.rs` | `WARP_BITCOIN_API` přijímá comma-list; adapter drží `api_urls: Vec<String>` + rotating primary (`AtomicUsize`, promote na první fungující). Všechny cesty failover: tip height, address txs, tx status, utxo fetch, broadcast (POST /tx sekvenčně). Defaults: mempool.space + blockstream.info (mainnet/testnet) — zero-config redundancy. 3 failover unit testy. Zbývá ops: vlastní esplora/bitcoind jako primary |
 | **R2: offer TTL** | `warp/btc_swap.rs`, `service.rs` | `offer_ttl_secs` (env `WARP_BTC_SWAP_OFFER_TTL_SECS`, default 14 400 s = 4 h) — `decide` vrací `Fail` pro `AwaitingUserLock` bez lock evidence po `created_at + TTL`; platný lock evidence má přednost i po TTL (late-lock projde); `Failed` terminální → uvolňuje `max_active_swaps`; `poll_one` persistuje — 6 unit testů |
-| **Testnet rehearsal — LIVE** | Edge env + `examples/gen_*` | 2026-09-19: BTC wallet vygenerován (`examples/gen_warp_btc_wallet.rs` — BIP39→BIP84, mnemonic na Desktopu `warp-btc-wallet.txt`, testnet `tb1qmy6czt…k0w6`, mainnet `bc1q53gn9…5n6k` ready). Edge: `WARP_BTC_RELAY_KEY` (testnet WIF) + `BITCOIN_NETWORK=testnet` + `WARP_BTC_SWAP_ENABLED=1` → `enabled — network Testnet` ✓. Test offer `dbc91da9…` (10k sats → 10 ZION) injectnut přes `gen_btc_swap_offer` do `warp_multichain.db` (ZIS-gated offer obchází — operator test), hydratován, `awaiting_user_lock`. HTLC `tb1qwps3v5wqj82k5j45wjan5gwfj4v8vx6xvrjkmqg25ehtavu0flgsjjz4fp` čeká na testnet3 funding |
+| **Testnet rehearsal — STALLED** | Edge env + `examples/gen_*` | 2026-09-19: BTC wallet vygenerován (`examples/gen_warp_btc_wallet.rs` — BIP39→BIP84, mnemonic na Desktopu `warp-btc-wallet.txt`, testnet `tb1qmy6czt…k0w6`, mainnet `bc1q53gn9…5n6k` ready). Edge: `WARP_BTC_RELAY_KEY` (testnet WIF) + `BITCOIN_NETWORK=testnet` + `WARP_BTC_SWAP_ENABLED=1` → `enabled — network Testnet` ✓. Test offer `dbc91da9…` (10k sats → 10 ZION) injectnut přes `gen_btc_swap_offer` do `warp_multichain.db` (ZIS-gated offer obchází — operator test), hydratován, `awaiting_user_lock`. HTLC `tb1qwps3v5wqj82k5j45wjan5gwfj4v8vx6xvrjkmqg25ehtavu0flgsjjz4fp` čekal na testnet3 funding. **2026-09-20: funding nedorazil — ani HTLC ani operator wallet nemají tx (ověřeno mempool.space testnet API); offer po TTL přejde do `Failed`. Testnet3 faucety jsou dead-end → doporučen mainnet dust pilot (~100k sats na `bc1q53gn9…5n6k`).** |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 
 ## ROZPRACOVÁNO 🟡
 
-| Komponenta | Co chybí |
-|---|---|
-| BTC adapter | fixní deposit watcher + **nové** per-swap `detect_htlc_lock`/`detect_htlc_spend`; orchestrátor napojen přes `BtcSwapFlow::poll_once` |
-| `HtlcSwap` koordinátor | cross-leg logika napojena přes `BtcSwapFlow`; service/HTTP expozice i `BtcSwapRecord` persistence hotové |
+*(prázdné — všechny komponenty BTC swapu jsou hotové; zbývají jen ops/enable kroky v BLOCKER)*
 
 ## CHYBÍ ❌
 
@@ -62,9 +59,11 @@
 
 | Blokér | Stav |
 |---|---|
-| BTC node/esplora — mempool.space public API je OK pro beta, pro produkci vlastní esplora/bitcoind | doporučeno, ne blocker pro testnet |
+| BTC node/esplora — public failover (mempool.space + blockstream.info) je OK pro beta, pro produkci vlastní esplora/bitcoind | doporučeno před enable; Edge 93 G free → pruned bitcoind ~15 G feasible |
+| Testnet3 rehearsal | **dead-end** — faucety nedoručily funding (ověřeno 2026-09-20, 0 tx na obou adresách); nahradit mainnet dust pilotem s cap |
 | LND node pro LN fázi | až WARP 0.3 |
 | Žádný externí audit | před mainnet spuštěním povinný |
+| Produkční `WARP_BTC_RELAY_KEY` (mainnet WIF) | nenastaven — potřeba pro ZION→BTC směr |
 
 ## Rizika / otevřené otázky
 
