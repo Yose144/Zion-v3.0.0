@@ -61,6 +61,7 @@ const t = {
     terra_te_piko_ora: { cs: 'Te Pīko Ora', en: 'Te Pīko Ora' },
     terra_golden_republic_bohemia: { cs: 'Golden Republic Bohemia', en: 'Golden Republic Bohemia' },
     terra_bodhi_lanka: { cs: 'Bodhi Lanka', en: 'Bodhi Lanka' },
+    terra_lumi: { cs: 'LUMI — Nová Amerika', en: 'LUMI — Nová Amerika' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
