@@ -2,7 +2,7 @@
 
 > Self-audit provedeý před externím security review. Rozsah: `BtcSwapFlow` orchestrátor (`V31/L2/multichain/src/warp/btc_swap.rs`), BTC HTLC (`btc_htlc.rs`, `btc_signer.rs`, `adapter/bitcoin.rs`), ZION leg (`swap/htlc.rs`, `chain/adapters/zion_l1.rs`), API (`server.rs`), persistence (`db.rs`).
 >
-> Datum: 2026-09-18 · Test baseline: 641 lib testů zelených + cross-leg/refund/restart E2E na regtestu + live ZION mainnet leg SETTLED.
+> Datum: 2026-09-19 · Test baseline: 655 lib testů zelených + cross-leg/refund/restart E2E na regtestu + live ZION mainnet leg SETTLED.
 
 ## Findings — FIXED
 
@@ -58,7 +58,7 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 | # | Severity | Item | Poznámka |
 |---|---|---|---|
 | R1 | low | Broadcast-window residual | Crash přesně mezi submit a persist bez jakéhokoliv záznamu — ms-scale okno, duplicitní lock refundovatelný. Uzavřít vyžaduje persistovaný txid před submit (adapter internals). |
-| R2 | low | `AwaitingUserLock` bez TTL | Swap může čekat donekonečna (user nikdy nezavře lock). Slot spotřebuje kapacitu — mitigováno `max_active_swaps` + auth na offer. Zvážit offer TTL → `Failed`. |
+| R2 | ~~low~~ | ~~`AwaitingUserLock` bez TTL~~ | **FIXED:** `offer_ttl_secs` (default 14 400 s = 4 h, env `WARP_BTC_SWAP_OFFER_TTL_SECS`). `decide` vrací `Fail` pro `AwaitingUserLock` bez lock evidence po `created_at + TTL` — obě directions; platný lock evidence má přednost (late-lock stále projde). `Failed` je terminální → uvolňuje `max_active_swaps` slot; persistováno přes `poll_one`. |
 | R3 | med | Shared hot wallet UTXO race | Largest-first selection koliduje s pool payout builderem na sdílené peněžence (live test: double-spend race). **FIXED (code):** `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` → dedikovaný keyring + vlastní `ZionL1Adapter` + vlastní `HtlcSwap` coordinator pro btc-swap; fallback na bridge keyring s warn. **Zbývá: nasadit key na Edge při enable.** |
 | R4 | med | Public esplora | mempool.space rate limits + availability. **ČÁSTEČNĚ FIXED (code):** multi-endpoint failover — `WARP_BITCOIN_API` comma-list, rotating primary (`AtomicUsize`), defaults mempool.space + blockstream.info; broadcast/utxo fetch také failover. **Zbývá ops: vlastní esplora/bitcoind jako primary při enable.** |
 | R5 | low | `getUtxos` reorg hloubka | UTXO set hit ≠ finalita; mitigováno `min_zion_lock_confs=2`. |
@@ -77,7 +77,7 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 - [ ] **Refund safety** — obě direction: refund až po vlastním timeoutu; user refund po CLTV; operator refund paths testovány E2E
 - [ ] **Restart/recovery** — `load_from_db`, snapshot round-trip, adopt paths (P2 fix), SQLite corruption → error handling
 - [ ] **Idempotency** — initiate dedupe, register_external_lock, claim/refund Mark* paths, offer admission
-- [ ] **Admission/limits** — duplicate hashlock, `min/max_btc_sats`, `max_active_swaps`, dust
+- [ ] **Admission/limits** — duplicate hashlock, `min/max_btc_sats`, `max_active_swaps`, `offer_ttl_secs` expiry (late-lock precedence), dust
 - [ ] **Secrets** — WIF/mnemonic/Ed25519 key jen env, žádný log; `preimage_hex` encrypted at rest (`enc:` prefix), `to_json` preimage neleakne
 - [ ] **API authz** — fail-closed na offer; rate limiting per-IP/per-user; read endpoints (list/get) public — obsah OK (žádné secrets)
 - [ ] **Error/retry** — `poll_once` outcome capture, žádný panic, error classification; `.ok()` swallows (viz confirmations bug — hledat další instance!)

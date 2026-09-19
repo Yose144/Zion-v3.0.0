@@ -1,6 +1,6 @@
 # WARP Beta — Status / Gap analýza
 
-> Snapshot: 2026-09-19 (update: **R3 dedicated wallet** `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` + coordinator restart hydration + **Edge redeploy na HEAD** — warpd rebuild z `54257422b`, swap stále disabled; +5 testů → 646 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
+> Snapshot: 2026-09-19 (update: **R2 offer TTL** — `WARP_BTC_SWAP_OFFER_TTL_SECS`, default 4 h — `AwaitingUserLock` bez lock evidence expiruje do `Failed` a uvolňuje `max_active_swaps` slot; obě directions, late-lock precedence; +6 testů → 655 zelených). Klasifikace: ✅ HOTOVO · 🟡 ROZPRACOVÁNO · ❌ CHYBÍ · ⛔ BLOCKER
 
 ## HOTOVO ✅
 
@@ -30,6 +30,7 @@
 | Bugfix: coordinator restart hydration | `warpd.rs`, `warp/btc_swap.rs` | `HtlcSwap::load_from_db` se nikdy nevolal → po restartu prázdná coordinator memory → `claim_source`/`refund` na in-flight swapu = `TransferNotFound` stuck. Fix: `warpd` volá `service.htlc().load_from_db()` při startu + `BtcSwapFlow::load_from_db` hydratuje `self.swaps` |
 | **Edge redeploy na HEAD** | Edge `62.171.141.136` | 2026-09-19: rsync `V31/` → `/root/build/V31/` → `cargo build --release -p zion-multichain --bin warpd` (10m) → atomic swap do `/opt/zion/V31/target/release/warpd` (backup `warpd.bak-20260919`) → restart `zion-v31-multichain`. Smoke: `/health` ok, `/swaps/btc/list` = `{"enabled":false}` (nový kód běží, swap disabled), `NRestarts=0`, watchers aktivní. `warp.db` perms 644→640. Deployed = `50df05d54` (+ solvency fix) |
 | **R4: multi-endpoint esplora failover** | `warp/adapter/bitcoin.rs`, `btc_signer.rs`, `btc_htlc.rs` | `WARP_BITCOIN_API` přijímá comma-list; adapter drží `api_urls: Vec<String>` + rotating primary (`AtomicUsize`, promote na první fungující). Všechny cesty failover: tip height, address txs, tx status, utxo fetch, broadcast (POST /tx sekvenčně). Defaults: mempool.space + blockstream.info (mainnet/testnet) — zero-config redundancy. 3 failover unit testy. Zbývá ops: vlastní esplora/bitcoind jako primary |
+| **R2: offer TTL** | `warp/btc_swap.rs`, `service.rs` | `offer_ttl_secs` (env `WARP_BTC_SWAP_OFFER_TTL_SECS`, default 14 400 s = 4 h) — `decide` vrací `Fail` pro `AwaitingUserLock` bez lock evidence po `created_at + TTL`; platný lock evidence má přednost i po TTL (late-lock projde); `Failed` terminální → uvolňuje `max_active_swaps`; `poll_one` persistuje — 6 unit testů |
 | LN stack připraven | `warp/adapter/lightning.rs`, `docker/lightning/`, `scripts/lightning/` | LND REST klient, BOLT11, docker-compose, invoice/channel scripty |
 | warp.toml kostra | `warp.example.toml` | `[chains.bitcoin]` + `[chains.lightning]` definovány, `enabled=false` s `disabled_reason` |
 
