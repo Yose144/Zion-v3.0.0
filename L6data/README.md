@@ -24,6 +24,7 @@ Tato složka obsahuje strukturované podklady pro práci s velkými jazykovými 
 | [`Kvantovy_Motor.md`](Kvantovy_Motor.md) | Návrh a výzkumný plán kvantového motoru / kvantové energetiky pro L6. |
 | [`Umela_Gravitace.md`](Umela_Gravitace.md) | Návrh umělé gravitace na orbitální stanici — fyzika, design, lidské faktory. |
 | [`Lidske_Faktory.md`](Lidske_Faktory.md) | Biomedicína, psychologie a životní podmínky dlouhodobého pobytu ve vesmíru. |
+| [`Pozemni_Stanice_Kostarika.md`](Pozemni_Stanice_Kostarika.md) | Pozemní segment L6 — výzkumný kampus a TT&C stanice v Kostarice (sdílený pozemek s L5 Novou Amerikou). |
 | [`GPT_Podklady.md`](GPT_Podklady.md) | Předpřipravený prompt-kontext — vše podstatné zjednodušeně na jedno zkopírování. |
 
 ---

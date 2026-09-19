@@ -57,8 +57,8 @@ const TeamCopy = {
   l5Leads: { cs: `L5 Free World`, en: `L5 Free World` },
   l5LeadsTitle: { cs: `Vedení L5 projektů`, en: `L5 Project Leads` },
   l5LeadsDesc: {
-    cs: `Pět fyzických komunit Terra Nova — každá drží jeden element Stromu života. Vedení se rodí z místních kruhů, ne z centrály.`,
-    en: `Five physical Terra Nova communities — each holds one element of the Tree of Life. Leadership grows from local circles, not from a headquarters.`,
+    cs: `Šest fyzických komunit Terra Nova — pět drží elementy Stromu života, šestá je most za pentagramem. Vedení se rodí z místních kruhů, ne z centrály.`,
+    en: `Six physical Terra Nova communities — five hold the elements of the Tree of Life, the sixth is the bridge beyond the pentagram. Leadership grows from local circles, not from a headquarters.`,
   },
   projectLead: { cs: `Project Lead`, en: `Project Lead` },
   visitProject: { cs: `Projekt`, en: `Project` },
@@ -181,6 +181,16 @@ const L5_LEADS = [
     accent: '232, 121, 249',
     text: 'text-fuchsia-300',
     href: '/terranova/bodhi-lanka',
+  },
+  {
+    key: 'nova-amerika',
+    name: 'Nová Amerika',
+    element: { cs: 'Most · Paměť', en: 'Bridge · Memory' },
+    location: { cs: 'Kostarika', en: 'Costa Rica' },
+    icon: Globe2,
+    accent: '20, 184, 166',
+    text: 'text-teal-300',
+    href: '/terranova/nova-amerika',
   },
 ];
 

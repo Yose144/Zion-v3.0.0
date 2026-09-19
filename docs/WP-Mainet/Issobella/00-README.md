@@ -24,7 +24,7 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 
 ---
 
-## Deset kapitol
+## Jedenáct kapitol
 
 | # | Kapitola | Archetyp / Vrstva | Stručně |
 |---|---|---|---|
@@ -38,6 +38,7 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 | 8 | [Zrcadlo](./08-Zrcadlo.md) | **Zrcadlo** · *L4 ↔ L6 / web* | Jak se Issobella objevuje na webu, v dashboardu, v katalogu dokumentů a v OASIS — a kde přesně zrcadlo končí. |
 | 9 | [Cesta poutníka — L6 onboarding](./09-Cesta-Poutnika.md) | **Sedm bran** | Pozorovatel, čtenář, výzkumník (DeSci), těžař, volič, dárce (+ hráč) — co potřebuješ a co ti nikdo nesmí slíbit. |
 | 10 | [Kotva pravdy a hranice](./10-Kotva-Pravdy-a-Hranice.md) | **Registr** · *Mise Amenti M5* | Plná tabulka důkazů L6, co Issobella není, známé nesrovnalosti, otevřené otázky, další kroky a návrh změny. |
+| 11 | [Pozemní uzel Kostarika](./11-Pozemni-Uzel-Kostarika.md) | **Anténa** · *L6 / HORIZONT* | První fyzická stopa L6 na Zemi — výzkumný kampus a budoucí TT&C ground station na středobodu Amerik, na pozemku sdíleném s L5 uzlem Nová Amerika. |
 
 ---
 
@@ -50,6 +51,7 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 | `zion-issobella` tracker běží na Edge (`127.0.0.1:8097`), skenuje coinbase, vystavuje zůstatek fondu / návrhy / metriky. | **ŽIVÉ** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Veřejný portál; vynucení API klíče |
 | Fond dnes vyplácí granty. | **NEPLATNÉ TVRZENÍ** (dnes) | Gate G10: žádná automatická dispozice; cesta přes DAO je zatím sumarizační ([`L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)) | DAO UI, payout flow, guardian multisig, první projekt |
 | Výzkumný balík L6 (architektura stanice, kvantový motor, umělá gravitace, lidské faktory, historie) je veřejný a servírovaný. | **ŽIVÉ** (dokumentace) | [`L6data/`](../../../L6data/README.md), mirror `APP&WEB/website-v2.9/public/docs/l6/`, katalog `/docs` → `l6-*` | Peer review, externí experti |
+| Pozemní uzel Kostarika — výzkumný kampus a budoucí TT&C ground station, sdílený pozemek s L5 Novou Amerikou. | **HORIZONT** | [`11-Pozemni-Uzel-Kostarika.md`](./11-Pozemni-Uzel-Kostarika.md), `L6data/Pozemni_Stanice_Kostarika.md` | Site survey, akvizice, povolení SUTEL, hardware; žádná anténa nestojí |
 | Orbitální stanice na dráze 400–550 km s umělou gravitací a posádkou. | **HORIZONT** | Prolog TerraNova (2040), `L6data/Architektura.md`, `/l6-issobella` (roadmapa 2030→2045+) | Feasibility studie, partneři, roky práce; žádný modul neexistuje |
 | Kvantový motor / energetika (demonstrátor 2033, CubeSat 2035). | **HORIZONT / HYPOTÉZA** | `L6data/Kvantovy_Motor.md` (TRL, bezpečnostní brány), roadmapa na webu | Výzkum, laborator, ověření; žádný hardware |
 | Alcubierre–Ekam metrika, Φ rezonance, toroidní stojaté vlny. | **HYPOTÉZA / MÝTUS** | [`nirvana/11`](../nirvana/11-Kvantovy-Ohen-Issobella.md) jako narativní rámec | Žádný fyzikální důkaz; číst jako poezii vědy |

@@ -222,6 +222,7 @@ const docTitles: Record<string, LocalizedText> = {
   'l6-artificial-gravity': { cs: 'Umělá gravitace', en: 'Artificial Gravity' },
   'l6-human-factors': { cs: 'Lidské faktory', en: 'Human Factors' },
   'l6-history': { cs: 'Historie vesmírných stanic', en: 'Space Station History' },
+  'l6-ground-station': { cs: 'Pozemní stanice Kostarika', en: 'Costa Rica Ground Station' },
 };
 
 function resolveLabel(value: string | LocalizedText, lang: 'cs' | 'en') {
@@ -454,6 +455,7 @@ const sections: Section[] = [
       { id: 'l6-artificial-gravity', title: 'Umělá gravitace', file: 'l6/Umela_Gravitace.md' },
       { id: 'l6-human-factors', title: 'Lidské faktory', file: 'l6/Lidske_Faktory.md' },
       { id: 'l6-history', title: 'Historie vesmírných stanic', file: 'l6/Histori.md' },
+      { id: 'l6-ground-station', title: 'Pozemní stanice Kostarika', file: 'l6/Pozemni_Stanice_Kostarika.md' },
     ],
   },
 ];

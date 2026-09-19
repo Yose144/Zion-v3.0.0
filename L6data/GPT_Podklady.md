@@ -175,6 +175,7 @@ g_eff = a / 9,81
 | `Umela_Gravitace.md` | Fyzika a design umělé gravitace |
 | `Lidske_Faktory.md` | Biomedicína a psychologie |
 | `Histori.md` | Historický kontext vesmírných stanic |
+| `Pozemni_Stanice_Kostarika.md` | Pozemní segment L6 — kampus a TT&C stanice v Kostarice (sdílený pozemek s L5 Novou Amerikou) |
 
 ---
 

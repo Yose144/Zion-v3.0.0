@@ -62,8 +62,9 @@ Celkový genesis premine činí **16 780 000 000 ZION** (14 slotů) a zůstává
    - **Projekt Te Piko Ora:** 500 000 000 ZION (správce: Vahine Fierro)  
    - **Project Bohemia:** 500 000 000 ZION (správce: Andrea Kalousová)  
    - **Project Bodhi Lanka:** 500 000 000 ZION (správce: Annicka Purkertová)  
-   - **L5 rezervní fond:** 800 000 000 ZION (správce: Erika Imlaufová / náhradník: Petra Tkácová)
-3. **L6 Issobella — Orbital Station & Quantum Research Fund (2 500 000 000 ZION):** orbitalní stanice a kvantový výzkum (repurposed z DAO Treasury slotu 6, time-lock blok 144 000). **Správkyní fondu je Aelan Vaast** — řídí projekt L6 Issobella do 18. narozenin Sarah Hubalkové; poté Sarah a Aelan fond spravují společně. Utrácení z adresy slotu 6 nadále vyžaduje 3-of-3 admin multisig + DAO vote.
+   - **Projekt Nová Amerika (Kostarika):** 500 000 000 ZION (záměr z rezervy; správce: TBD — určí se před první akvizicí; projekt pro nativní kultury Amerik, sdílený pozemek s pozemní stanicí L6)
+   - **L5 rezervní fond:** 300 000 000 ZION (správce: Erika Imlaufová / náhradník: Petra Tkácová)
+3. **L6 Issobella — Orbital Station & Quantum Research Fund (2 500 000 000 ZION):** orbitalní stanice, kvantový výzkum a pozemní segment — výzkumný kampus / TT&C ground station v Kostarice na pozemku sdíleném s L5 uzlem Nová Amerika (repurposed z DAO Treasury slotu 6, time-lock blok 144 000). **Správkyní fondu je Aelan Vaast** — řídí projekt L6 Issobella do 18. narozenin Sarah Hubalkové; poté Sarah a Aelan fond spravují společně. Utrácení z adresy slotu 6 nadále vyžaduje 3-of-3 admin multisig + DAO vote.
 4. **DAO Treasury (1 500 000 000 ZION):** komunitní správa a granty (sloty 7–8, time-lock blok 144 000).
 5. **Infrastruktura a Humanitární fondy (4 530 000 000 ZION):** vývoj sítě, bridge likvidita a dětský fond.
 

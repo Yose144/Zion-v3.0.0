@@ -306,7 +306,7 @@ The First World of Oasis is structured into **8 Genesis Territories**. Some desc
 
 ### Golden Egg and 108 clues
 
-In the center of Oasis stands the **Tree of Life**. In its roots lies the **first of 108 clues of the Golden Egg**. The Golden Egg is not just treasure — it is a **pedagogical story**. A reserve of **4.95 billion ZION** from the genesis allocation is locked in five reward pools (Slots 4 & 5 — 3.3B ZION — repurposed to L5 Free World Projects: 5 humanitarian projects × 500M + 800M reserve):
+In the center of Oasis stands the **Tree of Life**. In its roots lies the **first of 108 clues of the Golden Egg**. The Golden Egg is not just treasure — it is a **pedagogical story**. A reserve of **4.95 billion ZION** from the genesis allocation is locked in five reward pools (Slots 4 & 5 — 3.3B ZION — repurposed to L5 Free World Projects: 6 humanitarian projects × 500M + 300M reserve):
 
 - Player Pool
 - Guild Pool
