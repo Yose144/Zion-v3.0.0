@@ -1,7 +1,7 @@
 # WARP Beta — přehled
 
-> Stav: **2026-09-19** · HEAD `4b6c15384` · Edge deployed `d8fe0f97d`
-> Swap: **DISABLED** (čeká na externí audit) · Wallet: **funded 500 ZION**
+> Stav: **2026-09-19** · HEAD `9b3b23680` · Edge deployed `d8fe0f97d`
+> Swap: **TESTNET rehearsal aktivní** (`WARP_BTC_SWAP_ENABLED=1`, `BITCOIN_NETWORK=testnet`) · ZION wallet funded 500 ZION · BTC wallet vygenerován (mnemonic na Desktopu)
 > Detaily: [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) · [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md)
 
 Nativní trust-minimized atomické swapy **ZION L1 ↔ BTC** přes HTLC na obou
@@ -56,6 +56,17 @@ persistence, HTTP + CLI lifecycle. Edge: `62.171.141.136:2222`.
 | 3 | Privátní esplora/bitcoind | doporučeno | Edge 93 G free; pruned node ~15 G + IBD. Public failover funguje, beta-grade |
 | 4 | Signet E2E | blokováno | 2 signet adresy čekají na funding (faucety blokují automatizaci) |
 | 5 | `WARP_BTC_SWAP_ENABLED=1` | ⛔ gated | až po 1+2 (+3 doporučeno) |
+
+## 🧪 Testnet rehearsal (2026-09-19, živé)
+
+| | |
+|---|---|
+| Operator BTC wallet | `tb1qmy6cztgerzdqa5dmufkfa29tek52ruf2thk0w6` (BIP84 `m/84'/1'/0'/0/0`; mainnet `bc1q53gn9gf5uh7ashhadyryaulc6wq5apdfaz5n6k` ready) |
+| Mnemonic | `~/Desktop/warp-btc-wallet.txt` (operator machine, chmod 600) |
+| Edge env | `WARP_BTC_RELAY_KEY` (testnet WIF) + `BITCOIN_NETWORK=testnet` + `WARP_BTC_SWAP_ENABLED=1` |
+| Test offer | `dbc91da92e750cbcc49a9509f6111fcf5991ad37174f0785553e845d90ce10b5` — 10 000 sats → 10 ZION, injectnut do `warp_multichain.db` (obchází ZIS-gated offer endpoint — operator test), hydratován po restartu |
+| HTLC adresa | `tb1qwps3v5wqj82k5j45wjan5gwfj4v8vx6xvrjkmqg25ehtavu0flgsjjz4fp` (CLTV 5149593) — **čeká na funding ≥10k sats z testnet3 faucetu** |
+| Flow po fundingu | detect lock (2 confs) → `LockZion` (10 ZION z funded wallet) → user ZION claim (preimage) → operator BTC claim |
 
 ## ⚠️ Známé residuals (auditor checklist)
 
