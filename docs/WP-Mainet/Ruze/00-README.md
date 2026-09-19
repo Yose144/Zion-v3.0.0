@@ -6,7 +6,7 @@
 > **Místo v kompasu:** **průsečík — vztah.** Miriam je vodoravná osa paměti a času, Lumi svislá osa světla a vrstev. Tato kniha roste v jejich průsečíku: živý vztah mezi dítětem s lucernou a růží u řeky. **Není dvanáctou branou** ani novou technologickou vrstvou — je to zahrada mezi osami.
 > **Navazuje na:** [`Miriam/13 — Kotva pravdy a hranice`](../Miriam/13-Kotva-Pravdy-a-Hranice.md) (Sára odnáší z jeskyně prázdnou alabastrovou nádobu) · [`Miriam/12 — Řeka a dítě s lucernou`](../Miriam/12-Reka-a-Dite-s-Lucernou.md) (setkání paměti se světlem u řeky, semínko růže, voda zdarma) · [`Lumi/12 — Brána zůstává otevřená`](../Lumi/12-Brana-Zustava-Otevrena.md) (otevřená brána, prázdná stránka, otázka „co po tobě zůstane“) · [`SulZeme/11 — Brána prvního hráče a volba cesty`](../SulZeme/11-Brana-Prvniho-Hrace-a-Volba-Cesty.md) (růžová zahrada cesty Srdce; „vztah bez svobody je klec“).
 > **Jazyk:** čeština (kanonická). Anglický index vznikne až po českém review; překlad nesmí zesílit jistotu, emoci ani nárok oproti originálu (`MiseAmenti/08` §5.7).
-> **Pravidlo textu:** v kapitolách 01–09 se příběh nevysvětluje — význam zůstává v obrazu. Hranice, návaznosti a stav všech tvrzení jsou soustředěné v kapitole 10. Kde by se příběh střetl s registrem, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md).
+> **Pravidlo textu:** v kapitolách 01–09 a epilogu se příběh nevysvětluje — význam zůstává v obrazu. Hranice, návaznosti a stav všech tvrzení jsou soustředěné v kapitole 10. Kde by se příběh střetl s registrem, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md).
 
 ---
 
@@ -14,7 +14,7 @@
 
 Na konci Knihy Růže odchází Sára z jeskyně nad mořem a pod pláštěm nese prázdnou alabastrovou nádobu — předmět, který nelze ukrást právě proto, že je prázdný. Na konci Knihy Lucerny zůstává u otevřené brány dítě s lucernou a vedle ní kniha s prázdnou poslední stránkou.
 
-Tahle malá kniha se odehrává přesně mezi těmito dvěma konci. Sára přinese nádobu k bráně, Lumi ji přijme — a v prasklině nádoby zůstalo jediné obyčejné semínko. Z něj u řeky vyroste růže, která umí mluvit — a devět krátkých kapitol sleduje, co se stane, když se někdo o něco živého stará, aniž by si to přivlastnil.
+Tahle malá kniha se odehrává přesně mezi těmito dvěma konci. Sára přinese nádobu k bráně, Lumi ji přijme — a v prasklině nádoby zůstalo jediné obyčejné semínko. Z něj u řeky vyroste růže, která umí mluvit — a devět krátkých kapitol sleduje, co se stane, když se někdo o něco živého stará, aniž by si to přivlastnil. V epilogu pak Lumi odnese druhé semínko do skromné Zahrady Genesis u Atlantiku — příběh se dotkne hlíny, aniž by se vydával za důkaz.
 
 Je to bajka, ne dokumentace. Růže tu mluví, návštěvníci přicházejí a odcházejí, a jediná pravidla světa jsou řeka, brána a slunce. Celý děj je **MÝTUS** — a kniha to nikde nezastírá.
 
@@ -28,7 +28,7 @@ Tahle kniha si pokládá vlastní otázku: může vztah zůstat jedinečný, ani
 
 ---
 
-## Deset kapitol
+## Devět kapitol, epilog a kotva
 
 | # | Kapitola | O čem vypráví |
 |---|---|---|
@@ -41,13 +41,14 @@ Tahle kniha si pokládá vlastní otázku: může vztah zůstat jedinečný, ani
 | 7 | [Noc bez svědků](./07-Noc-bez-Svedku.md) | Přijde sucho a Lumi pečuje i v noci, kdy ji nikdo nevidí, dokud sama nezačne usychat; Růže ji přiměje postarat se i o sebe — péče je vzájemná. |
 | 8 | [Dovolení odejít](./08-Dovoleni-Odejit.md) | Lumi musí pokračovat s lucernou; Růže ji nedrží slibem návratu a Lumi Růži neutrhne — zralé semeno spadne samo do prázdné nádoby. |
 | 9 | [Oba břehy](./09-Oba-Brehy.md) | Po čase se Lumi vrací; růže rostou na obou březích a bránu nikdo nezamyká — první Růži pozná podle způsobu vztahu, který naučila celou zahradu. |
+| E | [Zahrada Genesis](./Epilog-Zahrada-Genesis.md) | Epilog: druhé semínko z nádoby dorazí do skromné Zahrady Genesis u Atlantiku; Lumi a Ana je zasadí na okraj záhonu bez cedule — celá scéna je MÝTUS, žádný fyzický čin. |
 | 10 | [Kotva příběhu](./10-Kotva-Pribehu.md) | Jediná dokumentární kapitola: co je MÝTUS, jaká kontinuita je doložená, vztah ke starým textům i k Malému princi, co kniha není a stav review. |
 
 ---
 
 ## Jak číst
 
-Kapitoly 01–09 čti jako jednu novelu — souvisle, v klidu, od první k poslední. Příběh se v nich záměrně nevysvětluje: žádné odrážky, žádné poučení pod textem, žádná technická poznámka. Každá kapitola končí jedinou samostatnou větou.
+Kapitoly 01–09 a epilog čti jako jednu novelu — souvisle, v klidu, od první k poslední. Příběh se v nich záměrně nevysvětluje: žádné odrážky, žádné poučení pod textem, žádná technická poznámka. Každá kapitola končí jedinou samostatnou větou.
 
 Všechno ostatní — co je mýtus, co je doložená kontinuita korpusu, jak se kniha vymezuje vůči starším textům a k Malému princi — je v [kapitole 10](./10-Kotva-Pribehu.md), která je jediná dokumentární.
 

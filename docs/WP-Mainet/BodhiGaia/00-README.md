@@ -32,7 +32,7 @@ Je to zároveň nejpřísnější kniha celé řady. **Půda nezná marketing.**
 
 ---
 
-## Jedenáct kapitol Knihy Země
+## Dvanáct kapitol Knihy Země
 
 Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příběh → hluboký výklad → tabulka ověřitelných faktů se stavovou značkou.**
 
@@ -49,6 +49,7 @@ Každá kapitola drží pravidlo absolutní poctivosti: **archetypální příb�
 | 9 | [Kotva pravdy a hranice](./09-Kotva-Pravdy-a-Hranice.md) | **Registr** · *Mise Amenti M5* | Úplná evidence tabulka L5, co Bodhi Gaia není, známé rozpory v dokumentaci a další kroky. |
 | 10 | [Golden Republic Bohemia](./10-Golden-Republic-Bohemia.md) | **Srdce** · *Čechy, Česká republika* | Kruh bez trůnu, sůl na stole, most mezi mýtem a protokolem; Říp, Přemysl oráč, Zlatá bula jako proto-DAO, governance laboratoř Zlaté republiky. |
 | 11 | [Bodhi Lanka](./11-Bodhi-Lanka.md) | **Akáša** · *Srí Lanka* | Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi (Sri Maha Bodhi, Anurádhapura, 288 př. n. l.), Ráma Setu jako most mezi ostrovy, akáša jako pátý element — prostor, který drží všechny ostatní; bhakti jako governance. |
+| 12 | [Růže v Zahradě Genesis](./12-Ruze-v-Zahrade-Genesis.md) | **Průsečík** · *Růže / L5* | Literární semínko z *Příběhu Růže* vstoupí do Zahrady Genesis — příběh je MÝTUS, fyzický pilot `GENESIS-ROSE-001` je HORIZONT a žádné zasazení se nestalo. |
 
 ---
 
@@ -66,6 +67,7 @@ Tato kniha nevytváří nový svět. **Sjednocuje to, co už v repozitáři, na 
 | **Web — L5 Free World** | Stránka `/l5-free-world` s fondovou adresou, protokoly a komunitami | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` | **ŽIVÉ** (web) |
 | **OASIS** | Panel „Nová Země" s třemi L5 projekty; svět `DHARMA_TEMPLE_LA_PALMA` v galaxii; avataři se sliby bódhisattvy | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx`, `src/domain/config/worlds.ts`, `V31/L4/oasis/data/avatars.json` | **ŽIVÉ** (klient), gameplay vazba = HORIZONT |
 | **Příběhové kořeny** | Sítá — Matka Země, Hanuman — Seva, Ráma — dharma/láska; Rámájana a Sri Maha Bodhi; kapitola Komunity a L5 Svoboda; havajská linie KNIHA-LEHUA | `SulZeme/04`, `SulZeme/10`, `docs/TerraNova/03-KOMUNITY.md`, `06-L5-SVOBODA.md`, `docs/TerraNova/hawaii/KNIHA-LEHUA/` | **MÝTUS** (archetypy) |
+| **Růže v Zahradě Genesis** | Epilog *Příběhu Růže* (Lumi + Ana, druhé semínko u Atlantiku); Rose lore ve světě `GENESIS_GARDEN`; návrh fyzického pilotu s gaty A–D | `Ruze/Epilog-Zahrada-Genesis.md`, `BodhiGaia/12`, `BodhiGaia/pilots/GENESIS-ROSE-001.md`, `worlds.ts` | **MÝTUS** (příběh) · **HORIZONT** (pilot) · fyzická růže **NEDOLOŽENO** |
 | **Governance rámec** | Rozhodnutí G10: L5/L6 jako pasivní read-only trackery + DAO proposal bridge; žádná automatická výplata | `docs/3.2/L5_L6_ACTIVATION_PLAN.md`, `docs/3.2/ROADMAP.md` | **ŽIVÉ** (rozhodnutí) |
 | **Exekuční rámec 3.3** | Workstream **M5** — od fondu k doloženému dopadu; impact packet; exit gate = jeden pilot celým auditovatelným cyklem | `MiseAmenti/04-Exekucni-Charta-3.3.md` | **STAVBA** |
 | **Mystická mapa** | Yesod (Základ) ↔ L5; slib péče *„I vow to care for this land as I would care for my own body"* | `docs/Zohar/01-SEFIROT-VRSTVY.md` | **MÝTUS** |

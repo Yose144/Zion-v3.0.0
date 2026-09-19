@@ -7,7 +7,7 @@
 
 ## 1. Celý děj je MÝTUS
 
-Příběh Růže je literární bajka. **Celý děj** — Sářino sestoupení od jeskyně k bráně, předání prázdné alabastrové nádoby Lumi, semínko v její prasklině, zasazení u řeky, mluvící Růže, návštěvník v rukavicích, zahradník zrcadel, kupec s vůní, zahrada mnoha růží, sucho, odchod Lumi i její návrat — **všechny postavy, dialogy a scény jsou MÝTUS** podle [`../MiseAmenti/01-Kanon-a-Ustava.md`](../MiseAmenti/01-Kanon-a-Ustava.md). Nic z toho se nestalo; nic z toho kniha nevydává za událost, svědectví ani zjevení.
+Příběh Růže je literární bajka. **Celý děj** — Sářino sestoupení od jeskyně k bráně, předání prázdné alabastrové nádoby Lumi, semínko v její prasklině, zasazení u řeky, mluvící Růže, návštěvník v rukavicích, zahradník zrcadel, kupec s vůní, zahrada mnoha růží, sucho, odchod Lumi i její návrat, epilogové zasazení druhého semínka v Zahradě Genesis u Atlantiku — **všechny postavy, dialogy a scény jsou MÝTUS** podle [`../MiseAmenti/01-Kanon-a-Ustava.md`](../MiseAmenti/01-Kanon-a-Ustava.md). Nic z toho se nestalo; nic z toho kniha nevydává za událost, svědectví ani zjevení.
 
 ## 2. Doložená kontinuita — existence textů, ne historická pravda
 
@@ -18,6 +18,7 @@ Jediné, co kniha smí tvrdit jako repozitářový fakt, je že v repozitáři e
 - [`../Lumi/12-Brana-Zustava-Otevrena.md`](../Lumi/12-Brana-Zustava-Otevrena.md) — Lumi nese lucernu, brána zůstává otevřená, poslední stránka její knihy je prázdná.
 - [`../SulZeme/11-Brana-Prvniho-Hrace-a-Volba-Cesty.md`](../SulZeme/11-Brana-Prvniho-Hrace-a-Volba-Cesty.md) — na cestě Srdce stojí růžová zahrada a Rádha říká doslova: **„vztah bez svobody je klec“**.
 - V [`V31/L4/oasis/data/avatars.json`](../../../V31/L4/oasis/data/avatars.json) existuje avatar `id: 18` se jménem **Meriam Rose**, `location: Jerusalem Garden`, `teaching: "True devotion sees beyond form"`.
+- [`../BodhiGaia/03-Zahrada-Genesis.md`](../BodhiGaia/03-Zahrada-Genesis.md) popisuje Zahradu Genesis (Algarve) a postavu Any; [`../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) je navazující kapitola této knihy; v `APP&WEB/OasisWeb/src/domain/config/worlds.ts` existuje záznam světa `GENESIS_GARDEN` s výslovně označenou literární Rose lore.
 
 Existence těchto řádků je **repozitářový fakt** — ověřitelné prostým otevřením souborů. Není to historická ani duchovní pravda. „Text existuje a říká X“ je ŽIVÉ; „X se stalo nebo platí“ zůstává MÝTUS.
 
@@ -51,13 +52,17 @@ V repozitáři existuje starší esoterický text [`../../docs2.9/ZION_OASIS/SAC
 | Avatar `id 18` „Meriam Rose“ — Jerusalem Garden, „True devotion sees beyond form“ | **ŽIVÉ** (existence řádků v datovém souboru) | `V31/L4/oasis/data/avatars.json` |
 | Růže = Miriam, reinkarnace, avatar, pokračování linie | **NEPLATNÝ NÁROK** | tato kapitola; `../Miriam/13` |
 | Nároky `18_MERIAM_ROSE.md` (twin flame, svazek, grál-lůno, tajné kódy, škola, council, fondy) | **MÝTUS / NEDOLOŽENO / HORIZONT / NEPLATNÝ NÁROK** — ne fakta | `../Miriam/13`; `../MiseAmenti/07` |
+| Lumi a Ana zasazují druhé semínko v Zahradě Genesis | **MÝTUS** (epilog) | `./Epilog-Zahrada-Genesis.md`; `../BodhiGaia/12` |
+| OASIS svět `GENESIS_GARDEN` obsahuje Rose lore | **ŽIVÉ** (existence řádku klienta) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` |
+| Fyzická růže byla v Algarve zasazena | **NEDOLOŽENO** | tato kapitola; `../BodhiGaia/pilots/GENESIS-ROSE-001.md` |
+| Pilot `GENESIS-ROSE-001` | **HORIZONT / NEZAHÁJENO** | `../BodhiGaia/pilots/GENESIS-ROSE-001.md` |
 | Etika knihy (péče bez vlastnění, hranice, vzájemnost, odchod, voda, která není zbožím) | **MÝTUS** (literární postoj, ne norma) | tato kniha |
 
 ## 7. Review a stav
 
 - **Status:** DRAFT.
 - **Třída revize:** **E** (kulturní / veřejná komunikace) — kniha neobsahuje nároky na custody, prostředky ani governance.
-- **Vyžaduje před kanonizací:** českou literární a jazykovou korekturu a public-copy review před jakýmkoli výňatkem, podle [`../MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) §2.
+- **Vyžaduje před kanonizací:** českou literární a jazykovou korekturu a public-copy review před jakýmkoli výňatkem, podle [`../MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) §2; review OASIS kopie (`GENESIS_GARDEN` lore musí zůstat označena MÝTUS); před jakýmkoli fyzickým pilotem navíc botanickou a lokální kontrolu (kultivar, mikroklima, voda, bezpečnost trnů) podle [`../BodhiGaia/pilots/GENESIS-ROSE-001.md`](../BodhiGaia/pilots/GENESIS-ROSE-001.md).
 - **Registr:** záznam v [`../MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) §6, pravidlo 7.
 
 ---
