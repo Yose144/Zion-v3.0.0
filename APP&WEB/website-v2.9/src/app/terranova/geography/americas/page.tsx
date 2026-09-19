@@ -15,10 +15,10 @@ const DATA = {
     },
     {
       id: 'nova-amerika',
-      titleCs: 'Nová Amerika — Kostarika',
-      titleEn: 'Nová Amerika — Costa Rica',
-      descCs: 'Šestý uzel L5 Terra Nova — most a paměť pro nativní kultury Amerik (Bribri, Cabécar, Boruca), FPIC governance, sdílený pozemek s pozemní stanicí L6 Issobella. Projekt ve fázi vize.',
-      descEn: 'The sixth L5 Terra Nova node — a bridge and memory project for the native cultures of the Americas (Bribri, Cabécar, Boruca), FPIC governance, land shared with the L6 Issobella ground station. Vision-stage project.',
+      titleCs: 'LUMI — Nová Amerika',
+      titleEn: 'LUMI — Nová Amerika',
+      descCs: 'Šestý uzel L5 Terra Nova v Kostarice — most a paměť pro nativní kultury Amerik (Bribri, Cabécar, Boruca), FPIC governance, sdílený pozemek s pozemní stanicí L6 Issobella. Projekt ve fázi vize.',
+      descEn: 'The sixth L5 Terra Nova node in Costa Rica — a bridge and memory project for the native cultures of the Americas (Bribri, Cabécar, Boruca), FPIC governance, land shared with the L6 Issobella ground station. Vision-stage project.',
     },
   ],
 };

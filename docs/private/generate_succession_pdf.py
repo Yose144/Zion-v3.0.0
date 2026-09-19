@@ -144,11 +144,11 @@ def build_pdf():
         "    - Projekt Te Piko Ora: 500 000 000 ZION (správce: Vahine Fierro)\n"
         "    - Project Bohemia: 500 000 000 ZION (správce: Andrea Kalousová)\n"
         "    - Project Bodhi Lanka: 500 000 000 ZION (správce: Annicka Purkertová)\n"
-        "    - Projekt Nová Amerika (Kostarika): 500 000 000 ZION (záměr z rezervy; správce: TBD)\n"
+        "    - Projekt LUMI — Nová Amerika (Kostarika): 500 000 000 ZION (záměr z rezervy; správce: TBD)\n"
         "    - L5 rezervní fond: 300 000 000 ZION (správce: Erika Imlaufová / náhradník: Petra Tkácová)\n"
         "• L6 Issobella — Orbital Station & Quantum Research Fund (2 500 000 000 ZION): správkyní fondu je Aelan Vaast — řídí projekt\n"
         "    do 18. narozenin Sarah Hubalkové, poté s ní spolupracuje. Rozsah zahrnuje pozemní segment v Kostarice (výzkumný kampus /\n"
-        "    TT&C ground station, sdílený pozemek s L5 Nová Amerika). Utrácení vyžaduje 3-of-3 admin multisig + DAO vote.\n"
+        "    TT&C ground station, sdílený pozemek s L5 LUMI (Nová Amerika)). Utrácení vyžaduje 3-of-3 admin multisig + DAO vote.\n"
         "• DAO Treasury (1 500 000 000 ZION) a Infrastruktura + Humanitární fondy (4 530 000 000 ZION): slouží výhradně svým určeným cílům."
     )
     pdf.multi_cell(0, 4.3, p4)

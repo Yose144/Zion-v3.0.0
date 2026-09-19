@@ -1,4 +1,4 @@
-# BODHI GAIA — Kapitola 13: Nová Amerika
+# BODHI GAIA — Kapitola 13: LUMI — Nová Amerika
 ## Most & Paměť · Kostarika — poslední uzel L5, země prvních národů a zeměpisný středobod mezi dvěma kontinent
 
 > *„Most nespojuje dva břehy, aby je změnil. Spojuje je, aby si mohly vyprávět."*

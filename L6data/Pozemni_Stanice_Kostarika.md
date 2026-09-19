@@ -2,7 +2,7 @@
 
 > *„Stanice, která nemá kde přistát v myslích lidí, poletí naprázdno."*
 
-Tento dokument popisuje **pozemní segment vrstvy L6** — výzkumný kampus a budoucí pozemní stanici (ground station) v **Kostarice**, na pozemku sdíleném s L5 uzlem **Nová Amerika** (`docs/TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md`).
+Tento dokument popisuje **pozemní segment vrstvy L6** — výzkumný kampus a budoucí pozemní stanici (ground station) v **Kostarice**, na pozemku sdíleném s L5 uzlem **LUMI (Nová Amerika)** (`docs/TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md`).
 
 > **Stav: HORIZONT.** Žádný pozemek, anténa ani laboratoř neexistuje. Dokument je plánovací rámec, ne záznam stavby.
 
@@ -64,7 +64,7 @@ Orbitální stanice Issobella má tři segmenty: vesmírný (HORIZONT 2040+), u�
 - Rádiová anténní pole → SETI/klidové data pipeline napojená na ZION DeSci
 - Meteorologická stanice jako provozní nutnost (blesky, vlhkost)
 
-### 3.4 Sdílená infrastruktura s L5 Nová Amerika
+### 3.4 Sdílená infrastruktura s L5 LUMI (Nová Amerika)
 
 | Systém | L5 podíl | L6 podíl |
 |--------|----------|----------|

@@ -1,4 +1,4 @@
-# Nová Amerika — Costa Rica
+# LUMI — Nová Amerika (Costa Rica)
 
 > **L5 Free World · sixth Terra Nova node** · Status: 🔵 Vision / Preparation
 > *"A bridge between two continents and two oceans — and a bridge between the first nations and the future we write together."*

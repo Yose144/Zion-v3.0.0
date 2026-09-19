@@ -38,7 +38,7 @@ Je to nejvzdálenější kniha série — a proto musí být **nejpřísnější
 | 8 | [Zrcadlo](./08-Zrcadlo.md) | **Zrcadlo** · *L4 ↔ L6 / web* | Jak se Issobella objevuje na webu, v dashboardu, v katalogu dokumentů a v OASIS — a kde přesně zrcadlo končí. |
 | 9 | [Cesta poutníka — L6 onboarding](./09-Cesta-Poutnika.md) | **Sedm bran** | Pozorovatel, čtenář, výzkumník (DeSci), těžař, volič, dárce (+ hráč) — co potřebuješ a co ti nikdo nesmí slíbit. |
 | 10 | [Kotva pravdy a hranice](./10-Kotva-Pravdy-a-Hranice.md) | **Registr** · *Mise Amenti M5* | Plná tabulka důkazů L6, co Issobella není, známé nesrovnalosti, otevřené otázky, další kroky a návrh změny. |
-| 11 | [Pozemní uzel Kostarika](./11-Pozemni-Uzel-Kostarika.md) | **Anténa** · *L6 / HORIZONT* | První fyzická stopa L6 na Zemi — výzkumný kampus a budoucí TT&C ground station na středobodu Amerik, na pozemku sdíleném s L5 uzlem Nová Amerika. |
+| 11 | [Pozemní uzel Kostarika](./11-Pozemni-Uzel-Kostarika.md) | **Anténa** · *L6 / HORIZONT* | První fyzická stopa L6 na Zemi — výzkumný kampus a budoucí TT&C ground station na středobodu Amerik, na pozemku sdíleném s L5 uzlem LUMI (Nová Amerika). |
 
 ---
 

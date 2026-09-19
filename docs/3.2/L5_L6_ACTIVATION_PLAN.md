@@ -12,7 +12,7 @@
 
 L5 Free World and L6 Issobella are the humanitarian and science/space layers of the ZION stack. They are funded by a protocol-level 5 % + 5 % block-reward tithe, hard-coded in L1 emission and paid to two canonical on-chain addresses. The purpose of the layers is:
 
-- **L5 Free World** — transparent accumulation and governance of the humanitarian tithe for grants, community projects, education, free-energy research, and physical L5 communities (Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, Nová Amerika).
+- **L5 Free World** — transparent accumulation and governance of the humanitarian tithe for grants, community projects, education, free-energy research, and physical L5 communities (Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, LUMI — Nová Amerika).
 - **L6 Issobella** — transparent accumulation and governance of the science/space tithe for orbital research, satellite mesh, SETI, and long-horizon space missions.
 
 For 3.2.0 the layers will be **activated in a limited, safe mode**: the daemons will run, scan L1 coinbase, and expose fund balance and proposal APIs, but **no automatic disbursement** will take place. Funds keep accumulating on-chain; any spend must go through the DAO governance path (proposals, voting, timelock, and a guardian multi-sig) and currently **requires the missing DAO UI/UX**. Therefore L5/L6 are **enabled as a public, auditable, read-only foundation** and are explicitly **not a 3.2.0 launch blocker**.
@@ -32,7 +32,7 @@ Source: `archive/V3/L5/docs/README.md` and `archive/V3/L5/docs/ARCHITECTURE/l5-s
   - **Te Pīko Ora** (Water / Crown) — fruition, abundance, marine permaculture.
   - **Golden Republic Bohemia** (Air / Heart) — governance lab, circle of decision, Czech wisdom, Zlatá republika protocol.
   - **Bodhi Lanka** (Akasha / Ether) — love (Rama-Sita), Bodhi tree, Bhakti protocol, Ayurvedic garden.
-  - **Nová Amerika** (Costa Rica — sixth node beyond the pentagram) — Americas bridge & memory, native cultures of the Americas (Bribri, Cabécar, Boruca), FPIC-governed, shares land with the L6 Issobella ground station.
+  - **LUMI — Nová Amerika** (Costa Rica — sixth node beyond the pentagram) — Americas bridge & memory, native cultures of the Americas (Bribri, Cabécar, Boruca), FPIC-governed, shares land with the L6 Issobella ground station.
 - **Shared protocols:** Guardian Node, Seed Library, Medical Table, LoRa/Meshtastic mesh, Sociocratic DAO, Consciousness Admission, Resonance Protocol.
 - **Revenue model:**
   - Network block reward: 89 % miner, 5 % humanitarian, 5 % Issobella, 1 % pool-fee/node-reward slot.
