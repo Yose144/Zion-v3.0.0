@@ -164,7 +164,7 @@ async fn e2e_flow_btc_to_zion() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
 
     // ZION identities (coordinator is offline — bookkeeping only).
     let (_, op_vk) = zion_core::crypto::generate_keypair();
@@ -289,7 +289,7 @@ async fn e2e_flow_zion_to_btc() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
 
     let (_, op_vk) = zion_core::crypto::generate_keypair();
     let (_, user_vk) = zion_core::crypto::generate_keypair();
@@ -485,7 +485,7 @@ async fn e2e_flow_btc_to_zion_refund() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
 
     let (_, op_vk) = zion_core::crypto::generate_keypair();
     let (_, user_vk) = zion_core::crypto::generate_keypair();
@@ -601,7 +601,7 @@ async fn e2e_flow_btc_to_zion_restart() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
 
     let (_, op_vk) = zion_core::crypto::generate_keypair();
     let (_, user_vk) = zion_core::crypto::generate_keypair();
@@ -860,7 +860,7 @@ async fn e2e_flow_zion_to_btc_live_zion() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
     let rpc = std::env::var("WARP_ZION_RPC").expect("WARP_ZION_RPC");
     // Funded USER identity: BIP39 mnemonic or a raw Ed25519 secret (hex).
     let user_keyring = |()| -> Keyring {

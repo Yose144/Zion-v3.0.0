@@ -394,7 +394,7 @@ impl BtcSigner {
     pub async fn lock_htlc(
         &self,
         client: &reqwest::Client,
-        api_url: &str,
+        api_urls: &[String],
         htlc: &BtcHtlc,
         amount_sats: u64,
     ) -> WarpResult<(String, u32, u64)> {
@@ -404,7 +404,7 @@ impl BtcSigner {
             .unwrap_or(5);
 
         let utxos =
-            crate::warp::btc_signer::fetch_utxos(client, api_url, &self.address().to_string())
+            crate::warp::btc_signer::fetch_utxos(client, api_urls, &self.address().to_string())
                 .await?;
         let confirmed: Vec<_> = utxos.into_iter().filter(|u| u.is_confirmed()).collect();
         if confirmed.is_empty() {
@@ -467,7 +467,7 @@ impl BtcSigner {
         }
 
         let raw_hex = hex::encode(serialize(&tx));
-        let txid = crate::warp::btc_signer::broadcast_tx(client, api_url, &raw_hex).await?;
+        let txid = crate::warp::btc_signer::broadcast_tx(client, api_urls, &raw_hex).await?;
         info!("[WARP][bitcoin] HTLC lock broadcast: {} ({} sats)", txid, amount_sats);
         Ok((txid, 0, amount_sats))
     }
@@ -476,7 +476,7 @@ impl BtcSigner {
     pub async fn claim_htlc(
         &self,
         client: &reqwest::Client,
-        api_url: &str,
+        api_urls: &[String],
         utxo: &HtlcUtxo,
         htlc: &BtcHtlc,
         preimage: [u8; 32],
@@ -495,7 +495,7 @@ impl BtcSigner {
             feerate,
         )?;
         let raw_hex = hex::encode(serialize(&tx));
-        let txid = crate::warp::btc_signer::broadcast_tx(client, api_url, &raw_hex).await?;
+        let txid = crate::warp::btc_signer::broadcast_tx(client, api_urls, &raw_hex).await?;
         info!("[WARP][bitcoin] HTLC claim broadcast: {}", txid);
         Ok(txid)
     }
@@ -504,7 +504,7 @@ impl BtcSigner {
     pub async fn refund_htlc(
         &self,
         client: &reqwest::Client,
-        api_url: &str,
+        api_urls: &[String],
         utxo: &HtlcUtxo,
         htlc: &BtcHtlc,
         dest: &Address,
@@ -522,7 +522,7 @@ impl BtcSigner {
             feerate,
         )?;
         let raw_hex = hex::encode(serialize(&tx));
-        let txid = crate::warp::btc_signer::broadcast_tx(client, api_url, &raw_hex).await?;
+        let txid = crate::warp::btc_signer::broadcast_tx(client, api_urls, &raw_hex).await?;
         info!("[WARP][bitcoin] HTLC refund broadcast: {}", txid);
         Ok(txid)
     }

@@ -138,7 +138,7 @@ async fn e2e_signet_claim_path() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
 
     let preimage: [u8; 32] = {
         let mut p = [0u8; 32];
@@ -227,7 +227,7 @@ async fn e2e_signet_refund_path() {
         return;
     };
     let client = reqwest::Client::new();
-    let api = btc.api_url().to_string();
+    let api = btc.api_urls().to_vec();
 
     let preimage: [u8; 32] = {
         let mut p = [0u8; 32];

@@ -60,7 +60,7 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 | R1 | low | Broadcast-window residual | Crash přesně mezi submit a persist bez jakéhokoliv záznamu — ms-scale okno, duplicitní lock refundovatelný. Uzavřít vyžaduje persistovaný txid před submit (adapter internals). |
 | R2 | low | `AwaitingUserLock` bez TTL | Swap může čekat donekonečna (user nikdy nezavře lock). Slot spotřebuje kapacitu — mitigováno `max_active_swaps` + auth na offer. Zvážit offer TTL → `Failed`. |
 | R3 | med | Shared hot wallet UTXO race | Largest-first selection koliduje s pool payout builderem na sdílené peněžence (live test: double-spend race). **FIXED (code):** `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` → dedikovaný keyring + vlastní `ZionL1Adapter` + vlastní `HtlcSwap` coordinator pro btc-swap; fallback na bridge keyring s warn. **Zbývá: nasadit key na Edge při enable.** |
-| R4 | med | Public esplora | mempool.space rate limits + availability → produkce potřebuje vlastní esplora/electrum. Beta OK. |
+| R4 | med | Public esplora | mempool.space rate limits + availability. **ČÁSTEČNĚ FIXED (code):** multi-endpoint failover — `WARP_BITCOIN_API` comma-list, rotating primary (`AtomicUsize`), defaults mempool.space + blockstream.info; broadcast/utxo fetch také failover. **Zbývá ops: vlastní esplora/bitcoind jako primary při enable.** |
 | R5 | low | `getUtxos` reorg hloubka | UTXO set hit ≠ finalita; mitigováno `min_zion_lock_confs=2`. |
 | R6 | info | BTC dust/change | `lock_htlc` UTXO select — zkontrolovat dust-limit change output (auditor: ověřit v `btc_signer.rs`). |
 | R7 | info | Deterministic claim rebroadcast | Identický claim tx → stejný txid → esplora dup-submit error → adopt path přes `detect_htlc_spend` to kryje (mempool detekce). |
@@ -91,7 +91,7 @@ Blokuje `WARP_BTC_SWAP_ENABLED=1`:
 
 1. ☐ Externí audit tohoto dokumentu + kódu
 2. ☑ R3 (code): dedikovaný WARP ZION wallet implementován — ☐ zbývá vygenerovat + nasadit `WARP_BTC_SWAP_ZION_SECRET` na Edge a nabít jej
-3. ☐ R4: vlastní esplora/bitcoind backend (ne public mempool.space)
+3. ☐ R4 (ops): vlastní esplora/bitcoind jako primary v `WARP_BITCOIN_API` comma-list (failover code hotový, defaults = 2 public backends)
 4. ☐ Edge binary = HEAD (všechny audit fixy), verify `git log`
 5. ☐ `WARP_BTC_RELAY_KEY` = produkční WIF (ne test), network match
 6. ☐ `ZION_MULTICHAIN_API_KEY` nebo ZIS auth pro offer endpoint

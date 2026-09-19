@@ -1043,7 +1043,7 @@ impl BtcSwapFlow {
             .signer
             .lock_htlc(
                 self.btc.client(),
-                self.btc.api_url(),
+                self.btc.api_urls(),
                 &rec.btc_htlc,
                 rec.btc_sats,
             )
@@ -1163,7 +1163,7 @@ impl BtcSwapFlow {
         self.signer
             .claim_htlc(
                 self.btc.client(),
-                self.btc.api_url(),
+                self.btc.api_urls(),
                 &utxo,
                 &rec.btc_htlc,
                 preimage,
@@ -1213,7 +1213,7 @@ impl BtcSwapFlow {
         self.signer
             .refund_htlc(
                 self.btc.client(),
-                self.btc.api_url(),
+                self.btc.api_urls(),
                 &utxo,
                 &rec.btc_htlc,
                 &dest,
