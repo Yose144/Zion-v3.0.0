@@ -85,6 +85,7 @@ def build_pdf():
         ("Hlavní správkyně / Zmocněnkyně (Trustee):", "Erika Imlaufová, datum narození: ____________________, bydliště: ________________________________"),
         ("Náhradní správkyně (při nečinnosti Eriky):", "Petra Tkácová, datum narození: ____________________, bydliště: ________________________________"),
         ("Nezletilé děti a hlavní beneficienti:", "Sarah Hubalková (dcera) a Tadeas Hubalek (syn)"),
+        ("Správkyně fondu L6 Issobella:", "Aelan Vaast, nar. 23. 12. 2004, bydliště: ________________________________\n(profesionální surfařka, Tahiti / Francie; Instagram @aelanvaast)"),
     ]
     for label, desc in participants:
         pdf.set_font("Arial", "B", 8.5)
@@ -144,7 +145,9 @@ def build_pdf():
         "    - Project Bohemia: 500 000 000 ZION (správce: Andrea Kalousová)\n"
         "    - Project Bodhi Lanka: 500 000 000 ZION (správce: Annicka Purkertová)\n"
         "    - L5 rezervní fond: 800 000 000 ZION (správce: Erika Imlaufová / náhradník: Petra Tkácová)\n"
-        "• L6 Issobella (2 500 000 000 ZION), DAO Treasury (1 500 000 000 ZION) a Infrastruktura + Humanitární fondy (4 530 000 000 ZION): slouží výhradně svým určeným cílům."
+        "• L6 Issobella — Orbital Station & Quantum Research Fund (2 500 000 000 ZION): správkyní fondu je Aelan Vaast — řídí projekt\n"
+        "    do 18. narozenin Sarah Hubalkové, poté s ní spolupracuje. Utrácení vyžaduje 3-of-3 admin multisig + DAO vote.\n"
+        "• DAO Treasury (1 500 000 000 ZION) a Infrastruktura + Humanitární fondy (4 530 000 000 ZION): slouží výhradně svým určeným cílům."
     )
     pdf.multi_cell(0, 4.3, p4)
     pdf.ln(2)
@@ -172,6 +175,7 @@ def build_pdf():
         ("Yosef Hubálek", "Zakladatel, Zmocnitel a Dárce", "Podpis: _____________________________________________"),
         ("Erika Imlaufová", "Hlavní správkyně (Trustee) — potvrzení přijetí správy a plné moci", "Podpis: _____________________________________________"),
         ("Petra Tkácová", "Náhradní správkyně — potvrzení přijetí náhradního pověření", "Podpis: _____________________________________________"),
+        ("Aelan Vaast", "Správkyně fondu L6 Issobella — přijímá řízení fondu do 18 let Sarah, poté spolupráce", "Podpis: _____________________________________________"),
     ]
 
     for name, title, sig_line in sig_blocks:
