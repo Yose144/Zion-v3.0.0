@@ -21,7 +21,7 @@ Poutník si vzpomněl na slova stařeny z kruhu starších — *nejdřív poslou
 
 ## Co to znamená
 
-**Pozemní uzel Kostarika je první fyzická stopa L6 na Zemi — výzkumný kampus a budoucí pozemní segment (ground segment) stanice Issobella.** Kde orbitální stanice je HORIZONT na desetiletí, pozemní uzel je cesta, jak L6 začít stavět **dnes**: laboratoř, anténní pole, vzdělávací centrum a observatoř — na pozemku sdíleném s L5 uzlem Nová Amerika.
+**Pozemní uzel Kostarika je první fyzická stopa L6 na Zemi — výzkumný kampus a budoucí pozemní segment (ground segment) stanice Issobella.** Kde orbitální stanice je HORIZONT na desetiletí, pozemní uzel je cesta, jak L6 začít stavět **dnes**: laboratoř, anténní pole, vzdělávací centrum a observatoř — na pozemku sdíleném s L5 uzlem LUMI (Nová Amerika).
 
 ### Proč Kostarika — technická logika
 
@@ -80,7 +80,7 @@ Utrácení z premine slotu 6 nadále vyžaduje 3-of-3 admin multisig + DAO vote 
 | **Kostarika ~9–10° s. š., dva oceány, bez armády** | **ŽIVÉ** (geografie/politika) | Veřejně ověřitelné údaje | — |
 | **ACE, Irazú, Ad Astra/VASIMR v CR** | **ŽIVÉ** (veřejné fakty) | Agencia Espacial Costarricense (2021); Irazú CubeSat (2018); Ad Astra Rocket Company, Liberia, Guanacaste | Žádná spolupráce není doložena |
 | **Pozemní segment jako první stavitelná část L6** | **HORIZONT** | Tato kapitola; `L6data/Pozemni_Stanice_Kostarika.md` | Site survey, povolení, rozpočet |
-| **Sdílený pozemek s L5 Nová Amerika** | **HORIZONT** | `BodhiGaia/13-Nova-Amerika.md`, `TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md` | Akvizice, MOU, FPIC |
+| **Sdílený pozemek s L5 LUMI (Nová Amerika)** | **HORIZONT** | `BodhiGaia/13-Nova-Amerika.md`, `TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md` | Akvizice, MOU, FPIC |
 | **Správkyně fondu Aelan Vaast** | **ŽIVÉ** (interní rozhodnutí) | `docs/private/` — darovací listina, succession plan | Její podpis, bydliště, formální přijetí |
 | **TT&C antény, laboratoř, observatoř** | **HORIZONT** | `L6data/Pozemni_Stanice_Kostarika.md` | Hardware, povolení SUTEL, financování |
 | **Jen-že, kružnice v písku, stanice-mezerá** | **MÝTUS** | Archetypy této knihy | — |

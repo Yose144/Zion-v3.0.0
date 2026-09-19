@@ -28,7 +28,7 @@ L5 is the **terrestrial layer** of ZION — where blockchain consensus meets soi
 | **Golden Republic Bohemia** | Air | Heart / Governance Lab | Circle of decision, Czech wisdom, Zlatá republika protocol |
 | **Bodhi Lanka** | Akasha / Ether | Soul / Akasha Node | Love (Rama-Sita), Bodhi tree, Bhakti protocol |
 
-> **Sixth node:** **Nová Amerika** (Costa Rica) stands beyond the pentagram — the Bridge & Memory node for the native cultures of the Americas, sharing its land with the L6 Issobella ground segment. See [`COMMUNITIES/nova-amerika.md`](./COMMUNITIES/nova-amerika.md).
+> **Sixth node:** **LUMI — Nová Amerika** (Costa Rica) stands beyond the pentagram — the Bridge & Memory node for the native cultures of the Americas, sharing its land with the L6 Issobella ground segment. See [`COMMUNITIES/nova-amerika.md`](./COMMUNITIES/nova-amerika.md).
 
 ---
 
@@ -55,7 +55,7 @@ V3/L5/docs/
 │   ├── te-piko-ora.md             ← Te Pīko Ora, French Polynesia
 │   ├── golden-republic-bohemia.md ← Golden Republic Bohemia, Czech Republic
 │   ├── bodhi-lanka.md             ← Bodhi Lanka, Sri Lanka
-│   └── nova-amerika.md            ← Nová Amerika, Costa Rica (native cultures + L6 ground segment)
+│   └── nova-amerika.md            ← LUMI — Nová Amerika, Costa Rica (native cultures + L6 ground segment)
 └── TEMPLATES/
     └── community-blueprint.md     ← Generic template for new L5 communities
 ```
@@ -71,7 +71,7 @@ V3/L5/docs/
 | **Te Pīko Ora** | Raiatea / Tahiti, French Polynesia | Crown — paradise, marine permaculture, wayfinding | 🔵 Vision / Preparation | [`COMMUNITIES/te-piko-ora.md`](./COMMUNITIES/te-piko-ora.md) |
 | **Golden Republic Bohemia** | Bohemia, Czech Republic | Heart — governance lab, circle of decision, Czech wisdom | 🔵 Preparation | [`COMMUNITIES/golden-republic-bohemia.md`](./COMMUNITIES/golden-republic-bohemia.md) |
 | **Bodhi Lanka** | Sri Lanka | Akasha — love (Rama-Sita), Bodhi tree, Bhakti protocol | 🔵 Vision / Preparation | [`COMMUNITIES/bodhi-lanka.md`](./COMMUNITIES/bodhi-lanka.md) |
-| **Nová Amerika** | Costa Rica | Bridge & Memory — native cultures of the Americas, FPIC, shared land with L6 ground station | 🔵 Vision / Preparation | [`COMMUNITIES/nova-amerika.md`](./COMMUNITIES/nova-amerika.md) |
+| **LUMI — Nová Amerika** | Costa Rica | Bridge & Memory — native cultures of the Americas, FPIC, shared land with L6 ground station | 🔵 Vision / Preparation | [`COMMUNITIES/nova-amerika.md`](./COMMUNITIES/nova-amerika.md) |
 
 ---
 

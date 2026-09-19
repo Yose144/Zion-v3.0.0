@@ -38,7 +38,7 @@ It is the most distant book of the series — and therefore must be the strictes
 | 8 | [The Mirror](./08-Zrcadlo.md) | **Mirror** · *L4 ↔ L6 / web* | How Issobella appears on the website, the dashboard, the docs catalog and in OASIS — and where exactly the mirror ends. |
 | 9 | [The Pilgrim's Path — L6 onboarding](./09-Cesta-Poutnika.md) | **Seven gates** | Observer, reader, researcher (DeSci), miner, voter, giver (+ player) — what you need and what nobody may promise you. |
 | 10 | [Truth Anchor and Boundaries](./10-Kotva-Pravdy-a-Hranice.md) | **Registry** · *Mise Amenti M5* | The full L6 evidence table, what Issobella is not, known inconsistencies, open questions, next steps and the change proposal. |
-| 11 | [Ground Node Costa Rica](./11-Pozemni-Uzel-Kostarika.md) | **Antenna** · *L6 / HORIZON* | The first physical footprint of L6 on Earth — a research campus and future TT&C ground station at the midpoint of the Americas, on land shared with the L5 node Nová Amerika. |
+| 11 | [Ground Node Costa Rica](./11-Pozemni-Uzel-Kostarika.md) | **Antenna** · *L6 / HORIZON* | The first physical footprint of L6 on Earth — a research campus and future TT&C ground station at the midpoint of the Americas, on land shared with the L5 node LUMI (Nová Amerika). |
 
 ---
 
@@ -51,7 +51,7 @@ It is the most distant book of the series — and therefore must be the strictes
 | `zion-issobella` tracker runs on Edge (`127.0.0.1:8097`), scans coinbase, exposes fund balance / proposals / metrics. | **LIVE** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Public portal; API-key enforcement |
 | The fund disburses grants today. | **INVALID CLAIM** (today) | Gate G10: no automatic disbursement; DAO path is summary-only ([`L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)) | DAO UI, payout flow, guardian multisig, first project |
 | The L6 research pack (station architecture, quantum motor, artificial gravity, human factors, history) is public and served. | **LIVE** (documentation) | [`L6data/`](../../../L6data/README.md), mirror `APP&WEB/website-v2.9/public/docs/l6/`, catalog `/docs` → `l6-*` | Peer review, external experts |
-| Costa Rica ground node — research campus and future TT&C ground station, land shared with L5 Nová Amerika. | **HORIZON** | [`11-Pozemni-Uzel-Kostarika.md`](./11-Pozemni-Uzel-Kostarika.md), `L6data/Pozemni_Stanice_Kostarika.md` | Site survey, land acquisition, SUTEL permits, hardware; no antenna stands |
+| Costa Rica ground node — research campus and future TT&C ground station, land shared with L5 LUMI (Nová Amerika). | **HORIZON** | [`11-Pozemni-Uzel-Kostarika.md`](./11-Pozemni-Uzel-Kostarika.md), `L6data/Pozemni_Stanice_Kostarika.md` | Site survey, land acquisition, SUTEL permits, hardware; no antenna stands |
 | Orbital station at 400–550 km with artificial gravity and crew. | **HORIZON** | TerraNova prologue (2040), `L6data/Architektura.md`, `/l6-issobella` (roadmap 2030→2045+) | Feasibility studies, partners, years of work; no module exists |
 | Quantum motor / power (demonstrator 2033, CubeSat 2035). | **HORIZON / HYPOTHESIS** | `L6data/Kvantovy_Motor.md` (TRL, safety gates), website roadmap | Research, lab, verification; no hardware |
 | Alcubierre–Ekam metric, Φ resonance, toroidal standing waves. | **HYPOTHESIS / MYTH** | [`nirvana/11`](../nirvana/11-Kvantovy-Ohen-Issobella.md) as a narrative frame | No physical evidence; read as poetry of science |

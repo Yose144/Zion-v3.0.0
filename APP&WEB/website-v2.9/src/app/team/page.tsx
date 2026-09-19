@@ -184,9 +184,9 @@ const L5_LEADS = [
   },
   {
     key: 'nova-amerika',
-    name: 'Nová Amerika',
+    name: 'LUMI',
     element: { cs: 'Most · Paměť', en: 'Bridge · Memory' },
-    location: { cs: 'Kostarika', en: 'Costa Rica' },
+    location: { cs: 'Kostarika · Nová Amerika', en: 'Costa Rica · Nová Amerika' },
     icon: Globe2,
     accent: '20, 184, 166',
     text: 'text-teal-300',

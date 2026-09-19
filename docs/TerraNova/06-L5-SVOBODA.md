@@ -189,7 +189,7 @@ Principy Zlaté republiky:
 
 *Zlatá republika nezrušila staré státy. Nabídla lepší alternativu — a lidé si vybrali.*
 
-> **Golden Republic Bohemia** (Česká republika) je první fyzický uzel L5 Pentagramu, který tento protokol prototypuje v praxi — governance lab a kruh rozhodnutí ukotvený v české moudrosti: sůl, most, Zlatá bula, Přemysl Oráč, Libuše, Karel IV. Paralelně **Bodhi Lanka** (Srí Lanka) prototypuje **Bhakti protokol** — lásku (Rama-Sita), Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most a Ayurvedu jako živou páteř péče. Šestý uzel — **Nová Amerika** (Kostarika) — stojí za pentagramem: most a paměť pro nativní kultury obou Amerik, řízený principem FPIC, na pozemku sdíleném s pozemní stanicí L6 Issobella (viz `Projects/NOVA-AMERIKA-KOSTARIKA.md`).
+> **Golden Republic Bohemia** (Česká republika) je první fyzický uzel L5 Pentagramu, který tento protokol prototypuje v praxi — governance lab a kruh rozhodnutí ukotvený v české moudrosti: sůl, most, Zlatá bula, Přemysl Oráč, Libuše, Karel IV. Paralelně **Bodhi Lanka** (Srí Lanka) prototypuje **Bhakti protokol** — lásku (Rama-Sita), Sri Maha Bodhi (nejstarší žijící strom, 288 př. n. l.), Rama Setu most a Ayurvedu jako živou páteř péče. Šestý uzel — **LUMI (Nová Amerika)** (Kostarika) — stojí za pentagramem: most a paměť pro nativní kultury obou Amerik, řízený principem FPIC, na pozemku sdíleném s pozemní stanicí L6 Issobella (viz `Projects/NOVA-AMERIKA-KOSTARIKA.md`).
 
 ---
 

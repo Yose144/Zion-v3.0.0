@@ -31,7 +31,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
   planned2027: { cs: `Plánováno 2027+`, en: `Planned 2027+` },
-  bridgeSubtitle: { cs: `Most Amerik · Kostarika · Terra Nova ®`, en: `Americas Bridge · Costa Rica · Terra Nova ®` },
+  bridgeSubtitle: { cs: `Nová Amerika · Most Amerik · Kostarika · Terra Nova ®`, en: `Nová Amerika · Americas Bridge · Costa Rica · Terra Nova ®` },
   quote: {
     cs: `"Nejdřív poslouchat, pak stavět. Most nespojuje břehy — spojuje lidi."`,
     en: `"Listen first, then build. A bridge does not connect shores — it connects people."`,
@@ -39,8 +39,8 @@ const Copy = {
   locationLine: { cs: `Kostarika · pevninský most Amerik`, en: `Costa Rica · the land bridge of the Americas` },
   introTitle: { cs: `Šestý uzel — země mezi dvěma světy`, en: `The sixth node — land between two worlds` },
   introBody: {
-    cs: `Nová Amerika je šestý a poslední plánovaný uzel L5 Free World — projekt pro nativní kultury obou Amerik. Kostarika leží na zeměpisném středobodu kontinentů: osm oficiálně uznávaných indiánských teritorií (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), země bez armády, ~98 % obnovitelné energie a dostupné rurální pozemky. Uzel se staví principem FPIC — svobodný, předem daný a informovaný souhlas kruhů starších.`,
-    en: `Nová Amerika is the sixth and final planned node of L5 Free World — a project for the native cultures of both Americas. Costa Rica sits at the geographic midpoint of the continents: eight officially recognised indigenous territories (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), a country without an army, ~98% renewable energy and affordable rural land. The node is built on FPIC — free, prior and informed consent of the councils of elders.`,
+    cs: `LUMI (Nová Amerika) je šestý a poslední plánovaný uzel L5 Free World — projekt pro nativní kultury obou Amerik. Kostarika leží na zeměpisném středobodu kontinentů: osm oficiálně uznávaných indiánských teritorií (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), země bez armády, ~98 % obnovitelné energie a dostupné rurální pozemky. Uzel se staví principem FPIC — svobodný, předem daný a informovaný souhlas kruhů starších.`,
+    en: `LUMI (Nová Amerika) is the sixth and final planned node of L5 Free World — a project for the native cultures of both Americas. Costa Rica sits at the geographic midpoint of the continents: eight officially recognised indigenous territories (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), a country without an army, ~98% renewable energy and affordable rural land. The node is built on FPIC — free, prior and informed consent of the councils of elders.`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Aktivity & vize`, en: `Activities & Vision` },
@@ -76,7 +76,7 @@ const Copy = {
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
-  documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace Nové Ameriky.`, en: `Complete plan, concept and specification of Nová Amerika.` },
+  documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace projektu LUMI.`, en: `Complete plan, concept and specification of the LUMI project.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
   sisterTitle: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
@@ -271,7 +271,7 @@ export default function NovaAmerikaPage() {
                   </div>
 
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
-                    Nová Amerika
+                    LUMI
                   </h1>
                   <p className="text-lg text-teal-300 font-medium">
                     {Copy.bridgeSubtitle[cs ? 'cs' : 'en']}

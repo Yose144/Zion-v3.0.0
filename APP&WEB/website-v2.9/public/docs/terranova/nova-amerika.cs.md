@@ -1,4 +1,4 @@
-# Nová Amerika — Kostarika
+# LUMI — Nová Amerika (Kostarika)
 
 > **L5 Free World · šestý uzel Terra Nova** · Stav: 🔵 Vize / Příprava
 > *„Most mezi dvěma kontinentů a dvěma oceány — a most mezi prvními národy a budoucností, kterou si píšeme společně."*

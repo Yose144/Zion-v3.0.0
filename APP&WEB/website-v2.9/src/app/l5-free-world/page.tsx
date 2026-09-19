@@ -186,8 +186,8 @@ const getCommunities = (cs: boolean) => [
     cover: '/images/bodhi-lanka/hero.jpg',
   },
   {
-    name: 'Nová Amerika',
-    location: cs ? 'Kostarika' : 'Costa Rica',
+    name: 'LUMI',
+    location: cs ? 'Kostarika · Nová Amerika' : 'Costa Rica · Nová Amerika',
     status: 'vision' as const,
     desc: cs
       ? 'Most Amerik — projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.'
@@ -203,7 +203,7 @@ const getPremineAllocation = (cs: boolean) => [
   { name: 'Te Pīko Ora', amount: cs ? '500 mil.' : '500M', href: '/terranova/te-piko-ora' },
   { name: 'Golden Republic Bohemia', amount: cs ? '500 mil.' : '500M', href: '/terranova/golden-republic-bohemia' },
   { name: 'Bodhi Lanka', amount: cs ? '500 mil.' : '500M', href: '/terranova/bodhi-lanka' },
-  { name: 'Nová Amerika', amount: cs ? '500 mil.' : '500M', href: '/terranova/nova-amerika' },
+  { name: 'LUMI (Nová Amerika)', amount: cs ? '500 mil.' : '500M', href: '/terranova/nova-amerika' },
 ];
 
 const getProtocols = (cs: boolean) => [

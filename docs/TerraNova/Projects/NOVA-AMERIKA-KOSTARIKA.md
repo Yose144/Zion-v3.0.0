@@ -1,4 +1,4 @@
-# Nová Amerika — L5 Komunita Terra Nova
+# LUMI — Nová Amerika · L5 Komunita Terra Nova
 *Nativní kultury · Kostarika · Most mezi dvěma kontinent · Paměť prvních národů*
 
 ## Základní data
@@ -17,7 +17,7 @@
 
 ## Vize a záměr
 
-Nová Amerika je **šestý a poslední uzel L5** — projekt pro nativní kultury Amerik. Kostarika je doslovný zeměpisný středobod: pevninský most mezi Severní a Jižní Amerikou, dvěma oceány (Pacifik + Karibik) a dvěma civilizačními sférami. Levné pozemky v rurálních regionech, stabilní demokracie bez armády (od 1948), ~6 % světové biodiverzity na 0,03 % zemské souše.
+**LUMI (Nová Amerika)** je **šestý a poslední uzel L5** — projekt pro nativní kultury Amerik. Kostarika je doslovný zeměpisný středobod: pevninský most mezi Severní a Jižní Amerikou, dvěma oceány (Pacifik + Karibik) a dvěma civilizačními sférami. Levné pozemky v rurálních regionech, stabilní demokracie bez armády (od 1948), ~6 % světové biodiverzity na 0,03 % zemské souše.
 
 Projekt prototypuje **Most protokol** — komunitu, která není „novou kolonií", ale **partnerem prvních národů**: Bribri, Cabécar, Boruca (Brunca), Ngäbe, Maleku, Huetar, Chorotega, Térraba. Kostarika má 24 indiánských teritorií chráněných zákonem Ley Indígena 6172 (1977).
 
@@ -83,7 +83,7 @@ Projekt prototypuje **Most protokol** — komunitu, která není „novou koloni
 | **Te Pīko Ora** | Voda / Koruna | Paradise (Polynésie — sesterský oceánský svět) |
 | **Golden Republic Bohemia** | Vzduch / Srdce | Governance lab |
 | **Bodhi Lanka** | Akasha / Éter | Bhakti |
-| **Nová Amerika** | Most & Paměť | Nativní kultury, zeměpisný středobod |
+| **LUMI — Nová Amerika** | Most & Paměť | Nativní kultury, zeměpisný středobod |
 | **L6 Issobella CR** | Nebe | Pozemní stanice / výzkumný kampus (sdílený pozemek) |
 
 ---

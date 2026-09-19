@@ -4681,8 +4681,8 @@ export const WORLDS: World[] = [
       galaxyPosition: { x: 5.4, y: 0.5, z: 16.8 }
   },
   {
-      id: "NOVA_AMERIKA",
-      name: "Nová Amerika",
+      id: "LUMI",
+      name: "Lumi — Nová Amerika",
       category: "world",
       layer: 5,
       location: "Costa Rica — Terra Nova L5 Americas bridge node",
@@ -4868,6 +4868,7 @@ export const WORLD_IDS = [
   "LONGCHEN_RABJAM",
   "LONO",
   "LUGH_ILDANAICH",
+  "LUMI",
   "MAAT",
   "MACHIK_LABDRON",
   "MAHATMA_GANDHI",
@@ -4896,7 +4897,6 @@ export const WORLD_IDS = [
   "NEO_THE_ONE",
   "NEZHA",
   "NICHIREN",
-  "NOVA_AMERIKA",
   "NOVA_ZEME",
   "NUT_STELLAR_VAULT",
   "NYAI_RORO_KIDUL",
