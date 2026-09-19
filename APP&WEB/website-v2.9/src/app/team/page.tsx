@@ -6,6 +6,7 @@ import {
   Users, Crown, ShieldCheck, Bot, ArrowRight, Github,
   Sprout, Flame, Waves, Wind, Sparkles, Layers,
   GitBranch, Heart, BookOpen, Compass, Globe2, UserPlus,
+  Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -57,11 +58,34 @@ const TeamCopy = {
   l5Leads: { cs: `L5 Free World`, en: `L5 Free World` },
   l5LeadsTitle: { cs: `Vedení L5 projektů`, en: `L5 Project Leads` },
   l5LeadsDesc: {
-    cs: `Šest fyzických komunit Terra Nova — pět drží elementy Stromu života, šestá je most za pentagramem. Vedení se rodí z místních kruhů, ne z centrály.`,
-    en: `Six physical Terra Nova communities — five hold the elements of the Tree of Life, the sixth is the bridge beyond the pentagram. Leadership grows from local circles, not from a headquarters.`,
+    cs: `Šest fyzických komunit Terra Nova plus orbitální Issobella — každý projekt drží svůj element. Vedení se rodí z místních kruhů, ne z centrály.`,
+    en: `Six physical Terra Nova communities plus orbital Issobella — each project holds its own element. Leadership grows from local circles, not from a headquarters.`,
   },
   projectLead: { cs: `Project Lead`, en: `Project Lead` },
   visitProject: { cs: `Projekt`, en: `Project` },
+
+  engKicker: { cs: `Engineering`, en: `Engineering` },
+  engTitle: { cs: `Vývojový tým — otevřené pozice`, en: `Engineering Team — Open Positions` },
+  engDesc: {
+    cs: `Klíčové technické role, které obsazujeme — protokol, bridge, AI, web, infra a bezpečnost. Práce je veřejná a ověřitelná: každý commit, release i audit zůstává v repozitáři.`,
+    en: `The core technical roles we are staffing — protocol, bridge, AI, web, infra and security. The work is public and verifiable: every commit, release and audit lives in the repository.`,
+  },
+  roleCore: { cs: `Core Protocol Engineer`, en: `Core Protocol Engineer` },
+  roleCoreDesc: { cs: `Rust · L1 konsenzus, UTXO, PoW algoritmus, mempool`, en: `Rust · L1 consensus, UTXO, PoW algorithm, mempool` },
+  roleEvm: { cs: `Multichain Engineer`, en: `Multichain Engineer` },
+  roleEvmDesc: { cs: `Solidity · TypeScript · L2 bridge, DAO, pooly`, en: `Solidity · TypeScript · L2 bridge, DAO, pools` },
+  roleAi: { cs: `AI / ML Engineer`, en: `AI / ML Engineer` },
+  roleAiDesc: { cs: `PyTorch · LoRA/QLoRA · L3 inference a orchestrace`, en: `PyTorch · LoRA/QLoRA · L3 inference and orchestration` },
+  roleWeb: { cs: `Full-stack Engineer`, en: `Full-stack Engineer` },
+  roleWebDesc: { cs: `Next.js · React · Node — L4 OASIS a veřejný web`, en: `Next.js · React · Node — L4 OASIS and the public web` },
+  roleDevops: { cs: `DevOps / SRE`, en: `DevOps / SRE` },
+  roleDevopsDesc: { cs: `Linux · systemd · nginx · monitoring · CI/CD`, en: `Linux · systemd · nginx · monitoring · CI/CD` },
+  roleSecurity: { cs: `Security Researcher`, en: `Security Researcher` },
+  roleSecurityDesc: { cs: `Kryptografie · audit konsenzu · fuzzing · pentest`, en: `Cryptography · consensus audit · fuzzing · pentest` },
+  roleQa: { cs: `QA / Test Engineer`, en: `QA / Test Engineer` },
+  roleQaDesc: { cs: `E2E · chaos testy · release gates · regrese`, en: `E2E · chaos tests · release gates · regression` },
+  roleDocs: { cs: `DevRel / Technical Writer`, en: `DevRel / Technical Writer` },
+  roleDocsDesc: { cs: `Dokumentace · SDK guides · API reference`, en: `Documentation · SDK guides · API reference` },
 
   sketchKicker: { cs: `Celková skica`, en: `The Big Sketch` },
   sketchTitle: { cs: `Jak je tým poskládaný`, en: `How the team is organized` },
@@ -82,8 +106,8 @@ const TeamCopy = {
   joinKicker: { cs: `Přidej se`, en: `Join us` },
   joinTitle: { cs: `Místo v kruhu je otevřené`, en: `A seat in the circle is open` },
   joinDesc: {
-    cs: `Hledáme vedení L5 projektů, Rust / TypeScript vývojáře, překladatele a správce uzlů. Začni v repozitáři — kód mluví za vše.`,
-    en: `We are looking for L5 project leads, Rust / TypeScript developers, translators and node stewards. Start in the repository — code speaks for itself.`,
+    cs: `Hledáme vedení L5/L6 projektů a vývojáře napříč stackem — Rust protokol, Solidity bridge, AI/ML, Next.js, DevOps, security, QA. Začni v repozitáři — kód mluví za vše.`,
+    en: `We are looking for L5/L6 project leads and engineers across the stack — Rust protocol, Solidity bridge, AI/ML, Next.js, DevOps, security, QA. Start in the repository — code speaks for itself.`,
   },
   joinGithub: { cs: `Repozitář na GitHubu`, en: `GitHub repository` },
   joinDocs: { cs: `Dokumentace`, en: `Documentation` },
@@ -192,6 +216,27 @@ const L5_LEADS = [
     text: 'text-teal-300',
     href: '/terranova/nova-amerika',
   },
+  {
+    key: 'issobella',
+    name: 'ZION Issobella',
+    element: { cs: 'Kosmos · Nirvana', en: 'Cosmos · Nirvana' },
+    location: { cs: 'Orbita + Kostarika (pozemní stanice)', en: 'Orbit + Costa Rica (ground station)' },
+    icon: Rocket,
+    accent: '129, 140, 248',
+    text: 'text-indigo-300',
+    href: '/l6-issobella',
+  },
+];
+
+const ENGINEERING = [
+  { key: 'core', role: TeamCopy.roleCore, desc: TeamCopy.roleCoreDesc, icon: Cpu, accent: '252, 209, 22', text: 'text-zion-gold' },
+  { key: 'evm', role: TeamCopy.roleEvm, desc: TeamCopy.roleEvmDesc, icon: Network, accent: '6, 182, 212', text: 'text-zion-cyan' },
+  { key: 'ai', role: TeamCopy.roleAi, desc: TeamCopy.roleAiDesc, icon: Brain, accent: '147, 51, 234', text: 'text-zion-purple' },
+  { key: 'web', role: TeamCopy.roleWeb, desc: TeamCopy.roleWebDesc, icon: Code2, accent: '16, 185, 129', text: 'text-emerald-300' },
+  { key: 'devops', role: TeamCopy.roleDevops, desc: TeamCopy.roleDevopsDesc, icon: Server, accent: '251, 146, 60', text: 'text-amber-300' },
+  { key: 'security', role: TeamCopy.roleSecurity, desc: TeamCopy.roleSecurityDesc, icon: ShieldCheck, accent: '248, 113, 113', text: 'text-red-300' },
+  { key: 'qa', role: TeamCopy.roleQa, desc: TeamCopy.roleQaDesc, icon: TestTube2, accent: '56, 189, 248', text: 'text-sky-300' },
+  { key: 'docs', role: TeamCopy.roleDocs, desc: TeamCopy.roleDocsDesc, icon: FileText, accent: '167, 139, 250', text: 'text-violet-300' },
 ];
 
 const PODS = [
@@ -340,7 +385,7 @@ export default function TeamPage() {
             </h2>
             <p className="text-sm text-gray-400 max-w-3xl">{TeamCopy.l5LeadsDesc[cs ? 'cs' : 'en']}</p>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {L5_LEADS.map((lead) => (
               <Link
                 key={lead.key}
@@ -367,6 +412,45 @@ export default function TeamPage() {
                   <ArrowRight className="h-4 w-4 text-gray-500 group-hover:translate-x-1 group-hover:text-white transition-all" />
                 </div>
               </Link>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ── ENGINEERING — OPEN ROLES ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{TeamCopy.engKicker[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Code2 className="h-7 w-7 text-zion-cyan" />
+              {TeamCopy.engTitle[cs ? 'cs' : 'en']}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{TeamCopy.engDesc[cs ? 'cs' : 'en']}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {ENGINEERING.map((seat) => (
+              <div
+                key={seat.key}
+                className="zion-rainbow-sub p-5 flex flex-col"
+                style={{ '--rc': seat.accent } as React.CSSProperties}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-xl border"
+                    style={{ borderColor: `rgba(${seat.accent},0.4)`, background: `rgba(${seat.accent},0.08)` }}
+                  >
+                    <seat.icon className={`h-5 w-5 ${seat.text}`} />
+                  </div>
+                  <StatusBadge status="open" cs={cs} />
+                </div>
+                <h3 className="font-semibold text-white leading-tight">{seat.role[cs ? 'cs' : 'en']}</h3>
+                <p className="text-xs text-gray-500 mt-2 leading-relaxed">{seat.desc[cs ? 'cs' : 'en']}</p>
+              </div>
             ))}
           </div>
         </motion.section>
