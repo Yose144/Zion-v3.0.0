@@ -90,13 +90,13 @@ Crash mezi broadcast a persist způsobil po restartu druhý broadcast (BTC lock 
 Blokuje `WARP_BTC_SWAP_ENABLED=1`:
 
 1. ☐ Externí audit tohoto dokumentu + kódu
-2. ☑ R3 (code+ops-prep): `WARP_BTC_SWAP_ZION_SECRET` nasazen v `/etc/zion/edge-environment.sh` (wallet `/etc/zion/keys/warp-operator.json`, 600) — ☐ zbývá NABÍT adresu `zion125w5f5w6w8n067g83846d7g8k630c43432rk3e6` před enable
+2. ☑ R3 (code+ops): `WARP_BTC_SWAP_ZION_SECRET` nasazen v `/etc/zion/edge-environment.sh` (wallet `/etc/zion/keys/warp-operator.json`, 600); adresa `zion125w5f5w6w8n067g83846d7g8k630c43432rk3e6` **FUNDED 500 ZION** 2026-09-19 (tx `abe521fc…`, blok 49544)
 3. ☐ R4 (ops): vlastní esplora/bitcoind jako primary v `WARP_BITCOIN_API` comma-list (failover code hotový, defaults = 2 public backends)
-4. ☐ Edge binary = HEAD (všechny audit fixy), verify `git log`
+4. ☐ Edge binary = HEAD (všechny audit fixy), verify `git log` — **aktuálně deployed `50df05d54` postrádá `d16922977` (R4 failover) a `d8fe0f97d` (R2 offer TTL); potřeba rebuild+redeploy před pilotem**
 5. ☐ `WARP_BTC_RELAY_KEY` = produkční WIF (ne test), network match
 6. ☐ `ZION_MULTICHAIN_API_KEY` nebo ZIS auth pro offer endpoint
 7. ☐ SQLite path/permissions/backup + `load_from_db` enabled v `warpd`
 8. ☐ `WARP_ZION_LOCK_MIN_CONFS` + `WARP_BTC_MIN_CONFS` + margin review pro mainnet parametry
 9. ☐ Monitoring/alerting: stuck swaps, failed submissions, refund deadlines, RPC outages, DB load failures
 10. ☐ Rollback procedura (disable env → restart → in-flight swaps dožijí/refundují)
-11. ☐ Signet E2E run (doporučeno, ne hard blocker — regtest+live-ZION pokrývají pathy)
+11. ☐ Signet/testnet E2E run — **dead-end 2026-09-20** (faucety nedoručily funding); nahrazeno doporučením **mainnet dust pilotu** s cap (`WARP_BTC_SWAP_MAX_SATS` nízko) — regtest+live-ZION leg pokrývají pathy

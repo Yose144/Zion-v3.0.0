@@ -1,7 +1,7 @@
 # WARP Beta — přehled
 
-> Stav: **2026-09-19** · HEAD `9b3b23680` · Edge deployed `d8fe0f97d`
-> Swap: **TESTNET rehearsal aktivní** (`WARP_BTC_SWAP_ENABLED=1`, `BITCOIN_NETWORK=testnet`) · ZION wallet funded 500 ZION · BTC wallet vygenerován (mnemonic na Desktopu)
+> Stav: **2026-09-20** · HEAD `63cc8f7d4` · Edge deployed `50df05d54` (⚠️ postrádá R2 TTL `d8fe0f97d` + R4 failover `d16922977` — redeploy potřeba před pilotem)
+> Swap: **TESTNET rehearsal STALLED** — faucety nedoručily funding (0 tx na HTLC i wallet); doporučen **mainnet dust pilot** · ZION wallet funded 500 ZION · BTC wallet vygenerován (mnemonic na Desktopu)
 > Detaily: [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) · [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md)
 
 Nativní trust-minimized atomické swapy **ZION L1 ↔ BTC** přes HTLC na obou
@@ -54,10 +54,10 @@ persistence, HTTP + CLI lifecycle. Edge: `62.171.141.136:2222`.
 | 1 | **Externí security audit** | ⏳ čeká | `AUDIT_PREP.md` připraven (findings log + checklist) |
 | 2 | **`WARP_BTC_RELAY_KEY`** | ⏳ nenastaven | produkční mainnet BTC WIF — potřeba pro ZION→BTC směr |
 | 3 | Privátní esplora/bitcoind | doporučeno | Edge 93 G free; pruned node ~15 G + IBD. Public failover funguje, beta-grade |
-| 4 | Signet E2E | blokováno | 2 signet adresy čekají na funding (faucety blokují automatizaci) |
+| 4 | Signet/testnet E2E | dead-end | faucety nedoručily funding — nahradit mainnet dust pilotem (regtest + live-ZION leg pathy pokryly) |
 | 5 | `WARP_BTC_SWAP_ENABLED=1` | ⛔ gated | až po 1+2 (+3 doporučeno) |
 
-## 🧪 Testnet rehearsal (2026-09-19, živé)
+## 🧪 Testnet rehearsal (2026-09-19 → STALLED 2026-09-20)
 
 | | |
 |---|---|
@@ -65,8 +65,8 @@ persistence, HTTP + CLI lifecycle. Edge: `62.171.141.136:2222`.
 | Mnemonic | `~/Desktop/warp-btc-wallet.txt` (operator machine, chmod 600) |
 | Edge env | `WARP_BTC_RELAY_KEY` (testnet WIF) + `BITCOIN_NETWORK=testnet` + `WARP_BTC_SWAP_ENABLED=1` |
 | Test offer | `dbc91da92e750cbcc49a9509f6111fcf5991ad37174f0785553e845d90ce10b5` — 10 000 sats → 10 ZION, injectnut do `warp_multichain.db` (obchází ZIS-gated offer endpoint — operator test), hydratován po restartu |
-| HTLC adresa | `tb1qwps3v5wqj82k5j45wjan5gwfj4v8vx6xvrjkmqg25ehtavu0flgsjjz4fp` (CLTV 5149593) — **čeká na funding ≥10k sats z testnet3 faucetu** |
-| Flow po fundingu | detect lock (2 confs) → `LockZion` (10 ZION z funded wallet) → user ZION claim (preimage) → operator BTC claim |
+| HTLC adresa | `tb1qwps3v5wqj82k5j45wjan5gwfj4v8vx6xvrjkmqg25ehtavu0flgsjjz4fp` (CLTV 5149593) — **funding nedorazil; mempool.space testnet API potvrdilo 0 tx na HTLC i operator walletu (2026-09-20). Offer po 4h TTL → `Failed`** |
+| Další krok | testnet3 faucety jsou dead-end → **mainnet dust pilot**: nabít `bc1q53gn9…5n6k` ~100k sats, produkční `WARP_BTC_RELAY_KEY`, `BITCOIN_NETWORK` unset, offer s dust amount → stejný flow |
 
 ## ⚠️ Známé residuals (auditor checklist)
 
