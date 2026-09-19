@@ -1,7 +1,7 @@
 # ZION — Soukromý plán poslední vůle a provozní kontinuity
 
 **DŮVĚRNÉ / NEVEŘEJNÉ — interní rodinný dokument**
-**Datum poslední revize:** 2026-09-06
+**Datum poslední revize:** 2026-09-19
 **Sestavil:** Devin na základě pokynů Yosefa Hubálka
 **Účel:** interní inventář a podklad ke třem samostatným listinám: darovací smlouvě pro případ smrti, okamžitě účinné plné moci a vlastnoruční závěti.
 
@@ -16,6 +16,7 @@
 | **Dárce / zůstavitel / zmocnitel** | Yosef Hubálek | Jednatel a zakladatel `OMNITY.ONE s.r.o.`, IČO 09120050. V `Cargo.toml` a package metadata uveden jako autor `Yose144`. Git historie ukazuje Yosefa/Yose144 jako dominantního autora, nikoli však sama o sobě vlastnictví všech práv. |
 | **Hlavní správkyně / Trustee / Zmocněnkyně** | Erika Imlaufová | Přijímá dar a plnou moc pro rozhodování v případě, že se Yosefovi něco stane. Spravuje majetek ve prospěch dětí a pro zachování projektu. |
 | **Náhradní správkyně (Fallback Trustee)** | Petra Tkácová | Nastupuje automaticky v plném rozsahu, pokud se Erika Imlaufová k převzetí nehlásí, správu odmítne nebo ji nemůže vykonávat. |
+| **Správkyně fondu L6 Issobella** | Aelan Vaast | Řídí projekt L6 Issobella (Orbital Station & Quantum Research Fund, slot 6, 2,5B ZION) do 18. narozenin Sarah Hubalkové; poté s Sarah spolupracuje. Profesionální surfařka z Tahiti (nar. 23. 12. 2004), členka francouzského národního týmu, ambasadorka Alpina Watches. Online: [instagram.com/aelanvaast](https://www.instagram.com/aelanvaast/), [linkedin.com/in/aelan-vaast](https://www.linkedin.com/in/aelan-vaast). Fotografie: `docs/private/aelan_vaast.jpg`. |
 | **Nepominutelná dědička** | Sarah Hubalková | Dítě, nezletilé; musí obdržet nejméně zákonný povinný díl. Zastoupení při správě dědictví se řídí zákonem a případným rozhodnutím soudu. |
 | **Nepominutelný dědic** | Tadeas Hubalek | Dítě, nezletilé; musí obdržet nejméně zákonný povinný díl. Zastoupení při správě dědictví se řídí zákonem a případným rozhodnutím soudu. |
 
@@ -86,14 +87,24 @@ Sloty 4 a 5 (`zion1h7r3v595y3g0z3e3l8p005h4c6l7l6s4s2xh708` + `zion1x535z563d3p6
 >
 > **Poznámka:** UTRÁCENÍ z Slot 4/5 adres vyžaduje admin unlock (3-of-3 Rama + Sita + Hanuman) + DAO vote — to je pojistka proti neřízenému výdaji. Rozdělení částek mezi projekty je účelové označení v této listině; on-chain zůstávají UTXO na dvou adresách slotů 4 a 5, dokud se neprovede konkrétní transfer.
 
-### 3.3 Princip
+### 3.3 L6 Issobella — správa fondu (2.5B ZION, Slot 6)
+
+Slot 6 (`zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, 2 500 000 000 ZION, admin + time-lock 144k) je určen pro **L6 Issobella — Orbital Station & Quantum Research Fund**.
+
+| Role | Osoba / pravidlo |
+|------|------------------|
+| **Správkyně fondu** | **Aelan Vaast** — profesionální surfařka z Tahiti (nar. 23. 12. 2004), členka francouzského národního týmu, ambasadorka Alpina Watches. Online: [instagram.com/aelanvaast](https://www.instagram.com/aelanvaast/), [linkedin.com/in/aelan-vaast](https://www.linkedin.com/in/aelan-vaast). Fotografie: `docs/private/aelan_vaast.jpg`. |
+| **Přechod ke Sarah** | Aelan řídí projekt L6 Issobella do 18. narozenin **Sarah Hubalkové**; poté Sarah a Aelan fond spravují společně. |
+| **Bezpečnostní omezení** | Utrácení z adresy slotu 6 nadále vyžaduje 3-of-3 admin multisig + DAO vote + time-lock 144 000. Správkyně fondu řídí projekt a jeho rozhodování, nikoli sama klíče. |
+
+### 3.4 Princip
 
 - **UTXO zůstávají na původních adresách.** Neprovádí se okamžitý on-chain přesun.
 - **Předání klíčů není změna signer setu.** Erika Imlaufová může získat bezpečnou kopii pro recovery, ale skutečná změna admin/guardian/multisig oprávnění vyžaduje příslušný protokolový krok, DAO vote nebo multisig rotation.
 - **Veřejně účelové fondy nejsou automaticky osobním majetkem rodiny.** DAO Treasury, humanitární fond, infrastruktura, bridge a L5 projekty mají účelové zámky.
 - Po plnoletosti Sarah a Tadease může proběhnout právní a případně on-chain rozdělení podílů pouze podle platné listiny; třetinový poměr je zatím pracovní záměr, nikoli aktuální on-chain stav.
 
-### 3.4 Místo uložení klíčů (doplnit Yosef)
+### 3.5 Místo uložení klíčů (doplnit Yosef)
 
 | Asset | Typ klíče | Fyzické uložení | Digitální záloha |
 |-------|-----------|-----------------|------------------|

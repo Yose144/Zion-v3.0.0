@@ -1,7 +1,7 @@
 # ZION — Kontrolní seznam předání a technický stav
 
 **DŮVĚRNÉ / NEVEŘEJNÉ**
-**Poslední revize:** 2026-09-06
+**Poslední revize:** 2026-09-19
 **Účel:** úplná kontrola předání správy projektu ZION na Eriku Imlaufovou — darovací listina + plná moc, pojistka pro rodinu a projekt.
 
 > **Bezpečnostní pravidlo:** Do tohoto souboru nikdy nepatří skutečné mnemoniky, privátní klíče, hesla, recovery kódy ani API tokeny. Uvádí se jen typ aktiva, jeho inventární označení a bezpečné místo uložení.
@@ -30,7 +30,8 @@
 **Klíčové role:**  
 - **Hlavní správkyně (Trustee):** Erika Imlaufová  
 - **Náhradní správkyně (Fallback):** Petra Tkácová (při nečinnosti či nemožnosti Eriky)  
-- **Beneficienti:** Sarah Hubalková a Tadeas Hubalek (nezletilé děti)
+- **Beneficienti:** Sarah Hubalková a Tadeas Hubalek (nezletilé děti)  
+- **Správkyně fondu L6 Issobella:** Aelan Vaast (@aelanvaast) — řídí fond do 18. narozenin Sarah, poté s ní spolupracuje
 
 ---
 
@@ -159,6 +160,14 @@ Zdrojový stav uvádí tuto sadu:
 | Project Bodhi Lanka | Annicka Purkertová | 500 000 000 |
 | L5 rezervní fond | Erika Imlaufová (Trustee) | 800 000 000 |
 | **Celkem** | | **3 300 000 000** |
+
+### 5.4 L6 Issobella — správa fondu (2.5B ZION, Slot 6)
+
+- [HOTOVO — ROZHODNUTÍ 2026-09-19] Správkyní fondu **L6 Issobella** (Orbital Station & Quantum Research Fund, slot 6, adresa `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`) je **Aelan Vaast** — profesionální surfařka z Tahiti, ambasadorka Alpina Watches (Instagram [@aelanvaast](https://www.instagram.com/aelanvaast/), LinkedIn [aelan-vaast](https://www.linkedin.com/in/aelan-vaast)). Fotografie: `docs/private/aelan_vaast.jpg`.
+- [HOTOVO — ROZHODNUTÍ] Aelan řídí projekt do 18. narozenin **Sarah Hubalkové**; poté Sarah a Aelan fond spravují společně.
+- [HOTOVO — REPO] Utrácení ze slotu 6 vyžaduje 3-of-3 admin multisig + DAO vote + time-lock 144 000 — správkyně fondu sama o sobě nemá disbursement pravomoc.
+- [PENDING] Ověřit, že `zion-v31-issobella` tracker (port 8097) je aktivní a read-only.
+- [PENDING] Doplnit bydliště Aelan Vaast a získat její podpis na prohlášení o přijetí v `ZION_DAROVACI_LISTINA_A_PLNA_MOC.md`.
 
 ---
 
