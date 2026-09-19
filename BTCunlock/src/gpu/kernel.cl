@@ -27,6 +27,9 @@
 #define OFF_PHRASE 12
 #define OFF_U 260
 #define OFF_T 324
+#define OFF_TAG 388
+#define TAG_C 0x9E3779B9u
+#define TAG_BAD 0xDEADDEADu
 
 // ---------------------------------------------------------------- SHA-256
 
@@ -194,32 +197,20 @@ static void hmac_sha512(const uchar* key, uint klen,
 
 // ------------------------------------------------------------------ filter
 
-// One work-item per combo. Checksum survivors get a state record with
-// U1 already computed (2047 iterations remain for pbkdf2_step).
-__kernel void bip39_filter(
+// Shared tail for both filter kernels: idx[] → checksum → phrase → U1 →
+// state record. `record_id` is stored at OFF_COMBO (combo or perm number).
+static void emit_if_valid(
+    const ushort* idx,                    // __private
+    const uint n_words,
+    const ulong record_id,
     __global const uchar*  wl_blob,
     __global const ushort* wl_off,
-    __global const ushort* templ,
-    const uint n_words,
-    __global const uchar*  hole_pos,
-    const uint n_holes,
-    const ulong combo_base,
     __global const uchar*  salt,
     const uint salt_len,
     const uint max_results,
-    volatile __global uint*  result_count,
-    __global uchar* states)               // max_results × STATE_SIZE
+    volatile __global uint* result_count,
+    __global uchar* states)
 {
-    ulong combo = combo_base + get_global_id(0);
-
-    ushort idx[MAX_WORDS];
-    for (uint i = 0; i < n_words; i++) idx[i] = templ[i];
-    ulong rem = combo;
-    for (int h = (int)n_holes - 1; h >= 0; h--) {
-        idx[hole_pos[h]] = (ushort)(rem % 2048);
-        rem /= 2048;
-    }
-
     // BIP39 checksum — pack 11-bit indices → entropy, sha256 → compare
     uint total_bits = n_words * 11;
     uint cs_bits = total_bits / 33;
@@ -263,34 +254,116 @@ __kernel void bip39_filter(
     uint slot = atomic_inc(result_count);
     if (slot >= max_results) return;
     __global uchar* st = states + (ulong)slot * STATE_SIZE;
-    *((__global ulong*)(st + OFF_COMBO)) = combo;
+    *((__global ulong*)(st + OFF_COMBO)) = record_id;
     *((__global uint*)(st + OFF_PLEN)) = plen;
     for (uint i = 0; i < plen; i++) st[OFF_PHRASE + i] = phrase[i];
     for (int i = 0; i < 64; i++) {
         st[OFF_U + i] = u1[i];
         st[OFF_T + i] = u1[i];
     }
+    // chain tag seq=0: u32(T[0..4]) — step launches verify+extend the chain
+    *((__global uint*)(st + OFF_TAG)) =
+        (uint)u1[0] | ((uint)u1[1] << 8) | ((uint)u1[2] << 16) | ((uint)u1[3] << 24);
+}
+
+// One work-item per combo. Checksum survivors get a state record with
+// U1 already computed (2047 iterations remain for pbkdf2_step).
+__kernel void bip39_filter(
+    __global const uchar*  wl_blob,
+    __global const ushort* wl_off,
+    __global const ushort* templ,
+    const uint n_words,
+    __global const uchar*  hole_pos,
+    const uint n_holes,
+    const ulong combo_base,
+    __global const uchar*  salt,
+    const uint salt_len,
+    const uint max_results,
+    volatile __global uint*  result_count,
+    __global uchar* states)               // max_results × STATE_SIZE
+{
+    ulong combo = combo_base + get_global_id(0);
+
+    ushort idx[MAX_WORDS];
+    for (uint i = 0; i < n_words; i++) idx[i] = templ[i];
+    ulong rem = combo;
+    for (int h = (int)n_holes - 1; h >= 0; h--) {
+        idx[hole_pos[h]] = (ushort)(rem % 2048);
+        rem /= 2048;
+    }
+    emit_if_valid(idx, n_words, combo, wl_blob, wl_off, salt, salt_len,
+                  max_results, result_count, states);
+}
+
+// One work-item per permutation number: factoradic (Lehmer) decode of
+// `words` into idx[], then the shared checksum→U1 tail. `words` must be
+// sorted ascending so perm numbering matches the host (perm_indices).
+__kernel void permute_filter(
+    __global const uchar*  wl_blob,
+    __global const ushort* wl_off,
+    __global const ushort* words,         // n_words sorted indices
+    const uint n_words,
+    const ulong perm_base,
+    __global const uchar*  salt,
+    const uint salt_len,
+    const uint max_results,
+    volatile __global uint* result_count,
+    __global uchar* states)
+{
+    ulong pid = perm_base + get_global_id(0);
+    ulong p = pid;
+    ushort pool[MAX_WORDS];
+    for (uint i = 0; i < n_words; i++) pool[i] = words[i];
+    ushort idx[MAX_WORDS];
+    for (uint k = 0; k < n_words; k++) {
+        uint m = n_words - k;
+        uint i = (uint)(p % (ulong)m);
+        p /= (ulong)m;
+        idx[k] = pool[i];
+        for (uint j = i; j + 1 < m; j++) pool[j] = pool[j + 1];
+    }
+    emit_if_valid(idx, n_words, pid, wl_blob, wl_off, salt, salt_len,
+                  max_results, result_count, states);
 }
 
 // --------------------------------------------------------------- pbkdf2 it
 
 // One work-item per state record: `iters` HMAC rounds, state persists
-// across launches. Host launches ceil(2047/iters) times.
+// across launches. Host launches seq=1..N. Each launch first verifies the
+// chain tag left by the previous one — a work-item killed in launch k
+// (driver per-item limits) leaves T/tag one step stale, so every later
+// launch for that record flags TAG_BAD and the host CPU-repairs it.
 __kernel void pbkdf2_step(
     __global uchar* states,
-    const uint iters)
+    const uint iters,
+    const uint seq)
 {
     __global uchar* st = states + (ulong)get_global_id(0) * STATE_SIZE;
     // copy state to __private — helpers can't take __global pointers
     uchar pw[MAX_PHRASE];
     uint plen = *((__global const uint*)(st + OFF_PLEN));
+    if (plen > MAX_PHRASE) {
+        *((__global uint*)(st + OFF_TAG)) = TAG_BAD;
+        return;
+    }
     for (uint i = 0; i < plen; i++) pw[i] = st[OFF_PHRASE + i];
     uchar u[64], t[64];
     for (int i = 0; i < 64; i++) { u[i] = st[OFF_U + i]; t[i] = st[OFF_T + i]; }
+    // verify chain: tag must equal u32(T[0..4]) ^ (seq-1)*TAG_C
+    uint tag = *((__global const uint*)(st + OFF_TAG));
+    uint expect = ((uint)t[0] | ((uint)t[1] << 8) | ((uint)t[2] << 16)
+                 | ((uint)t[3] << 24)) ^ (seq - 1u) * TAG_C;
+    if (tag != expect) {
+        *((__global uint*)(st + OFF_TAG)) = TAG_BAD;
+        return;
+    }
     uchar nu[64];
     for (uint it = 0; it < iters; it++) {
         hmac_sha512(pw, plen, u, 64, nu);   // u read into inner before write
         for (int j = 0; j < 64; j++) { u[j] = nu[j]; t[j] ^= nu[j]; }
     }
     for (int i = 0; i < 64; i++) { st[OFF_U + i] = u[i]; st[OFF_T + i] = t[i]; }
+    *((__global uint*)(st + OFF_TAG)) =
+        ((uint)t[0] | ((uint)t[1] << 8) | ((uint)t[2] << 16)
+        | ((uint)t[3] << 24)) ^ seq * TAG_C;
 }

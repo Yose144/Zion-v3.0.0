@@ -86,6 +86,50 @@ enum Cmd {
         #[arg(long)]
         resume: bool,
     },
+    /// All words known, order unknown — tries every arrangement (n!).
+    /// 12 words = 479M permutations (~1/16 pass checksum). CPU-only.
+    Permute {
+        /// The full word list, e.g. "w1 w2 ... w12" (any order).
+        words: String,
+        /// Known address(es) to match (P2PKH/P2SH/P2WPKH or hash160 hex).
+        #[arg(long = "target")]
+        targets: Vec<String>,
+        /// File with target addresses, one per line.
+        #[arg(long)]
+        target_file: Option<String>,
+        /// BIP39 passphrase, if used.
+        #[arg(long, default_value = "")]
+        pass: String,
+        /// mainnet | testnet | signet
+        #[arg(long, default_value = "mainnet")]
+        network: String,
+        /// Script purposes per seed (default 84,49,44).
+        #[arg(long, default_value = "84,49,44")]
+        purposes: String,
+        #[arg(long, default_value_t = 1)]
+        accounts: u32,
+        #[arg(long, default_value_t = 1)]
+        max_index: u32,
+        #[arg(long)]
+        change_chain: bool,
+        /// Use the OpenCL GPU backend (needs `--features gpu` build).
+        #[arg(long)]
+        gpu: bool,
+        /// OpenCL device index (see `gpu-list`).
+        #[arg(long, default_value_t = 0)]
+        gpu_index: usize,
+        #[arg(long, default_value_t = 1 << 20)]
+        batch: usize,
+        /// Stop after N permutations (default 0 = full n! space).
+        #[arg(long, default_value_t = 0)]
+        limit: u64,
+        /// Checkpoint file path (default btcunlock-perm.ckpt).
+        #[arg(long)]
+        checkpoint: Option<String>,
+        /// Resume from checkpoint.
+        #[arg(long)]
+        resume: bool,
+    },
     /// Quick completion listing for ≤2 unknown words (checksum-valid only).
     FixMnemonic {
         /// The phrase, e.g. "word1 word2 ? word4 ..."
@@ -191,6 +235,59 @@ fn main() -> Result<()> {
                 use_gpu: gpu,
                 gpu_index,
                 batch: batch.max(1 << 16),
+                checkpoint,
+                resume,
+            })
+        }
+        Cmd::Permute {
+            words,
+            targets,
+            target_file,
+            pass,
+            network,
+            purposes,
+            accounts,
+            max_index,
+            change_chain,
+            gpu,
+            gpu_index,
+            batch,
+            limit,
+            checkpoint,
+            resume,
+        } => {
+            let mut ts = TargetSet::default();
+            for t in &targets {
+                ts.add(t)?;
+            }
+            if let Some(f) = target_file {
+                for line in std::fs::read_to_string(&f)?.lines() {
+                    let line = line.trim();
+                    if !line.is_empty() && !line.starts_with('#') {
+                        ts.add(line)?;
+                    }
+                }
+            }
+            let purposes: Vec<u32> = purposes
+                .split(',')
+                .map(|p| p.trim().parse::<u32>())
+                .collect::<std::result::Result<_, _>>()?;
+            let plan = DerivePlan::standard(
+                net(&network)?,
+                &purposes,
+                accounts,
+                max_index,
+                change_chain,
+            )?;
+            runner::run_permute(runner::PermuteOpts {
+                words: words.split_whitespace().map(String::from).collect(),
+                passphrase: pass,
+                targets: ts,
+                plan,
+                use_gpu: gpu,
+                gpu_index,
+                batch: batch.max(1 << 16),
+                limit,
                 checkpoint,
                 resume,
             })
