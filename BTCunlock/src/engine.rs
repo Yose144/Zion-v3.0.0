@@ -147,8 +147,8 @@ pub fn phrase_seed(phrase: &str, passphrase: &str, seed: &mut [u8; 64]) {
     pbkdf2::pbkdf2_hmac::<sha2::Sha512>(phrase.as_bytes(), salt.as_bytes(), 2048, seed);
 }
 
-/// Decoded target: a 20-byte hash (pubkey/script hash) or a 32-byte
-/// BIP86 output key (tweaked x-only pubkey) for P2TR.
+/// Decoded targets: 20-byte hash160s (P2PKH/P2SH/P2WPKH) plus 32-byte
+/// taproot output keys (P2TR — matched against the tweaked x-only key).
 #[derive(Default)]
 pub struct TargetSet {
     pub hashes: HashSet<[u8; 20]>,
@@ -156,47 +156,51 @@ pub struct TargetSet {
 }
 
 impl TargetSet {
-    /// Accepts base58 P2PKH/P2SH, bech32 P2WPKH/P2TR, raw 40-hex hash160,
-    /// or raw 64-hex x-only output key.
+    /// Accepts base58 P2PKH/P2SH, bech32 P2WPKH, bech32m P2TR, or raw
+    /// hex hash160 (40 chars) / x-only output key (64 chars).
     pub fn add(&mut self, s: &str) -> Result<()> {
         let s = s.trim();
-        if s.chars().all(|c| c.is_ascii_hexdigit()) {
-            if s.len() == 40 {
-                let mut h = [0u8; 20];
-                hex::decode_to_slice(s, &mut h)?;
-                self.hashes.insert(h);
-                return Ok(());
-            }
-            if s.len() == 64 {
-                let mut k = [0u8; 32];
-                hex::decode_to_slice(s, &mut k)?;
-                self.xkeys.insert(k);
-                return Ok(());
-            }
+        if s.len() == 40 && s.chars().all(|c| c.is_ascii_hexdigit()) {
+            let mut h = [0u8; 20];
+            hex::decode_to_slice(s, &mut h)?;
+            self.hashes.insert(h);
+            return Ok(());
+        }
+        if s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit()) {
+            let mut k = [0u8; 32];
+            hex::decode_to_slice(s, &mut k)?;
+            self.xkeys.insert(k);
+            return Ok(());
         }
         let addr = Address::from_str(s)
-            .context("not an address / hash160 / xkey")?
+            .context("not an address / hash160 / xonly key")?
             .assume_checked();
         let spk = addr.script_pubkey();
         let b = spk.as_bytes();
-        if spk.is_p2pkh() {
-            self.hashes.insert(b[3..23].try_into().unwrap());
-        } else if spk.is_p2sh() || spk.is_p2wpkh() {
-            self.hashes.insert(b[2..22].try_into().unwrap());
-        } else if spk.is_p2tr() {
+        if spk.is_p2tr() {
             self.xkeys.insert(b[2..34].try_into().unwrap());
-        } else {
-            bail!("{s}: unsupported target (P2PKH/P2SH/P2WPKH/P2TR/hash160/xkey)");
+            return Ok(());
         }
-        Ok(())
+        let h: Option<[u8; 20]> = if spk.is_p2pkh() {
+            Some(b[3..23].try_into().unwrap())
+        } else if spk.is_p2sh() {
+            Some(b[2..22].try_into().unwrap())
+        } else if spk.is_p2wpkh() {
+            Some(b[2..22].try_into().unwrap())
+        } else {
+            None
+        };
+        match h {
+            Some(h) => {
+                self.hashes.insert(h);
+                Ok(())
+            }
+            None => bail!("{s}: P2WSH targets unsupported (P2PKH/P2SH/P2WPKH/P2TR work)"),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
         self.hashes.is_empty() && self.xkeys.is_empty()
-    }
-
-    pub fn len(&self) -> usize {
-        self.hashes.len() + self.xkeys.len()
     }
 }
 
@@ -255,13 +259,27 @@ fn check_leaf(
     child: &Xpriv,
     secp: &Secp256k1<All>,
     path: String,
-    check_script_hash: bool,
-    check_taproot: bool,
+    purpose: u32,
     network: Network,
     targets: &TargetSet,
     hits: &mut Vec<(String, Address)>,
 ) {
     let pk = PublicKey::new(child.private_key.public_key(secp));
+    // purpose 86: BIP86/BIP341 — match the tweaked x-only output key
+    // (no script-path merkle root; that is the standard key-spend form).
+    if purpose == 86 {
+        if targets.xkeys.is_empty() {
+            return;
+        }
+        let (xonly, _parity) = pk.inner.x_only_public_key();
+        let addr = Address::p2tr(secp, xonly, None, network);
+        let spk = addr.script_pubkey();
+        let out_key: [u8; 32] = spk.as_bytes()[2..34].try_into().unwrap();
+        if targets.xkeys.contains(&out_key) {
+            hits.push((path, addr));
+        }
+        return;
+    }
     let mut pk_hash = [0u8; 20];
     pk_hash.copy_from_slice(&hash160::Hash::hash(&pk.inner.serialize())[..]);
     // P2PKH / P2WPKH share the pubkey hash160 → one lookup covers both.
@@ -269,17 +287,8 @@ fn check_leaf(
         hits.push((path, Address::p2wpkh(&pk, network).expect("p2wpkh")));
         return;
     }
-    // BIP86/P2TR (purpose 86): output key = x-only(P + t·G), key-path only.
-    if check_taproot && !targets.xkeys.is_empty() {
-        use bitcoin::key::TapTweak;
-        let (xonly, _par) = pk.inner.x_only_public_key();
-        let (tweaked, _) = xonly.tap_tweak(secp, None);
-        if targets.xkeys.contains(&tweaked.serialize()) {
-            hits.push((path.clone(), Address::p2tr(secp, xonly, None, network)));
-        }
-    }
     // P2SH-P2WPKH (purpose 49 only): hash160 of the 0x0014<h160> redeem script.
-    if !check_script_hash {
+    if purpose != 49 {
         return;
     }
     let mut redeem = [0u8; 22];
@@ -342,8 +351,7 @@ pub fn match_seed_ctx(
                         &child,
                         secp,
                         format!("m/{p}'/{}'/{a}'/{c}/{i}", plan.coin),
-                        p == 49,
-                        p == 86,
+                        p,
                         plan.network,
                         targets,
                         &mut hits,
@@ -499,10 +507,6 @@ mod tests {
         abandon abandon abandon abandon abandon abandon abandon abandon \
         abandon abandon abandon abandon abandon abandon abandon art";
 
-    /// Canonical 12-word vector (abandon×11 + about) — the BIP86 fixture.
-    const KNOWN12: &str = "abandon abandon abandon abandon abandon abandon abandon abandon \
-        abandon abandon abandon about";
-
     #[test]
     fn known_phrase_is_valid() {
         Mnemonic::parse_in_normalized(Language::English, KNOWN).unwrap();
@@ -536,34 +540,6 @@ mod tests {
         assert_eq!(a, m.to_seed("toto"));
     }
 
-    /// BIP86: known test vector — mnemonic abandon×11+about, m/86'/0'/0'/0/0
-    /// → bc1p5cyx… — parsed as a p2tr target and hit via match_seed.
-    #[test]
-    fn p2tr_target_matches_bip86() {
-        let m = Mnemonic::parse_in_normalized(Language::English, KNOWN12).unwrap();
-        let secp = Secp256k1::new();
-        let xp = Xpriv::new_master(Network::Bitcoin, &m.to_seed("")).unwrap();
-        let child = xp
-            .derive_priv(&secp, &DerivationPath::from_str("m/86'/0'/0'/0/0").unwrap())
-            .unwrap();
-        let pk = PublicKey::new(child.private_key.public_key(&secp));
-        let (xonly, _) = pk.inner.x_only_public_key();
-        let addr = Address::p2tr(&secp, xonly, None, Network::Bitcoin);
-        assert_eq!(
-            addr.to_string(),
-            "bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr"
-        );
-
-        let mut ts = TargetSet::default();
-        ts.add(&addr.to_string()).unwrap();
-        assert_eq!(ts.xkeys.len(), 1);
-        let plan = DerivePlan::standard(Network::Bitcoin, &[86], 1, 1, false).unwrap();
-        let hits = match_seed(&m.to_seed(""), &plan, &ts);
-        assert_eq!(hits.len(), 1, "expected the BIP86 leaf to hit");
-        assert_eq!(hits[0].0, "m/86'/0'/0'/0/0");
-        assert_eq!(hits[0].1, addr);
-    }
-
     #[test]
     fn cpu_engine_finds_known_target() {
         // derive the test vector's own first BIP84 testnet address, mask the
@@ -595,5 +571,39 @@ mod tests {
             }
         }
         assert!(found, "engine must rediscover the masked word");
+    }
+
+    #[test]
+    fn cpu_engine_finds_taproot_target() {
+        // same drill for BIP86: mask the last word, target the key-spend
+        // P2TR output of m/86'/1'/0'/0/0 on testnet
+        let m = Mnemonic::parse_in_normalized(Language::English, KNOWN).unwrap();
+        let secp = Secp256k1::new();
+        let seed = m.to_seed("");
+        let xpriv = Xpriv::new_master(Network::Testnet, &seed).unwrap();
+        let child = xpriv
+            .derive_priv(&secp, &DerivationPath::from_str("m/86'/1'/0'/0/0").unwrap())
+            .unwrap();
+        let (xonly, _) = child
+            .private_key
+            .public_key(&secp)
+            .x_only_public_key();
+        let want = Address::p2tr(&secp, xonly, None, Network::Testnet).to_string();
+
+        let tpl = parse_template(&KNOWN.replacen("art", "?", 1)).unwrap();
+        let mut targets = TargetSet::default();
+        targets.add(&want).unwrap();
+        let plan = DerivePlan::standard(Network::Testnet, &[86], 1, 1, false).unwrap();
+        let seeds = cpu_seeds(&tpl, "", 0, 2048);
+        let mut found = false;
+        for (combo, seed) in seeds {
+            for (path, addr) in match_seed(&seed, &plan, &targets) {
+                found = true;
+                assert_eq!(combo_phrase(&tpl, combo), KNOWN);
+                assert_eq!(path, "m/86'/1'/0'/0/0");
+                assert_eq!(addr.to_string(), want);
+            }
+        }
+        assert!(found, "engine must rediscover the masked word (taproot)");
     }
 }

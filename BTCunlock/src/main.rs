@@ -235,6 +235,12 @@ fn main() -> Result<()> {
                 max_index,
                 change_chain,
             )?;
+            if !ts.xkeys.is_empty() && !purposes.contains(&86) {
+                eprintln!(
+                    "note: taproot (bc1p…) target given but --purposes lacks 86 \
+                     — it can never match; add 86 to --purposes"
+                );
+            }
             runner::run(runner::RecoverOpts {
                 phrase_template: phrase,
                 passphrase: pass,
@@ -291,6 +297,12 @@ fn main() -> Result<()> {
                 max_index,
                 change_chain,
             )?;
+            if !ts.xkeys.is_empty() && !purposes.contains(&86) {
+                eprintln!(
+                    "note: taproot (bc1p…) target given but --purposes lacks 86 \
+                     — it can never match; add 86 to --purposes"
+                );
+            }
             runner::run_permute(runner::PermuteOpts {
                 words: words.split_whitespace().map(String::from).collect(),
                 passphrase: pass,
