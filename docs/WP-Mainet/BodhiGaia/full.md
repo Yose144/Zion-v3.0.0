@@ -190,7 +190,6 @@ V [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../Zohar/01-SEFIROT-VRSTVY.md) odpovíd
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
 
-
 # BODHI GAIA — Kapitola 3: Zahrada Genesis
 ## Base Camp · Algarve, Portugalsko — farma na hranici dvou světů a první strom zasazený jako rituál
 
@@ -221,6 +220,8 @@ Toho večera zasadili společně první strom — olivu, protože vydrží sucho
 *„Tenhle strom bude dávat olej, až tu z nás nikdo nebude. Sázíme v biologickém čase, ne v čase účetních."*
 
 Tesař vyřezal do kůlu u brány tři znaky: vlnu, motyku a olivový list. Pod ně napsal: **Base Camp**.
+
+O mnoho příběhů později — v jiné knize této řady — došla k téhle zátoce jiná poutnice: dítě s lucernou, které neslo alabastrovou nádobu s druhým semínkem. Co se stalo na okraji záhonu, vypráví [epilog *Příběhu Růže*](../Ruze/Epilog-Zahrada-Genesis.md) a [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) této knihy — a celá ta scéna je **MÝTUS**, ne záznam skutečné události.
 
 ---
 
@@ -297,17 +298,18 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 | **Semenná knihovna** | **STAVBA** | Web `/terranova/genesis` uvádí *Seed Library — active*; dokument: „neformální výměna" → katalog. | Katalog odrůd, partneři výměny (Banco Português de Germoplasma Vegetal), první výměna s Dharma Temple (cíl 2028). |
 | **Ekonomika: 50 000 EUR / 120 nocí** | **HYPOTÉZA** | Break-even a příjmový model v §4 komunitního dokumentu; marketingové persony, kanály a sezónní ceník (§11); EU granty LEADER / Erasmus+ / LIFE ve fázi rešerše (§12). | Skutečné účetnictví po první sezóně; žádná z grantových žádostí není podána. |
 | **Ana, olivový list na kůlu** | **MÝTUS** | Postava vytvořená pro tuto knihu; motiv „biologický čas" je citát z komunitního dokumentu a webu. | — |
+| **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
+| **Fyzická růže zasazená v Algarve** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
 
 > **Známý rozpor k opravě:** stránka `/l5-free-world` označuje lokalitu Genesis Garden jako *Střední Evropa* (`L5FreeWorldCopy.centralEurope`), zatímco komunitní dokument, `/terranova/genesis`, karty Pioneer Projects i OASIS panel uvádějí **Algarve, Portugalsko**. Web je třeba sjednotit (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
 
 ---
 
-*→ Pokračování: [Kapitola 4 — Dharma Temple: Nová Bodhi Gaia (La Palma)](./04-Dharma-Temple-Nova-Bodhi-Gaia.md)*
+*→ Pokračování: [Kapitola 4 — Dharma Temple: Nová Bodhi Gaia (La Palma)](./04-Dharma-Temple-Nova-Bodhi-Gaia.md)* · *[Kapitola 12 — Růže v Zahradě Genesis](./12-Ruze-v-Zahrade-Genesis.md)*
 
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
-
 
 # BODHI GAIA — Kapitola 4: Dharma Temple — Nová Bodhi Gaia
 ## Svatyně · La Palma, Kanárské ostrovy — Merkaba ze dřeva a světla, sedm kopulí a Strom života jako osa
@@ -429,7 +431,7 @@ Mikro-hydro vyžaduje posouzení vlivu na životní prostředí (kanárské vodn
 | **Ticho jako protokol (21 dní, 48 h, bez elektroniky)** | **HORIZONT** | Governance model §6 komunitního dokumentu. | Zakládající tým (5 strážců) neexistuje; právní entita (`Asociación`) neregistrována. |
 | **Syntropická zahrada na svahu** | **HORIZONT** | Design guild pro klima La Palmy (§14: banánový kruh, subtropický sad, léčivý kout; Götschovy principy). | Půda, první výsadba (plán Fáze 1, 2027). |
 | **Solar na kopulích, voda z hor** | **HORIZONT** | Energetický a vodní plán (§3); mikro-hydro s EIA. | Realizace; povolení pro hydro. |
-| **Svět Dharma Temple v OASIS** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — id `DHARMA_TEMPLE_LA_PALMA`, popis „Merkaba geodesic temple with 7 domes, Tree of Life and meditation gardens", `goldenEggClue: 7`; panel „Nová Země" ve `WorldPanel.tsx` (status *Prep*). | Svět je v datech označen `layer: 3` — má být L5 (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)); žádná herní vazba na fyzický retreat. |
+| **Svět Dharma Temple v OASIS** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — id `DHARMA_TEMPLE_LA_PALMA`, popis „Merkaba geodesic temple with 7 domes, Tree of Life and meditation gardens", `goldenEggClue: 7`; panel „Nová Země" ve `WorldPanel.tsx` (status *Prep*). | Zdrojová data již uvádějí `layer: 5` + tag `layer 5`; chybí ověření deploy veřejného klienta a přímá herní vazba na fyzický retreat (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)). |
 | **Semínko a dřevěná destička na rozloučenou** | **HORIZONT** | Rituál „seed gift" a symbolická destička v kurikulu (§12.1–12.2). | — |
 | **Vulkanický protokol, zálohy mimo ostrov** | **HORIZONT** | Tabulka protokolu (§13.2), evakuační stupně, IGN / Cabildo alerty. | Seismometr, mesh, pojištění — vše ve fázi koncept. |
 | **Merkaba jako „vůz světla", Bodhi jako probuzení** | **MÝTUS** | Symbolika převzatá z návrhového dokumentu; kniha netvrdí náboženskou platnost ani lineage. | — |
@@ -443,7 +445,6 @@ Mikro-hydro vyžaduje posouzení vlivu na životní prostředí (kanárské vodn
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
-
 
 # BODHI GAIA — Kapitola 5: Te Pīko Ora
 ## Koruna · Raiatea, Francouzská Polynésie — živý pupek, kokosová palma jako Strom života a wayfinding jako konsensus
@@ -600,7 +601,6 @@ Cyklony (listopad–duben; stavby odolné cyklonům, evakuace na Tahiti), bělen
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
-
 
 # BODHI GAIA — Kapitola 6: Protokoly Země
 ## Sdílený kód pěti zahrad — Guardian Node, semenná knihovna, Medical Table, mesh, sociokracie, slib péče a cesta od fondu k doloženému dopadu
@@ -769,7 +769,6 @@ Původní trojice tří stromů se rozšířila na pentagram pěti uzlů — př
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
 
-
 # BODHI GAIA — Kapitola 7: Zahrada v OASIS a na webu
 ## Zrcadlo L4 ↔ L5 — jak se pět fyzických zahrad odráží v OASIS, na webu a v avatarech, a kde zrcadlo končí
 
@@ -835,6 +834,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 - Svět **`DHARMA_TEMPLE_LA_PALMA`** v galaxii (`worlds.ts`): „Sacred L5 sanctuary on La Palma — a geodesic temple of enlightenment, education and community", `goldenEggClue: 7`, pozice `(-16.2, 0.2, 31.8)`.
 - Svět **`GOLDEN_REPUBLIC_BOHEMIA`** v galaxii (`worlds.ts`): governance lab, kruh rozhodování, česká moudrost — most mezi tradicí a experimentem.
 - Svět **`BODHI_LANKA`** v galaxii (`worlds.ts`): Bhakti protokol, Sri Maha Bodhi, Rama Setu most — láska jako kořen, nejstarší žijící strom.
+- Svět **`GENESIS_GARDEN`** v galaxii (`worlds.ts`, layer 5): story-world zrcadlící projekt Zahrady Genesis v Algarve — jeho metadata nesou **Rose lore** (Lumi sází Růži z *Příběhu Růže*), výslovně označenou jako literární **MÝTUS** (tagy `rose`, `lore`, `myth`), ne evidence rostliny ani infrastruktury na místě.
 - Planeta **SAMANTABHADRA** (layer 5, „Nekonečná Zahrada", deset velkých slibů) — buddhistický archetyp všeobjímající praxe.
 
 **OASIS backend (`V31/L4/oasis`)**
@@ -861,7 +861,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | 2 | Veřejný L5 portál s živým zůstatkem fondu, návrhy, příjemci, milníky, výsledky (M5) | web | HORIZONT (`freeworld.zionterranova.com` v plánu N5) |
 | 3 | Označení každého L5 světa v OASIS stavovou značkou (koncept / stavba / živé) přímo v UI | L4 | HORIZONT |
 | 4 | Quest „Jeď do Zahrady" s ověřením přes impact packet a souhlas; žádná monetizace ceremonií | L4 ↔ L5 | HORIZONT (vyžaduje M5 gate a privacy review) |
-| 5 | Oprava metadat: Dharma Temple svět `layer: 3` → L5; Genesis lokalita na `/l5-free-world` → Algarve | L4 / web | STAVBA (drobná oprava kódu) |
+| 5 | Ověřit deploy metadat Dharma Temple (zdroj už má layer 5); Genesis lokalita na `/l5-free-world` → Algarve | L4 / web | STAVBA |
 
 ---
 
@@ -872,7 +872,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
 | **Karty na panelu „Nová Země"** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` (genesis *Active*, dharma *Prep*, piko-ora *Planned*, bohemia *Prep*, lanka *Planned*) s odkazy na `app.zionterranova.com/terranova/*`. | Statusy nejsou napojené na L5 API. |
-| **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`; `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`. | Svět `DHARMA_TEMPLE_LA_PALMA` má `layer: 3` místo L5; není označen jako koncept; nové světy Bohemia a Lanka v přípravě. |
+| **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`; `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`. | Zdroj již má `layer: 5`; zbývá ověření deploy veřejného klienta a explicitní štítek „koncept". |
 | **Sítá a Hanuman jako avataři** | **ŽIVÉ** (dokument) / **HORIZONT** (mechanika) | `docs/WP-Mainet/SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md` §II — role a questy směřující do L5. | Implementace questů „spojení s L5" v `V31/L4/oasis` (quests.rs) není doložena. |
 | **Sliby bódhisattvy v OASIS** | **ŽIVÉ** (data) | `V31/L4/oasis/data/avatars.json` — Samantabhadra, Avalokiteśvara, Mañjuśrī, *Bodhicitta Spark*. | Vazba na L5 Consciousness Admission = HORIZONT. |
 | **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`, `golden-republic-bohemia`, `bodhi-lanka`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (`/l5-free-world`: Střední Evropa vs Algarve). |
@@ -880,6 +880,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | **Rybář se sklíčkem (instant preview)** | **HORIZONT** | Nirvana ep. 9; `MiseAmenti/07` řadí WebGPU / Pixel Streaming / UE 5.7 do HORIZONT. | POC klienta, licenční a výkonová analýza (M4). |
 | **„Quest, který posílá do zahrady"** | **HORIZONT** | Nápad „Silence Quest" v `dharma-temple.md` §15 a „quest rewards for visits" v `genesis-garden.md` §11.2 jako marketingový kanál. | Mechanika, ověření, privacy review, M5 gate. |
 | **Trám se zuby a vědrem** | **MÝTUS** | Obraz této knihy pro pravidlo „každý prvek zrcadla má kotvu pravdy". | — |
+| **Rose lore ve světě `GENESIS_GARDEN`** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — vibe/summary světa nesou Růži výslovně jako literární lore (MYTH), tagy `rose`, `lore`, `myth`. | Deploy + ověření veřejného klienta; fyzická růže v Algarve = NEDOLOŽENO; pilot [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) = HORIZONT / NEZAHÁJENO. |
 
 ---
 
@@ -888,7 +889,6 @@ Nechal sklíčko v kapse a šel si pro motyku.
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
-
 
 # BODHI GAIA — Kapitola 8: Cesta poutníka — onboarding do L5
 ## Sedm bran do zahrad Nové země — co potřebuješ, co po tobě nikdo nesmí chtít a co ti nikdo nesmí slíbit
@@ -1022,7 +1022,6 @@ Tato kapitola nenahrazuje [`ZION_ONBOARDING_PUBLIC_CZ.md`](../ZION_ONBOARDING_PU
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
 
-
 # BODHI GAIA — Kapitola 9: Kotva pravdy a hranice
 ## Úplný registr L5 — co je živé, co se staví, co je horizont a co je jen obraz; známé rozpory, otevřené otázky a další kroky
 
@@ -1068,6 +1067,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Zahrada Genesis existuje jako fyzické místo v aktivním rozvoji. | **STAVBA** | `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (🟡 Active development; Fáze 0 ✅, Fáze 1 🟡); web `/terranova/genesis`; OASIS panel *Active*. | Pozemek (koupě/nájem), registrovaná entita, GPS, evidence realizace (solar, vrt, stany), nezávislé ověření. |
 | Zahrada Genesis má tým strážců. | **STAVBA** | Fáze 0: „core team formation (3 Guardians)" ✅. | Veřejná (privacy-respektující) identifikace koordinátora; role podle §6.3. |
 | Zahrada Genesis přijímá hosty. | **STAVBA** | Plán: první platící hosté Q3 2026; kanály a ceník §11. | Potvrzené rezervace, pojištění, pravidla výměny. |
+| Fyzická růže byla v Zahradě Genesis zasazena. | **NEDOLOŽENO** | Žádný Day 0 packet ani jiná evidence výsadby neexistuje; scéna v epilogu *Příběhu Růže* je MÝTUS. | Splnění Gate A–D návrhu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) (**HORIZONT / NEZAHÁJENO**) + kompletní Day 0 packet. |
 | Dharma Temple je připravovaná svatyně na La Palmě. | **STAVBA (dokumentace) / HORIZONT (fyzicky)** | `dharma-temple.md` (🔵 Preparation; Fáze 0 2026 Q2–Q4 🔵); web `/terranova/dharma-temple` (3D koncept, půdorys, dokumentace). | Pozemek, entita, 5 zakládajících strážců, financování 60 000 EUR Fáze 1. |
 | Architektura Dharma Temple: Merkaba, 7 kopulí, Strom života. | **HORIZONT** (koncept) | `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`; `DharmaTemplePreviewLazy`; `/images/dharma-temple/concept-og.png`. | Statika, povolení, rozpočet stavby. |
 | Te Pīko Ora je plánovaný pacifický uzel. | **HORIZONT** | `te-piko-ora.md` (🔵 Vision / Preparation; Fáze 0 2026–2027); web `/terranova/te-piko-ora` (*Plánováno 2027+*). | Polynéský partner, ostrov, entita, tým, rozpočet 80 000 EUR. |
@@ -1085,10 +1085,11 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
 |---|---|---|---|
 | Web `/terranova`, `/terranova/genesis`, `/terranova/dharma-temple`, `/terranova/te-piko-ora`, `/l5-free-world` existují a běží. | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/**`, `l5-free-world/page.tsx`; `zion-website.service` active. | Štítky stavu (koncept / stavba) přímo v UI. |
-| OASIS ukazuje tři L5 projekty a svět Dharma Temple. | **ŽIVÉ** (klient) | `WorldPanel.tsx` (`NOVA_ZEME_PROJECTS`), `worlds.ts` (`DHARMA_TEMPLE_LA_PALMA`). | Napojení statusů na L5 API; oprava `layer`. |
+| OASIS ukazuje pět L5 projektů a čtyři světy. | **ŽIVÉ** (klient) | `WorldPanel.tsx` (`NOVA_ZEME_PROJECTS` — pět projektů), `worlds.ts` (`GENESIS_GARDEN`, `DHARMA_TEMPLE_LA_PALMA`, `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`; všechny `layer: 5`). | Napojení statusů na L5 API; ověření deploy nových metadat. |
 | Avataři Sítá a Hanuman mají questy do L5. | **ŽIVÉ (dokument) / HORIZONT (mechanika)** | `SulZeme/10` §II. | Implementace v `V31/L4/oasis`. |
 | OASIS quest odměňuje fyzickou návštěvu zahrady. | **HORIZONT** | Nápad v `genesis-garden.md` §11.2, `dharma-temple.md` §15. | Ověření, privacy, M5 gate. |
 | OASIS je fotorealistický UE 5.7 svět s instant preview. | **HORIZONT** | `MiseAmenti/07` §5. | POC (M4). |
+| Svět `GENESIS_GARDEN` v OASIS obsahuje Rose lore. | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH); [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md). | Lore nesmí být čtena jako evidence fyzické rostliny ani infrastruktury; fyzická růže = NEDOLOŽENO, pilot = HORIZONT; ověření veřejného klienta po deploy. |
 
 ### 2.5 Příběh a symbolika
 
@@ -1098,6 +1099,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
 | Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
+| Lumi, Ana a zasazení druhého semínka u Atlantiku. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
 
 ---
 
@@ -1120,7 +1122,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 |---|---|---|---|---|
 | 1 | Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
 | 2 | Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve, Portugalsko**. | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` (`L5FreeWorldCopy.centralEurope`) | Sjednotit s `/terranova/genesis`, kartami a OASIS panelem. | A |
-| 3 | Svět Dharma Temple označen `layer: 3`, ale jde o L5 projekt. | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA`) | `layer: 5`, tag `layer 5`; přidat štítek „koncept". | A |
+| 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
 | 4 | Lokalita Te Pīko Ora: web/OASIS **Tahiti**, komunitní dokument preferuje **Raiatea** (Tahiti jako záloha). | `PioneerProjectCards.tsx`, `WorldPanel.tsx` vs `te-piko-ora.md` §3.3 | Uvést „Raiatea / Tahiti (výběr probíhá)" všude stejně. | A |
 | 5 | Komunitní dokumenty datovány **2026-05-21**; timeline Genesis Fáze 1 „první hosté Q3 2026" — Q3 2026 již probíhá bez evidence. | `public/V3/L5/docs/COMMUNITIES/*.md` | Refresh stavů a dat; přidat sekci „Evidence" s odkazy. | B |
 | 6 | Nirvana ep. 10 uvádí konkrétní čísla („přes 23 600 plateb") a „živý graf" na `/l5-free-world`. | `docs/WP-Mainet/nirvana/10-Prameny-Zivota.md` | Čísla označit jako snímek s datem; „živý graf" ověřit nebo změnit na „stránka s adresou fondu". | B |
@@ -1151,7 +1153,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 
 | Krok | Co | Gate | Stav |
 |---|---|---|---|
-| 1 | Opravit rozpory #1–#4, #10 (redakční) a #8 (config). | M0 | ❌ |
+| 1 | Opravit rozpory #1, #2, #4, #10 (redakční) a #8 (config); u #3 je zdroj opraven — zůstává ověření deploy a štítek „koncept". | M0 | ❌ |
 | 2 | Refresh tří komunitních dokumentů se sekcí *Evidence* (co je doloženo, kdy, kým). | M0 / M5 | ❌ |
 | 3 | Přidat řádky L5 do `MiseAmenti/07-Registr-Dukazu.md` (tato kapitola jako zdroj). | M0 | 🔄 (návrh v [`CHANGELOG`](../MiseAmenti/CHANGELOG.md)) |
 | 4 | Vynutit API klíč na `zion-free-world` před jakýmkoli veřejným exponováním. | M1 (bezpečnost) | ❌ |
@@ -1163,6 +1165,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 | 10 | Kulturní review českých (Golden Republic Bohemia) prvků — Přemysl/Libuše mytologie a Karel IV / Zlatá bula motivy — před veřejným vydáním. | třída E | ❌ |
 | 11 | Kulturní review srí lanských (Bodhi Lanka) prvků — Rámájana (Ráma/Sítá), Sri Maha Bodhi (živý náboženský objekt), buddhistické a hinduistické motivy — před veřejným vydáním. | třída E | ❌ |
 | 12 | Kanonizace této řady po review (technika + bezpečnost + fakta + kultura). | `MiseAmenti/08` | 🔄 DRAFT |
+| 13 | Pilot [`GENESIS-ROSE-001`](./pilots/GENESIS-ROSE-001.md) — fyzické zasazení růže smí začít až po splnění Gate A–D (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení); nenahrazuje M5 exit gate. | Gate A–D pilotu | ❌ NEZAHÁJENO |
 
 ---
 
@@ -1214,7 +1217,6 @@ changelog zachová historii; veřejné výňatky až po schválení.
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)* · *[Mise Amenti — Registr důkazů](../MiseAmenti/07-Registr-Dukazu.md)* · *[Nirvana, ep. 10 — Prameny Života](../nirvana/10-Prameny-Zivota.md)*
-
 
 # BODHI GAIA — Kapitola 10: Golden Republic Bohemia
 ## Srdce · Čechy, Česká republika — kruh bez trůnu, sůl na stole a most mezi mýtem a protokolem
@@ -1411,7 +1413,6 @@ Kontinentální klima (mrazíky, sucho, bouře; protipožární pásy, zásoby v
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
-
 
 # BODHI GAIA — Kapitola 11: Bodhi Lanka
 ## Akáša · Srí Lanka — nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a most mezi ostrovy
@@ -1612,11 +1613,6 @@ Monzun (dvě sezóny — Yala květen–září, Maha říjen–leden; stavby od
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
 
-
-
-
-
-
 # BODHI GAIA — Kapitola 12: Růže v Zahradě Genesis
 ## Průsečík · L5 — co se stane, když literární semeno vstoupí do fyzického projektu a odmítne předstírat, že už vyrostlo
 
@@ -1630,7 +1626,7 @@ Ráno potom, co dítě s lucernou odešlo za horizont — stejnou cestou, jakou 
 
 Na okraji záhonu, poblíž místa, kam stékala voda ze sudu, zůstala jen čerstvá hlína. Ničeho víc. Žádná stopa zázraku, žádný výhonek, jen nakypřená země, na jejímž okraji zůstaly otisky malých dlaní a kolen.
 
-Ana se sklonila a upravila hrana záhonu — ne kvůli kráse, ale aby vítr nerozmetal, co tam leželo pod zemí.
+Ana se sklonila a upravila hranu záhonu — ne kvůli kráse, ale aby vítr nerozmetal, co tam leželo pod zemí.
 
 Později, když se na kruhu kamenů rozdělovala práce, přišel k ní host — člověk, který přijel na týden s motykou a s telefonem plným obrázků. Slyšel to přes noc, jak to v Zahradě chodívá.
 
@@ -1646,7 +1642,7 @@ Ana se podívala na holou hlínu a pak na hosta — dlouho, jak se dívá na ně
 
 „Ale je to zvláštní semínko? Ze speciální zahrady?“
 
-„Je to semínko ze zahrady, kde se někdo naučil ptát před dotekem,“ řekla Ana. „Víc neříkám — a ne proto, že by to bylo tajemství, ale protože to není důkaz. Semínko je slib, ne certifikát. Co z něj vyroste, poznáme — až.“
+„Je to semínko ze zahrady, kde se někdo naučil ptát před dotekem,“ řekla Ana. „Víc neříkám — a ne proto, že by to bylo tajemství, ale protože to není důkaz. Semínko je slib, ne certifikát. Co z něj vyroste, poznáme teprve tehdy, až vyroste — nebo nevyroste.“
 
 „A když to bude růže — bude to růže té ženy? Miriam?“
 
@@ -1658,9 +1654,9 @@ Host se chtěl ještě zeptat — ale Ana už stála a brala džbán, protože z
 
 Host šel ten den pleť záhon vedle — a když se večer ptal, jestli „ta růže“ bude mít ve sklíčku vlastní svět, Ana mu řekla, že zrcadlo ukazuje jen to, kdo se sem vrací pečovat. Obrázek záhonu je obraz; záhon je práce.
 
-Večer, když se práce skončila a kruh kamenů vyprázdnil, vzala Ana pracovní sešit — ten samý, do kterého zapisovala počty sazenic, deníčky vody a ceny dřeva — a otevřela stránku s datem.
+Večer, když se práce skončila a kruh kamenů vyprázdnil, vzala Ana pracovní sešit — ten samý, do kterého zapisovala počty sazenic, záznamy o vodě a ceny dřeva — a otevřela stránku s datem.
 
-Nezapsala zázrak. Nezapsala událost. Nezapsala jméno.
+Nezapsala zázrak. Nezapsala obřad. Nezapsala jméno.
 
 Zapsala jen dvě věci: *zasazeno semínko — okraj záhonu u sudu* a *kontrola za měsíc*. A pod to, jako všechno ostatní v sešitě, malým písmem, bez slávy:
 
@@ -1683,7 +1679,7 @@ Tato kapitola stojí v **průsečíku** — místě, kde se setkávají dvě kni
 
 ## Návrh pilotu GENESIS-ROSE-001
 
-Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stane, musí to obstát jako **doložená událost, ne jako legenda**. Proto existuje návrh mikro-pilotu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md): rozhodovací rámec se čtyřmi gaty (souhlas a místo → botanika a bezpečnost → péče → finance a tvrzení), záznamovým packetem, evidencem Day 0 a kontrolami Day 30 / 90 / 365.
+Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stane, musí to obstát jako **doložená událost, ne jako legenda**. Proto existuje návrh mikro-pilotu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md): rozhodovací rámec se čtyřmi gaty (souhlas a místo → botanika a bezpečnost → péče → finance a tvrzení), záznamovým packetem, evidencí Day 0 a kontrolami Day 30 / 90 / 365.
 
 **Stav: HORIZONT / NEZAHÁJENO.** Dokument nedokládá pozemek, povolení, nákup rostliny, zasazení, přežití ani dopad. Není M5 exit gate, marketing, ceremonie ani fundraising — je to disciplína, jak by se malý fyzický čin měl provést a zdokladovat, kdyby někdy měl nastat.
 
@@ -1691,15 +1687,15 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 
 ## Kotva pravdy — ověřitelná fakta
 
-> Semínko v příběhu je zasazené. Semínko v zemi nikde neleží — a tahle tabulka říká přesně, co kde stojí.
+> Semínko v příběhu je zasazené. Fyzické zasazení tohoto semínka není doloženo — a tahle tabulka říká přesně, co kde stojí.
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
 | **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
 | **Zahrada Genesis jako projekt** | **STAVBA** | Stejná evidence jako [Kapitola 3](./03-Zahrada-Genesis.md): `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (Fáze 0 ✅, Fáze 1 🟡), web `/terranova/genesis`, OASIS panel *Active*. | Pozemek, entita, nezávislé ověření — stejné jako kap. 3. |
-| **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (klientská data) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Napojení metadata na L5 API je HORIZONT (kap. 7). |
-| **Fyzická růže byla v Algarve zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–C + kompletní Day 0 packet. |
-| **Pilotní dokument GENESIS-ROSE-001** | **ŽIVÉ** (dokument) / **HORIZONT** (akce) | [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) — rozhodovací rámec, gaty A–D, záznamová pole, prahy D0/D30/D90/D365. | Vlastní provedení: souhlas, botanický review, pečující, den výsadby. |
+| **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Deploy a ověření veřejného klienta; napojení metadat na L5 API je HORIZONT (kap. 7). |
+| **Fyzická růže byla v Algarve zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–D + kompletní Day 0 packet. |
+| **Pilotní dokument GENESIS-ROSE-001** | **ŽIVÉ** (dokument) / **HORIZONT** (akce) | [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) — rozhodovací rámec, gaty A–D, záznamová pole, prahy D0/D30/D90/D365. | Vlastní provedení: souhlas, botanická kontrola, pečující osoba a den výsadby. |
 | **Žádný L5 fond / DAO spend na pilot schválen** | **ŽIVÉ** (hranice) | Žádný proposal, žádná on-chain reference, žádný rozpočet — Gate D pilotu to výslovně zakazuje bez skutečného DAO procesu. | Skutečný DAO proces, pokud by někdy financování vzniklo. |
 
 ---
@@ -1714,9 +1710,6 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 ---
 
 *→ Předchozí: [Kapitola 11 — Bodhi Lanka](./11-Bodhi-Lanka.md)* · *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)* · *[Návrh pilotu → `pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md)*
-
-
-
 
 # BODHI GAIA — Kapitola 13: LUMI — Nová Amerika
 ## Most & Paměť · Kostarika — poslední uzel L5, země prvních národů a zeměpisný středobod mezi dvěma kontinent

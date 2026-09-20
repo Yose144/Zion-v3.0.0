@@ -11,7 +11,7 @@ Ráno potom, co dítě s lucernou odešlo za horizont — stejnou cestou, jakou 
 
 Na okraji záhonu, poblíž místa, kam stékala voda ze sudu, zůstala jen čerstvá hlína. Ničeho víc. Žádná stopa zázraku, žádný výhonek, jen nakypřená země, na jejímž okraji zůstaly otisky malých dlaní a kolen.
 
-Ana se sklonila a upravila hrana záhonu — ne kvůli kráse, ale aby vítr nerozmetal, co tam leželo pod zemí.
+Ana se sklonila a upravila hranu záhonu — ne kvůli kráse, ale aby vítr nerozmetal, co tam leželo pod zemí.
 
 Později, když se na kruhu kamenů rozdělovala práce, přišel k ní host — člověk, který přijel na týden s motykou a s telefonem plným obrázků. Slyšel to přes noc, jak to v Zahradě chodívá.
 
@@ -27,7 +27,7 @@ Ana se podívala na holou hlínu a pak na hosta — dlouho, jak se dívá na ně
 
 „Ale je to zvláštní semínko? Ze speciální zahrady?“
 
-„Je to semínko ze zahrady, kde se někdo naučil ptát před dotekem,“ řekla Ana. „Víc neříkám — a ne proto, že by to bylo tajemství, ale protože to není důkaz. Semínko je slib, ne certifikát. Co z něj vyroste, poznáme — až.“
+„Je to semínko ze zahrady, kde se někdo naučil ptát před dotekem,“ řekla Ana. „Víc neříkám — a ne proto, že by to bylo tajemství, ale protože to není důkaz. Semínko je slib, ne certifikát. Co z něj vyroste, poznáme teprve tehdy, až vyroste — nebo nevyroste.“
 
 „A když to bude růže — bude to růže té ženy? Miriam?“
 
@@ -39,9 +39,9 @@ Host se chtěl ještě zeptat — ale Ana už stála a brala džbán, protože z
 
 Host šel ten den pleť záhon vedle — a když se večer ptal, jestli „ta růže“ bude mít ve sklíčku vlastní svět, Ana mu řekla, že zrcadlo ukazuje jen to, kdo se sem vrací pečovat. Obrázek záhonu je obraz; záhon je práce.
 
-Večer, když se práce skončila a kruh kamenů vyprázdnil, vzala Ana pracovní sešit — ten samý, do kterého zapisovala počty sazenic, deníčky vody a ceny dřeva — a otevřela stránku s datem.
+Večer, když se práce skončila a kruh kamenů vyprázdnil, vzala Ana pracovní sešit — ten samý, do kterého zapisovala počty sazenic, záznamy o vodě a ceny dřeva — a otevřela stránku s datem.
 
-Nezapsala zázrak. Nezapsala událost. Nezapsala jméno.
+Nezapsala zázrak. Nezapsala obřad. Nezapsala jméno.
 
 Zapsala jen dvě věci: *zasazeno semínko — okraj záhonu u sudu* a *kontrola za měsíc*. A pod to, jako všechno ostatní v sešitě, malým písmem, bez slávy:
 
@@ -64,7 +64,7 @@ Tato kapitola stojí v **průsečíku** — místě, kde se setkávají dvě kni
 
 ## Návrh pilotu GENESIS-ROSE-001
 
-Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stane, musí to obstát jako **doložená událost, ne jako legenda**. Proto existuje návrh mikro-pilotu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md): rozhodovací rámec se čtyřmi gaty (souhlas a místo → botanika a bezpečnost → péče → finance a tvrzení), záznamovým packetem, evidencem Day 0 a kontrolami Day 30 / 90 / 365.
+Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stane, musí to obstát jako **doložená událost, ne jako legenda**. Proto existuje návrh mikro-pilotu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md): rozhodovací rámec se čtyřmi gaty (souhlas a místo → botanika a bezpečnost → péče → finance a tvrzení), záznamovým packetem, evidencí Day 0 a kontrolami Day 30 / 90 / 365.
 
 **Stav: HORIZONT / NEZAHÁJENO.** Dokument nedokládá pozemek, povolení, nákup rostliny, zasazení, přežití ani dopad. Není M5 exit gate, marketing, ceremonie ani fundraising — je to disciplína, jak by se malý fyzický čin měl provést a zdokladovat, kdyby někdy měl nastat.
 
@@ -72,15 +72,15 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 
 ## Kotva pravdy — ověřitelná fakta
 
-> Semínko v příběhu je zasazené. Semínko v zemi nikde neleží — a tahle tabulka říká přesně, co kde stojí.
+> Semínko v příběhu je zasazené. Fyzické zasazení tohoto semínka není doloženo — a tahle tabulka říká přesně, co kde stojí.
 
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
 | **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
 | **Zahrada Genesis jako projekt** | **STAVBA** | Stejná evidence jako [Kapitola 3](./03-Zahrada-Genesis.md): `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (Fáze 0 ✅, Fáze 1 🟡), web `/terranova/genesis`, OASIS panel *Active*. | Pozemek, entita, nezávislé ověření — stejné jako kap. 3. |
-| **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (klientská data) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Napojení metadata na L5 API je HORIZONT (kap. 7). |
-| **Fyzická růže byla v Algarve zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–C + kompletní Day 0 packet. |
-| **Pilotní dokument GENESIS-ROSE-001** | **ŽIVÉ** (dokument) / **HORIZONT** (akce) | [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) — rozhodovací rámec, gaty A–D, záznamová pole, prahy D0/D30/D90/D365. | Vlastní provedení: souhlas, botanický review, pečující, den výsadby. |
+| **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Deploy a ověření veřejného klienta; napojení metadat na L5 API je HORIZONT (kap. 7). |
+| **Fyzická růže byla v Algarve zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–D + kompletní Day 0 packet. |
+| **Pilotní dokument GENESIS-ROSE-001** | **ŽIVÉ** (dokument) / **HORIZONT** (akce) | [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) — rozhodovací rámec, gaty A–D, záznamová pole, prahy D0/D30/D90/D365. | Vlastní provedení: souhlas, botanická kontrola, pečující osoba a den výsadby. |
 | **Žádný L5 fond / DAO spend na pilot schválen** | **ŽIVÉ** (hranice) | Žádný proposal, žádná on-chain reference, žádný rozpočet — Gate D pilotu to výslovně zakazuje bez skutečného DAO procesu. | Skutečný DAO proces, pokud by někdy financování vzniklo. |
 
 ---

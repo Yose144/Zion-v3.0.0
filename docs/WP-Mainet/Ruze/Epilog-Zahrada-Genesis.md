@@ -3,7 +3,9 @@
 
 Ta jiná voda měla chuť Atlantiku.
 
-Lumi ji ucítila dřív, než ji uviděla — vzduch se změnil, všechno vonělo solí a větrem a pod větrem rozmarýnem. Řekla si jí jiná voda, protože řeka u brány zůstala daleko a moře se jí ještě nikdy neukázalo.
+Stalo se to ještě před jejím návratem k řece, když v alabastrové nádobě nesla semínko darované Růží.
+
+Lumi ji ucítila dřív, než ji uviděla — vzduch se změnil, všechno vonělo solí a větrem a pod větrem rozmarýnem. Říkala jí „jiná voda“, protože řeka u brány zůstala daleko a moře se jí ještě nikdy neukázalo.
 
 Zahrada Genesis ji nepřekvapila. Žádné kopule, žádné zlato, žádná svatyně. Plátěný stan, sud s vodou, kruh kamenů, na kterém se dalo sedět — a u první olivy žena s mozoly na dlaních, která klečela v záhonu a plela.
 
@@ -11,7 +13,7 @@ Zahrada Genesis ji nepřekvapila. Žádné kopule, žádné zlato, žádná svat
 
 „Tohle je Zahrada Genesis,“ řekla žena, aniž by zvedla hlavu. „Jmenuju se Ana. A ty neseš něco těžkého — poznám to podle chůze.“
 
-Lumi se usmála. Položila vedle sebe nádobu — tu samou, která přišla prázdná a od té doby už dvakrát nesla semeno. První zasadila u jiné vody, daleko odtud — a tam už možná voní zahrada. Tohle druhé jí darovala růže u řeky, když se vracela: jedno zralé semínko, které spadlo samo, jak semínka umí, když je nikdo nedrží.
+Lumi se usmála. Položila vedle sebe nádobu — tu samou, která kdysi přišla prázdná a v jejíž prasklině čekalo první semínko. To už vyrostlo v Růži u řeky. Semínko, které Lumi nesla teď, jí Růže darovala při odchodu: jedno zralé semínko, které spadlo samo, jak semínka umí, když je nikdo nedrží.
 
 „Co to neseš?“ zeptala se Ana.
 
@@ -25,7 +27,7 @@ Ana si utřela ruce do kalhot a poprvé se podívala Lumi do očí. Pak se podí
 
 „Tady se pěstuje jídlo,“ řekla. „Rajčata, fíky, olivy. Všechno tu ospravedlňuje svou vodu — sud není řeka. Když v létě klesne, zalévá se nejdřív to, co lidi živí. Rozumíš?“
 
-„Rozumím,“ řekla Lumi. „A právě proto sem růže patří. Ne všechno živé musí ospravedlnit svou existenci výnosem — ale nic živé nesmí pít na úkor těch, kdo žijí ze stejné půdy. Růže dostane vodu poslední, po lidech a po jídle. A když nebude, počká. Růže umí čekat.“
+„Rozumím,“ řekla Lumi. „A právě proto sem růže patří. Ne všechno živé musí ospravedlnit svou existenci výnosem — ale nic živé nesmí pít na úkor lidí ani záhonů, které je živí. Růže dostane jen vodu, kterou zahrada může postrádat. Když taková voda nebude, semeno zatím do země nepůjde.“
 
 „Péče bez privilegia,“ řekla Ana — a nebyla to otázka.
 
@@ -45,7 +47,7 @@ Ana přinesla hrst hlíny v dlaních — ze stejné země, do které kdysi řekl
 
 Lumi pokývala hlavou — a věděla, že tím je řečeno totéž, co kdysi řekla sama Růže, když si vybírala jméno: způsob oslovení, ne klec; jméno, ne hodnost.
 
-Semínko šlo do země — do obyčejné hlíny, do obyčejného dopoledne. Žádný hlas shora, žádná duha, žádný květ na počest. Ana zalila ze sudu, ale jen malý pohár — první a ne poslední, a teprve až po záhonech s rajčaty.
+Semínko šlo do země — do obyčejné hlíny, do obyčejného dopoledne. Žádný hlas shora, žádná duha, žádný květ na počest. Ana zalila malým pohárem vody, kterou zahrada mohla postrádat — teprve po záhonech s rajčaty.
 
 „A teď?“ zeptala se Lumi, když před nimi zůstala jen rozehrabaná země.
 

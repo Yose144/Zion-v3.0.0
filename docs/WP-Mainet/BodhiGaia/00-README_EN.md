@@ -57,7 +57,7 @@ It is also the strictest book of the series. **Soil does not know marketing.** A
 | LUMI — Nová Amerika (Costa Rica) — sixth L5 node for native cultures of the Americas; FPIC, council of elders, shared land with the L6 ground station. | **HORIZON** | [Ch. 13](./13-Nova-Amerika.md); `TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md` | Land (Talamanca / Boruca / Guanacaste), FPIC dialogue, legal entity, allocation from the L5 reserve (intent, not ratified) |
 | Guardian Nodes run in L5 communities (90 / 10 split). | **INVALID CLAIM** (today) | All five docs: installation in Phase 2 (2027 / 2028 / 2028 / 2028 / 2029) | Hardware, connectivity, treasury |
 | Seed Library, Medical Table, LoRa mesh, Resonance Protocol are deployed. | **HORIZON / MYTH** | Specifications in `public/V3/L5/docs/{TECH,PROTOCOLS}/`; `L5_L6_ACTIVATION_PLAN.md` marks them as vision | — |
-| OASIS shows the three L5 projects and the Dharma Temple world. | **LIVE** (client) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx`, `src/domain/config/worlds.ts` | Statuses fed from L5 API; fix `layer: 3` → L5 |
+| OASIS shows the five L5 projects and four worlds. | **LIVE** (client) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` (`NOVA_ZEME_PROJECTS` — five projects), `src/domain/config/worlds.ts` (`GENESIS_GARDEN`, `DHARMA_TEMPLE_LA_PALMA`, `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA` — all `layer: 5`) | Statuses fed from L5 API; verify deployment of new metadata |
 | Sītā, Hanuman, Sādhu, Ana, Hina, Rāma, the carpenter, the fisherman, the ploughman, the woman with the linden branch. | **MYTH** | Archetypes from Salt of the Earth, the Ramayana, and characters created for this book | — |
 
 ---
