@@ -5,8 +5,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Extension, Path, Query, State},
-    http::{header::HeaderName, HeaderValue, Method, StatusCode},
-    response::Json,
+    http::{header, header::HeaderName, HeaderMap, HeaderValue, Method, StatusCode},
+    response::{IntoResponse, Json},
     routing::{get, post},
     Router,
 };
@@ -1695,15 +1695,51 @@ async fn btc_swap_list(State(state): State<AppState>) -> Json<serde_json::Value>
 }
 
 /// Operator monitoring: per-phase counts + staleness/deadline gauges.
-/// Public read — the payload deliberately carries no secrets.
-async fn btc_swap_metrics(State(state): State<AppState>) -> Json<serde_json::Value> {
+/// Public read — the payload deliberately carries no secrets. Emits
+/// Prometheus text exposition when the client asks for it (Accept:
+/// text/plain / openmetrics) so Prometheus can scrape this endpoint
+/// directly; otherwise JSON.
+async fn btc_swap_metrics(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let wants_prom = headers
+        .get(header::ACCEPT)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.contains("text/plain") || v.contains("openmetrics"))
+        .unwrap_or(false);
     match state.service.btc_swap() {
         Some(flow) => {
+            if wants_prom {
+                return (
+                    StatusCode::OK,
+                    [(
+                        header::CONTENT_TYPE,
+                        HeaderValue::from_static("text/plain; version=0.0.4; charset=utf-8"),
+                    )],
+                    flow.prometheus_metrics().await,
+                )
+                    .into_response();
+            }
             let mut m = flow.health_metrics().await;
             m["enabled"] = serde_json::json!(true);
-            Json(m)
+            Json(m).into_response()
         }
-        None => Json(serde_json::json!({ "enabled": false })),
+        None => {
+            if wants_prom {
+                return (
+                    StatusCode::OK,
+                    [(
+                        header::CONTENT_TYPE,
+                        HeaderValue::from_static("text/plain; version=0.0.4; charset=utf-8"),
+                    )],
+                    "# TYPE warp_btc_swap_enabled gauge\nwarp_btc_swap_enabled 0\n"
+                        .to_string(),
+                )
+                    .into_response();
+            }
+            Json(serde_json::json!({ "enabled": false })).into_response()
+        }
     }
 }
 
