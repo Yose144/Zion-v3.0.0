@@ -36,7 +36,7 @@
 
 ### 1. SimpleMining.net API Token — **HIGH (MUST REMOVE)**
 
-**Token:** `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8`
+**Token:** `<redacted; load from SMOS_API_KEY>`
 **Rig ID:** 518837
 **API:** `https://api.simplemining.net`
 

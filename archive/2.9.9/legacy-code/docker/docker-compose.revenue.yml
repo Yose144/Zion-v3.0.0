@@ -292,8 +292,8 @@ services:
     volumes:
       - zion-mysterium-data:/var/lib/mysterium-node
     environment:
-      - MMN_API_KEY=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob
-    command: --mmn.api-key=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob service --agreed-terms-and-conditions
+      - MMN_API_KEY=${MYSTERIUM_API_KEY}
+    command: --mmn.api-key=${MYSTERIUM_API_KEY} service --agreed-terms-and-conditions
     networks:
       - revenue-net
     labels:

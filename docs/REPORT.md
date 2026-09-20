@@ -2186,7 +2186,7 @@ Nové stránky:
 | Finding | Soubor(y) | Oprava |
 |---------|-----------|--------|
 | **P1-29** `StrictHostKeyChecking=no` (MITM) | `scripts/deploy-*.sh`, `scripts/collect_stats.sh`, `2.9-History/deploy_*.sh` | Změněno na `accept-new` — přijímá nový klíč ale chrání před MITM na známých hostech |
-| **P1-31** Hardcoded SMTP heslo `x3nityOne144` | `debug_email_template.py`, `send-rasta-email.php`, `test-email-simple.php`, `ftp.md` | Přesunuto do `os.environ/getenv('SMTP_PASSWORD')`, credentials redacted |
+| **P1-31** Hardcoded SMTP heslo `${ZION_SMTP_PASSWORD}` | `debug_email_template.py`, `send-rasta-email.php`, `test-email-simple.php`, `ftp.md` | Přesunuto do `os.environ/getenv('SMTP_PASSWORD')`, credentials redacted |
 | **P1-32** Default hesla v Docker Compose | `docker-compose.mainnet.yml`, `testnet.yml`, `monitoring.yml` | Odstraněny všechny `:-fallback` default hodnoty (Redis, Grafana) — vyžaduje `.env` |
 | **P1-34** CORS wildcard `*` | `website-v2.9/.../route.ts` | `process.env.CORS_ORIGIN \|\| 'https://zionterranova.com'` |
 | **P2-06** GPU algo stuby nedokumentovány | `miner/src/miner/native_algos.rs` | Přidán module-level doc comment vysvětlující Keccak fallback |

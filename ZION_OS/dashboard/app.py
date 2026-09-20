@@ -257,11 +257,7 @@ _EDGE_SYSTEMD_UNITS = {
 # for security. Plaintext passwords are NEVER stored on disk.
 #
 # Users are configured via the DASHBOARD_USERS env var (comma-separated
-# "user:sha256hex" pairs) or fall back to compiled defaults below.
-#
-# SECURITY NOTE: The compiled defaults are convenient for local-dev dashboards
-# (127.0.0.1). For the Edge/production dashboard exposed to the internet,
-# ALWAYS override via DASHBOARD_USERS env var with strong unique credentials.
+# "user:sha256hex" pairs). No credentials are compiled into the application.
 #
 # To generate a hash: python3 -c "import hashlib; print(hashlib.sha256(b'password').hexdigest())"
 import hashlib as _hashlib
@@ -269,12 +265,7 @@ import hashlib as _hashlib
 def _sha256(s: str) -> str:
     return _hashlib.sha256(s.encode("utf-8")).hexdigest()
 
-# Default users — used when DASHBOARD_USERS env var is not set.
-# Override via DASHBOARD_USERS env var for production deployments.
-_DEFAULT_USERS = {
-    "Yose":  _sha256("3nityOne13"),
-    "Issy":  _sha256("3nityOne13"),
-}
+_DEFAULT_USERS: dict[str, str] = {}
 
 # Parse optional env override: DASHBOARD_USERS="user1:hash1,user2:hash2"
 DASHBOARD_USERS_ENV = os.environ.get("DASHBOARD_USERS", "")
@@ -14884,7 +14875,7 @@ if __name__ == "__main__":
     print(f"  Auth          : {len(DASHBOARD_USERS)} user(s) — {', '.join(DASHBOARD_USERS.keys())}")
     print(f"  ZIS SSO       : auth.zionterranova.com (zion_session cookie)")
     if not DASHBOARD_USERS_ENV and not (_legacy_user and _legacy_pass):
-        print("  Auth source   : compiled defaults (set DASHBOARD_USERS env var for production)")
+        print("  Auth source   : none (set DASHBOARD_USERS for Basic Auth)")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
     # Background sampler — re-enabled on Linux (was disabled for Windows deadlock).

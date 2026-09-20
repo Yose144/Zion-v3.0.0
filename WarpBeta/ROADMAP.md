@@ -1,6 +1,8 @@
 # WARP Beta — Roadmap
 
-> Strategie z ChatGPT výzkumu: **jedna konkrétní věc dobře** — ZION ↔ BTC atomic swap. Ne celé L2, ne 13 chainů, ne DEX. WARP 0.1 → testnet-ready → mainnet, pak teprve LN a další chainy.
+> **2026-09-20 SAFETY HOLD:** Edge BTC swap flow je vypnutý (`WARP_BTC_SWAP_ENABLED=0`). Historický regtest baseline je zelený, ale user-facing offer a mainnet pilot jsou NO-GO do externího auditu, hardened deploye, signed server-side quote/pricing/approval protokolu, dedikovaného offer key, dokončeného bitcoind IBD a explicitního capped-pilot schválení.
+>
+> Strategie: **jedna konkrétní věc dobře** — ZION ↔ BTC atomic swap. Ne celé L2, ne 13 chainů, ne DEX. WARP 0.1 → bezpečnostní gate → auditovaný pilot, pak teprve LN a další chainy.
 
 ## Přehled fází
 
@@ -32,24 +34,26 @@
   - regtest docker esplora na Edge (2026-09-17): cross-leg oba směry, refund paths, restart recovery — PASS
   - **live mainnet ZION leg SETTLED 2026-09-18** (`d77f837a` lock → `8c60d064` claim)
   - **regtest re-run 2026-09-20 přes nativní `bitcoind+rpc://` backend** (`zion-bitcoind-regtest` na Edge): 6/6 testů PASS — oba směry SETTLED, oba refund paths, restart recovery; live-ZION leg znovu SETTLED (`fa193379…` lock → `72abda00…` claim)
-  - signet/testnet3: faucety nedoručily funding (ověřeno 2026-09-20) → nahrazeno **mainnet dust pilotem**
+  - signet/testnet3: faucety nedoručily funding (ověřeno 2026-09-20); regtest poskytl historickou validační evidence. Mainnet pilot není automatická náhrada a zůstává za safety gates.
 
 ### Kritéria dokončení 0.1 — stav 2026-09-20
 
 - [x] 2× úspěšný swap (oba směry) — regtest E2E + live ZION mainnet leg SETTLED
 - [x] 1× úspěšný refund na každé straně — regtest (ZionToBtc: RefundBtc po CLTV; BtcToZion: RefundZion + user BTC refund)
-- [x] `cargo test -p zion-multichain` zelené (666 testů) + unit testy btc_htlc
-- [x] žádné secrets v repo; `warp.toml` dokumentované
-- [x] Edge redeploy na HEAD — `warpd` @ `9af96f6ae` (R2 TTL + R4 failover + bitcoind backend + metrics), Prometheus alerting zapnuto
-- [ ] **mainnet dust pilot** (náhrada za signet) — čeká na produkční `WARP_BTC_RELAY_KEY` + ~100k sats funding `bc1q53gn9…5n6k` + externí audit + dokončení mainnet bitcoind IBD (~5%)
+- [x] Historický full baseline byl zelený (666 testů); aktuální hardening má cílené testy green
+- [x] Aktuální full `zion-multichain` suite green (677 lib + integrace, 0 failed) + clippy čistý kromě zdokumentovaných pre-existing warningů
+- [x] WARP/root/ops plaintext credentials sanitizovány; tři legacy `APP&WEB/public_html` credential literals byly ponechány mimo tento batch, externí rotace a Git history zůstávají samostatný operátorský úkol
+- [x] Hardened Edge redeploy (2026-09-20): `warpd` = hardened working tree, backup `warpd.bak-20260920-hardening`, flow disabled + offer fail-closed
+- [ ] **Capped mainnet pilot** — až po externím auditu, signed quote/pricing protocolu, offer key, hardened deployi, dokončeném IBD, production WIF review a explicitním schválení; žádné funding kroky nyní
 
-## WARP 0.2 — Automated swap — ✅ hotovo (2026-09-19)
+## WARP 0.2 — Automated swap — SAFETY HOLD
 
-- ✅ `BtcSwapFlow` state machine v `warpd` (autonomní: detect → lock → claim/refund, `poll_once` loop, offer TTL, admission guards)
-- ✅ CLI: `zion warp btc-swap offer|list|status` (`--zis-api-key` auth)
-- ✅ HTTP API: `POST /swaps/btc/offer` (fail-closed auth), `GET /list`, `GET /:id`
-- ✅ Keyring: `WARP_BTC_RELAY_KEY` (WIF) + dedikovaný `WARP_BTC_SWAP_ZION_SECRET` keyring (funded 500 ZION)
-- ⏳ Offer discovery: zatím manuální (API inject), později solver network (`/v1/swap/intent` pattern existuje pro EVM)
+- [x] `BtcSwapFlow` state machine v `warpd` (detect → lock → claim/refund, `poll_once`, TTL, admission guards)
+- [x] CLI: `zion warp btc-swap offer|list|status`; lokální offer používá `WARP_BTC_SWAP_OFFER_KEY` / `X-Warp-Key`
+- [x] HTTP read API: `GET /list`, `GET /:id`, metrics
+- [ ] User-facing `POST /swaps/btc/offer`: blokovaný do signed server-side quote/pricing/approval protokolu; ZIS auth sama nestačí
+- [x] Keyring: dedikovaný `WARP_BTC_SWAP_ZION_SECRET` keyring (historicky funded 500 ZION)
+- [ ] Offer discovery + pricing approval: navrhnout přes signed quote/solver pattern; statický operator key je pouze interní mitigace
 
 ## WARP 0.3 — Lightning
 
@@ -60,10 +64,11 @@
 
 ## WARP 1.0 — Produkce
 
-- Externí security audit (HTLC scripty + koordinátor)
-- Vlastní esplora/bitcoind nebo placené API (odstranit mempool.space rate-limit závislost)
-- Watchtower hardening: crash-recovery ze SQLite, reconnect, alert na near-timeout swapy
-- Docs: operator runbook, user guide, slippage/fee policy
+- Externí security audit (HTLC scripty, koordinátor, auth a economic terms)
+- Server-side signed quote/pricing/approval před user-facing offerem
+- Vlastní synchronizovaný bitcoind jako primary, public API pouze fallback
+- Watchtower hardening: crash-recovery, reconnect a near-timeout alerting
+- Operator key rotation/runbook, user guide, slippage/fee policy
 - Governance: DAO ratifikace mainnet parametrů (min/max swap, Δ, fee policy)
 
 ## Co explicitně odložit (z chatu)
@@ -72,4 +77,4 @@ Staking · vlastní DEX · 13 chainů · nové tokeny · DAO frontend polishment
 
 ## Poznámka k „bullrun" framingu
 
-Netermínovat podle trhu — termínovat podle engineering gate: *„signet E2E zelený" → „mainnet pilot s cap" → „audit"*. Když bull run přijde dřív, máme připravený bezpečný základ místo spěšného bridgeware.
+Netermínovat podle trhu — termínovat podle engineering gate: *„regtest E2E zelený" → „hardening + full gate" → „externí audit + signed quote protocol" → „explicitně schválený capped pilot"*. Tržní tlak nesmí měnit pořadí bezpečnostních gate.

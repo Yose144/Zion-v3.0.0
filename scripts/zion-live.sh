@@ -73,8 +73,12 @@ case "$MODE" in
     fi
     echo ""
     echo "── Dashboard (:8766) ──"
-    curl -s -u Yose:3nityOne13 http://127.0.0.1:8766/api/status 2>/dev/null | \
-      jq -r '"  Topology: \(.topology)  Pool: \(.pool.running // false | if . then "running" else "stopped" end)  Miner: \(.miner.running // false | if . then "running" else "stopped" end)"' 2>/dev/null || echo "  (unreachable)"
+    if [ -n "${ZION_DASHBOARD_USER:-}" ] && [ -n "${ZION_DASHBOARD_PASS:-}" ]; then
+      curl -s -u "${ZION_DASHBOARD_USER}:${ZION_DASHBOARD_PASS}" http://127.0.0.1:8766/api/status 2>/dev/null | \
+        jq -r '"  Topology: \(.topology)  Pool: \(.pool.running // false | if . then "running" else "stopped" end)  Miner: \(.miner.running // false | if . then "running" else "stopped" end)"' 2>/dev/null || echo "  (unreachable)"
+    else
+      echo "  (set ZION_DASHBOARD_USER and ZION_DASHBOARD_PASS)"
+    fi
     echo ""
     echo "── Recent watchdog log ──"
     tail -5 "$LOG_DIR/watchdog.log" 2>/dev/null || echo "  (no watchdog log)"

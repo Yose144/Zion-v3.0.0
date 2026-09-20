@@ -136,7 +136,7 @@
             "algo": "rx/0",
             "coin": "monero",
             "url": "xmr-eu2.nanopool.org:10300",
-            "user": "42m86RBWf4PeuRf8P5rwA96XvmCKAfF77doWYJRv3KKAKrT8GTb5b3pbHTtaZsbJ4BERW1NHgh8WQgpAxAoEiXF82skcKsK.PC_1/omnity.company@gmail.com",
+            "user": "<xmr_wallet>.<worker>/<contact_email>",
             "pass": "x",
             "rig-id": null,
             "nicehash": false,

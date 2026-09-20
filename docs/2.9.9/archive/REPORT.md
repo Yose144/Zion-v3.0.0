@@ -506,7 +506,7 @@ Oba seed nody Usa + Asia měly 2 kritické chyby:
 94. ✅ **Mysterium identity created** — Helsinki: `0xbf85983bf3ecc65791b2884e30a9c0e1636b757b`; Germany: `0x1a9bcc8298a4cd214a90fb63e1eb5effa8fd8969`
 95. ✅ **Mysterium private keys zálohovány** — keystore decryptnuty (prázdné heslo, Ethereum-kompatibilní scrypt AES-128-CTR); viz `PREMINE_WALLETS_BACKUP.json` (gitignored)
 96. ⚠️ **Mysterium registrace — fee blocker** — `POST /register` vrátil HTTP 202, transactor inicioval tx na Polygon (ChainID 137); ale `Fee:+62026071429350000 wei (~0.062 MYST)` selhal — wallet nemá MYST tokeny; status `RegistrationError → Unregistered`
-97. ✅ **Mysterium registrace — Úspěch přes MMN** — `--mmn.api-key=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob` CLI flag před `service` subcommandem; mystnodes.com sponzoroval Polygon gas; oba nody `Registered`, všech 5 služeb aktivních: `dvpn`, `data_transfer`, `scraping`, `monitoring`, `quic_scraping`
+97. ✅ **Mysterium registrace — Úspěch přes MMN** — `--mmn.api-key=${MYSTERIUM_API_KEY}` CLI flag před `service` subcommandem; mystnodes.com sponzoroval Polygon gas; oba nody `Registered`, všech 5 služeb aktivních: `dvpn`, `data_transfer`, `scraping`, `monitoring`, `quic_scraping`
 98. ✅ **Commit `f99bf59`** — `docker/docker-compose.revenue.yml` (MMN flag fix + NKN fix)
 
 ### Session 29 — Desktop Agent: DAO/Warp/FreeWorld/Issobella + macOS Dock + Auto-Updates (24. února 2026)

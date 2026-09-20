@@ -60,7 +60,7 @@ SELF_TEST s4_memhard=FAIL
 - **Current IP**: dynamic (DHCP, last seen 192.168.0.161)
 - **GPU**: AMD Vega 64 (gfx900:xnack-)
 - **OS**: SimpleMining OS (SMOS) with kernel 5.15.80-sm, AMDGPU driver
-- **SSH**: miner@<current_ip> (password: omnity.company@gmail.com)
+- **SSH**: miner@<current_ip> (password: <retrieve from password manager>)
 - **SMOS Group**: ZION-Deeksha-AMD (ID 1765707)
 - **GLIBC**: 2.31
 
