@@ -6,6 +6,7 @@
 pub mod adapter;
 pub mod aptos_signer;
 pub mod bcs;
+pub mod bitcoind_rpc;
 pub mod bolt11;
 pub mod btc_htlc;
 pub mod btc_signer;

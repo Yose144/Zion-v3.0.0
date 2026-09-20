@@ -304,32 +304,18 @@ impl BitcoinAdapter {
         };
         for i in 0..n {
             let idx = (start + i) % n;
-            let url = format!("{}{}", self.api_urls[idx], path);
-            match self.client.get(&url).send().await {
-                Ok(resp) if resp.status().is_success() => match resp.text().await {
-                    Ok(text) => {
-                        if idx != start {
-                            self.primary.store(idx, Ordering::Relaxed);
-                        }
-                        return Ok(text);
+            let base = &self.api_urls[idx];
+            match crate::warp::bitcoind_rpc::backend_get(&self.client, base, path).await {
+                Ok(text) => {
+                    if idx != start {
+                        self.primary.store(idx, Ordering::Relaxed);
                     }
-                    Err(e) => {
-                        last_err = WarpError::AdapterError {
-                            chain: "bitcoin".into(),
-                            reason: format!("{url}: body read: {e}"),
-                        };
-                    }
-                },
-                Ok(resp) => {
-                    last_err = WarpError::AdapterError {
-                        chain: "bitcoin".into(),
-                        reason: format!("{url}: HTTP {}", resp.status()),
-                    };
+                    return Ok(text);
                 }
                 Err(e) => {
                     last_err = WarpError::AdapterError {
                         chain: "bitcoin".into(),
-                        reason: format!("{url}: {e}"),
+                        reason: format!("{base}{path}: {e}"),
                     };
                 }
             }

@@ -91,8 +91,8 @@ Blokuje `WARP_BTC_SWAP_ENABLED=1`:
 
 1. ☐ Externí audit tohoto dokumentu + kódu
 2. ☑ R3 (code+ops): `WARP_BTC_SWAP_ZION_SECRET` nasazen v `/etc/zion/edge-environment.sh` (wallet `/etc/zion/keys/warp-operator.json`, 600); adresa `zion125w5f5w6w8n067g83846d7g8k630c43432rk3e6` **FUNDED 500 ZION** 2026-09-19 (tx `abe521fc…`, blok 49544)
-3. ☐ R4 (ops): vlastní esplora/bitcoind jako primary v `WARP_BITCOIN_API` comma-list (failover code hotový, defaults = 2 public backends)
-4. ☐ Edge binary = HEAD (všechny audit fixy), verify `git log` — **aktuálně deployed `50df05d54` postrádá `d16922977` (R4 failover) a `d8fe0f97d` (R2 offer TTL); potřeba rebuild+redeploy před pilotem**
+3. 🟡 R4 (ops): vlastní backend **v řešení** — pruned `bitcoind` 31.1 na Edge (`zion-bitcoind.service`, prune=20G, RPC 127.0.0.1:8332, watch-only wallet `warpwatch`), IBD spuštěno 2026-09-20 (~2%). Nativní `bitcoind+rpc://user:pass@127.0.0.1:8332/warpwatch` backend v `WARP_BITCOIN_API` (esplora-path překlad na RPC, auto `importdescriptors`, esplora jako failover). Zbývá: IBD done → nastavit `WARP_BITCOIN_API` s lokálním nodem prvním
+4. ☑ Edge binary = HEAD — redeployed 2026-09-20 (R2 TTL + R4 failover + bitcoind backend), `warpd.bak-20260920` backup
 5. ☐ `WARP_BTC_RELAY_KEY` = produkční WIF (ne test), network match
 6. ☐ `ZION_MULTICHAIN_API_KEY` nebo ZIS auth pro offer endpoint
 7. ☐ SQLite path/permissions/backup + `load_from_db` enabled v `warpd`

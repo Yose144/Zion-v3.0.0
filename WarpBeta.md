@@ -1,6 +1,6 @@
 # WARP Beta — přehled
 
-> Stav: **2026-09-20** · HEAD `63cc8f7d4` · Edge deployed `50df05d54` (⚠️ postrádá R2 TTL `d8fe0f97d` + R4 failover `d16922977` — redeploy potřeba před pilotem)
+> Stav: **2026-09-20** · Edge deployed HEAD (`warpd` + bitcoind backend, backup `warpd.bak-20260920`) · pruned `bitcoind` 31.1 na Edge — IBD running (`zion-bitcoind.service`)
 > Swap: **TESTNET rehearsal STALLED** — faucety nedoručily funding (0 tx na HTLC i wallet); doporučen **mainnet dust pilot** · ZION wallet funded 500 ZION · BTC wallet vygenerován (mnemonic na Desktopu)
 > Detaily: [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) · [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md)
 
@@ -53,7 +53,7 @@ persistence, HTTP + CLI lifecycle. Edge: `62.171.141.136:2222`.
 |---|---|---|---|
 | 1 | **Externí security audit** | ⏳ čeká | `AUDIT_PREP.md` připraven (findings log + checklist) |
 | 2 | **`WARP_BTC_RELAY_KEY`** | ⏳ nenastaven | produkční mainnet BTC WIF — potřeba pro ZION→BTC směr |
-| 3 | Privátní esplora/bitcoind | doporučeno | Edge 93 G free; pruned node ~15 G + IBD. Public failover funguje, beta-grade |
+| 3 | Privátní esplora/bitcoind | 🟡 v řešení | pruned `bitcoind` 31.1 na Edge (prune=20G, IBD running) + nativní `bitcoind+rpc://` backend v adaptéru — zbývá napojit `WARP_BITCOIN_API` po IBD |
 | 4 | Signet/testnet E2E | dead-end | faucety nedoručily funding — nahradit mainnet dust pilotem (regtest + live-ZION leg pathy pokryly) |
 | 5 | `WARP_BTC_SWAP_ENABLED=1` | ⛔ gated | až po 1+2 (+3 doporučeno) |
 

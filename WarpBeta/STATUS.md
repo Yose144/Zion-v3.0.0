@@ -59,7 +59,7 @@
 
 | Blokér | Stav |
 |---|---|
-| BTC node/esplora — public failover (mempool.space + blockstream.info) je OK pro beta, pro produkci vlastní esplora/bitcoind | doporučeno před enable; Edge 93 G free → pruned bitcoind ~15 G feasible |
+| BTC node/esplora — public failover OK pro beta | 🟡 v řešení: pruned `bitcoind` 31.1 na Edge (`zion-bitcoind`, prune=20G, RPC :8332, wallet `warpwatch`), IBD od 2026-09-20; nativní `bitcoind+rpc://` backend v adaptéru (esplora path→RPC překlad, auto-import, failover zachován); po IBD nastavit `WARP_BITCOIN_API` lokální node first |
 | Testnet3 rehearsal | **dead-end** — faucety nedoručily funding (ověřeno 2026-09-20, 0 tx na obou adresách); nahradit mainnet dust pilotem s cap |
 | LND node pro LN fázi | až WARP 0.3 |
 | Žádný externí audit | před mainnet spuštěním povinný |
