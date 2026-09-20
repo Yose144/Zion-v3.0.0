@@ -165,12 +165,10 @@ impl SolvencyGuard {
             })
     }
 
-    /// Run a full solvency check for `asset` and `new_amount`.
-    ///
-    /// Returns `Ok(check)` if solvent, `Err(InsufficientSolvency)` if not (and
-    /// enforcement is enabled), or `Ok(check)` with `solvent=false` if
-    /// enforcement is disabled.
-    pub async fn check(
+    /// Evaluate solvency for `asset` and `new_amount` without enforcement.
+    /// Always returns the `SolvencyCheck` (including `solvent=false` results)
+    /// so callers like `check_all` can report insolvent assets.
+    async fn evaluate(
         &self,
         asset: &Asset,
         new_amount: Amount,
@@ -207,33 +205,50 @@ impl SolvencyGuard {
             solvent,
         };
 
-        if !solvent {
-            let deficit = total_required.0.saturating_sub(on_chain.0);
+        Ok(check)
+    }
+
+    /// Run a full solvency check for `asset` and `new_amount`.
+    ///
+    /// Returns `Ok(check)` if solvent, `Err(InsufficientSolvency)` if not (and
+    /// enforcement is enabled), or `Ok(check)` with `solvent=false` if
+    /// enforcement is disabled.
+    pub async fn check(
+        &self,
+        asset: &Asset,
+        new_amount: Amount,
+    ) -> MultichainResult<SolvencyCheck> {
+        let check = self.evaluate(asset, new_amount).await?;
+        if !check.solvent {
+            let required = check
+                .ledger_claims
+                .saturating_add(check.pool_reserves)
+                .saturating_add(check.pending_withdrawals)
+                .saturating_add(check.new_amount);
+            let deficit = required.0.saturating_sub(check.on_chain.0);
             if self.config.enforce {
                 tracing::warn!(
                     "SOLVENCY GUARD rejected: asset={} on_chain={} required={} deficit={}",
                     check.asset_key,
-                    on_chain.0,
-                    total_required.0,
+                    check.on_chain.0,
+                    required.0,
                     deficit
                 );
                 return Err(MultichainError::InsufficientSolvency {
                     asset: check.asset_key.clone(),
-                    on_chain: on_chain.0,
-                    required: total_required.0,
+                    on_chain: check.on_chain.0,
+                    required: required.0,
                     deficit,
                 });
-            } else {
-                tracing::warn!(
-                    "SOLVENCY GUARD warning (not enforced): asset={} on_chain={} required={} deficit={}",
-                    check.asset_key,
-                    on_chain.0,
-                    total_required.0,
-                    deficit
-                );
             }
+            tracing::warn!(
+                "SOLVENCY GUARD warning (not enforced): asset={} on_chain={} required={} deficit={}",
+                check.asset_key,
+                check.on_chain.0,
+                required.0,
+                deficit
+            );
         }
-
         Ok(check)
     }
 
@@ -296,18 +311,11 @@ pub async fn check_all(guard: &SolvencyGuard) -> MultichainResult<HashMap<String
             Some(a) => a,
             None => continue,
         };
-        // check() with zero new_amount gives the current solvency state.
-        match guard.check(&asset, Amount::ZERO).await {
+        // evaluate() with zero new_amount gives the current solvency state,
+        // including insolvent assets (enforcement is skipped here).
+        match guard.evaluate(&asset, Amount::ZERO).await {
             Ok(c) => {
                 results.insert(key, c);
-            }
-            Err(MultichainError::InsufficientSolvency { .. }) => {
-                // check() returns Err only when enforce=true and insolvent.
-                // For the full report we want the check object, so re-run with
-                // enforce=false by temporarily... instead just reconstruct.
-                // Simpler: call the inner logic. But since enforce is on the
-                // guard, we just skip storing the Err case here — the
-                // reconciliation module already logs alerts.
             }
             Err(e) => {
                 tracing::debug!("solvency check_all: {} failed: {}", key, e);
@@ -615,5 +623,53 @@ mod tests {
             .insert(usdc.id.to_string(), Amount::new(9_000_000));
         let result = guard.verify_withdrawal(&usdc, Amount::new(1_000_000)).await;
         assert!(result.is_err(), "should reject when claims exceed on-chain balance");
+    }
+
+    #[tokio::test]
+    async fn check_all_reports_insolvent_assets_when_enforced() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let asset = usdc_asset();
+
+        ledger
+            .credit("user1", &asset, Amount::new(10_000_000))
+            .await
+            .unwrap();
+
+        let token_balances = std::sync::Arc::new(std::sync::Mutex::new(HashMap::new()));
+        token_balances
+            .lock()
+            .unwrap()
+            .insert(asset.id.to_string(), Amount::new(1_000_000));
+
+        let adapter = SolvencyMockAdapter {
+            native_balance: Amount::ZERO,
+            token_balances,
+        };
+
+        let mut adapters = ChainAdapterRegistry::new();
+        adapters.register(ChainId::Base, Box::new(adapter));
+
+        let dex = Arc::new(RwLock::new(DexRouter::new()));
+        let keyring = Keyring::generate().unwrap();
+
+        let guard = SolvencyGuard::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            keyring,
+            Arc::clone(&dex),
+            SolvencyConfig {
+                enforce: true,
+                margin: Amount::ZERO,
+            },
+        );
+
+        let report = check_all(&guard).await.unwrap();
+        let check = report
+            .get(&asset.id.to_string())
+            .expect("insolvent asset must appear in the report");
+        assert!(!check.solvent);
+        assert_eq!(check.on_chain, Amount::new(1_000_000));
+        assert_eq!(check.ledger_claims, Amount::new(10_000_000));
     }
 }

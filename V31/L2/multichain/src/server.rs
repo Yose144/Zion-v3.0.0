@@ -76,6 +76,7 @@ pub struct AppState {
     solver_fee_bps: u16,
     solver_api_key: Option<String>,
     zis_client: ZisClient,
+    btc_swap_offer_key: Option<String>,
 }
 
 /// Resolve the optional `ZisUser` extension. Returns `401` when ZIS auth is
@@ -233,6 +234,9 @@ impl ApiServer {
             solver_fee_bps: solver_cfg.fee_bps,
             solver_api_key: solver_cfg.api_key,
             zis_client,
+            btc_swap_offer_key: std::env::var("WARP_BTC_SWAP_OFFER_KEY")
+                .ok()
+                .filter(|key| !key.trim().is_empty()),
         };
 
         Router::new()
@@ -1613,24 +1617,57 @@ fn decode_btc_pubkey(
     })
 }
 
-async fn btc_swap_offer(
-    State(state): State<AppState>,
-    user: Option<Extension<ZisUser>>,
-    Json(req): Json<BtcSwapOfferRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)
-        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
-    // Fail closed: an offer can make the operator lock real BTC, so the
-    // endpoint must never be reachable without SOME configured auth —
-    // a ZIS session, or the bearer key enforced by `auth_rate_limit`.
-    if !state.zis_client.enabled && state.limiter.api_key().is_none() {
-        return Err((
-            StatusCode::FORBIDDEN,
+fn constant_time_key_eq(expected: &str, provided: &str) -> bool {
+    if expected.len() != provided.len() {
+        return false;
+    }
+    expected
+        .as_bytes()
+        .iter()
+        .zip(provided.as_bytes())
+        .fold(0u8, |diff, (a, b)| diff | (a ^ b))
+        == 0
+}
+
+fn require_btc_swap_offer_key(
+    expected: Option<&str>,
+    provided: Option<&str>,
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    let expected = expected.ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
             Json(serde_json::json!({
-                "message": "btc swap api requires auth — set ZION_MULTICHAIN_API_KEY or enable ZIS"
+                "message": "btc swap offers disabled — operator approval key not configured"
             })),
+        )
+    })?;
+    let provided = provided.ok_or_else(|| {
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"message": "missing X-Warp-Key"})),
+        )
+    })?;
+    if !constant_time_key_eq(expected, provided) {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({"message": "invalid X-Warp-Key"})),
         ));
     }
+    Ok(())
+}
+
+async fn btc_swap_offer(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<BtcSwapOfferRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    // Operator-only until a server-side quote/approval protocol exists: an
+    // offer can make the operator counter-lock real assets, so a normal
+    // ZIS-authenticated user must not be able to reach this endpoint.
+    require_btc_swap_offer_key(
+        state.btc_swap_offer_key.as_deref(),
+        headers.get("x-warp-key").and_then(|value| value.to_str().ok()),
+    )?;
     let flow = btc_swap_flow(&state)?;
 
     let hashlock: [u8; 32] = hex::decode(&req.hash_hex)
@@ -2432,5 +2469,41 @@ async fn get_solvency_status(
             tracing::warn!("solvency status check failed: {e}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn btc_swap_offer_key_fails_closed() {
+        // No configured key → 503, even with a provided key.
+        let err = require_btc_swap_offer_key(None, Some("anything")).unwrap_err();
+        assert_eq!(err.0, StatusCode::SERVICE_UNAVAILABLE);
+        let err = require_btc_swap_offer_key(None, None).unwrap_err();
+        assert_eq!(err.0, StatusCode::SERVICE_UNAVAILABLE);
+
+        // Configured key, none provided → 401.
+        let err = require_btc_swap_offer_key(Some("operator-key"), None).unwrap_err();
+        assert_eq!(err.0, StatusCode::UNAUTHORIZED);
+
+        // Wrong key → 401.
+        let err =
+            require_btc_swap_offer_key(Some("operator-key"), Some("wrong-key")).unwrap_err();
+        assert_eq!(err.0, StatusCode::UNAUTHORIZED);
+
+        // Exact key → Ok.
+        assert!(require_btc_swap_offer_key(Some("operator-key"), Some("operator-key")).is_ok());
+    }
+
+    #[test]
+    fn btc_swap_offer_key_requires_exact_match() {
+        assert!(constant_time_key_eq("operator-key", "operator-key"));
+        // Same-length mismatch is rejected.
+        assert!(!constant_time_key_eq("operator-key", "operator-kex"));
+        // Different length is rejected.
+        assert!(!constant_time_key_eq("operator-key", "operator-key-longer"));
+        assert!(!constant_time_key_eq("operator-key", ""));
     }
 }

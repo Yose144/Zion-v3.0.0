@@ -56,9 +56,9 @@ pub enum BtcSwapCmd {
         /// Required for `zion_to_btc`: your ZION lock txid.
         #[arg(long)]
         zion_lock_txid: Option<String>,
-        /// ZIS session cookie or API key for the authenticated endpoint.
-        #[arg(long)]
-        zis_api_key: Option<String>,
+        /// Operator approval key; prefer WARP_BTC_SWAP_OFFER_KEY over a CLI argument.
+        #[arg(long, env = "WARP_BTC_SWAP_OFFER_KEY")]
+        offer_key: String,
     },
     /// List all BTC swaps tracked by this warp node.
     List,
@@ -129,7 +129,7 @@ pub async fn run(cmd: WarpCmd, warp_url: &str) -> Result<()> {
                     zion_address,
                     zion_timeout,
                     zion_lock_txid,
-                    zis_api_key,
+                    offer_key,
                 } => {
                     ui::print_header("WARP Beta — BTC↔ZION Swap Offer");
                     let body = serde_json::json!({
@@ -143,11 +143,11 @@ pub async fn run(cmd: WarpCmd, warp_url: &str) -> Result<()> {
                         "zion_timeout_ts": zion_timeout,
                         "user_zion_lock_txid": zion_lock_txid,
                     });
-                    match agent_rpc::post_auth(
+                    match agent_rpc::post_warp_auth(
                         &dex,
                         "v1/multichain/swaps/btc/offer",
                         body,
-                        zis_api_key.as_deref(),
+                        &offer_key,
                     )
                     .await
                     {

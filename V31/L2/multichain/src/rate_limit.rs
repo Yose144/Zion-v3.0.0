@@ -6,7 +6,7 @@
 //! excluded from auth/rate-limit so load balancers can probe freely.
 
 use std::collections::HashMap;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
@@ -59,7 +59,7 @@ impl TokenBucket {
 /// In-memory per-IP and per-user token bucket rate limiter.
 #[derive(Clone)]
 pub struct RateLimiter {
-    ip_buckets: Arc<Mutex<HashMap<SocketAddr, TokenBucket>>>,
+    ip_buckets: Arc<Mutex<HashMap<IpAddr, TokenBucket>>>,
     user_buckets: Arc<Mutex<HashMap<String, TokenBucket>>>,
     rate: f64,
     burst: f64,
@@ -121,7 +121,7 @@ impl RateLimiter {
         self.maybe_evict().await;
         let mut buckets = self.ip_buckets.lock().await;
         let bucket = buckets
-            .entry(addr)
+            .entry(addr.ip())
             .or_insert_with(|| TokenBucket::new(self.rate, self.burst));
         bucket.try_consume()
     }
@@ -161,9 +161,9 @@ pub async fn auth_rate_limit(
         // Health checks share the IP bucket but with a lower effective burst.
         // We consume a token but use a stricter limit: 1 req/sec, burst 5.
         let mut buckets = limiter.ip_buckets.lock().await;
-        let bucket = buckets.entry(addr).or_insert_with(|| {
-            TokenBucket::new(limiter.rate.min(1.0), limiter.burst.min(5.0))
-        });
+        let bucket = buckets
+            .entry(addr.ip())
+            .or_insert_with(|| TokenBucket::new(limiter.rate.min(1.0), limiter.burst.min(5.0)));
         if !bucket.try_consume() {
             return Err(StatusCode::TOO_MANY_REQUESTS);
         }
@@ -273,13 +273,16 @@ mod tests {
 
     #[tokio::test]
     async fn rate_limiter_tracks_per_ip() {
-        let config = ServerConfig::default();
+        let mut config = ServerConfig::default();
+        config.rate_limit.requests_per_second = 0.0;
+        config.rate_limit.burst = 1;
         let limiter = RateLimiter::new(&config);
-        let addr: SocketAddr = "127.0.0.1:1234".parse().unwrap();
 
-        // Default config: burst=100, so many requests pass.
-        for _ in 0..50 {
-            assert!(limiter.check(addr).await);
-        }
+        // First request consumes the single token for the IP.
+        let first: SocketAddr = "127.0.0.1:1234".parse().unwrap();
+        assert!(limiter.check(first).await);
+        // Rotating the source port must not bypass the per-IP bucket.
+        let second: SocketAddr = "127.0.0.1:5678".parse().unwrap();
+        assert!(!limiter.check(second).await);
     }
 }
