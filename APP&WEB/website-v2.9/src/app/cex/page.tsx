@@ -359,8 +359,8 @@ export default function CexPage() {
 
           {/* Per-pair breakdown from DexScreener */}
           {dexPairs.length > 0 && (
-            <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto zion-rainbow-sub" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+              <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
                     <th className="p-3 text-left font-medium text-gray-400">{CexCopy.pair[cs ? 'cs' : 'en']}</th>

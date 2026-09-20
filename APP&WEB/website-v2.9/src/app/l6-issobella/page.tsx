@@ -580,8 +580,8 @@ export default function L6IssobellaPage() {
                 {L6IssobellaCopy.agFormula[cs ? 'cs' : 'en']}
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-white/10">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-2xl border border-white/10">
+                <table className="w-full min-w-[480px] text-sm">
                   <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                     <tr>
                       <th className="p-3">g</th>
@@ -699,8 +699,8 @@ export default function L6IssobellaPage() {
             <p className="text-sm text-gray-400">{L6IssobellaCopy.hfBody[cs ? 'cs' : 'en']}</p>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-white/10">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full min-w-[480px] text-sm">
               <thead className="bg-white/5 text-left text-xs uppercase tracking-wider text-gray-400">
                 <tr>
                   <th className="p-3">{L6IssobellaCopy.hfRisk[cs ? 'cs' : 'en']}</th>
