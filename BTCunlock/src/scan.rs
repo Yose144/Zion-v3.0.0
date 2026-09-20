@@ -60,6 +60,10 @@ fn derive_addr(
         44 => Address::p2pkh(&pk, network),
         49 => Address::p2shwpkh(&pk, network).context("p2shwpkh")?,
         84 => Address::p2wpkh(&pk, network).context("p2wpkh")?,
+        86 => {
+            let (xonly, _) = pk.inner.x_only_public_key();
+            Address::p2tr(secp, xonly, None, network)
+        }
         _ => unreachable!(),
     };
     Ok(addr)
@@ -85,7 +89,7 @@ fn check_balance(api: &str, addr: &Address) -> Result<Option<(u64, u64)>> {
     }
 }
 
-/// Scan `mnemonic` across BIP44/49/84 × coin type × accounts × change × index.
+/// Scan `mnemonic` across BIP44/49/84/86 × coin type × accounts × change × index.
 /// Prints only addresses with history/balance (plus a per-path summary).
 pub fn scan_mnemonic(
     mnemonic: &str,
@@ -106,7 +110,7 @@ pub fn scan_mnemonic(
     let client_delay = std::time::Duration::from_millis(350); // be kind to public APIs
 
     let mut hits = 0usize;
-    for purpose in [44u32, 49, 84] {
+    for purpose in [44u32, 49, 84, 86] {
         for account in 0..accounts {
             for change in [0u32, 1] {
                 let mut printed_path = false;

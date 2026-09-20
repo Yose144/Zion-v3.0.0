@@ -152,7 +152,7 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
         tpl.holes.len(),
         tpl.total_combos,
         opts.plan.paths.len(),
-        opts.targets.len()
+        opts.targets.hashes.len() + opts.targets.xkeys.len()
     );
 
     let t0 = Instant::now();
@@ -329,7 +329,7 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
     eprintln!(
         "permute: {n} words → {scan_total}/{total} permutations | {} path(s)/seed | {} target(s)",
         opts.plan.paths.len(),
-        opts.targets.len()
+        opts.targets.hashes.len() + opts.targets.xkeys.len()
     );
 
     let t0 = Instant::now();
