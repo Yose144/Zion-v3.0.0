@@ -259,21 +259,8 @@ export default function NovaAmerikaPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
-            <div className="relative h-48 md:h-64 overflow-hidden">
-              <img
-                src="/images/nova-amerika/hero.webp"
-                alt="LUMI — Nová Amerika"
-                width={1672}
-                height={941}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            </div>
-            <div className="relative z-10 p-6 md:p-10">
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="relative z-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
                   <Feather className="h-10 w-10 text-teal-300" />
@@ -326,6 +313,18 @@ export default function NovaAmerikaPage() {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/nova-amerika/hero.webp"
+                alt="LUMI — Nová Amerika"
+                width={1672}
+                height={941}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
             </div>
           </div>
         </motion.header>

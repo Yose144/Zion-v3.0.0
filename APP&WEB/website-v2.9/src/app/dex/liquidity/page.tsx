@@ -216,8 +216,8 @@ export default function LiquidityPage() {
 
         {/* Pool List */}
         {tab === 'list' && (
-          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-            <table className="w-full">
+          <div className="zion-rainbow-sub overflow-x-auto" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b border-zinc-700/30">
                   <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">Chain</th>

@@ -377,20 +377,19 @@ export default function ZahradaGenesisPage() {
                     );
                   })}
                 </div>
-
-                <div className="relative z-10 mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                  <img
-                    src="/images/genesis-garden/hero.webp"
-                    alt={cs ? 'Genesis Garden — koncept' : 'Genesis Garden — concept render'}
-                    width={1616}
-                    height={973}
-                    loading="eager"
-                    decoding="async"
-                    fetchPriority="high"
-                    className="w-full object-cover"
-                  />
-                </div>
               </div>
+            </div>
+            <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/genesis-garden/hero.webp"
+                alt={cs ? 'Genesis Garden — koncept' : 'Genesis Garden — concept render'}
+                width={1616}
+                height={973}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
             </div>
           </div>
         </motion.header>

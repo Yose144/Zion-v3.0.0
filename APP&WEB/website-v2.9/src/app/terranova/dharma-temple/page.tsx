@@ -294,20 +294,19 @@ export default function DharmaTemplePage() {
                     );
                   })}
                 </div>
-
-                <div className="relative z-10 mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                  <img
-                    src="/images/dharma-temple/hero.webp"
-                    alt={cs ? 'Dharma Temple — koncept' : 'Dharma Temple — concept render'}
-                    width={1568}
-                    height={1003}
-                    loading="eager"
-                    decoding="async"
-                    fetchPriority="high"
-                    className="w-full object-cover"
-                  />
-                </div>
               </div>
+            </div>
+            <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/dharma-temple/hero.webp"
+                alt={cs ? 'Dharma Temple — koncept' : 'Dharma Temple — concept render'}
+                width={1568}
+                height={1003}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
             </div>
           </div>
         </motion.header>
