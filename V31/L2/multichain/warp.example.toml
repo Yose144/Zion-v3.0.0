@@ -157,12 +157,15 @@ finality_blocks = 0
 #   WARP_BTC_SWAP_ENABLED=1        # master switch (default off)
 #   WARP_BTC_RELAY_KEY=<wif>       # relay BTC key (BtcSigner::from_env)
 #   BITCOIN_NETWORK=signet|testnet|bitcoin
-#   WARP_BITCOIN_API=<url>[,<url>...]  # esplora backends — COMMA-SEPARATED
-#                                # failover list (own backend first, public
-#                                # after). Defaults: mempool.space +
-#                                # blockstream.info (mainnet/testnet).
-#                                # Recommended prod: own esplora/bitcoind
-#                                # first, public backends as fallback.
+#   WARP_BITCOIN_API=<url>[,<url>...]  # COMMA-SEPARATED failover list.
+#                                # Entries are esplora URLs or a local node:
+#                                #   bitcoind+rpc://user:pass@127.0.0.1:8332/warpwatch
+#                                # (wallet path = watch-only wallet, auto-created
+#                                # + auto-importaddress'd; needs pruned bitcoind
+#                                # only — no txindex/esplora index).
+#                                # Defaults: mempool.space + blockstream.info
+#                                # (mainnet/testnet). Recommended prod: own
+#                                # bitcoind first, public backends as fallback.
 #   WARP_BTC_MIN_CONFS=2           # confs before counter-locking ZION
 #   WARP_BTC_MARGIN_BLOCKS=36      # CLTV safety margin (~6h)
 #   WARP_BTC_SWAP_POLL_SECS=30     # poll loop interval (min 5)

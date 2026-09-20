@@ -287,7 +287,8 @@ fn p2wpkh_address(pubkey: &PublicKey, network: Network) -> WarpResult<Address> {
 }
 
 /// GET `path` against each endpoint in `api_urls` until one returns a
-/// successful body (failover for public esplora backends).
+/// successful body. `bitcoind+rpc://` entries are translated to JSON-RPC;
+/// plain `http(s)://` entries behave as esplora (failover preserved).
 pub(crate) async fn get_text_failover(
     client: &reqwest::Client,
     api_urls: &[String],
@@ -298,27 +299,12 @@ pub(crate) async fn get_text_failover(
         reason: "no bitcoin API endpoints configured".into(),
     };
     for base in api_urls {
-        let url = format!("{base}{path}");
-        match client.get(&url).send().await {
-            Ok(resp) if resp.status().is_success() => match resp.text().await {
-                Ok(text) => return Ok(text),
-                Err(e) => {
-                    last_err = WarpError::AdapterError {
-                        chain: "bitcoin".into(),
-                        reason: format!("{url}: body read: {e}"),
-                    };
-                }
-            },
-            Ok(resp) => {
-                last_err = WarpError::AdapterError {
-                    chain: "bitcoin".into(),
-                    reason: format!("{url}: HTTP {}", resp.status()),
-                };
-            }
+        match crate::warp::bitcoind_rpc::backend_get(client, base, path).await {
+            Ok(text) => return Ok(text),
             Err(e) => {
                 last_err = WarpError::AdapterError {
                     chain: "bitcoin".into(),
-                    reason: format!("{url}: {e}"),
+                    reason: format!("{base}{path}: {e}"),
                 };
             }
         }
@@ -419,7 +405,8 @@ fn build_unsigned_tx(
 }
 
 /// Broadcast a raw tx via each endpoint in `api_urls` until one accepts it.
-/// Submitting to multiple backends is harmless — the txid is identical.
+/// `bitcoind+rpc://` entries go through `sendrawtransaction`; submitting to
+/// multiple backends is harmless — the txid is identical.
 pub(crate) async fn broadcast_tx(
     client: &reqwest::Client,
     api_urls: &[String],
@@ -430,34 +417,15 @@ pub(crate) async fn broadcast_tx(
         reason: "no bitcoin API endpoints configured".into(),
     };
     for base in api_urls {
-        let url = format!("{base}/tx");
-        let resp = match client
-            .post(&url)
-            .header("Content-Type", "text/plain")
-            .body(raw_hex.to_string())
-            .send()
-            .await
-        {
-            Ok(r) => r,
+        match crate::warp::bitcoind_rpc::backend_post_tx(client, base, raw_hex).await {
+            Ok(txid) => return Ok(txid),
             Err(e) => {
                 last_err = WarpError::AdapterError {
                     chain: "bitcoin".into(),
-                    reason: format!("{url}: {e}"),
+                    reason: format!("{base}/tx: {e}"),
                 };
-                continue;
             }
-        };
-        let status = resp.status();
-        let body = resp.text().await.unwrap_or_default();
-        if !status.is_success() {
-            last_err = WarpError::AdapterError {
-                chain: "bitcoin".into(),
-                reason: format!("Broadcast failed HTTP {}: {}", status, body.trim()),
-            };
-            continue;
         }
-        // mempool.space returns the txid as plain text on success
-        return Ok(body.trim().to_string());
     }
     Err(last_err)
 }
