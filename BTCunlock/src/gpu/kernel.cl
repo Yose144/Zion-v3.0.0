@@ -364,12 +364,18 @@ __kernel void bip39_filter(
 // so each distinct phrase is PBKDF2'd once per run, not once per perm.
 // Returns 1 when `key` was newly inserted (caller proceeds with the emit).
 static int dedup_insert(volatile __global ulong* set, uint mask, ulong key) {
+#ifdef NO_I64ATOM
+    // Device lacks cl_khr_int64_base_atomics (e.g. Apple OpenCL) — emit
+    // every checksum-valid perm; the host dedupes identical seeds.
+    return 1;
+#else
     uint slot = (uint)((key * 0x9E3779B97F4A7C15UL) >> 43) & mask;
     for (uint i = 0; i < 64; i++) {
         ulong old = atom_cmpxchg(set + ((slot + i) & mask), 0UL, key);
         if (old == 0 || old == key) return old == 0;
     }
     return 1; // set hopelessly full — emit anyway (dup work, never loss)
+#endif
 }
 
 // One work-item per permutation number: factoradic (Lehmer) decode of
@@ -743,6 +749,36 @@ static void ec_ser_p(__private const uint X[8], __private const uint Y[8],
     }
 }
 
+// Jacobian → affine (x,y). Caller must ensure Z≠0 (never the point at
+// infinity — leaf keys are valid scalars).
+static void ec_affine(__private const uint X[8], __private const uint Y[8],
+                      __private const uint Z[8],
+                      __private uint x[8], __private uint y[8]) {
+    uint zi[8], zi2[8];
+    fe_inv(Z, zi);
+    fe_sqr(zi, zi2);
+    fe_mul(X, zi2, x);      // x = X/Z²
+    fe_mul(zi, zi2, zi);    // Z⁻³
+    fe_mul(Y, zi, y);       // y = Y/Z³
+}
+
+// x-only serialize (BIP340): affine x → 32B big-endian, parity dropped.
+static void ec_ser_x(__private const uint X[8], __private const uint Z[8],
+                     __private uchar out[32]) {
+    uint zi[8], zi2[8], xa[8];
+    fe_inv(Z, zi);
+    fe_sqr(zi, zi2);
+    fe_mul(X, zi2, xa);
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        uint v = xa[7 - i];
+        out[i*4]     = (uchar)(v >> 24);
+        out[i*4+1]   = (uchar)(v >> 16);
+        out[i*4+2]   = (uchar)(v >> 8);
+        out[i*4+3]   = (uchar)v;
+    }
+}
+
 
 // ------------------------------------------------------------- RIPEMD-160
 // Dual-line MD4-family hash — needed for hash160 = RIPEMD160(SHA256(x)).
@@ -846,6 +882,38 @@ static void hash160_of(__private const uchar* m, uint len, __private uchar out[2
     sha256_1(m, len, d);
     ripemd160(d, 32, out);
 }
+
+// SHA-256 over 64..119 bytes (two blocks) — BIP341 tagged hashes take
+// th‖th‖msg (96 B for key-path-only TapTweak).
+static void sha256_2(__private const uchar* m, uint len, __private uchar out[32]) {
+    uint h[8] = {0x6a09e667U,0xbb67ae85U,0x3c6ef372U,0xa54ff53aU,
+                 0x510e527fU,0x9b05688cU,0x1f83d9abU,0x5be0cd19U};
+    uint wb[16];
+    #pragma unroll
+    for (int i = 0; i < 16; i++) wb[i] = 0;
+    for (uint i = 0; i < 64; i++) wb[i >> 2] |= (uint)m[i] << (24 - (i & 3) * 8);
+    sha256_compress_w(h, wb);
+    uint rem = len - 64;
+    #pragma unroll
+    for (int i = 0; i < 16; i++) wb[i] = 0;
+    for (uint i = 0; i < rem; i++) wb[i >> 2] |= (uint)m[64 + i] << (24 - (i & 3) * 8);
+    wb[rem >> 2] |= 0x80u << (24 - (rem & 3) * 8);
+    wb[15] = len * 8;
+    sha256_compress_w(h, wb);
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        out[i*4]   = (uchar)(h[i] >> 24);
+        out[i*4+1] = (uchar)(h[i] >> 16);
+        out[i*4+2] = (uchar)(h[i] >> 8);
+        out[i*4+3] = (uchar)h[i];
+    }
+}
+
+// SHA256("TapTweak") — BIP341 tag hash, constant.
+__constant uchar TTAG[32] = {
+    0xe8,0x0f,0xe1,0x63,0x9c,0x9c,0xa0,0x50,0xe3,0xaf,0x1b,0x39,0xc1,0x43,
+    0xc6,0x3e,0x42,0x9c,0xbc,0xeb,0x15,0xd9,0x40,0xfb,0xb5,0xc5,0xa1,0xf4,
+    0xaf,0x57,0xc5,0xe9 };
 
 // ------------------------------------------------------------------ BIP32
 
@@ -973,6 +1041,19 @@ static int hit_hash160(__private const uchar h[20], __global const uchar* target
     return 0;
 }
 
+// target match: 32-byte x-only output key (BIP86 P2TR) against targets32
+static int hit_xkey(__private const uchar k[32], __global const uchar* targets,
+                    uint n_targets) {
+    for (uint i = 0; i < n_targets; i++) {
+        __global const uchar* tp = targets + i * 32;
+        uint d = 0;
+        #pragma unroll
+        for (int j = 0; j < 32; j++) d |= k[j] ^ tp[j];
+        if (d == 0) return 1;
+    }
+    return 0;
+}
+
 // Stage 4 kernel: per finished state record → seed → BIP32 tree walk →
 // hash160 per leaf → target match. Emits hit records (record_id ‖ seed)
 // for the host to expand + confirm, and bad records (dead work-items)
@@ -985,13 +1066,16 @@ __kernel void derive_match(
     __global const uchar* targets,
     __constant const uint* gtab,
     const uint n_targets,
+    __global const uchar* targets32, // 32B each — BIP86 tweaked x-only keys
+    const uint n_targets32,
     const uint seqs,                 // pbkdf2 launches run (= tag check)
     volatile __global uint* hit_count,
     __global uchar* hits,            // max_out × 72B: u64 id + u8 seed[64]
     volatile __global uint* bad_count,
     __global uchar* bads,            // max_out × (8+4+248)B: id + plen + phrase
-    const uint max_out)
-{
+    const uint max_out,
+    __global uchar* done)            // per-item completion flag (Apple kills
+{                                   // long items silently — host repairs)
     __global uchar* st = states + (ulong)get_global_id(0) * STATE_SIZE;
     uint plen = *((__global const uint*)(st + OFF_PLEN));
     if (plen == 0 || plen > MAX_PHRASE) goto bad;
@@ -1044,7 +1128,16 @@ __kernel void derive_match(
                         B32Node leaf;
                         if (!ckd_priv(&nch, i, 0, pc, &leaf)) continue;
                         uchar pl[33], h160[20], sh[32];
-                        node_ser_p(leaf.k, gtab, pl);
+                        // BIP86 needs the Jacobian point for the tweak —
+                        // ec_mult_g once, serialize compressed + x-only.
+                        int want86 = (pur == 86 && n_targets32);
+                        uint Xl[8], Yl[8], Zl[8];
+                        if (want86) {
+                            ec_mult_g(leaf.k, gtab, Xl, Yl, Zl);
+                            ec_ser_p(Xl, Yl, Zl, pl);
+                        } else {
+                            node_ser_p(leaf.k, gtab, pl);
+                        }
                         hash160_of(pl, 33, h160);
                         int hit = hit_hash160(h160, targets, n_targets);
                         if (!hit && pur == 49) {
@@ -1055,6 +1148,68 @@ __kernel void derive_match(
                             for (int j = 0; j < 20; j++) rd[2 + j] = h160[j];
                             hash160_of(rd, 22, sh);
                             hit = hit_hash160(sh, targets, n_targets);
+                        }
+                        if (!hit && want86) {
+                            // BIP86: Q = P_even + t·G,
+                            // t = SHA256(TTAG‖TTAG‖x(P)); output = x-only(Q).
+                            // BIP340 lift_x: the internal key is its even-Y
+                            // representative — negate Jacobian Y when odd.
+                            uchar ix[32], msg[96], tw[32];
+                            uint ax[8], ay[8];
+                            ec_affine(Xl, Yl, Zl, ax, ay);
+                            if (ay[0] & 1) {
+                                uint fp[8];
+                                #pragma unroll
+                                for (int j = 0; j < 8; j++) fp[j] = FP[j];
+                                fe_sub(fp, Yl, ay);   // ay dead — reuse as temp
+                                #pragma unroll
+                                for (int j = 0; j < 8; j++) Yl[j] = ay[j];
+                            }
+                            #pragma unroll
+                            for (int j = 0; j < 8; j++) {
+                                uint v = ax[7 - j];
+                                ix[j*4]     = (uchar)(v >> 24);
+                                ix[j*4 + 1] = (uchar)(v >> 16);
+                                ix[j*4 + 2] = (uchar)(v >> 8);
+                                ix[j*4 + 3] = (uchar)v;
+                            }
+                            #pragma unroll
+                            for (int j = 0; j < 32; j++) {
+                                msg[j] = TTAG[j];
+                                msg[32 + j] = TTAG[j];
+                                msg[64 + j] = ix[j];
+                            }
+                            sha256_2(msg, 96, tw);
+                            uint t[8], fn[8];
+                            u256_from_be(t, tw);
+                            #pragma unroll
+                            for (int j = 0; j < 8; j++) fn[j] = FN[j];
+                            uint tz = 0;
+                            #pragma unroll
+                            for (int j = 0; j < 8; j++) tz |= t[j];
+                            if (tz && !u256_ge(t, fn)) {
+                                uint Xt[8], Yt[8], Zt[8];
+                                ec_mult_g(t, gtab, Xt, Yt, Zt);
+                                ec_affine(Xt, Yt, Zt, ax, ay);
+                                pt_add_affine(Xl, Yl, Zl, ax, ay);
+                                uchar ox[32];
+                                ec_ser_x(Xl, Zl, ox);
+#ifdef DEBUG_XKEY
+                                if (a == 0 && ch == 0 && i == 0) {
+                                    uint slot = atomic_inc(hit_count);
+                                    if (slot < max_out) {
+                                        __global uchar* hr = hits + (ulong)slot * 72;
+                                        for (int j = 0; j < 8; j++)
+                                            hr[j] = st[OFF_COMBO + j];
+                                        for (int j = 0; j < 32; j++) {
+                                            hr[8 + j] = ox[j];
+                                            hr[40 + j] = ix[j];
+                                        }
+                                    }
+                                }
+#endif
+                                hit = hit_xkey(ox, targets32, n_targets32);
+                            }
                         }
                         if (hit) {
                             uint slot = atomic_inc(hit_count);
@@ -1071,6 +1226,7 @@ __kernel void derive_match(
             }
         }
     }
+    done[get_global_id(0)] = 1;
     return;
 
 bad:
@@ -1084,4 +1240,5 @@ bad:
                 br[12 + j] = st[OFF_PHRASE + j];
         }
     }
+    done[get_global_id(0)] = 1;
 }

@@ -107,16 +107,22 @@ pub struct Gpu {
     states: Buffer<u8>,
     plan_buf: Buffer<u32>,
     targets_buf: Buffer<u8>,
+    /// 32-byte BIP86 output keys — the P2TR half of the target set.
+    targets32_buf: Buffer<u8>,
     gtab: Buffer<u32>,
     hit_count: Buffer<u32>,
     bad_count: Buffer<u32>,
     hits_buf: Buffer<u8>,
     bads_buf: Buffer<u8>,
+    /// derive_match per-item completion flags — a work-item that dies
+    /// mid-derive (Apple kills long items silently) leaves 0 → CPU repair.
+    done_buf: Buffer<u8>,
     /// Permute phrase-dedupe set: open-addressed u64 table, 2^21 slots.
     dedup: Buffer<u64>,
     /// Hit/dead output capacity per batch (≤ max_results).
     out_cap: usize,
     n_targets: u32,
+    n_targets32: u32,
     /// Set by bind_match — switches finish_batch to the on-GPU stage 4.
     match_bound: bool,
     /// PBKDF2 iterations per step launch (see STEP_ITERS comment).
@@ -176,6 +182,26 @@ impl Gpu {
         };
         let opts_f = pick("KERNEL_OPTS_FILTER", "-cl-nv-maxrregcount=40");
         let opts_s = pick("KERNEL_OPTS_STEP", "-cl-nv-maxrregcount=64");
+        // Apple OpenCL (and any device without cl_khr_int64_base_atomics)
+        // can't resolve 64-bit atom_cmpxchg — build the dedup stub and let
+        // the host dedupe seeds instead.
+        let no_i64atom = !device
+            .extensions()
+            .unwrap_or_default()
+            .contains("cl_khr_int64_base_atomics");
+        let (opts_f, opts_s) = if no_i64atom {
+            (format!("{opts_f} -DNO_I64ATOM"), format!("{opts_s} -DNO_I64ATOM"))
+        } else {
+            (opts_f, opts_s)
+        };
+        // DEBUG_XKEY: derive_match writes (ox ‖ ix) into the hit record's
+        // seed slot for the first leaf — lets the host dump the kernel's
+        // computed taproot keys.
+        let opts_s = if std::env::var_os("BTCUNLOCK_DEBUG_XKEY").is_some() {
+            format!("{opts_s} -DDEBUG_XKEY")
+        } else {
+            opts_s
+        };
         // Chunked beats single-launch even on NVIDIA (measured GTX 1070 Ti:
         // 4×512 ≈ 42k seeds/s vs 1×2047 ≈ 36k — inter-chunk scheduling
         // absorbs item-time variance, one giant launch can't rebalance).
@@ -256,9 +282,12 @@ impl Gpu {
             let plan_buf =
                 Buffer::<u32>::create(&context, CL_MEM_READ_ONLY, 13, std::ptr::null_mut())
                     .map_err(cl_err)?;
-            // bind_match recreates this sized to the actual target list
+            // bind_match recreates these sized to the actual target lists
             let targets_buf =
                 Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, 20, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            let targets32_buf =
+                Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, 32, std::ptr::null_mut())
                     .map_err(cl_err)?;
             let mut gtab = Buffer::<u32>::create(
                 &context,
@@ -294,6 +323,13 @@ impl Gpu {
                 std::ptr::null_mut(),
             )
             .map_err(cl_err)?;
+            let done_buf = Buffer::<u8>::create(
+                &context,
+                CL_MEM_READ_WRITE,
+                max_results,
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
             queue
                 .enqueue_write_buffer(&mut wl_blob, CL_NON_BLOCKING, 0, &blob, &[])
                 .map_err(cl_err)?;
@@ -325,14 +361,17 @@ impl Gpu {
                 states,
                 plan_buf,
                 targets_buf,
+                targets32_buf,
                 gtab,
                 hit_count,
                 bad_count,
                 hits_buf,
                 bads_buf,
+                done_buf,
                 dedup,
                 out_cap,
                 n_targets: 0,
+                n_targets32: 0,
                 match_bound: false,
                 step_iters,
                 salt_bytes: Vec::new(),
@@ -435,24 +474,45 @@ impl Gpu {
         for h in &sorted {
             tb.extend_from_slice(h);
         }
+        let mut sorted32: Vec<[u8; 32]> = targets.xkeys.iter().copied().collect();
+        sorted32.sort_unstable();
+        let mut tb32 = Vec::with_capacity(32 * sorted32.len().max(1));
+        for k in &sorted32 {
+            tb32.extend_from_slice(k);
+        }
         #[allow(unused_unsafe)]
         unsafe {
             self.targets_buf = Buffer::<u8>::create(
                 &self.context,
                 CL_MEM_READ_ONLY,
-                tb.len(),
+                tb.len().max(1),
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
+            self.targets32_buf = Buffer::<u8>::create(
+                &self.context,
+                CL_MEM_READ_ONLY,
+                tb32.len().max(1),
                 std::ptr::null_mut(),
             )
             .map_err(cl_err)?;
             self.queue
                 .enqueue_write_buffer(&mut self.plan_buf, CL_NON_BLOCKING, 0, &pw, &[])
                 .map_err(cl_err)?;
-            self.queue
-                .enqueue_write_buffer(&mut self.targets_buf, CL_NON_BLOCKING, 0, &tb, &[])
-                .map_err(cl_err)?;
+            if !tb.is_empty() {
+                self.queue
+                    .enqueue_write_buffer(&mut self.targets_buf, CL_NON_BLOCKING, 0, &tb, &[])
+                    .map_err(cl_err)?;
+            }
+            if !tb32.is_empty() {
+                self.queue
+                    .enqueue_write_buffer(&mut self.targets32_buf, CL_NON_BLOCKING, 0, &tb32, &[])
+                    .map_err(cl_err)?;
+            }
             self.queue.finish().map_err(cl_err)?;
         }
         self.n_targets = sorted.len() as u32;
+        self.n_targets32 = sorted32.len() as u32;
         self.match_bound = true;
         Ok(())
     }
@@ -551,18 +611,25 @@ impl Gpu {
         self.queue
             .enqueue_write_buffer(&mut self.bad_count, CL_NON_BLOCKING, 0, &[0u32], &[])
             .map_err(cl_err)?;
+        let zeros = vec![0u8; got];
+        self.queue
+            .enqueue_write_buffer(&mut self.done_buf, CL_NON_BLOCKING, 0, &zeros, &[])
+            .map_err(cl_err)?;
         let mut ex = ExecuteKernel::new(&self.k_match);
         ex.set_arg(&self.states)
             .set_arg(&self.plan_buf)
             .set_arg(&self.targets_buf)
             .set_arg(&self.gtab)
             .set_arg(&self.n_targets)
+            .set_arg(&self.targets32_buf)
+            .set_arg(&self.n_targets32)
             .set_arg(&seq)
             .set_arg(&self.hit_count)
             .set_arg(&self.hits_buf)
             .set_arg(&self.bad_count)
             .set_arg(&self.bads_buf)
-            .set_arg(&(self.out_cap as cl_uint));
+            .set_arg(&(self.out_cap as cl_uint))
+            .set_arg(&self.done_buf);
         ex.set_global_work_size(got)
             .enqueue_nd_range(&self.queue)
             .map_err(cl_err)?;
@@ -622,6 +689,43 @@ impl Gpu {
                 seeds.push((id, s));
             }
             eprintln!("gpu: repaired {repaired} dead-item records");
+        }
+        // derive_match work-item deaths: done[i]==0 → the item never
+        // finished (no hit, no bad emitted) → repair from its state record.
+        let mut dflags = vec![0u8; got];
+        self.queue
+            .enqueue_read_buffer(&self.done_buf, CL_BLOCKING, 0, &mut dflags, &[])
+            .map_err(cl_err)?;
+        let mut repaired2 = 0u64;
+        for (i, &d) in dflags.iter().enumerate() {
+            if d != 0 {
+                continue;
+            }
+            let mut rec = [0u8; STATE_SIZE];
+            self.queue
+                .enqueue_read_buffer(
+                    &self.states,
+                    CL_BLOCKING,
+                    i * STATE_SIZE,
+                    &mut rec,
+                    &[],
+                )
+                .map_err(cl_err)?;
+            let id = u64::from_le_bytes(rec[..8].try_into().unwrap());
+            let plen = u32::from_le_bytes(rec[8..12].try_into().unwrap()) as usize;
+            if plen == 0 || plen > MAX_PHRASE {
+                continue;
+            }
+            let Ok(phrase) = std::str::from_utf8(&rec[12..12 + plen]) else {
+                continue;
+            };
+            let mut s = [0u8; 64];
+            pbkdf2::pbkdf2_hmac::<sha2::Sha512>(phrase.as_bytes(), &self.salt_bytes, 2048, &mut s);
+            repaired2 += 1;
+            seeds.push((id, s));
+        }
+        if repaired2 > 0 {
+            eprintln!("gpu: repaired {repaired2} records lost to derive_match item death");
         }
         Ok(BatchOut {
             seeds,
@@ -896,6 +1000,45 @@ cpu={}", g.0, hex::encode(g.1), hex::encode(c.1)); break; }
         let hits = crate::engine::match_seed(&out.seeds[0].1, &plan, &ts);
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].0, "m/84'/0'/0'/0/0");
+        assert_eq!(hits[0].1.to_string(), want);
+    }
+
+    /// GPU stage-4 with a P2TR (BIP86) target: the kernel must compute the
+    /// tweaked x-only output key on-device and still emit the hit.
+    #[test]
+    #[ignore]
+    fn gpu_match_finds_p2tr() {
+        use crate::engine::{DerivePlan, TargetSet};
+        use bip39::{Language, Mnemonic};
+        use bitcoin::bip32::DerivationPath;
+        use bitcoin::secp256k1::Secp256k1;
+        use bitcoin::{Address, Network, PublicKey};
+        use std::str::FromStr;
+
+        const KNOWN12: &str = "abandon abandon abandon abandon abandon abandon abandon abandon \
+            abandon abandon abandon about";
+        let m = Mnemonic::parse_in_normalized(Language::English, KNOWN12).unwrap();
+        let secp = Secp256k1::new();
+        let xp = bitcoin::bip32::Xpriv::new_master(Network::Bitcoin, &m.to_seed("")).unwrap();
+        let child = xp
+            .derive_priv(&secp, &DerivationPath::from_str("m/86'/0'/0'/0/0").unwrap())
+            .unwrap();
+        let pk = PublicKey::new(child.private_key.public_key(&secp));
+        let (xonly, _) = pk.inner.x_only_public_key();
+        let want = Address::p2tr(&secp, xonly, None, Network::Bitcoin).to_string();
+
+        let mut ts = TargetSet::default();
+        ts.add(&want).unwrap();
+        let plan = DerivePlan::standard(Network::Bitcoin, &[86], 1, 1, false).unwrap();
+        let tpl = parse_template(&KNOWN12.replacen("about", "?", 1)).unwrap();
+        let mut g = Gpu::init(0, 1 << 20).unwrap();
+        g.bind(&tpl, "").unwrap();
+        g.bind_match(&plan, &ts).unwrap();
+        let out = g.derive_batch(&tpl, 0, 2048).unwrap();
+        assert_eq!(out.seeds.len(), 1, "exactly one GPU hit expected");
+        let hits = crate::engine::match_seed(&out.seeds[0].1, &plan, &ts);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].0, "m/86'/0'/0'/0/0");
         assert_eq!(hits[0].1.to_string(), want);
     }
 }

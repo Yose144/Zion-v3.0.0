@@ -147,47 +147,56 @@ pub fn phrase_seed(phrase: &str, passphrase: &str, seed: &mut [u8; 64]) {
     pbkdf2::pbkdf2_hmac::<sha2::Sha512>(phrase.as_bytes(), salt.as_bytes(), 2048, seed);
 }
 
-/// Decoded target: a 20-byte hash (pubkey hash or script hash).
+/// Decoded target: a 20-byte hash (pubkey/script hash) or a 32-byte
+/// BIP86 output key (tweaked x-only pubkey) for P2TR.
 #[derive(Default)]
 pub struct TargetSet {
     pub hashes: HashSet<[u8; 20]>,
+    pub xkeys: HashSet<[u8; 32]>,
 }
 
 impl TargetSet {
-    /// Accepts base58 P2PKH/P2SH, bech32 P2WPKH, or raw 40-hex hash160.
+    /// Accepts base58 P2PKH/P2SH, bech32 P2WPKH/P2TR, raw 40-hex hash160,
+    /// or raw 64-hex x-only output key.
     pub fn add(&mut self, s: &str) -> Result<()> {
         let s = s.trim();
-        if s.len() == 40 && s.chars().all(|c| c.is_ascii_hexdigit()) {
-            let mut h = [0u8; 20];
-            hex::decode_to_slice(s, &mut h)?;
-            self.hashes.insert(h);
-            return Ok(());
+        if s.chars().all(|c| c.is_ascii_hexdigit()) {
+            if s.len() == 40 {
+                let mut h = [0u8; 20];
+                hex::decode_to_slice(s, &mut h)?;
+                self.hashes.insert(h);
+                return Ok(());
+            }
+            if s.len() == 64 {
+                let mut k = [0u8; 32];
+                hex::decode_to_slice(s, &mut k)?;
+                self.xkeys.insert(k);
+                return Ok(());
+            }
         }
         let addr = Address::from_str(s)
-            .context("not an address / hash160")?
+            .context("not an address / hash160 / xkey")?
             .assume_checked();
         let spk = addr.script_pubkey();
         let b = spk.as_bytes();
-        let h: Option<[u8; 20]> = if spk.is_p2pkh() {
-            Some(b[3..23].try_into().unwrap())
-        } else if spk.is_p2sh() {
-            Some(b[2..22].try_into().unwrap())
-        } else if spk.is_p2wpkh() {
-            Some(b[2..22].try_into().unwrap())
+        if spk.is_p2pkh() {
+            self.hashes.insert(b[3..23].try_into().unwrap());
+        } else if spk.is_p2sh() || spk.is_p2wpkh() {
+            self.hashes.insert(b[2..22].try_into().unwrap());
+        } else if spk.is_p2tr() {
+            self.xkeys.insert(b[2..34].try_into().unwrap());
         } else {
-            None
-        };
-        match h {
-            Some(h) => {
-                self.hashes.insert(h);
-                Ok(())
-            }
-            None => bail!("{s}: P2WSH/P2TR targets unsupported (v0.2 supports P2PKH/P2SH/P2WPKH)"),
+            bail!("{s}: unsupported target (P2PKH/P2SH/P2WPKH/P2TR/hash160/xkey)");
         }
+        Ok(())
     }
 
     pub fn is_empty(&self) -> bool {
-        self.hashes.is_empty()
+        self.hashes.is_empty() && self.xkeys.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.hashes.len() + self.xkeys.len()
     }
 }
 
@@ -247,6 +256,7 @@ fn check_leaf(
     secp: &Secp256k1<All>,
     path: String,
     check_script_hash: bool,
+    check_taproot: bool,
     network: Network,
     targets: &TargetSet,
     hits: &mut Vec<(String, Address)>,
@@ -258,6 +268,15 @@ fn check_leaf(
     if targets.hashes.contains(&pk_hash) {
         hits.push((path, Address::p2wpkh(&pk, network).expect("p2wpkh")));
         return;
+    }
+    // BIP86/P2TR (purpose 86): output key = x-only(P + t·G), key-path only.
+    if check_taproot && !targets.xkeys.is_empty() {
+        use bitcoin::key::TapTweak;
+        let (xonly, _par) = pk.inner.x_only_public_key();
+        let (tweaked, _) = xonly.tap_tweak(secp, None);
+        if targets.xkeys.contains(&tweaked.serialize()) {
+            hits.push((path.clone(), Address::p2tr(secp, xonly, None, network)));
+        }
     }
     // P2SH-P2WPKH (purpose 49 only): hash160 of the 0x0014<h160> redeem script.
     if !check_script_hash {
@@ -324,6 +343,7 @@ pub fn match_seed_ctx(
                         secp,
                         format!("m/{p}'/{}'/{a}'/{c}/{i}", plan.coin),
                         p == 49,
+                        p == 86,
                         plan.network,
                         targets,
                         &mut hits,
@@ -479,6 +499,10 @@ mod tests {
         abandon abandon abandon abandon abandon abandon abandon abandon \
         abandon abandon abandon abandon abandon abandon abandon art";
 
+    /// Canonical 12-word vector (abandon×11 + about) — the BIP86 fixture.
+    const KNOWN12: &str = "abandon abandon abandon abandon abandon abandon abandon abandon \
+        abandon abandon abandon about";
+
     #[test]
     fn known_phrase_is_valid() {
         Mnemonic::parse_in_normalized(Language::English, KNOWN).unwrap();
@@ -510,6 +534,34 @@ mod tests {
         // and with a passphrase
         phrase_seed(KNOWN, "toto", &mut a);
         assert_eq!(a, m.to_seed("toto"));
+    }
+
+    /// BIP86: known test vector — mnemonic abandon×11+about, m/86'/0'/0'/0/0
+    /// → bc1p5cyx… — parsed as a p2tr target and hit via match_seed.
+    #[test]
+    fn p2tr_target_matches_bip86() {
+        let m = Mnemonic::parse_in_normalized(Language::English, KNOWN12).unwrap();
+        let secp = Secp256k1::new();
+        let xp = Xpriv::new_master(Network::Bitcoin, &m.to_seed("")).unwrap();
+        let child = xp
+            .derive_priv(&secp, &DerivationPath::from_str("m/86'/0'/0'/0/0").unwrap())
+            .unwrap();
+        let pk = PublicKey::new(child.private_key.public_key(&secp));
+        let (xonly, _) = pk.inner.x_only_public_key();
+        let addr = Address::p2tr(&secp, xonly, None, Network::Bitcoin);
+        assert_eq!(
+            addr.to_string(),
+            "bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr"
+        );
+
+        let mut ts = TargetSet::default();
+        ts.add(&addr.to_string()).unwrap();
+        assert_eq!(ts.xkeys.len(), 1);
+        let plan = DerivePlan::standard(Network::Bitcoin, &[86], 1, 1, false).unwrap();
+        let hits = match_seed(&m.to_seed(""), &plan, &ts);
+        assert_eq!(hits.len(), 1, "expected the BIP86 leaf to hit");
+        assert_eq!(hits[0].0, "m/86'/0'/0'/0/0");
+        assert_eq!(hits[0].1, addr);
     }
 
     #[test]

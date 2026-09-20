@@ -32,10 +32,12 @@ btcunlock recover "legal ? thank ? shrimp ... ... ?" \
 
 - `?`, `_`, `x` mark unknown words (up to 6 holes)
 - `--target` repeatable, or `--target-file addrs.txt` (one per line);
-  accepts P2PKH / P2SH / P2WPKH addresses or raw 40-hex hash160
+  accepts P2PKH / P2SH / P2WPKH / P2TR (`bc1p…`) addresses, raw 40-hex
+  hash160, or raw 64-hex x-only output keys
 - per candidate: checksum → PBKDF2 → BIP32 derive → **target match**
 - default paths: `m/{84,49,44}'/c'/0'/0/0`; widen with
-  `--purposes`, `--accounts`, `--max-index`, `--change-chain`
+  `--purposes`, `--accounts`, `--max-index`, `--change-chain`;
+  a `bc1p…`/xkey target auto-adds purpose 86
 - `--checkpoint f.ckpt --resume` — survives restarts (progress saved
   every batch; a checkpoint is bound to its phrase template)
 
@@ -155,7 +157,8 @@ pbkdf2_step (×4 launches): Uᵢ = SHA512(hin‖Uᵢ₋₁) → SHA512(hout‖·
 derive_match (1 item/seed): BIP32 tree walk on device — secp256k1 field
                           arithmetic, Jacobian point ops, fixed-base
                           4-bit-window k·G table (built on host at init),
-                          RIPEMD-160 hash160 → target scan
+                          RIPEMD-160 hash160 + BIP86 tweaked x-only
+                          (TapTweak hash, even-Y lift, P+t·G) → target scan
 host:                    only hits + dead items come back over PCIe;
                          each hit seed is re-derived on CPU for reporting
 ```
@@ -179,8 +182,13 @@ single work-item trips per-item execution limits on Apple OpenCL
 (~75 % of items silently die — measured; chunked loses zero). Each record
 carries a chain tag (`OFF_TAG`) extended by every step launch — a killed
 item leaves a stale tag and the host CPU-recomputes that phrase, so a
-driver-level kill can no longer corrupt a seed silently. GPU↔CPU
-seed parity is covered by `gpu::tests::gpu_cpu_parity` +
+driver-level kill can no longer corrupt a seed silently. `derive_match`
+gets the same protection via a per-item `done` flag — an item killed
+mid-derive leaves the flag clear and the host CPU-recomputes that record
+(measured on Apple: ~half of a 128-item launch silently died). Devices
+without `cl_khr_int64_base_atomics` (Apple) build with `-DNO_I64ATOM` —
+in-kernel phrase dedupe is stubbed and the host dedupes seeds instead.
+GPU↔CPU seed parity is covered by `gpu::tests::gpu_cpu_parity` +
 `gpu_cpu_permute_parity` (run with `cargo test --features gpu -- --ignored`).
 `BTCUNLOCK_DEBUG=1` prints per-stage batch timings to stderr.
 
@@ -206,4 +214,4 @@ BIP32+match), vs ~67 s when the host derived every seed.
 
 - Metal backend (Apple native — OpenCL is deprecated there)
 - word-edit-distance mode (typo'd word, not just missing)
-- P2TR/xonly target matching, wallet.dat extraction
+- wallet.dat extraction (pre-BIP39 era wallets)
