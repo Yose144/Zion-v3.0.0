@@ -11325,7 +11325,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         # The cookie is scoped to .zionterranova.com and shared across all
         # ZION sub-domains. If present and valid, the user is authenticated
         # via ZIS (auth.zionterranova.com) — no Basic Auth needed.
+        # Disabled when DASHBOARD_ZIS_AUTH=0 (internal/operator dashboards).
+        if os.environ.get("DASHBOARD_ZIS_AUTH", "1") == "0":
+            zis_disabled = True
+        else:
+            zis_disabled = False
         try:
+            if zis_disabled:
+                raise RuntimeError("zis disabled")
             from zis_auth import get_current_user
             zis_user = get_current_user(self)
             if zis_user is not None:
