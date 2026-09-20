@@ -1338,7 +1338,7 @@ impl MinerRuntime {
         // ── Stream 1: ZION mining (GPU deeksha) — also distributes jobs ──
         // When stream1_enabled=false, this task only fetches and distributes
         // jobs to Stream 2/3 without mining ZION shares.
-        let h1 = {
+        let mut h1 = {
             let this = self.clone();
             let client = client.clone();
             let job_tx = job_tx.clone();
@@ -1457,7 +1457,7 @@ impl MinerRuntime {
         };
 
         // ── Stream 2: GPU AuxPoW (ZANO) ──
-        let h2 = if self.config.stream2_enabled {
+        let mut h2 = if self.config.stream2_enabled {
             let this = self.clone();
             let client = client.clone();
             let mut job_rx = job_tx.subscribe();
@@ -1538,7 +1538,7 @@ impl MinerRuntime {
         };
 
         // ── Stream 3: CPU AuxPoW (VRSC) ──
-        let h3 = if self.config.stream3_enabled {
+        let mut h3 = if self.config.stream3_enabled {
             let this = self.clone();
             let client = client.clone();
             let mut job_rx = job_tx.subscribe();
@@ -1615,13 +1615,44 @@ impl MinerRuntime {
             tokio::spawn(async move { Ok::<(), MinerError>(()) })
         };
 
+        // Supervise the stream tasks: a stream that exits with an error
+        // (e.g. a dropped pool connection) must end the session so the outer
+        // loop reconnects. Joining the handles only after shutdown would
+        // leave the miner hashing offline forever.
         let mut shutdown_for_changed = shutdown.clone();
-        let _ = shutdown_for_changed.changed().await;
-        let (r1, r2, r3) = tokio::join!(h1, h2, h3);
-        r1??;
-        r2??;
-        r3??;
-        Ok(())
+        let session_result: Result<(), MinerError> = loop {
+            tokio::select! {
+                _ = shutdown_for_changed.changed() => break Ok(()),
+                r = &mut h1, if !h1.is_finished() => match r {
+                    Ok(Ok(())) => continue,
+                    Ok(Err(e)) => break Err(e),
+                    Err(e) => break Err(MinerError::Join(e)),
+                },
+                r = &mut h2, if !h2.is_finished() => match r {
+                    Ok(Ok(())) => continue,
+                    Ok(Err(e)) => break Err(e),
+                    Err(e) => break Err(MinerError::Join(e)),
+                },
+                r = &mut h3, if !h3.is_finished() => match r {
+                    Ok(Ok(())) => continue,
+                    Ok(Err(e)) => break Err(e),
+                    Err(e) => break Err(MinerError::Join(e)),
+                },
+                else => break Ok(()),
+            }
+        };
+        if session_result.is_err() {
+            // The pool connection is shared by all streams — if one failed,
+            // the others cannot make progress either.
+            h1.abort();
+            h2.abort();
+            h3.abort();
+        } else {
+            // Graceful shutdown: each stream watches the same shutdown
+            // signal and exits on its own.
+            let _ = tokio::join!(h1, h2, h3);
+        }
+        session_result
     }
 
     /// Mine a ZION share from a V3 protocol job and submit it to the pool.
