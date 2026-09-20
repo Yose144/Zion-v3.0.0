@@ -76,8 +76,10 @@ enum Cmd {
         /// OpenCL device index (see `gpu-list`).
         #[arg(long, default_value_t = 0)]
         gpu_index: usize,
-        /// Combos per batch (GPU work-size / CPU chunk).
-        #[arg(long, default_value_t = 1 << 22)]
+        /// Combos per batch (GPU work-size / CPU chunk). Larger batches
+        /// saturate the GPU's PBKDF2 stage (needs ≥64k parallel seed
+        /// chains); 16M ≈ 1.1 GB states buffer at the /8 result ceiling.
+        #[arg(long, default_value_t = 1 << 24)]
         batch: usize,
         /// Checkpoint file path (default btcunlock.ckpt).
         #[arg(long)]
@@ -118,7 +120,9 @@ enum Cmd {
         /// OpenCL device index (see `gpu-list`).
         #[arg(long, default_value_t = 0)]
         gpu_index: usize,
-        #[arg(long, default_value_t = 1 << 20)]
+        /// Perms per batch — 12-word phrases pass checksum ~1/16, so 4M
+        /// combos ≈ 262k parallel PBKDF2 chains (GPU saturation point).
+        #[arg(long, default_value_t = 1 << 22)]
         batch: usize,
         /// Stop after N permutations (default 0 = full n! space).
         #[arg(long, default_value_t = 0)]
