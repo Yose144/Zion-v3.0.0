@@ -55,6 +55,14 @@ enum Backend {
     Gpu(crate::gpu::Gpu),
 }
 
+/// What one derive batch produced: `seeds` need host attention (all valid
+/// seeds in host-match mode; only GPU hits + repaired dead items when the
+/// GPU runs stage 4), `valid` counts checksum-passing seeds for stats.
+struct BatchOut {
+    seeds: Vec<(u64, [u8; 64])>,
+    valid: u64,
+}
+
 impl Backend {
     fn derive(
         &mut self,
@@ -62,11 +70,23 @@ impl Backend {
         pass: &str,
         base: u64,
         n: usize,
-    ) -> Result<Vec<(u64, [u8; 64])>> {
+    ) -> Result<BatchOut> {
         match self {
-            Backend::Cpu => Ok(cpu_seeds(tpl, pass, base, n as u32)),
+            Backend::Cpu => {
+                let seeds = cpu_seeds(tpl, pass, base, n as u32);
+                Ok(BatchOut {
+                    valid: seeds.len() as u64,
+                    seeds,
+                })
+            }
             #[cfg(feature = "gpu")]
-            Backend::Gpu(g) => g.derive_batch(tpl, base, n),
+            Backend::Gpu(g) => {
+                let o = g.derive_batch(tpl, base, n)?;
+                Ok(BatchOut {
+                    seeds: o.seeds,
+                    valid: o.valid,
+                })
+            }
         }
     }
 }
@@ -113,6 +133,8 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
             let mut gpu_dev = crate::gpu::Gpu::init(opts.gpu_index, opts.batch)?;
             eprintln!("gpu: {}", gpu_dev.device_name);
             gpu_dev.bind(&tpl, &opts.passphrase)?;
+            gpu_dev.bind_match(&opts.plan, &opts.targets)?;
+            eprintln!("gpu: stage-4 match on device");
             Backend::Gpu(gpu_dev)
         }
         #[cfg(not(feature = "gpu"))]
@@ -141,7 +163,7 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
     // Feeder pipeline: the backend (GPU batch or CPU rayon chunk) lives on a
     // worker thread; job/result channels give one batch of lookahead so the
     // GPU derives batch k+1 while the host matches batch k on all cores.
-    type Batch = Result<(u64, usize, Vec<(u64, [u8; 64])>)>;
+    type Batch = Result<(u64, usize, BatchOut)>;
     let (job_tx, job_rx) = std::sync::mpsc::channel::<(u64, usize)>();
     let (res_tx, res_rx) = std::sync::mpsc::channel::<Batch>();
     let worker = {
@@ -176,13 +198,14 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
     let mut outstanding = dispatch() as u64;
     while outstanding > 0 {
         outstanding += dispatch() as u64; // keep the worker busy on k+1 while we match k
-        let (b, n, seeds) = match res_rx.recv() {
+        let (b, n, out_b) = match res_rx.recv() {
             Ok(r) => r?,
             Err(_) => anyhow::bail!("derive worker died"),
         };
         outstanding -= 1;
-        valid_seeds += seeds.len() as u64;
-        let hits: Vec<(u64, Vec<(String, bitcoin::Address)>)> = seeds
+        valid_seeds += out_b.valid;
+        let hits: Vec<(u64, Vec<(String, bitcoin::Address)>)> = out_b
+            .seeds
             .par_iter()
             .map_init(Secp256k1::new, |secp, (combo, seed)| {
                 (*combo, match_seed_ctx(seed, &opts.plan, &opts.targets, secp))
@@ -279,6 +302,8 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
         let mut g = crate::gpu::Gpu::init(opts.gpu_index, opts.batch)?;
         eprintln!("gpu: {}", g.device_name);
         g.bind_permute(&widx, &opts.passphrase)?;
+        g.bind_match(&opts.plan, &opts.targets)?;
+        eprintln!("gpu: stage-4 match on device");
         Some(g)
     } else {
         None
@@ -326,7 +351,7 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
 
     // Same feeder pipeline as run(): the derive backend lives on a worker
     // thread; one batch of lookahead overlaps GPU PBKDF2 with host matching.
-    type Batch = Result<(u64, u64, Vec<(u64, [u8; 64])>)>;
+    type Batch = Result<(u64, u64, BatchOut)>;
     let (job_tx, job_rx) = std::sync::mpsc::channel::<(u64, u64)>();
     let (res_tx, res_rx) = std::sync::mpsc::channel::<Batch>();
     let worker = {
@@ -336,17 +361,27 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
         let mut gpu_w = gpu_dev;
         std::thread::spawn(move || {
             while let Ok((b, cnt)) = job_rx.recv() {
+                let mut cpu = || {
+                    let s = crate::engine::perm_seeds(
+                        &widx_w, &pass_w, b, cnt as u32, phrase_seen.as_mut(),
+                    );
+                    BatchOut {
+                        valid: s.len() as u64,
+                        seeds: s,
+                    }
+                };
                 #[cfg(feature = "gpu")]
                 let r = match gpu_w.as_mut() {
-                    Some(g) => g.derive_perm_batch(n, b, cnt as usize),
-                    None => Ok(crate::engine::perm_seeds(
-                        &widx_w, &pass_w, b, cnt as u32, phrase_seen.as_mut(),
-                    )),
+                    Some(g) => g
+                        .derive_perm_batch(n, b, cnt as usize)
+                        .map(|o| BatchOut {
+                            seeds: o.seeds,
+                            valid: o.valid,
+                        }),
+                    None => Ok(cpu()),
                 };
                 #[cfg(not(feature = "gpu"))]
-                let r = Ok(crate::engine::perm_seeds(
-                    &widx_w, &pass_w, b, cnt as u32, phrase_seen.as_mut(),
-                ));
+                let r = Ok(cpu());
                 if res_tx.send(r.map(|s| (b, cnt, s))).is_err() {
                     break;
                 }
@@ -366,21 +401,22 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
     let mut outstanding = dispatch() as u64;
     while outstanding > 0 {
         outstanding += dispatch() as u64; // keep the worker busy on k+1 while we match k
-        let (b, cnt, seeds) = match res_rx.recv() {
+        let (b, cnt, out_b) = match res_rx.recv() {
             Ok(r) => r?,
             Err(_) => anyhow::bail!("derive worker died"),
         };
         outstanding -= 1;
-        valid_seeds += seeds.len() as u64;
+        valid_seeds += out_b.valid;
         // serial dedupe (dup input words → repeated phrases) before the par
         // match — the HashSet can't be mutated from inside par_iter.
         let kept: Vec<(u64, [u8; 64])> = match seed_seen.as_mut() {
-            Some(set) => seeds
+            Some(set) => out_b
+                .seeds
                 .iter()
                 .filter(|(_, seed)| set.insert(u64::from_le_bytes(seed[..8].try_into().unwrap())))
                 .copied()
                 .collect(),
-            None => seeds,
+            None => out_b.seeds,
         };
         let hits: Vec<(u64, Vec<(String, bitcoin::Address)>)> = kept
             .par_iter()

@@ -5,12 +5,13 @@
 //!   1. assemble word indices (template + hole values)
 //!   2. BIP39 checksum prefilter — SHA-256 of packed entropy (~1/2^CS pass)
 //!   3. PBKDF2-HMAC-SHA512(phrase, "mnemonic"+passphrase, 2048) → seed
-//!   4. (host only) BIP32 derive each configured path → pubkey hash160 /
+//!   4. BIP32 derive each configured path → pubkey hash160 /
 //!      P2SH-P2WPKH script hash160 → match against the target set
 //!
-//! Stages 1-3 run on the GPU (kernel.cl) or on CPU threads; stage 4 always
-//! runs on the host — PBKDF2 is ~95% of the per-candidate cost, so the host
-//! keeps up while we avoid porting secp256k1 to OpenCL.
+//! Stages 1-4 all run on the GPU (kernel.cl `derive_match` — secp256k1 +
+//! RIPEMD-160 in OpenCL); the CPU backend does everything in rayon threads.
+//! GPU hits still get a host-side re-derive for reporting (cheap — hits
+//! are rare), which doubles as an independent confirmation.
 
 use anyhow::{bail, Context, Result};
 use bip39::{Language, Mnemonic};
