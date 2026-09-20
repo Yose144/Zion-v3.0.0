@@ -4,6 +4,13 @@
 # POSTs the status to the Edge dashboard and the local dashboard.
 set -euo pipefail
 
+# Optional env file (gitignored) with ZION_DASHBOARD_USER / ZION_DASHBOARD_PASS —
+# cron has a bare environment, so creds can't be relied on from the shell.
+_ENV_FILE="$(cd "$(dirname "$0")" && pwd)/backup-beacon.env"
+if [ -f "$_ENV_FILE" ]; then
+  set -a; . "$_ENV_FILE"; set +a
+fi
+
 RPC_HOST="127.0.0.1"
 RPC_PORT="8446"
 EDGE_URL="https://dashboard.zionterranova.com/api/backup-beacon"
