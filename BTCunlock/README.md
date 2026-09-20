@@ -59,7 +59,8 @@ great grid remind science umbrella spot" \
 - `--limit N` caps the scan (partial sweeps); `--resume` continues a
   checkpoint; same `--pass`, target, and derivation options as `recover`
 - duplicate words: perm ids over map onto the same phrase — the engine
-  dedupes before PBKDF2 (CPU) / before derive (GPU), so you only pay once
+  dedupes before PBKDF2 (CPU) / inside the filter kernel via a persistent
+  GPU hash set (GPU), so you only pay once
 
 | words | permutations | checksum rate | GTX 1070 Ti      |
 |-------|--------------|---------------|------------------|
@@ -146,12 +147,17 @@ phrase on CPU — you'll see `gpu: repaired N / dropped M` on stderr.
 ## GPU pipeline (src/gpu/kernel.cl)
 
 ```
-per combo (1 work-item):  word indices → entropy → SHA-256 checksum
+bip39_filter (1 item/combo): word indices → entropy → SHA-256 checksum
                           → phrase → U1 = HMAC-SHA512(phrase, salt‖1)
                           → record stores HMAC midstates hin/hout
 pbkdf2_step (×4 launches): Uᵢ = SHA512(hin‖Uᵢ₋₁) → SHA512(hout‖·); T ⊕= Uᵢ
                           (512 iters/launch, 2 compressions/iter)
-host (rayon):            seed → BIP32 path → hash160 → target set
+derive_match (1 item/seed): BIP32 tree walk on device — secp256k1 field
+                          arithmetic, Jacobian point ops, fixed-base
+                          4-bit-window k·G table (built on host at init),
+                          RIPEMD-160 hash160 → target scan
+host:                    only hits + dead items come back over PCIe;
+                         each hit seed is re-derived on CPU for reporting
 ```
 
 The compression functions use a circular `W[16]` message schedule under
@@ -179,10 +185,11 @@ seed parity is covered by `gpu::tests::gpu_cpu_parity` +
 `BTCUNLOCK_DEBUG=1` prints per-stage batch timings to stderr.
 
 Measured (bench template, 24-word/3-hole): Apple M1 ~0.7 M combos/s;
-**GTX 1070 Ti ~9.6 M combos/s / ~37 k seeds/s** (filter ~30 M/s,
-pbkdf2 ~42 k seeds/s at 32 M batch). For 12-word templates the 1/16
-checksum pass rate makes PBKDF2 the dominant stage (~0.6–0.7 M
-combos/s effective).
+**GTX 1070 Ti ~9.6 M combos/s / ~37 k seeds/s** (filter ~43 M/s,
+pbkdf2 ~42 k seeds/s at 32 M batch). With GPU-side stage 4 the host is
+out of the loop — a 12-word/2-hole recovery (4.2 M combos) completes
+end-to-end in ~11 s on a busy GTX 1070 Ti (~400 k combos/s including
+BIP32+match), vs ~67 s when the host derived every seed.
 
 ## Feasibility
 
@@ -197,7 +204,6 @@ combos/s effective).
 
 ## Roadmap
 
-- GPU-side secp256k1 + BIP32 (removes the host stage entirely)
 - Metal backend (Apple native — OpenCL is deprecated there)
 - word-edit-distance mode (typo'd word, not just missing)
 - P2TR/xonly target matching, wallet.dat extraction

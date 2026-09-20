@@ -1,13 +1,15 @@
-//! OpenCL backend — checksum + PBKDF2 on any OpenCL GPU (NVIDIA, AMD,
-//! Intel, Apple). The host keeps stage 4 (BIP32/secp256k1 + target match).
+//! OpenCL backend — checksum + PBKDF2 + (optionally) stage 4 on any OpenCL
+//! GPU (NVIDIA, AMD, Intel, Apple).
 //!
-//! Two kernels per batch (see kernel.cl): `bip39_filter` does the combo →
+//! Three kernels per batch (see kernel.cl): `bip39_filter` does the combo →
 //! indices → checksum → phrase → U1 stages; `pbkdf2_step` runs the remaining
 //! HMAC iterations in chunks — a full 2048-round PBKDF2 in one work-item
 //! exceeds per-item execution limits on Apple OpenCL (verified: ~75% of
-//! items silently die; chunked steps lose none).
+//! items silently die; chunked steps lose none). When `bind_match` has run,
+//! `derive_match` then does BIP32/secp256k1/hash160/target matching on-GPU
+//! and only hits come back over PCIe; without it the host keeps stage 4.
 
-use crate::engine::{Template, HOLE, MAX_HOLES, MAX_WORDS, WORDLIST};
+use crate::engine::{DerivePlan, TargetSet, Template, HOLE, MAX_HOLES, MAX_WORDS, WORDLIST};
 use anyhow::{bail, Result};
 use opencl3::command_queue::CommandQueue;
 use opencl3::context::Context as ClContext;
@@ -38,16 +40,60 @@ const TAG_C: u32 = 0x9E3779B9;
 const MAX_PHRASE: usize = 248;
 /// Result ceiling per batch: worst pass rate is 1/16 (12-word checksum).
 const RESULT_SLACK: usize = 1024;
+/// Hit record stride in the derive_match output buffer: u64 id + 64B seed.
+const HIT_REC: usize = 8 + 64;
+/// Dead-item record stride: u64 id + u32 plen + phrase bytes.
+const BAD_REC: usize = 8 + 4 + MAX_PHRASE;
+
+/// One derive batch result. `seeds` = records needing host attention —
+/// in GPU-match mode that is only hits plus CPU-repaired dead items;
+/// in host-match mode it is every checksum-valid seed. `valid` = how many
+/// checksum-valid seeds the batch contained (progress accounting).
+pub struct BatchOut {
+    pub seeds: Vec<(u64, [u8; 64])>,
+    pub valid: u64,
+}
 
 fn cl_err(e: impl std::fmt::Display) -> anyhow::Error {
     anyhow::anyhow!("opencl: {e}")
 }
 
+/// Fixed-base window table for the kernel's `ec_mult_g`: entry
+/// `(w*15 + d-1)` is affine (x‖y, u32 LE limbs) of `d·2^{4w}·G`,
+/// d=1..15, w=0..63 — 960 points = 61,440 B. Built once at init; the
+/// kernel then does ≤64 mixed additions per pubkey instead of ~256
+/// doublings + ~128 adds.
+fn g_table() -> Vec<u32> {
+    use bitcoin::secp256k1::{PublicKey, Secp256k1, SecretKey};
+    let secp = Secp256k1::new();
+    let mut t = Vec::with_capacity(64 * 15 * 16);
+    for w in 0..64usize {
+        let limb = (4 * w) / 32;
+        let sh = (4 * w) % 32;
+        for v in 1..16u32 {
+            let mut kb = [0u8; 32];
+            let l = v << sh; // ≤ 15·2^28 < 2^32 — nibble never crosses a limb
+            kb[28 - 4 * limb..32 - 4 * limb].copy_from_slice(&l.to_be_bytes());
+            let pk = PublicKey::from_secret_key(&secp, &SecretKey::from_slice(&kb).unwrap());
+            let un = pk.serialize_uncompressed(); // 04 ‖ x_be(32) ‖ y_be(32)
+            for i in 0..8 {
+                t.push(u32::from_be_bytes(un[29 - 4 * i..33 - 4 * i].try_into().unwrap()));
+            }
+            for i in 0..8 {
+                t.push(u32::from_be_bytes(un[61 - 4 * i..65 - 4 * i].try_into().unwrap()));
+            }
+        }
+    }
+    t
+}
+
 pub struct Gpu {
+    context: ClContext,
     queue: CommandQueue,
     k_filter: Kernel,
     k_step: Kernel,
     k_perm: Kernel,
+    k_match: Kernel,
     max_batch: usize,
     max_results: usize,
     salt_len: Cell<u32>,
@@ -59,6 +105,20 @@ pub struct Gpu {
     salt: Buffer<u8>,
     count: Buffer<u32>,
     states: Buffer<u8>,
+    plan_buf: Buffer<u32>,
+    targets_buf: Buffer<u8>,
+    gtab: Buffer<u32>,
+    hit_count: Buffer<u32>,
+    bad_count: Buffer<u32>,
+    hits_buf: Buffer<u8>,
+    bads_buf: Buffer<u8>,
+    /// Permute phrase-dedupe set: open-addressed u64 table, 2^21 slots.
+    dedup: Buffer<u64>,
+    /// Hit/dead output capacity per batch (≤ max_results).
+    out_cap: usize,
+    n_targets: u32,
+    /// Set by bind_match — switches finish_batch to the on-GPU stage 4.
+    match_bound: bool,
     /// PBKDF2 iterations per step launch (see STEP_ITERS comment).
     step_iters: u32,
     /// Host copy of "mnemonic{pass}" — CPU-repairs records whose GPU
@@ -69,6 +129,13 @@ pub struct Gpu {
 
 impl Gpu {
     pub fn init(device_index: usize, max_batch: usize) -> Result<Self> {
+        // checksum pass rate ≤ 1/16 (12-word) → /8 + slack covers it; the
+        // permute path dedupes phrases in-kernel, so the same bound holds
+        // there (records ≤ distinct valid phrases ≤ ~1/16 of perms)
+        Self::init_ex(device_index, max_batch, max_batch / 8 + RESULT_SLACK)
+    }
+
+    fn init_ex(device_index: usize, max_batch: usize, max_results: usize) -> Result<Self> {
         let gpus = get_all_devices(CL_DEVICE_TYPE_GPU).unwrap_or_default();
         if gpus.is_empty() {
             bail!("no OpenCL GPU devices found");
@@ -130,6 +197,9 @@ impl Gpu {
         let k_filter = Kernel::create(&prog_f, "bip39_filter").map_err(cl_err)?;
         let k_step = Kernel::create(prog_step, "pbkdf2_step").map_err(cl_err)?;
         let k_perm = Kernel::create(&prog_f, "permute_filter").map_err(cl_err)?;
+        // derive_match is register-hungry (secp256k1) — it shares the step
+        // program's looser cap rather than the filter's occupancy-tuned 40.
+        let k_match = Kernel::create(prog_step, "derive_match").map_err(cl_err)?;
 
         // wordlist blob + offsets (u16 — total < 16 KiB)
         let mut blob = Vec::with_capacity(16 * 1024);
@@ -141,7 +211,9 @@ impl Gpu {
         offs.push(blob.len() as u16);
         assert_eq!(offs.len(), 2049);
 
-        let max_results = max_batch / 8 + RESULT_SLACK;
+        // hit/dead output buffers are capped — hits are rare by definition
+        // and dead items are a driver pathology, not a throughput path
+        let out_cap = max_results.min(1 << 20);
         #[allow(unused_unsafe)]
         unsafe {
             let mut wl_blob = Buffer::<u8>::create(
@@ -179,18 +251,67 @@ impl Gpu {
                 std::ptr::null_mut(),
             )
             .map_err(cl_err)?;
+            // stage-4 buffers — sized to max_results so an overflow can never
+            // silently drop a hit or a dead record (both are ≤ got ≤ max_results)
+            let plan_buf =
+                Buffer::<u32>::create(&context, CL_MEM_READ_ONLY, 13, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            // bind_match recreates this sized to the actual target list
+            let targets_buf =
+                Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, 20, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            let mut gtab = Buffer::<u32>::create(
+                &context,
+                CL_MEM_READ_ONLY,
+                64 * 15 * 16,
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
+            let hit_count =
+                Buffer::<u32>::create(&context, CL_MEM_READ_WRITE, 1, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            let bad_count =
+                Buffer::<u32>::create(&context, CL_MEM_READ_WRITE, 1, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            let hits_buf = Buffer::<u8>::create(
+                &context,
+                CL_MEM_READ_WRITE,
+                out_cap * HIT_REC,
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
+            let bads_buf = Buffer::<u8>::create(
+                &context,
+                CL_MEM_READ_WRITE,
+                out_cap * BAD_REC,
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
+            let dedup = Buffer::<u64>::create(
+                &context,
+                CL_MEM_READ_WRITE,
+                1 << 21,
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
             queue
                 .enqueue_write_buffer(&mut wl_blob, CL_NON_BLOCKING, 0, &blob, &[])
                 .map_err(cl_err)?;
             queue
                 .enqueue_write_buffer(&mut wl_off, CL_NON_BLOCKING, 0, &offs, &[])
                 .map_err(cl_err)?;
+            let gt = g_table();
+            queue
+                .enqueue_write_buffer(&mut gtab, CL_NON_BLOCKING, 0, &gt, &[])
+                .map_err(cl_err)?;
             queue.finish().map_err(cl_err)?;
             Ok(Gpu {
+                context,
                 queue,
                 k_filter,
                 k_step,
                 k_perm,
+                k_match,
                 max_batch,
                 max_results,
                 salt_len: Cell::new(0),
@@ -202,6 +323,17 @@ impl Gpu {
                 salt,
                 count,
                 states,
+                plan_buf,
+                targets_buf,
+                gtab,
+                hit_count,
+                bad_count,
+                hits_buf,
+                bads_buf,
+                dedup,
+                out_cap,
+                n_targets: 0,
+                match_bound: false,
                 step_iters,
                 salt_bytes: Vec::new(),
                 device_name,
@@ -256,6 +388,7 @@ impl Gpu {
         }
         let mut sbuf = [0u8; 128];
         sbuf[..salt.len()].copy_from_slice(salt.as_bytes());
+        let zeros = vec![0u64; 1 << 21];
         #[allow(unused_unsafe)]
         unsafe {
             self.queue
@@ -264,6 +397,11 @@ impl Gpu {
             self.queue
                 .enqueue_write_buffer(&mut self.salt, CL_NON_BLOCKING, 0, &sbuf, &[])
                 .map_err(cl_err)?;
+            // fresh search → clear the dedupe set (it persists per run, so
+            // phrases repeated across batches are PBKDF2'd only once)
+            self.queue
+                .enqueue_write_buffer(&mut self.dedup, CL_NON_BLOCKING, 0, &zeros, &[])
+                .map_err(cl_err)?;
             self.queue.finish().map_err(cl_err)?;
         }
         self.salt_len.set(salt.len() as u32);
@@ -271,13 +409,59 @@ impl Gpu {
         Ok(())
     }
 
-    /// Stage 2 + readback shared by derive_batch/derive_perm_batch:
-    /// runs the remaining PBKDF2 chunks on `got` state records and returns
-    /// `(record_id, seed)` pairs. Each step launch extends a chain tag in
-    /// the record; records whose GPU work-item died mid-chain fail the
-    /// final tag check and are recomputed on CPU from their stored phrase.
+    /// Upload the stage-4 job (derivation plan + target hash160s) and switch
+    /// derive_batch/derive_perm_batch into GPU-match mode: `derive_match`
+    /// runs the whole BIP32 walk on the GPU and only hits + dead records
+    /// come back. Plan limits: ≤8 purposes, chains ⊆ {0,1}.
+    pub fn bind_match(&mut self, plan: &DerivePlan, targets: &TargetSet) -> Result<()> {
+        if plan.purposes.len() > 8 {
+            bail!("GPU match supports ≤8 purposes (got {})", plan.purposes.len());
+        }
+        if plan.chains.iter().any(|&c| c > 1) {
+            bail!("GPU match supports chains 0/1 only");
+        }
+        let mut pw = [0u32; 13];
+        pw[0] = plan.purposes.len() as u32;
+        pw[1] = plan.coin;
+        pw[2] = plan.accounts;
+        pw[3] = plan.chains.iter().fold(0u32, |m, &c| m | (1 << c));
+        pw[4] = plan.max_index;
+        for (i, &p) in plan.purposes.iter().enumerate() {
+            pw[5 + i] = p;
+        }
+        let mut sorted: Vec<[u8; 20]> = targets.hashes.iter().copied().collect();
+        sorted.sort_unstable();
+        let mut tb = Vec::with_capacity(20 * sorted.len().max(1));
+        for h in &sorted {
+            tb.extend_from_slice(h);
+        }
+        #[allow(unused_unsafe)]
+        unsafe {
+            self.targets_buf = Buffer::<u8>::create(
+                &self.context,
+                CL_MEM_READ_ONLY,
+                tb.len(),
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
+            self.queue
+                .enqueue_write_buffer(&mut self.plan_buf, CL_NON_BLOCKING, 0, &pw, &[])
+                .map_err(cl_err)?;
+            self.queue
+                .enqueue_write_buffer(&mut self.targets_buf, CL_NON_BLOCKING, 0, &tb, &[])
+                .map_err(cl_err)?;
+            self.queue.finish().map_err(cl_err)?;
+        }
+        self.n_targets = sorted.len() as u32;
+        self.match_bound = true;
+        Ok(())
+    }
+
+    /// Stage 2 driver shared by both readback modes: runs the remaining
+    /// PBKDF2 chunks on `got` state records and returns the number of step
+    /// launches (the chain tag multiplier the records must carry).
     #[allow(unused_unsafe)]
-    unsafe fn finish_batch(&mut self, got: usize) -> Result<Vec<(u64, [u8; 64])>> {
+    unsafe fn run_steps(&mut self, got: usize) -> Result<u32> {
         // remaining 2047 PBKDF2 iterations in chunks of `step_iters`
         // (NVIDIA: one launch of 2047; Apple-safe default: 512,512,512,511)
         let mut left = REMAINING;
@@ -293,6 +477,19 @@ impl Gpu {
             left -= it;
         }
         self.queue.finish().map_err(cl_err)?;
+        Ok(seq)
+    }
+
+    /// Stage 2 + readback shared by derive_batch/derive_perm_batch.
+    /// Each step launch extends a chain tag in the record; records whose
+    /// GPU work-item died mid-chain fail the final tag check and are
+    /// recomputed on CPU from their stored phrase.
+    #[allow(unused_unsafe)]
+    unsafe fn finish_batch(&mut self, got: usize) -> Result<BatchOut> {
+        let seq = self.run_steps(got)?;
+        if self.match_bound {
+            return self.match_readback(got, seq);
+        }
 
         // read back state records → verify chain tag → (record_id, seed=T)
         let mut raw = vec![0u8; got * STATE_SIZE];
@@ -338,7 +535,98 @@ impl Gpu {
         if repaired + dropped > 0 {
             eprintln!("gpu: repaired {repaired} / dropped {dropped} dead-item records");
         }
-        Ok(out)
+        Ok(BatchOut {
+            seeds: out,
+            valid: got as u64,
+        })
+    }
+
+    /// GPU-match readback: run `derive_match` over the finished records and
+    /// pull back only hits (id+seed) and dead items (id+phrase → CPU redo).
+    #[allow(unused_unsafe)]
+    unsafe fn match_readback(&mut self, got: usize, seq: u32) -> Result<BatchOut> {
+        self.queue
+            .enqueue_write_buffer(&mut self.hit_count, CL_NON_BLOCKING, 0, &[0u32], &[])
+            .map_err(cl_err)?;
+        self.queue
+            .enqueue_write_buffer(&mut self.bad_count, CL_NON_BLOCKING, 0, &[0u32], &[])
+            .map_err(cl_err)?;
+        let mut ex = ExecuteKernel::new(&self.k_match);
+        ex.set_arg(&self.states)
+            .set_arg(&self.plan_buf)
+            .set_arg(&self.targets_buf)
+            .set_arg(&self.gtab)
+            .set_arg(&self.n_targets)
+            .set_arg(&seq)
+            .set_arg(&self.hit_count)
+            .set_arg(&self.hits_buf)
+            .set_arg(&self.bad_count)
+            .set_arg(&self.bads_buf)
+            .set_arg(&(self.out_cap as cl_uint));
+        ex.set_global_work_size(got)
+            .enqueue_nd_range(&self.queue)
+            .map_err(cl_err)?;
+        self.queue.finish().map_err(cl_err)?;
+
+        let mut cnts = [0u32; 2];
+        self.queue
+            .enqueue_read_buffer(&self.hit_count, CL_BLOCKING, 0, &mut cnts[..1], &[])
+            .map_err(cl_err)?;
+        self.queue
+            .enqueue_read_buffer(&self.bad_count, CL_BLOCKING, 0, &mut cnts[1..], &[])
+            .map_err(cl_err)?;
+        let n_hit = (cnts[0] as usize).min(self.out_cap);
+        let n_bad = (cnts[1] as usize).min(self.out_cap);
+        if cnts[0] as usize > n_hit || cnts[1] as usize > n_bad {
+            eprintln!(
+                "gpu: WARNING match output overflow (hits {} bads {}) — enlarge batch",
+                cnts[0], cnts[1]
+            );
+        }
+
+        let mut seeds = Vec::with_capacity(n_hit + n_bad);
+        if n_hit > 0 {
+            let mut hraw = vec![0u8; n_hit * HIT_REC];
+            self.queue
+                .enqueue_read_buffer(&self.hits_buf, CL_BLOCKING, 0, &mut hraw, &[])
+                .map_err(cl_err)?;
+            for r in hraw.chunks_exact(HIT_REC) {
+                let id = u64::from_le_bytes(r[..8].try_into().unwrap());
+                let seed: [u8; 64] = r[8..72].try_into().unwrap();
+                seeds.push((id, seed));
+            }
+        }
+        if n_bad > 0 {
+            let mut braw = vec![0u8; n_bad * BAD_REC];
+            self.queue
+                .enqueue_read_buffer(&self.bads_buf, CL_BLOCKING, 0, &mut braw, &[])
+                .map_err(cl_err)?;
+            let mut repaired = 0u64;
+            for r in braw.chunks_exact(BAD_REC) {
+                let id = u64::from_le_bytes(r[..8].try_into().unwrap());
+                let plen = u32::from_le_bytes(r[8..12].try_into().unwrap()) as usize;
+                if plen == 0 || plen > MAX_PHRASE {
+                    continue;
+                }
+                let Ok(phrase) = std::str::from_utf8(&r[12..12 + plen]) else {
+                    continue;
+                };
+                let mut s = [0u8; 64];
+                pbkdf2::pbkdf2_hmac::<sha2::Sha512>(
+                    phrase.as_bytes(),
+                    &self.salt_bytes,
+                    2048,
+                    &mut s,
+                );
+                repaired += 1;
+                seeds.push((id, s));
+            }
+            eprintln!("gpu: repaired {repaired} dead-item records");
+        }
+        Ok(BatchOut {
+            seeds,
+            valid: got as u64,
+        })
     }
 
     /// Reads the filter result count, bails on overflow.
@@ -354,13 +642,14 @@ impl Gpu {
         Ok(cnt[0] as usize)
     }
 
-    /// One batch: combos `base .. base+n` → `(combo, seed)` pairs.
+    /// One batch: combos `base .. base+n` → BatchOut (all valid seeds, or
+    /// only hits+repaired when bind_match ran).
     pub fn derive_batch(
         &mut self,
         tpl: &Template,
         base: u64,
         n: usize,
-    ) -> Result<Vec<(u64, [u8; 64])>> {
+    ) -> Result<BatchOut> {
         if n > self.max_batch {
             bail!("batch {n} exceeds GPU max_batch {}", self.max_batch);
         }
@@ -395,7 +684,10 @@ impl Gpu {
                 eprintln!("gpu: filter {n} combos → {got} seeds in {:.2?}", t0.elapsed());
             }
             if got == 0 {
-                return Ok(Vec::new());
+                return Ok(BatchOut {
+                    seeds: Vec::new(),
+                    valid: 0,
+                });
             }
             let out = self.finish_batch(got);
             if debug {
@@ -406,13 +698,13 @@ impl Gpu {
     }
 
     /// One batch of the permutation domain: perm numbers `base .. base+n`
-    /// → `(perm, seed)` pairs. `n_words` = length of the bound word list.
+    /// → BatchOut. `n_words` = length of the bound word list.
     pub fn derive_perm_batch(
         &mut self,
         n_words: usize,
         base: u64,
         n: usize,
-    ) -> Result<Vec<(u64, [u8; 64])>> {
+    ) -> Result<BatchOut> {
         if n > self.max_batch {
             bail!("batch {n} exceeds GPU max_batch {}", self.max_batch);
         }
@@ -433,7 +725,9 @@ impl Gpu {
                 .set_arg(&self.salt_len.get())
                 .set_arg(&(self.max_results as cl_uint))
                 .set_arg(&self.count)
-                .set_arg(&self.states);
+                .set_arg(&self.states)
+                .set_arg(&self.dedup)
+                .set_arg(&((1u32 << 21) - 1));
             ex.set_global_work_size(n)
                 .enqueue_nd_range(&self.queue)
                 .map_err(cl_err)?;
@@ -444,7 +738,10 @@ impl Gpu {
                 eprintln!("gpu: filter {n} perms → {got} seeds in {:.2?}", t0.elapsed());
             }
             if got == 0 {
-                return Ok(Vec::new());
+                return Ok(BatchOut {
+                    seeds: Vec::new(),
+                    valid: 0,
+                });
             }
             let out = self.finish_batch(got);
             if debug {
@@ -489,7 +786,7 @@ mod tests {
         .unwrap();
         let mut g = Gpu::init(0, 1 << 20).unwrap();
         g.bind(&tpl, "").unwrap();
-        let mut gpu_out = g.derive_batch(&tpl, 0, 1 << 16).unwrap();
+        let mut gpu_out = g.derive_batch(&tpl, 0, 1 << 16).unwrap().seeds;
         let cpu_out = cpu_seeds(&tpl, "", 0, 1 << 16);
         gpu_out.sort_by_key(|x| x.0);
         let mut cpu_sorted = cpu_out;
@@ -526,7 +823,7 @@ cpu={}", g.0, hex::encode(g.1), hex::encode(c.1)); break; }
         widx.sort_unstable();
         let mut g = Gpu::init(0, 1 << 20).unwrap();
         g.bind_permute(&widx, "").unwrap();
-        let gpu_out = g.derive_perm_batch(widx.len(), 0, 1 << 16).unwrap();
+        let gpu_out = g.derive_perm_batch(widx.len(), 0, 1 << 16).unwrap().seeds;
         // CPU dedupes repeated phrases (dup words) pre-PBKDF2; compare the
         // unique seed sets — GPU emits every valid perm incl. dup phrases.
         let cpu_out = perm_seeds(&widx, "", 0, 1 << 16, None);
@@ -559,5 +856,46 @@ cpu={}", g.0, hex::encode(g.1), hex::encode(c.1)); break; }
         for (gs, cs) in gpu_seeds.iter().zip(cpu_seeds.iter()) {
             assert_eq!(gs, cs, "perm seed mismatch");
         }
+    }
+
+    /// GPU stage-4: bind a target, mask the last word of the canonical
+    /// 24-word vector, and require derive_match to return exactly its hit.
+    /// Run: cargo test --features gpu gpu::tests -- --ignored
+    #[test]
+    #[ignore]
+    fn gpu_match_finds_known() {
+        use crate::engine::{DerivePlan, TargetSet};
+        use bip39::{Language, Mnemonic};
+        use bitcoin::bip32::DerivationPath;
+        use bitcoin::secp256k1::Secp256k1;
+        use bitcoin::{Address, Network, PublicKey};
+        use std::str::FromStr;
+
+        const KNOWN: &str = "abandon abandon abandon abandon abandon abandon abandon abandon \
+            abandon abandon abandon abandon abandon abandon abandon abandon \
+            abandon abandon abandon abandon abandon abandon abandon art";
+        let m = Mnemonic::parse_in_normalized(Language::English, KNOWN).unwrap();
+        let secp = Secp256k1::new();
+        let xp = bitcoin::bip32::Xpriv::new_master(Network::Bitcoin, &m.to_seed("")).unwrap();
+        let child = xp
+            .derive_priv(&secp, &DerivationPath::from_str("m/84'/0'/0'/0/0").unwrap())
+            .unwrap();
+        let pk = PublicKey::new(child.private_key.public_key(&secp));
+        let want = Address::p2wpkh(&pk, Network::Bitcoin).unwrap().to_string();
+
+        let mut ts = TargetSet::default();
+        ts.add(&want).unwrap();
+        let plan = DerivePlan::standard(Network::Bitcoin, &[84], 1, 1, false).unwrap();
+        let tpl = parse_template(&KNOWN.replacen("art", "?", 1)).unwrap();
+        let mut g = Gpu::init(0, 1 << 20).unwrap();
+        g.bind(&tpl, "").unwrap();
+        g.bind_match(&plan, &ts).unwrap();
+        let out = g.derive_batch(&tpl, 0, 2048).unwrap();
+        assert_eq!(out.seeds.len(), 1, "exactly one GPU hit expected");
+        // the hit seed must re-derive to the target on the host
+        let hits = crate::engine::match_seed(&out.seeds[0].1, &plan, &ts);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].0, "m/84'/0'/0'/0/0");
+        assert_eq!(hits[0].1.to_string(), want);
     }
 }

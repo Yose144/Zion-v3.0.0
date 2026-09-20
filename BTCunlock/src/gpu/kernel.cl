@@ -1,10 +1,12 @@
 // BTCunlock — BIP39 recovery kernels.
 //
-// Pipeline (two kernels per batch):
+// Pipeline (three kernels per batch):
 //   bip39_filter: combo → word indices → checksum (SHA-256) → for survivors,
 //                 build phrase + U1 = HMAC(phrase, salt||1) → state record
 //   pbkdf2_step:  per state record, run CHUNK HMAC iterations
 //                 (U = HMAC(U); T ^= U) — launched ceil(2047/CHUNK) times
+//   derive_match: per finished record, seed → BIP32/secp256k1 → hash160 →
+//                 target match; only hits + dead items leave the device
 //
 // PBKDF2 is chunked across launches because a 2048-iteration HMAC loop in a
 // single work-item exceeds per-item execution limits on some stacks (Apple
@@ -36,6 +38,9 @@
 #define OFF_TAG 388
 #define TAG_C 0x9E3779B9u
 #define TAG_BAD 0xDEADDEADu
+
+// 64-bit atomics for the permute dedupe set (NVIDIA/AMD/Intel all expose it)
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 // ---------------------------------------------------------------- SHA-256
 
@@ -353,9 +358,24 @@ __kernel void bip39_filter(
                   max_results, result_count, states);
 }
 
+// Phrase dedupe for permute: duplicate input words make many perm ids
+// decode to the same arrangement — same idx[] → same phrase → same seed.
+// A global open-addressed u64 set persists across batches (zeroed at bind),
+// so each distinct phrase is PBKDF2'd once per run, not once per perm.
+// Returns 1 when `key` was newly inserted (caller proceeds with the emit).
+static int dedup_insert(volatile __global ulong* set, uint mask, ulong key) {
+    uint slot = (uint)((key * 0x9E3779B97F4A7C15UL) >> 43) & mask;
+    for (uint i = 0; i < 64; i++) {
+        ulong old = atom_cmpxchg(set + ((slot + i) & mask), 0UL, key);
+        if (old == 0 || old == key) return old == 0;
+    }
+    return 1; // set hopelessly full — emit anyway (dup work, never loss)
+}
+
 // One work-item per permutation number: factoradic (Lehmer) decode of
-// `words` into idx[], then the shared checksum→U1 tail. `words` must be
-// sorted ascending so perm numbering matches the host (perm_indices).
+// `words` into idx[], dedupe, then the shared checksum→U1 tail. `words`
+// must be sorted ascending so perm numbering matches the host
+// (perm_indices).
 __kernel void permute_filter(
     __global const uchar*  wl_blob,
     __global const ushort* wl_off,
@@ -366,7 +386,9 @@ __kernel void permute_filter(
     const uint salt_len,
     const uint max_results,
     volatile __global uint* result_count,
-    __global uchar* states)
+    __global uchar* states,
+    volatile __global ulong* dedup_set,
+    const uint dedup_mask)
 {
     ulong pid = perm_base + get_global_id(0);
     ulong p = pid;
@@ -380,6 +402,14 @@ __kernel void permute_filter(
         idx[k] = pool[i];
         for (uint j = i; j + 1 < m; j++) pool[j] = pool[j + 1];
     }
+    // FNV-1a over the arrangement — same hash as the host's idx_key
+    ulong dk = 0xcbf29ce484222325UL;
+    for (uint i = 0; i < n_words; i++) {
+        dk ^= idx[i];
+        dk *= 0x100000001b3UL;
+    }
+    dk |= 1UL; // 0 marks an empty slot
+    if (!dedup_insert(dedup_set, dedup_mask, dk)) return;
     emit_if_valid(idx, n_words, pid, wl_blob, wl_off, salt, salt_len,
                   max_results, result_count, states);
 }
@@ -456,4 +486,602 @@ __kernel void pbkdf2_step(
     *((__global uint*)(st + OFF_TAG)) =
         ((uint)st[OFF_T] | ((uint)st[OFF_T+1] << 8)
         | ((uint)st[OFF_T+2] << 16) | ((uint)st[OFF_T+3] << 24)) ^ seq * TAG_C;
+}
+
+// ============================================================ stage 4: EC
+//
+// secp256k1 + BIP32 CKD + hash160 + target match, fully on-GPU. The host
+// then only sees hit records — no per-seed CPU derivation at all.
+//
+// 256-bit integers = uint[8] little-endian limbs (v[0] = LSW). All array
+// indexing is compile-time (unrolled loops) — same discipline as the hash
+// code: dynamic private-array indexing spills to local memory.
+
+__constant uint FP[8] = {0xFFFFFC2Fu,0xFFFFFFFEu,0xFFFFFFFFu,0xFFFFFFFFu,
+                         0xFFFFFFFFu,0xFFFFFFFFu,0xFFFFFFFFu,0xFFFFFFFFu};
+// group order n
+__constant uint FN[8] = {0xD0364141u,0xBFD25E8Cu,0xAF48A03Bu,0xBAAEDCE6u,
+                         0xFFFFFFFEu,0xFFFFFFFFu,0xFFFFFFFFu,0xFFFFFFFFu};
+// p - 2 (inversion exponent)
+__constant uint FE2[8] = {0xFFFFFC2Du,0xFFFFFFFEu,0xFFFFFFFFu,0xFFFFFFFFu,
+                          0xFFFFFFFFu,0xFFFFFFFFu,0xFFFFFFFFu,0xFFFFFFFFu};
+// generator G, affine
+__constant uint GX[8] = {0x16F81798u,0x59F2815Bu,0x2DCE28D9u,0x029BFCDBu,
+                         0xCE870B07u,0x55A06295u,0xF9DCBBACu,0x79BE667Eu};
+__constant uint GY[8] = {0xFB10D4B8u,0x9C47D08Fu,0xA6855419u,0xFD17B448u,
+                         0x0E1108A8u,0x5DA4FBFCu,0x26A3C465u,0x483ADA77u};
+
+static int u256_ge(__private const uint a[8], __private const uint b[8]) {
+    #pragma unroll
+    for (int i = 7; i >= 0; i--)
+        if (a[i] != b[i]) return a[i] > b[i];
+    return 1;
+}
+
+static uint u256_add(__private const uint a[8], __private const uint b[8],
+                     __private uint r[8]) {
+    ulong c = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) { c += (ulong)a[i] + b[i]; r[i] = (uint)c; c >>= 32; }
+    return (uint)c;
+}
+
+static uint u256_sub(__private const uint a[8], __private const uint b[8],
+                     __private uint r[8]) {
+    ulong br = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        ulong d = (ulong)a[i] - b[i] - br;
+        r[i] = (uint)d;
+        br = d >> 63;
+    }
+    return (uint)br;
+}
+
+// r = a + b mod p. Fold the add carry via 2^256 ≡ 2^32 + 977, then one
+// conditional subtract (result < p + ε after folding, and < 2^256).
+static void fe_add(__private const uint a[8], __private const uint b[8],
+                   __private uint r[8]) {
+    uint fp[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) fp[i] = FP[i];
+    uint c = u256_add(a, b, r);
+    while (c) {
+        ulong s = (ulong)r[0] + 977UL * c; r[0] = (uint)s; s >>= 32;
+        s += (ulong)r[1] + c; r[1] = (uint)s; s >>= 32;
+        #pragma unroll
+        for (int i = 2; i < 8; i++) { s += r[i]; r[i] = (uint)s; s >>= 32; }
+        c = (uint)s;
+    }
+    if (u256_ge(r, fp)) u256_sub(r, fp, r);
+}
+
+// r = a - b mod p (borrow → add back p; result normalized)
+static void fe_sub(__private const uint a[8], __private const uint b[8],
+                   __private uint r[8]) {
+    if (u256_sub(a, b, r)) {
+        uint fp[8];
+        #pragma unroll
+        for (int i = 0; i < 8; i++) fp[i] = FP[i];
+        u256_add(r, fp, r);
+    }
+}
+
+// r = a·b mod p. Schoolbook into u64 limb accumulators (each column sums
+// ≤ 8·(2^32-1) terms — no overflow), then two linear folds of the pseudo-
+// Mersenne prime. Avoids the carry-ordering traps of in-place Comba.
+static void fe_mul(__private const uint a[8], __private const uint b[8],
+                   __private uint r[8]) {
+    ulong A[18];
+    #pragma unroll
+    for (int i = 0; i < 18; i++) A[i] = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        #pragma unroll
+        for (int j = 0; j < 8; j++) {
+            ulong p = (ulong)a[i] * b[j];
+            A[i + j] += (uint)p;
+            A[i + j + 1] += p >> 32;
+        }
+    }
+    // fold: limb m ≥8 contributes v·(2^32+977)·2^{32(m-8)} — i.e. +977v to
+    // limb m-8 and +v to limb m-7. Products land on A[0..15] only.
+    ulong B[9];
+    #pragma unroll
+    for (int i = 0; i < 9; i++) B[i] = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) B[i] = A[i];
+    #pragma unroll
+    for (int j = 0; j < 8; j++) {
+        ulong v = A[8 + j];
+        B[j] += 977UL * v;
+        B[j + 1] += v;
+    }
+    // normalize B[0..8) into r, carrying; B[8] is the residual ≥2^256 limb.
+    ulong c = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) { c += B[i]; r[i] = (uint)c; c >>= 32; }
+    c += B[8];
+    while (c) {
+        ulong s = (ulong)r[0] + 977UL * c; r[0] = (uint)s; s >>= 32;
+        s += (ulong)r[1] + c; r[1] = (uint)s; s >>= 32;
+        #pragma unroll
+        for (int i = 2; i < 8; i++) { s += r[i]; r[i] = (uint)s; s >>= 32; }
+        c = s;
+    }
+    uint fp[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) fp[i] = FP[i];
+    if (u256_ge(r, fp)) u256_sub(r, fp, r);
+}
+
+static void fe_sqr(__private const uint a[8], __private uint r[8]) {
+    fe_mul(a, a, r);
+}
+
+// r = a^(p-2) — plain binary ladder, constant exponent from FE2.
+static void fe_inv(__private const uint a[8], __private uint r[8]) {
+    uint t[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) { t[i] = a[i]; r[i] = i == 0 ? 1 : 0; }
+    for (int i = 0; i < 256; i++) {
+        if ((FE2[i >> 5] >> (i & 31)) & 1) fe_mul(r, t, r);
+        fe_sqr(t, t);
+    }
+}
+
+// Jacobian point = (X:Y:Z), Z=0 → infinity. Affine→ser is the only place
+// needing an inversion.
+
+// R = 2·P  (a=0 curve): S=4XY², M=3X², X'=M²−2S, Y'=M(S−X')−8Y⁴, Z'=2YZ
+// Z' must be computed before Y is overwritten (uses the old Y).
+static void pt_double(__private uint X[8], __private uint Y[8], __private uint Z[8]) {
+    uint yy[8], s[8], m[8], t[8], y4[8];
+    fe_sqr(Y, yy);          // Y²
+    fe_mul(X, yy, s);       // XY²
+    fe_add(s, s, s);
+    fe_add(s, s, s);        // S = 4XY²
+    fe_sqr(X, m);           // X²
+    fe_add(m, m, t);
+    fe_add(m, t, m);        // M = 3X²
+    fe_mul(Y, Z, t);        // Y·Z  (old Y)
+    fe_add(t, t, t);        // t = 2YZ  → new Z
+    fe_sqr(m, X);           // M²
+    fe_sub(X, s, X);
+    fe_sub(X, s, X);        // X' = M² − 2S
+    fe_sqr(yy, y4);         // Y⁴
+    fe_add(y4, y4, y4);
+    fe_add(y4, y4, y4);
+    fe_add(y4, y4, y4);     // 8Y⁴
+    fe_sub(s, X, s);        // S − X'
+    fe_mul(m, s, s);        // M(S − X')
+    fe_sub(s, y4, Y);       // Y'
+    #pragma unroll
+    for (int i = 0; i < 8; i++) Z[i] = t[i];
+}
+
+// R += (x2,y2) affine — mixed addition; R must not be the point at infinity
+// (caller guards on Z). Handles the H=0 edge: R==Q → double, else → inf.
+static void pt_add_affine(__private uint X[8], __private uint Y[8],
+                          __private uint Z[8],
+                          __private const uint x2[8], __private const uint y2[8]) {
+    uint zz[8], u2[8], s2[8], h[8], rr[8], hh[8], hhh[8], v[8], t[8];
+    fe_sqr(Z, zz);          // Z1²
+    fe_mul(x2, zz, u2);     // U2 = x2·Z1²
+    fe_mul(Z, zz, t);       // Z1³
+    fe_mul(y2, t, s2);      // S2 = y2·Z1³
+    fe_sub(u2, X, h);       // H
+    fe_sub(s2, Y, rr);      // r
+    // H==0 && r==0 → double; H==0 && r!=0 → infinity
+    uint hz = 0, rz = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) { hz |= h[i]; rz |= rr[i]; }
+    if (hz == 0) {
+        if (rz == 0) { pt_double(X, Y, Z); }
+        else { Z[0] = 0; Z[1] = 0; Z[2] = 0; Z[3] = 0; Z[4] = 0; Z[5] = 0; Z[6] = 0; Z[7] = 0; }
+        return;
+    }
+    fe_sqr(h, hh);          // H²
+    fe_mul(h, hh, hhh);     // H³
+    fe_mul(X, hh, v);       // V = X1·H²
+    fe_sqr(rr, X);          // r²
+    fe_sub(X, hhh, X);      // r² − H³
+    fe_sub(X, v, X);
+    fe_sub(X, v, X);        // X3
+    fe_sub(v, X, t);        // V − X3
+    fe_mul(rr, t, t);       // r(V − X3)
+    fe_mul(Y, hhh, Y);      // Y1·H³
+    fe_sub(t, Y, Y);        // Y3
+    fe_mul(Z, h, Z);        // Z3 = Z1·H
+}
+
+// R = k·G via a 4-bit fixed-base window table: gtab[w*15 + d-1] = affine
+// (x,y) of d·2^{4w}·G for d=1..15 (960 points, built on the host). Per key:
+// ≤64 mixed additions, no doublings — ~4× fewer point ops than the binary
+// ladder. Not constant-time (offline recovery — no secret channel).
+static void ec_mult_g(__private const uint k[8],
+                      __constant const uint* gtab,
+                      __private uint X[8], __private uint Y[8], __private uint Z[8]) {
+    #pragma unroll
+    for (int i = 0; i < 8; i++) Z[i] = 0;
+    for (int w = 0; w < 64; w++) {
+        uint d = (k[w >> 3] >> ((w & 7) * 4)) & 15;
+        if (d) {
+            __constant const uint* P = gtab + (w * 15 + d - 1) * 16;
+            uint x2[8], y2[8];
+            #pragma unroll
+            for (int i = 0; i < 8; i++) { x2[i] = P[i]; y2[i] = P[8 + i]; }
+            uint zacc = 0;
+            #pragma unroll
+            for (int j = 0; j < 8; j++) zacc |= Z[j];
+            if (zacc) pt_add_affine(X, Y, Z, x2, y2);
+            else {
+                #pragma unroll
+                for (int j = 0; j < 8; j++) { X[j] = x2[j]; Y[j] = y2[j]; Z[j] = j == 0; }
+            }
+        }
+    }
+}
+
+// Compressed pubkey: 0x02|(y&1) ‖ x_be(32). Needs affine → one inversion.
+static void ec_ser_p(__private const uint X[8], __private const uint Y[8],
+                     __private const uint Z[8], __private uchar out[33]) {
+    uint zi[8], zi2[8], xa[8], ya[8];
+    fe_inv(Z, zi);          // Z⁻¹
+    fe_sqr(zi, zi2);        // Z⁻²
+    fe_mul(X, zi2, xa);     // x = X/Z²
+    fe_mul(zi, zi2, zi);    // Z⁻³
+    fe_mul(Y, zi, ya);      // y = Y/Z³
+    out[0] = (uchar)(0x02 | (ya[0] & 1));
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        uint v = xa[7 - i];
+        out[1 + i*4]     = (uchar)(v >> 24);
+        out[2 + i*4]     = (uchar)(v >> 16);
+        out[3 + i*4]     = (uchar)(v >> 8);
+        out[4 + i*4]     = (uchar)v;
+    }
+}
+
+
+// ------------------------------------------------------------- RIPEMD-160
+// Dual-line MD4-family hash — needed for hash160 = RIPEMD160(SHA256(x)).
+// Inputs here are ≤ 55 bytes → always a single padded block.
+
+__constant uint RMD_R1[80] = {
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+    7,4,13,1,10,6,15,3,12,0,9,5,2,14,11,8,
+    3,10,14,4,9,15,8,1,2,7,0,6,13,11,5,12,
+    1,9,11,10,0,8,12,4,13,3,7,15,14,5,6,2,
+    4,0,5,9,7,12,2,10,14,1,3,8,11,6,15,13 };
+__constant uint RMD_S1[80] = {
+    11,14,15,12,5,8,7,9,11,13,14,15,6,7,9,8,
+    7,6,8,13,11,9,7,15,7,12,15,9,11,7,13,12,
+    11,13,6,7,14,9,13,15,14,8,13,6,5,12,7,5,
+    11,12,14,15,14,15,9,8,9,14,5,6,8,6,5,12,
+    9,15,5,11,6,8,13,12,5,12,13,14,11,8,5,6 };
+__constant uint RMD_R2[80] = {
+    5,14,7,0,9,2,11,4,13,6,15,8,1,10,3,12,
+    6,11,3,7,0,13,5,10,14,15,8,12,4,9,1,2,
+    15,5,1,3,7,14,6,9,11,8,12,2,10,0,4,13,
+    8,6,4,1,3,11,15,0,5,12,2,13,9,7,10,14,
+    12,15,10,4,1,5,8,7,6,2,13,14,0,3,9,11 };
+__constant uint RMD_S2[80] = {
+    8,9,9,11,13,15,15,5,7,7,8,11,14,14,12,6,
+    9,13,15,7,12,8,9,11,7,7,12,7,6,15,13,11,
+    9,7,15,11,8,6,6,14,12,13,5,14,13,13,7,5,
+    15,5,8,11,14,14,6,14,6,9,12,9,12,5,15,8,
+    8,5,12,9,12,5,14,6,8,13,6,5,15,13,11,11 };
+__constant uint RMD_K1[5] = {0x00000000u,0x5A827999u,0x6ED9EBA1u,0x8F1BBCDCu,0xA953FD4Eu};
+__constant uint RMD_K2[5] = {0x50A28BE6u,0x5C4DD124u,0x6D703EF3u,0x7A6D76E9u,0x00000000u};
+
+static uint rmd_f(int j, uint x, uint y, uint z) {
+    switch (j) {
+    case 0: return x ^ y ^ z;
+    case 1: return (x & y) | (~x & z);
+    case 2: return (x | ~y) ^ z;
+    case 3: return (x & z) | (y & ~z);
+    default: return x ^ (y | ~z);
+    }
+}
+
+// RIPEMD-160 of a ≤55-byte message (single block). Output = 20 bytes LE.
+static void ripemd160(__private const uchar* m, uint len, __private uchar out[20]) {
+    uint X[16];
+    #pragma unroll
+    for (int i = 0; i < 16; i++) X[i] = 0;
+    for (uint i = 0; i < len; i++) X[i >> 2] |= (uint)m[i] << ((i & 3) * 8);
+    X[len >> 2] |= 0x80u << ((len & 3) * 8);
+    X[14] = len * 8;
+    uint a1 = 0x67452301u, b1 = 0xEFCDAB89u, c1 = 0x98BADCFEu, d1 = 0x10325476u, e1 = 0xC3D2E1F0u;
+    uint a2 = a1, b2 = b1, c2 = c1, d2 = d1, e2 = e1;
+    #pragma unroll
+    for (int i = 0; i < 80; i++) {
+        int j = i >> 4;
+        uint t = rotate(a1 + rmd_f(j, b1, c1, d1) + X[RMD_R1[i]] + RMD_K1[j], RMD_S1[i]) + e1;
+        a1 = e1; e1 = d1; d1 = rotate(c1, 10U); c1 = b1; b1 = t;
+        t = rotate(a2 + rmd_f(4 - j, b2, c2, d2) + X[RMD_R2[i]] + RMD_K2[j], RMD_S2[i]) + e2;
+        a2 = e2; e2 = d2; d2 = rotate(c2, 10U); c2 = b2; b2 = t;
+    }
+    uint h[5];
+    h[0] = 0x67452301u; h[1] = 0xEFCDAB89u; h[2] = 0x98BADCFEu; h[3] = 0x10325476u; h[4] = 0xC3D2E1F0u;
+    uint t = h[1] + c1 + d2;
+    h[1] = h[2] + d1 + e2;
+    h[2] = h[3] + e1 + a2;
+    h[3] = h[4] + a1 + b2;
+    h[4] = h[0] + b1 + c2;
+    h[0] = t;
+    #pragma unroll
+    for (int i = 0; i < 5; i++) {
+        out[i*4]   = (uchar)h[i];
+        out[i*4+1] = (uchar)(h[i] >> 8);
+        out[i*4+2] = (uchar)(h[i] >> 16);
+        out[i*4+3] = (uchar)(h[i] >> 24);
+    }
+}
+
+// SHA-256 of a ≤55-byte message (single block) — hash160 needs the
+// byte-staged form (33-byte pubkey / 22-byte redeem script).
+static void sha256_1(__private const uchar* m, uint len, __private uchar out[32]) {
+    uint h[8] = {0x6a09e667U,0xbb67ae85U,0x3c6ef372U,0xa54ff53aU,
+                 0x510e527fU,0x9b05688cU,0x1f83d9abU,0x5be0cd19U};
+    uint wb[16];
+    #pragma unroll
+    for (int i = 0; i < 16; i++) wb[i] = 0;
+    for (uint i = 0; i < len; i++) wb[i >> 2] |= (uint)m[i] << (24 - (i & 3) * 8);
+    wb[len >> 2] |= 0x80u << (24 - (len & 3) * 8);
+    wb[15] = len * 8;
+    sha256_compress_w(h, wb);
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        out[i*4]   = (uchar)(h[i] >> 24);
+        out[i*4+1] = (uchar)(h[i] >> 16);
+        out[i*4+2] = (uchar)(h[i] >> 8);
+        out[i*4+3] = (uchar)h[i];
+    }
+}
+
+static void hash160_of(__private const uchar* m, uint len, __private uchar out[20]) {
+    uchar d[32];
+    sha256_1(m, len, d);
+    ripemd160(d, 32, out);
+}
+
+// ------------------------------------------------------------------ BIP32
+
+// HMAC-SHA512 with a 32-byte key (chain code) over a ≤64-byte message —
+// the CKD shape. 4 compressions via one pad block + absorb each way.
+static void hmac_cc(__private const uchar cc[32], __private const uchar* data,
+                    uint dlen, __private uchar out[64]) {
+    uchar pad[128];
+    #pragma unroll
+    for (int i = 0; i < 32; i++) pad[i] = cc[i] ^ 0x36;
+    #pragma unroll
+    for (int i = 32; i < 128; i++) pad[i] = 0x36;
+    ulong h[8] = {SHA512_IV};
+    sha512_compress(h, pad);
+    uchar ih[64];
+    sha512_absorb(h, data, dlen, 128 + dlen, ih);
+    #pragma unroll
+    for (int i = 0; i < 32; i++) pad[i] = cc[i] ^ 0x5c;
+    #pragma unroll
+    for (int i = 32; i < 128; i++) pad[i] = 0x5c;
+    ulong h2[8] = {SHA512_IV};
+    sha512_compress(h2, pad);
+    sha512_absorb(h2, ih, 64, 192, out);
+}
+
+// HMAC-SHA512 with an arbitrary ≤128-byte key — used once for the master
+// ("Bitcoin seed" ‖ seed).
+static void hmac_raw(__private const uchar* key, uint klen,
+                     __private const uchar* data, uint dlen, __private uchar out[64]) {
+    uchar pad[128];
+    for (uint i = 0; i < 128; i++) pad[i] = (i < klen ? key[i] : 0) ^ 0x36;
+    ulong h[8] = {SHA512_IV};
+    sha512_compress(h, pad);
+    uchar ih[64];
+    sha512_absorb(h, data, dlen, 128 + dlen, ih);
+    for (uint i = 0; i < 128; i++) pad[i] = (i < klen ? key[i] : 0) ^ 0x5c;
+    ulong h2[8] = {SHA512_IV};
+    sha512_compress(h2, pad);
+    sha512_absorb(h2, ih, 64, 192, out);
+}
+
+// BIP32 node: priv scalar (u256 LE limbs) + 32-byte chain code.
+typedef struct { uint k[8]; uchar cc[32]; } B32Node;
+
+// u256 ← 32 big-endian bytes
+static void u256_from_be(__private uint v[8], __private const uchar* b) {
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        v[i] = (uint)b[31 - i*4] | ((uint)b[30 - i*4] << 8)
+             | ((uint)b[29 - i*4] << 16) | ((uint)b[28 - i*4] << 24);
+    }
+}
+
+// u256 → 32 big-endian bytes
+static void u256_to_be(__private const uint v[8], __private uchar* b) {
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        uint w = v[i];
+        b[31 - i*4]     = (uchar)w;
+        b[30 - i*4]     = (uchar)(w >> 8);
+        b[29 - i*4]     = (uchar)(w >> 16);
+        b[28 - i*4]     = (uchar)(w >> 24);
+    }
+}
+
+// CKDpriv: (k,cc) + index → child. `hardened` selects data form; for the
+// normal form `ser_p` must already hold the parent's compressed pubkey
+// (33 bytes). Returns 0 on the (astronomically rare) invalid child.
+static int ckd_priv(__private const B32Node* par, uint index, int hardened,
+                    __private const uchar ser_p[33], __private B32Node* ch) {
+    uchar data[37];
+    if (hardened) {
+        data[0] = 0;
+        u256_to_be(par->k, data + 1);
+    } else {
+        for (int i = 0; i < 33; i++) data[i] = ser_p[i];
+    }
+    data[33] = (uchar)(index >> 24);
+    data[34] = (uchar)(index >> 16);
+    data[35] = (uchar)(index >> 8);
+    data[36] = (uchar)index;
+    uchar i64[64];
+    hmac_cc(par->cc, data, 37, i64);
+    uint fn[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) fn[i] = FN[i];
+    uint il[8];
+    u256_from_be(il, i64);
+    if (u256_ge(il, fn)) return 0;
+    uint s[8];
+    uint c = u256_add(par->k, il, s);
+    uint t[8];
+    uint b = u256_sub(s, fn, t);
+    if (c || !b) {   // sum ≥ n → take s - n
+        #pragma unroll
+        for (int i = 0; i < 8; i++) s[i] = t[i];
+    }
+    uint z = 0;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) { ch->k[i] = s[i]; z |= s[i]; }
+    if (z == 0) return 0;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) ch->cc[i] = i64[32 + i];
+    return 1;
+}
+
+// pubkey (compressed) of a private scalar
+static void node_ser_p(__private const uint k[8], __constant const uint* gtab,
+                       __private uchar out[33]) {
+    uint X[8], Y[8], Z[8];
+    ec_mult_g(k, gtab, X, Y, Z);
+    ec_ser_p(X, Y, Z, out);
+}
+
+// target match: hash160 against the target list
+static int hit_hash160(__private const uchar h[20], __global const uchar* targets,
+                       uint n_targets) {
+    for (uint i = 0; i < n_targets; i++) {
+        __global const uchar* tp = targets + i * 20;
+        uint d = 0;
+        #pragma unroll
+        for (int j = 0; j < 20; j++) d |= h[j] ^ tp[j];
+        if (d == 0) return 1;
+    }
+    return 0;
+}
+
+// Stage 4 kernel: per finished state record → seed → BIP32 tree walk →
+// hash160 per leaf → target match. Emits hit records (record_id ‖ seed)
+// for the host to expand + confirm, and bad records (dead work-items)
+// for CPU repair.
+//
+// plan[] = { npur, coin, n_accounts, chain_mask, max_index, pur[0..8) }
+__kernel void derive_match(
+    __global uchar* states,
+    __global const uint*  plan,
+    __global const uchar* targets,
+    __constant const uint* gtab,
+    const uint n_targets,
+    const uint seqs,                 // pbkdf2 launches run (= tag check)
+    volatile __global uint* hit_count,
+    __global uchar* hits,            // max_out × 72B: u64 id + u8 seed[64]
+    volatile __global uint* bad_count,
+    __global uchar* bads,            // max_out × (8+4+248)B: id + plen + phrase
+    const uint max_out)
+{
+    __global uchar* st = states + (ulong)get_global_id(0) * STATE_SIZE;
+    uint plen = *((__global const uint*)(st + OFF_PLEN));
+    if (plen == 0 || plen > MAX_PHRASE) goto bad;
+    {
+        // chain tag must equal u32(T[0..4]) ^ seqs·TAG_C
+        uint tag = *((__global const uint*)(st + OFF_TAG));
+        uint head = (uint)st[OFF_T] | ((uint)st[OFF_T+1] << 8)
+                  | ((uint)st[OFF_T+2] << 16) | ((uint)st[OFF_T+3] << 24);
+        if (tag != (head ^ seqs * TAG_C)) goto bad;
+    }
+
+    // master = HMAC("Bitcoin seed", seed)
+    uchar seed[64];
+    #pragma unroll
+    for (int i = 0; i < 64; i++) seed[i] = st[OFF_T + i];
+    {
+        const uchar mkey[13] = {'B','i','t','c','o','i','n',' ','s','e','e','d',0};
+        uchar i64[64];
+        hmac_raw(mkey, 12, seed, 64, i64);
+        B32Node master;
+        u256_from_be(master.k, i64);
+        #pragma unroll
+        for (int i = 0; i < 32; i++) master.cc[i] = i64[32 + i];
+        uint fn[8];
+        #pragma unroll
+        for (int i = 0; i < 8; i++) fn[i] = FN[i];
+        if (u256_ge(master.k, fn)) return;
+
+        uint npur = plan[0], coin = plan[1], n_acct = plan[2];
+        uint chain_mask = plan[3], max_index = plan[4];
+        for (uint pi = 0; pi < npur; pi++) {
+            uint pur = plan[5 + pi];
+            B32Node np, nc;
+            uchar dummy[33];
+            if (!ckd_priv(&master, pur | 0x80000000u, 1, dummy, &np)) continue;
+            if (!ckd_priv(&np, coin | 0x80000000u, 1, dummy, &nc)) continue;
+            for (uint a = 0; a < n_acct; a++) {
+                B32Node na;
+                if (!ckd_priv(&nc, a | 0x80000000u, 1, dummy, &na)) continue;
+                // parent pubkey needed for the normal chain derive
+                uchar pa[33];
+                node_ser_p(na.k, gtab, pa);
+                for (uint ch = 0; ch < 2; ch++) {
+                    if (!(chain_mask & (1u << ch))) continue;
+                    B32Node nch;
+                    if (!ckd_priv(&na, ch, 0, pa, &nch)) continue;
+                    uchar pc[33];
+                    node_ser_p(nch.k, gtab, pc);
+                    for (uint i = 0; i < max_index; i++) {
+                        B32Node leaf;
+                        if (!ckd_priv(&nch, i, 0, pc, &leaf)) continue;
+                        uchar pl[33], h160[20], sh[32];
+                        node_ser_p(leaf.k, gtab, pl);
+                        hash160_of(pl, 33, h160);
+                        int hit = hit_hash160(h160, targets, n_targets);
+                        if (!hit && pur == 49) {
+                            // P2SH-P2WPKH: hash160 of 0x0014‖h160
+                            uchar rd[22];
+                            rd[0] = 0; rd[1] = 20;
+                            #pragma unroll
+                            for (int j = 0; j < 20; j++) rd[2 + j] = h160[j];
+                            hash160_of(rd, 22, sh);
+                            hit = hit_hash160(sh, targets, n_targets);
+                        }
+                        if (hit) {
+                            uint slot = atomic_inc(hit_count);
+                            if (slot < max_out) {
+                                __global uchar* hr = hits + (ulong)slot * 72;
+                                for (int j = 0; j < 8; j++)
+                                    hr[j] = st[OFF_COMBO + j];
+                                #pragma unroll
+                                for (int j = 0; j < 64; j++) hr[8 + j] = seed[j];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return;
+
+bad:
+    {
+        uint slot = atomic_inc(bad_count);
+        if (slot < max_out) {
+            __global uchar* br = bads + (ulong)slot * (8 + 4 + MAX_PHRASE);
+            for (int j = 0; j < 8; j++) br[j] = st[OFF_COMBO + j];
+            *((__global uint*)(br + 8)) = plen;
+            for (uint j = 0; j < plen && j < MAX_PHRASE; j++)
+                br[12 + j] = st[OFF_PHRASE + j];
+        }
+    }
 }

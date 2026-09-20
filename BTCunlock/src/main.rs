@@ -367,7 +367,7 @@ fn bench(use_gpu: bool, gpu_index: usize, batch: usize, batches: usize) -> Resul
             let mut g = gpu::Gpu::init(gpu_index, batch)?;
             eprintln!("gpu: {}", g.device_name);
             g.bind(&tpl, "")?;
-            run_batch(&mut |base, n| g.derive_batch(&tpl, base, n), &tpl)?;
+            run_batch(&mut |base, n| g.derive_batch(&tpl, base, n).map(|o| o.seeds), &tpl)?;
         }
         #[cfg(not(feature = "gpu"))]
         anyhow::bail!("built without GPU support — cargo build --release --features gpu");
