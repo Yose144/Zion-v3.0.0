@@ -167,7 +167,7 @@ Dockerfile používá:
 ### Krok 1: Přihlásit se do SMOS dashboard
 
 1. Otevřít `https://simplemining.net`
-2. Přihlásit se (`omnity.company@gmail.com`)
+2. Přihlásit se (`<SMOS account email — retrieve from password manager>`)
 3. Jít do **Rigs** → najít **ZionRig** (ID 518837)
 
 ### Krok 2: Aktualizovat Group Config
@@ -273,7 +273,7 @@ systemctl show zion-edge-pool --property=Environment
 
 ### SMOS API
 ```bash
-# API token: api-7a54810f8c4f608934d2adda0620153b260273737bcfa3279d35265f7d25265c
+# API token: $SMOS_API_KEY
 # Base URL: https://api.simplemining.net
 
 # Zjistit rig

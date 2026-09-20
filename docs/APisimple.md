@@ -125,7 +125,7 @@
   },
   "security": [
     {
-      "apiKey": [api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8]
+      "apiKey": ["${SMOS_API_KEY}"]
     }
   ],
   "paths": {

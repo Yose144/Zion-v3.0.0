@@ -102,7 +102,7 @@ Generuje novou peněženku.
   "name": "John Doe",
   "tokens": 100000,
   "network": "testnet",
-  "apiSecret": "zion_presale_secret_2025"
+  "apiSecret": "${ZION_WALLET_API_SECRET}"
 }
 ```
 
@@ -127,7 +127,7 @@ Export dat pro email zákazníkovi.
 
 **Headers:**
 ```
-X-API-Secret: zion_presale_secret_2025
+X-API-Secret: ${ZION_WALLET_API_SECRET}
 ```
 
 **Response:**
@@ -393,7 +393,7 @@ curl -X POST http://localhost:5556/api/wallet/generate \
     "name": "Test User",
     "tokens": 10000,
     "network": "testnet",
-    "apiSecret": "zion_presale_secret_2025"
+    "apiSecret": "${ZION_WALLET_API_SECRET}"
   }'
 
 # Check database

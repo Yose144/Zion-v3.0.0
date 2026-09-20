@@ -26,7 +26,7 @@ CPU streams — trinity mining.
 | iGPU | Intel HD Graphics 610 (unused) |
 | OS | Ubuntu 22.04.5 LTS (SMOS custom kernel 6.9.12-sm6) |
 | Disk | 6.9 GB total, ~976 MB free |
-| SSH | `miner@192.168.1.113` password `omnity.company@gmail.com` |
+| SSH | `miner@192.168.1.113` password `<retrieve from password manager>` |
 | Miner user | `miner` |
 | Miner wrapper | `/root/xminer.sh` (SMOS custom) |
 | Miner package | `/root/miner/custom_zion-miner-v3.1.9-triple-fixed16/` |
@@ -215,7 +215,7 @@ ssh zion-new "strip /home/zionserver/zion-build/target-bullseye/release/zion-min
 ### Download on rig
 
 ```bash
-sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
+sshpass -p '<retrieve from password manager>' ssh miner@192.168.1.113 \
   'kill -9 $(ps aux | grep zion-miner-real | grep -v grep | awk "{print \$2}") 2>/dev/null; \
    kill -9 $(ps aux | grep custom_zion | grep -v grep | awk "{print \$2}") 2>/dev/null; \
    rm -f /tmp/zion-miner-real; \
@@ -226,7 +226,7 @@ sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
 ### Check logs on rig
 
 ```bash
-sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
+sshpass -p '<retrieve from password manager>' ssh miner@192.168.1.113 \
   "tail -60 /var/tmp/screen.miner.log | grep -E 'pure-Rust|light cache|dag_manager|ext_gpu|crash|Illegal|dag_ready|uploading|share|accepted|hashrate'"
 ```
 
@@ -272,13 +272,13 @@ ssh zion-new "objdump -d /var/www/zion-miner/zion-miner | \
 ssh zion-new "strip ... && cp ... /var/www/zion-miner/zion-miner"
 
 # Download on rig
-sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
+sshpass -p '<retrieve from password manager>' ssh miner@192.168.1.113 \
   'kill -9 $(ps aux | grep zion-miner-real | grep -v grep | awk "{print \$2}");
    rm -f /tmp/zion-miner-real;
    curl -s -o /tmp/zion-miner-real http://62.171.141.136/zion-miner/zion-miner && chmod +x /tmp/zion-miner-real'
 
 # Wait 60s and check logs
-sleep 60 && sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
+sleep 60 && sshpass -p '<retrieve from password manager>' ssh miner@192.168.1.113 \
   "tail -60 /var/tmp/screen.miner.log | grep -E 'pure-Rust|light cache|dag|crash|Illegal|share|accepted|hashrate'"
 ```
 
@@ -291,7 +291,7 @@ If BMI2 disable doesn't fix it, the SIGILL may come from:
 
 Debug with GDB on the rig:
 ```bash
-sshpass -p 'omnity.company@gmail.com' ssh miner@192.168.1.113 \
+sshpass -p '<retrieve from password manager>' ssh miner@192.168.1.113 \
   'sudo apt-get install -y gdb 2>/dev/null; \
    gdb -batch -ex run -ex "info registers rip" -ex "x/i \$rip" --args /tmp/zion-miner-real --pool 62.171.141.136:8444 --wallet zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5 --worker vega-smos --no-tui --threads 8 2>&1 | tail -20'
 ```
@@ -337,8 +337,8 @@ aa8ceb396 feat(miner): DAG generation exclusively on GPU, never on CPU
 ```
 IP:       192.168.1.113 (LAN only, accessible from edge server network)
 User:     miner
-Password: omnity.company@gmail.com
-SSH:      sshpass -p 'omnity.company@gmail.com' ssh -o StrictHostKeyChecking=no \
+Password: <retrieve from password manager>
+SSH:      sshpass -p '<retrieve from password manager>' ssh -o StrictHostKeyChecking=no \
           -o PreferredAuthentications=password,keyboard-interactive \
           -o PubkeyAuthentication=no miner@192.168.1.113
 ```
@@ -348,5 +348,5 @@ can reach it. If debugging from a different machine, SSH tunnel through
 the edge server:
 ```bash
 ssh -L 1113:192.168.1.113:22 zion-new
-# Then: sshpass -p 'omnity.company@gmail.com' ssh miner@localhost -p 1113
+# Then: sshpass -p '<retrieve from password manager>' ssh miner@localhost -p 1113
 ```

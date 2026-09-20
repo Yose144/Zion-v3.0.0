@@ -31,4 +31,4 @@
 
 ## 🔑 Credentials (Production)
 - **Admin Login:** `https://newearth.cz/V2/api/admin-login.php`
-- **Heslo:** `x3nityOne144`
+- **Heslo:** `${ADMIN_PASSWORD}`

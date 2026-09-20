@@ -3412,7 +3412,7 @@ Files changed: block.rs, messages.rs, p2p/mod.rs, server_v2.rs, processor.rs,
 
 ```
 P1-29: StrictHostKeyChecking=no Ôćĺ accept-new (all deploy scripts)
-P1-31: Hardcoded SMTP password x3nityOne144 Ôćĺ env var SMTP_PASSWORD
+P1-31: Hardcoded SMTP password ${ZION_SMTP_PASSWORD} Ôćĺ env var SMTP_PASSWORD
 P1-32: Docker default passwords removed (Redis, Grafana) Ôćĺ requires .env
 P1-34: CORS wildcard * Ôćĺ domain-restricted (zionterranova.com)
 P2-06: GPU algo stubs documented (Keccak fallback behavior)

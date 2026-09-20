@@ -1,92 +1,96 @@
 # WARP Beta — přehled
 
-> Stav: **2026-09-20** · Edge deployed HEAD (`warpd` + bitcoind backend, backup `warpd.bak-20260920`) · pruned `bitcoind` 31.1 na Edge — IBD running (`zion-bitcoind.service`)
-> Swap: **TESTNET rehearsal STALLED** — faucety nedoručily funding (0 tx na HTLC i wallet); doporučen **mainnet dust pilot** · ZION wallet funded 500 ZION · BTC wallet vygenerován (mnemonic na Desktopu)
+> Stav: **2026-09-20 — SAFETY HOLD**
+>
+> Edge služba `zion-v31-multichain` je aktivní, ale BTC swap flow je od 12:13 UTC vypnutý: `WARP_BTC_SWAP_ENABLED=0`. Veřejný i lokální list vrací `{"enabled":false,"swaps":[]}`.
+>
+> Důvod: offer endpoint dovoloval ZIS uživateli zvolit současně `btc_sats` i `zion_flowers` bez server-side quote nebo operátorského schválení. Při vypnutí nebyl aktivní žádný swap; existoval pouze jeden terminální failed testnet rehearsal záznam.
+>
+> Hardening je **nasazený na Edge** (2026-09-20, backup `warpd.bak-20260920-hardening`) s green full-suite gate; flow zůstává disabled a offer endpoint je navíc fail-closed bez `WARP_BTC_SWAP_OFFER_KEY` (503). Historických 6/6 regtest E2E a live-ZION leg zůstává validační evidence, nikoli povolení mainnetu.
+>
 > Detaily: [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) · [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md)
 
-Nativní trust-minimized atomické swapy **ZION L1 ↔ BTC** přes HTLC na obou
-chainech. Orchestrátor `BtcSwapFlow` + koordinátor `HtlcSwap`, SQLite
-persistence, HTTP + CLI lifecycle. Edge: `62.171.141.136:2222`.
+WARP Beta implementuje nativní trust-minimized atomické swapy **ZION L1 ↔ BTC** přes HTLC na obou chainech. Orchestrátor `BtcSwapFlow` používá koordinátor `HtlcSwap`, SQLite persistence a HTTP/CLI lifecycle.
 
 ---
 
-## ✅ Hotovo — code + testy + deployed
+## Aktuální bezpečnostní stav
 
 | Oblast | Stav |
 |---|---|
-| ZION L1 HTLC (konsensus) | script `0x01`, SHA-256 hashlock, timestamp timeout, claim/refund — ověřeno E2E na mainnetu |
-| BTC P2WSH HTLC | 13-op witness script, claim/refund, BIP143 sighash, strict parser + round-trip |
-| Swap orchestrátor | `decide()` transition table, `poll_once`, oba směry (BTC→ZION, ZION→BTC) |
-| Preimage propagace | extrakce z BTC claim witness → claim na ZION legu |
-| Persistence | `btc_swap_records` SQLite + restart hydration (recordy i coordinator) |
-| API | `POST /swaps/btc/offer` (fail-closed auth), `GET /list`, `GET /:id` — Edge :8454 |
-| CLI | `zion warp btc-swap offer\|list\|status` |
-| Multi-endpoint esplora | `WARP_BITCOIN_API` comma-list, rotating primary, failover na všech cestách; defaults mempool.space + blockstream.info |
-| Dedikovaný operator wallet | `WARP_BTC_SWAP_ZION_SECRET` → vlastní keyring/adapter/coordinator — **funded 500 ZION** (tx `abe521fc…`, blok 49544) |
-| Offer TTL | `WARP_BTC_SWAP_OFFER_TTL_SECS` (default 4 h) — expirace `AwaitingUserLock` → `Failed`, uvolní `max_active_swaps` |
-| Hardening | min/max sats, max_active, dup-hashlock, admission guards |
+| Edge BTC swap flow | **disabled** (`WARP_BTC_SWAP_ENABLED=0`) |
+| Aktivní BTC swapy při disable | 0 |
+| WARP/DEX služba | active; ostatní WARP funkce běží |
+| Veřejný offer endpoint | neaktivní, protože flow je disabled |
+| Lokální hardening | cílené testy green, pending deploy + full-suite gate |
+| Mainnet pilot | zakázán do uzavření všech blockerů |
+| Mainnet bitcoind | 608706 bloků / 967828 headers, 34.35 % IBD, pruned 20 GiB |
+| L1 snapshot | height 50916, `3.1.0-alpha` |
 
-### Audit fixy (self-audit)
+Env backup před safety disable: `/etc/zion/edge-environment.sh.bak-warp-disable-20260920T121310Z`.
 
-| # | Bug | Fix |
-|---|---|---|
-| P1 | Unverified user ZION lock → ztráta BTC | `verify_user_zion_lock` — on-chain kontrola scriptu/timeout/amount + `min_zion_lock_confs` depth |
-| P2 | Crash-recovery double-lock / stuck | persist před conf-check, adopt paths, idempotentní registry, coordinator-state aware `decide` |
-| P3 | Coordinator hydration po restartu | `warpd` volá `service.htlc().load_from_db()` |
-| — | Immature coinbase UTXOs | filter `age ≥ 100` v adapteru + CLI (live incident: tx evicted, CLI rebuild) |
-| — | `confirmations()` broken | `getTransaction` param `hash`→`txid` |
-| — | Solvency withdrawal double-count | `verify_withdrawal` → `check(ZERO)` |
-| — | Offer API bez auth | fail-closed 403 bez ZIS/API key |
+## Implementovaný historický baseline
 
-### Test baseline
-
-**655 lib testů zelených** + integrační E2E:
-
-- regtest: cross-leg oba směry, refund paths, restart recovery
-- **live mainnet leg**: ZION→BTC swap SETTLED (`d77f837a` lock → `8c60d064` claim)
-
----
-
-## ❌ Chybí — před mainnet enablem
-
-| # | Item | Stav | Poznámka |
-|---|---|---|---|
-| 1 | **Externí security audit** | ⏳ čeká | `AUDIT_PREP.md` připraven (findings log + checklist) |
-| 2 | **`WARP_BTC_RELAY_KEY`** | ⏳ nenastaven | produkční mainnet BTC WIF — potřeba pro ZION→BTC směr |
-| 3 | Privátní esplora/bitcoind | 🟡 v řešení | pruned `bitcoind` 31.1 na Edge (prune=20G, IBD running) + nativní `bitcoind+rpc://` backend v adaptéru — zbývá napojit `WARP_BITCOIN_API` po IBD |
-| 4 | Signet/testnet E2E | dead-end | faucety nedoručily funding — nahradit mainnet dust pilotem (regtest + live-ZION leg pathy pokryly) |
-| 5 | `WARP_BTC_SWAP_ENABLED=1` | ⛔ gated | až po 1+2 (+3 doporučeno) |
-
-## 🧪 Testnet rehearsal (2026-09-19 → STALLED 2026-09-20)
-
-| | |
+| Oblast | Stav |
 |---|---|
-| Operator BTC wallet | `tb1qmy6cztgerzdqa5dmufkfa29tek52ruf2thk0w6` (BIP84 `m/84'/1'/0'/0/0`; mainnet `bc1q53gn9gf5uh7ashhadyryaulc6wq5apdfaz5n6k` ready) |
-| Mnemonic | `~/Desktop/warp-btc-wallet.txt` (operator machine, chmod 600) |
-| Edge env | `WARP_BTC_RELAY_KEY` (testnet WIF) + `BITCOIN_NETWORK=testnet` + `WARP_BTC_SWAP_ENABLED=1` |
-| Test offer | `dbc91da92e750cbcc49a9509f6111fcf5991ad37174f0785553e845d90ce10b5` — 10 000 sats → 10 ZION, injectnut do `warp_multichain.db` (obchází ZIS-gated offer endpoint — operator test), hydratován po restartu |
-| HTLC adresa | `tb1qwps3v5wqj82k5j45wjan5gwfj4v8vx6xvrjkmqg25ehtavu0flgsjjz4fp` (CLTV 5149593) — **funding nedorazil; mempool.space testnet API potvrdilo 0 tx na HTLC i operator walletu (2026-09-20). Offer po 4h TTL → `Failed`** |
-| Další krok | testnet3 faucety jsou dead-end → **mainnet dust pilot**: nabít `bc1q53gn9…5n6k` ~100k sats, produkční `WARP_BTC_RELAY_KEY`, `BITCOIN_NETWORK` unset, offer s dust amount → stejný flow |
+| ZION L1 HTLC | SHA-256 hashlock, timestamp timeout, claim/refund; live L1 ověření |
+| BTC P2WSH HTLC | 13-op witness script, claim/refund, BIP143 sighash, strict parser |
+| Orchestrátor | oba směry BTC→ZION a ZION→BTC, transition table, polling |
+| Persistence | `btc_swap_records` + coordinator hydration po restartu |
+| Monitoring | JSON + Prometheus metrics, Edge scrape a alert rules |
+| Regtest | historicky 6/6 E2E přes nativní `bitcoind+rpc://` backend |
+| Dedikovaný ZION operator wallet | nasazen a historicky funded 500 ZION |
+| Guardrails | min/max sats, max active, duplicate hashlock, offer TTL |
 
-## ⚠️ Známé residuals (auditor checklist)
+## Safety hardening — local, pending deploy
 
-- **R1** ms-window crash mezi broadcast a persist (refundovatelný)
-- **R5** UTXO-set hit ≠ finalita — mitigováno `min_zion_lock_confs=2`
-- **R6** BTC dust/change limit v `lock_htlc` UTXO select
-- **R7** deterministický claim rebroadcast — krytý adopt path
+1. **Operator-only offer:** `POST /swaps/btc/offer` vyžaduje samostatný `WARP_BTC_SWAP_OFFER_KEY` v hlavičce `X-Warp-Key`; ZIS session sama nestačí.
+2. **Fail-closed polling:** chyby BTC height/lock/spend observations už nejsou převáděny na falešné `0`/`None`.
+3. **Credential redaction:** chybové zprávy neobsahují credential-bearing BTC backend URL ani reflektované response body.
+4. **Strict network/WIF:** neznámý `BITCOIN_NETWORK` je chyba a mainnet/test-family WIF mismatch se odmítne.
+5. **Watch import preflight:** bitcoind watch-only wallet musí prokazatelně sledovat HTLC adresu před fundingem.
+6. **Data-aware fallback:** validní prázdná odpověď lokální wallet nezastaví kontrolu dalších backendů.
+7. **Skutečný per-IP limiter:** bucket je klíčovaný IP adresou, ne `IP:source-port`.
+8. **Úplný solvency report:** admin API vrací i insolventní assety s `solvent:false`; samotné enforcement odmítnutí zůstává fail-closed.
 
-## Enable checklist (C7)
+## Test baseline
 
-```
-[ ] externí audit passed
-[ ] WARP_BTC_RELAY_KEY = produkční mainnet WIF (ověřit adresu)
-[x] WARP_BTC_SWAP_ZION_SECRET nastaven + wallet funded
-[x] warpd binary = HEAD na Edge
-[x] swap endpointy auth-gated, swap disabled
-[ ] bitcoin.enabled=true + WARP_BTC_SWAP_ENABLED=1
-[ ] smoke: offer → AwaitingUserLock → BTC lock detect → LockZion → settle
-```
+- **Historický baseline 2026-09-19:** 655 library testů + cross-leg/refund/restart regtest E2E + live ZION leg.
+- **Historický regtest rehearsal 2026-09-20:** 6/6 `btc_swap_flow` E2E přes `bitcoind+rpc://`.
+- **Aktuální lokální změny:** cílené solvency, polling, auth, bitcoind, signer, adapter, rate-limit a CLI testy/checky jsou zelené.
+- **Aktuální full-suite recount:** pending; před deployem je povinný celý `zion-multichain` test + clippy gate.
 
 ---
 
-*Generováno: Devin · Edge SSH `root@62.171.141.136 -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29`*
+## Blokéry před jakýmkoli re-enable
+
+1. Externí security audit kódu a threat modelu.
+2. Deploy hardened `warpd` binárky a ověření full test/clippy gate.
+3. Dedikovaný `WARP_BTC_SWAP_OFFER_KEY` uložený pouze v chráněném Edge environmentu.
+4. Server-side signed quote/pricing/approval protokol. Statický operator key je pouze interní mitigace, ne veřejný offer protokol.
+5. Dokončený bitcoind IBD a lokální backend nakonfigurovaný jako primary se správným `WARP_BITCOIN_IMPORT_SINCE`.
+6. Produkční `WARP_BTC_RELAY_KEY` a explicitní mainnet network/address kontrola.
+7. Review confirmation/margin/amount limitů.
+8. Explicitní operátorské schválení capped dust pilotu a rollback postupu.
+
+Dokud nejsou všechny body uzavřené, nesmí se:
+
+- nastavit `WARP_BTC_SWAP_ENABLED=1`,
+- fundovat mainnet BTC operator adresu pro pilot,
+- spustit mainnet offer nebo dust transakci.
+
+## Historický testnet rehearsal
+
+Testnet3 rehearsal z 2026-09-19 skončil bez fundingu kvůli nefunkčním faucetům a offer po TTL přešel do `Failed`. Byl nahrazen vlastním regtest bitcoind rehearsem. Tento záznam není instrukce k mainnet fundingu.
+
+## Residual risks pro audit
+
+- Broadcast/persist crash window zůstává refundovatelný, ale vyžaduje další idempotency review.
+- Timestamp ZION timeout versus BTC CLTV height vyžaduje margin review.
+- Public esplora backendy jsou pouze fallback; lokální node musí dokončit IBD.
+- Revealed preimage může být uložen pro restart recovery; po reveal je veřejný na chainu. Aktuální Edge nemá `ZION_HTLC_PREIMAGE_KEY` a existující XOR nelze označovat za authenticated encryption.
+- Operator-only key neřeší veřejnou cenotvorbu; signed quote/pricing protocol je samostatný blocker.
+
+---
+
+*Edge BTC swap flow zůstává disabled; tento dokument nesmí být použit jako souhlas s mainnet transakcí.*

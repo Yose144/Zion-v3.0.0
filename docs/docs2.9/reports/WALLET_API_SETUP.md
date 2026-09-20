@@ -61,7 +61,7 @@ curl -X POST http://localhost:5555/api/wallet/generate \
     "email": "test@example.com",
     "tokens": 1000,
     "orderId": "TEST123",
-    "apiSecret": "zion_presale_secret_2025"
+    "apiSecret": "${ZION_WALLET_API_SECRET}"
   }'
 ```
 
@@ -116,7 +116,7 @@ Zion-2.9-main/
 export WALLET_API_PORT=5555
 
 # API secret pro autorizaci
-export ZION_WALLET_API_SECRET="zion_presale_secret_2025"
+export ZION_WALLET_API_SECRET="${ZION_WALLET_API_SECRET}"
 
 # Debug mode
 export DEBUG=true
@@ -126,7 +126,7 @@ export DEBUG=true
 
 ```php
 define('WALLET_API_URL', 'http://localhost:5555/api/wallet/generate');
-define('WALLET_API_SECRET', 'zion_presale_secret_2025');
+define('WALLET_API_SECRET', '${ZION_WALLET_API_SECRET}');
 define('WALLET_API_TIMEOUT', 30);
 ```
 

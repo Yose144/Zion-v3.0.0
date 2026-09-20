@@ -7,8 +7,8 @@ set -euo pipefail
 RPC_HOST="127.0.0.1"
 RPC_PORT="8446"
 EDGE_URL="https://dashboard.zionterranova.com/api/backup-beacon"
-EDGE_USER="Yose"
-EDGE_PASS="3nityOne13"
+EDGE_USER="${ZION_DASHBOARD_USER:?ZION_DASHBOARD_USER is required}"
+EDGE_PASS="${ZION_DASHBOARD_PASS:?ZION_DASHBOARD_PASS is required}"
 LOCAL_URL="http://127.0.0.1:8766/api/backup-beacon"
 HOSTNAME_LABEL="$(hostname -s)"
 

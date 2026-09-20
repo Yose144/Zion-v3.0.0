@@ -36,8 +36,8 @@ The following files have been updated to require login via `auth.php`:
 
 ## 🔑 Credentials
 
-- **Admin Password:** `x3nityOne144` (Same as before, but now hashed).
-- **Hash:** `$2b$12$vpOmvB0OPajD2CyJuriyceEe/l0XJ9zMrJBkvK/v/jD4c6cqkAcJ2` (Stored in `.env`).
+- **Admin Password:** `${ADMIN_PASSWORD}` (load from the protected environment).
+- **Hash:** `<redacted>` (stored outside the repository).
 
 ## 📝 Next Steps
 

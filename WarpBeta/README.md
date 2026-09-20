@@ -1,7 +1,7 @@
 # WARP Beta — ZION ↔ BTC Native Atomic Swap
 
-> **Status:** **implementováno + audit-prep hotový** (2026-09-20) — regtest E2E oba směry + refundy + restart recovery zelené, live mainnet ZION leg SETTLED (`d77f837a` lock → `8c60d064` claim). Na Edge běží env-gated (`WARP_BTC_SWAP_ENABLED`); mainnet enable čeká na externí audit + produkční `WARP_BTC_RELAY_KEY`.
-> **Zdroj konceptu:** [`Lithing.md`](./Lithing.md) + ChatGPT výzkum „Zion L6" (strategický závěr: před bullrunem prioritizovat nativní ZION/BTC WARP před dalšími vrstvami)
+> **Status:** **SAFETY HOLD** (2026-09-20). Historický regtest E2E baseline je zelený, ale Edge BTC swap flow je vypnutý (`WARP_BTC_SWAP_ENABLED=0`) kvůli P0 mezeře v autorizaci ekonomických podmínek offeru. Lokální hardening je pending full-suite gate a Edge deploy. Re-enable/mainnet pilot navíc blokuje externí audit, server-side signed quote/pricing/approval, dedikovaný offer key, dokončený bitcoind IBD a production WIF review.
+> **Zdroj konceptu:** [`Lithing.md`](./Lithing.md); aktuální provozní rozhodnutí jsou pouze v [`STATUS.md`](./STATUS.md) a [`AUDIT_PREP.md`](./AUDIT_PREP.md).
 
 ## Cíl
 
@@ -27,14 +27,14 @@ Klíčový předpoklad je **splněn**: ZION L1 má nativní, konsensem vynucovan
 4. Bob claimne ZION tím, že odhalí `S` on-chain → Alice přečte `S` z claim tx a claimne BTC.
 5. Pokud se swap nedokončí, oba timeouty vrátí prostředky původním vlastníkům.
 
-Atomarita je kryptografická, ne důvěryhodná — nikdo nemůže ztratit prostředky, maximálně je má zamčené do timeoutu.
+HTLC atomarita omezuje counterparty risk mezi dvěma správně vytvořenými legy, ale nechrání před implementační chybou, nesprávným timeoutem ani ekonomicky neautorizovaným offerem. Proto zůstává externí audit a server-side schválení podmínek povinným gate.
 
 ## Scope WARP Beta
 
 | In scope | Out of scope (zatím) |
 |---|---|
 | ZION ↔ BTC on-chain HTLC swap | Lightning Network (až WARP 0.3) |
-| Regtest → testnet/mainnet pilot E2E | EVM/Solana/další chainy (wZION bridge je separátní stack) |
+| Regtest E2E + bezpečnostní hardening | Mainnet pilot před uzavřením safety gates; EVM/Solana/další chainy |
 | `warpd` orchestrace + CLI | DEX UI, marketplace integrace |
 | Per-swap P2WSH adresy | Automatický solver/market-maker |
 
@@ -59,6 +59,6 @@ Atomarita je kryptografická, ne důvěryhodná — nikdo nemůže ztratit prost
 | BTC HTLC modul | `V31/L2/multichain/src/warp/btc_htlc.rs` (P2WSH 13-op script) | ✅ |
 | BTC adapter (watch) | `V31/L2/multichain/src/warp/adapter/bitcoin.rs` (per-swap detekce + multi-endpoint failover) | ✅ |
 | BTC signer | `V31/L2/multichain/src/warp/btc_signer.rs` (P2WPKH + HTLC claim/refund) | ✅ |
-| BTC swap API | `warpd` :8454 `/v1/multichain/swaps/btc/*` (fail-closed auth) | ✅ live na Edge |
+| BTC swap API | `warpd` :8454 `/v1/multichain/swaps/btc/*` | Edge flow disabled + hardened binary nasazená (offer fail-closed bez `WARP_BTC_SWAP_OFFER_KEY`) |
 | LN klient | `V31/L2/multichain/src/warp/adapter/lightning.rs` + `docker/lightning/` | 🟡 disabled (WARP 0.3) |
 | HTLC HTTP API | `warpd` :8454 `/v1/multichain/swaps/htlc/*` | ✅ live na Edge |

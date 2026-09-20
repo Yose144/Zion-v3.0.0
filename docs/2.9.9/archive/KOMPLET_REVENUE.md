@@ -80,7 +80,7 @@
 | Usa2 | `0xe4286963afec6dbef08c217779a032e72661d711` | ✅ Registered |
 | Asia3 | `0x687c466b9068d89f3ddba98dab15bd591e2ab61d` | ✅ Registered |
 
-MMN API key: `8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob`  
+MMN API key: `${MYSTERIUM_API_KEY}`
 Dashboard: https://my.mystnodes.com
 
 ---
@@ -300,7 +300,7 @@ Všech 5 nodů **Registered** via MMN API key sponsorship. Quality oracle potře
 
 ```yaml
 # docker-compose.revenue.yml / docker-compose.mysterium-only.yml
-command: --mmn.api-key=8JCWSBmBlkYE9gsUq4qQPN3dOj25tctxtj18RSob service --agreed-terms-and-conditions
+command: --mmn.api-key=${MYSTERIUM_API_KEY} service --agreed-terms-and-conditions
 ports:
   - "4449:4449"
   - "41920-41925:41920-41925/udp"

@@ -13,7 +13,7 @@ if (-not $RpcHost)     { $RpcHost = '127.0.0.1' }
 if (-not $RpcPort)     { $RpcPort = '8446' }
 if (-not $DashboardUrl){ $DashboardUrl = 'https://dashboard.zionterranova.com/api/backup-beacon' }
 if (-not $DashboardUser){ $DashboardUser = 'Yose' }
-if (-not $DashboardPass){ $DashboardPass = '3nityOne13' }
+if (-not $DashboardPass){ throw 'ZION_DASHBOARD_PASS is required' }
 
 $rpcUri = "http://${RpcHost}:${RpcPort}/jsonrpc"
 $hostnameLabel = $env:COMPUTERNAME

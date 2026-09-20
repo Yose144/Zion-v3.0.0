@@ -1,8 +1,12 @@
 # AGENTS.md
 
+> **⚠️ 2026-09-20 CREDENTIAL RESPONSE:** Tracked dashboard heslo bylo potvrzeno jako stále aktivní, proto byly oba dashboard účty rotovány; nové hodnoty jsou pouze v owner-only lokálním souboru `~/Desktop/ZION_DASHBOARD_CREDENTIALS_2026-09-20.txt` a Edge používá jen hashe v chráněném `DASHBOARD_USERS`. Staré heslo už není aktivní. Plaintext SMOS/VNC/rig údaje byly odstraněny z aktuálního working tree, ale je nutné je považovat za kompromitované, rotovat u poskytovatelů a řešit Git historii samostatným schváleným postupem. Žádné nové hodnoty nesmí do repozitáře.
+>
+> **⚠️ 2026-09-20 WARP BTC-SWAP SAFETY HOLD (LATEST):** Edge má od 12:13 UTC `WARP_BTC_SWAP_ENABLED=0`. Audit odhalil, že veřejně proxovaný `POST /v1/multichain/swaps/btc/offer` dovoloval libovolnému ZIS uživateli zvolit současně `btc_sats` i `zion_flowers` bez server-side quote nebo operátorského schválení; při zásahu nebyl aktivní žádný swap a existoval jen jeden terminální failed testnet rehearsal záznam. Po restartu je `zion-v31-multichain` active, `/health` vrací `ok` a veřejný i lokální list vrací `enabled:false`; env backup je `/etc/zion/edge-environment.sh.bak-warp-disable-20260920T121310Z`. Hardening je **nasazený** (2026-09-20, `warpd` rebuild na Edge, backup `warpd.bak-20260920-hardening`): vyžaduje samostatný `WARP_BTC_SWAP_OFFER_KEY` přes `X-Warp-Key` (ZIS sám nestačí — live ověřeno 503 fail-closed), propaguje BTC observation chyby fail-closed, rediguje credential-bearing endpointy, striktně kontroluje BTC network/WIF, importuje HTLC adresy do watch-only wallet před fundingem, pokračuje na další backend po validní prázdné odpovědi, opravuje per-IP limiter a reportuje i insolventní assety (live ověřeno na `/v1/admin/solvency`). Full `zion-multichain` suite green (677 lib + integrace, 0 failed). Historických 6/6 regtest E2E a live-ZION leg zůstává validační evidence, nikoli povolení mainnetu. **Nezapínat flow, nefundovat mainnet BTC adresu a nespouštět dust pilot**, dokud neproběhne externí audit, uložení dedikovaného offer key mimo repo, návrh server-side signed quote/pricing/approval, dokončení bitcoind IBD a lokálního backendu, kontrola production WIF/network a explicitní schválení capped pilotu. Bitcoind snapshot: 608706/967828 headers, 34.35 % IBD; L1 snapshot: height 50916, protokol `3.1.0-alpha`. Kanonický stav: [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md), audit: [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md).
+>
 > **⚠️ 2026-09-20 ROBINHOOD CHAIN (L2):** Robinhood Chain (Arbitrum Orbit L2, mainnet od 2026-07-01, chain ID **4663**, testnet **46630**, ETH gas, ~100ms bloky, RPC `https://rpc.mainnet.chain.robinhood.com`, explorer `robinhoodchain.blockscout.com`) je registrována v L2 stacku: `ChainId::Robinhood` v `V31/L1/types`, EVM adaptery (`warp/adapter/evm.rs`, `chain/adapters/evm.rs`), `warp/registry` (22 chains), executor, deposit watcher (finality 12, native ETH), `contracts.rs`, `service.rs`/`db.rs` name maps, `warp.toml` configs (repo + Edge `/etc/zion/warp.toml` — **enabled=false**), web `ChainSelector`/`TokenSelector`/`dex-api`. **Deterministický deploy ověřen (`cast compute-address`):** deployer `0xdde17506…` má na Robinhood nonce 0 → `CREATE@nonce0` = wZION `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, `CREATE@nonce1` = bridge `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` (stejné kanonické adresy jako jinde). **Deploy script ready:** `V31/L2/multichain/contracts/script/DeployRobinhood.s.sol` (forge, assertuje canonical adresy, threshold 4/5, admin+guardian=deployer) — čeká jen na ETH funding deployera na 4663. Code-prep hotový: `wzion_contract("robinhood")` v `warp/adapter/evm.rs` + `BRIDGE_CONTRACTS_ROBINHOOD` v `bridge-api.ts` + `contracts.rs` už mapuje non_base bundle. **Pending:** `PRIVATE_KEY=<validator.key> forge script script/DeployRobinhood.s.sol --rpc-url https://rpc.mainnet.chain.robinhood.com --broadcast` → pak `enabled=true` v `/etc/zion/warp.toml` + restart `zion-v31-multichain`. Testy: `zion-multichain` 666 pass, `zion-l1-types` 11 pass.
 >
-> **⚠️ 2026-09-19 WARP BTC-SWAP STATE + EDGE ACCESS/REDEPLOY:** Nativní ZION↔BTC atomic swap (`BtcSwapFlow` v `V31/L2/multichain`) je implementovaný a audit-prep hotový — viz [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) a [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md). Na Edge je `WARP_BTC_SWAP_ENABLED=1` ale `BITCOIN_NETWORK=testnet` (rehearsal režim — BTC strana testnet3, ZION mainnet); mainnet zapnutí až po externím auditu. **Monitoring zapnut:** `/v1/multichain/swaps/btc/metrics` emituje Prometheus text přes `Accept: text/plain` (`warp_btc_swap_*` gauges), Edge Prometheus scrape job `warp_btc_swap` + alert rules `/etc/prometheus/rules/warp_btc_swap.yml` + Grafana provisioned rules `/etc/grafana/provisioning/alerting/warp_btc_swap.yaml` (folder `WARP`, datasource Prometheus) — notifikační kanál (SMTP/webhook) pending operátor. `warpd` deployed na HEAD 2026-09-20 (vč. R2 TTL + R4 failover + nový `bitcoind+rpc://` backend; backup `warpd.bak-20260920`; build na Edge v `/root/build/V31` — NE lokálně, glibc!). **R4 vlastní BTC node: pruned `bitcoind` 31.1 na Edge** (`zion-bitcoind.service`, datadir `/opt/zion/bitcoin/data`, prune=20G, RPC `127.0.0.1:8332` user `zionwarp`, watch-only wallet `warpwatch` — auto-create + `importdescriptors` přes backend v `warp/bitcoind_rpc.rs`), IBD od 2026-09-20. Po IBD: `WARP_BITCOIN_API=bitcoind+rpc://…/warpwatch,https://mempool.space/api,…` v edge-environment.sh. **Edge SSH:** `62.171.141.136:2222`, klíč `~/.ssh/zion-edge-post-wipe-2026-07-29`, user `root`. Lokální `~/.ssh/config` alias `zion` ukazuje na **mrtvou IP `91.98.122.165`** (reimaged cizí stroj — ignorovat). Novinky: R3 dedikovaný WARP ZION wallet **FUNDED 500 ZION** (tx `abe521fc…`, blok 49544), coordinator restart hydration fix, solvency withdrawal double-count fix. `warp.db` perms 640. **2026-09-20: testnet3 rehearsal dead-end → nahrazen REGTEST rehearsem na vlastním bitcoind:** `zion-bitcoind-regtest.service` na Edge (datadir `/opt/zion/bitcoin-regtest`, RPC `127.0.0.1:18443`, watch-only `warpwatch` + funded `e2e` wallet; klíče `/root/build/warp-regtest-keys.txt`). **6/6 `tests/btc_swap_flow` PASS přes `bitcoind+rpc://` backend** — oba směry settled, oba refund paths, restart recovery + live-ZION leg znovu SETTLED (ZION lock `fa193379…`, op claim `72abda00…` na mainnet L1). Pending před mainnet enable: externí audit, produkční `WARP_BTC_RELAY_KEY` (mainnet WIF), ~100k sats na `bc1q53gn9…5n6k`, dokončení bitcoind IBD → `WARP_BITCOIN_API` přepnout na lokální node first.
+> **HISTORICAL — SUPERSEDED BY THE 2026-09-20 SAFETY HOLD ABOVE · 2026-09-19 WARP BTC-SWAP STATE:** Nativní ZION↔BTC atomic swap (`BtcSwapFlow` v `V31/L2/multichain`) je implementovaný a audit-prep hotový — viz [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) a [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md). Na Edge je `WARP_BTC_SWAP_ENABLED=1` ale `BITCOIN_NETWORK=testnet` (rehearsal režim — BTC strana testnet3, ZION mainnet); mainnet zapnutí až po externím auditu. **Monitoring zapnut:** `/v1/multichain/swaps/btc/metrics` emituje Prometheus text přes `Accept: text/plain` (`warp_btc_swap_*` gauges), Edge Prometheus scrape job `warp_btc_swap` + alert rules `/etc/prometheus/rules/warp_btc_swap.yml` + Grafana provisioned rules `/etc/grafana/provisioning/alerting/warp_btc_swap.yaml` (folder `WARP`, datasource Prometheus) — notifikační kanál (SMTP/webhook) pending operátor. `warpd` deployed na HEAD 2026-09-20 (vč. R2 TTL + R4 failover + nový `bitcoind+rpc://` backend; backup `warpd.bak-20260920`; build na Edge v `/root/build/V31` — NE lokálně, glibc!). **R4 vlastní BTC node: pruned `bitcoind` 31.1 na Edge** (`zion-bitcoind.service`, datadir `/opt/zion/bitcoin/data`, prune=20G, RPC `127.0.0.1:8332` user `zionwarp`, watch-only wallet `warpwatch` — auto-create + `importdescriptors` přes backend v `warp/bitcoind_rpc.rs`), IBD od 2026-09-20. Po IBD: `WARP_BITCOIN_API=bitcoind+rpc://…/warpwatch,https://mempool.space/api,…` v edge-environment.sh. **Edge SSH:** `62.171.141.136:2222`, klíč `~/.ssh/zion-edge-post-wipe-2026-07-29`, user `root`. Lokální `~/.ssh/config` alias `zion` ukazuje na **mrtvou IP `91.98.122.165`** (reimaged cizí stroj — ignorovat). Novinky: R3 dedikovaný WARP ZION wallet **FUNDED 500 ZION** (tx `abe521fc…`, blok 49544), coordinator restart hydration fix, solvency withdrawal double-count fix. `warp.db` perms 640. **2026-09-20: testnet3 rehearsal dead-end → nahrazen REGTEST rehearsem na vlastním bitcoind:** `zion-bitcoind-regtest.service` na Edge (datadir `/opt/zion/bitcoin-regtest`, RPC `127.0.0.1:18443`, watch-only `warpwatch` + funded `e2e` wallet; klíče `/root/build/warp-regtest-keys.txt`). **6/6 `tests/btc_swap_flow` PASS přes `bitcoind+rpc://` backend** — oba směry settled, oba refund paths, restart recovery + live-ZION leg znovu SETTLED (ZION lock `fa193379…`, op claim `72abda00…` na mainnet L1). Pending před mainnet enable: externí audit, produkční `WARP_BTC_RELAY_KEY` (mainnet WIF), ~100k sats na `bc1q53gn9…5n6k`, dokončení bitcoind IBD → `WARP_BITCOIN_API` přepnout na lokální node first.
 >
 > **⚠️ 2026-09-07 L2 CANONICAL STATE + wZION/USDT UniV3 LIQUIDITY:** Kanonická L2/DEX dokumentace žije v [`L2contracts.md`](./L2contracts.md). **wZION** `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, **ZIONBridge** `0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467` (5 validátorů, threshold **4/5** — *opraveno z dřívějšího 5/5*), **ZIONStaking** `0xbd5cEe7878337d22188BFBaF9aa9F39A850Be78B` (12% APR), kanonický **wZION/USDT Uniswap V3** pool `0x186b46c2f04153999d44D25179cD623fD62Bfda2` (0.3%) je nyní ACTIVE s 19 USDT + 151,867.25 wZION liquiditou, NFT #5952162, tx `0x0d4194f21c2a7c78055af34be24ac50406e5b1cbd94ca3d5c223311c00ca6c69`. wZION/WETH a wZION/USDC pooly jsou zatím prázdné. **tZION/tUSDT/tWETH jsou pouze ledger/test tokeny**, nejsou na UniSwapu. ZIONDex AMM (Base) je DEPRECATED — viz [L2contracts.md §2](./L2contracts.md). Aktuální status sítí je vždy v [`StatusV3.md`](./StatusV3.md).
 >
@@ -34,7 +38,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 >
 > **⚠️ SERVER MIGRATION 2026-07-07 (HISTORICAL):** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** (Contabo VPS, hostname `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`) following the 2026-07-20 hard genesis reset (post block-retention fix; previous chain 0–~10913 lost). Historical genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` (superseded by 2026-08-06 reset above). SSH: `ssh zion-new` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, **port 22 (default) + port 2222 (alias), IPv4 + IPv6**). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology. Web: `https://zionterranova.com` (Next.js standalone). Dashboard: `https://dashboard.zionterranova.com` (Python `zion-edge-python-dashboard.service` on port 8766). Pool: `62.171.141.136:8444` (public stratum). Pool HTTP API / metrics: `127.0.0.1:8080` (localhost-only, dashboard/grafana via nginx). DAO API: `127.0.0.1:8456` (localhost-only, nginx `/api/dao` proxy). RPC: `rpc.zionterranova.com:8443` (public TCP stream proxy → `127.0.0.1:9445`); `getStatus` nyní vrací V31 `chain_height` a `protocol_version=3.1.0-alpha`. All L2/L3/L4 services connect to `127.0.0.1:9445` internally.
 >
-> **⚠️ INCIDENT 2026-07-19 (SSH + fail2ban recovery):** Po rebootu sshd naslouchalo jen na IPv6 (`[::]:2222`) kvůli broken `ssh.socket.d/override.conf` (`ListenStream=2222` bez IP → IPv6-only s `BindIPv6Only=ipv6-only`). IPv4 SSH byl `Connection refused`, root heslo ztraceno. Obnovení: (1) root heslo resetnuto přes Contabo panel, (2) IPv6 adresa nalezena přes `dig AAAA vmi3425821.contaboserver.net` → `2a02:c207:2342:5821::1`, (3) SSH přes `ssh -6 -p 2222 root@2a02:c207:2342:5821::1` fungovalo, (4) `override.conf` opraven na `0.0.0.0:2222` + `[::]:2222`, (5) přidán `port22.conf` drop-in pro alias na port 22. **Druhý incident:** fail2ban `zion-p2p` jail (maxretry=50/10min, bantime=24h) banoval IPv4 `109.81.31.210` (Mac) při spuštění lokálního backup node — backup node dělal rychlé P2P connect/disconnect na porty 8333/8334, fail2ban vyhodnotil jako port scan → REJECT na všechny porty (SSH/web/RPC přes IPv4 přestaly fungovat, IPv6 fungovalo). Opraveno: `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` rozšířeno o `109.81.31.210` + `109.81.27.87` (perzistentní, přežije reboot). **Root heslo resetnuto — uložit do 1Password.** VNC fallback: `95.111.232.25:63061` (RFB, password `h4neV76S`).
+> **⚠️ INCIDENT 2026-07-19 (SSH + fail2ban recovery):** Po rebootu sshd naslouchalo jen na IPv6 (`[::]:2222`) kvůli broken `ssh.socket.d/override.conf` (`ListenStream=2222` bez IP → IPv6-only s `BindIPv6Only=ipv6-only`). IPv4 SSH byl `Connection refused`, root heslo ztraceno. Obnovení: (1) root heslo resetnuto přes Contabo panel, (2) IPv6 adresa nalezena přes `dig AAAA vmi3425821.contaboserver.net` → `2a02:c207:2342:5821::1`, (3) SSH přes `ssh -6 -p 2222 root@2a02:c207:2342:5821::1` fungovalo, (4) `override.conf` opraven na `0.0.0.0:2222` + `[::]:2222`, (5) přidán `port22.conf` drop-in pro alias na port 22. **Druhý incident:** fail2ban `zion-p2p` jail (maxretry=50/10min, bantime=24h) banoval IPv4 `109.81.31.210` (Mac) při spuštění lokálního backup node — backup node dělal rychlé P2P connect/disconnect na porty 8333/8334, fail2ban vyhodnotil jako port scan → REJECT na všechny porty (SSH/web/RPC přes IPv4 přestaly fungovat, IPv6 fungovalo). Opraveno: `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` rozšířeno o `109.81.31.210` + `109.81.27.87` (perzistentní, přežije reboot). **Root heslo resetnuto — uložit do 1Password.** VNC fallback: `95.111.232.25:63061` (RFB, password `<retrieve from password manager>`).
 >
 > **⚠️ BLOCK RETENTION FIX 2026-07-20:** Bug v `V3/L1/core/src/bin/node.rs:179` — `if config.block_retention > 0 { rt.set_block_retention(...) }` přeskočil `set_block_retention(0)`, takže `ChainState` default (`DEFAULT_BLOCK_RETENTION=1000`) nebyl nikdy přepsán. Všechny uzly (Edge node1/node2 + lokální backup) ořezávaly historii na posledních 1000 bloků i přes `ZION_BLOCK_RETENTION=0` v env. Fix: odstraněn `> 0` guard — `rt.set_block_retention(config.block_retention)` se volá vždy. **Následek:** bloky 0–~10913 jsou trvale ztraceny (žádná záloha DB s plnou historií neexistuje — bug byl v kódu od genesisu). Od fixu (height ~10914+) se všechny bloky uchovávají. Nová binárka nasazena na Edge (`/opt/zion/V3/target/release/node`) i lokální backup (`target/release/node`). **Legacy `zion-node.service`** (old binary `/usr/local/bin/zion-node`) byl deaktivován — service file přesunut na `.DISABLED-legacy-2026-07-20`. **fail2ban ignoreip** rozšířeno o `109.81.89.176` + `109.81.83.205` (IP lokálního backup node a Mac) a později o `109.81.81.86` (aktuální vývojový PC). Při rychlém P2P reconnectu lokálního backup nodu může fail2ban `zion-p2p` jail IPv4 zabanovat — vždy zkuste `ssh -6 -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29 root@2a02:c207:2342:5821::1` jako fallback.
 >
@@ -980,7 +984,7 @@ If genesis corruption is suspected:
 If the new server (62.171.141.136) becomes unresponsive:
 1. SSH directly: `ssh zion-new` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, port 22 or 2222, IPv4)
 2. **If IPv4 SSH refused but server is up (ping OK, web/RPC OK):** sshd may be IPv6-only. Try IPv6 fallback: `ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` (IPv6 addr from `dig AAAA vmi3425821.contaboserver.net`)
-3. **If SSH completely fails:** use VNC console: `95.111.232.25:63061` (RFB protocol, password `h4neV76S`). If root password lost, reset via Contabo panel (my.contabo.com → VPS → Reset root password).
+3. **If SSH completely fails:** use VNC console: `95.111.232.25:63061` (RFB protocol, password `<retrieve from password manager>`). If root password lost, reset via Contabo panel (my.contabo.com → VPS → Reset root password).
 4. **If sshd listens only on IPv6** (root cause of 2026-07-19 incident): fix `/etc/systemd/system/ssh.socket.d/override.conf` to include both `ListenStream=0.0.0.0:2222` and `ListenStream=[::]:2222`, then `systemctl daemon-reload && systemctl restart ssh.socket`. Verify with `ss -tlnp | grep -E ':22|:2222'` — should show 4 listeners (IPv4+IPv6 × port 22+2222).
 5. Check systemd services: `systemctl status zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-dex zion-edge-oasis nginx`
 6. Restart services if needed: `systemctl restart zion-edge-node1 zion-edge-pool`
@@ -1219,17 +1223,17 @@ This address is no longer active after the 2026-08-06 V2 hard genesis reset.
 | New server hostname | `vmi3425821.contaboserver.net` (Contabo internal) |
 | New server source | `/root/zion/2.9.6/` (git clone at commit `690b6dfe`) |
 | New server Cargo | `source ~/.cargo/env` (Rust 1.96.1 stable) |
-| New server VNC | `95.111.232.25:63061` (RFB, password `h4neV76S`) — fallback if SSH fails |
+| New server VNC | `95.111.232.25:63061` (RFB, password `<retrieve from password manager>`) — fallback if SSH fails |
 | IPv6 SSH fallback cmd | `ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 -6 root@2a02:c207:2342:5821::1` |
 | fail2ban ignoreip (perzistentní) | `/etc/fail2ban/jail.d/zion-p2p.conf` — `127.0.0.1/8 ::1 109.81.31.210 109.81.27.87` (Mac + backup node whitelisted z P2P jail) |
 | Environment file | `/root/zion/edge-environment.sh` (chmod 600, `<REPLACE_*>` placeholders) |
-| SMOS API key | `api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8` (rotated 2026-07-08) |
+| SMOS API key | `$SMOS_API_KEY` (rotated 2026-07-08) |
 | SMOS API base | `https://api.simplemining.net` (header: `X-AUTH-TOKEN: <key>`) |
 | SMOS rig ID | `518837` (name: ZionRig / vega-smos) |
 | SMOS group ID | `1773590` (ZionLiteFire) — updated 2026-07-08 |
 | Rig GPU | AMD Vega 64 (gfx900:xnack-), GCN architecture |
 | Rig OS | SimpleMining OS, kernel 5.15.80-sm, **GLIBC 2.31** |
-| Rig SSH | `miner@<current_ip>` password: `omnity.company@gmail.com` (IP changes, behind NAT — use SMOS API to get it) |
+| Rig SSH | `miner@<current_ip>` password: `<retrieve from password manager>` (IP changes, behind NAT — use SMOS API to get it) |
 | Rig local IP | typically 192.168.0.x (DHCP), check via SMOS API `/rigs/518837` |
 | Pool payout wallet | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
 | Mining wallet (rig) | `zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3` |
@@ -1248,12 +1252,12 @@ To verify: `strings <binary> | grep 'GLIBC_' | sort -u` — if you see `GLIBC_2.
 **How to build on rig:**
 ```bash
 # Get rig IP from SMOS API first
-RIG_IP=$(curl -s -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" \
+RIG_IP=$(curl -s -H "X-AUTH-TOKEN: $SMOS_API_KEY" \
   https://api.simplemining.net/rigs/518837 | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ip',''))")
 echo "Rig IP: $RIG_IP"
 
 # SSH onto rig and build
-ssh miner@$RIG_IP  # password: omnity.company@gmail.com
+ssh miner@$RIG_IP  # password: <retrieve from password manager>
 
 # On rig:
 source ~/.cargo/env
@@ -1308,7 +1312,7 @@ The part before the first space is the URL; SMOS derives `MINER_PKG_NAME` from t
 ### SMOS API — useful calls
 
 ```bash
-API="api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8"
+API="$SMOS_API_KEY"
 BASE="https://api.simplemining.net"
 
 # Get rig details (incl. current IP)
@@ -1512,7 +1516,7 @@ Restart after change: `systemctl restart zion-pool.service`
 | Key | `~/.ssh/zion-edge-post-wipe-2026-07-29` (ed25519) |
 | Fingerprint | `SHA256:UOjWE5K22kyJ0Xgxdt/+cySZlErHFQ/y+M9uM/2zmY4` |
 | Password auth | DISABLED (keys only) |
-| VNC fallback | `95.111.232.25:63061` (RFB, password `h4neV76S`) |
+| VNC fallback | `95.111.232.25:63061` (RFB, password `<retrieve from password manager>`) |
 
 ### Firewall (UFW)
 
@@ -1661,8 +1665,8 @@ ZION_LOG_BLOCK_SUBMITTER=1
 |-------|-------|
 | URL | `https://dashboard.zionterranova.com` |
 | Auth | HTTP Basic Auth (handled by `app.py`) |
-| User 1 | `Yose` (password: `3nityOne13`) |
-| User 2 | `Issy` (password: `3nityOne13`) |
+| User 1 | `Yose` (password: `<configured via DASHBOARD_USERS>`) |
+| User 2 | `Issy` (password: `<configured via DASHBOARD_USERS>`) |
 | Title | "ZION Mainnet — Launch Command Center" |
 
 ### Deploy Files (in repo)
@@ -1785,7 +1789,7 @@ CPU hash-rate reference on a Ryzen 5 3600 (12 threads, release build):
 - **IP:** `109.81.31.210` (behind NAT — **nelze SSH inbound**, jen outbound)
 - **Hardware:** AMD Vega 64 (gfx900, 64CU, 8GB, OpenCL)
 - **OS:** SimpleMining OS (SMOS), GLIBC **2.31** (Ubuntu 20.04 based)
-- **SMOS API key:** `api-17a2bf581f1cf8f451e568d063c42f0cc3461516abbded073110b8486773adca` (prefix `api-` je povinný v headeru `X-AUTH-TOKEN`)
+- **SMOS API key:** `$SMOS_API_KEY` (prefix `api-` je povinný v headeru `X-AUTH-TOKEN`)
 - **SMOS Group:** `ZionLiteFire` (ID `1773590`)
 - **Miner binary URL:** `http://62.171.141.136/zion-miner/zion-miner` (served by Edge nginx)
 - **Pool:** `62.171.141.136:8444` (Edge)
@@ -1973,7 +1977,7 @@ ssh zion-new 'cd /tmp/zionNN && zip -r /var/www/zion-miner/teamredminer-zionNN.z
 | VRSC `Job not found` (LuckPool reject) | Stale job (multi-hop latency) | Stale job pre-rejection + clear HashMaps on reconnect |
 | Miner stále běží stará verze po reload | SMOS cachuje ZIP podle filename | Vždy nové číslo ZIPu (zion46, zion47, ...) |
 | SSH nelze na SMOS rig | Rig behind NAT, inbound blokován | Pouze SMOS API + Edge served binary |
-| SMOS API `Access Denied` (403) | API key bez `api-` prefixu | Header: `X-AUTH-TOKEN: api-17a2bf58...` |
+| SMOS API `Access Denied` (403) | API key bez `api-` prefixu | Header: `X-AUTH-TOKEN: $SMOS_API_KEY` |
 
 ### Pool config (Edge) — AuxPoW env vars
 
@@ -2045,7 +2049,7 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **ALPH blake3 na Vega 64:** GPU OpenCL init proběhne, ale ext_gpu thread / pool_io_thread padá — pravděpodobně kompilace OpenCL kernelu nebo CPU baseline. Pro Vega 64 zatím vypnuto; ZION `deeksha_lite_v1` je stabilní.
 - **TUI není vidět v SMOS konzoli:** Příčinou jsou verbose `scan_randomx` / `XMR_SHARE_FOUND` logy z CPU external mining, které přepisují TUI. Fix: vypnout CPU external stream (`ZION_POOL_AUXPOW_CPU_COIN=""` NEfunguje — prázdná hodnota defaultuje na první dostupný CPU coin, obvykle XMR; skutečně vypnout se musí `ZION_POOL_AUXPOW_ENABLED=0` a reload rigu, aby miner dostal `external_stream_cpu: null` a přestal těžit starou XMR job).
 - **Miner si drží starý external job:** Když pool přestane posílat `external_stream`/`external_stream_cpu`, miner si drží poslední job a těží dál (ext_gpu/ext_cpu thread neobdrží explicitní stop). K návratu k čistému ZION těžení je potřeba restart mineru (SMOS reload).
-- **API reload:** `PATCH https://api.simplemining.net/rigs/execute-reload` s body `{"rigIds": [518837]}` funguje pro restart. API key: `X-AUTH-TOKEN: api-17a2bf58...`.
+- **API reload:** `PATCH https://api.simplemining.net/rigs/execute-reload` s body `{"rigIds": [518837]}` funguje pro restart. API key: `X-AUTH-TOKEN: $SMOS_API_KEY`.
 
 ### BeamHash III + Autolykos v2 — share verification (2026-07-20)
 

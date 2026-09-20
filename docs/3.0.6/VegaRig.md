@@ -34,7 +34,7 @@
 
 ```
 Base URL:  https://api.simplemining.net
-Auth:      X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8
+Auth:      X-AUTH-TOKEN: $SMOS_API_KEY
 Rig ID:    518837
 Group ID:  1773590
 ```
@@ -342,13 +342,13 @@ bash scripts/edge-package-smos.sh v3.1.9-triple-fixed17
 
 ```bash
 curl -s -X PUT "https://api.simplemining.net/rig-groups/1773590" \
-  -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" \
+  -H "X-AUTH-TOKEN: $SMOS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"minerOptions": "https://zionterranova.com/zion-miner/zion-miner-v3.1.9-triple-fixed17.zip"}'
 
 # Reload rig
 curl -s -X PATCH "https://api.simplemining.net/rigs/execute-reload" \
-  -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" \
+  -H "X-AUTH-TOKEN: $SMOS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"rigIds":[518837]}'
 ```
@@ -432,7 +432,7 @@ a398cd68f fix(miner): reorder ext_stream send + disable OpenMP for non-AVX CPUs
 
 ```bash
 curl -s "https://api.simplemining.net/rigs/518837" \
-  -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" | jq
+  -H "X-AUTH-TOKEN: $SMOS_API_KEY" | jq
 ```
 
 ### Decode console output
@@ -440,7 +440,7 @@ curl -s "https://api.simplemining.net/rigs/518837" \
 ```bash
 # Console is base64 encoded in redisData.console
 curl -s "https://api.simplemining.net/rigs/518837" \
-  -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" | \
+  -H "X-AUTH-TOKEN: $SMOS_API_KEY" | \
   jq -r '.redisData.console' | base64 -d
 ```
 
@@ -448,7 +448,7 @@ curl -s "https://api.simplemining.net/rigs/518837" \
 
 ```bash
 curl -s -X PATCH "https://api.simplemining.net/rigs/execute-reboot" \
-  -H "X-AUTH-TOKEN: api-7a77595ab5176d2ea864c14e8b976a937c34b7e29cb486840e30729ad40f06c8" \
+  -H "X-AUTH-TOKEN: $SMOS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"rigIds":[518837]}'
 ```

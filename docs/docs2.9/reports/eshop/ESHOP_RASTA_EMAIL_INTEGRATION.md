@@ -106,7 +106,7 @@ python3 scripts/send_eshop_order_email.py \
   --smtp-host mail.webglobe.cz \
   --smtp-port 587 \
   --smtp-user shop@newearth.cz \
-  --smtp-password "x3nityOne144"
+  --smtp-password "${ZION_SMTP_PASSWORD}"
 ```
 
 **Výsledek:** ✅ **SUCCESS**
@@ -165,12 +165,12 @@ chmod 775 public_html/V2/logs
 
 V `public_html/V2/api/.env`:
 ```bash
-SMTP_PASSWORD=x3nityOne144
+SMTP_PASSWORD=${ZION_SMTP_PASSWORD}
 ```
 
 Nebo hardcoded v `send-rasta-email.php`:
 ```php
-$envPassword = 'x3nityOne144';
+$envPassword = '${ZION_SMTP_PASSWORD}';
 ```
 
 ### Step 4: Test on Server
@@ -187,7 +187,7 @@ python3 ../../../scripts/send_eshop_order_email.py \
   --smtp-host mail.webglobe.cz \
   --smtp-port 587 \
   --smtp-user shop@newearth.cz \
-  --smtp-password "x3nityOne144"
+  --smtp-password "${ZION_SMTP_PASSWORD}"
 
 # Test PHP wrapper
 php api/send-rasta-email.php test admin@newearth.cz
@@ -282,7 +282,7 @@ python3 --version  # Musí být >= 3.9
 2. **Zkontrolovat SMTP credentials:**
 ```bash
 # Test SMTP connection
-python3 -c "import smtplib; s=smtplib.SMTP('mail.webglobe.cz', 587); s.starttls(); s.login('shop@newearth.cz', 'x3nityOne144'); print('OK')"
+python3 -c "import smtplib; s=smtplib.SMTP('mail.webglobe.cz', 587); s.starttls(); s.login('shop@newearth.cz', '${ZION_SMTP_PASSWORD}'); print('OK')"
 ```
 
 3. **Zkontrolovat logy:**
