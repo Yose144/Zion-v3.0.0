@@ -163,6 +163,12 @@ finality_blocks = 0
 #                                # (wallet path = watch-only wallet, auto-created
 #                                # + auto-importaddress'd; needs pruned bitcoind
 #                                # only — no txindex/esplora index).
+#   WARP_BITCOIN_IMPORT_SINCE=<unix ts>  # optional: importdescriptors rescan
+#                                # window. Default "now" = no rescan (fresh HTLC
+#                                # addrs). Set to a time BEFORE the operator
+#                                # funding tx if the funding address was already
+#                                # funded when first imported. Imports persist
+#                                # in the wallet file — first import wins.
 #                                # Defaults: mempool.space + blockstream.info
 #                                # (mainnet/testnet). Recommended prod: own
 #                                # bitcoind first, public backends as fallback.

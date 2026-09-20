@@ -131,11 +131,16 @@ async fn wallet_rpc(
     }
 }
 
-/// Import `addr` into the watch-only wallet via `addr()` descriptor with
-/// `timestamp="now"` — no rescan (the node is pruned). The descriptor needs
-/// its checksum (`#xxxxxxxx`), resolved via `getdescriptorinfo`. Per-descriptor
-/// errors ("already exists", range) are ignored; transport/RPC failures
-/// propagate so failover can answer instead.
+/// Import `addr` into the watch-only wallet via `addr()` descriptor.
+/// Default `timestamp="now"` skips rescan — correct for fresh per-swap HTLC
+/// addresses. `WARP_BITCOIN_IMPORT_SINCE` (unix ts) overrides it: use when an
+/// address may already carry funds before its first import (e.g. the operator
+/// funding wallet), so the rescan covers those txs. Imports persist in the
+/// wallet file, so the timestamp matters only on first import; re-imports
+/// hit the benign "already exists" error below.
+/// The descriptor needs its checksum (`#xxxxxxxx`), resolved via
+/// `getdescriptorinfo`. Per-descriptor errors ("already exists", range) are
+/// ignored; transport/RPC failures propagate so failover can answer instead.
 async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), String> {
     let info = wallet_rpc(
         client,
@@ -149,12 +154,17 @@ async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), 
         .and_then(|d| d.as_str())
         .ok_or_else(|| format!("getdescriptorinfo({addr}): no descriptor"))?
         .to_string();
+    let timestamp: Value = std::env::var("WARP_BITCOIN_IMPORT_SINCE")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .map(Value::from)
+        .unwrap_or_else(|| Value::from("now"));
     // `requests` is itself an array param → double-wrapped.
     let res = wallet_rpc(
         client,
         ep,
         "importdescriptors",
-        json!([[{"desc": desc, "timestamp": "now", "active": false,
+        json!([[{"desc": desc, "timestamp": timestamp, "active": false,
                 "internal": false, "label": "warp"}]]),
     )
     .await?;
