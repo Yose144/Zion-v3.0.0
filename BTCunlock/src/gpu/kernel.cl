@@ -56,45 +56,29 @@ __constant uint K256[64] = {
 // hand-rolled macro unrolling miscompiles on NVIDIA's frontend (verified
 // 2026-09-20, GTX 1070 Ti) — use #pragma unroll, not macro expansion.
 
-static void sha256_compress(__private uint h[8], __private const uchar blk[64]) {
+#define SHA256_ROUNDS \
+    _Pragma("unroll") \
+    for (int i = 0; i < 64; i++) { \
+        if (i >= 16) \
+            W[i&15] += (rotate(W[(i-2)&15],15U)^rotate(W[(i-2)&15],13U)^(W[(i-2)&15]>>10)) \
+                     + W[(i-7)&15] \
+                     + (rotate(W[(i-15)&15],25U)^rotate(W[(i-15)&15],14U)^(W[(i-15)&15]>>3)); \
+        uint t1 = hh + (rotate(e,26U)^rotate(e,21U)^rotate(e,7U)) \
+                + ((e&f)^(~e&g)) + K256[i] + W[i&15]; \
+        uint t2 = (rotate(a,30U)^rotate(a,19U)^rotate(a,10U)) \
+                + ((a&b)^(a&c)^(b&c)); \
+        hh=g; g=f; f=e; e=d+t1; d=c; c=b; b=a; a=t1+t2; \
+    }
+
+// Word-form block — the checksum filter builds W directly (entropy packed
+// into ulong lanes), skipping byte-level staging entirely.
+static void sha256_compress_w(__private uint h[8], __private const uint blk[16]) {
     uint W[16];
     #pragma unroll
-    for (int i = 0; i < 16; i++)
-        W[i] = ((uint)blk[i*4] << 24) | ((uint)blk[i*4+1] << 16) |
-               ((uint)blk[i*4+2] << 8) | (uint)blk[i*4+3];
+    for (int i = 0; i < 16; i++) W[i] = blk[i];
     uint a=h[0],b=h[1],c=h[2],d=h[3],e=h[4],f=h[5],g=h[6],hh=h[7];
-    #pragma unroll
-    for (int i = 0; i < 64; i++) {
-        if (i >= 16)
-            W[i&15] += (rotate(W[(i-2)&15],15U)^rotate(W[(i-2)&15],13U)^(W[(i-2)&15]>>10))
-                     + W[(i-7)&15]
-                     + (rotate(W[(i-15)&15],25U)^rotate(W[(i-15)&15],14U)^(W[(i-15)&15]>>3));
-        uint t1 = hh + (rotate(e,26U)^rotate(e,21U)^rotate(e,7U))
-                + ((e&f)^(~e&g)) + K256[i] + W[i&15];
-        uint t2 = (rotate(a,30U)^rotate(a,19U)^rotate(a,10U))
-                + ((a&b)^(a&c)^(b&c));
-        hh=g; g=f; f=e; e=d+t1; d=c; c=b; b=a; a=t1+t2;
-    }
+    SHA256_ROUNDS
     h[0]+=a; h[1]+=b; h[2]+=c; h[3]+=d; h[4]+=e; h[5]+=f; h[6]+=g; h[7]+=hh;
-}
-
-// SHA-256 of a message ≤ 55 bytes (BIP39 entropy is 16-32) — single block.
-static void sha256_small(__private const uchar* m, uint len, __private uchar out[32]) {
-    uint h[8] = {0x6a09e667U,0xbb67ae85U,0x3c6ef372U,0xa54ff53aU,
-                 0x510e527fU,0x9b05688cU,0x1f83d9abU,0x5be0cd19U};
-    uchar blk[64];
-    for (int i = 0; i < 64; i++) blk[i] = 0;
-    for (uint i = 0; i < len; i++) blk[i] = m[i];
-    blk[len] = 0x80;
-    ulong bits = (ulong)len * 8;
-    for (int i = 0; i < 8; i++) blk[63-i] = (uchar)(bits >> (8*i));
-    sha256_compress(h, blk);
-    for (int i = 0; i < 8; i++) {
-        out[i*4]   = (uchar)(h[i] >> 24);
-        out[i*4+1] = (uchar)(h[i] >> 16);
-        out[i*4+2] = (uchar)(h[i] >> 8);
-        out[i*4+3] = (uchar)h[i];
-    }
 }
 
 // ---------------------------------------------------------------- SHA-512
@@ -168,24 +152,25 @@ static void sha512_compress_w(__private ulong h[8], __private const ulong blk[16
     h[0]+=a; h[1]+=b; h[2]+=c; h[3]+=d; h[4]+=e; h[5]+=f; h[6]+=g; h[7]+=hh;
 }
 
-// SHA-512 of a message ≤ 392 bytes (HMAC inner ≤ 128+132, outer = 192).
-static void sha512(__private const uchar* m, uint len, __private uchar out[64]) {
-    ulong h[8] = {0x6a09e667f3bcc908UL,0xbb67ae8584caa73bUL,
-                  0x3c6ef372fe94f82bUL,0xa54ff53a5f1d36f1UL,
-                  0x510e527fade682d1UL,0x9b05688c2b3e6c1fUL,
-                  0x1f83d9abfb41bd6bUL,0x5be0cd19137e2179UL};
+// SHA-512 absorb from a midstate: h already holds the compression of
+// `prior` bytes (e.g. an HMAC pad block); `total_len` = prior + mlen is
+// what goes into the padding length field. This is how emit_if_valid
+// computes U1 = HMAC(key, salt‖1) from the stored midstates — 2 absorbs
+// instead of a full HMAC (no k0/inner/outer buffers).
+static void sha512_absorb(__private ulong h[8], __private const uchar* m,
+                          uint mlen, uint total_len, __private uchar out[64]) {
     uint off = 0;
-    while (len - off >= 128) {
+    while (mlen - off >= 128) {
         sha512_compress(h, m + off);
         off += 128;
     }
     uchar tail[256];
     for (int i = 0; i < 256; i++) tail[i] = 0;
-    uint rem = len - off;
+    uint rem = mlen - off;
     for (uint i = 0; i < rem; i++) tail[i] = m[off + i];
     tail[rem] = 0x80;
     uint tail_blocks = (rem < 112) ? 1 : 2;
-    ulong bits = (ulong)len * 8;
+    ulong bits = (ulong)total_len * 8;
     uint base = tail_blocks * 128;
     for (int i = 0; i < 8; i++) tail[base - 1 - i] = (uchar)(bits >> (8*i));
     sha512_compress(h, tail);
@@ -202,28 +187,10 @@ static void sha512(__private const uchar* m, uint len, __private uchar out[64]) 
     }
 }
 
-// ------------------------------------------------------------- HMAC-SHA512
-
-static void hmac_sha512(__private const uchar* key, uint klen,
-                        __private const uchar* msg, uint mlen, __private uchar out[64]) {
-    uchar k0[128];
-    for (int i = 0; i < 128; i++) k0[i] = 0;
-    if (klen > 128) {
-        uchar kh[64];
-        sha512(key, klen, kh);
-        for (int i = 0; i < 64; i++) k0[i] = kh[i];
-    } else {
-        for (uint i = 0; i < klen; i++) k0[i] = key[i];
-    }
-    uchar inner[128 + 264];
-    for (int i = 0; i < 128; i++) inner[i] = k0[i] ^ 0x36;
-    for (uint i = 0; i < mlen; i++) inner[128 + i] = msg[i];
-    uchar ih[64];
-    sha512(inner, 128 + mlen, ih);
-    uchar outer[192];
-    for (int i = 0; i < 128; i++) outer[i] = k0[i] ^ 0x5c;
-    for (int i = 0; i < 64; i++) outer[128 + i] = ih[i];
-    sha512(outer, 192, out);
+// SHA-512 of a message ≤ 392 bytes.
+static void sha512(__private const uchar* m, uint len, __private uchar out[64]) {
+    ulong h[8] = {SHA512_IV};
+    sha512_absorb(h, m, len, len, out);
 }
 
 // ------------------------------------------------------------------ filter
@@ -242,28 +209,55 @@ static void emit_if_valid(
     volatile __global uint* result_count,
     __global uchar* states)
 {
-    // BIP39 checksum — pack 11-bit indices → entropy, sha256 → compare
+    // BIP39 checksum — the 11-bit index stream packed MSB-first into ulong
+    // lanes. Fully unrolled → every shift/lane is compile-time → registers.
+    // (The byte-wise ent[pos/8] form spilled to local memory via dynamic
+    // indexing; this does ~2 lane writes per word instead of 11 byte ops.)
     uint total_bits = n_words * 11;
     uint cs_bits = total_bits / 33;
     uint ent_bits = total_bits - cs_bits;
-    uchar ent[32];
-    for (int i = 0; i < 32; i++) ent[i] = 0;
-    for (uint i = 0; i < n_words; i++) {
-        for (uint b = 0; b < 11; b++) {
-            uint pos = i * 11 + b;
-            if (pos < ent_bits)
-                ent[pos >> 3] |= (uchar)(((idx[i] >> (10 - b)) & 1) << (7 - (pos & 7)));
+    ulong eb[5] = {0UL, 0UL, 0UL, 0UL, 0UL};
+    ulong lastv = 0;
+    #pragma unroll
+    for (int i = 0; i < MAX_WORDS; i++) {
+        if (i >= (int)n_words) break;
+        ulong v = idx[i];
+        lastv = v;
+        int p = i * 11, o = p & 63, k = p >> 6;
+        if (o <= 53) {
+            eb[k] |= v << (53 - o);
+        } else {
+            eb[k]     |= v >> (o - 53);
+            eb[k + 1] |= v << (117 - o);
         }
     }
-    uchar cs_val = 0;
-    for (uint b = 0; b < cs_bits; b++) {
-        uint pos = ent_bits + b;
-        cs_val |= (uchar)(((idx[pos / 11] >> (10 - pos % 11)) & 1) << (7 - b));
+    // entropy = first ent_bits of the stream; sha256 block built in words:
+    // W[0..8) = entropy, 0x80 lands at word ent_bytes/4 (ent_bytes%4==0 for
+    // all BIP39 word counts — and the checksum bits always live inside that
+    // very word, so the overwrite discards them), W[15] = bit length.
+    // The switch keeps every wb index compile-time — a dynamic wb[ent/32]
+    // would spill the whole block to local memory.
+    uint wb[16];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) wb[i] = (uint)(eb[i >> 1] >> (32 * (1 - (i & 1))));
+    #pragma unroll
+    for (int i = 8; i < 16; i++) wb[i] = 0;
+    switch (n_words) {
+    case 12: wb[4] = 0x80000000u; break;
+    case 15: wb[5] = 0x80000000u; break;
+    case 18: wb[6] = 0x80000000u; break;
+    case 21: wb[7] = 0x80000000u; break;
+    default: wb[8] = 0x80000000u; break;   // 24
     }
-    uchar dig[32];
-    sha256_small(ent, ent_bits / 8, dig);
-    uchar mask = (cs_bits == 8) ? 0xFF : (uchar)(0xFF << (8 - cs_bits));
-    if ((dig[0] & mask) != cs_val) return;   // ~255/256 exit here
+    wb[15] = ent_bits;
+    uint hs[8] = {0x6a09e667U,0xbb67ae85U,0x3c6ef372U,0xa54ff53aU,
+                  0x510e527fU,0x9b05688cU,0x1f83d9abU,0x5be0cd19U};
+    sha256_compress_w(hs, wb);
+    // checksum bits = low cs_bits of the last word index (cs_bits ≤ 8 < 11),
+    // left-aligned in a byte — scalar ops, no dynamic lane indexing.
+    uchar cs_val = (uchar)((lastv & ((1UL << cs_bits) - 1)) << (8 - cs_bits));
+    uchar mask = (uchar)(0xFF << (8 - cs_bits));
+    if (((uchar)(hs[0] >> 24) & mask) != cs_val) return;   // ~15/16 exit here
 
     // checksum-valid → phrase string (ASCII words + spaces)
     uchar phrase[MAX_PHRASE];
@@ -274,13 +268,6 @@ static void emit_if_valid(
         for (ushort o = wl_off[w]; o < wl_off[w + 1]; o++)
             phrase[plen++] = wl_blob[o];
     }
-
-    // U1 = HMAC(phrase, salt || INT32_BE(1)) — helpers need __private args
-    uchar m[MAX_SALT + 4];
-    for (uint i = 0; i < salt_len; i++) m[i] = salt[i];
-    m[salt_len] = 0; m[salt_len+1] = 0; m[salt_len+2] = 0; m[salt_len+3] = 1;
-    uchar u1[64];
-    hmac_sha512(phrase, plen, m, salt_len + 4, u1);
 
     // HMAC midstates for pbkdf2_step: hin = SHA512(k0^ipad),
     // hout = SHA512(k0^opad). k0 = phrase||0 — or SHA512(phrase) when
@@ -298,6 +285,20 @@ static void emit_if_valid(
     sha512_compress(hin, pb);
     for (int i = 0; i < 128; i++) pb[i] ^= 0x6a;   // ipad → opad
     sha512_compress(hout, pb);
+
+    // U1 = HMAC(phrase, salt‖INT32_BE(1)) via the same midstates —
+    // two absorbs, no k0/inner/outer buffers.
+    uchar m[MAX_SALT + 4];
+    for (uint i = 0; i < salt_len; i++) m[i] = salt[i];
+    m[salt_len] = 0; m[salt_len+1] = 0; m[salt_len+2] = 0; m[salt_len+3] = 1;
+    uchar ih[64], u1[64];
+    ulong hh[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) hh[i] = hin[i];
+    sha512_absorb(hh, m, salt_len + 4, 128 + salt_len + 4, ih);
+    #pragma unroll
+    for (int i = 0; i < 8; i++) hh[i] = hout[i];
+    sha512_absorb(hh, ih, 64, 192, u1);
 
     uint slot = atomic_inc(result_count);
     if (slot >= max_results) return;
@@ -405,8 +406,10 @@ __kernel void pbkdf2_step(
         *((__global uint*)(st + OFF_TAG)) = TAG_BAD;
         return;
     }
-    // load U, T and the HMAC midstates (BE bytes → ulongs)
-    ulong u[8], t[8], hin[8], hout[8];
+    // load U, T and the HMAC midstates (BE bytes → ulongs). U lives in the
+    // message block mb[0..8) — no separate u[] array (saves 16 registers
+    // and one 8-word copy per iteration).
+    ulong mb[16], t[8], hin[8], hout[8];
     #pragma unroll
     for (int i = 0; i < 8; i++) {
         ulong uv = 0, tv = 0, vi = 0, vo = 0;
@@ -417,7 +420,7 @@ __kernel void pbkdf2_step(
             vi = (vi << 8) | st[OFF_HI + i*8 + j];
             vo = (vo << 8) | st[OFF_HO + i*8 + j];
         }
-        u[i] = uv; t[i] = tv; hin[i] = vi; hout[i] = vo;
+        mb[i] = uv; t[i] = tv; hin[i] = vi; hout[i] = vo;
     }
     // verify chain: tag must equal u32(T[0..4]) ^ (seq-1)*TAG_C
     uint tag = *((__global const uint*)(st + OFF_TAG));
@@ -428,23 +431,22 @@ __kernel void pbkdf2_step(
         return;
     }
     // message block: U(64B) + fixed padding — total msg 192 B → len 1536
-    ulong mb[16];
     mb[8] = 0x8000000000000000UL; mb[15] = 1536UL;
     mb[9] = 0; mb[10] = 0; mb[11] = 0; mb[12] = 0; mb[13] = 0; mb[14] = 0;
     for (uint it = 0; it < iters; it++) {
         ulong h[8];
         #pragma unroll
-        for (int i = 0; i < 8; i++) { mb[i] = u[i]; h[i] = hin[i]; }
+        for (int i = 0; i < 8; i++) h[i] = hin[i];
         sha512_compress_w(h, mb);        // inner = SHA512(ipad ‖ U)
         #pragma unroll
         for (int i = 0; i < 8; i++) { mb[i] = h[i]; h[i] = hout[i]; }
         sha512_compress_w(h, mb);        // outer = SHA512(opad ‖ inner)
         #pragma unroll
-        for (int i = 0; i < 8; i++) { u[i] = h[i]; t[i] ^= h[i]; }
+        for (int i = 0; i < 8; i++) { mb[i] = h[i]; t[i] ^= h[i]; }
     }
     #pragma unroll
     for (int i = 0; i < 8; i++) {
-        ulong uv = u[i], tv = t[i];
+        ulong uv = mb[i], tv = t[i];
         #pragma unroll
         for (int j = 0; j < 8; j++) {
             st[OFF_U + i*8 + j] = (uchar)(uv >> (56 - 8*j));

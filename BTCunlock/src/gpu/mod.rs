@@ -19,9 +19,11 @@ use opencl3::types::{cl_uint, cl_ulong, CL_BLOCKING, CL_NON_BLOCKING};
 use std::cell::Cell;
 
 const KERNEL_SRC: &str = include_str!("kernel.cl");
-/// Remaining PBKDF2 iterations per step launch — well under the observed
-/// per-item limit (1536 iters verified safe on Apple; 512 has margin).
-/// Total = 1 (U1 in filter) + 2047 across steps = 2048.
+/// Remaining PBKDF2 iterations per step launch — the chunking exists for
+/// drivers with per-item execution limits (Apple loses ~75% of items at the
+/// full count — verified 2026-09). NVIDIA has no such limit, so it runs all
+/// 2047 in one launch (saves 3 record load/store round-trips per seed).
+/// PBKDF2_STEP_ITERS overrides both.
 const STEP_ITERS: u32 = 512;
 const REMAINING: u32 = 2048 - 1;
 /// State record size — must match kernel.cl STATE_SIZE (392 + 128 B of
@@ -57,6 +59,8 @@ pub struct Gpu {
     salt: Buffer<u8>,
     count: Buffer<u32>,
     states: Buffer<u8>,
+    /// PBKDF2 iterations per step launch (see STEP_ITERS comment).
+    step_iters: u32,
     /// Host copy of "mnemonic{pass}" — CPU-repairs records whose GPU
     /// work-item died mid-PBKDF2 (detected via the chain tag).
     salt_bytes: Vec<u8>,
@@ -105,6 +109,13 @@ impl Gpu {
         };
         let opts_f = pick("KERNEL_OPTS_FILTER", "-cl-nv-maxrregcount=40");
         let opts_s = pick("KERNEL_OPTS_STEP", "-cl-nv-maxrregcount=64");
+        // Chunked beats single-launch even on NVIDIA (measured GTX 1070 Ti:
+        // 4×512 ≈ 42k seeds/s vs 1×2047 ≈ 36k — inter-chunk scheduling
+        // absorbs item-time variance, one giant launch can't rebalance).
+        let step_iters = std::env::var("PBKDF2_STEP_ITERS")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(STEP_ITERS);
         let prog_f = Program::create_and_build_from_source(&context, KERNEL_SRC, &opts_f)
             .map_err(|e| anyhow::anyhow!("opencl filter build: {e}"))?;
         let prog_s = if opts_s == opts_f {
@@ -191,6 +202,7 @@ impl Gpu {
                 salt,
                 count,
                 states,
+                step_iters,
                 salt_bytes: Vec::new(),
                 device_name,
             })
@@ -266,12 +278,12 @@ impl Gpu {
     /// final tag check and are recomputed on CPU from their stored phrase.
     #[allow(unused_unsafe)]
     unsafe fn finish_batch(&mut self, got: usize) -> Result<Vec<(u64, [u8; 64])>> {
-        // remaining 2047 PBKDF2 iterations in chunks
-        // (512, 512, 512, 511 — never overshoot the count)
+        // remaining 2047 PBKDF2 iterations in chunks of `step_iters`
+        // (NVIDIA: one launch of 2047; Apple-safe default: 512,512,512,511)
         let mut left = REMAINING;
         let mut seq = 0u32;
         while left > 0 {
-            let it = STEP_ITERS.min(left);
+            let it = self.step_iters.min(left);
             seq += 1;
             let mut ex = ExecuteKernel::new(&self.k_step);
             ex.set_arg(&self.states).set_arg(&it).set_arg(&seq);

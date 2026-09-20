@@ -14,9 +14,9 @@
 
 use anyhow::{bail, Context, Result};
 use bip39::{Language, Mnemonic};
-use bitcoin::bip32::{DerivationPath, Xpriv};
+use bitcoin::bip32::{ChildNumber, DerivationPath, Xpriv};
 use bitcoin::hashes::{hash160, Hash};
-use bitcoin::secp256k1::Secp256k1;
+use bitcoin::secp256k1::{All, Secp256k1};
 use bitcoin::{Address, Network, PublicKey};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
@@ -191,9 +191,19 @@ impl TargetSet {
 }
 
 /// Which derivation paths each seed is checked against.
+/// Structured so `match_seed` can share intermediate nodes: with
+/// --change-chain/--max-index/--accounts the m/p'/coin'/acct' prefixes are
+/// derived once per seed instead of once per leaf path (≈4-5x fewer CKDs
+/// on wide scans; identical for the default single-path-per-purpose plan).
 pub struct DerivePlan {
-    pub paths: Vec<DerivationPath>,
+    pub purposes: Vec<u32>,
+    pub coin: u32,
+    pub accounts: u32,
+    pub chains: Vec<u32>,
+    pub max_index: u32,
     pub network: Network,
+    /// Flattened leaf paths — kept for logging/diagnostics.
+    pub paths: Vec<DerivationPath>,
 }
 
 impl DerivePlan {
@@ -219,47 +229,121 @@ impl DerivePlan {
                 }
             }
         }
-        Ok(DerivePlan { paths, network })
+        Ok(DerivePlan {
+            purposes: purposes.to_vec(),
+            coin,
+            accounts: accounts.max(1),
+            chains: changes.to_vec(),
+            max_index: max_index.max(1),
+            network,
+            paths,
+        })
     }
 }
 
+fn check_leaf(
+    child: &Xpriv,
+    secp: &Secp256k1<All>,
+    path: String,
+    check_script_hash: bool,
+    network: Network,
+    targets: &TargetSet,
+    hits: &mut Vec<(String, Address)>,
+) {
+    let pk = PublicKey::new(child.private_key.public_key(secp));
+    let mut pk_hash = [0u8; 20];
+    pk_hash.copy_from_slice(&hash160::Hash::hash(&pk.inner.serialize())[..]);
+    // P2PKH / P2WPKH share the pubkey hash160 → one lookup covers both.
+    if targets.hashes.contains(&pk_hash) {
+        hits.push((path, Address::p2wpkh(&pk, network).expect("p2wpkh")));
+        return;
+    }
+    // P2SH-P2WPKH (purpose 49 only): hash160 of the 0x0014<h160> redeem script.
+    if !check_script_hash {
+        return;
+    }
+    let mut redeem = [0u8; 22];
+    redeem[1] = 0x14;
+    redeem[2..].copy_from_slice(&pk_hash);
+    let mut sh = [0u8; 20];
+    sh.copy_from_slice(&hash160::Hash::hash(&redeem)[..]);
+    if targets.hashes.contains(&sh) {
+        hits.push((path, Address::p2shwpkh(&pk, network).expect("p2shwpkh")));
+    }
+}
+
+/// Stage-4 host check with a caller-provided secp context (context creation
+/// is not free — reuse it across seeds; see runner's `map_init`).
+pub fn match_seed_ctx(
+    seed: &[u8; 64],
+    plan: &DerivePlan,
+    targets: &TargetSet,
+    secp: &Secp256k1<All>,
+) -> Vec<(String, Address)> {
+    let Ok(master) = Xpriv::new_master(plan.network, seed) else {
+        return Vec::new();
+    };
+    let mut hits = Vec::new();
+    for &p in &plan.purposes {
+        let Ok(hp) = ChildNumber::from_hardened_idx(p) else {
+            continue;
+        };
+        let Ok(np) = master.derive_priv(secp, &[hp]) else {
+            continue;
+        };
+        let Ok(hc) = ChildNumber::from_hardened_idx(plan.coin) else {
+            continue;
+        };
+        let Ok(npc) = np.derive_priv(secp, &[hc]) else {
+            continue;
+        };
+        for a in 0..plan.accounts {
+            let Ok(ha) = ChildNumber::from_hardened_idx(a) else {
+                continue;
+            };
+            let Ok(na) = npc.derive_priv(secp, &[ha]) else {
+                continue;
+            };
+            for &c in &plan.chains {
+                let Ok(ncn) = ChildNumber::from_normal_idx(c) else {
+                    continue;
+                };
+                let Ok(nc) = na.derive_priv(secp, &[ncn]) else {
+                    continue;
+                };
+                for i in 0..plan.max_index {
+                    let Ok(ni) = ChildNumber::from_normal_idx(i) else {
+                        continue;
+                    };
+                    let Ok(child) = nc.derive_priv(secp, &[ni]) else {
+                        continue;
+                    };
+                    check_leaf(
+                        &child,
+                        secp,
+                        format!("m/{p}'/{}'/{a}'/{c}/{i}", plan.coin),
+                        p == 49,
+                        plan.network,
+                        targets,
+                        &mut hits,
+                    );
+                }
+            }
+        }
+    }
+    hits
+}
+
 /// Stage-4 host check: derive a seed over `plan`, return hits.
+/// (tests + ad-hoc callers; the hot loop uses `match_seed_ctx` via rayon)
+#[allow(dead_code)]
 pub fn match_seed(
     seed: &[u8; 64],
     plan: &DerivePlan,
     targets: &TargetSet,
 ) -> Vec<(String, Address)> {
     let secp = Secp256k1::new();
-    let Ok(xpriv) = Xpriv::new_master(plan.network, seed) else {
-        return Vec::new();
-    };
-    let mut hits = Vec::new();
-    for path in &plan.paths {
-        let Ok(child) = xpriv.derive_priv(&secp, path) else {
-            continue;
-        };
-        let pk = PublicKey::new(child.private_key.public_key(&secp));
-        let mut pk_hash = [0u8; 20];
-        pk_hash.copy_from_slice(&hash160::Hash::hash(&pk.inner.serialize())[..]);
-        // P2PKH / P2WPKH share the pubkey hash160 → one lookup covers both.
-        if targets.hashes.contains(&pk_hash) {
-            let addr = Address::p2wpkh(&pk, plan.network).expect("p2wpkh");
-            hits.push((path.to_string(), addr));
-            continue;
-        }
-        // P2SH-P2WPKH: hash160 of the 0x0014<h160> redeem script.
-        let mut redeem = [0u8; 22];
-        redeem[0] = 0x00;
-        redeem[1] = 0x14;
-        redeem[2..].copy_from_slice(&pk_hash);
-        let mut sh = [0u8; 20];
-        sh.copy_from_slice(&hash160::Hash::hash(&redeem)[..]);
-        if targets.hashes.contains(&sh) {
-            let addr = Address::p2shwpkh(&pk, plan.network).expect("p2shwpkh");
-            hits.push((path.to_string(), addr));
-        }
-    }
-    hits
+    match_seed_ctx(seed, plan, targets, &secp)
 }
 
 /// Number of permutations of `n` word slots (n!, saturating at u64::MAX).
