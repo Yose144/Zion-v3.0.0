@@ -110,6 +110,21 @@ export const BRIDGE_CONTRACTS_AVALANCHE: BridgeContractInfo = {
   explorer_base: 'https://snowtrace.io/address/',
 };
 
+/**
+ * Robinhood Chain (Arbitrum Orbit L2, chain 4663) — deterministic addresses.
+ * wZION = CREATE@nonce0, ZIONBridge = CREATE@nonce1 of deployer
+ * 0xdde17506…D186 (nonce 0 verified on 4663). Deploy pending operator ETH
+ * funding — do not point BRIDGE_CONTRACTS here until contracts are live.
+ */
+export const BRIDGE_CONTRACTS_ROBINHOOD: BridgeContractInfo = {
+  wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
+  bridge_address: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+  l1_bridge_address: 'zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7',
+  network: 'Robinhood Chain',
+  chain_id: 4663,
+  explorer_base: 'https://robinhoodchain.blockscout.com/address/',
+};
+
 /** Active contract set — mainnet 5/5 bridge is live */
 export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
 

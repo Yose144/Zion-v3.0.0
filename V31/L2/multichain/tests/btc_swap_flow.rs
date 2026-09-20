@@ -893,23 +893,19 @@ async fn e2e_flow_zion_to_btc_live_zion() {
     let op_zion_addr = op_kr.address(ChainId::ZionL1, 0, 0).unwrap().encoded;
     eprintln!("[e2e] zion user {user_zion_addr} / operator {op_zion_addr}");
 
-    // Sanity: user balance must cover lock + fee.
-    let user_addr_t = Address::new(
-        ChainId::ZionL1,
-        user_zion_addr.as_bytes().to_vec(),
-        user_zion_addr.clone(),
-    )
-    .unwrap();
-    let user_probe = ZionL1Adapter::new(rpc.clone(), user_keyring(()));
-    let user_bal = user_probe
-        .balance(&user_addr_t)
-        .await
-        .expect("user balance query");
-    eprintln!("[e2e] user zion balance: {} flowers", user_bal.0);
+    // Sanity: user balance must cover lock + fee. Sum the spendable UTXO set
+    // directly — `getAddressInfo`/`balance()` only see the legacy account
+    // ledger and miss v31-native UTXOs (hybrid model).
     const ZION_LOCK_FLOWERS: u64 = 2_000_000; // 2 ZION
     const ZION_FEE: u64 = 1_000_000;
+    let user_bal: u128 = zion_rpc_utxos(&client, &rpc, &user_zion_addr)
+        .await
+        .iter()
+        .map(|u| u.amount as u128)
+        .sum();
+    eprintln!("[e2e] user zion balance: {user_bal} flowers (utxo sum)");
     assert!(
-        user_bal.0 >= (ZION_LOCK_FLOWERS + ZION_FEE) as u128,
+        user_bal >= (ZION_LOCK_FLOWERS + ZION_FEE) as u128,
         "user zion balance too low for live test"
     );
 
