@@ -220,10 +220,14 @@ fn main() -> Result<()> {
                     }
                 }
             }
-            let purposes: Vec<u32> = purposes
+            let mut purposes: Vec<u32> = purposes
                 .split(',')
                 .map(|p| p.trim().parse::<u32>())
                 .collect::<std::result::Result<_, _>>()?;
+            // P2TR targets need the BIP86 walk — add it implicitly.
+            if !ts.xkeys.is_empty() && !purposes.contains(&86) {
+                purposes.push(86);
+            }
             let plan = DerivePlan::standard(
                 net(&network)?,
                 &purposes,
@@ -272,10 +276,14 @@ fn main() -> Result<()> {
                     }
                 }
             }
-            let purposes: Vec<u32> = purposes
+            let mut purposes: Vec<u32> = purposes
                 .split(',')
                 .map(|p| p.trim().parse::<u32>())
                 .collect::<std::result::Result<_, _>>()?;
+            // P2TR targets need the BIP86 walk — add it implicitly.
+            if !ts.xkeys.is_empty() && !purposes.contains(&86) {
+                purposes.push(86);
+            }
             let plan = DerivePlan::standard(
                 net(&network)?,
                 &purposes,
