@@ -61,12 +61,12 @@ great grid remind science umbrella spot" \
 - duplicate words: perm ids over map onto the same phrase — the engine
   dedupes before PBKDF2 (CPU) / before derive (GPU), so you only pay once
 
-| words | permutations | 12-word rate | GTX 1070 est. |
-|-------|--------------|--------------|----------------|
-| 12    | 479 001 600  | ~1/16 valid  | ~minutes       |
-| 15    | 1.31 T       | ~1/32 valid  | hours–days     |
-| 18    | 6.4 × 10^15  | ~1/64 valid  | impractical    |
-| 24    | 6.2 × 10^23  | ~1/256 valid | never          |
+| words | permutations | checksum rate | GTX 1070 Ti      |
+|-------|--------------|---------------|------------------|
+| 12    | 479 001 600  | ~1/16 valid   | ~8 min (measured)|
+| 15    | 1.31 T       | ~1/32 valid   | ~days            |
+| 18    | 6.4 × 10^15  | ~1/64 valid   | impractical      |
+| 24    | 6.2 × 10^23  | ~1/256 valid  | never            |
 
 12-word permute is cheap enough to be routine; 15-word needs patience;
 18+ is for desperate cases only.
@@ -133,8 +133,11 @@ cargo test --release --features gpu -- --ignored   # GPU↔CPU parity
 # detach-safe: Ctrl-C anytime, restart with --resume
 ```
 
-`--batch` default 1 M per launch; raise to `4194304` if VRAM is free
-(each result slot is 392 B — 4 M batch ≈ 33 MB states buffer, trivial).
+`--batch` default 16 M per launch for `recover` (4 M for `permute`).
+Bigger batches matter: the PBKDF2 stage runs one work-item per
+checksum-valid candidate and needs ≥64k parallel chains to saturate a
+dGPU — at 24-word's 1/256 pass rate that means ~16M-combo batches.
+VRAM cost: states buffer = batch/8 × 520 B (16 M → ~1.1 GB).
 
 The kernel self-heals: a work-item killed mid-PBKDF2 (driver limits,
 thermal reaping) breaks its chain tag and the host recomputes that
@@ -145,9 +148,25 @@ phrase on CPU — you'll see `gpu: repaired N / dropped M` on stderr.
 ```
 per combo (1 work-item):  word indices → entropy → SHA-256 checksum
                           → phrase → U1 = HMAC-SHA512(phrase, salt‖1)
-pbkdf2_step (×4 launches): Uᵢ = HMAC(Uᵢ₋₁); T ⊕= Uᵢ   (512 iters/launch)
+                          → record stores HMAC midstates hin/hout
+pbkdf2_step (×4 launches): Uᵢ = SHA512(hin‖Uᵢ₋₁) → SHA512(hout‖·); T ⊕= Uᵢ
+                          (512 iters/launch, 2 compressions/iter)
 host (rayon):            seed → BIP32 path → hash160 → target set
 ```
+
+The compression functions use a circular `W[16]` message schedule under
+`#pragma unroll` — register-resident after unrolling. (Do NOT hand-unroll
+via macros: NVIDIA's frontend miscompiles the expanded form — verified
+on GTX 1070 Ti, 2026-09. `#pragma unroll` is the portable fast path.)
+
+The HMAC midstates are computed once in `emit_if_valid` (k0 = phrase‖0,
+or SHA-512(phrase) when plen > 128) — `pbkdf2_step` then never touches
+the phrase, and each PBKDF2 iteration costs 2 compressions instead of 4.
+
+On NVIDIA the two stages are built with separate `-cl-nv-maxrregcount`
+caps (filter 40 / step 64) — register pressure limits occupancy, and the
+cap roughly doubles throughput. Override with `KERNEL_OPTS` (both) or
+`KERNEL_OPTS_FILTER` / `KERNEL_OPTS_STEP` (per stage).
 
 PBKDF2 is chunked across launches because a 2048-round HMAC loop inside a
 single work-item trips per-item execution limits on Apple OpenCL
@@ -157,18 +176,22 @@ item leaves a stale tag and the host CPU-recomputes that phrase, so a
 driver-level kill can no longer corrupt a seed silently. GPU↔CPU
 seed parity is covered by `gpu::tests::gpu_cpu_parity` +
 `gpu_cpu_permute_parity` (run with `cargo test --features gpu -- --ignored`).
+`BTCUNLOCK_DEBUG=1` prints per-stage batch timings to stderr.
 
-Measured on Apple M1 (8 CUs, iGPU): ~0.7 M combos/s. Discrete GPUs
-(1070 Ti class) land ~10–50× higher — the whole hot path is SHA-512.
+Measured (bench template, 24-word/3-hole): Apple M1 ~0.7 M combos/s;
+**GTX 1070 Ti ~9.6 M combos/s / ~37 k seeds/s** (filter ~30 M/s,
+pbkdf2 ~42 k seeds/s at 32 M batch). For 12-word templates the 1/16
+checksum pass rate makes PBKDF2 the dominant stage (~0.6–0.7 M
+combos/s effective).
 
 ## Feasibility
 
-| missing words | combos        | checksum-valid | M1 GPU   | dGPU     |
-|---------------|---------------|----------------|----------|----------|
-| 1             | 2 048         | ~8             | instant  | instant  |
-| 2             | 4.2 M         | ~16 K          | seconds  | seconds  |
-| 3             | 8.6 G         | ~33 M          | ~hours   | ~10 min  |
-| 4             | 17.6 T        | ~68 G          | days     | ~day     |
+| missing words | combos        | checksum-valid | M1 GPU   | GTX 1070 Ti |
+|---------------|---------------|----------------|----------|-------------|
+| 1             | 2 048         | ~8             | instant  | instant     |
+| 2             | 4.2 M         | ~16 K          | seconds  | instant     |
+| 3             | 8.6 G         | ~33 M          | ~hours   | ~15 min     |
+| 4             | 17.6 T        | ~68 G          | days     | ~3 weeks    |
 
 (24-word phrase, 8-bit checksum; 12-word phrases pass ~1/16 — more seeds.)
 

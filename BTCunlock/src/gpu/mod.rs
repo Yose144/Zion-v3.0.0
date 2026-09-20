@@ -24,8 +24,9 @@ const KERNEL_SRC: &str = include_str!("kernel.cl");
 /// Total = 1 (U1 in filter) + 2047 across steps = 2048.
 const STEP_ITERS: u32 = 512;
 const REMAINING: u32 = 2048 - 1;
-/// State record size — must match kernel.cl STATE_SIZE.
-const STATE_SIZE: usize = 392;
+/// State record size — must match kernel.cl STATE_SIZE (392 + 128 B of
+/// HMAC midstates appended at OFF_HI/OFF_HO; earlier offsets unchanged).
+const STATE_SIZE: usize = 520;
 const OFF_COMBO: usize = 0;
 const OFF_PLEN: usize = 8;
 const OFF_PHRASE: usize = 12;
@@ -81,12 +82,43 @@ impl Gpu {
         #[cfg(not(target_os = "macos"))]
         let queue =
             CommandQueue::create_with_properties(&context, dev_id, 0, 0).map_err(cl_err)?;
-        let opts = std::env::var("KERNEL_OPTS").unwrap_or_default();
-        let program = Program::create_and_build_from_source(&context, KERNEL_SRC, &opts)
-            .map_err(|e| anyhow::anyhow!("opencl kernel build: {e}"))?;
-        let k_filter = Kernel::create(&program, "bip39_filter").map_err(cl_err)?;
-        let k_step = Kernel::create(&program, "pbkdf2_step").map_err(cl_err)?;
-        let k_perm = Kernel::create(&program, "permute_filter").map_err(cl_err)?;
+        // NVIDIA: register-cap the two pipeline stages separately — the
+        // filter runs best at ~40 regs (occupancy), pbkdf2_step at ~64
+        // (measured on GTX 1070 Ti: +34% filter, +79% pbkdf2 vs default).
+        // KERNEL_OPTS overrides both; KERNEL_OPTS_{FILTER,STEP} win per-stage.
+        let env_opts = std::env::var("KERNEL_OPTS").unwrap_or_default();
+        let is_nv = {
+            let v = device.vendor().unwrap_or_default().to_lowercase();
+            let n = device_name.to_lowercase();
+            v.contains("nvidia") || n.contains("nvidia") || n.contains("geforce")
+        };
+        let pick = |var: &str, nv_default: &str| -> String {
+            std::env::var(var).unwrap_or_else(|_| {
+                if !env_opts.is_empty() {
+                    env_opts.clone()
+                } else if is_nv {
+                    nv_default.into()
+                } else {
+                    String::new()
+                }
+            })
+        };
+        let opts_f = pick("KERNEL_OPTS_FILTER", "-cl-nv-maxrregcount=40");
+        let opts_s = pick("KERNEL_OPTS_STEP", "-cl-nv-maxrregcount=64");
+        let prog_f = Program::create_and_build_from_source(&context, KERNEL_SRC, &opts_f)
+            .map_err(|e| anyhow::anyhow!("opencl filter build: {e}"))?;
+        let prog_s = if opts_s == opts_f {
+            None
+        } else {
+            Some(
+                Program::create_and_build_from_source(&context, KERNEL_SRC, &opts_s)
+                    .map_err(|e| anyhow::anyhow!("opencl step build: {e}"))?,
+            )
+        };
+        let prog_step = prog_s.as_ref().unwrap_or(&prog_f);
+        let k_filter = Kernel::create(&prog_f, "bip39_filter").map_err(cl_err)?;
+        let k_step = Kernel::create(prog_step, "pbkdf2_step").map_err(cl_err)?;
+        let k_perm = Kernel::create(&prog_f, "permute_filter").map_err(cl_err)?;
 
         // wordlist blob + offsets (u16 — total < 16 KiB)
         let mut blob = Vec::with_capacity(16 * 1024);
@@ -322,6 +354,8 @@ impl Gpu {
         }
         #[allow(unused_unsafe)]
         unsafe {
+            let debug = std::env::var_os("BTCUNLOCK_DEBUG").is_some();
+            let t0 = std::time::Instant::now();
             // stage 1 — filter + U1
             self.queue
                 .enqueue_write_buffer(&mut self.count, CL_NON_BLOCKING, 0, &[0u32], &[])
@@ -345,10 +379,17 @@ impl Gpu {
             self.queue.finish().map_err(cl_err)?;
 
             let got = self.result_count()?;
+            if debug {
+                eprintln!("gpu: filter {n} combos → {got} seeds in {:.2?}", t0.elapsed());
+            }
             if got == 0 {
                 return Ok(Vec::new());
             }
-            self.finish_batch(got)
+            let out = self.finish_batch(got);
+            if debug {
+                eprintln!("gpu: pbkdf2 {got} seeds in {:.2?}", t0.elapsed());
+            }
+            out
         }
     }
 
@@ -365,6 +406,8 @@ impl Gpu {
         }
         #[allow(unused_unsafe)]
         unsafe {
+            let debug = std::env::var_os("BTCUNLOCK_DEBUG").is_some();
+            let t0 = std::time::Instant::now();
             self.queue
                 .enqueue_write_buffer(&mut self.count, CL_NON_BLOCKING, 0, &[0u32], &[])
                 .map_err(cl_err)?;
@@ -385,10 +428,17 @@ impl Gpu {
             self.queue.finish().map_err(cl_err)?;
 
             let got = self.result_count()?;
+            if debug {
+                eprintln!("gpu: filter {n} perms → {got} seeds in {:.2?}", t0.elapsed());
+            }
             if got == 0 {
                 return Ok(Vec::new());
             }
-            self.finish_batch(got)
+            let out = self.finish_batch(got);
+            if debug {
+                eprintln!("gpu: pbkdf2 {got} seeds in {:.2?}", t0.elapsed());
+            }
+            out
         }
     }
 }
