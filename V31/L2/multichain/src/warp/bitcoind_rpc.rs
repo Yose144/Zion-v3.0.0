@@ -132,15 +132,30 @@ async fn wallet_rpc(
 }
 
 /// Import `addr` into the watch-only wallet via `addr()` descriptor with
-/// `timestamp="now"` — no rescan (the node is pruned). Per-descriptor errors
-/// ("already exists", range) are ignored; transport/RPC failures propagate.
+/// `timestamp="now"` — no rescan (the node is pruned). The descriptor needs
+/// its checksum (`#xxxxxxxx`), resolved via `getdescriptorinfo`. Per-descriptor
+/// errors ("already exists", range) are ignored; transport/RPC failures
+/// propagate so failover can answer instead.
 async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), String> {
+    let info = wallet_rpc(
+        client,
+        ep,
+        "getdescriptorinfo",
+        json!([format!("addr({addr})")]),
+    )
+    .await?;
+    let desc = info
+        .get("descriptor")
+        .and_then(|d| d.as_str())
+        .ok_or_else(|| format!("getdescriptorinfo({addr}): no descriptor"))?
+        .to_string();
+    // `requests` is itself an array param → double-wrapped.
     let res = wallet_rpc(
         client,
         ep,
         "importdescriptors",
-        json!([{"desc": format!("addr({addr})"), "timestamp": "now", "active": false,
-                "internal": false, "label": "warp"}]),
+        json!([[{"desc": desc, "timestamp": "now", "active": false,
+                "internal": false, "label": "warp"}]]),
     )
     .await?;
     if let Some(err) = res
@@ -234,7 +249,9 @@ fn decoded_to_mempool_tx(decoded: &Value, tx_meta: &Value) -> Value {
 /// prevout references).
 async fn address_txs(client: &Client, ep: &BtcRpc, addr: &str) -> Result<String, String> {
     ensure_address(client, ep, addr).await?;
-    let since = wallet_rpc(client, ep, "listsinceblock", json!(["", 0, true])).await?;
+    // No params: watch-only wallets default include_watchonly=true and an
+    // absent blockhash lists all known txs.
+    let since = wallet_rpc(client, ep, "listsinceblock", json!([])).await?;
     let mut txids = BTreeSet::new();
     if let Some(txs) = since.get("transactions").and_then(|t| t.as_array()) {
         for t in txs {

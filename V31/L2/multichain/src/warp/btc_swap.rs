@@ -857,6 +857,36 @@ impl BtcSwapFlow {
         })
     }
 
+    /// Prometheus text exposition of [`Self::health_metrics`].
+    pub async fn prometheus_metrics(&self) -> String {
+        let m = self.health_metrics().await;
+        let mut out = String::from(
+            "# HELP warp_btc_swap_total BTC swaps by phase.\n\
+             # TYPE warp_btc_swap_total gauge\n",
+        );
+        if let Some(phases) = m.get("phases").and_then(|p| p.as_object()) {
+            for (phase, n) in phases {
+                out.push_str(&format!(
+                    "warp_btc_swap_total{{phase=\"{phase}\"}} {n}\n"
+                ));
+            }
+        }
+        for (name, key) in [
+            ("warp_btc_swap_active", "active"),
+            ("warp_btc_swap_oldest_active_age_secs", "oldest_active_age_secs"),
+            ("warp_btc_swap_max_idle_secs", "max_active_idle_secs"),
+            ("warp_btc_swap_next_deadline_secs", "next_zion_deadline_secs"),
+            ("warp_btc_swap_near_deadline", "swaps_near_deadline"),
+            ("warp_btc_swap_stale", "swaps_stale"),
+        ] {
+            let v = m.get(key).cloned().unwrap_or(serde_json::Value::Null);
+            let num = if v.is_null() { "0".into() } else { v.to_string() };
+            out.push_str(&format!("# TYPE {name} gauge\n{name} {num}\n"));
+        }
+        out.push_str("# TYPE warp_btc_swap_enabled gauge\nwarp_btc_swap_enabled 1\n");
+        out
+    }
+
     // ── Poll loop ────────────────────────────────────────────────────────
 
     /// One iteration over all non-terminal swaps: gather observations, decide,
@@ -2172,5 +2202,40 @@ mod tests {
         assert_eq!(m["total"], 0);
         assert_eq!(m["active"], 0);
         assert!(m["next_zion_deadline_secs"].is_null());
+    }
+
+    #[tokio::test]
+    async fn prometheus_metrics_emits_gauges() {
+        let s = signer();
+        let c = cfg();
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c.clone(),
+        );
+        let mut active = btc_to_zion_rec(&s, &c);
+        active.zion_timeout_ts = (Utc::now().timestamp() + 1800) as u64;
+        flow.insert_record(active).await;
+        let mut settled = btc_to_zion_rec(&s, &c);
+        settled.phase = BtcSwapPhase::Settled;
+        flow.insert_record(settled).await;
+
+        let txt = flow.prometheus_metrics().await;
+        assert!(txt.contains("# TYPE warp_btc_swap_total gauge"));
+        assert!(txt.contains("warp_btc_swap_total{phase=\"awaiting_user_lock\"} 1"));
+        assert!(txt.contains("warp_btc_swap_total{phase=\"settled\"} 1"));
+        assert!(txt.contains("warp_btc_swap_active 1"));
+        assert!(txt.contains("warp_btc_swap_near_deadline 1"));
+        // null gauges render as 0 rather than "null"
+        let empty = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        let txt = empty.prometheus_metrics().await;
+        assert!(txt.contains("warp_btc_swap_next_deadline_secs 0"));
+        assert!(!txt.contains("null"));
     }
 }
