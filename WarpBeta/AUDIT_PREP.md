@@ -97,6 +97,6 @@ Blokuje `WARP_BTC_SWAP_ENABLED=1`:
 6. ☐ `ZION_MULTICHAIN_API_KEY` nebo ZIS auth pro offer endpoint
 7. ☐ SQLite path/permissions/backup + `load_from_db` enabled v `warpd`
 8. ☐ `WARP_ZION_LOCK_MIN_CONFS` + `WARP_BTC_MIN_CONFS` + margin review pro mainnet parametry
-9. ☐ Monitoring/alerting: stuck swaps, failed submissions, refund deadlines, RPC outages, DB load failures
+9. 🟡 Monitoring/alerting: `GET /v1/multichain/swaps/btc/metrics` expozuje per-phase counts + `oldest_active_age_secs`, `max_active_idle_secs`, `next_zion_deadline_secs`, `swaps_near_deadline`, `swaps_stale` — zbývá navěsit alert (Prometheus/Grafana scrape nebo cron check)
 10. ☐ Rollback procedura (disable env → restart → in-flight swaps dožijí/refundují)
 11. ☐ Signet/testnet E2E run — **dead-end 2026-09-20** (faucety nedoručily funding); nahrazeno doporučením **mainnet dust pilotu** s cap (`WARP_BTC_SWAP_MAX_SATS` nízko) — regtest+live-ZION leg pokrývají pathy

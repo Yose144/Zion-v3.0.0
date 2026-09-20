@@ -287,6 +287,7 @@ impl ApiServer {
             .route("/v1/multichain/swaps/htlc/:hash", get(htlc_get))
             .route("/v1/multichain/swaps/btc/offer", post(btc_swap_offer))
             .route("/v1/multichain/swaps/btc/list", get(btc_swap_list))
+            .route("/v1/multichain/swaps/btc/metrics", get(btc_swap_metrics))
             .route("/v1/multichain/swaps/btc/:id", get(btc_swap_get))
             .route("/v1/pool/stats", get(pool_stats))
             .route("/v1/pool/payouts", get(pool_payouts))
@@ -1690,6 +1691,19 @@ async fn btc_swap_list(State(state): State<AppState>) -> Json<serde_json::Value>
             Json(serde_json::json!({ "enabled": true, "swaps": records }))
         }
         None => Json(serde_json::json!({ "enabled": false, "swaps": [] })),
+    }
+}
+
+/// Operator monitoring: per-phase counts + staleness/deadline gauges.
+/// Public read — the payload deliberately carries no secrets.
+async fn btc_swap_metrics(State(state): State<AppState>) -> Json<serde_json::Value> {
+    match state.service.btc_swap() {
+        Some(flow) => {
+            let mut m = flow.health_metrics().await;
+            m["enabled"] = serde_json::json!(true);
+            Json(m)
+        }
+        None => Json(serde_json::json!({ "enabled": false })),
     }
 }
 

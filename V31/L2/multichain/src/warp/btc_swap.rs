@@ -806,6 +806,57 @@ impl BtcSwapFlow {
         self.records.lock().await.values().cloned().collect()
     }
 
+    /// Monitoring summary for operator dashboards/alerting — per-phase
+    /// counts plus staleness and deadline gauges over non-terminal swaps.
+    /// Contains no secrets (no pubkeys, addresses, or preimages).
+    pub async fn health_metrics(&self) -> serde_json::Value {
+        let recs = self.all_records().await;
+        let now = Utc::now();
+        let mut phases = serde_json::Map::new();
+        let mut active = 0u64;
+        let mut oldest_age: i64 = 0;
+        let mut max_idle: i64 = 0;
+        let mut next_deadline: Option<i64> = None;
+        let mut near_deadline = 0u64;
+        let mut stale = 0u64;
+        for r in &recs {
+            let tag = match &r.phase {
+                BtcSwapPhase::AwaitingUserLock => "awaiting_user_lock",
+                BtcSwapPhase::Locked => "locked",
+                BtcSwapPhase::Settled => "settled",
+                BtcSwapPhase::Refunded => "refunded",
+                BtcSwapPhase::Failed(_) => "failed",
+            };
+            let cur = phases.get(tag).and_then(|v| v.as_u64()).unwrap_or(0);
+            phases.insert(tag.to_string(), serde_json::json!(cur + 1));
+            if r.phase.is_terminal() {
+                continue;
+            }
+            active += 1;
+            oldest_age = oldest_age.max((now - r.created_at).num_seconds());
+            let idle = (now - r.updated_at).num_seconds();
+            max_idle = max_idle.max(idle);
+            let dl = r.zion_timeout_ts as i64 - now.timestamp();
+            next_deadline = Some(next_deadline.map(|d: i64| d.min(dl)).unwrap_or(dl));
+            if dl < 3600 {
+                near_deadline += 1;
+            }
+            if idle > self.cfg.offer_ttl_secs as i64 {
+                stale += 1;
+            }
+        }
+        serde_json::json!({
+            "total": recs.len(),
+            "active": active,
+            "phases": phases,
+            "oldest_active_age_secs": oldest_age,
+            "max_active_idle_secs": max_idle,
+            "next_zion_deadline_secs": next_deadline,
+            "swaps_near_deadline": near_deadline,
+            "swaps_stale": stale,
+        })
+    }
+
     // ── Poll loop ────────────────────────────────────────────────────────
 
     /// One iteration over all non-terminal swaps: gather observations, decide,
@@ -2070,5 +2121,56 @@ mod tests {
         );
         let check = flow.verify_user_zion_lock(&rec).await.unwrap();
         assert!(matches!(check, LockCheck::Verified));
+    }
+
+    #[tokio::test]
+    async fn health_metrics_counts_phases_and_deadlines() {
+        let s = signer();
+        let c = cfg();
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c.clone(),
+        );
+        // Active swap with a deadline 30 min out → counts as near_deadline.
+        let mut active = btc_to_zion_rec(&s, &c);
+        active.zion_timeout_ts = (Utc::now().timestamp() + 1800) as u64;
+        flow.insert_record(active).await;
+        // Terminal swap — excluded from active gauges.
+        let mut settled = btc_to_zion_rec(&s, &c);
+        settled.phase = BtcSwapPhase::Settled;
+        flow.insert_record(settled).await;
+        // Failed swap — terminal.
+        let mut failed = btc_to_zion_rec(&s, &c);
+        failed.phase = BtcSwapPhase::Failed("boom".into());
+        flow.insert_record(failed).await;
+
+        let m = flow.health_metrics().await;
+        assert_eq!(m["total"], 3);
+        assert_eq!(m["active"], 1);
+        assert_eq!(m["phases"]["awaiting_user_lock"], 1);
+        assert_eq!(m["phases"]["settled"], 1);
+        assert_eq!(m["phases"]["failed"], 1);
+        assert_eq!(m["swaps_near_deadline"], 1);
+        assert!(m["next_zion_deadline_secs"].as_i64().unwrap() <= 1800);
+        assert!(m["oldest_active_age_secs"].as_i64().unwrap() >= 0);
+        // no secret material leaks
+        let txt = serde_json::to_string(&m).unwrap();
+        assert!(!txt.contains("preimage") && !txt.contains("pubkey"));
+    }
+
+    #[tokio::test]
+    async fn health_metrics_empty() {
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        let m = flow.health_metrics().await;
+        assert_eq!(m["total"], 0);
+        assert_eq!(m["active"], 0);
+        assert!(m["next_zion_deadline_secs"].is_null());
     }
 }
