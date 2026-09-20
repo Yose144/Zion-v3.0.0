@@ -3,9 +3,11 @@
 //! ever touches the network.
 
 use crate::engine::{
-    combo_phrase, cpu_seeds, match_seed, verify_phrase, DerivePlan, TargetSet, Template,
+    combo_phrase, cpu_seeds, match_seed_ctx, verify_phrase, DerivePlan, TargetSet, Template,
 };
 use anyhow::{Context, Result};
+use bitcoin::secp256k1::Secp256k1;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::io::Write;
@@ -136,14 +138,61 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
     let mut valid_seeds = 0u64;
     let stdout = std::io::stdout();
 
-    while base < tpl.total_combos {
-        let n = opts.batch.min((tpl.total_combos - base) as usize);
-        let seeds = backend.derive(&tpl, &opts.passphrase, base, n)?;
+    // Feeder pipeline: the backend (GPU batch or CPU rayon chunk) lives on a
+    // worker thread; job/result channels give one batch of lookahead so the
+    // GPU derives batch k+1 while the host matches batch k on all cores.
+    type Batch = Result<(u64, usize, Vec<(u64, [u8; 64])>)>;
+    let (job_tx, job_rx) = std::sync::mpsc::channel::<(u64, usize)>();
+    let (res_tx, res_rx) = std::sync::mpsc::channel::<Batch>();
+    let worker = {
+        let tpl_w = Template {
+            indices: tpl.indices.clone(),
+            holes: tpl.holes.clone(),
+            total_combos: tpl.total_combos,
+        };
+        let pass_w = opts.passphrase.clone();
+        std::thread::spawn(move || {
+            while let Ok((b, n)) = job_rx.recv() {
+                let r = backend.derive(&tpl_w, &pass_w, b, n).map(|s| (b, n, s));
+                if res_tx.send(r).is_err() {
+                    break;
+                }
+            }
+        })
+    };
+    let mut send_base = base;
+    let mut dispatch = || -> bool {
+        let n = opts.batch.min((tpl.total_combos - send_base) as usize);
+        if n > 0 {
+            let _ = job_tx.send((send_base, n));
+            send_base += n as u64;
+            return true;
+        }
+        false
+    };
+    // outstanding = batches sent but not yet received. recv only happens
+    // when a result is guaranteed in-flight — the channels never disconnect
+    // until after the loop, so a bare `while let Ok` would deadlock.
+    let mut outstanding = dispatch() as u64;
+    while outstanding > 0 {
+        outstanding += dispatch() as u64; // keep the worker busy on k+1 while we match k
+        let (b, n, seeds) = match res_rx.recv() {
+            Ok(r) => r?,
+            Err(_) => anyhow::bail!("derive worker died"),
+        };
+        outstanding -= 1;
         valid_seeds += seeds.len() as u64;
-        for (combo, seed) in &seeds {
-            for (path, addr) in match_seed(seed, &opts.plan, &opts.targets) {
+        let hits: Vec<(u64, Vec<(String, bitcoin::Address)>)> = seeds
+            .par_iter()
+            .map_init(Secp256k1::new, |secp, (combo, seed)| {
+                (*combo, match_seed_ctx(seed, &opts.plan, &opts.targets, secp))
+            })
+            .filter(|(_, h)| !h.is_empty())
+            .collect();
+        for (combo, paths) in hits {
+            for (path, addr) in paths {
                 hit_count += 1;
-                let phrase = combo_phrase(&tpl, *combo);
+                let phrase = combo_phrase(&tpl, combo);
                 let _ = verify_phrase(&phrase); // sanity — bip39 re-parse
                 let mut out = stdout.lock();
                 let _ = writeln!(out, "HIT  combo={combo}");
@@ -154,7 +203,7 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
             }
         }
         tested += n as u64;
-        base += n as u64;
+        base = b + n as u64; // consumed prefix end (results arrive in order)
 
         if last_report.elapsed().as_secs() >= 2 {
             let dt = t0.elapsed().as_secs_f64();
@@ -174,6 +223,9 @@ pub fn run(opts: RecoverOpts) -> Result<()> {
             last_report = Instant::now();
         }
     }
+    drop(dispatch);
+    drop(job_tx);
+    worker.join().map_err(|_| anyhow::anyhow!("derive worker panicked"))?;
     save_checkpoint(Path::new(&ckpt_path), &opts.phrase_template, base, tested, hit_count);
     eprintln!(
         "done — {} combos, {} hit(s), {:.1}s",
@@ -223,7 +275,7 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
 
     // backend selection — a boxed derive closure keeps the loop backend-free
     #[cfg(feature = "gpu")]
-    let mut gpu_dev = if opts.use_gpu {
+    let gpu_dev = if opts.use_gpu {
         let mut g = crate::gpu::Gpu::init(opts.gpu_index, opts.batch)?;
         eprintln!("gpu: {}", g.device_name);
         g.bind_permute(&widx, &opts.passphrase)?;
@@ -272,25 +324,75 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
     let mut phrase_seen = has_dup.then(std::collections::HashSet::new); // CPU: pre-PBKDF2
     let mut seed_seen = has_dup.then(std::collections::HashSet::new); // GPU: post-PBKDF2
 
-    while base < scan_total {
-        let cnt = (opts.batch as u64).min(scan_total - base);
+    // Same feeder pipeline as run(): the derive backend lives on a worker
+    // thread; one batch of lookahead overlaps GPU PBKDF2 with host matching.
+    type Batch = Result<(u64, u64, Vec<(u64, [u8; 64])>)>;
+    let (job_tx, job_rx) = std::sync::mpsc::channel::<(u64, u64)>();
+    let (res_tx, res_rx) = std::sync::mpsc::channel::<Batch>();
+    let worker = {
+        let widx_w = widx.clone();
+        let pass_w = opts.passphrase.clone();
         #[cfg(feature = "gpu")]
-        let seeds = match gpu_dev.as_mut() {
-            Some(g) => g.derive_perm_batch(n, base, cnt as usize)?,
-            None => crate::engine::perm_seeds(&widx, &opts.passphrase, base, cnt as u32, phrase_seen.as_mut()),
-        };
-        #[cfg(not(feature = "gpu"))]
-        let seeds = crate::engine::perm_seeds(&widx, &opts.passphrase, base, cnt as u32, phrase_seen.as_mut());
-        valid_seeds += seeds.len() as u64;
-        for (p, seed) in &seeds {
-            if let Some(set) = seed_seen.as_mut() {
-                if !set.insert(u64::from_le_bytes(seed[..8].try_into().unwrap())) {
-                    continue;
+        let mut gpu_w = gpu_dev;
+        std::thread::spawn(move || {
+            while let Ok((b, cnt)) = job_rx.recv() {
+                #[cfg(feature = "gpu")]
+                let r = match gpu_w.as_mut() {
+                    Some(g) => g.derive_perm_batch(n, b, cnt as usize),
+                    None => Ok(crate::engine::perm_seeds(
+                        &widx_w, &pass_w, b, cnt as u32, phrase_seen.as_mut(),
+                    )),
+                };
+                #[cfg(not(feature = "gpu"))]
+                let r = Ok(crate::engine::perm_seeds(
+                    &widx_w, &pass_w, b, cnt as u32, phrase_seen.as_mut(),
+                ));
+                if res_tx.send(r.map(|s| (b, cnt, s))).is_err() {
+                    break;
                 }
             }
-            for (path, addr) in match_seed(seed, &opts.plan, &opts.targets) {
+        })
+    };
+    let mut send_base = base;
+    let mut dispatch = || -> bool {
+        let cnt = (opts.batch as u64).min(scan_total - send_base);
+        if cnt > 0 {
+            let _ = job_tx.send((send_base, cnt));
+            send_base += cnt;
+            return true;
+        }
+        false
+    };
+    let mut outstanding = dispatch() as u64;
+    while outstanding > 0 {
+        outstanding += dispatch() as u64; // keep the worker busy on k+1 while we match k
+        let (b, cnt, seeds) = match res_rx.recv() {
+            Ok(r) => r?,
+            Err(_) => anyhow::bail!("derive worker died"),
+        };
+        outstanding -= 1;
+        valid_seeds += seeds.len() as u64;
+        // serial dedupe (dup input words → repeated phrases) before the par
+        // match — the HashSet can't be mutated from inside par_iter.
+        let kept: Vec<(u64, [u8; 64])> = match seed_seen.as_mut() {
+            Some(set) => seeds
+                .iter()
+                .filter(|(_, seed)| set.insert(u64::from_le_bytes(seed[..8].try_into().unwrap())))
+                .copied()
+                .collect(),
+            None => seeds,
+        };
+        let hits: Vec<(u64, Vec<(String, bitcoin::Address)>)> = kept
+            .par_iter()
+            .map_init(Secp256k1::new, |secp, (p, seed)| {
+                (*p, match_seed_ctx(seed, &opts.plan, &opts.targets, secp))
+            })
+            .filter(|(_, h)| !h.is_empty())
+            .collect();
+        for (p, paths) in hits {
+            for (path, addr) in paths {
                 hit_count += 1;
-                let phrase = crate::engine::perm_phrase(&widx, *p);
+                let phrase = crate::engine::perm_phrase(&widx, p);
                 let _ = verify_phrase(&phrase);
                 let mut out = stdout.lock();
                 let _ = writeln!(out, "HIT  perm={p}");
@@ -300,7 +402,7 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
                 let _ = out.flush();
             }
         }
-        base += cnt;
+        base = b + cnt;
 
         if last_report.elapsed().as_secs() >= 2 {
             let dt = t0.elapsed().as_secs_f64();
@@ -320,6 +422,9 @@ pub fn run_permute(opts: PermuteOpts) -> Result<()> {
             last_report = Instant::now();
         }
     }
+    drop(dispatch);
+    drop(job_tx);
+    worker.join().map_err(|_| anyhow::anyhow!("derive worker panicked"))?;
     save_checkpoint(Path::new(&ckpt_path), &key, base, base, hit_count);
     eprintln!(
         "done — {} perms, {} hit(s), {:.1}s",
