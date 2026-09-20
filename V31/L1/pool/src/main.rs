@@ -283,6 +283,9 @@ async fn main() -> anyhow::Result<()> {
     // ── Primary stratum listener ──────────────────────────────────────────
     let listener = TcpListener::bind(&args.bind).await?;
     let local_addr = listener.local_addr()?;
+    // Report the real bound port through the HTTP API (config.port was
+    // previously hardcoded to 0, so /stats reported "port":0).
+    pool.lock().unwrap().config.port = local_addr.port();
     info!("zion-pool listening on {}", local_addr);
 
     if !l1_rpc_url.is_empty() {

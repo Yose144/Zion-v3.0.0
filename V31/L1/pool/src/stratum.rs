@@ -33,7 +33,7 @@ use crate::auxpow_bridge::{MultiAuxPowBridge, ShareForwardRequest};
 use crate::block_tracker::BlockTracker;
 use crate::config::PoolConfig;
 use crate::notifications::{NotificationsConfig, Notifier};
-use crate::pool::{Pool, PoolError};
+use crate::pool::{Pool, PoolError, SessionCounters};
 use crate::rate_limit::{IpRateLimiter, ShareRateLimiter};
 use crate::revenue_scheduler::RevenueScheduler;
 use crate::routing::{resolve_session_group, session_group_name, RoutingStats};
@@ -129,6 +129,18 @@ pub struct StratumServer {
     routing_stats: Arc<Mutex<RoutingStats>>,
     /// Optional persistent store for blocks and payouts.
     share_store: Option<Arc<crate::store::ShareStore>>,
+    /// Connection/session counters shared with the HTTP API via `Pool`.
+    session_counters: SessionCounters,
+}
+
+/// Decrements the shared active-session counter when the session task
+/// exits, regardless of which return path it takes.
+struct ActiveSessionGuard(Arc<AtomicU64>);
+
+impl Drop for ActiveSessionGuard {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::Relaxed);
+    }
 }
 
 /// Stable fingerprint of the ZION template + external streams.
@@ -160,9 +172,13 @@ impl StratumServer {
     }
 
     pub fn new(pool: Arc<Mutex<Pool>>) -> Self {
-        let (config, telemetry) = {
+        let (config, telemetry, session_counters) = {
             let pool = pool.lock().unwrap();
-            (pool.config.clone(), pool.telemetry.clone())
+            (
+                pool.config.clone(),
+                pool.telemetry.clone(),
+                pool.session_counters.clone(),
+            )
         };
         let (notify_tx, _notify_rx) = broadcast::channel(256);
 
@@ -206,6 +222,7 @@ impl StratumServer {
                 1000,
             )))),
             share_store: None,
+            session_counters,
         }
     }
 
@@ -967,10 +984,19 @@ impl StratumServer {
                 continue;
             }
 
+            self.session_counters
+                .total_connections
+                .fetch_add(1, Ordering::Relaxed);
+            self.session_counters
+                .active_sessions
+                .fetch_add(1, Ordering::Relaxed);
+
             let server = self.clone();
             let ip = peer.ip();
             let counter = Arc::clone(&session_id_counter);
             tokio::spawn(async move {
+                let _active_guard =
+                    ActiveSessionGuard(server.session_counters.active_sessions.clone());
                 let (reader, writer) = tokio::io::split(socket);
                 let writer = Arc::new(tokio::sync::Mutex::new(writer));
                 let mut notify_rx = server.notify_tx.subscribe();
@@ -1043,6 +1069,13 @@ impl StratumServer {
         peer: std::net::SocketAddr,
     ) {
         let ip = peer.ip();
+        self.session_counters
+            .total_connections
+            .fetch_add(1, Ordering::Relaxed);
+        self.session_counters
+            .active_sessions
+            .fetch_add(1, Ordering::Relaxed);
+        let _active_guard = ActiveSessionGuard(self.session_counters.active_sessions.clone());
         let (reader, writer) = tokio::io::split(tls_stream);
         let writer = Arc::new(tokio::sync::Mutex::new(writer));
         let reader = BufReader::new(reader);
@@ -2643,6 +2676,90 @@ mod tests {
 
         tokio::time::advance(Duration::from_secs(61)).await;
         assert!(limiter.allow(ip));
+    }
+
+    #[test]
+    fn session_counters_shared_across_listeners() {
+        // Primary port, extra ports and TLS each build their own
+        // `StratumServer` — all must share the pool's counters so the HTTP
+        // API sees the combined session/connection totals.
+        let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
+        let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default(), telemetry)));
+        let primary = StratumServer::new(pool.clone());
+        let extra = StratumServer::new(pool.clone());
+        let tls = StratumServer::new(pool.clone());
+
+        for server in [&primary, &extra, &tls] {
+            assert!(Arc::ptr_eq(
+                &server.session_counters.active_sessions,
+                &pool.lock().unwrap().session_counters.active_sessions
+            ));
+            assert!(Arc::ptr_eq(
+                &server.session_counters.total_connections,
+                &pool.lock().unwrap().session_counters.total_connections
+            ));
+        }
+
+        // A connection accepted by any listener is visible through the
+        // shared pool counters.
+        extra
+            .session_counters
+            .total_connections
+            .fetch_add(1, Ordering::Relaxed);
+        assert_eq!(
+            pool.lock()
+                .unwrap()
+                .session_counters
+                .total_connections
+                .load(Ordering::Relaxed),
+            1
+        );
+    }
+
+    // NOTE: sync test — `Notifier` inside `StratumServer` owns a
+    // `reqwest::blocking::Client` whose internal runtime must not be dropped
+    // inside an async context, so the server runs on a dedicated thread.
+    #[test]
+    fn session_counters_track_connections() {
+        use std::io::Write as _;
+
+        let server = make_server();
+        let counters = server.pool.lock().unwrap().session_counters.clone();
+        let (addr_tx, addr_rx) = std::sync::mpsc::channel();
+        let srv = server.clone();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                addr_tx.send(listener.local_addr().unwrap()).unwrap();
+                let _ = srv.run(listener).await;
+            });
+        });
+        let addr = addr_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+
+        let mut stream = std::net::TcpStream::connect(addr).unwrap();
+        stream
+            .write_all(b"{\"id\":1,\"method\":\"mining.subscribe\",\"params\":[]}\n")
+            .unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while counters.active_sessions.load(Ordering::Relaxed) == 0 {
+            assert!(Instant::now() < deadline, "session not registered");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(counters.total_connections.load(Ordering::Relaxed), 1);
+        assert_eq!(counters.active_sessions.load(Ordering::Relaxed), 1);
+
+        drop(stream);
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while counters.active_sessions.load(Ordering::Relaxed) != 0 {
+            assert!(Instant::now() < deadline, "session not released");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(counters.total_connections.load(Ordering::Relaxed), 1);
     }
 
     #[test]

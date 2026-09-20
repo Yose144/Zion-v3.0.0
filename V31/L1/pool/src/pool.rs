@@ -24,6 +24,17 @@ pub enum PoolError {
     Unauthorized,
 }
 
+/// Stratum connection/session counters shared between every
+/// `StratumServer` listener (primary port, extra ports, TLS) and the HTTP
+/// API. Cloning the handle shares the same underlying atomics.
+#[derive(Clone, Debug, Default)]
+pub struct SessionCounters {
+    /// Currently open stratum sessions.
+    pub active_sessions: Arc<AtomicU64>,
+    /// Cumulative accepted connections since start.
+    pub total_connections: Arc<AtomicU64>,
+}
+
 #[derive(Debug)]
 pub struct Pool {
     pub config: PoolConfig,
@@ -32,6 +43,8 @@ pub struct Pool {
     pub current_job_id: AtomicU64,
     pub accepted: AtomicU64,
     pub rejected: AtomicU64,
+    /// Live stratum session counters for the HTTP API.
+    pub session_counters: SessionCounters,
     /// Authorized worker name -> payout address (anonymous mining).
     pub worker_addresses: HashMap<String, Address>,
     /// Last computed payouts for a found block, keyed by block height.
@@ -73,6 +86,7 @@ impl Pool {
             current_job_id: AtomicU64::new(1),
             accepted: AtomicU64::new(0),
             rejected: AtomicU64::new(0),
+            session_counters: SessionCounters::default(),
             worker_addresses: HashMap::new(),
             last_payouts: None,
             signing_key,

@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -19,8 +19,6 @@ pub struct PoolApi {
     auxpow_bridge: Option<MultiAuxPowBridge>,
     routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
     started_at: Instant,
-    active_sessions: Arc<AtomicU64>,
-    total_connections: Arc<AtomicU64>,
 }
 
 impl PoolApi {
@@ -35,8 +33,6 @@ impl PoolApi {
             auxpow_bridge,
             routing_stats: None,
             started_at: Instant::now(),
-            active_sessions: Arc::new(AtomicU64::new(0)),
-            total_connections: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -46,14 +42,6 @@ impl PoolApi {
     ) -> Self {
         self.routing_stats = Some(stats);
         self
-    }
-
-    pub fn active_sessions(&self) -> &Arc<AtomicU64> {
-        &self.active_sessions
-    }
-
-    pub fn total_connections(&self) -> &Arc<AtomicU64> {
-        &self.total_connections
     }
 
     pub fn serve(&self, bind_addr: &str) -> Result<()> {
@@ -312,8 +300,14 @@ impl PoolApi {
         let pool = self.pool.lock().expect("pool lock poisoned");
         let (accepted, rejected) = pool.stats();
         let uptime_s = self.started_at.elapsed().as_secs();
-        let sessions = self.active_sessions.load(Ordering::Relaxed);
-        let total_conn = self.total_connections.load(Ordering::Relaxed);
+        let sessions = pool
+            .session_counters
+            .active_sessions
+            .load(Ordering::Relaxed);
+        let total_conn = pool
+            .session_counters
+            .total_connections
+            .load(Ordering::Relaxed);
         let stats = pool.pplns.stats();
         let fees = pool.pplns.fee_stats();
 
@@ -558,8 +552,14 @@ impl PoolApi {
         let pool = self.pool.lock().expect("pool lock poisoned");
         let (accepted, rejected) = pool.stats();
         let uptime_s = self.started_at.elapsed().as_secs();
-        let sessions = self.active_sessions.load(Ordering::Relaxed);
-        let total_conn = self.total_connections.load(Ordering::Relaxed);
+        let sessions = pool
+            .session_counters
+            .active_sessions
+            .load(Ordering::Relaxed);
+        let total_conn = pool
+            .session_counters
+            .total_connections
+            .load(Ordering::Relaxed);
 
         json!({
             "ok": true,
@@ -632,7 +632,7 @@ impl PoolApi {
     }
 
     fn build_prometheus_payload(&self) -> String {
-        let (accepted, rejected, telemetry, stats, fees) = {
+        let (accepted, rejected, telemetry, stats, fees, sessions) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
             (
                 pool.stats().0,
@@ -640,9 +640,11 @@ impl PoolApi {
                 pool.telemetry.clone(),
                 pool.pplns.stats(),
                 pool.pplns.fee_stats(),
+                pool.session_counters
+                    .active_sessions
+                    .load(Ordering::Relaxed),
             )
         };
-        let sessions = self.active_sessions.load(Ordering::Relaxed);
         let uptime_s = self.started_at.elapsed().as_secs();
         let now_s = now_unix_seconds();
 
@@ -1027,5 +1029,29 @@ mod tests {
         let (miner, limit) = parse_query_miner_limit("/payouts?miner=abc&limit=20", 50);
         assert_eq!(miner, Some("abc".to_string()));
         assert_eq!(limit, 20);
+    }
+
+    #[test]
+    fn stats_payload_reports_shared_counters_and_port() {
+        let telemetry = Arc::new(Mutex::new(crate::telemetry::MinerTelemetryRegistry::new()));
+        let config = crate::config::PoolConfig {
+            port: 8444,
+            ..Default::default()
+        };
+        let pool = Arc::new(Mutex::new(Pool::new(config, telemetry)));
+        {
+            let pool = pool.lock().unwrap();
+            pool.session_counters
+                .total_connections
+                .store(7, Ordering::Relaxed);
+            pool.session_counters
+                .active_sessions
+                .store(3, Ordering::Relaxed);
+        }
+        let api = PoolApi::new(pool, None, None);
+        let payload: serde_json::Value = serde_json::from_str(&api.build_stats_payload()).unwrap();
+        assert_eq!(payload["sessions"], 3);
+        assert_eq!(payload["total_connections"], 7);
+        assert_eq!(payload["pool"]["port"], 8444);
     }
 }
