@@ -18,7 +18,7 @@ Jediné, co kniha smí tvrdit jako repozitářový fakt, je že v repozitáři e
 - [`../Lumi/12-Brana-Zustava-Otevrena.md`](../Lumi/12-Brana-Zustava-Otevrena.md) — Lumi nese lucernu, brána zůstává otevřená, poslední stránka její knihy je prázdná.
 - [`../SulZeme/11-Brana-Prvniho-Hrace-a-Volba-Cesty.md`](../SulZeme/11-Brana-Prvniho-Hrace-a-Volba-Cesty.md) — na cestě Srdce stojí růžová zahrada a Rádha říká doslova: **„vztah bez svobody je klec“**.
 - V [`V31/L4/oasis/data/avatars.json`](../../../V31/L4/oasis/data/avatars.json) existuje avatar `id: 18` se jménem **Meriam Rose**, `location: Jerusalem Garden`, `teaching: "True devotion sees beyond form"`.
-- [`../BodhiGaia/03-Zahrada-Genesis.md`](../BodhiGaia/03-Zahrada-Genesis.md) popisuje Zahradu Genesis (Algarve) a postavu Any; [`../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) je navazující kapitola této knihy; v `APP&WEB/OasisWeb/src/domain/config/worlds.ts` existuje záznam světa `GENESIS_GARDEN` s výslovně označenou literární Rose lore.
+- [`../BodhiGaia/03-Zahrada-Genesis.md`](../BodhiGaia/03-Zahrada-Genesis.md) popisuje Zahradu Genesis (Algarve) a postavu Any; [`../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md`](../BodhiGaia/12-Ruze-v-Zahrade-Genesis.md) je navazující kapitola Knihy Země; v `APP&WEB/OasisWeb/src/domain/config/worlds.ts` existuje záznam světa `GENESIS_GARDEN` s výslovně označenou literární Rose lore.
 
 Existence těchto řádků je **repozitářový fakt** — ověřitelné prostým otevřením souborů. Není to historická ani duchovní pravda. „Text existuje a říká X“ je ŽIVÉ; „X se stalo nebo platí“ zůstává MÝTUS.
 
@@ -53,7 +53,7 @@ V repozitáři existuje starší esoterický text [`../../docs2.9/ZION_OASIS/SAC
 | Růže = Miriam, reinkarnace, avatar, pokračování linie | **NEPLATNÝ NÁROK** | tato kapitola; `../Miriam/13` |
 | Nároky `18_MERIAM_ROSE.md` (twin flame, svazek, grál-lůno, tajné kódy, škola, council, fondy) | **MÝTUS / NEDOLOŽENO / HORIZONT / NEPLATNÝ NÁROK** — ne fakta | `../Miriam/13`; `../MiseAmenti/07` |
 | Lumi a Ana zasazují druhé semínko v Zahradě Genesis | **MÝTUS** (epilog) | `./Epilog-Zahrada-Genesis.md`; `../BodhiGaia/12` |
-| OASIS svět `GENESIS_GARDEN` obsahuje Rose lore | **ŽIVÉ** (existence řádku klienta) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` |
+| OASIS svět `GENESIS_GARDEN` obsahuje Rose lore | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` |
 | Fyzická růže byla v Algarve zasazena | **NEDOLOŽENO** | tato kapitola; `../BodhiGaia/pilots/GENESIS-ROSE-001.md` |
 | Pilot `GENESIS-ROSE-001` | **HORIZONT / NEZAHÁJENO** | `../BodhiGaia/pilots/GENESIS-ROSE-001.md` |
 | Etika knihy (péče bez vlastnění, hranice, vzájemnost, odchod, voda, která není zbožím) | **MÝTUS** (literární postoj, ne norma) | tato kniha |
@@ -69,4 +69,4 @@ V repozitáři existuje starší esoterický text [`../../docs2.9/ZION_OASIS/SAC
 
 *„Růži se nedá vlastnit. Dá se jí naslouchat, zalévat ji — a nechat ji zůstat tím, čím je.“*
 
-**Navigace:** [← IX. Oba břehy](./09-Oba-Brehy.md) · [← Index knihy](./00-README.md)
+**Navigace:** [← Epilog: Zahrada Genesis](./Epilog-Zahrada-Genesis.md) · [← Index knihy](./00-README.md)

@@ -90,7 +90,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | 2 | Veřejný L5 portál s živým zůstatkem fondu, návrhy, příjemci, milníky, výsledky (M5) | web | HORIZONT (`freeworld.zionterranova.com` v plánu N5) |
 | 3 | Označení každého L5 světa v OASIS stavovou značkou (koncept / stavba / živé) přímo v UI | L4 | HORIZONT |
 | 4 | Quest „Jeď do Zahrady" s ověřením přes impact packet a souhlas; žádná monetizace ceremonií | L4 ↔ L5 | HORIZONT (vyžaduje M5 gate a privacy review) |
-| 5 | Oprava metadat: Dharma Temple svět `layer: 3` → L5; Genesis lokalita na `/l5-free-world` → Algarve | L4 / web | STAVBA (drobná oprava kódu) |
+| 5 | Ověřit deploy metadat Dharma Temple (zdroj už má layer 5); Genesis lokalita na `/l5-free-world` → Algarve | L4 / web | STAVBA |
 
 ---
 
@@ -101,7 +101,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | Prvek příběhu | Stav | Co je ověřitelné | Co ještě chybí |
 |---|---|---|---|
 | **Karty na panelu „Nová Země"** | **ŽIVÉ** (klient) | `APP&WEB/OasisWeb/src/components/WorldPanel.tsx` — `NOVA_ZEME_PROJECTS` (genesis *Active*, dharma *Prep*, piko-ora *Planned*, bohemia *Prep*, lanka *Planned*) s odkazy na `app.zionterranova.com/terranova/*`. | Statusy nejsou napojené na L5 API. |
-| **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`; `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`. | Svět `DHARMA_TEMPLE_LA_PALMA` má `layer: 3` místo L5; není označen jako koncept; nové světy Bohemia a Lanka v přípravě. |
+| **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`; `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`. | Zdroj již má `layer: 5`; zbývá ověření deploy veřejného klienta a explicitní štítek „koncept". |
 | **Sítá a Hanuman jako avataři** | **ŽIVÉ** (dokument) / **HORIZONT** (mechanika) | `docs/WP-Mainet/SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md` §II — role a questy směřující do L5. | Implementace questů „spojení s L5" v `V31/L4/oasis` (quests.rs) není doložena. |
 | **Sliby bódhisattvy v OASIS** | **ŽIVÉ** (data) | `V31/L4/oasis/data/avatars.json` — Samantabhadra, Avalokiteśvara, Mañjuśrī, *Bodhicitta Spark*. | Vazba na L5 Consciousness Admission = HORIZONT. |
 | **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`, `golden-republic-bohemia`, `bodhi-lanka`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (`/l5-free-world`: Střední Evropa vs Algarve). |
@@ -109,7 +109,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | **Rybář se sklíčkem (instant preview)** | **HORIZONT** | Nirvana ep. 9; `MiseAmenti/07` řadí WebGPU / Pixel Streaming / UE 5.7 do HORIZONT. | POC klienta, licenční a výkonová analýza (M4). |
 | **„Quest, který posílá do zahrady"** | **HORIZONT** | Nápad „Silence Quest" v `dharma-temple.md` §15 a „quest rewards for visits" v `genesis-garden.md` §11.2 jako marketingový kanál. | Mechanika, ověření, privacy review, M5 gate. |
 | **Trám se zuby a vědrem** | **MÝTUS** | Obraz této knihy pro pravidlo „každý prvek zrcadla má kotvu pravdy". | — |
-| **Rose lore ve světě `GENESIS_GARDEN`** | **ŽIVÉ** (klientská data) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — vibe/summary světa nesou Růži výslovně jako literární lore (MYTH), tagy `rose`, `lore`, `myth`. | Fyzická růže v Algarve = NEDOLOŽENO; pilot [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) = HORIZONT / NEZAHÁJENO. |
+| **Rose lore ve světě `GENESIS_GARDEN`** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — vibe/summary světa nesou Růži výslovně jako literární lore (MYTH), tagy `rose`, `lore`, `myth`. | Deploy + ověření veřejného klienta; fyzická růže v Algarve = NEDOLOŽENO; pilot [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) = HORIZONT / NEZAHÁJENO. |
 
 ---
 

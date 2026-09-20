@@ -2,13 +2,13 @@
 ## Rozhodovací rámec pro případ, že by literární semínko z *Příběhu Růže* mělo jednou narazit na skutečnou hlínu
 
 > **Stav: HORIZONT / NEZAHÁJENO.**
-> Tento dokument je rámec, ne záznam události. **Nedokládá** pozemek, povolení, nákup rostliny, zasazení, přežití ani dopad. **Neexistuje žádný approved L5/DAO spend** a tento dokument jej nenavrhuje.
+> Tento dokument je rámec, ne záznam události. **Nedokládá** pozemek, povolení, nákup rostliny, zasazení, přežití ani dopad. **Neexistuje žádný schválený výdaj L5/DAO** a tento dokument jej nenavrhuje.
 
 ---
 
 ## 1. Účel a hranice
 
-Mikro-pilot **evidence discipline**: ověřit, že projekt umí provést a zdokladovat jeden malý fyzický čin poctivě — se souhlasem, s původem, s limitacemi a s nezávislým ověřením, kde je dostupné.
+Mikro-pilot **disciplíny důkazu**: ověřit, že projekt umí provést a zdokladovat jeden malý fyzický čin poctivě — se souhlasem, s původem, s limitacemi a s nezávislým ověřením, kde je dostupné.
 
 **Co pilot není:**
 
@@ -40,7 +40,7 @@ Mikro-pilot **evidence discipline**: ověřit, že projekt umí provést a zdokl
 - Jmenovaný pečující člověk + náhradník (jména interní, veřejně jen role).
 - Zdroj vody a jeho limit; mulč a zálivka podle lokálního doporučení.
 - Plán pro sucho a požár (kdy přerušit, kdy obnovit, kdy ukončit).
-- **Žádná voda na úkor pitné vody nebo potravinových záhonů** — rostlina je vždy poslední v pořadí.
+- **Žádná voda na úkor pitné vody nebo potravinových záhonů.** Před výsadbou musí být doloženo, že zdroj pokryje doporučenou následnou péči; jinak Gate C neprojde a rostlina se nesází.
 
 ### Gate D — finance a tvrzení
 
@@ -80,7 +80,7 @@ Mikro-pilot **evidence discipline**: ověřit, že projekt umí provést a zdokl
 Packet Day 0 obsahuje:
 
 - fotografie místa **před** výsadbou, rostliny/zdroje, procesu výsadby a místa **po**;
-- původní metadatový hash nebo manifest souborů (doklad neporušenosti);
+- hash původních souborů nebo manifest jejich metadat (doklad integrity);
 - jmenovaného svědka a datum;
 - vyplněnou tabulku záznamových polí.
 
@@ -106,7 +106,7 @@ Každá kontrola se připojuje do tohoto dokumentu (nebo jeho verzovaného logu)
 |---|---|---|
 | — | **HORIZONT** (teď) | Tento dokument existuje; žádná akce. |
 | HORIZONT | **STAVBA** | Splněny Gate A–C + naplánovaný termín výsadby. |
-| STAVBA | **ŽIVÉ** („doložená událost zasazení") | Kompletní Day 0 packet. |
+| STAVBA | **ŽIVÉ** („doložená událost zasazení") | Splněna Gate D + kompletní Day 0 packet. |
 | — | Přežití: **NEDOLOŽENO → doložené** | Příslušná kontrola (D30/D90/D365) s evidencí. |
 | — | „Doložená biologická persistence" | Nejdřív **Day 365** s nezávislým ověřením. |
 
@@ -127,7 +127,7 @@ Každá kontrola se připojuje do tohoto dokumentu (nebo jeho verzovaného logu)
 ```text
 [ ] Gate A — souhlas vlastníka/správce, potvrzené místo, souhlas s publikací
 [ ] Gate B — lokální neinvazivní kultivar potvrzen hortikulturistou; voda, půda, požár, trasa ověřeny
-[ ] Gate C — pečující + náhradník, zdroj vody a limit, plán pro sucho/požár
+[ ] Gate C — pečující + náhradník, zdroj vody a limit, plán pro sucho/požár, doložená dostatečnost vody pro následnou péči bez konkurence s pitnou vodou a potravinovými záhony
 [ ] Gate D — žádný L5/DAO spend bez procesu; žádný token/NFT/reward; žádné posvátné/genealogické nároky
 [ ] Day 0 packet — foto před/proces/po, provenience, svědek, záznamová pole
 [ ] Day 30 — ujmutí

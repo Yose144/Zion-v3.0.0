@@ -165,14 +165,14 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 ### Dopad na stav tvrzení
 
 - Narativní lore (epilog, scéna Lumi + Ana, OASIS copy) = **MÝTUS** — žádná událost, žádný fyzický čin.
-- Existence OASIS metadat `GENESIS_GARDEN` = **ŽIVÉ** (klientská data); jejich obsah = **MÝTUS**.
+- Existence zdrojového řádku `GENESIS_GARDEN` = **ŽIVÉ** (repozitářový fakt); nová klientská metadata = **STAVBA** do deploy (build prošel, deploy neproběhl); jejich obsah = **MÝTUS**.
 - Fyzická růže zasazená v Algarve = **NEDOLOŽENO** — žádné zasazení se nestalo.
-- Pilot `GENESIS-ROSE-001` = **HORIZONT / NEZAHÁJENO** — nesmí začít bez Gate A–C, nenahrazuje M5 exit gate.
+- Pilot `GENESIS-ROSE-001` = **HORIZONT / NEZAHÁJENO** — nesmí začít bez Gate A–D, nenahrazuje M5 exit gate.
 - Žádný deploy, žádný L5/DAO spend, žádný token/NFT/reward, žádné finance, žádné „posvátné" ani genealogické nároky; Zahrada Genesis zůstává **STAVBA**.
 
 ### Review
 
-- Autor: Devin (AI). **DRAFT** — vyžaduje českou literární/jazykovou korekturu, public-copy review (třída E), review OASIS kopie (lore musí zůstat MÝTUS) a před jakýmkoli fyzickým krokem botanickou/lokální kontrolu a souhlas místa podle Gate A–C pilotního rámce.
+- Autor: Devin (AI). **DRAFT** — vyžaduje českou literární/jazykovou korekturu, public-copy review (třída E), review OASIS kopie (lore musí zůstat MÝTUS) a před jakýmkoli fyzickým krokem botanickou/lokální kontrolu a souhlas místa podle Gate A–D pilotního rámce.
 
 ---
 
