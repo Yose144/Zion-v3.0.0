@@ -91,7 +91,7 @@ We do NOT run our own AMM. We use Uniswap V3 — it already has wZION liquidity.
 | Robinhood Chain | 4663 | `https://rpc.mainnet.chain.robinhood.com` |
 | Robinhood Chain Testnet | 46630 | `https://rpc.testnet.chain.robinhood.com` |
 
-> **Robinhood Chain (2026-09-20):** Arbitrum Orbit L2 (mainnet live 2026-07-01, ~100ms blocks, ETH gas). Chain registered across the V31 multichain stack (`ChainId::Robinhood`, WARP registry + EVM adapter, deposit watcher, executor). **wZION/ZIONBridge NOT yet deployed** — chain stays `enabled=false` in `warp.toml` until contracts are deployed and the relayer is funded with ETH on chain 4663. Explorer: `https://robinhoodchain.blockscout.com`.
+> **Robinhood Chain (2026-09-20):** Arbitrum Orbit L2 (mainnet live 2026-07-01, ~100ms blocks, ETH gas). Chain registered across the V31 multichain stack (`ChainId::Robinhood`, WARP registry + EVM adapter, deposit watcher, executor). **wZION/ZIONBridge NOT yet deployed** — deterministic addresses verified via `cast compute-address` (deployer `0xdde17506…` nonce 0 on 4663): wZION = `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`, ZIONBridge = `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` (4/5 threshold). Deploy script ready: `V31/L2/multichain/contracts/script/DeployRobinhood.s.sol` — pending only operator ETH funding on chain 4663. Chain stays `enabled=false` in `warp.toml` until contracts are deployed. Explorer: `https://robinhoodchain.blockscout.com`.
 
 ---
 

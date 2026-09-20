@@ -28,18 +28,20 @@
   - `extract_preimage` → `revealed_preimage`/`claim_source` v `BtcSwapFlow` orchestrátoru
 - [x] **T5 — Timeout policy** ✅ hotovo
   - `cltv_from_zion_timeout` + `cltv_before_zion_timeout`; `Δ` margin konvence
-- [~] **T6 — E2E** ✅ regtest + live-ZION / ❌ signet dead-end
+- [x] **T6 — E2E** ✅ regtest (bitcoind+rpc backend) + live-ZION / ❌ signet dead-end
   - regtest docker esplora na Edge (2026-09-17): cross-leg oba směry, refund paths, restart recovery — PASS
   - **live mainnet ZION leg SETTLED 2026-09-18** (`d77f837a` lock → `8c60d064` claim)
+  - **regtest re-run 2026-09-20 přes nativní `bitcoind+rpc://` backend** (`zion-bitcoind-regtest` na Edge): 6/6 testů PASS — oba směry SETTLED, oba refund paths, restart recovery; live-ZION leg znovu SETTLED (`fa193379…` lock → `72abda00…` claim)
   - signet/testnet3: faucety nedoručily funding (ověřeno 2026-09-20) → nahrazeno **mainnet dust pilotem**
 
 ### Kritéria dokončení 0.1 — stav 2026-09-20
 
 - [x] 2× úspěšný swap (oba směry) — regtest E2E + live ZION mainnet leg SETTLED
 - [x] 1× úspěšný refund na každé straně — regtest (ZionToBtc: RefundBtc po CLTV; BtcToZion: RefundZion + user BTC refund)
-- [x] `cargo test -p zion-multichain` zelené (655 testů) + unit testy btc_htlc
+- [x] `cargo test -p zion-multichain` zelené (666 testů) + unit testy btc_htlc
 - [x] žádné secrets v repo; `warp.toml` dokumentované
-- [ ] **mainnet dust pilot** (náhrada za signet) — čeká na produkční `WARP_BTC_RELAY_KEY` + ~100k sats funding `bc1q53gn9…5n6k` + Edge redeploy na HEAD (R2 TTL + R4 failover chybí v `50df05d54`)
+- [x] Edge redeploy na HEAD — `warpd` @ `9af96f6ae` (R2 TTL + R4 failover + bitcoind backend + metrics), Prometheus alerting zapnuto
+- [ ] **mainnet dust pilot** (náhrada za signet) — čeká na produkční `WARP_BTC_RELAY_KEY` + ~100k sats funding `bc1q53gn9…5n6k` + externí audit + dokončení mainnet bitcoind IBD (~5%)
 
 ## WARP 0.2 — Automated swap — ✅ hotovo (2026-09-19)
 

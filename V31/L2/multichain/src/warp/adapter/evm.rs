@@ -44,12 +44,12 @@ fn wzion_contract_with_override(chain: &str, override_addr: Option<&str>) -> Opt
         }
     }
     // All deployed EVM chains share the same wZION address.
-    // NOTE: "robinhood" is intentionally absent — wZION is not yet deployed on
-    // Robinhood Chain; add it (and to `wzion_contract` test) after the deploy.
+    // "robinhood" maps to the deterministic CREATE@nonce0 address
+    // (0x0c49…bb6) — deployer nonce 0 verified on chain 4663; the deploy
+    // itself is pending operator ETH funding (Phase B).
     match chain {
-        "base" | "base-sepolia" | "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche" => {
-            Some(DEFAULT_WZION.to_string())
-        }
+        "base" | "base-sepolia" | "arbitrum" | "bsc" | "polygon" | "optimism" | "avalanche"
+        | "robinhood" => Some(DEFAULT_WZION.to_string()),
         _ => None,
     }
 }
@@ -534,6 +534,10 @@ mod tests {
         assert!(wzion_contract("polygon").is_some());
         assert!(wzion_contract("optimism").is_some());
         assert!(wzion_contract("avalanche").is_some());
+        assert_eq!(
+            wzion_contract("robinhood").unwrap(),
+            "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+        );
         assert!(wzion_contract("unknown").is_none());
     }
 
