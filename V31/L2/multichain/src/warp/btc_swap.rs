@@ -709,6 +709,9 @@ impl BtcSwapFlow {
         self.check_offer_admission(&hex::encode(p.hashlock)).await?;
         let tip = self.btc.current_height().await?;
         let rec = self.offer_btc_to_zion(p, Utc::now().timestamp() as u64, tip)?;
+        // The user is about to send BTC to `rec.btc_htlc.address` — every
+        // configured bitcoind watch wallet must already track it.
+        self.btc.prepare_htlc_watch(&rec.btc_htlc).await?;
         self.insert_record(rec.clone()).await;
         Ok(rec)
     }
@@ -923,19 +926,14 @@ impl BtcSwapFlow {
             .ok_or_else(|| WarpError::TransferNotFound(swap_id.to_string()))?;
 
         // ── Gather observations ──────────────────────────────────────────
-        let btc_tip = self.btc.current_height().await.unwrap_or(0);
+        let btc_tip = self.btc.current_height().await?;
         let now_ts = Utc::now().timestamp() as u64;
         let btc_lock = self
             .btc
             .detect_htlc_lock(&rec.btc_htlc, rec.btc_sats)
-            .await
-            .unwrap_or(None);
+            .await?;
         let btc_spend = match rec.btc_lock.as_ref().or(btc_lock.as_ref()) {
-            Some(lock) => self
-                .btc
-                .detect_htlc_spend(&rec.btc_htlc, lock)
-                .await
-                .unwrap_or(None),
+            Some(lock) => self.btc.detect_htlc_spend(&rec.btc_htlc, lock).await?,
             None => None,
         };
         let coord = self.swaps.get_record(swap_id).await;
@@ -1143,6 +1141,8 @@ impl BtcSwapFlow {
 
     /// Broadcast the operator's BTC HTLC lock.
     async fn exec_lock_btc(&self, rec: &BtcSwapRecord) -> WarpResult<BtcHtlcLock> {
+        // Ensure watch-only backends track the HTLC address before we fund it.
+        self.btc.prepare_htlc_watch(&rec.btc_htlc).await?;
         let (txid, vout, value) = self
             .signer
             .lock_htlc(
@@ -2237,5 +2237,37 @@ mod tests {
         let txt = empty.prometheus_metrics().await;
         assert!(txt.contains("warp_btc_swap_next_deadline_secs 0"));
         assert!(!txt.contains("null"));
+    }
+
+    #[tokio::test]
+    async fn poll_fails_closed_and_redacts_backend_credentials() {
+        let s = signer();
+        let c = cfg();
+        let chain = crate::warp::config::ChainConfig {
+            rpc_url: "bitcoind+rpc://warp-user:warp-secret@127.0.0.1:1/warpwatch".into(),
+            ..Default::default()
+        };
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::from_config(&chain)),
+            Arc::new(s.clone()),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        let rec = btc_to_zion_rec(&s, &cfg());
+        let swap_id = rec.swap_id.clone();
+        flow.insert_record(rec).await;
+
+        let outcomes = flow.poll_once().await;
+        assert_eq!(outcomes.len(), 1);
+        assert_eq!(outcomes[0].action, NextAction::Wait);
+        let detail = outcomes[0].detail.as_deref().unwrap();
+        assert!(detail.contains("poll error"));
+        assert!(detail.contains("bitcoin backend #1"));
+        assert!(!detail.contains("warp-user"));
+        assert!(!detail.contains("warp-secret"));
+        assert!(matches!(
+            flow.record(&swap_id).await.unwrap().phase,
+            BtcSwapPhase::AwaitingUserLock
+        ));
     }
 }

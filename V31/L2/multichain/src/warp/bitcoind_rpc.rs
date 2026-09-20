@@ -131,16 +131,31 @@ async fn wallet_rpc(
     }
 }
 
+/// Strict parse of `WARP_BITCOIN_IMPORT_SINCE`: `None`/unset → "now"
+/// (skip rescan), a unix timestamp → that value, anything else → error so a
+/// typo never silently widens or skips a rescan.
+fn import_timestamp(raw: Option<&str>) -> Result<Value, String> {
+    match raw {
+        Some(value) => value
+            .trim()
+            .parse::<u64>()
+            .map(Value::from)
+            .map_err(|_| "invalid WARP_BITCOIN_IMPORT_SINCE (expected unix timestamp)".into()),
+        None => Ok(Value::from("now")),
+    }
+}
+
 /// Import `addr` into the watch-only wallet via `addr()` descriptor.
 /// Default `timestamp="now"` skips rescan — correct for fresh per-swap HTLC
 /// addresses. `WARP_BITCOIN_IMPORT_SINCE` (unix ts) overrides it: use when an
 /// address may already carry funds before its first import (e.g. the operator
 /// funding wallet), so the rescan covers those txs. Imports persist in the
-/// wallet file, so the timestamp matters only on first import; re-imports
-/// hit the benign "already exists" error below.
+/// wallet file, so the timestamp matters only on first import.
 /// The descriptor needs its checksum (`#xxxxxxxx`), resolved via
-/// `getdescriptorinfo`. Per-descriptor errors ("already exists", range) are
-/// ignored; transport/RPC failures propagate so failover can answer instead.
+/// `getdescriptorinfo`. After `importdescriptors`, the postcondition is
+/// verified with `getaddressinfo` — an already-imported descriptor is
+/// accepted only when the address is provably watched; transport/RPC
+/// failures propagate so failover can answer instead.
 async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), String> {
     let info = wallet_rpc(
         client,
@@ -154,11 +169,8 @@ async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), 
         .and_then(|d| d.as_str())
         .ok_or_else(|| format!("getdescriptorinfo({addr}): no descriptor"))?
         .to_string();
-    let timestamp: Value = std::env::var("WARP_BITCOIN_IMPORT_SINCE")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .map(Value::from)
-        .unwrap_or_else(|| Value::from("now"));
+    let import_since = std::env::var("WARP_BITCOIN_IMPORT_SINCE").ok();
+    let timestamp = import_timestamp(import_since.as_deref())?;
     // `requests` is itself an array param → double-wrapped.
     let res = wallet_rpc(
         client,
@@ -168,20 +180,24 @@ async fn ensure_address(client: &Client, ep: &BtcRpc, addr: &str) -> Result<(), 
                 "internal": false, "label": "warp"}]]),
     )
     .await?;
-    if let Some(err) = res
+    let import_error = res
         .get(0)
-        .and_then(|r| r.get("error"))
-        .filter(|e| !e.is_null())
-    {
-        let msg = err.to_string();
-        let benign = msg.contains("already")
-            || msg.contains("exist")
-            || msg.contains("duplic")
-            || msg.contains("range")
-            || msg.contains("timestamp");
-        if !benign {
-            return Err(format!("importdescriptors({addr}): {msg}"));
-        }
+        .and_then(|result| result.get("error"))
+        .filter(|error| !error.is_null())
+        .map(ToString::to_string);
+    let info = wallet_rpc(client, ep, "getaddressinfo", json!([addr])).await?;
+    let watched = info
+        .get("iswatchonly")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+        || info
+            .get("ismine")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+    if !watched {
+        return Err(import_error
+            .map(|error| format!("importdescriptors({addr}): {error}"))
+            .unwrap_or_else(|| format!("address {addr} is not watched after import")));
     }
     Ok(())
 }
@@ -419,14 +435,14 @@ pub async fn backend_get(client: &Client, base: &str, path: &str) -> Result<Stri
             .get(&url)
             .send()
             .await
-            .map_err(|e| format!("{url}: {e}"))?;
+            .map_err(|e| format!("request failed: {}", e.without_url()))?;
         if !resp.status().is_success() {
-            return Err(format!("{url}: HTTP {}", resp.status()));
+            return Err(format!("HTTP {}", resp.status()));
         }
         return resp
             .text()
             .await
-            .map_err(|e| format!("{url}: body read: {e}"));
+            .map_err(|e| format!("response body failed: {}", e.without_url()));
     }
     let ep = parse(base)?;
     if path == "/blocks/tip/height" {
@@ -457,6 +473,21 @@ pub async fn backend_get(client: &Client, base: &str, path: &str) -> Result<Stri
     Err(format!("unsupported bitcoind path: {path}"))
 }
 
+/// Ensure a bitcoind watch-only wallet tracks `address` before funds move.
+/// No-op for plain esplora endpoints (no wallet to prime). Fails closed on
+/// transport/RPC errors so callers cannot fund an unwatched HTLC address.
+pub(crate) async fn backend_watch_address(
+    client: &Client,
+    base: &str,
+    address: &str,
+) -> Result<(), String> {
+    if !is_bitcoind(base) {
+        return Ok(());
+    }
+    let ep = parse(base)?;
+    ensure_address(client, &ep, address).await
+}
+
 /// POST raw tx hex (`/tx`) — `sendrawtransaction` on bitcoind, plain POST
 /// on esplora. Returns the txid.
 pub async fn backend_post_tx(
@@ -472,11 +503,11 @@ pub async fn backend_post_tx(
             .body(raw_hex.to_string())
             .send()
             .await
-            .map_err(|e| format!("{url}: {e}"))?;
+            .map_err(|e| format!("request failed: {}", e.without_url()))?;
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         if !status.is_success() {
-            return Err(format!("broadcast HTTP {status}: {}", body.trim()));
+            return Err(format!("broadcast HTTP {status}"));
         }
         return Ok(body.trim().to_string());
     }
@@ -574,5 +605,32 @@ mod tests {
     fn spk_type_mapping() {
         assert_eq!(map_spk_type("nulldata"), "op_return");
         assert_eq!(map_spk_type("witness_v0_scripthash"), "witness_v0_scripthash");
+    }
+
+    #[test]
+    fn import_timestamp_is_strict() {
+        assert_eq!(import_timestamp(None).unwrap(), Value::from("now"));
+        assert_eq!(import_timestamp(Some("12345")).unwrap(), Value::from(12345u64));
+        assert!(import_timestamp(Some("not-a-time")).is_err());
+        assert!(import_timestamp(Some("")).is_err());
+    }
+
+    #[tokio::test]
+    async fn plain_backend_errors_redact_url_credentials() {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(2))
+            .build()
+            .unwrap();
+        // Connection refused on port 1 — the error must not carry userinfo.
+        let base = "http://test-user:test-secret@127.0.0.1:1";
+        let err = backend_get(&client, base, "/blocks/tip/height")
+            .await
+            .unwrap_err();
+        assert!(!err.contains("test-user"), "leaked user: {err}");
+        assert!(!err.contains("test-secret"), "leaked secret: {err}");
+
+        let err = backend_post_tx(&client, base, "deadbeef").await.unwrap_err();
+        assert!(!err.contains("test-user"), "leaked user: {err}");
+        assert!(!err.contains("test-secret"), "leaked secret: {err}");
     }
 }

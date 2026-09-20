@@ -285,6 +285,34 @@ impl BitcoinAdapter {
         &self.client
     }
 
+    /// Ensure every configured bitcoind backend has the fresh HTLC address in
+    /// its watch-only wallet before funds are sent to it. Public esplora
+    /// endpoints need no priming and are skipped. Fails closed: if a bitcoind
+    /// backend cannot import the address, funding must not proceed — a restart
+    /// could otherwise prefer a recovered local wallet that never saw the
+    /// funding address.
+    pub(crate) async fn prepare_htlc_watch(&self, htlc: &BtcHtlc) -> WarpResult<()> {
+        for (idx, base) in self.api_urls.iter().enumerate() {
+            if !crate::warp::bitcoind_rpc::is_bitcoind(base) {
+                continue;
+            }
+            crate::warp::bitcoind_rpc::backend_watch_address(
+                &self.client,
+                base,
+                &htlc.address.to_string(),
+            )
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: format!(
+                    "bitcoin backend #{} failed to prepare HTLC watch: {e}",
+                    idx + 1
+                ),
+            })?;
+        }
+        Ok(())
+    }
+
     /// GET `path` against the configured endpoints with failover: the current
     /// primary is tried first; on transport/HTTP error the next endpoint is
     /// tried and promoted to primary for subsequent calls.
@@ -315,7 +343,7 @@ impl BitcoinAdapter {
                 Err(e) => {
                     last_err = WarpError::AdapterError {
                         chain: "bitcoin".into(),
-                        reason: format!("{base}{path}: {e}"),
+                        reason: format!("bitcoin backend #{} request {path} failed: {e}", idx + 1),
                     };
                 }
             }
@@ -333,15 +361,63 @@ impl BitcoinAdapter {
             })
     }
 
+    /// `/address/{addr}/txs` with data-aware failover: a valid-but-empty
+    /// response is remembered but does not stop the loop — a reset/pruned
+    /// watch wallet can otherwise silently hide a funding tx that a public
+    /// esplora backend does see. The first endpoint returning a non-empty
+    /// result wins and is promoted; empty-only responses yield `Ok(vec![])`;
+    /// if no endpoint produced a valid body, the last redacted error is
+    /// returned.
     async fn get_address_txs(&self, address: &str) -> WarpResult<Vec<MempoolTx>> {
-        // mempool.space returns max 50 confirmed + unconfirmed txs
-        let text = self
-            .request(&format!("/address/{address}/txs"))
-            .await?;
-        serde_json::from_str(&text).map_err(|e| WarpError::AdapterError {
+        use std::sync::atomic::Ordering;
+        let path = format!("/address/{address}/txs");
+        let n = self.api_urls.len();
+        if n == 0 {
+            return Err(WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: "no bitcoin API endpoints configured".into(),
+            });
+        }
+        let start = self.primary.load(Ordering::Relaxed) % n;
+        let mut saw_empty = false;
+        let mut last_err = WarpError::AdapterError {
             chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })
+            reason: "no bitcoin API endpoints configured".into(),
+        };
+        for offset in 0..n {
+            let idx = (start + offset) % n;
+            match crate::warp::bitcoind_rpc::backend_get(&self.client, &self.api_urls[idx], &path)
+                .await
+            {
+                Ok(text) => match serde_json::from_str::<Vec<MempoolTx>>(&text) {
+                    Ok(txs) if !txs.is_empty() => {
+                        self.primary.store(idx, Ordering::Relaxed);
+                        return Ok(txs);
+                    }
+                    Ok(_) => saw_empty = true,
+                    Err(e) => {
+                        last_err = WarpError::AdapterError {
+                            chain: "bitcoin".into(),
+                            reason: format!(
+                                "bitcoin backend #{} response decode failed: {e}",
+                                idx + 1
+                            ),
+                        };
+                    }
+                },
+                Err(e) => {
+                    last_err = WarpError::AdapterError {
+                        chain: "bitcoin".into(),
+                        reason: format!("bitcoin backend #{} request {path} failed: {e}", idx + 1),
+                    };
+                }
+            }
+        }
+        if saw_empty {
+            Ok(vec![])
+        } else {
+            Err(last_err)
+        }
     }
 
     /// Detect a funding output paying `min_sats` to the per-swap HTLC
@@ -847,6 +923,30 @@ mod tests {
         };
         assert!(BitcoinAdapter::new().execute_mint(&inst).await.is_err());
     }
+
+    #[tokio::test]
+    async fn prepare_htlc_watch_fails_closed_for_unavailable_bitcoind() {
+        let (htlc, _preimage) = test_htlc();
+        let mut adapter = BitcoinAdapter::new();
+        adapter.api_urls = vec!["bitcoind+rpc://test-user:test-secret@127.0.0.1:1/warpwatch".into()];
+        let err = adapter.prepare_htlc_watch(&htlc).await.unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("bitcoin backend #1"), "unexpected error: {msg}");
+        assert!(!msg.contains("test-user"), "leaked user: {msg}");
+        assert!(!msg.contains("test-secret"), "leaked secret: {msg}");
+    }
+
+    #[tokio::test]
+    async fn prepare_htlc_watch_skips_public_esplora() {
+        let (htlc, _preimage) = test_htlc();
+        let mut adapter = BitcoinAdapter::new();
+        // Dead plain-HTTP endpoint — skipped, so no request is attempted.
+        adapter.api_urls = vec!["http://127.0.0.1:1".into()];
+        adapter
+            .prepare_htlc_watch(&htlc)
+            .await
+            .expect("esplora endpoints are skipped");
+    }
 }
 
 #[cfg(test)]
@@ -889,6 +989,29 @@ mod failover_tests {
 
         let h2 = adapter.get_tip_height().await.expect("sticky primary");
         assert_eq!(h2, 12345);
+    }
+
+    #[tokio::test]
+    async fn empty_address_result_falls_through_to_populated_endpoint() {
+        let empty = mock_server("[]").await;
+        let txid = "11".repeat(32);
+        let populated = format!(
+            "[{{\"txid\":\"{txid}\",\"status\":{{\"confirmed\":true,\"block_height\":840000}},\"vin\":[],\"vout\":[]}}]"
+        );
+        let populated = Box::leak(populated.into_boxed_str());
+        let live = mock_server(populated).await;
+
+        let mut adapter = BitcoinAdapter::new();
+        adapter.api_urls = vec![empty, live];
+        adapter.primary.store(0, Ordering::Relaxed);
+
+        let txs = adapter
+            .get_address_txs("bc1qtestaddress")
+            .await
+            .expect("fall through to populated endpoint");
+        assert_eq!(txs.len(), 1);
+        assert_eq!(txs[0].txid, txid);
+        assert_eq!(adapter.primary.load(Ordering::Relaxed), 1, "populated promoted");
     }
 
     #[tokio::test]

@@ -91,7 +91,7 @@ impl BtcSigner {
             reason: "WARP_BTC_RELAY_KEY env var not set".into(),
         })?;
         let network_str = std::env::var("BITCOIN_NETWORK").unwrap_or_else(|_| "mainnet".into());
-        let network = parse_network(&network_str);
+        let network = parse_network(&network_str)?;
         Self::from_wif(&wif, network)
     }
 
@@ -102,6 +102,20 @@ impl BtcSigner {
             chain: "bitcoin".into(),
             reason: format!("WIF parse error: {}", e),
         })?;
+        // Reject mainnet/test-family WIF mismatches so a testnet key can never
+        // sign mainnet spends (or vice versa). Testnet WIFs are valid for
+        // Testnet, Signet and Regtest.
+        let wif_is_mainnet = private_key.network == Network::Bitcoin;
+        let target_is_mainnet = network == Network::Bitcoin;
+        if wif_is_mainnet != target_is_mainnet {
+            return Err(WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: format!(
+                    "WIF network mismatch: key is {}, configured network is {network}",
+                    private_key.network
+                ),
+            });
+        }
         let public_key = private_key.public_key(&secp);
         let address = p2wpkh_address(&public_key, network)?;
         Ok(Self {
@@ -257,12 +271,16 @@ impl BtcSigner {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-fn parse_network(s: &str) -> Network {
-    match s {
-        "testnet" => Network::Testnet,
-        "signet" => Network::Signet,
-        "regtest" => Network::Regtest,
-        _ => Network::Bitcoin,
+fn parse_network(s: &str) -> WarpResult<Network> {
+    match s.trim().to_ascii_lowercase().as_str() {
+        "mainnet" | "bitcoin" => Ok(Network::Bitcoin),
+        "testnet" => Ok(Network::Testnet),
+        "signet" => Ok(Network::Signet),
+        "regtest" => Ok(Network::Regtest),
+        other => Err(WarpError::AdapterError {
+            chain: "bitcoin".into(),
+            reason: format!("invalid BITCOIN_NETWORK '{other}'"),
+        }),
     }
 }
 
@@ -289,6 +307,9 @@ fn p2wpkh_address(pubkey: &PublicKey, network: Network) -> WarpResult<Address> {
 /// GET `path` against each endpoint in `api_urls` until one returns a
 /// successful body. `bitcoind+rpc://` entries are translated to JSON-RPC;
 /// plain `http(s)://` entries behave as esplora (failover preserved).
+/// Retained for callers that want first-success failover; `fetch_utxos` uses
+/// its own data-aware loop instead.
+#[allow(dead_code)]
 pub(crate) async fn get_text_failover(
     client: &reqwest::Client,
     api_urls: &[String],
@@ -298,13 +319,13 @@ pub(crate) async fn get_text_failover(
         chain: "bitcoin".into(),
         reason: "no bitcoin API endpoints configured".into(),
     };
-    for base in api_urls {
+    for (idx, base) in api_urls.iter().enumerate() {
         match crate::warp::bitcoind_rpc::backend_get(client, base, path).await {
             Ok(text) => return Ok(text),
             Err(e) => {
                 last_err = WarpError::AdapterError {
                     chain: "bitcoin".into(),
-                    reason: format!("{base}{path}: {e}"),
+                    reason: format!("bitcoin backend #{} request {path} failed: {e}", idx + 1),
                 };
             }
         }
@@ -312,17 +333,51 @@ pub(crate) async fn get_text_failover(
     Err(last_err)
 }
 
+/// Fetch relay UTXOs with data-aware failover: a valid-but-empty response is
+/// remembered but does not stop the loop — a reset/pruned watch wallet can
+/// otherwise hide funded UTXOs that another backend still sees. The first
+/// endpoint returning a non-empty set wins; empty-only responses yield
+/// `Ok(vec![])`; if no endpoint produced a valid body, the last redacted
+/// error is returned.
 pub(crate) async fn fetch_utxos(
     client: &reqwest::Client,
     api_urls: &[String],
     address: &str,
 ) -> WarpResult<Vec<MempoolUtxo>> {
-    let text =
-        get_text_failover(client, api_urls, &format!("/address/{address}/utxo")).await?;
-    serde_json::from_str(&text).map_err(|e| WarpError::AdapterError {
+    let path = format!("/address/{address}/utxo");
+    let mut saw_empty = false;
+    let mut last_err = WarpError::AdapterError {
         chain: "bitcoin".into(),
-        reason: e.to_string(),
-    })
+        reason: "no bitcoin API endpoints configured".into(),
+    };
+    for (idx, base) in api_urls.iter().enumerate() {
+        match crate::warp::bitcoind_rpc::backend_get(client, base, &path).await {
+            Ok(text) => match serde_json::from_str::<Vec<MempoolUtxo>>(&text) {
+                Ok(utxos) if !utxos.is_empty() => return Ok(utxos),
+                Ok(_) => saw_empty = true,
+                Err(e) => {
+                    last_err = WarpError::AdapterError {
+                        chain: "bitcoin".into(),
+                        reason: format!(
+                            "bitcoin backend #{} response decode failed: {e}",
+                            idx + 1
+                        ),
+                    };
+                }
+            },
+            Err(e) => {
+                last_err = WarpError::AdapterError {
+                    chain: "bitcoin".into(),
+                    reason: format!("bitcoin backend #{} request {path} failed: {e}", idx + 1),
+                };
+            }
+        }
+    }
+    if saw_empty {
+        Ok(vec![])
+    } else {
+        Err(last_err)
+    }
 }
 
 /// Greedy UTXO selection: sort largest-first, select until amount + estimated fee is covered.
@@ -416,13 +471,13 @@ pub(crate) async fn broadcast_tx(
         chain: "bitcoin".into(),
         reason: "no bitcoin API endpoints configured".into(),
     };
-    for base in api_urls {
+    for (idx, base) in api_urls.iter().enumerate() {
         match crate::warp::bitcoind_rpc::backend_post_tx(client, base, raw_hex).await {
             Ok(txid) => return Ok(txid),
             Err(e) => {
                 last_err = WarpError::AdapterError {
                     chain: "bitcoin".into(),
-                    reason: format!("{base}/tx: {e}"),
+                    reason: format!("bitcoin backend #{} broadcast failed: {e}", idx + 1),
                 };
             }
         }
@@ -440,17 +495,41 @@ mod tests {
 
     #[test]
     fn test_parse_network_mainnet() {
-        assert_eq!(parse_network("mainnet"), Network::Bitcoin);
+        assert_eq!(parse_network("mainnet").unwrap(), Network::Bitcoin);
+        assert_eq!(parse_network("bitcoin").unwrap(), Network::Bitcoin);
     }
 
     #[test]
     fn test_parse_network_testnet() {
-        assert_eq!(parse_network("testnet"), Network::Testnet);
+        assert_eq!(parse_network("testnet").unwrap(), Network::Testnet);
+        assert_eq!(parse_network("signet").unwrap(), Network::Signet);
+        assert_eq!(parse_network("regtest").unwrap(), Network::Regtest);
     }
 
     #[test]
-    fn test_parse_network_default() {
-        assert_eq!(parse_network("unknown"), Network::Bitcoin);
+    fn test_parse_network_rejects_invalid() {
+        assert!(parse_network("unknown").is_err());
+        assert!(parse_network("").is_err());
+        assert!(parse_network("testnet3").is_err());
+    }
+
+    #[test]
+    fn test_from_wif_rejects_mainnet_key_on_testnet() {
+        // Known mainnet WIF test vector must not be usable on test-family nets.
+        let wif = "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn";
+        assert!(BtcSigner::from_wif(wif, Network::Testnet).is_err());
+        assert!(BtcSigner::from_wif(wif, Network::Signet).is_err());
+        assert!(BtcSigner::from_wif(wif, Network::Bitcoin).is_ok());
+    }
+
+    #[test]
+    fn test_from_wif_testnet_key_accepted_on_test_family() {
+        let sk = bitcoin::secp256k1::SecretKey::from_slice(&[0x03u8; 32]).unwrap();
+        let wif = PrivateKey::new(sk, Network::Testnet).to_wif();
+        assert!(BtcSigner::from_wif(&wif, Network::Testnet).is_ok());
+        assert!(BtcSigner::from_wif(&wif, Network::Signet).is_ok());
+        assert!(BtcSigner::from_wif(&wif, Network::Regtest).is_ok());
+        assert!(BtcSigner::from_wif(&wif, Network::Bitcoin).is_err());
     }
 
     #[test]
@@ -569,6 +648,43 @@ mod tests {
         assert_eq!(tx.output.len(), 2); // recipient + change (99k > 546 dust)
         assert_eq!(tx.output[0].value, Amount::from_sat(100_000));
         assert_eq!(tx.output[1].value, Amount::from_sat(99_000));
+    }
+
+    async fn mock_json_server(body: &'static str) -> String {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            while let Ok((mut sock, _)) = listener.accept().await {
+                tokio::spawn(async move {
+                    let mut buf = [0u8; 4096];
+                    let _ = sock.read(&mut buf).await;
+                    let resp = format!(
+                        "HTTP/1.1 200 OK\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = sock.write_all(resp.as_bytes()).await;
+                });
+            }
+        });
+        format!("http://127.0.0.1:{port}")
+    }
+
+    #[tokio::test]
+    async fn fetch_utxos_falls_through_empty_backend() {
+        let empty = mock_json_server("[]").await;
+        let populated = mock_json_server(
+            "[{\"txid\":\"bbcc\",\"vout\":0,\"value\":50000,\"status\":{\"confirmed\":true}}]",
+        )
+        .await;
+        let client = reqwest::Client::new();
+        let urls = vec![empty, populated];
+        let utxos = fetch_utxos(&client, &urls, "tb1qtestrelay")
+            .await
+            .expect("fall through to populated endpoint");
+        assert_eq!(utxos.len(), 1);
+        assert_eq!(utxos[0].txid, "bbcc");
     }
 
     #[test]
