@@ -4,7 +4,19 @@ use crate::error::{DaoError, DaoResult};
 use crate::proposal::Proposal;
 
 pub fn check_quorum(proposal: &Proposal, circulating_supply: u64) -> DaoResult<bool> {
-    let required_percent = proposal.proposal_type.required_quorum_percent();
+    check_quorum_with_floor(proposal, circulating_supply, 0.0)
+}
+
+/// Quorum check honouring the configured base quorum — the effective
+/// requirement is `max(per-type quorum, quorum_floor)`.
+pub fn check_quorum_with_floor(
+    proposal: &Proposal,
+    circulating_supply: u64,
+    quorum_floor: f64,
+) -> DaoResult<bool> {
+    let required_percent = proposal
+        .proposal_type
+        .required_quorum_percent_or(quorum_floor);
     let total_votes = proposal.total_votes();
     let required_votes = (circulating_supply as f64 * required_percent / 100.0) as u64;
 

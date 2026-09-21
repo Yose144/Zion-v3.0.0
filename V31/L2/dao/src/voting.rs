@@ -117,6 +117,17 @@ impl VotingEngine {
             .unwrap_or(0)
     }
 
+    /// Count of distinct voter addresses across all proposals.
+    pub fn unique_voters(&self) -> usize {
+        let mut set = std::collections::HashSet::new();
+        for votes in self.votes.values() {
+            for voter in votes.keys() {
+                set.insert(voter.as_str());
+            }
+        }
+        set.len()
+    }
+
     /// Get total vote weight for a proposal.
     pub fn total_weight(&self, proposal_id: u64) -> u64 {
         self.votes

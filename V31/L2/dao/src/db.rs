@@ -611,6 +611,47 @@ impl DaoDb {
         }
     }
 
+    /// List treasury operations, optionally filtered by status, newest first.
+    pub fn list_treasury_ops(&self, status: Option<&str>) -> DaoResult<Vec<TreasuryOpRow>> {
+        let (sql, param): (&str, Option<String>) = match status {
+            Some(s) => (
+                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at
+                 FROM treasury_ops WHERE status=?1 ORDER BY created_at DESC",
+                Some(s.to_string()),
+            ),
+            None => (
+                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at
+                 FROM treasury_ops ORDER BY created_at DESC",
+                None,
+            ),
+        };
+        let mut stmt = self
+            .conn
+            .prepare(sql)
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let map_row = |row: &rusqlite::Row<'_>| -> rusqlite::Result<TreasuryOpRow> {
+            Ok(TreasuryOpRow {
+                op_id: row.get(0)?,
+                proposal_id: row.get(1)?,
+                operation: row.get(2)?,
+                submitted_by: row.get(3)?,
+                status: row.get(4)?,
+                created_at: row.get(5)?,
+                executed_at: row.get(6)?,
+            })
+        };
+        let rows = match &param {
+            Some(p) => stmt.query_map(params![p], map_row),
+            None => stmt.query_map([], map_row),
+        }
+        .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(|e| DaoError::Internal(e.to_string()))?);
+        }
+        Ok(out)
+    }
+
     /// Count treasury operations, optionally filtered by status.
     pub fn count_treasury_ops(&self, status: &str) -> DaoResult<usize> {
         let n: i64 = self

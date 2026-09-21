@@ -47,6 +47,14 @@ export const CONFIG = {
   // ZionDex Router API (cross-chain DEX)
   ZIONDEX_ROUTER_URL: __DEV__ ? 'http://localhost:8454' : 'https://dex.zionterranova.com',
 
+  // ── DAO governance API ────────────────────────────────────────────────────
+  // Public read path goes through the website's Next.js proxy on
+  // app.zionterranova.com (zionterranova.com/api/dao is operator-allowlisted).
+  // Write endpoints (vote/create) require a ZIS session cookie.
+  DAO: {
+    API_BASE: 'https://app.zionterranova.com/api/dao',
+  },
+
   // P2P network
   P2P_PORT: 8334,
 

@@ -44,6 +44,9 @@ pub struct ReconcilerConfig {
     /// Difference larger than this triggers an alert.
     pub alert_threshold: Amount,
     pub enabled: bool,
+    /// Asset keys (or `chain:ticker` prefixes) excluded from alerting.
+    /// Reports are still produced; the alert flag is suppressed.
+    pub excluded_assets: std::collections::HashSet<String>,
 }
 
 impl ReconcilerConfig {
@@ -71,7 +74,25 @@ impl ReconcilerConfig {
             interval: Duration::from_secs(c.interval_seconds),
             alert_threshold: Amount::new(alert_threshold),
             enabled: c.enabled,
+            excluded_assets: c.excluded_assets.iter().cloned().collect(),
         })
+    }
+
+    /// True when `asset_key` (`chain:ticker[:contract]`) is configured as
+    /// excluded — matched exactly or by its `chain:ticker` prefix.
+    pub fn is_excluded(&self, asset_key: &str) -> bool {
+        if self.excluded_assets.contains(asset_key) {
+            return true;
+        }
+        // `chain:ticker` prefix entries match every contract variant.
+        if let Some((chain, rest)) = asset_key.split_once(':') {
+            if let Some((ticker, _)) = rest.split_once(':') {
+                return self
+                    .excluded_assets
+                    .contains(format!("{chain}:{ticker}").as_str());
+            }
+        }
+        false
     }
 }
 
@@ -81,6 +102,7 @@ impl Default for ReconcilerConfig {
             interval: Duration::from_secs(300),
             alert_threshold: Amount::new(1_000_000), // 1 ZION atomic unit scaled
             enabled: true,
+            excluded_assets: Default::default(),
         }
     }
 }
@@ -236,7 +258,16 @@ impl Reconciler {
             // DEX).  Both must be summed to match the on-chain balance.
             let expected = internal.saturating_add(pool);
             let diff = on_chain.0 as i128 - expected.0 as i128;
-            let alert = diff.abs() > self.config.alert_threshold.0 as i128;
+            let excluded = self.config.is_excluded(&asset_key);
+            let alert = !excluded && diff.abs() > self.config.alert_threshold.0 as i128;
+            let notes = if excluded {
+                Some(match first_err {
+                    Some(n) => format!("excluded from alerting; {n}"),
+                    None => "excluded from alerting".to_string(),
+                })
+            } else {
+                first_err
+            };
 
             reports.push(ReconciliationReport {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -249,7 +280,7 @@ impl Reconciler {
                 pool_reserves: pool,
                 diff,
                 alert,
-                notes: first_err,
+                notes,
             });
         }
 
@@ -360,7 +391,16 @@ impl Reconciler {
 
             let expected = internal.saturating_add(pool);
             let diff = on_chain.0 as i128 - expected.0 as i128;
-            let alert = diff.abs() > self.config.alert_threshold.0 as i128;
+            let excluded = self.config.is_excluded(&asset_key);
+            let alert = !excluded && diff.abs() > self.config.alert_threshold.0 as i128;
+            let notes = if excluded {
+                Some(match notes {
+                    Some(n) => format!("excluded from alerting; {n}"),
+                    None => "excluded from alerting".to_string(),
+                })
+            } else {
+                notes
+            };
 
             reports.push(ReconciliationReport {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -555,6 +595,7 @@ mod tests {
                 interval: Duration::from_secs(1),
                 alert_threshold: Amount::new(1),
                 enabled: true,
+                excluded_assets: Default::default(),
             },
         );
 
@@ -649,6 +690,7 @@ mod tests {
                 interval: Duration::from_secs(1),
                 alert_threshold: Amount::new(1),
                 enabled: true,
+                excluded_assets: Default::default(),
             },
         );
 
@@ -661,6 +703,74 @@ mod tests {
         assert_eq!(zion_report.on_chain.0, 8_000_000);
         assert_eq!(zion_report.diff, 0);
         assert!(!zion_report.alert);
+    }
+
+    #[tokio::test]
+    async fn reconciliation_excluded_assets_do_not_alert() {
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let zion = Asset::native(ChainId::ZionL1, "ZION", 8, "ZION");
+
+        ledger
+            .credit("user1", &zion, Amount::new(2_000_000))
+            .await
+            .unwrap();
+
+        let mut adapters = ChainAdapterRegistry::new();
+        adapters.register(
+            ChainId::ZionL1,
+            Box::new(MockAdapter {
+                balance: Amount::ZERO,
+            }),
+        );
+
+        let reconciler = Reconciler::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            Keyring::generate().unwrap(),
+            Arc::new(RwLock::new(DexRouter::new())),
+            ReconcilerConfig {
+                interval: Duration::from_secs(1),
+                alert_threshold: Amount::new(1),
+                enabled: true,
+                excluded_assets: ["zion-l1:ZION"].into_iter().map(String::from).collect(),
+            },
+        );
+
+        let reports = reconciler.reconcile().await.unwrap();
+        let zion_report = reports
+            .iter()
+            .find(|r| r.asset_key == zion.id.to_string())
+            .unwrap();
+        // Huge drift (on-chain 0 vs internal 2M) but the asset is excluded —
+        // the report row persists, only the alert flag is suppressed.
+        assert_eq!(zion_report.diff, -2_000_000);
+        assert!(!zion_report.alert);
+        assert!(zion_report
+            .notes
+            .as_deref()
+            .unwrap_or("")
+            .contains("excluded"));
+    }
+
+    #[test]
+    fn excluded_assets_match_full_key_and_ticker_prefix() {
+        let cfg = ReconcilerConfig {
+            excluded_assets: ["base:tZION".to_string(), "base:USDT:0xfde4".to_string()]
+                .into_iter()
+                .collect(),
+            ..Default::default()
+        };
+        // `chain:ticker` prefix matches any contract variant.
+        assert!(cfg.is_excluded("base:tZION:0xC5E79b8C6475137aC3a982651097a219B63b0c33"));
+        // Full key matches exactly.
+        assert!(cfg.is_excluded("base:USDT:0xfde4"));
+        // Unrelated assets are not excluded.
+        assert!(!cfg.is_excluded("base:wZION:0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"));
+        assert!(!cfg.is_excluded("zion-l1:ZION"));
+        // A `chain:ticker` entry does not swallow the native asset of another
+        // chain sharing the ticker.
+        assert!(!cfg.is_excluded("bitcoin:tZION"));
     }
 
     #[tokio::test]

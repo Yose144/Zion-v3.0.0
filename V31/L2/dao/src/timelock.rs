@@ -16,11 +16,16 @@ pub struct Timelock {
 
 impl Timelock {
     pub fn new(proposal_id: u64) -> Self {
+        Self::new_with_hours(proposal_id, (TIMELOCK_SECS / 3600) as u32)
+    }
+
+    /// Timelock with an explicit duration in hours (from DAO config).
+    pub fn new_with_hours(proposal_id: u64, hours: u32) -> Self {
         let now = Utc::now();
         Self {
             proposal_id,
             started_at: now,
-            ends_at: now + Duration::seconds(TIMELOCK_SECS as i64),
+            ends_at: now + Duration::hours(hours as i64),
             executed: false,
         }
     }

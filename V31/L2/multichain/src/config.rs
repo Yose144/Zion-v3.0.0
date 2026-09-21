@@ -121,6 +121,13 @@ pub struct ReconciliationConfig {
     /// Absolute difference larger than this triggers an alert.
     #[serde(default = "default_reconciliation_threshold")]
     pub alert_threshold: String,
+    /// Assets excluded from alerting — deprecated/test assets that are known
+    /// unbacked and would otherwise spam permanent alerts masking real drift.
+    /// Entries are either a full asset key (`base:tZION:0xC5E7…`) or a
+    /// `chain:ticker` prefix (`base:tZION`) matching every contract.
+    /// Excluded assets still produce a report row with `alert=false`.
+    #[serde(default)]
+    pub excluded_assets: Vec<String>,
 }
 
 impl Default for ReconciliationConfig {
@@ -129,6 +136,7 @@ impl Default for ReconciliationConfig {
             enabled: true,
             interval_seconds: 300,
             alert_threshold: "1000000".to_string(),
+            excluded_assets: Vec::new(),
         }
     }
 }

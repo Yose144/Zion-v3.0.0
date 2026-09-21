@@ -92,5 +92,23 @@ async fn main() -> anyhow::Result<()> {
         });
     }
 
+    // Periodic lifecycle pass: tally proposals whose voting window closed.
+    // Without this, expired proposals would sit in `Active` forever waiting
+    // for a manual operator tally.
+    {
+        let rt = runtime.clone();
+        let interval = Duration::from_secs(config.scan_interval_secs.max(15));
+        tokio::spawn(async move {
+            let mut tick = tokio::time::interval(interval);
+            loop {
+                tick.tick().await;
+                let tallied = rt.lock().await.process_expired();
+                if tallied > 0 {
+                    tracing::info!("[DAO] Tallied {} expired proposal(s)", tallied);
+                }
+            }
+        });
+    }
+
     api::serve(config, runtime, metrics).await
 }

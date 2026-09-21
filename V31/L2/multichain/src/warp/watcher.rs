@@ -379,6 +379,7 @@ mod tests {
             wallet_mnemonic: None,
             solver: Default::default(),
             solvers: vec![],
+            reconciliation: Default::default(),
         }
     }
 

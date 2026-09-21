@@ -31,6 +31,18 @@ l1_vault_address = "zion1warp_vault_address"
 
 poll_interval_secs = 15
 
+# On-chain vs ledger reconciliation. `excluded_assets` suppresses the alert
+# flag for known-unbacked deprecated/test assets — they still appear in
+# reports. Entries are full asset keys (`chain:ticker:contract`) or a
+# `chain:ticker` prefix matching every contract variant.
+[reconciliation]
+enabled = true
+interval_seconds = 300
+alert_threshold = "1000000"
+excluded_assets = [
+  # "base:tZION",
+]
+
 # ENABLED for 3.2.0 Mainnet Stable (Base EVM pilot + ZION L1 source)
 [[chains]]
 name = "base"

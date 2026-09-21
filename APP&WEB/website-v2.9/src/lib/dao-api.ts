@@ -26,28 +26,38 @@ const DAO_BASE =
 // TypeScript interfaces — aligned with Rust ProposalRow + dao_stats response
 // ---------------------------------------------------------------------------
 
-/** ProposalRow as returned by Rust /api/dao/proposals */
+/** Proposal as returned by Rust /api/dao/proposals (serialize_proposal) */
 export interface GovernanceProposal {
   id: number;
-  /** "Active" | "Passed" | "Rejected" | "Executed" | "Pending" */
+  uuid?: string;
+  /** "Draft" | "Active" | "Passed" | "Failed" | "Timelocked" | "Executed" | "Cancelled" | "Expired" */
   state: string;
-  proposal_type_json: string;
+  /** "parameter" | "treasury" | "emergency" | "grant" | "humanitarian" | ... */
+  proposal_type: string;
   title: string;
   description: string;
   proposer: string;
-  /** votes_yes as string (safe for BigInt) */
+  /** proposer balance at snapshot (flowers, as string — safe for BigInt) */
+  proposer_balance?: string;
+  /** vote weight in favour (flowers, string) */
   for_votes: string;
-  /** votes_no as string (safe for BigInt) */
+  /** vote weight against (flowers, string) */
   against_votes: string;
-  /** votes_abstain as string */
+  /** abstain vote weight (flowers, string) */
   abstain_votes: string;
+  /** number of distinct voters */
+  voter_count: number;
+  /** total vote weight (flowers, string) */
+  total_votes: string;
   /** ISO-8601 datetime string */
   created_at: string;
   voting_ends_at: string;
+  timelock_ends_at?: string | null;
   executed_at: string | null;
-  // Optional fields used for display
-  start_block?: number;
-  end_block?: number;
+  /** server-computed: status == Active && now < voting_ends_at */
+  is_voting_open: boolean;
+  has_passed: boolean;
+  snapshot_block?: number;
 }
 
 export interface HumanitarianProposal {
@@ -89,11 +99,48 @@ export interface DAOStats {
   treasury_balance: number;
   /** Raw Rust fields */
   active: number;
+  /** Active proposals whose voting window already closed (pending tally) */
+  awaiting_tally: number;
   passed: number;
   executed: number;
+  failed: number;
   quorum_percent: number;
   multisig: string;
   voting_period_days: number;
+  timelock_hours: number;
+  /** Minimum balance (flowers) required to vote — 1 ZION = 1_000_000 */
+  min_vote_weight: number;
+  /** Minimum proposer balance (flowers) required to create a proposal */
+  proposal_threshold: number;
+  guardian_count: number;
+  total_votes_cast: number;
+  unique_voters: number;
+}
+
+/** A single vote record from GET /api/dao/proposals/:id/votes */
+export interface ProposalVote {
+  voter: string;
+  choice: string;
+  /** vote weight in flowers */
+  weight: string | number;
+  tx_hash: string | null;
+  voted_at: string;
+}
+
+/** A treasury multisig operation from GET /api/dao/treasury/ops */
+export interface TreasuryOp {
+  op_id: string;
+  proposal_id: number | null;
+  operation: Record<string, unknown> | null;
+  submitted_by: string;
+  status: string;
+  created_at: string;
+  executed_at: string | null;
+  signatures: string[];
+  signature_count: number;
+  threshold: number;
+  amount_atomic: number;
+  amount_zion: number;
 }
 
 export interface DAOHealth {
@@ -144,11 +191,19 @@ const PLACEHOLDER_STATS: DAOStats = {
   },
   treasury_balance: 1_500_000_000,
   active: 0,
+  awaiting_tally: 0,
   passed: 0,
   executed: 0,
+  failed: 0,
   quorum_percent: 15,
-  multisig: '3-of-3',
+  multisig: '5-of-7',
   voting_period_days: 14,
+  timelock_hours: 72,
+  min_vote_weight: 1_000_000,
+  proposal_threshold: 10_000_000_000_000,
+  guardian_count: 7,
+  total_votes_cast: 0,
+  unique_voters: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -171,23 +226,29 @@ async function daoFetch(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-/** Map Rust ProposalRow fields → GovernanceProposal used by the page */
+/** Map Rust serialize_proposal fields → GovernanceProposal used by the page */
 function mapProposal(row: any): GovernanceProposal {
   return {
     id: row.id,
+    uuid: row.uuid,
     state: row.status ?? row.state ?? 'Pending',
-    proposal_type_json: row.proposal_type_json ?? '{}',
+    proposal_type: row.proposal_type ?? '',
     title: row.title,
     description: row.description,
     proposer: row.proposer,
-    for_votes: String(row.votes_yes ?? row.for_votes ?? 0),
-    against_votes: String(row.votes_no ?? row.against_votes ?? 0),
+    proposer_balance: row.proposer_balance != null ? String(row.proposer_balance) : undefined,
+    for_votes: String(row.votes_for ?? row.for_votes ?? row.votes_yes ?? 0),
+    against_votes: String(row.votes_against ?? row.against_votes ?? row.votes_no ?? 0),
     abstain_votes: String(row.votes_abstain ?? row.abstain_votes ?? 0),
+    voter_count: row.voter_count ?? 0,
+    total_votes: String(row.total_votes ?? 0),
     created_at: row.created_at ?? new Date().toISOString(),
     voting_ends_at: row.voting_ends_at ?? '',
+    timelock_ends_at: row.timelock_ends_at ?? null,
     executed_at: row.executed_at ?? null,
-    start_block: row.start_block,
-    end_block: row.end_block,
+    is_voting_open: !!row.is_voting_open,
+    has_passed: !!row.has_passed,
+    snapshot_block: row.snapshot_block ?? row.start_block,
   };
 }
 
@@ -222,7 +283,7 @@ export async function getDAOStats(): Promise<DAOStats> {
     return {
       governance: {
         total_proposals: d.total_proposals ?? 0,
-        active_voters: d.active ?? 0,
+        active_voters: d.unique_voters ?? 0,
         treasury_balance: `${(d.treasury_total_zion ?? 1_500_000_000).toLocaleString()} ZION`,
         grants_funded: d.executed ?? 0,
         total_spent: 0,
@@ -236,11 +297,19 @@ export async function getDAOStats(): Promise<DAOStats> {
       },
       treasury_balance: d.treasury_total_zion ?? 1_500_000_000,
       active: d.active ?? 0,
+      awaiting_tally: d.awaiting_tally ?? 0,
       passed: d.passed ?? 0,
       executed: d.executed ?? 0,
+      failed: d.failed ?? 0,
       quorum_percent: d.quorum_percent ?? 10,
       multisig: d.multisig ?? '5-of-7',
       voting_period_days: d.voting_period_days ?? 7,
+      timelock_hours: d.timelock_hours ?? 48,
+      min_vote_weight: d.min_vote_weight ?? 1_000_000,
+      proposal_threshold: d.proposal_threshold ?? 1_000_000_000_000,
+      guardian_count: d.guardian_count ?? 7,
+      total_votes_cast: d.total_votes_cast ?? 0,
+      unique_voters: d.unique_voters ?? 0,
     };
   } catch {
     // DAO daemon not yet deployed — return placeholder so page looks good
@@ -384,15 +453,52 @@ export async function castGovernanceVote(
   return { success: true, message: data.data?.message ?? 'Vote recorded' };
 }
 
+/** GET /api/dao/proposals/:id/votes — per-voter breakdown */
+export async function getProposalVotes(id: number): Promise<ProposalVote[]> {
+  try {
+    const res = await daoFetch(`/api/dao/proposals/${id}/votes`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const raw = await res.json();
+    return ((raw.data ?? raw).votes ?? []) as ProposalVote[];
+  } catch {
+    return [];
+  }
+}
+
+/** GET /api/dao/treasury/ops — multisig operations with signature progress */
+export async function getTreasuryOps(status?: string): Promise<TreasuryOp[]> {
+  try {
+    const params = status ? `?status=${encodeURIComponent(status)}` : '';
+    const res = await daoFetch(`/api/dao/treasury/ops${params}`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const raw = await res.json();
+    return ((raw.data ?? raw).operations ?? []) as TreasuryOp[];
+  } catch {
+    return [];
+  }
+}
+
+/** Proposal type payloads accepted by the Rust `ProposalTypeDto` (kind/data tagged). */
+export type ProposalTypeInput =
+  | { kind: 'Parameter'; data: { parameter_name: string; current_value: string; proposed_value: string } }
+  | { kind: 'Treasury'; data: { recipient: string; amount: number; purpose: string } }
+  | { kind: 'Grant'; data: { recipient: string; amount: number; milestones: string[]; duration_days: number } }
+  | { kind: 'Emergency'; data: { action: string; justification: string } }
+  | { kind: 'Humanitarian'; data: { category: string; amount: number; region: string; description: string } };
+
 /**
- * POST /api/dao/proposals  (requires X-DAO-Key header)
+ * POST /api/dao/proposals
+ *
+ * Auth: `zion_session` cookie (identity + balance resolved server-side from
+ * ZIS/L1) or `X-DAO-Key` operator header. `proposer_balance`/`snapshot_block`
+ * are server-resolved for ZIS callers — clients must not send them.
  */
 export async function createGovernanceProposal(proposal: {
   proposer: string;
   title: string;
   description: string;
-  proposal_type?: Record<string, unknown>;
-}): Promise<GovernanceProposal> {
+  proposal_type?: ProposalTypeInput;
+}): Promise<{ proposal_id: number }> {
   const res = await daoFetch('/api/dao/proposals', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -400,7 +506,10 @@ export async function createGovernanceProposal(proposal: {
       proposer: proposal.proposer,
       title: proposal.title,
       description: proposal.description,
-      proposal_type: proposal.proposal_type ?? { Parameter: { parameter_name: 'general', current_value: '', proposed_value: '' } },
+      proposal_type: proposal.proposal_type ?? {
+        kind: 'Parameter',
+        data: { parameter_name: 'general', current_value: '', proposed_value: '' },
+      },
     }),
   });
   if (!res.ok) {
@@ -408,7 +517,7 @@ export async function createGovernanceProposal(proposal: {
     throw new Error((err.data ?? err.error) || 'Failed to create proposal');
   }
   const raw = await res.json();
-  return mapProposal(raw.data ?? raw);
+  return (raw.data ?? raw) as { proposal_id: number };
 }
 
 /** Humanitarian proposals — not yet in Rust daemon, returns empty list */
