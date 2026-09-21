@@ -18,9 +18,9 @@ use crate::db::DaoDb;
 use crate::error::{DaoError, DaoResult};
 use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
-use crate::quorum::check_quorum;
+use crate::quorum::check_quorum_with_floor;
 use crate::timelock::Timelock;
-use crate::types::{VoteChoice, PROPOSAL_THRESHOLD};
+use crate::types::VoteChoice;
 use crate::voting::{Vote, VotingEngine};
 
 /// Governance runtime state.
@@ -168,7 +168,7 @@ impl GovernanceRuntime {
 
     /// Create a new proposal.
     ///
-    /// The proposer must have at least `PROPOSAL_THRESHOLD` balance.
+    /// The proposer must have at least `config.proposal_threshold` balance.
     pub fn create_proposal(
         &mut self,
         title: String,
@@ -178,9 +178,10 @@ impl GovernanceRuntime {
         proposer_balance: u64,
         snapshot_block: u64,
     ) -> DaoResult<u64> {
-        if proposer_balance < PROPOSAL_THRESHOLD {
+        let threshold = self.config.proposal_threshold;
+        if proposer_balance < threshold {
             return Err(DaoError::InsufficientProposalBalance {
-                needed: PROPOSAL_THRESHOLD,
+                needed: threshold,
                 have: proposer_balance,
             });
         }
@@ -188,6 +189,8 @@ impl GovernanceRuntime {
         let id = self.next_proposal_id;
         self.next_proposal_id += 1;
 
+        let standard_period_secs = self.config.voting_period_days as u64 * 24 * 60 * 60;
+        let period_secs = proposal_type.voting_period_secs_or(standard_period_secs);
         let proposal = Proposal::new(
             id,
             title,
@@ -196,7 +199,8 @@ impl GovernanceRuntime {
             proposer,
             proposer_balance,
             snapshot_block,
-        );
+        )
+        .with_voting_period(period_secs);
 
         self.persist_new_proposal(&proposal);
         self.proposals.insert(id, proposal);
@@ -276,8 +280,12 @@ impl GovernanceRuntime {
                 return Err(DaoError::VotingPeriodNotEnded(proposal_id.to_string()));
             }
 
-            // Check quorum
-            let quorum_result = check_quorum(proposal, self.circulating_supply);
+            // Check quorum (per-type floor vs configured base quorum)
+            let quorum_result = check_quorum_with_floor(
+                proposal,
+                self.circulating_supply,
+                self.config.quorum_percent,
+            );
             let passed = proposal.has_passed();
 
             match quorum_result {
@@ -285,7 +293,8 @@ impl GovernanceRuntime {
                     if passed {
                         proposal.status = ProposalStatus::Passed;
                         // Start timelock
-                        let timelock = Timelock::new(proposal_id);
+                        let timelock =
+                            Timelock::new_with_hours(proposal_id, self.config.timelock_hours);
                         proposal.timelock_ends_at = Some(timelock.ends_at);
                         self.timelocks.insert(proposal_id, timelock);
                     } else {
@@ -456,6 +465,20 @@ impl GovernanceRuntime {
     /// Get the timelock for a proposal.
     pub fn get_timelock(&self, proposal_id: u64) -> Option<&Timelock> {
         self.timelocks.get(&proposal_id)
+    }
+
+    /// Count of distinct voter addresses across all proposals.
+    pub fn unique_voters(&self) -> usize {
+        self.voting.unique_voters()
+    }
+
+    /// Proposals whose voting window closed but that are still `Active`
+    /// (waiting for the periodic tally pass).
+    pub fn awaiting_tally(&self) -> Vec<&Proposal> {
+        self.proposals
+            .values()
+            .filter(|p| p.status == ProposalStatus::Active && !p.is_voting_open())
+            .collect()
     }
 
     /// Get the config.

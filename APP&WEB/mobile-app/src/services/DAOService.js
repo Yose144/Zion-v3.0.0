@@ -3,7 +3,9 @@
  * ──────────────────────────────────────────────────────────────────────
  * Wraps the public DAO REST API (read-only endpoints).
  *
- * Base URL: https://zionterranova.com/api/dao
+ * Base URL: https://app.zionterranova.com/api/dao
+ * (the Next.js proxy — zionterranova.com/api/dao is nginx-allowlisted
+ * for operators only and returns 403 for app users)
  * Endpoints used:
  *   GET /api/dao/health
  *   GET /api/dao/stats
@@ -11,13 +13,13 @@
  *   GET /api/dao/proposals/:id
  *   GET /api/dao/treasury
  *
- * Voting/submission endpoints require X-DAO-Key and are not exposed
- * in the mobile app (guardian-only operations).
+ * Voting/proposal creation requires a ZIS session cookie (or the operator
+ * X-DAO-Key) and is not currently wired into the mobile app.
  */
 
 import CONFIG from '../constants/config';
 
-const DAO_BASE = (CONFIG.DAO && CONFIG.DAO.API_BASE) || 'https://zionterranova.com/api/dao';
+const DAO_BASE = (CONFIG.DAO && CONFIG.DAO.API_BASE) || 'https://app.zionterranova.com/api/dao';
 
 async function daoFetch(path, opts = {}) {
   const url = `${DAO_BASE.replace(/\/$/, '')}${path}`;

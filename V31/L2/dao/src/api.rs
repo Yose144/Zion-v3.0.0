@@ -17,6 +17,7 @@
 //! | POST   | /api/dao/proposals/:id/cancel  | Cancel proposal (auth)        |
 //! | GET    | /api/dao/stats               | Global DAO statistics           |
 //! | GET    | /api/dao/treasury            | Treasury overview (public)      |
+//! | GET    | /api/dao/treasury/ops        | List multisig ops (public)      |
 //! | POST   | /api/dao/treasury/submit     | Submit treasury op (auth)       |
 //! | POST   | /api/dao/treasury/:op_id/sign    | Guardian signature (auth)   |
 //! | POST   | /api/dao/treasury/:op_id/execute | Execute signed op (auth)    |
@@ -29,7 +30,7 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::Json,
     routing::{get, post},
@@ -93,7 +94,12 @@ pub struct CreateProposalRequest {
     pub description: String,
     pub proposal_type: ProposalTypeDto,
     pub proposer: String,
+    /// Operator path only — for ZIS callers the real balance is resolved
+    /// from L1 at the snapshot block.
+    #[serde(default)]
     pub proposer_balance: u64,
+    /// `0` = resolve to the current L1 chain height (always resolved for ZIS).
+    #[serde(default)]
     pub snapshot_block: u64,
 }
 
@@ -307,16 +313,57 @@ async fn health() -> Json<serde_json::Value> {
     }))
 }
 
-async fn list_proposals(State(state): State<AppState>) -> Json<serde_json::Value> {
+#[derive(Deserialize)]
+pub struct ProposalsQuery {
+    /// Case-insensitive status filter, e.g. `Active`, `Passed`, `Failed`.
+    pub status: Option<String>,
+    /// Case-insensitive proposal-type filter, e.g. `parameter`, `treasury`.
+    pub proposal_type: Option<String>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+}
+
+async fn list_proposals(
+    State(state): State<AppState>,
+    Query(q): Query<ProposalsQuery>,
+) -> Json<serde_json::Value> {
     let rt = state.runtime.lock().await;
-    let proposals: Vec<serde_json::Value> = rt
+    let status_filter = q.status.as_deref().map(|s| s.to_lowercase());
+    let type_filter = q.proposal_type.as_deref().map(|s| s.to_lowercase());
+
+    let mut rows: Vec<&Proposal> = rt
         .all_proposals()
-        .iter()
-        .map(|p| serialize_proposal(p))
+        .into_iter()
+        .filter(|p| {
+            status_filter
+                .as_ref()
+                .map(|s| format!("{:?}", p.status).to_lowercase() == *s)
+                .unwrap_or(true)
+                && type_filter
+                    .as_ref()
+                    .map(|t| p.proposal_type.type_name() == t.as_str())
+                    .unwrap_or(true)
+        })
+        .collect();
+
+    // Newest first.
+    rows.sort_by(|a, b| b.id.cmp(&a.id));
+    let total = rows.len();
+
+    let offset = q.offset.unwrap_or(0);
+    let limit = q.limit.unwrap_or(50).min(200);
+    let proposals: Vec<serde_json::Value> = rows
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .map(serialize_proposal)
         .collect();
 
     ok(serde_json::json!({
         "count": proposals.len(),
+        "total": total,
+        "offset": offset,
+        "limit": limit,
         "proposals": proposals
     }))
 }
@@ -518,6 +565,7 @@ async fn cancel_proposal(
 
 async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
     let rt = state.runtime.lock().await;
+    let cfg = rt.config();
     let all = rt.all_proposals();
     let active = rt.active_proposals();
     let passed = all
@@ -532,16 +580,29 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
         .iter()
         .filter(|p| p.status == ProposalStatus::Failed)
         .count();
+    let total_votes_cast: u32 = all.iter().map(|p| p.voter_count).sum();
 
     ok(serde_json::json!({
         "total_proposals": all.len(),
         "active_proposals": active.len(),
         "active": active.len(),
+        "awaiting_tally": rt.awaiting_tally().len(),
         "passed": passed,
         "executed": executed,
         "failed": failed,
         "circulating_supply": rt.circulating_supply(),
         "treasury_total_zion": (DAO_TREASURY_TOTAL / FLOWERS_PER_ZION as u128) as u64,
+        // Configured governance parameters (previously missing — the UI had
+        // to fall back to hardcoded guesses).
+        "quorum_percent": cfg.quorum_percent,
+        "voting_period_days": cfg.voting_period_days,
+        "timelock_hours": cfg.timelock_hours,
+        "min_vote_weight": cfg.min_vote_weight,
+        "proposal_threshold": cfg.proposal_threshold,
+        "multisig": format!("{}-of-{}", cfg.multisig_threshold, cfg.multisig_total),
+        "guardian_count": cfg.guardians.len(),
+        "total_votes_cast": total_votes_cast,
+        "unique_voters": rt.unique_voters(),
     }))
 }
 
@@ -607,6 +668,57 @@ async fn treasury_overview(
              Spending requires a passed proposal plus {threshold}-of-{total} guardian multisig."
         ),
     })))
+}
+
+/// GET /api/dao/treasury/ops — list multisig operations (public read).
+///
+/// Each row includes the collected guardian signatures so the UI can render
+/// progress toward the configured threshold.
+async fn list_treasury_ops(
+    State(state): State<AppState>,
+    Query(q): Query<TreasuryOpsQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    let (db, threshold) = {
+        let rt = state.runtime.lock().await;
+        (rt.db(), rt.config().multisig_threshold)
+    };
+    let db = db.ok_or_else(|| err("database not configured"))?;
+    let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
+
+    let ops = db
+        .list_treasury_ops(q.status.as_deref())
+        .map_err(db_err)?;
+    let mut out = Vec::with_capacity(ops.len());
+    for op in &ops {
+        let sigs = db.list_treasury_sigs(&op.op_id).map_err(db_err)?;
+        let parsed: Option<TreasuryOperation> = serde_json::from_str(&op.operation).ok();
+        let amount = parsed.as_ref().map(treasury_op_amount).unwrap_or(0);
+        out.push(serde_json::json!({
+            "op_id": op.op_id,
+            "proposal_id": op.proposal_id,
+            "operation": parsed,
+            "submitted_by": op.submitted_by,
+            "status": op.status,
+            "created_at": op.created_at,
+            "executed_at": op.executed_at,
+            "signatures": sigs,
+            "signature_count": sigs.len(),
+            "threshold": threshold,
+            "amount_atomic": amount,
+            "amount_zion": amount as f64 / FLOWERS_PER_ZION as f64,
+        }));
+    }
+
+    Ok(ok(serde_json::json!({
+        "count": out.len(),
+        "threshold": threshold,
+        "operations": out,
+    })))
+}
+
+#[derive(Deserialize)]
+pub struct TreasuryOpsQuery {
+    pub status: Option<String>,
 }
 
 /// POST /api/dao/treasury/submit — guardian submits a multisig operation.
@@ -1002,6 +1114,7 @@ pub async fn serve(
         .route("/api/dao/proposals/:id/cancel", post(cancel_proposal))
         .route("/api/dao/stats", get(stats))
         .route("/api/dao/treasury", get(treasury_overview))
+        .route("/api/dao/treasury/ops", get(list_treasury_ops))
         .route("/api/dao/treasury/submit", post(submit_treasury_op))
         .route("/api/dao/treasury/:op_id/sign", post(sign_treasury_op))
         .route("/api/dao/treasury/:op_id/execute", post(execute_treasury_op))

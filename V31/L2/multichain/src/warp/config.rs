@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config::{SolverConfig, SolverEntry};
+use crate::config::{ReconciliationConfig, SolverConfig, SolverEntry};
 
 /// WARP configuration loaded from TOML.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,6 +42,10 @@ pub struct WarpConfig {
     /// Pre-configured off-chain solvers the buyer node can broadcast intents to.
     #[serde(default)]
     pub solvers: Vec<SolverEntry>,
+
+    /// Reconciliation task configuration ([reconciliation] section).
+    #[serde(default)]
+    pub reconciliation: ReconciliationConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +94,7 @@ impl Default for WarpConfig {
             poll_interval_secs: None,
             solver: SolverConfig::default(),
             solvers: Vec::new(),
+            reconciliation: ReconciliationConfig::default(),
         }
     }
 }
@@ -214,5 +219,53 @@ mod tests {
             config.chains[0].disabled_reason,
             Some("BCS not implemented".to_string())
         );
+    }
+
+    #[test]
+    fn test_reconciliation_section_in_toml() {
+        let toml_str = r#"
+            node_id = "n1"
+            listen_addr = "0.0.0.0"
+            listen_port = 9333
+            database_path = "warp.db"
+            quorum = 3
+            daily_limit_zion = 10000000
+            timelock_threshold_zion = 1000000
+            l1_rpc_url = "http://localhost:8443"
+            l1_vault_address = "zion1vault"
+
+            [reconciliation]
+            enabled = true
+            interval_seconds = 120
+            alert_threshold = "5000"
+            excluded_assets = ["base:tZION", "base:tUSDT:0xabc"]
+        "#;
+        let config = WarpConfig::load_from_str(toml_str).unwrap();
+        assert!(config.reconciliation.enabled);
+        assert_eq!(config.reconciliation.interval_seconds, 120);
+        assert_eq!(config.reconciliation.alert_threshold, "5000");
+        assert_eq!(
+            config.reconciliation.excluded_assets,
+            vec!["base:tZION".to_string(), "base:tUSDT:0xabc".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_reconciliation_defaults_when_section_missing() {
+        let toml_str = r#"
+            node_id = "n1"
+            listen_addr = "0.0.0.0"
+            listen_port = 9333
+            database_path = "warp.db"
+            quorum = 3
+            daily_limit_zion = 10000000
+            timelock_threshold_zion = 1000000
+            l1_rpc_url = "http://localhost:8443"
+            l1_vault_address = "zion1vault"
+        "#;
+        let config = WarpConfig::load_from_str(toml_str).unwrap();
+        assert!(config.reconciliation.enabled);
+        assert_eq!(config.reconciliation.interval_seconds, 300);
+        assert!(config.reconciliation.excluded_assets.is_empty());
     }
 }

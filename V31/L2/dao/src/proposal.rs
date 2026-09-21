@@ -94,6 +94,22 @@ impl ProposalType {
         }
     }
 
+    /// Effective voting period given the configured standard period.
+    /// Emergencies always stay on the short fixed fast-track; every other
+    /// type follows the configured standard voting window.
+    pub fn voting_period_secs_or(&self, standard_secs: u64) -> u64 {
+        match self {
+            ProposalType::Emergency { .. } => 3 * 24 * 60 * 60,
+            _ => standard_secs,
+        }
+    }
+
+    /// Effective quorum: per-type requirements act as a floor on top of the
+    /// configured base quorum (whichever is stricter wins).
+    pub fn required_quorum_percent_or(&self, base_percent: f64) -> f64 {
+        self.required_quorum_percent().max(base_percent)
+    }
+
     pub fn type_name(&self) -> &str {
         match self {
             ProposalType::Parameter { .. } => "parameter",
@@ -204,6 +220,12 @@ impl Proposal {
             executed_at: None,
             execution_tx: None,
         }
+    }
+
+    /// Builder-style override for the voting window (applied after `new`).
+    pub fn with_voting_period(mut self, period_secs: u64) -> Self {
+        self.voting_ends_at = self.created_at + chrono::Duration::seconds(period_secs as i64);
+        self
     }
 
     pub fn is_voting_open(&self) -> bool {

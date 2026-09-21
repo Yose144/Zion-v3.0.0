@@ -33,13 +33,17 @@ import ProposalCard from '@/components/dao/ProposalCard';
 import GuardiansTreeClient from '@/components/GuardiansTreeClient';
 import {
   getDAOStats,
+  getDAOHealth,
   getDAOTreasuryOverview,
   getGovernanceProposals,
+  getTreasuryOps,
   castGovernanceVote,
   createGovernanceProposal,
   type GovernanceProposal,
   type DAOStats as DAOStatsType,
   type DAOTreasuryOverview,
+  type ProposalTypeInput,
+  type TreasuryOp,
 } from '@/lib/dao-api';
 
 const DaoCopy = {
@@ -62,6 +66,30 @@ const DaoCopy = {
   theHybridDaoPhaseBeginsInQ2202: { cs: `Hybridní DAO fáze začne v Q2 2026 s on-chain proposal lifecycle. Plné DAO řízené stakery je naplánováno na 2026+.`, en: `The Hybrid DAO phase begins in Q2 2026 with an on-chain proposal lifecycle. Full DAO control by stakers is planned for 2026+.` },
   pleaseEnterATitleAndDescriptio: { cs: `Vyplňte název a popis.`, en: `Please enter a title and description.` },
   failedToCreateProposal: { cs: `Nepodařilo se vytvořit návrh.`, en: `Failed to create proposal.` },
+  proposalTypeLabel: { cs: `Typ návrhu`, en: `Proposal type` },
+  typeParameter: { cs: `Parametr`, en: `Parameter` },
+  typeTreasury: { cs: `Treasury výdaj`, en: `Treasury spend` },
+  typeGrant: { cs: `Grant`, en: `Grant` },
+  typeHumanitarian: { cs: `Humanitární`, en: `Humanitarian` },
+  typeEmergency: { cs: `Emergency`, en: `Emergency` },
+  parameterName: { cs: `Název parametru`, en: `Parameter name` },
+  currentValue: { cs: `Současná hodnota`, en: `Current value` },
+  proposedValue: { cs: `Navrhovaná hodnota`, en: `Proposed value` },
+  recipientAddress: { cs: `Adresa příjemce (zion1...)`, en: `Recipient address (zion1...)` },
+  amountZion: { cs: `Částka (ZION)`, en: `Amount (ZION)` },
+  purpose: { cs: `Účel`, en: `Purpose` },
+  durationDays: { cs: `Doba trvání (dní)`, en: `Duration (days)` },
+  category: { cs: `Kategorie`, en: `Category` },
+  region: { cs: `Region`, en: `Region` },
+  emergencyAction: { cs: `Emergency akce`, en: `Emergency action` },
+  justification: { cs: `Zdůvodnění`, en: `Justification` },
+  proposalThresholdNote: { cs: `Vytvoření návrhu vyžaduje zůstatek alespoň`, en: `Creating a proposal requires a balance of at least` },
+  votesAreWeightedByZionBalance: { cs: `Hlasovací síla = zůstatek ZION ve snapshot bloku. Proposer identity = tvůj ZIS účet.`, en: `Voting power = ZION balance at the snapshot block. Proposer identity = your ZIS account.` },
+  votingClosedAwaitingTally: { cs: `Hlasování ukončeno — čeká na sčítání`, en: `Voting closed — awaiting tally` },
+  multisigOperations: { cs: `Multisig operace`, en: `Multisig operations` },
+  noTreasuryOpsYet: { cs: `Zatím žádné treasury operace`, en: `No treasury operations yet` },
+  signatures: { cs: `podpisů`, en: `signatures` },
+  votersLabel: { cs: `hlasujících`, en: `voters` },
   governance: { cs: `Správa`, en: `Governance` },
   treasuryProposalsVoting: { cs: `Treasury · návrhy · hlasování`, en: `Treasury · proposals · voting` },
   shapeZionSFutureTogether: { cs: `Formuj budoucnost ZION společně`, en: `Shape ZION\'s future together` },
@@ -185,8 +213,7 @@ const DaoCopy = {
   eGIncreaseBridgeValidatorThres: { cs: `Např. Zvýšit bridge validator threshold`, en: `e.g. Increase bridge validator threshold` },
   description: { cs: `Popis`, en: `Description` },
   detailedDescriptionOfThePropos: { cs: `Detailní popis návrhu a očekávaného dopadu...`, en: `Detailed description of the proposal and expected impact...` },
-  proposerZion1: { cs: `Proposer (zion1...)`, en: `Proposer (zion1...)` },
-  optionalOtherwiseADemoAddressI: { cs: `Volitelně — jinak se použije demo adresa`, en: `Optional — otherwise a demo address is used` },
+
   cancel: { cs: `Zrušit`, en: `Cancel` },
   creating: { cs: `Vytvářím…`, en: `Creating…` },
 };
@@ -295,7 +322,9 @@ export default function DaoPage() {
 
   const [stats, setStats] = useState<DAOStatsType | null>(null);
   const [treasury, setTreasury] = useState<DAOTreasuryOverview | null>(null);
+  const [treasuryOps, setTreasuryOps] = useState<TreasuryOp[]>([]);
   const [proposals, setProposals] = useState<GovernanceProposal[]>([]);
+  const [proposalFilter, setProposalFilter] = useState<'all' | 'open' | 'awaiting' | 'passed' | 'executed' | 'failed'>('all');
   const [loading, setLoading] = useState(true);
   const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<SectionTab>('proposals');
@@ -304,7 +333,18 @@ export default function DaoPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createTitle, setCreateTitle] = useState('');
   const [createDesc, setCreateDesc] = useState('');
-  const [createProposer, setCreateProposer] = useState('');
+  const [createType, setCreateType] = useState<string>('Parameter');
+  const [paramName, setParamName] = useState('');
+  const [paramCurrent, setParamCurrent] = useState('');
+  const [paramProposed, setParamProposed] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [amountZion, setAmountZion] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [durationDays, setDurationDays] = useState('');
+  const [category, setCategory] = useState('');
+  const [region, setRegion] = useState('');
+  const [emergencyAction, setEmergencyAction] = useState('');
+  const [justification, setJustification] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<{
@@ -325,16 +365,19 @@ export default function DaoPage() {
   async function loadDAOData() {
     try {
       setLoading(true);
-      const [statsData, proposalsData, treasuryData, bridgeData] = await Promise.all([
+      const [health, statsData, proposalsData, treasuryData, opsData, bridgeData] = await Promise.all([
+        getDAOHealth(),
         getDAOStats(),
         getGovernanceProposals(),
         getDAOTreasuryOverview(),
+        getTreasuryOps(),
         fetch('/api/bridge/status', { cache: 'no-store' }).then(r => r.json()).catch(() => null),
       ]);
       setStats(statsData);
       setProposals(proposalsData);
       setTreasury(treasuryData);
-      setDaemonOnline(proposalsData.length > 0 || statsData.governance.total_proposals > 0);
+      setTreasuryOps(opsData);
+      setDaemonOnline(health.status === 'ok' || health.status === 'online');
       if (bridgeData) setBridgeStatus(bridgeData);
     } catch {
       setDaemonOnline(false);
@@ -352,7 +395,7 @@ export default function DaoPage() {
       // Voter + weight are resolved server-side from the ZIS session and the
       // L1 balance at the proposal snapshot block — the address passed here is
       // only a hint; the API replaces it with the authenticated identity.
-      await castGovernanceVote(parseInt(proposalId, 10), zionAddress, voteType as 'for' | 'against');
+      await castGovernanceVote(parseInt(proposalId, 10), zionAddress, voteType as 'for' | 'against' | 'abstain');
       await loadDAOData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Vote failed');
@@ -372,16 +415,35 @@ export default function DaoPage() {
     }
     setCreateBusy(true);
     try {
-      const proposer = zionAddress;
+      const zionAmount = Math.floor(parseFloat(amountZion) || 0);
+      const proposalType: ProposalTypeInput = (() => {
+        switch (createType) {
+          case 'Treasury':
+            return { kind: 'Treasury', data: { recipient: recipient.trim(), amount: zionAmount * 1_000_000, purpose: purpose.trim() } };
+          case 'Grant':
+            return { kind: 'Grant', data: { recipient: recipient.trim(), amount: zionAmount * 1_000_000, milestones: [], duration_days: parseInt(durationDays, 10) || 30 } };
+          case 'Humanitarian':
+            return { kind: 'Humanitarian', data: { category: category.trim(), amount: zionAmount * 1_000_000, region: region.trim(), description: createDesc.trim() } };
+          case 'Emergency':
+            return { kind: 'Emergency', data: { action: emergencyAction.trim(), justification: justification.trim() } };
+          default:
+            return { kind: 'Parameter', data: { parameter_name: paramName.trim() || 'general', current_value: paramCurrent.trim(), proposed_value: paramProposed.trim() } };
+        }
+      })();
       await createGovernanceProposal({
-        proposer,
+        proposer: zionAddress,
         title: createTitle.trim(),
         description: createDesc.trim(),
+        proposal_type: proposalType,
       });
       setCreateOpen(false);
       setCreateTitle('');
       setCreateDesc('');
-      setCreateProposer('');
+      setCreateType('Parameter');
+      setParamName(''); setParamCurrent(''); setParamProposed('');
+      setRecipient(''); setAmountZion(''); setPurpose('');
+      setDurationDays(''); setCategory(''); setRegion('');
+      setEmergencyAction(''); setJustification('');
       await loadDAOData();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : (DaoCopy.failedToCreateProposal[cs ? 'cs' : 'en']));
@@ -392,7 +454,18 @@ export default function DaoPage() {
 
   const totalProposals = stats?.governance.total_proposals ?? 0;
   const activeProposals = stats?.active ?? 0;
-  const guardiansCount = 5;
+  const guardiansCount = stats?.guardian_count ?? 7;
+  const filteredProposals = proposals.filter((p) => {
+    const s = p.state.toUpperCase();
+    switch (proposalFilter) {
+      case 'open': return p.is_voting_open;
+      case 'awaiting': return s === 'ACTIVE' && !p.is_voting_open;
+      case 'passed': return s === 'PASSED' || s === 'TIMELOCKED';
+      case 'executed': return s === 'EXECUTED';
+      case 'failed': return s === 'FAILED' || s === 'REJECTED' || s === 'CANCELLED' || s === 'EXPIRED';
+      default: return true;
+    }
+  });
 
   return (
     <div className="zion-page text-white relative">
@@ -593,7 +666,7 @@ export default function DaoPage() {
                   rc="6, 105, 40"
                   label={DaoCopy.active[cs ? 'cs' : 'en']}
                   value={activeProposals.toLocaleString()}
-                  sub={DaoCopy.ongoingVotes[cs ? 'cs' : 'en']}
+                  sub={(stats?.awaiting_tally ?? 0) > 0 ? `${stats?.awaiting_tally} ${DaoCopy.votingClosedAwaitingTally[cs ? 'cs' : 'en']}` : DaoCopy.ongoingVotes[cs ? 'cs' : 'en']}
                 />
                 <StatCard
                   icon={<CheckCircle2 className="h-5 w-5" />}
@@ -610,8 +683,8 @@ export default function DaoPage() {
                   bgClass="bg-zion-gold/10"
                   rc="252, 209, 22"
                   label={DaoCopy.voters[cs ? 'cs' : 'en']}
-                  value={(stats?.governance.active_voters ?? 0).toLocaleString()}
-                  sub={DaoCopy.activeParticipants[cs ? 'cs' : 'en']}
+                  value={(stats?.unique_voters ?? 0).toLocaleString()}
+                  sub={`${stats?.total_votes_cast ?? 0} ${cs ? 'hlasů celkem' : 'votes cast'}`}
                 />
                 <StatCard
                   icon={<ArrowLeftRight className="h-5 w-5" />}
@@ -709,11 +782,38 @@ export default function DaoPage() {
                     <p className="text-sm text-gray-300">{DaoCopy.signInToVote[cs ? 'cs' : 'en']}</p>
                   </div>
                 )}
+                {/* Status filter — 'Awaiting tally' is derived (Active + voting closed) */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {(['all', 'open', 'awaiting', 'passed', 'executed', 'failed'] as const).map((f) => {
+                    const labels = {
+                      all: cs ? 'Vše' : 'All',
+                      open: cs ? 'Hlasování' : 'Voting',
+                      awaiting: cs ? 'Čeká na sčítání' : 'Awaiting tally',
+                      passed: cs ? 'Schváleno' : 'Passed',
+                      executed: cs ? 'Exekutováno' : 'Executed',
+                      failed: cs ? 'Neúspěšné' : 'Failed',
+                    };
+                    const active = proposalFilter === f;
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setProposalFilter(f)}
+                        className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-wider border transition ${
+                          active ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {labels[f]}
+                      </button>
+                    );
+                  })}
+                </div>
                 {loading ? (
                   <div className="text-center py-12">
                     <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zion-gold border-r-transparent" />
                     <p className="mt-4 text-gray-400">{DaoCopy.loadingProposals[cs ? 'cs' : 'en']}</p>
                   </div>
+                ) : filteredProposals.length === 0 && proposals.length > 0 ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">{cs ? 'Žádné návrhy v této kategorii.' : 'No proposals in this category.'}</p>
                 ) : proposals.length === 0 ? (
                   <div className="zion-rainbow-card p-12 text-center" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <Crown className="h-12 w-12 text-gray-500 mx-auto mb-4" />
@@ -722,7 +822,7 @@ export default function DaoPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {proposals.map((proposal) => (
+                    {filteredProposals.map((proposal) => (
                       <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} />
                     ))}
                   </div>
@@ -765,6 +865,44 @@ export default function DaoPage() {
                   </div>
                 </motion.section>
               )}
+
+              <motion.section
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="zion-rainbow-card p-8"
+                style={{ '--rc': '6, 105, 40' } as CSSProperties}
+              >
+                <div className="flex flex-col gap-2 mb-6">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{treasury?.multisig ?? '5-of-7'}</p>
+                  <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                    <ShieldCheck className="h-7 w-7 text-zion-gold" />
+                    {DaoCopy.multisigOperations[cs ? 'cs' : 'en']}
+                  </h2>
+                </div>
+                {treasuryOps.length === 0 ? (
+                  <p className="text-sm text-gray-500">{DaoCopy.noTreasuryOpsYet[cs ? 'cs' : 'en']}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {treasuryOps.map((op) => (
+                      <div key={op.op_id} className="zion-rainbow-sub p-4 flex flex-wrap items-center justify-between gap-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                        <div className="min-w-0">
+                          <p className="font-mono text-sm text-white truncate">{op.op_id}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {op.operation && typeof op.operation === 'object' ? Object.keys(op.operation)[0] : '—'}
+                            {op.amount_zion > 0 ? ` · ${op.amount_zion.toLocaleString()} ZION` : ''}
+                            {op.proposal_id ? ` · proposal #${op.proposal_id}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className={`zion-badge ${op.status === 'executed' ? 'zion-badge-green' : ''}`}>{op.status}</span>
+                          <span className="font-mono text-gray-300">{op.signature_count}/{op.threshold} {DaoCopy.signatures[cs ? 'cs' : 'en']}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.section>
 
               <motion.section
                 initial={{ opacity: 0, y: 24 }}
@@ -1186,6 +1324,20 @@ export default function DaoPage() {
               </div>
               <form onSubmit={handleCreateProposal} className="space-y-4">
                 <div>
+                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{DaoCopy.proposalTypeLabel[cs ? 'cs' : 'en']}</label>
+                  <select
+                    value={createType}
+                    onChange={(e) => setCreateType(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-zion-gold focus:outline-none"
+                  >
+                    <option value="Parameter">{DaoCopy.typeParameter[cs ? 'cs' : 'en']}</option>
+                    <option value="Treasury">{DaoCopy.typeTreasury[cs ? 'cs' : 'en']}</option>
+                    <option value="Grant">{DaoCopy.typeGrant[cs ? 'cs' : 'en']}</option>
+                    <option value="Humanitarian">{DaoCopy.typeHumanitarian[cs ? 'cs' : 'en']}</option>
+                    <option value="Emergency">{DaoCopy.typeEmergency[cs ? 'cs' : 'en']}</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{DaoCopy.title[cs ? 'cs' : 'en']}</label>
                   <input
                     type="text"
@@ -1205,16 +1357,50 @@ export default function DaoPage() {
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-gray-400 mb-1">{DaoCopy.proposerZion1[cs ? 'cs' : 'en']}</label>
-                  <input
-                    type="text"
-                    value={createProposer}
-                    onChange={(e) => setCreateProposer(e.target.value)}
-                    placeholder={DaoCopy.optionalOtherwiseADemoAddressI[cs ? 'cs' : 'en']}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none"
-                  />
+
+                {createType === 'Parameter' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" value={paramName} onChange={(e) => setParamName(e.target.value)} placeholder={DaoCopy.parameterName[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={paramCurrent} onChange={(e) => setParamCurrent(e.target.value)} placeholder={DaoCopy.currentValue[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={paramProposed} onChange={(e) => setParamProposed(e.target.value)} placeholder={DaoCopy.proposedValue[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                  </div>
+                )}
+
+                {(createType === 'Treasury' || createType === 'Grant') && (
+                  <div className="space-y-3">
+                    <input type="text" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder={DaoCopy.recipientAddress[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="number" min="0" value={amountZion} onChange={(e) => setAmountZion(e.target.value)} placeholder={DaoCopy.amountZion[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                      {createType === 'Grant' ? (
+                        <input type="number" min="1" value={durationDays} onChange={(e) => setDurationDays(e.target.value)} placeholder={DaoCopy.durationDays[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                      ) : (
+                        <input type="text" value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder={DaoCopy.purpose[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {createType === 'Humanitarian' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder={DaoCopy.category[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="number" min="0" value={amountZion} onChange={(e) => setAmountZion(e.target.value)} placeholder={DaoCopy.amountZion[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} placeholder={DaoCopy.region[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                  </div>
+                )}
+
+                {createType === 'Emergency' && (
+                  <div className="space-y-3">
+                    <input type="text" value={emergencyAction} onChange={(e) => setEmergencyAction(e.target.value)} placeholder={DaoCopy.emergencyAction[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    <input type="text" value={justification} onChange={(e) => setJustification(e.target.value)} placeholder={DaoCopy.justification[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                  </div>
+                )}
+
+                <div className="zion-rainbow-sub p-3 text-[11px] text-gray-400" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                  {DaoCopy.proposalThresholdNote[cs ? 'cs' : 'en']}{' '}
+                  <span className="font-mono text-zion-gold">{((stats?.proposal_threshold ?? 0) / 1_000_000).toLocaleString()} ZION</span>
+                  {' · '}{DaoCopy.votesAreWeightedByZionBalance[cs ? 'cs' : 'en']}
                 </div>
+
                 {createError && (
                   <div className="zion-rainbow-sub p-3 text-sm text-zion-purple" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                     {createError}

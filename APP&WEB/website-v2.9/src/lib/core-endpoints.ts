@@ -18,8 +18,8 @@ export const CORE = {
   /** Hiran v2.2 LLM inference — Edge (port 8002) */
   hiranInference: `http://${EDGE_HOST}:8002`,
 
-  /** DAO API — runs locally on Edge (port 8450) */
-  dao: `http://127.0.0.1:8450`,
+  /** DAO API — runs locally on Edge (port 8456; ZION_DAO_API_URL can override) */
+  dao: `http://127.0.0.1:8456`,
 
   /** Prometheus metrics scraper — runs locally on Edge (port 9090) */
   prometheus: `http://127.0.0.1:9090`,
