@@ -364,12 +364,19 @@ __kernel void bip39_filter(
 // so each distinct phrase is PBKDF2'd once per run, not once per perm.
 // Returns 1 when `key` was newly inserted (caller proceeds with the emit).
 static int dedup_insert(volatile __global ulong* set, uint mask, ulong key) {
+#ifndef cl_khr_int64_base_atomics
+    // No 64-bit CAS on this stack (Apple ships OpenCL 1.2 without the
+    // extension): skip in-kernel dedupe — dup phrases get re-PBKDF2'd and
+    // the host dedupes seeds (runner seed_seen). Dup work, never loss.
+    return 1;
+#else
     uint slot = (uint)((key * 0x9E3779B97F4A7C15UL) >> 43) & mask;
     for (uint i = 0; i < 64; i++) {
         ulong old = atom_cmpxchg(set + ((slot + i) & mask), 0UL, key);
         if (old == 0 || old == key) return old == 0;
     }
     return 1; // set hopelessly full — emit anyway (dup work, never loss)
+#endif
 }
 
 // One work-item per permutation number: factoradic (Lehmer) decode of
