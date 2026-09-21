@@ -421,6 +421,7 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "getStatus" => get_chain_info(node).await,
         "getNodeInfo" => get_node_info(node).await,
         "getPeerInfo" => get_peer_info(node).await,
+        "getAdminUnlocks" => get_admin_unlocks(node).await,
         _ => Ok(error_response(
             id.clone(),
             -32601,
@@ -570,6 +571,17 @@ async fn get_node_info(node: &Node) -> Result<Value, NodeError> {
         "mempool_transactions": mempool_size,
         "transaction_model": "hybrid",
         "balance_lookup": "account_id_or_zion1_address",
+    }))
+}
+
+/// Premine addresses released from their admin-lock by on-chain 3-of-3
+/// admin unlock transactions, plus the canonical admin multisig set.
+async fn get_admin_unlocks(node: &Node) -> Result<Value, NodeError> {
+    let set = node.utxo_set.lock().await;
+    Ok(json!({
+        "unlocked": set.admin_unlocked().iter().collect::<Vec<_>>(),
+        "admin_addresses": crate::v3_compat::ADMIN_L1_ADDRESSES,
+        "memo_prefix": crate::v3_compat::ADMIN_UNLOCK_MEMO_PREFIX,
     }))
 }
 
@@ -1223,6 +1235,7 @@ impl RpcRouter {
             "getNetworkStats",
             "estimateFee",
             "getTokenInfo",
+            "getAdminUnlocks",
         ] {
             router.register(method, stub(method));
         }

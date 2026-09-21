@@ -5,7 +5,7 @@
 //! current set so invalid or double-spending transactions are rejected before
 //! they reach a block template.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use sha2::{Digest, Sha256 as Sha2};
 use zion_l1_types::{Address, Amount, Hash};
@@ -91,16 +91,57 @@ pub enum UtxoError {
 }
 
 /// In-memory UTXO set.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct UtxoSet {
     outputs: HashMap<Outpoint, UtxoOutput>,
+    /// Premine addresses whose admin-lock has been released by an on-chain
+    /// 3-of-3 admin unlock transaction. Rebuilt deterministically from stored
+    /// blocks at startup, exactly like `outputs`.
+    admin_unlocked: BTreeSet<String>,
+    /// Admin L1 addresses that must all appear as spent inputs in an unlock
+    /// transaction. Defaults to the canonical 3-of-3 set
+    /// (`v3_compat::ADMIN_L1_ADDRESSES`).
+    admin_addresses: Vec<String>,
+}
+
+impl Default for UtxoSet {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl UtxoSet {
     pub fn new() -> Self {
         Self {
             outputs: HashMap::new(),
+            admin_unlocked: BTreeSet::new(),
+            admin_addresses: crate::v3_compat::ADMIN_L1_ADDRESSES
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         }
+    }
+
+    /// True if `address` is a premine slot released by an on-chain admin
+    /// unlock authorization.
+    pub fn is_admin_unlocked(&self, address: &str) -> bool {
+        self.admin_unlocked.contains(address)
+    }
+
+    /// All premine addresses released by admin unlock transactions so far.
+    pub fn admin_unlocked(&self) -> &BTreeSet<String> {
+        &self.admin_unlocked
+    }
+
+    /// Test hook: replace the admin multisig set so tests can sign unlock
+    /// transactions with freshly generated keys.
+    #[cfg(test)]
+    pub fn set_admin_addresses_for_test<I, S>(&mut self, addrs: I)
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        self.admin_addresses = addrs.into_iter().map(Into::into).collect();
     }
 
     /// Return unspent outputs for the given encoded address.
@@ -259,6 +300,20 @@ impl UtxoSet {
                     is_coinbase: false,
                 },
             );
+        }
+
+        // Governance: a transaction that spent UTXOs owned by every admin
+        // address (all inputs signature-verified above) and carries the
+        // unlock memo releases the named premine address from this point in
+        // the chain onward. The record is part of the applied state, so the
+        // startup rebuild replays it identically on every node.
+        let admins: Vec<&str> = self.admin_addresses.iter().map(String::as_str).collect();
+        if let Some(target) = crate::v3_compat::admin_unlock_target(
+            tx,
+            inputs.iter().map(|(_, o)| o.address.encoded.as_str()),
+            &admins,
+        ) {
+            self.admin_unlocked.insert(target);
         }
 
         Ok(fee)

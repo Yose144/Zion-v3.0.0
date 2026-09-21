@@ -22,7 +22,7 @@ use crate::rpc::RpcServer;
 use crate::storage::{Storage, StorageError};
 use crate::transaction::{Transaction, TransactionOutput};
 use crate::utxo::{Outpoint, UtxoError, UtxoSet};
-use crate::v3_compat::is_premine_transfer_allowed_no_admin;
+use crate::v3_compat::is_premine_transfer_allowed;
 use zion_cosmic_harmony::EkamDeeksha;
 
 /// Node configuration.
@@ -483,7 +483,9 @@ impl Node {
             }
 
             if let Err(reason) =
-                is_premine_transfer_allowed_no_admin(&output.address.encoded, block_height)
+                is_premine_transfer_allowed(&output.address.encoded, block_height, &|addr| {
+                    view.is_admin_unlocked(addr)
+                })
             {
                 return Err(UtxoError::PremineLocked {
                     address: output.address.encoded.clone(),
@@ -514,7 +516,9 @@ impl Node {
                 continue;
             };
             if let Err(reason) =
-                is_premine_transfer_allowed_no_admin(&output.address.encoded, current_height)
+                is_premine_transfer_allowed(&output.address.encoded, current_height, &|addr| {
+                    view.is_admin_unlocked(addr)
+                })
             {
                 return Err(UtxoError::PremineLocked {
                     address: output.address.encoded.clone(),
@@ -1360,5 +1364,229 @@ mod tests {
             "expected premine lock error, got {:?}",
             err
         );
+    }
+
+    const PREMINE_SLOT1: &str = "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5";
+
+    /// Coinbase funding `address` at `height` so a later spend is mature.
+    fn fund_with_coinbase(utxo_set: &mut UtxoSet, address: &str, amount: u64, height: u64) {
+        let coinbase = Transaction {
+            version: 1,
+            inputs: vec![],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(amount as u128),
+                address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], address).unwrap(),
+                ..Default::default()
+            }],
+            memo: vec![],
+        };
+        utxo_set.apply_transaction(&coinbase, height, 0).unwrap();
+    }
+
+    /// Build and sign a 3-of-3 admin unlock transaction spending one funded
+    /// UTXO per admin address. Returns the signed transaction.
+    fn signed_unlock_tx(
+        utxo_set: &UtxoSet,
+        admins: &[(&ed25519_dalek::SigningKey, String)],
+        target: &str,
+    ) -> Transaction {
+        let mut inputs = Vec::new();
+        let mut total = 0u64;
+        for (_, addr) in admins {
+            let (tx_hash, index, amount, ..) = utxo_set
+                .get_utxos_for_address(addr)
+                .into_iter()
+                .next()
+                .expect("admin must hold a funded UTXO");
+            inputs.push(crate::transaction::TransactionInput {
+                previous_output: tx_hash,
+                index,
+                script: vec![],
+            });
+            total += amount;
+        }
+        let refund = Address::new(zion_l1_types::ChainId::ZionL1, vec![], &admins[0].1).unwrap();
+        let mut tx = Transaction {
+            version: 1,
+            inputs,
+            outputs: vec![TransactionOutput {
+                amount: Amount::new((total - 10_000) as u128),
+                address: refund,
+                ..Default::default()
+            }],
+            memo: format!(
+                "{}{target}:dao-proposal-1",
+                crate::v3_compat::ADMIN_UNLOCK_MEMO_PREFIX
+            )
+            .into_bytes(),
+        };
+        let signing_hash = tx.signing_hash();
+        for (input, (key, _)) in tx.inputs.iter_mut().zip(admins.iter()) {
+            let sig = crate::crypto::sign(key, &signing_hash.0);
+            input.script = sig.to_vec();
+            input
+                .script
+                .extend_from_slice(key.verifying_key().as_bytes());
+        }
+        tx
+    }
+
+    #[test]
+    fn premine_spend_allowed_after_admin_unlock_tx() {
+        // Three test admins replace the canonical set so the test can sign.
+        let admins: Vec<_> = (0..3)
+            .map(|_| {
+                let (sk, vk) = generate_keypair();
+                (sk, derive_address(vk.as_bytes()))
+            })
+            .collect();
+        let admin_addrs: Vec<String> = admins.iter().map(|(_, a)| a.clone()).collect();
+
+        let mut utxo_set = UtxoSet::new();
+        utxo_set.set_admin_addresses_for_test(admin_addrs.iter().cloned());
+
+        for (_, addr) in &admins {
+            fund_with_coinbase(&mut utxo_set, addr, 1_000_000, 1000);
+        }
+        fund_with_coinbase(&mut utxo_set, PREMINE_SLOT1, 1_650_000_000_000_000, 1000);
+
+        // A spend of the premine output — signatures are irrelevant here
+        // because the premine gate runs before script evaluation.
+        let (ph, pi, ..) = utxo_set
+            .get_utxos_for_address(PREMINE_SLOT1)
+            .into_iter()
+            .next()
+            .unwrap();
+        let spend = Transaction {
+            version: 1,
+            inputs: vec![crate::transaction::TransactionInput {
+                previous_output: ph,
+                index: pi,
+                script: vec![],
+            }],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(1),
+                address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test").unwrap(),
+                ..Default::default()
+            }],
+            memo: vec![],
+        };
+
+        // Locked before any unlock authorization exists.
+        let err = Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend, 1100).unwrap_err();
+        assert!(matches!(err, UtxoError::PremineLocked { .. }), "{err:?}");
+
+        // Two-of-three admin signatures are not enough. Apply on a clone so
+        // the spent admin UTXOs remain available for the real unlock below.
+        let admins2: Vec<(&ed25519_dalek::SigningKey, String)> = admins
+            .iter()
+            .take(2)
+            .map(|(sk, a)| (sk, a.clone()))
+            .collect();
+        let partial = signed_unlock_tx(&utxo_set, &admins2, PREMINE_SLOT1);
+        utxo_set
+            .clone()
+            .apply_transaction(&partial, 1001, 0)
+            .unwrap();
+        assert!(!utxo_set.is_admin_unlocked(PREMINE_SLOT1));
+        let err = Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend, 1100).unwrap_err();
+        assert!(matches!(err, UtxoError::PremineLocked { .. }), "{err:?}");
+
+        // All three admins sign → the unlock is recorded at apply time.
+        let admins3: Vec<(&ed25519_dalek::SigningKey, String)> =
+            admins.iter().map(|(sk, a)| (sk, a.clone())).collect();
+        let unlock = signed_unlock_tx(&utxo_set, &admins3, PREMINE_SLOT1);
+        utxo_set.apply_transaction(&unlock, 1002, 0).unwrap();
+        assert!(utxo_set.is_admin_unlocked(PREMINE_SLOT1));
+        assert!(utxo_set.admin_unlocked().contains(PREMINE_SLOT1));
+
+        // The premine gate now passes (the spend itself still needs valid
+        // premine signatures at apply time — checked separately).
+        Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend, 1100)
+            .expect("premine spend must pass the gate after admin unlock");
+
+        // A different premine slot stays locked.
+        let other = "zion1s7x735r6v86485k7t36008l682g777g3q8pu3q0";
+        fund_with_coinbase(&mut utxo_set, other, 1_000_000, 1000);
+        let (oh, oi, ..) = utxo_set
+            .get_utxos_for_address(other)
+            .into_iter()
+            .next()
+            .unwrap();
+        let spend2 = Transaction {
+            inputs: vec![crate::transaction::TransactionInput {
+                previous_output: oh,
+                index: oi,
+                script: vec![],
+            }],
+            ..spend.clone()
+        };
+        let err = Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend2, 1100).unwrap_err();
+        assert!(matches!(err, UtxoError::PremineLocked { .. }), "{err:?}");
+    }
+
+    #[test]
+    fn unlock_survives_utxo_set_rebuild() {
+        let admins: Vec<_> = (0..3)
+            .map(|_| {
+                let (sk, vk) = generate_keypair();
+                (sk, derive_address(vk.as_bytes()))
+            })
+            .collect();
+        let admin_addrs: Vec<String> = admins.iter().map(|(_, a)| a.clone()).collect();
+
+        let mut set = UtxoSet::new();
+        set.set_admin_addresses_for_test(admin_addrs.iter().cloned());
+        for (_, addr) in &admins {
+            fund_with_coinbase(&mut set, addr, 1_000_000, 1000);
+        }
+        let admins3: Vec<(&ed25519_dalek::SigningKey, String)> =
+            admins.iter().map(|(sk, a)| (sk, a.clone())).collect();
+        let unlock = signed_unlock_tx(&set, &admins3, PREMINE_SLOT1);
+
+        // Wrap the coinbase fundings + unlock into blocks and replay them
+        // through the unchecked rebuild path used at node startup.
+        let mut blocks = Vec::new();
+        for (i, (_, addr)) in admins.iter().enumerate() {
+            let cb = Transaction {
+                version: 1,
+                inputs: vec![],
+                outputs: vec![TransactionOutput {
+                    amount: Amount::new(1_000_000),
+                    address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], addr).unwrap(),
+                    ..Default::default()
+                }],
+                memo: vec![],
+            };
+            blocks.push(Block::new(
+                BlockHeader {
+                    previous_hash: Hash::default(),
+                    merkle_root: Hash::default(),
+                    height: 1000 + i as u64,
+                    timestamp: 0,
+                    nonce: 0,
+                    difficulty: 1,
+                },
+                vec![cb],
+            ));
+        }
+        blocks.push(Block::new(
+            BlockHeader {
+                previous_hash: Hash::default(),
+                merkle_root: Hash::default(),
+                height: 1003,
+                timestamp: 0,
+                nonce: 0,
+                difficulty: 1,
+            },
+            vec![unlock],
+        ));
+
+        let mut rebuilt = UtxoSet::new();
+        rebuilt.set_admin_addresses_for_test(admin_addrs);
+        for b in &blocks {
+            rebuilt.apply_block_unchecked(b).unwrap();
+        }
+        assert!(rebuilt.is_admin_unlocked(PREMINE_SLOT1));
     }
 }
