@@ -582,6 +582,94 @@ pub const ADMIN_HANUMAN_PUBLIC_KEY_HEX: &str =
 pub const ADMIN_HANUMAN_L1_ADDRESS: &str = "zion18693c577h054s7v866e686f8m3z0y8s7s5gl2l7";
 pub const ADMIN_HANUMAN_EVM_ADDRESS: &str = "0xcad8a7fc07a8777aaa7bba5261f409ae40d78141";
 
+/// Canonical admin L1 addresses — the 3-of-3 governance multisig set.
+///
+/// A premine unlock authorization is a transaction that spends at least one
+/// UTXO owned by each of these addresses (each input signature-verified by the
+/// normal UTXO rules) and carries an [`ADMIN_UNLOCK_MEMO_PREFIX`] memo naming
+/// the premine address to release.
+pub const ADMIN_L1_ADDRESSES: [&str; 3] = [
+    ADMIN_RAMA_L1_ADDRESS,
+    ADMIN_SITA_L1_ADDRESS,
+    ADMIN_HANUMAN_L1_ADDRESS,
+];
+
+/// Memo prefix of an on-chain admin premine-unlock authorization.
+///
+/// Full format: `ZION:ADMIN_UNLOCK:v1:<premine_address>[:<reference>]`
+/// where `<reference>` is an optional opaque audit tag (e.g. the DAO proposal
+/// id), max [`ADMIN_UNLOCK_MAX_REF_LEN`] bytes of printable ASCII.
+pub const ADMIN_UNLOCK_MEMO_PREFIX: &str = "ZION:ADMIN_UNLOCK:v1:";
+
+/// Maximum length of the optional reference segment in an unlock memo.
+pub const ADMIN_UNLOCK_MAX_REF_LEN: usize = 64;
+
+/// Parsed admin unlock memo.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdminUnlock<'a> {
+    /// Premine address the authorization releases.
+    pub target: &'a str,
+    /// Optional opaque audit reference (DAO proposal id, minutes hash, ...).
+    pub reference: Option<&'a str>,
+}
+
+/// Parse an admin unlock memo. Returns `None` unless the memo is
+/// `ZION:ADMIN_UNLOCK:v1:<premine_address>[:<ref>]` with a target that is one
+/// of the canonical [`PREMINE_OUTPUTS`] addresses.
+pub fn parse_admin_unlock_memo(memo: &[u8]) -> Option<AdminUnlock<'_>> {
+    let text = std::str::from_utf8(memo).ok()?;
+    let rest = text.strip_prefix(ADMIN_UNLOCK_MEMO_PREFIX)?;
+    let (target, reference) = match rest.split_once(':') {
+        Some((t, r)) => (t, Some(r)),
+        None => (rest, None),
+    };
+    if !PREMINE_OUTPUTS.iter().any(|o| o.address == target) {
+        return None;
+    }
+    if let Some(r) = reference {
+        let ok = !r.is_empty()
+            && r.len() <= ADMIN_UNLOCK_MAX_REF_LEN
+            && r.bytes().all(|b| b.is_ascii_graphic());
+        if !ok {
+            return None;
+        }
+    }
+    Some(AdminUnlock { target, reference })
+}
+
+/// Decide whether `tx` is a valid admin premine-unlock authorization and, if
+/// so, return the premine address it releases.
+///
+/// `spent_addresses` must be the resolved owner addresses of the transaction's
+/// inputs **after** signature verification — i.e. this function is only called
+/// for transactions that already passed `UtxoSet::apply_transaction`. The
+/// caller in `UtxoSet` supplies the spent outputs' addresses; the function
+/// checks that every admin address in `admins` appears at least once.
+///
+/// Unlock is permanent and address-scoped: once the transaction is applied,
+/// the target's admin-lock is released for the rest of the chain.
+pub fn admin_unlock_target<'a, I>(
+    tx: &crate::transaction::Transaction,
+    spent_addresses: I,
+    admins: &[&str],
+) -> Option<String>
+where
+    I: IntoIterator<Item = &'a str>,
+{
+    let parsed = parse_admin_unlock_memo(&tx.memo)?;
+    let mut authorized = std::collections::BTreeSet::new();
+    for addr in spent_addresses {
+        if admins.contains(&addr) {
+            authorized.insert(addr);
+        }
+    }
+    if !admins.is_empty() && admins.iter().all(|a| authorized.contains(a)) {
+        Some(parsed.target.to_string())
+    } else {
+        None
+    }
+}
+
 /// Check whether a premine output may be spent.
 ///
 /// Two-layer lock:
@@ -1000,6 +1088,115 @@ mod tests {
         assert!(
             decoded.bytes <= target.bytes,
             "decoded compact target must not be harder than the original target"
+        );
+    }
+
+    const SLOT1: &str = "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5";
+
+    fn memo(s: &str) -> Vec<u8> {
+        s.as_bytes().to_vec()
+    }
+
+    #[test]
+    fn admin_unlock_memo_parses_target_and_reference() {
+        let m = memo(&format!("{ADMIN_UNLOCK_MEMO_PREFIX}{SLOT1}"));
+        let p = parse_admin_unlock_memo(&m).unwrap();
+        assert_eq!(p.target, SLOT1);
+        assert_eq!(p.reference, None);
+
+        let m = memo(&format!("{ADMIN_UNLOCK_MEMO_PREFIX}{SLOT1}:dao-proposal-7"));
+        let p = parse_admin_unlock_memo(&m).unwrap();
+        assert_eq!(p.target, SLOT1);
+        assert_eq!(p.reference, Some("dao-proposal-7"));
+    }
+
+    #[test]
+    fn admin_unlock_memo_rejects_non_premine_target() {
+        let m = memo(&format!(
+            "{ADMIN_UNLOCK_MEMO_PREFIX}{ADMIN_RAMA_L1_ADDRESS}"
+        ));
+        assert!(parse_admin_unlock_memo(&m).is_none());
+    }
+
+    #[test]
+    fn admin_unlock_memo_rejects_malformed() {
+        for s in [
+            "ZION:ADMIN_UNLOCK:v2:",
+            "ZION:ADMIN_UNLOCK:v1:",
+            "ZION:ADMIN_UNLOCK:",
+            "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5",
+            "",
+        ] {
+            assert!(parse_admin_unlock_memo(&memo(s)).is_none(), "{s}");
+        }
+        // empty reference and oversized reference rejected
+        assert!(
+            parse_admin_unlock_memo(&memo(&format!("{ADMIN_UNLOCK_MEMO_PREFIX}{SLOT1}:")))
+                .is_none()
+        );
+        let long_ref = "x".repeat(ADMIN_UNLOCK_MAX_REF_LEN + 1);
+        assert!(parse_admin_unlock_memo(&memo(&format!(
+            "{ADMIN_UNLOCK_MEMO_PREFIX}{SLOT1}:{long_ref}"
+        )))
+        .is_none());
+        // non-graphic ref bytes rejected
+        assert!(parse_admin_unlock_memo(&memo(&format!(
+            "{ADMIN_UNLOCK_MEMO_PREFIX}{SLOT1}:bad ref"
+        )))
+        .is_none());
+        // non-UTF8 memo rejected
+        assert!(parse_admin_unlock_memo(&[0xff, 0xfe]).is_none());
+    }
+
+    #[test]
+    fn admin_unlock_target_requires_all_admins() {
+        let tx = crate::transaction::Transaction {
+            version: 1,
+            inputs: vec![],
+            outputs: vec![],
+            memo: memo(&format!("{ADMIN_UNLOCK_MEMO_PREFIX}{SLOT1}")),
+        };
+        let admins: Vec<&str> = ADMIN_L1_ADDRESSES.to_vec();
+        // All three admin addresses present among spent inputs.
+        let spent = vec![
+            ADMIN_RAMA_L1_ADDRESS,
+            ADMIN_SITA_L1_ADDRESS,
+            ADMIN_HANUMAN_L1_ADDRESS,
+            "zion1unrelated",
+        ];
+        assert_eq!(
+            admin_unlock_target(&tx, spent.into_iter(), &admins),
+            Some(SLOT1.to_string())
+        );
+        // Missing one admin → no unlock.
+        let spent = vec![ADMIN_RAMA_L1_ADDRESS, ADMIN_SITA_L1_ADDRESS];
+        assert_eq!(admin_unlock_target(&tx, spent.into_iter(), &admins), None);
+        // Duplicate admins still count as distinct addresses.
+        let spent = vec![
+            ADMIN_RAMA_L1_ADDRESS,
+            ADMIN_RAMA_L1_ADDRESS,
+            ADMIN_SITA_L1_ADDRESS,
+            ADMIN_HANUMAN_L1_ADDRESS,
+        ];
+        assert_eq!(
+            admin_unlock_target(&tx, spent.into_iter(), &admins),
+            Some(SLOT1.to_string())
+        );
+        // Wrong memo → no unlock even with all admins.
+        let tx_bad = crate::transaction::Transaction {
+            version: 1,
+            inputs: vec![],
+            outputs: vec![],
+            memo: memo("ZION:ADMIN_UNLOCK:v1:zion1notpremine"),
+        };
+        let spent = vec![
+            ADMIN_RAMA_L1_ADDRESS,
+            ADMIN_SITA_L1_ADDRESS,
+            ADMIN_HANUMAN_L1_ADDRESS,
+        ];
+        assert_eq!(
+            admin_unlock_target(&tx_bad, spent.into_iter(), &admins),
+            None
         );
     }
 }

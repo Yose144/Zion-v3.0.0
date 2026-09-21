@@ -9,6 +9,7 @@ use zion_l1_types::{Address, Amount, ChainId, Hash};
 
 use crate::crypto;
 use crate::transaction::{Transaction, TransactionInput, TransactionOutput};
+use crate::{fee, v3_compat};
 
 /// Maximum recipients in a single batch payout transaction.
 pub const MAX_BATCH_RECIPIENTS: usize = 200;
@@ -278,6 +279,116 @@ pub fn build_send_with_memo(
         memo,
         None,
     )
+}
+
+/// Build a premine admin-unlock authorization transaction.
+///
+/// The transaction spends one funded UTXO from each canonical admin address
+/// (`v3_compat::ADMIN_L1_ADDRESSES`), carries the
+/// `ZION:ADMIN_UNLOCK:v1:<target>[:<ref>]` memo, and returns the input total
+/// minus `fee` to `refund_address` (typically an admin or treasury wallet).
+///
+/// Every input is signed with its own admin key over the same
+/// `Transaction::signing_hash`, so the keys never need to co-locate: the
+/// coordinator can collect the funded outpoints, build the unsigned tx, let
+/// each admin sign the hash offline, and assemble `sig || pk` input scripts.
+///
+/// `admin_inputs` is a list of `(admin_signing_key, funded_utxo)` pairs that
+/// must cover all three canonical admin addresses. `reference` is an optional
+/// audit tag (e.g. the DAO proposal id) embedded in the memo.
+pub fn build_admin_unlock_tx(
+    admin_inputs: &[(SigningKey, SpendableUtxo)],
+    refund_address: &str,
+    target: &str,
+    reference: Option<&str>,
+    fee: u64,
+) -> Result<BuildResult, WalletError> {
+    // The unlock memo is consensus-parsed; build it first and verify it
+    // round-trips through the parser so a malformed target/ref can never be
+    // broadcast as a valid-looking transaction.
+    let memo = match reference {
+        Some(r) => format!("{}{target}:{r}", v3_compat::ADMIN_UNLOCK_MEMO_PREFIX),
+        None => format!("{}{target}", v3_compat::ADMIN_UNLOCK_MEMO_PREFIX),
+    };
+    let parsed = v3_compat::parse_admin_unlock_memo(memo.as_bytes())
+        .ok_or_else(|| WalletError::InvalidAddress(target.to_string()))?;
+    debug_assert_eq!(parsed.target, target);
+
+    // Every canonical admin address must contribute exactly one signed input.
+    let mut covered = std::collections::BTreeSet::new();
+    let mut total: u64 = 0;
+    let mut inputs: Vec<TransactionInput> = Vec::with_capacity(admin_inputs.len());
+    for (key, utxo) in admin_inputs {
+        if !v3_compat::ADMIN_L1_ADDRESSES.contains(&utxo.address.as_str()) {
+            return Err(WalletError::InvalidAddress(utxo.address.clone()));
+        }
+        if !utxo.script.is_empty() {
+            return Err(WalletError::InvalidAddress(utxo.address.clone()));
+        }
+        if crypto::derive_address(key.verifying_key().as_bytes()) != utxo.address {
+            return Err(WalletError::SigningFailed);
+        }
+        covered.insert(utxo.address.clone());
+        total = total
+            .checked_add(utxo.amount)
+            .ok_or(WalletError::InsufficientFunds {
+                available: u64::MAX,
+                needed: fee,
+            })?;
+        inputs.push(TransactionInput {
+            previous_output: Hash::new(utxo.tx_hash),
+            index: utxo.output_index,
+            script: Vec::new(),
+        });
+    }
+    if covered.len() != v3_compat::ADMIN_L1_ADDRESSES.len() {
+        return Err(WalletError::InvalidAddress(format!(
+            "admin unlock needs {} distinct admin inputs, got {}",
+            v3_compat::ADMIN_L1_ADDRESSES.len(),
+            covered.len()
+        )));
+    }
+
+    let min_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(inputs.len(), 1));
+    if fee < min_fee {
+        return Err(WalletError::FeeTooLow {
+            fee,
+            minimum: min_fee,
+        });
+    }
+    let refund =
+        total
+            .checked_sub(fee)
+            .filter(|r| *r > 0)
+            .ok_or(WalletError::InsufficientFunds {
+                available: total,
+                needed: fee + 1,
+            })?;
+
+    let mut tx = Transaction {
+        version: 1,
+        inputs,
+        outputs: vec![TransactionOutput {
+            amount: Amount::new(refund as u128),
+            address: parse_address(refund_address)?,
+            script: vec![],
+        }],
+        memo: memo.into_bytes(),
+    };
+
+    let signing_hash = tx.signing_hash();
+    for (input, (key, _)) in tx.inputs.iter_mut().zip(admin_inputs.iter()) {
+        let signature = crypto::sign(key, &signing_hash.0);
+        input.script = signature.to_vec();
+        input
+            .script
+            .extend_from_slice(key.verifying_key().as_bytes());
+    }
+
+    Ok(BuildResult {
+        transaction: tx,
+        change_amount: refund,
+    })
 }
 
 fn total_payout_inner(recipients: &[BatchRecipient], fee: u64) -> u64 {
@@ -595,6 +706,68 @@ mod tests {
 
         // The transaction must pass the node's UTXO validation.
         utxo_set.validate_transaction(&tx).unwrap();
+    }
+
+    #[test]
+    fn build_admin_unlock_rejects_non_admin_inputs() {
+        let (sk, vk) = generate_keypair();
+        let not_admin = derive_address(vk.as_bytes());
+        let utxo = SpendableUtxo {
+            tx_hash: [1u8; 32],
+            output_index: 0,
+            amount: 1_000_000,
+            address: not_admin.clone(),
+            script: vec![],
+            block_height: 1,
+            is_coinbase: false,
+        };
+        let inputs = vec![(sk, utxo)];
+        let err = build_admin_unlock_tx(
+            &inputs,
+            &not_admin,
+            v3_compat::ADMIN_L1_ADDRESSES[0],
+            None,
+            10_000,
+        )
+        .unwrap_err();
+        assert!(matches!(err, WalletError::InvalidAddress(_)));
+    }
+
+    #[test]
+    fn build_admin_unlock_rejects_unknown_target_and_thin_quorum() {
+        // Even with structurally admin-shaped inputs, an unknown premine
+        // target is rejected before any signature work happens.
+        let inputs: Vec<(SigningKey, SpendableUtxo)> = v3_compat::ADMIN_L1_ADDRESSES
+            .iter()
+            .map(|addr| {
+                let (sk, _vk) = generate_keypair();
+                (
+                    sk,
+                    SpendableUtxo {
+                        tx_hash: [7u8; 32],
+                        output_index: 0,
+                        amount: 1_000_000,
+                        address: addr.to_string(),
+                        script: vec![],
+                        block_height: 1,
+                        is_coinbase: false,
+                    },
+                )
+            })
+            .collect();
+        let err = build_admin_unlock_tx(&inputs, "zion1test", "zion1notpremine", None, 10_000)
+            .unwrap_err();
+        assert!(matches!(err, WalletError::InvalidAddress(_)));
+        // Keys that do not derive to the claimed admin address are rejected.
+        let err = build_admin_unlock_tx(
+            &inputs,
+            "zion1test",
+            v3_compat::PREMINE_OUTPUTS[0].address,
+            None,
+            10_000,
+        )
+        .unwrap_err();
+        assert_eq!(err, WalletError::SigningFailed);
     }
 
     #[test]
