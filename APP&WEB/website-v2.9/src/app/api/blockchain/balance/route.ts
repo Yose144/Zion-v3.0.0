@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
 
     const walletSnapshot = await rpc.getWalletSnapshot(address).catch(() => null);
 
+    if (!walletSnapshot) {
+      return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 503 });
+    }
+
     return NextResponse.json(
       {
         address,
