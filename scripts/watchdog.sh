@@ -251,6 +251,19 @@ check_v31() {
     fi
   fi
 
+  # Full-state rebuild (UTXO re-validation on start) can take 30+ min on a
+  # 50k+ block chain — a fixed grace window cannot cover it. If the RPC is
+  # unreachable but the node process is alive and burning CPU, it is still
+  # initializing; log and skip the restart.
+  if [[ -z "$(v31_tcp_rpc "getNodeInfo" "protocol_version")" ]]; then
+    local ncpu
+    ncpu=$(ps -o %cpu= -C zion-node 2>/dev/null | awk '{s+=$1} END {printf "%d", s}')
+    if [[ "${ncpu:-0}" -gt 20 ]]; then
+      log "INFO: ${NODE_SERVICE} RPC not reachable but process busy (cpu=${ncpu}%) — still initializing; skipping restart"
+      return
+    fi
+  fi
+
   # Use getNodeInfo to confirm the TCP RPC is alive; protocol_version is a string.
   local v31_version
   v31_version=$(v31_tcp_rpc "getNodeInfo" "protocol_version")
