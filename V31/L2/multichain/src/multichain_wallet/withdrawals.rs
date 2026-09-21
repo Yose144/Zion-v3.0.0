@@ -78,9 +78,10 @@ impl WithdrawalProcessor {
         let recipient = parse_recipient(recipient_address, asset.id.chain)?;
         let id = uuid::Uuid::new_v4().to_string();
 
-        // Pre-flight solvency check: verify the hot wallet has enough on-chain
-        // balance before debiting the user. This prevents creating withdrawals
-        // that would fail at settlement time.
+        // Pre-flight solvency check: verify service-controlled on-chain funds
+        // (hot wallet + funded deposit addresses) cover the liability before
+        // debiting the user. This prevents creating withdrawals that would
+        // fail at settlement time.
         if let Some(ref guard) = self.solvency {
             guard.verify_withdrawal(asset, amount).await?;
         }

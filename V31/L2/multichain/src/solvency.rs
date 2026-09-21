@@ -1,9 +1,10 @@
-//! Solvency guard — blocks swaps and withdrawals when the on-chain hot wallet
-//! balance is insufficient to honour the operation.
+//! Solvency guard — blocks swaps and withdrawals when the service-controlled
+//! on-chain balance (hot wallet + funded deposit addresses) is insufficient
+//! to honour the operation.
 //!
 //! The guard is a *pre-flight* check: before debiting the user's internal
 //! ledger for a withdrawal, or before executing a swap whose output must be
-//! settled on-chain, the guard queries the chain adapter for the hot wallet's
+//! settled on-chain, the guard queries the chain adapter for the service's
 //! real on-chain balance of the relevant asset and compares it against the
 //! sum of:
 //!
@@ -64,7 +65,8 @@ impl Default for SolvencyConfig {
 pub struct SolvencyCheck {
     /// Asset that was checked.
     pub asset_key: String,
-    /// On-chain hot wallet balance for the asset.
+    /// Service-controlled on-chain balance for the asset (hot wallet plus
+    /// funded deposit addresses — the same set reconciliation reports).
     pub on_chain: Amount,
     /// Total internal-ledger claims (all users) for the asset.
     pub ledger_claims: Amount,
@@ -88,8 +90,8 @@ impl SolvencyCheck {
     }
 }
 
-/// Solvency guard that checks on-chain hot wallet balances before allowing
-/// swaps and withdrawals.
+/// Solvency guard that checks service-controlled on-chain balances (hot
+/// wallet + funded deposit addresses) before allowing swaps and withdrawals.
 #[derive(Clone)]
 pub struct SolvencyGuard {
     db: Arc<Mutex<Db>>,
@@ -165,24 +167,61 @@ impl SolvencyGuard {
             })
     }
 
-    /// Evaluate solvency for `asset` and `new_amount` without enforcement.
-    /// Always returns the `SolvencyCheck` (including `solvent=false` results)
-    /// so callers like `check_all` can report insolvent assets.
-    async fn evaluate(
+    /// All service-controlled addresses on `chain`: the hot wallet first,
+    /// then every funded deposit address (deduplicated). Custodial deposits
+    /// are credited per-user and never swept automatically, so checking only
+    /// the hot wallet under-reports the on-chain backing — reconciliation
+    /// already uses the same address set.
+    async fn service_addresses(&self, chain: ChainId, hot: &Address) -> Vec<Address> {
+        let deposits: Vec<Address> = {
+            let db = self.db.lock().await;
+            db.load_funded_deposit_addresses()
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|w| w.chain == chain)
+                .map(|w| w.address)
+                .collect()
+        };
+        let mut out = vec![hot.clone()];
+        for addr in deposits {
+            if !out.contains(&addr) {
+                out.push(addr);
+            }
+        }
+        out
+    }
+
+    /// Sum `asset` balances over every service-controlled address on the
+    /// chain. Balance query errors propagate — when backing cannot be
+    /// measured the check must fail closed rather than under-report.
+    async fn service_on_chain_balance(
         &self,
         asset: &Asset,
-        new_amount: Amount,
-    ) -> MultichainResult<SolvencyCheck> {
-        let asset_key = asset.id.to_string();
-        let chain = asset.id.chain;
-
+        chain: ChainId,
+    ) -> MultichainResult<Amount> {
         let hot_address = self.hot_wallet_address(chain)?;
         let adapter = self
             .adapters
             .get(chain)
             .ok_or_else(|| MultichainError::AdapterNotFound(chain.as_str().to_string()))?;
 
-        let on_chain = adapter.token_balance(asset, &hot_address).await?;
+        let mut total = Amount::ZERO;
+        for addr in self.service_addresses(chain, &hot_address).await {
+            total = total.saturating_add(adapter.token_balance(asset, &addr).await?);
+            // Public RPC endpoints rate-limit bursts; pace per-address queries.
+            tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+        }
+        Ok(total)
+    }
+
+    /// Evaluate solvency for `asset` and `new_amount` without enforcement.
+    /// Always returns the `SolvencyCheck` (including `solvent=false` results)
+    /// so callers like `check_all` can report insolvent assets.
+    async fn evaluate(&self, asset: &Asset, new_amount: Amount) -> MultichainResult<SolvencyCheck> {
+        let asset_key = asset.id.to_string();
+        let chain = asset.id.chain;
+
+        let on_chain = self.service_on_chain_balance(asset, chain).await?;
         let ledger_claims = self.ledger_claims(&asset_key).await;
         let pool_reserves = self.pool_reserves(&asset_key).await;
         let pending_withdrawals = self.pending_withdrawals(&asset_key).await;
@@ -670,6 +709,141 @@ mod tests {
             .expect("insolvent asset must appear in the report");
         assert!(!check.solvent);
         assert_eq!(check.on_chain, Amount::new(1_000_000));
+        assert_eq!(check.ledger_claims, Amount::new(10_000_000));
+    }
+
+    /// Adapter whose `token_balance` is keyed by the queried address —
+    /// needed to verify that funded deposit addresses count toward solvency.
+    struct PerAddressAdapter {
+        balances: HashMap<String, Amount>,
+    }
+
+    #[async_trait]
+    impl ChainAdapter for PerAddressAdapter {
+        fn name(&self) -> &str {
+            "per-address-mock"
+        }
+
+        fn family(&self) -> ChainFamily {
+            ChainFamily::Evm
+        }
+
+        async fn health_check(&self) -> MultichainResult<bool> {
+            Ok(true)
+        }
+
+        async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
+            Ok(Vec::new())
+        }
+
+        async fn execute_outbound(&self, _t: &Transfer) -> MultichainResult<Hash> {
+            Ok(Hash([0u8; 32]))
+        }
+
+        async fn current_height(&self) -> MultichainResult<u64> {
+            Ok(1)
+        }
+
+        async fn confirmations(&self, _h: &Hash) -> MultichainResult<u64> {
+            Ok(1)
+        }
+
+        async fn send_payment(&self, _to: &Address, _amt: Amount) -> MultichainResult<Hash> {
+            Ok(Hash([0u8; 32]))
+        }
+
+        async fn balance(&self, addr: &Address) -> MultichainResult<Amount> {
+            Ok(*self.balances.get(&addr.encoded).unwrap_or(&Amount::ZERO))
+        }
+
+        async fn token_balance(&self, _asset: &Asset, addr: &Address) -> MultichainResult<Amount> {
+            Ok(*self.balances.get(&addr.encoded).unwrap_or(&Amount::ZERO))
+        }
+    }
+
+    #[tokio::test]
+    async fn solvency_counts_funded_deposit_addresses() {
+        use crate::multichain_wallet::types::{
+            AddressPurpose, DepositRecord, DepositStatus, WalletAddress,
+        };
+        use chrono::Utc;
+
+        let db = Arc::new(Mutex::new(Db::open_in_memory().unwrap()));
+        let ledger = WalletLedger::new(Arc::clone(&db));
+        let asset = usdc_asset();
+        let keyring = Keyring::generate().unwrap();
+
+        // User liability is 10M USDC in the internal ledger.
+        ledger
+            .credit("user1", &asset, Amount::new(10_000_000))
+            .await
+            .unwrap();
+
+        // Hot wallet (index 0,0) is empty; the funded deposit address
+        // (index 0,1) holds the real backing.
+        let hot = keyring.address(ChainId::Base, 0, 0).unwrap();
+        let deposit_addr = keyring.address(ChainId::Base, 0, 1).unwrap();
+        assert_ne!(hot.encoded, deposit_addr.encoded);
+
+        {
+            let db = db.lock().await;
+            db.save_wallet_address(&WalletAddress {
+                address: deposit_addr.clone(),
+                user_id: "user1".into(),
+                chain: ChainId::Base,
+                chain_id: None,
+                purpose: AddressPurpose::Deposit,
+                public_key: None,
+                derivation_path: "m/44'/0'/0'/0/1".into(),
+                is_external: false,
+                created_at: Utc::now(),
+            })
+            .unwrap();
+            db.record_deposit(&DepositRecord {
+                id: "dep1".into(),
+                user_id: "user1".into(),
+                chain: ChainId::Base,
+                chain_id: None,
+                tx_hash: "0xabc".into(),
+                asset_key: asset.id.to_string(),
+                amount: Amount::new(20_000_000),
+                confirmations: 12,
+                status: DepositStatus::Credited,
+                created_at: Utc::now(),
+                credited_at: Some(Utc::now()),
+            })
+            .unwrap();
+        }
+
+        let mut balances = HashMap::new();
+        balances.insert(hot.encoded.clone(), Amount::ZERO);
+        balances.insert(deposit_addr.encoded.clone(), Amount::new(20_000_000));
+        let adapter = PerAddressAdapter { balances };
+
+        let mut adapters = ChainAdapterRegistry::new();
+        adapters.register(ChainId::Base, Box::new(adapter));
+
+        let dex = Arc::new(RwLock::new(DexRouter::new()));
+        let guard = SolvencyGuard::new(
+            Arc::clone(&db),
+            Arc::new(adapters),
+            keyring,
+            Arc::clone(&dex),
+            SolvencyConfig {
+                enforce: true,
+                margin: Amount::ZERO,
+            },
+        );
+
+        // 6M withdrawal against 10M claims needs 16M backing; the deposit
+        // address holds 20M, so this must pass even though the hot wallet
+        // alone is empty.
+        let check = guard
+            .check(&asset, Amount::new(6_000_000))
+            .await
+            .expect("deposit-backed withdrawal must be solvent");
+        assert!(check.solvent);
+        assert_eq!(check.on_chain, Amount::new(20_000_000));
         assert_eq!(check.ledger_claims, Amount::new(10_000_000));
     }
 }
