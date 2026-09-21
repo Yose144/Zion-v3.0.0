@@ -113,9 +113,19 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
 export async function GET() {
   try {
     // Fetch all configured hosts in parallel.
-    const nodeStatuses = await Promise.all(
+    const allStatuses = await Promise.all(
       SEED_NODES.map(node => getNodeStatus(node))
     );
+
+    // All configured seeds are collapsed to a single public identity
+    // ('zion-primary') in getNodeStatus for privacy. Dedupe by id so failover
+    // nodes don't render as duplicate cards or triple-count pool metrics —
+    // prefer the online node with the highest height.
+    const nodeStatuses = [...new Map(
+      [...allStatuses]
+        .sort((a, b) => Number(b.online) - Number(a.online) || b.height - a.height)
+        .map(n => [n.id, n] as const)
+    ).values()];
 
     // Calculate summary
     const onlineNodes = nodeStatuses.filter(n => n.online);
