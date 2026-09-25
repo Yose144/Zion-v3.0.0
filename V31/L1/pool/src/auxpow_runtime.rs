@@ -360,7 +360,11 @@ async fn run_bridge_task(
                     // periodically so operators can still see the loop is alive.
                     timeout_counter += 1;
                     if timeout_counter % 30 == 0 {
-                        tracing::debug!("auxpow[{}]: still polling upstream ({}x timeout)", coin_label, timeout_counter);
+                        tracing::debug!(
+                            "auxpow[{}]: still polling upstream ({}x timeout)",
+                            coin_label,
+                            timeout_counter
+                        );
                     } else {
                         tracing::trace!("auxpow[{}]: wait_for_job timeout: {}", coin_label, e);
                     }
@@ -433,13 +437,17 @@ async fn forward_share_to_upstream(
     } else {
         &req.ntime
     };
-    // For VRSC (ZcashStratum PBaaS v7+), the extranonce2 must match the
-    // extranonce2_size from the upstream pool's subscription response.
-    // LuckPool typically sets extranonce2_size=4, so extranonce2 = "00000000".
-    // The nonce lives in the solution nonceSpace, so extranonce2 is all zeros.
+    // For VRSC (ZcashStratum PBaaS v7+), mining.submit params[3] is the
+    // 32-byte block-header nonce MINUS the pool-issued extranonce1 prefix,
+    // i.e. (32 - en1_len) bytes — not a bitcoin-style extranonce2. Verus
+    // miners iterate the nonceSpace inside the submitted solution and keep
+    // the header nonce field as en1 + zero padding, so a zero suffix of the
+    // correct length reproduces exactly the header that was hashed. Sending
+    // extranonce2_size zeros (4 B) makes upstreams reject shares with
+    // "incorrect size of nonce" / "invalid solution, pool nonce missing".
     let extranonce2 = if req.algorithm.contains("verushash") {
-        let en2_size = client.extranonce2_size().await.unwrap_or(4) as usize;
-        "0".repeat(en2_size * 2)
+        let en1_len = client.extranonce1().await.len().min(31);
+        "00".repeat(32usize - en1_len)
     } else {
         "00".to_string()
     };
