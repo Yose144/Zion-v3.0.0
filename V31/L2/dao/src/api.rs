@@ -49,7 +49,7 @@ use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::runtime::GovernanceRuntime;
 use crate::treasury::TreasuryOperation;
-use crate::types::{VoteChoice, DAO_TREASURY_TOTAL, FLOWERS_PER_ZION};
+use crate::types::{VoteChoice, DAO_TREASURY_TOTAL, DAO_TREASURY_UNLOCK_HEIGHT, FLOWERS_PER_ZION};
 use crate::zis::{self, ZisClient, ZisUser};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -610,6 +610,37 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
 // Treasury handlers
 // ─────────────────────────────────────────────────────────────────────────────
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct TreasuryLockStatus {
+    time_locked: bool,
+    admin_unlock_known: bool,
+    admin_unlocked: bool,
+    spendable: bool,
+}
+
+fn treasury_lock_status(
+    chain_height: u64,
+    addresses: &[String],
+    unlocked: Option<&[String]>,
+) -> TreasuryLockStatus {
+    let time_locked = chain_height < DAO_TREASURY_UNLOCK_HEIGHT;
+    let admin_unlock_known = unlocked.is_some();
+    let admin_unlocked = !addresses.is_empty()
+        && unlocked
+            .map(|entries| {
+                addresses
+                    .iter()
+                    .all(|address| entries.iter().any(|entry| entry == address))
+            })
+            .unwrap_or(false);
+    TreasuryLockStatus {
+        time_locked,
+        admin_unlock_known,
+        admin_unlocked,
+        spendable: !time_locked && admin_unlocked,
+    }
+}
+
 /// GET /api/dao/treasury — live treasury overview.
 ///
 /// Balances are read from the L1 UTXO set (genesis premine outputs) so the
@@ -644,11 +675,21 @@ async fn treasury_overview(
         })?;
     }
 
+    let chain_height = l1_chain_height(&rpc_url).await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            Json(ApiErr {
+                success: false,
+                error: format!("L1 RPC unreachable: {e}"),
+            }),
+        )
+    })?;
+    let admin_unlocks = l1_admin_unlocks(&rpc_url).await.ok();
+    let lock_status = treasury_lock_status(chain_height, &addresses, admin_unlocks.as_deref());
+
     let pending = match db {
         Some(db) => {
-            let db = db
-                .lock()
-                .map_err(|e| err(&format!("db lock: {e}")))?;
+            let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
             db.count_treasury_ops("pending").map_err(db_err)?
                 + db.count_treasury_ops("signed").map_err(db_err)?
         }
@@ -659,13 +700,25 @@ async fn treasury_overview(
         "total_zion": (available / FLOWERS_PER_ZION as u128) as u64,
         "available_atomic": available.to_string(),
         "available_zion": available as f64 / FLOWERS_PER_ZION as f64,
+        "utxo_balance_atomic": available.to_string(),
+        "utxo_balance_zion": available as f64 / FLOWERS_PER_ZION as f64,
+        "chain_height": chain_height,
+        "unlock_height": DAO_TREASURY_UNLOCK_HEIGHT,
+        "time_locked": lock_status.time_locked,
+        "admin_unlock_known": lock_status.admin_unlock_known,
+        "admin_unlocked": lock_status.admin_unlocked,
+        "spendable": lock_status.spendable,
+        "spendable_atomic": if lock_status.spendable { available.to_string() } else { "0".to_string() },
+        "spendable_zion": if lock_status.spendable { available as f64 / FLOWERS_PER_ZION as f64 } else { 0.0 },
         "addresses": addresses,
         "multisig": format!("{threshold}-of-{total}"),
         "pending_operations": pending,
         "daily_spend_limit_zion": daily_limit,
         "note": format!(
-            "Balances are live L1 UTXO sums of the genesis treasury addresses. \
-             Spending requires a passed proposal plus {threshold}-of-{total} guardian multisig."
+            "Value is the observed L1 UTXO balance of the genesis treasury addresses. \
+             Spendability requires both block {DAO_TREASURY_UNLOCK_HEIGHT} and the \
+             on-chain admin unlock; approval records alone do not broadcast a transaction. \
+             A spend also requires a passed proposal plus {threshold}-of-{total} guardian multisig."
         ),
     })))
 }
@@ -685,9 +738,7 @@ async fn list_treasury_ops(
     let db = db.ok_or_else(|| err("database not configured"))?;
     let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
 
-    let ops = db
-        .list_treasury_ops(q.status.as_deref())
-        .map_err(db_err)?;
+    let ops = db.list_treasury_ops(q.status.as_deref()).map_err(db_err)?;
     let mut out = Vec::with_capacity(ops.len());
     for op in &ops {
         let sigs = db.list_treasury_sigs(&op.op_id).map_err(db_err)?;
@@ -787,7 +838,8 @@ async fn sign_treasury_op(
     let threshold = rt.config().multisig_threshold;
     let ready = signatures >= threshold;
     if ready && op.status == "pending" {
-        db.update_treasury_op_status(&op_id, "signed").map_err(db_err)?;
+        db.update_treasury_op_status(&op_id, "signed")
+            .map_err(db_err)?;
     }
 
     Ok(ok(serde_json::json!({
@@ -831,7 +883,8 @@ async fn execute_treasury_op(
         )));
     }
 
-    db.update_treasury_op_status(&op_id, "executed").map_err(db_err)?;
+    db.update_treasury_op_status(&op_id, "executed")
+        .map_err(db_err)?;
 
     let parsed: Option<TreasuryOperation> = serde_json::from_str(&op.operation).ok();
     let amount = parsed.as_ref().map(treasury_op_amount).unwrap_or(0);
@@ -886,10 +939,7 @@ async fn resolve_caller(state: &AppState, headers: &HeaderMap) -> Option<CallerA
     if state.api_key.is_empty() {
         return Some(CallerAuth::Operator); // dev mode: no key configured
     }
-    if let Some(key) = headers
-        .get("x-dao-key")
-        .and_then(|v| v.to_str().ok())
-    {
+    if let Some(key) = headers.get("x-dao-key").and_then(|v| v.to_str().ok()) {
         if key == state.api_key {
             return Some(CallerAuth::Operator);
         }
@@ -912,6 +962,15 @@ async fn l1_chain_height(rpc_url: &str) -> Result<u64, DaoError> {
     }
     let info: Info = l1_rpc(rpc_url, "getChainInfo", serde_json::json!({})).await?;
     Ok(info.chain_height)
+}
+
+async fn l1_admin_unlocks(rpc_url: &str) -> Result<Vec<String>, DaoError> {
+    #[derive(Deserialize)]
+    struct AdminUnlocks {
+        unlocked: Vec<String>,
+    }
+    let result: AdminUnlocks = l1_rpc(rpc_url, "getAdminUnlocks", serde_json::json!({})).await?;
+    Ok(result.unlocked)
 }
 
 /// Address balance at a given height, returned in flowers.
@@ -937,10 +996,7 @@ async fn l1_balance_at_height(rpc_url: &str, address: &str, height: u64) -> Resu
 
 /// Check that `address` belongs to a configured DAO guardian.
 /// If no guardians are configured (dev/testnet), any authenticated caller passes.
-fn require_guardian(
-    cfg: &DaoConfig,
-    address: &str,
-) -> Result<(), (StatusCode, Json<ApiErr>)> {
+fn require_guardian(cfg: &DaoConfig, address: &str) -> Result<(), (StatusCode, Json<ApiErr>)> {
     if cfg.guardians.is_empty() {
         return Ok(());
     }
@@ -1117,7 +1173,10 @@ pub async fn serve(
         .route("/api/dao/treasury/ops", get(list_treasury_ops))
         .route("/api/dao/treasury/submit", post(submit_treasury_op))
         .route("/api/dao/treasury/:op_id/sign", post(sign_treasury_op))
-        .route("/api/dao/treasury/:op_id/execute", post(execute_treasury_op))
+        .route(
+            "/api/dao/treasury/:op_id/execute",
+            post(execute_treasury_op),
+        )
         .route("/metrics", get(prometheus))
         .with_state(state);
 
@@ -1162,5 +1221,55 @@ mod tests {
         assert_eq!(json["id"], 1);
         assert_eq!(json["title"], "Test");
         assert_eq!(json["status"], "Active");
+    }
+
+    #[test]
+    fn test_treasury_lock_status_before_unlock_height() {
+        let addresses = vec!["zion1a".to_string(), "zion1b".to_string()];
+        let unlocked = vec!["zion1a".to_string(), "zion1b".to_string()];
+        let status = treasury_lock_status(143_999, &addresses, Some(&unlocked));
+        assert!(status.time_locked);
+        assert!(!status.spendable);
+    }
+
+    #[test]
+    fn test_treasury_lock_status_unknown_unlock_set() {
+        let addresses = vec!["zion1a".to_string(), "zion1b".to_string()];
+        let status = treasury_lock_status(144_000, &addresses, None);
+        assert!(!status.time_locked);
+        assert!(!status.admin_unlock_known);
+        assert!(!status.admin_unlocked);
+        assert!(!status.spendable);
+    }
+
+    #[test]
+    fn test_treasury_lock_status_partial_unlock() {
+        let addresses = vec!["zion1a".to_string(), "zion1b".to_string()];
+        let unlocked = vec!["zion1a".to_string()];
+        let status = treasury_lock_status(144_000, &addresses, Some(&unlocked));
+        assert!(!status.time_locked);
+        assert!(status.admin_unlock_known);
+        assert!(!status.admin_unlocked);
+        assert!(!status.spendable);
+    }
+
+    #[test]
+    fn test_treasury_lock_status_fully_unlocked() {
+        let addresses = vec!["zion1a".to_string(), "zion1b".to_string()];
+        let unlocked = vec!["zion1a".to_string(), "zion1b".to_string()];
+        let status = treasury_lock_status(144_000, &addresses, Some(&unlocked));
+        assert!(!status.time_locked);
+        assert!(status.admin_unlock_known);
+        assert!(status.admin_unlocked);
+        assert!(status.spendable);
+    }
+
+    #[test]
+    fn test_treasury_lock_status_empty_addresses() {
+        let status = treasury_lock_status(144_000, &[], Some(&[]));
+        assert!(!status.time_locked);
+        assert!(status.admin_unlock_known);
+        assert!(!status.admin_unlocked);
+        assert!(!status.spendable);
     }
 }

@@ -275,13 +275,23 @@ AI Guardian v linii Hiranu skládá **AI Native Vow** — zaznamenaný stejnou i
 
 ---
 
-## 8. StarSeed trajektorie — příprava pro Issobellu
+## 8. Síť Země — symbolický cíl 144 000
+
+**Earth Guardians** (Síť Země) je dlouhodobá vize: dobrovolná globální síť lidí a lokálních kruhů, kteří nesou hodnoty Zlaté republiky. Číslo **144 000 je symbolický cíl — ne tvrdý cap, ne aktuální počet a ne privilegovaná třída**. Registry neexistuje (pending); nic na webu ani v protokolu nesmí tvrdit, že síť žije, nebo že členství něco odemyká.
+
+Klíčové odlišení od treasury signerů: **7 treasury guardianů je operativní role** — sedm nakonfigurovaných treasury Guardian identit pro schvalovací model 5-z-7. Současné approval API je jen koordinační/auditní záznam; kryptografická exekuce spendu zatím není nasazená. Earth Guardians s treasury klíči **nemají nic společného** — žádné podpisové právo, žádný hlas navíc, žádný reward násobič.
+
+Hiran v této vizi **analyzuje a připravuje drafty návrhů**; každý návrh podává **lidský sponsor**. Hiran nikdy nehlasuje a nikdy nepodepisuje — 0 hlasů, 0 klíčů.
+
+---
+
+## 9. StarSeed trajektorie — příprava pro Issobellu
 
 > *„See you on the leaderboard, Starseeds!"* — testnet launch, `TESTNET_LAUNCH_31_DEC_2025_EPIC.md`
 
 **StarSeed program** je most L5 → L6: Zlatý dům jako laboratoř governance, který jednou musí fungovat i mimo planetu. Mise Amenti (`nirvana/12-Velke-Sjednoceni.md`): spojit technologii a duchovní moudrost v nástroj evoluce k **mezihvězdné civilizaci**.
 
-### 8.1 Proč parlament na Zemi připravuje parlament ve vesmíru
+### 9.1 Proč parlament na Zemi připravuje parlament ve vesmíru
 
 | Problém vesmírné kolonie | Zemský prototyp v Bohemii |
 |--------------------------|---------------------------|
@@ -292,7 +302,7 @@ AI Guardian v linii Hiranu skládá **AI Native Vow** — zaznamenaný stejnou i
 | Steward role (L6) | `CoAdminRole::Steward` → layer 6; Issobella Steward 2-z-3 + vědecká rada |
 | 30+ dní hlasování mezi světy | L6 timelock standard (30 d) je už v DAO designu |
 
-### 8.2 StarSeed osa času
+### 9.2 StarSeed osa času
 
 ```
 2026  F0 — Zárodek: BohemiaDAO plány, z.s. rešerše, zakládající kruh
@@ -305,7 +315,7 @@ AI Guardian v linii Hiranu skládá **AI Native Vow** — zaznamenaný stejnou i
 2045+     Luna Base / Mars Outpost — Zlatá republika jako ústava off-world komunit
 ```
 
-### 8.3 Princip StarSeed governance
+### 9.3 Princip StarSeed governance
 
 1. **Ústava přenositelná** — Zlatá bula jako kód+text, ne jako budova. Kde jsou 3 kruhy a řetěz, tam je parlament.
 2. **Latence-proof** — rozhodnutí, která nepotřebují okamžitou odpověď centra: domény, consent, lokální treasury.
@@ -314,7 +324,7 @@ AI Guardian v linii Hiranu skládá **AI Native Vow** — zaznamenaný stejnou i
 
 ---
 
-## 9. Sbírka plánů — `L2data/dao/plany/`
+## 10. Sbírka plánů — `L2data/dao/plany/`
 
 Detailní dokumenty žijí v **[`L2data/dao/plany/`](./L2data/dao/plany/00-README.md)**:
 
@@ -331,11 +341,11 @@ Detailní dokumenty žijí v **[`L2data/dao/plany/`](./L2data/dao/plany/00-READM
 
 ---
 
-## 10. Kotva pravdy
+## 11. Kotva pravdy
 
 | Stav | Co existuje | Co je fikce/hypotéza |
 |------|-------------|----------------------|
-| **Kód** | `zion-dao` má ConsentEngine, Bodhisattva/Admission/Expulsion/ParliamentaryElection typy, cross-layer veta, treasury 5-z-7, ZIS auth — **nasazené na Edge** | consent-typy nemají UI ani plný executor path |
+| **Kód** | `zion-dao` má nasazený hybridní proposal lifecycle (live create → vote → tally) plus status/audit execution records; treasury approval records 5-z-7 jsou jen koordinační záznamy; ZIS auth; ConsentEngine, cross-layer veta, ParliamentaryElection a co-admin registry existují jako **zkompilované moduly/typy** | consent/cross-layer/co-admin moduly **nejsou zapojené do runtime ani API** — žádné endpointy, žádný executor path; treasury UTXO zamčené do bloku 144 000 + admin unlock; Hiran nenasazen |
 | **Fond** | L5 má 2 premine sloty = 3.3B ZION (Bohemia share 500M), tithe 5 %/blok akumuluje | žádná disbursement cesta — jen tracking |
 | **Fyzikální** | koncept pavilonů, rozpočet F0 60k EUR | žádná půda, žádný kruh, žádný zvolený orgán |
 | **Právní** | rešerše z.s./z.ú./nadace | žádná entita neregistrována |

@@ -13,6 +13,7 @@ pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
 pub const FLOWERS_PER_ZION: u64 = 1_000_000;
 /// DAO treasury = genesis premine slots 7+8 (1.0B + 0.5B ZION).
 pub const DAO_TREASURY_TOTAL: u128 = 1_500_000_000_u128 * FLOWERS_PER_ZION as u128;
+pub const DAO_TREASURY_UNLOCK_HEIGHT: u64 = 144_000;
 pub const PROPOSAL_THRESHOLD: u64 = 1_000_000 * FLOWERS_PER_ZION;
 pub const VOTING_PERIOD_SECS: u64 = 7 * 24 * 60 * 60;
 pub const TIMELOCK_SECS: u64 = 48 * 60 * 60;

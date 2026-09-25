@@ -184,14 +184,28 @@ export default function LiquidityPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-2">
               <Droplets className="w-6 h-6 text-zion-cyan" />
-              <h1 className="text-2xl font-bold text-white">Liquidity Pools</h1>
+              <h1 className="text-2xl font-bold text-white">Legacy Liquidity Pools</h1>
             </div>
-            <p className="text-zinc-400 text-sm">Provide liquidity to ZionDex AMM pools on Base and earn LP rewards</p>
+            <p className="text-zinc-400 text-sm">Legacy ZIONDex test pools on Base. Production wZION liquidity is on Uniswap V3.</p>
           </motion.div>
         </div>
       </div>
 
       <TestingPhaseBanner type="dex" className="max-w-6xl mx-auto px-6 pt-4" />
+
+      <div className="max-w-6xl mx-auto px-6 pt-4">
+        <div
+          className="zion-rainbow-card p-4 border-amber-500/30 bg-amber-500/10"
+          style={{ '--rc': '252, 209, 22' } as CSSProperties}
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-200">
+              Legacy test-token AMM. Production wZION liquidity is on Uniswap V3. Do not add new liquidity here.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Tabs */}
@@ -283,8 +297,8 @@ export default function LiquidityPage() {
                 <ChainSelector label="Chain" value={chain} onChange={setChain} />
 
                 <div className="grid grid-cols-2 gap-3">
-                  <TokenSelector label="Token A" chain={chain} value={tokenA} onChange={setTokenA} />
-                  <TokenSelector label="Token B" chain={chain} value={tokenB} onChange={setTokenB} />
+                  <TokenSelector label="Token A" chain={chain} value={tokenA} onChange={setTokenA} showTest />
+                  <TokenSelector label="Token B" chain={chain} value={tokenB} onChange={setTokenB} showTest />
                 </div>
 
                 {/* AMM Pair lookup result */}
@@ -299,7 +313,7 @@ export default function LiquidityPage() {
                     </span>
                   ) : (
                     <span className="text-zinc-500 flex items-center gap-2">
-                      <AlertCircle className="w-3 h-3" /> No AMM pair found for this token pair. A new pair will be created.
+                      <AlertCircle className="w-3 h-3" /> No legacy AMM pair found for this token pair.
                     </span>
                   )}
                 </div>
@@ -356,12 +370,10 @@ export default function LiquidityPage() {
                 )}
 
                 <button
-                  onClick={handleAddLiquidity}
-                  disabled={!amountA || !amountB || submitting}
+                  disabled
                   className="zion-button-primary w-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {submitting ? 'Adding...' : !authenticated ? 'Connect to Add Liquidity' : 'Add Liquidity'}
+                  Additions disabled — legacy AMM
                 </button>
               </div>
             </div>
@@ -381,8 +393,8 @@ export default function LiquidityPage() {
                 <ChainSelector label="Chain" value={chain} onChange={setChain} />
 
                 <div className="grid grid-cols-2 gap-3">
-                  <TokenSelector label="Token A" chain={chain} value={rmTokenA} onChange={setRmTokenA} />
-                  <TokenSelector label="Token B" chain={chain} value={rmTokenB} onChange={setRmTokenB} />
+                  <TokenSelector label="Token A" chain={chain} value={rmTokenA} onChange={setRmTokenA} showTest />
+                  <TokenSelector label="Token B" chain={chain} value={rmTokenB} onChange={setRmTokenB} showTest />
                 </div>
 
                 <div>

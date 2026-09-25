@@ -119,7 +119,7 @@ interface Props {
   showTest?: boolean;
 }
 
-export default function TokenSelector({ label, chain, value, onChange, showTest = true }: Props) {
+export default function TokenSelector({ label, chain, value, onChange, showTest = false }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

@@ -37,6 +37,31 @@ const CHAINS: ChainOption[] = [
   { id: 'lightning', name: 'Lightning', symbol: 'LN', color: '#792ee5' },
 ];
 
+const FALLBACK_ENABLED = new Set(['zion', 'base']);
+
+let enabledChainsPromise: Promise<Set<string>> | null = null;
+
+function normalizeChainId(id: string): string {
+  const key = id.trim().toLowerCase();
+  if (key === 'zion-l1' || key === 'zion_l1') return 'zion';
+  return key;
+}
+
+function loadEnabledChains(): Promise<Set<string>> {
+  if (!enabledChainsPromise) {
+    enabledChainsPromise = fetch('/api/multichain/chains', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`chains ${res.status}`);
+        const data = await res.json();
+        const list: unknown = Array.isArray(data) ? data : data?.data ?? data?.chains;
+        if (!Array.isArray(list)) throw new Error('unexpected chains payload');
+        return new Set(list.filter((c): c is string => typeof c === 'string').map(normalizeChainId));
+      })
+      .catch(() => new Set(FALLBACK_ENABLED));
+  }
+  return enabledChainsPromise;
+}
+
 interface Props {
   label: string;
   value: string;
@@ -46,7 +71,18 @@ interface Props {
 
 export default function ChainSelector({ label, value, onChange, excludeChain }: Props) {
   const [open, setOpen] = useState(false);
+  const [enabledChains, setEnabledChains] = useState<Set<string>>(FALLBACK_ENABLED);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadEnabledChains().then((set) => {
+      if (!cancelled) setEnabledChains(set);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -85,26 +121,34 @@ export default function ChainSelector({ label, value, onChange, excludeChain }: 
 
         {open && (
           <div className="absolute z-50 mt-1 w-full bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl max-h-64 overflow-y-auto">
-            {available.map(chain => (
-              <button
-                key={chain.id}
-                onClick={() => {
-                  onChange(chain.id);
-                  setOpen(false);
-                }}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-800/80 transition-colors first:rounded-t-xl last:rounded-b-xl"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: chain.color }}
-                  />
-                  <span className="text-sm text-white">{chain.name}</span>
-                  <span className="text-xs text-zinc-500">{chain.symbol}</span>
-                </div>
-                {chain.id === value && <Check className="w-4 h-4 text-zion-gold" />}
-              </button>
-            ))}
+            {available.map(chain => {
+              const isEnabled = enabledChains.has(chain.id);
+              return (
+                <button
+                  key={chain.id}
+                  disabled={!isEnabled}
+                  onClick={() => {
+                    if (!isEnabled) return;
+                    onChange(chain.id);
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 transition-colors first:rounded-t-xl last:rounded-b-xl disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-zinc-800/80"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: chain.color }}
+                    />
+                    <span className="text-sm text-white">{chain.name}</span>
+                    <span className="text-xs text-zinc-500">{chain.symbol}</span>
+                    <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${isEnabled ? 'bg-zion-cyan/10 text-zion-cyan' : 'bg-zinc-800 text-zinc-500'}`}>
+                      {isEnabled ? 'Live' : 'Planned'}
+                    </span>
+                  </div>
+                  {chain.id === value && <Check className="w-4 h-4 text-zion-gold" />}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
