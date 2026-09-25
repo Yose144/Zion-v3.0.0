@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe,
-  Wallet, BookOpen, Github,
+  Wallet, BookOpen, Github, Scale,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
 import { useLang } from '@/contexts/LanguageContext';
@@ -57,11 +57,11 @@ export default function Navigation() {
           { href: '/multichain#swap', label: tr('nav', 'swap', lang) },
           { href: '/multichain#bridge', label: tr('nav', 'bridge', lang) },
           { href: '/multichain#dex', label: tr('nav', 'dex', lang) },
-          { href: '/multichain#governance', label: tr('nav', 'dao', lang) },
           { href: '/multichain#bridge', label: tr('nav', 'warp', lang) },
           { href: '/multichain#earn', label: tr('nav', 'earn', lang) },
           { href: '/multichain#auction', label: tr('nav', 'auction', lang) },
         ] },
+        { href: '/dao', label: tr('nav', 'dao_governance', lang) },
         { href: '/cex', label: tr('nav', 'cex', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
       ],
@@ -115,6 +115,7 @@ export default function Navigation() {
     { href: '/explorer', icon: Orbit, color: '6, 105, 40', label: tr('nav', 'explorer', lang) },       /* green */
     { href: '/pool', icon: Pickaxe, color: '252, 209, 22', label: tr('nav', 'pool', lang) },               /* gold */
     { href: '/network', icon: SignalHigh, color: '228, 30, 43', label: tr('nav', 'network', lang) },      /* red */
+    { href: '/dao', icon: Scale, color: '147, 51, 234', label: tr('nav', 'dao', lang) },
     { href: '/docs', icon: BookOpen, color: '6, 105, 40', label: tr('nav', 'docs', lang) },             /* green */
     { href: '/wallet', icon: Wallet, color: '252, 209, 22', label: tr('nav', 'wallet', lang) },            /* gold */
   ];
@@ -475,6 +476,13 @@ export default function Navigation() {
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
                   >
                     {tr('nav', 'pool', lang)}
+                  </Link>
+                  <Link
+                    href="/dao"
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-xl border border-zion-purple/30 bg-zion-purple/10 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
+                  >
+                    {tr('nav', 'dao_governance', lang)}
                   </Link>
                   <Link
                     href="/dashboard"
