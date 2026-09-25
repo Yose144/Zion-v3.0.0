@@ -6,6 +6,7 @@ Pravidla pro agenty (Devin, Copilot, WARP) pracující na veřejném ZION webu.
 > **Intro hub:** `zionterranova.com` — statický `public/maintenance.html`, nasazen v `/var/www/maintenance/maintenance.html`, servírovaný systémovým nginxem (ne Next.js).
 > **OASIS Web:** `oasis.zionterranova.com` — samostatná aplikace v `/var/www/oasis/`.
 > **Deploy 2026-09-25 — DAO Parlament / truth-sync:** `/dao` obsahuje VISION Parlament, 144 000 jako symbolický cíl a fail-closed treasury lock UI; web backup je `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260925T152109Z-dao-parliament`. Live chain selector čte `/api/multichain/chains` (aktuálně jen `zion-l1`, `base`). Pozor: `next.config.ts` permanentně přesměrovává `/dex` i `/dex/:path*` na `/multichain#dex`; změny v `src/app/dex/liquidity/page.tsx` proto nejsou veřejně dosažitelné, dokud nebude redirect vědomě změněn.
+> **Deploy 2026-09-25 — DAO navigace:** přímé odkazy `/dao` v desktop shortcutu, multichain skupině (`DAO · Governance`) i mobilním menu; web backup je `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260925T184747Z-dao-nav`.
 >
 
 ---

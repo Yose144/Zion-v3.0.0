@@ -19,6 +19,7 @@ const t = {
     guardian:   { cs: 'Guardian', en: 'Guardian' },
     warp:       { cs: 'WARP',        en: 'WARP' },
     dao:        { cs: 'DAO',         en: 'DAO' },
+    dao_governance: { cs: 'DAO · Governance', en: 'DAO · Governance' },
     bridge:     { cs: 'Most',        en: 'Bridge' },
     swap:       { cs: 'Swap',        en: 'Swap' },
     earn:       { cs: 'Výnosy',      en: 'Earn' },
