@@ -153,6 +153,16 @@ export interface DAOTreasuryOverview {
   total_zion: number;
   available_atomic: string;
   available_zion: number;
+  utxo_balance_atomic?: string;
+  utxo_balance_zion?: number;
+  chain_height?: number;
+  unlock_height?: number;
+  time_locked?: boolean;
+  admin_unlock_known?: boolean;
+  admin_unlocked?: boolean;
+  spendable?: boolean;
+  spendable_atomic?: string;
+  spendable_zion?: number;
   addresses: string[];
   multisig: string;
   pending_operations: number;

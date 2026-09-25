@@ -24,13 +24,14 @@ import {
   Landmark,
   Route,
   CheckCircle2,
+  Globe2,
 } from 'lucide-react';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
-import GuardiansTreeClient from '@/components/GuardiansTreeClient';
+import ParliamentVision from '@/components/dao/ParliamentVision';
 import {
   getDAOStats,
   getDAOHealth,
@@ -47,9 +48,9 @@ import {
 } from '@/lib/dao-api';
 
 const DaoCopy = {
-  phase1Stewardship2025: { cs: `Fáze 1 · Stewardship (2025)`, en: `Phase 1 · Stewardship (2025)` },
-  phase2HybridDao2026: { cs: `Fáze 2 · Hybridní DAO (2026)`, en: `Phase 2 · Hybrid DAO (2026)` },
-  phase3FullDao2026: { cs: `Fáze 3 · Plné DAO (2026+)`, en: `Phase 3 · Full DAO (2026+)` },
+  phase1LiveFoundation: { cs: `Fáze 1 · Živý základ`, en: `Phase 1 · Live foundation` },
+  phase2DaoParliament: { cs: `Fáze 2 · DAO Parlament`, en: `Phase 2 · DAO Parliament` },
+  phase3EarthNetwork: { cs: `Fáze 3 · Síť Země`, en: `Phase 3 · Earth Network` },
   governanceDocs: { cs: `Governance dokumentace`, en: `Governance docs` },
   proposalFlowVotingPowerEmergen: { cs: `Proposal flow, hlasovací síla, nouzové klauzule.`, en: `Proposal flow, voting power, emergency clauses.` },
   treasuryDashboard: { cs: `Treasury dashboard`, en: `Treasury dashboard` },
@@ -57,13 +58,13 @@ const DaoCopy = {
   defiHub: { cs: `Multichain Hub`, en: `Multichain Hub` },
   swapBridgeAndPortfolioOnBaseMa: { cs: `Swap, bridge a portfolio na Base Mainnet.`, en: `Swap, bridge and portfolio on Base Mainnet.` },
   howDoIBecomeADaoGuardian: { cs: `Jak se stát DAO guardianem?`, en: `How do I become a DAO guardian?` },
-  guardiansAreSelectedBasedOnVer: { cs: `Guardians jsou vybíráni na základě prověřené identity, technického příspěvku a consciousness level. Proces začíná nominací v komunitě, následuje peer review a schválení Round Table.`, en: `Guardians are selected based on verified identity, technical contribution, and consciousness level. The process begins with community nomination, followed by peer review and Round Table approval.` },
+  guardiansAreSelectedBasedOnVer: { cs: `Guardian admission síť zatím není live. Plánovaná cesta je nominace komunitou → peer review → consent. Sedm treasury signerů je samostatná operativní role.`, en: `The guardian admission network is not live yet. The planned path is community nomination → peer review → consent. The seven treasury signers are a separate operational role.` },
   howDoesVotingPowerWork: { cs: `Jak funguje hlasovací síla?`, en: `How does voting power work?` },
-  everyZionHolderHasBaseVotingPo: { cs: `Každý držitel ZION má základní hlasovací sílu úměrnou zůstatku. Consciousness level a staking mohou sílu navyšovat. Quadratic voting se testuje ve fázi 3.`, en: `Every ZION holder has base voting power proportional to their balance. Consciousness level and staking can increase it. Quadratic voting is being tested in Phase 3.` },
-  whatIsTheHumanitarianTithe: { cs: `Co je Humanitarian Tithe?`, en: `What is the Humanitarian Tithe?` },
-  k10OfMiningRewardsGoIntoTheDaoH: { cs: `10 % z mining odměn jde do humanitárního fondu DAO. Projekty čisté vody, potravinové bezpečnosti a vzdělávání se schvalují přes governance návrhy.`, en: `10% of mining rewards go into the DAO humanitarian fund. Clean water, food security, and education projects are approved through governance proposals.` },
+  everyZionHolderHasBaseVotingPo: { cs: `Hlasovací síla = zůstatek ZION na L1 ve snapshot bloku návrhu. Žádný consciousness ani staking násobič.`, en: `Voting power equals your L1 ZION balance at the proposal snapshot block. No consciousness or staking multiplier.` },
+  whatIsTheHumanitarianTithe: { cs: `Co je humanitární fond?`, en: `What is the humanitarian fund?` },
+  k10OfMiningRewardsGoIntoTheDaoH: { cs: `5 % z coinbase odměn míří do L5 humanitárního fondu — ne do DAO treasury. Projekty čisté vody, potravinové bezpečnosti a vzdělávání mají procházet governance návrhy — výplatní cesta zatím není live.`, en: `5% of coinbase rewards are routed to the L5 humanitarian fund — not to the DAO treasury. Clean water, food security, and education projects are intended to go through governance proposals — the disbursement path is not live yet.` },
   whenWillTheDaoBeFullyOnChain: { cs: `Kdy bude plně on-chain DAO?`, en: `When will the DAO be fully on-chain?` },
-  theHybridDaoPhaseBeginsInQ2202: { cs: `Hybridní DAO fáze začne v Q2 2026 s on-chain proposal lifecycle. Plné DAO řízené stakery je naplánováno na 2026+.`, en: `The Hybrid DAO phase begins in Q2 2026 with an on-chain proposal lifecycle. Full DAO control by stakers is planned for 2026+.` },
+  theHybridDaoPhaseBeginsInQ2202: { cs: `Hybridní lifecycle návrhů už běží. Consent registry, DAO Parlament a kryptografická exekuce treasury jsou zatím ve fázi návrhu a prototypu.`, en: `The hybrid proposal lifecycle is already live. The consent registry, DAO Parliament, and cryptographic treasury execution remain staged prototype work.` },
   pleaseEnterATitleAndDescriptio: { cs: `Vyplňte název a popis.`, en: `Please enter a title and description.` },
   failedToCreateProposal: { cs: `Nepodařilo se vytvořit návrh.`, en: `Failed to create proposal.` },
   proposalTypeLabel: { cs: `Typ návrhu`, en: `Proposal type` },
@@ -86,14 +87,26 @@ const DaoCopy = {
   proposalThresholdNote: { cs: `Vytvoření návrhu vyžaduje zůstatek alespoň`, en: `Creating a proposal requires a balance of at least` },
   votesAreWeightedByZionBalance: { cs: `Hlasovací síla = zůstatek ZION ve snapshot bloku. Proposer identity = tvůj ZIS účet.`, en: `Voting power = ZION balance at the snapshot block. Proposer identity = your ZIS account.` },
   votingClosedAwaitingTally: { cs: `Hlasování ukončeno — čeká na sčítání`, en: `Voting closed — awaiting tally` },
-  multisigOperations: { cs: `Multisig operace`, en: `Multisig operations` },
-  noTreasuryOpsYet: { cs: `Zatím žádné treasury operace`, en: `No treasury operations yet` },
-  signatures: { cs: `podpisů`, en: `signatures` },
+  multisigOperations: { cs: `Záznamy schválení treasury`, en: `Treasury approval records` },
+  approvalRecordsExplainer: { cs: `Tyto záznamy koordinují schválení mezi treasury signery. Samy o sobě nepodepisují ani nevysílají L1 transakci — utracení vyžaduje blok 144 000, on-chain admin odemčení a skutečný multisig spend.`, en: `These records coordinate approvals among the treasury signers. They do not themselves sign or broadcast an L1 transaction — spending requires block 144,000, the on-chain admin unlock, and a real multisig spend.` },
+  lockState: { cs: `Stav zámku treasury`, en: `Treasury lock state` },
+  currentBlock: { cs: `Aktuální blok`, en: `Current block` },
+  unlockBlock: { cs: `Blok odemčení`, en: `Unlock block` },
+  timeLockLabel: { cs: `Časový zámek`, en: `Time lock` },
+  adminUnlockLabel: { cs: `Admin odemčení`, en: `Admin unlock` },
+  spendableNow: { cs: `Utratitelné nyní`, en: `Spendable now` },
+  stateUnknown: { cs: `neznámé`, en: `unknown` },
+  stateLocked: { cs: `Uzamčeno`, en: `Locked` },
+  stateReached: { cs: `Dosaženo`, en: `Reached` },
+  stateUnlocked: { cs: `Odemčeno`, en: `Unlocked` },
+  stateNotUnlocked: { cs: `Neodemčeno`, en: `Not unlocked` },
+  noTreasuryOpsYet: { cs: `Zatím žádné záznamy schválení treasury`, en: `No treasury approval records yet` },
+  signatures: { cs: `schválení`, en: `approvals` },
   votersLabel: { cs: `hlasujících`, en: `voters` },
   governance: { cs: `Správa`, en: `Governance` },
   treasuryProposalsVoting: { cs: `Treasury · návrhy · hlasování`, en: `Treasury · proposals · voting` },
   shapeZionSFutureTogether: { cs: `Formuj budoucnost ZION společně`, en: `Shape ZION\'s future together` },
-  zionSDaoGovernsTreasuryAllocat: { cs: `DAO ZION řídí alokaci treasury, upgrady protokolu a humanitární iniciativy. Každý držitel ZION má hlasovací sílu — posílenou consciousness level.`, en: `ZION\'s DAO governs treasury allocation, protocol upgrades, and humanitarian initiatives. Every ZION holder has voting power — enhanced by consciousness level.` },
+  zionSDaoGovernsTreasuryAllocat: { cs: `DAO ZION řídí alokaci treasury, upgrady protokolu a humanitární iniciativy. Každý oprávněný držitel ZION má hlasovací sílu danou zůstatkem ve snapshot bloku.`, en: `ZION\'s DAO governs treasury allocation, protocol upgrades, and humanitarian initiatives. Every eligible ZION holder has voting power set by their balance at the snapshot block.` },
   daemonOffline: { cs: `Daemon Offline`, en: `Daemon Offline` },
   daemonOnline: { cs: `Daemon Online`, en: `Daemon Online` },
   checking: { cs: `Kontroluji…`, en: `Checking…` },
@@ -106,19 +119,17 @@ const DaoCopy = {
   governanceDocs_2: { cs: `Dokumentace governance`, en: `Governance docs` },
   quickOverview: { cs: `Rychlý přehled`, en: `Quick Overview` },
   treasury: { cs: `Treasury`, en: `Treasury` },
-  available: { cs: `K dispozici`, en: `Available` },
   proposals: { cs: `Návrhů`, en: `Proposals` },
   guardians: { cs: `Guardians`, en: `Guardians` },
   daoDaemonPhase2HybridDao: { cs: `DAO Daemon — Fáze 2 (Hybridní DAO)`, en: `DAO Daemon — Phase 2 (Hybrid DAO)` },
-  theOnChainDaoGovernanceDaemonW: { cs: `On-chain DAO governance daemon bude nasazen s fází Hybrid DAO (Q2 2026). Treasury zůstatky a pravidla jsou aktivní; tvorba návrhů přes UI bude spuštěna s daemonem.`, en: `The on-chain DAO governance daemon will be deployed with the Hybrid DAO phase (Q2 2026). Treasury balance and governance rules are active; proposal creation via UI launches with the daemon.` },
+  theOnChainDaoGovernanceDaemonW: { cs: `DAO governance daemon je momentálně nedostupný — zobrazená data mohou být zastaralá. Hybridní lifecycle návrhů je nasazený; další moduly jsou ve vývoji.`, en: `The DAO governance daemon is currently unreachable — displayed data may be stale. The hybrid proposal lifecycle is deployed; further modules are in development.` },
   telemetry: { cs: `Telemetrie`, en: `Telemetry` },
   daoStatistics: { cs: `DAO statistiky`, en: `DAO Statistics` },
   governanceMetricsAggregatedFro: { cs: `Metriky governance agregované z DAO API, treasury a bridge relayeru v reálném čase.`, en: `Governance metrics aggregated from DAO API, treasury, and bridge relayer in real time.` },
   totalBalance: { cs: `celkový zůstatek`, en: `total balance` },
   totalTreasuryBalanceIncludingA: { cs: `Celkový zůstatek treasury včetně alokovaných prostředků.`, en: `Total treasury balance including allocated funds.` },
-  available_2: { cs: `Dostupné`, en: `Available` },
-  immediatelyUsable: { cs: `k okamžitému použití`, en: `immediately usable` },
-  balanceAvailableForGovernanceS: { cs: `Zůstatek dostupný pro governance výdaje bez čekajících operací.`, en: `Balance available for governance spend without pending operations.` },
+  immediatelyUsable: { cs: `po splnění všech zámků`, en: `after every lock is satisfied` },
+  balanceAvailableForGovernanceS: { cs: `Částka utratitelná nyní — vyžaduje blok 144 000 a on-chain admin odemčení.`, en: `Amount spendable right now — requires block 144,000 and the on-chain admin unlock.` },
   createdTotal: { cs: `celkem vytvořeno`, en: `created total` },
   active: { cs: `Aktivní`, en: `Active` },
   ongoingVotes: { cs: `probíhající hlasování`, en: `ongoing votes` },
@@ -154,17 +165,17 @@ const DaoCopy = {
   lastScan: { cs: `poslední scan`, en: `last scan` },
   vault: { cs: `Vault:`, en: `Vault:` },
   finality60Blocks: { cs: `Finality: 60 bloků`, en: `Finality: 60 blocks` },
-  humanitarianTithe: { cs: `Humanitární desátek`, en: `Humanitarian Tithe` },
-  k10OfAllMiningRewardsFundCleanW: { cs: `10 % všech odměn za těžbu financuje projekty čisté vody, potravinové bezpečnosti a vzdělávání.`, en: `10% of all mining rewards fund clean water, food security, and education projects worldwide.` },
+  humanitarianTithe: { cs: `Humanitární fond`, en: `Humanitarian Fund` },
+  k10OfAllMiningRewardsFundCleanW: { cs: `5 % z každé coinbase odměny míří do L5 humanitárního fondu. Podpora projektů čisté vody, potravinové bezpečnosti a vzdělávání má procházet governance — výplatní cesta zatím není live.`, en: `5% of every coinbase reward is routed to the L5 humanitarian fund. Support for clean water, food security, and education projects is intended to go through governance — the disbursement path is not live yet.` },
   totalProjects: { cs: `Celkem projektů`, en: `Total Projects` },
   activeFunding: { cs: `Aktivní financování`, en: `Active Funding` },
   beneficiaries: { cs: `Příjemci`, en: `Beneficiaries` },
   fundedAmount: { cs: `Financováno`, en: `Funded Amount` },
   multiLayerGovernance: { cs: `Vícevrstvá správa`, en: `Multi-Layer Governance` },
   coAdminSacredTrinity: { cs: `Co-Admin & Posvátná trojice`, en: `Co-Admin & Sacred Trinity` },
-  multiLayerDaoGovernanceAcrossL: { cs: `Multi-vrstvá DAO správa přes L1–L6. Co-Admini koordinují cross-layer veta a politiku, Posvátná trojice symbolizuje kosmické archetypy správy.`, en: `Multi-layer DAO governance across L1–L6. Co-Admins coordinate cross-layer vetoes and policy, while the Sacred Trinity embodies cosmic archetypes of stewardship.` },
-  coAdminSystem: { cs: `Co-Admin systém`, en: `Co-Admin System` },
-  eachLayerL1L6HasACoAdminForTec: { cs: `Každá vrstva (L1–L6) má svého Co-Admina pro technická rozhodnutí a koordinaci. Cross-layer rozhodnutí vyžadují souhlas dotčených Co-Adminů.`, en: `Each layer (L1–L6) has a Co-Admin for technical decisions and coordination. Cross-layer decisions require consent from affected Co-Admins.` },
+  multiLayerDaoGovernanceAcrossL: { cs: `Navržená multi-vrstvá DAO správa přes L1–L6. Co-Admin role a cross-layer veta jsou zatím návrh — Posvátná trojice symbolizuje kosmické archetypy správy.`, en: `Proposed multi-layer DAO governance across L1–L6. Co-Admin roles and cross-layer vetoes are a design so far — the Sacred Trinity embodies cosmic archetypes of stewardship.` },
+  coAdminSystem: { cs: `Co-Admin systém (návrh)`, en: `Co-Admin System (proposed)` },
+  eachLayerL1L6HasACoAdminForTec: { cs: `Navržený model: každá vrstva (L1–L6) by měla mít Co-Admina pro technická rozhodnutí a koordinaci. Produkční co-admin registry zatím nemá žádné členy.`, en: `Proposed design: each layer (L1–L6) would have a Co-Admin for technical decisions and coordination. The production co-admin registry currently has no populated members.` },
   coAdmin: { cs: `Co-Admin`, en: `Co-Admin` },
   daoAuthority: { cs: `DAO autorita`, en: `DAO authority` },
   sacredTrinity: { cs: `Posvátná trojice`, en: `Sacred Trinity` },
@@ -175,8 +186,8 @@ const DaoCopy = {
   humanitarianFundPhysicalCommun: { cs: `Humanitární fond, fyzické komunity, péče`, en: `Humanitarian fund, physical communities, care` },
   guardianBridgeL2: { cs: `Ochránce · Bridge · L2`, en: `Guardian · Bridge · L2` },
   bridgingWorldsProtectionFaithf: { cs: `Přemostění světů, ochrana, věrná služba`, en: `Bridging worlds, protection, faithful service` },
-  consentEngine: { cs: `Consent Engine`, en: `Consent Engine` },
-  theConsentMechanismEnsuresCros: { cs: `Mechanismus souhlasu zajišťuje, že cross-layer rozhodnutí neprocházejí bez aktivního souhlasu dotčených vrstev. Blokující veto je vyhrazeno pro bezpečnostní incidenty a porušení dohody.`, en: `The consent mechanism ensures cross-layer decisions do not pass without active consent from affected layers. Blocking veto is reserved for security incidents and agreement violations.` },
+  consentEngine: { cs: `Consent Engine (prototyp)`, en: `Consent Engine (prototype)` },
+  theConsentMechanismEnsuresCros: { cs: `Navržený mechanismus souhlasu má zajistit, že cross-layer rozhodnutí neprojdou bez aktivního souhlasu dotčených vrstev. Do live runtime návrhů zatím není zapojen. Blokující veto je vyhrazeno pro bezpečnostní incidenty a porušení dohody.`, en: `The proposed consent mechanism is designed to ensure cross-layer decisions do not pass without active consent from affected layers. It is not wired into the live proposal runtime yet. Blocking veto is reserved for security incidents and agreement violations.` },
   propose: { cs: `Návrh`, en: `Propose` },
   anyCoAdmin: { cs: `Jakýkoliv Co-Admin`, en: `Any Co-Admin` },
   consent: { cs: `Souhlas`, en: `Consent` },
@@ -185,8 +196,8 @@ const DaoCopy = {
   execute: { cs: `Provedení`, en: `Execute` },
   afterConsent: { cs: `Po souhlasu`, en: `After consent` },
   daoCirclesGovernanceTopology: { cs: `DAO kruhy & topologie`, en: `DAO Circles & Governance Topology` },
-  treeOfLifeServesAsALivingDaoLe: { cs: `Tree of Life slouží jako živý DAO ledger. Kořeny reprezentují komunitní guildy, srdce vývojové kruhy a koruna správní guardians.`, en: `Tree of Life serves as a living DAO ledger. Roots represent community guilds, the heart development circles, and the crown governance guardians.` },
-  liveTopology: { cs: `Živá topologie`, en: `Live topology` },
+  treeOfLifeServesAsALivingDaoLe: { cs: `Tree of Life slouží jako symbolická mapa DAO kruhů. Kořeny reprezentují komunitní guildy, srdce vývojové kruhy a koruna správní guardians.`, en: `Tree of Life serves as a symbolic map of DAO circles. Roots represent community guilds, the heart development circles, and the crown governance guardians.` },
+  liveTopology: { cs: `Symbolická mapa`, en: `Symbolic map` },
   crown: { cs: `Koruna`, en: `Crown` },
   guardiansCouncil: { cs: `Rada guardianů`, en: `Guardians Council` },
   topDaoGovernanceLayerTreasuryO: { cs: `Vrchní vrstva správy DAO — dohled nad treasury, bezpečnostní revize a dlouhodobá vize.`, en: `Top DAO governance layer — treasury oversight, security reviews, and long-term vision.` },
@@ -197,9 +208,6 @@ const DaoCopy = {
   communityGuild: { cs: `Komunitní guilda`, en: `Community Guild` },
   daoRootsOpenCommunityContribut: { cs: `Kořeny DAO — otevřená komunita, contribution streamy, komunitní hlasování a růst sítě.`, en: `DAO roots — open community, contribution streams, community votes, and network growth.` },
   dao: { cs: `DAO`, en: `DAO` },
-  kabbalahTreeOfLife144kGuardian: { cs: `Kabbalah Tree of Life · 144k Guardians`, en: `Kabbalah Tree of Life · 144k Guardians` },
-  k9ConsciousnessLevelsMappedTo10: { cs: `9 vědomostních levelů namapovaných na 10 Sefirot. Každý DAO circle odpovídá různým consciousness levelům.`, en: `9 consciousness levels mapped to 10 Sefirot. Each DAO circle corresponds to different consciousness levels.` },
-  realTimeDaoTracking: { cs: `Real-time DAO tracking`, en: `Real-time DAO tracking` },
   governancePhases: { cs: `Fáze governance`, en: `Governance phases` },
   roadToFullDecentralization: { cs: `Cesta k plné decentralizaci`, en: `Road to full decentralization` },
   support: { cs: `Podpora`, en: `Support` },
@@ -218,11 +226,12 @@ const DaoCopy = {
   creating: { cs: `Vytvářím…`, en: `Creating…` },
 };
 
-type SectionTab = 'proposals' | 'treasury' | 'guardians' | 'roadmap';
+type SectionTab = 'proposals' | 'treasury' | 'parliament' | 'guardians' | 'roadmap';
 
 const TABS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeof Gavel }[] = [
   { key: 'proposals', labelCs: 'Návrhy', labelEn: 'Proposals', icon: Gavel },
   { key: 'treasury', labelCs: 'Treasury', labelEn: 'Treasury', icon: Landmark },
+  { key: 'parliament', labelCs: 'Parlament', labelEn: 'Parliament', icon: Globe2 },
   { key: 'guardians', labelCs: 'Guardians', labelEn: 'Guardians', icon: ShieldCheck },
   { key: 'roadmap', labelCs: 'Roadmap', labelEn: 'Roadmap', icon: Route },
 ];
@@ -270,22 +279,22 @@ function StatCard({
 
 const getPhases = (cs: boolean) => [
   {
-    title: DaoCopy.phase1Stewardship2025[cs ? 'cs' : 'en'],
+    title: DaoCopy.phase1LiveFoundation[cs ? 'cs' : 'en'],
     bullets: cs
-      ? ['Maitreya Buddha + Round Table guardians zajišťují uptime', 'Emergency intervence + schválení rozpočtu roadmapy', '90denní reporting publikovaný v docs']
-      : ['Maitreya Buddha + Round Table guardians ensure uptime', 'Emergency intervention + roadmap budget approvals', '90-day reporting cadence published in docs'],
+      ? ['Hybridní lifecycle návrhů běží (vytvořit → hlasovat → sečíst)', 'Hlasovací síla = L1 zůstatek ZION ve snapshot bloku', 'Treasury signer schválení koordinovaná přes approval záznamy']
+      : ['Hybrid proposal lifecycle is live (create → vote → tally)', 'Voting power = L1 ZION balance at the snapshot block', 'Treasury signer approvals coordinated via approval records'],
   },
   {
-    title: DaoCopy.phase2HybridDao2026[cs ? 'cs' : 'en'],
+    title: DaoCopy.phase2DaoParliament[cs ? 'cs' : 'en'],
     bullets: cs
-      ? ['Validator council + guardians · 5-of-7 treasury', 'On-chain proposal lifecycle (create → vote → execute)', 'Golden Egg incentivy + community matching pooly']
-      : ['Validator council joins guardians · 5-of-7 treasury', 'On-chain proposal lifecycle (create → vote → execute)', 'Golden Egg incentives + community matching pools'],
+      ? ['DAO Parlament — čtyři komory: Péče, Opravy, Poznání, Horizontu', 'Consent registry a co-admin role — návrh a prototyp', 'Hiran jako zrcadlo a pomocník pro drafty — lidský sponsor povinný']
+      : ['DAO Parliament — four chambers: Care, Restoration, Knowledge, Horizon', 'Consent registry and co-admin roles — design and prototype', 'Hiran as a mirror and drafting aid — a human sponsor is required'],
   },
   {
-    title: DaoCopy.phase3FullDao2026[cs ? 'cs' : 'en'],
+    title: DaoCopy.phase3EarthNetwork[cs ? 'cs' : 'en'],
     bullets: cs
-      ? ['Treasury + roadmapa plně řízeny stakery', 'Kvadratické nebo consciousness-weighted hlasování', 'Transparentní granty + investiční komise ekosystému']
-      : ['Treasury + roadmap fully controlled by stakers', 'Quadratic or consciousness-weighted voting experiments', 'Transparent grants + ecosystem investment committee'],
+      ? ['Síť Země — symbolický cíl 144 000 earth guardianů (registry pending)', 'Dobrovolná globální síť lokálních kruhů — žádný cap ani privilegovaná třída', 'Transparentní granty a auditovaná governance']
+      : ['Earth Network — symbolic goal of 144,000 earth guardians (registry pending)', 'Voluntary global network of local circles — no cap and no privileged class', 'Transparent grants and auditable governance'],
   },
 ];
 
@@ -454,7 +463,9 @@ export default function DaoPage() {
 
   const totalProposals = stats?.governance.total_proposals ?? 0;
   const activeProposals = stats?.active ?? 0;
-  const guardiansCount = stats?.guardian_count ?? 7;
+  const guardiansCount = daemonOnline === true ? stats?.guardian_count ?? 0 : 0;
+  const spendableZion = treasury?.spendable === true ? treasury.spendable_zion ?? 0 : 0;
+  const multisigLabel = daemonOnline === true ? stats?.multisig ?? treasury?.multisig ?? '—' : '—';
   const filteredProposals = proposals.filter((p) => {
     const s = p.state.toUpperCase();
     switch (proposalFilter) {
@@ -556,9 +567,9 @@ export default function DaoPage() {
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Wallet className="h-4 w-4 text-zion-cyan" />
-                      {DaoCopy.available[cs ? 'cs' : 'en']}
+                      {DaoCopy.spendableNow[cs ? 'cs' : 'en']}
                     </div>
-                    <span className="font-mono text-white">{(treasury?.available_zion ?? 0).toLocaleString()} ZION</span>
+                    <span className="font-mono text-white">{spendableZion.toLocaleString()} ZION</span>
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
@@ -572,7 +583,7 @@ export default function DaoPage() {
                       <ShieldCheck className="h-4 w-4 text-zion-gold" />
                       {DaoCopy.guardians[cs ? 'cs' : 'en']}
                     </div>
-                    <span className="font-mono text-white">{guardiansCount}/5</span>
+                    <span className="font-mono text-white">{multisigLabel}</span>
                   </div>
                 </div>
               </div>
@@ -645,8 +656,8 @@ export default function DaoPage() {
                   colorClass="text-zion-cyan"
                   bgClass="bg-zion-cyan/10"
                   rc="6, 105, 40"
-                  label={DaoCopy.available_2[cs ? 'cs' : 'en']}
-                  value={`${(treasury?.available_zion ?? 0).toLocaleString()} ZION`}
+                  label={DaoCopy.spendableNow[cs ? 'cs' : 'en']}
+                  value={`${spendableZion.toLocaleString()} ZION`}
                   sub={DaoCopy.immediatelyUsable[cs ? 'cs' : 'en']}
                   tip={DaoCopy.balanceAvailableForGovernanceS[cs ? 'cs' : 'en']}
                 />
@@ -833,26 +844,26 @@ export default function DaoPage() {
 
           {activeTab === 'treasury' && (
             <div className="space-y-12">
-              {treasury && (
-                <motion.section
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="zion-rainbow-card p-8"
-                  style={{ '--rc': '6, 105, 40' } as CSSProperties}
-                >
-                  <div className="mb-6">
-                    <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Treasury</p>
-                    <h2 className="text-3xl font-semibold text-white">{DaoCopy.treasuryOverview[cs ? 'cs' : 'en']}</h2>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <motion.section
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="zion-rainbow-card p-8"
+                style={{ '--rc': '6, 105, 40' } as CSSProperties}
+              >
+                <div className="mb-6">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Treasury</p>
+                  <h2 className="text-3xl font-semibold text-white">{DaoCopy.treasuryOverview[cs ? 'cs' : 'en']}</h2>
+                </div>
+                {treasury && (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <p className="text-xs uppercase tracking-wider text-gray-400">Multisig</p>
                       <p className="text-lg font-semibold text-white mt-1">{treasury.multisig}</p>
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                      <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.available[cs ? 'cs' : 'en']}</p>
-                      <p className="text-lg font-semibold text-white mt-1">{treasury.available_zion.toLocaleString()} ZION</p>
+                      <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.spendableNow[cs ? 'cs' : 'en']}</p>
+                      <p className="text-lg font-semibold text-white mt-1">{spendableZion.toLocaleString()} ZION</p>
                     </div>
                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <p className="text-xs uppercase tracking-wider text-gray-400">{DaoCopy.pendingOps[cs ? 'cs' : 'en']}</p>
@@ -863,8 +874,45 @@ export default function DaoPage() {
                       <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString()} ZION</p>
                     </div>
                   </div>
-                </motion.section>
-              )}
+                )}
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-4">{DaoCopy.lockState[cs ? 'cs' : 'en']}</p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 text-sm">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.currentBlock[cs ? 'cs' : 'en']}</p>
+                      <p className="font-mono text-white mt-0.5">{treasury?.chain_height != null ? treasury.chain_height.toLocaleString() : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.unlockBlock[cs ? 'cs' : 'en']}</p>
+                      <p className="font-mono text-white mt-0.5">{treasury?.unlock_height != null ? treasury.unlock_height.toLocaleString() : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.timeLockLabel[cs ? 'cs' : 'en']}</p>
+                      <p className="font-mono text-white mt-0.5">
+                        {treasury?.time_locked == null
+                          ? DaoCopy.stateUnknown[cs ? 'cs' : 'en']
+                          : treasury.time_locked
+                            ? DaoCopy.stateLocked[cs ? 'cs' : 'en']
+                            : DaoCopy.stateReached[cs ? 'cs' : 'en']}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.adminUnlockLabel[cs ? 'cs' : 'en']}</p>
+                      <p className="font-mono text-white mt-0.5">
+                        {treasury?.admin_unlock_known !== true
+                          ? DaoCopy.stateUnknown[cs ? 'cs' : 'en']
+                          : treasury.admin_unlocked === true
+                            ? DaoCopy.stateUnlocked[cs ? 'cs' : 'en']
+                            : DaoCopy.stateNotUnlocked[cs ? 'cs' : 'en']}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-gray-500">{DaoCopy.spendableNow[cs ? 'cs' : 'en']}</p>
+                      <p className="font-mono text-white mt-0.5">{spendableZion.toLocaleString()} ZION</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
 
               <motion.section
                 initial={{ opacity: 0, y: 24 }}
@@ -874,11 +922,14 @@ export default function DaoPage() {
                 style={{ '--rc': '6, 105, 40' } as CSSProperties}
               >
                 <div className="flex flex-col gap-2 mb-6">
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{treasury?.multisig ?? '5-of-7'}</p>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{multisigLabel}</p>
                   <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                     <ShieldCheck className="h-7 w-7 text-zion-gold" />
                     {DaoCopy.multisigOperations[cs ? 'cs' : 'en']}
                   </h2>
+                  <p className="text-sm text-gray-400 max-w-3xl">
+                    {DaoCopy.approvalRecordsExplainer[cs ? 'cs' : 'en']}
+                  </p>
                 </div>
                 {treasuryOps.length === 0 ? (
                   <p className="text-sm text-gray-500">{DaoCopy.noTreasuryOpsYet[cs ? 'cs' : 'en']}</p>
@@ -998,6 +1049,14 @@ export default function DaoPage() {
                 )}
               </motion.section>
             </div>
+          )}
+
+          {activeTab === 'parliament' && (
+            <ParliamentVision
+              lang={cs ? 'cs' : 'en'}
+              treasuryGuardians={guardiansCount}
+              multisig={multisigLabel}
+            />
           )}
 
           {activeTab === 'guardians' && (
@@ -1145,28 +1204,6 @@ export default function DaoPage() {
                 </div>
               </motion.section>
 
-              <motion.section
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="zion-rainbow-card p-8"
-                style={{ '--rc': '6, 105, 40' } as CSSProperties}
-              >
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.dao[cs ? 'cs' : 'en']}</p>
-                    <h2 className="text-3xl font-semibold text-white">{DaoCopy.kabbalahTreeOfLife144kGuardian[cs ? 'cs' : 'en']}</h2>
-                    <p className="text-gray-300 max-w-2xl mt-2">
-                      {DaoCopy.k9ConsciousnessLevelsMappedTo10[cs ? 'cs' : 'en']}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 zion-rainbow-sub px-4 py-2 text-sm" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                    <Star className="h-5 w-5 text-zion-gold" />
-                    <span className="text-gray-300">{DaoCopy.realTimeDaoTracking[cs ? 'cs' : 'en']}</span>
-                  </div>
-                </div>
-                <GuardiansTreeClient />
-              </motion.section>
             </div>
           )}
 

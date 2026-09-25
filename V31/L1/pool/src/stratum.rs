@@ -706,7 +706,11 @@ impl StratumServer {
             // POL-007 fix: evict old jobs when the map grows too large.
             // Keep only the most recent 256 entries to bound memory.
             if jobs.len() > 256 {
-                let keys_to_remove: Vec<String> = jobs.keys().take(jobs.len().saturating_sub(200)).cloned().collect();
+                let keys_to_remove: Vec<String> = jobs
+                    .keys()
+                    .take(jobs.len().saturating_sub(200))
+                    .cloned()
+                    .collect();
                 for k in keys_to_remove {
                     jobs.remove(&k);
                 }
@@ -2557,12 +2561,10 @@ mod tests {
             6_000_000,
             "",
         );
-        let resp = server.handle_request(
-            &format!(
-                r#"{{"id":3,"method":"mining.submit","params":["worker","zion_1","{}"]}}"#,
-                nonce_hex
-            ),
-        );
+        let resp = server.handle_request(&format!(
+            r#"{{"id":3,"method":"mining.submit","params":["worker","zion_1","{}"]}}"#,
+            nonce_hex
+        ));
         assert!(resp.contains("true"));
     }
 
@@ -2575,8 +2577,7 @@ mod tests {
         let coin = zion_cosmic_harmony::ExternalCoin::Bitcoin;
         let nonce = (0..100_000u64)
             .find(|&n| {
-                let hash =
-                    zion_miner::auxpow::hasher::hash_for_coin(coin, &header_bytes, n);
+                let hash = zion_miner::auxpow::hasher::hash_for_coin(coin, &header_bytes, n);
                 zion_miner::auxpow::hasher::meets_target(&hash, &share_target)
             })
             .expect("should find a nonce meeting difficulty 1000 for Bitcoin");
@@ -2590,12 +2591,10 @@ mod tests {
             6_000_000,
             "",
         );
-        let resp = server.handle_request(
-            &format!(
-                r#"{{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","{}"]}}"#,
-                nonce_hex
-            ),
-        );
+        let resp = server.handle_request(&format!(
+            r#"{{"id":4,"method":"mining.submit","params":["worker","aux_bitcoin_1","{}"]}}"#,
+            nonce_hex
+        ));
         assert!(resp.contains("true"));
     }
 

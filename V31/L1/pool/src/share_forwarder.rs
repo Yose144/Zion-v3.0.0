@@ -90,7 +90,8 @@ impl ShareForwarder {
             if real_hash != *hash {
                 tracing::debug!(
                     "auxpow: non_dag_hash_recomputed algo={} nonce={} supplied={:.16} real={:.16}",
-                    algorithm, nonce,
+                    algorithm,
+                    nonce,
                     hash_to_hex(hash),
                     hash_to_hex(&real_hash),
                 );
@@ -101,7 +102,8 @@ impl ShareForwarder {
             // log a warning so operators know recomputation was skipped.
             tracing::warn!(
                 "auxpow: no header_bytes for algo={} nonce={} — hash not recomputed (POL-003)",
-                algorithm, nonce,
+                algorithm,
+                nonce,
             );
             (*hash, false)
         };

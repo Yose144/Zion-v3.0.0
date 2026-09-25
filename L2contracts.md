@@ -1,8 +1,10 @@
 # L2 Contracts — Canonical Registry
 
 > **Single source of truth** for all L2 contract addresses, token registries, and DEX integrations.
-> **Last updated:** 2026-09-03
+> **Last updated:** 2026-09-25
 > **Philosophy:** Minimal contracts. Use existing DEX/bridge infra, don't reinvent it.
+>
+> **Runtime truth (Edge):** Only `zion-l1` and `base` are enabled in the live multichain runtime (`/v1/multichain/chains` returns `["zion-l1", "base"]`). Contract bundles and deterministic addresses listed in this file are **not** proof of deployment or enablement — Robinhood remains pending/disabled until contracts are deployed and the chain is enabled.
 >
 > **Rule:** When a contract is deployed or updated, update this file FIRST, then propagate to:
 > - Frontend: `APP&WEB/website-v2.9/src/lib/defi-contracts.ts`

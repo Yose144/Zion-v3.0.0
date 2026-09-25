@@ -1,15 +1,17 @@
-# ZION DAO — Governance, Treasury & Guardian Multisig
+# ZION DAO — Governance, Treasury & Guardian Approval Model
 
 > **Stav:** ŽIVÉ na produkci (Edge `62.171.141.136`), služba `zion-v31-dao`, API `127.0.0.1:8456`, veřejný proxy prefix `https://app.zionterranova.com/api/dao`.
 > **Kód:** `V31/L2/dao` (Rust, axum, rusqlite/SQLite, tokio). UI: `APP&WEB/website-v2.9/src/app/dao/page.tsx`.
-> **Verze:** `zion-dao 3.1.0-alpha` · **Poslední velký update:** 2026-09-21 (lifecycle fix + rozšířené API + nové DAO UI).
+> **Verze:** `zion-dao 3.1.0-alpha` · **Poslední velký update:** 2026-09-25 (treasury lock truth + DAO Parlament / Síť Země UI; deployed).
 > **Kanonický provozní stav:** vždy ověřit proti `StatusV3.md` a live API — dokumentace nesmí být napřed před realitou.
 
 ---
 
 ## 1. Co DAO dělá
 
-DAO řídí **treasury** (1.5 mld. ZION z genesis premine slotů 7+8), **governance návrhy** (parametry, treasury výdaje, granty, humanitární a emergency akce) a **guardian multisig** (5-of-7) pro všechny výdaje. Identitu a hlasovací sílu řeší **ZIS** (`zion_session` cookie) + L1 balance ve snapshot bloku návrhu — klient nikdy neposílá váhu hlasu.
+DAO eviduje a řídí **governance návrhy** (parametry, treasury výdaje, granty, humanitární a emergency akce) nad **treasury** (1.5 mld. ZION z genesis premine slotů 7+8) a má nakonfigurovaný **5-of-7 schvalovací model** guardianů — kryptografická exekuce spendu je zatím pending; approval záznamy nejsou funkční multisig pro všechny výdaje. Identitu a hlasovací sílu řeší **ZIS** (`zion_session` cookie) + L1 balance ve snapshot bloku návrhu — klient nikdy neposílá váhu hlasu.
+
+> **Treasury pravda (144k):** Pozorované treasury UTXO zůstatky jsou **zamčené do bloku 144 000** (`DAO_TREASURY_UNLOCK_HEIGHT` v `types.rs`) a k utracení je navíc potřeba **on-chain admin unlock** (memo flow `ZION:ADMIN_UNLOCK:v1`, viz `PREMINE_UNLOCK.md`). `/api/dao/treasury` proto vrací `chain_height`, `unlock_height`, `time_locked`, `admin_unlock_known`, `admin_unlocked`, `spendable` a `spendable_*` — spendable je `true` jen když obě podmínky platí. Treasury approval API (`/treasury/submit|sign|execute`) je **koordinační/auditní záznam** — sám o sobě kryptograficky nepodepisuje ani nevysílá L1 transakci.
 
 ```
 Browser /app/dao ──► Next.js proxy /api/dao/* ──► zion-dao (127.0.0.1:8456)
@@ -31,10 +33,10 @@ Browser /app/dao ──► Next.js proxy /api/dao/* ──► zion-dao (127.0.0.
 | Timelock | **72 h** | `timelock_hours` mezi Passed a Executed |
 | Proposal threshold | **10 000 000 ZION** | min. zůstatek proposera ve snapshot bloku |
 | Min. váha hlasu | **1 ZION** | `min_vote_weight` (1 000 000 flowers) |
-| Multisig | **5-of-7** | guardian podpisy pro treasury výdaje |
+| Multisig | **5-of-7** | nakonfigurovaný schvalovací model; kryptografická exekuce spendu pending |
 | Denní spend limit | **50 000 000 ZION** | `daily_spend_limit_zion` |
-| Circulating supply | 4 000 000 000 ZION | pro výpočet kvóra |
-| Treasury | 1 500 000 000 ZION | live L1 UTXO součet, ne konstanta |
+| Circulating supply | 1 500 000 000 ZION | hodnota `circulating_supply` z live DAO runtime (`/stats`, pozorováno na Edge API) — používá se jen pro výpočet kvóra, není to nezávisle chain-odvozená metrika |
+| Treasury | 1 500 000 000 ZION | live L1 UTXO součet, ne konstanta — zamčeno do bloku 144 000 + admin unlock |
 
 Jednotky: **1 ZION = 1 000 000 flowers** (6 desetinných míst). API vrací flowers jako čísla/stringy — frontend je vždy převádí na ZION pro zobrazení.
 
@@ -55,22 +57,22 @@ Vše pod `/api/dao`. Odpověď je obálka `{ "success": bool, "data": … }`.
 | `GET /api/dao/proposals?status=&proposal_type=&limit=&offset=` | seznam návrhů, newest-first, cap 200 |
 | `GET /api/dao/proposals/:id` | detail návrhu vč. `is_voting_open`, `has_passed`, `snapshot_block` |
 | `GET /api/dao/proposals/:id/votes` | `{votes: [{voter, choice, weight, tx_hash, voted_at}]}` |
-| `GET /api/dao/treasury` | přehled treasury (UTXO součet, multisig, limity, pending ops) |
-| `GET /api/dao/treasury/ops?status=` | multisig operace: `{op_id, proposal_id, operation, status, signatures[], signature_count, threshold, amount_*}` |
+| `GET /api/dao/treasury` | přehled treasury (UTXO součet, multisig, limity, pending ops + `chain_height`, `unlock_height`, `time_locked`, `admin_unlock_known`, `admin_unlocked`, `spendable`, `spendable_*`, `utxo_balance_*`) — `getAdminUnlocks` se čte best-effort, na Edge L1 zatím vrací method-not-found → `admin_unlock_known=false`, `spendable=false` |
+| `GET /api/dao/treasury/ops?status=` | approval záznamy: `{op_id, proposal_id, operation, status, signatures[], signature_count, threshold, amount_*}` — koordinace schválení, ne podpis/broadcast tx |
 | `GET /metrics` | Prometheus text |
 
-### Mutace — auth: `zion_session` cookie **nebo** `X-DAO-Key` (operator)
+### Mutace — auth: `zion_session` cookie (jen create/vote) nebo `X-DAO-Key` (vše ostatní)
 
-| Endpoint | Body | Poznámka |
-|---|---|---|
-| `POST /api/dao/proposals` | `{proposer, title, description, proposal_type:{kind,data}}` | ZIS cesta: identita+balance se resolvují server-side; `proposer_balance`/`snapshot_block` klient neposílá |
-| `POST /api/dao/proposals/:id/vote` | `{voter, choice:"yes"|"no"|"abstain", weight}` | váha se u session cesty počítá z L1 balance ve `snapshot_block` |
-| `POST /api/dao/proposals/:id/tally` | — | ruční sčítání (operator); jinak běží automaticky |
-| `POST /api/dao/proposals/:id/execute` | — | po Passed + timelock |
-| `POST /api/dao/proposals/:id/cancel` | — | proposer/operator |
-| `POST /api/dao/treasury/submit` | `{operation, proposal_id, …}` | vytvoří multisig op (vyžaduje Passed návrh) |
-| `POST /api/dao/treasury/:op_id/sign` | `{signer, signature}` | guardian podpis |
-| `POST /api/dao/treasury/:op_id/execute` | — | po dosažení threshold |
+| Endpoint | Auth | Body | Poznámka |
+|---|---|---|---|
+| `POST /api/dao/proposals` | ZIS session **nebo** `X-DAO-Key` | `{proposer, title, description, proposal_type:{kind,data}}` | ZIS cesta: identita+balance se resolvují server-side; `proposer_balance`/`snapshot_block` klient neposílá |
+| `POST /api/dao/proposals/:id/vote` | ZIS session **nebo** `X-DAO-Key` | `{voter, choice:"yes"|"no"|"abstain", weight}` | váha se u session cesty počítá z L1 balance ve `snapshot_block` |
+| `POST /api/dao/proposals/:id/tally` | `X-DAO-Key` | — | ruční sčítání (operator); jinak běží automaticky |
+| `POST /api/dao/proposals/:id/execute` | `X-DAO-Key` | — | po Passed + timelock; status/audit přechod, ne L1 treasury broadcast |
+| `POST /api/dao/proposals/:id/cancel` | `X-DAO-Key` | `{caller}` | operator; cancel přes ZIS proposer session není zapojen |
+| `POST /api/dao/treasury/submit` | `X-DAO-Key` | `{op_id, guardian, operation, proposal_id?}` | vytvoří approval záznam; `proposal_id` je jen nepovinný audit link — Passed návrh se dnes **nevyžaduje** |
+| `POST /api/dao/treasury/:op_id/sign` | `X-DAO-Key` | `{guardian}` | zapíše schvalovací identitu guardiana do `treasury_sigs` — žádný kryptografický podpis |
+| `POST /api/dao/treasury/:op_id/execute` | `X-DAO-Key` | `{guardian}` | po dosažení threshold označí approval záznam jako `executed` — **nevysílá** L1 transakci |
 
 ### `proposal_type` — tagged union `{kind, data}`
 
@@ -101,11 +103,11 @@ Draft → Active ──(voting period)──► Passed ──(timelock 72h)─�
 
 | Soubor | Role |
 |---|---|
-| `src/app/dao/page.tsx` | stránka — 4 taby (Návrhy / Treasury / Guardians / Roadmap), create modal s 5 typy návrhů, filtry stavů |
+| `src/app/dao/page.tsx` | stránka — 5 tabů (Návrhy / Treasury / Parlament / Guardians / Roadmap), create modal s 5 typy návrhů, filtry stavů |
 | `src/lib/dao-api.ts` | typovaný klient — `getDAOHealth/Stats/TreasuryOverview/TreasuryOps/Proposals/ProposalVotes`, `createGovernanceProposal`, `castGovernanceVote` (mapuje for/against/abstain → yes/no/abstain) |
 | `src/components/dao/ProposalCard.tsx` | karta návrhu — progress bary, ZION-formátované váhy, voter list (expandable), vote buttons gated na `is_voting_open` |
 | `src/components/dao/DAOStats.tsx` | metriky |
-| `src/app/api/dao/[...path]/route.ts` | Next.js proxy — GET public; non-GET jen s `zion_session` nebo `X-DAO-Key`; cookie forwarduje upstream |
+| `src/app/api/dao/[...path]/route.ts` | Next.js proxy — GET public; non-GET jen s `zion_session` nebo `X-DAO-Key`; cookie forwarduje upstream, ale operator-only backend endpointy session odmítnou (ZIS identitu resolvují jen create/vote) |
 
 ### Chování UI (stav 2026-09-21)
 
@@ -113,12 +115,13 @@ Draft → Active ──(voting period)──► Passed ──(timelock 72h)─�
 - **Stat karty**: treasury (live ZION), návrhy, aktivní (+awaiting tally sublabel), schválené, unikátní hlasující + celkem hlasů, bridge relay.
 - **Filtry návrhů:** Vše / Hlasování / Čeká na sčítání / Schváleno / Exekutováno / Neúspěšné — „awaiting" je client-side odvozený stav.
 - **Create modal:** výběr typu návrhu → podmíněná pole; threshold note ukazuje live `proposal_threshold` ze stats; proposer = ZIS-linkovaná `zion-l1` adresa (není editovatelné pole — identitu řeší backend).
-- **Treasury tab:** live overview + **multisig operace** (op_id, typ, částka, status, `signature_count/threshold`).
-- **Guardians tab:** `/api/guardians/stats` je úmyslný 501 stub → UI ukazuje „under development"; `GuardiansTreeClient` má dev fallback — **neprezentovat jako live registry**.
+- **Treasury tab:** live overview + **lock-state panel** (aktuální blok, blok odemčení, time-lock, admin unlock, „utratitelné nyní" — chybějící pole = `unknown`/0, fail closed) + **treasury approval records** (op_id, typ, částka, status, `signature_count/threshold`).
+- **Parlament tab:** `ParliamentVision` — vizuální návrh Zlatého domu (4 komory, orbit kruhů), explicitně označený VISION; Hiran = 0 hlasů/0 klíčů, lidský sponsor povinný; 144 000 = symbolický cíl, ne cap.
+- **Guardians tab:** `/api/guardians/stats` je úmyslný 501 stub → UI ukazuje „under development"; `GuardiansTreeClient` má dev fallback — **neprezentovat jako live registry**. `GuardiansTreeClient` nadále žije na `/dashboard/dao-tree`, ne na `/dao`.
 
 ### Auth flow
 
-`useAuth()` → `user.linkedAddresses[zion-l1]` → proposer/voter hint; skutečnou identitu a váhu řeší server. Bez session: GET čtení funguje, mutace vrací 401 („Sign in with ZIS…"). **Nikdy neposílat `ZION_DAO_API_KEY` z browseru** — ten zůstává operátorům.
+`useAuth()` → `user.linkedAddresses[zion-l1]` → proposer/voter hint; skutečnou identitu a váhu řeší server. Bez session: GET čtení funguje, mutace vrací 401 („Sign in with ZIS…"). Proxy session forwarduje, ale backend ji přijímá jen u create proposal a vote — tally, proposal execute, cancel a všechny treasury mutace vyžadují `X-DAO-Key`. **Nikdy neposílat `ZION_DAO_API_KEY` z browseru** — ten zůstává operátorům.
 
 ---
 
@@ -158,7 +161,7 @@ ssh … 'chown -R zion:zion "/opt/zion/APP&WEB/website-v2.9"; systemctl restart 
 curl -s -o /dev/null -w '%{http_code}' https://app.zionterranova.com/dao   # = 200
 ```
 
-- **Testy:** `cargo test -p zion-dao` (78 pass), `npx tsc --noEmit` + `npm run build` ve webu.
+- **Testy:** `cargo test -p zion-dao` (81 lib + 2 smoke pass), `npx tsc --noEmit` + `npm run build` ve webu.
 - **Porty:** DAO `8456` (env `DAO_API_PORT`; `core-endpoints.ts` default sjednocen 2026-09-21). Nginx `/api/dao` → `127.0.0.1:8456`. Website env `ZION_DAO_API_URL=http://127.0.0.1:8456`.
 - **Backup:** `dao.db` je v denním Edge archivu (DR drill F5 ověřen 2026-09-14).
 
@@ -167,11 +170,16 @@ curl -s -o /dev/null -w '%{http_code}' https://app.zionterranova.com/dao   # = 2
 ## 7. Známé limity (stávající stav)
 
 1. **Guardians registry není implementován** — `/api/guardians/stats` = 501 stub; guardian adresy žijí jen v configu.
-2. **L5/L6 proposal bridge** — `dao_client.rs` ve free-world/issobella ukazuje defaultně na port 8080 (pool, ne DAO) → submit-to-dao flow je nesestavený.
-3. **On-chain hlasování** přes `zion:vote:` mema umí scanner, ale UI konstrukci takové tx nenabízí.
-4. **Desktop `DaoPanel`** má vlastní stale mapping.
-5. **Konfigurovatelnost guardianů/parametrů** je částečná — multisig threshold a sada guardianů jsou v configu, ale rotace nemá governance flow.
-6. **Žádná notifikace** při změně stavu návrhu (tally/timelock/execute) — jen polling.
+2. **Admin unlock visibility** — produkční Edge L1 node zatím nepodporuje `getAdminUnlocks` (metoda je implementovaná, ale na Edge nenasazená); DAO API ji čte best-effort a fail-closed reportuje `admin_unlock_known=false` / `spendable=false`.
+3. **Approval records ≠ execution** — `treasury_sigs` záznamy koordinují souhlasy guardianů, ale nevytvářejí ani nevysílají L1 transakci; `submit` dnes ani nekontroluje, že navázaný návrh je Passed. Skutečný spend vyžaduje navíc blok 144 000 + admin unlock.
+4. **Nezapojené moduly** — `consent.rs`, `cross_layer.rs` a co-admin registry jsou zkompilované typy/moduly, ale **nejsou zapojené do runtime/API** (žádné endpointy, žádný executor path); produkční co-admin registry nemá členy.
+5. **Runtime chains** — v multichain runtime jsou na Edge enabled pouze `zion-l1` a `base`; ostatní řetězy v UI jsou „Planned".
+6. **Hiran není nasazen** — žádná AI analýza/draft cesta v produkci; Hiran má 0 hlasů a 0 podpisových klíčů, návrhy podává lidský sponsor.
+7. **L5/L6 proposal bridge** — `dao_client.rs` ve free-world/issobella cílí na port 8456, ale produkční submit flow stále vyžaduje nakonfigurovaný operator klíč/proposer/balance a nebyl end-to-end validován pro disbursement.
+8. **On-chain hlasování** přes `zion:vote:` mema umí scanner, ale UI konstrukci takové tx nenabízí.
+9. **Desktop `DaoPanel`** má vlastní stale mapping.
+10. **Konfigurovatelnost guardianů/parametrů** je částečná — multisig threshold a sada guardianů jsou v configu, ale rotace nemá governance flow.
+11. **Žádná notifikace** při změně stavu návrhu (tally/timelock/execute) — jen polling.
 
 ---
 
@@ -186,7 +194,7 @@ Cílový stav: DAO je plně obsluhované z UI (web → mobile → desktop), life
 | Proposal detail stránka `/dao/[id]` | nový route | plný popis, timeline (voting→timelock→exec), voter tabulka, odhad kvóra progress bar (`total_votes / quorum_target`) |
 | Kvórum progress na kartě | `ProposalCard.tsx` | „x % of 15% quorum" — data už jsou ve stats |
 | Notifikace/refresh po vote+create | `page.tsx` | už se volá `loadDAOData()`; doplnit toast místo `alert()` |
-| Treasury op detail + sign flow pro guardiany | `page.tsx` + nový `TreasuryOpCard` | sign je mutace přes ZIS — jen pro guardian adresy z configu (zobrazit whitelist) |
+| Kryptografický treasury sign flow pro guardiany | `api.rs` + `page.tsx` | future: reálná guardian autorizace/podpis a L1 broadcast — současné approval identity v `treasury_sigs` nejsou kryptografické podpisy |
 | Mobile DAO screen sync | `DAOService.js` + `DAOScreen.js` | mapovat nová pole (status/is_voting_open/flowers→ZION); read-only zatím OK |
 | Desktop `DaoPanel` sync | `ZION_OS/desktop` | stejný mapping jako web |
 
@@ -206,7 +214,7 @@ Cílový stav: DAO je plně obsluhované z UI (web → mobile → desktop), life
 
 | Úkol | Poznámka |
 |---|---|
-| Hiranyagarbha → DAO návrhy | L3 agent při detekci incidentu vytvoří `Emergency`/`Parameter` návrh přes dedikovaný agent sub-účet (ZIS Agent Keyring, capped budget) — vždy s human approval |
+| Hiran → DAO drafty | Hiran připraví `Emergency`/`Parameter` draft návrhu; lidský sponsor ho přezkoumá a podá. Hiran nikdy autonomně nepublikuje, nehlasuje a nepodepisuje |
 | ZK Dharma proofs | hlas/reputace ověřitelné bez odhalení zůstatku — napojit na ZIS proof endpointy |
 | Notifikační pipeline | DAO event → notification service (Prisma `Notifications` už je ve shared schématu) → e-mail/push/in-app |
 | Guardian rotace přes governance | `Parameter`/`Emergency` typ pro add/remove guardian → multisig re-key flow |
@@ -214,6 +222,6 @@ Cílový stav: DAO je plně obsluhované z UI (web → mobile → desktop), life
 ### Implementační poznámky
 
 - Nové mainnet-track změny **vždy do `V31/`**, nikdy do `V3/`.
-- Každá mutace musí respektovat: ZIS session **nebo** `X-DAO-Key`; client-supplied identity/weight se u session cesty ignoruje (backend resolvuje z L1 snapshot).
+- Mutace respektují rozdělení: create proposal a vote přijímají ZIS session **nebo** `X-DAO-Key`; tally, proposal execute, cancel a všechny treasury mutace vyžadují `X-DAO-Key`; client-supplied identity/weight se u session cesty ignoruje (backend resolvuje z L1 snapshot).
 - Flowers jsou u64 — ve frontendu držet jako string/BigInt-safe, zobrazovat přes `/1e6` helper.
 - Public copy pravidla z `website-v2.9/AGENTS.md` platí i pro DAO UI (žádné interní porty/názvy služeb v textech).

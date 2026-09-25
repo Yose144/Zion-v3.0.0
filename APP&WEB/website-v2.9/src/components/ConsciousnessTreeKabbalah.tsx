@@ -17,7 +17,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     color: '#fbbf24',
     gradient: 'from-zion-gold via-zion-gold to-zion-gold',
     daoCircle: 'Guardians Council',
-    description: 'Maitreya\'s Realm. Absolutní jednota. Guardians Council a dlouhodobé stewardství. 10× REWARDS!',
+    description: 'Absolutní jednota. Guardians Council archetyp a dlouhodobé stewardství.',
     icon: Crown,
     guardianCount: 0, // Will be updated from real data
   },
@@ -33,7 +33,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     color: '#8b5cf6',
     gradient: 'from-zion-purple via-zion-purple to-zion-purple',
     daoCircle: 'Guardians Council',
-    description: 'Beyond Duality. Governance voting power. Stewardship role.',
+    description: 'Beyond Duality. Symbol of stewardship.',
     icon: Eye,
     guardianCount: 0,
   },
@@ -49,7 +49,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     color: '#8b5cf6',
     gradient: 'from-zion-purple via-zion-purple to-zion-purple',
     daoCircle: 'Guardians Council',
-    description: 'Cosmic Wisdom. Council alignment and DAO guardianship.',
+    description: 'Cosmic Wisdom. Council symbolism.',
     icon: Sparkles,
     guardianCount: 0,
   },
@@ -98,7 +98,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     color: '#ec4899',
     gradient: 'from-zion-purple via-zion-purple to-zion-purple',
     daoCircle: 'Builders Circle',
-    description: 'Governance access. Protection of the realm.',
+    description: 'Inner strength. Protection of the realm.',
     icon: Sword,
     guardianCount: 0,
   },
@@ -231,8 +231,8 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
             <Shield className="w-5 h-5 text-zion-gold" />
             <span className="text-xs uppercase tracking-wider text-gray-400">Guardians</span>
           </div>
-          <div className="text-4xl font-bold text-zion-gold">{guardianData?.total144k || 0}</div>
-          <div className="text-sm text-gray-400">of 144,000 Chosen</div>
+          <div className="text-4xl font-bold text-zion-gold">{guardianData ? guardianData.total144k : '—'}</div>
+          <div className="text-sm text-gray-400">symbolic goal · registry pending</div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-zion-purple/10 to-black/80 p-6 text-center backdrop-blur-xl">
           <div className="flex items-center justify-center gap-2 mb-2">
@@ -245,10 +245,10 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
         <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-zion-cyan/10 to-black/80 p-6 text-center backdrop-blur-xl">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Crown className="w-5 h-5 text-zion-cyan" />
-            <span className="text-xs uppercase tracking-wider text-gray-400">Max Power</span>
+            <span className="text-xs uppercase tracking-wider text-gray-400">Principle</span>
           </div>
-          <div className="text-4xl font-bold text-zion-cyan">10× Max</div>
-          <div className="text-sm text-gray-400">Reward Multiplier</div>
+          <div className="text-4xl font-bold text-zion-cyan">Equal dignity</div>
+          <div className="text-sm text-gray-400">No authority multiplier</div>
         </div>
       </div>
 
@@ -392,7 +392,7 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
                   fill={sephira.color}
                   fontWeight="600"
                 >
-                  CL{Math.floor(sephira.cl)} · {sephira.multiplier}×
+                  CL{Math.floor(sephira.cl)} · Symbolic
                 </text>
 
                 {/* Guardian Count */}
@@ -439,12 +439,12 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
                         <div className="font-semibold text-white">CL{Math.floor(s.cl)}</div>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
-                        <div className="text-xs text-gray-400 mb-1">Multiplier</div>
-                        <div className="font-semibold text-zion-gold">{s.multiplier}×</div>
+                        <div className="text-xs text-gray-400 mb-1">Governance power</div>
+                        <div className="font-semibold text-zion-gold">None</div>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
-                        <div className="text-xs text-gray-400 mb-1">XP Required</div>
-                        <div className="font-semibold text-zion-purple">{s.xpThreshold ? s.xpThreshold.toLocaleString() : '—'}</div>
+                        <div className="text-xs text-gray-400 mb-1">Status</div>
+                        <div className="font-semibold text-zion-purple">Cultural map</div>
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
                         <div className="text-xs text-gray-400 mb-1">Guardians</div>
