@@ -27,6 +27,10 @@ pub struct V3ZionJob {
     pub header_hex: String,
     pub height: u64,
     pub stream_weights: String,
+    /// When the read loop received this job. Used to bound share
+    /// submission to the advertised job TTL — the pool keeps recent
+    /// jobs around, so a superseded job_id is still accepted.
+    pub received_at: std::time::Instant,
 }
 
 /// A complete job from the pool — ZION + optional GPU/CPU AuxPoW streams.
@@ -237,6 +241,7 @@ impl V3PoolClient {
                                         header_hex,
                                         height,
                                         stream_weights,
+                                        received_at: std::time::Instant::now(),
                                     },
                                     gpu_external: external_stream,
                                     cpu_external: external_stream_cpu,

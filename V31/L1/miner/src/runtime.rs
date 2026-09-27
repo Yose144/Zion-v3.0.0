@@ -41,6 +41,15 @@ use zion_core::V3DifficultyTarget as DifficultyTarget;
 use crate::gpu::GpuMiner;
 use zion_core::v3_compat::{DifficultyTarget as V3DiffTarget, MiningHeader};
 
+/// Shares mined for a job older than the protocol TTL are skipped.
+/// The pool keeps ~256 recent jobs and validates a share against the
+/// job entry it was mined for, so an older job_id is still accepted —
+/// only genuinely stale work is dropped. Also bounds the stream-1 job
+/// feed: a bundle that ages past this without a refresh means the
+/// session silently stopped delivering and the miner must reconnect.
+#[cfg(feature = "auxpow")]
+const ZION_JOB_MAX_AGE: Duration = Duration::from_secs(60);
+
 /// Parallel CPU nonce search for ZION (Ekam Deeksha).
 ///
 /// Splits the nonce range across `threads` rayon workers. Each worker
@@ -1366,6 +1375,17 @@ impl MinerRuntime {
                             // If we have a current job, mine a share with it.
                             // Otherwise, wait for the first job.
                             if let Some(bundle) = &current_bundle {
+                                // The pool broadcasts on every fingerprint
+                                // change (~seconds). A bundle older than the
+                                // advertised TTL with no refresh means the
+                                // session silently stopped delivering —
+                                // reconnect for a fresh session instead of
+                                // mining dead work into a watchdog kill.
+                                if bundle.zion.received_at.elapsed() > ZION_JOB_MAX_AGE {
+                                    return Err(MinerError::Connection(
+                                        "V3 job feed stalled".into(),
+                                    ));
+                                }
                                 if zion_enabled {
                                     // Mine ZION share with the current job
                                     this.mine_v3_zion_share(&client, &bundle.zion).await
@@ -1418,12 +1438,27 @@ impl MinerRuntime {
                                 }
                             }
 
-                            // Check if a new job has arrived (non-blocking)
+                            // Check if a new job has arrived (non-blocking).
+                            // The pool broadcasts on every fingerprint change,
+                            // including external-stream-only refreshes — reset
+                            // the nonce cursor only when the ZION work itself
+                            // changed, otherwise the same nonce range would be
+                            // rescanned every ~5s and re-find old shares.
                             if let Some(new_bundle) = client.try_next_job().await {
-                                this.zion_nonce_cursor.store(
-                                    new_bundle.zion.start_nonce,
-                                    std::sync::atomic::Ordering::Relaxed,
-                                );
+                                let same_zion_work = current_bundle
+                                    .as_ref()
+                                    .map(|b| {
+                                        b.zion.header_hex == new_bundle.zion.header_hex
+                                            && b.zion.target_hex == new_bundle.zion.target_hex
+                                            && b.zion.start_nonce == new_bundle.zion.start_nonce
+                                    })
+                                    .unwrap_or(false);
+                                if !same_zion_work {
+                                    this.zion_nonce_cursor.store(
+                                        new_bundle.zion.start_nonce,
+                                        std::sync::atomic::Ordering::Relaxed,
+                                    );
+                                }
                                 if let Some(ref ext) = new_bundle.gpu_external {
                                     ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
                                 }
@@ -1834,17 +1869,16 @@ impl MinerRuntime {
             return Ok(false);
         }
 
-        // Stale-share race: if the pool has already pushed a newer ZION job
-        // while we were searching, it has dropped this job and the share
-        // would be rejected as `unknown_job`.  Skip the submit and let the
-        // loop pick up the fresh job instead.  Compare job ids so a bundle
-        // pushed only for an AuxPoW stream change does not drop valid work.
-        if client.latest_zion_job_id() != job.job_id {
+        // Only skip work that is genuinely past the protocol TTL. The pool
+        // retains ~256 recent job entries and validates a share against the
+        // job it was mined for, so a superseded job_id is still accepted —
+        // job ids rotate with every external-stream refresh (~5s), and
+        // skipping on id alone starved the submit path into watchdog kills.
+        if job.received_at.elapsed() > ZION_JOB_MAX_AGE {
             tracing::debug!(
                 job = job.job_id,
-                latest = client.latest_zion_job_id(),
                 nonce,
-                "V3 Trinity: ZION share superseded by newer job — skipping submit"
+                "V3 Trinity: ZION share for expired job — skipping submit"
             );
             return Ok(false);
         }
