@@ -1329,19 +1329,17 @@ impl MinerRuntime {
             "V3 Trinity connected — all 3 streams through pool"
         );
 
-        // Watch channel: Stream 1 receives jobs from pool, shares the latest
-        // bundle with Stream 2 & 3. Watch always keeps the newest job, so
-        // slow streams never get lagged or stale.
-        let (job_tx, _): (watch::Sender<Option<crate::v3_pool_client::V3JobBundle>>, _) =
-            watch::channel(None);
+        // Job bundles are distributed by V3PoolClient itself via a watch
+        // channel (send_replace — never blocks). Streams 2/3 subscribe
+        // directly to the client, so a stalled Stream 1 mining call can no
+        // longer freeze the external streams' job feed.
 
-        // ── Stream 1: ZION mining (GPU deeksha) — also distributes jobs ──
-        // When stream1_enabled=false, this task only fetches and distributes
-        // jobs to Stream 2/3 without mining ZION shares.
+        // ── Stream 1: ZION mining (GPU deeksha) ──
+        // Only consumes jobs for its own mining; distribution to the other
+        // streams is handled inside V3PoolClient's read loop.
         let mut h1 = {
             let this = self.clone();
             let client = client.clone();
-            let job_tx = job_tx.clone();
             let mut shutdown = shutdown.clone();
             let zion_enabled = self.config.stream1_enabled;
             tokio::spawn(async move {
@@ -1349,10 +1347,21 @@ impl MinerRuntime {
                 // until a new job arrives. This ensures we search many nonces
                 // per job instead of just one share per job.
                 let mut current_bundle: Option<crate::v3_pool_client::V3JobBundle> = None;
+                // Fires as soon as the pool connection dies — either on the
+                // conn_closed flag or on the read loop task exiting (which
+                // drops the sender). Without this a dead session kept mining
+                // the last job inside a long spawn_blocking scan (unbounded
+                // at low hashrates) until the watchdog killed the process.
+                let mut conn_closed = client.conn_closed_receiver();
 
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
+                        _ = conn_closed.changed() => {
+                            return Err(MinerError::Connection(
+                                "V3 pool: connection closed".into(),
+                            ));
+                        }
                         result = async {
                             // If we have a current job, mine a share with it.
                             // Otherwise, wait for the first job.
@@ -1380,7 +1389,6 @@ impl MinerRuntime {
                                 if let Some(ref ext) = bundle.cpu_external {
                                     ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
                                 }
-                                let _ = job_tx.send_replace(Some(bundle.clone()));
                                 current_bundle = Some(bundle);
                                 // Mine first share with the new job (or skip if ZION disabled)
                                 if zion_enabled {
@@ -1422,7 +1430,6 @@ impl MinerRuntime {
                                 if let Some(ref ext) = new_bundle.cpu_external {
                                     ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
                                 }
-                                let _ = job_tx.send_replace(Some(new_bundle.clone()));
                                 current_bundle = Some(new_bundle);
                             }
 
@@ -1440,7 +1447,6 @@ impl MinerRuntime {
                                         if let Some(ref ext) = bundle.cpu_external {
                                             ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
                                         }
-                                        let _ = job_tx.send_replace(Some(bundle.clone()));
                                         current_bundle = Some(bundle);
                                     }
                                     Err(e) => {
@@ -1460,7 +1466,7 @@ impl MinerRuntime {
         let mut h2 = if self.config.stream2_enabled {
             let this = self.clone();
             let client = client.clone();
-            let mut job_rx = job_tx.subscribe();
+            let mut job_rx = client.subscribe_jobs();
             let mut shutdown = shutdown.clone();
             let stream2_enabled = self.config.stream2_enabled;
             tokio::spawn(async move {
@@ -1538,10 +1544,17 @@ impl MinerRuntime {
         };
 
         // ── Stream 3: CPU AuxPoW (VRSC) ──
+        // Wall-clock staleness guard: upstream Verus pools rotate jobs every
+        // few seconds and the protocol advertises job_ttl=60s, so a
+        // cpu_external job_id older than that is dead weight — every submit
+        // would come back stale/"job not found". If the job feed freezes
+        // (hung distributor, stalled socket, upstream silence), idle instead
+        // of hammering a dead job.
+        const EXT_CPU_JOB_MAX_AGE: Duration = Duration::from_secs(60);
         let mut h3 = if self.config.stream3_enabled {
             let this = self.clone();
             let client = client.clone();
-            let mut job_rx = job_tx.subscribe();
+            let mut job_rx = client.subscribe_jobs();
             let mut shutdown = shutdown.clone();
             let stream3_enabled = self.config.stream3_enabled;
             tokio::spawn(async move {
@@ -1567,30 +1580,43 @@ impl MinerRuntime {
                 }
                 let mut bundle = bundle.unwrap();
 
+                let mut ext_job_id = bundle.cpu_external.as_ref().map(|e| e.job_id.clone());
+                let mut ext_job_since = Instant::now();
+
                 loop {
                     if *shutdown.borrow() {
                         break;
                     }
                     this.mark_active(StreamId::CpuExternal).await;
                     if let Some(ref ext) = bundle.cpu_external {
-                        match this
-                            .mine_v3_external_share(
-                                client.clone(),
-                                StreamId::CpuExternal,
-                                ext.clone(),
-                                &job_rx,
-                            )
-                            .await
-                        {
-                            Ok(true) => {}
-                            Ok(false) => {}
-                            Err(MinerError::NoAuxPoWSolution) => {}
-                            Err(e) => {
-                                warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
-                                if matches!(e, MinerError::Connection(_)) {
-                                    return Err(e);
+                        if ext_job_since.elapsed() < EXT_CPU_JOB_MAX_AGE {
+                            match this
+                                .mine_v3_external_share(
+                                    client.clone(),
+                                    StreamId::CpuExternal,
+                                    ext.clone(),
+                                    &job_rx,
+                                )
+                                .await
+                            {
+                                Ok(true) => {}
+                                Ok(false) => {}
+                                Err(MinerError::NoAuxPoWSolution) => {}
+                                Err(e) => {
+                                    warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
+                                    if matches!(e, MinerError::Connection(_)) {
+                                        return Err(e);
+                                    }
                                 }
                             }
+                        } else {
+                            ext_debug!(
+                                coin = %ext.coin,
+                                job_id = %ext.job_id,
+                                age_secs = ext_job_since.elapsed().as_secs(),
+                                "CPU ext job feed stale — idling until a fresh job arrives"
+                            );
+                            sleep(Duration::from_secs(2)).await;
                         }
                     }
                     match job_rx.has_changed() {
@@ -1599,6 +1625,12 @@ impl MinerRuntime {
                                 Some(b) => b,
                                 None => break,
                             };
+                            let new_id =
+                                bundle.cpu_external.as_ref().map(|e| e.job_id.clone());
+                            if new_id != ext_job_id {
+                                ext_job_id = new_id;
+                                ext_job_since = Instant::now();
+                            }
                         }
                         Ok(false) => {}
                         Err(_) => {
