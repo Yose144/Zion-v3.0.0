@@ -2,7 +2,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use serde_json::json;
@@ -44,7 +44,11 @@ impl PoolApi {
         self
     }
 
-    pub fn serve(&self, bind_addr: &str) -> Result<()> {
+    /// Serve HTTP requests. Each connection is handled on its own thread so a
+    /// single stalled request (slow client, contended internal lock) can never
+    /// freeze the whole API — the dashboard and Prometheus must keep working
+    /// even when one handler is stuck.
+    pub fn serve(self: Arc<Self>, bind_addr: &str) -> Result<()> {
         let listener = TcpListener::bind(bind_addr)?;
         info!("pool API listening on {bind_addr}");
 
@@ -56,14 +60,22 @@ impl PoolApi {
                     continue;
                 }
             };
-            if let Err(e) = self.handle_request(stream) {
-                error!("pool_api_handle_error={e}");
-            }
+            let api = Arc::clone(&self);
+            std::thread::spawn(move || {
+                if let Err(e) = api.handle_request(stream) {
+                    error!("pool_api_handle_error={e}");
+                }
+            });
         }
         Ok(())
     }
 
     fn handle_request(&self, mut stream: TcpStream) -> Result<()> {
+        // Bound all socket I/O so a connect-and-stall client cannot hold this
+        // handler (and its thread) forever.
+        let io_timeout = Duration::from_secs(10);
+        let _ = stream.set_read_timeout(Some(io_timeout));
+        let _ = stream.set_write_timeout(Some(io_timeout));
         let mut reader = BufReader::new(&stream);
         let mut request_line = String::new();
         if reader.read_line(&mut request_line).is_err() {
@@ -112,37 +124,33 @@ impl PoolApi {
             }
         }
         if method == "POST" && content_length > 0 {
-            let mut buf = vec![0u8; content_length];
+            // Cap body size — the API only needs small JSON payloads and an
+            // unbounded allocation here is an easy OOM footgun.
+            let mut buf = vec![0u8; content_length.min(1 << 20)];
             let _ = reader.read_exact(&mut buf);
         }
 
-        // API key authorization for /api/* and admin endpoints.
-        let (api_key, admin_key) = {
-            let pool = self.pool.lock().expect("pool lock poisoned");
-            (pool.config.api_key.clone(), pool.config.admin_key.clone())
-        };
+        // API key authorization for /api/* and admin endpoints. Only paths
+        // that actually require auth take the pool lock — /health and other
+        // public endpoints must stay reachable even when a lock is contended.
+        if path.starts_with("/admin") || path.starts_with("/api") {
+            let (api_key, admin_key) = {
+                let pool = self.pool.lock().expect("pool lock poisoned");
+                (pool.config.api_key.clone(), pool.config.admin_key.clone())
+            };
 
-        if path.starts_with("/admin") {
-            let admin_ok = admin_key.as_deref().is_some()
-                && (admin_key_header.as_deref() == admin_key.as_deref()
-                    || auth_bearer.as_deref() == admin_key.as_deref());
-            if !admin_ok {
-                let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
-                let response = format!(
-                    "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    body.len(),
-                    body
-                );
-                stream.write_all(response.as_bytes())?;
-                return Ok(());
-            }
-        } else if path.starts_with("/api") {
-            // POL-004 fix: default-deny. If no API key is configured, reject
-            // all /api/* requests rather than leaving them open.
-            let api_ok = api_key.as_deref().is_some()
-                && (api_key_header.as_deref() == api_key.as_deref()
-                    || auth_bearer.as_deref() == api_key.as_deref());
-            if !api_ok {
+            let ok = if path.starts_with("/admin") {
+                admin_key.as_deref().is_some()
+                    && (admin_key_header.as_deref() == admin_key.as_deref()
+                        || auth_bearer.as_deref() == admin_key.as_deref())
+            } else {
+                // POL-004 fix: default-deny. If no API key is configured, reject
+                // all /api/* requests rather than leaving them open.
+                api_key.as_deref().is_some()
+                    && (api_key_header.as_deref() == api_key.as_deref()
+                        || auth_bearer.as_deref() == api_key.as_deref())
+            };
+            if !ok {
                 let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
                 let response = format!(
                     "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
