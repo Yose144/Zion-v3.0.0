@@ -35,7 +35,7 @@
 - BTC swap: kompletní HTLC + `bitcoind_rpc` backend, 6/6 regtest E2E PASS — **ale `WARP_BTC_SWAP_ENABLED=0`** (safety hold od 2026-09-20, čeká externí audit + bitcoind IBD)
 
 **Chybí / plán přestřeluje:**
-- ❌ WebAuthn/Passkey — žádná závislost (`@simplewebauthn` nenalezeno), žádný biometric route
+- 🔄 WebAuthn/Passkey — **kód hotový 2026-09-28** (`APP&WEB/identity/src/routes/webauthn.ts`, model `WebAuthnCredential`, 10 testů; web: passkey login v `LoginModal`/`/login`, správa v `SecurityPanel`). **Nenasazeno:** čeká `prisma db push` na produkční Postgres + deploy ZIS/webu.
 - ❌ SUI/Aptos **chain adaptéry** — pouze signers, ne plné adaptéry
 - ❌ AMM pooly `ZION/BTC`, `ZION/USDC`, `ZION/SOL` — jen wZION/USDT existuje
 - ❌ Agent sub-accounts s budgety, Zero-Knowledge Dharma proofs
@@ -79,7 +79,8 @@
 - `dao_client.rs`, `hiran_bridge.rs` — napojení na DAO
 
 **Chybí:**
-- ❌ Quadratic voting — žádná implementace nikde
+- 🔄 Quadratic voting — **backend hotový 2026-09-28** v `V31/L5/free-world/src/quadratic.rs` + `/api/v1/rounds*` (kola draft→open→closed, Σvotes² ≤ kredity, water-filling alokace matching poolu s capem na požadovanou částku, zmrazené výsledky, 30 testů). Advisory — peníze dál jen přes DAO. Chybí web UI a napojení `voter_id` na ZIS session; nenasazeno. (Pozn.: původní „nikde" nebylo přesné — `V31/L2/dao/src/consent.rs` měl `quadratic_weight()` primitivum, ale bez volajících.)
+- 🔐 Všechny POST endpointy free-world nově vyžadují `X-API-Key` (`FREE_WORLD_API_KEY`, fail-closed 503 když není nastaven) — dřív byly bez autentizace (chránil je jen nginx allowlist).
 - ❌ Interaktivní planetary mapa, `freeworld.zionterranova.com` subdomain
 - ❌ ≥5 ověřených projektů (DB schema existuje, produkční obsah neověřen)
 
@@ -100,9 +101,9 @@
 
 | # | Podmínka | Stav | Poznámka |
 |---|---|---|---|
-| 1 | L1 100 000+ bloků bez zásahu | ❌ | height ~60.5k; 2026-09-27 4× pool wedge (opraveno) |
+| 1 | L1 100 000+ bloků bez zásahu | ❌ | height ~62k; 2026-09-21 stall 2 h 23 m, 2026-09-27 4× pool wedge (opraveno); G8 běh #1 neprošel ([report](docs/3.2/REPORTS/REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md)) |
 | 2 | Obousměrný ZION↔BTC↔ETH auto-settle + HTLC rollback | ❌ | BTC pod safety holdem; jen wZION/USDT na Base |
-| 3 | Passkey login napříč weby | ❌ | WebAuthn vůbec neexistuje v `identity/` |
+| 3 | Passkey login napříč weby | 🔄 | kód v ZIS + web hotový (2026-09-28), čeká DB push + deploy; RP ID `zionterranova.com` pokrývá všechny subdomény |
 | 4 | Maestro řídí ≥3 agenty on-chain s Dharma filtrem | ❌ | L3 nenasazeno; Dharma = keyword filter |
 | 5 | OASIS web preview <3 s + pixel streaming | ⚠️ | Three.js existuje; pixel streaming ne |
 | 6 | L5 portál + živý 5% tok + ≥5 projektů | ⚠️ | backend+page live; mapa/voting/projekty chybí |
