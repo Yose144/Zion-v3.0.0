@@ -288,6 +288,65 @@ paths:
         '200': { description: '{ valid: true, userId, ... }' }
         '401': { description: Invalid key }
 
+  /api/notifications:
+    get:
+      tags: [notifications]
+      summary: List notifications for the current user (newest first)
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: unread
+          in: query
+          description: Set to 1/true to return only unread notifications
+          schema: { type: string, enum: ['1', 'true'] }
+      responses:
+        '200': { description: '{ notifications[], total, unread, limit, offset }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/notifications/unread-count:
+    get:
+      tags: [notifications]
+      summary: Unread notification count (cheap poll for UI badge)
+      responses:
+        '200': { description: '{ count }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/notifications/{id}/read:
+    post:
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: '{ ok: true }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found }
+  /api/notifications/read-all:
+    post:
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        '200': { description: '{ ok: true, updated }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/notifications/{id}:
+    delete:
+      tags: [notifications]
+      summary: Delete a notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: '{ ok: true }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found }
+
   /api/wallet/me:
     get:
       tags: [wallet]

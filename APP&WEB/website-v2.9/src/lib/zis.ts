@@ -333,6 +333,96 @@ export async function linkAddress(body: {
   return sharedLinkAddress(body);
 }
 
+// ── Notifications (client-side through local proxy) ──────────────────
+
+const CLIENT_PROXY_BASE_NOTIFICATIONS = '/api/notifications';
+
+export interface ZisNotification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown> | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface ZisNotificationList {
+  notifications: ZisNotification[];
+  total: number;
+  unread: number;
+  limit: number;
+  offset: number;
+}
+
+/**
+ * List notifications for the current user (newest first).
+ */
+export async function getNotifications(options?: {
+  limit?: number;
+  offset?: number;
+  unread?: boolean;
+}): Promise<ZisNotificationList> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
+  if (options?.unread) params.set('unread', '1');
+  const qs = params.toString();
+  const res = await fetch(`${CLIENT_PROXY_BASE_NOTIFICATIONS}${qs ? `?${qs}` : ''}`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Notifications fetch failed: ${res.status}`);
+  return res.json();
+}
+
+/**
+ * Unread count — cheap endpoint for the nav bell badge.
+ */
+export async function getUnreadNotificationCount(): Promise<number> {
+  const res = await fetch(`${CLIENT_PROXY_BASE_NOTIFICATIONS}/unread-count`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) return 0;
+  const data = (await res.json()) as { count?: number };
+  return data.count ?? 0;
+}
+
+/**
+ * Mark a single notification read.
+ */
+export async function markNotificationRead(id: string): Promise<{ ok: boolean }> {
+  const res = await fetch(
+    `${CLIENT_PROXY_BASE_NOTIFICATIONS}/${encodeURIComponent(id)}/read`,
+    { method: 'POST', credentials: 'include' },
+  );
+  return { ok: res.ok };
+}
+
+/**
+ * Mark all notifications read.
+ */
+export async function markAllNotificationsRead(): Promise<{ ok: boolean }> {
+  const res = await fetch(`${CLIENT_PROXY_BASE_NOTIFICATIONS}/read-all`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  return { ok: res.ok };
+}
+
+/**
+ * Delete a notification.
+ */
+export async function deleteNotification(id: string): Promise<{ ok: boolean }> {
+  const res = await fetch(
+    `${CLIENT_PROXY_BASE_NOTIFICATIONS}/${encodeURIComponent(id)}`,
+    { method: 'DELETE', credentials: 'include' },
+  );
+  return { ok: res.ok };
+}
+
 // ── Server-side helper: extract cookie from NextRequest ──────────────
 
 /**
