@@ -2,7 +2,7 @@
 
 > **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
 > **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
-> **Last updated:** 2026-08-23  
+> **Last updated:** 2026-09-28  
 > **Public launch target:** postponed (TBD)  
 > **Daily summary:** [`REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md`](./REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md)
 >
@@ -55,7 +55,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G5** | XMR / RandomX path (reach pool or `disabled_reason`) | No reachable pure-RandomX pool from Edge datacenter | ✅ Complete — MoneroOcean `gulf.moneroocean.stream:10001` reachable over plain TCP; CryptonoteStratum handshake returns `rx/0` jobs; `zion-miner` CryptonoteStratum job parsing, compact target parsing, worker login, and share formatting fixed; `cargo test -p zion-miner --lib` 103 pass | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md`](./REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md) |
 | **G6** | PRL (Pearl PoUW) deferred and excluded | Must remain documented and excluded from profit switching | ✅ Documented |
 | **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ✅ Complete — 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived with real rigs unaffected, DEX quote overload 1 972 req/s 100 % 200, bridge submit overload 1 793 req/s no crash, P2P reconnect storm OK; 10-minute transaction fuzz preview passed (2 280 requests, 0 health fails); full 24h fuzz evidence complete per F2 (305 170 req, 0 health fails) | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
-| **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | 🔄 In progress — started 2026-08-23 07:00 CET; target end 2026-09-22 07:00 CET; public status UI at `https://app.zionterranova.com/g8`; monitoring tracked via dashboard `/api/g8` |
+| **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | ❌ Run #1 closed, **not passed** — window 2026-08-23 → 2026-09-22 elapsed (39 719 blocks), but chain-liveness uptime is 97.0–99.7 % (< 99.9 %); confirmed 2 h 23 m stall on 2026-09-21 (watchdog restart loop during node rebuild, fix `1e96a4599`); Prometheus/journald retention lost the first ~21 days of service evidence. `/api/g8` "completed" = clock only. Run #2 pending monitoring + restart-cliff fixes. Report: [`REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md`](./REPORTS/REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md) |
 | **G9** | External security audit (L1/L2) — planned before launch | Internal tests pass; no formal review on record | ❌ Not started — external review scheduled before public launch |
 | **G10** | L5/L6 decision — treasury, humanitarian fund, Issobella governance | Must have defined run mode or explicit post-3.2 deferral | ✅ Decision made — activate as passive read-only fund trackers + DAO proposal bridge; active on Edge as passive read-only fund trackers on `127.0.0.1:8095` (L5) and `127.0.0.1:8097` (L6); not a 3.2.0 blocker; full disbursement/UI post-3.2 (see [`L5_L6_ACTIVATION_PLAN.md`](./L5_L6_ACTIVATION_PLAN.md)) |
 | **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ✅ Complete — `public/` subtree in sync (G4 ✅); ZIS deployed on Edge and healthy; UTXO v2 hash and `submitUtxoTransaction` wired through wallet SDK, CLI and pool; Foundry test suite (43 tests pass) for wZION/ZIONBridge/ZDXToken; CLI `deploy` wraps `forge create/script/test/verify`; CLI `update now` downloads from GitHub releases API; miner TUI + Cargo features verified on Linux; H6/H7/H8 documented as post-3.2 | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G11_V3_V31_MIGRATION.md`](./REPORTS/REPORT_2026-08-22_G11_V3_V31_MIGRATION.md) |
@@ -87,7 +87,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | F3 | Chaos tests | QA/ops | ✅ Rounds 1–5 preview executed (network, process, data, resource, L2 bridge); no crashes | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F4 | 1000+ miner simulation | pool/QA | ✅ 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived; no panics | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F5 | Backup / DR drill | ops | 🔄 Partial — 2026-09-14: latest daily archive (`zion-edge-20260914_091911.tar.gz`, 150 MB) extracted and verified: `dao.db`/`node.db`/`warp.db` pass `PRAGMA integrity_check`, proposal #1 present, configs + systemd units included. Backup timer runs every ~4 h. Still pending: full off-site restore + sync to tip |
-| F6 | 30-day continuous run | ops | uptime ≥99.9%, no critical incidents | 🔄 Started 2026-08-23 07:00 CET; public status UI at `https://app.zionterranova.com/g8`; tracked via dashboard `/api/g8` |
+| F6 | 30-day continuous run | ops | uptime ≥99.9%, no critical incidents | ❌ Run #1 (2026-08-23 → 2026-09-22) not passed — see G8 and [`REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md`](./REPORTS/REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md) |
 
 ### Phase G — Release & Launch Readiness (weeks 9–10)
 
@@ -137,7 +137,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | J4 | Dashboard → ZIS | ✅ Complete — ZIS SSO cookie v `_check_auth()` + `/api/me` endpoint (2026-09-02) |
 | J5 | OASIS ↔ Marketplace artifact sync | ✅ Complete — `/api/oasis/sync` + `/api/oasis/reverse-sync` live na marketplace (3100); ověřeno 2026-09-14: `sync?type=avatars` → 200 avatars do Prisma DB |
 | J6 | Dashboard "My Ecosystem" view | ✅ Complete — `/ecosystem` page + `/api/ecosystem` na dashboardu (8766): ZIS user → linked zion-l1 adresy → L1 UTXO balances, pool mining payouts (`pool-store.db`), DAO votes (`dao.db`), marketplace counts (Postgres). Basic-auth operátoři dostanou "sign in with ZIS" (2026-09-14) |
-| J7 | Mining / DAO → shared DB | ❌ Not started |
+| J7 | Mining / DAO → shared DB | ✅ Complete — `zion-db-sync.service` on Edge (active since 2026-09-28) polls pool `/stats`+`/miners`, DAO `/api/proposals` and WARP `/transfers` every 30 s and upserts `MiningWorker`/`MiningStats`/`DaoProposal`/`BridgeTransaction` into the shared Postgres (`APP&WEB/shared/db-sync.ts`) |
 
 ---
 
