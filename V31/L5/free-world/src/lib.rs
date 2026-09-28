@@ -42,6 +42,7 @@ pub mod error;
 pub mod hiran_bridge;
 pub mod l1_scanner;
 pub mod metrics;
+pub mod quadratic;
 
 // Re-exports
 pub use config::FreeWorldConfig;

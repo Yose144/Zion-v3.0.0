@@ -68,7 +68,39 @@ impl FreeWorldDb {
             );
 
             INSERT OR IGNORE INTO fund_balance (id, total_accumulated, total_disbursed, last_block_height, updated_at)
-            VALUES (1, 0, 0, 0, datetime('now'));"
+            VALUES (1, 0, 0, 0, datetime('now'));
+
+            CREATE TABLE IF NOT EXISTS qv_rounds (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                credits_per_voter INTEGER NOT NULL,
+                matching_pool_zion INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'draft',
+                created_at TEXT NOT NULL,
+                opened_at TEXT,
+                closed_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS qv_round_grants (
+                round_id TEXT NOT NULL,
+                grant_id TEXT NOT NULL,
+                PRIMARY KEY(round_id, grant_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS qv_ballots (
+                round_id TEXT NOT NULL,
+                voter_id TEXT NOT NULL,
+                votes_json TEXT NOT NULL,
+                credits_spent INTEGER NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY(round_id, voter_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS qv_results (
+                round_id TEXT PRIMARY KEY,
+                results_json TEXT NOT NULL,
+                closed_at TEXT NOT NULL
+            );"
         )?;
         Ok(())
     }
@@ -110,6 +142,14 @@ impl FreeWorldDb {
             (status, &reviewed, notes.unwrap_or(""), id),
         )?;
         Ok(())
+    }
+
+    pub fn get_grant(&self, id: &str) -> FreeWorldResult<Option<GrantRecord>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes FROM grants WHERE id = ?1",
+        )?;
+        let row = stmt.query_row([id], row_to_grant).optional()?;
+        Ok(row)
     }
 
     // ── Projects ──
@@ -162,6 +202,246 @@ impl FreeWorldDb {
         )?;
         Ok(())
     }
+
+    // ── Quadratic voting rounds ──
+    //
+    // Status check + write always run inside ONE SQLite transaction so a
+    // ballot upsert can never interleave with a close (and close writes
+    // status + results together).
+
+    pub fn qv_create_round(
+        &mut self,
+        round: &QvRoundRecord,
+        grant_ids: &[String],
+    ) -> FreeWorldResult<()> {
+        let tx = self.conn.transaction()?;
+        tx.execute(
+            "INSERT INTO qv_rounds (id, title, credits_per_voter, matching_pool_zion, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            (
+                &round.id,
+                &round.title,
+                round.credits_per_voter,
+                round.matching_pool_zion,
+                &round.status,
+                &round.created_at,
+            ),
+        )?;
+        for gid in grant_ids {
+            tx.execute(
+                "INSERT INTO qv_round_grants (round_id, grant_id) VALUES (?1, ?2)",
+                (&round.id, gid),
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn qv_get_round(&self, id: &str) -> FreeWorldResult<Option<QvRoundRecord>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, title, credits_per_voter, matching_pool_zion, status, created_at, opened_at, closed_at
+             FROM qv_rounds WHERE id = ?1",
+        )?;
+        let row = stmt.query_row([id], row_to_qv_round).optional()?;
+        Ok(row)
+    }
+
+    /// All rounds with their ballot counts, newest first.
+    pub fn qv_list_rounds(&self) -> FreeWorldResult<Vec<(QvRoundRecord, u64)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT r.id, r.title, r.credits_per_voter, r.matching_pool_zion, r.status,
+                    r.created_at, r.opened_at, r.closed_at,
+                    (SELECT COUNT(*) FROM qv_ballots b WHERE b.round_id = r.id) AS ballot_count
+             FROM qv_rounds r ORDER BY r.created_at DESC",
+        )?;
+        let rows = stmt.query_map([], |row| Ok((row_to_qv_round(row)?, row.get::<_, u64>(8)?)))?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    /// Grant ids participating in a round (sorted).
+    pub fn qv_round_grant_ids(&self, round_id: &str) -> FreeWorldResult<Vec<String>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT grant_id FROM qv_round_grants WHERE round_id = ?1 ORDER BY grant_id",
+        )?;
+        let rows = stmt.query_map([round_id], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    pub fn qv_ballot_count(&self, round_id: &str) -> FreeWorldResult<u64> {
+        let count = self.conn.query_row(
+            "SELECT COUNT(*) FROM qv_ballots WHERE round_id = ?1",
+            [round_id],
+            |row| row.get::<_, u64>(0),
+        )?;
+        Ok(count)
+    }
+
+    /// All stored ballots for a round (voter_id, votes_json, credits_spent).
+    /// Callers must not expose voter_ids publicly.
+    pub fn qv_ballots(&self, round_id: &str) -> FreeWorldResult<Vec<QvBallotRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT voter_id, votes_json, credits_spent FROM qv_ballots
+             WHERE round_id = ?1 ORDER BY voter_id",
+        )?;
+        let rows = stmt.query_map([round_id], |row| {
+            Ok(QvBallotRow {
+                voter_id: row.get(0)?,
+                votes_json: row.get(1)?,
+                credits_spent: row.get(2)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    /// Transition a round draft → open. The status check and the write
+    /// happen inside one transaction.
+    pub fn qv_open_round(&mut self, id: &str, opened_at: &str) -> FreeWorldResult<QvTransition> {
+        let tx = self.conn.transaction()?;
+        let outcome = match qv_round_status(&tx, id)? {
+            None => QvTransition::NotFound,
+            Some(status) if status == "draft" => {
+                tx.execute(
+                    "UPDATE qv_rounds SET status = 'open', opened_at = ?1 WHERE id = ?2 AND status = 'draft'",
+                    (opened_at, id),
+                )?;
+                QvTransition::Done
+            }
+            Some(_) => QvTransition::Conflict,
+        };
+        tx.commit()?;
+        Ok(outcome)
+    }
+
+    /// Insert or replace a voter's ballot iff the round is currently open.
+    /// Status check + upsert happen inside one transaction.
+    pub fn qv_upsert_ballot(
+        &mut self,
+        round_id: &str,
+        voter_id: &str,
+        votes_json: &str,
+        credits_spent: u64,
+        updated_at: &str,
+    ) -> FreeWorldResult<QvBallotStore> {
+        let tx = self.conn.transaction()?;
+        let outcome = match qv_round_status(&tx, round_id)? {
+            None => QvBallotStore::NotFound,
+            Some(status) if status == "open" => {
+                tx.execute(
+                    "INSERT INTO qv_ballots (round_id, voter_id, votes_json, credits_spent, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5)
+                     ON CONFLICT(round_id, voter_id) DO UPDATE SET
+                        votes_json = excluded.votes_json,
+                        credits_spent = excluded.credits_spent,
+                        updated_at = excluded.updated_at",
+                    (round_id, voter_id, votes_json, credits_spent, updated_at),
+                )?;
+                QvBallotStore::Stored
+            }
+            Some(_) => QvBallotStore::NotOpen,
+        };
+        tx.commit()?;
+        Ok(outcome)
+    }
+
+    /// Transition a round open → closed and persist the frozen results in
+    /// the same transaction.
+    pub fn qv_close_round(
+        &mut self,
+        round_id: &str,
+        results_json: &str,
+        closed_at: &str,
+    ) -> FreeWorldResult<QvTransition> {
+        let tx = self.conn.transaction()?;
+        let outcome = match qv_round_status(&tx, round_id)? {
+            None => QvTransition::NotFound,
+            Some(status) if status == "open" => {
+                tx.execute(
+                    "UPDATE qv_rounds SET status = 'closed', closed_at = ?1 WHERE id = ?2 AND status = 'open'",
+                    (closed_at, round_id),
+                )?;
+                tx.execute(
+                    "INSERT INTO qv_results (round_id, results_json, closed_at) VALUES (?1, ?2, ?3)",
+                    (round_id, results_json, closed_at),
+                )?;
+                QvTransition::Done
+            }
+            Some(_) => QvTransition::Conflict,
+        };
+        tx.commit()?;
+        Ok(outcome)
+    }
+
+    /// Frozen results JSON for a closed round.
+    pub fn qv_results(&self, round_id: &str) -> FreeWorldResult<Option<String>> {
+        let row = self
+            .conn
+            .query_row(
+                "SELECT results_json FROM qv_results WHERE round_id = ?1",
+                [round_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?;
+        Ok(row)
+    }
+}
+
+fn qv_round_status(conn: &Connection, id: &str) -> FreeWorldResult<Option<String>> {
+    let status = conn
+        .query_row("SELECT status FROM qv_rounds WHERE id = ?1", [id], |row| {
+            row.get::<_, String>(0)
+        })
+        .optional()?;
+    Ok(status)
+}
+
+fn row_to_qv_round(row: &rusqlite::Row) -> Result<QvRoundRecord, rusqlite::Error> {
+    Ok(QvRoundRecord {
+        id: row.get(0)?,
+        title: row.get(1)?,
+        credits_per_voter: row.get(2)?,
+        matching_pool_zion: row.get(3)?,
+        status: row.get(4)?,
+        created_at: row.get(5)?,
+        opened_at: row.get(6)?,
+        closed_at: row.get(7)?,
+    })
+}
+
+/// A quadratic voting round. Status: draft | open | closed.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QvRoundRecord {
+    pub id: String,
+    pub title: String,
+    pub credits_per_voter: u64,
+    pub matching_pool_zion: u64,
+    pub status: String,
+    pub created_at: String,
+    pub opened_at: Option<String>,
+    pub closed_at: Option<String>,
+}
+
+/// A stored ballot row (internal — never serialize voter_id publicly).
+#[derive(Debug, Clone)]
+pub struct QvBallotRow {
+    pub voter_id: String,
+    pub votes_json: String,
+    pub credits_spent: u64,
+}
+
+/// Result of a guarded status transition (open / close).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QvTransition {
+    Done,
+    NotFound,
+    Conflict,
+}
+
+/// Result of an atomic ballot upsert.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QvBallotStore {
+    Stored,
+    NotOpen,
+    NotFound,
 }
 
 fn row_to_grant(row: &rusqlite::Row) -> Result<GrantRecord, rusqlite::Error> {
