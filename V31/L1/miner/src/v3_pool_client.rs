@@ -27,6 +27,10 @@ pub struct V3ZionJob {
     pub header_hex: String,
     pub height: u64,
     pub stream_weights: String,
+    /// When the read loop received this job. Used to bound share
+    /// submission to the advertised job TTL — the pool keeps recent
+    /// jobs around, so a superseded job_id is still accepted.
+    pub received_at: std::time::Instant,
 }
 
 /// A complete job from the pool — ZION + optional GPU/CPU AuxPoW streams.
@@ -65,8 +69,13 @@ pub struct V3PoolClient {
     pub payout_address: String,
     // Writer for sending messages to the pool
     writer: Arc<Mutex<tokio::io::WriteHalf<TcpStream>>>,
-    // Receiver for job bundles (from the read loop)
-    job_rx: Mutex<mpsc::Receiver<V3JobBundle>>,
+    // Job bundles are published by the read loop into a watch channel.
+    // `send_replace` never blocks, so a stalled mining stream can neither
+    // wedge the read loop on a full queue nor starve the other streams of
+    // fresh jobs. `next_job`/`try_next_job` share this receiver; external
+    // streams subscribe via `subscribe_jobs()`.
+    job_rx: Mutex<watch::Receiver<Option<V3JobBundle>>>,
+    job_tx: watch::Sender<Option<V3JobBundle>>,
     // Pending share result oneshots (keyed by a monotonic ID)
     // We use a simpler approach: the read loop dispatches Result/ExternalResult
     // to dedicated channels.
@@ -83,12 +92,32 @@ pub struct V3PoolClient {
     latest_zion_job_id: std::sync::Arc<std::sync::atomic::AtomicU64>,
 }
 
+/// Max time a single write to the pool socket may take. Without a bound, a
+/// stalled TCP send direction wedges the shared writer mutex and freezes
+/// every stream's submission path until the connection dies on its own.
+const WRITE_TIMEOUT: Duration = Duration::from_secs(10);
+
 impl V3PoolClient {
     fn ensure_connected(&self) -> Result<()> {
         if *self.conn_closed.borrow() {
             anyhow::bail!("V3 pool: connection closed");
         }
         Ok(())
+    }
+
+    /// True once the read loop has observed the connection closing
+    /// (EOF, read error, or a Bye message from the pool).
+    pub fn is_closed(&self) -> bool {
+        *self.conn_closed.borrow()
+    }
+
+    /// A receiver that signals when the connection dies — either when the
+    /// read loop marks it closed or when the read loop task exits and drops
+    /// the sender. Stream tasks use it to abort mining immediately instead of
+    /// finishing a scan on a dead connection (which previously looked like a
+    /// mining stall and ended in a watchdog kill).
+    pub fn conn_closed_receiver(&self) -> watch::Receiver<bool> {
+        self.conn_closed.clone()
     }
     /// Connect to the pool and perform the V3 handshake (Hello → Welcome).
     pub async fn connect(
@@ -118,8 +147,12 @@ impl V3PoolClient {
         let hello_line = encode_message(&hello)?;
         {
             let mut w = writer.lock().await;
-            w.write_all(hello_line.as_bytes()).await?;
-            w.flush().await?;
+            tokio::time::timeout(WRITE_TIMEOUT, async {
+                w.write_all(hello_line.as_bytes()).await?;
+                w.flush().await
+            })
+            .await
+            .context("V3 pool: hello write timeout")??;
         }
 
         // Read Welcome
@@ -145,8 +178,14 @@ impl V3PoolClient {
             }
         }
 
-        // Channels for dispatching messages from the read loop
-        let (job_tx, job_rx) = mpsc::channel::<V3JobBundle>(64);
+        // Channels for dispatching messages from the read loop.
+        // Jobs use a watch channel: consumers only ever need the newest
+        // bundle and the read loop must never block on a full queue
+        // (previously an mpsc(64) drained only by Stream 1 — when that
+        // stream hung, the queue filled, the read loop stalled, and the
+        // external streams kept mining a frozen job -> stale-share storm).
+        let (job_tx, job_rx) = watch::channel::<Option<V3JobBundle>>(None);
+        let job_tx_loop = job_tx.clone();
         let (zion_result_tx, zion_result_rx) = mpsc::channel::<V3ShareResult>(16);
         // Per-coin channels: VRSC results and ZANO results are dispatched
         // separately to prevent result mismatch when shares are submitted
@@ -202,17 +241,14 @@ impl V3PoolClient {
                                         header_hex,
                                         height,
                                         stream_weights,
+                                        received_at: std::time::Instant::now(),
                                     },
                                     gpu_external: external_stream,
                                     cpu_external: external_stream_cpu,
                                 };
                                 latest_zion_in_loop
                                     .store(job_id, std::sync::atomic::Ordering::Relaxed);
-                                if job_tx.send(bundle).await.is_err() {
-                                    warn!("V3 read loop: job channel closed, exiting");
-                                    let _ = conn_closed_tx.send(true);
-                                    break;
-                                }
+                                let _ = job_tx_loop.send_replace(Some(bundle));
                             }
                             Ok(PoolMessage::SetDifficulty {
                                 difficulty,
@@ -230,14 +266,20 @@ impl V3PoolClient {
                                 block_found,
                                 block_height,
                             }) => {
-                                let _ = zion_result_tx
-                                    .send(V3ShareResult {
+                                // try_send — never block the read loop on
+                                // share-result backpressure; a waiting submit
+                                // simply hits its own timeout instead.
+                                if zion_result_tx
+                                    .try_send(V3ShareResult {
                                         accepted,
                                         status,
                                         block_found,
                                         block_height,
                                     })
-                                    .await;
+                                    .is_err()
+                                {
+                                    warn!("V3 read loop: zion result channel full, dropping result");
+                                }
                             }
                             Ok(PoolMessage::ExternalResult {
                                 accepted,
@@ -253,11 +295,14 @@ impl V3PoolClient {
                                 // from the pool are uppercase tickers
                                 // ("VRSC", "ZANO").  Match case-insensitively.
                                 let coin_upper = coin.to_uppercase();
-                                if coin_upper == "VRSC" {
-                                    let _ = vrsc_result_tx.send(result).await;
+                                let send_result = if coin_upper == "VRSC" {
+                                    vrsc_result_tx.try_send(result)
                                 } else {
                                     // ZANO and any other GPU-external coin
-                                    let _ = zano_result_tx.send(result).await;
+                                    zano_result_tx.try_send(result)
+                                };
+                                if send_result.is_err() {
+                                    warn!("V3 read loop: external result channel full, dropping result");
                                 }
                             }
                             Ok(PoolMessage::Cancel { job_id, reason }) => {
@@ -309,6 +354,7 @@ impl V3PoolClient {
             payout_address: payout_address.to_string(),
             writer,
             job_rx: Mutex::new(job_rx),
+            job_tx,
             zion_result_rx: Mutex::new(zion_result_rx),
             vrsc_result_rx: Mutex::new(vrsc_result_rx),
             zano_result_rx: Mutex::new(zano_result_rx),
@@ -318,12 +364,38 @@ impl V3PoolClient {
     }
 
     /// Wait for the next job bundle from the pool (ZION + AuxPoW streams).
+    ///
+    /// Returns the newest unseen bundle; intermediate bundles published while
+    /// the caller was busy are coalesced (only the latest is ever relevant).
     pub async fn next_job(&self, timeout: Duration) -> Result<V3JobBundle> {
         self.ensure_connected()?;
         let mut rx = self.job_rx.lock().await;
-        match tokio::time::timeout(timeout, rx.recv()).await {
-            Ok(Some(bundle)) => Ok(bundle),
-            Ok(None) => anyhow::bail!("V3 pool: job channel closed"),
+        // Abort the wait as soon as the connection dies — previously a dead
+        // session kept waiting here for the full timeout even though no job
+        // could ever arrive, hiding real disconnects behind a misleading
+        // "job timeout" error and stalling reconnects by up to 60s.
+        let mut conn_closed = self.conn_closed.clone();
+        let wait = async {
+            loop {
+                if rx.has_changed().unwrap_or(false) {
+                    if let Some(bundle) = rx.borrow_and_update().clone() {
+                        return Ok(bundle);
+                    }
+                }
+                tokio::select! {
+                    changed = rx.changed() => {
+                        if changed.is_err() {
+                            anyhow::bail!("V3 pool: job channel closed");
+                        }
+                    }
+                    _ = conn_closed.changed() => {
+                        anyhow::bail!("V3 pool: connection closed");
+                    }
+                }
+            }
+        };
+        match tokio::time::timeout(timeout, wait).await {
+            Ok(res) => res,
             Err(_) => anyhow::bail!("V3 pool: job timeout after {:?}", timeout),
         }
     }
@@ -332,7 +404,17 @@ impl V3PoolClient {
     /// is available, `None` if no new job has arrived since the last call.
     pub async fn try_next_job(&self) -> Option<V3JobBundle> {
         let mut rx = self.job_rx.lock().await;
-        rx.try_recv().ok()
+        if rx.has_changed().unwrap_or(false) {
+            rx.borrow_and_update().clone()
+        } else {
+            None
+        }
+    }
+
+    /// Subscribe to the job bundle stream. External mining streams subscribe
+    /// directly so their job feed is independent of Stream 1's mining loop.
+    pub fn subscribe_jobs(&self) -> watch::Receiver<Option<V3JobBundle>> {
+        self.job_tx.subscribe()
     }
 
     /// The most recent ZION job_id received from the pool.
@@ -345,6 +427,18 @@ impl V3PoolClient {
     pub fn latest_zion_job_id(&self) -> u64 {
         self.latest_zion_job_id
             .load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// Write one JSON-line message to the pool socket with a hard timeout.
+    async fn write_line(&self, line: &str) -> Result<()> {
+        let mut w = self.writer.lock().await;
+        tokio::time::timeout(WRITE_TIMEOUT, async {
+            w.write_all(line.as_bytes()).await?;
+            w.flush().await
+        })
+        .await
+        .context("V3 pool: write timeout")??;
+        Ok(())
     }
 
     /// Submit a ZION share to the pool.
@@ -369,11 +463,7 @@ impl V3PoolClient {
             mix_hash_hex: mix_hash_hex.map(|s| s.to_string()),
         };
         let line = encode_message(&msg)?;
-        {
-            let mut w = self.writer.lock().await;
-            w.write_all(line.as_bytes()).await?;
-            w.flush().await?;
-        }
+        self.write_line(&line).await?;
         // Wait for Result
         let mut rx = self.zion_result_rx.lock().await;
         match tokio::time::timeout(Duration::from_secs(30), rx.recv()).await {
@@ -415,11 +505,7 @@ impl V3PoolClient {
             ntime_hex: ntime_hex.to_string(),
         };
         let line = encode_message(&msg)?;
-        {
-            let mut w = self.writer.lock().await;
-            w.write_all(line.as_bytes()).await?;
-            w.flush().await?;
-        }
+        self.write_line(&line).await?;
         // Wait for ExternalResult on the per-coin channel.
         // First drain any stale results left over from previous timed-out
         // submissions — without this, a late-arriving result from a previous
@@ -463,10 +549,7 @@ impl V3PoolClient {
             cpu_profit_usd_day,
         };
         let line = encode_message(&msg)?;
-        let mut w = self.writer.lock().await;
-        w.write_all(line.as_bytes()).await?;
-        w.flush().await?;
-        Ok(())
+        self.write_line(&line).await
     }
 
     /// Send a NoSolution message (job expired without finding a share).
@@ -480,10 +563,7 @@ impl V3PoolClient {
             elapsed_ms: None,
         };
         let line = encode_message(&msg)?;
-        let mut w = self.writer.lock().await;
-        w.write_all(line.as_bytes()).await?;
-        w.flush().await?;
-        Ok(())
+        self.write_line(&line).await
     }
 }
 
@@ -494,5 +574,181 @@ impl std::fmt::Debug for V3PoolClient {
             .field("miner_id", &self.miner_id)
             .field("worker_name", &self.worker_name)
             .finish_non_exhaustive()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pool_message::ExternalStreamJob;
+    use tokio::net::TcpListener;
+
+    fn job_line(id: u64, ext_job_id: &str) -> String {
+        encode_message(&PoolMessage::Job {
+            job_id: id,
+            algorithm: "ekam_deeksha".into(),
+            start_nonce: 0,
+            nonce_count: 1_000_000,
+            target_hex: "ff".repeat(64),
+            header_hex: "00".repeat(64),
+            height: id,
+            stream_weights: String::new(),
+            external_stream: None,
+            external_stream_cpu: Some(ExternalStreamJob {
+                coin: "VRSC".into(),
+                algorithm: "verushash".into(),
+                job_id: ext_job_id.into(),
+                header_hex: "11".repeat(64),
+                target_hex: "ff".repeat(64),
+                height: id,
+                extranonce1_hex: "aabbccdd".into(),
+                protocol: String::new(),
+                seed_hash_hex: String::new(),
+                timestamp: 0,
+                ntime_hex: "00000000".into(),
+            }),
+        })
+        .unwrap()
+    }
+
+    /// Spawns a mock V3 pool on loopback. Returns the address the client
+    /// should dial; `server_fn` runs after the Hello/Welcome handshake and
+    /// receives the socket halves for the rest of the scripted exchange.
+    async fn spawn_mock_pool<F, Fut>(server_fn: F) -> String
+    where
+        F: FnOnce(
+                tokio::io::Lines<BufReader<tokio::io::ReadHalf<TcpStream>>>,
+                tokio::io::WriteHalf<TcpStream>,
+            ) -> Fut
+            + Send
+            + 'static,
+        Fut: std::future::Future<Output = ()> + Send,
+    {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let (reader, mut writer) = tokio::io::split(stream);
+            let mut lines = BufReader::new(reader).lines();
+            // Consume Hello, reply Welcome.
+            let _hello = lines.next_line().await.unwrap().unwrap();
+            let welcome = encode_message(&PoolMessage::Welcome {
+                protocol_version: "zion-v3-stratum/0.2".into(),
+                algorithm: "ekam_deeksha".into(),
+                job_ttl_ms: 60_000,
+            })
+            .unwrap();
+            writer.write_all(welcome.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+            server_fn(lines, writer).await;
+        });
+        addr
+    }
+
+    /// Regression test for the stale-share storm: the read loop must keep
+    /// delivering jobs and results even when no consumer drains them.
+    /// With the old mpsc(64) queue, a wedged Stream 1 filled the queue and
+    /// the read loop blocked on `send()`, freezing the whole connection.
+    #[tokio::test]
+    async fn read_loop_never_blocks_on_job_delivery() {
+        let addr = spawn_mock_pool(|_lines, mut writer| async move {
+            // Blast 200 job bundles — far beyond the old 64-deep queue —
+            // with nobody consuming them.
+            for i in 1..=200u64 {
+                let line = job_line(i, &format!("ext{i}"));
+                writer.write_all(line.as_bytes()).await.unwrap();
+            }
+            // Then respond to whatever the client sends next.
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            let result = encode_message(&PoolMessage::Result {
+                accepted: true,
+                status: "accepted".into(),
+                block_found: false,
+                block_height: None,
+            })
+            .unwrap();
+            let _ = writer.write_all(result.as_bytes()).await;
+            let _ = writer.flush().await;
+        })
+        .await;
+
+        let client = V3PoolClient::connect(
+            &addr,
+            "miner",
+            "worker",
+            "ekam_deeksha",
+            "cpu",
+            "payout",
+        )
+        .await
+        .unwrap();
+
+        // The newest job bundle must be visible to subscribers without any
+        // next_job() polling in between.
+        let mut rx = client.subscribe_jobs();
+        let bundle = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                rx.changed().await.unwrap();
+                if let Some(b) = rx.borrow().clone() {
+                    if b.zion.job_id == 200 {
+                        return b;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("latest job bundle never reached subscribers");
+        assert_eq!(bundle.cpu_external.unwrap().job_id, "ext200");
+
+        // A share submit must still round-trip even though the read loop
+        // processed 200 jobs with no consumer attached until now.
+        let res = client
+            .submit_zion_share(200, 42, &"ab".repeat(32), None, 1, 1)
+            .await
+            .expect("share submit failed — read loop wedged");
+        assert!(res.accepted);
+    }
+
+    /// A pool session that dies before sending any job must surface as a
+    /// fast connection error, not a 60s "job timeout". Regression test for
+    /// the Trustee crash-loop: a dropped session made next_job wait the full
+    /// timeout, and an in-flight scan kept hashing on a dead connection until
+    /// the watchdog killed the miner.
+    #[tokio::test]
+    async fn next_job_aborts_when_connection_dies() {
+        let addr = spawn_mock_pool(|_lines, _writer| async move {
+            // Stay silent, then drop the socket — simulates a session the
+            // pool accepted and then dropped mid-handshake.
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        })
+        .await;
+
+        let client = V3PoolClient::connect(
+            &addr,
+            "miner",
+            "worker",
+            "ekam_deeksha",
+            "cpu",
+            "payout",
+        )
+        .await
+        .unwrap();
+
+        let start = std::time::Instant::now();
+        let err = client
+            .next_job(Duration::from_secs(60))
+            .await
+            .expect_err("next_job should fail on a dropped connection");
+        assert!(
+            start.elapsed() < Duration::from_secs(10),
+            "next_job waited {:?} on a dead connection",
+            start.elapsed()
+        );
+        let msg = err.to_string();
+        assert!(
+            msg.contains("connection closed"),
+            "expected connection-closed error, got: {msg}"
+        );
+        assert!(client.is_closed());
     }
 }

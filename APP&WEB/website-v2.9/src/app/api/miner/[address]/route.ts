@@ -19,7 +19,19 @@ export async function GET(
       rpc.getPoolStats().catch(() => null),
     ]);
 
-    if (!minerInfo) {
+    // Addresses that never mined get a zeroed/balance-only shape — no
+    // mining signal at all. Treat those as not-found so the UI shows the
+    // "no mining activity" state instead of a zeroed card.
+    const hasMiningSignal = minerInfo && (
+      (minerInfo.last_seen ?? 0) > 0 ||
+      (minerInfo.first_seen ?? 0) > 0 ||
+      (minerInfo.accepted_shares ?? 0) > 0 ||
+      (minerInfo.rejected_shares ?? 0) > 0 ||
+      (minerInfo.blocks_found ?? 0) > 0 ||
+      (minerInfo.hashrate_1h ?? 0) > 0 ||
+      (minerInfo.hashrate ?? 0) > 0
+    );
+    if (!hasMiningSignal) {
       return NextResponse.json({ error: 'Miner not found' }, { status: 404 });
     }
 
@@ -36,6 +48,7 @@ export async function GET(
 
     return NextResponse.json({
       wallet_address: addr,
+      worker_name: minerInfo.worker ?? null,
       is_active: isActive,
       stats: {
         current_hashrate: minerInfo.hashrate_1h ?? 0,
@@ -55,7 +68,7 @@ export async function GET(
             ? minerInfo.balance.paid ?? 0
             : minerInfo.balance ?? 0,
       },
-      payments: [],
+      payments: Array.isArray(minerInfo.recent_payouts) ? minerInfo.recent_payouts : [],
       efficiency: {
         acceptance_rate: total > 0 ? Math.round((valid / total) * 10000) / 100 : 100,
         rejection_rate: total > 0 ? Math.round((invalid / total) * 10000) / 100 : 0,

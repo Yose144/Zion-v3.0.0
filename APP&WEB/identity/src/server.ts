@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { authRoutes } from './routes/auth.js';
 import { sessionRoutes } from './routes/session.js';
 import { apiKeyRoutes } from './routes/apikey.js';
+import { notificationRoutes } from './routes/notifications.js';
 import { walletRoutes } from './routes/wallet.js';
 import { healthRoutes } from './routes/health.js';
 import { wellKnownRoutes } from './routes/wellknown.js';
@@ -72,6 +73,7 @@ async function start() {
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(sessionRoutes, { prefix: '/api/session' });
   await app.register(apiKeyRoutes, { prefix: '/api/keys' });
+  await app.register(notificationRoutes, { prefix: '/api/notifications' });
   await app.register(walletRoutes, { prefix: '/api/wallet' });
   await app.register(wellKnownRoutes, { prefix: '/.well-known' });
 

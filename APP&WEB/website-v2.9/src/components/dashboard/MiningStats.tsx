@@ -41,7 +41,22 @@ export default function MiningStats({ address }: MiningStatsProps) {
       }
       if (!res.ok) throw new Error('Failed to fetch miner data');
       const data = await res.json();
-      setMiner(data.miner ?? data);
+      // /api/miner/<addr> shape: { wallet_address, is_active,
+      //   stats: { current_hashrate, accepted_shares, rejected_shares,
+      //            blocks_found, last_seen }, balance: { pending, total_earned } }
+      const s = data.stats ?? {};
+      setMiner({
+        address: data.wallet_address ?? address,
+        online: Boolean(data.is_active),
+        hashrate: s.current_hashrate ?? 0,
+        shares_accepted: s.accepted_shares ?? 0,
+        shares_rejected: s.rejected_shares ?? 0,
+        shares_pending: s.pending_shares ?? 0,
+        blocks_found: s.blocks_found ?? 0,
+        last_share_time: s.last_seen ?? 0,
+        total_earned: data.balance?.total_earned ?? undefined,
+        worker_name: data.worker_name,
+      });
     } catch (err: any) {
       setError(err.message);
     } finally {

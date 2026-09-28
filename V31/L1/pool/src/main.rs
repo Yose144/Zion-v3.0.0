@@ -458,8 +458,10 @@ async fn main() -> anyhow::Result<()> {
     let api_bridge = multi_bridge.clone();
     let api_share_store = share_store.clone();
     let api_handle = tokio::task::spawn_blocking(move || {
-        let api = PoolApi::new(api_pool, api_share_store, Some(api_bridge))
-            .with_routing_stats(api_routing_stats);
+        let api = Arc::new(
+            PoolApi::new(api_pool, api_share_store, Some(api_bridge))
+                .with_routing_stats(api_routing_stats),
+        );
         if let Err(e) = api.serve(&api_bind) {
             tracing::error!("pool API server error: {}", e);
         }

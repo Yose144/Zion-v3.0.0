@@ -27,13 +27,15 @@ export default function WalletOverview({ address }: WalletOverviewProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/blockchain/address/${address}`);
+      const res = await fetch(`/api/blockchain/address?addr=${encodeURIComponent(address)}`);
       if (!res.ok) throw new Error('Failed to fetch balance');
       const data = await res.json();
+      // /api/blockchain/address shape: { balance: { total, total_atomic,
+      //   utxo_count, pool_pending, pool_paid }, ... }
       setBalance({
-        balance_zion: data.balance_zion ?? data.balance ?? 0,
-        balance_atomic: data.balance_atomic ?? 0,
-        utxo_count: data.utxo_count ?? data.utxos?.length ?? 0,
+        balance_zion: data.balance?.total ?? 0,
+        balance_atomic: data.balance?.total_atomic ?? 0,
+        utxo_count: data.balance?.utxo_count ?? 0,
       });
     } catch (err: any) {
       setError(err.message);
