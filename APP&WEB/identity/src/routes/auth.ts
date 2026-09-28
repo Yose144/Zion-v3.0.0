@@ -1,10 +1,10 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 
 import { createChallenge, getChallenge, clearChallenge, verifyEd25519, verifySiwe } from '../lib/challenge.js';
 import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
+import { issueSessionForUser } from '../lib/session-issue.js';
 
 const ChallengeSchema = z.object({
   address: z.string().min(8),
@@ -307,53 +307,4 @@ async function issueSession(
   });
 
   return issueSessionForUser(app, req, reply, user, address, chainType);
-}
-
-async function issueSessionForUser(
-  app: FastifyInstance,
-  req: FastifyRequest,
-  reply: import('fastify').FastifyReply,
-  user: { id: string; primaryAddress: string; displayName?: string | null; email?: string | null; avatar?: string | null; bio?: string | null },
-  address: string,
-  chainType: string,
-) {
-  // Ensure linked address exists
-  await app.prisma.linkedAddress.upsert({
-    where: { address },
-    update: {},
-    create: { userId: user.id, address, chainType },
-  });
-
-  // Create session
-  const jti = randomUUID();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const userAgent = (req.headers['user-agent'] as string | undefined) ?? '';
-  const ipAddress = req.ip ?? '';
-  await app.prisma.session.create({
-    data: { userId: user.id, jwtJti: jti, expiresAt, userAgent, ipAddress },
-  });
-
-  const token = app.jwt.sign({ sub: user.id, addr: address, jti });
-  reply.setCookie('zion_session', token, {
-    domain: app.cookieDomain,
-    path: '/',
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    signed: true,
-    expires: expiresAt,
-  });
-
-  return {
-    token,
-    user: {
-      id: user.id,
-      primaryAddress: user.primaryAddress,
-      displayName: user.displayName,
-      email: user.email,
-      avatar: user.avatar,
-      bio: user.bio,
-    },
-    expiresAt: expiresAt.toISOString(),
-  };
 }

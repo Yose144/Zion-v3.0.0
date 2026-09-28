@@ -8,7 +8,7 @@
  * creating and revoking API keys.
  */
 
-import { useState, useEffect, useCallback, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import {
   Shield,
   Key,
@@ -20,6 +20,8 @@ import {
   AlertTriangle,
   Globe,
   Clock,
+  Fingerprint,
+  Loader2,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,9 +32,14 @@ import {
   getApiKeys,
   createApiKey,
   revokeApiKey,
+  getPasskeyRegistrationOptions,
+  verifyPasskeyRegistration,
+  listPasskeys,
+  deletePasskey,
   type ZisActiveSession,
   type ZisApiKey,
   type ZisLinkedAddress,
+  type ZisPasskey,
 } from '@/lib/zis';
 
 const copy = {
@@ -59,8 +66,17 @@ const copy = {
     copy: 'Copy',
     copied: 'Copied',
     delete: 'Delete',
+    confirmDelete: 'Confirm delete',
     lastUsed: 'Last used',
     created: 'Created',
+    passkeys: 'Passkeys',
+    noPasskeys: 'No passkeys registered.',
+    passkeyLabel: 'Label (optional)',
+    addPasskey: 'Add passkey',
+    addingPasskey: 'Waiting for authenticator...',
+    passkeyCancelled: 'Authenticator prompt was dismissed.',
+    synced: 'Synced',
+    singleDevice: 'Single device',
     loading: 'Loading...',
     error: 'Error loading security data.',
   },
@@ -87,8 +103,17 @@ const copy = {
     copy: 'Kopírovat',
     copied: 'Zkopírováno',
     delete: 'Smazat',
+    confirmDelete: 'Potvrdit smazání',
     lastUsed: 'Naposledy použit',
     created: 'Vytvořeno',
+    passkeys: 'Přístupové klíče',
+    noPasskeys: 'Zatím žádné přístupové klíče.',
+    passkeyLabel: 'Popis (nepovinný)',
+    addPasskey: 'Přidat přístupový klíč',
+    addingPasskey: 'Čekání na autentikátor...',
+    passkeyCancelled: 'Výzva autentikátoru byla zrušena.',
+    synced: 'Synchronizováno',
+    singleDevice: 'Jedno zařízení',
     loading: 'Načítání...',
     error: 'Chyba při načítání bezpečnostních dat.',
   },
@@ -117,11 +142,18 @@ export default function SecurityPanel() {
 
   const [sessions, setSessions] = useState<ZisActiveSession[]>([]);
   const [keys, setKeys] = useState<ZisApiKey[]>([]);
+  const [passkeys, setPasskeys] = useState<ZisPasskey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newKeyLabel, setNewKeyLabel] = useState('');
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [newPasskeyLabel, setNewPasskeyLabel] = useState('');
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [hasPasskeySupport, setHasPasskeySupport] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const linkedAddresses: ZisLinkedAddress[] = user?.linkedAddresses ?? [];
 
@@ -129,12 +161,16 @@ export default function SecurityPanel() {
     setLoading(true);
     setError(null);
     try {
-      const [{ sessions: s }, { keys: k }] = await Promise.all([
+      const [{ sessions: s }, { keys: k }, { credentials: p }] = await Promise.all([
         getSessions(),
         getApiKeys(),
+        // Passkeys are best-effort: the list endpoint must not break the
+        // rest of the panel while the backend rolls out.
+        listPasskeys().catch(() => ({ credentials: [] as ZisPasskey[] })),
       ]);
       setSessions(s);
       setKeys(k);
+      setPasskeys(p);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -144,6 +180,12 @@ export default function SecurityPanel() {
 
   useEffect(() => {
     void load();
+    import('@simplewebauthn/browser')
+      .then((m) => setHasPasskeySupport(m.browserSupportsWebAuthn()))
+      .catch(() => setHasPasskeySupport(false));
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
   }, [load]);
 
   const handleRevokeSession = async (jti: string) => {
@@ -199,6 +241,60 @@ export default function SecurityPanel() {
     }
   };
 
+  const handleAddPasskey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasskeyBusy(true);
+    setPasskeyNotice(null);
+    try {
+      const { ceremonyId, options } = await getPasskeyRegistrationOptions();
+      const { startRegistration } = await import('@simplewebauthn/browser');
+      const response = await startRegistration({
+        optionsJSON: options as unknown as Parameters<typeof startRegistration>[0]['optionsJSON'],
+      });
+      await verifyPasskeyRegistration({
+        ceremonyId,
+        response,
+        label: newPasskeyLabel.trim() || undefined,
+      });
+      setNewPasskeyLabel('');
+      const { credentials } = await listPasskeys();
+      setPasskeys(credentials);
+    } catch (err: unknown) {
+      // User dismissed the authenticator prompt — quiet note, not an error.
+      setPasskeyNotice(
+        (err as { name?: string })?.name === 'NotAllowedError'
+          ? t.passkeyCancelled
+          : err instanceof Error
+            ? err.message
+            : String(err),
+      );
+    } finally {
+      setPasskeyBusy(false);
+    }
+  };
+
+  const handleDeletePasskey = async (id: string) => {
+    // Two-step inline confirm: first click arms (auto-disarms after 4s),
+    // second click deletes.
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = setTimeout(
+        () => setConfirmDeleteId((cur) => (cur === id ? null : cur)),
+        4000,
+      );
+      return;
+    }
+    try {
+      await deletePasskey(id);
+      setPasskeys((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setConfirmDeleteId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
@@ -246,6 +342,79 @@ export default function SecurityPanel() {
                 <div className="text-xs text-gray-500">
                   {t.verified}: {formatDate(la.verifiedAt, locale)}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Passkeys */}
+      <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+        <div className="flex items-center gap-2 mb-6">
+          <Fingerprint className="h-5 w-5 text-zion-cyan" />
+          <h2 className="text-lg font-bold text-white">{t.passkeys}</h2>
+        </div>
+
+        {hasPasskeySupport && (
+          <form onSubmit={handleAddPasskey} className="flex flex-col sm:flex-row gap-3 mb-6">
+            <input
+              type="text"
+              value={newPasskeyLabel}
+              onChange={(e) => setNewPasskeyLabel(e.target.value)}
+              placeholder={t.passkeyLabel}
+              maxLength={64}
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/50"
+            />
+            <button
+              type="submit"
+              disabled={passkeyBusy}
+              className="zion-button-secondary text-sm py-2 px-4 disabled:opacity-50"
+            >
+              {passkeyBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              {passkeyBusy ? t.addingPasskey : t.addPasskey}
+            </button>
+          </form>
+        )}
+
+        {passkeyNotice && (
+          <p className="mb-4 text-xs text-gray-400">{passkeyNotice}</p>
+        )}
+
+        {passkeys.length === 0 ? (
+          <p className="text-sm text-gray-400">{t.noPasskeys}</p>
+        ) : (
+          <div className="space-y-3">
+            {passkeys.map((p) => (
+              <div
+                key={p.id}
+                className="zion-rainbow-sub p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                style={{ '--rc': '6, 182, 212' } as CSSProperties}
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm text-white">{p.label || t.passkeys}</p>
+                    <span className="rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-2 py-0.5 text-[10px] text-zion-cyan">
+                      {p.backedUp || p.deviceType === 'multiDevice' ? t.synced : t.singleDevice}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {t.created}: {formatDate(p.createdAt, locale)}
+                    {p.lastUsedAt ? ` • ${t.lastUsed}: ${formatDate(p.lastUsedAt, locale)}` : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDeletePasskey(p.id)}
+                  className={`zion-button-secondary text-xs py-2 px-3 self-start sm:self-auto ${
+                    confirmDeleteId === p.id ? 'border-red-500/50 text-red-300' : ''
+                  }`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {confirmDeleteId === p.id ? t.confirmDelete : t.delete}
+                </button>
               </div>
             ))}
           </div>

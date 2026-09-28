@@ -17,6 +17,7 @@ servers:
 
 tags:
   - name: auth
+  - name: webauthn
   - name: session
   - name: keys
   - name: wallet
@@ -207,6 +208,83 @@ paths:
         '200': { $ref: '#/components/schemas/User' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/webauthn/register/options:
+    post:
+      tags: [webauthn]
+      summary: Begin passkey registration (returns WebAuthn creation options)
+      responses:
+        '200':
+          description: '{ ceremonyId, options } — pass options to the browser WebAuthn API'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: 'LIMIT — maximum of 10 passkeys per account' }
+  /api/auth/webauthn/register/verify:
+    post:
+      tags: [webauthn]
+      summary: Finish passkey registration, store credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ceremonyId, response]
+              properties:
+                ceremonyId: { type: string }
+                response: { type: object, description: RegistrationResponseJSON from the browser }
+                label: { type: string, maxLength: 64 }
+      responses:
+        '200': { description: 'Credential stored; returns summary without public key' }
+        '400': { description: 'BAD_REQUEST | CEREMONY_INVALID | VERIFY_FAILED' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { description: 'CONFLICT — passkey already registered' }
+  /api/auth/webauthn/login/options:
+    post:
+      tags: [webauthn]
+      summary: Begin passkey login (discoverable / usernameless)
+      security: []
+      responses:
+        '200':
+          description: '{ ceremonyId, options } — pass options to the browser WebAuthn API'
+  /api/auth/webauthn/login/verify:
+    post:
+      tags: [webauthn]
+      summary: Finish passkey login, issue zion_session cookie
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ceremonyId, response]
+              properties:
+                ceremonyId: { type: string }
+                response: { type: object, description: AuthenticationResponseJSON from the browser }
+      responses:
+        '200': { description: 'Session issued; `zion_session` cookie set; returns user object' }
+        '400': { description: 'BAD_REQUEST | CEREMONY_INVALID' }
+        '401': { description: 'AUTH_FAILED — unknown passkey or verification failed' }
+  /api/auth/webauthn/credentials:
+    get:
+      tags: [webauthn]
+      summary: List own passkeys (never includes public keys)
+      responses:
+        '200': { description: '{ credentials[] }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/auth/webauthn/credentials/{id}:
+    delete:
+      tags: [webauthn]
+      summary: Delete one of own passkeys
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: '{ "ok": true }' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Not found }
 
   /api/session:
     get:

@@ -50,6 +50,7 @@ model User {
   miningWorkers   MiningWorker[]
   daoVotes        DaoVote[]
   notifications   Notification[]
+  webauthnCredentials WebAuthnCredential[]
 
   // Multichain wallet (ZIS → L2 multichain API proxy)
   multichainWalletAccount MultichainWalletAccount?
@@ -95,6 +96,23 @@ model ApiKey {
   createdAt   DateTime @default(now())
   lastUsed    DateTime?
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WebAuthnCredential {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique // base64url credential ID
+  publicKey    Bytes     // COSE public key
+  counter      Int       @default(0)
+  transports   String[]
+  deviceType   String    // "singleDevice" | "multiDevice"
+  backedUp     Boolean   @default(false)
+  label        String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

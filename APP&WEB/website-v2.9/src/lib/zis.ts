@@ -25,6 +25,12 @@ import {
   createApiKey as sharedCreateApiKey,
   revokeApiKey as sharedRevokeApiKey,
   linkAddress as sharedLinkAddress,
+  getPasskeyRegistrationOptions as sharedGetPasskeyRegistrationOptions,
+  verifyPasskeyRegistration as sharedVerifyPasskeyRegistration,
+  getPasskeyLoginOptions as sharedGetPasskeyLoginOptions,
+  verifyPasskeyLogin as sharedVerifyPasskeyLogin,
+  listPasskeys as sharedListPasskeys,
+  deletePasskey as sharedDeletePasskey,
   useZisAuth as sharedUseZisAuth,
   getZisUrl,
   ZIS_SESSION_COOKIE,
@@ -36,6 +42,8 @@ import {
   type ZisOasisPlayer,
   type ZisActiveSession,
   type ZisApiKey,
+  type ZisPasskey,
+  type ZisPasskeyCeremony,
   type UseZisAuthResult,
 } from '../../../shared/zis-client';
 
@@ -49,6 +57,8 @@ export type {
   ZisOasisPlayer,
   ZisActiveSession,
   ZisApiKey,
+  ZisPasskey,
+  ZisPasskeyCeremony,
   UseZisAuthResult,
 };
 
@@ -331,6 +341,123 @@ export async function linkAddress(body: {
     return res.json();
   }
   return sharedLinkAddress(body);
+}
+
+// ── Passkeys / WebAuthn (client-side through local proxy) ────────────
+
+const CLIENT_PROXY_BASE_WEBAUTHN = '/api/auth/webauthn';
+
+/**
+ * Begin passkey registration for the signed-in user.
+ * Returns `{ ceremonyId, options }` — feed `options` to the browser
+ * credential API (e.g. `startRegistration({ optionsJSON: options })`).
+ */
+export async function getPasskeyRegistrationOptions(
+  options?: { cookieHeader?: string },
+): Promise<ZisPasskeyCeremony> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_WEBAUTHN}/register/options`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`Passkey registration options failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedGetPasskeyRegistrationOptions({ cookieHeader: options?.cookieHeader });
+}
+
+/**
+ * Finish passkey registration — submit the browser attestation response.
+ */
+export async function verifyPasskeyRegistration(body: {
+  ceremonyId: string;
+  response: unknown;
+  label?: string;
+}): Promise<{ credential: ZisPasskey }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_WEBAUTHN}/register/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Passkey registration failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedVerifyPasskeyRegistration(body);
+}
+
+/**
+ * Begin passkey login (anonymous). Feed `options` to the browser
+ * credential API (e.g. `startAuthentication({ optionsJSON: options })`).
+ */
+export async function getPasskeyLoginOptions(): Promise<ZisPasskeyCeremony> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_WEBAUTHN}/login/options`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`Passkey login options failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedGetPasskeyLoginOptions();
+}
+
+/**
+ * Finish passkey login — sets the `zion_session` cookie on success.
+ */
+export async function verifyPasskeyLogin(body: {
+  ceremonyId: string;
+  response: unknown;
+}): Promise<ZisSession> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_WEBAUTHN}/login/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Passkey login failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedVerifyPasskeyLogin(body);
+}
+
+/**
+ * List the signed-in user's passkeys.
+ */
+export async function listPasskeys(
+  options?: { cookieHeader?: string },
+): Promise<{ credentials: ZisPasskey[] }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_WEBAUTHN}/credentials`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`Passkey list failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedListPasskeys({ cookieHeader: options?.cookieHeader });
+}
+
+/**
+ * Delete one of the signed-in user's passkeys.
+ */
+export async function deletePasskey(
+  id: string,
+  options?: { cookieHeader?: string },
+): Promise<{ ok: boolean }> {
+  if (isBrowser()) {
+    const res = await fetch(
+      `${CLIENT_PROXY_BASE_WEBAUTHN}/credentials/${encodeURIComponent(id)}`,
+      { method: 'DELETE', credentials: 'include' },
+    );
+    if (!res.ok) throw new Error(`Passkey delete failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedDeletePasskey(id, { cookieHeader: options?.cookieHeader });
 }
 
 // ── Notifications (client-side through local proxy) ──────────────────

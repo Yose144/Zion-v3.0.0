@@ -9,14 +9,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Wallet, Shield, Lock, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { Wallet, Shield, Lock, ArrowRight, Sparkles, Loader2, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
 import LoginModal from '@/components/LoginModal';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
-  const { authenticated, loading, loginWithSiwe, loginWithGoogle } = useAuth();
+  const { authenticated, loading, loginWithSiwe, loginWithGoogle, loginWithPasskey } = useAuth();
   const zionWallet = useZionWallet();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,6 +27,10 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [hasMetaMask, setHasMetaMask] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
   // Already authenticated — redirect
   useEffect(() => {
@@ -44,7 +48,29 @@ export default function LoginPage() {
 
   useEffect(() => {
     setHasMetaMask(typeof window !== 'undefined' && !!(window as any).ethereum);
+    import('@simplewebauthn/browser')
+      .then((m) => setHasPasskey(m.browserSupportsWebAuthn()))
+      .catch(() => setHasPasskey(false));
   }, []);
+
+  const handlePasskey = async () => {
+    setPasskeyLoading(true);
+    setPasskeyNotice(null);
+    setPasskeyError(null);
+    try {
+      await loginWithPasskey();
+      router.push(redirect);
+    } catch (err: any) {
+      if (err?.name === 'NotAllowedError') {
+        // User dismissed the authenticator prompt — quiet note, not an error.
+        setPasskeyNotice('Passkey prompt was dismissed.');
+      } else {
+        setPasskeyError(err?.message || 'Passkey sign-in failed');
+      }
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   const handleSiwe = async () => {
     setSiweLoading(true);
@@ -112,6 +138,27 @@ export default function LoginPage() {
         </div>
 
         {/* Login buttons */}
+        {hasPasskey && (
+          <button
+            onClick={handlePasskey}
+            disabled={passkeyLoading || siweLoading || googleLoading}
+            className="zion-button-secondary w-full flex items-center justify-center gap-2 py-3.5 mb-3 disabled:opacity-50"
+          >
+            {passkeyLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <KeyRound className="h-5 w-5" />
+            )}
+            {passkeyLoading ? 'Waiting for passkey...' : 'Sign in with passkey'}
+          </button>
+        )}
+        {passkeyNotice && (
+          <p className="text-xs text-gray-500 text-center mb-3">{passkeyNotice}</p>
+        )}
+        {passkeyError && (
+          <p className="text-xs text-red-400 text-center mb-3">{passkeyError}</p>
+        )}
+
         <button
           onClick={handleSiwe}
           disabled={siweLoading || !hasMetaMask}
