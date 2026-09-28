@@ -125,13 +125,14 @@ export default function MultichainWalletPage() {
     refresh,
     withdraw,
     deriveAddress,
+    clearError,
   } = useMultichainWallet();
 
   const [tab, setTab] = useState<Tab>('overview');
   const [copied, setCopied] = useState<string | null>(null);
   const [deriveChain, setDeriveChain] = useState('zion');
   const [deriveLoading, setDeriveLoading] = useState(false);
-  const [deriveMessage, setDeriveMessage] = useState<string | null>(null);
+  const [deriveMessage, setDeriveMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawAsset, setWithdrawAsset] = useState('zion');
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -153,9 +154,9 @@ export default function MultichainWalletPage() {
     const result = await deriveAddress(deriveChain, 0, 0);
     setDeriveLoading(false);
     if (result?.address) {
-      setDeriveMessage(`${t('deriveSuccess')}: ${result.address}`);
+      setDeriveMessage({ text: `${t('deriveSuccess')}: ${result.address}`, ok: true });
     } else {
-      setDeriveMessage(t('error'));
+      setDeriveMessage({ text: t('error'), ok: false });
     }
   };
 
@@ -174,7 +175,6 @@ export default function MultichainWalletPage() {
       setWithdrawMessage({ text: result.error, success: false });
     } else if (result.withdrawal_id) {
       setWithdrawMessage({ text: `${t('withdraw')} ID: ${result.withdrawal_id}`, success: true });
-      setShowWithdraw(false);
       setWithdrawAmount('');
       setWithdrawRecipient('');
     }
@@ -411,6 +411,19 @@ export default function MultichainWalletPage() {
             ))}
           </div>
 
+          {error && (
+            <div className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3">
+              <p className="text-sm text-red-300">{t('error')}: {error}</p>
+              <button
+                onClick={clearError}
+                className="shrink-0 text-red-300/70 hover:text-red-200 transition-colors text-lg leading-none"
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="mt-6 min-h-[200px]">
             {tab === 'overview' && (
               <div className="grid gap-6 lg:grid-cols-2">
@@ -467,7 +480,9 @@ export default function MultichainWalletPage() {
                     </div>
                   </div>
                   {deriveMessage && (
-                    <p className="text-xs text-emerald-400 mb-3 break-all">{deriveMessage}</p>
+                    <p className={`text-xs mb-3 break-all ${deriveMessage.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {deriveMessage.text}
+                    </p>
                   )}
                   {addresses.length === 0 ? (
                     <p className="text-gray-500">{t('noAddresses')}</p>
@@ -577,12 +592,6 @@ export default function MultichainWalletPage() {
               </>
             )}
           </div>
-
-          {error && (
-            <p className="mt-4 text-sm text-red-400 border-t border-white/5 pt-3">
-              {t('error')}: {error}
-            </p>
-          )}
         </section>
       </div>
     </div>

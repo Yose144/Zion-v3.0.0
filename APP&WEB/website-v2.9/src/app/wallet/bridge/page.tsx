@@ -9,6 +9,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { ArrowLeft, ArrowRightLeft, Lock, Shield, ExternalLink, Copy, Flame, CheckCircle2 } from 'lucide-react';
 import { BRIDGE_CONTRACTS } from '@/lib/bridge-api';
 import { CONTRACTS } from '@/lib/defi-contracts';
+import BridgeRecentTransfers from '@/components/BridgeRecentTransfers';
 
 // BridgeBurnWidget uses browser-only hooks (ethers, WalletContext) — disable SSR.
 const BridgeBurnWidget = dynamic(() => import('@/components/BridgeBurnWidget'), {
@@ -183,6 +184,11 @@ export default function BridgePage() {
             </h2>
             <BridgeBurnWidget />
           </div>
+        </section>
+
+        {/* Live transfer states */}
+        <section>
+          <BridgeRecentTransfers />
         </section>
 
         {/* Contract addresses */}
