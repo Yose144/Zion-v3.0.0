@@ -14,14 +14,15 @@
  *   J10 — Notifications (cross-app event aggregation → Notification)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Service URLs (from env or defaults)
-const POOL_API = process.env.POOL_API_URL ?? 'http://127.0.0.1:8444';
-const MC_API = process.env.MC_API_URL ?? 'http://127.0.0.1:8453';
-const DAO_API = process.env.DAO_API_URL ?? 'http://127.0.0.1:8092';
+// Service URLs (from env or defaults — Edge production ports)
+const POOL_API = process.env.POOL_API_URL ?? 'http://127.0.0.1:8080'; // zion-v31-pool HTTP API
+const MC_API = process.env.MC_API_URL ?? 'http://127.0.0.1:8453'; // warpd (transfers)
+const MC_API_V1 = process.env.MC_API_V1_URL ?? 'http://127.0.0.1:8454'; // multichain ApiServer (swap/DEX)
+const DAO_API = process.env.DAO_API_URL ?? 'http://127.0.0.1:8456'; // zion-v31-dao
 const NODE_RPC = process.env.NODE_RPC_URL ?? 'http://127.0.0.1:9445';
 
 const SYNC_INTERVAL_MS = Number(process.env.SYNC_INTERVAL_MS ?? 30_000);
@@ -30,127 +31,226 @@ const SYNC_INTERVAL_MS = Number(process.env.SYNC_INTERVAL_MS ?? 30_000);
 
 async function syncMiningStats() {
   try {
-    const resp = await fetch(`${POOL_API}/stats`, {
+    // Pool-level totals from /stats (routing counters)
+    const statsResp = await fetch(`${POOL_API}/stats`, {
       signal: AbortSignal.timeout(5000),
     });
-    if (!resp.ok) return;
-    const data = await resp.json() as Record<string, unknown>;
+    if (statsResp.ok) {
+      const data = await statsResp.json() as Record<string, unknown>;
+      const routing = (data.routing as Record<string, unknown>) ?? {};
+      const totalAccepted = (routing.total_accepted as number) ?? 0;
+      const totalSubmits = (routing.total_submits as number) ?? 0;
+      const totalRejected = (routing.total_rejected as number) ?? 0;
+      const totalStale = (routing.total_stale as number) ?? 0;
+      const poolHashrate = ((data.pool as Record<string, unknown>)?.hashrate as number)
+        ?? (data.total_hashrate as number) ?? 0;
 
-    // Upsert pool-level mining worker entry
-    const poolAddr = (data.pool_address as string) ?? 'zion-pool';
-    const hashrate = (data.hashrate as number) ?? 0;
-    const shares = (data.shares_total as number) ?? 0;
-    const accepted = (data.shares_accepted as number) ?? 0;
-    const rejected = (data.shares_rejected as number) ?? 0;
+      const poolAddr = 'zion-pool';
+      const worker = await prisma.miningWorker.upsert({
+        where: { address: poolAddr },
+        update: {
+          hashrate: poolHashrate,
+          shares: totalSubmits,
+          accepted: totalAccepted,
+          rejected: totalRejected,
+          lastShareAt: new Date(),
+        },
+        create: {
+          address: poolAddr,
+          workerName: 'pool',
+          pool: 'zion-pool',
+          coin: 'ZION',
+          algorithm: 'ekam_deeksha',
+          hashrate: poolHashrate,
+          shares: totalSubmits,
+          accepted: totalAccepted,
+          rejected: totalRejected,
+          lastShareAt: new Date(),
+        },
+      });
 
-    await prisma.miningWorker.upsert({
-      where: { address: poolAddr },
-      update: {
-        hashrate,
-        shares,
-        accepted,
-        rejected,
-        lastShareAt: new Date(),
-      },
-      create: {
-        address: poolAddr,
-        workerName: 'pool',
-        pool: 'zion-pool',
-        coin: 'ZION',
-        algorithm: 'ekam_deeksha',
-        hashrate,
-        shares,
-        accepted,
-        rejected,
-        lastShareAt: new Date(),
-      },
-    });
-
-    // Insert stats snapshot
-    const worker = await prisma.miningWorker.findUnique({ where: { address: poolAddr } });
-    if (worker) {
       await prisma.miningStats.create({
         data: {
           workerId: worker.id,
-          hashrate,
-          shares,
-          accepted,
-          rejected,
-          stale: 0,
+          hashrate: poolHashrate,
+          shares: totalSubmits,
+          accepted: totalAccepted,
+          rejected: totalRejected,
+          stale: totalStale,
           uptime: Math.floor(Date.now() / 1000) - Math.floor(worker.createdAt.getTime() / 1000),
         },
       });
     }
 
-    // Sync individual miners if available
-    const miners = (data.miners as Array<Record<string, unknown>>) ?? [];
+    // Per-miner stats from /miners (zion-v31-pool HTTP API shape:
+    // { count, miners: [{ address, worker, hashrate_hps, valid_shares,
+    //   invalid_shares, blocks_found, last_share_time (epoch s) }] })
+    const minersResp = await fetch(`${POOL_API}/miners?limit=200`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!minersResp.ok) return;
+    const payload = await minersResp.json() as Record<string, unknown>;
+    const miners = (payload.miners as Array<Record<string, unknown>>) ?? [];
+
     for (const miner of miners) {
-      const addr = (miner.address as string) ?? (miner.worker as string);
+      const addr = (miner.address as string) ?? '';
+      const workerName = ((miner.worker as string) ?? addr).split('.').pop() || addr;
       if (!addr) continue;
-      const mHashrate = (miner.hashrate as number) ?? 0;
-      const mAccepted = (miner.accepted as number) ?? 0;
-      const mRejected = (miner.rejected as number) ?? 0;
+      const mHashrate = (miner.hashrate_hps as number) ?? 0;
+      const mAccepted = (miner.valid_shares as number) ?? 0;
+      const mRejected = (miner.invalid_shares as number) ?? 0;
+      const lastShareSec = (miner.last_share_time as number) ?? 0;
+      const lastShareAt = lastShareSec > 0 ? new Date(lastShareSec * 1000) : new Date();
 
       await prisma.miningWorker.upsert({
-        where: { address: addr },
+        where: { address: workerName === addr ? addr : `${addr}.${workerName}` },
         update: {
           hashrate: mHashrate,
           accepted: mAccepted,
           rejected: mRejected,
-          lastShareAt: new Date(),
+          lastShareAt,
         },
         create: {
-          address: addr,
-          workerName: (miner.worker as string) ?? addr,
+          address: workerName === addr ? addr : `${addr}.${workerName}`,
+          workerName,
           pool: 'zion-pool',
           coin: 'ZION',
           algorithm: 'ekam_deeksha',
           hashrate: mHashrate,
           accepted: mAccepted,
           rejected: mRejected,
-          lastShareAt: new Date(),
+          lastShareAt,
         },
       });
+
+      // Block-found delta → mining_payout notification. The first poll only
+      // populates the baseline so a service start does not re-notify history.
+      const key = workerName === addr ? addr : `${addr}.${workerName}`;
+      const blocks = (miner.blocks_found as number) ?? 0;
+      const prev = miningBlockBaseline.get(key);
+      miningBlockBaseline.set(key, blocks);
+      if (miningBaselinePrimed && prev !== undefined && blocks > prev) {
+        await notifyAddress(
+          addr,
+          'mining_payout',
+          'Mining reward incoming',
+          `Your worker "${workerName}" found block #${blocks} — the pool is paying it out to ${addr.slice(0, 16)}…`,
+          { href: '/account', worker: key },
+        );
+      }
     }
+    miningBaselinePrimed = true;
   } catch (e) {
     console.error('[J6] Mining stats sync error:', e);
   }
 }
 
-// ── J7: DAO proposals sync ────────────────────────────────────────────
+// ── J10 helpers: address → ZIS user resolution ────────────────────────
+
+/** Resolve a chain address (zion1…/0x…) to a ZIS user id via primary or linked address. */
+async function resolveUserByAddress(address: string): Promise<string | null> {
+  if (!address) return null;
+  const user = await prisma.user.findFirst({
+    where: { primaryAddress: address },
+    select: { id: true },
+  });
+  if (user) return user.id;
+  const linked = await prisma.linkedAddress.findFirst({
+    where: { address },
+    select: { userId: true },
+  });
+  return linked?.userId ?? null;
+}
+
+/** Create a notification for whoever owns `address` (primary or linked). */
+async function notifyAddress(
+  address: string,
+  type: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+) {
+  const userId = await resolveUserByAddress(address);
+  if (!userId) return;
+  await createNotification({ userId, type, title, body, data }).catch((e) =>
+    console.error(`[J10] notify ${type} failed for ${userId}:`, e),
+  );
+}
+
+// Baseline guards — populated on first poll so a service restart does not
+// re-notify for historical events.
+const miningBlockBaseline = new Map<string, number>();
+let miningBaselinePrimed = false;
+
+// ── J7: DAO proposals sync (also produces dao_vote notifications) ──────
 
 async function syncDaoProposals() {
   try {
-    const resp = await fetch(`${DAO_API}/api/dao/proposals?status=active`, {
+    // zion-v31-dao shape: { success, data: { proposals: [...], total } }
+    // proposal fields: id, title, description, status ("Active"|"Passed"|
+    // "Failed"|"Executed"), votes_for/_against/_abstain, total_votes,
+    // voter_count, proposer, proposal_type, voting_ends_at, created_at
+    const resp = await fetch(`${DAO_API}/api/dao/proposals?limit=200`, {
       signal: AbortSignal.timeout(5000),
     });
     if (!resp.ok) return;
-    const proposals = await resp.json() as Array<Record<string, unknown>>;
+    const body = await resp.json() as Record<string, unknown>;
+    const data = (body.data as Record<string, unknown>) ?? body;
+    const proposals = (data.proposals as Array<Record<string, unknown>>) ?? [];
 
     for (const p of proposals) {
       const proposalId = Number(p.id ?? p.proposal_id ?? 0);
       if (!proposalId) continue;
+
+      const status = String(p.status ?? 'Active').toLowerCase();
+      const votingEnds = p.voting_ends_at
+        ? new Date(p.voting_ends_at as string)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const prevProposal = await prisma.daoProposal.findUnique({
+        where: { proposalId },
+        select: { status: true },
+      });
 
       await prisma.daoProposal.upsert({
         where: { proposalId },
         update: {
           title: (p.title as string) ?? '',
           description: (p.description as string) ?? '',
-          status: (p.status as string) ?? 'active',
-          yesVotes: Number(p.yes_votes ?? p.yesVotes ?? 0),
-          noVotes: Number(p.no_votes ?? p.noVotes ?? 0),
+          status,
+          yesVotes: Number(p.votes_for ?? p.yes_votes ?? 0),
+          noVotes: Number(p.votes_against ?? p.no_votes ?? 0),
+          expiresAt: votingEnds,
         },
         create: {
           proposalId,
           title: (p.title as string) ?? '',
           description: (p.description as string) ?? '',
           proposer: (p.proposer as string) ?? '',
-          status: (p.status as string) ?? 'active',
-          yesVotes: Number(p.yes_votes ?? p.yesVotes ?? 0),
-          noVotes: Number(p.no_votes ?? p.noVotes ?? 0),
-          expiresAt: p.expires_at ? new Date(p.expires_at as string) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status,
+          yesVotes: Number(p.votes_for ?? p.yes_votes ?? 0),
+          noVotes: Number(p.votes_against ?? p.no_votes ?? 0),
+          expiresAt: votingEnds,
         },
       });
+
+      // Proposal left the "active" state → notify recorded voters once.
+      if (prevProposal && prevProposal.status === 'active' && status !== 'active') {
+        const votes = await prisma.daoVote.findMany({
+          where: { proposalId },
+          select: { voter: true },
+        });
+        const title = (p.title as string) ?? `Proposal #${proposalId}`;
+        for (const v of votes) {
+          await notifyAddress(
+            v.voter,
+            'dao_vote',
+            'DAO proposal closed',
+            `"${title}" ended with status: ${status}.`,
+            { href: '/dao', proposalId, status },
+          );
+        }
+      }
     }
   } catch (e) {
     console.error('[J7] DAO sync error:', e);
@@ -161,19 +261,38 @@ async function syncDaoProposals() {
 
 async function syncBridgeTransactions() {
   try {
-    const resp = await fetch(`${MC_API}/bridge/transfers`, {
+    // warpd shape: { ok, data: [{ id, source_chain: {name,family},
+    //   dest_chain: {...}, sender, recipient, amount_flowers, fee_flowers,
+    //   status ("Pending"|"Completed"|...), source_tx_hash, dest_tx_hash,
+    //   created_at, updated_at, memo }] }
+    const resp = await fetch(`${MC_API}/transfers`, {
       signal: AbortSignal.timeout(5000),
     });
     if (!resp.ok) return;
-    const transfers = await resp.json() as Array<Record<string, unknown>>;
+    const body = await resp.json() as Record<string, unknown>;
+    const transfers = (body.data as Array<Record<string, unknown>>)
+      ?? (Array.isArray(body) ? body : []);
 
     for (const t of transfers) {
       const id = (t.id as string) ?? `${t.source_tx_hash}-${t.dest_tx_hash}`;
       if (!id) continue;
 
-      const status = ((t.status as string) ?? 'pending').toLowerCase();
+      // Schema statuses: pending | confirmed | failed — normalize warp states.
+      const raw = ((t.status as string) ?? 'pending').toLowerCase();
+      const status = ['completed', 'settled', 'confirmed'].includes(raw)
+        ? 'confirmed'
+        : ['failed', 'refunded', 'expired'].includes(raw)
+          ? 'failed'
+          : 'pending';
       const existing = await prisma.bridgeTransaction.findUnique({ where: { id } });
       if (existing && existing.status === 'confirmed') continue;
+
+      const srcChain = (t.source_chain as Record<string, unknown>)?.name
+        ?? (t.source_chain as string) ?? '';
+      const dstChain = (t.dest_chain as Record<string, unknown>)?.name
+        ?? (t.dest_chain as string) ?? '';
+      const amount = BigInt(String(t.amount_flowers ?? t.amount ?? 0));
+      const isOutboundL1 = String(srcChain).includes('zion');
 
       await prisma.bridgeTransaction.upsert({
         where: { id },
@@ -185,10 +304,10 @@ async function syncBridgeTransactions() {
         },
         create: {
           id,
-          txType: (t.direction as string) ?? 'lock',
-          sourceChain: (t.source_chain as string) ?? '',
-          destChain: (t.dest_chain as string) ?? '',
-          amount: BigInt((t.amount as number) ?? 0),
+          txType: isOutboundL1 ? 'lock' : 'release',
+          sourceChain: String(srcChain),
+          destChain: String(dstChain),
+          amount,
           sender: (t.sender as string) ?? '',
           recipient: (t.recipient as string) ?? '',
           sourceTxHash: (t.source_tx_hash as string) ?? undefined,
@@ -196,6 +315,24 @@ async function syncBridgeTransactions() {
           status,
         },
       });
+
+      // Transition to confirmed → bridge_complete notification. The 2h
+      // freshness window skips historical transfers on first sync.
+      const createdMs = t.created_at ? Date.parse(String(t.created_at)) : Date.now();
+      const isFresh = Number.isFinite(createdMs)
+        ? Date.now() - createdMs < 2 * 3_600_000
+        : true;
+      if (status === 'confirmed' && isFresh && existing?.status !== 'confirmed') {
+        const userAddr = String(isOutboundL1 ? (t.sender ?? '') : (t.recipient ?? ''));
+        const amountZion = (Number(amount) / 1_000_000).toFixed(6).replace(/\.?0+$/, '');
+        await notifyAddress(
+          userAddr,
+          'bridge_complete',
+          'Bridge transfer completed',
+          `${amountZion || '0'} ZION moved ${srcChain} → ${dstChain}.`,
+          { href: '/wallet/bridge', txId: id, destTxHash: t.dest_tx_hash },
+        );
+      }
     }
   } catch (e) {
     console.error('[J8] Bridge sync error:', e);
@@ -206,7 +343,9 @@ async function syncBridgeTransactions() {
 
 async function syncDexOrders() {
   try {
-    const resp = await fetch(`${MC_API}/dex/orders`, {
+    // Multichain ApiServer (port 8454) has /v1/swap/order/:id but no public
+    // orders list — this no-ops cleanly until such an endpoint exists.
+    const resp = await fetch(`${MC_API_V1}/v1/swap/orders`, {
       signal: AbortSignal.timeout(5000),
     });
     if (!resp.ok) return;
@@ -262,7 +401,7 @@ export async function createNotification(params: {
       type: params.type,
       title: params.title,
       body: params.body,
-      data: params.data ?? undefined,
+      data: (params.data ?? undefined) as Prisma.InputJsonValue | undefined,
     },
   });
 }

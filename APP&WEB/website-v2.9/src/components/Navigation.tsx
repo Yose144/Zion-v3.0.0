@@ -9,6 +9,7 @@ import {
   Wallet, BookOpen, Github, Scale,
 } from 'lucide-react';
 import NavAuthButton from './NavAuthButton';
+import NotificationBell from './NotificationBell';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
@@ -278,6 +279,7 @@ export default function Navigation() {
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
             </Link>
             <NavAuthButton />
+            <NotificationBell />
             <Link
               href="/dashboard"
               title={tr('nav', 'dashboard', lang)}

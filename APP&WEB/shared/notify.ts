@@ -16,7 +16,7 @@
  *   - system              — System-wide announcement
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -48,7 +48,7 @@ export async function notify(params: CreateNotificationParams) {
       type: params.type,
       title: params.title,
       body: params.body,
-      data: params.data ?? undefined,
+      data: (params.data ?? undefined) as Prisma.InputJsonValue | undefined,
     },
   });
 }

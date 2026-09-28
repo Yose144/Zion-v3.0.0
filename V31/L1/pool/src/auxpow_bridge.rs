@@ -45,6 +45,7 @@ pub enum ShareForwardOutcome {
     ChannelClosed,
 }
 
+#[derive(Clone)]
 pub struct AuxPowBridge {
     pub enabled: bool,
     pub job_queue: Arc<Mutex<VecDeque<JobPackage>>>,
@@ -248,8 +249,13 @@ impl MultiAuxPowBridge {
         coin: &ExternalCoin,
         req: ShareForwardRequest,
     ) -> Option<ShareForwardOutcome> {
-        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
-        bridges.get(coin).and_then(|b| b.forward(req))
+        let bridge = self
+            .bridges
+            .lock()
+            .expect("multi_bridge lock poisoned")
+            .get(coin)
+            .cloned();
+        bridge.and_then(|bridge| bridge.forward(req))
     }
 
     /// Push a job to the bridge for a specific coin.
@@ -434,5 +440,78 @@ mod tests {
         let job = bridge.get_job_by_id("findme").unwrap();
         assert_eq!(job.coin, ExternalCoin::Ravencoin);
         assert!(bridge.get_job_by_id("nonexistent").is_none());
+    }
+
+    #[test]
+    fn forwarding_does_not_block_job_updates() {
+        let multi = MultiAuxPowBridge::new();
+        let (bridge, share_rx) = AuxPowBridge::new(true);
+        multi.insert(ExternalCoin::Verus, bridge);
+
+        let forward_multi = multi.clone();
+        let forward_handle = std::thread::spawn(move || {
+            forward_multi.forward(
+                &ExternalCoin::Verus,
+                ShareForwardRequest {
+                    job_id: "old".into(),
+                    nonce: 1,
+                    hash_hex: "00".into(),
+                    mix_hash_hex: None,
+                    algorithm: "verushash".into(),
+                    header_bytes: vec![],
+                    ntime: "00000000".into(),
+                    solution_hex: String::new(),
+                    extranonce1_hex: String::new(),
+                },
+            )
+        });
+
+        let (_, reply_tx) = share_rx
+            .recv_timeout(std::time::Duration::from_secs(1))
+            .unwrap();
+        let push_multi = multi.clone();
+        let (done_tx, done_rx) = mpsc::channel();
+        let push_handle = std::thread::spawn(move || {
+            push_multi.push_job_for_coin(
+                &ExternalCoin::Verus,
+                JobPackage {
+                    external_job_id: "new".into(),
+                    coin: ExternalCoin::Verus,
+                    header_hex: String::new(),
+                    target_hex: String::new(),
+                    height: 1,
+                    algorithm: "verushash".into(),
+                    extranonce1_hex: String::new(),
+                    ntime: "00000000".into(),
+                    received_at: None,
+                },
+            );
+            let _ = done_tx.send(());
+        });
+
+        let updated_while_forward_waited = done_rx
+            .recv_timeout(std::time::Duration::from_millis(250))
+            .is_ok();
+        reply_tx
+            .send(ShareForwardOutcome::Result(ShareForwardResult::Accepted))
+            .unwrap();
+        let forwarded = forward_handle.join().unwrap();
+        push_handle.join().unwrap();
+
+        assert!(
+            updated_while_forward_waited,
+            "job updates must not wait for an in-flight share response"
+        );
+        assert_eq!(
+            forwarded,
+            Some(ShareForwardOutcome::Result(ShareForwardResult::Accepted))
+        );
+        assert_eq!(
+            multi
+                .latest_job_for_coin(&ExternalCoin::Verus)
+                .unwrap()
+                .external_job_id,
+            "new"
+        );
     }
 }

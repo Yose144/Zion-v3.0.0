@@ -8,6 +8,7 @@ import {
   Wallet, Plus, Import, Send, RefreshCw, Trash2, Copy, Eye, EyeOff,
   Shield, KeyRound, Download, BookOpen, Lock, Fingerprint,
   Zap, Globe2, Usb, AlertTriangle, Activity, ArrowRight, ArrowLeftRight,
+  Check, ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -98,6 +99,13 @@ const WalletCopy = {
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   multichainWallet: { cs: `Multichain peněženka`, en: `Multichain Wallet` },
   openMultichainWallet: { cs: `Otevřít multichain peněženku`, en: `Open multichain wallet` },
+  invalidRecipientAddress: { cs: `Neplatná adresa příjemce — musí začínat "zion1".`, en: `Invalid recipient address — must start with "zion1".` },
+  invalidAmount: { cs: `Zadejte platnou částku větší než 0.`, en: `Enter a valid amount greater than 0.` },
+  amountExceedsBalance: { cs: `Částka přesahuje dostupný zůstatek.`, en: `Amount exceeds available balance.` },
+  transactionSubmitted: { cs: `Transakce odeslána`, en: `Transaction submitted` },
+  viewInExplorer: { cs: `Zobrazit v exploreru`, en: `View in explorer` },
+  confirmDelete: { cs: `Potvrdit smazání`, en: `Confirm delete` },
+  deleteWalletWarn: { cs: `Klikněte znovu pro trvalé smazání peněženky z tohoto zařízení.`, en: `Click again to permanently delete this wallet from this device.` },
 };
 
 // ── Tithe Wallets (89/5/5/1 coinbase fee split) ──────────────────────────
@@ -242,8 +250,12 @@ export default function WalletPage() {
   const [exportedSecret, setExportedSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false);
   const [txResult, setTxResult] = useState('');
+  const [txid, setTxid] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [localError, setLocalError] = useState('');
+  const [importMsg, setImportMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [titheBalances, setTitheBalances] = useState<Record<string, number | null>>({});
   const [titheLoading, setTitheLoading] = useState(false);
 
@@ -315,69 +327,120 @@ export default function WalletPage() {
   };
 
   const handleImportMnemonic = async () => {
-    if (!mnemonic || !password) { alert(WalletCopy.mnemonicAndPasswordRequired[cs ? 'cs' : 'en']); return; }
+    setImportMsg(null);
+    if (!mnemonic || !password) {
+      setImportMsg({ text: WalletCopy.mnemonicAndPasswordRequired[cs ? 'cs' : 'en'], ok: false });
+      return;
+    }
     try {
       await importFromMnemonic(mnemonic, walletName, password);
       setMnemonic(''); setPassword('');
-      alert(WalletCopy.walletImportedSuccessfully[cs ? 'cs' : 'en']);
-    } catch (e: any) { alert(e.message); }
+      setImportMsg({ text: WalletCopy.walletImportedSuccessfully[cs ? 'cs' : 'en'], ok: true });
+    } catch (e: any) {
+      setImportMsg({ text: e.message, ok: false });
+    }
   };
 
   const handleImportPrivateKey = async () => {
-    if (!privateKey || !password) { alert(WalletCopy.privateKeyAndPasswordRequired[cs ? 'cs' : 'en']); return; }
+    setImportMsg(null);
+    if (!privateKey || !password) {
+      setImportMsg({ text: WalletCopy.privateKeyAndPasswordRequired[cs ? 'cs' : 'en'], ok: false });
+      return;
+    }
     try {
       await importFromPrivateKey(privateKey, walletName, password);
       setPrivateKey(''); setPassword('');
-      alert(WalletCopy.walletImportedSuccessfully[cs ? 'cs' : 'en']);
-    } catch (e: any) { alert(e.message); }
+      setImportMsg({ text: WalletCopy.walletImportedSuccessfully[cs ? 'cs' : 'en'], ok: true });
+    } catch (e: any) {
+      setImportMsg({ text: e.message, ok: false });
+    }
   };
 
   const handleSend = async () => {
+    setTxResult(''); setTxid(''); setLocalError('');
     if (!activeWallet || !sendTo || !sendAmount || !password) {
-      alert(WalletCopy.fillAllRequiredFields[cs ? 'cs' : 'en']); return;
+      setLocalError(WalletCopy.fillAllRequiredFields[cs ? 'cs' : 'en']);
+      return;
+    }
+    if (!/^zion1[a-z0-9]+$/i.test(sendTo.trim())) {
+      setLocalError(WalletCopy.invalidRecipientAddress[cs ? 'cs' : 'en']);
+      return;
+    }
+    const amount = parseFloat(sendAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setLocalError(WalletCopy.invalidAmount[cs ? 'cs' : 'en']);
+      return;
+    }
+    if (balance !== null && amount > balance) {
+      setLocalError(WalletCopy.amountExceedsBalance[cs ? 'cs' : 'en']);
+      return;
     }
     try {
-      const txid = await send(sendTo, parseFloat(sendAmount), password, sendMemo || undefined);
-      setTxResult(`Transaction submitted! TXID: ${txid}`);
+      const result = await send(sendTo.trim(), amount, password, sendMemo || undefined);
+      setTxid(String(result));
+      setTxResult(WalletCopy.transactionSubmitted[cs ? 'cs' : 'en']);
       setSendTo(''); setSendAmount(''); setSendMemo(''); setPassword('');
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) {
+      setLocalError(e.message);
+    }
   };
 
   const handleExportMnemonic = async () => {
     if (!activeWallet || !password) return;
+    setLocalError('');
     try {
       const m = await exportMnemonic(activeWallet.id, password);
       setExportedSecret(m);
       setShowSecret(false);
-    } catch (e: any) { alert(e.message); }
+      setPassword('');
+    } catch (e: any) { setLocalError(e.message); }
   };
 
   const handleExportPrivateKey = async () => {
     if (!activeWallet || !password) return;
+    setLocalError('');
     try {
       const pk = await exportPrivateKey(activeWallet.id, password);
       setExportedSecret(pk);
       setShowSecret(false);
-    } catch (e: any) { alert(e.message); }
+      setPassword('');
+    } catch (e: any) { setLocalError(e.message); }
   };
 
   const handleImportTrezor = async () => {
+    setImportMsg(null);
     try {
       await importFromTrezor(walletName);
-      alert(WalletCopy.trezorWalletConnected[cs ? 'cs' : 'en']);
-    } catch (e: any) { alert(e.message); }
+      setImportMsg({ text: WalletCopy.trezorWalletConnected[cs ? 'cs' : 'en'], ok: true });
+    } catch (e: any) {
+      setImportMsg({ text: e.message, ok: false });
+    }
   };
 
   const handleImportLedger = async () => {
+    setImportMsg(null);
     try {
       await importFromLedger(walletName);
-      alert(WalletCopy.ledgerWalletConnected[cs ? 'cs' : 'en']);
-    } catch (e: any) { alert(e.message); }
+      setImportMsg({ text: WalletCopy.ledgerWalletConnected[cs ? 'cs' : 'en'], ok: true });
+    } catch (e: any) {
+      setImportMsg({ text: e.message, ok: false });
+    }
   };
 
-  const copyToClipboard = (text: string) => {
+  const handleDeleteWallet = (id: string) => {
+    if (confirmDeleteId === id) {
+      deleteWallet(id);
+      setConfirmDeleteId(null);
+      return;
+    }
+    setConfirmDeleteId(id);
+    setTimeout(() => setConfirmDeleteId((cur) => (cur === id ? null : cur)), 4000);
+  };
+
+  const copyToClipboard = (text: string, field = 'addr') => {
     navigator.clipboard.writeText(text);
-    alert(WalletCopy.copiedToClipboard[cs ? 'cs' : 'en']);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
   };
 
   const activeName = activeWallet?.name ?? (WalletCopy.noWallet[cs ? 'cs' : 'en']);
@@ -700,8 +763,10 @@ export default function WalletPage() {
                   <code className="bg-black/60 px-3 py-1.5 rounded-xl text-sm font-mono text-zion-gold flex-1 truncate">
                     {activeWallet.address}
                   </code>
-                  <button onClick={() => copyToClipboard(activeWallet.address)} className="p-2 hover:bg-white/10 rounded-2xl transition">
-                    <Copy className="w-4 h-4 text-gray-400" />
+                  <button onClick={() => copyToClipboard(activeWallet.address, 'addr')} className="p-2 hover:bg-white/10 rounded-2xl transition" title={WalletCopy.copiedToClipboard[cs ? 'cs' : 'en']}>
+                    {copiedField === 'addr'
+                      ? <Check className="w-4 h-4 text-emerald-400" />
+                      : <Copy className="w-4 h-4 text-gray-400" />}
                   </button>
                 </div>
                 <p className="text-2xl font-bold text-zion-cyan mt-3">
@@ -749,12 +814,23 @@ export default function WalletPage() {
                         <p className="font-medium text-white">{w.name}</p>
                         <p className="text-xs text-gray-500 font-mono truncate max-w-[300px]">{w.address}</p>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); deleteWallet(w.id); }}
-                        className="p-2 hover:bg-zion-purple/10 rounded-2xl text-zion-purple transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {confirmDeleteId === w.id ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteWallet(w.id); }}
+                          title={WalletCopy.deleteWalletWarn[cs ? 'cs' : 'en']}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-2 py-1 text-xs font-semibold text-red-400 transition"
+                        >
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          {WalletCopy.confirmDelete[cs ? 'cs' : 'en']}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteWallet(w.id); }}
+                          className="p-2 hover:bg-zion-purple/10 rounded-2xl text-zion-purple transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -930,6 +1006,15 @@ export default function WalletPage() {
                         {WalletCopy.warningTrezorLedgerFirmwareDoe[cs ? 'cs' : 'en']}
                       </p>
                     </div>
+                    {importMsg && (
+                      <div className={`rounded-xl border px-4 py-3 text-sm ${
+                        importMsg.ok
+                          ? 'border-emerald-400/20 bg-emerald-400/5 text-emerald-300'
+                          : 'border-red-400/20 bg-red-400/5 text-red-300'
+                      }`}>
+                        {importMsg.text}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -994,7 +1079,23 @@ export default function WalletPage() {
                         {loading ? (WalletCopy.sending[cs ? 'cs' : 'en']) : (WalletCopy.sendZion[cs ? 'cs' : 'en'])}
                       </button>
                       {txResult && (
-                        <p className="text-zion-cyan text-sm mt-2 zion-rainbow-sub p-3 font-mono" style={{ '--rc': '252, 209, 22' } as CSSProperties}>{txResult}</p>
+                        <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+                          <p className="text-zion-cyan text-sm font-medium">{txResult}</p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <code className="text-xs font-mono text-gray-300 break-all">{txid}</code>
+                            {txid && (
+                              <>
+                                <button onClick={() => copyToClipboard(txid, 'txid')} className="text-zion-gold hover:text-white">
+                                  {copiedField === 'txid' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                                </button>
+                                <Link href={`/explorer/tx/${txid}`} className="inline-flex items-center gap-1 text-xs text-zion-cyan hover:underline">
+                                  <ExternalLink className="h-3 w-3" />
+                                  {WalletCopy.viewInExplorer[cs ? 'cs' : 'en']}
+                                </Link>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1045,8 +1146,8 @@ export default function WalletPage() {
                               <button onClick={() => setShowSecret(!showSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
                                 {showSecret ? <EyeOff className="w-4 h-4 text-zion-purple" /> : <Eye className="w-4 h-4 text-zion-purple" />}
                               </button>
-                              <button onClick={() => copyToClipboard(exportedSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
-                                <Copy className="w-4 h-4 text-zion-purple" />
+                              <button onClick={() => copyToClipboard(exportedSecret, 'secret')} className="p-1 hover:bg-red-900/30 rounded transition">
+                                {copiedField === 'secret' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zion-purple" />}
                               </button>
                             </div>
                           </div>
