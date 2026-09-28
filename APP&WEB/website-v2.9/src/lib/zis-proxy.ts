@@ -32,7 +32,7 @@ export async function proxyToZis(
   }
 
   const zisBase = getZisUrl();
-  const targetUrl = `${zisBase}${zisBasePath}${subPath ? `/${subPath}` : ''}`;
+  const targetUrl = `${zisBase}${zisBasePath}${subPath ? `/${subPath}` : ''}${req.nextUrl?.search ?? ''}`;
 
   // Forward the session cookie so ZIS can authenticate the request.
   const forwardHeaders: Record<string, string> = {

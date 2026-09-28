@@ -141,3 +141,6 @@ ZION_POOL_AUXPOW_CPU_COIN="VRSC"
 ZION_POOL_AUXPOW_CPU_WALLET="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
 ZION_POOL_AUXPOW_CPU_WORKER_NAME="zion_triple"
 ZION_POOL_AUXPOW_CPU_REGION="eu"
+# pool-side per-coin vars actually read by auxpow_runtime.rs (CPU_WALLET above is miner-side)
+ZION_POOL_AUXPOW_WALLET_VRSC="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
+ZION_POOL_AUXPOW_POOL_VRSC="eu.luckpool.net:3956"

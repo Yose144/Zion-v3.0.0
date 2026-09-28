@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   Wallet, Pickaxe, ArrowLeftRight, Sparkles, LogOut, Copy, Check,
-  User, Activity, Shield, Globe2, Zap, TrendingUp, Bot,
+  User, Activity, Shield, Globe2, Zap, TrendingUp, Bot, Bell,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
@@ -22,6 +22,7 @@ import MiningStats from '@/components/dashboard/MiningStats';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
 import SecurityPanel from '@/components/dashboard/SecurityPanel';
+import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 
 const AccountCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -54,13 +55,14 @@ const AccountCopy = {
   wallet: { cs: `Peněženka`, en: `Wallet` },
 };
 
-type Tab = 'wallet' | 'mining' | 'transactions' | 'ai' | 'security';
+type Tab = 'wallet' | 'mining' | 'transactions' | 'ai' | 'security' | 'notifications';
 
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
   { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '6, 105, 40' },
   { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '228, 30, 43' },
   { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '252, 209, 22' },
   { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '6, 105, 40' },
+  { id: 'notifications', labelCs: 'Notifikace', labelEn: 'Notifications', icon: Bell, rc: '147, 51, 234' },
   { id: 'security', labelCs: 'Bezpečnost', labelEn: 'Security', icon: Shield, rc: '252, 209, 22' },
 ];
 
@@ -493,6 +495,11 @@ export default function AccountPage() {
                     <h2 className="text-lg font-bold text-white">{AccountCopy.hiranyagarbhaAi[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <DashboardAIChat />
+                </div>
+              )}
+              {activeTab === 'notifications' && (
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as CSSProperties}>
+                  <NotificationsPanel />
                 </div>
               )}
               {activeTab === 'security' && <SecurityPanel />}
