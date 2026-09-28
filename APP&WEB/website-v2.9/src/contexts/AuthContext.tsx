@@ -14,6 +14,8 @@ import {
   verifyEd25519 as zisVerifyEd25519,
   verifySiwe as zisVerifySiwe,
   verifyGoogle as zisVerifyGoogle,
+  getPasskeyLoginOptions,
+  verifyPasskeyLogin,
   getCurrentUser,
   logout as zisLogout,
   updateProfile as zisUpdateProfile,
@@ -47,6 +49,8 @@ interface AuthState {
   loginWithSiwe: () => Promise<void>;
   /** Login with Google (OpenID Connect ID token) */
   loginWithGoogle: (idToken: string) => Promise<void>;
+  /** Login with a passkey (WebAuthn). Throws on failure/cancel. */
+  loginWithPasskey: () => Promise<void>;
   /** Logout */
   logout: () => Promise<void>;
   /** Update display name */
@@ -61,6 +65,7 @@ const defaultState: AuthState = {
   loginWithWallet: async () => {},
   loginWithSiwe: async () => {},
   loginWithGoogle: async () => {},
+  loginWithPasskey: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
 };
@@ -203,6 +208,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(zisToAuthUser(fullUser));
   }, []);
 
+  const loginWithPasskey = useCallback(async () => {
+    // 1. Begin the WebAuthn login ceremony on ZIS.
+    const { ceremonyId, options } = await getPasskeyLoginOptions();
+
+    // 2. Ask the browser/authenticator for an assertion.
+    const { startAuthentication } = await import('@simplewebauthn/browser');
+    const response = await startAuthentication({
+      optionsJSON: options as unknown as Parameters<typeof startAuthentication>[0]['optionsJSON'],
+    });
+
+    // 3. Submit the assertion — sets the SSO cookie on success.
+    await verifyPasskeyLogin({ ceremonyId, response });
+
+    // 4. Fetch full user record with the fresh cookie.
+    const fullUser = await getCurrentUser();
+    setUser(zisToAuthUser(fullUser));
+  }, []);
+
   const logout = useCallback(async () => {
     await zisLogout();
     setUser(null);
@@ -223,6 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithWallet,
         loginWithSiwe,
         loginWithGoogle,
+        loginWithPasskey,
         logout,
         updateProfile,
       }}

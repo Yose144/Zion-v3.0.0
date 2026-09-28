@@ -13,7 +13,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Wallet, Loader2, AlertCircle, CheckCircle2, ArrowRight, ChevronDown } from 'lucide-react';
+import { X, Lock, Wallet, Loader2, AlertCircle, CheckCircle2, ArrowRight, ChevronDown, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
 
@@ -24,7 +24,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ open, onClose, redirectTo }: LoginModalProps) {
-  const { loginWithWallet, loginWithSiwe } = useAuth();
+  const { loginWithWallet, loginWithSiwe, loginWithPasskey } = useAuth();
   const zionWallet = useZionWallet();
 
   const [password, setPassword] = useState('');
@@ -34,11 +34,41 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
   const [showWalletList, setShowWalletList] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasMetaMask, setHasMetaMask] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
     setHasMetaMask(typeof window !== 'undefined' && !!(window as any).ethereum);
+    import('@simplewebauthn/browser')
+      .then((m) => setHasPasskey(m.browserSupportsWebAuthn()))
+      .catch(() => setHasPasskey(false));
   }, []);
+
+  const handlePasskey = async () => {
+    setPasskeyLoading(true);
+    setPasskeyNotice(null);
+    setPasskeyError(null);
+    setError(null);
+    try {
+      await loginWithPasskey();
+      onClose();
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      }
+    } catch (err: any) {
+      if (err?.name === 'NotAllowedError') {
+        // User dismissed the authenticator prompt — quiet note, not an error.
+        setPasskeyNotice('Passkey prompt was dismissed.');
+      } else {
+        setPasskeyError(err?.message || 'Passkey sign-in failed');
+      }
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   const handleSiwe = async () => {
     setLoading(true);
@@ -88,6 +118,8 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
   const handleClose = () => {
     setPassword('');
     setError(null);
+    setPasskeyNotice(null);
+    setPasskeyError(null);
     onClose();
   };
 
@@ -129,6 +161,34 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
 
             {/* Body */}
             <div className="px-6 py-5">
+              {/* Passkey sign-in */}
+              {hasPasskey && (
+                <div className="mb-5">
+                  <button
+                    type="button"
+                    onClick={handlePasskey}
+                    disabled={loading || passkeyLoading}
+                    className="zion-button-secondary w-full text-sm disabled:opacity-50"
+                  >
+                    {passkeyLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <KeyRound className="h-4 w-4" />
+                    )}
+                    {passkeyLoading ? 'Waiting for passkey...' : 'Sign in with passkey'}
+                  </button>
+                  {passkeyNotice && (
+                    <p className="text-[10px] text-zion-gold/55 text-center mt-2">{passkeyNotice}</p>
+                  )}
+                  {passkeyError && (
+                    <div className="mt-2 rounded-lg border border-zion-purple/20 bg-zion-purple/5 px-3 py-2 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-zion-purple shrink-0 mt-0.5" />
+                      <p className="text-xs text-zion-purple">{passkeyError}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* MetaMask / EVM sign-in */}
               <div className="mb-5">
                 <button

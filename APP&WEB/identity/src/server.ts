@@ -13,6 +13,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 import { authRoutes } from './routes/auth.js';
+import { webauthnRoutes } from './routes/webauthn.js';
 import { sessionRoutes } from './routes/session.js';
 import { apiKeyRoutes } from './routes/apikey.js';
 import { notificationRoutes } from './routes/notifications.js';
@@ -71,6 +72,7 @@ async function start() {
   // ── Routes ──────────────────────────────────────────────────────
   await app.register(healthRoutes, { prefix: '/health' });
   await app.register(authRoutes, { prefix: '/api/auth' });
+  await app.register(webauthnRoutes, { prefix: '/api/auth/webauthn' });
   await app.register(sessionRoutes, { prefix: '/api/session' });
   await app.register(apiKeyRoutes, { prefix: '/api/keys' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });

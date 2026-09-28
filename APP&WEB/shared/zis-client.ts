@@ -476,6 +476,119 @@ export async function verifyApiKey(
   });
 }
 
+// ── WebAuthn / passkey API ───────────────────────────────────────────
+
+/** A passkey registered on a ZION account (the public key never leaves ZIS). */
+export interface ZisPasskey {
+  id: string;
+  credentialId: string;
+  label?: string | null;
+  /** "singleDevice" | "multiDevice" */
+  deviceType: string;
+  backedUp: boolean;
+  transports: string[];
+  createdAt: string;
+  lastUsedAt?: string | null;
+}
+
+/**
+ * A pending WebAuthn ceremony. `options` is the JSON options object to hand
+ * to the browser WebAuthn API (navigator.credentials.create / .get), e.g.
+ * via `@simplewebauthn/browser` startRegistration / startAuthentication.
+ */
+export interface ZisPasskeyCeremony {
+  ceremonyId: string;
+  options: Record<string, unknown>;
+}
+
+/**
+ * Begin passkey registration for the authenticated user.
+ * POST /api/auth/webauthn/register/options  (requires zion_session cookie)
+ */
+export async function getPasskeyRegistrationOptions(
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<ZisPasskeyCeremony> {
+  return zisFetch<ZisPasskeyCeremony>('/api/auth/webauthn/register/options', {
+    method: 'POST',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Finish passkey registration — submit the browser's attestation response.
+ * POST /api/auth/webauthn/register/verify  (requires zion_session cookie)
+ */
+export async function verifyPasskeyRegistration(
+  body: { ceremonyId: string; response: unknown; label?: string },
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ credential: ZisPasskey }> {
+  return zisFetch<{ credential: ZisPasskey }>('/api/auth/webauthn/register/verify', {
+    method: 'POST',
+    body,
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Begin passkey (usernameless) login.
+ * POST /api/auth/webauthn/login/options  (anonymous)
+ */
+export async function getPasskeyLoginOptions(
+  options?: { baseUrl?: string },
+): Promise<ZisPasskeyCeremony> {
+  return zisFetch<ZisPasskeyCeremony>('/api/auth/webauthn/login/options', {
+    method: 'POST',
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Finish passkey login — submit the browser's assertion response.
+ * Sets the `zion_session` cookie on success.
+ * POST /api/auth/webauthn/login/verify  (anonymous)
+ */
+export async function verifyPasskeyLogin(
+  body: { ceremonyId: string; response: unknown },
+  options?: { baseUrl?: string },
+): Promise<ZisSession> {
+  return zisFetch<ZisSession>('/api/auth/webauthn/login/verify', {
+    method: 'POST',
+    body,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * List the authenticated user's passkeys.
+ * GET /api/auth/webauthn/credentials  (requires zion_session cookie)
+ */
+export async function listPasskeys(
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ credentials: ZisPasskey[] }> {
+  return zisFetch<{ credentials: ZisPasskey[] }>('/api/auth/webauthn/credentials', {
+    method: 'GET',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Delete one of the authenticated user's passkeys.
+ * DELETE /api/auth/webauthn/credentials/:id  (requires zion_session cookie)
+ */
+export async function deletePasskey(
+  id: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean }> {
+  return zisFetch<{ ok: boolean }>(`/api/auth/webauthn/credentials/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
 /**
  * Fetch the ZIS well-known discovery document.
  * GET /.well-known/zion-identity
