@@ -122,13 +122,67 @@ async function syncMiningStats() {
           lastShareAt,
         },
       });
+
+      // Block-found delta → mining_payout notification. The first poll only
+      // populates the baseline so a service start does not re-notify history.
+      const key = workerName === addr ? addr : `${addr}.${workerName}`;
+      const blocks = (miner.blocks_found as number) ?? 0;
+      const prev = miningBlockBaseline.get(key);
+      miningBlockBaseline.set(key, blocks);
+      if (miningBaselinePrimed && prev !== undefined && blocks > prev) {
+        await notifyAddress(
+          addr,
+          'mining_payout',
+          'Mining reward incoming',
+          `Your worker "${workerName}" found block #${blocks} — the pool is paying it out to ${addr.slice(0, 16)}…`,
+          { href: '/account', worker: key },
+        );
+      }
     }
+    miningBaselinePrimed = true;
   } catch (e) {
     console.error('[J6] Mining stats sync error:', e);
   }
 }
 
-// ── J7: DAO proposals sync ────────────────────────────────────────────
+// ── J10 helpers: address → ZIS user resolution ────────────────────────
+
+/** Resolve a chain address (zion1…/0x…) to a ZIS user id via primary or linked address. */
+async function resolveUserByAddress(address: string): Promise<string | null> {
+  if (!address) return null;
+  const user = await prisma.user.findFirst({
+    where: { primaryAddress: address },
+    select: { id: true },
+  });
+  if (user) return user.id;
+  const linked = await prisma.linkedAddress.findFirst({
+    where: { address },
+    select: { userId: true },
+  });
+  return linked?.userId ?? null;
+}
+
+/** Create a notification for whoever owns `address` (primary or linked). */
+async function notifyAddress(
+  address: string,
+  type: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+) {
+  const userId = await resolveUserByAddress(address);
+  if (!userId) return;
+  await createNotification({ userId, type, title, body, data }).catch((e) =>
+    console.error(`[J10] notify ${type} failed for ${userId}:`, e),
+  );
+}
+
+// Baseline guards — populated on first poll so a service restart does not
+// re-notify for historical events.
+const miningBlockBaseline = new Map<string, number>();
+let miningBaselinePrimed = false;
+
+// ── J7: DAO proposals sync (also produces dao_vote notifications) ──────
 
 async function syncDaoProposals() {
   try {
@@ -153,6 +207,11 @@ async function syncDaoProposals() {
         ? new Date(p.voting_ends_at as string)
         : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+      const prevProposal = await prisma.daoProposal.findUnique({
+        where: { proposalId },
+        select: { status: true },
+      });
+
       await prisma.daoProposal.upsert({
         where: { proposalId },
         update: {
@@ -174,6 +233,24 @@ async function syncDaoProposals() {
           expiresAt: votingEnds,
         },
       });
+
+      // Proposal left the "active" state → notify recorded voters once.
+      if (prevProposal && prevProposal.status === 'active' && status !== 'active') {
+        const votes = await prisma.daoVote.findMany({
+          where: { proposalId },
+          select: { voter: true },
+        });
+        const title = (p.title as string) ?? `Proposal #${proposalId}`;
+        for (const v of votes) {
+          await notifyAddress(
+            v.voter,
+            'dao_vote',
+            'DAO proposal closed',
+            `"${title}" ended with status: ${status}.`,
+            { href: '/dao', proposalId, status },
+          );
+        }
+      }
     }
   } catch (e) {
     console.error('[J7] DAO sync error:', e);
@@ -238,6 +315,24 @@ async function syncBridgeTransactions() {
           status,
         },
       });
+
+      // Transition to confirmed → bridge_complete notification. The 2h
+      // freshness window skips historical transfers on first sync.
+      const createdMs = t.created_at ? Date.parse(String(t.created_at)) : Date.now();
+      const isFresh = Number.isFinite(createdMs)
+        ? Date.now() - createdMs < 2 * 3_600_000
+        : true;
+      if (status === 'confirmed' && isFresh && existing?.status !== 'confirmed') {
+        const userAddr = String(isOutboundL1 ? (t.sender ?? '') : (t.recipient ?? ''));
+        const amountZion = (Number(amount) / 1_000_000).toFixed(6).replace(/\.?0+$/, '');
+        await notifyAddress(
+          userAddr,
+          'bridge_complete',
+          'Bridge transfer completed',
+          `${amountZion || '0'} ZION moved ${srcChain} → ${dstChain}.`,
+          { href: '/wallet/bridge', txId: id, destTxHash: t.dest_tx_hash },
+        );
+      }
     }
   } catch (e) {
     console.error('[J8] Bridge sync error:', e);

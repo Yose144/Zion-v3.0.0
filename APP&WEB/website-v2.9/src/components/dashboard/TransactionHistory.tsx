@@ -14,10 +14,13 @@ interface TransactionHistoryProps {
 interface Tx {
   tx_hash: string;
   block_height: number;
-  block_timestamp: number;
+  /** seconds since epoch (normalized from API `timestamp`) */
+  timestamp: number;
+  /** ZION amount (API already returns ZION, not atomic) */
   amount: number;
   fee?: number;
   from?: string;
+  /** comma-separated output list on multi-output transfers */
   to?: string;
   direction?: 'in' | 'out';
   memo?: string;
@@ -36,7 +39,17 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
       if (!res.ok) throw new Error('Failed to fetch transactions');
       const data = await res.json();
       const list = data.transactions ?? data.txs ?? data ?? [];
-      setTxs(Array.isArray(list) ? list : []);
+      const normalized: Tx[] = (Array.isArray(list) ? list : []).map((tx: any) => ({
+        tx_hash: tx.tx_hash ?? tx.tx_id ?? '',
+        block_height: tx.block_height ?? 0,
+        timestamp: tx.block_timestamp ?? tx.timestamp ?? 0,
+        // API `amount` is ZION; `amount_zion` is atomic flowers — prefer the float.
+        amount: Number(tx.amount ?? (Number(tx.amount_zion ?? 0) / 1_000_000)),
+        from: tx.from,
+        to: tx.to,
+        direction: tx.direction,
+      }));
+      setTxs(normalized.filter((tx) => tx.tx_hash));
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -48,9 +61,14 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
     fetchTxs();
   }, [fetchTxs]);
 
-  const formatAmount = (atomic: number) => {
-    return (atomic / 1e8).toFixed(8);
+  const formatAmount = (zion: number) => {
+    return zion.toFixed(6);
   };
+
+  // `to`/`from` are comma-joined output lists on multi-output transfers —
+  // exact `===` almost never matches; check individual entries.
+  const involvesAddress = (field: string | undefined) =>
+    !!field && field.split(',').map((a) => a.trim()).includes(address);
 
   const formatTime = (ts: number) => {
     if (!ts) return '—';
@@ -95,7 +113,10 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
       ) : (
         <div className="space-y-2">
           {txs.map((tx) => {
-            const isIn = tx.direction === 'in' || tx.to === address;
+            // Sender wins over recipient when the address appears on both
+            // sides (UTXO change outputs list the sender as an output too).
+            const isIn = tx.direction === 'in' ||
+              (involvesAddress(tx.to) && !involvesAddress(tx.from) && tx.direction !== 'out');
             const amount = formatAmount(tx.amount ?? 0);
             return (
               <div
@@ -116,7 +137,7 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
                     <p className={`text-sm font-mono font-semibold ${isIn ? 'text-zion-cyan' : 'text-zion-purple'}`}>
                       {isIn ? '+' : '-'}{amount} ZION
                     </p>
-                    <span className="text-[10px] text-gray-600">{formatTime(tx.block_timestamp)}</span>
+                    <span className="text-[10px] text-gray-600">{formatTime(tx.timestamp)}</span>
                   </div>
                   <p className="text-[10px] font-mono text-gray-600 truncate">
                     {tx.tx_hash.slice(0, 24)}...
