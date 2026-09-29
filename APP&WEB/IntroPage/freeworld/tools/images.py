@@ -30,13 +30,21 @@ for slug, (render, board) in SOURCES.items():
     save_webp(Image.open(IMG / render), DIST / f'assets/img/{slug}/render.webp', 1400, 82)
     save_webp(Image.open(IMG / board), DIST / f'assets/img/{slug}/board.webp', 1600, 80)
 
-save_webp(Image.open(IMG / 'L5FreeWorlds.jpg'), DIST / 'assets/img/hero.webp', 1920, 82)
+save_webp(Image.open(IMG.parent / 'Hero.png'), DIST / 'assets/img/hero.webp', 1920, 84)
 
-# logo + favicon from main site assets
+# brand marks — original ZION tree-Z mark (nav + favicon) and the wide
+# chain-link glyph (footer brand). Sources live in IntroPage public/.
+INTRO_PUBLIC = REPO / 'APP&WEB/IntroPage/public'
 (DIST / 'assets/img').mkdir(parents=True, exist_ok=True)
-for src, dst in [(WEB_IMG / 'logo144.png', 'glyph.png'), (WEB_IMG / 'favicon.png', 'favicon.png')]:
+for src, dst, size in [
+    (INTRO_PUBLIC / 'symbol-200x200.png', 'mark.png', 200),
+    (INTRO_PUBLIC / 'symbol-200x200.png', 'favicon.png', 64),
+    (INTRO_PUBLIC / 'glyph-transparent.png', 'glyph.png', 800),
+]:
     if src.exists():
         im = Image.open(src)
+        if im.width > size:
+            im = im.resize((size, int(im.height * size / im.width)), Image.LANCZOS)
         out = DIST / 'assets/img' / dst
         im.save(out)
         print(f'  {out.relative_to(DIST)} {im.size}')

@@ -85,30 +85,36 @@ a:hover { text-decoration: underline; }
 
 /* ── Hero ────────────────────────────────────────────────────── */
 .fw-hero {
-  position: relative; min-height: 88vh;
+  position: relative; min-height: 100vh;
   display: flex; align-items: flex-end;
   overflow: hidden;
 }
 .fw-hero-bg { position: absolute; inset: 0; }
-.fw-hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+.fw-hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 32%; }
+/* Bright banner: light scrim under the nav, clear middle so the baked-in
+   L5 FREE WORLD title reads, dark band at the bottom for the tagline. */
 .fw-hero-bg::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(11,13,16,0.45) 0%, rgba(11,13,16,0.15) 40%, rgba(11,13,16,0.92) 100%);
+  background: linear-gradient(180deg,
+    rgba(11,13,16,0.42) 0%, rgba(11,13,16,0) 22%,
+    rgba(11,13,16,0) 55%, rgba(11,13,16,0.55) 78%, rgba(11,13,16,0.96) 100%);
 }
 .fw-hero-inner {
   position: relative; z-index: 2; width: 100%;
   max-width: var(--maxw); margin: 0 auto;
-  padding: 7rem clamp(1rem, 4vw, 2.5rem) 3.5rem;
+  padding: 7rem clamp(1rem, 4vw, 2.5rem) 3rem;
 }
 .fw-hero h1 {
-  font-family: var(--serif); font-weight: 500;
-  font-size: clamp(2.6rem, 7vw, 5.2rem); line-height: 1.05;
+  font-family: var(--serif); font-weight: 500; font-style: italic;
+  font-size: clamp(1.9rem, 4.6vw, 3.4rem); line-height: 1.12;
   letter-spacing: 0.02em; color: #fff;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.6);
 }
 .fw-hero h1 em { color: var(--gold); font-style: normal; }
 .fw-hero .fw-tagline {
-  margin-top: 1.1rem; max-width: 620px;
-  font-size: clamp(1rem, 2vw, 1.2rem); color: #cfd4d9;
+  margin-top: 1rem; max-width: 620px;
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem); color: #d8dde2;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.55);
 }
 .fw-hero-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
 .fw-hero-badges span {
@@ -351,6 +357,7 @@ a:hover { text-decoration: underline; }
 }
 .fw-footer .cols { max-width: var(--maxw); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: space-between; }
 .fw-footer .brand { font-family: var(--serif); letter-spacing: 0.24em; color: var(--gold); text-transform: uppercase; }
+.fw-footer-glyph { width: 160px; height: auto; margin-bottom: 0.9rem; opacity: 0.92; }
 .fw-footer nav { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.82rem; }
 .fw-footer nav span { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.3rem; }
 .fw-footer nav a { color: var(--text-dim); }
