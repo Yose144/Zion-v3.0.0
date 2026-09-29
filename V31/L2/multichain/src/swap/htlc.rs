@@ -969,7 +969,7 @@ fn hash_sha256(data: &[u8]) -> Hash {
 /// XOR is used because the preimage is exactly 32 bytes and the key is 32
 /// bytes — this provides equivalent protection to a one-time pad when the key
 /// is unique and secret. The same function decrypts (XOR is symmetric).
-fn encrypt_preimage_at_rest(preimage_hex: &str) -> String {
+pub(crate) fn encrypt_preimage_at_rest(preimage_hex: &str) -> String {
     match std::env::var("ZION_HTLC_PREIMAGE_KEY") {
         Ok(key_hex) => {
             let key = match hex::decode(key_hex.trim()) {
@@ -1005,8 +1005,7 @@ fn encrypt_preimage_at_rest(preimage_hex: &str) -> String {
 /// Decrypt a preimage that was encrypted with `encrypt_preimage_at_rest`.
 /// Returns the plaintext hex. If the stored value is not encrypted (no `enc:`
 /// prefix), returns it as-is.
-#[allow(dead_code)]
-fn decrypt_preimage_at_rest(stored: &str) -> String {
+pub(crate) fn decrypt_preimage_at_rest(stored: &str) -> String {
     let Some(enc_hex) = stored.strip_prefix("enc:") else {
         return stored.to_string();
     };

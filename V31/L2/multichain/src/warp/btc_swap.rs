@@ -352,7 +352,11 @@ impl BtcSwapRecord {
             user_zion_lock_txid: self.user_zion_lock_txid.clone(),
             btc_lock: self.btc_lock.clone(),
             zion_lock_tx: self.zion_lock_tx.clone(),
-            preimage_hex: self.preimage.map(hex::encode),
+            // FIND-002: encrypt at rest (XOR vs ZION_HTLC_PREIMAGE_KEY);
+            // plaintext fallback only when the env key is unset.
+            preimage_hex: self
+                .preimage
+                .map(|p| crate::swap::htlc::encrypt_preimage_at_rest(&hex::encode(p))),
             btc_settle_tx: self.btc_settle_tx.clone(),
             quote_id: self.quote_id.clone(),
             created_at: self.created_at,
@@ -379,7 +383,8 @@ impl BtcSwapRecord {
             .ok_or_else(|| err("bad user_zion_pubkey_hex"))?;
         let preimage = match &snap.preimage_hex {
             Some(h) => Some(
-                hex::decode(h)
+                // Transparently handles legacy plaintext and `enc:` records.
+                hex::decode(crate::swap::htlc::decrypt_preimage_at_rest(h))
                     .ok()
                     .and_then(|b| <[u8; 32]>::try_from(b.as_slice()).ok())
                     .ok_or_else(|| err("bad preimage_hex"))?,
@@ -2148,6 +2153,40 @@ mod tests {
         assert_eq!(rec2.btc_lock.unwrap().txid, "aa".repeat(32));
         assert_eq!(rec2.preimage, Some([0x42; 32]));
         assert_eq!(rec2.zion_lock_tx, Some("bb".repeat(32)));
+    }
+
+    /// FIND-002: with ZION_HTLC_PREIMAGE_KEY set, a stored preimage is
+    /// `enc:`-wrapped at rest and decrypts transparently on load.
+    #[test]
+    fn snapshot_encrypts_preimage_at_rest() {
+        std::env::set_var("ZION_HTLC_PREIMAGE_KEY", "ab".repeat(32));
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.preimage = Some([0x42; 32]);
+
+        let snap = rec.to_snapshot();
+        let stored = snap.preimage_hex.clone().unwrap();
+        assert!(stored.starts_with("enc:"), "preimage must be wrapped: {stored}");
+        assert!(!stored.contains(&"42".repeat(32)), "must not leak plaintext");
+
+        let rec2 = BtcSwapRecord::from_snapshot(&snap).unwrap();
+        assert_eq!(rec2.preimage, Some([0x42; 32]));
+        std::env::remove_var("ZION_HTLC_PREIMAGE_KEY");
+    }
+
+    /// Legacy plaintext `preimage_hex` snapshots still load (no `enc:` prefix).
+    #[test]
+    fn snapshot_loads_legacy_plaintext_preimage() {
+        std::env::remove_var("ZION_HTLC_PREIMAGE_KEY");
+        let s = signer();
+        let c = cfg();
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.preimage = Some([0x77; 32]);
+        let mut snap = rec.to_snapshot();
+        snap.preimage_hex = Some("77".repeat(32)); // simulate pre-encryption DB row
+        let rec2 = BtcSwapRecord::from_snapshot(&snap).unwrap();
+        assert_eq!(rec2.preimage, Some([0x77; 32]));
     }
 
     #[test]
