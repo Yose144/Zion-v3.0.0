@@ -8,7 +8,9 @@ Dedikovaný **statický** L5 Free World portál — editorial/projektový web mi
 - `src/project.html` — template projektové stránky
 - `src/assets/css/site.css` — celý design (dark shell + krémové "masterplan board" panely)
 - `src/assets/js/site.js` — i18n slovník CS/EN (`data-i18n` + `data-lang-show`), reveal, Leaflet mapa (Esri Dark Gray Canvas), live fund/registry polling, QV ballot UI
+- `src/docs-index.html`, `src/doc.html` — templates dokumentace
 - `content/projects.json` — 6 projektů (slug, lokace, souřadnice, accent, tagline cs/en, obrázky, docs slug)
+- `content/docs.json` — L5 docs registry (kategorie → {slug, file, title override?}); zdroj `public/V3/L5/docs/**`, titulky/blurby se berou z `# H1` + první `>` citace
 - `tools/build.mjs` — build (marked → docs HTML, templating, volá images.py)
 - `tools/images.py` — PIL → webp z `L5Projects/img/` do `dist/assets/img/<slug>/{render,board}.webp`
 - `deploy/deploy-freeworld.sh` — rsync `dist/` → `/var/www/freeworld` + nginx reload
@@ -30,6 +32,7 @@ bash deploy/deploy-freeworld.sh
 
 - `/` — hero (L5FreeWorlds banner), live fund ticker, 6 karet, mapa, registry tabulky, QV sekce
 - `/p/<slug>/` — detail: render hero, masterplan board (lightbox), plná dokumentace CS+EN (pre-render z `website-v2.9/public/docs/terranova/<docSlug>.<lang>.md`), prev/next navigace
+- `/docs/` — index 14 L5 dokumentů ve 7 kategoriích; `/docs/<slug>/` — doc stránka (EN obsah, `docs.enonly` poznámka jen v CS; per-doc `title`/`blurb` override v docs.json pro interní názvy v H1)
 
 ## Live data & bezpečnost
 

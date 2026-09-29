@@ -19,6 +19,8 @@ const DIST = join(ROOT, 'dist');
 const DOCS = join(REPO, 'APP&WEB/website-v2.9/public/docs/terranova');
 
 const projects = JSON.parse(readFileSync(join(ROOT, 'content/projects.json'), 'utf8'));
+const docGroups = JSON.parse(readFileSync(join(ROOT, 'content/docs.json'), 'utf8'));
+const L5DOCS = join(REPO, 'public/V3/L5/docs');
 
 marked.setOptions({ gfm: true, breaks: false });
 
@@ -94,6 +96,69 @@ for (const [i, p] of projects.entries()) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'index.html'), html);
 }
+
+/* ── docs ── */
+// Extract `# H1` as title and the first `>` quote line as blurb; the H1 line
+// is stripped from the rendered body (the page header renders it instead).
+function parseDoc(md) {
+  const lines = md.split('\n');
+  let title = 'Untitled';
+  let blurb = '';
+  let h1Line = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].trim();
+    if (h1Line < 0 && l.startsWith('# ')) { title = l.slice(2).trim(); h1Line = i; continue; }
+    if (!blurb && l.startsWith('>')) blurb = l.replace(/^>\s*/, '').replace(/\*+/g, '').trim();
+    if (h1Line >= 0 && blurb) break;
+  }
+  const body = lines.filter((_, i) => i !== h1Line).join('\n');
+  return { title, blurb, body };
+}
+
+const flatDocs = docGroups.flatMap((g) => g.docs);
+const titleCache = {};
+function docTitleOf(slug) {
+  if (titleCache[slug]) return titleCache[slug];
+  const d = flatDocs.find((x) => x.slug === slug);
+  if (!d) return slug;
+  const src = join(L5DOCS, d.file);
+  titleCache[slug] = d.title || (existsSync(src) ? parseDoc(readFileSync(src, 'utf8')).title : slug);
+  return titleCache[slug];
+}
+
+const docTpl = readFileSync(join(SRC, 'doc.html'), 'utf8');
+for (const [i, d] of flatDocs.entries()) {
+  const src = join(L5DOCS, d.file);
+  if (!existsSync(src)) { console.warn('  !! missing doc', d.file); continue; }
+  const { title, blurb, body } = parseDoc(readFileSync(src, 'utf8'));
+  const prev = flatDocs[(i - 1 + flatDocs.length) % flatDocs.length];
+  const next = flatDocs[(i + 1) % flatDocs.length];
+  const html = fill(docTpl, {
+    TITLE: esc(d.title || title),
+    BLURB: esc(d.blurb || blurb),
+    BODY: marked.parse(body),
+    PREV_HREF: `/docs/${prev.slug}/`, PREV_NAME: esc(docTitleOf(prev.slug)),
+    NEXT_HREF: `/docs/${next.slug}/`, NEXT_NAME: esc(docTitleOf(next.slug)),
+  });
+  const dir = join(DIST, 'docs', d.slug);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), html);
+}
+
+const docsIdxTpl = readFileSync(join(SRC, 'docs-index.html'), 'utf8');
+const groupsHtml = docGroups.map((g) => {
+  const rows = g.docs.map((d) => {
+    const src = join(L5DOCS, d.file);
+    const { title, blurb } = existsSync(src) ? parseDoc(readFileSync(src, 'utf8')) : { title: d.slug, blurb: '' };
+    return `<a class="fw-docrow" href="/docs/${d.slug}/"><div><strong>${esc(d.title || title)}</strong><span>${esc(d.blurb || blurb)}</span></div><span class="arr">→</span></a>`;
+  }).join('\n');
+  return `<div class="fw-docgroup fw-reveal">
+      <h3><span data-lang-show="cs">${esc(g.title.cs)}</span><span class="fw-hidden" data-lang-show="en">${esc(g.title.en)}</span></h3>
+      ${rows}
+    </div>`;
+}).join('\n');
+mkdirSync(join(DIST, 'docs'), { recursive: true });
+writeFileSync(join(DIST, 'docs', 'index.html'), fill(docsIdxTpl, { DOC_GROUPS: groupsHtml }));
 
 /* ── assets ── */
 cpSync(join(SRC, 'assets/css'), join(DIST, 'assets/css'), { recursive: true });
