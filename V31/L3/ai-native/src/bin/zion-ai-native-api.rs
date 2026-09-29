@@ -6,15 +6,17 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::Utc;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use uuid::Uuid;
-use zion_ai_native::autotuner::DharmaAutotuner;
+use zion_ai_native::autotuner::{AutotuneReport, DharmaAutotuner};
 use zion_ai_native::consciousness_engine::ConsciousnessEngine;
 use zion_ai_native::knowledge_base::KnowledgeConfig;
+use zion_ai_native::lexical::{truncate_chars, Bm25Index};
 use zion_ai_native::llm_backend::RemoteHttpBackend;
 use zion_ai_native::orchestrator::Orchestrator;
 use zion_ai_native::rag::EmbeddingInputType;
@@ -34,6 +36,7 @@ use zion_ncl::{
 
 struct RagIndexState {
     store: VectorStore,
+    bm25: Bm25Index,
     last_indexed_at: Option<String>,
 }
 
@@ -45,6 +48,7 @@ struct AppState {
     model: String,
     backend_mode: String,
     echo_backend: EchoBackend,
+    autotune_enabled: bool,
     consciousness_engine: Mutex<ConsciousnessEngine>,
     rag: Mutex<RagIndexState>,
     autotuner: Mutex<DharmaAutotuner>,
@@ -113,44 +117,44 @@ fn default_consciousness() -> u8 {
     1
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
-    let bind = std::env::var("HIRANYAGARBHA_BIND")
-        .unwrap_or_else(|_| "0.0.0.0:8001".to_string())
-        .parse::<SocketAddr>()?;
-
+    // AppState construction must happen BEFORE the tokio runtime exists:
+    // `RemoteHttpBackend` builds a `reqwest::blocking::Client`, which
+    // panics when created inside an async runtime context.
     let state = Arc::new(AppState::from_env());
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?
+        .block_on(run(state))
+}
+
+async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
+    let bind = std::env::var("HIRANYAGARBHA_BIND")
+        .unwrap_or_else(|_| "127.0.0.1:8001".to_string())
+        .parse::<SocketAddr>()?;
 
     // Auto-seed RAG on startup
     if let Err(e) = seed_rag(&state) {
         tracing::error!(error = %e, "failed_to_auto_seed_rag");
     }
 
-    // Spawn Autotune in background
-    let autotune_state = state.clone();
-    tokio::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-        let mut tuner = autotune_state
-            .autotuner
-            .lock()
-            .expect("autotuner lock poisoned");
-        let rag = autotune_state.rag.lock().expect("rag lock poisoned");
-        if let Some(llm) = autotune_state.remote_backend.as_ref() {
-            let mut consciousness = autotune_state
-                .consciousness_engine
-                .lock()
-                .expect("consciousness lock poisoned");
-            if let Ok(report) = tuner.tune(llm, &rag.store, &mut consciousness.memory) {
-                consciousness.on_autotune(&report);
-            }
-        }
-    });
+    // Spawn Autotune in background — opt-in only (HIRANYAGARBHA_AUTOTUNE).
+    // The blocking remote LLM call runs on the blocking thread pool so the
+    // async workers stay responsive.
+    if state.autotune_enabled {
+        let autotune_state = state.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            let _ = tokio::task::spawn_blocking(move || run_autotune(&autotune_state)).await;
+        });
+    }
 
     // Mount full NCL router at /ncl/* (scheduler, jobs, workers, leaderboard)
     let ncl_app = ncl_router(state.ncl_state.clone());
@@ -230,9 +234,11 @@ impl AppState {
             model,
             backend_mode,
             echo_backend: EchoBackend::new("hiranyagarbha-echo-fallback"),
+            autotune_enabled: autotune_enabled(),
             consciousness_engine: Mutex::new(ConsciousnessEngine::new("hiranyagarbha-v2")),
             rag: Mutex::new(RagIndexState {
                 store: VectorStore::new(),
+                bm25: Bm25Index::build(Vec::new()),
                 last_indexed_at: None,
             }),
             autotuner: Mutex::new(DharmaAutotuner::new()),
@@ -272,6 +278,19 @@ fn buddhism_rag_preset() -> BuddhismRagPreset {
         "tibetan" => BuddhismRagPreset::Tibetan,
         _ => BuddhismRagPreset::All,
     }
+}
+
+/// Autotune is opt-in: `HIRANYAGARBHA_AUTOTUNE` must be "1", "true" or
+/// "yes" (case-insensitive). Default OFF — the refined system prompt is raw
+/// model output and must never be applied implicitly.
+fn parse_autotune_flag(value: &str) -> bool {
+    matches!(value.to_lowercase().as_str(), "1" | "true" | "yes")
+}
+
+fn autotune_enabled() -> bool {
+    std::env::var("HIRANYAGARBHA_AUTOTUNE")
+        .map(|v| parse_autotune_flag(&v))
+        .unwrap_or(false)
 }
 
 fn workspace_root_path() -> PathBuf {
@@ -368,12 +387,18 @@ fn seed_rag(state: &Arc<AppState>) -> anyhow::Result<()> {
         anyhow::bail!("rag seed has no documents");
     }
 
+    let bm25_docs: Vec<(String, String)> = entries
+        .iter()
+        .map(|(id, text, _)| (id.clone(), text.clone()))
+        .collect();
+
     let embedder = MockEmbeddingBackend::new(24);
     let texts: Vec<&str> = entries.iter().map(|(_, t, _)| t.as_str()).collect();
     let embeddings = embedder
         .embed(&texts, EmbeddingInputType::Passage)
         .map_err(|err| anyhow::anyhow!(err.to_string()))?;
 
+    let bm25 = Bm25Index::build(bm25_docs);
     let mut rag = state.rag.lock().expect("rag lock poisoned");
     rag.store = VectorStore::new();
     for ((id, content, meta), embedding) in entries.into_iter().zip(embeddings) {
@@ -381,6 +406,7 @@ fn seed_rag(state: &Arc<AppState>) -> anyhow::Result<()> {
         doc.metadata = meta;
         rag.store.add(doc);
     }
+    rag.bm25 = bm25;
     rag.last_indexed_at = Some(Utc::now().to_rfc3339());
     tracing::info!(total = rag.store.len(), "seeding_rag_complete");
     Ok(())
@@ -465,46 +491,43 @@ fn record_event(
         .record(MemoryEntry::simple(kind, summary).with_importance(importance));
 }
 
-fn generate_answer(
-    state: &AppState,
-    prompt: String,
-) -> Result<(String, String, Option<String>), String> {
+/// The default system prompt — used whenever autotune is off (the default).
+const DEFAULT_SYSTEM_PROMPT: &str = "Jsi Hiranyagarbha, AI asistent sítě ZION (L3). Odpovídej stručně, ve stejném jazyce jako dotaz (česky nebo anglicky). Vycházej z KONTEXTU; pokud v něm odpověď není, řekni to na rovinu. Nikdy si nevymýšlej čísla, adresy, ceny, termíny ani stav sítě.";
+
+/// Build the LLM request for a chat prompt.
+///
+/// The `consciousness_engine` and `rag` locks are held ONLY inside this
+/// function — the blocking remote LLM call happens afterwards in
+/// [`generate_answer`] on a blocking thread, with all locks released.
+fn prepare_chat_request(state: &AppState, prompt: &str) -> LlmRequest {
     let consciousness = state
         .consciousness_engine
         .lock()
         .expect("consciousness lock poisoned");
     let rag = state.rag.lock().expect("rag lock poisoned");
 
-    // 1. Get RAG context
-    let embedder = MockEmbeddingBackend::new(24);
-    let query_embedding = embedder
-        .embed(&[&prompt], EmbeddingInputType::Query)
-        .map_err(|e| e.to_string())?
-        .into_iter()
-        .next()
-        .unwrap_or_default();
-
-    let hits = rag.store.search(&query_embedding, 2);
-    let context = hits
+    // 1. BM25 retrieval — top 3 chunks, each truncated to 1200 chars.
+    let context = rag
+        .bm25
+        .search(prompt, 3)
         .iter()
-        .map(|d| d.content.as_str())
+        .map(|(idx, _score)| truncate_chars(rag.bm25.doc(*idx).1, 1200))
         .collect::<Vec<_>>()
         .join("\n---\n");
 
-    // 2. Build system prompt
-    let mut system_prompt =
-        "Jsi Hiranyagarbha, AI Native agent ZION site. Odpovidej presne, technicky a cesky."
-            .to_string();
-
-    // Try to use refined prompt from autotuner if it exists
-    if let Ok(tuner) = state.autotuner.lock() {
-        if let Some(report) = &tuner.last_report {
-            system_prompt = report.refined_system_prompt.clone();
+    // 2. System prompt — the refined autotune prompt only applies when
+    //    autotune was explicitly enabled.
+    let mut system_prompt = DEFAULT_SYSTEM_PROMPT.to_string();
+    if state.autotune_enabled {
+        if let Ok(tuner) = state.autotuner.lock() {
+            if let Some(report) = &tuner.last_report {
+                system_prompt = report.refined_system_prompt.clone();
+            }
         }
     }
 
     let final_prompt = if context.is_empty() {
-        prompt
+        prompt.to_string()
     } else {
         format!(
             "KONTEXT Z DOKUMENTACE:\n{}\n---\nDOTAZ: {}",
@@ -512,12 +535,19 @@ fn generate_answer(
         )
     };
 
-    let request = LlmRequest::new(MmlModality::Text, final_prompt)
+    LlmRequest::new(MmlModality::Text, final_prompt)
         .with_system_prompt(system_prompt)
         .with_consciousness(consciousness.level)
         .with_max_tokens(450)
-        .with_temperature(0.2);
+        .with_temperature(0.2)
+}
 
+/// Blocking LLM call — remote backend with echo fallback. Must be run via
+/// `tokio::task::spawn_blocking`; takes NO locks.
+fn generate_answer(
+    state: &AppState,
+    request: LlmRequest,
+) -> Result<(String, String, Option<String>), String> {
     if let Some(remote) = state.remote_backend.as_ref() {
         match remote.generate(request.clone()) {
             Ok(resp) => return Ok((resp.content, resp.backend_id, None)),
@@ -548,6 +578,25 @@ fn generate_answer(
         resp.backend_id,
         None,
     ))
+}
+
+/// Blocking autotune — invoked via `spawn_blocking`; locks are taken inside
+/// on the blocking thread so async workers are never stalled.
+fn run_autotune(state: &AppState) -> anyhow::Result<AutotuneReport> {
+    let mut tuner = state.autotuner.lock().expect("autotuner lock poisoned");
+    let rag = state.rag.lock().expect("rag lock poisoned");
+    let mut consciousness = state
+        .consciousness_engine
+        .lock()
+        .expect("consciousness lock poisoned");
+    match state.remote_backend.as_ref() {
+        Some(llm) => {
+            let report = tuner.tune(llm, &rag.store, &mut consciousness.memory)?;
+            consciousness.on_autotune(&report);
+            Ok(report)
+        }
+        None => anyhow::bail!("No remote LLM backend available for autotuning"),
+    }
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Json<Value> {
@@ -604,14 +653,36 @@ async fn config(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-async fn chat(State(state): State<Arc<AppState>>, Json(req): Json<ChatRequest>) -> Json<Value> {
+async fn chat(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<ChatRequest>,
+) -> (StatusCode, Json<Value>) {
     let prompt = req.message.trim().to_string();
     if prompt.is_empty() {
-        return Json(json!({ "error": "empty message" }));
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "empty message" })),
+        );
+    }
+    if prompt.chars().count() > 4000 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "message too long (max 4000 characters)" })),
+        );
     }
 
     state.request_count.fetch_add(1, Ordering::Relaxed);
-    let result = generate_answer(&state, prompt.clone());
+
+    // Locks are held only while the request is prepared (BM25 context,
+    // system prompt, consciousness level). The blocking remote LLM call
+    // runs on the blocking thread pool with all locks released.
+    let request = prepare_chat_request(&state, &prompt);
+    let llm_state = state.clone();
+    let result = tokio::task::spawn_blocking(move || generate_answer(&llm_state, request))
+        .await
+        .map_err(|e| e.to_string())
+        .and_then(|r| r);
+
     let mut consciousness = state
         .consciousness_engine
         .lock()
@@ -626,7 +697,10 @@ async fn chat(State(state): State<Arc<AppState>>, Json(req): Json<ChatRequest>) 
                 MemoryEntry::new(MemoryEventKind::MessageSent, answer.clone(), json!({}))
                     .with_importance(0.5),
             );
-            Json(json!({ "answer": answer, "context": context, "source": source }))
+            (
+                StatusCode::OK,
+                Json(json!({ "answer": answer, "context": context, "source": source })),
+            )
         }
         Err(err) => {
             consciousness.memory.record(
@@ -637,7 +711,7 @@ async fn chat(State(state): State<Arc<AppState>>, Json(req): Json<ChatRequest>) 
                 )
                 .with_importance(0.8),
             );
-            Json(json!({ "error": err }))
+            (StatusCode::OK, Json(json!({ "error": err })))
         }
     }
 }
@@ -688,40 +762,44 @@ async fn rag_query(
         return Json(json!({ "error": "empty query" }));
     }
 
-    let embedder = MockEmbeddingBackend::new(24);
-    let query_embedding = match embedder.embed(&[query.as_str()], EmbeddingInputType::Query) {
-        Ok(v) => v.into_iter().next().unwrap_or_default(),
-        Err(err) => return Json(json!({ "error": err.to_string() })),
-    };
-
     let rag = state.rag.lock().expect("rag lock poisoned");
     let hits: Vec<Value> = rag
-        .store
-        .search(&query_embedding, 3)
+        .bm25
+        .search(&query, 3)
         .into_iter()
-        .map(|doc| json!({ "id": doc.id, "content": doc.content, "metadata": doc.metadata }))
+        .map(|(idx, score)| {
+            let (id, text) = rag.bm25.doc(idx);
+            json!({ "id": id, "score": score, "snippet": truncate_chars(text, 240) })
+        })
         .collect();
 
-    Json(json!({ "query": query, "results": hits, "documents": rag.store.len() }))
+    Json(json!({ "query": query, "results": hits, "documents": rag.bm25.len() }))
 }
 
-async fn rag_autotune(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let mut tuner = state.autotuner.lock().expect("autotuner lock poisoned");
-    let rag = state.rag.lock().expect("rag lock poisoned");
-    if let Some(llm) = state.remote_backend.as_ref() {
-        let mut consciousness = state
-            .consciousness_engine
-            .lock()
-            .expect("consciousness lock poisoned");
-        match tuner.tune(llm, &rag.store, &mut consciousness.memory) {
-            Ok(report) => {
-                consciousness.on_autotune(&report);
-                Json(json!({ "ok": true, "report": report }))
-            }
-            Err(err) => Json(json!({ "ok": false, "error": err.to_string() })),
-        }
-    } else {
-        Json(json!({ "ok": false, "error": "No remote LLM backend available for autotuning" }))
+async fn rag_autotune(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
+    if !state.autotune_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({ "error": "autotune disabled" })),
+        );
+    }
+
+    let tune_state = state.clone();
+    let outcome = tokio::task::spawn_blocking(move || run_autotune(&tune_state)).await;
+
+    match outcome {
+        Ok(Ok(report)) => (
+            StatusCode::OK,
+            Json(json!({ "ok": true, "report": report })),
+        ),
+        Ok(Err(err)) => (
+            StatusCode::OK,
+            Json(json!({ "ok": false, "error": err.to_string() })),
+        ),
+        Err(err) => (
+            StatusCode::OK,
+            Json(json!({ "ok": false, "error": err.to_string() })),
+        ),
     }
 }
 
@@ -1107,4 +1185,27 @@ async fn fetch_pool_stats(url: &str) -> anyhow::Result<(f64, usize)> {
     let hashrate = json["hashrate"]["pool"].as_f64().unwrap_or(0.0);
     let miners = json["miners"].as_array().map(|a| a.len()).unwrap_or(0);
     Ok((hashrate, miners))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_autotune_flag;
+
+    #[test]
+    fn autotune_env_parsing() {
+        // "" covers the unset/empty case: autotune defaults OFF.
+        for (val, expected) in [
+            ("1", true),
+            ("true", true),
+            ("TRUE", true),
+            ("yes", true),
+            ("0", false),
+            ("false", false),
+            ("no", false),
+            ("", false),
+            ("on", false),
+        ] {
+            assert_eq!(parse_autotune_flag(val), expected, "value: {val}");
+        }
+    }
 }

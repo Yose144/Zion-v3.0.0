@@ -1,0 +1,33 @@
+[Unit]
+Description=ZION V31 L3 Hiranyagarbha AI-Native API (localhost only)
+After=network-online.target zion-v31-node.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion
+Environment="RUST_LOG=info"
+Environment="HIRANYAGARBHA_BIND=127.0.0.1:8001"
+Environment="LLM_BASE_URL=http://127.0.0.1:8002/v1"
+Environment="LLM_MODEL=zion-l3"
+Environment="HIRANYAGARBHA_BACKEND=auto"
+Environment="HIRANYAGARBHA_AUTOTUNE=0"
+Environment="ZION_DOCS_PATH=/opt/zion/data/l3-rag-docs"
+Environment="ZION_RAG_BUDDHISM=0"
+Environment="ZION_NODE_RPC_ADDR=127.0.0.1:9445"
+Environment="ZION_POOL_API_URL=http://127.0.0.1:8080"
+ExecStart=/opt/zion/V31/target/release/zion-ai-native-api
+Restart=on-failure
+RestartSec=10
+Nice=10
+CPUQuota=100%
+MemoryMax=512M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

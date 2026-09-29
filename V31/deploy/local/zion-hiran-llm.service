@@ -1,0 +1,16 @@
+[Unit]
+Description=ZION L3 Hiranyagarbha local LLM (llama.cpp Vulkan, Qwen3-1.7B)
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/zion-hiran
+ExecStart=%h/zion-hiran/bin/llama-b11065/llama-server -m %h/zion-hiran/models/Qwen3-1.7B-Q8_0.gguf --host 127.0.0.1 --port 8002 --alias zion-l3 -c 4096 --parallel 1 -ngl 999 -fa on --cache-type-k q8_0 --cache-type-v q8_0 -t 2 --reasoning-budget 0 --chat-template-kwargs '{"enable_thinking":false}' --no-webui
+Nice=10
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:%h/zion-hiran/logs/llm-8002.log
+StandardError=append:%h/zion-hiran/logs/llm-8002.log
+
+[Install]
+WantedBy=default.target

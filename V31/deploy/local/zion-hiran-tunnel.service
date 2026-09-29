@@ -1,0 +1,33 @@
+# ZION L3 — reverse SSH tunnel: Edge 127.0.0.1:8002 -> this PC's llama-server (127.0.0.1:8002).
+#
+# User unit (systemctl --user). The Edge account `hirantunnel` has no shell and its key is
+# restricted in authorized_keys to `-R 127.0.0.1:8002` only (permitlisten), with local
+# forwarding pinned to a dead port (permitopen="127.0.0.1:9"). Edge sshd drops dead clients
+# after ~3 min (ClientAliveInterval 60 / CountMax 3), so a broken tunnel cannot hold the port.
+#
+# Install: cp to ~/.config/systemd/user/ && systemctl --user daemon-reload &&
+#          systemctl --user enable --now zion-hiran-tunnel
+# Key:     ~/.ssh/zion-hiran-tunnel (ed25519, dedicated to this tunnel only)
+
+[Unit]
+Description=ZION L3 reverse tunnel (Edge 127.0.0.1:8002 -> local llama-server)
+After=network-online.target zion-hiran-llm.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/ssh -NT \
+    -o BatchMode=yes \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=30 \
+    -o ServerAliveCountMax=3 \
+    -o StrictHostKeyChecking=yes \
+    -o UserKnownHostsFile=%h/.ssh/known_hosts \
+    -i %h/.ssh/zion-hiran-tunnel \
+    -p 2222 \
+    -R 127.0.0.1:8002:127.0.0.1:8002 \
+    hirantunnel@62.171.141.136
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target
