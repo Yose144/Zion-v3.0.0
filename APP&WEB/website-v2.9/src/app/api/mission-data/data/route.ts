@@ -128,17 +128,26 @@ async function loadG8RunState(): Promise<StabilityCollectorState | null> {
     if (!parsed || typeof parsed !== 'object' || !parsed.started || !parsed.target_end) return null;
     const startMs = new Date(parsed.started).getTime();
     const endMs = new Date(parsed.target_end).getTime();
+    const incidents = Array.isArray(parsed.incidents) ? parsed.incidents.length : 0;
+    const critical = Array.isArray(parsed.critical_incidents) ? parsed.critical_incidents.length : 0;
     return {
+      schema_version: parsed.schema_version,
       started_at: parsed.started,
       target_duration_secs: Math.max(3600, Math.floor((endMs - startMs) / 1000)),
       run_id: parsed.run_id ?? 'g8-30day',
-      samples_collected: 0,
-      issue_count: Array.isArray(parsed.critical_incidents) ? parsed.critical_incidents.length : 0,
+      samples_collected: Math.floor(parsed.sample_counts?.covered ?? 0),
+      issue_count: incidents + critical,
+      healthy_sample_ratio:
+        typeof parsed.uptime_percent === 'number' ? parsed.uptime_percent / 100 : undefined,
+      last_sample_at: parsed.last_evidence_update ?? undefined,
       latest: {
-        status: parsed.status,
-        pool_reachable: Array.isArray(parsed.services)
-          ? parsed.services.some((s: any) => s.id === 'v31-pool' && s.alive)
-          : undefined,
+        status: parsed.window_status ?? parsed.status,
+        pool_reachable:
+          typeof parsed.service_uptime_percent?.pool_http === 'number'
+            ? parsed.service_uptime_percent.pool_http >= 99
+            : Array.isArray(parsed.services)
+              ? parsed.services.some((s: any) => s.id === 'v31-pool' && s.alive)
+              : undefined,
       },
     };
   } catch {
@@ -261,7 +270,7 @@ function buildMainnetStabilityRun(
     start: startIso,
     ...progress,
     status,
-    public_launch_gate: 'GO',
+    public_launch_gate: status === 'PASS' ? 'REVIEW REQUIRED' : 'PENDING',
     agreement: {
       online_nodes: onlineNodes,
       expected_nodes: expectedNodes,
@@ -320,6 +329,10 @@ export async function GET() {
       { title: 'H5 — AuxPoW E2E test harness', detail: 'Local pool mock + CPU miner end-to-end validated.' },
       { title: 'Premine/coinbase maturity soft-fork', detail: 'ZION core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
       { title: 'V3.2.0 public release assets', detail: 'Terminal Miner, CLI and Desktop Agent build scripts, workflows and download metadata switched to v3.2.0.' },
+      { title: 'G10 — L5/L6 run mode decided', detail: 'Passive read-only fund trackers plus a DAO proposal bridge; no active treasury disbursement.' },
+      { title: 'Node fast-restart fix', detail: 'Persistent state cache verified in production — node restart no longer replays the full chain.' },
+      { title: 'Independent run evidence + alerts', detail: 'Automated 60s sampling, persistent alert delivery and 40-day metric retention for the stability run.' },
+      { title: 'Phase I — ZIS identity service', detail: 'Identity service is live and issuing sessions for the app.' },
     ],
     missing: [],
     not_missing: [
@@ -333,12 +346,16 @@ export async function GET() {
       { title: 'H5 — AuxPoW E2E test harness', detail: 'Local pool mock + CPU miner end-to-end validated.' },
       { title: 'Premine/coinbase maturity soft-fork', detail: 'ZION core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
       { title: 'V3.2.0 public release assets', detail: 'Terminal Miner, CLI and Desktop Agent build scripts, workflows and download metadata switched to v3.2.0.' },
+      { title: 'G10 — L5/L6 run mode decided', detail: 'Passive read-only fund trackers plus a DAO proposal bridge; no active treasury disbursement.' },
+      { title: 'Node fast-restart fix', detail: 'Persistent state cache verified in production — node restart no longer replays the full chain.' },
+      { title: 'Independent run evidence + alerts', detail: 'Automated 60s sampling, persistent alert delivery and 40-day metric retention for the stability run.' },
+      { title: 'Phase I — ZIS identity service', detail: 'Identity service is live and issuing sessions for the app.' },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run', detail: 'Started 2026-08-23 07:00 CET. Target 2026-09-22 07:00 CET. Uptime target ≥99.9%.' },
-      { title: 'G9 — security audit', detail: 'Schedule external security audit (Trail of Bits or equivalent) for L1/L2 before public launch.' },
-      { title: 'G10 — L5/L6 decision', detail: 'Formal treasury, humanitarian fund and Issobella space-fund governance activation plan.' },
-      { title: 'Phase I — ZIS identity service', detail: 'Finalise ZION Identity Service deployment, rate limiting and public auth flows.' },
+      { title: 'G8 — 30-day continuous run #2', detail: 'Running since 2026-09-29 UTC. Target end 2026-10-29. Uptime target ≥99.9%; live status on /g8.' },
+      { title: 'G9 — external security audit', detail: 'Audit scope prepared (L1 consensus, bridge/HTLC, treasury, identity, release supply chain); external firm not yet engaged.' },
+      { title: 'Disaster-recovery drill', detail: 'Full off-site restore with measured RTO/RPO before launch.' },
+      { title: 'Release artifacts', detail: 'Version unification, multi-platform builds, checksums and signed tag after the stability run.' },
     ],
   };
 
