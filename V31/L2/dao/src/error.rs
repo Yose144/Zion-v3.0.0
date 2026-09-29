@@ -19,6 +19,13 @@ pub enum DaoError {
     #[error("Insufficient balance for proposal creation: need {needed} ZION, have {have}")]
     InsufficientProposalBalance { needed: u64, have: u64 },
 
+    #[error("Proposer {proposer} already has {active} active proposals (max {max})")]
+    TooManyActiveProposals {
+        proposer: String,
+        active: u32,
+        max: u32,
+    },
+
     #[error("Already voted on proposal {0}")]
     AlreadyVoted(String),
 

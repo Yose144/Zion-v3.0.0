@@ -269,6 +269,7 @@ impl GovernanceRuntime {
             "daily_spend_limit",
             "multisig_threshold",
             "cross_layer_consent_threshold",
+            "max_active_per_proposer",
         ]
     }
 
@@ -312,6 +313,11 @@ impl GovernanceRuntime {
             "cross_layer_consent_threshold" => {
                 let v: u8 = value.trim().parse().map_err(|_| bad())?;
                 if !(1..=4).contains(&v) {
+                    return Err(bad());
+                }
+            }
+            "max_active_per_proposer" => {
+                if value.trim().parse::<u32>().map_err(|_| bad())? == 0 {
                     return Err(bad());
                 }
             }
@@ -378,6 +384,11 @@ impl GovernanceRuntime {
                     )));
                 }
                 self.config.multisig_threshold = t;
+            }
+            "max_active_per_proposer" => {
+                self.config.max_active_per_proposer = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
             }
             _ => unreachable!("validated whitelist"),
         }
@@ -496,6 +507,25 @@ impl GovernanceRuntime {
                 needed: threshold,
                 have: proposer_balance,
             });
+        }
+
+        // D13: spam guard — cap simultaneously Active proposals per proposer.
+        // An address that meets the balance threshold could otherwise flood
+        // the ballot with unlimited parallel proposals.
+        let max_active = self.config.max_active_per_proposer;
+        if max_active > 0 {
+            let active = self
+                .proposals
+                .values()
+                .filter(|p| p.proposer == proposer && p.status == ProposalStatus::Active)
+                .count() as u32;
+            if active >= max_active {
+                return Err(DaoError::TooManyActiveProposals {
+                    proposer,
+                    active,
+                    max: max_active,
+                });
+            }
         }
 
         // D5: a Parameter proposal must name a governable parameter with a
@@ -1862,5 +1892,89 @@ mod tests {
             None,
         );
         assert!(matches!(res, Err(DaoError::AlreadyVoted(_))));
+    }
+
+    // ── D13: spam guard ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_max_active_proposals_per_proposer() {
+        let mut rt = make_runtime();
+        rt.config.max_active_per_proposer = 2;
+
+        for _ in 0..2 {
+            rt.create_proposal(
+                "P".into(),
+                "D".into(),
+                ProposalType::Parameter {
+                    parameter_name: "quorum_percent".into(),
+                    current_value: "10".into(),
+                    proposed_value: "15".into(),
+                },
+                "zion1proposer".into(),
+                2_000_000 * FLOWERS_PER_ZION,
+                100,
+            )
+            .unwrap();
+        }
+
+        // Third simultaneous active proposal from the same proposer → reject.
+        let res = rt.create_proposal(
+            "P3".into(),
+            "D".into(),
+            ProposalType::Parameter {
+                parameter_name: "quorum_percent".into(),
+                current_value: "10".into(),
+                proposed_value: "15".into(),
+            },
+            "zion1proposer".into(),
+            2_000_000 * FLOWERS_PER_ZION,
+            100,
+        );
+        assert!(matches!(res, Err(DaoError::TooManyActiveProposals { .. })));
+
+        // A different proposer is unaffected.
+        rt.create_proposal(
+            "P4".into(),
+            "D".into(),
+            ProposalType::Parameter {
+                parameter_name: "quorum_percent".into(),
+                current_value: "10".into(),
+                proposed_value: "15".into(),
+            },
+            "zion1other".into(),
+            2_000_000 * FLOWERS_PER_ZION,
+            100,
+        )
+        .unwrap();
+
+        // Cancelling frees a slot.
+        rt.cancel_proposal(1, "zion1proposer").unwrap();
+        rt.create_proposal(
+            "P5".into(),
+            "D".into(),
+            ProposalType::Parameter {
+                parameter_name: "quorum_percent".into(),
+                current_value: "10".into(),
+                proposed_value: "15".into(),
+            },
+            "zion1proposer".into(),
+            2_000_000 * FLOWERS_PER_ZION,
+            100,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_max_active_per_proposer_governable() {
+        let mut rt = make_runtime();
+        rt.apply_config_param("max_active_per_proposer", "1")
+            .unwrap();
+        assert_eq!(rt.config.max_active_per_proposer, 1);
+        assert!(rt
+            .apply_config_param("max_active_per_proposer", "0")
+            .is_err());
+        assert!(rt
+            .apply_config_param("max_active_per_proposer", "abc")
+            .is_err());
     }
 }
