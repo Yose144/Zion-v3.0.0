@@ -7,9 +7,11 @@ and parses local log files via a JSON API.
 
 import base64
 import contextlib
+import fcntl
 import gzip
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -3261,31 +3263,95 @@ def build_status() -> dict:
         _STATUS_CACHE_TIME = now
     return result
 
+def _g8_state_file_candidates() -> list:
+    return [
+        Path("/opt/zion/data/g8_run.json"),
+        Path("/var/lib/zion/g8_run.json"),
+        DATA_DIR / "g8_run.json",
+    ]
+
+
+def _g8_state_file(create: bool = False) -> Path:
+    """Resolve the G8 state file path (existing parent dir wins)."""
+    candidates = _g8_state_file_candidates()
+    for p in candidates:
+        try:
+            if create:
+                p.parent.mkdir(parents=True, exist_ok=True)
+            if p.parent.exists():
+                return p
+        except Exception:
+            continue
+    return candidates[0]
+
+
+@contextlib.contextmanager
+def _g8_lock(path: Path):
+    """Advisory flock on <state_file>.lock serialising read-modify-write."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path) + ".lock", os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+
+def _g8_atomic_write(path: Path, state: dict) -> None:
+    """Write JSON state via temp file + fsync + os.replace."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+        raise
+
+
+def _g8_archive(path: Path) -> Path:
+    """Archive an existing G8 state file beside it; never overwrites."""
+    tag = None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            tag = json.load(f).get("run_id")
+    except Exception:
+        pass
+    if not tag:
+        tag = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    dest = path.with_name(f"{path.stem}.{tag}.json")
+    n = 1
+    while dest.exists():
+        dest = path.with_name(f"{path.stem}.{tag}-{n}.json")
+        n += 1
+    tmp = dest.with_name(f"{dest.name}.{os.getpid()}.tmp")
+    shutil.copyfile(path, tmp)
+    os.replace(tmp, dest)
+    return dest
+
+
 def get_g8_status() -> dict:
     """Read or initialise the 30-day continuous run (G8) state.
 
     State lives in /opt/zion/data/g8_run.json (Edge) or DATA_DIR fallback.
     """
-    candidates = [
-        Path("/opt/zion/data/g8_run.json"),
-        Path("/var/lib/zion/g8_run.json"),
-        DATA_DIR / "g8_run.json",
-    ]
-    g8_file = None
-    for p in candidates:
-        try:
-            if p.parent.exists():
-                g8_file = p
-                break
-        except Exception:
-            continue
-    if g8_file is None:
-        g8_file = candidates[0]
+    g8_file = _g8_state_file()
 
     result = {
         "started": None,
         "target_end": None,
         "status": "not_started",
+        "window_status": "not_started",
         "elapsed_seconds": 0,
         "remaining_seconds": 0,
         "progress_percent": 0.0,
@@ -3316,7 +3382,16 @@ def get_g8_status() -> dict:
             result["remaining_seconds"] = max(0, int(total - elapsed))
             result["progress_percent"] = round(min(100.0, max(0.0, (elapsed / total) * 100.0)) if total > 0 else 0.0, 6)
             result["target_end"] = target_end.isoformat()
-            result["status"] = "running" if now < target_utc else "completed"
+            stopped = result.get("status") == "stopped"
+            if stopped:
+                result["status"] = "stopped"
+                result["window_status"] = "stopped"
+            elif now < target_utc:
+                result["status"] = "running"
+                result["window_status"] = "running"
+            else:
+                result["status"] = "window_elapsed"
+                result["window_status"] = "window_elapsed"
         except Exception as e:
             result["_error"] = f"G8 time parse error: {e}"
 
@@ -14402,34 +14477,57 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/g8/start":
             # Start or restart the 30-day continuous run (G8) clock.
             try:
-                start = payload.get("started") or datetime.now().isoformat()
-                started_dt = datetime.fromisoformat(start)
-                target = payload.get("target_end") or (started_dt + timedelta(days=30)).isoformat()
-                state = {
-                    "started": started_dt.isoformat(),
-                    "target_end": target,
-                    "status": "running",
-                    "uptime_percent": None,
-                    "critical_incidents": [],
-                    "started_by": self.headers.get("Remote-User", "dashboard"),
-                }
-                candidates = [
-                    Path("/opt/zion/data/g8_run.json"),
-                    Path("/var/lib/zion/g8_run.json"),
-                    DATA_DIR / "g8_run.json",
-                ]
-                g8_file = None
-                for p in candidates:
-                    try:
-                        p.parent.mkdir(parents=True, exist_ok=True)
-                        g8_file = p
-                        break
-                    except Exception:
-                        continue
-                if g8_file is None:
-                    g8_file = candidates[0]
-                with open(g8_file, "w", encoding="utf-8") as f:
-                    json.dump(state, f, indent=2)
+                duration_days = float(payload.get("duration_days") or 30)
+                if not math.isfinite(duration_days) or duration_days < 30:
+                    self._json({"ok": False, "error": "duration_days must be finite and >= 30"})
+                    return
+                g8_file = _g8_state_file(create=True)
+                with _g8_lock(g8_file):
+                    if g8_file.exists():
+                        try:
+                            with open(g8_file, "r", encoding="utf-8") as f:
+                                existing = json.load(f)
+                        except Exception:
+                            existing = None
+                        if (isinstance(existing, dict)
+                                and existing.get("schema_version") == 2
+                                and existing.get("status") == "running"):
+                            self._json({"ok": False, "error": "A G8 run is already running"})
+                            return
+                        _g8_archive(g8_file)
+                    started_iso = payload.get("started")
+                    if started_iso:
+                        started_dt = datetime.fromisoformat(started_iso)
+                        if started_dt.tzinfo is None:
+                            started_dt = started_dt.replace(tzinfo=timezone.utc)
+                        started_dt = started_dt.astimezone(timezone.utc)
+                    else:
+                        started_dt = datetime.now(timezone.utc)
+                    target_dt = started_dt + timedelta(days=duration_days)
+                    state = {
+                        "schema_version": 2,
+                        "run_id": "g8-" + started_dt.strftime("%Y%m%dT%H%M%SZ"),
+                        "started": started_dt.isoformat(),
+                        "target_end": target_dt.isoformat(),
+                        "status": "running",
+                        "window_status": "running",
+                        "gate_status": "pending",
+                        "uptime_percent": 0.0,
+                        "evidence_coverage_percent": 0.0,
+                        "service_uptime_percent": {},
+                        "incidents": [],
+                        "critical_incidents": [],
+                        "evidence_policy": {
+                            "step_seconds": 60,
+                            "required_services": ["chain_live", "pool_http", "pool_stratum", "multichain", "dao", "zis"],
+                            "chain_tip_max_age_seconds": 900,
+                            "uptime_threshold_percent": 99.9,
+                            "critical_outage_seconds": 900,
+                            "missing_samples": "downtime",
+                        },
+                        "started_by": payload.get("started_by") or self.headers.get("Remote-User", "dashboard"),
+                    }
+                    _g8_atomic_write(g8_file, state)
                 self._json({"ok": True, "g8": get_g8_status()})
             except Exception as e:
                 self._json({"ok": False, "error": f"Failed to start G8: {e}"})
@@ -14440,9 +14538,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": "G8 has not started"})
                     return
                 g8_file = Path(st.get("_state_file", "/opt/zion/data/g8_run.json"))
-                state = {"started": st["started"], "target_end": st.get("target_end"), "status": "stopped", "stopped_at": datetime.now().isoformat()}
-                with open(g8_file, "w", encoding="utf-8") as f:
-                    json.dump(state, f, indent=2)
+                with _g8_lock(g8_file):
+                    try:
+                        with open(g8_file, "r", encoding="utf-8") as f:
+                            state = json.load(f)
+                    except Exception:
+                        state = {"started": st["started"], "target_end": st.get("target_end")}
+                    state["status"] = "stopped"
+                    state["window_status"] = "stopped"
+                    state["stopped_at"] = datetime.now(timezone.utc).isoformat()
+                    _g8_atomic_write(g8_file, state)
                 self._json({"ok": True, "g8": get_g8_status()})
             except Exception as e:
                 self._json({"ok": False, "error": f"Failed to stop G8: {e}"})

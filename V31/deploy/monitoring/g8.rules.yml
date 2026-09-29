@@ -1,0 +1,46 @@
+groups:
+  - name: zion_g8
+    rules:
+      - alert: G8ExporterDown
+        expr: up{job="zion_g8"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "G8 probe exporter is down"
+          description: "Prometheus cannot scrape the zion_g8 probe exporter on 127.0.0.1:9105 for over 2 minutes; G8 evidence collection is blind."
+
+      - alert: G8ChainStale
+        expr: zion_g8_chain_tip_age_seconds > 900 or zion_g8_chain_live == 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "G8 chain tip is stale or unreachable"
+          description: "The V31 chain tip is older than 15 minutes or the primary node probe is failing (zion_g8_chain_live == 0)."
+
+      - alert: G8RequiredServiceDown
+        expr: zion_g8_probe_success{service=~"pool_http|pool_stratum|multichain|dao|zis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "G8 required service down: {{ $labels.service }}"
+          description: "Required service {{ $labels.service }} has been failing its G8 probe for over 2 minutes."
+
+      - alert: G8PrimaryNodeDown
+        expr: zion_g8_probe_success{service="node_primary"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "G8 primary node RPC down"
+          description: "The primary V31 node JSON-RPC probe (node_primary) has been failing for over 2 minutes."
+
+      - alert: G8NodeQuorumLow
+        expr: zion_g8_node_quorum < 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "G8 node quorum degraded"
+          description: "Fewer than 2 of 3 node RPC ports are answering for over 5 minutes (zion_g8_node_quorum < 2)."

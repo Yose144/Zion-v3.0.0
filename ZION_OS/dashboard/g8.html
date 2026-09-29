@@ -39,7 +39,10 @@
 <div class="wrap">
   <header>
     <h1>ZION 3.2 — 30-Day Continuous Run</h1>
-    <span id="g8-status" class="badge pending">Loading…</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span id="g8-status" class="badge pending">Loading…</span>
+      <span id="g8-gate" class="badge pending">Gate: —</span>
+    </div>
   </header>
 
   <div id="not-started" class="note" style="display:none;">
@@ -67,6 +70,34 @@
         <h3>Uptime Requirement</h3>
         <div class="value">99.9%</div>
         <div class="sub">no critical incidents</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Window Status</h3>
+        <div id="window-status" class="value">—</div>
+        <div class="sub">time window only — not the gate verdict</div>
+      </div>
+      <div class="card">
+        <h3>Gate Status</h3>
+        <div id="gate-status" class="value">—</div>
+        <div class="sub" id="gate-sub">decided from evidence after the window</div>
+      </div>
+      <div class="card">
+        <h3>Measured Uptime</h3>
+        <div id="uptime" class="value">—</div>
+        <div class="sub" id="uptime-sub">of sampled 60s buckets</div>
+      </div>
+      <div class="card">
+        <h3>Evidence Coverage</h3>
+        <div id="coverage" class="value">—</div>
+        <div class="sub" id="coverage-sub">samples collected / expected</div>
+      </div>
+      <div class="card">
+        <h3>Critical Incidents</h3>
+        <div id="critical" class="value">—</div>
+        <div class="sub">outages ≥ 15 minutes</div>
       </div>
     </div>
 
@@ -104,16 +135,19 @@ const fmtDuration = (ms) => {
 
 const render = async () => {
   try {
-    const [g8, status, readiness] = await Promise.all([
+    const [g8, status] = await Promise.all([
       fetch('/api/g8').then(r => r.json()).catch(() => ({})),
       fetch('/api/status').then(r => r.json()).catch(() => ({}))
     ]);
 
     const statusEl = document.getElementById('g8-status');
+    const gateEl = document.getElementById('g8-gate');
 
     if (!g8.started) {
       statusEl.textContent = 'Not started';
       statusEl.className = 'badge pending';
+      gateEl.textContent = 'Gate: —';
+      gateEl.className = 'badge pending';
       document.getElementById('not-started').style.display = 'block';
       document.getElementById('run-info').style.display = 'none';
       return;
@@ -132,10 +166,37 @@ const render = async () => {
     document.getElementById('end-iso').textContent = g8.target_end;
     document.getElementById('elapsed').textContent = fmtDuration(elapsedMs);
     document.getElementById('progress-bar').style.width = `${progress}%`;
-    document.getElementById('progress-text').textContent = `${progress.toFixed(4)}% of 30 days • ${fmtDuration(totalMs - elapsedMs)} remaining`;
+    document.getElementById('progress-text').textContent = `${progress.toFixed(4)}% of 30 days • ${fmtDuration(Math.max(0, totalMs - elapsedMs))} remaining`;
 
-    statusEl.textContent = g8.status;
-    statusEl.className = `badge ${g8.status === 'running' ? 'running' : 'stopped'}`;
+    const windowStatus = g8.window_status || g8.status;
+    statusEl.textContent =
+      windowStatus === 'running' ? 'Running'
+      : windowStatus === 'stopped' ? 'Stopped'
+      : 'Window elapsed';
+    statusEl.className = `badge ${
+      windowStatus === 'running' ? 'running'
+      : windowStatus === 'stopped' ? 'stopped'
+      : 'pending'}`;
+
+    const gate = g8.gate_status;
+    gateEl.textContent = `Gate: ${gate || '—'}`;
+    gateEl.className = `badge ${
+      gate === 'passed' ? 'running'
+      : gate === 'failed' ? 'stopped'
+      : 'pending'}`;
+
+    const pct = (v) => (v === null || v === undefined) ? '—' : `${v}%`;
+    document.getElementById('window-status').textContent = windowStatus || '—';
+    document.getElementById('gate-status').textContent = gate || '—';
+    document.getElementById('uptime').textContent = pct(g8.uptime_percent);
+    document.getElementById('coverage').textContent = pct(g8.evidence_coverage_percent);
+    const sc = g8.sample_counts || {};
+    document.getElementById('coverage-sub').textContent =
+      sc.expected !== undefined ? `${sc.covered ?? 0} / ${sc.expected} samples` : 'samples collected / expected';
+    document.getElementById('uptime-sub').textContent =
+      sc.expected !== undefined ? `${sc.good ?? 0} / ${sc.expected} buckets healthy` : 'of sampled 60s buckets';
+    document.getElementById('critical').textContent =
+      Array.isArray(g8.critical_incidents) ? String(g8.critical_incidents.length) : '—';
     document.getElementById('not-started').style.display = 'none';
     document.getElementById('run-info').style.display = 'block';
 

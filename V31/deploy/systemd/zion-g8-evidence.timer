@@ -1,0 +1,10 @@
+[Unit]
+Description=ZION G8 evidence update timer
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

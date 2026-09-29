@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: zion_g8
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ["127.0.0.1:9105"]
