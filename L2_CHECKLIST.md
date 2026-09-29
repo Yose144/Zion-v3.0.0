@@ -142,13 +142,27 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 
 ## 5. Solvency / reconciliation — živé alerty (k vyřešení před claims)
 
-| Asset | On-chain | Očekáváno | Drift | Klasifikace |
+| Asset | On-chain | Očekáváno | Drift | Klasifikace (forenzika 2026-10-02) |
 |-------|----------|-----------|-------|-------------|
-| `zion-l1:ZION` | 0 | 20 000 000 | −20M | Pool reserve semantics — zdokumentovat nebo přesunout do excluded_assets |
-| `base:WETH` | 0 | 33.1 gwei | −33 gwei | Dust — pravděpodobně excluded |
-| `base:wZION` | 220 000 | 124 495 | **+95 505** | ⚠️ **Reálný surplus** — wZION mintnuté mimo tracked ledger (CCA/farm/staking pozice?). Vysvětlit nebo zaúčtovat. |
+| `zion-l1:ZION` | 0 | 20 000 000 | −20M | **Falešný alarm při RPC výpadku** — `zion rpc connect refused` → on_chain=0; expected = pool reserve 20M. Fix: potlačit alert když balance query selhala (notes obsahují `balance query failed`). |
+| `base:WETH` | 0 | 33.1 gwei | −33 gwei | Dust — ledger WETH credit bez on-chain protikladu (testovací deposit?). Low priority; zvážit excluded nebo vyšetření. |
+| `base:wZION` | 220.0 | 124.495 | **+95.505** | ✅ **VYŠETŘENO — benigní účetní artefakt**: deposits se nesweepují → prodané wZION zůstává fyzicky na deposit adresách. Detail níže. |
 
-→ Reconciler funguje, ale **soulad on-chain vs ledger není prokázán**. Před „solvable" claimem: uzavřít všechny 3 položky (buď opravou accountingu, nebo auditovaným vysvětlením).
+### wZION surplus — forenzika (2026-10-02)
+
+On-chain rozpad (wZION `0x0c49…` na Base, service adresy):
+- hot wallet `0x3903763b…ceac` = **0** (žádné Transfer eventy na něj — žádný mint do service adresy)
+- deposit `0x622e…` (`cmt8k293t`) = 20 · deposit `0xfd44…` (`cmteuhfhn`) = 100 · deposit `0x2fd1…` (`cmtex8jva`) = 100 → **součet 220**
+
+Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `internal`.
+
+**Mechanismus:** `cmtex8jva` prodal 100 wZION→USDT interním ledger-DEXem (29. 8., executed) a `cmt8k293t` prodal 1 wZION (26. 8.) — ledger správně odepsal, ale **tokeny zůstávají na nesweepovaných deposit adresách**. Reconciler počítá on-chain = všechny service adresy vs expected = ledger ⇒ surplus = „prodané-ale-nesweepnuté" wZION (+95.505 ≈ 101 prodaných − 4.95 buy credit − 1 on-chain withdrawal… přesný rozpad do sat; trend růstu +75.5→+95.5 = další sell 20.0 mezi 21.–29. 9.).
+
+**Verdikt:** žádný unbacked mint ani únik — dluh je v *modelu*, ne ve fondech. Akce:
+1. Reconciler pro token assety přepnout na deposit-flow invariant `Σ deposits_credited − Σ withdrawals_onchain ≈ on_chain` (nebo přidat `unswept_float` složku).
+2. Dlouhodobě: sweep engine (deposits → hot wallet) — pozor, vyžaduje gas na každé adrese.
+
+→ Reconciler funguje; **žádná položka neindikuje ztrátu fondů**. Před „solvable" claimem zbývá přepsat model alertů (deposit-flow invariant) + WETH dust.
 
 ---
 
@@ -320,6 +334,6 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 |-------|--------|-------|
 | 2026-10-02 | `fb67421` | Počáteční checklist |
 | 2026-10-02 | `06751d3` | **Inbound auto-release**: `warp/inbound.rs`, `warp/l1_release.rs`, `burn_id` v `DepositProof`, `router.set_dest_tx`, `warp.example.toml` env dokumentace. 594 multichain testů ✅, clippy clean. |
-| 2026-10-02 | níže | **DAO crypto treasury** (`treasury_tx.rs`): Ed25519 guardian podpisy nad `dao:treasury:v1\|op_id\|sha256(op)`, verified-only threshold, unsigned UTXO spec z live `getUtxos`, broadcast `submitUtxoTransaction` přes `ZION_DAO_TREASURY_KEY`, stavy `awaiting_broadcast`/`executed`, persist `unsigned_tx`/`signing_hash`/`tx_id`, DB migrace zachovává legacy audit rows. 85 dao testů ✅. |
+| 2026-10-02 | `8477942` | **DAO crypto treasury** (`treasury_tx.rs`): Ed25519 guardian podpisy nad `dao:treasury:v1\|op_id\|sha256(op)`, verified-only threshold, unsigned UTXO spec z live `getUtxos`, broadcast `submitUtxoTransaction` přes `ZION_DAO_TREASURY_KEY`, stavy `awaiting_broadcast`/`executed`, persist `unsigned_tx`/`signing_hash`/`tx_id`, DB migrace zachovává legacy audit rows. 85 dao testů ✅. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
