@@ -1,6 +1,8 @@
 [Unit]
 Description=ZION L3 Hiranyagarbha local LLM (llama.cpp Vulkan, Qwen3-1.7B)
-After=default.target
+# No After=default.target here: this unit is WantedBy=default.target, so ordering
+# itself after the target creates a dependency cycle (systemd drops the tunnel's
+# start job to break it and the reverse tunnel never starts).
 
 [Service]
 Type=simple
