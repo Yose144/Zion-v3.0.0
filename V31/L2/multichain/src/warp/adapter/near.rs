@@ -336,6 +336,7 @@ impl NearAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:near:{}", dest),
             confirmations: 0,
+            burn_id: None,
         })
     }
 }

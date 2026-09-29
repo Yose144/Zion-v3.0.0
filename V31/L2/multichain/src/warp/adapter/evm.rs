@@ -327,6 +327,10 @@ impl EvmAdapter {
         let block_num = hex_to_u64(&log.block_number);
         let confirmations = current_block.saturating_sub(block_num);
 
+        // topics[2] = burnId (indexed bytes32) — required by the L1
+        // `submitBridgeUnlock` replay key (`chain:burn_id:evm_tx_hash`).
+        let burn_id = log.topics.get(2).cloned();
+
         Some(DepositProof {
             tx_hash: log.tx_hash.clone(),
             block_height: block_num,
@@ -336,6 +340,7 @@ impl EvmAdapter {
             // Encode dest ZION address in memo so watcher can route inbound
             memo: format!("WARP_INBOUND:{}:{}", self.chain_name, dest_addr),
             confirmations,
+            burn_id,
         })
     }
 }

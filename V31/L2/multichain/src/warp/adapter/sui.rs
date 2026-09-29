@@ -516,6 +516,7 @@ impl SuiAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:sui:{}", recipient),
             confirmations: latest_checkpoint.saturating_sub(checkpoint),
+            burn_id: None,
         })
     }
 }

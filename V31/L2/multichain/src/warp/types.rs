@@ -333,6 +333,10 @@ pub struct WarpTransfer {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub memo: String,
+    /// Source-chain burn identifier used to build the L1 unlock request
+    /// (inbound transfers). Defaults to the source tx hash when absent.
+    #[serde(default)]
+    pub burn_id: Option<String>,
 }
 
 impl WarpTransfer {
@@ -360,6 +364,7 @@ impl WarpTransfer {
             created_at: now,
             updated_at: now,
             memo,
+            burn_id: None,
         }
     }
 

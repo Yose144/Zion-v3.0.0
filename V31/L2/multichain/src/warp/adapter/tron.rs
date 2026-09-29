@@ -231,6 +231,7 @@ impl TronAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:tron:{}", dest),
             confirmations: current_block.saturating_sub(block),
+            burn_id: None,
         })
     }
 }

@@ -287,6 +287,7 @@ impl StellarAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:stellar:{}", dest),
             confirmations: latest_ledger.saturating_sub(ledger),
+            burn_id: None,
         })
     }
 }

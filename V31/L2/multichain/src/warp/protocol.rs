@@ -18,6 +18,11 @@ pub struct DepositProof {
     pub amount_flowers: u64,
     pub memo: String,
     pub confirmations: u64,
+    /// Source-chain burn identifier (e.g. EVM `BridgeBurn.burnId` topic).
+    /// Required for L1 unlock replay protection (`submitBridgeUnlock`).
+    /// Falls back to `tx_hash` when the source chain has no dedicated id.
+    #[serde(default)]
+    pub burn_id: Option<String>,
 }
 
 /// Message to be signed by validators for cross-chain execution.
@@ -214,6 +219,7 @@ mod tests {
             amount_flowers: 1_000_000,
             memo: "WARP:1:solana:addr".into(),
             confirmations: 60,
+            burn_id: None,
         };
         let json = serde_json::to_string(&proof).unwrap();
         let parsed: DepositProof = serde_json::from_str(&json).unwrap();

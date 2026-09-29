@@ -291,6 +291,7 @@ impl ChainAdapter for ZionL1Adapter {
                             amount_flowers,
                             memo: format!("WARP:1:{}:{}", dest_chain, dest_addr),
                             confirmations: tip.saturating_sub(block_height) + 1,
+                            burn_id: None,
                         };
                         proofs.push(proof);
                         info!(

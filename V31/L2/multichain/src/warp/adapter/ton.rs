@@ -398,6 +398,7 @@ impl TonAdapter {
             amount_flowers: amount,
             memo: memo.to_string(),
             confirmations: 0,
+            burn_id: None,
         })
     }
 }
