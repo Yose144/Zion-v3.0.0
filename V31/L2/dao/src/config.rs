@@ -39,6 +39,9 @@ pub struct DaoConfig {
     pub cross_layer_veto_enabled: bool,
     #[serde(default = "default_cross_layer_threshold")]
     pub cross_layer_consent_threshold: u8,
+    /// D13 spam guard: max simultaneously Active proposals from one proposer.
+    #[serde(default = "default_max_active_per_proposer")]
+    pub max_active_per_proposer: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,6 +78,10 @@ fn default_cross_layer_threshold() -> u8 {
     2
 }
 
+fn default_max_active_per_proposer() -> u32 {
+    5
+}
+
 impl Default for DaoConfig {
     fn default() -> Self {
         Self {
@@ -105,6 +112,7 @@ impl Default for DaoConfig {
             zis_enabled: true,
             cross_layer_veto_enabled: true,
             cross_layer_consent_threshold: 2,
+            max_active_per_proposer: default_max_active_per_proposer(),
         }
     }
 }
@@ -142,6 +150,11 @@ impl DaoConfig {
         }
         if let Ok(v) = env::var("DAO_L1_RPC") {
             cfg.l1_rpc_url = v;
+        }
+        if let Ok(v) = env::var("DAO_MAX_ACTIVE_PER_PROPOSER") {
+            if let Ok(n) = v.parse::<u32>() {
+                cfg.max_active_per_proposer = n;
+            }
         }
 
         cfg
