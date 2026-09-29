@@ -119,7 +119,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 📄 zdokumentováno, neschváleno |
 | 12 | Mainnet E2E důkaz (regtest ≠ mainnet) | ❌ |
 
-**Pozn.:** statický offer key řeší jen „kdo smí volat API" — **neřeší ekonomiku**. Quote musí být server-side podepsaný, jinak zůstane loss-path. To je blocker #2 a hlavní důvod holdu.
+**Pozn.:** statický offer key řeší jen „kdo smí volat API" — **neřeší ekonomiku**. Ekonomiku řeší server-side podepsaný quote (blocker #2 — implementováno níže); zbývající hold = ops/pilot položky (#1, #3–#7, #9–#12).
 
 #### Signed-quote protokol — IMPLEMENTOVÁNO (kód + testy, deploy pending)
 
@@ -259,7 +259,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | Voting interface (cast vote přímo z UI + L1 memo deep-link/QR) | 🟡 vote z UI ✅ (karta + detail, ZIS session); L1 memo deep-link/QR ❌ |
 | Quorum progress vizualizace | ✅ **CODE 2026-10-02** — `QuorumProgress` bar (karta + detail); daemon emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply` v `serialize_proposal` |
 | Vote history / audit event feed per proposal | ✅ **CODE 2026-10-02** — backend D4 (`GET /api/dao/proposals/:id/events`) + „Event history" sekce na `/dao/proposals/[id]` |
-| Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ❌ |
+| Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ✅ **CODE 2026-10-02** — `TreasuryOpsPanel` na `/dao` Treasury tabu: verified-signature progress bar, per-sig verified/unverified list, signing_hash k podpisu, inline sign form (guardian + Ed25519 hex + DAO key → `POST /treasury/:op/sign`), tx_id link do exploreru, status badges vč. `awaiting_broadcast` |
 | Guardian dashboard (registry, aktivita, rotace) | 🟡 tab existuje, data jsou statické |
 | Notifikace (bell/email) | ❌ (backend D9) |
 | Vytvoření návrhu z UI (guided form, param typy) | 🟡/❌ |
@@ -351,6 +351,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | 2026-10-02 | `a85a3a2` | **DAO UI**: `/dao/proposals/[id]` detail route (votes, quorum bar, timeline, inline ZIS voting), `QuorumProgress` komponenta na kartách, `serialize_proposal` nově emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply`. tsc+eslint clean, 85 dao testů ✅. Deploy pending (Edge web rebuild + daemon restart). |
 | 2026-10-02 | `4bc8014` | **Quote liability caps + solvency** (blocker #8): `issue_quote` async — outstanding caps `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` (live quotes + AwaitingUserLock liability), L1 `getUtxos` balance check pro `btc_to_zion` (fail-closed na RPC chybu), liability release při consume/expiry. 41/41 btc_swap testů ✅. |
 | 2026-10-02 | `a3fb0ae` | **BTC-leg solvency check** (dokončení blockeru #8): `issue_quote("zion_to_btc")` sčítá confirmed UTXOs na signer adrese přes BTC backend (`fetch_utxos`, esplora+bitcoind shape), fail-closed na dead backend / empty wallet / nedostatek sats. `BitcoinAdapter::with_api_urls` test-ctor + mock backend helper. 42/42 btc_swap testů ✅. |
+| 2026-10-02 | _pending_ | **Guardian treasury console** (DAO UI): `TreasuryOpsPanel` — verified-signature progress bar, per-sig verified marks, signing_hash zobrazení, inline sign form (guardian+sig+DAO key), `TreasuryOp` typ rozšířen (`verified_count`, `signing_hash`, `tx_id`, `unsigned_tx`, detailed `signatures[]`), `signTreasuryOperation` posílá `signature`. Build ✅, tsc+eslint clean. Deploy pending. |
 | 2026-10-02 | `c952f70` | **DAO D4 event/audit log**: append-only `dao_events` (subject `proposal:<id>`/`op:<op_id>`, event_type, actor, data_json, created_at) + index; runtime emituje `proposal_created`/`vote_cast`/`proposal_tallied`/`proposal_executed`/`proposal_cancelled`, treasury handlery `treasury_op_*`; audit selhání = `warn!`, neblokuje transition; nový endpoint `GET /api/dao/proposals/:id/events` (limit 500, parsed `data`); UI „Event history" na `/dao/proposals/[id]`. 87 dao testů ✅, tsc+eslint clean. Deploy pending. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*

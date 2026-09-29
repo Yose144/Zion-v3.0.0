@@ -31,6 +31,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
+import TreasuryOpsPanel from '@/components/dao/TreasuryOpsPanel';
 import ParliamentVision from '@/components/dao/ParliamentVision';
 import {
   getDAOStats,
@@ -931,28 +932,11 @@ export default function DaoPage() {
                     {DaoCopy.approvalRecordsExplainer[cs ? 'cs' : 'en']}
                   </p>
                 </div>
-                {treasuryOps.length === 0 ? (
-                  <p className="text-sm text-gray-500">{DaoCopy.noTreasuryOpsYet[cs ? 'cs' : 'en']}</p>
-                ) : (
-                  <div className="space-y-3">
-                    {treasuryOps.map((op) => (
-                      <div key={op.op_id} className="zion-rainbow-sub p-4 flex flex-wrap items-center justify-between gap-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
-                        <div className="min-w-0">
-                          <p className="font-mono text-sm text-white truncate">{op.op_id}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {op.operation && typeof op.operation === 'object' ? Object.keys(op.operation)[0] : '—'}
-                            {op.amount_zion > 0 ? ` · ${op.amount_zion.toLocaleString()} ZION` : ''}
-                            {op.proposal_id ? ` · proposal #${op.proposal_id}` : ''}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs">
-                          <span className={`zion-badge ${op.status === 'executed' ? 'zion-badge-green' : ''}`}>{op.status}</span>
-                          <span className="font-mono text-gray-300">{op.signature_count}/{op.threshold} {DaoCopy.signatures[cs ? 'cs' : 'en']}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <TreasuryOpsPanel
+                  ops={treasuryOps}
+                  emptyLabel={DaoCopy.noTreasuryOpsYet[cs ? 'cs' : 'en']}
+                  onChanged={() => { void loadDAOData(); }}
+                />
               </motion.section>
 
               <motion.section
