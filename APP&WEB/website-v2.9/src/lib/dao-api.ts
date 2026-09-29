@@ -135,6 +135,16 @@ export interface ProposalVote {
   voted_at: string;
 }
 
+/** One guardian signature row on a treasury op (D2 verified pipeline). */
+export interface TreasuryOpSignature {
+  guardian: string;
+  signature: string | null;
+  pubkey: string | null;
+  /** Ed25519 verification result over the op's signing_hash. */
+  verified: boolean;
+  created_at: string;
+}
+
 /** A treasury multisig operation from GET /api/dao/treasury/ops */
 export interface TreasuryOp {
   op_id: string;
@@ -144,8 +154,14 @@ export interface TreasuryOp {
   status: string;
   created_at: string;
   executed_at: string | null;
-  signatures: string[];
+  /** Canonical payload guardians sign: dao:treasury:v1|op_id|sha256(op). */
+  signing_hash: string | null;
+  unsigned_tx: Record<string, unknown> | null;
+  tx_id: string | null;
+  signatures: TreasuryOpSignature[];
   signature_count: number;
+  /** Count of cryptographically verified signatures (the threshold metric). */
+  verified_count: number;
   threshold: number;
   amount_atomic: number;
   amount_zion: number;
@@ -382,11 +398,13 @@ export async function submitTreasuryOperation(input: {
   return (raw.data ?? raw) as TreasuryMultisigResult;
 }
 
-/** POST /api/dao/treasury/:op_id/sign */
+/** POST /api/dao/treasury/:op_id/sign — `signature` is the guardian's
+ *  Ed25519 hex signature over the op's `signing_hash`. */
 export async function signTreasuryOperation(input: {
   apiKey: string;
   op_id: string;
   guardian: string;
+  signature?: string;
 }): Promise<TreasuryMultisigResult> {
   const res = await daoFetch(`/api/dao/treasury/${encodeURIComponent(input.op_id)}/sign`, {
     method: 'POST',
@@ -394,7 +412,7 @@ export async function signTreasuryOperation(input: {
       'Content-Type': 'application/json',
       'X-DAO-Key': input.apiKey,
     },
-    body: JSON.stringify({ guardian: input.guardian }),
+    body: JSON.stringify({ guardian: input.guardian, signature: input.signature }),
   });
 
   const raw = await res.json().catch(() => ({}));
