@@ -3,14 +3,16 @@
 /**
  * FreeWorldMap — planetary map of the six L5 founding communities.
  *
- * Leaflet is lazy-loaded client-side (`await import('leaflet')`), styled
- * with the dark CARTO basemap and glowing div-icon markers coloured by
- * community status (gold = active development, cyan = preparation,
- * purple = planned). Clicking a marker opens a popup with a link to the
- * community page.
+ * Leaflet is lazy-loaded client-side (`await import('leaflet')`) and init
+ * is gated behind an IntersectionObserver — initializing inside the
+ * `content-visibility:auto` / `whileInView` page sections before they are
+ * on-screen leaves Leaflet with a zero-sized viewport and blank tiles.
+ * Styled with the dark CARTO basemap and glowing div-icon markers coloured
+ * by community status (gold = active development, cyan = preparation,
+ * purple = planned).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type * as Leaflet from 'leaflet';
 import { useLang } from '@/contexts/LanguageContext';
 import { FREE_WORLD_SITES, SITE_STATUS_COLOR, type FreeWorldSite } from '@/lib/freeworld-sites';
@@ -42,9 +44,59 @@ export default function FreeWorldMap() {
   const cs = lang === 'cs';
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
+  const [visible, setVisible] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
+  // Observe the container — only init Leaflet once it is on-screen, so the
+  // element has real layout dimensions (content-visibility / whileInView
+  // animations otherwise hand Leaflet a 0×0 box).
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const buildMarkers = useCallback(
+    (map: Leaflet.Map, L: typeof Leaflet) => {
+      for (const site of FREE_WORLD_SITES) {
+        const color = SITE_STATUS_COLOR[site.status];
+        const icon = L.divIcon({
+          className: 'fw-map-marker',
+          html: `<span class="fw-dot" style="--dot:${color}"></span>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+          popupAnchor: [0, -12],
+        });
+        const loc = LOCATION_LABEL[site.key]?.[cs ? 'cs' : 'en'] ?? '';
+        const statusLabel = copy.status[site.status][cs ? 'cs' : 'en'];
+        L.marker([site.lat, site.lon], { icon, title: site.name })
+          .addTo(map)
+          .bindPopup(
+            `<div class="fw-popup">` +
+              `<strong>${site.name}</strong>` +
+              `<span class="fw-popup-loc">${loc}</span>` +
+              `<span class="fw-popup-status" style="color:${color}">● ${statusLabel}</span>` +
+              `<a href="${site.href}">${copy.detail[cs ? 'cs' : 'en']}</a>` +
+              `</div>`,
+            { closeButton: false },
+          );
+      }
+    },
+    [cs],
+  );
+
+  useEffect(() => {
+    if (!visible) return;
     let cancelled = false;
 
     async function init() {
@@ -70,34 +122,16 @@ export default function FreeWorldMap() {
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
         }).addTo(map);
 
-        for (const site of FREE_WORLD_SITES) {
-          const color = SITE_STATUS_COLOR[site.status];
-          const icon = L.divIcon({
-            className: 'fw-map-marker',
-            html: `<span class="fw-dot" style="--dot:${color}"></span>`,
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
-            popupAnchor: [0, -12],
-          });
-          const loc = LOCATION_LABEL[site.key]?.[cs ? 'cs' : 'en'] ?? '';
-          const statusLabel = copy.status[site.status][cs ? 'cs' : 'en'];
-          L.marker([site.lat, site.lon], { icon, title: site.name })
-            .addTo(map)
-            .bindPopup(
-              `<div class="fw-popup">` +
-                `<strong>${site.name}</strong>` +
-                `<span class="fw-popup-loc">${loc}</span>` +
-                `<span class="fw-popup-status" style="color:${color}">● ${statusLabel}</span>` +
-                `<a href="${site.href}">${copy.detail[cs ? 'cs' : 'en']}</a>` +
-                `</div>`,
-              { closeButton: false },
-            );
-        }
+        mapRef.current = map;
+        buildMarkers(map, L);
 
         const bounds = L.latLngBounds(FREE_WORLD_SITES.map((s) => [s.lat, s.lon] as [number, number]));
         map.fitBounds(bounds.pad(0.35));
 
-        mapRef.current = map;
+        // Size can still settle after the entrance animation — re-measure.
+        requestAnimationFrame(() => map.invalidateSize());
+        setTimeout(() => map.invalidateSize(), 400);
+
         setState('ready');
       } catch (err) {
         console.warn('FreeWorldMap unavailable:', err);
@@ -109,14 +143,38 @@ export default function FreeWorldMap() {
 
     return () => {
       cancelled = true;
+    };
+  }, [visible, buildMarkers]);
+
+  // Language toggle → rebuild markers/popups with the new labels.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || state !== 'ready') return;
+    let cancelled = false;
+    (async () => {
+      const L = await import('leaflet');
+      if (cancelled || !mapRef.current) return;
+      mapRef.current.eachLayer((layer) => {
+        if (layer instanceof L.Marker) mapRef.current!.removeLayer(layer);
+      });
+      buildMarkers(mapRef.current, L);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [cs, state, buildMarkers]);
+
+  // Full teardown on unmount.
+  useEffect(
+    () => () => {
       try {
         mapRef.current?.remove();
       } finally {
         mapRef.current = null;
       }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cs]);
+    },
+    [],
+  );
 
   return (
     <div className="relative">
