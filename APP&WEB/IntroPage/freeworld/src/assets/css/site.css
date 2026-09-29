@@ -84,35 +84,30 @@ a:hover { text-decoration: underline; }
 .fw-nav-cta:hover { background: rgba(252, 209, 22, 0.12); }
 
 /* ── Hero ────────────────────────────────────────────────────── */
-.fw-hero {
-  position: relative;
-  overflow: hidden;
-}
+.fw-hero { position: relative; }
 /* Banner renders in-flow at its natural 1672×941 aspect — always fully
-   visible, never cropped. The overlay content sits on the dark land strip. */
+   visible, never cropped, and the text content lives below it. */
+.fw-hero-bg { position: relative; }
 .fw-hero-bg img { width: 100%; height: auto; display: block; }
 .fw-hero-bg::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(180deg,
-    rgba(11,13,16,0.4) 0%, rgba(11,13,16,0) 20%,
-    rgba(11,13,16,0) 58%, rgba(11,13,16,0.62) 82%, rgba(11,13,16,0.95) 100%);
+    rgba(11,13,16,0.35) 0%, rgba(11,13,16,0) 18%,
+    rgba(11,13,16,0) 82%, rgba(11,13,16,0.55) 100%);
 }
 .fw-hero-inner {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
   max-width: var(--maxw); margin: 0 auto;
-  padding: 0 clamp(1rem, 4vw, 2.5rem) clamp(1.2rem, 3vw, 2.6rem);
+  padding: clamp(1.6rem, 3.5vw, 2.8rem) clamp(1rem, 4vw, 2.5rem) 0;
 }
 .fw-hero h1 {
   font-family: var(--serif); font-weight: 500; font-style: italic;
   font-size: clamp(1.9rem, 4.6vw, 3.4rem); line-height: 1.12;
   letter-spacing: 0.02em; color: #fff;
-  text-shadow: 0 2px 24px rgba(0,0,0,0.6);
 }
 .fw-hero h1 em { color: var(--gold); font-style: normal; }
 .fw-hero .fw-tagline {
   margin-top: 1rem; max-width: 620px;
-  font-size: clamp(0.95rem, 1.8vw, 1.1rem); color: #d8dde2;
-  text-shadow: 0 1px 12px rgba(0,0,0,0.55);
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem); color: var(--text-dim);
 }
 .fw-hero-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.6rem; }
 .fw-hero-badges span {
@@ -397,12 +392,8 @@ a:hover { text-decoration: underline; }
 @media (max-width: 760px) {
   .fw-section { padding-left: 1rem; padding-right: 1rem; }
 
-  /* hero: content flows below the full banner instead of overlaying it */
-  .fw-hero-inner {
-    position: static; margin-top: -1px;
-    background: linear-gradient(180deg, rgba(11,13,16,0.85), var(--bg) 45%);
-    padding: 1rem 1rem 1.8rem;
-  }
+  /* hero: text sits below the full banner on every viewport */
+  .fw-hero-inner { padding: 1rem 1rem 0; }
   .fw-hero h1 { font-size: 1.55rem; }
   .fw-hero .fw-tagline { font-size: 0.9rem; }
   .fw-hero-badges { margin-top: 1rem; }
