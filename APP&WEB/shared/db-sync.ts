@@ -181,6 +181,8 @@ async function notifyAddress(
 // re-notify for historical events.
 const miningBlockBaseline = new Map<string, number>();
 let miningBaselinePrimed = false;
+const daoProposalBaseline = new Set<number>();
+let daoProposalBaselinePrimed = false;
 
 // ── J7: DAO proposals sync (also produces dao_vote notifications) ──────
 
@@ -234,6 +236,60 @@ async function syncDaoProposals() {
         },
       });
 
+      // New proposal detected after the first poll → broadcast a dao_proposal
+      // notification to every ZIS user. The baseline set is primed on the
+      // first cycle so a service restart does not re-notify history.
+      if (daoProposalBaselinePrimed && !daoProposalBaseline.has(proposalId)) {
+        const title = (p.title as string) ?? `Proposal #${proposalId}`;
+        const users = await prisma.user.findMany({ select: { id: true } });
+        for (const u of users) {
+          await createNotification({
+            userId: u.id,
+            type: 'dao_proposal',
+            title: 'New DAO proposal',
+            body: `"${title}" is open for voting.`,
+            data: { href: `/dao/proposals/${proposalId}`, proposalId },
+          }).catch((e) =>
+            console.error(`[J7] notify dao_proposal failed for ${u.id}:`, e),
+          );
+        }
+      }
+      daoProposalBaseline.add(proposalId);
+
+      // Sync the voter list so close-notifications and per-user vote history
+      // have real data. Votes only change while a proposal is active; after
+      // closing we re-fetch until the local count matches remote once, then
+      // the (proposalId, voter) unique key keeps re-syncs idempotent.
+      const remoteVoterCount = Number(p.voter_count ?? 0);
+      const localVoterCount = await prisma.daoVote.count({ where: { proposalId } });
+      if (status === 'active' || localVoterCount < remoteVoterCount) {
+        const votesResp = await fetch(`${DAO_API}/api/dao/proposals/${proposalId}/votes`, {
+          signal: AbortSignal.timeout(5000),
+        });
+        if (votesResp.ok) {
+          const votesBody = await votesResp.json() as Record<string, unknown>;
+          const votesData = (votesBody.data as Record<string, unknown>) ?? votesBody;
+          const votes = (votesData.votes as Array<Record<string, unknown>>) ?? [];
+          for (const v of votes) {
+            const voter = (v.voter as string) ?? '';
+            if (!voter) continue;
+            const userId = await resolveUserByAddress(voter);
+            await prisma.daoVote.upsert({
+              where: { proposalId_voter: { proposalId, voter } },
+              update: {},
+              create: {
+                proposalId,
+                voter,
+                vote: String(v.choice ?? '').toLowerCase() === 'yes',
+                weight: BigInt(Math.trunc(Number(v.weight ?? 0))),
+                votedAt: v.voted_at ? new Date(String(v.voted_at)) : new Date(),
+                userId,
+              },
+            });
+          }
+        }
+      }
+
       // Proposal left the "active" state → notify recorded voters once.
       if (prevProposal && prevProposal.status === 'active' && status !== 'active') {
         const votes = await prisma.daoVote.findMany({
@@ -252,6 +308,7 @@ async function syncDaoProposals() {
         }
       }
     }
+    daoProposalBaselinePrimed = true;
   } catch (e) {
     console.error('[J7] DAO sync error:', e);
   }
