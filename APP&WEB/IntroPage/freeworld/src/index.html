@@ -30,7 +30,7 @@
 </nav>
 
 <header class="fw-hero">
-  <div class="fw-hero-bg"><img src="/assets/img/hero.webp" alt="ZION Free World"></div>
+  <div class="fw-hero-bg"><img src="/assets/img/hero.webp" srcset="/assets/img/hero-m.webp 900w, /assets/img/hero.webp 1672w" sizes="100vw" alt="ZION Free World" fetchpriority="high"></div>
   <div class="fw-hero-inner">
     <p class="fw-kicker" data-i18n="hero.kicker"></p>
     <h1 data-i18n="hero.title"></h1>
@@ -93,14 +93,18 @@
     <h2 class="fw-h2 fw-reveal" data-i18n="registry.title"></h2>
     <p class="fw-lead fw-reveal" data-i18n="registry.lead"></p>
     <div class="fw-reveal">
-      <table class="fw-table">
-        <thead><tr><th data-i18n="registry.project"></th><th data-i18n="registry.budget"></th><th data-i18n="registry.status"></th></tr></thead>
-        <tbody data-registry-projects><tr><td colspan="3" class="fw-muted">…</td></tr></tbody>
-      </table>
-      <table class="fw-table" style="margin-top:2.5rem">
-        <thead><tr><th data-i18n="registry.grant"></th><th data-i18n="registry.amount"></th><th data-i18n="registry.status"></th></tr></thead>
-        <tbody data-registry-grants><tr><td colspan="3" class="fw-muted">…</td></tr></tbody>
-      </table>
+      <div class="fw-tablewrap">
+        <table class="fw-table">
+          <thead><tr><th data-i18n="registry.project"></th><th data-i18n="registry.budget"></th><th data-i18n="registry.status"></th></tr></thead>
+          <tbody data-registry-projects><tr><td colspan="3" class="fw-muted">…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="fw-tablewrap" style="margin-top:2.5rem">
+        <table class="fw-table">
+          <thead><tr><th data-i18n="registry.grant"></th><th data-i18n="registry.amount"></th><th data-i18n="registry.status"></th></tr></thead>
+          <tbody data-registry-grants><tr><td colspan="3" class="fw-muted">…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </section>
