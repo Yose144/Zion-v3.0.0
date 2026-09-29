@@ -18,9 +18,9 @@
 
 ## 0. Executive summary — 3 věty
 
-1. **Outbound most ZION L1 → Base funguje automatizovaně** (7 dokončených transferů, watcher→executor pipeline), ale **inbound Base → ZION L1 není automatizovaný** — burn se detekuje, ale release na L1 vyžaduje ruční `zion-bridge-unlock` + ≥3 validátor klíče, z nichž Edge drží 1.
+1. **Outbound most ZION L1 → Base funguje automatizovaně** (7 dokončených transferů, watcher→executor pipeline). **Inbound Base → ZION L1 má od 2026-10-02 implementovanou auto-release cestu** (`warp/inbound.rs` + `l1_release.rs`, commit `06751d3`) — watcher detekuje burn, releaser počká na source finalitu, sestaví threshold ECDSA proofy z lokálních release klíčů a pošle `submitBridgeUnlock`. **Nenasazeno na Edge** — vyžaduje `WARP_L1_RELEASE_KEYS` (≥3 klíče odpovídající `ZION_BRIDGE_VALIDATOR_PUBKEYS`) + Edge rebuild.
 2. **Nativní BTC↔ZION HTLC swap je kompletně naprogramovaný** (1 250 LOC orchestrátor, 6/6 regtest E2E), ale **záměrně vypnutý** — chybí server-side quote/approval protokol, dokončený Bitcoin IBD (~80 %) a bezpečnostní audit.
-3. **DAO má funkční lifecycle** (proposal → vote → quorum → timelock → execute) včetně L1 memo hlasování, ale **treasury „podpisy" jsou jen auditní záznamy v DB — ne kryptografické podpisy ani broadcastnuté transakce**; treasury 1.5B ZION je do bloku 144 000 fakticky nesputná.
+3. **DAO má funkční lifecycle** (proposal → vote → quorum → timelock → execute) včetně L1 memo hlasování. **Treasury podpisy jsou od 2026-10-02 skutečné Ed25519 podpisy** (`dao/src/treasury_tx.rs`, commit níže v changelogu) — guardian podepisuje `dao:treasury:v1|op_id|sha256(op_json)`, threshold počítá jen verified sigs, execute staví reálnou UTXO tx z `getUtxos` a broadcastuje přes `submitUtxoTransaction` (pokud `ZION_DAO_TREASURY_KEY`, jinak `awaiting_broadcast` + exportovatelný spec). **Custody limit:** L1 nemá m-of-n script — jeden treasury key vykonává, guardian sigs jsou autorizace. Treasury 1.5B ZION do bloku 144 000 stále nesputná (time-lock).
 
 ---
 
@@ -37,8 +37,8 @@
 | HTTP API | `server.rs` | ✅ DONE | `/health /metrics /chains /transfers/:id /pending /outbound /inbound /advance` na :8453 |
 | Registry chainů | `registry.rs` | ✅ DONE | `disabled_reason` pro nenasazené chainy (G2/E5 gate) |
 | Validator set | `validator.rs` | ⚠️ RISK | Ed25519 proofs + audit log OK, **ale quorum=1 na Edge** a všechny klíče mohou být lokálně (Alpha mód). Není to distribuovaná validace. |
-| Auto-advance inbound | `runtime.rs` | 🟡 PARTIAL | Auto-advance pouští **jen outbound**. Inbound zůstává v `Detected` navždy → manuální zásah. |
-| L1 release (mint/unlock) | `adapter/zion_l1.rs:execute_mint` | ❌ MISSING | Explicitní `AdapterError` — „Manual release only in Alpha". Inbound na L1 nemá automatizovanou cestu. |
+| Auto-advance inbound | `inbound.rs` (nový, 2026-10-02) | ✅ CODE | `InboundReleaser` běží jako runtime task — Detected→source-finality→`submitBridgeUnlock`→Completed. Bez `WARP_L1_RELEASE_KEYS` zůstává transfer bezpečně pending + manuální fallback zůstává. |
+| L1 release (mint/unlock) | `l1_release.rs` (nový) | ✅ CODE | `L1Releaser` podepisuje kanonický `unlock\|…` payload secp256k1 klíči z `WARP_L1_RELEASE_KEYS`, threshold kontrola, `submitBridgeUnlock`, trvalé chyby → Failed. `execute_mint` v adaptéru zůstává unsupported — inbound míjí executor pipeline záměrně. |
 | Distribuovaní validátoři | — | 📄 DOC | `WarpValidatorSet` umí N validátorů, ale topologie N nodů s oddělenými klíči není nasazená. |
 
 **Live důkaz:** `GET /health` → `transfers_total: 7, pending: 0`, enabled = `zion-l1 + base`, `quorum = 1` v `/etc/zion/warp.toml`.
@@ -51,7 +51,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 
 | Chain | Signer | WARP adapter | ChainAdapter | Token/kontrakt nasazen | Relay klíč na Edge | Enabled | Reálný stav mostu |
 |-------|:------:|:------------:|:------------:|:----------------------:|:------------------:|:-------:|-------------------|
-| **ZION L1** | — (keyring) | ✅ | ✅ | nativní | keyring | ✅ | Outbound ✅ / Inbound ⚠️ jen manuálně |
+| **ZION L1** | — (keyring) | ✅ | ✅ | nativní | keyring | ✅ | Outbound ✅ / Inbound ✅ v kódu (auto-release, čeká deploy + release klíče) |
 | **Base (EVM)** | ✅ | ✅ | ✅ | ✅ wZION `0x0c49…` + ZIONBridge `0x72c8…` | `WARP_EVM_RELAY_KEY` | ✅ | **Jediný funkční koridor** |
 | Ethereum/Arb/OP/Polygon/BSC/AVAX | ✅ (sdílený EVM) | ✅ (sdílený) | ✅ | ❌ kontrakty nedeploynuté | stejný klíč | ❌ | Připraveno k deployi — jen `forge` + enable |
 | Robinhood (chain 4663) | ✅ (EVM) | ✅ | ✅ | ❌ nedeploynuto, deployer nemá gas | — | ❌ `disabled_reason` | Deploy script hotový; čeká na funding |
@@ -188,8 +188,8 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 
 | Komponenta | Stav | Poznámka |
 |-----------|------|----------|
-| Treasury execution | ⚠️ **KRITICKÉ** | `execute` jen změní status v DB. **Nebuduje, nepodepisuje, nebroadcastuje L1 tx.** |
-| `treasury_sigs` | ⚠️ | Jsou to **auditní approvals, ne kryptografické podpisy**. Nelze z nich sestavit tx. |
+| Treasury execution | ✅ CODE (2026-10-02, nedesazeno) | `execute_treasury_op` staví reálnou UTXO tx z `getUtxos` (`treasury_tx.rs`), deterministicky vybírá vstupy, podepisuje `ZION_DAO_TREASURY_KEY` (env) a broadcastuje `submitUtxoTransaction` → `tx_id` persistováno. Bez klíče → `awaiting_broadcast` + exportovatelný unsigned spec. |
+| `treasury_sigs` | ✅ CODE | Od 2026-10-02 obsahují skutečné Ed25519 podpisy (`signature`, `pubkey`, `verified` sloupce; migrace zachovává legacy audit řádky s verified=0). Threshold počítá jen verified. Podpis: `dao:treasury:v1\|op_id\|sha256(op_json)` — vázaný na obsah operace, odolný vůči změně UTXO výběru. |
 | Consent engine | 🟡 `consent.rs` napsaný, nenapojený do lifecycle | sociokratická „odůvodněná námitka" |
 | Cross-layer veto | 🟡 `cross_layer.rs` nenapojený | L5/L6/L3 veto 80 % v configu |
 | Co-admin | 🟡 `co_admin.rs` nenapojený | 4 co-admini v configu |
@@ -202,8 +202,8 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 
 | # | Gap | Priorita |
 |---|-----|----------|
-| D1 | **Skutečný treasury tx pipeline**: build unsigned L1 tx → guardian crypto-podpisy (Ed25519/secp) → threshold assembly → broadcast → on-chain confirm → audit | **P0** |
-| D2 | Kryptografické guardian podpisy + challenge/anti-replay místo `treasury_sigs` rows | P0 |
+| D1 | **Skutečný treasury tx pipeline**: unsigned spec → threshold verified sigs → broadcast → tx_id persist. ✅ CODE — k ověření E2E po unlock@144000; custody = jeden `ZION_DAO_TREASURY_KEY` (L1 nemá m-of-n script; guardian sigs = autorizační vrstva, ne on-chain multisig) | ~~P0~~ ✅ DONE (code), E2E pending |
+| D2 | Kryptografické guardian podpisy + anti-replay | ~~P0~~ ✅ DONE (code) — Ed25519 nad `dao:treasury:v1` doménou, verified-only threshold, UNIQUE(op,guardian), replay: UTXO double-spend + status + tx_id |
 | D3 | On-chain guardian registry + rotace přes governance | P1 |
 | D4 | Proposal event/audit log (immutable historie stavů, hlasů, exekucí) | P1 |
 | D5 | Param-execution: config-driven změny (quorum, timelock…) aplikované bez redeploye | P1 |
@@ -279,9 +279,9 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 ## 10. Doporučené pořadí prací (k plně funkčnímu native WARP + DAO)
 
 **Priorita 0 — uzavřít pravdu o existujícím:**
-1. Reconciliation: vyřešit 3 drift alerts (zvlášť +95.5 wZION surplus) → audited solvency statement.
-2. Inbound Base→L1: rozhodnout architekturu — (a) distribuované validátory ≥3 s automatickým threshold sběrem do `submitBridgeUnlock`, nebo (b) explicitní ops-runbook s `zion-bridge-unlock` jako dokumentovaným krokem. Bez toho není „bridge", je „one-way mint".
-3. D1+D2: krypto treasury pipeline — jinak DAO treasury = demo.
+1. Reconciliation: vyřešit 3 drift alerts (zvlášť +95.5 wZION surplus) → audited solvency statement. **← zbývá**
+2. ~~Inbound Base→L1 architektura~~ ✅ **CODE 2026-10-02** — `InboundReleaser` + `L1Releaser` (varianta a: automatický threshold sběr z lokálních release klíčů do `submitBridgeUnlock`). Deploy pending: Edge rebuild + `WARP_L1_RELEASE_KEYS` (≥3 pubkeys v `ZION_BRIDGE_VALIDATOR_PUBKEYS`) + `ZION_BRIDGE_VALIDATOR_THRESHOLD>=3` + malý E2E test.
+3. ~~D1+D2: krypto treasury pipeline~~ ✅ **CODE 2026-10-02** — Ed25519 guardian sigs + unsigned UTXO spec + `submitUtxoTransaction` broadcast přes `ZION_DAO_TREASURY_KEY` (nebo `awaiting_broadcast` export). Deploy pending: Edge rebuild + treasury key env + E2E po unlock@144000.
 
 **Priorita 1 — BTC/ZION native:**
 4. Server-side signed quote protokol (blocker #2) + offer key provisioning.
@@ -313,5 +313,13 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | `/opt/zion/V31` checkout | ⚠️ dirty, `d57f6b979`, 337 commitů za main — rebuild risk |
 
 ---
+
+## 12. Changelog (autonomní práce)
+
+| Datum | Commit | Změna |
+|-------|--------|-------|
+| 2026-10-02 | `fb67421` | Počáteční checklist |
+| 2026-10-02 | `06751d3` | **Inbound auto-release**: `warp/inbound.rs`, `warp/l1_release.rs`, `burn_id` v `DepositProof`, `router.set_dest_tx`, `warp.example.toml` env dokumentace. 594 multichain testů ✅, clippy clean. |
+| 2026-10-02 | níže | **DAO crypto treasury** (`treasury_tx.rs`): Ed25519 guardian podpisy nad `dao:treasury:v1\|op_id\|sha256(op)`, verified-only threshold, unsigned UTXO spec z live `getUtxos`, broadcast `submitUtxoTransaction` přes `ZION_DAO_TREASURY_KEY`, stavy `awaiting_broadcast`/`executed`, persist `unsigned_tx`/`signing_hash`/`tx_id`, DB migrace zachovává legacy audit rows. 85 dao testů ✅. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*

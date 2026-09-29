@@ -49,6 +49,7 @@ use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::runtime::GovernanceRuntime;
 use crate::treasury::TreasuryOperation;
+use crate::treasury_tx;
 use crate::types::{VoteChoice, DAO_TREASURY_TOTAL, DAO_TREASURY_UNLOCK_HEIGHT, FLOWERS_PER_ZION};
 use crate::zis::{self, ZisClient, ZisUser};
 
@@ -294,11 +295,17 @@ pub struct TreasurySubmitRequest {
     pub guardian: String,
     pub operation: serde_json::Value,
     pub proposal_id: Option<u64>,
+    /// Ed25519 hex signature over `dao:treasury:v1|<op_id>|<sha256(op_json)>`.
+    /// Required once guardians are configured — the submitter's approval is
+    /// the first *cryptographically verified* signature.
+    pub signature: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct TreasuryGuardianRequest {
     pub guardian: String,
+    /// Ed25519 hex signature over the op's `signing_hash`.
+    pub signature: Option<String>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -741,7 +748,12 @@ async fn list_treasury_ops(
     let ops = db.list_treasury_ops(q.status.as_deref()).map_err(db_err)?;
     let mut out = Vec::with_capacity(ops.len());
     for op in &ops {
-        let sigs = db.list_treasury_sigs(&op.op_id).map_err(db_err)?;
+        let sigs = db.list_treasury_sigs_detailed(&op.op_id).map_err(db_err)?;
+        let verified = sigs.iter().filter(|s| s.verified).count();
+        let unsigned: Option<serde_json::Value> = op
+            .unsigned_tx
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok());
         let parsed: Option<TreasuryOperation> = serde_json::from_str(&op.operation).ok();
         let amount = parsed.as_ref().map(treasury_op_amount).unwrap_or(0);
         out.push(serde_json::json!({
@@ -752,8 +764,18 @@ async fn list_treasury_ops(
             "status": op.status,
             "created_at": op.created_at,
             "executed_at": op.executed_at,
-            "signatures": sigs,
+            "signing_hash": op.signing_hash,
+            "unsigned_tx": unsigned,
+            "tx_id": op.tx_id,
+            "signatures": sigs.iter().map(|s| serde_json::json!({
+                "guardian": s.guardian,
+                "signature": s.signature,
+                "pubkey": s.pubkey,
+                "verified": s.verified,
+                "created_at": s.created_at,
+            })).collect::<Vec<_>>(),
             "signature_count": sigs.len(),
+            "verified_count": verified,
             "threshold": threshold,
             "amount_atomic": amount,
             "amount_zion": amount as f64 / FLOWERS_PER_ZION as f64,
@@ -773,7 +795,7 @@ pub struct TreasuryOpsQuery {
 }
 
 /// POST /api/dao/treasury/submit — guardian submits a multisig operation.
-/// The submitter's approval counts as the first signature.
+/// The submitter's verified approval counts as the first signature.
 async fn submit_treasury_op(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -793,22 +815,49 @@ async fn submit_treasury_op(
         return Err(err(&format!("operation {} already exists", req.op_id)));
     }
 
-    db.insert_treasury_op(&req.op_id, req.proposal_id, &operation, &req.guardian)
-        .map_err(db_err)?;
-    db.add_treasury_sig(&req.op_id, &req.guardian)
-        .map_err(db_err)?;
+    // Canonical signing payload — every guardian signs this exact string.
+    let op_json = serde_json::to_string(&operation)
+        .map_err(|e| err(&format!("operation serialize: {e}")))?;
+    let signing_hash = treasury_tx::signing_message(&req.op_id, &op_json);
+    let (pubkey, verified) = verify_treasury_signature(
+        rt.config(),
+        &req.guardian,
+        &signing_hash,
+        req.signature.as_deref(),
+    )?;
 
-    let signatures = db.list_treasury_sigs(&req.op_id).map_err(db_err)?.len() as u32;
+    db.insert_treasury_op(
+        &req.op_id,
+        req.proposal_id,
+        &operation,
+        &req.guardian,
+        Some(&signing_hash),
+    )
+    .map_err(db_err)?;
+    db.add_treasury_sig(
+        &req.op_id,
+        &req.guardian,
+        req.signature.as_deref(),
+        pubkey.as_deref(),
+        verified,
+    )
+    .map_err(db_err)?;
+
+    let signatures = db
+        .count_verified_treasury_sigs(&req.op_id)
+        .map_err(db_err)? as u32;
     let threshold = rt.config().multisig_threshold;
     Ok(ok(serde_json::json!({
         "op_id": req.op_id,
+        "signing_hash": signing_hash,
         "signatures": signatures,
         "threshold": threshold,
         "ready": signatures >= threshold,
     })))
 }
 
-/// POST /api/dao/treasury/:op_id/sign — add a guardian signature.
+/// POST /api/dao/treasury/:op_id/sign — add a cryptographically verified
+/// guardian signature. Signs the op's stored `signing_hash`.
 async fn sign_treasury_op(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -833,8 +882,28 @@ async fn sign_treasury_op(
         )));
     }
 
-    db.add_treasury_sig(&op_id, &req.guardian).map_err(db_err)?;
-    let signatures = db.list_treasury_sigs(&op_id).map_err(db_err)?.len() as u32;
+    // The stored signing_hash is authoritative — it binds op_id + operation.
+    let signing_hash = op.signing_hash.clone().unwrap_or_else(|| {
+        treasury_tx::signing_message(&op_id, &op.operation)
+    });
+    let (pubkey, verified) = verify_treasury_signature(
+        rt.config(),
+        &req.guardian,
+        &signing_hash,
+        req.signature.as_deref(),
+    )?;
+
+    db.add_treasury_sig(
+        &op_id,
+        &req.guardian,
+        req.signature.as_deref(),
+        pubkey.as_deref(),
+        verified,
+    )
+    .map_err(db_err)?;
+    let signatures = db
+        .count_verified_treasury_sigs(&op_id)
+        .map_err(db_err)? as u32;
     let threshold = rt.config().multisig_threshold;
     let ready = signatures >= threshold;
     if ready && op.status == "pending" {
@@ -851,6 +920,12 @@ async fn sign_treasury_op(
 }
 
 /// POST /api/dao/treasury/:op_id/execute — execute a fully-signed operation.
+///
+/// Requires ≥ threshold *verified* guardian signatures, then builds a real
+/// L1 UTXO spend from live treasury UTXOs. When `ZION_DAO_TREASURY_KEY` is
+/// configured the tx is signed + broadcast immediately (`executed` +
+/// `tx_id`); otherwise the op moves to `awaiting_broadcast` with the
+/// unsigned spec persisted for external signing.
 async fn execute_treasury_op(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -861,7 +936,12 @@ async fn execute_treasury_op(
 
     let rt = state.runtime.lock().await;
     require_guardian(rt.config(), &req.guardian)?;
-    let db = rt.db().ok_or_else(|| err("database not configured"))?;
+    let (db, treasury_addresses, l1_rpc_url) = (
+        rt.db(),
+        rt.config().treasury_addresses.clone(),
+        rt.config().l1_rpc_url.clone(),
+    );
+    let db = db.ok_or_else(|| err("database not configured"))?;
     let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
 
     let op = db
@@ -871,32 +951,98 @@ async fn execute_treasury_op(
     if op.status == "executed" {
         return Err(err(&format!("operation {op_id} already executed")));
     }
-    if op.status == "rejected" {
-        return Err(err(&format!("operation {op_id} was rejected")));
-    }
-
-    let signatures = db.list_treasury_sigs(&op_id).map_err(db_err)?.len() as u32;
-    let threshold = rt.config().multisig_threshold;
-    if signatures < threshold {
+    if op.status == "rejected" || op.status == "failed" {
         return Err(err(&format!(
-            "insufficient signatures: {signatures}/{threshold} required"
+            "operation {op_id} is {status}",
+            status = op.status
         )));
     }
 
-    db.update_treasury_op_status(&op_id, "executed")
+    // Threshold counts *cryptographically verified* signatures only.
+    let verified = db.count_verified_treasury_sigs(&op_id).map_err(db_err)? as u32;
+    let threshold = rt.config().multisig_threshold;
+    if verified < threshold {
+        return Err(err(&format!(
+            "insufficient verified signatures: {verified}/{threshold} required"
+        )));
+    }
+
+    // If a proposal is linked it must have been executed first — the treasury
+    // op is the settlement of an approved proposal, not a parallel path.
+    if let Some(pid) = op.proposal_id {
+        let proposal_ok = db
+            .get_proposal(pid)
+            .map_err(db_err)?
+            .map(|p| p.status == "Executed")
+            .unwrap_or(false);
+        if !proposal_ok {
+            return Err(err(&format!(
+                "operation {op_id} links proposal {pid} which is not executed yet"
+            )));
+        }
+    }
+
+    let parsed: TreasuryOperation = serde_json::from_str(&op.operation)
+        .map_err(|e| err(&format!("stored operation unparseable: {e}")))?;
+
+    // Build the unsigned tx spec from live treasury UTXOs.
+    let source_addr = treasury_tx::op_source_address(&parsed, &treasury_addresses)
+        .ok_or_else(|| err("no treasury source address configured"))?;
+    let utxos = treasury_tx::fetch_utxos(&l1_rpc_url, &source_addr).map_err(api_err)?;
+    let spec = treasury_tx::build_unsigned_spec(&op_id, &parsed, &treasury_addresses, &utxos)
+        .map_err(api_err)?;
+    let spec_json = serde_json::to_string(&spec).map_err(|e| err(&format!("spec: {e}")))?;
+    db.set_treasury_op_unsigned_tx(&op_id, &spec_json)
         .map_err(db_err)?;
 
-    let parsed: Option<TreasuryOperation> = serde_json::from_str(&op.operation).ok();
-    let amount = parsed.as_ref().map(treasury_op_amount).unwrap_or(0);
-
-    Ok(ok(serde_json::json!({
-        "op_id": op_id,
-        "executed_by": req.guardian,
-        "signatures": signatures,
-        "threshold": threshold,
-        "amount_atomic": amount,
-        "amount_zion": amount as f64 / FLOWERS_PER_ZION as f64,
-    })))
+    // Sign + broadcast when the custody key is configured; otherwise leave
+    // the op in `awaiting_broadcast` with the spec exportable.
+    match treasury_tx::treasury_key_from_env().map_err(api_err)? {
+        Some(key) => {
+            let selected = treasury_tx::select_utxos(
+                &utxos,
+                spec.amount_flowers,
+                spec.fee_flowers,
+            )
+            .map_err(api_err)?
+            .0;
+            let tx_id = treasury_tx::sign_and_broadcast(
+                &l1_rpc_url,
+                &spec,
+                &selected,
+                &key,
+            )
+            .map_err(api_err)?;
+            db.set_treasury_op_tx_id(&op_id, &tx_id).map_err(db_err)?;
+            db.update_treasury_op_status(&op_id, "executed")
+                .map_err(db_err)?;
+            Ok(ok(serde_json::json!({
+                "op_id": op_id,
+                "status": "executed",
+                "executed_by": req.guardian,
+                "verified_signatures": verified,
+                "threshold": threshold,
+                "tx_id": tx_id,
+                "amount_atomic": spec.amount_flowers,
+                "amount_zion": spec.amount_flowers as f64 / FLOWERS_PER_ZION as f64,
+            })))
+        }
+        None => {
+            db.update_treasury_op_status(&op_id, "awaiting_broadcast")
+                .map_err(db_err)?;
+            Ok(ok(serde_json::json!({
+                "op_id": op_id,
+                "status": "awaiting_broadcast",
+                "executed_by": req.guardian,
+                "verified_signatures": verified,
+                "threshold": threshold,
+                "unsigned_tx": spec,
+                "note": "threshold reached; ZION_DAO_TREASURY_KEY not configured — unsigned tx spec stored for external signing",
+                "amount_atomic": spec.amount_flowers,
+                "amount_zion": spec.amount_flowers as f64 / FLOWERS_PER_ZION as f64,
+            })))
+        }
+    }
 }
 
 use axum::response::Response;
@@ -912,6 +1058,12 @@ async fn prometheus(State(state): State<AppState>) -> Response<String> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Treasury-pipeline errors — same envelope as `db_err`, distinct fn name
+/// keeps call sites readable (`map_err(api_err)` on `DaoResult`).
+fn api_err(e: DaoError) -> (StatusCode, Json<ApiErr>) {
+    db_err(e)
+}
 
 fn db_err(e: DaoError) -> (StatusCode, Json<ApiErr>) {
     err(&e.to_string())
@@ -1011,6 +1163,36 @@ fn require_guardian(cfg: &DaoConfig, address: &str) -> Result<(), (StatusCode, J
             }),
         ))
     }
+}
+
+/// Verify a guardian's Ed25519 signature over `message` against the pubkey
+/// configured for that guardian. Returns `(pubkey, verified)`:
+/// * guardians configured + valid sig → `(Some(pk), true)`
+/// * guardians configured + missing/invalid sig → error (fail-closed)
+/// * no guardians configured (dev mode) → `(None, true)` — nothing to
+///   verify against; the DB row is still marked verified so the threshold
+///   math behaves as before.
+fn verify_treasury_signature(
+    cfg: &DaoConfig,
+    guardian: &str,
+    message: &str,
+    signature: Option<&str>,
+) -> Result<(Option<String>, bool), (StatusCode, Json<ApiErr>)> {
+    if cfg.guardians.is_empty() {
+        return Ok((None, true));
+    }
+    let pubkey = cfg
+        .guardians
+        .iter()
+        .find(|g| g.address == guardian || g.name == guardian)
+        .map(|g| g.public_key.clone())
+        .ok_or_else(|| err(&format!("guardian {guardian} has no configured pubkey")))?;
+    let sig = signature.ok_or_else(|| {
+        err("treasury signature required: sign the op's signing_hash with your guardian key")
+    })?;
+    treasury_tx::verify_guardian_signature(&pubkey, message, sig)
+        .map_err(|e| err(&format!("guardian signature rejected: {e}")))?;
+    Ok((Some(pubkey), true))
 }
 
 fn treasury_op_amount(op: &TreasuryOperation) -> u64 {
