@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
 import TreasuryOpsPanel from '@/components/dao/TreasuryOpsPanel';
+import GuardianRegisterCard from '@/components/dao/GuardianRegisterCard';
 import ParliamentVision from '@/components/dao/ParliamentVision';
 import {
   getDAOStats,
@@ -1155,10 +1156,14 @@ export default function DaoPage() {
                         )}
                       </div>
                     </div>
+                    <GuardianRegisterCard />
                   </div>
                 ) : (
-                  <div className="zion-rainbow-sub p-5 text-sm text-gray-500" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
-                    {daemonOnline === false ? DaoCopy.noGuardiansConfigured[cs ? 'cs' : 'en'] : '…'}
+                  <div className="space-y-5">
+                    <div className="zion-rainbow-sub p-5 text-sm text-gray-500" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                      {daemonOnline === false ? DaoCopy.noGuardiansConfigured[cs ? 'cs' : 'en'] : '…'}
+                    </div>
+                    <GuardianRegisterCard />
                   </div>
                 )}
               </motion.section>
