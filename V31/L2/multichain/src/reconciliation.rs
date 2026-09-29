@@ -96,6 +96,56 @@ impl ReconcilerConfig {
     }
 }
 
+/// Classify an observed service balance into `(alert, note)`:
+///
+/// * `on_chain < expected − threshold` → **deficit** — funds missing
+///   relative to ledger+pool, always alert (unless excluded/errored).
+/// * `on_chain > max(expected, deposits_credited) + threshold` →
+///   **untracked inflow** — tokens on service addresses that neither the
+///   ledger nor deposit history can explain (unbacked mint / unknown
+///   funding). Worth a human look.
+/// * `expected + threshold < on_chain ≤ deposits_credited` → benign
+///   *unswept deposit float* — users sold deposited assets on the ledger
+///   DEX while tokens stay parked on their (never-swept) deposit
+///   addresses. Noted, no alert.
+/// * Any balance-query error → never alert; partial data proves nothing.
+fn classify_drift(
+    on_chain: Amount,
+    expected: Amount,
+    deposits_credited: Amount,
+    threshold: Amount,
+    excluded: bool,
+    query_err: &Option<String>,
+) -> (bool, Option<String>) {
+    if excluded || query_err.is_some() {
+        return (false, None);
+    }
+    let thr = threshold.0 as i128;
+    let diff = on_chain.0 as i128 - expected.0 as i128;
+    if diff < -thr {
+        return (true, Some("deficit: on-chain below ledger+pool".to_string()));
+    }
+    let upper = expected.0.max(deposits_credited.0) as i128;
+    if on_chain.0 as i128 > upper + thr {
+        return (
+            true,
+            Some(format!(
+                "untracked inflow: on-chain exceeds deposits+ledger bound {upper}"
+            )),
+        );
+    }
+    if diff > thr {
+        return (
+            false,
+            Some(format!(
+                "benign float vs deposits_credited={} (unswept deposits/manual funding)",
+                deposits_credited.0
+            )),
+        );
+    }
+    (false, None)
+}
+
 impl Default for ReconcilerConfig {
     fn default() -> Self {
         Self {
@@ -157,6 +207,7 @@ impl Reconciler {
 
         let mut ledger_totals: HashMap<String, Amount> = HashMap::new();
         let mut deposit_addrs: HashMap<ChainId, Vec<Address>> = HashMap::new();
+        let deposit_flow: HashMap<String, Amount>;
         {
             let db = self.db.lock().await;
             for (asset_key, amount) in db.load_all_wallet_balances()? {
@@ -178,6 +229,14 @@ impl Reconciler {
                     tracing::warn!("reconciliation: cannot load deposit addresses: {e}");
                 }
             }
+            // Deposit upper bound per asset: everything ever credited. Users
+            // can sell deposited assets on the internal ledger DEX while the
+            // tokens remain parked on their (never-swept) deposit addresses,
+            // so `on_chain ∈ (ledger+pool, deposits_credited]` is benign
+            // "unswept float", not a surplus. Withdrawals are not subtracted:
+            // a withdrawal marked `sent` may have been fulfilled from an
+            // external/operator wallet without reducing service custody.
+            deposit_flow = db.deposit_totals_by_asset().unwrap_or_default();
         }
 
         let pool_totals = self.pool_reserves().await;
@@ -259,14 +318,26 @@ impl Reconciler {
             let expected = internal.saturating_add(pool);
             let diff = on_chain.0 as i128 - expected.0 as i128;
             let excluded = self.config.is_excluded(&asset_key);
-            let alert = !excluded && diff.abs() > self.config.alert_threshold.0 as i128;
+            let flow = *deposit_flow.get(&asset_key).unwrap_or(&Amount::ZERO);
+            let (alert, class_note) = classify_drift(
+                on_chain,
+                expected,
+                flow,
+                self.config.alert_threshold,
+                excluded,
+                &first_err,
+            );
             let notes = if excluded {
                 Some(match first_err {
                     Some(n) => format!("excluded from alerting; {n}"),
                     None => "excluded from alerting".to_string(),
                 })
             } else {
-                first_err
+                match (class_note, first_err) {
+                    (Some(c), Some(e)) => Some(format!("{c}; {e}")),
+                    (Some(c), None) => Some(c),
+                    (None, e) => e,
+                }
             };
 
             reports.push(ReconciliationReport {
@@ -392,14 +463,26 @@ impl Reconciler {
             let expected = internal.saturating_add(pool);
             let diff = on_chain.0 as i128 - expected.0 as i128;
             let excluded = self.config.is_excluded(&asset_key);
-            let alert = !excluded && diff.abs() > self.config.alert_threshold.0 as i128;
+            let flow = *deposit_flow.get(&asset_key).unwrap_or(&Amount::ZERO);
+            let (alert, class_note) = classify_drift(
+                on_chain,
+                expected,
+                flow,
+                self.config.alert_threshold,
+                excluded,
+                &notes,
+            );
             let notes = if excluded {
                 Some(match notes {
                     Some(n) => format!("excluded from alerting; {n}"),
                     None => "excluded from alerting".to_string(),
                 })
             } else {
-                notes
+                match (class_note, notes) {
+                    (Some(c), Some(e)) => Some(format!("{c}; {e}")),
+                    (Some(c), None) => Some(c),
+                    (None, e) => e,
+                }
             };
 
             reports.push(ReconciliationReport {
@@ -826,5 +909,81 @@ mod tests {
         assert_eq!(zion_report.pool_reserves.0, 3_000_000);
         assert_eq!(zion_report.diff, 0);
         assert!(!zion_report.alert);
+    }
+
+    #[test]
+    fn classify_drift_bands() {
+        let thr = Amount::new(1);
+        let none = None;
+
+        // Deficit — always alerts.
+        let (alert, _) = classify_drift(
+            Amount::new(50),
+            Amount::new(100),
+            Amount::new(200),
+            thr,
+            false,
+            &none,
+        );
+        assert!(alert);
+
+        // The live wZION case: ledger 100, deposits 200 parked on unswept
+        // deposit addresses, on-chain 200 → benign float, no alert.
+        let (alert, note) = classify_drift(
+            Amount::new(200),
+            Amount::new(100),
+            Amount::new(200),
+            thr,
+            false,
+            &none,
+        );
+        assert!(!alert);
+        assert!(note.unwrap().contains("benign float"));
+
+        // Ledger-balanced hot-wallet funding (deposits < expected): no alert.
+        let (alert, _) = classify_drift(
+            Amount::new(8),
+            Amount::new(8),
+            Amount::new(3),
+            thr,
+            false,
+            &none,
+        );
+        assert!(!alert);
+
+        // Above both bounds → untracked inflow alert (unbacked mint etc).
+        let (alert, note) = classify_drift(
+            Amount::new(250),
+            Amount::new(100),
+            Amount::new(200),
+            thr,
+            false,
+            &none,
+        );
+        assert!(alert);
+        assert!(note.unwrap().contains("untracked inflow"));
+
+        // Query error suppresses even a catastrophic deficit.
+        let err = Some("balance query failed: connection refused".to_string());
+        let (alert, _) = classify_drift(
+            Amount::ZERO,
+            Amount::new(20_000_000),
+            Amount::ZERO,
+            thr,
+            false,
+            &err,
+        );
+        assert!(!alert);
+
+        // Excluded assets never alert.
+        let (alert, _) = classify_drift(
+            Amount::new(999),
+            Amount::new(100),
+            Amount::ZERO,
+            thr,
+            true,
+            &none,
+        );
+        assert!(!alert);
     }
 }

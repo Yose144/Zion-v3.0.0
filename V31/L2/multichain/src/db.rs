@@ -1123,6 +1123,41 @@ impl Db {
         parse_deposit_rows(&mut stmt, [user_id])
     }
 
+    /// Credited deposit totals grouped by asset_key — the on-chain deposit
+    /// float (`deposits.amount` is a decimal string, summed in Rust).
+    pub fn deposit_totals_by_asset(&self) -> MultichainResult<HashMap<String, Amount>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT asset_key, amount FROM deposits WHERE status = 'credited'")?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?;
+        let mut out: HashMap<String, Amount> = HashMap::new();
+        for row in rows {
+            let (asset, amount) = row?;
+            let n: u128 = amount.parse().unwrap_or(0);
+            let e = out.entry(asset).or_insert(Amount::ZERO);
+            *e = e.saturating_add(Amount::new(n));
+        }
+        Ok(out)
+    }
+
+    /// Sent withdrawal totals grouped by asset_key (on-chain outflows).
+    pub fn sent_withdrawal_totals_by_asset(&self) -> MultichainResult<HashMap<String, Amount>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT asset_key, amount FROM withdrawals WHERE status = 'sent'")?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?;
+        let mut out: HashMap<String, Amount> = HashMap::new();
+        for row in rows {
+            let (asset, amount) = row?;
+            let n: u128 = amount.parse().unwrap_or(0);
+            let e = out.entry(asset).or_insert(Amount::ZERO);
+            *e = e.saturating_add(Amount::new(n));
+        }
+        Ok(out)
+    }
+
     /// Record a new withdrawal request.
     pub fn record_withdrawal(&self, withdrawal: &WithdrawalRecord) -> MultichainResult<()> {
         let created_at = withdrawal.created_at.to_rfc3339();
