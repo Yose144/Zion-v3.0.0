@@ -115,12 +115,17 @@ export default function FreeWorldMap() {
         });
         map.setView([22, -20], 2);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          maxZoom: 12,
-          subdomains: 'abcd',
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-        }).addTo(map);
+        // Esri World Dark Gray Canvas — dark basemap, no API key required
+        // (CARTO basemaps moved behind an API key and watermark tiles).
+        L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          { maxZoom: 12, attribution: 'Tiles &copy; Esri — Esri, DeLorme, NAVTEQ' },
+        ).addTo(map);
+        // Reference overlay: country/place labels on top of the dark canvas.
+        L.tileLayer(
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+          { maxZoom: 12, attribution: '&copy; OpenStreetMap contributors' },
+        ).addTo(map);
 
         mapRef.current = map;
         buildMarkers(map, L);
