@@ -234,7 +234,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | D6 | Delegace hlasů | P2 |
 | D7 | Quadratic voting pro granty (V3.3) | P2 |
 | D8 | On-chain vote UX: deep-link/memo generátor z UI, QR pro mobil | ~~P1~~ ✅ DONE (code) — `VoteMemoCard` na `/dao/proposals/[id]`: volba PRO/PROTI/Zdržet se → memo `DAO:vote:<id>:<choice>` + copy + QR (formát = `parse_dao_memo` v daemonu). Deploy pending |
-| D9 | Notifikační pipeline (proposal created/voting ends/executed) | P2 |
+| D9 | Notifikační pipeline (proposal created/voting ends/executed) | ✅ CODE — db-sync J7: **DaoVote sync** (dřív tabulka prázdná → close-notifikace byla mrtvá větev; teď `/api/dao/proposals/:id/votes` → upsert `(proposalId,voter)`, link na `userId` přes primary/linked adresa, re-fetch jen u active / dokud `local < voter_count`), **nový návrh → broadcast `dao_proposal` všem ZIS userům** (baseline-guard — první poll jen naplní set, restart nere-notifikuje historii), existující `dao_vote` při uzavření nově opravdu notifikuje hlasující. Chybí: „voting ends soon" reminder (cron/window), email kanál. Deploy pending (Edge `zion-db-sync`) |
 | D10 | Hiran draft proposals s human sponsor (V3.3) | P3 |
 | D11 | ZK Dharma/reputation proofs (V3.3) | P3 |
 | D12 | L5/L6 grant integration end-to-end | P2 |
@@ -261,7 +261,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | Vote history / audit event feed per proposal | ✅ **CODE 2026-10-02** — backend D4 (`GET /api/dao/proposals/:id/events`) + „Event history" sekce na `/dao/proposals/[id]` |
 | Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ✅ **CODE 2026-10-02** — `TreasuryOpsPanel` na `/dao` Treasury tabu: verified-signature progress bar, per-sig verified/unverified list, signing_hash k podpisu, inline sign form (guardian + Ed25519 hex + DAO key → `POST /treasury/:op/sign`), tx_id link do exploreru, status badges vč. `awaiting_broadcast` |
 | Guardian dashboard (registry, aktivita, rotace) | ✅ **CODE 2026-10-02** — `/dao` Guardians tab má live „On-chain registr" sekci: aktivní guardianové (jméno/adresa), registrovaní kandidáti čekající na admission, multisig threshold badge — zdroj `GET /api/dao/guardians`; + `GuardianRegisterCard` memo generátor (`DAO:guardian:register:<pubkey_hex>`, 64-hex validace, copy + QR). Deploy pending |
-| Notifikace (bell/email) | ❌ (backend D9) |
+| Notifikace (bell/email) | 🟡 bell ✅ (`NotificationBell` + `/api/notifications`, nasazeno 2026-09-28); DAO events feed nově plní `dao_proposal`/`dao_vote` (D9 code); email kanál ❌ |
 | Vytvoření návrhu z UI (guided form, param typy) | ✅ **CODE 2026-10-02** — modal na `/dao`: Parameter/Treasury/Grant/Humanitarian/Emergency + **Admission/Expulsion** (guardian rotace přes UI — candidate adresa, community/offense/tier, hash commitment z description); ZIS session auth + proposal threshold hint. Deploy pending |
 | Mobilní hlasování (memo QR → wallet app) | ❌ |
 
