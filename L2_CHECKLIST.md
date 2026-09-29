@@ -116,7 +116,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 8 | Amount caps + solvency check před akceptací | ✅ CODE — `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` outstanding-liability caps + oboustranný balance check v `issue_quote` (fail-closed): ZION leg přes L1 `getUtxos`, BTC leg přes confirmed UTXOs signer adresy z BTC backendu (esplora/bitcoind-shape). Deploy pending |
 | 9 | Monitoring + on-call routing pro stuck swap | 🟡 CODE — `GET /v1/multichain/swaps/btc/metrics` (JSON + Prometheus: per-phase count, `swaps_stale`, `swaps_near_deadline`, `max_active_idle_secs`, `next_zion_deadline_secs`) + rate-limitovaný `warn!` v poll loopu (10 min) když swap idle > offer TTL nebo <1h do ZION timeoutu. Chybí: alertmanager/Grafana alert rule, on-call eskalace |
 | 10 | Preimage persistence/šifrování at-rest review | 🟡 CODE — FIND-002 `enc:` XOR wrap (`ZION_HTLC_PREIMAGE_KEY`) nově aplikován i na `btc_swap_records.preimage_hex` snapshot (dříve jen generic HTLC store); decrypt transparentní (legacy plaintext rows se načtou). API `to_json` preimage nevrací. Zbývá: nastavit env key na Edge + případný rewrap existujících rows; hlubší model: preimage sám o sobě neudílí spend (claimant pk v HTLC), takže riziko úniku = nízké, šifrování = defense-in-depth |
-| 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 📄 zdokumentováno, neschváleno |
+| 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 🟡 CODE-READY — pilot profil zdokumentován v `warp.example.toml` (MIN_SATS=10k, MAX_SATS=100k = 0.001 BTC cap, MAX_ACTIVE=4, confs=3, quote liability caps, rollback = ENABLED=0 + CLTV refund path zůstává). Zbývá: ops sign-off + aplikace env na Edge |
 | 12 | Mainnet E2E důkaz (regtest ≠ mainnet) | ❌ |
 
 **Pozn.:** statický offer key řeší jen „kdo smí volat API" — **neřeší ekonomiku**. Ekonomiku řeší server-side podepsaný quote (blocker #2 — implementováno níže); zbývající hold = ops/pilot položky (#1, #3–#7, #9–#12).
@@ -269,7 +269,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 
 **Ano, oddělená doména dává smysl — ale fázovaně.**
 
-**Fáze A (teď, ~nízké riziko):** ponechat `/dao` na app.zionterranova.com; doplnit do něj proposal detail route, quorum progress a treasury truth vizuály. `dao.zionterranova.com` zatím jako **301 → `/dao`** (jednoduchý hosting redirect, nulový backend).
+**Fáze A (teď, ~nízké riziko):** ponechat `/dao` na app.zionterranova.com; ✅ proposal detail route, quorum progress a treasury truth vizuály doplněny. `dao.zionterranova.com` zatím jako **301 → `/dao`** — host-redirect pravidla přidána v `next.config.ts` (`has:host` → `app.zionterranova.com/dao[/:path]`); aktivuje se až DNS záznam + nginx server_name nasměrují host na web app. Zbývá ops: DNS A-record + nginx vhost + TLS cert.
 
 **Fáze B (po D1–D5 backendu):** samostatná Next.js app na subdoméně jako **read-only public governance explorer** (proposals, votes, quorum, treasury lock countdown, L1 memo odkazy) + přihlášení přes sdílený ZIS cookie session → vote/guardian console. Výhoda subdomény: governance je institucionální produkt (Bohemia DAO „Zlatý dům"), ne DeFi feature — zaslouží si vlastní povrch, vlastní navigaci, klidnější branding.
 
@@ -372,5 +372,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | 2026-10-02 | `606063e` | **DAO D9 „voting ends soon"**: `dao_ending_soon` reminder v db-sync — jednou na návrh při ≤24h do konce (`DAO_END_SOON_WINDOW_MS`), broadcast všem ZIS userům bez zaznamenaného hlasu (`DaoVote.userId` exclude). Dedup persistentní přes Notification JSON path query (`data.proposalId`) — žádná schema migrace, restart-safe. tsc clean. Deploy pending. |
 
 | 2026-10-02 | `0cd07e4` | **DAO API write rate-limit** (D13 zbytek): `WriteLimiter` middleware — POST `/api/dao/*` token-bucket per client IP z `X-Forwarded-For` (web proxy nově předává hlavičku; DAO bind localhost → trusted), `DAO_API_WRITE_RPM` (default 60/min, burst=rpm/5 min 4, `0`=vypnuto), bounded map (10k). 103+2 dao testů ✅, web tsc clean. Deploy pending. |
+
+| 2026-10-02 | `5f1194c` | **dao.zionterranova.com Fáze A + pilot profil**: `next.config.ts` host-redirecty (`has:host` → `app.zionterranova.com/dao[/:path+]`, pořadí: /dao passthrough → root → catch-all) — aktivní po DNS+nginx nasměrování; `warp.example.toml` capped-pilot profil (blocker #11: 0.001 BTC cap, MAX_ACTIVE=4, confs=3, rollback přes ENABLED=0). tsc clean. Deploy pending. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
