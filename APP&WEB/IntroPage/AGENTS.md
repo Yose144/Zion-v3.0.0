@@ -50,3 +50,7 @@ Use `id="main"` + `<article className="active">` to get the glass rasta card loo
 ## Deploy
 
 `deploy/deploy-intro.sh` rsyncs `dist/` to `/var/www/maintenance/` and reloads nginx.
+
+## freeworld/ (L5 Free World portal)
+
+Dedikovaný statický L5 portál pro `freeworld.zionterranova.com` — vlastní templaty + build (`marked` + PIL → webp), deploy do `/var/www/freeworld`. Z kořene IntroPage: `npm run build:freeworld`, `npm run deploy:freeworld`. Detaily: `freeworld/AGENTS.md`.

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
+    "build:freeworld": "npm --prefix freeworld run build",
+    "deploy:freeworld": "bash freeworld/deploy/deploy-freeworld.sh",
     "start": "next start -p 3001",
     "lint": "next lint"
   },

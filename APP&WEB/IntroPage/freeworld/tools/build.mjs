@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
 
 const ROOT = dirname(fileURLToPath(import.meta.url)) + '/..';
-const REPO = join(ROOT, '..', '..');
+const REPO = join(ROOT, '..', '..', '..');
 const SRC = join(ROOT, 'src');
 const DIST = join(ROOT, 'dist');
 const DOCS = join(REPO, 'APP&WEB/website-v2.9/public/docs/terranova');

@@ -865,6 +865,18 @@ footer .footer-layers .layer-sep {
   color: rgba(252, 209, 22, 0.5);
 }
 
+footer .footer-layers a.layer-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(252, 209, 22, 0.45);
+  transition: color 0.2s ease;
+}
+
+footer .footer-layers a.layer-link:hover {
+  color: #fcd116;
+  border-bottom-color: #fcd116;
+}
+
 /* ── Copyright at the very bottom ─────────────────────────────────────────── */
 footer .footer-copyright {
   color: rgba(255, 255, 255, 0.45);
