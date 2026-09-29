@@ -85,24 +85,22 @@ a:hover { text-decoration: underline; }
 
 /* ── Hero ────────────────────────────────────────────────────── */
 .fw-hero {
-  position: relative; min-height: 100vh;
-  display: flex; align-items: flex-end;
+  position: relative;
   overflow: hidden;
 }
-.fw-hero-bg { position: absolute; inset: 0; }
-.fw-hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 32%; }
-/* Bright banner: light scrim under the nav, clear middle so the baked-in
-   L5 FREE WORLD title reads, dark band at the bottom for the tagline. */
+/* Banner renders in-flow at its natural 1672×941 aspect — always fully
+   visible, never cropped. The overlay content sits on the dark land strip. */
+.fw-hero-bg img { width: 100%; height: auto; display: block; }
 .fw-hero-bg::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(180deg,
-    rgba(11,13,16,0.42) 0%, rgba(11,13,16,0) 22%,
-    rgba(11,13,16,0) 55%, rgba(11,13,16,0.55) 78%, rgba(11,13,16,0.96) 100%);
+    rgba(11,13,16,0.4) 0%, rgba(11,13,16,0) 20%,
+    rgba(11,13,16,0) 58%, rgba(11,13,16,0.62) 82%, rgba(11,13,16,0.95) 100%);
 }
 .fw-hero-inner {
-  position: relative; z-index: 2; width: 100%;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
   max-width: var(--maxw); margin: 0 auto;
-  padding: 7rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 0 clamp(1rem, 4vw, 2.5rem) clamp(1.2rem, 3vw, 2.6rem);
 }
 .fw-hero h1 {
   font-family: var(--serif); font-weight: 500; font-style: italic;
@@ -154,7 +152,7 @@ a:hover { text-decoration: underline; }
 .fw-lead { margin-top: 1rem; max-width: 760px; color: var(--text-dim); font-size: 1.02rem; }
 
 /* ── Community cards ─────────────────────────────────────────── */
-.fw-grid { display: grid; gap: 1.4rem; margin-top: 2.6rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.fw-grid { display: grid; gap: 1.4rem; margin-top: 2.6rem; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
 .fw-card {
   position: relative; display: flex; flex-direction: column;
   border: 1px solid var(--line); border-radius: var(--radius);
@@ -385,6 +383,55 @@ a:hover { text-decoration: underline; }
 /* ── Reveal animation ────────────────────────────────────────── */
 .fw-reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.7s ease, transform 0.7s ease; }
 .fw-reveal.in { opacity: 1; transform: none; }
+
+/* ── Tables ──────────────────────────────────────────────────── */
+.fw-tablewrap { overflow-x: auto; margin-top: 1.8rem; }
+.fw-tablewrap .fw-table { margin-top: 0; min-width: 560px; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .fw-docrow span:not(.arr) { display: none; }
+  .fw-proj-meta { gap: 1rem; }
+}
+
+@media (max-width: 760px) {
+  .fw-section { padding-left: 1rem; padding-right: 1rem; }
+
+  /* hero: content flows below the full banner instead of overlaying it */
+  .fw-hero-inner {
+    position: static; margin-top: -1px;
+    background: linear-gradient(180deg, rgba(11,13,16,0.85), var(--bg) 45%);
+    padding: 1rem 1rem 1.8rem;
+  }
+  .fw-hero h1 { font-size: 1.55rem; }
+  .fw-hero .fw-tagline { font-size: 0.9rem; }
+  .fw-hero-badges { margin-top: 1rem; }
+  .fw-ticker { margin-top: 1.4rem; padding: 0.65rem 1rem; }
+  .fw-ticker .val { font-size: 1.15rem; }
+
+  .fw-map { height: 21rem; }
+
+  .fw-proj-hero { min-height: 52vh; }
+  .fw-proj-meta { flex-direction: column; gap: 0.9rem; align-items: flex-start; }
+
+  .fw-qv-grant { flex-wrap: wrap; }
+  .fw-qv-cost { width: auto; }
+
+  .fw-prevnext { flex-direction: column; }
+  .fw-prevnext .r { text-align: left; }
+
+  .fw-board { padding: 1.2rem; }
+  .fw-doc table { display: block; overflow-x: auto; white-space: nowrap; }
+
+  .fw-footer .cols { flex-direction: column; gap: 1.6rem; }
+  .fw-footer-glyph { width: 120px; }
+}
+
+@media (max-width: 420px) {
+  .fw-hero h1 { font-size: 1.3rem; }
+  .fw-hero-badges span { font-size: 0.58rem; padding: 0.28rem 0.7rem; }
+  .fw-stat .val { font-size: 1.35rem; }
+}
 
 /* utility */
 .fw-center { text-align: center; }

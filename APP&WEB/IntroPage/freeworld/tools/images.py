@@ -30,7 +30,9 @@ for slug, (render, board) in SOURCES.items():
     save_webp(Image.open(IMG / render), DIST / f'assets/img/{slug}/render.webp', 1400, 82)
     save_webp(Image.open(IMG / board), DIST / f'assets/img/{slug}/board.webp', 1600, 80)
 
-save_webp(Image.open(IMG.parent / 'Hero.png'), DIST / 'assets/img/hero.webp', 1920, 84)
+hero_src = Image.open(IMG.parent / 'Hero.png')
+save_webp(hero_src.copy(), DIST / 'assets/img/hero.webp', 1920, 84)
+save_webp(hero_src, DIST / 'assets/img/hero-m.webp', 900, 82)
 
 # brand marks — original ZION tree-Z mark (nav + favicon) and the wide
 # chain-link glyph (footer brand). Sources live in IntroPage public/.
