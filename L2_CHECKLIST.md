@@ -349,5 +349,6 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | 2026-10-02 | `90d8925` | **BTC signed-quote protokol**: `BtcSwapQuote` + `warp:btc-quote:v1` domain Ed25519 sign/verify, `POST /swaps/btc/quote` (veřejný, `WARP_BTC_SWAP_ZION_PER_SAT` fix sazba, TTL 900 s), `/offer` auth = X-Warp-Key NEBO validní quote, `quote_id` UNIQUE replay protection, `save_btc_swap` → upsert (REPLACE by smazal victim row). 40/40 btc_swap testů ✅. Deploy pending. |
 
 | 2026-10-02 | `a85a3a2` | **DAO UI**: `/dao/proposals/[id]` detail route (votes, quorum bar, timeline, inline ZIS voting), `QuorumProgress` komponenta na kartách, `serialize_proposal` nově emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply`. tsc+eslint clean, 85 dao testů ✅. Deploy pending (Edge web rebuild + daemon restart). |
+| 2026-10-02 | `4bc8014` | **Quote liability caps + solvency** (blocker #8): `issue_quote` async — outstanding caps `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` (live quotes + AwaitingUserLock liability), L1 `getUtxos` balance check pro `btc_to_zion` (fail-closed na RPC chybu), liability release při consume/expiry. 41/41 btc_swap testů ✅. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
