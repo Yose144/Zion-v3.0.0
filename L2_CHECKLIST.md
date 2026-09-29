@@ -114,7 +114,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 6 | WIF/network/adresa separace mainnet vs regtest | 🟡 zkontrolovat |
 | 7 | Confirmation/timeout margin review (CLTV deltas oběma směry) | 📄 částečně |
 | 8 | Amount caps + solvency check před akceptací | ✅ CODE — `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` outstanding-liability caps + oboustranný balance check v `issue_quote` (fail-closed): ZION leg přes L1 `getUtxos`, BTC leg přes confirmed UTXOs signer adresy z BTC backendu (esplora/bitcoind-shape). Deploy pending |
-| 9 | Monitoring + on-call routing pro stuck swap | ❌ |
+| 9 | Monitoring + on-call routing pro stuck swap | 🟡 CODE — `GET /v1/multichain/swaps/btc/metrics` (JSON + Prometheus: per-phase count, `swaps_stale`, `swaps_near_deadline`, `max_active_idle_secs`, `next_zion_deadline_secs`) + rate-limitovaný `warn!` v poll loopu (10 min) když swap idle > offer TTL nebo <1h do ZION timeoutu. Chybí: alertmanager/Grafana alert rule, on-call eskalace |
 | 10 | Preimage persistence/šifrování at-rest review | ⚠️ ověřit |
 | 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 📄 zdokumentováno, neschváleno |
 | 12 | Mainnet E2E důkaz (regtest ≠ mainnet) | ❌ |
