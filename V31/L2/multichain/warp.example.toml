@@ -235,7 +235,17 @@ finality_blocks = 0
 # keyring (domain warp:btc-quote:v1) and replay-protected by the
 # btc_swap_records.quote_id UNIQUE index — one quote opens one swap.
 # API: POST /v1/multichain/swaps/btc/quote, POST /swaps/btc/offer,
-#      GET /swaps/btc/list, GET /swaps/btc/:id
+#      GET /swaps/btc/list, GET /swaps/btc/:id, GET /swaps/btc/metrics
+#      (JSON or Prometheus text via Accept: text/plain; the 30s poll loop
+#      also warn!-alerts on stale/near-deadline swaps, max once per 10 min)
+#
+# Preimage at-rest encryption (FIND-002):
+#   ZION_HTLC_PREIMAGE_KEY=<64-hex>  # 32-byte XOR key wrapping revealed
+#                                # preimages in btc_swap_records and the
+#                                # generic HTLC store. Unset → plaintext
+#                                # storage + warn log. Generate once per
+#                                # deployment; rotating requires a rewrap
+#                                # pass over stored records.
 
 # ── Solver network (optional) ───────────────────────────────────────────────
 # Configure this warpd instance as an off-chain intent solver, and/or list

@@ -111,11 +111,11 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 3 | `WARP_BTC_SWAP_OFFER_KEY` provisioning + rotace + scope | ❌ |
 | 4 | Bitcoin IBD → 100 %, lokální bitcoind jako primární backend | 🟡 ~80 %, roste |
 | 5 | Watch-only import review (`WARP_BITCOIN_IMPORT_SINCE`, rescan mezery) | ❌ |
-| 6 | WIF/network/adresa separace mainnet vs regtest | 🟡 zkontrolovat |
+| 6 | WIF/network/adresa separace mainnet vs regtest | ✅ OVĚŘENO v kódu — `BtcSigner::from_wif` fail-closed rejectuje WIF↔network mismatch (mainnet WIF nelze použít na testnet/signet/regtest a naopak; test-family WIFy jsou navzájem kompatibilní); `BITCOIN_NETWORK` env → `parse_network` mainnet/testnet/signet/regtest; P2WPKH adresa se derivuje podle zvolené sítě. Zbývá ops: prověřit, že Edge env drží mainnet WIF a žádný sdílený testnet key |
 | 7 | Confirmation/timeout margin review (CLTV deltas oběma směry) | 📄 částečně |
 | 8 | Amount caps + solvency check před akceptací | ✅ CODE — `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` outstanding-liability caps + oboustranný balance check v `issue_quote` (fail-closed): ZION leg přes L1 `getUtxos`, BTC leg přes confirmed UTXOs signer adresy z BTC backendu (esplora/bitcoind-shape). Deploy pending |
 | 9 | Monitoring + on-call routing pro stuck swap | 🟡 CODE — `GET /v1/multichain/swaps/btc/metrics` (JSON + Prometheus: per-phase count, `swaps_stale`, `swaps_near_deadline`, `max_active_idle_secs`, `next_zion_deadline_secs`) + rate-limitovaný `warn!` v poll loopu (10 min) když swap idle > offer TTL nebo <1h do ZION timeoutu. Chybí: alertmanager/Grafana alert rule, on-call eskalace |
-| 10 | Preimage persistence/šifrování at-rest review | ⚠️ ověřit |
+| 10 | Preimage persistence/šifrování at-rest review | 🟡 CODE — FIND-002 `enc:` XOR wrap (`ZION_HTLC_PREIMAGE_KEY`) nově aplikován i na `btc_swap_records.preimage_hex` snapshot (dříve jen generic HTLC store); decrypt transparentní (legacy plaintext rows se načtou). API `to_json` preimage nevrací. Zbývá: nastavit env key na Edge + případný rewrap existujících rows; hlubší model: preimage sám o sobě neudílí spend (claimant pk v HTLC), takže riziko úniku = nízké, šifrování = defense-in-depth |
 | 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 📄 zdokumentováno, neschváleno |
 | 12 | Mainnet E2E důkaz (regtest ≠ mainnet) | ❌ |
 
