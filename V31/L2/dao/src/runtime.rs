@@ -33,6 +33,14 @@ pub struct GovernanceRuntime {
     circulating_supply: u64,
     db: Option<Arc<Mutex<DaoDb>>>,
     metrics: Option<Arc<DaoMetrics>>,
+    /// D6: delegator → delegate weight assignments (L1 `DAO:delegate:*` memos,
+    /// replayed from `dao_delegations` at startup). Non-transitive.
+    delegations: std::collections::HashMap<String, String>,
+    /// D6: proposal_id → (delegator → (delegate, weight)) — consumed delegated
+    /// weight. A consumed delegator cannot cast a direct vote on that
+    /// proposal (no double count), replayed from `dao_delegated_votes`.
+    delegated_votes:
+        std::collections::HashMap<u64, std::collections::HashMap<String, (String, u64)>>,
 }
 
 impl GovernanceRuntime {
@@ -47,6 +55,8 @@ impl GovernanceRuntime {
             circulating_supply,
             db: None,
             metrics: None,
+            delegations: std::collections::HashMap::new(),
+            delegated_votes: std::collections::HashMap::new(),
         }
     }
 
@@ -86,6 +96,27 @@ impl GovernanceRuntime {
                     }
                 }
                 Err(e) => warn!("[DAO] dao_guardians replay failed: {e}"),
+            }
+            // D6: replay delegation mappings and consumed delegated votes so
+            // the no-double-count rule survives a daemon restart.
+            match guard.list_delegations() {
+                Ok(rows) => {
+                    for (delegator, delegate, _) in rows {
+                        self.delegations.insert(delegator, delegate);
+                    }
+                }
+                Err(e) => warn!("[DAO] dao_delegations replay failed: {e}"),
+            }
+            match guard.list_delegated_votes() {
+                Ok(rows) => {
+                    for (proposal_id, delegator, delegate, weight) in rows {
+                        self.delegated_votes
+                            .entry(proposal_id)
+                            .or_default()
+                            .insert(delegator, (delegate, weight));
+                    }
+                }
+                Err(e) => warn!("[DAO] dao_delegated_votes replay failed: {e}"),
             }
         }
         self.db = Some(db);
@@ -176,7 +207,13 @@ impl GovernanceRuntime {
 
     /// Append an immutable audit event (D4). Never fatal — a log failure
     /// must not abort the governance transition being recorded.
-    fn emit_event(&self, subject: &str, event_type: &str, actor: Option<&str>, data: serde_json::Value) {
+    fn emit_event(
+        &self,
+        subject: &str,
+        event_type: &str,
+        actor: Option<&str>,
+        data: serde_json::Value,
+    ) {
         if let Some(db) = self.db.as_ref() {
             let data_json = serde_json::to_string(&data).unwrap_or_else(|_| "{}".into());
             match db.lock() {
@@ -239,9 +276,7 @@ impl GovernanceRuntime {
     /// (e.g. `multisig_threshold` ≤ `multisig_total`) are re-checked in
     /// `apply_config_param` at execution, since the config may have moved.
     fn validate_governance_param(name: &str, value: &str) -> DaoResult<()> {
-        let bad = || {
-            DaoError::Config(format!("invalid value '{value}' for parameter '{name}'"))
-        };
+        let bad = || DaoError::Config(format!("invalid value '{value}' for parameter '{name}'"));
         match name {
             "min_vote_weight" | "proposal_threshold" => {
                 if value.trim().parse::<u64>().map_err(|_| bad())? == 0 {
@@ -297,15 +332,45 @@ impl GovernanceRuntime {
         Self::validate_governance_param(name, value)?;
         let v = value.trim();
         match name {
-            "min_vote_weight" => self.config.min_vote_weight = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
-            "proposal_threshold" => self.config.proposal_threshold = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
-            "daily_spend_limit" => self.config.daily_spend_limit = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
-            "quorum_percent" => self.config.quorum_percent = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
-            "voting_period_days" => self.config.voting_period_days = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
-            "timelock_hours" => self.config.timelock_hours = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
-            "cross_layer_consent_threshold" => self.config.cross_layer_consent_threshold = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "min_vote_weight" => {
+                self.config.min_vote_weight = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
+            "proposal_threshold" => {
+                self.config.proposal_threshold = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
+            "daily_spend_limit" => {
+                self.config.daily_spend_limit = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
+            "quorum_percent" => {
+                self.config.quorum_percent = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
+            "voting_period_days" => {
+                self.config.voting_period_days = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
+            "timelock_hours" => {
+                self.config.timelock_hours = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
+            "cross_layer_consent_threshold" => {
+                self.config.cross_layer_consent_threshold = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?
+            }
             "multisig_threshold" => {
-                let t: u32 = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?;
+                let t: u32 = v
+                    .parse()
+                    .map_err(|_| DaoError::Internal("param parse".into()))?;
                 if t > self.config.multisig_total {
                     return Err(DaoError::Config(format!(
                         "multisig_threshold {t} exceeds multisig_total {}",
@@ -493,6 +558,64 @@ impl GovernanceRuntime {
         weight: u64,
         tx_hash: Option<String>,
     ) -> DaoResult<Vote> {
+        self.cast_vote_with_delegations(proposal_id, voter, choice, weight, tx_hash, Vec::new())
+    }
+
+    /// Cast a vote that additionally consumes delegated weight (D6).
+    ///
+    /// `delegated` is a caller-resolved list of `(delegator, weight)` — the
+    /// caller looks up each delegator's L1 balance at the same block height
+    /// used for the voter's own weight. The runtime filters out delegators
+    /// who already voted or were already consumed on this proposal, or whose
+    /// delegation no longer points at `voter` (stale read) — the stored vote
+    /// weight is `weight + Σ(consumed delegators)`.
+    ///
+    /// Consumption is recorded persistently: a delegator whose weight was
+    /// counted here can no longer cast a direct vote on this proposal
+    /// (`AlreadyVoted`), so a restart can never double-count.
+    pub fn cast_vote_with_delegations(
+        &mut self,
+        proposal_id: u64,
+        voter: String,
+        choice: VoteChoice,
+        weight: u64,
+        tx_hash: Option<String>,
+        delegated: Vec<(String, u64)>,
+    ) -> DaoResult<Vote> {
+        // D6 no-double-count: a delegator whose weight was already consumed
+        // by a delegate's vote cannot also cast a direct vote.
+        if self
+            .delegated_votes
+            .get(&proposal_id)
+            .map(|m| m.contains_key(&voter))
+            .unwrap_or(false)
+        {
+            return Err(DaoError::AlreadyVoted(proposal_id.to_string()));
+        }
+
+        // Filter the caller-supplied delegators: still delegating to this
+        // voter, not themselves voting, not already consumed, not the voter.
+        let consumed: Vec<(String, u64)> = delegated
+            .into_iter()
+            .filter(|(delegator, w)| {
+                *w > 0
+                    && *delegator != voter
+                    && self
+                        .delegations
+                        .get(delegator.as_str())
+                        .map(|d| d == &voter)
+                        .unwrap_or(false)
+                    && !self.voting.has_voted(proposal_id, delegator)
+                    && !self
+                        .delegated_votes
+                        .get(&proposal_id)
+                        .map(|m| m.contains_key(delegator.as_str()))
+                        .unwrap_or(false)
+            })
+            .collect();
+        let delegated_total: u64 = consumed.iter().map(|(_, w)| *w).sum();
+        let effective_weight = weight.saturating_add(delegated_total);
+
         let vote = {
             let proposal = self
                 .proposals
@@ -500,8 +623,28 @@ impl GovernanceRuntime {
                 .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
             self.voting
-                .cast_vote(proposal, voter, choice, weight, tx_hash)?
+                .cast_vote(proposal, voter, choice, effective_weight, tx_hash)?
         };
+
+        // Record the consumption — in-memory first, then persistent.
+        if !consumed.is_empty() {
+            let entry = self.delegated_votes.entry(proposal_id).or_default();
+            for (delegator, w) in &consumed {
+                entry.insert(delegator.clone(), (vote.voter.clone(), *w));
+            }
+            if let Some(db) = self.db.as_ref() {
+                match db.lock() {
+                    Ok(db) => {
+                        if let Err(e) =
+                            db.record_delegated_votes(proposal_id, &vote.voter, &consumed)
+                        {
+                            warn!("Failed to persist delegated votes: {}", e);
+                        }
+                    }
+                    Err(e) => warn!("DAO db lock poisoned: {}", e),
+                }
+            }
+        }
 
         if let Some(proposal) = self.proposals.get(&proposal_id) {
             self.persist_vote(proposal_id, &vote);
@@ -515,6 +658,8 @@ impl GovernanceRuntime {
                 "choice": format!("{:?}", vote.choice),
                 "weight": vote.weight,
                 "tx_hash": vote.tx_hash,
+                "delegated_from": consumed.iter().map(|(d, _)| d).collect::<Vec<_>>(),
+                "delegated_weight": delegated_total,
             }),
         );
 
@@ -539,6 +684,106 @@ impl GovernanceRuntime {
         }
 
         Ok(vote)
+    }
+
+    // ── Delegation (D6) ───────────────────────────────────────────────────────
+
+    /// Set or revoke a delegation (`DAO:delegate:<addr>` / `DAO:delegate:none`).
+    /// Validations: no self-delegation, delegate must look like an L1 address.
+    /// Non-transitive — the target may itself delegate, but that chain does
+    /// not transfer weight (the delegate must vote directly to count it).
+    pub fn set_delegation(&mut self, delegator: &str, target: Option<&str>) -> DaoResult<()> {
+        match target {
+            Some(delegate) => {
+                if delegate == delegator {
+                    return Err(DaoError::Config("self-delegation".into()));
+                }
+                if !delegate.starts_with("zion1") || delegate.len() < 8 {
+                    return Err(DaoError::Config(format!(
+                        "invalid delegate address '{delegate}'"
+                    )));
+                }
+                self.delegations
+                    .insert(delegator.to_string(), delegate.to_string());
+                if let Some(db) = self.db.as_ref() {
+                    match db.lock() {
+                        Ok(db) => {
+                            if let Err(e) = db.set_delegation(delegator, delegate) {
+                                warn!("Failed to persist delegation: {}", e);
+                            }
+                        }
+                        Err(e) => warn!("DAO db lock poisoned: {}", e),
+                    }
+                }
+                self.emit_event(
+                    &format!("delegation:{delegator}"),
+                    "delegation_set",
+                    Some(delegator),
+                    serde_json::json!({ "delegate": delegate }),
+                );
+            }
+            None => {
+                self.delegations.remove(delegator);
+                if let Some(db) = self.db.as_ref() {
+                    match db.lock() {
+                        Ok(db) => {
+                            if let Err(e) = db.remove_delegation(delegator) {
+                                warn!("Failed to remove delegation: {}", e);
+                            }
+                        }
+                        Err(e) => warn!("DAO db lock poisoned: {}", e),
+                    }
+                }
+                self.emit_event(
+                    &format!("delegation:{delegator}"),
+                    "delegation_revoked",
+                    Some(delegator),
+                    serde_json::json!({}),
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// Addresses currently delegating to `delegate`.
+    pub fn delegators_of(&self, delegate: &str) -> Vec<String> {
+        self.delegations
+            .iter()
+            .filter(|(_, d)| d.as_str() == delegate)
+            .map(|(g, _)| g.clone())
+            .collect()
+    }
+
+    /// All active delegations as (delegator, delegate) pairs.
+    pub fn delegations(&self) -> Vec<(String, String)> {
+        self.delegations
+            .iter()
+            .map(|(g, d)| (g.clone(), d.clone()))
+            .collect()
+    }
+
+    /// Whether `voter` already participates on `proposal_id` — either by a
+    /// direct vote or because a delegate consumed their weight (D6).
+    pub fn has_voted_or_delegated(&self, proposal_id: u64, voter: &str) -> bool {
+        self.voting.has_voted(proposal_id, voter)
+            || self
+                .delegated_votes
+                .get(&proposal_id)
+                .map(|m| m.contains_key(voter))
+                .unwrap_or(false)
+    }
+
+    /// Delegated weights a given vote consumed: (delegator, weight) pairs.
+    pub fn delegated_votes_for(&self, proposal_id: u64, delegate: &str) -> Vec<(String, u64)> {
+        self.delegated_votes
+            .get(&proposal_id)
+            .map(|m| {
+                m.iter()
+                    .filter(|(_, (d, _))| d == delegate)
+                    .map(|(g, (_, w))| (g.clone(), *w))
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     /// Tally votes and check quorum for a proposal whose voting period has ended.
@@ -649,12 +894,8 @@ impl GovernanceRuntime {
         // config-file guardians — so the removal replays at startup.
         let guardian_action = match self.proposals.get(&proposal_id) {
             Some(p) => match &p.proposal_type {
-                ProposalType::Admission { candidate_id, .. } => {
-                    Some((candidate_id.clone(), true))
-                }
-                ProposalType::Expulsion { accused_id, .. } => {
-                    Some((accused_id.clone(), false))
-                }
+                ProposalType::Admission { candidate_id, .. } => Some((candidate_id.clone(), true)),
+                ProposalType::Expulsion { accused_id, .. } => Some((accused_id.clone(), false)),
                 _ => None,
             },
             None => None,
@@ -897,8 +1138,14 @@ mod tests {
         let db = std::sync::Arc::new(StdMutex::new(db));
         let mut rt = make_runtime().with_db(std::sync::Arc::clone(&db));
         let id = make_parameter_proposal(&mut rt);
-        rt.cast_vote(id, "zion1voter".into(), crate::types::VoteChoice::Yes, 150_000_000_000_000, None)
-            .unwrap();
+        rt.cast_vote(
+            id,
+            "zion1voter".into(),
+            crate::types::VoteChoice::Yes,
+            150_000_000_000_000,
+            None,
+        )
+        .unwrap();
         rt.cancel_proposal(id, "zion1proposer").unwrap();
 
         let events = db
@@ -1422,5 +1669,198 @@ mod tests {
         let result = rt.execute_proposal(id).unwrap();
         assert!(result.contains("Election"));
         assert!(result.contains("Party A"));
+    }
+
+    // ── D6: delegation ────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_delegation_set_and_revoke() {
+        let mut rt = make_runtime();
+
+        rt.set_delegation("zion1alice", Some("zion1bob")).unwrap();
+        assert_eq!(rt.delegators_of("zion1bob"), vec!["zion1alice".to_string()]);
+        assert_eq!(rt.delegations().len(), 1);
+
+        // re-delegating replaces the target
+        rt.set_delegation("zion1alice", Some("zion1carol")).unwrap();
+        assert!(rt.delegators_of("zion1bob").is_empty());
+        assert_eq!(
+            rt.delegators_of("zion1carol"),
+            vec!["zion1alice".to_string()]
+        );
+
+        rt.set_delegation("zion1alice", None).unwrap();
+        assert!(rt.delegators_of("zion1carol").is_empty());
+        assert!(rt.delegations().is_empty());
+    }
+
+    #[test]
+    fn test_delegation_rejects_bad_targets() {
+        let mut rt = make_runtime();
+        assert!(rt.set_delegation("zion1alice", Some("zion1alice")).is_err());
+        assert!(rt.set_delegation("zion1alice", Some("0xabc")).is_err());
+        assert!(rt.set_delegation("zion1alice", Some("zion1")).is_err());
+        assert!(rt.delegations().is_empty());
+    }
+
+    #[test]
+    fn test_cast_vote_consumes_delegated_weight() {
+        let mut rt = make_runtime();
+        let id = make_parameter_proposal(&mut rt);
+
+        rt.set_delegation("zion1alice", Some("zion1bob")).unwrap();
+        rt.set_delegation("zion1carol", Some("zion1bob")).unwrap();
+
+        let vote = rt
+            .cast_vote_with_delegations(
+                id,
+                "zion1bob".into(),
+                VoteChoice::Yes,
+                100 * FLOWERS_PER_ZION,
+                None,
+                vec![
+                    ("zion1alice".into(), 50 * FLOWERS_PER_ZION),
+                    ("zion1carol".into(), 30 * FLOWERS_PER_ZION),
+                ],
+            )
+            .unwrap();
+
+        // stored weight = own + consumed delegators
+        assert_eq!(vote.weight, 180 * FLOWERS_PER_ZION);
+        let proposal = rt.get_proposal(id).unwrap();
+        assert_eq!(proposal.votes_for, 180 * FLOWERS_PER_ZION);
+        assert_eq!(proposal.voter_count, 1); // only the delegate votes
+        assert_eq!(rt.delegated_votes_for(id, "zion1bob").len(), 2);
+    }
+
+    #[test]
+    fn test_consumed_delegator_cannot_vote_directly() {
+        let mut rt = make_runtime();
+        let id = make_parameter_proposal(&mut rt);
+
+        rt.set_delegation("zion1alice", Some("zion1bob")).unwrap();
+        rt.cast_vote_with_delegations(
+            id,
+            "zion1bob".into(),
+            VoteChoice::Yes,
+            100 * FLOWERS_PER_ZION,
+            None,
+            vec![("zion1alice".into(), 50 * FLOWERS_PER_ZION)],
+        )
+        .unwrap();
+
+        // Alice's weight was already counted via Bob — a direct vote is a
+        // double count and must be rejected.
+        let res = rt.cast_vote(
+            id,
+            "zion1alice".into(),
+            VoteChoice::No,
+            50 * FLOWERS_PER_ZION,
+            None,
+        );
+        assert!(matches!(res, Err(DaoError::AlreadyVoted(_))));
+        assert!(rt.has_voted_or_delegated(id, "zion1alice"));
+    }
+
+    #[test]
+    fn test_delegator_who_voted_first_is_not_consumed() {
+        let mut rt = make_runtime();
+        let id = make_parameter_proposal(&mut rt);
+
+        // Alice votes directly BEFORE Bob's vote — her weight must not be
+        // counted twice even though she delegates to Bob.
+        rt.set_delegation("zion1alice", Some("zion1bob")).unwrap();
+        rt.cast_vote(
+            id,
+            "zion1alice".into(),
+            VoteChoice::No,
+            50 * FLOWERS_PER_ZION,
+            None,
+        )
+        .unwrap();
+
+        let vote = rt
+            .cast_vote_with_delegations(
+                id,
+                "zion1bob".into(),
+                VoteChoice::Yes,
+                100 * FLOWERS_PER_ZION,
+                None,
+                vec![("zion1alice".into(), 50 * FLOWERS_PER_ZION)],
+            )
+            .unwrap();
+
+        assert_eq!(vote.weight, 100 * FLOWERS_PER_ZION); // own weight only
+        assert!(rt.delegated_votes_for(id, "zion1bob").is_empty());
+    }
+
+    #[test]
+    fn test_stale_delegation_not_consumed() {
+        let mut rt = make_runtime();
+        let id = make_parameter_proposal(&mut rt);
+
+        // Alice delegates to X — a caller supplying her weight for Bob's vote
+        // must be filtered (delegation no longer/never pointed at Bob).
+        rt.set_delegation("zion1alice", Some("zion1xavier"))
+            .unwrap();
+
+        let vote = rt
+            .cast_vote_with_delegations(
+                id,
+                "zion1bob".into(),
+                VoteChoice::Yes,
+                100 * FLOWERS_PER_ZION,
+                None,
+                vec![("zion1alice".into(), 50 * FLOWERS_PER_ZION)],
+            )
+            .unwrap();
+        assert_eq!(vote.weight, 100 * FLOWERS_PER_ZION);
+
+        // Alice can still vote directly — nothing was consumed.
+        rt.cast_vote(
+            id,
+            "zion1alice".into(),
+            VoteChoice::No,
+            50 * FLOWERS_PER_ZION,
+            None,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_delegation_replay_from_db() {
+        use std::sync::Mutex as StdMutex;
+        let db = crate::db::DaoDb::in_memory().unwrap();
+        let db = std::sync::Arc::new(StdMutex::new(db));
+
+        let id;
+        {
+            let mut rt = make_runtime().with_db(std::sync::Arc::clone(&db));
+            id = make_parameter_proposal(&mut rt);
+            rt.set_delegation("zion1alice", Some("zion1bob")).unwrap();
+            rt.cast_vote_with_delegations(
+                id,
+                "zion1bob".into(),
+                VoteChoice::Yes,
+                100 * FLOWERS_PER_ZION,
+                None,
+                vec![("zion1alice".into(), 50 * FLOWERS_PER_ZION)],
+            )
+            .unwrap();
+        }
+
+        // Fresh runtime over the same db — delegation and consumption replay.
+        let mut rt = make_runtime().with_db(std::sync::Arc::clone(&db));
+        rt.load_from_db().unwrap();
+        assert_eq!(rt.delegators_of("zion1bob"), vec!["zion1alice".to_string()]);
+        assert!(rt.has_voted_or_delegated(id, "zion1alice"));
+        let res = rt.cast_vote(
+            id,
+            "zion1alice".into(),
+            VoteChoice::No,
+            50 * FLOWERS_PER_ZION,
+            None,
+        );
+        assert!(matches!(res, Err(DaoError::AlreadyVoted(_))));
     }
 }

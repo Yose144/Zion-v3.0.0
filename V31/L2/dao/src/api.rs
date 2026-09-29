@@ -482,6 +482,11 @@ async fn get_votes(
                 "weight": v.weight,
                 "tx_hash": v.tx_hash,
                 "voted_at": v.voted_at.to_rfc3339(),
+                // D6: delegator weights consumed by this vote (empty when none).
+                "delegated_from": rt.delegated_votes_for(id, &v.voter)
+                    .into_iter()
+                    .map(|(d, w)| serde_json::json!({"delegator": d, "weight": w}))
+                    .collect::<Vec<_>>(),
             })
         })
         .collect();
@@ -502,8 +507,8 @@ async fn cast_vote(
         .await
         .ok_or_else(unauthorized)?;
 
-    let (voter, weight) = match caller {
-        CallerAuth::Operator => (req.voter, req.weight),
+    let (voter, weight, delegated) = match caller {
+        CallerAuth::Operator => (req.voter, req.weight, Vec::new()),
         CallerAuth::Zis(user) => {
             // Voter = the user's linked ZION L1 address; weight = its real
             // balance at the proposal snapshot block (client can't fake it).
@@ -534,16 +539,40 @@ async fn cast_vote(
                     }),
                 ));
             }
-            (voter, weight)
+            // D6: resolve delegators whose weight this vote may consume —
+            // still delegating to voter and not already participating on the
+            // proposal. Each delegator's balance is fetched at the same
+            // snapshot block; a failed/dust lookup skips that delegator,
+            // it never sinks the vote.
+            let delegators = {
+                let rt = state.runtime.lock().await;
+                rt.delegators_of(&voter)
+                    .into_iter()
+                    .filter(|d| !rt.has_voted_or_delegated(id, d))
+                    .collect::<Vec<_>>()
+            };
+            let mut delegated = Vec::new();
+            for d in delegators {
+                if let Ok(w) = l1_balance_at_height(&rpc_url, &d, snapshot_block).await {
+                    if w >= min_weight {
+                        delegated.push((d, w));
+                    }
+                }
+            }
+            (voter, weight, delegated)
         }
     };
 
     let mut rt = state.runtime.lock().await;
-    match rt.cast_vote(id, voter, req.choice, weight, req.tx_hash) {
+    match rt.cast_vote_with_delegations(id, voter, req.choice, weight, req.tx_hash, delegated) {
         Ok(vote) => Ok(ok(serde_json::json!({
             "proposal_id": vote.proposal_id,
             "voter": vote.voter,
             "weight": vote.weight,
+            "delegated_from": rt.delegated_votes_for(id, &vote.voter)
+                .into_iter()
+                .map(|(d, w)| serde_json::json!({"delegator": d, "weight": w}))
+                .collect::<Vec<_>>(),
             "voted_at": vote.voted_at.to_rfc3339(),
         }))),
         Err(e) => Err(err(&e.to_string())),
@@ -686,6 +715,26 @@ async fn list_guardians(
         "total": cfg.multisig_total,
         "guardians": guardians,
         "candidates": candidates,
+    })))
+}
+
+/// GET /api/dao/delegations — live delegation map (D6): delegator → delegate
+/// pairs plus per-delegate aggregated delegator counts. Public read.
+async fn list_delegations(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    let rt = state.runtime.lock().await;
+    let pairs = rt.delegations();
+    let mut delegations: Vec<serde_json::Value> = pairs
+        .iter()
+        .map(|(delegator, delegate)| {
+            serde_json::json!({ "delegator": delegator, "delegate": delegate })
+        })
+        .collect();
+    delegations.sort_by(|a, b| a["delegate"].as_str().cmp(&b["delegate"].as_str()));
+    Ok(ok(serde_json::json!({
+        "delegations": delegations,
+        "total": delegations.len(),
     })))
 }
 
@@ -892,8 +941,8 @@ async fn submit_treasury_op(
     }
 
     // Canonical signing payload — every guardian signs this exact string.
-    let op_json = serde_json::to_string(&operation)
-        .map_err(|e| err(&format!("operation serialize: {e}")))?;
+    let op_json =
+        serde_json::to_string(&operation).map_err(|e| err(&format!("operation serialize: {e}")))?;
     let signing_hash = treasury_tx::signing_message(&req.op_id, &op_json);
     let (pubkey, verified) = verify_treasury_signature(
         rt.config(),
@@ -970,9 +1019,10 @@ async fn sign_treasury_op(
     }
 
     // The stored signing_hash is authoritative — it binds op_id + operation.
-    let signing_hash = op.signing_hash.clone().unwrap_or_else(|| {
-        treasury_tx::signing_message(&op_id, &op.operation)
-    });
+    let signing_hash = op
+        .signing_hash
+        .clone()
+        .unwrap_or_else(|| treasury_tx::signing_message(&op_id, &op.operation));
     let (pubkey, verified) = verify_treasury_signature(
         rt.config(),
         &req.guardian,
@@ -988,9 +1038,7 @@ async fn sign_treasury_op(
         verified,
     )
     .map_err(db_err)?;
-    let signatures = db
-        .count_verified_treasury_sigs(&op_id)
-        .map_err(db_err)? as u32;
+    let signatures = db.count_verified_treasury_sigs(&op_id).map_err(db_err)? as u32;
     let threshold = rt.config().multisig_threshold;
     let ready = signatures >= threshold;
     if ready && op.status == "pending" {
@@ -1098,20 +1146,11 @@ async fn execute_treasury_op(
     // the op in `awaiting_broadcast` with the spec exportable.
     match treasury_tx::treasury_key_from_env().map_err(api_err)? {
         Some(key) => {
-            let selected = treasury_tx::select_utxos(
-                &utxos,
-                spec.amount_flowers,
-                spec.fee_flowers,
-            )
-            .map_err(api_err)?
-            .0;
-            let tx_id = treasury_tx::sign_and_broadcast(
-                &l1_rpc_url,
-                &spec,
-                &selected,
-                &key,
-            )
-            .map_err(api_err)?;
+            let selected = treasury_tx::select_utxos(&utxos, spec.amount_flowers, spec.fee_flowers)
+                .map_err(api_err)?
+                .0;
+            let tx_id = treasury_tx::sign_and_broadcast(&l1_rpc_url, &spec, &selected, &key)
+                .map_err(api_err)?;
             db.set_treasury_op_tx_id(&op_id, &tx_id).map_err(db_err)?;
             db.update_treasury_op_status(&op_id, "executed")
                 .map_err(db_err)?;
@@ -1184,7 +1223,13 @@ fn db_err(e: DaoError) -> (StatusCode, Json<ApiErr>) {
 
 /// Append an immutable audit event (D4). Never fails the request — the
 /// log is best-effort beside the state transition it records.
-fn audit(db: &crate::db::DaoDb, subject: &str, event_type: &str, actor: Option<&str>, data: serde_json::Value) {
+fn audit(
+    db: &crate::db::DaoDb,
+    subject: &str,
+    event_type: &str,
+    actor: Option<&str>,
+    data: serde_json::Value,
+) {
     let data_json = serde_json::to_string(&data).unwrap_or_else(|_| "{}".into());
     if let Err(e) = db.insert_event(subject, event_type, actor, &data_json) {
         tracing::warn!("dao event {event_type} on {subject}: {e}");
@@ -1414,7 +1459,11 @@ fn check_auth(state: &AppState, headers: &HeaderMap) -> Result<(), (StatusCode, 
     }
 }
 
-fn serialize_proposal(p: &Proposal, circulating_supply: u64, quorum_floor: f64) -> serde_json::Value {
+fn serialize_proposal(
+    p: &Proposal,
+    circulating_supply: u64,
+    quorum_floor: f64,
+) -> serde_json::Value {
     // Quorum math mirrors check_quorum_with_floor: required = supply ×
     // max(per-type floor, configured base) / 100, counted on total weight.
     let required_percent = p.proposal_type.required_quorum_percent_or(quorum_floor);
@@ -1484,6 +1533,7 @@ pub async fn serve(
         .route("/api/dao/proposals/:id/cancel", post(cancel_proposal))
         .route("/api/dao/stats", get(stats))
         .route("/api/dao/guardians", get(list_guardians))
+        .route("/api/dao/delegations", get(list_delegations))
         .route("/api/dao/treasury", get(treasury_overview))
         .route("/api/dao/treasury/ops", get(list_treasury_ops))
         .route("/api/dao/treasury/submit", post(submit_treasury_op))

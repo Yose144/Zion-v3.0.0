@@ -53,21 +53,12 @@ pub const TREASURY_TX_FEE_FLOWERS: u64 = 1_000_000;
 /// `operation_json` is the exact stored `treasury_ops.operation` blob.
 pub fn signing_message(op_id: &str, operation_json: &str) -> String {
     let digest = Sha256::digest(operation_json.as_bytes());
-    format!(
-        "{}|{}|{}",
-        TREASURY_SIG_DOMAIN,
-        op_id,
-        hex::encode(digest)
-    )
+    format!("{}|{}|{}", TREASURY_SIG_DOMAIN, op_id, hex::encode(digest))
 }
 
 /// Verify an Ed25519 guardian signature over `signing_message`.
 /// `pubkey_hex`/`sig_hex` are lowercase or 0x-prefixed hex.
-pub fn verify_guardian_signature(
-    pubkey_hex: &str,
-    message: &str,
-    sig_hex: &str,
-) -> DaoResult<()> {
+pub fn verify_guardian_signature(pubkey_hex: &str, message: &str, sig_hex: &str) -> DaoResult<()> {
     use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 
     let pk_bytes = hex::decode(pubkey_hex.trim_start_matches("0x"))
@@ -112,10 +103,7 @@ pub fn op_recipient_amount(op: &TreasuryOperation) -> (String, u64) {
 
 /// Source treasury address for an operation (`Rebalance.from`, else the
 /// first configured treasury address).
-pub fn op_source_address(
-    op: &TreasuryOperation,
-    treasury_addresses: &[String],
-) -> Option<String> {
+pub fn op_source_address(op: &TreasuryOperation, treasury_addresses: &[String]) -> Option<String> {
     match op {
         TreasuryOperation::Rebalance { from, .. } => Some(from.clone()),
         _ => treasury_addresses.first().cloned(),
@@ -303,12 +291,7 @@ pub fn sign_and_broadcast(
         .or_else(|| resp.get("txid"))
         .and_then(|v| v.as_str())
         .map(str::to_string)
-        .unwrap_or_else(|| {
-            built
-                .transaction
-                .hash()
-                .to_hex()
-        });
+        .unwrap_or_else(|| built.transaction.hash().to_hex());
     Ok(tx_id)
 }
 
@@ -402,7 +385,12 @@ mod tests {
         verify_guardian_signature(&pk, &msg, &hex::encode(sig.to_bytes())).unwrap();
 
         // Wrong message / wrong key must fail.
-        assert!(verify_guardian_signature(&pk, "dao:treasury:v1|op-9|00", &hex::encode(sig.to_bytes())).is_err());
+        assert!(verify_guardian_signature(
+            &pk,
+            "dao:treasury:v1|op-9|00",
+            &hex::encode(sig.to_bytes())
+        )
+        .is_err());
         let other = SigningKey::from_bytes(&[8u8; 32]);
         assert!(verify_guardian_signature(
             &hex::encode(other.verifying_key().to_bytes()),
@@ -415,9 +403,27 @@ mod tests {
     #[test]
     fn utxo_selection_is_deterministic_and_covers_fee() {
         let utxos = vec![
-            TreasuryUtxo { tx_hash: "bb".into(), output_index: 0, amount: 3_000_000, is_coinbase: false, block_height: 1 },
-            TreasuryUtxo { tx_hash: "aa".into(), output_index: 1, amount: 4_000_000, is_coinbase: false, block_height: 1 },
-            TreasuryUtxo { tx_hash: "cc".into(), output_index: 0, amount: 9_000_000, is_coinbase: false, block_height: 1 },
+            TreasuryUtxo {
+                tx_hash: "bb".into(),
+                output_index: 0,
+                amount: 3_000_000,
+                is_coinbase: false,
+                block_height: 1,
+            },
+            TreasuryUtxo {
+                tx_hash: "aa".into(),
+                output_index: 1,
+                amount: 4_000_000,
+                is_coinbase: false,
+                block_height: 1,
+            },
+            TreasuryUtxo {
+                tx_hash: "cc".into(),
+                output_index: 0,
+                amount: 9_000_000,
+                is_coinbase: false,
+                block_height: 1,
+            },
         ];
         let (picked, total) = select_utxos(&utxos, 5_000_000, TREASURY_TX_FEE_FLOWERS).unwrap();
         // sorted: aa(4M) then bb(3M) → total 7M ≥ 6M
@@ -437,13 +443,19 @@ mod tests {
             proposal_id: 1,
         };
         let utxos = vec![TreasuryUtxo {
-            tx_hash: "aa".into(), output_index: 0, amount: 10_000_000,
-            is_coinbase: false, block_height: 1,
+            tx_hash: "aa".into(),
+            output_index: 0,
+            amount: 10_000_000,
+            is_coinbase: false,
+            block_height: 1,
         }];
         let spec = build_unsigned_spec("op-7", &op, &["zion1treasury".into()], &utxos).unwrap();
         assert_eq!(spec.to_address, "zion1dest");
         assert_eq!(spec.amount_flowers, 5_000_000);
         assert_eq!(spec.memo, "DAO:treasury:op-7");
-        assert_eq!(spec.change_flowers, 10_000_000 - 5_000_000 - TREASURY_TX_FEE_FLOWERS);
+        assert_eq!(
+            spec.change_flowers,
+            10_000_000 - 5_000_000 - TREASURY_TX_FEE_FLOWERS
+        );
     }
 }

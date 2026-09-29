@@ -202,6 +202,27 @@ impl DaoDb {
                 applied_at   TEXT NOT NULL
             );
 
+            -- Vote delegation (D6). `DAO:delegate:<addr>` memo sets the
+            -- mapping, `DAO:delegate:none` removes the row. Delegation is
+            -- non-transitive and consumed per-proposal: once a delegate's
+            -- vote counts a delegator's weight, that delegator can no
+            -- longer cast a direct vote on the same proposal — recorded in
+            -- dao_delegated_votes so the rule survives restarts.
+            CREATE TABLE IF NOT EXISTS dao_delegations (
+                delegator   TEXT PRIMARY KEY,
+                delegate    TEXT NOT NULL,
+                updated_at  TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS dao_delegated_votes (
+                proposal_id INTEGER NOT NULL,
+                delegator   TEXT NOT NULL,
+                delegate    TEXT NOT NULL,
+                weight      INTEGER NOT NULL,
+                created_at  TEXT NOT NULL,
+                PRIMARY KEY (proposal_id, delegator)
+            );
+
             INSERT OR IGNORE INTO scan_state(id, last_block, updated_at)
             VALUES (1, 0, datetime('now'));
             "#,
@@ -940,7 +961,9 @@ impl DaoDb {
             .prepare("SELECT name, value FROM dao_params ORDER BY name")
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         let rows = stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
             .map_err(|e| DaoError::Internal(e.to_string()))?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -1038,6 +1061,119 @@ impl DaoDb {
                     row.get::<_, String>(0)?,
                     row.get::<_, String>(1)?,
                     row.get::<_, i64>(2)? != 0,
+                ))
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(rows)
+    }
+
+    // ── Delegation (D6) ───────────────────────────────────────────────────────
+
+    /// Set or replace a delegation: `delegator` assigns voting weight to
+    /// `delegate` (`DAO:delegate:<addr>` memo).
+    pub fn set_delegation(&self, delegator: &str, delegate: &str) -> DaoResult<()> {
+        self.conn
+            .execute(
+                r#"INSERT INTO dao_delegations (delegator, delegate, updated_at)
+                   VALUES (?1, ?2, datetime('now'))
+                   ON CONFLICT(delegator) DO UPDATE SET
+                     delegate = excluded.delegate,
+                     updated_at = excluded.updated_at"#,
+                params![delegator, delegate],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Revoke a delegation (`DAO:delegate:none` memo).
+    pub fn remove_delegation(&self, delegator: &str) -> DaoResult<()> {
+        self.conn
+            .execute(
+                "DELETE FROM dao_delegations WHERE delegator = ?1",
+                params![delegator],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// All active delegations as (delegator, delegate, updated_at) rows —
+    /// replayed into the runtime map at startup.
+    pub fn list_delegations(&self) -> DaoResult<Vec<(String, String, String)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT delegator, delegate, updated_at FROM dao_delegations")
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(rows)
+    }
+
+    /// Record which delegators' weights were consumed by a delegate's vote.
+    /// Rows are (proposal_id, delegator)-unique — a replayed/double process
+    /// cannot insert the same consumption twice.
+    pub fn record_delegated_votes(
+        &self,
+        proposal_id: u64,
+        delegate: &str,
+        delegators: &[(String, u64)],
+    ) -> DaoResult<()> {
+        let tx = self
+            .conn
+            .unchecked_transaction()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        for (delegator, weight) in delegators {
+            tx.execute(
+                r#"INSERT OR IGNORE INTO dao_delegated_votes
+                   (proposal_id, delegator, delegate, weight, created_at)
+                   VALUES (?1, ?2, ?3, ?4, datetime('now'))"#,
+                params![proposal_id, delegator, delegate, *weight as i64],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        }
+        tx.commit().map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Whether `delegator`'s weight was already consumed by a delegate's
+    /// vote on this proposal (blocks a later direct vote — D6 no-double-count).
+    pub fn has_delegated_vote(&self, proposal_id: u64, delegator: &str) -> DaoResult<bool> {
+        let count: i64 = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM dao_delegated_votes WHERE proposal_id=?1 AND delegator=?2",
+                params![proposal_id, delegator],
+                |row| row.get(0),
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(count > 0)
+    }
+
+    /// All delegated-vote consumptions as (proposal_id, delegator, delegate,
+    /// weight) rows — replayed at startup so the no-double-count rule
+    /// survives a restart.
+    pub fn list_delegated_votes(&self) -> DaoResult<Vec<(u64, String, String, u64)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT proposal_id, delegator, delegate, weight FROM dao_delegated_votes")
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, u64>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, i64>(3)? as u64,
                 ))
             })
             .map_err(|e| DaoError::Internal(e.to_string()))?
@@ -1198,13 +1334,24 @@ mod tests {
     #[test]
     fn test_event_log_append_and_scope() {
         let db = make_db();
-        db.insert_event("proposal:1", "proposal_created", Some("zion1a"), "{\"title\":\"T\"}")
-            .unwrap();
-        db.insert_event("proposal:1", "vote_cast", Some("zion1b"), "{\"choice\":\"Yes\"}")
-            .unwrap();
+        db.insert_event(
+            "proposal:1",
+            "proposal_created",
+            Some("zion1a"),
+            "{\"title\":\"T\"}",
+        )
+        .unwrap();
+        db.insert_event(
+            "proposal:1",
+            "vote_cast",
+            Some("zion1b"),
+            "{\"choice\":\"Yes\"}",
+        )
+        .unwrap();
         db.insert_event("op:abc", "treasury_op_submitted", Some("zion1g"), "{}")
             .unwrap();
-        db.insert_event("proposal:2", "proposal_created", None, "{}").unwrap();
+        db.insert_event("proposal:2", "proposal_created", None, "{}")
+            .unwrap();
 
         let feed = db.list_events("proposal:1", 500).unwrap();
         assert_eq!(feed.len(), 2);
