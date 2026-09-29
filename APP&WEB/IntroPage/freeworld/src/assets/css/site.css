@@ -5,8 +5,12 @@
    ════════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg: #0b0d10;
+  --bg: #0d0e10;
   --bg-2: #10141a;
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #078930;
+  --nav-h: 68px;
   --panel: rgba(255, 255, 255, 0.03);
   --line: rgba(255, 255, 255, 0.09);
   --line-gold: rgba(252, 209, 22, 0.28);
@@ -31,12 +35,42 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
   font-size: 16px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  padding-top: var(--nav-h);
+  /* IntroPage signature: rasta radial glows over near-black */
+  background:
+    radial-gradient(circle at 20% -4%, rgba(228, 30, 43, 0.14), transparent 36rem),
+    radial-gradient(circle at 84% 3%, rgba(7, 137, 48, 0.11), transparent 32rem),
+    radial-gradient(circle at 50% 42%, rgba(252, 209, 22, 0.05), transparent 48rem),
+    radial-gradient(ellipse at bottom, #0e1013 0%, #07080a 100%);
+  background-attachment: fixed;
+  background-color: var(--bg);
+}
+/* Subtle diagonal rasta stripes — same overlay as the intro hub */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(228, 30, 43, 0.022) 0px,
+    rgba(228, 30, 43, 0.022) 3px,
+    rgba(252, 209, 22, 0.018) 3px,
+    rgba(252, 209, 22, 0.018) 6px,
+    rgba(7, 137, 48, 0.022) 6px,
+    rgba(7, 137, 48, 0.022) 9px,
+    transparent 9px,
+    transparent 160px
+  );
+  background-size: 160px 160px;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
 }
 img { max-width: 100%; display: block; }
 a { color: var(--gold); text-decoration: none; }
@@ -49,9 +83,11 @@ a:hover { text-decoration: underline; }
   position: fixed; inset: 0 0 auto 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.9rem clamp(1rem, 4vw, 2.5rem);
-  background: linear-gradient(180deg, rgba(11, 13, 16, 0.92), rgba(11, 13, 16, 0.55) 70%, transparent);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--line);
+  background: rgba(13, 14, 16, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(252, 209, 22, 0.12);
+  box-shadow: 0 8px 32px -12px rgba(0, 0, 0, 0.6);
 }
 .fw-nav-brand {
   display: flex; align-items: center; gap: 0.7rem;
@@ -91,13 +127,19 @@ a:hover { text-decoration: underline; }
 .fw-hero-bg img { width: 100%; height: auto; display: block; }
 .fw-hero-bg::after {
   content: ''; position: absolute; inset: 0;
+  /* gentle melt into page background at the bottom edge only —
+     nav no longer overlaps the banner */
   background: linear-gradient(180deg,
-    rgba(11,13,16,0.35) 0%, rgba(11,13,16,0) 18%,
-    rgba(11,13,16,0) 82%, rgba(11,13,16,0.55) 100%);
+    rgba(13,14,16,0) 74%, rgba(13,14,16,0.45) 96%, rgba(13,14,16,0.55) 100%);
 }
 .fw-hero-inner {
   max-width: var(--maxw); margin: 0 auto;
-  padding: clamp(1.6rem, 3.5vw, 2.8rem) clamp(1rem, 4vw, 2.5rem) 0;
+  padding: clamp(1.6rem, 3.5vw, 2.6rem) clamp(1rem, 4vw, 2.5rem) clamp(1.6rem, 3vw, 2.4rem);
+  /* rasta tricolor hairline closing the hero — intro hub motif */
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg,
+    transparent 0%, rgba(228,30,43,0.55) 25%, rgba(252,209,22,0.65) 50%,
+    rgba(7,137,48,0.55) 75%, transparent 100%) 1;
 }
 .fw-hero h1 {
   font-family: var(--serif); font-weight: 500; font-style: italic;
@@ -120,8 +162,12 @@ a:hover { text-decoration: underline; }
 /* live fund ticker in hero */
 .fw-ticker {
   margin-top: 2.4rem; display: inline-flex; align-items: center; gap: 1rem;
-  border: 1px solid var(--line-gold); border-radius: 16px;
-  background: rgba(11, 13, 16, 0.66); backdrop-filter: blur(10px);
+  border: 1px solid rgba(252, 209, 22, 0.22); border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)),
+    rgba(13, 14, 16, 0.7);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 30px -12px rgba(252, 209, 22, 0.3);
   padding: 0.9rem 1.4rem;
 }
 .fw-ticker .dot {
@@ -143,15 +189,28 @@ a:hover { text-decoration: underline; }
   font-size: 0.68rem; letter-spacing: 0.34em; text-transform: uppercase;
   color: var(--gold); margin-bottom: 0.9rem;
 }
-.fw-h2 { font-family: var(--serif); font-size: clamp(1.9rem, 4.4vw, 3rem); font-weight: 500; color: #fff; line-height: 1.15; }
+.fw-h2 {
+  font-family: var(--serif); font-size: clamp(1.9rem, 4.4vw, 3rem); font-weight: 500;
+  line-height: 1.15;
+  /* IntroPage .major headings — rasta tri-color gradient text */
+  background-image: linear-gradient(92deg, var(--rasta-red), var(--rasta-gold) 48%, var(--rasta-green));
+  background-clip: text; -webkit-background-clip: text; color: transparent;
+  display: inline-block;
+}
+.fw-section[id] { scroll-margin-top: calc(var(--nav-h) + 0.5rem); }
 .fw-lead { margin-top: 1rem; max-width: 760px; color: var(--text-dim); font-size: 1.02rem; }
 
 /* ── Community cards ─────────────────────────────────────────── */
 .fw-grid { display: grid; gap: 1.4rem; margin-top: 2.6rem; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
 .fw-card {
   position: relative; display: flex; flex-direction: column;
-  border: 1px solid var(--line); border-radius: var(--radius);
-  background: var(--panel); overflow: hidden; color: var(--text);
+  border: 1px solid rgba(252, 209, 22, 0.14); border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+    linear-gradient(90deg, rgba(228,30,43,0.05), rgba(252,209,22,0.045), rgba(7,137,48,0.05));
+  overflow: hidden; color: var(--text);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.7), 0 0 26px -18px rgba(252, 209, 22, 0.25);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .fw-card:hover {
@@ -213,8 +272,10 @@ a:hover { text-decoration: underline; }
 /* ── Live registry / stats ───────────────────────────────────── */
 .fw-stats { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 2.4rem; }
 .fw-stat {
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem 1.4rem;
-  background: var(--panel);
+  border: 1px solid rgba(252, 209, 22, 0.12); border-radius: var(--radius); padding: 1.2rem 1.4rem;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+    linear-gradient(90deg, rgba(228,30,43,0.04), rgba(252,209,22,0.035), rgba(7,137,48,0.04));
 }
 .fw-stat .lbl { font-size: 0.64rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); }
 .fw-stat .val { font-family: var(--serif); font-size: 1.7rem; color: var(--gold); margin-top: 0.3rem; }
@@ -239,8 +300,12 @@ a:hover { text-decoration: underline; }
 
 /* ── QV ──────────────────────────────────────────────────────── */
 .fw-qv-round {
-  border: 1px solid var(--line-gold); border-radius: var(--radius);
-  padding: 1.6rem; margin-top: 2.2rem; background: var(--panel);
+  border: 1px solid rgba(252, 209, 22, 0.22); border-radius: var(--radius);
+  padding: 1.6rem; margin-top: 2.2rem;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)),
+    linear-gradient(90deg, rgba(228,30,43,0.05), rgba(252,209,22,0.05), rgba(7,137,48,0.05));
+  box-shadow: 0 0 34px -16px rgba(252, 209, 22, 0.3);
 }
 .fw-qv-grants { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1.2rem; }
 .fw-qv-grant {
@@ -345,8 +410,16 @@ a:hover { text-decoration: underline; }
 
 /* ── Footer ──────────────────────────────────────────────────── */
 .fw-footer {
-  border-top: 1px solid var(--line); padding: 3rem clamp(1rem,4vw,2.5rem) 4rem;
+  padding: 0 clamp(1rem,4vw,2.5rem) 4rem;
   margin-top: 2rem;
+}
+/* tricolor hairline across the footer — intro hub signature */
+.fw-footer::before {
+  content: ''; display: block; height: 1px; margin: 0 auto 3rem;
+  max-width: var(--maxw);
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(228,30,43,0.55) 25%, rgba(252,209,22,0.7) 50%,
+    rgba(7,137,48,0.55) 75%, transparent 100%);
 }
 .fw-footer .cols { max-width: var(--maxw); margin: 0 auto; display: flex; flex-wrap: wrap; gap: 2.5rem; justify-content: space-between; }
 .fw-footer .brand { font-family: var(--serif); letter-spacing: 0.24em; color: var(--gold); text-transform: uppercase; }
@@ -393,7 +466,7 @@ a:hover { text-decoration: underline; }
   .fw-section { padding-left: 1rem; padding-right: 1rem; }
 
   /* hero: text sits below the full banner on every viewport */
-  .fw-hero-inner { padding: 1rem 1rem 0; }
+  .fw-hero-inner { padding: 1rem 1rem 1.2rem; }
   .fw-hero h1 { font-size: 1.55rem; }
   .fw-hero .fw-tagline { font-size: 0.9rem; }
   .fw-hero-badges { margin-top: 1rem; }
