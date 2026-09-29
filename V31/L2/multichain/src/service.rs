@@ -1356,6 +1356,34 @@ fn build_btc_swap(
             .ok()
             .and_then(|v| v.parse().ok()),
     };
+    // Sanity bounds (blocker #7): a misconfigured margin or confirmation
+    // floor silently erodes HTLC safety — refuse to enable the flow rather
+    // than run swaps with no refund/claim headroom.
+    if cfg.margin_blocks < 6 {
+        tracing::error!(
+            "[WARP][btc-swap] disabled: WARP_BTC_MARGIN_BLOCKS={} too low \
+             (need >=6 ≈1h of claim headroom)",
+            cfg.margin_blocks
+        );
+        return None;
+    }
+    if cfg.min_btc_confs < 1 || cfg.min_zion_lock_confs < 1 {
+        tracing::error!(
+            "[WARP][btc-swap] disabled: confirmation floors must be >=1 \
+             (WARP_BTC_MIN_CONFS={}, WARP_ZION_LOCK_MIN_CONFS={})",
+            cfg.min_btc_confs,
+            cfg.min_zion_lock_confs
+        );
+        return None;
+    }
+    if cfg.min_btc_sats > cfg.max_btc_sats {
+        tracing::error!(
+            "[WARP][btc-swap] disabled: WARP_BTC_SWAP_MIN_SATS={} > MAX_SATS={}",
+            cfg.min_btc_sats,
+            cfg.max_btc_sats
+        );
+        return None;
+    }
     let quote_ttl_secs = cfg.quote_ttl_secs;
     tracing::info!(
         "[WARP][btc-swap] enabled — network {:?}, relay {}, min_confs {}",
