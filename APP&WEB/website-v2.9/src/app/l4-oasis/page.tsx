@@ -105,7 +105,7 @@ const L4OasisCopy = {
 
   rewards: { cs: `Odměny`, en: `Rewards` },
   oasisPool: { cs: `OASIS Reward Pool`, en: `OASIS Reward Pool` },
-  oasisPoolDesc: { cs: `4.95 miliardy ZION vyhrazené pro herní ekonomiku — rozdělené do tří slotů po 33 %.`, en: `4.95 billion ZION reserved for the game economy — split into three 33% slots.` },
+  oasisPoolDesc: { cs: `4.95 miliardy ZION vyhrazené pro herní ekonomiku — genesis sloty 1–3 po 1,65 mld. Původní sloty 4 a 5 (3,3 mld) patří L5 Free World Projects.`, en: `4.95 billion ZION reserved for the game economy — genesis slots 1–3 of 1.65B each. Former slots 4 and 5 (3.3B) belong to L5 Free World Projects.` },
   poolMining: { cs: `Mining Rewards`, en: `Mining Rewards` },
   poolMiningDesc: { cs: `1.65B ZION — odměny za herní těžební aktivity a skill-based mining.`, en: `1.65B ZION — rewards for in-game mining activity and skill-based mining.` },
   poolChallenges: { cs: `Challenge Rewards`, en: `Challenge Rewards` },
