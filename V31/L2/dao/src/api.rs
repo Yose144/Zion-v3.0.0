@@ -390,6 +390,35 @@ async fn get_proposal(
     }
 }
 
+/// GET /api/dao/proposals/:id/events — immutable audit feed for one
+/// proposal (D4). Oldest first; events are append-only in `dao_events`.
+async fn get_proposal_events(
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    let db = {
+        let rt = state.runtime.lock().await;
+        rt.db()
+    };
+    let db = db.ok_or_else(|| err("database not configured"))?;
+    let db = db.lock().map_err(|e| err(&format!("db lock: {e}")))?;
+    let events = db
+        .list_events(&format!("proposal:{id}"), 500)
+        .map_err(db_err)?;
+    Ok(ok(serde_json::json!({
+        "proposal_id": id,
+        "count": events.len(),
+        "events": events.iter().map(|e| serde_json::json!({
+            "id": e.id,
+            "event_type": e.event_type,
+            "actor": e.actor,
+            "data": serde_json::from_str::<serde_json::Value>(&e.data_json)
+                .unwrap_or(serde_json::json!({})),
+            "created_at": e.created_at,
+        })).collect::<Vec<_>>(),
+    })))
+}
+
 async fn create_proposal(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -851,6 +880,17 @@ async fn submit_treasury_op(
         .count_verified_treasury_sigs(&req.op_id)
         .map_err(db_err)? as u32;
     let threshold = rt.config().multisig_threshold;
+    audit(
+        &db,
+        &format!("op:{}", req.op_id),
+        "treasury_op_submitted",
+        Some(&req.guardian),
+        serde_json::json!({
+            "proposal_id": req.proposal_id,
+            "verified": verified,
+            "signatures": signatures,
+        }),
+    );
     Ok(ok(serde_json::json!({
         "op_id": req.op_id,
         "signing_hash": signing_hash,
@@ -915,6 +955,18 @@ async fn sign_treasury_op(
             .map_err(db_err)?;
     }
 
+    audit(
+        &db,
+        &format!("op:{op_id}"),
+        "treasury_op_signed",
+        Some(&req.guardian),
+        serde_json::json!({
+            "verified": verified,
+            "signatures": signatures,
+            "threshold": threshold,
+            "ready": ready,
+        }),
+    );
     Ok(ok(serde_json::json!({
         "op_id": op_id,
         "signatures": signatures,
@@ -1020,6 +1072,13 @@ async fn execute_treasury_op(
             db.set_treasury_op_tx_id(&op_id, &tx_id).map_err(db_err)?;
             db.update_treasury_op_status(&op_id, "executed")
                 .map_err(db_err)?;
+            audit(
+                &db,
+                &format!("op:{op_id}"),
+                "treasury_op_executed",
+                Some(&req.guardian),
+                serde_json::json!({ "tx_id": tx_id, "verified_signatures": verified }),
+            );
             Ok(ok(serde_json::json!({
                 "op_id": op_id,
                 "status": "executed",
@@ -1034,6 +1093,13 @@ async fn execute_treasury_op(
         None => {
             db.update_treasury_op_status(&op_id, "awaiting_broadcast")
                 .map_err(db_err)?;
+            audit(
+                &db,
+                &format!("op:{op_id}"),
+                "treasury_op_awaiting_broadcast",
+                Some(&req.guardian),
+                serde_json::json!({ "verified_signatures": verified }),
+            );
             Ok(ok(serde_json::json!({
                 "op_id": op_id,
                 "status": "awaiting_broadcast",
@@ -1071,6 +1137,15 @@ fn api_err(e: DaoError) -> (StatusCode, Json<ApiErr>) {
 
 fn db_err(e: DaoError) -> (StatusCode, Json<ApiErr>) {
     err(&e.to_string())
+}
+
+/// Append an immutable audit event (D4). Never fails the request — the
+/// log is best-effort beside the state transition it records.
+fn audit(db: &crate::db::DaoDb, subject: &str, event_type: &str, actor: Option<&str>, data: serde_json::Value) {
+    let data_json = serde_json::to_string(&data).unwrap_or_else(|_| "{}".into());
+    if let Err(e) = db.insert_event(subject, event_type, actor, &data_json) {
+        tracing::warn!("dao event {event_type} on {subject}: {e}");
+    }
 }
 
 fn unauthorized() -> (StatusCode, Json<ApiErr>) {
@@ -1358,6 +1433,7 @@ pub async fn serve(
             get(list_proposals).post(create_proposal),
         )
         .route("/api/dao/proposals/:id", get(get_proposal))
+        .route("/api/dao/proposals/:id/events", get(get_proposal_events))
         .route("/api/dao/proposals/:id/votes", get(get_votes))
         .route("/api/dao/proposals/:id/vote", post(cast_vote))
         .route("/api/dao/proposals/:id/tally", post(tally_proposal))
