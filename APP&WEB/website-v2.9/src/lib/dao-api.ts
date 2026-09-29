@@ -583,7 +583,9 @@ export type ProposalTypeInput =
   | { kind: 'Treasury'; data: { recipient: string; amount: number; purpose: string } }
   | { kind: 'Grant'; data: { recipient: string; amount: number; milestones: string[]; duration_days: number } }
   | { kind: 'Emergency'; data: { action: string; justification: string } }
-  | { kind: 'Humanitarian'; data: { category: string; amount: number; region: string; description: string } };
+  | { kind: 'Humanitarian'; data: { category: string; amount: number; region: string; description: string } }
+  | { kind: 'Admission'; data: { candidate_id: string; gate_scores_hash: string; sponsoring_guardians: string[]; community: string } }
+  | { kind: 'Expulsion'; data: { accused_id: string; offense_category: string; investigation_hash: string; defense_hash?: string | null; tier: number } };
 
 /**
  * POST /api/dao/proposals

@@ -262,7 +262,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ✅ **CODE 2026-10-02** — `TreasuryOpsPanel` na `/dao` Treasury tabu: verified-signature progress bar, per-sig verified/unverified list, signing_hash k podpisu, inline sign form (guardian + Ed25519 hex + DAO key → `POST /treasury/:op/sign`), tx_id link do exploreru, status badges vč. `awaiting_broadcast` |
 | Guardian dashboard (registry, aktivita, rotace) | ✅ **CODE 2026-10-02** — `/dao` Guardians tab má live „On-chain registr" sekci: aktivní guardianové (jméno/adresa), registrovaní kandidáti čekající na admission, multisig threshold badge — zdroj `GET /api/dao/guardians`. Deploy pending |
 | Notifikace (bell/email) | ❌ (backend D9) |
-| Vytvoření návrhu z UI (guided form, param typy) | 🟡/❌ |
+| Vytvoření návrhu z UI (guided form, param typy) | ✅ **CODE 2026-10-02** — modal na `/dao`: Parameter/Treasury/Grant/Humanitarian/Emergency + **Admission/Expulsion** (guardian rotace přes UI — candidate adresa, community/offense/tier, hash commitment z description); ZIS session auth + proposal threshold hint. Deploy pending |
 | Mobilní hlasování (memo QR → wallet app) | ❌ |
 
 ### Doporučení k `dao.zionterranova.com`
