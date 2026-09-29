@@ -29,9 +29,9 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Plán letu k veřejnému launchi (odloženo)',
-    subtitle: 'One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch je odložen (TBD); nové datum oznámíme po splnění Maturity Gate, zajištění základní likvidity a sestavení týmu dobrovolných vývojářů.',
+    subtitle: 'One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch je odložen (TBD); nové datum oznámíme po splnění Maturity Gate, zajištění základní likvidity a sestavení týmu dobrovolných vývojářů. 30denní kontinuální stabilitní run probíhá — live na /g8.',
     subtitleStrong: 'odloženo (TBD)',
-    updated: 'Aktualizováno 11. 9. 2026',
+    updated: 'Aktualizováno 29. 9. 2026',
     publicLaunch: 'Veřejný launch · odloženo (TBD)',
     testsPassing: '2 155+ testů prochází',
     heroStats: [
@@ -105,9 +105,9 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Flight plan to public launch (postponed)',
-    subtitle: 'One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch is postponed (TBD); a new date will be announced once the Maturity Gate is passed, basic liquidity is secured, and a team of volunteer developers is assembled.',
+    subtitle: 'One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch is postponed (TBD); a new date will be announced once the Maturity Gate is passed, basic liquidity is secured, and a team of volunteer developers is assembled. A 30-day continuous stability run is in progress — live on /g8.',
     subtitleStrong: 'postponed (TBD)',
-    updated: 'Updated 11 Sep 2026',
+    updated: 'Updated 29 Sep 2026',
     publicLaunch: 'Public launch · postponed (TBD)',
     testsPassing: '2,155+ tests passing',
     heroStats: [
@@ -372,10 +372,15 @@ export default function RoadmapPage() {
       status: 'active',
       description: copy.phase4Desc,
       sprints: [
+        { id: 'G8', title: cs ? '30denní kontinuální run #2 — běží od 29. 9., cíl ≥ 99,9 % uptime (live na /g8)' : '30-day continuous run #2 — running since Sep 29, target ≥99.9% uptime (live on /g8)', done: false },
+        { id: 'G8a', title: cs ? 'Evidence pipeline — 60s sampling, perzistentní alerty, retence 40 dní' : 'Evidence pipeline — 60s sampling, persistent alerts, 40-day retention', done: true },
+        { id: 'G8b', title: cs ? 'Rychlý restart nodu — perzistentní stavová cache ověřena v produkci' : 'Node fast-restart — persistent state cache verified in production', done: true },
         { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : 'Final payout verification — PPLNS window validation', done: false },
-        { id: 'B-2', title: cs ? 'Bezpečnostní audit — externí firma booked' : 'Security audit — external firm booked', done: false },
+        { id: 'B-2', title: cs ? 'Bezpečnostní audit — scope připraven, externí firma zatím neobjednána' : 'Security audit — scope prepared, external firm not yet engaged', done: false },
         { id: 'B-3', title: cs ? 'Bridge validator provisioning — 3/5 threshold produkce' : 'Bridge validator key provisioning — 3/5 threshold production', done: false },
         { id: 'B-4', title: cs ? 'Komunitní příprava — dokumentace, tutoriály' : 'Community preparation — documentation, tutorials', done: false },
+        { id: 'DR', title: cs ? 'Disaster-recovery drill — plná obnova mimo produkci s RTO/RPO' : 'Disaster-recovery drill — full off-site restore with RTO/RPO', done: false },
+        { id: 'REL', title: cs ? 'Release artefakty — sjednocení verzí, checksumy, podepsaný tag' : 'Release artifacts — version unification, checksums, signed tag', done: false },
         { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: false },
         { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: false },
         { id: 'T-2', title: cs ? 'Finální release node software' : 'Final node software release', done: false },
@@ -383,8 +388,10 @@ export default function RoadmapPage() {
       ],
       exitCriteria: [
         { text: cs ? 'Phase 1 Foundation kompletní' : 'Phase 1 Foundation complete', done: true },
+        { text: cs ? '30denní kontinuální run ≥ 99,9 % uptime (probíhá — G8)' : '30-day continuous run ≥99.9% uptime (in progress — G8)', done: false },
         { text: cs ? 'Finální payout verifikace' : 'Final payout verification', done: false },
         { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
+        { text: cs ? 'DR drill — ověřená obnova s RTO/RPO' : 'DR drill — verified restore with RTO/RPO', done: false },
         { text: cs ? 'Bridge validator provisioning — 3/5 threshold' : 'Bridge validator provisioning — 3/5 threshold', done: false },
         { text: cs ? 'Genesis block hash publikován' : 'Genesis block hash published', done: true },
         { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : 'Bootstrap hosts online (public + internal quorum)', done: true },
@@ -919,7 +926,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-09-01
+          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-09-29
         </p>
       </div>
     </div>
