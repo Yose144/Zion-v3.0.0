@@ -1321,7 +1321,12 @@ fn build_btc_swap(
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(14_400),
+        quote_ttl_secs: std::env::var("WARP_BTC_SWAP_QUOTE_TTL_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(900),
     };
+    let quote_ttl_secs = cfg.quote_ttl_secs;
     tracing::info!(
         "[WARP][btc-swap] enabled — network {:?}, relay {}, min_confs {}",
         network,
@@ -1335,6 +1340,33 @@ fn build_btc_swap(
         cfg,
     );
     flow.set_db(Arc::clone(db));
+
+    // Signed-quote protocol: the operator's dedicated ZION keyring signs
+    // price quotes (`WARP_BTC_SWAP_ZION_PER_SAT` = flowers per sat, fixed
+    // alpha rate). Without the rate the /quote endpoint stays disabled —
+    // offers remain operator-only via X-Warp-Key.
+    let zion_per_sat: u64 = std::env::var("WARP_BTC_SWAP_ZION_PER_SAT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+    match operator_kr.zion_signing_key(0, 0) {
+        Ok(key) => {
+            flow.set_quote_signer(key, zion_per_sat);
+            if zion_per_sat > 0 {
+                tracing::info!(
+                    "[WARP][btc-swap] signed quotes enabled — {zion_per_sat} flowers/sat, ttl {}s",
+                    quote_ttl_secs
+                );
+            } else {
+                tracing::info!(
+                    "[WARP][btc-swap] quote signer ready but WARP_BTC_SWAP_ZION_PER_SAT unset — /quote disabled"
+                );
+            }
+        }
+        Err(e) => {
+            tracing::warn!("[WARP][btc-swap] quote signing unavailable: {e}");
+        }
+    }
     Some(Arc::new(flow))
 }
 

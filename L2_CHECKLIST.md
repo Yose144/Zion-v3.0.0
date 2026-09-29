@@ -107,7 +107,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | # | Blocker | Stav |
 |---|---------|------|
 | 1 | Externí bezpečnostní audit HTLC + preimage handling | ❌ (G9/F1 otevřený) |
-| 2 | **Server-side quote/pricing protokol** — uživatel dnes volil BTC i ZION amount → operátor loss-path | ❌ MISSING |
+| 2 | **Server-side quote/pricing protokol** — uživatel dnes volil BTC i ZION amount → operátor loss-path | ✅ CODE+TESTED (viz níže) |
 | 3 | `WARP_BTC_SWAP_OFFER_KEY` provisioning + rotace + scope | ❌ |
 | 4 | Bitcoin IBD → 100 %, lokální bitcoind jako primární backend | 🟡 ~80 %, roste |
 | 5 | Watch-only import review (`WARP_BITCOIN_IMPORT_SINCE`, rescan mezery) | ❌ |
@@ -120,6 +120,16 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 12 | Mainnet E2E důkaz (regtest ≠ mainnet) | ❌ |
 
 **Pozn.:** statický offer key řeší jen „kdo smí volat API" — **neřeší ekonomiku**. Quote musí být server-side podepsaný, jinak zůstane loss-path. To je blocker #2 a hlavní důvod holdu.
+
+#### Signed-quote protokol — IMPLEMENTOVÁNO (kód + testy, deploy pending)
+
+`warp/btc_swap.rs` + `server.rs` + `db.rs` + `service.rs`:
+
+- **`POST /v1/multichain/swaps/btc/quote`** (veřejný) — server vydá Ed25519-podepsaný `BtcSwapQuote` za fixní sazbu `WARP_BTC_SWAP_ZION_PER_SAT` (flowers/sat; `0`/unset → endpoint disabled a `/offer` zůstává operator-only). Quote binduje `direction`, `btc_sats`, `zion_flowers`, `expires_at` (`WARP_BTC_SWAP_QUOTE_TTL_SECS`, default 900 s) a nonce `quote_id`; podepisuje dedikovaný ZION swap keyring, domain `warp:btc-quote:v1`.
+- **`POST /v1/multichain/swaps/btc/offer`** — autorizace = `X-Warp-Key` (operator/admin fallback) **NEBO** platný quote v requestu. Quote cesta ověří podpis, směr, obě částky a expiraci; uživatel si už nemůže zvolit obě nohy.
+- **Replay protection:** `btc_swap_records.quote_id` UNIQUE index (migrace) + `btc_swap_quote_used()` pre-check; `save_btc_swap` přepsán na `ON CONFLICT(swap_id) DO UPDATE` — `INSERT OR REPLACE` by při quote kolizi smazal původní záznam.
+- Testy: roundtrip, direction/amount/expiry/signer/tampered-hex rejection, disabled-when-rate-0, band enforcement, DB UNIQUE replay, `verify_offer_quote` binding. 40/40 btc_swap testů.
+- **Zbývá:** operator-side risk caps (kolik ZION/BTC smí být najednou v okně quotů), dynamic pricing místo fix sazby, offer-key provisioning, Edge deploy + E2E.
 
 ---
 
@@ -298,7 +308,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 3. ~~D1+D2: krypto treasury pipeline~~ ✅ **CODE 2026-10-02** — Ed25519 guardian sigs + unsigned UTXO spec + `submitUtxoTransaction` broadcast přes `ZION_DAO_TREASURY_KEY` (nebo `awaiting_broadcast` export). Deploy pending: Edge rebuild + treasury key env + E2E po unlock@144000.
 
 **Priorita 1 — BTC/ZION native:**
-4. Server-side signed quote protokol (blocker #2) + offer key provisioning.
+4. ~~Server-side signed quote protokol (blocker #2)~~ ✅ **CODE 2026-10-02** — `/quote` endpoint + Ed25519 podpisy + UNIQUE replay + offer auth. Zbývá: rate caps, offer key provisioning, deploy+E2E.
 5. bitcoind IBD → 100 %, přepnout backend z mempool.space na lokál.
 6. Caps + solvency + monitoring → capped pilot → audit.
 
@@ -335,5 +345,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | 2026-10-02 | `fb67421` | Počáteční checklist |
 | 2026-10-02 | `06751d3` | **Inbound auto-release**: `warp/inbound.rs`, `warp/l1_release.rs`, `burn_id` v `DepositProof`, `router.set_dest_tx`, `warp.example.toml` env dokumentace. 594 multichain testů ✅, clippy clean. |
 | 2026-10-02 | `8477942` | **DAO crypto treasury** (`treasury_tx.rs`): Ed25519 guardian podpisy nad `dao:treasury:v1\|op_id\|sha256(op)`, verified-only threshold, unsigned UTXO spec z live `getUtxos`, broadcast `submitUtxoTransaction` přes `ZION_DAO_TREASURY_KEY`, stavy `awaiting_broadcast`/`executed`, persist `unsigned_tx`/`signing_hash`/`tx_id`, DB migrace zachovává legacy audit rows. 85 dao testů ✅. |
+| 2026-10-02 | `6281c6c` | **Reconciliation drift klasifikace**: `classify_drift` — deficit / untracked inflow / benign unswept deposit float (`max(expected, deposits_credited)` bound) / RPC-error suppression / excluded. Forenzika +95.5 wZION = prodané tokeny zaparkované na unswept deposit adresách (benigní). 8/8 testů ✅. |
+| 2026-10-02 | `TBD` | **BTC signed-quote protokol**: `BtcSwapQuote` + `warp:btc-quote:v1` domain Ed25519 sign/verify, `POST /swaps/btc/quote` (veřejný, `WARP_BTC_SWAP_ZION_PER_SAT` fix sazba, TTL 900 s), `/offer` auth = X-Warp-Key NEBO validní quote, `quote_id` UNIQUE replay protection, `save_btc_swap` → upsert (REPLACE by smazal victim row). 40/40 btc_swap testů ✅. Deploy pending. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
