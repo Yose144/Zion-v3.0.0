@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import NextLink from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, AlertTriangle, ArrowLeftRight, BarChart3, Brain, CheckCircle2,
@@ -340,14 +341,23 @@ interface V3Charts {
 }
 
 interface G8Run {
+  run_id?: string;
   started?: string | null;
   target_end?: string | null;
-  status?: 'not_started' | 'running' | 'completed' | 'stopped';
+  status?: string;
+  window_status?: string;
+  gate_status?: string;
   elapsed_seconds?: number;
   remaining_seconds?: number;
   progress_percent?: number;
   uptime_percent?: number | null;
-  services?: Array<{ name: string; status: string }>;
+  evidence_coverage_percent?: number | null;
+  service_uptime_percent?: Record<string, number> | null;
+  active_alert_count?: number;
+  incident_count?: number;
+  critical_incident_count?: number;
+  sample_counts?: { expected?: number; covered?: number; good?: number };
+  last_evidence_update?: string | null;
   _error?: string;
 }
 
@@ -808,6 +818,9 @@ function getFallbackReadinessMap(cs: boolean): ReadinessMap {
       { title: 'Gates G1–G5 · G7 · G11 + E4', detail: cs ? 'Rigy, chaos/load, bridge round-trip, migrace uzavřeny' : 'Rigs, chaos/load, bridge round-trip, migration closed' },
       { title: MissionControlDashboardCopy.feeSplit89551[cs ? 'cs' : 'en'], detail: MissionControlDashboardCopy.pplnsPayoutVerifiedAndActive[cs ? 'cs' : 'en'] },
       { title: 'Public releases v3.2.0', detail: 'Miner · CLI · Desktop Agent' },
+      { title: 'G10 — L5/L6 run mode decided', detail: cs ? 'Pasivní trackery fondů + DAO proposal bridge' : 'Passive fund trackers + DAO proposal bridge' },
+      { title: cs ? 'Rychlý restart nodu' : 'Node fast-restart fix', detail: cs ? 'Perzistentní stavová cache — ověřeno v produkci' : 'Persistent state cache — verified in production' },
+      { title: 'Run evidence + alerting', detail: cs ? 'Vzorkování 60 s, persistentní alerty, retence 40 dní' : '60s sampling, persistent alerts, 40-day retention' },
     ],
     missing: [],
     not_missing: [
@@ -816,9 +829,10 @@ function getFallbackReadinessMap(cs: boolean): ReadinessMap {
       { title: '89/5/5/1 reward split', detail: cs ? 'On-chain od přechodu na mainnet' : 'On-chain since the mainnet cutover' },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run', detail: cs ? '23. 8. — 22. 9. 2026 · uptime ≥ 99,9 %' : '23 Aug — 22 Sep 2026 · uptime ≥ 99.9%' },
-      { title: 'G9 — security audit', detail: MissionControlDashboardCopy.externalFirmBooked[cs ? 'cs' : 'en'] },
-      { title: 'G10 — L5/L6 decision', detail: cs ? 'Treasury + humanitární fond + Issobella governance' : 'Treasury + humanitarian fund + Issobella governance' },
+      { title: 'G8 — 30-day continuous run #2', detail: cs ? 'Běží od 29. 9. 2026 · cíl 29. 10. · uptime ≥ 99,9 % · live na /g8' : 'Running since 29 Sep 2026 · target 29 Oct · uptime ≥ 99.9% · live on /g8' },
+      { title: 'G9 — security audit', detail: cs ? 'Scope připraven · externí firma zatím není objednána' : 'Scope prepared · external firm not yet engaged' },
+      { title: 'Disaster-recovery drill', detail: cs ? 'Plná obnova mimo produkci s RTO/RPO reportem' : 'Full off-site restore with measured RTO/RPO' },
+      { title: cs ? 'Release artefakty' : 'Release artifacts', detail: cs ? 'Sjednocení verzí, checksumy, podepsaný tag po stabilitě' : 'Version unification, checksums, signed tag after stability' },
     ],
   };
 }
@@ -920,6 +934,8 @@ function BigProgress({ run }: { run?: StabilityRun }) {
 }
 
 function G8RunCard({ run }: { run: G8Run | null }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   if (!run?.started) {
     return (
       <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -927,7 +943,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
           <Activity className="h-5 w-5 text-zion-cyan" />
           <div>
             <h4 className="text-sm font-semibold text-white">30-Day Continuous Run</h4>
-            <p className="text-xs text-gray-400">Not started</p>
+            <p className="text-xs text-gray-400">{cs ? 'Nespuštěno' : 'Not started'}</p>
           </div>
         </div>
       </div>
@@ -945,8 +961,38 @@ function G8RunCard({ run }: { run: G8Run | null }) {
     return `${d}d ${h}h ${m}m`;
   }
 
-  const statusLabel = run.status === 'running' ? 'Running' : run.status === 'completed' ? 'Completed' : run.status === 'stopped' ? 'Stopped' : 'Not started';
-  const statusColor = run.status === 'running' ? '#22C55E' : run.status === 'completed' ? '#3B82F6' : '#F59E0B';
+  const windowStatus = (run.window_status ?? run.status ?? '').toLowerCase();
+  const gateStatus = (run.gate_status ?? '').toLowerCase();
+  const isRunning = windowStatus === 'running' || windowStatus === 'in_progress';
+  const isDone = windowStatus === 'completed' || windowStatus === 'complete' || windowStatus === 'ended';
+  const isStopped = windowStatus === 'stopped' || run.status === 'stopped';
+  const statusLabel = isDone
+    ? (cs ? 'Okno dokončeno' : 'Window ended')
+    : isRunning
+    ? (cs ? 'Běží' : 'Running')
+    : isStopped
+    ? (cs ? 'Zastaveno' : 'Stopped')
+    : (cs ? 'Nespuštěno' : 'Not started');
+  const statusColor = isDone ? '#3B82F6' : isRunning ? '#22C55E' : '#F59E0B';
+
+  const gateLabel =
+    gateStatus === 'passed' ? 'PASS'
+    : gateStatus === 'failed' ? 'FAIL'
+    : gateStatus === 'evidence_incomplete' ? (cs ? 'NEKOMPLETNÍ EVIDENCE' : 'EVIDENCE INCOMPLETE')
+    : gateStatus === 'pending' ? 'PENDING'
+    : gateStatus ? gateStatus.toUpperCase() : '—';
+  const gateColor =
+    gateStatus === 'passed' ? '#22C55E'
+    : gateStatus === 'failed' ? '#EF4444'
+    : gateStatus === 'evidence_incomplete' ? '#F59E0B'
+    : '#F59E0B';
+
+  const uptime = typeof run.uptime_percent === 'number' ? run.uptime_percent : null;
+  const coverage = typeof run.evidence_coverage_percent === 'number' ? run.evidence_coverage_percent : null;
+  const alerts = typeof run.active_alert_count === 'number' ? run.active_alert_count : null;
+  const incidents = run.incident_count ?? 0;
+  const critical = run.critical_incident_count ?? 0;
+  const sc = run.sample_counts;
 
   return (
     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -955,43 +1001,80 @@ function G8RunCard({ run }: { run: G8Run | null }) {
           <Activity className="h-5 w-5 text-zion-cyan" />
           <div>
             <h4 className="text-sm font-semibold text-white">30-Day Continuous Run</h4>
-            <p className="text-[10px] text-gray-400">Mainnet stability target ≥99.9% uptime</p>
+            <p className="text-[10px] text-gray-400">
+              {cs ? 'Stabilita mainnetu · cíl ≥ 99,9 % uptime · rozhoduje evidence, ne odpočet' : 'Mainnet stability · target ≥99.9% uptime · verdict decided by evidence, not the clock'}
+            </p>
           </div>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold self-start" style={{ background: statusColor + '20', color: statusColor, border: '1px solid ' + statusColor + '40' }}>
-          {statusLabel}
-        </span>
+        <div className="flex items-center gap-2 self-start">
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: statusColor + '20', color: statusColor, border: '1px solid ' + statusColor + '40' }}>
+            {statusLabel}
+          </span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: gateColor + '20', color: gateColor, border: '1px solid ' + gateColor + '40' }}>
+            {cs ? 'GATE' : 'GATE'}: {gateLabel}
+          </span>
+        </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Started</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Start' : 'Started'}</p>
           <p className="text-xs font-mono text-white">{new Date(run.started).toLocaleString()}</p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">End</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Cílový konec' : 'Target end'}</p>
           <p className="text-xs font-mono text-white">{run.target_end ? new Date(run.target_end).toLocaleString() : '—'}</p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Elapsed</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uběhlo' : 'Elapsed'}</p>
           <p className="text-xs font-mono text-zion-cyan">{fmtG8Duration(elapsed)}</p>
         </div>
         <div>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Remaining</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Zbývá' : 'Remaining'}</p>
           <p className="text-xs font-mono text-zion-cyan">{fmtG8Duration(remaining)}</p>
         </div>
       </div>
-      {typeof run.uptime_percent === 'number' && (
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
-          <span className="font-semibold text-zion-cyan">{run.uptime_percent.toFixed(2)}%</span>
-          <span>service uptime</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Uptime služeb' : 'Service uptime'}</p>
+          <p className="text-xs font-mono font-semibold" style={{ color: uptime != null && uptime >= 99.9 ? '#22C55E' : uptime != null ? '#F59E0B' : '#9CA3AF' }}>
+            {uptime != null ? `${uptime.toFixed(3)}%` : '—'}
+          </p>
         </div>
-      )}
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Pokrytí evidence' : 'Evidence coverage'}</p>
+          <p className="text-xs font-mono font-semibold" style={{ color: coverage != null && coverage >= 99 ? '#22C55E' : coverage != null ? '#F59E0B' : '#9CA3AF' }}>
+            {coverage != null ? `${coverage.toFixed(2)}%` : '—'}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Aktivní alerty' : 'Active alerts'}</p>
+          <p className="text-xs font-mono font-semibold" style={{ color: alerts === 0 ? '#22C55E' : '#EF4444' }}>
+            {alerts != null ? alerts : '—'}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">{cs ? 'Incidenty' : 'Incidents'}</p>
+          <p className="text-xs font-mono font-semibold" style={{ color: incidents + critical === 0 ? '#22C55E' : critical > 0 ? '#EF4444' : '#F59E0B' }}>
+            {incidents}{critical > 0 ? ` (+${critical} crit)` : ''}
+          </p>
+        </div>
+      </div>
       <div>
         <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-          <span>Progress</span>
+          <span>{cs ? 'Průběh okna' : 'Window progress'}</span>
           <span className="font-mono text-white">{pct.toFixed(4)}%</span>
         </div>
         <ProgressBar pct={pct} />
+      </div>
+      <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[10px] text-gray-500">
+        <span className="font-mono truncate">
+          {run.run_id ?? 'g8'}
+          {sc?.covered != null && sc?.expected != null ? ` · ${sc.covered}/${sc.expected} samples` : ''}
+          {run.last_evidence_update ? ` · evidence ${new Date(run.last_evidence_update).toLocaleTimeString()}` : ''}
+        </span>
+        <NextLink href="/g8" className="text-zion-cyan hover:text-white transition-colors font-semibold uppercase tracking-wider">
+          {cs ? 'Živé detaily →' : 'Live details →'}
+        </NextLink>
       </div>
     </div>
   );
@@ -1973,8 +2056,9 @@ export default function MissionControlDashboard() {
     const s = n?.stats?.status;
     return s === 'OK' || s === 'ok' || s === 'healthy';
   };
+  const expectedNodes = Math.max(1, Math.floor(stabilityRun?.agreement?.expected_nodes ?? 2));
   const onlineCount = [primaryNode, data?.usa, data?.singapore].filter(isNodeOnline).length;
-  const allHealthy = onlineCount === 3;
+  const allHealthy = onlineCount >= expectedNodes;
   const anyHealthy = onlineCount > 0;
   const launchGate = environment?.public_launch_status ?? stabilityRun?.public_launch_gate ?? 'NO-GO';
   const missingCount = readinessMap?.missing?.length ?? 0;
@@ -2258,11 +2342,11 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
                 <Stat label="Chain Height" value={fmt(primaryHeight)} color="text-zion-cyan" mono />
-                <Stat label="Online Nodes" value={`${onlineCount}/2`} color={anyHealthy ? 'text-zion-cyan' : 'text-zion-gold'} mono />
+                <Stat label="Online Nodes" value={`${onlineCount}/${expectedNodes}`} color={allHealthy ? 'text-zion-cyan' : anyHealthy ? 'text-zion-gold' : 'text-zion-purple'} mono />
                 <Stat label="Tip Agreement" value={tipAgreement ? 'LOCKED' : (anyHealthy ? 'SYNCING' : '—')} color={tipAgreement ? 'text-zion-cyan' : 'text-zion-gold'} />
                 <Stat label="Pool Accept" value={poolAcceptRate != null ? `${poolAcceptRate}%` : (primaryNode?.pool?.ok ? '100%' : '—')} color={(poolAcceptRate ?? 100) >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} mono />
-                <Stat label="Security Gate" value="TBD" color="text-zion-gold" sub="audit pending" />
-                <Stat label="Launch Gate" value="TBD" color="text-zion-gold" sub="postponed (TBD)" />
+                <Stat label="Security Gate" value="PENDING" color="text-zion-gold" sub={cs ? 'externí audit zatím neproběhl' : 'external audit not started'} />
+                <Stat label="Launch Gate" value={launchGate} color="text-zion-gold" sub={cs ? 'odloženo do splnění G8 + G9' : 'postponed pending G8 + G9'} />
               </div>
               <div className="mt-4">
                 <G8RunCard run={g8} />
@@ -2292,7 +2376,7 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Stat label="Network" value="One Love Mainnet" color="text-zion-cyan" />
-                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/2 nodes online`} mono />
+                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/${expectedNodes} nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(primaryStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-zion-cyan' : 'text-gray-400'} />
               </div>
