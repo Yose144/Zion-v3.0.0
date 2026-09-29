@@ -83,6 +83,13 @@
       'nav.about': `O nás`,
       'nav.docs': `Docs`,
       'nav.mine': `Těžba`,
+      'nav.freeworld': `Free World`,
+
+      'freeworld.title': `Free World`,
+      'freeworld.subtitle': `L5 · Humanitární fond & fyzické komunity`,
+      'freeworld.p1': `Free World je fyzická vrstva ZION — místo, kde blockchainový konsenzus potkává půdu, vodu a lidskou správu. <strong>5 % z každého bloku</strong> proudí do humanitárního fondu spravovaného DAO a šest zakládajících komunit roste napříč kontinenty.`,
+      'freeworld.p2': `Portál ukazuje živý zůstatek fondu, planetární mapu uzlů, transparentní registr projektů a grantů a kvadratické hlasování komunity — vše ověřitelné on-chain.`,
+      'freeworld.cta': `Otevřít Free World`,
 
       'about.title': `O ZIONu`,
       'about.p1': `ZION TerraNova je veřejný multichain ekosystém s nativním Proof-of-Work. Každý blok dělí odměnu mezi těžaře, humanitární fond, fond budoucnosti a spalování. Bez ICO, bez předprodeje, bez tajných alokací. Kód je otevřený, pravidla transparentní a spuštění sítě probíhá postupně až do odloženého termínu (TBD).`,
@@ -200,6 +207,13 @@
       'nav.about': `About`,
       'nav.docs': `Docs`,
       'nav.mine': `Mine`,
+      'nav.freeworld': `Free World`,
+
+      'freeworld.title': `Free World`,
+      'freeworld.subtitle': `L5 · Humanitarian fund & physical communities`,
+      'freeworld.p1': `Free World is the physical layer of ZION — where blockchain consensus meets soil, water, and human governance. <strong>5% of every block</strong> flows into the DAO-governed humanitarian fund and six founding communities are growing across the continents.`,
+      'freeworld.p2': `The portal shows the live fund balance, a planetary map of the nodes, a transparent project & grant registry and community quadratic voting — all verifiable on-chain.`,
+      'freeworld.cta': `Open Free World`,
 
       'about.title': `About ZION`,
       'about.p1': `ZION TerraNova is a public multichain ecosystem with native Proof-of-Work. Every block splits the reward among miners, a humanitarian fund, a future fund, and burning. No ICO, no presale, no secret allocations. The code is open, the rules are transparent, and the network launch is rolling until the postponed date (TBD).`,

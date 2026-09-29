@@ -6,10 +6,14 @@ import {
   Globe2, Heart, Shield, Users, Wallet, ArrowRight,
   CheckCircle2, Sparkles, TreeDeciduous, Crown,
   Sprout, Activity, Radio, Brain, Music,
-  Eye, Home, Wrench,
+  Eye, Home, Wrench, MapPin, FileCheck2, Vote,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import FundBalance, { FundBalanceSum } from '@/components/FundBalance';
+import FreeWorldMap from '@/components/FreeWorldMap';
+import L5FundTracker from '@/components/L5FundTracker';
+import FreeWorldRegistry from '@/components/FreeWorldRegistry';
+import QvSection from '@/components/QvSection';
 
 const L5FreeWorldCopy = {
   physicalLayerOfTheZionEcosyste: { cs: `Fyzická vrstva ZION ekosystému`, en: `Physical layer of the ZION ecosystem` },
@@ -87,6 +91,21 @@ const L5FreeWorldCopy = {
   k40Ops25Infra20Reserve10Tithe5: { cs: `40 % provoz · 25 % infrastruktura · 20 % rezerva · 10 % humanitární desátek · 5 % vzdělání`, en: `40% operations · 25% infrastructure · 20% reserve · 10% humanitarian tithe · 5% education` },
   learnMoreAboutL5: { cs: `Více o L5`, en: `Learn more about L5` },
   network: { cs: `Síť`, en: `Network` },
+
+  planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
+  sixNodesOnPlanet: { cs: `Šest uzlů na planetě`, en: `Six nodes on the planet` },
+  l5MapDesc: {
+    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Polynésii. Barva markeru ukazuje aktuální fázi: zlatá = aktivní rozvoj, cyan = příprava, fialová = plánováno.`,
+    en: `The founding L5 communities across the continents — from the Algarve to Polynesia. Marker colour shows the current phase: gold = active development, cyan = preparation, purple = planned.`,
+  },
+  liveRegistry: { cs: `Živý registr`, en: `Live registry` },
+  projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
+  registryDesc: {
+    cs: `Transparentní registr L5 projektů a žádostí o financování — přímo z Free World služby.`,
+    en: `Transparent registry of L5 projects and funding requests — straight from the Free World service.`,
+  },
+  quadraticVoting: { cs: `Kvadratické hlasování`, en: `Quadratic Voting` },
+  qvTitle: { cs: `Hlas komunity o alokaci fondu`, en: `Community voice on fund allocation` },
 };
 
 const HUMANITARIAN_WALLET = 'zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8';
@@ -432,9 +451,25 @@ export default function L5FreeWorldPage() {
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{L5FreeWorldCopy.fundWallet[cs ? 'cs' : 'en']}</p>
             {HUMANITARIAN_WALLET}
           </div>
+          <div className="mt-4">
+            <L5FundTracker />
+          </div>
           <p className="mt-4 text-xs text-gray-500">
             {L5FreeWorldCopy.fundDisbursementNote[cs ? 'cs' : 'en']}
           </p>
+        </motion.section>
+
+        {/* ── Planetary map ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.planetaryMap[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <MapPin className="h-7 w-7 text-emerald-400" />
+              {L5FreeWorldCopy.sixNodesOnPlanet[cs ? 'cs' : 'en']}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{L5FreeWorldCopy.l5MapDesc[cs ? 'cs' : 'en']}</p>
+          </div>
+          <FreeWorldMap />
         </motion.section>
 
         {/* ── Genesis premine allocation ── */}
@@ -618,6 +653,31 @@ export default function L5FreeWorldPage() {
           <p className="text-xs text-gray-500 mt-4 text-center">
             {L5FreeWorldCopy.wantToProposeANewL5CommunityOp[cs ? 'cs' : 'en']}
           </p>
+        </motion.section>
+
+        {/* ── Live registry: projects & grants ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.liveRegistry[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <FileCheck2 className="h-7 w-7 text-emerald-400" />
+              {L5FreeWorldCopy.projectsAndGrants[cs ? 'cs' : 'en']}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">{L5FreeWorldCopy.registryDesc[cs ? 'cs' : 'en']}</p>
+          </div>
+          <FreeWorldRegistry />
+        </motion.section>
+
+        {/* ── Quadratic voting ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-rainbow-card p-8" style={{ '--rc': '168, 85, 247' } as React.CSSProperties}>
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L5FreeWorldCopy.quadraticVoting[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Vote className="h-7 w-7 text-zion-purple" />
+              {L5FreeWorldCopy.qvTitle[cs ? 'cs' : 'en']}
+            </h2>
+          </div>
+          <QvSection />
         </motion.section>
 
         {/* ── Revenue model ── */}

@@ -1109,6 +1109,79 @@ pre.wrap {
   word-break: break-all;
 }
 
+/* ── Free World planetary map ── */
+.fw-map {
+  background: #0b0f14;
+}
+.fw-map .leaflet-container {
+  background: #0b0f14;
+  font: inherit;
+}
+.fw-map-marker {
+  background: transparent;
+  border: none;
+}
+.fw-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--dot, #fcd116);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--dot, #fcd116) 25%, transparent),
+    0 0 18px var(--dot, #fcd116);
+  animation: fw-dot-pulse 2.4s ease-in-out infinite;
+}
+@keyframes fw-dot-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--dot, #fcd116) 25%, transparent),
+      0 0 18px var(--dot, #fcd116);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px color-mix(in srgb, var(--dot, #fcd116) 12%, transparent),
+      0 0 26px var(--dot, #fcd116);
+  }
+}
+.fw-map .leaflet-popup-content-wrapper {
+  background: rgba(13, 13, 13, 0.96);
+  border: 1px solid rgba(252, 209, 22, 0.25);
+  border-radius: 0.9rem;
+  color: #e5e7eb;
+}
+.fw-map .leaflet-popup-tip {
+  background: rgba(13, 13, 13, 0.96);
+}
+.fw-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 160px;
+}
+.fw-popup strong {
+  color: #fff;
+  font-size: 0.95rem;
+}
+.fw-popup-loc {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+.fw-popup-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fw-popup a {
+  color: #fcd116;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
 /* Skip rendering off-screen content for faster initial paint */
 .zion-page > section,
 .zion-page > div > section,
