@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import QuorumProgress from '@/components/dao/QuorumProgress';
+import VoteMemoCard from '@/components/dao/VoteMemoCard';
 import {
   getGovernanceProposal,
   getProposalVotes,
@@ -271,6 +272,8 @@ export default function ProposalDetailPage() {
                     {C.abstainLabel[cs ? 'cs' : 'en']}
                   </button>
                 </div>
+                {/* D8: on-chain vote via L1 self-transfer memo + QR */}
+                <VoteMemoCard proposalId={proposal.id} />
               </div>
             )}
             {awaitingTally && (
