@@ -133,6 +133,8 @@ export interface ProposalVote {
   weight: string | number;
   tx_hash: string | null;
   voted_at: string;
+  /** D6: delegator weights consumed by this vote (absent/empty when none). */
+  delegated_from?: { delegator: string; weight: string | number }[];
 }
 
 /** One guardian signature row on a treasury op (D2 verified pipeline). */
