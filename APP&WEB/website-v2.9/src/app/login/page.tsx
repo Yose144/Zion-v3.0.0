@@ -15,6 +15,9 @@ import { useZionWallet } from '@/contexts/ZionWalletContext';
 import LoginModal from '@/components/LoginModal';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
+// Passkey sign-in is hidden until the ZIS webauthn endpoints are deployed.
+const PASSKEY_ENABLED = process.env.NEXT_PUBLIC_PASSKEY_ENABLED === '1';
+
 export default function LoginPage() {
   const { authenticated, loading, loginWithSiwe, loginWithGoogle, loginWithPasskey } = useAuth();
   const zionWallet = useZionWallet();
@@ -48,9 +51,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     setHasMetaMask(typeof window !== 'undefined' && !!(window as any).ethereum);
-    import('@simplewebauthn/browser')
-      .then((m) => setHasPasskey(m.browserSupportsWebAuthn()))
-      .catch(() => setHasPasskey(false));
+    if (PASSKEY_ENABLED) {
+      import('@simplewebauthn/browser')
+        .then((m) => setHasPasskey(m.browserSupportsWebAuthn()))
+        .catch(() => setHasPasskey(false));
+    }
   }, []);
 
   const handlePasskey = async () => {

@@ -42,6 +42,9 @@ import {
   type ZisPasskey,
 } from '@/lib/zis';
 
+// The Passkeys section is hidden until the ZIS webauthn endpoints are deployed.
+const PASSKEY_ENABLED = process.env.NEXT_PUBLIC_PASSKEY_ENABLED === '1';
+
 const copy = {
   en: {
     security: 'Security',
@@ -165,8 +168,11 @@ export default function SecurityPanel() {
         getSessions(),
         getApiKeys(),
         // Passkeys are best-effort: the list endpoint must not break the
-        // rest of the panel while the backend rolls out.
-        listPasskeys().catch(() => ({ credentials: [] as ZisPasskey[] })),
+        // rest of the panel while the backend rolls out. Skipped entirely
+        // while the feature flag is off.
+        PASSKEY_ENABLED
+          ? listPasskeys().catch(() => ({ credentials: [] as ZisPasskey[] }))
+          : Promise.resolve({ credentials: [] as ZisPasskey[] }),
       ]);
       setSessions(s);
       setKeys(k);
@@ -180,9 +186,11 @@ export default function SecurityPanel() {
 
   useEffect(() => {
     void load();
-    import('@simplewebauthn/browser')
-      .then((m) => setHasPasskeySupport(m.browserSupportsWebAuthn()))
-      .catch(() => setHasPasskeySupport(false));
+    if (PASSKEY_ENABLED) {
+      import('@simplewebauthn/browser')
+        .then((m) => setHasPasskeySupport(m.browserSupportsWebAuthn()))
+        .catch(() => setHasPasskeySupport(false));
+    }
     return () => {
       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
     };
@@ -349,6 +357,7 @@ export default function SecurityPanel() {
       </div>
 
       {/* Passkeys */}
+      {PASSKEY_ENABLED && (
       <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
         <div className="flex items-center gap-2 mb-6">
           <Fingerprint className="h-5 w-5 text-zion-cyan" />
@@ -420,6 +429,7 @@ export default function SecurityPanel() {
           </div>
         )}
       </div>
+      )}
 
       {/* Active sessions */}
       <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
