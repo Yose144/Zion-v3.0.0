@@ -77,6 +77,10 @@ pub struct AppState {
     solver_api_key: Option<String>,
     zis_client: ZisClient,
     btc_swap_offer_key: Option<String>,
+    /// Previous operator key, accepted during a rotation grace window so a
+    /// key swap doesn't reject in-flight callers. Unset once all clients
+    /// have migrated to `WARP_BTC_SWAP_OFFER_KEY`.
+    btc_swap_offer_key_prev: Option<String>,
 }
 
 /// Resolve the optional `ZisUser` extension. Returns `401` when ZIS auth is
@@ -235,6 +239,9 @@ impl ApiServer {
             solver_api_key: solver_cfg.api_key,
             zis_client,
             btc_swap_offer_key: std::env::var("WARP_BTC_SWAP_OFFER_KEY")
+                .ok()
+                .filter(|key| !key.trim().is_empty()),
+            btc_swap_offer_key_prev: std::env::var("WARP_BTC_SWAP_OFFER_KEY_PREV")
                 .ok()
                 .filter(|key| !key.trim().is_empty()),
         };
@@ -1644,6 +1651,7 @@ fn constant_time_key_eq(expected: &str, provided: &str) -> bool {
 
 fn require_btc_swap_offer_key(
     expected: Option<&str>,
+    expected_prev: Option<&str>,
     provided: Option<&str>,
 ) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
     let expected = expected.ok_or_else(|| {
@@ -1660,7 +1668,13 @@ fn require_btc_swap_offer_key(
             Json(serde_json::json!({"message": "missing X-Warp-Key"})),
         )
     })?;
-    if !constant_time_key_eq(expected, provided) {
+    // During rotation the previous key stays valid until it is unset —
+    // fail-closed still applies: a missing primary key disables the flow.
+    let matches = constant_time_key_eq(expected, provided)
+        || expected_prev
+            .map(|prev| constant_time_key_eq(prev, provided))
+            .unwrap_or(false);
+    if !matches {
         return Err((
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({"message": "invalid X-Warp-Key"})),
@@ -1699,6 +1713,7 @@ async fn btc_swap_offer(
     // users open swaps without ever choosing both legs of the trade.
     let operator_ok = require_btc_swap_offer_key(
         state.btc_swap_offer_key.as_deref(),
+        state.btc_swap_offer_key_prev.as_deref(),
         headers.get("x-warp-key").and_then(|value| value.to_str().ok()),
     )
     .is_ok();
@@ -1715,6 +1730,7 @@ async fn btc_swap_offer(
             None => {
                 return Err(require_btc_swap_offer_key(
                     state.btc_swap_offer_key.as_deref(),
+                    state.btc_swap_offer_key_prev.as_deref(),
                     headers.get("x-warp-key").and_then(|v| v.to_str().ok()),
                 )
                 .unwrap_err())
@@ -2533,22 +2549,58 @@ mod tests {
     #[test]
     fn btc_swap_offer_key_fails_closed() {
         // No configured key → 503, even with a provided key.
-        let err = require_btc_swap_offer_key(None, Some("anything")).unwrap_err();
+        let err = require_btc_swap_offer_key(None, None, Some("anything")).unwrap_err();
         assert_eq!(err.0, StatusCode::SERVICE_UNAVAILABLE);
-        let err = require_btc_swap_offer_key(None, None).unwrap_err();
+        let err = require_btc_swap_offer_key(None, None, None).unwrap_err();
+        assert_eq!(err.0, StatusCode::SERVICE_UNAVAILABLE);
+        // A prev key alone must not enable the endpoint.
+        let err = require_btc_swap_offer_key(None, Some("old-key"), Some("old-key")).unwrap_err();
         assert_eq!(err.0, StatusCode::SERVICE_UNAVAILABLE);
 
         // Configured key, none provided → 401.
-        let err = require_btc_swap_offer_key(Some("operator-key"), None).unwrap_err();
+        let err = require_btc_swap_offer_key(Some("operator-key"), None, None).unwrap_err();
         assert_eq!(err.0, StatusCode::UNAUTHORIZED);
 
         // Wrong key → 401.
         let err =
-            require_btc_swap_offer_key(Some("operator-key"), Some("wrong-key")).unwrap_err();
+            require_btc_swap_offer_key(Some("operator-key"), None, Some("wrong-key")).unwrap_err();
         assert_eq!(err.0, StatusCode::UNAUTHORIZED);
 
         // Exact key → Ok.
-        assert!(require_btc_swap_offer_key(Some("operator-key"), Some("operator-key")).is_ok());
+        assert!(
+            require_btc_swap_offer_key(Some("operator-key"), None, Some("operator-key")).is_ok()
+        );
+    }
+
+    #[test]
+    fn btc_swap_offer_key_rotation_accepts_prev() {
+        // During rotation the previous key is still honoured.
+        assert!(require_btc_swap_offer_key(
+            Some("new-key"),
+            Some("old-key"),
+            Some("old-key")
+        )
+        .is_ok());
+        assert!(require_btc_swap_offer_key(
+            Some("new-key"),
+            Some("old-key"),
+            Some("new-key")
+        )
+        .is_ok());
+        // An unrelated key stays rejected.
+        assert_eq!(
+            require_btc_swap_offer_key(Some("new-key"), Some("old-key"), Some("third"))
+                .unwrap_err()
+                .0,
+            StatusCode::UNAUTHORIZED
+        );
+        // Once the prev key is unset, it no longer authenticates.
+        assert_eq!(
+            require_btc_swap_offer_key(Some("new-key"), None, Some("old-key"))
+                .unwrap_err()
+                .0,
+            StatusCode::UNAUTHORIZED
+        );
     }
 
     #[test]
