@@ -229,7 +229,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | D1 | **Skutečný treasury tx pipeline**: unsigned spec → threshold verified sigs → broadcast → tx_id persist. ✅ CODE — k ověření E2E po unlock@144000; custody = jeden `ZION_DAO_TREASURY_KEY` (L1 nemá m-of-n script; guardian sigs = autorizační vrstva, ne on-chain multisig) | ~~P0~~ ✅ DONE (code), E2E pending |
 | D2 | Kryptografické guardian podpisy + anti-replay | ~~P0~~ ✅ DONE (code) — Ed25519 nad `dao:treasury:v1` doménou, verified-only threshold, UNIQUE(op,guardian), replay: UTXO double-spend + status + tx_id |
 | D3 | On-chain guardian registry + rotace přes governance | P1 |
-| D4 | Proposal event/audit log (immutable historie stavů, hlasů, exekucí) | P1 |
+| D4 | Proposal event/audit log (immutable historie stavů, hlasů, exekucí) | ~~P1~~ ✅ DONE (code) — append-only `dao_events` tabulka (subject-scoped: `proposal:<id>`, `op:<op_id>`), emitováno z runtime (created/vote/tally/execute/cancel) + treasury handlerů (submitted/signed/executed/awaiting_broadcast); best-effort — selhání logu neblokuje state transition; `GET /api/dao/proposals/:id/events`; UI „Event history" na detailu. Deploy pending |
 | D5 | Param-execution: config-driven změny (quorum, timelock…) aplikované bez redeploye | P1 |
 | D6 | Delegace hlasů | P2 |
 | D7 | Quadratic voting pro granty (V3.3) | P2 |
@@ -258,7 +258,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | Proposal detail page (vlastní route `/dao/proposals/[id]`) | ✅ **CODE 2026-10-02** — full detail + votes + timeline + inline voting, deploy pending |
 | Voting interface (cast vote přímo z UI + L1 memo deep-link/QR) | 🟡 vote z UI ✅ (karta + detail, ZIS session); L1 memo deep-link/QR ❌ |
 | Quorum progress vizualizace | ✅ **CODE 2026-10-02** — `QuorumProgress` bar (karta + detail); daemon emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply` v `serialize_proposal` |
-| Vote history / audit event feed per proposal | ❌ (backend D4 předpoklad) |
+| Vote history / audit event feed per proposal | ✅ **CODE 2026-10-02** — backend D4 (`GET /api/dao/proposals/:id/events`) + „Event history" sekce na `/dao/proposals/[id]` |
 | Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ❌ |
 | Guardian dashboard (registry, aktivita, rotace) | 🟡 tab existuje, data jsou statické |
 | Notifikace (bell/email) | ❌ (backend D9) |
@@ -350,5 +350,6 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 
 | 2026-10-02 | `a85a3a2` | **DAO UI**: `/dao/proposals/[id]` detail route (votes, quorum bar, timeline, inline ZIS voting), `QuorumProgress` komponenta na kartách, `serialize_proposal` nově emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply`. tsc+eslint clean, 85 dao testů ✅. Deploy pending (Edge web rebuild + daemon restart). |
 | 2026-10-02 | `4bc8014` | **Quote liability caps + solvency** (blocker #8): `issue_quote` async — outstanding caps `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` (live quotes + AwaitingUserLock liability), L1 `getUtxos` balance check pro `btc_to_zion` (fail-closed na RPC chybu), liability release při consume/expiry. 41/41 btc_swap testů ✅. |
+| 2026-10-02 | _pending_ | **DAO D4 event/audit log**: append-only `dao_events` (subject `proposal:<id>`/`op:<op_id>`, event_type, actor, data_json, created_at) + index; runtime emituje `proposal_created`/`vote_cast`/`proposal_tallied`/`proposal_executed`/`proposal_cancelled`, treasury handlery `treasury_op_*`; audit selhání = `warn!`, neblokuje transition; nový endpoint `GET /api/dao/proposals/:id/events` (limit 500, parsed `data`); UI „Event history" na `/dao/proposals/[id]`. 87 dao testů ✅, tsc+eslint clean. Deploy pending. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*

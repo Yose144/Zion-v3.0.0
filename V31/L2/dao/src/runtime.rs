@@ -138,6 +138,22 @@ impl GovernanceRuntime {
         }
     }
 
+    /// Append an immutable audit event (D4). Never fatal — a log failure
+    /// must not abort the governance transition being recorded.
+    fn emit_event(&self, subject: &str, event_type: &str, actor: Option<&str>, data: serde_json::Value) {
+        if let Some(db) = self.db.as_ref() {
+            let data_json = serde_json::to_string(&data).unwrap_or_else(|_| "{}".into());
+            match db.lock() {
+                Ok(db) => {
+                    if let Err(e) = db.insert_event(subject, event_type, actor, &data_json) {
+                        warn!("Failed to emit event {} on {}: {}", event_type, subject, e);
+                    }
+                }
+                Err(e) => warn!("DAO db lock poisoned: {}", e),
+            }
+        }
+    }
+
     /// Get the circulating supply used for quorum calculations.
     pub fn circulating_supply(&self) -> u64 {
         self.circulating_supply
@@ -203,6 +219,17 @@ impl GovernanceRuntime {
         .with_voting_period(period_secs);
 
         self.persist_new_proposal(&proposal);
+        self.emit_event(
+            &format!("proposal:{id}"),
+            "proposal_created",
+            Some(&proposal.proposer),
+            serde_json::json!({
+                "title": proposal.title,
+                "proposal_type": proposal.proposal_type.type_name(),
+                "snapshot_block": proposal.snapshot_block,
+                "voting_ends_at": proposal.voting_ends_at.to_rfc3339(),
+            }),
+        );
         self.proposals.insert(id, proposal);
 
         if let Some(metrics) = self.metrics.as_ref() {
@@ -237,6 +264,16 @@ impl GovernanceRuntime {
             self.persist_vote(proposal_id, &vote);
             self.persist_proposal(proposal);
         }
+        self.emit_event(
+            &format!("proposal:{proposal_id}"),
+            "vote_cast",
+            Some(&vote.voter),
+            serde_json::json!({
+                "choice": format!("{:?}", vote.choice),
+                "weight": vote.weight,
+                "tx_hash": vote.tx_hash,
+            }),
+        );
 
         if let Some(metrics) = self.metrics.as_ref() {
             metrics
@@ -312,6 +349,15 @@ impl GovernanceRuntime {
         if let Some(proposal) = self.proposals.get(&proposal_id) {
             self.persist_proposal(proposal);
         }
+        self.emit_event(
+            &format!("proposal:{proposal_id}"),
+            "proposal_tallied",
+            None,
+            serde_json::json!({
+                "new_status": format!("{:?}", status),
+                "total_votes": self.proposals.get(&proposal_id).map(|p| p.total_votes()),
+            }),
+        );
         Ok(status)
     }
 
@@ -410,6 +456,12 @@ impl GovernanceRuntime {
         if let Some(proposal) = self.proposals.get(&proposal_id) {
             self.persist_proposal(proposal);
         }
+        self.emit_event(
+            &format!("proposal:{proposal_id}"),
+            "proposal_executed",
+            None,
+            serde_json::json!({ "summary": summary }),
+        );
         if let Some(metrics) = self.metrics.as_ref() {
             metrics
                 .proposals_executed
@@ -449,6 +501,12 @@ impl GovernanceRuntime {
         if let Some(proposal) = self.proposals.get(&proposal_id) {
             self.persist_proposal(proposal);
         }
+        self.emit_event(
+            &format!("proposal:{proposal_id}"),
+            "proposal_cancelled",
+            Some(caller),
+            serde_json::json!({}),
+        );
         Ok(())
     }
 
@@ -543,6 +601,32 @@ mod tests {
         let id = make_parameter_proposal(&mut rt);
         assert_eq!(id, 1);
         assert!(rt.get_proposal(id).is_some());
+    }
+
+    #[test]
+    fn test_event_log_records_lifecycle() {
+        use std::sync::Mutex as StdMutex;
+        let db = crate::db::DaoDb::in_memory().unwrap();
+        let db = std::sync::Arc::new(StdMutex::new(db));
+        let mut rt = make_runtime().with_db(std::sync::Arc::clone(&db));
+        let id = make_parameter_proposal(&mut rt);
+        rt.cast_vote(id, "zion1voter".into(), crate::types::VoteChoice::Yes, 150_000_000_000_000, None)
+            .unwrap();
+        rt.cancel_proposal(id, "zion1proposer").unwrap();
+
+        let events = db
+            .lock()
+            .unwrap()
+            .list_events(&format!("proposal:{id}"), 100)
+            .unwrap();
+        let types: Vec<&str> = events.iter().map(|e| e.event_type.as_str()).collect();
+        assert_eq!(
+            types,
+            ["proposal_created", "vote_cast", "proposal_cancelled"]
+        );
+        assert_eq!(events[0].actor.as_deref(), Some("zion1proposer"));
+        assert_eq!(events[1].actor.as_deref(), Some("zion1voter"));
+        assert_eq!(events[2].actor.as_deref(), Some("zion1proposer"));
     }
 
     #[test]

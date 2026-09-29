@@ -57,6 +57,17 @@ pub struct TreasurySigRow {
     pub created_at: String,
 }
 
+/// One immutable audit-log row from `dao_events`.
+#[derive(Debug, Clone)]
+pub struct DaoEventRow {
+    pub id: i64,
+    pub subject: String,
+    pub event_type: String,
+    pub actor: Option<String>,
+    pub data_json: String,
+    pub created_at: String,
+}
+
 impl DaoDb {
     /// Open (or create) the SQLite database at `path`.
     pub fn open<P: AsRef<Path>>(path: P) -> DaoResult<Self> {
@@ -147,6 +158,20 @@ impl DaoDb {
                 last_block    INTEGER NOT NULL DEFAULT 0,
                 updated_at    TEXT    NOT NULL
             );
+
+            -- Append-only audit/event log (D4). subject scopes the feed:
+            -- 'proposal:<id>' for governance lifecycle, 'op:<op_id>' for
+            -- treasury operations. Events are never updated or deleted.
+            CREATE TABLE IF NOT EXISTS dao_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject     TEXT    NOT NULL,
+                event_type  TEXT    NOT NULL,
+                actor       TEXT,
+                data_json   TEXT    NOT NULL DEFAULT '{}',
+                created_at  TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_dao_events_subject
+                ON dao_events(subject);
 
             INSERT OR IGNORE INTO scan_state(id, last_block, updated_at)
             VALUES (1, 0, datetime('now'));
@@ -837,6 +862,56 @@ impl DaoDb {
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(())
     }
+
+    // ── Event / audit log (D4) ────────────────────────────────────────────────
+
+    /// Append an immutable event. `subject` scopes the feed —
+    /// `proposal:<id>` for governance lifecycle, `op:<op_id>` for treasury.
+    /// Callers must not mutate or delete rows; failures are logged by the
+    /// caller, not fatal to governance flow.
+    pub fn insert_event(
+        &self,
+        subject: &str,
+        event_type: &str,
+        actor: Option<&str>,
+        data_json: &str,
+    ) -> DaoResult<()> {
+        self.conn
+            .execute(
+                r#"INSERT INTO dao_events (subject, event_type, actor, data_json, created_at)
+                   VALUES (?1, ?2, ?3, ?4, datetime('now'))"#,
+                params![subject, event_type, actor, data_json],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Events for one subject, oldest first (append order = audit order).
+    pub fn list_events(&self, subject: &str, limit: u32) -> DaoResult<Vec<DaoEventRow>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                r#"SELECT id, subject, event_type, actor, data_json, created_at
+                   FROM dao_events WHERE subject = ?1
+                   ORDER BY id ASC LIMIT ?2"#,
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map(params![subject, limit], |row| {
+                Ok(DaoEventRow {
+                    id: row.get(0)?,
+                    subject: row.get(1)?,
+                    event_type: row.get(2)?,
+                    actor: row.get(3)?,
+                    data_json: row.get(4)?,
+                    created_at: row.get(5)?,
+                })
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(rows)
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -958,6 +1033,32 @@ mod tests {
         assert_eq!(db.last_scanned_block().unwrap(), 12345);
         db.set_last_scanned_block(99999).unwrap();
         assert_eq!(db.last_scanned_block().unwrap(), 99999);
+    }
+
+    #[test]
+    fn test_event_log_append_and_scope() {
+        let db = make_db();
+        db.insert_event("proposal:1", "proposal_created", Some("zion1a"), "{\"title\":\"T\"}")
+            .unwrap();
+        db.insert_event("proposal:1", "vote_cast", Some("zion1b"), "{\"choice\":\"Yes\"}")
+            .unwrap();
+        db.insert_event("op:abc", "treasury_op_submitted", Some("zion1g"), "{}")
+            .unwrap();
+        db.insert_event("proposal:2", "proposal_created", None, "{}").unwrap();
+
+        let feed = db.list_events("proposal:1", 500).unwrap();
+        assert_eq!(feed.len(), 2);
+        assert_eq!(feed[0].event_type, "proposal_created");
+        assert_eq!(feed[1].event_type, "vote_cast");
+        assert_eq!(feed[0].actor.as_deref(), Some("zion1a"));
+        // Append order preserved (ascending id).
+        assert!(feed[0].id < feed[1].id);
+        // Scoping: op: and other proposals are excluded.
+        assert_eq!(db.list_events("op:abc", 500).unwrap().len(), 1);
+        assert_eq!(db.list_events("proposal:2", 500).unwrap().len(), 1);
+        assert!(db.list_events("proposal:9", 500).unwrap().is_empty());
+        // Limit respected.
+        assert_eq!(db.list_events("proposal:1", 1).unwrap().len(), 1);
     }
 
     #[test]

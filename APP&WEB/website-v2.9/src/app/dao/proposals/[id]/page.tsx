@@ -22,9 +22,11 @@ import QuorumProgress from '@/components/dao/QuorumProgress';
 import {
   getGovernanceProposal,
   getProposalVotes,
+  getProposalEvents,
   castGovernanceVote,
   type GovernanceProposal,
   type ProposalVote,
+  type DaoEvent,
 } from '@/lib/dao-api';
 
 const FLOWERS_PER_ZION = 1_000_000;
@@ -70,6 +72,7 @@ const C = {
   snapshotBlock: { cs: 'Snapshot blok', en: 'Snapshot block' },
   proposer: { cs: 'Navrhovatel', en: 'Proposer' },
   voterCount: { cs: 'Počet hlasujících', en: 'Voter count' },
+  history: { cs: 'Historie událostí', en: 'Event history' },
   loading: { cs: 'Načítám návrh…', en: 'Loading proposal…' },
   notFound: { cs: 'Návrh nenalezen nebo je DAO daemon offline.', en: 'Proposal not found or the DAO daemon is offline.' },
   voteRecorded: { cs: 'Hlas zaznamenán.', en: 'Vote recorded.' },
@@ -89,6 +92,7 @@ export default function ProposalDetailPage() {
 
   const [proposal, setProposal] = useState<GovernanceProposal | null>(null);
   const [votes, setVotes] = useState<ProposalVote[]>([]);
+  const [events, setEvents] = useState<DaoEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
   const [voteMsg, setVoteMsg] = useState<string | null>(null);
@@ -99,9 +103,14 @@ export default function ProposalDetailPage() {
       setLoading(false);
       return;
     }
-    const [p, v] = await Promise.all([getGovernanceProposal(id), getProposalVotes(id)]);
+    const [p, v, e] = await Promise.all([
+      getGovernanceProposal(id),
+      getProposalVotes(id),
+      getProposalEvents(id),
+    ]);
     setProposal(p);
     setVotes(v);
+    setEvents(e);
     setLoading(false);
   }, [id]);
 
@@ -311,6 +320,33 @@ export default function ProposalDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Event history (D4 audit log — oldest first) */}
+            {events.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {C.history[cs ? 'cs' : 'en']}
+                </h2>
+                <div className="space-y-1.5">
+                  {events.map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-center justify-between text-xs zion-rainbow-sub px-3 py-2"
+                      style={{ '--rc': '107, 114, 128' } as CSSProperties}
+                    >
+                      <span className="text-gray-300">
+                        {e.event_type.replace(/_/g, ' ')}
+                        {e.actor && (
+                          <span className="text-gray-500 font-mono ml-2">{e.actor}</span>
+                        )}
+                      </span>
+                      <span className="text-gray-500 font-mono">{fmtDate(e.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Timeline / meta */}
             <div className="border-t border-white/10 pt-5">

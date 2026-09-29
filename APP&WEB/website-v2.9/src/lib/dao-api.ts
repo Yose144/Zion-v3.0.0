@@ -490,6 +490,27 @@ export async function getProposalVotes(id: number): Promise<ProposalVote[]> {
   }
 }
 
+/** One immutable audit-log row from GET /api/dao/proposals/:id/events */
+export interface DaoEvent {
+  id: number;
+  event_type: string;
+  actor: string | null;
+  data: Record<string, unknown>;
+  created_at: string;
+}
+
+/** GET /api/dao/proposals/:id/events — append-only lifecycle feed (D4). */
+export async function getProposalEvents(id: number): Promise<DaoEvent[]> {
+  try {
+    const res = await daoFetch(`/api/dao/proposals/${id}/events`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const raw = await res.json();
+    return ((raw.data ?? raw).events ?? []) as DaoEvent[];
+  } catch {
+    return [];
+  }
+}
+
 /** GET /api/dao/treasury/ops — multisig operations with signature progress */
 export async function getTreasuryOps(status?: string): Promise<TreasuryOp[]> {
   try {
