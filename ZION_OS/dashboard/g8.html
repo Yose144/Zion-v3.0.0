@@ -99,6 +99,11 @@
         <div id="critical" class="value">—</div>
         <div class="sub">outages ≥ 15 minutes</div>
       </div>
+      <div class="card">
+        <h3>Active Alerts</h3>
+        <div id="alerts-count" class="value">—</div>
+        <div class="sub">Alertmanager webhooks currently firing</div>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:16px;">
@@ -112,6 +117,14 @@
       <table>
         <thead><tr><th>Status</th><th>Service</th><th>Health</th><th>Last check</th></tr></thead>
         <tbody id="services-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Active Alerts</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Alert</th><th>Service</th><th>Since</th><th>Summary</th></tr></thead>
+        <tbody id="alerts-body"></tbody>
       </table>
     </div>
 
@@ -199,6 +212,41 @@ const render = async () => {
       Array.isArray(g8.critical_incidents) ? String(g8.critical_incidents.length) : '—';
     document.getElementById('not-started').style.display = 'none';
     document.getElementById('run-info').style.display = 'block';
+
+    const alerts = Array.isArray(g8.active_alerts) ? g8.active_alerts : [];
+    const alertCount = (typeof g8.active_alert_count === 'number') ? g8.active_alert_count : alerts.length;
+    const alertsCountEl = document.getElementById('alerts-count');
+    alertsCountEl.textContent = String(alertCount);
+    alertsCountEl.style.color = alertCount > 0 ? 'var(--red)' : 'var(--green)';
+    const alertsBody = document.getElementById('alerts-body');
+    alertsBody.replaceChildren();
+    if (alerts.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.textContent = 'No active alerts';
+      tr.appendChild(td);
+      alertsBody.appendChild(tr);
+    } else {
+      for (const a of alerts.slice(0, 20)) {
+        const tr = document.createElement('tr');
+        const labels = (a && typeof a.labels === 'object' && a.labels) || {};
+        const annotations = (a && typeof a.annotations === 'object' && a.annotations) || {};
+        const cells = [
+          String(a.status || '—'),
+          String(labels.alertname || '—'),
+          String(labels.service || '—'),
+          a.starts_at ? new Date(a.starts_at).toLocaleString() : '—',
+          String(annotations.summary || '—'),
+        ];
+        for (const text of cells) {
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.appendChild(td);
+        }
+        alertsBody.appendChild(tr);
+      }
+    }
 
     // Service health summary
     const services = g8.services || status.services || [];
