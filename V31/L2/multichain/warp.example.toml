@@ -250,6 +250,17 @@ finality_blocks = 0
 #                                # storage + warn log. Generate once per
 #                                # deployment; rotating requires a rewrap
 #                                # pass over stored records.
+#
+# Capped pilot profile (blocker #11 — apply only after ops sign-off):
+#   WARP_BTC_SWAP_MIN_SATS=10000   # ~0.0001 BTC floor
+#   WARP_BTC_SWAP_MAX_SATS=100000  # 0.001 BTC per-swap pilot cap
+#   WARP_BTC_SWAP_MAX_ACTIVE=4     # small concurrency during pilot
+#   WARP_BTC_MIN_CONFS=3           # pilot: one extra conf over default
+#   WARP_ZION_LOCK_MIN_CONFS=3
+#   WARP_BTC_SWAP_MAX_QUOTE_ZION=<pilot treasury size in flowers>
+#   WARP_BTC_SWAP_MAX_QUOTE_BTC=300000   # total outstanding BTC leg ≤ 0.003
+# Rollback: set WARP_BTC_SWAP_ENABLED=0 + restart; in-flight swaps keep
+# their HTLC refund paths (CLTV expiry) — no funds are stuck by disabling.
 
 # ── Solver network (optional) ───────────────────────────────────────────────
 # Configure this warpd instance as an off-chain intent solver, and/or list

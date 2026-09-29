@@ -133,6 +133,33 @@ const nextConfig: NextConfig = {
       { source: '/dex', destination: '/multichain#dex', permanent: true },
       { source: '/dex/:path*', destination: '/multichain#dex', permanent: true },
       { source: '/ziondex', destination: '/multichain#dex', permanent: true },
+      // dao.zionterranova.com (Phase A): once DNS+nginx route the host here,
+      // canonicalize onto the app domain under /dao. Order matters: the
+      // explicit /dao passthrough must precede the catch-all path map.
+      {
+        source: '/dao',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao',
+        permanent: true,
+      },
+      {
+        source: '/dao/:path+',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao/:path+',
+        permanent: true,
+      },
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao',
+        permanent: true,
+      },
+      {
+        source: '/:path+',
+        has: [{ type: 'host', value: 'dao.zionterranova.com' }],
+        destination: 'https://app.zionterranova.com/dao/:path+',
+        permanent: true,
+      },
       // /dao is a real page — no redirect to /multichain#governance
     ];
   },
