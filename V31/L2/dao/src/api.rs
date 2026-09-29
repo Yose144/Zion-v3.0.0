@@ -640,6 +640,8 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
         "min_vote_weight": cfg.min_vote_weight,
         "proposal_threshold": cfg.proposal_threshold,
         "multisig": format!("{}-of-{}", cfg.multisig_threshold, cfg.multisig_total),
+        // D5: parameter names a Parameter proposal may change at execution.
+        "governable_parameters": crate::runtime::GovernanceRuntime::governable_parameters(),
         "guardian_count": cfg.guardians.len(),
         "total_votes_cast": total_votes_cast,
         "unique_voters": rt.unique_voters(),
