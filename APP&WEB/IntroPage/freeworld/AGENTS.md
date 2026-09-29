@@ -51,3 +51,6 @@ Starší app-vestavěný portál zůstává funkční na `app.zionterranova.com/
 - Mapa: Esri World Dark Gray Canvas (CARTO tiles mají "API KEY REQUIRED" watermark — nepoužívat basemaps.cartocdn.com).
 - LUMI/Nova Amerika board (`Lumi project.png`) je tmavý Issobella board — sdílený pozemek s L6 pozemní stanicí, záměrně.
 - i18n: `data-i18n` klíče + `data-lang-show="cs|en"` bloků; výchozí CS, ?lang=en nebo localStorage `fw-lang`.
+- Navigace: floating rasta pill — stejný pattern jako IntroPage/Amenti (`PageLayout.tsx` + `rasta-nav.css`): tricolor gradient border pill, centrální pill menu s pill linky, CZ/EN switch, hamburger → slide-in drawer (`.fw-nav-mobile`, toggle v `initNav()` v site.js).
+- Design: IntroPage motivy — rasta radial glows + diagonal stripes na body, tricolor gradient na `.fw-h2`, tricolor hairlines pod hero a nad footerem, glass karty s gold-tinted bordery.
+- Hero: `Hero.png` banner v-flow na 90% šířky (rounded card + shadow), text pod obrázkem; `srcset` 900w/1672w, `sizes="90vw"`.

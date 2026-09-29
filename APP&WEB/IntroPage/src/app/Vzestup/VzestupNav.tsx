@@ -74,6 +74,15 @@ export default function VzestupNav() {
           >
             Amenti
           </a>
+          <a
+            href="https://freeworld.zionterranova.com"
+            target="_blank"
+            rel="noopener"
+            className="rasta-nav-link"
+            onClick={() => setOpen(false)}
+          >
+            Free World
+          </a>
           <button
             onClick={() => setOpen((s) => !s)}
             className={`rasta-hamburger ${open ? "active" : ""}`}
@@ -134,6 +143,16 @@ export default function VzestupNav() {
           className="rasta-nav-link"
         >
           Amenti
+        </a>
+
+        <a
+          href="https://freeworld.zionterranova.com"
+          target="_blank"
+          rel="noopener"
+          onClick={() => setOpen(false)}
+          className="rasta-nav-link"
+        >
+          Free World
         </a>
       </div>
     </nav>

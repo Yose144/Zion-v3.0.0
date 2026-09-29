@@ -23,12 +23,17 @@ export default function PageLayout({
   const path = normalize(usePathname());
   const [open, setOpen] = useState(false);
 
-  const nav = [
+  const nav: { href: string; label: { cs: string; en: string }; external?: boolean }[] = [
     { href: "/", label: { cs: "Domů", en: "Home" } },
     { href: "/amenti", label: { cs: "Amenti", en: "Amenti" } },
     { href: "/evoluzion", label: { cs: "EvoluZion", en: "EvoluZion" } },
     { href: "/camp", label: { cs: "Camp", en: "Camp" } },
     { href: "/Vzestup", label: { cs: "Vzestup", en: "Ascension" } },
+    {
+      href: "https://freeworld.zionterranova.com",
+      label: { cs: "Free World", en: "Free World" },
+      external: true,
+    },
   ];
 
   const close = () => setOpen(false);
@@ -62,7 +67,18 @@ export default function PageLayout({
 
           <div className="rasta-nav-menu rasta-desktop-menu">
             {nav.map((n) =>
-              n.href === "/" ? (
+              n.external ? (
+                <a
+                  key={n.href}
+                  href={n.href}
+                  target="_blank"
+                  rel="noopener"
+                  onClick={close}
+                  className="rasta-nav-link"
+                >
+                  {n.label[lang]}
+                </a>
+              ) : n.href === "/" ? (
                 <a
                   key={n.href}
                   href="/"
@@ -137,7 +153,18 @@ export default function PageLayout({
           </div>
 
           {nav.map((n) =>
-            n.href === "/" ? (
+            n.external ? (
+              <a
+                key={n.href}
+                href={n.href}
+                target="_blank"
+                rel="noopener"
+                onClick={close}
+                className="rasta-nav-link"
+              >
+                {n.label[lang]}
+              </a>
+            ) : n.href === "/" ? (
               <a
                 key={n.href}
                 href="/"
