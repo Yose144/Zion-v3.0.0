@@ -31,8 +31,9 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode},
-    response::Json,
+    http::{HeaderMap, Method, Request, StatusCode},
+    middleware::{self, Next},
+    response::{Json, Response},
     routing::{get, post},
     Router,
 };
@@ -63,6 +64,74 @@ pub struct AppState {
     pub api_key: String,
     pub metrics: Arc<DaoMetrics>,
     pub zis: ZisClient,
+    pub write_limiter: WriteLimiter,
+}
+
+/// Per-client token bucket for mutating (POST) requests. The service binds
+/// localhost behind the website proxy, so the client key is the first
+/// `X-Forwarded-For` hop set by the proxy. `rpm = 0` disables limiting.
+#[derive(Clone)]
+pub struct WriteLimiter {
+    buckets: Arc<TokioMutex<std::collections::HashMap<String, (f64, std::time::Instant)>>>,
+    /// Tokens refilled per second.
+    refill: f64,
+    /// Maximum burst capacity.
+    burst: f64,
+}
+
+impl WriteLimiter {
+    pub fn new(rpm: u32) -> Self {
+        let burst = (rpm as f64 / 5.0).max(4.0);
+        Self {
+            buckets: Arc::new(TokioMutex::new(std::collections::HashMap::new())),
+            refill: rpm as f64 / 60.0,
+            burst,
+        }
+    }
+
+    async fn check(&self, client: &str) -> bool {
+        let mut buckets = self.buckets.lock().await;
+        // Bound memory: drop the whole map once it grows past 10k tracked
+        // clients — worst case a burst slips through once, never memory.
+        if buckets.len() > 10_000 {
+            buckets.clear();
+        }
+        let (tokens, last) = buckets
+            .entry(client.to_string())
+            .or_insert((self.burst, std::time::Instant::now()));
+        let now = std::time::Instant::now();
+        *tokens = (*tokens + now.duration_since(*last).as_secs_f64() * self.refill).min(self.burst);
+        *last = now;
+        if *tokens >= 1.0 {
+            *tokens -= 1.0;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+/// Rate-limit POST requests per client IP (X-Forwarded-For). GETs are not
+/// limited here — reads are cheap and already public.
+async fn write_rate_limit(
+    State(state): State<AppState>,
+    req: Request<axum::body::Body>,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    if req.method() == Method::POST && state.write_limiter.refill > 0.0 {
+        let client = req
+            .headers()
+            .get("x-forwarded-for")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.split(',').next())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "local".to_string());
+        if !state.write_limiter.check(&client).await {
+            return Err(StatusCode::TOO_MANY_REQUESTS);
+        }
+    }
+    Ok(next.run(req).await)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1197,8 +1266,6 @@ async fn execute_treasury_op(
     }
 }
 
-use axum::response::Response;
-
 async fn prometheus(State(state): State<AppState>) -> Response<String> {
     let body = state.metrics.render_prometheus();
     Response::builder()
@@ -1516,6 +1583,7 @@ pub async fn serve(
         api_key,
         metrics,
         zis,
+        write_limiter: WriteLimiter::new(config.api_write_rpm),
     };
 
     let app = Router::new()
@@ -1543,6 +1611,10 @@ pub async fn serve(
             post(execute_treasury_op),
         )
         .route("/metrics", get(prometheus))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            write_rate_limit,
+        ))
         .with_state(state);
 
     let addr = format!("127.0.0.1:{port}");
@@ -1555,6 +1627,25 @@ pub async fn serve(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn write_limiter_throttles_per_client() {
+        // 60 rpm = 1 token/sec refill, burst 12.
+        let limiter = WriteLimiter::new(60);
+        for _ in 0..12 {
+            assert!(limiter.check("1.2.3.4").await);
+        }
+        assert!(!limiter.check("1.2.3.4").await);
+        // A different client has its own bucket.
+        assert!(limiter.check("5.6.7.8").await);
+    }
+
+    #[tokio::test]
+    async fn write_limiter_zero_means_disabled_callers_skip() {
+        // rpm=0 constructs fine; the middleware skips check() entirely when
+        // refill == 0, so nothing to assert beyond construction.
+        let _ = WriteLimiter::new(0);
+    }
 
     #[test]
     fn test_proposal_type_dto_conversion() {

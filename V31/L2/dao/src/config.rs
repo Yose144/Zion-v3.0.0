@@ -42,6 +42,11 @@ pub struct DaoConfig {
     /// D13 spam guard: max simultaneously Active proposals from one proposer.
     #[serde(default = "default_max_active_per_proposer")]
     pub max_active_per_proposer: u32,
+    /// API write rate limit: max POST requests per minute per client IP
+    /// (X-Forwarded-For set by the website proxy; the service binds localhost
+    /// so the header is trusted). `0` disables the limiter.
+    #[serde(default = "default_api_write_rpm")]
+    pub api_write_rpm: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,6 +87,10 @@ fn default_max_active_per_proposer() -> u32 {
     5
 }
 
+fn default_api_write_rpm() -> u32 {
+    60
+}
+
 impl Default for DaoConfig {
     fn default() -> Self {
         Self {
@@ -113,6 +122,7 @@ impl Default for DaoConfig {
             cross_layer_veto_enabled: true,
             cross_layer_consent_threshold: 2,
             max_active_per_proposer: default_max_active_per_proposer(),
+            api_write_rpm: default_api_write_rpm(),
         }
     }
 }
@@ -154,6 +164,11 @@ impl DaoConfig {
         if let Ok(v) = env::var("DAO_MAX_ACTIVE_PER_PROPOSER") {
             if let Ok(n) = v.parse::<u32>() {
                 cfg.max_active_per_proposer = n;
+            }
+        }
+        if let Ok(v) = env::var("DAO_API_WRITE_RPM") {
+            if let Ok(n) = v.parse::<u32>() {
+                cfg.api_write_rpm = n;
             }
         }
 
