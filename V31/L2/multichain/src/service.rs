@@ -912,6 +912,11 @@ impl MultichainService {
             .max(5);
         Some(tokio::spawn(async move {
             let mut tick = tokio::time::interval(std::time::Duration::from_secs(secs));
+            // Stuck-swap alerting is rate-limited so a wedged swap warns once
+            // per window instead of spamming every tick.
+            let mut last_alert = std::time::Instant::now()
+                .checked_sub(std::time::Duration::from_secs(3600))
+                .unwrap_or_else(std::time::Instant::now);
             loop {
                 tick.tick().await;
                 let outcomes = flow.poll_once().await;
@@ -927,6 +932,25 @@ impl MultichainService {
                             o.detail.unwrap_or_default()
                         );
                     }
+                }
+
+                // Alert on swaps that stopped progressing: idle past the
+                // offer TTL or approaching their ZION-leg timeout. The warn
+                // line is what ops log-scraping routes on.
+                let m = flow.health_metrics().await;
+                let stale = m["swaps_stale"].as_u64().unwrap_or(0);
+                let near = m["swaps_near_deadline"].as_u64().unwrap_or(0);
+                if (stale > 0 || near > 0)
+                    && last_alert.elapsed() >= std::time::Duration::from_secs(600)
+                {
+                    last_alert = std::time::Instant::now();
+                    tracing::warn!(
+                        "[WARP][btc-swap] stuck swaps: {stale} stale (idle > offer ttl), \
+                         {near} within 1h of zion timeout, {} active, \
+                         oldest idle {}s — inspect /v1/multichain/swaps/btc/metrics",
+                        m["active"].as_u64().unwrap_or(0),
+                        m["max_active_idle_secs"].as_i64().unwrap_or(0),
+                    );
                 }
             }
         }))
