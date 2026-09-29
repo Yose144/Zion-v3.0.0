@@ -1325,6 +1325,12 @@ fn build_btc_swap(
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(900),
+        max_quote_outstanding_zion: std::env::var("WARP_BTC_SWAP_MAX_QUOTE_ZION")
+            .ok()
+            .and_then(|v| v.parse().ok()),
+        max_quote_outstanding_btc: std::env::var("WARP_BTC_SWAP_MAX_QUOTE_BTC")
+            .ok()
+            .and_then(|v| v.parse().ok()),
     };
     let quote_ttl_secs = cfg.quote_ttl_secs;
     tracing::info!(

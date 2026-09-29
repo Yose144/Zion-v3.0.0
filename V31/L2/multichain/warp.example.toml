@@ -222,6 +222,11 @@ finality_blocks = 0
 #                                # 0/unset → POST /swaps/btc/quote disabled
 #                                # and /offer stays operator-only via X-Warp-Key.
 #   WARP_BTC_SWAP_QUOTE_TTL_SECS=900  # quote validity window (default 15 min)
+#   WARP_BTC_SWAP_MAX_QUOTE_ZION=<flowers>  # cap on outstanding operator
+#                                # ZION liability (issued quotes + swaps
+#                                # awaiting the operator counter-lock)
+#   WARP_BTC_SWAP_MAX_QUOTE_BTC=<sats> # same cap for the BTC leg
+#                                # (zion_to_btc direction)
 #   WARP_BTC_SWAP_OFFER_KEY=<secret>  # X-Warp-Key header for operator offers
 #                                # (bypasses quotes — keep for admin/test only)
 # Flow: user POSTs /quote {direction, btc_sats} → server returns a signed
