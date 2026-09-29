@@ -1292,31 +1292,45 @@ export default function GenesisPage() {
                 <ul className="space-y-3 list-none pl-0 flex flex-col items-center max-w-2xl mx-auto">
                   <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <span className="flex items-center gap-2">
-                      <Coins className="w-5 h-5 text-zion-gold" />
-                      Těžaře
+                      <Palmtree className="w-5 h-5 text-zion-purple" />
+                      OASIS + Golden Egg
                     </span>
-                    <span className="font-bold text-zion-gold">4,95 miliard</span>
+                    <span className="font-bold text-zion-purple">4,95 miliard</span>
+                  </li>
+                  <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <span className="flex items-center gap-2">
+                      <HandHeart className="w-5 h-5 text-zion-gold" />
+                      L5 Free World Projects
+                    </span>
+                    <span className="font-bold text-zion-gold">3,3 miliard</span>
+                  </li>
+                  <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-zion-cyan" />
+                      L6 Issobella
+                    </span>
+                    <span className="font-bold text-zion-cyan">2,5 miliard</span>
                   </li>
                   <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <span className="flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-zion-cyan" />
-                      DAO
+                      DAO Treasury
                     </span>
-                    <span className="font-bold text-zion-cyan">1,75 miliard</span>
-                  </li>
-                  <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                    <span className="flex items-center gap-2">
-                      <Palmtree className="w-5 h-5 text-zion-purple" />
-                      OASIS
-                    </span>
-                    <span className="font-bold text-zion-purple">1,44 miliard</span>
+                    <span className="font-bold text-zion-cyan">1,5 miliard</span>
                   </li>
                   <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <span className="flex items-center gap-2">
                       <Settings className="w-5 h-5 text-zion-cyan" />
                       Infrastruktura
                     </span>
-                    <span className="font-bold text-zion-cyan">4,34 miliard</span>
+                    <span className="font-bold text-zion-cyan">2,59 miliard</span>
+                  </li>
+                  <li className="flex items-center gap-3 w-full justify-between px-6 py-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <span className="flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-zion-gold" />
+                      Humanitární seed
+                    </span>
+                    <span className="font-bold text-zion-gold">1,44 miliard</span>
                   </li>
                 </ul>
 
