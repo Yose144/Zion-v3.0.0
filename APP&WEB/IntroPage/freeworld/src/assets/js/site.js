@@ -403,9 +403,32 @@
     });
   }
 
+  /* ── Nav — hamburger + slide-in drawer ────────────────────── */
+  function initNav() {
+    var burger = document.querySelector('.fw-burger');
+    var drawer = document.querySelector('.fw-nav-mobile');
+    if (!burger || !drawer) return;
+    function setOpen(open) {
+      burger.classList.toggle('active', open);
+      drawer.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('fw-menu-open', open);
+    }
+    burger.addEventListener('click', function () {
+      setOpen(!drawer.classList.contains('open'));
+    });
+    drawer.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { setOpen(false); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  }
+
   /* ── boot ─────────────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', function () {
     applyI18n();
+    initNav();
     initReveal();
     initMap();
     initQV();
