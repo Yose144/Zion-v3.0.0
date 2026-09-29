@@ -3357,6 +3357,8 @@ def get_g8_status() -> dict:
         "progress_percent": 0.0,
         "uptime_percent": None,
         "services": [],
+        "active_alerts": [],
+        "active_alert_count": 0,
         "_state_file": str(g8_file),
     }
 
@@ -3400,6 +3402,33 @@ def get_g8_status() -> dict:
         result["services"] = all_services_health()
     except Exception:
         pass
+
+    try:
+        alert_state_path = Path("/opt/zion/data/g8_alert_state.json")
+        if not alert_state_path.parent.exists():
+            alert_state_path = DATA_DIR / "g8_alert_state.json"
+        active_alerts = []
+        if alert_state_path.exists():
+            with open(alert_state_path, "r", encoding="utf-8") as f:
+                alert_state = json.load(f)
+            if isinstance(alert_state, dict) and isinstance(alert_state.get("active_alerts"), list):
+                for entry in alert_state["active_alerts"]:
+                    if not isinstance(entry, dict):
+                        continue
+                    active_alerts.append({
+                        "fingerprint": str(entry.get("fingerprint", "")),
+                        "status": str(entry.get("status", "")),
+                        "labels": entry.get("labels") if isinstance(entry.get("labels"), dict) else {},
+                        "annotations": entry.get("annotations") if isinstance(entry.get("annotations"), dict) else {},
+                        "starts_at": str(entry.get("starts_at", "")),
+                        "ends_at": str(entry.get("ends_at", "")),
+                        "received_at": str(entry.get("received_at", "")),
+                    })
+        result["active_alerts"] = active_alerts
+        result["active_alert_count"] = len(active_alerts)
+    except Exception:
+        result["active_alerts"] = []
+        result["active_alert_count"] = 0
 
     return result
 

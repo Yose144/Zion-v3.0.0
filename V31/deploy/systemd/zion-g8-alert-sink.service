@@ -1,0 +1,24 @@
+[Unit]
+Description=ZION G8 Alertmanager webhook sink (localhost only)
+After=network.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+ExecStart=/usr/bin/python3 /opt/zion/scripts/ops/g8_alert_sink.py
+Restart=always
+RestartSec=10
+Nice=10
+StandardOutput=journal
+StandardError=journal
+CPUQuota=25%
+MemoryMax=64M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zion/data
+
+[Install]
+WantedBy=multi-user.target
