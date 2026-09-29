@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZION Free World — L5 · Terra Nova</title>
+<meta name="description" content="Six founding L5 communities on a real planet — 5% of every ZION block flows into the Free World humanitarian fund.">
+<link rel="icon" href="/assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/site.css">
+</head>
+<body>
+
+<nav class="fw-nav">
+  <a class="fw-nav-brand" href="/">
+    <img src="/assets/img/glyph.png" alt="" width="26" height="26" style="border-radius:50%">
+    <span>ZION<small>Free World · L5</small></span>
+  </a>
+  <div class="fw-nav-links">
+    <a href="/#projects" data-i18n="nav.projects"></a>
+    <a href="/#map" data-i18n="nav.map"></a>
+    <a href="/#fund" data-i18n="nav.fund"></a>
+    <a href="/#qv" data-i18n="nav.qv"></a>
+    <a class="fw-nav-cta" href="https://app.zionterranova.com" data-i18n="nav.app"></a>
+    <div class="fw-lang"><button data-lang="cs">CS</button><button data-lang="en">EN</button></div>
+  </div>
+</nav>
+
+<header class="fw-hero">
+  <div class="fw-hero-bg"><img src="/assets/img/hero.webp" alt="ZION Free World"></div>
+  <div class="fw-hero-inner">
+    <p class="fw-kicker" data-i18n="hero.kicker"></p>
+    <h1 data-i18n="hero.title"></h1>
+    <p class="fw-tagline" data-i18n="hero.tagline"></p>
+    <div class="fw-hero-badges">
+      <span data-i18n="hero.badge1"></span><span data-i18n="hero.badge2"></span><span data-i18n="hero.badge3"></span>
+    </div>
+    <div class="fw-ticker">
+      <span class="dot" data-fund-dot></span>
+      <div>
+        <div class="lbl" data-i18n="ticker.label"></div>
+        <div class="val"><span data-fund-acc>…</span> <small style="font-size:.85rem">ZION</small></div>
+        <div class="sub"><span data-i18n="ticker.block"></span> <span data-fund-block>…</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="fw-section" id="projects">
+  <div class="fw-wrap">
+    <p class="fw-kicker fw-reveal" data-i18n="projects.kicker"></p>
+    <h2 class="fw-h2 fw-reveal" data-i18n="projects.title"></h2>
+    <p class="fw-lead fw-reveal" data-i18n="projects.lead"></p>
+    <div class="fw-grid"><!--GEN:PROJECT_CARDS--></div>
+  </div>
+</section>
+
+<section class="fw-section" id="map" style="padding-top:0">
+  <div class="fw-wrap">
+    <p class="fw-kicker fw-reveal" data-i18n="map.kicker"></p>
+    <h2 class="fw-h2 fw-reveal" data-i18n="map.title"></h2>
+    <p class="fw-lead fw-reveal" data-i18n="map.lead"></p>
+    <div id="fw-map" class="fw-map fw-reveal"></div>
+    <div class="fw-legend">
+      <span style="text-transform:uppercase;letter-spacing:.2em;font-size:.62rem" data-i18n="map.legend"></span>
+      <span><i style="background:#fcd116"></i><span data-i18n="status.development"></span></span>
+      <span><i style="background:#06b6d4"></i><span data-i18n="status.preparation"></span></span>
+      <span><i style="background:#a855f7"></i><span data-i18n="status.vision"></span></span>
+    </div>
+  </div>
+</section>
+
+<section class="fw-section" id="fund" style="padding-top:0">
+  <div class="fw-wrap">
+    <p class="fw-kicker fw-reveal" data-i18n="fund.kicker"></p>
+    <h2 class="fw-h2 fw-reveal" data-i18n="fund.title"></h2>
+    <p class="fw-lead fw-reveal" data-i18n="fund.lead"></p>
+    <div class="fw-stats fw-reveal">
+      <div class="fw-stat"><div class="lbl" data-i18n="fund.acc"></div><div class="val"><span data-fund-acc>…</span> <small>ZION</small></div></div>
+      <div class="fw-stat"><div class="lbl" data-i18n="fund.disb"></div><div class="val"><span data-fund-disb>…</span> <small>ZION</small></div></div>
+      <div class="fw-stat"><div class="lbl" data-i18n="fund.block"></div><div class="val"><span data-fund-block>…</span></div></div>
+      <div class="fw-stat"><div class="lbl" data-i18n="fund.updated"></div><div class="val" style="font-size:.95rem;font-family:var(--sans);padding-top:.45rem"><span data-fund-updated>…</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="fw-section" id="registry" style="padding-top:0">
+  <div class="fw-wrap">
+    <p class="fw-kicker fw-reveal" data-i18n="registry.kicker"></p>
+    <h2 class="fw-h2 fw-reveal" data-i18n="registry.title"></h2>
+    <p class="fw-lead fw-reveal" data-i18n="registry.lead"></p>
+    <div class="fw-reveal">
+      <table class="fw-table">
+        <thead><tr><th data-i18n="registry.project"></th><th data-i18n="registry.budget"></th><th data-i18n="registry.status"></th></tr></thead>
+        <tbody data-registry-projects><tr><td colspan="3" class="fw-muted">…</td></tr></tbody>
+      </table>
+      <table class="fw-table" style="margin-top:2.5rem">
+        <thead><tr><th data-i18n="registry.grant"></th><th data-i18n="registry.amount"></th><th data-i18n="registry.status"></th></tr></thead>
+        <tbody data-registry-grants><tr><td colspan="3" class="fw-muted">…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="fw-section" id="qv" style="padding-top:0">
+  <div class="fw-wrap">
+    <p class="fw-kicker fw-reveal" data-i18n="qv.kicker"></p>
+    <h2 class="fw-h2 fw-reveal" data-i18n="qv.title"></h2>
+    <p class="fw-lead fw-reveal" data-i18n="qv.lead"></p>
+    <div id="fw-qv" class="fw-reveal"></div>
+  </div>
+</section>
+
+<section class="fw-section fw-center" style="padding-top:0">
+  <div class="fw-wrap">
+    <h2 class="fw-h2 fw-reveal" data-i18n="cta.title"></h2>
+    <p class="fw-lead fw-reveal" style="margin-left:auto;margin-right:auto" data-i18n="cta.lead"></p>
+    <div class="fw-reveal" style="margin-top:1.8rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a class="fw-btn fw-btn-gold" href="https://app.zionterranova.com/l5-free-world" data-i18n="cta.app"></a>
+      <a class="fw-btn fw-btn-ghost" href="https://zionterranova.com" data-i18n="cta.intro"></a>
+    </div>
+  </div>
+</section>
+
+<footer class="fw-footer">
+  <div class="cols">
+    <div>
+      <div class="brand">ZION Free World</div>
+      <p class="fw-muted" style="font-size:.75rem;margin-top:.5rem;max-width:260px">L5 · One planet · One humanity · One love</p>
+    </div>
+    <nav><span data-i18n="footer.explore"></span>
+      <a href="/#projects" data-i18n="nav.projects"></a>
+      <a href="/#map" data-i18n="nav.map"></a>
+      <a href="/#qv" data-i18n="nav.qv"></a>
+    </nav>
+    <nav><span data-i18n="footer.network"></span>
+      <a href="https://app.zionterranova.com" data-i18n="footer.portal"></a>
+      <a href="https://zionterranova.com" data-i18n="footer.intro"></a>
+      <a href="https://app.zionterranova.com/dao" data-i18n="footer.dao"></a>
+      <a href="https://app.zionterranova.com/explorer" data-i18n="footer.explorer"></a>
+    </nav>
+  </div>
+  <p class="note" data-i18n="footer.note"></p>
+</footer>
+
+<script>window.FW_SITES = <!--GEN:SITES_JSON-->;</script>
+<script src="/assets/js/site.js"></script>
+</body>
+</html>

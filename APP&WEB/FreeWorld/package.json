@@ -1,0 +1,12 @@
+{
+  "name": "zion-freeworld-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ZION Free World (L5) — dedicated static portal at freeworld.zionterranova.com",
+  "scripts": {
+    "build": "node tools/build.mjs"
+  },
+  "devDependencies": {
+    "marked": "^14.1.2"
+  }
+}
