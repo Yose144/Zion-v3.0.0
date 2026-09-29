@@ -255,9 +255,9 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 
 | Featura | Stav |
 |---------|------|
-| Proposal detail page (vlastní route `/dao/[id]`) | ❌ |
-| Voting interface (cast vote přímo z UI + L1 memo deep-link/QR) | ❌ — jen list |
-| Quorum progress vizualizace | ❌ |
+| Proposal detail page (vlastní route `/dao/proposals/[id]`) | ✅ **CODE 2026-10-02** — full detail + votes + timeline + inline voting, deploy pending |
+| Voting interface (cast vote přímo z UI + L1 memo deep-link/QR) | 🟡 vote z UI ✅ (karta + detail, ZIS session); L1 memo deep-link/QR ❌ |
+| Quorum progress vizualizace | ✅ **CODE 2026-10-02** — `QuorumProgress` bar (karta + detail); daemon emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply` v `serialize_proposal` |
 | Vote history / audit event feed per proposal | ❌ (backend D4 předpoklad) |
 | Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ❌ |
 | Guardian dashboard (registry, aktivita, rotace) | 🟡 tab existuje, data jsou statické |
@@ -347,5 +347,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | 2026-10-02 | `8477942` | **DAO crypto treasury** (`treasury_tx.rs`): Ed25519 guardian podpisy nad `dao:treasury:v1\|op_id\|sha256(op)`, verified-only threshold, unsigned UTXO spec z live `getUtxos`, broadcast `submitUtxoTransaction` přes `ZION_DAO_TREASURY_KEY`, stavy `awaiting_broadcast`/`executed`, persist `unsigned_tx`/`signing_hash`/`tx_id`, DB migrace zachovává legacy audit rows. 85 dao testů ✅. |
 | 2026-10-02 | `6281c6c` | **Reconciliation drift klasifikace**: `classify_drift` — deficit / untracked inflow / benign unswept deposit float (`max(expected, deposits_credited)` bound) / RPC-error suppression / excluded. Forenzika +95.5 wZION = prodané tokeny zaparkované na unswept deposit adresách (benigní). 8/8 testů ✅. |
 | 2026-10-02 | `90d8925` | **BTC signed-quote protokol**: `BtcSwapQuote` + `warp:btc-quote:v1` domain Ed25519 sign/verify, `POST /swaps/btc/quote` (veřejný, `WARP_BTC_SWAP_ZION_PER_SAT` fix sazba, TTL 900 s), `/offer` auth = X-Warp-Key NEBO validní quote, `quote_id` UNIQUE replay protection, `save_btc_swap` → upsert (REPLACE by smazal victim row). 40/40 btc_swap testů ✅. Deploy pending. |
+
+| 2026-10-02 | `TBD` | **DAO UI**: `/dao/proposals/[id]` detail route (votes, quorum bar, timeline, inline ZIS voting), `QuorumProgress` komponenta na kartách, `serialize_proposal` nově emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply`. tsc+eslint clean, 85 dao testů ✅. Deploy pending (Edge web rebuild + daemon restart). |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
