@@ -17,6 +17,9 @@ import { X, Lock, Wallet, Loader2, AlertCircle, CheckCircle2, ArrowRight, Chevro
 import { useAuth } from '@/contexts/AuthContext';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
 
+// Passkey sign-in is hidden until the ZIS webauthn endpoints are deployed.
+const PASSKEY_ENABLED = process.env.NEXT_PUBLIC_PASSKEY_ENABLED === '1';
+
 interface LoginModalProps {
   open: boolean;
   onClose: () => void;
@@ -42,9 +45,11 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
   useEffect(() => {
     setMounted(true);
     setHasMetaMask(typeof window !== 'undefined' && !!(window as any).ethereum);
-    import('@simplewebauthn/browser')
-      .then((m) => setHasPasskey(m.browserSupportsWebAuthn()))
-      .catch(() => setHasPasskey(false));
+    if (PASSKEY_ENABLED) {
+      import('@simplewebauthn/browser')
+        .then((m) => setHasPasskey(m.browserSupportsWebAuthn()))
+        .catch(() => setHasPasskey(false));
+    }
   }, []);
 
   const handlePasskey = async () => {
