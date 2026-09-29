@@ -39,6 +39,7 @@ import {
   getDAOTreasuryOverview,
   getGovernanceProposals,
   getTreasuryOps,
+  getGuardians,
   castGovernanceVote,
   createGovernanceProposal,
   type GovernanceProposal,
@@ -46,6 +47,7 @@ import {
   type DAOTreasuryOverview,
   type ProposalTypeInput,
   type TreasuryOp,
+  type GuardianRegistry,
 } from '@/lib/dao-api';
 
 const DaoCopy = {
@@ -59,7 +61,7 @@ const DaoCopy = {
   defiHub: { cs: `Multichain Hub`, en: `Multichain Hub` },
   swapBridgeAndPortfolioOnBaseMa: { cs: `Swap, bridge a portfolio na Base Mainnet.`, en: `Swap, bridge and portfolio on Base Mainnet.` },
   howDoIBecomeADaoGuardian: { cs: `Jak se stát DAO guardianem?`, en: `How do I become a DAO guardian?` },
-  guardiansAreSelectedBasedOnVer: { cs: `Guardian admission síť zatím není live. Plánovaná cesta je nominace komunitou → peer review → consent. Sedm treasury signerů je samostatná operativní role.`, en: `The guardian admission network is not live yet. The planned path is community nomination → peer review → consent. The seven treasury signers are a separate operational role.` },
+  guardiansAreSelectedBasedOnVer: { cs: `Kandidát se registruje on-chain memo transakcí na L1, pak o něm hlasuje komunita — admission vyžaduje 60 % quorum, expulsion 75 %. Sedm treasury signerů je samostatná operativní role.`, en: `A candidate registers via an on-chain L1 memo transaction, then the community votes — admission requires 60% quorum, expulsion 75%. The seven treasury signers are a separate operational role.` },
   howDoesVotingPowerWork: { cs: `Jak funguje hlasovací síla?`, en: `How does voting power work?` },
   everyZionHolderHasBaseVotingPo: { cs: `Hlasovací síla = zůstatek ZION na L1 ve snapshot bloku návrhu. Žádný consciousness ani staking násobič.`, en: `Voting power equals your L1 ZION balance at the proposal snapshot block. No consciousness or staking multiplier.` },
   whatIsTheHumanitarianTithe: { cs: `Co je humanitární fond?`, en: `What is the humanitarian fund?` },
@@ -201,6 +203,15 @@ const DaoCopy = {
   liveTopology: { cs: `Symbolická mapa`, en: `Symbolic map` },
   crown: { cs: `Koruna`, en: `Crown` },
   guardiansCouncil: { cs: `Rada guardianů`, en: `Guardians Council` },
+  onChainRegistry: { cs: `On-chain registr`, en: `On-chain registry` },
+  liveGuardianRegistry: { cs: `Živý registr guardianů`, en: `Live Guardian Registry` },
+  liveGuardianRegistryDesc: { cs: `Aktivní členové rady a kandidáti registrovaní on-chain memo transakcí na L1. Rotace probíhá hlasováním — admission vyžaduje 60 % quorum, expulsion 75 %.`, en: `Active council members and candidates registered via an on-chain L1 memo transaction. Rotation happens by vote — admission requires 60% quorum, expulsion 75%.` },
+  activeGuardians: { cs: `Aktivní guardianové`, en: `Active guardians` },
+  registeredCandidates: { cs: `Registrovaní kandidáti`, en: `Registered candidates` },
+  noGuardiansConfigured: { cs: `Žádní guardianové zatím nenakonfigurováni`, en: `No guardians configured yet` },
+  noCandidatesRegistered: { cs: `Žádní kandidáti zatím nejsou registrovaní`, en: `No candidates registered yet` },
+  multisigThreshold: { cs: `Multisig práh`, en: `Multisig threshold` },
+  candidateAwaitingAdmission: { cs: `čeká na admission hlasování`, en: `awaiting admission vote` },
   topDaoGovernanceLayerTreasuryO: { cs: `Vrchní vrstva správy DAO — dohled nad treasury, bezpečnostní revize a dlouhodobá vize.`, en: `Top DAO governance layer — treasury oversight, security reviews, and long-term vision.` },
   heart: { cs: `Srdce`, en: `Heart` },
   buildersCircle: { cs: `Kruh stavitelů`, en: `Builders Circle` },
@@ -357,6 +368,7 @@ export default function DaoPage() {
   const [justification, setJustification] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [guardianRegistry, setGuardianRegistry] = useState<GuardianRegistry | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<{
     online: boolean;
     l1_locks_detected: number;
@@ -375,18 +387,20 @@ export default function DaoPage() {
   async function loadDAOData() {
     try {
       setLoading(true);
-      const [health, statsData, proposalsData, treasuryData, opsData, bridgeData] = await Promise.all([
+      const [health, statsData, proposalsData, treasuryData, opsData, guardiansData, bridgeData] = await Promise.all([
         getDAOHealth(),
         getDAOStats(),
         getGovernanceProposals(),
         getDAOTreasuryOverview(),
         getTreasuryOps(),
+        getGuardians(),
         fetch('/api/bridge/status', { cache: 'no-store' }).then(r => r.json()).catch(() => null),
       ]);
       setStats(statsData);
       setProposals(proposalsData);
       setTreasury(treasuryData);
       setTreasuryOps(opsData);
+      setGuardianRegistry(guardiansData);
       setDaemonOnline(health.status === 'ok' || health.status === 'online');
       if (bridgeData) setBridgeStatus(bridgeData);
     } catch {
@@ -1045,6 +1059,84 @@ export default function DaoPage() {
 
           {activeTab === 'guardians' && (
             <div className="space-y-12">
+              {/* Live guardian registry — D3 on-chain rotation data */}
+              <motion.section
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="zion-rainbow-card p-8"
+                style={{ '--rc': '252, 209, 22' } as CSSProperties}
+              >
+                <div className="flex flex-col gap-2 mb-6">
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DaoCopy.onChainRegistry[cs ? 'cs' : 'en']}</p>
+                  <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                    <ShieldCheck className="h-7 w-7 text-zion-gold" />
+                    {DaoCopy.liveGuardianRegistry[cs ? 'cs' : 'en']}
+                  </h2>
+                  <p className="text-sm text-gray-400 max-w-3xl">
+                    {DaoCopy.liveGuardianRegistryDesc[cs ? 'cs' : 'en']}
+                  </p>
+                </div>
+                {guardianRegistry ? (
+                  <div className="space-y-5">
+                    <div className="flex items-center gap-3 zion-rainbow-sub px-4 py-2.5 text-sm w-fit" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                      <Users className="h-4 w-4 text-zion-gold" />
+                      <span className="text-gray-400">{DaoCopy.multisigThreshold[cs ? 'cs' : 'en']}:</span>
+                      <span className="font-mono font-semibold text-zion-gold">{guardianRegistry.threshold}-of-{guardianRegistry.total}</span>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                        <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+                          <Crown className="h-4 w-4 text-zion-gold" />
+                          {DaoCopy.activeGuardians[cs ? 'cs' : 'en']}
+                          <span className="text-xs text-gray-500 font-normal">({guardianRegistry.guardians.length})</span>
+                        </h3>
+                        {guardianRegistry.guardians.length === 0 ? (
+                          <p className="text-xs text-gray-500">{DaoCopy.noGuardiansConfigured[cs ? 'cs' : 'en']}</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {guardianRegistry.guardians.map((g) => (
+                              <div key={g.address} className="zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-sm font-medium text-white truncate">{g.name || g.address}</span>
+                                  <span className="zion-badge-green text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider shrink-0">active</span>
+                                </div>
+                                {g.name && <p className="text-[11px] text-gray-500 font-mono truncate mt-0.5">{g.address}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                        <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-zion-cyan" />
+                          {DaoCopy.registeredCandidates[cs ? 'cs' : 'en']}
+                          <span className="text-xs text-gray-500 font-normal">({guardianRegistry.candidates.length})</span>
+                        </h3>
+                        {guardianRegistry.candidates.length === 0 ? (
+                          <p className="text-xs text-gray-500">{DaoCopy.noCandidatesRegistered[cs ? 'cs' : 'en']}</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {guardianRegistry.candidates.map((c) => (
+                              <div key={c.address} className="zion-rainbow-sub px-3 py-2.5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-sm font-mono text-gray-200 truncate">{c.address}</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-0.5">{DaoCopy.candidateAwaitingAdmission[cs ? 'cs' : 'en']}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="zion-rainbow-sub p-5 text-sm text-gray-500" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
+                    {daemonOnline === false ? DaoCopy.noGuardiansConfigured[cs ? 'cs' : 'en'] : '…'}
+                  </div>
+                )}
+              </motion.section>
+
               <motion.section
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}

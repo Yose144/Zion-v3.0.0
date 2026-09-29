@@ -173,6 +173,22 @@ export interface DAOHealth {
   db_version?: string;
 }
 
+/** Live guardian registry entry from GET /api/dao/guardians (D3). */
+export interface GuardianEntry {
+  address: string;
+  public_key: string;
+  /** "active" = council member; "registered" = L1-registered candidate. */
+  source: 'active' | 'registered';
+  name?: string;
+}
+
+export interface GuardianRegistry {
+  threshold: number;
+  total: number;
+  guardians: GuardianEntry[];
+  candidates: GuardianEntry[];
+}
+
 export interface DAOTreasuryOverview {
   total_zion: number;
   available_atomic: string;
@@ -355,6 +371,25 @@ export async function getDAOStats(): Promise<DAOStats> {
   } catch {
     // DAO daemon not yet deployed — return placeholder so page looks good
     return PLACEHOLDER_STATS;
+  }
+}
+
+/** GET /api/dao/guardians — live registry: active guardians + L1-registered
+ *  candidates awaiting admission (D3). */
+export async function getGuardians(): Promise<GuardianRegistry | null> {
+  try {
+    const res = await daoFetch('/api/dao/guardians', { cache: 'no-store' });
+    if (!res.ok) return null;
+    const raw = await res.json();
+    const d = raw.data ?? raw;
+    return {
+      threshold: d.threshold ?? 0,
+      total: d.total ?? 0,
+      guardians: (d.guardians ?? []) as GuardianEntry[],
+      candidates: (d.candidates ?? []) as GuardianEntry[],
+    };
+  } catch {
+    return null;
   }
 }
 
