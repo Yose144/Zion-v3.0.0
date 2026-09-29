@@ -5,7 +5,7 @@
 //! current set so invalid or double-spending transactions are rejected before
 //! they reach a block template.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use sha2::{Digest, Sha256 as Sha2};
 use zion_l1_types::{Address, Amount, Hash};
@@ -88,6 +88,8 @@ pub enum UtxoError {
     HtlcUnauthorizedKey(usize),
     #[error("HTLC spend output must go to the authorized address for input {0}")]
     HtlcInvalidDestination(usize),
+    #[error("duplicate outpoint in cache snapshot: {0:?}")]
+    DuplicateOutpoint(Outpoint),
 }
 
 /// In-memory UTXO set.
@@ -208,30 +210,64 @@ impl UtxoSet {
         block_height: u64,
         block_timestamp: u64,
     ) -> Result<u128, UtxoError> {
+        self.apply_transaction_inner(tx, block_height, block_timestamp, true)
+    }
+
+    /// Apply a transaction that was already fully validated when its block was
+    /// accepted into our own block store.
+    ///
+    /// Identical to `apply_transaction` except that Ed25519 signature and HTLC
+    /// script execution (`verify_input`) is skipped — every structural rule
+    /// (input existence, output amounts/addresses, sums, minimum fee,
+    /// admin-unlock detection) is still enforced. Only for replaying trusted
+    /// on-disk blocks; never for mempool or live block acceptance.
+    pub(crate) fn apply_transaction_trusted_replay(
+        &mut self,
+        tx: &Transaction,
+        block_height: u64,
+        block_timestamp: u64,
+    ) -> Result<u128, UtxoError> {
+        self.apply_transaction_inner(tx, block_height, block_timestamp, false)
+    }
+
+    fn apply_transaction_inner(
+        &mut self,
+        tx: &Transaction,
+        block_height: u64,
+        block_timestamp: u64,
+        verify_scripts: bool,
+    ) -> Result<u128, UtxoError> {
         if tx.is_coinbase() {
             return self.apply_coinbase(tx, block_height, block_timestamp);
         }
 
         // Collect the outputs being spent before we remove them, and verify
-        // signatures / output scripts before mutating the set.
-        let signing_hash = tx.signing_hash();
+        // signatures / output scripts before mutating the set. The signing
+        // hash is only needed for script verification, not trusted replay.
+        let signing_hash = verify_scripts.then(|| tx.signing_hash());
         let mut inputs = Vec::with_capacity(tx.inputs.len());
+        let mut seen = HashSet::with_capacity(tx.inputs.len());
         for (i, input) in tx.inputs.iter().enumerate() {
             let outpoint = Outpoint::from(input);
+            if !seen.insert(outpoint) {
+                return Err(UtxoError::AlreadySpent(outpoint));
+            }
             let output = self
                 .outputs
                 .get(&outpoint)
                 .ok_or(UtxoError::InputNotFound(outpoint))?
                 .clone();
 
-            verify_input(
-                i,
-                input,
-                &signing_hash,
-                &output,
-                block_timestamp,
-                &tx.outputs,
-            )?;
+            if let Some(signing_hash) = &signing_hash {
+                verify_input(
+                    i,
+                    input,
+                    signing_hash,
+                    &output,
+                    block_timestamp,
+                    &tx.outputs,
+                )?;
+            }
 
             inputs.push((outpoint, output));
         }
@@ -364,9 +400,42 @@ impl UtxoSet {
         let block_height = block.header.height;
         let block_timestamp = block.header.timestamp;
         for tx in &block.transactions {
-            self.apply_transaction(tx, block_height, block_timestamp)?;
+            self.apply_transaction_trusted_replay(tx, block_height, block_timestamp)?;
         }
         Ok(())
+    }
+
+    /// Number of live outputs in the set (cache bookkeeping).
+    pub(crate) fn output_count(&self) -> usize {
+        self.outputs.len()
+    }
+
+    /// Iterate all live outputs for the discardable persistent cache without
+    /// cloning the map.
+    pub(crate) fn cache_entries(&self) -> impl Iterator<Item = (&Outpoint, &UtxoOutput)> {
+        self.outputs.iter()
+    }
+
+    /// Snapshot of the admin-unlock set for the discardable persistent cache.
+    pub(crate) fn admin_unlocks_for_cache(&self) -> Vec<String> {
+        self.admin_unlocked.iter().cloned().collect()
+    }
+
+    /// Rebuild a set from cache entries previously produced by
+    /// `cache_entries`/`admin_unlocks_for_cache`. Uses the canonical admin
+    /// address config; duplicate outpoints are rejected.
+    pub(crate) fn from_cache_entries(
+        entries: Vec<(Outpoint, UtxoOutput)>,
+        admin_unlocks: Vec<String>,
+    ) -> Result<Self, UtxoError> {
+        let mut set = Self::new();
+        for (outpoint, output) in entries {
+            if set.outputs.insert(outpoint, output).is_some() {
+                return Err(UtxoError::DuplicateOutpoint(outpoint));
+            }
+        }
+        set.admin_unlocked = admin_unlocks.into_iter().collect();
+        Ok(set)
     }
 
     /// True if the transaction hash is already present as an unspent output.
@@ -494,7 +563,8 @@ mod tests {
     use crate::crypto::{derive_address, generate_keypair};
     use crate::transaction::{Transaction, TransactionOutput};
     use crate::v31_wallet::{
-        build_htlc_claim, build_htlc_lock, build_htlc_refund, htlc_output_script, SpendableUtxo,
+        build_htlc_claim, build_htlc_lock, build_htlc_refund, build_send, htlc_output_script,
+        SpendableUtxo,
     };
     use sha2::{Digest, Sha256};
     use zion_l1_types::{Address, Amount, ChainId};
@@ -797,5 +867,215 @@ mod tests {
             .unwrap();
         let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
         assert_eq!(lock_utxo.script, script);
+    }
+
+    #[test]
+    fn trusted_replay_skips_signature_verification() {
+        let (_owner_sk, owner_vk) = generate_keypair();
+        let owner_addr = derive_address(owner_vk.as_bytes());
+        let (_recipient_sk, recipient_vk) = generate_keypair();
+        let recipient_addr = derive_address(recipient_vk.as_bytes());
+
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &owner_addr, 10_000_000, 1);
+        let utxo = spendable(&utxo_set, &owner_addr);
+
+        // The transaction is signed by a key that does not own the spent
+        // output: full validation must reject it, while trusted replay (used
+        // only for blocks already accepted into our own block store) still
+        // applies the structural state transition.
+        let (wrong_sk, _) = generate_keypair();
+        let tx = build_send(
+            &wrong_sk,
+            &owner_addr,
+            &recipient_addr,
+            1_000_000,
+            10_000,
+            &[utxo],
+        )
+        .unwrap()
+        .transaction;
+
+        let mut full = utxo_set.clone();
+        assert!(full.apply_transaction(&tx, 2, 0).is_err());
+
+        let mut replay = utxo_set.clone();
+        replay.apply_transaction_trusted_replay(&tx, 2, 0).unwrap();
+        let expected = utxo_set.output_count() - 1 + tx.outputs.len();
+        assert_eq!(replay.output_count(), expected);
+        assert!(!replay.get_utxos_for_address(&recipient_addr).is_empty());
+    }
+
+    #[test]
+    fn trusted_replay_rejects_structurally_invalid_spends() {
+        let (_sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &addr, 10_000_000, 1);
+
+        let missing = Transaction {
+            version: 1,
+            inputs: vec![TransactionInput {
+                previous_output: Hash::new([9u8; 32]),
+                index: 0,
+                script: vec![],
+            }],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(1_000),
+                address: Address::new(ChainId::ZionL1, vec![], &addr).unwrap(),
+                ..Default::default()
+            }],
+            memo: vec![],
+        };
+        let err = utxo_set
+            .apply_transaction_trusted_replay(&missing, 2, 0)
+            .unwrap_err();
+        assert!(matches!(err, UtxoError::InputNotFound(_)));
+    }
+
+    #[test]
+    fn trusted_replay_matches_full_validation() {
+        let (sk, pk) = generate_keypair();
+        let addr = derive_address(pk.as_bytes());
+        let (_rsk, rpk) = generate_keypair();
+        let recipient = derive_address(rpk.as_bytes());
+        let (_csk, cpk) = generate_keypair();
+
+        let coinbase_block = Block::new(
+            crate::block::BlockHeader {
+                previous_hash: Hash::default(),
+                merkle_root: Hash::default(),
+                height: 1,
+                timestamp: 100,
+                nonce: 0,
+                difficulty: 1,
+            },
+            vec![Transaction {
+                version: 1,
+                inputs: vec![],
+                outputs: vec![TransactionOutput {
+                    amount: Amount::new(10_000_000),
+                    address: Address::new(ChainId::ZionL1, vec![], &addr).unwrap(),
+                    ..Default::default()
+                }],
+                memo: vec![],
+            }],
+        );
+
+        let mut seed = UtxoSet::new();
+        seed.apply_block_unchecked(&coinbase_block).unwrap();
+
+        let send = build_send(
+            &sk,
+            &addr,
+            &recipient,
+            1_000_000,
+            10_000,
+            &[spendable(&seed, &addr)],
+        )
+        .unwrap()
+        .transaction;
+
+        let mut seed2 = seed.clone();
+        seed2.apply_transaction(&send, 2, 200).unwrap();
+        let lock = build_htlc_lock(
+            &sk,
+            &addr,
+            500_000,
+            10_000,
+            &[spendable(&seed2, &addr)],
+            &[7u8; 32],
+            10_000,
+            cpk.as_bytes(),
+            pk.as_bytes(),
+        )
+        .unwrap()
+        .transaction;
+
+        let spend_block = Block::new(
+            crate::block::BlockHeader {
+                previous_hash: Hash::default(),
+                merkle_root: Hash::default(),
+                height: 2,
+                timestamp: 200,
+                nonce: 0,
+                difficulty: 1,
+            },
+            vec![send, lock],
+        );
+
+        let mut full = seed.clone();
+        full.apply_block(&spend_block).unwrap();
+        let mut replay = seed;
+        replay.apply_block_unchecked(&spend_block).unwrap();
+
+        assert_eq!(full.outputs, replay.outputs);
+        assert_eq!(full.admin_unlocked, replay.admin_unlocked);
+    }
+
+    #[test]
+    fn duplicate_inputs_rejected_without_mutation() {
+        let (sk, pk) = generate_keypair();
+        let addr = derive_address(pk.as_bytes());
+        let (_rsk, rpk) = generate_keypair();
+        let recipient = derive_address(rpk.as_bytes());
+
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &addr, 10_000_000, 1);
+        let utxo = spendable(&utxo_set, &addr);
+
+        let mut tx = build_send(&sk, &addr, &recipient, 1_000_000, 10_000, &[utxo])
+            .unwrap()
+            .transaction;
+        let dup = tx.inputs[0].clone();
+        tx.inputs.push(dup);
+        let outpoint = Outpoint::from(&tx.inputs[0]);
+        // Re-sign over the duplicated-input signing hash so input 0 passes
+        // verification and the duplicate itself is what fails.
+        let signing_hash = tx.signing_hash();
+        for input in &mut tx.inputs {
+            input.script = crypto::sign(&sk, &signing_hash.0).to_vec();
+            input.script.extend_from_slice(pk.as_bytes());
+        }
+
+        // Full validation: repeated outpoint in one tx must not count twice.
+        let mut full = utxo_set.clone();
+        let err = full.apply_transaction(&tx, 2, 0).unwrap_err();
+        assert!(matches!(err, UtxoError::AlreadySpent(op) if op == outpoint));
+        assert_eq!(full.outputs, utxo_set.outputs);
+
+        // Trusted replay enforces the same rule.
+        let mut replay = utxo_set.clone();
+        let err = replay
+            .apply_transaction_trusted_replay(&tx, 2, 0)
+            .unwrap_err();
+        assert!(matches!(err, UtxoError::AlreadySpent(op) if op == outpoint));
+        assert_eq!(replay.outputs, utxo_set.outputs);
+    }
+
+    #[test]
+    fn cache_round_trip_rejects_duplicate_outpoints() {
+        let addr = Address::new(ChainId::ZionL1, vec![], "zion1test").unwrap();
+        let outpoint = Outpoint::new(Hash::new([1u8; 32]), 0);
+        let output = UtxoOutput {
+            amount: Amount::new(1),
+            address: addr,
+            script: vec![],
+            block_height: 0,
+            block_timestamp: 0,
+            is_coinbase: true,
+        };
+        let dup = vec![(outpoint, output.clone()), (outpoint, output.clone())];
+        assert!(matches!(
+            UtxoSet::from_cache_entries(dup, vec![]),
+            Err(UtxoError::DuplicateOutpoint(_))
+        ));
+
+        let unlock = "zion1unlockedaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string();
+        let set =
+            UtxoSet::from_cache_entries(vec![(outpoint, output)], vec![unlock.clone()]).unwrap();
+        assert_eq!(set.output_count(), 1);
+        assert!(set.is_admin_unlocked(&unlock));
+        assert_eq!(set.admin_unlocks_for_cache(), vec![unlock]);
     }
 }
