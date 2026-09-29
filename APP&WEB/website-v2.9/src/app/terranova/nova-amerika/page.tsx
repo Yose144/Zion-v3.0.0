@@ -30,7 +30,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
-  planned2027: { cs: `Plánováno 2027+`, en: `Planned 2027+` },
+  planned2029: { cs: `Plánováno 2029+`, en: `Planned 2029+` },
   bridgeSubtitle: { cs: `Nová Amerika · Most Amerik · Kostarika · Terra Nova ®`, en: `Nová Amerika · Americas Bridge · Costa Rica · Terra Nova ®` },
   quote: {
     cs: `"Nejdřív poslouchat, pak stavět. Most nespojuje břehy — spojuje lidi."`,
@@ -271,7 +271,7 @@ export default function NovaAmerikaPage() {
                     <span className="zion-badge">L5 · Terra Nova · Americas Bridge</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.planned2027[cs ? 'cs' : 'en']}
+                      {Copy.planned2029[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 
@@ -295,7 +295,7 @@ export default function NovaAmerikaPage() {
                     {[
                       { icon: Globe2, value: cs ? 'Středobod Amerik' : 'Midpoint of the Americas', labelCs: 'Osa', labelEn: 'Axis' },
                       { icon: Feather, value: cs ? 'Nativní kultury' : 'Native cultures', labelCs: 'Fokus', labelEn: 'Focus' },
-                      { icon: Sparkles, value: '2027–2031', labelCs: 'Fáze 0–3', labelEn: 'Phases 0–3' },
+                      { icon: Sparkles, value: '2029–2033', labelCs: 'Fáze 0–3', labelEn: 'Phases 0–3' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (

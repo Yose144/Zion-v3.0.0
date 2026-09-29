@@ -64,11 +64,11 @@ Mezi pyramidami vedou vodní kanály a pěší cesty. Okolo centrální zahrady 
 
 | Fáze | Název | Klíčové milníky |
 |----:|---|---|
-| 0 | Zárodek (2025 Q3–Q4) | Core team 3 strážců, scouting Algarve, právní rešerše, rozpočet 50 000 EUR, zkušební záhony 0,1 ha. |
-| 1 | Kořeny (2026) | Pozemek, registrace, solar 5 kWp, vrt, glamping 4–6 jednotek, 0,5 ha, první hosté Q3 2026, ZION wallet. |
-| 2 | Komunita (2027) | Guardian node, 3–5 eko-chat, měsíční program, LoRa mesh, Medical Table pavilon, propojení s Dharma Temple. |
-| 3 | Síť (2028) | 2 ha, semenná síť 3+ uzlů, vzdělávací centrum, surf škola, druhý uzel v Portugalsku. |
-| 4 | Výzařování (2029+) | Retreat centrum 40+ hostů, ZION platby výchozí, knowledge commons, 1 % přebytku → L6. |
+| 0 | Zárodek (2026–2028) | Core team 3 strážců, scouting Algarve, právní rešerše, rozpočet 50 000 EUR, zkušební záhony 0,1 ha. |
+| 1 | Kořeny (2029) | Pozemek, registrace, solar 5 kWp, vrt, glamping 4–6 jednotek, 0,5 ha, první hosté Q3 2029, ZION wallet. |
+| 2 | Komunita (2030) | Guardian node, 3–5 eko-chat, měsíční program, LoRa mesh, Medical Table pavilon, propojení s Dharma Temple. |
+| 3 | Síť (2031) | 2 ha, semenná síť 3+ uzlů, vzdělávací centrum, surf škola, druhý uzel v Portugalsku. |
+| 4 | Výzařování (2032+) | Retreat centrum 40+ hostů, ZION platby výchozí, knowledge commons, 1 % přebytku → L6. |
 
 ## ZION integrace
 

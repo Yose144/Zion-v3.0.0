@@ -43,10 +43,10 @@ Na stejném pozemku (nebo sousední parcele) je plánován **pozemní segment L6
 
 | Fáze | Období | Obsah |
 |------|--------|-------|
-| 0 — Poslouchání | 2027–2028 | Mapování teritorií, FPIC dialog, scouting lokalit (Talamanca / Boruca / Guanacaste), právní rešerše |
-| 1 — Pozemek | 2028–2029 | Akvizice (koupě / dlouhodobý pronájem), kruh starších, základní infrastruktura |
-| 2 — Komunita | 2029–2031 | Farma, semenná knihovna, Guardian node, první rezidence |
-| 3 — Síť | 2031+ | Sesterské uzly v dalších teritoriích Amerik, výměnné programy |
+| 0 — Poslouchání | 2026–2028 | Mapování teritorií, FPIC dialog, scouting lokalit (Talamanca / Boruca / Guanacaste), právní rešerše |
+| 1 — Pozemek | 2029–2030 | Akvizice (koupě / dlouhodobý pronájem), kruh starších, základní infrastruktura |
+| 2 — Komunita | 2031–2033 | Farma, semenná knihovna, Guardian node, první rezidence |
+| 3 — Síť | 2033+ | Sesterské uzly v dalších teritoriích Amerik, výměnné programy |
 
 ## Co projekt není
 

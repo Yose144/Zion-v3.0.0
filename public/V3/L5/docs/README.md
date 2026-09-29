@@ -62,16 +62,18 @@ V3/L5/docs/
 
 ---
 
-## Active Communities
+## Founding Communities
 
 | Community | Location | Archetype | Status | L5 Docs |
 |-----------|----------|-----------|--------|---------|
-| **Genesis Garden** | Algarve, Portugal | Base Camp — movement, ocean, farm | 🟡 Active development | [`COMMUNITIES/genesis-garden.md`](./COMMUNITIES/genesis-garden.md) |
+| **Genesis Garden** | Algarve, Portugal | Base Camp — movement, ocean, farm | 🔵 Preparation | [`COMMUNITIES/genesis-garden.md`](./COMMUNITIES/genesis-garden.md) |
 | **Dharma Temple** | La Palma, Canary Islands | Sanctuary — silence, meditation, volcano | 🔵 Preparation | [`COMMUNITIES/dharma-temple.md`](./COMMUNITIES/dharma-temple.md) |
-| **Te Pīko Ora** | Raiatea / Tahiti, French Polynesia | Crown — paradise, marine permaculture, wayfinding | 🔵 Vision / Preparation | [`COMMUNITIES/te-piko-ora.md`](./COMMUNITIES/te-piko-ora.md) |
+| **Te Pīko Ora** | Raiatea / Tahiti, French Polynesia | Crown — paradise, marine permaculture, wayfinding | 🔵 Preparation | [`COMMUNITIES/te-piko-ora.md`](./COMMUNITIES/te-piko-ora.md) |
 | **Golden Republic Bohemia** | Bohemia, Czech Republic | Heart — governance lab, circle of decision, Czech wisdom | 🔵 Preparation | [`COMMUNITIES/golden-republic-bohemia.md`](./COMMUNITIES/golden-republic-bohemia.md) |
-| **Bodhi Lanka** | Sri Lanka | Akasha — love (Rama-Sita), Bodhi tree, Bhakti protocol | 🔵 Vision / Preparation | [`COMMUNITIES/bodhi-lanka.md`](./COMMUNITIES/bodhi-lanka.md) |
-| **LUMI — Nová Amerika** | Costa Rica | Bridge & Memory — native cultures of the Americas, FPIC, shared land with L6 ground station | 🔵 Vision / Preparation | [`COMMUNITIES/nova-amerika.md`](./COMMUNITIES/nova-amerika.md) |
+| **Bodhi Lanka** | Sri Lanka | Akasha — love (Rama-Sita), Bodhi tree, Bhakti protocol | 🔵 Preparation | [`COMMUNITIES/bodhi-lanka.md`](./COMMUNITIES/bodhi-lanka.md) |
+| **LUMI — Nová Amerika** | Costa Rica | Bridge & Memory — native cultures of the Americas, FPIC, shared land with L6 ground station | 🔵 Preparation | [`COMMUNITIES/nova-amerika.md`](./COMMUNITIES/nova-amerika.md) |
+
+*All six communities are in preparation until 2028 — construction starts no earlier than 2029, after OASIS.*
 
 ---
 

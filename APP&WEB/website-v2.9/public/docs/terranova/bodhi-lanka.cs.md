@@ -64,11 +64,11 @@ Mezi pavilony vedou kryté chodby (evokace chrámových koridorů) a pěší ces
 
 | Fáze | Název | Klíčové milníky |
 |----:|---|---|
-| 0 | Zárodek (2026 Q3–Q4) | Core team 3–5 strážců, scouting Srí Lanka (Anuradhapura / hill country / south coast), právní rešerše (NGO vs company vs cooperative), rozpočet 80 000 EUR, zkušební záhony 0,3 ha, partnerství s buddhistickou sanghou. |
-| 1 | Kořeny (2027) | Pozemek (dlouhodobý nájem / partnerství), registrace, solar 10 kWp, cisterna, eko-chaty 4–6 jednotek, 1,5 ha, první hosté Q4 2027, ZION wallet + DAO rámec, výsadba Bodhi aleje. |
-| 2 | Komunita (2028) | Guardian node, stálé bydlení 3–5 chat, měsíční governance program, LoRa mesh, Medical Table pavilon (Ayurveda), propojení s Genesis Garden, Dharma Temple a Te Pīko Ora. |
-| 3 | Síť (2029) | 4 ha, semenná síť 3+ uzlů, univerzita a škola (ayurvedské vzdělávací centrum + Bhakti Governance akademie), druhý uzel v Asii. |
-| 4 | Výzařování (2030+) | Probuzené retreat centrum 40+ hostů, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první protokol Bhakti Governance v praxi. |
+| 0 | Zárodek (2026–2028) | Core team 3–5 strážců, scouting Srí Lanka (Anuradhapura / hill country / south coast), právní rešerše (NGO vs company vs cooperative), rozpočet 80 000 EUR, zkušební záhony 0,3 ha, partnerství s buddhistickou sanghou. |
+| 1 | Kořeny (2029) | Pozemek (dlouhodobý nájem / partnerství), registrace, solar 10 kWp, cisterna, eko-chaty 4–6 jednotek, 1,5 ha, první hosté Q4 2029, ZION wallet + DAO rámec, výsadba Bodhi aleje. |
+| 2 | Komunita (2030) | Guardian node, stálé bydlení 3–5 chat, měsíční governance program, LoRa mesh, Medical Table pavilon (Ayurveda), propojení s Genesis Garden, Dharma Temple a Te Pīko Ora. |
+| 3 | Síť (2031) | 4 ha, semenná síť 3+ uzlů, univerzita a škola (ayurvedské vzdělávací centrum + Bhakti Governance akademie), druhý uzel v Asii. |
+| 4 | Výzařování (2032+) | Probuzené retreat centrum 40+ hostů, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první protokol Bhakti Governance v praxi. |
 
 ## ZION integrace
 
@@ -103,8 +103,8 @@ Mezi pavilony vedou kryté chodby (evokace chrámových koridorů) a pěší ces
 | **Rámájana, Rama a Sita** | **MÝTUS / kulturní fakt** | Rámájana (Valmiki) — staroindický epos, veřejně doložený; příběh Ramy a Sity je kulturní dědictví Indie a Srí Lanky. | — |
 | **Rama Setu (Adam's Bridge)** | **MÝTUS + geologický útvar** | Rama Setu — pás pískových břehů a kamenných bloků mezi Indií a Srí Lankou; geologicky ověřitelný útvar, kulturně spojovaný s Rámájanou. NASA satelitní snímky veřejně dostupné. | — |
 | **Bodhi Gaia jako koncept** | **MÝTUS** (narrativní rámec) | `docs/WP-Mainet/BodhiGaia/` — kniha Země, probuzená Země jako narativní rámec pro L5 Free World. | — |
-| **Bodhi Lanka projekt** | **HORIZONT** (dokumentace) | Tento dokument; `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — protokol soužití, horizont 2027–2030. | Fyzický uzel, tým, protokol v praxi, pozemek. |
-| **Guardian Node, DAO, multisig** | **HORIZONT** | Specifikace `public/V3/L5/docs/TECH/zion-node-spec.md`; split 90/10 v komunitních dokumentech. | Žádný L5 node na Srí Lance neběží; instalace Fáze 2 (2028). |
+| **Bodhi Lanka projekt** | **HORIZONT** (dokumentace) | Tento dokument; `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — protokol soužití, horizont 2029–2032. | Fyzický uzel, tým, protokol v praxi, pozemek. |
+| **Guardian Node, DAO, multisig** | **HORIZONT** | Specifikace `public/V3/L5/docs/TECH/zion-node-spec.md`; split 90/10 v komunitních dokumentech. | Žádný L5 node na Srí Lance neběží; instalace Fáze 2 (2030). |
 | **Ayurvedská partnerství** | **HORIZONT** | Ayurvedské instituce Srí Lanky (University of Colombo, Gampaha Wickramarachchi) — veřejně existující instituce. | Žádný kontakt není doložen; MOU není podepsáno. |
 | **Ekonomický model (break-even, příjmy)** | **HYPOTÉZA** | Podle vzoru Genesis Garden §4 komunitního dokumentu a Te Pīko Ora §4. | Skutečné účetnictví po první sezóně. |
 

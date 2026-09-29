@@ -61,8 +61,8 @@ const PROJECTS: ProjectCardData[] = [
     title: 'Zahrada Genesis',
     location: 'Algarve · Portugalsko',
     eyebrow: 'L5 · Portugal Base Camp',
-    statusCs: 'Aktivní rozvoj',
-    statusEn: 'Active development',
+    statusCs: 'V přípravě',
+    statusEn: 'In preparation',
     descriptionCs:
       'Atlantický uzel Terra Nova pro farmaření, glamping, vodu, energii a první dlouhodobou komunitní infrastrukturu.',
     descriptionEn:
@@ -74,7 +74,7 @@ const PROJECTS: ProjectCardData[] = [
       { icon: Trees, labelCs: 'Sázení stromů', labelEn: 'Tree planting' },
     ],
     metrics: [
-      { value: '2026', labelCs: 'Aktivní fáze', labelEn: 'Active phase' },
+      { value: '2029', labelCs: 'Stavba od', labelEn: 'Build from' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'EU', labelCs: 'Region', labelEn: 'Region' },
     ],

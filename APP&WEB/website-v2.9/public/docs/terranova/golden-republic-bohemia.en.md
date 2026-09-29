@@ -65,11 +65,11 @@ Covered corridors (evoking Karlštejn's passageways) and walking paths connect t
 
 | Phase | Name | Key milestones |
 |----:|---|---|
-| 0 | Seed (2026 Q3–Q4) | Core team 3–5 guardians, scouting Bohemia, legal research (z.s. vs z.ú. vs community foundation), budget 60 000 EUR, trial plots 0.2 ha. |
-| 1 | Roots (2027) | Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2027, ZION wallet + DAO framework. |
-| 2 | Community (2028) | Guardian node, permanent housing 3–5 cabins, monthly governance program, LoRa mesh, Medical Table pavilion, connection with Genesis Garden and Dharma Temple. |
-| 3 | Network (2029) | 3 ha, seed network 3+ nodes, education center (Wayfinding Governance school), second node in Bohemia or Slovakia. |
-| 4 | Radiance (2030+) | Governance retreat center 40+ guests, Golden House as the seat of the DAO parliament, ZION payments as default, knowledge commons, 1% surplus → L6, first working prototype of the Golden Republic in practice. |
+| 0 | Seed (2026–2028) | Core team 3–5 guardians, scouting Bohemia, legal research (z.s. vs z.ú. vs community foundation), budget 60 000 EUR, trial plots 0.2 ha. |
+| 1 | Roots (2029) | Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2029, ZION wallet + DAO framework. |
+| 2 | Community (2030) | Guardian node, permanent housing 3–5 cabins, monthly governance program, LoRa mesh, Medical Table pavilion, connection with Genesis Garden and Dharma Temple. |
+| 3 | Network (2031) | 3 ha, seed network 3+ nodes, education center (Wayfinding Governance school), second node in Bohemia or Slovakia. |
+| 4 | Radiance (2032+) | Governance retreat center 40+ guests, Golden House as the seat of the DAO parliament, ZION payments as default, knowledge commons, 1% surplus → L6, first working prototype of the Golden Republic in practice. |
 
 ## ZION Integration
 
@@ -104,10 +104,10 @@ Covered corridors (evoking Karlštejn's passageways) and walking paths connect t
 |---|---|---|---|
 | **Salt of the earth, Přemysl the Ploughman, Libuše** | **MYTH / cultural fact** | Czech legends (Cosmas, *Chronica Boemorum* 12th c.), Přemyslid dynasty — publicly documented. | — |
 | **Charles IV, Golden Bull, Charles Bridge, Charles University** | **LIVE** (historical facts) | Publicly verifiable historical records; Golden Bull 1356 in archives; Charles Bridge stands; university operates. | — |
-| **Golden Republic as a concept** | **HORIZON** (documentation) | `docs/TerraNova/06-L5-SVOBODA.md` §6.6, `docs/TerraNova/BASE_FINAL/08-SVOBODA.md` — 8 principles, horizon 2030–2035. | Physical node, team, protocol in practice. |
+| **Golden Republic as a concept** | **HORIZON** (documentation) | `docs/TerraNova/06-L5-SVOBODA.md` §6.6, `docs/TerraNova/BASE_FINAL/08-SVOBODA.md` — 8 principles, horizon 2032–2037. | Physical node, team, protocol in practice. |
 | **Říp, Elbe valley, Czech landscape** | **LIVE** (facts about the place) | Říp (456 m), national cultural monument, publicly accessible. | Specific site location not chosen. |
 | **Decision circle, pavilions, permaculture** | **HORIZON** (concept) | This document. | Land, building permit, structural engineering, construction budget. |
-| **Guardian Node, DAO, multisig** | **HORIZON** | Specification `public/V3/L5/docs/TECH/zion-node-spec.md`; 90/10 split in community documents. | No L5 node runs in Bohemia; installation Phase 2 (2028). |
+| **Guardian Node, DAO, multisig** | **HORIZON** | Specification `public/V3/L5/docs/TECH/zion-node-spec.md`; 90/10 split in community documents. | No L5 node runs in Bohemia; installation Phase 2 (2030). |
 | **Seed library, Medical Table, mesh** | **HORIZON** | Specifications `TECH/`, `PROTOCOLS/`; protocols shared with Genesis Garden and Dharma Temple. | Implementation; partners; first exchange with other nodes. |
 | **Partnerships with Czech universities** | **HORIZON** | Charles University (1348), ČZU — publicly existing institutions. | No contact documented; no MOU signed. |
 | **Economic model (break-even, revenue)** | **HYPOTHESIS** | Based on Genesis Garden §4 community document template. | Real accounting after first season. |

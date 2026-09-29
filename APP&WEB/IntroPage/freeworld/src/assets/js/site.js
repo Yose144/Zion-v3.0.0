@@ -22,6 +22,7 @@
       'projects.lead': 'Každá komunita je skutečný pozemek, reálný tým a veřejný rozpočet z L5 fondu. Vyber projekt pro plný masterplan, fáze rozvoje a governance model.',
       'projects.more': 'Otevřít projekt →',
       'status.development': 'Aktivní rozvoj', 'status.preparation': 'V přípravě', 'status.vision': 'Plánováno',
+      'status.allprep': 'Všechny komunity — příprava do 2028 · stavba od 2029',
       'map.kicker': 'Planetární mapa',
       'map.title': 'Od Algarve po Raiatea',
       'map.lead': 'Šest geografických uzlů napříč kontinenty — Evropa, Afrika, Amerika, Polynésie, Asie.',
@@ -64,6 +65,7 @@
       'docs.enonly': 'Dokumentace je vedená v angličtině; česká verze projektových plánů je na stránkách jednotlivých komunit.',
       'board.title': 'Masterplan board', 'board.note': 'Klikni pro zvětšení.',
       'meta.status': 'Stav', 'meta.location': 'Lokace', 'meta.grant': 'Zakládající grant', 'meta.budget': 'Rozpočet projektu',
+      'meta.timeline': 'Časový plán',
       'nav.back': '← Všechny projekty', 'nav.prev': '← Předchozí', 'nav.next': 'Další →',
     },
     en: {
@@ -80,6 +82,7 @@
       'projects.lead': 'Every community is real land, a real team and a public budget from the L5 fund. Pick a project for the full masterplan, development phases and governance model.',
       'projects.more': 'Open project →',
       'status.development': 'Active development', 'status.preparation': 'In preparation', 'status.vision': 'Planned',
+      'status.allprep': 'All communities — preparation until 2028 · construction from 2029',
       'map.kicker': 'Planetary map',
       'map.title': 'From the Algarve to Raiatea',
       'map.lead': 'Six geographic nodes across continents — Europe, Africa, the Americas, Polynesia, Asia.',
@@ -122,6 +125,7 @@
       'docs.enonly': '',
       'board.title': 'Masterplan board', 'board.note': 'Click to zoom.',
       'meta.status': 'Status', 'meta.location': 'Location', 'meta.grant': 'Founding grant', 'meta.budget': 'Project budget',
+      'meta.timeline': 'Timeline',
       'nav.back': '← All projects', 'nav.prev': '← Previous', 'nav.next': 'Next →',
     },
   };

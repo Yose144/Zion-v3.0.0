@@ -4,7 +4,7 @@
 >
 > **Location:** Algarve / western coast, Portugal
 > **Climate:** Mediterranean Atlantic — 300+ sunny days, ocean wind
-> **Status:** 🟡 Active development
+> **Status:** 🟡 Preparation — construction earliest 2029 (post-Oasis)
 > **Last modified:** 2026-05-21
 
 ---
@@ -146,7 +146,7 @@ The intent is not perfection — the intent is **real operation open to people**
 | **Power draw** | 15–25W (fits within solar budget) |
 | **Connectivity** | Starlink / 4G failover / LoRa mesh relay |
 | **Revenue split** | 90% operator (covers hardware, electricity, bandwidth) / 10% community treasury |
-| **Installation target** | Phase 2 (2027) |
+| **Installation target** | Phase 2 (2030) |
 
 ### 5.2 Wallet Structure
 
@@ -219,24 +219,24 @@ General Circle (all Guardians + long-stay members)
 
 ## 7. Development Timeline
 
-### Phase 0 — Seed (2025 Q3–Q4) ✅
+### Phase 0 — Seed (2026–2028) 🟡
 - [x] Core team formation (3 Guardians)
 - [x] Land scouting (Algarve region)
 - [x] Legal research (Associação vs Cooperativa)
 - [x] Budget draft (EUR 50,000 Phase 1)
 - [x] First trial crops (0.1 ha)
 
-### Phase 1 — Roots (2026 Q1–Q4) 🟡
+### Phase 1 — Roots (2029) 🔵
 - [ ] Land acquisition / long-term lease
 - [ ] Legal entity registration
 - [ ] Solar installation (5 kWp)
 - [ ] Well drilling + water system
 - [ ] Glamping infrastructure (4–6 units)
 - [ ] Basic farm operations (0.5 ha)
-- [ ] First paying guests (Q3 2026)
+- [ ] First paying guests (Q3 2029)
 - [ ] ZION wallet setup + DAO framework
 
-### Phase 2 — Community (2027)
+### Phase 2 — Community (2030)
 - [ ] Guardian node installation
 - [ ] Permanent housing (3–5 eco-cabins)
 - [ ] Workshop / event program (monthly)
@@ -245,7 +245,7 @@ General Circle (all Guardians + long-stay members)
 - [ ] Revenue target: EUR 150,000/year
 - [ ] Connection to Dharma Temple (shared protocols)
 
-### Phase 3 — Network (2028)
+### Phase 3 — Network (2031)
 - [ ] Expansion to 2 ha cultivation
 - [ ] Seed library network (3+ L5 nodes)
 - [ ] Educational center operational
@@ -253,7 +253,7 @@ General Circle (all Guardians + long-stay members)
 - [ ] Revenue target: EUR 300,000/year
 - [ ] Second L5 node in Portugal (expansion or partnership)
 
-### Phase 4 — Radiance (2029+)
+### Phase 4 — Radiance (2032+)
 - [ ] Retreat center (40+ guests)
 - [ ] ZION-native payments default
 - [ ] Knowledge commons published
@@ -338,12 +338,12 @@ General Circle (all Guardians + long-stay members)
 
 **Work exchange ratio:** 2 work-exchanged guests per 4 paying guests (max). Ensures labor while maintaining revenue.
 
-### 11.4 Launch Campaign (Q3 2026)
+### 11.4 Launch Campaign (Q3 2029)
 
 - **Month 1 (Jul):** "Soft open" — friends, family, ZION community. Collect photos, testimonials, fix issues.
 - **Month 2 (Aug):** "Guardian week" — free stays for 10 Guardians from other nodes. Content creation blitz.
 - **Month 3 (Sep):** "Public launch" — paid guests, full pricing, all channels active.
-- **Goal:** 60% occupancy by Q4 2026.
+- **Goal:** 60% occupancy by Q4 2029.
 
 ---
 
@@ -361,7 +361,7 @@ General Circle (all Guardians + long-stay members)
 **Action items:**
 - [ ] Register entity (Associação) to unlock grant eligibility
 - [ ] Hire grant writer / partner with local development agency (ADRA, INAlentejo)
-- [ ] Prepare first LEADER application (2026 call)
+- [ ] Prepare first LEADER application (2027 call)
 - [ ] Build Erasmus+ partnership network (3+ EU countries)
 
 ---

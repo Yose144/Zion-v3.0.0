@@ -7,9 +7,9 @@
  * is gated behind an IntersectionObserver — initializing inside the
  * `content-visibility:auto` / `whileInView` page sections before they are
  * on-screen leaves Leaflet with a zero-sized viewport and blank tiles.
- * Styled with the dark CARTO basemap and glowing div-icon markers coloured
- * by community status (gold = active development, cyan = preparation,
- * purple = planned).
+ * Styled with the Esri Dark Gray Canvas basemap and glowing div-icon
+ * markers coloured by community status. All six founding communities are
+ * in preparation until 2028 — construction starts no earlier than 2029.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -26,6 +26,10 @@ const copy = {
     vision: { cs: 'Plánováno', en: 'Planned' },
   },
   legendTitle: { cs: 'Stav komunit', en: 'Community status' },
+  legendPrep: {
+    cs: 'Všechny komunity — příprava do 2028 · stavba od 2029',
+    en: 'All communities — preparation until 2028 · construction from 2029',
+  },
   detail: { cs: 'Otevřít stránku komunity →', en: 'Open community page →' },
   sixCommunities: { cs: '6 zakládajících komunit', en: '6 founding communities' },
 };
@@ -201,12 +205,10 @@ export default function FreeWorldMap() {
       />
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-400">
         <span className="uppercase tracking-widest text-gray-500">{copy.legendTitle[cs ? 'cs' : 'en']}</span>
-        {(Object.keys(copy.status) as FreeWorldSite['status'][]).map((s) => (
-          <span key={s} className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR[s] }} />
-            {copy.status[s][cs ? 'cs' : 'en']}
-          </span>
-        ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.preparation }} />
+          {copy.legendPrep[cs ? 'cs' : 'en']}
+        </span>
         <span className="ml-auto text-gray-500">{copy.sixCommunities[cs ? 'cs' : 'en']}</span>
       </div>
     </div>

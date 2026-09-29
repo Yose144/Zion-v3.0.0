@@ -64,11 +64,11 @@ Covered corridors (evoking temple passageways) and walking paths connect the pav
 
 | Phase | Name | Key milestones |
 |----:|---|---|
-| 0 | Seed (2026 Q3–Q4) | Core team 3–5 guardians, scouting Sri Lanka (Anuradhapura / hill country / south coast), legal research (NGO vs company vs cooperative), budget 80 000 EUR, trial plots 0.3 ha, partnership with Buddhist sangha. |
-| 1 | Roots (2027) | Land (long-term lease / partnership), registration, solar 10 kWp, cistern, eco-cabins 4–6 units, 1.5 ha, first guests Q4 2027, ZION wallet + DAO framework, planting of Bodhi avenue. |
-| 2 | Community (2028) | Guardian node, permanent housing 3–5 cabins, monthly governance program, LoRa mesh, Medical Table pavilion (Ayurveda), connection with Genesis Garden, Dharma Temple, and Te Pīko Ora. |
-| 3 | Network (2029) | 4 ha, seed network 3+ nodes, university and school (Ayurvedic education center + Bhakti Governance academy), second node in Asia. |
-| 4 | Radiance (2030+) | Awakened retreat center 40+ guests, ZION payments as default, knowledge commons, 1% surplus → L6, first Bhakti Governance protocol in practice. |
+| 0 | Seed (2026–2028) | Core team 3–5 guardians, scouting Sri Lanka (Anuradhapura / hill country / south coast), legal research (NGO vs company vs cooperative), budget 80 000 EUR, trial plots 0.3 ha, partnership with Buddhist sangha. |
+| 1 | Roots (2029) | Land (long-term lease / partnership), registration, solar 10 kWp, cistern, eco-cabins 4–6 units, 1.5 ha, first guests Q4 2029, ZION wallet + DAO framework, planting of Bodhi avenue. |
+| 2 | Community (2030) | Guardian node, permanent housing 3–5 cabins, monthly governance program, LoRa mesh, Medical Table pavilion (Ayurveda), connection with Genesis Garden, Dharma Temple, and Te Pīko Ora. |
+| 3 | Network (2031) | 4 ha, seed network 3+ nodes, university and school (Ayurvedic education center + Bhakti Governance academy), second node in Asia. |
+| 4 | Radiance (2032+) | Awakened retreat center 40+ guests, ZION payments as default, knowledge commons, 1% surplus → L6, first Bhakti Governance protocol in practice. |
 
 ## ZION Integration
 
@@ -103,8 +103,8 @@ Covered corridors (evoking temple passageways) and walking paths connect the pav
 | **Ramayana, Rama and Sita** | **MYTH / cultural fact** | Ramayana (Valmiki) — ancient Indian epic, publicly documented; the story of Rama and Sita is the cultural heritage of India and Sri Lanka. | — |
 | **Rama Setu (Adam's Bridge)** | **MYTH + geological feature** | Rama Setu — a chain of sandbanks and stone blocks between India and Sri Lanka; geologically verifiable feature, culturally linked to the Ramayana. NASA satellite imagery publicly available. | — |
 | **Bodhi Gaia as a concept** | **MYTH** (narrative frame) | `docs/WP-Mainet/BodhiGaia/` — Book of the Earth, awakened Earth as the narrative frame for the L5 Free World. | — |
-| **Bodhi Lanka project** | **HORIZON** (documentation) | This document; `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — protocol of coexistence, horizon 2027–2030. | Physical node, team, protocol in practice, land. |
-| **Guardian Node, DAO, multisig** | **HORIZON** | Specification `public/V3/L5/docs/TECH/zion-node-spec.md`; 90/10 split in community documents. | No L5 node runs in Sri Lanka; installation Phase 2 (2028). |
+| **Bodhi Lanka project** | **HORIZON** (documentation) | This document; `docs/TerraNova/06-L5-SVOBODA.md` §6.6 — protocol of coexistence, horizon 2029–2032. | Physical node, team, protocol in practice, land. |
+| **Guardian Node, DAO, multisig** | **HORIZON** | Specification `public/V3/L5/docs/TECH/zion-node-spec.md`; 90/10 split in community documents. | No L5 node runs in Sri Lanka; installation Phase 2 (2030). |
 | **Ayurvedic partnerships** | **HORIZON** | Sri Lankan Ayurvedic institutions (University of Colombo, Gampaha Wickramarachchi) — publicly existing institutions. | No contact documented; no MOU signed. |
 | **Economic model (break-even, revenue)** | **HYPOTHESIS** | Based on Genesis Garden §4 community document template and Te Pīko Ora §4. | Real accounting after first season. |
 

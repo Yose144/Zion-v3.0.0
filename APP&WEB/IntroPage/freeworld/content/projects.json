@@ -3,120 +3,204 @@
     "slug": "genesis-garden",
     "docSlug": "genesis-garden",
     "name": "Genesis Garden",
-    "subtitle": { "cs": "Three Pyramids · Terra Nova Base Camp", "en": "Three Pyramids · Terra Nova Base Camp" },
+    "subtitle": {
+      "cs": "Three Pyramids · Terra Nova Base Camp",
+      "en": "Three Pyramids · Terra Nova Base Camp"
+    },
     "tagline": {
       "cs": "První fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se potkává půda, oceán, komunita a ZION.",
       "en": "The first physical Terra Nova node in Europe — an eco-farm on the Atlantic coast of the Algarve where soil, ocean, community and ZION meet."
     },
-    "location": { "cs": "Algarve, Portugalsko", "en": "Algarve, Portugal" },
-    "status": "development",
+    "location": {
+      "cs": "Algarve, Portugalsko",
+      "en": "Algarve, Portugal"
+    },
+    "status": "preparation",
     "lat": 37.17,
     "lon": -8.62,
     "accent": "#fcd116",
-    "tags": ["Permaculture", "Guardian Node", "DAO Circle"],
+    "tags": [
+      "Permaculture",
+      "Guardian Node",
+      "DAO Circle"
+    ],
     "renderImg": "genesis-garden/render.webp",
     "boardImg": "genesis-garden/board.webp",
     "appHref": "https://app.zionterranova.com/terranova/genesis",
-    "grantTitle": "Genesis Garden — founding tranche"
+    "grantTitle": "Genesis Garden — founding tranche",
+    "timeline": {
+      "cs": "Příprava 2026–2028 · stavba od 2029",
+      "en": "Preparation 2026–2028 · construction from 2029"
+    }
   },
   {
     "slug": "dharma-temple",
     "docSlug": "dharma-temple",
     "name": "Dharma Temple",
-    "subtitle": { "cs": "Nova Bodhi Gaia — místo osvícení", "en": "Nova Bodhi Gaia — a place of awakening" },
+    "subtitle": {
+      "cs": "Nova Bodhi Gaia — místo osvícení",
+      "en": "Nova Bodhi Gaia — a place of awakening"
+    },
     "tagline": {
       "cs": "Sedm geodetických kopulí kolem posvátného Stromu života — chrám postavený na geometrii Merkaby na La Palmě.",
       "en": "Seven geodesic domes around the sacred Tree of Life — a temple built on Merkaba geometry on La Palma."
     },
-    "location": { "cs": "La Palma — Terra Nova Sanctuary", "en": "La Palma — Terra Nova Sanctuary" },
+    "location": {
+      "cs": "La Palma — Terra Nova Sanctuary",
+      "en": "La Palma — Terra Nova Sanctuary"
+    },
     "status": "preparation",
     "lat": 28.66,
     "lon": -17.87,
     "accent": "#06b6d4",
-    "tags": ["Education", "Off-grid", "Meditation"],
+    "tags": [
+      "Education",
+      "Off-grid",
+      "Meditation"
+    ],
     "renderImg": "dharma-temple/render.webp",
     "boardImg": "dharma-temple/board.webp",
     "appHref": "https://app.zionterranova.com/terranova/dharma-temple",
-    "grantTitle": "Dharma Temple — founding tranche"
+    "grantTitle": "Dharma Temple — founding tranche",
+    "timeline": {
+      "cs": "Příprava 2026–2028 · stavba od 2029",
+      "en": "Preparation 2026–2028 · construction from 2029"
+    }
   },
   {
     "slug": "te-piko-ora",
     "docSlug": "te-piko-ora",
     "name": "Te Pīko Ora",
-    "subtitle": { "cs": "Pupek života — Raiatea", "en": "Navel of life — Raiatea" },
+    "subtitle": {
+      "cs": "Pupek života — Raiatea",
+      "en": "Navel of life — Raiatea"
+    },
     "tagline": {
       "cs": "Polynéská kulturní renesance na posvátném ostrově Raiatea — kolébka pacifické civilizace, Taputapuātea a živá tradice.",
       "en": "Polynesian cultural revival on the sacred island of Raiatea — cradle of Pacific civilisation, Taputapuātea and living tradition."
     },
-    "location": { "cs": "Raiatea, Francouzská Polynésie", "en": "Raiatea, French Polynesia" },
-    "status": "vision",
+    "location": {
+      "cs": "Raiatea, Francouzská Polynésie",
+      "en": "Raiatea, French Polynesia"
+    },
+    "status": "preparation",
     "lat": -16.83,
     "lon": -151.44,
     "accent": "#a855f7",
-    "tags": ["Cultural Revival", "Heritage", "L5 Fund"],
+    "tags": [
+      "Cultural Revival",
+      "Heritage",
+      "L5 Fund"
+    ],
     "renderImg": "te-piko-ora/render.webp",
     "boardImg": "te-piko-ora/board.webp",
     "appHref": "https://app.zionterranova.com/terranova/te-piko-ora",
-    "grantTitle": "Te Pīko Ora — founding tranche"
+    "grantTitle": "Te Pīko Ora — founding tranche",
+    "timeline": {
+      "cs": "Příprava 2026–2028 · stavba od 2029",
+      "en": "Preparation 2026–2028 · construction from 2029"
+    }
   },
   {
     "slug": "golden-republic-bohemia",
     "docSlug": "golden-republic-bohemia",
     "name": "Golden Republic Bohemia",
-    "subtitle": { "cs": "Zlatá republika — srdce Evropy", "en": "Golden Republic — the heart of Europe" },
+    "subtitle": {
+      "cs": "Zlatá republika — srdce Evropy",
+      "en": "Golden Republic — the heart of Europe"
+    },
     "tagline": {
       "cs": "Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.",
       "en": "Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe."
     },
-    "location": { "cs": "Čechy, Česká republika", "en": "Bohemia, Czech Republic" },
-    "status": "vision",
+    "location": {
+      "cs": "Čechy, Česká republika",
+      "en": "Bohemia, Czech Republic"
+    },
+    "status": "preparation",
     "lat": 50.05,
     "lon": 15.45,
     "accent": "#a855f7",
-    "tags": ["Governance", "DAO Circle", "Golden Republic"],
+    "tags": [
+      "Governance",
+      "DAO Circle",
+      "Golden Republic"
+    ],
     "renderImg": "golden-republic-bohemia/render.webp",
     "boardImg": "golden-republic-bohemia/board.webp",
     "appHref": "https://app.zionterranova.com/terranova/golden-republic-bohemia",
-    "grantTitle": "Golden Republic Bohemia — founding tranche"
+    "grantTitle": "Golden Republic Bohemia — founding tranche",
+    "timeline": {
+      "cs": "Příprava 2026–2028 · stavba od 2029",
+      "en": "Preparation 2026–2028 · construction from 2029"
+    }
   },
   {
     "slug": "bodhi-lanka",
     "docSlug": "bodhi-lanka",
     "name": "Bodhi Lanka",
-    "subtitle": { "cs": "Akáša uzel — Srí Lanka", "en": "Akasha node — Sri Lanka" },
+    "subtitle": {
+      "cs": "Akáša uzel — Srí Lanka",
+      "en": "Akasha node — Sri Lanka"
+    },
     "tagline": {
       "cs": "Prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.",
       "en": "The space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol."
     },
-    "location": { "cs": "Srí Lanka", "en": "Sri Lanka" },
-    "status": "vision",
+    "location": {
+      "cs": "Srí Lanka",
+      "en": "Sri Lanka"
+    },
+    "status": "preparation",
     "lat": 7.87,
     "lon": 80.65,
     "accent": "#a855f7",
-    "tags": ["Bhakti", "Ayurveda", "Bodhi Tree"],
+    "tags": [
+      "Bhakti",
+      "Ayurveda",
+      "Bodhi Tree"
+    ],
     "renderImg": "bodhi-lanka/render.webp",
     "boardImg": "bodhi-lanka/board.webp",
     "appHref": "https://app.zionterranova.com/terranova/bodhi-lanka",
-    "grantTitle": "Bodhi Lanka — founding tranche"
+    "grantTitle": "Bodhi Lanka — founding tranche",
+    "timeline": {
+      "cs": "Příprava 2026–2028 · stavba od 2029",
+      "en": "Preparation 2026–2028 · construction from 2029"
+    }
   },
   {
     "slug": "lumi-nova-amerika",
     "docSlug": "nova-amerika",
     "name": "LUMI · Nová Amerika",
-    "subtitle": { "cs": "Most Amerik — Kostarika", "en": "Americas bridge — Costa Rica" },
+    "subtitle": {
+      "cs": "Most Amerik — Kostarika",
+      "en": "Americas bridge — Costa Rica"
+    },
     "tagline": {
       "cs": "Projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.",
       "en": "A project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station."
     },
-    "location": { "cs": "Kostarika · Nová Amerika", "en": "Costa Rica · Nová Amerika" },
-    "status": "vision",
+    "location": {
+      "cs": "Kostarika · Nová Amerika",
+      "en": "Costa Rica · Nová Amerika"
+    },
+    "status": "preparation",
     "lat": 9.75,
     "lon": -83.75,
     "accent": "#a855f7",
-    "tags": ["Native Cultures", "FPIC", "Americas Bridge"],
+    "tags": [
+      "Native Cultures",
+      "FPIC",
+      "Americas Bridge"
+    ],
     "renderImg": "lumi-nova-amerika/render.webp",
     "boardImg": "lumi-nova-amerika/board.webp",
     "appHref": "https://app.zionterranova.com/terranova/nova-amerika",
-    "grantTitle": "LUMI Nova Amerika — founding tranche"
+    "grantTitle": "LUMI Nova Amerika — founding tranche",
+    "timeline": {
+      "cs": "Příprava 2026–2028 · stavba od 2029",
+      "en": "Preparation 2026–2028 · construction from 2029"
+    }
   }
 ]

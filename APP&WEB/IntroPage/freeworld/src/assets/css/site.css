@@ -426,6 +426,9 @@ body.fw-menu-open { overflow: hidden; }
 .fw-badge.approved, .fw-badge.active, .fw-badge.open { color: var(--green); border-color: rgba(30,158,90,0.5); }
 .fw-badge.planning, .fw-badge.under_review, .fw-badge.tallying { color: var(--cyan); border-color: rgba(6,182,212,0.5); }
 .fw-badge.pending, .fw-badge.draft { color: var(--text-dim); }
+.fw-badge.development { color: var(--gold); border-color: rgba(252,209,22,0.5); }
+.fw-badge.preparation { color: var(--cyan); border-color: rgba(6,182,212,0.5); }
+.fw-badge.vision { color: var(--purple); border-color: rgba(168,85,247,0.5); }
 
 /* ── QV ──────────────────────────────────────────────────────── */
 .fw-qv-round {

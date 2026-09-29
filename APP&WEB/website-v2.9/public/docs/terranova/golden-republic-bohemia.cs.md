@@ -65,11 +65,11 @@ Mezi pavilony vedou kryté chodby (evokace karlštejnských koridorů) a pěší
 
 | Fáze | Název | Klíčové milníky |
 |----:|---|---|
-| 0 | Zárodek (2026 Q3–Q4) | Core team 3–5 strážců, scouting Čechy, právní rešerše (z.s. vs z.ú. vs komunitní nadace), rozpočet 60 000 EUR, zkušební záhony 0,2 ha. |
-| 1 | Kořeny (2027) | Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2027, ZION wallet + DAO rámec. |
-| 2 | Komunita (2028) | Guardian node, stálé bydlení 3–5 chat, měsíční governance program, LoRa mesh, Medical Table pavilon, propojení s Genesis Garden a Dharma Temple. |
-| 3 | Síť (2029) | 3 ha, semenná síť 3+ uzlů, vzdělávací centrum (Wayfinding Governance škola), druhý uzel v Čechách nebo na Slovensku. |
-| 4 | Výzařování (2030+) | Governance retreat centrum 40+ hostů, Zlatý dům jako sídlo DAO parlamentu, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první prototyp Zlaté republiky v praxi. |
+| 0 | Zárodek (2026–2028) | Core team 3–5 strážců, scouting Čechy, právní rešerše (z.s. vs z.ú. vs komunitní nadace), rozpočet 60 000 EUR, zkušební záhony 0,2 ha. |
+| 1 | Kořeny (2029) | Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2029, ZION wallet + DAO rámec. |
+| 2 | Komunita (2030) | Guardian node, stálé bydlení 3–5 chat, měsíční governance program, LoRa mesh, Medical Table pavilon, propojení s Genesis Garden a Dharma Temple. |
+| 3 | Síť (2031) | 3 ha, semenná síť 3+ uzlů, vzdělávací centrum (Wayfinding Governance škola), druhý uzel v Čechách nebo na Slovensku. |
+| 4 | Výzařování (2032+) | Governance retreat centrum 40+ hostů, Zlatý dům jako sídlo DAO parlamentu, ZION platby jako výchozí, knowledge commons, 1 % přebytku → L6, první prototyp Zlaté republiky v praxi. |
 
 ## ZION integrace
 
@@ -104,10 +104,10 @@ Mezi pavilony vedou kryté chodby (evokace karlštejnských koridorů) a pěší
 |---|---|---|---|
 | **Sůl země, Přemysl Oráč, Libuše** | **MÝTUS / kulturní fakt** | České pověsti (Kosmas, *Chronica Boemorum* 12. stol.), Přemyslovská dynastie — veřejně doložené. | — |
 | **Karel IV, Zlatá bula, Karlův most, Charles University** | **ŽIVÉ** (historická fakta) | Veřejně ověřitelné historické záznamy; Zlatá bula 1356 v archivech; Karlův most stojí; univerzita funguje. | — |
-| **Zlatá republika jako koncept** | **HORIZONT** (dokumentace) | `docs/TerraNova/06-L5-SVOBODA.md` §6.6, `docs/TerraNova/BASE_FINAL/08-SVOBODA.md` — 8 principů, horizont 2030–2035. | Fyzický uzel, tým, protokol v praxi. |
+| **Zlatá republika jako koncept** | **HORIZONT** (dokumentace) | `docs/TerraNova/06-L5-SVOBODA.md` §6.6, `docs/TerraNova/BASE_FINAL/08-SVOBODA.md` — 8 principů, horizont 2032–2037. | Fyzický uzel, tým, protokol v praxi. |
 | **Říp, Labské údolí, česká krajina** | **ŽIVÉ** (fakta o místě) | Říp (456 m), národní kulturní památka, veřejně přístupný. | Konkrétní lokalita areálu není vybrána. |
 | **Kruh rozhodování, pavilony, permakultura** | **HORIZONT** (koncept) | Tento dokument. | Pozemek, stavební povolení, statika, rozpočet stavby. |
-| **Guardian Node, DAO, multisig** | **HORIZONT** | Specifikace `public/V3/L5/docs/TECH/zion-node-spec.md`; split 90/10 v komunitních dokumentech. | Žádný L5 node v Čechách neběží; instalace Fáze 2 (2028). |
+| **Guardian Node, DAO, multisig** | **HORIZONT** | Specifikace `public/V3/L5/docs/TECH/zion-node-spec.md`; split 90/10 v komunitních dokumentech. | Žádný L5 node v Čechách neběží; instalace Fáze 2 (2030). |
 | **Semenná knihovna, Medical Table, mesh** | **HORIZONT** | Specifikace `TECH/`, `PROTOCOLS/`; protokoly sdílené s Genesis Garden a Dharma Temple. | Realizace; partneři; první výměna s dalšími uzly. |
 | **Partnerství s českými univerzitami** | **HORIZONT** | Charles University (1348), ČZU — veřejně existující instituce. | Žádný kontakt není doložen; MOU není podepsáno. |
 | **Ekonomický model (break-even, příjmy)** | **HYPOTÉZA** | Podle vzoru Genesis Garden §4 komunitního dokumentu. | Skutečné účetnictví po první sezóně. |

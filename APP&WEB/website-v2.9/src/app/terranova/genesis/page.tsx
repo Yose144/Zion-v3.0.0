@@ -43,7 +43,7 @@ const GenesisGardenPreviewLazy = dynamic(
 
 const TerranovaGenesisCopy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
-  activeDevelopment: { cs: `Aktivní rozvoj`, en: `Active Development` },
+  inPreparation: { cs: `V přípravě`, en: `In preparation` },
   oneLoveOneHeartTogetherWeCreat: { cs: `"One love, one heart. Společně tvoříme budoucnost, kde je člověk a Země opět v harmonii."`, en: `"One love, one heart. Together we create a future where humanity and Earth are in harmony again."` },
   projectConcept: { cs: `Co projekt nabízí`, en: `What the project offers` },
   activitiesVision: { cs: `Aktivity & Infrastruktura`, en: `Activities & Infrastructure` },
@@ -172,7 +172,7 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Glamping',
     descCs: 'Pohodlné stany uprostřed přírody — komfort bez kompromisu. Ubytování pro hosty a long-stay farmáře.',
     descEn: 'Comfortable tents in the heart of nature — comfort without compromise. Accommodation for guests and long-stay farmers.',
-    status: 'open' as const,
+    status: 'planned' as const,
     color: '#34D399',
     rgb: '52,211,153',
   },
@@ -182,7 +182,7 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Organic Farm',
     descCs: 'Pestrá škála organických plodin, obnova biodiverzity, sezónní sklizně. Každý návštěvník může přiložit ruku k dílu.',
     descEn: 'Diverse organic crops, biodiversity restoration, seasonal harvests. Every visitor can lend a hand.',
-    status: 'active' as const,
+    status: 'planned' as const,
     color: '#10B981',
     rgb: '6, 105, 40',
   },
@@ -192,7 +192,7 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Tree Planting',
     descCs: 'Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Budujeme dědictví v biologickém čase.',
     descEn: 'Every tree that grows here will be here long after this team is gone. We build legacy in biological time.',
-    status: 'active' as const,
+    status: 'planned' as const,
     color: '#059669',
     rgb: '5,150,105',
   },
@@ -212,7 +212,7 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Solar & Off-grid',
     descCs: 'Fotovoltaický systém, sběr dešťové vody, kompostování. Fyzická manifestace energetické svobody.',
     descEn: 'Photovoltaic system, rainwater collection, composting. Physical manifestation of energy freedom.',
-    status: 'active' as const,
+    status: 'planned' as const,
     color: '#F59E0B',
     rgb: '252, 209, 22',
   },
@@ -222,7 +222,7 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Community Gatherings',
     descCs: 'Workshopy, retreaty, ceremonie a festivaly. Prostor kde se lidé setkávají s autentickým záměrem.',
     descEn: 'Workshops, retreats, ceremonies and festivals. A space where people meet with authentic intention.',
-    status: 'active' as const,
+    status: 'planned' as const,
     color: '#8B5CF6',
     rgb: '228, 30, 43',
   },
@@ -343,7 +343,7 @@ export default function ZahradaGenesisPage() {
                   </span>
                   <span className="zion-badge-gold inline-flex items-center gap-1">
                     <Zap className="w-3 h-3" />
-                    {TerranovaGenesisCopy.activeDevelopment[cs ? 'cs' : 'en']}
+                    {TerranovaGenesisCopy.inPreparation[cs ? 'cs' : 'en']}
                   </span>
                 </div>
 

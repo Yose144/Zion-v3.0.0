@@ -43,10 +43,10 @@ On the same plot (or an adjacent parcel) the **L6 Issobella ground segment** is 
 
 | Phase | Period | Content |
 |-------|--------|---------|
-| 0 — Listening | 2027–2028 | Territory mapping, FPIC dialogue, site scouting (Talamanca / Boruca / Guanacaste), legal research |
-| 1 — Land | 2028–2029 | Acquisition (purchase / long-term lease), council of elders, basic infrastructure |
-| 2 — Community | 2029–2031 | Farm, seed library, Guardian node, first residencies |
-| 3 — Network | 2031+ | Sister nodes in other territories of the Americas, exchange programmes |
+| 0 — Listening | 2026–2028 | Territory mapping, FPIC dialogue, site scouting (Talamanca / Boruca / Guanacaste), legal research |
+| 1 — Land | 2029–2030 | Acquisition (purchase / long-term lease), council of elders, basic infrastructure |
+| 2 — Community | 2031–2033 | Farm, seed library, Guardian node, first residencies |
+| 3 — Network | 2033+ | Sister nodes in other territories of the Americas, exchange programmes |
 
 ## What this project is not
 
