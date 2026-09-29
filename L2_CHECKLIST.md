@@ -375,4 +375,6 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 
 | 2026-10-02 | `5f1194c` | **dao.zionterranova.com Fáze A + pilot profil**: `next.config.ts` host-redirecty (`has:host` → `app.zionterranova.com/dao[/:path+]`, pořadí: /dao passthrough → root → catch-all) — aktivní po DNS+nginx nasměrování; `warp.example.toml` capped-pilot profil (blocker #11: 0.001 BTC cap, MAX_ACTIVE=4, confs=3, rollback přes ENABLED=0). tsc clean. Deploy pending. |
 
+| 2026-10-02 | `b11fc18` | **DAO UI delegace v hlasování**: `ProposalVote.delegated_from` typ + voter list na `/dao/proposals/[id]` ukazuje „↳ +N delegovaných (Σ ZION)" sub-line s per-delegator tooltip (title). tsc+eslint clean. Deploy pending. |
+
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
