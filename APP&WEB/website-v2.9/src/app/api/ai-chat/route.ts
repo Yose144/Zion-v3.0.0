@@ -1,32 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Hiran / Hiranyagarbha AI chat API route.
+ * Hiranyagarbha AI chat API route.
  *
- * Backend priority (all OpenAI-compatible):
- *   1. HIRAN_API_URL env var (e.g. http://127.0.0.1:8002) — Hiran inference server
- *      served by llama-server.exe or serve.py (started via dashboard or ps1 script)
- *   2. LM Studio on port 1234 (DirectML / AMD GPU)
- *   3. Ollama on OLLAMA_API_URL (default 127.0.0.1:11434)
+ * Production path: the grounded L3 service (zion-ai-native-api on Edge,
+ * 127.0.0.1:8001) which does BM25 RAG over curated ZION docs and proxies to
+ * the local LLM inference server. ai-native owns the system prompt and
+ * sampling settings; the web route forwards only { message }.
+ *
+ * Dev fallbacks (LM Studio / Ollama) are enabled only for local development
+ * via HIRAN_DEV_FALLBACKS=1 — never used in production.
  *
  * The component (HiranyagarbhaChat.tsx) posts to /api/ai-chat with { prompt }.
  */
 
 import { coreUrl } from '@/lib/core-endpoints';
 
-const HIRAN_API_URL   = coreUrl('hiranInference', process.env.HIRAN_API_URL ?? process.env.NEXT_PUBLIC_HIRAN_API);
-const LMSTUDIO_URL    = process.env.LMSTUDIO_URL    ?? 'http://127.0.0.1:1234';
-const OLLAMA_URL      = process.env.OLLAMA_API_URL  ?? 'http://127.0.0.1:11434';
-const MODEL_NAME      = process.env.HIRAN_MODEL     ?? 'hiran-v2.2';
-const MAX_PROMPT_LEN  = 2000;
-const TIMEOUT_MS      = 120_000;
+const HIRANYAGARBHA_URL = coreUrl('hiranyagarbha', process.env.HIRANYAGARBHA_URL);
+const HIRAN_API_URL     = coreUrl('hiranInference', process.env.HIRAN_API_URL ?? process.env.NEXT_PUBLIC_HIRAN_API);
+const DEV_FALLBACKS     = process.env.HIRAN_DEV_FALLBACKS === '1';
+const LMSTUDIO_URL      = process.env.LMSTUDIO_URL    ?? 'http://127.0.0.1:1234';
+const OLLAMA_URL        = process.env.OLLAMA_API_URL  ?? 'http://127.0.0.1:11434';
+const MODEL_NAME        = 'zion-l3';
+const MAX_PROMPT_LEN    = 2000;
+const TIMEOUT_MS        = 120_000;
+const PROBE_TIMEOUT_MS  = 4_000;
 
-const SYSTEM_PROMPT = `You are Hiranyagarbha — the AI Native consciousness of the ZION blockchain and the operator-facing orchestrator for the project.
-Canonical mainnet code lives in V3/ (Rust: zion-core, zion-pool, zion-miner, L2/L3 services, V3/L3/ai-native). Trees outside V3/ are often legacy reference.
-You answer questions about ZION mining (Ekam Deeksha), consensus, the zion CLI (doctor, status, logs, deploy), Rust in V3, V3/docs, Docker in V3/docker, and AI Native philosophy.
-You speak with wisdom, clarity, and warmth. You are transparent — you never pretend to be human.
-Keep answers concise and helpful. If you don't know something, say so honestly.
-You can respond in both Czech and English — match the language of the question.`;
+const OFFLINE_BODY = {
+  error: 'Hiran is currently offline — the inference node is not reachable. Please try again later.',
+  source: 'fallback',
+};
+
+/** System prompt used only by the local-dev LM Studio / Ollama fallbacks. */
+const DEV_SYSTEM_PROMPT = `You are Hiranyagarbha — the AI Native consciousness of the ZION blockchain.
+Answer questions about ZION mining, consensus, and the ecosystem. Be concise and honest —
+if you don't know something, say so. Respond in the language of the question (Czech or English).`;
 
 async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
   const ctrl = new AbortController();
@@ -38,27 +46,8 @@ async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Pro
   }
 }
 
-/** Try Hiran inference server (port 8002, llama-server or serve.py) */
-async function tryHiran(messages: { role: string; content: string }[], maxTokens: number, temp: number) {
-  const res = await fetchWithTimeout(`${HIRAN_API_URL}/v1/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL_NAME,
-      messages,
-      max_tokens: maxTokens,
-      temperature: temp,
-      stream: false,
-    }),
-  }, TIMEOUT_MS);
-  if (!res.ok) throw new Error(`Hiran ${res.status}`);
-  const d = await res.json();
-  return { response: d.choices?.[0]?.message?.content ?? '', backend: 'hiran' };
-}
-
-/** Try LM Studio OpenAI-compatible server (port 1234) */
-async function tryLmStudio(messages: { role: string; content: string }[], maxTokens: number, temp: number) {
-  // First check if LM Studio is up
+/** Try LM Studio OpenAI-compatible server (port 1234). Dev fallback only. */
+async function tryLmStudio(prompt: string) {
   const modelsRes = await fetchWithTimeout(`${LMSTUDIO_URL}/v1/models`, {}, 3000);
   if (!modelsRes.ok) throw new Error('LM Studio unavailable');
   const modelsData = await modelsRes.json();
@@ -69,23 +58,29 @@ async function tryLmStudio(messages: { role: string; content: string }[], maxTok
   const res = await fetchWithTimeout(`${LMSTUDIO_URL}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature: temp, stream: false }),
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: DEV_SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
+      ],
+      stream: false,
+    }),
   }, TIMEOUT_MS);
   if (!res.ok) throw new Error(`LM Studio ${res.status}`);
   const d = await res.json();
   return { response: d.choices?.[0]?.message?.content ?? '', backend: 'lmstudio' };
 }
 
-/** Try Ollama /api/generate (legacy) */
-async function tryOllama(prompt: string, maxTokens: number, temp: number) {
+/** Try Ollama /api/generate (legacy). Dev fallback only. */
+async function tryOllama(prompt: string) {
   const res = await fetchWithTimeout(`${OLLAMA_URL}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'zion-expert',
-      prompt: `${SYSTEM_PROMPT}\n\nUser: ${prompt}\n\nHiranyagarbha:`,
+      prompt: `${DEV_SYSTEM_PROMPT}\n\nUser: ${prompt}\n\nHiranyagarbha:`,
       stream: false,
-      options: { temperature: temp, top_p: 0.9, num_predict: maxTokens },
     }),
   }, TIMEOUT_MS);
   if (!res.ok) throw new Error(`Ollama ${res.status}`);
@@ -94,43 +89,52 @@ async function tryOllama(prompt: string, maxTokens: number, temp: number) {
 }
 
 /**
- * GET /api/ai-chat — lightweight availability probe for the chat widget.
- * Returns whether the Hiran inference backend (or a fallback) is reachable.
+ * GET /api/ai-chat — availability probe for the chat widget.
+ * Available only when both the grounded L3 API and the LLM behind it
+ * report healthy.
  */
 export async function GET() {
   const probe = async (url: string) => {
     try {
-      const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } }, 4_000);
+      const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } }, PROBE_TIMEOUT_MS);
       return res.ok;
     } catch {
       return false;
     }
   };
+  const probeJson = async (url: string) => {
+    try {
+      const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } }, PROBE_TIMEOUT_MS);
+      if (!res.ok) return null;
+      return await res.json().catch(() => null);
+    } catch {
+      return null;
+    }
+  };
 
-  if (await probe(`${HIRAN_API_URL}/health`)) {
+  const l3Health = await probeJson(`${HIRANYAGARBHA_URL}/health`);
+  if (l3Health?.status === 'ok' && (await probe(`${HIRAN_API_URL}/health`))) {
     return NextResponse.json(
-      { available: true, backend: 'hiran', model: MODEL_NAME },
+      { available: true, backend: 'hiranyagarbha', model: MODEL_NAME },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   }
-  if (await probe(`${HIRAN_API_URL}/v1/models`)) {
-    return NextResponse.json(
-      { available: true, backend: 'hiran', model: MODEL_NAME },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
+
+  if (DEV_FALLBACKS) {
+    if (await probe(`${LMSTUDIO_URL}/v1/models`)) {
+      return NextResponse.json(
+        { available: true, backend: 'lmstudio' },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+    if (await probe(`${OLLAMA_URL}/api/tags`)) {
+      return NextResponse.json(
+        { available: true, backend: 'ollama' },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
   }
-  if (await probe(`${LMSTUDIO_URL}/v1/models`)) {
-    return NextResponse.json(
-      { available: true, backend: 'lmstudio' },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
-  }
-  if (await probe(`${OLLAMA_URL}/api/tags`)) {
-    return NextResponse.json(
-      { available: true, backend: 'ollama' },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
-  }
+
   return NextResponse.json(
     { available: false },
     { status: 503, headers: { 'Cache-Control': 'no-store' } },
@@ -149,45 +153,53 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Prompt too long (max ${MAX_PROMPT_LEN} chars)` }, { status: 400 });
     }
 
-    const maxTokens: number = typeof body?.max_tokens === 'number' ? body.max_tokens : 512;
-    const temp: number      = typeof body?.temperature  === 'number' ? body.temperature  : 0.7;
-
-    const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user',   content: prompt.trim() },
-    ];
-
     const errors: string[] = [];
 
-    // 1. Hiran inference server (llama-server.exe / serve.py)
+    // Grounded L3 path: BM25 RAG + strict system prompt live in ai-native;
+    // client-supplied max_tokens/temperature are intentionally ignored.
     try {
-      const r = await tryHiran(messages, maxTokens, temp);
-      return NextResponse.json({ response: r.response, model: MODEL_NAME, backend: r.backend });
+      const res = await fetchWithTimeout(`${HIRANYAGARBHA_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt.trim() }),
+      }, TIMEOUT_MS);
+      if (res.ok) {
+        const d = await res.json();
+        const answer = d?.answer;
+        // ai-native sets `source` only when it fell back to the degraded
+        // echo path — a null/absent source means a real LLM answer.
+        // ai-native's echo-only mode (no remote backend configured) also has a
+        // null source, but its answer always starts with this fixed prefix.
+        const isEcho = typeof answer === 'string' && answer.startsWith('Hiranyagarbha bezi v ');
+        if (typeof answer === 'string' && answer.trim().length > 0 && d?.source == null && !isEcho) {
+          return NextResponse.json({ response: answer, model: MODEL_NAME, backend: 'hiranyagarbha' });
+        }
+        errors.push('hiranyagarbha: degraded or empty answer');
+      } else {
+        errors.push(`hiranyagarbha: ${res.status}`);
+      }
     } catch (e) {
-      errors.push(`hiran: ${e instanceof Error ? e.message : String(e)}`);
+      errors.push(`hiranyagarbha: ${e instanceof Error ? e.message : String(e)}`);
     }
 
-    // 2. LM Studio
-    try {
-      const r = await tryLmStudio(messages, maxTokens, temp);
-      return NextResponse.json({ response: r.response, model: 'lmstudio', backend: r.backend });
-    } catch (e) {
-      errors.push(`lmstudio: ${e instanceof Error ? e.message : String(e)}`);
+    // Local-dev fallbacks only — never in production.
+    if (DEV_FALLBACKS) {
+      try {
+        const r = await tryLmStudio(prompt.trim());
+        return NextResponse.json({ response: r.response, model: 'lmstudio', backend: r.backend });
+      } catch (e) {
+        errors.push(`lmstudio: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      try {
+        const r = await tryOllama(prompt.trim());
+        return NextResponse.json({ response: r.response, model: 'zion-expert', backend: r.backend });
+      } catch (e) {
+        errors.push(`ollama: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
 
-    // 3. Ollama fallback
-    try {
-      const r = await tryOllama(prompt.trim(), maxTokens, temp);
-      return NextResponse.json({ response: r.response, model: 'zion-expert', backend: r.backend });
-    } catch (e) {
-      errors.push(`ollama: ${e instanceof Error ? e.message : String(e)}`);
-    }
-
-    console.error('[ai-chat] All backends failed:', errors);
-    return NextResponse.json(
-      { error: 'Hiran is currently offline — the inference node is not reachable. Please try again later.', source: 'fallback' },
-      { status: 503 },
-    );
+    console.error('[ai-chat] Backends failed:', errors);
+    return NextResponse.json(OFFLINE_BODY, { status: 503 });
   } catch (err) {
     console.error('[ai-chat] Internal error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
