@@ -31,6 +31,7 @@ pub mod in_context;
 pub mod intent;
 pub mod knowledge_base;
 pub mod layer_agents;
+pub mod lexical;
 pub mod llm_backend;
 pub mod maestro;
 pub mod memory;
