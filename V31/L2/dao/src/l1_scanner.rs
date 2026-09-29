@@ -379,13 +379,21 @@ impl L1Scanner {
                         continue;
                     }
 
+                    let delegated_total: u64;
                     let recorded = if let Some(runtime) = self.runtime.as_ref() {
-                        let proposal_type = {
+                        let (proposal_type, delegators) = {
                             let rt = runtime.lock().await;
                             match rt.get_proposal(pid) {
-                                Some(p) if p.status == ProposalStatus::Active => {
-                                    p.proposal_type.clone()
-                                }
+                                Some(p) if p.status == ProposalStatus::Active => (
+                                    p.proposal_type.clone(),
+                                    // D6: delegators whose weight this vote may
+                                    // consume — still delegating to sender and
+                                    // not already participating on this proposal.
+                                    rt.delegators_of(sender)
+                                        .into_iter()
+                                        .filter(|d| !rt.has_voted_or_delegated(pid, d))
+                                        .collect::<Vec<_>>(),
+                                ),
                                 Some(_) => {
                                     debug!(
                                         "[DAO-SCANNER] Proposal {} not active, ignoring vote",
@@ -411,12 +419,32 @@ impl L1Scanner {
                             continue;
                         }
 
-                        match runtime.lock().await.cast_vote(
+                        // Resolve each delegator's balance at the same height
+                        // as the voter's own weight. A failed lookup skips the
+                        // delegator (logged), it does not sink the vote.
+                        let mut delegated = Vec::new();
+                        for d in delegators {
+                            match self.get_balance_at(&d, block_height).await {
+                                Ok(w) if w >= self.config.min_vote_weight => delegated.push((d, w)),
+                                Ok(w) => debug!(
+                                    "[DAO-SCANNER] Skipping dust delegation from {} (weight {})",
+                                    d, w
+                                ),
+                                Err(e) => warn!(
+                                    "[DAO-SCANNER] Delegator {} balance lookup failed: {}",
+                                    d, e
+                                ),
+                            }
+                        }
+                        delegated_total = delegated.iter().map(|(_, w)| *w).sum();
+
+                        match runtime.lock().await.cast_vote_with_delegations(
                             pid,
                             sender.to_string(),
                             choice.clone(),
                             weight,
                             Some(txid.to_string()),
+                            delegated,
                         ) {
                             Ok(_) => true,
                             Err(DaoError::AlreadyVoted(_)) => {
@@ -432,6 +460,8 @@ impl L1Scanner {
                             }
                         }
                     } else {
+                        // db-only fallback path (no shared runtime) — apply
+                        // the same D6 expansion straight against the tables.
                         let db = self.db.lock().await;
 
                         let row = db.get_proposal(pid)?;
@@ -469,14 +499,69 @@ impl L1Scanner {
                             continue;
                         }
 
-                        db.record_vote(pid, sender, choice, weight, Some(txid))?
+                        if db.has_delegated_vote(pid, sender)? || db.has_voted(pid, sender)? {
+                            debug!(
+                                "[DAO-SCANNER] Duplicate/delegated vote ignored: proposal={} voter={}",
+                                pid, sender
+                            );
+                            continue;
+                        }
+
+                        let delegators: Vec<String> = db
+                            .list_delegations()?
+                            .into_iter()
+                            .filter(|(g, d, _)| {
+                                d.as_str() == sender
+                                    && !db.has_voted(pid, g).unwrap_or(true)
+                                    && !db.has_delegated_vote(pid, g).unwrap_or(true)
+                            })
+                            .map(|(g, _, _)| g)
+                            .collect();
+                        drop(db);
+
+                        let mut delegated = Vec::new();
+                        for d in delegators {
+                            match self.get_balance_at(&d, block_height).await {
+                                Ok(w) if w >= self.config.min_vote_weight => delegated.push((d, w)),
+                                Ok(w) => debug!(
+                                    "[DAO-SCANNER] Skipping dust delegation from {} (weight {})",
+                                    d, w
+                                ),
+                                Err(e) => warn!(
+                                    "[DAO-SCANNER] Delegator {} balance lookup failed: {}",
+                                    d, e
+                                ),
+                            }
+                        }
+                        delegated_total = delegated.iter().map(|(_, w)| *w).sum();
+                        let effective = weight.saturating_add(delegated_total);
+
+                        let db = self.db.lock().await;
+                        let inserted =
+                            db.record_vote(pid, sender, choice, effective, Some(txid))?;
+                        if inserted && !delegated.is_empty() {
+                            if let Err(e) = db.record_delegated_votes(pid, sender, &delegated) {
+                                warn!(
+                                    "[DAO-SCANNER] Failed to record delegated votes for proposal {}: {}",
+                                    pid, e
+                                );
+                            }
+                        }
+                        inserted
                     };
 
                     if recorded {
-                        info!(
-                            "[DAO-SCANNER] Vote recorded: proposal={} voter={} weight={}",
-                            pid, sender, weight
-                        );
+                        if delegated_total > 0 {
+                            info!(
+                                "[DAO-SCANNER] Vote recorded: proposal={} voter={} weight={} (+{} delegated)",
+                                pid, sender, weight, delegated_total
+                            );
+                        } else {
+                            info!(
+                                "[DAO-SCANNER] Vote recorded: proposal={} voter={} weight={}",
+                                pid, sender, weight
+                            );
+                        }
                         any_processed = true;
                     } else {
                         debug!(
@@ -506,12 +591,57 @@ impl L1Scanner {
                         continue;
                     }
                     let db = self.db.lock().await;
-                    if let Err(e) = db.register_guardian_candidate(sender, &bytes_to_hex(&pk_bytes), txid) {
+                    if let Err(e) =
+                        db.register_guardian_candidate(sender, &bytes_to_hex(&pk_bytes), txid)
+                    {
                         warn!("[DAO-SCANNER] Guardian candidate persist failed: {e}");
                         continue;
                     }
                     info!("[DAO-SCANNER] Guardian candidate registered: {sender} (tx {txid})");
                     any_processed = true;
+                }
+
+                DaoMemo::Delegate { target } => {
+                    // D6: `DAO:delegate:<zion1addr>` assigns voting weight;
+                    // `DAO:delegate:none` revokes. Self-delegation and
+                    // malformed targets are rejected.
+                    let target = target.as_deref();
+                    if let Some(t) = target {
+                        if t == sender {
+                            debug!("[DAO-SCANNER] Self-delegation ignored from {sender}");
+                            continue;
+                        }
+                        if !t.starts_with("zion1") || t.len() < 8 {
+                            debug!("[DAO-SCANNER] Bad delegate target '{t}' from {sender}");
+                            continue;
+                        }
+                    }
+                    if let Some(runtime) = self.runtime.as_ref() {
+                        match runtime.lock().await.set_delegation(sender, target) {
+                            Ok(()) => {
+                                info!(
+                                    "[DAO-SCANNER] Delegation {}: {} -> {}",
+                                    if target.is_some() { "set" } else { "revoked" },
+                                    sender,
+                                    target.unwrap_or("(none)")
+                                );
+                                any_processed = true;
+                            }
+                            Err(e) => {
+                                warn!("[DAO-SCANNER] set_delegation failed: {e}");
+                            }
+                        }
+                    } else {
+                        let db = self.db.lock().await;
+                        let res = match target {
+                            Some(t) => db.set_delegation(sender, t),
+                            None => db.remove_delegation(sender),
+                        };
+                        match res {
+                            Ok(()) => any_processed = true,
+                            Err(e) => warn!("[DAO-SCANNER] delegation persist failed: {e}"),
+                        }
+                    }
                 }
 
                 DaoMemo::Propose { proposal_type } => {

@@ -33,6 +33,7 @@ import DAOStats from '@/components/dao/DAOStats';
 import ProposalCard from '@/components/dao/ProposalCard';
 import TreasuryOpsPanel from '@/components/dao/TreasuryOpsPanel';
 import GuardianRegisterCard from '@/components/dao/GuardianRegisterCard';
+import DelegateMemoCard from '@/components/dao/DelegateMemoCard';
 import ParliamentVision from '@/components/dao/ParliamentVision';
 import {
   getDAOStats,
@@ -880,6 +881,10 @@ export default function DaoPage() {
                     ))}
                   </div>
                 )}
+                {/* D6: on-chain vote delegation memo generator */}
+                <div className="mt-6">
+                  <DelegateMemoCard />
+                </div>
               </section>
             </div>
           )}

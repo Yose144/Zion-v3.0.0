@@ -51,6 +51,15 @@ pub fn parse_dao_memo(memo: &str) -> Option<DaoMemo> {
                 pubkey_hex: parts[3].to_string(),
             })
         }
+        // DAO:delegate:<zion1_address> — delegate voting weight (D6).
+        // DAO:delegate:none — revoke the delegation.
+        "delegate" => Some(DaoMemo::Delegate {
+            target: if parts[2] == "none" {
+                None
+            } else {
+                Some(parts[2].to_string())
+            },
+        }),
         _ => None,
     }
 }
@@ -70,7 +79,16 @@ pub enum DaoMemo {
     /// `DAO:guardian:register:<pubkey_hex>` — candidate registration for the
     /// guardian registry (D3). The pubkey must derive to the sender address,
     /// which proves key ownership on-chain.
-    GuardianRegister { pubkey_hex: String },
+    GuardianRegister {
+        pubkey_hex: String,
+    },
+    /// `DAO:delegate:<address>` / `DAO:delegate:none` — set or revoke a
+    /// voting-weight delegation (D6). Non-transitive: the weight counts only
+    /// when the direct delegate casts a vote, and only if the delegator has
+    /// not voted (or been consumed) on that proposal.
+    Delegate {
+        target: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -202,6 +220,20 @@ mod tests {
         match parsed {
             DaoMemo::Propose { proposal_type } => assert_eq!(proposal_type, "treasury"),
             _ => panic!("Expected Propose memo"),
+        }
+    }
+
+    #[test]
+    fn test_parse_delegate_memo() {
+        match parse_dao_memo("DAO:delegate:zion1abc123").unwrap() {
+            DaoMemo::Delegate { target } => {
+                assert_eq!(target.as_deref(), Some("zion1abc123"))
+            }
+            _ => panic!("Expected Delegate memo"),
+        }
+        match parse_dao_memo("DAO:delegate:none").unwrap() {
+            DaoMemo::Delegate { target } => assert!(target.is_none()),
+            _ => panic!("Expected Delegate revoke memo"),
         }
     }
 
