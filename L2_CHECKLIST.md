@@ -238,7 +238,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | D10 | Hiran draft proposals s human sponsor (V3.3) | P3 |
 | D11 | ZK Dharma/reputation proofs (V3.3) | P3 |
 | D12 | L5/L6 grant integration end-to-end | P2 |
-| D13 | Multi-proposal concurrency + spam ochrana | ✅ CODE — review: runtime je single-mutex seriálový (žádný race v create/vote/tally), `proposal_threshold` balance gate existoval; **nově `max_active_per_proposer`** (default 5, env `DAO_MAX_ACTIVE_PER_PROPOSER`, governable přes Parameter proposal) — cap souběžných Active návrhů na proposera, `TooManyActiveProposals` error; `0` v config souboru = vypnuto (ne governable). Zbývá: rate-limit na API úrovni (N+1 memo spam je bounded L1 poplatky) |
+| D13 | Multi-proposal concurrency + spam ochrana | ✅ CODE — review: runtime je single-mutex seriálový (žádný race v create/vote/tally), `proposal_threshold` balance gate existoval; **nově `max_active_per_proposer`** (default 5, env `DAO_MAX_ACTIVE_PER_PROPOSER`, governable přes Parameter proposal) — cap souběžných Active návrhů na proposera, `TooManyActiveProposals` error; `0` v config souboru = vypnuto (ne governable). **API rate-limit doplněn:** `WriteLimiter` middleware — POST writes token-bucket per client IP z `X-Forwarded-For` (proxy ho nově forwarduje; service = localhost-only → header trusted), `DAO_API_WRITE_RPM` (default 60/min, burst 12, `0`=off, map bound 10k klientů). N+1 memo spam dál bounded L1 poplatky |
 | D14 | Disaster recovery: dao.db backup→restore→rebuild drill | P2 (backup běží, restore nedrillován) |
 
 ---
@@ -370,5 +370,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 | 2026-10-02 | `6c121fa` | **Offer-key rotace** (blocker #3): `WARP_BTC_SWAP_OFFER_KEY_PREV` — předchozí operator klíč platný během grace okna migrace klientů (constant-time compare oba); prev-only konfigurace endpoint neaktivuje (primary musí být nastaven). Testy: fails-closed, rotation prev/new, prev-unset reject. Deploy pending. |
 
 | 2026-10-02 | `606063e` | **DAO D9 „voting ends soon"**: `dao_ending_soon` reminder v db-sync — jednou na návrh při ≤24h do konce (`DAO_END_SOON_WINDOW_MS`), broadcast všem ZIS userům bez zaznamenaného hlasu (`DaoVote.userId` exclude). Dedup persistentní přes Notification JSON path query (`data.proposalId`) — žádná schema migrace, restart-safe. tsc clean. Deploy pending. |
+
+| 2026-10-02 | `0cd07e4` | **DAO API write rate-limit** (D13 zbytek): `WriteLimiter` middleware — POST `/api/dao/*` token-bucket per client IP z `X-Forwarded-For` (web proxy nově předává hlavičku; DAO bind localhost → trusted), `DAO_API_WRITE_RPM` (default 60/min, burst=rpm/5 min 4, `0`=vypnuto), bounded map (10k). 103+2 dao testů ✅, web tsc clean. Deploy pending. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
