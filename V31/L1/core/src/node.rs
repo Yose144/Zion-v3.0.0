@@ -254,14 +254,32 @@ impl Node {
 
         let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
 
-        // Rebuild the V31 UTXO set from storage.
-        let mut utxo_set = UtxoSet::new();
-        let height = storage.height().await?;
-        for h in 0..=height {
-            if let Some(block) = storage.get_by_height(h).await? {
-                utxo_set.apply_block_unchecked(&block)?;
+        // Load the persistent V31 UTXO cache; on a miss rebuild by replaying
+        // the trusted on-disk block store and snapshot the result.
+        let utxo_set = match storage.load_native_utxo_cache().await? {
+            Some(set) => {
+                info!(outputs = set.output_count(), "loaded native UTXO cache");
+                set
             }
-        }
+            None => {
+                let started = std::time::Instant::now();
+                let mut set = UtxoSet::new();
+                let height = storage.height().await?;
+                for h in 0..=height {
+                    if let Some(block) = storage.get_by_height(h).await? {
+                        set.apply_block_unchecked(&block)?;
+                    }
+                }
+                storage.replace_native_utxo_cache(&set).await?;
+                info!(
+                    outputs = set.output_count(),
+                    height,
+                    elapsed_ms = started.elapsed().as_millis(),
+                    "rebuilt native UTXO cache from trusted block store"
+                );
+                set
+            }
+        };
         let utxo_set = Arc::new(tokio::sync::Mutex::new(utxo_set));
 
         // One-time backfill of the tx/address indexes for databases that
@@ -1156,6 +1174,33 @@ mod tests {
         let node = Node::new(config).await.unwrap();
         let status = node.status().await.unwrap();
         assert_eq!(status.height, 0);
+    }
+
+    #[tokio::test]
+    async fn node_restarts_from_native_utxo_cache() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("node.db").to_string_lossy().into_owned();
+        let config = |path: &str| NodeConfig {
+            db_path: path.to_string(),
+            ..Default::default()
+        };
+        {
+            let node = Node::new(config(&db)).await.unwrap();
+            assert_eq!(node.status().await.unwrap().height, 0);
+            // First startup replays blocks and writes the cache snapshot.
+            assert!(node
+                .storage
+                .load_native_utxo_cache()
+                .await
+                .unwrap()
+                .is_some());
+        }
+        // Second startup must come up from the cache without touching it.
+        let node = Node::new(config(&db)).await.unwrap();
+        let status = node.status().await.unwrap();
+        assert_eq!(status.height, 0);
+        let cached = node.storage.load_native_utxo_cache().await.unwrap();
+        assert!(cached.is_some());
     }
 
     #[tokio::test]
