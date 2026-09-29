@@ -486,6 +486,34 @@ impl L1Scanner {
                     }
                 }
 
+                DaoMemo::GuardianRegister { pubkey_hex } => {
+                    // D3: register sender as a guardian candidate. The pubkey
+                    // must derive to the sender address — proof the sender
+                    // controls the key they register (the tx is signed).
+                    let pk_bytes = match hex::decode(pubkey_hex.trim()) {
+                        Ok(b) => b,
+                        Err(_) => {
+                            debug!("[DAO-SCANNER] Guardian register: bad hex from {sender}");
+                            continue;
+                        }
+                    };
+                    let derived = zion_address_from_public_key(&pk_bytes).unwrap_or_default();
+                    if derived != sender {
+                        warn!(
+                            "[DAO-SCANNER] Guardian register pubkey mismatch: \
+                             {pubkey_hex} derives {derived}, not {sender}"
+                        );
+                        continue;
+                    }
+                    let db = self.db.lock().await;
+                    if let Err(e) = db.register_guardian_candidate(sender, &bytes_to_hex(&pk_bytes), txid) {
+                        warn!("[DAO-SCANNER] Guardian candidate persist failed: {e}");
+                        continue;
+                    }
+                    info!("[DAO-SCANNER] Guardian candidate registered: {sender} (tx {txid})");
+                    any_processed = true;
+                }
+
                 DaoMemo::Propose { proposal_type } => {
                     info!(
                         "[DAO-SCANNER] Propose memo from {} (type {}), ignored for now",

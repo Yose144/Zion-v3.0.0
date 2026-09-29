@@ -45,6 +45,12 @@ pub fn parse_dao_memo(memo: &str) -> Option<DaoMemo> {
         "execute" => Some(DaoMemo::Execute {
             proposal_id: parts[2].to_string(),
         }),
+        // DAO:guardian:register:<ed25519_pubkey_hex> — D3 registry candidacy.
+        "guardian" if parts.len() >= 4 && parts[2] == "register" => {
+            Some(DaoMemo::GuardianRegister {
+                pubkey_hex: parts[3].to_string(),
+            })
+        }
         _ => None,
     }
 }
@@ -61,6 +67,10 @@ pub enum DaoMemo {
     Execute {
         proposal_id: String,
     },
+    /// `DAO:guardian:register:<pubkey_hex>` — candidate registration for the
+    /// guardian registry (D3). The pubkey must derive to the sender address,
+    /// which proves key ownership on-chain.
+    GuardianRegister { pubkey_hex: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

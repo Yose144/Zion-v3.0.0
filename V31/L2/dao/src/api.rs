@@ -648,6 +648,47 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
     }))
 }
 
+/// GET /api/dao/guardians — live guardian registry: config bootstrap set +
+/// governance mutations (D3), plus L1-registered candidates awaiting
+/// admission. Public read.
+async fn list_guardians(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
+    let rt = state.runtime.lock().await;
+    let cfg = rt.config();
+    let guardians: Vec<serde_json::Value> = cfg
+        .guardians
+        .iter()
+        .map(|g| {
+            serde_json::json!({
+                "name": g.name,
+                "address": g.address,
+                "public_key": g.public_key,
+                "source": "active",
+            })
+        })
+        .collect();
+    let candidates: Vec<serde_json::Value> = match rt.db() {
+        Some(db) => db
+            .lock()
+            .ok()
+            .and_then(|g| g.list_guardian_candidates().ok())
+            .unwrap_or_default(),
+        None => vec![],
+    }
+    .into_iter()
+    .map(|(address, pubkey)| {
+        serde_json::json!({ "address": address, "public_key": pubkey, "source": "registered" })
+    })
+    .collect();
+    Ok(ok(serde_json::json!({
+        "threshold": cfg.multisig_threshold,
+        "total": cfg.multisig_total,
+        "guardians": guardians,
+        "candidates": candidates,
+    })))
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Treasury handlers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1442,6 +1483,7 @@ pub async fn serve(
         .route("/api/dao/proposals/:id/execute", post(execute_proposal))
         .route("/api/dao/proposals/:id/cancel", post(cancel_proposal))
         .route("/api/dao/stats", get(stats))
+        .route("/api/dao/guardians", get(list_guardians))
         .route("/api/dao/treasury", get(treasury_overview))
         .route("/api/dao/treasury/ops", get(list_treasury_ops))
         .route("/api/dao/treasury/submit", post(submit_treasury_op))

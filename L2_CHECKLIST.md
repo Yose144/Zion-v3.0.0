@@ -185,7 +185,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | ZIONBridge kontrakt (Base) | ✅ | 4/5 validator threshold on-chain |
 | Treasury multisig (DAO) | 🟡 | 5-z-7 registry existuje, ale bez crypto execution (§7) |
 | Klíčová rotace / HSM / KMS | ❌ | Všechny klíče = env vars / plaintext soubory |
-| Guardian rotace | 📄 | `DAO:guardian:register:` memo existuje v scanneru, end-to-end nenapojeno |
+| Guardian rotace | ✅ CODE (2026-10-02, nedesazeno) | `DAO:guardian:register:<pubkey_hex>` → L1 scanner ověří pubkey→adresa odesílatele → `guardian_candidates`; `Admission`/`Expulsion` proposal types aplikují mutaci při execute (60 %/75 % quorum), persist `dao_guardians`, restart replay, fail-closed admission bez registrace |
 
 **Pro „native WARP" plný stav je nutné:** distribuovaná sada ≥3 validator nodů s oddělenými klíči + L1 release path naprogramovaný tak, aby sbíral threshold podpisy (dnes `execute_burn_release` vyrobí 1 proof vs threshold 3).
 
@@ -219,7 +219,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | Co-admin | 🟡 `co_admin.rs` nenapojený | 4 co-admini v configu |
 | Humanitarian/L5 + prizes | 🟡 `humanitarian.rs`, `prizes.rs` nenapojené | grantový flow L5 fondu |
 | ZIS bridge auth | 🟡 `zis.rs` | session flow funguje pro vote/create |
-| Guardian registration memo | 🟡 | scanner parsuje `DAO:guardian:register:`, ale registr se neaplikuje |
+| Guardian registration memo | ✅ CODE | scanner validuje pubkey→sender address derivation a perzistuje `guardian_candidates`; admission consume při execute; `GET /api/dao/guardians` exposes active + candidates |
 | Proposal/execute memos | ❌ | scanner je explicitně ignoruje → on-chain proposals neexistují |
 
 ### Chybí ke „komplexnímu DAO"
@@ -228,7 +228,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 |---|-----|----------|
 | D1 | **Skutečný treasury tx pipeline**: unsigned spec → threshold verified sigs → broadcast → tx_id persist. ✅ CODE — k ověření E2E po unlock@144000; custody = jeden `ZION_DAO_TREASURY_KEY` (L1 nemá m-of-n script; guardian sigs = autorizační vrstva, ne on-chain multisig) | ~~P0~~ ✅ DONE (code), E2E pending |
 | D2 | Kryptografické guardian podpisy + anti-replay | ~~P0~~ ✅ DONE (code) — Ed25519 nad `dao:treasury:v1` doménou, verified-only threshold, UNIQUE(op,guardian), replay: UTXO double-spend + status + tx_id |
-| D3 | On-chain guardian registry + rotace přes governance | P1 |
+| D3 | On-chain guardian registry + rotace přes governance | ~~P1~~ ✅ DONE (code) — `DAO:guardian:register:<pubkey_hex>` memo (pubkey↔sender binding), `guardian_candidates` + `dao_guardians` tabulky, `Admission` (60 % quorum) přidá guardian a `Expulsion` (75 %) tombstonuje, mutace při execute + replay v `with_db`, admission fail-closed bez L1 registrace, audit eventy `guardian_admitted`/`guardian_expelled`, `GET /api/dao/guardians`. Deploy pending |
 | D4 | Proposal event/audit log (immutable historie stavů, hlasů, exekucí) | ~~P1~~ ✅ DONE (code) — append-only `dao_events` tabulka (subject-scoped: `proposal:<id>`, `op:<op_id>`), emitováno z runtime (created/vote/tally/execute/cancel) + treasury handlerů (submitted/signed/executed/awaiting_broadcast); best-effort — selhání logu neblokuje state transition; `GET /api/dao/proposals/:id/events`; UI „Event history" na detailu. Deploy pending |
 | D5 | Param-execution: config-driven změny (quorum, timelock…) aplikované bez redeploye | ~~P1~~ ✅ DONE (code) — whitelist 8 governable params (`min_vote_weight`, `proposal_threshold`, `quorum_percent`, `voting_period_days`, `timelock_hours`, `daily_spend_limit`, `multisig_threshold`, `cross_layer_consent_threshold`); validace při create (unexecutability-proof), apply při execute před status flip, persist `dao_params` + replay v `with_db` po restartu; `api_key`/`db_path`/guardians/treasury addrs záměrně mimo whitelist; `/api/dao/stats` emituje whitelist. Deploy pending |
 | D6 | Delegace hlasů | P2 |
