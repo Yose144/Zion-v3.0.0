@@ -1,6 +1,6 @@
 # AGENTS.md — FreeWorld (freeworld.zionterranova.com)
 
-Dedikovaný **statický** L5 Free World portál — editorial/projektový web mimo hlavní Next.js appku. Live na `freeworld.zionterranova.com` (nginx servíruje `/var/www/freeworld` na Edge).
+Dedikovaný **statický** L5 Free World portál — editorial/projektový web mimo hlavní Next.js appku. Žije jako podprojekt IntroPage (`APP&WEB/IntroPage/freeworld/`). Live na `freeworld.zionterranova.com` (nginx servíruje `/var/www/freeworld` na Edge).
 
 ## Struktura
 
@@ -16,6 +16,11 @@ Dedikovaný **statický** L5 Free World portál — editorial/projektový web mi
 ## Build & deploy
 
 ```bash
+# z kořene IntroPage:
+npm run build:freeworld      # → freeworld/dist/
+npm run deploy:freeworld     # rsync → /var/www/freeworld + nginx reload
+
+# nebo přímo v tomto adresáři:
 npm install        # pokud chybí marked
 npm run build      # → dist/
 bash deploy/deploy-freeworld.sh

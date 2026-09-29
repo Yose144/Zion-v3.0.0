@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image
 
 DIST = Path(sys.argv[1])
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[4]
 IMG = REPO / 'L5Projects/img'
 WEB_IMG = REPO / 'APP&WEB/website-v2.9/public/images'
 
