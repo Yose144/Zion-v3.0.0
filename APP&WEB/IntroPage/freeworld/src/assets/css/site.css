@@ -122,8 +122,15 @@ a:hover { text-decoration: underline; }
 /* ── Hero ────────────────────────────────────────────────────── */
 .fw-hero { position: relative; }
 /* Banner renders in-flow at its natural 1672×941 aspect — always fully
-   visible, never cropped, and the text content lives below it. */
-.fw-hero-bg { position: relative; }
+   visible, never cropped, and the text content lives below it.
+   Floated at 90% width with rounded corners + soft shadow. */
+.fw-hero-bg {
+  position: relative;
+  width: 90%; margin: 0 auto;
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid rgba(252, 209, 22, 0.14);
+  box-shadow: 0 30px 90px -30px rgba(0, 0, 0, 0.85), 0 0 60px -30px rgba(252, 209, 22, 0.3);
+}
 .fw-hero-bg img { width: 100%; height: auto; display: block; }
 .fw-hero-bg::after {
   content: ''; position: absolute; inset: 0;
