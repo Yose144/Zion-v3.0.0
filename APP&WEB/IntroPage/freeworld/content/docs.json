@@ -1,0 +1,58 @@
+[
+  {
+    "id": "overview",
+    "title": { "cs": "Přehled", "en": "Overview" },
+    "docs": [
+      { "slug": "l5-overview", "file": "README.md", "title": "L5 — Terra Nova Physical Communities" }
+    ]
+  },
+  {
+    "id": "architecture",
+    "title": { "cs": "Architektura", "en": "Architecture" },
+    "docs": [
+      { "slug": "l5-system-design", "file": "ARCHITECTURE/l5-system-design.md" }
+    ]
+  },
+  {
+    "id": "governance",
+    "title": { "cs": "Governance", "en": "Governance" },
+    "docs": [
+      { "slug": "community-dao-framework", "file": "GOVERNANCE/community-dao-framework.md" },
+      { "slug": "consciousness-admission-framework", "file": "GOVERNANCE/consciousness-admission-framework.md" },
+      { "slug": "multi-layer-dao-governance", "file": "GOVERNANCE/multi-layer-dao-governance.md" },
+      { "slug": "sefirot-vow", "file": "GOVERNANCE/sefirot-vow.md" }
+    ]
+  },
+  {
+    "id": "protocols",
+    "title": { "cs": "Protokoly", "en": "Protocols" },
+    "docs": [
+      { "slug": "resonance-protocol", "file": "PROTOCOLS/resonance-protocol.md" }
+    ]
+  },
+  {
+    "id": "tech",
+    "title": { "cs": "Technologie", "en": "Technology" },
+    "docs": [
+      { "slug": "medical-table", "file": "TECH/medical-table.md" },
+      { "slug": "mesh-network", "file": "TECH/mesh-network.md" },
+      { "slug": "zion-node-spec", "file": "TECH/zion-node-spec.md" }
+    ]
+  },
+  {
+    "id": "communities",
+    "title": { "cs": "Komunity", "en": "Communities" },
+    "docs": [
+      { "slug": "genesis-garden", "file": "COMMUNITIES/genesis-garden.md" },
+      { "slug": "dharma-temple", "file": "COMMUNITIES/dharma-temple.md" },
+      { "slug": "te-piko-ora", "file": "COMMUNITIES/te-piko-ora.md" }
+    ]
+  },
+  {
+    "id": "start",
+    "title": { "cs": "Založit komunitu", "en": "Start a Community" },
+    "docs": [
+      { "slug": "community-blueprint", "file": "TEMPLATES/community-blueprint.md" }
+    ]
+  }
+]
