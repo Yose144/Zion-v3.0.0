@@ -1,8 +1,7 @@
 [Unit]
 Description=ZION V31 Node 3 (Follower, P2P sync to Node 1)
 After=network-online.target zion-v31-node.service
-Wants=network-online.target
-Requires=zion-v31-node.service
+Wants=network-online.target zion-v31-node.service
 
 [Service]
 Type=simple
