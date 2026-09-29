@@ -37,6 +37,10 @@ async function proxyDao(request: Request, path: string[]) {
   if (contentType) headers.set('content-type', contentType);
   if (apiKey) headers.set('x-dao-key', apiKey);
   if (cookie) headers.set('cookie', cookie);
+  // Forward the client IP set by the front nginx — the DAO service binds
+  // localhost and rate-limits POST writes by this header.
+  const clientIp = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip');
+  if (clientIp) headers.set('x-forwarded-for', clientIp);
 
   const body = method === 'POST' ? await request.text() : undefined;
 
