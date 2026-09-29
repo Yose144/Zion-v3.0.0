@@ -870,6 +870,29 @@ impl BtcSwapFlow {
                     )));
                 }
             }
+        } else {
+            // zion_to_btc: the operator counter-locks real BTC from the
+            // swap signer wallet. Sum confirmed UTXOs on the signer address
+            // and require it to cover all outstanding sats + this quote.
+            // Fail-closed — same rule as the ZION leg.
+            let utxos = crate::warp::btc_signer::fetch_utxos(
+                self.btc.client(),
+                self.btc.api_urls(),
+                &self.signer.address().to_string(),
+            )
+            .await?;
+            let confirmed_sats: u64 = utxos
+                .iter()
+                .filter(|u| u.is_confirmed())
+                .map(|u| u.value)
+                .sum();
+            if confirmed_sats < outstanding.saturating_add(owed) {
+                return Err(err(format!(
+                    "operator BTC balance {confirmed_sats} below outstanding \
+                     obligation {}",
+                    outstanding + owed
+                )));
+            }
         }
 
         let quote = sign_quote(key, direction, btc_sats, zion_flowers, expires_at);
@@ -2628,6 +2651,37 @@ mod tests {
         flow
     }
 
+    /// Mock mempool-compatible backend returning a fixed JSON body; used to
+    /// exercise the zion_to_btc solvency check without real network access.
+    async fn mock_btc_backend(body: String) -> BitcoinAdapter {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            while let Ok((mut sock, _)) = listener.accept().await {
+                let body = body.clone();
+                tokio::spawn(async move {
+                    let mut buf = [0u8; 4096];
+                    let _ = sock.read(&mut buf).await;
+                    let resp = format!(
+                        "HTTP/1.1 200 OK\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = sock.write_all(resp.as_bytes()).await;
+                });
+            }
+        });
+        BitcoinAdapter::with_api_urls(vec![format!("http://127.0.0.1:{port}")])
+    }
+
+    fn funded_utxo_body(sats: u64) -> String {
+        format!(
+            "[{{\"txid\":\"{}\",\"vout\":0,\"value\":{sats},\"status\":{{\"confirmed\":true}}}}]",
+            "aa".repeat(32)
+        )
+    }
+
     #[test]
     fn quote_sign_verify_roundtrip() {
         let key = quote_key();
@@ -2736,7 +2790,7 @@ mod tests {
         c.max_quote_outstanding_zion = Some(75_000_000);
         c.max_quote_outstanding_btc = Some(150_000);
         let mut flow = BtcSwapFlow::new(
-            Arc::new(BitcoinAdapter::new()),
+            Arc::new(mock_btc_backend(funded_utxo_body(10_000_000)).await),
             Arc::new(signer()),
             Arc::new(HtlcSwap::new_offline()),
             c,
@@ -2759,6 +2813,58 @@ mod tests {
             .await
             .unwrap();
         assert!(flow.issue_quote("btc_to_zion", 100_000).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn issue_quote_zion_to_btc_checks_btc_balance() {
+        // Funded backend: signer UTXOs cover the quote → ok.
+        let funded = mock_btc_backend(funded_utxo_body(1_000_000)).await;
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(funded),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        flow.set_quote_signer(quote_key(), 500);
+        assert!(flow.issue_quote("zion_to_btc", 100_000).await.is_ok());
+
+        // Underfunded backend: 50k confirmed sats < 100k owed → fail.
+        let thin = mock_btc_backend(funded_utxo_body(50_000)).await;
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(thin),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        flow.set_quote_signer(quote_key(), 500);
+        let e = flow
+            .issue_quote("zion_to_btc", 100_000)
+            .await
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("BTC balance"), "{e}");
+
+        // Empty wallet (saw_empty → Ok(vec![])) → balance 0 → fail.
+        let empty = mock_btc_backend("[]".into()).await;
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(empty),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        flow.set_quote_signer(quote_key(), 500);
+        assert!(flow.issue_quote("zion_to_btc", 100_000).await.is_err());
+
+        // Dead backend → fail-closed.
+        let dead = BitcoinAdapter::with_api_urls(vec!["http://127.0.0.1:1".into()]);
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(dead),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        flow.set_quote_signer(quote_key(), 500);
+        assert!(flow.issue_quote("zion_to_btc", 100_000).await.is_err());
     }
 
     #[tokio::test]

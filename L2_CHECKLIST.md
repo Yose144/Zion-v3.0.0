@@ -113,7 +113,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 5 | Watch-only import review (`WARP_BITCOIN_IMPORT_SINCE`, rescan mezery) | ❌ |
 | 6 | WIF/network/adresa separace mainnet vs regtest | 🟡 zkontrolovat |
 | 7 | Confirmation/timeout margin review (CLTV deltas oběma směry) | 📄 částečně |
-| 8 | Amount caps + solvency check před akceptací | 🟡 CODE — `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` outstanding-liability caps + L1 `getUtxos` solvency check v `issue_quote` (fail-closed); BTC-leg balance check + deploy pending |
+| 8 | Amount caps + solvency check před akceptací | ✅ CODE — `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` outstanding-liability caps + oboustranný balance check v `issue_quote` (fail-closed): ZION leg přes L1 `getUtxos`, BTC leg přes confirmed UTXOs signer adresy z BTC backendu (esplora/bitcoind-shape). Deploy pending |
 | 9 | Monitoring + on-call routing pro stuck swap | ❌ |
 | 10 | Preimage persistence/šifrování at-rest review | ⚠️ ověřit |
 | 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 📄 zdokumentováno, neschváleno |
@@ -350,6 +350,7 @@ V33 GAP analysis uvádí L2 ≈ **50 %** — z auditovaného stavu sedí:
 
 | 2026-10-02 | `a85a3a2` | **DAO UI**: `/dao/proposals/[id]` detail route (votes, quorum bar, timeline, inline ZIS voting), `QuorumProgress` komponenta na kartách, `serialize_proposal` nově emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply`. tsc+eslint clean, 85 dao testů ✅. Deploy pending (Edge web rebuild + daemon restart). |
 | 2026-10-02 | `4bc8014` | **Quote liability caps + solvency** (blocker #8): `issue_quote` async — outstanding caps `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` (live quotes + AwaitingUserLock liability), L1 `getUtxos` balance check pro `btc_to_zion` (fail-closed na RPC chybu), liability release při consume/expiry. 41/41 btc_swap testů ✅. |
+| 2026-10-02 | _pending_ | **BTC-leg solvency check** (dokončení blockeru #8): `issue_quote("zion_to_btc")` sčítá confirmed UTXOs na signer adrese přes BTC backend (`fetch_utxos`, esplora+bitcoind shape), fail-closed na dead backend / empty wallet / nedostatek sats. `BitcoinAdapter::with_api_urls` test-ctor + mock backend helper. 42/42 btc_swap testů ✅. |
 | 2026-10-02 | `c952f70` | **DAO D4 event/audit log**: append-only `dao_events` (subject `proposal:<id>`/`op:<op_id>`, event_type, actor, data_json, created_at) + index; runtime emituje `proposal_created`/`vote_cast`/`proposal_tallied`/`proposal_executed`/`proposal_cancelled`, treasury handlery `treasury_op_*`; audit selhání = `warn!`, neblokuje transition; nový endpoint `GET /api/dao/proposals/:id/events` (limit 500, parsed `data`); UI „Event history" na `/dao/proposals/[id]`. 87 dao testů ✅, tsc+eslint clean. Deploy pending. |
 
 *Živý dokument — aktualizovat po každé změně (deploy chainu, BTC pilot, DAO D1–D5, drift resolution).*
