@@ -1,0 +1,23 @@
+[Unit]
+Description=ZION G8 30-day run probe exporter (localhost only)
+After=network.target zion-v31-node.service zion-v31-pool.service zion-v31-multichain.service zion-v31-dao.service zion-zis.service
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+ExecStart=/usr/bin/python3 /opt/zion/scripts/ops/g8_probe_exporter.py
+Restart=always
+RestartSec=10
+Nice=10
+StandardOutput=journal
+StandardError=journal
+CPUQuota=50%
+MemoryMax=128M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
