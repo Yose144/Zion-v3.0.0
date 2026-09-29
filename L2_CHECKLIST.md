@@ -113,7 +113,7 @@ Klasifikace tří úrovní: **ChainAdapter** (`chain/adapters/` — plný wallet
 | 5 | Watch-only import review (`WARP_BITCOIN_IMPORT_SINCE`, rescan mezery) | ❌ |
 | 6 | WIF/network/adresa separace mainnet vs regtest | 🟡 zkontrolovat |
 | 7 | Confirmation/timeout margin review (CLTV deltas oběma směry) | 📄 částečně |
-| 8 | Amount caps + solvency check před akceptací | ❌ |
+| 8 | Amount caps + solvency check před akceptací | 🟡 CODE — `WARP_BTC_SWAP_MAX_QUOTE_ZION`/`_BTC` outstanding-liability caps + L1 `getUtxos` solvency check v `issue_quote` (fail-closed); BTC-leg balance check + deploy pending |
 | 9 | Monitoring + on-call routing pro stuck swap | ❌ |
 | 10 | Preimage persistence/šifrování at-rest review | ⚠️ ověřit |
 | 11 | Explicitní capped pilot (např. ≤ 0.001 BTC) + rollback plán | 📄 zdokumentováno, neschváleno |

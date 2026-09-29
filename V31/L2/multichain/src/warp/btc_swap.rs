@@ -67,6 +67,16 @@ pub enum BtcSwapDirection {
     ZionToBtc,
 }
 
+impl BtcSwapDirection {
+    /// Wire label used by the quote protocol and the HTTP API.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BtcSwapDirection::BtcToZion => "btc_to_zion",
+            BtcSwapDirection::ZionToBtc => "zion_to_btc",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BtcSwapPhase {
@@ -461,6 +471,13 @@ pub struct BtcSwapConfig {
     /// Seconds a signed quote stays valid; env
     /// `WARP_BTC_SWAP_QUOTE_TTL_SECS` (default 900 = 15 min).
     pub quote_ttl_secs: u64,
+    /// Cap on total ZION (flowers) the operator may owe across outstanding
+    /// quotes + awaiting-counter-lock swaps; env
+    /// `WARP_BTC_SWAP_MAX_QUOTE_ZION` (None = uncapped).
+    pub max_quote_outstanding_zion: Option<u64>,
+    /// Same cap for the BTC leg (sats) of `zion_to_btc` offers; env
+    /// `WARP_BTC_SWAP_MAX_QUOTE_BTC`.
+    pub max_quote_outstanding_btc: Option<u64>,
 }
 
 impl Default for BtcSwapConfig {
@@ -479,6 +496,8 @@ impl Default for BtcSwapConfig {
             min_zion_lock_confs: 2,
             offer_ttl_secs: 14_400,
             quote_ttl_secs: 900,
+            max_quote_outstanding_zion: None,
+            max_quote_outstanding_btc: None,
         }
     }
 }
@@ -704,6 +723,17 @@ pub struct BtcSwapFlow {
     quote_signer: Option<ed25519_dalek::SigningKey>,
     /// Fixed ZION↔BTC rate for quoting (flowers per sat). `0` = disabled.
     zion_per_sat: u64,
+    /// Issued-but-unredeemed quotes — the operator liability they represent
+    /// until expiry or consumption (record takes over on accept).
+    quote_liabilities: Mutex<HashMap<String, QuoteLiability>>,
+}
+
+/// Liability carried by one issued quote until expiry/consumption.
+struct QuoteLiability {
+    direction: String,
+    /// Owed units: ZION flowers for `btc_to_zion`, BTC sats for `zion_to_btc`.
+    owed: u64,
+    expires_at: u64,
 }
 
 /// Outcome of one poll iteration for a swap.
@@ -730,6 +760,7 @@ impl BtcSwapFlow {
             db: None,
             quote_signer: None,
             zion_per_sat: 0,
+            quote_liabilities: Mutex::new(HashMap::new()),
         }
     }
 
@@ -750,8 +781,11 @@ impl BtcSwapFlow {
 
     /// Issue a signed quote at the configured fixed rate. `direction` is
     /// `"btc_to_zion"` or `"zion_to_btc"`; `btc_sats` must sit inside the
-    /// configured band. Errors when no signer/rate is configured.
-    pub fn issue_quote(&self, direction: &str, btc_sats: u64) -> WarpResult<BtcSwapQuote> {
+    /// configured band. Errors when no signer/rate is configured. Enforces
+    /// outstanding-liability caps (issued-but-unredeemed quotes + swaps still
+    /// awaiting the operator counter-lock) and, when `zion_rpc_url` is set,
+    /// verifies the operator wallet actually covers the new obligation.
+    pub async fn issue_quote(&self, direction: &str, btc_sats: u64) -> WarpResult<BtcSwapQuote> {
         let key = self
             .quote_signer
             .as_ref()
@@ -766,8 +800,88 @@ impl BtcSwapFlow {
         let zion_flowers = btc_sats
             .checked_mul(self.zion_per_sat)
             .ok_or_else(|| err("quote overflow"))?;
-        let expires_at = Utc::now().timestamp().max(0) as u64 + self.cfg.quote_ttl_secs;
-        Ok(sign_quote(key, direction, btc_sats, zion_flowers, expires_at))
+        let now = Utc::now().timestamp().max(0) as u64;
+        let expires_at = now + self.cfg.quote_ttl_secs;
+
+        // Owed units: btc_to_zion obliges ZION flowers, zion_to_btc obliges
+        // BTC sats the operator counter-locks.
+        let owed = if direction == "btc_to_zion" { zion_flowers } else { btc_sats };
+        let cap = if direction == "btc_to_zion" {
+            self.cfg.max_quote_outstanding_zion
+        } else {
+            self.cfg.max_quote_outstanding_btc
+        };
+
+        // Outstanding liability = live quote window + records still waiting
+        // for the operator to counter-lock (AwaitingUserLock). Once locked,
+        // the funds already left the operator wallet — covered by the balance
+        // check rather than the liability sum.
+        let mut quote_liab = self.quote_liabilities.lock().await;
+        quote_liab.retain(|_, l| l.expires_at > now);
+        let mut outstanding: u64 = quote_liab
+            .values()
+            .filter(|l| l.direction == direction)
+            .map(|l| l.owed)
+            .sum();
+        for rec in self.records.lock().await.values() {
+            if rec.phase == BtcSwapPhase::AwaitingUserLock
+                && rec.direction.as_str() == direction
+            {
+                outstanding = outstanding.saturating_add(
+                    if direction == "btc_to_zion" { rec.zion_flowers } else { rec.btc_sats },
+                );
+            }
+        }
+
+        if let Some(cap) = cap {
+            if outstanding.saturating_add(owed) > cap {
+                return Err(err(format!(
+                    "quote would exceed outstanding {direction} cap \
+                     ({outstanding} + {owed} > {cap})"
+                )));
+            }
+        }
+
+        // Operator solvency: for btc_to_zion the wallet must cover all
+        // outstanding ZION obligations + this quote. Fail-closed on RPC
+        // error — an unverifiable balance is not a sellable quote.
+        if direction == "btc_to_zion" {
+            if let Some(rpc) = self.cfg.zion_rpc_url.as_deref() {
+                let resp = zion_rpc_call(
+                    rpc,
+                    "getUtxos",
+                    serde_json::json!({"address": self.cfg.operator_zion_address}),
+                )
+                .await?;
+                let balance: u64 = resp
+                    .get("utxos")
+                    .and_then(|v| v.as_array())
+                    .map(|utxos| {
+                        utxos.iter()
+                            .filter_map(|u| u.get("amount").and_then(|a| a.as_u64()))
+                            .sum()
+                    })
+                    .unwrap_or(0);
+                if balance < outstanding.saturating_add(owed) {
+                    return Err(err(format!(
+                        "operator ZION balance {balance} below outstanding \
+                         obligation {}",
+                        outstanding + owed
+                    )));
+                }
+            }
+        }
+
+        let quote = sign_quote(key, direction, btc_sats, zion_flowers, expires_at);
+        quote_liab.insert(
+            quote.quote_id.clone(),
+            QuoteLiability {
+                direction: direction.to_string(),
+                owed,
+                expires_at,
+            },
+        );
+        Ok(quote)
     }
 
     /// Verify a client-returned quote against this offer's terms, including
@@ -796,6 +910,8 @@ impl BtcSwapFlow {
                 return Err(err("quote already consumed"));
             }
         }
+        // Consume the liability — the swap record takes over tracking.
+        self.quote_liabilities.lock().await.remove(&quote.quote_id);
         Ok(quote.quote_id.clone())
     }
 
@@ -2579,8 +2695,8 @@ mod tests {
         assert!(verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000).is_err());
     }
 
-    #[test]
-    fn issue_quote_respects_config() {
+    #[tokio::test]
+    async fn issue_quote_respects_config() {
         // No signer at all.
         let flow = BtcSwapFlow::new(
             Arc::new(BitcoinAdapter::new()),
@@ -2588,7 +2704,7 @@ mod tests {
             Arc::new(HtlcSwap::new_offline()),
             cfg(),
         );
-        assert!(flow.issue_quote("btc_to_zion", 100_000).is_err());
+        assert!(flow.issue_quote("btc_to_zion", 100_000).await.is_err());
 
         // Signer but zero rate → quoting disabled.
         let mut flow = BtcSwapFlow::new(
@@ -2598,15 +2714,15 @@ mod tests {
             cfg(),
         );
         flow.set_quote_signer(quote_key(), 0);
-        assert!(flow.issue_quote("btc_to_zion", 100_000).is_err());
+        assert!(flow.issue_quote("btc_to_zion", 100_000).await.is_err());
 
         // Configured: rate applied, band enforced, direction validated.
         let flow = quote_flow();
-        let q = flow.issue_quote("btc_to_zion", 100_000).unwrap();
+        let q = flow.issue_quote("btc_to_zion", 100_000).await.unwrap();
         assert_eq!(q.zion_flowers, 100_000 * 500);
         assert!(q.expires_at > Utc::now().timestamp() as u64);
-        assert!(flow.issue_quote("btc_to_zion", 1_999).is_err()); // below min band
-        assert!(flow.issue_quote("bogus", 100_000).is_err());
+        assert!(flow.issue_quote("btc_to_zion", 1_999).await.is_err()); // below min band
+        assert!(flow.issue_quote("bogus", 100_000).await.is_err());
         // Quote verifies against the flow's own key.
         let pk = flow.quote_pubkey().unwrap();
         let now = Utc::now().timestamp().max(0) as u64;
@@ -2614,9 +2730,41 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn issue_quote_enforces_outstanding_caps() {
+        // Cap at 1.5× a single 100k-sat quote (rate 500) = 75M flowers.
+        let mut c = cfg();
+        c.max_quote_outstanding_zion = Some(75_000_000);
+        c.max_quote_outstanding_btc = Some(150_000);
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            c,
+        );
+        flow.set_quote_signer(quote_key(), 500);
+
+        // First quote fits, second of the same size breaks the cap.
+        let q1 = flow.issue_quote("btc_to_zion", 100_000).await.unwrap();
+        let e = flow.issue_quote("btc_to_zion", 100_000).await.unwrap_err();
+        assert!(e.to_string().contains("cap"), "{e}");
+        // A smaller one still fits under the residual headroom.
+        assert!(flow.issue_quote("btc_to_zion", 50_000).await.is_ok());
+
+        // The other direction has its own cap (sats).
+        assert!(flow.issue_quote("zion_to_btc", 100_000).await.is_ok());
+        assert!(flow.issue_quote("zion_to_btc", 60_000).await.is_err());
+
+        // Consuming q1 frees its liability — a same-size quote fits again.
+        flow.verify_offer_quote(&q1, "btc_to_zion", 100_000, q1.zion_flowers)
+            .await
+            .unwrap();
+        assert!(flow.issue_quote("btc_to_zion", 100_000).await.is_ok());
+    }
+
+    #[tokio::test]
     async fn verify_offer_quote_binds_and_replays() {
         let flow = quote_flow();
-        let q = flow.issue_quote("btc_to_zion", 100_000).unwrap();
+        let q = flow.issue_quote("btc_to_zion", 100_000).await.unwrap();
         let zion = q.zion_flowers;
 
         // Correct terms → returns the quote_id.
@@ -2646,7 +2794,7 @@ mod tests {
         let s = signer();
         let c = cfg();
         let flow = quote_flow();
-        let q = flow.issue_quote("btc_to_zion", 100_000).unwrap();
+        let q = flow.issue_quote("btc_to_zion", 100_000).await.unwrap();
         let zion = q.zion_flowers;
 
         // Consume the quote on one record.

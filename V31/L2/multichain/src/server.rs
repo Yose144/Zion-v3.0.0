@@ -1680,6 +1680,7 @@ async fn btc_swap_quote(
     let flow = btc_swap_flow(&state)?;
     let quote = flow
         .issue_quote(&req.direction, req.btc_sats)
+        .await
         .map_err(|e| bad_request(&e.to_string()))?;
     Ok(Json(serde_json::json!({
         "quote": quote,
