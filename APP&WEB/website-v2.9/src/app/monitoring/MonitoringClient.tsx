@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity, BarChart3, Box, Clock, Cpu, Database, ExternalLink,
-  Flame, Globe, HardDrive, Heart, Layers, Monitor, Network,
+  Flame, Globe, HardDrive, Heart, HeartPulse, Layers, Monitor, Network,
   RefreshCw, Server, Shield, Sparkles, Users, Zap,
   Coins, CircleDollarSign, ArrowUpDown, Gauge, Timer,
 } from 'lucide-react';
@@ -20,6 +20,7 @@ const MonitoringMonitoringClientCopy = {
   livePrometheusMetricsFromTheV3: { cs: `Zive Prometheus metriky z V3 core nodu, mining poolu, PPLNS enginu a serverove infrastruktury. 30+ metrik · automaticky refresh kazdych 15 sekund.`, en: `Live Prometheus metrics from the V3 core node, mining pool, PPLNS engine, and server infrastructure. 30+ metrics · Auto-refreshes every 15 seconds.` },
   openGrafanaDashboard: { cs: `Otevrit Grafana dashboard`, en: `Open Grafana Dashboard` },
   refresh: { cs: `Obnovit`, en: `Refresh` },
+  stabilityRun30Day: { cs: `30denní stabilitní běh`, en: `30-Day Stability Run` },
   lastUpdate: { cs: `Posledni aktualizace`, en: `Last update` },
   nextIn15s: { cs: `dalsi za 15 s`, en: `Next in 15s` },
   coreNode: { cs: `Core node`, en: `Core Node` },
@@ -441,6 +442,13 @@ export default function MonitoringClient() {
                 <BarChart3 className="h-4 w-4" />
                 {MonitoringMonitoringClientCopy.openGrafanaDashboard[cs ? 'cs' : 'en']}
                 <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+              </a>
+              <a
+                href="/g8"
+                className="zion-button-secondary"
+              >
+                <HeartPulse className="h-4 w-4" />
+                {MonitoringMonitoringClientCopy.stabilityRun30Day[cs ? 'cs' : 'en']}
               </a>
               <button
                 onClick={refresh}

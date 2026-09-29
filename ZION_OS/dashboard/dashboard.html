@@ -1190,8 +1190,27 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <span id="g8-progress-text">—</span>%
         </div>
       </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2 text-sm">
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Uptime</div>
+          <div id="g8-uptime" class="font-mono text-emerald-300 text-xs">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Coverage</div>
+          <div id="g8-coverage" class="font-mono text-cyan-300 text-xs">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Gate verdict</div>
+          <div id="g8-gate" class="font-mono text-purple-300 text-xs">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Active alerts / incidents</div>
+          <div id="g8-alerts" class="font-mono text-white text-xs">—</div>
+        </div>
+      </div>
+      <div id="g8-signals" class="flex flex-wrap gap-1.5 mb-2 text-[10px]"></div>
       <div class="text-[10px] text-gray-400">
-        Uptime target: <strong>≥99.9%</strong> · no critical incidents · Public UI: <a href="https://app.zionterranova.com/g8" target="_blank" class="text-cyan-300 hover:underline">app.zionterranova.com/g8</a>
+        Uptime target: <strong>≥99.9%</strong> · missing samples = downtime · chain tip >15min = outage · <a href="/g8" target="_blank" class="text-cyan-300 hover:underline">full report ↗</a> · Public UI: <a href="https://app.zionterranova.com/g8" target="_blank" class="text-cyan-300 hover:underline">app.zionterranova.com/g8</a>
       </div>
     </div>
 
@@ -1212,7 +1231,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
             badge.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-700/50 text-amber-200';
             return;
           }
-          const status = d.status || 'running';
+          const status = d.window_status || d.status || 'running';
           badge.textContent = status;
           badge.className = status === 'running'
             ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-200'
@@ -1226,6 +1245,31 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           const pct = d.progress_percent || 0;
           document.getElementById('g8-progress').style.width = pct + '%';
           document.getElementById('g8-progress-text').textContent = pct.toFixed(4);
+          const up = d.uptime_percent;
+          const upEl = document.getElementById('g8-uptime');
+          upEl.textContent = (up == null) ? '—' : up.toFixed(2) + '%';
+          upEl.className = 'font-mono text-xs ' + ((up != null && up >= 99.9) ? 'text-emerald-300' : 'text-rose-300');
+          const cov = d.evidence_coverage_percent;
+          document.getElementById('g8-coverage').textContent = (cov == null) ? '—' : cov.toFixed(1) + '%';
+          const gateEl = document.getElementById('g8-gate');
+          gateEl.textContent = d.gate_status || '—';
+          gateEl.className = 'font-mono text-xs ' + (d.gate_status === 'passed' ? 'text-emerald-300' : d.gate_status === 'failed' ? 'text-rose-300' : 'text-purple-300');
+          const inc = Array.isArray(d.incidents) ? d.incidents.length : 0;
+          const crit = Array.isArray(d.critical_incidents) ? d.critical_incidents.length : 0;
+          const alertsEl = document.getElementById('g8-alerts');
+          alertsEl.textContent = `${d.active_alert_count ?? 0} alerts · ${inc} inc (${crit} crit)`;
+          alertsEl.className = 'font-mono text-xs ' + ((d.active_alert_count ?? 0) > 0 || crit > 0 ? 'text-amber-300' : 'text-white');
+          const sigWrap = document.getElementById('g8-signals');
+          if (d.service_uptime_percent && typeof d.service_uptime_percent === 'object'){
+            sigWrap.innerHTML = '';
+            for (const [name, v] of Object.entries(d.service_uptime_percent)){
+              const chip = document.createElement('span');
+              const ok = v != null && v >= 99.9;
+              chip.className = 'px-2 py-0.5 rounded-full border ' + (ok ? 'border-emerald-500/40 text-emerald-300' : 'border-rose-500/40 text-rose-300');
+              chip.textContent = `${name} ${v == null ? '—' : v.toFixed(1) + '%'}`;
+              sigWrap.appendChild(chip);
+            }
+          }
         }catch(e){ console.error('G8 panel error', e); }
       }
       refreshG8();
