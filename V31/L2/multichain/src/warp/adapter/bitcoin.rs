@@ -269,6 +269,14 @@ impl BitcoinAdapter {
         adapter
     }
 
+    /// Test constructor: fixed endpoint list (mock backend).
+    #[cfg(test)]
+    pub(crate) fn with_api_urls(api_urls: Vec<String>) -> Self {
+        let mut a = Self::new();
+        a.api_urls = api_urls;
+        a
+    }
+
     /// The currently-primary mempool.space-compatible API base URL.
     pub fn api_url(&self) -> &str {
         &self.api_urls[self.primary.load(std::sync::atomic::Ordering::Relaxed)]
