@@ -2,9 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, Minus, Clock, Users, Calendar, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { GovernanceProposal, ProposalVote, getProposalVotes } from '@/lib/dao-api';
 import { useLang } from '@/contexts/LanguageContext';
+import QuorumProgress from './QuorumProgress';
 
 const FLOWERS_PER_ZION = 1_000_000;
 
@@ -111,7 +113,14 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
               </span>
             )}
           </div>
-          <h3 className="text-base font-medium text-white leading-snug">{proposal.title}</h3>
+          <h3 className="text-base font-medium text-white leading-snug">
+            <Link
+              href={`/dao/proposals/${proposal.id}`}
+              className="hover:text-zion-gold transition-colors"
+            >
+              {proposal.title}
+            </Link>
+          </h3>
         </div>
       </div>
 
@@ -163,6 +172,9 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
           <p className="text-[10px] text-gray-500">Abstain (ZION)</p>
         </div>
       </div>
+
+      {/* Quorum progress — participation vs required votes */}
+      <QuorumProgress proposal={proposal} />
 
       {/* Voting buttons — only while the voting window is actually open */}
       {votingOpen && onVote && (

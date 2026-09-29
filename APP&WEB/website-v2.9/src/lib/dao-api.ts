@@ -58,6 +58,14 @@ export interface GovernanceProposal {
   is_voting_open: boolean;
   has_passed: boolean;
   snapshot_block?: number;
+  /** Effective quorum % — max(per-type floor, configured base). */
+  required_quorum_percent?: number;
+  /** Vote weight (flowers) needed for quorum; 0/undefined if daemon is old. */
+  quorum_required_votes?: string;
+  /** total_votes >= quorum_required_votes */
+  quorum_met?: boolean;
+  /** Circulating supply used for quorum math (flowers). */
+  circulating_supply?: string;
 }
 
 export interface HumanitarianProposal {
@@ -259,6 +267,13 @@ function mapProposal(row: any): GovernanceProposal {
     is_voting_open: !!row.is_voting_open,
     has_passed: !!row.has_passed,
     snapshot_block: row.snapshot_block ?? row.start_block,
+    required_quorum_percent:
+      row.required_quorum_percent != null ? Number(row.required_quorum_percent) : undefined,
+    quorum_required_votes:
+      row.quorum_required_votes != null ? String(row.quorum_required_votes) : undefined,
+    quorum_met: row.quorum_met != null ? !!row.quorum_met : undefined,
+    circulating_supply:
+      row.circulating_supply != null ? String(row.circulating_supply) : undefined,
   };
 }
 

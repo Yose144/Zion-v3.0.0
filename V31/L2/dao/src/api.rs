@@ -363,7 +363,7 @@ async fn list_proposals(
         .into_iter()
         .skip(offset)
         .take(limit)
-        .map(serialize_proposal)
+        .map(|p| serialize_proposal(p, rt.circulating_supply(), rt.config().quorum_percent))
         .collect();
 
     ok(serde_json::json!({
@@ -381,7 +381,11 @@ async fn get_proposal(
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<ApiErr>)> {
     let rt = state.runtime.lock().await;
     match rt.get_proposal(id) {
-        Some(p) => Ok(ok(serialize_proposal(p))),
+        Some(p) => Ok(ok(serialize_proposal(
+            p,
+            rt.circulating_supply(),
+            rt.config().quorum_percent,
+        ))),
         None => Err(err(&format!("proposal {} not found", id))),
     }
 }
@@ -1292,7 +1296,12 @@ fn check_auth(state: &AppState, headers: &HeaderMap) -> Result<(), (StatusCode, 
     }
 }
 
-fn serialize_proposal(p: &Proposal) -> serde_json::Value {
+fn serialize_proposal(p: &Proposal, circulating_supply: u64, quorum_floor: f64) -> serde_json::Value {
+    // Quorum math mirrors check_quorum_with_floor: required = supply ×
+    // max(per-type floor, configured base) / 100, counted on total weight.
+    let required_percent = p.proposal_type.required_quorum_percent_or(quorum_floor);
+    let required_votes = (circulating_supply as f64 * required_percent / 100.0) as u64;
+    let total_votes = p.total_votes();
     serde_json::json!({
         "id": p.id,
         "uuid": p.uuid,
@@ -1307,13 +1316,17 @@ fn serialize_proposal(p: &Proposal) -> serde_json::Value {
         "votes_against": p.votes_against,
         "votes_abstain": p.votes_abstain,
         "voter_count": p.voter_count,
-        "total_votes": p.total_votes(),
+        "total_votes": total_votes,
         "created_at": p.created_at.to_rfc3339(),
         "voting_ends_at": p.voting_ends_at.to_rfc3339(),
         "timelock_ends_at": p.timelock_ends_at.map(|t| t.to_rfc3339()),
         "executed_at": p.executed_at.map(|t| t.to_rfc3339()),
         "has_passed": p.has_passed(),
         "is_voting_open": p.is_voting_open(),
+        "required_quorum_percent": required_percent,
+        "quorum_required_votes": required_votes,
+        "quorum_met": total_votes >= required_votes,
+        "circulating_supply": circulating_supply,
     })
 }
 
@@ -1399,10 +1412,15 @@ mod tests {
             1000,
             100,
         );
-        let json = serialize_proposal(&p);
+        let json = serialize_proposal(&p, 1_000_000_000_000, 10.0);
         assert_eq!(json["id"], 1);
         assert_eq!(json["title"], "Test");
         assert_eq!(json["status"], "Active");
+        // Parameter floor = 10% × 1e12 supply = 1e11 required votes.
+        assert_eq!(json["required_quorum_percent"], 10.0);
+        assert_eq!(json["quorum_required_votes"], 100_000_000_000u64);
+        assert_eq!(json["quorum_met"], false);
+        assert_eq!(json["circulating_supply"], 1_000_000_000_000u64);
     }
 
     #[test]
