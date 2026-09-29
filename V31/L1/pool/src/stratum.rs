@@ -1049,6 +1049,7 @@ impl StratumServer {
                                     if w.write_all(line.as_bytes()).await.is_err() { break; }
                                     if w.write_all(b"\n").await.is_err() { break; }
                                 }
+                                Err(broadcast::error::RecvError::Lagged(_)) => continue,
                                 Err(_) => break,
                             },
                         }
@@ -1360,6 +1361,15 @@ impl StratumServer {
                             let line = msg.trim_end();
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
+                            if w.write_all(b"\n").await.is_err() { break; }
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(n)) => {
+                        tracing::warn!("v3 tls session lagged {} broadcasts ip={}, resyncing", n, ip);
+                        let resync_job = self.last_v3_job.lock().unwrap().clone();
+                        if let Some(job) = resync_job {
+                            let mut w = writer.lock().await;
+                            if w.write_all(job.as_bytes()).await.is_err() { break; }
                             if w.write_all(b"\n").await.is_err() { break; }
                         }
                     }
@@ -1765,8 +1775,8 @@ impl StratumServer {
                                 ..
                             }) => {
                                 tracing::info!(
-                                    "v3_external_submit miner={} coin={} job={} nonce={}",
-                                    sub_miner_id, coin, external_job_id, nonce
+                                    "v3_external_submit miner={} worker={} ip={} coin={} job={} nonce={}",
+                                    sub_miner_id, sub_worker_name, ip, coin, external_job_id, nonce
                                 );
                                 tracing::debug!(
                                     target: "en1_trace",
@@ -1940,8 +1950,8 @@ impl StratumServer {
                                     }
                                     None => {
                                         tracing::info!(
-                                            "v3_external_stale miner={} coin={} job={} nonce={} reason=unknown_or_stale_bridge_job",
-                                            sub_miner_id, coin, external_job_id, nonce
+                                            "v3_external_stale miner={} worker={} ip={} coin={} job={} nonce={} reason=unknown_or_stale_bridge_job",
+                                            sub_miner_id, sub_worker_name, ip, coin, external_job_id, nonce
                                         );
                                         Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                                             crate::share_forwarder::ShareForwardResult::Rejected("stale".to_string()),
@@ -1950,8 +1960,8 @@ impl StratumServer {
                                 };
 
                                 tracing::info!(
-                                    "v3_external_forward miner={} coin={} job={} nonce={} result={:?} status={}",
-                                    sub_miner_id, coin, external_job_id, nonce,
+                                    "v3_external_forward miner={} worker={} ip={} coin={} job={} nonce={} result={:?} status={}",
+                                    sub_miner_id, sub_worker_name, ip, coin, external_job_id, nonce,
                                     bridge_result.as_ref().map(|_| "result"),
                                     match &bridge_result {
                                         Some(crate::auxpow_bridge::ShareForwardOutcome::Result(r)) => format!("{:?}", r),
@@ -1991,6 +2001,20 @@ impl StratumServer {
                                     coin: coin.clone(),
                                 };
                                 let _ = write_v3_message(writer, &result).await;
+
+                                if !accepted {
+                                    // Resync: a miner submitting shares for a retired
+                                    // upstream job likely missed the job broadcast (or
+                                    // runs a build without external-job refresh). Push
+                                    // the latest bundled job so it stops hashing dead work.
+                                    let resync_job = self.last_v3_job.lock().unwrap().clone();
+                                    if let Some(job) = resync_job {
+                                        let mut w = writer.lock().await;
+                                        let _ = w.write_all(job.as_bytes()).await;
+                                        let _ = w.write_all(b"\n").await;
+                                        let _ = w.flush().await;
+                                    }
+                                }
 
                                 if accepted {
                                     // Record telemetry
@@ -2042,6 +2066,17 @@ impl StratumServer {
                             let line = msg.trim_end();
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
+                            if w.write_all(b"\n").await.is_err() { break; }
+                        }
+                    }
+                    // Lagged receivers miss broadcasts but stay subscribed —
+                    // resync with the latest job instead of killing the session.
+                    Err(broadcast::error::RecvError::Lagged(n)) => {
+                        tracing::warn!("v3 session lagged {} broadcasts ip={}, resyncing", n, ip);
+                        let resync_job = self.last_v3_job.lock().unwrap().clone();
+                        if let Some(job) = resync_job {
+                            let mut w = writer.lock().await;
+                            if w.write_all(job.as_bytes()).await.is_err() { break; }
                             if w.write_all(b"\n").await.is_err() { break; }
                         }
                     }
