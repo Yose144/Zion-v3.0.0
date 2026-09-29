@@ -344,6 +344,30 @@ impl Db {
             );
         }
 
+        // quote_id column + UNIQUE index — replay protection for signed
+        // BTC-swap quotes (one quote_id can be consumed by one swap).
+        let mut stmt = self.conn.prepare("PRAGMA table_info(btc_swap_records)")?;
+        let mut has_quote_id = false;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            if row.get::<_, String>(1)? == "quote_id" {
+                has_quote_id = true;
+            }
+        }
+        drop(rows);
+        drop(stmt);
+        if !has_quote_id {
+            self.conn.execute(
+                "ALTER TABLE btc_swap_records ADD COLUMN quote_id TEXT",
+                [],
+            )?;
+        }
+        self.conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_btc_swap_quote
+             ON btc_swap_records(quote_id) WHERE quote_id IS NOT NULL",
+            [],
+        )?;
+
         Ok(())
     }
 
@@ -448,11 +472,18 @@ impl Db {
     ) -> MultichainResult<()> {
         let data_json = serde_json::to_string(snap)
             .map_err(|e| MultichainError::Internal(format!("serialize BTC swap: {e}")))?;
+        // Upsert keyed on swap_id only — a reused quote_id hits the UNIQUE
+        // index and fails hard (never silently REPLACE-deletes the victim row).
         self.conn.execute(
             r#"
-            INSERT OR REPLACE INTO btc_swap_records
-            (swap_id, direction, phase, updated_at, data_json)
-            VALUES (?1, ?2, ?3, ?4, ?5)
+            INSERT INTO btc_swap_records
+            (swap_id, direction, phase, updated_at, data_json, quote_id)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+            ON CONFLICT(swap_id) DO UPDATE SET
+                direction = excluded.direction,
+                phase = excluded.phase,
+                updated_at = excluded.updated_at,
+                data_json = excluded.data_json
             "#,
             rusqlite::params![
                 snap.swap_id,
@@ -463,9 +494,21 @@ impl Db {
                 snap.phase_tag(),
                 snap.updated_at.to_rfc3339(),
                 data_json,
+                snap.quote_id,
             ],
         )?;
         Ok(())
+    }
+
+    /// `true` if a signed-quote nonce was already consumed by a swap
+    /// (offer-side pre-check; the UNIQUE index is the hard guarantee).
+    pub fn btc_swap_quote_used(&self, quote_id: &str) -> MultichainResult<bool> {
+        let n: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM btc_swap_records WHERE quote_id = ?1",
+            rusqlite::params![quote_id],
+            |row| row.get(0),
+        )?;
+        Ok(n > 0)
     }
 
     /// List all BTC swap snapshots, newest first.

@@ -289,6 +289,7 @@ impl ApiServer {
             .route("/v1/multichain/swaps/htlc/pending", get(htlc_pending))
             .route("/v1/multichain/swaps/htlc/escrow", get(htlc_escrow))
             .route("/v1/multichain/swaps/htlc/:hash", get(htlc_get))
+            .route("/v1/multichain/swaps/btc/quote", post(btc_swap_quote))
             .route("/v1/multichain/swaps/btc/offer", post(btc_swap_offer))
             .route("/v1/multichain/swaps/btc/list", get(btc_swap_list))
             .route("/v1/multichain/swaps/btc/metrics", get(btc_swap_metrics))
@@ -1593,6 +1594,18 @@ struct BtcSwapOfferRequest {
     user_zion_lock_txid: Option<String>,
     /// ZION-leg timeout (UNIX seconds).
     zion_timeout_ts: u64,
+    /// Signed quote from `POST /v1/multichain/swaps/btc/quote`. When present
+    /// and valid it replaces the operator `X-Warp-Key` requirement.
+    #[serde(default)]
+    quote: Option<crate::warp::btc_swap::BtcSwapQuote>,
+}
+
+/// `POST /v1/multichain/swaps/btc/quote` request.
+#[derive(serde::Deserialize)]
+struct BtcSwapQuoteRequest {
+    /// `btc_to_zion` | `zion_to_btc`.
+    direction: String,
+    btc_sats: u64,
 }
 
 fn btc_swap_flow(
@@ -1656,19 +1669,57 @@ fn require_btc_swap_offer_key(
     Ok(())
 }
 
+/// `POST /v1/multichain/swaps/btc/quote` — issue a signed price quote.
+/// Public endpoint: the quote is only a price commitment; redeeming it via
+/// `/offer` still requires a valid hashlock + user pubkeys. Replay is bound
+/// by the `btc_swap_records.quote_id` UNIQUE index.
+async fn btc_swap_quote(
+    State(state): State<AppState>,
+    Json(req): Json<BtcSwapQuoteRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let flow = btc_swap_flow(&state)?;
+    let quote = flow
+        .issue_quote(&req.direction, req.btc_sats)
+        .map_err(|e| bad_request(&e.to_string()))?;
+    Ok(Json(serde_json::json!({
+        "quote": quote,
+        "zion_flowers": quote.zion_flowers,
+        "expires_at": quote.expires_at,
+    })))
+}
+
 async fn btc_swap_offer(
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(req): Json<BtcSwapOfferRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    // Operator-only until a server-side quote/approval protocol exists: an
-    // offer can make the operator counter-lock real assets, so a normal
-    // ZIS-authenticated user must not be able to reach this endpoint.
-    require_btc_swap_offer_key(
+    // Authorization: operator X-Warp-Key OR a valid signed quote that binds
+    // this offer's (direction, btc_sats, zion_flowers). The quote path lets
+    // users open swaps without ever choosing both legs of the trade.
+    let operator_ok = require_btc_swap_offer_key(
         state.btc_swap_offer_key.as_deref(),
         headers.get("x-warp-key").and_then(|value| value.to_str().ok()),
-    )?;
+    )
+    .is_ok();
     let flow = btc_swap_flow(&state)?;
+    let quote_id = if operator_ok {
+        req.quote.as_ref().map(|q| q.quote_id.clone())
+    } else {
+        match &req.quote {
+            Some(q) => Some(
+                flow.verify_offer_quote(q, &req.direction, req.btc_sats, req.zion_flowers)
+                    .await
+                    .map_err(|e| bad_request(&e.to_string()))?,
+            ),
+            None => {
+                return Err(require_btc_swap_offer_key(
+                    state.btc_swap_offer_key.as_deref(),
+                    headers.get("x-warp-key").and_then(|v| v.to_str().ok()),
+                )
+                .unwrap_err())
+            }
+        }
+    };
 
     let hashlock: [u8; 32] = hex::decode(&req.hash_hex)
         .ok()
@@ -1690,6 +1741,7 @@ async fn btc_swap_offer(
                 user_zion_claim: user_zion,
                 user_zion_address: req.user_zion_address,
                 zion_timeout_ts: req.zion_timeout_ts,
+                quote_id: quote_id.clone(),
             })
             .await
         }
@@ -1706,6 +1758,7 @@ async fn btc_swap_offer(
                 user_zion_lock_txid: lock_txid,
                 user_zion_address: req.user_zion_address,
                 zion_timeout_ts: req.zion_timeout_ts,
+                quote_id: quote_id.clone(),
             })
             .await
         }

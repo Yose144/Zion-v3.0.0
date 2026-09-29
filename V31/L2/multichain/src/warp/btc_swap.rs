@@ -107,6 +107,131 @@ pub struct OfferBtcToZion {
     /// Agreed ZION-leg timeout (UNIX secs) — must sit comfortably before the
     /// derived BTC CLTV (the BTC leg always expires later).
     pub zion_timeout_ts: u64,
+    /// Consumed signed-quote nonce (replay protection; `None` = operator offer).
+    pub quote_id: Option<String>,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Signed quote protocol
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// A quote is the operator's signed price commitment. Without it the offer
+// endpoint stays operator-only (`X-Warp-Key`): an unsigned user offer could
+// pick *both* legs of the trade (e.g. ask 1 BTC for 1 flower), making the
+// operator counter-lock real funds at a loss. The quote binds direction,
+// both amounts and an expiry to an Ed25519 signature from the operator's
+// dedicated ZION swap keyring, and `quote_id` is replay-protected by a
+// UNIQUE column on `btc_swap_records`.
+
+/// Domain separator for quote signatures.
+pub const QUOTE_DOMAIN: &str = "warp:btc-quote:v1";
+
+/// A signed server quote. JSON-serializable — clients pass it back verbatim
+/// inside the offer request.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct BtcSwapQuote {
+    /// Unique nonce — replay key (`btc_swap_records.quote_id`, UNIQUE).
+    pub quote_id: String,
+    /// `"btc_to_zion"` | `"zion_to_btc"`.
+    pub direction: String,
+    pub btc_sats: u64,
+    pub zion_flowers: u64,
+    /// Unix seconds; offer must arrive before this.
+    pub expires_at: u64,
+    /// Operator Ed25519 pubkey (hex) — must equal the configured signer.
+    pub signer_pubkey_hex: String,
+    /// Ed25519 signature (hex) over [`quote_signing_payload`].
+    pub signature_hex: String,
+}
+
+/// Canonical bytes the operator signs:
+/// `warp:btc-quote:v1|<quote_id>|<direction>|<btc_sats>|<zion_flowers>|<expires_at>`
+pub fn quote_signing_payload(
+    quote_id: &str,
+    direction: &str,
+    btc_sats: u64,
+    zion_flowers: u64,
+    expires_at: u64,
+) -> String {
+    format!("{QUOTE_DOMAIN}|{quote_id}|{direction}|{btc_sats}|{zion_flowers}|{expires_at}")
+}
+
+/// Build + sign a quote with the operator's Ed25519 key.
+pub fn sign_quote(
+    signing_key: &ed25519_dalek::SigningKey,
+    direction: &str,
+    btc_sats: u64,
+    zion_flowers: u64,
+    expires_at: u64,
+) -> BtcSwapQuote {
+    use ed25519_dalek::Signer;
+    let quote_id = uuid::Uuid::new_v4().to_string();
+    let payload = quote_signing_payload(&quote_id, direction, btc_sats, zion_flowers, expires_at);
+    let sig = signing_key.sign(payload.as_bytes());
+    BtcSwapQuote {
+        quote_id,
+        direction: direction.to_string(),
+        btc_sats,
+        zion_flowers,
+        expires_at,
+        signer_pubkey_hex: hex::encode(signing_key.verifying_key().to_bytes()),
+        signature_hex: hex::encode(sig.to_bytes()),
+    }
+}
+
+/// Verify a quote: signature validity, expected signer, expiry, and that it
+/// binds the exact `(direction, btc_sats, zion_flowers)` of the offer.
+/// Replay protection is enforced separately by the `quote_id` UNIQUE column.
+pub fn verify_quote(
+    quote: &BtcSwapQuote,
+    expected_pubkey: &[u8; 32],
+    direction: &str,
+    btc_sats: u64,
+    zion_flowers: u64,
+    now_ts: u64,
+) -> WarpResult<()> {
+    use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+
+    if quote.direction != direction {
+        return Err(err(format!(
+            "quote direction {} does not match offer {direction}",
+            quote.direction
+        )));
+    }
+    if quote.btc_sats != btc_sats || quote.zion_flowers != zion_flowers {
+        return Err(err(format!(
+            "quote binds {}/{} but offer carries {}/{}",
+            quote.btc_sats, quote.zion_flowers, btc_sats, zion_flowers
+        )));
+    }
+    if now_ts > quote.expires_at {
+        return Err(err(format!(
+            "quote expired at {} (now {now_ts})",
+            quote.expires_at
+        )));
+    }
+    let pk_bytes: [u8; 32] = hex::decode(&quote.signer_pubkey_hex)
+        .ok()
+        .and_then(|b| b.try_into().ok())
+        .ok_or_else(|| err("quote signer_pubkey_hex malformed"))?;
+    if &pk_bytes != expected_pubkey {
+        return Err(err("quote signed by unknown key"));
+    }
+    let sig_bytes: [u8; 64] = hex::decode(&quote.signature_hex)
+        .ok()
+        .and_then(|b| b.try_into().ok())
+        .ok_or_else(|| err("quote signature_hex malformed"))?;
+    let vk = VerifyingKey::from_bytes(&pk_bytes)
+        .map_err(|e| err(format!("quote pubkey invalid: {e}")))?;
+    let payload = quote_signing_payload(
+        &quote.quote_id,
+        &quote.direction,
+        quote.btc_sats,
+        quote.zion_flowers,
+        quote.expires_at,
+    );
+    vk.verify(payload.as_bytes(), &Signature::from_bytes(&sig_bytes))
+        .map_err(|_| err("quote signature invalid"))
 }
 
 /// Parameters of a ZION→BTC offer (user locks ZION first).
@@ -126,6 +251,8 @@ pub struct OfferZionToBtc {
     /// Timeout of the user's ZION lock (UNIX secs) — our BTC CLTV is placed
     /// strictly before it minus the safety margin.
     pub zion_timeout_ts: u64,
+    /// Consumed signed-quote nonce (replay protection; `None` = operator offer).
+    pub quote_id: Option<String>,
 }
 
 /// A tracked swap.
@@ -152,6 +279,9 @@ pub struct BtcSwapRecord {
     pub preimage: Option<[u8; 32]>,
     /// Our settlement txid on the BTC leg (claim or refund).
     pub btc_settle_tx: Option<String>,
+    /// Signed-quote nonce this swap consumed (replay protection). `None`
+    /// for operator-key offers and records predating the quote protocol.
+    pub quote_id: Option<String>,
     pub created_at: chrono::DateTime<Utc>,
     pub updated_at: chrono::DateTime<Utc>,
 }
@@ -176,6 +306,8 @@ pub struct BtcSwapSnapshot {
     pub zion_lock_tx: Option<String>,
     pub preimage_hex: Option<String>,
     pub btc_settle_tx: Option<String>,
+    /// Consumed quote nonce — UNIQUE-indexed for replay protection.
+    pub quote_id: Option<String>,
     pub created_at: chrono::DateTime<Utc>,
     pub updated_at: chrono::DateTime<Utc>,
 }
@@ -212,6 +344,7 @@ impl BtcSwapRecord {
             zion_lock_tx: self.zion_lock_tx.clone(),
             preimage_hex: self.preimage.map(hex::encode),
             btc_settle_tx: self.btc_settle_tx.clone(),
+            quote_id: self.quote_id.clone(),
             created_at: self.created_at,
             updated_at: self.updated_at,
         }
@@ -258,6 +391,7 @@ impl BtcSwapRecord {
             zion_lock_tx: snap.zion_lock_tx.clone(),
             preimage,
             btc_settle_tx: snap.btc_settle_tx.clone(),
+            quote_id: snap.quote_id.clone(),
             created_at: snap.created_at,
             updated_at: snap.updated_at,
         })
@@ -324,6 +458,9 @@ pub struct BtcSwapConfig {
     /// evidence before it is failed. Frees `max_active_swaps` capacity;
     /// env `WARP_BTC_SWAP_OFFER_TTL_SECS` (default 14400 = 4h).
     pub offer_ttl_secs: u64,
+    /// Seconds a signed quote stays valid; env
+    /// `WARP_BTC_SWAP_QUOTE_TTL_SECS` (default 900 = 15 min).
+    pub quote_ttl_secs: u64,
 }
 
 impl Default for BtcSwapConfig {
@@ -341,6 +478,7 @@ impl Default for BtcSwapConfig {
             zion_rpc_url: None,
             min_zion_lock_confs: 2,
             offer_ttl_secs: 14_400,
+            quote_ttl_secs: 900,
         }
     }
 }
@@ -561,6 +699,11 @@ pub struct BtcSwapFlow {
     records: Arc<Mutex<HashMap<String, BtcSwapRecord>>>,
     /// Optional SQLite persistence — set via [`Self::set_db`].
     db: Option<Arc<Mutex<crate::db::Db>>>,
+    /// Operator Ed25519 key used to sign quotes (from the dedicated swap
+    /// keyring). `None` → the `/quote` endpoint reports "not configured".
+    quote_signer: Option<ed25519_dalek::SigningKey>,
+    /// Fixed ZION↔BTC rate for quoting (flowers per sat). `0` = disabled.
+    zion_per_sat: u64,
 }
 
 /// Outcome of one poll iteration for a swap.
@@ -585,7 +728,75 @@ impl BtcSwapFlow {
             cfg,
             records: Arc::new(Mutex::new(HashMap::new())),
             db: None,
+            quote_signer: None,
+            zion_per_sat: 0,
         }
+    }
+
+    /// Attach the quote signer (operator's dedicated swap keyring key) and
+    /// the fixed quote rate (`zion_flowers` per BTC sat). Called by service
+    /// wiring once `WARP_BTC_SWAP_ZION_SECRET`/`_MNEMONIC` resolves.
+    pub fn set_quote_signer(&mut self, key: ed25519_dalek::SigningKey, zion_per_sat: u64) {
+        self.quote_signer = Some(key);
+        self.zion_per_sat = zion_per_sat;
+    }
+
+    /// Operator's quote-signing pubkey — `None` when quoting is unconfigured.
+    pub fn quote_pubkey(&self) -> Option<[u8; 32]> {
+        self.quote_signer
+            .as_ref()
+            .map(|k| k.verifying_key().to_bytes())
+    }
+
+    /// Issue a signed quote at the configured fixed rate. `direction` is
+    /// `"btc_to_zion"` or `"zion_to_btc"`; `btc_sats` must sit inside the
+    /// configured band. Errors when no signer/rate is configured.
+    pub fn issue_quote(&self, direction: &str, btc_sats: u64) -> WarpResult<BtcSwapQuote> {
+        let key = self
+            .quote_signer
+            .as_ref()
+            .ok_or_else(|| err("quote signing not configured"))?;
+        if self.zion_per_sat == 0 {
+            return Err(err("quote rate not configured (WARP_BTC_SWAP_ZION_PER_SAT)"));
+        }
+        if direction != "btc_to_zion" && direction != "zion_to_btc" {
+            return Err(err(format!("unknown direction '{direction}'")));
+        }
+        self.check_amount(btc_sats)?;
+        let zion_flowers = btc_sats
+            .checked_mul(self.zion_per_sat)
+            .ok_or_else(|| err("quote overflow"))?;
+        let expires_at = Utc::now().timestamp().max(0) as u64 + self.cfg.quote_ttl_secs;
+        Ok(sign_quote(key, direction, btc_sats, zion_flowers, expires_at))
+    }
+
+    /// Verify a client-returned quote against this offer's terms, including
+    /// a replay pre-check when a DB is attached (the `quote_id` UNIQUE index
+    /// remains the hard guarantee). Returns the `quote_id` to persist on the
+    /// swap record.
+    pub async fn verify_offer_quote(
+        &self,
+        quote: &BtcSwapQuote,
+        direction: &str,
+        btc_sats: u64,
+        zion_flowers: u64,
+    ) -> WarpResult<String> {
+        let pk = self
+            .quote_pubkey()
+            .ok_or_else(|| err("quote verification unavailable"))?;
+        let now = Utc::now().timestamp().max(0) as u64;
+        verify_quote(quote, &pk, direction, btc_sats, zion_flowers, now)?;
+        if let Some(db) = &self.db {
+            if db
+                .lock()
+                .await
+                .btc_swap_quote_used(&quote.quote_id)
+                .map_err(|e| err(format!("quote replay check: {e}")))?
+            {
+                return Err(err("quote already consumed"));
+            }
+        }
+        Ok(quote.quote_id.clone())
     }
 
     /// Attach SQLite persistence (records survive restarts).
@@ -698,6 +909,7 @@ impl BtcSwapFlow {
             zion_lock_tx: None,
             preimage: None,
             btc_settle_tx: None,
+            quote_id: p.quote_id,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -753,6 +965,7 @@ impl BtcSwapFlow {
             zion_lock_tx: None,
             preimage: None,
             btc_settle_tx: None,
+            quote_id: p.quote_id,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -1398,6 +1611,7 @@ mod tests {
                 user_zion_claim: [0x22; 32],
                 user_zion_address: "zion1user".into(),
                 zion_timeout_ts: 1_800_000_000,
+                quote_id: None,
             },
             1_700_000_000, // now
             850_000,       // btc tip
@@ -1614,6 +1828,7 @@ mod tests {
                     user_zion_lock_txid: "cc".repeat(32),
                     user_zion_address: "zion1user".into(),
                     zion_timeout_ts: 1_800_000_000,
+                    quote_id: None,
                 },
                 1_700_000_000,
                 850_000,
@@ -1656,6 +1871,7 @@ mod tests {
                     user_zion_lock_txid: "cc".repeat(32),
                     user_zion_address: "zion1user".into(),
                     zion_timeout_ts: 1_800_000_000,
+                    quote_id: None,
                 },
                 1_700_000_000,
                 850_000,
@@ -1698,6 +1914,7 @@ mod tests {
                     user_zion_lock_txid: "cc".repeat(32),
                     user_zion_address: "zion1user".into(),
                     zion_timeout_ts: 1_800_000_000,
+                    quote_id: None,
                 },
                 1_700_000_000,
                 850_000,
@@ -1755,6 +1972,7 @@ mod tests {
                 user_zion_claim: [0; 32],
                 user_zion_address: "zion1u".into(),
                 zion_timeout_ts: 100,
+                quote_id: None,
             },
             1_700_000_000,
             850_000,
@@ -1860,6 +2078,7 @@ mod tests {
                     user_zion_claim: [0x22; 32],
                     user_zion_address: "zion1user".into(),
                     zion_timeout_ts: 1_800_000_000,
+                    quote_id: None,
                 },
                 1_700_000_000,
                 850_000,
@@ -1875,6 +2094,7 @@ mod tests {
                 user_zion_claim: [0x22; 32],
                 user_zion_address: "zion1user".into(),
                 zion_timeout_ts: 1_800_000_000,
+                quote_id: None,
             },
             1_700_000_000,
             850_000,
@@ -1946,6 +2166,7 @@ mod tests {
                 user_zion_claim: [0x22; 32],
                 user_zion_address: "zion1user".into(),
                 zion_timeout_ts: 1_800_000_000,
+                quote_id: None,
             },
             1_700_000_000,
             850_000,
@@ -1972,6 +2193,7 @@ mod tests {
                 user_zion_lock_txid: lock_txid.into(),
                 user_zion_address: "zion1user".into(),
                 zion_timeout_ts: 1_800_000_000,
+                quote_id: None,
             },
             1_700_000_000,
             850_000,
@@ -2269,5 +2491,177 @@ mod tests {
             flow.record(&swap_id).await.unwrap().phase,
             BtcSwapPhase::AwaitingUserLock
         ));
+    }
+
+    // ------------------------------------------------------------------
+    // Signed-quote protocol
+    // ------------------------------------------------------------------
+
+    fn quote_key() -> ed25519_dalek::SigningKey {
+        ed25519_dalek::SigningKey::from_bytes(&[0x77; 32])
+    }
+
+    fn quote_flow() -> BtcSwapFlow {
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        flow.set_quote_signer(quote_key(), 500);
+        flow
+    }
+
+    #[test]
+    fn quote_sign_verify_roundtrip() {
+        let key = quote_key();
+        let pk = key.verifying_key().to_bytes();
+        let q = sign_quote(&key, "btc_to_zion", 100_000, 50_000_000, 1_900_000_000);
+        assert!(!q.quote_id.is_empty());
+        verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000).unwrap();
+        // zion_to_btc direction is bound into the signature too.
+        let q2 = sign_quote(&key, "zion_to_btc", 100_000, 50_000_000, 1_900_000_000);
+        verify_quote(&q2, &pk, "zion_to_btc", 100_000, 50_000_000, 1_800_000_000).unwrap();
+    }
+
+    #[test]
+    fn quote_rejects_every_tampering() {
+        let key = quote_key();
+        let pk = key.verifying_key().to_bytes();
+        let good = sign_quote(&key, "btc_to_zion", 100_000, 50_000_000, 1_900_000_000);
+
+        // Wrong direction / either amount / expiry / signer / signature.
+        let mut q = good.clone();
+        q.direction = "zion_to_btc".into();
+        assert!(verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000).is_err());
+
+        assert!(
+            verify_quote(&good, &pk, "btc_to_zion", 100_001, 50_000_000, 1_800_000_000).is_err()
+        );
+        assert!(
+            verify_quote(&good, &pk, "btc_to_zion", 100_000, 50_000_001, 1_800_000_000).is_err()
+        );
+        // Expired.
+        assert!(
+            verify_quote(&good, &pk, "btc_to_zion", 100_000, 50_000_000, 1_900_000_001).is_err()
+        );
+
+        // Signed by an unknown key.
+        let other = ed25519_dalek::SigningKey::from_bytes(&[0x99; 32]);
+        let forged = sign_quote(&other, "btc_to_zion", 100_000, 50_000_000, 1_900_000_000);
+        let e = verify_quote(&forged, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000)
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("unknown key"), "{e}");
+
+        // Claimed signer pubkey swapped to the attacker's key while the
+        // signature stays the operator's — must fail signature check.
+        let mut q = good.clone();
+        q.signer_pubkey_hex = hex::encode(other.verifying_key().to_bytes());
+        let e = verify_quote(&q, &other.verifying_key().to_bytes(), "btc_to_zion", 100_000,
+            50_000_000, 1_800_000_000).unwrap_err().to_string();
+        assert!(e.contains("signature invalid"), "{e}");
+
+        // Corrupted signature bytes.
+        let mut q = good;
+        q.signature_hex = "ff".repeat(64);
+        let e = verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000)
+            .unwrap_err()
+            .to_string();
+        assert!(e.contains("signature invalid"), "{e}");
+
+        // Malformed hex fields.
+        let mut q = sign_quote(&key, "btc_to_zion", 100_000, 50_000_000, 1_900_000_000);
+        q.signature_hex = "zz".into();
+        assert!(verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000).is_err());
+        let mut q = sign_quote(&key, "btc_to_zion", 100_000, 50_000_000, 1_900_000_000);
+        q.signer_pubkey_hex = "zz".into();
+        assert!(verify_quote(&q, &pk, "btc_to_zion", 100_000, 50_000_000, 1_800_000_000).is_err());
+    }
+
+    #[test]
+    fn issue_quote_respects_config() {
+        // No signer at all.
+        let flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        assert!(flow.issue_quote("btc_to_zion", 100_000).is_err());
+
+        // Signer but zero rate → quoting disabled.
+        let mut flow = BtcSwapFlow::new(
+            Arc::new(BitcoinAdapter::new()),
+            Arc::new(signer()),
+            Arc::new(HtlcSwap::new_offline()),
+            cfg(),
+        );
+        flow.set_quote_signer(quote_key(), 0);
+        assert!(flow.issue_quote("btc_to_zion", 100_000).is_err());
+
+        // Configured: rate applied, band enforced, direction validated.
+        let flow = quote_flow();
+        let q = flow.issue_quote("btc_to_zion", 100_000).unwrap();
+        assert_eq!(q.zion_flowers, 100_000 * 500);
+        assert!(q.expires_at > Utc::now().timestamp() as u64);
+        assert!(flow.issue_quote("btc_to_zion", 1_999).is_err()); // below min band
+        assert!(flow.issue_quote("bogus", 100_000).is_err());
+        // Quote verifies against the flow's own key.
+        let pk = flow.quote_pubkey().unwrap();
+        let now = Utc::now().timestamp().max(0) as u64;
+        verify_quote(&q, &pk, "btc_to_zion", 100_000, q.zion_flowers, now).unwrap();
+    }
+
+    #[tokio::test]
+    async fn verify_offer_quote_binds_and_replays() {
+        let flow = quote_flow();
+        let q = flow.issue_quote("btc_to_zion", 100_000).unwrap();
+        let zion = q.zion_flowers;
+
+        // Correct terms → returns the quote_id.
+        let qid = flow
+            .verify_offer_quote(&q, "btc_to_zion", 100_000, zion)
+            .await
+            .unwrap();
+        assert_eq!(qid, q.quote_id);
+
+        // Amount mismatch must not pass even with a valid signature.
+        assert!(flow
+            .verify_offer_quote(&q, "btc_to_zion", 100_000, zion + 1)
+            .await
+            .is_err());
+        assert!(flow
+            .verify_offer_quote(&q, "zion_to_btc", 100_000, zion)
+            .await
+            .is_err());
+    }
+
+    #[tokio::test]
+    async fn quote_id_is_unique_in_db() {
+        // Fresh temp DB each run.
+        let dir = std::env::temp_dir().join(format!("warp-qtest-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let db = crate::db::Db::open(&dir.join("t.db")).unwrap();
+        let s = signer();
+        let c = cfg();
+        let flow = quote_flow();
+        let q = flow.issue_quote("btc_to_zion", 100_000).unwrap();
+        let zion = q.zion_flowers;
+
+        // Consume the quote on one record.
+        let mut rec = btc_to_zion_rec(&s, &c);
+        rec.quote_id = Some(q.quote_id.clone());
+        db.save_btc_swap(&rec.to_snapshot()).unwrap();
+        assert!(db.btc_swap_quote_used(&q.quote_id).unwrap());
+        assert!(!db.btc_swap_quote_used("other").unwrap());
+
+        // A second record reusing the same quote_id must hit UNIQUE.
+        let mut rec2 = btc_to_zion_rec(&s, &c);
+        rec2.quote_id = Some(q.quote_id.clone());
+        assert!(db.save_btc_swap(&rec2.to_snapshot()).is_err());
+
+        let _ = (flow, zion); // keep imports/vars exercised
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

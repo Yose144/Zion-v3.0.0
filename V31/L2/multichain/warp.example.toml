@@ -12,7 +12,9 @@
 #   WARP_CARDANO_ZION_ASSET, WARP_CARDANO_PAYMENT_KEY
 #   WARP_BITCOIN_HTLC_ADDRESS, WARP_BTC_RELAY_KEY
 #   WARP_BTC_SWAP_ENABLED, WARP_BTC_MIN_CONFS, WARP_BTC_MARGIN_BLOCKS,
-#   WARP_BTC_SWAP_POLL_SECS, BITCOIN_NETWORK, WARP_BITCOIN_API
+#   WARP_BTC_SWAP_POLL_SECS, BITCOIN_NETWORK, WARP_BITCOIN_API,
+#   WARP_BTC_SWAP_ZION_PER_SAT, WARP_BTC_SWAP_QUOTE_TTL_SECS,
+#   WARP_BTC_SWAP_OFFER_KEY
 #   WARP_LN_NODE_URL, WARP_LN_MACAROON
 #   WARP_EVM_RELAY_KEY, WARP_VALIDATOR_KEYS
 #   WARP_L1_RELEASE_KEYS  — comma-separated secp256k1 hex keys used to sign
@@ -214,7 +216,21 @@ finality_blocks = 0
 #                                # dedicated wallet (SECRET wins if both set)
 # The dedicated keyring gets its own ZionL1 adapter + HTLC coordinator, so
 # WARP swap locks/claims never share UTXO selection with the bridge/pool.
-# API: POST /v1/multichain/swaps/btc/offer, GET /swaps/btc/list, GET /swaps/btc/:id
+#
+# Signed-quote protocol (public offers):
+#   WARP_BTC_SWAP_ZION_PER_SAT=0   # fixed quote rate: flowers per BTC sat.
+#                                # 0/unset → POST /swaps/btc/quote disabled
+#                                # and /offer stays operator-only via X-Warp-Key.
+#   WARP_BTC_SWAP_QUOTE_TTL_SECS=900  # quote validity window (default 15 min)
+#   WARP_BTC_SWAP_OFFER_KEY=<secret>  # X-Warp-Key header for operator offers
+#                                # (bypasses quotes — keep for admin/test only)
+# Flow: user POSTs /quote {direction, btc_sats} → server returns a signed
+# quote binding (direction, sats, flowers, expiry); user POSTs /offer with
+# the quote embedded. Quotes are Ed25519-signed by the dedicated ZION
+# keyring (domain warp:btc-quote:v1) and replay-protected by the
+# btc_swap_records.quote_id UNIQUE index — one quote opens one swap.
+# API: POST /v1/multichain/swaps/btc/quote, POST /swaps/btc/offer,
+#      GET /swaps/btc/list, GET /swaps/btc/:id
 
 # ── Solver network (optional) ───────────────────────────────────────────────
 # Configure this warpd instance as an off-chain intent solver, and/or list

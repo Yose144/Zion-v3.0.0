@@ -203,6 +203,7 @@ async fn e2e_flow_btc_to_zion() {
             user_zion_claim: user_zion_pk,
             user_zion_address: user_zion_addr.clone(),
             zion_timeout_ts: zion_timeout,
+            quote_id: None,
         })
         .await
         .expect("offer_btc_to_zion");
@@ -329,6 +330,7 @@ async fn e2e_flow_zion_to_btc() {
             user_zion_lock_txid: "test-zion-lock-txid".into(),
             user_zion_address: user_zion_addr.clone(),
             zion_timeout_ts: zion_timeout,
+            quote_id: None,
         })
         .await
         .expect("offer_zion_to_btc");
@@ -425,6 +427,7 @@ async fn e2e_flow_zion_to_btc_refund() {
             user_zion_lock_txid: "test-zion-lock-refund".into(),
             user_zion_address: user_zion_addr,
             zion_timeout_ts: zion_timeout,
+            quote_id: None,
         })
         .await
         .expect("offer_zion_to_btc");
@@ -524,6 +527,7 @@ async fn e2e_flow_btc_to_zion_refund() {
             user_zion_claim: user_zion_pk,
             user_zion_address: user_zion_addr,
             zion_timeout_ts: zion_timeout,
+            quote_id: None,
         })
         .await
         .expect("offer_btc_to_zion");
@@ -653,6 +657,7 @@ async fn e2e_flow_btc_to_zion_restart() {
             user_zion_claim: user_zion_pk,
             user_zion_address: user_zion_addr.clone(),
             zion_timeout_ts: zion_timeout,
+            quote_id: None,
         })
         .await
         .expect("offer_btc_to_zion");
@@ -999,6 +1004,7 @@ async fn e2e_flow_zion_to_btc_live_zion() {
             user_zion_lock_txid: zion_lock_txid.clone(),
             user_zion_address: user_zion_addr.clone(),
             zion_timeout_ts: zion_timeout,
+            quote_id: None,
         })
         .await
         .expect("offer_zion_to_btc");
