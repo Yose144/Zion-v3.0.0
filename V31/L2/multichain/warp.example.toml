@@ -229,6 +229,10 @@ finality_blocks = 0
 #                                # (zion_to_btc direction)
 #   WARP_BTC_SWAP_OFFER_KEY=<secret>  # X-Warp-Key header for operator offers
 #                                # (bypasses quotes — keep for admin/test only)
+#   WARP_BTC_SWAP_OFFER_KEY_PREV=<secret>  # previous key, accepted during a
+#                                # rotation grace window; unset after clients
+#                                # migrate. Never enables the endpoint on its
+#                                # own — the primary key must stay configured.
 # Flow: user POSTs /quote {direction, btc_sats} → server returns a signed
 # quote binding (direction, sats, flowers, expiry); user POSTs /offer with
 # the quote embedded. Quotes are Ed25519-signed by the dedicated ZION
