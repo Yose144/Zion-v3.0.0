@@ -95,8 +95,8 @@ const L5FreeWorldCopy = {
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
   sixNodesOnPlanet: { cs: `Šest uzlů na planetě`, en: `Six nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Polynésii. Barva markeru ukazuje aktuální fázi: zlatá = aktivní rozvoj, cyan = příprava, fialová = plánováno.`,
-    en: `The founding L5 communities across the continents — from the Algarve to Polynesia. Marker colour shows the current phase: gold = active development, cyan = preparation, purple = planned.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Polynésii. Všechny jsou v přípravě do roku 2028; stavba začíná nejdříve v roce 2029, po OASIS.`,
+    en: `The founding L5 communities across the continents — from the Algarve to Polynesia. All are in preparation until 2028; construction starts no earlier than 2029, after OASIS.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -158,7 +158,7 @@ const getCommunities = (cs: boolean) => [
   {
     name: 'Genesis Garden',
     location: L5FreeWorldCopy.algarvePortugal[cs ? 'cs' : 'en'],
-    status: 'development' as const,
+    status: 'preparation' as const,
     desc: L5FreeWorldCopy.pioneerL5CommunityPermaculture[cs ? 'cs' : 'en'],
     tags: ['Permaculture', 'Guardian Node', 'DAO Circle'],
     href: '/terranova/genesis',
@@ -176,7 +176,7 @@ const getCommunities = (cs: boolean) => [
   {
     name: 'Te Pīko Ora',
     location: 'Raiatea · French Polynesia',
-    status: 'vision' as const,
+    status: 'preparation' as const,
     desc: L5FreeWorldCopy.tePikoOraPolynesianRevival[cs ? 'cs' : 'en'],
     tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
     href: '/terranova/te-piko-ora',
@@ -185,7 +185,7 @@ const getCommunities = (cs: boolean) => [
   {
     name: 'Golden Republic Bohemia',
     location: cs ? 'Čechy, Česká republika' : 'Bohemia, Czech Republic',
-    status: 'vision' as const,
+    status: 'preparation' as const,
     desc: cs
       ? 'Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.'
       : 'Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.',
@@ -196,7 +196,7 @@ const getCommunities = (cs: boolean) => [
   {
     name: 'Bodhi Lanka',
     location: cs ? 'Srí Lanka' : 'Sri Lanka',
-    status: 'vision' as const,
+    status: 'preparation' as const,
     desc: cs
       ? 'Akáša uzel — prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.'
       : 'Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
@@ -207,7 +207,7 @@ const getCommunities = (cs: boolean) => [
   {
     name: 'LUMI',
     location: cs ? 'Kostarika · Nová Amerika' : 'Costa Rica · Nová Amerika',
-    status: 'vision' as const,
+    status: 'preparation' as const,
     desc: cs
       ? 'Most Amerik — projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.'
       : 'Americas bridge — a project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station.',

@@ -80,6 +80,7 @@ for (const [i, p] of projects.entries()) {
     LOCATION: `${esc(p.location.cs)} · ${esc(p.location.en)}`,
     STATUS: esc(statusLabel(p)),
     STATUS_LABEL: `<span data-lang-show="cs">${esc(statusCs(p))}</span><span class="fw-hidden" data-lang-show="en">${esc(statusEn(p))}</span>`,
+    TIMELINE: `<span data-lang-show="cs">${esc(p.timeline.cs)}</span><span class="fw-hidden" data-lang-show="en">${esc(p.timeline.en)}</span>`,
     GRANT: esc(p.grantTitle),
     TAGLINE: `<span data-lang-show="cs">${esc(p.tagline.cs)}</span><span class="fw-hidden" data-lang-show="en">${esc(p.tagline.en)}</span>`,
     TAGLINE_EN: esc(p.tagline.en),

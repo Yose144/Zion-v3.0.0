@@ -60,11 +60,11 @@ The site grows from the philosophy of Te Pīko Ora: **ocean + palm + canoe + com
 
 | Phase | Name | Key milestones |
 |----:|---|---|
-| 0 | Piko (2025 Q3–Q4) | Core team of 3 guardians, scouting Raiatea/Tahiti, legal research, marae steward partnerships, budget 80,000 EUR. |
-| 1 | Roots (2026) | Association Loi 1901, land lease, solar 10 kWp, first va'a and wayfinding course, 4–6 fare, first guests Q3 2026. |
-| 2 | Crown (2027) | Guardian node, marine permaculture, LoRa mesh, marae pavilion, connection with Rapa Nui and other nodes. |
-| 3 | Network (2028) | Polynesian wayfinding academy, seed network 5+ nodes, pearl cooperative, education centre. |
-| 4 | Radiance (2029+) | International wayfinding school, 40+ guests, ZION payments default, knowledge commons, 1% surplus → L6. |
+| 0 | Piko (2026–2028) | Core team of 3 guardians, scouting Raiatea/Tahiti, legal research, marae steward partnerships, budget 80,000 EUR. |
+| 1 | Roots (2029) | Association Loi 1901, land lease, solar 10 kWp, first va'a and wayfinding course, 4–6 fare, first guests Q3 2029. |
+| 2 | Crown (2030) | Guardian node, marine permaculture, LoRa mesh, marae pavilion, connection with Rapa Nui and other nodes. |
+| 3 | Network (2031) | Polynesian wayfinding academy, seed network 5+ nodes, pearl cooperative, education centre. |
+| 4 | Radiance (2032+) | International wayfinding school, 40+ guests, ZION payments default, knowledge commons, 1% surplus → L6. |
 
 ## ZION integration
 

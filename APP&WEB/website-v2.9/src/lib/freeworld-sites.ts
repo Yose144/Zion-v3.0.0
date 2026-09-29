@@ -22,7 +22,7 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     name: 'Genesis Garden',
     lat: 37.17,
     lon: -8.62,
-    status: 'development',
+    status: 'preparation',
     href: '/terranova/genesis',
     allocationZion: 500_000_000,
   },
@@ -40,7 +40,7 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     name: 'Te Pīko Ora',
     lat: -16.83,
     lon: -151.44,
-    status: 'vision',
+    status: 'preparation',
     href: '/terranova/te-piko-ora',
     allocationZion: 500_000_000,
   },
@@ -49,7 +49,7 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     name: 'Golden Republic Bohemia',
     lat: 50.05,
     lon: 15.45,
-    status: 'vision',
+    status: 'preparation',
     href: '/terranova/golden-republic-bohemia',
     allocationZion: 500_000_000,
   },
@@ -58,7 +58,7 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     name: 'Bodhi Lanka',
     lat: 7.87,
     lon: 80.65,
-    status: 'vision',
+    status: 'preparation',
     href: '/terranova/bodhi-lanka',
     allocationZion: 500_000_000,
   },
@@ -67,14 +67,14 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     name: 'LUMI · Nová Amerika',
     lat: 9.75,
     lon: -83.75,
-    status: 'vision',
+    status: 'preparation',
     href: '/terranova/nova-amerika',
     allocationZion: 500_000_000,
   },
 ];
 
 export const SITE_STATUS_COLOR: Record<FreeWorldSiteStatus, string> = {
-  development: '#fcd116', // gold — active build
+  development: '#fcd116', // gold — reserved for active build phase
   preparation: '#06b6d4', // cyan — in preparation
   vision: '#a855f7', // purple — planned
 };

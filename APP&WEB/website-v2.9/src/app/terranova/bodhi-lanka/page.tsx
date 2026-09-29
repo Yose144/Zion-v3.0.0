@@ -32,7 +32,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const TerranovaBodhiLankaCopy = {
   home: { cs: `Domů`, en: `Home` },
-  planned2027: { cs: `Plánováno 2027+`, en: `Planned 2027+` },
+  planned2029: { cs: `Plánováno 2029+`, en: `Planned 2029+` },
   akasaSriLankaTerraNova: { cs: `Akáša · Srí Lanka · Terra Nova ®`, en: `Akasha · Sri Lanka · Terra Nova ®` },
   loveIsTheElementFireCannotBurn: { cs: `"Láska je element, který oheň nemůže spálit. Most nespojil ostrovy — spojil srdce."`, en: `"Love is the element fire cannot burn. The bridge did not connect islands — it connected hearts."` },
   sriLankaPearlOfTheIndianOcean: { cs: `Srí Lanka — Perla Indického oceánu`, en: `Sri Lanka — Pearl of the Indian Ocean` },
@@ -176,7 +176,7 @@ const FEATURES: FeatureItem[] = [
 const SIGNALS: SignalItem[] = [
   { icon: MapPin, value: 'Anuradhapura', labelCs: 'Osa', labelEn: 'Axis' },
   { icon: Heart, value: 'Srí Lanka', labelCs: 'Region', labelEn: 'Region' },
-  { icon: Sparkles, value: '2027–2030', labelCs: 'Fáze 1', labelEn: 'Phase 1' },
+  { icon: Sparkles, value: '2029–2032', labelCs: 'Fáze 1', labelEn: 'Phase 1' },
 ];
 
 const PHASES = [
@@ -192,8 +192,8 @@ const PHASES = [
     num: '1',
     cs: 'Kořeny',
     en: 'Roots',
-    descCs: 'Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2027, ZION wallet + DAO rámec, výsadba Bodhi stromu.',
-    descEn: 'Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2027, ZION wallet + DAO framework, Bodhi tree planting.',
+    descCs: 'Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2030, ZION wallet + DAO rámec, výsadba Bodhi stromu.',
+    descEn: 'Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2030, ZION wallet + DAO framework, Bodhi tree planting.',
     active: false,
   },
   {
@@ -340,7 +340,7 @@ export default function BodhiLankaPage() {
                     </span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {TerranovaBodhiLankaCopy.planned2027[cs ? 'cs' : 'en']}
+                      {TerranovaBodhiLankaCopy.planned2029[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 

@@ -32,7 +32,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const TerranovaGoldenRepublicBohemiaCopy = {
   home: { cs: `Domů`, en: `Home` },
-  planned2027: { cs: `Plánováno 2027+`, en: `Planned 2027+` },
+  planned2029: { cs: `Plánováno 2029+`, en: `Planned 2029+` },
   livingCentreBohemiaTerraNova: { cs: `Živý střed · Čechy · Terra Nova ®`, en: `Living Centre · Bohemia · Terra Nova ®` },
   saltOnTheTableABridgeBetweenMy: { cs: `"Sůl na stole. Most mezi mýtem a protokolem. Kruh bez trůnu."`, en: `"Salt on the table. A bridge between myth and protocol. A circle without a throne."` },
   bohemiaHeartOfEurope: { cs: `Čechy — Srdce Evropy`, en: `Bohemia — Heart of Europe` },
@@ -175,7 +175,7 @@ const FEATURES: FeatureItem[] = [
 const SIGNALS: SignalItem[] = [
   { icon: MapPin, value: 'Říp / Čechy', labelCs: 'Osa', labelEn: 'Axis' },
   { icon: Crown, value: 'Čechy', labelCs: 'Region', labelEn: 'Region' },
-  { icon: Sparkles, value: '2027–2030', labelCs: 'Fáze 1', labelEn: 'Phase 1' },
+  { icon: Sparkles, value: '2029–2032', labelCs: 'Fáze 1', labelEn: 'Phase 1' },
 ];
 
 const PHASES = [
@@ -191,8 +191,8 @@ const PHASES = [
     num: '1',
     cs: 'Kořeny',
     en: 'Roots',
-    descCs: 'Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2027, ZION wallet + DAO rámec.',
-    descEn: 'Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2027, ZION wallet + DAO framework.',
+    descCs: 'Pozemek (koupě / dlouhodobý nájem), registrace, solar 8 kWp, cisterna, eko-chaty 4–6 jednotek, 1 ha, první hosté Q3 2030, ZION wallet + DAO rámec.',
+    descEn: 'Land (purchase / long-term lease), registration, solar 8 kWp, cistern, eco-cabins 4–6 units, 1 ha, first guests Q3 2030, ZION wallet + DAO framework.',
     active: false,
   },
   {
@@ -339,7 +339,7 @@ export default function GoldenRepublicBohemiaPage() {
                     </span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {TerranovaGoldenRepublicBohemiaCopy.planned2027[cs ? 'cs' : 'en']}
+                      {TerranovaGoldenRepublicBohemiaCopy.planned2029[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 

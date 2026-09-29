@@ -31,7 +31,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const TerranovaTePikoOraCopy = {
   home: { cs: `Domů`, en: `Home` },
-  planned2027: { cs: `Plánováno 2027+`, en: `Planned 2027+` },
+  planned2029: { cs: `Plánováno 2029+`, en: `Planned 2029+` },
   livingCentrePolynesiaTerraNova: { cs: `Živý střed · Polynésie · Terra Nova ®`, en: `Living Centre · Polynesia · Terra Nova ®` },
   ioranaHereIsTheSandHereIsTheSe: { cs: `"Iorana. Zde je písek, zde je moře, zde je skála. Zde končí mapa. A zde začíná pravda."`, en: `"Iorana. Here is the sand, here is the sea, here is the rock. Here the map ends. And here truth begins."` },
   frenchPolynesiaCrownOfThePacif: { cs: `Francouzská Polynésie — Koruna Pacifiku`, en: `French Polynesia — Crown of the Pacific` },
@@ -167,7 +167,7 @@ const FEATURES: FeatureItem[] = [
 const SIGNALS: SignalItem[] = [
   { icon: MapPin, value: 'Raiatea / Tahiti', labelCs: 'Lokalita', labelEn: 'Location' },
   { icon: Waves, value: 'Polynésie', labelCs: 'Region', labelEn: 'Region' },
-  { icon: Star, value: '2027–2030', labelCs: 'Fáze 1', labelEn: 'Phase 1' },
+  { icon: Star, value: '2029–2032', labelCs: 'Fáze 1', labelEn: 'Phase 1' },
 ];
 
 const PHASES = [
@@ -322,7 +322,7 @@ export default function TePikoOraPage() {
                   </span>
                   <span className="zion-badge-gold inline-flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {TerranovaTePikoOraCopy.planned2027[cs ? 'cs' : 'en']}
+                    {TerranovaTePikoOraCopy.planned2029[cs ? 'cs' : 'en']}
                   </span>
                 </div>
 

@@ -64,11 +64,11 @@ Water channels and walking paths run between the pyramids. A stone circle around
 
 | Phase | Name | Key Milestones |
 |----:|---|---|
-| 0 | Seed (2025 Q3–Q4) | Core team of 3 Guardians, Algarve scouting, legal research, EUR 50,000 budget, 0.1 ha trial crops. |
-| 1 | Roots (2026) | Land, registration, 5 kWp solar, borehole, 4–6 glamping units, 0.5 ha, first guests Q3 2026, ZION wallet. |
-| 2 | Community (2027) | Guardian node, 3–5 eco-cabins, monthly program, LoRa mesh, Medical Table pavilion, Dharma Temple link. |
-| 3 | Network (2028) | 2 ha, 3+ node seed network, education center, surf school, second Portuguese node. |
-| 4 | Radiance (2029+) | Retreat center 40+ guests, ZION-native payments default, knowledge commons, 1 % surplus → L6. |
+| 0 | Seed (2026–2028) | Core team of 3 Guardians, Algarve scouting, legal research, EUR 50,000 budget, 0.1 ha trial crops. |
+| 1 | Roots (2029) | Land, registration, 5 kWp solar, borehole, 4–6 glamping units, 0.5 ha, first guests Q3 2029, ZION wallet. |
+| 2 | Community (2030) | Guardian node, 3–5 eco-cabins, monthly program, LoRa mesh, Medical Table pavilion, Dharma Temple link. |
+| 3 | Network (2031) | 2 ha, 3+ node seed network, education center, surf school, second Portuguese node. |
+| 4 | Radiance (2032+) | Retreat center 40+ guests, ZION-native payments default, knowledge commons, 1 % surplus → L6. |
 
 ## ZION Integration
 

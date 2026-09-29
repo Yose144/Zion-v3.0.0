@@ -60,11 +60,11 @@ Areál vyrůstá z filosofie Te Pīko Ora: **oceán + palma + kánoe + komunita 
 
 | Fáze | Název | Klíčové milníky |
 |----:|---|---|
-| 0 | Piko (2025 Q3–Q4) | Core team 3 strážců, scouting Raiatea/Tahiti, právní rešerše, partnerství s marae správci, rozpočet 80 000 EUR. |
-| 1 | Kořeny (2026) | Association Loi 1901, lease pozemku, solar 10 kWp, první va'a a wayfinding kurz, 4–6 fare, první hosté Q3 2026. |
-| 2 | Koruna (2027) | Guardian node, marine permakultura, LoRa mesh, marae pavilon, propojení s Rapa Nui a dalšími uzly. |
-| 3 | Síť (2028) | Polynéská wayfinding akademie, semenná síť 5+ uzlů, perlová kooperativa, vzdělávací centrum. |
-| 4 | Výzařování (2029+) | Mezinárodní wayfinding škola, 40+ hostů, ZION platby výchozí, knowledge commons, 1 % přebytku → L6. |
+| 0 | Piko (2026–2028) | Core team 3 strážců, scouting Raiatea/Tahiti, právní rešerše, partnerství s marae správci, rozpočet 80 000 EUR. |
+| 1 | Kořeny (2029) | Association Loi 1901, lease pozemku, solar 10 kWp, první va'a a wayfinding kurz, 4–6 fare, první hosté Q3 2029. |
+| 2 | Koruna (2030) | Guardian node, marine permakultura, LoRa mesh, marae pavilon, propojení s Rapa Nui a dalšími uzly. |
+| 3 | Síť (2031) | Polynéská wayfinding akademie, semenná síť 5+ uzlů, perlová kooperativa, vzdělávací centrum. |
+| 4 | Výzařování (2032+) | Mezinárodní wayfinding škola, 40+ hostů, ZION platby výchozí, knowledge commons, 1 % přebytku → L6. |
 
 ## ZION integrace
 

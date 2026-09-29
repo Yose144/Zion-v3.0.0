@@ -275,7 +275,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Komunita bez energetického účtu',
-        body: 'Konkrétní model — Terra Nova komunita 100 lidí, rok 2027:\n\nInfrastruktura: 500 solárních panelů (250 kW), 2 větrné mikroturbíny (20 kW), geotermální systém, bateriové úložiště (48 hodin autonomie), bioplynová stanice, ZION node pro správu přes smart contracts.\n\nFinancování: kombinace komunitního kapitálu a grantu z ZION humanitárního fondu.\n\nVýsledek: energetický účet každého člena: nulový. Závislost na vnějším dodavateli: nulová. Jako Wi-Fi v kavárně. Infrastruktura existuje. Všichni ji sdílejí. Nikdo nechce účet za každé kliknutí.',
+        body: 'Konkrétní model — Terra Nova komunita 100 lidí, rok 2030:\n\nInfrastruktura: 500 solárních panelů (250 kW), 2 větrné mikroturbíny (20 kW), geotermální systém, bateriové úložiště (48 hodin autonomie), bioplynová stanice, ZION node pro správu přes smart contracts.\n\nFinancování: kombinace komunitního kapitálu a grantu z ZION humanitárního fondu.\n\nVýsledek: energetický účet každého člena: nulový. Závislost na vnějším dodavateli: nulová. Jako Wi-Fi v kavárně. Infrastruktura existuje. Všichni ji sdílejí. Nikdo nechce účet za každé kliknutí.',
       },
     ],
     sectionsEn: [
@@ -292,7 +292,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Community without an energy bill',
-        body: 'Concrete model — Terra Nova community of 100 people, year 2027:\n\nInfrastructure: 500 solar panels (250 kW), 2 micro wind turbines (20 kW), geothermal system, battery storage (48-hour autonomy), biogas plant, ZION node for management through smart contracts.\n\nFinancing: combination of community capital and ZION humanitarian fund grant.\n\nResult: energy bill for each member: zero. Dependence on external provider: zero. Like Wi-Fi in a café. The infrastructure exists. Everyone shares it. Nobody wants a bill for every click.',
+        body: 'Concrete model — Terra Nova community of 100 people, year 2030:\n\nInfrastructure: 500 solar panels (250 kW), 2 micro wind turbines (20 kW), geothermal system, battery storage (48-hour autonomy), biogas plant, ZION node for management through smart contracts.\n\nFinancing: combination of community capital and ZION humanitarian fund grant.\n\nResult: energy bill for each member: zero. Dependence on external provider: zero. Like Wi-Fi in a café. The infrastructure exists. Everyone shares it. Nobody wants a bill for every click.',
       },
     ],
   },
