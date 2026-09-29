@@ -20,6 +20,10 @@ toml = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 zion-l1-types = { path = "../../L1/types" }
+zion-core = { workspace = true }
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

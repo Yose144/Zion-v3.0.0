@@ -20,6 +20,7 @@ pub mod quorum;
 pub mod runtime;
 pub mod timelock;
 pub mod treasury;
+pub mod treasury_tx;
 pub mod types;
 pub mod voting;
 pub mod zis;

@@ -41,6 +41,20 @@ pub struct TreasuryOpRow {
     pub status: String,
     pub created_at: String,
     pub executed_at: Option<String>,
+    pub unsigned_tx: Option<String>,
+    pub signing_hash: Option<String>,
+    pub tx_id: Option<String>,
+}
+
+/// A guardian signature row — may be a verified crypto signature or a
+/// legacy audit-only record (`signature`/`pubkey` NULL, `verified=false`).
+#[derive(Debug, Clone)]
+pub struct TreasurySigRow {
+    pub guardian: String,
+    pub signature: Option<String>,
+    pub pubkey: Option<String>,
+    pub verified: bool,
+    pub created_at: String,
 }
 
 impl DaoDb {
@@ -110,14 +124,20 @@ impl DaoDb {
                 proposal_id   INTEGER     REFERENCES proposals(id),
                 operation     TEXT NOT NULL,  -- JSON (TreasuryOperation variant)
                 submitted_by  TEXT NOT NULL,
-                status        TEXT NOT NULL DEFAULT 'pending',  -- pending|signed|executed|rejected
+                status        TEXT NOT NULL DEFAULT 'pending',  -- pending|signed|awaiting_broadcast|executed|rejected|failed
                 created_at    TEXT NOT NULL,
-                executed_at   TEXT
+                executed_at   TEXT,
+                unsigned_tx   TEXT,  -- JSON UnsignedTreasuryTx spec
+                signing_hash  TEXT,  -- canonical guardian signing message
+                tx_id         TEXT   -- L1 transaction hash after broadcast
             );
 
             CREATE TABLE IF NOT EXISTS treasury_sigs (
                 op_id      TEXT NOT NULL REFERENCES treasury_ops(op_id),
                 guardian   TEXT NOT NULL,
+                signature  TEXT,      -- Ed25519 hex over signing_hash (NULL = legacy audit row)
+                pubkey     TEXT,      -- Ed25519 hex pubkey used for verification
+                verified   INTEGER NOT NULL DEFAULT 0,  -- 1 = cryptographically verified
                 created_at TEXT NOT NULL,
                 UNIQUE(op_id, guardian)
             );
@@ -135,35 +155,54 @@ impl DaoDb {
             .map_err(|e| DaoError::Internal(e.to_string()))?;
 
         // Migration: add any columns that may be missing in older DBs.
-        let columns: Vec<String> = self
+        self.ensure_columns(
+            "proposals",
+            &[
+                ("proposer_balance", "INTEGER NOT NULL DEFAULT 0"),
+                ("snapshot_block", "INTEGER NOT NULL DEFAULT 0"),
+                ("election_tallies", "TEXT NOT NULL DEFAULT '{}'"),
+                ("voter_count", "INTEGER NOT NULL DEFAULT 0"),
+                ("timelock_ends_at", "TEXT"),
+                ("execution_tx", "TEXT"),
+            ],
+        )?;
+        self.ensure_columns(
+            "treasury_ops",
+            &[
+                ("unsigned_tx", "TEXT"),
+                ("signing_hash", "TEXT"),
+                ("tx_id", "TEXT"),
+            ],
+        )?;
+        self.ensure_columns(
+            "treasury_sigs",
+            &[
+                ("signature", "TEXT"),
+                ("pubkey", "TEXT"),
+                ("verified", "INTEGER NOT NULL DEFAULT 0"),
+            ],
+        )?;
+
+        Ok(())
+    }
+
+    /// Add `cols` to `table` if missing (each entry: `(name, sql_type)`).
+    fn ensure_columns(&self, table: &str, cols: &[(&str, &str)]) -> DaoResult<()> {
+        let existing: Vec<String> = self
             .conn
-            .prepare("PRAGMA table_info(proposals)")
+            .prepare(&format!("PRAGMA table_info({table})"))
             .map_err(|e| DaoError::Internal(e.to_string()))?
-            .query_map([], |row| {
-                let name: String = row.get(1)?;
-                Ok(name)
-            })
+            .query_map([], |row| row.get::<_, String>(1))
             .map_err(|e| DaoError::Internal(e.to_string()))?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| DaoError::Internal(e.to_string()))?;
-
-        let migrations = [
-            ("proposer_balance", "INTEGER NOT NULL DEFAULT 0"),
-            ("snapshot_block", "INTEGER NOT NULL DEFAULT 0"),
-            ("election_tallies", "TEXT NOT NULL DEFAULT '{}'"),
-            ("voter_count", "INTEGER NOT NULL DEFAULT 0"),
-            ("timelock_ends_at", "TEXT"),
-            ("execution_tx", "TEXT"),
-        ];
-
-        for (name, ty) in migrations {
-            if !columns.iter().any(|c| c == name) {
+        for (name, ty) in cols {
+            if !existing.iter().any(|c| c == name) {
                 self.conn
-                    .execute(&format!("ALTER TABLE proposals ADD COLUMN {name} {ty}"), [])
+                    .execute(&format!("ALTER TABLE {table} ADD COLUMN {name} {ty}"), [])
                     .map_err(|e| DaoError::Internal(e.to_string()))?;
             }
         }
-
         Ok(())
     }
 
@@ -552,6 +591,7 @@ impl DaoDb {
         proposal_id: Option<u64>,
         operation: &TreasuryOperation,
         submitted_by: &str,
+        signing_hash: Option<&str>,
     ) -> DaoResult<()> {
         let op_json =
             serde_json::to_string(operation).map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -559,9 +599,31 @@ impl DaoDb {
         self.conn
             .execute(
                 r#"INSERT OR IGNORE INTO treasury_ops
-                   (op_id, proposal_id, operation, submitted_by, status, created_at)
-                   VALUES (?1,?2,?3,?4,'pending',datetime('now'))"#,
-                params![op_id, proposal_id, op_json, submitted_by],
+                   (op_id, proposal_id, operation, submitted_by, status, created_at, signing_hash)
+                   VALUES (?1,?2,?3,?4,'pending',datetime('now'),?5)"#,
+                params![op_id, proposal_id, op_json, submitted_by, signing_hash],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Persist the unsigned-tx spec (JSON) once threshold is reached.
+    pub fn set_treasury_op_unsigned_tx(&self, op_id: &str, unsigned_tx: &str) -> DaoResult<()> {
+        self.conn
+            .execute(
+                "UPDATE treasury_ops SET unsigned_tx=?1 WHERE op_id=?2",
+                params![unsigned_tx, op_id],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Persist the L1 tx_id after broadcast (status handled separately).
+    pub fn set_treasury_op_tx_id(&self, op_id: &str, tx_id: &str) -> DaoResult<()> {
+        self.conn
+            .execute(
+                "UPDATE treasury_ops SET tx_id=?1 WHERE op_id=?2",
+                params![tx_id, op_id],
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(())
@@ -587,7 +649,8 @@ impl DaoDb {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at
+                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at,
+                        unsigned_tx, signing_hash, tx_id
                  FROM treasury_ops WHERE op_id=?1",
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -601,6 +664,9 @@ impl DaoDb {
                     status: row.get(4)?,
                     created_at: row.get(5)?,
                     executed_at: row.get(6)?,
+                    unsigned_tx: row.get(7)?,
+                    signing_hash: row.get(8)?,
+                    tx_id: row.get(9)?,
                 })
             })
             .map_err(|e| DaoError::Internal(e.to_string()))?;
@@ -615,12 +681,14 @@ impl DaoDb {
     pub fn list_treasury_ops(&self, status: Option<&str>) -> DaoResult<Vec<TreasuryOpRow>> {
         let (sql, param): (&str, Option<String>) = match status {
             Some(s) => (
-                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at
+                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at,
+                        unsigned_tx, signing_hash, tx_id
                  FROM treasury_ops WHERE status=?1 ORDER BY created_at DESC",
                 Some(s.to_string()),
             ),
             None => (
-                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at
+                "SELECT op_id, proposal_id, operation, submitted_by, status, created_at, executed_at,
+                        unsigned_tx, signing_hash, tx_id
                  FROM treasury_ops ORDER BY created_at DESC",
                 None,
             ),
@@ -638,6 +706,9 @@ impl DaoDb {
                 status: row.get(4)?,
                 created_at: row.get(5)?,
                 executed_at: row.get(6)?,
+                unsigned_tx: row.get(7)?,
+                signing_hash: row.get(8)?,
+                tx_id: row.get(9)?,
             })
         };
         let rows = match &param {
@@ -666,12 +737,22 @@ impl DaoDb {
     }
 
     /// Record a guardian signature on a treasury operation (idempotent).
-    pub fn add_treasury_sig(&self, op_id: &str, guardian: &str) -> DaoResult<()> {
+    /// `signature`/`pubkey` are hex; `verified` is set only after successful
+    /// Ed25519 verification — legacy audit rows keep NULL/0.
+    pub fn add_treasury_sig(
+        &self,
+        op_id: &str,
+        guardian: &str,
+        signature: Option<&str>,
+        pubkey: Option<&str>,
+        verified: bool,
+    ) -> DaoResult<()> {
         self.conn
             .execute(
-                "INSERT OR IGNORE INTO treasury_sigs (op_id, guardian, created_at)
-                 VALUES (?1, ?2, datetime('now'))",
-                params![op_id, guardian],
+                "INSERT OR IGNORE INTO treasury_sigs
+                 (op_id, guardian, signature, pubkey, verified, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'))",
+                params![op_id, guardian, signature, pubkey, verified as i64],
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(())
@@ -691,6 +772,46 @@ impl DaoDb {
             out.push(r.map_err(|e| DaoError::Internal(e.to_string()))?);
         }
         Ok(out)
+    }
+
+    /// Detailed signature rows for an op — guardian, sig, pubkey, verified.
+    pub fn list_treasury_sigs_detailed(&self, op_id: &str) -> DaoResult<Vec<TreasurySigRow>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                "SELECT guardian, signature, pubkey, verified, created_at
+                 FROM treasury_sigs WHERE op_id=?1 ORDER BY created_at",
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map(params![op_id], |row| {
+                Ok(TreasurySigRow {
+                    guardian: row.get(0)?,
+                    signature: row.get(1)?,
+                    pubkey: row.get(2)?,
+                    verified: row.get::<_, i64>(3)? != 0,
+                    created_at: row.get(4)?,
+                })
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(|e| DaoError::Internal(e.to_string()))?);
+        }
+        Ok(out)
+    }
+
+    /// Count *cryptographically verified* signatures on an op.
+    pub fn count_verified_treasury_sigs(&self, op_id: &str) -> DaoResult<usize> {
+        let n: i64 = self
+            .conn
+            .query_row(
+                "SELECT COUNT(*) FROM treasury_sigs WHERE op_id=?1 AND verified=1",
+                params![op_id],
+                |row| row.get(0),
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(n as usize)
     }
 
     // ── L1 Scan State ─────────────────────────────────────────────────────────
@@ -913,11 +1034,14 @@ mod tests {
             proposal_id: 7,
         };
 
-        db.insert_treasury_op("op-1", None, &op, "guardian-1")
+        db.insert_treasury_op("op-1", None, &op, "guardian-1", Some("hash-1"))
             .unwrap();
-        db.add_treasury_sig("op-1", "guardian-1").unwrap();
-        db.add_treasury_sig("op-1", "guardian-2").unwrap();
-        db.add_treasury_sig("op-1", "guardian-2").unwrap(); // duplicate ignored
+        db.add_treasury_sig("op-1", "guardian-1", Some("sig"), Some("pk"), true)
+            .unwrap();
+        db.add_treasury_sig("op-1", "guardian-2", None, None, false)
+            .unwrap();
+        db.add_treasury_sig("op-1", "guardian-2", None, None, false)
+            .unwrap(); // duplicate ignored
 
         let row = db.get_treasury_op("op-1").unwrap().unwrap();
         assert_eq!(row.status, "pending");
@@ -928,8 +1052,18 @@ mod tests {
         assert_eq!(parsed, op);
 
         assert_eq!(db.list_treasury_sigs("op-1").unwrap().len(), 2);
+        assert_eq!(db.count_verified_treasury_sigs("op-1").unwrap(), 1);
+        assert_eq!(db.list_treasury_sigs_detailed("op-1").unwrap().len(), 2);
         assert_eq!(db.count_treasury_ops("pending").unwrap(), 1);
         assert_eq!(db.count_treasury_ops("executed").unwrap(), 0);
+
+        // unsigned spec + tx_id round-trip
+        db.set_treasury_op_unsigned_tx("op-1", "{\"x\":1}").unwrap();
+        db.set_treasury_op_tx_id("op-1", "abcd").unwrap();
+        let row = db.get_treasury_op("op-1").unwrap().unwrap();
+        assert_eq!(row.unsigned_tx.as_deref(), Some("{\"x\":1}"));
+        assert_eq!(row.tx_id.as_deref(), Some("abcd"));
+        assert_eq!(row.signing_hash.as_deref(), Some("hash-1"));
 
         db.update_treasury_op_status("op-1", "executed").unwrap();
         let row = db.get_treasury_op("op-1").unwrap().unwrap();
