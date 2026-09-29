@@ -50,8 +50,24 @@ impl GovernanceRuntime {
         }
     }
 
-    /// Attach a SQLite DAO database for persistence.
+    /// Attach a SQLite DAO database for persistence and replay any
+    /// governance parameters applied by executed Parameter proposals (D5),
+    /// so an approved change survives a daemon restart. Replay is
+    /// best-effort: an unparseable stored value is logged and skipped, the
+    /// config-file value stays in effect.
     pub fn with_db(mut self, db: Arc<Mutex<DaoDb>>) -> Self {
+        if let Ok(guard) = db.lock() {
+            match guard.gov_params() {
+                Ok(params) => {
+                    for (name, value) in params {
+                        if let Err(e) = self.apply_config_param(&name, &value) {
+                            warn!("[DAO] replaying param {name}={value} failed: {e}");
+                        }
+                    }
+                }
+                Err(e) => warn!("[DAO] dao_params replay failed: {e}"),
+            }
+        }
         self.db = Some(db);
         self
     }
@@ -182,6 +198,132 @@ impl GovernanceRuntime {
             .collect()
     }
 
+    /// Runtime-governable parameter names — the whitelist a `Parameter`
+    /// proposal may change without redeploy (D5). Config keys that could
+    /// hijack or brick the daemon (api_key, db_path, rpc urls, guardians,
+    /// treasury addresses, zis auth) are deliberately excluded.
+    pub fn governable_parameters() -> &'static [&'static str] {
+        &[
+            "min_vote_weight",
+            "proposal_threshold",
+            "quorum_percent",
+            "voting_period_days",
+            "timelock_hours",
+            "daily_spend_limit",
+            "multisig_threshold",
+            "cross_layer_consent_threshold",
+        ]
+    }
+
+    /// Parse + static-bound check used at proposal creation. Dynamic bounds
+    /// (e.g. `multisig_threshold` ≤ `multisig_total`) are re-checked in
+    /// `apply_config_param` at execution, since the config may have moved.
+    fn validate_governance_param(name: &str, value: &str) -> DaoResult<()> {
+        let bad = || {
+            DaoError::Config(format!("invalid value '{value}' for parameter '{name}'"))
+        };
+        match name {
+            "min_vote_weight" | "proposal_threshold" => {
+                if value.trim().parse::<u64>().map_err(|_| bad())? == 0 {
+                    return Err(bad());
+                }
+            }
+            "daily_spend_limit" => {
+                value.trim().parse::<u64>().map_err(|_| bad())?;
+            }
+            "quorum_percent" => {
+                let v: f64 = value.trim().parse().map_err(|_| bad())?;
+                if !(v > 0.0 && v <= 100.0) {
+                    return Err(bad());
+                }
+            }
+            "voting_period_days" => {
+                let v: u32 = value.trim().parse().map_err(|_| bad())?;
+                if !(1..=365).contains(&v) {
+                    return Err(bad());
+                }
+            }
+            "timelock_hours" => {
+                let v: u32 = value.trim().parse().map_err(|_| bad())?;
+                if !(1..=8760).contains(&v) {
+                    return Err(bad());
+                }
+            }
+            "multisig_threshold" => {
+                if value.trim().parse::<u32>().map_err(|_| bad())? == 0 {
+                    return Err(bad());
+                }
+            }
+            "cross_layer_consent_threshold" => {
+                let v: u8 = value.trim().parse().map_err(|_| bad())?;
+                if !(1..=4).contains(&v) {
+                    return Err(bad());
+                }
+            }
+            _ => {
+                return Err(DaoError::Config(format!(
+                    "parameter '{name}' is not governable (allowed: {})",
+                    Self::governable_parameters().join(", ")
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    /// Apply a governable parameter to the live config. Re-validates static
+    /// bounds and enforces dynamic ones. Called by `execute_proposal` for
+    /// `Parameter` proposals and by `with_db` when replaying `dao_params`.
+    pub fn apply_config_param(&mut self, name: &str, value: &str) -> DaoResult<()> {
+        Self::validate_governance_param(name, value)?;
+        let v = value.trim();
+        match name {
+            "min_vote_weight" => self.config.min_vote_weight = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "proposal_threshold" => self.config.proposal_threshold = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "daily_spend_limit" => self.config.daily_spend_limit = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "quorum_percent" => self.config.quorum_percent = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "voting_period_days" => self.config.voting_period_days = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "timelock_hours" => self.config.timelock_hours = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "cross_layer_consent_threshold" => self.config.cross_layer_consent_threshold = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?,
+            "multisig_threshold" => {
+                let t: u32 = v.parse().map_err(|_| DaoError::Internal("param parse".into()))?;
+                if t > self.config.multisig_total {
+                    return Err(DaoError::Config(format!(
+                        "multisig_threshold {t} exceeds multisig_total {}",
+                        self.config.multisig_total
+                    )));
+                }
+                self.config.multisig_threshold = t;
+            }
+            _ => unreachable!("validated whitelist"),
+        }
+        Ok(())
+    }
+
+    /// Execute-path application: mutate config, persist to `dao_params` for
+    /// startup replay. Runs before the executed flag flips so a failure
+    /// leaves the proposal inspectable rather than stuck. Parameters outside
+    /// the whitelist (only possible for proposals created before D5
+    /// validation) are recorded in the summary but never applied.
+    fn apply_executed_parameter(
+        &mut self,
+        proposal_id: u64,
+        name: &str,
+        value: &str,
+    ) -> DaoResult<()> {
+        if !Self::governable_parameters().contains(&name) {
+            return Ok(());
+        }
+        self.apply_config_param(name, value)?;
+        if let Some(db) = self.db.as_ref() {
+            if let Ok(guard) = db.lock() {
+                if let Err(e) = guard.set_gov_param(name, value, proposal_id) {
+                    warn!("[DAO] param persist failed for proposal {proposal_id}: {e}");
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Create a new proposal.
     ///
     /// The proposer must have at least `config.proposal_threshold` balance.
@@ -200,6 +342,18 @@ impl GovernanceRuntime {
                 needed: threshold,
                 have: proposer_balance,
             });
+        }
+
+        // D5: a Parameter proposal must name a governable parameter with a
+        // value that parses and passes static bounds — otherwise it could
+        // pass the vote yet be impossible to execute.
+        if let ProposalType::Parameter {
+            parameter_name,
+            proposed_value,
+            ..
+        } = &proposal_type
+        {
+            Self::validate_governance_param(parameter_name, proposed_value)?;
         }
 
         let id = self.next_proposal_id;
@@ -365,22 +519,46 @@ impl GovernanceRuntime {
     ///
     /// Returns a human-readable execution result.
     pub fn execute_proposal(&mut self, proposal_id: u64) -> DaoResult<String> {
-        let summary = {
-            // Check timelock
+        // Validate the timelock phase first (read-only), so a premature
+        // execute cannot mutate the live config via a Parameter proposal.
+        {
             let timelock = self
                 .timelocks
-                .get_mut(&proposal_id)
+                .get(&proposal_id)
                 .ok_or_else(|| DaoError::Internal("proposal not in timelock phase".into()))?;
-
             if timelock.is_active() {
                 return Err(DaoError::TimelockActive {
                     remaining_hours: timelock.remaining_hours(),
                 });
             }
-
             if timelock.executed {
                 return Err(DaoError::Internal("proposal already executed".into()));
             }
+        }
+
+        // D5: apply a Parameter change to the live config BEFORE marking the
+        // proposal executed — a failure (e.g. multisig_threshold > total)
+        // leaves the proposal executable/inspectable rather than stuck.
+        let param_to_apply = match self.proposals.get(&proposal_id) {
+            Some(p) => match &p.proposal_type {
+                ProposalType::Parameter {
+                    parameter_name,
+                    proposed_value,
+                    ..
+                } => Some((parameter_name.clone(), proposed_value.clone())),
+                _ => None,
+            },
+            None => None,
+        };
+        if let Some((name, value)) = param_to_apply.as_ref() {
+            self.apply_executed_parameter(proposal_id, name, value)?;
+        }
+
+        let summary = {
+            let timelock = self
+                .timelocks
+                .get_mut(&proposal_id)
+                .ok_or_else(|| DaoError::Internal("proposal not in timelock phase".into()))?;
 
             // Mark timelock executed
             timelock.mark_executed()?;
@@ -584,9 +762,9 @@ mod tests {
             "Test".into(),
             "Desc".into(),
             ProposalType::Parameter {
-                parameter_name: "fee".into(),
-                current_value: "0.1".into(),
-                proposed_value: "0.05".into(),
+                parameter_name: "quorum_percent".into(),
+                current_value: "10".into(),
+                proposed_value: "15".into(),
             },
             "zion1proposer".into(),
             2_000_000 * FLOWERS_PER_ZION, // 2M ZION — above threshold
@@ -819,6 +997,79 @@ mod tests {
             rt.get_proposal(id).unwrap().status,
             ProposalStatus::Executed
         );
+        // D5: the governable parameter was applied to the live config.
+        assert_eq!(rt.config().quorum_percent, 15.0);
+    }
+
+    #[test]
+    fn test_param_proposal_rejects_ungovernable_and_invalid() {
+        let mut rt = make_runtime();
+        // Unknown name → rejected at creation.
+        let err = rt
+            .create_proposal(
+                "T".into(),
+                "D".into(),
+                ProposalType::Parameter {
+                    parameter_name: "api_key".into(),
+                    current_value: "x".into(),
+                    proposed_value: "y".into(),
+                },
+                "zion1proposer".into(),
+                2_000_000 * FLOWERS_PER_ZION,
+                100,
+            )
+            .unwrap_err();
+        assert!(err.to_string().contains("not governable"), "{err}");
+        // Governable name but out-of-bounds value → rejected.
+        assert!(rt
+            .create_proposal(
+                "T".into(),
+                "D".into(),
+                ProposalType::Parameter {
+                    parameter_name: "quorum_percent".into(),
+                    current_value: "10".into(),
+                    proposed_value: "250".into(),
+                },
+                "zion1proposer".into(),
+                2_000_000 * FLOWERS_PER_ZION,
+                100,
+            )
+            .is_err());
+    }
+
+    #[test]
+    fn test_executed_param_persists_and_replays() {
+        use std::sync::Mutex as StdMutex;
+        let db = crate::db::DaoDb::in_memory().unwrap();
+        let db = std::sync::Arc::new(StdMutex::new(db));
+        let mut rt = make_runtime().with_db(std::sync::Arc::clone(&db));
+        let id = make_parameter_proposal(&mut rt);
+        rt.cast_vote(
+            id,
+            "zion1voter1".into(),
+            VoteChoice::Yes,
+            150_000_000 * FLOWERS_PER_ZION,
+            None,
+        )
+        .unwrap();
+        {
+            let p = rt.proposals.get_mut(&id).unwrap();
+            p.voting_ends_at = Utc::now() - chrono::Duration::seconds(1);
+        }
+        rt.tally_proposal(id).unwrap();
+        {
+            let t = rt.timelocks.get_mut(&id).unwrap();
+            t.ends_at = Utc::now() - chrono::Duration::seconds(1);
+        }
+        rt.execute_proposal(id).unwrap();
+        assert_eq!(rt.config().quorum_percent, 15.0);
+        assert_eq!(
+            db.lock().unwrap().gov_params().unwrap(),
+            vec![("quorum_percent".to_string(), "15".to_string())]
+        );
+        // Restart: a fresh runtime on the same DB replays the applied value.
+        let rt2 = make_runtime().with_db(std::sync::Arc::clone(&db));
+        assert_eq!(rt2.config().quorum_percent, 15.0);
     }
 
     #[test]

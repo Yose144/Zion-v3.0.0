@@ -173,6 +173,16 @@ impl DaoDb {
             CREATE INDEX IF NOT EXISTS idx_dao_events_subject
                 ON dao_events(subject);
 
+            -- Runtime-applied governance parameters (D5): executed Parameter
+            -- proposals persist here and are replayed at startup so an
+            -- approved parameter change survives a daemon restart.
+            CREATE TABLE IF NOT EXISTS dao_params (
+                name         TEXT PRIMARY KEY,
+                value        TEXT    NOT NULL,
+                proposal_id  INTEGER NOT NULL,
+                applied_at   TEXT    NOT NULL
+            );
+
             INSERT OR IGNORE INTO scan_state(id, last_block, updated_at)
             VALUES (1, 0, datetime('now'));
             "#,
@@ -884,6 +894,38 @@ impl DaoDb {
             )
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(())
+    }
+
+    /// Persist an executed Parameter proposal's applied value (D5).
+    /// Upsert by name — the latest executed proposal wins.
+    pub fn set_gov_param(&self, name: &str, value: &str, proposal_id: u64) -> DaoResult<()> {
+        self.conn
+            .execute(
+                r#"INSERT INTO dao_params (name, value, proposal_id, applied_at)
+                   VALUES (?1, ?2, ?3, datetime('now'))
+                   ON CONFLICT(name) DO UPDATE SET
+                     value = excluded.value,
+                     proposal_id = excluded.proposal_id,
+                     applied_at = excluded.applied_at"#,
+                params![name, value, proposal_id],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// All applied governance parameters as (name, value) pairs — replayed
+    /// into the runtime config at startup (D5).
+    pub fn gov_params(&self) -> DaoResult<Vec<(String, String)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name, value FROM dao_params ORDER BY name")
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(rows)
     }
 
     /// Events for one subject, oldest first (append order = audit order).
