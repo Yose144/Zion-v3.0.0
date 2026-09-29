@@ -309,6 +309,7 @@ impl CardanoAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:cardano:{}", dest),
             confirmations: tip.saturating_sub(block_height),
+            burn_id: None,
         })
     }
 }

@@ -250,6 +250,7 @@ impl SolanaAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:solana:{}", dest),
             confirmations: confirm_diff,
+            burn_id: None,
         })
     }
 }

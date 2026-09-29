@@ -505,6 +505,7 @@ impl BitcoinAdapter {
             amount_flowers: amount_sats, // satoshis (8 decimals)
             memo: format!("WARP_INBOUND:bitcoin:{}", zion_addr),
             confirmations: confirms,
+            burn_id: None,
         })
     }
 }

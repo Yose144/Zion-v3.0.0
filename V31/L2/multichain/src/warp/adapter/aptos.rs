@@ -309,6 +309,7 @@ impl AptosAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:aptos:{}:{}", dest_chain, dest_address),
             confirmations: 0,
+            burn_id: None,
         })
     }
 

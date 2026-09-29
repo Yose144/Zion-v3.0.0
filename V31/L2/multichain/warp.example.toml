@@ -15,6 +15,13 @@
 #   WARP_BTC_SWAP_POLL_SECS, BITCOIN_NETWORK, WARP_BITCOIN_API
 #   WARP_LN_NODE_URL, WARP_LN_MACAROON
 #   WARP_EVM_RELAY_KEY, WARP_VALIDATOR_KEYS
+#   WARP_L1_RELEASE_KEYS  — comma-separated secp256k1 hex keys used to sign
+#     `submitBridgeUnlock` proofs for inbound (burn → L1 release) transfers.
+#     L1 consensus requires ≥3 distinct pubkeys from
+#     ZION_BRIDGE_VALIDATOR_PUBKEYS. When unset or <3 keys, inbound transfers
+#     hold in AwaitingFinality for the manual `zion-bridge-unlock` fallback.
+#   WARP_L1_RELEASE_IDS   — optional comma-separated validator ids matching
+#     WARP_L1_RELEASE_KEYS (default warp-release-1..n).
 # See V31/L2/multichain/src/warp/adapter/*.rs for the complete env-var surface.
 
 node_id = "warp-node-1"

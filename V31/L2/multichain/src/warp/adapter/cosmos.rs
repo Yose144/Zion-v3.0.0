@@ -266,6 +266,7 @@ impl CosmosAdapter {
             amount_flowers: amount,
             memo: format!("WARP_INBOUND:cosmos:{}", dest_addr),
             confirmations: tip.saturating_sub(height),
+            burn_id: None,
         })
     }
 }

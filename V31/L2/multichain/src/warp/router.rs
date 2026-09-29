@@ -376,6 +376,10 @@ impl WarpRouter {
             format!("WARP_INBOUND:{}:{}", source_chain_name, recipient_zion),
         );
         transfer.source_tx_hash = Some(proof.tx_hash.clone());
+        // burn_id comes from the source event (EVM BridgeBurn topic); fall
+        // back to the tx hash — the L1 replay key just needs a stable unique
+        // identifier: `{source_chain}:{burn_id}:{tx_hash}`.
+        transfer.burn_id = proof.burn_id.clone().or_else(|| Some(proof.tx_hash.clone()));
         transfer.status = WarpStatus::Detected;
 
         let transfer_id = transfer.id;
@@ -421,6 +425,16 @@ impl WarpRouter {
         }
 
         Ok(())
+    }
+
+    /// Record the destination-chain tx hash (persisted) for a transfer.
+    /// Used by the inbound releaser after `submitBridgeUnlock` is accepted.
+    pub fn set_dest_tx(&mut self, id: &Uuid, tx_hash: String) {
+        if let Some(t) = self.transfers.get_mut(id) {
+            t.dest_tx_hash = Some(tx_hash);
+            t.updated_at = chrono::Utc::now();
+        }
+        self.update_transfer_db(*id);
     }
 
     pub fn get_transfer(&self, id: &Uuid) -> Option<&WarpTransfer> {
@@ -510,6 +524,7 @@ mod tests {
             amount_flowers: amount,
             memo: memo.into(),
             confirmations: 60,
+            burn_id: None,
         }
     }
 
