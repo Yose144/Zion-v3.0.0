@@ -260,7 +260,7 @@ Ledger (`wallet_balances`): 17 + 100 + 0 + 7.495 = **124.495** ✓ soulad s `int
 | Quorum progress vizualizace | ✅ **CODE 2026-10-02** — `QuorumProgress` bar (karta + detail); daemon emituje `required_quorum_percent`/`quorum_required_votes`/`quorum_met`/`circulating_supply` v `serialize_proposal` |
 | Vote history / audit event feed per proposal | ✅ **CODE 2026-10-02** — backend D4 (`GET /api/dao/proposals/:id/events`) + „Event history" sekce na `/dao/proposals/[id]` |
 | Treasury signing workflow UI (guardian console: pending ops → sign → threshold bar) | ✅ **CODE 2026-10-02** — `TreasuryOpsPanel` na `/dao` Treasury tabu: verified-signature progress bar, per-sig verified/unverified list, signing_hash k podpisu, inline sign form (guardian + Ed25519 hex + DAO key → `POST /treasury/:op/sign`), tx_id link do exploreru, status badges vč. `awaiting_broadcast` |
-| Guardian dashboard (registry, aktivita, rotace) | 🟡 tab existuje, data jsou statické |
+| Guardian dashboard (registry, aktivita, rotace) | ✅ **CODE 2026-10-02** — `/dao` Guardians tab má live „On-chain registr" sekci: aktivní guardianové (jméno/adresa), registrovaní kandidáti čekající na admission, multisig threshold badge — zdroj `GET /api/dao/guardians`. Deploy pending |
 | Notifikace (bell/email) | ❌ (backend D9) |
 | Vytvoření návrhu z UI (guided form, param typy) | 🟡/❌ |
 | Mobilní hlasování (memo QR → wallet app) | ❌ |
