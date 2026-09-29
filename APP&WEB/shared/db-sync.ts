@@ -183,6 +183,10 @@ const miningBlockBaseline = new Map<string, number>();
 let miningBaselinePrimed = false;
 const daoProposalBaseline = new Set<number>();
 let daoProposalBaselinePrimed = false;
+// "Voting ends soon" reminder fires once per proposal when this much time
+// remains. Dedup is the notification row itself (JSON data.proposalId) so a
+// restart does not re-notify.
+const DAO_END_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 // ── J7: DAO proposals sync (also produces dao_vote notifications) ──────
 
@@ -286,6 +290,45 @@ async function syncDaoProposals() {
                 userId,
               },
             });
+          }
+        }
+      }
+
+      // "Voting ends soon" reminder: once per proposal, while it is still
+      // active with <= 24h left, notify every ZIS user that has no recorded
+      // vote (voters already get the close notification). Runs after the
+      // vote sync above so the exclude set is fresh.
+      if (status === 'active') {
+        const msLeft = votingEnds.getTime() - Date.now();
+        if (msLeft > 0 && msLeft <= DAO_END_SOON_WINDOW_MS) {
+          const alreadySent = await prisma.notification.findFirst({
+            where: {
+              type: 'dao_ending_soon',
+              data: { path: ['proposalId'], equals: proposalId },
+            },
+            select: { id: true },
+          });
+          if (!alreadySent) {
+            const votedUsers = await prisma.daoVote.findMany({
+              where: { proposalId, userId: { not: null } },
+              select: { userId: true },
+            });
+            const exclude = new Set(votedUsers.map((v) => v.userId));
+            const users = await prisma.user.findMany({ select: { id: true } });
+            const title = (p.title as string) ?? `Proposal #${proposalId}`;
+            const hoursLeft = Math.max(1, Math.round(msLeft / 3600000));
+            for (const u of users) {
+              if (exclude.has(u.id)) continue;
+              await createNotification({
+                userId: u.id,
+                type: 'dao_ending_soon',
+                title: 'Voting ends soon',
+                body: `"${title}" closes in ~${hoursLeft}h.`,
+                data: { href: `/dao/proposals/${proposalId}`, proposalId },
+              }).catch((e) =>
+                console.error(`[J7] notify dao_ending_soon failed for ${u.id}:`, e),
+              );
+            }
           }
         }
       }
