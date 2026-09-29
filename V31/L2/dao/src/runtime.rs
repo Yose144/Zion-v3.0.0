@@ -67,6 +67,26 @@ impl GovernanceRuntime {
                 }
                 Err(e) => warn!("[DAO] dao_params replay failed: {e}"),
             }
+            // D3: replay guardian registry mutations (admissions add,
+            // expulsions remove — tombstones override config-file guardians).
+            match guard.gov_guardians() {
+                Ok(muts) => {
+                    for (address, pubkey, active) in muts {
+                        if active {
+                            if !self.config.guardians.iter().any(|g| g.address == address) {
+                                self.config.guardians.push(crate::config::GuardianConfig {
+                                    name: address.clone(),
+                                    address,
+                                    public_key: pubkey,
+                                });
+                            }
+                        } else {
+                            self.config.guardians.retain(|g| g.address != address);
+                        }
+                    }
+                }
+                Err(e) => warn!("[DAO] dao_guardians replay failed: {e}"),
+            }
         }
         self.db = Some(db);
         self
@@ -324,6 +344,75 @@ impl GovernanceRuntime {
         Ok(())
     }
 
+    /// Execute-path guardian rotation (D3). `admit=true` admits the
+    /// L1-registered candidate; `admit=false` expels the address.
+    /// Mutations persist to `dao_guardians` and replay in `with_db`.
+    fn apply_guardian_mutation(
+        &mut self,
+        proposal_id: u64,
+        address: &str,
+        admit: bool,
+    ) -> DaoResult<()> {
+        if admit {
+            let pubkey = match self.db.as_ref().and_then(|db| {
+                db.lock()
+                    .ok()
+                    .and_then(|g| g.guardian_candidate_pubkey(address).ok().flatten())
+            }) {
+                Some(pk) => pk,
+                None => {
+                    return Err(DaoError::Config(format!(
+                        "guardian candidate {address} has not registered a pubkey on L1 \
+                         (memo DAO:guardian:register:<pubkey>)"
+                    )))
+                }
+            };
+            if !self.config.guardians.iter().any(|g| g.address == address) {
+                self.config.guardians.push(crate::config::GuardianConfig {
+                    name: address.to_string(),
+                    address: address.to_string(),
+                    public_key: pubkey.clone(),
+                });
+            }
+            if let Some(db) = self.db.as_ref() {
+                if let Ok(guard) = db.lock() {
+                    if let Err(e) = guard.set_gov_guardian(address, &pubkey, true, proposal_id) {
+                        warn!("[DAO] guardian persist failed for proposal {proposal_id}: {e}");
+                    }
+                }
+            }
+            self.emit_event(
+                &format!("proposal:{proposal_id}"),
+                "guardian_admitted",
+                None,
+                serde_json::json!({ "address": address }),
+            );
+        } else {
+            let pubkey = self
+                .config
+                .guardians
+                .iter()
+                .find(|g| g.address == address)
+                .map(|g| g.public_key.clone())
+                .unwrap_or_default();
+            self.config.guardians.retain(|g| g.address != address);
+            if let Some(db) = self.db.as_ref() {
+                if let Ok(guard) = db.lock() {
+                    if let Err(e) = guard.set_gov_guardian(address, &pubkey, false, proposal_id) {
+                        warn!("[DAO] guardian tombstone persist failed: {e}");
+                    }
+                }
+            }
+            self.emit_event(
+                &format!("proposal:{proposal_id}"),
+                "guardian_expelled",
+                None,
+                serde_json::json!({ "address": address }),
+            );
+        }
+        Ok(())
+    }
+
     /// Create a new proposal.
     ///
     /// The proposer must have at least `config.proposal_threshold` balance.
@@ -552,6 +641,26 @@ impl GovernanceRuntime {
         };
         if let Some((name, value)) = param_to_apply.as_ref() {
             self.apply_executed_parameter(proposal_id, name, value)?;
+        }
+
+        // D3: Admission/Expulsion rotate the guardian registry at execution.
+        // Admission requires the candidate to be registered on L1 (pubkey
+        // proves ownership); Expulsion tombstones the address — including
+        // config-file guardians — so the removal replays at startup.
+        let guardian_action = match self.proposals.get(&proposal_id) {
+            Some(p) => match &p.proposal_type {
+                ProposalType::Admission { candidate_id, .. } => {
+                    Some((candidate_id.clone(), true))
+                }
+                ProposalType::Expulsion { accused_id, .. } => {
+                    Some((accused_id.clone(), false))
+                }
+                _ => None,
+            },
+            None => None,
+        };
+        if let Some((address, admit)) = guardian_action {
+            self.apply_guardian_mutation(proposal_id, &address, admit)?;
         }
 
         let summary = {
@@ -1070,6 +1179,129 @@ mod tests {
         // Restart: a fresh runtime on the same DB replays the applied value.
         let rt2 = make_runtime().with_db(std::sync::Arc::clone(&db));
         assert_eq!(rt2.config().quorum_percent, 15.0);
+    }
+
+    /// Drive a proposal through vote → tally → timelock-expiry → execute.
+    fn pass_and_execute(rt: &mut GovernanceRuntime, id: u64) {
+        rt.cast_vote(
+            id,
+            "zion1voter1".into(),
+            VoteChoice::Yes,
+            900_000_000 * FLOWERS_PER_ZION, // clears every quorum floor
+            None,
+        )
+        .unwrap();
+        {
+            let p = rt.proposals.get_mut(&id).unwrap();
+            p.voting_ends_at = Utc::now() - chrono::Duration::seconds(1);
+        }
+        rt.tally_proposal(id).unwrap();
+        {
+            let t = rt.timelocks.get_mut(&id).unwrap();
+            t.ends_at = Utc::now() - chrono::Duration::seconds(1);
+        }
+        rt.execute_proposal(id).unwrap();
+    }
+
+    #[test]
+    fn test_guardian_rotation_via_governance() {
+        use std::sync::Mutex as StdMutex;
+        let db = crate::db::DaoDb::in_memory().unwrap();
+        // Candidate registers a pubkey (as the L1 scanner would after
+        // verifying the memo signature binds key → address).
+        db.register_guardian_candidate("zion1cand", "aa".repeat(32).as_str(), "txid1")
+            .unwrap();
+        let db = std::sync::Arc::new(StdMutex::new(db));
+        let mut rt = make_runtime().with_db(std::sync::Arc::clone(&db));
+        assert!(rt.config().guardians.is_empty());
+
+        // Admission executes → guardian added live + persisted.
+        let admit_id = rt
+            .create_proposal(
+                "Admit".into(),
+                "D".into(),
+                ProposalType::Admission {
+                    candidate_id: "zion1cand".into(),
+                    gate_scores_hash: "x".into(),
+                    sponsoring_guardians: vec![],
+                    community: "core".into(),
+                },
+                "zion1proposer".into(),
+                2_000_000 * FLOWERS_PER_ZION,
+                100,
+            )
+            .unwrap();
+        pass_and_execute(&mut rt, admit_id);
+        assert_eq!(rt.config().guardians.len(), 1);
+        assert_eq!(rt.config().guardians[0].address, "zion1cand");
+
+        // Expulsion executes → guardian removed live + tombstoned.
+        let expel_id = rt
+            .create_proposal(
+                "Expel".into(),
+                "D".into(),
+                ProposalType::Expulsion {
+                    accused_id: "zion1cand".into(),
+                    offense_category: "abuse".into(),
+                    investigation_hash: "x".into(),
+                    defense_hash: None,
+                    tier: 1,
+                },
+                "zion1proposer".into(),
+                2_000_000 * FLOWERS_PER_ZION,
+                100,
+            )
+            .unwrap();
+        pass_and_execute(&mut rt, expel_id);
+        assert!(rt.config().guardians.is_empty());
+
+        // Restart replays: admitted then expelled → stays empty.
+        let rt2 = make_runtime().with_db(std::sync::Arc::clone(&db));
+        assert!(rt2.config().guardians.is_empty());
+    }
+
+    #[test]
+    fn test_admission_requires_l1_registration() {
+        let mut rt = make_runtime();
+        let id = rt
+            .create_proposal(
+                "Admit".into(),
+                "D".into(),
+                ProposalType::Admission {
+                    candidate_id: "zion1unregistered".into(),
+                    gate_scores_hash: "x".into(),
+                    sponsoring_guardians: vec![],
+                    community: "core".into(),
+                },
+                "zion1proposer".into(),
+                2_000_000 * FLOWERS_PER_ZION,
+                100,
+            )
+            .unwrap();
+        rt.cast_vote(
+            id,
+            "zion1voter1".into(),
+            VoteChoice::Yes,
+            900_000_000 * FLOWERS_PER_ZION,
+            None,
+        )
+        .unwrap();
+        {
+            let p = rt.proposals.get_mut(&id).unwrap();
+            p.voting_ends_at = Utc::now() - chrono::Duration::seconds(1);
+        }
+        rt.tally_proposal(id).unwrap();
+        {
+            let t = rt.timelocks.get_mut(&id).unwrap();
+            t.ends_at = Utc::now() - chrono::Duration::seconds(1);
+        }
+        let e = rt.execute_proposal(id).unwrap_err();
+        assert!(e.to_string().contains("not registered"), "{e}");
+        // Not marked executed — still retryable after registration.
+        assert_ne!(
+            rt.get_proposal(id).unwrap().status,
+            ProposalStatus::Executed
+        );
     }
 
     #[test]

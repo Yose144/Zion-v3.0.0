@@ -183,6 +183,25 @@ impl DaoDb {
                 applied_at   TEXT    NOT NULL
             );
 
+            -- Guardian registry (D3). Candidates self-register on L1 via
+            -- `DAO:guardian:register:<pubkey>` memo; governance mutations
+            -- (admission adds, expulsion removes) persist as active flags
+            -- and are replayed onto config.guardians at startup.
+            CREATE TABLE IF NOT EXISTS guardian_candidates (
+                address     TEXT PRIMARY KEY,
+                pubkey      TEXT NOT NULL,
+                txid        TEXT,
+                created_at  TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS dao_guardians (
+                address      TEXT PRIMARY KEY,
+                pubkey       TEXT NOT NULL,
+                active       INTEGER NOT NULL DEFAULT 1,
+                proposal_id  INTEGER NOT NULL,
+                applied_at   TEXT NOT NULL
+            );
+
             INSERT OR IGNORE INTO scan_state(id, last_block, updated_at)
             VALUES (1, 0, datetime('now'));
             "#,
@@ -922,6 +941,105 @@ impl DaoDb {
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         let rows = stmt
             .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(rows)
+    }
+
+    /// Record a `DAO:guardian:register` memo — maps sender address → pubkey.
+    /// Re-registration rotates the claimed pubkey (the sender address is the
+    /// identity; the newest on-chain registration wins).
+    pub fn register_guardian_candidate(
+        &self,
+        address: &str,
+        pubkey: &str,
+        txid: &str,
+    ) -> DaoResult<()> {
+        self.conn
+            .execute(
+                r#"INSERT INTO guardian_candidates (address, pubkey, txid, created_at)
+                   VALUES (?1, ?2, ?3, datetime('now'))
+                   ON CONFLICT(address) DO UPDATE SET
+                     pubkey = excluded.pubkey,
+                     txid = excluded.txid,
+                     created_at = excluded.created_at"#,
+                params![address, pubkey, txid],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// All registered guardian candidates as (address, pubkey) pairs.
+    pub fn list_guardian_candidates(&self) -> DaoResult<Vec<(String, String)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT address, pubkey FROM guardian_candidates ORDER BY created_at")
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(rows)
+    }
+
+    /// Pubkey a candidate registered on L1 (None = never registered).
+    pub fn guardian_candidate_pubkey(&self, address: &str) -> DaoResult<Option<String>> {
+        self.conn
+            .query_row(
+                "SELECT pubkey FROM guardian_candidates WHERE address = ?1",
+                params![address],
+                |row| row.get(0),
+            )
+            .map(Some)
+            .or_else(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                other => Err(DaoError::Internal(other.to_string())),
+            })
+    }
+
+    /// Persist a governance guardian mutation: `active=true` admits,
+    /// `active=false` expels (tombstone — overrides a config-file guardian).
+    pub fn set_gov_guardian(
+        &self,
+        address: &str,
+        pubkey: &str,
+        active: bool,
+        proposal_id: u64,
+    ) -> DaoResult<()> {
+        self.conn
+            .execute(
+                r#"INSERT INTO dao_guardians (address, pubkey, active, proposal_id, applied_at)
+                   VALUES (?1, ?2, ?3, ?4, datetime('now'))
+                   ON CONFLICT(address) DO UPDATE SET
+                     pubkey = excluded.pubkey,
+                     active = excluded.active,
+                     proposal_id = excluded.proposal_id,
+                     applied_at = excluded.applied_at"#,
+                params![address, pubkey, active as i64, proposal_id],
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        Ok(())
+    }
+
+    /// All governance guardian mutations (address, pubkey, active) — replayed
+    /// onto `config.guardians` at startup (D3).
+    pub fn gov_guardians(&self) -> DaoResult<Vec<(String, String, bool)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT address, pubkey, active FROM dao_guardians ORDER BY proposal_id")
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, i64>(2)? != 0,
+                ))
+            })
             .map_err(|e| DaoError::Internal(e.to_string()))?
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| DaoError::Internal(e.to_string()))?;
