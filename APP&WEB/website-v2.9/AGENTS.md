@@ -3,8 +3,10 @@
 Pravidla pro agenty (Devin, Copilot, WARP) pracující na veřejném ZION webu.
 
 > **Služba:** `app.zionterranova.com` — Next.js 16.2.9, běží jako systemd `zion-website.service` na Edge (`62.171.141.136`), WorkingDirectory `/opt/zion/APP&WEB/website-v2.9`, proxy na `127.0.0.1:3000`.
-> **Intro hub:** `zionterranova.com` — statický `public/maintenance.html`, nasazen v `/var/www/maintenance/maintenance.html`, servírovaný systémovým nginxem (ne Next.js).
+> **Intro hub:** `zionterranova.com` — statický export projektu `APP&WEB/IntroPage` (source `src/app/maintenance.html`), deploy přes `APP&WEB/IntroPage/deploy/deploy-intro.sh` do `/var/www/zion-maintenance/`, servírovaný systémovým nginxem (ne Next.js). Legacy kopie `public/maintenance.html` v tomto repozitáři se na apex nepoužívá.
 > **OASIS Web:** `oasis.zionterranova.com` — samostatná aplikace v `/var/www/oasis/`.
+> **Free World portál:** `freeworld.zionterranova.com` — dedikovaný nginx vhost (repo `V31/deploy/nginx/freeworld.zionterranova.com.conf`) proxy na `127.0.0.1:3000`; `/` mapuje na `/l5-free-world`, cert přes certbot. Portál používá `/api/free-world/[[...path]]` proxy → L5 daemon `127.0.0.1:8095` (GET public; POST jen QV ballots se ZIS session — `voter_id` je server-side `zis:<user.id>`, `X-API-Key` z env `FREE_WORLD_API_KEY`). L5 API jednotky: všechna `*_zion` pole = flowers (1e-6 ZION). Web backup: `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260929T134241Z-l5-portal`.
+>
 > **Deploy 2026-09-25 — DAO Parlament / truth-sync:** `/dao` obsahuje VISION Parlament, 144 000 jako symbolický cíl a fail-closed treasury lock UI; web backup je `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260925T152109Z-dao-parliament`. Live chain selector čte `/api/multichain/chains` (aktuálně jen `zion-l1`, `base`). Pozor: `next.config.ts` permanentně přesměrovává `/dex` i `/dex/:path*` na `/multichain#dex`; změny v `src/app/dex/liquidity/page.tsx` proto nejsou veřejně dosažitelné, dokud nebude redirect vědomě změněn.
 > **Deploy 2026-09-25 — DAO navigace:** přímé odkazy `/dao` v desktop shortcutu, multichain skupině (`DAO · Governance`) i mobilním menu; web backup je `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260925T184747Z-dao-nav`.
 >
