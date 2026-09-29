@@ -76,6 +76,14 @@ const DaoCopy = {
   typeGrant: { cs: `Grant`, en: `Grant` },
   typeHumanitarian: { cs: `Humanitární`, en: `Humanitarian` },
   typeEmergency: { cs: `Emergency`, en: `Emergency` },
+  typeAdmission: { cs: `Guardian admission`, en: `Guardian admission` },
+  typeExpulsion: { cs: `Guardian expulsion`, en: `Guardian expulsion` },
+  candidateAddress: { cs: `Adresa kandidáta (zion1…)`, en: `Candidate address (zion1…)` },
+  accusedAddress: { cs: `Adresa guardian (zion1…)`, en: `Guardian address (zion1…)` },
+  communityLabel: { cs: `Komunita`, en: `Community` },
+  offenseCategoryLabel: { cs: `Kategorie přestupku`, en: `Offense category` },
+  tierLabel: { cs: `Tier (1–3)`, en: `Tier (1–3)` },
+  admissionRequiresOnChainRegistration: { cs: `Kandidát musí být nejdřív registrován on-chain memo transakcí na L1 — jinak exekuce selže.`, en: `The candidate must first be registered via an on-chain L1 memo transaction — otherwise execution fails.` },
   parameterName: { cs: `Název parametru`, en: `Parameter name` },
   currentValue: { cs: `Současná hodnota`, en: `Current value` },
   proposedValue: { cs: `Navrhovaná hodnota`, en: `Proposed value` },
@@ -238,6 +246,11 @@ const DaoCopy = {
   creating: { cs: `Vytvářím…`, en: `Creating…` },
 };
 
+async function sha256Hex(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 type SectionTab = 'proposals' | 'treasury' | 'parliament' | 'guardians' | 'roadmap';
 
 const TABS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeof Gavel }[] = [
@@ -366,6 +379,10 @@ export default function DaoPage() {
   const [region, setRegion] = useState('');
   const [emergencyAction, setEmergencyAction] = useState('');
   const [justification, setJustification] = useState('');
+  const [candidateAddress, setCandidateAddress] = useState('');
+  const [communityName, setCommunityName] = useState('');
+  const [offenseCategory, setOffenseCategory] = useState('');
+  const [expulsionTier, setExpulsionTier] = useState('1');
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [guardianRegistry, setGuardianRegistry] = useState<GuardianRegistry | null>(null);
@@ -440,6 +457,10 @@ export default function DaoPage() {
     setCreateBusy(true);
     try {
       const zionAmount = Math.floor(parseFloat(amountZion) || 0);
+      // Only the guardian-rotation types carry a hash commitment field.
+      const descHash = (createType === 'Admission' || createType === 'Expulsion')
+        ? await sha256Hex(createDesc.trim())
+        : '';
       const proposalType: ProposalTypeInput = (() => {
         switch (createType) {
           case 'Treasury':
@@ -450,6 +471,10 @@ export default function DaoPage() {
             return { kind: 'Humanitarian', data: { category: category.trim(), amount: zionAmount * 1_000_000, region: region.trim(), description: createDesc.trim() } };
           case 'Emergency':
             return { kind: 'Emergency', data: { action: emergencyAction.trim(), justification: justification.trim() } };
+          case 'Admission':
+            return { kind: 'Admission', data: { candidate_id: candidateAddress.trim(), gate_scores_hash: descHash, sponsoring_guardians: [], community: communityName.trim() || 'zion' } };
+          case 'Expulsion':
+            return { kind: 'Expulsion', data: { accused_id: candidateAddress.trim(), offense_category: offenseCategory.trim() || 'conduct', investigation_hash: descHash, defense_hash: null, tier: Math.min(3, Math.max(1, parseInt(expulsionTier, 10) || 1)) } };
           default:
             return { kind: 'Parameter', data: { parameter_name: paramName.trim() || 'general', current_value: paramCurrent.trim(), proposed_value: paramProposed.trim() } };
         }
@@ -468,6 +493,7 @@ export default function DaoPage() {
       setRecipient(''); setAmountZion(''); setPurpose('');
       setDurationDays(''); setCategory(''); setRegion('');
       setEmergencyAction(''); setJustification('');
+      setCandidateAddress(''); setCommunityName(''); setOffenseCategory(''); setExpulsionTier('1');
       await loadDAOData();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : (DaoCopy.failedToCreateProposal[cs ? 'cs' : 'en']));
@@ -1448,6 +1474,8 @@ export default function DaoPage() {
                     <option value="Grant">{DaoCopy.typeGrant[cs ? 'cs' : 'en']}</option>
                     <option value="Humanitarian">{DaoCopy.typeHumanitarian[cs ? 'cs' : 'en']}</option>
                     <option value="Emergency">{DaoCopy.typeEmergency[cs ? 'cs' : 'en']}</option>
+                    <option value="Admission">{DaoCopy.typeAdmission[cs ? 'cs' : 'en']}</option>
+                    <option value="Expulsion">{DaoCopy.typeExpulsion[cs ? 'cs' : 'en']}</option>
                   </select>
                 </div>
                 <div>
@@ -1505,6 +1533,23 @@ export default function DaoPage() {
                   <div className="space-y-3">
                     <input type="text" value={emergencyAction} onChange={(e) => setEmergencyAction(e.target.value)} placeholder={DaoCopy.emergencyAction[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
                     <input type="text" value={justification} onChange={(e) => setJustification(e.target.value)} placeholder={DaoCopy.justification[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                  </div>
+                )}
+
+                {(createType === 'Admission' || createType === 'Expulsion') && (
+                  <div className="space-y-3">
+                    <input type="text" value={candidateAddress} onChange={(e) => setCandidateAddress(e.target.value)} placeholder={createType === 'Admission' ? DaoCopy.candidateAddress[cs ? 'cs' : 'en'] : DaoCopy.accusedAddress[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                    {createType === 'Admission' ? (
+                      <>
+                        <input type="text" value={communityName} onChange={(e) => setCommunityName(e.target.value)} placeholder={DaoCopy.communityLabel[cs ? 'cs' : 'en']} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <p className="text-[11px] text-gray-500">{DaoCopy.admissionRequiresOnChainRegistration[cs ? 'cs' : 'en']}</p>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <input type="text" value={offenseCategory} onChange={(e) => setOffenseCategory(e.target.value)} placeholder={DaoCopy.offenseCategoryLabel[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                        <input type="number" min="1" max="3" value={expulsionTier} onChange={(e) => setExpulsionTier(e.target.value)} placeholder={DaoCopy.tierLabel[cs ? 'cs' : 'en']} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:border-zion-gold focus:outline-none" />
+                      </div>
+                    )}
                   </div>
                 )}
 
