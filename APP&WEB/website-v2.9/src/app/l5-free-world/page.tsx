@@ -409,8 +409,8 @@ export default function L5FreeWorldPage() {
               <img
                 src="/images/l5-free-world/hero.webp"
                 alt={cs ? 'L5 Free World — šest komunit Terra Nova ve fyzickém světě' : 'L5 Free World — the six Terra Nova communities in the physical world'}
-                width={1280}
-                height={720}
+                width={1672}
+                height={941}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
