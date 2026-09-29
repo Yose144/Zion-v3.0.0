@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | L1 core + miner + pool | 232 | ~122k | produkční | ✅ `zion-v31-node/pool/miner` |
 | L2 multichain + dao | 129 | ~59k | produkční-grade | ✅ `zion-v31-multichain/dao`, `zion-zis` |
-| L3 ai-native + ncl | 38 | ~19k | funkční jádro | ❌ žádná služba |
+| L3 ai-native + ncl | 38 | ~19k | funkční jádro | ✅ nasazeno 2026-09-29 (`zion-v31-ai-native` + public `/api/ai-chat`) |
 | L4 oasis | 30 | ~9.5k | backend + Three.js web | ✅ `zion-v31-oasis` (Rust backend) |
 | L5 free-world | 11 | ~1.7k | funkční tracker | ✅ `zion-v31-free-world` |
 | L6 issobella | 11 | ~2.6k | funkční tracker | ✅ `zion-v31-issobella` |
@@ -42,7 +42,7 @@
 
 **DoD:** obousměrný cross-chain swap s auto-settlement → **nesplněno** (BTC off).
 
-### N2 — L3 Hiranyagarbha 2.4 (plán: říjen 2026) — kód ~60 %, deploy 0 %
+### N2 — L3 Hiranyagarbha 2.4 (plán: říjen 2026) — kód ~60 %, deploy základ ✅
 
 **Existuje:**
 - `maestro.rs` — IntentRouter → Planner → `ExecutionPlan` (DAG) → `LayerAgentRegistry` — skutečný orchestrátor
@@ -50,11 +50,23 @@
 - `health_poller.rs` — 26-service health matrix
 - `autotuner.rs`, `planner.rs`, `intent.rs`, `orchestrator.rs`, `hiranyagarbha.rs`
 - NCL crate — scheduler, reputation, pricing, store, backend (~2.2k ř.)
+- `zion-ai-native-api` binary — `/health`, `/chat`, `/rag/query`, `/rag/seed`, autotune opt-in
+
+**Nasazeno 2026-09-29** (detail v `V31/AGENTS.md`):
+- Edge `zion-v31-ai-native.service` na `127.0.0.1:8001`, BM25 RAG nad kurátorovaným korpusem `/opt/zion/data/l3-rag-docs` (49 souborů, 670 chunků, česká diakritika)
+- LLM **lokálně na operátorském PC** (llama.cpp Vulkan, Qwen3-1.7B-Q8_0, `127.0.0.1:8002`, ~25 tok/s) — Edge GPU nemá; do Edge vede restric­tovaný reverzní SSH tunel (`hirantunnel`, `permitlisten` jen 8002)
+- Veřejný `POST /api/ai-chat` proxuje přes grounded L3 — nginx 503 gate zrušen, rate-limit zóny drží
+- Omezení: 1.7B model halucinuje i s RAG → operátorský nástroj, ne zdroj pravdy
 
 **Chybí:**
-- ❌ **Není nasazeno** — žádná `zion-ai-native` / `hiran` / `ncl` systemd služba na Edge
 - ❌ Miner↔NCL wiring — `V31/L1/miner/src/runtime.rs` nemá žádnou referenci na NCL (mineři AI práci neprovádějí)
 - ❌ "Specializovaní agenti" jsou enum stubs (`SubAgent::WalletOps` apod.), ne běžící agenty
+- ⚠️ **Model quality gate** — viz níže
+
+**Model upgrade path (hardware-gated):**
+- **Strata** (`github.com/Niko1221/Strata`) — ggml engine pro ~125B MoE (Qwen3.8-Flash-Next) na gaming PC, 60–95 tok/s; **požadavky nesplňujeme**: RTX 30+ ≥12 GB VRAM (máme GTX 1070 Ti 8 GB sdílenou s minerem) + 48–64 GB RAM (máme 30 GB). Kandidát při hw upgradu.
+- Realističtější střední krok: RTX 3090 24 GB + ≥48 GB RAM → v llama.cpp MoE **Qwen3-30B-A3B** (3B aktivních parametrů) místo současného 1.7B.
+- Bez hw změny: lepší ~3–4B quant (IQ2/IQ3), rozšíření RAG korpusu, případně externí API fallback pro public chat.
 
 ### N3 — L3 2.5 Amitabha & Agenti (plán: listopad 2026) — ~10 %
 
@@ -104,7 +116,7 @@
 | 1 | L1 100 000+ bloků bez zásahu | ❌ | height ~62k; 2026-09-21 stall 2 h 23 m, 2026-09-27 4× pool wedge (opraveno); G8 běh #1 neprošel ([report](docs/3.2/REPORTS/REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md)) |
 | 2 | Obousměrný ZION↔BTC↔ETH auto-settle + HTLC rollback | ❌ | BTC pod safety holdem; jen wZION/USDT na Base |
 | 3 | Passkey login napříč weby | 🔄 | kód v ZIS + web hotový (2026-09-28), čeká DB push + deploy; RP ID `zionterranova.com` pokrývá všechny subdomény |
-| 4 | Maestro řídí ≥3 agenty on-chain s Dharma filtrem | ❌ | L3 nenasazeno; Dharma = keyword filter |
+| 4 | Maestro řídí ≥3 agenty on-chain s Dharma filtrem | ❌ | L3 API nasazeno 2026-09-29, ale Maestro on-chain agenty neřídí; Dharma = keyword filter |
 | 5 | OASIS web preview <3 s + pixel streaming | ⚠️ | Three.js existuje; pixel streaming ne |
 | 6 | L5 portál + živý 5% tok + ≥5 projektů | ⚠️ | backend+page live; mapa/voting/projekty chybí |
 | 7 | L6 quantum model publikován + NCL na GPU | ❌ | pouze docs |
@@ -117,8 +129,8 @@
 ## 4. Kde je plán nejvíc přestřelený (top mezery)
 
 1. **UE 5.7 metaverse** — žádný kód, asset pipeline, build infra ani licensing strategie; Three.js web je reálný, ale plan marketingově slibuje Nanite/Lumen.
-2. **Amitabha + autonomní agenti** — čistý koncept; ani Maestro není nasazen.
-3. **WebAuthn/Passkey** — nejobvyklejší produkční požadavek, ale v ZIS zcela chybí.
+2. **Amitabha + autonomní agenti** — čistý koncept; L3 inference+RAG nasazené, ale Maestro žádné on-chain agenty neřídí.
+3. ~~WebAuthn/Passkey~~ — **vyřešeno 2026-09-28** v kódu (ZIS routes + web UI), čeká jen DB push + deploy + flag.
 4. **BTC swap mainnet** — kód hotový a otestovaný, ale blokovaný safety holdem (audit + IBD).
 
 ## 5. Kde je plán podhodnocený (skutečnost lepší než docs)
@@ -134,7 +146,7 @@
 | 1 | BTC swap re-enable (audit → capped pilot po bitcoind IBD ~65 % → done) | odemyká N1 DoD + jediná blocker je procedurální |
 | 2 | L5 planetary mapa + 2-3 pilotní projekty | N5 je nejblíž dokončení (backend hotový) |
 | 3 | Passkey/WebAuthn do ZIS | denní UX; knihovny existují (`@simplewebauthn/server`) |
-| 4 | `zion-ai-native` service deploy + Maestro E2E na 1 reálný task | L3 existuje jako kód, chybí provoz |
+| 4 | ~~`zion-ai-native` service deploy~~ ✅ hotovo → zbývá Maestro E2E na 1 reálný task + větší model (hw-gated, viz N2) | deploy hotov, orchestrace agentů ne |
 | 5 | L6 quantum model → publikace v DeSci repozitáři (i jako draft) | čistý výzkumný výstup, ne infra |
 | 6 | UE5.7 → **realisticky odkládáme** / Three.js preview rozšiřovat | 0 % základy, megaprojekt |
 
