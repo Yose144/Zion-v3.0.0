@@ -65,6 +65,7 @@ const C = {
     en: 'Voting ended — the proposal is awaiting tally (automatic within ~1 min).',
   },
   voters: { cs: 'Hlasující', en: 'Voters' },
+  delegated: { cs: 'delegovaných', en: 'delegated' },
   timeline: { cs: 'Časová osa', en: 'Timeline' },
   created: { cs: 'Vytvořeno', en: 'Created' },
   votingEnds: { cs: 'Konec hlasování', en: 'Voting ends' },
@@ -295,31 +296,51 @@ export default function ProposalDetailPage() {
                 <p className="text-xs text-gray-500">—</p>
               ) : (
                 <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                  {votes.map((v) => (
-                    <div
-                      key={`${v.voter}-${v.voted_at}`}
-                      className="flex items-center justify-between text-xs zion-rainbow-sub px-3 py-2"
-                      style={{ '--rc': '6, 105, 40' } as CSSProperties}
-                    >
-                      <span className="font-mono text-gray-400 truncate max-w-[50%]">{v.voter}</span>
-                      <span className="flex items-center gap-3">
-                        <span
-                          className={
-                            v.choice === 'Yes'
-                              ? 'text-zion-cyan'
-                              : v.choice === 'No'
-                                ? 'text-zion-purple'
-                                : 'text-gray-400'
-                          }
-                        >
-                          {v.choice}
-                        </span>
-                        <span className="font-mono text-gray-300">
-                          {formatZion(flowersToZion(v.weight))} ZION
-                        </span>
-                      </span>
-                    </div>
-                  ))}
+                  {votes.map((v) => {
+                    const delegated = v.delegated_from ?? [];
+                    const delegatedTotal = delegated.reduce(
+                      (sum, d) => sum + Number(d.weight ?? 0),
+                      0,
+                    );
+                    return (
+                      <div
+                        key={`${v.voter}-${v.voted_at}`}
+                        className="text-xs zion-rainbow-sub px-3 py-2"
+                        style={{ '--rc': '6, 105, 40' } as CSSProperties}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-gray-400 truncate max-w-[50%]">{v.voter}</span>
+                          <span className="flex items-center gap-3">
+                            <span
+                              className={
+                                v.choice === 'Yes'
+                                  ? 'text-zion-cyan'
+                                  : v.choice === 'No'
+                                    ? 'text-zion-purple'
+                                    : 'text-gray-400'
+                              }
+                            >
+                              {v.choice}
+                            </span>
+                            <span className="font-mono text-gray-300">
+                              {formatZion(flowersToZion(v.weight))} ZION
+                            </span>
+                          </span>
+                        </div>
+                        {delegated.length > 0 && (
+                          <div
+                            className="mt-1 pl-3 border-l border-white/10 text-gray-500"
+                            title={delegated
+                              .map((d) => `${d.delegator}: ${formatZion(flowersToZion(d.weight))} ZION`)
+                              .join('\n')}
+                          >
+                            ↳ +{delegated.length} {C.delegated[cs ? 'cs' : 'en']} (
+                            {formatZion(flowersToZion(delegatedTotal))} ZION)
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
