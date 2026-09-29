@@ -365,6 +365,25 @@ async fn address_txs(client: &Client, ep: &BtcRpc, addr: &str) -> Result<String,
 /// outputs show with `confirmed:false`, matching esplora).
 async fn address_utxos(client: &Client, ep: &BtcRpc, addr: &str) -> Result<String, String> {
     ensure_address(client, ep, addr).await?;
+    // `importdescriptors` with a historical timestamp rescans in the
+    // background; `listunspent` mid-rescan returns partial results that would
+    // read as "missing funds". Fail closed so failover/retry answers once the
+    // rescan completes (or a synced backend answers instead).
+    let wallet_info = wallet_rpc(client, ep, "getwalletinfo", json!([])).await?;
+    if !wallet_info
+        .get("scanning")
+        .map(|s| s.is_null() || s == &Value::from(false))
+        .unwrap_or(true)
+    {
+        return Err(format!(
+            "wallet rescanning ({}%) — UTXO set incomplete",
+            wallet_info
+                .pointer("/scanning/progress")
+                .and_then(|p| p.as_f64())
+                .map(|p| format!("{:.1}", p * 100.0))
+                .unwrap_or_else(|| "?".into())
+        ));
+    }
     let unspent = wallet_rpc(
         client,
         ep,
