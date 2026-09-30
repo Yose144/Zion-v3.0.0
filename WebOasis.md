@@ -100,7 +100,7 @@ if (!backend) return null; // nebo skeleton — detection je ~ms
   gl={async (props) => {
     if (backend === 'webgpu') {
       const { WebGPURenderer } = await import('three/webgpu');
-      const r = new WebGPURenderer({ canvas: props.canvas, antialias: true });
+      const r = new WebGPURenderer({ canvas: props.canvas, antialias: false });
       await r.init();
       return r;
     }
@@ -212,15 +212,25 @@ Implementováno v tomto commitu (`OasisWeb`):
 - [x] Feature flag: `?gpu=webgpu|webgl2|auto` query override pro testy + `localStorage` persist
 - [x] **Akceptace splněna:** `?gpu=webgpu` renderuje galaxii/stargate/svět (508–1138 draw calls), E2E flow intro→scene projde; `navigator.gpu` off → čistý webgl2 fallback; commit `63c9d6b9e`
 
-### G2 — TSL efekty a stabilizace ✅ NASAZENO (2026-09-30)
+### G2 — TSL efekty a stabilizace ✅ NASAZENO (2026-09-30, hotfix `e69402151`)
 - [x] TSL post-processing: `PostProcessing` chain (`pass` → `bloom` → `vignette` grade) v `gpu/WebGpuPostFX.tsx`, fallback na direct render dokud se TSL chunk sestaví
 - [x] TSL porty komponent: `TslStars` (PointsNodeMaterial starfield + twinkle — náhrada drei `Stars`/`TwinkleStars`), `TslAtmosphere` (fresnel node), `TslVortex` (spiral warp-gate disc)
 - [x] Perf parity: webgl2 ≈ webgpu (24.8 vs 26.2 fps headless Chrome; limit prostředí, ne rendereru)
 - [x] Vizuální parita ověřena screenshot-diffem (Issobella env: shodná struktura/barva)
+- [x] **Produkce ověřena:** `?gpu=webgpu` renderuje plnou galaxii (402 světů, Nova Zeme + L5 markery, `~1 900 draw calls`, 0 material chyb)
 - [ ] `GalaxyCore` streak shader — zbývá port na TSL (zatím webgl2-only, nenápadný detail)
 - [ ] `Environment` night HDRI na WebGPU — ověřit `scene.environment` příspěvek
+- [ ] **Parity gap (kosmetika):** instanced listí Stromu života a wireframe aura boxy renderují na WebGPU viditelněji/běleji než na WebGL2 — node-konverze `meshBasicMaterial wireframe`/instanced standard materiálu chce ladění, ne blocker
 - [ ] Mobile WebGPU (Chrome Android / Safari 26) — rozhodnout zapnutí podle device matrix
 - [ ] `auto` → WebGPU promování až po device-matrix potvrzení
+
+#### Produkční incident (root cause) — černý canvas na `?gpu=webgpu`
+Po nasazení G2 produkce hlásila `NodeMaterial: Material "MeshStandardMaterial" is not compatible` pro všechny klasické materiály → prázdný NodeMaterial → černý canvas. Dva skutečné root causes, oba fixnuté v `e69402151`:
+
+1. **Turbopack minifikace rozbila registraci `StandardNodeLibrary`.** `addMaterial(nodeClass, materialClass)` klíčuje mapu `materialNodes` podle `materialClass.name` — v produkčním buildu jsou class names zkrácené (`"sj"`, `"sG"`…, ověřeno dump klíčů na produkci). Lookup `materialNodes.get(material.type)` (`"MeshStandardMaterial"` — string, neminifikovaný) → vždy miss. **Fix:** po `renderer.init()` přeregistrace pod **string type klíči** (`materialNodes.set('MeshStandardMaterial', MeshStandardNodeMaterial)` × 13 typů) + registrace light node tříd pod **class-object klíči app bundlu** (`lightNodes` je `WeakMap<object,…>`, string keys hážou) — funkce `registerNodeLibrary()` v `OasisScene.tsx`. Minification-proof, nezávislé na bundleru.
+2. **MSAA resolve do canvas swapchainu selhal validaci** na části Chrome/macOS pathů (`resolve target [TextureView … WebgpuSwapChainTexture]` → `Invalid CommandBuffer`, submit se zahodil každý frame → černá). Headless repro neexistovalo. **Fix:** `antialias: false` u `WebGPURenderer` — TSL postfx stejně zvládá akceptable AA pro preview.
+
+Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém OS** — headless Chrome neukáže swapchain/IOSurface validační cesty; `materialNodes.keys()`/`lightNodes` dump je rychlý diagnostický hook přes `window.__oasisGl.nodes.library`.
 
 ### G3 — Asset & bridge track
 - Draco/KTX2 pipeline + avatar/artifact preview viewer (Marketplace bridge)
