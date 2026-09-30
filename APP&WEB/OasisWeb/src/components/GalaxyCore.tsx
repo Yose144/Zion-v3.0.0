@@ -5,6 +5,8 @@ import { useFrame, extend, type ThreeElement } from '@react-three/fiber';
 import { shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import { createRandom } from '../domain/ports/random';
+import { useGpuBackend } from '../lib/gpuBackend';
+import TslStreaks from './gpu/TslStreaks';
 
 /**
  * GPU-driven tunnel streak material — the forward/backward motion and
@@ -73,6 +75,7 @@ function createLensTexture(): THREE.Texture {
 }
 
 export default function GalaxyCore() {
+  const backend = useGpuBackend();
   const coreRef = useRef<THREE.Group>(null);
   const ringsRef = useRef<THREE.Group>(null);
   const streaksGroupRef = useRef<THREE.Group>(null);
@@ -223,18 +226,23 @@ export default function GalaxyCore() {
         ))}
       </group>
 
-      {/* Blue-white tunnel streaks — GPU-animated, see StreakMaterial */}
+      {/* Blue-white tunnel streaks — GPU-animated; GLSL on WebGL2,
+          TSL instanced quads on WebGPU (point size is fixed at 1px there) */}
       <group ref={streaksGroupRef}>
-        <points geometry={streaksGeometry} frustumCulled={false}>
-          <streakMaterial
-            ref={streakMaterialRef}
-            uSize={0.18}
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            toneMapped={false}
-          />
-        </points>
+        {backend === 'webgpu' ? (
+          <TslStreaks geometry={streaksGeometry} size={0.18} />
+        ) : (
+          <points geometry={streaksGeometry} frustumCulled={false}>
+            <streakMaterial
+              ref={streakMaterialRef}
+              uSize={0.18}
+              transparent
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+              toneMapped={false}
+            />
+          </points>
+        )}
       </group>
 
       {/* Large lens-flare sprite */}

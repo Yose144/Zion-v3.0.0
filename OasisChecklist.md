@@ -41,9 +41,9 @@
 | WebGL2 path (default) | ✅ | R3F + EffectComposer (bloom/vignette/sat/contrast), pixel-parity zachována |
 | `?gpu=webgpu` WebGPU preview | ✅ opt-in verified | `WebGPURenderer` (three 0.169) + `WebGPUEngine` (Babylon) s WebGL2 fallback; **produkce ověřena** — plná galaxie 402 světů, ~1 900 draw calls, 0 material chyb (hotfix `e69402151`: string-key node library registrace proti Turbopack minifikaci + `antialias:false` kvůli swapchain resolve validaci); `auto` → webgl2 do device-matrix potvrzení |
 | TSL postfx (bloom + vignette) | ✅ preview | `gpu/WebGpuPostFX.tsx` |
-| TSL porty shader komponent | 🚧 | `TslStars` ✅, `TslAtmosphere` ✅, `TslVortex` ✅; `GalaxyCore` streak shader ⬜ (webgl2-only) |
+| TSL porty shader komponent | ✅ | `TslStars` ✅, `TslAtmosphere` ✅, `TslVortex` ✅, `TslStreaks` ✅ (GalaxyCore — instanced quady, WebGPU nemá point size; fix `timerLocal()` callable) |
 | FPS parita | 🚧 | headless Chrome ~25 fps oba backendy (limit prostředí); device matrix chybí |
-| WebGPU vizuální parita (kosmetika) | 🚧 | instanced listí + wireframe aura renderují jinak než WebGL2 — node-konverze `wireframe`/instanced materiálů; ne blocker |
+| WebGPU vizuální parita (kosmetika) | 🚧 | hvězdy fixní 1 px body (žádný point size v WebGPU), listy/bloom vybělenější než WebGL2; wireframe aura podobně; ne blocker |
 | Pixel Streaming z GPU Edge | 🔭 | UE 5.7 POC — samostatný track M4.3 |
 | UE 5.7 / Nanite / Lumen / MetaHuman | 🔭 | není v repu — viz `WebOasis.md` §9 rizika |
 
@@ -93,7 +93,7 @@
 
 ## Nejbližší otevřené úkoly (priorita)
 
-1. **G2 resty:** `GalaxyCore` TSL port; `Environment` HDRI ověřit na WebGPU; mobile WebGPU device matrix → rozhodnout `auto` promoci.
+1. **G2 resty:** `Environment` HDRI ověřit na WebGPU; mobile WebGPU device matrix → rozhodnout `auto` promoci; kosmetická parita (stars/leaves).
 2. **Load-time budget:** měření navigace→scéna na referenčních zařízeních (DoD ≤ 3 s).
 3. **Quest/landing smyčka E2E:** approach→land→quest completion flow test.
 4. **Discovery persistence:** sync discovered světů do ZIS `oasisPlayer` profilu.

@@ -219,9 +219,10 @@ Implementováno v tomto commitu (`OasisWeb`):
 - [x] Perf parity: webgl2 ≈ webgpu (24.8 vs 26.2 fps headless Chrome; limit prostředí, ne rendereru)
 - [x] Vizuální parita ověřena screenshot-diffem (Issobella env: shodná struktura/barva)
 - [x] **Produkce ověřena:** `?gpu=webgpu` renderuje plnou galaxii (402 světů, Nova Zeme + L5 markery, `~1 900 draw calls`, 0 material chyb)
-- [ ] `GalaxyCore` streak shader — zbývá port na TSL (zatím webgl2-only, nenápadný detail)
+- [x] `GalaxyCore` streak shader → `gpu/TslStreaks.tsx` — WebGPU point size je fixní 1 px (ani `PointsNodeMaterial.sizeNode` není v r169 zapojen), proto instanced screen-aligned quady přes `InstancedPointsNodeMaterial` + vlastní `vertexNode`/`fragmentNode` (`setupShaders` override); floor-mod místo TSL `mod` (WGSL `%` je truncated, zabloudí záporné rychlosti); `pointWidth` je 2× screen px → kompenzováno. Produkce: streak mesh ve scéně, 400 instancí, 0 chyb.
 - [ ] `Environment` night HDRI na WebGPU — ověřit `scene.environment` příspěvek
-- [ ] **Parity gap (kosmetika):** instanced listí Stromu života a wireframe aura boxy renderují na WebGPU viditelněji/běleji než na WebGL2 — node-konverze `meshBasicMaterial wireframe`/instanced standard materiálu chce ladění, ne blocker
+- [ ] **Parity gap (kosmetika):** listy Stromu života (lineSegments + `vertexColors`) a TSL hvězdy renderují na WebGPU slaběji/běleji — hvězdy fixní 1 px body (vs. `factor: 4.5` sprites na GL), listy přepálí TSL bloom; wireframe aura boxy podobně. Ne blocker.
+- [x] **TSL gotcha fix:** `timerLocal` je funkce `(scale?) => TimerNode`, ne node — bare `timerLocal.mul` házel `not a function` (ticho zabilo twinkle v `TslStars` i warp v `TslVortex`); opraveno na `timerLocal()` všude
 - [ ] Mobile WebGPU (Chrome Android / Safari 26) — rozhodnout zapnutí podle device matrix
 - [ ] `auto` → WebGPU promování až po device-matrix potvrzení
 
