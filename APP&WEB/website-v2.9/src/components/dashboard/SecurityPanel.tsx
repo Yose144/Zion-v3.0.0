@@ -22,9 +22,12 @@ import {
   Clock,
   Fingerprint,
   Loader2,
+  Link2,
+  Wallet,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useZionWallet } from '@/contexts/ZionWalletContext';
 import {
   getSessions,
   revokeSession,
@@ -32,6 +35,8 @@ import {
   getApiKeys,
   createApiKey,
   revokeApiKey,
+  getChallenge,
+  linkAddress,
   getPasskeyRegistrationOptions,
   verifyPasskeyRegistration,
   listPasskeys,
@@ -82,6 +87,15 @@ const copy = {
     singleDevice: 'Single device',
     loading: 'Loading...',
     error: 'Error loading security data.',
+    linkZionWallet: 'Link ZION wallet',
+    linkMetaMask: 'Link MetaMask',
+    linking: 'Linking…',
+    linked: 'Address linked',
+    linkHint: 'Sign a challenge to prove ownership. Keys never leave your browser.',
+    walletPassword: 'Wallet password',
+    noSoftwareWallets: 'No software wallet found — create one on the Wallet page first.',
+    currentSession: 'This device',
+    primary: 'primary',
   },
   cs: {
     security: 'Bezpečnost',
@@ -119,7 +133,23 @@ const copy = {
     singleDevice: 'Jedno zařízení',
     loading: 'Načítání...',
     error: 'Chyba při načítání bezpečnostních dat.',
+    linkZionWallet: 'Propojit ZION peněženku',
+    linkMetaMask: 'Propojit MetaMask',
+    linking: 'Propojuji…',
+    linked: 'Adresa propojena',
+    linkHint: 'Podepiš výzvu k ověření vlastnictví. Klíče neopustí prohlížeč.',
+    walletPassword: 'Heslo peněženky',
+    noSoftwareWallets: 'Žádná softwarová peněženka — nejdřív ji vytvoř na stránce Peněženka.',
+    currentSession: 'Toto zařízení',
+    primary: 'primární',
   },
+};
+
+const CHAIN_LABELS: Record<string, string> = {
+  'zion-l1': 'ZION L1',
+  evm: 'EVM',
+  bitcoin: 'Bitcoin',
+  google: 'Google',
 };
 
 function formatDate(iso: string | null | undefined, locale: string): string {
@@ -139,7 +169,8 @@ function formatDate(iso: string | null | undefined, locale: string): string {
 
 export default function SecurityPanel() {
   const { lang } = useLang();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const zionWallet = useZionWallet();
   const t = lang === 'en' ? copy.en : copy.cs;
   const locale = lang === 'en' ? 'en-US' : 'cs-CZ';
 
@@ -158,7 +189,21 @@ export default function SecurityPanel() {
   const [hasPasskeySupport, setHasPasskeySupport] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Link-address state
+  const [linkWalletId, setLinkWalletId] = useState<string | null>(null);
+  const [linkPassword, setLinkPassword] = useState('');
+  const [linkBusy, setLinkBusy] = useState<'zion' | 'evm' | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [linkSuccess, setLinkSuccess] = useState<string | null>(null);
+
   const linkedAddresses: ZisLinkedAddress[] = user?.linkedAddresses ?? [];
+
+  const softwareWallets = zionWallet.wallets.filter(
+    (w) => w.keyType !== 'trezor' && w.keyType !== 'ledger',
+  );
+  const alreadyLinked = new Set(linkedAddresses.map((la) => la.address));
+  const linkableWallets = softwareWallets.filter((w) => !alreadyLinked.has(w.address));
+  const linkWallet = linkableWallets.find((w) => w.id === linkWalletId) ?? linkableWallets[0] ?? null;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -199,6 +244,11 @@ export default function SecurityPanel() {
   const handleRevokeSession = async (jti: string) => {
     try {
       await revokeSession(jti);
+      // Revoking the current session logs this device out.
+      if (sessions.find((s) => s.jwtJti === jti)?.current) {
+        await logout();
+        return;
+      }
       setSessions((prev) => prev.filter((s) => s.jwtJti !== jti));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -303,6 +353,96 @@ export default function SecurityPanel() {
     }
   };
 
+  // ── Link ZION L1 wallet ───────────────────────────────────────────
+  // Same Ed25519 challenge-response as login: decrypt the wallet locally,
+  // sign the ZIS challenge, submit — the server verifies ownership.
+  const handleLinkZion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkWallet || !linkPassword) return;
+    setLinkBusy('zion');
+    setLinkError(null);
+    setLinkSuccess(null);
+    try {
+      const privateKeyHex = await zionWallet.exportPrivateKey(linkWallet.id, linkPassword);
+      const privateKeyBytes = new Uint8Array(
+        privateKeyHex.match(/.{2}/g)!.map((b: string) => parseInt(b, 16)),
+      );
+      const ed = await import('@noble/ed25519');
+      const publicKeyBytes = await ed.getPublicKey(privateKeyBytes);
+      const publicKeyHex = Array.from(publicKeyBytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const { challenge } = await getChallenge(linkWallet.address, 'zion-l1');
+      const signatureBytes = await ed.sign(new TextEncoder().encode(challenge), privateKeyBytes);
+      const signatureHex = Array.from(signatureBytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      await linkAddress({
+        address: linkWallet.address,
+        chainType: 'zion-l1',
+        publicKey: publicKeyHex,
+        signature: signatureHex,
+      });
+      setLinkPassword('');
+      setLinkSuccess(linkWallet.address);
+      await refreshUser();
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLinkBusy(null);
+    }
+  };
+
+  // ── Link EVM wallet (MetaMask SIWE) ───────────────────────────────
+  const handleLinkEvm = async () => {
+    const ethereum = (typeof window !== 'undefined' ? (window as any).ethereum : undefined);
+    if (!ethereum) {
+      setLinkError('MetaMask not detected');
+      return;
+    }
+    setLinkBusy('evm');
+    setLinkError(null);
+    setLinkSuccess(null);
+    try {
+      const accounts: string[] = await ethereum.request({ method: 'eth_requestAccounts' });
+      const { ethers } = await import('ethers');
+      const address = ethers.utils.getAddress(accounts[0]);
+      const { challenge } = await getChallenge(address, 'evm');
+      const nonce = challenge.match(/nonce: ([^\n]+)/i)?.[1];
+      if (!nonce) throw new Error('No nonce in challenge');
+
+      const issuedAt = new Date().toISOString();
+      const expirationTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      const message = [
+        `${window.location.host} wants you to sign in with your Ethereum account:`,
+        address,
+        '',
+        'Link your MetaMask wallet to ZION.',
+        '',
+        `URI: ${window.location.origin}/account`,
+        'Version: 1',
+        'Chain ID: 8453',
+        `Nonce: ${nonce}`,
+        `Issued At: ${issuedAt}`,
+        `Expiration Time: ${expirationTime}`,
+      ].join('\n');
+      const signature: string = await ethereum.request({
+        method: 'personal_sign',
+        params: [message, address],
+      });
+
+      await linkAddress({ address, chainType: 'evm', chainId: 'base', message, signature });
+      setLinkSuccess(address);
+      await refreshUser();
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLinkBusy(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
@@ -333,18 +473,27 @@ export default function SecurityPanel() {
         {linkedAddresses.length === 0 ? (
           <p className="text-sm text-gray-400">{t.noLinkedAddresses}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 mb-6">
             {linkedAddresses.map((la) => (
               <div
                 key={la.id}
                 className="zion-rainbow-sub p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 style={{ '--rc': '6, 105, 40' } as CSSProperties}
               >
-                <div className="space-y-1">
-                  <p className="font-mono text-sm text-white break-all">{la.address}</p>
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-mono text-sm text-white break-all">
+                      {la.chainType === 'google' ? (user?.email ?? la.address) : la.address}
+                    </p>
+                    {la.address === user?.address && (
+                      <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2 py-0.5 text-[10px] text-zion-gold">
+                        {t.primary}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500">
-                    {t.chain}: <span className="text-zion-cyan">{la.chainType}</span>
-                    {la.chainId ? ` / ${la.chainId}` : ''}
+                    {t.chain}: <span className="text-zion-cyan">{CHAIN_LABELS[la.chainType] ?? la.chainType}</span>
+                    {la.chainId && la.chainId !== la.chainType ? ` / ${la.chainId}` : ''}
                   </p>
                 </div>
                 <div className="text-xs text-gray-500">
@@ -354,6 +503,65 @@ export default function SecurityPanel() {
             ))}
           </div>
         )}
+
+        {/* Link a ZION L1 wallet */}
+        <div className="border-t border-white/5 pt-5 space-y-4">
+          <p className="text-[11px] text-gray-500">{t.linkHint}</p>
+
+          {linkableWallets.length > 0 ? (
+            <form onSubmit={handleLinkZion} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select
+                  value={linkWallet?.id ?? ''}
+                  onChange={(e) => setLinkWalletId(e.target.value)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-cyan/50"
+                >
+                  {linkableWallets.map((w) => (
+                    <option key={w.id} value={w.id} className="bg-zinc-900">
+                      {w.name} — {w.address.slice(0, 12)}…
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="password"
+                  value={linkPassword}
+                  onChange={(e) => setLinkPassword(e.target.value)}
+                  placeholder={t.walletPassword}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/50"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={linkBusy !== null || !linkPassword || !linkWallet}
+                className="zion-button-secondary text-sm py-2 px-4 disabled:opacity-50"
+              >
+                {linkBusy === 'zion' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+                {linkBusy === 'zion' ? t.linking : t.linkZionWallet}
+              </button>
+            </form>
+          ) : (
+            zionWallet.initialized && (
+              <p className="text-xs text-gray-500">{t.noSoftwareWallets}</p>
+            )
+          )}
+
+          <button
+            type="button"
+            onClick={handleLinkEvm}
+            disabled={linkBusy !== null}
+            className="zion-button-secondary text-sm py-2 px-4 disabled:opacity-50"
+          >
+            {linkBusy === 'evm' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            {linkBusy === 'evm' ? t.linking : t.linkMetaMask}
+          </button>
+
+          {linkError && <p className="text-xs text-red-400">{linkError}</p>}
+          {linkSuccess && (
+            <p className="text-xs text-green-400 break-all">
+              {t.linked}: {linkSuccess}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Passkeys */}
@@ -461,6 +669,11 @@ export default function SecurityPanel() {
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm text-white">{s.userAgent || 'Unknown'}</p>
+                    {s.current && (
+                      <span className="rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-2 py-0.5 text-[10px] text-zion-cyan">
+                        {t.currentSession}
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                     <span className="flex items-center gap-1">

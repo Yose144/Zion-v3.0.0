@@ -59,8 +59,11 @@ export default function NavAuthButton() {
   }
 
   // Authenticated — show avatar + dropdown
-  const shortAddr = user?.address ? `${user.address.slice(0, 8)}...${user.address.slice(-4)}` : '';
-  const initial = user?.displayName?.[0]?.toUpperCase() || 'Z';
+  const isChainAddress = !!user?.address && (user.address.startsWith('zion1') || user.address.startsWith('0x'));
+  const shortAddr = isChainAddress
+    ? `${user!.address.slice(0, 8)}...${user!.address.slice(-4)}`
+    : (user?.email ?? '');
+  const initial = (user?.displayName ?? user?.email ?? 'Z')[0]?.toUpperCase() || 'Z';
 
   return (
     <>
@@ -69,10 +72,20 @@ export default function NavAuthButton() {
           onClick={() => setShowMenu(!showMenu)}
           className="flex items-center gap-2 px-2 py-1.5 rounded-xl border border-white/15 bg-black/75 hover:border-white/25 transition-colors"
         >
-          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-[11px] font-bold text-white">
-            {initial}
-          </div>
-          <span className="hidden lg:inline text-[11px] font-mono text-zion-gold/85">{shortAddr}</span>
+          {user?.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatar}
+              alt=""
+              className="h-7 w-7 rounded-lg object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-[11px] font-bold text-white">
+              {initial}
+            </div>
+          )}
+          <span className="hidden lg:inline text-[11px] font-mono text-zion-gold/85 max-w-[140px] truncate">{shortAddr}</span>
           <ChevronDown className={`w-3.5 h-3.5 text-zion-gold/70 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
         </button>
         {showMenu && (
@@ -83,7 +96,9 @@ export default function NavAuthButton() {
                 <p className="text-xs font-semibold text-white truncate">
                   {user?.displayName || NavAuthCopy.user[lang]}
                 </p>
-                <p className="text-[10px] font-mono text-zion-gold/70 truncate">{user?.address}</p>
+                <p className="text-[10px] font-mono text-zion-gold/70 truncate">
+                  {isChainAddress ? user?.address : (user?.email ?? '')}
+                </p>
               </div>
               <button
                 onClick={() => {

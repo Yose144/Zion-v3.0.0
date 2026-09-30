@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Wallet, Loader2, AlertCircle, CheckCircle2, ArrowRight, ChevronDown, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 // Passkey sign-in is hidden until the ZIS webauthn endpoints are deployed.
 const PASSKEY_ENABLED = process.env.NEXT_PUBLIC_PASSKEY_ENABLED === '1';
@@ -27,7 +28,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ open, onClose, redirectTo }: LoginModalProps) {
-  const { loginWithWallet, loginWithSiwe, loginWithPasskey } = useAuth();
+  const { loginWithWallet, loginWithSiwe, loginWithGoogle, loginWithPasskey } = useAuth();
   const zionWallet = useZionWallet();
 
   const [password, setPassword] = useState('');
@@ -41,6 +42,8 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -89,6 +92,23 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
       setError(err.message || 'MetaMask login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogle = async (idToken: string) => {
+    setGoogleLoading(true);
+    setGoogleError(null);
+    setError(null);
+    try {
+      await loginWithGoogle(idToken);
+      onClose();
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      }
+    } catch (err: any) {
+      setGoogleError(err?.message || 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -194,12 +214,33 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                 </div>
               )}
 
+              {/* Google sign-in */}
+              <div className="mb-5">
+                {googleLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-2 text-sm text-gray-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Signing in with Google...
+                  </div>
+                ) : (
+                  <GoogleSignInButton
+                    onSuccess={handleGoogle}
+                    onError={(err) => setGoogleError(err.message || 'Google sign-in failed')}
+                  />
+                )}
+                {googleError && (
+                  <div className="mt-2 rounded-lg border border-zion-purple/20 bg-zion-purple/5 px-3 py-2 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-zion-purple shrink-0 mt-0.5" />
+                    <p className="text-xs text-zion-purple">{googleError}</p>
+                  </div>
+                )}
+              </div>
+
               {/* MetaMask / EVM sign-in */}
               <div className="mb-5">
                 <button
                   type="button"
                   onClick={handleSiwe}
-                  disabled={loading || !hasMetaMask}
+                  disabled={loading || !hasMetaMask || googleLoading}
                   className="zion-button-secondary w-full text-sm disabled:opacity-50"
                 >
                   {loading ? (
