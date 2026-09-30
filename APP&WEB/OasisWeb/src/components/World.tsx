@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import WarpGateVortex from './WarpGateVortex';
+import TslVortex from './gpu/TslVortex';
 import GlowSprite from './GlowSprite';
 import { createRandom } from '../domain/ports/random';
 import { useGpuBackend } from '../lib/gpuBackend';
@@ -250,8 +251,10 @@ export default function World({
               depthWrite={false}
             />
           </mesh>
-          {backend === 'webgl2' && (
+          {backend === 'webgl2' ? (
             <WarpGateVortex color={color} size={displaySize} active={hovered || selected} />
+          ) : (
+            <TslVortex color={color} size={displaySize} active={hovered || selected} />
           )}
           {(hovered || selected) && <GlowSprite color={color} size={displaySize * 3} opacity={0.45} fog={!isDistant} />}
         </group>

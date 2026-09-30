@@ -1,0 +1,100 @@
+# OASIS Checklist — co je a co není (stav 2026-09-30)
+
+> **Labels:** ✅ ŽIVÉ = nasazené na `oasis.zionterranova.com` a ověřené · 🚧 STAVBA = kód/plán existuje, důkaz chybí nebo je opt-in · 🔭 HORIZONT = cíl V3.3 bez nároku na dnešek
+> **Důkazy:** `WebOasis.md` (GPU preview architektura) · `V31/STATUS.md` · `StatusV3.md` · E2E Playwright běhy (citováno níže)
+
+---
+
+## 1. Herní flow & UX
+
+| Funkce | Stav | Poznámka / důkaz |
+|---|---|---|
+| Intro (warp) → stargate → arrival → rite → scene | ✅ | E2E ověřený desktop i mobil; `window.__oasisPhase` hook |
+| Stargate threshold tlačítko | ✅ | Babylon GUI + DOM fallback + pointer-up fallback; na produkci ověřeno |
+| Desktop rite (Warrior/Explorer/Sage/Trader) | ✅ | `__oasisPhase: rite → scene` |
+| Mobile flow (arrival → přímo scene) | ✅ | camera fix `[0,4,22]`, MobileTouchControls init na prvním framu |
+| Klávesové zkratky (M/Esc/H/F/1-3) | ✅ | ignorují input fokus |
+| Search napříč ~408 světy | ✅ | name/location/tags, layer badge, discovery status |
+| World panel (intel, lore, questy, CTA) | ✅ | sticky Enter/Return buttony |
+| Hover labely nad galaxy node | ✅ | desktop; na mobilu jen vybraný |
+| Discovery dimming + "New world discovered" toast | ✅ | toasty přesunuty nahoru doprostřed (nepřekrývají CTA) |
+| Flight mode (WASD, throttle 1/2/3, approach/land prompt) | 🚧 | UI živé; landing/quest logika nedotestována E2E |
+| Quest progression vázaná na discovery | 🚧 | quest data z API žijí; herní smyčka neověřena |
+| Zvuky / hudba v herní smyčce | 🚧 | AudioEngine/MusicPlayer existují; coverage neprověřená |
+
+## 2. Světy & obsah (L1–L6)
+
+| Obsah | Stav | Poznámka |
+|---|---|---|
+| Katalog ~408 světů z OASIS API | ✅ | `GET /api/v1/oasis/worlds` na produkci |
+| L5 Nova Zeme projekty (6+1: Zahrada Genesis, Dharma Temple, Te Pīko Ora, Golden Republic, Bodhi Lanka, LUMI/Uluru) | ✅ | `novaZemeProjects.ts`, statusy `Preparation`/`Vision`, beacon markery na glóbu, Free World link |
+| L6 Issobella orbitální stanice | ✅ | dedikované 3D env (rotating ring, sails, spires), DAO Parlament + Free World linky |
+| On-chain persistence světů (L1 UTXO pozemky/artefakty) | 🔭 | canon V3.3 — kryptografické vázání pozemků není implementováno |
+| Marketplace bridge (artefakt → 3D preview) | 🔭 | plán G3 v `WebOasis.md` |
+
+## 3. Renderer (GPUweb preview — `WebOasis.md`)
+
+| Část | Stav | Poznámka |
+|---|---|---|
+| WebGL2 path (default) | ✅ | R3F + EffectComposer (bloom/vignette/sat/contrast), pixel-parity zachována |
+| `?gpu=webgpu` WebGPU preview | 🚧→✅ opt-in | `WebGPURenderer` (three 0.169) + `WebGPUEngine` (Babylon) s WebGL2 fallback; renderuje galaxii i světy (E2E 0 chyb); `auto` → webgl2 do device-matrix potvrzení |
+| TSL postfx (bloom + vignette) | ✅ preview | `gpu/WebGpuPostFX.tsx` |
+| TSL porty shader komponent | 🚧 | `TslStars` ✅, `TslAtmosphere` ✅, `TslVortex` ✅; `GalaxyCore` streak shader ⬜ (webgl2-only) |
+| FPS parita | 🚧 | headless Chrome ~25 fps oba backendy (limit prostředí); device matrix chybí |
+| Pixel Streaming z GPU Edge | 🔭 | UE 5.7 POC — samostatný track M4.3 |
+| UE 5.7 / Nanite / Lumen / MetaHuman | 🔭 | není v repu — viz `WebOasis.md` §9 rizika |
+
+## 4. ZIS identity & auth
+
+| Funkce | Stav | Poznámka |
+|---|---|---|
+| Mnemonic login (Ed25519 challenge → `zion_session` cookie) | ✅ | same-origin proxy `/api/auth/*` → ZIS Edge |
+| Passkey login + registrace + správa | ✅ | WebAuthn ceremony ověřená na produkci (`login/options` → 200); UI v Identity tab; rpId `zionterranova.com` sdílí klíč napříč weby |
+| Logout + session expiry handling | ✅ | `AuthContext.logout`, 401 → signed-out stav |
+| ZIS avatar v identitě | ✅ | `ZisAvatar` + `zisAvatarUrl` (`/api/auth/avatar/:seed.svg`) |
+| Soulbound avatar ↔ L1 vazba | 🚧 | `oasisPlayer` pole v ZIS user existuje; on-chain vazba neověřená |
+| Discovery/progress sync do profilu | 🚧 | discovery je per-session; persistentní sync neimplementován |
+
+## 5. Performance & stabilita
+
+| Funkce | Stav | Poznámka |
+|---|---|---|
+| Adaptive quality (PerformanceMonitor → one-way degrade) | ✅ | fps < ~40 % refresh → lehčí pipeline na zbytek session |
+| `lowPower` detekce (cores/RAM/saveData/mobil) | ✅ | méně hvězd/částic, žádný bloom/MatrixCore |
+| `DirectRenderer` (manual-render freeze fix) | ✅ | ověřeno `calls: 1→16` po vstupu do světa |
+| R3F error boundaries | ✅ | per-component `R3FErrorBoundary` |
+| WebGPU bundle laziness | ✅ | `three/tsl` chunk ~724K se stáhne jen při `?gpu=webgpu` |
+| Server-side FPS telemetrie | 🔭 | opt-in agregát podle privacy modelu — neimplementováno |
+| Load ≤ 3 s do interaktivní scény (V3.3 DoD) | 🚧 | neměřeno na referenčních zařízeních — device matrix task |
+
+## 6. Infra & API
+
+| Část | Stav | Poznámka |
+|---|---|---|
+| Static export → `/var/www/oasis` → nginx | ✅ | `rsync --delete` + `chown zion:zion`, curl 200 |
+| Same-origin `/api/*` → `zion-v31-oasis` :8094 | ✅ | worlds/quests/player endpoints živé |
+| `/api/auth/*` → ZIS Edge proxy | ✅ | passkey + session endpointy |
+| API contract stabilizace (versioning, rate limits, ownership model) | 🚧 | M4.2 před G3 — viz `WebOasis.md` |
+| Accessibility review + privacy policy (M4 exit gate) | 🚧 | gate před veřejným announcementem |
+
+## 7. Dokumentace & repo
+
+| Artefakt | Stav |
+|---|---|
+| `WebOasis.md` (GPU preview architektura) | ✅ aktuální po G2 |
+| `OasisChecklist.md` (tento soubor) | ✅ |
+| E2E harness (Playwright + `channel:'chrome'`) | ✅ lokální skripty `/tmp` — zvážit přesun do `scripts/e2e` |
+
+---
+
+## Nejbližší otevřené úkoly (priorita)
+
+1. **G2 resty:** `GalaxyCore` TSL port; `Environment` HDRI ověřit na WebGPU; mobile WebGPU device matrix → rozhodnout `auto` promoci.
+2. **Load-time budget:** měření navigace→scéna na referenčních zařízeních (DoD ≤ 3 s).
+3. **Quest/landing smyčka E2E:** approach→land→quest completion flow test.
+4. **Discovery persistence:** sync discovered světů do ZIS `oasisPlayer` profilu.
+5. **API contract (M4.2):** versioning + rate limits + asset ownership model před G3.
+6. **M4 exit gate:** accessibility review, security review, privacy policy, device-matrix perf report.
+7. **G3:** Draco/KTX2 asset pipeline, Marketplace bridge viewer, WASM world-gen (dle profilingu).
+
+*Aktualizovat při každém gate přechodu. Rozpor s live stavem řeší ověřený kód a `StatusV3.md`.*

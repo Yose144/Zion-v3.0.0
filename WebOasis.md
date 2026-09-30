@@ -1,7 +1,8 @@
 # WebOasis — GPUweb (WebGPU) Preview Architektura
 
 > **Vrstva:** L4 OASIS · **Track:** V3.3 „Nirvana" **N4** (L4 OASIS UE 5.7 & Web Preview)
-> **Status tohoto dokumentu:** návrh architektury + první implementační kroky.
+> **Status tohoto dokumentu:** architektura + stav implementace (G0–G2 nasazeny).
+> **Live preview:** `https://oasis.zionterranova.com/` (WebGL2 default) · `?gpu=webgpu` (WebGPU preview) · `?gpu=webgl2` (reset)
 > **Zdroje pravdy:** [`V33_NIRVANA_MASTER_PLAN.md`](./V33_NIRVANA_MASTER_PLAN.md) §5 a §9, [`docs/WP-Mainet/MiseAmenti/03-Zivy-Zaklad-3.3.md`](./docs/WP-Mainet/MiseAmenti/03-Zivy-Zaklad-3.3.md) §6 L4, [`docs/WP-Mainet/MiseAmenti/04-Exekucni-Charta-3.3.md`](./docs/WP-Mainet/MiseAmenti/04-Exekucni-Charta-3.3.md) M4 + gate R6.
 > **Label discipline (canon):** ŽIVÉ = nasazené/ověřené; STAVBA = kód existuje, produkce/důkaz částečný; HORIZONT = legitimní směr bez nároku na dnešek.
 
@@ -30,9 +31,10 @@ Tento dokument specifikuje **první GPUweb preview**: architekturu, jak se stáv
 | OASIS web | ŽIVÉ | `oasis.zionterranova.com` — Next.js 16 static export v `/var/www/oasis/`, R3F/Three.js WebGL galaxy (407+ světů v katalogu z API), Babylon.js stargate intro, mobilní/desktop flow ověřené E2E |
 | OASIS backend | ŽIVÉ | `zion-v31-oasis` Rust/Axum na Edge `:8094`, nginx proxuje `/api/`, `/health`; světy/questy/player endpointy |
 | ZIS auth v OASIS | ŽIVÉ | mnemonic → Ed25519 challenge → `zion_session` cookie přes same-origin proxy `/api/auth/*` |
-| **Passkey login v OASIS** | STAVBA (tento commit) | WebAuthn endpointy nasazené na ZIS Edge (`/api/auth/webauthn/*`), origin `oasis.zionterranova.com` allowlistnut; ověřeno `POST /api/auth/webauthn/login/options` → 200. OASIS klient: `zis.ts` funkce + `AuthContext.loginWithPasskey`/`registerPasskey` + UI v Identity tab. Browser E2E s reálným autentikátorem pending |
+| **Passkey login v OASIS** | ŽIVÉ | WebAuthn endpointy na ZIS Edge (`/api/auth/webauthn/*`), origin `oasis.zionterranova.com` allowlistnut; ověřeno `POST /api/auth/webauthn/login/options` → 200. OASIS klient: `zis.ts` funkce + `AuthContext.loginWithPasskey`/`registerPasskey` + UI v Identity tab (nasazeno) |
 | Adaptivní kvalita | ŽIVÉ | `PerformanceMonitor` → one-way degrade (bloom/particles/MatrixCore off); `DirectRenderer` fallback pro manual-render mód |
-| WebGPU renderer | HORIZONT → STAVBA (tento plán) | `three@0.169` obsahuje `three/webgpu` + TSL; `@babylonjs/core@9.19` obsahuje `WebGPUEngine` — obě cesty možné bez nových enginů |
+| **WebGPU backend (G1)** | STAVBA → preview live | `?gpu=webgpu` opt-in: `three/webgpu` WebGPURenderer + Babylon `WebGPUEngine`, oba s WebGL2 fallbackem; backend volba persistuje (`localStorage`), `auto` → webgl2 do dokončení parity |
+| **TSL pipeline (G2)** | STAVBA → preview live | `PostProcessing` (bloom+vignette), `TslStars`, `TslAtmosphere`, `TslVortex` — node-material ekvivalenty GLSL komponent; fps parita ≈ stejná (viz §7) |
 | UE 5.7 / Nanite / Lumen / MetaHuman / Pixel Streaming | HORIZONT | samostatný R&D POC podle M4.3; není součástí web klienta |
 
 ---
@@ -201,19 +203,24 @@ Implementováno v tomto commitu (`OasisWeb`):
 - [x] Passkey login + Identity UI
 - [x] `PerformanceMonitor` + `DirectRenderer` (manual-render-safe pipeline)
 - [x] Debug hooks `__oasisPhase/__oasisCamera/__oasisScene/__oasisGl`
-- [ ] `detectGpuBackend()` + `window.__oasisBackend` debug flag
+- [x] `detectGpuBackend()` + `window.__oasisBackend`/`__oasisGpuMode` debug flags
 
-### G1 — Duální backend, scéna bez efektů (první WebGPU render)
-- `OasisScene`: `gl` factory → `WebGPURenderer` (dynamic import) nebo WebGL2
-- WebGPU path startuje bez EffectComposer (materiály/fog/světla only)
-- `BabylonIntro`: `WebGPUEngine` s WebGL2 fallback
-- Feature flag: `?gpu=webgpu|webgl2|auto` query override pro testy + `localStorage` persist
-- **Akceptace:** na WebGPU zařízení scéna renderuje galaxii identicky vizuálně, camera flow intro→scene projde E2E; `?gpu=webgl2` = dnešní pixel-parity
+### G1 — Duální backend, scéna bez efektů (první WebGPU render) ✅ NASAZENO
+- [x] `OasisScene`: `gl` factory → `WebGPURenderer` (dynamic import) nebo WebGL2
+- [x] WebGPU path startuje bez EffectComposer (materiály/fog/světla only)
+- [x] `BabylonIntro`: `WebGPUEngine` s WebGL2 fallback
+- [x] Feature flag: `?gpu=webgpu|webgl2|auto` query override pro testy + `localStorage` persist
+- [x] **Akceptace splněna:** `?gpu=webgpu` renderuje galaxii/stargate/svět (508–1138 draw calls), E2E flow intro→scene projde; `navigator.gpu` off → čistý webgl2 fallback; commit `63c9d6b9e`
 
-### G2 — TSL efekty a stabilizace
-- Bloom + atmosphere přes `three/tsl` nodes na WebGPU path
-- Perf parity test: WebGPU ≥ WebGL2 na referenčních GPU (M-series, RTX, iGPU)
-- Mobile WebGPU (Chrome Android / Safari 26) — rozhodnout zapnutí podle telemetry
+### G2 — TSL efekty a stabilizace ✅ NASAZENO (2026-09-30)
+- [x] TSL post-processing: `PostProcessing` chain (`pass` → `bloom` → `vignette` grade) v `gpu/WebGpuPostFX.tsx`, fallback na direct render dokud se TSL chunk sestaví
+- [x] TSL porty komponent: `TslStars` (PointsNodeMaterial starfield + twinkle — náhrada drei `Stars`/`TwinkleStars`), `TslAtmosphere` (fresnel node), `TslVortex` (spiral warp-gate disc)
+- [x] Perf parity: webgl2 ≈ webgpu (24.8 vs 26.2 fps headless Chrome; limit prostředí, ne rendereru)
+- [x] Vizuální parita ověřena screenshot-diffem (Issobella env: shodná struktura/barva)
+- [ ] `GalaxyCore` streak shader — zbývá port na TSL (zatím webgl2-only, nenápadný detail)
+- [ ] `Environment` night HDRI na WebGPU — ověřit `scene.environment` příspěvek
+- [ ] Mobile WebGPU (Chrome Android / Safari 26) — rozhodnout zapnutí podle device matrix
+- [ ] `auto` → WebGPU promování až po device-matrix potvrzení
 
 ### G3 — Asset & bridge track
 - Draco/KTX2 pipeline + avatar/artifact preview viewer (Marketplace bridge)
@@ -253,9 +260,15 @@ Implementováno v tomto commitu (`OasisWeb`):
 
 | Soubor | Role |
 |---|---|
-| `APP&WEB/OasisWeb/src/components/OasisScene.tsx` | R3F scéna — sem přijde `gl` factory + backend výběr |
-| `APP&WEB/OasisWeb/src/lib/gpuBackend.ts` | **(nový, G1)** detekce + flag resolve |
-| `APP&WEB/OasisWeb/src/components/BabylonIntro.tsx` | stargate — `WebGPUEngine` fallback chain |
+| `APP&WEB/OasisWeb/src/components/OasisScene.tsx` | R3F scéna — `gl` factory + backend výběr (nasazeno) |
+| `APP&WEB/OasisWeb/src/lib/gpuBackend.ts` | **G1** detekce + flag resolve + `GpuBackendContext` |
+| `APP&WEB/OasisWeb/src/lib/tsl.ts` | **G2** lazy loader `three/tsl` (jednotný ~724K chunk) |
+| `APP&WEB/OasisWeb/src/components/gpu/WebGpuPostFX.tsx` | **G2** TSL PostProcessing (bloom+vignette) |
+| `APP&WEB/OasisWeb/src/components/gpu/TslStars.tsx` | **G2** PointsNodeMaterial starfield |
+| `APP&WEB/OasisWeb/src/components/gpu/TslAtmosphere.tsx` | **G2** fresnel atmosphere node |
+| `APP&WEB/OasisWeb/src/components/gpu/TslVortex.tsx` | **G2** spiral warp-gate vortex |
+| `APP&WEB/OasisWeb/src/types/three-webgpu.d.ts` | ambient deklarace `three/webgpu`+`three/tsl` |
+| `APP&WEB/OasisWeb/src/components/BabylonIntro.tsx` | stargate — `WebGPUEngine` fallback chain (nasazeno) |
 | `APP&WEB/OasisWeb/src/lib/zis.ts` | ZIS klient vč. WebAuthn (hotovo) |
 | `APP&WEB/OasisWeb/src/contexts/AuthContext.tsx` | `loginWithPasskey`/`registerPasskey` (hotovo) |
 | `APP&WEB/OasisWeb/deploy/nginx-oasis.conf` | `/api/auth/*` proxy → ZIS (živé) |

@@ -6,6 +6,8 @@ import { Html, Stars, shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import type { World } from '../domain/types/world';
 import { useGpuBackend } from '../lib/gpuBackend';
+import TslStars from './gpu/TslStars';
+import TslAtmosphere from './gpu/TslAtmosphere';
 import { createRandom } from '../domain/ports/random';
 import { useGameStore } from '../store/gameStore';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
@@ -455,8 +457,10 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
       {/* distant star backdrop */}
-      {backend === 'webgl2' && (
+      {backend === 'webgl2' ? (
         <Stars radius={140} depth={90} count={isMobile ? 800 : 2000} factor={3} saturation={0.65} fade speed={0.3} />
+      ) : (
+        <TslStars radius={140} depth={90} count={isMobile ? 800 : 2000} />
       )}
 
       {world.category === 'star-system' && (
@@ -491,7 +495,11 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
               toneMapped={false}
             />
           </mesh>
-          {backend === 'webgl2' && <AtmosphereSphere color={color} size={size} />}
+          {backend === 'webgl2' ? (
+            <AtmosphereSphere color={color} size={size} />
+          ) : (
+            <TslAtmosphere color={color} size={size} />
+          )}
           <OrbitRing radius={size * 2.2} color={color} texture={ringTexture} />
           {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#d4d4d4" distance={size * 2.4} sizeBase={0.06} />}
           {world.id === 'NOVA_ZEME' && <NovaZemeBeacons size={size} isMobile={isMobile} />}

@@ -4,6 +4,11 @@
  * WebGPURenderer; declare the surface R3F + our DirectRenderer need.
  */
 
+/** `three/tsl` ships the same untyped bundle as `three/webgpu` — all TSL
+ *  node functions/materials live in it. Accessed only via loadTsl()
+ *  which types it `any` deliberately (API surface changes per release). */
+declare module 'three/tsl';
+
 declare module 'three/webgpu' {
   import type { Camera, ColorRepresentation, Scene } from 'three';
 
