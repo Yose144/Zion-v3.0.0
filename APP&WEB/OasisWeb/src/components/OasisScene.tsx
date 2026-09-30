@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
 import { GpuBackendContext, resolveGpuBackend, demoteToWebGL, type GpuBackend } from '../lib/gpuBackend';
+import WebGpuPostFX from './gpu/WebGpuPostFX';
+import TslStars from './gpu/TslStars';
 import TreeOfLife from './TreeOfLife';
 import Galaxy from './Galaxy';
 import DistantGalaxies from './DistantGalaxies';
@@ -254,9 +256,11 @@ export default function OasisScene({
   // Reduce heavy effects on mobile and on low-power devices (few cores,
   // little RAM, or data-saver). Keeps the scene fluid everywhere.
   const reduceEffects = isMobile || lowPower || perfLow;
-  // Postprocessing EffectComposer is WebGL-only — the WebGPU backend
-  // always renders direct in G1 (TSL bloom arrives in G2).
+  // Postprocessing: WebGL2 uses the EffectComposer stack; WebGPU uses the
+  // TSL PostProcessing chain (bloom + vignette). Reduced-effects devices
+  // render direct on both backends.
   const useComposer = !reduceEffects && backend === 'webgl2';
+  const usePostFX = !reduceEffects && backend === 'webgpu';
 
   return (
     <GpuBackendContext.Provider value={backend ?? 'webgl2'}>
@@ -343,15 +347,23 @@ export default function OasisScene({
           <group ref={universeRef}>
             {/* Raw-GLSL components don't compile on the WebGPU backend —
                 they mount only on the WebGL2 path (G1). */}
-            {backend === 'webgl2' && (
+            {backend === 'webgl2' ? (
               <R3FErrorBoundary label="Stars">
                 <Stars radius={250} depth={160} count={reduceEffects ? 1500 : 3000} factor={4.5} saturation={0.65} fade speed={0.4} />
               </R3FErrorBoundary>
+            ) : (
+              <R3FErrorBoundary label="TslStars">
+                <TslStars radius={250} depth={160} count={reduceEffects ? 1500 : 3000} />
+              </R3FErrorBoundary>
             )}
 
-            {backend === 'webgl2' && (
+            {backend === 'webgl2' ? (
               <R3FErrorBoundary label="TwinkleStars">
                 <TwinkleStars count={reduceEffects ? 600 : 1500} radius={150} />
+              </R3FErrorBoundary>
+            ) : (
+              <R3FErrorBoundary label="TslTwinkle">
+                <TslStars radius={150} depth={40} count={reduceEffects ? 600 : 1500} opacity={0.7} />
               </R3FErrorBoundary>
             )}
 
@@ -538,6 +550,8 @@ export default function OasisScene({
             <BrightnessContrast brightness={0.02} contrast={0.12} />
             <Vignette eskil={false} offset={0.22} darkness={0.7} />
           </EffectComposer>
+        ) : usePostFX ? (
+          <WebGpuPostFX />
         ) : (
           <DirectRenderer />
         )}
