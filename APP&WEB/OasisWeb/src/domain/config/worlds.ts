@@ -4691,6 +4691,28 @@ export const WORLDS: World[] = [
       tags: ["world", "layer 5", "terranova", "nova amerika", "costa rica", "native cultures", "bridge"],
       galaxyPosition: { x: -19.4, y: 0.24, z: 9.8 }
   },
+  {
+      id: "ULURU",
+      name: "Uluru",
+      category: "world",
+      layer: 5,
+      location: "Northern Territory, Australia — Terra Nova L5 antipode node",
+      vibe: "Message from the antipodes — Tjukurpa, songlines, telepathy and vision. Sixty thousand years of unbroken land memory.",
+      summary: "Seventh L5 Terra Nova node at Uluru — Aboriginal songlines and dreamtime stewardship, telepathic communion with land and animals, and an annual celebration-of-life festival. Vision phase — deepest canon of the Terra Nova ring.",
+      tags: ["world", "layer 5", "terranova", "uluru", "australia", "aboriginal", "songlines"],
+      galaxyPosition: { x: 33.5, y: -0.2, z: 18.4 }
+  },
+  {
+      id: "MARIA_DEL_CAMINO",
+      name: "María del Camino",
+      category: "world",
+      layer: 5,
+      location: "World Oceans · Galicia — Terra Nova sailing node",
+      vibe: "The ship that ties the ring — a solar-sailed vessel carrying ~50 pilgrims along the ocean Camino between all seven nodes.",
+      summary: "Eighth L5 Terra Nova node — a sailing sanctuary: a solar-sail vessel for ~50 pilgrims connecting all seven Terra Nova nodes across the oceans. Preparation phase.",
+      tags: ["world", "layer 5", "terranova", "maria del camino", "sailing", "ocean", "galicia"],
+      galaxyPosition: { x: 3.2, y: 0.6, z: 22.0 }
+  },
 ];
 
 export const WORLD_IDS = [
@@ -4879,6 +4901,7 @@ export const WORLD_IDS = [
   "MAMA_YASHODA",
   "MANANNAN_MAC_LIR",
   "MANJUSHRI",
+  "MARIA_DEL_CAMINO",
   "MARPA_LOTSAWA",
   "MATRIX_TRINITY_COMPLETE",
   "MAUI",
@@ -5056,6 +5079,7 @@ export const WORLD_IDS = [
   "TUBE_OF_LIGHT_SENTINEL",
   "TUMATAUENGA",
   "TYR_OATH_FIRE",
+  "ULURU",
   "VAJRASATTVA",
   "VALHALLA_STEWARD",
   "VASUDEVA",
