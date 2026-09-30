@@ -6,7 +6,7 @@ export async function sessionRoutes(app: FastifyInstance): Promise<void> {
   app.get('/', { preHandler: [requireAuth] }, async (req) => {
     const payload = req.user as { sub: string };
     const sessions = await app.prisma.session.findMany({
-      where: { userId: payload.sub, revoked: false },
+      where: { userId: payload.sub, revoked: false, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: 'desc' },
     });
     return { sessions };

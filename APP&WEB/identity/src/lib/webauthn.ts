@@ -17,6 +17,7 @@ const DEFAULT_ORIGINS = [
   'https://market.zionterranova.com',
   'https://oasis.zionterranova.com',
   'https://dashboard.zionterranova.com',
+  'https://freeworld.zionterranova.com',
 ];
 
 export interface WebAuthnConfig {

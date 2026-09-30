@@ -130,6 +130,19 @@ export async function verifySiwe(
   // The nonce in the SIWE message must be the nonce from the active challenge.
   if (!challenge.includes(`nonce: ${parsed.nonce}`)) return false;
 
+  // Domain binding: the SIWE message must declare a ZION domain, otherwise a
+  // signature captured on a phishing site (our nonce, their domain) could be
+  // replayed here. Hosts are matched case-insensitively against the apex and
+  // any subdomain; localhost is allowed for local development.
+  const declaredDomain = (parsed.domain ?? '').toLowerCase();
+  const domainOk =
+    declaredDomain === 'zionterranova.com' ||
+    declaredDomain.endsWith('.zionterranova.com') ||
+    declaredDomain === 'localhost' ||
+    /^localhost:\d+$/.test(declaredDomain) ||
+    /^127\.0\.0\.1(:\d+)?$/.test(declaredDomain);
+  if (!domainOk) return false;
+
   // Verify the EIP-191 signature and recover the signing address.
   const { success, data } = await parsed.verify({
     signature,

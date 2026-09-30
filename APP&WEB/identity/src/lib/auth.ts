@@ -65,7 +65,7 @@ export async function requireAuth(
       path: '/',
       httpOnly: true,
       secure: true,
-      sameSite: 'none',
+      sameSite: 'lax',
       signed: true,
       expires: newExpiresAt,
     });

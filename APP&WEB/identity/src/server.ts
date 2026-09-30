@@ -34,6 +34,10 @@ const HOST = process.env.HOST ?? '0.0.0.0';
 const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production';
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN ?? '.zionterranova.com';
 
+if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'change-me-in-production') {
+  throw new Error('JWT_SECRET must be set in production');
+}
+
 async function start() {
   // ── Plugins ─────────────────────────────────────────────────────
   await app.register(cookie, {
@@ -47,6 +51,7 @@ async function start() {
       'https://market.zionterranova.com',
       'https://oasis.zionterranova.com',
       'https://dashboard.zionterranova.com',
+      'https://freeworld.zionterranova.com',
     ],
     credentials: true,
   });
@@ -97,9 +102,16 @@ start()
   .catch((err) => {
     app.log.error({ err }, 'Fatal start error');
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });
+
+// Prisma disconnects on shutdown, not after listen — the previous
+// `.finally()` closed the pool the moment the server started.
+for (const sig of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(sig, async () => {
+    await app.close();
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+}
 
 export { app };
