@@ -1,79 +1,58 @@
 # ZionDEX — Uživatelský průvodce
 
 > **Verze:** v3.2.0 "One Love"  
-> **Síť:** Base Mainnet pilot + ZION L1 HTLC fallback  
-> **Web:** [/swap](/swap) a [/dex](/dex)
+> **Web:** [Multichain → DEX](/multichain#dex) · [Swap](/multichain#swap) · [Výnosy](/multichain#earn) · [Bridge](/multichain#bridge)
 
 ---
 
 ## Co je ZionDEX
 
-ZionDEX je nativní ZION decentralizovaná burza. Umožňuje swapovat tokeny, přidávat likviditu do on-chain AMM poolů a sledovat pozice z jednoho rozhraní.
+ZionDEX je nativní ZION rozhraní pro decentralizovanou směnu. Spojuje dvě věci na jednom místě:
 
-Vydání v3.2.0 spouští swap engine proti **Base Mainnet AMM** (ZionDexRouter / ZionDexFactory). ZION L1 HTLC atomic swapy jsou také dostupné pro cross-chain obchody, které nevyžadují custodial bridge.
+- **cross-chain swap engine** napájený L3 WARP bridge — přesouvá hodnotu napříč 13+ chainy bez syntetických wrap tokenů,
+- **Uniswap V3 trh** `wZION/USDT` na Base Mainnetu, obchodovaný přímo z tvé vlastní EVM peněženky.
 
----
-
-## Jak začít
-
-1. **Přihlas se přes ZIS** v horní části stránky (email, Google, MetaMask nebo X).
-2. **Připoj peněženku** nebo použij generovanou multichain peněženku pro příjem depositů.
-3. **Deponuj** token, který chceš obchodovat, do své ZION peněženky.
-4. **Swapuj**, **přidávej likviditu** nebo **prohlížej portfolio**.
-
-Pro webové rozhraní nemusíš nic instalovat. Desktop App a CLI nabízejí stejnou funkčnost pro pokročilé uživatele.
+Všechno žije na stránce [Multichain](/multichain) — záložky DEX, Swap, Výnosy, Bridge, Governance a Aukce.
 
 ---
 
-## Swapování tokenů
+## Cross-chain swap — záložka DEX
 
-1. Jdi na [/swap](/swap) nebo na záložku **DEX**.
-2. Vyber chain a token, který chceš prodat.
-3. Vyber token, který chceš koupit.
-4. Zadej částku.
-5. Zkontroluj quote, slippage a deadline.
-6. Potvrď swap. Transakce je podepsána multichain peněženkou a odeslána on-chain.
+Záložka **DEX** ([/multichain#dex](/multichain#dex)) obsahuje cross-chain swap widget, živý graf ceny `wZION/USDT` a seznam poolů s on-chain rezervami.
 
-Quote engine zkouší **single-hop, two-hop a three-hop routy** napříč dostupnými likviditními pooly. Pokud neexistuje přímý pool, engine může routovat přes mezitoken jako WETH nebo stablecoin.
+1. Otevři [/multichain#dex](/multichain#dex).
+2. Vyber **zdrojový chain a token**, který chceš prodat, a **cílový chain a token**, který chceš obdržet — podporované chainy jsou mimo jiné Base, Arbitrum, BSC, Polygon, Optimism, Avalanche, Solana, Tron, Stellar, Cardano, Cosmos, Aptos, Sui, Near, TON, ZION L1 a Bitcoin/Lightning.
+3. Zadej částku a **cílovou adresu**.
+4. Zkontroluj quote a routu, kterou engine vybral.
+5. Potvrď — vypořádání je non-custodial přes WARP bridge.
 
----
+## Swap wZION na Base — záložka Swap
 
-## Likviditní pooly
+Záložka **Swap** ([/multichain#swap](/multichain#swap)) obchoduje `wZION/USDT` na **Uniswapu V3** (Base Mainnet) přímo z tvé peněženky — ZION nic nedrží.
 
-### Přidání likvidity
+1. Otevři [/multichain#swap](/multichain#swap) a klikni **Connect Wallet** (MetaMask).
+2. Pokud tě to vyzve, přepni peněženku na **Base Mainnet**.
+3. Vyber směr (`wZION → USDT` nebo zpět), zadej částku, zkontroluj quote a slippage.
+4. Potvrď — transakce se podepíše ve tvé peněžence a vypořádá se on-chain.
 
-1. Jdi na [/dex/liquidity](/dex/liquidity).
-2. Vyber dva tokeny, které chceš deponovat, například `tZION` a `tUSDT` na Base.
-3. Zadej částku každého tokenu.
-4. Volitelně nastav recipient adresu a deadline.
-5. Potvrď. Obdržíš **LP tokeny** reprezentující tvůj podíl v poolu.
+Záložka zároveň ukazuje tvé zůstatky wZION/USDT a LiFi widget agregující 30+ DEXů a 20+ bridgů pro delší routy.
 
-### Odebrání likvidity
+## Záložky Výnosy a Bridge
 
-1. Otevři záložku **Remove** na [/dex/liquidity](/dex/liquidity).
-2. Vyber pool a zadej množství LP tokenů, které chceš vybrat.
-3. Zkontroluj očekávané částky každého tokenu.
-4. Potvrď. LP tokeny se spálí a podkladové tokeny se vrátí.
+- **Výnosy** ([/multichain#earn](/multichain#earn)) — stakeuj nebo farm wZION pro pravidelné odměny.
+- **Bridge** ([/multichain#bridge](/multichain#bridge)) — přesouvej ZION L1 ↔ wZION na Base Mainnetu se sledováním konfirmací a historií posledních převodů.
 
 ---
 
-## Portfolio
+## Likvidita
 
-Stránka [/dex/portfolio](/dex/portfolio) zobrazuje:
-
-- Tvé poslední swapy.
-- Aktivní AMM pooly a jejich on-chain pair adresy.
-- Stav poolu (active / pending).
-
-Stránka se automaticky aktualizuje, když přidáš nebo odebereš likviditu.
+Rezervy poolů v záložce DEX jsou živá on-chain data. Likviditu do páru `wZION/USDT` přidáváš přímo na **Uniswapu V3** — záložka Swap na pool odkazuje. Žádná samostatná stránka pro správu LP pozic v aplikaci není — tvoje LP pozice žije ve tvé peněžence.
 
 ---
 
-## Beta test tokeny
+## Pilotní test tokeny
 
-Během veřejné beta používá webové rozhraní test tokeny na Base Mainnet (například `tZION`, `tUSDT`, `tWETH`), aby se mohl AMM flow procvičovat reálnými on-chain voláními bez rizika pro hlavní wZION supply.
-
-Seznam poolů na [/dex/liquidity](/dex/liquidity) ukazuje, které pooly jsou aktivní a které jsou stále v řadě na deploy.
+Na Base má ZionDex AMM také pilotní páry (`tZION`, `tUSDT`, `tWETH`), které slouží k end-to-end procvičení cross-chain AMM. Jsou to pilotní aktiva — ne kanonická wZION supply.
 
 ---
 
@@ -81,8 +60,8 @@ Seznam poolů na [/dex/liquidity](/dex/liquidity) ukazuje, které pooly jsou akt
 
 - Před potvrzením swapu vždy zkontroluj adresu token contractu.
 - Nastavení slippage a deadline tě chrání před front-runningem a zastaralými quoty.
-- Poskytování likvidity je non-custodial: tvé LP tokeny jsou pod tvou kontrolou.
-- Cross-chain HTLC swapy vyžadují, aby obě strany claimovaly v rámci timelock okna.
+- Swapy v záložce Swap podepisuje **tvoje** peněženka — ZION nad tvými EVM prostředky nemá custodii.
+- Cross-chain převody jsou non-custodial; před provedením dvakrát zkontroluj cílovou adresu.
 
 ---
 
@@ -90,7 +69,7 @@ Seznam poolů na [/dex/liquidity](/dex/liquidity) ukazuje, které pooly jsou akt
 
 | Problém | Co dělat |
 |---------|----------|
-| Quote selže | Zkus menší částku nebo jiný pár. Některé páry mají likviditu jen na Base. |
-| Swap reverts s "insufficient balance" | Nejprve deponuj potřebný token nebo sniž částku. |
-| Přidání likvidity selže | Ujisti se, že máš oba tokeny a dostatek pro minimální dust threshold. |
-| Portfolio je prázdné | Přihlas se, aby server mohl vyhledat tvou historii a pool pozice. |
+| Quote selže | Zkus menší částku nebo jiný pár — některé páry mají likviditu jen na Base. |
+| Peněženka se nepřipojí | Ujisti se, že je MetaMask odemčený a nastavený na **Base Mainnet**; záložka Swap nabízí přepnutí sítě na jedno kliknutí. |
+| Swap reverts s "insufficient balance" | Zkontroluj, že držíš vstupní token a dost ETH na Base pro gas. |
+| Pooly se nezobrazují | Seznam čte živé on-chain rezervy — obnov stránku nebo to zkus za chvíli. |

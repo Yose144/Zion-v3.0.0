@@ -42,9 +42,10 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument [v3.2.0 Přehled](#v320-readme). Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), získat základní likviditu a sestavit tým dobrovolných vývojářů.',
-    en: 'The current public line is v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document [v3.2.0 Overview](#v320-readme). Pool active, mining live, DEX and bridge deployed. The public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a team of volunteer developers.',
+    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" — kandidát na Mainnet Stable; probíhá 30denní veřejný stability run. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument níže. Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), získat základní likviditu a sestavit tým dobrovolných vývojářů.',
+    en: 'The current public line is v3.2.0 "One Love" — Mainnet Stable candidate; the 30-day public stability run is in progress. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document below. Pool active, mining live, DEX and bridge deployed. The public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a team of volunteer developers.',
   },
+  overviewNoticeLink: { cs: 'v3.2.0 Přehled', en: 'v3.2.0 Overview' },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
 } as const satisfies Record<string, LocalizedText>;
@@ -52,7 +53,7 @@ const docsPageCopy = {
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
   'v3.2.0': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love" Mainnet Stable, nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love" Mainnet Stable, new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
+    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love", kandidát na Mainnet Stable (probíhá 30denní stability run), nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love", Mainnet Stable candidate (30-day stability run in progress), new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
   },
   'v3.1.0': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
@@ -60,8 +61,9 @@ const versionText: Record<string, { tag?: LocalizedText; description?: Localized
   },
   'v3.0.6': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
-    description: { cs: 'Trinity / Mainnet Beta — poslední stabilní vydání před Mainnet Stable', en: 'Trinity / Mainnet Beta — last stable release before Mainnet Stable' },
+    description: { cs: 'Trinity / Mainnet Beta — AuxPoW triple plan, poslední beta linie před One Love', en: 'Trinity / Mainnet Beta — AuxPoW triple plan, last beta line before One Love' },
   },
+
   'v3.0.2': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
     description: { cs: 'Bridge, DeFi Run — L2 bridge na Base Mainnet, wZION token live', en: 'Bridge, DeFi Run — L2 bridge on Base Mainnet, wZION token live' },
@@ -278,9 +280,9 @@ const versions: Version[] = [
   {
     id: 'v3.0.6',
     label: 'v3.0.6',
-    tag: 'CURRENT',
-    tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
-    description: 'MainNet Edge server live, pool active, mining running',
+    tag: 'PREVIOUS',
+    tagColor: 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10',
+    description: 'Trinity / Mainnet Beta — AuxPoW triple plan, last beta line before One Love',
     categories: [
       {
         id: 'v301-overview',
@@ -632,7 +634,17 @@ export default function DocsPage() {
               className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300"
               style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
-              {tx(docsPageCopy.overviewNotice, currentLang)}
+              {tx(docsPageCopy.overviewNotice, currentLang)}{' '}
+              <button
+                onClick={() => {
+                  setSelectedDoc('v320-readme');
+                  setActiveVersion('v3.2.0');
+                  setActiveCategory('v320-overview');
+                }}
+                className="text-zion-cyan font-semibold hover:text-white underline decoration-zion-cyan/40 underline-offset-2 transition-colors"
+              >
+                {tx(docsPageCopy.overviewNoticeLink, currentLang)} →
+              </button>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (
@@ -771,7 +783,7 @@ export default function DocsPage() {
                                   if (doc.href) { window.location.href = doc.href; return; }
                                   setSelectedDoc(doc.id);
                                   setActiveCategory(section.id);
-                                  setActiveVersion('v3.0.1');
+                                  setActiveVersion('v3.2.0');
                                   setMobileMenuOpen(false);
                                 }}
                                 className={`w-full text-left px-3 py-2 transition-all text-sm flex items-center gap-2 ${
