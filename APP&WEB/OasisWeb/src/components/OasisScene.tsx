@@ -153,6 +153,63 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
   );
 }
 
+/**
+ * Re-register classic→node material classes under STRING type keys.
+ *
+ * StandardNodeLibrary registers via `addMaterial(nodeClass, materialClass)`
+ * which keys the map by `materialClass.name`. Turbopack minifies class
+ * names in production builds (keys became "sj", "sG", …), so every lookup
+ * by `material.type` ("MeshStandardMaterial" etc.) missed and all classic
+ * materials degraded to empty NodeMaterial — black canvas (observed on
+ * production). Setting the string keys directly is minification-proof.
+ * Light nodes are keyed by class OBJECT — we register the app's own
+ * `three` bundle classes, which differ from the webgpu bundle's.
+ */
+async function registerNodeLibrary(renderer: {
+  nodes?: { library?: { materialNodes?: Map<string, unknown>; lightNodes?: WeakMap<object, unknown> | Map<unknown, unknown> } };
+}) {
+  const tsl = await import('three/tsl');
+  const lib = renderer.nodes?.library;
+  if (!lib?.materialNodes) return;
+
+  const materialTypes: Array<[unknown, string]> = [
+    [tsl.MeshStandardNodeMaterial, 'MeshStandardMaterial'],
+    [tsl.MeshBasicNodeMaterial, 'MeshBasicMaterial'],
+    [tsl.MeshPhysicalNodeMaterial, 'MeshPhysicalMaterial'],
+    [tsl.MeshPhongNodeMaterial, 'MeshPhongMaterial'],
+    [tsl.MeshToonNodeMaterial, 'MeshToonMaterial'],
+    [tsl.MeshLambertNodeMaterial, 'MeshLambertMaterial'],
+    [tsl.MeshNormalNodeMaterial, 'MeshNormalMaterial'],
+    [tsl.MeshMatcapNodeMaterial, 'MeshMatcapMaterial'],
+    [tsl.LineBasicNodeMaterial, 'LineBasicMaterial'],
+    [tsl.LineDashedNodeMaterial, 'LineDashedMaterial'],
+    [tsl.PointsNodeMaterial, 'PointsMaterial'],
+    [tsl.SpriteNodeMaterial, 'SpriteMaterial'],
+    [tsl.ShadowNodeMaterial, 'ShadowMaterial'],
+  ];
+  for (const [cls, type] of materialTypes) {
+    if (cls) lib.materialNodes.set(type, cls);
+  }
+
+  // lightNodes is a WeakMap keyed by class OBJECT — only object keys are
+  // valid (string keys would throw "Invalid value used as weak map key").
+  if (!lib.lightNodes) return;
+  const lightClasses: Array<[unknown, unknown]> = [
+    [tsl.PointLightNode, THREE.PointLight],
+    [tsl.DirectionalLightNode, THREE.DirectionalLight],
+    [tsl.AmbientLightNode, THREE.AmbientLight],
+    [tsl.HemisphereLightNode, THREE.HemisphereLight],
+    [tsl.SpotLightNode, THREE.SpotLight],
+    [tsl.RectAreaLightNode, THREE.RectAreaLight],
+    [tsl.LightProbeNode, THREE.LightProbe],
+  ];
+  for (const [nodeCls, lightCls] of lightClasses) {
+    if (nodeCls && typeof lightCls === 'function') {
+      (lib.lightNodes as WeakMap<object, unknown>).set(lightCls as object, nodeCls);
+    }
+  }
+}
+
 /** Fallback renderer — CameraRig's useFrame runs at priority 1, which puts
  *  R3F in manual-render mode. When EffectComposer is mounted it does the
  *  rendering; when it's unmounted (reduced-effects path, or the WebGPU
@@ -285,12 +342,21 @@ export default function OasisScene({
               const { WebGPURenderer } = await import('three/webgpu');
               const renderer = new WebGPURenderer({
                 canvas: defaults.canvas as HTMLCanvasElement,
-                antialias: true,
+                // MSAA resolve into the canvas swapchain fails validation on
+                // some Chrome/macOS paths ("resolve target ... WebgpuSwapChain-
+                // Texture" → invalid CommandBuffer, black canvas). Disable —
+                // the TSL postfx path anti-aliases acceptably for the preview.
+                antialias: false,
                 powerPreference: 'high-performance',
               });
               renderer.toneMapping = THREE.ACESFilmicToneMapping;
               renderer.toneMappingExposure = 1.15;
               await renderer.init();
+              try {
+                await registerNodeLibrary(renderer as unknown as { nodes?: { library?: { materialNodes?: Map<string, unknown>; lightNodes?: WeakMap<object, unknown> | Map<unknown, unknown> } } });
+              } catch (err) {
+                console.warn('[OASIS] node library fixup failed', err);
+              }
               return renderer as unknown as THREE.WebGLRenderer;
             } catch (err) {
               demoteToWebGL(err);
