@@ -44,6 +44,13 @@ export async function proxyToZis(
     forwardHeaders.Cookie = `${ZIS_SESSION_COOKIE}=${sessionCookie}`;
   }
 
+  // Preserve the client IP so ZIS session records keep the real address
+  // instead of the Next.js proxy loopback.
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) {
+    forwardHeaders['x-forwarded-for'] = xff;
+  }
+
   const contentType = req.headers.get('content-type');
   if (contentType) {
     forwardHeaders['Content-Type'] = contentType;

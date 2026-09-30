@@ -123,9 +123,6 @@ export async function verifyEd25519(
 }
 
 /**
- * Verify a SIWE signature (client-side, via local proxy).
- */
-/**
  * Verify a Google Sign-In ID token (client-side, via local proxy).
  */
 export async function verifyGoogle(idToken: string): Promise<ZisSession> {
@@ -142,6 +139,9 @@ export async function verifyGoogle(idToken: string): Promise<ZisSession> {
   return sharedVerifyGoogle(idToken);
 }
 
+/**
+ * Verify a SIWE signature (client-side, via local proxy).
+ */
 export async function verifySiwe(
   address: string,
   message: string,

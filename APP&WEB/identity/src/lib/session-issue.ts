@@ -31,7 +31,9 @@ export async function issueSessionForUser(
     path: '/',
     httpOnly: true,
     secure: true,
-    sameSite: 'none',
+    // 'lax' still covers every *.zionterranova.com subdomain (same-site),
+    // but blocks cross-site credentialed POSTs — CSRF hardening.
+    sameSite: 'lax',
     signed: true,
     expires: expiresAt,
   });
