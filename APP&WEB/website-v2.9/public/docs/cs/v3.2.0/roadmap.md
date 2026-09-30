@@ -3,7 +3,7 @@
 > **Aktuální stabilní baseline:** 3.2.0 „One Love"  
 > **Aspirativní veřejný launch:** odložen (TBD)  
 > **Vývojový horizont:** 3.3.0 „Nirvana"  
-> **Naposledy upraveno:** 1. září 2026
+> **Naposledy upraveno:** 30. září 2026
 
 ---
 
@@ -11,20 +11,23 @@
 
 3.1 Mainnet Alpha / 3.2 „One Love" je **live na mainnetu** a produkuje bloky. Workspace se buildí, všechny testy procházejí a hlavní produkční služby běží:
 
-- Výška chainu 23 000+ (srpen 2026)
+- Výška chainu 63 600+ (září 2026)
 - Všechny mainnet služby aktivní: node, pool, multichain, DAO, OASIS, web, marketplace, dashboard, ZIS
 - Trinity těžba ověřená na live poolu (ZION + ZANO + VRSC)
 - Regulace obtížnosti stabilizovaná
 - CPU-only těžební cesta stabilizovaná
 - Nativní indexace transakcí a adres aktivní
 - ZIS Identity Service běží na `auth.zionterranova.com`
-- L5 Free World a L6 Issobella trackery běží na mainnetu
+- L5 Free World portál live na `freeworld.zionterranova.com` — fund tracker, registr projektů a pilotní quadratic-voting kolo
+- L6 Issobella fund tracker aktivní na mainnetu
+- AI asistent (Hiran) live na webu
+- **30denní kontinuální stability run právě probíhá** — živý stav na [/g8](/g8)
 
 Historické 3.1 reporty jsou archivovány v repozitáři.
 
 ---
 
-## 3.2.0 „One Love" — Mainnet Stable
+## 3.2.0 „One Love" — Mainnet Stable (kandidát)
 
 Cesta od *spuštění produkce* k *prověřené a stabilní produkci* je uzavřená real-world E2E, 30denním kontinuálním během, bezpečnostním auditem, public-subtree synchronizací a release readiness.
 
@@ -42,7 +45,7 @@ Další horizont po 3.2. **„Nirvana" je aspirativní architektonický cíl, ni
 1. **L2 Multichain & ZIS Passkeys** — wZION/ETH a ZION/BTC AMM settlement, univerzální WebAuthn/Passkey SSO napříč všemi aplikacemi, agent sub-accounts.
 2. **L3 Hiranyagarbha 2.4 a 2.5** — Maestro multi-agent DAG orchestrace, NCL distribuovaný compute broker, Amitabha natural intent interface, self-sovereign autonomní AI agenti s Dharma constraint enginem.
 3. **L4 OASIS Metaverse** — Unreal Engine 5.7 fotorealistický engine (Nanite/Lumen/MetaHumans), nízko-latenční WebGPU / Pixel Streaming preview.
-4. **L5 Free World** — dedikovaný webový portál, live 5 % L1 coinbase treasury tracker, globální vodní a permakulturní projekty.
+4. **L5 Free World** — dedikovaný webový portál live na `freeworld.zionterranova.com` (dodáno září 2026); dále: live 5 % L1 coinbase treasury tracker, globální vodní a permakulturní projekty.
 5. **L6 Issobella** — kvantový warp engine teoretický výzkum (Alcubierre-Ekam metrika), DeSci repository, NCL-powered fyzikální simulace.
 
 ---

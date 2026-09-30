@@ -1,8 +1,8 @@
-# ZION v3.2.0 "One Love" — Mainnet Stable
+# ZION v3.2.0 "One Love" — Mainnet Stable candidate
 
 > **Released:** 6 August 2026  
 > **Current public line:** v3.2.0 "One Love"  
-> **Status:** Mainnet Stable — live, pool active, mining running, bridge and DEX deployed  
+> **Status:** Mainnet Stable candidate — live, pool active, mining running, bridge and DEX deployed  
 > **Official public launch:** postponed (TBD)  
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
@@ -18,7 +18,7 @@
 
 ## What is v3.2.0 "One Love"
 
-v3.2.0 "One Love" is the **Mainnet Stable** release of ZION TerraNova. It combines the Ekam Deeksha proof-of-work consensus, a unified multi-chain wallet, the ZionDex decentralized exchange, and a full protocol-level security hardening pass.
+v3.2.0 "One Love" is the **Mainnet Stable candidate** release of ZION TerraNova — the 30-day public stability run is in progress and tracked live at [/g8](/g8). It combines the Ekam Deeksha proof-of-work consensus, a unified multi-chain wallet, the ZionDex decentralized exchange, and a full protocol-level security hardening pass.
 
 The "One Love" name marks the unification of the network, wallet, and community layers under one runtime line. All services are active and the chain has been running continuously since the August 2026 genesis reset.
 
@@ -78,7 +78,7 @@ The "One Love" name marks the unification of the network, wallet, and community 
 
 ```bash
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet/V31
+cd v3-Mainnet/V3
 cargo build --release --bin zion-miner
 ./target/release/zion-miner \
   --pool pool.zionterranova.com:8444 \
@@ -141,7 +141,7 @@ See the [Download](/download) page for direct links.
 
 ## Important notices
 
-- The network is **Mainnet Stable** but the public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a volunteer developer team before announcing a new date.
+- The network is **a Mainnet Stable candidate** but the public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a volunteer developer team before announcing a new date.
 - OASIS is a **live preview under construction** — content, quests, and progression can change or reset.
 - Mine, bridge, swap, and participate **at your own risk**.
 - This is an experimental open-source protocol, not an investment product.

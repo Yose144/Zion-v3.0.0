@@ -1,8 +1,8 @@
-# ZION v3.2.0 "One Love" — Mainnet Stable
+# ZION v3.2.0 "One Love" — Mainnet Stable (kandidát)
 
 > **Vydáno:** 6. srpna 2026  
 > **Aktuální veřejná linka:** v3.2.0 "One Love"  
-> **Stav:** Mainnet Stable — live, pool aktivní, těžba běží, bridge a DEX nasazeny  
+> **Stav:** Mainnet Stable (kandidát) — live, pool aktivní, těžba běží, bridge a DEX nasazeny  
 > **Oficiální veřejný launch:** odložen (TBD)  
 > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
@@ -18,7 +18,7 @@
 
 ## Co je v3.2.0 "One Love"
 
-v3.2.0 „One Love" je **Mainnet Stable** vydání ZION TerraNova. Spojuje Ekam Deeksha proof-of-work konsenzus, jednotnou multichain peněženku, decentralizovanou burzu ZionDex a kompletní protokolové bezpečnostní zpřísnění.
+v3.2.0 „One Love" je vydání **kandidující na Mainnet Stable** v rámci ZION TerraNova — probíhá 30denní veřejný stability run, sledovaný live na [/g8](/g8). Spojuje Ekam Deeksha proof-of-work konsenzus, jednotnou multichain peněženku, decentralizovanou burzu ZionDex a kompletní protokolové bezpečnostní zpřísnění.
 
 Název „One Love" znamená sjednocení sítě, peněženky a komunitní vrstvy pod jednu runtime linii. Všechny služby jsou aktivní a chain běží nepřetržitě od srpnového hard resetu v roce 2026.
 
@@ -78,7 +78,7 @@ Název „One Love" znamená sjednocení sítě, peněženky a komunitní vrstvy
 
 ```bash
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
-cd v3-Mainnet/V31
+cd v3-Mainnet/V3
 cargo build --release --bin zion-miner
 ./target/release/zion-miner \
   --pool pool.zionterranova.com:8444 \
@@ -141,7 +141,7 @@ Přímé odkazy najdeš na stránce [Stáhnout](/download).
 
 ## Důležitá upozornění
 
-- Síť je **Mainnet Stable**, ale veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), zajistit základní likviditu a sestavit tým dobrovolných vývojářů, než oznámíme nové datum.
+- Síť je **kandidátem na Mainnet Stable**, ale veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), zajistit základní likviditu a sestavit tým dobrovolných vývojářů, než oznámíme nové datum.
 - OASIS je **živý preview ve výstavbě** — obsah, questy i progrese se mohou během vývoje měnit nebo resetovat.
 - Těžba, bridge, swap a účast probíhají **na vlastní riziko**.
 - Jde o experimentální open-source protokol, nikoliv investiční produkt.

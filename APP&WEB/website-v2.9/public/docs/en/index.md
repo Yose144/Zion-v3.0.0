@@ -1,56 +1,46 @@
 # ZION TerraNova — Public Docs Hub
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Operational note (2026-03-31):** This public documentation entrypoint tracks the controlled V3 test-mainnet rehearsal on the public 2.9.9 Pure Code line over the canonical 2.9.8 Deeksha runtime.
+> **Current public line: v3.2.0 One Love / Mainnet Stable candidate.**
+> Genesis #0: 1 January 2026 (block timestamp); One Love hard reset 6 August 2026.
+> Official public launch: postponed (TBD).
 
 ---
 
-## Public line overview
+## Live status — v3.2.0 One Love
 
-ZION is a decentralized Layer 1 blockchain written in **Rust**. The public launch path is currently operated as a controlled V3 test-mainnet rehearsal with emphasis on verifiability, auditability, and the gradual closure of launch-gate conditions.
+ZION Mainnet is live as **Mainnet Stable candidate**. The current runtime is **v3.2.0 Ekam Deeksha v3.2** with 6-decimal flowers and a new genesis hash after the August 2026 hard reset.
 
-Historical 2.9.x materials remain archived. For public reading, the canonical references are currently:
+- ✅ Mainnet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
+- ✅ Pool server active — `stratum+tcp://pool.zionterranova.com:8444`
+- ✅ CPU and GPU mining running (OpenCL/CUDA/Metal)
+- ✅ Ekam Deeksha v3.2 PoW — memory-hard (512 KiB scratchpad), ASIC-resistant
+- ✅ Fee split 89/5/5/1 (miners / humanitarian / Issobella / 1% slot — currently burned until node-reward activation)
+- ✅ DAO governance + treasury
+- ✅ WARP bridge + atomic swap
+- ✅ 11/11 L1–L6 services active, watchdog enabled
+- ✅ E2E memo field confirmed in block 752
 
-- Live Index at `/docs#live-index`
-- V3 Mainnet Whitepaper at `/docs#wp-v3-mainnet`
-- Public Launch Path at `/docs#mainnet-plan`
-
----
-
-## Release lineage (2.9.7 -> 2.9.9)
-
-For the main source line, it is important to read the 2026 progression as a linked trio of release steps:
-
-| Version | Role | What it delivered |
-|---------|------|-------------------|
-| **v2.9.7** | Pre-MainNet Gate | Stability work, documentation gate, and operational closure without changing the economics baseline |
-| **v2.9.8** | Ekam canonical runtime | Runtime unification under the canonical profile |
-| **v2.9.9** | Pure Code | Cleanup and migration bridge into the clean V3 mainnet track |
-
-Public docs references:
-
-- `/docs#v297-gate`
-- `/docs#v298-canonical`
-- `/docs#v299-purecode`
+> ⚠️ **The network runs real consensus, real mining and real parameters and is still being hardened and audited — a public 30-day stability run is tracked at [/g8](/g8). Mine, bridge and participate at your own risk.**
 
 ---
 
 ## Canonical chain parameters
 
-| Parameter | Mainnet | Testnet |
-|-----------|---------|---------|
-| **Chain ID** | `zion-mainnet-1` | `zion-testnet-1` |
-| **P2P bind** | runtime-configurable | runtime-configurable |
-| **RPC bind** | runtime-configurable | runtime-configurable |
-| **Algorithm** | Ekam Deeksha v2 | Ekam Deeksha v2 |
-| **Block time** | 60 s | 60 s |
-| **Block reward** | 5,400.067 -> Decade Decay (-20% / 10 years) | Decade Decay |
-| **Tail emission** | 724.784723787776 ZION/block (from ~2126) | 724.784723787776 ZION |
-| **DAA** | LWMA (60 blocks, +-25%) | LWMA (60 blocks) |
-| **Total emission** | 144B ZION | 144B ZION |
-| **Mining horizon** | 100+ years + infinite tail | 100+ years |
-| **Fees** | Burned | Burned |
-| **Architecture** | 6-layer stack | 6-layer stack |
+| Parameter | Mainnet |
+|-----------|---------|
+| **Chain ID** | `zion-mainnet-1` |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
+| **Protocol version** | `zion-v3-node/3.1.0-alpha` |
+| **Algorithm** | Ekam Deeksha v3.2 (512 KiB, 2 passes, 128 reads, Keccak-256) |
+| **Block time** | 60 s |
+| **Block reward** | 5,400.067 ZION → Decade Decay (-20%/10 years) |
+| **Tail emission** | ~724.784723 ZION/block (from ~2126, perpetual) |
+| **Total supply** | ~144,000,000,000 ZION after ~100 years (the perpetual tail adds ~381M ZION/year beyond that — 144B is the planned emission target, not a hard supply cap) |
+| **Decimals** | 6 (1 ZION = 1,000,000 flowers) |
+| **DAA** | LWMA (60 blocks, ±25%) |
+| **Fees** | Split 89/5/5/1 |
+| **Architecture** | 6-Layer stack |
 
 ---
 
@@ -61,75 +51,53 @@ Public docs references:
 | ⛏️ Miners | 89% |
 | 🕊️ Humanitarian Tithe | 5% |
 | 🔭 L5/L6 Issobella Fund | 5% |
-| 🏊 Pool Fee | 1% |
+| 🔥 1% slot | Burned until the node-reward soft fork activates; then minted to the node reward pool |
 
 ---
 
 ## 6-layer stack
 
-| Layer | Name | Year | Purpose |
-|-------|------|------|---------|
-| **L1** | ZION TerraNova ⛓️ | 2026 | PoW blockchain, Ekam Deeksha, UTXO, fee burn |
-| **L2** | DeFi + DAO 💱 | 2026–27 | WARP bridge, wZION, governance, treasury |
-| **L3** | NCL + WARP + AI-native 🧠 | 2027 | Compute orchestration, cross-chain adapters, agent tooling |
-| **L4** | ZION Oasis 🎮 | 2028+ target | XP, game economy, Golden Egg, NFT, non-consensus layer |
-| **L5** | ZION Free World 🌍 | 2030 | Quantum energy, humanitarian missions |
-| **L6** | ZION Issobella 🔭 | 2040+ | Orbital observatory and research station |
+| Layer | Name | Purpose |
+|-------|------|---------|
+| **L1** | ZION TerraNova ⛓️ | PoW blockchain — Ekam Deeksha, UTXO/account model, fee split |
+| **L2** | DeFi + DAO 💱 | WARP bridge, wZION, governance, treasury, atomic swap |
+| **L3** | AI Native + NCL 🧠 | Neural Compute Layer, CUDA-X GPU inference |
+| **L4** | ZION Oasis 🎮 | Consciousness Levels, gamification, Golden Egg |
+| **L5** | ZION Free World 🌍 | Humanitarian missions, community layer |
+| **L6** | ZION Issobella 🔭 | Orbital observatory and research station (horizon) |
 
 ---
 
-## Public genesis reserve summary
+## Release lineage
 
-ZION uses a **16.78B ZION genesis reserve** to bootstrap the ecosystem. Public docs intentionally avoid wallet-level operational detail in the main entry document.
-
-**Primary strategic envelope:** **5.2B ZION** is reserved for L4 OASIS and game-development bootstrap (4.95B direct OASIS slots + 0.25B ecosystem allocation). An additional **3.3B ZION** (2 slots × 1.65B, repurposed from Slots 4 & 5) is allocated to L5 Free World Projects.
-
-| Bucket | ZION | Purpose |
-|--------|------|---------|
-| OASIS Golden Egg | 4.95B | L4 reward pool and game-economy reserve |
-| Ecosystem bootstrap | 0.25B | Game-dev execution envelope |
-| L6 Issobella | 2.50B | Orbital station & quantum research fund (repurposed from DAO Treasury) |
-| DAO Treasury total | 1.50B | Grants & ecosystem bootstrap |
-| Core development + infrastructure | 2.59B | Runtime, operations, delivery |
-| Humanitarian seed | 1.44B | Immediate humanitarian deployment |
-
-XP and consciousness mechanics belong to **L4 OASIS** and do **not** change L1 consensus or mining rewards.
-
----
-
-## Active public host
-
-| Role | IP | P2P | RPC |
-|------|----|-----|-----|
-| Zion2 public host | seed.zionterranova.com | :8334 | :8444 |
-
-Internal containers `zion-seed-1` and `zion-seed-2` run behind that host and are not separate public bootstrap entrypoints.
+| Version | Role | What changed |
+|---------|------|--------------|
+| **v3.2.0** | **One Love / Mainnet Stable (candidate)** | August 2026 hard reset — complete key rotation, canonical Ekam Deeksha v3.2, V31 native genesis, 5/5 core services active |
+| **v3.1.0** | Mainnet Alpha | V31 cut-over, public RPC/pool/DAO/OASIS/web/marketplace live |
+| **v3.0.5** | **All Green / Mainnet Beta** | New genesis hash after hard reset, 3-node mesh, 11/11 services active, E2E memo tests, F1/F5/F4.7 security fixes deployed |
+| **v3.0.4** | Hard Genesis Reset | New server provisioned, key regeneration, full stack rebuild |
+| **v3.0.3** | Decimal Fork | `1e12` → `1e6` flower scale |
+| **v3.0.1** | Genesis Launch (historical) | First public mainnet block #0 — see [historical overview](/docs#v301-readme) |
+| **v3.0.0** | MainNet Ready | Docker, systemd, fee split, genesis freeze, Edge topology |
+| **v2.9.9** | Pure Code | Cleanup / migration bridge into clean V3 mainnet track |
+| **v2.9.8** | Ekam canonical runtime | Runtime unification under canonical profile |
+| **v2.9.7** | Pre-MainNet Gate | Stabilisation and documentation gate |
 
 ---
 
 ## Quick links
 
-- [Live Index →](#live-index)
-- [V3 Mainnet Whitepaper →](#wp-v3-mainnet)
-- [Public Launch Path →](#mainnet-plan)
-- [Release Lineage v2.9.7 →](#v297-gate)
-- [Release Lineage v2.9.8 →](#v298-canonical)
-- [Release Lineage v2.9.9 →](#v299-purecode)
-- [CoinGecko Checklist →](#coingecko-checklist)
-- [GitHub — Zion-TerraNova](https://github.com/Zion-TerraNova)
-- [Web — zionterranova.com](https://www.zionterranova.com)
+- [Mainnet Status & Transition →](/docs#mainnet)
+- [Public Release — How to Use →](/docs#mainnet-public-release)
+- [Whitepaper V3 →](/docs#wp-v3-mainnet)
+- [ZION CLI Quickstart →](/docs#cli-quickstart)
+- [6-Layer Architecture →](/docs#arch-overview)
+- [Network Status →](https://zionterranova.com/network)
+- [Explorer →](https://zionterranova.com/explorer)
+- [Pool →](https://zionterranova.com/pool)
+- [GitHub — v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet)
+- [Web — zionterranova.com](https://zionterranova.com)
 
 ---
 
-## Repository map
-
-| Repo | Description |
-|------|-------------|
-| [2.9.6](https://github.com/Zion-TerraNova/2.9.6) | Main workspace, public line, website, docs, deployment |
-| [v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) | Clean mainnet-track code line |
-| [2.9-QuantumLeap](https://github.com/Zion-TerraNova/2.9-QuantumLeap) | Historical Python-era archive |
-| [Zion-TestNet2.8.5](https://github.com/Zion-TerraNova/Zion-TestNet2.8.5) | Historical legacy testnet |
-
----
-
-*ZION TerraNova public docs hub • public release line 2.9.9 Pure Code • canonical runtime 2.9.8 Deeksha/Ekam • updated 31 Mar 2026*
+*ZION TerraNova public docs hub • v3.2.0 One Love / Mainnet Stable (candidate) • updated 2026-09-30*

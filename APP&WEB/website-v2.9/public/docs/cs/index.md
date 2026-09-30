@@ -1,7 +1,7 @@
 # ZION TerraNova — Veřejná dokumentace
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Aktuální veřejná linka: v3.2.0 One Love / Mainnet Stable.**
+> **Aktuální veřejná linka: v3.2.0 One Love / Mainnet Stable (kandidát).**
 > Genesis #0: 1. ledna 2026 (timestamp bloku); One Love hard reset 6. srpna 2026.
 > Oficiální veřejný launch: odložen (TBD).
 
@@ -9,19 +9,19 @@
 
 ## Živý stav — v3.2.0 One Love
 
-ZION Mainnet běží jako **Mainnet Stable**. Aktuální runtime je **v3.2.0 Ekam Deeksha v3.2** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v srpnu 2026.
+ZION Mainnet běží jako **kandidát na Mainnet Stable**. Aktuální runtime je **v3.2.0 Ekam Deeksha v3.2** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v srpnu 2026.
 
 - ✅ Mainnet Core nód — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server aktivní — `stratum+tcp://pool.zionterranova.com:8444`
 - ✅ CPU a GPU mining v provozu (OpenCL/CUDA/Metal)
-- ✅ Ekam Deeksha dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire`
-- ✅ Fee split 89/5/5/1 (mineři / humanitární desátek / Issobella / pool)
+- ✅ Ekam Deeksha v3.2 PoW — memory-hard (512 KiB scratchpad), ASIC-resistant
+- ✅ Fee split 89/5/5/1 (mineři / humanitární desátek / Issobella / 1% slot — aktuálně se pálí do aktivace node-reward)
 - ✅ DAO governance + treasury
 - ✅ WARP bridge + atomic swap
 - ✅ 11/11 služeb L1–L6 aktivních, watchdog aktivní
 - ✅ E2E memo pole potvrzeno v bloku 752
 
-> ⚠️ **Mainnet Beta znamená reálný konsensus, reálné těžení a reálné parametry, ale síť se stále zpevňuje a audituje. Těžte, bridgujte a participujte na vlastní riziko.**
+> ⚠️ **Síť běží s reálným konsensem, reálnou těžbou a reálnými parametry a stále se zpevňuje a audituje — veřejný 30denní stability run je sledován na [/g8](/g8). Těžte, bridgujte a participujte na vlastní riziko.**
 
 ---
 
@@ -35,8 +35,8 @@ ZION Mainnet běží jako **Mainnet Stable**. Aktuální runtime je **v3.2.0 Eka
 | **Algoritmus** | Ekam Deeksha v3.2 (512 KiB, 2 passy, 128 čtení, Keccak-256) |
 | **Block time** | 60 s |
 | **Block reward** | 5 400,067 ZION → Decade Decay (-20 %/10 let) |
-| **Tail emission** | 724,784723787776 ZION/block (od ~2126) |
-| **Celková emise** | 144 000 000 000 ZION |
+| **Tail emission** | ~724,784723 ZION/block (od ~2126, věčný) |
+| **Celková emise** | ~144 000 000 000 ZION po ~100 letech (věčný tail přidává ~381M ZION/rok navíc — 144B je plánovaný emisní cíl, ne tvrdý strop supply) |
 | **Desetinná místa** | 6 (1 ZION = 1 000 000 flowers) |
 | **DAA** | LWMA (60 bloků, ±25 %) |
 | **Poplatky** | Split 89/5/5/1 |
@@ -51,7 +51,7 @@ ZION Mainnet běží jako **Mainnet Stable**. Aktuální runtime je **v3.2.0 Eka
 | ⛏️ Mineři | 89 % |
 | 🕊️ Humanitární desátek | 5 % |
 | 🔭 L5/L6 Issobella fond | 5 % |
-| 🏊 Pool fee | 1 % |
+| 🔥 1% slot | Pálí se do aktivace node-reward soft forku; poté se razí do node reward poolu |
 
 ---
 
@@ -72,7 +72,7 @@ ZION Mainnet běží jako **Mainnet Stable**. Aktuální runtime je **v3.2.0 Eka
 
 | Verze | Role | Co přinesla |
 |-------|------|-------------|
-| **v3.2.0** | **One Love / Mainnet Stable** | Hard reset v srpnu 2026 — kompletní rotace klíčů, kanonický Ekam Deeksha v3.2, V31 native genesis, 5/5 core služeb aktivních |
+| **v3.2.0** | **One Love / Mainnet Stable (kandidát)** | Hard reset v srpnu 2026 — kompletní rotace klíčů, kanonický Ekam Deeksha v3.2, V31 native genesis, 5/5 core služeb aktivních |
 | **v3.1.0** | Mainnet Alpha | V31 cut-over, veřejný RPC/pool/DAO/OASIS/web/marketplace live |
 | **v3.0.5** | **All Green / Mainnet Beta** | Nový genesis hash po hard resetu, 3-node mesh, 11/11 služeb aktivních, E2E memo testy, opravy zabezpečení F1/F5/F4.7 nasazeny |
 | **v3.0.4** | Hard Genesis Reset | Nový server zprovozněn, regenerace klíčů, full stack rebuild |
@@ -100,4 +100,4 @@ ZION Mainnet běží jako **Mainnet Stable**. Aktuální runtime je **v3.2.0 Eka
 
 ---
 
-*ZION TerraNova veřejná dokumentace • v3.2.0 One Love / Mainnet Stable • aktualizováno 11. 8. 2026*
+*ZION TerraNova veřejná dokumentace • v3.2.0 One Love / Mainnet Stable (kandidát) • aktualizováno 30. 9. 2026*

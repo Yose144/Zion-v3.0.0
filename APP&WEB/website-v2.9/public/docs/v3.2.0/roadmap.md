@@ -3,7 +3,7 @@
 > **Current stable baseline:** 3.2.0 "One Love"  
 > **Public launch target:** postponed (TBD)  
 > **Development horizon:** 3.3.0 "Nirvana"  
-> **Last updated:** 1 September 2026
+> **Last updated:** 30 September 2026
 
 ---
 
@@ -11,20 +11,23 @@
 
 3.1 Mainnet Alpha / 3.2 "One Love" is **live on mainnet** and producing blocks. The workspace builds, all workspace tests pass, and the core production services are active:
 
-- Chain height 23,000+ (August 2026)
+- Chain height 63,600+ (September 2026)
 - All mainnet services active: node, pool, multichain, DAO, OASIS, web, marketplace, dashboard, ZIS
 - Trinity mining validated on the live pool (ZION + ZANO + VRSC)
 - Difficulty regulation stabilized
 - CPU-only mining path stabilized
 - Native transaction and address indexing active
 - ZIS Identity Service running on `auth.zionterranova.com`
-- L5 Free World and L6 Issobella fund trackers are active on mainnet
+- L5 Free World portal live at `freeworld.zionterranova.com` — fund tracker, project registry and a quadratic-voting pilot round
+- L6 Issobella fund tracker active on mainnet
+- AI assistant (Hiran) live on the website
+- **30-day continuous stability run in progress** — live status at [/g8](/g8)
 
 Historical 3.1 reports are archived in the repository.
 
 ---
 
-## 3.2.0 "One Love" — Mainnet Stable
+## 3.2.0 "One Love" — Mainnet Stable (candidate)
 
 The path from *production started* to *production exercised and stable* is gated by real-world E2E, a 30-day continuous run, security audit, public-subtree sync, and release readiness.
 
@@ -42,7 +45,7 @@ The next horizon after 3.2. **"Nirvana" is an aspirational architectural target,
 1. **L2 Multichain & ZIS Passkeys** — wZION/ETH & ZION/BTC AMM settlement, universal WebAuthn/Passkey SSO across all apps, agent sub-accounts.
 2. **L3 Hiranyagarbha 2.4 & 2.5** — Maestro multi-agent DAG orchestration, NCL distributed compute broker, Amitabha natural intent interface, self-sovereign autonomous AI agents with a Dharma constraint engine.
 3. **L4 OASIS Metaverse** — Unreal Engine 5.7 photorealistic engine (Nanite/Lumen/MetaHumans), low-latency WebGPU / Pixel Streaming preview.
-4. **L5 Free World** — dedicated web portal, live 5% L1 coinbase treasury tracker, global water & permaculture projects.
+4. **L5 Free World** — dedicated web portal live at `freeworld.zionterranova.com` (delivered September 2026); next: live 5% L1 coinbase treasury tracker, global water & permaculture projects.
 5. **L6 Issobella** — quantum warp engine theoretical research (Alcubierre-Ekam metric), DeSci repository, NCL-powered physics simulations.
 
 ---

@@ -1,7 +1,7 @@
 # ZION TerraNova — Public Docs Hub
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Current public line: v3.2.0 One Love / Mainnet Stable.**
+> **Current public line: v3.2.0 One Love / Mainnet Stable candidate.**
 > Genesis #0: 1 January 2026 (block timestamp); One Love hard reset 6 August 2026.
 > Official public launch: postponed (TBD).
 
@@ -9,19 +9,19 @@
 
 ## Live status — v3.2.0 One Love
 
-ZION Mainnet is live as **Mainnet Stable**. The current runtime is **v3.2.0 Ekam Deeksha v3.2** with 6-decimal flowers and a new genesis hash after the August 2026 hard reset.
+ZION Mainnet is live as **Mainnet Stable candidate**. The current runtime is **v3.2.0 Ekam Deeksha v3.2** with 6-decimal flowers and a new genesis hash after the August 2026 hard reset.
 
 - ✅ Mainnet Core node — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server active — `stratum+tcp://pool.zionterranova.com:8444`
 - ✅ CPU and GPU mining running (OpenCL/CUDA/Metal)
-- ✅ Ekam Deeksha dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire`
-- ✅ Fee split 89/5/5/1 (miners / humanitarian / Issobella / pool)
+- ✅ Ekam Deeksha v3.2 PoW — memory-hard (512 KiB scratchpad), ASIC-resistant
+- ✅ Fee split 89/5/5/1 (miners / humanitarian / Issobella / 1% slot — currently burned until node-reward activation)
 - ✅ DAO governance + treasury
 - ✅ WARP bridge + atomic swap
 - ✅ 11/11 L1–L6 services active, watchdog enabled
 - ✅ E2E memo field confirmed in block 752
 
-> ⚠️ **Mainnet Beta means real consensus, real mining and real parameters, but the network is still being hardened and audited. Mine, bridge and participate at your own risk.**
+> ⚠️ **The network runs real consensus, real mining and real parameters and is still being hardened and audited — a public 30-day stability run is tracked at [/g8](/g8). Mine, bridge and participate at your own risk.**
 
 ---
 
@@ -35,8 +35,8 @@ ZION Mainnet is live as **Mainnet Stable**. The current runtime is **v3.2.0 Ekam
 | **Algorithm** | Ekam Deeksha v3.2 (512 KiB, 2 passes, 128 reads, Keccak-256) |
 | **Block time** | 60 s |
 | **Block reward** | 5,400.067 ZION → Decade Decay (-20%/10 years) |
-| **Tail emission** | 724.784723787776 ZION/block (from ~2126) |
-| **Total supply** | 144,000,000,000 ZION |
+| **Tail emission** | ~724.784723 ZION/block (from ~2126, perpetual) |
+| **Total supply** | ~144,000,000,000 ZION after ~100 years (the perpetual tail adds ~381M ZION/year beyond that — 144B is the planned emission target, not a hard supply cap) |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers) |
 | **DAA** | LWMA (60 blocks, ±25%) |
 | **Fees** | Split 89/5/5/1 |
@@ -51,7 +51,7 @@ ZION Mainnet is live as **Mainnet Stable**. The current runtime is **v3.2.0 Ekam
 | ⛏️ Miners | 89% |
 | 🕊️ Humanitarian Tithe | 5% |
 | 🔭 L5/L6 Issobella Fund | 5% |
-| 🏊 Pool Fee | 1% |
+| 🔥 1% slot | Burned until the node-reward soft fork activates; then minted to the node reward pool |
 
 ---
 
@@ -72,7 +72,7 @@ ZION Mainnet is live as **Mainnet Stable**. The current runtime is **v3.2.0 Ekam
 
 | Version | Role | What changed |
 |---------|------|--------------|
-| **v3.2.0** | **One Love / Mainnet Stable** | August 2026 hard reset — complete key rotation, canonical Ekam Deeksha v3.2, V31 native genesis, 5/5 core services active |
+| **v3.2.0** | **One Love / Mainnet Stable (candidate)** | August 2026 hard reset — complete key rotation, canonical Ekam Deeksha v3.2, V31 native genesis, 5/5 core services active |
 | **v3.1.0** | Mainnet Alpha | V31 cut-over, public RPC/pool/DAO/OASIS/web/marketplace live |
 | **v3.0.5** | **All Green / Mainnet Beta** | New genesis hash after hard reset, 3-node mesh, 11/11 services active, E2E memo tests, F1/F5/F4.7 security fixes deployed |
 | **v3.0.4** | Hard Genesis Reset | New server provisioned, key regeneration, full stack rebuild |
@@ -100,4 +100,4 @@ ZION Mainnet is live as **Mainnet Stable**. The current runtime is **v3.2.0 Ekam
 
 ---
 
-*ZION TerraNova public docs hub • v3.2.0 One Love / Mainnet Stable • updated 2026-08-11*
+*ZION TerraNova public docs hub • v3.2.0 One Love / Mainnet Stable (candidate) • updated 2026-09-30*
