@@ -588,7 +588,7 @@ pub struct ProjectRecord {
     pub category: String,
     pub budget_zion: u64,
     pub spent_zion: u64,
-    pub status: String, // planning | active | completed | cancelled
+    pub status: String, // planning | vision | active | on_hold | completed | cancelled
     pub started_at: Option<DateTime<Utc>>,
     pub completed_at: Option<DateTime<Utc>>,
     pub impact_metrics: Option<String>,

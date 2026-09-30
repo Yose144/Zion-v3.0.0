@@ -44,6 +44,7 @@ const copy = {
 
 const PROJECT_STATUS: Record<string, { cs: string; en: string; cls: string }> = {
   planning: { cs: 'Příprava', en: 'Planning', cls: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan' },
+  vision: { cs: 'Vize', en: 'Vision', cls: 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple' },
   proposed: { cs: 'Návrh', en: 'Proposed', cls: 'border-white/20 bg-white/5 text-gray-300' },
   approved: { cs: 'Schválen', en: 'Approved', cls: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan' },
   active: { cs: 'Aktivní', en: 'Active', cls: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' },

@@ -4687,7 +4687,7 @@ export const WORLDS: World[] = [
       layer: 5,
       location: "Costa Rica — Terra Nova L5 Americas bridge node",
       vibe: "The bridge between two continents and two oceans. A circle of elders, a living seed library, and the first ground beneath the sky station.",
-      summary: "Sixth L5 Terra Nova node in Costa Rica — a project honouring the native cultures of the Americas (Bribri, Cabécar, Boruca and others), governed through FPIC dialogue, sharing its land with the future Issobella L6 ground station. Vision status — no land acquired yet.",
+      summary: "Sixth L5 Terra Nova node in Costa Rica — a project honouring the native cultures of the Americas (Bribri, Cabécar, Boruca and others), governed through FPIC dialogue, sharing its land with the future Issobella L6 ground station. Preparation phase — on-site construction earliest 2029.",
       tags: ["world", "layer 5", "terranova", "nova amerika", "costa rica", "native cultures", "bridge"],
       galaxyPosition: { x: -19.4, y: 0.24, z: 9.8 }
   },

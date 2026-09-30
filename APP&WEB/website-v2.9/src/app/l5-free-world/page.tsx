@@ -215,6 +215,16 @@ const getCommunities = (cs: boolean) => [
     href: '/terranova/nova-amerika',
     cover: '/images/nova-amerika/hero.webp',
   },
+  {
+    name: 'Uluru',
+    location: cs ? 'Northern Territory, Austrálie' : 'Northern Territory, Australia',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines a šedesát tisíc let paměti krajiny. Uzel jako vztah, ne stavba.'
+      : 'Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines and sixty thousand years of land memory. A node as a relationship, not a construction.',
+    tags: cs ? ['Tjukurpa', 'Songlines', 'Domorodé dědictví'] : ['Tjukurpa', 'Songlines', 'Indigenous Heritage'],
+    href: '/terranova/uluru',
+  },
 ];
 
 const getPremineAllocation = (cs: boolean) => [

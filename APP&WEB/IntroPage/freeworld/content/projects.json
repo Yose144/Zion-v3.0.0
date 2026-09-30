@@ -202,5 +202,39 @@
       "cs": "Příprava 2026–2028 · stavba od 2029",
       "en": "Preparation 2026–2028 · construction from 2029"
     }
+  },
+  {
+    "slug": "uluru",
+    "docSlug": "uluru",
+    "name": "Uluru",
+    "subtitle": {
+      "cs": "Poselství od protinožců",
+      "en": "A message from the antipodes"
+    },
+    "tagline": {
+      "cs": "Nejstarší nepřetržitá kultura planety — Tjukurpa, songlines a šedesát tisíc let paměti krajiny. Uzel jako vztah, ne jako stavba: nejdřív naslouchat.",
+      "en": "The planet's oldest continuous culture — Tjukurpa, songlines and sixty thousand years of landscape memory. A node as relationship, not construction: listening first."
+    },
+    "location": {
+      "cs": "Uluru, Severní teritorium, Austrálie",
+      "en": "Uluru, Northern Territory, Australia"
+    },
+    "status": "vision",
+    "lat": -25.34,
+    "lon": 131.04,
+    "accent": "#ea580c",
+    "tags": [
+      "Tjukurpa",
+      "Songlines",
+      "Indigenous Heritage"
+    ],
+    "renderImg": "uluru/render.webp",
+    "boardImg": "uluru/board.webp",
+    "appHref": "https://app.zionterranova.com/terranova/uluru",
+    "grantTitle": "—",
+    "timeline": {
+      "cs": "Vize — nejdřív naslouchat · bez termínu",
+      "en": "Vision — listening first · no deadline"
+    }
   }
 ]

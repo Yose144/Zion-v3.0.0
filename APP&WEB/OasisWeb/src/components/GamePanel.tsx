@@ -6,12 +6,13 @@ import {
   Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package,
   ChevronRight, ChevronLeft, Plane, RefreshCw, Palette, Scan, RotateCcw, Eye, EyeOff,
   Volume2, VolumeX, Play, Pause, SkipBack, SkipForward, ListMusic, Music,
-  Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy, Globe,
+  Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy, Globe, Fingerprint, Trash2,
 } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress, type ShipLoadout, SHIP_MODELS, type ShipModelId } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getAddressType, isValidZionAddress, generateZionWallet, deriveWalletFromMnemonic, validatePilgrimOrZionAddress } from '../lib/zionWallet';
 import { getHealth, getLeaderboard, getPlayer, getAvatars, type Player, type LeaderboardEntry } from '../lib/api';
+import { listPasskeys, deletePasskey, type ZisPasskey } from '../lib/zis';
 import type { World, WorldCategory } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import MiniMap from './MiniMap';
@@ -255,12 +256,70 @@ export function ShipTab() {
 export function IdentityTab() {
   const { address, setAddress, reset, syncPlayer, avatarConfig, archetype } = useGameStore();
   const addToast = useToastStore((s) => s.add);
-  const { user, authenticated, loading: authLoading, loginWithMnemonic, logout: authLogout } = useAuth();
+  const { user, authenticated, loading: authLoading, loginWithMnemonic, loginWithPasskey, registerPasskey, logout: authLogout } = useAuth();
   const [input, setInput] = useState(address ?? '');
   const [showSeed, setShowSeed] = useState(false);
   const [mnemonic, setMnemonic] = useState('');
   const [generated, setGenerated] = useState<{ address: string; mnemonic: string } | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [webauthnOk, setWebauthnOk] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeys, setPasskeys] = useState<ZisPasskey[]>([]);
+
+  useEffect(() => {
+    import('@simplewebauthn/browser')
+      .then((m) => setWebauthnOk(m.browserSupportsWebAuthn()))
+      .catch(() => setWebauthnOk(false));
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) {
+      setPasskeys([]);
+      return;
+    }
+    listPasskeys()
+      .then((r) => setPasskeys(r.credentials))
+      .catch(() => {});
+  }, [authenticated]);
+
+  const handlePasskeyLogin = async () => {
+    setPasskeyBusy(true);
+    try {
+      const authUser = await loginWithPasskey();
+      if (authUser?.address) setAddress(authUser.address);
+      addToast('Signed in with passkey', 'success', 2500);
+      syncPlayer();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Passkey sign-in failed';
+      addToast(/not allowed|abort|cancel/i.test(msg) ? 'Passkey prompt dismissed' : msg, 'error', 3000);
+    } finally {
+      setPasskeyBusy(false);
+    }
+  };
+
+  const handleAddPasskey = async () => {
+    setPasskeyBusy(true);
+    try {
+      const cred = await registerPasskey('OASIS pilgrim');
+      setPasskeys((p) => [...p, cred]);
+      addToast('Passkey added — next time sign in without a seed', 'success', 3000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Passkey registration failed';
+      addToast(/not allowed|abort|cancel/i.test(msg) ? 'Passkey prompt dismissed' : msg, 'error', 3000);
+    } finally {
+      setPasskeyBusy(false);
+    }
+  };
+
+  const handleDeletePasskey = async (id: string) => {
+    const res = await deletePasskey(id).catch(() => ({ ok: false }));
+    if (res.ok) {
+      setPasskeys((p) => p.filter((k) => k.id !== id));
+      addToast('Passkey removed', 'info', 2000);
+    } else {
+      addToast('Could not remove passkey', 'error', 2500);
+    }
+  };
 
   const handleSave = () => {
     const trimmed = input.trim();
@@ -351,6 +410,34 @@ export function IdentityTab() {
                 <span className="font-semibold text-white">{user.displayName}</span>
               </div>
             )}
+            {webauthnOk && (
+              <div className="space-y-1 border-t border-white/10 pt-1.5">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/50">Passkeys</p>
+                {passkeys.map((k) => (
+                  <div key={k.id} className="flex items-center gap-1.5 text-[9px] text-white/70">
+                    <Fingerprint className="h-3 w-3 shrink-0 text-oasis-cyan" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {k.label || 'Passkey'} · {k.deviceType === 'multiDevice' ? 'synced' : 'this device'}
+                    </span>
+                    <button
+                      onClick={() => handleDeletePasskey(k.id)}
+                      className="shrink-0 text-white/40 transition hover:text-rasta-red"
+                      aria-label="Remove passkey"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={handleAddPasskey}
+                  disabled={passkeyBusy || authLoading}
+                  className="zion-button-ghost w-full border-oasis-cyan/30 bg-oasis-cyan/10 text-[10px] text-oasis-cyan hover:bg-oasis-cyan/20 disabled:opacity-40"
+                >
+                  <Fingerprint className="h-3 w-3" />
+                  {passkeyBusy ? 'Waiting for device…' : passkeys.length ? 'Add another passkey' : 'Add passkey for this device'}
+                </button>
+              </div>
+            )}
             <button
               onClick={handleLogout}
               disabled={authLoading}
@@ -364,7 +451,19 @@ export function IdentityTab() {
             <p className="text-[9px] leading-relaxed text-white/60">
               Log in with a ZION wallet to sync your pilgrim across devices.
             </p>
-            <p className="text-[9px] text-white/40">Use an existing mnemonic or generate a new one below.</p>
+            {webauthnOk && (
+              <button
+                onClick={handlePasskeyLogin}
+                disabled={passkeyBusy || authLoading}
+                className="zion-button-primary w-full text-[10px] disabled:opacity-40"
+              >
+                <Fingerprint className="h-3 w-3" />
+                {passkeyBusy ? 'Waiting for device…' : 'Sign in with Passkey'}
+              </button>
+            )}
+            <p className="text-[9px] text-white/40">
+              {webauthnOk ? 'Or use an existing mnemonic / generate a new one below.' : 'Use an existing mnemonic or generate a new one below.'}
+            </p>
           </div>
         )}
       </div>

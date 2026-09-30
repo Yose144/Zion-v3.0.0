@@ -22,8 +22,13 @@ import {
   getChallenge,
   verifyEd25519,
   getCurrentUser,
+  getPasskeyLoginOptions,
+  verifyPasskeyLogin,
+  getPasskeyRegistrationOptions,
+  verifyPasskeyRegistration,
   logout as zisLogout,
   type ZisUser,
+  type ZisPasskey,
 } from '@/lib/zis';
 import { deriveWalletFromMnemonic, signMessage } from '@/lib/zionWallet';
 
@@ -48,6 +53,10 @@ interface AuthState {
   checkSession: () => Promise<void>;
   /** Log in with a 12-word BIP39 mnemonic */
   loginWithMnemonic: (mnemonic: string) => Promise<void>;
+  /** Log in with a registered passkey (WebAuthn). Returns the authed user. */
+  loginWithPasskey: () => Promise<AuthUser | null>;
+  /** Register a passkey on the signed-in account */
+  registerPasskey: (label?: string) => Promise<ZisPasskey>;
   /** Log out */
   logout: () => Promise<void>;
   /** Refresh the current user */
@@ -60,6 +69,8 @@ const defaultState: AuthState = {
   authenticated: false,
   checkSession: async () => {},
   loginWithMnemonic: async () => {},
+  loginWithPasskey: async () => null,
+  registerPasskey: async () => ({} as ZisPasskey),
   logout: async () => {},
   refresh: async () => {},
 };
@@ -129,6 +140,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loginWithPasskey = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. Begin the WebAuthn login ceremony on ZIS.
+      const { ceremonyId, options } = await getPasskeyLoginOptions();
+
+      // 2. Ask the browser/authenticator for an assertion.
+      const { startAuthentication } = await import('@simplewebauthn/browser');
+      const response = await startAuthentication({
+        optionsJSON: options as unknown as Parameters<typeof startAuthentication>[0]['optionsJSON'],
+      });
+
+      // 3. Submit the assertion — ZIS sets the `zion_session` cookie.
+      await verifyPasskeyLogin({ ceremonyId, response });
+
+      // 4. Fetch the full user record with the fresh cookie.
+      const fullUser = await getCurrentUser();
+      const authUser = zisToAuthUser(fullUser);
+      setUser(authUser);
+      return authUser;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const registerPasskey = useCallback(async (label?: string) => {
+    // 1. Begin the WebAuthn registration ceremony on ZIS (needs session).
+    const { ceremonyId, options } = await getPasskeyRegistrationOptions();
+
+    // 2. Ask the browser/authenticator to create the credential.
+    const { startRegistration } = await import('@simplewebauthn/browser');
+    const response = await startRegistration({
+      optionsJSON: options as unknown as Parameters<typeof startRegistration>[0]['optionsJSON'],
+    });
+
+    // 3. Submit the attestation — ZIS stores the credential.
+    const { credential } = await verifyPasskeyRegistration({ ceremonyId, response, label });
+    return credential;
+  }, []);
+
   const logout = useCallback(async () => {
     await zisLogout();
     setUser(null);
@@ -142,6 +193,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authenticated: !!user,
         checkSession,
         loginWithMnemonic,
+        loginWithPasskey,
+        registerPasskey,
         logout,
         refresh,
       }}

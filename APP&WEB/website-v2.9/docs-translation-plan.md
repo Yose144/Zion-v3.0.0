@@ -86,6 +86,10 @@ Stranky:
 - [ ] `/terranova/genesis` — Genesis chapter
 - [ ] `/terranova/dharma-temple` — Dharma Temple
 - [ ] `/terranova/te-piko-ora` — Te Piko Ora
+- [ ] `/terranova/golden-republic-bohemia` — Golden Republic Bohemia
+- [ ] `/terranova/bodhi-lanka` — Bodhi Lanka
+- [ ] `/terranova/nova-amerika` — LUMI / Nová Amerika
+- [ ] `/terranova/uluru` — Uluru (vision)
 - [ ] `/terranova/geography/*` — Africa, Americas, Asia, Europe, Oceania
 
 ---

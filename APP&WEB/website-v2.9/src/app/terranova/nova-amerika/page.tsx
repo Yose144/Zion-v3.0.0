@@ -39,8 +39,8 @@ const Copy = {
   locationLine: { cs: `Kostarika · pevninský most Amerik`, en: `Costa Rica · the land bridge of the Americas` },
   introTitle: { cs: `Šestý uzel — země mezi dvěma světy`, en: `The sixth node — land between two worlds` },
   introBody: {
-    cs: `LUMI (Nová Amerika) je šestý a poslední plánovaný uzel L5 Free World — projekt pro nativní kultury obou Amerik. Kostarika leží na zeměpisném středobodu kontinentů: osm oficiálně uznávaných indiánských teritorií (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), země bez armády, ~98 % obnovitelné energie a dostupné rurální pozemky. Uzel se staví principem FPIC — svobodný, předem daný a informovaný souhlas kruhů starších.`,
-    en: `LUMI (Nová Amerika) is the sixth and final planned node of L5 Free World — a project for the native cultures of both Americas. Costa Rica sits at the geographic midpoint of the continents: eight officially recognised indigenous territories (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), a country without an army, ~98% renewable energy and affordable rural land. The node is built on FPIC — free, prior and informed consent of the councils of elders.`,
+    cs: `LUMI (Nová Amerika) je šestý financovaný uzel L5 Free World — projekt pro nativní kultury obou Amerik. Kostarika leží na zeměpisném středobodu kontinentů: osm oficiálně uznávaných indiánských teritorií (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), země bez armády, ~98 % obnovitelné energie a dostupné rurální pozemky. Uzel se staví principem FPIC — svobodný, předem daný a informovaný souhlas kruhů starších.`,
+    en: `LUMI (Nová Amerika) is the sixth funded node of L5 Free World — a project for the native cultures of both Americas. Costa Rica sits at the geographic midpoint of the continents: eight officially recognised indigenous territories (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), a country without an army, ~98% renewable energy and affordable rural land. The node is built on FPIC — free, prior and informed consent of the councils of elders.`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Aktivity & vize`, en: `Activities & Vision` },
@@ -210,6 +210,7 @@ const SISTERS = [
   { name: 'Te Pīko Ora', href: '/terranova/te-piko-ora', region: { cs: 'Raiatea · Polynésie', en: 'Raiatea · Polynesia' } },
   { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
+  { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory · Austrálie', en: 'Northern Territory · Australia' } },
 ];
 
 export default function NovaAmerikaPage() {

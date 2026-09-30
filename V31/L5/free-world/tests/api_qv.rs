@@ -590,3 +590,81 @@ async fn invalid_ballot_is_400() {
     let (status, _) = cast_ballot(&app, &round_id, "v", json!([])).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
+
+// ── Projects ──────────────────────────────────────────────────────
+
+async fn post_project(app: &axum::Router, body: Value) -> (StatusCode, Value) {
+    let resp = app
+        .clone()
+        .oneshot(request("POST", "/api/v1/projects", Some(KEY), Some(body)))
+        .await
+        .unwrap();
+    let status = resp.status();
+    (status, body_json(resp).await)
+}
+
+#[tokio::test]
+async fn vision_project_allows_zero_budget_and_is_listed() {
+    let (app, _db) = test_app(KEY);
+    let (status, body) = post_project(
+        &app,
+        json!({
+            "name": "Uluru",
+            "category": "community",
+            "budget_zion": 0,
+            "status": "vision",
+            "description": "Heritage & message node — Aboriginal Australia",
+            "location": "Northern Territory, Australia",
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(body["data"]["status"], "vision");
+    assert_eq!(body["data"]["budget_zion"], 0);
+
+    let resp = app
+        .clone()
+        .oneshot(request("GET", "/api/v1/projects", None, None))
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let list = body_json(resp).await;
+    let names: Vec<&str> = list["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|p| p["name"].as_str())
+        .collect();
+    assert!(names.contains(&"Uluru"));
+}
+
+#[tokio::test]
+async fn zero_budget_rejected_for_non_vision_project() {
+    let (app, _db) = test_app(KEY);
+    // default status is planning → 0 budget rejected
+    let (status, _) = post_project(
+        &app,
+        json!({"name": "Unfunded", "category": "community", "budget_zion": 0}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    // explicit planning + 0 → rejected too
+    let (status, _) = post_project(
+        &app,
+        json!({"name": "Unfunded", "category": "community", "budget_zion": 0, "status": "planning"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn unknown_project_status_rejected() {
+    let (app, _db) = test_app(KEY);
+    let (status, _) = post_project(
+        &app,
+        json!({"name": "X", "category": "community", "budget_zion": 1, "status": "limbo"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}

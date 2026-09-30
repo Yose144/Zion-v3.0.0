@@ -299,8 +299,62 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
               ))}
             </div>
             <p className="mt-3 text-[9px] text-white/60">
-              Klikni na projekt → otevře detail na zionterranova.com
+              Klikni na projekt → otevře detail na zionterranova.com ·{' '}
+              <a
+                href="https://freeworld.zionterranova.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-rasta-green/80 underline decoration-rasta-green/30 underline-offset-2 transition hover:text-rasta-green"
+              >
+                Free World portal ↗
+              </a>
             </p>
+          </div>
+        )}
+
+        {/* ── Issobella: Orbital Council → live DAO ── */}
+        {world.id === 'ISSOBELA_GUARDIAN' && (
+          <div className="zion-rainbow-sub p-3.5" style={{ '--rc': '255, 157, 226' } as React.CSSProperties}>
+            <div className="mb-3 flex items-center gap-1.5">
+              <Users2 className="h-3 w-3 text-[#ff9de2]" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#ff9de2]/80">
+                Orbital Council · ZION DAO
+              </p>
+            </div>
+            <p className="mb-3 text-[11px] leading-snug text-white/70">
+              Issobella is where the guardians convene — proposals, votes, delegations and the
+              treasury mandate are decided on-chain in the DAO Parlament.
+            </p>
+            <div className="space-y-2">
+              <a
+                href="https://app.zionterranova.com/dao"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/15 hover:bg-white/[0.04]"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: '#ff9de2', boxShadow: '0 0 8px #ff9de2' }} />
+                  <h4 className="text-sm font-bold text-white">DAO Parlament</h4>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-white/70">
+                  Live proposals, guardian registry, vote delegation and treasury — the council's working chamber.
+                </p>
+              </a>
+              <a
+                href="https://freeworld.zionterranova.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/15 hover:bg-white/[0.04]"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
+                  <h4 className="text-sm font-bold text-white">Free World Portal</h4>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-snug text-white/70">
+                  The L5 founding communities, quadratic-voting rounds and site registry — what the council oversees.
+                </p>
+              </a>
+            </div>
           </div>
         )}
 
