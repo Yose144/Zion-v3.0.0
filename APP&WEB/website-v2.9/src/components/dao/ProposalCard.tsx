@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { GovernanceProposal, ProposalVote, getProposalVotes } from '@/lib/dao-api';
 import { useLang } from '@/contexts/LanguageContext';
 import QuorumProgress from './QuorumProgress';
+import ZisAvatar from '@/components/ZisAvatar';
 
 const FLOWERS_PER_ZION = 1_000_000;
 
@@ -230,7 +231,10 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
                 <p className="text-[11px] text-gray-500">{cs ? 'Načítám…' : 'Loading…'}</p>
               ) : (votes ?? []).map((v) => (
                 <div key={`${v.voter}-${v.voted_at}`} className="flex items-center justify-between text-[11px] zion-rainbow-sub px-2.5 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
-                  <span className="font-mono text-gray-400 truncate max-w-[55%]">{v.voter}</span>
+                  <span className="flex items-center gap-1.5 min-w-0 max-w-[55%]">
+                    <ZisAvatar seed={v.voter} size={16} className="rounded shrink-0" />
+                    <span className="font-mono text-gray-400 truncate">{v.voter}</span>
+                  </span>
                   <span className="flex items-center gap-2">
                     <span className={v.choice === 'Yes' ? 'text-zion-cyan' : v.choice === 'No' ? 'text-zion-purple' : 'text-gray-400'}>{v.choice}</span>
                     <span className="font-mono text-gray-300">{formatZion(flowersToZion(v.weight))} ZION</span>
@@ -246,7 +250,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
       <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 border-t border-white/6 pt-3">
         <span className="inline-flex items-center gap-1">
           <Users className="h-3 w-3" />
-          Proposer: <span className="text-gray-400 font-mono">{proposal.proposer}</span>
+          Proposer: <ZisAvatar seed={proposal.proposer} size={14} className="rounded" /> <span className="text-gray-400 font-mono">{proposal.proposer}</span>
         </span>
         <span className="inline-flex items-center gap-1">
           <Calendar className="h-3 w-3" />

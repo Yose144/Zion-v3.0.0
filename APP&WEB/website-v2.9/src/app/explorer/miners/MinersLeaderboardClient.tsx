@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
+import ZisAvatar from "@/components/ZisAvatar";
 import { apiClient } from "@/lib/api";
 import type { ExplorerMiners } from "@/lib/explorer/types";
 import { formatNumber, formatHashrate } from "@/lib/explorer/format";
@@ -151,10 +152,13 @@ export default function MinersLeaderboardClient() {
                             </span>
                           </td>
                           <td className="px-3 py-3">
-                            <Link href={`/explorer/address?addr=${encodeURIComponent(m.address)}`}
-                              className="text-zion-cyan hover:text-white transition font-mono text-xs">
-                              {m.label || `${m.address.slice(0, 12)}…${m.address.slice(-8)}`}
-                            </Link>
+                            <span className="inline-flex items-center gap-2">
+                              <ZisAvatar seed={m.address} size={18} className="rounded shrink-0" />
+                              <Link href={`/explorer/address?addr=${encodeURIComponent(m.address)}`}
+                                className="text-zion-cyan hover:text-white transition font-mono text-xs">
+                                {m.label || `${m.address.slice(0, 12)}…${m.address.slice(-8)}`}
+                              </Link>
+                            </span>
                           </td>
                           <td className="px-3 py-3 hidden md:table-cell">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border ${

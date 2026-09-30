@@ -20,6 +20,7 @@ import { FLOWERS_PER_ZION } from '@/lib/constants';
 import QRCode from "@/components/explorer/QRCode";
 import { default as InfoRow } from '@/components/explorer/v4/shared/ExplorerDetailRow';
 import ExplorerCopyButton from '@/components/explorer/v4/shared/ExplorerCopyButton';
+import ZisAvatar from '@/components/ZisAvatar';
 import ExplorerSkeleton from '@/components/explorer/v4/shared/ExplorerSkeleton';
 import ExplorerEmptyState from '@/components/explorer/v4/shared/ExplorerEmptyState';
 
@@ -290,9 +291,12 @@ export default function AddressDetailClient() {
 
         {/* title & address */}
         <div className="flex items-start gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-zion-purple/10 border border-zion-purple/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Wallet className="w-5 h-5 text-zion-purple" />
-          </div>
+          <ZisAvatar
+            seed={addr}
+            size={40}
+            className="rounded-xl flex-shrink-0 mt-0.5 border border-zion-purple/20"
+            initial="Z"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</h1>
