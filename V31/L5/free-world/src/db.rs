@@ -31,7 +31,8 @@ impl FreeWorldDb {
                 status TEXT NOT NULL DEFAULT 'pending',
                 created_at TEXT NOT NULL,
                 reviewed_at TEXT,
-                reviewer_notes TEXT
+                reviewer_notes TEXT,
+                dao_proposal_id INTEGER
             );
 
             CREATE TABLE IF NOT EXISTS projects (
@@ -102,6 +103,26 @@ impl FreeWorldDb {
                 closed_at TEXT NOT NULL
             );"
         )?;
+
+        // Migration: older DBs lack grants.dao_proposal_id — add it.
+        self.ensure_column(
+            "grants",
+            "dao_proposal_id",
+            "ALTER TABLE grants ADD COLUMN dao_proposal_id INTEGER",
+        )?;
+        Ok(())
+    }
+
+    /// Idempotent column add: runs `alter_sql` only when `column` is absent
+    /// from `PRAGMA table_info(table)`.
+    fn ensure_column(&self, table: &str, column: &str, alter_sql: &str) -> FreeWorldResult<()> {
+        let mut stmt = self.conn.prepare(&format!("PRAGMA table_info({table})"))?;
+        let exists = stmt
+            .query_map([], |row| row.get::<_, String>(1))?
+            .any(|name| name.map(|n| n == column).unwrap_or(false));
+        if !exists {
+            self.conn.execute_batch(alter_sql)?;
+        }
         Ok(())
     }
 
@@ -109,18 +130,18 @@ impl FreeWorldDb {
 
     pub fn insert_grant(&self, g: &GrantRecord) -> FreeWorldResult<()> {
         self.conn.execute(
-            "INSERT INTO grants (id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            "INSERT INTO grants (id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, dao_proposal_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             (&g.id, &g.title, &g.description, &g.applicant_name, &g.applicant_address,
-             &g.category, &g.amount_zion, &g.status, &g.created_at.to_rfc3339()),
+             &g.category, &g.amount_zion, &g.status, &g.created_at.to_rfc3339(), &g.dao_proposal_id),
         )?;
         Ok(())
     }
 
     pub fn list_grants(&self, status: Option<&str>) -> FreeWorldResult<Vec<GrantRecord>> {
         let sql = match status {
-            Some(_s) => "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes FROM grants WHERE status = ?1 ORDER BY created_at DESC",
-            None => "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes FROM grants ORDER BY created_at DESC",
+            Some(_s) => "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes, dao_proposal_id FROM grants WHERE status = ?1 ORDER BY created_at DESC",
+            None => "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes, dao_proposal_id FROM grants ORDER BY created_at DESC",
         };
         let mut stmt = self.conn.prepare(sql)?;
         let rows = match status {
@@ -139,14 +160,47 @@ impl FreeWorldDb {
         let reviewed = Utc::now().to_rfc3339();
         self.conn.execute(
             "UPDATE grants SET status = ?1, reviewed_at = ?2, reviewer_notes = ?3 WHERE id = ?4",
-            (status, &reviewed, notes.unwrap_or(""), id),
+            (status, &reviewed, notes, id),
         )?;
         Ok(())
     }
 
+    /// Record the DAO proposal a grant was submitted as and move it to
+    /// `on_dao`. Returns the number of rows updated (0 = unknown grant).
+    pub fn set_grant_dao_proposal(&self, id: &str, proposal_id: u64) -> FreeWorldResult<usize> {
+        let reviewed = Utc::now().to_rfc3339();
+        let n = self.conn.execute(
+            "UPDATE grants SET status = 'on_dao', dao_proposal_id = ?1, reviewed_at = ?2 WHERE id = ?3",
+            (proposal_id, &reviewed, id),
+        )?;
+        Ok(n)
+    }
+
+    /// Grant counts grouped by status — used to hydrate the Prometheus
+    /// gauges so they reflect the DB, not just in-process events.
+    pub fn grant_status_counts(&self) -> FreeWorldResult<Vec<(String, u64)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT status, COUNT(*) FROM grants GROUP BY status")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, u64>(1)?))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    pub fn project_status_counts(&self) -> FreeWorldResult<Vec<(String, u64)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT status, COUNT(*) FROM projects GROUP BY status")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, u64>(1)?))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
     pub fn get_grant(&self, id: &str) -> FreeWorldResult<Option<GrantRecord>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes FROM grants WHERE id = ?1",
+            "SELECT id, title, description, applicant_name, applicant_address, category, amount_zion, status, created_at, reviewed_at, reviewer_notes, dao_proposal_id FROM grants WHERE id = ?1",
         )?;
         let row = stmt.query_row([id], row_to_grant).optional()?;
         Ok(row)
@@ -462,6 +516,7 @@ fn row_to_grant(row: &rusqlite::Row) -> Result<GrantRecord, rusqlite::Error> {
             .and_then(|s| DateTime::parse_from_rfc3339(&s).ok())
             .map(|dt| dt.with_timezone(&Utc)),
         reviewer_notes: row.get(10)?,
+        dao_proposal_id: row.get(11)?,
     })
 }
 
@@ -495,11 +550,14 @@ pub struct GrantRecord {
     pub applicant_name: Option<String>,
     pub applicant_address: Option<String>,
     pub category: String, // humanitarian | energy | education | community
+    /// Requested amount in flowers (1e-6 ZION) — L5 `*_zion` convention.
     pub amount_zion: u64,
-    pub status: String, // pending | approved | rejected | disbursed
+    pub status: String, // pending | under_review | approved | on_dao | rejected | disbursed
     pub created_at: DateTime<Utc>,
     pub reviewed_at: Option<DateTime<Utc>>,
     pub reviewer_notes: Option<String>,
+    /// DAO proposal id once the grant was submitted to governance.
+    pub dao_proposal_id: Option<u64>,
 }
 
 impl GrantRecord {
@@ -516,6 +574,7 @@ impl GrantRecord {
             created_at: Utc::now(),
             reviewed_at: None,
             reviewer_notes: None,
+            dao_proposal_id: None,
         }
     }
 }

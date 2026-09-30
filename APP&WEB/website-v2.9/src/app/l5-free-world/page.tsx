@@ -93,10 +93,10 @@ const L5FreeWorldCopy = {
   network: { cs: `Síť`, en: `Network` },
 
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
-  sixNodesOnPlanet: { cs: `Šest uzlů na planetě`, en: `Six nodes on the planet` },
+  sixNodesOnPlanet: { cs: `Sedm uzlů na planetě`, en: `Seven nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Polynésii. Všechny jsou v přípravě do roku 2028; stavba začíná nejdříve v roce 2029, po OASIS.`,
-    en: `The founding L5 communities across the continents — from the Algarve to Polynesia. All are in preparation until 2028; construction starts no earlier than 2029, after OASIS.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Austrálii. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru zůstává vizí — odkaz a poselství domorodé Austrálie a její šedesátitisícileté paměti krajiny.`,
+    en: `The L5 communities across the continents — from the Algarve to Australia. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru remains a vision — the heritage and message of Aboriginal Australia and its sixty-thousand-year memory of the land.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -408,7 +408,7 @@ export default function L5FreeWorldPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l5-free-world/hero.webp"
-                alt={cs ? 'L5 Free World — šest komunit Terra Nova ve fyzickém světě' : 'L5 Free World — the six Terra Nova communities in the physical world'}
+                alt={cs ? 'L5 Free World — sedm komunit Terra Nova ve fyzickém světě' : 'L5 Free World — the seven Terra Nova communities in the physical world'}
                 width={1672}
                 height={941}
                 loading="eager"

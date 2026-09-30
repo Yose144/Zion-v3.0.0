@@ -65,6 +65,7 @@ pub fn free_world_router(state: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/api/v1/grants", get(list_grants).post(create_grant))
         .route("/api/v1/grants/:id/approve", post(approve_grant))
+        .route("/api/v1/grants/:id/reject", post(reject_grant))
         .route(
             "/api/v1/grants/:id/submit-to-dao",
             post(submit_grant_to_dao),
@@ -101,6 +102,38 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 }
 
 type ApiErr = (StatusCode, Json<ApiResponse>);
+
+/// Recompute the count gauges from the DB — restart-safe and idempotent,
+/// unlike incrementing counters per request (which drifts on restart and
+/// can underflow on pre-existing rows).
+fn sync_gauges(db: &FreeWorldDb, metrics: &FreeWorldMetrics) {
+    use std::sync::atomic::Ordering::Relaxed;
+    if let Ok(counts) = db.grant_status_counts() {
+        let get = |s: &str| {
+            counts
+                .iter()
+                .find(|(k, _)| k == s)
+                .map(|(_, n)| *n)
+                .unwrap_or(0)
+        };
+        metrics.grants_pending.store(get("pending"), Relaxed);
+        metrics.grants_approved.store(get("approved"), Relaxed);
+        metrics.grants_disbursed.store(get("disbursed"), Relaxed);
+    }
+    if let Ok(counts) = db.project_status_counts() {
+        let active: u64 = counts
+            .iter()
+            .filter(|(s, _)| s == "active")
+            .map(|(_, n)| *n)
+            .sum();
+        metrics.projects_active.store(active, Relaxed);
+    }
+}
+
+/// Grants in these statuses can still be moved to a review outcome.
+fn is_reviewable(status: &str) -> bool {
+    matches!(status, "pending" | "under_review")
+}
 
 fn require_write_key(state: &AppState, headers: &HeaderMap) -> Result<(), ApiErr> {
     if state.api_key.is_empty() {
@@ -145,7 +178,15 @@ async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
 async fn list_grants(State(state): State<AppState>) -> impl IntoResponse {
     let db = state.db.lock().unwrap();
     match db.list_grants(None) {
-        Ok(grants) => (StatusCode::OK, Json(ApiResponse::ok(grants))),
+        // The list is served through the public proxy — keep applicant
+        // names (shown in the registry) but redact payout addresses,
+        // which are never displayed and would be a financial PII leak.
+        Ok(mut grants) => {
+            for g in &mut grants {
+                g.applicant_address = None;
+            }
+            (StatusCode::OK, Json(ApiResponse::ok(grants)))
+        }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::err(&e.to_string())),
@@ -171,6 +212,20 @@ async fn create_grant(
     if let Err(e) = require_write_key(&state, &headers) {
         return e;
     }
+    if req.title.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err("title must not be empty")),
+        );
+    }
+    // amount_zion is flowers (1e-6 ZION) — a zero grant can never be
+    // funded and would be excluded from QV allocation anyway.
+    if req.amount_zion == 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err("amount_zion must be > 0")),
+        );
+    }
     let mut grant = GrantRecord::new(&req.title, &req.category, req.amount_zion);
     grant.description = req.description;
     grant.applicant_name = req.applicant_name;
@@ -179,10 +234,7 @@ async fn create_grant(
     let db = state.db.lock().unwrap();
     match db.insert_grant(&grant) {
         Ok(_) => {
-            state
-                .metrics
-                .grants_pending
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            sync_gauges(&db, &state.metrics);
             (StatusCode::CREATED, Json(ApiResponse::ok(grant)))
         }
         Err(e) => (
@@ -193,37 +245,77 @@ async fn create_grant(
 }
 
 #[derive(Deserialize)]
-pub struct ApproveGrantRequest {
+pub struct ReviewGrantRequest {
     pub notes: Option<String>,
 }
 
-async fn approve_grant(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path(id): Path<String>,
-    Json(req): Json<ApproveGrantRequest>,
-) -> impl IntoResponse {
-    if let Err(e) = require_write_key(&state, &headers) {
+/// Shared guard for review transitions: the grant must exist and be in a
+/// reviewable status (pending | under_review).
+fn reviewable_grant(db: &FreeWorldDb, id: &str) -> Result<GrantRecord, ApiErr> {
+    match db.get_grant(id) {
+        Ok(Some(g)) if is_reviewable(&g.status) => Ok(g),
+        Ok(Some(g)) => Err((
+            StatusCode::CONFLICT,
+            Json(ApiResponse::err(&format!(
+                "grant is not reviewable (status: {})",
+                g.status
+            ))),
+        )),
+        Ok(None) => Err((
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::err("grant not found")),
+        )),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        )),
+    }
+}
+
+fn review_grant(
+    state: &AppState,
+    headers: &HeaderMap,
+    id: &str,
+    notes: Option<&str>,
+    target_status: &'static str,
+) -> ApiErrResult {
+    if let Err(e) = require_write_key(state, headers) {
         return e;
     }
     let db = state.db.lock().unwrap();
-    match db.update_grant_status(&id, "approved", req.notes.as_deref()) {
+    if let Err(e) = reviewable_grant(&db, id) {
+        return e;
+    }
+    match db.update_grant_status(id, target_status, notes) {
         Ok(_) => {
-            state
-                .metrics
-                .grants_pending
-                .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
-            state
-                .metrics
-                .grants_approved
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            (StatusCode::OK, Json(ApiResponse::ok("approved")))
+            sync_gauges(&db, &state.metrics);
+            (StatusCode::OK, Json(ApiResponse::ok(target_status)))
         }
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiResponse::err(&e.to_string())),
         ),
     }
+}
+
+type ApiErrResult = (StatusCode, Json<ApiResponse>);
+
+async fn approve_grant(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+    Json(req): Json<ReviewGrantRequest>,
+) -> impl IntoResponse {
+    review_grant(&state, &headers, &id, req.notes.as_deref(), "approved")
+}
+
+async fn reject_grant(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(id): Path<String>,
+    Json(req): Json<ReviewGrantRequest>,
+) -> impl IntoResponse {
+    review_grant(&state, &headers, &id, req.notes.as_deref(), "rejected")
 }
 
 async fn submit_grant_to_dao(
@@ -236,8 +328,8 @@ async fn submit_grant_to_dao(
     }
     let grant = {
         let db = state.db.lock().unwrap();
-        match db.list_grants(None) {
-            Ok(grants) => grants.into_iter().find(|g| g.id == id),
+        match db.get_grant(&id) {
+            Ok(g) => g,
             Err(e) => {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -246,27 +338,52 @@ async fn submit_grant_to_dao(
             }
         }
     };
-    match grant {
-        Some(grant) => {
-            let client = DaoClient::new(DaoClientConfig::from(&state.config));
-            let req = GrantProposalInput {
-                title: format!("Grant: {}", grant.title),
-                description: grant.description.clone().unwrap_or_default(),
-                category: grant.category.clone(),
-                amount_zion: grant.amount_zion,
-                recipient_address: grant.applicant_address.clone().unwrap_or_default(),
-            };
-            match client.submit_grant_proposal(&req).await {
-                Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),
-                Err(e) => (
-                    StatusCode::BAD_GATEWAY,
-                    Json(ApiResponse::err(&e.to_string())),
-                ),
-            }
+    let grant = match grant {
+        Some(g) => g,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::err("Grant not found")),
+            )
         }
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(ApiResponse::err("Grant not found")),
+    };
+    // Only reviewed grants may go on-chain; submitting also moves the
+    // grant to `on_dao`, which prevents duplicate proposals.
+    if grant.status != "approved" {
+        return (
+            StatusCode::CONFLICT,
+            Json(ApiResponse::err(&format!(
+                "grant must be approved before DAO submission (status: {})",
+                grant.status
+            ))),
+        );
+    }
+    let client = DaoClient::new(DaoClientConfig::from(&state.config));
+    let req = GrantProposalInput {
+        title: format!("Grant: {}", grant.title),
+        description: grant.description.clone().unwrap_or_default(),
+        category: grant.category.clone(),
+        amount_zion: grant.amount_zion,
+        recipient_address: grant.applicant_address.clone().unwrap_or_default(),
+    };
+    match client.submit_grant_proposal(&req).await {
+        Ok(resp) => {
+            let db = state.db.lock().unwrap();
+            if let Err(e) = db.set_grant_dao_proposal(&id, resp.proposal_id) {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiResponse::err(&format!(
+                        "proposal {} submitted but failed to persist: {}",
+                        resp.proposal_id, e
+                    ))),
+                );
+            }
+            sync_gauges(&db, &state.metrics);
+            (StatusCode::OK, Json(ApiResponse::ok(resp)))
+        }
+        Err(e) => (
+            StatusCode::BAD_GATEWAY,
+            Json(ApiResponse::err(&e.to_string())),
         ),
     }
 }
@@ -299,6 +416,12 @@ async fn create_project(
     if let Err(e) = require_write_key(&state, &headers) {
         return e;
     }
+    if req.name.trim().is_empty() || req.budget_zion == 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err("name must not be empty and budget_zion must be > 0")),
+        );
+    }
     let mut project = ProjectRecord::new(&req.name, &req.category, req.budget_zion);
     project.description = req.description;
     project.location = req.location;
@@ -306,10 +429,7 @@ async fn create_project(
     let db = state.db.lock().unwrap();
     match db.insert_project(&project) {
         Ok(_) => {
-            state
-                .metrics
-                .projects_active
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            sync_gauges(&db, &state.metrics);
             (StatusCode::CREATED, Json(ApiResponse::ok(project)))
         }
         Err(e) => (

@@ -119,7 +119,8 @@ impl FreeWorldHiranBridge {
 
     async fn chat(&self, user_prompt: &str) -> anyhow::Result<String> {
         let body = json!({
-            "model": "hiran-v2.2",
+            // llama.cpp alias of the deployed L3 model (`--alias zion-l3`).
+            "model": "zion-l3",
             "messages": [
                 {
                     "role": "system",

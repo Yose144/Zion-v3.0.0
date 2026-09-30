@@ -7,8 +7,10 @@
 use crate::config::FreeWorldConfig;
 use serde::{Deserialize, Serialize};
 
-/// Number of flowers per 1 ZION.
-pub const FLOWERS_PER_ZION: u64 = 1_000_000;
+// L5 convention: every `*_zion` field in this service is denominated in
+// flowers (1e-6 ZION) — the same atomic unit the DAO uses for proposal
+// amounts (`ProposalType::Treasury.amount`, `DAO_TREASURY_TOTAL`).
+// Amounts therefore pass through without conversion.
 
 /// Configuration for the DAO client.
 #[derive(Clone)]
@@ -111,6 +113,7 @@ pub struct GrantProposalInput {
     pub title: String,
     pub description: String,
     pub category: String,
+    /// Requested amount in flowers (1e-6 ZION) — L5 `*_zion` convention.
     pub amount_zion: u64,
     pub recipient_address: String,
 }
@@ -147,11 +150,6 @@ impl DaoClient {
             return Err(anyhow::anyhow!("Grant recipient address is required"));
         }
 
-        let amount_flowers = grant
-            .amount_zion
-            .checked_mul(FLOWERS_PER_ZION)
-            .ok_or_else(|| anyhow::anyhow!("Grant amount overflow"))?;
-
         let req = CreateDaoProposalRequest {
             title: grant.title.clone(),
             description: grant.description.clone(),
@@ -160,7 +158,9 @@ impl DaoClient {
             snapshot_block: self.config.snapshot_block,
             proposal_type: ProposalTypeDto::Treasury {
                 recipient: grant.recipient_address.clone(),
-                amount: amount_flowers,
+                // Grant.amount_zion is already flowers — DAO amounts are
+                // flowers too, no conversion.
+                amount: grant.amount_zion,
                 purpose: format!("Free World grant ({}) — {}", grant.category, grant.title),
             },
         };

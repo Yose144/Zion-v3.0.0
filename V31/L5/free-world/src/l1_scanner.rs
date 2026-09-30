@@ -4,14 +4,21 @@
 //! and accumulates the running total in the local database.
 
 use crate::db::FreeWorldDb;
-use crate::error::FreeWorldResult;
+use crate::error::{FreeWorldError, FreeWorldResult};
+use crate::metrics::FreeWorldMetrics;
 use serde::Deserialize;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::time::sleep;
+use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
+
+/// Per-request timeout for the raw TCP JSON-RPC calls — without it a
+/// stalled connection would park the scan loop forever while /health
+/// stays green (it only reads the DB).
+const RPC_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone)]
 pub struct ScannerConfig {
@@ -35,15 +42,19 @@ impl Default for ScannerConfig {
 pub struct L1Scanner {
     config: ScannerConfig,
     db: Arc<Mutex<FreeWorldDb>>,
-    blocks_scanned: Arc<std::sync::atomic::AtomicU64>,
+    metrics: Arc<FreeWorldMetrics>,
 }
 
 impl L1Scanner {
-    pub fn new(config: ScannerConfig, db: Arc<Mutex<FreeWorldDb>>) -> Self {
+    pub fn new(
+        config: ScannerConfig,
+        db: Arc<Mutex<FreeWorldDb>>,
+        metrics: Arc<FreeWorldMetrics>,
+    ) -> Self {
         Self {
             config,
             db,
-            blocks_scanned: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+            metrics,
         }
     }
 
@@ -98,26 +109,52 @@ impl L1Scanner {
             // humanitarian, Issobella, and (post-activation) node-reward outputs.
             // We scan all transactions and all outputs to avoid depending on the
             // exact position of the coinbase or the response field name.
+            let mut block_tithe = 0u64;
             for tx in &block.transactions {
                 for output in &tx.outputs {
                     if output.address == self.config.fund_address {
-                        let db = self.db.lock().unwrap();
-                        let mut balance = db.get_fund_balance()?;
-                        balance.total_accumulated += output.amount;
-                        balance.last_block_height = height;
-                        balance.updated_at = chrono::Utc::now().to_rfc3339();
-                        db.update_fund_balance(&balance)?;
+                        block_tithe = block_tithe.saturating_add(output.amount);
                         tithes_found += 1;
-                        info!(
-                            "[FW-SCANNER] Tithe @ block {}: {} flowers → total {} flowers",
-                            height, output.amount, balance.total_accumulated
-                        );
                     }
                 }
             }
 
-            self.blocks_scanned
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            // Advance the cursor for EVERY successfully fetched block — not
+            // just blocks containing a tithe — otherwise a tithe-less block
+            // range would be refetched on every poll.
+            {
+                let db = self.db.lock().unwrap();
+                let mut balance = db.get_fund_balance()?;
+                balance.total_accumulated = balance
+                    .total_accumulated
+                    .checked_add(block_tithe)
+                    .ok_or_else(|| {
+                        FreeWorldError::Other("fund balance overflow".to_string())
+                    })?;
+                balance.last_block_height = height;
+                balance.updated_at = chrono::Utc::now().to_rfc3339();
+                db.update_fund_balance(&balance)?;
+                // Gauges are whole-ZION (dashboard contract); the DB is
+                // flowers — divide.
+                self.metrics.total_accumulated_zion.store(
+                    balance.total_accumulated / crate::metrics::FLOWERS_PER_ZION,
+                    Ordering::Relaxed,
+                );
+                self.metrics.total_disbursed_zion.store(
+                    balance.total_disbursed / crate::metrics::FLOWERS_PER_ZION,
+                    Ordering::Relaxed,
+                );
+                if block_tithe > 0 {
+                    info!(
+                        "[FW-SCANNER] Tithe @ block {}: {} flowers → total {} flowers",
+                        height, block_tithe, balance.total_accumulated
+                    );
+                }
+            }
+
+            self.metrics
+                .blocks_scanned
+                .fetch_add(1, Ordering::Relaxed);
         }
 
         Ok(tithes_found)
@@ -126,6 +163,18 @@ impl L1Scanner {
     // ── L1 RPC helpers ──
 
     async fn rpc<T: for<'de> Deserialize<'de>>(
+        &self,
+        method: &str,
+        params: serde_json::Value,
+    ) -> FreeWorldResult<T> {
+        timeout(RPC_TIMEOUT, self.rpc_inner(method, params))
+            .await
+            .map_err(|_| {
+                crate::error::FreeWorldError::L1Rpc(format!("timeout calling {}", method))
+            })?
+    }
+
+    async fn rpc_inner<T: for<'de> Deserialize<'de>>(
         &self,
         method: &str,
         params: serde_json::Value,

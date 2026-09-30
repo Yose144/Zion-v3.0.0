@@ -13,17 +13,25 @@ use zion_free_world::FreeWorldConfig;
 
 const KEY: &str = "test-write-key";
 
-fn test_app(api_key: &str) -> (axum::Router, Arc<Mutex<FreeWorldDb>>) {
+fn test_app_full(
+    api_key: &str,
+) -> (axum::Router, Arc<Mutex<FreeWorldDb>>, Arc<FreeWorldMetrics>) {
     let cfg = FreeWorldConfig::default();
     let db = Arc::new(Mutex::new(FreeWorldDb::open(":memory:").unwrap()));
+    let metrics = Arc::new(FreeWorldMetrics::new());
     let state = AppState {
         db: db.clone(),
         api_key: api_key.to_string(),
-        metrics: Arc::new(FreeWorldMetrics::new()),
+        metrics: metrics.clone(),
         hiran: Arc::new(FreeWorldHiranBridge::new(&cfg)),
         config: cfg,
     };
-    (free_world_router(state), db)
+    (free_world_router(state), db, metrics)
+}
+
+fn test_app(api_key: &str) -> (axum::Router, Arc<Mutex<FreeWorldDb>>) {
+    let (app, db, _) = test_app_full(api_key);
+    (app, db)
 }
 
 fn request(method: &str, uri: &str, api_key: Option<&str>, body: Option<Value>) -> Request<Body> {
@@ -414,6 +422,147 @@ async fn unknown_round_is_404_everywhere() {
     }
     let (status, _) = cast_ballot(&app, "nope", "v", json!([{"grant_id": "g", "votes": 1}])).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+// ── grant lifecycle guards ──
+
+async fn post_grant_review(
+    app: &axum::Router,
+    id: &str,
+    action: &str,
+) -> (StatusCode, Value) {
+    let resp = app
+        .clone()
+        .oneshot(request(
+            "POST",
+            &format!("/api/v1/grants/{id}/{action}"),
+            Some(KEY),
+            Some(json!({})),
+        ))
+        .await
+        .unwrap();
+    let status = resp.status();
+    (status, body_json(resp).await)
+}
+
+#[tokio::test]
+async fn approve_missing_grant_is_404() {
+    let (app, _db) = test_app(KEY);
+    let (status, _) = post_grant_review(&app, "no-such-grant", "approve").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn approve_reject_enforce_reviewable_status() {
+    let (app, db) = test_app(KEY);
+    let g1 = seed_grant(&db, "G1", 100, false);
+    let g2 = seed_grant(&db, "G2", 100, false);
+
+    // pending → approved ok; second approve → 409
+    let (status, _) = post_grant_review(&app, &g1, "approve").await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = post_grant_review(&app, &g1, "approve").await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    // pending → rejected ok; approving a rejected grant → 409
+    let (status, _) = post_grant_review(&app, &g2, "reject").await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = post_grant_review(&app, &g2, "approve").await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    // status actually persisted
+    let db = db.lock().unwrap();
+    assert_eq!(db.get_grant(&g1).unwrap().unwrap().status, "approved");
+    assert_eq!(db.get_grant(&g2).unwrap().unwrap().status, "rejected");
+}
+
+#[tokio::test]
+async fn create_grant_validates_input() {
+    let (app, _db) = test_app(KEY);
+    for body in [
+        json!({"title": "", "category": "c", "amount_zion": 5}),
+        json!({"title": "   ", "category": "c", "amount_zion": 5}),
+        json!({"title": "G", "category": "c", "amount_zion": 0}),
+    ] {
+        let resp = app
+            .clone()
+            .oneshot(request("POST", "/api/v1/grants", Some(KEY), Some(body)))
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+}
+
+#[tokio::test]
+async fn grants_list_redacts_applicant_address() {
+    let (app, db) = test_app(KEY);
+    let id = {
+        let mut g = GrantRecord::new("Secret payee", "humanitarian", 1);
+        g.applicant_name = Some("Alice".to_string());
+        g.applicant_address = Some("zion1secret".to_string());
+        let id = g.id.clone();
+        db.lock().unwrap().insert_grant(&g).unwrap();
+        id
+    };
+
+    let resp = app
+        .oneshot(request("GET", "/api/v1/grants", None, None))
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let body = body_json(resp).await;
+    let grants = body["data"].as_array().unwrap();
+    let g = grants.iter().find(|g| g["id"] == id).unwrap();
+    // Name stays public (registry displays it); the payout address is redacted.
+    assert_eq!(g["applicant_name"], "Alice");
+    assert_eq!(g["applicant_address"], Value::Null);
+
+    // …but the address is still in the DB for the DAO submit path.
+    let db = db.lock().unwrap();
+    assert_eq!(
+        db.get_grant(&id).unwrap().unwrap().applicant_address.as_deref(),
+        Some("zion1secret")
+    );
+}
+
+#[tokio::test]
+async fn submit_to_dao_requires_approved_status() {
+    let (app, db) = test_app(KEY);
+    let pending = seed_grant(&db, "P", 100, false);
+    let resp = app
+        .clone()
+        .oneshot(request(
+            "POST",
+            &format!("/api/v1/grants/{pending}/submit-to-dao"),
+            Some(KEY),
+            None,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn metrics_gauges_track_db_counts() {
+    use std::sync::atomic::Ordering::Relaxed;
+    let (app, db, metrics) = test_app_full(KEY);
+    seed_grant(&db, "A", 100, false);
+    let g_b = seed_grant(&db, "B", 100, false);
+
+    let resp = app
+        .clone()
+        .oneshot(request("GET", "/metrics", None, None))
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    // Seeding bypassed the API, so gauges are still zero until a write path
+    // resyncs them — that is the documented behaviour; hydrate on startup.
+    assert_eq!(metrics.grants_pending.load(Relaxed), 0);
+
+    let (status, _) = post_grant_review(&app, &g_b, "approve").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(metrics.grants_pending.load(Relaxed), 1);
+    assert_eq!(metrics.grants_approved.load(Relaxed), 1);
 }
 
 #[tokio::test]
