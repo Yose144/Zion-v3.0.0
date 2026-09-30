@@ -46,7 +46,7 @@ export default function TslStars({ count = 2000, radius = 150, depth = 80, size 
       const h1 = tsl.hash(tsl.instanceIndex);
       const h2 = tsl.hash(tsl.instanceIndex.add(17));
       // twinkle — slow sine pulse per star, phase from hash
-      const tw = tsl.sin(tsl.timerLocal.mul(0.5).add(h1.mul(6.283))).mul(0.5).add(0.5);
+      const tw = tsl.sin(tsl.timerLocal().mul(0.5).add(h1.mul(6.283))).mul(0.5).add(0.5);
       const colA = tsl.vec3(0.62, 0.78, 1.0);
       const colB = tsl.vec3(1.0, 0.82, 0.62);
       mat.colorNode = tsl.mix(colA, colB, h2);

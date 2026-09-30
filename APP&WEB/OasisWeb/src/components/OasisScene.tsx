@@ -445,11 +445,9 @@ export default function OasisScene({
               <Galaxy isMobile={reduceEffects} />
             </R3FErrorBoundary>
 
-            {backend === 'webgl2' && (
-              <R3FErrorBoundary label="GalaxyCore">
-                <GalaxyCore />
-              </R3FErrorBoundary>
-            )}
+            <R3FErrorBoundary label="GalaxyCore">
+              <GalaxyCore />
+            </R3FErrorBoundary>
 
             {!reduceEffects && (
               <R3FErrorBoundary label="MatrixCore">
