@@ -31,8 +31,11 @@ export default function WebGpuPostFX() {
           const scenePass = tsl.pass(scene, camera);
           const color = scenePass.getTextureNode();
           // Gentle bloom — TSL bloom output is added back to the scene
-          // colour, so a high strength/low threshold blows the frame out.
-          const bloomPass = tsl.bloom(color, 0.25, 0.3, 0.55);
+          // colour. The galaxy is already luminous (thousands of additive
+          // particles + emissive nodes), so strength must stay low and the
+          // threshold high, or dense bright regions lift the whole frame
+          // toward white (observed on the 400-world production scene).
+          const bloomPass = tsl.bloom(color, 0.12, 0.3, 0.65);
           // Vignette — darken towards the frame edges, matching the
           // WebGL Vignette(eskil=false offset .22 darkness .7) feel.
           const edgeDist = tsl.screenUV.sub(0.5).length();
@@ -58,12 +61,24 @@ export default function WebGpuPostFX() {
   useFrame(({ gl: g, scene: s, camera: c }) => {
     const pp = ppRef.current;
     if (pp?.renderAsync) {
-      void pp.renderAsync();
+      // If the pipeline fails at draw time (not construction), drop it —
+      // next frame falls through to direct rendering instead of a black canvas.
+      void pp
+        .renderAsync()!
+        .catch((err: unknown) => {
+          console.warn('[OASIS] WebGPU post-processing render failed, disabling:', err);
+          ppRef.current = null;
+        });
       return;
     }
     if (pp?.render) {
-      pp.render();
-      return;
+      try {
+        pp.render();
+        return;
+      } catch (err) {
+        console.warn('[OASIS] WebGPU post-processing render failed, disabling:', err);
+        ppRef.current = null;
+      }
     }
     const anyGl = g as unknown as {
       render: (sc: THREE.Scene, cam: THREE.Camera) => void;

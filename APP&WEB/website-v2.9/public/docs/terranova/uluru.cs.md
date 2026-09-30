@@ -22,20 +22,37 @@ Uluru není pozemek k zastavění. Od roku 2019 je uzavřen i pro výstupy a o j
 
 ## Co uzel drží (vize)
 
+Uzel Uluru je **škola vnímání** — jeho učení má tři pilíře:
+
+- **Telepatie & vize** — kultura protinožců pracuje se sněním jako s komunikačním a poznávacím prostorem. Uzel zkoumá vědomé propojení: meditované vize, sdílené sny, tichou komunikaci za hranicí slov.
+- **Příroda & zvířata** — nativní propojení s krajinou a jejími tvory jako s rodinou, ne zdrojem: čtení stopy, rytmu a roční doby podle custodiánů, kteří krajinu čtou desetitisíce let.
+- **Učení jako vztah** — nic se neodebírá a neprodává; custodiáni určují, co se sdílí, jak a komu.
+
+A dědictví, na kterém učení stojí:
+
 - **Tjukurpa — Snění** — zákon předků jako trvající přítomnost: vztah mezi člověkem, zemí a příběhem.
 - **Songlines** — pěvecké stezky nesoucí mapu a poselství přes celý kontinent; nejstarší síť zpráv na Zemi.
 - **Kanyini** — propojenost a odpovědnost pečovat o zemi, rodinu a příběh. Princip, který L5 humanitární tithe ztělesňuje v protokolu.
 - **Kruh custodiánů** — Aňangu a další tradiční vlastníci sedí u stolu od prvního dne.
 - **Kulturní granty** — L5 nástroje pro Aboriginal-led iniciativy: jazyky, péče o zemi, tradiční oheň.
 
+## Uluru Festival — oslava života
+
+**Jednou ročně** se poušť na území uzlu promění v dočasné město umění — festival ve duchu Burning Man, upravený pro své místo:
+
+- **Účast je tvorba** — nikdo není divák; instalace, hudba, tanec, oheň a světlo vznikají rukama účastníků.
+- **Pro všechny umělce** — oslava života otevřená tvůrcům z celého světa, vedle custodiánů a lokálních komunit.
+- **Custodiáni kurátují** — kulturní program řídí ti, kdo znalosti nesou; žádné napodobování posvátných rituálů.
+- **Leave no trace** — země se po odchodu vrací prázdná; festival nestojí na posvátné půdě.
+
 ## Fáze rozvoje
 
 | Fáze | Název | Popis |
 |------|-------|-------|
-| 0 | Naslouchání | Uznání a vzdání holdu. Žádné jednání bez souhlasu custodiánů — a žádný termín. |
-| 1 | Vztah | Pokud custodiáni chtějí: výměnné pobyty, kulturní dialog, podpora komunitou vedených projektů. |
-| 2 | Podpora | Granty L5 pro Aboriginal-led iniciativy — prostředky bez podmínek vlastnictví. |
-| 3 | Síť | Uluru jako poselství v síti — songlines se setkávají s Te Pīko Ora, LUMI a dalšími uzly. |
+| 0 | Vztah | Dialog s custodiány a komunitami Severního teritoria — uzel existuje jako vzájemné učení, ne stavba. |
+| 1 | Komunita | Malý uzlový kruh; programy učení — telepatie, vize, vztah ke krajině a zvířatům — pod vedením těch, kdo je nesou. |
+| 2 | Pilotní setkání | Menší gathering na schváleném místě — zkouška formátu, logistiky bez stop a vztahu s custodiány. |
+| 3 | Uluru Festival | První celoroční cyklus — oslava života pro všechny umělce; každý rok roste jen tak, jak nesou custodiáni a země. |
 
 ## Proč právě teď
 

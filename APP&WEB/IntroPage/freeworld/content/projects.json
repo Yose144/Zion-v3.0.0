@@ -212,8 +212,8 @@
       "en": "A message from the antipodes"
     },
     "tagline": {
-      "cs": "Nejstarší nepřetržitá kultura planety — Tjukurpa, songlines a šedesát tisíc let paměti krajiny. Uzel jako vztah, ne jako stavba: nejdřív naslouchat.",
-      "en": "The planet's oldest continuous culture — Tjukurpa, songlines and sixty thousand years of landscape memory. A node as relationship, not construction: listening first."
+      "cs": "Nejstarší nepřetržitá kultura planety — škola vnímání (telepatie, vize, propojení s přírodou a zvířaty) a každoroční festival oslavy života. Uzel jako vztah, ne stavba.",
+      "en": "The planet's oldest continuous culture — a school of perception (telepathy, visions, connection with land and animals) and an annual celebration-of-life festival. A node as relationship, not construction."
     },
     "location": {
       "cs": "Uluru, Severní teritorium, Austrálie",
@@ -235,6 +235,40 @@
     "timeline": {
       "cs": "Vize — nejdřív naslouchat · bez termínu",
       "en": "Vision — listening first · no deadline"
+    }
+  },
+  {
+    "slug": "maria-del-camino",
+    "docSlug": "maria-del-camino",
+    "name": "María del Camino",
+    "subtitle": {
+      "cs": "Plující uzel · Loď Cesty",
+      "en": "The Sailing Node · Ship of the Way"
+    },
+    "tagline": {
+      "cs": "Osmý bod L5 není bod, ale cesta — plachetnice se solárními plachtami pro ~50 poutníků, která spojuje všech sedm uzlů. Tam, kde Camino končil u moře, ona pokračuje.",
+      "en": "The eighth L5 point is not a point but a way — a sailing ship with solar sails for ~50 pilgrims connecting all seven nodes. Where the Camino ended at the sea, she sails on."
+    },
+    "location": {
+      "cs": "Světové oceány · domovský přístav Galicie",
+      "en": "World oceans · home port Galicia"
+    },
+    "status": "preparation",
+    "lat": 42.43,
+    "lon": -8.65,
+    "accent": "#0ea5e9",
+    "tags": [
+      "Sea Camino",
+      "Solar Sails",
+      "Mobile Node"
+    ],
+    "renderImg": "maria-del-camino/render.webp",
+    "boardImg": "maria-del-camino/board.webp",
+    "appHref": "https://app.zionterranova.com/terranova/maria-del-camino",
+    "grantTitle": "María del Camino — founding reserve",
+    "timeline": {
+      "cs": "Výzkum plavidla 2026–2027 · první etapa TBD",
+      "en": "Vessel research 2026–2027 · first leg TBD"
     }
   }
 ]

@@ -5,10 +5,12 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
+  Brain,
   Calendar,
   Compass,
   Ear,
   Feather,
+  Flame,
   Heart,
   Landmark,
   LucideIcon,
@@ -16,6 +18,7 @@ import {
   Mountain,
   Music,
   Network,
+  PawPrint,
   Shield,
   Sparkles,
   Sun,
@@ -38,11 +41,21 @@ const Copy = {
   locationLine: { cs: `Uluru-Kata Tjuṯa · Northern Territory, Austrálie`, en: `Uluru-Kata Tjuṯa · Northern Territory, Australia` },
   introTitle: { cs: `Sedmý uzel — poselství od protinožců`, en: `The seventh node — the message from the antipodes` },
   introBody: {
-    cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
-    en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Listen first — then, maybe, build, somewhere else, differently.`,
+    cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Jeho učení jsou telepatie a vize, nativní propojení s přírodou a zvířaty — a jednou ročně Uluru Festival, oslava života pro všechny umělce. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
+    en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Its teachings are telepathy and visions, native connection with land and animals — and once a year the Uluru Festival, a celebration of life for all artists. Listen first — then, maybe, build, somewhere else, differently.`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Dědictví & poselství`, en: `Heritage & Message` },
+  festivalTitle: { cs: `Uluru Festival — oslava života`, en: `Uluru Festival — a celebration of life` },
+  festivalSubtitle: { cs: `Jednou ročně · pro všechny umělce`, en: `Once a year · for all artists` },
+  festivalBody: {
+    cs: `Jednou za rok se poušť promění v dočasné město umění — festival ve duchu Burning Man, upravený pro své místo: účast není diváctví, každý spoluvytváří. Instalace, hudba, tanec, oheň a světlo — oslava života pro umělce celého světa. Posvátná země zůstává nedotčena: místo určují custodiáni a po odchodu na něm nezůstává jediná stopa.`,
+    en: `Once a year the desert turns into a temporary city of art — a festival in the spirit of Burning Man, adapted to its place: participation is not spectatorship, everyone co-creates. Installations, music, dance, fire and light — a celebration of life for artists worldwide. Sacred land stays untouched: the custodians choose the site and not a single trace remains after we leave.`,
+  },
+  festivalPoints: {
+    cs: [`Jednou ročně — pouštní cyklus`, `Pro všechny umělce — účast je tvorba`, `Leave no trace — země se vrací prázdná`],
+    en: [`Once a year — a desert cycle`, `For all artists — participation is creation`, `Leave no trace — the land returns empty`],
+  },
   phasesTitle: { cs: `Fáze rozvoje`, en: `Development Phases` },
   phasesSubtitle: { cs: `Od naslouchání k vztahu`, en: `From listening to relationship` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
@@ -56,14 +69,14 @@ const Copy = {
     cs: [
       `Je fyzický uzel vůbec správný? Může být vazbou, ne místem.`,
       `FPIC dialog — kruhy starších a tradiční custodiáni (Aňangu a další)`,
-      `Partnerské území mimo národní park — střední Austrálie nebo pobřeží`,
+      `Partnerské území mimo národní park — pro uzel i festival určují custodiáni`,
       `Songlines jako mapa: které příběhy smí být sdíleny, a pod čí kontrolou`,
       `Souhlas a vlastnictví — znalosti zůstávají majetkem jejich nositelů`,
     ],
     en: [
       `Is a physical node even right? It may be a relationship, not a site.`,
       `FPIC dialogue — councils of elders and traditional custodians (Aṉangu and beyond)`,
-      `Partner territory outside the national park — central Australia or the coast`,
+      `Partner territory outside the national park — node and festival sites chosen by custodians`,
       `Songlines as a map: which stories may be shared, and under whose control`,
       `Consent and ownership — knowledge stays in the custody of its carriers`,
     ],
@@ -74,7 +87,7 @@ const Copy = {
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
-  documentationSubtitle: { cs: `Koncept a vize uzlu Uluru — Dreamtime, songlines a poselství protinožců.`, en: `Concept and vision of the Uluru node — Dreamtime, songlines and the message of the antipodes.` },
+  documentationSubtitle: { cs: `Koncept a vize uzlu Uluru — Dreamtime, songlines, škola vnímání a festival oslavy života.`, en: `Concept and vision of the Uluru node — Dreamtime, songlines, the school of perception and the celebration-of-life festival.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
   sisterTitle: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
@@ -97,13 +110,40 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
+    icon: Brain,
+    titleCs: 'Telepatie & vize',
+    titleEn: 'Telepathy & visions',
+    descCs: 'Učení tiché komunikace — meditované vize, sdílené snění a vědomé propojení za hranicí slov. Škola vnímání vedená těmi, kdo ji nesou.',
+    descEn: 'Learning silent communication — meditated visions, shared dreaming and conscious connection beyond words. A school of perception led by those who carry it.',
+    color: '#A78BFA',
+    rgb: '167, 139, 250',
+  },
+  {
+    icon: PawPrint,
+    titleCs: 'Příroda & zvířata',
+    titleEn: 'Land & animals',
+    descCs: 'Nativní propojení s krajinou a jejími tvory jako s rodinou — čtení stopy, rytmu a roční doby podle custodiánů, kteří krajinu čtou desetitisíce let.',
+    descEn: 'Native connection with the land and its creatures as family — reading track, rhythm and season with custodians who have read the land for tens of thousands of years.',
+    color: '#066928',
+    rgb: '6, 105, 40',
+  },
+  {
+    icon: Flame,
+    titleCs: 'Uluru Festival',
+    titleEn: 'Uluru Festival',
+    descCs: 'Jednou ročně se poušť promění v dočasné město umění — oslava života pro všechny umělce. Model Burning Man upravený pro místo; custodiáni kurátují.',
+    descEn: 'Once a year the desert becomes a temporary city of art — a celebration of life for all artists. A Burning Man model adapted to place; curated by the custodians.',
+    color: '#EA580C',
+    rgb: '234, 88, 12',
+  },
+  {
     icon: Music,
     titleCs: 'Songlines',
     titleEn: 'Songlines',
     descCs: 'Pěvecké stezky nesoucí příběh, mapu i zákon přes celý kontinent — nejstarší síť poselství na Zemi.',
     descEn: 'Singing tracks carrying story, map and law across the whole continent — the oldest message network on Earth.',
-    color: '#EA580C',
-    rgb: '234, 88, 12',
+    color: '#F59E0B',
+    rgb: '252, 209, 22',
   },
   {
     icon: Mountain,
@@ -111,8 +151,8 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Tjukurpa — the Dreaming',
     descCs: 'Zákon předků, který není minulostí, ale trvající přítomnost: vztah mezi člověkem, zemí a příběhem.',
     descEn: 'The law of the ancestors — not the past but a continuing present: the relation between people, land and story.',
-    color: '#F59E0B',
-    rgb: '252, 209, 22',
+    color: '#8B5CF6',
+    rgb: '139, 92, 246',
   },
   {
     icon: Users,
@@ -120,8 +160,8 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Council of custodians',
     descCs: 'Aňangu a další tradiční vlastníci rozhodují od prvního dne — FPIC není formulář, je to způsob existence vztahu.',
     descEn: 'The Aṉangu and other traditional owners decide from day one — FPIC is not a form, it is how the relationship exists at all.',
-    color: '#066928',
-    rgb: '6, 105, 40',
+    color: '#22D3EE',
+    rgb: '34, 211, 238',
   },
   {
     icon: Ear,
@@ -129,8 +169,8 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Listening as practice',
     descCs: 'Šedesát tisíc let kontinuity se nedá „osvojit" — dá se jenom vyslechnout. L5 přichází jako žák, ne jako zakladatel.',
     descEn: 'Sixty thousand years of continuity cannot be "adopted" — it can only be listened to. L5 arrives as a student, not a founder.',
-    color: '#22D3EE',
-    rgb: '34, 211, 238',
+    color: '#06B6D4',
+    rgb: '6, 182, 212',
   },
   {
     icon: Heart,
@@ -138,17 +178,8 @@ const FEATURES: FeatureItem[] = [
     titleEn: 'Kanyini — responsibility',
     descCs: 'Propojenost a povinnost pečovat o zemi, rodinu a příběh — princip, který L5 tithe ztělesňuje v protokolu.',
     descEn: 'Connectedness and the duty to care for land, family and story — the principle the L5 tithe embodies in protocol.',
-    color: '#A78BFA',
-    rgb: '167, 139, 250',
-  },
-  {
-    icon: Sparkles,
-    titleCs: 'Paměť krajiny',
-    titleEn: 'Memory of the land',
-    descCs: 'Nejstarší žijící kultura planety drží vědění o poušti, vodě a ohni, které žádná knihovna neobsáhne.',
-    descEn: 'The oldest living culture on the planet holds knowledge of desert, water and fire that no library contains.',
-    color: '#8B5CF6',
-    rgb: '139, 92, 246',
+    color: '#F43F5E',
+    rgb: '244, 63, 94',
   },
 ];
 
@@ -157,32 +188,32 @@ const PHASES = [
     num: '0',
     cs: 'Naslouchání',
     en: 'Listening',
-    descCs: 'Uznání a vzdání holdu. Žádné jednání bez FPIC dialogu s tradičními custodiány — a žádný termín.',
-    descEn: 'Acknowledgement and respect. No action without FPIC dialogue with the traditional custodians — and no deadline.',
+    descCs: 'Dialog s custodiány a komunitami Severního teritoria. Uzel existuje jako vzájemné učení, ne stavba — a žádný termín.',
+    descEn: 'Dialogue with the custodians and communities of the Northern Territory. The node exists as mutual learning, not construction — and no deadline.',
     active: true,
   },
   {
     num: '1',
-    cs: 'Vztah',
-    en: 'Relationship',
-    descCs: 'Pokud custodiáni chtějí: výměnné pobyty, kulturní dialog, podpora komunitou vedených projektů.',
-    descEn: 'If the custodians wish: exchange visits, cultural dialogue, support for community-led projects.',
+    cs: 'Komunita',
+    en: 'Community',
+    descCs: 'Malý uzlový kruh; programy učení — telepatie, vize, vztah ke krajině a zvířatům — pod vedením těch, kdo je nesou.',
+    descEn: 'A small node circle; learning programmes — telepathy, visions, relationship with land and animals — led by those who carry them.',
     active: false,
   },
   {
     num: '2',
-    cs: 'Podpora',
-    en: 'Support',
-    descCs: 'Granty a nástroje L5 pro Aboriginal-led iniciativy — jazyky, krajina, oheň. Prostředky bez podmínek vlastnictví.',
-    descEn: 'L5 grants and tools for Aboriginal-led initiatives — language, land, fire. Resources with no ownership strings.',
+    cs: 'Pilotní setkání',
+    en: 'Pilot gathering',
+    descCs: 'Menší gathering na schváleném místě — zkouška formátu, logistiky bez stop a vztahu s custodiány.',
+    descEn: 'A smaller gathering on an approved site — testing the format, leave-no-trace logistics and the custodian relationship.',
     active: false,
   },
   {
     num: '3',
-    cs: 'Síť',
-    en: 'Network',
-    descCs: 'Uluru jako poselství v síti — songlines se setkávají s Te Pīko Ora, LUMI a ostatními uzly. Směr určují custodiáni.',
-    descEn: 'Uluru as a message inside the network — songlines meeting Te Pīko Ora, LUMI and the other nodes. Direction set by the custodians.',
+    cs: 'Uluru Festival',
+    en: 'Uluru Festival',
+    descCs: 'První celoroční cyklus — oslava života pro všechny umělce. Každý rok roste jen tak, jak nesou custodiáni a země.',
+    descEn: 'The first annual cycle — a celebration of life for all artists. Each year it grows only as far as the custodians and the land allow.',
     active: false,
   },
 ];
@@ -307,6 +338,18 @@ export default function UluruPage() {
                 </div>
               </div>
             </div>
+            <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/uluru/hero.webp"
+                alt="Uluru — poselství protinožců nad posvátným monolitem"
+                width={1672}
+                height={941}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
+            </div>
           </div>
         </motion.header>
 
@@ -351,6 +394,41 @@ export default function UluruPage() {
                 <p className="text-sm text-gray-400">{cs ? f.descCs : f.descEn}</p>
               </div>
             ))}
+          </div>
+        </motion.section>
+
+        {/* ═══ ULURU FESTIVAL ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="mb-4">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.festivalSubtitle[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
+                <Flame className="h-7 w-7 text-orange-400" />
+                {Copy.festivalTitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <p className="text-gray-300 leading-relaxed mb-6">
+              {Copy.festivalBody[cs ? 'cs' : 'en']}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {Copy.festivalPoints[cs ? 'cs' : 'en'].map((point, i) => {
+                const PointIcon = [Flame, Music, Feather][i];
+                return (
+                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-orange-300 mb-1">
+                      <PointIcon className="h-4 w-4" />
+                      <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
+                    </div>
+                    <p className="text-sm text-gray-300">{point}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </motion.section>
 

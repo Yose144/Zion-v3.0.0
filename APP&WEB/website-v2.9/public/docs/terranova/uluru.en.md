@@ -22,20 +22,37 @@ Uluru is not land to be built on. Climbing it has been closed since 2019, and it
 
 ## What the node holds (vision)
 
+The Uluru node is a **school of perception** — its teaching has three pillars:
+
+- **Telepathy & visions** — the culture of the antipodes works with dreaming as a communicative and cognitive space. The node explores conscious connection: meditated visions, shared dreams, silent communication beyond words.
+- **Land & animals** — native connection with the landscape and its creatures as family, not resource: reading track, rhythm and season with custodians who have read the land for tens of thousands of years.
+- **Learning as relationship** — nothing is taken or sold; the custodians decide what is shared, how and with whom.
+
+And the heritage the teaching stands on:
+
 - **Tjukurpa — the Dreaming** — the law of the ancestors as a continuing present: the relation between people, land and story.
 - **Songlines** — singing tracks carrying map and message across the entire continent; the oldest message network on Earth.
 - **Kanyini** — connectedness and the responsibility to care for land, family and story. The principle the L5 humanitarian tithe embodies in protocol.
 - **Council of custodians** — the Aṉangu and other traditional owners sit at the table from day one.
 - **Cultural grants** — L5 tools for Aboriginal-led initiatives: languages, land care, traditional fire.
 
+## Uluru Festival — a celebration of life
+
+**Once a year** the desert on the node's territory turns into a temporary city of art — a festival in the spirit of Burning Man, adapted to its place:
+
+- **Participation is creation** — nobody is a spectator; installations, music, dance, fire and light are built by the hands of those present.
+- **For all artists** — a celebration of life open to creators worldwide, alongside custodians and local communities.
+- **Curated by the custodians** — the cultural programme is directed by those who carry the knowledge; no imitation of sacred rituals.
+- **Leave no trace** — the land returns empty after departure; the festival never stands on sacred ground.
+
 ## Development phases
 
 | Phase | Name | Description |
 |-------|------|-------------|
-| 0 | Listening | Acknowledgement and respect. No action without custodian consent — and no deadline. |
-| 1 | Relationship | If the custodians wish: exchange visits, cultural dialogue, support for community-led projects. |
-| 2 | Support | L5 grants for Aboriginal-led initiatives — resources with no ownership strings. |
-| 3 | Network | Uluru as a message inside the network — songlines meeting Te Pīko Ora, LUMI and the other nodes. |
+| 0 | Relationship | Dialogue with the custodians and communities of the Northern Territory — the node exists as mutual learning, not construction. |
+| 1 | Community | A small node circle; learning programmes — telepathy, visions, relationship with land and animals — led by those who carry them. |
+| 2 | Pilot gathering | A smaller gathering on an approved site — testing the format, leave-no-trace logistics and the custodian relationship. |
+| 3 | Uluru Festival | The first annual cycle — a celebration of life for all artists; each year it grows only as far as the custodians and the land allow. |
 
 ## Why now
 

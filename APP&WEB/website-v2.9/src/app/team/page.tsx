@@ -7,7 +7,7 @@ import {
   Sprout, Flame, Waves, Wind, Sparkles, Layers,
   GitBranch, Heart, BookOpen, Compass, Globe2, UserPlus,
   Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
-  Mountain,
+  Mountain, Sailboat,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -226,6 +226,16 @@ const L5_LEADS = [
     accent: '234, 88, 12',
     text: 'text-orange-300',
     href: '/terranova/uluru',
+  },
+  {
+    key: 'maria-del-camino',
+    name: 'María del Camino',
+    element: { cs: 'Moře · Cesta', en: 'Ocean · Way' },
+    location: { cs: 'Světové oceány · Galicie', en: 'World oceans · Galicia' },
+    icon: Sailboat,
+    accent: '14, 165, 233',
+    text: 'text-sky-300',
+    href: '/terranova/maria-del-camino',
   },
   {
     key: 'issobella',

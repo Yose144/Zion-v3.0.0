@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -68,6 +68,14 @@ const VISIONS = [
     desc: 'Poselství protinožců — Tjukurpa, songlines a šedesát tisíc let paměti země.',
     rc: '234, 88, 12', // ochre
     accent: 'text-zion-gold',
+  },
+  {
+    href: '/terranova/maria-del-camino',
+    icon: Sailboat,
+    label: 'María del Camino',
+    desc: 'Plující uzel — plachetnice se solárními plachtami, která spojuje všech sedm bodů přes oceány.',
+    rc: '14, 165, 233', // ocean blue
+    accent: 'text-sky-300',
   },
 ];
 
