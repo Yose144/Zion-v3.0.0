@@ -18,8 +18,8 @@ SOURCES = {
     'bodhi-lanka': ('Lanka.jpg', 'LankaProject.jpg'),
     'lumi-nova-amerika': ('Lumi.png', 'Lumi project.png'),
     'uluru': ('Uluru copy.png', 'UluruProject.png'),
-    # TODO(interim): placeholder art — replace with real vessel renders
-    'maria-del-camino': ('MariaDelCamino.png', 'MariaDelCaminoProject.png'),
+    # TODO(interim): board is placeholder art — replace with real vessel masterplan
+    'maria-del-camino': ('Maria2.jpg', 'MariaDelCaminoProject.png'),
 }
 
 def save_webp(im: Image.Image, out: Path, max_w: int, q: int):
