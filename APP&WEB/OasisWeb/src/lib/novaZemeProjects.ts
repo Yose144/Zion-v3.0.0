@@ -76,7 +76,7 @@ export const NOVA_ZEME_PROJECTS = [
     location: 'Northern Territory · Austrálie',
     color: '#ea580c',
     status: 'Vision',
-    desc: 'Sedmý bod — poselství protinožců: Tjukurpa, songlines a 60 000 let paměti krajiny. Uzel jako vztah, ne stavba.',
+    desc: 'Sedmý bod — poselství protinožců: Tjukurpa, songlines, telepatie & vize, propojení s přírodou a zvířaty. Každoroční festival oslavy života.',
     href: 'https://app.zionterranova.com/terranova/uluru',
     lat: -25.3,
     lon: 131.0,
