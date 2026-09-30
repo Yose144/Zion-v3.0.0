@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, memo } from 'react';
+import { useMemo, useEffect, useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users, Shield, Cpu, Gem, Users2, ScrollText, Zap, ScanLine } from 'lucide-react';
 import type { World } from '../domain/types/world';
@@ -11,6 +11,10 @@ import { useAudio } from './AudioEngine';
 import { useToastStore } from '../store/toastStore';
 import { CATEGORY_COLORS, CATEGORY_RGB, CATEGORY_LABELS, LAYER_NAMES } from '../lib/categoryColors';
 import { NOVA_ZEME_PROJECTS } from '../lib/novaZemeProjects';
+import {
+  fetchL5Live, liveProjectFor, liveGrantFor, formatZion,
+  WORLD_TO_PROJECT, type L5Live,
+} from '../lib/l5';
 
 const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   exploration: Compass,
@@ -180,6 +184,23 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const intel = useMemo(() => generateWorldIntel(world), [world]);
   const lore = useMemo(() => generateLore(world), [world]);
 
+  // Live L5 Free World registry — fetched only for L5-related panels
+  const isNovaZeme = world.id === 'NOVA_ZEME';
+  const l5CanonId = WORLD_TO_PROJECT[world.id] ?? null;
+  const [l5, setL5] = useState<L5Live | null>(null);
+  useEffect(() => {
+    if (!isNovaZeme && !l5CanonId) return;
+    let mounted = true;
+    fetchL5Live().then((d) => mounted && setL5(d));
+    return () => {
+      mounted = false;
+    };
+  }, [isNovaZeme, l5CanonId]);
+  const l5Project = l5CanonId ? liveProjectFor(l5CanonId, l5?.projects ?? null) : null;
+  const l5Grant = l5CanonId ? liveGrantFor(l5CanonId, l5?.grants ?? null) : null;
+  const canonProject = l5CanonId ? NOVA_ZEME_PROJECTS.find((p) => p.id === l5CanonId) : null;
+  const openRound = l5?.rounds?.find((r) => r.status === 'open') ?? null;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 80 }}
@@ -254,8 +275,72 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
           <p className="text-sm leading-relaxed text-white/90">{world.summary}</p>
         </div>
 
+        {/* ── Terra Nova L5 node — live Free World registry ── */}
+        {l5CanonId && canonProject && (
+          <div className="zion-rainbow-sub p-3.5" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+            <div className="mb-3 flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-rasta-green" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-rasta-green/80">
+                Terra Nova Node · Free World Registry
+              </p>
+            </div>
+            <a
+              href={canonProject.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/15 hover:bg-white/[0.04]"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ background: canonProject.color, boxShadow: `0 0 8px ${canonProject.color}` }}
+                    />
+                    <h4 className="text-sm font-bold text-white">{canonProject.name}</h4>
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-white/60">{l5Project?.location ?? canonProject.location}</p>
+                  <p className="mt-1.5 text-[11px] leading-snug text-white/70">{l5Project?.description ?? canonProject.desc}</p>
+                </div>
+                <span
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                  style={{
+                    border: `1px solid ${canonProject.color}40`,
+                    background: `${canonProject.color}10`,
+                    color: canonProject.color,
+                  }}
+                >
+                  {l5Project?.status ?? canonProject.status}
+                </span>
+              </div>
+            </a>
+            {(l5Project || l5Grant) && (
+              <div className="mt-2.5 space-y-1 border-t border-white/5 pt-2.5 text-[10px] text-white/70">
+                {l5Project?.budget_zion != null && (
+                  <div className="flex justify-between">
+                    <span>Budget</span>
+                    <span className="font-semibold text-white">{formatZion(l5Project.budget_zion)}</span>
+                  </div>
+                )}
+                {l5Project?.spent_zion != null && (
+                  <div className="flex justify-between">
+                    <span>Spent</span>
+                    <span className="font-semibold text-white">{formatZion(l5Project.spent_zion)}</span>
+                  </div>
+                )}
+                {l5Grant && (
+                  <div className="flex justify-between">
+                    <span>Founding tranche</span>
+                    <span className="font-semibold text-rasta-green">{formatZion(l5Grant.amount_zion)} · {l5Grant.status}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Nova Zeme Pioneer Projects (L5) ── */}
-        {world.id === 'NOVA_ZEME' && (
+        {isNovaZeme && (
           <div className="zion-rainbow-sub p-3.5" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
             <div className="mb-3 flex items-center gap-1.5">
               <Sparkles className="h-3 w-3 text-rasta-green" />
@@ -264,40 +349,73 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
               </p>
             </div>
             <div className="space-y-2.5">
-              {NOVA_ZEME_PROJECTS.map((p) => (
-                <a
-                  key={p.id}
-                  href={p.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/15 hover:bg-white/[0.04]"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="inline-block h-2 w-2 rounded-full"
-                          style={{ background: p.color, boxShadow: `0 0 8px ${p.color}` }}
-                        />
-                        <h4 className="text-sm font-bold text-white">{p.name}</h4>
+              {NOVA_ZEME_PROJECTS.map((p) => {
+                const live = liveProjectFor(p.id, l5?.projects ?? null);
+                const tranche = liveGrantFor(p.id, l5?.grants ?? null);
+                return (
+                  <a
+                    key={p.id}
+                    href={p.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-lg border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/15 hover:bg-white/[0.04]"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ background: p.color, boxShadow: `0 0 8px ${p.color}` }}
+                          />
+                          <h4 className="text-sm font-bold text-white">{p.name}</h4>
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-white/60">{live?.location ?? p.location}</p>
+                        <p className="mt-1.5 text-[11px] leading-snug text-white/70">{p.desc}</p>
+                        {tranche && (
+                          <p className="mt-1 text-[9px] font-semibold text-rasta-green/90">
+                            Founding tranche {formatZion(tranche.amount_zion)} · {tranche.status}
+                          </p>
+                        )}
                       </div>
-                      <p className="mt-0.5 text-[10px] text-white/60">{p.location}</p>
-                      <p className="mt-1.5 text-[11px] leading-snug text-white/70">{p.desc}</p>
+                      <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                        style={{
+                          border: `1px solid ${p.color}40`,
+                          background: `${p.color}10`,
+                          color: p.color,
+                        }}
+                      >
+                        {live?.status ?? p.status}
+                      </span>
                     </div>
-                    <span
-                      className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
-                      style={{
-                        border: `1px solid ${p.color}40`,
-                        background: `${p.color}10`,
-                        color: p.color,
-                      }}
-                    >
-                      {p.status}
+                  </a>
+                );
+              })}
+            </div>
+            {(l5?.fund || openRound) && (
+              <div className="mt-3 space-y-1.5 rounded-lg border border-rasta-green/15 bg-rasta-green/[0.04] p-2.5 text-[10px] text-white/75">
+                {l5?.fund && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>L5 Fund accumulated</span>
+                      <span className="font-semibold text-rasta-green">{formatZion(l5.fund.total_accumulated)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Disbursed</span>
+                      <span className="font-semibold text-white">{formatZion(l5.fund.total_disbursed)}</span>
+                    </div>
+                  </>
+                )}
+                {openRound && (
+                  <div className="flex justify-between">
+                    <span>QV round</span>
+                    <span className="font-semibold text-rasta-green">
+                      {openRound.title ?? 'Open'} · pool {formatZion(openRound.matching_pool_zion)}
                     </span>
                   </div>
-                </a>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
             <p className="mt-3 text-[9px] text-white/60">
               Klikni na projekt → otevře detail na zionterranova.com ·{' '}
               <a
