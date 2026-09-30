@@ -25,6 +25,7 @@ import {
   type FwRoundStatus,
 } from '@/lib/freeworld-api';
 import { formatZion } from './L5FundTracker';
+import ZisAvatar from './ZisAvatar';
 
 const LoginModal = dynamic(() => import('./LoginModal'), { ssr: false });
 
@@ -324,7 +325,14 @@ export default function QvSection() {
                   </button>
                 )}
                 {authenticated && user && (
-                  <span className="text-xs text-gray-500">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                    <ZisAvatar
+                      seed={user.id}
+                      src={user.avatar}
+                      size={18}
+                      className="rounded"
+                      initial={(user.displayName ?? 'Z')[0]}
+                    />
                     {user.displayName ?? user.primaryAddress.slice(0, 18) + '…'}
                   </span>
                 )}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useLang } from '@/contexts/LanguageContext';
+import ZisAvatar from '@/components/ZisAvatar';
 import {
   Award,
   BarChart3,
@@ -415,6 +416,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
 
                   {/* Address */}
                   <div className="flex items-center gap-2 min-w-0">
+                    <ZisAvatar seed={entry.address} size={20} className="rounded shrink-0" />
                     <Link
                       href={`/explorer/address?addr=${entry.address}`}
                       className="font-mono text-sm text-zion-cyan hover:text-white transition-colors truncate"

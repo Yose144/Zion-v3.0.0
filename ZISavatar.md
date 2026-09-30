@@ -121,10 +121,16 @@ initial (současné chování).
 - [x] OasisWeb — `zisAvatarUrl` v `src/lib/zis.ts`, `ZisAvatar.tsx`,
       avatar v ZIS Identity panelu (GamePanel); nasazeno do
       `/var/www/oasis` (avatar endpoint přes nginx `/api/auth` proxy ověřen)
-- [ ] DAO UI — avatar proposerů/voters podle `zion1…` adresy (seed =
-      adresa, žádný ZIS lookup nepotřeba)
-- [ ] L5 Free World — `voter_id = zis:<id>` → avatar ballotů
-- [ ] NotificationsPanel / další místa ukazující identitu
+- [x] DAO UI — avatar proposerů/voters podle `zion1…` adresy (seed =
+      adresa, žádný ZIS lookup nepotřeba): ProposalCard (footer +
+      rozbalený voter list), proposal detail (proposer + voters)
+- [x] L5 Free World — `QvSection` zobrazuje avatar přihlášeného votera
+      (seed = `user.id`, src = `user.avatar`)
+- [x] Explorer — generická Wallet ikona na `/explorer/address` →
+      deterministický avatar adresy; richlist + miners leaderboard řádky
+- [x] Pool miner dashboard `/pool/miner/<addr>` — avatar v hlavičce
+- [ ] NotificationsPanel / další místa ukazující identitu (nizko-prioritní —
+      vlastní notifikace identitu nezobrazují)
 
 ### Fáze 3 — pokročilé
 - [ ] Custom upload (vyžaduje storage — Edge nedisponuje object storage;

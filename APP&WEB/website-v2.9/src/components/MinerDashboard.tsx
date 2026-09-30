@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
+import ZisAvatar from '@/components/ZisAvatar';
 
 const MinerDashboardCopy = {
   minerNotFound: { cs: `Miner nebyl nalezen`, en: `Miner not found` },
@@ -477,6 +478,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                 </div>
               )}
               <h1 className="text-xl md:text-2xl font-mono text-white break-all leading-relaxed flex items-center gap-2">
+                <ZisAvatar seed={address} size={34} className="rounded-lg shrink-0" initial="M" />
                 {shortAddr(address)}
                 <CopyBtn text={address} titleLabel={MinerDashboardCopy.copyAddress[cs ? 'cs' : 'en']} />
               </h1>

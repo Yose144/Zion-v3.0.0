@@ -20,6 +20,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import QuorumProgress from '@/components/dao/QuorumProgress';
 import VoteMemoCard from '@/components/dao/VoteMemoCard';
+import ZisAvatar from '@/components/ZisAvatar';
 import {
   getGovernanceProposal,
   getProposalVotes,
@@ -309,7 +310,10 @@ export default function ProposalDetailPage() {
                         style={{ '--rc': '6, 105, 40' } as CSSProperties}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-gray-400 truncate max-w-[50%]">{v.voter}</span>
+                          <span className="flex items-center gap-1.5 min-w-0 max-w-[50%]">
+                            <ZisAvatar seed={v.voter} size={16} className="rounded shrink-0" />
+                            <span className="font-mono text-gray-400 truncate">{v.voter}</span>
+                          </span>
                           <span className="flex items-center gap-3">
                             <span
                               className={
@@ -405,7 +409,10 @@ export default function ProposalDetailPage() {
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-gray-500">{C.proposer[cs ? 'cs' : 'en']}</dt>
-                  <dd className="text-gray-300 font-mono truncate max-w-[60%]">{proposal.proposer}</dd>
+                  <dd className="text-gray-300 font-mono truncate max-w-[60%] flex items-center gap-1.5">
+                    <ZisAvatar seed={proposal.proposer} size={18} className="rounded shrink-0" />
+                    <span className="truncate">{proposal.proposer}</span>
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-gray-500">{C.voterCount[cs ? 'cs' : 'en']}</dt>
