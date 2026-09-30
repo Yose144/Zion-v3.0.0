@@ -1,15 +1,24 @@
-# María del Camino — Loď Cesty (mořské Camino · solární plachty)
+# María del Camino — Lodě Cesty (mořské Camino · solární plachty)
 
-> **L5 Free World · osmý bod Terra Nova** · Stav: 🔵 Příprava — plavidlo ve výzkumné fázi
+> **L5 Free World · osmý bod Terra Nova** · Stav: 🔵 Příprava — plavidla ve výzkumné fázi
 > *„Tam, kde starý svět končil u moře, nový pluje dál."*
 
 ---
 
 ## Záměr
 
-**María del Camino** je osmý bod vrstvy L5 Free World — a jediný, který není místo. Je to **cesta**: plachetnice pro zhruba padesát lidí, která fyzicky spojuje všech sedm pevných uzlů sítě.
+**María del Camino** je osmý bod vrstvy L5 Free World — a jediný, který není místo. Je to **cesta**: flotila dvou plachetnic pro zhruba padesát poutníků na trup, která fyzicky spojuje všech sedm pevných uzlů sítě.
 
 Každý uzel Terra Nova nese do sítě jeden princip — Genesis nese zahradu, Dharma chrám, Te Pīko Ora oceán, Bohemia governance, Bodhi Lanka akášu, LUMI most mezi světy, Uluru paměť. **María del Camino nese spojení samotné** — cirkulaci mezi body. Semenná knihovna, kulturní archiv, lidé a granty proudí mezi uzly přes moře, ne kurýrní službou.
+
+## Dvě lodě — dvě Marie
+
+Osmý bod není jedna loď, ale **dvojče pro dva oceány**:
+
+- **María del Camino (Atlantik)** — klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría), trasa Finisterre → Algarve → La Palma → karibský břeh LUMI; severský výběžek umí říční leg Labem k Bohemii.
+- **María del Pacífico (Pacifik)** — solární katamarán v linii *wa'a kaulua*, polynéské dvojité kánoe, kterou nesla Hōkūleʻa a celá wayfinding kultura. Domov navrhovaný v Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka.
+
+Dvojice se schází v **LUMI Nová Amerika** — most mezi Amerikami se stává mostem mezi dvěma moři: poutníci, semena a náklad překládají přes šíji a přestupují mezi loděmi. Žádná loď nemusí uplout celý kruh — síť je obsloužena kontinuálně.
 
 ## Jméno
 
@@ -27,9 +36,13 @@ Loď nese jméno **María del Camino** — *Marie Cesty*, mariánské svatyně s
 - **Guardian node na moři** — plný ZION uzel validující přes satelit, LoRa/mesh gateway na stěžni a treasury, kterou umí loď fyzicky doručit: humanitární náklad mezi uzly.
 - **Pilgrim credential** — každý úsek je *etapa*; posádka i residenti sbírají on-chain razítka jako poutníčková *credencial*, za celý okruh *compostela*.
 
-## Trasa — Velký kruh (vize)
+## Trasy — dva okruhy, jedna cesta (vize)
 
-Prologem je samotné **mořské Camino**: Finisterre → Pontevedra → Fátima → La Palma (María de las Nieves, patronka ostrova, na kterém stojí uzel Dharma Temple). Pak hlavní okruh: Algarve (Genesis Garden) → Kostarika (LUMI) → Francouzská Polynésie (Te Pīko Ora) → domorodá Austrálie (Uluru — návštěva custodiánských komunit na jejich podmínky, žádný claim) → Srí Lanka (Bodhi Lanka) → domů.
+**Atlantika (María del Camino):** prologem je samotné **mořské Camino** — Finisterre → Pontevedra → Fátima → Algarve (Genesis Garden) → La Palma (María de las Nieves + Dharma Temple) → atlantická přeplavba → karibský břeh **LUMI**.
+
+**Pacifik (María del Pacífico):** LUMI pacifický břeh → **Te Pīko Ora** (Raiatea — wayfinding škola) → domorodá Austrálie (Uluru — návštěva custodiánských komunit na jejich podmínky, žádný claim) → **Bodhi Lanka** (Srí Lanka) → návrat.
+
+Poutník, který chce přejít z Atlantiku do Pacifiku, vystoupí na jedné Marii, projde LUMI zemí — a nastoupí na druhou. Credencial dostává razítko „dvou moří".
 
 ## Fáze rozvoje
 
@@ -37,9 +50,9 @@ Prologem je samotné **mořské Camino**: Finisterre → Pontevedra → Fátima 
 |------|-------|-------|
 | 0 | Kresba | Design study, partnerství se sail-training a NGO flotilami, odhad CAPEX/OPEX |
 | 1 | První etapa | Pilotní trasa na **charterované** lodi mezi dvěma uzly — důkaz Guardian node at sea, mesh sync, program posádky — ještě před vlastním trupem |
-| 2 | Trup | Refit nebo stavba dedikované lodi; flag state, certifikace, pojištění |
-| 3 | Velký kruh | První okruh všemi uzly; výměna semen a knihovny živě |
-| 4 | Flotila | Replikace: jedna loď na oceán — tři Marie se vracejí jako flotila |
+| 2 | Atlantický trup | Refit nebo stavba **María del Camino** — klasická plachetnice; flag state, certifikace, pojištění |
+| 3 | Atlantický okruh | První okruh atlantické trasy (Finisterre → La Palma → Karibik → LUMI); výměna semen a knihovny živě |
+| 4 | Pacifický trup | Stavba/refit **María del Pacífico** — solární katamarán; pacifický home port, LUMI exchange protokol; později případná třetí Marie pro Indický oceán |
 
 ## Proč právě teď
 

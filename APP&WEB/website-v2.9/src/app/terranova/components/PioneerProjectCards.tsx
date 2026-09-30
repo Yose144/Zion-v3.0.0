@@ -24,6 +24,7 @@ import {
   Feather,
   Users,
   Sailboat,
+  Sunrise,
   LucideIcon,
 } from 'lucide-react';
 
@@ -175,6 +176,29 @@ const PROJECTS: ProjectCardData[] = [
     ],
   },
   {
+    href: '/terranova/ekam',
+    title: 'Ekam',
+    location: 'Andhra Pradesh · Indie',
+    eyebrow: 'L5 · The Template',
+    statusCs: 'Postaveno',
+    statusEn: 'Built',
+    descriptionCs:
+      'Desátý bod L5 Free World — jediný, který už stojí. Bílý mramorový chrám Jednoty (2008): zlatý řez, bezsloupová hala 2 090 m², Zlatá koule. Předloha všech uzlů a vrchol Velké cesty — iniciace dokončení na místě, které pojmenovalo samotný chain.',
+    descriptionEn:
+      'The tenth point of L5 Free World — the only one already standing. The white-marble Temple of Oneness (2008): golden ratio, a 2,090 m² column-free hall, the Golden Orb. The template for every node and the summit of the Great Route — the initiation of completion at the place that named the chain itself.',
+    features: [
+      { icon: Sun, labelCs: 'Zlatá koule', labelEn: 'Golden Orb' },
+      { icon: Landmark, labelCs: 'Postaveno 2008', labelEn: 'Built 2008' },
+      { icon: Compass, labelCs: 'Iniciace dokončení', labelEn: 'Initiation of completion' },
+      { icon: Network, labelCs: 'PoW ekam_deeksha', labelEn: 'PoW ekam_deeksha' },
+    ],
+    metrics: [
+      { value: '2008', labelCs: 'Otevřen', labelEn: 'Opened' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'IN', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
     href: '/terranova/nova-amerika',
     title: 'LUMI · Nová Amerika',
     location: 'Kostarika',
@@ -228,9 +252,9 @@ const PROJECTS: ProjectCardData[] = [
     statusCs: 'V přípravě',
     statusEn: 'In preparation',
     descriptionCs:
-      'Osmý bod L5 Free World — cesta, ne místo. Plachetnice se solárními plachtami pro ~50 poutníků fyzicky spojuje všech sedm uzlů po mořském Caminu: tam, kde cesta starého světa u Finisterry končila, ona začíná.',
+      'Osmý bod L5 Free World — cesta, ne místo. Dvě lodě pro dva oceány: atlantická plachetnice María del Camino a pacifický solární katamarán María del Pacífico, ~50 poutníků na trup. Tam, kde cesta starého světa u Finisterry končila, ona začíná.',
     descriptionEn:
-      'The eighth point of L5 Free World — a way, not a place. A solar-sail vessel for ~50 pilgrims physically connecting all seven nodes on a sea Camino: where the old world’s road ended at Finisterre, this one begins.',
+      'The eighth point of L5 Free World — a way, not a place. Two ships for two oceans: the Atlantic tall ship María del Camino and the Pacific solar catamaran María del Pacífico, ~50 pilgrims per hull. Where the old world’s road ended at Finisterre, this one begins.',
     features: [
       { icon: Sailboat, labelCs: 'Solární plachty', labelEn: 'Solar sails' },
       { icon: Waves, labelCs: 'Soběstačnost na moři', labelEn: 'Self-sufficiency at sea' },
@@ -241,6 +265,29 @@ const PROJECTS: ProjectCardData[] = [
       { value: '~50', labelCs: 'Poutníků', labelEn: 'Pilgrims' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: '300M', labelCs: 'Rezerva ZION', labelEn: 'ZION reserve' },
+    ],
+  },
+  {
+    href: '/terranova/boa-esperanca',
+    title: 'Boa Esperança',
+    location: 'Mys dobré naděje · Jihoafrická republika',
+    eyebrow: 'L5 · The Turn',
+    statusCs: 'Vize',
+    statusEn: 'Vision',
+    descriptionCs:
+      'Devátý bod L5 Free World — šev dvou oceánů a obrat Velké cesty domů. Nejstarší lidská linie (Khoisan), kolébka symbolického myšlení v Blombos, fynbos zahrada, kelp seaforest a Day-Zero vodní laboratoř. Uzel jako vztah, ne stavba.',
+    descriptionEn:
+      'The ninth point of L5 Free World — the seam of two oceans and the Great Route’s turn homeward. Humanity’s oldest lineage (Khoisan), the cradle of symbolic thought at Blombos, a fynbos garden, kelp seaforest and a Day-Zero water lab. A node as a relationship, not a construction.',
+    features: [
+      { icon: Sunrise, labelCs: 'Naděje po bouři', labelEn: 'Hope after the storm' },
+      { icon: Compass, labelCs: 'Agulhas — pravý sever', labelEn: 'Agulhas — true north' },
+      { icon: Users, labelCs: 'Khoisan custodiáni', labelEn: 'Khoisan custodians' },
+      { icon: Waves, labelCs: 'Šev dvou oceánů', labelEn: 'Seam of two oceans' },
+    ],
+    metrics: [
+      { value: '~100k', labelCs: 'Let kořenů', labelEn: 'Years of roots' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'ZA', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];

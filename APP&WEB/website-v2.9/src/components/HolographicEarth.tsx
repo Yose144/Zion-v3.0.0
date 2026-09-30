@@ -698,9 +698,11 @@ const TERRA_NOVA_MARKERS = [
   { lat: -17.0, lon: -150.0, color: '#e41e2b', glow: '#e41e2b', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
   { lat: 50.0, lon: 14.4, color: '#9333ea', glow: '#9333ea', nameCs: 'Golden Republic Bohemia', nameEn: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia' },
   { lat: 7.0, lon: 81.0, color: '#06b6d4', glow: '#06b6d4', nameCs: 'Bodhi Lanka', nameEn: 'Bodhi Lanka', href: '/terranova/bodhi-lanka' },
+  { lat: 13.42, lon: 79.67, color: '#f5e7b8', glow: '#fcd116', nameCs: 'Ekam · Oneness Temple', nameEn: 'Ekam · Oneness Temple', href: '/terranova/ekam' },
   { lat: 9.7, lon: -83.7, color: '#14b8a6', glow: '#14b8a6', nameCs: 'LUMI · Nová Amerika', nameEn: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika' },
   { lat: -25.3, lon: 131.0, color: '#ea580c', glow: '#ea580c', nameCs: 'Uluru', nameEn: 'Uluru', href: '/terranova/uluru' },
   { lat: 42.4, lon: -8.7, color: '#0ea5e9', glow: '#0ea5e9', nameCs: 'María del Camino', nameEn: 'María del Camino', href: '/terranova/maria-del-camino' },
+  { lat: -34.35, lon: 18.47, color: '#f59e0b', glow: '#f59e0b', nameCs: 'Boa Esperança', nameEn: 'Boa Esperança', href: '/terranova/boa-esperanca' },
 ];
 
 function TerraNovaMarkers() {

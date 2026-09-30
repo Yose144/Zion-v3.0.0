@@ -20,6 +20,10 @@ SOURCES = {
     'uluru': ('Uluru copy.png', 'UluruProject.png'),
     # TODO(interim): board is placeholder art — replace with real vessel masterplan
     'maria-del-camino': ('Maria2.jpg', 'MariaDelCaminoProject.png'),
+    # TODO(interim): placeholder art — replace with real cape renders
+    'boa-esperanca': ('BoaEsperanca.png', 'BoaEsperancaProject.png'),
+    # TODO(interim): placeholder art — replace with real temple renders
+    'ekam': ('Ekam.png', 'EkamProject.png'),
 }
 
 def save_webp(im: Image.Image, out: Path, max_w: int, q: int):

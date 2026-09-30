@@ -47,8 +47,8 @@ function projectCard(p) {
       </div>
     </a>`;
 }
-const statusCs = (p) => ({ development: 'Aktivní rozvoj', preparation: 'V přípravě', vision: 'Plánováno' }[p.status] || p.status);
-const statusEn = (p) => ({ development: 'Active development', preparation: 'In preparation', vision: 'Planned' }[p.status] || p.status);
+const statusCs = (p) => ({ development: 'Aktivní rozvoj', preparation: 'V přípravě', vision: 'Plánováno', built: 'Postaveno' }[p.status] || p.status);
+const statusEn = (p) => ({ development: 'Active development', preparation: 'In preparation', vision: 'Planned', built: 'Built' }[p.status] || p.status);
 
 function renderDoc(docSlug, lang) {
   const f = join(DOCS, `${docSlug}.${lang}.md`);

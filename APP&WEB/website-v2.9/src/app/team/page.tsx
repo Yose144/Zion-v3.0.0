@@ -7,7 +7,7 @@ import {
   Sprout, Flame, Waves, Wind, Sparkles, Layers,
   GitBranch, Heart, BookOpen, Compass, Globe2, UserPlus,
   Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
-  Mountain, Sailboat,
+  Mountain, Sailboat, Sunrise, Sun,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -208,6 +208,16 @@ const L5_LEADS = [
     href: '/terranova/bodhi-lanka',
   },
   {
+    key: 'ekam',
+    name: 'Ekam',
+    element: { cs: 'Jednota · Dokončení', en: 'Oneness · Completion' },
+    location: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' },
+    icon: Sun,
+    accent: '245, 222, 130',
+    text: 'text-amber-200',
+    href: '/terranova/ekam',
+  },
+  {
     key: 'nova-amerika',
     name: 'LUMI',
     element: { cs: 'Most · Paměť', en: 'Bridge · Memory' },
@@ -236,6 +246,16 @@ const L5_LEADS = [
     accent: '14, 165, 233',
     text: 'text-sky-300',
     href: '/terranova/maria-del-camino',
+  },
+  {
+    key: 'boa-esperanca',
+    name: 'Boa Esperança',
+    element: { cs: 'Obrat · Naděje', en: 'Turn · Hope' },
+    location: { cs: 'Mys dobré naděje, Jihoafrická republika', en: 'Cape of Good Hope, South Africa' },
+    icon: Sunrise,
+    accent: '245, 158, 11',
+    text: 'text-amber-300',
+    href: '/terranova/boa-esperanca',
   },
   {
     key: 'issobella',

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -54,6 +54,14 @@ const VISIONS = [
     accent: 'text-zion-cyan',
   },
   {
+    href: '/terranova/ekam',
+    icon: Sun,
+    label: 'Ekam',
+    desc: 'Oneness Temple — jediný uzel, který už stojí (2008); předloha všech ostatních a místo, které pojmenovalo chain.',
+    rc: '245, 222, 130', // marble gold
+    accent: 'text-amber-200',
+  },
+  {
     href: '/terranova/nova-amerika',
     icon: Feather,
     label: 'LUMI · Nová Amerika',
@@ -73,9 +81,17 @@ const VISIONS = [
     href: '/terranova/maria-del-camino',
     icon: Sailboat,
     label: 'María del Camino',
-    desc: 'Plující uzel — plachetnice se solárními plachtami, která spojuje všech sedm bodů přes oceány.',
+    desc: 'Plující uzel — dvě lodě na solárních plachtách (Atlantik × Pacifik), které spojují všechny body přes oceány.',
     rc: '14, 165, 233', // ocean blue
     accent: 'text-sky-300',
+  },
+  {
+    href: '/terranova/boa-esperanca',
+    icon: Sunrise,
+    label: 'Boa Esperança',
+    desc: 'Mys dobré naděje — šev dvou oceánů, kde se bouře přejmenovává na naději; domov nejstarší lidské linie.',
+    rc: '245, 158, 11', // amber — hope
+    accent: 'text-amber-300',
   },
 ];
 
