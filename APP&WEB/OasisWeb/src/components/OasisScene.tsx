@@ -7,6 +7,7 @@ import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast } fr
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
+import { GpuBackendContext, resolveGpuBackend, demoteToWebGL, type GpuBackend } from '../lib/gpuBackend';
 import TreeOfLife from './TreeOfLife';
 import Galaxy from './Galaxy';
 import DistantGalaxies from './DistantGalaxies';
@@ -152,11 +153,17 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
 
 /** Fallback renderer — CameraRig's useFrame runs at priority 1, which puts
  *  R3F in manual-render mode. When EffectComposer is mounted it does the
- *  rendering; when it's unmounted (reduced-effects path) nothing would draw
- *  and the canvas would freeze on its last frame. This takes over then. */
+ *  rendering; when it's unmounted (reduced-effects path, or the WebGPU
+ *  backend which has no EffectComposer) nothing would draw and the canvas
+ *  would freeze on its last frame. This takes over then. */
 function DirectRenderer() {
   useFrame(({ gl, scene, camera }) => {
-    gl.render(scene, camera);
+    const anyGl = gl as unknown as {
+      render: (s: THREE.Scene, c: THREE.Camera) => void;
+      renderAsync?: (s: THREE.Scene, c: THREE.Camera) => Promise<void>;
+    };
+    if (anyGl.renderAsync) void anyGl.renderAsync(scene, camera);
+    else anyGl.render(scene, camera);
   }, 1);
   return null;
 }
@@ -232,32 +239,70 @@ export default function OasisScene({
   // degrade effects for the rest of the session (one-way — avoids
   // oscillating bloom on/off which would itself cost frames).
   const [perfLow, setPerfLow] = useState(false);
+  // GPU backend — resolved once before the canvas mounts (a canvas can't
+  // switch WebGL2↔WebGPU contexts after creation). null = still detecting.
+  const [backend, setBackend] = useState<GpuBackend | null>(null);
+  useEffect(() => {
+    let live = true;
+    resolveGpuBackend().then((b) => {
+      if (live) setBackend(b);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
   // Reduce heavy effects on mobile and on low-power devices (few cores,
   // little RAM, or data-saver). Keeps the scene fluid everywhere.
   const reduceEffects = isMobile || lowPower || perfLow;
+  // Postprocessing EffectComposer is WebGL-only — the WebGPU backend
+  // always renders direct in G1 (TSL bloom arrives in G2).
+  const useComposer = !reduceEffects && backend === 'webgl2';
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'absolute',
-        inset: 0,
-        backgroundColor: '#05060a',
-      }}
-    >
-      <Canvas
+    <GpuBackendContext.Provider value={backend ?? 'webgl2'}>
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: '#05060a',
+        }}
+      >
+        {backend && (
+          <Canvas
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
         dpr={[1, isMobile ? 1 : 1]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
-        gl={{
-          alpha: false,
-          antialias: false,
-          powerPreference: 'high-performance',
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.15,
-          failIfMajorPerformanceCaveat: false,
+        gl={async (defaults) => {
+          if (backend === 'webgpu') {
+            try {
+              const { WebGPURenderer } = await import('three/webgpu');
+              const renderer = new WebGPURenderer({
+                canvas: defaults.canvas as HTMLCanvasElement,
+                antialias: true,
+                powerPreference: 'high-performance',
+              });
+              renderer.toneMapping = THREE.ACESFilmicToneMapping;
+              renderer.toneMappingExposure = 1.15;
+              await renderer.init();
+              return renderer as unknown as THREE.WebGLRenderer;
+            } catch (err) {
+              demoteToWebGL(err);
+              setBackend('webgl2');
+            }
+          }
+          const renderer = new THREE.WebGLRenderer({
+            canvas: defaults.canvas,
+            alpha: false,
+            antialias: false,
+            powerPreference: 'high-performance',
+            failIfMajorPerformanceCaveat: false,
+          });
+          renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 1.15;
+          return renderer;
         }}
         onCreated={({ gl, camera, scene }) => {
           gl.setClearColor(new THREE.Color('#05060a'), 1);
@@ -281,9 +326,11 @@ export default function OasisScene({
 
         {/* HDRI environment — desktop only */}
         {!isMobile && (
-          <Suspense fallback={null}>
-            <Environment preset="night" background={false} environmentIntensity={0.6} />
-          </Suspense>
+          <R3FErrorBoundary label="Environment">
+            <Suspense fallback={null}>
+              <Environment preset="night" background={false} environmentIntensity={0.6} />
+            </Suspense>
+          </R3FErrorBoundary>
         )}
 
         {/* On mobile, skip CameraRig/OrbitControls — they break mobile rendering.
@@ -294,13 +341,19 @@ export default function OasisScene({
 
         {view === 'galaxy' && (
           <group ref={universeRef}>
-            <R3FErrorBoundary label="Stars">
-              <Stars radius={250} depth={160} count={reduceEffects ? 1500 : 3000} factor={4.5} saturation={0.65} fade speed={0.4} />
-            </R3FErrorBoundary>
+            {/* Raw-GLSL components don't compile on the WebGPU backend —
+                they mount only on the WebGL2 path (G1). */}
+            {backend === 'webgl2' && (
+              <R3FErrorBoundary label="Stars">
+                <Stars radius={250} depth={160} count={reduceEffects ? 1500 : 3000} factor={4.5} saturation={0.65} fade speed={0.4} />
+              </R3FErrorBoundary>
+            )}
 
-            <R3FErrorBoundary label="TwinkleStars">
-              <TwinkleStars count={reduceEffects ? 600 : 1500} radius={150} />
-            </R3FErrorBoundary>
+            {backend === 'webgl2' && (
+              <R3FErrorBoundary label="TwinkleStars">
+                <TwinkleStars count={reduceEffects ? 600 : 1500} radius={150} />
+              </R3FErrorBoundary>
+            )}
 
             <R3FErrorBoundary label="ShootingStars">
               <ShootingStars count={reduceEffects ? 2 : 3} isMobile={reduceEffects} />
@@ -314,9 +367,11 @@ export default function OasisScene({
               <Galaxy isMobile={reduceEffects} />
             </R3FErrorBoundary>
 
-            <R3FErrorBoundary label="GalaxyCore">
-              <GalaxyCore />
-            </R3FErrorBoundary>
+            {backend === 'webgl2' && (
+              <R3FErrorBoundary label="GalaxyCore">
+                <GalaxyCore />
+              </R3FErrorBoundary>
+            )}
 
             {!reduceEffects && (
               <R3FErrorBoundary label="MatrixCore">
@@ -476,7 +531,7 @@ export default function OasisScene({
 
         {flightMode && <PilgrimShip speed={flightSpeed} />}
 
-        {!reduceEffects ? (
+        {useComposer ? (
           <EffectComposer multisampling={2}>
             <Bloom intensity={0.62} luminanceThreshold={0.35} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
             <HueSaturation saturation={0.28} />
@@ -499,8 +554,10 @@ export default function OasisScene({
             onDecline={() => setPerfLow(true)}
           />
         )}
-      </Canvas>
-    </div>
+          </Canvas>
+        )}
+      </div>
+    </GpuBackendContext.Provider>
   );
 }
 

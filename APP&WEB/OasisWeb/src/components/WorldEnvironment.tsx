@@ -5,6 +5,7 @@ import { useFrame, extend, type ThreeElement } from '@react-three/fiber';
 import { Html, Stars, shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 import type { World } from '../domain/types/world';
+import { useGpuBackend } from '../lib/gpuBackend';
 import { createRandom } from '../domain/ports/random';
 import { useGameStore } from '../store/gameStore';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
@@ -407,6 +408,9 @@ function AvatarHologram({ world, color, size }: { world: World; color: string; s
 
 
 export default function WorldEnvironment({ world, isMobile = false }: { world: World; isMobile?: boolean }) {
+  // Raw-GLSL pieces (drei Stars + atmosphere shaderMaterial) don't compile
+  // on the WebGPU backend — they mount only on the WebGL2 path.
+  const backend = useGpuBackend();
   const groupRef = useRef<THREE.Group>(null);
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
   const size = SIZES[world.category] || 1.0;
@@ -451,7 +455,9 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
       {/* distant star backdrop */}
-      <Stars radius={140} depth={90} count={isMobile ? 800 : 2000} factor={3} saturation={0.65} fade speed={0.3} />
+      {backend === 'webgl2' && (
+        <Stars radius={140} depth={90} count={isMobile ? 800 : 2000} factor={3} saturation={0.65} fade speed={0.3} />
+      )}
 
       {world.category === 'star-system' && (
         <>
@@ -485,7 +491,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
               toneMapped={false}
             />
           </mesh>
-          <AtmosphereSphere color={color} size={size} />
+          {backend === 'webgl2' && <AtmosphereSphere color={color} size={size} />}
           <OrbitRing radius={size * 2.2} color={color} texture={ringTexture} />
           {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#d4d4d4" distance={size * 2.4} sizeBase={0.06} />}
           {world.id === 'NOVA_ZEME' && <NovaZemeBeacons size={size} isMobile={isMobile} />}

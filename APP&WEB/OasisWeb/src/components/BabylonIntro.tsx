@@ -19,8 +19,28 @@ import {
   GlowLayer,
   Mesh,
   DynamicTexture,
+  WebGPUEngine,
 } from '@babylonjs/core';
 import { AdvancedDynamicTexture, Button, TextBlock } from '@babylonjs/gui';
+import { getGpuMode, detectWebGpu } from '../lib/gpuBackend';
+
+/**
+ * Engine backend chain — WebGPU when explicitly enabled (?gpu=webgpu)
+ * and supported, else classic WebGL2 Engine. Mirrors OasisScene's
+ * renderer selection; documented in WebOasis.md §3.4.
+ */
+async function createBabylonEngine(canvas: HTMLCanvasElement): Promise<Engine | WebGPUEngine> {
+  if (getGpuMode() === 'webgpu' && (await detectWebGpu())) {
+    try {
+      const engine = new WebGPUEngine(canvas, { antialias: true });
+      await engine.initAsync();
+      return engine;
+    } catch (e) {
+      console.warn('[BabylonIntro] WebGPUEngine init failed — falling back to WebGL2:', e);
+    }
+  }
+  return new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+}
 
 interface BabylonIntroProps {
   onEnter: () => void;
@@ -35,10 +55,21 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    let cancelled = false;
+    let engine: Engine | WebGPUEngine | null = null;
+    let sceneRef: Scene | null = null;
+    let onResize: (() => void) | null = null;
 
-    const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
-    const scene = new Scene(engine);
-    scene.clearColor = new Color4(0, 0, 0, 1);
+    const init = async () => {
+      const eng = await createBabylonEngine(canvas);
+      if (cancelled) {
+        eng.dispose();
+        return;
+      }
+      engine = eng;
+      const scene = new Scene(eng);
+      sceneRef = scene;
+      scene.clearColor = new Color4(0, 0, 0, 1);
 
     const flareTexture = createFlareTexture(scene);
 
@@ -196,27 +227,32 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
       atmo.rotation.y += 0.0012;
     });
 
-    // Render loop
-    engine.runRenderLoop(() => scene.render());
-    const resize = () => engine.resize();
-    window.addEventListener('resize', resize);
+      // Render loop
+      eng.runRenderLoop(() => scene.render());
+      onResize = () => eng.resize();
+      window.addEventListener('resize', onResize);
+    };
+
+    void init();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      cancelled = true;
+      if (onResize) window.removeEventListener('resize', onResize);
       // Stop render loop first
-      engine.stopRenderLoop();
+      engine?.stopRenderLoop();
       // Dispose Babylon scene + engine (defensive: context may already be lost)
       try {
-        scene.dispose();
+        sceneRef?.dispose();
       } catch (e) {
         console.warn('[BabylonIntro] scene dispose failed:', e);
       }
       try {
-        engine.dispose();
+        engine?.dispose();
       } catch (e) {
         console.warn('[BabylonIntro] engine dispose failed:', e);
       }
-      // Force WebGL context release immediately
+      // Force WebGL context release immediately (no-op on a WebGPU canvas —
+      // getContext('webgl2') returns null once 'webgpu' was claimed)
       try {
         const gl = canvas.getContext('webgl2') as WebGL2RenderingContext | null;
         if (gl) {
