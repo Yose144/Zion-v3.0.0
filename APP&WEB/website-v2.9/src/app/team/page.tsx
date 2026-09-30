@@ -7,6 +7,7 @@ import {
   Sprout, Flame, Waves, Wind, Sparkles, Layers,
   GitBranch, Heart, BookOpen, Compass, Globe2, UserPlus,
   Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
+  Mountain,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -215,6 +216,16 @@ const L5_LEADS = [
     accent: '20, 184, 166',
     text: 'text-teal-300',
     href: '/terranova/nova-amerika',
+  },
+  {
+    key: 'uluru',
+    name: 'Uluru',
+    element: { cs: 'Kámen · Píseň', en: 'Stone · Song' },
+    location: { cs: 'Northern Territory, Austrálie', en: 'Northern Territory, Australia' },
+    icon: Mountain,
+    accent: '234, 88, 12',
+    text: 'text-orange-300',
+    href: '/terranova/uluru',
   },
   {
     key: 'issobella',

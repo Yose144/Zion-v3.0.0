@@ -7,7 +7,7 @@
 
 ## Záměr
 
-**Nová Amerika** je šestý a poslední plánovaný uzel vrstvy L5 Free World. Na rozdíl od ostatních uzlů není zaměřen na jednu komunitu, ale na **nativní kultury obou Amerik** — domorodé národy, jejichž území, jazyky a vědění předcházely státům, ve kterých dnes žijí.
+**Nová Amerika** je šestý financovaný uzel vrstvy L5 Free World. Na rozdíl od ostatních uzlů není zaměřen na jednu komunitu, ale na **nativní kultury obou Amerik** — domorodé národy, jejichž území, jazyky a vědění předcházely státům, ve kterých dnes žijí.
 
 Kostarika byla zvolena záměrně:
 

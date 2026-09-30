@@ -229,6 +229,85 @@ export async function logout(): Promise<{ ok: boolean }> {
   }
 }
 
+// ── WebAuthn / passkeys ─────────────────────────────────────────────
+
+/** A passkey registered on a ZION account (the public key never leaves ZIS). */
+export interface ZisPasskey {
+  id: string;
+  credentialId: string;
+  label?: string | null;
+  /** "singleDevice" | "multiDevice" */
+  deviceType: string;
+  backedUp: boolean;
+  transports: string[];
+  createdAt: string;
+  lastUsedAt?: string | null;
+}
+
+/**
+ * A pending WebAuthn ceremony. `options` feeds the browser WebAuthn API
+ * via `@simplewebauthn/browser` startRegistration / startAuthentication.
+ */
+export interface ZisPasskeyCeremony {
+  ceremonyId: string;
+  options: Record<string, unknown>;
+}
+
+const CLIENT_PROXY_BASE_WEBAUTHN = `${CLIENT_PROXY_BASE}/webauthn`;
+
+/** Begin passkey registration for the signed-in user. */
+export async function getPasskeyRegistrationOptions(): Promise<ZisPasskeyCeremony> {
+  return zisFetch<ZisPasskeyCeremony>(`${CLIENT_PROXY_BASE_WEBAUTHN}/register/options`, {
+    method: 'POST',
+  });
+}
+
+/** Finish passkey registration — submit the browser attestation response. */
+export async function verifyPasskeyRegistration(body: {
+  ceremonyId: string;
+  response: unknown;
+  label?: string;
+}): Promise<{ credential: ZisPasskey }> {
+  return zisFetch<{ credential: ZisPasskey }>(`${CLIENT_PROXY_BASE_WEBAUTHN}/register/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+/** Begin passkey (usernameless) login — anonymous. */
+export async function getPasskeyLoginOptions(): Promise<ZisPasskeyCeremony> {
+  return zisFetch<ZisPasskeyCeremony>(`${CLIENT_PROXY_BASE_WEBAUTHN}/login/options`, {
+    method: 'POST',
+  });
+}
+
+/** Finish passkey login — sets the `zion_session` cookie on success. */
+export async function verifyPasskeyLogin(body: {
+  ceremonyId: string;
+  response: unknown;
+}): Promise<ZisSession> {
+  return zisFetch<ZisSession>(`${CLIENT_PROXY_BASE_WEBAUTHN}/login/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+/** List the authenticated user's passkeys. */
+export async function listPasskeys(): Promise<{ credentials: ZisPasskey[] }> {
+  return zisFetch<{ credentials: ZisPasskey[] }>(`${CLIENT_PROXY_BASE_WEBAUTHN}/credentials`);
+}
+
+/** Delete one of the authenticated user's passkeys. */
+export async function deletePasskey(id: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${CLIENT_PROXY_BASE_WEBAUTHN}/credentials/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  return { ok: res.ok };
+}
+
 // ── Session management ───────────────────────────────────────────────
 
 export async function getSessions(): Promise<{ sessions: ZisActiveSession[] }> {

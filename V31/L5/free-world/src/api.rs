@@ -399,11 +399,24 @@ async fn list_projects(State(state): State<AppState>) -> impl IntoResponse {
     }
 }
 
+/// Project statuses the operator API accepts. `vision` marks an
+/// unfunded aspirational site (e.g. Uluru) — the only status allowed
+/// to carry `budget_zion == 0`.
+const PROJECT_STATUSES: &[&str] = &[
+    "planning",
+    "vision",
+    "active",
+    "on_hold",
+    "completed",
+    "cancelled",
+];
+
 #[derive(Deserialize)]
 pub struct CreateProjectRequest {
     pub name: String,
     pub category: String,
     pub budget_zion: u64,
+    pub status: Option<String>,
     pub description: Option<String>,
     pub location: Option<String>,
 }
@@ -416,13 +429,25 @@ async fn create_project(
     if let Err(e) = require_write_key(&state, &headers) {
         return e;
     }
-    if req.name.trim().is_empty() || req.budget_zion == 0 {
+    let status = req.status.as_deref().unwrap_or("planning");
+    if req.name.trim().is_empty() || !PROJECT_STATUSES.contains(&status) {
         return (
             StatusCode::BAD_REQUEST,
-            Json(ApiResponse::err("name must not be empty and budget_zion must be > 0")),
+            Json(ApiResponse::err(
+                "name must not be empty and status must be one of planning|vision|active|on_hold|completed|cancelled",
+            )),
+        );
+    }
+    if req.budget_zion == 0 && status != "vision" {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::err(
+                "budget_zion must be > 0 (only 'vision' projects may be unfunded)",
+            )),
         );
     }
     let mut project = ProjectRecord::new(&req.name, &req.category, req.budget_zion);
+    project.status = status.to_string();
     project.description = req.description;
     project.location = req.location;
 

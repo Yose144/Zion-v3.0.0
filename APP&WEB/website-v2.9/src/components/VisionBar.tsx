@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -52,6 +52,22 @@ const VISIONS = [
     desc: 'Akáša L5 — nekonečná láska, Bodhi strom, Rama a Sita, Ajurvéda.',
     rc: '6, 182, 212', // cyan
     accent: 'text-zion-cyan',
+  },
+  {
+    href: '/terranova/nova-amerika',
+    icon: Feather,
+    label: 'LUMI · Nová Amerika',
+    desc: 'Most mezi Amerikami — nativní kultury, FPIC kruh starších, semenná knihovna.',
+    rc: '20, 184, 166', // teal
+    accent: 'text-zion-cyan',
+  },
+  {
+    href: '/terranova/uluru',
+    icon: Mountain,
+    label: 'Uluru',
+    desc: 'Poselství protinožců — Tjukurpa, songlines a šedesát tisíc let paměti země.',
+    rc: '234, 88, 12', // ochre
+    accent: 'text-zion-gold',
   },
 ];
 

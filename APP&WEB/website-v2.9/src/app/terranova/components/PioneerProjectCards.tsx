@@ -21,6 +21,8 @@ import {
   Landmark,
   TreePine,
   Flower,
+  Feather,
+  Users,
   LucideIcon,
 } from 'lucide-react';
 
@@ -169,6 +171,52 @@ const PROJECTS: ProjectCardData[] = [
       { value: 'Anuradhapura', labelCs: 'Osa', labelEn: 'Axis' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'LK', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/nova-amerika',
+    title: 'LUMI · Nová Amerika',
+    location: 'Kostarika',
+    eyebrow: 'L5 · Americas Bridge',
+    statusCs: 'V přípravě',
+    statusEn: 'In preparation',
+    descriptionCs:
+      'Šestý uzel L5 Free World — most mezi oběma Amerikami pro nativní kultury. FPIC kruh starších, semenná knihovna Amerik a sdílený pozemek s L6 pozemní stanicí.',
+    descriptionEn:
+      'The sixth L5 Free World node — a bridge between the two Americas for native cultures. FPIC council of elders, Seed Library of the Americas, and a plot shared with the L6 ground station.',
+    features: [
+      { icon: Users, labelCs: 'Kruh starších', labelEn: 'Council of elders' },
+      { icon: Leaf, labelCs: 'Semenná knihovna', labelEn: 'Seed library' },
+      { icon: Globe, labelCs: 'Most Amerik', labelEn: 'Americas bridge' },
+      { icon: Network, labelCs: 'L5 + L6 kampus', labelEn: 'L5 + L6 campus' },
+    ],
+    metrics: [
+      { value: 'Kostarika', labelCs: 'Osa', labelEn: 'Axis' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'CR', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/uluru',
+    title: 'Uluru',
+    location: 'Northern Territory · Austrálie',
+    eyebrow: 'L5 · Antipodes Message',
+    statusCs: 'Vize',
+    statusEn: 'Vision',
+    descriptionCs:
+      'Sedmý bod L5 Free World — odkaz a poselství domorodé Austrálie. Tjukurpa, songlines a šedesát tisíc let paměti krajiny. Uzel jako vztah, ne stavba.',
+    descriptionEn:
+      'The seventh point of L5 Free World — the heritage and message of Aboriginal Australia. Tjukurpa, songlines and sixty thousand years of land memory. A node as a relationship, not a construction.',
+    features: [
+      { icon: Mountain, labelCs: 'Tjukurpa · Snění', labelEn: 'Tjukurpa · Dreaming' },
+      { icon: Feather, labelCs: 'Songlines', labelEn: 'Songlines' },
+      { icon: Users, labelCs: 'Kruh custodiánů', labelEn: 'Council of custodians' },
+      { icon: Heart, labelCs: 'Kanyini · odpovědnost', labelEn: 'Kanyini · responsibility' },
+    ],
+    metrics: [
+      { value: '60 000+', labelCs: 'Let paměti', labelEn: 'Years of memory' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'AU', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];

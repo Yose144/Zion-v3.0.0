@@ -76,13 +76,13 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
   {
     // Aboriginal Australia — the Dreamtime/songlines heritage from the
     // antipodes. Vision stage: no funded allocation or on-site community
-    // yet; detail links to the Oceania geography page.
+    // yet; the node is a relationship, not a construction site.
     key: 'uluru',
     name: 'Uluru',
     lat: -25.34,
     lon: 131.04,
     status: 'vision',
-    href: '/terranova/geography/oceania',
+    href: '/terranova/uluru',
     allocationZion: 0,
   },
 ];

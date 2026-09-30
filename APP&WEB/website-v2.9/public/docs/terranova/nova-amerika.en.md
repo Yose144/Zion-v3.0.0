@@ -7,7 +7,7 @@
 
 ## Intent
 
-**Nová Amerika** is the sixth and final planned node of the L5 Free World layer. Unlike the other nodes, it is not centred on a single community but on the **native cultures of both Americas** — the indigenous nations whose territories, languages and knowledge predate the states they live in today.
+**Nová Amerika** is the sixth funded node of the L5 Free World layer. Unlike the other nodes, it is not centred on a single community but on the **native cultures of both Americas** — the indigenous nations whose territories, languages and knowledge predate the states they live in today.
 
 Costa Rica was chosen deliberately:
 

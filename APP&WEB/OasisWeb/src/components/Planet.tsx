@@ -279,6 +279,28 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     lat: 8,
     lon: 80,
   },
+  {
+    id: 'lumi',
+    name: 'LUMI · Nová Amerika',
+    location: 'Kostarika',
+    color: '#14b8a6',
+    rgb: '20, 184, 166',
+    descCs: 'Most Amerik — nativní kultury, FPIC kruh starších, semenná knihovna.',
+    descEn: 'Americas bridge — native cultures, FPIC council of elders, seed library.',
+    lat: 10,
+    lon: -84,
+  },
+  {
+    id: 'uluru',
+    name: 'Uluru',
+    location: 'Austrálie',
+    color: '#ea580c',
+    rgb: '234, 88, 12',
+    descCs: 'Poselství protinožců — Tjukurpa, songlines, 60 000 let paměti země.',
+    descEn: 'Message from the antipodes — Tjukurpa, songlines, 60,000 years of land memory.',
+    lat: -25,
+    lon: 131,
+  },
 ];
 
 function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {

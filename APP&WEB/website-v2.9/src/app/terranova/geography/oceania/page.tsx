@@ -10,8 +10,8 @@ const DATA = {
       id: 'australia',
       titleCs: 'Austrálie',
       titleEn: 'Australia',
-      descCs: 'Aboriginský Dreamtime, zeměpisné písně a 60 000 let kontinuity mezi člověkem a krajinou.',
-      descEn: 'Aboriginal Dreamtime, songlines, and 60,000 years of continuity between humans and landscape.',
+      descCs: 'Aboriginský Dreamtime, zeměpisné písně a 60 000 let kontinuity mezi člověkem a krajinou. Uzel Uluru nese tento odkaz jako vizi L5.',
+      descEn: 'Aboriginal Dreamtime, songlines, and 60,000 years of continuity between humans and landscape. The Uluru node carries this heritage as an L5 vision.',
     },
     {
       id: 'hawaii',

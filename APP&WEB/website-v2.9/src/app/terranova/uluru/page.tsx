@@ -7,16 +7,15 @@ import {
   ArrowRight,
   Calendar,
   Compass,
+  Ear,
   Feather,
-  Globe2,
   Heart,
   Landmark,
-  Leaf,
   LucideIcon,
   MapPin,
+  Mountain,
+  Music,
   Network,
-  Radio,
-  Satellite,
   Shield,
   Sparkles,
   Sun,
@@ -30,58 +29,52 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
-  planned2029: { cs: `Plánováno 2029+`, en: `Planned 2029+` },
-  bridgeSubtitle: { cs: `Nová Amerika · Most Amerik · Kostarika · Terra Nova ®`, en: `Nová Amerika · Americas Bridge · Costa Rica · Terra Nova ®` },
+  visionStage: { cs: `Vize — nejdřív naslouchat`, en: `Vision — listen first` },
+  subtitle: { cs: `Uluru · Tjukurpa · Songlines · Austrálie · Terra Nova ®`, en: `Uluru · Tjukurpa · Songlines · Australia · Terra Nova ®` },
   quote: {
-    cs: `"Nejdřív poslouchat, pak stavět. Most nespojuje břehy — spojuje lidi."`,
-    en: `"Listen first, then build. A bridge does not connect shores — it connects people."`,
+    cs: `"Země není něco, co vlastníme. Země je něco, čím jsme."`,
+    en: `"The land is not something we own. The land is something we are."`,
   },
-  locationLine: { cs: `Kostarika · pevninský most Amerik`, en: `Costa Rica · the land bridge of the Americas` },
-  introTitle: { cs: `Šestý uzel — země mezi dvěma světy`, en: `The sixth node — land between two worlds` },
+  locationLine: { cs: `Uluru-Kata Tjuṯa · Northern Territory, Austrálie`, en: `Uluru-Kata Tjuṯa · Northern Territory, Australia` },
+  introTitle: { cs: `Sedmý uzel — poselství od protinožců`, en: `The seventh node — the message from the antipodes` },
   introBody: {
-    cs: `LUMI (Nová Amerika) je šestý financovaný uzel L5 Free World — projekt pro nativní kultury obou Amerik. Kostarika leží na zeměpisném středobodu kontinentů: osm oficiálně uznávaných indiánských teritorií (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), země bez armády, ~98 % obnovitelné energie a dostupné rurální pozemky. Uzel se staví principem FPIC — svobodný, předem daný a informovaný souhlas kruhů starších.`,
-    en: `LUMI (Nová Amerika) is the sixth funded node of L5 Free World — a project for the native cultures of both Americas. Costa Rica sits at the geographic midpoint of the continents: eight officially recognised indigenous territories (Bribri, Cabécar, Boruca, Ngäbe-Buglé, Maleku, Huetar, Chorotega), a country without an army, ~98% renewable energy and affordable rural land. The node is built on FPIC — free, prior and informed consent of the councils of elders.`,
+    cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
+    en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Listen first — then, maybe, build, somewhere else, differently.`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
-  featuresSubtitle: { cs: `Aktivity & vize`, en: `Activities & Vision` },
+  featuresSubtitle: { cs: `Dědictví & poselství`, en: `Heritage & Message` },
   phasesTitle: { cs: `Fáze rozvoje`, en: `Development Phases` },
-  phasesSubtitle: { cs: `Od naslouchání k síti`, en: `From listening to the network` },
+  phasesSubtitle: { cs: `Od naslouchání k vztahu`, en: `From listening to relationship` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
-  l6Title: { cs: `Sdílený pozemek s L6 Issobella`, en: `Shared land with L6 Issobella` },
-  l6Body: {
-    cs: `Na stejném pozemku je plánován pozemní segment L6 Issobella — výzkumný kampus s TT&C anténami, laboratoří a observatoří. L5 pod nohama, L6 nad hlavou: sdílená země, voda, energie a mesh — ale každý fond, governance a rozpočet zvlášť.`,
-    en: `The same plot is planned to host the L6 Issobella ground segment — a research campus with TT&C antennas, a lab and an observatory. L5 underfoot, L6 overhead: shared land, water, energy and mesh — but separate fund, governance and budget.`,
-  },
-  l6Link: { cs: `Pozemní stanice Kostarika → L6 Issobella`, en: `Costa Rica Ground Station → L6 Issobella` },
-  conceptTitle: { cs: `Koncept kampusu`, en: `Campus concept` },
-  conceptSub: {
-    cs: `Vizualizace sdíleného L5 + L6 kampusu — vize, ne realita`,
-    en: `Shared L5 + L6 campus visualization — a vision, not reality`,
+  respectTitle: { cs: `Posvátná země zůstává nedotčena`, en: `Sacred land stays untouched` },
+  respectBody: {
+    cs: `Uluru samotné je posvátný — od roku 2019 se na něj nesmí vystoupit a Aňangu o něm rozhodují v národním parku Uluru-Kata Tjuṯa (UNESCO za přírodní i kulturní dědictví). Uzel L5 proto neznamená stavbu u monolitu. Znamená uznání: že mapa lidstva není kompletní bez jeho nejstarší žijící kultury, a že její poselství — odpovědnost za zemi, kanyini — je přesně to, co Free World potřebuje slyšet.`,
+    en: `Uluru itself is sacred — climbing it has been closed since 2019 and the Aṉangu govern it within the Uluru-Kata Tjuṯa National Park (UNESCO listed for both natural and cultural heritage). The L5 node therefore does not mean a construction by the monolith. It means recognition: that the map of humanity is not complete without its oldest living culture, and that its message — responsibility for the land, kanyini — is exactly what the Free World needs to hear.`,
   },
   openTitle: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   openItems: {
     cs: [
-      `Konkrétní lokalita — Talamanca (Bribri/Cabécar), Boruca či Guanacaste`,
-      `FPIC dialog a kruh starších — partneři z indiánských teritorií`,
-      `Právní forma v Kostarice (asociace / komunitní nadace / hybrid)`,
-      `Pravidla sdílení pozemku a infrastruktury s L6 kampusem`,
-      `Semenná knihovna Amerik — které odrůdy a partneři výměny`,
+      `Je fyzický uzel vůbec správný? Může být vazbou, ne místem.`,
+      `FPIC dialog — kruhy starších a tradiční custodiáni (Aňangu a další)`,
+      `Partnerské území mimo národní park — střední Austrálie nebo pobřeží`,
+      `Songlines jako mapa: které příběhy smí být sdíleny, a pod čí kontrolou`,
+      `Souhlas a vlastnictví — znalosti zůstávají majetkem jejich nositelů`,
     ],
     en: [
-      `Exact location — Talamanca (Bribri/Cabécar), Boruca or Guanacaste`,
-      `FPIC dialogue and council of elders — partners from indigenous territories`,
-      `Legal form in Costa Rica (association / community foundation / hybrid)`,
-      `Rules for sharing land and infrastructure with the L6 campus`,
-      `Seed Library of the Americas — which varieties and exchange partners`,
+      `Is a physical node even right? It may be a relationship, not a site.`,
+      `FPIC dialogue — councils of elders and traditional custodians (Aṉangu and beyond)`,
+      `Partner territory outside the national park — central Australia or the coast`,
+      `Songlines as a map: which stories may be shared, and under whose control`,
+      `Consent and ownership — knowledge stays in the custody of its carriers`,
     ],
   },
   cta: {
-    cs: `Slyšíš volání mostu? Jsi Guardian, který chce stavět uzel mezi dvěma Amerikami?`,
-    en: `Do you hear the call of the bridge? Are you a Guardian who wants to build the node between the two Americas?`,
+    cs: `Slyšíš píseň protinožců? Jsi Guardian, který umí nejdřív poslouchat?`,
+    en: `Do you hear the song of the antipodes? Are you a Guardian who knows how to listen first?`,
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
-  documentationSubtitle: { cs: `Kompletní plán, koncept a specifikace projektu LUMI.`, en: `Complete plan, concept and specification of the LUMI project.` },
+  documentationSubtitle: { cs: `Koncept a vize uzlu Uluru — Dreamtime, songlines a poselství protinožců.`, en: `Concept and vision of the Uluru node — Dreamtime, songlines and the message of the antipodes.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
   sisterTitle: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
@@ -104,92 +97,92 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    icon: Users,
-    titleCs: 'Kruh starších',
-    titleEn: 'Council of Elders',
-    descCs: 'Představitelé partnerských teritorií sedí u stolu od prvního dne. FPIC není formulář — je to způsob rozhodování.',
-    descEn: 'Representatives of partner territories sit at the table from day one. FPIC is not a form — it is how decisions are made.',
+    icon: Music,
+    titleCs: 'Songlines',
+    titleEn: 'Songlines',
+    descCs: 'Pěvecké stezky nesoucí příběh, mapu i zákon přes celý kontinent — nejstarší síť poselství na Zemi.',
+    descEn: 'Singing tracks carrying story, map and law across the whole continent — the oldest message network on Earth.',
+    color: '#EA580C',
+    rgb: '234, 88, 12',
+  },
+  {
+    icon: Mountain,
+    titleCs: 'Tjukurpa — Snění',
+    titleEn: 'Tjukurpa — the Dreaming',
+    descCs: 'Zákon předků, který není minulostí, ale trvající přítomnost: vztah mezi člověkem, zemí a příběhem.',
+    descEn: 'The law of the ancestors — not the past but a continuing present: the relation between people, land and story.',
     color: '#F59E0B',
     rgb: '252, 209, 22',
   },
   {
-    icon: Leaf,
-    titleCs: 'Semenná knihovna Amerik',
-    titleEn: 'Seed Library of the Americas',
-    descCs: 'Kakao, kukuřice, fazole, dýně a lokální odrůdy. Živá sbírka ve vlastnictví komunity, ve výměně s ostatními uzly.',
-    descEn: 'Cacao, maize, beans, squash and local varieties. A living collection owned by the community, exchanged with other nodes.',
+    icon: Users,
+    titleCs: 'Kruh custodiánů',
+    titleEn: 'Council of custodians',
+    descCs: 'Aňangu a další tradiční vlastníci rozhodují od prvního dne — FPIC není formulář, je to způsob existence vztahu.',
+    descEn: 'The Aṉangu and other traditional owners decide from day one — FPIC is not a form, it is how the relationship exists at all.',
     color: '#066928',
     rgb: '6, 105, 40',
   },
   {
-    icon: Sun,
-    titleCs: 'Permakultura & agrolesnictví',
-    titleEn: 'Permaculture & Agroforestry',
-    descCs: 'Syntropické systémy inspirované tradičním kostarickým hospodařením — půda, která se zlepšuje každým rokem.',
-    descEn: 'Syntropic systems inspired by traditional Costa Rican cultivation — soil that improves every year.',
+    icon: Ear,
+    titleCs: 'Naslouchání jako praxe',
+    titleEn: 'Listening as practice',
+    descCs: 'Šedesát tisíc let kontinuity se nedá „osvojit" — dá se jenom vyslechnout. L5 přichází jako žák, ne jako zakladatel.',
+    descEn: 'Sixty thousand years of continuity cannot be "adopted" — it can only be listened to. L5 arrives as a student, not a founder.',
     color: '#22D3EE',
     rgb: '34, 211, 238',
   },
   {
     icon: Heart,
-    titleCs: 'Medical Table',
-    titleEn: 'Medical Table',
-    descCs: 'Most mezi tradiční medicínou a holistickými protokoly L5 — znalosti zůstávají majetkem komunit, které je nosí.',
-    descEn: 'A bridge between traditional medicine and L5 holistic protocols — knowledge stays in the ownership of the communities that carry it.',
-    color: '#F59E0B',
-    rgb: '252, 209, 22',
-  },
-  {
-    icon: Radio,
-    titleCs: 'LoRa mesh + Guardian Node',
-    titleEn: 'LoRa Mesh + Guardian Node',
-    descCs: 'Off-grid komunikace a validace bloků — 90 % operátor / 10 % komunitní pokladna, stejně jako všechny L5 uzly.',
-    descEn: 'Off-grid communication and block validation — 90% operator / 10% community treasury, same as all L5 nodes.',
-    color: '#8B5CF6',
-    rgb: '139, 92, 246',
-  },
-  {
-    icon: Satellite,
-    titleCs: 'L6 pozemní segment',
-    titleEn: 'L6 Ground Segment',
-    descCs: 'Na sdíleném pozemku později kampus Issobella — TT&C antény, laboratoř a observatoř pro budoucí orbitální stanici.',
-    descEn: 'The shared plot later hosts the Issobella campus — TT&C antennas, a lab and an observatory for the future orbital station.',
+    titleCs: 'Kanyini — odpovědnost',
+    titleEn: 'Kanyini — responsibility',
+    descCs: 'Propojenost a povinnost pečovat o zemi, rodinu a příběh — princip, který L5 tithe ztělesňuje v protokolu.',
+    descEn: 'Connectedness and the duty to care for land, family and story — the principle the L5 tithe embodies in protocol.',
     color: '#A78BFA',
     rgb: '167, 139, 250',
+  },
+  {
+    icon: Sparkles,
+    titleCs: 'Paměť krajiny',
+    titleEn: 'Memory of the land',
+    descCs: 'Nejstarší žijící kultura planety drží vědění o poušti, vodě a ohni, které žádná knihovna neobsáhne.',
+    descEn: 'The oldest living culture on the planet holds knowledge of desert, water and fire that no library contains.',
+    color: '#8B5CF6',
+    rgb: '139, 92, 246',
   },
 ];
 
 const PHASES = [
   {
     num: '0',
-    cs: 'Poslouchání',
+    cs: 'Naslouchání',
     en: 'Listening',
-    descCs: 'Mapování teritorií, FPIC dialog, scouting lokalit (Talamanca / Boruca / Guanacaste), právní rešerše. Žádná stavba před souhlasem.',
-    descEn: 'Territory mapping, FPIC dialogue, site scouting (Talamanca / Boruca / Guanacaste), legal research. No building before consent.',
+    descCs: 'Uznání a vzdání holdu. Žádné jednání bez FPIC dialogu s tradičními custodiány — a žádný termín.',
+    descEn: 'Acknowledgement and respect. No action without FPIC dialogue with the traditional custodians — and no deadline.',
     active: true,
   },
   {
     num: '1',
-    cs: 'Pozemek',
-    en: 'Land',
-    descCs: 'Akvizice soukromé půdy mimo teritoria (koupě / dlouhodobý pronájem), ustavení kruhu starších, voda a solar.',
-    descEn: 'Acquisition of private land outside the territories (purchase / long-term lease), council of elders established, water and solar.',
+    cs: 'Vztah',
+    en: 'Relationship',
+    descCs: 'Pokud custodiáni chtějí: výměnné pobyty, kulturní dialog, podpora komunitou vedených projektů.',
+    descEn: 'If the custodians wish: exchange visits, cultural dialogue, support for community-led projects.',
     active: false,
   },
   {
     num: '2',
-    cs: 'Komunita',
-    en: 'Community',
-    descCs: 'Farma, semenná knihovna, Guardian node, LoRa mesh, první rezidenční pobyty hostů z teritorií.',
-    descEn: 'Farm, seed library, Guardian node, LoRa mesh, first residency stays for guests from the territories.',
+    cs: 'Podpora',
+    en: 'Support',
+    descCs: 'Granty a nástroje L5 pro Aboriginal-led iniciativy — jazyky, krajina, oheň. Prostředky bez podmínek vlastnictví.',
+    descEn: 'L5 grants and tools for Aboriginal-led initiatives — language, land, fire. Resources with no ownership strings.',
     active: false,
   },
   {
     num: '3',
     cs: 'Síť',
     en: 'Network',
-    descCs: 'Sesterské uzly v dalších teritoriích Amerik, výměnné programy s Te Pīko Ora a dalšími L5 komunitami.',
-    descEn: 'Sister nodes in other territories of the Americas, exchange programmes with Te Pīko Ora and other L5 communities.',
+    descCs: 'Uluru jako poselství v síti — songlines se setkávají s Te Pīko Ora, LUMI a ostatními uzly. Směr určují custodiáni.',
+    descEn: 'Uluru as a message inside the network — songlines meeting Te Pīko Ora, LUMI and the other nodes. Direction set by the custodians.',
     active: false,
   },
 ];
@@ -198,10 +191,9 @@ const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
   { label: 'ZION L1 Node', icon: Network },
   { label: 'DAO Governance', icon: Users },
   { label: 'Guardian Wallet', icon: Shield },
-  { label: 'Medical Table', icon: Heart },
-  { label: 'LoRa / Mesh', icon: Radio },
-  { label: 'Seed Library', icon: Leaf },
-  { label: 'L6 Ground Station', icon: Satellite },
+  { label: 'L5 Humanitarian Tithe', icon: Heart },
+  { label: 'Cultural Grants', icon: Feather },
+  { label: 'Community Registry', icon: Landmark },
 ];
 
 const SISTERS = [
@@ -210,10 +202,10 @@ const SISTERS = [
   { name: 'Te Pīko Ora', href: '/terranova/te-piko-ora', region: { cs: 'Raiatea · Polynésie', en: 'Raiatea · Polynesia' } },
   { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
-  { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory · Austrálie', en: 'Northern Territory · Australia' } },
+  { name: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika', region: { cs: 'Kostarika', en: 'Costa Rica' } },
 ];
 
-export default function NovaAmerikaPage() {
+export default function UluruPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
@@ -221,7 +213,7 @@ export default function NovaAmerikaPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/nova-amerika.cs.md' : '/docs/terranova/nova-amerika.en.md';
+    const file = cs ? '/docs/terranova/uluru.cs.md' : '/docs/terranova/uluru.en.md';
     setDoc(null);
     setDocError(false);
     fetch(file)
@@ -260,27 +252,27 @@ export default function NovaAmerikaPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
             <div className="relative z-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
-                  <Feather className="h-10 w-10 text-teal-300" />
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+                  <Mountain className="h-10 w-10 text-orange-300" />
                 </div>
 
                 <div className="space-y-3 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="zion-badge">L5 · Terra Nova · Americas Bridge</span>
+                    <span className="zion-badge">L5 · Terra Nova · Antipodes</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.planned2029[cs ? 'cs' : 'en']}
+                      {Copy.visionStage[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
-                    LUMI
+                    Uluru
                   </h1>
-                  <p className="text-lg text-teal-300 font-medium">
-                    {Copy.bridgeSubtitle[cs ? 'cs' : 'en']}
+                  <p className="text-lg text-orange-300 font-medium">
+                    {Copy.subtitle[cs ? 'cs' : 'en']}
                   </p>
 
                   <div className="flex items-center gap-1.5 text-white/70">
@@ -294,14 +286,14 @@ export default function NovaAmerikaPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Globe2, value: cs ? 'Středobod Amerik' : 'Midpoint of the Americas', labelCs: 'Osa', labelEn: 'Axis' },
-                      { icon: Feather, value: cs ? 'Nativní kultury' : 'Native cultures', labelCs: 'Fokus', labelEn: 'Focus' },
-                      { icon: Sparkles, value: '2029–2033', labelCs: 'Fáze 0–3', labelEn: 'Phases 0–3' },
+                      { icon: Sun, value: cs ? '60 000+ let' : '60,000+ years', labelCs: 'Paměť', labelEn: 'Memory' },
+                      { icon: Mountain, value: 'Uluru', labelCs: 'Srdce', labelEn: 'Heart' },
+                      { icon: Sparkles, value: cs ? 'Vize' : 'Vision', labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
-                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
-                          <div className="flex items-center gap-2 text-teal-300">
+                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+                          <div className="flex items-center gap-2 text-orange-300">
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
@@ -315,18 +307,6 @@ export default function NovaAmerikaPage() {
                 </div>
               </div>
             </div>
-            <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-              <img
-                src="/images/nova-amerika/hero.webp"
-                alt="LUMI — Nová Amerika"
-                width={1672}
-                height={941}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                className="w-full object-cover"
-              />
-            </div>
           </div>
         </motion.header>
 
@@ -337,7 +317,7 @@ export default function NovaAmerikaPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
               {Copy.introTitle[cs ? 'cs' : 'en']}
             </h2>
@@ -357,7 +337,7 @@ export default function NovaAmerikaPage() {
           <div className="mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.featuresSubtitle[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Compass className="h-7 w-7 text-teal-300" />
+              <Compass className="h-7 w-7 text-orange-400" />
               {Copy.featuresTitle[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -381,17 +361,17 @@ export default function NovaAmerikaPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
             <div className="mb-8">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
-                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
                   <div
                     className={`shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-bold text-sm ${
-                      phase.active ? 'border-teal-400/40 bg-teal-400/10 text-teal-300' : 'border-white/10 bg-white/5 text-gray-500'
+                      phase.active ? 'border-orange-400/40 bg-orange-400/10 text-orange-300' : 'border-white/10 bg-white/5 text-gray-500'
                     }`}
                   >
                     {phase.num}
@@ -399,7 +379,7 @@ export default function NovaAmerikaPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-teal-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-orange-300">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -409,7 +389,7 @@ export default function NovaAmerikaPage() {
           </div>
         </motion.section>
 
-        {/* ═══ L6 SHARED LAND ═══ */}
+        {/* ═══ SACRED LAND ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -418,48 +398,12 @@ export default function NovaAmerikaPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
-              <Satellite className="h-7 w-7 text-zion-purple" />
-              {Copy.l6Title[cs ? 'cs' : 'en']}
+              <Shield className="h-7 w-7 text-zion-purple" />
+              {Copy.respectTitle[cs ? 'cs' : 'en']}
             </h2>
-            <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.l6Body[cs ? 'cs' : 'en']}
+            <p className="text-gray-300 leading-relaxed">
+              {Copy.respectBody[cs ? 'cs' : 'en']}
             </p>
-            <Link
-              href="/l6-issobella"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-6 py-3 text-sm font-semibold text-rose-200 hover:bg-zion-purple/10 transition-colors"
-            >
-              {Copy.l6Link[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </motion.section>
-
-        {/* ═══ CAMPUS CONCEPT ═══ */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-16"
-        >
-          <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
-            <div className="relative z-10 mb-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
-                {Copy.conceptTitle[cs ? 'cs' : 'en']}
-              </p>
-              <h2 className="text-xl font-bold text-white">
-                {Copy.conceptSub[cs ? 'cs' : 'en']}
-              </h2>
-            </div>
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-              <img
-                src="/images/nova-amerika/concept-og.webp"
-                alt={cs ? 'Koncept sdíleného kampusu LUMI a Issobella' : 'LUMI and Issobella shared campus concept'}
-                width={1671}
-                height={941}
-                loading="lazy"
-                decoding="async"
-                className="w-full object-contain"
-              />
-            </div>
           </div>
         </motion.section>
 
@@ -471,23 +415,23 @@ export default function NovaAmerikaPage() {
           className="mb-16"
         >
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Network className="h-5 w-5 text-teal-300" />
+                <Network className="h-5 w-5 text-orange-300" />
                 {Copy.zionTitle[cs ? 'cs' : 'en']}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/30 bg-teal-400/10 px-3 py-1 text-xs text-teal-200">
+                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1 text-xs text-orange-200">
                     <item.icon className="h-3 w-3" />
                     {item.label}
                   </span>
                 ))}
               </div>
             </div>
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Landmark className="h-5 w-5 text-teal-300" />
+                <Landmark className="h-5 w-5 text-orange-300" />
                 {Copy.openTitle[cs ? 'cs' : 'en']}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">
