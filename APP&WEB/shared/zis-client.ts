@@ -118,6 +118,45 @@ export function zisAvatarAbsoluteUrl(
   return `${getZisUrl()}${zisAvatarUrl(seed, opts)}`;
 }
 
+const AVATAR_UPLOAD_MIMES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const;
+export type ZisAvatarUploadMime = (typeof AVATAR_UPLOAD_MIMES)[number];
+
+/**
+ * Upload a custom avatar image for the current user.
+ * POST /api/auth/avatar/upload — raw image body (PNG/JPEG/WebP/GIF,
+ * ≤256 KiB). ZIS stores the bytes and sets `user.avatar` to the public
+ * serve URL in one call, so `refreshUser()` reflects it immediately.
+ * Browser-side only (credentials: include).
+ */
+export async function uploadAvatar(
+  blob: Blob,
+): Promise<{ ok: boolean; avatar: string }> {
+  const mime = blob.type as ZisAvatarUploadMime;
+  if (!(AVATAR_UPLOAD_MIMES as readonly string[]).includes(mime)) {
+    throw new Error('Unsupported image type — use PNG, JPEG, WebP or GIF.');
+  }
+  const res = await fetch('/api/auth/avatar/upload', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': mime },
+    body: blob,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(
+      (data as { message?: string }).message ?? `Avatar upload failed (${res.status})`,
+    ) as Error & { status: number };
+    err.status = res.status;
+    throw err;
+  }
+  return data as { ok: boolean; avatar: string };
+}
+
+/** Remove the uploaded avatar — account falls back to the generated one. */
+export async function deleteUploadedAvatar(): Promise<{ ok: boolean }> {
+  return zisFetch<{ ok: boolean }>('/api/auth/avatar/upload', { method: 'DELETE' });
+}
+
 /** ZIS API key metadata (without the secret). */
 export interface ZisApiKey {
   id: string;

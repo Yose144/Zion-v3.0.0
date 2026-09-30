@@ -56,10 +56,12 @@ export async function proxyToZis(
     forwardHeaders['Content-Type'] = contentType;
   }
 
-  // Read body for mutating methods.
+  // Read body for mutating methods. ArrayBuffer keeps binary uploads
+  // (avatar images) intact — req.text() would corrupt them through
+  // UTF-8 decoding.
   let body: BodyInit | undefined;
   if (method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE') {
-    body = await req.text();
+    body = await req.arrayBuffer();
   }
 
   let zisRes: Response;

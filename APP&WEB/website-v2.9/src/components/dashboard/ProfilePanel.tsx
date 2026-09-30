@@ -7,12 +7,12 @@
  * PATCH /api/auth/me through the AuthContext updateProfile helper.
  */
 
-import { useState, type CSSProperties } from 'react';
-import { User, Mail, Image as ImageIcon, FileText, Loader2, Check, AlertTriangle, Save, RefreshCw, Undo2 } from 'lucide-react';
+import { useRef, useState, type CSSProperties } from 'react';
+import { User, Mail, Image as ImageIcon, FileText, Loader2, Check, AlertTriangle, Save, RefreshCw, Undo2, ImagePlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
 import ZisAvatar from '@/components/ZisAvatar';
-import { zisAvatarUrl, zisAvatarAbsoluteUrl, type ZisAvatarStyle } from '@/lib/zis';
+import { zisAvatarUrl, zisAvatarAbsoluteUrl, uploadAvatar, type ZisAvatarStyle } from '@/lib/zis';
 
 const copy = {
   en: {
@@ -37,6 +37,10 @@ const copy = {
     regenerate: 'More variants',
     customUrl: 'Or paste a custom image URL',
     resetAvatar: 'Reset to generated',
+    uploadAvatar: 'Upload image',
+    uploading: 'Uploading…',
+    uploadHint: 'PNG, JPEG, WebP or GIF, max 256 KB',
+    uploadErr: 'Upload failed — check the file type and size.',
     avatarHint: 'Avatars are generated deterministically from your identity — pick a variant, a style, or use your own image URL.',
   },
   cs: {
@@ -61,6 +65,10 @@ const copy = {
     regenerate: 'Další varianty',
     customUrl: 'Nebo vlož URL vlastního obrázku',
     resetAvatar: 'Vrátit na generovaný',
+    uploadAvatar: 'Nahrát obrázek',
+    uploading: 'Nahrávám…',
+    uploadHint: 'PNG, JPEG, WebP nebo GIF, max 256 KB',
+    uploadErr: 'Nahrání selhalo — zkontroluj typ a velikost souboru.',
     avatarHint: 'Avatary se generují deterministicky z tvé identity — vyber variantu, styl, nebo použij vlastní obrázek.',
   },
 };
@@ -88,7 +96,7 @@ function parseGeneratedAvatar(url: string | null | undefined): { style: ZisAvata
 }
 
 export default function ProfilePanel() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
   const { lang } = useLang();
   const t = lang === 'en' ? copy.en : copy.cs;
 
@@ -107,6 +115,9 @@ export default function ProfilePanel() {
   const [variantBase, setVariantBase] = useState(0);
   const [pickedVariant, setPickedVariant] = useState<number | null>(initialGen?.variant ?? null);
   const [customAvatar, setCustomAvatar] = useState('');
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
 
@@ -139,6 +150,28 @@ export default function ProfilePanel() {
     setPendingAvatar(null);
     setPickedVariant(null);
     setCustomAvatar('');
+  };
+
+  const handleUploadFile = async (file: File) => {
+    if (file.size > 256 * 1024) {
+      setUploadErr(t.uploadErr);
+      return;
+    }
+    setUploadBusy(true);
+    setUploadErr(null);
+    try {
+      // Server stores the bytes AND sets user.avatar in one call.
+      await uploadAvatar(file);
+      await refreshUser();
+      setPendingAvatar(undefined);
+      setPickedVariant(null);
+      setCustomAvatar('');
+    } catch (err) {
+      setUploadErr(err instanceof Error ? err.message : t.uploadErr);
+    } finally {
+      setUploadBusy(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,13 +266,37 @@ export default function ProfilePanel() {
               ))}
               <button
                 type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadBusy}
+                className="rounded-lg border border-zion-gold/30 bg-zion-gold/10 px-3 py-1.5 text-xs text-zion-gold hover:bg-zion-gold/20 inline-flex items-center gap-1 disabled:opacity-50"
+              >
+                {uploadBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImagePlus className="h-3 w-3" />}
+                {uploadBusy ? t.uploading : t.uploadAvatar}
+              </button>
+              <button
+                type="button"
                 onClick={handleResetAvatar}
                 className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-400 hover:border-white/25 inline-flex items-center gap-1"
               >
                 <Undo2 className="h-3 w-3" /> {t.resetAvatar}
               </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleUploadFile(f);
+                }}
+              />
             </div>
           </div>
+          {uploadErr && (
+            <p className="mb-3 flex items-center gap-1.5 text-xs text-red-300">
+              <AlertTriangle className="h-3 w-3" /> {uploadErr}
+            </p>
+          )}
 
           <p className="text-[11px] text-gray-600 mb-2">{t.style}: <span className="text-zion-cyan">{avatarStyle}</span> · {t.variants}</p>
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
@@ -283,6 +340,7 @@ export default function ProfilePanel() {
             maxLength={512}
             className={inputCls}
           />
+          <p className="mt-1.5 text-[10px] text-gray-600">{t.uploadHint}</p>
         </div>
 
         <div>

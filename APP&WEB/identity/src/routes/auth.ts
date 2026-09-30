@@ -6,6 +6,7 @@ import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
 import { issueSessionForUser } from '../lib/session-issue.js';
 import { renderAvatarSvg, AVATAR_STYLES } from '../lib/avatar.js';
+import { createHash } from 'node:crypto';
 
 const ChallengeSchema = z.object({
   address: z.string().min(8),
@@ -77,6 +78,102 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       .send(svg);
     },
   );
+
+  // ── Uploaded avatar storage ─────────────────────────────────────
+  // POST /avatar/upload accepts a raw image body (no multipart dep):
+  //   Content-Type: image/png|jpeg|webp|gif, ≤256 KiB, magic-byte checked.
+  //   Stored in AvatarAsset (Postgres bytea) and user.avatar is set to
+  //   the public serve URL /api/auth/avatar/u/<userId>.
+  // GET  /avatar/u/:userId serves the bytes (public, moderate cache).
+  // DELETE /avatar/upload removes the upload → generated fallback.
+  const AVATAR_MIME_MAGIC: Array<[string, number[]]> = [
+    ['image/png', [0x89, 0x50, 0x4e, 0x47]],
+    ['image/jpeg', [0xff, 0xd8, 0xff]],
+    ['image/webp', [0x52, 0x49, 0x46, 0x46]], // RIFF (+WEBP at offset 8)
+    ['image/gif', [0x47, 0x49, 0x46, 0x38]], // GIF8
+  ];
+  const AVATAR_MAX_BYTES = 256 * 1024;
+
+  app.addContentTypeParser(
+    ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+    { parseAs: 'buffer', bodyLimit: AVATAR_MAX_BYTES },
+    (_req, body, done) => done(null, body),
+  );
+
+  function sniffAvatarMime(buf: Buffer): string | null {
+    for (const [mime, magic] of AVATAR_MIME_MAGIC) {
+      if (buf.length >= magic.length && magic.every((b, i) => buf[i] === b)) {
+        if (mime === 'image/webp' && buf.slice(8, 12).toString('ascii') !== 'WEBP') continue;
+        return mime;
+      }
+    }
+    return null;
+  }
+
+  const uploadedAvatarUrl = (userId: string): string => {
+    // Always the public origin — requests arriving through the website
+    // proxy carry an internal Host, which would persist an unusable URL.
+    const base = process.env.ZIS_PUBLIC_URL ?? 'https://auth.zionterranova.com';
+    return `${base}/api/auth/avatar/u/${encodeURIComponent(userId)}`;
+  };
+
+  // GET /avatar/u/:userId — serve an uploaded avatar (public)
+  app.get('/avatar/u/:userId', async (req, reply) => {
+    const { userId } = req.params as { userId: string };
+    if (!userId || userId.length > 64) {
+      return reply.code(400).send({ error: 'BAD_REQUEST' });
+    }
+    const asset = await app.prisma.avatarAsset.findUnique({ where: { userId } });
+    if (!asset) return reply.code(404).send({ error: 'NOT_FOUND' });
+    const etag = `"${createHash('sha256').update(asset.data).digest('hex').slice(0, 32)}"`;
+    if (req.headers['if-none-match'] === etag) {
+      return reply.code(304).send();
+    }
+    return reply
+      .header('Content-Type', asset.mime)
+      .header('Cache-Control', 'public, max-age=300')
+      .header('X-Content-Type-Options', 'nosniff')
+      .header('ETag', etag)
+      .send(Buffer.from(asset.data));
+  });
+
+  // POST /avatar/upload — authenticated raster upload
+  app.post('/avatar/upload', { preHandler: [requireAuth] }, async (req, reply) => {
+    const buf = req.body as Buffer;
+    if (!Buffer.isBuffer(buf) || buf.length === 0) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Expected an image body' });
+    }
+    if (buf.length > AVATAR_MAX_BYTES) {
+      return reply.code(413).send({ error: 'PAYLOAD_TOO_LARGE', message: 'Max 256 KiB' });
+    }
+    const mime = sniffAvatarMime(buf);
+    const declared = (req.headers['content-type'] ?? '').split(';')[0];
+    if (!mime || mime !== declared) {
+      return reply.code(400).send({ error: 'BAD_IMAGE', message: 'Unsupported or corrupt image' });
+    }
+
+    const payload = req.user as { sub: string };
+    const userId = payload.sub;
+    await app.prisma.avatarAsset.upsert({
+      where: { userId },
+      create: { userId, data: buf, mime },
+      update: { data: buf, mime },
+    });
+    const url = uploadedAvatarUrl(userId);
+    await app.prisma.user.update({ where: { id: userId }, data: { avatar: url } });
+    return { ok: true, avatar: url };
+  });
+
+  // DELETE /avatar/upload — remove upload, fall back to generated avatar
+  app.delete('/avatar/upload', { preHandler: [requireAuth] }, async (req, reply) => {
+    const payload = req.user as { sub: string };
+    await app.prisma.avatarAsset.deleteMany({ where: { userId: payload.sub } });
+    const user = await app.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (user?.avatar?.includes('/api/auth/avatar/u/')) {
+      await app.prisma.user.update({ where: { id: payload.sub }, data: { avatar: null } });
+    }
+    return { ok: true };
+  });
 
   // ── POST /challenge ─────────────────────────────────────────────
   app.post('/challenge', async (req, reply) => {

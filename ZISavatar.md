@@ -133,9 +133,14 @@ initial (současné chování).
       vlastní notifikace identitu nezobrazují)
 
 ### Fáze 3 — pokročilé
-- [ ] Custom upload (vyžaduje storage — Edge nedisponuje object storage;
-      možnosti: malý data-URI limit, nebo dedikovaný `/api/avatar/upload`
-      s resize+store do Postgres `bytea`)
+- [x] Custom upload — `POST /api/auth/avatar/upload` (auth, raw body
+      `image/png|jpeg|webp|gif` ≤256 KiB, magic-byte validace; uloží se do
+      `AvatarAsset` bytea a `user.avatar` se nastaví na veřejnou
+      `/api/auth/avatar/u/<userId>` URL atomicky), `GET /avatar/u/:userId`
+      (public, ETag, `max-age=300`), `DELETE /avatar/upload` (smaže asset +
+      avatar → fallback na generovaný). Avatar Studio má tlačítko
+      „Nahrát obrázek" (applied okamžitě, bez Save). Resize se nedělá —
+      limit velikosti řeší payload, prohlížeč škáluje.
 - [ ] OASIS NFT avatary (on-chain ownership → `avatar` URL na token art)
 - [ ] 3D/animated avatar varianty pro OASIS world
 
