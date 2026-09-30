@@ -700,6 +700,7 @@ const TERRA_NOVA_MARKERS = [
   { lat: 7.0, lon: 81.0, color: '#06b6d4', glow: '#06b6d4', nameCs: 'Bodhi Lanka', nameEn: 'Bodhi Lanka', href: '/terranova/bodhi-lanka' },
   { lat: 9.7, lon: -83.7, color: '#14b8a6', glow: '#14b8a6', nameCs: 'LUMI · Nová Amerika', nameEn: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika' },
   { lat: -25.3, lon: 131.0, color: '#ea580c', glow: '#ea580c', nameCs: 'Uluru', nameEn: 'Uluru', href: '/terranova/uluru' },
+  { lat: 42.4, lon: -8.7, color: '#0ea5e9', glow: '#0ea5e9', nameCs: 'María del Camino', nameEn: 'María del Camino', href: '/terranova/maria-del-camino' },
 ];
 
 function TerraNovaMarkers() {

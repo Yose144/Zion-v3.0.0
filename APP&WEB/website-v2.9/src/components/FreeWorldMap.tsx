@@ -46,6 +46,7 @@ const LOCATION_LABEL: Record<string, { cs: string; en: string }> = {
   'bodhi-lanka': { cs: 'Srí Lanka', en: 'Sri Lanka' },
   lumi: { cs: 'Kostarika · Nová Amerika', en: 'Costa Rica · Nová Amerika' },
   uluru: { cs: 'Uluru, Northern Territory, Austrálie', en: 'Uluru, Northern Territory, Australia' },
+  'maria-del-camino': { cs: 'Světové oceány · domovský přístav Galicie', en: 'World oceans · home port Galicia' },
 };
 
 export default function FreeWorldMap() {

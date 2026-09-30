@@ -3,26 +3,27 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
+  Anchor,
   ArrowLeft,
   ArrowRight,
-  Brain,
   Calendar,
   Compass,
-  Ear,
   Feather,
-  Flame,
   Heart,
   Landmark,
   LucideIcon,
   MapPin,
-  Mountain,
-  Music,
   Network,
-  PawPrint,
+  Radio,
+  Route,
+  Sailboat,
+  Shell,
   Shield,
+  Ship,
   Sparkles,
   Sun,
   Users,
+  Waves,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import dynamic from 'next/dynamic';
@@ -32,69 +33,69 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
-  visionStage: { cs: `Vize — nejdřív naslouchat`, en: `Vision — listen first` },
-  subtitle: { cs: `Uluru · Tjukurpa · Songlines · Austrálie · Terra Nova ®`, en: `Uluru · Tjukurpa · Songlines · Australia · Terra Nova ®` },
+  researchStage: { cs: `Příprava — výzkum plavidla`, en: `Preparation — vessel research` },
+  subtitle: { cs: `Plující uzel · Mořské Camino · Solární plachty · Terra Nova ®`, en: `The Sailing Node · Sea Camino · Solar Sails · Terra Nova ®` },
   quote: {
-    cs: `"Země není něco, co vlastníme. Země je něco, čím jsme."`,
-    en: `"The land is not something we own. The land is something we are."`,
+    cs: `"Ultreia et suseia — vpřed a výš."`,
+    en: `"Ultreia et suseia — onward and upward."`,
   },
-  locationLine: { cs: `Uluru-Kata Tjuṯa · Northern Territory, Austrálie`, en: `Uluru-Kata Tjuṯa · Northern Territory, Australia` },
-  introTitle: { cs: `Sedmý uzel — poselství od protinožců`, en: `The seventh node — the message from the antipodes` },
+  locationLine: { cs: `Světové oceány · domovský přístav Galicie`, en: `World oceans · home port Galicia` },
+  introTitle: { cs: `Osmý uzel — cesta, ne místo`, en: `The eighth node — a way, not a place` },
   introBody: {
-    cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Jeho učení jsou telepatie a vize, nativní propojení s přírodou a zvířaty — a jednou ročně Uluru Festival, oslava života pro všechny umělce. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
-    en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Its teachings are telepathy and visions, native connection with land and animals — and once a year the Uluru Festival, a celebration of life for all artists. Listen first — then, maybe, build, somewhere else, differently.`,
+    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. Plachetnice pro zhruba padesát poutníků fyzicky spojuje všech sedm pevných uzlů sítě. Její plachty jsou zároveň solární články: loď nese vlastní energii, vodu, jídlo i plný ZION uzel zprostřed oceánu. Tisíc let končilo Camino u Finisterry — „konce země". María del Camino je krok navíc: cesta, která u moře nekončí, ale na něm pokračuje.`,
+    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. A sailing ship for roughly fifty pilgrims physically connects all seven fixed nodes of the network. Her sails are solar cells themselves: the vessel carries its own energy, water, food and a full ZION node in the middle of the ocean. For a thousand years the Camino ended at Finisterre — "the end of the earth". María del Camino is the step beyond: the way that does not end at the sea but continues on it.`,
   },
-  featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
-  featuresSubtitle: { cs: `Dědictví & poselství`, en: `Heritage & Message` },
-  festivalTitle: { cs: `Uluru Festival — oslava života`, en: `Uluru Festival — a celebration of life` },
-  festivalSubtitle: { cs: `Jednou ročně · pro všechny umělce`, en: `Once a year · for all artists` },
-  festivalBody: {
-    cs: `Jednou za rok se poušť promění v dočasné město umění — festival ve duchu Burning Man, upravený pro své místo: účast není diváctví, každý spoluvytváří. Instalace, hudba, tanec, oheň a světlo — oslava života pro umělce celého světa. Posvátná země zůstává nedotčena: místo určují custodiáni a po odchodu na něm nezůstává jediná stopa.`,
-    en: `Once a year the desert turns into a temporary city of art — a festival in the spirit of Burning Man, adapted to its place: participation is not spectatorship, everyone co-creates. Installations, music, dance, fire and light — a celebration of life for artists worldwide. Sacred land stays untouched: the custodians choose the site and not a single trace remains after we leave.`,
+  featuresTitle: { cs: `Co plavidlo drží`, en: `What the vessel holds` },
+  featuresSubtitle: { cs: `Trup & posádka`, en: `Hull & crew` },
+  caminoTitle: { cs: `Mořské Camino — cesta jako prolog`, en: `The Sea Camino — the way as prologue` },
+  caminoSubtitle: { cs: `Finisterre · tři mariánská místa · etapy`, en: `Finisterre · three Marian sites · etapas` },
+  caminoBody: {
+    cs: `Trasa lodi začíná tam, kde pro starý svět cesta končila: na Finisterre, kam poutníci tisíc let docházeli „na konec země" — a dívali se na moře. Prologová etapa míjí tři mariánská místa z příběhu sítě: Pontevedru (María Mayor — zasvěcení), Fátimu (most mezi nebem a zemí) a La Palmu (María de las Nieves — patronka ostrova i sítě). Každý úsek je etapa: posádka i residenti sbírají on-chain razítka jako poutníčková credencial — za celý okruh compostela.`,
+    en: `The ship's route begins where the old world's road ended: at Finisterre, where pilgrims for a thousand years walked to "the end of the earth" — and looked out to sea. The prologue leg passes the three Marian sites woven into the network's story: Pontevedra (María Mayor — initiation), Fátima (the bridge between heaven and earth) and La Palma (María de las Nieves — patroness of the island and the network). Each leg is an etapa: crew and residents collect on-chain stamps like the pilgrim's credencial — a compostela for the full circuit.`,
   },
-  festivalPoints: {
-    cs: [`Jednou ročně — pouštní cyklus`, `Pro všechny umělce — účast je tvorba`, `Leave no trace — země se vrací prázdná`],
-    en: [`Once a year — a desert cycle`, `For all artists — participation is creation`, `Leave no trace — the land returns empty`],
+  caminoPoints: {
+    cs: [`Finisterre — vyplouvání z konce země`, `Etapy jako credencial — on-chain razítka`, `Compostela za celý Velký kruh`],
+    en: [`Finisterre — departure from the end of the earth`, `Etapas as credencial — on-chain stamps`, `Compostela for the full Great Circle`],
   },
   phasesTitle: { cs: `Fáze rozvoje`, en: `Development Phases` },
-  phasesSubtitle: { cs: `Od naslouchání k vztahu`, en: `From listening to relationship` },
+  phasesSubtitle: { cs: `Od design study k Velkému kruhu`, en: `From design study to the Great Circle` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
-  respectTitle: { cs: `Posvátná země zůstává nedotčena`, en: `Sacred land stays untouched` },
-  respectBody: {
-    cs: `Uluru samotné je posvátný — od roku 2019 se na něj nesmí vystoupit a Aňangu o něm rozhodují v národním parku Uluru-Kata Tjuṯa (UNESCO za přírodní i kulturní dědictví). Uzel L5 proto neznamená stavbu u monolitu. Znamená uznání: že mapa lidstva není kompletní bez jeho nejstarší žijící kultury, a že její poselství — odpovědnost za zemi, kanyini — je přesně to, co Free World potřebuje slyšet.`,
-    en: `Uluru itself is sacred — climbing it has been closed since 2019 and the Aṉangu govern it within the Uluru-Kata Tjuṯa National Park (UNESCO listed for both natural and cultural heritage). The L5 node therefore does not mean a construction by the monolith. It means recognition: that the map of humanity is not complete without its oldest living culture, and that its message — responsibility for the land, kanyini — is exactly what the Free World needs to hear.`,
+  nameTitle: { cs: `Jménem Cesty`, en: `In the name of the Way` },
+  nameBody: {
+    cs: `Loď nese jméno María del Camino — Marie Cesty, mariánské svatyně stojící přímo na Camino Francés u Leónu. Camino de Santiago funguje od devátého století: Codex Calixtinus (~1140) byl první evropský průvodce a poutní trasy byly první fyzickou sítí kontinentu — náměty, kultura i zboží proudily po ní. L5 síť je její pokračování; loď jeho poslední etapa — ta, která pokračuje za horizont.`,
+    en: `The ship carries the name María del Camino — Mary of the Way, the Marian sanctuary standing directly on the Camino Francés near León. The Camino de Santiago has run since the ninth century: the Codex Calixtinus (~1140) was Europe's first travel guide and the pilgrim routes were the continent's first physical network — ideas, culture and goods flowed along it. The L5 network is its continuation; the ship its final stage — the one that keeps going past the horizon.`,
   },
   openTitle: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   openItems: {
     cs: [
-      `Je fyzický uzel vůbec správný? Může být vazbou, ne místem.`,
-      `FPIC dialog — kruhy starších a tradiční custodiáni (Aňangu a další)`,
-      `Partnerské území mimo národní park — pro uzel i festival určují custodiáni`,
-      `Songlines jako mapa: které příběhy smí být sdíleny, a pod čí kontrolou`,
-      `Souhlas a vlastnictví — znalosti zůstávají majetkem jejich nositelů`,
+      `Flag state a domovský přístav — Galicie na trase i na Caminu?`,
+      `Vlastnictví: DAO-owned asset vs. foundation vs. permanentní charter`,
+      `Energetická bilance pro 50 osob — solární plachty vs. hydroregenerace`,
+      `Sezónní okna Velkého kruhu — konzultace s wayfinding/marine ops`,
+      `Vazba na L6 Issobella — plující pozemní stanice / telemetry relay`,
     ],
     en: [
-      `Is a physical node even right? It may be a relationship, not a site.`,
-      `FPIC dialogue — councils of elders and traditional custodians (Aṉangu and beyond)`,
-      `Partner territory outside the national park — node and festival sites chosen by custodians`,
-      `Songlines as a map: which stories may be shared, and under whose control`,
-      `Consent and ownership — knowledge stays in the custody of its carriers`,
+      `Flag state and home port — Galicia, on the route and on the Camino?`,
+      `Ownership: DAO-owned asset vs. foundation vs. permanent charter`,
+      `Energy balance for 50 souls — solar sails vs. hydro-regeneration`,
+      `Great Circle seasonal windows — wayfinding/marine ops consultation`,
+      `L6 Issobella link — a floating ground station / telemetry relay`,
     ],
   },
   cta: {
-    cs: `Slyšíš píseň protinožců? Jsi Guardian, který umí nejdřív poslouchat?`,
-    en: `Do you hear the song of the antipodes? Are you a Guardian who knows how to listen first?`,
+    cs: `Ultreia — vyplouváš? Jsi Guardian, který umí držet kurz?`,
+    en: `Ultreia — will you sail? Are you a Guardian who can hold a course?`,
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
-  documentationSubtitle: { cs: `Koncept a vize uzlu Uluru — Dreamtime, songlines, škola vnímání a festival oslavy života.`, en: `Concept and vision of the Uluru node — Dreamtime, songlines, the school of perception and the celebration-of-life festival.` },
+  documentationSubtitle: { cs: `Koncept a vize plujícího uzlu María del Camino — mořské Camino, solární plachty a Velký kruh.`, en: `Concept and vision of the María del Camino vessel node — the sea Camino, solar sails and the Great Circle.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
   sisterTitle: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
   sisterSubtitle: { cs: `Propojení se sesterskými projekty`, en: `Connection with sister projects` },
   sisterBody: {
-    cs: `Všechny uzly sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance a seed library.`,
-    en: `All nodes share the same source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance and the seed library.`,
+    cs: `Všechny uzly sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance a seed library. María del Camino je spojuje doslova.`,
+    en: `All nodes share the same source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance and the seed library. María del Camino connects them — literally.`,
   },
 };
 
@@ -110,110 +111,118 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    icon: Brain,
-    titleCs: 'Telepatie & vize',
-    titleEn: 'Telepathy & visions',
-    descCs: 'Učení tiché komunikace — meditované vize, sdílené snění a vědomé propojení za hranicí slov. Škola vnímání vedená těmi, kdo ji nesou.',
-    descEn: 'Learning silent communication — meditated visions, shared dreaming and conscious connection beyond words. A school of perception led by those who carry it.',
-    color: '#A78BFA',
-    rgb: '167, 139, 250',
-  },
-  {
-    icon: PawPrint,
-    titleCs: 'Příroda & zvířata',
-    titleEn: 'Land & animals',
-    descCs: 'Nativní propojení s krajinou a jejími tvory jako s rodinou — čtení stopy, rytmu a roční doby podle custodiánů, kteří krajinu čtou desetitisíce let.',
-    descEn: 'Native connection with the land and its creatures as family — reading track, rhythm and season with custodians who have read the land for tens of thousands of years.',
-    color: '#066928',
-    rgb: '6, 105, 40',
-  },
-  {
-    icon: Flame,
-    titleCs: 'Uluru Festival',
-    titleEn: 'Uluru Festival',
-    descCs: 'Jednou ročně se poušť promění v dočasné město umění — oslava života pro všechny umělce. Model Burning Man upravený pro místo; custodiáni kurátují.',
-    descEn: 'Once a year the desert becomes a temporary city of art — a celebration of life for all artists. A Burning Man model adapted to place; curated by the custodians.',
-    color: '#EA580C',
-    rgb: '234, 88, 12',
-  },
-  {
-    icon: Music,
-    titleCs: 'Songlines',
-    titleEn: 'Songlines',
-    descCs: 'Pěvecké stezky nesoucí příběh, mapu i zákon přes celý kontinent — nejstarší síť poselství na Zemi.',
-    descEn: 'Singing tracks carrying story, map and law across the whole continent — the oldest message network on Earth.',
-    color: '#F59E0B',
+    icon: Sun,
+    titleCs: 'Solární plachty',
+    titleEn: 'Solar sails',
+    descCs: 'Plachty samotné jsou fotovoltaické — flexibilní články laminované do plachtoviny (odhad 60–200 kWp) plus hydroregenerace pod plachtami. Cíl: plavba bez fosilních paliv.',
+    descEn: 'The sails themselves are photovoltaic — flexible cells laminated into sailcloth (est. 60–200 kWp) plus hydro-regeneration under sail. Target: fossil-free passage.',
+    color: '#FCD116',
     rgb: '252, 209, 22',
   },
   {
-    icon: Mountain,
-    titleCs: 'Tjukurpa — Snění',
-    titleEn: 'Tjukurpa — the Dreaming',
-    descCs: 'Zákon předků, který není minulostí, ale trvající přítomnost: vztah mezi člověkem, zemí a příběhem.',
-    descEn: 'The law of the ancestors — not the past but a continuing present: the relation between people, land and story.',
-    color: '#8B5CF6',
-    rgb: '139, 92, 246',
-  },
-  {
     icon: Users,
-    titleCs: 'Kruh custodiánů',
-    titleEn: 'Council of custodians',
-    descCs: 'Aňangu a další tradiční vlastníci rozhodují od prvního dne — FPIC není formulář, je to způsob existence vztahu.',
-    descEn: 'The Aṉangu and other traditional owners decide from day one — FPIC is not a form, it is how the relationship exists at all.',
+    titleCs: '~50 poutníků',
+    titleEn: '~50 pilgrims',
+    descCs: 'Permanentní posádka Guardianů plus rotující residenti — výzkum, youth bridge programy, praktici Medical Table a noví Guardiani v tranzitu mezi uzly.',
+    descEn: 'A permanent Guardian crew plus rotating residents — research, youth bridge programmes, Medical Table practitioners and new Guardians in transit between nodes.',
     color: '#22D3EE',
     rgb: '34, 211, 238',
   },
   {
-    icon: Ear,
-    titleCs: 'Naslouchání jako praxe',
-    titleEn: 'Listening as practice',
-    descCs: 'Šedesát tisíc let kontinuity se nedá „osvojit" — dá se jenom vyslechnout. L5 přichází jako žák, ne jako zakladatel.',
-    descEn: 'Sixty thousand years of continuity cannot be "adopted" — it can only be listened to. L5 arrives as a student, not a founder.',
-    color: '#06B6D4',
-    rgb: '6, 182, 212',
+    icon: Waves,
+    titleCs: 'Soběstačnost na moři',
+    titleEn: 'Self-sufficiency at sea',
+    descCs: 'Odsolování a sběr deště, hydroponická palubní zahrada, zásoby vyměňované v uzlech — k tomu trasa existuje.',
+    descEn: 'Desalination and rain catchment, a hydroponic deck garden, provisions exchanged at the nodes — that is what the route is for.',
+    color: '#0EA5E9',
+    rgb: '14, 165, 233',
+  },
+  {
+    icon: Network,
+    titleCs: 'Guardian node na moři',
+    titleEn: 'Guardian node at sea',
+    descCs: 'Plný ZION uzel validující přes satelit, LoRa/mesh gateway na stěžni — při kotvení u uzlu se loď stává jeho edge nodem.',
+    descEn: 'A full ZION node validating over satellite, a LoRa/mesh gateway at the mast — at anchor it becomes the node’s own edge node.',
+    color: '#A78BFA',
+    rgb: '167, 139, 250',
+  },
+  {
+    icon: Compass,
+    titleCs: 'Wayfinding',
+    titleEn: 'Wayfinding',
+    descCs: 'Loď se učí navigaci, která předcházela mapy — hvězdy, vlny, ptáci. Campus stellae: cesta vedená hvězdami, ne GPS.',
+    descEn: 'The ship learns the navigation that preceded maps — stars, swells, birds. Campus stellae: a way steered by stars, not GPS.',
+    color: '#8B5CF6',
+    rgb: '139, 92, 246',
+  },
+  {
+    icon: Shell,
+    titleCs: 'Pilgrim credential',
+    titleEn: 'Pilgrim credential',
+    descCs: 'Každý úsek je etapa — on-chain razítka jako poutníčková credencial; za celý Velký kruh compostela.',
+    descEn: 'Every leg is an etapa — on-chain stamps like the pilgrim’s credencial; a compostela for completing the Great Circle.',
+    color: '#F59E0B',
+    rgb: '252, 209, 22',
   },
   {
     icon: Heart,
-    titleCs: 'Kanyini — odpovědnost',
-    titleEn: 'Kanyini — responsibility',
-    descCs: 'Propojenost a povinnost pečovat o zemi, rodinu a příběh — princip, který L5 tithe ztělesňuje v protokolu.',
-    descEn: 'Connectedness and the duty to care for land, family and story — the principle the L5 tithe embodies in protocol.',
+    titleCs: 'Tithe, který dopluje',
+    titleEn: 'A tithe that arrives',
+    descCs: 'L5 humanitární tithe umí loď fyzicky doručit — zásoby, medicína a vybavení pro uzly jako náklad, ne bankovní převod.',
+    descEn: 'The ship can physically deliver the L5 humanitarian tithe — supplies, medicine and equipment for the nodes as cargo, not a bank transfer.',
     color: '#F43F5E',
     rgb: '244, 63, 94',
+  },
+  {
+    icon: Feather,
+    titleCs: 'Plovoucí knihovna',
+    titleEn: 'A floating library',
+    descCs: 'Seed library a kulturní archiv cestují mezi uzly mořem — semena, příběhy a znalosti jako živý oběh sítě.',
+    descEn: 'The seed library and cultural archive travel between the nodes by sea — seeds, stories and knowledge as the network’s living circulation.',
+    color: '#066928',
+    rgb: '6, 105, 40',
   },
 ];
 
 const PHASES = [
   {
     num: '0',
-    cs: 'Naslouchání',
-    en: 'Listening',
-    descCs: 'Dialog s custodiány a komunitami Severního teritoria. Uzel existuje jako vzájemné učení, ne stavba — a žádný termín.',
-    descEn: 'Dialogue with the custodians and communities of the Northern Territory. The node exists as mutual learning, not construction — and no deadline.',
+    cs: 'Kresba',
+    en: 'Design',
+    descCs: 'Design study, partnerství se sail-training a NGO flotilami, odhad CAPEX/OPEX, ověření caminských pramenů.',
+    descEn: 'Design study, partnerships with sail-training and NGO fleets, CAPEX/OPEX estimate, verification of the Camino sources.',
     active: true,
   },
   {
     num: '1',
-    cs: 'Komunita',
-    en: 'Community',
-    descCs: 'Malý uzlový kruh; programy učení — telepatie, vize, vztah ke krajině a zvířatům — pod vedením těch, kdo je nesou.',
-    descEn: 'A small node circle; learning programmes — telepathy, visions, relationship with land and animals — led by those who carry them.',
+    cs: 'První etapa',
+    en: 'First leg',
+    descCs: 'Pilotní trasa na charterované lodi mezi dvěma uzly (Finisterre → La Palma): důkaz Guardian node at sea a mesh sync — bez vlastního trupu.',
+    descEn: 'A pilot route on a chartered vessel between two nodes (Finisterre → La Palma): proof of the Guardian node at sea and mesh sync — before any hull is owned.',
     active: false,
   },
   {
     num: '2',
-    cs: 'Pilotní setkání',
-    en: 'Pilot gathering',
-    descCs: 'Menší gathering na schváleném místě — zkouška formátu, logistiky bez stop a vztahu s custodiány.',
-    descEn: 'A smaller gathering on an approved site — testing the format, leave-no-trace logistics and the custodian relationship.',
+    cs: 'Trup',
+    en: 'Hull',
+    descCs: 'Refit nebo stavba dedikované lodi; flag state, certifikace, pojištění, posádka.',
+    descEn: 'Refit or build of the dedicated vessel; flag state, certification, insurance, crew.',
     active: false,
   },
   {
     num: '3',
-    cs: 'Uluru Festival',
-    en: 'Uluru Festival',
-    descCs: 'První celoroční cyklus — oslava života pro všechny umělce. Každý rok roste jen tak, jak nesou custodiáni a země.',
-    descEn: 'The first annual cycle — a celebration of life for all artists. Each year it grows only as far as the custodians and the land allow.',
+    cs: 'Velký kruh',
+    en: 'Great Circle',
+    descCs: 'První okruh všemi uzly — Galicie → Algarve → La Palma → Kostarika → Polynésie → Austrálie → Srí Lanka → domů.',
+    descEn: 'The first circuit of all nodes — Galicia → Algarve → La Palma → Costa Rica → Polynesia → Australia → Sri Lanka → home.',
+    active: false,
+  },
+  {
+    num: '4',
+    cs: 'Flotila',
+    en: 'Fleet',
+    descCs: 'Replikace — jedna loď na oceán. Tři Marie se vracejí jako flotila.',
+    descEn: 'Replication — one ship per ocean. The three Marys return as a fleet.',
     active: false,
   },
 ];
@@ -223,8 +232,8 @@ const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
   { label: 'DAO Governance', icon: Users },
   { label: 'Guardian Wallet', icon: Shield },
   { label: 'L5 Humanitarian Tithe', icon: Heart },
-  { label: 'Cultural Grants', icon: Feather },
-  { label: 'Community Registry', icon: Landmark },
+  { label: 'Mesh Relay', icon: Radio },
+  { label: 'Pilgrim Credential', icon: Shell },
 ];
 
 const SISTERS = [
@@ -234,9 +243,10 @@ const SISTERS = [
   { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
   { name: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika', region: { cs: 'Kostarika', en: 'Costa Rica' } },
+  { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory, Austrálie', en: 'Northern Territory, Australia' } },
 ];
 
-export default function UluruPage() {
+export default function MariaDelCaminoPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
@@ -244,7 +254,7 @@ export default function UluruPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/uluru.cs.md' : '/docs/terranova/uluru.en.md';
+    const file = cs ? '/docs/terranova/maria-del-camino.cs.md' : '/docs/terranova/maria-del-camino.en.md';
     setDoc(null);
     setDocError(false);
     fetch(file)
@@ -283,26 +293,26 @@ export default function UluruPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="relative z-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                  <Mountain className="h-10 w-10 text-orange-300" />
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
+                  <Sailboat className="h-10 w-10 text-sky-300" />
                 </div>
 
                 <div className="space-y-3 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="zion-badge">L5 · Terra Nova · Antipodes</span>
+                    <span className="zion-badge">L5 · Terra Nova · World Oceans</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.visionStage[cs ? 'cs' : 'en']}
+                      {Copy.researchStage[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
-                    Uluru
+                    María del Camino
                   </h1>
-                  <p className="text-lg text-orange-300 font-medium">
+                  <p className="text-lg text-sky-300 font-medium">
                     {Copy.subtitle[cs ? 'cs' : 'en']}
                   </p>
 
@@ -317,14 +327,14 @@ export default function UluruPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Sun, value: cs ? '60 000+ let' : '60,000+ years', labelCs: 'Paměť', labelEn: 'Memory' },
-                      { icon: Mountain, value: 'Uluru', labelCs: 'Srdce', labelEn: 'Heart' },
-                      { icon: Sparkles, value: cs ? 'Vize' : 'Vision', labelCs: 'Stav', labelEn: 'Status' },
+                      { icon: Users, value: '~50', labelCs: 'Poutníků', labelEn: 'Pilgrims' },
+                      { icon: Sailboat, value: cs ? '8. bod' : '8th point', labelCs: 'Uzel', labelEn: 'Node' },
+                      { icon: Sparkles, value: cs ? 'Příprava' : 'Preparation', labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
-                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                          <div className="flex items-center gap-2 text-orange-300">
+                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
+                          <div className="flex items-center gap-2 text-sky-300">
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
@@ -340,10 +350,10 @@ export default function UluruPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/uluru/hero.webp"
-                alt="Uluru — poselství protinožců nad posvátným monolitem"
-                width={1672}
-                height={941}
+                src="/images/maria-del-camino/hero.webp"
+                alt="María del Camino — noční oceán, plachetnice pod Mléčnou dráhou"
+                width={1600}
+                height={900}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
@@ -360,7 +370,7 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
               {Copy.introTitle[cs ? 'cs' : 'en']}
             </h2>
@@ -380,7 +390,7 @@ export default function UluruPage() {
           <div className="mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.featuresSubtitle[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Compass className="h-7 w-7 text-orange-400" />
+              <Ship className="h-7 w-7 text-sky-400" />
               {Copy.featuresTitle[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -397,30 +407,30 @@ export default function UluruPage() {
           </div>
         </motion.section>
 
-        {/* ═══ ULURU FESTIVAL ═══ */}
+        {/* ═══ SEA CAMINO ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.festivalSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.caminoSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
-                <Flame className="h-7 w-7 text-orange-400" />
-                {Copy.festivalTitle[cs ? 'cs' : 'en']}
+                <Route className="h-7 w-7 text-sky-400" />
+                {Copy.caminoTitle[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.festivalBody[cs ? 'cs' : 'en']}
+              {Copy.caminoBody[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
-              {Copy.festivalPoints[cs ? 'cs' : 'en'].map((point, i) => {
-                const PointIcon = [Flame, Music, Feather][i];
+              {Copy.caminoPoints[cs ? 'cs' : 'en'].map((point, i) => {
+                const PointIcon = [Anchor, Shell, Compass][i];
                 return (
-                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                    <div className="flex items-center gap-2 text-orange-300 mb-1">
+                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-sky-300 mb-1">
                       <PointIcon className="h-4 w-4" />
                       <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
                     </div>
@@ -439,17 +449,17 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
             <div className="mb-8">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
-                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
                   <div
                     className={`shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-bold text-sm ${
-                      phase.active ? 'border-orange-400/40 bg-orange-400/10 text-orange-300' : 'border-white/10 bg-white/5 text-gray-500'
+                      phase.active ? 'border-sky-400/40 bg-sky-400/10 text-sky-300' : 'border-white/10 bg-white/5 text-gray-500'
                     }`}
                   >
                     {phase.num}
@@ -457,7 +467,7 @@ export default function UluruPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-orange-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-sky-300">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -467,7 +477,7 @@ export default function UluruPage() {
           </div>
         </motion.section>
 
-        {/* ═══ SACRED LAND ═══ */}
+        {/* ═══ NAME / CAMINO HERITAGE ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -476,11 +486,11 @@ export default function UluruPage() {
         >
           <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
-              <Shield className="h-7 w-7 text-zion-purple" />
-              {Copy.respectTitle[cs ? 'cs' : 'en']}
+              <Shell className="h-7 w-7 text-zion-purple" />
+              {Copy.nameTitle[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-gray-300 leading-relaxed">
-              {Copy.respectBody[cs ? 'cs' : 'en']}
+              {Copy.nameBody[cs ? 'cs' : 'en']}
             </p>
           </div>
         </motion.section>
@@ -493,23 +503,23 @@ export default function UluruPage() {
           className="mb-16"
         >
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Network className="h-5 w-5 text-orange-300" />
+                <Network className="h-5 w-5 text-sky-300" />
                 {Copy.zionTitle[cs ? 'cs' : 'en']}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1 text-xs text-orange-200">
+                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs text-sky-200">
                     <item.icon className="h-3 w-3" />
                     {item.label}
                   </span>
                 ))}
               </div>
             </div>
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Landmark className="h-5 w-5 text-orange-300" />
+                <Landmark className="h-5 w-5 text-sky-300" />
                 {Copy.openTitle[cs ? 'cs' : 'en']}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">

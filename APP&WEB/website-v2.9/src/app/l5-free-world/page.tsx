@@ -37,7 +37,7 @@ const L5FreeWorldCopy = {
 
   genesisAllocation: { cs: `Genesis alokace`, en: `Genesis allocation` },
   l5PremineTitle: { cs: `L5 Free World — 3,3 mld ZION z genesis`, en: `L5 Free World — 3.3B ZION from genesis` },
-  l5PremineIntro: { cs: `Nad rámec průběžného 5% podílu z každého bloku má L5 vlastní alokaci přímo v genesis bloku. Sloty 4 a 5 (2 × 1,65 mld ZION) byly převedeny z OASIS na L5 Free World Projects — šest zakládajících komunit a rezervní fond.`, en: `Beyond the ongoing 5% share of every block, L5 has its own allocation directly in the genesis block. Slots 4 and 5 (2 × 1.65B ZION) were repurposed from OASIS to L5 Free World Projects — six founding communities and a reserve fund.` },
+  l5PremineIntro: { cs: `Nad rámec průběžného 5% podílu z každého bloku má L5 vlastní alokaci přímo v genesis bloku. Sloty 4 a 5 (2 × 1,65 mld ZION) byly převedeny z OASIS na L5 Free World Projects — šest zakládajících komunit po 500M a rezervní fond 300M, který se stal founding rezervou plujícího uzlu María del Camino.`, en: `Beyond the ongoing 5% share of every block, L5 has its own allocation directly in the genesis block. Slots 4 and 5 (2 × 1.65B ZION) were repurposed from OASIS to L5 Free World Projects — six founding communities of 500M each and a 300M reserve fund, now committed as the founding reserve of the María del Camino vessel node.` },
   perProjectAmount: { cs: `na projekt`, en: `per project` },
   l5ReserveFund: { cs: `L5 rezervní fond`, en: `L5 reserve fund` },
   l5ReserveFundDesc: { cs: `Nealokovaná rezerva pro budoucí uzly a rozvoj stávajících komunit (původně 800 mil. — 500 mil. je záměr pro Novou Ameriku).`, en: `Unallocated reserve for future nodes and growth of existing communities (originally 800M — 500M is intended for Nová Amerika).` },
@@ -93,10 +93,10 @@ const L5FreeWorldCopy = {
   network: { cs: `Síť`, en: `Network` },
 
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
-  sixNodesOnPlanet: { cs: `Sedm uzlů na planetě`, en: `Seven nodes on the planet` },
+  sixNodesOnPlanet: { cs: `Osm bodů na planetě`, en: `Eight nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Austrálii. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru zůstává vizí — odkaz a poselství domorodé Austrálie a její šedesátitisícileté paměti krajiny.`,
-    en: `The L5 communities across the continents — from the Algarve to Australia. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru remains a vision — the heritage and message of Aboriginal Australia and its sixty-thousand-year memory of the land.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Austrálii. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru zůstává vizí — odkaz a poselství domorodé Austrálie. A María del Camino — plující uzel se solárními plachtami — je osmý bod, který všechny ostatní fyzicky spojuje přes oceány.`,
+    en: `The L5 communities across the continents — from the Algarve to Australia. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru remains a vision — the heritage and message of Aboriginal Australia. And María del Camino — a sailing node on solar sails — is the eighth point, physically connecting all the others across the oceans.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -220,10 +220,22 @@ const getCommunities = (cs: boolean) => [
     location: cs ? 'Northern Territory, Austrálie' : 'Northern Territory, Australia',
     status: 'vision' as const,
     desc: cs
-      ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines a šedesát tisíc let paměti krajiny. Uzel jako vztah, ne stavba.'
-      : 'Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines and sixty thousand years of land memory. A node as a relationship, not a construction.',
+      ? 'Poselství protinožců — odkaz domorodé Austrálie: Tjukurpa, songlines, škola vnímání a každoroční festival oslavy života. Uzel jako vztah, ne stavba.'
+      : 'Message from the antipodes — the heritage of Aboriginal Australia: Tjukurpa, songlines, a school of perception and an annual celebration-of-life festival. A node as a relationship, not a construction.',
     tags: cs ? ['Tjukurpa', 'Songlines', 'Domorodé dědictví'] : ['Tjukurpa', 'Songlines', 'Indigenous Heritage'],
     href: '/terranova/uluru',
+    cover: '/images/uluru/hero.webp',
+  },
+  {
+    name: 'María del Camino',
+    location: cs ? 'Světové oceány · domovský přístav Galicie' : 'World oceans · home port Galicia',
+    status: 'preparation' as const,
+    desc: cs
+      ? 'Osmý bod sítě — plující uzel. Plachetnice se solárními plachtami pro ~50 poutníků fyzicky spojuje všech sedm pevných uzlů po mořském Caminu.'
+      : 'The eighth point of the network — a sailing node. A solar-sail vessel for ~50 pilgrims physically connecting all seven fixed nodes on a sea Camino.',
+    tags: cs ? ['Mořské Camino', 'Solární plachty', 'Mobilní uzel'] : ['Sea Camino', 'Solar Sails', 'Mobile Node'],
+    href: '/terranova/maria-del-camino',
+    cover: '/images/maria-del-camino/hero.webp',
   },
 ];
 
@@ -234,6 +246,7 @@ const getPremineAllocation = (cs: boolean) => [
   { name: 'Golden Republic Bohemia', amount: cs ? '500 mil.' : '500M', href: '/terranova/golden-republic-bohemia' },
   { name: 'Bodhi Lanka', amount: cs ? '500 mil.' : '500M', href: '/terranova/bodhi-lanka' },
   { name: 'LUMI (Nová Amerika)', amount: cs ? '500 mil.' : '500M', href: '/terranova/nova-amerika' },
+  { name: 'María del Camino', amount: cs ? '300 mil.' : '300M', href: '/terranova/maria-del-camino' },
 ];
 
 const getProtocols = (cs: boolean) => [
@@ -418,7 +431,7 @@ export default function L5FreeWorldPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l5-free-world/hero.webp"
-                alt={cs ? 'L5 Free World — sedm komunit Terra Nova ve fyzickém světě' : 'L5 Free World — the seven Terra Nova communities in the physical world'}
+                alt={cs ? 'L5 Free World — osm bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the eight Terra Nova nodes in the physical world'}
                 width={1672}
                 height={941}
                 loading="eager"
@@ -509,7 +522,7 @@ export default function L5FreeWorldPage() {
                 <h3 className="font-semibold text-white text-sm">{L5FreeWorldCopy.l5ReserveFund[cs ? 'cs' : 'en']}</h3>
               </div>
               <p className="text-2xl font-bold text-teal-300">{cs ? '300 mil.' : '300M'}</p>
-              <p className="text-xs text-gray-500 mt-1">{L5FreeWorldCopy.l5ReserveFundDesc[cs ? 'cs' : 'en']}</p>
+              <p className="text-xs text-gray-500 mt-1">{cs ? 'Vyhrazeno jako founding rezerva plujícího uzlu María del Camino.' : 'Earmarked as the founding reserve of the María del Camino vessel node.'}</p>
             </div>
           </div>
           <div className="mt-6 grid sm:grid-cols-2 gap-4">

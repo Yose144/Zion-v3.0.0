@@ -81,4 +81,15 @@ export const NOVA_ZEME_PROJECTS = [
     lat: -25.3,
     lon: 131.0,
   },
+  {
+    id: 'maria-del-camino',
+    name: 'María del Camino',
+    location: 'Světové oceány · Galicie',
+    color: '#0ea5e9',
+    status: 'Preparation',
+    desc: 'Osmý bod — plující uzel: plachetnice se solárními plachtami pro ~50 poutníků, která spojuje všech sedm uzlů po mořském Caminu.',
+    href: 'https://app.zionterranova.com/terranova/maria-del-camino',
+    lat: 42.4,
+    lon: -8.7,
+  },
 ] as const;

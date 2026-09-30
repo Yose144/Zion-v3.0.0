@@ -84,6 +84,7 @@ export default function Navigation() {
             { href: '/terranova/bodhi-lanka', label: tr('nav', 'terra_bodhi_lanka', lang) },
             { href: '/terranova/nova-amerika', label: tr('nav', 'terra_lumi', lang) },
             { href: '/terranova/uluru', label: tr('nav', 'terra_uluru', lang) },
+            { href: '/terranova/maria-del-camino', label: tr('nav', 'terra_maria_del_camino', lang) },
           ],
         },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },

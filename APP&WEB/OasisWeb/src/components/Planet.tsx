@@ -301,6 +301,17 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     lat: -25,
     lon: 131,
   },
+  {
+    id: 'maria-del-camino',
+    name: 'María del Camino',
+    location: 'Oceány · Galicie',
+    color: '#0ea5e9',
+    rgb: '14, 165, 233',
+    descCs: 'Plující uzel — plachetnice se solárními plachtami spojující všech sedm bodů přes oceány.',
+    descEn: 'The sailing node — a solar-sail vessel connecting all seven points across the oceans.',
+    lat: 42.4,
+    lon: -8.7,
+  },
 ];
 
 function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {

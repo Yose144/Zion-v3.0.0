@@ -23,6 +23,7 @@ import {
   Flower,
   Feather,
   Users,
+  Sailboat,
   LucideIcon,
 } from 'lucide-react';
 
@@ -204,9 +205,9 @@ const PROJECTS: ProjectCardData[] = [
     statusCs: 'Vize',
     statusEn: 'Vision',
     descriptionCs:
-      'Sedmý bod L5 Free World — odkaz a poselství domorodé Austrálie. Tjukurpa, songlines a šedesát tisíc let paměti krajiny. Uzel jako vztah, ne stavba.',
+      'Sedmý bod L5 Free World — odkaz a poselství domorodé Austrálie. Škola vnímání: telepatie, vize, propojení s přírodou a zvířaty — a každoroční festival oslavy života. Uzel jako vztah, ne stavba.',
     descriptionEn:
-      'The seventh point of L5 Free World — the heritage and message of Aboriginal Australia. Tjukurpa, songlines and sixty thousand years of land memory. A node as a relationship, not a construction.',
+      'The seventh point of L5 Free World — the heritage and message of Aboriginal Australia. A school of perception: telepathy, visions, connection with land and animals — and an annual celebration-of-life festival. A node as a relationship, not a construction.',
     features: [
       { icon: Mountain, labelCs: 'Tjukurpa · Snění', labelEn: 'Tjukurpa · Dreaming' },
       { icon: Feather, labelCs: 'Songlines', labelEn: 'Songlines' },
@@ -217,6 +218,29 @@ const PROJECTS: ProjectCardData[] = [
       { value: '60 000+', labelCs: 'Let paměti', labelEn: 'Years of memory' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'AU', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/maria-del-camino',
+    title: 'María del Camino',
+    location: 'Světové oceány · Galicie',
+    eyebrow: 'L5 · Sailing Node',
+    statusCs: 'V přípravě',
+    statusEn: 'In preparation',
+    descriptionCs:
+      'Osmý bod L5 Free World — cesta, ne místo. Plachetnice se solárními plachtami pro ~50 poutníků fyzicky spojuje všech sedm uzlů po mořském Caminu: tam, kde cesta starého světa u Finisterry končila, ona začíná.',
+    descriptionEn:
+      'The eighth point of L5 Free World — a way, not a place. A solar-sail vessel for ~50 pilgrims physically connecting all seven nodes on a sea Camino: where the old world’s road ended at Finisterre, this one begins.',
+    features: [
+      { icon: Sailboat, labelCs: 'Solární plachty', labelEn: 'Solar sails' },
+      { icon: Waves, labelCs: 'Soběstačnost na moři', labelEn: 'Self-sufficiency at sea' },
+      { icon: Network, labelCs: 'Guardian node', labelEn: 'Guardian node' },
+      { icon: Compass, labelCs: 'Mořské Camino', labelEn: 'Sea Camino' },
+    ],
+    metrics: [
+      { value: '~50', labelCs: 'Poutníků', labelEn: 'Pilgrims' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: '300M', labelCs: 'Rezerva ZION', labelEn: 'ZION reserve' },
     ],
   },
 ];

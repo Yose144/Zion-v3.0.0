@@ -1,8 +1,9 @@
 /**
  * The L5 Free World community sites — shared between the planetary
  * map and the community/registry sections. Six founding communities
- * carry a funded allocation; later sites (e.g. Uluru) start as
- * vision-stage with no committed allocation.
+ * carry a funded 500M allocation; María del Camino (the vessel node)
+ * carries a 300M founding reserve, and Uluru stays vision-stage with
+ * no committed allocation.
  */
 
 export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision';
@@ -84,6 +85,18 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     status: 'vision',
     href: '/terranova/uluru',
     allocationZion: 0,
+  },
+  {
+    // The vessel node — a sailing ship connecting all fixed nodes across
+    // the oceans. Marker sits at the Galician home port (Pontevedra ría,
+    // on the coastal Camino); the node itself is the route, not the point.
+    key: 'maria-del-camino',
+    name: 'María del Camino',
+    lat: 42.43,
+    lon: -8.65,
+    status: 'preparation',
+    href: '/terranova/maria-del-camino',
+    allocationZion: 300_000_000,
   },
 ];
 
