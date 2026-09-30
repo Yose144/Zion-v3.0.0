@@ -1,5 +1,7 @@
 # WARP Beta — Status / Gap analýza
 
+> Snapshot: **2026-09-30 — SAFETY HOLD, blocker work merged, Edge binary pending.** Edge BTC swap flow zůstává vypnutý (`WARP_BTC_SWAP_ENABLED=0`, active=0). **Změna od snapshotu 2026-09-20:** většina původních blockerů je implementována v `main` (signed quote #2, liability/solvency caps #8, sanity bounds #7, rescan fail-closed #5, preimage encryption FIND-002, stuck-swap alerting #9, offer-key rotation `WARP_BTC_SWAP_OFFER_KEY_PREV`, automated inbound L1 release) — ověřeno v kódu 2026-09-30, viz `../L2checkpoints.md`. **Nasazený Edge `warpd` je build 2026-09-21** — obsahuje pouze 9/20 hardening + solvency/deposit fix; 9/29 blocker commits nasazené NEJSOU. Re-enable přesto zůstává gated: externí audit, dokončený bitcoind IBD (live: ~80,4 %, height ~877k), `WARP_BTC_SWAP_OFFER_KEY` + `WARP_BTC_SWAP_ZION_PER_SAT` provisioning, WIF/network review a explicitní capped-pilot go.
+
 > Snapshot: **2026-09-20 — SAFETY HOLD**. Edge BTC swap flow je od 12:13 UTC vypnutý (`WARP_BTC_SWAP_ENABLED=0`). Důvodem je P0 autorizační mezera: ZIS uživatel mohl zvolit oba objemy směny bez server-side quote či operátorského schválení. Při disable bylo `active=0`; po restartu je multichain služba active a veřejný i lokální list vrací `enabled:false`. Historických 6/6 regtest E2E zůstává validační evidence. Hardening níže je nasazený (2026-09-20) s green full-suite gate; flow zůstává disabled.
 
 ## HOTOVO — produkční mitigace a historický baseline
@@ -89,12 +91,19 @@ ZIS autentizace sama není autorizace k vytvoření offeru, který může zamkno
 - [x] Historický regtest rehearsal 6/6
 - [x] Hardened working tree full-test/clippy green (677 lib + integrace, 0 failed; jen pre-existing warnings)
 - [x] Hardened `warpd` nasazen a smoke ověřen (2026-09-20; flow zůstává disabled)
+- [x] Signed server-side quote/pricing protocol — `sign_quote`/`issue_quote`/`set_quote_signer`, `WARP_BTC_SWAP_ZION_PER_SAT` (2026-09-29 `90d8925a5`; kód ✅, na Edge nenasazeno, rate env nenastavena)
+- [x] Liability caps + operator solvency — `max_quote_outstanding_{zion,btc}` + solvency check v `issue_quote` (2026-09-29 `4bc801480`, `a3fb0aeff`)
+- [x] Confirmation/margin sanity bounds — env bounds refusují misconfig (2026-09-29 `df2be579d`; production review hodnot zůstává)
+- [x] Fail-closed při bitcoind wallet rescanu (2026-09-29 `d0e79f6dd`)
+- [x] Preimage encryption at rest — FIND-002, `ZION_HTLC_PREIMAGE_KEY` (2026-09-29 `36e270412`; key na Edge neprovisioned)
+- [x] Stuck-swap alerting v poll loopu (2026-09-29 `f6f2637f8`)
+- [x] Offer-key rotation grace — `WARP_BTC_SWAP_OFFER_KEY_PREV` (2026-09-29 `6c121fa5e`; keys na Edge neprovisioned)
+- [x] Automated inbound L1 release burn→unlock (2026-09-29 `06751d37c`)
+- [ ] **Edge `warpd` rebuild + deploy z current `main`** (Edge build je 2026-09-21; flow zůstává disabled)
 - [ ] Externí audit passed
-- [ ] Signed server-side quote/pricing/approval protocol
-- [ ] `WARP_BTC_SWAP_OFFER_KEY` bezpečně provisioned
-- [ ] Mainnet bitcoind IBD complete + local backend configured
+- [ ] `WARP_BTC_SWAP_OFFER_KEY` (+ `_PREV` při rotaci), `WARP_BTC_SWAP_ZION_PER_SAT`, `ZION_HTLC_PREIMAGE_KEY` bezpečně provisioned mimo repo (`chmod 600`)
+- [ ] Mainnet bitcoind IBD complete + local backend configured (live 2026-09-30: ~80,4 %, height ~877k)
 - [ ] Production WIF/network/address review
-- [ ] Confirmation/margin/limits review
 - [ ] Capped pilot explicitně schválen
 
 Do té doby musí endpoint zůstat `enabled:false`.
