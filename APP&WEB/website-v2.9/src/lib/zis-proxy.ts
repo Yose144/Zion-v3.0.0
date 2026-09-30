@@ -77,7 +77,7 @@ export async function proxyToZis(
     );
   }
 
-  // Build the proxied response, preserving status + JSON body.
+  // Build the proxied response, preserving status + body + content-type.
   const text = await zisRes.text();
   const response = new NextResponse(text, {
     status: zisRes.status,
@@ -85,6 +85,12 @@ export async function proxyToZis(
       'Content-Type': zisRes.headers.get('content-type') ?? 'application/json',
     },
   });
+
+  // Pass through upstream caching for immutable content (avatars).
+  const cacheControl = zisRes.headers.get('cache-control');
+  if (cacheControl) response.headers.set('cache-control', cacheControl);
+  const contentTypeOptions = zisRes.headers.get('x-content-type-options');
+  if (contentTypeOptions) response.headers.set('x-content-type-options', contentTypeOptions);
 
   // Pass through all Set-Cookie headers so the SSO cookie is established on
   // the same origin (the cookie domain is .zionterranova.com).

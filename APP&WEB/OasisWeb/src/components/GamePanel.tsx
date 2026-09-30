@@ -17,6 +17,7 @@ import type { World, WorldCategory } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import MiniMap from './MiniMap';
 import SocialPanel from './SocialPanel';
+import ZisAvatar from './ZisAvatar';
 import { useAuth } from '../contexts/AuthContext';
 
 const XP_PER_LEVEL = 1000;
@@ -402,7 +403,18 @@ export function IdentityTab() {
           <div className="mt-2 space-y-1.5">
             <div className="flex items-center justify-between text-[10px]">
               <span className="text-white/70">Connected</span>
-              <span className="font-mono text-oasis-cyan">{(user?.address ?? address ?? '').slice(0, 18)}…</span>
+              <span className="flex items-center gap-1.5">
+                {user?.id && (
+                  <ZisAvatar
+                    seed={user.id}
+                    src={user.avatar}
+                    size={18}
+                    alt={user.displayName ?? 'avatar'}
+                    initial={(user.displayName ?? 'Z')[0]}
+                  />
+                )}
+                <span className="font-mono text-oasis-cyan">{(user?.address ?? address ?? '').slice(0, 18)}…</span>
+              </span>
             </div>
             {user?.displayName && (
               <div className="flex items-center justify-between text-[10px]">

@@ -8,9 +8,11 @@
  */
 
 import { useState, type CSSProperties } from 'react';
-import { User, Mail, Image as ImageIcon, FileText, Loader2, Check, AlertTriangle, Save } from 'lucide-react';
+import { User, Mail, Image as ImageIcon, FileText, Loader2, Check, AlertTriangle, Save, RefreshCw, Undo2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
+import ZisAvatar from '@/components/ZisAvatar';
+import { zisAvatarUrl, zisAvatarAbsoluteUrl, type ZisAvatarStyle } from '@/lib/zis';
 
 const copy = {
   en: {
@@ -29,6 +31,13 @@ const copy = {
     error: 'Could not save profile.',
     provider: 'Sign-in method',
     userId: 'User ID',
+    avatarStudio: 'Avatar',
+    style: 'Style',
+    variants: 'Pick a variant — saved on "Save changes"',
+    regenerate: 'More variants',
+    customUrl: 'Or paste a custom image URL',
+    resetAvatar: 'Reset to generated',
+    avatarHint: 'Avatars are generated deterministically from your identity — pick a variant, a style, or use your own image URL.',
   },
   cs: {
     profile: 'Profil',
@@ -46,14 +55,36 @@ const copy = {
     error: 'Profil se nepodařilo uložit.',
     provider: 'Způsob přihlášení',
     userId: 'ID uživatele',
+    avatarStudio: 'Avatar',
+    style: 'Styl',
+    variants: 'Vyber variantu — uloží se tlačítkem „Uložit změny"',
+    regenerate: 'Další varianty',
+    customUrl: 'Nebo vlož URL vlastního obrázku',
+    resetAvatar: 'Vrátit na generovaný',
+    avatarHint: 'Avatary se generují deterministicky z tvé identity — vyber variantu, styl, nebo použij vlastní obrázek.',
   },
 };
+
+const AVATAR_STYLES: ZisAvatarStyle[] = ['sigil', 'rings', 'prism'];
+const VARIANT_BATCH = 8;
 
 function providerLabel(address: string): string {
   if (address.startsWith('zion1')) return 'ZION L1 wallet';
   if (address.startsWith('google:')) return 'Google';
   if (address.startsWith('0x')) return 'EVM wallet (SIWE)';
   return 'Passkey / other';
+}
+
+/** Recover {style, variant} when `avatar` is one of our generated URLs. */
+function parseGeneratedAvatar(url: string | null | undefined): { style: ZisAvatarStyle; variant: number } | null {
+  const m = url?.match(/\/api\/auth\/avatar\/[^/?]+\.svg(?:\?(.*))?$/);
+  if (!m) return null;
+  const q = new URLSearchParams(m[1] ?? '');
+  const style = (AVATAR_STYLES as string[]).includes(q.get('t') ?? '')
+    ? (q.get('t') as ZisAvatarStyle)
+    : 'sigil';
+  const variant = q.has('s') ? Number(q.get('s')) || 0 : 0;
+  return { style, variant };
 }
 
 export default function ProfilePanel() {
@@ -63,13 +94,52 @@ export default function ProfilePanel() {
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
-  const [avatar, setAvatar] = useState(user?.avatar ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ── Avatar studio ──────────────────────────────────────────────────
+  // pendingAvatar: undefined = keep current · null = reset to generated · string = new URL
+  const initialGen = parseGeneratedAvatar(user?.avatar);
+  const [pendingAvatar, setPendingAvatar] = useState<string | null | undefined>(undefined);
+  const [avatarStyle, setAvatarStyle] = useState<ZisAvatarStyle>(initialGen?.style ?? 'sigil');
+  const [variantBase, setVariantBase] = useState(0);
+  const [pickedVariant, setPickedVariant] = useState<number | null>(initialGen?.variant ?? null);
+  const [customAvatar, setCustomAvatar] = useState('');
+
   if (!user) return null;
+
+  const seed = user.id ?? user.address;
+  const previewUrl =
+    pendingAvatar !== undefined
+      ? (pendingAvatar ?? zisAvatarUrl(seed))
+      : (user.avatar ?? zisAvatarUrl(seed));
+
+  const handlePickVariant = (v: number) => {
+    setPickedVariant(v);
+    setCustomAvatar('');
+    setPendingAvatar(zisAvatarAbsoluteUrl(seed, { s: v, t: avatarStyle }));
+  };
+
+  const handleStyleChange = (st: ZisAvatarStyle) => {
+    setAvatarStyle(st);
+    const v = pickedVariant ?? 0;
+    setPickedVariant(v);
+    setCustomAvatar('');
+    setPendingAvatar(zisAvatarAbsoluteUrl(seed, { s: v, t: st }));
+  };
+
+  const handleCustomAvatar = (v: string) => {
+    setCustomAvatar(v);
+    setPendingAvatar(v.trim() ? v.trim() : undefined);
+  };
+
+  const handleResetAvatar = () => {
+    setPendingAvatar(null);
+    setPickedVariant(null);
+    setCustomAvatar('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,9 +150,11 @@ export default function ProfilePanel() {
       await updateProfile({
         ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
         email: email.trim() || null,
-        avatar: avatar.trim() || null,
+        ...(pendingAvatar !== undefined ? { avatar: pendingAvatar } : {}),
         bio: bio.trim() || null,
       });
+      setPendingAvatar(undefined);
+      setPickedVariant(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -128,33 +200,103 @@ export default function ProfilePanel() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Mail className="h-3 w-3" /> {t.email}
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t.emailPh}
-              maxLength={255}
-              className={inputCls}
+        {/* ── Avatar studio ── */}
+        <div>
+          <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <ImageIcon className="h-3 w-3" /> {t.avatarStudio}
+          </label>
+          <p className="text-[11px] text-gray-500 mb-3">{t.avatarHint}</p>
+
+          <div className="flex items-center gap-4 mb-4">
+            <ZisAvatar
+              seed={seed}
+              src={previewUrl}
+              size={64}
+              alt={displayName || 'avatar'}
+              className="rounded-2xl border border-white/15 shrink-0"
+              initial={displayName?.[0] ?? 'Z'}
             />
+            <div className="flex flex-wrap gap-2">
+              {AVATAR_STYLES.map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => handleStyleChange(st)}
+                  className={`rounded-lg px-3 py-1.5 text-xs capitalize transition-colors ${
+                    avatarStyle === st
+                      ? 'bg-zion-cyan/20 border border-zion-cyan/50 text-zion-cyan'
+                      : 'border border-white/10 bg-white/5 text-gray-400 hover:border-white/25'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={handleResetAvatar}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-400 hover:border-white/25 inline-flex items-center gap-1"
+              >
+                <Undo2 className="h-3 w-3" /> {t.resetAvatar}
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <ImageIcon className="h-3 w-3" /> {t.avatar}
-            </label>
-            <input
-              type="url"
-              value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
-              placeholder={t.avatarPh}
-              maxLength={512}
-              className={inputCls}
-            />
+
+          <p className="text-[11px] text-gray-600 mb-2">{t.style}: <span className="text-zion-cyan">{avatarStyle}</span> · {t.variants}</p>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
+            {Array.from({ length: VARIANT_BATCH }, (_, i) => {
+              const v = variantBase + i;
+              const selected = pickedVariant === v && pendingAvatar !== null && !customAvatar;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => handlePickVariant(v)}
+                  className={`rounded-xl overflow-hidden border-2 transition-colors ${
+                    selected ? 'border-zion-cyan' : 'border-transparent hover:border-white/25'
+                  }`}
+                  aria-label={`variant ${v}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={zisAvatarUrl(seed, { s: v, t: avatarStyle, sz: 96 })}
+                    alt=""
+                    className="w-full h-auto block"
+                    loading="lazy"
+                  />
+                </button>
+              );
+            })}
           </div>
+          <button
+            type="button"
+            onClick={() => setVariantBase((b) => b + VARIANT_BATCH)}
+            className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:underline mb-3"
+          >
+            <RefreshCw className="h-3 w-3" /> {t.regenerate}
+          </button>
+
+          <input
+            type="url"
+            value={customAvatar}
+            onChange={(e) => handleCustomAvatar(e.target.value)}
+            placeholder={t.customUrl}
+            maxLength={512}
+            className={inputCls}
+          />
+        </div>
+
+        <div>
+          <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <Mail className="h-3 w-3" /> {t.email}
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t.emailPh}
+            maxLength={255}
+            className={inputCls}
+          />
         </div>
 
         <div>

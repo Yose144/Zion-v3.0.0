@@ -24,6 +24,7 @@ import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
 import SecurityPanel from '@/components/dashboard/SecurityPanel';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import ProfilePanel from '@/components/dashboard/ProfilePanel';
+import ZisAvatar from '@/components/ZisAvatar';
 
 const AccountCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -291,19 +292,14 @@ export default function AccountPage() {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
                 <div className="flex items-center gap-4">
-                  {user.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.avatar}
-                      alt=""
-                      className="h-14 w-14 rounded-2xl border border-white/15 object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-xl font-bold text-white">
-                      {(user.displayName ?? 'Z')[0]?.toUpperCase()}
-                    </div>
-                  )}
+                  <ZisAvatar
+                    seed={user.id ?? user.address}
+                    src={user.avatar}
+                    size={56}
+                    alt={user.displayName ?? 'avatar'}
+                    className="rounded-2xl border border-white/15"
+                    initial={(user.displayName ?? 'Z')[0]?.toUpperCase() ?? 'Z'}
+                  />
                   <div className="zion-badge-gold">
                     <User className="h-4 w-4" />
                     {AccountCopy.myAccount[cs ? 'cs' : 'en']}

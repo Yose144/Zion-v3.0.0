@@ -33,6 +33,8 @@ import {
   deletePasskey as sharedDeletePasskey,
   useZisAuth as sharedUseZisAuth,
   getZisUrl,
+  zisAvatarUrl,
+  zisAvatarAbsoluteUrl,
   ZIS_SESSION_COOKIE,
   type ZisUser,
   type ZisSession,
@@ -44,6 +46,7 @@ import {
   type ZisApiKey,
   type ZisPasskey,
   type ZisPasskeyCeremony,
+  type ZisAvatarStyle,
   type UseZisAuthResult,
 } from '../../../shared/zis-client';
 
@@ -59,10 +62,11 @@ export type {
   ZisApiKey,
   ZisPasskey,
   ZisPasskeyCeremony,
+  ZisAvatarStyle,
   UseZisAuthResult,
 };
 
-export { ZIS_SESSION_COOKIE, getZisUrl };
+export { ZIS_SESSION_COOKIE, getZisUrl, zisAvatarUrl, zisAvatarAbsoluteUrl };
 
 // ── Client-side base URL ─────────────────────────────────────────────
 //

@@ -87,6 +87,37 @@ export interface ZisActiveSession {
   current?: boolean;
 }
 
+/** Avatar render style supported by GET /api/auth/avatar/:seed.svg. */
+export type ZisAvatarStyle = 'sigil' | 'rings' | 'prism';
+
+/**
+ * Build a deterministic avatar URL for any identity seed (user id,
+ * zion1 address, 0x address…). Served by ZIS, reachable through the
+ * same-origin `/api/auth/avatar/…` proxy on the website.
+ */
+export function zisAvatarUrl(
+  seed: string,
+  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number },
+): string {
+  const params = new URLSearchParams();
+  if (opts?.s !== undefined) params.set('s', String(opts.s));
+  if (opts?.t) params.set('t', opts.t);
+  if (opts?.sz) params.set('sz', String(opts.sz));
+  const qs = params.toString();
+  return `/api/auth/avatar/${encodeURIComponent(seed)}.svg${qs ? `?${qs}` : ''}`;
+}
+
+/**
+ * Absolute avatar URL — for storing into `user.avatar` (the field requires
+ * a valid absolute URL) and for rendering outside the website proxy.
+ */
+export function zisAvatarAbsoluteUrl(
+  seed: string,
+  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number },
+): string {
+  return `${getZisUrl()}${zisAvatarUrl(seed, opts)}`;
+}
+
 /** ZIS API key metadata (without the secret). */
 export interface ZisApiKey {
   id: string;

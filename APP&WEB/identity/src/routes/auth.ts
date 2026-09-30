@@ -5,6 +5,7 @@ import { createChallenge, verifyEd25519, verifySiwe } from '../lib/challenge.js'
 import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
 import { issueSessionForUser } from '../lib/session-issue.js';
+import { renderAvatarSvg, AVATAR_STYLES } from '../lib/avatar.js';
 
 const ChallengeSchema = z.object({
   address: z.string().min(8),
@@ -47,6 +48,36 @@ const LinkAddressSchema = z.object({
 });
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
+  // ── GET /avatar/:file.svg ───────────────────────────────────────
+  // Public deterministic avatar renderer. Seed = filename without the
+  // `.svg` suffix (user id, zion1 address, 0x address — any stable
+  // identity string). `s` = variant seed, `t` = style, `sz` = size.
+  // The URL is content-addressed by its params → immutable caching.
+  app.get(
+    '/avatar/:file',
+    // Avatars render on every page view — keep abuse protection but way
+    // above the global 30/min auth budget.
+    { config: { rateLimit: { max: 600, timeWindow: '1 minute' } } },
+    async (req, reply) => {
+    const { file } = req.params as { file: string };
+    if (!file.endsWith('.svg') || file.length > 140) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Expected <seed>.svg' });
+    }
+    const seed = file.slice(0, -4);
+    const q = req.query as { s?: string; t?: string; sz?: string };
+    const variant = Math.min(Math.max(parseInt(q.s ?? '0', 10) || 0, 0), 1_000_000);
+    const style = (AVATAR_STYLES as readonly string[]).includes(q.t ?? '') ? q.t! : 'sigil';
+    const size = Math.min(Math.max(parseInt(q.sz ?? '128', 10) || 128, 16), 512);
+
+    const svg = renderAvatarSvg(seed, variant, style, size);
+    return reply
+      .header('Content-Type', 'image/svg+xml; charset=utf-8')
+      .header('Cache-Control', 'public, max-age=31536000, immutable')
+      .header('X-Content-Type-Options', 'nosniff')
+      .send(svg);
+    },
+  );
+
   // ── POST /challenge ─────────────────────────────────────────────
   app.post('/challenge', async (req, reply) => {
     const parsed = ChallengeSchema.safeParse(req.body);
