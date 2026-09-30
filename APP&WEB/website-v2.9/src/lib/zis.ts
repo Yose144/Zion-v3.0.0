@@ -35,6 +35,8 @@ import {
   getZisUrl,
   zisAvatarUrl,
   zisAvatarAbsoluteUrl,
+  uploadAvatar,
+  deleteUploadedAvatar,
   ZIS_SESSION_COOKIE,
   type ZisUser,
   type ZisSession,
@@ -66,7 +68,7 @@ export type {
   UseZisAuthResult,
 };
 
-export { ZIS_SESSION_COOKIE, getZisUrl, zisAvatarUrl, zisAvatarAbsoluteUrl };
+export { ZIS_SESSION_COOKIE, getZisUrl, zisAvatarUrl, zisAvatarAbsoluteUrl, uploadAvatar, deleteUploadedAvatar };
 
 // ── Client-side base URL ─────────────────────────────────────────────
 //

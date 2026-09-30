@@ -58,7 +58,23 @@ model User {
   multichainBalances      MultichainBalance[]
   multichainOrders        MultichainOrder[]
 
+  avatarAsset     AvatarAsset?
+
   @@index([role])
+}
+
+// ── User-uploaded avatar image (Phase: ZISavatar.md fáze 3) ──────────
+// One uploaded raster image per account. user.avatar then points at the
+// public serve route /api/auth/avatar/u/<userId>. Generated avatars stay
+// zero-storage — this table only holds explicit uploads.
+model AvatarAsset {
+  userId    String   @id
+  data      Bytes
+  mime      String   // image/png | image/jpeg | image/webp | image/gif
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model LinkedAddress {
