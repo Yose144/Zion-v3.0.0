@@ -28,13 +28,14 @@ Tento dokument specifikuje **první GPUweb preview**: architekturu, jak se stáv
 
 | Část | Stav | Poznámka |
 |---|---|---|
-| OASIS web | ŽIVÉ | `oasis.zionterranova.com` — Next.js 16 static export v `/var/www/oasis/`, R3F/Three.js WebGL galaxy (407+ světů v katalogu z API), Babylon.js stargate intro, mobilní/desktop flow ověřené E2E |
-| OASIS backend | ŽIVÉ | `zion-v31-oasis` Rust/Axum na Edge `:8094`, nginx proxuje `/api/`, `/health`; světy/questy/player endpointy |
+| OASIS web | ŽIVÉ | `oasis.zionterranova.com` — Next.js 16 static export v `/var/www/oasis/`, R3F/Three.js WebGL galaxy (410 světů v katalogu z API), Babylon.js stargate intro, mobilní/desktop flow ověřené E2E |
+| OASIS backend | ŽIVÉ | `zion-v31-oasis` Rust/Axum na Edge `:8094`, nginx proxuje `/api/`, `/health`; světy/questy/player endpointy. Katalog světů = `data/worlds.json` embedovaný `include_str!` → změna = rebuild `zion-oasis` na Edge |
+| **L5 Free World v OASIS** | ŽIVÉ | všech 8 Terra Nova uzlů jako světy (vč. Uluru + María del Camino); same-origin `/api/free-world/*` → `zion-v31-free-world :8095` (`/api/v1/*`); `src/lib/l5.ts` + panel — live statusy, founding tranches (6× 10M ZION), L5 fund (17.44M ZION), QV pilot round |
 | ZIS auth v OASIS | ŽIVÉ | mnemonic → Ed25519 challenge → `zion_session` cookie přes same-origin proxy `/api/auth/*` |
 | **Passkey login v OASIS** | ŽIVÉ | WebAuthn endpointy na ZIS Edge (`/api/auth/webauthn/*`), origin `oasis.zionterranova.com` allowlistnut; ověřeno `POST /api/auth/webauthn/login/options` → 200. OASIS klient: `zis.ts` funkce + `AuthContext.loginWithPasskey`/`registerPasskey` + UI v Identity tab (nasazeno) |
 | Adaptivní kvalita | ŽIVÉ | `PerformanceMonitor` → one-way degrade (bloom/particles/MatrixCore off); `DirectRenderer` fallback pro manual-render mód |
 | **WebGPU backend (G1)** | STAVBA → preview live | `?gpu=webgpu` opt-in: `three/webgpu` WebGPURenderer + Babylon `WebGPUEngine`, oba s WebGL2 fallbackem; backend volba persistuje (`localStorage`), `auto` → webgl2 do dokončení parity |
-| **TSL pipeline (G2)** | STAVBA → preview live | `PostProcessing` (bloom+vignette), `TslStars`, `TslAtmosphere`, `TslVortex` — node-material ekvivalenty GLSL komponent; fps parita ≈ stejná (viz §7) |
+| **TSL pipeline (G2)** | ŽIVÉ (opt-in) | `PostProcessing` (bloom+vignette), `TslStars`, `TslAtmosphere`, `TslVortex`; **produkce ověřena** — `?gpu=webgpu` renderuje plnou galaxii, 0 material chyb (viz §7 incident) |
 | UE 5.7 / Nanite / Lumen / MetaHuman / Pixel Streaming | HORIZONT | samostatný R&D POC podle M4.3; není součástí web klienta |
 
 ---
