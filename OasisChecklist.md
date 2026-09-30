@@ -37,10 +37,11 @@
 | Část | Stav | Poznámka |
 |---|---|---|
 | WebGL2 path (default) | ✅ | R3F + EffectComposer (bloom/vignette/sat/contrast), pixel-parity zachována |
-| `?gpu=webgpu` WebGPU preview | 🚧→✅ opt-in | `WebGPURenderer` (three 0.169) + `WebGPUEngine` (Babylon) s WebGL2 fallback; renderuje galaxii i světy (E2E 0 chyb); `auto` → webgl2 do device-matrix potvrzení |
+| `?gpu=webgpu` WebGPU preview | ✅ opt-in verified | `WebGPURenderer` (three 0.169) + `WebGPUEngine` (Babylon) s WebGL2 fallback; **produkce ověřena** — plná galaxie 402 světů, ~1 900 draw calls, 0 material chyb (hotfix `e69402151`: string-key node library registrace proti Turbopack minifikaci + `antialias:false` kvůli swapchain resolve validaci); `auto` → webgl2 do device-matrix potvrzení |
 | TSL postfx (bloom + vignette) | ✅ preview | `gpu/WebGpuPostFX.tsx` |
 | TSL porty shader komponent | 🚧 | `TslStars` ✅, `TslAtmosphere` ✅, `TslVortex` ✅; `GalaxyCore` streak shader ⬜ (webgl2-only) |
 | FPS parita | 🚧 | headless Chrome ~25 fps oba backendy (limit prostředí); device matrix chybí |
+| WebGPU vizuální parita (kosmetika) | 🚧 | instanced listí + wireframe aura renderují jinak než WebGL2 — node-konverze `wireframe`/instanced materiálů; ne blocker |
 | Pixel Streaming z GPU Edge | 🔭 | UE 5.7 POC — samostatný track M4.3 |
 | UE 5.7 / Nanite / Lumen / MetaHuman | 🔭 | není v repu — viz `WebOasis.md` §9 rizika |
 
@@ -81,7 +82,7 @@
 
 | Artefakt | Stav |
 |---|---|
-| `WebOasis.md` (GPU preview architektura) | ✅ aktuální po G2 |
+| `WebOasis.md` (GPU preview architektura) | ✅ aktuální po G2 hotfixi (vč. produkčního incident reportu) |
 | `OasisChecklist.md` (tento soubor) | ✅ |
 | E2E harness (Playwright + `channel:'chrome'`) | ✅ lokální skripty `/tmp` — zvážit přesun do `scripts/e2e` |
 
