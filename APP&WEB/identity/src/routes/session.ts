@@ -4,12 +4,14 @@ import { requireAuth } from '../lib/auth.js';
 export async function sessionRoutes(app: FastifyInstance): Promise<void> {
   // List active sessions for current user
   app.get('/', { preHandler: [requireAuth] }, async (req) => {
-    const payload = req.user as { sub: string };
+    const payload = req.user as { sub: string; jti: string };
     const sessions = await app.prisma.session.findMany({
       where: { userId: payload.sub, revoked: false, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: 'desc' },
     });
-    return { sessions };
+    return {
+      sessions: sessions.map((s) => ({ ...s, current: s.jwtJti === payload.jti })),
+    };
   });
 
   // Revoke a specific session

@@ -53,8 +53,15 @@ interface AuthState {
   loginWithPasskey: () => Promise<void>;
   /** Logout */
   logout: () => Promise<void>;
-  /** Update display name */
-  updateProfile: (displayName: string) => Promise<void>;
+  /** Update profile fields (displayName, email, avatar, bio) */
+  updateProfile: (patch: {
+    displayName?: string;
+    email?: string | null;
+    avatar?: string | null;
+    bio?: string | null;
+  }) => Promise<void>;
+  /** Re-fetch the user record (e.g. after linking an address) */
+  refreshUser: () => Promise<void>;
 }
 
 const defaultState: AuthState = {
@@ -68,6 +75,7 @@ const defaultState: AuthState = {
   loginWithPasskey: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
+  refreshUser: async () => {},
 };
 
 const AuthContext = createContext<AuthState>(defaultState);
@@ -231,9 +239,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback(async (displayName: string) => {
-    const updated = await zisUpdateProfile({ displayName });
+  const updateProfile = useCallback(async (patch: {
+    displayName?: string;
+    email?: string | null;
+    avatar?: string | null;
+    bio?: string | null;
+  }) => {
+    const updated = await zisUpdateProfile(patch);
     setUser(zisToAuthUser(updated));
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const zisUser = await getCurrentUser();
+      setUser(zisToAuthUser(zisUser));
+    } catch {
+      // keep stale state — a failed refresh must not log the user out
+    }
   }, []);
 
   return (
@@ -249,6 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithPasskey,
         logout,
         updateProfile,
+        refreshUser,
       }}
     >
       {children}

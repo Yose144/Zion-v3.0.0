@@ -83,6 +83,8 @@ export interface ZisActiveSession {
   expiresAt: string;
   revoked: boolean;
   lastUsedAt?: string | null;
+  /** True when this session row matches the caller's JWT — "this device". */
+  current?: boolean;
 }
 
 /** ZIS API key metadata (without the secret). */

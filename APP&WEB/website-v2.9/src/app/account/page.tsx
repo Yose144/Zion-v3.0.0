@@ -23,6 +23,7 @@ import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
 import SecurityPanel from '@/components/dashboard/SecurityPanel';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
+import ProfilePanel from '@/components/dashboard/ProfilePanel';
 
 const AccountCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -55,9 +56,10 @@ const AccountCopy = {
   wallet: { cs: `Peněženka`, en: `Wallet` },
 };
 
-type Tab = 'wallet' | 'mining' | 'transactions' | 'ai' | 'security' | 'notifications';
+type Tab = 'profile' | 'wallet' | 'mining' | 'transactions' | 'ai' | 'security' | 'notifications';
 
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
+  { id: 'profile', labelCs: 'Profil', labelEn: 'Profile', icon: User, rc: '147, 51, 234' },
   { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '6, 105, 40' },
   { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '228, 30, 43' },
   { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '252, 209, 22' },
@@ -136,9 +138,28 @@ export default function AccountPage() {
 
   const cs = lang === 'cs';
 
+  // The chain-facing address: primaryAddress when it is a real zion1 wallet,
+  // otherwise the first linked zion-l1 address (Google/passkey accounts have
+  // a `google:<sub>` primary which is not an on-chain address).
+  const zionAddress = user
+    ? user.address.startsWith('zion1')
+      ? user.address
+      : (user.linkedAddresses?.find((la) => la.chainType === 'zion-l1')?.address ?? null)
+    : null;
+
   const fetchStats = useCallback(async () => {
-    if (!user?.address) return;
-    const address = user.address;
+    if (!zionAddress) {
+      setStats((s) => ({
+        ...s,
+        balanceLoading: false,
+        miningLoading: false,
+        txLoading: false,
+        aiLoading: false,
+        aiSessions: 0,
+      }));
+      return;
+    }
+    const address = zionAddress;
 
     setStats((s) => ({
       ...s,
@@ -203,13 +224,16 @@ export default function AccountPage() {
 
     // AI sessions — no backend counter available yet, show placeholder
     setStats((s) => ({ ...s, aiSessions: 0, aiLoading: false }));
-  }, [user?.address]);
+  }, [zionAddress]);
 
   useEffect(() => {
-    if (user?.address) {
-      void fetchStats();
-    }
-  }, [fetchStats, user?.address]);
+    void fetchStats();
+  }, [fetchStats]);
+
+  // Redirect unauthenticated visitors — inside an effect, never during render.
+  useEffect(() => {
+    if (!loading && !user) router.push('/login');
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -227,12 +251,12 @@ export default function AccountPage() {
   }
 
   if (!user) {
-    router.push('/login');
     return null;
   }
 
   const copyAddress = () => {
-    navigator.clipboard.writeText(user.address);
+    if (!zionAddress) return;
+    navigator.clipboard.writeText(zionAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -266,9 +290,24 @@ export default function AccountPage() {
           >
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
-                <div className="zion-badge-gold">
-                  <User className="h-4 w-4" />
-                  {AccountCopy.myAccount[cs ? 'cs' : 'en']}
+                <div className="flex items-center gap-4">
+                  {user.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.avatar}
+                      alt=""
+                      className="h-14 w-14 rounded-2xl border border-white/15 object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-xl font-bold text-white">
+                      {(user.displayName ?? 'Z')[0]?.toUpperCase()}
+                    </div>
+                  )}
+                  <div className="zion-badge-gold">
+                    <User className="h-4 w-4" />
+                    {AccountCopy.myAccount[cs ? 'cs' : 'en']}
+                  </div>
                 </div>
 
                 <div>
@@ -276,17 +315,25 @@ export default function AccountPage() {
                     {AccountCopy.zionL1Dashboard[cs ? 'cs' : 'en']}
                   </p>
                   <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                    {user.displayName || (AccountCopy.myAccount[cs ? 'cs' : 'en'])}
+                    {user.displayName || user.email || (AccountCopy.myAccount[cs ? 'cs' : 'en'])}
                   </h1>
                 </div>
 
-                <button
-                  onClick={copyAddress}
-                  className="zion-button-secondary rounded-full px-4 py-2 text-xs font-mono"
-                >
-                  {user.address}
-                  {copied ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
-                </button>
+                {zionAddress ? (
+                  <button
+                    onClick={copyAddress}
+                    className="zion-button-secondary rounded-full px-4 py-2 text-xs font-mono"
+                  >
+                    {zionAddress}
+                    {copied ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
+                  </button>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    {cs
+                      ? 'Žádná ZION L1 adresa — propoj peněženku v záložce Bezpečnost.'
+                      : 'No ZION L1 address — link a wallet in the Security tab.'}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap gap-3 text-xs">
                   <span className="zion-badge-green">
@@ -321,7 +368,7 @@ export default function AccountPage() {
                         {AccountCopy.address[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white text-xs">
-                        {user.address.slice(0, 10)}…{user.address.slice(-6)}
+                        {zionAddress ? `${zionAddress.slice(0, 10)}…${zionAddress.slice(-6)}` : '—'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
@@ -461,13 +508,22 @@ export default function AccountPage() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3 }}
             >
+              {activeTab === 'profile' && <ProfilePanel />}
               {activeTab === 'wallet' && (
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Wallet className="h-5 w-5 text-zion-cyan" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.walletOverview[cs ? 'cs' : 'en']}</h2>
                   </div>
-                  <WalletOverview address={user.address} />
+                  {zionAddress ? (
+                    <WalletOverview address={zionAddress} />
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      {cs
+                        ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.'
+                        : 'Link a ZION wallet in the Security tab first.'}
+                    </p>
+                  )}
                 </div>
               )}
               {activeTab === 'mining' && (
@@ -476,7 +532,15 @@ export default function AccountPage() {
                     <Pickaxe className="h-5 w-5 text-zion-purple" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.miningStats[cs ? 'cs' : 'en']}</h2>
                   </div>
-                  <MiningStats address={user.address} />
+                  {zionAddress ? (
+                    <MiningStats address={zionAddress} />
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      {cs
+                        ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.'
+                        : 'Link a ZION wallet in the Security tab first.'}
+                    </p>
+                  )}
                 </div>
               )}
               {activeTab === 'transactions' && (
@@ -485,7 +549,15 @@ export default function AccountPage() {
                     <ArrowLeftRight className="h-5 w-5 text-zion-gold" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.transactionHistory[cs ? 'cs' : 'en']}</h2>
                   </div>
-                  <TransactionHistory address={user.address} />
+                  {zionAddress ? (
+                    <TransactionHistory address={zionAddress} />
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      {cs
+                        ? 'Nejdřív propoj ZION peněženku v záložce Bezpečnost.'
+                        : 'Link a ZION wallet in the Security tab first.'}
+                    </p>
+                  )}
                 </div>
               )}
               {activeTab === 'ai' && (
