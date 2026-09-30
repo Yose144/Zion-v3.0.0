@@ -1,6 +1,8 @@
 /**
- * The six founding L5 Free World communities — shared between the
- * planetary map and the community/registry sections.
+ * The L5 Free World community sites — shared between the planetary
+ * map and the community/registry sections. Six founding communities
+ * carry a funded allocation; later sites (e.g. Uluru) start as
+ * vision-stage with no committed allocation.
  */
 
 export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision';
@@ -70,6 +72,18 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     status: 'preparation',
     href: '/terranova/nova-amerika',
     allocationZion: 500_000_000,
+  },
+  {
+    // Aboriginal Australia — the Dreamtime/songlines heritage from the
+    // antipodes. Vision stage: no funded allocation or on-site community
+    // yet; detail links to the Oceania geography page.
+    key: 'uluru',
+    name: 'Uluru',
+    lat: -25.34,
+    lon: 131.04,
+    status: 'vision',
+    href: '/terranova/geography/oceania',
+    allocationZion: 0,
   },
 ];
 

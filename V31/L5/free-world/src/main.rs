@@ -60,6 +60,44 @@ async fn main() {
     let db = Arc::new(Mutex::new(fw_db));
 
     let metrics = Arc::new(FreeWorldMetrics::new());
+
+    // Hydrate the count/fund gauges from the DB — the atomics otherwise
+    // restart at zero and drift from reality until the next mutation.
+    {
+        use std::sync::atomic::Ordering::Relaxed;
+        let db = db.lock().unwrap();
+        if let Ok(counts) = db.grant_status_counts() {
+            let get = |s: &str| {
+                counts
+                    .iter()
+                    .find(|(k, _)| k == s)
+                    .map(|(_, n)| *n)
+                    .unwrap_or(0)
+            };
+            metrics.grants_pending.store(get("pending"), Relaxed);
+            metrics.grants_approved.store(get("approved"), Relaxed);
+            metrics.grants_disbursed.store(get("disbursed"), Relaxed);
+        }
+        if let Ok(counts) = db.project_status_counts() {
+            let active: u64 = counts
+                .iter()
+                .filter(|(s, _)| s == "active")
+                .map(|(_, n)| *n)
+                .sum();
+            metrics.projects_active.store(active, Relaxed);
+        }
+        if let Ok(b) = db.get_fund_balance() {
+            metrics.total_accumulated_zion.store(
+                b.total_accumulated / zion_free_world::metrics::FLOWERS_PER_ZION,
+                Relaxed,
+            );
+            metrics.total_disbursed_zion.store(
+                b.total_disbursed / zion_free_world::metrics::FLOWERS_PER_ZION,
+                Relaxed,
+            );
+        }
+    }
+
     info!(
         "📊 Prometheus metrics: http://{}:{}/metrics",
         cfg.bind, cfg.port
@@ -106,7 +144,7 @@ async fn main() {
         fund_address: cfg.humanitarian_fund_address.clone(),
         finality_blocks: 6,
     };
-    let scanner = L1Scanner::new(scanner_cfg, Arc::clone(&db));
+    let scanner = L1Scanner::new(scanner_cfg, Arc::clone(&db), Arc::clone(&metrics));
 
     let scanner_handle = tokio::spawn(async move {
         scanner.run().await;

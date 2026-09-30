@@ -1,15 +1,16 @@
 'use client';
 
 /**
- * FreeWorldMap — planetary map of the six L5 founding communities.
+ * FreeWorldMap — planetary map of the L5 Free World communities.
  *
  * Leaflet is lazy-loaded client-side (`await import('leaflet')`) and init
  * is gated behind an IntersectionObserver — initializing inside the
  * `content-visibility:auto` / `whileInView` page sections before they are
  * on-screen leaves Leaflet with a zero-sized viewport and blank tiles.
  * Styled with the Esri Dark Gray Canvas basemap and glowing div-icon
- * markers coloured by community status. All six founding communities are
- * in preparation until 2028 — construction starts no earlier than 2029.
+ * markers coloured by community status. The six founding communities are
+ * in preparation until 2028 — construction starts no earlier than 2029;
+ * vision-stage sites (Uluru) carry no allocation yet.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,11 +28,14 @@ const copy = {
   },
   legendTitle: { cs: 'Stav komunit', en: 'Community status' },
   legendPrep: {
-    cs: 'Všechny komunity — příprava do 2028 · stavba od 2029',
-    en: 'All communities — preparation until 2028 · construction from 2029',
+    cs: 'Financované komunity — příprava do 2028 · stavba od 2029',
+    en: 'Funded communities — preparation until 2028 · construction from 2029',
   },
   detail: { cs: 'Otevřít stránku komunity →', en: 'Open community page →' },
-  sixCommunities: { cs: '6 zakládajících komunit', en: '6 founding communities' },
+  communityCount: {
+    cs: `${FREE_WORLD_SITES.length} komunit`,
+    en: `${FREE_WORLD_SITES.length} communities`,
+  },
 };
 
 const LOCATION_LABEL: Record<string, { cs: string; en: string }> = {
@@ -41,6 +45,7 @@ const LOCATION_LABEL: Record<string, { cs: string; en: string }> = {
   'golden-republic-bohemia': { cs: 'Čechy, Česká republika', en: 'Bohemia, Czech Republic' },
   'bodhi-lanka': { cs: 'Srí Lanka', en: 'Sri Lanka' },
   lumi: { cs: 'Kostarika · Nová Amerika', en: 'Costa Rica · Nová Amerika' },
+  uluru: { cs: 'Uluru, Northern Territory, Austrálie', en: 'Uluru, Northern Territory, Australia' },
 };
 
 export default function FreeWorldMap() {
@@ -201,7 +206,7 @@ export default function FreeWorldMap() {
         ref={containerRef}
         className="fw-map h-96 w-full rounded-2xl border border-white/10 md:h-[28rem]"
         role="application"
-        aria-label={cs ? 'Mapa šesti zakládajících komunit L5' : 'Map of the six founding L5 communities'}
+        aria-label={cs ? 'Mapa komunit L5' : 'Map of the L5 communities'}
       />
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-400">
         <span className="uppercase tracking-widest text-gray-500">{copy.legendTitle[cs ? 'cs' : 'en']}</span>
@@ -209,7 +214,7 @@ export default function FreeWorldMap() {
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.preparation }} />
           {copy.legendPrep[cs ? 'cs' : 'en']}
         </span>
-        <span className="ml-auto text-gray-500">{copy.sixCommunities[cs ? 'cs' : 'en']}</span>
+        <span className="ml-auto text-gray-500">{copy.communityCount[cs ? 'cs' : 'en']}</span>
       </div>
     </div>
   );

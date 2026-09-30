@@ -15,8 +15,6 @@ pub struct FreeWorldConfig {
     pub scan_interval_secs: u64,
     pub api_key: String,
     pub humanitarian_fund_address: String,
-    pub min_grant_amount_zion: u64,
-    pub max_grant_amount_zion: u64,
     pub hiran_endpoint: Option<String>,
     pub hiran_enabled: bool,
     pub dao_api_url: String,
@@ -37,8 +35,6 @@ impl Default for FreeWorldConfig {
             scan_interval_secs: 60,
             api_key: std::env::var("FREE_WORLD_API_KEY").unwrap_or_default(),
             humanitarian_fund_address: DEFAULT_HUMANITARIAN_FUND_ADDRESS.to_string(),
-            min_grant_amount_zion: 1_000,
-            max_grant_amount_zion: 10_000_000,
             hiran_endpoint: Some("http://localhost:8002".to_string()),
             hiran_enabled: false,
             dao_api_url: std::env::var("ZION_DAO_API_ADDR")

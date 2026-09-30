@@ -56,7 +56,6 @@ export interface FwProject {
   started_at: string | null;
   completed_at: string | null;
   impact_metrics: string | null;
-  created_at: string;
 }
 
 export type FwRoundStatus = 'draft' | 'open' | 'tallying' | 'closed';
@@ -79,6 +78,8 @@ export interface FwRound {
   closed_at: string | null;
   ballot_count: number;
   grants?: FwRoundGrant[];
+  /** Embedded for closed rounds by GET /rounds/:id. */
+  results?: FwResults;
 }
 
 export interface FwResultGrant {
@@ -143,7 +144,7 @@ export const fwApi = {
   round: (id: string) => request<FwRound>(`rounds/${id}`),
   roundResults: (id: string) => request<FwResults>(`rounds/${id}/results`),
   castBallot: (roundId: string, votes: { grant_id: string; votes: number }[]) =>
-    request<{ round_id: string; voter_id: string; votes: number; credits: number; tally: number }>(
+    request<{ voter_id: string; credits_spent: number; credits_remaining: number }>(
       `rounds/${roundId}/ballots`,
       { method: 'POST', body: JSON.stringify({ votes }) },
     ),

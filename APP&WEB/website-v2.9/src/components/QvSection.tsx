@@ -114,13 +114,16 @@ export default function QvSection() {
       try {
         const detail = await fwApi.round(r.id);
         setSelected(detail);
-        if (detail.status === 'closed') {
+        // GET /rounds/:id embeds frozen results for closed rounds; only
+        // hit the results endpoint as a fallback.
+        if (detail.status === 'closed' && !detail.results) {
           try {
-            setResults(await fwApi.roundResults(r.id));
+            detail.results = await fwApi.roundResults(r.id);
           } catch {
             /* results may not exist yet */
           }
         }
+        setResults(detail.results ?? null);
       } catch {
         setOffline(true);
       } finally {
