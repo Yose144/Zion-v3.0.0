@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { LogIn, LogOut, LayoutDashboard, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
+import ZisAvatar from '@/components/ZisAvatar';
 
 const LoginModal = dynamic(() => import('./LoginModal'), { ssr: false });
 
@@ -72,19 +73,13 @@ export default function NavAuthButton() {
           onClick={() => setShowMenu(!showMenu)}
           className="flex items-center gap-2 px-2 py-1.5 rounded-xl border border-white/15 bg-black/75 hover:border-white/25 transition-colors"
         >
-          {user?.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.avatar}
-              alt=""
-              className="h-7 w-7 rounded-lg object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-[11px] font-bold text-white">
-              {initial}
-            </div>
-          )}
+          <ZisAvatar
+            seed={user?.id ?? user?.address ?? 'anon'}
+            src={user?.avatar}
+            size={28}
+            className="rounded-lg"
+            initial={initial}
+          />
           <span className="hidden lg:inline text-[11px] font-mono text-zion-gold/85 max-w-[140px] truncate">{shortAddr}</span>
           <ChevronDown className={`w-3.5 h-3.5 text-zion-gold/70 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
         </button>

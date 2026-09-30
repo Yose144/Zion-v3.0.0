@@ -1,7 +1,9 @@
 # ZIS Avatar — specifikace a roadmap
 
-> Stav: **specifikace → fáze 1 implementována** (2026-09-30).
+> Stav: **fáze 1 + část fáze 2 NASAZENY na produkci** (2026-09-30).
 > Kanonický dokument pro avatar systém ZION identity napříč ekosystémem.
+> Live: `https://auth.zionterranova.com/api/auth/avatar/<seed>.svg` a
+> same-origin proxy na app/oasis hostech.
 
 ## Cíl
 
@@ -103,16 +105,22 @@ initial (současné chování).
 
 ## Integrační body (fáze)
 
-### Fáze 1 — hotovo při tomto tasku
-- [x] ZIS `GET /api/auth/avatar/:seed.svg` + generátor
-- [x] shared helper `avatarUrl(seed, {s,t,sz})` v `zis-client.ts`
+### Fáze 1 — NASAZENO (2026-09-30)
+- [x] ZIS `GET /api/auth/avatar/:seed.svg` + generátor (`src/lib/avatar.ts`),
+      per-route limit 600/min, immutable cache
+- [x] shared helper `zisAvatarUrl/zisAvatarAbsoluteUrl` v `zis-client.ts`
 - [x] `ZisAvatar` komponenta + integrace: NavAuthButton, /account hero,
-      ProfilePanel (studio)
-- [ ] Deploy ZIS + website na Edge, verify
+      ProfilePanel (Avatar Studio: preview + 3 styly + mřížka variant
+      + vlastní URL + reset na generovaný)
+- [x] zis-proxy předává upstream `Cache-Control`/`X-Content-Type-Options`
+- [x] Unit testy `identity/test/avatar.test.ts` (8/8)
+- [x] Deploy ZIS + website na Edge — ověřeno: SVG 200 přes veřejnou
+      proxy, immutable hlavičky, 400 na nevalidní input, 8/8 G8 probes
 
 ### Fáze 2 — povrchy identity napříč weby
-- [ ] OasisWeb (ZIS auth tam už je — AuthContext+zis.ts) — avatar v
-      profilu/hráčském panelu
+- [x] OasisWeb — `zisAvatarUrl` v `src/lib/zis.ts`, `ZisAvatar.tsx`,
+      avatar v ZIS Identity panelu (GamePanel); nasazeno do
+      `/var/www/oasis` (avatar endpoint přes nginx `/api/auth` proxy ověřen)
 - [ ] DAO UI — avatar proposerů/voters podle `zion1…` adresy (seed =
       adresa, žádný ZIS lookup nepotřeba)
 - [ ] L5 Free World — `voter_id = zis:<id>` → avatar ballotů

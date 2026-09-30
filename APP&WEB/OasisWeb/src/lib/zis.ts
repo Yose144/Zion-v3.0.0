@@ -51,6 +51,27 @@ export interface ZisUser {
   oasisPlayer?: ZisOasisPlayer | null;
 }
 
+// ── Avatars ──────────────────────────────────────────────────────────
+
+/** Avatar render style supported by GET /api/auth/avatar/:seed.svg. */
+export type ZisAvatarStyle = 'sigil' | 'rings' | 'prism';
+
+/**
+ * Deterministic avatar URL for any identity seed (user id, zion1
+ * address, 0x address…). Served by ZIS through the `/api/auth` proxy.
+ */
+export function zisAvatarUrl(
+  seed: string,
+  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number },
+): string {
+  const params = new URLSearchParams();
+  if (opts?.s !== undefined) params.set('s', String(opts.s));
+  if (opts?.t) params.set('t', opts.t);
+  if (opts?.sz) params.set('sz', String(opts.sz));
+  const qs = params.toString();
+  return `${CLIENT_PROXY_BASE}/avatar/${encodeURIComponent(seed)}.svg${qs ? `?${qs}` : ''}`;
+}
+
 export interface ZisSession {
   token: string;
   user: {
