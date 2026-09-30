@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import WarpGateVortex from './WarpGateVortex';
 import GlowSprite from './GlowSprite';
 import { createRandom } from '../domain/ports/random';
+import { useGpuBackend } from '../lib/gpuBackend';
 
 /** Small procedural surface texture so planet/world/sector nodes on the
  *  galaxy map read as tiny textured worlds instead of flat-shaded balls. */
@@ -120,6 +121,8 @@ export default function World({
   const gateRef = useRef<THREE.Mesh>(null);
   const rayRef = useRef<THREE.Sprite>(null);
   const [hovered, setHovered] = useState(false);
+  // WarpGateVortex is raw GLSL — WebGPU backend skips it (G1).
+  const backend = useGpuBackend();
 
   const isStarSystem = category === 'star-system';
   const distance = Math.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2);
@@ -247,7 +250,9 @@ export default function World({
               depthWrite={false}
             />
           </mesh>
-          <WarpGateVortex color={color} size={displaySize} active={hovered || selected} />
+          {backend === 'webgl2' && (
+            <WarpGateVortex color={color} size={displaySize} active={hovered || selected} />
+          )}
           {(hovered || selected) && <GlowSprite color={color} size={displaySize * 3} opacity={0.45} fog={!isDistant} />}
         </group>
       )}
