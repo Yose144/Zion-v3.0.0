@@ -5,24 +5,22 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
-  Brain,
   Calendar,
   Compass,
-  Ear,
   Feather,
-  Flame,
   Heart,
   Landmark,
+  Layers,
   LucideIcon,
   MapPin,
   Mountain,
-  Music,
   Network,
-  PawPrint,
   Shield,
+  Ship,
   Sparkles,
   Sun,
   Users,
+  Waves,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import dynamic from 'next/dynamic';
@@ -32,62 +30,62 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
-  visionStage: { cs: `Vize — nejdřív naslouchat`, en: `Vision — listen first` },
-  subtitle: { cs: `Uluru · Tjukurpa · Songlines · Austrálie · Terra Nova ®`, en: `Uluru · Tjukurpa · Songlines · Australia · Terra Nova ®` },
+  builtStage: { cs: `Postaveno 2008 — předloha všech uzlů`, en: `Built 2008 — the template for all nodes` },
+  subtitle: { cs: `Oneness Temple · Andhra Pradesh · Indie · Terra Nova ®`, en: `Oneness Temple · Andhra Pradesh · India · Terra Nova ®` },
   quote: {
-    cs: `"Země není něco, co vlastníme. Země je něco, čím jsme."`,
-    en: `"The land is not something we own. The land is something we are."`,
+    cs: `"Ostatní uzly stavíme — tento nás učí, jak."`,
+    en: `"We build the other nodes — this one teaches us how."`,
   },
-  locationLine: { cs: `Uluru-Kata Tjuṯa · Northern Territory, Austrálie`, en: `Uluru-Kata Tjuṯa · Northern Territory, Australia` },
-  introTitle: { cs: `Sedmý uzel — poselství od protinožců`, en: `The seventh node — the message from the antipodes` },
+  locationLine: { cs: `Varadaiahpalem · distrikt Tirupati, Andhra Pradesh, Indie`, en: `Varadaiahpalem · Tirupati district, Andhra Pradesh, India` },
+  introTitle: { cs: `Desátý uzel — jediný, který už stojí`, en: `The tenth node — the only one already standing` },
   introBody: {
-    cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Jeho učení jsou telepatie a vize, nativní propojení s přírodou a zvířaty — a jednou ročně Uluru Festival, oslava života pro všechny umělce. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
-    en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Its teachings are telepathy and visions, native connection with land and animals — and once a year the Uluru Festival, a celebration of life for all artists. Listen first — then, maybe, build, somewhere else, differently.`,
+    cs: `Ekam je desátý bod L5 Free World — a jediný, který fyzicky existuje. Chrám Jednoty u vesnice Varadaiahpalem byl otevřen 22. dubna 2008 jako Oneness Temple; dnes nese jméno Ekam — sanskrtské „Jedno". Bílý mramor na platformě 130×106 m, výška 33 m, vodní plochy jako „ostrov", bezsloupová meditační hala ~2 090 m² a na nejvyšším podlaží Zlatá koule. Ekam je vrchol Velké cesty — iniciace dokončení — a zároveň předloha: živý důkaz, že architektura navržená pro vědomí se dá postavit. A navazuje přímo na řetězec: proof-of-work ZIONu se jmenuje ekam_deeksha a genesis věta sítě zní „Om Namo Hiranyagarbha & Ekam Deeksha!".`,
+    en: `Ekam is the tenth point of L5 Free World — and the only one that physically exists. The Temple of Oneness near the village of Varadaiahpalem opened on 22 April 2008 as the Oneness Temple; today it carries the name Ekam — Sanskrit for "One". White marble on a 130×106 m platform, 33 m tall, water moats forming an "island", a ~2,090 m² column-free meditation hall and, on the top floor, the Golden Orb. Ekam is the summit of the Great Route — the initiation of completion — and also the template: living proof that architecture designed for consciousness can be built. And it connects directly to the chain: ZION's proof-of-work is called ekam_deeksha and the network's genesis words read "Om Namo Hiranyagarbha & Ekam Deeksha!".`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
-  featuresSubtitle: { cs: `Dědictví & poselství`, en: `Heritage & Message` },
-  festivalTitle: { cs: `Uluru Festival — oslava života`, en: `Uluru Festival — a celebration of life` },
-  festivalSubtitle: { cs: `Jednou ročně · pro všechny umělce`, en: `Once a year · for all artists` },
-  festivalBody: {
-    cs: `Jednou za rok se poušť promění v dočasné město umění — festival ve duchu Burning Man, upravený pro své místo: účast není diváctví, každý spoluvytváří. Instalace, hudba, tanec, oheň a světlo — oslava života pro umělce celého světa. Posvátná země zůstává nedotčena: místo určují custodiáni a po odchodu na něm nezůstává jediná stopa.`,
-    en: `Once a year the desert turns into a temporary city of art — a festival in the spirit of Burning Man, adapted to its place: participation is not spectatorship, everyone co-creates. Installations, music, dance, fire and light — a celebration of life for artists worldwide. Sacred land stays untouched: the custodians choose the site and not a single trace remains after we leave.`,
+  featuresSubtitle: { cs: `Dokončení & předloha`, en: `Completion & template` },
+  templateTitle: { cs: `Předloha — co se z Ekamu učí všechny uzly`, en: `The template — what every node learns from Ekam` },
+  templateSubtitle: { cs: `Architektura jako technologie`, en: `Architecture as technology` },
+  templateBody: {
+    cs: `Chrám nevznikl jako svatyně jedné tradice — navrhl ho Prabhat Poddar z Auroville tak, aby v něm jakákoli vnitřní zkušenost mohla prohloubit. Zlatý řez v každé proporci, vaastu orientace podle světových stran, geobiologicky vybraná lokalita, tři podlaží jako architektura iniciace (příprava → přání → osvobození) a jeden nepřerušený prostor pro stovky lidí. Tyto principy informují design Genesis, Dharmy i všech budoucích uzlů — Ekam je kurátorovaný „reference design" sítě.`,
+    en: `The temple was not designed as the shrine of one tradition — Prabhat Poddar of Auroville designed it so that any inner experience could deepen within it. Golden ratio in every proportion, Vaastu alignment to the cardinal directions, a geobiologically chosen site, three floors as an architecture of initiation (preparation → aspiration → liberation) and one uninterrupted space holding hundreds of people. These principles inform the design of Genesis, Dharma and every future node — Ekam is the network's curated "reference design".`,
   },
-  festivalPoints: {
-    cs: [`Jednou ročně — pouštní cyklus`, `Pro všechny umělce — účast je tvorba`, `Leave no trace — země se vrací prázdná`],
-    en: [`Once a year — a desert cycle`, `For all artists — participation is creation`, `Leave no trace — the land returns empty`],
+  templatePoints: {
+    cs: [`Zlatý řez + vaastu + geobiologie — proporce jako nosič zkušenosti`, `Bezsloupová hala 2 090 m² — vzor pro sál každého uzlu`, `Tři podlaží = iniciační sekvence — příprava → přání → osvobození`],
+    en: [`Golden ratio + Vaastu + geobiology — proportion as a carrier of experience`, `2,090 m² column-free hall — the pattern for every node's hall`, `Three floors = initiation sequence — preparation → aspiration → liberation`],
   },
   phasesTitle: { cs: `Fáze rozvoje`, en: `Development Phases` },
-  phasesSubtitle: { cs: `Od naslouchání k vztahu`, en: `From listening to relationship` },
+  phasesSubtitle: { cs: `Od vztahu k předloze`, en: `From relationship to template` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
-  respectTitle: { cs: `Posvátná země zůstává nedotčena`, en: `Sacred land stays untouched` },
+  respectTitle: { cs: `Vztah, ne vlastnictví`, en: `Relationship, not ownership` },
   respectBody: {
-    cs: `Uluru samotné je posvátný — od roku 2019 se na něj nesmí vystoupit a Aňangu o něm rozhodují v národním parku Uluru-Kata Tjuṯa (UNESCO za přírodní i kulturní dědictví). Uzel L5 proto neznamená stavbu u monolitu. Znamená uznání: že mapa lidstva není kompletní bez jeho nejstarší žijící kultury, a že její poselství — odpovědnost za zemi, kanyini — je přesně to, co Free World potřebuje slyšet.`,
-    en: `Uluru itself is sacred — climbing it has been closed since 2019 and the Aṉangu govern it within the Uluru-Kata Tjuṯa National Park (UNESCO listed for both natural and cultural heritage). The L5 node therefore does not mean a construction by the monolith. It means recognition: that the map of humanity is not complete without its oldest living culture, and that its message — responsibility for the land, kanyini — is exactly what the Free World needs to hear.`,
+    cs: `Ekam provozuje organizace Oneness/Ekam — ZION na něm nebuduje, nevlastní a nereprezentuje ho. Uzel funguje jako Uluru a Boa Esperança: destination node, návštěvy na podmínky provozovatele, žádný nárok na programy, symboly či dědictví. Silnější metafyzická tvrzení linie („generátor vědomí", „pole jednoty") uvádíme jako její učení — L5 z něj čerpá principy návrhu, ne empirické nároky.`,
+    en: `Ekam is operated by the Oneness/Ekam organisation — ZION does not build on it, own it or represent it. The node works like Uluru and Boa Esperança: a destination node, visits on the operator's terms, no claim on programmes, symbols or heritage. The lineage's stronger metaphysical claims ("a generator of consciousness", "the oneness field") are presented as its teaching — L5 draws design principles from it, not empirical claims.`,
   },
   openTitle: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   openItems: {
     cs: [
-      `Je fyzický uzel vůbec správný? Může být vazbou, ne místem.`,
-      `FPIC dialog — kruhy starších a tradiční custodiáni (Aňangu a další)`,
-      `Partnerské území mimo národní park — pro uzel i festival určují custodiáni`,
-      `Songlines jako mapa: které příběhy smí být sdíleny, a pod čí kontrolou`,
-      `Souhlas a vlastnictví — znalosti zůstávají majetkem jejich nositelů`,
+      `Forma vztahu s provozovatelem kampusu — návštěva, dialog, výzkumná vazba`,
+      `Poutní protokol — malé skupiny, Chennai kotviště, pozemní transfer 73 km`,
+      `Co z architektury je přenositelné do designu ostatních uzlů (se souhlasem)`,
+      `Jazyk pro deekshu a Zlatou kouli — respektovaně a přesně`,
+      `Auroville linka — Matrimandir jako sesterský archetyp`,
     ],
     en: [
-      `Is a physical node even right? It may be a relationship, not a site.`,
-      `FPIC dialogue — councils of elders and traditional custodians (Aṉangu and beyond)`,
-      `Partner territory outside the national park — node and festival sites chosen by custodians`,
-      `Songlines as a map: which stories may be shared, and under whose control`,
-      `Consent and ownership — knowledge stays in the custody of its carriers`,
+      `Form of relationship with the campus operator — visit, dialogue, research link`,
+      `Pilgrim protocol — small groups, Chennai anchorage, 73 km overland transfer`,
+      `Which architectural principles can inform other nodes (with consent)`,
+      `Language for deeksha and the Golden Orb — respectful and precise`,
+      `The Auroville link — Matrimandir as a sister archetype`,
     ],
   },
   cta: {
-    cs: `Slyšíš píseň protinožců? Jsi Guardian, který umí nejdřív poslouchat?`,
-    en: `Do you hear the song of the antipodes? Are you a Guardian who knows how to listen first?`,
+    cs: `Stál jsi někdy v místě, které bylo postavené pro vědomí? Jsi Guardian, který umí nést dokončení domů?`,
+    en: `Have you ever stood in a place built for consciousness? Are you a Guardian who can carry completion home?`,
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
-  documentationSubtitle: { cs: `Koncept a vize uzlu Uluru — Dreamtime, songlines, škola vnímání a festival oslavy života.`, en: `Concept and vision of the Uluru node — Dreamtime, songlines, the school of perception and the celebration-of-life festival.` },
+  documentationSubtitle: { cs: `Koncept a fakta uzlu Ekam — chrám Jednoty, Zlatá koule, architektura jako technologie, role na Velké cestě.`, en: `Concept and facts of the Ekam node — the Temple of Oneness, the Golden Orb, architecture as technology, its role on the Great Route.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
   sisterTitle: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
@@ -110,74 +108,74 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    icon: Brain,
-    titleCs: 'Telepatie & vize',
-    titleEn: 'Telepathy & visions',
-    descCs: 'Učení tiché komunikace — meditované vize, sdílené snění a vědomé propojení za hranicí slov. Škola vnímání vedená těmi, kdo ji nesou.',
-    descEn: 'Learning silent communication — meditated visions, shared dreaming and conscious connection beyond words. A school of perception led by those who carry it.',
-    color: '#A78BFA',
-    rgb: '167, 139, 250',
+    icon: Sun,
+    titleCs: 'Zlatá koule',
+    titleEn: 'The Golden Orb',
+    descCs: 'Ø ~91 cm na horním podlaží Dharma Moksha — „čočka" soustředění a symbolický protějšek Hiranyagarbhy, Zlatého zárodku.',
+    descEn: '~91 cm diameter on the Dharma Moksha top floor — a "lens" of focus and the symbolic counterpart of Hiranyagarbha, the Golden Seed.',
+    color: '#F5DE82',
+    rgb: '245, 222, 130',
   },
   {
-    icon: PawPrint,
-    titleCs: 'Příroda & zvířata',
-    titleEn: 'Land & animals',
-    descCs: 'Nativní propojení s krajinou a jejími tvory jako s rodinou — čtení stopy, rytmu a roční doby podle custodiánů, kteří krajinu čtou desetitisíce let.',
-    descEn: 'Native connection with the land and its creatures as family — reading track, rhythm and season with custodians who have read the land for tens of thousands of years.',
-    color: '#066928',
-    rgb: '6, 105, 40',
-  },
-  {
-    icon: Flame,
-    titleCs: 'Uluru Festival',
-    titleEn: 'Uluru Festival',
-    descCs: 'Jednou ročně se poušť promění v dočasné město umění — oslava života pro všechny umělce. Model Burning Man upravený pro místo; custodiáni kurátují.',
-    descEn: 'Once a year the desert becomes a temporary city of art — a celebration of life for all artists. A Burning Man model adapted to place; curated by the custodians.',
-    color: '#EA580C',
-    rgb: '234, 88, 12',
-  },
-  {
-    icon: Music,
-    titleCs: 'Songlines',
-    titleEn: 'Songlines',
-    descCs: 'Pěvecké stezky nesoucí příběh, mapu i zákon přes celý kontinent — nejstarší síť poselství na Zemi.',
-    descEn: 'Singing tracks carrying story, map and law across the whole continent — the oldest message network on Earth.',
-    color: '#F59E0B',
-    rgb: '252, 209, 22',
-  },
-  {
-    icon: Mountain,
-    titleCs: 'Tjukurpa — Snění',
-    titleEn: 'Tjukurpa — the Dreaming',
-    descCs: 'Zákon předků, který není minulostí, ale trvající přítomnost: vztah mezi člověkem, zemí a příběhem.',
-    descEn: 'The law of the ancestors — not the past but a continuing present: the relation between people, land and story.',
-    color: '#8B5CF6',
-    rgb: '139, 92, 246',
-  },
-  {
-    icon: Users,
-    titleCs: 'Kruh custodiánů',
-    titleEn: 'Council of custodians',
-    descCs: 'Aňangu a další tradiční vlastníci rozhodují od prvního dne — FPIC není formulář, je to způsob existence vztahu.',
-    descEn: 'The Aṉangu and other traditional owners decide from day one — FPIC is not a form, it is how the relationship exists at all.',
+    icon: Network,
+    titleCs: 'Chain nese její jméno',
+    titleEn: 'The chain carries its name',
+    descCs: 'PoW mainnetu je ekam_deeksha — každý blok se těží pod jménem chrámu; genesis věta sítě děkuje této tradici.',
+    descEn: 'The mainnet PoW is ekam_deeksha — every block is mined under the temple’s name; the network’s genesis words thank this lineage.',
     color: '#22D3EE',
     rgb: '34, 211, 238',
   },
   {
-    icon: Ear,
-    titleCs: 'Naslouchání jako praxe',
-    titleEn: 'Listening as practice',
-    descCs: 'Šedesát tisíc let kontinuity se nedá „osvojit" — dá se jenom vyslechnout. L5 přichází jako žák, ne jako zakladatel.',
-    descEn: 'Sixty thousand years of continuity cannot be "adopted" — it can only be listened to. L5 arrives as a student, not a founder.',
-    color: '#06B6D4',
-    rgb: '6, 182, 212',
+    icon: Landmark,
+    titleCs: 'Jediný postavený',
+    titleEn: 'The only one built',
+    descCs: 'Otevřen 22. 4. 2008 před ~500 000 lidmi — Ekam je důkaz, že uzel L5 není utopie, ale stavitelný prostor.',
+    descEn: 'Opened 22 April 2008 before ~500,000 people — Ekam is proof that an L5 node is not utopia but buildable space.',
+    color: '#F5F5F4',
+    rgb: '245, 245, 244',
+  },
+  {
+    icon: Layers,
+    titleCs: 'Tři podlaží iniciace',
+    titleEn: 'Three floors of initiation',
+    descCs: 'Příprava → Artha Kama (hala přání) → Dharma Moksha (osvobození) — architektura jako mapa vnitřní cesty.',
+    descEn: 'Preparation → Artha Kama (hall of aspirations) → Dharma Moksha (liberation) — architecture as a map of the inner journey.',
+    color: '#A78BFA',
+    rgb: '167, 139, 250',
+  },
+  {
+    icon: Waves,
+    titleCs: 'Vodní ostrov',
+    titleEn: 'Water island',
+    descCs: 'Platforma 130×106 m obklopená vodními plochami — stavba v symbióze s vodním elementem; vzor pro design uzlů.',
+    descEn: 'A 130×106 m platform ringed by water — a building in symbiosis with the water element; a pattern for node design.',
+    color: '#2DD4BF',
+    rgb: '45, 212, 191',
+  },
+  {
+    icon: Sparkles,
+    titleCs: 'Bezsloupová hala',
+    titleEn: 'Column-free hall',
+    descCs: '~2 090 m² jednoho nepřerušeného prostoru — stovky lidí v jednom vizuálním a akustickém poli; vzor pro sál uzlů.',
+    descEn: '~2,090 m² of uninterrupted space — hundreds of people in a single visual and acoustic field; the pattern for node halls.',
+    color: '#F59E0B',
+    rgb: '245, 158, 11',
+  },
+  {
+    icon: Ship,
+    titleCs: 'Vrchol Velké cesty',
+    titleEn: 'Summit of the Great Route',
+    descCs: 'Iniciace 7 — Dokončení. Bodhi Lanka → Chennai kotviště → 73 km po souši. Satori se dokazuje návratem, ne odchodem.',
+    descEn: 'Initiation 7 — Completion. Bodhi Lanka → Chennai anchorage → 73 km overland. Satori is proven by returning, not leaving.',
+    color: '#0EA5E9',
+    rgb: '14, 165, 233',
   },
   {
     icon: Heart,
-    titleCs: 'Kanyini — odpovědnost',
-    titleEn: 'Kanyini — responsibility',
-    descCs: 'Propojenost a povinnost pečovat o zemi, rodinu a příběh — princip, který L5 tithe ztělesňuje v protokolu.',
-    descEn: 'Connectedness and the duty to care for land, family and story — the principle the L5 tithe embodies in protocol.',
+    titleCs: 'Otevřený všem tradicím',
+    titleEn: 'Open to all traditions',
+    descCs: 'Chrám bez oltáře jednoho boha — jakákoli vnitřní zkušenost se tu může prohloubit. Princip, který nese každý uzel L5.',
+    descEn: 'A temple with no altar to one deity — any inner experience can deepen here. The principle every L5 node carries.',
     color: '#F43F5E',
     rgb: '244, 63, 94',
   },
@@ -186,60 +184,59 @@ const FEATURES: FeatureItem[] = [
 const PHASES = [
   {
     num: '0',
-    cs: 'Naslouchání',
-    en: 'Listening',
-    descCs: 'Dialog s custodiány a komunitami Severního teritoria. Uzel existuje jako vzájemné učení, ne stavba — a žádný termín.',
-    descEn: 'Dialogue with the custodians and communities of the Northern Territory. The node exists as mutual learning, not construction — and no deadline.',
+    cs: 'Vztah',
+    en: 'Relationship',
+    descCs: 'Kontakt s provozovatelem kampusu — návštěvní protokol pro malé skupiny poutníků na jejich podmínky.',
+    descEn: 'Contact with the campus operator — a visit protocol for small pilgrim groups on their terms.',
     active: true,
   },
   {
     num: '1',
-    cs: 'Komunita',
-    en: 'Community',
-    descCs: 'Malý uzlový kruh; programy učení — telepatie, vize, vztah ke krajině a zvířatům — pod vedením těch, kdo je nesou.',
-    descEn: 'A small node circle; learning programmes — telepathy, visions, relationship with land and animals — led by those who carry them.',
+    cs: 'Poutní návštěvy',
+    en: 'Pilgrim visits',
+    descCs: 'První Guardian skupiny na Velké cestě — Chennai kotviště, pozemní transfer, návštěva chrámu.',
+    descEn: 'First Guardian groups on the Great Route — Chennai anchorage, overland transfer, temple visit.',
     active: false,
   },
   {
     num: '2',
-    cs: 'Pilotní setkání',
-    en: 'Pilot gathering',
-    descCs: 'Menší gathering na schváleném místě — zkouška formátu, logistiky bez stop a vztahu s custodiány.',
-    descEn: 'A smaller gathering on an approved site — testing the format, leave-no-trace logistics and the custodian relationship.',
+    cs: 'Dialog',
+    en: 'Dialogue',
+    descCs: 'Vzájemné učení — které principy architektury a programů jsou přenositelné do designu ostatních uzlů.',
+    descEn: 'Mutual learning — which architectural and programme principles can inform the design of other nodes.',
     active: false,
   },
   {
     num: '3',
-    cs: 'Uluru Festival',
-    en: 'Uluru Festival',
-    descCs: 'První celoroční cyklus — oslava života pro všechny umělce. Každý rok roste jen tak, jak nesou custodiáni a země.',
-    descEn: 'The first annual cycle — a celebration of life for all artists. Each year it grows only as far as the custodians and the land allow.',
+    cs: 'Předloha',
+    en: 'The template',
+    descCs: 'Ekam jako kurátorovaný reference design L5 — dokumentace principů pro Genesis, Dharma i budoucí uzly.',
+    descEn: 'Ekam as the curated L5 reference design — documented principles informing Genesis, Dharma and future nodes.',
     active: false,
   },
 ];
 
 const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
-  { label: 'ZION L1 Node', icon: Network },
+  { label: 'PoW ekam_deeksha', icon: Network },
+  { label: 'Hiranyagarbha · L3', icon: Sun },
   { label: 'DAO Governance', icon: Users },
   { label: 'Guardian Wallet', icon: Shield },
+  { label: 'Pilgrim Credential', icon: Feather },
   { label: 'L5 Humanitarian Tithe', icon: Heart },
-  { label: 'Cultural Grants', icon: Feather },
-  { label: 'Community Registry', icon: Landmark },
 ];
 
 const SISTERS = [
   { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Algarve, Portugalsko', en: 'Algarve, Portugal' } },
   { name: 'Dharma Temple', href: '/terranova/dharma-temple', region: { cs: 'La Palma', en: 'La Palma' } },
   { name: 'Te Pīko Ora', href: '/terranova/te-piko-ora', region: { cs: 'Raiatea · Polynésie', en: 'Raiatea · Polynesia' } },
-  { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
   { name: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika', region: { cs: 'Kostarika', en: 'Costa Rica' } },
+  { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory, Austrálie', en: 'Northern Territory, Australia' } },
   { name: 'María del Camino', href: '/terranova/maria-del-camino', region: { cs: 'Světové oceány · Galicie', en: 'World oceans · Galicia' } },
   { name: 'Boa Esperança', href: '/terranova/boa-esperanca', region: { cs: 'Mys dobré naděje', en: 'Cape of Good Hope' } },
-  { name: 'Ekam · Oneness Temple', href: '/terranova/ekam', region: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' } },
 ];
 
-export default function UluruPage() {
+export default function EkamPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
@@ -247,7 +244,7 @@ export default function UluruPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/uluru.cs.md' : '/docs/terranova/uluru.en.md';
+    const file = cs ? '/docs/terranova/ekam.cs.md' : '/docs/terranova/ekam.en.md';
     setDoc(null);
     setDocError(false);
     fetch(file)
@@ -286,26 +283,26 @@ export default function UluruPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
             <div className="relative z-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                  <Mountain className="h-10 w-10 text-orange-300" />
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+                  <Sun className="h-10 w-10 text-amber-200" />
                 </div>
 
                 <div className="space-y-3 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="zion-badge">L5 · Terra Nova · Antipodes</span>
+                    <span className="zion-badge">L5 · Terra Nova · India</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {Copy.visionStage[cs ? 'cs' : 'en']}
+                      {Copy.builtStage[cs ? 'cs' : 'en']}
                     </span>
                   </div>
 
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
-                    Uluru
+                    Ekam
                   </h1>
-                  <p className="text-lg text-orange-300 font-medium">
+                  <p className="text-lg text-amber-200 font-medium">
                     {Copy.subtitle[cs ? 'cs' : 'en']}
                   </p>
 
@@ -320,14 +317,14 @@ export default function UluruPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Sun, value: cs ? '60 000+ let' : '60,000+ years', labelCs: 'Paměť', labelEn: 'Memory' },
-                      { icon: Mountain, value: 'Uluru', labelCs: 'Srdce', labelEn: 'Heart' },
-                      { icon: Sparkles, value: cs ? 'Vize' : 'Vision', labelCs: 'Stav', labelEn: 'Status' },
+                      { icon: Calendar, value: '2008', labelCs: 'Otevřen', labelEn: 'Opened' },
+                      { icon: Sparkles, value: '2 090 m²', labelCs: 'Bezsloupová hala', labelEn: 'Column-free hall' },
+                      { icon: Sun, value: cs ? 'Zlatá koule' : 'Golden Orb', labelCs: 'Dharma Moksha', labelEn: 'Dharma Moksha' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
-                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                          <div className="flex items-center gap-2 text-orange-300">
+                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+                          <div className="flex items-center gap-2 text-amber-200">
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
@@ -343,10 +340,10 @@ export default function UluruPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/uluru/hero.webp"
-                alt="Uluru — poselství protinožců nad posvátným monolitem"
-                width={1672}
-                height={941}
+                src="/images/ekam/hero.webp"
+                alt="Ekam — bílý mramorový chrám Jednoty se Zlatou koulí, Andhra Pradesh"
+                width={1600}
+                height={900}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
@@ -363,7 +360,7 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
               {Copy.introTitle[cs ? 'cs' : 'en']}
             </h2>
@@ -383,7 +380,7 @@ export default function UluruPage() {
           <div className="mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.featuresSubtitle[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Compass className="h-7 w-7 text-orange-400" />
+              <Compass className="h-7 w-7 text-amber-300" />
               {Copy.featuresTitle[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -400,30 +397,30 @@ export default function UluruPage() {
           </div>
         </motion.section>
 
-        {/* ═══ ULURU FESTIVAL ═══ */}
+        {/* ═══ THE TEMPLATE ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
             <div className="mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.festivalSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.templateSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
-                <Flame className="h-7 w-7 text-orange-400" />
-                {Copy.festivalTitle[cs ? 'cs' : 'en']}
+                <Landmark className="h-7 w-7 text-amber-300" />
+                {Copy.templateTitle[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.festivalBody[cs ? 'cs' : 'en']}
+              {Copy.templateBody[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
-              {Copy.festivalPoints[cs ? 'cs' : 'en'].map((point, i) => {
-                const PointIcon = [Flame, Music, Feather][i];
+              {Copy.templatePoints[cs ? 'cs' : 'en'].map((point, i) => {
+                const PointIcon = [Compass, Sparkles, Layers][i];
                 return (
-                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                    <div className="flex items-center gap-2 text-orange-300 mb-1">
+                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-amber-200 mb-1">
                       <PointIcon className="h-4 w-4" />
                       <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
                     </div>
@@ -442,17 +439,17 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
             <div className="mb-8">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
-                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
                   <div
                     className={`shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-bold text-sm ${
-                      phase.active ? 'border-orange-400/40 bg-orange-400/10 text-orange-300' : 'border-white/10 bg-white/5 text-gray-500'
+                      phase.active ? 'border-amber-200/40 bg-amber-200/10 text-amber-200' : 'border-white/10 bg-white/5 text-gray-500'
                     }`}
                   >
                     {phase.num}
@@ -460,7 +457,7 @@ export default function UluruPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-orange-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-amber-200">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -470,7 +467,7 @@ export default function UluruPage() {
           </div>
         </motion.section>
 
-        {/* ═══ SACRED LAND ═══ */}
+        {/* ═══ RELATIONSHIP NOT OWNERSHIP ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -496,23 +493,23 @@ export default function UluruPage() {
           className="mb-16"
         >
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Network className="h-5 w-5 text-orange-300" />
+                <Network className="h-5 w-5 text-amber-200" />
                 {Copy.zionTitle[cs ? 'cs' : 'en']}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1 text-xs text-orange-200">
+                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/30 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">
                     <item.icon className="h-3 w-3" />
                     {item.label}
                   </span>
                 ))}
               </div>
             </div>
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Landmark className="h-5 w-5 text-orange-300" />
+                <Landmark className="h-5 w-5 text-amber-200" />
                 {Copy.openTitle[cs ? 'cs' : 'en']}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">
@@ -551,7 +548,7 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
             <div className="mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.sisterSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-2xl font-semibold text-white">{Copy.sisterTitle[cs ? 'cs' : 'en']}</h2>
@@ -559,7 +556,7 @@ export default function UluruPage() {
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {SISTERS.map((s) => (
-                <Link key={s.name} href={s.href} className="zion-rainbow-sub p-4 group hover:bg-white/5 transition-colors" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                <Link key={s.name} href={s.href} className="zion-rainbow-sub p-4 group hover:bg-white/5 transition-colors" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <h3 className="font-semibold text-white text-sm">{s.name}</h3>
@@ -577,7 +574,7 @@ export default function UluruPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-                style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+                style={{ '--rc': '245, 222, 130' } as React.CSSProperties}
               >
                 {Copy.joinDiscord[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
               </a>

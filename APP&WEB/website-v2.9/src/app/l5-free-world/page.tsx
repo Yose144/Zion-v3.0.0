@@ -73,6 +73,7 @@ const L5FreeWorldCopy = {
   statusDevelopment: { cs: `Aktivní rozvoj`, en: `Active development` },
   statusPreparation: { cs: `V přípravě`, en: `In preparation` },
   statusVision: { cs: `Plánováno`, en: `Planned` },
+  statusBuilt: { cs: `Postaveno`, en: `Built` },
 
   sevenGates: { cs: `Sedm bran do L5`, en: `Seven Gates into L5` },
   sevenGatesSubtitle: { cs: `Onboarding není funnel. Je to Hanumanův most — dost jednoduchý, aby po něm přešel nováček, dost poctivý, aby na něm neztratil orientaci.`, en: `Onboarding is not a funnel. It is Hanuman's bridge — simple enough for a newcomer, honest enough to stay oriented.` },
@@ -93,10 +94,10 @@ const L5FreeWorldCopy = {
   network: { cs: `Síť`, en: `Network` },
 
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
-  sixNodesOnPlanet: { cs: `Osm bodů na planetě`, en: `Eight nodes on the planet` },
+  sixNodesOnPlanet: { cs: `Deset bodů na planetě`, en: `Ten nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Austrálii. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru zůstává vizí — odkaz a poselství domorodé Austrálie. A María del Camino — plující uzel se solárními plachtami — je osmý bod, který všechny ostatní fyzicky spojuje přes oceány.`,
-    en: `The L5 communities across the continents — from the Algarve to Australia. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru remains a vision — the heritage and message of Aboriginal Australia. And María del Camino — a sailing node on solar sails — is the eighth point, physically connecting all the others across the oceans.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od Algarve po Mys dobré naděje. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru a Boa Esperança zůstávají vizemi — vztahové uzly na posvátných a historických místech. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. A María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány.`,
+    en: `The L5 communities across the continents — from the Algarve to the Cape of Good Hope. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru and Boa Esperança remain visions — relationship nodes on sacred and historic ground. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. And María del Camino — a sailing node on solar sails — physically connects every point across the oceans.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -114,7 +115,7 @@ const L5_PREMINE_WALLETS = [
   'zion1x535z563d3p6r6u3v6x0g0y445f507w8h6g8388',
 ] as const;
 
-type CommunityStatus = 'development' | 'preparation' | 'vision';
+type CommunityStatus = 'development' | 'preparation' | 'vision' | 'built';
 type OnboardingStatus = 'live' | 'building' | 'horizon';
 
 const getStatusStyle = (cs: boolean, status: CommunityStatus) => {
@@ -130,6 +131,10 @@ const getStatusStyle = (cs: boolean, status: CommunityStatus) => {
     vision: {
       label: L5FreeWorldCopy.statusVision[cs ? 'cs' : 'en'],
       class: 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple',
+    },
+    built: {
+      label: L5FreeWorldCopy.statusBuilt[cs ? 'cs' : 'en'],
+      class: 'border-amber-200/40 bg-amber-100/10 text-amber-200',
     },
   };
   return map[status];
@@ -205,6 +210,17 @@ const getCommunities = (cs: boolean) => [
     cover: '/images/bodhi-lanka/hero.jpg',
   },
   {
+    name: 'Ekam · Oneness Temple',
+    location: cs ? 'Varadaiahpalem, Andhra Pradesh, Indie' : 'Varadaiahpalem, Andhra Pradesh, India',
+    status: 'built' as const,
+    desc: cs
+      ? 'Jediný uzel, který už stojí — chrám Jednoty postavený 2008: bílý mramor, zlatý řez, bezsloupová hala a Zlatá koule. Předloha pro všechny uzly a místo, které pojmenovalo samotný chain (ekam_deeksha).'
+      : 'The only node already standing — the Temple of Oneness built in 2008: white marble, golden ratio, a column-free hall and the Golden Orb. The template for every node and the place that named the chain itself (ekam_deeksha).',
+    tags: cs ? ['Postaveno 2008', 'Předloha', 'Zlatá koule'] : ['Built 2008', 'The Template', 'Golden Orb'],
+    href: '/terranova/ekam',
+    cover: '/images/ekam/hero.webp',
+  },
+  {
     name: 'LUMI',
     location: cs ? 'Kostarika · Nová Amerika' : 'Costa Rica · Nová Amerika',
     status: 'preparation' as const,
@@ -231,11 +247,22 @@ const getCommunities = (cs: boolean) => [
     location: cs ? 'Světové oceány · domovský přístav Galicie' : 'World oceans · home port Galicia',
     status: 'preparation' as const,
     desc: cs
-      ? 'Osmý bod sítě — plující uzel. Plachetnice se solárními plachtami pro ~50 poutníků fyzicky spojuje všech sedm pevných uzlů po mořském Caminu.'
-      : 'The eighth point of the network — a sailing node. A solar-sail vessel for ~50 pilgrims physically connecting all seven fixed nodes on a sea Camino.',
+      ? 'Osmý bod sítě — plující uzel, flotila dvou lodí: atlantická plachetnice María del Camino a pacifický solární katamarán María del Pacífico. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.'
+      : 'The eighth point of the network — a sailing node, a fleet of two vessels: the Atlantic tall ship María del Camino and the Pacific solar catamaran María del Pacífico. ~50 pilgrims per hull connecting every node of the network on a sea Camino.',
     tags: cs ? ['Mořské Camino', 'Solární plachty', 'Mobilní uzel'] : ['Sea Camino', 'Solar Sails', 'Mobile Node'],
     href: '/terranova/maria-del-camino',
     cover: '/images/maria-del-camino/hero.webp',
+  },
+  {
+    name: 'Boa Esperança',
+    location: cs ? 'Mys dobré naděje, Jihoafrická republika' : 'Cape of Good Hope, South Africa',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Devátý bod sítě — druhý šev světa, kde se bouře přejmenovává na naději a dvě Marie se setkávají na vodě. Domov nejstarší lidské linie (Khoisan), fynbos zahrada a kelp seaforest, vodní laboratoř Day Zero. Uzel jako vztah, ne stavba.'
+      : 'The ninth point of the network — the second seam of the world, where the storm is renamed hope and the two Marias meet at sea. Home of humanity’s oldest lineage (Khoisan), a fynbos garden and kelp seaforest, a Day-Zero water lab. A node as a relationship, not a construction.',
+    tags: cs ? ['Naděje', 'Dva oceány', 'Khoisan'] : ['Hope', 'Two Oceans', 'Khoisan'],
+    href: '/terranova/boa-esperanca',
+    cover: '/images/boa-esperanca/hero.webp',
   },
 ];
 
@@ -431,7 +458,7 @@ export default function L5FreeWorldPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l5-free-world/hero.webp"
-                alt={cs ? 'L5 Free World — osm bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the eight Terra Nova nodes in the physical world'}
+                alt={cs ? 'L5 Free World — deset bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the ten Terra Nova nodes in the physical world'}
                 width={1672}
                 height={941}
                 loading="eager"

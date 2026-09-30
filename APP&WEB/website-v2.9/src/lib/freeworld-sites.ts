@@ -2,11 +2,12 @@
  * The L5 Free World community sites — shared between the planetary
  * map and the community/registry sections. Six founding communities
  * carry a funded 500M allocation; María del Camino (the vessel node)
- * carries a 300M founding reserve, and Uluru stays vision-stage with
- * no committed allocation.
+ * carries a 300M founding reserve; Uluru + Boa Esperança stay
+ * vision-stage with no committed allocation — and Ekam is the only
+ * node already built (2008), held as a relationship, not a project.
  */
 
-export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision';
+export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision' | 'built';
 
 export interface FreeWorldSite {
   key: string;
@@ -66,6 +67,18 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     allocationZion: 500_000_000,
   },
   {
+    // Ekam (Oneness Temple), Varadaiahpalem, Andhra Pradesh — the only
+    // node that already stands (built 2008). The template the other
+    // nodes learn from; a relationship, not a ZION construction.
+    key: 'ekam',
+    name: 'Ekam · Oneness Temple',
+    lat: 13.42,
+    lon: 79.67,
+    status: 'built',
+    href: '/terranova/ekam',
+    allocationZion: 0,
+  },
+  {
     key: 'lumi',
     name: 'LUMI · Nová Amerika',
     lat: 9.75,
@@ -98,10 +111,23 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     href: '/terranova/maria-del-camino',
     allocationZion: 300_000_000,
   },
+  {
+    // Cape of Good Hope — the seam of two oceans and the turning point
+    // of the Great Route; home of humanity's oldest lineage (Khoisan).
+    // Vision stage: a relationship node like Uluru — no funded allocation.
+    key: 'boa-esperanca',
+    name: 'Boa Esperança',
+    lat: -34.35,
+    lon: 18.47,
+    status: 'vision',
+    href: '/terranova/boa-esperanca',
+    allocationZion: 0,
+  },
 ];
 
 export const SITE_STATUS_COLOR: Record<FreeWorldSiteStatus, string> = {
   development: '#fcd116', // gold — reserved for active build phase
   preparation: '#06b6d4', // cyan — in preparation
   vision: '#a855f7', // purple — planned
+  built: '#f5f5f4', // marble white — already standing (Ekam)
 };

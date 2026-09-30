@@ -5,24 +5,24 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
-  Brain,
   Calendar,
   Compass,
-  Ear,
+  Droplets,
   Feather,
-  Flame,
   Heart,
   Landmark,
+  Leaf,
   LucideIcon,
   MapPin,
   Mountain,
-  Music,
   Network,
-  PawPrint,
   Shield,
+  Ship,
   Sparkles,
   Sun,
+  Sunrise,
   Users,
+  Waves,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import dynamic from 'next/dynamic';
@@ -32,62 +32,62 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
-  visionStage: { cs: `Vize — nejdřív naslouchat`, en: `Vision — listen first` },
-  subtitle: { cs: `Uluru · Tjukurpa · Songlines · Austrálie · Terra Nova ®`, en: `Uluru · Tjukurpa · Songlines · Australia · Terra Nova ®` },
+  visionStage: { cs: `Vize — uzel jako vztah`, en: `Vision — a node as relationship` },
+  subtitle: { cs: `Mys dobré naděje · Obrat · Šev dvou oceánů · Terra Nova ®`, en: `Cape of Good Hope · the Turn · Seam of two oceans · Terra Nova ®` },
   quote: {
-    cs: `"Země není něco, co vlastníme. Země je něco, čím jsme."`,
-    en: `"The land is not something we own. The land is something we are."`,
+    cs: `"Mys bouří dostal své jméno od strachu. Dobrou naději od toho, co za ním stojí."`,
+    en: `"The Cape of Storms was named by fear. Good Hope was named by what lay beyond it."`,
   },
-  locationLine: { cs: `Uluru-Kata Tjuṯa · Northern Territory, Austrálie`, en: `Uluru-Kata Tjuṯa · Northern Territory, Australia` },
-  introTitle: { cs: `Sedmý uzel — poselství od protinožců`, en: `The seventh node — the message from the antipodes` },
+  locationLine: { cs: `Western Cape · Jihoafrická republika`, en: `Western Cape · South Africa` },
+  introTitle: { cs: `Devátý uzel — místo, kde se bouře přejmenovává`, en: `The ninth node — where the storm is renamed` },
   introBody: {
-    cs: `Uluru je sedmý bod L5 Free World — a záměrně je to vize, ne stavební plán. Červený monolit v srdci Austrálie je domovem Aňangu, tradičních custodiánů, a Tjukurpy — Snění, které nese zákon, příběhy a mapu krajiny starší než šedesát tisíc let. Songlines, pěvecké stezky, nesou poselství přes celý kontinent — od protinožců k protinožcům. Tento uzel nevzniká na posvátné zemi; vzniká jako vztah. Jeho učení jsou telepatie a vize, nativní propojení s přírodou a zvířaty — a jednou ročně Uluru Festival, oslava života pro všechny umělce. Nejdřív poslouchat — teprve pak případně stavět, někde jinde, jinak.`,
-    en: `Uluru is the seventh point of L5 Free World — and deliberately a vision, not a building plan. The red monolith at the heart of Australia is the home of the Aṉangu, the traditional custodians, and of Tjukurpa — the Dreaming that carries law, stories and a map of the land older than sixty thousand years. Songlines, the singing tracks, carry the message across the whole continent — from antipode to antipode. This node is not built on sacred land; it is born as a relationship. Its teachings are telepathy and visions, native connection with land and animals — and once a year the Uluru Festival, a celebration of life for all artists. Listen first — then, maybe, build, somewhere else, differently.`,
+    cs: `Boa Esperança je devátý bod L5 Free World — a záměrně je to vize, ne stavební plán. Roku 1488 Bartolomeu Dias objel mys v bouři a pojmenoval ho Cabo das Tormentas; král Jan II. ho přejmenoval na Boa Esperança, protože zeď na konci světa otevřela mořskou cestu do Indie. Uzel nese Obrat — moment Velké cesty, kdy se poutník po dokončení v Ekamu otáčí domů. Je to druhý šev světa: LUMI spojuje oceány po souši, Mys je jediné místo, kde se dvě Marie mohou setkat na vodě. A drží nejstarší kořen lidstva — Khoisan linii a kolébku symbolického myšlení v Blombos. Uzel vzniká jako vztah s custodiány, ne jako stavba.`,
+    en: `Boa Esperança is the ninth point of L5 Free World — and deliberately a vision, not a building plan. In 1488 Bartolomeu Dias rounded the cape in a storm and named it Cabo das Tormentas; King John II renamed it Boa Esperança, because the wall at the end of the world had opened the sea road to India. The node carries the Turn — the moment of the Great Route when the pilgrim, after completion at Ekam, turns home. It is the second seam of the world: LUMI bridges the oceans overland, the Cape is the only place the two Marias can meet at sea. And it holds humanity's oldest root — the Khoisan lineage and the cradle of symbolic thought at Blombos. The node is born as a relationship with custodians, not as a construction.`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
-  featuresSubtitle: { cs: `Dědictví & poselství`, en: `Heritage & Message` },
-  festivalTitle: { cs: `Uluru Festival — oslava života`, en: `Uluru Festival — a celebration of life` },
-  festivalSubtitle: { cs: `Jednou ročně · pro všechny umělce`, en: `Once a year · for all artists` },
-  festivalBody: {
-    cs: `Jednou za rok se poušť promění v dočasné město umění — festival ve duchu Burning Man, upravený pro své místo: účast není diváctví, každý spoluvytváří. Instalace, hudba, tanec, oheň a světlo — oslava života pro umělce celého světa. Posvátná země zůstává nedotčena: místo určují custodiáni a po odchodu na něm nezůstává jediná stopa.`,
-    en: `Once a year the desert turns into a temporary city of art — a festival in the spirit of Burning Man, adapted to its place: participation is not spectatorship, everyone co-creates. Installations, music, dance, fire and light — a celebration of life for artists worldwide. Sacred land stays untouched: the custodians choose the site and not a single trace remains after we leave.`,
+  featuresSubtitle: { cs: `Naděje & paměť`, en: `Hope & memory` },
+  turnTitle: { cs: `Scháziště flotily — obrat na švu oceánů`, en: `The fleet rendezvous — the turn on the seam of oceans` },
+  turnSubtitle: { cs: `Druhý šev světa`, en: `The second seam of the world` },
+  turnBody: {
+    cs: `LUMI je šev na souši — Mys je šev na vodě. Atlantická María del Camino sem pluje z jihu, pacifická María del Pacífico z Indie; potkají se tam, kde se potkávají oceány. Je to jediné místo Velké cesty, kde se oba trupy střetnou bez Panamy — a odkud se cesta otáčí domů: přes St Helenu a Azory zpět do Pontevedry. Ceremonie obratu: razítko credencialu „bouře přejmenována".`,
+    en: `LUMI is the seam on land — the Cape is the seam at sea. The Atlantic María del Camino sails up from the south, the Pacific María del Pacífico down from India; they meet where the oceans meet. It is the only place on the Great Route where the two hulls can rendezvous without Panama — and where the journey turns homeward: via St Helena and the Azores back to Pontevedra. The turning ceremony: the credential stamp "the storm renamed".`,
   },
-  festivalPoints: {
-    cs: [`Jednou ročně — pouštní cyklus`, `Pro všechny umělce — účast je tvorba`, `Leave no trace — země se vrací prázdná`],
-    en: [`Once a year — a desert cycle`, `For all artists — participation is creation`, `Leave no trace — the land returns empty`],
+  turnPoints: {
+    cs: [`Jediné setkání obou trupů na vodě — bez Panamy`, `Agulhas — místo, kde jehla ukazovala pravý sever`, `Obrat domů — Cape → St Helena → Azory → Pontevedra`],
+    en: [`The only at-sea meeting of both hulls — no Panama`, `Agulhas — where the needle read true north`, `The turn home — Cape → St Helena → Azores → Pontevedra`],
   },
   phasesTitle: { cs: `Fáze rozvoje`, en: `Development Phases` },
-  phasesSubtitle: { cs: `Od naslouchání k vztahu`, en: `From listening to relationship` },
+  phasesSubtitle: { cs: `Od vztahu k scházišti`, en: `From relationship to rendezvous` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
-  respectTitle: { cs: `Posvátná země zůstává nedotčena`, en: `Sacred land stays untouched` },
+  respectTitle: { cs: `Nejstarší lidé vedou`, en: `The first people lead` },
   respectBody: {
-    cs: `Uluru samotné je posvátný — od roku 2019 se na něj nesmí vystoupit a Aňangu o něm rozhodují v národním parku Uluru-Kata Tjuṯa (UNESCO za přírodní i kulturní dědictví). Uzel L5 proto neznamená stavbu u monolitu. Znamená uznání: že mapa lidstva není kompletní bez jeho nejstarší žijící kultury, a že její poselství — odpovědnost za zemi, kanyini — je přesně to, co Free World potřebuje slyšet.`,
-    en: `Uluru itself is sacred — climbing it has been closed since 2019 and the Aṉangu govern it within the Uluru-Kata Tjuṯa National Park (UNESCO listed for both natural and cultural heritage). The L5 node therefore does not mean a construction by the monolith. It means recognition: that the map of humanity is not complete without its oldest living culture, and that its message — responsibility for the land, kanyini — is exactly what the Free World needs to hear.`,
+    cs: `Pobřeží Mysu je domovem Khoisan — pravděpodobně nejstarší kontinuální lidské linie planety — a Blombos ukrývá první symbolické umění lidstva (~75–100 tisíc let). Uzel L5 proto znamená vztah, ne pozemek: FPIC od prvního dne, custodiáni rozhodují co se sdílí a jak, žádná tokenizace dědictví. Přicházíme jako žáci — jako na Uluru.`,
+    en: `The Cape coast is home to the Khoisan — arguably the oldest continuous human lineage on the planet — and Blombos holds humanity's first symbolic art (~75–100 thousand years). The L5 node therefore means relationship, not land: FPIC from day one, custodians decide what is shared and how, no tokenization of heritage. We arrive as students — as at Uluru.`,
   },
   openTitle: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   openItems: {
     cs: [
-      `Je fyzický uzel vůbec správný? Může být vazbou, ne místem.`,
-      `FPIC dialog — kruhy starších a tradiční custodiáni (Aňangu a další)`,
-      `Partnerské území mimo národní park — pro uzel i festival určují custodiáni`,
-      `Songlines jako mapa: které příběhy smí být sdíleny, a pod čí kontrolou`,
-      `Souhlas a vlastnictví — znalosti zůstávají majetkem jejich nositelů`,
+      `Khoisan partnerství — kdo jsou custodiáni a na jakých podmínkách (FPIC)`,
+      `Lokalita: Cape Peninsula vs. Agulhas (čistý šev) vs. False Bay (kelp lesy)`,
+      `Přístavní protokol pro flotilu — kotviště, resupply, sezónní okna Roaring Forties`,
+      `Vodní laboratoř Day Zero — protokoly přenositelné do celé sítě`,
+      `Fynbos sanctuary + kelp program — s kým a jak začít`,
     ],
     en: [
-      `Is a physical node even right? It may be a relationship, not a site.`,
-      `FPIC dialogue — councils of elders and traditional custodians (Aṉangu and beyond)`,
-      `Partner territory outside the national park — node and festival sites chosen by custodians`,
-      `Songlines as a map: which stories may be shared, and under whose control`,
-      `Consent and ownership — knowledge stays in the custody of its carriers`,
+      `Khoisan partnership — who are the custodians and on what terms (FPIC)`,
+      `Site: Cape Peninsula vs. Agulhas (the true seam) vs. False Bay (kelp forests)`,
+      `Harbour protocol for the fleet — anchorage, resupply, Roaring Forties windows`,
+      `Day-Zero water lab — protocols transferable to the whole network`,
+      `Fynbos sanctuary + kelp program — with whom, and how to begin`,
     ],
   },
   cta: {
-    cs: `Slyšíš píseň protinožců? Jsi Guardian, který umí nejdřív poslouchat?`,
-    en: `Do you hear the song of the antipodes? Are you a Guardian who knows how to listen first?`,
+    cs: `Umíš přejmenovat bouři na naději? Jsi Guardian pro obrat Velké cesty?`,
+    en: `Can you rename a storm into hope? Are you a Guardian for the Great Route's turn?`,
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
-  documentationSubtitle: { cs: `Koncept a vize uzlu Uluru — Dreamtime, songlines, škola vnímání a festival oslavy života.`, en: `Concept and vision of the Uluru node — Dreamtime, songlines, the school of perception and the celebration-of-life festival.` },
+  documentationSubtitle: { cs: `Koncept a vize uzlu Boa Esperança — šev dvou oceánů, nejstarší linie lidí, vodní resilience.`, en: `Concept and vision of the Boa Esperança node — the seam of two oceans, humanity's oldest lineage, water resilience.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
   documentationError: { cs: `Dokumentaci se nepodařilo načíst.`, en: `Failed to load documentation.` },
   sisterTitle: { cs: `Síť Terra Nova`, en: `Terra Nova Network` },
@@ -110,110 +110,110 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    icon: Brain,
-    titleCs: 'Telepatie & vize',
-    titleEn: 'Telepathy & visions',
-    descCs: 'Učení tiché komunikace — meditované vize, sdílené snění a vědomé propojení za hranicí slov. Škola vnímání vedená těmi, kdo ji nesou.',
-    descEn: 'Learning silent communication — meditated visions, shared dreaming and conscious connection beyond words. A school of perception led by those who carry it.',
-    color: '#A78BFA',
-    rgb: '167, 139, 250',
-  },
-  {
-    icon: PawPrint,
-    titleCs: 'Příroda & zvířata',
-    titleEn: 'Land & animals',
-    descCs: 'Nativní propojení s krajinou a jejími tvory jako s rodinou — čtení stopy, rytmu a roční doby podle custodiánů, kteří krajinu čtou desetitisíce let.',
-    descEn: 'Native connection with the land and its creatures as family — reading track, rhythm and season with custodians who have read the land for tens of thousands of years.',
-    color: '#066928',
-    rgb: '6, 105, 40',
-  },
-  {
-    icon: Flame,
-    titleCs: 'Uluru Festival',
-    titleEn: 'Uluru Festival',
-    descCs: 'Jednou ročně se poušť promění v dočasné město umění — oslava života pro všechny umělce. Model Burning Man upravený pro místo; custodiáni kurátují.',
-    descEn: 'Once a year the desert becomes a temporary city of art — a celebration of life for all artists. A Burning Man model adapted to place; curated by the custodians.',
-    color: '#EA580C',
-    rgb: '234, 88, 12',
-  },
-  {
-    icon: Music,
-    titleCs: 'Songlines',
-    titleEn: 'Songlines',
-    descCs: 'Pěvecké stezky nesoucí příběh, mapu i zákon přes celý kontinent — nejstarší síť poselství na Zemi.',
-    descEn: 'Singing tracks carrying story, map and law across the whole continent — the oldest message network on Earth.',
+    icon: Sunrise,
+    titleCs: 'Naděje jako navigace',
+    titleEn: 'Hope as navigation',
+    descCs: 'Cabo das Tormentas → Boa Esperança: stejné místo, jiné jméno. Iniciace Obratu — Guardian se učí, že naděje je navigační nástroj, ne pocit.',
+    descEn: 'Cabo das Tormentas → Boa Esperança: same place, new name. The initiation of the Turn — the Guardian learns that hope is a navigational instrument, not a feeling.',
     color: '#F59E0B',
-    rgb: '252, 209, 22',
+    rgb: '245, 158, 11',
   },
   {
-    icon: Mountain,
-    titleCs: 'Tjukurpa — Snění',
-    titleEn: 'Tjukurpa — the Dreaming',
-    descCs: 'Zákon předků, který není minulostí, ale trvající přítomnost: vztah mezi člověkem, zemí a příběhem.',
-    descEn: 'The law of the ancestors — not the past but a continuing present: the relation between people, land and story.',
-    color: '#8B5CF6',
-    rgb: '139, 92, 246',
-  },
-  {
-    icon: Users,
-    titleCs: 'Kruh custodiánů',
-    titleEn: 'Council of custodians',
-    descCs: 'Aňangu a další tradiční vlastníci rozhodují od prvního dne — FPIC není formulář, je to způsob existence vztahu.',
-    descEn: 'The Aṉangu and other traditional owners decide from day one — FPIC is not a form, it is how the relationship exists at all.',
+    icon: Compass,
+    titleCs: 'Agulhas — pravý sever',
+    titleEn: 'Agulhas — true north',
+    descCs: 'Geografický šev Atlantiku a Indického oceánu; „jehly" — kolem r. 1500 tu střelka ukazovala skutečný sever. Na švu světa se kompas kalibruje na pravdu.',
+    descEn: 'The geographic seam of the Atlantic and Indian Oceans; "needles" — around 1500 the needle read true north here. At the seam of the world the compass is calibrated to truth.',
     color: '#22D3EE',
     rgb: '34, 211, 238',
   },
   {
-    icon: Ear,
-    titleCs: 'Naslouchání jako praxe',
-    titleEn: 'Listening as practice',
-    descCs: 'Šedesát tisíc let kontinuity se nedá „osvojit" — dá se jenom vyslechnout. L5 přichází jako žák, ne jako zakladatel.',
-    descEn: 'Sixty thousand years of continuity cannot be "adopted" — it can only be listened to. L5 arrives as a student, not a founder.',
-    color: '#06B6D4',
-    rgb: '6, 182, 212',
+    icon: Users,
+    titleCs: 'Khoisan — nejstarší linie',
+    titleEn: 'Khoisan — the oldest lineage',
+    descCs: 'Původní lidé pobřeží a pravděpodobně nejstarší kontinuální lidská linie planety. Custodiáni vedou — FPIC jako forma existence vztahu.',
+    descEn: 'The first people of the coast and arguably the oldest continuous human lineage on Earth. Custodians lead — FPIC as the form the relationship exists in.',
+    color: '#EA580C',
+    rgb: '234, 88, 12',
   },
   {
-    icon: Heart,
-    titleCs: 'Kanyini — odpovědnost',
-    titleEn: 'Kanyini — responsibility',
-    descCs: 'Propojenost a povinnost pečovat o zemi, rodinu a příběh — princip, který L5 tithe ztělesňuje v protokolu.',
-    descEn: 'Connectedness and the duty to care for land, family and story — the principle the L5 tithe embodies in protocol.',
-    color: '#F43F5E',
-    rgb: '244, 63, 94',
+    icon: Sparkles,
+    titleCs: 'Blombos — kolébka symbolů',
+    titleEn: 'Blombos — cradle of symbols',
+    descCs: 'Ochrové rytiny a mušlové korálky staré 75–100 tisíc let — první symbolické umění lidstva, první „razítko na credencialu" v historii druhu.',
+    descEn: 'Ochre engravings and shell beads 75–100 thousand years old — humanity’s first symbolic art, the first "credential stamp" in the history of our species.',
+    color: '#A78BFA',
+    rgb: '167, 139, 250',
+  },
+  {
+    icon: Leaf,
+    titleCs: 'Fynbos — květena Mysu',
+    titleEn: 'Fynbos — the Cape flora',
+    descCs: 'Cape Floristic Region — nejmenší, ale na druhy nejbohatší florální říše planety. Zahrada uzlu jako její pokračování.',
+    descEn: 'The Cape Floristic Region — the smallest yet richest-per-area floral kingdom on Earth. The node’s garden as its continuation.',
+    color: '#34D399',
+    rgb: '52, 211, 153',
+  },
+  {
+    icon: Waves,
+    titleCs: 'Kelp seaforest',
+    titleEn: 'Kelp seaforest',
+    descCs: 'Great African Seaforest ve False Bay — zahrada pod hladinou. Uzel spojuje péči o pevninu s péčí o mořský les.',
+    descEn: 'The Great African Seaforest of False Bay — the garden below the waterline. The node joins care for the land to care for the sea forest.',
+    color: '#2DD4BF',
+    rgb: '45, 212, 191',
+  },
+  {
+    icon: Droplets,
+    titleCs: 'Day Zero laboratoř',
+    titleEn: 'Day Zero lab',
+    descCs: 'Cape Town 2018 málem vyschol a kolektivní disciplínou vodu ubránil — naděje jako praktikovaný protokol. Know-how vodní resilience pro celou síť.',
+    descEn: 'Cape Town nearly ran dry in 2018 and collective discipline held the water — hope as a practised protocol. Water-resilience know-how for the whole network.',
+    color: '#60A5FA',
+    rgb: '96, 165, 250',
+  },
+  {
+    icon: Ship,
+    titleCs: 'Scháziště flotily',
+    titleEn: 'Fleet rendezvous',
+    descCs: 'Jediné místo, kde se dvě Marie setkávají na vodě bez Panamy — a odkud Velká cesta míří domů. Útočiště a resupply pro nejtěžší legy.',
+    descEn: 'The only place the two Marias meet at sea without Panama — and where the Great Route turns home. Refuge and resupply for the hardest legs.',
+    color: '#0EA5E9',
+    rgb: '14, 165, 233',
   },
 ];
 
 const PHASES = [
   {
     num: '0',
-    cs: 'Naslouchání',
-    en: 'Listening',
-    descCs: 'Dialog s custodiány a komunitami Severního teritoria. Uzel existuje jako vzájemné učení, ne stavba — a žádný termín.',
-    descEn: 'Dialogue with the custodians and communities of the Northern Territory. The node exists as mutual learning, not construction — and no deadline.',
+    cs: 'Vztah',
+    en: 'Relationship',
+    descCs: 'Dialog s Khoisan custodiány a ekokomunitami Western Cape — uzel existuje jako vzájemné učení, ne stavba. Žádný termín.',
+    descEn: 'Dialogue with Khoisan custodians and Western Cape eco-communities — the node exists as mutual learning, not construction. No deadline.',
     active: true,
   },
   {
     num: '1',
-    cs: 'Komunita',
-    en: 'Community',
-    descCs: 'Malý uzlový kruh; programy učení — telepatie, vize, vztah ke krajině a zvířatům — pod vedením těch, kdo je nesou.',
-    descEn: 'A small node circle; learning programmes — telepathy, visions, relationship with land and animals — led by those who carry them.',
+    cs: 'Pobřežní kruh',
+    en: 'Coastal circle',
+    descCs: 'Malý uzlový kruh — fynbos zahrada, kelp program, vodní lab. Custodiáni vedou vše, co se dotýká jejich země a příběhů.',
+    descEn: 'A small node circle — fynbos garden, kelp program, water lab. Custodians lead everything touching their land and stories.',
     active: false,
   },
   {
     num: '2',
-    cs: 'Pilotní setkání',
-    en: 'Pilot gathering',
-    descCs: 'Menší gathering na schváleném místě — zkouška formátu, logistiky bez stop a vztahu s custodiány.',
-    descEn: 'A smaller gathering on an approved site — testing the format, leave-no-trace logistics and the custodian relationship.',
+    cs: 'Přístavní protokol',
+    en: 'Harbour protocol',
+    descCs: 'Kotviště a resupply pro flotilu — logistika Velké cesty, sezónní okna Roaring Forties.',
+    descEn: 'Anchorage and resupply for the fleet — Great Route logistics, Roaring Forties seasonal windows.',
     active: false,
   },
   {
     num: '3',
-    cs: 'Uluru Festival',
-    en: 'Uluru Festival',
-    descCs: 'První celoroční cyklus — oslava života pro všechny umělce. Každý rok roste jen tak, jak nesou custodiáni a země.',
-    descEn: 'The first annual cycle — a celebration of life for all artists. Each year it grows only as far as the custodians and the land allow.',
+    cs: 'Scháziště',
+    en: 'The Rendezvous',
+    descCs: 'První setkání obou trupů na švu oceánů — ceremonie obratu a razítko credencialu „bouře přejmenována".',
+    descEn: 'The first meeting of both hulls on the seam of oceans — the turning ceremony and the credential stamp "the storm renamed".',
     active: false,
   },
 ];
@@ -223,23 +223,22 @@ const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
   { label: 'DAO Governance', icon: Users },
   { label: 'Guardian Wallet', icon: Shield },
   { label: 'L5 Humanitarian Tithe', icon: Heart },
-  { label: 'Cultural Grants', icon: Feather },
-  { label: 'Community Registry', icon: Landmark },
+  { label: 'Pilgrim Credential', icon: Feather },
+  { label: 'Water Commons', icon: Droplets },
 ];
 
 const SISTERS = [
   { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Algarve, Portugalsko', en: 'Algarve, Portugal' } },
   { name: 'Dharma Temple', href: '/terranova/dharma-temple', region: { cs: 'La Palma', en: 'La Palma' } },
   { name: 'Te Pīko Ora', href: '/terranova/te-piko-ora', region: { cs: 'Raiatea · Polynésie', en: 'Raiatea · Polynesia' } },
-  { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
   { name: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika', region: { cs: 'Kostarika', en: 'Costa Rica' } },
   { name: 'María del Camino', href: '/terranova/maria-del-camino', region: { cs: 'Světové oceány · Galicie', en: 'World oceans · Galicia' } },
-  { name: 'Boa Esperança', href: '/terranova/boa-esperanca', region: { cs: 'Mys dobré naděje', en: 'Cape of Good Hope' } },
+  { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory, Austrálie', en: 'Northern Territory, Australia' } },
   { name: 'Ekam · Oneness Temple', href: '/terranova/ekam', region: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' } },
 ];
 
-export default function UluruPage() {
+export default function BoaEsperancaPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
@@ -247,7 +246,7 @@ export default function UluruPage() {
   const [docError, setDocError] = useState(false);
 
   useEffect(() => {
-    const file = cs ? '/docs/terranova/uluru.cs.md' : '/docs/terranova/uluru.en.md';
+    const file = cs ? '/docs/terranova/boa-esperanca.cs.md' : '/docs/terranova/boa-esperanca.en.md';
     setDoc(null);
     setDocError(false);
     fetch(file)
@@ -286,16 +285,16 @@ export default function UluruPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="relative z-10">
               <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                  <Mountain className="h-10 w-10 text-orange-300" />
+                <div className="shrink-0 w-20 h-20 flex items-center justify-center zion-rainbow-sub" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                  <Sunrise className="h-10 w-10 text-amber-300" />
                 </div>
 
                 <div className="space-y-3 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="zion-badge">L5 · Terra Nova · Antipodes</span>
+                    <span className="zion-badge">L5 · Terra Nova · Two Oceans</span>
                     <span className="zion-badge-gold inline-flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {Copy.visionStage[cs ? 'cs' : 'en']}
@@ -303,9 +302,9 @@ export default function UluruPage() {
                   </div>
 
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
-                    Uluru
+                    Boa Esperança
                   </h1>
-                  <p className="text-lg text-orange-300 font-medium">
+                  <p className="text-lg text-amber-300 font-medium">
                     {Copy.subtitle[cs ? 'cs' : 'en']}
                   </p>
 
@@ -320,14 +319,14 @@ export default function UluruPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Sun, value: cs ? '60 000+ let' : '60,000+ years', labelCs: 'Paměť', labelEn: 'Memory' },
-                      { icon: Mountain, value: 'Uluru', labelCs: 'Srdce', labelEn: 'Heart' },
+                      { icon: Mountain, value: cs ? '~100 tis. let' : '~100k years', labelCs: 'Lidské kořeny', labelEn: 'Human roots' },
+                      { icon: Waves, value: cs ? 'Dva oceány' : 'Two oceans', labelCs: 'Šev světa', labelEn: 'Seam of the world' },
                       { icon: Sparkles, value: cs ? 'Vize' : 'Vision', labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
                       const Icon = signal.icon;
                       return (
-                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                          <div className="flex items-center gap-2 text-orange-300">
+                        <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                          <div className="flex items-center gap-2 text-amber-300">
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold">{signal.value}</span>
                           </div>
@@ -343,8 +342,8 @@ export default function UluruPage() {
             </div>
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
-                src="/images/uluru/hero.webp"
-                alt="Uluru — poselství protinožců nad posvátným monolitem"
+                src="/images/boa-esperanca/hero.webp"
+                alt="Boa Esperança — úsvit nad Mysem dobré naděje, šev dvou oceánů"
                 width={1672}
                 height={941}
                 loading="eager"
@@ -363,7 +362,7 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">
               {Copy.introTitle[cs ? 'cs' : 'en']}
             </h2>
@@ -383,7 +382,7 @@ export default function UluruPage() {
           <div className="mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.featuresSubtitle[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Compass className="h-7 w-7 text-orange-400" />
+              <Compass className="h-7 w-7 text-amber-400" />
               {Copy.featuresTitle[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -400,30 +399,30 @@ export default function UluruPage() {
           </div>
         </motion.section>
 
-        {/* ═══ ULURU FESTIVAL ═══ */}
+        {/* ═══ THE TURN ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.festivalSubtitle[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.turnSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
-                <Flame className="h-7 w-7 text-orange-400" />
-                {Copy.festivalTitle[cs ? 'cs' : 'en']}
+                <Ship className="h-7 w-7 text-amber-400" />
+                {Copy.turnTitle[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {Copy.festivalBody[cs ? 'cs' : 'en']}
+              {Copy.turnBody[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
-              {Copy.festivalPoints[cs ? 'cs' : 'en'].map((point, i) => {
-                const PointIcon = [Flame, Music, Feather][i];
+              {Copy.turnPoints[cs ? 'cs' : 'en'].map((point, i) => {
+                const PointIcon = [Ship, Compass, Sunrise][i];
                 return (
-                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
-                    <div className="flex items-center gap-2 text-orange-300 mb-1">
+                  <div key={point} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 text-amber-300 mb-1">
                       <PointIcon className="h-4 w-4" />
                       <span className="text-[10px] uppercase tracking-widest text-gray-500">{cs ? 'Princip' : 'Principle'} {i + 1}</span>
                     </div>
@@ -442,17 +441,17 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="mb-8">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.phasesSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white">{Copy.phasesTitle[cs ? 'cs' : 'en']}</h2>
             </div>
             <div className="space-y-4">
               {PHASES.map((phase) => (
-                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+                <div key={phase.num} className="zion-rainbow-sub p-5 flex gap-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <div
                     className={`shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-bold text-sm ${
-                      phase.active ? 'border-orange-400/40 bg-orange-400/10 text-orange-300' : 'border-white/10 bg-white/5 text-gray-500'
+                      phase.active ? 'border-amber-400/40 bg-amber-400/10 text-amber-300' : 'border-white/10 bg-white/5 text-gray-500'
                     }`}
                   >
                     {phase.num}
@@ -460,7 +459,7 @@ export default function UluruPage() {
                   <div>
                     <h3 className="font-semibold text-white mb-1">
                       {cs ? phase.cs : phase.en}
-                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-orange-300">· {cs ? 'probíhá' : 'in progress'}</span>}
+                      {phase.active && <span className="ml-2 text-[10px] uppercase tracking-widest text-amber-300">· {cs ? 'probíhá' : 'in progress'}</span>}
                     </h3>
                     <p className="text-sm text-gray-400">{cs ? phase.descCs : phase.descEn}</p>
                   </div>
@@ -470,7 +469,7 @@ export default function UluruPage() {
           </div>
         </motion.section>
 
-        {/* ═══ SACRED LAND ═══ */}
+        {/* ═══ FIRST PEOPLE LEAD ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -496,23 +495,23 @@ export default function UluruPage() {
           className="mb-16"
         >
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Network className="h-5 w-5 text-orange-300" />
+                <Network className="h-5 w-5 text-amber-300" />
                 {Copy.zionTitle[cs ? 'cs' : 'en']}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {ZION_ITEMS.map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-400/10 px-3 py-1 text-xs text-orange-200">
+                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs text-amber-200">
                     <item.icon className="h-3 w-3" />
                     {item.label}
                   </span>
                 ))}
               </div>
             </div>
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '234, 88, 12' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-4">
-                <Landmark className="h-5 w-5 text-orange-300" />
+                <Landmark className="h-5 w-5 text-amber-300" />
                 {Copy.openTitle[cs ? 'cs' : 'en']}
               </h2>
               <ul className="list-disc pl-4 text-sm text-gray-400 space-y-2">
@@ -551,7 +550,7 @@ export default function UluruPage() {
           viewport={{ once: true }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
             <div className="mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.sisterSubtitle[cs ? 'cs' : 'en']}</p>
               <h2 className="text-2xl font-semibold text-white">{Copy.sisterTitle[cs ? 'cs' : 'en']}</h2>
@@ -559,7 +558,7 @@ export default function UluruPage() {
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {SISTERS.map((s) => (
-                <Link key={s.name} href={s.href} className="zion-rainbow-sub p-4 group hover:bg-white/5 transition-colors" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                <Link key={s.name} href={s.href} className="zion-rainbow-sub p-4 group hover:bg-white/5 transition-colors" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <h3 className="font-semibold text-white text-sm">{s.name}</h3>
@@ -577,7 +576,7 @@ export default function UluruPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-                style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
               >
                 {Copy.joinDiscord[cs ? 'cs' : 'en']} <ArrowRight className="h-4 w-4" />
               </a>

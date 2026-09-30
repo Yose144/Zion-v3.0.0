@@ -1,274 +1,344 @@
 [
-  {
-    "slug": "genesis-garden",
-    "docSlug": "genesis-garden",
-    "name": "Genesis Garden",
-    "subtitle": {
-      "cs": "Three Pyramids · Terra Nova Base Camp",
-      "en": "Three Pyramids · Terra Nova Base Camp"
-    },
-    "tagline": {
-      "cs": "První fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se potkává půda, oceán, komunita a ZION.",
-      "en": "The first physical Terra Nova node in Europe — an eco-farm on the Atlantic coast of the Algarve where soil, ocean, community and ZION meet."
-    },
-    "location": {
-      "cs": "Algarve, Portugalsko",
-      "en": "Algarve, Portugal"
-    },
-    "status": "preparation",
-    "lat": 37.17,
-    "lon": -8.62,
-    "accent": "#fcd116",
-    "tags": [
-      "Permaculture",
-      "Guardian Node",
-      "DAO Circle"
-    ],
-    "renderImg": "genesis-garden/render.webp",
-    "boardImg": "genesis-garden/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/genesis",
-    "grantTitle": "Genesis Garden — founding tranche",
-    "timeline": {
-      "cs": "Příprava 2026–2028 · stavba od 2029",
-      "en": "Preparation 2026–2028 · construction from 2029"
-    }
+ {
+  "slug": "genesis-garden",
+  "docSlug": "genesis-garden",
+  "name": "Genesis Garden",
+  "subtitle": {
+   "cs": "Three Pyramids · Terra Nova Base Camp",
+   "en": "Three Pyramids · Terra Nova Base Camp"
   },
-  {
-    "slug": "dharma-temple",
-    "docSlug": "dharma-temple",
-    "name": "Dharma Temple",
-    "subtitle": {
-      "cs": "Nova Bodhi Gaia — místo osvícení",
-      "en": "Nova Bodhi Gaia — a place of awakening"
-    },
-    "tagline": {
-      "cs": "Sedm geodetických kopulí kolem posvátného Stromu života — chrám postavený na geometrii Merkaby na La Palmě.",
-      "en": "Seven geodesic domes around the sacred Tree of Life — a temple built on Merkaba geometry on La Palma."
-    },
-    "location": {
-      "cs": "La Palma — Terra Nova Sanctuary",
-      "en": "La Palma — Terra Nova Sanctuary"
-    },
-    "status": "preparation",
-    "lat": 28.66,
-    "lon": -17.87,
-    "accent": "#06b6d4",
-    "tags": [
-      "Education",
-      "Off-grid",
-      "Meditation"
-    ],
-    "renderImg": "dharma-temple/render.webp",
-    "boardImg": "dharma-temple/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/dharma-temple",
-    "grantTitle": "Dharma Temple — founding tranche",
-    "timeline": {
-      "cs": "Příprava 2026–2028 · stavba od 2029",
-      "en": "Preparation 2026–2028 · construction from 2029"
-    }
+  "tagline": {
+   "cs": "První fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se potkává půda, oceán, komunita a ZION.",
+   "en": "The first physical Terra Nova node in Europe — an eco-farm on the Atlantic coast of the Algarve where soil, ocean, community and ZION meet."
   },
-  {
-    "slug": "te-piko-ora",
-    "docSlug": "te-piko-ora",
-    "name": "Te Pīko Ora",
-    "subtitle": {
-      "cs": "Pupek života — Raiatea",
-      "en": "Navel of life — Raiatea"
-    },
-    "tagline": {
-      "cs": "Polynéská kulturní renesance na posvátném ostrově Raiatea — kolébka pacifické civilizace, Taputapuātea a živá tradice.",
-      "en": "Polynesian cultural revival on the sacred island of Raiatea — cradle of Pacific civilisation, Taputapuātea and living tradition."
-    },
-    "location": {
-      "cs": "Raiatea, Francouzská Polynésie",
-      "en": "Raiatea, French Polynesia"
-    },
-    "status": "preparation",
-    "lat": -16.83,
-    "lon": -151.44,
-    "accent": "#a855f7",
-    "tags": [
-      "Cultural Revival",
-      "Heritage",
-      "L5 Fund"
-    ],
-    "renderImg": "te-piko-ora/render.webp",
-    "boardImg": "te-piko-ora/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/te-piko-ora",
-    "grantTitle": "Te Pīko Ora — founding tranche",
-    "timeline": {
-      "cs": "Příprava 2026–2028 · stavba od 2029",
-      "en": "Preparation 2026–2028 · construction from 2029"
-    }
+  "location": {
+   "cs": "Algarve, Portugalsko",
+   "en": "Algarve, Portugal"
   },
-  {
-    "slug": "golden-republic-bohemia",
-    "docSlug": "golden-republic-bohemia",
-    "name": "Golden Republic Bohemia",
-    "subtitle": {
-      "cs": "Zlatá republika — srdce Evropy",
-      "en": "Golden Republic — the heart of Europe"
-    },
-    "tagline": {
-      "cs": "Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.",
-      "en": "Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe."
-    },
-    "location": {
-      "cs": "Čechy, Česká republika",
-      "en": "Bohemia, Czech Republic"
-    },
-    "status": "preparation",
-    "lat": 50.05,
-    "lon": 15.45,
-    "accent": "#a855f7",
-    "tags": [
-      "Governance",
-      "DAO Circle",
-      "Golden Republic"
-    ],
-    "renderImg": "golden-republic-bohemia/render.webp",
-    "boardImg": "golden-republic-bohemia/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/golden-republic-bohemia",
-    "grantTitle": "Golden Republic Bohemia — founding tranche",
-    "timeline": {
-      "cs": "Příprava 2026–2028 · stavba od 2029",
-      "en": "Preparation 2026–2028 · construction from 2029"
-    }
-  },
-  {
-    "slug": "bodhi-lanka",
-    "docSlug": "bodhi-lanka",
-    "name": "Bodhi Lanka",
-    "subtitle": {
-      "cs": "Akáša uzel — Srí Lanka",
-      "en": "Akasha node — Sri Lanka"
-    },
-    "tagline": {
-      "cs": "Prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.",
-      "en": "The space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol."
-    },
-    "location": {
-      "cs": "Srí Lanka",
-      "en": "Sri Lanka"
-    },
-    "status": "preparation",
-    "lat": 7.87,
-    "lon": 80.65,
-    "accent": "#a855f7",
-    "tags": [
-      "Bhakti",
-      "Ayurveda",
-      "Bodhi Tree"
-    ],
-    "renderImg": "bodhi-lanka/render.webp",
-    "boardImg": "bodhi-lanka/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/bodhi-lanka",
-    "grantTitle": "Bodhi Lanka — founding tranche",
-    "timeline": {
-      "cs": "Příprava 2026–2028 · stavba od 2029",
-      "en": "Preparation 2026–2028 · construction from 2029"
-    }
-  },
-  {
-    "slug": "lumi-nova-amerika",
-    "docSlug": "nova-amerika",
-    "name": "LUMI · Nová Amerika",
-    "subtitle": {
-      "cs": "Most Amerik — Kostarika",
-      "en": "Americas bridge — Costa Rica"
-    },
-    "tagline": {
-      "cs": "Projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.",
-      "en": "A project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station."
-    },
-    "location": {
-      "cs": "Kostarika · Nová Amerika",
-      "en": "Costa Rica · Nová Amerika"
-    },
-    "status": "preparation",
-    "lat": 9.75,
-    "lon": -83.75,
-    "accent": "#a855f7",
-    "tags": [
-      "Native Cultures",
-      "FPIC",
-      "Americas Bridge"
-    ],
-    "renderImg": "lumi-nova-amerika/render.webp",
-    "boardImg": "lumi-nova-amerika/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/nova-amerika",
-    "grantTitle": "LUMI Nova Amerika — founding tranche",
-    "timeline": {
-      "cs": "Příprava 2026–2028 · stavba od 2029",
-      "en": "Preparation 2026–2028 · construction from 2029"
-    }
-  },
-  {
-    "slug": "uluru",
-    "docSlug": "uluru",
-    "name": "Uluru",
-    "subtitle": {
-      "cs": "Poselství od protinožců",
-      "en": "A message from the antipodes"
-    },
-    "tagline": {
-      "cs": "Nejstarší nepřetržitá kultura planety — škola vnímání (telepatie, vize, propojení s přírodou a zvířaty) a každoroční festival oslavy života. Uzel jako vztah, ne stavba.",
-      "en": "The planet's oldest continuous culture — a school of perception (telepathy, visions, connection with land and animals) and an annual celebration-of-life festival. A node as relationship, not construction."
-    },
-    "location": {
-      "cs": "Uluru, Severní teritorium, Austrálie",
-      "en": "Uluru, Northern Territory, Australia"
-    },
-    "status": "vision",
-    "lat": -25.34,
-    "lon": 131.04,
-    "accent": "#ea580c",
-    "tags": [
-      "Tjukurpa",
-      "Songlines",
-      "Indigenous Heritage"
-    ],
-    "renderImg": "uluru/render.webp",
-    "boardImg": "uluru/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/uluru",
-    "grantTitle": "—",
-    "timeline": {
-      "cs": "Vize — nejdřív naslouchat · bez termínu",
-      "en": "Vision — listening first · no deadline"
-    }
-  },
-  {
-    "slug": "maria-del-camino",
-    "docSlug": "maria-del-camino",
-    "name": "María del Camino",
-    "subtitle": {
-      "cs": "Plující uzel · Loď Cesty",
-      "en": "The Sailing Node · Ship of the Way"
-    },
-    "tagline": {
-      "cs": "Osmý bod L5 není bod, ale cesta — plachetnice se solárními plachtami pro ~50 poutníků, která spojuje všech sedm uzlů. Tam, kde Camino končil u moře, ona pokračuje.",
-      "en": "The eighth L5 point is not a point but a way — a sailing ship with solar sails for ~50 pilgrims connecting all seven nodes. Where the Camino ended at the sea, she sails on."
-    },
-    "location": {
-      "cs": "Světové oceány · domovský přístav Galicie",
-      "en": "World oceans · home port Galicia"
-    },
-    "status": "preparation",
-    "lat": 42.43,
-    "lon": -8.65,
-    "accent": "#0ea5e9",
-    "tags": [
-      "Sea Camino",
-      "Solar Sails",
-      "Mobile Node"
-    ],
-    "renderImg": "maria-del-camino/render.webp",
-    "boardImg": "maria-del-camino/board.webp",
-    "appHref": "https://app.zionterranova.com/terranova/maria-del-camino",
-    "grantTitle": "María del Camino — founding reserve",
-    "timeline": {
-      "cs": "Výzkum plavidla 2026–2027 · první etapa TBD",
-      "en": "Vessel research 2026–2027 · first leg TBD"
-    }
+  "status": "preparation",
+  "lat": 37.17,
+  "lon": -8.62,
+  "accent": "#fcd116",
+  "tags": [
+   "Permaculture",
+   "Guardian Node",
+   "DAO Circle"
+  ],
+  "renderImg": "genesis-garden/render.webp",
+  "boardImg": "genesis-garden/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/genesis",
+  "grantTitle": "Genesis Garden — founding tranche",
+  "timeline": {
+   "cs": "Příprava 2026–2028 · stavba od 2029",
+   "en": "Preparation 2026–2028 · construction from 2029"
   }
+ },
+ {
+  "slug": "dharma-temple",
+  "docSlug": "dharma-temple",
+  "name": "Dharma Temple",
+  "subtitle": {
+   "cs": "Nova Bodhi Gaia — místo osvícení",
+   "en": "Nova Bodhi Gaia — a place of awakening"
+  },
+  "tagline": {
+   "cs": "Sedm geodetických kopulí kolem posvátného Stromu života — chrám postavený na geometrii Merkaby na La Palmě.",
+   "en": "Seven geodesic domes around the sacred Tree of Life — a temple built on Merkaba geometry on La Palma."
+  },
+  "location": {
+   "cs": "La Palma — Terra Nova Sanctuary",
+   "en": "La Palma — Terra Nova Sanctuary"
+  },
+  "status": "preparation",
+  "lat": 28.66,
+  "lon": -17.87,
+  "accent": "#06b6d4",
+  "tags": [
+   "Education",
+   "Off-grid",
+   "Meditation"
+  ],
+  "renderImg": "dharma-temple/render.webp",
+  "boardImg": "dharma-temple/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/dharma-temple",
+  "grantTitle": "Dharma Temple — founding tranche",
+  "timeline": {
+   "cs": "Příprava 2026–2028 · stavba od 2029",
+   "en": "Preparation 2026–2028 · construction from 2029"
+  }
+ },
+ {
+  "slug": "te-piko-ora",
+  "docSlug": "te-piko-ora",
+  "name": "Te Pīko Ora",
+  "subtitle": {
+   "cs": "Pupek života — Raiatea",
+   "en": "Navel of life — Raiatea"
+  },
+  "tagline": {
+   "cs": "Polynéská kulturní renesance na posvátném ostrově Raiatea — kolébka pacifické civilizace, Taputapuātea a živá tradice.",
+   "en": "Polynesian cultural revival on the sacred island of Raiatea — cradle of Pacific civilisation, Taputapuātea and living tradition."
+  },
+  "location": {
+   "cs": "Raiatea, Francouzská Polynésie",
+   "en": "Raiatea, French Polynesia"
+  },
+  "status": "preparation",
+  "lat": -16.83,
+  "lon": -151.44,
+  "accent": "#a855f7",
+  "tags": [
+   "Cultural Revival",
+   "Heritage",
+   "L5 Fund"
+  ],
+  "renderImg": "te-piko-ora/render.webp",
+  "boardImg": "te-piko-ora/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/te-piko-ora",
+  "grantTitle": "Te Pīko Ora — founding tranche",
+  "timeline": {
+   "cs": "Příprava 2026–2028 · stavba od 2029",
+   "en": "Preparation 2026–2028 · construction from 2029"
+  }
+ },
+ {
+  "slug": "golden-republic-bohemia",
+  "docSlug": "golden-republic-bohemia",
+  "name": "Golden Republic Bohemia",
+  "subtitle": {
+   "cs": "Zlatá republika — srdce Evropy",
+   "en": "Golden Republic — the heart of Europe"
+  },
+  "tagline": {
+   "cs": "Governance laboratoř Zlaté republiky — kruh rozhodování, česká moudrost a ZION protokol v srdci Evropy.",
+   "en": "Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe."
+  },
+  "location": {
+   "cs": "Čechy, Česká republika",
+   "en": "Bohemia, Czech Republic"
+  },
+  "status": "preparation",
+  "lat": 50.05,
+  "lon": 15.45,
+  "accent": "#a855f7",
+  "tags": [
+   "Governance",
+   "DAO Circle",
+   "Golden Republic"
+  ],
+  "renderImg": "golden-republic-bohemia/render.webp",
+  "boardImg": "golden-republic-bohemia/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/golden-republic-bohemia",
+  "grantTitle": "Golden Republic Bohemia — founding tranche",
+  "timeline": {
+   "cs": "Příprava 2026–2028 · stavba od 2029",
+   "en": "Preparation 2026–2028 · construction from 2029"
+  }
+ },
+ {
+  "slug": "bodhi-lanka",
+  "docSlug": "bodhi-lanka",
+  "name": "Bodhi Lanka",
+  "subtitle": {
+   "cs": "Akáša uzel — Srí Lanka",
+   "en": "Akasha node — Sri Lanka"
+  },
+  "tagline": {
+   "cs": "Prostor, který drží všechny elementy. Nekonečná láska Ramy a Sity, nejstarší žijící strom na Zemi a ZION protokol.",
+   "en": "The space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol."
+  },
+  "location": {
+   "cs": "Srí Lanka",
+   "en": "Sri Lanka"
+  },
+  "status": "preparation",
+  "lat": 7.87,
+  "lon": 80.65,
+  "accent": "#a855f7",
+  "tags": [
+   "Bhakti",
+   "Ayurveda",
+   "Bodhi Tree"
+  ],
+  "renderImg": "bodhi-lanka/render.webp",
+  "boardImg": "bodhi-lanka/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/bodhi-lanka",
+  "grantTitle": "Bodhi Lanka — founding tranche",
+  "timeline": {
+   "cs": "Příprava 2026–2028 · stavba od 2029",
+   "en": "Preparation 2026–2028 · construction from 2029"
+  }
+ },
+ {
+  "slug": "ekam",
+  "docSlug": "ekam",
+  "name": "Ekam",
+  "subtitle": {
+   "cs": "Oneness Temple — Dokončení",
+   "en": "Oneness Temple — Completion"
+  },
+  "tagline": {
+   "cs": "Desátý bod — a jediný, který už stojí. Bílý mramorový chrám v Indii, postavený 2008 jako architektura pro vědomí: zlatý řez, bezsloupová hala, Zlatá koule. Předloha pro všechny uzly — a místo, které pojmenovalo samotný chain.",
+   "en": "The tenth point — and the only one already built. A white-marble temple in India, raised in 2008 as architecture for consciousness: golden ratio, a column-free hall, the Golden Orb. The template for every node — and the place that named the chain itself."
+  },
+  "location": {
+   "cs": "Varadaiahpalem, Andhra Pradesh, Indie",
+   "en": "Varadaiahpalem, Andhra Pradesh, India"
+  },
+  "status": "built",
+  "lat": 13.42,
+  "lon": 79.67,
+  "accent": "#fcd116",
+  "tags": [
+   "Built 2008",
+   "The Template",
+   "Golden Orb",
+   "Satori"
+  ],
+  "renderImg": "ekam/render.webp",
+  "boardImg": "ekam/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/ekam",
+  "grantTitle": "—",
+  "timeline": {
+   "cs": "Postaveno 2008 · uzel jako vztah — návštěvy na podmínky provozovatele",
+   "en": "Built 2008 · a relationship node — visits on the operator's terms"
+  }
+ },
+ {
+  "slug": "lumi-nova-amerika",
+  "docSlug": "nova-amerika",
+  "name": "LUMI · Nová Amerika",
+  "subtitle": {
+   "cs": "Most Amerik — Kostarika",
+   "en": "Americas bridge — Costa Rica"
+  },
+  "tagline": {
+   "cs": "Projekt pro nativní kultury (Bribri, Cabécar, Boruca) na zeměpisném středobodu kontinentů, sdílený pozemek s pozemní stanicí Issobella.",
+   "en": "A project for the native cultures (Bribri, Cabécar, Boruca) at the geographic midpoint of the continents, sharing land with the Issobella ground station."
+  },
+  "location": {
+   "cs": "Kostarika · Nová Amerika",
+   "en": "Costa Rica · Nová Amerika"
+  },
+  "status": "preparation",
+  "lat": 9.75,
+  "lon": -83.75,
+  "accent": "#a855f7",
+  "tags": [
+   "Native Cultures",
+   "FPIC",
+   "Americas Bridge"
+  ],
+  "renderImg": "lumi-nova-amerika/render.webp",
+  "boardImg": "lumi-nova-amerika/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/nova-amerika",
+  "grantTitle": "LUMI Nova Amerika — founding tranche",
+  "timeline": {
+   "cs": "Příprava 2026–2028 · stavba od 2029",
+   "en": "Preparation 2026–2028 · construction from 2029"
+  }
+ },
+ {
+  "slug": "uluru",
+  "docSlug": "uluru",
+  "name": "Uluru",
+  "subtitle": {
+   "cs": "Poselství od protinožců",
+   "en": "A message from the antipodes"
+  },
+  "tagline": {
+   "cs": "Nejstarší nepřetržitá kultura planety — škola vnímání (telepatie, vize, propojení s přírodou a zvířaty) a každoroční festival oslavy života. Uzel jako vztah, ne stavba.",
+   "en": "The planet's oldest continuous culture — a school of perception (telepathy, visions, connection with land and animals) and an annual celebration-of-life festival. A node as relationship, not construction."
+  },
+  "location": {
+   "cs": "Uluru, Severní teritorium, Austrálie",
+   "en": "Uluru, Northern Territory, Australia"
+  },
+  "status": "vision",
+  "lat": -25.34,
+  "lon": 131.04,
+  "accent": "#ea580c",
+  "tags": [
+   "Tjukurpa",
+   "Songlines",
+   "Indigenous Heritage"
+  ],
+  "renderImg": "uluru/render.webp",
+  "boardImg": "uluru/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/uluru",
+  "grantTitle": "—",
+  "timeline": {
+   "cs": "Vize — nejdřív naslouchat · bez termínu",
+   "en": "Vision — listening first · no deadline"
+  }
+ },
+ {
+  "slug": "maria-del-camino",
+  "docSlug": "maria-del-camino",
+  "name": "María del Camino",
+  "subtitle": {
+   "cs": "Plující uzel · Loď Cesty",
+   "en": "The Sailing Node · Ship of the Way"
+  },
+  "tagline": {
+   "cs": "Osmý bod L5 není bod, ale cesta — dvě lodě pro dva oceány: atlantická plachetnice María del Camino a pacifický solární katamarán María del Pacífico. Tam, kde Camino končil u moře, plují dál.",
+   "en": "The eighth L5 point is not a point but a way — two ships for two oceans: the Atlantic sailing ship María del Camino and the Pacific solar catamaran María del Pacífico. Where the Camino ended at the sea, they sail on."
+  },
+  "location": {
+   "cs": "Světové oceány · domovský přístav Galicie",
+   "en": "World oceans · home port Galicia"
+  },
+  "status": "preparation",
+  "lat": 42.43,
+  "lon": -8.65,
+  "accent": "#0ea5e9",
+  "tags": [
+   "Sea Camino",
+   "Solar Sails",
+   "Mobile Node"
+  ],
+  "renderImg": "maria-del-camino/render.webp",
+  "boardImg": "maria-del-camino/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/maria-del-camino",
+  "grantTitle": "María del Camino — founding reserve",
+  "timeline": {
+   "cs": "Výzkum plavidla 2026–2027 · první etapa TBD",
+   "en": "Vessel research 2026–2027 · first leg TBD"
+  }
+ },
+ {
+  "slug": "boa-esperanca",
+  "docSlug": "boa-esperanca",
+  "name": "Boa Esperança",
+  "subtitle": {
+   "cs": "Mys dobré naděje — Obrat",
+   "en": "Cape of Good Hope — the Turn"
+  },
+  "tagline": {
+   "cs": "Druhý šev světa — místo, kde se dvě Marie setkávají na vodě a bouře se přejmenovává na naději. Nejstarší lidská linie (Khoisan, Blombos), fynbos zahrada a kelp seaforest, Day-Zero vodní laboratoř. Uzel jako vztah, ne stavba.",
+   "en": "The second seam of the world — where the two Marias meet at sea and the storm is renamed hope. The oldest human lineage (Khoisan, Blombos), a fynbos garden and kelp seaforest, a Day-Zero water lab. A node as relationship, not construction."
+  },
+  "location": {
+   "cs": "Mys dobré naděje, Western Cape, Jihoafrická republika",
+   "en": "Cape of Good Hope, Western Cape, South Africa"
+  },
+  "status": "vision",
+  "lat": -34.35,
+  "lon": 18.47,
+  "accent": "#f59e0b",
+  "tags": [
+   "Hope",
+   "Two Oceans",
+   "Khoisan",
+   "Fynbos"
+  ],
+  "renderImg": "boa-esperanca/render.webp",
+  "boardImg": "boa-esperanca/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/boa-esperanca",
+  "grantTitle": "—",
+  "timeline": {
+   "cs": "Vize — nejdřív naslouchat · bez termínu",
+   "en": "Vision — listening first · no deadline"
+  }
+ }
 ]

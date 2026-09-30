@@ -34,7 +34,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
   researchStage: { cs: `Příprava — výzkum plavidla`, en: `Preparation — vessel research` },
-  subtitle: { cs: `Plující uzel · Mořské Camino · Solární plachty · Terra Nova ®`, en: `The Sailing Node · Sea Camino · Solar Sails · Terra Nova ®` },
+  subtitle: { cs: `Plující uzel · Dvě lodě, dva oceány · Solární plachty · Terra Nova ®`, en: `The Sailing Node · Two ships, two oceans · Solar Sails · Terra Nova ®` },
   quote: {
     cs: `"Ultreia et suseia — vpřed a výš."`,
     en: `"Ultreia et suseia — onward and upward."`,
@@ -42,8 +42,22 @@ const Copy = {
   locationLine: { cs: `Světové oceány · domovský přístav Galicie`, en: `World oceans · home port Galicia` },
   introTitle: { cs: `Osmý uzel — cesta, ne místo`, en: `The eighth node — a way, not a place` },
   introBody: {
-    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. Plachetnice pro zhruba padesát poutníků fyzicky spojuje všech sedm pevných uzlů sítě. Její plachty jsou zároveň solární články: loď nese vlastní energii, vodu, jídlo i plný ZION uzel zprostřed oceánu. Tisíc let končilo Camino u Finisterry — „konce země". María del Camino je krok navíc: cesta, která u moře nekončí, ale na něm pokračuje.`,
-    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. A sailing ship for roughly fifty pilgrims physically connects all seven fixed nodes of the network. Her sails are solar cells themselves: the vessel carries its own energy, water, food and a full ZION node in the middle of the ocean. For a thousand years the Camino ended at Finisterre — "the end of the earth". María del Camino is the step beyond: the way that does not end at the sea but continues on it.`,
+    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. A není jedna loď, ale dvojče pro dva oceány: atlantická plachetnice María del Camino v tradici Camina a pacifický solární katamarán María del Pacífico v linii polynéské wa'a. Zhruba padesát poutníků na trup, solární plachty, vlastní energie, voda, jídlo i plný ZION uzel zprostřed oceánu. Lodě se scházejí v LUMI — most mezi Amerikami se stává mostem mezi dvěma moři.`,
+    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. And it is not one ship but a twin for two oceans: the Atlantic sailing ship María del Camino in the Camino tradition, and the Pacific solar catamaran María del Pacífico in the line of the Polynesian wa'a. Roughly fifty pilgrims per hull, solar sails, their own energy, water, food and a full ZION node mid-ocean. The ships meet at LUMI — the bridge between the Americas becomes the bridge between two seas.`,
+  },
+  fleetTitle: { cs: `Dvě lodě — dvě Marie`, en: `Two ships — two Marys` },
+  fleetSubtitle: { cs: `Atlantik × Pacifik · scháziště LUMI`, en: `Atlantic × Pacific · the LUMI meeting point` },
+  fleetAtlantic: {
+    cs: `Klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría); trasa Finisterre → Algarve → La Palma → karibský břeh LUMI, severský výběžek Labem k Bohemii.`,
+    en: `A classic sailing ship in the Camino de Santiago tradition. Home waters Galicia (the Pontevedra ría); route Finisterre → the Algarve → La Palma → the Caribbean shore of LUMI, with a northern sortie up the Elbe to Bohemia.`,
+  },
+  fleetPacific: {
+    cs: `Solární katamarán v linii wa'a kaulua — polynéské dvojité kánoe a wayfinding kultury. Domov navrhovaný v Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka.`,
+    en: `A solar catamaran in the wa'a kaulua line — the Polynesian double canoe and its wayfinding culture. Proposed home at Te Pīko Ora (Raiatea); route Costa Rica → Polynesia → Aboriginal Australia → Sri Lanka.`,
+  },
+  fleetMeet: {
+    cs: `Dvojice se neschází uprostřed moře — jejich světy se dotýkají na šíji Amerik: poutník vystoupí na jedné Marii, projde LUMI zemí a nastoupí na druhou. Credencial dostává razítko „dvou moří".`,
+    en: `The pair does not meet mid-ocean — their worlds touch on the isthmus of the Americas: a pilgrim steps off one Mary, crosses LUMI by land, and boards the other. The credencial earns the "two seas" stamp.`,
   },
   featuresTitle: { cs: `Co plavidlo drží`, en: `What the vessel holds` },
   featuresSubtitle: { cs: `Trup & posádka`, en: `Hull & crew` },
@@ -68,17 +82,17 @@ const Copy = {
   openTitle: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   openItems: {
     cs: [
-      `Flag state a domovský přístav — Galicie na trase i na Caminu?`,
+      `Flag state a domovské přístavy — Galicie pro Atlantik; Raiatea/Papeete pro Pacifik?`,
       `Vlastnictví: DAO-owned asset vs. foundation vs. permanentní charter`,
       `Energetická bilance pro 50 osob — solární plachty vs. hydroregenerace`,
-      `Sezónní okna Velkého kruhu — konzultace s wayfinding/marine ops`,
+      `LUMI exchange protokol — přestup posádek a nákladu přes šíji`,
       `Vazba na L6 Issobella — plující pozemní stanice / telemetry relay`,
     ],
     en: [
-      `Flag state and home port — Galicia, on the route and on the Camino?`,
+      `Flag state and home ports — Galicia for the Atlantic; Raiatea/Papeete for the Pacific?`,
       `Ownership: DAO-owned asset vs. foundation vs. permanent charter`,
-      `Energy balance for 50 souls — solar sails vs. hydro-regeneration`,
-      `Great Circle seasonal windows — wayfinding/marine ops consultation`,
+      `Energy balance for 50 souls per hull — solar sails vs. hydro-regeneration`,
+      `The LUMI exchange protocol — crew and cargo transfers across the isthmus`,
       `L6 Issobella link — a floating ground station / telemetry relay`,
     ],
   },
@@ -203,26 +217,26 @@ const PHASES = [
   },
   {
     num: '2',
-    cs: 'Trup',
-    en: 'Hull',
-    descCs: 'Refit nebo stavba dedikované lodi; flag state, certifikace, pojištění, posádka.',
-    descEn: 'Refit or build of the dedicated vessel; flag state, certification, insurance, crew.',
+    cs: 'Atlantický trup',
+    en: 'Atlantic hull',
+    descCs: 'Refit nebo stavba María del Camino — klasické plachetnice; flag state, certifikace, pojištění, posádka.',
+    descEn: 'Refit or build of María del Camino — the classic sailing ship; flag state, certification, insurance, crew.',
     active: false,
   },
   {
     num: '3',
-    cs: 'Velký kruh',
-    en: 'Great Circle',
-    descCs: 'První okruh všemi uzly — Galicie → Algarve → La Palma → Kostarika → Polynésie → Austrálie → Srí Lanka → domů.',
-    descEn: 'The first circuit of all nodes — Galicia → Algarve → La Palma → Costa Rica → Polynesia → Australia → Sri Lanka → home.',
+    cs: 'Atlantický okruh',
+    en: 'Atlantic circuit',
+    descCs: 'První okruh atlantické trasy — Finisterre → Algarve → La Palma → Karibik → karibský břeh LUMI.',
+    descEn: 'The first circuit of the Atlantic route — Finisterre → the Algarve → La Palma → the Caribbean → LUMI.',
     active: false,
   },
   {
     num: '4',
-    cs: 'Flotila',
-    en: 'Fleet',
-    descCs: 'Replikace — jedna loď na oceán. Tři Marie se vracejí jako flotila.',
-    descEn: 'Replication — one ship per ocean. The three Marys return as a fleet.',
+    cs: 'Pacifický trup',
+    en: 'Pacific hull',
+    descCs: 'Stavba/refit María del Pacífico — solárního katamaránu; pacifický home port, LUMI exchange protokol.',
+    descEn: 'Build or refit of María del Pacífico — the solar catamaran; Pacific home port, the LUMI exchange protocol.',
     active: false,
   },
 ];
@@ -244,6 +258,8 @@ const SISTERS = [
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
   { name: 'LUMI · Nová Amerika', href: '/terranova/nova-amerika', region: { cs: 'Kostarika', en: 'Costa Rica' } },
   { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory, Austrálie', en: 'Northern Territory, Australia' } },
+  { name: 'Boa Esperança', href: '/terranova/boa-esperanca', region: { cs: 'Mys dobré naděje', en: 'Cape of Good Hope' } },
+  { name: 'Ekam · Oneness Temple', href: '/terranova/ekam', region: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' } },
 ];
 
 export default function MariaDelCaminoPage() {
@@ -327,7 +343,7 @@ export default function MariaDelCaminoPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Users, value: '~50', labelCs: 'Poutníků', labelEn: 'Pilgrims' },
+                      { icon: Users, value: cs ? '2 × ~50' : '2 × ~50', labelCs: 'Poutníků na trup', labelEn: 'Pilgrims per hull' },
                       { icon: Sailboat, value: cs ? '8. bod' : '8th point', labelCs: 'Uzel', labelEn: 'Node' },
                       { icon: Sparkles, value: cs ? 'Příprava' : 'Preparation', labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
@@ -377,6 +393,65 @@ export default function MariaDelCaminoPage() {
             <p className="text-gray-300 leading-relaxed">
               {Copy.introBody[cs ? 'cs' : 'en']}
             </p>
+          </div>
+        </motion.section>
+
+        {/* ═══ FLEET — TWO SHIPS ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="mb-8">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.fleetSubtitle[cs ? 'cs' : 'en']}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Ship className="h-7 w-7 text-sky-400" />
+              {Copy.fleetTitle[cs ? 'cs' : 'en']}
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+              <div className="overflow-hidden">
+                <img
+                  src="/images/maria-del-camino/atlantic.webp"
+                  alt="María del Camino — atlantická plachetnice pod zlatými plachtami"
+                  width={1280}
+                  height={720}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="font-semibold text-white mb-1">María del Camino <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : 'Atlantic'}</span></h3>
+                <p className="text-sm text-gray-400">{Copy.fleetAtlantic[cs ? 'cs' : 'en']}</p>
+              </div>
+            </div>
+            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
+              <div className="overflow-hidden">
+                <img
+                  src="/images/maria-del-camino/pacific.webp"
+                  alt="María del Pacífico — solární katamarán se svítícími plachtami a vieirou na přídi"
+                  width={1280}
+                  height={720}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="font-semibold text-white mb-1">María del Pacífico <span className="text-xs text-gray-500 font-normal">· Pacifik</span></h3>
+                <p className="text-sm text-gray-400">{Copy.fleetPacific[cs ? 'cs' : 'en']}</p>
+              </div>
+            </div>
+          </div>
+          <div className="zion-rainbow-sub p-5" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+            <div className="flex items-center gap-2 mb-2">
+              <Anchor className="h-4 w-4 text-teal-300" />
+              <span className="text-xs uppercase tracking-widest text-gray-500">LUMI · {cs ? 'scháziště' : 'meeting point'}</span>
+            </div>
+            <p className="text-sm text-gray-300">{Copy.fleetMeet[cs ? 'cs' : 'en']}</p>
           </div>
         </motion.section>
 

@@ -46,7 +46,9 @@ const LOCATION_LABEL: Record<string, { cs: string; en: string }> = {
   'bodhi-lanka': { cs: 'Srí Lanka', en: 'Sri Lanka' },
   lumi: { cs: 'Kostarika · Nová Amerika', en: 'Costa Rica · Nová Amerika' },
   uluru: { cs: 'Uluru, Northern Territory, Austrálie', en: 'Uluru, Northern Territory, Australia' },
-  'maria-del-camino': { cs: 'Světové oceány · domovský přístav Galicie', en: 'World oceans · home port Galicia' },
+  'maria-del-camino': { cs: 'Světové oceány · domovský přístav Pontevedra, Galicie', en: 'World oceans · home port Pontevedra, Galicia' },
+  'boa-esperanca': { cs: 'Mys dobré naděje, Jihoafrická republika', en: 'Cape of Good Hope, South Africa' },
+  ekam: { cs: 'Varadaiahpalem, Andhra Pradesh, Indie', en: 'Varadaiahpalem, Andhra Pradesh, India' },
 };
 
 export default function FreeWorldMap() {

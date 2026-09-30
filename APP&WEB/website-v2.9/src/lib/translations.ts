@@ -65,6 +65,8 @@ const t = {
     terra_lumi: { cs: 'LUMI — Nová Amerika', en: 'LUMI — Nová Amerika' },
     terra_uluru: { cs: 'Uluru', en: 'Uluru' },
     terra_maria_del_camino: { cs: 'María del Camino', en: 'María del Camino' },
+    terra_boa_esperanca: { cs: 'Boa Esperança', en: 'Boa Esperança' },
+    terra_ekam: { cs: 'Ekam', en: 'Ekam' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
