@@ -7,6 +7,7 @@
  * - Copies css/js assets to dist/
  */
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,7 +38,7 @@ function projectCard(p) {
   const tags = p.tags.map((t) => `<span>${esc(t)}</span>`).join('');
   return `<a class="fw-card fw-reveal" href="/p/${p.slug}/" style="--card-accent:${p.accent}">
       <span class="fw-status" style="--sc:${p.accent}"><span data-lang-show="cs">${esc(statusCs(p))}</span><span class="fw-hidden" data-lang-show="en">${esc(statusEn(p))}</span></span>
-      <div class="fw-card-img"><img src="/assets/img/${p.renderImg}" alt="${esc(p.name)}" loading="lazy"></div>
+      <div class="fw-card-img"><img src="/assets/img/${p.renderImg}?v=${imgV(p.renderImg)}" alt="${esc(p.name)}" loading="lazy"></div>
       <div class="fw-card-body">
         <h3>${esc(p.name)}</h3>
         <span class="fw-card-loc">${esc(p.location.cs)} · ${esc(p.location.en)}</span>
@@ -60,12 +61,23 @@ mkdirSync(DIST, { recursive: true });
 mkdirSync(join(DIST, 'assets/css'), { recursive: true });
 mkdirSync(join(DIST, 'assets/js'), { recursive: true });
 
+/* images via PIL — before HTML so img URLs get content-hash cache busting
+   (nginx caches /assets/img for 7d; ?v= changes when the asset changes) */
+execFileSync('python3', [join(ROOT, 'tools/images.py'), DIST], { stdio: 'inherit' });
+
+const imgV = (rel) => {
+  const f = join(DIST, 'assets/img', rel);
+  return existsSync(f) ? createHash('md5').update(readFileSync(f)).digest('hex').slice(0, 8) : '0';
+};
+
 /* ── index ── */
 const indexTpl = readFileSync(join(SRC, 'index.html'), 'utf8');
 const sitesJson = JSON.stringify(projects.map(({ slug, name, location, lat, lon, accent }) => ({ slug, name, location, lat, lon, accent })));
 const index = fill(indexTpl, {
   PROJECT_CARDS: projects.map(projectCard).join('\n      '),
   SITES_JSON: sitesJson,
+  HERO: `hero.webp?v=${imgV('hero.webp')}`,
+  HERO_M: `hero-m.webp?v=${imgV('hero-m.webp')}`,
 });
 writeFileSync(join(DIST, 'index.html'), index);
 
@@ -85,8 +97,8 @@ for (const [i, p] of projects.entries()) {
     TAGLINE: `<span data-lang-show="cs">${esc(p.tagline.cs)}</span><span class="fw-hidden" data-lang-show="en">${esc(p.tagline.en)}</span>`,
     TAGLINE_EN: esc(p.tagline.en),
     TAGS: p.tags.map((t) => `<span>${esc(t)}</span>`).join(''),
-    RENDER: p.renderImg,
-    BOARD: p.boardImg,
+    RENDER: `${p.renderImg}?v=${imgV(p.renderImg)}`,
+    BOARD: `${p.boardImg}?v=${imgV(p.boardImg)}`,
     DOC_CS: renderDoc(p.docSlug, 'cs'),
     DOC_EN: renderDoc(p.docSlug, 'en'),
     PREV_HREF: `/p/${prev.slug}/`, PREV_NAME: esc(prev.name),
@@ -164,8 +176,5 @@ writeFileSync(join(DIST, 'docs', 'index.html'), fill(docsIdxTpl, { DOC_GROUPS: g
 /* ── assets ── */
 cpSync(join(SRC, 'assets/css'), join(DIST, 'assets/css'), { recursive: true });
 cpSync(join(SRC, 'assets/js'), join(DIST, 'assets/js'), { recursive: true });
-
-/* images via PIL */
-execFileSync('python3', [join(ROOT, 'tools/images.py'), DIST], { stdio: 'inherit' });
 
 console.log('build → dist/ done');
