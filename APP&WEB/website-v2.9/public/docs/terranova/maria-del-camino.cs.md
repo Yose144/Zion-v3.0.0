@@ -1,4 +1,4 @@
-# María del Camino — Lodě Cesty (mořské Camino · solární plachty)
+# María del Camino — Tres Marias (mořské Camino · solární plachty)
 
 > **L5 Free World · osmý bod Terra Nova** · Stav: 🔵 Příprava — plavidla ve výzkumné fázi
 > *„Tam, kde starý svět končil u moře, nový pluje dál."*
@@ -7,42 +7,51 @@
 
 ## Záměr
 
-**María del Camino** je osmý bod vrstvy L5 Free World — a jediný, který není místo. Je to **cesta**: flotila dvou plachetnic pro zhruba padesát poutníků na trup, která fyzicky spojuje všech sedm pevných uzlů sítě.
+**María del Camino** je osmý bod vrstvy L5 Free World — a jediný, který není místo. Je to **cesta**: flotila **Tres Marias** — tři lodě pro tři oceány, zhruba padesát poutníků na trup, které fyzicky spojují všech devět pevných bodů sítě.
 
-Každý uzel Terra Nova nese do sítě jeden princip — Genesis nese zahradu, Dharma chrám, Te Pīko Ora oceán, Bohemia governance, Bodhi Lanka akášu, LUMI most mezi světy, Uluru paměť. **María del Camino nese spojení samotné** — cirkulaci mezi body. Semenná knihovna, kulturní archiv, lidé a granty proudí mezi uzly přes moře, ne kurýrní službou.
+Každý uzel Terra Nova nese do sítě jeden princip — Genesis nese zahradu, Dharma chrám, Te Pīko Ora oceán, Bohemia governance, Bodhi Lanka akášu, LUMI most mezi světy, Uluru paměť, Boa Esperança naději a Ekam dokončení. **María del Camino nese spojení samotné** — cirkulaci mezi body. Semenná knihovna, kulturní archiv, lidé a granty proudí mezi uzly přes moře, ne kurýrní službou.
 
-## Dvě lodě — dvě Marie
+## Tři lodě — tres Marias
 
-Osmý bod není jedna loď, ale **dvojče pro dva oceány**:
+Flotila nese jména tří mariánských zjevení poutníkovy cesty — ta samá, která provázela zrození sítě:
 
-- **María del Camino (Atlantik)** — klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría), trasa Finisterre → Algarve → La Palma → karibský břeh LUMI; severský výběžek umí říční leg Labem k Bohemii.
-- **María del Pacífico (Pacifik)** — solární katamarán v linii *wa'a kaulua*, polynéské dvojité kánoe, kterou nesla Hōkūleʻa a celá wayfinding kultura. Domov navrhovaný v Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka.
+| Loď | Oceán | Zjevení | Roucho |
+|-----|-------|---------|--------|
+| **Santa María la Mayor** | Atlantik | Pontevedra — bazilika na pobřežním Caminu | Červená královská roucha — španělská královna; zasvěcení poutníka |
+| **Nossa Senhora de Fátima** | Pacifik | Fátima — Bílá Paní | Svatební šaty — mystická svatba, bílá orchidej, nové zjevení |
+| **María de las Nieves** | Indický oceán | La Palma — patronka ostrova i celé sítě | Zlatá roucha — nedokončené zázraky, v náručí vzpřímené dítě |
 
-Dvojice se schází v **LUMI Nová Amerika** — most mezi Amerikami se stává mostem mezi dvěma moři: poutníci, semena a náklad překládají přes šíji a přestupují mezi loděmi. Žádná loď nemusí uplout celý kruh — síť je obsloužena kontinuálně.
+- **Santa María la Mayor (Atlantik)** — klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría — přístav, kde námořníci postavili Marii svou nejkrásnější stavbu), trasa Finisterre → Algarve → La Palma → karibský břeh LUMI; severský výběžek umí říční leg Labem k Bohemii.
+- **Nossa Senhora de Fátima (Pacifik)** — solární katamarán v linii *wa'a kaulua*, polynéské dvojité kánoe, kterou nesla Hōkūleʻa a celá wayfinding kultura. Domov v Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka → Ekam.
+- **María de las Nieves (Indický oceán)** — třetí loď, loď nedokončených zázraků. Nese třetí zjevení: María ve zlatých rouchech drží vzpřímené dítě — malého prince, symbol Zlatého věku (v příběhu sítě dítě LUMI a Elizabeth). Patronka La Palmy je zároveň patronkou celého ZIONu — proto právě ona dostává oceán, kde cesta vrcholí: Ekam → Boa Esperança → návrat do Atlantiku.
+
+Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na **švech světa**: na šíji Amerik (**LUMI** — atlantická × pacifická výměna po souši) a na švu oceánů u Mysu dobré naděje (**Boa Esperança** — atlantická × indická). Credencial sbírá razítka „tří moří".
 
 ## Jméno
 
-Loď nese jméno **María del Camino** — *Marie Cesty*, mariánské svatyně stojící přímo na Camino Francés u Leónu. Tisíc let chodili poutníci do Santiaga; kdo šel skutečně do kraje, pokračoval na **Finisterre** — *finis terrae*, konec země — kde cesta končila u oceánu a nebylo kam jít dál.
+Program nese jméno **María del Camino** — *Marie Cesty*, mariánské svatyně stojící přímo na Camino Francés u Leónu. Tisíc let chodili poutníci do Santiaga; kdo šel skutečně do kraje, pokračoval na **Finisterre** — *finis terrae*, konec země — kde cesta končila u oceánu a nebylo kam jít dál.
 
-**María del Camino je přesně ten krok navíc**: Camino, které u moře nekončí, ale na něm pokračuje. Její prologová trasa dokonce míjí tři mariánská místa z vlastního příběhu sítě — Pontevedru, Fátimu a La Palmu.
+**María del Camino je přesně ten krok navíc**: Camino, které u moře nekončí, ale na něm pokračuje. A předehra se naplnila — tři zjevení z poutníkovy cesty se stala třemi loděmi; loď bez plachet ze staré legendy se stala flotilou, jejíž plachty jsou světlo.
 
-> *„Ultreia et suseia — vpřed a výš."* — pozdrav poutníků z Codex Calixtinus, motto lodi.
+> *„Ultreia et suseia — vpřed a výš."* — pozdrav poutníků z Codex Calixtinus, motto flotily.
 
 ## Co plavidlo drží (koncept)
 
 - **Solární plachty** — plachty samotné jsou fotovoltaické: flexibilní solární články laminované do plachtoviny (odhad 60–200 kWp) plus hydroregenerace pod plachtami. Cíl: plavba bez fosilních paliv.
-- **~50 osob** — permanentní posádka Guardianů plus rotující residenti: výzkum, programy youth bridge, praktici Medical Table, noví Guardiani v tranzitu mezi uzly.
+- **~50 osob na trup** — permanentní posádka Guardianů plus rotující residenti: výzkum, programy youth bridge, praktici Medical Table, noví Guardiani v tranzitu mezi uzly.
 - **Soběstačnost** — odsolování a sběr deště, hydroponická palubní zahrada, zásoby vyměňované v uzlech — k tomu trasa je.
 - **Guardian node na moři** — plný ZION uzel validující přes satelit, LoRa/mesh gateway na stěžni a treasury, kterou umí loď fyzicky doručit: humanitární náklad mezi uzly.
-- **Pilgrim credential** — každý úsek je *etapa*; posádka i residenti sbírají on-chain razítka jako poutníčková *credencial*, za celý okruh *compostela*.
+- **Pilgrim credential** — každý úsek je *etapa*; posádka i residenti sbírají on-chain razítka jako poutníčková *credencial*, za celý okruh *compostela* — razítko tří moří.
 
-## Trasy — dva okruhy, jedna cesta (vize)
+## Velká cesta — obeplutí jako iniciace
 
-**Atlantika (María del Camino):** prologem je samotné **mořské Camino** — Finisterre → Pontevedra → Fátima → Algarve (Genesis Garden) → La Palma (María de las Nieves + Dharma Temple) → atlantická přeplavba → karibský břeh **LUMI**.
+Trasa není servisní okruh — je to cesta, kde **každý uzel je jedna iniciace**: Pontevedra (poutník) → Genesis (země) → Dharma/La Palma (ticho) → LUMI (most) → Te Pīko Ora (oceán) → Uluru (paměť) → Bodhi Lanka (akáša) → **Ekam (dokončení)** → Indický oceán → **Boa Esperança (obrat/naděje)** → návrat Pontevedra → Bohemia (governance doma).
 
-**Pacifik (María del Pacífico):** LUMI pacifický břeh → **Te Pīko Ora** (Raiatea — wayfinding škola) → domorodá Austrálie (Uluru — návštěva custodiánských komunit na jejich podmínky, žádný claim) → **Bodhi Lanka** (Srí Lanka) → návrat.
+**Atlantik (Santa María la Mayor):** prologem je samotné mořské Camino — Finisterre → Pontevedra → Fátima → Algarve → La Palma → atlantická přeplavba → karibský břeh LUMI.
 
-Poutník, který chce přejít z Atlantiku do Pacifiku, vystoupí na jedné Marii, projde LUMI zemí — a nastoupí na druhou. Credencial dostává razítko „dvou moří".
+**Pacifik (Nossa Senhora de Fátima):** LUMI pacifický břeh → Te Pīko Ora (wayfinding škola) → domorodá Austrálie (návštěva custodiánských komunit na jejich podmínky) → Bodhi Lanka → Chennai → **Ekam** po souši.
+
+**Indický oceán (María de las Nieves):** Ekam → Indický oceán → **Boa Esperança** (scháziště s atlantickou Marií) → St Helena → Azory → Pontevedra. Loď nedokončených zázraků nese poutníky domů — protože satori se dokazuje návratem, ne odchodem.
 
 ## Fáze rozvoje
 
@@ -50,10 +59,11 @@ Poutník, který chce přejít z Atlantiku do Pacifiku, vystoupí na jedné Mari
 |------|-------|-------|
 | 0 | Kresba | Design study, partnerství se sail-training a NGO flotilami, odhad CAPEX/OPEX |
 | 1 | První etapa | Pilotní trasa na **charterované** lodi mezi dvěma uzly — důkaz Guardian node at sea, mesh sync, program posádky — ještě před vlastním trupem |
-| 2 | Atlantický trup | Refit nebo stavba **María del Camino** — klasická plachetnice; flag state, certifikace, pojištění |
+| 2 | Atlantický trup | Refit nebo stavba **Santa María la Mayor** — klasická plachetnice; flag state, certifikace, pojištění |
 | 3 | Atlantický okruh | První okruh atlantické trasy (Finisterre → La Palma → Karibik → LUMI); výměna semen a knihovny živě |
-| 4 | Pacifický trup | Stavba/refit **María del Pacífico** — solární katamarán; pacifický home port, LUMI exchange protokol; později případná třetí Marie pro Indický oceán |
+| 4 | Pacifický trup | Stavba/refit **Nossa Senhora de Fátima** — solární katamarán; pacifický home port, LUMI exchange protokol |
+| 5 | Indický trup | **María de las Nieves** — třetí loď zavírá trojúhelník Atlantik–Pacifik–Indický; trasa dokončení Ekam → Cape → domov |
 
 ## Proč právě teď
 
-Síť sedmi pevných bodů je konstelace. Konstelace potřebuje cestovatele, aby se stala příběhem — někdo mezi hvězdami musí jít, nebo plout. Loď dělá příslib L5 fyzickým: ne mapu míst, ale živou trasu. Na palubě je celý pentagram v malém — zahrada, chrám, oceán, kruh, archiv — takže kdo nastoupí, už je všude.
+Síť deseti bodů je konstelace. Konstelace potřebuje cestovatele, aby se stala příběhem — někdo mezi hvězdami musí jít, nebo plout. Loď dělá příslib L5 fyzickým: ne mapu míst, ale živou trasu. Na palubě je celý pentagram v malém — zahrada, chrám, oceán, kruh, archiv — takže kdo nastoupí, už je všude. A tři Marie nesou tři zjevení kolem světa — červená královna, bílá nevěsta a zlatá matka s dítětem.

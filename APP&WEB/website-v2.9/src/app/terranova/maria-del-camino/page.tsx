@@ -34,7 +34,7 @@ const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownAr
 const Copy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
   researchStage: { cs: `Příprava — výzkum plavidla`, en: `Preparation — vessel research` },
-  subtitle: { cs: `Plující uzel · Dvě lodě, dva oceány · Solární plachty · Terra Nova ®`, en: `The Sailing Node · Two ships, two oceans · Solar Sails · Terra Nova ®` },
+  subtitle: { cs: `Plující uzel · Tres Marias — tři lodě, tři oceány · Solární plachty · Terra Nova ®`, en: `The Sailing Node · Tres Marias — three ships, three oceans · Solar Sails · Terra Nova ®` },
   quote: {
     cs: `"Ultreia et suseia — vpřed a výš."`,
     en: `"Ultreia et suseia — onward and upward."`,
@@ -42,22 +42,26 @@ const Copy = {
   locationLine: { cs: `Světové oceány · domovský přístav Galicie`, en: `World oceans · home port Galicia` },
   introTitle: { cs: `Osmý uzel — cesta, ne místo`, en: `The eighth node — a way, not a place` },
   introBody: {
-    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. A není jedna loď, ale dvojče pro dva oceány: atlantická plachetnice María del Camino v tradici Camina a pacifický solární katamarán María del Pacífico v linii polynéské wa'a. Zhruba padesát poutníků na trup, solární plachty, vlastní energie, voda, jídlo i plný ZION uzel zprostřed oceánu. Lodě se scházejí v LUMI — most mezi Amerikami se stává mostem mezi dvěma moři.`,
-    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. And it is not one ship but a twin for two oceans: the Atlantic sailing ship María del Camino in the Camino tradition, and the Pacific solar catamaran María del Pacífico in the line of the Polynesian wa'a. Roughly fifty pilgrims per hull, solar sails, their own energy, water, food and a full ZION node mid-ocean. The ships meet at LUMI — the bridge between the Americas becomes the bridge between two seas.`,
+    cs: `María del Camino je osmý bod L5 Free World — a jediný, který není místo, ale cesta. Flotila Tres Marias — tři lodě pro tři oceány, každá nesoucí jedno ze tří mariánských zjevení poutníkovy cesty: atlantická plachetnice Santa María la Mayor (červená královská roucha), pacifický solární katamarán Nossa Senhora de Fátima (bílé svatební šaty) a indickooceánská María de las Nieves (zlatá roucha, nedokončené zázraky). Zhruba padesát poutníků na trup, solární plachty, vlastní energie, voda, jídlo i plný ZION uzel zprostřed oceánu.`,
+    en: `María del Camino is the eighth point of L5 Free World — and the only one that is not a place but a way. The Tres Marias fleet — three ships for three oceans, each carrying one of the three Marian apparitions of the pilgrim's journey: the Atlantic tall ship Santa María la Mayor (red royal robes), the Pacific solar catamaran Nossa Senhora de Fátima (white wedding dress) and the Indian-ocean María de las Nieves (golden robes, unfinished miracles). Roughly fifty pilgrims per hull, solar sails, their own energy, water, food and a full ZION node mid-ocean.`,
   },
-  fleetTitle: { cs: `Dvě lodě — dvě Marie`, en: `Two ships — two Marys` },
-  fleetSubtitle: { cs: `Atlantik × Pacifik · scháziště LUMI`, en: `Atlantic × Pacific · the LUMI meeting point` },
+  fleetTitle: { cs: `Tři lodě — tres Marias`, en: `Three ships — tres Marias` },
+  fleetSubtitle: { cs: `Tři zjevení · tři oceány · scháziště LUMI a Cape`, en: `Three apparitions · three oceans · LUMI & the Cape seam` },
   fleetAtlantic: {
-    cs: `Klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría); trasa Finisterre → Algarve → La Palma → karibský břeh LUMI, severský výběžek Labem k Bohemii.`,
-    en: `A classic sailing ship in the Camino de Santiago tradition. Home waters Galicia (the Pontevedra ría); route Finisterre → the Algarve → La Palma → the Caribbean shore of LUMI, with a northern sortie up the Elbe to Bohemia.`,
+    cs: `Klasická plachetnice v tradici Camina — pokřtěná po prvním zjevení v Pontevedře, kde se María Mayor ukázala v červených královských rouchech jako španělská královna. Domácí voda Galicie; trasa Finisterre → Algarve → La Palma → karibský břeh LUMI, severský výběžek Labem k Bohemii.`,
+    en: `A classic sailing ship in the Camino tradition — christened after the first apparition at Pontevedra, where María Mayor appeared in red royal robes like a Spanish queen. Home waters Galicia; route Finisterre → the Algarve → La Palma → the Caribbean shore of LUMI, with a northern sortie up the Elbe to Bohemia.`,
   },
   fleetPacific: {
-    cs: `Solární katamarán v linii wa'a kaulua — polynéské dvojité kánoe a wayfinding kultury. Domov navrhovaný v Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka.`,
-    en: `A solar catamaran in the wa'a kaulua line — the Polynesian double canoe and its wayfinding culture. Proposed home at Te Pīko Ora (Raiatea); route Costa Rica → Polynesia → Aboriginal Australia → Sri Lanka.`,
+    cs: `Solární katamarán v linii wa'a kaulua — pokřtěný po druhém zjevení u Fátimy, kde se objevila Bílá Paní ve svatebních šatech: mystická svatba, bílá orchidej, nové zjevení. Domov Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka → Ekam.`,
+    en: `A solar catamaran in the wa'a kaulua line — christened after the second apparition near Fátima, where the White Lady appeared in a wedding dress: the mystical wedding, the white orchid, the new apparition. Home Te Pīko Ora (Raiatea); route Costa Rica → Polynesia → Aboriginal Australia → Sri Lanka → Ekam.`,
+  },
+  fleetIndian: {
+    cs: `Třetí loď pro Indický oceán — pokřtěná po třetím zjevení na La Palmě: María de las Nieves ve zlatých rouchech, držící vzpřímené dítě — dítě LUMI, Elizabeth. Loď nedokončených zázraků; patronka ostrova i celé sítě. Trasa Ekam → Boa Esperança → návrat do Atlantiku.`,
+    en: `The third ship for the Indian Ocean — christened after the third apparition on La Palma: María de las Nieves in golden robes, holding the upright child — the child LUMI, Elizabeth. The ship of unfinished miracles; patroness of the island and the whole network. Route Ekam → Boa Esperança → return to the Atlantic.`,
   },
   fleetMeet: {
-    cs: `Dvojice se neschází uprostřed moře — jejich světy se dotýkají na šíji Amerik: poutník vystoupí na jedné Marii, projde LUMI zemí a nastoupí na druhou. Credencial dostává razítko „dvou moří".`,
-    en: `The pair does not meet mid-ocean — their worlds touch on the isthmus of the Americas: a pilgrim steps off one Mary, crosses LUMI by land, and boards the other. The credencial earns the "two seas" stamp.`,
+    cs: `Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na švech světa: na šíji Amerik (LUMI — atlantická × pacifická) a na švu oceánů u Mysu dobré naděje (Boa Esperança — atlantická × indická). Credencial sbírá razítka „tří moří".`,
+    en: `The three Marys do not meet mid-ocean — their worlds touch at the seams of the world: on the isthmus of the Americas (LUMI — Atlantic × Pacific) and on the ocean seam at the Cape of Good Hope (Boa Esperança — Atlantic × Indian). The credencial collects the "three seas" stamps.`,
   },
   featuresTitle: { cs: `Co plavidlo drží`, en: `What the vessel holds` },
   featuresSubtitle: { cs: `Trup & posádka`, en: `Hull & crew` },
@@ -219,8 +223,8 @@ const PHASES = [
     num: '2',
     cs: 'Atlantický trup',
     en: 'Atlantic hull',
-    descCs: 'Refit nebo stavba María del Camino — klasické plachetnice; flag state, certifikace, pojištění, posádka.',
-    descEn: 'Refit or build of María del Camino — the classic sailing ship; flag state, certification, insurance, crew.',
+    descCs: 'Refit nebo stavba Santa María la Mayor — klasické plachetnice; flag state, certifikace, pojištění, posádka.',
+    descEn: 'Refit or build of Santa María la Mayor — the classic sailing ship; flag state, certification, insurance, crew.',
     active: false,
   },
   {
@@ -235,8 +239,16 @@ const PHASES = [
     num: '4',
     cs: 'Pacifický trup',
     en: 'Pacific hull',
-    descCs: 'Stavba/refit María del Pacífico — solárního katamaránu; pacifický home port, LUMI exchange protokol.',
-    descEn: 'Build or refit of María del Pacífico — the solar catamaran; Pacific home port, the LUMI exchange protocol.',
+    descCs: 'Stavba/refit Nossa Senhora de Fátima — solárního katamaránu; pacifický home port, LUMI exchange protokol.',
+    descEn: 'Build or refit of Nossa Senhora de Fátima — the solar catamaran; Pacific home port, the LUMI exchange protocol.',
+    active: false,
+  },
+  {
+    num: '5',
+    cs: 'Indický trup',
+    en: 'Indian hull',
+    descCs: 'Třetí Marie — María de las Nieves pro Indický oceán: zlatá loď nedokončených zázraků; trasa Ekam → Boa Esperança → návrat.',
+    descEn: 'The third Mary — María de las Nieves for the Indian Ocean: the golden ship of unfinished miracles; route Ekam → Boa Esperança → the return.',
     active: false,
   },
 ];
@@ -343,7 +355,7 @@ export default function MariaDelCaminoPage() {
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
                     {[
-                      { icon: Users, value: cs ? '2 × ~50' : '2 × ~50', labelCs: 'Poutníků na trup', labelEn: 'Pilgrims per hull' },
+                      { icon: Users, value: cs ? '3 × ~50' : '3 × ~50', labelCs: 'Poutníků na trup', labelEn: 'Pilgrims per hull' },
                       { icon: Sailboat, value: cs ? '8. bod' : '8th point', labelCs: 'Uzel', labelEn: 'Node' },
                       { icon: Sparkles, value: cs ? 'Příprava' : 'Preparation', labelCs: 'Stav', labelEn: 'Status' },
                     ].map((signal) => {
@@ -396,7 +408,7 @@ export default function MariaDelCaminoPage() {
           </div>
         </motion.section>
 
-        {/* ═══ FLEET — TWO SHIPS ═══ */}
+        {/* ═══ FLEET — TRES MARIAS ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -410,12 +422,12 @@ export default function MariaDelCaminoPage() {
               {Copy.fleetTitle[cs ? 'cs' : 'en']}
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
-            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
               <div className="overflow-hidden">
                 <img
                   src="/images/maria-del-camino/atlantic.webp"
-                  alt="María del Camino — atlantická plachetnice pod zlatými plachtami"
+                  alt="Santa María la Mayor — atlantická plachetnice pod zlatými plachtami"
                   width={1280}
                   height={720}
                   loading="lazy"
@@ -424,7 +436,7 @@ export default function MariaDelCaminoPage() {
                 />
               </div>
               <div className="p-5">
-                <h3 className="font-semibold text-white mb-1">María del Camino <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : 'Atlantic'}</span></h3>
+                <h3 className="font-semibold text-white mb-1">Santa María la Mayor <span className="text-xs text-gray-500 font-normal">· {cs ? 'Atlantik' : 'Atlantic'}</span></h3>
                 <p className="text-sm text-gray-400">{Copy.fleetAtlantic[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
@@ -432,7 +444,7 @@ export default function MariaDelCaminoPage() {
               <div className="overflow-hidden">
                 <img
                   src="/images/maria-del-camino/pacific.webp"
-                  alt="María del Pacífico — solární katamarán se svítícími plachtami a vieirou na přídi"
+                  alt="Nossa Senhora de Fátima — solární katamarán se svítícími plachtami a vieirou na přídi"
                   width={1280}
                   height={720}
                   loading="lazy"
@@ -441,8 +453,25 @@ export default function MariaDelCaminoPage() {
                 />
               </div>
               <div className="p-5">
-                <h3 className="font-semibold text-white mb-1">María del Pacífico <span className="text-xs text-gray-500 font-normal">· Pacifik</span></h3>
+                <h3 className="font-semibold text-white mb-1">Nossa Senhora de Fátima <span className="text-xs text-gray-500 font-normal">· Pacifik</span></h3>
                 <p className="text-sm text-gray-400">{Copy.fleetPacific[cs ? 'cs' : 'en']}</p>
+              </div>
+            </div>
+            <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+              <div className="overflow-hidden">
+                <img
+                  src="/images/maria-del-camino/indian.webp"
+                  alt="María de las Nieves — zlatá loď Indického oceánu"
+                  width={1280}
+                  height={720}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full object-cover"
+                />
+              </div>
+              <div className="p-5">
+                <h3 className="font-semibold text-white mb-1">María de las Nieves <span className="text-xs text-gray-500 font-normal">· {cs ? 'Indický oceán' : 'Indian Ocean'}</span></h3>
+                <p className="text-sm text-gray-400">{Copy.fleetIndian[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
           </div>

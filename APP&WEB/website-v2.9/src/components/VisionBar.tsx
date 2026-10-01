@@ -81,7 +81,7 @@ const VISIONS = [
     href: '/terranova/maria-del-camino',
     icon: Sailboat,
     label: 'María del Camino',
-    desc: 'Plující uzel — dvě lodě na solárních plachtách (Atlantik × Pacifik), které spojují všechny body přes oceány.',
+    desc: 'Plující uzel — flotila Tres Marias na solárních plachtách (Atlantik × Pacifik × Indický oceán), která spojuje všechny body přes oceány.',
     rc: '14, 165, 233', // ocean blue
     accent: 'text-sky-300',
   },

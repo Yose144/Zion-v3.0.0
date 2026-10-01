@@ -281,8 +281,8 @@
    "en": "The Sailing Node · Ship of the Way"
   },
   "tagline": {
-   "cs": "Osmý bod L5 není bod, ale cesta — dvě lodě pro dva oceány: atlantická plachetnice María del Camino a pacifický solární katamarán María del Pacífico. Tam, kde Camino končil u moře, plují dál.",
-   "en": "The eighth L5 point is not a point but a way — two ships for two oceans: the Atlantic sailing ship María del Camino and the Pacific solar catamaran María del Pacífico. Where the Camino ended at the sea, they sail on."
+   "cs": "Osmý bod L5 není bod, ale cesta — flotila Tres Marias: tři lodě nesoucí tři mariánská zjevení kolem tří oceánů. Santa María la Mayor (Atlantik), Nossa Senhora de Fátima (Pacifik), María de las Nieves (Indický oceán). Tam, kde Camino končil u moře, plují dál.",
+   "en": "The eighth L5 point is not a point but a way — the Tres Marias fleet: three ships carrying the three Marian apparitions across three oceans. Santa María la Mayor (Atlantic), Nossa Senhora de Fátima (Pacific), María de las Nieves (Indian Ocean). Where the Camino ended at the sea, they sail on."
   },
   "location": {
    "cs": "Světové oceány · domovský přístav Galicie",
@@ -293,9 +293,10 @@
   "lon": -8.65,
   "accent": "#0ea5e9",
   "tags": [
-   "Sea Camino",
-   "Solar Sails",
-   "Mobile Node"
+   "Sailing node",
+   "Tres Marias",
+   "Solar sails",
+   "Great Route"
   ],
   "renderImg": "maria-del-camino/render.webp",
   "boardImg": "maria-del-camino/board.webp",
