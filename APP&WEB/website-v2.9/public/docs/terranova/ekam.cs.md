@@ -5,6 +5,12 @@
 
 ---
 
+## Věnování — In memoriam
+
+*Pro Oneness rodinu a fyzickou rodinu Sri Bhagavana — navždy v našich srdcích, v našem vědomí, v naší rodině Jednoty. Na památku zesnulého Sri Kalkiho — zvláště pro Sri Krishnajiho, Preetaji, Sri Ammi a Lokka. Cesta pokračuje. Společně.*
+
+---
+
 ## Záměr
 
 **Ekam** je desátý bod vrstvy L5 Free World — a jediný, který fyzicky existuje. Chrám Jednoty u vesnice Varadaiahpalem v indické Andhrě Pradesh byl otevřen **22. dubna 2008** jako Oneness Temple (později Temple of the Supreme Light, od 2018 **Ekam** — sanskrt *„Jedno"*). Ne stavíme ho a ne vlastníme — **navazujeme vztah** s místem, které ZION síti dalo jméno: proof-of-work mainnetu se jmenuje `ekam_deeksha` a genesis věta sítě zní *„Om Namo Hiranyagarbha & Ekam Deeksha !"*.

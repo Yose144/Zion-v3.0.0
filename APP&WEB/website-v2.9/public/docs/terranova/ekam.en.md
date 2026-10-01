@@ -5,6 +5,12 @@
 
 ---
 
+## Dedication — In memoriam
+
+*For the Oneness Family and the physical family of Sri Bhagavan — forever in our hearts, in our consciousness, in the Oneness Family. In memory of the late Sri Kalki — especially for Sri Krishnaji, Preetaji, Sri Amma and Lokku. The journey continues. Together.*
+
+---
+
 ## Intent
 
 **Ekam** is the tenth point of the L5 Free World layer — and the only one that physically exists. The Temple of Oneness near the village of Varadaiahpalem in Andhra Pradesh, India opened on **22 April 2008** as the Oneness Temple (later the Temple of the Supreme Light; since 2018 **Ekam** — Sanskrit for "One"). We do not build it and we do not own it — **we form a relationship** with the place that gave the ZION network its name: the mainnet proof-of-work is called `ekam_deeksha` and the network's genesis words read *"Om Namo Hiranyagarbha & Ekam Deeksha !"*.
