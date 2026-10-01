@@ -45,6 +45,14 @@ Cesta, která se jmenuje po třech Mariích — a která nese světlo tam, kam �
 
 ---
 
+## Hranice epilogu
+
+- **Celá scéna je MÝTUS.** Orchidej vtisknutá do credencialu, lucerna na palubě a dítě u přídě jsou literární obrazy — nic z toho se nestalo a žádná loď dnes nepluje.
+- **Repozitářový fakt:** program `maria-del-camino` je živý registry záznam (`planning`, 300M ZION rezerva) a koncept [`L5MariaDelCamino.md`](../../../L5MariaDelCamino.md); jeho existence je ověřitelná, jeho obsah vypráví směr, ne výsledek.
+- **Tři zjevení: ŽIVÉ jako tradice, MÝTUS jako událost této knihy** — viz [kapitola 11](./11-Kotva-Pravdy-a-Hranice.md).
+
+---
+
 *„Moře nekončí. Převléká se — a kdo se naučí číst jeho roucho, naučí se číst i cestu, která ho nese domů."*
 
 *Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*
