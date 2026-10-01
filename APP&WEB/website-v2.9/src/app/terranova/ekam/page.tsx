@@ -37,6 +37,20 @@ const Copy = {
     en: `"We build the other nodes — this one teaches us how."`,
   },
   locationLine: { cs: `Varadaiahpalem · distrikt Tirupati, Andhra Pradesh, Indie`, en: `Varadaiahpalem · Tirupati district, Andhra Pradesh, India` },
+  dedicationTitle: { cs: `Věnování`, en: `Dedication` },
+  dedicationSubtitle: { cs: `In memoriam · 29. 9. 2026`, en: `In memoriam · 29.09.2026` },
+  dedicationBody: {
+    cs: `Pro Oneness rodinu a fyzickou rodinu Sri Bhagavana — navždy v našich srdcích, v našem vědomí, v naší rodině Jednoty. Na památku zesnulého Sri Kalkiho.`,
+    en: `For the Oneness Family and the physical family of Sri Bhagavan — forever in our hearts, in our consciousness, in the Oneness Family. In memory of the late Sri Kalki.`,
+  },
+  dedicationNames: {
+    cs: `Zvláště pro Sri Krishnajiho, Preetaji, Sri Ammi a Lokka.`,
+    en: `Especially for Sri Krishnaji, Preetaji, Sri Amma and Lokku.`,
+  },
+  dedicationFoot: {
+    cs: `Cesta pokračuje. Společně.`,
+    en: `The journey continues. Together.`,
+  },
   introTitle: { cs: `Desátý uzel — jediný, který už stojí`, en: `The tenth node — the only one already standing` },
   introBody: {
     cs: `Ekam je desátý bod L5 Free World — a jediný, který fyzicky existuje. Chrám Jednoty u vesnice Varadaiahpalem byl otevřen 22. dubna 2008 jako Oneness Temple; dnes nese jméno Ekam — sanskrtské „Jedno". Bílý mramor na platformě 130×106 m, výška 33 m, vodní plochy jako „ostrov", bezsloupová meditační hala ~2 090 m² a na nejvyšším podlaží Zlatá koule. Ekam je vrchol Velké cesty — iniciace dokončení — a zároveň předloha: živý důkaz, že architektura navržená pro vědomí se dá postavit. A navazuje přímo na řetězec: proof-of-work ZIONu se jmenuje ekam_deeksha a genesis věta sítě zní „Om Namo Hiranyagarbha & Ekam Deeksha!".`,
@@ -352,6 +366,31 @@ export default function EkamPage() {
             </div>
           </div>
         </motion.header>
+
+        {/* ═══ DEDICATION ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10 text-center" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+            <div className="relative z-10">
+              <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-amber-200/30 bg-amber-200/10">
+                <Heart className="h-5 w-5 text-amber-200" />
+              </div>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.dedicationSubtitle[cs ? 'cs' : 'en']}</p>
+              <h2 className="mt-3 text-2xl md:text-3xl font-semibold text-gradient">{Copy.dedicationTitle[cs ? 'cs' : 'en']}</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-gray-300 leading-relaxed">
+                {Copy.dedicationBody[cs ? 'cs' : 'en']}
+              </p>
+              <p className="mx-auto mt-3 max-w-2xl text-amber-200/90 font-medium">
+                {Copy.dedicationNames[cs ? 'cs' : 'en']}
+              </p>
+              <p className="mt-6 text-sm italic text-white/60">{Copy.dedicationFoot[cs ? 'cs' : 'en']}</p>
+            </div>
+          </div>
+        </motion.section>
 
         {/* ═══ INTRO ═══ */}
         <motion.section
