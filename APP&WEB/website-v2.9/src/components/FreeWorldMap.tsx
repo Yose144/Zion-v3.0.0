@@ -8,9 +8,10 @@
  * `content-visibility:auto` / `whileInView` page sections before they are
  * on-screen leaves Leaflet with a zero-sized viewport and blank tiles.
  * Styled with the Esri Dark Gray Canvas basemap and glowing div-icon
- * markers coloured by community status. The six founding communities are
- * in preparation until 2028 — construction starts no earlier than 2029;
- * vision-stage sites (Uluru) carry no allocation yet.
+ * markers coloured by community status. The six founding communities plus
+ * the vessel node are in preparation until 2028 — construction starts no
+ * earlier than 2029; vision-stage sites (Uluru, Boa Esperança) carry no
+ * allocation and Ekam is already built.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,11 +26,20 @@ const copy = {
     development: { cs: 'Aktivní rozvoj', en: 'Active development' },
     preparation: { cs: 'V přípravě', en: 'In preparation' },
     vision: { cs: 'Plánováno', en: 'Planned' },
+    built: { cs: 'Postaveno', en: 'Built' },
   },
   legendTitle: { cs: 'Stav komunit', en: 'Community status' },
   legendPrep: {
     cs: 'Financované komunity — příprava do 2028 · stavba od 2029',
     en: 'Funded communities — preparation until 2028 · construction from 2029',
+  },
+  legendVision: {
+    cs: 'Vizní uzly — vztah, ne stavba',
+    en: 'Vision nodes — relationship, not construction',
+  },
+  legendBuilt: {
+    cs: 'Postaveno — předloha sítě',
+    en: 'Built — the network template',
   },
   detail: { cs: 'Otevřít stránku komunity →', en: 'Open community page →' },
   communityCount: {
@@ -216,6 +226,14 @@ export default function FreeWorldMap() {
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.preparation }} />
           {copy.legendPrep[cs ? 'cs' : 'en']}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.vision }} />
+          {copy.legendVision[cs ? 'cs' : 'en']}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: SITE_STATUS_COLOR.built }} />
+          {copy.legendBuilt[cs ? 'cs' : 'en']}
         </span>
         <span className="ml-auto text-gray-500">{copy.communityCount[cs ? 'cs' : 'en']}</span>
       </div>
