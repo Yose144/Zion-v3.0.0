@@ -49,8 +49,8 @@ const Copy = {
   turnTitle: { cs: `Scháziště flotily — obrat na švu oceánů`, en: `The fleet rendezvous — the turn on the seam of oceans` },
   turnSubtitle: { cs: `Druhý šev světa`, en: `The second seam of the world` },
   turnBody: {
-    cs: `LUMI je šev na souši — Mys je šev na vodě. Atlantická María del Camino sem pluje z jihu, pacifická María del Pacífico z Indie; potkají se tam, kde se potkávají oceány. Je to jediné místo Velké cesty, kde se oba trupy střetnou bez Panamy — a odkud se cesta otáčí domů: přes St Helenu a Azory zpět do Pontevedry. Ceremonie obratu: razítko credencialu „bouře přejmenována".`,
-    en: `LUMI is the seam on land — the Cape is the seam at sea. The Atlantic María del Camino sails up from the south, the Pacific María del Pacífico down from India; they meet where the oceans meet. It is the only place on the Great Route where the two hulls can rendezvous without Panama — and where the journey turns homeward: via St Helena and the Azores back to Pontevedra. The turning ceremony: the credential stamp "the storm renamed".`,
+    cs: `LUMI je šev na souši — Mys je šev na vodě. Atlantická Santa María la Mayor sem pluje z jihu, indickooceánská María de las Nieves z Indie; potkají se tam, kde se potkávají oceány. Je to jediné místo Velké cesty, kde se dva trupy střetnou bez Panamy — a odkud se cesta otáčí domů: přes St Helenu a Azory zpět do Pontevedry. Ceremonie obratu: razítko credencialu „bouře přejmenována".`,
+    en: `LUMI is the seam on land — the Cape is the seam at sea. The Atlantic Santa María la Mayor sails up from the south, the Indian-ocean María de las Nieves down from India; they meet where the oceans meet. It is the only place on the Great Route where two hulls can rendezvous without Panama — and where the journey turns homeward: via St Helena and the Azores back to Pontevedra. The turning ceremony: the credential stamp "the storm renamed".`,
   },
   turnPoints: {
     cs: [`Jediné setkání obou trupů na vodě — bez Panamy`, `Agulhas — místo, kde jehla ukazovala pravý sever`, `Obrat domů — Cape → St Helena → Azory → Pontevedra`],

@@ -247,8 +247,8 @@ const getCommunities = (cs: boolean) => [
     location: cs ? 'Světové oceány · domovský přístav Galicie' : 'World oceans · home port Galicia',
     status: 'preparation' as const,
     desc: cs
-      ? 'Osmý bod sítě — plující uzel, flotila dvou lodí: atlantická plachetnice María del Camino a pacifický solární katamarán María del Pacífico. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.'
-      : 'The eighth point of the network — a sailing node, a fleet of two vessels: the Atlantic tall ship María del Camino and the Pacific solar catamaran María del Pacífico. ~50 pilgrims per hull connecting every node of the network on a sea Camino.',
+      ? 'Osmý bod sítě — plující uzel, flotila Tres Marias: atlantická plachetnice Santa María la Mayor, pacifický solární katamarán Nossa Senhora de Fátima a indickooceánská María de las Nieves. ~50 poutníků na trup spojuje všechny uzly sítě po mořském Caminu.'
+      : 'The eighth point of the network — a sailing node, the Tres Marias fleet: the Atlantic tall ship Santa María la Mayor, the Pacific solar catamaran Nossa Senhora de Fátima and the Indian-ocean María de las Nieves. ~50 pilgrims per hull connecting every node of the network on a sea Camino.',
     tags: cs ? ['Mořské Camino', 'Solární plachty', 'Mobilní uzel'] : ['Sea Camino', 'Solar Sails', 'Mobile Node'],
     href: '/terranova/maria-del-camino',
     cover: '/images/maria-del-camino/hero.webp',

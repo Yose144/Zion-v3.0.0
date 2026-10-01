@@ -252,9 +252,9 @@ const PROJECTS: ProjectCardData[] = [
     statusCs: 'V přípravě',
     statusEn: 'In preparation',
     descriptionCs:
-      'Osmý bod L5 Free World — cesta, ne místo. Dvě lodě pro dva oceány: atlantická plachetnice María del Camino a pacifický solární katamarán María del Pacífico, ~50 poutníků na trup. Tam, kde cesta starého světa u Finisterry končila, ona začíná.',
+      'Osmý bod L5 Free World — cesta, ne místo. Flotila Tres Marias — tři lodě nesoucí tři mariánská zjevení kolem tří oceánů, ~50 poutníků na trup. Tam, kde cesta starého světa u Finisterry končila, ona začíná.',
     descriptionEn:
-      'The eighth point of L5 Free World — a way, not a place. Two ships for two oceans: the Atlantic tall ship María del Camino and the Pacific solar catamaran María del Pacífico, ~50 pilgrims per hull. Where the old world’s road ended at Finisterre, this one begins.',
+      'The eighth point of L5 Free World — a way, not a place. The Tres Marias fleet — three ships carrying the three Marian apparitions across three oceans, ~50 pilgrims per hull. Where the old world’s road ended at Finisterre, this one begins.',
     features: [
       { icon: Sailboat, labelCs: 'Solární plachty', labelEn: 'Solar sails' },
       { icon: Waves, labelCs: 'Soběstačnost na moři', labelEn: 'Self-sufficiency at sea' },

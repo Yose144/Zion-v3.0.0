@@ -98,7 +98,7 @@ export const NOVA_ZEME_PROJECTS = [
     location: 'Světové oceány · Galicie',
     color: '#0ea5e9',
     status: 'Preparation',
-    desc: 'Osmý bod — plující uzel: dvě lodě na solárních plachtách (María del Camino × María del Pacífico) spojující všechny uzly po mořském Caminu.',
+    desc: 'Osmý bod — plující uzel: flotila Tres Marias (Santa María la Mayor × Nossa Senhora de Fátima × María de las Nieves) na solárních plachtách spojující všechny uzly po mořském Caminu.',
     href: 'https://app.zionterranova.com/terranova/maria-del-camino',
     lat: 42.4,
     lon: -8.7,
