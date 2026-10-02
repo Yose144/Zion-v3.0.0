@@ -45,13 +45,24 @@ The programme carries the name **María del Camino** — *Mary of the Way*, the 
 
 ## The Great Route — circumnavigation as initiation
 
-The route is not a service loop — it is a journey where **each node is an initiation**: Pontevedra (the pilgrim) → Genesis (earth) → Dharma/La Palma (silence) → LUMI (the bridge) → Te Pīko Ora (the ocean) → Uluru (memory) → Bodhi Lanka (akasha) → **Ekam (completion)** → the Indian Ocean → **Boa Esperança (the turn/hope)** → return to Pontevedra → Bohemia (governance at home).
+The route is not a service loop — it is a journey where **each node is an initiation**. Twelve stops, three oceans, three ships — and a return as someone else. The baton passes at the seams of the world: the Atlantic Mary hands off to the Pacific at LUMI, the Pacific to the Indian at Ekam, and the Indian meets the Atlantic again at the Cape.
 
-**Atlantic (Santa María la Mayor):** the prologue is the sea Camino itself — Finisterre → Pontevedra → Fátima → the Algarve → La Palma → the Atlantic crossing → LUMI's Caribbean shore.
+| # | Stop | Initiation | Ship | What happens |
+|---|------|-----------|------|-------------|
+| 0 | **Pontevedra · Galicia** | The Pilgrim | I | Departure from the home port — the María Mayor basilica, credencials, the flame carried from Finisterre |
+| 1 | **Genesis Garden · Algarve** | Earth | I | Hands in the soil — work in the garden, the source, the seeds |
+| 2 | **Dharma Temple · La Palma** | Silence | I | The island of the third apparition — temple practice under the network's patroness |
+| 3 | **LUMI · Nová Amerika** | The Bridge | I→II | The isthmus overland (Camino de Cruces) — the handoff between oceans, crew and cargo exchange |
+| 4 | **Te Pīko Ora · Raiatea** | Ocean | II | The wayfinding school — star navigation, the wa'a tradition |
+| 5 | **Uluru · Australia** | Memory | II | Coastal visits on the custodians' terms — listening to the songlines |
+| 6 | **Bodhi Lanka · Sri Lanka** | Akasha | II | Service and archive — the knowledge node before the final hop |
+| 7 | **Ekam · India** | Completion | II→III | Anchorage at Chennai, overland to the Oneness campus — satori at the only built node |
+| 8 | **Indian Ocean** | The Return | III | María de las Nieves takes the pilgrims aboard — the monsoon route where the journey turns |
+| 9 | **Boa Esperança · the Cape** | The Turn | III | The fleet rendezvous on the seam of oceans — the storm renamed hope |
+| 10 | **St Helena → Azores → Pontevedra** | Integration | III→I | The homeward arc — the oceanic compostela, a complete three-seas credencial |
+| 11 | **Golden Republic · Bohemia** | Governance | home | The last stamp in the heartland — after enlightenment, chop wood, carry water |
 
-**Pacific (Nossa Senhora de Fátima):** LUMI's Pacific shore → Te Pīko Ora (the wayfinding school) → Aboriginal Australia (custodial visits on their terms) → Bodhi Lanka → Chennai → **Ekam** overland.
-
-**Indian Ocean (María de las Nieves):** Ekam → the Indian Ocean → **Boa Esperança** (the meeting point with the Atlantic María) → St Helena → the Azores → Pontevedra. The ship of unfinished miracles carries the pilgrims home — because satori is proven by returning, not by leaving.
+*The ship of unfinished miracles carries the pilgrims home — because satori is proven by returning, not by leaving.*
 
 ## Development phases
 

@@ -45,13 +45,24 @@ Program nese jméno **María del Camino** — *Marie Cesty*, mariánské svatyn�
 
 ## Velká cesta — obeplutí jako iniciace
 
-Trasa není servisní okruh — je to cesta, kde **každý uzel je jedna iniciace**: Pontevedra (poutník) → Genesis (země) → Dharma/La Palma (ticho) → LUMI (most) → Te Pīko Ora (oceán) → Uluru (paměť) → Bodhi Lanka (akáša) → **Ekam (dokončení)** → Indický oceán → **Boa Esperança (obrat/naděje)** → návrat Pontevedra → Bohemia (governance doma).
+Trasa není servisní okruh — je to cesta, kde **každý uzel je jedna iniciace**. Dvanáct zastávek, tři oceány, tři lodě — a návrat jiným člověkem. Štafeta se předává na švech světa: atlantická Marie podává pacifické v LUMI, pacifická indické u Ekamu, indická se vrací s atlantickou na Mysu.
 
-**Atlantik (Santa María la Mayor):** prologem je samotné mořské Camino — Finisterre → Pontevedra → Fátima → Algarve → La Palma → atlantická přeplavba → karibský břeh LUMI.
+| # | Zastávka | Iniciace | Loď | Co se děje |
+|---|----------|----------|-----|-----------|
+| 0 | **Pontevedra · Galicie** | Poutník | I | Vyplutí z domácího přístavu — bazilika María Mayor, credencialy, plamen z Finisterra |
+| 1 | **Genesis Garden · Algarve** | Země | I | Ruce v hlíně — práce v zahradě, zdroj, semínka |
+| 2 | **Dharma Temple · La Palma** | Ticho | I | Ostrov třetího zjevení — chrámová praxe pod patronkou sítě |
+| 3 | **LUMI · Nová Amerika** | Most | I→II | Šíje po souši (Camino de Cruces) — předání mezi oceány, výměna posádky i nákladu |
+| 4 | **Te Pīko Ora · Raiatea** | Oceán | II | Wayfinding škola — hvězdná navigace, wa'a tradice |
+| 5 | **Uluru · Austrálie** | Paměť | II | Pobřežní návštěvy na podmínky custodiánů — naslouchání songlines |
+| 6 | **Bodhi Lanka · Srí Lanka** | Akáša | II | Služba a archiv — znalostní uzel před posledním skokem |
+| 7 | **Ekam · Indie** | Dokončení | II→III | Kotviště Chennai, po souši na kampus Oneness — satori na jediném postaveném uzlu |
+| 8 | **Indický oceán** | Návrat | III | María de las Nieves přebírá — monzunová trasa, kde cesta vrcholí obratem |
+| 9 | **Boa Esperança · Mys** | Obrat | III | Scháziště flotily na švu oceánů — bouře přejmenována na naději |
+| 10 | **St Helena → Azory → Pontevedra** | Integrace | III→I | Návratový oblouk — oceánská compostela, plný credencial tří moří |
+| 11 | **Zlatá republika · Bohemia** | Governance | domů | Poslední razítko v srdci — po osvícení sekat dříví, nést vodu |
 
-**Pacifik (Nossa Senhora de Fátima):** LUMI pacifický břeh → Te Pīko Ora (wayfinding škola) → domorodá Austrálie (návštěva custodiánských komunit na jejich podmínky) → Bodhi Lanka → Chennai → **Ekam** po souši.
-
-**Indický oceán (María de las Nieves):** Ekam → Indický oceán → **Boa Esperança** (scháziště s atlantickou Marií) → St Helena → Azory → Pontevedra. Loď nedokončených zázraků nese poutníky domů — protože satori se dokazuje návratem, ne odchodem.
+*Loď nedokončených zázraků nese poutníky domů — protože satori se dokazuje návratem, ne odchodem.*
 
 ## Fáze rozvoje
 

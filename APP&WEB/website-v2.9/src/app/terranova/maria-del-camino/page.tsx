@@ -63,6 +63,12 @@ const Copy = {
     cs: `Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na švech světa: na šíji Amerik (LUMI — atlantická × pacifická) a na švu oceánů u Mysu dobré naděje (Boa Esperança — atlantická × indická). Credencial sbírá razítka „tří moří".`,
     en: `The three Marys do not meet mid-ocean — their worlds touch at the seams of the world: on the isthmus of the Americas (LUMI — Atlantic × Pacific) and on the ocean seam at the Cape of Good Hope (Boa Esperança — Atlantic × Indian). The credencial collects the "three seas" stamps.`,
   },
+  routeTitle: { cs: `Velká cesta — obeplutí světa`, en: `The Great Route — around the world` },
+  routeSubtitle: { cs: `Každý uzel = jedna iniciace · credencial tří moří`, en: `Every node is an initiation · the three-seas credencial` },
+  routeLead: {
+    cs: `Trasa není servisní okruh — je to cesta, kterou si poutník vydobude. Dvanáct zastávek, tři oceány, tři lodě — a návrat jiným člověkem. Štafeta se předává na švech světa: atlantická Marie podává pacifické v LUMI, pacifická indické u Ekamu, indická se vrací s atlantickou na Mysu.`,
+    en: `The route is no service loop — it is a journey the pilgrim earns. Twelve stops, three oceans, three ships — and a return as someone else. The baton passes at the seams of the world: the Atlantic Mary hands off to the Pacific at LUMI, the Pacific to the Indian at Ekam, and the Indian meets the Atlantic again at the Cape.`,
+  },
   featuresTitle: { cs: `Co plavidlo drží`, en: `What the vessel holds` },
   featuresSubtitle: { cs: `Trup & posádka`, en: `Hull & crew` },
   caminoTitle: { cs: `Mořské Camino — cesta jako prolog`, en: `The Sea Camino — the way as prologue` },
@@ -252,6 +258,100 @@ const PHASES = [
     active: false,
   },
 ];
+
+const ROUTE = [
+  {
+    num: '0',
+    hull: 'I',
+    stop: { cs: 'Pontevedra · Galicie', en: 'Pontevedra · Galicia' },
+    initiation: { cs: 'Poutník', en: 'The Pilgrim' },
+    desc: { cs: 'Vyplutí z domácího přístavu — bazilika Santa María la Mayor, credencialy, plamen z Finisterra.', en: 'Departure from the home port — the basilica of Santa María la Mayor, the credencial, the flame carried from Finisterre.' },
+  },
+  {
+    num: '1',
+    hull: 'I',
+    stop: { cs: 'Genesis Garden · Algarve', en: 'Genesis Garden · Algarve' },
+    initiation: { cs: 'Země', en: 'Earth' },
+    desc: { cs: 'Ruce v hlíně — první iniciace je práce v zahradě, zdroj vody a semínka.', en: 'Hands in the soil — the first initiation is work in the garden, the source and the seeds.' },
+  },
+  {
+    num: '2',
+    hull: 'I',
+    stop: { cs: 'Dharma Temple · La Palma', en: 'Dharma Temple · La Palma' },
+    initiation: { cs: 'Ticho', en: 'Silence' },
+    desc: { cs: 'Ostrov třetího zjevení — chrámová praxe pod patronkou sítě, sníh, který nepadá, ale může.', en: 'The island of the third apparition — temple practice under the network’s patroness; the snow that never falls, yet may.' },
+  },
+  {
+    num: '3',
+    hull: 'I→II',
+    stop: { cs: 'LUMI · Nová Amerika', en: 'LUMI · Nová Amerika' },
+    initiation: { cs: 'Most', en: 'The Bridge' },
+    desc: { cs: 'Atlantik předává Pacifiku — přechod šíje po souši (Camino de Cruces precedens); posádka i náklad se přelévají mezi loděmi.', en: 'The Atlantic hands off to the Pacific — the isthmus crossed overland (the Camino de Cruces precedent); crew and cargo pour between the ships.' },
+  },
+  {
+    num: '4',
+    hull: 'II',
+    stop: { cs: 'Te Pīko Ora · Raiatea', en: 'Te Pīko Ora · Raiatea' },
+    initiation: { cs: 'Oceán', en: 'Ocean' },
+    desc: { cs: 'Wayfinding škola — hvězdná navigace, wa’a tradice, legy plavené bez satelitů.', en: 'The wayfinding school — star navigation, the wa’a tradition, legs sailed without satellites.' },
+  },
+  {
+    num: '5',
+    hull: 'II',
+    stop: { cs: 'Uluru · Austrálie', en: 'Uluru · Australia' },
+    initiation: { cs: 'Paměť', en: 'Memory' },
+    desc: { cs: 'Pobřežní návštěvy na podmínky custodiánů — naslouchání nejstarším songlines planety.', en: 'Coastal visits on the custodians’ terms — listening to the planet’s oldest songlines.' },
+  },
+  {
+    num: '6',
+    hull: 'II',
+    stop: { cs: 'Bodhi Lanka · Srí Lanka', en: 'Bodhi Lanka · Sri Lanka' },
+    initiation: { cs: 'Akáša', en: 'Akasha' },
+    desc: { cs: 'Služba a archiv — znalostní uzel před posledním skokem.', en: 'Service and archive — the knowledge node before the final hop.' },
+  },
+  {
+    num: '7',
+    hull: 'II→III',
+    stop: { cs: 'Ekam · Indie', en: 'Ekam · India' },
+    initiation: { cs: 'Dokončení', en: 'Completion' },
+    desc: { cs: 'Loď kotví v Chennai, poutníci pokračují po souši na kampus Oneness — satori na jediném postaveném uzlu.', en: 'The ship anchors off Chennai; pilgrims continue overland to the Oneness campus — satori at the only built node.' },
+  },
+  {
+    num: '8',
+    hull: 'III',
+    stop: { cs: 'Indický oceán', en: 'Indian Ocean' },
+    initiation: { cs: 'Návrat', en: 'The Return' },
+    desc: { cs: 'María de las Nieves přebírá poutníky — monzunová trasa přes oceán, kde cesta vrcholí obratem.', en: 'María de las Nieves takes the pilgrims aboard — the monsoon route across the ocean where the journey turns.' },
+  },
+  {
+    num: '9',
+    hull: 'III',
+    stop: { cs: 'Boa Esperança · Mys', en: 'Boa Esperança · the Cape' },
+    initiation: { cs: 'Obrat', en: 'The Turn' },
+    desc: { cs: 'Scháziště flotily na švu oceánů — bouře se přejmenovává na naději; razítko credencialu „bouře přejmenována".', en: 'The fleet rendezvous on the seam of oceans — the storm renamed hope; the credencial stamp “the storm renamed”.' },
+  },
+  {
+    num: '10',
+    hull: 'III→I',
+    stop: { cs: 'St Helena → Azory → Pontevedra', en: 'St Helena → Azores → Pontevedra' },
+    initiation: { cs: 'Integrace', en: 'Integration' },
+    desc: { cs: 'Návratový oblouk Atlantikem — oceánská compostela a plný credencial tří moří.', en: 'The homeward arc across the Atlantic — the oceanic compostela and a complete three-seas credencial.' },
+  },
+  {
+    num: '11',
+    hull: 'home',
+    stop: { cs: 'Zlatá republika · Bohemia', en: 'Golden Republic · Bohemia' },
+    initiation: { cs: 'Governance', en: 'Governance' },
+    desc: { cs: 'Poslední razítko doma v srdci — satori se dokazuje návratem: po osvícení sekat dříví, nést vodu.', en: 'The last stamp at home in the heartland — satori is proven by returning: after enlightenment, chop wood, carry water.' },
+  },
+];
+
+const HULL_META: Record<string, { label: { cs: string; en: string }; rc: string; text: string }> = {
+  I: { label: { cs: 'Santa María la Mayor', en: 'Santa María la Mayor' }, rc: '239, 68, 68', text: 'text-red-300' },
+  II: { label: { cs: 'Nossa Senhora de Fátima', en: 'Nossa Senhora de Fátima' }, rc: '14, 165, 233', text: 'text-sky-300' },
+  III: { label: { cs: 'María de las Nieves', en: 'María de las Nieves' }, rc: '245, 222, 130', text: 'text-amber-200' },
+  home: { label: { cs: 'Návrat domů', en: 'The way home' }, rc: '168, 85, 247', text: 'text-purple-300' },
+};
 
 const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
   { label: 'ZION L1 Node', icon: Network },
@@ -481,6 +581,59 @@ export default function MariaDelCaminoPage() {
               <span className="text-xs uppercase tracking-widest text-gray-500">LUMI · {cs ? 'scháziště' : 'meeting point'}</span>
             </div>
             <p className="text-sm text-gray-300">{Copy.fleetMeet[cs ? 'cs' : 'en']}</p>
+          </div>
+        </motion.section>
+
+        {/* ═══ THE GREAT ROUTE ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '14, 165, 233' } as React.CSSProperties}>
+            <div className="mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.routeSubtitle[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
+                <Compass className="h-7 w-7 text-sky-400" />
+                {Copy.routeTitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <p className="text-gray-300 leading-relaxed mb-8">
+              {Copy.routeLead[cs ? 'cs' : 'en']}
+            </p>
+            <div className="space-y-3">
+              {ROUTE.map((leg) => {
+                const hulls = leg.hull.split('→');
+                const meta = HULL_META[hulls[hulls.length - 1]] ?? HULL_META.I;
+                return (
+                  <div key={leg.num} className="zion-rainbow-sub p-4 flex gap-4 items-start" style={{ '--rc': meta.rc } as React.CSSProperties}>
+                    <div className="shrink-0 w-9 h-9 rounded-full border border-white/15 bg-white/5 flex items-center justify-center font-bold text-sm text-white/80">
+                      {leg.num}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <h3 className="font-semibold text-white">{leg.stop[cs ? 'cs' : 'en']}</h3>
+                        <span className="text-xs uppercase tracking-widest text-gray-500">
+                          {cs ? 'iniciace' : 'initiation'} · {leg.initiation[cs ? 'cs' : 'en']}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-400 mt-1">{leg.desc[cs ? 'cs' : 'en']}</p>
+                    </div>
+                    <div className="hidden sm:flex shrink-0 flex-col items-end gap-1">
+                      {hulls.map((h) => {
+                        const m = HULL_META[h] ?? HULL_META.I;
+                        return (
+                          <span key={h} className={`text-[10px] uppercase tracking-widest ${m.text}`}>
+                            {m.label[cs ? 'cs' : 'en']}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </motion.section>
 
