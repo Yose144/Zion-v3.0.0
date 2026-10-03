@@ -139,6 +139,25 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
   Fix: po `changed()` číst rovnou `borrow()`, `has_changed()` jen jako
   fast-path před čekáním. Regresní test `next_job_returns_job_published_while_awaiting`.
   Po fixu: ZION stream live — stovky accepted sharů, 2 found blocky.
+- **2026-10-03 desktop-agent E2E (triple stream, TUI spawn):** `npm run tui`
+  nad `~/.config/zion-desktop-agent/miner_config.json` (`tripleStream:true`,
+  `gpuCoin:"QTU"`, `cpuCoin:"VRSC"`) → spawn args `--v3-trinity` bez
+  `--no-gpu/--no-cpu`, env `/proc/<pid>/environ` ověřen:
+  `ZION_STREAM2_FORCE_COIN=QTU`, `ZION_STREAM3_FORCE_COIN=VRSC`,
+  `ZION_AUTONOMOUS=0`, `ZION_(GPU_)BACKEND=cuda`. TUI streams tabulka:
+  ZION ~4–5 MH/s (534 acc, 99.8 %) + GPU BOOST 1 `qpow-poseidon2`
+  **28 MH/s (4 QTU acc)** + CPU BOOST 2 `verushash` ~5 MH/s
+  (**22 VRSC acc, 100 %**). Celkem 37 MH/s, 99.6 %.
+- **⚠️ Feature-parity gotcha:** miner buildnutý jen s `--features gpu-cuda`
+  nemá `native-verushash` → `mine_verushash` je stub vracející `None`
+  okamžitě → Stream 3 „těží" prázdnou smyčkou a metrika ukazuje falešné
+  desítky GH/s (`batch/µs`). Agentův `prepare-rust-miner.js` builduje s
+  `native-all` — packaged binárka v `resources/zion-miner` musí být buildnutá
+  stejnými features (`public_build,auxpow,gpu-opencl,native-all,tui,gpu-cuda`).
+- **TUI (src/tui/index.js):** doplněno čtení/persist `gpuCoin`, `cpuCoin`,
+  `gpuStream2Batch`, `gpuExtGapMs` + env `ZION_STREAM2_FORCE_COIN`,
+  `ZION_STREAM3_FORCE_COIN`, `ZION_STREAM2_BATCH`, `ZION_EXT_GPU_GAP_MS` —
+  stejná semantika jako `main.js` spawn.
 
 ## TODO na 1070 Ti rigu (CUDA debug)
 
