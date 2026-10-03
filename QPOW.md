@@ -158,6 +158,24 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
   `gpuStream2Batch`, `gpuExtGapMs` + env `ZION_STREAM2_FORCE_COIN`,
   `ZION_STREAM3_FORCE_COIN`, `ZION_STREAM2_BATCH`, `ZION_EXT_GPU_GAP_MS` —
   stejná semantika jako `main.js` spawn.
+- **2026-10-03 reject stabilization + batch tuning (produkce, Edge):**
+  - `auxpow_runtime` drainoval `share_rx` až PO `wait_for_job(1s)` → share
+    čekal v kanálu ~1 s než se forwardnul upstream. Při QTU rotaci jobů
+    ~5–15 s a VRSC notifies co ~2–20 s to přímo generovalo `Invalid job id`
+    / `job not found`. Fix: drain na začátek iterace + poll timeout 100 ms
+    (`wait_for_job` se budí okamžitě přes Notify, fresh joby netrpí).
+    Deploy wt-main → sha `688d5605…`.
+  - `ZION_STREAM2_BATCH=1048576` (1M) — na sm_61 je 1M batch rychlejší než
+    auto 5.24M i solo (bench ~39–40 vs ~35 MH/s) a pod kontencí se krátké
+    QPoW kernely lépe proplétají se ZION kerneli → **QTU ~28–30 MH/s**
+    (↑ z ~24) a současně **ZION ~5.5–5.9 MH/s** (↑ z ~4). Win-win.
+  - Výsledek: 50 ext shares Accepted / 0 Rejected za ~14 min okna
+    (předtím ~8–17 % stale). Zbylé teoretické rejecty = inherentní rasa
+    (upstream job žil jen ~1.4 s — nelze napravit, jen snížit pravděpodobnost).
+  - `cpuStream3Batch` → `ZION_EXT_CPU_NONCE_COUNT` přidáno do
+    main.js + TUI (opt-in ≥100 k; 2M v configu) — kratší refresh granularity
+    pro VRSC; projeví se až po restartu Electron agenta (main.js je require'd
+    při startu, env se nedá doplnit živému spawnu).
 
 ## TODO na 1070 Ti rigu (CUDA debug)
 
