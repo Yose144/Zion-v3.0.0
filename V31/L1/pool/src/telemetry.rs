@@ -276,6 +276,33 @@ impl MinerTelemetryRegistry {
         }
     }
 
+    /// Record an external (AuxPoW) share result on a named coin stream.
+    /// Unlike `record_job_result_stream`, this does not touch the aggregate
+    /// valid/invalid totals or the ZION hashrate estimator — external shares
+    /// use different difficulty/hashrate scales.
+    pub fn record_external_share(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        coin: &str,
+        accepted: bool,
+    ) {
+        let now_s = now_unix_seconds();
+        let key = format!("{miner_id}/{worker_name}");
+        let miner = self
+            .miners
+            .entry(key)
+            .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
+        miner.touch(worker_name, "", "", now_s);
+        let stats = miner.streams.entry(coin.to_ascii_lowercase()).or_default();
+        if accepted {
+            stats.valid_shares = stats.valid_shares.saturating_add(1);
+            stats.last_share_time_s = now_s;
+        } else {
+            stats.invalid_shares = stats.invalid_shares.saturating_add(1);
+        }
+    }
+
     /// Record a block found by the miner.
     pub fn record_block_found(&mut self, miner_id: &str, worker_name: &str) {
         let now_s = now_unix_seconds();
