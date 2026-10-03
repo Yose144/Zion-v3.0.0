@@ -80,6 +80,7 @@ pub enum ExternalCoin {
     Zcash,
     PhoenixCoin,
     Keryx,
+    Quantus,
 }
 
 impl ExternalCoin {
@@ -116,6 +117,7 @@ impl ExternalCoin {
         ExternalCoin::Zcash,
         ExternalCoin::PhoenixCoin,
         ExternalCoin::Keryx,
+        ExternalCoin::Quantus,
     ];
 
     pub fn all() -> &'static [ExternalCoin] {
@@ -156,6 +158,9 @@ impl ExternalCoin {
             ExternalCoin::Zcash => "ZEC",
             ExternalCoin::PhoenixCoin => "PHX",
             ExternalCoin::Keryx => "KRX",
+            // Quantus trades as QTC, but QTC is already taken by Qubitcoin in
+            // this enum — QTU keeps ZION_STREAM*_FORCE_COIN parsing unambiguous.
+            ExternalCoin::Quantus => "QTU",
         }
     }
 
@@ -199,6 +204,7 @@ impl ExternalCoin {
             ExternalCoin::Zcash => "equihash",
             ExternalCoin::PhoenixCoin => "neoscrypt",
             ExternalCoin::Keryx => "keryxhash",
+            ExternalCoin::Quantus => "qpow-poseidon2",
         }
     }
 
@@ -336,6 +342,7 @@ impl ExternalCoin {
             ExternalCoin::Zcash => 170.0,
             ExternalCoin::PhoenixCoin => 180.0,
             ExternalCoin::Keryx => 180.0,
+            ExternalCoin::Quantus => 170.0,
             ExternalCoin::Bitcoin => 250.0,
             ExternalCoin::Neoxa => 170.0,
             _ => 0.0,
@@ -383,6 +390,10 @@ impl ExternalCoin {
             "zec" | "zcash" | "equihash" => Some(Self::Zcash),
             "phx" | "phoenixcoin" | "neoscrypt" => Some(Self::PhoenixCoin),
             "krx" | "keryx" | "keryxhash" => Some(Self::Keryx),
+            // "qtc" is intentionally NOT an alias — it resolves to Qubitcoin.
+            "quantus" | "qtu" | "qpow" | "qpow-poseidon2" | "qpowposeidon2" => {
+                Some(Self::Quantus)
+            }
             "neox" | "neoxa" => Some(Self::Neoxa),
             "btc" | "bitcoin" | "sha256d" => Some(Self::Bitcoin),
             _ => None,
@@ -421,6 +432,7 @@ impl ExternalCoin {
             ExternalCoin::Zcash => "zec.2miners.com:7070",
             ExternalCoin::PhoenixCoin => "neoscrypt.eu.mine.zpool.ca:4233",
             ExternalCoin::Keryx => "keryxhash.eu.mine.zpool.ca:4233",
+            ExternalCoin::Quantus => "quantus.qelvhash.com:4444",
             ExternalCoin::Neoxa => "neox.2miners.com:4040",
             // Bitcoin SHA-256d merge-mining is not via standard stratum pools;
             // leave empty so auxpow_runtime skips it until a real endpoint is configured.
@@ -639,6 +651,7 @@ impl CoinProfile {
             Self::new(ExternalCoin::Verus, 1000.0, 0.018, Device::Cpu),
             Self::new(ExternalCoin::Decred, 1000.0, 0.02, Device::Gpu),
             Self::new(ExternalCoin::Vertcoin, 1000.0, 0.01, Device::Gpu),
+            Self::new(ExternalCoin::Quantus, 1000.0, 0.02, Device::Gpu),
             // Pearl is intentionally disabled until the pool endpoint and kernel
             // are fully verified (see AGENTS.md ExternalCoin disabled_reason convention).
             Self::new(ExternalCoin::Pearl, 1000.0, 0.01, Device::Gpu)

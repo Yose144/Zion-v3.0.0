@@ -150,6 +150,8 @@ impl ShareForwarder {
             header_hash,
             mix_hash: mix_hash.copied(),
             solution: solution.map(|s| s.to_vec()),
+            nonce_512: None,
+            hash_512: None,
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
         };

@@ -72,7 +72,7 @@ const VERUSHASH_CU: &str = include_str!("../../csrc/cuda/verushash_kernel.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
-fn preprocess_kernel(src: &str) -> String {
+pub(crate) fn preprocess_kernel(src: &str) -> String {
     let mut out = String::new();
     // Prepend typedefs that the kernels need
     out.push_str("typedef unsigned char uint8_t;\n");

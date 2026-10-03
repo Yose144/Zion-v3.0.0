@@ -315,6 +315,12 @@ pub fn find_auxpow_share_from(
     let threads = threads.max(1);
     let coin = job.coin;
     let algorithm = coin.algorithm();
+
+    // Quantus QPoW — 512-bit nonce/target, Poseidon2. Dedicated scan path;
+    // the generic u64/[u8;32] pipeline cannot represent it.
+    if algorithm == "qpow-poseidon2" {
+        return find_qpow_share(job, threads, nonce_count, start_nonce);
+    }
     // kHeavyHash (KAS) carries the block timestamp in the job height and
     // uses an extranonce1 prefix inside the 8-byte nonce.
     // DAG-based algorithms (Ethash, KawPow, ProgPoW) use the job height for
@@ -401,6 +407,8 @@ pub fn find_auxpow_share_from(
                     header_hash,
                     mix_hash: mix,
                     solution: None,
+                    nonce_512: None,
+                    hash_512: None,
                     extranonce2,
                     ntime,
                 });
@@ -440,10 +448,96 @@ pub fn find_auxpow_share_from(
                     header_hash,
                     mix_hash: mix,
                     solution: None,
+                    nonce_512: None,
+                    hash_512: None,
                     extranonce2: extranonce2.clone(),
                     ntime: ntime.clone(),
                 });
             }
+        }
+        None
+    })
+}
+
+/// Quantus QPoW CPU scan — Poseidon2 squeeze-twice over a 512-bit nonce.
+///
+/// Builds one `mining_prestate_low64` per job (extranonce + nonce prefix are
+/// constant for the whole batch), then each rayon thread scans a disjoint
+/// `low64` range via `scan_low64`. The returned `Share` carries the full
+/// 64-byte wire nonce (`nonce_512`) and the 64-byte result (`hash_512`);
+/// `nonce`/`hash` hold truncated views for metrics only.
+fn find_qpow_share(
+    job: &crate::auxpow::Job,
+    threads: usize,
+    nonce_count: u64,
+    start_nonce: u64,
+) -> Option<crate::auxpow::Share> {
+    use crate::auxpow::qpow;
+
+    let target = *job.target_512.as_ref()?;
+    let mut header = [0u8; 32];
+    let copy_len = job.header.len().min(32);
+    header[..copy_len].copy_from_slice(&job.header[..copy_len]);
+
+    // Base nonce carries the pool extranonce (high half) and zeros in the
+    // iterated half; the prestate absorbs nonce_be[0..56], so every candidate
+    // in this job shares it — only the low64 limb varies.
+    let base_nonce = qpow::build_nonce(&job.extranonce, 0);
+    let prestate = qpow::mining_prestate_low64(&header, &base_nonce);
+
+    let job_id = job.job_id.clone();
+    let coin = job.coin;
+    let extranonce = job.extranonce.clone();
+    let extranonce2 = job.extranonce2.clone();
+    let ntime = job.ntime.clone();
+    let mut header_hash = [0u8; 32];
+    header_hash[..copy_len].copy_from_slice(&job.header[..copy_len]);
+
+    let chunk_size = nonce_count / threads as u64;
+    if chunk_size == 0 {
+        return None;
+    }
+    let cancelled = Arc::new(AtomicBool::new(false));
+
+    (0..threads).into_par_iter().find_map_any(|thread_idx| {
+        let start = start_nonce.saturating_add(thread_idx as u64 * chunk_size);
+        let count = if thread_idx == threads - 1 {
+            nonce_count.saturating_sub(thread_idx as u64 * chunk_size)
+        } else {
+            chunk_size
+        };
+        let mut offset = 0u64;
+        while offset < count {
+            if cancelled.load(Ordering::Relaxed) {
+                return None;
+            }
+            // scan_low64 refuses ranges that wrap u64 — shrink the tail.
+            let span = (count - offset).min(u64::MAX - start - offset + 1);
+            if span == 0 {
+                return None;
+            }
+            if let Some((low, hash64)) =
+                qpow::scan_low64(&prestate, &target, start + offset, span)
+            {
+                cancelled.store(true, Ordering::Relaxed);
+                let nonce_be = qpow::build_nonce(&extranonce, low);
+                let mut hash = [0u8; 32];
+                hash.copy_from_slice(&hash64[..32]);
+                return Some(crate::auxpow::Share {
+                    job_id: job_id.clone(),
+                    coin,
+                    nonce: low,
+                    hash,
+                    header_hash,
+                    mix_hash: None,
+                    solution: None,
+                    nonce_512: Some(nonce_be),
+                    hash_512: Some(hash64),
+                    extranonce2: extranonce2.clone(),
+                    ntime: ntime.clone(),
+                });
+            }
+            offset += span;
         }
         None
     })
@@ -505,6 +599,8 @@ fn find_verushash_share(
                 header_hash,
                 mix_hash: None,
                 solution: Some(solution),
+                nonce_512: None,
+                hash_512: None,
                 extranonce2,
                 ntime: ntime.clone(),
             })
@@ -611,6 +707,7 @@ mod tests {
             coin: zion_cosmic_harmony::ExternalCoin::Kaspa,
             header: vec![0xAA; 32],
             target: [0xFF; 32],
+            target_512: None,
             extranonce: vec![0x01],
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
@@ -651,6 +748,7 @@ mod tests {
             coin: zion_cosmic_harmony::ExternalCoin::Verus,
             header,
             target: [0xFF; 32],
+            target_512: None,
             extranonce: en1.to_vec(),
             extranonce2: "00".to_string(),
             ntime: "5a5ac000".to_string(),

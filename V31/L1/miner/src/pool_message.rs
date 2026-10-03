@@ -184,6 +184,10 @@ pub enum PoolMessage {
         algorithm: String,
         external_job_id: String,
         nonce: u64,
+        /// Full-width nonce hex for wide-nonce algorithms (Quantus QPoW:
+        /// 128 chars). Absent for legacy u64-nonce coins.
+        #[serde(default)]
+        nonce_hex: Option<String>,
         hash_hex: String,
         #[serde(default)]
         mix_hash_hex: Option<String>,
@@ -306,6 +310,7 @@ mod tests {
             algorithm: "progpow_zano".into(),
             external_job_id: "ext1".into(),
             nonce: 12345,
+            nonce_hex: None,
             hash_hex: "abcd".into(),
             mix_hash_hex: Some("eff0".into()),
             extranonce1_hex: "".into(),
@@ -315,6 +320,35 @@ mod tests {
         let encoded = encode_message(&msg).unwrap();
         let decoded = decode_message(&encoded).unwrap();
         assert_eq!(msg, decoded);
+    }
+
+    #[test]
+    fn external_submit_qpow_nonce_hex_roundtrip() {
+        // Quantus QPoW submit: 128-char nonce + 128-char result.
+        let nonce_hex = "00".repeat(64);
+        let msg = PoolMessage::ExternalSubmit {
+            miner_id: "m".into(),
+            worker_name: "w".into(),
+            coin: "QTU".into(),
+            algorithm: "qpow-poseidon2".into(),
+            external_job_id: "q1".into(),
+            nonce: 42,
+            nonce_hex: Some(nonce_hex.clone()),
+            hash_hex: "ab".repeat(64),
+            mix_hash_hex: None,
+            extranonce1_hex: "deadbeef".into(),
+            solution_hex: "".into(),
+            ntime_hex: "".into(),
+        };
+        let encoded = encode_message(&msg).unwrap();
+        let decoded = decode_message(&encoded).unwrap();
+        assert_eq!(msg, decoded);
+        // Backward compat: a message without nonce_hex decodes to None.
+        let line = r#"{"type":"external_submit","miner_id":"m","worker_name":"w","coin":"ZANO","algorithm":"progpow_zano","external_job_id":"e","nonce":1,"hash_hex":"aa"}"#;
+        match decode_message(line).unwrap() {
+            PoolMessage::ExternalSubmit { nonce_hex, .. } => assert!(nonce_hex.is_none()),
+            _ => panic!("expected ExternalSubmit"),
+        }
     }
 
     #[test]

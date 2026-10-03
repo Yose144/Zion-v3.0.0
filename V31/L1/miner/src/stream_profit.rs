@@ -142,7 +142,7 @@ impl StreamProfitOracle {
             }
         }
 
-        let estimates: Vec<ProfitEstimate> = fallback_estimates()
+        let mut estimates: Vec<ProfitEstimate> = fallback_estimates()
             .into_iter()
             .map(|mut e| {
                 if let Some(revenue) = live.get(&e.coin) {
@@ -152,6 +152,11 @@ impl StreamProfitOracle {
                 e
             })
             .collect();
+        for e in estimates.iter_mut() {
+            if let Some(revenue) = env_override_for(e.coin) {
+                e.revenue_usd_per_day = revenue;
+            }
+        }
 
         state.cache = estimates.clone();
         state.last_fetch = Some(now);
@@ -173,7 +178,7 @@ pub fn fallback_for_coin(coin: ExternalCoin) -> ProfitEstimate {
     // CoinProfile stores per-unit profit; scale to a conservative daily
     // revenue figure.  The 24x multiplier aligns the placeholder profile
     // values with the historical daily revenue table in `autonomous.rs`.
-    let revenue = profile.estimate_profit(1.0) * 24.0;
+    let revenue = env_override_for(coin).unwrap_or_else(|| profile.estimate_profit(1.0) * 24.0);
     ProfitEstimate {
         coin,
         revenue_usd_per_day: revenue,
@@ -188,6 +193,19 @@ pub fn fallback_estimates() -> Vec<ProfitEstimate> {
         .copied()
         .map(fallback_for_coin)
         .collect()
+}
+
+/// `ZION_<TICKER>_USD_PER_DAY` per-coin revenue override.
+///
+/// Explicit operator override — applied after live API values, so it wins
+/// over WhatToMine/NiceHash too. Needed for coins with no public revenue
+/// feed (e.g. Quantus `ZION_QTU_USD_PER_DAY`) and for pilots where the
+/// operator wants to pin a value.
+fn env_override_for(coin: ExternalCoin) -> Option<f64> {
+    std::env::var(format!("ZION_{}_USD_PER_DAY", coin.ticker()))
+        .ok()
+        .and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|v| v.is_finite() && *v >= 0.0)
 }
 
 fn fetch_whattomine(api_key: &str) -> Result<HashMap<ExternalCoin, f64>, String> {
@@ -353,6 +371,32 @@ mod tests {
         for coin in ExternalCoin::ALL {
             assert!(estimates.iter().any(|e| e.coin == *coin));
         }
+    }
+
+    #[test]
+    fn env_override_pins_coin_revenue() {
+        // QTU has no public revenue feed — the env override must apply on
+        // both the no-API early-return path and the merged path.
+        std::env::set_var("ZION_QTU_USD_PER_DAY", "12.5");
+        std::env::remove_var("WHATTOMAINE_API_KEY");
+        std::env::remove_var("NICEHASH_API_KEY");
+        let oracle = StreamProfitOracle::new();
+        let estimates = oracle.get_estimates();
+        let qtu = estimates
+            .iter()
+            .find(|e| e.coin == ExternalCoin::Quantus)
+            .expect("QTU estimate");
+        assert!((qtu.revenue_usd_per_day - 12.5).abs() < 1e-9);
+        // Malformed values are ignored.
+        std::env::set_var("ZION_QTU_USD_PER_DAY", "bogus");
+        let oracle2 = StreamProfitOracle::with_interval(Duration::from_secs(0));
+        let qtu2 = oracle2
+            .get_estimates()
+            .into_iter()
+            .find(|e| e.coin == ExternalCoin::Quantus)
+            .expect("QTU estimate");
+        assert!(qtu2.revenue_usd_per_day > 0.0);
+        std::env::remove_var("ZION_QTU_USD_PER_DAY");
     }
 
     #[test]

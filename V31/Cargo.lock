@@ -3534,6 +3534,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "qp-poseidon-core"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5872607e25ea4ee5fb37e64bf1462168e1a36a4e719cdc8a105533c708253918"
+
+[[package]]
 name = "quinn"
 version = "0.11.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6231,6 +6237,7 @@ dependencies = [
  "num_cpus",
  "objc",
  "ocl",
+ "qp-poseidon-core",
  "ratatui",
  "rayon",
  "reqwest 0.12.28",

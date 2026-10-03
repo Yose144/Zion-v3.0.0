@@ -190,6 +190,15 @@ pub struct MinerRuntime {
     /// Current algorithm for gpu_ext (for DAG/epoch reload detection).
     #[cfg(feature = "auxpow")]
     gpu_ext_algo: Arc<std::sync::Mutex<Option<String>>>,
+    /// Dedicated Poseidon2/QPoW miner for Stream 2 (Quantus). Lazily
+    /// initialized; the 512-bit nonce/target cannot ride the generic
+    /// `GpuMiner` interface so this is a separate dedicated backend.
+    #[cfg(all(feature = "auxpow", feature = "gpu-cuda"))]
+    gpu_qpow: Arc<std::sync::Mutex<Option<crate::gpu::qpow_cuda::QpowCudaMiner>>>,
+    /// Set once the QPoW CUDA backend fails to initialize — avoids retrying
+    /// the NVRTC compile on every batch on CPU-only rigs.
+    #[cfg(all(feature = "auxpow", feature = "gpu-cuda"))]
+    gpu_qpow_disabled: Arc<std::sync::atomic::AtomicBool>,
     /// ZION nonce cursor — advances between batches so we don't always
     /// re-scan from 0. Wrapped in a mutex for safe concurrent access.
     zion_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
@@ -351,6 +360,10 @@ impl MinerRuntime {
                 gpu_zion,
                 gpu_ext: Arc::new(std::sync::Mutex::new(None)),
                 gpu_ext_algo: Arc::new(std::sync::Mutex::new(None)),
+                #[cfg(all(feature = "auxpow", feature = "gpu-cuda"))]
+                gpu_qpow: Arc::new(std::sync::Mutex::new(None)),
+                #[cfg(all(feature = "auxpow", feature = "gpu-cuda"))]
+                gpu_qpow_disabled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_last_job_id: Arc::new(Mutex::new(String::new())),
@@ -591,6 +604,8 @@ impl MinerRuntime {
             header_hash,
             mix_hash: None,
             solution: None,
+            nonce_512: None,
+            hash_512: None,
             extranonce2: job.extranonce2,
             ntime: job.ntime,
         };
@@ -716,12 +731,19 @@ impl MinerRuntime {
         // Read the CPU external nonce cursor WITHOUT advancing yet.
         // We'll advance by the actual nonces scanned after the scan completes,
         // so we don't waste nonce space when shares are found early.
-        let nonce_start = if stream == StreamId::CpuExternal {
-            self.cpu_ext_nonce_cursor
-                .load(std::sync::atomic::Ordering::Relaxed)
+        // QPoW on the GPU stream (CPU fallback until the Poseidon2 kernel
+        // lands) uses the GPU ext cursor the same way.
+        let is_qpow = algorithm == "qpow-poseidon2";
+        let cursor = if stream == StreamId::CpuExternal {
+            Some(&self.cpu_ext_nonce_cursor)
+        } else if is_qpow {
+            Some(&self.gpu_ext_nonce_cursor)
         } else {
-            0
+            None
         };
+        let nonce_start = cursor
+            .map(|c| c.load(std::sync::atomic::Ordering::Relaxed))
+            .unwrap_or(0);
         let share = task::spawn_blocking(move || {
             crate::parallel::find_auxpow_share_from(&job, threads, batch, nonce_start)
         })
@@ -741,17 +763,15 @@ impl MinerRuntime {
             let total_nonces = nonces_per_thread * threads as u64;
 
             // Advance cursor by actual nonces scanned (not full batch)
-            if stream == StreamId::CpuExternal {
-                self.cpu_ext_nonce_cursor
-                    .fetch_add(total_nonces, std::sync::atomic::Ordering::Relaxed);
+            if let Some(c) = cursor {
+                c.fetch_add(total_nonces, std::sync::atomic::Ordering::Relaxed);
             }
             self.update_hashrate(stream, total_nonces, elapsed).await;
             Ok(share)
         } else {
             // No share found — full batch was scanned
-            if stream == StreamId::CpuExternal {
-                self.cpu_ext_nonce_cursor
-                    .fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
+            if let Some(c) = cursor {
+                c.fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
             }
             // DAG CPU fallback is a placeholder (hash_kawpow) and would distort
             // the hashrate display; skip hashrate for these misses.
@@ -772,6 +792,14 @@ impl MinerRuntime {
         let algorithm = job.coin.algorithm();
         if algorithm.starts_with("kheavyhash") {
             return None; // CPU-only for now
+        }
+        if algorithm == "qpow-poseidon2" {
+            // Quantus needs a dedicated 512-bit Poseidon2 kernel — the generic
+            // u64/[u8;32] GPU interface cannot represent it.
+            #[cfg(feature = "gpu-cuda")]
+            return self.try_qpow_gpu_share(job, batch).await;
+            #[cfg(not(feature = "gpu-cuda"))]
+            return None;
         }
 
         let coin_ticker = job.coin.ticker();
@@ -895,6 +923,8 @@ impl MinerRuntime {
                         header_hash,
                         mix_hash: mix,
                         solution,
+                        nonce_512: None,
+                        hash_512: None,
                         extranonce2,
                         ntime,
                     });
@@ -909,6 +939,141 @@ impl MinerRuntime {
             }
         }
         None
+    }
+
+    /// Stream 2 Quantus QPoW path — dedicated Poseidon2 CUDA backend.
+    ///
+    /// The kernel iterates the low 256 bits of a U512 nonce; the pool
+    /// extranonce sits in the fixed high half (`qpow::build_nonce`). The
+    /// host precomputes the Poseidon2 midstate once per batch; each GPU
+    /// thread then pays for only three permutations per candidate.
+    /// Full-width nonce/hash are carried on `Share::nonce_512`/`hash_512`.
+    #[cfg(all(feature = "auxpow", feature = "gpu-cuda"))]
+    async fn try_qpow_gpu_share(&self, job: &Job, batch: u64) -> Option<Share> {
+        use crate::auxpow::qpow;
+        use crate::gpu::qpow_cuda::QpowCudaMiner;
+
+        if self
+            .gpu_qpow_disabled
+            .load(std::sync::atomic::Ordering::Relaxed)
+        {
+            return None;
+        }
+        let target512 = job.target_512?;
+        let mut header32 = [0u8; qpow::QPOW_HEADER_LEN];
+        let copy_len = job.header.len().min(qpow::QPOW_HEADER_LEN);
+        header32[..copy_len].copy_from_slice(&job.header[..copy_len]);
+        let extranonce = job.extranonce.clone();
+        let job_id = job.job_id.clone();
+        let coin = job.coin;
+        let extranonce2 = job.extranonce2.clone();
+        let ntime = job.ntime.clone();
+        let header_hash = header32;
+        // dispatch_config counts are u32 — cap the launch at u32::MAX.
+        let count = batch.min(u32::MAX as u64);
+        let work_size = batch as usize;
+
+        let gpu_qpow = self.gpu_qpow.clone();
+        let gpu_qpow_disabled = self.gpu_qpow_disabled.clone();
+        let gpu_zion = self.gpu_zion.clone();
+        let gpu_ext = self.gpu_ext.clone();
+        let gpu_ext_nonce_cursor = self.gpu_ext_nonce_cursor.clone();
+
+        let start = Instant::now();
+        let gpu_result = task::spawn_blocking(move || {
+            {
+                let need_create = gpu_qpow.lock().unwrap().is_none();
+                if need_create {
+                    // Share the CUDA context with Stream 1 (ZION) or the
+                    // generic external backend — a second context on a
+                    // consumer GPU corrupts results / deadlocks.
+                    let shared_dev = {
+                        gpu_zion
+                            .lock()
+                            .unwrap()
+                            .as_ref()
+                            .and_then(|m| m.shared_cuda_device())
+                    }
+                    .or_else(|| {
+                        gpu_ext
+                            .lock()
+                            .unwrap()
+                            .as_ref()
+                            .and_then(|m| m.shared_cuda_device())
+                    });
+                    let dev = match shared_dev {
+                        Some(d) => d,
+                        None => cudarc::driver::CudaDevice::new(0)
+                            .map_err(|e| anyhow::anyhow!("CUDA device init: {e}"))?,
+                    };
+                    match QpowCudaMiner::new_with_device(work_size, dev) {
+                        Ok(miner) => {
+                            ext_info!(
+                                "gpu_qpow: Poseidon2 CUDA backend ready device=\"{}\"",
+                                miner.device_name()
+                            );
+                            *gpu_qpow.lock().unwrap() = Some(miner);
+                        }
+                        Err(e) => {
+                            gpu_qpow_disabled.store(true, std::sync::atomic::Ordering::Relaxed);
+                            return Err::<Option<crate::gpu::qpow_cuda::QpowGpuResult>, anyhow::Error>(
+                                anyhow::anyhow!("qpow backend init: {e}"),
+                            );
+                        }
+                    }
+                }
+            }
+
+            let nonce_start =
+                gpu_ext_nonce_cursor.fetch_add(count, std::sync::atomic::Ordering::Relaxed);
+            let mut guard = gpu_qpow.lock().unwrap();
+            let miner = match guard.as_mut() {
+                Some(m) => m,
+                None => return Ok(None),
+            };
+            let nonce_be = qpow::build_nonce(&extranonce, nonce_start);
+            miner
+                .mine_batch(&header32, &nonce_be, &target512, count)
+                .map_err(|e| anyhow::anyhow!("qpow mine_batch: {e}"))
+        })
+        .await;
+        let elapsed = start.elapsed().as_secs_f64();
+
+        match gpu_result {
+            Ok(Ok(Some(res))) => {
+                self.update_hashrate(StreamId::GpuExternal, res.nonces_tested, elapsed)
+                    .await;
+                let low64 = u64::from_be_bytes(res.nonce[56..64].try_into().unwrap());
+                let mut hash32 = [0u8; 32];
+                hash32.copy_from_slice(&res.hash[..32]);
+                Some(Share {
+                    job_id,
+                    coin,
+                    nonce: low64,
+                    hash: hash32,
+                    header_hash,
+                    mix_hash: None,
+                    solution: None,
+                    nonce_512: Some(res.nonce),
+                    hash_512: Some(res.hash),
+                    extranonce2,
+                    ntime,
+                })
+            }
+            Ok(Ok(None)) => {
+                self.update_hashrate(StreamId::GpuExternal, count, elapsed)
+                    .await;
+                None
+            }
+            Ok(Err(e)) => {
+                warn!(stream = "gpu_ext", error = %e, "QPoW GPU mining failed");
+                None
+            }
+            Err(e) => {
+                warn!(stream = "gpu_ext", error = %e, "QPoW GPU task failed");
+                None
+            }
+        }
     }
 
     #[cfg(feature = "auxpow")]
@@ -2020,12 +2185,21 @@ impl MinerRuntime {
         let mut target = [0u8; 32];
         let copy_len = target_vec.len().min(32);
         target[..copy_len].copy_from_slice(&target_vec[..copy_len]);
+        // Quantus QPoW jobs carry a 64-byte (128-hex) big-endian target —
+        // decode it into the full-width field; `target` stays the truncated
+        // legacy view.
+        let target_512 = if coin.algorithm() == "qpow-poseidon2" {
+            crate::auxpow::qpow::biguint_from_hex::<64>(target_hex_stripped)
+        } else {
+            None
+        };
 
         let job = Job {
             job_id: ext.job_id.clone(),
             coin,
             header: header.clone(),
             target,
+            target_512,
             extranonce: hex::decode(&ext.extranonce1_hex).unwrap_or_default(),
             extranonce2: String::new(),
             ntime: ext.ntime_hex.clone(),
@@ -2074,7 +2248,8 @@ impl MinerRuntime {
         // fast (~60s) and the target is easy, so shares are found frequently.
         // Blocking the scan loop on network round-trips wastes CPU cycles.
         if matches!(stream, StreamId::CpuExternal) {
-            let hash_hex = hex::encode(share.hash);
+            let hash_hex = share.qpow_hash_hex();
+            let nonce_hex = share.nonce_512.map(hex::encode);
             let mix_hash_hex = share.mix_hash.as_ref().map(hex::encode);
             let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
             let ntime_hex = share.ntime.clone();
@@ -2093,6 +2268,7 @@ impl MinerRuntime {
                         &algo,
                         &job_id,
                         nonce,
+                        nonce_hex.as_deref(),
                         &hash_hex,
                         mix_hash_hex.as_deref(),
                         &en1,
@@ -2144,7 +2320,9 @@ impl MinerRuntime {
         }
 
         // For ZANO (GpuExternal): submit synchronously (30s blocks, low share rate)
-        let hash_hex = hex::encode(share.hash);
+        // QPoW shares carry the full 64-byte result/nonce hex.
+        let hash_hex = share.qpow_hash_hex();
+        let nonce_hex = share.nonce_512.map(hex::encode);
         let mix_hash_hex = share.mix_hash.as_ref().map(hex::encode);
         let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
         let ntime_hex = share.ntime.clone();
@@ -2154,6 +2332,7 @@ impl MinerRuntime {
                 &ext.algorithm,
                 &ext.job_id,
                 share.nonce,
+                nonce_hex.as_deref(),
                 &hash_hex,
                 mix_hash_hex.as_deref(),
                 &ext.extranonce1_hex,
@@ -2615,6 +2794,7 @@ mod tests {
             coin: zion_cosmic_harmony::ExternalCoin::Kaspa,
             header: vec![0xAA; 32],
             target: [0xFF; 32],
+            target_512: None,
             extranonce: vec![0x01],
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
