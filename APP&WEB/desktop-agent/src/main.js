@@ -1298,7 +1298,7 @@ const DEFAULT_CONFIG = {
   //   Supported: "auto", "VRSC", "XMR", "RTM"
   // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
   //   Supported: "auto", "KAS", "ALPH", "DCR", "ERG", "ETC", "RVN", "CLORE",
-  //              "MEWC", "EVR", "FLUX", "EPIC"
+  //              "MEWC", "EVR", "FLUX", "EPIC", "QTU"
   // tripleStream: master toggle. When true, --no-gpu/--no-cpu are omitted and
   //   ZION_STREAM2_FORCE_COIN / ZION_STREAM3_FORCE_COIN are forwarded to the
   //   V31 miner. When false, both AuxPoW streams are disabled.
@@ -2432,6 +2432,19 @@ function startMiningV31(config, v31Path) {
     // Double-buffered async readback.
     if (!env.ZION_GPU_EARLY_BREAK) {
       env.ZION_GPU_EARLY_BREAK = '0';
+    }
+
+    // Stream-2 (QPoW/external GPU coin) overrides — opt-in only.
+    // ZION_STREAM2_BATCH = nonces per GPU launch (miner auto-tunes by VRAM
+    // when unset; ~5M is optimal on 8GB Pascal). ZION_EXT_GPU_GAP_MS =
+    // duty-cycle pause between batches so the ZION stream gets GPU time.
+    const s2Batch = Number(config?.gpuStream2Batch);
+    if (Number.isFinite(s2Batch) && s2Batch >= 262144) {
+      env.ZION_STREAM2_BATCH = String(Math.floor(s2Batch));
+    }
+    const extGap = Number(config?.gpuExtGapMs);
+    if (Number.isFinite(extGap) && extGap >= 0 && extGap <= 1000) {
+      env.ZION_EXT_GPU_GAP_MS = String(Math.floor(extGap));
     }
 
     log(`[V31-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize} | MaxBatch: ${env.ZION_GPU_MAX_BATCH}\n`);

@@ -5,12 +5,12 @@
 //! difficulty target are 512-bit values and the digest is 64 bytes, while
 //! `mine_batch_raw` is built around a `u64` nonce and a `[u8; 32]` target /
 //! hash.  Instead of shoehorning QPoW into that shape we run a dedicated
-//! kernel — `csrc/cuda/poseidon2_kernel.cu`, a 1:1 port of the upstream
-//! `mining_u64.wgsl` — behind a small dedicated API.
+//! kernel — `csrc/cuda/poseidon2_kernel.cu`, a port of the upstream
+//! engine-cuda `mining.cu` (G2) — behind a small dedicated API.
 //!
-//! Host-side layout (mirrors the WGSL kernel):
-//!   - results:        u32[33]  — flag, 16 nonce limbs, 16 hash limbs
-//!   - midstate:       u32[24]  — 12 Goldilocks limbs as LE u32 pairs
+//! Host-side layout (mirrors upstream engine-cuda `mining.cu`):
+//!   - results:        u32[9]   — candidate count, up to 8 logical indices
+//!   - prestate:       u32[24]  — 12 Goldilocks limbs as LE u32 pairs
 //!   - start_nonce:    u32[16]  — U512 little-endian limbs
 //!   - difficulty:     u32[16]  — U512 little-endian limbs
 //!   - dispatch:       u32[3]   — {total_threads, nonces_per_thread, total}
@@ -28,8 +28,13 @@ const POSEIDON2_CU: &str = include_str!("../../csrc/cuda/poseidon2_kernel.cu");
 const QPOW_MODULE: &str = "qpow_poseidon2";
 const QPOW_KERNEL: &str = "qpow_mine";
 const QPOW_THREADS_PER_BLOCK: u32 = 256;
-/// u32[33]: found flag + 16 nonce limbs + 16 hash limbs.
-const RESULT_WORDS: usize = 33;
+/// Grid cap mirroring upstream `MAX_BLOCKS` — bounds resident threads so the
+/// inner nonce loop amortizes thread setup across `nonces_per_thread` hashes.
+const QPOW_MAX_BLOCKS: u32 = 4096;
+/// Candidate slots recorded per launch (mirrors upstream `MAX_HITS`).
+const MAX_HITS: usize = 8;
+/// u32[9]: hit count + up to `MAX_HITS` logical indices.
+const RESULT_WORDS: usize = 1 + MAX_HITS;
 
 /// Result of one QPoW GPU batch.
 pub struct QpowGpuResult {
@@ -82,7 +87,7 @@ impl QpowCudaMiner {
             .map_err(|e| anyhow::anyhow!("qpow results alloc: {e}"))?;
         let midstate_buf = dev
             .alloc_zeros::<u32>(24)
-            .map_err(|e| anyhow::anyhow!("qpow midstate alloc: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("qpow prestate alloc: {e}"))?;
         let start_nonce_buf = dev
             .alloc_zeros::<u32>(16)
             .map_err(|e| anyhow::anyhow!("qpow nonce alloc: {e}"))?;
@@ -122,10 +127,10 @@ impl QpowCudaMiner {
     }
 
     /// Scan `total` candidate nonces, starting from `nonce_be` interpreted as
-    /// a big-endian U512 (the kernel iterates the low 256 bits; the host must
-    /// keep `total` small enough not to carry into the high half — in
-    /// practice batches stay within the low64 cursor, which is far below the
-    /// 2^256 wrap point).
+    /// a big-endian U512. The kernel iterates the low 64 nonce bits only —
+    /// the batch is capped at the low64 carry boundary (the caller advances
+    /// its cursor by the full `total` regardless, so the un-scanned tail past
+    /// the boundary is skipped once per 2^64 nonces).
     ///
     /// `nonce_be` already embeds the pool extranonce in its high half (see
     /// `qpow::build_nonce`). `target` is the 64-byte big-endian U512 target;
@@ -137,13 +142,23 @@ impl QpowCudaMiner {
         target: &[u8; qpow::QPOW_TARGET_LEN],
         total: u64,
     ) -> Result<Option<QpowGpuResult>> {
-        let total32 = total.min(u32::MAX as u64) as u32;
+        let low64_base = u64::from_be_bytes(nonce_be[56..64].try_into().expect("nonce len"));
+        // Headroom until the low 64 bits carry into the high half.
+        // wrapping_neg() == 0 only at low64_base == 0 (full 2^64 space).
+        let headroom = match low64_base.wrapping_neg() {
+            0 => u64::MAX,
+            h => h,
+        };
+        let total64 = total.min(headroom).min(u32::MAX as u64);
+        let total32 = total64 as u32;
         if total32 == 0 {
             return Ok(None);
         }
 
-        // Host-side prestate: absorb header + high nonce half once per batch.
-        let mid = qpow::mining_midstate(header, &nonce_be[..32]);
+        // Host-side prestate: header + nonce_be[0..56] absorbed, initial
+        // linear layer + round-0 constants already applied. The kernel only
+        // injects the two low64 lanes and finishes the hash.
+        let mid = qpow::mining_prestate_low64(header, nonce_be);
         let mut midstate32 = [0u32; 24];
         for i in 0..12 {
             midstate32[2 * i] = mid[i] as u32;
@@ -152,10 +167,15 @@ impl QpowCudaMiner {
         let start_nonce = u512_be_to_limbs(nonce_be);
         let target_limbs = u512_be_to_limbs(target);
 
-        let total_threads = (total32 as usize).min(self.work_size) as u32;
-        let nonces_per_thread = total32.div_ceil(total_threads);
+        // Pascal-tuned dispatch: one nonce per thread. The G2 j-loop carries
+        // a 12-lane u64 sponge state; looping nonces inside a thread loses
+        // ~12% on sm_61 vs. simply launching more blocks (measured: npt=1
+        // ≈ 40 MH/s, npt=5 ≈ 35 MH/s on GTX 1070 Ti).
+        let total_threads = total32;
+        let nonces_per_thread = 1u32;
         let blocks = total_threads.div_ceil(QPOW_THREADS_PER_BLOCK);
 
+        let t_up = std::time::Instant::now();
         // Reset + upload
         self.dev
             .htod_copy_into(vec![0u32; RESULT_WORDS], &mut self.results_buf)
@@ -185,6 +205,8 @@ impl QpowCudaMiner {
             block_dim: (QPOW_THREADS_PER_BLOCK, 1, 1),
             shared_mem_bytes: 0,
         };
+        let up_ms = t_up.elapsed();
+        let t_kern = std::time::Instant::now();
         unsafe {
             func.clone()
                 .launch(
@@ -202,33 +224,71 @@ impl QpowCudaMiner {
         self.dev
             .synchronize()
             .map_err(|e| anyhow::anyhow!("qpow device sync: {e}"))?;
+        let kern_ms = t_kern.elapsed();
+        if std::env::var("QPOW_TIMING").is_ok() {
+            eprintln!(
+                "qpow_timing: upload={:?} kernel_sync={:?} threads={} npt={} blocks={}",
+                up_ms, kern_ms, total_threads, nonces_per_thread, blocks
+            );
+        }
 
+        let t_dl = std::time::Instant::now();
         let results = self
             .dev
             .dtoh_sync_copy(&self.results_buf)
             .map_err(|e| anyhow::anyhow!("qpow results download: {e}"))?;
-        if results[0] == 0 {
+        let dl_ms = t_dl.elapsed();
+        let hits = results[0] as usize;
+        if hits == 0 {
+            if std::env::var("QPOW_TIMING").is_ok() {
+                eprintln!(
+                    "qpow_timing: download={:?} total={:?} hits=0",
+                    dl_ms,
+                    t_up.elapsed()
+                );
+            }
             return Ok(None);
         }
-
-        let mut nonce_limbs = [0u32; 16];
-        nonce_limbs.copy_from_slice(&results[1..17]);
-        let mut hash_limbs = [0u32; 16];
-        hash_limbs.copy_from_slice(&results[17..33]);
-        let nonce = limbs_to_u512_be(&nonce_limbs);
-        let hash = limbs_to_u512_be(&hash_limbs);
-
-        // Belt-and-suspenders: verify the candidate on the CPU before it ever
-        // reaches the wire. A GPU false-positive would otherwise burn the
-        // pool's share-validation budget and waste a submit.
-        if !qpow::is_valid_nonce(header, &nonce, target) {
-            anyhow::bail!("qpow GPU produced invalid share (hash !< target)");
-        }
-        if hash != qpow::get_nonce_hash(header, &nonce) {
-            anyhow::bail!("qpow GPU hash mismatch vs CPU reference");
+        let recorded = hits.min(MAX_HITS);
+        if hits > MAX_HITS {
+            crate::ext_warn!(
+                "qpow launch produced {} candidates, only {} slots",
+                hits,
+                MAX_HITS
+            );
         }
 
-        Ok(Some(QpowGpuResult {
+        // The kernel's lazy 128-bit reduction can slip by ±EPS on ~1 in 3e6
+        // nonces, so every recorded index is recomputed and verified on the
+        // CPU before it may reach the wire.
+        let mut best: Option<([u8; 64], [u8; 64])> = None;
+        for &index in &results[1..=recorded] {
+            let low64 = low64_base.wrapping_add(index as u64);
+            let mut nonce = *nonce_be;
+            nonce[56..64].copy_from_slice(&low64.to_be_bytes());
+            let hash = qpow::get_nonce_hash(header, &nonce);
+            if hash.as_slice() >= target.as_slice() {
+                crate::ext_warn!("qpow GPU candidate {} rejected by CPU verification", index);
+                continue;
+            }
+            let better = best
+                .as_ref()
+                .map(|(n, _)| nonce.as_slice() < n.as_slice())
+                .unwrap_or(true);
+            if better {
+                best = Some((nonce, hash));
+            }
+        }
+
+        if std::env::var("QPOW_TIMING").is_ok() {
+            eprintln!(
+                "qpow_timing: download={:?} total={:?} hits={}",
+                dl_ms,
+                t_up.elapsed(),
+                hits
+            );
+        }
+        Ok(best.map(|(nonce, hash)| QpowGpuResult {
             nonce,
             hash,
             nonces_tested: total32 as u64,
@@ -252,6 +312,7 @@ fn u512_be_to_limbs(wire: &[u8; 64]) -> [u32; 16] {
 }
 
 /// Inverse of `u512_be_to_limbs`.
+#[cfg(test)]
 fn limbs_to_u512_be(limbs: &[u32; 16]) -> [u8; 64] {
     let mut wire = [0u8; 64];
     for i in 0..16 {
@@ -263,6 +324,141 @@ fn limbs_to_u512_be(limbs: &[u32; 16]) -> [u8; 64] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// On-device correctness gate (mirrors upstream `cuda_*` KV tests):
+    /// runs the real kernel on the local GPU for the canonical KAT nonce,
+    /// with targets `hash - 1`, `hash` and `hash + 1` — only the last may
+    /// produce a candidate, and the reported nonce/hash must be the exact
+    /// CPU reference values.
+    ///
+    /// Requires a CUDA device; run with:
+    /// `cargo test --release -p zion-miner --features gpu-cuda -- --ignored`
+    #[test]
+    #[ignore]
+    fn cuda_kernel_matches_cpu_golden_and_boundaries() {
+        let dev = CudaDevice::new(0).expect("CUDA device 0");
+        let mut miner = QpowCudaMiner::new_with_device(1 << 16, dev).expect("qpow cuda init");
+
+        let header = [0u8; 32];
+        // Canonical KAT: header=0, nonce=0 → 8e64e3d8…
+        let nonce_be = [0u8; 64];
+        let hash = qpow::get_nonce_hash(&header, &nonce_be);
+
+        // Boundary checks scan exactly one nonce so neighbouring nonces
+        // cannot satisfy the crafted targets.
+        // target = hash: strict `hash < target` must NOT fire.
+        let r = miner
+            .mine_batch(&header, &nonce_be, &hash, 1)
+            .expect("batch");
+        assert!(r.is_none(), "target == hash must not yield a candidate");
+
+        // target = hash - 1: must not fire either (hash > target).
+        let mut below = hash;
+        let mut i = 63;
+        loop {
+            let (v, c) = below[i].overflowing_sub(1);
+            below[i] = v;
+            if !c {
+                break;
+            }
+            i -= 1;
+        }
+        let r = miner
+            .mine_batch(&header, &nonce_be, &below, 1)
+            .expect("batch");
+        assert!(r.is_none(), "target = hash-1 must not yield a candidate");
+
+        // target = hash + 1: candidate 0 must appear, hash exact.
+        let mut above = hash;
+        let mut i = 63;
+        loop {
+            let (v, c) = above[i].overflowing_add(1);
+            above[i] = v;
+            if !c {
+                break;
+            }
+            i -= 1;
+        }
+        let r = miner
+            .mine_batch(&header, &nonce_be, &above, 1)
+            .expect("batch")
+            .expect("target = hash+1 must yield the KAT nonce");
+        assert_eq!(&r.nonce, &nonce_be);
+        assert_eq!(&r.hash, &hash);
+
+        // A nonzero batch base + a mid-range carry: nonce = 2^32 - 3, the
+        // batch crosses the 32-bit limb boundary inside low64.
+        let mut nonce2 = [0u8; 64];
+        nonce2[..4].copy_from_slice(&[0x00, 0x0c, 0x00, 0x01]); // extranonce
+        let base_low = 0xffff_fffcu64;
+        nonce2[56..64].copy_from_slice(&base_low.to_be_bytes());
+        // Make every nonce in the batch a candidate; the kernel records the
+        // first 8 — host must report the lowest, i.e. base_low itself.
+        let max_target = [0xffu8; 64];
+        let r = miner
+            .mine_batch(&header, &nonce2, &max_target, 8)
+            .expect("batch")
+            .expect("max target yields candidates");
+        assert_eq!(
+            u64::from_be_bytes(r.nonce[56..64].try_into().unwrap()),
+            base_low
+        );
+        assert_eq!(&r.hash, &qpow::get_nonce_hash(&header, &r.nonce));
+    }
+
+    /// Throughput bench for the real kernel on the local GPU: repeatedly
+    /// calls `mine_batch` over an unreachable-target window (no candidates)
+    /// and reports effective nonces/s including all per-batch host overhead.
+    ///
+    /// Env knobs: `QPOW_BENCH_BATCH` (nonces per batch, default 1<<22),
+    /// `QPOW_BENCH_ITERS` (default 12, first two are warmup).
+    ///
+    /// `cargo test --release -p zion-miner --features gpu-cuda qpow_bench -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn qpow_bench_effective_throughput() {
+        let batch = std::env::var("QPOW_BENCH_BATCH")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(1 << 22);
+        let iters = std::env::var("QPOW_BENCH_ITERS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(12);
+        let dev = CudaDevice::new(0).expect("CUDA device 0");
+        let mut miner =
+            QpowCudaMiner::new_with_device(batch as usize, dev).expect("qpow cuda init");
+
+        let header = [0u8; 32];
+        // Target 1 (last byte = big-endian least significant): unreachable,
+        // so every batch scans fully with no candidates.
+        let mut target = [0u8; 64];
+        target[63] = 1;
+
+        let mut base = 0u64;
+        for i in 0..iters {
+            nonce_in(&mut base, batch);
+            let mut n = [0u8; 64];
+            n[56..64].copy_from_slice(&base.to_be_bytes());
+            let t0 = std::time::Instant::now();
+            let r = miner
+                .mine_batch(&header, &n, &target, batch)
+                .expect("batch");
+            let dt = t0.elapsed();
+            assert!(r.is_none());
+            eprintln!(
+                "qpow_bench iter={} batch={} wall={:?} rate={:.2} MH/s",
+                i,
+                batch,
+                dt,
+                batch as f64 / dt.as_secs_f64() / 1e6
+            );
+        }
+
+        fn nonce_in(base: &mut u64, step: u64) {
+            *base = base.wrapping_add(step);
+        }
+    }
 
     /// The limb packing must round-trip and must place the extranonce
     /// (wire bytes 0..4) in the fixed high half (limb 15).

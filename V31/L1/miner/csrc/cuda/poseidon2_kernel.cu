@@ -1,23 +1,37 @@
-// Native-u64 Poseidon2 (Goldilocks) mining kernel for Quantus QPoW.
-// 1:1 port of quantus-miner mining_u64.wgsl — bit-exact with pow_core.
+// Quantus QPoW mining kernel — port of upstream quantus-miner
+// engine-cuda `mining.cu` (G2, post-optimization revision) onto the
+// Trinity buffer ABI.
 //
 // Buffers (all u32):
-//   results[33]        : [0]=found flag, [1..17]=nonce U512 LE limbs,
-//                        [17..33]=hash U512 LE limbs
-//   midstate[24]       : 12 felts as LE u32 pairs — sponge state after
-//                        absorbing header + high nonce half (host-computed)
-//   start_nonce[16]    : U512 LE limbs — batch base nonce
+//   results[9]         : [0]=candidate count (atomicAdd), [1..9]=logical
+//                        indices of up to MAX_HITS candidates
+//   prestate[24]       : 12 felts as LE u32 pairs — sponge state after the
+//                        initial external linear layer + round-0 constants,
+//                        covering header + nonce_be[0..56] (host-computed
+//                        `mining_prestate_low64`)
+//   start_nonce[16]    : U512 LE limbs — batch base nonce; only the low 64
+//                        bits advance (host caps batches at the carry)
 //   difficulty_target[16] : U512 LE limbs
 //   dispatch_config[3] : {total_threads, nonces_per_thread, total_nonces}
+//
+// Correctness contract (same as upstream): `reduce128` skips two rare carry
+// corrections (~2^-33 per multiply), so ~1 nonce in 3e6 hashes wrong on the
+// GPU. A wrong hash below target is rejected by the host CPU re-verification;
+// a wrong hash for a valid nonce is simply missed (~3e-7 of solutions).
 
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
-__device__ __constant__ u64 P64 = 0xFFFFFFFF00000001ULL;
-// EPS64 = 2^32 - 1 = 2^64 mod P
-__device__ __constant__ u64 EPS64 = 0xFFFFFFFFULL;
+#define MAX_HITS 8
 
-__device__ __constant__ u64 RC_INTERNAL[22] = {
+const u64 P64 = 0xFFFFFFFF00000001ULL;
+const u64 EPS64 = 0xFFFFFFFFULL;
+const u32 EPS32 = 0xFFFFFFFFu;
+
+// Round-constant tables carry one extra zero row (RC_INITIAL's last row holds
+// the first internal constant in slot 0) so the round loops index them
+// without per-round selects.
+__constant__ u64 RC_INTERNAL[23] = {
     0x97f7798a784ad863ULL, 0xd1d2bf082f60d4f0ULL, 0x69a377a79f9ad206ULL,
     0xa9d06906a3858e24ULL, 0x295275001eede5b5ULL, 0x5874e441117bd746ULL,
     0x8a084bbba8ed86ccULL, 0x3defd7645cde6425ULL, 0x3998cfe6871cc137ULL,
@@ -25,10 +39,9 @@ __device__ __constant__ u64 RC_INTERNAL[22] = {
     0x8e79b4a5d0096d6dULL, 0x8492362ad2392556ULL, 0xee72f470262574d6ULL,
     0x1e0e18496da2444aULL, 0x0f3a74bf215eaac6ULL, 0x1b061b76a1c0ded3ULL,
     0x192c42d86803d7a6ULL, 0xf6d49ff997ae0260ULL, 0x3ec372e7a0fa3786ULL,
-    0x5538cdf4f23445d3ULL
-};
+    0x5538cdf4f23445d3ULL, 0ULL};
 
-__device__ __constant__ u64 RC_INITIAL[4][12] = {
+__constant__ u64 RC_INITIAL[5][12] = {
     {0xc002e770975b1607ULL, 0xbca51a8dfe14593aULL, 0x72938dfbe774f7f9ULL,
      0xe4f2fe29e03234acULL, 0xd5e0ba2f541b6449ULL, 0xec33b868f3cc46c1ULL,
      0x486dcb55419d475aULL, 0x6c1cb2a358cc24f1ULL, 0xe3f30d509a1436bbULL,
@@ -44,10 +57,11 @@ __device__ __constant__ u64 RC_INITIAL[4][12] = {
     {0x1e5e2b5760e32477ULL, 0x622462a1f9aaaeedULL, 0xaa284b3ecdb222aeULL,
      0x63c8e72f542bf3fcULL, 0x3ba588cacb43b5e0ULL, 0x23eda6f3c99150ddULL,
      0xaad3bea4baac9a5aULL, 0xe9da8d699b94184aULL, 0xcdb13f4cd93e024cULL,
-     0x902cbd0956f655e3ULL, 0x5b4e40ffc759532fULL, 0xde795c20a2357af7ULL}
-};
+     0x902cbd0956f655e3ULL, 0x5b4e40ffc759532fULL, 0xde795c20a2357af7ULL},
+    {0x97f7798a784ad863ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL,
+     0ULL, 0ULL, 0ULL}};
 
-__device__ __constant__ u64 RC_TERMINAL[4][12] = {
+__constant__ u64 RC_TERMINAL[5][12] = {
     {0x7b72c539e0ea4c6eULL, 0x144573dae2ce9976ULL, 0x802028b68f35fc88ULL,
      0x6d36c5022c4fe7c2ULL, 0xa205d0ffa9b9def3ULL, 0xf6e7e38b1ea6ba2fULL,
      0x34f7909ae5258d64ULL, 0xb0464d9d77b97fcaULL, 0x64ddb9d5de7e00a6ULL,
@@ -63,140 +77,303 @@ __device__ __constant__ u64 RC_TERMINAL[4][12] = {
     {0xfe04051f909e042bULL, 0x7257e5b147fd3803ULL, 0xe6ae134bb82f2e78ULL,
      0x5711fd5cf4784511ULL, 0xf83a42660c08c0bcULL, 0x2cd8c96d9a3ce855ULL,
      0x7d2ffb1bb0e17271ULL, 0x85ae1528caea3811ULL, 0x52a345d5c7adb0b8ULL,
-     0x504c4c51f3faee94ULL, 0xbce34a649cfccaf9ULL, 0xe0a3389266fb6dc9ULL}
-};
+     0x504c4c51f3faee94ULL, 0xbce34a649cfccaf9ULL, 0xe0a3389266fb6dc9ULL},
+    {0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL}};
 
-__device__ __constant__ u64 MDS_DIAG[12] = {
+__constant__ u64 MDS_DIAG[12] = {
     0xc3b6c08e23ba9300ULL, 0xd84b5de94a324fb6ULL, 0x0d0c371c5b35b84fULL,
     0x7964f570e7188037ULL, 0x5daf18bbd996604bULL, 0x6743bc47b9595257ULL,
     0x5528b9362c59bb70ULL, 0xac45e25b7127b68bULL, 0xa2077d7dfbb606b5ULL,
-    0xf3faac6faee378aeULL, 0x0c6388b51545e883ULL, 0xd27dbb6944917b60ULL
-};
+    0xf3faac6faee378aeULL, 0x0c6388b51545e883ULL, 0xd27dbb6944917b60ULL};
 
-// a + b mod P in lazy form. Wrapping carries fold back via 2^64 ≡ EPS64 (mod P).
+// Sum in [0, 2^64) with a single 2^64 -> EPS fold. The fold itself can only
+// wrap when both inputs are within 2^32 of 2^64, which reducer outputs never
+// are in practice; that case is left uncorrected (see reduce128).
 __device__ __forceinline__ u64 gf64_add(u64 a, u64 b) {
-    u64 s0 = a + b;
-    bool c1 = s0 < a;
-    u64 s1 = s0 + (c1 ? EPS64 : 0ULL);
-    bool c2 = c1 && (s1 < s0);
-    return s1 + (c2 ? EPS64 : 0ULL);
+    u32 a0 = (u32)a, a1 = (u32)(a >> 32), b0 = (u32)b, b1 = (u32)(b >> 32);
+    u32 o0, o1;
+    asm("{\n\t"
+        ".reg .u32 c;\n\t"
+        "add.cc.u32 %0, %2, %4;\n\t"
+        "addc.cc.u32 %1, %3, %5;\n\t"
+        "addc.u32 c, 0, 0;\n\t"
+        "mad.lo.cc.u32 %0, c, %6, %0;\n\t"
+        "madc.hi.u32 %1, c, %6, %1;\n\t"
+        "}"
+        : "=&r"(o0), "=&r"(o1)
+        : "r"(a0), "r"(a1), "r"(b0), "r"(b1), "r"(EPS32));
+    return ((u64)o1 << 32) | (u64)o0;
 }
 
-// Reduce a 128-bit value (lo + hi*2^64) mod P using
-// 2^64 ≡ EPS64 and 2^96 ≡ -1 (mod P).
-__device__ __forceinline__ u64 gf64_reduce(u64 lo, u64 hi) {
-    u64 hi_hi = hi >> 32;
-    u64 hi_lo = hi & EPS64;
-    u64 t0 = lo - hi_hi;
-    t0 = t0 - (lo < hi_hi ? EPS64 : 0ULL);
-    u64 t1 = hi_lo * EPS64;
-    u64 t2 = t0 + t1;
-    return t2 + (t2 < t0 ? EPS64 : 0ULL);
+__device__ __forceinline__ void mul64wide(u64 a, u64 b, u32 &r0, u32 &r1,
+                                          u32 &r2, u32 &r3) {
+    u64 lo = a * b;
+    u64 hi = __umul64hi(a, b);
+    r0 = (u32)lo;
+    r1 = (u32)(lo >> 32);
+    r2 = (u32)hi;
+    r3 = (u32)(hi >> 32);
+}
+
+// 128 -> 64 bit fold using 2^64 = EPS and 2^96 = -1 (mod p):
+//   (r1:r0) + r2*EPS with carry c, then + c*2^32 - (r3 + c).
+// The final borrow and the two 32-bit wraps are deliberately not corrected;
+// each occurs with probability about 2^-33 per multiply on reducer-distributed
+// inputs and shifts the result by +-EPS (mod p). A hash built on a slipped
+// value is simply wrong for that nonce, and the host re-verifies every
+// candidate on the CPU. This is the same trade as a lazy Montgomery reduction:
+// bit-exact results are not required for mining, only for verification.
+__device__ __forceinline__ u64 reduce128(u32 r0, u32 r1, u32 r2, u32 r3) {
+    u32 o0, o1;
+    asm("{\n\t"
+        ".reg .u32 c;\n\t"
+        "mad.lo.cc.u32 %0, %4, %6, %2;\n\t"
+        "madc.hi.cc.u32 %1, %4, %6, %3;\n\t"
+        "addc.u32 c, %5, 0;\n\t"
+        "addc.u32 %1, %1, 0;\n\t"
+        "sub.cc.u32 %0, %0, c;\n\t"
+        "subc.u32 %1, %1, 0;\n\t"
+        "}"
+        : "=&r"(o0), "=&r"(o1)
+        : "r"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(EPS32));
+    return ((u64)o1 << 32) | (u64)o0;
 }
 
 __device__ __forceinline__ u64 gf64_mul(u64 a, u64 b) {
-    u64 a_lo = a & EPS64;
-    u64 a_hi = a >> 32;
-    u64 b_lo = b & EPS64;
-    u64 b_hi = b >> 32;
-    u64 ll = a_lo * b_lo;
-    u64 lh = a_lo * b_hi;
-    u64 hl = a_hi * b_lo;
-    u64 hh = a_hi * b_hi;
-    u64 mid = lh + hl;
-    u64 mid_c = mid < lh ? 1ULL : 0ULL;
-    u64 lo = ll + (mid << 32);
-    u64 lo_c = lo < ll ? 1ULL : 0ULL;
-    u64 hi = hh + (mid >> 32) + (mid_c << 32) + lo_c;
-    return gf64_reduce(lo, hi);
+    u32 r0, r1, r2, r3;
+    mul64wide(a, b, r0, r1, r2, r3);
+    return reduce128(r0, r1, r2, r3);
 }
 
+// Three partial products instead of four: (a1:a0)^2 = a0^2 + 2*a0*a1*2^32 + a1^2*2^64.
 __device__ __forceinline__ u64 gf64_sqr(u64 a) {
-    u64 a_lo = a & EPS64;
-    u64 a_hi = a >> 32;
-    u64 ll = a_lo * a_lo;
-    u64 lh = a_lo * a_hi;
-    u64 hh = a_hi * a_hi;
+    u32 a0 = (u32)a, a1 = (u32)(a >> 32);
+    u64 ll = (u64)a0 * a0;
+    u64 lh = (u64)a0 * a1;
+    u64 hh = (u64)a1 * a1;
     u64 mid = lh << 1;
-    u64 mid_c = lh >> 63;
-    u64 lo = ll + (mid << 32);
-    u64 lo_c = lo < ll ? 1ULL : 0ULL;
-    u64 hi = hh + (mid >> 32) + (mid_c << 32) + lo_c;
-    return gf64_reduce(lo, hi);
+    u32 mid_top = (u32)(lh >> 63);
+    u32 r0 = (u32)ll, r1, r2, r3;
+    asm("{\n\t"
+        "add.cc.u32 %0, %3, %4;\n\t"
+        "addc.cc.u32 %1, %5, %6;\n\t"
+        "addc.u32 %2, %7, %8;\n\t"
+        "}"
+        : "=&r"(r1), "=&r"(r2), "=&r"(r3)
+        : "r"((u32)(ll >> 32)), "r"((u32)mid), "r"((u32)hh),
+          "r"((u32)(mid >> 32)), "r"((u32)(hh >> 32)), "r"(mid_top));
+    return reduce128(r0, r1, r2, r3);
 }
 
+// x^7 with a depth-3 chain: x3 and x4 come from x2 in parallel.
 __device__ __forceinline__ u64 gf64_sbox(u64 x) {
     u64 x2 = gf64_sqr(x);
+    u64 x3 = gf64_mul(x2, x);
     u64 x4 = gf64_sqr(x2);
-    u64 x6 = gf64_mul(x4, x2);
-    return gf64_mul(x6, x);
+    return gf64_mul(x4, x3);
 }
 
 __device__ __forceinline__ u64 gf64_canon(u64 a) {
-    return a - (a >= P64 ? P64 : 0ULL);
+    return a - ((a >= P64) ? P64 : 0ULL);
 }
 
-// External linear layer: 4x4 MDS on each chunk, then circulant sums.
-__device__ __forceinline__ void ext_layer64(u64 st[12]) {
-    for (u32 chunk = 0u; chunk < 3u; chunk++) {
-        u32 o = chunk * 4u;
-        u64 x0 = st[o];
-        u64 x1 = st[o + 1u];
-        u64 x2 = st[o + 2u];
-        u64 x3 = st[o + 3u];
-        u64 t01 = gf64_add(x0, x1);
-        u64 t23 = gf64_add(x2, x3);
-        u64 t0123 = gf64_add(t01, t23);
-        u64 t01123 = gf64_add(t0123, x1);
-        u64 t01233 = gf64_add(t0123, x3);
-        st[o + 3u] = gf64_add(t01233, gf64_add(x0, x0));
-        st[o + 1u] = gf64_add(t01123, gf64_add(x2, x2));
-        st[o] = gf64_add(t01123, t01);
-        st[o + 2u] = gf64_add(t01233, t23);
+struct Wide {
+    u32 l0;
+    u32 l1;
+    u32 h;
+};
+
+__device__ __forceinline__ Wide wide_from(u64 x) {
+    Wide w;
+    w.l0 = (u32)x;
+    w.l1 = (u32)(x >> 32);
+    w.h = 0;
+    return w;
+}
+
+__device__ __forceinline__ void wide_add(Wide &w, u64 x) {
+    u32 x0 = (u32)x, x1 = (u32)(x >> 32);
+    asm("{\n\t"
+        "add.cc.u32 %0, %0, %3;\n\t"
+        "addc.cc.u32 %1, %1, %4;\n\t"
+        "addc.u32 %2, %2, 0;\n\t"
+        "}"
+        : "+r"(w.l0), "+r"(w.l1), "+r"(w.h)
+        : "r"(x0), "r"(x1));
+}
+
+__device__ __forceinline__ void wide_add_wide(Wide &w, const Wide &x) {
+    asm("{\n\t"
+        "add.cc.u32 %0, %0, %3;\n\t"
+        "addc.cc.u32 %1, %1, %4;\n\t"
+        "addc.u32 %2, %2, %5;\n\t"
+        "}"
+        : "+r"(w.l0), "+r"(w.l1), "+r"(w.h)
+        : "r"(x.l0), "r"(x.l1), "r"(x.h));
+}
+
+// A 96-bit lane is a 128-bit value with a zero top word.
+__device__ __forceinline__ u64 wide_reduce(const Wide &w) {
+    return reduce128(w.l0, w.l1, w.h, 0u);
+}
+
+__device__ __forceinline__ void add128_wide(u32 &r0, u32 &r1, u32 &r2,
+                                            u32 &r3, const Wide &w) {
+    asm("{\n\t"
+        "add.cc.u32 %0, %0, %4;\n\t"
+        "addc.cc.u32 %1, %1, %5;\n\t"
+        "addc.cc.u32 %2, %2, %6;\n\t"
+        "addc.u32 %3, %3, 0;\n\t"
+        "}"
+        : "+r"(r0), "+r"(r1), "+r"(r2), "+r"(r3)
+        : "r"(w.l0), "r"(w.l1), "r"(w.h));
+}
+
+// a * b + w as a 128-bit value. The three words of the 96-bit addend ride in
+// the 64-bit accumulators of the partial products, so the add costs nothing.
+// Requires b < 2^64 - 2^59 (true for MDS_DIAG) and w.h small, so every partial
+// sum and the total fit.
+__device__ __forceinline__ void mul128_add_wide(u64 a, u64 b, const Wide &w,
+                                                u32 &r0, u32 &r1, u32 &r2,
+                                                u32 &r3) {
+    u32 a0 = (u32)a, a1 = (u32)(a >> 32), b0 = (u32)b, b1 = (u32)(b >> 32);
+    u64 w0 = w.l0, w1 = w.l1, w2 = w.h;
+    asm("{\n\t"
+        ".reg .b64 p0, m, m2, p3;\n\t"
+        ".reg .b32 m0, m1, p0h, p3l, p3h, cw;\n\t"
+        "mad.wide.u32 p0, %4, %6, %8;\n\t"
+        "mad.wide.u32 m, %5, %6, %9;\n\t"
+        "mul.wide.u32 m2, %4, %7;\n\t"
+        "mad.wide.u32 p3, %5, %7, %10;\n\t"
+        "mov.b64 {%0, p0h}, p0;\n\t"
+        "mov.b64 {p3l, p3h}, p3;\n\t"
+        "add.cc.u64 m, m, m2;\n\t"
+        "addc.u32 cw, p3h, 0;\n\t"
+        "mov.b64 {m0, m1}, m;\n\t"
+        "add.cc.u32 %1, p0h, m0;\n\t"
+        "addc.cc.u32 %2, p3l, m1;\n\t"
+        "addc.u32 %3, cw, 0;\n\t"
+        "}"
+        : "=&r"(r0), "=&r"(r1), "=&r"(r2), "=&r"(r3)
+        : "r"(a0), "r"(a1), "r"(b0), "r"(b1), "l"(w0), "l"(w1), "l"(w2));
+}
+
+__device__ __forceinline__ void ext_layer64(u64 *state, const u64 *rc12) {
+    Wide y[12];
+    #pragma unroll
+    for (int chunk = 0; chunk < 3; chunk++) {
+        int o = chunk * 4;
+        u64 x0 = state[o];
+        u64 x1 = state[o + 1];
+        u64 x2 = state[o + 2];
+        u64 x3 = state[o + 3];
+        Wide t01 = wide_from(x0);
+        wide_add(t01, x1);
+        Wide t23 = wide_from(x2);
+        wide_add(t23, x3);
+        Wide t0123 = t01;
+        wide_add_wide(t0123, t23);
+        Wide t01123 = t0123;
+        wide_add(t01123, x1);
+        Wide t01233 = t0123;
+        wide_add(t01233, x3);
+        y[o + 3] = t01233;
+        wide_add(y[o + 3], x0);
+        wide_add(y[o + 3], x0);
+        y[o + 1] = t01123;
+        wide_add(y[o + 1], x2);
+        wide_add(y[o + 1], x2);
+        y[o] = t01123;
+        wide_add_wide(y[o], t01);
+        y[o + 2] = t01233;
+        wide_add_wide(y[o + 2], t23);
     }
-    u64 sums[4];
-    for (u32 k = 0u; k < 4u; k++) {
-        sums[k] = gf64_add(gf64_add(st[k], st[k + 4u]), st[k + 8u]);
+    Wide sums[4];
+    #pragma unroll
+    for (int k = 0; k < 4; k++) {
+        sums[k] = y[k];
+        wide_add_wide(sums[k], y[k + 4]);
+        wide_add_wide(sums[k], y[k + 8]);
     }
-    for (u32 i = 0u; i < 12u; i++) {
-        st[i] = gf64_add(st[i], sums[i & 3u]);
+    #pragma unroll
+    for (int i = 0; i < 12; i++) {
+        Wide w = y[i];
+        wide_add_wide(w, sums[i % 4]);
+        wide_add(w, rc12[i]);
+        state[i] = wide_reduce(w);
     }
 }
 
-// Internal linear layer: diagonal matrix plus full sum.
-__device__ __forceinline__ void int_layer64(u64 st[12]) {
-    u64 sum = st[0];
-    for (u32 i = 1u; i < 12u; i++) {
-        sum = gf64_add(sum, st[i]);
+// Software-pipelined internal round. `x` is this round's S-boxed element 0.
+// Elements 1..11 are summed before x is needed, element 0's output comes out
+// first so the caller can start the next S-box while the other 11 products
+// retire, and the unreduced 96-bit row sum (plus rc0 for element 0) rides in
+// the multiply accumulators. Returns the new element 0; updates state[1..11].
+__device__ __forceinline__ u64 int_round_p(u64 *state, u64 x, u64 rc0) {
+    Wide s = wide_from(state[1]);
+    #pragma unroll
+    for (int i = 2; i < 12; i++) {
+        wide_add(s, state[i]);
     }
-    for (u32 i = 0u; i < 12u; i++) {
-        st[i] = gf64_add(gf64_mul(st[i], MDS_DIAG[i]), sum);
+    wide_add(s, x);
+    Wide s0 = s;
+    wide_add(s0, rc0);
+    u32 r0, r1, r2, r3;
+    mul64wide(x, MDS_DIAG[0], r0, r1, r2, r3);
+    add128_wide(r0, r1, r2, r3, s0);
+    u64 out0 = reduce128(r0, r1, r2, r3);
+    #pragma unroll
+    for (int i = 1; i < 12; i++) {
+        mul64wide(state[i], MDS_DIAG[i], r0, r1, r2, r3);
+        add128_wide(r0, r1, r2, r3, s);
+        state[i] = reduce128(r0, r1, r2, r3);
+    }
+    return out0;
+}
+
+__device__ __forceinline__ void permute64_after_initial(u64 *state) {
+    #pragma unroll 1
+    for (int r = 0; r < 4; r++) {
+        #pragma unroll
+        for (int i = 0; i < 12; i++) {
+            state[i] = gf64_sbox(state[i]);
+        }
+        ext_layer64(state, RC_INITIAL[r + 1]);
+    }
+    u64 x = gf64_sbox(state[0]);
+    #pragma unroll 1
+    for (int r = 0; r < 21; r++) {
+        x = gf64_sbox(int_round_p(state, x, RC_INTERNAL[r + 1]));
+    }
+    state[0] = int_round_p(state, x, 0ULL);
+    #pragma unroll
+    for (int i = 0; i < 12; i++) {
+        state[i] = gf64_add(state[i], RC_TERMINAL[0][i]);
+    }
+    #pragma unroll 1
+    for (int r = 0; r < 4; r++) {
+        #pragma unroll
+        for (int i = 0; i < 12; i++) {
+            state[i] = gf64_sbox(state[i]);
+        }
+        ext_layer64(state, RC_TERMINAL[r + 1]);
     }
 }
 
-__device__ __forceinline__ void permute64(u64 st[12]) {
-    ext_layer64(st);
-    for (u32 r = 0u; r < 4u; r++) {
-        for (u32 i = 0u; i < 12u; i++) {
-            st[i] = gf64_add(st[i], RC_INITIAL[r][i]);
+// Two consecutive permutations from the post-initial-layer prestate: first
+// finishes the nonce-absorb block, second finishes the [1,1] padding block,
+// leaving the state ready for the first squeeze.
+__device__ __forceinline__ void permute64_twice_after_initial(u64 *state) {
+    #pragma unroll 1
+    for (int pass = 0; pass < 2; pass++) {
+        if (pass != 0) {
+            ext_layer64(state, RC_INITIAL[0]);
         }
-        for (u32 i = 0u; i < 12u; i++) {
-            st[i] = gf64_sbox(st[i]);
+        permute64_after_initial(state);
+        if (pass == 0) {
+            state[0] = gf64_add(state[0], 1ULL);
+            state[1] = gf64_add(state[1], 1ULL);
         }
-        ext_layer64(st);
-    }
-    for (u32 r = 0u; r < 22u; r++) {
-        st[0] = gf64_sbox(gf64_add(st[0], RC_INTERNAL[r]));
-        int_layer64(st);
-    }
-    for (u32 r = 0u; r < 4u; r++) {
-        for (u32 i = 0u; i < 12u; i++) {
-            st[i] = gf64_add(st[i], RC_TERMINAL[r][i]);
-        }
-        for (u32 i = 0u; i < 12u; i++) {
-            st[i] = gf64_sbox(st[i]);
-        }
-        ext_layer64(st);
     }
 }
 
@@ -204,16 +381,12 @@ __device__ __forceinline__ u32 bswap32(u32 v) {
     return __byte_perm(v, 0u, 0x0123u);
 }
 
-extern "C" __global__ void qpow_mine(
-    u32* results,
-    const u32* midstate,
-    const u32* start_nonce,
-    const u32* difficulty_target,
-    const u32* dispatch_config)
-{
-    if (atomicOr(&results[0], 0u) != 0u) {
-        return;
-    }
+extern "C" __global__ void __launch_bounds__(256, 4) qpow_mine(
+    u32 *results,
+    const u32 *prestate,
+    const u32 *start_nonce,
+    const u32 *difficulty_target,
+    const u32 *dispatch_config) {
     u32 thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     u32 total_threads = dispatch_config[0];
     u32 nonces_per_thread = dispatch_config[1];
@@ -223,120 +396,90 @@ extern "C" __global__ void qpow_mine(
     }
     u32 base_index = thread_id * nonces_per_thread;
 
-    // Hoist uniform reads out of the nonce loop
     u64 mid[12];
-    for (u32 i = 0u; i < 12u; i++) {
-        mid[i] = ((u64)midstate[2u * i + 1u] << 32) | (u64)midstate[2u * i];
+    #pragma unroll
+    for (int i = 0; i < 12; i++) {
+        mid[i] = ((u64)prestate[2 * i + 1] << 32) | (u64)prestate[2 * i];
     }
-    u32 tgt[16];
-    for (u32 i = 0u; i < 16u; i++) {
-        tgt[i] = difficulty_target[i];
+    u32 tgt_hi[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        tgt_hi[i] = difficulty_target[8 + i];
     }
-    u32 nonce_base[16];
-    for (u32 i = 0u; i < 16u; i++) {
-        nonce_base[i] = start_nonce[i];
-    }
+    u64 nonce_base_low = ((u64)start_nonce[1] << 32) | (u64)start_nonce[0];
 
-    for (u32 j = 0u; j < nonces_per_thread; j = j + 1u) {
+    #pragma unroll
+    for (u32 j = 0; j < nonces_per_thread; j++) {
         u32 logical_index = base_index + j;
         if (logical_index >= total_nonces) {
             break;
         }
-        if (j > 0u && atomicOr(&results[0], 0u) != 0u) {
-            return;
-        }
-
-        // The host guarantees a batch never carries into the high nonce half
-        // (limbs 8..15), so only the low 256 bits are incremented here.
-        u32 current_nonce[16];
-        u32 val0 = nonce_base[0];
-        u32 sum0 = val0 + logical_index;
-        current_nonce[0] = sum0;
-        u32 carry = sum0 < val0 ? 1u : 0u;
-        #pragma unroll
-        for (u32 i = 1u; i < 8u; i++) {
-            u32 val = nonce_base[i];
-            u32 sum = val + carry;
-            current_nonce[i] = sum;
-            carry = sum < val ? 1u : 0u;
-        }
-        #pragma unroll
-        for (u32 i = 8u; i < 16u; i++) {
-            current_nonce[i] = nonce_base[i];
-        }
-
-        // Resume the sponge from the precomputed midstate: absorb the low
-        // nonce half, pad, squeeze twice (3 permutations instead of 5).
         u64 st[12];
         #pragma unroll
-        for (u32 i = 0u; i < 12u; i++) {
+        for (int i = 0; i < 12; i++) {
             st[i] = mid[i];
         }
-        #pragma unroll
-        for (u32 i = 0u; i < 8u; i++) {
-            st[i] = gf64_add(st[i], (u64)bswap32(current_nonce[7u - i]));
-        }
-        permute64(st);
-        st[0] = gf64_add(st[0], 1ULL);
-        st[1] = gf64_add(st[1], 1ULL);
-        permute64(st);
+        // Sparse inject: the prestate already ran the initial linear layer,
+        // so only the linear image of the two varying lanes (6,7) is added —
+        // x6/x7 are the byte-swapped low 64 bits of the nonce.
+        u64 nonce_low = nonce_base_low + (u64)logical_index;
+        u64 x6 = (u64)bswap32((u32)(nonce_low >> 32));
+        u64 x7 = (u64)bswap32((u32)nonce_low);
+        u64 x6_2 = x6 + x6;
+        u64 x6_3 = x6_2 + x6;
+        u64 x6_4 = x6_2 + x6_2;
+        u64 x6_6 = x6_3 + x6_3;
+        u64 x7_2 = x7 + x7;
+        u64 x7_3 = x7_2 + x7;
+        u64 x7_4 = x7_2 + x7_2;
+        u64 x7_6 = x7_3 + x7_3;
+        u64 c0 = x6 + x7;
+        u64 c1 = x6_3 + x7;
+        u64 c2 = x6_2 + x7_3;
+        u64 c3 = x6 + x7_2;
+        st[0] = gf64_add(st[0], c0);
+        st[1] = gf64_add(st[1], c1);
+        st[2] = gf64_add(st[2], c2);
+        st[3] = gf64_add(st[3], c3);
+        st[4] = gf64_add(st[4], x6_2 + x7_2);
+        st[5] = gf64_add(st[5], x6_6 + x7_2);
+        st[6] = gf64_add(st[6], x6_4 + x7_6);
+        st[7] = gf64_add(st[7], x6_2 + x7_4);
+        st[8] = gf64_add(st[8], c0);
+        st[9] = gf64_add(st[9], c1);
+        st[10] = gf64_add(st[10], c2);
+        st[11] = gf64_add(st[11], c3);
+        permute64_twice_after_initial(st);
 
-        // First squeeze yields the most significant 256 bits of the hash, which
-        // decide hash-vs-target on their own unless they exactly equal the
-        // target's high half. Only candidates pay for the second squeeze, and
-        // byte-swapped hash words are produced on demand during the compare.
+        // First squeeze = the most significant 256 bits of the 64-byte BE
+        // hash; compare them against the target high half and pay for the
+        // second squeeze only on candidates (host re-verifies fully anyway).
         u32 first[8];
         #pragma unroll
-        for (u32 i = 0u; i < 4u; i++) {
+        for (int i = 0; i < 4; i++) {
             u64 c = gf64_canon(st[i]);
-            first[2u * i] = (u32)(c & EPS64);
-            first[2u * i + 1u] = (u32)(c >> 32);
+            first[2 * i] = (u32)(c & EPS64);
+            first[2 * i + 1] = (u32)(c >> 32);
         }
         u32 cmp = 0u;
-        for (u32 i = 0u; i < 8u; i++) {
+        #pragma unroll
+        for (int i = 0; i < 8; i++) {
             u32 h = bswap32(first[i]);
-            u32 t = tgt[15u - i];
+            u32 t = tgt_hi[7 - i];
             if (h != t) {
-                cmp = h > t ? 1u : 2u;
+                cmp = (h > t) ? 1u : 2u;
                 break;
             }
         }
         if (cmp == 1u) {
             continue;
         }
-
-        u32 hash_le[16];
-        #pragma unroll
-        for (u32 i = 0u; i < 8u; i++) {
-            hash_le[15u - i] = bswap32(first[i]);
-        }
-        permute64(st);
-        #pragma unroll
-        for (u32 i = 0u; i < 4u; i++) {
-            u64 c = gf64_canon(st[i]);
-            hash_le[7u - 2u * i] = bswap32((u32)(c & EPS64));
-            hash_le[6u - 2u * i] = bswap32((u32)(c >> 32));
-        }
-        bool below = cmp == 2u;
-        if (!below) {
-            for (u32 i = 0u; i < 8u; i++) {
-                u32 h = hash_le[7u - i];
-                u32 t = tgt[7u - i];
-                if (h != t) {
-                    below = h < t;
-                    break;
-                }
-            }
-        }
-
-        if (below) {
-            if (atomicExch(&results[0], 1u) == 0u) {
-                for (u32 i = 0u; i < 16u; i++) {
-                    atomicExch(&results[1u + i], current_nonce[i]);
-                    atomicExch(&results[17u + i], hash_le[i]);
-                }
-            }
-            return;
+        // Record the candidate and keep going: no thread ever stops early, so
+        // a launch always evaluates its whole rectangle. The host recomputes
+        // and verifies every recorded index on the CPU.
+        u32 slot = atomicAdd(&results[0], 1u);
+        if (slot < MAX_HITS) {
+            results[1 + slot] = logical_index;
         }
     }
 }
