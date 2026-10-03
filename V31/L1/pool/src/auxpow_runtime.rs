@@ -324,14 +324,29 @@ async fn run_bridge_task(
     // just waits for the next job and drains the share/touch channels.
     let mut timeout_counter = 0u64;
     loop {
+        // Drain pending shares BEFORE the job poll so a share never waits
+        // behind a blocked `wait_for_job` call — upstream job windows are
+        // short (~15s on QTU), so submit latency directly costs accepts.
+        while let Ok((req, reply_tx)) = share_rx.try_recv() {
+            let client = client.clone();
+            tokio::spawn(async move {
+                let result = forward_share_to_upstream(&client, coin, &req).await;
+                tracing::info!(
+                    "auxpow[{}]: share forwarded job={} nonce={} result={:?}",
+                    coin.as_str(),
+                    req.job_id,
+                    req.nonce,
+                    result
+                );
+                let _ = reply_tx.send(result);
+            });
+        }
+
         if client.is_connected().await {
-            // Short 1-second timeout so shares in the channel are forwarded
-            // promptly. The previous 5s timeout could delay share forwarding
-            // by up to 5s, causing "Job expired" rejections on fast-block
-            // chains like ZANO (~30s blocks).
-            // wait_for_job now compares the full job content (id/ntime/target/header)
-            // so rolling updates with the same job_id are also picked up.
-            match client.wait_for_job(Duration::from_secs(1)).await {
+            // Short 100ms timeout bounds share-forward latency (~100ms worst
+            // case) while `wait_for_job` still returns immediately on new
+            // jobs via the notify channel.
+            match client.wait_for_job(Duration::from_millis(100)).await {
                 Ok(job) => {
                     let pkg = external_job_to_package(&job, coin);
                     tracing::debug!(
@@ -373,25 +388,6 @@ async fn run_bridge_task(
         } else {
             tracing::debug!("auxpow[{}]: waiting for upstream reconnect", coin_label);
             tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-
-        // Forward any pending shares (non-blocking drain) in parallel so a
-        // slow upstream submit for one share does not block new jobs or the
-        // rest of the queue. This is especially important for fast-block
-        // coins (VRSC ~60s, ZANO ~30s) where stale shares are rejected.
-        while let Ok((req, reply_tx)) = share_rx.try_recv() {
-            let client = client.clone();
-            tokio::spawn(async move {
-                let result = forward_share_to_upstream(&client, coin, &req).await;
-                tracing::info!(
-                    "auxpow[{}]: share forwarded job={} nonce={} result={:?}",
-                    coin.as_str(),
-                    req.job_id,
-                    req.nonce,
-                    result
-                );
-                let _ = reply_tx.send(result);
-            });
         }
 
         // Refresh the bridge's timestamp for the current upstream job.
