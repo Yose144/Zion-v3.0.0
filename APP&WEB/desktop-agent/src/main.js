@@ -2446,6 +2446,13 @@ function startMiningV31(config, v31Path) {
     if (Number.isFinite(extGap) && extGap >= 0 && extGap <= 1000) {
       env.ZION_EXT_GPU_GAP_MS = String(Math.floor(extGap));
     }
+    // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
+    // smaller batches refresh upstream jobs sooner, cutting stale
+    // "job not found" rejects on fast-rotating pools (LuckPool ~15-60s).
+    const s3Batch = Number(config?.cpuStream3Batch);
+    if (Number.isFinite(s3Batch) && s3Batch >= 100000) {
+      env.ZION_EXT_CPU_NONCE_COUNT = String(Math.floor(s3Batch));
+    }
 
     log(`[V31-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize} | MaxBatch: ${env.ZION_GPU_MAX_BATCH}\n`);
     if (gpuInfo?.memory) log(`[V31-FAST] GPU VRAM: ${gpuInfo.memory} | Driver: ${gpuInfo.driver || 'n/a'}\n`);

@@ -151,6 +151,7 @@ function loadConfig() {
   const cpuCoin = String(disk.cpuCoin || 'auto').trim();
   const gpuStream2Batch = Number(disk.gpuStream2Batch) || 0;
   const gpuExtGapMs = Number(disk.gpuExtGapMs);
+  const cpuStream3Batch = Number(disk.cpuStream3Batch) || 0;
 
   return {
     pool,
@@ -165,6 +166,7 @@ function loadConfig() {
     cpuCoin,
     gpuStream2Batch,
     gpuExtGapMs,
+    cpuStream3Batch,
   };
 }
 
@@ -193,6 +195,7 @@ function saveConfig(config) {
       cpuCoin: config.cpuCoin,
       gpuStream2Batch: config.gpuStream2Batch,
       gpuExtGapMs: config.gpuExtGapMs,
+      cpuStream3Batch: config.cpuStream3Batch,
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(persist, null, 2));
   } catch (err) {
@@ -300,6 +303,12 @@ async function main() {
     }
     if (Number.isFinite(config.gpuExtGapMs) && config.gpuExtGapMs >= 0 && config.gpuExtGapMs <= 1000) {
       env.ZION_EXT_GPU_GAP_MS = String(Math.floor(config.gpuExtGapMs));
+    }
+    // Opt-in stream-3 batch (VerusHash CPU nonces per scan round).
+    // Smaller batches refresh the upstream job sooner — cuts stale
+    // "job not found" rejects on pools with sub-minute job rotation.
+    if (Number.isFinite(config.cpuStream3Batch) && config.cpuStream3Batch >= 100000) {
+      env.ZION_EXT_CPU_NONCE_COUNT = String(Math.floor(config.cpuStream3Batch));
     }
   }
 
