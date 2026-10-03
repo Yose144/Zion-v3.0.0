@@ -51,12 +51,41 @@ pool: stratum.rs → ShareForwardRequest{nonce_hex} → auxpow_bridge
 
 ## Pooly
 
+- `eu.quantus.k1pool.com:5660` (TCP+SSL stejný port, diff ~1–3G) — **aktivní upstream**;
+  vyžaduje registraci, login = `Kr_WALLET.worker` (interní account wallet, ne qz adresa)
 - `quantus.qelvhash.com:4444` (TLS 4443) — nejnižší diff, login-dialekt, testováno live
 - `quantus.suprnova.cc:7071` (TLS 7074)
 - `qtc.kryptex.network:7049`
 
 Wire submit: `{"id":<session>, "job_id":…, "nonce":<128hex>, "result":<128hex>}` —
 nonce je 64B BE hex, extranonce uvnitř prefixu.
+
+## Nasazení (zion-pool → k1pool)
+
+Pool-side bridge se řídí env v `/etc/zion/edge-environment.sh` (Edge) /
+`V31/deploy/config/edge-environment.sh` (template). **Per-coin env suffix =
+ticker, tedy `QTU`, ne `QUANTUS`:**
+
+```sh
+ZION_POOL_AUXPOW_COIN=QTU                              # Stream 2 = Quantus
+ZION_POOL_AUXPOW_POOL_QTU=eu.quantus.k1pool.com:5660   # override CoinProfile defaultu
+ZION_POOL_AUXPOW_WALLET_QTU=Kr…Fm                      # Kr_WALLET z k1pool účtu (NESMÍ do gitu)
+ZION_POOL_AUXPOW_WORKER=zion-pool                      # login → "Kr….zion-pool"
+```
+
+⚠️ Pouze **jeden** non-CPU coin smí mít aktivní bridge — `is_cpu_coin` =
+{XMR, VRSC}, vše ostatní jde do `build_external_stream_gpu`, který iteruje
+`enabled_coins()` (HashMap, nondeterministic order) a vrátí první fresh job.
+ZANO i Quantus současně → náhodný coin na Stream 2. ZANO proto vypnuto
+(zakomentováno, re-enable = prohodit dvě řádky).
+
+Login `Kr…Fm.zion-pool` proti `eu.quantus.k1pool.com:5660` **live ověřen
+2026-10-30** — pool vrátil session id + job (`mining_hash` 32B, `target` 64B,
+`extranonce` 4B, `difficulty` 3e9, `clean_jobs:true`).
+
+Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
+(`from_str_loose` přijímá `quantus`/`qtu`/`qpow`; job coin "QTU" parsuje
+`from_ticker`).
 
 ## ENV
 

@@ -75,8 +75,20 @@ ZION_POOL_API_BIND=0.0.0.0:8080
 # issue only external jobs or omit ZION from the work assignment.
 ZION_BACKEND_AUTO_INCLUDE_ZION=1
 ZION_POOL_AUXPOW_ENABLED=1
-ZION_POOL_AUXPOW_COIN=ZANO
-ZION_POOL_AUXPOW_WALLET_ZANO=ZxCFngZg2XUHmxm7zTL9jwEaDKNPCBDoCZv44myC6PesBXEXrbq8NRaDpkmL7utcYhiLXB2KiJyVmA5atrQbd7Ai2SX3nptts
+# Stream 2 (GPU) upstream coin. Only ONE non-CPU coin may be enabled at a time —
+# build_external_stream_gpu picks the first non-CPU bridge with a fresh job and
+# HashMap iteration order is nondeterministic.
+# Quantus QPoW via k1pool (EU stratum :5660, TCP+SSL same port). The upstream
+# login is the k1pool account wallet "Kr_WALLET" (register at k1pool.com), NOT a
+# Quantus qz… payout address — the qz address is set as payout inside the
+# k1pool account. Per-coin env names use the QTU ticker (not QUANTUS).
+ZION_POOL_AUXPOW_COIN=QTU
+ZION_POOL_AUXPOW_POOL_QTU=eu.quantus.k1pool.com:5660
+# Set the real Kr_WALLET on the server (never commit account credentials):
+#ZION_POOL_AUXPOW_WALLET_QTU=<KR_WALLET_FROM_K1POOL_ACCOUNT>
+# Previous GPU coin (re-enable by swapping the two lines back):
+#ZION_POOL_AUXPOW_COIN=ZANO
+#ZION_POOL_AUXPOW_WALLET_ZANO=ZxCFngZg2XUHmxm7zTL9jwEaDKNPCBDoCZv44myC6PesBXEXrbq8NRaDpkmL7utcYhiLXB2KiJyVmA5atrQbd7Ai2SX3nptts
 ZION_POOL_AUXPOW_SPLIT_ZION=4
 ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
 # ZION_POOL_AUXPOW_WALLET is the fallback wallet for external AuxPoW pools.
