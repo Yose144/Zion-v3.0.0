@@ -376,16 +376,23 @@ impl V3PoolClient {
         // "job timeout" error and stalling reconnects by up to 60s.
         let mut conn_closed = self.conn_closed.clone();
         let wait = async {
-            loop {
-                if rx.has_changed().unwrap_or(false) {
-                    if let Some(bundle) = rx.borrow_and_update().clone() {
-                        return Ok(bundle);
-                    }
+            // Fast path: a bundle published before this call is still unseen.
+            if rx.has_changed().unwrap_or(false) {
+                if let Some(bundle) = rx.borrow_and_update().clone() {
+                    return Ok(bundle);
                 }
+            }
+            loop {
+                // NOTE: `changed()` marks the newest value as seen when it
+                // resolves — `has_changed()` afterwards is always false, so
+                // the bundle must be read here, not re-tested for freshness.
                 tokio::select! {
                     changed = rx.changed() => {
                         if changed.is_err() {
                             anyhow::bail!("V3 pool: job channel closed");
+                        }
+                        if let Some(bundle) = rx.borrow().clone() {
+                            return Ok(bundle);
                         }
                     }
                     _ = conn_closed.changed() => {
@@ -709,6 +716,45 @@ mod tests {
             .await
             .expect("share submit failed — read loop wedged");
         assert!(res.accepted);
+    }
+
+    /// Regression test for the `changed()`/`has_changed()` inversion: a job
+    /// published while `next_job` is parked in `rx.changed()` must be
+    /// returned immediately. `changed()` marks the newest value as seen when
+    /// it resolves, so re-testing `has_changed()` afterwards is always false
+    /// — the old loop swallowed every published job and starved until the
+    /// 60s timeout (live symptom: Stream 1 never mined, every session died
+    /// on the job TTL while streams 2/3 kept working).
+    #[tokio::test]
+    async fn next_job_returns_job_published_while_awaiting() {
+        let addr = spawn_mock_pool(|_lines, mut writer| async move {
+            // Give the client a moment to call next_job and park in
+            // rx.changed(), then publish exactly one job and go quiet —
+            // a second send must not be required to wake the waiter.
+            tokio::time::sleep(Duration::from_millis(300)).await;
+            let line = job_line(7, "ext7");
+            writer.write_all(line.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+            tokio::time::sleep(Duration::from_secs(10)).await;
+        })
+        .await;
+
+        let client = V3PoolClient::connect(
+            &addr,
+            "miner",
+            "worker",
+            "ekam_deeksha",
+            "cpu",
+            "payout",
+        )
+        .await
+        .unwrap();
+
+        let bundle = client
+            .next_job(Duration::from_secs(5))
+            .await
+            .expect("next_job must return a job published while awaiting");
+        assert_eq!(bundle.zion.job_id, 7);
     }
 
     /// A pool session that dies before sending any job must surface as a

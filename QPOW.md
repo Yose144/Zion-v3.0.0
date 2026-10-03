@@ -1,7 +1,7 @@
 # QPOW — Quantus nativní integrace do Trinity (Stream 2)
 
-Status: **implementováno, čeká na CUDA runtime debug na GTX 1070 Ti**
-Datum: 2026-10-30
+Status: **live-validated na GTX 1070 Ti — CUDA kernel těží, ZION stream opraven**
+Datum: 2026-10-30 (CUDA debug run 2026-10-03)
 
 Quantus (QPoW = Poseidon2 nad Goldilocks polem) je plně integrovaný jako
 `ExternalCoin::Quantus` na Trinity Stream 2 (GPU external). Těžba běží nativně —
@@ -102,15 +102,31 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
 - Kernel sponge-flow == `get_nonce_hash` (`midstate_kernel_flow_matches_reference`)
 - Live qelvhash roundtrip: login + job + submit (below-target reject = validace chainu OK)
 - Testy: 119 miner + 172 pool zelených; `gpu-cuda` feature compile čistý
+- **2026-10-03 real-hardware (GTX 1070 Ti, driver 580.178, CUDA 13.0 / NVRTC 12.4):**
+  NVRTC compile prošel autodetekcí `compute_61` (env `ZION_CUDA_ARCH` není
+  potřeba), kernel launch + `mine_batch` běží, ~1.5–2.4 MH/s za sdíleného
+  contextu se Stream 1 (`shared_cuda_device` — jeden `CudaDevice`, VRAM
+  2184 MiB celkem, žádný druhý context). Koexistence s llama-serverem OK
+  (GPU ~76 % util, 120 W). Accepted share na upstreamu zatím nepadl —
+  miners minují přímo proti upstream `target_hex` (diff ~1e9), expected
+  ~7 min/share; běží dál.
+- **Kritický fix během debugu:** `V3PoolClient::next_job` měl invertovanou
+  watch-semantiku — `rx.changed()` po resolvnutí sám označí hodnotu za seen,
+  takže následný `has_changed()` je vždy false a loop hltal každý publikovaný
+  bundle bez návratu → Stream 1 nikdy netěžil, session umírala na 60s job TTL.
+  Postihlo by KAŽDÉHO na nové binárce (regrese watch refactoru), ne jen QPoW.
+  Fix: po `changed()` číst rovnou `borrow()`, `has_changed()` jen jako
+  fast-path před čekáním. Regresní test `next_job_returns_job_published_while_awaiting`.
+  Po fixu: ZION stream live — stovky accepted sharů, 2 found blocky.
 
 ## TODO na 1070 Ti rigu (CUDA debug)
 
-1. `cargo build --release -p zion-miner --features gpu-cuda`
-2. `ZION_STREAM2_FORCE_COIN=quantus ZION_CUDA_ARCH=sm_61` run → ověřit NVRTC compile + kernel launch (logy `qpow_cuda`)
-3. Hashrate vs. SRBMiner-MULTI baseline; ladit `ZION_GPU_WORK_SIZE` / `ZION_CUDA_BLOCK_SIZE`
-4. Accepted share na `quantus.qelvhash.com:4444` (nejen below-target reject)
-5. CUDA context sharing se Stream 1 (zion kernel) — ověřit že `shared_cuda_device` reuse funguje, ne dva contexty na jedné kartě
-6. Duty-cycle s llama: `ZION_EXT_GPU_GAP_MS` (VRAM OK — kernel nemá DAG)
+1. ~~`cargo build --release -p zion-miner --features gpu-cuda`~~ ✅
+2. ~~NVRTC compile + kernel launch~~ ✅ (autodetect `compute_61`, log `gpu_qpow_cuda_init`)
+3. Hashrate vs. SRBMiner-MULTI baseline; ladit `ZION_GPU_WORK_SIZE` / `ZION_CUDA_BLOCK_SIZE` — částečně: ~2 MH/s out-of-box, tuning teprve
+4. Accepted share na upstreamu (k1pool přes zion-pool) — pending, čeká se na náhodu (diff ~1e9 @ ~2 MH/s)
+5. ~~CUDA context sharing se Stream 1~~ ✅ (`shared_cuda_device`, jeden context)
+6. Duty-cycle s llama ✅ implicitně ověřeno (llama + zion + qpow na kartě současně); `ZION_EXT_GPU_GAP_MS` pro jemné ladění
 
 ## Známé limity
 
