@@ -147,6 +147,10 @@ function loadConfig() {
   const gpuBackend = String(disk.gpuBackend || disk.backend || DEFAULT_CONFIG.gpuBackend).trim().toLowerCase();
   const tripleStream = !!disk.tripleStream;
   const autonomous = !!disk.autonomous;
+  const gpuCoin = String(disk.gpuCoin || 'auto').trim();
+  const cpuCoin = String(disk.cpuCoin || 'auto').trim();
+  const gpuStream2Batch = Number(disk.gpuStream2Batch) || 0;
+  const gpuExtGapMs = Number(disk.gpuExtGapMs);
 
   return {
     pool,
@@ -157,6 +161,10 @@ function loadConfig() {
     gpuBackend,
     tripleStream,
     autonomous,
+    gpuCoin,
+    cpuCoin,
+    gpuStream2Batch,
+    gpuExtGapMs,
   };
 }
 
@@ -181,6 +189,10 @@ function saveConfig(config) {
       gpuBackend: config.gpuBackend,
       tripleStream: config.tripleStream,
       autonomous: config.autonomous,
+      gpuCoin: config.gpuCoin,
+      cpuCoin: config.cpuCoin,
+      gpuStream2Batch: config.gpuStream2Batch,
+      gpuExtGapMs: config.gpuExtGapMs,
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(persist, null, 2));
   } catch (err) {
@@ -269,6 +281,27 @@ async function main() {
     // Users can override via RUST_LOG if they need logs for debugging.
     RUST_LOG: process.env.RUST_LOG || 'error',
   };
+
+  // Triple-stream force-coin envs (mirror main.js): when the user picks a
+  // specific coin for stream2/3 the miner skips the profit router.
+  if (config.tripleStream) {
+    const gpuCoin = config.gpuCoin.toLowerCase();
+    const cpuCoin = config.cpuCoin.toLowerCase();
+    if (config.gpu && gpuCoin && gpuCoin !== 'auto') {
+      env.ZION_STREAM2_FORCE_COIN = config.gpuCoin.toUpperCase();
+    }
+    if (cpuCoin && cpuCoin !== 'auto') {
+      env.ZION_STREAM3_FORCE_COIN = config.cpuCoin.toUpperCase();
+    }
+    // Opt-in stream-2 tuning (QPoW CUDA): batch size in nonces and the
+    // duty-cycle gap that yields GPU time to the ZION stream.
+    if (config.gpuStream2Batch >= 262144) {
+      env.ZION_STREAM2_BATCH = String(Math.floor(config.gpuStream2Batch));
+    }
+    if (Number.isFinite(config.gpuExtGapMs) && config.gpuExtGapMs >= 0 && config.gpuExtGapMs <= 1000) {
+      env.ZION_EXT_GPU_GAP_MS = String(Math.floor(config.gpuExtGapMs));
+    }
+  }
 
   // Persist any resolved defaults (e.g. default pool) so the GUI sees the same values.
   saveConfig({ ...config, worker });
