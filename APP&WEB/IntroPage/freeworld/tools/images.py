@@ -19,7 +19,7 @@ SOURCES = {
     'lumi-nova-amerika': ('Lumi.png', 'Lumi project.png'),
     'uluru': ('Uluru copy.png', 'UluruProject.png'),
     # TODO(interim): board is placeholder art — replace with real vessel masterplan
-    'maria-del-camino': ('Maria2.jpg', 'MariaDelCaminoProject.png'),
+    'maria-del-camino': ('Caminos3.jpg', 'MariaDelCaminoProject.png'),
     # TODO(interim): board is placeholder art — replace with real cape masterplan
     'boa-esperanca': ('BoaEsp.jpg', 'BoaEsperancaProject.png'),
     # TODO(interim): board is placeholder art — replace with real temple masterplan
