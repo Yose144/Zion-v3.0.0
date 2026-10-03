@@ -561,9 +561,15 @@ impl AutonomousProfitRouter {
 
 /// Read ZION_STREAM2_FORCE_COIN env var to force a specific Stream 2 coin.
 /// Useful for testing CUDA kernels for specific algorithms.
-/// Valid values: KAS, ALPH, DCR, ERG, FLUX, ETC, RVN, CLORE, VRSC, etc.
+/// Valid values: KAS, ALPH, DCR, ERG, FLUX, ETC, RVN, CLORE, VRSC, QTU, etc.
+/// `from_str_loose` accepts aliases ("quantus", "qpow", …) in addition to
+/// tickers; the ticker match is kept as a fallback for any ticker not
+/// covered by the loose table.
 fn forced_stream2_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM2_FORCE_COIN").ok()?;
+    if let Some(coin) = ExternalCoin::from_str_loose(&raw) {
+        return Some(coin);
+    }
     let upper = raw.trim().to_uppercase();
     ExternalCoin::ALL
         .iter()
@@ -574,6 +580,9 @@ fn forced_stream2_coin() -> Option<ExternalCoin> {
 /// Read ZION_STREAM3_FORCE_COIN env var to force a specific Stream 3 (CPU) coin.
 fn forced_stream3_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM3_FORCE_COIN").ok()?;
+    if let Some(coin) = ExternalCoin::from_str_loose(&raw) {
+        return Some(coin);
+    }
     let upper = raw.trim().to_uppercase();
     ExternalCoin::ALL
         .iter()

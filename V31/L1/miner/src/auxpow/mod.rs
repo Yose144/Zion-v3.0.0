@@ -15,6 +15,7 @@ pub mod native;
 pub mod parent_chains;
 pub mod progpow_codegen;
 pub(crate) mod pure;
+pub mod qpow;
 pub mod scheduler;
 pub mod true_auxpow;
 pub mod types;
@@ -60,6 +61,33 @@ pub fn find_share(coin: ExternalCoin, job: &Job, start: u64, limit: u64) -> Opti
     let mut header_hash = [0u8; 32];
     let copy_len = job.header.len().min(32);
     header_hash[..copy_len].copy_from_slice(&job.header[..copy_len]);
+
+    // Quantus QPoW — 512-bit nonce/target; the u64 path below cannot
+    // represent it.
+    if coin.algorithm() == "qpow-poseidon2" {
+        let target = job.target_512?;
+        let mut header = [0u8; 32];
+        header[..copy_len].copy_from_slice(&job.header[..copy_len]);
+        let base = qpow::build_nonce(&job.extranonce, 0);
+        let prestate = qpow::mining_prestate_low64(&header, &base);
+        let (low, hash64) = qpow::scan_low64(&prestate, &target, start, limit)?;
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(&hash64[..32]);
+        return Some(Share {
+            job_id: job.job_id.clone(),
+            coin,
+            nonce: low,
+            hash,
+            header_hash,
+            mix_hash: None,
+            solution: None,
+            nonce_512: Some(qpow::build_nonce(&job.extranonce, low)),
+            hash_512: Some(hash64),
+            extranonce2: job.extranonce2.clone(),
+            ntime: job.ntime.clone(),
+        });
+    }
+
     for offset in 0..limit {
         let nonce = start.wrapping_add(offset);
         let hash = hasher::hash_for_coin(coin, &job.header, nonce);
@@ -72,6 +100,8 @@ pub fn find_share(coin: ExternalCoin, job: &Job, start: u64, limit: u64) -> Opti
                 header_hash,
                 mix_hash: None,
                 solution: None,
+                nonce_512: None,
+                hash_512: None,
                 extranonce2: job.extranonce2.clone(),
                 ntime: job.ntime.clone(),
             });

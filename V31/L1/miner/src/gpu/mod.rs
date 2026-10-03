@@ -24,6 +24,8 @@ use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 
 #[cfg(feature = "gpu-cuda")]
 pub mod cuda_external;
+#[cfg(feature = "gpu-cuda")]
+pub mod qpow_cuda;
 
 // ── Global GPU memory budget tracker ──────────────────────────────────
 // On Apple Silicon (unified memory), GPU and CPU share the same physical

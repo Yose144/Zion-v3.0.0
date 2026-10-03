@@ -84,6 +84,7 @@ clap = { workspace = true }
 hex = { workspace = true }
 num-bigint = { workspace = true }
 num_cpus = "1"
+qp-poseidon-core = { workspace = true }
 rayon = "1"
 reqwest = { workspace = true }
 serde = { workspace = true }

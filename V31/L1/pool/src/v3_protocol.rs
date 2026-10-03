@@ -146,6 +146,10 @@ pub enum PoolMessage {
         algorithm: String,
         external_job_id: String,
         nonce: u64,
+        /// Full-width nonce hex for wide-nonce algorithms (Quantus QPoW:
+        /// 128 chars). Absent for legacy u64-nonce coins.
+        #[serde(default)]
+        nonce_hex: Option<String>,
         hash_hex: String,
         #[serde(default)]
         mix_hash_hex: Option<String>,

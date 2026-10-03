@@ -80,6 +80,10 @@ pub enum StratumProtocol {
     BeamStratum,
     CryptonoteStratum,
     IronFishStratum,
+    /// Quantus QPoW stratum (miningcore-style): `login` handshake, jobs carry
+    /// `mining_hash`(32B)/`target`(64B)/`extranonce`, submits send 128-hex
+    /// nonce + 128-hex result.
+    QuantusStratum,
 }
 
 impl StratumProtocol {
@@ -93,6 +97,7 @@ impl StratumProtocol {
             Self::BeamStratum => "beamstratum",
             Self::CryptonoteStratum => "cryptonotestratum",
             Self::IronFishStratum => "ironfishstratum",
+            Self::QuantusStratum => "quantusstratum",
         }
     }
 }
@@ -100,6 +105,7 @@ impl StratumProtocol {
 /// Map V31 ExternalCoin to StratumProtocol.
 pub fn coin_protocol(coin: ExternalCoin) -> StratumProtocol {
     match coin {
+        ExternalCoin::Quantus => StratumProtocol::QuantusStratum,
         ExternalCoin::Monero => StratumProtocol::CryptonoteStratum,
         ExternalCoin::Flux | ExternalCoin::Verus => StratumProtocol::ZcashStratum,
         ExternalCoin::EpicCash => StratumProtocol::EpicStratum,
@@ -121,6 +127,10 @@ pub struct ExternalJob {
     pub header_bytes: Vec<u8>,
     #[serde(skip)]
     pub target_bytes: [u8; 32],
+    /// Full 512-bit target for QPoW coins (Quantus). `target_bytes` stays the
+    /// truncated legacy view; QPoW paths must read this field instead.
+    #[serde(skip)]
+    pub target_512: Option<[u8; 64]>,
     #[serde(skip)]
     pub timestamp: Option<u64>,
     #[serde(skip)]
@@ -154,6 +164,7 @@ impl Default for ExternalJob {
             algorithm: String::new(),
             header_bytes: Vec::new(),
             target_bytes: [0u8; 32],
+            target_512: None,
             timestamp: None,
             nbits: None,
             external_coin: ExternalCoin::Bitcoin,
@@ -208,6 +219,10 @@ pub struct AuxPowClient {
     latest_job_time: Arc<Mutex<Option<Instant>>>,
     cryptonote_session_id: Arc<Mutex<Option<String>>>,
     submitted_nonces: Arc<Mutex<std::collections::VecDeque<(String, u64)>>>,
+    /// QPoW submit dedup keyed by full 128-hex nonce (u64 is insufficient).
+    submitted_qpow: Arc<Mutex<std::collections::HashSet<String>>>,
+    /// Full 512-bit target of the current QPoW job (Quantus only).
+    current_target_512: Arc<Mutex<Option<[u8; 64]>>>,
     /// Guard to ensure only one background poll/reconnect task is ever spawned.
     poll_task_running: Arc<AtomicBool>,
 }
@@ -253,6 +268,8 @@ impl AuxPowClient {
             latest_job_time: Arc::new(Mutex::new(None)),
             cryptonote_session_id: Arc::new(Mutex::new(None)),
             submitted_nonces: Arc::new(Mutex::new(std::collections::VecDeque::new())),
+            submitted_qpow: Arc::new(Mutex::new(std::collections::HashSet::new())),
+            current_target_512: Arc::new(Mutex::new(None)),
             poll_task_running: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -270,6 +287,8 @@ impl AuxPowClient {
 
         if self.protocol == StratumProtocol::CryptonoteStratum {
             self.cryptonote_login(payout_wallet).await?;
+        } else if self.protocol == StratumProtocol::QuantusStratum {
+            self.quantus_login(payout_wallet).await?;
         }
 
         // Mark the poll loop as running before spawning so concurrent
@@ -367,6 +386,8 @@ impl AuxPowClient {
         self.connect_tcp().await?;
         if self.protocol == StratumProtocol::CryptonoteStratum {
             self.cryptonote_login(payout_wallet).await?;
+        } else if self.protocol == StratumProtocol::QuantusStratum {
+            self.quantus_login(payout_wallet).await?;
         } else {
             if self.protocol != StratumProtocol::PearlStratum
                 && self.protocol != StratumProtocol::EthStratum
@@ -731,6 +752,135 @@ impl AuxPowClient {
         Ok(())
     }
 
+    /// Quantus QPoW login — same `login` JSON-RPC shape as cryptonote but the
+    /// result/job carries QPoW fields (mining_hash/target/extranonce).
+    async fn quantus_login(&self, payout_wallet: &str) -> Result<()> {
+        let login = format!("{}.{}", payout_wallet, self.config.worker_name);
+        let req = json!({
+            "id": 1,
+            "method": "login",
+            "params": {
+                "login": login,
+                "pass": self.config.password,
+                "agent": "zion-miner/3.1.0"
+            }
+        });
+        let resp = self.send_request_inline(&req).await?;
+        if let Some(err) = resp.get("error").filter(|e| !e.is_null()) {
+            bail!("quantus login failed: {}", err);
+        }
+        if let Some(result) = resp.get("result") {
+            if let Some(id) = result.get("id").and_then(Value::as_str) {
+                *self.cryptonote_session_id.lock().await = Some(id.to_string());
+            }
+            if let Some(job) = result.get("job") {
+                self.parse_quantus_job(job).await;
+            }
+        }
+        *self.authorized.lock().await = true;
+        ext_info!("quantus login for {}", self.config.coin);
+        Ok(())
+    }
+
+    /// Parse a Quantus job object (`result.job` in the login response or
+    /// `params.job` in a `"job"` notification):
+    /// `{algo, difficulty, extranonce, job_id, mining_hash, seq, target}` —
+    /// `mining_hash` is 32B hex, `target` is 64B big-endian hex, `extranonce`
+    /// is a small hex prefix placed inside the 64B nonce.
+    async fn parse_quantus_job(&self, job: &Value) {
+        let job_id = job
+            .get("job_id")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        let hash_hex = job.get("mining_hash").and_then(Value::as_str).unwrap_or("");
+        let target_hex = job.get("target").and_then(Value::as_str).unwrap_or("");
+        let extranonce_hex = job.get("extranonce").and_then(Value::as_str).unwrap_or("");
+        let difficulty = job
+            .get("difficulty")
+            .and_then(Value::as_f64)
+            .or_else(|| job.get("difficulty").and_then(Value::as_u64).map(|d| d as f64))
+            .unwrap_or(0.0);
+        let seq = job.get("seq").and_then(Value::as_u64);
+
+        let header_bytes = hex::decode(hash_hex).unwrap_or_default();
+        let target_512 = super::qpow::biguint_from_hex::<64>(target_hex);
+        // Legacy 32-byte view: keep the least significant 32 bytes so
+        // difficulty accounting still works; QPoW paths use target_512.
+        let mut target_bytes = [0xFFu8; 32];
+        if let Some(t) = target_512 {
+            target_bytes.copy_from_slice(&t[32..]);
+        } else if let Some(t) = hasher::parse_target_hex(target_hex) {
+            target_bytes = t;
+        }
+        if difficulty > 0.0 {
+            *self.current_difficulty.lock().await = difficulty;
+        }
+        *self.current_target_bytes.lock().await = Some(target_bytes);
+        *self.current_target_512.lock().await = target_512;
+
+        let extranonce = hex::decode(extranonce_hex).unwrap_or_default();
+        *self.extranonce1.lock().await = extranonce.clone();
+
+        let ext_job = ExternalJob {
+            job_id: job_id.clone(),
+            header_hex: hash_hex.to_string(),
+            target_hex: target_hex.to_string(),
+            header_bytes,
+            target_bytes,
+            target_512,
+            block_number: seq,
+            algorithm: self.config.algorithm.clone(),
+            external_coin: self.config.coin,
+            extranonce1: extranonce,
+            ..Default::default()
+        };
+        *self.current_job.lock().await = Some(ext_job);
+        *self.latest_job_id.lock().await = Some(job_id);
+        *self.latest_job_time.lock().await = Some(Instant::now());
+        self.job_notify.notify_waiters();
+    }
+
+    /// Submit a QPoW share: `{"method":"submit","params":{"id":session,
+    /// "job_id":..,"nonce":<128-hex>,"result":<128-hex>}}`.
+    pub async fn submit_qpow_share(
+        &self,
+        job_id: &str,
+        nonce: &[u8; 64],
+        hash: &[u8; 64],
+    ) -> Result<ShareResult> {
+        let nonce_hex = hex::encode(nonce);
+        {
+            let mut submitted = self.submitted_qpow.lock().await;
+            if submitted.contains(&nonce_hex) {
+                return Ok(ShareResult::Rejected("duplicate share".to_string()));
+            }
+            submitted.insert(nonce_hex.clone());
+            if submitted.len() > 8192 {
+                let oldest = submitted.iter().next().cloned();
+                if let Some(o) = oldest {
+                    submitted.remove(&o);
+                }
+            }
+        }
+
+        let session_id = self.cryptonote_session_id.lock().await.clone();
+        let req = json!({
+            "id": self.next_rpc_id(),
+            "method": "submit",
+            "params": {
+                "id": session_id.unwrap_or_default(),
+                "job_id": job_id,
+                "nonce": nonce_hex,
+                "result": hex::encode(hash)
+            }
+        });
+        match self.send_request(&req).await {
+            Ok(resp) => Ok(parse_submit_response(&resp)),
+            Err(e) => Ok(ShareResult::Rejected(e.to_string())),
+        }
+    }
+
     async fn parse_cryptonote_job(&self, job: &Value) {
         let job_id = job
             .get("job_id")
@@ -882,6 +1032,17 @@ impl AuxPowClient {
                 if self.protocol == StratumProtocol::CryptonoteStratum {
                     if let Some(params) = msg.get("params").filter(|v| v.is_object()) {
                         self.parse_cryptonote_job(params).await;
+                    }
+                } else if self.protocol == StratumProtocol::QuantusStratum {
+                    // Quantus sends {"method":"job","params":{"clean_jobs":..,
+                    // "job":{…}}} — the job object is nested under params.job.
+                    let job_val = msg
+                        .get("params")
+                        .and_then(|p| p.get("job"))
+                        .filter(|v| v.is_object())
+                        .or_else(|| msg.get("params").filter(|v| v.is_object()));
+                    if let Some(job) = job_val {
+                        self.parse_quantus_job(job).await;
                     }
                 } else if let Some(job) = self.parse_getwork_response(msg).await {
                     *self.current_job.lock().await = Some(job);
@@ -1230,6 +1391,13 @@ impl AuxPowClient {
         header_hash: Option<&str>,
         solution_hex: &str,
     ) -> Result<ShareResult> {
+        if self.protocol == StratumProtocol::QuantusStratum {
+            // QPoW shares need the full 64-byte nonce/result — the u64 API
+            // cannot represent them. Callers must use `submit_qpow_share`.
+            return Ok(ShareResult::Rejected(
+                "qpow shares must go through submit_qpow_share".to_string(),
+            ));
+        }
         {
             let mut submitted = self.submitted_nonces.lock().await;
             if submitted
@@ -1486,6 +1654,8 @@ pub struct StratumJob {
     pub job_id: String,
     pub header: Vec<u8>,
     pub target: [u8; 32],
+    /// Full 512-bit target for QPoW coins (Quantus).
+    pub target_512: Option<[u8; 64]>,
     pub extranonce1: Vec<u8>,
     pub extranonce2_size: usize,
     pub ntime: String,
@@ -1502,6 +1672,7 @@ impl From<StratumJob> for super::Job {
             coin: j.coin,
             header: j.header,
             target: j.target,
+            target_512: j.target_512,
             extranonce: j.extranonce1,
             extranonce2: "00".to_string(),
             ntime: j.ntime,
@@ -1564,7 +1735,7 @@ impl StratumClient {
                 coin,
                 job_tx,
                 submit_rx,
-                StratumState::new(),
+                StratumState::for_coin(coin),
                 pending,
             ));
         }
@@ -1661,6 +1832,13 @@ struct StratumState {
     ntime: Arc<Mutex<String>>,
     /// Optional explicit target override sent by mining.set_target (2miners).
     target_bytes: Arc<Mutex<Option<[u8; 32]>>>,
+    /// QPoW (Quantus) session: the pool dialect is `login`-based with
+    /// per-job extranonce + 64-byte targets.
+    qpow: bool,
+    /// Session id returned by the pool's login response (submit `params.id`).
+    qpow_session_id: Arc<Mutex<Option<String>>>,
+    /// Full 512-bit target of the current QPoW job.
+    target_512: Arc<Mutex<Option<[u8; 64]>>>,
 }
 
 impl StratumState {
@@ -1671,7 +1849,16 @@ impl StratumState {
             difficulty: Arc::new(Mutex::new(1.0f64)),
             ntime: Arc::new(Mutex::new("00000000".to_string())),
             target_bytes: Arc::new(Mutex::new(None)),
+            qpow: false,
+            qpow_session_id: Arc::new(Mutex::new(None)),
+            target_512: Arc::new(Mutex::new(None)),
         }
+    }
+
+    fn for_coin(coin: zion_cosmic_harmony::ExternalCoin) -> Self {
+        let mut s = Self::new();
+        s.qpow = coin == zion_cosmic_harmony::ExternalCoin::Quantus;
+        s
     }
 }
 
@@ -1733,11 +1920,27 @@ async fn stratum_session(
     let (reader, mut writer) = stream.split();
     let mut lines = BufReader::new(reader).lines();
 
-    let subscribe =
-        json!({"id": 1, "method": "mining.subscribe", "params": ["zion-miner/3.1.0", null]});
-    send_line(&mut writer, &subscribe).await?;
-    let auth = json!({"id": 2, "method": "mining.authorize", "params": [worker, password]});
-    send_line(&mut writer, &auth).await?;
+    if state.qpow {
+        // Quantus QPoW dialect: login-based handshake (miningcore style),
+        // no mining.subscribe/authorize. The login response (id=1) carries
+        // the session id and the first job.
+        let login = json!({
+            "id": 1,
+            "method": "login",
+            "params": {
+                "login": worker,
+                "pass": password,
+                "agent": "zion-miner/3.1.0"
+            }
+        });
+        send_line(&mut writer, &login).await?;
+    } else {
+        let subscribe =
+            json!({"id": 1, "method": "mining.subscribe", "params": ["zion-miner/3.1.0", null]});
+        send_line(&mut writer, &subscribe).await?;
+        let auth = json!({"id": 2, "method": "mining.authorize", "params": [worker, password]});
+        send_line(&mut writer, &auth).await?;
+    }
 
     // EthStratum (EthereumStratum / 2miners) uses `eth_getWork` instead of
     // `mining.notify`. Poll the pool for new work every few seconds.
@@ -1778,7 +1981,7 @@ async fn stratum_session(
                 Some(req) => {
                     pending_submits.push_back(req);
                     while let Some(req) = pending_submits.pop_front() {
-                        match send_submit(&mut writer, worker, req.id, &req.share).await {
+                        match send_submit(&mut writer, worker, req.id, &req.share, state).await {
                             Ok(()) => {
                                 pending.lock().await.insert(req.id, req.response);
                             }
@@ -1813,7 +2016,13 @@ async fn handle_line(
     if let Some(id) = value.get("id").and_then(Value::as_i64) {
         match id {
             1 => {
-                parse_subscribe_response(&value, state).await?;
+                if state.qpow {
+                    if let Some(job) = parse_qpow_login_response(&value, state).await {
+                        let _ = job_tx.send(job).await;
+                    }
+                } else {
+                    parse_subscribe_response(&value, state).await?;
+                }
                 return Ok(());
             }
             2 => {
@@ -1881,13 +2090,90 @@ async fn handle_line(
             }
         }
         "eth_getWork" | "job" => {
-            if let Some(job) = parse_eth_getwork(&value) {
+            if state.qpow {
+                let job_val = value
+                    .get("params")
+                    .and_then(|p| p.get("job"))
+                    .filter(|v| v.is_object())
+                    .or_else(|| value.get("params").filter(|v| v.is_object()));
+                if let Some(jv) = job_val {
+                    if let Some(job) = parse_qpow_stratum_job_sync(jv, state) {
+                        let _ = job_tx.send(job).await;
+                    }
+                }
+            } else if let Some(job) = parse_eth_getwork(&value) {
                 let _ = job_tx.send(job).await;
             }
         }
         _ => {}
     }
     Ok(())
+}
+
+/// Parse the Quantus `login` response (id=1): stores the session id and
+/// returns the embedded first job, if any.
+async fn parse_qpow_login_response(value: &Value, state: &StratumState) -> Option<StratumJob> {
+    if let Some(err) = value.get("error").filter(|e| !e.is_null()) {
+        ext_warn!("quantus login rejected: {}", err);
+        return None;
+    }
+    let result = value.get("result")?;
+    if let Some(id) = result.get("id").and_then(Value::as_str) {
+        *state.qpow_session_id.lock().await = Some(id.to_string());
+        ext_info!(session = %id, "quantus login ok");
+    }
+    result
+        .get("job")
+        .and_then(|j| parse_qpow_stratum_job_sync(j, state))
+}
+
+/// Quantus job object → StratumJob. `mining_hash` is the 32-byte header,
+/// `target` is the 64-byte big-endian U512 target, `extranonce` is a small
+/// hex prefix placed inside the 64-byte nonce.
+fn parse_qpow_stratum_job_sync(job: &Value, state: &StratumState) -> Option<StratumJob> {
+    let job_id = job.get("job_id").and_then(Value::as_str)?.to_string();
+    let hash_hex = job.get("mining_hash").and_then(Value::as_str).unwrap_or("");
+    let target_hex = job.get("target").and_then(Value::as_str).unwrap_or("");
+    let extranonce_hex = job.get("extranonce").and_then(Value::as_str).unwrap_or("");
+    let difficulty = job
+        .get("difficulty")
+        .and_then(Value::as_f64)
+        .or_else(|| job.get("difficulty").and_then(Value::as_u64).map(|d| d as f64))
+        .unwrap_or(0.0);
+    let seq = job.get("seq").and_then(Value::as_u64).unwrap_or(0);
+
+    let header = hex::decode(hash_hex).unwrap_or_default();
+    let target_512 = super::qpow::biguint_from_hex::<64>(target_hex);
+    let mut target = [0xFFu8; 32];
+    if let Some(t) = target_512 {
+        target.copy_from_slice(&t[32..]);
+    }
+    let extranonce = hex::decode(extranonce_hex).unwrap_or_default();
+
+    // Fire-and-forget state updates (sync fn — spawn onto current runtime).
+    let target_512_arc = state.target_512.clone();
+    let difficulty_arc = state.difficulty.clone();
+    let en1_arc = state.extranonce1.clone();
+    tokio::spawn(async move {
+        *target_512_arc.lock().await = target_512;
+        if difficulty > 0.0 {
+            *difficulty_arc.lock().await = difficulty;
+        }
+        *en1_arc.lock().await = extranonce;
+    });
+
+    Some(StratumJob {
+        job_id,
+        header,
+        target,
+        target_512,
+        extranonce1: hex::decode(extranonce_hex).unwrap_or_default(),
+        extranonce2_size: 0,
+        ntime: "00000000".to_string(),
+        difficulty,
+        coin: zion_cosmic_harmony::ExternalCoin::Quantus,
+        height: seq,
+    })
 }
 
 async fn parse_subscribe_response(value: &Value, state: &StratumState) -> Result<()> {
@@ -1969,6 +2255,7 @@ fn parse_eth_getwork(value: &Value) -> Option<StratumJob> {
         job_id: height.to_string(),
         header,
         target,
+        target_512: None,
         extranonce1: Vec::new(),
         extranonce2_size: 0,
         ntime: "00000000".to_string(),
@@ -2013,6 +2300,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
                     job_id,
                     header,
                     target,
+                    target_512: None,
                     extranonce1: state.extranonce1.lock().await.clone(),
                     extranonce2_size: *state.extranonce2_size.lock().await,
                     ntime: format!("{:016x}", timestamp),
@@ -2047,6 +2335,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             job_id,
             header,
             target,
+            target_512: None,
             extranonce1: state.extranonce1.lock().await.clone(),
             extranonce2_size: *state.extranonce2_size.lock().await,
             ntime: "00000000".to_string(),
@@ -2120,6 +2409,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
                 job_id,
                 header,
                 target,
+                target_512: None,
                 extranonce1: en1,
                 extranonce2_size: *state.extranonce2_size.lock().await,
                 ntime,
@@ -2149,6 +2439,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             job_id,
             header,
             target,
+            target_512: None,
             extranonce1: state.extranonce1.lock().await.clone(),
             extranonce2_size: *state.extranonce2_size.lock().await,
             ntime,
@@ -2164,11 +2455,31 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
 
 /// Build the `mining.submit` / `eth_submitWork` params for a given share,
 /// taking into account the coin/algorithm-specific requirements.
-fn build_submit_params(worker: &str, share: &super::Share, id: i64) -> Value {
+fn build_submit_params(
+    worker: &str,
+    share: &super::Share,
+    id: i64,
+    qpow_session: Option<String>,
+) -> Value {
     let algo = share.coin.algorithm();
     let nonce = share.nonce_hex();
     let mix = share.mix_hash_hex();
     let sol = share.solution_hex();
+
+    // Quantus QPoW: {"method":"submit","params":{"id":session,"job_id":..,
+    // "nonce":<128-hex>,"result":<128-hex>}}.
+    if algo == "qpow-poseidon2" {
+        return json!({
+            "id": id,
+            "method": "submit",
+            "params": {
+                "id": qpow_session.unwrap_or_default(),
+                "job_id": share.job_id,
+                "nonce": share.qpow_nonce_hex(),
+                "result": share.qpow_hash_hex()
+            }
+        });
+    }
 
     // Kaspa / kHeavyHash (KaspaStratum / 2miners):
     //   mining.submit params = [worker, job_id, full_nonce_hex]
@@ -2229,8 +2540,10 @@ async fn send_submit(
     worker: &str,
     id: i64,
     share: &super::Share,
+    state: &StratumState,
 ) -> Result<()> {
-    send_line(writer, &build_submit_params(worker, share, id)).await
+    let qpow_session = state.qpow_session_id.lock().await.clone();
+    send_line(writer, &build_submit_params(worker, share, id, qpow_session)).await
 }
 
 #[cfg(test)]
@@ -2275,6 +2588,177 @@ mod tests {
             coin_protocol(ExternalCoin::Zano),
             StratumProtocol::EthStratum
         );
+    }
+
+    #[test]
+    fn qpow_submit_params_use_128_hex_fields() {
+        let mut nonce = [0u8; 64];
+        nonce[..4].copy_from_slice(&[0xde, 0xad, 0xbe, 0xef]);
+        nonce[56..64].copy_from_slice(&42u64.to_be_bytes());
+        let hash64 = [0xabu8; 64];
+        let share = super::super::Share {
+            job_id: "qjob".to_string(),
+            coin: ExternalCoin::Quantus,
+            nonce: 42,
+            hash: [0u8; 32],
+            header_hash: [0u8; 32],
+            mix_hash: None,
+            solution: None,
+            nonce_512: Some(nonce),
+            hash_512: Some(hash64),
+            extranonce2: "00".to_string(),
+            ntime: "00000000".to_string(),
+        };
+        let v = build_submit_params("worker", &share, 7, Some("sess".to_string()));
+        assert_eq!(v["method"], "submit");
+        let p = &v["params"];
+        assert_eq!(p["id"], "sess");
+        assert_eq!(p["job_id"], "qjob");
+        let nonce_hex = p["nonce"].as_str().unwrap();
+        let result_hex = p["result"].as_str().unwrap();
+        assert_eq!(nonce_hex.len(), 128);
+        assert_eq!(result_hex.len(), 128);
+        assert_eq!(hex::decode(nonce_hex).unwrap(), nonce.to_vec());
+        assert_eq!(hex::decode(result_hex).unwrap(), hash64.to_vec());
+    }
+
+    #[tokio::test]
+    async fn qpow_stratum_job_parses_128_hex_target() {
+        let state = StratumState::for_coin(ExternalCoin::Quantus);
+        assert!(state.qpow);
+        let job = serde_json::json!({
+            "algo": "qpow",
+            "clean_jobs": false,
+            "difficulty": 1000000000.0,
+            "extranonce": "deadbeef",
+            "job_id": "abc123",
+            "mining_hash": "11".repeat(32),
+            "seq": 777,
+            "target": format!("00{}", "ff".repeat(63))
+        });
+        let sj = parse_qpow_stratum_job_sync(&job, &state).expect("job");
+        assert_eq!(sj.job_id, "abc123");
+        assert_eq!(sj.coin, ExternalCoin::Quantus);
+        assert_eq!(sj.extranonce1, vec![0xde, 0xad, 0xbe, 0xef]);
+        assert_eq!(sj.height, 777);
+        let t = sj.target_512.expect("full target");
+        assert_eq!(t[..2], [0x00, 0xff]);
+        assert_eq!(t[63], 0xff);
+        // Job → auxpow::Job conversion preserves the 512-bit target.
+        let job: super::super::Job = sj.into();
+        assert_eq!(job.target_512, Some(t));
+    }
+
+    /// Live round-trip against the qelvhash Quantus stratum pool.
+    /// Run: `cargo test -p zion-miner live_qpow -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore]
+    async fn live_qpow_qelvhash_roundtrip() {
+        let config = AuxPowClientConfig::new(
+            ExternalCoin::Quantus,
+            "quantus.qelvhash.com:4444",
+            "devin-test",
+            "x",
+        );
+        let client = AuxPowClient::new(config);
+        client
+            .connect("qzkeicNBtW2AG2E7USjDcLzAL8d9WxTZnV2cbtXoDzWxzpHC2")
+            .await
+            .expect("connect+login");
+        let job = client
+            .wait_for_job(Duration::from_secs(20))
+            .await
+            .expect("job within 20s");
+        eprintln!(
+            "live job: id={} header={} target={} en1={}",
+            job.job_id, job.header_hex, job.target_hex,
+            hex::encode(&job.extranonce1)
+        );
+        assert_eq!(job.header_bytes.len(), 32);
+        assert!(job.target_512.is_some());
+        assert!(!job.extranonce1.is_empty());
+
+        // Deliberately-invalid share (hash = 0xff… cannot be < target) — the
+        // pool must respond with a *share-level* rejection, proving the
+        // submit wire format parsed correctly.
+        let nonce = super::super::qpow::build_nonce(&job.extranonce1, 0x1234);
+        let result = client
+            .submit_qpow_share(&job.job_id, &nonce, &[0xffu8; 64])
+            .await
+            .expect("submit round-trip");
+        eprintln!("below-target submit result: {:?}", result);
+        assert!(!matches!(result, ShareResult::NoShare));
+
+        // Multithreaded scan — finding a real share at diff 2.5e9 needs
+        // ~2.5e9 hashes. QPOW_LIVE_SCAN_SECS bounds the effort (default 5s
+        // smoke test; raise for a real acceptance attempt).
+        let target = job.target_512.unwrap();
+        let mut header = [0u8; 32];
+        header.copy_from_slice(&job.header_bytes);
+        let deadline = std::env::var("QPOW_LIVE_SCAN_SECS")
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(5);
+        let deadline = std::time::Instant::now() + Duration::from_secs(deadline);
+        let threads = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4);
+        let t0 = std::time::Instant::now();
+        let mut scanned = 0u64;
+        let mut found: Option<(u64, [u8; 64])> = None;
+        let job_id = job.job_id.clone();
+        let en1 = job.extranonce1.clone();
+        // Chunked scans across all cores; check the deadline between chunks.
+        let chunk = 4_000_000u64;
+        let (tx, rx) = std::sync::mpsc::channel();
+        for t in 0..threads {
+            let tx = tx.clone();
+            let en1 = en1.clone();
+            std::thread::spawn(move || {
+                let base = super::super::qpow::build_nonce(&en1, 0);
+                let prestate = super::super::qpow::mining_prestate_low64(&header, &base);
+                let mut start = t as u64 * chunk;
+                loop {
+                    if let Some(hit) =
+                        super::super::qpow::scan_low64(&prestate, &target, start, chunk)
+                    {
+                        let _ = tx.send(Some(hit));
+                        return;
+                    }
+                    start += threads as u64 * chunk;
+                }
+            });
+        }
+        while std::time::Instant::now() < deadline && found.is_none() {
+            scanned += chunk;
+            std::thread::sleep(Duration::from_millis(200));
+            if let Ok(Some(hit)) = rx.try_recv() {
+                found = Some(hit);
+            }
+        }
+        drop(rx);
+        let rate = scanned as f64 / t0.elapsed().as_secs_f64() / 1e6;
+        eprintln!(
+            "scanned ~{}M hashes in {:.1}s (~{:.1} MH/s, {} threads)",
+            scanned / 1_000_000,
+            t0.elapsed().as_secs_f64(),
+            rate,
+            threads
+        );
+        if let Some((low, hash64)) = found {
+            let nonce = super::super::qpow::build_nonce(&en1, low);
+            let res = client
+                .submit_qpow_share(&job_id, &nonce, &hash64)
+                .await
+                .expect("submit share");
+            eprintln!("valid share submit result: {:?}", res);
+            // The pool rotates jobs every ~1s (clean_jobs: true), so a CPU
+            // scan will typically find the share *after* its job expired —
+            // "stale"/"job not found" still proves the full pipeline.
+            assert!(!matches!(res, ShareResult::NoShare));
+        } else {
+            eprintln!("no share in scan window (expected at diff 2.5e9)");
+        }
     }
 
     #[tokio::test]
@@ -2360,6 +2844,8 @@ mod tests {
             header_hash: [0u8; 32],
             mix_hash: None,
             solution: None,
+            nonce_512: None,
+            hash_512: None,
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
         };

@@ -1767,6 +1767,7 @@ impl StratumServer {
                                 algorithm: submit_algorithm,
                                 external_job_id,
                                 nonce,
+                                nonce_hex,
                                 hash_hex,
                                 mix_hash_hex,
                                 extranonce1_hex,
@@ -1933,6 +1934,7 @@ impl StratumServer {
                                         let req = ShareForwardRequest {
                                             job_id: job_pkg.external_job_id.clone(),
                                             nonce,
+                                            nonce_hex: nonce_hex.clone(),
                                             hash_hex: hash_hex.clone(),
                                             mix_hash_hex: mix_hash_hex.clone(),
                                             algorithm: submit_algorithm.clone(),

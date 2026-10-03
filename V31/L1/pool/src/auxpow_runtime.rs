@@ -418,6 +418,41 @@ async fn forward_share_to_upstream(
 ) -> ShareForwardOutcome {
     let _ = coin; // coin is implicit in the client config
 
+    // Quantus QPoW — dedicated submit path: 64-byte nonce + 64-byte result.
+    if req.algorithm == "qpow-poseidon2" {
+        let nonce_hex = req.nonce_hex.as_deref().unwrap_or("");
+        let Some(nonce) =
+            zion_miner::auxpow::qpow::biguint_from_hex::<64>(nonce_hex)
+        else {
+            return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
+                "bad qpow nonce".to_string(),
+            ));
+        };
+        let Some(hash) =
+            zion_miner::auxpow::qpow::biguint_from_hex::<64>(&req.hash_hex)
+        else {
+            return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
+                "bad qpow result".to_string(),
+            ));
+        };
+        return match client.submit_qpow_share(&req.job_id, &nonce, &hash).await {
+            Ok(zion_miner::auxpow::client::ShareResult::Accepted) => {
+                ShareForwardOutcome::Result(ShareForwardResult::Accepted)
+            }
+            Ok(zion_miner::auxpow::client::ShareResult::Rejected(reason)) => {
+                ShareForwardOutcome::Result(ShareForwardResult::Rejected(reason))
+            }
+            Ok(zion_miner::auxpow::client::ShareResult::Unknown)
+            | Ok(zion_miner::auxpow::client::ShareResult::NoShare) => {
+                ShareForwardOutcome::Result(ShareForwardResult::Unknown)
+            }
+            Err(e) => {
+                tracing::warn!("auxpow qpow share forward error: {}", e);
+                ShareForwardOutcome::Result(ShareForwardResult::Unknown)
+            }
+        };
+    }
+
     // V3 philosophy: forward ALL shares to the upstream pool.
     // No job_id mismatch check, no age-based stale check, no pool-side
     // duplicate suppression. The AuxPowClient already deduplicates by

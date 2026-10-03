@@ -20,6 +20,9 @@ pub enum ExternalAlgorithm {
     Equihash,
     NeoScrypt,
     KeryxHash,
+    /// Quantus QPoW — Poseidon2 squeeze-twice over Goldilocks (512-bit
+    /// nonce/target, does not fit the u64/[u8;32] mining paths).
+    QPowPoseidon2,
 }
 
 impl ExternalAlgorithm {
@@ -41,6 +44,7 @@ impl ExternalAlgorithm {
             Self::Equihash => "equihash",
             Self::NeoScrypt => "neoscrypt",
             Self::KeryxHash => "keryxhash",
+            Self::QPowPoseidon2 => "qpow-poseidon2",
         }
     }
 
@@ -62,6 +66,7 @@ impl ExternalAlgorithm {
             "equihash" => Some(Self::Equihash),
             "neoscrypt" => Some(Self::NeoScrypt),
             "keryxhash" | "keryx" => Some(Self::KeryxHash),
+            "qpow" | "qpow-poseidon2" | "qpowposeidon2" => Some(Self::QPowPoseidon2),
             _ => None,
         }
     }
@@ -74,6 +79,9 @@ pub struct Job {
     pub coin: ExternalCoin,
     pub header: Vec<u8>,
     pub target: [u8; 32],
+    /// Full 512-bit target for QPoW coins (Quantus). `target` remains the
+    /// truncated legacy view; QPoW mining paths must use this field.
+    pub target_512: Option<[u8; 64]>,
     pub extranonce: Vec<u8>,
     pub extranonce2: String,
     pub ntime: String,
@@ -88,6 +96,7 @@ impl Default for Job {
             coin: ExternalCoin::Bitcoin,
             header: Vec::new(),
             target: [0u8; 32],
+            target_512: None,
             extranonce: Vec::new(),
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
@@ -109,6 +118,11 @@ pub struct Share {
     pub mix_hash: Option<[u8; 32]>,
     /// Variable-length solution blob for Equihash/BeamHash/VerusHash-style shares.
     pub solution: Option<Vec<u8>>,
+    /// Full 512-bit nonce for QPoW shares (Quantus). `nonce` carries the low
+    /// 64 bits for metrics/dedup; the wire format needs the whole value.
+    pub nonce_512: Option<[u8; 64]>,
+    /// Full 512-bit Poseidon2 result for QPoW shares (Quantus).
+    pub hash_512: Option<[u8; 64]>,
     pub extranonce2: String,
     pub ntime: String,
 }
@@ -116,6 +130,20 @@ pub struct Share {
 impl Share {
     pub fn nonce_hex(&self) -> String {
         format!("{:016x}", self.nonce)
+    }
+
+    /// Full-width nonce hex for QPoW shares (128 chars), else the u64 nonce.
+    pub fn qpow_nonce_hex(&self) -> String {
+        self.nonce_512
+            .map(hex::encode)
+            .unwrap_or_else(|| self.nonce_hex())
+    }
+
+    /// Full-width hash/result hex for QPoW shares (128 chars).
+    pub fn qpow_hash_hex(&self) -> String {
+        self.hash_512
+            .map(hex::encode)
+            .unwrap_or_else(|| hex::encode(self.hash))
     }
 
     /// Hex representation of the solution blob, if any.

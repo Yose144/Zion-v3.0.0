@@ -25,6 +25,9 @@ pub struct JobPackage {
 pub struct ShareForwardRequest {
     pub job_id: String,
     pub nonce: u64,
+    /// Full-width nonce hex for wide-nonce algorithms (Quantus QPoW:
+    /// 128 chars); `nonce` stays the legacy u64 view.
+    pub nonce_hex: Option<String>,
     pub hash_hex: String,
     pub mix_hash_hex: Option<String>,
     pub algorithm: String,
@@ -307,6 +310,7 @@ mod tests {
             bridge.forward(ShareForwardRequest {
                 job_id: "test".into(),
                 nonce: 0,
+                nonce_hex: None,
                 hash_hex: "00".into(),
                 mix_hash_hex: None,
                 algorithm: "blake3".into(),
@@ -455,6 +459,7 @@ mod tests {
                 ShareForwardRequest {
                     job_id: "old".into(),
                     nonce: 1,
+                    nonce_hex: None,
                     hash_hex: "00".into(),
                     mix_hash_hex: None,
                     algorithm: "verushash".into(),
