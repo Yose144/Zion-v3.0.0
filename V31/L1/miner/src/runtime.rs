@@ -701,6 +701,19 @@ impl MinerRuntime {
                 }
                 return Ok(share);
             }
+            // A live Poseidon2 CUDA backend has already scanned this whole
+            // `batch` — falling through to the CPU scanner would rescan the
+            // same range at ~100 kH/s and stall the stream for tens of
+            // seconds. Only when the QPoW GPU backend failed to init do we
+            // fall through to CPU.
+            if job.coin.algorithm() == "qpow-poseidon2"
+                && !self
+                    .gpu_qpow_disabled
+                    .load(std::sync::atomic::Ordering::Relaxed)
+                && self.gpu_qpow.lock().unwrap().is_some()
+            {
+                return Err(MinerError::NoAuxPoWSolution);
+            }
             // GPU failed — fall through to CPU
         }
 
@@ -1016,9 +1029,12 @@ impl MinerRuntime {
                         }
                         Err(e) => {
                             gpu_qpow_disabled.store(true, std::sync::atomic::Ordering::Relaxed);
-                            return Err::<Option<crate::gpu::qpow_cuda::QpowGpuResult>, anyhow::Error>(
-                                anyhow::anyhow!("qpow backend init: {e}"),
-                            );
+                            return Err::<
+                                Option<crate::gpu::qpow_cuda::QpowGpuResult>,
+                                anyhow::Error,
+                            >(anyhow::anyhow!(
+                                "qpow backend init: {e}"
+                            ));
                         }
                     }
                 }
@@ -1825,8 +1841,7 @@ impl MinerRuntime {
                                 Some(b) => b,
                                 None => break,
                             };
-                            let new_id =
-                                bundle.cpu_external.as_ref().map(|e| e.job_id.clone());
+                            let new_id = bundle.cpu_external.as_ref().map(|e| e.job_id.clone());
                             if new_id != ext_job_id {
                                 ext_job_id = new_id;
                                 ext_job_since = Instant::now();

@@ -39,7 +39,7 @@ pool: stratum.rs → ShareForwardRequest{nonce_hex} → auxpow_bridge
 | Soubor | Obsah |
 |---|---|
 | `miner/src/auxpow/qpow.rs` | CPU hasher: `get_nonce_hash`, `mining_midstate`, `mining_prestate_low64`, `hash_from_prestate_low64`, `build_nonce`, `scan_low64`, `biguint_from_hex`, KAT testy |
-| `miner/csrc/cuda/poseidon2_kernel.cu` | CUDA kernel — 1:1 port upstream `mining_u64.wgsl`, u64 Goldilocks, squeeze-early-out |
+| `miner/csrc/cuda/poseidon2_kernel.cu` | CUDA kernel — port upstream `quantus-miner` engine-cuda G2 (`mining.cu`): `__constant__` RC tabulky, inline-PTX carry, `reduce128`, sparse nonce inject, early-reject po 1. squeeze, candidate-index results |
 | `miner/src/gpu/qpow_cuda.rs` | `QpowCudaMiner`: NVRTC, U512 limb packing, CPU double-check safety net |
 | `miner/src/runtime.rs` | `gpu_qpow`, `gpu_qpow_disabled`, `try_qpow_gpu_share`, target_512 decode z V3 `target_hex` |
 | `miner/src/parallel.rs` | `find_qpow_share` — paralelní disjoint CPU ranges |
@@ -104,12 +104,33 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
 - Testy: 119 miner + 172 pool zelených; `gpu-cuda` feature compile čistý
 - **2026-10-03 real-hardware (GTX 1070 Ti, driver 580.178, CUDA 13.0 / NVRTC 12.4):**
   NVRTC compile prošel autodetekcí `compute_61` (env `ZION_CUDA_ARCH` není
-  potřeba), kernel launch + `mine_batch` běží, ~1.5–2.4 MH/s za sdíleného
-  contextu se Stream 1 (`shared_cuda_device` — jeden `CudaDevice`, VRAM
-  2184 MiB celkem, žádný druhý context). Koexistence s llama-serverem OK
-  (GPU ~76 % util, 120 W). Accepted share na upstreamu zatím nepadl —
-  miners minují přímo proti upstream `target_hex` (diff ~1e9), expected
-  ~7 min/share; běží dál.
+  potřeba), kernel launch + `mine_batch` běží, sdílený context se Stream 1
+  (`shared_cuda_device` — jeden `CudaDevice`, VRAM 2184 MiB celkem, žádný
+  druhý context). Koexistence s llama-serverem OK.
+- **2026-10-03 G2 kernel + tuning (stejná karta):** port upstream
+  `quantus-miner/crates/engine-cuda` `mining.cu` (post-opt revize) na
+  Trinity ABI: `results[9]` = count + indexy kandidátů, `prestate[24]` z
+  `mining_prestate_low64`, cap na low64-carry hranici, CPU re-verifikace
+  každého indexu před submitem. Dispatch tuning na Pascal: **1 nonce /
+  thread, uncapped grid** (na sm_61 je npt>1 ~12–15 % pomalejší — j-loop
+  s 12-lane u64 stavem zbytečně zvedá register pressure; měřeno přes
+  `qpow_bench_effective_throughput`, env `QPOW_BENCH_BATCH`).
+  **Naměřené rychlosti (effective, vč. host overheadu):**
+  - starý kernel (1:1 WGSL port): ~2.3 MH/s live
+  - G2 port, solo (`--no-zion --no-cpu`, `ZION_EXT_GPU_GAP_MS=0`):
+    **~38–40 MH/s** — referenční `quantus-miner benchmark --cuda-gpu`
+    na stejné kartě: 33.1 MH/s → jsme ~18 % NAD upstreamem
+  - Trinity live (ZION GPU stream + QPoW, gap 50 ms): **QTU ~20–27 MH/s**
+    + ZION ~0.9–1.1 MH/s současně, oba 99.9–100 % accept
+  - Accepted QTU shares na upstreamu (k1pool přes zion-pool): potvrzeno
+    (job `188908f9_…`, `188908fb`, `188908fc`); občasný
+    `Invalid job id` = stale-job race při rotaci upstream jobů.
+- **Kritický fix #2 (stream throughput):** `mine_auxpow_share_batch` po
+  neúspěšném GPU batchi (`None`) propadávalo na generický CPU scanner —
+  QPoW tak po každých ~145 ms GPU práce rescanovalo 5.24M noncí na CPU
+  (~190 kH/s, ~28 s stall). Nově: živý QPoW CUDA backend → rovnou
+  `NoAuxPoWSolution`, CPU fallback jen při selhání GPU init.
+  To byl hlavní důvod, proč live metrika ukazovala ~13–18 MH/s místo ~39.
 - **Kritický fix během debugu:** `V3PoolClient::next_job` měl invertovanou
   watch-semantiku — `rx.changed()` po resolvnutí sám označí hodnotu za seen,
   takže následný `has_changed()` je vždy false a loop hltal každý publikovaný
@@ -123,8 +144,8 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
 
 1. ~~`cargo build --release -p zion-miner --features gpu-cuda`~~ ✅
 2. ~~NVRTC compile + kernel launch~~ ✅ (autodetect `compute_61`, log `gpu_qpow_cuda_init`)
-3. Hashrate vs. SRBMiner-MULTI baseline; ladit `ZION_GPU_WORK_SIZE` / `ZION_CUDA_BLOCK_SIZE` — částečně: ~2 MH/s out-of-box, tuning teprve
-4. Accepted share na upstreamu (k1pool přes zion-pool) — pending, čeká se na náhodu (diff ~1e9 @ ~2 MH/s)
+3. ~~Hashrate tuning~~ ✅ — G2 kernel + dispatch: ~39 MH/s solo / ~22–27 MH/s v trinity (baseline upstream reference miner 33.1 MH/s solo)
+4. ~~Accepted share na upstreamu~~ ✅ — QTU shares accepted na k1pool přes zion-pool
 5. ~~CUDA context sharing se Stream 1~~ ✅ (`shared_cuda_device`, jeden context)
 6. Duty-cycle s llama ✅ implicitně ověřeno (llama + zion + qpow na kartě současně); `ZION_EXT_GPU_GAP_MS` pro jemné ladění
 
