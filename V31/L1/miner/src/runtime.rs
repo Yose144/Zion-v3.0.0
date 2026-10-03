@@ -666,6 +666,21 @@ impl MinerRuntime {
         self.mine_auxpow_share_batch(stream, job, batch).await
     }
 
+    /// Whether the dedicated QPoW CUDA backend is live (initialized and not
+    /// disabled by a previous init failure).
+    #[cfg(all(feature = "auxpow", feature = "gpu-cuda"))]
+    fn qpow_gpu_live(&self) -> bool {
+        !self
+            .gpu_qpow_disabled
+            .load(std::sync::atomic::Ordering::Relaxed)
+            && self.gpu_qpow.lock().unwrap().is_some()
+    }
+
+    #[cfg(not(all(feature = "auxpow", feature = "gpu-cuda")))]
+    fn qpow_gpu_live(&self) -> bool {
+        false
+    }
+
     #[cfg(feature = "auxpow")]
     /// Mine a single AuxPoW share for `job` using a custom batch.
     ///
@@ -706,12 +721,7 @@ impl MinerRuntime {
             // same range at ~100 kH/s and stall the stream for tens of
             // seconds. Only when the QPoW GPU backend failed to init do we
             // fall through to CPU.
-            if job.coin.algorithm() == "qpow-poseidon2"
-                && !self
-                    .gpu_qpow_disabled
-                    .load(std::sync::atomic::Ordering::Relaxed)
-                && self.gpu_qpow.lock().unwrap().is_some()
-            {
+            if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live() {
                 return Err(MinerError::NoAuxPoWSolution);
             }
             // GPU failed — fall through to CPU

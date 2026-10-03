@@ -2018,30 +2018,20 @@ impl StratumServer {
                                     }
                                 }
 
-                                if accepted {
-                                    // Record telemetry
-                                    self.telemetry.lock().unwrap().record_job_result(
-                                        &sub_miner_id,
-                                        &sub_worker_name,
-                                        true,
-                                        0,
-                                        0,
-                                    );
-                                    // Record routing stats for external shares
-                                    // Map coin algorithm to RevenueSource
-                                    let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
-                                        &submit_algorithm
-                                    ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
-                                    let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
-                                    self.routing_stats.lock().unwrap().record(group, rev_source, true);
-                                } else {
-                                    // Record rejected external share
-                                    let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
-                                        &submit_algorithm
-                                    ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
-                                    let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
-                                    self.routing_stats.lock().unwrap().record(group, rev_source, false);
-                                }
+                                // Route external shares to the coin's own telemetry
+                                // stream so they appear under `streams` in /miners
+                                // without polluting ZION share/hashrate stats.
+                                self.telemetry.lock().unwrap().record_external_share(
+                                    &sub_miner_id,
+                                    &sub_worker_name,
+                                    &coin,
+                                    accepted,
+                                );
+                                let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
+                                    &submit_algorithm
+                                ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+                                let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
+                                self.routing_stats.lock().unwrap().record(group, rev_source, accepted);
                             }
 
                             Ok(PoolMessage::PearlSubmit { .. }) => {
@@ -2121,6 +2111,9 @@ impl StratumServer {
         // compare height, previous_hash, merkle_root and external job ids
         // instead of the full message.
         let mut last_fingerprint: Option<JobFingerprint> = None;
+        // Last successfully fetched template — reused when `getTemplate`
+        // fails or times out so external-stream job updates keep flowing.
+        let mut last_template_json: Option<String> = None;
 
         loop {
             let sleep_fut = if first {
@@ -2140,15 +2133,53 @@ impl StratumServer {
                         "params": { "miner_address": miner_address },
                     });
 
-                    match jsonrpc_call(rpc_addr, &payload).await {
-                        Ok(v) => {
+                    // Bound the RPC call: a wedged node `getTemplate` must not
+                    // stall this loop — it also carries external (AuxPoW)
+                    // job broadcasts to miners.
+                    let fetched: Option<Value> = match tokio::time::timeout(
+                        Duration::from_secs(5),
+                        jsonrpc_call(rpc_addr, &payload),
+                    )
+                    .await
+                    {
+                        Ok(Ok(v)) => {
                             if let Some(err) = v.get("error") {
                                 if !err.is_null() {
                                     tracing::warn!("getTemplate error: {}", err);
                                     continue;
                                 }
                             }
-                            let result = v.get("result").unwrap_or(&Value::Null);
+                            v.get("result").cloned()
+                        }
+                        Ok(Err(e)) => {
+                            tracing::warn!("getTemplate request failed: {}", e);
+                            None
+                        }
+                        Err(_) => {
+                            tracing::warn!("getTemplate request timed out after 5s");
+                            None
+                        }
+                    };
+
+                    // On RPC failure/timeout reuse the last good template so
+                    // external (AuxPoW) job rotations still reach miners while
+                    // the L1 node is stalled.
+                    let (result, template_json) = match fetched {
+                        Some(r) => {
+                            let tj = serde_json::to_string(&r).unwrap_or_default();
+                            last_template_json = Some(tj.clone());
+                            (r, tj)
+                        }
+                        None => match &last_template_json {
+                            Some(tj) => (
+                                serde_json::from_str::<Value>(tj).unwrap_or(Value::Null),
+                                tj.clone(),
+                            ),
+                            None => continue,
+                        },
+                    };
+
+                    {
                             let header_hex = result.get("header_hex")
                                 .and_then(Value::as_str)
                                 .unwrap_or("");
@@ -2162,7 +2193,6 @@ impl StratumServer {
                                 .and_then(Value::as_u64)
                                 .unwrap_or(1)
                                 .max(1);
-                            let template_json = serde_json::to_string(result).unwrap_or_default();
 
                             // The full block target is too hard for frequent shares.
                             // Broadcast a share target derived from the configured starting
@@ -2201,8 +2231,6 @@ impl StratumServer {
                             } else {
                                 last_fingerprint = None;
                             }
-                        }
-                        Err(e) => tracing::warn!("getTemplate request failed: {}", e),
                     }
                 }
             }
