@@ -788,6 +788,78 @@ impl Storage {
         Ok(())
     }
 
+    /// Remove a stored tip block and all of its indexes, moving the chain tip
+    /// to the block's parent. Used by the shallow-reorg path — the caller
+    /// must already have reversed the block's UTXO effects via
+    /// `UtxoSet::unapply_block`. Refuses to delete a non-tip block so a bug
+    /// cannot punch a hole in the middle of the chain.
+    pub async fn delete_block(&self, block: &Block, block_hash: &Hash) -> Result<(), StorageError> {
+        let mut conn = self.conn.lock().await;
+        let tx = conn.transaction()?;
+
+        let current_tip: Option<Vec<u8>> = tx
+            .query_row(
+                "SELECT tip_hash FROM chain_state WHERE singleton = 1",
+                [],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if current_tip.as_deref() != Some(block_hash.0.as_slice()) {
+            return Err(StorageError::Sqlite(rusqlite::Error::QueryReturnedNoRows));
+        }
+
+        tx.execute(
+            "DELETE FROM blocks WHERE hash = ?1",
+            params![block_hash.0.as_slice()],
+        )?;
+
+        // Re-point the tip at the deleted block's parent.
+        let parent: Option<(Vec<u8>, i64, i64, i64)> = tx
+            .query_row(
+                "SELECT hash, height, difficulty, timestamp FROM blocks WHERE hash = ?1",
+                params![block.header.previous_hash.0.as_slice()],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .optional()?;
+        match parent {
+            Some((hash, height, difficulty, timestamp)) => {
+                tx.execute(
+                    "INSERT OR REPLACE INTO chain_state
+                     (singleton, tip_hash, tip_height, tip_difficulty, tip_timestamp)
+                     VALUES (1, ?1, ?2, ?3, ?4)",
+                    params![hash, height, difficulty, timestamp],
+                )?;
+            }
+            None => {
+                tx.execute("DELETE FROM chain_state WHERE singleton = 1", [])?;
+            }
+        }
+
+        // The persistent UTXO cache now contains rolled-back state; drop the
+        // validity marker so the next startup does a trusted replay instead
+        // of loading phantom outputs.
+        tx.execute("DELETE FROM native_utxo_cache_state", [])?;
+
+        for t in &block.transactions {
+            let tx_hash = t.hash();
+            tx.execute(
+                "DELETE FROM tx_index WHERE tx_hash = ?1",
+                params![tx_hash.0.as_slice()],
+            )?;
+            tx.execute(
+                "DELETE FROM output_index WHERE tx_hash = ?1",
+                params![tx_hash.0.as_slice()],
+            )?;
+            tx.execute(
+                "DELETE FROM address_tx_index WHERE tx_hash = ?1",
+                params![tx_hash.0.as_slice()],
+            )?;
+        }
+
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Retrieve a block by its hash.
     pub async fn get_by_hash(&self, hash: &Hash) -> Result<Option<Block>, StorageError> {
         let conn = self.conn.lock().await;

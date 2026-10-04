@@ -405,6 +405,55 @@ impl UtxoSet {
         Ok(())
     }
 
+    /// Reverse `apply_block`: remove the outputs the block created and
+    /// restore the outputs it spent. `spent` maps each consumed outpoint to
+    /// its previous live entry (resolved by the caller from the block store).
+    ///
+    /// Transactions are un-applied in reverse order so intra-block spends
+    /// restore correctly. Admin-unlock effects are reverted by re-deriving
+    /// the unlock target from the restored input owners.
+    pub fn unapply_block(
+        &mut self,
+        block: &Block,
+        spent: &HashMap<Outpoint, UtxoOutput>,
+    ) -> Result<(), UtxoError> {
+        for tx in block.transactions.iter().rev() {
+            let tx_hash = tx.hash();
+            for (index, _output) in tx.outputs.iter().enumerate() {
+                let outpoint = Outpoint::new(tx_hash, index as u32);
+                if self.outputs.remove(&outpoint).is_none() {
+                    // Every output the block created must be live (or have
+                    // been restored by a descendant block's rollback). A
+                    // missing entry means the set diverged from the stored
+                    // chain — refuse to roll back into a corrupt state.
+                    return Err(UtxoError::InputNotFound(outpoint));
+                }
+            }
+            if tx.is_coinbase() {
+                continue;
+            }
+            let mut restored_owners = Vec::with_capacity(tx.inputs.len());
+            for input in &tx.inputs {
+                let outpoint = Outpoint::from(input);
+                let output = spent
+                    .get(&outpoint)
+                    .cloned()
+                    .ok_or(UtxoError::InputNotFound(outpoint))?;
+                self.outputs.insert(outpoint, output.clone());
+                restored_owners.push(output.address.encoded);
+            }
+            let admins: Vec<&str> = self.admin_addresses.iter().map(String::as_str).collect();
+            if let Some(target) = crate::v3_compat::admin_unlock_target(
+                tx,
+                restored_owners.iter().map(String::as_str),
+                &admins,
+            ) {
+                self.admin_unlocked.remove(&target);
+            }
+        }
+        Ok(())
+    }
+
     /// Number of live outputs in the set (cache bookkeeping).
     pub(crate) fn output_count(&self) -> usize {
         self.outputs.len()
@@ -1077,5 +1126,66 @@ mod tests {
         assert_eq!(set.output_count(), 1);
         assert!(set.is_admin_unlocked(&unlock));
         assert_eq!(set.admin_unlocks_for_cache(), vec![unlock]);
+    }
+
+    #[test]
+    fn unapply_block_restores_spent_and_removes_created() {
+        let (sk, pk) = generate_keypair();
+        let addr = derive_address(pk.as_bytes());
+        let (_rsk, rpk) = generate_keypair();
+        let recipient = derive_address(rpk.as_bytes());
+
+        let coinbase_block = Block::new(
+            crate::block::BlockHeader {
+                previous_hash: Hash::default(),
+                merkle_root: Hash::default(),
+                height: 1,
+                timestamp: 100,
+                nonce: 0,
+                difficulty: 1,
+            },
+            vec![Transaction {
+                version: 1,
+                inputs: vec![],
+                outputs: vec![TransactionOutput {
+                    amount: Amount::new(10_000_000),
+                    address: Address::new(ChainId::ZionL1, vec![], &addr).unwrap(),
+                    ..Default::default()
+                }],
+                memo: vec![],
+            }],
+        );
+
+        let mut set = UtxoSet::new();
+        set.apply_block_unchecked(&coinbase_block).unwrap();
+        let funded = spendable(&set, &addr);
+        let funded_op = Outpoint::new(Hash::new(funded.tx_hash), funded.output_index);
+        let funded_entry = set.get(&funded_op).unwrap().clone();
+
+        // Block 2 spends the funded output into a new one.
+        let send = build_send(&sk, &addr, &recipient, 1_000_000, 10_000, &[funded])
+            .unwrap()
+            .transaction;
+        let spend_block = Block::new(
+            crate::block::BlockHeader {
+                previous_hash: Hash::default(),
+                merkle_root: Hash::default(),
+                height: 2,
+                timestamp: 200,
+                nonce: 0,
+                difficulty: 1,
+            },
+            vec![send.clone()],
+        );
+        set.apply_block(&spend_block).unwrap();
+        assert!(!set.contains(&funded_op));
+        let created_op = Outpoint::new(send.hash(), 0);
+        assert!(set.contains(&created_op));
+
+        // Roll back block 2: spent input restored, created output removed.
+        let spent = std::collections::HashMap::from([(funded_op, funded_entry.clone())]);
+        set.unapply_block(&spend_block, &spent).unwrap();
+        assert_eq!(set.get(&funded_op), Some(&funded_entry));
+        assert!(!set.contains(&created_op));
     }
 }
