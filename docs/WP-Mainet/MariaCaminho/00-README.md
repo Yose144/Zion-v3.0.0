@@ -8,6 +8,8 @@
 > **Jazyk:** čeština (kanonická). Anglický index vznikne až po českém review; překlad nesmí zesílit jistotu, emoci ani historický nárok oproti originálu (`MiseAmenti/08` §5.7).
 > **Pravidlo textu:** *Příběh → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, registry nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../StatusV3.md) a živý repozitář před příběhem. Kde mluví o poutních a mariánských tradicích, vítězí doložená tradice před zjeveným příběhem — a zjevené je vždy označeno jako MÝTUS.
 
+> **Literární pokračování:** příběh Lumen na flotile, [Na Cestě](../NaCeste/00-README.md), vznikl jako samostatný DRAFT ke kulturnímu review; tato kniha tím nemění svůj status.
+
 ---
 
 ## Co je tato kniha?
