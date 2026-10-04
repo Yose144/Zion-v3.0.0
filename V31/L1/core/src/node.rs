@@ -21,7 +21,7 @@ use crate::mempool::Mempool;
 use crate::rpc::RpcServer;
 use crate::storage::{Storage, StorageError};
 use crate::transaction::{Transaction, TransactionOutput};
-use crate::utxo::{Outpoint, UtxoError, UtxoSet};
+use crate::utxo::{Outpoint, UtxoError, UtxoOutput, UtxoSet};
 use crate::v3_compat::is_premine_transfer_allowed;
 use zion_cosmic_harmony::EkamDeeksha;
 
@@ -1174,6 +1174,135 @@ impl Node {
         );
         Ok(())
     }
+
+    /// Roll back every block above `target_height`, reversing each block's
+    /// UTXO effects and returning its non-coinbase transactions to the
+    /// mempool. Used by the P2P shallow-reorg path when our tip sits on a
+    /// side fork (e.g. an orphan race the linear sync cannot heal).
+    ///
+    /// Spent outputs are reconstructed from the block store itself — the
+    /// creating transaction is located via `tx_index`, so no undo log is
+    /// required. Returns the number of blocks rolled back.
+    pub async fn rollback_to_height(&self, target_height: u64) -> Result<u64, NodeError> {
+        let mut set = self.utxo_set.lock().await;
+        let mut rolled = 0u64;
+        let mut requeue: Vec<Transaction> = Vec::new();
+
+        loop {
+            let (tip_header, tip_hash) = match self.storage.tip().await? {
+                Some(t) => t,
+                None => break,
+            };
+            if tip_header.height <= target_height {
+                break;
+            }
+            let block = self
+                .storage
+                .get_by_hash(&tip_hash)
+                .await?
+                .ok_or_else(|| {
+                    NodeError::Task(format!(
+                        "rollback: tip block {} missing from store",
+                        tip_hash.to_hex()
+                    ))
+                })?;
+
+            // Resolve every spent outpoint back to its live UTXO entry
+            // before the block's indexes are deleted.
+            let mut spent = std::collections::HashMap::new();
+            for tx in &block.transactions {
+                if tx.is_coinbase() {
+                    continue;
+                }
+                for input in &tx.inputs {
+                    let outpoint = Outpoint::from(input);
+                    if spent.contains_key(&outpoint) {
+                        continue;
+                    }
+                    let prev_height = self
+                        .storage
+                        .find_tx_height(&input.previous_output)
+                        .await?
+                        .ok_or_else(|| {
+                            NodeError::Task(format!(
+                                "rollback: spent tx {} not in tx_index",
+                                input.previous_output.to_hex()
+                            ))
+                        })?;
+                    let prev_block = self
+                        .storage
+                        .get_by_height(prev_height)
+                        .await?
+                        .ok_or_else(|| {
+                            NodeError::Task(format!(
+                                "rollback: prev block {prev_height} missing"
+                            ))
+                        })?;
+                    let prev_tx = prev_block
+                        .transactions
+                        .iter()
+                        .find(|t| t.hash() == input.previous_output)
+                        .ok_or_else(|| {
+                            NodeError::Task("rollback: prev tx not in its block".into())
+                        })?;
+                    let prev_out = prev_tx
+                        .outputs
+                        .get(input.index as usize)
+                        .ok_or_else(|| {
+                            NodeError::Task("rollback: prev output index out of range".into())
+                        })?;
+                    spent.insert(
+                        outpoint,
+                        UtxoOutput {
+                            amount: prev_out.amount,
+                            address: prev_out.address.clone(),
+                            script: prev_out.script.clone(),
+                            block_height: prev_height,
+                            block_timestamp: prev_block.header.timestamp,
+                            is_coinbase: prev_tx.is_coinbase(),
+                        },
+                    );
+                }
+            }
+
+            set.unapply_block(&block, &spent).map_err(|e| {
+                NodeError::Task(format!("rollback unapply at {}: {e}", tip_header.height))
+            })?;
+
+            for tx in &block.transactions {
+                if !tx.is_coinbase() {
+                    requeue.push(tx.clone());
+                }
+            }
+            self.storage.delete_block(&block, &tip_hash).await?;
+            rolled += 1;
+        }
+
+        // Return still-valid rolled-back transactions to the mempool in
+        // original block order; conflicts with the canonical chain are
+        // dropped.
+        if !requeue.is_empty() {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let mut view = (*set).clone();
+            for tx in requeue {
+                if view.apply_transaction(&tx, 0, now).is_ok() {
+                    self.mempool.add(tx).await;
+                }
+            }
+        }
+
+        // The cached template was built on the rolled-back tip — force a
+        // rebuild on the next poll.
+        *self.template_cache.lock().await = None;
+
+        if rolled > 0 {
+            info!(rolled, target_height, "rollback completed");
+        }
+        Ok(rolled)
+    }
 }
 
 fn merkle_root(transactions: &[Transaction]) -> Hash {
@@ -1344,6 +1473,58 @@ mod tests {
         let accepted = [ra.is_ok(), rb.is_ok()].iter().filter(|ok| **ok).count();
         assert_eq!(accepted, 1, "exactly one same-height block may be accepted");
         assert_eq!(node.status().await.unwrap().height, 1);
+    }
+
+    #[tokio::test]
+    async fn rollback_restores_tip_and_accepts_competing_block() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            soft_fork_activation_height: 0,
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test").unwrap();
+
+        let template = node.block_template(miner).await.unwrap();
+        let mine = |nonce_start: u64| {
+            let mut header: BlockHeader = serde_json::from_str(&template.header_json).unwrap();
+            header.difficulty = 1;
+            node.consensus
+                .mine(&mut header, &[0xff; 32], nonce_start, 1_000)
+                .expect("mine competing block");
+            Block::new(header, template.transactions.clone())
+        };
+
+        // Our node lands on the losing branch.
+        let a = mine(0);
+        let a_hash = a.header.header_hash();
+        let a_coinbase_tx = a.transactions[0].hash();
+        node.submit_block(a).await.unwrap();
+        assert_eq!(node.status().await.unwrap().height, 1);
+
+        // Reorg: roll block 1 back to genesis-level state.
+        let rolled = node.rollback_to_height(0).await.unwrap();
+        assert_eq!(rolled, 1);
+        assert_eq!(node.status().await.unwrap().height, 0);
+        assert!(node
+            .storage
+            .get_by_hash(&a_hash)
+            .await
+            .unwrap()
+            .is_none());
+        {
+            let set = node.utxo_set.lock().await;
+            assert!(!set.contains(&Outpoint::new(a_coinbase_tx, 0)));
+        }
+
+        // The winning branch's block now attaches cleanly.
+        let b = mine(500);
+        let b_hash = b.header.header_hash();
+        assert_ne!(a_hash, b_hash);
+        node.submit_block(b).await.unwrap();
+        let status = node.status().await.unwrap();
+        assert_eq!(status.height, 1);
+        assert_eq!(status.tip_hash, b_hash);
     }
 
     #[tokio::test]
