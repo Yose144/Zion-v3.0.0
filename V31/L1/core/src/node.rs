@@ -1064,6 +1064,15 @@ impl Node {
 
     /// Validate and accept a mined block.
     pub async fn submit_block(&self, block: Block) -> Result<(), NodeError> {
+        // Serialize the whole tip-check → apply → commit critical section.
+        // Without this, two concurrent same-height submits (e.g. the pool
+        // forwarding shares solved by different workers on one template)
+        // both pass the height check; the second `INSERT OR REPLACE` then
+        // silently overwrites the tip row (height is UNIQUE) and the loser
+        // block's coinbase stays applied in the UTXO set — an orphaned tip
+        // replace plus a phantom reward output.
+        let mut set = self.utxo_set.lock().await;
+
         let (tip_header, _tip_hash) = self.storage.tip().await?.unwrap_or_else(|| {
             let genesis = genesis::genesis_block();
             let hash = genesis.header.header_hash();
@@ -1120,18 +1129,15 @@ impl Node {
         self.validate_coinbase(&block)?;
 
         // Validate and apply the block's transactions to the V31 UTXO set.
-        {
-            let mut set = self.utxo_set.lock().await;
-            if block.header.height >= self.config.soft_fork_activation_height {
-                let mut view = set.clone();
-                for tx in &block.transactions {
-                    Self::validate_premine_and_maturity_for_tx(&view, tx, block.header.height)?;
-                    view.apply_transaction(tx, block.header.height, block.header.timestamp)?;
-                }
-                *set = view;
-            } else {
-                set.apply_block(&block)?;
+        if block.header.height >= self.config.soft_fork_activation_height {
+            let mut view = set.clone();
+            for tx in &block.transactions {
+                Self::validate_premine_and_maturity_for_tx(&view, tx, block.header.height)?;
+                view.apply_transaction(tx, block.header.height, block.header.timestamp)?;
             }
+            *set = view;
+        } else {
+            set.apply_block(&block)?;
         }
 
         self.storage.put(&block).await?;
@@ -1142,10 +1148,9 @@ impl Node {
 
         // Revalidate the remaining mempool against the updated UTXO set and
         // drop any transactions that are no longer valid (e.g. outpoints spent
-        // by a block received over P2P). The filter runs on a lock-free
-        // snapshot so this pass does not serialize against template builds.
+        // by a block received over P2P).
         {
-            let mut view = self.utxo_set.lock().await.clone();
+            let mut view = (*set).clone();
             let remaining = self.mempool.pending().await;
             let mut invalid = Vec::new();
             for tx in remaining {
@@ -1304,6 +1309,41 @@ mod tests {
         let t3 = node.block_template(miner.clone()).await.unwrap();
         assert_ne!(t3.template_id, t1.template_id);
         assert_eq!(t3.height, t1.height + 1);
+    }
+
+    #[tokio::test]
+    async fn concurrent_same_height_submit_accepts_only_one() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            soft_fork_activation_height: 0,
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test").unwrap();
+
+        // One template → two competing blocks at the same height (different
+        // nonces/hashes), like two workers solving the same pool template.
+        let template = node.block_template(miner).await.unwrap();
+        let mine = |nonce_start: u64| {
+            let mut header: BlockHeader = serde_json::from_str(&template.header_json).unwrap();
+            header.difficulty = 1;
+            node.consensus
+                .mine(&mut header, &[0xff; 32], nonce_start, 1_000)
+                .expect("mine competing block");
+            Block::new(header, template.transactions.clone())
+        };
+        let a = mine(0);
+        let b = mine(500);
+        assert_ne!(
+            a.header.header_hash(),
+            b.header.header_hash(),
+            "competing blocks must differ"
+        );
+
+        let (ra, rb) = tokio::join!(node.submit_block(a), node.submit_block(b));
+        let accepted = [ra.is_ok(), rb.is_ok()].iter().filter(|ok| **ok).count();
+        assert_eq!(accepted, 1, "exactly one same-height block may be accepted");
+        assert_eq!(node.status().await.unwrap().height, 1);
     }
 
     #[tokio::test]
