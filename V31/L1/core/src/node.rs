@@ -159,7 +159,27 @@ pub struct Node {
     /// Shared P2P peer manager (active + known peers).
     pub peer_manager: Arc<crate::peer_manager::PeerManager>,
     next_template_id: AtomicU64,
+    /// Short-lived block template cache. Serving `block_template` from the
+    /// cache keeps getTemplate latency independent of the `utxo_set` lock —
+    /// block import can hold that lock for seconds while it clones and
+    /// validates, which used to make getTemplate intermittently time out.
+    /// Cleared on every accepted block and bounded by `TEMPLATE_CACHE_TTL`
+    /// so mempool changes still reach miners quickly.
+    template_cache: tokio::sync::Mutex<Option<TemplateCacheEntry>>,
 }
+
+/// Cached result of `Node::block_template` for a single miner address.
+struct TemplateCacheEntry {
+    miner: Address,
+    built_at: std::time::Instant,
+    template: BlockTemplate,
+}
+
+/// How long a cached template may be served without rebuilding. The pool
+/// polls getTemplate roughly once per second; a few seconds of mempool
+/// staleness is harmless — the template itself stays valid for the same
+/// tip, and a new accepted block clears the cache immediately.
+const TEMPLATE_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(5);
 
 impl Node {
     /// Open storage and seed the genesis block if the chain is empty.
@@ -301,6 +321,7 @@ impl Node {
             config,
             peer_manager: Arc::new(crate::peer_manager::PeerManager::default_manager()),
             next_template_id: AtomicU64::new(1),
+            template_cache: tokio::sync::Mutex::new(None),
         };
 
         // FIND-L1-005: log the genesis hash prominently at boot so operators
@@ -880,6 +901,20 @@ impl Node {
 
     /// Build a block template for miners.
     pub async fn block_template(&self, miner: Address) -> Result<BlockTemplate, NodeError> {
+        // Serve the cached template when it is still fresh. This lookup sits
+        // outside the utxo_set lock, so getTemplate answers instantly even
+        // while block import holds the UTXO lock for a long validation. The
+        // cache is cleared on every accepted block and expired by TTL, so a
+        // new tip or new mempool txs are never stale for long.
+        {
+            let cache = self.template_cache.lock().await;
+            if let Some(entry) = cache.as_ref() {
+                if entry.miner == miner && entry.built_at.elapsed() < TEMPLATE_CACHE_TTL {
+                    return Ok(entry.template.clone());
+                }
+            }
+        }
+
         let (tip_header, _tip_hash) = self.storage.tip().await?.unwrap_or_else(|| {
             let genesis = genesis::genesis_block();
             let hash = genesis.header.header_hash();
@@ -904,7 +939,7 @@ impl Node {
         let mut outputs = vec![
             TransactionOutput {
                 amount: Amount::new(miner_amount as u128),
-                address: miner,
+                address: miner.clone(),
                 ..Default::default()
             },
             TransactionOutput {
@@ -945,45 +980,46 @@ impl Node {
         let mut invalid = Vec::with_capacity(mempool_txs.len());
         let mut selected_bytes = 0usize;
         let block_timestamp = chrono::Utc::now().timestamp() as u64;
-        {
-            let set = self.utxo_set.lock().await;
-            let mut view = set.clone();
-            for tx in mempool_txs {
-                if selected.len() >= max_user_txs {
-                    break;
+        // Snapshot the UTXO set under the lock, then release it — the
+        // mempool filter below operates purely on the snapshot and does not
+        // need the lock. Previously the lock was held across the whole loop,
+        // serializing template builds against block import.
+        let mut view = self.utxo_set.lock().await.clone();
+        for tx in mempool_txs {
+            if selected.len() >= max_user_txs {
+                break;
+            }
+            let tx_size = match Self::validate_tx_size(&tx) {
+                Ok(s) => s,
+                Err(e) => {
+                    warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx oversized for template");
+                    invalid.push(tx.hash());
+                    continue;
                 }
-                let tx_size = match Self::validate_tx_size(&tx) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx oversized for template");
-                        invalid.push(tx.hash());
-                        continue;
-                    }
-                };
-                if selected_bytes
-                    .checked_add(tx_size)
-                    .is_none_or(|s| s > max_user_bytes)
+            };
+            if selected_bytes
+                .checked_add(tx_size)
+                .is_none_or(|s| s > max_user_bytes)
+            {
+                break;
+            }
+            if next_height >= self.config.soft_fork_activation_height {
+                if let Err(e) =
+                    Self::validate_premine_and_maturity_for_tx(&view, &tx, next_height)
                 {
-                    break;
+                    warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
+                    invalid.push(tx.hash());
+                    continue;
                 }
-                if next_height >= self.config.soft_fork_activation_height {
-                    if let Err(e) =
-                        Self::validate_premine_and_maturity_for_tx(&view, &tx, next_height)
-                    {
-                        warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
-                        invalid.push(tx.hash());
-                        continue;
-                    }
+            }
+            match view.apply_transaction(&tx, next_height, block_timestamp) {
+                Ok(_) => {
+                    selected_bytes += tx_size;
+                    selected.push(tx);
                 }
-                match view.apply_transaction(&tx, next_height, block_timestamp) {
-                    Ok(_) => {
-                        selected_bytes += tx_size;
-                        selected.push(tx);
-                    }
-                    Err(e) => {
-                        warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
-                        invalid.push(tx.hash());
-                    }
+                Err(e) => {
+                    warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
+                    invalid.push(tx.hash());
                 }
             }
         }
@@ -1006,7 +1042,7 @@ impl Node {
 
         let template_id = self.next_template_id.fetch_add(1, Ordering::Relaxed);
 
-        Ok(BlockTemplate {
+        let template = BlockTemplate {
             template_id,
             previous_hash: header.previous_hash.to_hex(),
             height: header.height,
@@ -1017,7 +1053,13 @@ impl Node {
             block_reward: subsidy,
             header_json: serde_json::to_string(&header)?,
             transactions: txs,
-        })
+        };
+        *self.template_cache.lock().await = Some(TemplateCacheEntry {
+            miner,
+            built_at: std::time::Instant::now(),
+            template: template.clone(),
+        });
+        Ok(template)
     }
 
     /// Validate and accept a mined block.
@@ -1100,11 +1142,11 @@ impl Node {
 
         // Revalidate the remaining mempool against the updated UTXO set and
         // drop any transactions that are no longer valid (e.g. outpoints spent
-        // by a block received over P2P).
+        // by a block received over P2P). The filter runs on a lock-free
+        // snapshot so this pass does not serialize against template builds.
         {
-            let set = self.utxo_set.lock().await;
+            let mut view = self.utxo_set.lock().await.clone();
             let remaining = self.mempool.pending().await;
-            let mut view = set.clone();
             let mut invalid = Vec::new();
             for tx in remaining {
                 if view.apply_transaction(&tx, 0, 0).is_err() {
@@ -1115,6 +1157,10 @@ impl Node {
                 self.mempool.remove(&invalid).await;
             }
         }
+
+        // The tip just changed — force the next getTemplate poll to build a
+        // fresh template instead of serving a stale cached one.
+        *self.template_cache.lock().await = None;
 
         info!(
             height = block.header.height,
@@ -1227,6 +1273,37 @@ mod tests {
         node.submit_block(block).await.unwrap();
 
         assert_eq!(node.status().await.unwrap().height, 1);
+    }
+
+    #[tokio::test]
+    async fn block_template_cache_serves_fresh_and_invalidates_on_block() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            soft_fork_activation_height: 0,
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test").unwrap();
+
+        let t1 = node.block_template(miner.clone()).await.unwrap();
+        // A second immediate poll is served from the cache — same template.
+        let t2 = node.block_template(miner.clone()).await.unwrap();
+        assert_eq!(t1.template_id, t2.template_id, "expected cached template");
+
+        // After an accepted block the cache is invalidated: the next build
+        // advances the height and gets a fresh template_id.
+        let mut header: BlockHeader = serde_json::from_str(&t2.header_json).unwrap();
+        header.difficulty = 1;
+        node.consensus
+            .mine(&mut header, &[0xff; 32], 0, 1_000)
+            .expect("mine block");
+        node.submit_block(Block::new(header, t2.transactions))
+            .await
+            .unwrap();
+
+        let t3 = node.block_template(miner.clone()).await.unwrap();
+        assert_ne!(t3.template_id, t1.template_id);
+        assert_eq!(t3.height, t1.height + 1);
     }
 
     #[tokio::test]
