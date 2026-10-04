@@ -59,4 +59,4 @@ Cesta, která se jmenuje po třech Mariích — a která nese světlo tam, kam �
 
 ---
 
-**Navigace:** [← Kapitola 11: Kotva pravdy a hranice](./11-Kotva-Pravdy-a-Hranice.md) · [Kniha Cesty — index](./00-README.md) · [Kniha Růže →](../Miriam/00-README.md) · [Kniha Lucerny →](../Lumi/00-README.md)
+**Navigace:** [← Kapitola 11: Kotva pravdy a hranice](./11-Kotva-Pravdy-a-Hranice.md) · [Kniha Cesty — index](./00-README.md) · [Kniha Růže →](../Miriam/00-README.md) · [Kniha Lucerny →](../Lumi/00-README.md) · [Na Cestě (literární pokračování, DRAFT) →](../NaCeste/00-README.md)

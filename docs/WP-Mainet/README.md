@@ -38,6 +38,8 @@ These documents are not yet canonized. They are working concepts and directional
 - **Lumi — Cesta domů** (Kniha Lucerny: sjednocení Nirvany, Bodhi Gaii a Issobelly kolem děvčátka Lumi/Elizabeth; L1–L6, 3.3 a horizont 2026–2126; DRAFT pro 3.3 / draft for 3.3): [`Lumi/00-README.md`](./Lumi/00-README.md) (CZ)
 - **Miriam — Kniha Růže** (Kniha Linie: Miriam z Magdaly, Tesař, svědek skrze dvacet století; osa času — vodoravná k Lumiině svislé; kámen/hlína/sen, Zjevení jako mapa; DRAFT pro 3.3 / draft for 3.3): [`Miriam/00-README.md`](./Miriam/00-README.md) (CZ)
 - **Příběh Růže — Co nelze vlastnit** (malá filosofická bajka o Lumi a růži u řeky za otevřenou bránou; průsečík paměti a světla — vztah, nikoli dvanáctá brána; epilog odnese druhé semínko do Zahrady Genesis u Atlantiku; celý děj MÝTUS; DRAFT pro 3.3 / draft for 3.3): [`Ruze/00-README.md`](./Ruze/00-README.md) (CZ)
+- **María del Camino — Kniha Cesty** (tři mariánská zjevení a flotila Tres Marias; trasa přes tři oceány; celý děj MÝTUS/HORIZONT; DRAFT pro 3.3 / draft for 3.3): [`MariaCaminho/00-README.md`](./MariaCaminho/00-README.md) (CZ)
+- **Na Cestě — literární pokračování** (Lumen na flotile Tres Marias, jedna možná budoucnost; celý děj MÝTUS/HORIZONT; DRAFT ke kulturnímu a faktickému review, nekanonizováno / draft pending review, not canonized): [`NaCeste/00-README.md`](./NaCeste/00-README.md) (CZ)
 
 ## Historické / superseded verze
 
