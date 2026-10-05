@@ -2135,8 +2135,8 @@ async function updateMinerLeaderboard(){
         const sInvalid = v.invalid_shares || 0;
         const sTotal = sValid + sInvalid;
         const sPct = sTotal > 0 ? ((sValid/sTotal)*100).toFixed(0)+'%' : '—';
-        const colors = {zion:'text-emerald-400',kheavyhash:'text-cyan-400',verushash:'text-yellow-400',blake3:'text-blue-400',ethash:'text-purple-400',kawpow:'text-pink-400',randomx:'text-orange-400',autolykos:'text-red-400'};
-        const labels = {zion:'ZION',kheavyhash:'KAS',verushash:'VRSC',blake3:'BLAKE3',ethash:'ETC',kawpow:'KAWPOW',randomx:'XMR',autolykos:'ERG'};
+        const colors = {zion:'text-emerald-400',qtu:'text-violet-400',vrsc:'text-yellow-400',kheavyhash:'text-cyan-400',verushash:'text-yellow-400',blake3:'text-blue-400',ethash:'text-purple-400',kawpow:'text-pink-400',randomx:'text-orange-400',autolykos:'text-red-400'};
+        const labels = {zion:'ZION',qtu:'QTU',vrsc:'VRSC',kheavyhash:'KAS',verushash:'VRSC',blake3:'BLAKE3',ethash:'ETC',kawpow:'KAWPOW',randomx:'XMR',autolykos:'ERG'};
         const color = colors[k] || 'text-gray-400';
         const label = labels[k] || k.toUpperCase().slice(0,6);
         return `<span class="text-[9px] ${color} mr-1">${label}:${sValid}/${sPct}</span>`;
@@ -2898,12 +2898,43 @@ async function updateConnectedMiners(){
 }
 
 // ── Trinity Mining panel (Claymore-style 3-stream) ──
-// v3.0.6 canonical 3 streams:
+// v3.2 canonical 3 streams:
 //   Stream 1 — ZION (Deeksha + internal bonuses: keccak/sha3/profit/ncl/deeksha_lite/thermal_bonus)
-//   Stream 2 — GPU PROFIT (one GPU-capable AuxPoW coin: blake3/kheavyhash/ethash/kawpow/autolykos/zelhash/progpow/beamhash)
+//   Stream 2 — GPU PROFIT (external GPU coin: QTU QPoW native, or AuxPoW blake3/kheavyhash/ethash/kawpow/autolykos/zelhash/progpow/beamhash)
 //   Stream 3 — CPU PROFIT (Verus/RandomX: verushash/randomx)
 // Pearl (pearlhash) is intentionally ignored — Pearl thread was removed in v3.0.6.
+// v3.2: prefer `trinity_streams` (per-coin shares aggregated from /miners streams,
+// coin-keyed: zion/qtu/vrsc/...) — routing.sources is algorithm-keyed and has
+// no QPoW/QTU source. routing.sources kept as fallback.
 function updateTripleStream(data){
+  const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  const ts=(data&&data.trinity_streams)||null;
+  if(ts&&Object.keys(ts).length){
+    // Coin-keyed buckets. Stream 1 = zion; Stream 3 = CPU coins (vrsc/xmr/rtm/verus);
+    // Stream 2 = remaining GPU coins (qtu, zano, kas…). Unknown coins land on S2.
+    const CPU_COINS=new Set(['vrsc','xmr','rtm','verus','verushash','randomx']);
+    let zionAcc=0,zionSub=0,gpuAcc=0,gpuSub=0,cpuAcc=0,cpuSub=0,gpuCoin='—',cpuCoin='—';
+    for(const [coin,s] of Object.entries(ts)){
+      if(!s)continue;
+      const v=Number(s.valid_shares)||0, iv=Number(s.invalid_shares)||0;
+      const c=String(coin).toLowerCase();
+      if(c==='zion'){zionAcc+=v;zionSub+=v+iv;}
+      else if(CPU_COINS.has(c)){cpuAcc+=v;cpuSub+=v+iv;if((v+iv)>0&&cpuCoin==='—')cpuCoin=c.toUpperCase();}
+      else{gpuAcc+=v;gpuSub+=v+iv;if((v+iv)>0&&gpuCoin==='—')gpuCoin=c.toUpperCase();}
+    }
+    setText('stream-zion-shares',zionAcc+' / '+(zionSub-zionAcc));
+    setText('stream-zion-pct',zionSub>0?(100*zionAcc/zionSub).toFixed(1)+'% accepted':'—');
+    setText('stream-gpu-shares',gpuAcc+' / '+(gpuSub-gpuAcc));
+    setText('stream-gpu-coin',gpuCoin);
+    setText('stream-gpu-pct',gpuSub>0?(100*gpuAcc/gpuSub).toFixed(1)+'% accepted':'—');
+    setText('stream-cpu-shares',cpuAcc+' / '+(cpuSub-cpuAcc));
+    setText('stream-cpu-coin',cpuCoin);
+    setText('stream-cpu-pct',cpuSub>0?(100*cpuAcc/cpuSub).toFixed(1)+'% accepted':'—');
+    const totalAcc=zionAcc+gpuAcc+cpuAcc;
+    const totalRej=(zionSub-zionAcc)+(gpuSub-gpuAcc)+(cpuSub-cpuAcc);
+    setText('trinity-summary',totalAcc+' acc / '+totalRej+' rej total');
+    return;
+  }
   if(!data||!data.routing||!data.routing.sources){
     const summary = document.getElementById('trinity-summary');
     if(summary) summary.textContent='No routing data';
@@ -2924,7 +2955,7 @@ function updateTripleStream(data){
   let zionAcc=0,zionSub=0;
   for(const k of zionKeys){const v=get(k);zionAcc+=v.accepted||0;zionSub+=v.submits||0;}
   // Stream 2: GPU-capable external AuxPoW sources
-  const gpuKeys=['blake3','blake3_external','kheavyhash','kheavyhash_external','ethash','ethash_external','etchash','etchash_external','kawpow','kawpow_external','autolykos','autolykos_external','zelhash','zelhash_external','progpow','progpow_external','beamhash','beamhash_external','meowpow'];
+  const gpuKeys=['blake3','blake3_external','kheavyhash','kheavyhash_external','ethash','ethash_external','etchash','etchash_external','kawpow','kawpow_external','autolykos','autolykos_external','zelhash','zelhash_external','progpow','progpow_external','beamhash','beamhash_external','meowpow','qpow','qpow_external','poseidon2','poseidon2_external'];
   let gpuAcc=0,gpuSub=0,gpuCoin='—';
   for(const k of gpuKeys){
     const v=get(k);
@@ -2941,7 +2972,6 @@ function updateTripleStream(data){
     cpuSub+=v.submits||0;
     if((v.submits||0)>0&&cpuCoin==='—'){cpuCoin=k.replace('_external','').toUpperCase();}
   }
-  const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
   // Stream 1: ZION
   setText('stream-zion-shares',zionAcc+' / '+(zionSub-zionAcc));
   setText('stream-zion-pct',zionSub>0?(100*zionAcc/zionSub).toFixed(1)+'% accepted':'—');
@@ -3045,8 +3075,8 @@ async function updatePoolLeaderboard(){
         const sInvalid = v.invalid_shares || 0;
         const sTotal = sValid + sInvalid;
         const sPct = sTotal > 0 ? ((sValid/sTotal)*100).toFixed(0)+'%' : '—';
-        const colors = {zion:'text-emerald-400',kheavyhash:'text-cyan-400',verushash:'text-yellow-400',blake3:'text-blue-400',ethash:'text-purple-400',kawpow:'text-pink-400',randomx:'text-orange-400',autolykos:'text-red-400'};
-        const labels = {zion:'ZION',kheavyhash:'KAS',verushash:'VRSC',blake3:'BLAKE3',ethash:'ETC',kawpow:'KAWPOW',randomx:'XMR',autolykos:'ERG'};
+        const colors = {zion:'text-emerald-400',qtu:'text-violet-400',vrsc:'text-yellow-400',kheavyhash:'text-cyan-400',verushash:'text-yellow-400',blake3:'text-blue-400',ethash:'text-purple-400',kawpow:'text-pink-400',randomx:'text-orange-400',autolykos:'text-red-400'};
+        const labels = {zion:'ZION',qtu:'QTU',vrsc:'VRSC',kheavyhash:'KAS',verushash:'VRSC',blake3:'BLAKE3',ethash:'ETC',kawpow:'KAWPOW',randomx:'XMR',autolykos:'ERG'};
         const color = colors[k] || 'text-gray-400';
         const label = labels[k] || k.toUpperCase().slice(0,6);
         return `<span class="text-[9px] ${color} mr-1">${label}:${sValid}/${sPct}</span>`;
