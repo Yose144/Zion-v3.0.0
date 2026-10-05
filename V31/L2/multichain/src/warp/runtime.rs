@@ -105,6 +105,7 @@ impl WarpRuntime {
             router: self.router.clone(),
             config: self.config.clone(),
             db: self.db.clone(),
+            api_key: None,
         };
         let app = create_router(app_state);
         let bind_addr_for_task = bind_addr.clone();

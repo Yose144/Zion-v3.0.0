@@ -49,6 +49,9 @@ pub struct WarpState {
     pub config: WarpConfig,
     /// Optional SQLite persistence — None = in-memory only (dev mode).
     pub db: Option<TransferDb>,
+    /// Static key required on mutating routes (`x-warp-key` header).
+    /// Populated from `WARP_API_KEY` in `create_router`; unset = writes disabled.
+    pub api_key: Option<String>,
 }
 
 impl WarpState {
@@ -72,6 +75,7 @@ impl WarpState {
             router: Arc::new(Mutex::new(router)),
             config,
             db: None,
+            api_key: None,
         }
     }
 
@@ -100,6 +104,7 @@ impl WarpState {
             router: Arc::new(Mutex::new(router)),
             config,
             db: Some(db),
+            api_key: None,
         })
     }
 }
@@ -108,17 +113,34 @@ impl WarpState {
 // Router factory
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub fn create_router(state: WarpState) -> Router {
+pub fn create_router(mut state: WarpState) -> Router {
+    // An explicitly-configured key on the state wins (used by tests/embedders);
+    // otherwise fall back to the WARP_API_KEY environment variable.
+    if state.api_key.is_none() {
+        state.api_key = std::env::var("WARP_API_KEY")
+            .ok()
+            .filter(|k| !k.is_empty());
+    }
+    if state.api_key.is_none() {
+        tracing::warn!("[warpd] WARP_API_KEY unset — mutating API routes disabled");
+    }
+    // Mutating routes are gated before body parsing.
+    let writes = Router::new()
+        .route("/transfers/outbound", post(initiate_outbound))
+        .route("/transfers/inbound", post(initiate_inbound))
+        .route("/transfers/:id/advance", post(advance_transfer))
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            warp_write_auth,
+        ));
     Router::new()
         .route("/health", get(health))
         .route("/metrics", get(metrics))
         .route("/chains", get(chains))
         .route("/transfers", get(list_transfers))
         .route("/transfers/pending", get(list_pending))
-        .route("/transfers/outbound", post(initiate_outbound))
-        .route("/transfers/inbound", post(initiate_inbound))
         .route("/transfers/:id", get(get_transfer))
-        .route("/transfers/:id/advance", post(advance_transfer))
+        .merge(writes)
         .with_state(state)
 }
 
@@ -208,6 +230,63 @@ impl ApiErr {
                 error: msg.into(),
             }),
         )
+    }
+
+    fn with_status(status: StatusCode, msg: impl Into<String>) -> (StatusCode, Json<ApiErr>) {
+        (
+            status,
+            Json(ApiErr {
+                ok: false,
+                error: msg.into(),
+            }),
+        )
+    }
+}
+
+fn warp_key_eq(expected: &str, provided: &str) -> bool {
+    if expected.len() != provided.len() {
+        return false;
+    }
+    expected
+        .as_bytes()
+        .iter()
+        .zip(provided.as_bytes())
+        .fold(0u8, |diff, (a, b)| diff | (a ^ b))
+        == 0
+}
+
+/// Mutating routes require `x-warp-key` matching `WARP_API_KEY`.
+/// Unset key -> 503 (writes disabled); missing/wrong key -> 401.
+fn require_warp_key(
+    state: &WarpState,
+    headers: &HeaderMap,
+) -> Result<(), (StatusCode, Json<ApiErr>)> {
+    let Some(expected) = state.api_key.as_deref() else {
+        return Err(ApiErr::with_status(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "warp write API disabled (WARP_API_KEY unset)",
+        ));
+    };
+    let provided = headers
+        .get("x-warp-key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    if warp_key_eq(expected, provided) {
+        Ok(())
+    } else {
+        Err(ApiErr::with_status(StatusCode::UNAUTHORIZED, "unauthorized"))
+    }
+}
+
+async fn warp_write_auth(
+    State(state): State<WarpState>,
+    headers: HeaderMap,
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    match require_warp_key(&state, &headers) {
+        Ok(()) => next.run(req).await,
+        Err(resp) => resp.into_response(),
     }
 }
 
@@ -467,6 +546,103 @@ mod tests {
             "expected at least 13 chains, got {}",
             chains.len()
         );
+    }
+
+    fn post_req(uri: &str, key: Option<&str>, body: &str) -> Request<Body> {
+        let mut b = Request::builder()
+            .method("POST")
+            .uri(uri)
+            .header("content-type", "application/json");
+        if let Some(k) = key {
+            b = b.header("x-warp-key", k);
+        }
+        b.body(Body::from(body.to_string())).unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_write_routes_disabled_without_key() {
+        // WARP_API_KEY is not used by any other test in this binary.
+        std::env::remove_var("WARP_API_KEY");
+        let app = create_router(make_state());
+        for uri in [
+            "/transfers/outbound",
+            "/transfers/inbound",
+            "/transfers/00000000-0000-0000-0000-000000000000/advance",
+        ] {
+            let res = app
+                .clone()
+                .oneshot(post_req(uri, Some("k"), "{}"))
+                .await
+                .unwrap();
+            assert_eq!(
+                res.status(),
+                StatusCode::SERVICE_UNAVAILABLE,
+                "{uri} must reject writes when WARP_API_KEY is unset"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_write_routes_key_matrix() {
+        let mut state = make_state();
+        state.api_key = Some("warp-secret".to_string());
+        let app = create_router(state);
+        let uri = "/transfers/00000000-0000-0000-0000-000000000000/advance";
+        let body = r#"{"new_status":"validating"}"#;
+
+        // Missing key -> 401.
+        let res = app
+            .clone()
+            .oneshot(post_req(uri, None, body))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+        let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["ok"], false);
+        assert_eq!(json["error"], "unauthorized");
+
+        // Wrong key -> 401.
+        let res = app
+            .clone()
+            .oneshot(post_req(uri, Some("wrong"), body))
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+
+        // Right key -> passes auth (transfer not found -> 400).
+        let res = app
+            .oneshot(post_req(uri, Some("warp-secret"), body))
+            .await
+            .unwrap();
+        assert_ne!(res.status(), StatusCode::UNAUTHORIZED);
+        assert_ne!(res.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[test]
+    fn test_require_warp_key_direct() {
+        let mut state = make_state();
+        let mut h = HeaderMap::new();
+        // Unset -> 503.
+        let (status, Json(err)) = require_warp_key(&state, &h).unwrap_err();
+        assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(err.error, "warp write API disabled (WARP_API_KEY unset)");
+
+        state.api_key = Some("k1".to_string());
+        // Missing -> 401.
+        assert_eq!(
+            require_warp_key(&state, &h).unwrap_err().0,
+            StatusCode::UNAUTHORIZED
+        );
+        // Wrong -> 401.
+        h.insert("x-warp-key", "k2".parse().unwrap());
+        assert_eq!(
+            require_warp_key(&state, &h).unwrap_err().0,
+            StatusCode::UNAUTHORIZED
+        );
+        // Right -> ok.
+        h.insert("x-warp-key", "k1".parse().unwrap());
+        assert!(require_warp_key(&state, &h).is_ok());
     }
 
     #[tokio::test]

@@ -2155,10 +2155,15 @@ mod tests {
         assert_eq!(rec2.zion_lock_tx, Some("bb".repeat(32)));
     }
 
+    /// Serializes tests that mutate `ZION_HTLC_PREIMAGE_KEY` — env is
+    /// process-global, so parallel tests would race.
+    static PREIMAGE_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     /// FIND-002: with ZION_HTLC_PREIMAGE_KEY set, a stored preimage is
     /// `enc:`-wrapped at rest and decrypts transparently on load.
     #[test]
     fn snapshot_encrypts_preimage_at_rest() {
+        let _guard = PREIMAGE_ENV_LOCK.lock().unwrap();
         std::env::set_var("ZION_HTLC_PREIMAGE_KEY", "ab".repeat(32));
         let s = signer();
         let c = cfg();
@@ -2178,6 +2183,7 @@ mod tests {
     /// Legacy plaintext `preimage_hex` snapshots still load (no `enc:` prefix).
     #[test]
     fn snapshot_loads_legacy_plaintext_preimage() {
+        let _guard = PREIMAGE_ENV_LOCK.lock().unwrap();
         std::env::remove_var("ZION_HTLC_PREIMAGE_KEY");
         let s = signer();
         let c = cfg();
