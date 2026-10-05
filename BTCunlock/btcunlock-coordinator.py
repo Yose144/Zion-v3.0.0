@@ -378,6 +378,8 @@ def status_payload():
     tested = int(_meta_get("tested_total", 0))
     coverage = tested / RANGE_KEYS if RANGE_KEYS else 0.0
     now = time.time()
+    leased_workers = {r[0] for r in db().execute(
+        "SELECT DISTINCT worker_id FROM units WHERE status='leased'")}
     rows = db().execute(
         "SELECT worker_id,label,last_seen,total_tested,units_done,rate_mks "
         "FROM workers").fetchall()
@@ -388,7 +390,9 @@ def status_payload():
                 (last_seen or "").replace("Z", "+00:00")).timestamp()
         except Exception:
             seen = 0
-        active = (now - seen) < LEASE_TTL
+        # Active = reported recently (heartbeat ~20 s) OR still holds a
+        # live lease. A dead worker stops inflating the fleet rate fast.
+        active = (now - seen) < 120 or wid in leased_workers
         if active:
             rate_sum += float(rate or 0)
         workers.append({"worker_id": wid, "label": label or "",
