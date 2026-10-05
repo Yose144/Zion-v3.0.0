@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -45,30 +45,6 @@ export async function GET() {
     return NextResponse.json(
       { error: error?.message || 'Failed to load revenue config' },
       { status: 503 },
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const submitted = await request.json() as Record<string, JsonValue>;
-    const { path: filePath, data: current } = await readRevenueConfig();
-    const merged = {
-      ...current,
-      ...submitted,
-      streams: {
-        ...(current.streams as Record<string, JsonValue> | undefined),
-        ...(submitted.streams as Record<string, JsonValue> | undefined),
-      },
-    } satisfies Record<string, JsonValue>;
-
-    await writeFile(filePath, `${JSON.stringify(merged, null, 2)}\n`, 'utf8');
-
-    return NextResponse.json({ ok: true, path: filePath, config: merged });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to save revenue config' },
-      { status: 500 },
     );
   }
 }

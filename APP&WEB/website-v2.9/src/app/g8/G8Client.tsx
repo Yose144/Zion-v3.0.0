@@ -25,6 +25,11 @@ const G8Copy = {
   gatePassed: { cs: `verdikt: splněno`, en: `verdict: passed` },
   gateFailed: { cs: `verdikt: nesplněno`, en: `verdict: failed` },
   gateIncomplete: { cs: `verdikt: neúplná evidence`, en: `verdict: incomplete evidence` },
+  gateReasonCriticalIncident: { cs: `kritický incident`, en: `critical incident` },
+  gateReasonDowntimeBudget: { cs: `vyčerpán downtime budget`, en: `downtime budget exhausted` },
+  gateReasonStoppedEarly: { cs: `běh ukončen předčasně`, en: `stopped before window end` },
+  gateReasonCoverage: { cs: `nízké pokrytí evidence`, en: `coverage below threshold` },
+  gateReasonUptime: { cs: `dostupnost pod prahem`, en: `uptime below threshold` },
   uptime: { cs: `Dostupnost`, en: `Uptime` },
   uptimeTarget: { cs: `cíl ≥ 99,9 %`, en: `target ≥ 99.9%` },
   progress: { cs: `Průběh`, en: `Progress` },
@@ -73,6 +78,7 @@ interface G8Status {
   status: string | null;
   window_status: string | null;
   gate_status: string | null;
+  gate_reason: string | null;
   started: string | null;
   target_end: string | null;
   elapsed_seconds: number | null;
@@ -166,6 +172,18 @@ export default function G8Client() {
         : gate
           ? t('gatePending')
           : null;
+  const gateReason = data?.gate_reason || null;
+  const gateReasonLabel = gateReason === 'critical_incident'
+    ? t('gateReasonCriticalIncident')
+    : gateReason === 'downtime_budget_exhausted'
+      ? t('gateReasonDowntimeBudget')
+      : gateReason === 'stopped_before_window_end'
+        ? t('gateReasonStoppedEarly')
+        : gateReason === 'coverage_below_threshold'
+          ? t('gateReasonCoverage')
+          : gateReason === 'uptime_below_threshold'
+            ? t('gateReasonUptime')
+            : null;
 
   const uptime = data?.uptime_percent ?? null;
   const threshold = data?.policy?.uptime_threshold_percent ?? 99.9;
@@ -190,6 +208,7 @@ export default function G8Client() {
           {gateLabel && (
             <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 bg-white/5 text-gray-400">
               {gateLabel}
+              {gateReasonLabel ? ` — ${gateReasonLabel}` : ''}
             </span>
           )}
         </div>

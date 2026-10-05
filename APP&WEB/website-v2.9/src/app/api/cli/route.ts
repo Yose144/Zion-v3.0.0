@@ -63,11 +63,6 @@ interface CliResponse {
 
 export async function POST(req: NextRequest) {
   try {
-    // Resolve internal base URL from the request origin for server-side fetch.
-    // We always recompute per request so that self-calls hit the same deployment
-    // (public origin behind nginx, not a potentially unreachable localhost:3000).
-    INTERNAL_BASE = resolveInternalBase(req);
-
     const { command } = await req.json();
     if (!command || typeof command !== 'string') {
       return NextResponse.json<CliResponse>(
@@ -161,33 +156,18 @@ async function executeCommand(input: string): Promise<CliResponse> {
 
 // ─── Fetch helpers ──────────────────────────────────────────────────────────
 
-/** Base URL for internal API calls (server-side fetch needs absolute URLs). */
-let INTERNAL_BASE = `http://127.0.0.1:${process.env.PORT || 3000}`;
-
-/** Resolve the base URL the CLI should use to call its own /api/* routes.
- *  Prefers explicit env, then x-forwarded headers, then the request origin,
- *  and finally the canonical public app URL so self-calls work behind nginx.
- */
-function resolveInternalBase(req: NextRequest): string {
+/** Base URL for internal API calls (server-side fetch needs absolute URLs).
+ *  Resolved once at module load from INTERNAL_API_BASE — never from request
+ *  headers (that was an SSRF vector plus a cross-request race on the module
+ *  global). Falls back to the local loopback listener. */
+const INTERNAL_BASE = (() => {
   const envBase = process.env.INTERNAL_API_BASE;
   if (envBase) {
     const b = envBase.replace(/\/+$/, '');
     if (b.startsWith('http://') || b.startsWith('https://')) return b;
   }
-
-  const forwardedProto = req.headers.get('x-forwarded-proto') ?? '';
-  const forwardedHost = req.headers.get('x-forwarded-host') ?? '';
-  if (forwardedProto && forwardedHost) {
-    return `${forwardedProto}://${forwardedHost}`;
-  }
-
-  try {
-    const u = new URL(req.url);
-    return `${u.protocol}//${u.host}`;
-  } catch {
-    return SITE_APP_URL.replace(/\/+$/, '');
-  }
-}
+  return `http://127.0.0.1:${process.env.PORT || 3000}`;
+})();
 
 async function fetchJson<T = any>(url: string, init?: RequestInit, timeoutMs = FETCH_TIMEOUT): Promise<{ ok: boolean; status: number; data: T | null }> {
   try {

@@ -352,9 +352,9 @@ export async function GET() {
       { title: 'Phase I — ZIS identity service', detail: 'Identity service is live and issuing sessions for the app.' },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run #2', detail: 'Running since 2026-09-29 UTC. Target end 2026-10-29. Uptime target ≥99.9%; live status on /g8.' },
-      { title: 'G9 — external security audit', detail: 'Audit scope prepared (L1 consensus, bridge/HTLC, treasury, identity, release supply chain); external firm not yet engaged.' },
-      { title: 'Disaster-recovery drill', detail: 'Full off-site restore with measured RTO/RPO before launch.' },
+      { title: 'G8 — 30-day continuous run #2', detail: 'Gate failed (critical incidents; downtime budget exhausted). Window continues to 2026-10-29 for data only. Run #3 after a mining-liveness plan.' },
+      { title: 'G9 — external security audit', detail: 'Whole-project audit scope drafted; external firm not yet engaged.' },
+      { title: 'Disaster-recovery drill', detail: 'Partial single-node restore test done 2026-10-05; a full encrypted off-site restore drill is still required.' },
       { title: 'Release artifacts', detail: 'Version unification, multi-platform builds, checksums and signed tag after the stability run.' },
     ],
   };
@@ -363,8 +363,8 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     environment: {
       label: 'Mainnet Alpha',
-      current_phase: 'G8 30-day continuous run · running',
-      public_launch_status: 'G8 IN-PROGRESS',
+      current_phase: 'G8 run #2 failed · run #3 pending',
+      public_launch_status: 'G8 RUN #2 FAILED',
     },
     mainnet_stability_run: mainnetStabilityRun,
     launch_rehearsal: mainnetStabilityRun,
