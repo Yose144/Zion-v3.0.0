@@ -90,7 +90,7 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'One Love Mainnet Stable · 3.2.0', en: 'One Love Mainnet Stable · 3.2.0' },
+    badge_version:  { cs: 'One Love Mainnet Alpha · 3.2.0', en: 'One Love Mainnet Alpha · 3.2.0' },
     badge_chv4:     { cs: 'Edge server topologie', en: 'Edge server topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
     title_sub:      { cs: 'Public launch odložen · Projekt zůstává ve vývoji · v3.2.0 One Love', en: 'Public launch postponed · Project remains in development · v3.2.0 One Love' },

@@ -513,7 +513,7 @@ export default function Navigation() {
                   onClick={() => setIsOpen(false)}
                   className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-zion-gold/8 px-3 py-3 inline-flex items-center justify-center min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(252, 209, 22,0.12)]"
                 >
-                  GitHub · Mainnet Stable
+                  GitHub · Mainnet Alpha
                 </a>
               </div>
             </div>

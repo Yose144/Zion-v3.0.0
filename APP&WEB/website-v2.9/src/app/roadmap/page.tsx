@@ -29,9 +29,9 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Plán letu k veřejnému launchi (odloženo)',
-    subtitle: 'One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch je odložen (TBD); nové datum oznámíme po splnění Maturity Gate, zajištění základní likvidity a sestavení týmu dobrovolných vývojářů. 30denní kontinuální stabilitní run probíhá — live na /g8.',
+    subtitle: 'One Love Mainnet Alpha — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Veřejný launch je odložen (TBD); nové datum oznámíme po splnění Maturity Gate, zajištění základní likvidity a sestavení týmu dobrovolných vývojářů. 30denní stabilitní run #2 nesplnil gate (kritické výpadky těžby); další běh spustíme po zajištění spolehlivé těžby — průběh na /g8.',
     subtitleStrong: 'odloženo (TBD)',
-    updated: 'Aktualizováno 29. 9. 2026',
+    updated: 'Aktualizováno 5. 10. 2026',
     publicLaunch: 'Veřejný launch · odloženo (TBD)',
     testsPassing: '2 155+ testů prochází',
     heroStats: [
@@ -105,9 +105,9 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Flight plan to public launch (postponed)',
-    subtitle: 'One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch is postponed (TBD); a new date will be announced once the Maturity Gate is passed, basic liquidity is secured, and a team of volunteer developers is assembled. A 30-day continuous stability run is in progress — live on /g8.',
+    subtitle: 'One Love Mainnet Alpha — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. The public launch is postponed (TBD); a new date will be announced once the Maturity Gate is passed, basic liquidity is secured, and a team of volunteer developers is assembled. The 30-day stability run #2 did not pass the gate (critical mining outages); the next run starts once reliable mining is secured — status on /g8.',
     subtitleStrong: 'postponed (TBD)',
-    updated: 'Updated 29 Sep 2026',
+    updated: 'Updated 5 Oct 2026',
     publicLaunch: 'Public launch · postponed (TBD)',
     testsPassing: '2,155+ tests passing',
     heroStats: [
@@ -372,7 +372,8 @@ export default function RoadmapPage() {
       status: 'active',
       description: copy.phase4Desc,
       sprints: [
-        { id: 'G8', title: cs ? '30denní kontinuální run #2 — běží od 29. 9., cíl ≥ 99,9 % uptime (live na /g8)' : '30-day continuous run #2 — running since Sep 29, target ≥99.9% uptime (live on /g8)', done: false },
+        { id: 'G8', title: cs ? '30denní kontinuální run #2 — nesplnil gate (kritické výpadky); run #3 po zajištění spolehlivé těžby (stav na /g8)' : '30-day continuous run #2 — gate failed (critical outages); run #3 after reliable mining is secured (status on /g8)', done: false },
+        { id: 'IA', title: cs ? 'Interní bezpečnostní revize celého projektu (5. 10.) — nálezy opraveny nebo v řešení' : 'Internal whole-project security review (Oct 5) — findings fixed or in progress', done: true },
         { id: 'G8a', title: cs ? 'Evidence pipeline — 60s sampling, perzistentní alerty, retence 40 dní' : 'Evidence pipeline — 60s sampling, persistent alerts, 40-day retention', done: true },
         { id: 'G8b', title: cs ? 'Rychlý restart nodu — perzistentní stavová cache ověřena v produkci' : 'Node fast-restart — persistent state cache verified in production', done: true },
         { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : 'Final payout verification — PPLNS window validation', done: false },
@@ -388,7 +389,7 @@ export default function RoadmapPage() {
       ],
       exitCriteria: [
         { text: cs ? 'Phase 1 Foundation kompletní' : 'Phase 1 Foundation complete', done: true },
-        { text: cs ? '30denní kontinuální run ≥ 99,9 % uptime (probíhá — G8)' : '30-day continuous run ≥99.9% uptime (in progress — G8)', done: false },
+        { text: cs ? '30denní kontinuální run ≥ 99,9 % uptime bez kritického incidentu (run #2 nesplnil — G8)' : '30-day continuous run ≥99.9% uptime with no critical incident (run #2 failed — G8)', done: false },
         { text: cs ? 'Finální payout verifikace' : 'Final payout verification', done: false },
         { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
         { text: cs ? 'DR drill — ověřená obnova s RTO/RPO' : 'DR drill — verified restore with RTO/RPO', done: false },
@@ -516,6 +517,56 @@ export default function RoadmapPage() {
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 3.2 PATH — ALPHA → BETA → STABLE */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04 }}
+          className="zion-rainbow-card p-8"
+          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Aktuální fáze' : 'Current stage'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Rocket className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Cesta 3.2 „One Love“: Alpha → Beta → Stable' : 'The 3.2 "One Love" path: Alpha → Beta → Stable'}
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-lg font-semibold text-white">Alpha</p>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan uppercase">{cs ? 'Live' : 'Live'}</span>
+              </div>
+              <p className="text-sm text-gray-300">{cs ? 'Node, pool, multichain, DAO a OASIS běží v produkci na mainnetu.' : 'Node, pool, multichain, DAO and OASIS run in production on mainnet.'}</p>
+            </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-lg font-semibold text-white">Beta</p>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-3 py-1 text-xs font-semibold text-zion-gold uppercase">{cs ? 'Rozpracováno' : 'In progress'}</span>
+              </div>
+              <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
+                {(cs
+                  ? ['živý DEX tok se zafinancovaným účtem', 'HTLC refund doložený na mainnetu', 'parita GPU výpočtu (CPU/OpenCL/CUDA/Metal)', 'opakovatelný monitoring a smoke test bridge', 'živý log přepínání profitability']
+                  : ['live funded DEX flow', 'HTLC refund evidenced on mainnet', 'GPU computation parity (CPU/OpenCL/CUDA/Metal)', 'repeatable bridge monitoring and smoke test', 'live profit-switching log']
+                ).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </div>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-lg font-semibold text-white">Stable</p>
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-3 py-1 text-xs font-semibold text-zion-purple uppercase">{cs ? 'Plán' : 'Planned'}</span>
+              </div>
+              <ul className="text-sm text-gray-300 space-y-1.5 list-disc pl-4">
+                {(cs
+                  ? ['30denní stabilitní run ≥ 99,9 % bez kritického incidentu (run #2 nesplnil)', 'nezávislý externí bezpečnostní audit a oprava nálezů', 'plný test obnovy ze šifrovaných off-site záloh', 'podepsané release artefakty a kontrolní součty']
+                  : ['30-day stability run ≥99.9% with no critical incident (run #2 failed)', 'independent external security audit and remediation', 'full restore drill from encrypted off-site backups', 'signed release artifacts and checksums']
+                ).map((item) => <li key={item}>{item}</li>)}
+              </ul>
             </div>
           </div>
         </motion.section>
@@ -926,7 +977,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-09-29
+          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-10-05
         </p>
       </div>
     </div>
