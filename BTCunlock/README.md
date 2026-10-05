@@ -247,7 +247,21 @@ Endpoints: `GET /api/status` + `GET /api/units` (public, no secrets);
 `POST /api/lease`, `/api/report`, `/api/hit` and `GET /api/vault` need
 `Authorization: Bearer <token>`. A lease expires after `COORD_LEASE_TTL`
 (default 3 h) — a dead worker wastes at most one unit, which then returns
-to the pool automatically. State is one atomic JSON file.
+to the pool automatically.
+
+**Persistence — SQLite, not hope.** `COORD_DB` (WAL, `synchronous=FULL`)
+holds `meta` (job config + cursor + counters), `units`, `workers`,
+`hits`, `events`. Nothing restarts from zero: cursor, per-worker totals
+and every hit survive crashes/reboots. A legacy `coordinator-state.json`
+is imported once on first boot. Auto-backup: DB snapshot + hits dir into
+`COORD_BACKUP_DIR` every `COORD_BACKUP_S` (default 15 min, keeps 96).
+
+**Hit safety — three layers.** ① the worker's scanner binary host-verifies
+before printing `HIT`; ② the coordinator re-checks the claimed
+address↔target binding (base58/bech32 → hash160, pure stdlib) and flags
+`verified`; ③ `COORD_HIT_HOOK` fires an arbitrary command with
+`BTCUNLOCK_*` env (alert log / journal / mail). Records also land in
+`hits/hits.jsonl` + per-hit `hit-*.txt`, all mode 600.
 
 **Worker** (`btcunlock-worker.py`) — wraps `keyscan` per leased unit:
 
