@@ -25,9 +25,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let wif = std::env::var("WARP_BTC_RELAY_KEY")?;
     let signer = BtcSigner::from_wif(&wif, bitcoin::Network::Testnet)?;
 
-    let mut cfg = BtcSwapConfig::default();
-    cfg.btc_network = bitcoin::Network::Testnet;
-    cfg.min_btc_confs = 1; // testnet rehearsal — faster than prod default 2
+    let cfg = BtcSwapConfig {
+        btc_network: bitcoin::Network::Testnet,
+        min_btc_confs: 1, // testnet rehearsal — faster than prod default 2
+        ..Default::default()
+    };
 
     let user_zion_pubkey: [u8; 32] = hex::decode(std::env::var("USER_ZION_PUBKEY")?)?
         .try_into()
@@ -61,6 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             user_zion_claim: user_zion_pubkey,
             user_zion_address: std::env::var("USER_ZION_ADDRESS")?,
             zion_timeout_ts: std::env::var("ZION_TIMEOUT_TS")?.parse()?,
+            quote_id: None,
         },
         now,
         tip,

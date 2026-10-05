@@ -14,8 +14,10 @@ use zion_multichain::server::ApiServer;
 use zion_multichain::service::MultichainService;
 
 fn test_service() -> Arc<MultichainService> {
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        ..Default::default()
+    };
     config.database.path = ":memory:".to_string();
 
     Arc::new(
@@ -24,11 +26,34 @@ fn test_service() -> Arc<MultichainService> {
     )
 }
 
+const TEST_API_KEY: &str = "test-admin-key";
+
+fn test_server_config() -> ServerConfig {
+    let mut config = ServerConfig::default();
+    config.auth.api_key = Some(TEST_API_KEY.to_string());
+    config
+}
+
 fn build_request(method: &str, uri: &str, body: String) -> Request<Body> {
     let mut req = Request::builder()
         .method(method)
         .uri(uri)
         .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {TEST_API_KEY}"))
+        .body(Body::from(body))
+        .expect("valid request");
+    req.extensions_mut()
+        .insert(ConnectInfo(SocketAddr::from(([127, 0, 0, 1], 1234))));
+    req
+}
+
+/// Operator routes require the static admin key when ZIS auth is disabled.
+fn build_admin_request(method: &str, uri: &str, body: String) -> Request<Body> {
+    let mut req = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {TEST_API_KEY}"))
         .body(Body::from(body))
         .expect("valid request");
     req.extensions_mut()
@@ -39,7 +64,7 @@ fn build_request(method: &str, uri: &str, body: String) -> Request<Body> {
 #[tokio::test]
 async fn intent_http_lifecycle_happy_path() {
     let service = test_service();
-    let server = ApiServer::new(ServerConfig::default(), service);
+    let server = ApiServer::new(test_server_config(), service);
     let app = server.router();
 
     // 1. Deploy a ZION/USDC pool.
@@ -55,7 +80,7 @@ async fn intent_http_lifecycle_happy_path() {
     });
     let response = app
         .clone()
-        .oneshot(build_request(
+        .oneshot(build_admin_request(
             "POST",
             "/v1/swap/pool/deploy",
             pool_body.to_string(),
@@ -67,7 +92,7 @@ async fn intent_http_lifecycle_happy_path() {
     // 2. Register a solver.
     let response = app
         .clone()
-        .oneshot(build_request(
+        .oneshot(build_admin_request(
             "POST",
             "/v1/swap/intent/solver/register",
             r#"{"solver":"solver-a"}"#.to_string(),
@@ -142,7 +167,7 @@ async fn intent_http_lifecycle_happy_path() {
     // 5. Execute the intent.
     let response = app
         .clone()
-        .oneshot(build_request(
+        .oneshot(build_admin_request(
             "POST",
             &format!("/v1/swap/intent/{}/execute", intent_id),
             "".to_string(),
@@ -179,7 +204,7 @@ async fn intent_http_lifecycle_happy_path() {
 #[tokio::test]
 async fn http_solver_endpoint_returns_bid_for_valid_intent() {
     let service = test_service();
-    let server = ApiServer::new(ServerConfig::default(), service);
+    let server = ApiServer::new(test_server_config(), service);
     let app = server.router();
 
     // Deploy a ZION/USDC pool.
@@ -195,7 +220,7 @@ async fn http_solver_endpoint_returns_bid_for_valid_intent() {
     });
     let response = app
         .clone()
-        .oneshot(build_request(
+        .oneshot(build_admin_request(
             "POST",
             "/v1/swap/pool/deploy",
             pool_body.to_string(),
@@ -221,7 +246,7 @@ async fn http_solver_endpoint_returns_bid_for_valid_intent() {
     });
     let response = app
         .clone()
-        .oneshot(build_request(
+        .oneshot(build_admin_request(
             "POST",
             "/v1/swap/solve",
             solve_body.to_string(),

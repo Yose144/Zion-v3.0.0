@@ -96,6 +96,42 @@ fn resolve_auth_user(
     }
 }
 
+/// Operator-only routes. ZIS on: user must exist (else 401) and have role
+/// "admin" (else 403). ZIS off: require the legacy static key
+/// (`state.limiter.api_key()`) via `Authorization: Bearer <key>` on EVERY
+/// method, constant-time compare (else 401); if no key is configured -> 403
+/// (fail closed).
+fn require_admin(
+    state: &AppState,
+    user: Option<&ZisUser>,
+    headers: &HeaderMap,
+) -> Result<(), StatusCode> {
+    if state.zis_client.enabled {
+        match user {
+            None => Err(StatusCode::UNAUTHORIZED),
+            Some(u) if u.role == "admin" => Ok(()),
+            Some(_) => Err(StatusCode::FORBIDDEN),
+        }
+    } else {
+        let Some(expected) = state.limiter.api_key() else {
+            return Err(StatusCode::FORBIDDEN);
+        };
+        let header = headers
+            .get(header::AUTHORIZATION)
+            .and_then(|h| h.to_str().ok())
+            .unwrap_or("");
+        let provided = header
+            .strip_prefix("Bearer ")
+            .or_else(|| header.strip_prefix("bearer "))
+            .unwrap_or(header)
+            .trim();
+        if !constant_time_key_eq(expected, provided) {
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+        Ok(())
+    }
+}
+
 /// Helper to record an audit log from a route handler.
 #[allow(clippy::too_many_arguments)]
 async fn record_audit(
@@ -206,14 +242,6 @@ impl ApiServer {
 
     /// Build the Axum router for testing and serving.
     pub fn router(&self) -> Router {
-        let mut config = self.config.clone();
-        if config.auth.api_key.is_none() {
-            config.auth.api_key = std::env::var("ZION_MULTICHAIN_API_KEY").ok();
-        }
-
-        let solver_cfg = self.service.config().solver.clone();
-        let zis_url = std::env::var("ZIS_URL")
-            .unwrap_or_else(|_| "https://auth.zionterranova.com".to_string());
         let zis_enabled = std::env::var("ZION_MULTICHAIN_ZIS_AUTH")
             .ok()
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
@@ -221,9 +249,28 @@ impl ApiServer {
 
         // When ZIS auth is enabled, browser/headless callers use ZIS sessions or
         // ZIS API keys; the legacy static multichain API key is no longer required.
-        if zis_enabled {
-            config.auth.api_key = None;
-        }
+        let api_key = if zis_enabled {
+            None
+        } else {
+            self.config
+                .auth
+                .api_key
+                .clone()
+                .or_else(|| std::env::var("ZION_MULTICHAIN_API_KEY").ok())
+        };
+
+        self.build_router(zis_enabled, api_key)
+    }
+
+    /// Build the router with an explicit auth configuration; used by `router()`
+    /// with environment-derived values and by tests to avoid env mutation.
+    fn build_router(&self, zis_enabled: bool, api_key: Option<String>) -> Router {
+        let mut config = self.config.clone();
+        config.auth.api_key = api_key;
+
+        let solver_cfg = self.service.config().solver.clone();
+        let zis_url = std::env::var("ZIS_URL")
+            .unwrap_or_else(|_| "https://auth.zionterranova.com".to_string());
 
         let zis_client = ZisClient::new(zis_enabled, zis_url);
 
@@ -498,9 +545,11 @@ struct WalletAddressRequest {
 async fn wallet_address(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<WalletAddressRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
+    let user = user.map(|u| u.0);
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let addr = match user
@@ -534,9 +583,10 @@ struct WalletSignRequest {
 async fn wallet_sign(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<WalletSignRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
 
     // FIND-018 fix: enforce typed signing with a ZION domain tag to prevent
@@ -903,9 +953,10 @@ async fn swap_quote_multi(
 async fn swap_execute(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<SwapRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state
         .service
         .dex_swap(&req.from, &req.to, Amount::new(req.amount))
@@ -1048,9 +1099,10 @@ async fn get_swap_order(
 async fn deploy_pool(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(pool): Json<Pool>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state.service.deploy_pool(pool).await {
         Ok(()) => Ok(Json(serde_json::json!({"ok": true}))),
         Err(e) => Ok(Json(serde_json::json!({
@@ -1075,9 +1127,10 @@ struct SetAmmPairRequest {
 async fn set_amm_pair(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<SetAmmPairRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state
         .service
         .set_amm_pair(req.pool_id, req.amm_pair, req.amm_factory)
@@ -1108,9 +1161,10 @@ struct AddLiquidityRequest {
 async fn add_liquidity(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<AddLiquidityRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
     let amount_a_min = req.amount_a_min.unwrap_or(Amount::ZERO);
     let amount_b_min = req.amount_b_min.unwrap_or(Amount::ZERO);
@@ -1161,9 +1215,10 @@ struct RemoveLiquidityRequest {
 async fn remove_liquidity(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<RemoveLiquidityRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
     let amount_a_min = req.amount_a_min.unwrap_or(Amount::ZERO);
     let amount_b_min = req.amount_b_min.unwrap_or(Amount::ZERO);
@@ -1239,9 +1294,10 @@ struct BridgeEdgeRequest {
 async fn deploy_bridge(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<BridgeEdgeRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     if req.fee_bps >= 10_000 {
         return Err(StatusCode::BAD_REQUEST);
     }
@@ -1267,9 +1323,10 @@ struct BridgeRequest {
 async fn bridge_submit(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<BridgeRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let direction = match req.direction.to_lowercase().as_str() {
         "lock" | "lockmint" | "lock_mint" => TransferDirection::LockMint,
         "burn" | "burnrelease" | "burn_release" => TransferDirection::BurnRelease,
@@ -1392,9 +1449,10 @@ fn decode_pubkey_hex(
 async fn htlc_lock(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<HtlcLockRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)
         .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
@@ -1450,9 +1508,10 @@ struct HtlcClaimRequest {
 async fn htlc_claim(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<HtlcClaimRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)
         .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
@@ -1525,9 +1584,10 @@ struct HtlcRefundRequest {
 async fn htlc_refund(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<HtlcRefundRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)
         .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
@@ -2119,9 +2179,10 @@ async fn submit_bid(
 async fn settle_intent(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state.service.settle_intent(id).await {
         Ok(Some(bid)) => Ok(Json(serde_json::json!({ "winning_bid": bid }))),
         Ok(None) => Ok(Json(serde_json::json!({ "winning_bid": null }))),
@@ -2132,9 +2193,10 @@ async fn settle_intent(
 async fn execute_intent(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state.service.execute_intent(id).await {
         Ok(Some(out)) => Ok(Json(
             serde_json::json!({ "executed": true, "out": out.0.to_string() }),
@@ -2155,15 +2217,11 @@ struct RegisterSolverRequest {
 async fn register_solver(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Json(req): Json<RegisterSolverRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let user = resolve_auth_user(state.zis_client.enabled, user)?;
     // FIND-016 fix: restrict solver registration to admin users.
-    if let Some(ref u) = user {
-        if u.role != "admin" {
-            return Err(StatusCode::FORBIDDEN);
-        }
-    }
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state
         .service
         .register_solver(req.solver, req.url, req.reputation)
@@ -2180,6 +2238,8 @@ async fn solve_intent(
     headers: axum::http::HeaderMap,
     Json(intent): Json<SwapIntent>,
 ) -> Result<Json<SolverBid>, StatusCode> {
+    // Inbound solver-bid endpoint: authenticated ZIS user (or static-key mode
+    // via middleware); solver-to-solver calls carry X-Solver-Key, checked below.
     let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     if let Some(expected) = &state.solver_api_key {
         let provided = headers.get("X-Solver-Key").and_then(|v| v.to_str().ok());
@@ -2268,9 +2328,10 @@ async fn solve_intent(
 async fn broadcast_intent(
     State(state): State<AppState>,
     user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let mut keys = crate::swap::dex::solver_network::SolverApiKeys::new();
     for entry in &state.service.config().solvers {
         if let Some(key) = &entry.api_key {
@@ -2471,8 +2532,11 @@ fn default_reconciliation_limit() -> usize {
 
 async fn get_reconciliation_reports(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
     Query(query): Query<ReconciliationQuery>,
 ) -> Result<Json<Vec<ReconciliationReport>>, StatusCode> {
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     match state.service.reconciliation_reports(query.limit).await {
         Ok(reports) => Ok(Json(reports)),
         Err(e) => {
@@ -2484,7 +2548,10 @@ async fn get_reconciliation_reports(
 
 async fn trigger_reconciliation(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
 ) -> Result<Json<Vec<ReconciliationReport>>, StatusCode> {
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let reconciler = state.service.reconciler();
     match reconciler.reconcile().await {
         Ok(reports) => Ok(Json(reports)),
@@ -2497,7 +2564,10 @@ async fn trigger_reconciliation(
 
 async fn get_solvency_status(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
     let guard = match state.service.solvency_guard() {
         Some(g) => g,
         None => {
@@ -2611,5 +2681,273 @@ mod tests {
         // Different length is rejected.
         assert!(!constant_time_key_eq("operator-key", "operator-key-longer"));
         assert!(!constant_time_key_eq("operator-key", ""));
+    }
+
+    fn test_zis_user(role: &str) -> ZisUser {
+        ZisUser {
+            id: "user-1".to_string(),
+            primary_address: "zion1test".to_string(),
+            display_name: None,
+            email: None,
+            avatar: None,
+            bio: None,
+            role: role.to_string(),
+            created_at: String::new(),
+            last_login: None,
+            login_count: 0,
+            linked_addresses: vec![],
+            oasis_player: None,
+        }
+    }
+
+    fn test_app_state(zis_enabled: bool, api_key: Option<&str>) -> AppState {
+        let mut config = crate::config::MultichainConfig {
+            l1_rpc_url: String::new(),
+            ..Default::default()
+        };
+        config.database.path = ":memory:".to_string();
+        let service = Arc::new(
+            crate::service::MultichainService::new_with_adapters(
+                config,
+                crate::chain::adapter::ChainAdapterRegistry::new(),
+            )
+            .expect("in-memory service builds"),
+        );
+        let mut server_config = ServerConfig::default();
+        server_config.auth.api_key = api_key.map(str::to_string);
+        AppState {
+            service,
+            limiter: RateLimiter::new(&server_config),
+            solver_name: "zion-solver".to_string(),
+            solver_fee_bps: 0,
+            solver_api_key: None,
+            zis_client: ZisClient::new(zis_enabled, "http://127.0.0.1:1"),
+            btc_swap_offer_key: None,
+            btc_swap_offer_key_prev: None,
+        }
+    }
+
+    fn bearer_headers(key: Option<&str>) -> HeaderMap {
+        let mut h = HeaderMap::new();
+        if let Some(k) = key {
+            h.insert(header::AUTHORIZATION, format!("Bearer {k}").parse().unwrap());
+        }
+        h
+    }
+
+    #[test]
+    fn require_admin_zis_on_matrix() {
+        let state = test_app_state(true, None);
+        let h = HeaderMap::new();
+        assert_eq!(
+            require_admin(&state, None, &h).unwrap_err(),
+            StatusCode::UNAUTHORIZED
+        );
+        let non_admin = test_zis_user("user");
+        assert_eq!(
+            require_admin(&state, Some(&non_admin), &h).unwrap_err(),
+            StatusCode::FORBIDDEN
+        );
+        let admin = test_zis_user("admin");
+        assert!(require_admin(&state, Some(&admin), &h).is_ok());
+    }
+
+    #[test]
+    fn require_admin_zis_off_matrix() {
+        // No static key configured -> fail closed 403.
+        let state = test_app_state(false, None);
+        assert_eq!(
+            require_admin(&state, None, &bearer_headers(Some("anything"))).unwrap_err(),
+            StatusCode::FORBIDDEN
+        );
+        let state = test_app_state(false, Some("test-key"));
+        // Missing header -> 401.
+        assert_eq!(
+            require_admin(&state, None, &HeaderMap::new()).unwrap_err(),
+            StatusCode::UNAUTHORIZED
+        );
+        // Wrong key -> 401.
+        assert_eq!(
+            require_admin(&state, None, &bearer_headers(Some("wrong"))).unwrap_err(),
+            StatusCode::UNAUTHORIZED
+        );
+        // Right key -> ok.
+        assert!(require_admin(&state, None, &bearer_headers(Some("test-key"))).is_ok());
+    }
+
+    fn test_router(zis_enabled: bool, api_key: Option<&str>) -> Router {
+        let mut config = crate::config::MultichainConfig {
+            l1_rpc_url: String::new(),
+            ..Default::default()
+        };
+        config.database.path = ":memory:".to_string();
+        let service = Arc::new(
+            crate::service::MultichainService::new_with_adapters(
+                config,
+                crate::chain::adapter::ChainAdapterRegistry::new(),
+            )
+            .expect("in-memory service builds"),
+        );
+        ApiServer::new(ServerConfig::default(), service)
+            .build_router(zis_enabled, api_key.map(str::to_string))
+    }
+
+    async fn call(
+        app: &Router,
+        method: &str,
+        uri: &str,
+        body: Option<serde_json::Value>,
+        user: Option<ZisUser>,
+        key: Option<&str>,
+    ) -> StatusCode {
+        use axum::body::Body;
+        use axum::extract::ConnectInfo;
+        use axum::http::Request;
+        use tower::ServiceExt;
+
+        let mut b = Request::builder()
+            .method(method)
+            .uri(uri)
+            .header("content-type", "application/json");
+        if let Some(k) = key {
+            b = b.header("authorization", format!("Bearer {k}"));
+        }
+        let mut req = b
+            .body(Body::from(
+                body.map(|v| v.to_string()).unwrap_or_default(),
+            ))
+            .expect("valid request");
+        req.extensions_mut()
+            .insert(ConnectInfo(std::net::SocketAddr::from(([127, 0, 0, 1], 1234))));
+        if let Some(u) = user {
+            req.extensions_mut().insert(u);
+        }
+        app.clone()
+            .oneshot(req)
+            .await
+            .expect("response")
+            .status()
+    }
+
+    fn zion_asset() -> serde_json::Value {
+        serde_json::to_value(Asset::native(
+            zion_l1_types::ChainId::ZionL1,
+            "ZION",
+            6,
+            "ZION",
+        ))
+        .unwrap()
+    }
+
+    /// Routes gated by `require_admin`, with bodies that pass extractor
+    /// validation so the auth check is what decides the status.
+    fn admin_route_cases() -> Vec<(&'static str, &'static str, Option<serde_json::Value>)> {
+        vec![
+            ("POST", "/v1/admin/reconciliation/trigger", None),
+            ("GET", "/v1/admin/solvency", None),
+            ("GET", "/v1/admin/reconciliation", None),
+            (
+                "POST",
+                "/v1/swap/pool/deploy",
+                Some(serde_json::json!({
+                    "id": 1,
+                    "asset_a": zion_asset(),
+                    "asset_b": zion_asset(),
+                    "reserve_a": 1,
+                    "reserve_b": 1,
+                    "fee_bps": 30,
+                })),
+            ),
+            (
+                "POST",
+                "/v1/swap/liquidity/remove",
+                Some(serde_json::json!({
+                    "chain": "zion",
+                    "router_address": "0x00",
+                    "token_a": zion_asset(),
+                    "token_b": zion_asset(),
+                    "liquidity": 1,
+                })),
+            ),
+            (
+                "POST",
+                "/v1/multichain/swaps/htlc/lock",
+                Some(serde_json::json!({
+                    "from": "zion",
+                    "to": "bitcoin",
+                    "amount": 1,
+                    "hash_hex": "ab".repeat(32),
+                    "timelock": 100,
+                })),
+            ),
+            (
+                "POST",
+                "/v1/wallet/sign",
+                Some(serde_json::json!({"chain": "zion", "message": "hi"})),
+            ),
+            (
+                "POST",
+                "/v1/bridge/submit",
+                Some(serde_json::json!({
+                    "direction": "lock",
+                    "from": "zion",
+                    "to": "base",
+                    "amount": 1,
+                })),
+            ),
+        ]
+    }
+
+    #[tokio::test]
+    async fn admin_routes_zis_on() {
+        let app = test_router(true, None);
+        for (method, uri, body) in admin_route_cases() {
+            let status = call(&app, method, uri, body.clone(), None, None).await;
+            assert_eq!(status, StatusCode::UNAUTHORIZED, "{method} {uri} no user");
+            let status = call(
+                &app,
+                method,
+                uri,
+                body.clone(),
+                Some(test_zis_user("user")),
+                None,
+            )
+            .await;
+            assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri} non-admin");
+            let status = call(
+                &app,
+                method,
+                uri,
+                body,
+                Some(test_zis_user("admin")),
+                None,
+            )
+            .await;
+            assert!(
+                status != StatusCode::UNAUTHORIZED && status != StatusCode::FORBIDDEN,
+                "{method} {uri} admin must pass auth, got {status}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn admin_routes_zis_off() {
+        // No static key configured -> 403 fail closed.
+        let app = test_router(false, None);
+        for (method, uri, body) in admin_route_cases() {
+            let status = call(&app, method, uri, body, None, Some("anything")).await;
+            assert_eq!(status, StatusCode::FORBIDDEN, "{method} {uri} no key configured");
+        }
+        // Key configured: wrong -> 401, right -> passes auth.
+        let app = test_router(false, Some("test-key"));
+        for (method, uri, body) in admin_route_cases() {
+            let status = call(&app, method, uri, body.clone(), None, Some("wrong")).await;
+            assert_eq!(status, StatusCode::UNAUTHORIZED, "{method} {uri} wrong key");
+            let status = call(&app, method, uri, body, None, Some("test-key")).await;
+            assert!(
+                status != StatusCode::UNAUTHORIZED && status != StatusCode::FORBIDDEN,
+                "{method} {uri} right key must pass auth, got {status}"
+            );
+        }
     }
 }
