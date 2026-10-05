@@ -1974,11 +1974,10 @@ function setupEventListeners() {
     if (si >= 1 && si <= 3) _streamLastShareAt[si] = data.ts || Date.now();
     renderShareLog();
     if (data.accepted) {
+      const latStr = data.latencyMs != null ? ` ${data.latencyMs}ms` : '';
       const detail = data.coin === 'ZION'
-        ? `job=${data.job} h=${data.height} nonce=${data.nonce} ${data.latencyMs}ms`
-        : data.coin === 'ZANO' ? 'GPU progpow'
-        : data.coin === 'VRSC' ? 'CPU verushash'
-        : `status=${data.status}`;
+        ? `job=${data.job} h=${data.height} nonce=${data.nonce}${latStr}`
+        : `${data.stream === 2 ? 'GPU' : data.stream === 3 ? 'CPU' : 'stream'} ${data.algorithm || ''}`.trim();
       addLogEntry(`✓ ${data.coin} share accepted (${detail})`, 'success');
     } else {
       const reason = data.reason || data.status || 'rejected';
@@ -2420,13 +2419,13 @@ function renderShareLog() {
     const cls = ok ? 'share-acc' : 'share-rej';
     let detail = '';
     if (s.coin === 'ZION') {
+      const latStr = s.latencyMs != null ? ` ${s.latencyMs}ms` : '';
       detail = ok
-        ? `job=${s.job} h=${s.height} ${s.latencyMs}ms`
+        ? `job=${s.job} h=${s.height}${latStr}`
         : `job=${s.job} reason=${s.reason || '?'}`;
-    } else if (s.coin === 'ZANO') {
-      detail = ok ? 'GPU progpow accepted' : `reason=${s.reason || 'rejected'}`;
-    } else if (s.coin === 'VRSC') {
-      detail = ok ? 'CPU verushash accepted' : `reason=${s.reason || 'rejected'}`;
+    } else if (Number(s.stream) === 2 || Number(s.stream) === 3) {
+      const dev = Number(s.stream) === 2 ? 'GPU' : 'CPU';
+      detail = ok ? `${dev} ${s.algorithm || ''} accepted`.trim() : `reason=${s.reason || 'rejected'}`;
     } else {
       detail = s.status || (ok ? 'accepted' : 'rejected');
     }
@@ -3449,7 +3448,7 @@ function updateSessionMetrics(stats) {
       streamsEl.innerHTML = `<div class="session-metrics-empty">${stats.isRunning ? 'Waiting for stream telemetry...' : 'Waiting for mining to start...'}</div>`;
     } else {
       const icons = { 1: '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-pickaxe"></use></svg>', 2: '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-zap"></use></svg>', 3: '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-monitor-cpu"></use></svg>' };
-      const labels = { 1: 'ZION', 2: 'ZANO', 3: 'VRSC' };
+      const labels = { 1: 'ZION', 2: 'GPU', 3: 'CPU' };
       streamsEl.innerHTML = streams.map((s) => {
         const idx = Number(s.index) || 1;
         const active = s.active !== false;
@@ -3632,6 +3631,10 @@ function updateTripleStreamPanel(stats) {
     }
 
     if (coinEl) coinEl.textContent = stream.coin || '—';
+    const labelEl = card.querySelector('.stream-label');
+    if (labelEl && stream.coin && stream.coin !== '—') {
+      labelEl.textContent = `Stream ${i} · ${stream.coin}`;
+    }
     if (hrEl) {
       // Prefer 10s window, fallback to 60s
       const hr = Number(stream.hashrate_10s) || Number(stream.hashrate_60s) || 0;

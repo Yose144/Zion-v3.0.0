@@ -664,6 +664,31 @@ let minerShareDeltaSamples = [];
 // shares are only visible as incrementing counts in periodic "stream stats" lines.
 // We detect the increment and emit a synthetic share-event to the renderer.
 let _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
+
+// Resolved external coins for the active miner spawn ('' = auto/none).
+// Set when the miner env is built; used by the parsers below to map
+// coin → stream index / label / algorithm dynamically (QTU, ZANO, VRSC…).
+let _activeExtCoins = { gpu: '', cpu: '' };
+
+function _coinAlgo(coin) {
+  const c = String(coin || '').toUpperCase();
+  if (c === 'ZION') return 'ekam_deeksha';
+  if (c === 'QTU' || c === 'QUANTUS') return 'qpow-poseidon2';
+  if (c === 'ZANO') return 'progpow';
+  if (c === 'VRSC') return 'verushash';
+  return '';
+}
+
+function _coinStreamIndex(coin) {
+  const c = String(coin || '').toUpperCase();
+  if (c === 'ZION') return 1;
+  if (c && _activeExtCoins.cpu && c === _activeExtCoins.cpu) return 3;
+  if (c && _activeExtCoins.gpu && c === _activeExtCoins.gpu) return 2;
+  // Legacy/static mapping: known GPU coins → 2, CPU coins → 3.
+  if (c === 'QTU' || c === 'QUANTUS' || c === 'ZANO') return 2;
+  if (c === 'VRSC') return 3;
+  return 1;
+}
 let minerStats = {
   hashrate: 0,
   shares: 0,
@@ -2385,12 +2410,15 @@ function startMiningV31(config, v31Path) {
   }
   // V31 uses stream2 (GPU) / stream3 (CPU) force-coin env vars, and
   // ZION_AUTONOMOUS to toggle the profit router.
+  _activeExtCoins = { gpu: '', cpu: '' };
   if (tripleStreamEnabled) {
     if (!cpuCoinAuto) {
       env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
+      _activeExtCoins.cpu = cpuCoin.toUpperCase();
     }
     if (wantsGpu && !gpuCoinAuto) {
       env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
+      _activeExtCoins.gpu = gpuCoin.toUpperCase();
     }
     env.ZION_AUTONOMOUS = (config.autonomous === true && cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
   } else {
@@ -3210,20 +3238,22 @@ function maybeEmitShareEvent(output) {
   }
   const extAccM = clean.match(/external_share_accepted\s+coin=(\S+)\s+status=(\S+)/i);
   if (extAccM) {
+    const coin = String(extAccM[1] || '').toUpperCase();
     try {
       sendToRenderer('share-event', {
-        stream: extAccM[1] === 'VRSC' ? 3 : 2, coin: extAccM[1],
-        accepted: true, status: extAccM[2], ts: Date.now(),
+        stream: _coinStreamIndex(coin), coin,
+        accepted: true, status: extAccM[2], algorithm: _coinAlgo(coin), ts: Date.now(),
       });
     } catch {}
     return;
   }
   const extRejM = clean.match(/external_share_rejected\s+coin=(\S+)\s+status=(\S+)/i);
   if (extRejM) {
+    const coin = String(extRejM[1] || '').toUpperCase();
     try {
       sendToRenderer('share-event', {
-        stream: extRejM[1] === 'VRSC' ? 3 : 2, coin: extRejM[1],
-        accepted: false, status: extRejM[2], ts: Date.now(),
+        stream: _coinStreamIndex(coin), coin,
+        accepted: false, status: extRejM[2], algorithm: _coinAlgo(coin), ts: Date.now(),
       });
     } catch {}
   }
@@ -3235,8 +3265,8 @@ function maybeEmitShareEvent(output) {
   const trinityAccM = clean.match(/V3\s+Trinity:\s+(\S+)\s+share\s+accepted\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)/i);
   if (trinityAccM) {
     const coin = trinityAccM[1].toUpperCase();
-    const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
-    const algo = coin === 'ZION' ? 'ekam_deeksha' : coin === 'ZANO' ? 'progpow' : coin === 'VRSC' ? 'verushash' : '';
+    const streamIdx = _coinStreamIndex(coin);
+    const algo = _coinAlgo(coin);
     try {
       sendToRenderer('share-event', {
         stream: streamIdx, coin, accepted: true, algorithm: algo,
@@ -3248,8 +3278,8 @@ function maybeEmitShareEvent(output) {
   const trinityRejM = clean.match(/V3\s+Trinity:\s+(\S+)\s+share\s+rejected\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)(?:\s+reason="([^"]+)")?/i);
   if (trinityRejM) {
     const coin = trinityRejM[1].toUpperCase();
-    const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
-    const algo = coin === 'ZION' ? 'ekam_deeksha' : coin === 'ZANO' ? 'progpow' : coin === 'VRSC' ? 'verushash' : '';
+    const streamIdx = _coinStreamIndex(coin);
+    const algo = _coinAlgo(coin);
     try {
       sendToRenderer('share-event', {
         stream: streamIdx, coin, accepted: false, algorithm: algo,
@@ -4002,11 +4032,14 @@ function parseMinerOutput(output) {
 
   // ─── V31 per-stream telemetry ───
   // INFO zion_miner: stream stats stream=zion coin=zion accepted=1 rejected=0 hashrate=0 status=active
-  // Three streams: zion (Stream 1), gpu-external (Stream 2 = ZANO), cpu-external (Stream 3 = VRSC)
+  // Three streams: zion (Stream 1), gpu-external (Stream 2 = forced GPU coin, e.g. QTU/ZANO),
+  // cpu-external (Stream 3 = forced CPU coin, e.g. VRSC)
+  const gpuExtCoin = _activeExtCoins.gpu || 'ZANO';
+  const cpuExtCoin = _activeExtCoins.cpu || 'VRSC';
   const streamIndex = { zion: 1, 'gpu-external': 2, 'cpu-external': 3 };
-  const streamLabels = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
-  const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': 'progpow', 'cpu-external': 'verushash' };
-  const streamDefaultCoins = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
+  const streamLabels = { zion: 'ZION', 'gpu-external': gpuExtCoin, 'cpu-external': cpuExtCoin };
+  const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': _coinAlgo(gpuExtCoin), 'cpu-external': _coinAlgo(cpuExtCoin) };
+  const streamDefaultCoins = { zion: 'ZION', 'gpu-external': gpuExtCoin, 'cpu-external': cpuExtCoin };
   if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
   // Use a temp object keyed by 1-based index to avoid sparse array issues.
   // Direct array assignment (streams[1]=...) + filter() compaction causes
@@ -4026,9 +4059,9 @@ function parseMinerOutput(output) {
     }
     _newStreams[idx] = {
       index: idx,
-      label: streamLabels[streamId] || streamId,
+      label: coin || streamLabels[streamId] || streamId,
       coin: coin,
-      algorithm: streamAlgos[streamId] || '',
+      algorithm: _coinAlgo(coin) || streamAlgos[streamId] || '',
       hashrate_10s: Number.isFinite(hr) ? hr : 0,
       hashrate_60s: Number.isFinite(hr) ? hr : 0,
       hashrate_15m: Number.isFinite(hr) ? hr : 0,
@@ -4051,7 +4084,7 @@ function parseMinerOutput(output) {
           try {
             sendToRenderer('share-event', {
               stream: idx, coin, accepted: true,
-              status: 'accepted', algorithm: streamAlgos[streamId] || '', ts: Date.now(),
+              status: 'accepted', algorithm: _coinAlgo(coin) || streamAlgos[streamId] || '', ts: Date.now(),
             });
           } catch {}
         }
@@ -4059,7 +4092,7 @@ function parseMinerOutput(output) {
           try {
             sendToRenderer('share-event', {
               stream: idx, coin, accepted: false,
-              status: 'rejected', reason: 'rejected', algorithm: streamAlgos[streamId] || '', ts: Date.now(),
+              status: 'rejected', reason: 'rejected', algorithm: _coinAlgo(coin) || streamAlgos[streamId] || '', ts: Date.now(),
             });
           } catch {}
         }
@@ -4072,13 +4105,18 @@ function parseMinerOutput(output) {
     // summary parser below.
   }
 
-  // Build a dense array from the temp object, sorted by stream index.
-  // This replaces the old sparse-array + filter() approach which caused
-  // duplicate ZION entries (filter re-indexed the array, so the next
-  // streams[1]=... overwrote ZANO instead of updating ZION).
+  // Build a dense array sorted by stream index. stdout may split the three
+  // "stream stats" lines across chunks — merge per-index into the existing
+  // array instead of replacing wholesale, so a partial chunk doesn't blank
+  // the other stream cards for a tick.
   const _sortedIdxs = Object.keys(_newStreams).map(Number).sort((a, b) => a - b);
   if (_sortedIdxs.length > 0) {
-    minerStats.streams = _sortedIdxs.map(i => _newStreams[i]);
+    const _merged = {};
+    for (const s of Array.isArray(minerStats.streams) ? minerStats.streams : []) {
+      if (s && Number(s.index) >= 1) _merged[Number(s.index)] = s;
+    }
+    for (const i of _sortedIdxs) _merged[i] = _newStreams[i];
+    minerStats.streams = Object.keys(_merged).map(Number).sort((a, b) => a - b).map(i => _merged[i]);
   }
 
   // ─── V31 TUI log (aggregate hashrate only) ───
