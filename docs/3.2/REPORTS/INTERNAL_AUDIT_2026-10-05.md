@@ -353,3 +353,35 @@ Both nginx files and the ZIS environment were backed up on the host before the c
 8. Trace and persist payout idempotency (IA-14).
 9. Plan mining liveness before starting G8 run #3 (IA-19).
 10. Engage the external auditor with the corrected scope; include this report as baseline.
+
+---
+
+## Addendum — Remediation deploy 2026-10-05 (~14:00–16:20 UTC)
+
+**Deployed commit:** `94ed5fba1` (audit branch rebased onto main, pushed as main)
+**Backup:** `/opt/zion/backup/deploy-20261005T140248Z` (old zion-node `a0c86325…`, warpd `20531e07…`, identity dist, website `.next`, g8_evidence.py)
+
+### Deployed artifacts
+
+| Artifact | sha256 (new) | Target | Verify |
+|---|---|---|---|
+| `zion-node` | `da120d45fd39…` | `/opt/zion/V31/target/release/zion-node` | all 3 nodes report `node_version=3.2.0`, height 70125 |
+| `warpd` | `28517fbdd573…` | `/opt/zion/V31/target/release/warpd` | `/health` ok v3.2.0; POST /transfers/* without key → 503 |
+| ZIS | compiled JS → `/opt/zion/identity/{server.js,lib,routes}` | `zion-zis` | public health 200 |
+| website | rsync `src+.next+public` | `zion-website` | all public pages 200; copy says "Mainnet Alpha" |
+| `g8_evidence.py` | new early-fail evaluate() | `/opt/zion/scripts/ops/` | state now `gate_status=failed, gate_reason=critical_incident` |
+| nginx | `.bak*` moved out of `sites-enabled/` → `/etc/nginx/backups/` | — | `nginx -t` clean; duplicate-server warnings resolved |
+
+### Live verification
+
+- Negative probes all 401/403: `/v1/admin/*`, `/v1/wallet/sign`, `/v1/swap/quote` (POST), `/api/warp/*/advance`, `/api/v2.9/revenue/config` (POST)
+- Positive reads: `/v1/swap/pools` 200, `/api/g8` sanitized (no internals), `/api/mission-data` truthful (`G8 RUN #2 FAILED`)
+- Pages 200: `/`, `/roadmap`, `/g8`, `/dashboard`, `/multichain`, `/l5-free-world`, apex, auth
+
+### Incident during deploy
+
+Manual `g8_evidence.py update` run as root rewrote `g8_run.json` as `root:root 600`, breaking the zion-user dashboard read (public `/api/g8` showed `not_started` for ~3 min). Fixed with `chown zion:zion`. **Rule: never run the evidence script as root on Edge — the timer runs as `User=zion`.**
+
+### Rollback
+
+`install` old binaries from `/opt/zion/backup/deploy-20261005T140248Z/` back to `/opt/zion/V31/target/release/`, restore `identity-dist`/`website-next`, `systemctl restart` affected units.
