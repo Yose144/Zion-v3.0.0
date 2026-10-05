@@ -187,13 +187,19 @@ impl MultiAuxPowBridge {
             .contains_key(coin)
     }
 
+    /// Enabled coins sorted by ticker — deterministic iteration order so
+    /// job selection does not depend on HashMap order when multiple coins
+    /// share a device class.
     pub fn enabled_coins(&self) -> Vec<ExternalCoin> {
-        self.bridges
+        let mut coins: Vec<ExternalCoin> = self
+            .bridges
             .lock()
             .expect("multi_bridge lock poisoned")
             .keys()
             .copied()
-            .collect()
+            .collect();
+        coins.sort_by_key(|c| c.ticker());
+        coins
     }
 
     pub fn touch_job_timestamp(&self, coin: &ExternalCoin, job_id: &str) {

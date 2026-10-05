@@ -1529,6 +1529,23 @@ impl MinerRuntime {
             "V3 Trinity connected — all 3 streams through pool"
         );
 
+        // Pin the session's external streams to the force-coin envs so the
+        // pool serves this miner the right coin regardless of the global
+        // broadcast default (e.g. ZION_STREAM2_FORCE_COIN=ZANO keeps a Vega
+        // rig on ZANO while the pool's default GPU coin is QTU).
+        let gpu_pref = self.config.stream2_force_coin.map(|c| c.ticker());
+        let cpu_pref = self.config.stream3_force_coin.map(|c| c.ticker());
+        if gpu_pref.is_some() || cpu_pref.is_some() {
+            let gpu_coin = gpu_pref.unwrap_or("");
+            let cpu_coin = cpu_pref.unwrap_or("");
+            if let Err(e) = client
+                .send_coin_preference(gpu_coin, cpu_coin, 0.0, 0.0)
+                .await
+            {
+                warn!(error = %e, "V3 pool: coin preference send failed");
+            }
+        }
+
         // Job bundles are distributed by V3PoolClient itself via a watch
         // channel (send_replace — never blocks). Streams 2/3 subscribe
         // directly to the client, so a stalled Stream 1 mining call can no

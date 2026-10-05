@@ -131,6 +131,20 @@ pub struct StratumServer {
     share_store: Option<Arc<crate::store::ShareStore>>,
     /// Connection/session counters shared with the HTTP API via `Pool`.
     session_counters: SessionCounters,
+    /// Default GPU AuxPoW coin embedded in broadcast Job messages —
+    /// `ZION_POOL_AUXPOW_COIN` when it names a GPU coin, else the first
+    /// enabled GPU coin by ticker. Per-session routes or a miner's
+    /// CoinPreference message can override it for that session only.
+    gpu_coin_default: Option<ExternalCoin>,
+    /// Default CPU AuxPoW coin — `ZION_POOL_AUXPOW_CPU_COIN` when it names
+    /// a CPU coin, else the first enabled CPU coin by ticker.
+    cpu_coin_default: Option<ExternalCoin>,
+    /// Per-miner GPU coin routes from `ZION_POOL_AUXPOW_GPU_COIN_ROUTE`
+    /// (`pattern=COIN,...` — `*` glob, case-insensitive; matched against
+    /// the worker tail, full worker_name, miner_id and "miner/worker").
+    gpu_coin_routes: Vec<(String, ExternalCoin)>,
+    /// Per-miner CPU coin routes (`ZION_POOL_AUXPOW_CPU_COIN_ROUTE`).
+    cpu_coin_routes: Vec<(String, ExternalCoin)>,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -163,6 +177,11 @@ struct JobFingerprint {
     cpu_external_job_id: Option<String>,
     cpu_external_ntime: Option<String>,
     cpu_external_target: Option<String>,
+    /// Latest job id of EVERY enabled external coin ("TICKER:jobid", sorted
+    /// by ticker). With per-session coin routing a rotation of a non-default
+    /// coin must still trigger a broadcast, or pinned sessions would keep
+    /// mining a job the upstream pool already replaced.
+    external_job_ids: Vec<String>,
 }
 
 impl StratumServer {
@@ -223,6 +242,16 @@ impl StratumServer {
             )))),
             share_store: None,
             session_counters,
+            gpu_coin_default: std::env::var("ZION_POOL_AUXPOW_COIN")
+                .ok()
+                .and_then(|s| ExternalCoin::from_str_loose(s.trim()))
+                .filter(|c| c.is_gpu()),
+            cpu_coin_default: std::env::var("ZION_POOL_AUXPOW_CPU_COIN")
+                .ok()
+                .and_then(|s| ExternalCoin::from_str_loose(s.trim()))
+                .filter(|c| c.is_cpu()),
+            gpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_GPU_COIN_ROUTE"),
+            cpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_CPU_COIN_ROUTE"),
         }
     }
 
@@ -788,8 +817,8 @@ impl StratumServer {
         let vardiff_target_hex = hex::encode(vardiff_target);
 
         // Triple-stream: fetch external jobs from AuxPoW bridge
-        let external_stream = self.build_external_stream_gpu();
-        let external_stream_cpu = self.build_external_stream_cpu();
+        let external_stream = self.build_external_stream_gpu(None);
+        let external_stream_cpu = self.build_external_stream_cpu(None);
 
         let job_msg = PoolMessage::Job {
             job_id: numeric_job_id,
@@ -807,81 +836,208 @@ impl StratumServer {
     }
 
     /// Build the GPU external stream job from the AuxPoW bridge.
-    /// Selects the first available non-CPU coin job.
-    fn build_external_stream_gpu(&self) -> Option<ExternalStreamJob> {
-        let coins = self.multi_bridge.enabled_coins();
+    /// `prefer` pins the coin (per-session route / CoinPreference); the env
+    /// default is tried next, then the remaining enabled GPU coins in
+    /// ticker order — deterministic regardless of HashMap order.
+    fn build_external_stream_gpu(&self, prefer: Option<ExternalCoin>) -> Option<ExternalStreamJob> {
+        self.build_external_stream(prefer, false, self.gpu_coin_default)
+    }
+
+    /// Build the CPU external stream job from the AuxPoW bridge.
+    /// Same selection order as the GPU variant, restricted to CPU coins.
+    ///
+    /// V3 philosophy: use the upstream pool's target as-is (no override).
+    /// V3 didn't override VRSC difficulty and achieved 95% accept rate.
+    fn build_external_stream_cpu(&self, prefer: Option<ExternalCoin>) -> Option<ExternalStreamJob> {
+        self.build_external_stream(prefer, true, self.cpu_coin_default)
+    }
+
+    /// Pick the freshest external job among enabled coins of the given
+    /// device class. Candidate order: `prefer`, then the env default coin,
+    /// then the rest sorted by ticker (see `enabled_coins`).
+    fn build_external_stream(
+        &self,
+        prefer: Option<ExternalCoin>,
+        cpu: bool,
+        env_default: Option<ExternalCoin>,
+    ) -> Option<ExternalStreamJob> {
+        let mut coins = self.multi_bridge.enabled_coins();
+        coins.retain(|c| self.multi_bridge.is_cpu_coin(c) == cpu);
         if coins.is_empty() {
             return None;
         }
-        // Find a GPU coin (not CPU)
-        for coin in &coins {
-            if !self.multi_bridge.is_cpu_coin(coin) {
-                if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
-                    if !Self::job_is_fresh(&job) {
-                        tracing::debug!(
-                            "build_external_stream_gpu: dropping stale {} job {}",
-                            coin.as_str(),
-                            job.external_job_id
-                        );
-                        continue;
-                    }
-                    return Some(ExternalStreamJob {
-                        coin: coin.as_str().to_string(),
-                        algorithm: job.algorithm.clone(),
-                        job_id: job.external_job_id.clone(),
-                        header_hex: job.header_hex.clone(),
-                        target_hex: job.target_hex.clone(),
-                        height: job.height,
-                        extranonce1_hex: job.extranonce1_hex.clone(),
-                        protocol: "stratum".to_string(),
-                        seed_hash_hex: String::new(),
-                        timestamp: 0,
-                        ntime_hex: job.ntime.clone(),
-                    });
+        let mut order: Vec<ExternalCoin> = Vec::with_capacity(coins.len());
+        for c in [prefer, env_default].into_iter().flatten() {
+            if coins.contains(&c) && !order.contains(&c) {
+                order.push(c);
+            }
+        }
+        for c in coins {
+            if !order.contains(&c) {
+                order.push(c);
+            }
+        }
+        for coin in &order {
+            if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
+                if !Self::job_is_fresh(&job) {
+                    tracing::debug!(
+                        "build_external_stream: dropping stale {} job {}",
+                        coin.as_str(),
+                        job.external_job_id
+                    );
+                    continue;
                 }
+                return Some(Self::job_to_ext_stream(coin, &job));
             }
         }
         None
     }
 
-    /// Build the CPU external stream job from the AuxPoW bridge.
-    /// Selects the first available CPU coin job (XMR, VRSC, RTM).
-    ///
-    /// V3 philosophy: use the upstream pool's target as-is (no override).
-    /// V3 didn't override VRSC difficulty and achieved 95% accept rate.
-    fn build_external_stream_cpu(&self) -> Option<ExternalStreamJob> {
-        let coins = self.multi_bridge.enabled_coins();
-        if coins.is_empty() {
+    fn job_to_ext_stream(
+        coin: &ExternalCoin,
+        job: &crate::auxpow_bridge::JobPackage,
+    ) -> ExternalStreamJob {
+        ExternalStreamJob {
+            coin: coin.as_str().to_string(),
+            algorithm: job.algorithm.clone(),
+            job_id: job.external_job_id.clone(),
+            header_hex: job.header_hex.clone(),
+            target_hex: job.target_hex.clone(),
+            height: job.height,
+            extranonce1_hex: job.extranonce1_hex.clone(),
+            protocol: "stratum".to_string(),
+            seed_hash_hex: String::new(),
+            timestamp: 0,
+            ntime_hex: job.ntime.clone(),
+        }
+    }
+
+    /// Rewrite the `external_stream` / `external_stream_cpu` fields of a
+    /// broadcast Job line for a session with explicit coin preferences.
+    /// Returns the original line unchanged when no preference applies or
+    /// the embedded coin already matches — the common path stays cheap.
+    fn session_job_line(
+        &self,
+        line: &str,
+        gpu_pref: Option<ExternalCoin>,
+        cpu_pref: Option<ExternalCoin>,
+    ) -> String {
+        if gpu_pref.is_none() && cpu_pref.is_none() {
+            return line.to_string();
+        }
+        let mut v: serde_json::Value = match serde_json::from_str(line.trim()) {
+            Ok(v) => v,
+            Err(_) => return line.to_string(),
+        };
+        if v.get("type").and_then(|t| t.as_str()) != Some("job") {
+            return line.to_string();
+        }
+        let mut changed = false;
+        if let Some(coin) = gpu_pref {
+            changed |= self.rewrite_ext_field(&mut v, "external_stream", coin);
+        }
+        if let Some(coin) = cpu_pref {
+            changed |= self.rewrite_ext_field(&mut v, "external_stream_cpu", coin);
+        }
+        if !changed {
+            return line.to_string();
+        }
+        serde_json::to_string(&v).unwrap_or_else(|_| line.to_string())
+    }
+
+    /// Swap the `field` external-stream object for the session's `coin`.
+    /// Writes `null` when the preferred coin has no fresh job — a
+    /// wrong-algorithm job would only produce error spam on a miner that
+    /// cannot run it.
+    fn rewrite_ext_field(
+        &self,
+        v: &mut serde_json::Value,
+        field: &str,
+        coin: ExternalCoin,
+    ) -> bool {
+        let embedded_matches = v
+            .get(field)
+            .and_then(|f| f.get("coin"))
+            .and_then(|c| c.as_str())
+            .map(|c| c.eq_ignore_ascii_case(coin.ticker()) || c.eq_ignore_ascii_case(coin.as_str()))
+            .unwrap_or(false);
+        if embedded_matches {
+            return false;
+        }
+        let fresh = self
+            .multi_bridge
+            .latest_job_for_coin(&coin)
+            .filter(|j| Self::job_is_fresh(j));
+        let new_val = fresh
+            .as_ref()
+            .and_then(|job| serde_json::to_value(Self::job_to_ext_stream(&coin, job)).ok());
+        match new_val {
+            Some(val) => {
+                v[field] = val;
+                true
+            }
+            None => match v.get(field) {
+                Some(existing) if !existing.is_null() => {
+                    v[field] = serde_json::Value::Null;
+                    true
+                }
+                _ => false,
+            },
+        }
+    }
+
+    /// Resolve a session's preferred coin against `routes` — first matching
+    /// pattern wins. Patterns are tested against the worker tail
+    /// ("wallet.worker" → "worker"), the full worker_name, the miner_id and
+    /// the "miner_id/worker_name" composite.
+    fn session_coin_pref(
+        routes: &[(String, ExternalCoin)],
+        miner_id: &str,
+        worker_name: &str,
+    ) -> Option<ExternalCoin> {
+        if routes.is_empty() {
             return None;
         }
-        for coin in &coins {
-            if self.multi_bridge.is_cpu_coin(coin) {
-                if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
-                    if !Self::job_is_fresh(&job) {
-                        tracing::debug!(
-                            "build_external_stream_cpu: dropping stale {} job {}",
-                            coin.as_str(),
-                            job.external_job_id
-                        );
-                        continue;
-                    }
-                    return Some(ExternalStreamJob {
-                        coin: coin.as_str().to_string(),
-                        algorithm: job.algorithm.clone(),
-                        job_id: job.external_job_id.clone(),
-                        header_hex: job.header_hex.clone(),
-                        target_hex: job.target_hex.clone(),
-                        height: job.height,
-                        extranonce1_hex: job.extranonce1_hex.clone(),
-                        protocol: "stratum".to_string(),
-                        seed_hash_hex: String::new(),
-                        timestamp: 0,
-                        ntime_hex: job.ntime.clone(),
-                    });
-                }
+        let short = worker_name.rsplit('.').next().unwrap_or(worker_name);
+        let composite = format!("{miner_id}/{worker_name}");
+        for (pat, coin) in routes {
+            if glob_match(pat, short)
+                || glob_match(pat, worker_name)
+                || glob_match(pat, miner_id)
+                || glob_match(pat, &composite)
+            {
+                return Some(*coin);
             }
         }
         None
+    }
+
+    /// Fold a miner's CoinPreference into the session prefs. Fields are
+    /// slotted by coin class rather than by field name — a miner sending
+    /// `gpu_coin=VRSC` still lands on the CPU stream where it belongs.
+    fn apply_coin_preference(
+        gpu_pref: &mut Option<ExternalCoin>,
+        cpu_pref: &mut Option<ExternalCoin>,
+        gpu_coin: &str,
+        cpu_coin: &str,
+    ) {
+        for raw in [gpu_coin, cpu_coin] {
+            let raw = raw.trim();
+            if raw.is_empty() {
+                continue;
+            }
+            let Some(coin) =
+                ExternalCoin::from_str_loose(raw).or_else(|| ExternalCoin::from_ticker(raw))
+            else {
+                tracing::warn!("v3_coin_preference: unknown coin {:?}", raw);
+                continue;
+            };
+            if coin.is_cpu() {
+                *cpu_pref = Some(coin);
+            } else {
+                *gpu_pref = Some(coin);
+            }
+        }
     }
 
     /// Build a fingerprint from the current template and external streams.
@@ -912,13 +1068,14 @@ impl StratumServer {
         }
 
         let (gpu_external_job_id, gpu_external_ntime, gpu_external_target) = self
-            .build_external_stream_gpu()
+            .build_external_stream_gpu(None)
             .map(|j| (Some(j.job_id), Some(j.ntime_hex), Some(j.target_hex)))
             .unwrap_or((None, None, None));
         let (cpu_external_job_id, cpu_external_ntime, cpu_external_target) = self
-            .build_external_stream_cpu()
+            .build_external_stream_cpu(None)
             .map(|j| (Some(j.job_id), Some(j.ntime_hex), Some(j.target_hex)))
             .unwrap_or((None, None, None));
+        let external_job_ids = self.all_external_job_ids();
 
         Some(JobFingerprint {
             zion_height: height,
@@ -930,7 +1087,24 @@ impl StratumServer {
             cpu_external_job_id,
             cpu_external_ntime,
             cpu_external_target,
+            external_job_ids,
         })
+    }
+
+    /// Latest external job id for every enabled coin ("TICKER:jobid"),
+    /// sorted by ticker — part of the broadcast fingerprint so a job
+    /// rotation on ANY coin (not just the embedded default) refreshes
+    /// sessions pinned to a different coin via route/CoinPreference.
+    fn all_external_job_ids(&self) -> Vec<String> {
+        self.multi_bridge
+            .enabled_coins()
+            .into_iter()
+            .filter_map(|c| {
+                self.multi_bridge
+                    .latest_job_for_coin(&c)
+                    .map(|j| format!("{}:{}", c.ticker(), j.external_job_id))
+            })
+            .collect()
     }
 
     /// Return true if an external job is fresh enough to send to a miner.
@@ -1131,6 +1305,11 @@ impl StratumServer {
     ) where
         R: tokio::io::AsyncRead + Unpin,
     {
+        // Per-session coin preferences — set from worker-name routes on
+        // Hello and updated by CoinPreference messages.
+        let mut session_gpu_pref: Option<ExternalCoin>;
+        let mut session_cpu_pref: Option<ExternalCoin>;
+
         // For now, just handle Hello and forward jobs.
         // Full V3 handling over TLS uses the same logic as plain TCP.
         match decode_message(&first_line) {
@@ -1148,6 +1327,20 @@ impl StratumServer {
                     algorithm,
                     ip
                 );
+
+                session_gpu_pref =
+                    Self::session_coin_pref(&self.gpu_coin_routes, &miner_id, &worker_name);
+                session_cpu_pref =
+                    Self::session_coin_pref(&self.cpu_coin_routes, &miner_id, &worker_name);
+                if session_gpu_pref.is_some() || session_cpu_pref.is_some() {
+                    tracing::info!(
+                        "v3_coin_route miner={} worker={} gpu={:?} cpu={:?}",
+                        miner_id,
+                        worker_name,
+                        session_gpu_pref.map(|c| c.ticker()),
+                        session_cpu_pref.map(|c| c.ticker()),
+                    );
+                }
 
                 let welcome = PoolMessage::Welcome {
                     protocol_version: PROTOCOL_VERSION.to_string(),
@@ -1172,6 +1365,7 @@ impl StratumServer {
                 // even when the template fingerprint has not changed since the last broadcast.
                 let last_job = self.last_v3_job.lock().unwrap().clone();
                 if let Some(job) = last_job {
+                    let job = self.session_job_line(&job, session_gpu_pref, session_cpu_pref);
                     let mut w = writer.lock().await;
                     if w.write_all(job.as_bytes()).await.is_err() {
                         return;
@@ -1347,7 +1541,16 @@ impl StratumServer {
                                         return;
                                     }
                                 }
-                                Ok(PoolMessage::CoinPreference { .. }) => { /* store for triple-stream */ }
+                                Ok(PoolMessage::CoinPreference {
+                                    gpu_coin, cpu_coin, ..
+                                }) => {
+                                    Self::apply_coin_preference(
+                                        &mut session_gpu_pref,
+                                        &mut session_cpu_pref,
+                                        &gpu_coin,
+                                        &cpu_coin,
+                                    );
+                                }
                                 Ok(_) => { /* ignore other messages */ }
                                 Err(_) => { /* ignore decode errors */ }
                             }
@@ -1358,7 +1561,11 @@ impl StratumServer {
                 msg = notify_rx.recv() => match msg {
                     Ok(msg) => {
                         if msg.contains("\"type\":\"job\"") {
-                            let line = msg.trim_end();
+                            let line = self.session_job_line(
+                                msg.trim_end(),
+                                session_gpu_pref,
+                                session_cpu_pref,
+                            );
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
                             if w.write_all(b"\n").await.is_err() { break; }
@@ -1368,6 +1575,11 @@ impl StratumServer {
                         tracing::warn!("v3 tls session lagged {} broadcasts ip={}, resyncing", n, ip);
                         let resync_job = self.last_v3_job.lock().unwrap().clone();
                         if let Some(job) = resync_job {
+                            let job = self.session_job_line(
+                                &job,
+                                session_gpu_pref,
+                                session_cpu_pref,
+                            );
                             let mut w = writer.lock().await;
                             if w.write_all(job.as_bytes()).await.is_err() { break; }
                             if w.write_all(b"\n").await.is_err() { break; }
@@ -1396,6 +1608,10 @@ impl StratumServer {
         let worker_name;
         let algorithm;
         let backend;
+        // Per-session coin preferences — worker-name routes on Hello,
+        // updated by CoinPreference messages.
+        let mut session_gpu_pref: Option<ExternalCoin>;
+        let mut session_cpu_pref: Option<ExternalCoin>;
 
         // Process first line (should be Hello)
         match decode_message(first_line) {
@@ -1419,6 +1635,20 @@ impl StratumServer {
                     backend,
                     ip
                 );
+
+                session_gpu_pref =
+                    Self::session_coin_pref(&self.gpu_coin_routes, &miner_id, &worker_name);
+                session_cpu_pref =
+                    Self::session_coin_pref(&self.cpu_coin_routes, &miner_id, &worker_name);
+                if session_gpu_pref.is_some() || session_cpu_pref.is_some() {
+                    tracing::info!(
+                        "v3_coin_route miner={} worker={} gpu={:?} cpu={:?}",
+                        miner_id,
+                        worker_name,
+                        session_gpu_pref.map(|c| c.ticker()),
+                        session_cpu_pref.map(|c| c.ticker()),
+                    );
+                }
 
                 // Send Welcome
                 let welcome = PoolMessage::Welcome {
@@ -1445,6 +1675,7 @@ impl StratumServer {
                 // even when the template fingerprint has not changed since the last broadcast.
                 let last_job = self.last_v3_job.lock().unwrap().clone();
                 if let Some(job) = last_job {
+                    let job = self.session_job_line(&job, session_gpu_pref, session_cpu_pref);
                     let mut w = writer.lock().await;
                     if w.write_all(job.as_bytes()).await.is_err() {
                         return;
@@ -1755,9 +1986,16 @@ impl StratumServer {
                                     "v3_coin_preference miner={} gpu={} cpu={} gpu_profit={:.2}/day cpu_profit={:.2}/day",
                                     pref_miner, gpu_coin, cpu_coin, gpu_profit_usd_day, cpu_profit_usd_day
                                 );
-                                // Preferences are stored per-session and will be used
-                                // in future job construction for coin selection.
-                                // For now, the pool-side profit switcher handles coin selection.
+                                // Pin this session's external streams to the
+                                // miner's declared coins — the broadcast embeds
+                                // only the default coin, so sessions routed to
+                                // another coin get theirs via session_job_line.
+                                Self::apply_coin_preference(
+                                    &mut session_gpu_pref,
+                                    &mut session_cpu_pref,
+                                    &gpu_coin,
+                                    &cpu_coin,
+                                );
                             }
 
                             Ok(PoolMessage::ExternalSubmit {
@@ -2055,7 +2293,11 @@ impl StratumServer {
                         // Only forward V3 Job messages to V3 clients
                         // (stratum v1 mining.notify messages are skipped)
                         if msg.contains("\"type\":\"job\"") {
-                            let line = msg.trim_end();
+                            let line = self.session_job_line(
+                                msg.trim_end(),
+                                session_gpu_pref,
+                                session_cpu_pref,
+                            );
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
                             if w.write_all(b"\n").await.is_err() { break; }
@@ -2067,6 +2309,11 @@ impl StratumServer {
                         tracing::warn!("v3 session lagged {} broadcasts ip={}, resyncing", n, ip);
                         let resync_job = self.last_v3_job.lock().unwrap().clone();
                         if let Some(job) = resync_job {
+                            let job = self.session_job_line(
+                                &job,
+                                session_gpu_pref,
+                                session_cpu_pref,
+                            );
                             let mut w = writer.lock().await;
                             if w.write_all(job.as_bytes()).await.is_err() { break; }
                             if w.write_all(b"\n").await.is_err() { break; }
@@ -2469,6 +2716,66 @@ fn env_or_f64(key: &str, default: f64) -> f64 {
         .unwrap_or(default)
 }
 
+/// Parse a `PATTERN=COIN,PATTERN=COIN` route map from an env var into
+/// `(pattern, coin)` pairs. Unknown coins and malformed entries are
+/// skipped with a warning — a typo must not kill the whole route table.
+fn parse_coin_routes(var: &str) -> Vec<(String, ExternalCoin)> {
+    let raw = match std::env::var(var) {
+        Ok(v) => v,
+        Err(_) => return Vec::new(),
+    };
+    let mut routes = Vec::new();
+    for pair in raw.split(',') {
+        let pair = pair.trim();
+        if pair.is_empty() {
+            continue;
+        }
+        let Some((pat, ticker)) = pair.split_once('=') else {
+            tracing::warn!("{}: skipping malformed route entry {:?}", var, pair);
+            continue;
+        };
+        match ExternalCoin::from_str_loose(ticker.trim()) {
+            Some(coin) => routes.push((pat.trim().to_string(), coin)),
+            None => tracing::warn!("{}: skipping route with unknown coin {:?}", var, pair),
+        }
+    }
+    routes
+}
+
+/// Case-insensitive `*` glob: `vega*`, `*smos`, `vega-*-rig`, plain
+/// equality when no `*` is present.
+fn glob_match(pattern: &str, text: &str) -> bool {
+    let p = pattern.to_ascii_lowercase();
+    let t = text.to_ascii_lowercase();
+    if !p.contains('*') {
+        return p == t;
+    }
+    let anchored_start = !p.starts_with('*');
+    let anchored_end = !p.ends_with('*');
+    let segments: Vec<&str> = p.split('*').collect();
+    let mut rest: &str = &t;
+    for (i, seg) in segments.iter().enumerate() {
+        if seg.is_empty() {
+            continue;
+        }
+        match rest.find(seg) {
+            Some(pos) => {
+                if i == 0 && anchored_start && pos != 0 {
+                    return false;
+                }
+                rest = &rest[pos + seg.len()..];
+            }
+            None => return false,
+        }
+    }
+    if anchored_end {
+        if let Some(last_seg) = segments.iter().rev().find(|s| !s.is_empty()) {
+            return t.ends_with(last_seg);
+        }
+    }
+    true
+}
+
 fn build_solved_block(tpl: CoreBlockTemplate, nonce: u64) -> Result<Block, serde_json::Error> {
     let mut header: BlockHeader = serde_json::from_str(&tpl.header_json)?;
     header.nonce = nonce;
@@ -2844,5 +3151,181 @@ mod tests {
                 );
             }
         }
+    }
+
+    fn push_ext_job(server: &StratumServer, coin: ExternalCoin, job_id: &str) {
+        let (bridge, _rx) = crate::auxpow_bridge::AuxPowBridge::new(true);
+        if !server.multi_bridge.contains(&coin) {
+            server.multi_bridge.insert(coin, bridge.clone());
+        }
+        server.multi_bridge.push_job_for_coin(
+            &coin,
+            crate::auxpow_bridge::JobPackage {
+                external_job_id: job_id.to_string(),
+                coin,
+                header_hex: "aabb".to_string(),
+                target_hex: "00ff".to_string(),
+                height: 1,
+                algorithm: coin.algorithm().to_string(),
+                extranonce1_hex: String::new(),
+                ntime: "00000000".to_string(),
+                received_at: Some(Instant::now()),
+            },
+        );
+    }
+
+    fn broadcast_job_line(ext: Option<ExternalStreamJob>) -> String {
+        encode_message(&PoolMessage::Job {
+            job_id: 1,
+            algorithm: "ekam_deeksha".into(),
+            start_nonce: 0,
+            nonce_count: 100,
+            target_hex: "ff".repeat(64),
+            header_hex: "00".repeat(64),
+            height: 1,
+            stream_weights: String::new(),
+            external_stream: ext,
+            external_stream_cpu: None,
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn glob_match_patterns() {
+        assert!(glob_match("vega*", "vega-smos"));
+        assert!(glob_match("*smos", "vega-smos"));
+        assert!(glob_match("vega*smos", "vega-x-smos"));
+        assert!(glob_match("vega-smos", "vega-smos"));
+        assert!(glob_match("VEGA-SMOS", "vega-smos"));
+        assert!(glob_match("*", "anything"));
+        assert!(!glob_match("vega*", "rx5600"));
+        assert!(!glob_match("*smos", "smos-rig"));
+        assert!(!glob_match("vega", "vega-smos"));
+        assert!(!glob_match("vega*smos", "vega-smo"));
+    }
+
+    #[test]
+    fn coin_route_pref_resolution() {
+        let routes = vec![
+            ("vega*".to_string(), ExternalCoin::Zano),
+            ("dest-zion*".to_string(), ExternalCoin::Quantus),
+        ];
+        // worker tail match: "wallet.vega-smos" → "vega-smos" → vega*
+        assert_eq!(
+            StratumServer::session_coin_pref(&routes, "wallet1", "wallet1.vega-smos"),
+            Some(ExternalCoin::Zano)
+        );
+        assert_eq!(
+            StratumServer::session_coin_pref(&routes, "wallet2", "wallet2.dest-zion"),
+            Some(ExternalCoin::Quantus)
+        );
+        // miner_id match
+        assert_eq!(
+            StratumServer::session_coin_pref(&routes, "vega-farm", "other"),
+            Some(ExternalCoin::Zano)
+        );
+        assert_eq!(
+            StratumServer::session_coin_pref(&routes, "w", "unmatched"),
+            None
+        );
+        assert_eq!(StratumServer::session_coin_pref(&[], "a", "b"), None);
+    }
+
+    #[test]
+    fn external_stream_prefers_session_coin() {
+        let server = make_server();
+        push_ext_job(&server, ExternalCoin::Quantus, "qtu_job_1");
+        push_ext_job(&server, ExternalCoin::Zano, "zano_job_1");
+        push_ext_job(&server, ExternalCoin::Verus, "vrsc_job_1");
+
+        // No preference: env default (unset in test) → first by ticker = QTU.
+        let gpu = server.build_external_stream_gpu(None).unwrap();
+        assert_eq!(gpu.coin, "QTU");
+        assert_eq!(gpu.job_id, "qtu_job_1");
+        // Session pinned to ZANO gets the ZANO job.
+        let gpu = server
+            .build_external_stream_gpu(Some(ExternalCoin::Zano))
+            .unwrap();
+        assert_eq!(gpu.coin, "ZANO");
+        assert_eq!(gpu.job_id, "zano_job_1");
+        // CPU stream picks the CPU coin; a GPU-coin pref is ignored there.
+        let cpu = server
+            .build_external_stream_cpu(Some(ExternalCoin::Zano))
+            .unwrap();
+        assert_eq!(cpu.coin, "VRSC");
+        assert_eq!(cpu.job_id, "vrsc_job_1");
+    }
+
+    #[test]
+    fn session_job_line_rewrites_external_stream() {
+        let server = make_server();
+        push_ext_job(&server, ExternalCoin::Quantus, "qtu_job_9");
+        push_ext_job(&server, ExternalCoin::Zano, "zano_job_9");
+
+        let line = broadcast_job_line(Some(ExternalStreamJob {
+            coin: "QTU".into(),
+            algorithm: "qpow-poseidon2".into(),
+            job_id: "qtu_job_9".into(),
+            header_hex: "aabb".into(),
+            target_hex: "00ff".into(),
+            height: 1,
+            extranonce1_hex: String::new(),
+            protocol: "stratum".into(),
+            seed_hash_hex: String::new(),
+            timestamp: 0,
+            ntime_hex: "00000000".into(),
+        }));
+
+        // Session pinned to ZANO: broadcast carries QTU → rewritten to ZANO.
+        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["external_stream"]["coin"], "ZANO");
+        assert_eq!(v["external_stream"]["job_id"], "zano_job_9");
+        assert_eq!(v["external_stream"]["algorithm"], "progpow_zano");
+
+        // Session pinned to the embedded coin: identical line passes through.
+        let out = server.session_job_line(&line, Some(ExternalCoin::Quantus), None);
+        assert_eq!(out, line);
+
+        // No prefs at all: byte-identical passthrough.
+        let out = server.session_job_line(&line, None, None);
+        assert_eq!(out, line);
+    }
+
+    #[test]
+    fn session_job_line_nulls_stream_when_pref_coin_has_no_job() {
+        let server = make_server();
+        push_ext_job(&server, ExternalCoin::Quantus, "qtu_job_1");
+        // ZANO routed but no ZANO bridge/job → stream nulled, not left as QTU.
+        let line = broadcast_job_line(Some(ExternalStreamJob {
+            coin: "QTU".into(),
+            algorithm: "qpow-poseidon2".into(),
+            job_id: "qtu_job_1".into(),
+            header_hex: "aabb".into(),
+            target_hex: "00ff".into(),
+            height: 1,
+            extranonce1_hex: String::new(),
+            protocol: "stratum".into(),
+            seed_hash_hex: String::new(),
+            timestamp: 0,
+            ntime_hex: "00000000".into(),
+        }));
+        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert!(v["external_stream"].is_null());
+    }
+
+    #[test]
+    fn apply_coin_preference_slots_by_class() {
+        let mut gpu = None;
+        let mut cpu = None;
+        // A miner sending gpu_coin=VRSC (a CPU coin) lands on the CPU stream.
+        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, "VRSC", "QTU");
+        assert_eq!(gpu, Some(ExternalCoin::Quantus));
+        assert_eq!(cpu, Some(ExternalCoin::Verus));
+        // Unknown coins are ignored, prefs untouched.
+        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, "NOPE", "");
+        assert_eq!(gpu, Some(ExternalCoin::Quantus));
+        assert_eq!(cpu, Some(ExternalCoin::Verus));
     }
 }
