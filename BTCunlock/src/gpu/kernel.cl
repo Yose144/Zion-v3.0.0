@@ -1188,3 +1188,134 @@ bad:
         }
     }
 }
+
+// ======================================================== key_scan
+//
+// Raw private-key range walk ("Bitcoin puzzle" mode). Work-item i covers
+// `stride` consecutive keys k = start + i·stride + [0,stride):
+//
+//   1. P₀ = k·G — one fixed-base scalar mult via gtab
+//   2. stride−1 mixed Jacobian additions of affine G → P₁…P_{stride−1}
+//      (all coords stored — 96 B/point in private/local memory)
+//   3. ONE Montgomery batch inversion covers every point: prefix products
+//      pr[j] = Z₀·…·Z_j, invert the total once, walk back for each Z_j⁻¹
+//   4. affine (x,y) → compressed pubkey → hash160 → target match
+//
+// Per-key cost ≈ 1 point add + ~5 field muls + hash160 — ~10× cheaper than
+// a per-key inversion. Hits are recorded as 40 B records:
+//   [0..4)   target index (into the sorted `targets` buffer)
+//   [4..8)   stride slot j (diagnostic)
+//   [8..40)  key, 32-byte big-endian — host re-verifies before reporting
+
+#define KS_MAX_STRIDE 16
+#define KS_HIT_REC 40
+
+__kernel void key_scan(
+    __global const uint*  start_k,   // 8 u32 LE limbs — first key of the launch
+    const uint stride,               // keys per work-item (≤ KS_MAX_STRIDE)
+    __global const uchar* targets,   // n_targets × 20-byte hash160
+    const uint n_targets,
+    __constant const uint* gtab,
+    volatile __global uint* hit_count,
+    __global uchar* hits,            // max_out × KS_HIT_REC
+    const uint max_out)
+{
+    uint S = stride > KS_MAX_STRIDE ? KS_MAX_STRIDE : stride;
+    if (S == 0) return;
+    ulong gid = get_global_id(0);
+
+    // k = start + gid·stride (u64 offset into u256)
+    uint k[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) k[i] = start_k[i];
+    {
+        ulong off = gid * (ulong)S;
+        ulong c = (ulong)k[0] + (uint)off;          k[0] = (uint)c; c >>= 32;
+        c += (ulong)k[1] + (uint)(off >> 32);       k[1] = (uint)c; c >>= 32;
+        #pragma unroll
+        for (int i = 2; i < 8; i++) { c += k[i]; k[i] = (uint)c; c >>= 32; }
+    }
+
+    // stage 1: forward walk — store every Jacobian coord + Z prefix product
+    uint xs[KS_MAX_STRIDE][8], ys[KS_MAX_STRIDE][8];
+    uint zs[KS_MAX_STRIDE][8], pr[KS_MAX_STRIDE][8];
+    uint gx[8], gy[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) { gx[i] = GX[i]; gy[i] = GY[i]; }
+
+    uint X[8], Y[8], Z[8];
+    ec_mult_g(k, gtab, X, Y, Z);
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        xs[0][i] = X[i]; ys[0][i] = Y[i]; zs[0][i] = Z[i]; pr[0][i] = Z[i];
+    }
+    for (uint j = 1; j < S; j++) {
+        pt_add_affine(X, Y, Z, gx, gy);
+        uint t[8];
+        fe_mul(pr[j - 1], Z, t);
+        #pragma unroll
+        for (int i = 0; i < 8; i++) {
+            xs[j][i] = X[i]; ys[j][i] = Y[i]; zs[j][i] = Z[i]; pr[j][i] = t[i];
+        }
+    }
+
+    // stage 2: one inversion for the whole stride, then per-point affine
+    // recovery walking the prefix products backwards:
+    //   zi_j = (Π_{i<j}Z_i) / (Π_{i≤S−1}Z_i) · … — maintained via
+    //   acc = 1/Π_{i≤j}Z_i after step j.
+    uint inv[8];
+    fe_inv(pr[S - 1], inv);
+    uint acc[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) acc[i] = inv[i];
+
+    for (int j = (int)S - 1; j >= 0; j--) {
+        uint zi[8];
+        if (j == 0) {
+            #pragma unroll
+            for (int i = 0; i < 8; i++) zi[i] = acc[i];
+        } else {
+            fe_mul(acc, pr[j - 1], zi);        // zi = 1/Z_j
+            uint t[8];
+            fe_mul(acc, zs[j], t);             // acc /= Z_j
+            #pragma unroll
+            for (int i = 0; i < 8; i++) acc[i] = t[i];
+        }
+        uint zi2[8], zi3[8], xa[8], ya[8];
+        fe_sqr(zi, zi2);
+        fe_mul(zi, zi2, zi3);
+        fe_mul(xs[j], zi2, xa);
+        fe_mul(ys[j], zi3, ya);
+
+        uchar ser[33];
+        ser[0] = (uchar)(0x02 | (ya[0] & 1));
+        u256_to_be(xa, ser + 1);
+        uchar h[20];
+        hash160_of(ser, 33, h);
+        int tidx = -1;
+        for (uint t = 0; t < n_targets; t++) {
+            __global const uchar* tp = targets + (ulong)t * 20;
+            uint d = 0;
+            #pragma unroll
+            for (int b = 0; b < 20; b++) d |= h[b] ^ tp[b];
+            if (d == 0) { tidx = (int)t; break; }
+        }
+        if (tidx < 0) continue;
+
+        uint slot = atomic_inc(hit_count);
+        if (slot < max_out) {
+            __global uchar* r = hits + (ulong)slot * KS_HIT_REC;
+            *((__global uint*)r) = (uint)tidx;
+            *((__global uint*)(r + 4)) = (uint)j;
+            // record key = k + j  (k already = start + gid·stride)
+            uint kj[8];
+            ulong c = (ulong)k[0] + (uint)j; kj[0] = (uint)c; c >>= 32;
+            #pragma unroll
+            for (int i = 1; i < 8; i++) { c += k[i]; kj[i] = (uint)c; c >>= 32; }
+            uchar kb[32];
+            u256_to_be(kj, kb);
+            #pragma unroll
+            for (int i = 0; i < 32; ++i) r[8 + i] = kb[i];
+        }
+    }
+}

@@ -77,10 +77,14 @@ fn g_table() -> Vec<u32> {
             let pk = PublicKey::from_secret_key(&secp, &SecretKey::from_slice(&kb).unwrap());
             let un = pk.serialize_uncompressed(); // 04 ‖ x_be(32) ‖ y_be(32)
             for i in 0..8 {
-                t.push(u32::from_be_bytes(un[29 - 4 * i..33 - 4 * i].try_into().unwrap()));
+                t.push(u32::from_be_bytes(
+                    un[29 - 4 * i..33 - 4 * i].try_into().unwrap(),
+                ));
             }
             for i in 0..8 {
-                t.push(u32::from_be_bytes(un[61 - 4 * i..65 - 4 * i].try_into().unwrap()));
+                t.push(u32::from_be_bytes(
+                    un[61 - 4 * i..65 - 4 * i].try_into().unwrap(),
+                ));
             }
         }
     }
@@ -94,6 +98,7 @@ pub struct Gpu {
     k_step: Kernel,
     k_perm: Kernel,
     k_match: Kernel,
+    k_keyscan: Kernel,
     max_batch: usize,
     max_results: usize,
     salt_len: Cell<u32>,
@@ -113,6 +118,10 @@ pub struct Gpu {
     bad_count: Buffer<u32>,
     hits_buf: Buffer<u8>,
     bads_buf: Buffer<u8>,
+    /// key_scan: launch start key (8 u32 LE limbs) + hit records
+    /// (40 B each: u32 tidx, u32 stride slot, 32 B key BE).
+    ks_start: Buffer<u32>,
+    ks_hits: Buffer<u8>,
     /// Permute phrase-dedupe set: open-addressed u64 table, 2^21 slots.
     dedup: Buffer<u64>,
     /// Hit/dead output capacity per batch (≤ max_results).
@@ -143,7 +152,10 @@ impl Gpu {
             bail!("no OpenCL GPU devices found");
         }
         let dev_id = *gpus.get(device_index).ok_or_else(|| {
-            anyhow::anyhow!("gpu index {device_index} out of range ({} devices)", gpus.len())
+            anyhow::anyhow!(
+                "gpu index {device_index} out of range ({} devices)",
+                gpus.len()
+            )
         })?;
         let device = Device::new(dev_id);
         let device_name = device.name().unwrap_or_else(|_| "?".into());
@@ -153,8 +165,7 @@ impl Gpu {
         #[cfg(target_os = "macos")]
         let queue = CommandQueue::create(&context, dev_id, 0).map_err(cl_err)?;
         #[cfg(not(target_os = "macos"))]
-        let queue =
-            CommandQueue::create_with_properties(&context, dev_id, 0, 0).map_err(cl_err)?;
+        let queue = CommandQueue::create_with_properties(&context, dev_id, 0, 0).map_err(cl_err)?;
         // NVIDIA: register-cap the two pipeline stages separately — the
         // filter runs best at ~40 regs (occupancy), pbkdf2_step at ~64
         // (measured on GTX 1070 Ti: +34% filter, +79% pbkdf2 vs default).
@@ -202,6 +213,7 @@ impl Gpu {
         // derive_match is register-hungry (secp256k1) — it shares the step
         // program's looser cap rather than the filter's occupancy-tuned 40.
         let k_match = Kernel::create(prog_step, "derive_match").map_err(cl_err)?;
+        let k_keyscan = Kernel::create(prog_step, "key_scan").map_err(cl_err)?;
 
         // wordlist blob + offsets (u16 — total < 16 KiB)
         let mut blob = Vec::with_capacity(16 * 1024);
@@ -218,20 +230,12 @@ impl Gpu {
         let out_cap = max_results.min(1 << 20);
         #[allow(unused_unsafe)]
         unsafe {
-            let mut wl_blob = Buffer::<u8>::create(
-                &context,
-                CL_MEM_READ_ONLY,
-                blob.len(),
-                std::ptr::null_mut(),
-            )
-            .map_err(cl_err)?;
-            let mut wl_off = Buffer::<u16>::create(
-                &context,
-                CL_MEM_READ_ONLY,
-                offs.len(),
-                std::ptr::null_mut(),
-            )
-            .map_err(cl_err)?;
+            let mut wl_blob =
+                Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, blob.len(), std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            let mut wl_off =
+                Buffer::<u16>::create(&context, CL_MEM_READ_ONLY, offs.len(), std::ptr::null_mut())
+                    .map_err(cl_err)?;
             let templ =
                 Buffer::<u16>::create(&context, CL_MEM_READ_ONLY, MAX_WORDS, std::ptr::null_mut())
                     .map_err(cl_err)?;
@@ -243,9 +247,8 @@ impl Gpu {
                     .map_err(cl_err)?;
             let salt = Buffer::<u8>::create(&context, CL_MEM_READ_ONLY, 128, std::ptr::null_mut())
                 .map_err(cl_err)?;
-            let count =
-                Buffer::<u32>::create(&context, CL_MEM_READ_WRITE, 1, std::ptr::null_mut())
-                    .map_err(cl_err)?;
+            let count = Buffer::<u32>::create(&context, CL_MEM_READ_WRITE, 1, std::ptr::null_mut())
+                .map_err(cl_err)?;
             let states = Buffer::<u8>::create(
                 &context,
                 CL_MEM_READ_WRITE,
@@ -292,13 +295,16 @@ impl Gpu {
                 std::ptr::null_mut(),
             )
             .map_err(cl_err)?;
-            let dedup = Buffer::<u64>::create(
-                &context,
-                CL_MEM_READ_WRITE,
-                1 << 21,
-                std::ptr::null_mut(),
-            )
-            .map_err(cl_err)?;
+            let dedup =
+                Buffer::<u64>::create(&context, CL_MEM_READ_WRITE, 1 << 21, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            let ks_start =
+                Buffer::<u32>::create(&context, CL_MEM_READ_ONLY, 8, std::ptr::null_mut())
+                    .map_err(cl_err)?;
+            // key_scan hits are rare by design — 4k records is generous
+            let ks_hits =
+                Buffer::<u8>::create(&context, CL_MEM_READ_WRITE, 4096 * 40, std::ptr::null_mut())
+                    .map_err(cl_err)?;
             queue
                 .enqueue_write_buffer(&mut wl_blob, CL_NON_BLOCKING, 0, &blob, &[])
                 .map_err(cl_err)?;
@@ -317,6 +323,7 @@ impl Gpu {
                 k_step,
                 k_perm,
                 k_match,
+                k_keyscan,
                 max_batch,
                 max_results,
                 salt_len: Cell::new(0),
@@ -336,6 +343,8 @@ impl Gpu {
                 bad_count,
                 hits_buf,
                 bads_buf,
+                ks_start,
+                ks_hits,
                 dedup,
                 out_cap,
                 n_targets: 0,
@@ -422,7 +431,10 @@ impl Gpu {
     /// come back. Plan limits: ≤8 purposes, chains ⊆ {0,1}.
     pub fn bind_match(&mut self, plan: &DerivePlan, targets: &TargetSet) -> Result<()> {
         if plan.purposes.len() > 8 {
-            bail!("GPU match supports ≤8 purposes (got {})", plan.purposes.len());
+            bail!(
+                "GPU match supports ≤8 purposes (got {})",
+                plan.purposes.len()
+            );
         }
         if plan.chains.iter().any(|&c| c > 1) {
             bail!("GPU match supports chains 0/1 only");
@@ -484,6 +496,91 @@ impl Gpu {
         self.n_xtargets = xsorted.len() as u32;
         self.match_bound = true;
         Ok(())
+    }
+
+    /// Upload only the hash160 target list — used by `key_scan`, which has
+    /// no derive plan (raw private-key walk, compressed-P2PKH match only).
+    /// `targets` must already be in the order the kernel reports indices
+    /// against (the caller's sorted vec doubles as the host's index map).
+    pub fn bind_targets(&mut self, targets: &[[u8; 20]]) -> Result<()> {
+        let mut tb = Vec::with_capacity(20 * targets.len().max(1));
+        for h in targets {
+            tb.extend_from_slice(h);
+        }
+        #[allow(unused_unsafe)]
+        unsafe {
+            self.targets_buf = Buffer::<u8>::create(
+                &self.context,
+                CL_MEM_READ_ONLY,
+                tb.len().max(20),
+                std::ptr::null_mut(),
+            )
+            .map_err(cl_err)?;
+            if !tb.is_empty() {
+                self.queue
+                    .enqueue_write_buffer(&mut self.targets_buf, CL_NON_BLOCKING, 0, &tb, &[])
+                    .map_err(cl_err)?;
+            }
+            self.queue.finish().map_err(cl_err)?;
+        }
+        self.n_targets = targets.len() as u32;
+        Ok(())
+    }
+
+    /// One `key_scan` launch: `n_items` work-items × `stride` keys each,
+    /// covering keys start .. start + n_items·stride (256-bit space).
+    /// Returns (target_index, key_be32) records.
+    pub fn key_scan(
+        &mut self,
+        start: &[u32; 8],
+        stride: u32,
+        n_items: usize,
+    ) -> Result<Vec<(u32, [u8; 32])>> {
+        #[allow(unused_unsafe)]
+        unsafe {
+            self.queue
+                .enqueue_write_buffer(&mut self.ks_start, CL_NON_BLOCKING, 0, start, &[])
+                .map_err(cl_err)?;
+            self.queue
+                .enqueue_write_buffer(&mut self.hit_count, CL_NON_BLOCKING, 0, &[0u32], &[])
+                .map_err(cl_err)?;
+            let mut ex = ExecuteKernel::new(&self.k_keyscan);
+            ex.set_arg(&self.ks_start)
+                .set_arg(&stride)
+                .set_arg(&self.targets_buf)
+                .set_arg(&self.n_targets)
+                .set_arg(&self.gtab)
+                .set_arg(&self.hit_count)
+                .set_arg(&self.ks_hits)
+                .set_arg(&4096u32);
+            ex.set_global_work_size(n_items)
+                .enqueue_nd_range(&self.queue)
+                .map_err(cl_err)?;
+            self.queue.finish().map_err(cl_err)?;
+
+            let mut cnt = [0u32];
+            self.queue
+                .enqueue_read_buffer(&self.hit_count, CL_BLOCKING, 0, &mut cnt, &[])
+                .map_err(cl_err)?;
+            let n = (cnt[0] as usize).min(4096);
+            if cnt[0] as usize > n {
+                eprintln!("gpu: WARNING key_scan hit overflow ({})", cnt[0]);
+            }
+            if n == 0 {
+                return Ok(Vec::new());
+            }
+            let mut raw = vec![0u8; n * 40];
+            self.queue
+                .enqueue_read_buffer(&self.ks_hits, CL_BLOCKING, 0, &mut raw, &[])
+                .map_err(cl_err)?;
+            let mut out = Vec::with_capacity(n);
+            for r in raw.chunks_exact(40) {
+                let t = u32::from_le_bytes(r[0..4].try_into().unwrap());
+                let key: [u8; 32] = r[8..40].try_into().unwrap();
+                out.push((t, key));
+            }
+            Ok(out)
+        }
     }
 
     /// Stage 2 driver shared by both readback modes: runs the remaining
@@ -675,12 +772,7 @@ impl Gpu {
 
     /// One batch: combos `base .. base+n` → BatchOut (all valid seeds, or
     /// only hits+repaired when bind_match ran).
-    pub fn derive_batch(
-        &mut self,
-        tpl: &Template,
-        base: u64,
-        n: usize,
-    ) -> Result<BatchOut> {
+    pub fn derive_batch(&mut self, tpl: &Template, base: u64, n: usize) -> Result<BatchOut> {
         if n > self.max_batch {
             bail!("batch {n} exceeds GPU max_batch {}", self.max_batch);
         }
@@ -712,7 +804,10 @@ impl Gpu {
 
             let got = self.result_count()?;
             if debug {
-                eprintln!("gpu: filter {n} combos → {got} seeds in {:.2?}", t0.elapsed());
+                eprintln!(
+                    "gpu: filter {n} combos → {got} seeds in {:.2?}",
+                    t0.elapsed()
+                );
             }
             if got == 0 {
                 return Ok(BatchOut {
@@ -730,12 +825,7 @@ impl Gpu {
 
     /// One batch of the permutation domain: perm numbers `base .. base+n`
     /// → BatchOut. `n_words` = length of the bound word list.
-    pub fn derive_perm_batch(
-        &mut self,
-        n_words: usize,
-        base: u64,
-        n: usize,
-    ) -> Result<BatchOut> {
+    pub fn derive_perm_batch(&mut self, n_words: usize, base: u64, n: usize) -> Result<BatchOut> {
         if n > self.max_batch {
             bail!("batch {n} exceeds GPU max_batch {}", self.max_batch);
         }
@@ -766,7 +856,10 @@ impl Gpu {
 
             let got = self.result_count()?;
             if debug {
-                eprintln!("gpu: filter {n} perms → {got} seeds in {:.2?}", t0.elapsed());
+                eprintln!(
+                    "gpu: filter {n} perms → {got} seeds in {:.2?}",
+                    t0.elapsed()
+                );
             }
             if got == 0 {
                 return Ok(BatchOut {
@@ -824,11 +917,22 @@ mod tests {
         cpu_sorted.sort_by_key(|x| x.0);
         eprintln!("gpu={} cpu={}", gpu_out.len(), cpu_sorted.len());
         if gpu_out.len() == cpu_sorted.len() {
-            for (g,c) in gpu_out.iter().zip(cpu_sorted.iter()) {
-                if g.0 != c.0 { eprintln!("combo mismatch gpu={} cpu={}", g.0, c.0); break; }
-                if g.1 != c.1 { eprintln!("seed mismatch combo={}
+            for (g, c) in gpu_out.iter().zip(cpu_sorted.iter()) {
+                if g.0 != c.0 {
+                    eprintln!("combo mismatch gpu={} cpu={}", g.0, c.0);
+                    break;
+                }
+                if g.1 != c.1 {
+                    eprintln!(
+                        "seed mismatch combo={}
 gpu={}
-cpu={}", g.0, hex::encode(g.1), hex::encode(c.1)); break; }
+cpu={}",
+                        g.0,
+                        hex::encode(g.1),
+                        hex::encode(c.1)
+                    );
+                    break;
+                }
             }
         }
         assert_eq!(gpu_out.len(), cpu_sorted.len(), "valid-count mismatch");
@@ -882,8 +986,17 @@ cpu={}", g.0, hex::encode(g.1), hex::encode(c.1)); break; }
         let mut cpu_seeds: Vec<[u8; 64]> = cpu_out.iter().map(|x| x.1).collect();
         cpu_seeds.sort();
         cpu_seeds.dedup();
-        eprintln!("perm gpu={} cpu={} uniq_gpu={}", gpu_out.len(), cpu_out.len(), gpu_seeds.len());
-        assert_eq!(gpu_seeds.len(), cpu_seeds.len(), "perm unique-seed count mismatch");
+        eprintln!(
+            "perm gpu={} cpu={} uniq_gpu={}",
+            gpu_out.len(),
+            cpu_out.len(),
+            gpu_seeds.len()
+        );
+        assert_eq!(
+            gpu_seeds.len(),
+            cpu_seeds.len(),
+            "perm unique-seed count mismatch"
+        );
         for (gs, cs) in gpu_seeds.iter().zip(cpu_seeds.iter()) {
             assert_eq!(gs, cs, "perm seed mismatch");
         }
