@@ -2,16 +2,19 @@
 set -euo pipefail
 
 # ── V31 Trinity Miner Wrapper for SMOS ──────────────────────────────────────
-# Triple-stream: ZION (GPU) + ZANO (GPU AuxPoW) + VRSC (CPU AuxPoW)
-# Multi-GPU DEDICATED: RX 5600 XT → ZION Deeksha, Vega 64 → ZANO ProgPoWZ.
+# Triple-stream: ZION (GPU) + QTU/QPoW (GPU AuxPoW) + VRSC (CPU AuxPoW)
+# Multi-GPU DEDICATED: RX 5600 XT → ZION Deeksha, Vega 64 → QTU Poseidon2.
 # Both GPUs at 100% load, no time-slicing, no OpenCL context contention.
-# VRSC on CPU (Stream 3). Max performance: 1x ZION + 1x ZANO + 1x VRSC.
+# VRSC on CPU (Stream 3). Max performance: 1x ZION + 1x QTU + 1x VRSC.
 # NOTE: PARALLEL mode (RESERVE=0, both GPUs both coins) tested 2026-08-10 —
-# 1000x slower ZANO due to OpenCL context contention on AMD driver.
+# 1000x slower ext due to OpenCL context contention on AMD driver.
 # DEDICATED mode is optimal for AMD multi-GPU.
 # V3 Trinity architecture: single V3 protocol connection to ZION pool.
 # Pool embeds external_stream jobs and forwards AuxPoW shares to external pools.
 # All revenue flows through the pool's AuxPoW bridge and revenue system.
+# QPoW OpenCL backend: commit 789d30e02 (poseidon2_kernel.cl, bit-exact vs
+# CPU reference on hash-1/hash/hash+1 boundaries incl. nonzero nonces).
+# Rollback to ZANO: flip ZION_STREAM2_FORCE_COIN back to ZANO.
 # Date: 2026-08-10 (V3.2 Trinity multi-GPU DEDICATED, max performance)
 
 # Pool wallet — miner uses this for ZION coinbase. Pool handles ZANO/VRSC wallets.
@@ -67,14 +70,17 @@ export ZION_STREAM1_ENABLED=1
 export ZION_STREAM2_ENABLED=1
 export ZION_STREAM3_ENABLED=1
 
-# GPU AuxPoW tuning (ZANO ProgPoWZ)
-# DEDICATED mode: Vega 64 exclusively mines ZANO ProgPoWZ.
-# GWS cap: 1048576 (1M) — Vega 64 has 64 CUs, 1M/128 = 8192 WGs,
-# 8192/64 = 128 WGs per CU. Safe from amdgpu TTD in dedicated mode.
-# Tested: 262K → 12.82 MH/s, 524K → 16.54 MH/s (+29%), 1M → target ~18+ MH/s.
-# Vega 64 (GCN): GROUP_SIZE=128, bpermute auto-disabled (GCN-safe)
+# GPU AuxPoW tuning — QTU QPoW (Poseidon2-Goldilocks) on the reserved Vega.
+# ZION_STREAM2_BATCH doubles as the QPoW launch size (nonces per kernel
+# dispatch). 4M ≈ ~1 s/launch on Vega-class GPUs; keep low enough that a
+# new job doesn't wait long on the in-flight batch.
 export ZION_STREAM2_BATCH=4194304
-export ZION_STREAM2_FORCE_COIN=ZANO
+export ZION_STREAM2_FORCE_COIN=QTU
+# QPoW OpenCL work partitioning (gfx900 wave64): one wavefront per group,
+# 1 nonce per work-item — the 12-lane u64 sponge is register-hungry on GCN.
+export ZION_QPOW_OCL_LOCAL_SIZE="${ZION_QPOW_OCL_LOCAL_SIZE:-64}"
+export ZION_QPOW_OCL_NPT="${ZION_QPOW_OCL_NPT:-1}"
+# ProgPoW-era knobs kept for instant ZANO rollback — unused by QPoW.
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
@@ -82,9 +88,9 @@ export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 export ZION_AUXPOW_PROGPOW_MAX_GWS=1048576
 export ZION_ZANO_STALE_SECS=30
 
-# Multi-GPU DEDICATED mode: Vega 64 reserved for ZANO ProgPoWZ,
+# Multi-GPU DEDICATED mode: Vega 64 reserved for the external stream (QTU),
 # RX 5600 XT dedicated to ZION Deeksha. Both at 100%, no time-slicing.
-# ZION_ZANO_RESERVE=1: reserve Vega 64 for ZANO (no OpenCL context contention).
+# ZION_ZANO_RESERVE=1: reserve Vega 64 (no OpenCL context contention).
 # GAP_MS=0: no sleep needed — GPUs are dedicated, not shared.
 export ZION_ZANO_RESERVE=1
 export ZION_ZANO_DEVICE_NAME=vega
@@ -117,7 +123,7 @@ chmod +x "${LOCAL_MINER}.tmp"
 mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
 echo "[smos-wrapper] V31 miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
 
-echo "[smos-wrapper] starting V3 TRINITY multi-GPU DEDICATED: RX5600→ZION + Vega→ZANO + VRSC CPU"
+echo "[smos-wrapper] starting V3 TRINITY multi-GPU DEDICATED: RX5600→ZION + Vega→QTU + VRSC CPU"
 exec "${LOCAL_MINER}" \
   --pool "${ZION_POOL_ADDR:-62.171.141.136:8444}" \
   --wallet "${WALLET_ADDR}" \
