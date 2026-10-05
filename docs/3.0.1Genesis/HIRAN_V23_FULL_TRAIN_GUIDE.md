@@ -36,7 +36,7 @@ Fingerprint: SHA256:nwasu/3QGBGgHklFguoqsr3+hS8+MmpWsv3ZEzvOFCQ
 
 ### Jak zjistit SSH port (instance se mění při restartu)
 ```bash
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 INSTANCE_ID="40791384"
 
 curl -s "https://console.vast.ai/api/v0/instances/${INSTANCE_ID}/?api_key=${API_KEY}" | \
@@ -48,7 +48,7 @@ https://cloud.vast.ai/ — instance **40791384**
 
 ### API Key (pro kontrolu stavu)
 ```
-4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd
+$VAST_API_KEY
 ```
 
 ---
@@ -58,7 +58,7 @@ https://cloud.vast.ai/ — instance **40791384**
 ### Možnost A: Automatický deploy z lokálu
 ```bash
 cd /Users/yeshuae/Projects/2.9.6/HiranV2.3/scripts
-VASTAI_API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd" \
+VASTAI_API_KEY="$VAST_API_KEY" \
   ./deploy-and-train.sh
 ```
 
@@ -161,7 +161,7 @@ python scripts/quantize.py \
 ### Možnost A: rsync (doporučeno — resumable)
 ```bash
 # 1. Zjisti aktuální SSH port
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 PORT=$(curl -s "https://console.vast.ai/api/v0/instances/40791384/?api_key=${API_KEY}" | \
   python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('ssh_port',''))")
 
@@ -280,7 +280,7 @@ print(output['choices'][0]['text'])
 
 ```bash
 # Zrušení instance ušetří peníze
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 INSTANCE_ID="40791384"
 
 curl -s -X DELETE \

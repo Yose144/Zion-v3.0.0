@@ -56,11 +56,15 @@ async function main() {
     console.log('ZIS Relay already set — skipping');
   }
 
-  // Set ZIS Public Key — use keccak256 of JWT_SECRET as a 32-byte placeholder
+  // Set ZIS Public Key — supplied explicitly via env (32-byte hex).
   // (on-chain Ed25519 verification is deferred; key is for audit/future use)
-  const jwtSecret = 'd3b0b5acb4ae00cdf1ca76896791280860028361ba48e61595cda10491a2fc84';
-  const zisPubKey = ethers.keccak256('0x' + jwtSecret);
-  console.log(`\nZIS Public Key (keccak256 of JWT_SECRET): ${zisPubKey}`);
+  const zisPubKey = process.env.ZIS_PUBLIC_KEY;
+  if (!zisPubKey) { console.error('ZIS_PUBLIC_KEY required (32-byte hex)'); process.exit(1); }
+  if (!/^(0x)?[0-9a-fA-F]{64}$/.test(zisPubKey)) {
+    console.error('ZIS_PUBLIC_KEY must be a 32-byte hex value');
+    process.exit(1);
+  }
+  console.log(`\nZIS Public Key (from ZIS_PUBLIC_KEY env): ${zisPubKey}`);
 
   if (currentKey === ethers.ZeroHash) {
     console.log('Setting ZIS Public Key...');
