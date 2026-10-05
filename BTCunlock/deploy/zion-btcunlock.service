@@ -16,6 +16,8 @@ ExecStart=/home/zionserver/2.9.6-main/BTCunlock/target/release/btcunlock \
   --checkpoint /home/zionserver/btcunlock/p71.ckpt --resume
 Restart=always
 RestartSec=15
+# Daily restart bounds log growth; the checkpoint makes it seamless.
+RuntimeMaxSec=86400
 Nice=15
 StandardOutput=append:/home/zionserver/btcunlock/p71.log
 StandardError=append:/home/zionserver/btcunlock/p71.log
