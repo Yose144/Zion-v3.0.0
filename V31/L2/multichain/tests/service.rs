@@ -104,7 +104,11 @@ async fn service_reports_health_and_balances() {
         )),
     );
 
-    let service = MultichainService::new_with_adapters(MultichainConfig::default(), registry)
+    let db_path = std::env::temp_dir().join("multichain-health-balances-test.db");
+    let _ = std::fs::remove_file(&db_path);
+    let mut config = MultichainConfig::default();
+    config.database.path = db_path.to_string_lossy().into();
+    let service = MultichainService::new_with_adapters(config, registry)
         .expect("in-memory service builds");
 
     let health = service.health().await;
@@ -120,8 +124,13 @@ async fn service_reports_health_and_balances() {
 
 #[tokio::test]
 async fn intent_lifecycle_creates_bids_settles_and_executes() {
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    let db_path = std::env::temp_dir().join("multichain-intent-lifecycle-test.db");
+    let _ = std::fs::remove_file(&db_path);
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        ..Default::default()
+    };
+    config.database.path = db_path.to_string_lossy().into();
 
     let service = MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())
         .expect("in-memory service builds");
@@ -199,8 +208,10 @@ async fn intent_engine_loads_from_db_on_restart() {
     let db_path = std::env::temp_dir().join("multichain-intent-persist-test.db");
     let _ = std::fs::remove_file(&db_path);
 
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        ..Default::default()
+    };
     config.database.path = db_path.to_string_lossy().into();
 
     let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
@@ -285,8 +296,13 @@ async fn intent_engine_loads_from_db_on_restart() {
 
 #[tokio::test]
 async fn cross_chain_intent_executes_bridge_hop() {
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    let db_path = std::env::temp_dir().join("multichain-bridge-hop-test.db");
+    let _ = std::fs::remove_file(&db_path);
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        ..Default::default()
+    };
+    config.database.path = db_path.to_string_lossy().into();
 
     let zion_events = Arc::new(Mutex::new(vec![]));
     let base_events = Arc::new(Mutex::new(vec![]));
@@ -382,8 +398,13 @@ async fn cross_chain_intent_executes_bridge_hop() {
 
 #[tokio::test]
 async fn intent_broadcast_collects_and_submits_solver_bids() {
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    let db_path = std::env::temp_dir().join("multichain-intent-broadcast-test.db");
+    let _ = std::fs::remove_file(&db_path);
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        ..Default::default()
+    };
+    config.database.path = db_path.to_string_lossy().into();
 
     let service = MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())
         .expect("in-memory service builds");
@@ -474,8 +495,10 @@ async fn e2e_deposit_swap_withdraw() {
     let db_path = std::env::temp_dir().join("multichain-e2e-deposit-swap-withdraw-test.db");
     let _ = std::fs::remove_file(&db_path);
 
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        ..Default::default()
+    };
     config.database.path = db_path.to_string_lossy().into();
 
     // One shared event queue for the ZionL1 mock adapter.

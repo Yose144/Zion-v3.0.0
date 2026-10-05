@@ -19,8 +19,17 @@ use zion_multichain::service::MultichainService;
 use zion_multichain::swap::dex::intent::{SolverBid, SwapIntent};
 
 fn build_service() -> Arc<MultichainService> {
-    let mut config = MultichainConfig::default();
-    config.l1_rpc_url = String::new();
+    build_service_with_solvers(Vec::new())
+}
+
+fn build_service_with_solvers(
+    solvers: Vec<zion_multichain::config::SolverEntry>,
+) -> Arc<MultichainService> {
+    let mut config = MultichainConfig {
+        l1_rpc_url: String::new(),
+        solvers,
+        ..Default::default()
+    };
     config.database.path = ":memory:".to_string();
 
     Arc::new(
@@ -29,11 +38,21 @@ fn build_service() -> Arc<MultichainService> {
     )
 }
 
+/// Admin/operator key required on mutating routes when ZIS auth is off.
+const TEST_API_KEY: &str = "test-admin-key";
+
+fn test_server_config() -> ServerConfig {
+    let mut config = ServerConfig::default();
+    config.auth.api_key = Some(TEST_API_KEY.to_string());
+    config
+}
+
 fn build_request(method: &str, uri: &str, body: String) -> Request<Body> {
     let mut req = Request::builder()
         .method(method)
         .uri(uri)
         .header("content-type", "application/json")
+        .header("authorization", format!("Bearer {TEST_API_KEY}"))
         .body(Body::from(body))
         .expect("valid request");
     req.extensions_mut()
@@ -52,12 +71,36 @@ async fn read_json(response: axum::response::Response<Body>) -> serde_json::Valu
 async fn http_solver_client_bids_and_buyer_executes() {
     // --- Solver node -------------------------------------------------------
     let solver_service = build_service();
-    let solver_server = ApiServer::new(ServerConfig::default(), Arc::clone(&solver_service));
+    let solver_server = ApiServer::new(test_server_config(), Arc::clone(&solver_service));
     let solver_app = solver_server.router();
 
+    // Start the solver server on a random local port first so the buyer's
+    // static solver list can carry the URL and the admin key required by the
+    // solver's mutating-route middleware.
+    let solver_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let solver_addr = solver_listener.local_addr().unwrap();
+    let solver_url = format!("http://{}", solver_addr);
+
+    let solver_app_serve = solver_app.clone();
+    tokio::spawn(async move {
+        axum::serve(
+            solver_listener,
+            solver_app_serve.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .unwrap();
+    });
+
     // --- Buyer node --------------------------------------------------------
-    let buyer_service = build_service();
-    let buyer_server = ApiServer::new(ServerConfig::default(), Arc::clone(&buyer_service));
+    let buyer_service = build_service_with_solvers(vec![
+        zion_multichain::config::SolverEntry {
+            name: "zion-solver".to_string(),
+            url: solver_url.clone(),
+            reputation: 100,
+            api_key: Some(TEST_API_KEY.to_string()),
+        },
+    ]);
+    let buyer_server = ApiServer::new(test_server_config(), Arc::clone(&buyer_service));
     let buyer_app = buyer_server.router();
 
     let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
@@ -85,20 +128,6 @@ async fn http_solver_client_bids_and_buyer_executes() {
             .expect("request ok");
         assert_eq!(response.status(), StatusCode::OK);
     }
-
-    // Start the solver server on a random local port.
-    let solver_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let solver_addr = solver_listener.local_addr().unwrap();
-    let solver_url = format!("http://{}", solver_addr);
-
-    tokio::spawn(async move {
-        axum::serve(
-            solver_listener,
-            solver_app.into_make_service_with_connect_info::<SocketAddr>(),
-        )
-        .await
-        .unwrap();
-    });
 
     // Register the live solver in the buyer registry.
     let register_body = serde_json::json!({
@@ -160,7 +189,7 @@ async fn http_solver_client_bids_and_buyer_executes() {
     let json = read_json(response).await;
     let results = json["results"].as_array().expect("results array");
     let bids = results.iter().filter(|r| r["status"] == "bid").count();
-    assert_eq!(bids, 1, "exactly one solver should bid");
+    assert_eq!(bids, 1, "exactly one solver should bid: {:?}", results);
 
     // Execute the winning bid.
     let response = buyer_app
@@ -215,10 +244,12 @@ async fn http_solver_client_bids_and_buyer_executes() {
 fn build_service_with_solver(
     config: zion_multichain::config::SolverConfig,
 ) -> Arc<MultichainService> {
-    let mut mc_config = zion_multichain::config::MultichainConfig::default();
-    mc_config.l1_rpc_url = String::new();
+    let mut mc_config = zion_multichain::config::MultichainConfig {
+        l1_rpc_url: String::new(),
+        solver: config,
+        ..Default::default()
+    };
     mc_config.database.path = ":memory:".to_string();
-    mc_config.solver = config;
     Arc::new(
         MultichainService::new_with_adapters(mc_config, ChainAdapterRegistry::new())
             .expect("in-memory service builds"),
@@ -235,7 +266,7 @@ async fn solver_solve_endpoint_requires_api_key() {
         advertised_url: None,
     };
     let solver_service = build_service_with_solver(solver_config);
-    let solver_server = ApiServer::new(ServerConfig::default(), Arc::clone(&solver_service));
+    let solver_server = ApiServer::new(test_server_config(), Arc::clone(&solver_service));
     let solver_app = solver_server.router();
 
     let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
