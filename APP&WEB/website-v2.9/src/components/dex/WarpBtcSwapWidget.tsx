@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeftRight,
   Zap,
@@ -23,6 +23,8 @@ import {
   RefreshCw,
   ExternalLink,
   KeyRound,
+  ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { secp256k1 } from '@noble/curves/secp256k1';
@@ -85,6 +87,21 @@ const Copy_map = {
   step4: { cs: `Pokud něco selže, po timeoutu se vše vrátí`, en: `If anything fails, everything refunds after the timeout` },
   quoteExpired: { cs: `Nabídka vypršela — vyžádejte novou`, en: `Quote expired — request a new one` },
   satsTooLow: { cs: `Min. 10 000 sats`, en: `Min. 10,000 sats` },
+  faq: { cs: `Časté otázky`, en: `FAQ` },
+  qWhatIsWarp: { cs: `Co je WARP BTC/ZION swap?`, en: `What is the WARP BTC/ZION swap?` },
+  aWhatIsWarp: { cs: `Atomický swap mezi Bitcoinem a ZION L1 postavený na HTLC (Hash Time-Locked Contract). Žádný custodian ani prostředník — směna buď proběhne celá, nebo se prostředky po timeoutu vrátí oběma stranám.`, en: `An atomic swap between Bitcoin and ZION L1 built on HTLCs (Hash Time-Locked Contracts). No custodian, no middleman — either the swap completes fully or both sides get refunded after the timeout.` },
+  qHowLong: { cs: `Jak dlouho swap trvá?`, en: `How long does a swap take?` },
+  aHowLong: { cs: `Váš BTC lock potřebuje 3 konfirmace (~30 min). Operátor pak okamžitě zamkne ZION a vy ho claimnete odhalením tajemství — celkem řádově pod hodinu.`, en: `Your BTC lock needs 3 confirmations (~30 min). The operator then counter-locks ZION and you claim it by revealing the secret — roughly under an hour total.` },
+  qLimits: { cs: `Jaké jsou limity?`, en: `What are the limits?` },
+  aLimits: { cs: `Pilot běží s nízkými stropy: 10 000–100 000 sats na swap a max. 4 aktivní swapy současně. Kurz je fixní podle serverem podepsané nabídky.`, en: `The pilot runs with low caps: 10,000–100,000 sats per swap, max 4 active swaps at once. The rate is fixed by a server-signed quote.` },
+  qSafe: { cs: `Je to bezpečné?`, en: `Is it safe?` },
+  aSafe: { cs: `Swap chrání SHA-256 hashlock + časový zámek (CLTV). Kurz nemůžete přepsat — nabídka je podepsaná operátorem a vázaná na přesné částky. Kód prošel regtest E2E všemi směry včetně refundů.`, en: `The swap is protected by a SHA-256 hashlock and a timelock (CLTV). The rate can't be tampered with — quotes are operator-signed and bound to exact amounts. The code passed regtest E2E in both directions including refunds.` },
+  qLostSecret: { cs: `Co když ztratím tajemství nebo zavřu prohlížeč?`, en: `What if I lose the secret or close the browser?` },
+  aLostSecret: { cs: `Tajemství (preimage + klíče) se ukládají do localStorage tohoto prohlížeče — nečištěte data do dokončení swapu. Pokud tajemství ztratíte, nedokončíte claim, ale po vypršení timelocku se vám BTC vrátí. Nikdy nemůžete přijít o obě strany.`, en: `Secrets (preimage + keys) are stored in this browser's localStorage — don't clear browser data until the swap completes. If you lose the secret you can't claim, but your BTC refunds after the timelock expires. You can never lose both sides.` },
+  qDisabled: { cs: `Proč je swap teď vypnutý?`, en: `Why is the swap disabled right now?` },
+  aDisabled: { cs: `Probíhá příprava capped pilotu — provisioned konfigurace, audit a operační kontroly. Sekce už ukazuje živý stav; jakmile pilot startuje, formulář se aktivuje sám.`, en: `A capped pilot is being prepared — provisioned config, audit, and operational checks. This section already shows live status; once the pilot starts, the form activates automatically.` },
+  qWallet: { cs: `Co potřebuju?`, en: `What do I need?` },
+  aWallet: { cs: `Pro BTC → ZION stačí BTC peněženka na odeslání depositu — ZION claim adresu vám vygenerujeme dočasně (klíč si uložte). Pro ZION → BTC potřebujete L1 HTLC lock (viz /swap fallback) a vlastní BTC peněženku pro claim.`, en: `For BTC → ZION you only need a BTC wallet for the deposit — we generate a temporary ZION claim address (save the key). For ZION → BTC you need an L1 HTLC lock (see the /swap fallback) and your own BTC wallet to claim.` },
 };
 
 type FlowState = 'idle' | 'quoting' | 'quoted' | 'creating' | 'created';
@@ -177,6 +194,7 @@ export default function WarpBtcSwapWidget() {
   const [zionLockTxid, setZionLockTxid] = useState('');
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const refresh = useCallback(async () => {
     const [list, m] = await Promise.all([getBtcSwapList(), getBtcSwapMetrics()]);
@@ -535,6 +553,44 @@ export default function WarpBtcSwapWidget() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── FAQ ─────────────────────────────────────────────────────── */}
+      <div className="space-y-2">
+        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-500">
+          <HelpCircle className="h-3.5 w-3.5" /> {t('faq')}
+        </p>
+        {([
+          ['qWhatIsWarp', 'aWhatIsWarp'],
+          ['qHowLong', 'aHowLong'],
+          ['qLimits', 'aLimits'],
+          ['qSafe', 'aSafe'],
+          ['qLostSecret', 'aLostSecret'],
+          ['qWallet', 'aWallet'],
+          ['qDisabled', 'aDisabled'],
+        ] as const).map(([qk, ak], i) => (
+          <div key={qk} className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+            <button
+              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-xs font-medium text-zinc-200">{t(qk)}</span>
+              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-zinc-500 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence initial={false}>
+              {openFaq === i && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <p className="px-4 pb-3.5 text-[11px] leading-relaxed text-zinc-400">{t(ak)}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
       </div>
     </div>
   );
