@@ -113,6 +113,7 @@ def new_state(started: datetime = None, duration_days: float = 30.0,
         "status": "running",
         "window_status": "running",
         "gate_status": "pending",
+        "gate_reason": None,
         "uptime_percent": 0.0,
         "evidence_coverage_percent": 0.0,
         "service_uptime_percent": {},
@@ -315,24 +316,51 @@ def evaluate(state: dict, signal_series: dict, up_series: dict,
         target = target_dt.timestamp()
     except (KeyError, TypeError, ValueError):
         target = end
+
+    # Downtime budget over the whole window: how many bad buckets can still
+    # occur before the uptime threshold becomes unreachable.
+    total_window_samples = max((target - start) / step, 0) if step else 0.0
+    budget = math.floor(total_window_samples * (100.0 - threshold) / 100.0)
+    bad = expected - good
+
     if now.timestamp() < target:
         status = "running"
         window_status = "running"
-        gate = "pending"
+        # Fail the gate early once the outcome is already decided: a critical
+        # incident is disqualifying on its own, and exceeding the downtime
+        # budget makes the uptime threshold mathematically unreachable.
+        if critical:
+            gate = "failed"
+            gate_reason = "critical_incident"
+        elif bad > budget:
+            gate = "failed"
+            gate_reason = "downtime_budget_exhausted"
+        else:
+            gate = "pending"
+            gate_reason = None
     else:
         status = "window_elapsed"
         window_status = "window_elapsed"
         if coverage < threshold:
             gate = "evidence_incomplete"
+            gate_reason = "coverage_below_threshold"
         elif uptime >= threshold and not critical:
             gate = "passed"
+            gate_reason = None
         else:
             gate = "failed"
+            if critical:
+                gate_reason = "critical_incident"
+            elif bad > budget:
+                gate_reason = "downtime_budget_exhausted"
+            else:
+                gate_reason = "uptime_below_threshold"
 
     return {
         "status": status,
         "window_status": window_status,
         "gate_status": gate,
+        "gate_reason": gate_reason,
         "uptime_percent": uptime,
         "evidence_coverage_percent": coverage,
         "service_uptime_percent": service_uptime,
@@ -401,7 +429,7 @@ def cmd_update(state_file: str, prom_url: str, now: datetime = None,
         state.update(updates)
         atomic_write(state_file, state)
     print(json.dumps({k: state[k] for k in (
-        "status", "window_status", "gate_status", "uptime_percent",
+        "status", "window_status", "gate_status", "gate_reason", "uptime_percent",
         "evidence_coverage_percent", "sample_counts")}, indent=2))
     return 0
 
@@ -415,6 +443,23 @@ def cmd_status(state_file: str) -> int:
     return 0
 
 
+def _downtime_budget(state: dict) -> float:
+    """Max bad buckets allowed by the uptime threshold over the full window.
+
+    Returns None when the state's timestamps/step are missing or unparseable.
+    """
+    policy = state.get("evidence_policy") or DEFAULT_POLICY
+    threshold = float(policy.get("uptime_threshold_percent", 99.9))
+    step = int(policy.get("step_seconds", STEP_SECONDS)) or STEP_SECONDS
+    try:
+        started = datetime.fromisoformat(state["started"]).timestamp()
+        target = datetime.fromisoformat(state["target_end"]).timestamp()
+    except (KeyError, TypeError, ValueError):
+        return None
+    total_window_samples = max((target - started) / step, 0)
+    return math.floor(total_window_samples * (100.0 - threshold) / 100.0)
+
+
 def cmd_stop(state_file: str, now: datetime = None) -> int:
     now = now or utcnow()
     with state_lock(state_file):
@@ -422,6 +467,23 @@ def cmd_stop(state_file: str, now: datetime = None) -> int:
         if state is None or not state.get("started"):
             print(f"g8_evidence: no run to stop at {state_file}", file=sys.stderr)
             return 1
+        # Reflect gate truth: if the collected evidence already decides the
+        # outcome, record the failure reason; a terminal gate verdict is
+        # preserved; anything else stopped early is evidence_incomplete.
+        counts = state.get("sample_counts") or {}
+        bad = counts.get("expected", 0) - counts.get("good", 0)
+        budget = _downtime_budget(state)
+        if state.get("critical_incidents"):
+            state["gate_status"] = "failed"
+            state["gate_reason"] = "critical_incident"
+        elif budget is not None and bad > budget:
+            state["gate_status"] = "failed"
+            state["gate_reason"] = "downtime_budget_exhausted"
+        elif state.get("gate_status") in ("passed", "failed", "evidence_incomplete"):
+            pass  # terminal verdict already recorded — keep it
+        else:
+            state["gate_status"] = "evidence_incomplete"
+            state["gate_reason"] = "stopped_before_window_end"
         state["status"] = "stopped"
         state["window_status"] = "stopped"
         state["stopped_at"] = now.isoformat()
