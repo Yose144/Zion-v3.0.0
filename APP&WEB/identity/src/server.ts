@@ -4,7 +4,7 @@
 // Ed25519 (ZION L1 native) + EVM SIWE (Sign-In with Ethereum) auth.
 // Issues JWTs valid across all *.zionterranova.com apps (SSO).
 
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
@@ -25,7 +25,7 @@ import { logger } from './lib/logger.js';
 const prisma = new PrismaClient();
 
 const app = Fastify({
-  logger,
+  loggerInstance: logger,
   trustProxy: true,
 });
 
@@ -85,7 +85,7 @@ async function start() {
   await app.register(wellKnownRoutes, { prefix: '/.well-known' });
 
   // ── Error handler ───────────────────────────────────────────────
-  app.setErrorHandler((err, _req, reply) => {
+  app.setErrorHandler((err: FastifyError, _req, reply) => {
     app.log.error({ err }, 'Unhandled error');
     reply.status(err.statusCode ?? 500).send({
       error: err.code ?? 'INTERNAL',
