@@ -185,6 +185,12 @@ mod tests {
         assert_eq!(initiated_hash, hashlock);
         assert_eq!(transfer.status, TransferStatus::Executing);
 
+        // The user locks funds on the source chain; the coordinator marks the
+        // source lock confirmed before the target-side claim may proceed.
+        swap.set_source_lock(&hashlock.to_hex(), "smoke-source-lock-tx", far_future as i64)
+            .await
+            .unwrap();
+
         swap.claim(SECRET, RECIPIENT, &mut transfer).await.unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);
 
