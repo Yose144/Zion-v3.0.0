@@ -1,6 +1,20 @@
 #!/bin/bash
 set -euo pipefail
 
+# ── SMOS arg passthrough ────────────────────────────────────────────────────
+# minerOptions tokens after the zip URL land in "$@".  Tokens shaped
+# ZION_*=VALUE / RUST_*=VALUE become env overrides (applied before the config
+# block so ${VAR:-default} expansion sees them); anything else is forwarded to
+# the miner binary as a CLI arg.
+passthru_args=()
+for arg in "$@"; do
+  case "$arg" in
+    ZION_*=*|RUST_*=*) export "$arg" ;;
+    *) passthru_args+=("$arg") ;;
+  esac
+done
+set -- "${passthru_args[@]+"${passthru_args[@]}"}"
+
 # ── V31 Trinity Miner Wrapper for SMOS ──────────────────────────────────────
 # Triple-stream: ZION (GPU) + QTU/QPoW (GPU AuxPoW) + VRSC (CPU AuxPoW)
 # Multi-GPU DEDICATED: RX 5600 XT → ZION Deeksha, Vega 64 → QTU Poseidon2.
