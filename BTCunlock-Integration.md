@@ -76,8 +76,15 @@ The single-rig scan became a fleet operation:
   (`zion-btcunlock-coord.service`, User=zion, `ProtectSystem=strict`).
   Splits [2^70, 2^71) into `2^36`-key units (17.2 G units), leases them in
   order, re-queues expired leases (`COORD_LEASE_TTL=3 h`), credits tested
-  keys, stores hits to `/opt/zion/btcunlock/hits/` (mode 600). State:
-  single atomic `coordinator-state.json`. Token in
+  keys. **Storage: SQLite** `/opt/zion/btcunlock/coordinator.db` (WAL,
+  synchronous=FULL) — meta/units/workers/hits/events survive restarts;
+  legacy `coordinator-state.json` imported once (verified: 94 G keys
+  preserved across the upgrade). Auto-backup: DB + hits snapshots into
+  `backups/` every 15 min (keep 96). Hits land mode-600 in
+  `/opt/zion/btcunlock/hits/` (`hits.jsonl` + per-hit txt) AND the hits
+  table AND fire `COORD_HIT_HOOK` (`hit-hook.sh` → `HITS-ALERT.log` +
+  journald). Server-side re-verify: claimed address→hash160 must match a
+  configured target (`verified` flag). Token in
   `/etc/zion/btcunlock-coord.env` (mode 600).
 - **`BTCunlock/btcunlock-worker.py`** — lease→`keyscan`→report loop; wraps
   the binary, posts progress ~20 s, POSTs hits instantly, signal-safe.
