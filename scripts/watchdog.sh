@@ -293,7 +293,12 @@ check_v31() {
     "http://127.0.0.1:${V31_RPC_PORT}" -H 'content-type: application/json' \
     -d '{"jsonrpc":"2.0","id":1,"method":"getTemplate","params":{"miner_address":"zion1test"}}' \
     2>/dev/null || echo "000")
-  local tpl_state="/tmp/zion-wd-template-fails"
+  # NOTE: the unit runs with PrivateTmp=yes, so /tmp is a per-invocation
+  # namespace and state written there never survives between watchdog runs.
+  # The strike counter must live outside /tmp — /run is tmpfs-backed (cleared
+  # at boot, which is fine) but shared across service invocations.
+  local tpl_state="/run/zion-watchdog/template-fails"
+  mkdir -p /run/zion-watchdog 2>/dev/null || true
   local tpl_fails=0
   [[ -f "$tpl_state" ]] && tpl_fails=$(cat "$tpl_state" 2>/dev/null || echo 0)
   if [[ "$tpl_code" != "200" ]]; then
