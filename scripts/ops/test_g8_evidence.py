@@ -200,6 +200,43 @@ class EvaluateTests(unittest.TestCase):
         self.assertEqual(out2["gate_status"], "failed")
         self.assertEqual(out2["critical_incidents"], [])
 
+    def test_running_gate_failed_on_critical_incident(self):
+        # 16 consecutive bad buckets = 960s >= 900s critical outage.
+        end = T0 + 19 * 60
+        signals = {n: full_series(T0, end) for n in NAMES}
+        for i in range(16):
+            signals["dao"][T0 + i * 60] = 0.0
+        out = self.eval(signals, full_series(T0, end), T0, end,
+                        now=START + timedelta(minutes=30))
+        self.assertEqual((out["status"], out["window_status"]),
+                         ("running", "running"))
+        self.assertEqual(out["gate_status"], "failed")
+        self.assertEqual(out["gate_reason"], "critical_incident")
+
+    def test_running_gate_failed_on_downtime_budget(self):
+        # 30d window @60s step => 43200 samples; budget = floor(43200*0.001)=43.
+        # 50 non-contiguous bad buckets exceed the budget without reaching
+        # the 900s contiguous critical threshold.
+        end = T0 + 99 * 60  # 100 buckets
+        signals = {n: full_series(T0, end) for n in NAMES}
+        for i in range(0, 100, 2):
+            signals["dao"][T0 + i * 60] = 0.0
+        out = self.eval(signals, full_series(T0, end), T0, end,
+                        now=START + timedelta(days=1))
+        self.assertEqual(out["sample_counts"]["good"], 50)
+        self.assertEqual(out["critical_incidents"], [])
+        self.assertEqual(out["gate_status"], "failed")
+        self.assertEqual(out["gate_reason"], "downtime_budget_exhausted")
+
+    def test_running_gate_pending_under_budget(self):
+        end = T0 + 9 * 60
+        signals = {n: full_series(T0, end) for n in NAMES}
+        signals["dao"][T0 + 60] = 0.0  # one bad bucket, far under the budget
+        out = self.eval(signals, full_series(T0, end), T0, end,
+                        now=START + timedelta(minutes=15))
+        self.assertEqual(out["gate_status"], "pending")
+        self.assertIsNone(out["gate_reason"])
+
 
 class DurationValidationTests(unittest.TestCase):
     def test_new_state_rejects_short_or_nonfinite_duration(self):
@@ -303,6 +340,49 @@ class StateFileTests(unittest.TestCase):
         self.assertEqual(out["gate_status"], "passed")
         self.assertEqual(out["extra_field"], {"keep": 1})
         self.assertIn("stopped_at", out)
+
+    def test_stop_pending_becomes_evidence_incomplete(self):
+        state = make_state()  # running, gate pending, no evidence yet
+        g8e.atomic_write(self.path, state)
+        self.assertEqual(g8e.cmd_stop(self.path, now=START + timedelta(hours=1)), 0)
+        out = g8e.read_state(self.path)
+        self.assertEqual(out["gate_status"], "evidence_incomplete")
+        self.assertEqual(out["gate_reason"], "stopped_before_window_end")
+
+    def test_stop_with_critical_incident_fails_gate(self):
+        state = make_state(
+            gate_status="failed",
+            gate_reason="critical_incident",
+            critical_incidents=[{"duration_seconds": 1000}],
+        )
+        g8e.atomic_write(self.path, state)
+        self.assertEqual(g8e.cmd_stop(self.path), 0)
+        out = g8e.read_state(self.path)
+        self.assertEqual(out["gate_status"], "failed")
+        self.assertEqual(out["gate_reason"], "critical_incident")
+
+    def test_stop_with_exhausted_budget_fails_gate(self):
+        # 44 bad buckets > budget of 43 for a 30d/60s-step window.
+        state = make_state(
+            gate_status="pending",
+            sample_counts={"expected": 100, "covered": 100, "good": 56},
+        )
+        g8e.atomic_write(self.path, state)
+        self.assertEqual(g8e.cmd_stop(self.path), 0)
+        out = g8e.read_state(self.path)
+        self.assertEqual(out["gate_status"], "failed")
+        self.assertEqual(out["gate_reason"], "downtime_budget_exhausted")
+
+    def test_stop_under_budget_pending_becomes_incomplete(self):
+        state = make_state(
+            gate_status="pending",
+            sample_counts={"expected": 100, "covered": 100, "good": 99},
+        )
+        g8e.atomic_write(self.path, state)
+        self.assertEqual(g8e.cmd_stop(self.path), 0)
+        out = g8e.read_state(self.path)
+        self.assertEqual(out["gate_status"], "evidence_incomplete")
+        self.assertEqual(out["gate_reason"], "stopped_before_window_end")
 
     def test_status_prints_without_mutation(self):
         state = make_state()
