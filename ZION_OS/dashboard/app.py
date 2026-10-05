@@ -1304,7 +1304,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:9445",
-     "purpose": "V31 Mainnet Alpha 3.1.0-beta (protocol 3.1.0-alpha) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
+     "purpose": "V31 Mainnet Alpha 3.2.0-beta (protocol 3.2.0-alpha) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
      "child_says": "🚀 V31 PROD node — mainnet alpha!",
      "depends_on": []},
     {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
@@ -3718,13 +3718,13 @@ def _build_status_edge_primary() -> dict:
         "tip_hash": v31_tip_hash,
         "mempool_size": v31_mempool,
         "network": _vr.get("network", "mainnet"),
-        "protocol_version": _vr.get("protocol_version", "3.1.0-alpha"),
+        "protocol_version": _vr.get("protocol_version", "3.2.0-alpha"),
         "accepted_blocks": _vr.get("accepted_blocks"),
         "node_id": _vr.get("node_id", "zion-edge-v31"),
         "p2p_bind": _vr.get("p2p_bind", "0.0.0.0:8335"),
         "rpc_bind": _vr.get("rpc_bind", "127.0.0.1:9445"),
         "host": "127.0.0.1:9445",
-        "version": "3.1.0-beta",
+        "version": "3.2.0-beta",
         "known_peers": _vr.get("known_peers", 0),
         "active_peers": _vr.get("active_peers", 0),
         "sync_lag": 0,
@@ -3774,13 +3774,13 @@ def _build_status_edge_primary() -> dict:
         "tip_hash": v31_n2_tip,
         "mempool_size": v31_n2_mempool,
         "network": _vr2.get("network", "mainnet"),
-        "protocol_version": _vr2.get("protocol_version", "3.1.0-alpha"),
+        "protocol_version": _vr2.get("protocol_version", "3.2.0-alpha"),
         "accepted_blocks": _vr2.get("accepted_blocks"),
         "node_id": _vr2.get("node_id", "zion-edge-v31-node2"),
         "p2p_bind": _vr2.get("p2p_bind", "0.0.0.0:8336"),
         "rpc_bind": _vr2.get("rpc_bind", "127.0.0.1:9446"),
         "host": "127.0.0.1:9446",
-        "version": "3.1.0-beta",
+        "version": "3.2.0-beta",
         "known_peers": _vr2.get("known_peers", 0),
         "active_peers": _vr2.get("active_peers", 0),
         "sync_lag": 0,
@@ -3822,13 +3822,13 @@ def _build_status_edge_primary() -> dict:
         "tip_hash": v31_n3_tip,
         "mempool_size": v31_n3_mempool,
         "network": _vr3.get("network", "mainnet"),
-        "protocol_version": _vr3.get("protocol_version", "3.1.0-alpha"),
+        "protocol_version": _vr3.get("protocol_version", "3.2.0-alpha"),
         "accepted_blocks": _vr3.get("accepted_blocks"),
         "node_id": _vr3.get("node_id", "zion-edge-v31-node3"),
         "p2p_bind": _vr3.get("p2p_bind", "0.0.0.0:8337"),
         "rpc_bind": _vr3.get("rpc_bind", "127.0.0.1:9447"),
         "host": "127.0.0.1:9447",
-        "version": "3.1.0-beta",
+        "version": "3.2.0-beta",
         "known_peers": _vr3.get("known_peers", 0),
         "active_peers": _vr3.get("active_peers", 0),
         "sync_lag": 0,
@@ -7580,6 +7580,32 @@ def get_pool_miners_dashboard() -> dict:
     except Exception:
         result["revenue"] = {}
 
+    # 9d. Trinity stream aggregate — per-coin share totals summed across all
+    # miners' /miners `streams` buckets (coin-keyed: zion/qtu/vrsc/...).
+    # routing.sources is algorithm-keyed and has no QPoW/QTU source, so the
+    # Trinity panel reads this block instead.
+    try:
+        trinity: dict = {}
+        for m in result.get("miners", []) or []:
+            streams = m.get("streams") if isinstance(m, dict) else None
+            if not isinstance(streams, dict):
+                continue
+            for coin, s in streams.items():
+                if not isinstance(s, dict):
+                    continue
+                c = str(coin or "").lower()
+                if not c:
+                    continue
+                b = trinity.setdefault(c, {"valid_shares": 0, "invalid_shares": 0, "last_share_time": 0})
+                b["valid_shares"] += int(s.get("valid_shares", 0) or 0)
+                b["invalid_shares"] += int(s.get("invalid_shares", 0) or 0)
+                lst = int(s.get("last_share_time", 0) or 0)
+                if lst > b["last_share_time"]:
+                    b["last_share_time"] = lst
+        result["trinity_streams"] = trinity
+    except Exception:
+        result["trinity_streams"] = {}
+
     # 10. Computed summary aggregations
     miners = result.get("miners", [])
     stats = result.get("stats", {}) or {}
@@ -8408,7 +8434,7 @@ POOL_SETUP_COIN_E2E_NOTES = {
 
 # Coins suitable for each stream
 STREAM2_GPU_COINS = [
-    "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC", "EVR", "MEWC",
+    "QTU", "DCR", "ALPH", "KAS", "ERG", "RVN", "ETC", "EVR", "MEWC",
     "FLUX", "CLORE", "EPIC", "QUAI", "BEAM", "KLS", "ZCL", "QTC",
     "VTC", "IRON", "NEXA", "DNX",
 ]
@@ -8416,7 +8442,7 @@ STREAM3_CPU_COINS = ["VRSC", "XMR", "RTM"]
 
 # Algorithm → hardware type mapping
 COIN_HARDWARE = {
-    "VRSC": "CPU", "XMR": "CPU",
+    "VRSC": "CPU", "XMR": "CPU", "QTU": "GPU",
     "DCR": "GPU", "ALPH": "GPU", "KAS": "GPU", "ERG": "GPU",
     "RVN": "GPU", "ETC": "GPU", "EVR": "GPU", "MEWC": "GPU",
     "FLUX": "GPU", "CLORE": "GPU", "EPIC": "GPU", "QUAI": "GPU",
@@ -13238,7 +13264,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         # ── Dashboard v2 compatibility endpoints ─────────────────────────────
         elif route == "/health":
             # Simple liveness endpoint for load balancers / uptime probes
-            self._json({"ok": True, "status": "healthy", "version": "3.1.0-beta", "timestamp": int(time.time())})
+            self._json({"ok": True, "status": "healthy", "version": "3.2.0-beta", "timestamp": int(time.time())})
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())
