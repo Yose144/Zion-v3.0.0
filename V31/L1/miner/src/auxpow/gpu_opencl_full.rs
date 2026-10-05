@@ -2597,7 +2597,7 @@ typedef unsigned long ulong;
         }
     }
 
-    fn pick_opencl_device() -> Result<(Platform, Device, String, String)> {
+    pub(crate) fn pick_opencl_device() -> Result<(Platform, Device, String, String)> {
         let platforms = Platform::list();
         if platforms.is_empty() {
             anyhow::bail!("no OpenCL platforms found");
