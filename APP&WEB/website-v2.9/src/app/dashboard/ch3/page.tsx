@@ -206,7 +206,6 @@ export default function CH3SettingsPage() {
   const { lang } = useLang();
   const [settings, setSettings] = useState<CH3Settings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [error, setError] = useState<string | null>(null);
 
@@ -276,26 +275,6 @@ export default function CH3SettingsPage() {
         },
       },
     });
-  };
-
-  const saveSettings = async () => {
-    if (!settings) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/v2.9/revenue/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
-    } finally {
-      setSaving(false);
-    }
   };
 
   if (loading || !settings) {
@@ -829,19 +808,13 @@ export default function CH3SettingsPage() {
         </div>
       )}
 
-      {/* Save Button */}
+      {/* Read-only notice — the revenue config API no longer accepts writes. */}
       <div className="zion-cta-banner mt-8 flex justify-end">
-        <button
-          onClick={saveSettings}
-          disabled={saving || !settings}
-          className={`px-8 py-3 rounded-xl font-bold text-lg ${
-            saving || !settings
-              ? "bg-white/10 text-gray-400 cursor-wait"
-              : "bg-zion-gold text-black hover:bg-zion-gold"
-          }`}
-        >
-          {saving ? (DashboardCh3Copy.saving[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.saveSettings[lang === 'cs' ? 'cs' : 'en'])}
-        </button>
+        <span className="px-8 py-3 rounded-xl text-sm text-gray-400 border border-white/10 bg-white/5">
+          {lang === 'cs'
+            ? 'Konfigurace je jen pro čtení — změny provádí operátor v souboru nastavení.'
+            : 'Configuration is read-only — changes are made by the operator in the settings file.'}
+        </span>
       </div>
     </div>
   );

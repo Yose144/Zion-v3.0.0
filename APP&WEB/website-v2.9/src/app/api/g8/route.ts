@@ -50,6 +50,7 @@ export async function GET() {
       status: d.status ?? null,
       window_status: d.window_status ?? null,
       gate_status: d.gate_status ?? null,
+      gate_reason: typeof d.gate_reason === 'string' ? d.gate_reason : null,
       started: d.started ?? null,
       target_end: d.target_end ?? null,
       elapsed_seconds: typeof d.elapsed_seconds === 'number' ? d.elapsed_seconds : null,

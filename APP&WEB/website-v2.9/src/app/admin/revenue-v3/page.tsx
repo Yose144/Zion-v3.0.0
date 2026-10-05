@@ -10,7 +10,7 @@ const AdminRevenueV3Copy = {
   failedToLoadConfiguration: { cs: `Nepodařilo se načíst konfiguraci.`, en: `Failed to load configuration.` },
   cosmicHarmonyV3RevenueSettings: { cs: `Cosmic Harmony v3 — Nastavení příjmů`, en: `Cosmic Harmony v3 Revenue Settings` },
   refresh: { cs: `Obnovit`, en: `Refresh` },
-  saveConfiguration: { cs: `Uložit konfiguraci`, en: `Save Configuration` },
+  readOnlyNotice: { cs: `Konfigurace je jen pro čtení — změny provádí operátor v souboru nastavení.`, en: `Configuration is read-only — changes are made by the operator in the settings file.` },
   error: { cs: `Chyba`, en: `Error` },
   nclArtificialIntelligence: { cs: `NCL Umělá inteligence`, en: `NCL Artificial Intelligence` },
   enabled: { cs: `Aktivní`, en: `Enabled` },
@@ -51,7 +51,6 @@ interface RevenueConfig {
 export default function RevenueSettings() {
   const { lang } = useLang();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<RevenueConfig | null>(null);
   const [status, setStatus] = useState<string>('');
 
@@ -72,28 +71,6 @@ export default function RevenueSettings() {
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
-
-  const handleSave = async () => {
-    if (!config) return;
-    setSaving(true);
-    setStatus(AdminRevenueV3Copy.saving[lang === 'cs' ? 'cs' : 'en']);
-    try {
-      const res = await fetch(REVENUE_CONFIG_API, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(config),
-      });
-      if (!res.ok) throw new Error('Failed to save');
-      setStatus(AdminRevenueV3Copy.settingsSavedSuccessfully[lang === 'cs' ? 'cs' : 'en']);
-    } catch (err: any) {
-      console.error(err);
-      setStatus(lang === 'cs' ? `Chyba při ukládání: ${err.message}` : `Error saving: ${err.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const updateStream = (streamName: keyof RevenueConfig['streams'], field: string, value: any) => {
     if (!config) return;
@@ -140,19 +117,14 @@ export default function RevenueSettings() {
           {AdminRevenueV3Copy.cosmicHarmonyV3RevenueSettings[lang === 'cs' ? 'cs' : 'en']}
         </h1>
         <div className="flex gap-4">
+            <span className="text-sm text-gray-400 self-center">
+                {AdminRevenueV3Copy.readOnlyNotice[lang === 'cs' ? 'cs' : 'en']}
+            </span>
             <button
                 onClick={fetchConfig}
                 className="zion-button-secondary"
-                disabled={saving}
             >
                 {AdminRevenueV3Copy.refresh[lang === 'cs' ? 'cs' : 'en']}
-            </button>
-            <button
-                onClick={handleSave}
-                className="zion-button-primary"
-                disabled={saving}
-            >
-                {saving ? (AdminRevenueV3Copy.saving[lang === 'cs' ? 'cs' : 'en']) : (AdminRevenueV3Copy.saveConfiguration[lang === 'cs' ? 'cs' : 'en'])}
             </button>
         </div>
       </div>
