@@ -29,8 +29,28 @@ pub const KS_MAX_STRIDE: u32 = 16;
 // ---------------------------------------------------------------- U256
 
 /// 256-bit scalar as little-endian u32 limbs — same layout the kernel uses.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// NOTE: `Ord` must compare from the most significant limb down — the
+/// derived array ordering starts at limb 0 (the LSB) and is wrong.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct U256(pub [u32; 8]);
+
+impl Ord for U256 {
+    fn cmp(&self, o: &Self) -> std::cmp::Ordering {
+        for i in (0..8).rev() {
+            match self.0[i].cmp(&o.0[i]) {
+                std::cmp::Ordering::Equal => continue,
+                ord => return ord,
+            }
+        }
+        std::cmp::Ordering::Equal
+    }
+}
+
+impl PartialOrd for U256 {
+    fn partial_cmp(&self, o: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(o))
+    }
+}
 
 #[allow(dead_code)]
 impl U256 {
@@ -531,6 +551,17 @@ mod tests {
         let hi = U256::pow2(255).unwrap();
         assert_eq!(hi.0[7], 0x8000_0000);
         assert!(U256::from_hex("0x").is_err());
+        // cross-limb comparison — the bug that killed the first p71 run:
+        // 2^70 + 4M must stay < 2^71 even though limb 0 is nonzero
+        let mut x = U256::pow2(70).unwrap();
+        x.add_u64(4_194_304);
+        assert!(x < U256::pow2(71).unwrap());
+        assert!(x > U256::pow2(70).unwrap());
+        // any nonzero low limb must not dominate
+        let lo = U256::from_hex("0xffffffff").unwrap();
+        let mut hi2 = U256::zero();
+        hi2.0[1] = 1; // 2^32
+        assert!(lo < hi2);
     }
 
     #[test]
