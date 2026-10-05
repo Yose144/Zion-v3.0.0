@@ -189,6 +189,11 @@ impl Gpu {
         };
         let opts_f = pick("KERNEL_OPTS_FILTER", "-cl-nv-maxrregcount=40");
         let opts_s = pick("KERNEL_OPTS_STEP", "-cl-nv-maxrregcount=64");
+        // key_scan is secp256k1-only — its own cap. Measured on GTX 1070 Ti:
+        // 64 → 22.0 Mk/s, 80 → 26.6 Mk/s (+21%). ≥96 is not just slower,
+        // the NVIDIA JIT compile balloons past minutes — 80 is the sweet
+        // spot on Pascal; override with KERNEL_OPTS_KEYSCAN to re-tune.
+        let opts_k = pick("KERNEL_OPTS_KEYSCAN", "-cl-nv-maxrregcount=80");
         // Chunked beats single-launch even on NVIDIA (measured GTX 1070 Ti:
         // 4×512 ≈ 42k seeds/s vs 1×2047 ≈ 36k — inter-chunk scheduling
         // absorbs item-time variance, one giant launch can't rebalance).
@@ -207,13 +212,22 @@ impl Gpu {
             )
         };
         let prog_step = prog_s.as_ref().unwrap_or(&prog_f);
+        let prog_k = if opts_k == opts_s {
+            None
+        } else {
+            Some(
+                Program::create_and_build_from_source(&context, KERNEL_SRC, &opts_k)
+                    .map_err(|e| anyhow::anyhow!("opencl keyscan build: {e}"))?,
+            )
+        };
+        let prog_ks = prog_k.as_ref().unwrap_or(prog_step);
         let k_filter = Kernel::create(&prog_f, "bip39_filter").map_err(cl_err)?;
         let k_step = Kernel::create(prog_step, "pbkdf2_step").map_err(cl_err)?;
         let k_perm = Kernel::create(&prog_f, "permute_filter").map_err(cl_err)?;
         // derive_match is register-hungry (secp256k1) — it shares the step
         // program's looser cap rather than the filter's occupancy-tuned 40.
         let k_match = Kernel::create(prog_step, "derive_match").map_err(cl_err)?;
-        let k_keyscan = Kernel::create(prog_step, "key_scan").map_err(cl_err)?;
+        let k_keyscan = Kernel::create(prog_ks, "key_scan").map_err(cl_err)?;
 
         // wordlist blob + offsets (u16 — total < 16 KiB)
         let mut blob = Vec::with_capacity(16 * 1024);
