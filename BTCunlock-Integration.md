@@ -33,16 +33,21 @@ Evaluated and rejected wiring keyscan into `V31/L1/miner` Trinity streams:
 Chosen design (matches the `llama.cpp`-shares-GPU precedent):
 
 ```
-btcunlock (systemd user service, Nice 15)
-   │  checkpoint ~/btcunlock/p71.ckpt · log ~/btcunlock/p71.log
-   │  hits → ~/btcunlock/btcunlock-hits/  (mode 600, fsync'd)
+btcunlock-worker.py (systemd user service, Nice 15)
+   │  leases 2^36-key units from the coordinator, runs keyscan on each
+   │  hits → ~/btcunlock/btcunlock-hits/ (mode 600, fsync'd)
+   │  reports progress → coordinator every ~20 s
+   ▼
+Edge: zion-btcunlock-coord.service (:8779, token-gated writes)
+   │  nginx: /lottery/api/ → public GET status/units, POSTs need Bearer
    ▼
 btcunlock-ui.py :8777 ── /api/status (localhost, read-only)
    │                                    ▲
    ├── proxied/trimmed by ──────────────┤
    ▼                                    │
 ZION_OS dashboard :8766                │ desktop-agent main.js poller
-/api/keyscan → Stream-4 card           │ → 'keyscan-status' IPC → Stream-4 card
+/api/keyscan + /api/lottery            │ → 'keyscan-status'/'lottery-status'
+→ Stream-4 card + DISTRIBUTED block    │   IPC → Stream-4 + Logs drawer
 ```
 
 GPU contention is left to the driver (same as llama.cpp); `Nice 15` keeps CPU
@@ -63,15 +68,49 @@ priority below the miner. Zero changes to V31 miner, pool protocol, or website.
 
 Nothing runtime-related lives in the repo or home root anymore.
 
-## 4. Services (systemd **user** units, linger-enabled)
+## 4. Distributed mode (2026-10-05 extension)
 
-Unit templates committed at `BTCunlock/deploy/zion-btcunlock{,-ui}.service`;
-live copies in `~/.config/systemd/user/`.
+The single-rig scan became a fleet operation:
 
-- `zion-btcunlock.service` — `puzzle 71 --gpu --stride 16 --batch 262144
-  --resume --checkpoint ~/btcunlock/p71.ckpt`, `Nice=15`, `Restart=always`,
-  `RuntimeMaxSec=86400` (daily restart = bounded log; checkpoint makes it seamless)
-- `zion-btcunlock-ui.service` — `python3 btcunlock-ui.py`, `Restart=always`
+- **`BTCunlock/btcunlock-coordinator.py`** — stdlib service on Edge
+  (`zion-btcunlock-coord.service`, User=zion, `ProtectSystem=strict`).
+  Splits [2^70, 2^71) into `2^36`-key units (17.2 G units), leases them in
+  order, re-queues expired leases (`COORD_LEASE_TTL=3 h`), credits tested
+  keys, stores hits to `/opt/zion/btcunlock/hits/` (mode 600). State:
+  single atomic `coordinator-state.json`. Token in
+  `/etc/zion/btcunlock-coord.env` (mode 600).
+- **`BTCunlock/btcunlock-worker.py`** — lease→`keyscan`→report loop; wraps
+  the binary, posts progress ~20 s, POSTs hits instantly, signal-safe.
+- **nginx** `location /lottery/api/` on `dashboard.zionterranova.com` →
+  `127.0.0.1:8779/api/` with `allow all` (workers join from any network;
+  the server-block IP allowlist stays for everything else). GET
+  status/units are public telemetry; `lease/report/hit/vault` require the
+  Bearer token — verified 401 without it.
+- **Public dashboard** (Edge `/opt/zion/ZION_OS/dashboard`, diverged from
+  repo — patched surgically, backups `*.bak-lottery-*`): `/api/lottery` +
+  `/api/lottery/units` proxy routes and a Stream-4 "BTC KEY LOTTERY
+  (distributed)" card in the Trinity panel — fleet rate/tested/units/
+  workers/hits, coverage bar, DETAIL toggle (workers + recent units +
+  join instructions). `?v=132` bumped, `.gz` regenerated.
+- **Desktop agent** — main.js polls `…/lottery/api/status` →
+  `lottery-status` IPC; Logs view gains a **Lottery** button → drawer
+  with fleet stats, workers/units tables and the join command.
+- **Local worker service** switched from standalone sequential scan to
+  `btcunlock-worker.py` (token `~/btcunlock/coord.env` mode 600).
+
+## 4b. Services (systemd **user** units, linger-enabled)
+
+Unit templates committed at `BTCunlock/deploy/` (`zion-btcunlock.service`
+worker, `zion-btcunlock-ui.service`, `zion-btcunlock-coord.service` Edge
+system unit); live copies in `~/.config/systemd/user/` and
+`/etc/systemd/system/` on Edge.
+
+- `zion-btcunlock.service` — `btcunlock-worker.py --gpu --stride 16
+  --batch 262144` + `EnvironmentFile=~/btcunlock/coord.env`, `Nice=15`,
+  `Restart=always`, `RuntimeMaxSec=86400`
+- `zion-btcunlock-ui.service` — `python3 btcunlock-ui.py --port 8777
+  --log ~/btcunlock/worker.log`, `Restart=always`
+- `zion-btcunlock-coord.service` (Edge, system) — coordinator :8779
 
 Manage: `systemctl --user {status,restart} zion-btcunlock{,-ui}`.
 Boot persistence: `loginctl show-user zionserver -p Linger` → yes.
@@ -160,14 +199,22 @@ ticket**, not a plan. Open puzzles with public keys (#140…#160) are wider than
 ```bash
 # status
 systemctl --user status zion-btcunlock zion-btcunlock-ui
-tail -f ~/btcunlock/p71.log
+tail -f ~/btcunlock/worker.log
 curl -s 127.0.0.1:8777/api/status | python3 -m json.tool
 
-# resume after reboot/manual
-cd ~/2.9.6-main/BTCunlock
-./target/release/btcunlock puzzle 71 --gpu --stride 16 --batch 262144 \
-    --checkpoint ~/btcunlock/p71.ckpt --resume
+# fleet (public)
+curl -s https://dashboard.zionterranova.com/lottery/api/status | python3 -m json.tool
 
-# hits (mode 600 — private keys!)
+# join a rig
+BTCUNLOCK_COORD_TOKEN=<token> python3 BTCunlock/btcunlock-worker.py \
+    --coord https://dashboard.zionterranova.com/lottery \
+    --worker-id <rig> --label "<gpu>" --gpu
+
+# coordinator ops (Edge)
+systemctl status zion-btcunlock-coord
+curl -s http://127.0.0.1:8779/api/status | python3 -m json.tool
+ls -l /opt/zion/btcunlock/hits/            # mode 600 — private keys!
+
+# local hits (mode 600 — private keys!)
 ls -l ~/btcunlock/btcunlock-hits/
 ```

@@ -6,7 +6,7 @@ After=zion-btcunlock.service
 [Service]
 Type=simple
 WorkingDirectory=/home/zionserver/2.9.6-main/BTCunlock
-ExecStart=/usr/bin/python3 /home/zionserver/2.9.6-main/BTCunlock/btcunlock-ui.py --port 8777
+ExecStart=/usr/bin/python3 /home/zionserver/2.9.6-main/BTCunlock/btcunlock-ui.py --port 8777 --log /home/zionserver/btcunlock/worker.log --ckpt /home/zionserver/btcunlock/coord-worker.ckpt
 Restart=always
 RestartSec=10
 StandardOutput=append:/home/zionserver/btcunlock/ui.log

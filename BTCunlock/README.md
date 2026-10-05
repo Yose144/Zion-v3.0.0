@@ -212,6 +212,62 @@ via `GET /api/vault_wif?key=0x…` from localhost only.
 
 Defaults point at `~/btcunlock/` (override with `--log/--ckpt/--vault`).
 
+## Distributed scan — coordinator + workers
+
+Two more stdlib-only scripts turn the single-machine scan into a fleet
+operation: the keyspace is split into fixed-size **units** that workers
+lease, scan and report — so coverage is systematic instead of every rig
+re-walking the same front.
+
+```
+                 ┌─────────────────────────────┐
+   lease unit →  │ btcunlock-coordinator.py    │ → report done
+                 │ state.json · hits/ (600)    │
+                 │ :8779 (token-gated writes)  │
+                 └──────────────┬──────────────┘
+        ┌───────────────────────┼────────────────────────┐
+btcunlock-worker.py      worker.py                  worker.py
+(GPU rig A)              (rig B)                    (rig C)
+```
+
+**Coordinator** (`btcunlock-coordinator.py`) — on any always-on host
+(production: Edge, behind nginx TLS at `/lottery/api/`):
+
+```bash
+BTCUNLOCK_COORD_TOKEN=<openssl rand -hex 24> \
+COORD_STATE=/opt/zion/btcunlock/coordinator-state.json \
+COORD_HITS=/opt/zion/btcunlock/hits \
+COORD_START=0x400000000000000000 COORD_END=0x800000000000000000 \
+COORD_UNIT_SIZE=68719476736 COORD_TARGETS=<puzzle-addr> \
+COORD_LABEL="puzzle #71" \
+python3 btcunlock-coordinator.py --port 8779
+```
+
+Endpoints: `GET /api/status` + `GET /api/units` (public, no secrets);
+`POST /api/lease`, `/api/report`, `/api/hit` and `GET /api/vault` need
+`Authorization: Bearer <token>`. A lease expires after `COORD_LEASE_TTL`
+(default 3 h) — a dead worker wastes at most one unit, which then returns
+to the pool automatically. State is one atomic JSON file.
+
+**Worker** (`btcunlock-worker.py`) — wraps `keyscan` per leased unit:
+
+```bash
+BTCUNLOCK_COORD_TOKEN=<token> python3 btcunlock-worker.py \
+    --coord https://dashboard.zionterranova.com/lottery \
+    --worker-id rig-01 --label "GTX 1070 Ti" --gpu
+```
+
+Streams scanner output, posts progress every ~20 s, marks units done,
+and POSTs hits to the coordinator instantly (the binary still writes its
+own mode-600 backup). Signals propagate to the child scan; a mid-unit
+kill just lets the lease expire.
+
+**nginx exposure** (Edge pattern): `location /lottery/api/ { allow all;
+proxy_pass http://127.0.0.1:8779/api/; }` — GET endpoints stay public
+telemetry, POSTs carry the token over TLS. Systemd templates live in
+`deploy/` (`zion-btcunlock-coord.service` system unit,
+`zion-btcunlock.service` worker user unit).
+
 ## Runtime data layout
 
 Keep all run artifacts in one place — the production layout used by
@@ -219,8 +275,10 @@ the operator:
 
 ```
 ~/btcunlock/
-├── p71.ckpt                 # scanner checkpoint (job-hash bound)
-├── p71.log                  # scanner stdout/stderr
+├── worker.log               # worker + scanner stdout/stderr
+├── coord.env                # COORD_URL + TOKEN for worker mode (600)
+├── unit-<id>.ckpt           # transient per-unit checkpoints (auto-removed)
+├── p71.ckpt / p71.log       # legacy standalone-scan artifacts
 ├── btcunlock-hits/          # scanner-side hit backup (mode 600)
 │   ├── hits.jsonl
 │   └── hit-*.txt
@@ -228,15 +286,16 @@ the operator:
 └── ui.log                   # dashboard server log
 ```
 
-Start a scan + UI detached so they survive the shell:
+Start worker + UI detached so they survive the shell:
 
 ```bash
 cd BTCunlock
-setsid nohup nice -n 15 ./target/release/btcunlock puzzle 71 \
-    --gpu --stride 16 --batch 524288 \
-    --checkpoint ~/btcunlock/p71.ckpt --resume \
-    > ~/btcunlock/p71.log 2>&1 < /dev/null &
+setsid nohup nice -n 15 env $(grep -v '^#' ~/btcunlock/coord.env | xargs) \
+    python3 btcunlock-worker.py --gpu --stride 16 --batch 262144 \
+    --worker-id "$(hostname)" --label "rig" \
+    > ~/btcunlock/worker.log 2>&1 < /dev/null &
 setsid nohup python3 btcunlock-ui.py --port 8777 \
+    --log ~/btcunlock/worker.log \
     > ~/btcunlock/ui.log 2>&1 < /dev/null &
 ```
 

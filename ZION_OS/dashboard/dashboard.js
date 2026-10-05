@@ -3026,6 +3026,79 @@ async function updateKeyscan(){
   }
 }
 
+// ── Distributed lottery: coordinator aggregate (/api/lottery) ──
+// Global fleet view — units leased/done, per-worker table, coverage of
+// the whole keyspace. Read-only public telemetry; write endpoints and
+// the hit vault stay token-gated on the coordinator.
+let _lotteryDetailOpen=false;
+function toggleLotteryDetail(){
+  _lotteryDetailOpen=!_lotteryDetailOpen;
+  const el=document.getElementById('lottery-detail');
+  const btn=document.getElementById('lottery-detail-btn');
+  if(el)el.classList.toggle('hidden',!_lotteryDetailOpen);
+  if(btn)btn.textContent=_lotteryDetailOpen?'DETAIL ▾':'DETAIL ▸';
+  if(_lotteryDetailOpen)updateLottery();
+}
+
+async function updateLottery(){
+  const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  const block=document.getElementById('lottery-block');
+  const fmtSI=(n)=>{if(!isFinite(n))return'—';const u=['','K','M','G','T','P'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++;}return n.toFixed(n>=100?0:n>=10?1:2)+' '+u[i];};
+  const fmtNum=(n)=>{try{return BigInt(n).toLocaleString('en-US');}catch(e){return String(n);}};
+  try{
+    const d=await apiFetch('/api/lottery',{},5000);
+    if(!d||d.ok!==true){
+      setText('lot-rate','off');setText('lot-frontier',
+        'coordinator unreachable'+(d&&d.error?': '+String(d.error).slice(0,80):''));
+      if(block)block.style.opacity='0.55';
+      return;
+    }
+    if(block)block.style.opacity='1';
+    setText('lot-rate',fmtSI((d.rate_mks||0)*1e6)+'/s');
+    setText('lot-tested',fmtSI(d.tested_total||0));
+    setText('lot-units',fmtNum(d.units_done||0)+' / '+fmtNum(d.n_units||0));
+    setText('lot-leasing',String(d.units_leased||0));
+    const ws=(d.workers||[]);
+    setText('lot-workers',String(ws.filter(w=>w.active).length)+' / '+ws.length);
+    setText('lot-hits',String(d.hits_total||0));
+    const covPct=(d.coverage||0)*100;
+    const bar=document.getElementById('lot-coverage-bar');
+    if(bar)bar.style.width=Math.min(100,Math.max(0.02,covPct))+'%';
+    const etaS=d.eta_s;
+    const etaStr=etaS==null?'—':(etaS>315360000000?'>10k yr':etaS>86400?Math.round(etaS/86400)+' d':Math.round(etaS/3600)+' h');
+    setText('lot-frontier',
+      (d.label||'scan')+' · coverage '+(covPct<0.0001?covPct.toExponential(2):covPct.toFixed(4))+'%'
+      +' · frontier '+String(d.frontier||'—').slice(0,20)+'…'
+      +' · full-range ETA ~'+etaStr+' · unit '+fmtSI(d.unit_size||0)+' keys');
+    if(_lotteryDetailOpen){
+      const tb=document.getElementById('lot-workers-tbody');
+      if(tb)tb.innerHTML=ws.length?ws.map(w=>'<tr class="border-t border-zion-800">'
+        +'<td class="pr-2 py-0.5 text-emerald-300">'+String(w.worker_id).replace(/[<>&]/g,'')+'</td>'
+        +'<td class="pr-2 text-gray-400">'+String(w.label||'').replace(/[<>&]/g,'')+'</td>'
+        +'<td class="pr-2">'+fmtSI((w.rate_mks||0)*1e6)+'/s</td>'
+        +'<td class="pr-2">'+fmtNum(w.total_tested||0)+'</td>'
+        +'<td class="pr-2">'+String(w.units_done||0)+'</td>'
+        +'<td class="pr-2 text-gray-500">'+String(w.last_seen||'—').replace('T',' ').replace('Z','')+'</td>'
+        +'<td>'+(w.active?'<span class="text-emerald-400">●active</span>':'<span class="text-gray-600">idle</span>')+'</td>'
+        +'</tr>').join(''):'<tr><td colspan="7" class="text-gray-600">no workers yet</td></tr>';
+      const u=await apiFetch('/api/lottery/units',{},5000);
+      const utb=document.getElementById('lot-units-tbody');
+      if(utb&&u&&u.ok){
+        const units=(u.units||[]).slice(0,20);
+        utb.innerHTML=units.length?units.map(x=>'<tr class="border-t border-zion-800">'
+          +'<td class="pr-2 py-0.5">#'+x.unit_id+'</td>'
+          +'<td class="pr-2">'+(x.status==='done'?'<span class="text-emerald-400">done</span>':'<span class="text-amber-400">leased</span>')+'</td>'
+          +'<td class="pr-2 text-gray-400">'+String(x.worker_id||'').replace(/[<>&]/g,'')+'</td>'
+          +'<td class="pr-2">'+fmtNum(x.tested||0)+'</td>'
+          +'<td>'+(x.hits?('<span class="text-green-300 font-bold">'+x.hits+'</span>'):'0')+'</td>'
+          +'</tr>').join(''):'<tr><td colspan="5" class="text-gray-600">no units yet</td></tr>';
+      }
+    }
+  }catch(e){
+    setText('lot-frontier','poll error: '+e.message);
+  }
+}
+
 async function updatePoolConnectionHistory(){
   const tbody = document.getElementById('pool-connection-history-tbody');
   const badge = document.getElementById('pool-connection-history-badge');
@@ -10609,6 +10682,8 @@ refreshAll = async function() {
     }).catch(() => {});
     // Stream 4 — BTCunlock key lottery (local :8777 status via proxy)
     if(typeof updateKeyscan === 'function') updateKeyscan();
+    // Distributed lottery — coordinator fleet stats
+    if(typeof updateLottery === 'function') updateLottery();
     // Run secondary refreshes in parallel (non-blocking, fire-and-forget)
     refreshReadiness().catch(() => {});
     refreshServiceHealth().catch(() => {});
