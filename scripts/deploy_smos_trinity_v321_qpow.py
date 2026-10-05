@@ -20,7 +20,9 @@ import urllib.request
 
 API = "https://api.simplemining.net"
 RIG = 518837
-GROUP = 1773590
+# NOTE: rig 518837 is assigned to group 1780844 "ZionTrinity".
+# (1773590 "ZionLiteFire" is a different, unused group — do not update it.)
+GROUP = 1780844
 MINER_URL = "https://zionterranova.com/zion-miner/zion-trinity-smos-v3.2.1.zip"
 
 
