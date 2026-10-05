@@ -140,7 +140,7 @@ impl U256 {
         for i in 0..8 {
             let d = self.0[i] as i64 - o.0[i] as i64 - br;
             r[i] = d as u32;
-            br = if d < 0 { -1 } else { 0 };
+            br = if d < 0 { 1 } else { 0 };
         }
         U256(r)
     }
@@ -566,6 +566,8 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
             _ => eprintln!("no usable checkpoint at {ckpt_path} — starting fresh"),
         }
     }
+    // baseline for session rate — resumed keys didn't run in this session
+    let tested0 = tested;
     let save_ck = |next: &U256, tested: u64, hits: u64| {
         let ck = KsCheckpoint {
             job_hash: jhash.clone(),
@@ -695,7 +697,7 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
 
         if last_report.elapsed().as_secs() >= 2 {
             let dt = t0.elapsed().as_secs_f64();
-            let rate = tested as f64 / dt;
+            let rate = (tested - tested0) as f64 / dt;
             let left = opts.end.saturating_sub(&cur).to_f64();
             let done_pct = 100.0 * (1.0 - left / size_f);
             eprintln!(
@@ -783,6 +785,31 @@ mod tests {
         let mut hi2 = U256::zero();
         hi2.0[1] = 1; // 2^32
         assert!(lo < hi2);
+    }
+
+    #[test]
+    fn u256_cross_limb_sub() {
+        // 2^71 - (2^70 + 2^32*7 + 0x62400000) — borrows through limbs 0..2
+        let end = U256::from_hex("800000000000000000").unwrap();
+        let cur = U256::from_hex("400000000762400000").unwrap();
+        let left = end.saturating_sub(&cur);
+        // expected: 2^71 - (2^70 + 0x762400000) = 0x3ffffffff89dc00000
+        assert_eq!(left, U256::from_hex("3ffffffff89dc00000").unwrap());
+
+        // simple borrow: 2^32 - 1 = 0xffffffff (all low limbs set, no borrow into limb1)
+        let one_hi = U256::from_hex("100000000").unwrap(); // 2^32
+        let one = U256::from_hex("1").unwrap();
+        assert_eq!(
+            one_hi.saturating_sub(&one).to_hex(),
+            "00000000000000000000000000000000000000000000000000000000ffffffff"
+        );
+
+        // sequential chain borrow: 2^64 - 1
+        let hi64 = U256::from_hex("10000000000000000").unwrap();
+        assert_eq!(
+            hi64.saturating_sub(&one).to_hex(),
+            "000000000000000000000000000000000000000000000000ffffffffffffffff"
+        );
     }
 
     #[test]

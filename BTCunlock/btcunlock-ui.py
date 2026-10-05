@@ -8,10 +8,18 @@ mode-600 JSON file so they survive log rotation), the puzzle catalog,
 a copy-ready resume command, and the raw log tail.
 
     ./btcunlock-ui.py [--port 8777] [--host 0.0.0.0] \
-        [--log ~/btcunlock-p71.log] [--ckpt ~/btcunlock-p71.ckpt] \
-        [--vault ~/btcunlock-hits.json]
+        [--log ~/btcunlock/p71.log] [--ckpt ~/btcunlock/p71.ckpt] \
+        [--vault ~/btcunlock/hits-vault.json]
 
 The page polls /api/status every 2 s. No dependencies, read-only.
+
+Data layout (all run artifacts under one dir):
+    ~/btcunlock/p71.ckpt            scanner checkpoint (job-bound)
+    ~/btcunlock/p71.log             scanner stdout/stderr log
+    ~/btcunlock/btcunlock-hits/     scanner-side hit backup (mode 600):
+                                    hits.jsonl + hit-<ISO>-<key>.txt
+    ~/btcunlock/hits-vault.json     UI-side merged vault (mode 600)
+    ~/btcunlock/ui.log              this server's log
 """
 
 import datetime
@@ -25,9 +33,9 @@ from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOG = os.path.expanduser("~/btcunlock-p71.log")
-CKPT = os.path.expanduser("~/btcunlock-p71.ckpt")
-VAULT = os.path.expanduser("~/btcunlock-hits.json")
+LOG = os.path.expanduser("~/btcunlock/p71.log")
+CKPT = os.path.expanduser("~/btcunlock/p71.ckpt")
+VAULT = os.path.expanduser("~/btcunlock/hits-vault.json")
 PUZZLE_TABLE_RS = os.path.join(HERE, "src", "puzzle_table.rs")
 
 PROGRESS_RE = re.compile(
