@@ -280,6 +280,35 @@ check_v31() {
     return
   fi
 
+  # getTemplate probe: the template path can wedge (deadlock in node) while
+  # the rest of the RPC stays alive — getNodeInfo/getChainInfo keep answering.
+  # A 15s bound catches it. A single failure is NOT enough to restart: the
+  # node recovers from short template stalls on its own (utxo_set lock
+  # contention during block import) and a restart costs ~10s of full RPC
+  # outage plus UTXO rebuild, which is worse than the stall. Restart only
+  # after 2 consecutive failures (watchdog runs ~60s apart → restart on a
+  # sustained >60s wedge that does not self-recover).
+  local tpl_code
+  tpl_code=$(curl -s -o /dev/null -w '%{http_code}' -m 15 -X POST \
+    "http://127.0.0.1:${V31_RPC_PORT}" -H 'content-type: application/json' \
+    -d '{"jsonrpc":"2.0","id":1,"method":"getTemplate","params":{"miner_address":"zion1test"}}' \
+    2>/dev/null || echo "000")
+  local tpl_state="/tmp/zion-wd-template-fails"
+  local tpl_fails=0
+  [[ -f "$tpl_state" ]] && tpl_fails=$(cat "$tpl_state" 2>/dev/null || echo 0)
+  if [[ "$tpl_code" != "200" ]]; then
+    tpl_fails=$((tpl_fails + 1))
+    echo "$tpl_fails" > "$tpl_state"
+    if [[ "$tpl_fails" -ge 2 ]]; then
+      echo 0 > "$tpl_state"
+      restart_service "$NODE_SERVICE" "V31 getTemplate wedged ${tpl_fails}x consecutively (http=${tpl_code})"
+      return
+    fi
+    log "WARN: getTemplate probe failed (http=${tpl_code}) — fail ${tpl_fails}/2, waiting for self-recovery"
+  else
+    [[ "$tpl_fails" -gt 0 ]] && echo 0 > "$tpl_state"
+  fi
+
   if [[ -n "$POOL_SERVICE" ]] && ! check_pool_tcp; then
     restart_service "$POOL_SERVICE" "pool TCP ${POOL_HOST}:${POOL_PORT} not reachable"
   fi

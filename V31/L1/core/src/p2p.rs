@@ -311,22 +311,48 @@ async fn sync_peer(
     // ── Tip comparison ───────────────────────────────────────────────────
     // If we have a tip, compare its hash with the peer's tip.  Matching tips
     // mean we are fully synced — no action needed.
+    let mut our_height = our_height;
     if let Ok(Some((_our_tip_header, our_tip_hash))) = node.storage.tip().await {
         let our_tip_hex = our_tip_hash.to_hex();
         if our_tip_hex == peer_tip_hash {
             return Ok(()); // already on the same tip
         }
-        // Tips differ but our height >= peer height: we are on a different
-        // fork.  Log a warning — the sync below only helps when peer is
-        // ahead.  A proper reorg would compare cumulative work, but for the
-        // backup-node use case the operator should wipe the DB.
-        if our_height >= peer_height {
-            warn!(
-                "chain divergence: our tip {} (h={}) != peer tip {} (h={}); \
-                 local chain may be stale — consider deleting the DB to re-sync",
-                our_tip_hex, our_height, peer_tip_hash, peer_height
-            );
-            return Ok(());
+
+        // Tips differ: we may sit on a side fork the linear sync below can
+        // never attach to (the first forked block fails the prev-hash check
+        // forever).  Walk back to the common ancestor and roll the forked
+        // suffix back, then resume normal sync on the peer's branch.
+        match find_common_ancestor(node, peer, our_height).await {
+            Ok(Some(fork_height)) => {
+                let depth = our_height.saturating_sub(fork_height);
+                if depth > MAX_REORG_DEPTH {
+                    warn!(
+                        "chain divergence: reorg depth {} exceeds max {}; \
+                         local chain may be stale — consider deleting the DB to re-sync",
+                        depth, MAX_REORG_DEPTH
+                    );
+                    return Ok(());
+                }
+                info!(
+                    "reorg: our tip {} (h={}) != peer tip {} (h={}); \
+                     rolling back {} block(s) to common ancestor h={}",
+                    our_tip_hex, our_height, peer_tip_hash, peer_height, depth, fork_height
+                );
+                node.rollback_to_height(fork_height).await?;
+                our_height = node.storage.height().await?;
+            }
+            Ok(None) => {
+                warn!(
+                    "chain divergence: no common ancestor within {} blocks; \
+                     local chain may be stale — consider deleting the DB to re-sync",
+                    MAX_REORG_DEPTH
+                );
+                return Ok(());
+            }
+            Err(e) => {
+                warn!("common ancestor search failed: {e}");
+                return Ok(());
+            }
         }
     }
 
@@ -346,4 +372,40 @@ async fn sync_peer(
         }
     }
     Ok(())
+}
+
+/// Maximum blocks we are willing to roll back during a reorg. Anything
+/// deeper indicates a genuinely stale or alternate-history DB — the
+/// operator wipes and re-syncs instead.
+const MAX_REORG_DEPTH: u64 = 64;
+
+/// Walk our chain backwards alongside the peer's, returning the highest
+/// height at which both nodes store the same block hash. `None` when no
+/// common ancestor exists within `MAX_REORG_DEPTH` of our tip.
+async fn find_common_ancestor(
+    node: &Node,
+    peer: SocketAddr,
+    our_height: u64,
+) -> Result<Option<u64>, crate::node::NodeError> {
+    let mut h = our_height;
+    let floor = our_height.saturating_sub(MAX_REORG_DEPTH);
+    loop {
+        let peer_blocks = get_blocks(peer, h, h).await?;
+        let peer_hash = peer_blocks
+            .first()
+            .map(|b| b.header.header_hash().to_hex());
+        let our_hash = match node.storage.get_by_height(h).await? {
+            Some(b) => Some(b.header.header_hash().to_hex()),
+            None => None,
+        };
+        match (our_hash, peer_hash) {
+            (Some(a), Some(p)) if a == p => return Ok(Some(h)),
+            _ => {
+                if h <= floor || h == 0 {
+                    return Ok(None);
+                }
+                h -= 1;
+            }
+        }
+    }
 }

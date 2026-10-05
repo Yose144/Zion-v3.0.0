@@ -84,6 +84,8 @@ Nečti Terra Novu jako slib, že vše už existuje.
 - co se má postavit v další fázi,
 - co drží dlouhodobý směr.
 
+Literární pokračování [Na Cestě](../../WP-Mainet/NaCeste/00-README.md) je DRAFT ke kulturnímu review; není pátou knihou ani povýšením projekce 2040 na současnou realitu.
+
 Pokud hledáš technický detail, najdeš ho. Pokud hledáš obraz, najdeš ho také. Ale obojí musí stát ve službě jedné otázky:
 
 **Jaký svět má právo pokračovat?**
