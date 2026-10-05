@@ -320,10 +320,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/logout', async (req, reply) => {
     try {
       await req.jwtVerify();
-      const payload = req.user as { jti?: string };
-      if (payload?.jti) {
+      const payload = req.user as { sub?: string; jti?: string };
+      if (payload?.jti && payload?.sub) {
+        // Only revoke a session that actually belongs to the token subject —
+        // a forged token must not be able to kill another user's session.
         await app.prisma.session.updateMany({
-          where: { jwtJti: payload.jti },
+          where: { jwtJti: payload.jti, userId: payload.sub },
           data: { revoked: true },
         });
       }

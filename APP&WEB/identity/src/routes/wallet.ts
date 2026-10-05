@@ -103,8 +103,8 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
     return {
       account,
       addresses,
-      balances: balances.map((b) => ({ ...b, amount: b.amount.toString() })),
-      orders: orders.map((o) => ({
+      balances: balances.map((b: any) => ({ ...b, amount: b.amount.toString() })),
+      orders: orders.map((o: any) => ({
         ...o,
         amountIn: o.amountIn.toString(),
         amountOut: o.amountOut?.toString() ?? null,
@@ -188,7 +188,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
     });
 
     return {
-      balances: balances.map((b) => ({ ...b, amount: b.amount.toString() })),
+      balances: balances.map((b: any) => ({ ...b, amount: b.amount.toString() })),
       l2: l2Balances,
     };
   });
@@ -305,7 +305,7 @@ export async function walletRoutes(app: FastifyInstance): Promise<void> {
     });
 
     return {
-      orders: orders.map((o) => ({
+      orders: orders.map((o: any) => ({
         ...o,
         amountIn: o.amountIn.toString(),
         amountOut: o.amountOut?.toString() ?? null,

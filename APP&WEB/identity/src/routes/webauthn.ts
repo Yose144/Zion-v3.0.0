@@ -112,7 +112,7 @@ export async function webauthnRoutes(
         userName: user.displayName ?? user.primaryAddress,
         userID: new TextEncoder().encode(user.id),
         attestationType: 'none',
-        excludeCredentials: existing.map((c) => ({
+        excludeCredentials: existing.map((c: any) => ({
           id: c.credentialId,
           transports: c.transports as AuthenticatorTransportFuture[],
         })),
