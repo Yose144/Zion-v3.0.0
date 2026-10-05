@@ -6004,7 +6004,7 @@ dependencies = [
 
 [[package]]
 name = "zion-ai-native"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6028,7 +6028,7 @@ dependencies = [
 
 [[package]]
 name = "zion-cli"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6058,7 +6058,7 @@ dependencies = [
 
 [[package]]
 name = "zion-core"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6093,7 +6093,7 @@ dependencies = [
 
 [[package]]
 name = "zion-cosmic-harmony"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "aes",
  "blake3",
@@ -6114,7 +6114,7 @@ dependencies = [
 
 [[package]]
 name = "zion-cosmic-harmony-v3"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "aes",
  "blake3",
@@ -6132,7 +6132,7 @@ dependencies = [
 
 [[package]]
 name = "zion-dao"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -6156,7 +6156,7 @@ dependencies = [
 
 [[package]]
 name = "zion-free-world"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6178,7 +6178,7 @@ dependencies = [
 
 [[package]]
 name = "zion-issobella"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6200,7 +6200,7 @@ dependencies = [
 
 [[package]]
 name = "zion-l1-types"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -6217,7 +6217,7 @@ dependencies = [
 
 [[package]]
 name = "zion-miner"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6258,7 +6258,7 @@ dependencies = [
 
 [[package]]
 name = "zion-multichain"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -6303,14 +6303,14 @@ dependencies = [
 
 [[package]]
 name = "zion-native-ffi"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "cc",
 ]
 
 [[package]]
 name = "zion-ncl"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "axum",
  "chrono",
@@ -6326,7 +6326,7 @@ dependencies = [
 
 [[package]]
 name = "zion-oasis"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6356,7 +6356,7 @@ dependencies = [
 
 [[package]]
 name = "zion-pool"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6384,7 +6384,7 @@ dependencies = [
 
 [[package]]
 name = "zion-sdk"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "bip39",
  "ed25519-dalek",
@@ -6402,7 +6402,7 @@ dependencies = [
 
 [[package]]
 name = "zion-smoke"
-version = "3.1.0-beta"
+version = "3.2.0"
 dependencies = [
  "chrono",
  "sha2",
