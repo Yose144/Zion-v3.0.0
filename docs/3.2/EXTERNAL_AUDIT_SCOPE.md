@@ -1,96 +1,95 @@
-# ZION 3.2 "One Love" — External Security Audit Scope
+# ZION 3.2 "One Love" — External Security Audit Scope (DRAFT)
 
-> **Version:** 1.0 · **Prepared:** 2026-10-05 · **Status:** READY TO SEND
-> **Contact:** ops@zionterranova.com
-> **Repository:** https://github.com/Yose144/Zion-v3.0.0 (branch `main`)
-
----
-
-## 1. What is being audited
-
-ZION is a Layer-1 blockchain (UTXO model, Ed25519 signatures, custom PoW) with a live mainnet in Alpha. The audit covers the code and deployment that constitutes the 3.2 "One Love" stable-release candidate.
-
-**What is live and in scope:**
-
-| Component | Layer | Language | Where |
-|---|---|---|---|
-| Consensus, UTXO, premine, PoW | L1 | Rust | `V31/L1/core/` |
-| P2P networking, IBD, mempool | L1 | Rust | `V31/L1/core/src/p2p.rs`, `node.rs` |
-| Mining pool (stratum, PPLNS, payouts) | L1 ops | Rust | `V31/L1/pool/` |
-| Miner (CPU/GPU triple-stream) | L1 ops | Rust | `V31/L1/miner/` |
-| Bridge (ZION ↔ wZION on Base) | L2 | Rust | `V31/L2/multichain/src/bridge/` |
-| HTLC atomic swaps | L2 | Rust | `V31/L2/multichain/src/swap/` |
-| DEX / solver network | L2 | Rust | `V31/L2/multichain/src/dex/`, `solver/` |
-| DAO + treasury | L2 | Rust | `V31/L2/dao/` |
-| ZIS identity (sessions, WebAuthn) | L2 | TypeScript | `APP&WEB/website-v2.9/src/lib/zis-client.ts`, `identity/` |
-| Release supply chain | ops | — | `scripts/`, `V31/deploy/`, GitHub workflows |
-
-**Explicitly out of scope for this engagement:** L3 AI-native orchestration (`zion-ai-native-api`, RAG — operator tool, no fund custody), L4 OASIS game client, L5 Free World portal, marketing website UI.
+> **Version:** 2.0 (rewritten 2026-10-05 after the internal audit) · **Status:** DRAFT — **not sent; no audit firm selected or engaged**
+> **Contact / SLA:** _to be filled in by the operator before sending_ (v1.0 contained an invented address and SLA — withdrawn)
+> **Repository:** https://github.com/Yose144/Zion-v3.0.0 (public) — the audit commit will be pinned when the engagement starts
 
 ---
 
-## 2. Pre-existing audit status
+## 1. System overview
 
-An internal audit was completed 2026-08-26 → 2026-09-01 (report: `docs/3.2/SECURITY_AUDIT_3.2.md`).
+ZION is a Layer-1 blockchain: UTXO/hybrid transaction model, Ed25519 signatures, custom PoW "Ekam Deeksha". The mainnet is live in Alpha. A small set of services runs on one production host:
 
-- **44 findings:** 2 Critical, 10 High, 20 Medium, 12 Low
-- **Remediation:** 37 fixed, 7 accepted with documented mitigations, 4 deferred to v3.3 (`ethers→alloy` migration)
-- Criticals fixed: pool difficulty-1 share acceptance, non-idempotent payout, ZDXToken immutable owner + missing burn
+- three L1 nodes (one primary, two followers)
+- the mining pool
+- the multichain/WARP daemon
+- DAO, ZIS identity, L3–L6 services
+- the Next.js web app behind nginx
 
-The internal report and its remediation log are the starting baseline — the external firm should verify the fixes and probe for issues the internal pass missed.
+**Requested scope: the whole project.** Areas are listed below by priority.
 
----
+## 2. In scope
 
-## 3. Highest-risk areas (priorities for the auditor)
+| # | Component | Layer | Lang | Paths |
+|---|---|---|---|---|
+| 1 | Consensus, block/tx validation, UTXO, premine and admin-unlock rules, difficulty | L1 | Rust | `V31/L1/core/src/` (`chain_state.rs`, `node.rs`, `v3_compat.rs`, `genesis.rs`, `utxo.rs`, `v3_tx.rs`) |
+| 2 | P2P sync, reorg/rollback, mempool | L1 | Rust | `V31/L1/core/src/p2p.rs`, `v3_p2p.rs`, `node.rs` (`rollback_to_height`), `storage.rs` |
+| 3 | PoW implementation and miner kernels (CPU/CUDA/OpenCL/Metal KAT parity) | L1 | Rust/C/CUDA/OpenCL | `V31/L1/cosmic-harmony/`, `V31/L1/miner/` (excluding vendored `csrc/ref/`) |
+| 4 | Mining pool: stratum, share validation, vardiff, PPLNS, payouts | L1 | Rust | `V31/L1/pool/src/` |
+| 5 | Multichain API authorization and operator routes | L2 | Rust | `V31/L2/multichain/src/server.rs`, `rate_limit.rs`, `zis_auth.rs` |
+| 6 | Bridge, HTLC, DEX/intents/solvers, WARP runtime + BTC swap (feature disabled) | L2 | Rust | `V31/L2/multichain/src/bridge/`, `swap/htlc.rs`, `swap/dex/`, `warp/` |
+| 7 | Custodial wallet, deposit/withdrawal ledger, reconciliation, solvency | L2 | Rust | `V31/L2/multichain/src/multichain_wallet/`, `wallet/`, `reconciliation.rs`, `solvency.rs` |
+| 8 | DAO service and treasury lock | L2 | Rust | `V31/L2/dao/` |
+| 9 | ZIS identity: sessions, WebAuthn/passkeys, API keys | — | TypeScript | `APP&WEB/identity/` |
+| 10 | Public web API routes and proxies | — | TypeScript | `APP&WEB/website-v2.9/src/app/api/` |
+| 11 | L3 AI-native API + RAG (public chat proxy, prompt-injection and data exposure) | L3 | Rust | `V31/L3/ai-native/`, `V31/L3/ncl/` |
+| 12 | L4 OASIS, L5 Free World (projects, quadratic voting), L6 Issobella services | L4–L6 | Rust | `V31/L4/oasis/`, `V31/L5/free-world/`, `V31/L6/issobella/` |
+| 13 | Contracts (bridge token, DEX, intent settlement) | L2 | Solidity | `V31/L2/multichain/contracts/src/`, `V31/contracts/` |
+| 14 | Deployment and operations: nginx, systemd units, backups, secret handling, build reproducibility, dependencies | ops | — | `V31/deploy/`, `ZION_OS/infra/scripts/`, `scripts/ops/`, lockfiles |
 
-1. **Premine / admin unlock** — 14 genesis outputs, `admin_locked` flag, time-locks at block 144,000. Verify no path releases them early. `V31/L1/core/src/v3_compat.rs`, `genesis.rs`, `chain_state.rs`.
-2. **Consensus / UTXO integrity** — coinbase maturity (100), reorg limit (10), soft finality (60), double-spend in mempool + UTXO, overflow (checked math). `node.rs`, `chain_state.rs`.
-3. **PoW verification** — Ekam Deeksha 512 KiB scratchpad, 2 passes, 128 reads, KAT-locked across CPU/CUDA/OpenCL/Metal. `V31/L1/core/src/pow*`, `V31/L1/miner/src/`.
-4. **Pool payout** — PPLNS window, share validation, batch TX, payout confirmation sweep. `V31/L1/pool/src/payout*.rs`, `api.rs`.
-5. **Bridge / HTLC** — preimage generation, timelock expiry, refund path, claimer enforcement, non-ZION chain branches. `multichain/src/swap/htlc.rs`, `bridge/`.
-6. **WARP solvency** — reconciliation vs. on-chain balances, deposit-address accounting. `multichain/src/reconciliation*`, `solvency*`.
-7. **DAO treasury** — spendable vs. locked split, approval records, L1 interaction. `V31/L2/dao/src/treasury*`, `api.rs`.
-8. **ZIS** — session issuance, WebAuthn credential storage/verification, passkey flow. `identity/` + web `zis-client`.
-9. **Supply chain** — build reproducibility, checksums, signed tags, deploy scripts, CI.
+**Out of scope (unless requested):**
 
----
+- mobile app, MarketPlace, desktop agent UI
+- `archive/`, `public/` mirror
+- marketing pages (non-API)
 
-## 4. Deliverables expected
+## 3. Measured size (non-blank lines incl. inline tests, `git grep`, commit `29a6b8a8a`)
 
-- Written report: finding ID, severity, file:line, PoC description, recommended fix.
-- Severity classification: Critical / High / Medium / Low / Informational.
-- Re-test of any findings we remediate during the engagement.
-- Final attestation letter suitable for public reference.
+| Area | Lines |
+|---|---:|
+| L1 core + types + native-ffi | 33,038 |
+| L1 cosmic-harmony (PoW) | 9,657 |
+| L1 pool | 14,663 |
+| L1 miner (Rust) | 35,881 |
+| L1 miner GPU/C kernels (excluding vendored reference) | 61,485 |
+| L2 multichain | 48,412 |
+| L2 DAO | 9,311 |
+| L3 (ai-native + ncl) | 17,303 |
+| L4 / L5 / L6 | 8,572 / 3,709 / 2,270 |
+| CLI / SDK / smoke | 5,245 |
+| ZIS identity (TS) | 2,509 |
+| Web API routes | subset of 136,781 lines of TS/TSX in `website-v2.9/src` (API routes only are in scope) |
+| Solidity (live contracts) | 4,790 |
 
----
+## 4. Baseline: known issues the auditor should verify
 
-## 5. Access & logistics
+1. `docs/3.2/SECURITY_AUDIT_3.2.md`: internal audit of 2026-08/09, 44 findings.
+   - Re-classified by the internal audit of 2026-10-05: FIND-002 is *partially fixed*; POL-002 is *partially verified*.
+2. `docs/3.2/REPORTS/INTERNAL_AUDIT_2026-10-05.md`: whole-project internal audit, findings IA-01…IA-22. These include:
+   - multichain/WARP authorization fixes
+   - ZIS session-binding fix and secret rotation
+   - P2P fork-choice fix
+   - open operator items: allowlists, backups, secrets in history, dependencies
+3. Constants the auditor should reconcile:
+   - Three different `MAX_REORG_DEPTH` values exist: 10 (`v3_chain.rs`, V3-compat path), 64 (`p2p.rs`, native sync), 500 (`node_runtime.rs`).
+   - The DAO treasury premine output has `unlock_height` 144,000 (`v3_compat.rs`). The other premine outputs have no height lock and depend on admin-lock rules.
 
-- **Read-only source access** via GitHub (`main` branch, commit-pinned tag `v3.2.0-rc*` once cut).
-- **Testnet / sandbox** node + pool can be provided for live probing (no production access).
-- **Point of contact:** ops@zionterranova.com — response SLA <24h.
-- **Preferred format:** GitHub Issues draft or PDF report; findings tracked in `docs/3.2/REPORTS/`.
+## 5. Deliverables requested
 
----
+- Report with finding ID, severity, file:line, reproduction/PoC description, recommended fix.
+- Severities: Critical / High / Medium / Low / Informational.
+- Re-test of remediated findings.
+- Attestation letter suitable for public reference.
 
-## 6. Rough size estimate for quoting
+## 6. Access and logistics (to be confirmed by the operator)
 
-| Area | Approx LOC |
-|---|---|
-| L1 core (consensus, UTXO, PoW) | ~22,700 |
-| Pool | ~19,500 |
-| Miner | ~14,500 |
-| L2 multichain (bridge, HTLC, DEX, solver, WARP) | ~29,000 |
-| DAO | ~5,000 |
-| ZIS / web glue | ~6,000 |
-| **Total** | **~96,700** |
+- Source: public GitHub repository, pinned commit.
+- A sandbox/testnet environment for live probing can be discussed. Not yet prepared; no production access.
+- The point of contact, the response times and the report channel are filled in by the operator before sending.
 
----
+## 7. Reference documents
 
-## 7. Reference reports & docs
-
-- Internal audit + remediation: `docs/3.2/SECURITY_AUDIT_3.2.md`
-- WARP-specific audit prep + findings log: `WarpBeta/AUDIT_PREP.md`
-- G8 30-day stability run (live): `https://app.zionterranova.com/g8`
-- Public token disclosure: `APP&WEB/website-v2.9/public/docs/en/v3.2.0/security-audit.md`
-- Full 3.2 roadmap with gate definitions: `docs/3.2/ROADMAP.md`
+- `docs/3.2/SECURITY_AUDIT_3.2.md`, `docs/3.2/REPORTS/INTERNAL_AUDIT_2026-10-05.md`
+- `WarpBeta/AUDIT_PREP.md` (WARP / BTC swap preparation)
+- `docs/3.2/ROADMAP.md` (gate definitions)
+- G8 stability-run status (public): https://app.zionterranova.com/g8
