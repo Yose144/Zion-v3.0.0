@@ -94,6 +94,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onStatsUpdate: (callback) => {
     ipcRenderer.on('stats-update', (event, data) => callback(data));
   },
+  onKeyscanStatus: (callback) => {
+    ipcRenderer.on('keyscan-status', (event, data) => callback(data));
+  },
   onMinerBackend: (callback) => {
     ipcRenderer.on('miner-backend', (event, data) => callback(data));
   },

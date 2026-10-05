@@ -1989,6 +1989,47 @@ function setupEventListeners() {
     _lastIpcStatsAt = Date.now();
     scheduleStatsUpdate(stats);
   });
+
+  // Stream 4 — BTCunlock key lottery (polled by main on :8777)
+  if (typeof window.electronAPI.onKeyscanStatus === 'function') {
+    window.electronAPI.onKeyscanStatus((d) => updateKeyscanCard(d));
+  }
+}
+
+// Stream 4 card: BTCunlock keyscan (independent service, GPU-shared).
+// Payload is already trimmed server-side; hits are a count only — raw
+// key material never crosses this channel.
+function updateKeyscanCard(d) {
+  const card = document.getElementById('stream-card-4');
+  if (!card) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmtSI = (n, suf) => {
+    if (!Number.isFinite(n)) return '—';
+    const u = ['', 'K', 'M', 'G', 'T', 'P']; let i = 0;
+    while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+    return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + ' ' + u[i] + suf;
+  };
+  const badge = document.getElementById('stream-4-status');
+  if (!d || !d.ok) {
+    card.classList.remove('active'); card.classList.add('inactive');
+    set('stream-4-hashrate', 'off');
+    set('stream-4-coin', 'svc down');
+    if (badge) { badge.textContent = 'inactive'; badge.className = 'stream-status inactive'; }
+    return;
+  }
+  if (d.alive) { card.classList.add('active'); card.classList.remove('inactive'); }
+  else { card.classList.remove('active'); card.classList.add('inactive'); }
+  set('stream-4-coin', (d.label || 'keyscan').replace(/^puzzle #?/i, 'P'));
+  set('stream-4-hashrate', d.alive ? fmtSI((d.rate_mks || 0) * 1e6, '/s') : '0 /s');
+  set('stream-4-shares', `${d.hits || 0} hits`);
+  set('stream-4-tested', fmtSI(d.tested || 0, ''));
+  const cov = d.coverage_ppm;
+  set('stream-4-cover', cov != null ? (cov < 0.01 ? cov.toExponential(1) : cov.toFixed(3)) + ' ppm' : '—');
+  set('stream-4-eta', d.eta || '—');
+  if (badge) {
+    badge.textContent = d.alive ? 'active' : 'stopped';
+    badge.className = 'stream-status ' + (d.alive ? 'active' : 'inactive');
+  }
 }
 
 function updateControlButtons() {

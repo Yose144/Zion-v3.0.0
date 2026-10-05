@@ -1782,6 +1782,38 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div class="text-xs text-gray-500" id="stream-cpu-pct">—</div>
         </div>
       </div>
+      <!-- Stream 4: BTCunlock key lottery — GPU key-range scanner sharing
+           the rig's GPU with mining. Rare-jackpot workload: no pool shares,
+           data proxied from local btcunlock-ui (/api/keyscan). -->
+      <div class="mt-3 bg-zion-900 rounded-lg p-3 border border-green-900/50" id="keyscan-card">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-green-400">Stream 4 — BTC KEY LOTTERY</span>
+          <span class="text-[10px] text-gray-500" id="keyscan-puzzle">—</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div>
+            <div class="text-lg font-bold text-green-300" id="keyscan-rate">—</div>
+            <div class="text-xs text-gray-400">keys/s</div>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-green-300" id="keyscan-tested">—</div>
+            <div class="text-xs text-gray-400">tested</div>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-green-300" id="keyscan-coverage">—</div>
+            <div class="text-xs text-gray-400">range coverage</div>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-green-300" id="keyscan-eta">—</div>
+            <div class="text-xs text-gray-400">full-range ETA</div>
+          </div>
+          <div>
+            <div class="text-lg font-bold text-green-300" id="keyscan-hits">0</div>
+            <div class="text-xs text-gray-400">hits (jackpot)</div>
+          </div>
+        </div>
+        <div class="text-[10px] text-gray-500 mt-2" id="keyscan-meta">—</div>
+      </div>
     </div>
 
     <!-- CLI Node Status (zion-cli data source) -->
@@ -8351,7 +8383,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=131" defer></script>
+<script src="/dashboard.js?v=132" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [

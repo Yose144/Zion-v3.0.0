@@ -2985,6 +2985,30 @@ def get_miner_live_stats() -> dict:
         "timestamp": datetime.now().isoformat(),
     }
 
+
+def get_keyscan_status() -> dict:
+    """BTCunlock key-lottery status, proxied from btcunlock-ui (:8777).
+
+    Trimmed on purpose: the raw payload carries a large rate histogram,
+    a log tail and the full 77-entry open-puzzle catalog — none of which
+    the dashboard card needs. Hit records pass through masked (the UI
+    masks WIFs); raw WIFs stay behind the localhost-only
+    /api/vault_wif endpoint on :8777 and are never proxied here.
+    """
+    try:
+        import urllib.request as _ur
+        with _ur.urlopen("http://127.0.0.1:8777/api/status", timeout=3.0) as r:
+            s = json.loads(r.read())
+    except Exception as ex:
+        return {"reachable": False, "error": str(ex)}
+    drop = {"rate_hist", "log_tail", "catalog", "cmdline", "milestones",
+            "targets_hdr", "gpu_name", "next_key", "start", "end", "size"}
+    out = {k: v for k, v in s.items() if k not in drop}
+    out["reachable"] = True
+    out["vault_count"] = len(out.pop("vault", []) or [])
+    return out
+
+
 # ── Settings persistence ─────────────────────────────────────────────────
 SETTINGS_FILE = DATA_DIR / "dashboard-settings.json"
 
@@ -11981,6 +12005,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_debug_dump())
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
+        elif route == "/api/keyscan":
+            self._json(get_keyscan_status())
         elif route == "/api/miner/log-tail":
             lines = int(params.get("lines", ["30"])[0])
             self._json({"lines": tail_log("miner.log", lines), "file": str(LOG_DIR / "miner.log")})

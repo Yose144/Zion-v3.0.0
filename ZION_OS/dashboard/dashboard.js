@@ -2989,6 +2989,43 @@ function updateTripleStream(data){
   setText('trinity-summary',totalAcc+' acc / '+totalRej+' rej total');
 }
 
+// ── Stream 4: BTCunlock key lottery ──
+// Proxied /api/keyscan (app.py → btcunlock-ui :8777). The payload is
+// already trimmed + WIF-masked server-side; a jackpot hit would still
+// never surface a raw key here — only the count lights up.
+async function updateKeyscan(){
+  const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  const card=document.getElementById('keyscan-card');
+  try{
+    const d=await apiFetch('/api/keyscan',{},4000);
+    if(!d||d.reachable===false||d.ok!==true){
+      setText('keyscan-rate','off');
+      setText('keyscan-puzzle','service down');
+      setText('keyscan-tested','—');setText('keyscan-coverage','—');
+      setText('keyscan-eta','—');setText('keyscan-meta',(d&&d.error)?String(d.error).slice(0,80):'btcunlock-ui unreachable (:8777)');
+      if(card)card.style.opacity='0.55';
+      return;
+    }
+    if(card)card.style.opacity='1';
+    const fmtSI=(n)=>{if(!isFinite(n))return'—';const u=['','K','M','G','T','P'];let i=0;while(n>=1000&&i<u.length-1){n/=1000;i++;}return n.toFixed(n>=100?0:n>=10?1:2)+' '+u[i];};
+    setText('keyscan-rate',d.alive?fmtSI((d.rate_mks||0)*1e6)+'/s':'0 /s');
+    setText('keyscan-tested',fmtSI(d.tested||0));
+    const cov=d.coverage_ppm;
+    setText('keyscan-coverage',cov!=null?(cov<0.01?cov.toExponential(1):cov.toFixed(3))+' ppm':'—');
+    setText('keyscan-eta',d.eta||'—');
+    setText('keyscan-hits',String(d.hits??0));
+    const pz=d.puzzle||{};
+    setText('keyscan-puzzle',(d.label||'keyscan')+(pz.address?(' · '+pz.address):''));
+    const odds=d.odds?('1 in '+d.odds+' today'):'';
+    setText('keyscan-meta',[d.alive?'scanning':'stopped',
+      d.uptime?('up '+d.uptime):null,odds,
+      d.gpu&&d.gpu.util!=null?('GPU '+d.gpu.util+'%'):null,
+      d.vault_count?('vault '+d.vault_count):null].filter(Boolean).join(' · '));
+  }catch(e){
+    setText('keyscan-meta','poll error: '+e.message);
+  }
+}
+
 async function updatePoolConnectionHistory(){
   const tbody = document.getElementById('pool-connection-history-tbody');
   const badge = document.getElementById('pool-connection-history-badge');
@@ -10570,6 +10607,8 @@ refreshAll = async function() {
     apiFetch('/api/pool/miners-dashboard', {}, 8000).then(d => {
       if (d && d.routing && typeof updateTripleStream === 'function') updateTripleStream(d);
     }).catch(() => {});
+    // Stream 4 — BTCunlock key lottery (local :8777 status via proxy)
+    if(typeof updateKeyscan === 'function') updateKeyscan();
     // Run secondary refreshes in parallel (non-blocking, fire-and-forget)
     refreshReadiness().catch(() => {});
     refreshServiceHealth().catch(() => {});
