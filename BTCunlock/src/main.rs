@@ -17,6 +17,7 @@
 mod engine;
 #[cfg(feature = "gpu")]
 mod gpu;
+mod keyscan;
 mod recover;
 mod runner;
 mod scan;
@@ -165,6 +166,68 @@ enum Cmd {
     },
     /// Decode a WIF private key: network, compression, P2PKH + P2WPKH addr.
     Wif { wif: String },
+    /// Sequential private-key scan over [start, end) — the raw form of the
+    /// Bitcoin puzzle search. Every key's compressed pubkey hash160 is
+    /// matched against the target set; GPU does the EC walk on-device.
+    /// Realistic reach: ~2^40 keys. Use only on ranges you have a reason
+    /// to search (your own partially-known key, public bounty puzzles).
+    Keyscan {
+        /// First key to test, big-endian hex (with/without 0x).
+        #[arg(long)]
+        start: String,
+        /// End key, hex — the scan covers [start, end). Default: start.
+        #[arg(long)]
+        end: Option<String>,
+        /// Known address(es) — P2PKH/P2WPKH or 40-hex hash160. Repeatable.
+        #[arg(long = "target")]
+        targets: Vec<String>,
+        /// File with target addresses, one per line.
+        #[arg(long)]
+        target_file: Option<String>,
+        /// Use the OpenCL GPU backend.
+        #[arg(long)]
+        gpu: bool,
+        /// OpenCL device index (see `gpu-list`).
+        #[arg(long, default_value_t = 0)]
+        gpu_index: usize,
+        /// Keys each GPU work-item walks (batch inversion; 1–16).
+        #[arg(long, default_value_t = 8)]
+        stride: u32,
+        /// Work-items per GPU launch / keys per CPU batch.
+        #[arg(long, default_value_t = 1 << 20)]
+        batch: usize,
+        /// Checkpoint file (default btcunlock-keys.ckpt).
+        #[arg(long)]
+        checkpoint: Option<String>,
+        /// Resume from checkpoint.
+        #[arg(long)]
+        resume: bool,
+    },
+    /// Scan a 2015 Bitcoin-puzzle range: `puzzle 66` covers [2^65, 2^66)
+    /// against the published puzzle address. Same engine as `keyscan`;
+    /// solved puzzles double as self-tests.
+    Puzzle {
+        /// Puzzle number 1..=160.
+        n: u32,
+        /// Use the OpenCL GPU backend.
+        #[arg(long)]
+        gpu: bool,
+        /// OpenCL device index (see `gpu-list`).
+        #[arg(long, default_value_t = 0)]
+        gpu_index: usize,
+        /// Keys each GPU work-item walks (batch inversion; 1–16).
+        #[arg(long, default_value_t = 8)]
+        stride: u32,
+        /// Work-items per GPU launch / keys per CPU batch.
+        #[arg(long, default_value_t = 1 << 20)]
+        batch: usize,
+        /// Checkpoint file (default btcunlock-keys.ckpt).
+        #[arg(long)]
+        checkpoint: Option<String>,
+        /// Resume from checkpoint.
+        #[arg(long)]
+        resume: bool,
+    },
     /// Measure seed-derivation throughput (GPU sanity check).
     Bench {
         #[arg(long)]
@@ -228,13 +291,8 @@ fn main() -> Result<()> {
             if !ts.xkeys.is_empty() && !purposes.contains(&86) {
                 purposes.push(86);
             }
-            let plan = DerivePlan::standard(
-                net(&network)?,
-                &purposes,
-                accounts,
-                max_index,
-                change_chain,
-            )?;
+            let plan =
+                DerivePlan::standard(net(&network)?, &purposes, accounts, max_index, change_chain)?;
             if !ts.xkeys.is_empty() && !purposes.contains(&86) {
                 eprintln!(
                     "note: taproot (bc1p…) target given but --purposes lacks 86 \
@@ -290,13 +348,8 @@ fn main() -> Result<()> {
             if !ts.xkeys.is_empty() && !purposes.contains(&86) {
                 purposes.push(86);
             }
-            let plan = DerivePlan::standard(
-                net(&network)?,
-                &purposes,
-                accounts,
-                max_index,
-                change_chain,
-            )?;
+            let plan =
+                DerivePlan::standard(net(&network)?, &purposes, accounts, max_index, change_chain)?;
             if !ts.xkeys.is_empty() && !purposes.contains(&86) {
                 eprintln!(
                     "note: taproot (bc1p…) target given but --purposes lacks 86 \
@@ -333,6 +386,87 @@ fn main() -> Result<()> {
             !(online || api.is_some()),
         ),
         Cmd::Wif { wif } => scan::wif_info(&wif),
+        Cmd::Keyscan {
+            start,
+            end,
+            targets,
+            target_file,
+            gpu,
+            gpu_index,
+            stride,
+            batch,
+            checkpoint,
+            resume,
+        } => {
+            let start = keyscan::U256::from_hex(&start)?;
+            let end = match end {
+                Some(e) => keyscan::U256::from_hex(&e)?,
+                None => {
+                    let mut e = start;
+                    e.add_u64(1);
+                    e
+                }
+            };
+            let mut ts = TargetSet::default();
+            for t in &targets {
+                ts.add(t)?;
+            }
+            if let Some(f) = target_file {
+                for line in std::fs::read_to_string(&f)?.lines() {
+                    let line = line.trim();
+                    if !line.is_empty() && !line.starts_with('#') {
+                        ts.add(line)?;
+                    }
+                }
+            }
+            let mut sorted: Vec<[u8; 20]> = ts.hashes.iter().copied().collect();
+            sorted.sort_unstable();
+            let names: Vec<String> = sorted.iter().map(|h| hex::encode(h)).collect();
+            keyscan::run_keyscan(keyscan::KeyscanOpts {
+                start,
+                end,
+                targets: sorted,
+                target_names: names,
+                use_gpu: gpu,
+                gpu_index,
+                stride,
+                batch: batch.max(1),
+                checkpoint,
+                resume,
+                label: String::new(),
+            })
+        }
+        Cmd::Puzzle {
+            n,
+            gpu,
+            gpu_index,
+            stride,
+            batch,
+            checkpoint,
+            resume,
+        } => {
+            let (label, start, end, addr, solved) = keyscan::puzzle_range(n)?;
+            if solved {
+                eprintln!("note: {label} is already solved — self-test mode");
+            }
+            let mut ts = TargetSet::default();
+            ts.add(&addr)?;
+            let mut sorted: Vec<[u8; 20]> = ts.hashes.iter().copied().collect();
+            sorted.sort_unstable();
+            keyscan::run_keyscan(keyscan::KeyscanOpts {
+                start,
+                end,
+                targets: sorted,
+                target_names: vec![addr],
+                use_gpu: gpu,
+                gpu_index,
+                stride,
+                batch: batch.max(1),
+                checkpoint,
+                resume,
+                label,
+            })
+        }
         Cmd::Bench {
             gpu,
             gpu_index,
@@ -387,7 +521,10 @@ fn bench(use_gpu: bool, gpu_index: usize, batch: usize, batches: usize) -> Resul
             let mut g = gpu::Gpu::init(gpu_index, batch)?;
             eprintln!("gpu: {}", g.device_name);
             g.bind(&tpl, "")?;
-            run_batch(&mut |base, n| g.derive_batch(&tpl, base, n).map(|o| o.seeds), &tpl)?;
+            run_batch(
+                &mut |base, n| g.derive_batch(&tpl, base, n).map(|o| o.seeds),
+                &tpl,
+            )?;
         }
         #[cfg(not(feature = "gpu"))]
         anyhow::bail!("built without GPU support — cargo build --release --features gpu");

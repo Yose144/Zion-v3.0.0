@@ -104,6 +104,43 @@ prefer your own esplora.
 btcunlock wif Kx...   # network, compression, pubkey, P2PKH + P2WPKH
 ```
 
+## `keyscan` — raw private-key range scan (Bitcoin puzzle mode)
+
+Sequential walk of every key in `[start, end)` — compressed pubkey →
+hash160 → match. This is the raw form of the 2015 "Bitcoin puzzle"
+search: the key is *known* to sit in a range, so a scan is guaranteed to
+hit iff the range is covered. It is not ECDLP and gives no shortcut on
+arbitrary addresses.
+
+```bash
+btcunlock keyscan --start 0x1000000 --end 0x2000000 \
+    --target 15JhYXn6Mx3oF4Y7PcTAv2wVVAuCFFQNiP \
+    --gpu --stride 8 --batch 1048576 \
+    --checkpoint p25.ckpt          # Ctrl-C, then --resume
+
+btcunlock puzzle 25 --gpu           # shorthand: [2^24, 2^25) + the
+                                    # published puzzle address
+```
+
+- `--start/--end`: big-endian hex, `0x` optional, up to 256 bits
+- `--target`: P2PKH / P2WPKH address or 40-hex hash160, repeatable;
+  `--target-file` reads one per line
+- `--stride` (1–16): keys each GPU work-item walks. All `stride` points
+  share ONE Montgomery batch inversion — per-key cost ≈ 1 point add +
+  ~5 field muls + hash160, ~10× cheaper than inverting per key
+- GPU hits are re-derived and verified on the host before reporting
+  (key, WIF, address) — a kernel bug can lose a hit, never fake one
+- CPU path does one scalar mult per 64k-chunk then `combine(+G)` steps
+- Measured ~22 M keys/s on a busy GTX 1070 Ti → puzzle #25 (16.7 M keys)
+  in ~1 s. Realistic reach on one GPU: ~2^44 keys/week. The open
+  puzzles (#71+) are range ~2^70 — a full sequential scan is
+  10^5–10^6 GPU-years; running them is a lottery ticket, not a plan
+- `puzzle N` resolves the published address for N = 1–160 and marks
+  solved ones as self-tests (handy regression checks)
+
+Checkpoint is `btcunlock-keys.ckpt` (or `--checkpoint`), bound to the
+range+targets — resume with `--resume` on the same command.
+
 ## `bench` / `gpu-list`
 
 ```bash
@@ -160,6 +197,10 @@ derive_match (1 item/seed): BIP32 tree walk on device — secp256k1 field
                           RIPEMD-160 hash160 + BIP341 TapTweak → target scan
 host:                    only hits + dead items come back over PCIe;
                          each hit seed is re-derived on CPU for reporting
+key_scan (item=stride keys): k₀·G via the window table, then stride−1
+                         Jacobian +G additions; ONE Montgomery batch
+                         inversion → affine → hash160 → target match.
+                         Hits carry the absolute key; host re-verifies
 ```
 
 The compression functions use a circular `W[16]` message schedule under
