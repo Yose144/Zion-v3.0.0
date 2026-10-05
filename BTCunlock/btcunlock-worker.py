@@ -202,6 +202,15 @@ def main():
         extra += ["--gpu-index", str(args.gpu_index)]
 
     log(f"coordinator={COORD} worker={args.worker_id} label={args.label}")
+    # Drop stale per-unit checkpoints — an interrupted unit re-queues on
+    # the coordinator after its lease TTL anyway; old ckpts only linger.
+    for ck in BASE.glob("unit-*.ckpt"):
+        try:
+            if time.time() - ck.stat().st_mtime > 4 * 3600:
+                ck.unlink()
+                log(f"cleaned stale {ck.name}")
+        except Exception:
+            pass
     while not _stop.is_set():
         try:
             u = api("POST", "/api/lease",
