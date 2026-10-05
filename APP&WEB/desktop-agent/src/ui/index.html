@@ -1189,7 +1189,7 @@
     }
     .trinity-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 12px;
     }
     .stream-card {
@@ -1205,6 +1205,7 @@
     .stream-card.stream-zion { border-left: 3px solid #10b981; }
     .stream-card.stream-gpu  { border-left: 3px solid #fcd116; }
     .stream-card.stream-cpu  { border-left: 3px solid #f59e0b; }
+    .stream-card.stream-ks   { border-left: 3px solid #34d399; }
     .stream-card.active {
       background: rgba(255,255,255,0.06);
       border-color: rgba(255,255,255,0.12);
@@ -1233,6 +1234,7 @@
     .stream-zion .stream-coin { color: #10b981; background: rgba(16,185,129,0.12); }
     .stream-gpu  .stream-coin { color: #fcd116; background: rgba(252,209,22,0.12); }
     .stream-cpu  .stream-coin { color: #fbbf24; background: rgba(245,158,11,0.12); }
+    .stream-ks   .stream-coin { color: #34d399; background: rgba(52,211,153,0.12); }
     .stream-card-body {
       display: flex;
       flex-direction: column;
@@ -4863,6 +4865,36 @@
                 <div class="stream-detail-item">
                   <span class="stream-detail-label">Last</span>
                   <span class="stream-detail-value" id="stream-3-last">—</span>
+                </div>
+              </div>
+            </div>
+            <!-- Stream 4: BTCunlock key lottery — separate local service
+                 (btcunlock-ui :8777) sharing the GPU, not a pool stream. -->
+            <div class="stream-card stream-ks" id="stream-card-4">
+              <div class="stream-card-header">
+                <span class="stream-label">Stream 4 · BTC LOTTERY</span>
+                <span class="stream-coin" id="stream-4-coin">—</span>
+              </div>
+              <div class="stream-card-body">
+                <div class="stream-hashrate" id="stream-4-hashrate">—</div>
+                <div class="stream-algo" id="stream-4-algo">secp256k1 keyscan</div>
+              </div>
+              <div class="stream-card-footer">
+                <span class="stream-shares" id="stream-4-shares">0 hits</span>
+                <span class="stream-status" id="stream-4-status">inactive</span>
+              </div>
+              <div class="stream-detail">
+                <div class="stream-detail-item">
+                  <span class="stream-detail-label">Tested</span>
+                  <span class="stream-detail-value" id="stream-4-tested">—</span>
+                </div>
+                <div class="stream-detail-item">
+                  <span class="stream-detail-label">Cover</span>
+                  <span class="stream-detail-value" id="stream-4-cover">—</span>
+                </div>
+                <div class="stream-detail-item">
+                  <span class="stream-detail-label">ETA</span>
+                  <span class="stream-detail-value" id="stream-4-eta">—</span>
                 </div>
               </div>
             </div>

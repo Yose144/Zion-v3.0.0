@@ -1,0 +1,16 @@
+# BTCunlock key lottery dashboard — read-only status API + web UI on :8777.
+[Unit]
+Description=BTCunlock key lottery dashboard (:8777)
+After=zion-btcunlock.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/zionserver/2.9.6-main/BTCunlock
+ExecStart=/usr/bin/python3 /home/zionserver/2.9.6-main/BTCunlock/btcunlock-ui.py --port 8777
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/zionserver/btcunlock/ui.log
+StandardError=append:/home/zionserver/btcunlock/ui.log
+
+[Install]
+WantedBy=default.target

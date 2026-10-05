@@ -1,0 +1,24 @@
+# BTCunlock key lottery — GPU key-range scanner (puzzle #71).
+# Shares the box's GPU with the ZION miner and llama.cpp; Nice=15 keeps
+# mining workloads ahead. Checkpoints survive restarts (--resume).
+# Install:  cp ~/.config/systemd/user/  (user unit, linger starts at boot)
+#           systemctl --user daemon-reload && systemctl --user enable --now zion-btcunlock
+[Unit]
+Description=BTCunlock key lottery — puzzle #71 GPU keyscan
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/zionserver/2.9.6-main/BTCunlock
+ExecStart=/home/zionserver/2.9.6-main/BTCunlock/target/release/btcunlock \
+  puzzle 71 --gpu --stride 16 --batch 524288 \
+  --checkpoint /home/zionserver/btcunlock/p71.ckpt --resume
+Restart=always
+RestartSec=15
+Nice=15
+StandardOutput=append:/home/zionserver/btcunlock/p71.log
+StandardError=append:/home/zionserver/btcunlock/p71.log
+
+[Install]
+WantedBy=default.target

@@ -7094,6 +7094,33 @@ setInterval(() => {
     // ignore
   }
 
+  // BTCunlock key-lottery: poll the local scanner UI (:8777) and relay a
+  // trimmed status to the renderer. Independent of the miner — the
+  // scanner is a separate service sharing the same GPU.
+  void (async () => {
+    let payload = { ok: false };
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 2000);
+      try {
+        const res = await fetch('http://127.0.0.1:8777/api/status', { signal: ctrl.signal });
+        if (res.ok) {
+          const d = await res.json();
+          payload = {
+            ok: true, alive: !!d.alive, rate_mks: d.rate_mks || 0,
+            tested: d.tested || 0, hits: d.hits || 0,
+            coverage_ppm: d.coverage_ppm, odds: d.odds, eta: d.eta,
+            uptime: d.uptime, label: d.label, puzzle: d.puzzle,
+            gpu_util: d.gpu && d.gpu.util,
+          };
+        }
+      } finally { clearTimeout(timer); }
+    } catch {
+      // unreachable → payload stays {ok:false}
+    }
+    try { sendToRenderer('keyscan-status', payload); } catch {}
+  })();
+
   if (minerProcess) {
     const updated = tryUpdateStatsFromFile();
     if (!updated) minerStats.uptime += STATS_INTERVAL_SEC;
