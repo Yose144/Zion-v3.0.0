@@ -502,8 +502,11 @@ async fn e2e_flow_btc_to_zion_refund() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    // Short ZION timeout — expires ~45s after offer (wall-clock timelock).
-    let zion_timeout = now + 45;
+    // Short ZION timeout — expires ~120s after offer (wall-clock timelock).
+    // Headroom must cover offer→BTC-lock→mine→first-poll on contended hosts:
+    // the L1 adapter rejects timelocks that are already in the past, and under
+    // load this path took ~74s (observed on Edge), so 45s was flaky.
+    let zion_timeout = now + 120;
 
     let swaps = Arc::new(HtlcSwap::new_offline());
     let cfg = BtcSwapConfig {
@@ -546,8 +549,14 @@ async fn e2e_flow_btc_to_zion_refund() {
         *p == BtcSwapPhase::Locked
     })
     .await;
-    eprintln!("[e2e] locked; waiting out the 45s ZION timeout");
-    tokio::time::sleep(Duration::from_secs(50)).await;
+    eprintln!("[e2e] locked; waiting out the ZION timeout");
+    // Sleep until the wall-clock timelock has actually expired (+5s grace) —
+    // adaptive, since reaching this point can take tens of seconds under load.
+    let now2 = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    tokio::time::sleep(Duration::from_secs(zion_timeout.saturating_sub(now2) + 5)).await;
 
     poll_until(&flow, &swap_id, "phase=Refunded (RefundZion)", |p| {
         *p == BtcSwapPhase::Refunded
