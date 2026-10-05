@@ -62,7 +62,7 @@ const categories: Category[] = [
       {
         id: 'master-3.2-cz',
         title: { cs: 'One Love 3.2 (CZ)', en: 'One Love 3.2 (CZ)' },
-        description: { cs: 'Kanonická syntéza všech čtyř knih pro Mainnet Stable 3.2 "One Love". Inspirováno duchem Boba Marleye.', en: 'Canonical synthesis of all four books for Mainnet Stable 3.2 "One Love." Inspired by the spirit of Bob Marley.' },
+        description: { cs: 'Kanonická syntéza všech čtyř knih pro 3.2 "One Love". Inspirováno duchem Boba Marleye.', en: 'Canonical synthesis of all four books for 3.2 "One Love." Inspired by the spirit of Bob Marley.' },
         file: 'ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md',
         format: 'md',
       },

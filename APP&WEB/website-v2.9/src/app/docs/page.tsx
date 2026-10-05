@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" — kandidát na Mainnet Stable; probíhá 30denní veřejný stability run. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument níže. Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), získat základní likviditu a sestavit tým dobrovolných vývojářů.',
-    en: 'The current public line is v3.2.0 "One Love" — Mainnet Stable candidate; the 30-day public stability run is in progress. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document below. Pool active, mining live, DEX and bridge deployed. The public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a team of volunteer developers.',
+    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" — kandidát na Mainnet Stable; 30denní stability run #2 nesplnil gate, další běh se připravuje. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument níže. Pool aktivní, mining live, DEX a bridge nasazeny. Veřejný launch je odložen (TBD). Projekt potřebuje projít Maturity Gate (Maturitou), získat základní likviditu a sestavit tým dobrovolných vývojářů.',
+    en: 'The current public line is v3.2.0 "One Love" — Mainnet Stable candidate; the 30-day stability run #2 did not pass the gate; the next run is being prepared. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document below. Pool active, mining live, DEX and bridge deployed. The public launch is postponed (TBD). The project needs to pass the Maturity Gate, secure basic liquidity, and assemble a team of volunteer developers.',
   },
   overviewNoticeLink: { cs: 'v3.2.0 Přehled', en: 'v3.2.0 Overview' },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
@@ -53,7 +53,7 @@ const docsPageCopy = {
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
   'v3.2.0': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love", kandidát na Mainnet Stable (probíhá 30denní stability run), nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love", Mainnet Stable candidate (30-day stability run in progress), new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
+    description: { cs: 'Aktuální veřejná linka — v3.2.0 "One Love", kandidát na Mainnet Stable (stability run #2 nesplnil gate), nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 7/7 služeb aktivních, kanonický Ekam Deeksha PoW, DEX a bridge nasazeny', en: 'Current public line — v3.2.0 "One Love", Mainnet Stable candidate (stability run #2 failed the gate), new genesis hash after the August hard reset (complete key rotation), 7/7 services active, canonical Ekam Deeksha PoW, DEX and bridge deployed' },
   },
   'v3.1.0': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
@@ -241,7 +241,7 @@ const versions: Version[] = [
     label: 'v3.2.0',
     tag: 'CURRENT',
     tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
-    description: 'Current public line — v3.2.0 "One Love" Mainnet Stable, DEX and bridge deployed',
+    description: 'Current public line — v3.2.0 "One Love" Mainnet Alpha, DEX and bridge deployed',
     categories: [
       {
         id: 'v320-overview',

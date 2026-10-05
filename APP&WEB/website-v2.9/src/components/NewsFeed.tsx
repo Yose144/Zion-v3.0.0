@@ -32,6 +32,22 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'zion-v320-alpha-beta-stable-path',
+    date: '2026-10-05',
+    tag: { cs: 'Aktualizace', en: 'Update' },
+    tagColor: 'text-zion-cyan',
+    title: {
+      cs: 'Cesta 3.2 „One Love“: Alpha → Beta → Stable',
+      en: 'The 3.2 "One Love" path: Alpha → Beta → Stable',
+    },
+    summary: {
+      cs: 'Síť 3.2.0 „One Love“ běží jako Mainnet Alpha. Další krok je Beta — doložit živé toky DEX a HTLC, paritu GPU výpočtu a monitoring bridge. Stable vyžaduje 30denní stabilitní běh ≥ 99,9 % bez kritického incidentu, nezávislý bezpečnostní audit a plný test obnovy ze záloh. Aktuální stav a plán najdete na roadmapě.',
+      en: 'The 3.2.0 "One Love" network runs as Mainnet Alpha. The next step is Beta — proving live DEX and HTLC flows, GPU computation parity and bridge monitoring. Stable requires a 30-day stability run at ≥99.9% with no critical incident, an independent security audit and a full backup-restore drill. Current status and plan are on the roadmap.',
+    },
+    href: '/roadmap',
+    homepage: false,
+  },
+  {
     slug: 'public-launch-postponed-sep-2026',
     date: '2026-09-11',
     tag: { cs: 'Oznámení', en: 'Announcement' },
@@ -100,12 +116,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Release', en: 'Release' },
     tagColor: 'text-zion-purple',
     title: {
-      cs: 'ZION v3.2.0 "One Love" — Mainnet Stable je live',
-      en: 'ZION v3.2.0 "One Love" — Mainnet Stable is live',
+      cs: 'ZION v3.2.0 "One Love" — mainnet je live (Alpha)',
+      en: 'ZION v3.2.0 "One Love" — mainnet is live (Alpha)',
     },
     summary: {
-      cs: 'ZION TerraNova v3.2.0 "One Love" je oficiálně Mainnet Stable. Node, pool, multichain, DAO a OASIS běží v produkci na Edge serveru. Nový genesis po hard resetu (kompletní rotace klíčů), kanonický Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge na Base Mainnet, ZionDex multi-path routing a OASIS game API. Veřejný launch je odložen (TBD) — do oznámení nového data probíhá kontinuální testování a security audit. One love, one chain, one road.',
-      en: 'ZION TerraNova v3.2.0 "One Love" is officially Mainnet Stable. Node, pool, multichain, DAO, and OASIS are running in production on the Edge server. New genesis after a hard reset (complete key rotation), canonical Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge on Base Mainnet, ZionDex multi-path routing, and OASIS game API. Public launch is postponed (TBD) — continuous testing and security audit continue until a new date is announced. One love, one chain, one road.',
+      cs: 'ZION TerraNova v3.2.0 "One Love" běží jako Mainnet Alpha. Node, pool, multichain, DAO a OASIS běží v produkci na Edge serveru. Nový genesis po hard resetu (kompletní rotace klíčů), kanonický Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge na Base Mainnet, ZionDex multi-path routing a OASIS game API. Veřejný launch je odložen (TBD) — do oznámení nového data probíhá kontinuální testování a bezpečnostní revize. Oprava 5. 10. 2026: původní text uváděl „Mainnet Stable“ — Stable gate (30denní stabilitní run, externí audit) zatím splněny nejsou. One love, one chain, one road.',
+      en: 'ZION TerraNova v3.2.0 "One Love" runs as Mainnet Alpha. Node, pool, multichain, DAO, and OASIS are running in production on the Edge server. New genesis after a hard reset (complete key rotation), canonical Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge on Base Mainnet, ZionDex multi-path routing, and OASIS game API. Public launch is postponed (TBD) — continuous testing and security reviews continue until a new date is announced. Correction 5 Oct 2026: the original text said "Mainnet Stable" — the Stable gates (30-day stability run, external audit) are not met yet. One love, one chain, one road.',
     },
     href: '/roadmap',
     homepage: false,

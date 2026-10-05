@@ -347,6 +347,7 @@ interface G8Run {
   status?: string;
   window_status?: string;
   gate_status?: string;
+  gate_reason?: string | null;
   elapsed_seconds?: number;
   remaining_seconds?: number;
   progress_percent?: number;
@@ -829,9 +830,9 @@ function getFallbackReadinessMap(cs: boolean): ReadinessMap {
       { title: '89/5/5/1 reward split', detail: cs ? 'On-chain od přechodu na mainnet' : 'On-chain since the mainnet cutover' },
     ],
     next_48h: [
-      { title: 'G8 — 30-day continuous run #2', detail: cs ? 'Běží od 29. 9. 2026 · cíl 29. 10. · uptime ≥ 99,9 % · live na /g8' : 'Running since 29 Sep 2026 · target 29 Oct · uptime ≥ 99.9% · live on /g8' },
-      { title: 'G9 — security audit', detail: cs ? 'Scope připraven · externí firma zatím není objednána' : 'Scope prepared · external firm not yet engaged' },
-      { title: 'Disaster-recovery drill', detail: cs ? 'Plná obnova mimo produkci s RTO/RPO reportem' : 'Full off-site restore with measured RTO/RPO' },
+      { title: 'G8 — 30-day continuous run #2', detail: cs ? 'Gate nesplněn (kritické incidenty, vyčerpaný downtime budget). Okno běží do 29. 10. jen pro data; run #3 po plánu liveness těžby.' : 'Gate failed (critical incidents, downtime budget exhausted). Window runs to 29 Oct for data only; run #3 after a mining-liveness plan.' },
+      { title: 'G9 — security audit', detail: cs ? 'Scope auditu celého projektu připraven; externí firma zatím neobjednána.' : 'Whole-project audit scope drafted; external firm not yet engaged.' },
+      { title: 'Disaster-recovery drill', detail: cs ? 'Částečný test obnovy jednoho nodu proběhl 5. 10.; plný šifrovaný off-site DR drill stále chybí.' : 'Partial single-node restore test done 2026-10-05; a full encrypted off-site restore drill is still required.' },
       { title: cs ? 'Release artefakty' : 'Release artifacts', detail: cs ? 'Sjednocení verzí, checksumy, podepsaný tag po stabilitě' : 'Version unification, checksums, signed tag after stability' },
     ],
   };
@@ -986,6 +987,18 @@ function G8RunCard({ run }: { run: G8Run | null }) {
     : gateStatus === 'failed' ? '#EF4444'
     : gateStatus === 'evidence_incomplete' ? '#F59E0B'
     : '#F59E0B';
+  const gateReasonLabel =
+    run.gate_reason === 'critical_incident'
+      ? (cs ? 'kritický incident' : 'critical incident')
+      : run.gate_reason === 'downtime_budget_exhausted'
+        ? (cs ? 'vyčerpán downtime budget' : 'downtime budget exhausted')
+        : run.gate_reason === 'stopped_before_window_end'
+          ? (cs ? 'běh ukončen předčasně' : 'stopped before window end')
+          : run.gate_reason === 'coverage_below_threshold'
+            ? (cs ? 'nízké pokrytí evidence' : 'coverage below threshold')
+            : run.gate_reason === 'uptime_below_threshold'
+              ? (cs ? 'dostupnost pod prahem' : 'uptime below threshold')
+              : null;
 
   const uptime = typeof run.uptime_percent === 'number' ? run.uptime_percent : null;
   const coverage = typeof run.evidence_coverage_percent === 'number' ? run.evidence_coverage_percent : null;
@@ -1011,7 +1024,7 @@ function G8RunCard({ run }: { run: G8Run | null }) {
             {statusLabel}
           </span>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: gateColor + '20', color: gateColor, border: '1px solid ' + gateColor + '40' }}>
-            {cs ? 'GATE' : 'GATE'}: {gateLabel}
+            GATE: {gateLabel}{gateReasonLabel ? ` — ${gateReasonLabel}` : ''}
           </span>
         </div>
       </div>
@@ -2335,8 +2348,8 @@ export default function MissionControlDashboard() {
                 </h2>
                 <p className="text-sm text-gray-400">
                   {cs
-                    ? 'Síťová topologie aktivní. Mainnet Alpha live, G8 30denní kontinuální běh aktivní, genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.'
-                    : 'Network topology active. Mainnet Alpha live, G8 30-day continuous run active, genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.'
+                    ? 'Síťová topologie aktivní. Mainnet Alpha live, G8 run #2 nesplnil gate, genesis artefakty potvrzeny. Veřejný mainnet launch je odložen; nové datum oznámíme po splnění podmínek.'
+                    : 'Network topology active. Mainnet Alpha live, G8 run #2 failed the gate, genesis artifacts confirmed. Public mainnet launch is postponed; a new date will be announced once conditions are met.'
                   }
                 </p>
               </div>
@@ -2353,8 +2366,8 @@ export default function MissionControlDashboard() {
               </div>
               <div className="mt-4 zion-tile px-5 py-4 text-sm text-gray-300">
                 {cs
-                  ? <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Alpha v testování, G8 30denní kontinuální běh aktivní, genesis artefakty potvrzeny. Síťová topologie v testování.</>
-                  : <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Alpha in testing, G8 30-day continuous run active, genesis artifacts confirmed. Network topology in testing.</>
+                  ? <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Alpha v testování, G8 run #2 nesplnil gate, genesis artefakty potvrzeny. Síťová topologie v testování.</>
+                  : <><span className="font-semibold text-zion-gold">One Love Mainnet</span> — Mainnet Alpha in testing, G8 run #2 failed the gate, genesis artifacts confirmed. Network topology in testing.</>
                 }
               </div>
             </motion.section>
@@ -2432,7 +2445,7 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Network" value="ZION" sub="One Love · L1–L6" color="text-zion-cyan" />
                 <Stat label="Tests" value="2,100+" sub="workspace passing / 0 failing" color="text-zion-cyan" />
-                <Stat label="Launch Mode" value="G8 RUNNING" sub="30-day run · uptime ≥99.9%" color="text-zion-gold" />
+                <Stat label="Launch Mode" value="G8 FAILED" sub="run #2 · run #3 pending" color="text-zion-gold" />
                 <Stat label="Mainnet Status" value="ALPHA LIVE" sub="public launch postponed (TBD)" color="text-zion-gold" />
               </div>
             </motion.section>
@@ -2983,7 +2996,7 @@ export default function MissionControlDashboard() {
                       { step: 'G1 Rigs E2E', desc: 'Produkční rigy na mainnet poolu — GTX 1070 Ti + SMOS AMD rig, >99% accept', status: 'done', ref: 'closed' },
                       { step: 'G7 Chaos/Load', desc: '10k-miner pool handshake, DEX/bridge overload, P2P storm', status: 'done', ref: 'passed' },
                       { step: 'Public Build', desc: 'public build — Boost branding, protected details', status: 'done', ref: 'v3.2.0' },
-                      { step: 'G8 30-Day Run', desc: 'Kontinuální běh 23. 8. — 22. 9. 2026, uptime cíl ≥99.9%', status: 'pending', ref: 'in progress' },
+                      { step: 'G8 30-Day Run', desc: 'Run #2 (29. 9. – 29. 10. 2026) nesplnil gate; run #3 po zajištění těžby', status: 'pending', ref: 'run #2 failed' },
                       { step: 'G9 Security Audit', desc: 'Externí audit před public launchem', status: 'pending', ref: 'scheduled' },
                     ].map(row => (
                       <tr key={row.step} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${row.status === 'pending' ? 'bg-zion-gold/5' : ''}`}>
@@ -3148,7 +3161,7 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">{cs ? 'Mainnet Alpha live. Gates G1–G5, G7 a G11 hotové, G8 30denní kontinuální běh probíhá. Veřejný launch je odložen (TBD).' : 'Mainnet Alpha live. Gates G1–G5, G7 and G11 complete, G8 30-day continuous run in progress. Public launch is postponed (TBD).'}</p>
+                <p className="text-sm text-gray-400">{cs ? 'Mainnet Alpha live. Gates G1–G7, G10 a G11 hotové; G8 run #2 nesplnil gate, další běh se připravuje. Veřejný launch je odložen (TBD).' : 'Mainnet Alpha live. Gates G1–G7, G10 and G11 complete; G8 run #2 failed, the next run is being prepared. Public launch is postponed (TBD).'}</p>
               </div>
               <div className="relative h-9 zion-section overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-zion-gold via-zion-cyan to-zion-purple" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1.2 }} />
@@ -3511,8 +3524,8 @@ export default function MissionControlDashboard() {
                   <p className="mt-2">{cs ? 'ZION konsensus, Ekam Deeksha v3.2, reward split 89/5/5/1 a payout sweep běží produkčně na mainnetu.' : 'ZION consensus, Ekam Deeksha v3.2, the 89/5/5/1 reward split, and the payout sweep run in production on mainnet.'}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">Launch Gate · G8 Running</p>
-                  <p className="mt-2">{cs ? 'G8 30denní kontinuální běh probíhá (23. 8. — 22. 9. 2026). Po uzavření následuje G9 externí audit a G10 L5/L6 rozhodnutí.' : 'The G8 30-day continuous run is in progress (23 Aug — 22 Sep 2026). G9 external audit and G10 L5/L6 decision follow after closure.'}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">Launch Gate · G8 Run #2 Failed</p>
+                  <p className="mt-2">{cs ? 'G8 run #2 (29. 9. — 29. 10. 2026) nesplnil gate kvůli kritickým výpadkům těžby. Run #3 následuje po zajištění spolehlivé těžby; G9 externí audit zatím není objednán.' : 'G8 run #2 (29 Sep — 29 Oct 2026) failed the gate due to critical mining outages. Run #3 follows once reliable mining is secured; the G9 external audit is not yet engaged.'}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan">Pre-Launch</p>
@@ -3550,7 +3563,7 @@ export default function MissionControlDashboard() {
                       { done: true, date: cs ? '1. ledna 2026' : '1 January 2026', title: 'MAINNET GENESIS', desc: cs ? 'Genesis block (timestamp 1767225600) — chain start' : 'Genesis block (timestamp 1767225600) — chain start', color: 'text-zion-cyan' },
                       { done: true, date: cs ? '6. srpna 2026' : '6 August 2026', title: 'v3.2.0 ONE LOVE RESET', desc: cs ? 'Nová genesis, kompletní rotace klíčů (BIP39), přechod na mainnet' : 'New genesis, full key rotation (BIP39), mainnet cutover', color: 'text-zion-cyan' },
                       { done: true, date: cs ? '22. srpna 2026' : '22 August 2026', title: 'GATES G1–G5/G7/G11 + E4', desc: cs ? 'Rigy E2E, chaos/load, bridge round-trip, migrace na veřejný mainnet uzavřeny' : 'Rigs E2E, chaos/load, bridge round-trip, public mainnet migration closed', color: 'text-zion-cyan' },
-                      { active: true, date: cs ? '23. 8. — 22. 9. 2026' : '23 Aug — 22 Sep 2026', title: 'G8 30-DAY RUN', desc: cs ? 'Kontinuální běh ZION sítě — uptime cíl ≥ 99,9 %' : 'Continuous run of the ZION network — uptime target ≥ 99.9%', color: 'text-zion-gold' },
+                      { date: cs ? '29. 9. — 29. 10. 2026' : '29 Sep — 29 Oct 2026', title: 'G8 30-DAY RUN #2', desc: cs ? 'Nesplnil gate — kritické výpadky těžby; run #3 po zajištění těžby' : 'Gate failed — critical mining outages; run #3 after mining is secured', color: 'text-zion-gold' },
                       { active: true, date: cs ? 'TBD' : 'TBD', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : 'One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', color: 'text-zion-cyan' },
                     ].map((item, i) => (
                       <div key={i} className="relative">
@@ -3672,7 +3685,7 @@ export default function MissionControlDashboard() {
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G3 — solver network + G2 WARP registry gating', phase: 'L2/L3', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G4 — public subtree sync s v3-Mainnet', phase: 'DOCS', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'Public releases v3.2.0 — miner, CLI, Desktop Agent', phase: 'RELEASE', status: 'CLOSED', sColor: 'text-zion-cyan' },
-                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'G8 — 30-day continuous run (23. 8. — 22. 9. 2026)', phase: 'G8', status: 'RUNNING', sColor: 'text-zion-gold' },
+                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'G8 — 30-day continuous run #2 (29. 9. — 29. 10. 2026)', phase: 'G8', status: 'FAILED', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'F2 — 24h transaction fuzz evidence', phase: 'F2', status: 'RUNNING', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G9 — externí security audit' : 'G9 — external security audit', phase: 'G9', status: 'SCHEDULED', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'G10 — L5/L6 governance decision', phase: 'G10', status: 'PENDING', sColor: 'text-zion-purple' },
