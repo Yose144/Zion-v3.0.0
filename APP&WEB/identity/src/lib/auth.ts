@@ -39,6 +39,12 @@ export async function requireAuth(
     return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Session revoked or expired' });
   }
 
+  // The session must belong to the token subject — a JWT minted with a
+  // foreign jti must not authenticate as its owner.
+  if (session.userId !== payload.sub) {
+    return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Session does not match token subject' });
+  }
+
   // Rolling refresh: if the session is more than 50% through its lifetime,
   // issue a new token with the same JTI and an extended expiry.
   const iatMs = payload.iat * 1000;
@@ -83,7 +89,12 @@ export async function optionalAuth(
       const session = await (req.server as FastifyInstance).prisma.session.findUnique({
         where: { jwtJti: payload.jti },
       });
-      if (!session || session.revoked || session.expiresAt < new Date()) {
+      if (
+        !session ||
+        session.revoked ||
+        session.expiresAt < new Date() ||
+        session.userId !== payload.sub
+      ) {
         (req as unknown as Record<string, unknown>).user = undefined;
       }
     }

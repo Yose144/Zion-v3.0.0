@@ -10,7 +10,7 @@ export async function sessionRoutes(app: FastifyInstance): Promise<void> {
       orderBy: { createdAt: 'desc' },
     });
     return {
-      sessions: sessions.map((s) => ({ ...s, current: s.jwtJti === payload.jti })),
+      sessions: sessions.map((s: any) => ({ ...s, current: s.jwtJti === payload.jti })),
     };
   });
 
