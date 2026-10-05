@@ -380,10 +380,10 @@ Both nginx files and the ZIS environment were backed up on the host before the c
 
 ### Dependency audit findings (post-deploy, follow-up items)
 
-- **cargo audit:** 1 vulnerability — `RUSTSEC-2026-0285` rustls 0.23.42 (TLS 1.3 message-boundary, medium 5.3; fix ≥0.23.45). Plus unmaintained deps (fxhash, instant, paste, ring 0.16, rustls-pemfile ×2), unsound `lru` (RUSTSEC-2026-0002, -0253), yanked chacha20. → bump `rustls` to ≥0.23.45 in a follow-up.
+- **cargo audit:** ~~1 vulnerability~~ **0 vulnerabilities after `rustls 0.23.42 → 0.23.45`** (`RUSTSEC-2026-0285` resolved same day; aws-lc-rs 1.18.1, rustls-webpki 0.103.15 pulled in; `cargo check --workspace` + zion-pool 178/178 green). Remaining: 9 warnings — unmaintained (fxhash, instant, paste, ring 0.16, rustls-pemfile ×2), unsound `lru` (RUSTSEC-2026-0002, -0253), yanked chacha20.
 - **npm audit (identity):** 7 advisories incl. **critical `fast-jwt` ≤6.2.3** (iss-validation bypass, unknown-crit headers, algorithm confusion, empty-HMAC-secret bypass). Fix requires `@fastify/jwt` ^10.2.2 — **semver-major, breaking**; not applied in this pass, scheduled as a follow-up task.
 - **gitleaks:** 1415 history findings (burned secrets — documented, rotated). HEAD scan: 160 hits in tracked files, all triaged as test vectors/doc examples/deployed-contract data; none are the Fix-H scrubbed secrets.
-- Workspace `cargo test` (whole-tree) is running as belt-and-suspenders; all touched-component suites are green (see above).
+- **Workspace `cargo test`:** per-package sweep completed — all crates pass (l1-types, cosmic-harmony, miner, native-ffi, dao, ncl, ai-native, oasis, free-world, issobella, smoke, sdk, cli + core/pool/multichain above). One pre-existing failure found and fixed: `zion-smoke::warp_htlc_cross_chain_smoke` predated the upstream `source_confirmed` guard (d74b479ac); test now confirms the source lock via `set_source_lock` (`8e8be1e9c`).
 
 ### Incident during deploy
 
