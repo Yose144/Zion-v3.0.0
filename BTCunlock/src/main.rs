@@ -17,6 +17,7 @@
 mod engine;
 #[cfg(feature = "gpu")]
 mod gpu;
+mod kangaroo;
 mod keyscan;
 mod recover;
 mod runner;
@@ -234,6 +235,32 @@ enum Cmd {
         resume: bool,
         /// Shell command run on every verified hit — env carries
         /// BTCUNLOCK_KEY/KEY_HEX/WIF/ADDRESS/TARGET/LABEL.
+        #[arg(long)]
+        hit_cmd: Option<String>,
+    },
+    /// Pollard kangaroo (lambda) for a bounded ECDLP: given a PUBLIC KEY
+    /// whose secret lies in [start, end), recover it in ~2√(b−a) group
+    /// ops. Address-only targets (e.g. puzzle #71) cannot be solved this
+    /// way — the method needs the key, not the hash160.
+    Kangaroo {
+        /// secp256k1 public key, hex: 02/03+64 (compressed) or 04+128.
+        pubkey: String,
+        /// Interval start, hex.
+        #[arg(long)]
+        start: String,
+        /// Interval end, hex — secret k satisfies start ≤ k < end.
+        #[arg(long)]
+        end: String,
+        /// Distinguished-point bits (memory/time trade-off; 0 = auto).
+        #[arg(long, default_value_t = 0)]
+        dp_bits: u32,
+        /// Hard step cap (0 = auto ≈ 16√width).
+        #[arg(long, default_value_t = 0)]
+        max_steps: u64,
+        /// Directory for mode-600 hit records (default: none — stdout only).
+        #[arg(long)]
+        hits_dir: Option<String>,
+        /// Hook command on hit — same env contract as keyscan --hit-cmd.
         #[arg(long)]
         hit_cmd: Option<String>,
     },
@@ -479,6 +506,34 @@ fn main() -> Result<()> {
                 label,
                 hit_cmd,
             })
+        }
+        Cmd::Kangaroo {
+            pubkey,
+            start,
+            end,
+            dp_bits,
+            max_steps,
+            hits_dir,
+            hit_cmd,
+        } => {
+            let pk = kangaroo::parse_pubkey(&pubkey)?;
+            let start = keyscan::U256::from_hex(&start)?;
+            let end = keyscan::U256::from_hex(&end)?;
+            let hit = kangaroo::solve(
+                &kangaroo::KangaOpts {
+                    start,
+                    end,
+                    dp_bits,
+                    max_steps,
+                    hits_dir: hits_dir.map(std::path::PathBuf::from),
+                    hit_cmd,
+                },
+                &pk,
+            )?;
+            if hit.is_none() {
+                std::process::exit(1);
+            }
+            Ok(())
         }
         Cmd::Bench {
             gpu,

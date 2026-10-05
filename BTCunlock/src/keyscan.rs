@@ -264,7 +264,7 @@ pub struct KeyscanOpts {
     pub hit_cmd: Option<String>,
 }
 
-fn fmt_rate(r: f64) -> String {
+pub(crate) fn fmt_rate(r: f64) -> String {
     if r >= 1e9 {
         format!("{:.2} Gk/s", r / 1e9)
     } else if r >= 1e6 {
@@ -326,7 +326,7 @@ fn leap(y: i64) -> bool {
 }
 
 /// epoch → "YYYY-MM-DDTHH:MM:SSZ" — simple year/month walk, no chrono.
-fn iso_time(epoch: u64) -> String {
+pub(crate) fn iso_time(epoch: u64) -> String {
     let mut days = (epoch / 86400) as i64;
     let s = epoch % 86400;
     let mut y = 1970i64;
@@ -360,7 +360,7 @@ fn iso_time(epoch: u64) -> String {
 }
 
 #[cfg(unix)]
-fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
+pub(crate) fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
     use std::os::unix::fs::OpenOptionsExt;
     std::fs::OpenOptions::new()
         .create(true)
@@ -370,7 +370,7 @@ fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
 }
 
 #[cfg(unix)]
-fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
+pub(crate) fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
     use std::os::unix::fs::OpenOptionsExt;
     let mut f = std::fs::OpenOptions::new()
         .create(true)
@@ -382,7 +382,7 @@ fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
 }
 
 #[cfg(not(unix))]
-fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
+pub(crate) fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
     std::fs::OpenOptions::new()
         .create(true)
         .append(true)
@@ -390,7 +390,7 @@ fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
 }
 
 #[cfg(not(unix))]
-fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
+pub(crate) fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
     std::fs::write(p, data)
 }
 
