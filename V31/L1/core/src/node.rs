@@ -1071,6 +1071,17 @@ impl Node {
         // silently overwrites the tip row (height is UNIQUE) and the loser
         // block's coinbase stays applied in the UTXO set — an orphaned tip
         // replace plus a phantom reward output.
+        // Cheap pre-screen BEFORE taking the global UTXO lock: gossiped blocks
+        // that do not extend the tip (stale/fork spam) are rejected without
+        // entering the serialized critical section at all. The authoritative
+        // check still runs under the lock below — a racing tip update simply
+        // makes the block fail there instead.
+        if let Some((pre_tip, _)) = self.storage.tip().await? {
+            if block.header.height != pre_tip.height + 1 {
+                return Err(NodeError::Consensus(ConsensusError::PreviousHashMismatch));
+            }
+        }
+
         let mut set = self.utxo_set.lock().await;
 
         let (tip_header, _tip_hash) = self.storage.tip().await?.unwrap_or_else(|| {
@@ -1142,19 +1153,26 @@ impl Node {
 
         self.storage.put(&block).await?;
 
+        // Snapshot the post-apply UTXO set for mempool revalidation, then
+        // RELEASE the lock — everything below only touches mempool/template
+        // caches and must not extend the serialized critical section (the
+        // tip-check → apply → commit portion above is what needs atomicity).
+        let mut mempool_view = (*set).clone();
+        drop(set);
+
         // Remove included transactions from mempool.
         let included: Vec<Hash> = block.transactions.iter().map(|t| t.hash()).collect();
         self.mempool.remove(&included).await;
 
         // Revalidate the remaining mempool against the updated UTXO set and
         // drop any transactions that are no longer valid (e.g. outpoints spent
-        // by a block received over P2P).
+        // by a block received over P2P). Runs on the snapshot taken above —
+        // safe outside the lock, removals are idempotent.
         {
-            let mut view = (*set).clone();
             let remaining = self.mempool.pending().await;
             let mut invalid = Vec::new();
             for tx in remaining {
-                if view.apply_transaction(&tx, 0, 0).is_err() {
+                if mempool_view.apply_transaction(&tx, 0, 0).is_err() {
                     invalid.push(tx.hash());
                 }
             }
