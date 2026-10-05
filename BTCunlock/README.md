@@ -131,15 +131,114 @@ btcunlock puzzle 25 --gpu           # shorthand: [2^24, 2^25) + the
 - GPU hits are re-derived and verified on the host before reporting
   (key, WIF, address) — a kernel bug can lose a hit, never fake one
 - CPU path does one scalar mult per 64k-chunk then `combine(+G)` steps
-- Measured ~22 M keys/s on a busy GTX 1070 Ti → puzzle #25 (16.7 M keys)
-  in ~1 s. Realistic reach on one GPU: ~2^44 keys/week. The open
-  puzzles (#71+) are range ~2^70 — a full sequential scan is
-  10^5–10^6 GPU-years; running them is a lottery ticket, not a plan
+- Measured ~27 M keys/s on a shared GTX 1070 Ti (stride 16, batch
+  524288, `key_scan` regcap 80) → puzzle #25 (16.7 M keys) in ~0.6 s.
+  Realistic reach on one GPU: ~2^45 keys/week. The open puzzles (#71+)
+  are range ~2^70 — a full sequential scan is 10^5–10^6 GPU-years;
+  running them is a lottery ticket, not a plan
 - `puzzle N` resolves the published address for N = 1–160 and marks
   solved ones as self-tests (handy regression checks)
 
 Checkpoint is `btcunlock-keys.ckpt` (or `--checkpoint`), bound to the
 range+targets — resume with `--resume` on the same command.
+
+## `kangaroo` — bounded ECDLP (needs the public key)
+
+Pollard's lambda method: given `Q = k·G` with `start ≤ k < end`,
+recovers `k` in `~2√(end−start)` group operations instead of a linear
+scan. This is the algorithm that actually solves puzzle-range keys —
+**but only when the public key is known** (revealed by a spend or
+published by the challenge author).
+
+```bash
+btcunlock kangaroo 0279be66...f81798 --start 0x1 --end 0x1000000
+#                                             ↑ compressed (02/03+64hex)
+#                                               or uncompressed (04+128hex)
+```
+
+- Tame/wild herds, power-of-two jump set, distinguished points
+  (`--dp-bits` memory/time trade-off, auto by default), `--max-steps`
+  safety cap (auto ≈ 16√width)
+- Candidates are recomputed mod n and **verified against the pubkey and
+  the interval** before reporting — no false hits
+- Hits persist exactly like keyscan (mode-600 `hits.jsonl` + txt +
+  optional `--hit-cmd`)
+- **Cannot work on address-only targets.** hash160 hides the pubkey, so
+  puzzles like #71 (`pubkey_known: false`) are mathematically out of
+  scope — use `keyscan`/`puzzle` for those (lottery), or wait for the
+  owner to reveal the key. Open puzzles *with* known pubkeys (#140+)
+  are 2^70+ wide — kangaroo cuts them to ~2^70 ops, still impractical.
+  Honest reach: ~2^44–2^48 width = minutes on one CPU thread; ~2^56+
+  needs a serious DP-server setup (not implemented — single process,
+  single pair of walkers)
+
+Self-test: `cargo test --release kangaroo` recovers puzzle #25's key
+from its pubkey, plus a ragged non-power-of-two interval.
+
+## Hit backup & alerting (`keyscan`, `puzzle`, `kangaroo`)
+
+Every verified hit is persisted **before** it reaches stdout — a crash
+or closed terminal cannot lose a found key:
+
+```
+<ckpt_dir>/btcunlock-hits/
+├── hits.jsonl                     # append-only index, one JSON/line
+└── hit-<ISO>-0x<key>.txt          # human-readable copy
+```
+
+Both mode `0600` (they contain the WIF). The record carries key,
+key_hex, WIF, address, target, label, range, tested count, timestamp.
+
+`--hit-cmd '<cmd>'` runs a hook per hit with env vars
+`BTCUNLOCK_KEY`, `BTCUNLOCK_KEY_HEX`, `BTCUNLOCK_WIF`,
+`BTCUNLOCK_ADDRESS`, `BTCUNLOCK_TARGET`, `BTCUNLOCK_LABEL` — e.g.
+`scp` the hit file off-site, send a mail/ntfy push.
+
+## Live dashboard — `btcunlock-ui.py`
+
+Self-contained stdlib-only Python web UI, zero dependencies:
+
+```bash
+python3 btcunlock-ui.py --port 8777      # http://localhost:8777
+```
+
+Shows: live throughput + sparkline, keys tested, range coverage and the
+honest "1 in N" odds, puzzle card (id, address, range, OPEN/solved),
+GPU telemetry (nvidia-smi), milestones-to-coverage table, open-puzzle
+catalog, checkpoint age, copy-ready `--resume` command, log tail, and a
+**hits vault** — hits merged from the scanner's `hits.jsonl` into
+`hits-vault.json` (mode 600). WIFs are masked in web payloads; reveal
+via `GET /api/vault_wif?key=0x…` from localhost only.
+
+Defaults point at `~/btcunlock/` (override with `--log/--ckpt/--vault`).
+
+## Runtime data layout
+
+Keep all run artifacts in one place — the production layout used by
+the operator:
+
+```
+~/btcunlock/
+├── p71.ckpt                 # scanner checkpoint (job-hash bound)
+├── p71.log                  # scanner stdout/stderr
+├── btcunlock-hits/          # scanner-side hit backup (mode 600)
+│   ├── hits.jsonl
+│   └── hit-*.txt
+├── hits-vault.json          # UI-side merged vault (mode 600)
+└── ui.log                   # dashboard server log
+```
+
+Start a scan + UI detached so they survive the shell:
+
+```bash
+cd BTCunlock
+setsid nohup nice -n 15 ./target/release/btcunlock puzzle 71 \
+    --gpu --stride 16 --batch 524288 \
+    --checkpoint ~/btcunlock/p71.ckpt --resume \
+    > ~/btcunlock/p71.log 2>&1 < /dev/null &
+setsid nohup python3 btcunlock-ui.py --port 8777 \
+    > ~/btcunlock/ui.log 2>&1 < /dev/null &
+```
 
 ## `bench` / `gpu-list`
 
@@ -212,10 +311,14 @@ The HMAC midstates are computed once in `emit_if_valid` (k0 = phrase‖0,
 or SHA-512(phrase) when plen > 128) — `pbkdf2_step` then never touches
 the phrase, and each PBKDF2 iteration costs 2 compressions instead of 4.
 
-On NVIDIA the two stages are built with separate `-cl-nv-maxrregcount`
-caps (filter 40 / step 64) — register pressure limits occupancy, and the
-cap roughly doubles throughput. Override with `KERNEL_OPTS` (both) or
-`KERNEL_OPTS_FILTER` / `KERNEL_OPTS_STEP` (per stage).
+On NVIDIA the stages are built with separate `-cl-nv-maxrregcount`
+caps (filter 40 / step 64 / **key_scan 80**) — register pressure limits
+occupancy, and the right cap roughly doubles throughput. key_scan
+measured on GTX 1070 Ti: 64→22.0, **80→26.6**, 96→23.3, 255→9.7 Mk/s
+(≥96 also balloons JIT compile time to minutes; NVIDIA caches binaries
+per option string, so a once-compiled config starts instantly).
+Override with `KERNEL_OPTS` (all) or per-stage `KERNEL_OPTS_FILTER` /
+`KERNEL_OPTS_STEP` / `KERNEL_OPTS_KEYSCAN`.
 
 PBKDF2 is chunked across launches because a 2048-round HMAC loop inside a
 single work-item trips per-item execution limits on Apple OpenCL
@@ -245,8 +348,21 @@ BIP32+match), vs ~67 s when the host derived every seed.
 
 (24-word phrase, 8-bit checksum; 12-word phrases pass ~1/16 — more seeds.)
 
+## Security & legal-use boundaries
+
+- Recover **your own** wallets and public challenge puzzles only.
+  Full-entropy brute force of arbitrary mnemonics is 2^128+ — impossible
+  by design; address-only key search is a lottery, not an attack.
+- Hit records and the UI vault contain raw private keys (WIF) — mode
+  `0600`, never commit them, never world-read them. `--hit-cmd` hooks
+  that copy hits elsewhere inherit that responsibility.
+- The dashboard binds where you tell it; exposing it on a LAN reveals
+  masked hits but the `/api/vault_wif` endpoint answers WIFs to any
+  localhost client — keep it on 127.0.0.1 or protect it.
+
 ## Roadmap
 
 - Metal backend (Apple native — OpenCL is deprecated there)
 - word-edit-distance mode (typo'd word, not just missing)
 - P2TR script-path (merkle-root) targets, wallet.dat extraction
+- kangaroo: multi-walker parallelism + DP server, GPU kernel port

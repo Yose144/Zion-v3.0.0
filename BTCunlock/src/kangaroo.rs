@@ -254,11 +254,7 @@ fn finish(
     let addr = addr_of(secp, &k);
     eprintln!("  WIF:    {wif}\n  addr:   {addr}");
     persist(opts, &k, &wif, &addr, steps);
-    Ok(Some(KangaHit {
-        key: k,
-        steps,
-        dps,
-    }))
+    Ok(Some(KangaHit { key: k, steps, dps }))
 }
 
 fn wif_of(k: &U256) -> Result<String> {
@@ -268,9 +264,7 @@ fn wif_of(k: &U256) -> Result<String> {
 
 fn addr_of(secp: &Secp256k1<bitcoin::secp256k1::All>, k: &U256) -> String {
     pk_from_u256(secp, k)
-        .map(|pk| {
-            Address::p2pkh(&bitcoin::PublicKey::new(pk), Network::Bitcoin).to_string()
-        })
+        .map(|pk| Address::p2pkh(&bitcoin::PublicKey::new(pk), Network::Bitcoin).to_string())
         .unwrap_or_else(|_| "?".into())
 }
 
@@ -304,7 +298,11 @@ fn persist(opts: &KangaOpts, k: &U256, wif: &str, addr: &str, steps: u64) {
         Ok(()) => eprintln!("hit-backup: appended → {}", jsonl.display()),
         Err(e) => eprintln!("hit-backup: write {}: {e}", jsonl.display()),
     }
-    let txt = dir.join(format!("hit-{}-0x{}.txt", iso.replace([':', '-'], ""), k.to_hex_short()));
+    let txt = dir.join(format!(
+        "hit-{}-0x{}.txt",
+        iso.replace([':', '-'], ""),
+        k.to_hex_short()
+    ));
     let body = format!(
         "BTCunlock kangaroo hit\n\
          time:   {iso}\n\
