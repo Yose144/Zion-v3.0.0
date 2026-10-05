@@ -23,7 +23,8 @@ RIG = 518837
 # NOTE: rig 518837 is assigned to group 1780844 "ZionTrinity".
 # (1773590 "ZionLiteFire" is a different, unused group — do not update it.)
 GROUP = 1780844
-MINER_URL = "https://zionterranova.com/zion-miner/zion-trinity-smos-v3.2.1.zip"
+# teamredminer-* filename → SMOS polls the sgminer API on 4028/4029 (smos_api.py).
+MINER_URL = "https://zionterranova.com/zion-miner/teamredminer-zion-trinity-smos-v3.3.2.zip"
 
 
 def token():

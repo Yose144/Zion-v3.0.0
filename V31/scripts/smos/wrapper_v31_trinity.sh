@@ -44,6 +44,10 @@ export ZION_INTERACTIVE=1
 export ZION_NO_STICKY=1
 export ZION_METRICS_REPORT_SECS=15
 export ZION_STATS_FILE="/tmp/zion-miner-stats.json"
+# sgminer/TRM-compatible stats API (built into zion-miner) — SMOS polls this
+# for packages named teamredminer-*.zip: 4028 = primary (QTU), 4029 = dual (ZION).
+export ZION_API_ADDR="${ZION_API_ADDR:-127.0.0.1:4028}"
+export ZION_API_ADDR_DUAL="${ZION_API_ADDR_DUAL:-127.0.0.1:4029}"
 
 # ── V3 Trinity mode ────────────────────────────────────────────────────────
 # All 3 streams through a single V3 protocol connection to the pool.
@@ -137,12 +141,35 @@ chmod +x "${LOCAL_MINER}.tmp"
 mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
 echo "[smos-wrapper] V31 miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
 
+# ── SMOS stats API (sgminer/TRM-compatible) ──────────────────────────────────
+# Two providers race for the port — whichever binds first serves SMOS:
+#   1. smos_api.py sidecar (python3, reads ZION_STATS_FILE) — proven on rig
+#   2. built-in zion-miner API (ZION_API_ADDR) — binds second, else warns only
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SIDECAR_PID=""
+if command -v python3 >/dev/null 2>&1 && [ -f "${SCRIPT_DIR}/smos_api.py" ]; then
+  ZION_STATS_FILE="${ZION_STATS_FILE}" python3 "${SCRIPT_DIR}/smos_api.py" 2>&1 &
+  SIDECAR_PID=$!
+  echo "[smos-wrapper] stats API sidecar started (pid ${SIDECAR_PID})"
+fi
+echo "[smos-wrapper] API listening on ${ZION_API_ADDR} (dual ${ZION_API_ADDR_DUAL})"
 echo "[smos-wrapper] starting V3 TRINITY multi-GPU DEDICATED: RX5600→ZION + Vega→QTU + VRSC CPU"
-exec "${LOCAL_MINER}" \
+
+# Foreground miner + signal forwarding (SMOS stops the script, not the miner).
+MINER_PID=""
+_term() { [ -n "${MINER_PID}" ] && kill -TERM "${MINER_PID}" 2>/dev/null || true; }
+trap '_term' TERM INT
+
+"${LOCAL_MINER}" \
   --pool "${ZION_POOL_ADDR:-62.171.141.136:8444}" \
   --wallet "${WALLET_ADDR}" \
   --worker "${WORKER_NAME}" \
   --gpu "${ZION_GPU_BACKEND}" \
   --threads "${ZION_MINER_THREADS}" \
   --v3-trinity \
-  "$@"
+  "$@" &
+MINER_PID=$!
+wait "${MINER_PID}"
+STATUS=$?
+[ -n "${SIDECAR_PID:-}" ] && kill "${SIDECAR_PID}" 2>/dev/null || true
+exit "${STATUS}"
