@@ -4,7 +4,7 @@
 > **Remediation date:** 2026-09-01
 > **Scope:** V31 L1 core, L2 multichain, pool, miner, EVM contracts, dependencies
 > **Auditor:** Kilo (autonomous)
-> **Status:** G9/F1 gate — REMEDIATION COMPLETE (37 fixed, 7 accepted with mitigations, 4 deferred to 3.3 alloy migration)
+> **Status:** internal audit (this is **not** the independent external audit G9). Remediation as of 2026-09-01: 37 fixed, 7 accepted with mitigations, 4 deferred to the 3.3 alloy migration. The 2026-10-05 re-verification re-classifies FIND-002, FIND-018 and POL-002; see §10 and `REPORTS/INTERNAL_AUDIT_2026-10-05.md`.
 
 ---
 
@@ -580,3 +580,20 @@ The codebase demonstrates strong security practices in several areas:
 - **Total:** 48 findings (all L1/L2/Pool/Miner/Contract/Dependency findings covered)
 
 All Rust code compiles (`cargo check --workspace` clean). Tests verified for `zion-core`, `zion-pool`, `zion-multichain`.
+
+---
+
+## 10. Re-verification addendum (2026-10-05)
+
+A whole-project internal audit on 2026-10-05 (`REPORTS/INTERNAL_AUDIT_2026-10-05.md`) re-checked a subset of the items above against commit `29a6b8a8a`. Everything not listed here was **not** re-verified.
+
+| ID | Re-verified status | Notes |
+|----|--------------------|-------|
+| POL-001 | ✅ Verified | `MIN_SHARE_DIFFICULTY = 1000` enforced in `VarDiff::new` and the `difficulty_to_target` clamp. |
+| POL-002 | ⚠️ Partially verified | The `paid_block_heights`/`sent_payouts` guard is in-memory only and is not persisted across restarts. The production payout path has not been traced end-to-end (IA-14). |
+| FIND-002 | ⚠️ Partially fixed | XOR with a single reused key is a many-time pad. Revealed preimages expose the key, and the key is stored inside the same backup as the DB. Must become AEAD before BTC swap is enabled (IA-13). |
+| FIND-016 | ✅ Verified | `register_solver` requires `role == "admin"`. |
+| FIND-018 | ⚠️ Partially fixed | The domain tag is present, but `wallet_sign` signed with server HD keys at a caller-chosen account/index for any ZIS user. Now admin-only (IA-03, fix A). |
+| FIND-L1-001 | ⏳ Still accepted | Flat BLAKE3 merkle root. |
+
+New findings from the 2026-10-05 pass (IA-01…IA-22) are tracked in the internal audit report, not in this table. The count above (37/7/4, total 48 — the executive summary's "44" predates the dependency and miner items) is kept as historical record.

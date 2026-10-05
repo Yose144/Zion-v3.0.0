@@ -1,7 +1,8 @@
 # ZION 3.2.0 "One Love" — Release Artifacts & Provenance
 
-> **Status:** PREPARED (gates pending — G8 run, external audit, DR drill)
-> **Target:** v3.2.0 stable · **Prepared:** 2026-10-05
+> **Status:** DRAFT PROCEDURE, not executed. The Stable gates are not met: G8 run #2 failed, the external audit is not engaged, and DR is only partially proven (see `REPORTS/DR_DRILL_2026-10-05.md`).
+> **Version label:** `3.2.0`. The workspace already uses it, and the public client releases `v3.2.0-cli`, `v3.2.0-desktop` and `v3.2.0-miner` were published under it on 2026-08-22. "Stable" is a gate decision, not a version string.
+> **Target:** v3.2.0 stable · **Prepared:** 2026-10-05 · **Revised:** 2026-10-05 (internal audit)
 
 ---
 
@@ -14,14 +15,14 @@
 | L1 miner | `zion-miner` (CPU + CUDA + OpenCL) | workspace |
 | L2 multichain | `warpd` (bridge, HTLC, DEX, solver) | workspace |
 | DAO | `zion-dao` binary + unit | workspace |
-| Identity | `zion-identity` (ZIS, WebAuthn) | workspace |
+| Identity (ZIS) | Node.js service `APP&WEB/identity` (`dist/`) | its own `package.json` (not a Cargo workspace member) |
 | Website / app | Next.js bundle + nginx conf | `package.json` 3.2.0 |
 | Docs / config | `docs/3.2/`, deploy scripts | tagged commit |
 
 ## 2. Version
 
 - Workspace version: `3.2.0` (`V31/Cargo.toml` `[workspace.package]`)
-- Protocol: `protocol_version 3.1.0-alpha` → bump to `3.2.0` in release commit (hardcoded in `node.rs` status response)
+- Protocol: the `3.1.0-alpha` strings in `node.rs`/`rpc.rs` are V3-compat P2P handshake/protocol labels and **stay unchanged**. The binary version is exposed separately as RPC `node_version` (`CARGO_PKG_VERSION`, internal-audit fix F).
 - Website: `package.json` `3.2.0` (already correct)
 
 ## 3. Release procedure (checklist)
@@ -62,8 +63,9 @@ gh release create v3.2.0 \
 
 ## 5. Gates before tagging
 
-- [ ] G8 run ≥99.9 % (run #3, after #2 documented)
-- [ ] External audit remediation complete / accepted
-- [ ] DR drill green (this file + `DR_DRILL_2026-10-05.md`)
-- [ ] Version bumped to `3.2.0` in `Cargo.toml` + `node.rs` protocol string
+- [ ] G8 run ≥99.9 % with no critical incident (run #2 **failed**; run #3 needs a mining-liveness plan first)
+- [ ] External audit engaged, remediation complete / accepted (scope draft: `EXTERNAL_AUDIT_SCOPE.md`)
+- [ ] Real DR drill: encrypted off-site backups + full-stack restore (the 2026-10-05 test was a partial single-node restore)
+- [ ] Internal audit 2026-10-05: critical/high code fixes deployed and soaked; operator items IA-07/08/09/10 decided
+- [x] Workspace version `3.2.0` (protocol label intentionally unchanged; `node_version` exposed via RPC)
 - [ ] Release notes `RELEASE_NOTES_3.2.0.md` written
