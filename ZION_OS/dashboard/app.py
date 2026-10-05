@@ -7211,8 +7211,14 @@ def get_pool_registered_miners() -> dict:
             unique_addrs.add(addr)
 
     # Per-address on-chain balance via fast getUtxos RPC.
+    # Wedge guard: each lookup retries up to 3 RPC endpoints (~3×timeout each);
+    # without an overall budget a stalled node makes this O(minutes). Balances
+    # are display-only — skipping the rest still yields a useful response.
     balance_map = {}
+    balance_deadline = time.time() + 8.0
     for addr in unique_addrs:
+        if time.time() > balance_deadline:
+            break
         try:
             atomic, ok = _get_on_chain_balance(addr)
             if ok:
@@ -7345,9 +7351,17 @@ def enrich_miner_balances(miners: list) -> list:
     """
     if not miners:
         return miners
+    # Same wedge guard as get_pool_registered_miners: bound total enrichment
+    # time so a stalled node cannot hang callers that embed balances.
+    balance_deadline = time.time() + 8.0
     for m in miners:
         addr = m.get("payout_address") or m.get("address") or ""
-        if addr and isinstance(addr, str) and addr.startswith("zion1"):
+        if (
+            addr
+            and isinstance(addr, str)
+            and addr.startswith("zion1")
+            and time.time() <= balance_deadline
+        ):
             try:
                 atomic, ok = _get_on_chain_balance(addr)
                 if ok:
