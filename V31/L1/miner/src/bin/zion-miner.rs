@@ -248,6 +248,25 @@ async fn main() -> Result<()> {
     // Start Prometheus endpoint.
     tokio::spawn(serve(metrics.clone(), args.metrics));
 
+    // sgminer/TRM-compatible stats API for mining-OS dashboards.
+    // SimpleMining polls 127.0.0.1:4028 (+4029 dual) when the custom-miner
+    // package name matches a supported miner (e.g. teamredminer-*.zip).
+    for (var, dual) in [("ZION_API_ADDR", false), ("ZION_API_ADDR_DUAL", true)] {
+        if let Ok(val) = std::env::var(var) {
+            match val.parse::<SocketAddr>() {
+                Ok(addr) => {
+                    let rt = runtime.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = sgminer_api_serve(rt, addr, dual).await {
+                            warn!("sgminer api {addr}: {e}");
+                        }
+                    });
+                }
+                Err(e) => warn!("{var}={val}: invalid socket addr: {e}"),
+            }
+        }
+    }
+
     // ── Shutdown signal ──
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
@@ -288,6 +307,40 @@ async fn main() -> Result<()> {
         loop {
             sleep(Duration::from_secs(stats_log_interval)).await;
             let stats = stats_rt.stats().await;
+
+            // Optional machine-readable stats dump (SMOS/sidecar readers).
+            if let Ok(path) = std::env::var("ZION_STATS_FILE") {
+                if !path.is_empty() {
+                    let streams: serde_json::Map<String, serde_json::Value> = stats
+                        .iter()
+                        .map(|(id, s)| {
+                            (
+                                id.as_str().to_string(),
+                                serde_json::json!({
+                                    "coin": s.coin.as_ref().map(|c| c.ticker()),
+                                    "algorithm": s.algorithm.as_deref(),
+                                    "hashrate_hps": s.hashrate,
+                                    "accepted": s.accepted,
+                                    "rejected": s.rejected,
+                                    "active": s.active,
+                                }),
+                            )
+                        })
+                        .collect();
+                    let body = serde_json::json!({
+                        "ts": std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_secs())
+                            .unwrap_or(0),
+                        "streams": streams,
+                    });
+                    let tmp = format!("{}.tmp", path);
+                    if std::fs::write(&tmp, body.to_string()).is_ok() {
+                        let _ = std::fs::rename(&tmp, &path);
+                    }
+                }
+            }
+
             let mut total_hr: f64 = 0.0;
             let mut _total_accepted: u64 = 0;
             let mut _total_rejected: u64 = 0;
@@ -432,4 +485,283 @@ async fn main() -> Result<()> {
     }
     result?;
     Ok(())
+}
+
+// ── sgminer/TRM-compatible stats API ─────────────────────────────────────────
+// Mining-OS dashboards (SimpleMining) poll a cgminer/sgminer-style TCP JSON API
+// on 127.0.0.1:4028 (+4029 for dual mining).  Enabled via ZION_API_ADDR and
+// ZION_API_ADDR_DUAL env vars.  Every request is logged so the SMOS console
+// shows when the dashboard agent is polling.
+
+fn sg_dev(idx: usize, name: &str, algo: String, s: Option<&StreamStats>) -> serde_json::Value {
+    let (mhs, acc, rej, active) = match s {
+        Some(s) => (
+            s.hashrate / 1e6,
+            s.accepted,
+            s.rejected,
+            s.active,
+        ),
+        None => (0.0, 0, 0, false),
+    };
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    serde_json::json!({
+        "GPU": idx, "Enabled": if active { "Y" } else { "N" },
+        "Status": if active { "Alive" } else { "Dead" },
+        "Name": name, "ASC": idx, "Device": idx,
+        "Temperature": 0.0, "Fan Speed": -1, "Fan Percent": -1,
+        "GPU Clock": -1, "Memory Clock": -1,
+        "MHS av": (mhs * 1e4).round() / 1e4,
+        "MHS 5s": (mhs * 1e4).round() / 1e4,
+        "MHS 1m": (mhs * 1e4).round() / 1e4,
+        "MHS 5m": (mhs * 1e4).round() / 1e4,
+        "MHS 15m": (mhs * 1e4).round() / 1e4,
+        "Accepted": acc, "Rejected": rej, "Hardware Errors": 0,
+        "Utility": 0.0, "Intensity": "", "Last Share Pool": 0,
+        "Last Share Time": if acc > 0 { now } else { 0 },
+        "Total MH": 0.0, "Diff1 Work": 0.0,
+        "Difficulty Accepted": acc as f64, "Difficulty Rejected": rej as f64,
+        "Last Valid Work": now,
+        "Algo": algo,
+    })
+}
+
+fn sg_summary(mhs: f64, acc: u64, rej: u64, algo: &str, elapsed: u64) -> serde_json::Value {
+    serde_json::json!({
+        "Elapsed": elapsed,
+        "MHS av": (mhs * 1e4).round() / 1e4,
+        "MHS 5s": (mhs * 1e4).round() / 1e4,
+        "MHS 1m": (mhs * 1e4).round() / 1e4,
+        "MHS 5m": (mhs * 1e4).round() / 1e4,
+        "MHS 15m": (mhs * 1e4).round() / 1e4,
+        "KHS av": (mhs * 1000.0 * 10.0).round() / 10.0,
+        "Accepted": acc, "Rejected": rej,
+        "Difficulty Accepted": acc as f64, "Difficulty Rejected": rej as f64,
+        "Hardware Errors": 0, "Utility": 0.0, "Discarded": 0, "Stale": 0,
+        "Total MH": 0.0, "Work Utility": 0.0,
+        "Algo": algo,
+    })
+}
+
+fn sg_status(msg: &str) -> serde_json::Value {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    serde_json::json!([{
+        "STATUS": "S", "When": now, "Code": 0, "Msg": msg, "Description": "",
+    }])
+}
+
+fn sg_pools(summary: &serde_json::Value) -> serde_json::Value {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    serde_json::json!([{
+        "POOL": 0, "URL": "zion-pool:8444", "Status": "Alive",
+        "Priority": 0, "Quota": 1, "Long Poll": "N", "Getworks": 0,
+        "Accepted": summary["Accepted"], "Rejected": summary["Rejected"],
+        "Works": 0, "Discarded": 0, "Stale": 0, "Get Failures": 0,
+        "Remote Failures": 0, "User": "vega-smos",
+        "Last Share Time": now, "Diff1 Shares": 0.0,
+        "Proxy Type": "", "Proxy": "",
+        "Difficulty Accepted": summary["Difficulty Accepted"],
+        "Difficulty Rejected": summary["Difficulty Rejected"],
+        "Difficulty Stale": 0.0, "Last Share Difficulty": 0.0,
+        "Work Difficulty": 0.0, "Has Stratum": true,
+        "Stratum Active": true, "Stratum URL": "zion-pool:8444",
+        "Stratum Difficulty": 0.0, "Has Vmask": false, "Has GBT": false,
+        "Best Share": 0.0, "Pool Rejected%": 0.0, "Pool Stale%": 0.0,
+        "Bad Work": 0, "Current Block Height": 0,
+        "Current Block Version": 0,
+    }])
+}
+
+fn sgminer_response(
+    cmd: &str,
+    stats: &std::collections::HashMap<StreamId, StreamStats>,
+    _dual_port: bool,
+    elapsed: u64,
+) -> serde_json::Value {
+    let zion = stats.get(&StreamId::Zion);
+    let gpu = stats.get(&StreamId::GpuExternal);
+    let cpu = stats.get(&StreamId::CpuExternal);
+    let ticker = |s: Option<&StreamStats>| -> String {
+        s.and_then(|s| s.coin.as_ref().map(|c| c.ticker().to_string()))
+            .unwrap_or_default()
+    };
+    let algo_of = |s: Option<&StreamStats>, fallback: &str| -> String {
+        s.and_then(|s| s.algorithm.clone())
+            .unwrap_or_else(|| fallback.to_string())
+    };
+
+    // Primary payload = QTU/QPoW external GPU stream (Vega). Dual = ZION.
+    let primary_devs = vec![
+        sg_dev(0, "RX Vega 64", algo_of(gpu, "qpow-poseidon2"), gpu),
+        sg_dev(1, "RX 5600 XT", algo_of(zion, "ekam_deeksha"), zion),
+        sg_dev(2, "CPU", algo_of(cpu, "verushash"), cpu),
+    ];
+    let primary_summary = sg_summary(
+        gpu.map(|s| s.hashrate / 1e6).unwrap_or(0.0),
+        gpu.map(|s| s.accepted).unwrap_or(0),
+        gpu.map(|s| s.rejected).unwrap_or(0),
+        &format!("{} ({})", algo_of(gpu, "qpow-poseidon2"), ticker(gpu)),
+        elapsed,
+    );
+    let dual_devs = vec![sg_dev(
+        0,
+        "RX 5600 XT",
+        algo_of(zion, "ekam_deeksha"),
+        zion,
+    )];
+    let dual_summary = sg_summary(
+        zion.map(|s| s.hashrate / 1e6).unwrap_or(0.0),
+        zion.map(|s| s.accepted).unwrap_or(0),
+        zion.map(|s| s.rejected).unwrap_or(0),
+        &algo_of(zion, "ekam_deeksha"),
+        elapsed,
+    );
+
+    // SMOS sends multi-commands like "devs+summary+devs2+summary2".
+    // cgminer join format: nested section per lowercase command name, each
+    // with its own STATUS + data.  A trailing "2" selects the dual payload.
+    // We emit nested sections AND flat keys for maximum parser compatibility.
+    let parts: Vec<String> = cmd
+        .split('+')
+        .map(|p| p.trim().to_lowercase())
+        .filter(|p| !p.is_empty())
+        .collect();
+    let nested = parts.len() > 1;
+    let mut resp = serde_json::json!({"id": 1});
+    let obj = resp.as_object_mut().unwrap();
+    let mut saw_any = false;
+    for part in &parts {
+        let mut c = part.clone();
+        let dual = c.ends_with('2');
+        if dual {
+            c.pop();
+        }
+        let devs = if dual { &dual_devs } else { &primary_devs };
+        let summary = if dual { &dual_summary } else { &primary_summary };
+        let flat = |base: &str| format!("{}{}", base, if dual { "2" } else { "" });
+        if c.starts_with("dev") {
+            let mut sub = serde_json::json!({
+                "STATUS": sg_status("devs"), "DEVS": devs, "id": 1});
+            if dual {
+                sub.as_object_mut()
+                    .unwrap()
+                    .insert("DEVS2".into(), serde_json::json!(devs));
+            }
+            if nested {
+                obj.insert(part.clone(), sub);
+            } else {
+                obj.insert("STATUS".into(), sg_status("devs"));
+            }
+            obj.insert(flat("DEVS"), serde_json::json!(devs));
+            saw_any = true;
+        } else if c.starts_with("sum") {
+            let mut sub = serde_json::json!({
+                "STATUS": sg_status("summary"), "SUMMARY": [summary], "id": 1});
+            if dual {
+                sub.as_object_mut()
+                    .unwrap()
+                    .insert("SUMMARY2".into(), serde_json::json!([summary]));
+            }
+            if nested {
+                obj.insert(part.clone(), sub);
+            } else {
+                obj.insert("STATUS".into(), sg_status("summary"));
+            }
+            obj.insert(flat("SUMMARY"), serde_json::json!([summary]));
+            saw_any = true;
+        } else if c.starts_with("pool") {
+            let pools = sg_pools(summary);
+            if nested {
+                obj.insert(
+                    part.clone(),
+                    serde_json::json!({
+                        "STATUS": sg_status("pools"), "POOLS": pools, "id": 1}),
+                );
+            } else {
+                obj.insert("STATUS".into(), sg_status("pools"));
+            }
+            obj.insert("POOLS".into(), pools);
+            saw_any = true;
+        } else if c.starts_with("ver") {
+            let ver = serde_json::json!([{
+                "Miner": "teamredminer", "CGMiner": "0.10.5", "API": "3.7",
+            }]);
+            if nested {
+                obj.insert(
+                    part.clone(),
+                    serde_json::json!({
+                        "STATUS": sg_status("version"), "VERSION": ver, "id": 1}),
+                );
+            } else {
+                obj.insert("STATUS".into(), sg_status("version"));
+            }
+            obj.insert("VERSION".into(), ver);
+            saw_any = true;
+        } else if c.starts_with("coin") {
+            let coin = serde_json::json!([{
+                "Method": "qpow", "Current Block Time": 0.0,
+                "Current Block Hash": "", "LP": false,
+                "Network Difficulty": 0.0,
+            }]);
+            if nested {
+                obj.insert(
+                    part.clone(),
+                    serde_json::json!({
+                        "STATUS": sg_status("coin"), "COIN": coin, "id": 1}),
+                );
+            } else {
+                obj.insert("STATUS".into(), sg_status("coin"));
+            }
+            obj.insert("COIN".into(), coin);
+            saw_any = true;
+        }
+    }
+    if !saw_any {
+        obj.insert("STATUS".into(), sg_status("summary"));
+        obj.insert("SUMMARY".into(), serde_json::json!([primary_summary]));
+    }
+    resp
+}
+
+async fn sgminer_api_serve(
+    rt: MinerRuntime,
+    addr: SocketAddr,
+    dual: bool,
+) -> Result<()> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    info!("sgminer api listening on {addr} (dual={dual})");
+    let start = Instant::now();
+    loop {
+        let (mut sock, peer) = listener.accept().await?;
+        let rt = rt.clone();
+        tokio::spawn(async move {
+            let mut buf = [0u8; 8192];
+            let n = match sock.read(&mut buf).await {
+                Ok(n) => n,
+                Err(_) => return,
+            };
+            let raw = String::from_utf8_lossy(&buf[..n]);
+            let head = raw.split('\0').next().unwrap_or("").trim();
+            let cmd = serde_json::from_str::<serde_json::Value>(head)
+                .ok()
+                .and_then(|v| v.get("command").and_then(|c| c.as_str()).map(str::to_string))
+                .filter(|c| !c.is_empty())
+                .unwrap_or_else(|| if head.is_empty() { "summary".into() } else { head.to_string() });
+            let stats = rt.stats().await;
+            let resp = sgminer_response(&cmd, &stats, dual, start.elapsed().as_secs());
+            info!("sgminer api {peer} cmd={cmd} dual={dual}");
+            let mut out = serde_json::to_vec(&resp).unwrap_or_default();
+            out.push(0);
+            let _ = sock.write_all(&out).await;
+        });
+    }
 }
