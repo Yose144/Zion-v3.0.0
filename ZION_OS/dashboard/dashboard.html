@@ -1782,9 +1782,11 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div class="text-xs text-gray-500" id="stream-cpu-pct">—</div>
         </div>
       </div>
-      <!-- Stream 4: BTCunlock key lottery — GPU key-range scanner sharing
-           the rig's GPU with mining. Rare-jackpot workload: no pool shares,
-           data proxied from local btcunlock-ui (/api/keyscan). -->
+      <!-- Stream 4: BTCunlock key lottery — distributed GPU key-range scan
+           coordinated across rigs. Local worker stats proxied from
+           btcunlock-ui (/api/keyscan); global coverage from the
+           coordinator (/api/lottery). Rare-jackpot workload: the scanned
+           space is ~2^70 keys — this is a lottery ticket, not a plan. -->
       <div class="mt-3 bg-zion-900 rounded-lg p-3 border border-green-900/50" id="keyscan-card">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-bold text-green-400">Stream 4 — BTC KEY LOTTERY</span>
@@ -1793,11 +1795,11 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div>
             <div class="text-lg font-bold text-green-300" id="keyscan-rate">—</div>
-            <div class="text-xs text-gray-400">keys/s</div>
+            <div class="text-xs text-gray-400">keys/s (local)</div>
           </div>
           <div>
             <div class="text-lg font-bold text-green-300" id="keyscan-tested">—</div>
-            <div class="text-xs text-gray-400">tested</div>
+            <div class="text-xs text-gray-400">tested (local)</div>
           </div>
           <div>
             <div class="text-lg font-bold text-green-300" id="keyscan-coverage">—</div>
@@ -1813,6 +1815,42 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           </div>
         </div>
         <div class="text-[10px] text-gray-500 mt-2" id="keyscan-meta">—</div>
+        <!-- Distributed lottery: coordinator aggregate + unit detail -->
+        <div class="mt-3 pt-2 border-t border-green-900/40" id="lottery-block">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-bold text-emerald-400">🌐 DISTRIBUTED SCAN — all workers (coordinator)</span>
+            <button id="lottery-detail-btn" onclick="toggleLotteryDetail()"
+              class="text-[10px] px-2 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-700/60">DETAIL ▸</button>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-center">
+            <div><div class="text-sm font-bold text-emerald-300" id="lot-rate">—</div><div class="text-[9px] text-gray-500">fleet keys/s</div></div>
+            <div><div class="text-sm font-bold text-emerald-300" id="lot-tested">—</div><div class="text-[9px] text-gray-500">fleet tested</div></div>
+            <div><div class="text-sm font-bold text-emerald-300" id="lot-units">—</div><div class="text-[9px] text-gray-500">units done</div></div>
+            <div><div class="text-sm font-bold text-emerald-300" id="lot-leasing">—</div><div class="text-[9px] text-gray-500">leased now</div></div>
+            <div><div class="text-sm font-bold text-emerald-300" id="lot-workers">—</div><div class="text-[9px] text-gray-500">workers</div></div>
+            <div><div class="text-sm font-bold text-emerald-300" id="lot-hits">0</div><div class="text-[9px] text-gray-500">hits</div></div>
+          </div>
+          <div class="h-1.5 bg-zion-800 rounded mt-2 overflow-hidden"><div id="lot-coverage-bar" class="h-full bg-emerald-500" style="width:0%"></div></div>
+          <div class="text-[9px] text-gray-500 mt-1" id="lot-frontier">—</div>
+          <div id="lottery-detail" class="hidden mt-3">
+            <div class="text-[10px] font-bold text-gray-400 mb-1">WORKERS</div>
+            <div class="overflow-x-auto"><table class="w-full text-[10px] text-left">
+              <thead><tr class="text-gray-500"><th class="pr-2">worker</th><th class="pr-2">label</th><th class="pr-2">rate</th><th class="pr-2">tested</th><th class="pr-2">units</th><th class="pr-2">last seen</th><th>state</th></tr></thead>
+              <tbody id="lot-workers-tbody"><tr><td colspan="7" class="text-gray-600">—</td></tr></tbody>
+            </table></div>
+            <div class="text-[10px] font-bold text-gray-400 mt-2 mb-1">RECENT UNITS</div>
+            <div class="overflow-x-auto"><table class="w-full text-[10px] text-left">
+              <thead><tr class="text-gray-500"><th class="pr-2">unit</th><th class="pr-2">status</th><th class="pr-2">worker</th><th class="pr-2">tested</th><th>hits</th></tr></thead>
+              <tbody id="lot-units-tbody"><tr><td colspan="5" class="text-gray-600">—</td></tr></tbody>
+            </table></div>
+            <div class="text-[10px] font-bold text-gray-400 mt-2 mb-1">JOIN THE SCAN</div>
+            <pre class="text-[9px] text-gray-400 bg-zion-800 rounded p-2 overflow-x-auto" id="lot-join-cmd"># on any rig with the btcunlock binary (target/release/btcunlock):
+BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
+  --coord https://dashboard.zionterranova.com/lottery \
+  --worker-id &lt;rig-name&gt; --label "&lt;gpu&gt;" --gpu</pre>
+            <div class="text-[9px] text-gray-600 mt-1">Token stays server-side; hits are backed up mode-600 on the worker AND in the coordinator vault.</div>
+          </div>
+        </div>
       </div>
     </div>
 

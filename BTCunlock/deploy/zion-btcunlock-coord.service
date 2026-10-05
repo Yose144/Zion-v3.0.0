@@ -1,0 +1,20 @@
+[Unit]
+Description=BTCunlock distributed scan coordinator (key-range units)
+After=network.target
+
+[Service]
+Type=simple
+User=zion
+# Env file (mode 600): BTCUNLOCK_COORD_TOKEN + COORD_* job config —
+# range, unit size, targets, label, lease TTL, state/hits paths.
+EnvironmentFile=/etc/zion/btcunlock-coord.env
+ExecStart=/usr/bin/python3 /opt/zion/btcunlock/btcunlock-coordinator.py
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/zion/btcunlock
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

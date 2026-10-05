@@ -1,26 +1,24 @@
-# BTCunlock key lottery — GPU key-range scanner (puzzle #71).
-# Shares the box's GPU with the ZION miner and llama.cpp; Nice=15 keeps
-# mining workloads ahead. Checkpoints survive restarts (--resume).
-# Install:  cp ~/.config/systemd/user/  (user unit, linger starts at boot)
-#           systemctl --user daemon-reload && systemctl --user enable --now zion-btcunlock
 [Unit]
-Description=BTCunlock key lottery — puzzle #71 GPU keyscan
+Description=BTCunlock lottery worker (coordinator-leased keyscan units)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
+# Adjust paths: WorkingDirectory = BTCunlock checkout with a built
+# target/release/btcunlock; EnvironmentFile holds COORD_URL + TOKEN
+# (mode 600 — it carries the shared write token).
 WorkingDirectory=/home/zionserver/2.9.6-main/BTCunlock
-ExecStart=/home/zionserver/2.9.6-main/BTCunlock/target/release/btcunlock \
-  puzzle 71 --gpu --stride 16 --batch 524288 \
-  --checkpoint /home/zionserver/btcunlock/p71.ckpt --resume
+EnvironmentFile=/home/zionserver/btcunlock/coord.env
+ExecStart=/usr/bin/python3 btcunlock-worker.py --gpu --stride 16 --batch 262144 --worker-id dest-zion --label "GTX 1070 Ti"
 Restart=always
 RestartSec=15
-# Daily restart bounds log growth; the checkpoint makes it seamless.
-RuntimeMaxSec=86400
 Nice=15
-StandardOutput=append:/home/zionserver/btcunlock/p71.log
-StandardError=append:/home/zionserver/btcunlock/p71.log
+# Daily restart bounds log growth; a mid-unit restart just lets the
+# lease expire and the unit returns to the pool.
+RuntimeMaxSec=86400
+StandardOutput=append:/home/zionserver/btcunlock/worker.log
+StandardError=append:/home/zionserver/btcunlock/worker.log
 
 [Install]
 WantedBy=default.target

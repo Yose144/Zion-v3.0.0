@@ -1739,6 +1739,41 @@
       font-size: 10px;
       color: rgba(255,255,255,0.2);
     }
+    #lottery-drawer:not(.view-hidden) { display: block; }
+    .lottery-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .lottery-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .lottery-val { font-size: 15px; font-weight: 700; color: #6ee7b7; }
+    .lottery-lbl { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .lottery-bar {
+      height: 5px; border-radius: 3px; overflow: hidden;
+      background: rgba(255,255,255,0.06); margin: 6px 0 4px;
+    }
+    .lottery-bar-fill { height: 100%; background: #34d399; width: 0%; transition: width .4s; }
+    .lottery-frontier { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+    .lottery-sub {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      color: rgba(255,255,255,0.4); margin: 10px 0 4px;
+    }
+    .lottery-table { width: 100%; font-size: 10px; border-collapse: collapse; }
+    .lottery-table th { text-align: left; color: rgba(255,255,255,0.3); font-weight: 500; padding: 2px 8px 2px 0; }
+    .lottery-table td { padding: 2px 8px 2px 0; color: rgba(255,255,255,0.65); border-top: 1px solid rgba(255,255,255,0.05); }
+    .lottery-join {
+      font-size: 9px; color: rgba(255,255,255,0.5);
+      background: rgba(0,0,0,0.3); border-radius: 8px;
+      padding: 8px 10px; overflow-x: auto; white-space: pre;
+    }
+    .lottery-note { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 6px; }
     .log-viewer-compact {
       height: 200px;
       border-radius: 12px;
@@ -6885,6 +6920,10 @@
             <div class="web29-subtitle">Live miner output · stdout/stderr</div>
           </div>
           <div class="header-actions">
+            <button class="btn btn-ghost btn-sm" id="lottery-detail-btn" title="BTC key lottery — distributed scan progress">
+              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+              Lottery
+            </button>
             <button class="btn btn-ghost btn-sm" id="toggle-debug-btn" title="Toggle App Diagnostics">
               <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-info"></use></svg>
               Debug
@@ -6921,6 +6960,40 @@
             </div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V31 Mainnet Alpha v3.2.0</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
+          </div>
+        </div>
+
+        <!-- BTC Key Lottery — distributed scan detail drawer -->
+        <div id="lottery-drawer" class="debug-drawer view-hidden">
+          <div class="debug-head">
+            <h3 class="debug-title">
+              <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+              BTC Key Lottery — Distributed Scan
+            </h3>
+            <span class="debug-note" id="lottery-drawer-note">coordinator aggregate</span>
+          </div>
+          <div class="lottery-panel">
+            <div class="lottery-grid">
+              <div class="lottery-stat"><div class="lottery-val" id="lot-fleet-rate">—</div><div class="lottery-lbl">fleet keys/s</div></div>
+              <div class="lottery-stat"><div class="lottery-val" id="lot-fleet-tested">—</div><div class="lottery-lbl">fleet tested</div></div>
+              <div class="lottery-stat"><div class="lottery-val" id="lot-fleet-coverage">—</div><div class="lottery-lbl">coverage</div></div>
+              <div class="lottery-stat"><div class="lottery-val" id="lot-fleet-units">—</div><div class="lottery-lbl">units done</div></div>
+              <div class="lottery-stat"><div class="lottery-val" id="lot-fleet-workers">—</div><div class="lottery-lbl">workers</div></div>
+              <div class="lottery-stat"><div class="lottery-val" id="lot-fleet-hits">0</div><div class="lottery-lbl">hits</div></div>
+            </div>
+            <div class="lottery-bar"><div class="lottery-bar-fill" id="lot-fleet-bar"></div></div>
+            <div class="lottery-frontier" id="lot-fleet-frontier">—</div>
+            <div class="lottery-sub">WORKERS</div>
+            <table class="lottery-table"><thead><tr><th>worker</th><th>rate</th><th>tested</th><th>units</th><th>state</th></tr></thead>
+              <tbody id="lottery-workers-tbody"><tr><td colspan="5">—</td></tr></tbody></table>
+            <div class="lottery-sub">RECENT UNITS</div>
+            <table class="lottery-table"><thead><tr><th>unit</th><th>status</th><th>worker</th><th>tested</th><th>hits</th></tr></thead>
+              <tbody id="lottery-units-tbody"><tr><td colspan="5">—</td></tr></tbody></table>
+            <div class="lottery-sub">JOIN THE SCAN</div>
+            <pre class="lottery-join">BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
+  --coord https://dashboard.zionterranova.com/lottery \
+  --worker-id &lt;rig-name&gt; --label "&lt;gpu&gt;" --gpu</pre>
+            <div class="lottery-note">Hits are backed up mode-600 on the worker and in the coordinator vault — private keys never leave through telemetry.</div>
           </div>
         </div>
 

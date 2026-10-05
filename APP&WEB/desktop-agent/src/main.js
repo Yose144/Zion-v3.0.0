@@ -4416,6 +4416,20 @@ ipcMain.handle('test-block-found', (_event, { height, coin } = {}) => {
   return { success: true, height: h, coin: c };
 });
 
+ipcMain.handle('lottery-get-units', async () => {
+  const base = (process.env.BTCUNLOCK_COORD_URL
+    || 'https://dashboard.zionterranova.com/lottery').replace(/\/+$/, '');
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    try {
+      const res = await fetch(`${base}/api/units`, { signal: ctrl.signal });
+      if (res.ok) return await res.json();
+    } finally { clearTimeout(timer); }
+  } catch {}
+  return { ok: false };
+});
+
 ipcMain.handle('open-logs', () => {
   const { shell } = require('electron');
   shell.openPath(LOG_PATH);
@@ -7119,6 +7133,40 @@ setInterval(() => {
       // unreachable → payload stays {ok:false}
     }
     try { sendToRenderer('keyscan-status', payload); } catch {}
+  })();
+
+  // Distributed lottery: coordinator fleet status (public read endpoint —
+  // aggregate telemetry only, never keys). URL overridable via env.
+  void (async () => {
+    const base = (process.env.BTCUNLOCK_COORD_URL
+      || 'https://dashboard.zionterranova.com/lottery').replace(/\/+$/, '');
+    let payload = { ok: false };
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 4000);
+      try {
+        const res = await fetch(`${base}/api/status`, { signal: ctrl.signal });
+        if (res.ok) {
+          const d = await res.json();
+          payload = {
+            ok: !!d.ok, label: d.label, rate_mks: d.rate_mks || 0,
+            tested_total: d.tested_total || 0, coverage: d.coverage || 0,
+            units_done: d.units_done || 0, n_units: d.n_units || 0,
+            units_leased: d.units_leased || 0, hits_total: d.hits_total || 0,
+            frontier: d.frontier, eta_s: d.eta_s,
+            workers: Array.isArray(d.workers) ? d.workers.map(w => ({
+              worker_id: w.worker_id, label: w.label,
+              rate_mks: w.rate_mks || 0, total_tested: w.total_tested || 0,
+              units_done: w.units_done || 0, active: !!w.active,
+              last_seen: w.last_seen,
+            })) : [],
+          };
+        }
+      } finally { clearTimeout(timer); }
+    } catch {
+      // unreachable → payload stays {ok:false}
+    }
+    try { sendToRenderer('lottery-status', payload); } catch {}
   })();
 
   if (minerProcess) {

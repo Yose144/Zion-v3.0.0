@@ -1098,6 +1098,23 @@ function setupControls() {
       debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(228, 30, 43,0.15)';
     });
   }
+
+  // Lottery drawer toggle (BTC key lottery — distributed scan detail)
+  const lotToggle = document.getElementById('lottery-detail-btn');
+  const lotDrawer = document.getElementById('lottery-drawer');
+  if (lotToggle && lotDrawer) {
+    lotToggle.addEventListener('click', () => {
+      const hidden = lotDrawer.classList.contains('view-hidden');
+      lotDrawer.classList.toggle('view-hidden', !hidden);
+      lotToggle.style.color = hidden ? 'rgba(110,231,183,0.9)' : 'rgba(255,255,255,0.45)';
+      if (hidden) {
+        _lotteryDrawerOpen = true;
+        renderLotteryDrawer();
+      } else {
+        _lotteryDrawerOpen = false;
+      }
+    });
+  }
 }
 
 function formatHashrate(valueHs) {
@@ -1994,6 +2011,14 @@ function setupEventListeners() {
   if (typeof window.electronAPI.onKeyscanStatus === 'function') {
     window.electronAPI.onKeyscanStatus((d) => updateKeyscanCard(d));
   }
+
+  // Distributed lottery — coordinator fleet status (public read endpoint)
+  if (typeof window.electronAPI.onLotteryStatus === 'function') {
+    window.electronAPI.onLotteryStatus((d) => {
+      _lastLotteryStatus = d;
+      if (_lotteryDrawerOpen) renderLotteryDrawer();
+    });
+  }
 }
 
 // Stream 4 card: BTCunlock keyscan (independent service, GPU-shared).
@@ -2029,6 +2054,72 @@ function updateKeyscanCard(d) {
   if (badge) {
     badge.textContent = d.alive ? 'active' : 'stopped';
     badge.className = 'stream-status ' + (d.alive ? 'active' : 'inactive');
+  }
+}
+
+// ── BTC key lottery drawer (Logs view → "Lottery" button) ──
+// Fleet-wide progress from the public coordinator endpoint — aggregate
+// telemetry only; worker tokens and hit keys never cross this channel.
+let _lotteryDrawerOpen = false;
+let _lastLotteryStatus = null;
+let _lotteryUnitsFetched = 0;
+
+function renderLotteryDrawer() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmtSI = (n, suf) => {
+    if (!Number.isFinite(n)) return '—';
+    const u = ['', 'K', 'M', 'G', 'T', 'P']; let i = 0;
+    while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+    return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + ' ' + u[i] + suf;
+  };
+  const fmtNum = (n) => { try { return BigInt(n).toLocaleString('en-US'); } catch { return String(n); } };
+  const esc = (s) => String(s ?? '').replace(/[<>&"]/g, '');
+  const d = _lastLotteryStatus;
+  if (!d || !d.ok) {
+    set('lot-fleet-frontier', 'coordinator unreachable — the scan may still be local-only');
+    set('lot-fleet-rate', 'off');
+    return;
+  }
+  set('lot-fleet-rate', fmtSI((d.rate_mks || 0) * 1e6, '/s'));
+  set('lot-fleet-tested', fmtSI(d.tested_total || 0, ''));
+  const covPct = (d.coverage || 0) * 100;
+  set('lot-fleet-coverage', (covPct < 0.0001 ? covPct.toExponential(2) : covPct.toFixed(4)) + '%');
+  set('lot-fleet-units', `${fmtNum(d.units_done || 0)} / ${fmtNum(d.n_units || 0)}`);
+  const ws = d.workers || [];
+  set('lot-fleet-workers', `${ws.filter(w => w.active).length} / ${ws.length}`);
+  set('lot-fleet-hits', String(d.hits_total || 0));
+  const bar = document.getElementById('lot-fleet-bar');
+  if (bar) bar.style.width = Math.min(100, Math.max(0.05, covPct)) + '%';
+  const etaS = d.eta_s;
+  const etaStr = etaS == null ? '—' : etaS > 315360000000 ? '>10k yr'
+    : etaS > 86400 ? Math.round(etaS / 86400) + ' d' : Math.round(etaS / 3600) + ' h';
+  set('lot-fleet-frontier',
+    `${d.label || 'scan'} · frontier ${String(d.frontier || '—').slice(0, 20)}… · ETA ~${etaStr}`);
+  const wtb = document.getElementById('lottery-workers-tbody');
+  if (wtb) {
+    wtb.innerHTML = ws.length ? ws.slice(0, 15).map(w =>
+      `<tr><td>${esc(w.worker_id)}${w.label ? ' <span style="opacity:.5">' + esc(w.label) + '</span>' : ''}</td>`
+      + `<td>${fmtSI((w.rate_mks || 0) * 1e6, '/s')}</td>`
+      + `<td>${fmtNum(w.total_tested || 0)}</td>`
+      + `<td>${w.units_done || 0}</td>`
+      + `<td>${w.active ? '🟢' : '⚪'}</td></tr>`).join('')
+      : '<tr><td colspan="5">no workers yet</td></tr>';
+  }
+  // Units are heavier — refresh them at most every 30 s while the drawer is open.
+  if (Date.now() - _lotteryUnitsFetched > 30000 && typeof window.electronAPI.lotteryGetUnits === 'function') {
+    _lotteryUnitsFetched = Date.now();
+    window.electronAPI.lotteryGetUnits().then(u => {
+      const utb = document.getElementById('lottery-units-tbody');
+      if (!utb || !u || !u.ok) return;
+      const units = (u.units || []).slice(0, 20);
+      utb.innerHTML = units.length ? units.map(x =>
+        `<tr><td>#${x.unit_id}</td>`
+        + `<td>${x.status === 'done' ? '🟢 done' : '🟡 leased'}</td>`
+        + `<td>${esc(x.worker_id)}</td>`
+        + `<td>${fmtNum(x.tested || 0)}</td>`
+        + `<td>${x.hits ? '🎯 ' + x.hits : '0'}</td></tr>`).join('')
+        : '<tr><td colspan="5">no units yet</td></tr>';
+    }).catch(() => {});
   }
 }
 

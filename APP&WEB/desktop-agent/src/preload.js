@@ -97,6 +97,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onKeyscanStatus: (callback) => {
     ipcRenderer.on('keyscan-status', (event, data) => callback(data));
   },
+  onLotteryStatus: (callback) => {
+    ipcRenderer.on('lottery-status', (event, data) => callback(data));
+  },
+  lotteryGetUnits: () => ipcRenderer.invoke('lottery-get-units'),
   onMinerBackend: (callback) => {
     ipcRenderer.on('miner-backend', (event, data) => callback(data));
   },

@@ -3009,6 +3009,33 @@ def get_keyscan_status() -> dict:
     return out
 
 
+def _lottery_proxy(path: str) -> dict:
+    """Proxy the btcunlock coordinator (default 127.0.0.1:8779).
+
+    Only the public read endpoints are exposed — write endpoints
+    (lease/report/hit) and the hit vault stay token-gated on the
+    coordinator itself.
+    """
+    base = os.environ.get("BTCUNLOCK_COORD_URL", "http://127.0.0.1:8779").rstrip("/")
+    try:
+        import urllib.request as _ur
+        with _ur.urlopen(base + path, timeout=4.0) as r:
+            return json.loads(r.read())
+    except Exception as ex:
+        return {"ok": False, "reachable": False, "error": str(ex)}
+
+
+def get_lottery_status() -> dict:
+    d = _lottery_proxy("/api/status")
+    if d.get("ok"):
+        d["reachable"] = True
+    return d
+
+
+def get_lottery_units() -> dict:
+    return _lottery_proxy("/api/units")
+
+
 # ── Settings persistence ─────────────────────────────────────────────────
 SETTINGS_FILE = DATA_DIR / "dashboard-settings.json"
 
@@ -12007,6 +12034,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_miner_live_stats())
         elif route == "/api/keyscan":
             self._json(get_keyscan_status())
+        elif route == "/api/lottery":
+            self._json(get_lottery_status())
+        elif route == "/api/lottery/units":
+            self._json(get_lottery_units())
         elif route == "/api/miner/log-tail":
             lines = int(params.get("lines", ["30"])[0])
             self._json({"lines": tail_log("miner.log", lines), "file": str(LOG_DIR / "miner.log")})
