@@ -410,6 +410,12 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
         size_f,
         opts.targets.len(),
     );
+    for (i, n) in opts.target_names.iter().take(8).enumerate() {
+        eprintln!("  target #{i}: {n}");
+    }
+    if opts.target_names.len() > 8 {
+        eprintln!("  … +{} more targets", opts.target_names.len() - 8);
+    }
 
     let t0 = Instant::now();
     let mut last_report = Instant::now();
