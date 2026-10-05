@@ -207,15 +207,15 @@ export default function ZionDexDashboard() {
             className="text-center py-20"
           >
             <Repeat className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white">Atomic Swap</h2>
+            <h2 className="text-xl font-semibold text-white">WARP BTC/ZION</h2>
             <p className="text-zinc-400 mt-2 max-w-md mx-auto">
-              Trustless HTLC atomic swaps between ZION and other chains. No custodian.
+              Trustless HTLC atomic swaps between Bitcoin and ZION L1. No custodian.
             </p>
             <Link
-              href="/swap"
+              href="/multichain#warp"
               className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-xl bg-zion-gold/15 text-zion-gold border border-zion-gold/30 hover:bg-zion-gold/25 transition-colors"
             >
-              Open Atomic Swap
+              Open WARP Swap
             </Link>
           </motion.div>
         )}
