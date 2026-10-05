@@ -112,12 +112,21 @@ def run_unit(worker_id, label, unit, extra):
                 hit["address"] = am.group(1)
             if hit.get("key") and hit.get("wif") and hit.get("address"):
                 payload = {"worker_id": worker_id, "unit_id": uid, **hit}
-                try:
-                    api("POST", "/api/hit", payload)
-                    hits_sent += 1
-                    log(f"unit {uid}: HIT reported to coordinator")
-                except Exception as e:
-                    log(f"unit {uid}: HIT report FAILED: {e}")
+                # The hit IS the jackpot — retry hard in a background
+                # thread so stdout keeps draining (a full pipe would
+                # stall the scanner). Local mode-600 backup is fallback.
+                def _post_hit(p=payload):
+                    for attempt in range(10):
+                        try:
+                            api("POST", "/api/hit", p, timeout=15)
+                            log(f"unit {uid}: HIT reported to coordinator")
+                            return
+                        except Exception as e:
+                            log(f"unit {uid}: HIT report attempt {attempt + 1} failed: {e}")
+                            time.sleep(min(60, 2 ** attempt))
+                    log(f"unit {uid}: HIT report FAILED after 10 tries — "
+                        f"key is in local hits dir")
+                threading.Thread(target=_post_hit, daemon=True).start()
                 hit = {}
             now = time.time()
             if now - last_report >= REPORT_EVERY:
