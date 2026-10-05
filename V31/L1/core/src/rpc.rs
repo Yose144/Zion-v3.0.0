@@ -546,6 +546,7 @@ async fn get_chain_info(node: &Node) -> Result<Value, NodeError> {
         "accepted_blocks": effective_height + 1,
         "mempool_transactions": mempool_size,
         "protocol_version": "3.1.0-alpha",
+        "node_version": env!("CARGO_PKG_VERSION"),
         "transaction_model": "hybrid",
         "utxo_validation_available": true,
     }))
@@ -1432,5 +1433,34 @@ mod tests {
 
         let to = tx["to"].as_str().unwrap();
         assert!(to.contains(&recipient_addr), "to should contain recipient");
+    }
+
+    /// `getStatus`/`getChainInfo` expose the crate version as `node_version`.
+    #[tokio::test]
+    async fn get_status_exposes_node_version() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+        for method in ["getStatus", "getChainInfo"] {
+            let req = json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": method,
+                "params": {},
+            });
+            let line = serde_json::to_string(&req).unwrap();
+            let response = dispatch_request(&line, &node).await;
+            let version = response
+                .get("result")
+                .and_then(|r| r.get("node_version"))
+                .and_then(|v| v.as_str());
+            assert_eq!(
+                version,
+                Some(env!("CARGO_PKG_VERSION")),
+                "{method} should report node_version"
+            );
+        }
     }
 }
