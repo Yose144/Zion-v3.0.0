@@ -2179,9 +2179,15 @@ impl MinerRuntime {
             let mut last_job = self.gpu_ext_last_job_id.lock().await;
             if *last_job != ext.job_id {
                 *last_job = ext.job_id.clone();
+                // Always mix in a per-miner/session salt — the upstream
+                // extranonce1 is shared by every session mining the same
+                // job, so starting every rig from it made them scan the
+                // same low64 range and lose to "duplicate share" rejects.
+                let session_salt = self.compute_gpu_ext_nonce_base(&ext);
                 let base = Self::parse_hex_u64(&ext.extranonce1_hex)
                     .filter(|&v| v != 0)
-                    .unwrap_or_else(|| self.compute_gpu_ext_nonce_base(&ext));
+                    .map(|en1| en1.wrapping_add(session_salt))
+                    .unwrap_or(session_salt);
                 self.gpu_ext_nonce_cursor
                     .store(base, std::sync::atomic::Ordering::Relaxed);
                 self.gpu_ext_job_base
@@ -2251,6 +2257,21 @@ impl MinerRuntime {
                     .and_then(|b| b.cpu_external.as_ref())
                     .map(|e| e.job_id.clone());
                 new_vrsc_id.is_some() && new_vrsc_id.as_deref() != Some(&ext.job_id)
+            } else {
+                false
+            }
+        } else if matches!(stream, StreamId::GpuExternal) {
+            // Same stale check for the GPU stream (QTU/ZANO on fast-rotating
+            // upstream pools): if a newer bundle carries a different
+            // gpu_external job id, this share would only earn an upstream
+            // "Invalid job id" — drop it instead of burning a round-trip.
+            if job_rx.has_changed().unwrap_or(false) {
+                let new_gpu_id = job_rx
+                    .borrow()
+                    .as_ref()
+                    .and_then(|b| b.gpu_external.as_ref())
+                    .map(|e| e.job_id.clone());
+                new_gpu_id.is_some() && new_gpu_id.as_deref() != Some(&ext.job_id)
             } else {
                 false
             }
