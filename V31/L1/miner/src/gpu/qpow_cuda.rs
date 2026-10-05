@@ -36,15 +36,8 @@ const MAX_HITS: usize = 8;
 /// u32[9]: hit count + up to `MAX_HITS` logical indices.
 const RESULT_WORDS: usize = 1 + MAX_HITS;
 
-/// Result of one QPoW GPU batch.
-pub struct QpowGpuResult {
-    /// Full 64-byte wire nonce (big-endian U512).
-    pub nonce: [u8; 64],
-    /// Full 64-byte wire hash (big-endian U512).
-    pub hash: [u8; 64],
-    /// Nonces actually scanned by this launch.
-    pub nonces_tested: u64,
-}
+/// Result of one QPoW GPU batch — shared with the OpenCL backend.
+pub use crate::gpu::QpowGpuResult;
 
 /// Persistent CUDA miner for `qpow-poseidon2`.
 pub struct QpowCudaMiner {

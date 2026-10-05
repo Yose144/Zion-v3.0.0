@@ -26,6 +26,56 @@ use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 pub mod cuda_external;
 #[cfg(feature = "gpu-cuda")]
 pub mod qpow_cuda;
+#[cfg(feature = "gpu-opencl")]
+pub mod qpow_opencl;
+
+/// Result of one QPoW GPU batch — shared by the CUDA and OpenCL backends.
+#[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+pub struct QpowGpuResult {
+    /// Full 64-byte wire nonce (big-endian U512).
+    pub nonce: [u8; 64],
+    /// Full 64-byte wire hash (big-endian U512).
+    pub hash: [u8; 64],
+    /// Nonces actually scanned by this launch.
+    pub nonces_tested: u64,
+}
+
+/// Backend-agnostic QPoW GPU miner. Wraps whichever GPU backend the
+/// runtime configured — CUDA on NVIDIA, OpenCL on AMD (Vega/gfx900).
+#[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+pub enum QpowGpuMiner {
+    #[cfg(feature = "gpu-cuda")]
+    Cuda(qpow_cuda::QpowCudaMiner),
+    #[cfg(feature = "gpu-opencl")]
+    OpenCl(qpow_opencl::QpowOpenclMiner),
+}
+
+#[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+impl QpowGpuMiner {
+    pub fn device_name(&self) -> String {
+        match self {
+            #[cfg(feature = "gpu-cuda")]
+            Self::Cuda(m) => m.device_name(),
+            #[cfg(feature = "gpu-opencl")]
+            Self::OpenCl(m) => m.device_name(),
+        }
+    }
+
+    pub fn mine_batch(
+        &mut self,
+        header: &[u8; crate::auxpow::qpow::QPOW_HEADER_LEN],
+        nonce_be: &[u8; crate::auxpow::qpow::QPOW_NONCE_LEN],
+        target: &[u8; crate::auxpow::qpow::QPOW_TARGET_LEN],
+        total: u64,
+    ) -> anyhow::Result<Option<QpowGpuResult>> {
+        match self {
+            #[cfg(feature = "gpu-cuda")]
+            Self::Cuda(m) => m.mine_batch(header, nonce_be, target, total),
+            #[cfg(feature = "gpu-opencl")]
+            Self::OpenCl(m) => m.mine_batch(header, nonce_be, target, total),
+        }
+    }
+}
 
 // ── Global GPU memory budget tracker ──────────────────────────────────
 // On Apple Silicon (unified memory), GPU and CPU share the same physical
