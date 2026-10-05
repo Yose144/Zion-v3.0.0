@@ -255,6 +255,33 @@ def scan_log_hits(text):
     return recs
 
 
+def hits_dir():
+    """Scanner-side backup dir — <ckpt_dir>/btcunlock-hits/ (mode 600)."""
+    return os.path.join(os.path.dirname(os.path.abspath(CKPT)), "btcunlock-hits")
+
+
+def load_jsonl_hits():
+    """Hits the SCANNER itself persisted — the primary source of truth.
+    One JSON object per line in hits.jsonl."""
+    recs = []
+    path = os.path.join(hits_dir(), "hits.jsonl")
+    try:
+        with open(path, "r", errors="replace") as f:
+            for ln in f:
+                ln = ln.strip()
+                if not ln:
+                    continue
+                try:
+                    r = json.loads(ln)
+                    r.setdefault("ts", r.get("ts"))
+                    recs.append(r)
+                except ValueError:
+                    continue
+    except OSError:
+        pass
+    return recs, path
+
+
 # ---------------------------------------------------------------- status
 
 
@@ -384,16 +411,27 @@ def status():
                 }
             )
 
-    # --- hits vault: merge log-derived hits into the persistent file ---
+    # --- hits vault: merge scanner-persisted hits + log-derived hits ---
+    # the scanner's own hits.jsonl (written at hit time, mode 600) is the
+    # primary source; log parsing is a fallback for older runs
     vault = load_vault()
     seen = {(r.get("key_hex"), r.get("address")) for r in vault}
-    new = [r for r in scan_log_hits(window) if (r.get("key_hex"), r.get("address")) not in seen]
+    disk_hits, jsonl_path = load_jsonl_hits()
+    new = [r for r in disk_hits + scan_log_hits(window)
+           if (r.get("key_hex"), r.get("address")) not in seen]
     if new:
         vault.extend(new)
         try:
             save_vault(vault)
         except OSError:
             pass
+    s["hits_dir"] = hits_dir()
+    s["hits_jsonl"] = jsonl_path if os.path.exists(jsonl_path) else None
+    s["hits_files"] = (
+        len([f for f in os.listdir(hits_dir()) if f.startswith("hit-")])
+        if os.path.isdir(hits_dir())
+        else 0
+    )
     # WIF is deliberately INCLUDED in the vault file (mode 600) — it is
     # the whole point of a recovery run — but masked out of the web
     # payload so a shoulder-surfer on the LAN page can't grab it. The
@@ -566,11 +604,11 @@ async function tick(){
   (s.milestones||[]).forEach(m=>{const tr=document.createElement('tr');if(m.done)tr.className='done';
    tr.innerHTML=`<td>${m.pct} %</td><td>${m.keys}</td><td>${m.done?'✓':m.in}</td><td>${m.date||''}</td>`;ms.appendChild(tr)});
   // vault
-  document.getElementById('vaultpath').textContent='file: '+s.vault_path+' (mode 600 · click row = reveal via localhost api)';
+  document.getElementById('vaultpath').textContent='file: '+s.vault_path+' (600) · scanner dir: '+s.hits_dir+' ('+(s.hits_files||0)+' hit file'+(s.hits_files===1?'':'s')+(s.hits_jsonl?' + hits.jsonl':'')+')';
   const vt=document.getElementById('vault');vt.innerHTML='<tr><th>when</th><th>key</th><th>address</th><th>target</th></tr>';
   if(!(s.vault||[]).length){vt.innerHTML+='<tr><td colspan=4 class=dim>empty — found keys land here and in the vault file</td></tr>'}
   (s.vault||[]).forEach(r=>{const tr=document.createElement('tr');
-   tr.innerHTML=`<td>${r.ts?new Date(r.ts*1000).toLocaleString():'—'}</td><td class=mono>${r.key||''}</td><td class=mono>${r.address||''}</td><td class=mono>${r.target||''}</td>`;vt.appendChild(tr)});
+   tr.innerHTML=`<td>${r.time||(r.ts?new Date(r.ts*1000).toLocaleString():'—')}</td><td class=mono>${r.key||''}</td><td class=mono>${r.address||''}</td><td class=mono>${r.target||''}</td>`;vt.appendChild(tr)});
   document.getElementById('cmd').textContent=s.alive?('# restart same scan:\ncd ~/2.9.6-main/BTCunlock\nsetsid nohup '+s.cmdline.replace(' --gpu',' --gpu --resume')+' &'):'—';
   // catalog
   const cat=document.getElementById('cat');cat.textContent=`puzzle catalog — ${s.catalog.open} open / ${s.catalog.total} total (open shown)`;

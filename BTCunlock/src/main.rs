@@ -202,6 +202,11 @@ enum Cmd {
         /// Resume from checkpoint.
         #[arg(long)]
         resume: bool,
+        /// Shell command run on every verified hit — env carries
+        /// BTCUNLOCK_KEY/KEY_HEX/WIF/ADDRESS/TARGET/LABEL (e.g. a mailer,
+        /// scp off-site copy, ntfy push…).
+        #[arg(long)]
+        hit_cmd: Option<String>,
     },
     /// Scan a 2015 Bitcoin-puzzle range: `puzzle 66` covers [2^65, 2^66)
     /// against the published puzzle address. Same engine as `keyscan`;
@@ -227,6 +232,10 @@ enum Cmd {
         /// Resume from checkpoint.
         #[arg(long)]
         resume: bool,
+        /// Shell command run on every verified hit — env carries
+        /// BTCUNLOCK_KEY/KEY_HEX/WIF/ADDRESS/TARGET/LABEL.
+        #[arg(long)]
+        hit_cmd: Option<String>,
     },
     /// Measure seed-derivation throughput (GPU sanity check).
     Bench {
@@ -397,6 +406,7 @@ fn main() -> Result<()> {
             batch,
             checkpoint,
             resume,
+            hit_cmd,
         } => {
             let start = keyscan::U256::from_hex(&start)?;
             let end = match end {
@@ -434,6 +444,7 @@ fn main() -> Result<()> {
                 checkpoint,
                 resume,
                 label: String::new(),
+                hit_cmd,
             })
         }
         Cmd::Puzzle {
@@ -444,6 +455,7 @@ fn main() -> Result<()> {
             batch,
             checkpoint,
             resume,
+            hit_cmd,
         } => {
             let (label, start, end, addr, solved) = keyscan::puzzle_range(n)?;
             if solved {
@@ -465,6 +477,7 @@ fn main() -> Result<()> {
                 checkpoint,
                 resume,
                 label,
+                hit_cmd,
             })
         }
         Cmd::Bench {

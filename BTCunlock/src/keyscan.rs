@@ -259,6 +259,9 @@ pub struct KeyscanOpts {
     pub resume: bool,
     /// Label for the header line (e.g. "puzzle #66").
     pub label: String,
+    /// Optional shell command run on every verified hit — the material
+    /// is exported as BTCUNLOCK_KEY/KEY_HEX/WIF/ADDRESS/TARGET/LABEL.
+    pub hit_cmd: Option<String>,
 }
 
 fn fmt_rate(r: f64) -> String {
@@ -292,11 +295,10 @@ fn fmt_eta(secs: f64) -> String {
     format!("{secs:.0}s")
 }
 
-fn report_hit(key: &U256, network: Network) {
+fn hit_details(key: &U256, network: Network) -> (String, String) {
     let kb = key.to_be_bytes();
-    let sk = SecretKey::from_slice(&kb);
     let secp = Secp256k1::new();
-    let (wif, addr) = match sk {
+    match SecretKey::from_slice(&kb) {
         Ok(sk) => {
             let pk = PublicKey::from_secret_key(&secp, &sk);
             let privk = bitcoin::PrivateKey::new(sk, network);
@@ -304,13 +306,204 @@ fn report_hit(key: &U256, network: Network) {
             (privk.to_wif(), a.to_string())
         }
         Err(_) => ("<key ≥ group order — re-check>".into(), "?".into()),
-    };
+    }
+}
+
+fn report_hit(key: &U256, network: Network) {
+    let (wif, addr) = hit_details(key, network);
     let mut out = std::io::stdout().lock();
     let _ = writeln!(out, "HIT  key=0x{}", key.to_hex_short());
     let _ = writeln!(out, "     key hex: {}", key.to_hex());
     let _ = writeln!(out, "     WIF:     {wif}");
     let _ = writeln!(out, "     address: {addr}");
     let _ = out.flush();
+}
+
+// -------------------------------------------------------- hit backup
+
+fn leap(y: i64) -> bool {
+    y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
+}
+
+/// epoch → "YYYY-MM-DDTHH:MM:SSZ" — simple year/month walk, no chrono.
+fn iso_time(epoch: u64) -> String {
+    let mut days = (epoch / 86400) as i64;
+    let s = epoch % 86400;
+    let mut y = 1970i64;
+    loop {
+        let diy = if leap(y) { 366 } else { 365 };
+        if days < diy {
+            break;
+        }
+        days -= diy;
+        y += 1;
+    }
+    const MD: [i64; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let mut m = 0usize;
+    let mut d = days;
+    while m < 12 {
+        let dm = MD[m] + if m == 1 && leap(y) { 1 } else { 0 };
+        if d < dm {
+            break;
+        }
+        d -= dm;
+        m += 1;
+    }
+    format!(
+        "{y:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        m + 1,
+        d + 1,
+        s / 3600,
+        (s % 3600) / 60,
+        s % 60
+    )
+}
+
+#[cfg(unix)]
+fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .mode(0o600)
+        .open(p)
+}
+
+#[cfg(unix)]
+fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let mut f = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(p)?;
+    f.write_all(data.as_bytes())
+}
+
+#[cfg(not(unix))]
+fn open_600_append(p: &std::path::Path) -> std::io::Result<std::fs::File> {
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(p)
+}
+
+#[cfg(not(unix))]
+fn write_600(p: &std::path::Path, data: &str) -> std::io::Result<()> {
+    std::fs::write(p, data)
+}
+
+/// Persist a verified hit — this runs BEFORE the console report so a
+/// found key is on disk even if stdout is lost:
+///   <hits_dir>/hits.jsonl            append-only index (one JSON / line)
+///   <hits_dir>/hit-<iso>-<key>.txt   human-readable copy
+/// Both files are mode 600 (the WIF is a real private key).
+#[allow(clippy::too_many_arguments)]
+fn save_hit(
+    hits_dir: &std::path::Path,
+    key: &U256,
+    wif: &str,
+    addr: &str,
+    target_name: &str,
+    target_hash: &[u8; 20],
+    label: &str,
+    opts: &KeyscanOpts,
+    tested: u64,
+) {
+    let epoch = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let iso = iso_time(epoch);
+    let rec = serde_json::json!({
+        "ts": epoch,
+        "time": iso,
+        "key": format!("0x{}", key.to_hex_short()),
+        "key_hex": key.to_hex(),
+        "wif": wif,
+        "address": addr,
+        "target": target_name,
+        "target_hash160": hex::encode(target_hash),
+        "label": label,
+        "range_start": format!("0x{}", opts.start.to_hex_short()),
+        "range_end": format!("0x{}", opts.end.to_hex_short()),
+        "tested_at_hit": tested,
+    });
+    if let Err(e) = std::fs::create_dir_all(hits_dir) {
+        eprintln!("hit-backup: mkdir {}: {e}", hits_dir.display());
+        return;
+    }
+    let mut ok = true;
+    let jsonl = hits_dir.join("hits.jsonl");
+    match open_600_append(&jsonl).and_then(|mut f| {
+        writeln!(f, "{}", rec)?;
+        f.sync_all()
+    }) {
+        Ok(()) => eprintln!("hit-backup: appended → {}", jsonl.display()),
+        Err(e) => {
+            ok = false;
+            eprintln!("hit-backup: write {}: {e}", jsonl.display());
+        }
+    }
+    let fname = format!(
+        "hit-{}-0x{}.txt",
+        iso.replace([':', '-'], ""),
+        key.to_hex_short()
+    );
+    let txt = hits_dir.join(&fname);
+    let body = format!(
+        "BTCunlock verified hit\n\
+         time:     {iso}\n\
+         label:    {label}\n\
+         key:      0x{}\n\
+         key hex:  {}\n\
+         WIF:      {wif}\n\
+         address:  {addr}\n\
+         target:   {target_name} (hash160 {})\n\
+         range:    [0x{}, 0x{})\n\
+         tested:   {tested}\n",
+        key.to_hex_short(),
+        key.to_hex(),
+        hex::encode(target_hash),
+        opts.start.to_hex_short(),
+        opts.end.to_hex_short(),
+    );
+    match write_600(&txt, &body) {
+        Ok(()) => eprintln!("hit-backup: wrote → {}", txt.display()),
+        Err(e) => {
+            ok = false;
+            eprintln!("hit-backup: write {}: {e}", txt.display());
+        }
+    }
+    // optional user hook: run an arbitrary command on every hit with the
+    // material in env vars (mail/scp/ntfy/whatever the operator wants).
+    if let Some(cmd) = &opts.hit_cmd {
+        let st = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .env("BTCUNLOCK_KEY", format!("0x{}", key.to_hex_short()))
+            .env("BTCUNLOCK_KEY_HEX", key.to_hex())
+            .env("BTCUNLOCK_WIF", wif)
+            .env("BTCUNLOCK_ADDRESS", addr)
+            .env("BTCUNLOCK_TARGET", target_name)
+            .env("BTCUNLOCK_LABEL", label)
+            .status();
+        match st {
+            Ok(s) if s.success() => eprintln!("hit-backup: --hit-cmd ok"),
+            Ok(s) => {
+                ok = false;
+                eprintln!("hit-backup: --hit-cmd exited {s}")
+            }
+            Err(e) => {
+                ok = false;
+                eprintln!("hit-backup: --hit-cmd: {e}")
+            }
+        }
+    }
+    if !ok {
+        eprintln!("hit-backup: some backups failed — key is still in stdout/log");
+    }
 }
 
 /// Verify a GPU-reported hit on the host: recompute pubkey hash160 and
@@ -349,6 +542,13 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
         .clone()
         .unwrap_or_else(|| "btcunlock-keys.ckpt".into());
     let jhash = job_hash(&opts.start, &opts.end, &opts.targets);
+    // hits land next to the checkpoint so custom --checkpoint layouts
+    // keep everything for one job in one place
+    let hits_dir = std::path::Path::new(&ckpt_path)
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("btcunlock-hits");
     let mut cur = opts.start;
     let mut tested = 0u64;
     let mut hit_count = 0u64;
@@ -416,6 +616,7 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
     if opts.target_names.len() > 8 {
         eprintln!("  … +{} more targets", opts.target_names.len() - 8);
     }
+    eprintln!("  hits backup → {}/ (mode 600)", hits_dir.display());
 
     let t0 = Instant::now();
     let mut last_report = Instant::now();
@@ -463,6 +664,20 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
                 hit_count += 1;
                 let name = opts.target_names.get(*t).cloned().unwrap_or_default();
                 eprintln!("hit for target #{t} {name}");
+                // backup BEFORE the console report — the key must reach
+                // disk even if the terminal/log dies right after
+                let (wif, addr) = hit_details(key, Network::Bitcoin);
+                save_hit(
+                    &hits_dir,
+                    key,
+                    &wif,
+                    &addr,
+                    &name,
+                    &opts.targets[*t],
+                    &opts.label,
+                    &opts,
+                    tested + scanned,
+                );
                 report_hit(key, Network::Bitcoin);
             } else {
                 eprintln!(
