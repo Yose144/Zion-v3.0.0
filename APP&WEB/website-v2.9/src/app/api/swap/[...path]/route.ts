@@ -17,8 +17,9 @@ function buildUpstreamUrl(request: Request, path: string[]) {
   if (ROOT_PATHS.has(suffix)) {
     return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/${suffix}${incoming.search}`;
   }
-  // Native multichain HTLC endpoints live under /v1/multichain/swaps/htlc/{...}
-  if (suffix.startsWith('htlc/')) {
+  // Native multichain HTLC + WARP BTC endpoints live under
+  // /v1/multichain/swaps/{htlc,btc}/{...}
+  if (suffix.startsWith('htlc/') || suffix.startsWith('btc/')) {
     return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/v1/multichain/swaps/${suffix}${incoming.search}`;
   }
   return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/v1/swap/${suffix}${incoming.search}`;

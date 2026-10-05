@@ -45,6 +45,7 @@ const FarmingPanel    = dynamic(() => import('@/components/FarmingPanel'), { ssr
 const GovernancePanel = dynamic(() => import('@/components/GovernancePanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 const BridgeValidators = dynamic(() => import('@/components/BridgeValidators'), { ssr: false, loading: () => <div className="h-40 animate-pulse rounded-2xl bg-white/5" /> });
 const CrossChainSwapWidget = dynamic(() => import('@/components/dex/CrossChainSwapWidget'), { ssr: false, loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" /> });
+const WarpBtcSwapWidget = dynamic(() => import('@/components/dex/WarpBtcSwapWidget'), { ssr: false, loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" /> });
 const DexPriceChart   = dynamic(() => import('@/components/dex/PriceChart'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 const DexPoolList     = dynamic(() => import('@/components/dex/DexPoolList'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 
@@ -307,11 +308,12 @@ function StatCard({
 
 // ─── Multichain Sections (same pattern as /pool) ──────────────────────────────────
 
-type SectionTab = 'overview' | 'swap' | 'earn' | 'bridge' | 'governance' | 'dex' | 'auction';
+type SectionTab = 'overview' | 'swap' | 'warp' | 'earn' | 'bridge' | 'governance' | 'dex' | 'auction';
 
 const SECTIONS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeof Activity }[] = [
   { key: 'overview', labelCs: 'Přehled', labelEn: 'Overview', icon: Activity },
   { key: 'swap', labelCs: 'Swap', labelEn: 'Swap', icon: RefreshCw },
+  { key: 'warp', labelCs: 'WARP BTC/ZION', labelEn: 'WARP BTC/ZION', icon: Zap },
   { key: 'earn', labelCs: 'Výnosy', labelEn: 'Earn', icon: TrendingUp },
   { key: 'bridge', labelCs: 'Bridge', labelEn: 'Bridge', icon: ArrowLeftRight },
   { key: 'governance', labelCs: 'Governance', labelEn: 'Governance', icon: Scale },
@@ -376,7 +378,7 @@ export default function DefiPage() {
   useEffect(() => {
     const applyHash = () => {
       const raw = window.location.hash.replace('#', '');
-      const key = (raw === 'warp' ? 'bridge' : raw) as SectionTab;
+      const key = raw as SectionTab;
       if (SECTIONS.some((s) => s.key === key)) {
         setActiveTab(key);
       }
@@ -1288,6 +1290,41 @@ export default function DefiPage() {
                   <DefiBalances />
                 </div>
               </div>
+            </div>
+          </motion.div>
+        </section>
+      </>
+      )}
+
+      {activeTab === 'warp' && (
+      <>
+        {/* ═══════ WARP BTC/ZION native atomic swap ═══════ */}
+        <section className="zion-container relative z-10 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-col gap-2 mb-6"
+          >
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Nativní most' : 'Native bridge'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Zap className="h-7 w-7 text-zion-gold" />
+              WARP BTC/ZION
+            </h2>
+            <p className="text-sm text-gray-400">
+              {cs
+                ? 'Atomický swap mezi Bitcoinem a ZION L1 — trustless HTLC, bez custodiana.'
+                : 'Atomic swap between Bitcoin and ZION L1 — trustless HTLC, no custodian.'}
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="max-w-3xl"
+          >
+            <div className="zion-rainbow-card p-5 md:p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+              <WarpBtcSwapWidget />
             </div>
           </motion.div>
         </section>
