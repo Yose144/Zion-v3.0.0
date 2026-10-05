@@ -609,7 +609,7 @@ async function tick(){
   if(!(s.vault||[]).length){vt.innerHTML+='<tr><td colspan=4 class=dim>empty — found keys land here and in the vault file</td></tr>'}
   (s.vault||[]).forEach(r=>{const tr=document.createElement('tr');
    tr.innerHTML=`<td>${r.time||(r.ts?new Date(r.ts*1000).toLocaleString():'—')}</td><td class=mono>${r.key||''}</td><td class=mono>${r.address||''}</td><td class=mono>${r.target||''}</td>`;vt.appendChild(tr)});
-  document.getElementById('cmd').textContent=s.alive?('# restart same scan:\ncd ~/2.9.6-main/BTCunlock\nsetsid nohup '+s.cmdline.replace(' --gpu',' --gpu --resume')+' &'):'—';
+  document.getElementById('cmd').textContent=s.alive?('# restart same scan:\\ncd ~/2.9.6-main/BTCunlock\\nsetsid nohup '+s.cmdline.replace(' --gpu',' --gpu --resume')+' &'):'—';
   // catalog
   const cat=document.getElementById('cat');cat.textContent=`puzzle catalog — ${s.catalog.open} open / ${s.catalog.total} total (open shown)`;
   const pt=document.getElementById('pt');pt.innerHTML='<tr><th>#</th><th>address</th><th>status</th></tr>';
