@@ -9,7 +9,7 @@
 ### 1. ✅ Backend Konfigurace (config.php)
 **Změny:**
 - `PRESALE_ENABLED = true` (už bylo nastaveno na produkci)
-- `WALLET_LEDGER_API_KEY = '4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684'` (nově přidáno)
+- `WALLET_LEDGER_API_KEY = '<redacted>'` (nově přidáno)
 
 **Soubory:**
 - Backup: `config.php.backup.20251222`
@@ -59,7 +59,7 @@
 ## 🔐 **Bezpečnostní nastavení**
 
 ### API Authentication
-- **WALLET_LEDGER_API_KEY**: `4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684`
+- **WALLET_LEDGER_API_KEY**: `<redacted>`
 - Použití: POST požadavky na `wallet-ledger.php` vyžadují header `X-API-Key`
 - Generováno: `openssl rand -hex 32`
 

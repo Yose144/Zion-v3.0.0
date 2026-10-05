@@ -18,10 +18,15 @@ if (!PASSWORD) {
   process.exit(1);
 }
 
-// Genesis Projects wallet data (Slot 11)
+// Genesis Projects wallet data (Slot 11). The secret key is supplied via
+// env — never committed to the repo.
+const SECRET_KEY_HEX = process.env.GENESIS_CREATOR_SECRET_HEX;
+if (!SECRET_KEY_HEX || !/^(0x)?[0-9a-fA-F]{64}$/.test(SECRET_KEY_HEX)) {
+  console.error('GENESIS_CREATOR_SECRET_HEX required (32-byte hex secret key)');
+  process.exit(1);
+}
+
 const GENESIS_CREATOR = {
-  secretKeyHex: '60a084869f413466c1bb68aaaaa617990c7a07d30ae64b229e178f8af580c0d3',
-  publicKeyHex: '4608c3495ad13f1dbf68bebfbd476aa36bba797bd2da499a652b36bd75915bc5',
   address: 'zion16542q4l853a2z0u5r5w8y4m8k4558847h503736',
   balanceZION: 590_000_000, // 590 million
   purpose: 'Genesis Projects — Dharma Temple, Piko de Ora + DAO (Slot 11)'
@@ -35,7 +40,7 @@ console.log('');
 try {
   // Step 1: Import wallet from raw secret key
   console.log('[1/4] Importing Genesis Projects wallet...');
-  const wallet = WalletGenerator.importPrivateKey(GENESIS_CREATOR.secretKeyHex);
+  const wallet = WalletGenerator.importPrivateKey(SECRET_KEY_HEX.replace(/^0x/, ''));
 
   // Verify address matches
   if (wallet.address !== GENESIS_CREATOR.address) {

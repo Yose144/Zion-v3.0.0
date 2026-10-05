@@ -39,7 +39,7 @@
 
 ### Presale Backend
 - [x] **Set WALLET_LEDGER_API_KEY on production** ✅ HOTOVO (2.1.2026)
-  - Klíč nastaven: `4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684`
+  - Klíč nastaven: `<redacted>`
   - Dokumentace: [WALLET_LEDGER_API_KEY_CONFIG.md](./WALLET_LEDGER_API_KEY_CONFIG.md)
   - SSH: `ssh -i ~/.ssh/zion_server_key root@91.98.122.165`
 - [x] **Test presale end-to-end flow** ✅ HOTOVO (1.1.2026)

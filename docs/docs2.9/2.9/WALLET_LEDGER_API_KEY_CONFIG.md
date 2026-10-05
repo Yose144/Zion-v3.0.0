@@ -21,14 +21,14 @@ Edit `/var/www/zion/public_html/V2/api/config.php`:
 ```php
 <?php
 // Production WALLET_LEDGER_API_KEY
-define('WALLET_LEDGER_API_KEY', '4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684');
+define('WALLET_LEDGER_API_KEY', '<redacted>');
 ```
 
 ### Option 2: Environment Variable
 
 ```bash
 # Add to /root/zion-v2.9/.env
-export WALLET_LEDGER_API_KEY="4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684"
+export WALLET_LEDGER_API_KEY="<redacted>"
 ```
 
 Then modify config.php:
@@ -45,7 +45,7 @@ Include the API key in the `X-API-Key` header:
 ```bash
 curl -X POST https://zionterranova.com/V2/api/wallet-ledger.php \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: 4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684" \
+  -H "X-API-Key: <redacted>" \
   -d '{
     "wallet": "zion1abc123...",
     "action": "update_balance",
@@ -58,7 +58,7 @@ curl -X POST https://zionterranova.com/V2/api/wallet-ledger.php \
 ```python
 import requests
 
-API_KEY = "4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684"
+API_KEY = "<redacted>"
 
 response = requests.post(
     "https://zionterranova.com/V2/api/wallet-ledger.php",
@@ -97,7 +97,7 @@ curl -X POST https://zionterranova.com/V2/api/wallet-ledger.php \
 # With key (should succeed)
 curl -X POST https://zionterranova.com/V2/api/wallet-ledger.php \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: 4ae61f159832b0c5102779ebf7f6527ef951db9d6f6f1551a0cade3995494684" \
+  -H "X-API-Key: <redacted>" \
   -d '{"wallet": "test"}'
 ```
 

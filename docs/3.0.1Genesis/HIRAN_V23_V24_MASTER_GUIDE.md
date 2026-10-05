@@ -71,7 +71,7 @@ ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai
 
 ### If port changes (instance restart)
 ```bash
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 INSTANCE_ID="40791384"
 
 curl -s "https://console.vast.ai/api/v0/instances/${INSTANCE_ID}/?api_key=${API_KEY}" | \
@@ -88,7 +88,7 @@ https://cloud.vast.ai/ — instance **40791384**
 ### Create new instance (if this one dies)
 ```bash
 # Find cheapest 2x A100
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 curl -s "https://console.vast.ai/api/v0/bundles/?api_key=${API_KEY}" | \
   python3 -c "import json,sys; data=json.load(sys.stdin); offers=[o for o in data.get('offers',[]) if 'A100' in o.get('gpu_name','') and o.get('num_gpus',0)==2]; offers.sort(key=lambda x:x.get('dph_total',999)); print(f'Offer {offers[0][\"id\"]}: {offers[0][\"gpu_name\"]} x{offers[0][\"num_gpus\"]} at ${offers[0][\"dph_total\"]:.2f}/hr')"
 
@@ -100,7 +100,7 @@ curl -s -X PUT "https://console.vast.ai/api/v0/asks/OFFER_ID/?api_key=${API_KEY}
 ```bash
 PUBKEY=$(cat ~/.ssh/vast/hiran_v2.4_key.pub)
 curl -s -X POST \
-  -H "Authorization: Bearer 4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd" \
+  -H "Authorization: Bearer $VAST_API_KEY" \
   -H "Content-Type: application/json" \
   --data "{\"ssh_key\": \"${PUBKEY}\"}" \
   "https://console.vast.ai/api/v0/instances/40791384/ssh/"
@@ -108,7 +108,7 @@ curl -s -X POST \
 
 ### Destroy instance (stop billing)
 ```bash
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 INSTANCE_ID="40791384"
 
 curl -s -X DELETE \
@@ -229,7 +229,7 @@ Hardware:     2x A100 SXM4 80GB
 ### Credit Check
 ```bash
 # Check your Vast.ai balance
-curl -s -H "Authorization: Bearer 4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd" \
+curl -s -H "Authorization: Bearer $VAST_API_KEY" \
   "https://console.vast.ai/api/v0/user/" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Balance: ${d.get(\"credit_balance\",0):.2f}')"
 ```
 
@@ -242,7 +242,7 @@ curl -s -H "Authorization: Bearer 4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e
 ### Option A: rsync (recommended — resumable)
 ```bash
 # 1. Check SSH port (may change after restart)
-API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
+API_KEY="$VAST_API_KEY"
 PORT=$(curl -s "https://console.vast.ai/api/v0/instances/40791384/?api_key=${API_KEY}" | \
   python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('ssh_port',''))")
 
