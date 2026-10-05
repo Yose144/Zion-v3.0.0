@@ -103,6 +103,9 @@ impl SolverClient for HttpSolverClient {
         let mut req = self.client.post(&url).timeout(self.timeout).json(intent);
         if let Some(key) = key {
             req = req.header("X-Solver-Key", key);
+            // The solve endpoint is operator-gated (`require_admin`); forward
+            // the configured key as Bearer so keyed deployments still work.
+            req = req.bearer_auth(key);
         }
         let res = req.send().await.map_err(|e| {
             MultichainError::Internal(format!("solver {} HTTP request failed: {}", solver.name, e))
