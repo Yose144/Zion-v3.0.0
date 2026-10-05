@@ -365,8 +365,8 @@ Both nginx files and the ZIS environment were backed up on the host before the c
 
 | Artifact | sha256 (new) | Target | Verify |
 |---|---|---|---|
-| `zion-node` | `da120d45fd39…` | `/opt/zion/V31/target/release/zion-node` | all 3 nodes report `node_version=3.2.0`, height 70125 |
-| `warpd` | `28517fbdd573…` | `/opt/zion/V31/target/release/warpd` | `/health` ok v3.2.0; POST /transfers/* without key → 503 |
+| `zion-node` | `22cecc8828f5…` | `/opt/zion/V31/target/release/zion-node` | all 3 nodes report `node_version=3.2.0`, height ~70143 |
+| `warpd` | `22dd58c56186…` | `/opt/zion/V31/target/release/warpd` | `/health` ok v3.2.0; POST /transfers/* without key → 503 |
 | ZIS | compiled JS → `/opt/zion/identity/{server.js,lib,routes}` | `zion-zis` | public health 200 |
 | website | rsync `src+.next+public` | `zion-website` | all public pages 200; copy says "Mainnet Alpha" |
 | `g8_evidence.py` | new early-fail evaluate() | `/opt/zion/scripts/ops/` | state now `gate_status=failed, gate_reason=critical_incident` |
@@ -377,6 +377,13 @@ Both nginx files and the ZIS environment were backed up on the host before the c
 - Negative probes all 401/403: `/v1/admin/*`, `/v1/wallet/sign`, `/v1/swap/quote` (POST), `/api/warp/*/advance`, `/api/v2.9/revenue/config` (POST)
 - Positive reads: `/v1/swap/pools` 200, `/api/g8` sanitized (no internals), `/api/mission-data` truthful (`G8 RUN #2 FAILED`)
 - Pages 200: `/`, `/roadmap`, `/g8`, `/dashboard`, `/multichain`, `/l5-free-world`, apex, auth
+
+### Dependency audit findings (post-deploy, follow-up items)
+
+- **cargo audit:** 1 vulnerability — `RUSTSEC-2026-0285` rustls 0.23.42 (TLS 1.3 message-boundary, medium 5.3; fix ≥0.23.45). Plus unmaintained deps (fxhash, instant, paste, ring 0.16, rustls-pemfile ×2), unsound `lru` (RUSTSEC-2026-0002, -0253), yanked chacha20. → bump `rustls` to ≥0.23.45 in a follow-up.
+- **npm audit (identity):** 7 advisories incl. **critical `fast-jwt` ≤6.2.3** (iss-validation bypass, unknown-crit headers, algorithm confusion, empty-HMAC-secret bypass). Fix requires `@fastify/jwt` ^10.2.2 — **semver-major, breaking**; not applied in this pass, scheduled as a follow-up task.
+- **gitleaks:** 1415 history findings (burned secrets — documented, rotated). HEAD scan: 160 hits in tracked files, all triaged as test vectors/doc examples/deployed-contract data; none are the Fix-H scrubbed secrets.
+- Workspace `cargo test` (whole-tree) is running as belt-and-suspenders; all touched-component suites are green (see above).
 
 ### Incident during deploy
 
