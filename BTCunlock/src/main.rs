@@ -208,6 +208,10 @@ enum Cmd {
         /// scp off-site copy, ntfy push…).
         #[arg(long)]
         hit_cmd: Option<String>,
+        /// GPU duty cycle % (1–100) — sleeps between launches so a
+        /// co-resident miner keeps the card. 100 = full throttle.
+        #[arg(long, default_value_t = 100)]
+        gpu_duty: u32,
     },
     /// Scan a 2015 Bitcoin-puzzle range: `puzzle 66` covers [2^65, 2^66)
     /// against the published puzzle address. Same engine as `keyscan`;
@@ -237,6 +241,10 @@ enum Cmd {
         /// BTCUNLOCK_KEY/KEY_HEX/WIF/ADDRESS/TARGET/LABEL.
         #[arg(long)]
         hit_cmd: Option<String>,
+        /// GPU duty cycle % (1–100) — sleeps between launches so a
+        /// co-resident miner keeps the card. 100 = full throttle.
+        #[arg(long, default_value_t = 100)]
+        gpu_duty: u32,
     },
     /// Pollard kangaroo (lambda) for a bounded ECDLP: given a PUBLIC KEY
     /// whose secret lies in [start, end), recover it in ~2√(b−a) group
@@ -434,6 +442,7 @@ fn main() -> Result<()> {
             checkpoint,
             resume,
             hit_cmd,
+            gpu_duty,
         } => {
             let start = keyscan::U256::from_hex(&start)?;
             let end = match end {
@@ -472,6 +481,7 @@ fn main() -> Result<()> {
                 resume,
                 label: String::new(),
                 hit_cmd,
+                gpu_duty_pct: gpu_duty,
             })
         }
         Cmd::Puzzle {
@@ -483,6 +493,7 @@ fn main() -> Result<()> {
             checkpoint,
             resume,
             hit_cmd,
+            gpu_duty,
         } => {
             let (label, start, end, addr, solved) = keyscan::puzzle_range(n)?;
             if solved {
@@ -505,6 +516,7 @@ fn main() -> Result<()> {
                 resume,
                 label,
                 hit_cmd,
+                gpu_duty_pct: gpu_duty,
             })
         }
         Cmd::Kangaroo {

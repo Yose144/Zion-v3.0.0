@@ -179,6 +179,8 @@ def main():
     ap.add_argument("--gpu-index", default=None)
     ap.add_argument("--stride", type=int, default=16)
     ap.add_argument("--batch", type=int, default=262144)
+    ap.add_argument("--gpu-duty", type=int, default=int(
+        os.environ.get("BTCUNLOCK_GPU_DUTY", "100")))
     ap.add_argument("--idle-retry", type=int, default=60)
     args = ap.parse_args()
     COORD = args.coord.rstrip("/")
@@ -198,6 +200,8 @@ def main():
     extra = []
     if args.gpu:
         extra += ["--gpu", "--stride", str(args.stride), "--batch", str(args.batch)]
+        if args.gpu_duty < 100:
+            extra += ["--gpu-duty", str(args.gpu_duty)]
     if args.gpu_index:
         extra += ["--gpu-index", str(args.gpu_index)]
 
