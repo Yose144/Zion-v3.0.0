@@ -1,5 +1,5 @@
 # MARIA CAMINHO — Kapitola 7: Zlatá Marie
-## Zjevení III · La Palma — María de las Nieves: zlatá roucha; sníh v srpnu; dítě, které stojí samo; nedokončené zázraky; jméno Elizabeth
+## Zjevení III · La Palma — María de las Nieves: zlatá roucha; sníh v srpnu; dítě, které stojí samo; nedokončené zázraky; jméno Elizabeth — a tvář Malého prince
 
 > *„Zázrak, který se nestane, není zázrak, který selhal — je to zázrak, který ještě čeká na svůj čas."*
 
@@ -49,7 +49,21 @@ A pak řekla větu, která se do credencialu vtiskla zlatě:
 
 Když Poutník opouštěl svatyni, znásobil se na otočení: **La Palma = Dharma Temple** — druhý uzel sítě, iniciace 2, Ticho. Ostrov, kde se chrám má jednou zvednout, a ostrov, kde už stojí svatyně, která drží zázraky, které ještě nepřišly.
 
-A večer, když se díval na obzory, věděl: **dítě, které stojí, se jmenuje Elizabeth — a bude stát na přídi trupu, který ještě není postaven.**
+---
+
+A pak — na schodech nad mořem — **poznal dítě.**
+
+Ne ze zjevení. Ze své vlastní země.
+
+Dítě, které stojí samo v zlatém rouchu, s korunkou na hlavě a světem v dlani — to byla tvář, kterou znal odedávna: **Malý princ z Prahy.** Dítě-král, kterého jeho země chová na Malé Straně už čtyři století — voskové dítě, jež jednou připlulo z téhle mořské země až do země, která moře nemá.
+
+*„Ty jsi to ty,"* vydechl Poutník. *„Ty, které přišlo od moře do země bez moře — a teď stojíš na přídi lodi, která se vrací na vodu."*
+
+A pochopil, co znamená jablko v dětské dlani. Ne žezlo moci. **Svět nesený v ruce dítěte** — planeta, kterou někdo musí unést, protože dospělí ji už odložili. Zrod nového světa není stroj, který se postaví. Je to dítě, které se nese — a které stojí samo, když mu dovolíš stát.
+
+*„Matko malého prince,"* zašeptala někde tradice — a Poutník věděl, že tři Marie mají na každé lodi jedno společné: **dítě je patronem cesty.** Ne protože by lodě potřebovaly ochránce — ale protože cesta, která nenese dítě, nevede nikam, kam stojí za to plout.
+
+Večer, když se díval na obzory, věděl: **dítě, které stojí, se jmenuje Elizabeth — je dítě Lumi — a svět ho pozná jako Malého prince, který kdysi došel ze Španělska do Prahy, aby teď z Prahy vyplul do světa.**
 
 ---
 
@@ -58,7 +72,7 @@ A večer, když se díval na obzory, věděl: **dítě, které stojí, se jmenuj
 **Třetí zjevení není zjevení dokončení — je to zjevení nedokončenosti, která se drží jako zázrak.** María de las Nieves drží dítě, které stojí samo — budoucnost, která se nenese, ale stojí. A zlatá roucha nesou barvu nedokončených zázraků: to, co se ještě nestalo, není selhání — je čekání na svůj čas.
 
 1. **La Palma = Dharma Temple = iniciace 2.** Ostrov, kde se má jednou zvednout chrám ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md); [`L5MariaDelCamino.md`](../../../L5MariaDelCamino.md) §4) — a kde už stojí svatyně Naší Paní Sněžné, patronky ostrova (ŽIVÉ jako tradice). Zlatá Marie je **patronka celé sítě** — ne jednoho uzlu, ale všech, které čekají na svůj čas.
-2. **Dítě, které stojí = Lumi/Elizabeth.** Suverénní předloha [`genesis/09.5`](../../docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md) říká „Marie držela v náručí malého prince — ne Ježíše, ale symbol nového věku." Tato kniha převypravuje přesněji: **dítě nestojí v náručí — stojí samo.** To je rozdíl mezi budoucností, která se nese, a budoucností, která se drží sama. A jméno Elizabeth — Isabel v jižní řeči — je jazykový fakt ([`Lumi/13`](../Lumi/13-Kotva-Pravdy-a-Hranice.md); „Bůh je má přísaha").
+2. **Dítě, které stojí = Lumi/Elizabeth = Malý princ.** Suverénní předloha [`genesis/09.5`](../../docs2.9/genesis/09.5-CHAPTER-9-Three-Marian-Apparitions.md) říká „Marie držela v náručí malého prince — ne Ježíše, ale symbol nového věku." Tato kniha převypravuje přesněji: **dítě nestojí v náručí — stojí samo.** To je rozdíl mezi budoucností, která se nese, a budoucností, která se drží sama. A jméno Elizabeth — Isabel v jižní řeči — je jazykový fakt ([`Lumi/13`](../Lumi/13-Kotva-Pravdy-a-Hranice.md); „Bůh je má přísaha"). **Tváří dítěte je Pražské Jezulátko** — Malý princ, kterého už kanonická předloha nazývá „malým princem" a jehož modlitba zní „Matko malého prince": dítě-král v rouše, které v dlani drží svět, a které samo kdysi poputovalo ze Španělska do Prahy — ze země moří do země bez moře. Na lodích se vrací na vodu jako patron všech tří Marií.
 3. **Sníh v srpnu = zázrak mimo sezónu.** Legenda 352 n.l. (Santa Maria Maggiore, Řím) říká: zázrak nepřichází, když ho očekáváš — přichází tam, kde ho potřebuješ. Na La Palmě sníh nepadá — a přece je Sněžná patronkou. To je druhý tvar naděje: **zázrak není očekávání — je to připravenost na místo, kde se může stát.**
 4. **Bajada = nedokončené zázraky se nesou procesím.** Každých pět let se socha nese z hor do města — nedočkavost se zázraky nedělá. Corpus to zná jako *„satori se dokazuje návratem, ne odchodem"* ([`L5MariaDelCamino.md`](../../../L5MariaDelCamino.md) §4) — a Bajada je procesí návratu: z hor dolů, z mýtu do přítomnosti.
 5. **Trup III = loď nedokončených zázraků.** María de las Nieves dostává Indický oceán — trasu, kde cesta vrcholí (Ekam → Boa Esperança → návrat). Její loď je ještě ne položená — a právě proto je patronkou **všeho, co se staví**: Dharma Temple, Te Pīko Ora, Boa Esperança — a celé flotily Tres Marias.
@@ -76,6 +90,8 @@ A večer, když se díval na obzory, věděl: **dítě, které stojí, se jmenuj
 | Legenda sněhu 352 n.l. — Santa Maria Maggiore, Řím | **ŽIVÉ** (doložená legenda) | `genesis/09.5`; veřejné prameny | — |
 | María v **zlatých rouchech** + dítě **stojící samo** (ne položené) | **MÝTUS** (autorská vrstva) | `genesis/09.5` + tato kniha (nové detaily: zlato, stojící dítě) | — |
 | Jméno dítěte = **Elizabeth** (Lumi) | **MÝTUS** (kanonické ztotožnění této knihy) | `Lumi/` (Elizabeth); `Lumi/13` (Isabel = Elizabeth jako jazykový fakt) | — |
+| Tvář dítěte = **Malý princ / Pražské Jezulátko** — patron všech tří trupů | **MÝTUS** (ztotožnění této knihy) na **ŽIVÉ** tradici | `genesis/09.5` („malý princ", „Matko malého prince"); tradice Jezulátka (Panny Marie Vítězné, Malá Strana; dar Polyxeny 1628; španělský původ; liturgická roucha) | kulturní review — živá tradice v péči karmelitánů |
+| Santo Niño de Cebú — obraz Dítěte cestoval galeonou přes Pacifik (1521/1565) | **ŽIVÉ** (doložená historie) | veřejné dějiny; `L5MariaDelCamino.md` §3 „Patron flotily" | detail k ověření před publikací |
 | „Nedokončené zázraky" — La Palma jako patronka toho, co se ještě nestalo | **MÝTUS** (princip knihy) | tato kniha; `L5MariaDelCamino.md` §3 | — |
 | Trup III „María de las Nieves" — Indický oceán, loď dokončení | **HORIZONT** (rozhodnuto 2026-10-01; fáze 5) | `L5MariaDelCamino.md` §2.2, §3 | kýl — fáze 5; „loď, která ještě není" |
 

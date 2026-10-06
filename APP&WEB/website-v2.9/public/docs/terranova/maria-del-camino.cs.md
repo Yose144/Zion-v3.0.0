@@ -27,6 +27,14 @@ Flotila nese jména tří mariánských zjevení poutníkovy cesty — ta samá,
 
 Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na **švech světa**: na šíji Amerik (**LUMI** — atlantická × pacifická výměna po souši) a na švu oceánů u Mysu dobré naděje (**Boa Esperança** — atlantická × indická). Credencial sbírá razítka „tří moří".
 
+## Patron flotily — Malý princ
+
+Patronem cest všech tří Marií je **Malý princ** — dítě ze zlatého zjevení na La Palmě, jehož tváří je **Pražské Jezulátko**: dítě-král v rouše a korunce, jež v dlani drží celý svět. Dítě, které kdysi poputovalo ze Španělska do Prahy — ze země moří do země bez moře — se teď na lodích vrací na vodu.
+
+- **Každý trup jej nese ve své barvě** — červeném rouše na *Santa María la Mayor*, bílém na *Nossa Senhora de Fátima*, zlatém na *María de las Nieves*; tak, jak se Jezulátko po staletí obléká do liturgických barev.
+- **Svět v dětské dlani** — jablko s křížkem čteme jako planetu nesenou v ruce dítěte: zrod nového světa, ne jeho dobytí.
+- **Patron, který už plul** — obraz Dítěte přeplul Pacifik na manilské galeoně (Santo Niño de Cebú, 1521/1565); pacifický trup jde jeho trasou. V příběhu sítě je Malý princ dítětem linie LUMI — Elizabeth — a zároveň platí: *každý z nás je malý princ, když se plně probudí.*
+
 ## Jméno
 
 Program nese jméno **María del Camino** — *Marie Cesty*, mariánské svatyně stojící přímo na Camino Francés u Leónu. Tisíc let chodili poutníci do Santiaga; kdo šel skutečně do kraje, pokračoval na **Finisterre** — *finis terrae*, konec země — kde cesta končila u oceánu a nebylo kam jít dál.

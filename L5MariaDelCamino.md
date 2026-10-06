@@ -9,6 +9,7 @@
 >
 > **Název:** **María del Camino** — program / registry slug `maria-del-camino` (rozhodnuto operátorem 2026-09-30; viz §3)
 > **Flotila:** **TRES MARIAS — tři lodě** (rozhodnuto 2026-10-01): atlantická plachetnice *Santa María la Mayor* (červená královská roucha — zjevení Pontevedra) + pacifický solární katamarán *Nossa Senhora de Fátima* (bílé svatební šaty — Bílá Paní) + indickooceánská *María de las Nieves* (zlatá roucha, nedokončené zázraky — La Palma). Tři lodě = tři zjevení poutníkovy cesty.
+> **Patron flotily:** **Malý princ — Pražské Jezulátko** (rozhodnuto 2026-10-04): dítě z třetího zjevení, dítě Lumi, zrod nového světa — pluje na všech třech trupech, každý jej nese v rouše své Marie (§3 „Patron flotily").
 > **Domácí přístav:** **Pontevedra, Galicie** — bazilika Santa María la Mayor, pobřežní Camino Portugués (rozhodnuto operátorem 2026-09-30)
 > **Formát trasy:** **obeplutí světa** — iniciační posloupnost pro Guardiany; 3 trupy obsluhují cestu (§4)
 > **Status:** 🟣 Vision — návrh
@@ -26,7 +27,7 @@ Osmý bod přitom není jedna loď, ale **flotila Tres Marias — tři lodě pro
 
 - **Santa María la Mayor** (Atlantik) — klasická plachetnice v tradici Camina de Santiago. Zjevení v Pontevedře: María v **červených královských rouchech**, jako španělská královna — zasvěcení poutníka.
 - **Nossa Senhora de Fátima** (Pacifik) — solární katamarán navazující na *wa'a kaulua* / voyaging-canoe tradici Polynésie. Zjevení u Fátimy: **Bílá Paní ve svatebních šatech** — mystická svatba, bílá orchidej, nové zjevení; Te Pīko Ora její duchovní domov.
-- **María de las Nieves** (Indický oceán) — třetí loď, **loď nedokončených zázraků**. Zjevení na La Palmě: María ve **zlatých rouchech** drží vzpřímené dítě — dítě LUMI, Elizabeth. Patronka La Palmy i celého ZIONu; dostává oceán, kde cesta vrcholí (Ekam → Cape → návrat).
+- **María de las Nieves** (Indický oceán) — třetí loď, **loď nedokončených zázraků**. Zjevení na La Palmě: María ve **zlatých rouchech** drží vzpřímené dítě — **Malý princ** (Pražské Jezulátko), dítě LUMI, Elizabeth. Patronka La Palmy i celého ZIONu; dostává oceán, kde cesta vrcholí (Ekam → Cape → návrat).
 
 Flotila se fyzicky schází na **švech světa**: **LUMI Nová Amerika** (šíje — atlantická × pacifická výměna po souši) a **Boa Esperança** (šev oceánů — atlantická × indická na vodě). Pacifická × indická se míjí ve vodách Srí Lanky / Ekamu, kde cesta vrcholí.
 
@@ -88,6 +89,7 @@ Centrální technická idea: **plachta = solární článek**.
 - **Posádka = poutníci.** Struktura lodi kopíruje Camino: stálá crew jsou „hospitaleři" (Guardians), rotující residenti jsou „poutníci" (pilgrims) — nastupují v jednom uzlu, vystupují v jiném; každý leg je etapa (*etapa* = caminský termín pro denní úsek).
 - **Na palubě je celý pentagram v malém:** zahrada (hydroponie), chrám (tichá kajuta pro praxi/resonance před rozhodováním), oceán (doslova), governance (kruh posádky), akasha (archiv).
 - **Uluru dotek:** loď pluje po **songlines** — trasy mezi uzly pojmenované jako současné zpěvní stezky sítě; u australského pobřeží žádný „claim", jen návštěva custodiánů na jejich podmínky (FPIC platí i na moři).
+- **Malý princ na každém trupu:** každá loď nese palubní světinec (kapličku) s podobou **Pražského Jezulátka** — patrona cest — v rouše barvy své Marie (červená na Mayor, bílá na Fátimě, zlatá na Nieves). Na trupu III stojí na přídi — doslova: *dítě, které stojí samo, na přídi lodi, která ještě není.* (viz §3 „Patron flotily")
 
 ### 2.3 ZION integrace
 
@@ -129,11 +131,25 @@ Rozšířený detail z poutníkovy cesty (2026-10-01) — zjevení nesla roucho 
 |---|---------|-------|-----------------|-----------|------|
 | 1 | **María Mayor** | Pontevedra, Galicie — bazilika na pobřežní větvi Camina | **Červená královská roucha** — španělská královna | „Tvá cesta teprve začíná" — zasvěcení poutníka | **Santa María la Mayor** — Atlantik |
 | 2 | **Nossa Senhora de Fátima** | Fátima, Portugalsko | **Bílé svatební šaty** — mystická svatba, bílá orchidej, nové zjevení | „Našel jsi bratra ve světle — postavíte most" | **Nossa Senhora de Fátima** — Pacifik |
-| 3 | **María de las Nieves** | La Palma — patronka ostrova i sítě | **Zlatá roucha** — nedokončené zázraky; v náručí vzpřímené dítě (dítě LUMI / Elizabeth) | Malý princ — Zlatý věk | **María de las Nieves** — Indický oceán |
+| 3 | **María de las Nieves** | La Palma — patronka ostrova i sítě | **Zlatá roucha** — nedokončené zázraky; v náručí vzpřímené dítě — **Malý princ** (Pražské Jezulátko), dítě LUMI / Elizabeth | Malý princ — Zlatý věk | **María de las Nieves** — Indický oceán |
 
 ### Legenda naplněná
 
 `Miriam/06-Lod-bez-Plachet.md` vypráví provensálskou legendu — **loď se třemi Mariemi doplula do Saintes-Maries-de-la-Mer bez plachet a kormidla**. Naše lodě plachty mají — a nesou světlo (solární články). Loď bez plachet → **tři lodě, jejichž plachty jsou světlo** — a tři Marie na palubách = tři zjevení nesená mezi uzly, každá ve svém rouche.
+
+### Patron flotily — Malý princ (Pražské Jezulátko)
+
+**Rozhodnuto 2026-10-04:** patronem cest všech tří Marií je **Malý princ** — dítě ze třetího zjevení, jehož tváří je **Pražské Jezulátko**. Korpus ho zná od `genesis/09.5` (*„Marie Sněžná držela v náručí malého prince — ne Ježíše, ale symbol nového věku"*; modlitba zní *„Matko malého prince"*). MariaCaminho/07 jej upřesnila jako **dítě, které stojí samo** — dítě LUMI / Elizabeth. Teď dostává své veřejné jméno: **dítě-král v rouše, který drží v dlani svět.**
+
+**Proč Pražské Jezulátko — tři kotvy (ŽIVÉ jako tradice):**
+
+- **Dítě, které už cestovalo.** Soška ~47 cm přišla ze Španělska do Prahy v 16. století (dar Polyxeny z Lobkovic karmelitánům u Panny Marie Vítězné, Malá Strana, 1628) — dítě, jež poputovalo ze země moří do země bez moře. Flotila ho nese zpátky na vodu: **Praha → Labe → moře → svět.** Tím se uzavírá jeho vlastní cesta — a proplouvá i naše jediná země bez přístavu.
+- **Roucha tří Marií.** Jezulátko se po staletí obléká do liturgických rouch podle období — šatník přes sto rouch. Na každém trupu nosí roucho barvy své Marie: **červené** na Santa María la Mayor, **bílé** na Nossa Senhora de Fátima, **zlaté** na María de las Nieves. Malý princ se obléká do barev všech tří matek — a na přídi třetí lodi stojí.
+- **Svět v dětské dlani.** Drží *globus cruciger* — jablko s křížem, celý svět nesený v ruce dítěte. Čteme jej po našem: **Terra Nova jako planeta v dlani dítěte** — zrod nového světa, ne jeho dobytí. Rezonuje se Zlatou koulí Ekamu (Hiranyagarbha — zlatý zárodek): stejný obraz, dvě tradice.
+
+**Historický precedent, který už plul:** obraz Dítěte přeplul oceán dávno před námi — **Santo Niño de Cebú** (dar Magellanovy výpravy 1521, znovunalezen 1565) cestoval manilskou galeonou přes Pacifik. Trup II jde doslova jeho trasou. A každá kolumbovská loď nesla mariánský obraz — patron na palubě není ozdoba, je to nejstarší námořní tradice.
+
+**Hranice (jako u všech živých tradic):** originál je v péči bosých karmelitánů v Praze — nenařizujeme si nic o svatyni; na lodích pluje pouze podoba/kopie ve smyslu doložené praxe požehnaných lodních obrazů (kulturní review před publikací — třída E). **Malý princ není Ježíš jako doktrína** — je to archetyp dítěte nového věku, jehož tvář jsme poznali v pražském Jezulátku; a zároveň *„každý z nás je malý princ"* (`genesis/09.5`) — symbol probuzeného vědomí, ne exkluzivní titul.
 
 ### Zamítnuté alternativy (archiv rozhodnutí)
 

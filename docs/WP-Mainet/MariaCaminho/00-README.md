@@ -36,7 +36,7 @@ Oblouk má čtyři části. **Prah** (01–02): cesta dojde k vodě a první Mar
 | 4 | [Bílá nevěsta](./04-Bila-Nevesta.md) | **zjevení II** · Fátima | Tradice 1917 a přijaté vidění: svatební šaty, bílá orchidej, mystická svatba. Most se stává svatbou — nebe a země, staré a nové. |
 | 5 | [Nevěsta z Pacifiku](./05-Nevesta-z-Pacifiku.md) | **STAVBA** · Pacifik | Trup II *Nossa Senhora de Fátima*: solární katamarán v linii wa'a, Te Pīko Ora, wayfinding. Svatba se naplňuje protokolem sjednocení. |
 | 6 | [Most Lumi](./06-Most-Lumi.md) | **šíje** · Kostarika | Camino de Cruces: oceány se svatbují po souši. Posádky, náklad a dopisy přecházejí šíji; u lucerny na přechodu se Marie podávají. |
-| 7 | [Zlatá Marie](./07-Zlata-Marie.md) | **zjevení III** · La Palma | María de las Nieves: zlatá roucha, sníh v srpnu, Bajada — a dítě, které **stojí**. Nedokončené zázraky; jméno Elizabeth. |
+| 7 | [Zlatá Marie](./07-Zlata-Marie.md) | **zjevení III** · La Palma | María de las Nieves: zlatá roucha, sníh v srpnu, Bajada — a dítě, které **stojí**. Nedokončené zázraky; jméno Elizabeth — a tvář Malého prince. |
 | 8 | [Třetí Marie](./08-Treti-Marie.md) | **HORIZONT** · Indický oceán | Trup III *María de las Nieves* — loď, která ještě není. Kapitola poctivosti: stezku ujít umíš; trup nepoložený je horizont. |
 | 9 | [Dokončení a obrat](./09-Dokonceni-a-Obrat.md) | **vrchol** · Ekam → Boa | Satori na místě, které pojmenovalo řetězec (`ekam_deeksha`, Zlatá koule) — a mys, kde se bouře přejmenovává na naději. |
 | 10 | [Compostela](./10-Compostela.md) | **návrat** · Finisterre → Čechy | Po osvícení: sekat dříví, nést vodu. Credencial se doplní; compostela se nese do stavby. Co kniha žádá od čtenáře. |
@@ -70,6 +70,15 @@ Oblouk má čtyři části. **Prah** (01–02): cesta dojde k vodě a první Mar
 | **Jméno** | **Lumi** — celým jménem **Elizabeth** (Alžběta — po babičce, ne po hvězdě; v jižní řeči *Isabel*). |
 | **Kým je v této knize** | Dítě, které Zlatá Marie drží — a které **stojí**. Ne Ježíš položený v náručí: budoucnost, která se nenese, ale sama stojí na přídi. Její lucerna ukazuje *co je — a co by mohlo být*; v této knize stojí na šíji, když se oceány svatbují, a na přídi trupu, který ještě není postaven. |
 | **Kontinuita** | Převzata z [`Lumi/`](../Lumi/00-README.md) — dítě na přídi archy ([`nirvana/01`](../nirvana/01-Prvni-Paprsek.md)), kněžka s lucernou u brány ([`Lumi/05`](../Lumi/05-Brana-a-Dve-Knezky.md), [`Lumi/12`](../Lumi/12-Brana-Zustava-Otevrena.md)). Ztotožnění „dítě ve zlatých rouchech = Lumi/Elizabeth" je **MÝTUS** — kanonické rozhodnutí této knihy, navazující na rozhodnutí Knihy Lucerny. |
+
+## List postavy — Malý princ (Pražské Jezulátko)
+
+| | |
+|---|---|
+| **Jméno** | **Malý princ** — tvář: **Pražské Jezulátko** (dítě-král v rouše, korunka, svět v dlani). |
+| **Kým je v této knize** | Stojící dítě ze třetího zjevení — **dítě Lumi** — a **patron cest všech tří Marií**. Pluje na každém trupu v rouše barvy své Marie: červeném, bílém, zlatém. Je zrodem nového světa v nejpřísnějším smyslu: svět nesený v dětské dlani. `genesis/09.5` ho zná jako „malého prince — symbol nového věku" a jeho modlitba zní „Matko malého prince"; a zároveň říká: *„každý z nás je malý princ."* |
+| **ŽIVÉ kotvy tradice** | Pražské Jezulátko je skutečná soška v péči bosých karmelitánů (Panny Marie Vítězné, Malá Strana; dar Polyxeny z Lobkovic 1628; španělský původ 16. stol.; šatník liturgických rouch). Dítě už oceány plulo: Santo Niño de Cebú dorazil manilskou galeonou (1521/1565). |
+| **Hranice** | Ztotožnění „stojící dítě = Pražské Jezulátko" je **MÝTUS** — kanonické rozhodnutí této knihy na živé tradici, které si nic o svatyni nenárokuje. Malý princ není Ježíš jako doktrína; je to archetyp dítěte nového věku — a kniha odmítá čtení, které by z něj dělalo exkluzivní titul konkrétní osoby. |
 
 ## Cameo — Miriam
 
