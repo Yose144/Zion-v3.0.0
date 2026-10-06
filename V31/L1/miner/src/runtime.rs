@@ -645,6 +645,32 @@ impl MinerRuntime {
         self.stats.lock().await.clone()
     }
 
+    /// Per-device hashrate estimates (H/s) for a stream's GPU backend.
+    /// Empty when the stream has no multi-GPU miner or is CPU-only.
+    pub async fn gpu_devices(&self, stream: StreamId) -> Vec<(String, f64)> {
+        match stream {
+            StreamId::Zion => self
+                .gpu_zion
+                .lock()
+                .unwrap()
+                .as_ref()
+                .and_then(|m| m.per_gpu_hashrates())
+                .unwrap_or_default(),
+            #[cfg(all(
+                feature = "auxpow",
+                any(feature = "gpu-cuda", feature = "gpu-opencl")
+            ))]
+            StreamId::GpuExternal => self
+                .gpu_qpow
+                .lock()
+                .unwrap()
+                .as_ref()
+                .and_then(|m| m.per_gpu_hashrates())
+                .unwrap_or_default(),
+            _ => Vec::new(),
+        }
+    }
+
     /// Total accepted shares across all streams.
     pub async fn total_shares(&self) -> u64 {
         self.stats().await.values().map(|s| s.accepted).sum()
@@ -695,33 +721,50 @@ impl MinerRuntime {
     ) -> Result<Share, MinerError> {
         // Stream 2: GPU with duty-cycle time-slicing (like V3 reference)
         if stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu" {
-            if let Some(share) = self.try_gpu_ext_share(job, batch).await {
-                // Duty-cycle yield to let Stream 1 (ZION) get GPU time.
-                // When ZION has its own GPU backend, use a short gap (50ms)
-                // — the CUDA driver serializes kernels, but a small gap
-                // ensures ZION's kernel launch gets queued fairly.
-                // When ZION is CPU-only, use a longer gap (300ms) so ZION
-                // CPU mining gets a chance to run without GPU competition.
-                let zion_has_gpu = self.gpu_zion.lock().unwrap().is_some();
-                let default_gap = if zion_has_gpu { 50 } else { 300 };
-                let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+            let t_batch = Instant::now();
+            let gpu_share = self.try_gpu_ext_share(job, batch).await;
+            let batch_ms = t_batch.elapsed().as_millis() as u64;
+            if gpu_share.is_some()
+                || (job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live())
+            {
+                // Duty-cycle yield after EVERY GPU batch (hit or miss) so
+                // Stream 1 (ZION) gets GPU time on shared cards.
+                // ZION_EXT_GPU_TIME_DUTY_PCT = target % of GPU time for the
+                // ext stream: sleep = batch_ms * (100-duty)/duty.
+                // <100 only when ZION has its own GPU backend sharing the
+                // card; 100 = legacy behavior (free contention).
+                let duty_pct = std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
                     .ok()
                     .and_then(|v| v.parse::<u64>().ok())
-                    .unwrap_or(default_gap);
+                    .filter(|&d| (1..=100).contains(&d))
+                    .unwrap_or(100);
+                let gap_ms = if duty_pct < 100
+                    && self.gpu_zion.lock().unwrap().is_some()
+                {
+                    batch_ms
+                        .saturating_mul(100 - duty_pct)
+                        / duty_pct.max(1)
+                } else {
+                    std::env::var("ZION_EXT_GPU_GAP_MS")
+                        .ok()
+                        .and_then(|v| v.parse::<u64>().ok())
+                        .unwrap_or(0)
+                };
                 if gap_ms > 0 {
                     tokio::time::sleep(Duration::from_millis(gap_ms)).await;
                 } else {
                     tokio::task::yield_now().await;
                 }
-                return Ok(share);
-            }
-            // A live Poseidon2 CUDA backend has already scanned this whole
-            // `batch` — falling through to the CPU scanner would rescan the
-            // same range at ~100 kH/s and stall the stream for tens of
-            // seconds. Only when the QPoW GPU backend failed to init do we
-            // fall through to CPU.
-            if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live() {
-                return Err(MinerError::NoAuxPoWSolution);
+                if let Some(share) = gpu_share {
+                    return Ok(share);
+                }
+                // A live Poseidon2 backend already scanned this whole
+                // `batch` — falling through to the CPU scanner would rescan
+                // the same range at ~100 kH/s.
+                if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live()
+                {
+                    return Err(MinerError::NoAuxPoWSolution);
+                }
             }
             // GPU failed — fall through to CPU
         }
@@ -2667,6 +2710,56 @@ fn create_qpow_gpu_miner(
     }
     #[cfg(feature = "gpu-opencl")]
     if matches!(backend, GpuBackendKind::OpenCL | GpuBackendKind::Auto) {
+        // With ZION_ZANO_RESERVE=0 no GPU is reserved for the external
+        // stream — run one QPoW miner per OpenCL GPU in parallel (the same
+        // "all devices" mode the ZION stream uses via MultiGpuMiner).
+        let all_devices = matches!(
+            std::env::var("ZION_ZANO_RESERVE").as_deref(),
+            Ok("0") | Ok("false") | Ok("FALSE") | Ok("no")
+        );
+        if all_devices {
+            let devices = crate::gpu::enumerate_opencl_gpu_devices();
+            if devices.len() > 1 {
+                let saved_name = std::env::var("ZION_OCL_DEVICE_NAME").ok();
+                let saved_idx = std::env::var("ZION_OCL_DEVICE_IDX").ok();
+                let mut miners: Vec<crate::gpu::QpowGpuMiner> = Vec::new();
+                for dev in &devices {
+                    std::env::remove_var("ZION_OCL_DEVICE_IDX");
+                    std::env::set_var("ZION_OCL_DEVICE_NAME", &dev.name);
+                    match crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size)
+                    {
+                        Ok(m) => miners.push(crate::gpu::QpowGpuMiner::OpenCl(m)),
+                        Err(e) => crate::ext_warn!(
+                            "gpu_qpow_opencl_sub_init device=\"{}\" failed: {e}",
+                            dev.name
+                        ),
+                    }
+                }
+                match saved_name {
+                    Some(v) => std::env::set_var("ZION_OCL_DEVICE_NAME", v),
+                    None => std::env::remove_var("ZION_OCL_DEVICE_NAME"),
+                }
+                match saved_idx {
+                    Some(v) => std::env::set_var("ZION_OCL_DEVICE_IDX", v),
+                    None => std::env::remove_var("ZION_OCL_DEVICE_IDX"),
+                }
+                if miners.len() > 1 {
+                    crate::ext_info!(
+                        "gpu_qpow_opencl_multi devices={} names=\"{}\"",
+                        miners.len(),
+                        miners
+                            .iter()
+                            .map(|m| m.device_name())
+                            .collect::<Vec<_>>()
+                            .join(" + ")
+                    );
+                    return Ok(crate::gpu::QpowGpuMiner::multi(miners));
+                }
+                if let Some(m) = miners.into_iter().next() {
+                    return Ok(m);
+                }
+            }
+        }
         return crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size)
             .map(crate::gpu::QpowGpuMiner::OpenCl);
     }
