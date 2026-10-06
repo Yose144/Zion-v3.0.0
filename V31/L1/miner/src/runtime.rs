@@ -2719,6 +2719,30 @@ fn create_qpow_gpu_miner(
         );
         if all_devices {
             let devices = crate::gpu::enumerate_opencl_gpu_devices();
+            // Optional subset: ZION_QPOW_OCL_DEVICES="vega" or "gfx900,ellesmere"
+            // (comma-separated name substrings or indices) restricts which
+            // cards carry QPoW — lets ZION keep a card exclusively.
+            let filter: Vec<String> = std::env::var("ZION_QPOW_OCL_DEVICES")
+                .unwrap_or_default()
+                .split(',')
+                .map(|s| s.trim().to_lowercase())
+                .filter(|s| !s.is_empty())
+                .collect();
+            let devices: Vec<_> = if filter.is_empty() {
+                devices
+            } else {
+                devices
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(i, d)| {
+                        let name = d.name.to_lowercase();
+                        filter
+                            .iter()
+                            .any(|f| name.contains(f.as_str()) || f == &i.to_string())
+                    })
+                    .map(|(_, d)| d)
+                    .collect()
+            };
             if devices.len() > 1 {
                 let saved_name = std::env::var("ZION_OCL_DEVICE_NAME").ok();
                 let saved_idx = std::env::var("ZION_OCL_DEVICE_IDX").ok();
@@ -2758,6 +2782,28 @@ fn create_qpow_gpu_miner(
                 if let Some(m) = miners.into_iter().next() {
                     return Ok(m);
                 }
+            }
+            // Filter left exactly one device — run single on that card.
+            if devices.len() == 1 {
+                crate::ext_info!(
+                    "gpu_qpow_opencl_single device=\"{}\"",
+                    devices[0].name
+                );
+                let saved_name = std::env::var("ZION_OCL_DEVICE_NAME").ok();
+                let saved_idx = std::env::var("ZION_OCL_DEVICE_IDX").ok();
+                std::env::set_var("ZION_OCL_DEVICE_NAME", &devices[0].name);
+                std::env::remove_var("ZION_OCL_DEVICE_IDX");
+                let res =
+                    crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size);
+                match saved_name {
+                    Some(v) => std::env::set_var("ZION_OCL_DEVICE_NAME", v),
+                    None => std::env::remove_var("ZION_OCL_DEVICE_NAME"),
+                }
+                match saved_idx {
+                    Some(v) => std::env::set_var("ZION_OCL_DEVICE_IDX", v),
+                    None => std::env::remove_var("ZION_OCL_DEVICE_IDX"),
+                }
+                return res.map(crate::gpu::QpowGpuMiner::OpenCl);
             }
         }
         return crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size)

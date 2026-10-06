@@ -114,9 +114,11 @@ export ZION_ZANO_STALE_SECS=30
 # ZION_ZANO_DEVICE_NAME is ignored with RESERVE=0 (kept for rollback docs).
 export ZION_ZANO_RESERVE=0
 export ZION_ZANO_DEVICE_NAME=vega
-export ZION_EXT_GPU_TIME_DUTY_PCT=100
-export ZION_EXT_GPU_GAP_MS=0
-export ZION_EXT_GPU_MAX_GAP_MS=0
+# 100 = QPoW free contention; <100 yields GPU time to ZION per batch
+# (gap = batch_ms*(100-duty)/duty). Tune via minerOptions, e.g. "60".
+export ZION_EXT_GPU_TIME_DUTY_PCT="${ZION_EXT_GPU_TIME_DUTY_PCT:-100}"
+export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-0}"
+export ZION_EXT_GPU_MAX_GAP_MS="${ZION_EXT_GPU_MAX_GAP_MS:-0}"
 
 # CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)
 # Pentium G4560: 2C/4T @ 3.5GHz. 4 threads = max (hyperthreading).
