@@ -114,14 +114,13 @@ export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 export ZION_AUXPOW_PROGPOW_MAX_GWS=1048576
 export ZION_ZANO_STALE_SECS=30
 
-# Multi-GPU SHARED mode (ZION_ZANO_RESERVE=0): BOTH GPUs run BOTH streams —
-# ZION Deeksha on Vega+5600 XT via MultiGpuMiner, QTU QPoW on both via
-# QpowGpuMiner::Multi (one kernel launch per device per batch). The driver
-# timeshares the two kernel queues on each card; a small ext gap lets
-# ZION launches stay fair.
-# ZION_ZANO_DEVICE_NAME is ignored with RESERVE=0 (kept for rollback docs).
-export ZION_ZANO_RESERVE=0
-export ZION_ZANO_DEVICE_NAME=vega
+# Multi-GPU HYBRID mode (ZION_ZANO_RESERVE=1): Vega is reserved for the
+# external stream → ZION Deeksha runs ONLY on the 5600 XT (gfx1010).
+# QPoW device list is set via minerOptions: ZION_QPOW_OCL_DEVICES=
+# gfx900,gfx1010 puts QPoW on BOTH cards — Vega pure QPoW, 5600 XT dual
+# ZION+QPoW (driver timeshares the two kernel queues on that card).
+export ZION_ZANO_RESERVE="${ZION_ZANO_RESERVE:-1}"
+export ZION_ZANO_DEVICE_NAME="${ZION_ZANO_DEVICE_NAME:-vega}"
 # 100 = QPoW free contention; <100 yields GPU time to ZION per batch
 # (gap = batch_ms*(100-duty)/duty). Tune via minerOptions, e.g. "60".
 export ZION_EXT_GPU_TIME_DUTY_PCT="${ZION_EXT_GPU_TIME_DUTY_PCT:-100}"

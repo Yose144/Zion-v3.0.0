@@ -2717,17 +2717,18 @@ fn create_qpow_gpu_miner(
             std::env::var("ZION_ZANO_RESERVE").as_deref(),
             Ok("0") | Ok("false") | Ok("FALSE") | Ok("no")
         );
-        if all_devices {
+        // ZION_QPOW_OCL_DEVICES="vega" or "gfx900,ellesmere" (comma-separated
+        // name substrings or indices) restricts which cards carry QPoW.
+        // Setting it explicitly also enables the multi/single-device path when
+        // RESERVE=1 — e.g. Vega pure QPoW while another card dual-mines.
+        let filter: Vec<String> = std::env::var("ZION_QPOW_OCL_DEVICES")
+            .unwrap_or_default()
+            .split(',')
+            .map(|s| s.trim().to_lowercase())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if all_devices || !filter.is_empty() {
             let devices = crate::gpu::enumerate_opencl_gpu_devices();
-            // Optional subset: ZION_QPOW_OCL_DEVICES="vega" or "gfx900,ellesmere"
-            // (comma-separated name substrings or indices) restricts which
-            // cards carry QPoW — lets ZION keep a card exclusively.
-            let filter: Vec<String> = std::env::var("ZION_QPOW_OCL_DEVICES")
-                .unwrap_or_default()
-                .split(',')
-                .map(|s| s.trim().to_lowercase())
-                .filter(|s| !s.is_empty())
-                .collect();
             let devices: Vec<_> = if filter.is_empty() {
                 devices
             } else {
