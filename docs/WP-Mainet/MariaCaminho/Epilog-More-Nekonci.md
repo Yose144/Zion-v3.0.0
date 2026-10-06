@@ -25,11 +25,13 @@ Na palubě — tam, kde se ukládají věci, které se nesmí ztratit — ležel
 
 Ne Poutníkova. **Její.** Dítě stálo u přídě a dívalo se na horizont tak, jak se dívají ti, kteří už vědí, že horizont není hranice — je to otázka, která se ptá sama.
 
+A když se otočilo, Poutník už znal jeho tvář: **Malý princ.** Dítě-král, které kdysi připlulo ze Španělska do Prahy a které teď plulo s ním zpátky na vodu — v levé dlani drželo svět, jako by to byl ten nejlehčí náklad ze všech: *budoucnost, kterou někdo musí nést domů.*
+
 *„Půjdeš se mnou?"* zeptal se Poutník.
 
 *„Půjdu za tebou,"* řeklo dítě — a to byl rozdíl, který kniha drží: *„za"*, ne *„s"*. Ne vedení, ale následování. Ne autorita, ale světlo, které ukazuje, co je — a co by mohlo být — a nikdy si ty dvě věci nesplete.
 
-Lucerna se položila na palubu — vedle kompasu, vedle credencialu, vedle orchideje — a světlo v ní nehořelo ohněm, ale zářilo jako pravda, která se nedá sfalšovat.
+Lucerna se položila na palubu — vedle kompasu, vedle credencialu, vedle orchideje — a světlo v ní nehořelo ohněm, ale zářilo jako pravda, která se nedá sfalšovat. A na všech třech trupech — i na tom, který ještě nebyl — zářila tatáž podoba: **dítě, které drží svět, aby ho nesla loď.**
 
 ---
 

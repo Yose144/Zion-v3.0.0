@@ -61,6 +61,7 @@ Suverénní předloha vypráví soukromý příběh v první osobě; tato kniha 
 | Červená královská roucha (Pontevedra) | `genesis/09.5` uvádí zjevení, ne roucho | **MÝTUS** — nový detail |
 | Bílé svatební šaty + orchidej (Fátima) | `genesis/09.5` uvádí zjevení, ne svatbu | **MÝTUS** — nový detail |
 | Zlatá roucha + dítě **stojící samo** + jméno **Elizabeth** (La Palma) | `genesis/09.5` uvádí „malý princ" v náručí; tato kniha upřesňuje na stojící dítě + Elizabeth | **MÝTUS** — nový detail |
+| Dítě = **Malý princ / Pražské Jezulátko**, patron všech tří trupů; roucho v barvě Marie trupu | `genesis/09.5` („malý princ", „Matko malého prince") + tradice Jezulátka (Malá Strana, 1628; španělský původ; liturgická roucha) + `L5MariaDelCamino.md` §3 „Patron flotily" | **MÝTUS** (ztotožnění) na **ŽIVÉ** tradici — kulturní review |
 | Tři trupy = tři zjevení (Tres Marias) | `L5MariaDelCamino.md` §3 (rozhodnuto 2026-10-01) | **STAVBA/HORIZONT** — koncept |
 | „Svatba se naplňuje protokolem" (lodě se svatbují přes souš) | `L5MariaDelCamino.md` §4 (výměna na švech) | **STAVBA** — protokol |
 | Loď III = „nedokončený zázrak" (HORIZONT jako čest) | `L5MariaDelCamino.md` §5 (fáze 5) | **HORIZONT** — princip knihy |
@@ -92,6 +93,7 @@ Suverénní předloha vypráví soukromý příběh v první osobě; tato kniha 
 | 4 | On-chain credencial — formát „etapa absolvována" | `L5MariaDelCamino.md` §2.3, §7 | STAVBA — implementační spec |
 | 5 | „Loď bez plachet → plachty světla" — jak číst legenda naplněná | `Miriam/06` + tato kniha | MÝTUS — rozhodnutí knihy, ne důkaz |
 | 6 | Kulturní review mariánských a poutních tradic | `MiseAmenti/08` §2 (třída E) | povinné před kanonizací |
+| 7 | Pražské Jezulátko jako patron flotily — vztah k živé tradici v péči karmelitánů (Panny Marie Vítězné) | `L5MariaDelCamino.md` §3 „Patron flotily"; `TreeMarias.md` §5.4 | třída E — kniha používá archetyp + doloženou praxi lodních obrazů; žádný nárok na svatyni; Santo Niño precedent ověřit před publikací |
 
 ---
 

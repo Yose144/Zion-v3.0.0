@@ -112,7 +112,7 @@ V kajutě se postavila nad mapu a mlčela. Lumen čekala výbuch a nedočkala se
 
 Té noci napsala Lumen do šanonu první větu, která nebyla jistá: *Spletla jsem se. Zde je, jak.*
 
-Na La Palmu dorazili za svítání. Kopec nad městem byl pokrytý sopečným pískem a lidé se tu, jak řekla jedna dívka s kudrnatými vlasy, „učili žít na hoře, která si vždycky může rozmyslet". Nikdo je nepozval do svého svatostánku, jen do kuchyně. Ta voněla kmínem a čerstvým chlebem a nikdo se neptal, proč jsou unavení. Naplnili nádrže, spravili roztrženou plachtu a Lumen tři dny škrábala brambory a poslouchala hádky o ceně vody. Poprvé v životě přijala pomoc, aniž by ji musela zasloužit. Večer, nad hrncem polévky, si vzpomněla na obraz ze stránky MariaCaminho: Marie Sněžná ve zlatém rouchu s dítětem, které stojí samo. Byla to jen kresba v její vlastní knize, ne socha ani důkaz, a přesto ji hřála.
+Na La Palmu dorazili za svítání. Kopec nad městem byl pokrytý sopečným pískem a lidé se tu, jak řekla jedna dívka s kudrnatými vlasy, „učili žít na hoře, která si vždycky může rozmyslet". Nikdo je nepozval do svého svatostánku, jen do kuchyně. Ta voněla kmínem a čerstvým chlebem a nikdo se neptal, proč jsou unavení. Naplnili nádrže, spravili roztrženou plachtu a Lumen tři dny škrábala brambory a poslouchala hádky o ceně vody. Poprvé v životě přijala pomoc, aniž by ji musela zasloužit. Večer, nad hrncem polévky, si vzpomněla na obraz ze stránky MariaCaminho: Marie Sněžná ve zlatém rouchu s dítětem, které stojí samo — Malým princem, dítětem, které kdysi připlulo z mořské země do Prahy a kterého její země chová už čtyři století. Byla to jen kresba v její vlastní knize, ne socha ani důkaz, a přesto ji hřála.
 
 ---
 
@@ -276,7 +276,7 @@ Anjali se zasmála, tiše. „A kdo by to řekl? Já? Vy sama? Nikdo z nás nem�
 
 Lumen to zapsala.
 
-Třetí loď čekala u nábřeží. Plachty a úzký zlatý pruh podél boku zachytily poslední světlo. MARÍA DE LAS NIEVES. Zítra měla vyplout; na přídi se ještě schla poslední vrstva laku. Na hladké prkno tam někdo připevnil dětskou kresbu stojícího dítěte s lucernou. Nikdo nevěděl, kdo ji nakreslil, a Anjali řekla, že ji tam nechá viset.
+Třetí loď čekala u nábřeží. Plachty a úzký zlatý pruh podél boku zachytily poslední světlo. MARÍA DE LAS NIEVES. Zítra měla vyplout; na přídi se ještě schla poslední vrstva laku. Na hladké prkno tam někdo připevnil dětskou kresbu stojícího dítěte s lucernou — a nad hlavou mu kreslíř přidal malou korunku a do dlaně kouli, jako by věděl o Malém princi. Nikdo nevěděl, kdo ji nakreslil, a Anjali řekla, že ji tam nechá viset.
 
 „Nechávám ji," řekla. „Dítě, které stojí samo a drží světlo. Připomíná mi, že každý se může postavit a jít, a že nikdo nemusí být nesen."
 

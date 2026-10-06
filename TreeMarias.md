@@ -31,6 +31,7 @@ Z `L5MariaDelCamino.md`:
 - **Práce mezi uzly:** nákladní prostor (seeds, humanitární cargo, produkty uzlů — „Terra Nova Cargo")
 - **Legitimita:** SOLAS/SPS-použitelná kategorie pro přepravu „voyage crew" (special personnel, ne passenger)
 - **Panama-compliance:** do 38,1 m LOA = handline transit (levný); nad = tonnage toll, ale průjezdné — viz §9
+- **Patron + světinec:** každý trup nese podobu **Malého prince (Pražské Jezulátko)** — patrona flotily — a malý palubní světinec (tichá kajuta/kaplička); roucho podoby v barvě Marie trupu — viz §5.4
 
 **Klíčové rozhodnutí o kategorii pasažérů (ovlivňuje celý design):**
 
@@ -46,7 +47,7 @@ Z `L5MariaDelCamino.md`:
 
 ## 2. Trup I — SANTA MARÍA LA MAYOR (Atlantik)
 
-*Klasická plachetnice v caminské tradici. Červená královská roucha → červené akcenty oplachtění/bonite. Domov: Pontevedra.*
+*Klasická plachetnice v caminské tradici. Červená královská roucha → červené akcenty oplachtění/bonite; Malý princ na palubě nese roucho červené. Domov: Pontevedra.*
 
 ### 2.1 Tři cesty k trupu
 
@@ -122,7 +123,7 @@ Z `L5MariaDelCamino.md`:
 
 ## 3. Trup II — NOSSA SENHORA DE FÁTIMA (Pacifik)
 
-*Solární katamarán v linii wa'a kaulua. Bílé svatební šaty → bílý trup, orchidej na přídi. Domov: Te Pīko Ora (Raiatea).*
+*Solární katamarán v linii wa'a kaulua. Bílé svatební šaty → bílý trup, orchidej na přídi; Malý princ na palubě nese roucho bílé. Domov: Te Pīko Ora (Raiatea).*
 
 ### 3.1 Precedent — PlanetSolar (důkaz proveditelnosti)
 
@@ -173,7 +174,7 @@ Katamarán pro ~50 osob na oceán:
 
 ## 4. Trup III — MARÍA DE LAS NIEVES (Indický oceán)
 
-*Zlatá roucha, nedokončené zázraky — „loď, která ještě není". Trasa Ekam → Boa Esperança → návrat. Design otevřený; poslední z flotily.*
+*Zlatá roucha, nedokončené zázraky — „loď, která ještě není". Trasa Ekam → Boa Esperança → návrat. Malý princ tu nese roucho zlaté — a jako jediný stojí na přídi (dítě, které stojí samo). Design otevřený; poslední z flotily.*
 
 ### 4.1 Tři kandidátní linie
 
@@ -236,6 +237,20 @@ Trup III se **nepodrobuje stejné specifikaci jako I/II v tomto dokumentu** — 
 - **Španělské námořnictvo** — Juan Sebastián de Elcano alumni
 - **Nizozemská STV síť** — Bark Europa alumni jsou zkušení circumnavigátoři
 - **Sailcargo/Fairtransport síť** — lidi co pluli na Tres Hombres/Nordlys bez motoru
+
+### 5.4 Patron flotily — Malý princ na palubě (architektura posvátného prostoru)
+
+**Rozhodnuto 2026-10-04:** patronem cest všech tří Marií je **Malý princ — Pražské Jezulátko** (korpus: `genesis/09.5` „malý princ — symbol nového věku"; koncept `L5MariaDelCamino.md` §3). Realizačně to znamená tři konkrétní věci:
+
+| Prvek | Co znamená v designu | Poznámka |
+|---|---|---|
+| **Palubní světinec** | Malý tichý prostor (2–4 m²) na každém trupu — kajuta/kaplička při hlavní kajutě; slouží zároveň jako „tichá kajuta" pro praxi/resonance z konceptu | Žádná speciální certifikace; námořní kaple jsou staletou tradicí |
+| **Podoba patrona** | Kopie/podoba Jezulátka v rouše barvy trupu: **červené** (I — Mayor), **bílé** (II — Fátima), **zlaté** (III — Nieves); na trupu III varianta **stojícího dítěte** u přídě | Pořízení přes řádné kanály tradice (obchod svatyně / požehnaná kopie) — žádný nárok na originál v péči karmelitánů v Praze |
+| **Požehnání lodi** | Launch/křest každého trupu vč. posvěcení podoby — standardní ceremoniál u tradičních plavidel | Sloučitelné s křtem lodi; doložená praxe od Kolumba po dnešní fishing fleets |
+
+**Proč to není dekorace, ale precedent:** obraz Dítěte už oceán přeplul — **Santo Niño de Cebú** dorazil manilskou galeonou (dar Magellanovy výpravy 1521, znovunalezen Legazpiho 1565) a dodnes je patronem filipínského námořnictví; trup II jde doslova jeho trasou. Kolumbusovy lodě byly všechny mariánské. Ibero-americká námořní kultura = patron na palubě jako standard, ne exotika.
+
+**Kulturní hranice:** Pražské Jezulátko je živá tradice v péči bosých karmelitánů (Panny Marie Vítězné, Malá Strana). Používáme archetyp a doloženou praxi lodních obrazů — žádné tvrzení o partnerství, schválení či vztahu se svatyní bez skutečného kontaktu (třída E — kulturní review před public copy).
 
 ---
 

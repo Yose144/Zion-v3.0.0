@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Calendar,
   Compass,
+  Crown,
   Feather,
   Heart,
   Landmark,
@@ -56,12 +57,30 @@ const Copy = {
     en: `A solar catamaran in the wa'a kaulua line — christened after the second apparition near Fátima, where the White Lady appeared in a wedding dress: the mystical wedding, the white orchid, the new apparition. Home Te Pīko Ora (Raiatea); route Costa Rica → Polynesia → Aboriginal Australia → Sri Lanka → Ekam.`,
   },
   fleetIndian: {
-    cs: `Třetí loď pro Indický oceán — pokřtěná po třetím zjevení na La Palmě: María de las Nieves ve zlatých rouchech, držící vzpřímené dítě — dítě LUMI, Elizabeth. Loď nedokončených zázraků; patronka ostrova i celé sítě. Trasa Ekam → Boa Esperança → návrat do Atlantiku.`,
-    en: `The third ship for the Indian Ocean — christened after the third apparition on La Palma: María de las Nieves in golden robes, holding the upright child — the child LUMI, Elizabeth. The ship of unfinished miracles; patroness of the island and the whole network. Route Ekam → Boa Esperança → return to the Atlantic.`,
+    cs: `Třetí loď pro Indický oceán — pokřtěná po třetím zjevení na La Palmě: María de las Nieves ve zlatých rouchech, držící vzpřímené dítě — Malého prince (Pražské Jezulátko), dítě LUMI, Elizabeth. Loď nedokončených zázraků; patronka ostrova i celé sítě. Trasa Ekam → Boa Esperança → návrat do Atlantiku.`,
+    en: `The third ship for the Indian Ocean — christened after the third apparition on La Palma: María de las Nieves in golden robes, holding the upright child — the Little Prince (the Infant of Prague), the child LUMI, Elizabeth. The ship of unfinished miracles; patroness of the island and the whole network. Route Ekam → Boa Esperança → return to the Atlantic.`,
   },
   fleetMeet: {
     cs: `Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na švech světa: na šíji Amerik (LUMI — atlantická × pacifická) a na švu oceánů u Mysu dobré naděje (Boa Esperança — atlantická × indická). Credencial sbírá razítka „tří moří".`,
     en: `The three Marys do not meet mid-ocean — their worlds touch at the seams of the world: on the isthmus of the Americas (LUMI — Atlantic × Pacific) and on the ocean seam at the Cape of Good Hope (Boa Esperança — Atlantic × Indian). The credencial collects the "three seas" stamps.`,
+  },
+  patronTitle: { cs: `Patron flotily — Malý princ`, en: `Patron of the fleet — the Little Prince` },
+  patronSubtitle: { cs: `Pražské Jezulátko · dítě Lumi · zrod nového světa`, en: `The Infant of Prague · the child of Lumi · the birth of the new world` },
+  patronBody: {
+    cs: `Patronem cest všech tří Marií je Malý princ — dítě ze zlatého zjevení na La Palmě, jehož tváří je Pražské Jezulátko: dítě-král v rouše a korunce, jež v dlani drží celý svět. Dítě, které kdysi poputovalo ze Španělska do Prahy — ze země moří do země bez moře — se teď na lodích vrací na vodu. V příběhu sítě je to dítě linie LUMI / Elizabeth — a zároveň platí: každý z nás je malý princ, když se plně probudí.`,
+    en: `The patron of all three Marys' journeys is the Little Prince — the child of the golden apparition on La Palma, whose face is the Infant Jesus of Prague: the child-king in robes and crown, holding the whole world in his little palm. The child who once travelled from Spain to Prague — from a land of seas to a land without one — now sails back to the water aboard the fleet. In the network's story he is the child of the LUMI / Elizabeth line — and at the same time: each of us is the little prince, once fully awake.`,
+  },
+  patronPoints: {
+    cs: [
+      `Každý trup jej nese ve své barvě — červené roucho na Santa María la Mayor, bílé na Nossa Senhora de Fátima, zlaté na María de las Nieves; tak, jak se Jezulátko po staletí obléká do liturgických barev`,
+      `Svět v dětské dlani — jablko s křížkem čteme jako planetu nesenou v ruce dítěte: zrod nového světa, ne jeho dobytí`,
+      `Patron, který už plul — obraz Dítěte přeplul Pacifik na manilské galeoně (Santo Niño de Cebú, 1521/1565); pacifický trup jde jeho trasou`,
+    ],
+    en: [
+      `Each hull carries him in its own colour — red robes aboard Santa María la Mayor, white aboard Nossa Senhora de Fátima, gold aboard María de las Nieves — just as the Infant has been dressed in liturgical colours for centuries`,
+      `The world in a child's palm — the orb is read as the planet carried in a child's hand: the birth of a new world, not its conquest`,
+      `A patron who has already sailed — an image of the Child crossed the Pacific on a Manila galleon (Santo Niño de Cebú, 1521/1565); the Pacific hull follows his route`,
+    ],
   },
   routeTitle: { cs: `Velká cesta — obeplutí světa`, en: `The Great Route — around the world` },
   routeSubtitle: { cs: `Každý uzel = jedna iniciace · credencial tří moří`, en: `Every node is an initiation · the three-seas credencial` },
@@ -581,6 +600,55 @@ export default function MariaDelCaminoPage() {
               <span className="text-xs uppercase tracking-widest text-gray-500">LUMI · {cs ? 'scháziště' : 'meeting point'}</span>
             </div>
             <p className="text-sm text-gray-300">{Copy.fleetMeet[cs ? 'cs' : 'en']}</p>
+          </div>
+        </motion.section>
+
+        {/* ═══ PATRON — MALÝ PRINC ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="md:w-2/5 shrink-0">
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <img
+                    src="/images/maria-del-camino/patron.webp"
+                    alt="Malý princ — zlatá postavička s korunkou a světem v dlani nad mořem"
+                    width={1280}
+                    height={900}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full object-cover"
+                  />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500 mb-1">{Copy.patronSubtitle[cs ? 'cs' : 'en']}</p>
+                <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mb-4">
+                  <Crown className="h-7 w-7 text-amber-200" />
+                  {Copy.patronTitle[cs ? 'cs' : 'en']}
+                </h2>
+                <p className="text-gray-300 leading-relaxed mb-6">
+                  {Copy.patronBody[cs ? 'cs' : 'en']}
+                </p>
+                <div className="space-y-3">
+                  {Copy.patronPoints[cs ? 'cs' : 'en'].map((point, i) => (
+                    <div key={i} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': '245, 222, 130' } as React.CSSProperties}>
+                      <div className="flex items-center gap-2 text-amber-200 mb-1">
+                        <Sparkles className="h-4 w-4" />
+                        <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                          {(cs ? ['Tři roucha', 'Svět v dlani', 'Precedent'] : ['Three robes', 'The world in hand', 'Precedent'])[i]}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-300">{point}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </motion.section>
 

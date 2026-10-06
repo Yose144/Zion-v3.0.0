@@ -43,7 +43,7 @@ Poutník se podíval na mapu: Ekam. Chrám, který už stojí — jediný uzel s
 
 A večer, když se díval na Indický oceán — vodu, která drží teplotu, kterou Atlantik zapomněl — rozuměl:
 
-**Třetí Marie je loď, kterou se učíme stavět tím, že ji nepředstíráme.** Její trup je zatím pouze trasa. Její plachty jsou zatím pouze směr. A její dítě — Elizabeth — stojí už teď na přídi, kterou ještě nikdo nepostavil.
+**Třetí Marie je loď, kterou se učíme stavět tím, že ji nepředstíráme.** Její trup je zatím pouze trasa. Její plachty jsou zatím pouze směr. A její dítě — Elizabeth, Malý princ — stojí už teď na přídi, kterou ještě nikdo nepostavil: s korunkou, která je z papíru, a světem v dlani, který je zítřek.
 
 ---
 
@@ -78,6 +78,7 @@ A večer, když se díval na Indický oceán — vodu, která drží teplotu, kt
 | „Horizont si zaslouží poctivost, ne barvu" | **MÝTUS** (etická pozice knihy) | `MiseAmenti/01` §6 (spor se řeší důkazem); tato kniha | — |
 | Tři lodě = flotila Tres Marias | **STAVBA** (rozhodnuto 2026-10-01) | `L5MariaDelCamino.md` §3 | realizace trupů I–III |
 | „Loď, která čeká, je věrnější než loď, která spěchá" | **MÝTUS** (princip knihy) | tato kniha; `Lumi/13` (oprava příběhu, ne faktu) | — |
+| Dítě na přídi = **Malý princ** (Elizabeth, dítě Lumi) — patron flotily | **MÝTUS** (ztotožnění knihy) na **ŽIVÉ** tradici | `07` (poznání tváře); `genesis/09.5`; `L5MariaDelCamino.md` §3 „Patron flotily" | kulturní review |
 
 ---
 

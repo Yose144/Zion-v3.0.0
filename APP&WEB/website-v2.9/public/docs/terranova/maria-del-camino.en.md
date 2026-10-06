@@ -27,6 +27,14 @@ The fleet carries the names of the three Marian apparitions of the pilgrim's jou
 
 The three Marys do not meet mid-ocean — their worlds touch at the **seams of the world**: on the isthmus of the Americas (**LUMI** — Atlantic × Pacific exchange overland) and on the ocean seam at the Cape of Good Hope (**Boa Esperança** — Atlantic × Indian). The credencial collects the "three seas" stamps.
 
+## Patron of the fleet — the Little Prince
+
+The patron of all three Marys' journeys is **the Little Prince** — the child of the golden apparition on La Palma, whose face is the **Infant Jesus of Prague**: the child-king in robes and crown, holding the whole world in his little palm. The child who once travelled from Spain to Prague — from a land of seas to a land without one — now sails back to the water aboard the fleet.
+
+- **Each hull carries him in its own colour** — red robes aboard *Santa María la Mayor*, white aboard *Nossa Senhora de Fátima*, gold aboard *María de las Nieves* — just as the Infant has been dressed in liturgical colours for centuries.
+- **The world in a child's palm** — the orb is read as the planet carried in a child's hand: the birth of a new world, not its conquest.
+- **A patron who has already sailed** — an image of the Child crossed the Pacific on a Manila galleon (Santo Niño de Cebú, 1521/1565); the Pacific hull follows his route. In the network's story the Little Prince is the child of the LUMI — Elizabeth — line, and at the same time: *each of us is the little prince, once fully awake.*
+
 ## The name
 
 The programme carries the name **María del Camino** — *Mary of the Way*, the Marian sanctuary standing directly on the Camino Francés near León. For a thousand years pilgrims walked to Santiago; whoever truly went to the end continued to **Finisterre** — *finis terrae*, the end of the earth — where the road ended at the ocean and there was nowhere left to walk.
