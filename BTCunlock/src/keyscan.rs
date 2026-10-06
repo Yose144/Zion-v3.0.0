@@ -262,6 +262,10 @@ pub struct KeyscanOpts {
     /// Optional shell command run on every verified hit — the material
     /// is exported as BTCUNLOCK_KEY/KEY_HEX/WIF/ADDRESS/TARGET/LABEL.
     pub hit_cmd: Option<String>,
+    /// GPU duty cycle 1..=100 — after each launch the scanner sleeps
+    /// `launch_ms * (100-duty)/duty` so a co-resident workload (miner)
+    /// keeps the card most of the time. 100 (default) = back-to-back.
+    pub gpu_duty_pct: u32,
 }
 
 pub(crate) fn fmt_rate(r: f64) -> String {
@@ -626,6 +630,7 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
     while cur < opts.end {
         // keys remaining (f64 — range can exceed u64)
         let remain_f = opts.end.saturating_sub(&cur).to_f64();
+        let t_launch = Instant::now();
 
         let mut scanned: u64 = 0;
         #[cfg(feature = "gpu")]
@@ -693,6 +698,17 @@ pub fn run_keyscan(opts: KeyscanOpts) -> Result<()> {
         tested += scanned;
         if cur > opts.end {
             cur = opts.end;
+        }
+
+        // GPU duty cycle — yield the card between launches so a
+        // co-resident miner keeps most of the compute time.
+        let duty = opts.gpu_duty_pct.clamp(1, 100);
+        if cfg!(feature = "gpu") && opts.use_gpu && duty < 100 {
+            let work_ms = t_launch.elapsed().as_millis() as u64;
+            let sleep_ms = work_ms.saturating_mul(100 - duty as u64) / duty as u64;
+            if sleep_ms > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(sleep_ms));
+            }
         }
 
         if last_report.elapsed().as_secs() >= 2 {
