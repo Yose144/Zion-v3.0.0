@@ -97,3 +97,37 @@ Fix smyčka: kernel launch fail → log OpenCL compile error → fix `csrc/openc
 | ZIS auth | pending |
 | Multichain payout | pending |
 | Agent multi-algo UI | pending |
+
+### Kernel E2E matrix — výsledky (2026-10-06, GTX 1070 Ti OpenCL)
+
+| Algo | Kernel | GPU≡CPU (KAT) | Live/E2E | Poznámka |
+|---|---|---|---|---|
+| kheavyhash (KAS) | ✅ | ✅ PASS bit-exact | ✅ **E2E accepted** | 100/100 shares proti bcutil/kheavyhash referenci; ~249 MH/s; consensus-exact (official vector e097f2e4…) |
+| keryxhash (KRX) | ✅ | ✅ PASS | pending live | per-block matrix z pre_pow opravena |
+| blake3 (DCR) | ✅ | ✅ PASS | pending live | 180B header, nonce@140 |
+| blake3 (ALPH) | ✅ | ✅ PASS | pending live | en1-high nonce |
+| pearlhash (PHX) | ✅ | ✅ PASS | pending live | `__constant` addr-space fix |
+| autolykos (ERG) | ✅ | ⚠️ RUN, CPU ref stub | pending | GPU běží, brání stub hasher |
+| ethash (ETC/ETHW) | ✅ | ⚠️ RUN | pending | DAG gen runtime nutný |
+| progpow (ZANO) | ✅ | ⚠️ RUN | ✅ ZANO live již dřív | |
+| kawpow (RVN) | ✅ | ❌ DAG gen chybí | blocked | "KawPow DAG generation not available in V31" |
+| verushash (VRSC) | — | n/a | ✅ CPU path live | GPU kernel neexistuje (1487B header) |
+| zelhash (FLUX) | ✅ compile | ❌ CL_MEM_OBJECT_ALLOCATION | blocked | kernel_init_ht alloc > VRAM |
+| nexapow (NEXA) | ✅ | ⏳ pomalé (big-int) | pending | |
+| qhash (QTC) | ⚠️ | kernel_dir fix | pending | int16_t→short fix |
+| dynexsolve (DNX) | ⚠️ | kernel_dir fix | pending | |
+| fishhash (IRON) | ❌ | no DAG gen | blocked | FishHash DAG absent |
+| karlsenhash (KLS) | ❌ | no DAG gen | blocked | |
+
+### kHeavyHash — opravené defekty (commit 749d112b1)
+
+1. **Matice per-block**: `Matrix::generate(pre_pow_hash)` (xoshiro256++, rank-64 retry) místo statického `sha3("KHeavyHash")` seedu — Rust + OpenCL host + CUDA host + obě C kopie (miner + native-ffi, které sdílely symbol `kheavyhash_mine` → link-time kolize).
+2. **maxTarget 2²²⁴−1** (bridge `hasher.rs`), ne 2²⁴⁸ — způsobovalo "Low difficulty share".
+3. **LE u256 compare**: `meets_target_kaspa` — pool čte hash jako `Uint256::from_le_bytes`.
+4. **en1 v HIGH bytes** u64 nonce (bridge concat: `en1_hex ‖ nonce_hex`).
+5. **difficulty→target** přepsáno na bridge formuli `(max·1e18)/(diff·1e18)` — fractional diff dřív kolabovala na max target.
+6. **CPU scan dedup**: `start_nonce` se reálně používá (dříve se rescanovalo od 0 → duplicate-submit flood).
+7. **Stratum job channel** mpsc(8) → `watch` (latest-wins) — KaspaStratum notify spam deadlockoval session před submity.
+8. **GPU path zapnut** pro kheavyhash: ts z `header[32..40]`, en1 složené do `base_nonce`.
+
+Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_pool_semantics`, `kheavyhash_matches_native`, KAT GPU≡CPU — vše PASS.
