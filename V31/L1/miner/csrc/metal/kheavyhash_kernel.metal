@@ -275,11 +275,14 @@ kernel void kheavyhash_mine(
     uchar hash[32];
     cshake256_custom(product, 32, CUSTOM_HEAVY_HASH, CUSTOM_HEAVY_HASH_LEN, hash);
 
-    // -- Step 4: Check target (big-endian byte comparison: hash <= target)
+    // -- Step 4: Check target. Kaspa interprets the PoW hash as little-endian
+    // u256 (Uint256::from_le_bytes) vs the big-endian share target.
     int meets = 1;
     for (int i = 0; i < 32; i++) {
-        if (hash[i] < target[i]) { meets = 1; break; }
-        if (hash[i] > target[i]) { meets = 0; break; }
+        uchar hb = hash[31 - i];
+        uchar tb = target[i];
+        if (hb < tb) { meets = 1; break; }
+        if (hb > tb) { meets = 0; break; }
     }
 
     if (meets) {

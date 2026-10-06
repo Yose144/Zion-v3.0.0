@@ -350,15 +350,16 @@ pub fn find_auxpow_share_from(
     let copy_len = header.len().min(32);
     header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
 
-    // Build the nonce base and shift for kHeavyHash so the extranonce1
-    // prefix stays in the low bytes and the scanned suffix occupies the
-    // high bytes (matching KaspaStratum / 2miners).
+    // Build the nonce base for kHeavyHash so extranonce1 occupies the HIGH
+    // bytes of the u64 nonce and the scanned suffix the low bytes — matching
+    // KaspaStratum (kaspanet bridge prepends en1 to the nonce hex string:
+    // `final_nonce = extranonce_hex || suffix_hex`).
     let (nonce_base, nonce_shift, max_suffix, nonce_count) = if is_kheavyhash {
         let en1_len = extranonce.len().min(8);
         let mut base_bytes = [0u8; 8];
         base_bytes[..en1_len].copy_from_slice(&extranonce[..en1_len]);
-        let base = u64::from_le_bytes(base_bytes);
-        let shift = en1_len * 8;
+        let base = u64::from_be_bytes(base_bytes);
+        let shift = 0usize;
         let max_suffix = if en1_len == 0 {
             u64::MAX
         } else {
@@ -392,13 +393,22 @@ pub fn find_auxpow_share_from(
     }
 
     if threads == 1 || nonce_count < threads as u64 {
-        for suffix in 0..nonce_count {
+        for offset in 0..nonce_count {
+            let suffix = start_nonce.saturating_add(offset);
             if suffix > max_suffix {
                 break;
             }
             let nonce = make_nonce(suffix);
             let (hash, mix) = hash_auxpow(coin, &header, nonce, height, &extranonce, algorithm);
-            if crate::auxpow::hasher::meets_target(&hash, &target) {
+            // Kaspa interprets the PoW hash as a little-endian u256 (pool-side
+            // `Uint256::from_le_bytes`) — a plain big-endian compare submits
+            // shares the pool rejects as "Low difficulty share".
+            let meets = if is_kheavyhash {
+                crate::auxpow::hasher::meets_target_kaspa(&hash, &target)
+            } else {
+                crate::auxpow::hasher::meets_target(&hash, &target)
+            };
+            if meets {
                 return Some(crate::auxpow::Share {
                     job_id,
                     coin,
@@ -421,9 +431,9 @@ pub fn find_auxpow_share_from(
     let cancelled = Arc::new(AtomicBool::new(false));
 
     (0..threads).into_par_iter().find_map_any(|thread_idx| {
-        let start_suffix = thread_idx as u64 * chunk_size;
+        let thread_start = start_nonce.saturating_add(thread_idx as u64 * chunk_size);
         let count = if thread_idx == threads - 1 {
-            nonce_count - start_suffix
+            nonce_count.saturating_sub(thread_idx as u64 * chunk_size)
         } else {
             chunk_size
         };
@@ -432,13 +442,18 @@ pub fn find_auxpow_share_from(
             if offset % 4096 == 0 && cancelled.load(Ordering::Relaxed) {
                 return None;
             }
-            let suffix = start_suffix + offset;
+            let suffix = thread_start + offset;
             if suffix > max_suffix {
                 break;
             }
             let nonce = make_nonce(suffix);
             let (hash, mix) = hash_auxpow(coin, &header, nonce, height, &extranonce, algorithm);
-            if crate::auxpow::hasher::meets_target(&hash, &target) {
+            let meets = if is_kheavyhash {
+                crate::auxpow::hasher::meets_target_kaspa(&hash, &target)
+            } else {
+                crate::auxpow::hasher::meets_target(&hash, &target)
+            };
+            if meets {
                 cancelled.store(true, Ordering::Relaxed);
                 return Some(crate::auxpow::Share {
                     job_id: job_id.clone(),

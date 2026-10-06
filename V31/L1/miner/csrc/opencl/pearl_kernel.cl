@@ -49,7 +49,7 @@ __constant const uint MSG_SCHEDULE[7][16] = {
     b = ROTR32(b ^ c, 7);
 
 void blake3_round(uint state[16], const uint msg[16], int round) {
-    const uint *s = MSG_SCHEDULE[round];
+    const __constant uint *s = MSG_SCHEDULE[round];
     G(m, state[0], state[4], state[8],  state[12], msg[s[0]],  msg[s[1]]);
     G(m, state[1], state[5], state[9],  state[13], msg[s[2]],  msg[s[3]]);
     G(m, state[2], state[6], state[10], state[14], msg[s[4]],  msg[s[5]]);
@@ -90,9 +90,9 @@ void blake3_compress8(
     state[10] = BLAKE3_IV[2];
     state[11] = BLAKE3_IV[3];
     state[12] = counter;
-    state[13] = block_len;
-    state[14] = flags;
-    state[15] = 0u;
+    state[13] = 0u;
+    state[14] = block_len;
+    state[15] = flags;
 
     for (int r = 0; r < 7; r++) {
         blake3_round(state, m, r);
@@ -127,16 +127,17 @@ void blake3_compress16(
     state[10] = BLAKE3_IV[2];
     state[11] = BLAKE3_IV[3];
     state[12] = counter;
-    state[13] = block_len;
-    state[14] = flags;
-    state[15] = 0u;
+    state[13] = 0u;
+    state[14] = block_len;
+    state[15] = flags;
 
     for (int r = 0; r < 7; r++) {
         blake3_round(state, m, r);
     }
 
-    for (int i = 0; i < 16; i++) {
-        out[i] = state[i] ^ state[i % 8];
+    for (int i = 0; i < 8; i++) {
+        out[i]     = state[i] ^ state[i + 8];
+        out[i + 8] = state[i + 8] ^ chain[i];
     }
 }
 
@@ -158,12 +159,12 @@ void blake3_compress16(
 __attribute__((reqd_work_group_size(256, 1, 1)))
 __kernel void pearl_mine(
     __global const uchar *header_blob,
+    const uint header_len,
     __global const uchar *target,
+    ulong base_nonce,
     __global ulong *output_nonce,
     __global uchar *output_hash,
-    __global volatile uint *found,
-    const uint header_len,
-    ulong base_nonce
+    __global volatile uint *found
 )
 {
     // Prefetch target into private memory.

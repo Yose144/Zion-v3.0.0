@@ -274,7 +274,7 @@ __kernel void qhash_mine(
     for (int i = 0; i < 32; i++) buf[i] = initial_hash[i];
     for (int i = 0; i < NUM_QUBITS; i++) {
         float scaled = expectations[i] * 32768.0f;
-        int16_t fixed = (int16_t)(scaled >= 0.0f ? (scaled + 0.5f) : (scaled - 0.5f));
+        short fixed = (short)(scaled >= 0.0f ? (scaled + 0.5f) : (scaled - 0.5f));
         buf[32 + i*2]     = (uchar)(fixed & 0xFF);
         buf[32 + i*2 + 1] = (uchar)((fixed >> 8) & 0xFF);
     }
@@ -365,7 +365,7 @@ __kernel void qhash_benchmark(
     for (int i = 0; i < 32; i++) buf[i] = initial_hash[i];
     for (int i = 0; i < NUM_QUBITS; i++) {
         float scaled = expectations[i] * 32768.0f;
-        int16_t fixed = (int16_t)(scaled >= 0.0f ? (scaled + 0.5f) : (scaled - 0.5f));
+        short fixed = (short)(scaled >= 0.0f ? (scaled + 0.5f) : (scaled - 0.5f));
         buf[32 + i*2]     = (uchar)(fixed & 0xFF);
         buf[32 + i*2 + 1] = (uchar)((fixed >> 8) & 0xFF);
     }

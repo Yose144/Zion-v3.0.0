@@ -286,6 +286,7 @@ fn main() {
     // kHeavyHash  (KAS)
     // -----------------------------------------------------------------------
     if feat("native-kheavyhash") {
+        println!("cargo:rerun-if-changed=csrc/kheavyhash/kheavyhash_native.c");
         base_build(
             "csrc/kheavyhash/kheavyhash_native.c",
             "kheavyhash_zion",

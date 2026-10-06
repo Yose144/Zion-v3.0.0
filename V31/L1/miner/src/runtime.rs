@@ -811,12 +811,13 @@ impl MinerRuntime {
         // QPoW on the GPU stream (CPU fallback until the Poseidon2 kernel
         // lands) uses the GPU ext cursor the same way.
         let is_qpow = algorithm == "qpow-poseidon2";
-        let cursor = if stream == StreamId::CpuExternal {
-            Some(&self.cpu_ext_nonce_cursor)
-        } else if is_qpow {
+        // Every CPU-scan path needs a persistent nonce cursor — otherwise
+        // GPU-stream CPU fallbacks (e.g. kheavyhash, which has no GPU path)
+        // rescan from 0 every batch and resubmit the same share forever.
+        let cursor = if is_qpow {
             Some(&self.gpu_ext_nonce_cursor)
         } else {
-            None
+            Some(&self.cpu_ext_nonce_cursor)
         };
         let nonce_start = cursor
             .map(|c| c.load(std::sync::atomic::Ordering::Relaxed))
@@ -867,9 +868,6 @@ impl MinerRuntime {
     #[cfg(feature = "auxpow")]
     async fn try_gpu_ext_share(&self, job: &Job, batch: u64) -> Option<Share> {
         let algorithm = job.coin.algorithm();
-        if algorithm.starts_with("kheavyhash") {
-            return None; // CPU-only for now
-        }
         if algorithm == "qpow-poseidon2" {
             // Quantus needs a dedicated 512-bit Poseidon2 kernel — the generic
             // u64/[u8;32] GPU interface cannot represent it.
@@ -886,6 +884,9 @@ impl MinerRuntime {
         let job_id = job.job_id.clone();
         let extranonce2 = job.extranonce2.clone();
         let extranonce1 = job.extranonce.clone();
+        // The nonce-composition happens inside the spawn_blocking closure;
+        // keep a second copy for share construction after it returns.
+        let extranonce1_gpu = extranonce1.clone();
         let ntime = job.ntime.clone();
         let height = job.height;
         let work_size = batch as usize;
@@ -960,6 +961,24 @@ impl MinerRuntime {
             // caps global work size for TTD avoidance).
             let nonce_start =
                 gpu_ext_nonce_cursor.fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
+
+            // KaspaStratum: extranonce1 occupies the HIGH bytes of the u64
+            // nonce and the GPU kernel scans `base_nonce + offset`, so fold
+            // en1 into the base nonce (the cursor tracks the low suffix).
+            let nonce_start = if algorithm.starts_with("kheavyhash") {
+                let en1_len = extranonce1_gpu.len().min(8);
+                let mut b = [0u8; 8];
+                b[..en1_len].copy_from_slice(&extranonce1_gpu[..en1_len]);
+                let en1_base = u64::from_be_bytes(b);
+                let suffix_mask = if en1_len >= 8 {
+                    0
+                } else {
+                    (1u64 << ((8 - en1_len) * 8)) - 1
+                };
+                en1_base | (nonce_start & suffix_mask)
+            } else {
+                nonce_start
+            };
 
             let result = gpu
                 .mine_batch_raw(&header, target, nonce_start, batch)
@@ -3235,7 +3254,9 @@ mod tests {
                 }
             }
 
-            // Verify the share we receive has the extranonce1 prefix in the low bytes.
+            // Verify the share we receive has the extranonce1 prefix in the
+            // HIGH bytes of the u64 nonce — the kaspa bridge prepends en1 to
+            // the nonce hex string: final_nonce_hex = en1_hex + suffix_hex.
             while let Ok(Some(line)) = lines.next_line().await {
                 if let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) {
                     if msg.get("method").and_then(|m| m.as_str()) == Some("mining.submit") {
@@ -3246,13 +3267,13 @@ mod tests {
                             .unwrap_or_default();
                         if params.len() >= 3 {
                             let nonce_hex = params[2].as_str().unwrap_or("");
-                            let full = u64::from_str_radix(nonce_hex, 16)
-                                .unwrap_or(0)
-                                .to_le_bytes();
+                            let nonce = u64::from_str_radix(nonce_hex, 16).unwrap_or(0);
+                            let en1_val = u64::from_str_radix(en1, 16).unwrap_or(0);
+                            let en1_len = hex::decode(en1).unwrap().len();
                             assert_eq!(
-                                &full[..2],
-                                hex::decode(en1).unwrap().as_slice(),
-                                "KAS nonce must start with extranonce1"
+                                nonce >> ((8 - en1_len) * 8),
+                                en1_val,
+                                "KAS nonce must carry extranonce1 in its high bytes"
                             );
                         }
                         let resp = r#"{"id":100,"result":true,"error":null}"#;

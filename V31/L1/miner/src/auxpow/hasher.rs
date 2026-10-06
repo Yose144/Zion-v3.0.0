@@ -8,7 +8,7 @@
 
 use blake3::Hasher as Blake3Hasher;
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use sha3::{CShake256, CShake256Core, Digest, Keccak256, Keccak512, Sha3_256};
+use sha3::{CShake256, CShake256Core, Digest, Keccak256, Keccak512};
 use zion_cosmic_harmony::ExternalCoin;
 
 /// Hash `header || nonce_le` with the algorithm used by `coin`.
@@ -26,6 +26,18 @@ pub fn hash_for_coin(coin: ExternalCoin, header: &[u8], nonce: u64) -> [u8; 32] 
 /// Check whether `hash` meets the 32-byte `target` (big-endian comparison).
 pub fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     hash <= target
+}
+
+/// Kaspa PoW comparison: the pool interprets the 32-byte PoW hash as a
+/// little-endian u256 (`Uint256::from_le_bytes`) and compares it to the
+/// big-endian share target. Equivalent to `BigUint::from_le_bytes(hash) <=
+/// BigUint::from_bytes_be(target)` — implemented here as a byte compare of the
+/// reversed hash against the big-endian target.
+#[inline]
+pub fn meets_target_kaspa(hash: &[u8; 32], target_be: &[u8; 32]) -> bool {
+    let mut h_be = *hash;
+    h_be.reverse();
+    h_be <= *target_be
 }
 
 /// Check whether `hash` meets the 32-byte `target` (little-endian comparison).
@@ -89,7 +101,10 @@ pub fn hash_kheavyhash(pre_pow_hash: &[u8], timestamp: u64, nonce: u64) -> [u8; 
     let mut pow_hash = [0u8; 32];
     pow_hasher.finalize_xof().read(&mut pow_hash);
 
-    let matrix = kheavy_matrix();
+    let mut seed = [0u8; 32];
+    let copy_len = pre_pow_hash.len().min(32);
+    seed[..copy_len].copy_from_slice(&pre_pow_hash[..copy_len]);
+    let matrix = kheavy_matrix_for(&seed);
     let product = matrix.heavy_hash(&pow_hash);
 
     let mut heavy_hasher = CShake256::from_core(CShake256Core::new(b"HeavyHash"));
@@ -106,13 +121,18 @@ pub fn hash_kheavyhash_extranonce(
     extranonce1: &[u8],
     suffix: u64,
 ) -> [u8; 32] {
-    let mut full_nonce = [0u8; 8];
+    // KaspaStratum layout: extranonce1 occupies the most-significant bytes of
+    // the u64 nonce (the kaspa bridge prepends its hex to the submitted nonce
+    // hex string), the miner-scanned suffix fills the low bytes.
+    // Equivalently: nonce_u64 = (en1_be << suffix_bits) | suffix.
     let en1_len = extranonce1.len().min(8);
-    full_nonce[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
-    let suffix_len = 8 - en1_len;
-    if suffix_len > 0 {
-        full_nonce[en1_len..8].copy_from_slice(&suffix.to_le_bytes()[..suffix_len]);
+    let mut en1_val = 0u64;
+    for &b in &extranonce1[..en1_len] {
+        en1_val = (en1_val << 8) | b as u64;
     }
+    let suffix_bits = (8 - en1_len) * 8;
+    let mask = if suffix_bits == 64 { u64::MAX } else { (1u64 << suffix_bits) - 1 };
+    let full_nonce = ((en1_val << suffix_bits) | (suffix & mask)).to_le_bytes();
 
     let mut pow_hasher = CShake256::from_core(CShake256Core::new(b"ProofOfWorkHash"));
     pow_hasher.update(pre_pow_hash);
@@ -122,7 +142,10 @@ pub fn hash_kheavyhash_extranonce(
     let mut pow_hash = [0u8; 32];
     pow_hasher.finalize_xof().read(&mut pow_hash);
 
-    let matrix = kheavy_matrix();
+    let mut seed = [0u8; 32];
+    let copy_len = pre_pow_hash.len().min(32);
+    seed[..copy_len].copy_from_slice(&pre_pow_hash[..copy_len]);
+    let matrix = kheavy_matrix_for(&seed);
     let product = matrix.heavy_hash(&pow_hash);
 
     let mut heavy_hasher = CShake256::from_core(CShake256Core::new(b"HeavyHash"));
@@ -163,9 +186,10 @@ impl XoShiRo256PlusPlus {
 struct KheavyMatrix([[u16; 64]; 64]);
 
 impl KheavyMatrix {
-    fn generate() -> Self {
-        let seed = Sha3_256::digest(b"KHeavyHash");
-        let mut rng = XoShiRo256PlusPlus::new(seed.into());
+    /// Generate the 64×64 matrix seeded by the block's `pre_pow_hash`,
+    /// matching rusty-kaspa `Matrix::generate(pre_pow_hash)`.
+    fn generate(seed: &[u8; 32]) -> Self {
+        let mut rng = XoShiRo256PlusPlus::new(*seed);
         loop {
             let mat = Self::rand_matrix(&mut rng);
             if mat.compute_rank() == 64 {
@@ -250,14 +274,25 @@ impl KheavyMatrix {
     }
 }
 
-fn kheavy_matrix() -> &'static KheavyMatrix {
-    use std::sync::OnceLock;
-    static MATRIX: OnceLock<KheavyMatrix> = OnceLock::new();
-    MATRIX.get_or_init(KheavyMatrix::generate)
+/// Return the kHeavyHash matrix for `pre_pow_hash`, caching the last-used
+/// matrix so the CPU mining loop only regenerates once per job.
+fn kheavy_matrix_for(pre_pow_hash: &[u8; 32]) -> std::sync::Arc<KheavyMatrix> {
+    use std::sync::{Arc, Mutex, OnceLock};
+    static CACHE: OnceLock<Mutex<Option<([u8; 32], Arc<KheavyMatrix>)>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(None));
+    let mut guard = cache.lock().expect("kheavy matrix cache");
+    if let Some((seed, m)) = guard.as_ref() {
+        if seed == pre_pow_hash {
+            return Arc::clone(m);
+        }
+    }
+    let m = Arc::new(KheavyMatrix::generate(pre_pow_hash));
+    *guard = Some((*pre_pow_hash, Arc::clone(&m)));
+    m
 }
 
-pub fn kheavyhash_matrix_flat() -> [u16; 4096] {
-    let m = kheavy_matrix();
+pub fn kheavyhash_matrix_flat(pre_pow_hash: &[u8; 32]) -> [u16; 4096] {
+    let m = kheavy_matrix_for(pre_pow_hash);
     let mut flat = [0u16; 4096];
     for i in 0..64 {
         for j in 0..64 {
@@ -905,11 +940,19 @@ pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
 
 pub fn algorithm_max_target(algorithm: &str) -> [u8; 32] {
     match algorithm {
-        "kheavyhash" | "keryxhash" => {
-            let mut t = [0u8; 32];
+        // kaspa-stratum bridge (kaspanet/rusty-kaspa bridge/src/hasher.rs):
+        //   MAX_TARGET = 0xFF…FF (56 hex chars = 28 bytes = 2^224-1);
+        //   share target = maxTarget / stratum_difficulty, and the submitted
+        //   PoW hash is interpreted as a little-endian u256
+        //   (`Uint256::from_le_bytes`) before comparison.
+        "kheavyhash" => {
+            let mut t = [0xFFu8; 32];
+            t[..4].fill(0x00);
+            t
+        }
+        "keryxhash" => {
+            let mut t = [0xFFu8; 32];
             t[0] = 0x00;
-            t[1] = 0x00;
-            t[2..].fill(0xFF);
             t
         }
         _ => [0xFF; 32],
@@ -922,37 +965,30 @@ pub fn algorithm_max_target(algorithm: &str) -> [u8; 32] {
 pub fn difficulty_to_target_with_max(difficulty: f64, max_target: &[u8; 32]) -> [u8; 32] {
     use num_bigint::BigUint;
 
-    if difficulty <= 1.0 || !difficulty.is_finite() || difficulty.is_nan() {
+    // Only non-positive / non-finite difficulties collapse to max_target;
+    // fractional values below 1.0 are legitimate (kaspa-stratum computes
+    // pool_target = maxTarget / diff for any positive diff).
+    if difficulty <= 0.0 || !difficulty.is_finite() || difficulty.is_nan() {
         return *max_target;
     }
 
     let max = BigUint::from_bytes_be(max_target);
-    // Convert difficulty to a rational approximation from its IEEE-754 bits.
-    let bits = difficulty.to_bits();
-    let mantissa = bits & 0x000F_FFFF_FFFF_FFFF;
-    let exponent = ((bits >> 52) & 0x7FF) as i32 - 1023;
-    let significand = if exponent == -1023 {
-        // subnormal
-        BigUint::from(mantissa)
-    } else {
-        BigUint::from(mantissa | 0x0010_0000_0000_0000u64)
-    };
-    let mut diff_int = significand;
-    if exponent >= 52 {
-        diff_int <<= (exponent - 52) as usize;
-    } else {
-        diff_int >>= (52 - exponent) as usize;
+    // Match the kaspa-stratum bridge formula exactly:
+    //   target = (maxTarget * 1e18) / (diff * 1e18), truncating.
+    // Supports fractional difficulties (< 1.0) that integer-only
+    // decompositions would collapse to zero.
+    const SCALE: u128 = 1_000_000_000_000_000_000;
+    let diff_scaled = (difficulty * SCALE as f64) as u128;
+    if diff_scaled == 0 {
+        return *max_target;
     }
-
-    if diff_int == BigUint::from(0u32) {
+    let target = (&max * BigUint::from(SCALE)) / BigUint::from(diff_scaled);
+    let bytes = target.to_bytes_be();
+    if bytes.len() > 32 {
         return [0xFF; 32];
     }
-
-    let target = &max / diff_int;
-    let bytes = target.to_bytes_be();
     let mut out = [0u8; 32];
-    let start = out.len().saturating_sub(bytes.len());
-    out[start..].copy_from_slice(&bytes);
+    out[32 - bytes.len()..].copy_from_slice(&bytes);
     out
 }
 
@@ -1029,8 +1065,98 @@ mod tests {
 
     #[test]
     fn kheavyhash_matrix_flat_4096() {
-        let flat = kheavyhash_matrix_flat();
+        let flat = kheavyhash_matrix_flat(&[0xABu8; 32]);
         assert_eq!(flat.len(), 4096);
+    }
+
+    /// Official reference vector from `bcutil/kheavyhash` (the package
+    /// maintained alongside the Kaspa reference implementation):
+    ///   input  = pre_pow ‖ ts_le ‖ zeros32 ‖ nonce_le, where
+    ///   pre_pow = 0ad86e9bef09726cdc75913e44ec96521391c7ceb2aae3c633f46a94bf4d2546
+    ///   ts      = 0x19568d36b3e, nonce = 0x575106849306fd39
+    ///   output  = e097f2e49b05978b2b5b387a46798a0c463082b6546f24afcc8aae4fe68b702f
+    #[test]
+    fn kheavyhash_official_vector() {
+        let hex = "0ad86e9bef09726cdc75913e44ec96521391c7ceb2aae3c633f46a94bf4d2546";
+        let mut pre_pow = [0u8; 32];
+        for i in 0..32 {
+            pre_pow[i] = u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16).unwrap();
+        }
+        let hash = hash_kheavyhash(&pre_pow, 0x19568d36b3e, 0x575106849306fd39);
+        let expected_hex = "e097f2e49b05978b2b5b387a46798a0c463082b6546f24afcc8aae4fe68b702f";
+        let mut expected = [0u8; 32];
+        for i in 0..32 {
+            expected[i] = u8::from_str_radix(&expected_hex[i * 2..i * 2 + 2], 16).unwrap();
+        }
+        assert_eq!(hash, expected, "kheavyhash diverges from official vector");
+    }
+
+    /// End-to-end share validation: simulate the kaspa-stratum bridge's
+    /// acceptance path — miner scans with extranonce-in-high-bytes layout,
+    /// pool recomputes the consensus hash and interprets it as a
+    /// little-endian u256 compared against `maxTarget/diff` where
+    /// `maxTarget = 2^224 - 1` (bridge hasher.rs).
+    #[test]
+    fn kheavyhash_share_roundtrip_pool_semantics() {
+        let pre_pow = [0x5Au8; 32];
+        let timestamp: u64 = 1_700_000_000_000;
+        let en1 = [0x04, 0x71u8]; // extranonce1 = "0471" → top 16 bits of u64
+        let max_target = algorithm_max_target("kheavyhash");
+        assert_eq!(&max_target[..4], &[0, 0, 0, 0], "kaspa maxTarget = 2^224-1");
+        // Synthetic easy target (~1/256 accept) — exercises the LE compare
+        // semantics without needing billions of hashes.
+        let mut target = [0xFFu8; 32];
+        target[0] = 0x00;
+
+        // Miner side: replicate find_auxpow_share_from's nonce layout —
+        // en1 already sits in the top bytes after from_be_bytes.
+        let nonce_base = u64::from_be_bytes({
+            let mut b = [0u8; 8];
+            b[..2].copy_from_slice(&en1);
+            b
+        });
+        let mut found = None;
+        for suffix in 0..2_000_000u64 {
+            let nonce = nonce_base | suffix;
+            let hash = hash_kheavyhash(&pre_pow, timestamp, nonce);
+            if meets_target_kaspa(&hash, &target) {
+                found = Some(nonce);
+                break;
+            }
+        }
+        let nonce = found.expect("no share found in 2M nonces at ~1/256 accept");
+        assert_eq!(nonce >> 48, 0x0471, "extranonce1 must occupy top 16 bits");
+
+        // Pool side: bridge recomputes hash from the submitted u64 verbatim,
+        // then compares BigUint::from_le_bytes(hash) <= pool_target.
+        let pool_hash = hash_kheavyhash(&pre_pow, timestamp, nonce);
+        let mut pool_view = pool_hash;
+        pool_view.reverse(); // Uint256::from_le_bytes → BE number
+        assert!(
+            pool_view <= target,
+            "share that passed miner check fails pool-side LE compare"
+        );
+    }
+
+    /// Cross-check the pure-Rust kHeavyHash against the C reference in
+    /// zion-native-ffi (which ports the rusty-kaspa implementation).
+    /// Any divergence means the OpenCL kernel — proven bit-identical to this
+    /// Rust path by auxpow_kat — is producing shares pools will reject.
+    #[test]
+    #[cfg(feature = "native-kheavyhash")]
+    fn kheavyhash_matches_native() {
+        let pre_pow = [0xABu8; 32];
+        for nonce in [0u64, 1, 42, 0x0448_0000_004d_dacc] {
+            for ts in [0u64, 1_234_567_890, 1_791_318_794_296] {
+                let rust = hash_kheavyhash(&pre_pow, ts, nonce);
+                let native = zion_native_ffi::kheavyhash::mine(&pre_pow, ts, nonce);
+                assert_eq!(
+                    rust,
+                    native,
+                    "kheavyhash mismatch vs native impl (nonce={nonce} ts={ts})"
+                );
+            }
+        }
     }
 
     #[test]

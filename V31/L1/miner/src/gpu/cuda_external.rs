@@ -227,6 +227,10 @@ pub struct CudaExternalMiner {
     found_flag: CudaSlice<u32>,
     // Algorithm-specific buffers
     kheavy_matrix: Option<CudaSlice<u16>>,
+    /// Pre-PoW hash the current `kheavy_matrix` was generated from — the
+    /// matrix is seeded by pre_pow (rusty-kaspa `Matrix::generate`), so it
+    /// must be regenerated whenever a new job's pre_pow differs.
+    kheavy_pre_pow: [u8; 32],
     autolykos_table: Option<CudaSlice<u64>>,
     autolykos_table_size: u32,
     // DAG buffer for ethash/kawpow
@@ -336,9 +340,10 @@ impl CudaExternalMiner {
             .htod_copy(vec![SENTINEL_FOUND])
             .map_err(|e| anyhow::anyhow!("found_flag alloc: {e}"))?;
 
-        // Algorithm-specific buffers
+        // Algorithm-specific buffers — kheavyhash matrix is regenerated
+        // per job (seeded by pre_pow_hash); start with a zero seed.
         let kheavy_matrix = if algo == CudaExtAlgo::Kheavyhash {
-            let matrix = generate_kheavy_matrix_cuda();
+            let matrix = generate_kheavy_matrix_cuda(&[0u8; 32]);
             Some(
                 dev.htod_copy(matrix.to_vec())
                     .map_err(|e| anyhow::anyhow!("kheavy_matrix alloc: {e}"))?,
@@ -410,6 +415,7 @@ impl CudaExternalMiner {
             output_mix,
             found_flag,
             kheavy_matrix,
+            kheavy_pre_pow: [0u8; 32],
             autolykos_table,
             autolykos_table_size: 0,
             dag_buf: None,
@@ -852,6 +858,23 @@ impl CudaExternalMiner {
         self.dev
             .htod_copy_into(target.to_vec(), &mut self.target_buf)
             .map_err(|e| anyhow::anyhow!("target upload: {e}"))?;
+
+        // kHeavyHash: the 64×64 matrix is seeded by the block's pre_pow_hash
+        // (rusty-kaspa Matrix::generate) — regenerate + reupload on job change.
+        if self.algo == CudaExtAlgo::Kheavyhash {
+            let mut pp = [0u8; 32];
+            let n = header.len().min(32);
+            pp[..n].copy_from_slice(&header[..n]);
+            if pp != self.kheavy_pre_pow {
+                let matrix = generate_kheavy_matrix_cuda(&pp);
+                self.kheavy_matrix = Some(
+                    self.dev
+                        .htod_copy(matrix.to_vec())
+                        .map_err(|e| anyhow::anyhow!("kheavy_matrix upload: {e}"))?,
+                );
+                self.kheavy_pre_pow = pp;
+            }
+        }
 
         let func = self
             .dev
@@ -1590,37 +1613,32 @@ impl GpuMiner for CudaExternalMiner {
 
 // ── Host-side helper functions ─────────────────────────────────────────────
 
-/// Generate the 64x64 kHeavyHash matrix (4096 u16 values).
-fn generate_kheavy_matrix_cuda() -> [u16; 4096] {
-    use std::sync::OnceLock;
-    static MATRIX: OnceLock<[u16; 4096]> = OnceLock::new();
-    *MATRIX.get_or_init(|| {
-        use sha3::{Digest, Sha3_256};
-        let seed = Sha3_256::digest(b"KHeavyHash");
-        let mut rng = XoShiRo256PlusPlus::new(seed.into());
-        loop {
-            let mut mat = [[0u16; 64]; 64];
-            for row in &mut mat {
-                let mut val = 0u64;
-                for (j, elem) in row.iter_mut().enumerate() {
-                    let shift = j % 16;
-                    if shift == 0 {
-                        val = rng.next();
-                    }
-                    *elem = ((val >> (4 * shift)) & 0x0F) as u16;
+/// Generate the 64x64 kHeavyHash matrix (4096 u16 values) seeded by the
+/// block's `pre_pow_hash` — matches rusty-kaspa `Matrix::generate`.
+fn generate_kheavy_matrix_cuda(pre_pow_hash: &[u8; 32]) -> [u16; 4096] {
+    let mut rng = XoShiRo256PlusPlus::new(*pre_pow_hash);
+    loop {
+        let mut mat = [[0u16; 64]; 64];
+        for row in &mut mat {
+            let mut val = 0u64;
+            for (j, elem) in row.iter_mut().enumerate() {
+                let shift = j % 16;
+                if shift == 0 {
+                    val = rng.next();
                 }
-            }
-            if compute_rank_64(&mat) == 64 {
-                let mut flat = [0u16; 4096];
-                for i in 0..64 {
-                    for j in 0..64 {
-                        flat[i * 64 + j] = mat[i][j];
-                    }
-                }
-                return flat;
+                *elem = ((val >> (4 * shift)) & 0x0F) as u16;
             }
         }
-    })
+        if compute_rank_64(&mat) == 64 {
+            let mut flat = [0u16; 4096];
+            for i in 0..64 {
+                for j in 0..64 {
+                    flat[i * 64 + j] = mat[i][j];
+                }
+            }
+            return flat;
+        }
+    }
 }
 
 fn autolykos_table_size_cuda() -> usize {
@@ -1686,51 +1704,42 @@ impl XoShiRo256PlusPlus {
     }
 }
 
-/// Compute the rank of a 64x64 matrix over GF(2^4) (4-bit entries).
+/// Compute the rank of a 64×64 matrix over the reals via Gaussian
+/// elimination — matches rusty-kaspa `Matrix::compute_rank`.
 fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
-    let mut m = mat.map(|row| row.map(|v| v as u32));
+    const EPS: f64 = 1e-9;
+    let mut m = [[0.0f64; 64]; 64];
+    for i in 0..64 {
+        for j in 0..64 {
+            m[i][j] = mat[i][j] as f64;
+        }
+    }
     let mut rank = 0;
-    let mut col = 0;
-    while col < 64 && rank < 64 {
-        let mut pivot = None;
-        for (r, row) in m.iter().enumerate().skip(rank) {
-            if row[col] != 0 {
-                pivot = Some(r);
+    let mut row_selected = [false; 64];
+    for i in 0..64 {
+        let mut j = 0;
+        while j < 64 {
+            if !row_selected[j] && m[j][i].abs() > EPS {
                 break;
             }
+            j += 1;
         }
-        if let Some(p) = pivot {
-            m.swap(rank, p);
-            let pivot_val = m[rank][col];
-            if pivot_val != 0 {
-                let inv = mod_inv_15(pivot_val);
-                for item in m[rank].iter_mut().skip(col) {
-                    *item = (*item * inv) & 0x0F;
-                }
+        if j != 64 {
+            rank += 1;
+            row_selected[j] = true;
+            for p in (i + 1)..64 {
+                m[j][p] /= m[j][i];
             }
-            let rank_row = m[rank];
-            for (r, row) in m.iter_mut().enumerate() {
-                if r != rank && row[col] != 0 {
-                    let factor = row[col];
-                    for (dest, src) in row.iter_mut().skip(col).zip(rank_row.iter().skip(col)) {
-                        *dest = ((*dest + 16) - ((src * factor) & 0x0F)) & 0x0F;
+            for k in 0..64 {
+                if k != j && m[k][i].abs() > EPS {
+                    for p in (i + 1)..64 {
+                        m[k][p] -= m[j][p] * m[k][i];
                     }
                 }
             }
-            rank += 1;
         }
-        col += 1;
     }
     rank
-}
-
-fn mod_inv_15(a: u32) -> u32 {
-    for x in 1..16u32 {
-        if (a * x) & 0x0F == 1 {
-            return x;
-        }
-    }
-    1
 }
 
 // ── Ethash/Kawpow DAG generation (CPU-side) ────────────────────────────────

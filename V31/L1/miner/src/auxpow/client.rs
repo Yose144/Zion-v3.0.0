@@ -1565,15 +1565,17 @@ fn cryptonote_result_hex(hex: &str) -> String {
 }
 
 fn is_authorize_ok(value: &Value) -> bool {
+    if let Some(err) = value.get("error") {
+        if !err.is_null() {
+            return false;
+        }
+    }
     if let Some(result) = value.get("result") {
         if result.is_boolean() {
             return result.as_bool().unwrap_or(false);
         }
-        if result.is_null() {
-            return true;
-        }
     }
-    value.get("error").is_none()
+    true
 }
 
 /// Parse a standard JSON-RPC `mining.submit` or `eth_submitWork` response and
@@ -1695,7 +1697,7 @@ pub struct StratumClient {
     pub password: String,
     /// External coin this client is mining (used for EthStratum polling).
     pub coin: zion_cosmic_harmony::ExternalCoin,
-    job_rx: tokio::sync::mpsc::Receiver<StratumJob>,
+    job_rx: tokio::sync::watch::Receiver<Option<StratumJob>>,
     submit_tx: tokio::sync::mpsc::Sender<ShareSubmit>,
     next_id: Arc<Mutex<i64>>,
 }
@@ -1716,7 +1718,13 @@ impl StratumClient {
         password: impl Into<String>,
         coin: zion_cosmic_harmony::ExternalCoin,
     ) -> Self {
-        let (job_tx, job_rx) = tokio::sync::mpsc::channel(8);
+        // Latest-job mailbox (watch channel): the pool pushes notify jobs
+        // faster than the miner can consume them, and only the freshest
+        // template is worth mining. `send` overwrites — it can never block the
+        // stratum session loop. (Previously a bounded mpsc queue filled up and
+        // `send().await` froze the select loop, starving submit_rx; submits
+        // then died with "response timeout" without ever being transmitted.)
+        let (job_tx, job_rx) = tokio::sync::watch::channel(None);
         let (submit_tx, submit_rx) = tokio::sync::mpsc::channel(256);
         let url = url.into();
         let worker = worker.into();
@@ -1763,12 +1771,19 @@ impl StratumClient {
         coin: zion_cosmic_harmony::ExternalCoin,
         timeout_dur: Duration,
     ) -> Result<StratumJob> {
-        match tokio::time::timeout(timeout_dur, self.job_rx.recv()).await {
-            Ok(Some(mut j)) => {
-                j.coin = coin;
-                Ok(j)
+        let wait = async {
+            loop {
+                if self.job_rx.changed().await.is_err() {
+                    bail!("stratum job channel closed");
+                }
+                if let Some(mut j) = self.job_rx.borrow_and_update().clone() {
+                    j.coin = coin;
+                    return Ok(j);
+                }
             }
-            Ok(None) => bail!("stratum job channel closed"),
+        };
+        match tokio::time::timeout(timeout_dur, wait).await {
+            Ok(r) => r,
             Err(_) => bail!("stratum job receive timed out"),
         }
     }
@@ -1868,7 +1883,7 @@ async fn run_stratum_loop(
     worker: String,
     password: String,
     coin: zion_cosmic_harmony::ExternalCoin,
-    job_tx: tokio::sync::mpsc::Sender<StratumJob>,
+    job_tx: tokio::sync::watch::Sender<Option<StratumJob>>,
     mut submit_rx: tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: StratumState,
     pending: Arc<Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>>,
@@ -1909,7 +1924,7 @@ async fn stratum_session(
     worker: &str,
     password: &str,
     coin: zion_cosmic_harmony::ExternalCoin,
-    job_tx: &tokio::sync::mpsc::Sender<StratumJob>,
+    job_tx: &tokio::sync::watch::Sender<Option<StratumJob>>,
     submit_rx: &mut tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: &StratumState,
     pending: &Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>,
@@ -1967,6 +1982,9 @@ async fn stratum_session(
                     if line.trim().is_empty() {
                         continue;
                     }
+                    if stratum_trace_enabled() {
+                        ext_info!(dir = "rx", raw = %line, "stratum");
+                    }
                     if let Err(e) = handle_line(&line, job_tx, state, pending).await {
                         ext_warn!(line = %line, error = %e, "stratum line parse failed");
                     }
@@ -1981,13 +1999,14 @@ async fn stratum_session(
                 Some(req) => {
                     pending_submits.push_back(req);
                     while let Some(req) = pending_submits.pop_front() {
-                        match send_submit(&mut writer, worker, req.id, &req.share, state).await {
-                            Ok(()) => {
-                                pending.lock().await.insert(req.id, req.response);
-                            }
-                            Err(e) => {
-                                ext_warn!(error = %e, "failed to send share");
-                                let _ = req.response.send(ShareResult::Rejected("failed to send share".to_string()));
+                        // Register the pending response BEFORE sending: the
+                        // pool may answer within the same epoll tick, and an
+                        // unregistered response id would be dropped.
+                        pending.lock().await.insert(req.id, req.response);
+                        if let Err(e) = send_submit(&mut writer, worker, req.id, &req.share, state).await {
+                            ext_warn!(error = %e, "failed to send share");
+                            if let Some(resp) = pending.lock().await.remove(&req.id) {
+                                let _ = resp.send(ShareResult::Rejected("failed to send share".to_string()));
                             }
                         }
                     }
@@ -2000,15 +2019,27 @@ async fn stratum_session(
 
 async fn send_line(writer: &mut tokio::net::tcp::WriteHalf<'_>, value: &Value) -> Result<()> {
     let mut text = serde_json::to_string(value)?;
+    if stratum_trace_enabled() {
+        ext_info!(dir = "tx", raw = %text, "stratum");
+    }
     text.push('\n');
     writer.write_all(text.as_bytes()).await?;
     writer.flush().await?;
     Ok(())
 }
 
+fn stratum_trace_enabled() -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ON.get_or_init(|| {
+        std::env::var("ZION_STRATUM_TRACE")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false)
+    })
+}
+
 async fn handle_line(
     line: &str,
-    job_tx: &tokio::sync::mpsc::Sender<StratumJob>,
+    job_tx: &tokio::sync::watch::Sender<Option<StratumJob>>,
     state: &StratumState,
     pending: &Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>,
 ) -> Result<()> {
@@ -2018,7 +2049,7 @@ async fn handle_line(
             1 => {
                 if state.qpow {
                     if let Some(job) = parse_qpow_login_response(&value, state).await {
-                        let _ = job_tx.send(job).await;
+                        push_job_latest(job_tx, job);
                     }
                 } else {
                     parse_subscribe_response(&value, state).await?;
@@ -2034,7 +2065,7 @@ async fn handle_line(
             }
             ETH_GETWORK_ID => {
                 if let Some(job) = parse_eth_getwork(&value) {
-                    let _ = job_tx.send(job).await;
+                    push_job_latest(job_tx, job);
                 }
                 return Ok(());
             }
@@ -2056,7 +2087,7 @@ async fn handle_line(
                 .cloned()
                 .unwrap_or_default();
             if let Some(job) = parse_notify(&params, state).await {
-                let _ = job_tx.send(job).await;
+                push_job_latest(job_tx, job);
             }
         }
         "mining.set_difficulty" => {
@@ -2098,16 +2129,26 @@ async fn handle_line(
                     .or_else(|| value.get("params").filter(|v| v.is_object()));
                 if let Some(jv) = job_val {
                     if let Some(job) = parse_qpow_stratum_job_sync(jv, state) {
-                        let _ = job_tx.send(job).await;
+                        push_job_latest(job_tx, job);
                     }
                 }
             } else if let Some(job) = parse_eth_getwork(&value) {
-                let _ = job_tx.send(job).await;
+                push_job_latest(job_tx, job);
             }
         }
         _ => {}
     }
     Ok(())
+}
+
+/// Deliver the freshest job to the runtime. `watch::Sender::send` overwrites
+/// the slot and never blocks, so the stratum session loop can never be frozen
+/// by job backpressure; only the newest template is kept anyway.
+fn push_job_latest(
+    job_tx: &tokio::sync::watch::Sender<Option<StratumJob>>,
+    job: StratumJob,
+) {
+    let _ = job_tx.send(Some(job));
 }
 
 /// Parse the Quantus `login` response (id=1): stores the session id and

@@ -244,9 +244,10 @@ static uint64_t xoshiro_next(xoshiro256pp* r) {
 }
 
 /* ---------------------------------------------------------------------------
- * The fixed 64x64 matrix of 4-bit values used by kHeavyHash.
- * Generated from SHA3-256("KHeavyHash") via XoShiRo256++, retrying until the
- * matrix has full rank (64) over the reals (Gaussian elimination).
+ * The 64x64 matrix of 4-bit values used by kHeavyHash.
+ * Generated per-block from the pre_pow_hash via XoShiRo256++, retrying until
+ * the matrix has full rank (64) over the reals (Gaussian elimination).
+ * Matches rusty-kaspa `Matrix::generate(pre_pow_hash)`.
  * ------------------------------------------------------------------------- */
 static uint16_t g_matrix[KHEAVY_MATRIX_SIZE][KHEAVY_MATRIX_SIZE];
 static int g_matrix_initialized = 0;
@@ -309,11 +310,19 @@ static int compute_rank(uint16_t mat[KHEAVY_MATRIX_SIZE][KHEAVY_MATRIX_SIZE]) {
     return rank;
 }
 
-static void init_matrix(void) {
-    if (g_matrix_initialized) return;
+/* Generate the 64x64 matrix seeded by `seed` (the block's pre_pow_hash),
+ * matching rusty-kaspa's `Matrix::generate(pre_pow_hash)`. Caches the last
+ * seed so the mining loop regenerates only once per job. Not thread-safe for
+ * concurrent calls with different seeds — callers are single-threaded per
+ * job or accept regeneration. */
+static uint8_t g_matrix_seed[KHEAVY_HASH_SIZE];
+static int g_matrix_has_seed = 0;
 
-    uint8_t seed[KHEAVY_HASH_SIZE];
-    sha3_256((const uint8_t*)"KHeavyHash", 10, seed);
+static void ensure_matrix(const uint8_t seed[KHEAVY_HASH_SIZE]) {
+    if (g_matrix_initialized && g_matrix_has_seed &&
+        memcmp(g_matrix_seed, seed, KHEAVY_HASH_SIZE) == 0) {
+        return;
+    }
 
     xoshiro256pp rng;
     xoshiro_init(&rng, seed);
@@ -327,7 +336,19 @@ static void init_matrix(void) {
         }
     }
 
+    memcpy(g_matrix_seed, seed, KHEAVY_HASH_SIZE);
+    g_matrix_seed[0] = seed[0];
+    g_matrix_has_seed = 1;
     g_matrix_initialized = 1;
+}
+
+static void init_matrix(void) {
+    /* Legacy entry point for kheavyhash_hash(): derive the seed from a
+     * fixed domain string so callers that pass arbitrary input still get a
+     * deterministic matrix. */
+    uint8_t seed[KHEAVY_HASH_SIZE];
+    sha3_256((const uint8_t*)"KHeavyHash", 10, seed);
+    ensure_matrix(seed);
 }
 
 /* ---------------------------------------------------------------------------
@@ -399,7 +420,13 @@ EXPORT void kheavyhash_mine(
     uint64_t nonce,
     uint8_t* output
 ) {
-    init_matrix();
+    /* Matrix is seeded by the block's pre_pow_hash (rusty-kaspa
+     * Matrix::generate) — regenerate only when it changes. */
+    uint8_t seed[KHEAVY_HASH_SIZE];
+    memset(seed, 0, sizeof(seed));
+    size_t seed_len = pre_pow_hash_len < KHEAVY_HASH_SIZE ? pre_pow_hash_len : KHEAVY_HASH_SIZE;
+    memcpy(seed, pre_pow_hash, seed_len);
+    ensure_matrix(seed);
 
     /* Build the PowHash input:
      *   pre_pow_hash || timestamp_le || 32 zero bytes || nonce_le */
@@ -431,7 +458,9 @@ EXPORT void kheavyhash_mine(
               output, KHEAVY_HASH_SIZE);
 }
 
-/* Verify a solution against a 32-byte target (big-endian comparison). */
+/* Verify a solution against a 32-byte target.  Kaspa consensus interprets
+ * the PoW hash as a little-endian Uint256 while the stratum target is a
+ * big-endian integer — compare with the hash byte-reversed. */
 EXPORT int kheavyhash_verify(
     const uint8_t* pre_pow_hash,
     size_t pre_pow_hash_len,
@@ -442,10 +471,11 @@ EXPORT int kheavyhash_verify(
     uint8_t hash[KHEAVY_HASH_SIZE];
     kheavyhash_mine(pre_pow_hash, pre_pow_hash_len, timestamp, nonce, hash);
 
-    /* Compare hash <= target (big-endian, index 0 is most significant) */
+    /* Compare reverse(hash) <= target (little-endian u256 semantics) */
     for (int i = 0; i < KHEAVY_HASH_SIZE; i++) {
-        if (hash[i] < target[i]) return 1;
-        if (hash[i] > target[i]) return 0;
+        uint8_t hb = hash[KHEAVY_HASH_SIZE - 1 - i];
+        if (hb < target[i]) return 1;
+        if (hb > target[i]) return 0;
     }
     return 1; /* equal -> meets target */
 }
