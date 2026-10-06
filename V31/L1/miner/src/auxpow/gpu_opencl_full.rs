@@ -511,14 +511,12 @@ fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
     rank
 }
 
-/// Generate the 64×64 kHeavyHash matrix as a flat array of 4096 u16 values.
-pub fn generate_kheavy_matrix() -> [u16; 4096] {
-    use std::sync::OnceLock;
-    static MATRIX: OnceLock<[u16; 4096]> = OnceLock::new();
-    *MATRIX.get_or_init(|| {
-        use sha3::{Digest, Sha3_256};
-        let seed = Sha3_256::digest(b"KHeavyHash");
-        let mut rng = XoShiRo256PlusPlus::new(seed.into());
+/// Generate the 64×64 kHeavyHash matrix as a flat array of 4096 u16 values,
+/// seeded by the block's `pre_pow_hash` — matching rusty-kaspa's
+/// `Matrix::generate(pre_pow_hash)` (XoShiRo256++, retry until rank 64).
+pub fn generate_kheavy_matrix(pre_pow_hash: &[u8; 32]) -> [u16; 4096] {
+    {
+        let mut rng = XoShiRo256PlusPlus::new(*pre_pow_hash);
 
         loop {
             let mut mat = [[0u16; 64]; 64];
@@ -542,7 +540,7 @@ pub fn generate_kheavy_matrix() -> [u16; 4096] {
                 return flat;
             }
         }
-    })
+    }
 }
 
 /// Default Autolykos v2 table size (number of u64 entries).
@@ -2530,15 +2528,23 @@ typedef unsigned long ulong;
 
     /// Get the path to the OpenCL kernel source files.
     fn kernel_dir() -> Result<PathBuf> {
-        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+        // Runtime env override first, then the compile-time manifest dir
+        // (works when the binary runs on a host where the source tree is
+        // present — e.g. dev boxes and the SMOS rig's /src bind-mount).
+        let runtime = std::env::var("CARGO_MANIFEST_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("."));
-        let dir = manifest_dir.join("csrc").join("opencl");
-        if dir.exists() {
-            Ok(dir)
-        } else {
-            Err(anyhow!("OpenCL kernel directory not found: {:?}", dir))
+        for dir in [
+            runtime.join("csrc").join("opencl"),
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("csrc")
+                .join("opencl"),
+        ] {
+            if dir.exists() {
+                return Ok(dir);
+            }
         }
+        Err(anyhow!("OpenCL kernel directory not found"))
     }
 
     /// List available OpenCL kernel source files.
@@ -3964,17 +3970,26 @@ typedef unsigned long ulong;
             .fill_val(0u8)
             .build()?;
 
-        // Create kernels
+        // Create kernels — ocl requires all args declared at build time
+        // (KernelBuilder::build() fails with "wrong number of kernel
+        // arguments" otherwise); set_arg() is only used to re-bind buffers
+        // between dispatches below.
         let k_init_ht = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_init_ht")
+            .arg(&ht0)
+            .arg(&rc0)
             .build()?;
 
         let k_round0 = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_round0")
+            .arg(&blake_st_buf)
+            .arg(&ht0)
+            .arg(&rc0)
+            .arg(&dbg_buf)
             .build()?;
 
         // For K=4: rounds 1-2 are collision-finding (no sols arg),
@@ -3987,6 +4002,11 @@ typedef unsigned long ulong;
                     .queue(q.clone())
                     .program(pro_que.program())
                     .name(&name)
+                    .arg(&ht0)
+                    .arg(&ht1)
+                    .arg(&rc0)
+                    .arg(&rc1)
+                    .arg(&dbg_buf)
                     .build()?,
             );
         }
@@ -3996,12 +4016,23 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_round3")
+            .arg(&ht0)
+            .arg(&ht1)
+            .arg(&rc0)
+            .arg(&rc1)
+            .arg(&dbg_buf)
+            .arg(&sols_buf)
             .build()?;
 
         let k_sols = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_sols")
+            .arg(&ht0)
+            .arg(&ht1)
+            .arg(&sols_buf)
+            .arg(&rc0)
+            .arg(&rc1)
             .build()?;
 
         // Work sizes
@@ -5099,7 +5130,12 @@ typedef unsigned long ulong;
         let copy_len = header.len().min(32);
         pre_pow_hash[..copy_len].copy_from_slice(&header[..copy_len]);
 
-        let timestamp: u64 = if extra.len() >= 8 {
+        // KaspaStratum jobs pack the ms timestamp into header[32..40]; the
+        // `extra` channel is only used by the KAT harness. Prefer the header
+        // so live jobs carry their real timestamp.
+        let timestamp: u64 = if header.len() >= 40 {
+            u64::from_le_bytes(header[32..40].try_into().unwrap())
+        } else if extra.len() >= 8 {
             u64::from_le_bytes(extra[..8].try_into().unwrap())
         } else {
             0
@@ -5117,9 +5153,9 @@ typedef unsigned long ulong;
             .build()?;
 
         // Generate the 64×64 kHeavyHash matrix (4096 u16 values) on the host.
-        // This matches rusty-kaspa's Matrix::generate: seed = SHA3-256("KHeavyHash"),
-        // XoShiRo256++ PRNG, retry until full rank (64).
-        let matrix = generate_kheavy_matrix();
+        // Matches rusty-kaspa's Matrix::generate: seeded by the block's
+        // pre_pow_hash via XoShiRo256++, retry until full rank (64).
+        let matrix = generate_kheavy_matrix(&pre_pow_hash);
         let matrix_buf: Buffer<u16> = Buffer::builder()
             .queue(q.clone())
             .len(4096)
@@ -5188,7 +5224,7 @@ typedef unsigned long ulong;
         let daa_score: u64 = if extra.len() >= 16 {
             u64::from_le_bytes(extra[8..16].try_into().unwrap())
         } else {
-            0 // KERYX_SALT_V4_ACTIVATION_DAA not available in V31
+            crate::auxpow::hasher::KERYX_SALT_V4_ACTIVATION_DAA
         };
 
         let pre_pow_buf: Buffer<u8> = Buffer::builder()
@@ -5205,7 +5241,8 @@ typedef unsigned long ulong;
         // Generate the per-block Keryx 64×64 matrix (4096 u16 values) on the host.
         // This matches keryx-miner's Matrix::generate: seed = pre_pow_hash XOR
         // KERYX_MATRIX_SALT_<v>, XoShiRo256++ PRNG, retry until full rank (64).
-        let matrix_2d = [[0u16; 64]; 64]; // generate_keryx_matrix not available in V31
+        let matrix_2d =
+            crate::auxpow::hasher::generate_keryx_matrix(&pre_pow_hash, daa_score);
         let mut matrix = [0u16; 4096];
         for i in 0..64 {
             for j in 0..64 {

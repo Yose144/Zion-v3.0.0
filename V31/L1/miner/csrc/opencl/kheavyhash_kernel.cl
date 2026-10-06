@@ -2,8 +2,9 @@
 //
 // Full implementation of the Kaspa consensus kHeavyHash algorithm:
 //   1. PowHash   = cSHAKE256("ProofOfWorkHash")(pre_pow_hash ‖ timestamp_le ‖ 32 zero bytes ‖ nonce_le)
-//   2. Matrix    = expand PowHash to 64 nibbles, multiply by fixed 64×64 matrix
-//                  (4-bit entries, generated from SHA3-256("KHeavyHash") via XoShiRo256++),
+//   2. Matrix    = expand PowHash to 64 nibbles, multiply by the per-block
+//                  64×64 matrix (4-bit entries, generated from pre_pow_hash
+//                  via XoShiRo256++, matching rusty-kaspa Matrix::generate),
 //                  reduce each sum to bits 10–13, recombine to 32 bytes, XOR with PowHash
 //   3. HeavyHash = cSHAKE256("HeavyHash")(matrix_output)
 //
@@ -204,7 +205,7 @@ __constant const uint CUSTOM_HEAVY_HASH_LEN = 9;
 //   target        — 32-byte target (big-endian byte comparison)
 //   base_nonce    — first nonce in this batch
 //   matrix        — 64×64 u16 matrix (4096 values = 8192 bytes), generated
-//                   on the host from SHA3-256("KHeavyHash") via XoShiRo256++
+//                   on the host from the block's pre_pow_hash via XoShiRo256++
 //   output_nonce  — single u64, written when a solution is found
 //   output_hash   — 32-byte hash of the winning nonce
 //   found         — atomic flag: 0 = not found, 1 = found
@@ -301,11 +302,16 @@ void kheavyhash_mine(
         uchar hash[32];
         cshake256_custom(product, 32, CUSTOM_HEAVY_HASH, CUSTOM_HEAVY_HASH_LEN, hash);
 
-        // ── Step 4: Check target (big-endian byte comparison: hash <= target)
+        // ── Step 4: Check target. Kaspa interprets the PoW hash as a
+        // little-endian u256 (pool-side Uint256::from_le_bytes) compared
+        // against the big-endian share target — i.e. hash[31] is the most
+        // significant byte. Compare reversed-hash against BE target.
         int meets = 1;
         for (int i = 0; i < 32; i++) {
-            if (hash[i] < tgt[i]) { meets = 1; break; }
-            if (hash[i] > tgt[i]) { meets = 0; break; }
+            uchar hb = hash[31 - i];
+            uchar tb = tgt[i];
+            if (hb < tb) { meets = 1; break; }
+            if (hb > tb) { meets = 0; break; }
         }
 
         if (meets) {

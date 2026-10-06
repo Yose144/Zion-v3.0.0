@@ -1052,6 +1052,11 @@ typedef struct {
     ulong limbs[4];
 } Scalar;
 
+// Forward declarations (used before their definitions below).
+inline void scalar_negate_impl(const Scalar* a, Scalar* r);
+inline void scalar_mul_mod_n_impl(const Scalar* a, const Scalar* b, Scalar* r);
+inline void ct_schnorr_pubkey_impl(const Scalar* priv, FieldElement* pub_x);
+
 // =============================================================================
 // Point Utilities
 // =============================================================================
@@ -5958,7 +5963,7 @@ inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
     // P2-CT-005: reject zero nonce — k'=0 produces point at infinity and a
     // degenerate (all-zeros) signature that would otherwise be returned as success.
     // Matches CPU schnorr_sign k_prime.is_zero_ct() guard.
-    if (scalar_is_zero_impl(&k_prime)) return 0;
+    if (scalar_is_zero(&k_prime)) return 0;
 
     // CT: R = k'*G
     CTJacobianPoint R;
@@ -5996,7 +6001,7 @@ inline int ct_schnorr_sign_impl(const Scalar* priv, const uchar msg[32],
     ct_scalar_add_impl(&k, &ed, &s);
 
     // Rule 14: reject degenerate output — s==0 or R.x all-zeros
-    if (scalar_is_zero_impl(&s)) return 0;
+    if (scalar_is_zero(&s)) return 0;
     {
         uint _r_or = 0u;
         for (int _i = 0; _i < 32; ++_i) _r_or |= (uint)rx_bytes[_i];
@@ -6023,7 +6028,7 @@ inline int ct_schnorr_sign_verified_impl(const Scalar* priv, const uchar msg[32]
     {
         Scalar s_check;
         scalar_from_bytes_impl(sig_out + 32, &s_check);
-        if (scalar_is_zero_impl(&s_check)) return 0;
+        if (scalar_is_zero(&s_check)) return 0;
         uint r_or = 0;
         for (int _i = 0; _i < 32; ++_i) r_or |= (uint)sig_out[_i];
         if (r_or == 0u) return 0;
@@ -6089,7 +6094,7 @@ __kernel void nexapow_mine(
     // Input: 32 bytes candidateHash + 8 bytes nonce = 40 bytes
     SHA256Ctx ctx1;
     sha256_init(&ctx1);
-    sha256_update(&ctx1, header, 32);
+    sha256_update_global(&ctx1, header, 32);
 
     // Serialize nonce as little-endian 8 bytes (Nexa uses LE)
     uchar nonce_bytes[8];
