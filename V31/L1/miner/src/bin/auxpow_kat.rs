@@ -84,12 +84,24 @@ fn real_main() {
             },
         },
         Case {
-            // CPU ref is a blake2b stub — the GPU kernel implements real
-            // Autolykos v2 (precomputed table). Report RUN only.
+            // CPU ref: real Autolykos v2 via native-ffi when available
+            // (generates the table internally — slow for high heights,
+            // fine for height=1 KAT).
             algo: "autolykos",
             header: vec![0x44u8; 39],
             extra: 1u32.to_le_bytes().to_vec(),
-            cpu: |_h, _e, _n| anyhow::bail!("no real CPU ref (stub)"),
+            cpu: |h, e, n| {
+                #[cfg(feature = "native-autolykos")]
+                {
+                    let height = u32::from_le_bytes(e[..4].try_into().unwrap());
+                    Ok(zion_native_ffi::autolykos::hash(h, n, height))
+                }
+                #[cfg(not(feature = "native-autolykos"))]
+                {
+                    let _ = (h, e, n);
+                    anyhow::bail!("no real CPU ref (native-autolykos off)")
+                }
+            },
         },
         Case {
             algo: "verushash",
@@ -187,6 +199,18 @@ fn real_main() {
             extra: vec![],
             cpu: |_h, _e, _n| anyhow::bail!("no CPU ref; Wagner multi-kernel"),
         },
+        Case {
+            algo: "equihash",
+            header: vec![0xDDu8; 140],
+            extra: vec![],
+            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref; Equihash 200,9 Wagner"),
+        },
+        Case {
+            algo: "fishhash",
+            header: vec![0xEEu8; 32],
+            extra: vec![],
+            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref; needs fishhash DAG"),
+        },
     ];
 
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -253,11 +277,16 @@ fn real_main() {
                     fail += 1;
                 }
                 Err(e) => {
+                    let mix_tag = share
+                        .mix_hash
+                        .map(|m| format!(" mix={}", hex::encode(&m[..8])))
+                        .unwrap_or_default();
                     println!(
-                        "{:<14} RUN   nonce={} gpu={} (unverifiable: {e})",
+                        "{:<14} RUN   nonce={} gpu={}{} (unverifiable: {e})",
                         c.algo,
                         share.nonce,
-                        hex::encode(&share.hash[..8])
+                        hex::encode(&share.hash[..8]),
+                        mix_tag
                     );
                     skip += 1;
                 }

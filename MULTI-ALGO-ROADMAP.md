@@ -100,24 +100,52 @@ Fix smyčka: kernel launch fail → log OpenCL compile error → fix `csrc/openc
 
 ### Kernel E2E matrix — výsledky (2026-10-06, GTX 1070 Ti OpenCL)
 
-| Algo | Kernel | GPU≡CPU (KAT) | Live/E2E | Poznámka |
-|---|---|---|---|---|
-| kheavyhash (KAS) | ✅ | ✅ PASS bit-exact | ✅ **E2E accepted** | 100/100 shares proti bcutil/kheavyhash referenci; ~249 MH/s; consensus-exact (official vector e097f2e4…) |
-| keryxhash (KRX) | ✅ | ✅ PASS | pending live | per-block matrix z pre_pow opravena |
-| blake3 (DCR) | ✅ | ✅ PASS | pending live | 180B header, nonce@140 |
-| blake3 (ALPH) | ✅ | ✅ PASS | pending live | en1-high nonce |
-| pearlhash (PHX) | ✅ | ✅ PASS | pending live | `__constant` addr-space fix |
-| autolykos (ERG) | ✅ | ⚠️ RUN, CPU ref stub | pending | GPU běží, brání stub hasher |
-| ethash (ETC/ETHW) | ✅ | ⚠️ RUN | pending | DAG gen runtime nutný |
-| progpow (ZANO) | ✅ | ⚠️ RUN | ✅ ZANO live již dřív | |
-| kawpow (RVN) | ✅ | ❌ DAG gen chybí | blocked | "KawPow DAG generation not available in V31" |
-| verushash (VRSC) | — | n/a | ✅ CPU path live | GPU kernel neexistuje (1487B header) |
-| zelhash (FLUX) | ✅ compile | ❌ CL_MEM_OBJECT_ALLOCATION | blocked | kernel_init_ht alloc > VRAM |
-| nexapow (NEXA) | ✅ | ⏳ pomalé (big-int) | pending | |
-| qhash (QTC) | ⚠️ | kernel_dir fix | pending | int16_t→short fix |
-| dynexsolve (DNX) | ⚠️ | kernel_dir fix | pending | |
-| fishhash (IRON) | ❌ | no DAG gen | blocked | FishHash DAG absent |
-| karlsenhash (KLS) | ❌ | no DAG gen | blocked | |
+Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, CPU ref chybí;
+**Stratum** = `stratum_probe` connect+authorize+job (fake wallet → authorize fail je OK signál).
+
+| Algo (coin) | Kernel | KAT | Stratum probe | Live E2E | Poznámka |
+|---|---|---|---|---|---|
+| kheavyhash (KAS) | ✅ | ✅ PASS | ✅ OK (real wallet) | ✅ **100/100 fake-pool accepted**, live connected | consensus-exact, ~249 MH/s GPU |
+| keryxhash (KRX) | ✅ | ✅ PASS | ✅ OK (zpool, fake wallet OK) | pending live | per-block matrix fix |
+| blake3_dcr (DCR) | ✅ | ✅ PASS | ⏱️ woolypooly timeout | pending | 180B header, nonce@140 |
+| blake3_alph (ALPH) | ✅ | ✅ PASS | ⏱️ woolypooly timeout | pending | en1-high nonce |
+| pearlhash (PRL) | ✅ | ✅ PASS | ⏱️ alphapool timeout | pending | user fix BLAKE3 state layout `[12]=cnt_lo,[13]=cnt_hi,[14]=len,[15]=flags` |
+| autolykos (ERG) | ✅ běží | ❌ **non-consensus** | ❌ authorize (wallet) | blocked | GPU kernel = zjednodušená u64-table varianta ≠ Autolykos v2 (31B bigints, N=2²⁶, sum-mod); native CPU ref existuje → kernel rewrite needed |
+| ethash (ETC) | ✅ | ⚠️ RUN (mix≠0 ✓) | ❌ authorize (wallet) | pending | DAG gen OK; hash=0 by-design (mix_hash je artefakt) |
+| kawpow (RVN) | ✅ | ⚠️ RUN (mix≠0 ✓) | ❌ authorize (wallet) | pending | **DAG gen implementován** (sdílí ethash light-cache; epoch 7500) |
+| progpow (EPIC/ZANO) | ✅ | ⚠️ RUN | ZANO ✅ live dřív | ✅ ZANO | DAG OOM při sweep (DAG buffery se kumulují — samostatný run OK) |
+| zelhash (FLUX) | ✅ compile | ❌ VRAM | ❌ TCP connect (woolypooly mrtvý) | blocked | potřebuje ~6.5GB volné VRAM; na busy kartě OOM |
+| verushash (VRSC) | — | n/a (no kernel) | ✅ OK (luckpool, zcashstratum) | ✅ **CPU path live** | 1487B header; GPU kernel absent |
+| equihashzero (ZCL) | ⚠️ init only | — | ✅ OK (zpool) | blocked | Wagner orchestrace chybí |
+| equihash 200,9 (ZEC) | ⚠️ init only | — | ❌ TCP connect (port mrtvý) | blocked | Wagner orchestrace chybí |
+| qhash (QTC) | ⚠️ compile fix | ⏳ | ✅ OK (suprnova) | pending | int16_t→short |
+| ghostrider (RTM) | ✅ | ⏳ | ✅ OK (zpool) | pending | 2MB scratchpad/WI |
+| neoscrypt (PHX) | ✅ | ⏳ | ✅ OK (zpool) | pending | |
+| eaglesong (CKB) | ✅ | ⏳ | ❌ authorize (wallet) | pending | |
+| dynexsolve (DNX) | ⚠️ compile fix | ⏳ | ❌ authorize (wallet) | pending | kernel_dir fix |
+| nexapow (NEXA) | ✅ compile | ⏳ pomalé | ❌ authorize (wallet) | pending | secp256k1 big-int na GPU |
+| octopus (CFX) | ✅ | ⏳ | ❌ TCP connect (port) | pending | |
+| verthash (VTC) | ✅ compile | ⏳ | ✅ OK (zpool) | blocked | 1.2GB datafile loading chybí na hostu |
+| fishhash (IRON) | ✅ kernel | — | ❌ authorize (wallet) | blocked | FishHash DAG gen absent |
+| karlsenhash (KLS) | ✅ kernel | — | ❌ authorize (wallet) | blocked | DAG gen absent |
+| beamhash (BEAM) | ✅ solver | ⏳ | ⏱️ beam.2miners timeout | pending | **pre_pow=b2b512(header‖nonce) fix** (bylo [0;4]) |
+| randomx (XMR) | CPU only | n/a | ⚠️ authorized, no job | — | cryptonote login OK; stub GPU |
+| quai (QUAI) | kawpow path | — | ❌ TCP connect | blocked | port mrtvý |
+| evrprogpow (EVR) | kawpow fallback | — | ⚠️ authorized, no job | pending | per-coin progpow params chybí |
+| meowpow (MEWC) | kawpow fallback | — | ⚠️ authorized, no job | pending | dto. |
+| sha256d (BTC) | — | — | SKIP | — | merge-mining, žádný pool |
+| quantus (QTU) | qpow native | ✅ live | ⚠️ login: potřeba 36B wallet | ✅ produkce | QuantusStratum custom |
+| epic (EPIC) | progpow | — | ⚠️ authorized, no job | pending | EpicStratum job parse? |
+| monero (XMR) | CPU randomx | — | ⚠️ authorized, no job | — | cryptonote OK |
+
+### Stratum probe — mapa connectivity (2026-10-06, fake wallet `zion1probe`)
+
+- **OK s fake wallet (pool nevaliduje adresu):** VTC, VRSC, ZCL, QTC, RTM, PHX, KRX
+- **Authorize fail (pool validuje formát adresy):** KAS, RVN, ETC, ERG, KLS, IRON, NEXA, DNX, CKB — pro share-level E2E potřeba validní adresa
+- **TCP connect fail (mrtvý endpoint):** CLORE, FLUX, NEOX, QUAI, CFX, ZEC:7070 — default_pool() potřebuje update
+- **Timeout:** ALPH, DCR, PRL, BEAM (woolypooly/beam.2miners nedostupné odsud)
+- **Authorized, žádný job:** XMR, EPIC, MEWC, EVR — možný job-parse gap
+- **QTU:** Quantus login vyžaduje dekódovatelnou 36B adresu
 
 ### kHeavyHash — opravené defekty (commit 749d112b1)
 
