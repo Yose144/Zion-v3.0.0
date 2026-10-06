@@ -98,14 +98,16 @@ export ZION_STREAM3_ENABLED=1
 
 # GPU AuxPoW tuning — QTU QPoW (Poseidon2-Goldilocks) on the reserved Vega.
 # ZION_STREAM2_BATCH doubles as the QPoW launch size (nonces per kernel
-# dispatch). 4M ≈ ~1 s/launch on Vega-class GPUs; keep low enough that a
-# new job doesn't wait long on the in-flight batch.
-export ZION_STREAM2_BATCH=4194304
+# dispatch). 8M measured ~10% faster than 4M on the Vega+5600XT hybrid
+# (fewer host prestate/launch round-trips); still short enough that an
+# in-flight batch doesn't hold up a fresh job for long.
+export ZION_STREAM2_BATCH="${ZION_STREAM2_BATCH:-8388608}"
 export ZION_STREAM2_FORCE_COIN=QTU
-# QPoW OpenCL work partitioning (gfx900 wave64): one wavefront per group,
-# 1 nonce per work-item — the 12-lane u64 sponge is register-hungry on GCN.
+# QPoW OpenCL work partitioning: local_size 64 (one wave64 group on gfx900,
+# two wave32 on gfx1010), NPT=4 amortizes per-work-item dispatch setup —
+# measured ~10% above NPT=1 on this rig (NPT=8 flat vs 4).
 export ZION_QPOW_OCL_LOCAL_SIZE="${ZION_QPOW_OCL_LOCAL_SIZE:-64}"
-export ZION_QPOW_OCL_NPT="${ZION_QPOW_OCL_NPT:-1}"
+export ZION_QPOW_OCL_NPT="${ZION_QPOW_OCL_NPT:-4}"
 # ProgPoW-era knobs kept for instant ZANO rollback — unused by QPoW.
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
