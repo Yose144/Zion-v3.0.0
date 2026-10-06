@@ -521,6 +521,7 @@ impl MinerRuntime {
         let header_for_gpu = job.header.clone();
         let target_for_gpu = job.target;
         let batch_for_gpu = batch_size;
+        let t_gpu = Instant::now();
         let gpu_result: Option<Option<(u64, [u8; 32])>> = task::spawn_blocking(move || {
             let mut gpu_guard = gpu_zion.lock().unwrap();
             if let Some(ref mut gpu) = gpu_guard.as_mut() {
@@ -550,6 +551,17 @@ impl MinerRuntime {
         })
         .await
         .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
+        let gpu_ms = t_gpu.elapsed().as_millis() as u64;
+
+        // ZION duty cycle: yield the card to the external (QPoW) stream.
+        // ZION_GPU_TIME_DUTY_PCT=30 → after a D ms GPU batch, sleep D*(70/30)
+        // so ZION occupies ~30% of GPU time; 100 (default) = no throttle.
+        if gpu_result.is_some() {
+            let sleep_ms = zion_gpu_duty_sleep_ms(gpu_ms);
+            if sleep_ms > 0 {
+                sleep(Duration::from_millis(sleep_ms)).await;
+            }
+        }
 
         let (nonce, _hash, nonces_searched) =
             if let Some(Some((found_nonce, found_hash))) = gpu_result {
@@ -1987,6 +1999,7 @@ impl MinerRuntime {
         let gpu_zion = self.gpu_zion.clone();
         let header_for_gpu = header.clone();
         let target_for_gpu = target_bytes;
+        let t_gpu = Instant::now();
         let gpu_result: Option<Option<(u64, [u8; 32], u64)>> = task::spawn_blocking(move || {
             let mut gpu_guard = gpu_zion.lock().unwrap();
             if let Some(ref mut gpu) = gpu_guard.as_mut() {
@@ -2017,6 +2030,15 @@ impl MinerRuntime {
         })
         .await
         .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
+        let gpu_ms = t_gpu.elapsed().as_millis() as u64;
+
+        // Same ZION duty-cycle as the V3 path — yields the card to QPoW.
+        if gpu_result.is_some() {
+            let sleep_ms = zion_gpu_duty_sleep_ms(gpu_ms);
+            if sleep_ms > 0 {
+                sleep(Duration::from_millis(sleep_ms)).await;
+            }
+        }
 
         let (nonce, hash_bytes, nonces_searched) = if let Some(Some((n, h, tested))) = gpu_result {
             // GPU found a solution. The kernel uses an in-kernel sentinel for
@@ -2656,6 +2678,22 @@ impl MinerRuntime {
             }
         }
     }
+}
+
+/// ZION-stream GPU duty cycle: after a GPU batch of `gpu_ms` milliseconds,
+/// return how long to sleep so the ZION stream occupies ~duty% of the card.
+/// ZION_GPU_TIME_DUTY_PCT=100 (default) → no sleep; 30 → ZION gets ~30% of
+/// GPU time and the external (QPoW) stream gets the rest.
+fn zion_gpu_duty_sleep_ms(gpu_ms: u64) -> u64 {
+    let duty = std::env::var("ZION_GPU_TIME_DUTY_PCT")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .unwrap_or(100)
+        .clamp(1, 100);
+    if duty >= 100 {
+        return 0;
+    }
+    gpu_ms.saturating_mul(100 - duty) / duty
 }
 
 fn parse_gpu_backend(s: &str) -> GpuBackendKind {
