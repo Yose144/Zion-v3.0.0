@@ -48,9 +48,11 @@ export ZION_MINER_ID="vega-smos"
 export ZION_GPU_BACKEND="${ZION_GPU_BACKEND:-opencl}"
 export ZION_PROFILE="${ZION_PROFILE:-pool}"
 export ZION_VERBOSE=1
-export ZION_INTERACTIVE=1
+# Plain-text console mode for SimpleMining (TUI/ANSI would render as garbage
+# in the SMOS console). [metrics] lines print every --log-interval seconds.
+export ZION_INTERACTIVE="${ZION_INTERACTIVE:-0}"
 export ZION_NO_STICKY=1
-export ZION_METRICS_REPORT_SECS=15
+export ZION_LOG_INTERVAL="${ZION_LOG_INTERVAL:-15}"
 export ZION_STATS_FILE="/tmp/zion-miner-stats.json"
 # sgminer/TRM-compatible stats API (built into zion-miner) — SMOS polls this
 # for packages named teamredminer-*.zip: 4028 = primary (QTU), 4029 = dual (ZION).
@@ -179,6 +181,7 @@ trap '_term' TERM INT
   --worker "${WORKER_NAME}" \
   --gpu "${ZION_GPU_BACKEND}" \
   --threads "${ZION_MINER_THREADS}" \
+  --log-interval "${ZION_LOG_INTERVAL}" \
   --v3-trinity \
   "$@" &
 MINER_PID=$!
