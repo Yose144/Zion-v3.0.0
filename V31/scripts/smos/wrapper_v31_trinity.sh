@@ -15,7 +15,15 @@ for arg in "$@"; do
 done
 set -- "${passthru_args[@]+"${passthru_args[@]}"}"
 
-# ── V31 Trinity Miner Wrapper for SMOS ──────────────────────────────────────
+# ── One-shot SMOS agent probe (ZION_SMOS_PROBE=1 via minerOptions) ─────────
+# Removed 2026-10-06 after the SMOS parser schema was extracted
+# (miner_api.sh ^teamredminer branch: nested .devs/.summary/.devs2/.summary2,
+#  "KHS 30s" keys in KH/s, Accepted/Rejected). Kept only as a no-op flag so
+# minerOptions with the flag still start mining normally.
+if [ "${ZION_SMOS_PROBE:-0}" = "1" ]; then
+  echo "[wrapper] ZION_SMOS_PROBE ignored (probe removed)"
+fi
+
 # Triple-stream: ZION (GPU) + QTU/QPoW (GPU AuxPoW) + VRSC (CPU AuxPoW)
 # Multi-GPU DEDICATED: RX 5600 XT → ZION Deeksha, Vega 64 → QTU Poseidon2.
 # Both GPUs at 100% load, no time-slicing, no OpenCL context contention.

