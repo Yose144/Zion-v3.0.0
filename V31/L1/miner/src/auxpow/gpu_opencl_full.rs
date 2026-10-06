@@ -1723,7 +1723,12 @@ impl ExtGpuMiner {
 
         let mut full_header = header.to_vec();
         full_header.extend_from_slice(&full_nonce);
-        let pre_pow_u64 = [0u64; 4]; // beamhash not available in V31
+        // BeamHash III: SipHash-2-4 keys = first 32 bytes of
+        // blake2b-512(header || nonce).
+        let b2b = blake2b_simd::blake2b(&full_header);
+        let pre_pow_u64: [u64; 4] = core::array::from_fn(|i| {
+            u64::from_le_bytes(b2b.as_bytes()[i * 8..i * 8 + 8].try_into().unwrap())
+        });
         let prepow = ocl::prm::Ulong4::new(
             pre_pow_u64[0],
             pre_pow_u64[1],
@@ -2214,13 +2219,46 @@ impl ExtGpuMiner {
     /// **Requires** the `native-hashers` feature (for light cache generation).
     #[cfg(feature = "native-hashers")]
     pub fn generate_kawpow_dag_on_gpu(&mut self, epoch: u32) -> Result<()> {
-        // KawPow light cache not available in V31 native-ffi.
-        // KawPow (RVN/CLORE) is not needed for ZANO ProgPoW mining.
-        anyhow::bail!(
-            "KawPow DAG generation not available in V31 (epoch={}). \
-             KawPow is not needed for ZANO ProgPoW mining.",
+        // KawPow shares Ethash's DAG size constants and item-generation
+        // function — only EPOCH_LENGTH differs (7500 vs 30000), and that
+        // mapping is the caller's concern: `epoch` arrives pre-computed.
+        if let Some(ref dag) = self.kawpow_dag {
+            if dag.epoch == epoch {
+                return Ok(());
+            }
+        }
+        crate::ext_warn!(
+            "dag_manager: generating KawPow light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
+        let light_cache = generate_ethash_light_cache_rust(epoch).ok_or_else(|| {
+            anyhow!(
+                "ethash_generate_light_cache_rust returned NULL for KawPow epoch {}",
+                epoch
+            )
+        })?;
+
+        crate::ext_warn!(
+            "dag_manager: light cache ready ({} items = {:.1} MB)",
+            light_cache.cache_items,
+            light_cache.cache_size as f64 / (1024.0 * 1024.0)
+        );
+
+        let (dag_buf, dag_size_entries) = self.generate_dag_on_gpu_impl(
+            light_cache.as_slice(),
+            light_cache.cache_items,
+            light_cache.dag_size_entries,
+            "KawPow",
+        )?;
+
+        self.kawpow_dag = Some(KawpowDag {
+            buf: dag_buf,
+            size_entries: dag_size_entries,
+            epoch,
+        });
+
+        crate::ext_warn!("dag_manager: KawPow DAG epoch={} ready on GPU", epoch);
+        Ok(())
     }
 
     #[cfg(not(feature = "native-hashers"))]
