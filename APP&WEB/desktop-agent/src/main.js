@@ -2474,6 +2474,13 @@ function startMiningV31(config, v31Path) {
     if (Number.isFinite(extGap) && extGap >= 0 && extGap <= 1000) {
       env.ZION_EXT_GPU_GAP_MS = String(Math.floor(extGap));
     }
+    // ZION (Stream-1) GPU duty cycle: 100 = unthrottled, 30 = ZION gets ~30%
+    // of GPU time so Stream-2 QPoW can dominate the card. Requires a miner
+    // binary with ZION_GPU_TIME_DUTY_PCT support.
+    const zionDuty = Number(config?.gpuZionDutyPct);
+    if (Number.isFinite(zionDuty) && zionDuty >= 1 && zionDuty <= 100) {
+      env.ZION_GPU_TIME_DUTY_PCT = String(Math.floor(zionDuty));
+    }
     // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
     // smaller batches refresh upstream jobs sooner, cutting stale
     // "job not found" rejects on fast-rotating pools (LuckPool ~15-60s).
