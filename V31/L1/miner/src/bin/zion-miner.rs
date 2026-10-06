@@ -311,22 +311,33 @@ async fn main() -> Result<()> {
             // Optional machine-readable stats dump (SMOS/sidecar readers).
             if let Ok(path) = std::env::var("ZION_STATS_FILE") {
                 if !path.is_empty() {
-                    let streams: serde_json::Map<String, serde_json::Value> = stats
-                        .iter()
-                        .map(|(id, s)| {
-                            (
-                                id.as_str().to_string(),
+                    let mut streams: serde_json::Map<String, serde_json::Value> =
+                        serde_json::Map::new();
+                    for (id, s) in &stats {
+                        let devices: Vec<serde_json::Value> = stats_rt
+                            .gpu_devices(*id)
+                            .await
+                            .into_iter()
+                            .map(|(name, hr)| {
                                 serde_json::json!({
-                                    "coin": s.coin.as_ref().map(|c| c.ticker()),
-                                    "algorithm": s.algorithm.as_deref(),
-                                    "hashrate_hps": s.hashrate,
-                                    "accepted": s.accepted,
-                                    "rejected": s.rejected,
-                                    "active": s.active,
-                                }),
-                            )
-                        })
-                        .collect();
+                                    "name": name,
+                                    "hashrate_hps": hr,
+                                })
+                            })
+                            .collect();
+                        streams.insert(
+                            id.as_str().to_string(),
+                            serde_json::json!({
+                                "coin": s.coin.as_ref().map(|c| c.ticker()),
+                                "algorithm": s.algorithm.as_deref(),
+                                "hashrate_hps": s.hashrate,
+                                "accepted": s.accepted,
+                                "rejected": s.rejected,
+                                "active": s.active,
+                                "devices": devices,
+                            }),
+                        );
+                    }
                     let body = serde_json::json!({
                         "ts": std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
@@ -418,6 +429,60 @@ async fn main() -> Result<()> {
                         }
                     }
                     std::process::exit(1);
+                }
+            }
+
+            // ── Console metrics line (SMOS / headless) ──
+            // One plain-text line per interval so non-TUI consoles (SMOS
+            // dashboard, journald) show per-stream AND per-GPU rates.
+            {
+                let mut parts: Vec<String> = Vec::new();
+                for (id, s) in &stats {
+                    if !s.active {
+                        continue;
+                    }
+                    let coin = s
+                        .coin
+                        .as_ref()
+                        .map(|c| c.ticker())
+                        .unwrap_or_else(|| id.as_str());
+                    let hr = if s.hashrate >= 1e6 {
+                        format!("{:.2} MH/s", s.hashrate / 1e6)
+                    } else if s.hashrate >= 1e3 {
+                        format!("{:.1} KH/s", s.hashrate / 1e3)
+                    } else {
+                        format!("{:.0} H/s", s.hashrate)
+                    };
+                    let devs = stats_rt.gpu_devices(*id).await;
+                    let dev_str = if devs.is_empty() {
+                        String::new()
+                    } else {
+                        format!(
+                            " [{}]",
+                            devs.iter()
+                                .map(|(n, h)| {
+                                    let short = n
+                                        .split(':')
+                                        .next()
+                                        .unwrap_or(n.as_str());
+                                    let hs = if *h >= 1e6 {
+                                        format!("{:.2}M", h / 1e6)
+                                    } else {
+                                        format!("{:.0}K", h / 1e3)
+                                    };
+                                    format!("{short}={hs}")
+                                })
+                                .collect::<Vec<_>>()
+                                .join(" ")
+                        )
+                    };
+                    parts.push(format!(
+                        "{coin}: {hr}{dev_str} A{} R{}",
+                        s.accepted, s.rejected
+                    ));
+                }
+                if !parts.is_empty() {
+                    println!("[metrics] {}", parts.join(" | "));
                 }
             }
 

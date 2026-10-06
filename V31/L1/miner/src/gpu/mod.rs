@@ -48,6 +48,15 @@ pub enum QpowGpuMiner {
     Cuda(qpow_cuda::QpowCudaMiner),
     #[cfg(feature = "gpu-opencl")]
     OpenCl(qpow_opencl::QpowOpenclMiner),
+    /// One miner instance per GPU — the low-64 nonce space of each batch is
+    /// partitioned across devices (weighted by measured per-GPU hashrate)
+    /// and scanned in parallel (one thread per sub-miner per batch).
+    Multi {
+        miners: Vec<QpowGpuMiner>,
+        names: Vec<String>,
+        /// Per-device hashrate EMA (H/s) — feeds the weighted nonce split.
+        hashrates: Vec<f64>,
+    },
 }
 
 #[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
@@ -58,6 +67,28 @@ impl QpowGpuMiner {
             Self::Cuda(m) => m.device_name(),
             #[cfg(feature = "gpu-opencl")]
             Self::OpenCl(m) => m.device_name(),
+            Self::Multi { names, .. } => names.join(" + "),
+        }
+    }
+
+    /// Per-device hashrate estimates (H/s) — `Some` only for multi-GPU.
+    pub fn per_gpu_hashrates(&self) -> Option<Vec<(String, f64)>> {
+        match self {
+            Self::Multi {
+                names, hashrates, ..
+            } => Some(names.iter().cloned().zip(hashrates.iter().copied()).collect()),
+            _ => None,
+        }
+    }
+
+    /// Build a multi-device miner from per-GPU sub-miners.
+    pub fn multi(miners: Vec<QpowGpuMiner>) -> Self {
+        let n = miners.len();
+        let names = miners.iter().map(|m| m.device_name()).collect();
+        Self::Multi {
+            miners,
+            names,
+            hashrates: vec![0.0; n],
         }
     }
 
@@ -73,6 +104,111 @@ impl QpowGpuMiner {
             Self::Cuda(m) => m.mine_batch(header, nonce_be, target, total),
             #[cfg(feature = "gpu-opencl")]
             Self::OpenCl(m) => m.mine_batch(header, nonce_be, target, total),
+            Self::Multi {
+                miners, hashrates, ..
+            } => {
+                let n = miners.len();
+                if n == 0 {
+                    return Ok(None);
+                }
+                if n == 1 {
+                    return miners[0].mine_batch(header, nonce_be, target, total);
+                }
+                // Weighted partition of the low-64 nonce space: sub i covers
+                // [base + offset_i, base + offset_i + size_i) where size_i is
+                // proportional to its measured hashrate — both GPUs finish at
+                // the same time (max utilization, no idle waiting).
+                let low64_base = u64::from_be_bytes(
+                    nonce_be[56..64].try_into().expect("nonce len"),
+                );
+                let hr_sum: f64 = hashrates.iter().sum();
+                let mut ranges = Vec::with_capacity(n);
+                let mut allocated: u64 = 0;
+                for i in 0..n {
+                    let size = if hr_sum > 0.0 {
+                        if i == n - 1 {
+                            total.saturating_sub(allocated)
+                        } else {
+                            (total as f64 * (hashrates[i] / hr_sum)) as u64
+                        }
+                    } else if i == n - 1 {
+                        total.saturating_sub(allocated)
+                    } else {
+                        total / n as u64
+                    };
+                    let size = size.min(total.saturating_sub(allocated));
+                    ranges.push((low64_base.wrapping_add(allocated), size));
+                    allocated = allocated.saturating_add(size);
+                }
+                let mut results: Vec<Option<(anyhow::Result<Option<QpowGpuResult>>, u64)>> =
+                    (0..n).map(|_| None).collect();
+                std::thread::scope(|s| {
+                    let mut handles = Vec::with_capacity(n);
+                    for (i, (m, (start, count))) in
+                        miners.iter_mut().zip(ranges.iter()).enumerate()
+                    {
+                        if *count == 0 {
+                            continue;
+                        }
+                        let mut nonce_i = *nonce_be;
+                        nonce_i[56..64].copy_from_slice(&start.to_be_bytes());
+                        let count = *count;
+                        handles.push((
+                            i,
+                            s.spawn(move || {
+                                let t0 = std::time::Instant::now();
+                                let r = m.mine_batch(header, &nonce_i, target, count);
+                                (r, t0.elapsed().as_millis() as u64)
+                            }),
+                        ));
+                    }
+                    for (i, h) in handles {
+                        results[i] = Some(h.join().unwrap_or_else(|_| {
+                            (
+                                Err(anyhow::anyhow!("qpow sub-miner panicked")),
+                                0,
+                            )
+                        }));
+                    }
+                });
+                // Per-device hashrate EMA from the assigned range / elapsed.
+                for (i, slot) in results.iter().enumerate() {
+                    if let Some((Ok(_), ms_el)) = slot {
+                        let count = ranges[i].1;
+                        if *ms_el > 0 && count > 0 {
+                            let hr = count as f64 / (*ms_el as f64 / 1000.0);
+                            if hr.is_finite() && hr > 0.0 {
+                                hashrates[i] = if hashrates[i] > 0.0 {
+                                    hashrates[i] * 0.7 + hr * 0.3
+                                } else {
+                                    hr
+                                };
+                            }
+                        }
+                    }
+                }
+                // Merge: best (lowest) nonce wins; nonces_tested is the sum.
+                let mut best: Option<QpowGpuResult> = None;
+                let mut tested: u64 = 0;
+                for slot in results {
+                    if let Some((r, _)) = slot {
+                        if let Some(res) = r? {
+                            tested = tested.saturating_add(res.nonces_tested);
+                            let better = best
+                                .as_ref()
+                                .map(|b| res.nonce.as_slice() < b.nonce.as_slice())
+                                .unwrap_or(true);
+                            if better {
+                                best = Some(res);
+                            }
+                        }
+                    }
+                }
+                if let Some(b) = best.as_mut() {
+                    b.nonces_tested = tested;
+                }
+                Ok(best)
+            }
         }
     }
 }
@@ -289,6 +425,12 @@ pub trait GpuMiner: Send {
     /// where GPU and CPU use different implementations for stage 4).
     fn suppress_mismatch_warnings(&self) -> bool {
         false
+    }
+
+    /// Per-device hashrate estimates (H/s) for multi-GPU miners.
+    /// Single-device backends return `None`.
+    fn per_gpu_hashrates(&self) -> Option<Vec<(String, f64)>> {
+        None
     }
 
     /// Mine a batch of nonces starting from `nonce_start`.
@@ -767,6 +909,16 @@ impl GpuMiner for MultiGpuMiner {
         // Suppress per-GPU mismatch warnings in multi-GPU mode; the main loop
         // verifies the combined result against CPU hash.
         true
+    }
+
+    fn per_gpu_hashrates(&self) -> Option<Vec<(String, f64)>> {
+        Some(
+            self.miners
+                .iter()
+                .map(|m| m.device_name())
+                .zip(self.hashrates.iter().copied())
+                .collect(),
+        )
     }
 
     fn mine_batch(
@@ -2439,7 +2591,7 @@ fn count_opencl_gpu_devices() -> usize {
 
 /// Detailed info about a single OpenCL GPU device for multi-GPU assignment.
 #[cfg(feature = "gpu-opencl")]
-struct GpuDeviceInfo {
+pub(crate) struct GpuDeviceInfo {
     /// Global enumeration index (stable within a single process).
     global_idx: usize,
     /// Platform index.
@@ -2447,7 +2599,7 @@ struct GpuDeviceInfo {
     /// Device index within platform.
     device_idx: usize,
     /// OpenCL device name (e.g. "gfx900:xnack-", "Ellesmere [Radeon RX 470/480/570]").
-    name: String,
+    pub(crate) name: String,
     /// Platform name (e.g. "AMD Accelerated Parallel Processing").
     platform_name: String,
     /// Number of compute units (CUs).
@@ -2603,7 +2755,7 @@ fn device_name_matches_filter(device_name: &str, filter: &str) -> bool {
 
 /// Enumerate all OpenCL GPU devices with detailed info for multi-GPU assignment.
 #[cfg(feature = "gpu-opencl")]
-fn enumerate_opencl_gpu_devices() -> Vec<GpuDeviceInfo> {
+pub(crate) fn enumerate_opencl_gpu_devices() -> Vec<GpuDeviceInfo> {
     let platforms = ocl::Platform::list();
     let mut devices = Vec::new();
     let mut global_idx = 0;

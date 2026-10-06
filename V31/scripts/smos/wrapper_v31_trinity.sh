@@ -106,11 +106,13 @@ export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 export ZION_AUXPOW_PROGPOW_MAX_GWS=1048576
 export ZION_ZANO_STALE_SECS=30
 
-# Multi-GPU DEDICATED mode: Vega 64 reserved for the external stream (QTU),
-# RX 5600 XT dedicated to ZION Deeksha. Both at 100%, no time-slicing.
-# ZION_ZANO_RESERVE=1: reserve Vega 64 (no OpenCL context contention).
-# GAP_MS=0: no sleep needed — GPUs are dedicated, not shared.
-export ZION_ZANO_RESERVE=1
+# Multi-GPU SHARED mode (ZION_ZANO_RESERVE=0): BOTH GPUs run BOTH streams —
+# ZION Deeksha on Vega+5600 XT via MultiGpuMiner, QTU QPoW on both via
+# QpowGpuMiner::Multi (one kernel launch per device per batch). The driver
+# timeshares the two kernel queues on each card; a small ext gap lets
+# ZION launches stay fair.
+# ZION_ZANO_DEVICE_NAME is ignored with RESERVE=0 (kept for rollback docs).
+export ZION_ZANO_RESERVE=0
 export ZION_ZANO_DEVICE_NAME=vega
 export ZION_EXT_GPU_TIME_DUTY_PCT=100
 export ZION_EXT_GPU_GAP_MS=0

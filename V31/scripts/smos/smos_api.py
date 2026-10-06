@@ -83,15 +83,36 @@ def dev_entry(idx, name, algo, mhs, acc, rej, active):
     }
 
 
+# OpenCL device name fragment → SMOS GPU slot (PCI order).
+_GPU_SLOT = [("gfx1010", 0), ("5600", 0), ("navi10", 0),
+             ("gfx900", 1), ("vega", 1), ("gfx906", 1)]
+
+
+def dev_rates(stats_key, stats):
+    """Per-GPU-slot hashrate (MH/s) from the stream's devices[] array.
+    Returns {slot: mhs}; empty when the miner reports no per-device data."""
+    out = {}
+    for d in (stream(stats, stats_key).get("devices") or []):
+        name = str(d.get("name") or "").lower()
+        mhs = hps_to_mhs(d.get("hashrate_hps"))
+        for frag, slot in _GPU_SLOT:
+            if frag in name:
+                out[slot] = mhs
+                break
+    return out
+
+
 def primary_payload(stats):
     """Primary payload: QTU QPoW.  DEVS index = SMOS PCI order:
-    GPU0=RX 5600 XT (does not mine QTU -> 0), GPU1=RX Vega 64 (~50 MH/s)."""
+    GPU0=RX 5600 XT, GPU1=RX Vega 64 — per-device rates from devices[]."""
     gpu = stream(stats, "gpu-external")
-    zion = stream(stats, "zion")
+    rates = dev_rates("gpu-external", stats)
     mhs = hps_to_mhs(gpu.get("hashrate_hps"))
     devs = [
-        dev_entry(0, "RX 5600 XT", "qpow-poseidon2", 0.0, 0, 0, True),
-        dev_entry(1, "RX Vega 64", "qpow-poseidon2", mhs,
+        dev_entry(0, "RX 5600 XT", "qpow-poseidon2",
+                  rates.get(0, 0.0), 0, 0, True),
+        dev_entry(1, "RX Vega 64", "qpow-poseidon2",
+                  rates.get(1, mhs),
                   gpu.get("accepted", 0), gpu.get("rejected", 0),
                   bool(gpu.get("active"))),
     ]
@@ -113,17 +134,20 @@ def primary_payload(stats):
 
 
 def dual_payload(stats):
-    """Dual payload: ZION deeksha on the 5600 XT."""
+    """Dual payload: ZION deeksha — per-device rates from devices[]."""
     zion = stream(stats, "zion")
+    rates = dev_rates("zion", stats)
     mhs = hps_to_mhs(zion.get("hashrate_hps"))
-    devs = [
-        dev_entry(0, "RX 5600 XT", "ekam_deeksha", mhs,
-                  zion.get("accepted", 0), zion.get("rejected", 0),
-                  bool(zion.get("active"))),
-        dev_entry(1, "RX Vega 64", "ekam_deeksha", 0.0, 0, 0, True),
-    ]
     acc = int(zion.get("accepted") or 0)
     rej = int(zion.get("rejected") or 0)
+    devs = [
+        dev_entry(0, "RX 5600 XT", "ekam_deeksha",
+                  rates.get(0, mhs), acc, rej,
+                  bool(zion.get("active"))),
+        dev_entry(1, "RX Vega 64", "ekam_deeksha",
+                  rates.get(1, 0.0), 0, 0,
+                  bool(zion.get("active"))),
+    ]
     summary = {
         "Elapsed": int(time.time() - START_TS),
         "MHS av": round(mhs, 4), "MHS 5s": round(mhs, 4),
