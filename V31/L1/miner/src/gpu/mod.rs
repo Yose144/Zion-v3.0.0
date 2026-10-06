@@ -933,7 +933,18 @@ impl GpuMiner for MultiGpuMiner {
             anyhow::bail!("MultiGpuMiner has no sub-miners");
         }
         if n == 1 {
-            return self.miners[0].mine_batch(header, target, nonce_start, batch_size);
+            // Keep the per-device EMA fresh in the single-GPU path so
+            // per_gpu_hashrates() reports the real rate instead of init 1.0.
+            let t0 = std::time::Instant::now();
+            let r = self.miners[0].mine_batch(header, target, nonce_start, batch_size)?;
+            let ms = t0.elapsed().as_millis() as u64;
+            if ms > 0 && r.nonces_tested > 0 {
+                let hr = r.nonces_tested as f64 / (ms as f64 / 1000.0);
+                if hr > 0.0 && hr.is_finite() {
+                    self.hashrates[0] = self.hashrates[0] * 0.7 + hr * 0.3;
+                }
+            }
+            return Ok(r);
         }
 
         // Split nonce range proportionally to each GPU's measured hashrate.
@@ -1006,7 +1017,16 @@ impl GpuMiner for MultiGpuMiner {
             anyhow::bail!("MultiGpuMiner has no sub-miners");
         }
         if n == 1 {
-            return self.miners[0].mine_batch_raw(raw_header, target, nonce_start, batch_size);
+            let t0 = std::time::Instant::now();
+            let r = self.miners[0].mine_batch_raw(raw_header, target, nonce_start, batch_size)?;
+            let ms = t0.elapsed().as_millis() as u64;
+            if ms > 0 && r.nonces_tested > 0 {
+                let hr = r.nonces_tested as f64 / (ms as f64 / 1000.0);
+                if hr > 0.0 && hr.is_finite() {
+                    self.hashrates[0] = self.hashrates[0] * 0.7 + hr * 0.3;
+                }
+            }
+            return Ok(r);
         }
 
         // Weighted split for raw header (ProgPoW/ZANO etc.)
