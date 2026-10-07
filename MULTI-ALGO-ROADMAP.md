@@ -160,6 +160,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 6. **CPU scan dedup**: `start_nonce` se reálně používá (dříve se rescanovalo od 0 → duplicate-submit flood).
 7. **Stratum job channel** mpsc(8) → `watch` (latest-wins) — KaspaStratum notify spam deadlockoval session před submity.
 8. **GPU path zapnut** pro kheavyhash: ts z `header[32..40]`, en1 složené do `base_nonce`.
+9. **Zero-seed xoshiro infinite loop** (commit `374ed56a5`): all-zero `pre_pow_hash` (mock/broken pool job) → xoshiro256++ drží stav `[0,0,0,0]` navždy → `next()`=0 → rank-64 retry `while(1)` nikdy neskončí → worker wedged. Guard `s[0]=0x9E37…` ve **všech 3 kopiích**: `native-ffi/csrc`, `miner/csrc` (duplicita! linker vybere miner .o — fix jen v native-ffi se neprojeví) a Rust `hasher.rs`. **CPU dispatch přepnut na native `kheavyhash_mine`** + equivalence test `kheavyhash_native_equiv_rust_ref` (24 combos, byte-identical). ⚠️ **Dual-copy hazard**: `miner/csrc/*.c` duplikuje `native-ffi/csrc/*` (blake3/kheavyhash/autolykos identické; kawpow/etchash/verushash divergují — miner kopie jsou superset) — opravy C kódu MUSÍ jít do obou stromů.
 
 ### Checklist — co máme / co ne (2026-10-07)
 
