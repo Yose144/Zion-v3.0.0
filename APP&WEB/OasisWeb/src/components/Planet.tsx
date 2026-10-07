@@ -334,6 +334,17 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     lat: -34.35,
     lon: 18.47,
   },
+  {
+    id: 'kailash',
+    name: 'Kailash',
+    location: 'Ngari · Tibet',
+    color: '#a5b4fc',
+    rgb: '165, 180, 252',
+    descCs: 'Poušť očištění u nezlané hory — shoda čtyř tradic, kora ~52 km, prastarý oheň mistrů Šambhaly.',
+    descEn: 'The desert of purification beneath the unclimbed mountain — four traditions in agreement, the ~52 km kora, the primordial fire of the Shambhala masters.',
+    lat: 31.07,
+    lon: 81.31,
+  },
 ];
 
 function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {

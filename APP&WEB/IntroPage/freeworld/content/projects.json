@@ -341,5 +341,40 @@
    "cs": "Vize — nejdřív naslouchat · bez termínu",
    "en": "Vision — listening first · no deadline"
   }
+ },
+ {
+  "slug": "kailash",
+  "docSlug": "kailash",
+  "name": "Kailash",
+  "subtitle": {
+   "cs": "Poušť očištění — Prastarý oheň",
+   "en": "The Desert of Purification — Primordial Fire"
+  },
+  "tagline": {
+   "cs": "Jediná hora, na kterou se nikdy nevylezlo — čtyřstěnná pyramida Gang Rinpoche drží shodu čtyř tradic najednou (hindu, buddha, bön, džina). Poutník horu nechodí na ni, ale kolem — kora ~52 km přes Dolma La. V mýtické geografii sítě hoří v poušti Ngari prastarý oheň: u něj sedí mistři všech linií Šambhaly, od tesaře až po Mahávatára Bábadžího. Uzel jako vztah, ne stavba.",
+   "en": "The only mountain never climbed — the four-sided pyramid of Gang Rinpoche holds the agreement of four traditions at once (Hindu, Buddhist, Bön, Jain). The pilgrim walks around the mountain, not up it — the ~52 km kora over the Dolma La pass. In the mythic geography of the network a primordial fire burns in the Ngari desert: beside it sit the masters of all Shambhala lineages, from the Carpenter to Mahavatar Babaji. A node as relationship, not construction."
+  },
+  "location": {
+   "cs": "Ngari, Transhimaláje · Tibet",
+   "en": "Ngari, Transhimalaya · Tibet"
+  },
+  "status": "vision",
+  "lat": 31.07,
+  "lon": 81.31,
+  "accent": "#a5b4fc",
+  "tags": [
+   "Purification",
+   "Kora",
+   "Shambhala",
+   "Four Traditions"
+  ],
+  "renderImg": "kailash/render.webp",
+  "boardImg": "kailash/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/kailash",
+  "grantTitle": "—",
+  "timeline": {
+   "cs": "Vize — nejdřív naslouchat · bez termínu",
+   "en": "Vision — listening first · no deadline"
+  }
  }
 ]

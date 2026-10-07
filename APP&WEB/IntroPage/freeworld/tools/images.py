@@ -24,6 +24,8 @@ SOURCES = {
     'boa-esperanca': ('BoaEsp.jpg', 'BoaEsperancaProject.png'),
     # TODO(interim): board is placeholder art — replace with real temple masterplan
     'ekam': ('Ekam.png', 'EkamProject.png'),
+    # TODO(interim): render+board are PIL interim art — replace with real Kailash art
+    'kailash': ('Kailash.png', 'KailashProject.png'),
 }
 
 def save_webp(im: Image.Image, out: Path, max_w: int, q: int):

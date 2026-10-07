@@ -94,10 +94,10 @@ const L5FreeWorldCopy = {
   network: { cs: `Síť`, en: `Network` },
 
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
-  sixNodesOnPlanet: { cs: `Deset bodů na planetě`, en: `Ten nodes on the planet` },
+  sixNodesOnPlanet: { cs: `Jedenáct bodů na planetě`, en: `Eleven nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po Mys dobré naděje. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru a Boa Esperança zůstávají vizemi — vztahové uzly na posvátných a historických místech. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. A María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány.`,
-    en: `The L5 communities across the continents — from the Nabão valley to the Cape of Good Hope. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru and Boa Esperança remain visions — relationship nodes on sacred and historic ground. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. And María del Camino — a sailing node on solar sails — physically connects every point across the oceans.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança a Kailash zůstávají vizemi — vztahové uzly na posvátných a historických místech. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. A María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány.`,
+    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança and Kailash remain visions — relationship nodes on sacred and historic ground. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. And María del Camino — a sailing node on solar sails — physically connects every point across the oceans.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -263,6 +263,17 @@ const getCommunities = (cs: boolean) => [
     tags: cs ? ['Naděje', 'Dva oceány', 'Khoisan'] : ['Hope', 'Two Oceans', 'Khoisan'],
     href: '/terranova/boa-esperanca',
     cover: '/images/boa-esperanca/hero.webp',
+  },
+  {
+    name: 'Kailash',
+    location: cs ? 'Ngari, Tibet' : 'Ngari, Tibet',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Jedenáctý bod sítě — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo. Gang Rinpoche drží shodu čtyř tradic (hindu, buddha, bön, džina); poutník ji nechodí na ni, ale kolem — kora. U prastarého ohně sedí mistři všech linií Šambhaly. Uzel jako vztah, ne stavba.'
+      : 'The eleventh point of the network — the desert of purification around the only mountain never climbed. Gang Rinpoche holds the agreement of four traditions (Hindu, Buddhist, Bön, Jain); the pilgrim walks around it, not up — the kora. At the primordial fire sit the masters of all Shambhala lineages. A node as a relationship, not a construction.',
+    tags: cs ? ['Očištění', 'Kora', 'Šambhala'] : ['Purification', 'Kora', 'Shambhala'],
+    href: '/terranova/kailash',
+    cover: '/images/kailash/hero.webp',
   },
 ];
 

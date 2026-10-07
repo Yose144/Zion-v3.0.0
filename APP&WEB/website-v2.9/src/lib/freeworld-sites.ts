@@ -2,7 +2,7 @@
  * The L5 Free World community sites — shared between the planetary
  * map and the community/registry sections. Six founding communities
  * carry a funded 500M allocation; María del Camino (the vessel node)
- * carries a 300M founding reserve; Uluru + Boa Esperança stay
+ * carries a 300M founding reserve; Uluru + Boa Esperança + Kailash stay
  * vision-stage with no committed allocation — and Ekam is the only
  * node already built (2008), held as a relationship, not a project.
  */
@@ -121,6 +121,19 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     lon: 18.47,
     status: 'vision',
     href: '/terranova/boa-esperanca',
+    allocationZion: 0,
+  },
+  {
+    // Mt. Kailash / Gang Rinpoche — the only mountain never climbed; the
+    // desert of purification and the council of masters at the primordial
+    // fire. Vision stage like Uluru and Boa: a relationship node held by
+    // the custodians of four traditions — no parcel, no construction.
+    key: 'kailash',
+    name: 'Kailash',
+    lat: 31.07,
+    lon: 81.31,
+    status: 'vision',
+    href: '/terranova/kailash',
     allocationZion: 0,
   },
 ];
