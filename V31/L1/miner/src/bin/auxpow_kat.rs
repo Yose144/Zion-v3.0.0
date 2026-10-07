@@ -322,6 +322,15 @@ fn real_main() {
         if !args.is_empty() && !args.iter().any(|a| a == c.algo) {
             continue;
         }
+        // NexaPow's 6k-line secp256k1 kernel takes >10 min in the NVIDIA JIT
+        // compiler on every fresh process — exclude it from the default sweep
+        // unless explicitly named (or ZION_KAT_SLOW=1).
+        let explicit = args.iter().any(|a| a == c.algo);
+        if c.algo == "nexapow" && !explicit && std::env::var("ZION_KAT_SLOW").is_err() {
+            println!("{:<14} SKIP  nexapow (secp256k1 kernel JIT compile >10min; run `auxpow_kat nexapow` or ZION_KAT_SLOW=1)", c.algo);
+            skip += 1;
+            continue;
+        }
         let t0 = std::time::Instant::now();
         // DAG-family algorithms need an epoch DAG uploaded first.
         #[cfg(feature = "native-hashers")]
