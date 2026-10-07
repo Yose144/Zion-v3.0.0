@@ -101,7 +101,7 @@ const TerranovaGenesisCopy = {
   dharmaTemple: { cs: `Dharma Temple`, en: `Dharma Temple` },
   tePikoOra: { cs: `Te Pīko Ora`, en: `Te Pīko Ora` },
   threeDPreview: { cs: `3D koncept`, en: `3D concept` },
-  threeDPreviewSubtitle: { cs: `Interaktivní náhled tří pyramid kolem Stromu života. Koncept — ne stavba.`, en: `Interactive preview of the three pyramids around the Tree of Life. Concept — not a built structure.` },
+  threeDPreviewSubtitle: { cs: `Interaktivní náhled tří pyramid kolem Stromu života — s albergue u poutní cesty a meandrem řeky Nabão. Koncept — ne stavba.`, en: `Interactive preview of the three pyramids around the Tree of Life — with the albergue by the pilgrim path and a bend of the Nabão river. Concept — not a built structure.` },
   conceptOnlyLabel: { cs: `KONCEPT — NESTOJÍ`, en: `CONCEPT — NOT BUILT` },
   sitePlan: { cs: `Architektonický koncept`, en: `Architectural concept` },
   sitePlanSubtitle: { cs: `Masterplan, funkční zóny a legendy prvního návrhu Genesis Garden.`, en: `Masterplan, functional zones and legend of the first Genesis Garden draft.` },
