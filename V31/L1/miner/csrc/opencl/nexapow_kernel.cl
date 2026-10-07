@@ -2690,9 +2690,10 @@ inline void ct_scalar_mul_point(const CTJacobianPoint* p, const Scalar* k,
         ct_point_cneg_y(&table_b[i], glv.k2_neg);
     }
 
-    // Windowed double-and-add: 33 iterations
+    // Windowed double-and-add: 64 iterations — fake GLV keeps the full
+    // 256-bit scalar in k1, so all 64 windows must be scanned.
     ct_point_set_infinity(r_out);
-    for (int w = 32; w >= 0; --w) {
+    for (int w = 63; w >= 0; --w) {
         ct_point_dbl(r_out, r_out);
         ct_point_dbl(r_out, r_out);
         ct_point_dbl(r_out, r_out);
@@ -2824,9 +2825,11 @@ inline void ct_generator_mul_impl(const Scalar* k, CTJacobianPoint* r_out) {
         ct_point_cneg_y(&table_b[i], glv.k2_neg);
     }
 
-    // Windowed loop: 33 iterations
+    // Windowed loop: 64 iterations — ct_glv_decompose_impl does NOT split k
+    // into 128-bit halves (k2 is always 0), so k1 carries the full 256-bit
+    // scalar and all 64 windows must be scanned.
     ct_point_set_infinity(r_out);
-    for (int w = 32; w >= 0; --w) {
+    for (int w = 63; w >= 0; --w) {
         ct_point_dbl(r_out, r_out);
         ct_point_dbl(r_out, r_out);
         ct_point_dbl(r_out, r_out);
@@ -4185,7 +4188,7 @@ inline int ecdsa_sign_impl(const uchar msg_hash[32], const Scalar* priv, ECDSASi
     // eliminating warp divergence on secret-derived s = f(k, d).
     {
         Scalar neg_s;
-        scalar_negate_impl(&neg_s, &sig->s);
+        scalar_negate_impl(&sig->s, &neg_s);
         const ulong mask = scalar_is_high_mask_impl(&sig->s);
         sig->s.limbs[0] = (sig->s.limbs[0] & ~mask) | (neg_s.limbs[0] & mask);
         sig->s.limbs[1] = (sig->s.limbs[1] & ~mask) | (neg_s.limbs[1] & mask);

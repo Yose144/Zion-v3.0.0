@@ -406,7 +406,13 @@ fn real_main() {
             algo: "nexapow",
             header: vec![0x11u8; 32],
             extra: vec![],
-            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref"),
+            cpu: |h, _e, n| {
+                let mut h32 = [0u8; 32];
+                let copy = h.len().min(32);
+                h32[..copy].copy_from_slice(&h[..copy]);
+                zion_miner::auxpow::nexapow_ref::nexapow_hash_ref(&h32, n)
+                    .ok_or_else(|| anyhow::anyhow!("nexapow: invalid privkey"))
+            },
         },
         Case {
             algo: "ghostrider",
@@ -589,6 +595,134 @@ fn real_main() {
                 fail += 1;
                 continue;
             }
+        }
+        // NexaPow bisect: ZION_NEXAPOW_DEBUG=sign runs the schnorr_sign
+        // kernel entry on the official BIP-340 vector-0 inputs (priv=3,
+        // msg=0, aux=0) and prints the signature for diffing against the
+        // known-good reference signature.
+        if c.algo == "nexapow"
+            && std::env::var("ZION_NEXAPOW_DEBUG").ok().as_deref() == Some("sign")
+        {
+            let priv_be: [u8; 32] = {
+                let mut b = [0u8; 32];
+                b[31] = 3;
+                b
+            };
+            let msg = [0u8; 32];
+            let aux = [0u8; 32];
+            match miner.nexapow_schnorr_debug(&priv_be, &msg, &aux) {
+                Ok((sig, flag)) => {
+                    // sig.s is a Scalar struct — 4×u64 little-endian limbs;
+                    // convert back to big-endian bytes for comparison.
+                    let mut s_be = [0u8; 32];
+                    for i in 0..4 {
+                        let limb = u64::from_le_bytes(
+                            sig[32 + i * 8..32 + i * 8 + 8].try_into().unwrap(),
+                        );
+                        let base = (3 - i) * 8;
+                        s_be[base..base + 8].copy_from_slice(&limb.to_be_bytes());
+                    }
+                    println!("schnorr_sign flag={flag}");
+                    println!("r = {}", hex::encode(&sig[..32]));
+                    println!("s = {}", hex::encode(s_be));
+                    println!("exp.r e907831f80848d1069a5371b402410364bdf1c5f8307b0084c55f1ce2dca8215");
+                    println!("exp.s 25f66a4a85ea8b71e482a74f382d2ce5ebeee8fdb2172f477df4900d310536c0");
+                }
+                Err(e) => println!("schnorr_sign ERR {e}"),
+            }
+
+            // verify(official sig) — exercises lift_x + scalar_mul + challenge.
+            let pub_x: [u8; 32] = hex::decode(
+                "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9",
+            )
+            .unwrap()
+            .try_into()
+            .unwrap();
+            let mut sig_wire = [0u8; 64];
+            sig_wire[..32].copy_from_slice(
+                &hex::decode(
+                    "e907831f80848d1069a5371b402410364bdf1c5f8307b0084c55f1ce2dca8215",
+                )
+                .unwrap(),
+            );
+            sig_wire[32..].copy_from_slice(
+                &hex::decode(
+                    "25f66a4a85ea8b71e482a74f382d2ce5ebeee8fdb2172f477df4900d310536c0",
+                )
+                .unwrap(),
+            );
+            match miner.nexapow_verify_debug(&pub_x, &msg, &sig_wire) {
+                Ok(v) => println!("schnorr_verify(official vector) = {v} (expect 1)"),
+                Err(e) => println!("schnorr_verify ERR {e}"),
+            }
+
+            // priv=3 ·G — Jacobian → affine via k256; x must equal pub_x.
+            match miner.nexapow_gmul_debug(&priv_be) {
+                Ok(limbs) => {
+                    let fe = |l: &[u64]| -> k256::FieldElement {
+                        let mut be = [0u8; 32];
+                        for i in 0..4 {
+                            be[(3 - i) * 8..(3 - i) * 8 + 8]
+                                .copy_from_slice(&l[i].to_be_bytes());
+                        }
+                        k256::FieldElement::from_bytes((&be).into()).unwrap()
+                    };
+                    let x = fe(&limbs[0..4]);
+                    let y = fe(&limbs[4..8]);
+                    let z = fe(&limbs[8..12]);
+                    let infinity = limbs[12] as u32;
+                    let zi = z.invert().unwrap();
+                    let zi2 = zi.square();
+                    let xa = x * zi2;
+                    let ya = y * zi2 * zi;
+                    println!(
+                        "gmul priv=3: inf={} x={} y={}",
+                        infinity,
+                        hex::encode(xa.to_bytes()),
+                        hex::encode(ya.to_bytes())
+                    );
+                    println!("exp.x f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9");
+                }
+                Err(e) => println!("gmul ERR {e}"),
+            }
+
+            // ecdsa_sign(priv=3, msg=0) — exercises rfc6979 + ct_generator_mul
+            // + mod-n scalar ops. Compare against k256 deterministic sign.
+            match miner.nexapow_ecdsa_debug(&priv_be, &msg) {
+                Ok((eflag, esig)) => {
+                    let mut r_be = [0u8; 32];
+                    let mut s_be = [0u8; 32];
+                    for i in 0..4 {
+                        let rl = u64::from_le_bytes(
+                            esig[i * 8..i * 8 + 8].try_into().unwrap(),
+                        );
+                        let sl = u64::from_le_bytes(
+                            esig[32 + i * 8..32 + i * 8 + 8].try_into().unwrap(),
+                        );
+                        r_be[(3 - i) * 8..(3 - i) * 8 + 8]
+                            .copy_from_slice(&rl.to_be_bytes());
+                        s_be[(3 - i) * 8..(3 - i) * 8 + 8]
+                            .copy_from_slice(&sl.to_be_bytes());
+                    }
+                    println!("ecdsa_sign flag={eflag}");
+                    println!("r = {}", hex::encode(r_be));
+                    println!("s = {}", hex::encode(s_be));
+                    let sk = k256::ecdsa::SigningKey::from_bytes(
+                        (&priv_be).into(),
+                    )
+                    .unwrap();
+                    let (esig_ref, _recid) =
+                        k256::ecdsa::signature::hazmat::PrehashSigner::sign_prehash(
+                            &sk, &msg,
+                        )
+                        .unwrap();
+                    let (rr, ss) = esig_ref.split_bytes();
+                    println!("exp.r {}", hex::encode(rr));
+                    println!("exp.s {}", hex::encode(ss));
+                }
+                Err(e) => println!("ecdsa_sign ERR {e}"),
+            }
+            continue 'cases;
         }
         // GhostRider per-stage bisect: ZION_GR_BISECT=1 runs each of the 15
         // core SPH hashes on the case header and prints hex for diffing
