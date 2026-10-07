@@ -240,13 +240,41 @@ fn real_main() {
         #[cfg(feature = "native-hashers")]
         {
             let dag_res = match c.algo {
-                "ethash" | "etchash" => Some(miner.generate_ethash_dag_on_gpu(0)),
+                "ethash" | "etchash" | "octopus" => {
+                    Some(miner.generate_ethash_dag_on_gpu(0))
+                }
                 "kawpow" => Some(miner.generate_kawpow_dag_on_gpu(0)),
                 "progpow" => Some(miner.generate_progpow_dag_on_gpu(0)),
+                "verthash" => {
+                    // Verthash needs the ~1.2GB static data file. Look for it
+                    // in the usual locations; skip cleanly if absent.
+                    let candidates = [
+                        std::env::var("VERTHASH_DAT").unwrap_or_default(),
+                        "/home/zionserver/verthash.dat".to_string(),
+                        "./verthash.dat".to_string(),
+                    ];
+                    let found = candidates.iter().find(|p| {
+                        !p.is_empty() && std::path::Path::new(p.as_str()).exists()
+                    });
+                    match found {
+                        Some(path) => match std::fs::read(path) {
+                            Ok(data) => Some(miner.set_verthash_data(&data)),
+                            Err(e) => Some(Err(anyhow::anyhow!("read {path}: {e}"))),
+                        },
+                        None => {
+                            println!(
+                                "{:<14} SKIP  verthash.dat not found (set VERTHASH_DAT)",
+                                c.algo
+                            );
+                            skip += 1;
+                            continue;
+                        }
+                    }
+                }
                 _ => None,
             };
             if let Some(Err(e)) = dag_res {
-                println!("{:<14} ERR   DAG gen failed: {e}", c.algo);
+                println!("{:<14} ERR   DAG/data gen failed: {e}", c.algo);
                 fail += 1;
                 continue;
             }

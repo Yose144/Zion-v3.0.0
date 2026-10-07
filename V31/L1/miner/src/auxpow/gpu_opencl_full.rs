@@ -1054,9 +1054,34 @@ impl ExtGpuMiner {
             return self.mine_beamhash_solver(header, extra, target, base_nonce, batch_size);
         }
 
+        // Algorithms with dedicated multi-kernel paths must dispatch BEFORE
+        // the generic `ensure_proque(kernel_file)` below — their kernel files
+        // either require special compile defines (verthash: -DWORK_SIZE/-DMDIV)
+        // or are compiled by the dedicated path itself (zelhash prod,
+        // equihash Wagner).  Compiling them via the generic path fails or
+        // wastes a compilation.
+        match algorithm {
+            "verthash" | "verthash_vtc" => {
+                return self.mine_verthash(header, target, base_nonce);
+            }
+            "equihashzero" | "equihashzero_zcl" => {
+                return self.mine_equihash(header, target, base_nonce);
+            }
+            "equihash" | "equihash_zec" => {
+                return self.mine_equihash200(header, target, base_nonce);
+            }
+            "zelhash" | "zelhash_flux" => {
+                return self.mine_zelhash_prod(header, target, base_nonce);
+            }
+            _ => {}
+        }
+
         // Ethash/KawPow need the per-epoch DAG; clone the Arc-backed buffer
         // handle before borrowing `self` for the ProQue below.
-        let ethash_dag = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
+        let ethash_dag = if matches!(
+            algorithm,
+            "ethash" | "etchash" | "ethash_etc" | "octopus" | "octopus_cfx"
+        ) {
             self.ethash_dag.clone()
         } else {
             None
@@ -1093,6 +1118,17 @@ impl ExtGpuMiner {
         } else {
             None
         };
+
+        // Cap batch_size per algorithm BEFORE kernel construction and
+        // dispatch: memory-heavy algos allocate per-work-item buffers inside
+        // their builders (ghostrider 2MB/WI, qhash 512KB/WI, neoscrypt
+        // 32KB/WI, dynexsolve ~30KB/WI).  Without this cap the builder sizes
+        // its buffer with min(batch, cap) while the dispatch uses the raw
+        // batch — work-items past the cap index outside the buffer
+        // (CL_OUT_OF_HOST_MEMORY / memory faults observed on ghostrider).
+        let batch_size = batch_size.min(Self::algo_max_batch(algorithm));
+        // Read before the `pro_que` mutable borrow below (neoscrypt arm).
+        let max_work_items = self.work_size;
 
         // For KawPow/ProgPow, use period-based ProQue (recompiled per period).
         // For all other algorithms, use the standard cached ProQue.
@@ -1323,12 +1359,6 @@ impl ExtGpuMiner {
                 &output_hash_buf,
                 &found_flag_buf,
             )?,
-            "zelhash" | "zelhash_flux" => {
-                // Use the production multi-kernel Wagner's algorithm
-                // (zelhash_prod_kernel.cl) instead of the simplified single-kernel.
-                // Falls back to simplified kernel if VRAM is insufficient.
-                return self.mine_zelhash_prod(header, target, base_nonce);
-            }
             "beamhash" | "beamhash_beam" => unreachable!(),
             "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => {
                 let dag = fishhash_dag.ok_or_else(|| {
@@ -1350,26 +1380,11 @@ impl ExtGpuMiner {
                     &found_flag_buf,
                 )?
             }
-            "verthash" | "verthash_vtc" => {
-                // Verthash: I/O-bound algorithm requiring 1.2GB data file
-                // and precomputed SHA3 states. Delegated to mine_verthash()
-                // which handles the 3-kernel dispatch:
-                //   1. sha3_512_precompute → 8 Keccak states from header
-                //   2. sha3_512_256 → initial 256-bit hash per nonce
-                //   3. verthash_4w → 4096 memory seeks + target check
-                return self.mine_verthash(header, target, base_nonce);
-            }
-            "equihashzero" | "equihashzero_zcl" => {
-                // Equihash 192,7: multi-kernel Wagner's algorithm
-                // Delegated to mine_equihash() which handles the full
-                // multi-kernel dispatch (init_ht → round0..6 → sols)
-                // and double-SHA256 solution verification.
-                return self.mine_equihash(header, target, base_nonce);
-            }
-            "equihash" | "equihash_zec" => {
-                // Equihash 200,9: multi-kernel Wagner's algorithm (Zcash)
-                // Same multi-pass approach as 192,7 but with N=200, K=9.
-                return self.mine_equihash200(header, target, base_nonce);
+            // verthash / equihashzero / equihash / zelhash are dispatched
+            // above before the generic ProQue is compiled (dedicated paths).
+            "verthash" | "verthash_vtc" | "equihashzero" | "equihashzero_zcl"
+            | "equihash" | "equihash_zec" | "zelhash" | "zelhash_flux" => {
+                unreachable!("dispatched before generic ProQue build")
             }
             "nexapow" | "nexapow_nexa" => {
                 // NexaPow: double-SHA256 → secp256k1 Schnorr sign → SHA256
@@ -1430,6 +1445,71 @@ impl ExtGpuMiner {
                     &found_flag_buf,
                 )?
             }
+            "eaglesong" | "eaglesong_ckb" => {
+                // Eaglesong (CKB): 80-byte header, nonce injected at
+                // offset 32 inside the kernel.
+                Self::build_eaglesong_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
+            "neoscrypt" | "neoscrypt_phx" => {
+                // NeoScrypt (PHX): memory-hard — each work-item needs a
+                // private 32 KiB scratchpad in global memory.  Sized for the
+                // dispatch: batch_factor=1 → one nonce per work-item.
+                let wi_count = (batch_size as usize).min(max_work_items).max(1);
+                let scratch_len = wi_count * 32768usize;
+                let scratch_buf: Buffer<u8> = Buffer::builder()
+                    .queue(q.clone())
+                    .len(scratch_len)
+                    .build()
+                    .map_err(|e| {
+                        anyhow!(
+                            "NeoScrypt scratchpad alloc failed ({} MB): {e}",
+                            scratch_len / 1_048_576
+                        )
+                    })?;
+                Self::build_neoscrypt_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                    &scratch_buf,
+                )?
+            }
+            "octopus" | "octopus_cfx" => {
+                // Octopus (CFX): Ethash-like DAG lookup — reuses the
+                // uploaded Ethash DAG buffer for now (proper Octopus DAG
+                // sizing constants are a TODO — same 128-byte entries).
+                let dag = ethash_dag.ok_or_else(|| {
+                    anyhow!(
+                        "Octopus DAG not set; call ExtGpuMiner::set_ethash_dag() \
+                         before mining CFX (shares ethash DAG machinery)"
+                    )
+                })?;
+                Self::build_octopus_kernel(
+                    pro_que,
+                    kernel_name,
+                    header,
+                    target,
+                    base_nonce,
+                    &dag.buf,
+                    dag.size_entries,
+                    &output_nonce_buf,
+                    &output_hash_buf,
+                    &found_flag_buf,
+                )?
+            }
             other => anyhow::bail!("unsupported GPU algorithm: {other}"),
         };
 
@@ -1451,6 +1531,9 @@ impl ExtGpuMiner {
             "ghostrider" | "ghostrider_rtm" => 1,     // GhostRider: 2MB scratchpad per nonce
             "dynexsolve" | "dynexsolve_dnx" => 1,     // DynexSolve: SAT solver per nonce
             "zelhash" | "zelhash_flux" => 1,          // ZelHash: multi-kernel, 1 nonce per dispatch
+            "eaglesong" | "eaglesong_ckb" => 1,       // Eaglesong: 1 nonce per work-item
+            "neoscrypt" | "neoscrypt_phx" => 1,       // NeoScrypt: 1 nonce per work-item
+            "octopus" | "octopus_cfx" => 1,           // Octopus: 1 nonce per work-item
             _ => 8,                                   // blake3, kheavyhash, keryxhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
@@ -1475,6 +1558,9 @@ impl ExtGpuMiner {
             "ghostrider" | "ghostrider_rtm" => 64, // GhostRider: hash + CN, 64 for register pressure
             "dynexsolve" | "dynexsolve_dnx" => 64, // DynexSolve: ODE solver, 64 for register pressure
             "zelhash" | "zelhash_flux" => 64,      // ZelHash: reqd_work_group_size(64,1,1)
+            "eaglesong" | "eaglesong_ckb" => 256,  // Eaglesong: reqd_work_group_size(256,1,1)
+            "neoscrypt" | "neoscrypt_phx" => 64,   // NeoScrypt: 32KiB/WI scratchpad — small WGs
+            "octopus" | "octopus_cfx" => 128,      // Octopus: DAG-bound, 128 like ethash
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -2965,6 +3051,10 @@ typedef unsigned long ulong;
             Err(_) => {
                 let embedded = match kernel_file {
                     "verthash_kernel.cl" => include_str!("../../csrc/opencl/verthash_kernel.cl"),
+                    "equihash_kernel.cl" => include_str!("../../csrc/opencl/equihash_kernel.cl"),
+                    "equihash200_kernel.cl" => {
+                        include_str!("../../csrc/opencl/equihash200_kernel.cl")
+                    }
                     "sha3_512_precompute.cl" => {
                         include_str!("../../csrc/opencl/sha3_512_precompute.cl")
                     }
@@ -3245,6 +3335,162 @@ typedef unsigned long ulong;
         Ok(kernel)
     }
 
+    /// Build the Eaglesong (CKB) kernel.
+    ///
+    /// Kernel signature:
+    ///   eaglesong_mine(header, header_len, base_nonce,
+    ///                  output_hash, output_nonce, found_flag, target)
+    fn build_eaglesong_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        let header_len = header.len().min(80);
+        let mut header_padded = vec![0u8; 80];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(header_padded.len())
+            .copy_host_slice(&header_padded)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(header_len as u32)
+            .arg(base_nonce)
+            .arg(output_hash_buf)
+            .arg(output_nonce_buf)
+            .arg(found_flag_buf)
+            .arg(&target_buf)
+            .build()
+            .map_err(|e| anyhow!("Eaglesong kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    /// Build the NeoScrypt (PHX) kernel.
+    ///
+    /// Kernel signature:
+    ///   neoscrypt_mine(header, header_len, base_nonce,
+    ///                  output_hash, output_nonce, found_flag, target, scratchpad)
+    /// `scratch_buf` must provide 32 KiB per work-item.
+    #[allow(clippy::too_many_arguments)]
+    fn build_neoscrypt_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+        scratch_buf: &Buffer<u8>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        let header_len = header.len().min(152);
+        let mut header_padded = vec![0u8; 152];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(header_padded.len())
+            .copy_host_slice(&header_padded)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(header_len as u32)
+            .arg(base_nonce)
+            .arg(output_hash_buf)
+            .arg(output_nonce_buf)
+            .arg(found_flag_buf)
+            .arg(&target_buf)
+            .arg(scratch_buf)
+            .build()
+            .map_err(|e| anyhow!("NeoScrypt kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
+    /// Build the Octopus (CFX) kernel.
+    ///
+    /// Kernel signature:
+    ///   octopus_mine(header, header_len, base_nonce,
+    ///                output_hash, output_nonce, found_flag, target, dag, dag_size)
+    #[allow(clippy::too_many_arguments)]
+    fn build_octopus_kernel(
+        pro_que: &ProQue,
+        kernel_name: &str,
+        header: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        dag_buf: &Buffer<u64>,
+        dag_size_entries: u64,
+        output_nonce_buf: &Buffer<u64>,
+        output_hash_buf: &Buffer<u8>,
+        found_flag_buf: &Buffer<u32>,
+    ) -> Result<Kernel> {
+        let q = pro_que.queue().clone();
+
+        let header_len = header.len().min(32);
+        let mut header_padded = vec![0u8; 32];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+
+        let header_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(header_padded.len())
+            .copy_host_slice(&header_padded)
+            .build()?;
+        let target_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target.as_slice())
+            .build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name(kernel_name)
+            .arg(&header_buf)
+            .arg(header_len as u32)
+            .arg(base_nonce)
+            .arg(output_hash_buf)
+            .arg(output_nonce_buf)
+            .arg(found_flag_buf)
+            .arg(&target_buf)
+            .arg(dag_buf)
+            .arg(dag_size_entries)
+            .build()
+            .map_err(|e| anyhow!("Octopus kernel build failed: {e}"))?;
+
+        Ok(kernel)
+    }
+
     /// Build the ZelHash (Equihash 125,4) kernel for FLUX mining.
     ///
     /// The `header` is the block header prefix (without nonce/solution).
@@ -3503,6 +3749,28 @@ typedef unsigned long ulong;
     // GhostRider (RTM) — 15 SPH core algos + 14 CryptoNight variants
     // -----------------------------------------------------------------
 
+    /// Per-algorithm hard cap on work-items per dispatch, driven by
+    /// per-work-item memory footprint.  Every batch_size entering `mine()`
+    /// is clamped to this BEFORE buffer sizing and kernel enqueue, so a
+    /// work-item can never index beyond its allocated scratch region.
+    fn algo_max_batch(algorithm: &str) -> u64 {
+        match algorithm {
+            // GhostRider: 2MB CryptoNight scratchpad per work-item → 128 WI
+            // = 256MB. (512 WI = 1GB still hit CL_OUT_OF_HOST_MEMORY on
+            // NVIDIA driver under memory pressure.)
+            "ghostrider" | "ghostrider_rtm" => 128,
+            // Qhash: 512KB quantum state vector per work-item.
+            "qhash" | "qhash_qtc" => 4096,
+            // DynexSolve: ~30KB clause/var arrays per work-item.
+            "dynexsolve" | "dynexsolve_dnx" => 8192,
+            // NeoScrypt: 32KB scratchpad per work-item → 8192 WI = 256MB.
+            "neoscrypt" | "neoscrypt_phx" => 8192,
+            // Verthash: 4-way cooperative work-items, heavy __local state.
+            "verthash" | "verthash_vtc" => 4096,
+            _ => u64::MAX,
+        }
+    }
+
     /// CryptoNight scratchpad: max 2MB per work-item (CNFast variant)
     /// CN variants: 256KB (turtle), 512KB (dark), 1MB (lite), 2MB (fast)
     const GHOSTRIDER_SCRATCH_BYTES: usize = 2 * 1024 * 1024; // 2MB max
@@ -3520,9 +3788,9 @@ typedef unsigned long ulong;
     ) -> Result<Kernel> {
         let q = pro_que.queue().clone();
 
-        // Cap batch by VRAM: each work-item needs 2MB scratchpad (max CN variant)
-        // With 16GB unified memory (M1), max ~8000 work-items. Use min(batch_size, 512) for safety.
-        let effective_batch = batch_size.min(512) as usize;
+        // Cap batch by VRAM: each work-item needs 2MB scratchpad (max CN
+        // variant). 128 WI = 256MB — kept in sync with algo_max_batch().
+        let effective_batch = batch_size.min(128) as usize;
 
         let mut hdr = [0u8; 80];
         let copy_len = header.len().min(80);
@@ -3597,14 +3865,40 @@ typedef unsigned long ulong;
         // DynexSolve is memory-light (~30KB per work-item), can use large batch
         let effective_batch = batch_size.min(8192) as usize;
 
-        let mut hdr = [0u8; 80];
-        let copy_len = header.len().min(80);
-        hdr[..copy_len].copy_from_slice(&header[..copy_len]);
+        // DynexSolve kernel ABI takes the SAT problem directly:
+        //   (clause_literals, num_clauses, num_variables, base_nonce,
+        //    output_hash, found_flag, output_nonce, target,
+        //    clause_neurons, clause_scratch)
+        //
+        // For mining we synthesize a deterministic random 3-SAT instance
+        // from the job header (SHA-256 driven): num_variables=64,
+        // num_clauses=256 — well under MAX_CLAUSES=1024.
+        let num_variables: u32 = 64;
+        let num_clauses: u32 = 256;
+        let mut seed = [0u8; 32];
+        let copy_len = header.len().min(32);
+        seed[..copy_len].copy_from_slice(&header[..copy_len]);
+        let mut rng_state = u64::from_le_bytes(seed[..8].try_into().unwrap())
+            .wrapping_add(0x9E3779B97F4A7C15);
+        let mut next_u32 = || {
+            // xorshift64*
+            rng_state ^= rng_state >> 12;
+            rng_state ^= rng_state << 25;
+            rng_state ^= rng_state >> 27;
+            (rng_state.wrapping_mul(0x2545F4914F6CDD1D) >> 32) as u32
+        };
+        let mut clause_literals = vec![0i32; 3 * num_clauses as usize];
+        for lit in clause_literals.iter_mut() {
+            // Kernel decode_literal() uses 1-based sign-encoded literals:
+            // lit > 0 → var (lit-1) positive, lit < 0 → var (-lit-1) negated.
+            let var = (next_u32() % num_variables) as i32 + 1;
+            *lit = if next_u32() & 1 == 0 { var } else { -var };
+        }
 
-        let header_buf: Buffer<u8> = Buffer::builder()
+        let literals_buf: Buffer<i32> = Buffer::builder()
             .queue(q.clone())
-            .len(80)
-            .copy_host_slice(&hdr[..])
+            .len(clause_literals.len())
+            .copy_host_slice(&clause_literals)
             .build()?;
 
         let target_buf: Buffer<u8> = Buffer::builder()
@@ -3613,41 +3907,33 @@ typedef unsigned long ulong;
             .copy_host_slice(target.as_slice())
             .build()?;
 
-        // Allocate per-work-item buffers as byte pools
-        let clauses_bytes = effective_batch * Self::DYNEX_MAX_CLAUSES * Self::DYNEX_CLAUSE_BYTES;
-        let vars_bytes = effective_batch * Self::DYNEX_MAX_VARS * 4;
-        let tmp_bytes = effective_batch * 4 * Self::DYNEX_MAX_VARS * 4;
-        let tmp_x_bytes = effective_batch * Self::DYNEX_MAX_VARS * 4;
-        let meta_bytes = effective_batch * 2 * 4;
-
-        let clauses_pool: Buffer<u8> = Buffer::builder()
+        // Per-work-item scratch: clause_neurons[gid * num_clauses] floats,
+        // clause_scratch[gid * 3 * MAX_CLAUSES] floats.
+        let neurons_len = effective_batch * num_clauses as usize;
+        let scratch_len = effective_batch * 3 * Self::DYNEX_MAX_CLAUSES;
+        let clause_neurons: Buffer<f32> = Buffer::builder()
             .queue(q.clone())
-            .len(clauses_bytes)
+            .len(neurons_len)
             .build()?;
-        let vars_pool: Buffer<u8> = Buffer::builder().queue(q.clone()).len(vars_bytes).build()?;
-        let tmp_pool: Buffer<u8> = Buffer::builder().queue(q.clone()).len(tmp_bytes).build()?;
-        let tmp_x_pool: Buffer<u8> = Buffer::builder()
+        let clause_scratch: Buffer<f32> = Buffer::builder()
             .queue(q.clone())
-            .len(tmp_x_bytes)
+            .len(scratch_len)
             .build()?;
-        let meta_pool: Buffer<u8> = Buffer::builder().queue(q.clone()).len(meta_bytes).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&header_buf) // 0: header (80 bytes)
-            .arg(80u32) // 1: header_len
-            .arg(base_nonce) // 2: base_nonce
-            .arg(output_hash_buf) // 3: output_hash (32 bytes)
-            .arg(found_flag_buf) // 4: found_flag
-            .arg(output_nonce_buf) // 5: output_nonce
-            .arg(&target_buf) // 6: target (32 bytes)
-            .arg(&clauses_pool) // 7: clauses_pool
-            .arg(&vars_pool) // 8: vars_pool
-            .arg(&tmp_pool) // 9: tmp_pool (k1-k4)
-            .arg(&tmp_x_pool) // 10: tmp_x_pool
-            .arg(&meta_pool) // 11: meta_pool
+            .arg(&literals_buf) // 0: clause_literals
+            .arg(num_clauses) // 1: num_clauses
+            .arg(num_variables) // 2: num_variables
+            .arg(base_nonce) // 3: base_nonce
+            .arg(output_hash_buf) // 4: output_hash (32 bytes)
+            .arg(found_flag_buf) // 5: found_flag
+            .arg(output_nonce_buf) // 6: output_nonce
+            .arg(&target_buf) // 7: target (32 bytes)
+            .arg(&clause_neurons) // 8: clause_neurons
+            .arg(&clause_scratch) // 9: clause_scratch
             .build()
             .map_err(|e| anyhow!("DynexSolve kernel build failed: {e}"))?;
 
@@ -3705,9 +3991,12 @@ typedef unsigned long ulong;
     /// Returns 8 u64 words (64 bytes) that can be uploaded to the GPU as
     /// `blake_state` for `kernel_round0`.
     fn zcash_blake2b_state(header: &[u8]) -> [u64; 8] {
-        // Zcash Equihash 192,7 parameters
-        let n: u64 = 192;
-        let k: u64 = 7;
+        Self::equihash_blake2b_state(header, 192, 7)
+    }
+
+    /// Blake2b midstate for Equihash (N,K) with ZcashPoW personalization.
+    /// 192,7 → Zclassic, 200,9 → Zcash.
+    fn equihash_blake2b_state(header: &[u8], n: u64, k: u64) -> [u64; 8] {
         let hash_len: u64 = 50; // ZCASH_HASH_LEN
 
         // Initialize state (zcash_blake2b_init)
@@ -4317,26 +4606,30 @@ typedef unsigned long ulong;
         const ZCASH_BLOCK_HEADER_LEN: usize = 140;
         const ZCASH_NONCE_LEN: usize = 32;
         const ZCASH_NONCE_OFFSET: usize = ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN; // 108
+        // NVIDIA local-memory ceiling (48KB) forces WG=32: the round kernels
+        // allocate ~84KB of __local at WG=64. Compiled with -DEQ_WG_SIZE=32.
+        const EQ_WG: usize = 32;
         let zcash_sol_len: usize = (1usize << param_k) * (prefix as usize + 1) / 8;
 
         // sols_t layout (matching the kernel struct):
         //   uint nr;           // 4 bytes
         //   uint likely_invalids; // 4 bytes
         //   uchar valid[MAX_SOLS]; // 10 bytes → padded to 12 for uint alignment
-        //   uint values[MAX_SOLS][1<<PARAM_K]; // 10 * 128 * 4 = 5120 bytes
-        // Total: 12 + 5120 = 5132 bytes. Use 8192 for safety margin.
-        const SOLS_BUF_SIZE: usize = 8192;
+        //   uint values[MAX_SOLS][1<<PARAM_K]; // 10 * (1<<K) * 4 bytes
+        // K=7: 12 + 5120 = 5132; K=9: 12 + 20480 = 20492.
+        let sols_buf_size: usize = 16 + MAX_SOLS * (1usize << param_k) * 4;
 
         // Check VRAM — need at least 2 * ht_size + overhead
-        let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
+        let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + sols_buf_size + 1024;
         crate::ext_info!(
             "auxpow_gpu_equihash ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             ht_size as f64 / 1e9,
             vram_needed as f64 / 1e9
         );
 
-        // Get ProQue for equihash kernel
-        let pro_que = self.ensure_proque(kernel_file)?;
+        // Get ProQue for equihash kernel — WG=32 keeps __local under the
+        // 48KB NVIDIA limit (84KB at WG=64).
+        let pro_que = self.ensure_proque_with_opts(kernel_file, "-DEQ_WG_SIZE=32")?;
         let q = pro_que.queue().clone();
 
         // Prepare 140-byte header with nonce
@@ -4351,8 +4644,13 @@ typedef unsigned long ulong;
             header_buf[i] = 0;
         }
 
-        // Compute Blake2b state from first 128 bytes
-        let blake_state = Self::zcash_blake2b_state(&header_buf);
+        // Compute Blake2b state from first 128 bytes — personalization must
+        // match the (N,K) parameter set: ZcashPoW with n,k embedded in h[7].
+        let blake_state = if param_k == 9 {
+            Self::equihash_blake2b_state(&header_buf, 200, 9)
+        } else {
+            Self::zcash_blake2b_state(&header_buf)
+        };
 
         // Allocate GPU buffers
         crate::ext_info!("auxpow_gpu_equihash allocating hash tables...");
@@ -4399,65 +4697,88 @@ typedef unsigned long ulong;
 
         let sols_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(SOLS_BUF_SIZE)
+            .len(sols_buf_size)
             .fill_val(0u8)
             .build()?;
 
-        // Create kernels
+        // Create kernels — ocl requires all args declared at build time;
+        // set_arg() rebinds them per dispatch (alternating ht0/ht1).
         let k_init_ht = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_init_ht")
+            .arg(&ht0)
+            .arg(&rc0)
             .build()?;
 
         let k_round0 = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_round0")
+            .arg(&blake_st_buf)
+            .arg(&ht0)
+            .arg(&rc0)
+            .arg(&dbg_buf)
             .build()?;
 
         // For K=7, rounds 1-5 are collision-finding (no sols arg),
         // round 6 is the final round (with sols arg).
         // k_rounds[0] = kernel_round1, ..., k_rounds[4] = kernel_round5
         let mut k_rounds: Vec<Kernel> = Vec::with_capacity((param_k - 2) as usize);
-        for round in 1..=(param_k - 1) {
+        for round in 1..=(param_k - 2) {
             let name = format!("kernel_round{}", round);
             k_rounds.push(
                 Kernel::builder()
                     .queue(q.clone())
                     .program(pro_que.program())
                     .name(&name)
+                    .arg(&ht0)
+                    .arg(&ht1)
+                    .arg(&rc0)
+                    .arg(&rc1)
+                    .arg(&dbg_buf)
                     .build()?,
             );
         }
 
-        // Final round kernel (round K-1 = 6) with sols argument
+        // Final round kernel (round K-1) with sols argument
         let k_round_final = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
-            .name("kernel_round6")
+            .name(&format!("kernel_round{}", param_k - 1))
+            .arg(&ht0)
+            .arg(&ht1)
+            .arg(&rc0)
+            .arg(&rc1)
+            .arg(&dbg_buf)
+            .arg(&sols_buf)
             .build()?;
 
         let k_sols = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name("kernel_sols")
+            .arg(&ht0)
+            .arg(&ht1)
+            .arg(&sols_buf)
+            .arg(&rc0)
+            .arg(&rc1)
             .build()?;
 
         // Work sizes
         let init_global = NR_ROWS / ROWS_PER_UINT; // 262,144
-        let init_local = 256;
+        let init_local = EQ_WG;
         let round0_global = {
             // Must divide NR_INPUTS (2^24). Use a reasonable size.
             // 2^14 = 16384 → each thread processes 1024 inputs
             let ws = 1 << 14;
             ws
         };
-        let round0_local = 64;
+        let round0_local = EQ_WG;
         let rounds_global = NR_ROWS; // 1,048,576
-        let rounds_local = 64;
+        let rounds_local = EQ_WG;
         let sols_global = NR_ROWS;
-        let sols_local = 64;
+        let sols_local = EQ_WG;
 
         let start = Instant::now();
 
@@ -4485,7 +4806,7 @@ typedef unsigned long ulong;
                 .local_work_size(init_local)
                 .enq()?;
         }
-        q.finish()?;
+        q.finish().map_err(|e| anyhow!("equihash init_ht finish: {e}"))?;
 
         // 2. Round 0: Blake2b hashing → fills ht[0]
         k_round0.set_arg(0, &blake_st_buf)?;
@@ -4499,7 +4820,7 @@ typedef unsigned long ulong;
                 .local_work_size(round0_local)
                 .enq()?;
         }
-        q.finish()?;
+        q.finish().map_err(|e| anyhow!("equihash round0 finish: {e}"))?;
 
         // 3. Rounds 1..K-2: collision finding (alternating ht_src/ht_dst)
         //    For K=7: rounds 1-5 use k_rounds[0..4] (no sols arg)
@@ -4534,7 +4855,7 @@ typedef unsigned long ulong;
                     .local_work_size(rounds_local)
                     .enq()?;
             }
-            q.finish()?;
+            q.finish().map_err(|e| anyhow!("equihash round{round} finish: {e}"))?;
         }
 
         // 4. Round K-1 (= 6): final round with sols argument
@@ -4570,7 +4891,7 @@ typedef unsigned long ulong;
                     .local_work_size(rounds_local)
                     .enq()?;
             }
-            q.finish()?;
+            q.finish().map_err(|e| anyhow!("equihash final-round finish: {e}"))?;
         }
 
         // 5. kernel_sols: extract solutions
@@ -4586,13 +4907,13 @@ typedef unsigned long ulong;
                 .local_work_size(sols_local)
                 .enq()?;
         }
-        q.finish()?;
+        q.finish().map_err(|e| anyhow!("equihash kernel_sols finish: {e}"))?;
 
         let elapsed_ms = start.elapsed().as_millis();
         crate::ext_info!("auxpow_gpu_equihash kernels completed in {elapsed_ms} ms");
 
         // 5. Read back solutions
-        let mut sols_data = vec![0u8; SOLS_BUF_SIZE];
+        let mut sols_data = vec![0u8; sols_buf_size];
         sols_buf.read(&mut sols_data).enq()?;
 
         // Parse sols_t structure
@@ -4623,7 +4944,7 @@ typedef unsigned long ulong;
             let mut inputs = vec![0u32; n_inputs];
             for j in 0..n_inputs {
                 let off = values_offset + j * 4;
-                if off + 4 > SOLS_BUF_SIZE {
+                if off + 4 > sols_buf_size {
                     break;
                 }
                 inputs[j] = u32::from_le_bytes([

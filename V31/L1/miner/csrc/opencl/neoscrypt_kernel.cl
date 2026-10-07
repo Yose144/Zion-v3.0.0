@@ -555,6 +555,7 @@ __kernel void neoscrypt_mine(
     uint header_len,
     ulong base_nonce,
     __global uchar *output_hash,
+    __global ulong *output_nonce,
     __global uint *found_flag,
     __global const uchar *target,
     __global uchar *scratchpad
@@ -592,6 +593,7 @@ __kernel void neoscrypt_mine(
         uint old = atomic_xchg(found_flag, 1u);
         if (old == 0u) {
             for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            output_nonce[0] = nonce;
         }
     }
 }
