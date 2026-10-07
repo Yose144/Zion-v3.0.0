@@ -252,7 +252,7 @@ DEV_INLINE void progPowLoop(
 // (uint32 at offset 32) with gid (the nonce).
 extern "C" {
 
-__global__ XMRIG_INCLUDE_LAUNCH_BOUNDS void progpow_search(
+__global__ __launch_bounds__(256) void progpow_search(
     const uint64_t *g_dag_u64,       // 0: DAG buffer (as u64, reinterpreted as dag_t inside)
     const uint32_t* job_blob,        // 1: 40-byte job blob (10 uint32)
     const uint64_t target,           // 2: u64 target (big-endian)
