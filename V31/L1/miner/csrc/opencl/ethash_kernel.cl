@@ -247,9 +247,10 @@ void keccak256(const uchar *input, const uint len, uchar *output) {
 
 #define FNV_PRIME 0x01000193u
 
+// Ethash uses FNV-1 (multiply-first): fnv(a, b) = (a * prime) ^ b
 __attribute__((always_inline))
 inline uint fnv1a(uint a, uint b) {
-    return (a ^ b) * FNV_PRIME;
+    return (a * FNV_PRIME) ^ b;
 }
 
 // ── Mining kernel ────────────────────────────────────────────────────
@@ -318,10 +319,12 @@ __kernel void ethash_mine(
             mix[j + 16] = w;
         }
 
-        // ── Step 3: 64 DAG accesses with FNV-1a mixing ──
-        // DAG is accessed randomly; prefetch hints help the GPU memory subsystem.
+        // ── Step 3: 64 DAG accesses with FNV-1 mixing ──
+        // Standard hashimoto: p = fnv(i ^ s[0], mix[i % w]) where s[0] is the
+        // static first word of the seed and mix[i % w] is the rotating word.
+        const uint s0 = mix[0];
         for (int i = 0; i < 64; i++) {
-            uint index = fnv1a((uint)i ^ mix[0], mix[0]) % (uint)dag_size;
+            uint index = fnv1a((uint)i ^ s0, mix[i & 31]) % (uint)dag_size;
 
             // Load 128-byte DAG node = 16 × u64, split into 32 × u32 (little-endian).
             __global const ulong *node = dag + (ulong)index * 16UL;
