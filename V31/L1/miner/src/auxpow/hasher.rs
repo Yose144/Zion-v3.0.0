@@ -525,6 +525,71 @@ pub fn is_valid_autolykos_solution(_header: &[u8], _nonce: u64, _solution: &[u8]
     false
 }
 
+/// Autolykos v2 CPU reference — spec-exact (element
+/// `T[i] = Blake2b256(i_BE4 || height_BE4 || M)[1..32)`, index chain via
+/// `ext = h32||h32[0..3)`, BE mod-N, 31-byte big-endian accumulate).
+/// `n` is the table size (mainnet 2^26, tests may use smaller).
+/// Shared CPU reference for the OpenCL and CUDA KATs.
+pub fn hash_autolykos_v2(msg: &[u8], nonce: u64, height: u32, n: u32) -> [u8; 32] {
+    use blake2::digest::{Update, VariableOutput};
+
+    let b2b256 = |parts: &[&[u8]]| -> [u8; 32] {
+        let mut h = blake2::Blake2bVar::new(32).unwrap();
+        for p in parts {
+            h.update(p);
+        }
+        let mut out = [0u8; 32];
+        h.finalize_variable(&mut out).unwrap();
+        out
+    };
+
+    // M = concat of i64-BE for i in 0..1024 (8192 bytes)
+    let mut m = [0u8; 8192];
+    for i in 0..1024u64 {
+        m[i as usize * 8..i as usize * 8 + 8].copy_from_slice(&i.to_be_bytes());
+    }
+
+    let nonce_be = nonce.to_be_bytes();
+    let height_be = height.to_be_bytes();
+
+    // Step 1: h1 = b2b256(msg || nonce_BE); i0 = last8BE(h1) mod N
+    let h1 = b2b256(&[msg, &nonce_be]);
+    let prei8 = u64::from_be_bytes(h1[24..32].try_into().unwrap());
+    let i0 = (prei8 % n as u64) as u32;
+
+    // Element fn: T[i] = b2b256(i_BE4 || height_BE4 || M)[1..32)
+    let element = |i: u32| -> [u8; 31] {
+        let d = b2b256(&[&i.to_be_bytes(), &height_be, &m]);
+        let mut e = [0u8; 31];
+        e.copy_from_slice(&d[1..]);
+        e
+    };
+
+    // Step 4: seed = f31 || msg || nonce_BE → h32 → ext = h32||h32[0..3)
+    let f31 = element(i0);
+    let h32 = b2b256(&[&f31, msg, &nonce_be]);
+    let mut ext = [0u8; 35];
+    ext[..32].copy_from_slice(&h32);
+    ext[32..35].copy_from_slice(&h32[..3]);
+
+    // Steps 5-7: idx[k] = BE4(ext[k..k+4]) mod N; sum += T[idx[k]] (BE, mod 2^256)
+    let mut sum = [0u8; 32];
+    for k in 0..32 {
+        let raw = u32::from_be_bytes([ext[k], ext[k + 1], ext[k + 2], ext[k + 3]]);
+        let e = element(raw % n);
+        let mut carry = 0u16;
+        for i in (0..31).rev() {
+            let s = sum[1 + i] as u16 + e[i] as u16 + carry;
+            sum[1 + i] = s as u8;
+            carry = s >> 8;
+        }
+        sum[0] = sum[0].wrapping_add(carry as u8);
+    }
+
+    // Step 8: out = b2b256(sum)
+    b2b256(&[&sum])
+}
+
 // ── VerusHash (Verus) ────────────────────────────────────────────────
 
 pub const VERUS_HEADER_SIZE: usize = 1487;

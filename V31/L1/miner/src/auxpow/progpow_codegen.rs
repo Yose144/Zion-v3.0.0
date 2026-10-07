@@ -549,6 +549,10 @@ pub fn prepare_kawpow_kernel_source_for_algo(
     let data_loads = gen_kawpow_data_loads(params, prog_seed);
 
     base_source
+        .replace(
+            "XMRIG_INCLUDE_OFFSET_MOD_DAG_ELEMENTS",
+            "offset %= PROGPOW_DAG_ELEMENTS;",
+        )
         .replace("XMRIG_INCLUDE_PROGPOW_RANDOM_MATH", &random_math)
         .replace("XMRIG_INCLUDE_PROGPOW_DATA_LOADS", &data_loads)
 }
