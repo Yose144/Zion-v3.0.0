@@ -531,8 +531,20 @@ fn real_main() {
         // don't accumulate across cases on an 8 GB card.
         miner.free_dag_caches();
         let dag_res = match c.algo {
-                "ethash" | "etchash" | "octopus" => {
-                    Some(miner.generate_ethash_dag_on_gpu(0))
+                "ethash" | "etchash" => Some(miner.generate_ethash_dag_on_gpu(0)),
+                "octopus" => {
+                    // Stage-0 Octopus DAG; real dataset is ~4 GiB — the KAT
+                    // builds a reduced-size prefix (node contents identical,
+                    // only page count shrinks) to fit VRAM.
+                    let kat_nodes: u64 = std::env::var("ZION_KAT_OCTOPUS_NODES")
+                        .ok()
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(1 << 16);
+                    let kat_height: u64 = std::env::var("ZION_KAT_OCTOPUS_HEIGHT")
+                        .ok()
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(0);
+                    Some(miner.generate_octopus_dag_on_gpu(kat_height, kat_nodes))
                 }
                 "kawpow" | "evrprogpow" | "meowpow" => {
                     Some(miner.generate_kawpow_dag_on_gpu(0))
@@ -877,6 +889,87 @@ fn real_main() {
                     );
                 }
                 Ok::<_, anyhow::Error>(format!("mine mix≡CPU nonce={}", share.nonce))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
+        // Octopus (CFX / CIP-3): verify the GPU DAG node contents and the
+        // mined digest against the CPU reference port of Conflux-Rust
+        // `hash_compute` (SipHash warp matrix + remap/powmod + polynomial
+        // evaluation + 256B DAG mix). The DAG prefix on the GPU is built by
+        // the shared ethash-item generator which octopus reuses verbatim.
+        if c.algo == "octopus" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                use zion_miner::auxpow::octopus_ref::{
+                    octopus_cache_size, octopus_dag_item, octopus_hash_ref,
+                    octopus_ident, octopus_make_cache,
+                };
+                let kat_nodes: u64 = std::env::var("ZION_KAT_OCTOPUS_NODES")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(1 << 16);
+                let kat_nodes = kat_nodes & !3u64;
+                let kat_height: u64 = std::env::var("ZION_KAT_OCTOPUS_HEIGHT")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0);
+                let cache_nodes = (octopus_cache_size(kat_height) / 64) as usize;
+                let ident = octopus_ident(kat_height / (1 << 19));
+                let cache = octopus_make_cache(cache_nodes, &ident);
+
+                // Bisect 1: GPU DAG nodes ≡ CPU dataset items.
+                for e in [0u64, 1, 3, 17, kat_nodes - 1] {
+                    let gpu = miner.octopus_dag_read_slice(e, 1)?;
+                    let mut gpu_node = [0u8; 64];
+                    for (i, w) in gpu.iter().enumerate() {
+                        gpu_node[i * 8..i * 8 + 8].copy_from_slice(&w.to_le_bytes());
+                    }
+                    let want = octopus_dag_item(&cache, e);
+                    if gpu_node != want {
+                        anyhow::bail!(
+                            "octopus DAG node {e} mismatch: gpu={} cpu={}",
+                            hex::encode(&gpu_node[..8]),
+                            hex::encode(&want[..8])
+                        );
+                    }
+                }
+                eprintln!("  octopus DAG nodes ≡ CPU ref");
+
+                // Bisect 2: mined digest ≡ CPU hash_compute on the same DAG.
+                let mut h32 = [0u8; 32];
+                let copy = c.header.len().min(32);
+                h32[..copy].copy_from_slice(&c.header[..copy]);
+                let cache_ref = &cache;
+                let dag_item = |i: u64| octopus_dag_item(cache_ref, i);
+                let share = miner
+                    .mine("octopus", &c.header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .ok_or_else(|| anyhow::anyhow!("octopus mine: no share found"))?;
+                let expect = octopus_hash_ref(&h32, share.nonce, kat_nodes, &dag_item);
+                if share.hash != expect {
+                    anyhow::bail!(
+                        "octopus hash mismatch nonce={}: gpu={} cpu={}",
+                        share.nonce,
+                        hex::encode(share.hash),
+                        hex::encode(expect)
+                    );
+                }
+                Ok::<_, anyhow::Error>(format!(
+                    "DAG≡CPU + mine≡CPU nonce={}",
+                    share.nonce
+                ))
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
