@@ -89,10 +89,10 @@ Z tohoto postavení vyrůstá **Caminho do Jardim** — nová odbočka, tak jak 
 
 | Úsek | ~km | Co se děje |
 |---|---:|---|
-| **Fátima → Sabacheira** | ~20 | Ze svatyně po náhorní plošině a olivových hájích do údolí Nabão (částečně Caminho de Fátima Nascente pozpátku). |
-| **Sabacheira — Albergue do Jardim** | razítko | Noc v zahradě, kuchyň, práce na záhonech — a **carimbo Zahrady** do credencialu. Iniciace Země (ruce v hlíně) před mořem. |
-| **Sabacheira → Agroal** | ~5 | Největší pramen řeky Nabão — praia fluvial, ledová čistá voda; práh vody před odletem. |
-| **Agroal → Tomar** | ~11 | Údolím Nabão na jih do templářského města — Convento de Cristo, a zpět na žluté šipky Caminha Central. |
+| **Fátima → Seiça** | ~15 | Ze svatyně po červené značce přes náhorní plošinu a olivové háje na severovýchod do klidné vsi Seiça. |
+| **Seiça → Sabacheira — Albergue do Jardim** | ~5 | Na jih do údolí Nabão: noc v zahradě, kuchyň, práce na záhonech — a **carimbo Zahrady** do credencialu. Iniciace Země (ruce v hlíně) před vodou. |
+| **Genesis Garden → Agroal** | ~4 | Největší pramen řeky Nabão — praia fluvial, ledová čistá voda; práh vody u pramene. |
+| **Agroal → Tomar ⛵** | ~14 po vodě | Sjezd Nabão **po proudu** kajakem/kánoí do templářského města (prověřená trasa; sezóna cca XI–V dle průtoku, açudy = krátké přenášky; pěší varianta po břehu ~13 km). U řeky Convento de Cristo — a zpět na žluté šipky Caminha Central. |
 
 **Razítko Zahrady = kvalifikace požádat o místo na palubě Tres Marias.** Kdo prošel zahradou, nasedá jako poutník, ne jako turista — paluba se poté řídí kapacitou trupu, bezpečností a pravidly programu (poutník nastupuje jako voyage crew). V Tomaru se cesta vrací na Caminho Central a přes Coimbru, Porto a Tui vede až do **Pontevedry** — domácího přístavu Santa María la Mayor. Sabacheira sama byla v 15.–16. století comendou Řádu Kristova — poutní tradice tu má hluboké kořeny.
 
@@ -100,7 +100,7 @@ Z tohoto postavení vyrůstá **Caminho do Jardim** — nová odbočka, tak jak 
 
 ## Otevřené otázky
 
-- Výběr konkrétního pozemku ve freguesii Sabacheira a jeho výměra (v jednání).
+- Parcela identifikována — ~39.6788, −8.4778 v Sabacheiře; výměra a právní převod v jednání.
 - Právní forma: Associação vs Cooperativa vs hybrid.
 - Kapacita solárního systému (kWp / kWh denně).
 - Albergue do Jardim — kapacita, licence, partnerství s Juntou de Sabacheira a Caminho Central.

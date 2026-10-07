@@ -278,10 +278,10 @@ General Circle (all Guardians + long-stay members)
 
 ## 9. Open Questions
 
-- [ ] Exact GPS coordinates and land area (pending acquisition)
+- [ ] Parcel identified ~39.6788, −8.4778 (Sabacheira) — area + legal transfer in negotiation
 - [ ] Solar system capacity confirmation (kWp / kWh daily)
 - [ ] Legal entity: Associação vs Cooperativa vs hybrid
-- [ ] Albergue do Jardim timeline + Caminho do Jardim waymarking (Fátima → Sabacheira → Agroal → Tomar)
+- [ ] Albergue do Jardim timeline + Caminho do Jardim waymarking (Fátima → Seiça → Sabacheira → Agroal → ⛵ Nabão → Tomar)
 - [ ] ZION node installation coordinator (Tech Guardian recruitment)
 - [ ] Dharma Temple La Palma — shared protocol specifications
 - [ ] Seed library: which varieties? Exchange partners?
@@ -382,13 +382,14 @@ General Circle (all Guardians + long-stay members)
 
 ## 14. Caminho do Jardim — Pilgrim Detour (proposed)
 
-Genesis Garden sits inside Portugal's pilgrimage geography: **Sabacheira** parish (~39.68, −8.48, historically a comenda of the Order of Christ) lies ~20 km from **Fátima**, ~11 km from **Tomar** (a stage of the Caminho Central Português and seat of the Order) and ~5 km from **Agroal** — the largest spring of the Nabão river, a Blue-Flag river beach. The parish even hosts the **Chão de Maçãs–Fátima** station on the Linha do Norte.
+Genesis Garden sits inside Portugal's pilgrimage geography: **Sabacheira** parish (~39.68, −8.48, historically a comenda of the Order of Christ) lies ~15 km from **Fátima**, ~14 km from **Tomar** (a stage of the Caminho Central Português and seat of the Order) and ~4 km from **Agroal** — the largest spring of the Nabão river, a Blue-Flag river beach and the put-in for the proven downstream kayak descent to Tomar. The parish even hosts the **Chão de Maçãs–Fátima** station on the Linha do Norte.
 
 | Leg | ~km | Character |
 |-----|-----|-----------|
-| **Fátima → Sabacheira** | ~20 | Detour off the Caminho de Fátima Nascente (Tomar ↔ Fátima ~29 km); blue arrows toward Fátima, yellow toward Santiago |
-| **Sabacheira → Agroal** | ~5 | Short walk to the Nabão spring — bathing, picnic, water threshold |
-| **Agroal → Tomar** | ~11 | Down the Nabão valley into the Templar city → back onto the Caminho Central |
+| **Fátima → Seiça** | ~15 | Red-waymarked trail across the plateau and olive groves north-east to Seiça (detour off the Caminho de Fátima Nascente) |
+| **Seiça → Sabacheira · Albergue do Jardim** | ~5 | South into the Nabão valley to Genesis Garden (~39.6788, −8.4778) — bed, garden work, carimbo |
+| **Genesis Garden → Agroal** | ~4 | Short walk to the Nabão spring — bathing, picnic, water threshold |
+| **Agroal → Tomar ⛵** | ~14 by water | Downstream Nabão kayak/canoe descent into the Templar city (proven route; season ~Nov–May, weir portages; riverside walk ~13 km dry season) → Caminho Central |
 
 **Albergue do Jardim** — a planned pilgrim hostel on the farm: beds, shared kitchen, orientation to Agroal and Tomar, and the **Garden carimbo into the credencial**. A pilgrim carrying the Garden stamp is **qualified to request a berth aboard one of the Tres Marias** (María del Camino fleet) — the stamp is a program onboarding credential, not a passage guarantee: hull capacity, safety and operating rules apply (pilgrims join as voyage crew).
 

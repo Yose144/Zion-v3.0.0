@@ -233,7 +233,7 @@ Trasa kolem světa má díry — budoucí uzly, které ji uzavřou (pipeline, ne
 ### Legy trasy — Atlantická loď (Santa María la Mayor)
 
 0. **Vyplutí Pontevedra** — bazilika, credencialy, plamen z Finisterra.
-1. **Lisabon → Sabacheira (Tomar)** — Genesis Garden (iniciace 1): loď kotví na Teju, poutníci pokračují po souši do freguesie Sabacheira — vlakem na nádraží Chão de Maçãs–Fátima (Linha do Norte leží přímo ve freguesii) nebo přes Tomar. Iniciace Země probíhá v zahradě — albergue, záhony, razítko. **Caminho do Jardim** (odbočka): Fátima → Sabacheira ~20 km → Agroal (pramen Nabão, praia fluvial) ~5 km → Tomar ~11 km — v Tomaru návrat na Caminho Central, který vede zpět přes Coimbru, Porto a Tui do Pontevedry.
+1. **Lisabon → Sabacheira (Tomar)** — Genesis Garden (iniciace 1): loď kotví na Teju, poutníci pokračují po souši do freguesie Sabacheira — vlakem na nádraží Chão de Maçãs–Fátima (Linha do Norte leží přímo ve freguesii) nebo přes Tomar. Iniciace Země probíhá v zahradě — albergue, záhony, razítko. **Caminho do Jardim** (odbočka): Fátima → Seiça ~15 km (červená značka) → Sabacheira/Zahrada ~5 km → Agroal (pramen Nabão) ~4 km → Tomar ~14 km po vodě po proudu — v Tomaru návrat na Caminho Central, který vede zpět přes Coimbru, Porto a Tui do Pontevedry.
 2. **Fátima leg** (na souši, součást Caminho do Jardim — druhé zjevení je cíl, ne pobřežní zastávka).
 3. **La Palma** — Dharma Temple + María de las Nieves (iniciace 2).
 4. **Atlantická přeplavba** → Karibik (kandidátská stanice Barbados/Windwards).
@@ -242,15 +242,16 @@ Trasa kolem světa má díry — budoucí uzly, které ji uzavřou (pipeline, ne
 
 ### Caminho do Jardim — poutní odbočka a onboarding na Tres Marias (concept)
 
-Zahrada Genesis leží přímo v poutní krajině Portugalska: **Sabacheira** (freguesia concelho Tomar, ~39.68/−8.48, historická comenda Řádu Kristova) sedí ~20 km od **Fátimy**, ~11 km od **Tomaru** (etapa Caminho Central Português + sídlo Kristova řádu) a ~5 km od **Agroalu** — praia fluvial na největším prameni řeky Nabão (Modrá vlajka; řeka teče přímo freguesií). Linha do Norte má ve freguesii nádraží **Chão de Maçãs–Fátima** — vlakový příjezd z Lisabonu/Porta přes Caxarias.
+Zahrada Genesis leží přímo v poutní krajině Portugalska: **Sabacheira** (freguesia concelho Tomar; parcel ~39.6788/−8.4778, historická comenda Řádu Kristova) sedí ~15 km od **Fátimy**, ~14 km od **Tomaru** (etapa Caminho Central Português + sídlo Kristova řádu) a ~4 km od **Agroalu** — praia fluvial na největším prameni řeky Nabão (Modrá vlajka; řeka teče přímo freguesií). Linha do Norte má ve freguesii nádraží **Chão de Maçãs–Fátima** — vlakový příjezd z Lisabonu/Porta přes Caxarias. **Rota do Nabão** (Agroal→Tomar po proudu, ~14 km) je prověřený komerční sjezd kajakem/kánoí — vodní leg odbočky, sezónně dle průtoku.
 
 **Navrhovaná odbočka** (status: *concept* — trasa zatím není oficiálně vyznačena, vzdálenosti orientační, vyžaduje GPX survey, posouzení bezpečnosti a povolení):
 
 | Úsek | ~Vzdálenost | Charakter |
 |---|---|---|
-| **Fátima → Sabacheira** | ~20 km | Odbočka z Caminho de Fátima Nascente (Tomar ↔ Fátima ~29 km); modré šipky směr Fátima, žluté směr Santiago |
-| **Sabacheira → Agroal** | ~5 km | Krátká cesta k prameni Nabão — koupání, piknik, voda |
-| **Agroal → Tomar** | ~11 km | Dolů po Nabão do templářského města → návrat na Caminho Central |
+| **Fátima → Seiça** | ~15 km | Po červené značce přes pláň a olivové háje na severovýchod do vsi Seiça (odbočka z Caminho de Fátima Nascente; modré šipky směr Fátima, žluté směr Santiago) |
+| **Seiça → Sabacheira — Albergue do Jardim** | ~5 km | Na jih do údolí Nabão ke Genesis Garden (~39.6788/−8.4778) — nocleh, práce v zahradě, carimbo |
+| **Genesis Garden → Agroal** | ~4 km | Krátká cesta k prameni Nabão — koupání, piknik, voda |
+| **Agroal → Tomar ⛵** | ~14 km po vodě | **Po proudu** Nabão kajakem/kánoí do templářského města (prověřený komerční sjezd; sezóna ~XI–V dle průtoku, açudy = krátké přenášky; pěší varianta po břehu ~13 km) → návrat na Caminho Central |
 
 **Albergue do Jardim** — navrhovaná poutní noclehárna přímo v Zahrádce/na farmě: lůžka, společná večeře, orientace na Agroal a Tomar a **carimbo Zahrady do credencialu**. Poutník nesoucí razítko Zahrady je **kvalifikován požádat o místo na palubě jedné z Tres Marias** — razítko je onboarding credential programu, ne garance plavby: rozhoduje kapacita trupu, bezpečnostní podmínky a pravidla provozu (SPS/sail-training režim — poutník jako voyage crew, viz `TreeMarias.md` §posádka/regulace). Tím se Genesis stává **vstupní branou flotily po souši** — Camino, které vede na vodu.
 
