@@ -118,10 +118,10 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | verushash (VRSC) | — | n/a (no kernel) | ✅ OK (luckpool, zcashstratum) | ✅ **CPU path live** | 1487B header; GPU kernel absent |
 | equihashzero (ZCL) | ⚠️ compile | ❌ VRAM | ✅ OK (zpool) | blocked | 2×2GB tabulky > volná VRAM (192,7 NR_SLOTS=64); args-at-build + EQ_WG_SIZE=32 hotovo |
 | equihash 200,9 (ZEC) | ✅ | ⚠️ **RUN** (řešení nalezeno) | ❌ TCP connect (port mrtvý) | pending | **Wagner pipeline kompletní**: init→r0→r1-7→r8→sols; host/kernel NR_SLOTS mismatch fix (4→8); K=9 rounds doplněny |
-| qhash (QTC) | ✅ | ⚠️ RUN | ✅ OK (suprnova) | pending | produkuje kandidáty; CPU ref chybí; batch cap 4096→1024 (VRAM) |
-| ghostrider (RTM) | ✅ | ⚠️ RUN | ✅ OK (zpool) | pending | **fixed**: batch cap 128 WI (2MB scratchpad/WI) — byl OOM |
-| neoscrypt (PHX) | ✅ | ⚠️ RUN | ✅ OK (zpool) | pending | **dispatch doplněn** (byl "unsupported") |
-| eaglesong (CKB) | ✅ | ⚠️ RUN | ❌ authorize (wallet) | pending | **dispatch doplněn** |
+| qhash (QTC) | ✅ | ✅ **PASS** | ✅ OK (suprnova) | pending | **CPU ref** (SHA256→16q stavovec RY/RZ/CNOT→SHA256, bit-exact); batch cap 1024 |
+| ghostrider (RTM) | ✅ | ❌ **FAIL** | ✅ OK (zpool) | pending | GPU ≠ native-ffi (684cd098 vs f5c2b739) — defekt v 15-algo selection/CN stage; batch cap 128 WI OK |
+| neoscrypt (PHX) | ✅ | ✅ **PASS** | ✅ OK (zpool) | pending | **kernel fix**: blake2s_256 double-compressoval poslední blok při len%64==0 → standardní blokování; CPU ref (`neoscrypt_ref.rs`) ≡ GPU. Pozn.: kernelová varianta (N=32, blake2s BlockMix) ≠ mainline NeoScrypt — port konsistentní, consensus-vůči-mainnet = samostatná otázka |
+| eaglesong (CKB) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | pending | **CPU ref** (`eaglesong_ref.rs`: 43 rounds, bitmatrix+circulant+ARX, 0x06 pad) ≡ GPU |
 | dynexsolve (DNX) | ✅ | EMPTY (kernel běží) | ❌ authorize (wallet) | pending | **ABI fix**: 12→10 args, 1-based literály; syntetický SAT bez řešení v batchi = očekávané |
 | nexapow (NEXA) | ✅ compile | ⏳ JIT >10min | ❌ authorize (wallet) | blocked | 6k-řádkový secp256k1 kernel — NVIDIA JIT compile pathologický; batch cap 64 + SKIP default ve sweepu (`auxpow_kat nexapow` explicit) |
 | octopus (CFX) | ✅ | ⚠️ RUN | ❌ TCP connect (port) | pending | **dispatch + DAG wiring** (sdílí ethash DAG) |
@@ -161,10 +161,13 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 ### Checklist — co máme / co ne (2026-10-07)
 
 **✅ Consensus-ověřené GPU kernely (KAT PASS bit-exact):**
-kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace)
+kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace), **eaglesong** (RFC-0010 ref ≡ GPU), **qhash** (16q circuit ref ≡ GPU), **neoscrypt** (kernel blake2s fix; kernel-variant ≡ CPU ref — variantu pozn. ve výše řádku)
 
 **✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
-qhash, ghostrider, neoscrypt, eaglesong, octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže), verthash, **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
+octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže), verthash, **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
+
+**❌ Známý defekt (GPU ≠ reference):**
+ghostrider — GPU produkuje jiný digest než native-ffi (sphlib+CN); potřeba bisect přes `ghostrider_sph_test` per-stage
 
 **⚠️ Kernel spustitelný, ale široké oprávnění chybí:**
 - dynexsolve — běží, syntetický SAT bez řešení (EMPTY = OK signál)

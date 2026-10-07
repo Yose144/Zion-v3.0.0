@@ -181,43 +181,27 @@ void blake2s_256(const uchar *data, uint len, uchar digest[32]) {
         return;
     }
 
-    uint full = len / 64u;      // number of complete 64-byte blocks
-    uint rem = len & 63u;       // remaining bytes in the final (partial) block
-
+    // Standard BLAKE2s blocking: nblocks = ceil(len/64); the last block
+    // (full or partial) is compressed exactly once with the final flag.
+    uint nblocks = (len + 63u) / 64u;
     uint t = 0u;
-    for (uint b = 0u; b < full; b++) {
+    for (uint b = 0u; b < nblocks; b++) {
         uchar block[64];
-        uint off = b * 64u;
         #pragma unroll
-        for (int i = 0; i < 64; i++) block[i] = data[off + i];
-        t += 64u;
+        for (int i = 0; i < 64; i++) block[i] = 0;
+        uint off = b * 64u;
+        uint take = (len - off) < 64u ? (len - off) : 64u;
+        for (uint i = 0; i < take; i++) block[i] = data[off + i];
+        t += take;
+        uint last = (b == nblocks - 1u) ? 1u : 0u;
         uint out[8];
-        blake2s_compress(h, block, t, 0u, out);
+        blake2s_compress(h, block, t, last, out);
         #pragma unroll
         for (int i = 0; i < 8; i++) h[i] = out[i];
     }
-
-    // Final block (always present when rem > 0; if rem == 0 the last full
-    // block above was already the final block only when len was a multiple
-    // of 64 — handle that by re-compressing the last full block as final).
-    uchar block[64];
-    #pragma unroll
-    for (int i = 0; i < 64; i++) block[i] = 0;
-    if (rem > 0u) {
-        uint off = full * 64u;
-        for (uint i = 0; i < rem; i++) block[i] = data[off + i];
-        t += rem;
-    } else {
-        // len was an exact multiple of 64: the previous block was not marked
-        // final, so re-process it as the final block.
-        full -= 1u;
-        uint off = full * 64u;
-        #pragma unroll
-        for (int i = 0; i < 64; i++) block[i] = data[off + i];
-        t = len; // already includes this block's 64 bytes
-    }
     uint out[8];
-    blake2s_compress(h, block, t, 1u, out);
+    #pragma unroll
+    for (int i = 0; i < 8; i++) out[i] = h[i];
     #pragma unroll
     for (int i = 0; i < 8; i++) {
         digest[i * 4 + 0] = (uchar)(out[i]);

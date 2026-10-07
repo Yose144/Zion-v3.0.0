@@ -81,6 +81,16 @@ fn autolykos_v2_hash(msg: &[u8], nonce: u64, height: u32, n: u32) -> [u8; 32] {
     b2b256(&[&sum])
 }
 
+/// GhostRider CPU ref via native-ffi (sphlib + CryptoNight).
+#[cfg(feature = "native-ghostrider")]
+fn ghostrider_cpu(h: &[u8], n: u64) -> anyhow::Result<[u8; 32]> {
+    Ok(zion_native_ffi::ghostrider::hash(h, n))
+}
+#[cfg(not(feature = "native-ghostrider"))]
+fn ghostrider_cpu(_h: &[u8], _n: u64) -> anyhow::Result<[u8; 32]> {
+    anyhow::bail!("no CPU ref; build with native-all")
+}
+
 #[cfg(feature = "gpu-opencl")]
 fn real_main() {
     use zion_miner::auxpow::gpu_opencl_full::ExtGpuMiner;
@@ -238,25 +248,25 @@ fn real_main() {
             algo: "ghostrider",
             header: vec![0x22u8; 76],
             extra: vec![],
-            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref"),
+            cpu: |h, _e, n| ghostrider_cpu(h, n),
         },
         Case {
             algo: "qhash",
             header: vec![0x44u8; 32],
             extra: vec![],
-            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref"),
+            cpu: |h, _e, n| Ok(zion_miner::auxpow::qhash_ref::qhash_hash_ref(h, n)),
         },
         Case {
             algo: "eaglesong",
             header: vec![0x55u8; 32],
             extra: vec![],
-            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref"),
+            cpu: |h, _e, n| Ok(zion_miner::auxpow::eaglesong_ref::eaglesong_hash_ref(h, n)),
         },
         Case {
             algo: "neoscrypt",
             header: vec![0x66u8; 80],
             extra: vec![],
-            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref"),
+            cpu: |h, _e, n| Ok(zion_miner::auxpow::neoscrypt_ref::neoscrypt_hash_ref(h, n)),
         },
         Case {
             algo: "karlsenhash",
