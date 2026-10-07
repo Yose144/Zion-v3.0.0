@@ -148,7 +148,9 @@ impl CudaExtAlgo {
             Self::Autolykos => "autolykos_mine",
             Self::Zelhash => "zelhash_mine",
             Self::Ethash => "ethash_mine",
-            Self::Kawpow => "kawpow_mine",
+            // kawpow_kernel.cu exports the upstream kawpowminer name
+            // `progpow_search` (there is no `kawpow_mine` symbol).
+            Self::Kawpow => "progpow_search",
             Self::Progpow => "progpow_mine",
             Self::Verushash => "verus_mine",
         }
@@ -197,17 +199,10 @@ impl CudaExtAlgo {
     }
 
     /// Returns true if this algorithm requires period-based kernel recompilation
-    /// (random math changes every PERIOD blocks).
+    /// (random math changes every PERIOD blocks). KawPow/ProgPoW share the
+    /// XMRIG_INCLUDE_* codegen path, so both compile deferred.
     fn needs_period_recompile(&self) -> bool {
-        matches!(self, Self::Progpow)
-    }
-
-    /// Period length for random math recompilation.
-    fn period_length(&self) -> u32 {
-        match self {
-            Self::Progpow => 50,
-            _ => 0,
-        }
+        matches!(self, Self::Progpow | Self::Kawpow)
     }
 }
 
@@ -231,8 +226,13 @@ pub struct CudaExternalMiner {
     /// matrix is seeded by pre_pow (rusty-kaspa `Matrix::generate`), so it
     /// must be regenerated whenever a new job's pre_pow differs.
     kheavy_pre_pow: [u8; 32],
-    autolykos_table: Option<CudaSlice<u64>>,
+    /// Autolykos R-table on device: N × 8 u32 (32 bytes per element,
+    /// layout expected by `autolykos_mine`'s `r_table[i*2]` uint4 reads).
+    autolykos_table: Option<CudaSlice<u32>>,
     autolykos_table_size: u32,
+    /// Autolykos M constant buffer: 1024 × i64-BE = 8192 bytes.
+    autolykos_m_buf: Option<CudaSlice<u8>>,
+    autolykos_height: u32,
     // DAG buffer for ethash/kawpow
     dag_buf: Option<CudaSlice<u64>>,
     dag_size_entries: u64,
@@ -313,7 +313,14 @@ impl CudaExternalMiner {
 
             let module_name = algo.module_name();
             let kernel_name = algo.kernel_name();
-            dev.load_ptx(ptx, module_name, &[kernel_name])
+            // Autolykos also uses the device-side R-table precompute kernel
+            // from the same module.
+            let func_names: &[&str] = if algo == CudaExtAlgo::Autolykos {
+                &[kernel_name, "autolykos_precompute"]
+            } else {
+                &[kernel_name]
+            };
+            dev.load_ptx(ptx, module_name, func_names)
                 .map_err(|e| anyhow::anyhow!("PTX load failed for {}: {e}", algorithm))?;
         }
 
@@ -418,6 +425,8 @@ impl CudaExternalMiner {
             kheavy_pre_pow: [0u8; 32],
             autolykos_table,
             autolykos_table_size: 0,
+            autolykos_m_buf: None,
+            autolykos_height: 0,
             dag_buf: None,
             dag_size_entries: 0,
             dag_epoch: 0xFFFFFFFF,
@@ -438,16 +447,61 @@ impl CudaExternalMiner {
         })
     }
 
-    /// Generate the Autolykos v2 table on the host and upload to GPU.
-    fn ensure_autolykos_table(&mut self, header: &[u8], height: u32) -> Result<()> {
-        let table_size = autolykos_table_size_cuda();
-        let table = generate_autolykos_table_cuda(header, height, table_size);
-        self.autolykos_table_size = table_size as u32;
-        let table_buf = self
+    /// Build the Autolykos v2 R-table on device via the `autolykos_precompute`
+    /// kernel: `R[j] = takeRight(31, Blake2b256(j_BE4 || height_BE4 || M))`,
+    /// stored as 8 big-endian u32 per element. The table depends only on
+    /// (height, M) — NOT on the block header — so it is cached per height.
+    fn ensure_autolykos_table(&mut self, _header: &[u8], height: u32) -> Result<()> {
+        let n = autolykos_table_size_cuda();
+        if self.autolykos_table.is_some()
+            && self.autolykos_height == height
+            && self.autolykos_table_size == n as u32
+        {
+            return Ok(());
+        }
+
+        // M = i64-BE words 0..1024 (8192 bytes), constant per spec.
+        if self.autolykos_m_buf.is_none() {
+            let mut m = vec![0u8; 8192];
+            for i in 0..1024u64 {
+                m[i as usize * 8..i as usize * 8 + 8]
+                    .copy_from_slice(&(i as i64).to_be_bytes());
+            }
+            self.autolykos_m_buf = Some(
+                self.dev
+                    .htod_copy(m)
+                    .map_err(|e| anyhow::anyhow!("autolykos M upload: {e}"))?,
+            );
+        }
+
+        // Allocate R-table on device: N elements × 8 u32 (32B each).
+        let r_table = self
             .dev
-            .htod_copy(table)
-            .map_err(|e| anyhow::anyhow!("autolykos_table upload: {e}"))?;
-        self.autolykos_table = Some(table_buf);
+            .alloc_zeros::<u32>(n * 8)
+            .map_err(|e| anyhow::anyhow!("autolykos r_table alloc: {e}"))?;
+
+        let func = self
+            .dev
+            .get_func("autolykos", "autolykos_precompute")
+            .ok_or_else(|| anyhow::anyhow!("autolykos_precompute kernel not found"))?;
+        let m_buf = self.autolykos_m_buf.as_ref().unwrap();
+        let cfg = LaunchConfig {
+            grid_dim: ((n as u32).div_ceil(256), 1, 1),
+            block_dim: (256, 1, 1),
+            shared_mem_bytes: 0,
+        };
+        unsafe {
+            func.clone()
+                .launch(cfg, (height, n as u32, m_buf, &r_table))
+                .map_err(|e| anyhow::anyhow!("autolykos_precompute launch: {e}"))?;
+        }
+        self.dev
+            .synchronize()
+            .map_err(|e| anyhow::anyhow!("autolykos_precompute sync: {e}"))?;
+
+        self.autolykos_table = Some(r_table);
+        self.autolykos_table_size = n as u32;
+        self.autolykos_height = height;
         Ok(())
     }
 
@@ -752,7 +806,9 @@ impl CudaExternalMiner {
     /// Uses the AuXpow codegen to inject random math + data load code into the
     /// CUDA kernel template, then compiles with NVRTC.
     fn ensure_progpow_kernel(&mut self, block_height: u64) -> Result<()> {
-        let period = (block_height / self.algo.period_length() as u64) as u32;
+        let params =
+            crate::auxpow::progpow_codegen::select_progpow_params(&self.algorithm);
+        let period = (block_height / params.period as u64) as u32;
         let dag_elements = if self.dag_buf.is_some() {
             self.dag_size_entries / 2 // PROGPOW_DAG_ELEMENTS = dag_entries / 2
         } else {
@@ -783,11 +839,19 @@ impl CudaExternalMiner {
         // .replace() for it is a no-op (the function-based codegen uses OpenCL
         // constructs that won't compile in CUDA). Only the inline placeholders
         // are present in the CUDA template.
-        let prepared_src = crate::auxpow::progpow_codegen::prepare_progpow_kernel_source_for_algo(
-            base_src,
-            &self.algorithm,
-            block_height,
-        );
+        let prepared_src = if self.algo == CudaExtAlgo::Kawpow {
+            crate::auxpow::progpow_codegen::prepare_kawpow_kernel_source_for_algo(
+                base_src,
+                &self.algorithm,
+                block_height,
+            )
+        } else {
+            crate::auxpow::progpow_codegen::prepare_progpow_kernel_source_for_algo(
+                base_src,
+                &self.algorithm,
+                block_height,
+            )
+        };
 
         // Step 3: Preprocess (strip #pragma once, #include, fix NVRTC issues)
         let processed = preprocess_kernel(&prepared_src);
@@ -883,6 +947,13 @@ impl CudaExternalMiner {
 
         let threads_per_block: u32 = if self.algo == CudaExtAlgo::Verushash {
             128 // Verushash kernel uses __launch_bounds__(128)
+        } else if self.algo == CudaExtAlgo::Autolykos {
+            64 // autolykos_mine uses __launch_bounds__(64, 4)
+        } else if self.algo == CudaExtAlgo::Kawpow {
+            // kawpow_kernel.cu sizes __shared__ share[HASHES_PER_GROUP] to
+            // GROUP_SIZE/16 with GROUP_SIZE=128 — a 256-thread launch would
+            // index group_id 8..15 out of bounds and corrupt c_dag.
+            128
         } else {
             // Configurable via ZION_CUDA_BLOCK_SIZE env var.
             // Default 256 (optimal for Ampere/Ada). For Pascal/Turing (GTX 1080, etc.),
@@ -964,11 +1035,19 @@ impl CudaExternalMiner {
                             .map_err(|e| anyhow::anyhow!("blake3_dcr launch: {e}"))?;
                     }
                     CudaExtAlgo::Autolykos => {
+                        // autolykos_mine(header, header_len, height, N,
+                        //   target, base_nonce, M_raw, r_table,
+                        //   output_nonce, output_hash, found)
                         let table = self
                             .autolykos_table
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("autolykos table not generated"))?;
+                        let m_buf = self
+                            .autolykos_m_buf
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("autolykos M not uploaded"))?;
                         let header_len_u32 = header_len as u32;
+                        let height_u32 = self.autolykos_height;
                         let table_size_u32 = self.autolykos_table_size;
                         func.clone()
                             .launch(
@@ -976,10 +1055,12 @@ impl CudaExternalMiner {
                                 (
                                     &self.header_buf,
                                     header_len_u32,
+                                    height_u32,
+                                    table_size_u32,
                                     &self.target_buf,
                                     current_nonce,
+                                    m_buf,
                                     table,
-                                    table_size_u32,
                                     &mut self.output_nonce,
                                     &mut self.output_hash,
                                     &mut self.found_flag,
@@ -1101,6 +1182,11 @@ impl CudaExternalMiner {
                             .dag_buf
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("progpow DAG not loaded"))?;
+                        // Convert 32-byte big-endian target to u64 (first 8 bytes)
+                        let target_u64 = u64::from_be_bytes([
+                            target[0], target[1], target[2], target[3], target[4], target[5],
+                            target[6], target[7],
+                        ]);
                         let g_output = self
                             .progpow_g_output
                             .as_mut()
@@ -1109,11 +1195,6 @@ impl CudaExternalMiner {
                         self.dev
                             .htod_copy_into(vec![0u32; 18], g_output)
                             .map_err(|e| anyhow::anyhow!("progpow g_output reset: {e}"))?;
-                        // Convert 32-byte big-endian target to u64 (first 8 bytes)
-                        let target_u64 = u64::from_be_bytes([
-                            target[0], target[1], target[2], target[3], target[4], target[5],
-                            target[6], target[7],
-                        ]);
                         let hack_false: u32 = 0;
                         func.clone()
                             .launch(
@@ -1648,29 +1729,6 @@ fn autolykos_table_size_cuda() -> usize {
         .unwrap_or(1 << 23)
 }
 
-fn generate_autolykos_table_cuda(header: &[u8], height: u32, table_size: usize) -> Vec<u64> {
-    use sha2::Digest;
-    let mut h = sha2::Sha256::new();
-    h.update(header);
-    let seed: [u8; 32] = h.finalize().into();
-    (0..table_size)
-        .map(|i| gen_autolykos_element_cuda(i as u64, &seed, height))
-        .collect()
-}
-
-fn gen_autolykos_element_cuda(i: u64, seed: &[u8; 32], height: u32) -> u64 {
-    use blake2::digest::{Update, VariableOutput};
-    let mut hasher = blake2::Blake2bVar::new(32).expect("blake2b256");
-    hasher.update(seed);
-    hasher.update(&i.to_be_bytes());
-    hasher.update(&height.to_be_bytes());
-    let mut out = [0u8; 32];
-    hasher
-        .finalize_variable(&mut out)
-        .expect("blake2b256 finalize");
-    u64::from_be_bytes(out[0..8].try_into().unwrap())
-}
-
 // ── XoShiRo256++ PRNG ──────────────────────────────────────────────────────
 
 struct XoShiRo256PlusPlus {
@@ -1682,6 +1740,12 @@ impl XoShiRo256PlusPlus {
         let mut s = [0u64; 4];
         for i in 0..4 {
             s[i] = u64::from_le_bytes(seed[i * 8..(i + 1) * 8].try_into().unwrap());
+        }
+        if s.iter().all(|&x| x == 0) {
+            // xoshiro256++ degenerates on an all-zero state (next() = 0
+            // forever) — generate_kheavy_matrix_cuda would retry the rank
+            // check forever. Same guard as hasher.rs / the C FFI copies.
+            s[0] = 0x9E37_79B9_7F4A_7C15;
         }
         Self { state: s }
     }
