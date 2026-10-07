@@ -228,7 +228,7 @@ const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
 ];
 
 const SISTERS = [
-  { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Algarve, Portugalsko', en: 'Algarve, Portugal' } },
+  { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Sabacheira · Tomar, Portugalsko', en: 'Sabacheira · Tomar, Portugal' } },
   { name: 'Dharma Temple', href: '/terranova/dharma-temple', region: { cs: 'La Palma', en: 'La Palma' } },
   { name: 'Te Pīko Ora', href: '/terranova/te-piko-ora', region: { cs: 'Raiatea · Polynésie', en: 'Raiatea · Polynesia' } },
   { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },

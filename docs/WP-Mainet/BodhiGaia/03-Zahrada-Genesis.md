@@ -1,5 +1,5 @@
 # BODHI GAIA — Kapitola 3: Zahrada Genesis
-## Base Camp · Algarve, Portugalsko — farma na hranici dvou světů a první strom zasazený jako rituál
+## Base Camp · Sabacheira, Tomar, Portugalsko — zahrada mezi Fátimou a templářským městem a první strom zasazený jako rituál
 
 > *„Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, tu bude dál, když tenhle tým dávno odejde."*
 
@@ -35,7 +35,7 @@ O mnoho příběhů později — v jiné knize této řady — došla k téhle z
 
 ## Co to znamená
 
-**Zahrada Genesis je první fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se protíná organické zemědělství, surf, off-grid technologie a komunitní život. Její role v L5 Free World je Kořen: Base Camp, vstupní brána, místo, kam se dá přijet poprvé.**
+**Zahrada Genesis je první fyzický uzel Terra Nova v Evropě — eko-farma ve freguesii Sabacheira u Tomaru, v údolí Nabão, kde se protíná organické zemědělství, surf, off-grid technologie a komunitní život. Její role v L5 Free World je Kořen: Base Camp, vstupní brána, místo, kam se dá přijet poprvé.**
 
 Záměrem není dokonalost. Záměrem je **reálný provoz otevřený lidem** — farma, která roste spolu s lidmi, ne bez nich.
 
@@ -79,7 +79,7 @@ Cíl Fáze 1: 50 000 EUR/rok, break-even při 120 nocích/měsíc. Pracovní vý
 
 | Fáze | Období | Stav | Klíčové body |
 |---|---|---|---|
-| 0 — Zárodek | 2025 Q3–Q4 | ✅ | Tým 3 strážců, scouting Algarve, právní rešerše (Associação vs Cooperativa), rozpočet 50 000 EUR, zkušební záhony 0,1 ha |
+| 0 — Zárodek | 2025 Q3–Q4 | ✅ | Tým 3 strážců, scouting Sabacheira/Tomar, právní rešerše (Associação vs Cooperativa), rozpočet 50 000 EUR, zkušební záhony 0,1 ha |
 | 1 — Kořeny | 2026 | 🟡 | Pozemek (koupě / dlouhodobý nájem), registrace, solar 5 kWp, vrt, glamping 4–6 jednotek, 0,5 ha, první platící hosté (Q3 2026), ZION wallet + DAO rámec |
 | 2 — Komunita | 2027 | 🔵 | Guardian node, stálé bydlení 3–5 chat, měsíční program, LoRa mesh, Medical Table pavilon, propojení s Dharma Temple |
 | 3 — Síť | 2028 | 🔵 | 2 ha, semenná síť 3+ uzlů, vzdělávací centrum, surf škola, druhý uzel v Portugalsku |
@@ -107,9 +107,9 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 | **Ekonomika: 50 000 EUR / 120 nocí** | **HYPOTÉZA** | Break-even a příjmový model v §4 komunitního dokumentu; marketingové persony, kanály a sezónní ceník (§11); EU granty LEADER / Erasmus+ / LIFE ve fázi rešerše (§12). | Skutečné účetnictví po první sezóně; žádná z grantových žádostí není podána. |
 | **Ana, olivový list na kůlu** | **MÝTUS** | Postava vytvořená pro tuto knihu; motiv „biologický čas" je citát z komunitního dokumentu a webu. | — |
 | **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
-| **Fyzická růže zasazená v Algarve** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
+| **Fyzická růže zasazená v Sabacheiře** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
 
-> **Známý rozpor k opravě:** stránka `/l5-free-world` označuje lokalitu Genesis Garden jako *Střední Evropa* (`L5FreeWorldCopy.centralEurope`), zatímco komunitní dokument, `/terranova/genesis`, karty Pioneer Projects i OASIS panel uvádějí **Algarve, Portugalsko**. Web je třeba sjednotit (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
+> **Známý rozpor k opravě:** lokalita Genesis Garden byla historicky uváděna jako *Algarve* i jako *Střední Evropa* — od 2026-10-07 je sjednocena na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem; viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
 
 ---
 

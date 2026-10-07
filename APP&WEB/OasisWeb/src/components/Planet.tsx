@@ -227,13 +227,13 @@ const PIONEER_PROJECTS: PioneerProject[] = [
   {
     id: 'genesis',
     name: 'Zahrada Genesis',
-    location: 'Algarve · Portugalsko',
+    location: 'Sabacheira · Tomar',
     color: '#10b981',
     rgb: '16, 185, 129',
-    descCs: 'Atlantický uzel Terra Nova — farma, glamping, voda, energie, komunita.',
-    descEn: 'Atlantic Terra Nova node — farm, glamping, water, energy, community.',
-    lat: 37,
-    lon: -8,
+    descCs: 'Uzel Terra Nova v údolí Nabão mezi Fátimou a Tomarem — farma, albergue Caminho do Jardim, voda, energie, komunita.',
+    descEn: 'Terra Nova node in the Nabão valley between Fátima and Tomar — farm, the Caminho do Jardim albergue, water, energy, community.',
+    lat: 39.68,
+    lon: -8.48,
   },
   {
     id: 'dharma',

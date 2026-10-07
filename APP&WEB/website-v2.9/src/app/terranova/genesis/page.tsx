@@ -9,6 +9,7 @@ import {
   Circle,
   Dot,
   Droplets,
+  Footprints,
   Globe,
   Landmark,
   Leaf,
@@ -84,10 +85,10 @@ const TerranovaGenesisCopy = {
   ofZionNetworkNodeRewardsGoToTh: { cs: `z node odměn ZION sítě jde do humanitárního fondu komunity`, en: `of ZION network node rewards go to the community humanitarian fund` },
   everyGuardianNodeOperatedOnThe: { cs: `Každý Guardian node, který bude provozován v areálu, přispívá 10 % odměn zpět komunitě a jejím projektům.`, en: `Every Guardian node operated on the premises contributes 10% of rewards back to the community and its projects.` },
   characterOfPlace: { cs: `Charakter místa`, en: `Character of Place` },
-  aFarmOnTheEdgeOfTwoWorlds: { cs: `Farma na hranici dvou světů`, en: `A Farm on the Edge of Two Worlds` },
-  zahradaGenesisStandsOnTheBound: { cs: `Zahrada Genesis stojí na hranici dvou světů: tichého vnitrozemí farmy a divokého atlantického pobřeží. Tato dualita — ticho půdy a energie oceánu — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i surfovat vlny. Farmáře i surfaře. Stavitele i meditující.`, en: `Zahrada Genesis stands on the boundary of two worlds: the quiet inland farm and the wild Atlantic coast. This duality — the silence of soil and the energy of the ocean — is intentional. The project looks for people who can work in clay and surf waves. Farmers and surfers. Builders and meditators.` },
+  aFarmOnTheEdgeOfTwoWorlds: { cs: `Zahrada mezi Fátimou a Tomarem`, en: `A Garden between Fátima and Tomar` },
+  zahradaGenesisStandsOnTheBound: { cs: `Zahrada Genesis stojí ve freguesii Sabacheira — mezi svatyní Fátimy a templářským Tomarem, přímo na náběhu dvou poutních cest. Tato dualita — ticho půdy a tok Nabão, jehož největší pramen Agroal leží na okraji freguesie — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i jít pěšky za poutníky. Farmáře i hostel mámy. Stavitele i meditující.`, en: `Genesis Garden stands in the parish of Sabacheira — between the shrine of Fátima and the Templar city of Tomar, right where two pilgrimage ways meet. This duality — the silence of soil and the flow of the Nabão, whose greatest spring, the Agroal, lies at the parish edge — is intentional. The project looks for people who can work in clay and walk beside pilgrims. Farmers and hostel keepers. Builders and meditators.` },
   treePlantingIsNotAPrActivityIt: { cs: `Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Zahrada Genesis buduje dědictví v biologickém čase — ne v čtvrtletních zprávách.`, en: `Tree planting is not a PR activity. It is a ritual of rooting. Every tree that grows here will be here long after this team is gone. Zahrada Genesis builds legacy in biological time — not in quarterly reports.` },
-  oceanMovement: { cs: `Oceán & pohyb`, en: `Ocean & movement` },
+  oceanMovement: { cs: `Pramen & řeka`, en: `Spring & river` },
   soilSilence: { cs: `Půda & ticho`, en: `Soil & silence` },
   biologicalTime: { cs: `Biologický čas`, en: `Biological time` },
   authenticIntention: { cs: `Autentický záměr`, en: `Authentic intention` },
@@ -114,6 +115,11 @@ const TerranovaGenesisCopy = {
   bothProjectsShareSourceCodeTer: { cs: `Oba projekty sdílejí zdrojový kód: Terra Nova etika, ZION blockchain, off-grid technologie, komunitní governance a seed library.`, en: `Both projects share source code: Terra Nova ethics, ZION blockchain, off-grid technology, community governance and seed library.` },
   openQuestionsLookingForGuardia: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  caminoTitle: { cs: `Caminho do Jardim — poutní odbočka`, en: `Caminho do Jardim — the pilgrim detour` },
+  caminoSubtitle: { cs: `Fátima → Sabacheira → Agroal → Tomar · ~35 km`, en: `Fátima → Sabacheira → Agroal → Tomar · ~35 km` },
+  caminoLead: { cs: `Zahrada Genesis stojí na křižovatce dvou cest: Caminho de Fátima (Nascente) a Caminho Central Português, který prochází templářským Tomarem. Z ní vyrůstá nová odbočka — tak, jak portugalské Camino zná svou Variante Espiritual. **Albergue do Jardim** je její hostinec: poutník tu získá do credencialu razítko Zahrady — a s ním kvalifikaci vstoupit na paluby Tres Marias.`, en: `Genesis Garden stands at the crossing of two ways: the Caminho de Fátima (Nascente) and the Caminho Central Português, which runs through the Templar city of Tomar. A new detour grows out of it — just as the Portuguese Camino knows its Variante Espiritual. **Albergue do Jardim** is its hostel: here the pilgrim receives the Garden stamp in the credencial — and with it the qualification to step aboard the Tres Marias.` },
+  caminoFoot: { cs: `V Tomaru se cesta vrací na Caminho Central — přes Coimbru a Porto až do Pontevedry, domácího přístavu Santa María la Mayor. Kdo projde Zahradou, nasedá jako poutník — ne jako turista.`, en: `At Tomar the way rejoins the Caminho Central — through Coimbra and Porto all the way to Pontevedra, home port of Santa María la Mayor. Whoever walks through the Garden boards as a pilgrim — not as a tourist.` },
+
 };
 
 type FeatureStatus = 'open' | 'active' | 'planned' | 'concept';
@@ -198,10 +204,10 @@ const FEATURES: FeatureItem[] = [
   },
   {
     icon: Waves,
-    titleCs: 'Surf škola',
-    titleEn: 'Surf School',
-    descCs: 'Propojení oceánu, pohybu a vědomého stylu. Surf jako praxe přítomnosti — vlna jako učitel.',
-    descEn: 'Connecting ocean, movement and conscious lifestyle. Surf as a practice of presence — the wave as teacher.',
+    titleCs: 'Albergue do Jardim',
+    titleEn: 'Albergue do Jardim',
+    descCs: 'Poutní hostinec na Caminho do Jardim — lůžka, kuchyň a carimbo do credencialu. Razítko Zahrady je kvalifikace k nástupu na paluby Tres Marias.',
+    descEn: 'The pilgrim hostel on the Caminho do Jardim — beds, kitchen and the credencial stamp. The Garden stamp qualifies pilgrims to step aboard the Tres Marias.',
     status: 'planned' as const,
     color: '#066928',
     rgb: '6,105,40',
@@ -228,12 +234,43 @@ const FEATURES: FeatureItem[] = [
   },
 ];
 
+const CAMINO_LEGS = [
+  {
+    from: 'Fátima',
+    to: 'Sabacheira',
+    km: '~20 km',
+    descCs: 'Ze svatyně — modré šipky Nascente obráceně; den po pláni a olivových hájích do údolí Nabão.',
+    descEn: 'From the shrine — the blue Nascente arrows walked backwards; a day across the plateau and olive groves into the Nabão valley.',
+  },
+  {
+    from: 'Sabacheira',
+    to: 'Genesis Garden — Albergue',
+    km: 'carimbo',
+    descCs: 'Albergue do Jardim: noc, kuchyň, zahrada — a razítko Zahrady do credencialu. Iniciace Země se děje rukama v hlíně, ještě před mořem.',
+    descEn: 'Albergue do Jardim: a bed, a kitchen, the garden — and the Garden stamp in the credencial. The Earth initiation happens hands-in-soil, before the sea.',
+  },
+  {
+    from: 'Sabacheira',
+    to: 'Agroal',
+    km: '~5 km',
+    descCs: 'K největšímu prameni Nabão — praia fluvial s modrou vlajkou, ledová čistá voda 16–18 °C. Práh vody: koupel před odletem.',
+    descEn: 'To the greatest spring of the Nabão — a Blue-Flag river beach, cold clear water at 16–18 °C. The water threshold: a bath before setting sail.',
+  },
+  {
+    from: 'Agroal',
+    to: 'Tomar',
+    km: '~11 km',
+    descCs: 'Po údolí Nabão na jih do templářského města — Convento de Cristo nad řekou, nádraží, a zpět na žluté šipky Caminha Central.',
+    descEn: 'Down the Nabão valley to the Templar city — the Convento de Cristo above the river, the station, and back onto the yellow arrows of the Caminho Central.',
+  },
+];
+
 const PHASES = [
   { num: 0, cs: 'Zárodek', en: 'Seed', descCs: 'Pozemek, legal základ, první Guardian', descEn: 'Land, legal base, first Guardian', done: true },
   { num: 1, cs: 'Kořeny', en: 'Roots', descCs: 'Solar, voda, organická zahrada, glamping', descEn: 'Solar, water, organic garden, glamping', active: true },
   { num: 2, cs: 'Komunita', en: 'Community', descCs: 'Stálí obyvatelé, ZION node, governance', descEn: 'Permanent residents, ZION node, governance', done: false },
   { num: 3, cs: 'Síť', en: 'Network', descCs: 'Propojení s Dharma Temple, L5 uzly', descEn: 'Connection with Dharma Temple, L5 nodes', done: false },
-  { num: 4, cs: 'Výzařování', en: 'Radiance', descCs: 'Surf škola, retreaty, vzdělávací centrum', descEn: 'Surf school, retreats, education center', done: false },
+  { num: 4, cs: 'Výzařování', en: 'Radiance', descCs: 'Albergue, retreaty, vzdělávací centrum', descEn: 'Pilgrim albergue, retreats, education center', done: false },
 ];
 
 const ZION_ITEMS: IntegrationItem[] = [
@@ -260,17 +297,17 @@ const STATUS_LABEL = {
 };
 
 const COMPARE = [
-  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, dharma: { cs: 'Vulkanické ticho & hory', en: 'Volcanic silence & mountains' } },
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Údolí Nabão & prameny', en: 'Nabão valley & springs' }, dharma: { cs: 'Vulkanické ticho & hory', en: 'Volcanic silence & mountains' } },
   { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, dharma: { cs: 'Sanctuary', en: 'Sanctuary' } },
-  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, dharma: { cs: 'Meditace, dharma, vzdělávání', en: 'Meditation, dharma, education' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, poutníci, komunita', en: 'Farm, pilgrims, community' }, dharma: { cs: 'Meditace, dharma, vzdělávání', en: 'Meditation, dharma, education' } },
   { dim: { cs: 'Architektonický symbol', en: 'Architectural symbol' }, genesis: { cs: '3 pyramidy — Memory / Consciousness / Future', en: '3 pyramids — Memory / Consciousness / Future' }, dharma: { cs: '7 kopulí + Strom života', en: '7 domes + Tree of Life' } },
 ];
 
 const OPEN_QUESTIONS = [
-  { cs: 'Přesné GPS souřadnice a výměra pozemku (v jednání)', en: 'Exact GPS coordinates and land area (in negotiation)' },
+  { cs: 'Výběr pozemku ve freguesii Sabacheira a výměra (v jednání)', en: 'Parcel selection in the Sabacheira parish and its area (in negotiation)' },
   { cs: 'Právní forma: Associação vs Cooperativa vs hybrid', en: 'Legal form: Associação vs Cooperativa vs hybrid' },
   { cs: 'Kapacita solárního systému (kWp / kWh denně)', en: 'Solar system capacity (kWp / kWh per day)' },
-  { cs: 'Timeline surf školy a partnerství s lokálním surf klubem', en: 'Surf school timeline and partnership with local surf club' },
+  { cs: 'Albergue do Jardim — kapacita, licence a partnerství s Juntou Sabacheira a Caminho Central', en: 'Albergue do Jardim — capacity, licensing and partnership with the Sabacheira parish and the Central Caminho' },
   { cs: 'Koordinátor ZION node — nábor Tech Guardiana', en: 'ZION node coordinator — recruiting a Tech Guardian' },
   { cs: 'Dharma Temple La Palma — specifikace sdílených protokolů', en: 'Dharma Temple La Palma — shared protocol specifications' },
   { cs: 'Semenná knihovna: které odrůdy a partneři výměny?', en: 'Seed library: which varieties and exchange partners?' },
@@ -354,7 +391,7 @@ export default function ZahradaGenesisPage() {
 
                 <div className="flex items-center gap-1.5 text-white/70">
                   <MapPin className="w-4 h-4 text-zion-cyan shrink-0" />
-                  <span className="text-sm">Algarve / Atlantické pobřeží · Portugalsko</span>
+                  <span className="text-sm">{cs ? 'Sabacheira · Tomar · Portugalsko' : 'Sabacheira · Tomar · Portugal'}</span>
                 </div>
 
                 <blockquote className="mt-4 pl-4 border-l-2 border-zion-cyan/40 text-sm text-white/70 italic leading-relaxed max-w-lg">
@@ -804,6 +841,45 @@ export default function ZahradaGenesisPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ CAMINHO DO JARDIM ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+            <div className="relative z-10">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-1">
+                {TerranovaGenesisCopy.caminoSubtitle[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-3 mb-4">
+                <Footprints className="h-6 w-6 text-zion-gold" />
+                {TerranovaGenesisCopy.caminoTitle[cs ? 'cs' : 'en']}
+              </h2>
+              <p className="text-white/70 text-sm leading-relaxed max-w-3xl mb-6">
+                {TerranovaGenesisCopy.caminoLead[cs ? 'cs' : 'en']}
+              </p>
+              <div className="space-y-3">
+                {CAMINO_LEGS.map((leg, i) => (
+                  <div key={i} className="zion-rainbow-sub px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
+                    <div className="flex items-center gap-2 shrink-0 sm:w-64">
+                      <MapPin className="h-4 w-4 text-zion-gold shrink-0" />
+                      <span className="text-sm font-semibold text-white">{leg.from} → {leg.to}</span>
+                      <span className="text-[10px] uppercase tracking-widest text-zion-gold/65">{leg.km}</span>
+                    </div>
+                    <p className="text-sm text-white/70">{cs ? leg.descCs : leg.descEn}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-zion-gold/65 text-sm leading-relaxed mt-6 max-w-3xl">
+                {TerranovaGenesisCopy.caminoFoot[cs ? 'cs' : 'en']}
+              </p>
             </div>
           </div>
         </motion.section>

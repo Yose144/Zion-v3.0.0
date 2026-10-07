@@ -6,7 +6,7 @@
 
 | Vrstva | Obsah | Status |
 |---|---|---|
-| Doložená realita | Oneness Temple (Ekam) u Varadaiahpalemu je fyzicky postavený chrám (2008); zeměpis (Pontevedra, Algarve, La Palma, Kostarika, Raiatea, australské pobřeží, Srí Lanka, Chennai, Cape Agulhas, St Helena, Azory); existence dokumentů korpusu | Reálné; podrobnosti nad rámec uvedeného nejsou v příběhu tvrzeny |
+| Doložená realita | Oneness Temple (Ekam) u Varadaiahpalemu je fyzicky postavený chrám (2008); zeměpis (Pontevedra, Sabacheira–Tomar–Fátima–Agroal, La Palma, Kostarika, Raiatea, australské pobřeží, Srí Lanka, Chennai, Cape Agulhas, St Helena, Azory); existence dokumentů korpusu | Reálné; podrobnosti nad rámec uvedeného nejsou v příběhu tvrzeny |
 | Plánované / koncepční | Program `maria-del-camino` ve stavu planning; tři zamýšlené trupy; uzly L5 a komunity | Tři lodě jsou plánované, některé uzly L5 jsou ve fázi dokumentace; registry a rezerva neznamenají stavbu ani automatické výplaty. Ekam je výjimka: existující chrám, který ZION neprovozuje |
 | Horizont | Hmotně realizovaný trup III; setkání flotily u Agulhas; Boa Esperança jako vztahová vize; Issobella | Výzkumný program a dokumentace jsou reálné, obydlená orbitální stanice neexistuje a žádný rok není slíben |
 | MÝTUS | Lumen, kapitánky, přejímka na šíji, všechny scény, rozhovory a rozhodnutí; lucerna Lumi jako obraz | Fikce; nejde o historii ani biografii |

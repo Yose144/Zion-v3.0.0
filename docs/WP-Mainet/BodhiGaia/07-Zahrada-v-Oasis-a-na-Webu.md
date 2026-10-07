@@ -35,7 +35,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 
 ## Co to znamená
 
-**L4 OASIS a web `app.zionterranova.com` jsou zrcadlem L5 — místem, kde se pět fyzických zahrad poprvé ukazují lidem, kteří nikdy nebyli v Algarve, na La Palmě, na Raiatea, v Čechách ani na Srí Lance.** Zrcadlo má tři legitimní funkce a jednu zakázanou:
+**L4 OASIS a web `app.zionterranova.com` jsou zrcadlem L5 — místem, kde se pět fyzických zahrad poprvé ukazují lidem, kteří nikdy nebyli v údolí Nabão, na La Palmě, na Raiatea, v Čechách ani na Srí Lance.** Zrcadlo má tři legitimní funkce a jednu zakázanou:
 
 | Funkce zrcadla | Správně | Zakázáno |
 |---|---|---|
@@ -63,7 +63,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 - Svět **`DHARMA_TEMPLE_LA_PALMA`** v galaxii (`worlds.ts`): „Sacred L5 sanctuary on La Palma — a geodesic temple of enlightenment, education and community", `goldenEggClue: 7`, pozice `(-16.2, 0.2, 31.8)`.
 - Svět **`GOLDEN_REPUBLIC_BOHEMIA`** v galaxii (`worlds.ts`): governance lab, kruh rozhodování, česká moudrost — most mezi tradicí a experimentem.
 - Svět **`BODHI_LANKA`** v galaxii (`worlds.ts`): Bhakti protokol, Sri Maha Bodhi, Rama Setu most — láska jako kořen, nejstarší žijící strom.
-- Svět **`GENESIS_GARDEN`** v galaxii (`worlds.ts`, layer 5): story-world zrcadlící projekt Zahrady Genesis v Algarve — jeho metadata nesou **Rose lore** (Lumi sází Růži z *Příběhu Růže*), výslovně označenou jako literární **MÝTUS** (tagy `rose`, `lore`, `myth`), ne evidence rostliny ani infrastruktury na místě.
+- Svět **`GENESIS_GARDEN`** v galaxii (`worlds.ts`, layer 5): story-world zrcadlící projekt Zahrady Genesis v Sabacheiře u Tomaru — jeho metadata nesou **Rose lore** (Lumi sází Růži z *Příběhu Růže*), výslovně označenou jako literární **MÝTUS** (tagy `rose`, `lore`, `myth`), ne evidence rostliny ani infrastruktury na místě.
 - Planeta **SAMANTABHADRA** (layer 5, „Nekonečná Zahrada", deset velkých slibů) — buddhistický archetyp všeobjímající praxe.
 
 **OASIS backend (`V31/L4/oasis`)**
@@ -90,7 +90,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | 2 | Veřejný L5 portál s živým zůstatkem fondu, návrhy, příjemci, milníky, výsledky (M5) | web | HORIZONT (`freeworld.zionterranova.com` v plánu N5) |
 | 3 | Označení každého L5 světa v OASIS stavovou značkou (koncept / stavba / živé) přímo v UI | L4 | HORIZONT |
 | 4 | Quest „Jeď do Zahrady" s ověřením přes impact packet a souhlas; žádná monetizace ceremonií | L4 ↔ L5 | HORIZONT (vyžaduje M5 gate a privacy review) |
-| 5 | Ověřit deploy metadat Dharma Temple (zdroj už má layer 5); Genesis lokalita na `/l5-free-world` → Algarve | L4 / web | STAVBA |
+| 5 | Ověřit deploy metadat Dharma Temple (zdroj už má layer 5); Genesis lokalita všude → Sabacheira, Tomar | L4 / web | STAVBA |
 
 ---
 
@@ -104,12 +104,12 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | **Sedm kopulí na mapě galaxie** | **ŽIVÉ** (klient) / **HORIZONT** (stavba) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — `DHARMA_TEMPLE_LA_PALMA`, `goldenEggClue: 7`; `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`. | Zdroj již má `layer: 5`; zbývá ověření deploy veřejného klienta a explicitní štítek „koncept". |
 | **Sítá a Hanuman jako avataři** | **ŽIVÉ** (dokument) / **HORIZONT** (mechanika) | `docs/WP-Mainet/SulZeme/10-Prvni-Svet-Oasis-a-Best-of-Avatari.md` §II — role a questy směřující do L5. | Implementace questů „spojení s L5" v `V31/L4/oasis` (quests.rs) není doložena. |
 | **Sliby bódhisattvy v OASIS** | **ŽIVÉ** (data) | `V31/L4/oasis/data/avatars.json` — Samantabhadra, Avalokiteśvara, Mañjuśrī, *Bodhicitta Spark*. | Vazba na L5 Consciousness Admission = HORIZONT. |
-| **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`, `golden-republic-bohemia`, `bodhi-lanka`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (`/l5-free-world`: Střední Evropa vs Algarve). |
+| **Pioneer Projects na webu** | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/components/PioneerProjectCards.tsx`; stránky `genesis`, `dharma-temple`, `te-piko-ora`, `golden-republic-bohemia`, `bodhi-lanka`. | Sjednocení lokality Te Pīko Ora (Tahiti vs Raiatea) a Genesis (historicky Algarve / Střední Evropa → nyní Sabacheira, Tomar — vyřešeno 2026-10-07). |
 | **3D koncept chrámu** | **ŽIVÉ** (web) / **HORIZONT** (stavba) | `DharmaTemplePreviewLazy` na `/terranova/dharma-temple`; dokument `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`. | Na webu chybí explicitní štítek „koncept — nestojí". |
 | **Rybář se sklíčkem (instant preview)** | **HORIZONT** | Nirvana ep. 9; `MiseAmenti/07` řadí WebGPU / Pixel Streaming / UE 5.7 do HORIZONT. | POC klienta, licenční a výkonová analýza (M4). |
 | **„Quest, který posílá do zahrady"** | **HORIZONT** | Nápad „Silence Quest" v `dharma-temple.md` §15 a „quest rewards for visits" v `genesis-garden.md` §11.2 jako marketingový kanál. | Mechanika, ověření, privacy review, M5 gate. |
 | **Trám se zuby a vědrem** | **MÝTUS** | Obraz této knihy pro pravidlo „každý prvek zrcadla má kotvu pravdy". | — |
-| **Rose lore ve světě `GENESIS_GARDEN`** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — vibe/summary světa nesou Růži výslovně jako literární lore (MYTH), tagy `rose`, `lore`, `myth`. | Deploy + ověření veřejného klienta; fyzická růže v Algarve = NEDOLOŽENO; pilot [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) = HORIZONT / NEZAHÁJENO. |
+| **Rose lore ve světě `GENESIS_GARDEN`** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — vibe/summary světa nesou Růži výslovně jako literární lore (MYTH), tagy `rose`, `lore`, `myth`. | Deploy + ověření veřejného klienta; fyzická růže v Sabacheiře = NEDOLOŽENO; pilot [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) = HORIZONT / NEZAHÁJENO. |
 
 ---
 

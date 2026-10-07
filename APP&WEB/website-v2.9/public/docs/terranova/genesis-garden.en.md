@@ -1,19 +1,19 @@
-# Genesis Garden — Base Camp · Algarve, Portugal
+# Genesis Garden — Base Camp · Sabacheira, Tomar, Portugal
 
-The first physical Terra Nova node in Europe — an eco-farm on the Atlantic coast of the Algarve where soil, ocean, community, and ZION meet.
+The first physical Terra Nova node in Europe — an eco-farm in the parish of **Sabacheira** (municipality of Tomar, Santarém district), between the shrine of Fátima and the Templar city of Tomar, where soil, the Nabão spring, community, and ZION meet.
 
 Genesis Garden is designed as a **regenerative off-grid sanctuary**. Its heart is formed by **three modern crystalline pyramids** arranged around a central garden and Tree of Life. Each pyramid carries a different function, but together they create a sacred triad — a gateway between soil and stars.
 
 ## Concept
 
-The site grows from the Genesis philosophy: **soil + ocean + community + self-sufficiency + ZION**.
+The site grows from the Genesis philosophy: **soil + spring + community + self-sufficiency + ZION**.
 
 - **Three pyramids as the heart of the garden** — crystalline, biomorphic, contemporary architecture integrated into the landscape.
 - **Tree of Life (Bodhi Gaia) at the center** — circular reflecting pool and water channels leading to the pyramids.
 - **Mediterranean garden, food forest, and orchards** — local and regenerative vegetation.
 - **Eco-huts, glamping, and walking paths** — human scale at the edges.
 - **Solar, rainwater harvesting, and borehole** — off-grid technology gently embedded in the land.
-- **Atlantic Ocean in the background** — a farm on the border between quiet soil and wild ocean.
+- **The Nabão in the background** — a farm on the border between quiet soil and the river valley; the river's greatest spring, the **Agroal**, lies at the parish edge.
 
 The pyramids are not Egyptian replicas. They are **original contemporary structures** that visually evoke a gateway/triad and relate to sacred geometry and Merkaba — without copying any existing symbol.
 
@@ -38,7 +38,8 @@ The pyramids are not Egyptian replicas. They are **original contemporary structu
 | 6 | **Eco-huts / glamping** | Accommodation for guests, volunteers, and Guardians. |
 | 7 | **Solar and water system** | 5 kWp PV, battery, borehole, tanks, root-zone wastewater. |
 | 8 | **Farm terraces** | Organic vegetables, agroforestry, tree planting. |
-| 9 | **Atlantic access** | Walking paths to the sea, surf, beach, windy slope. |
+| 9 | **Agroal & Nabão** | River beach on the river's largest spring (16–18 °C, Blue Flag), riverside trails PR1 TMR. |
+| 10 | **Albergue do Jardim** | The pilgrim hostel of the Caminho do Jardim — beds, kitchen, the credencial stamp. |
 
 Water channels and walking paths run between the pyramids. A stone circle around the central garden hosts the daily morning gathering.
 
@@ -64,11 +65,11 @@ Water channels and walking paths run between the pyramids. A stone circle around
 
 | Phase | Name | Key Milestones |
 |----:|---|---|
-| 0 | Seed (2026–2028) | Core team of 3 Guardians, Algarve scouting, legal research, EUR 50,000 budget, 0.1 ha trial crops. |
+| 0 | Seed (2026–2028) | Core team of 3 Guardians, Sabacheira/Tomar scouting, legal research, EUR 50,000 budget, 0.1 ha trial crops. |
 | 1 | Roots (2029) | Land, registration, 5 kWp solar, borehole, 4–6 glamping units, 0.5 ha, first guests Q3 2029, ZION wallet. |
 | 2 | Community (2030) | Guardian node, 3–5 eco-cabins, monthly program, LoRa mesh, Medical Table pavilion, Dharma Temple link. |
-| 3 | Network (2031) | 2 ha, 3+ node seed network, education center, surf school, second Portuguese node. |
-| 4 | Radiance (2032+) | Retreat center 40+ guests, ZION-native payments default, knowledge commons, 1 % surplus → L6. |
+| 3 | Network (2031) | 2 ha, 3+ node seed network, education center, pilgrim albergue, second Portuguese node. |
+| 4 | Radiance (2032+) | Retreat center 40+ guests, full albergue capacity, ZION-native payments default, knowledge commons, 1 % surplus → L6. |
 
 ## ZION Integration
 
@@ -80,12 +81,29 @@ Water channels and walking paths run between the pyramids. A stone circle around
 - **Proof-of-Care** — rewards for real care of soil and community.
 - **Humanitarian Tithe** — 10 % of node rewards to local and global humanitarian projects.
 
+## Caminho do Jardim — the pilgrim detour
+
+Sabacheira sits exactly between two pilgrimage axes: **the shrine of Fátima** (~17 km west) and **Tomar** (~11 km south), the Templar city through which the **Caminho Central Português** runs (Lisbon → Santarém → Golegã → Tomar → Coimbra → Porto → Pontevedra → Santiago). The parish even has the **Chão de Maçãs–Fátima** station on the Linha do Norte — pilgrims can arrive by train.
+
+From this position grows the **Caminho do Jardim** — a new detour, just as the Portuguese Camino knows its Variante Espiritual:
+
+| Leg | ~km | What happens |
+|---|---:|---|
+| **Fátima → Sabacheira** | ~20 | From the shrine across the plateau and olive groves into the Nabão valley (partly the Caminho de Fátima Nascente walked backwards). |
+| **Sabacheira — Albergue do Jardim** | stamp | A night in the garden, kitchen, work in the beds — and the **Garden stamp** in the credencial. The Earth initiation (hands in the soil) before the sea. |
+| **Sabacheira → Agroal** | ~5 | The greatest spring of the Nabão — a Blue-Flag river beach, cold clear water; the water threshold before the voyage. |
+| **Agroal → Tomar** | ~11 | Down the Nabão valley into the Templar city — the Convento de Cristo — and back onto the yellow arrows of the Caminho Central. |
+
+**The Garden stamp qualifies a pilgrim to request a berth aboard the Tres Marias.** Whoever walks through the Garden boards as a pilgrim, not a tourist — passage itself is governed by hull capacity, safety and program rules (pilgrims join as voyage crew). At Tomar the way rejoins the Caminho Central and leads through Coimbra, Porto and Tui to **Pontevedra** — the home port of Santa María la Mayor. Sabacheira itself was a comenda of the Order of Christ in the 15th–16th century — pilgrimage tradition has deep roots here.
+
+*(Distances are approximate walking values; formal waymarking is a phase 1–2 matter, subject to agreements with local partners.)*
+
 ## Open Questions
 
-- Exact GPS coordinates and land area (in negotiation).
+- Parcel selection within the Sabacheira parish and its area (in negotiation).
 - Legal form: Associação vs Cooperativa vs hybrid.
 - Solar system capacity (kWp / kWh per day).
-- Surf school timeline and partnership with local surf club.
+- Albergue do Jardim — capacity, licensing, partnership with the Sabacheira parish and the Central Caminho.
 - ZION node installation coordinator — recruiting a Tech Guardian.
 - Dharma Temple La Palma — shared protocol specifications.
 - Seed library: which varieties and exchange partners?

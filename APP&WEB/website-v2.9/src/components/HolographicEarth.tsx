@@ -693,7 +693,7 @@ function latLonToVector3(lat: number, lon: number, radius: number): [number, num
 }
 
 const TERRA_NOVA_MARKERS = [
-  { lat: 37.0, lon: -8.0, color: '#066928', glow: '#066928', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
+  { lat: 39.68, lon: -8.48, color: '#066928', glow: '#066928', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
   { lat: 28.7, lon: -17.9, color: '#fcd116', glow: '#fcd116', nameCs: 'Dharma Temple', nameEn: 'Dharma Temple', href: '/terranova/dharma-temple' },
   { lat: -17.0, lon: -150.0, color: '#e41e2b', glow: '#e41e2b', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
   { lat: 50.0, lon: 14.4, color: '#9333ea', glow: '#9333ea', nameCs: 'Golden Republic Bohemia', nameEn: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia' },

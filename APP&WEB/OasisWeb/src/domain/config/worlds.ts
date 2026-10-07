@@ -4663,10 +4663,10 @@ export const WORLDS: World[] = [
       name: "Zahrada Genesis",
       category: "world",
       layer: 5,
-      location: "Algarve, Portugal — Terra Nova L5 Atlantic node",
+      location: "Sabacheira, Tomar, Portugal — Terra Nova L5 node",
       vibe: "The first garden. In its story layer, Lumi plants the Rose — care without ownership, an open gate, and water shared with the thirsty.",
-      summary: "L5 story-world mirroring the Genesis Garden project in the Algarve: regenerative land, water, energy and community. The Rose is explicitly literary lore (MYTH), not evidence that a flower or infrastructure exists at the physical site.",
-      tags: ["world", "layer 5", "terranova", "genesis", "algarve", "sanctuary", "rose", "lore", "myth"],
+      summary: "L5 story-world mirroring the Genesis Garden project in Sabacheira (Tomar): regenerative land, water, energy and community. The Rose is explicitly literary lore (MYTH), not evidence that a flower or infrastructure exists at the physical site.",
+      tags: ["world", "layer 5", "terranova", "genesis", "sabacheira", "tomar", "sanctuary", "rose", "lore", "myth"],
       galaxyPosition: { x: -4.2, y: 0.4, z: 14.6 }
   },
   {

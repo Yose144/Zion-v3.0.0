@@ -272,9 +272,9 @@ const CZECH_WISDOM = [
 ];
 
 const COMPARE = [
-  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, bohemia: { cs: 'Říp & labské údolí', en: 'Říp & Elbe valley' } },
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Údolí Nabão & prameny', en: 'Nabão valley & springs' }, bohemia: { cs: 'Říp & labské údolí', en: 'Říp & Elbe valley' } },
   { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, bohemia: { cs: 'Governance Lab', en: 'Governance Lab' } },
-  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, bohemia: { cs: 'Governance kruhy, vzdělávání', en: 'Governance circles, education' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, poutníci, komunita', en: 'Farm, pilgrims, community' }, bohemia: { cs: 'Governance kruhy, vzdělávání', en: 'Governance circles, education' } },
   { dim: { cs: 'Architektonický symbol', en: 'Architectural symbol' }, genesis: { cs: '3 pyramidy — Memory / Consciousness / Future', en: '3 pyramids — Memory / Consciousness / Future' }, bohemia: { cs: 'Tři pavilony — Most / Univerzita / Zlatá bula', en: 'Three Pavilions — Bridge / University / Golden Bull' } },
 ];
 

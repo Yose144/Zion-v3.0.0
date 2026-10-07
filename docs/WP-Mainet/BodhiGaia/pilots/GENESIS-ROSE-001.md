@@ -30,7 +30,7 @@ Mikro-pilot **disciplíny důkazu**: ověřit, že projekt umí provést a zdokl
 
 ### Gate B — botanika a bezpečnost
 
-- Místní zahradník / hortikulturista potvrdí **lokálně dostupný, neinvazivní kultivar** vhodný pro konkrétní mikroklima Algarve.
+- Místní zahradník / hortikulturista potvrdí **lokálně dostupný, neinvazivní kultivar** vhodný pro konkrétní mikroklima údolí Nabão.
 - Ověřit: vodní omezení lokality, vhodnou dobu výsadby, stav půdy, požární režim.
 - Umístění **mimo pěší, dětskou a pracovní trasu** — rostlina bude mít trny.
 - Žádné sázení do chráněného biotopu ani na místo, kde by rostlina konkurovala původní květeně.
@@ -64,7 +64,7 @@ Mikro-pilot **disciplíny důkazu**: ověřit, že projekt umí provést a zdokl
 | Datum/čas výsadby | TBD |
 | Taxon / kultivar | TBD |
 | Zdroj rostliny/semena a doklad | TBD |
-| Veřejná hrubá lokalita | TBD (např. „Algarve, Portugalsko") |
+| Veřejná hrubá lokalita | TBD (např. „Sabacheira, Tomar, Portugalsko") |
 | Soukromé GPS ref | TBD (interní) |
 | Vodní / aftercare plán | TBD |
 | Rozpočet a zdroj | TBD |

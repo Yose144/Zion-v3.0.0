@@ -11,7 +11,7 @@ WEB_IMG = REPO / 'APP&WEB/website-v2.9/public/images'
 
 # slug -> (render source, board source)
 SOURCES = {
-    'genesis-garden': ('Genesis.png', 'GenesisProject.png'),
+    'genesis-garden': ('GenesisSabacheira.png', 'GenesisProject_Sabacheira.png'),
     'dharma-temple': ('Dharma.png', 'DharmaProject.png'),
     'te-piko-ora': ('Piko.png', 'PikoProject.png'),
     'golden-republic-bohemia': ('Bohemia.jpg', 'BohemiaProjekt.jpg'),

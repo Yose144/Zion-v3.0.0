@@ -184,9 +184,9 @@ const SIGNALS = [
 ];
 
 const COMPARE = [
-  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, dharma: { cs: 'Vulkanické ticho & hory', en: 'Volcanic silence & mountains' } },
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Údolí Nabão & prameny', en: 'Nabão valley & springs' }, dharma: { cs: 'Vulkanické ticho & hory', en: 'Volcanic silence & mountains' } },
   { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, dharma: { cs: 'Sanctuary', en: 'Sanctuary' } },
-  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, dharma: { cs: 'Meditace, dharma, vzdělávání', en: 'Meditation, dharma, education' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, poutníci, komunita', en: 'Farm, pilgrims, community' }, dharma: { cs: 'Meditace, dharma, vzdělávání', en: 'Meditation, dharma, education' } },
 ];
 
 const STATUS_LABEL = {

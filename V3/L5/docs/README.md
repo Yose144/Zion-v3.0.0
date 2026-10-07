@@ -59,7 +59,7 @@ V3/L5/docs/
 
 | Community | Location | Archetype | Status | L5 Docs |
 |-----------|----------|-----------|--------|---------|
-| **Genesis Garden** | Algarve, Portugal | Base Camp — movement, ocean, farm | 🟡 Active development | [`COMMUNITIES/genesis-garden.md`](./COMMUNITIES/genesis-garden.md) |
+| **Genesis Garden** | Sabacheira, Tomar, Portugal | Base Camp — garden, pilgrims, Nabão valley | 🟡 Active development | [`COMMUNITIES/genesis-garden.md`](./COMMUNITIES/genesis-garden.md) |
 | **Dharma Temple** | La Palma, Canary Islands | Sanctuary — silence, meditation, volcano | 🔵 Preparation | [`COMMUNITIES/dharma-temple.md`](./COMMUNITIES/dharma-temple.md) |
 | **Te Pīko Ora** | Raiatea / Tahiti, French Polynesia | Crown — paradise, marine permaculture, wayfinding | 🔵 Vision / Preparation | [`COMMUNITIES/te-piko-ora.md`](./COMMUNITIES/te-piko-ora.md) |
 

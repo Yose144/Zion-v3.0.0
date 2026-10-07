@@ -142,7 +142,7 @@ Every L5 community maintains a **local herbal database**:
   "plant_id": "rosmarinus-officinalis-algarve",
   "common_names": {"en": "Rosemary", "pt": "Alecrim", "cs": "Rozmarýna"},
   "latin_name": "Rosmarinus officinalis",
-  "local_variety": "Algarve coastal",
+  "local_variety": "Ribatejo inland",
   "habitat": "Coastal scrub, full sun, well-drained soil",
   "harvest": {"part": "leaves and flowering tops", "season": "spring", "method": "cut 10cm from tip"},
   "preparations": [

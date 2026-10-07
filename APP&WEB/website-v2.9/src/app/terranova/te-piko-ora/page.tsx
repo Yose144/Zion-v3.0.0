@@ -255,9 +255,9 @@ const RAPA_NUI_LESSONS = [
 ];
 
 const COMPARE = [
-  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, tepiko: { cs: 'Větrné vlny & laguny', en: 'Wind waves & lagoons' } },
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Údolí Nabão & prameny', en: 'Nabão valley & springs' }, tepiko: { cs: 'Větrné vlny & laguny', en: 'Wind waves & lagoons' } },
   { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, tepiko: { cs: 'Wayfinding School', en: 'Wayfinding School' } },
-  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, tepiko: { cs: 'Navigace, marine permakultura', en: 'Navigation, marine permaculture' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, poutníci, komunita', en: 'Farm, pilgrims, community' }, tepiko: { cs: 'Navigace, marine permakultura', en: 'Navigation, marine permaculture' } },
   { dim: { cs: 'Architektonický symbol', en: 'Architectural symbol' }, genesis: { cs: '3 pyramidy — Memory / Consciousness / Future', en: '3 pyramids — Memory / Consciousness / Future' }, tepiko: { cs: 'Va\'a kánoe + marae', en: 'Va\'a canoe + marae' } },
 ];
 

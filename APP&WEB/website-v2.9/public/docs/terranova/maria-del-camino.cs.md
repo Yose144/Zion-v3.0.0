@@ -21,7 +21,7 @@ Flotila nese jména tří mariánských zjevení poutníkovy cesty — ta samá,
 | **Nossa Senhora de Fátima** | Pacifik | Fátima — Bílá Paní | Svatební šaty — mystická svatba, bílá orchidej, nové zjevení |
 | **María de las Nieves** | Indický oceán | La Palma — patronka ostrova i celé sítě | Zlatá roucha — nedokončené zázraky, v náručí vzpřímené dítě |
 
-- **Santa María la Mayor (Atlantik)** — klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría — přístav, kde námořníci postavili Marii svou nejkrásnější stavbu), trasa Finisterre → Algarve → La Palma → karibský břeh LUMI; severský výběžek umí říční leg Labem k Bohemii.
+- **Santa María la Mayor (Atlantik)** — klasická plachetnice v tradici Camina de Santiago. Domácí voda Galicie (Pontevedra ría — přístav, kde námořníci postavili Marii svou nejkrásnější stavbu), trasa Finisterre → Lisabon (odbočka po souši Tomar–Sabacheira) → La Palma → karibský břeh LUMI; severský výběžek umí říční leg Labem k Bohemii.
 - **Nossa Senhora de Fátima (Pacifik)** — solární katamarán v linii *wa'a kaulua*, polynéské dvojité kánoe, kterou nesla Hōkūleʻa a celá wayfinding kultura. Domov v Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka → Ekam.
 - **María de las Nieves (Indický oceán)** — třetí loď, loď nedokončených zázraků. Nese třetí zjevení: María ve zlatých rouchech drží vzpřímené dítě — malého prince, symbol Zlatého věku (v příběhu sítě dítě LUMI a Elizabeth). Patronka La Palmy je zároveň patronkou celého ZIONu — proto právě ona dostává oceán, kde cesta vrcholí: Ekam → Boa Esperança → návrat do Atlantiku.
 
@@ -58,7 +58,7 @@ Trasa není servisní okruh — je to cesta, kde **každý uzel je jedna iniciac
 | # | Zastávka | Iniciace | Loď | Co se děje |
 |---|----------|----------|-----|-----------|
 | 0 | **Pontevedra · Galicie** | Poutník | I | Vyplutí z domácího přístavu — bazilika María Mayor, credencialy, plamen z Finisterra |
-| 1 | **Genesis Garden · Algarve** | Země | I | Ruce v hlíně — práce v zahradě, zdroj, semínka |
+| 1 | **Genesis Garden · Sabacheira, Tomar** | Země | I | Ruce v hlíně — práce v zahradě, zdroj, semínka; **Albergue do Jardim**: carimbo Zahrady do credencialu = kvalifikace k nástupu na palubu |
 | 2 | **Dharma Temple · La Palma** | Ticho | I | Ostrov třetího zjevení — chrámová praxe pod patronkou sítě |
 | 3 | **LUMI · Nová Amerika** | Most | I→II | Šíje po souši (Camino de Cruces) — předání mezi oceány, výměna posádky i nákladu |
 | 4 | **Te Pīko Ora · Raiatea** | Oceán | II | Wayfinding škola — hvězdná navigace, wa'a tradice |

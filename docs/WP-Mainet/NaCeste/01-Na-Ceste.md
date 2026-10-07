@@ -72,13 +72,13 @@ Tu noc Lumen poprvé neotevřela šanon. Dívala se z paluby na lampy v přísta
 
 ## II. Čísla na moři
 
-Vyplouvali v květnu a věděli, že cesta potrvá mnoho měsíců, protože lodě čekají na příznivá sezónní okna a nikdo je nehoní. V Algarve zastavili u zahrady na skalnaté stráni a zjistili, jak se tam hospodaří s vodou: dešťovou jímali ze střech, malou část brali z odsolovací jednotky na solární pohon a sladkou odděleně od mořské, protože slaná voda zasoluje půdu a zahradu by za pár let zabila. Jedna žena vyměnila část jejich zásob za dvě sklenice medu. Většina nákladu měla dohledatelný původ a potřebné doklady, které Lumen chránila v šanonu. Na jeho dně však ležel Xoánův sáček s pouhým ručně psaným lístkem.
+Vyplouvali v květnu a věděli, že cesta potrvá mnoho měsíců, protože lodě čekají na příznivá sezónní okna a nikdo je nehoní. Cesta do Pontevedry vedla přes zahradu: v údolí Nabão, mezi Fátimou a templářským Tomarem, stála ve freguesii Sabacheira Zahrada Genesis s malým albergue pro poutníky. Tam si Lumen poprvé vetřela hlínu pod nehty a tam do credencialu dostala první razítko — carimbo Zahrady. A tam zjistili, jak se hospodaří s vodou: dešťovou jímali ze střech, studniční čerpali ze vrtu a sladkou oddělovali od užitkové, protože znečištěná voda by zahradu za pár let zabila. Jedna žena vyměnila část jejich zásob za dvě sklenice medu. Většina nákladu měla dohledatelný původ a potřebné doklady, které Lumen chránila v šanonu. Na jeho dně však ležel Xoánův sáček s pouhým ručně psaným lístkem.
 
 Pak vyjeli na Atlantik. První noc byla klidná. Druhý den ráno se barva oblohy změnila na olověnou a vlny začaly mít vlastní vůli: neváhaly, přicházely v dlouhých řadách, zvedaly loď a pouštěly ji. Posádka sundala část plachet. Lumen seděla v kajutě s nohama zaklíněnýma o skříň, nemocná a bledá, a pokoušela se vést záznam zásob, protože to byla její práce a protože ruce, které píší, nevolnost trochu tlumí.
 
 Sčítala, odečítala a čísla jí nesouhlasila.
 
-Zalistovala zpět. V den odplutí z Algarve zapsala do kolonky *pitná voda, nádrž č. 2: 640 litrů*. Ve skutečnosti, jak teď viděla z předávacího listu přístavního technika, který měla přilepený na zadní straně, do nádrže tehdy přitéklo jen 460. Přepsala dvě číslice. Od té doby se podle jejího čísla počítaly dávky.
+Zalistovala zpět. V den odplutí z Pontevedry zapsala do kolonky *pitná voda, nádrž č. 2: 640 litrů*. Ve skutečnosti, jak teď viděla z předávacího listu přístavního technika, který měla přilepený na zadní straně, do nádrže tehdy přitéklo jen 460. Přepsala dvě číslice. Od té doby se podle jejího čísla počítaly dávky.
 
 Rozepsala si to tužkou na okraj, pak znovu a znovu. Vyšlo jí, že nádrž č. 2 se vyprázdní o několik dní dřív, než se všem říkalo.
 
@@ -88,7 +88,7 @@ Jenže právě šanon ji učil, že záznam je smlouva s lidmi, kteří se na n�
 
 Vyšplhala se po schůdkách s hořícím obličejem a s papírem v ruce. Inés stála u kormidla, přivázaná lanem, s očima přimhouřenýma proti dešti.
 
-„Kapitánko, v lodním záznamu je moje chyba. Přepsala jsem číslo. Nádrž č. 2 měla méně vody, než jsem uvedla. Dávky jsme od Algarve počítali podle špatného čísla."
+„Kapitánko, v lodním záznamu je moje chyba. Přepsala jsem číslo. Nádrž č. 2 měla méně vody, než jsem uvedla. Dávky jsme od Pontevedry počítali podle špatného čísla."
 
 Inés se na ni dlouho dívala. Vítr jí trhal pramen vlasů přes tvář.
 
@@ -128,7 +128,7 @@ Dívka, která se jmenovala Marisol a vedla přejímku, rozložila na stole krab
 
 „Semena. Odkud?"
 
-„Z Algarve a z Pontevedry. Dostali jsme je výměnou."
+„Ze Sabacheiry a z Pontevedry. Dostali jsme je výměnou."
 
 „Máte to na papíře?"
 
@@ -372,7 +372,7 @@ Xoán nahlédl do beden a řekl: „Dobře."
 
 „To je všechno. Teď víte, co je hotové a co ne."
 
-Večer jí kapitánka Inés předala obálku. Uvnitř byl list papíru s razítkem lodi a několika řádky: *Lumen, zapisovatelka. Podle sdílených záznamů lodí: Pontevedra – Algarve – La Palma – (po souši přes šíji) – Pacifik – Srí Lanka – Chennai – Indický oceán – Cape Agulhas – Pontevedra. Potvrzuji pouze to, co vím ze záznamů, které se mi dostaly do rukou, a z toho, co jsem sama viděla. Za cizí posádky nemluvím.* A níž, jiným písmem: *Účty jsou otevřené. Můžeš odejít, kdykoliv budeš chtít.*
+Večer jí kapitánka Inés předala obálku. Uvnitř byl list papíru s razítkem lodi a několika řádky: *Lumen, zapisovatelka. Podle sdílených záznamů lodí: Pontevedra – Lisabon (Sabacheira) – La Palma – (po souši přes šíji) – Pacifik – Srí Lanka – Chennai – Indický oceán – Cape Agulhas – Pontevedra. Potvrzuji pouze to, co vím ze záznamů, které se mi dostaly do rukou, a z toho, co jsem sama viděla. Za cizí posádky nemluvím.* A níž, jiným písmem: *Účty jsou otevřené. Můžeš odejít, kdykoliv budeš chtít.*
 
 „Je to certifikát?"
 

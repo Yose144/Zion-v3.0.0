@@ -49,7 +49,7 @@ const copy = {
 };
 
 const LOCATION_LABEL: Record<string, { cs: string; en: string }> = {
-  'genesis-garden': { cs: 'Algarve, Portugalsko', en: 'Algarve, Portugal' },
+  'genesis-garden': { cs: 'Sabacheira · Tomar, Portugalsko', en: 'Sabacheira · Tomar, Portugal' },
   'dharma-temple': { cs: 'La Palma — Terra Nova Sanctuary', en: 'La Palma — Terra Nova Sanctuary' },
   'te-piko-ora': { cs: 'Raiatea, Francouzská Polynésie', en: 'Raiatea, French Polynesia' },
   'golden-republic-bohemia': { cs: 'Čechy, Česká republika', en: 'Bohemia, Czech Republic' },

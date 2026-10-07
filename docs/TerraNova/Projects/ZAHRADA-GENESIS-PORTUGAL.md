@@ -5,9 +5,9 @@
 
 | Pole | Hodnota |
 |------|---------|
-| **Lokace** | Algarve / západní pobřeží, Portugalsko |
-| **Klimatická zóna** | Mediteránní atlantická — 300+ slunečných dní, oceánský vítr |
-| **GPS / Oblast** | TBD — blízkost surfových vln, Atlantic coast |
+| **Lokace** | Sabacheira, concelho Tomar — freguesie mezi Fátimou a Tomarem, údolí Nabão |
+| **Klimatická zóna** | Kontinentálně-mediterránní — horká léta, studená pramenitá voda Nabão (~16–18 °C) |
+| **GPS / Oblast** | TBD přesný pozemek — freguesie Sabacheira (~39.68, −8.48), ~5 min od Agroal / pramene Nabão |
 | **Status** | 🟡 Aktivní rozvoj — eko farma roste |
 | **Verze listu** | 2026-04-28 |
 | **Guardian(i)** | Terra Nova ® PT team |
@@ -17,7 +17,7 @@
 
 ## Vize a záměr
 
-Zahrada Genesis je první fyzický uzel sítě Terra Nova v Evropě — eko farma v Portugalsku, kde se propojuje organické zemědělství, surf, off-grid technologie a komunitní život. Projekt slouží jako **Base Camp**: místo, kam přichází Guardians a příznivci Terra Nova na retreaty, pracovní pobyty a vzdělávací programy, a kde si každý může osahat reálný off-grid provoz.
+Zahrada Genesis je první fyzický uzel sítě Terra Nova v Evropě — eko farma ve freguesii Sabacheira u Tomaru, v údolí řeky Nabão mezi Fátimou a templářským městem. Propojuje organické zemědělství, poutní stezky, off-grid technologie a komunitní život. Projekt slouží jako **Base Camp**: místo, kam přichází Guardians, příznivci Terra Nova a poutníci na retreaty, pracovní pobyty a vzdělávací programy, a kde si každý může osahat reálný off-grid provoz.
 
 Záměr není perfekce — záměr je **reálný provoz otevřený lidem**. Farma, která roste vedle lidí, ne bez nich.
 
@@ -63,7 +63,7 @@ Záměr není perfekce — záměr je **reálný provoz otevřený lidem**. Farm
 | Sázení stromů | 🟢 Aktivní | Každý návštěvník může zasadit strom |
 | Off-grid provoz | 🟡 Eko | Solar, kompostování, sběr vody |
 | Komunitní setkání | 🟢 Aktivní | Workshopy, retreaty, ceremonie, festivaly |
-| Surf škola | 🔵 Brzy | Propojení oceánu, pohybu a vědomého stylu |
+| Albergue do Jardim | 🔵 Plánováno | Poutní noclehárna Caminho do Jardim — carimbo Zahrady do credencialu |
 | ZION node | 🔵 Plánováno | Guardian uzel sítě |
 | Medical Table | 🔵 Plánováno | Zdravotní protokoly komunity |
 | LoRa / Mesh síť | 🔵 Plánováno | Off-grid komunikace areálu |
@@ -93,8 +93,8 @@ Glamping je první komerční pilíř Zahrady Genesis — zdroj příjmů, kter�
 
 ### Sezóna a cílová skupina
 
-- **Hlavní sezóna:** duben–říjen (Algarve / atlantické pobřeží)
-- **Cílová skupina:** Digitální nomádi, surfeři, rodiny s dětmi, retreat účastníci, Guardian kandidáti
+- **Hlavní sezóna:** duben–říjen (střední Portugalsko — poutní sezóna Fátima/Camino)
+- **Cílová skupina:** Digitální nomádi, poutníci (Camino Central / Fátima), rodiny s dětmi, retreat účastníci, Guardian kandidáti
 - **Délka pobytu:** Minimum 2 noci, preferováno 5–14 dní (long-stay sleva)
 
 ### Příjmy a alokace
@@ -141,7 +141,7 @@ Výstavba trvalých budov je klíčový přechod z kempingové fáze do skutečn
 | Budova | Popis |
 |--------|-------|
 | Vzdělávací centrum | Učebna, knihovna, pracovní stanice, ZION node rack |
-| Surf škola & storage | Přístřešek na surfovací vybavení, šatny, sprchy |
+| Albergue do Jardim | Poutní noclehárna, společná jídelna, prostor pro razítkování credencialu |
 | Seed bank | Kontrolované prostředí pro uchovávání osiva |
 
 ### Metody přírodní výstavby používané v projektu
@@ -163,6 +163,20 @@ Výstavba trvalých budov je klíčový přechod z kempingové fáze do skutečn
 | Fáze 3 — Výzařování | 50 000–100 000 EUR |
 
 *Náklady jsou výrazně sníženy participativní výstavbou — hosté se učí a zároveň staví.*
+
+---
+
+## Caminho do Jardim — poutní odbočka (navrženo)
+
+Zahrada Genesis leží v krajině, která sama o sobě je poutní mapa: **Fátima** (~20 km), **Tomar** (~11 km — stanice Caminho Central Português a sídlo Kristova řádu), **Agroal** (~5 km — pramen Nabão, praia fluvial). Návrh odbočky:
+
+| Úsek | Vzdálenost | Poznámka |
+|------|-----------|----------|
+| Fátima → Sabacheira | ~20 km | Nejsoučasnější směr — odbočka z Caminho de Fátima Nascente (Tomar ↔ Fátima ~29 km) |
+| Sabacheira → Agroal | ~5 km | Pramen Nabão — přírodní koupání, piknik, Modrá vlajka |
+| Agroal → Tomar | ~11 km | Dolů po Nabão do templářského města → návrat na Caminho Central |
+
+**Albergue do Jardim** — plánovaná poutní noclehárna přímo v zahradě: lůžka, večeře, a **carimbo Zahrady do credencialu**. Poutník s tímto razítkem je kvalifikován požádat o místo na palubě flotily **Tres Marias** (María del Camino) — dle kapacity, bezpečnosti a provozních pravidel programu. Trasa je návrh — přesné GPX, vyznačení a právní posouzení teprve proběhne.
 
 ---
 
@@ -196,13 +210,13 @@ Výstavba trvalých budov je klíčový přechod z kempingové fáze do skutečn
 | 1 — Kořeny | Solar, voda, organická zahrada, glamping | 🟡 Probíhá |
 | 2 — Komunita | Stálí obyvatelé, ZION node, governance | 🔵 Plánováno |
 | 3 — Síť | Propojení s Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka a dalšími L5 uzly | 🔵 Plánováno |
-| 4 — Výzařování | Surf škola, retreaty, vzdělávací centrum | 🔵 Vize |
+| 4 — Výzařování | Albergue do Jardim, Caminho do Jardim vyznačení, retreaty, vzdělávací centrum | 🔵 Vize |
 
 ---
 
 ## Charakter místa
 
-Zahrada Genesis stojí na hranici dvou světů: tichého vnitrozemí farmy a divokého atlantického pobřeží. Tato dualita — ticho půdy a energie oceánu — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i surfovat vlny. Farmáře i surfaře. Stavitele i meditující.
+Zahrada Genesis stojí na křižovatce dvou cest: zemědělské freguesie Sabacheira a poutních stezek, které se tu protínají — Caminho de Fátima z Tomaru a Caminho Central Português přes tomarský klášter Kristova řádu, jehož comendou Sabacheira historicky byla. O pár kilometrů dál v Agroalu vyvěrá pramen Nabão — největší v celém povodí — s přírodním koupalištěm pod platanovými stromy. Tato dualita — ticho půdy a cesta poutníka — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i jít pěšky dvacet kilometrů denně. Farmáře i poutníky. Stavitele i meditující.
 
 Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Zahrada Genesis buduje **dědictví v biologickém čase** — ne v čtvrtletních zprávách.
 
@@ -213,7 +227,7 @@ Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, 
 - [ ] Přesná GPS lokace a plocha pozemku
 - [ ] Kapacita solárního systému (kWp / kWh denně)
 - [ ] Právní forma projektu (s.r.o., kooperativa, spolek?)
-- [ ] Timeline surf školy
+- [ ] Timeline Albergue do Jardim + vyznačení Caminho do Jardim (Fátima → Sabacheira → Agroal → Tomar)
 - [ ] ZION node instalace — koordinátor?
 - [ ] Propojení s Dharma Temple La Palma, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka — sdílené protokoly?
 - [ ] Seed library — jaké odrůdy? Výměna se kterými projekty?

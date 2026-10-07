@@ -75,7 +75,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
 | Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
-| Lumi, Ana a zasazení druhého semínka u Atlantiku. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
+| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
 
 ---
 
@@ -97,7 +97,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 | # | Rozpor | Kde | Doporučená oprava | Třída |
 |---|---|---|---|---|
 | 1 | Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
-| 2 | Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve, Portugalsko**. | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` (`L5FreeWorldCopy.centralEurope`) | Sjednotit s `/terranova/genesis`, kartami a OASIS panelem. | A |
+| 2 | ~~Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve**~~ → **VYŘEŠENO 2026-10-07:** správná lokalita je **Sabacheira, concelho Tomar** — sjednoceno napříč `/l5-free-world`, `/terranova/genesis`, kartami, OASIS, mapami i registry. | — | Zápis ponechán jako historie rozhodnutí. | A |
 | 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
 | 4 | Lokalita Te Pīko Ora: web/OASIS **Tahiti**, komunitní dokument preferuje **Raiatea** (Tahiti jako záloha). | `PioneerProjectCards.tsx`, `WorldPanel.tsx` vs `te-piko-ora.md` §3.3 | Uvést „Raiatea / Tahiti (výběr probíhá)" všude stejně. | A |
 | 5 | Komunitní dokumenty datovány **2026-05-21**; timeline Genesis Fáze 1 „první hosté Q3 2026" — Q3 2026 již probíhá bez evidence. | `public/V3/L5/docs/COMMUNITIES/*.md` | Refresh stavů a dat; přidat sekci „Evidence" s odkazy. | B |
