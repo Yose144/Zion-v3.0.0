@@ -4832,6 +4832,115 @@ ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   }
 });
 
+// ── AuxPoW kernel self-test — runs auxpow_kat per configured coin ──
+// Maps UI coin tickers → auxpow_kat case names (V31/L1/miner KAT matrix).
+const KAT_ALGO_BY_COIN = {
+  KAS: 'kheavyhash', ALPH: 'blake3_alph', DCR: 'blake3_dcr', ERG: 'autolykos',
+  ETC: 'ethash', RVN: 'kawpow', CLORE: 'kawpow', MEWC: 'meowpow',
+  EVR: 'evrprogpow', FLUX: 'zelhash', EPIC: 'progpow', QTU: 'qpow',
+  ZANO: 'progpowz', VRSC: 'verushash', RTM: 'ghostrider', NEXA: 'nexapow',
+  KLS: 'karlsenhash', VTC: 'verthash', BEAM: 'beamhash', DNX: 'dynexsolve',
+  CKB: 'eaglesong', CFX: 'octopus', ZEC: 'equihash', PHX: 'neoscrypt',
+  KRX: 'keryxhash', IRON: 'fishhash', QTC: 'qhash', ZCL: 'equihashzero',
+  PRL: 'pearlhash',
+};
+
+function findAuxpowKatBinary() {
+  const names = process.platform === 'win32' ? ['auxpow_kat.exe'] : ['auxpow_kat'];
+  const dirs = [];
+  if (MINER_PATH) dirs.push(path.dirname(MINER_PATH));
+  dirs.push(
+    path.join(APP_ROOT, 'resources'),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target-vega-fix', 'release'),
+    path.join(APP_ROOT, '..', '..', 'V31', 'L1', 'miner', 'target', 'release'),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release'),
+    path.join(APP_ROOT, '..', '..', 'target', 'release')
+  );
+  for (const dir of dirs) {
+    for (const name of names) {
+      const p = path.join(dir, name);
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  return null;
+}
+
+ipcMain.handle('run-kernel-selftest', async (_event, options = {}) => {
+  try {
+    const katPath = findAuxpowKatBinary();
+    if (!katPath) {
+      return {
+        success: false,
+        error: 'auxpow_kat binary not found — ship it next to zion-miner or build `cargo build --release -p zion-miner --features gpu-opencl --bin auxpow_kat`'
+      };
+    }
+
+    // Coins under test: explicit list → configured gpuCoin/cpuCoin → KAS smoke.
+    let coins = Array.isArray(options.coins) ? options.coins.slice() : [];
+    if (!coins.length) {
+      const cfg = loadConfig ? loadConfig() : {};
+      if (cfg.gpuCoin && cfg.gpuCoin !== 'auto') coins.push(cfg.gpuCoin);
+      if (cfg.cpuCoin && cfg.cpuCoin !== 'auto') coins.push(cfg.cpuCoin);
+    }
+    if (!coins.length) coins = ['KAS'];
+
+    const seen = new Set();
+    const algos = [];
+    for (const c of coins) {
+      const ticker = String(c || '').toUpperCase();
+      const algo = KAT_ALGO_BY_COIN[ticker];
+      if (algo && !seen.has(algo)) { seen.add(algo); algos.push({ ticker, algo }); }
+      else if (!algo) {
+        sendToRenderer('miner-output', { stream: 'stderr', text: `[SELFTEST] ${ticker}: no KAT case mapped\n` });
+      }
+    }
+
+    sendToRenderer('miner-output', { stream: 'stdout', text: `[SELFTEST] auxpow_kat @ ${katPath} — ${algos.map(a => a.algo).join(', ')}\n` });
+
+    const results = [];
+    for (const { ticker, algo } of algos) {
+      // nexapow JIT-compiles a 6k-line secp256k1 kernel (~40min cold) — opt-in only.
+      if (algo === 'nexapow' && options.slow !== true) {
+        sendToRenderer('miner-output', { stream: 'stdout', text: `[SELFTEST] ${algo} SKIP (JIT ~40min cold; pass {slow:true} to include)\n` });
+        results.push({ ticker, algo, verdict: 'SKIP', detail: 'slow opt-in' });
+        continue;
+      }
+      const env = { ...process.env, ZION_KAT_BATCH: '1' };
+      if (options.slow === true) env.ZION_KAT_SLOW = '1';
+      sendToRenderer('miner-output', { stream: 'stdout', text: `[SELFTEST] ${ticker} (${algo}) — running…\n` });
+      const res = await new Promise((resolve) => {
+        const child = spawn(katPath, [algo], { env, windowsHide: true });
+        let verdict = 'TIMEOUT';
+        let detail = '';
+        const killer = setTimeout(() => {
+          try { child.kill('SIGKILL'); } catch { /* ignore */ }
+        }, Math.min(Math.max(Number(options.timeoutMs) || 240000, 30000), 3600000));
+        child.stdout.on('data', (d) => {
+          const text = d.toString();
+          sendToRenderer('miner-output', { stream: 'stdout', text });
+          const m = text.match(/^\s*([a-z0-9_]+)\s+(PASS|FAIL|SKIP|EMPTY|UNVERIFIABLE|ERR)\b(.*)$/im);
+          if (m) { verdict = m[2]; detail = m[3].trim(); }
+        });
+        child.stderr.on('data', (d) => {
+          sendToRenderer('miner-output', { stream: 'stderr', text: d.toString() });
+        });
+        child.on('error', (e) => { clearTimeout(killer); resolve({ verdict: 'ERR', detail: e.message }); });
+        child.on('close', (code) => { clearTimeout(killer); resolve({ verdict, detail, code }); });
+      });
+      sendToRenderer('miner-output', {
+        stream: 'stdout',
+        text: `[SELFTEST] ${ticker} (${algo}) → ${res.verdict}${res.detail ? ' — ' + res.detail : ''}\n`
+      });
+      results.push({ ticker, algo, verdict: res.verdict, detail: res.detail });
+    }
+
+    const failed = results.filter(r => r.verdict === 'FAIL' || r.verdict === 'ERR');
+    return { success: failed.length === 0, results, binary: katPath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 
 ipcMain.handle('get-server-status', async () => {
   try {

@@ -141,6 +141,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // ── Ekam Deeksha v3.1.0 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
+  runKernelSelftest: (options) => ipcRenderer.invoke('run-kernel-selftest', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
 
   // ── ZION CLI Integration (v3 unified CLI) ────────────────────────────
