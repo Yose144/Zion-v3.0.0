@@ -3131,6 +3131,12 @@ mod tests {
         use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
         use tokio::net::TcpListener;
 
+        // Make miner-side tracing visible for diagnosing stratum stalls
+        // (no-op if a subscriber is already installed by another test).
+        let _ = tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .try_init();
+
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
 
@@ -3178,6 +3184,10 @@ mod tests {
         config.stream2_enabled = true;
         config.stream3_enabled = false;
         config.auxpow_pool = Some(format!("127.0.0.1:{}", port));
+        // Force Kaspa: without this the profit router may pick a heavyweight
+        // algo (nexapow/ghostrider) whose OpenCL JIT takes 5-40 min — far
+        // beyond any reasonable test window.
+        config.stream2_force_coin = Some(zion_cosmic_harmony::ExternalCoin::Kaspa);
         config.stream2_batch = 1_000_000;
 
         let runtime = Arc::new(MinerRuntime::new(config));
@@ -3188,7 +3198,10 @@ mod tests {
             tokio::spawn(async move { runtime.run(shutdown_rx).await })
         };
 
-        for _ in 0..80 {
+        // Generous window: OpenCL kernel JIT-compile + GPU context init can
+        // take tens of seconds on a box whose GPU is already shared with a
+        // production miner. The loop still breaks early on the first share.
+        for _ in 0..900 {
             if runtime.total_shares().await >= 1 {
                 break;
             }
@@ -3307,7 +3320,8 @@ mod tests {
             tokio::spawn(async move { runtime.run(shutdown_rx).await })
         };
 
-        for _ in 0..80 {
+        // Same shared-GPU timing concern as the auxpow mock test above.
+        for _ in 0..900 {
             if runtime.total_shares().await >= 1 {
                 break;
             }
@@ -3368,6 +3382,10 @@ mod tests {
         config.stream2_enabled = true;
         config.stream3_enabled = true;
         config.auxpow_pool = Some(format!("127.0.0.1:{}", port));
+        // Pin both external streams to light algos — the profit router may
+        // otherwise select kernels with multi-minute cold JIT compiles.
+        config.stream2_force_coin = Some(zion_cosmic_harmony::ExternalCoin::Kaspa);
+        config.stream3_force_coin = Some(zion_cosmic_harmony::ExternalCoin::Verus);
         config.stream2_batch = 1_000_000;
         config.stream3_batch = 1_000_000;
 
@@ -3379,7 +3397,10 @@ mod tests {
             tokio::spawn(async move { runtime.run(shutdown_rx).await })
         };
 
-        for _ in 0..120 {
+        // Triple-stream needs ZION solo + GPU ext + CPU ext shares; on a GPU
+        // shared with a production miner the external kernels can spend tens
+        // of seconds in OpenCL JIT compile before the first share lands.
+        for _ in 0..900 {
             if runtime.total_shares().await >= 3 {
                 break;
             }

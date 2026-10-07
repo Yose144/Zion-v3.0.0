@@ -480,6 +480,12 @@ impl XoShiRo256PlusPlus {
         for i in 0..4 {
             s[i] = u64::from_le_bytes(seed[i * 8..(i + 1) * 8].try_into().unwrap());
         }
+        if s.iter().all(|&x| x == 0) {
+            // xoshiro256++ degenerates on an all-zero state (next() = 0 forever),
+            // which would spin the rank-64 retry loop in generate_kheavy_matrix
+            // indefinitely on a zero pre_pow_hash (mock/malformed jobs).
+            s[0] = 0x9E37_79B9_7F4A_7C15;
+        }
         Self { s }
     }
 
@@ -1749,6 +1755,16 @@ impl ExtGpuMiner {
         // batch — work-items past the cap index outside the buffer
         // (CL_OUT_OF_HOST_MEMORY / memory faults observed on ghostrider).
         let batch_size = batch_size.min(Self::algo_max_batch(algorithm));
+        // Memory-heavy builders (ghostrider/qhash/neoscrypt/dynexsolve) size
+        // their per-work-item scratchpad pools from `batch_size`, while the
+        // dispatch below rounds the global work size UP to a multiple of
+        // wg_size (64 for all of them). A batch that is not a multiple of 64
+        // therefore launches work-items whose gid-indexed scratchpad would
+        // run past the end of the pool — a device-side OOB that poisons the
+        // whole OpenCL context (CL_NV_INVALID_MEM_ACCESS, all subsequent
+        // calls fail). Round the effective batch up so sizing and launch
+        // always agree; every algo cap above is itself a multiple of 64.
+        let batch_size = (batch_size + 63) & !63;
         // Read before the `pro_que` mutable borrow below (neoscrypt arm).
         let max_work_items = self.work_size;
 
@@ -6960,8 +6976,13 @@ typedef unsigned long ulong;
                 .build()
                 .map_err(|e| anyhow!("autolykos_mine build failed: {e}"))?;
 
-            // 4 nonces per work-item.
-            let gws = (batch_size / 4).max(1) as usize;
+            // 4 nonces per work-item. The kernel declares
+            // reqd_work_group_size(128) so the global size must be a multiple
+            // of 128 — a batch < 512 would otherwise trip
+            // CL_INVALID_WORK_GROUP_SIZE. Extra work-items simply probe
+            // nonces beyond the requested batch, which is harmless for both
+            // mining and the KAT (the returned nonce is what gets verified).
+            let gws = ((batch_size / 4).max(1) as usize + 127) & !127;
             unsafe {
                 kernel
                     .cmd()
