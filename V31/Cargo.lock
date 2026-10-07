@@ -879,6 +879,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "corez"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4df6f98652d30167eaeea34d77b730e07c8caba6df17bd4551842b9b8da01deb"
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1235,6 +1241,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "document-features"
+version = "0.2.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61"
+dependencies = [
+ "litrs",
+]
+
+[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1354,6 +1369,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be4551092f4d519593039259a9ed8daedf0da12e5109c5280338073eaeb81180"
 dependencies = [
  "num-traits 0.1.43",
+]
+
+[[package]]
+name = "equihash"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "306286e8dcc39ab3dfceb74c792ce8baffdab90591321d3ffaae64829734c37f"
+dependencies = [
+ "blake2b_simd",
+ "cc",
+ "corez",
+ "document-features",
 ]
 
 [[package]]
@@ -2781,6 +2808,12 @@ name = "litemap"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
+
+[[package]]
+name = "litrs"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
 
 [[package]]
 name = "lock_api"
@@ -4733,7 +4766,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.4",
  "windows-sys 0.61.2",
@@ -6231,7 +6264,9 @@ dependencies = [
  "clap",
  "crossterm",
  "cudarc",
+ "equihash",
  "hex",
+ "keccak",
  "metal",
  "num-bigint",
  "num_cpus",
