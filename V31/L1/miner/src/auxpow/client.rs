@@ -901,6 +901,13 @@ impl AuxPowClient {
         *self.current_difficulty.lock().await = difficulty;
         *self.current_target_bytes.lock().await = Some(target_bytes);
 
+        // RandomX jobs carry `seed_hash` in the cryptonote job JSON — the
+        // miner needs it to init the RandomX VM for this epoch.
+        let seed_hash = job
+            .get("seed_hash")
+            .and_then(Value::as_str)
+            .map(|s| s.trim_start_matches("0x").to_string());
+
         let ext_job = ExternalJob {
             job_id: job_id.clone(),
             header_hex: blob_hex.to_string(),
@@ -910,6 +917,7 @@ impl AuxPowClient {
             block_number: height,
             algorithm: self.config.algorithm.clone(),
             external_coin: self.config.coin,
+            seed_hash,
             ..Default::default()
         };
         *self.current_job.lock().await = Some(ext_job);
@@ -1679,6 +1687,7 @@ impl From<StratumJob> for super::Job {
             extranonce2: "00".to_string(),
             ntime: j.ntime,
             height: j.height,
+            seed_hash: None,
         }
     }
 }

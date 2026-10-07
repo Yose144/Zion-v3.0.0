@@ -24,6 +24,7 @@ pub fn dispatch_algorithm(
     height: u64,
     extranonce: &[u8],
     algorithm: &str,
+    seed_hash: Option<&[u8]>,
 ) -> [u8; 32] {
     match algorithm {
         // ── ZION PoW: Ekam Deeksha v3.2 ──────────────────────────
@@ -128,20 +129,46 @@ pub fn dispatch_algorithm(
             crate::auxpow::hash_keryxhash(pre_pow_hash, height, nonce, height)
         }
 
-        // ── External algorithms: RandomX (XMR, ZEPH) / GhostRider (RTM) ─
-        // No pure-Rust fallback — use a fast Blake3 placeholder.
-        "randomx" | "randomx_xmr" | "randomx_zeph" | "ghostrider" | "ghostrider_rtm" => {
+        // ── External algorithms: RandomX (XMR, ZEPH) ────────────
+        "randomx" | "randomx_xmr" | "randomx_zeph" => {
             #[cfg(feature = "native-randomx")]
             {
-                if algorithm == "randomx" || algorithm.starts_with("randomx_") {
-                    zion_native_ffi::randomx::init();
-                    return zion_native_ffi::randomx::hash(header, nonce);
+                // RandomX is seed-dependent (epoch). Without the job's seed
+                // hash the VM init is wrong → every share is invalid upstream.
+                zion_native_ffi::randomx::init_with_seed(seed_hash.unwrap_or(&[0u8; 32]));
+                // randomx_zion_hash hashes the raw blob — the nonce must be
+                // embedded in the cryptonote blob (offset 39, 4 bytes LE for
+                // XMR major-version ≥16 hashing blobs).
+                let mut blob = header.to_vec();
+                if blob.len() >= 43 {
+                    blob[39..43].copy_from_slice(&(nonce as u32).to_le_bytes());
                 }
+                return zion_native_ffi::randomx::hash(&blob, 0);
             }
-            let mut input = Vec::with_capacity(header.len().saturating_add(8));
-            input.extend_from_slice(header);
-            input.extend_from_slice(&nonce.to_le_bytes());
-            *blake3::hash(&input).as_bytes()
+            #[cfg(not(feature = "native-randomx"))]
+            {
+                let _ = seed_hash;
+                let mut input = Vec::with_capacity(header.len().saturating_add(8));
+                input.extend_from_slice(header);
+                input.extend_from_slice(&nonce.to_le_bytes());
+                *blake3::hash(&input).as_bytes()
+            }
+        }
+
+        // ── External algorithms: GhostRider (RTM) ───────────────
+        "ghostrider" | "ghostrider_rtm" => {
+            #[cfg(feature = "native-ghostrider")]
+            {
+                zion_native_ffi::ghostrider::init();
+                return zion_native_ffi::ghostrider::hash(header, nonce);
+            }
+            #[cfg(not(feature = "native-ghostrider"))]
+            {
+                let mut input = Vec::with_capacity(header.len().saturating_add(8));
+                input.extend_from_slice(header);
+                input.extend_from_slice(&nonce.to_le_bytes());
+                *blake3::hash(&input).as_bytes()
+            }
         }
 
         // ── Fallback: use the generic AuxPoW hasher for unknown coins ─
@@ -161,6 +188,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
         candidate.height,
         &[],
         algorithm,
+        None,
     )
 }
 
@@ -260,6 +288,7 @@ fn hash_auxpow(
     height: u64,
     extranonce: &[u8],
     algorithm: &str,
+    seed_hash: Option<&[u8]>,
 ) -> ([u8; 32], Option<[u8; 32]>) {
     if algorithm.contains("ethash") || algorithm.contains("etchash") {
         let mut h32 = [0u8; 32];
@@ -284,7 +313,7 @@ fn hash_auxpow(
     }
 
     (
-        dispatch_algorithm(coin, header, nonce, height, extranonce, algorithm),
+        dispatch_algorithm(coin, header, nonce, height, extranonce, algorithm, seed_hash),
         None,
     )
 }
@@ -343,6 +372,7 @@ pub fn find_auxpow_share_from(
     let job_id = job.job_id.clone();
     let extranonce2 = job.extranonce2.clone();
     let ntime = job.ntime.clone();
+    let seed_hash = job.seed_hash.clone();
 
     // Cache the first 32 bytes of the header for Ethash/KawPow/ProgPoW
     // `eth_submitWork` submissions.
@@ -399,7 +429,10 @@ pub fn find_auxpow_share_from(
                 break;
             }
             let nonce = make_nonce(suffix);
-            let (hash, mix) = hash_auxpow(coin, &header, nonce, height, &extranonce, algorithm);
+            let (hash, mix) = hash_auxpow(
+                coin, &header, nonce, height, &extranonce, algorithm,
+                seed_hash.as_deref(),
+            );
             // Kaspa interprets the PoW hash as a little-endian u256 (pool-side
             // `Uint256::from_le_bytes`) — a plain big-endian compare submits
             // shares the pool rejects as "Low difficulty share".
@@ -447,7 +480,10 @@ pub fn find_auxpow_share_from(
                 break;
             }
             let nonce = make_nonce(suffix);
-            let (hash, mix) = hash_auxpow(coin, &header, nonce, height, &extranonce, algorithm);
+            let (hash, mix) = hash_auxpow(
+                coin, &header, nonce, height, &extranonce, algorithm,
+                seed_hash.as_deref(),
+            );
             let meets = if is_kheavyhash {
                 crate::auxpow::hasher::meets_target_kaspa(&hash, &target)
             } else {
@@ -727,6 +763,7 @@ mod tests {
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
             height: 0,
+            seed_hash: None,
         };
         let share = find_auxpow_share(&job, 2, 1_000).expect("should find share with max target");
         assert_eq!(share.coin, job.coin);
@@ -768,6 +805,7 @@ mod tests {
             extranonce2: "00".to_string(),
             ntime: "5a5ac000".to_string(),
             height: 0,
+            seed_hash: None,
         };
         let share = find_auxpow_share(&job, 2, 1_000)
             .expect("verushash CPU scanner should find a share with max target");

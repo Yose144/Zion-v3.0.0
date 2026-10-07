@@ -2313,6 +2313,9 @@ impl MinerRuntime {
             extranonce2: String::new(),
             ntime: ext.ntime_hex.clone(),
             height: ext.height,
+            seed_hash: hex::decode(&ext.seed_hash_hex)
+                .ok()
+                .filter(|v| !v.is_empty()),
         };
 
         // Mine the share using existing GPU/CPU infrastructure
@@ -3086,6 +3089,7 @@ mod tests {
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
             height: 0,
+            seed_hash: None,
         };
         let share = runtime
             .mine_auxpow_share(StreamId::GpuExternal, &job)
