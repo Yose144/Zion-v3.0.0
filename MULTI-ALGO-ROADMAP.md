@@ -146,7 +146,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 - **Authorize fail (pool validuje formát adresy):** KAS, RVN, ETC, ERG, KLS, IRON, NEXA, DNX, CKB — pro share-level E2E potřeba validní adresa
 - **TCP connect fail / mrtvý endpoint → FIXED:** ZEC→`zec.f2pool.com:3357` (8-param zcash notify parser), CFX→`cfx.f2pool.com:6800` (nový 4-param `[diff,height,hdr,boundary]` parser — height→DAG stage), NEOX→`stratum-eu.rplant.xyz:7057` (kawpow OK, header 32B), QUAI→`de.quai.herominers.com:1185` (protokol živý, fake wallet zamítnut = reálný signál)
 - **TCP connect fail (bez ověřené alternativy — egress/pool block):** CLORE (vipor/kryptex/aikapool + woolypooly vše unreachable), FLUX (minerpool/fluxpools/rplant/cruxpool/2miners vše unreachable), EPIC (epicmine connect ale tichý po subscribe; herominers/51pool mrtvé) — pravděpodobně outbound egress filtr nebo mrtvé pooly; defaults ponechány, E2E blokováno
-- **Timeout:** ALPH, DCR, PRL, BEAM (woolypooly/beam.2miners nedostupné odsud)
+- **Timeout:** ALPH, DCR, PRL, BEAM (woolypooly/beam.2miners nedostupné odsud; BEAM herominers:1130 connect→close po subscribe = TLS/port mismatch; suprnova/herominers/metapool pro DCR/ALPH TCP fail)
 - **Authorized, žádný job:** ~~XMR~~ **vyřešeno** — moneroocean validuje ed25519 adresu (ne jen checksum); s validní adresou login+job OK (blob 76B, seed_hash, height). EPIC (pool tichý po subscribe — endpoint/protocol, ne parser). **EVR + MEWC vyřešeno** — YiiMP 7-param `[job,hdr,seed,target,clean,height,ntime]` notify parser (obě path: `StratumJob` i legacy `ExternalJob`/`AuxPowClient`)
 - **QTU:** Quantus login vyžaduje dekódovatelnou 36B adresu
 
