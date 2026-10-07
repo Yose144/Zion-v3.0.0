@@ -47,7 +47,29 @@ mod imp {
         let mut kh_header = vec![0xABu8; 32];
         kh_header.extend_from_slice(&1234567890u64.to_le_bytes());
 
+        let mut krx_header = vec![0xCDu8; 32];
+        krx_header.extend_from_slice(&987654321u64.to_le_bytes()); // timestamp
+        krx_header.extend_from_slice(&0u64.to_le_bytes()); // daa_score=0 → salt v1
+
         let cases: Vec<Case> = vec![
+            Case {
+                algo: "keryxhash",
+                header: krx_header.clone(),
+                height: 0,
+                verify: |ctx, nonce, hash, _mix| {
+                    let ts = u64::from_le_bytes(ctx.header[32..40].try_into().unwrap());
+                    let daa = u64::from_le_bytes(ctx.header[40..48].try_into().unwrap());
+                    let expect = hasher::hash_keryxhash(&ctx.header[..32], ts, nonce, daa);
+                    if *hash != expect {
+                        anyhow::bail!(
+                            "keryxhash mismatch: gpu={} cpu={}",
+                            hex::encode(hash),
+                            hex::encode(expect)
+                        );
+                    }
+                    Ok(())
+                },
+            },
             Case {
                 algo: "kheavyhash",
                 header: kh_header.clone(),
