@@ -54,6 +54,17 @@ const QuantumRevolutionQuantumRevolutionClientCopy = {
   genesisAiAndQuantum: { cs: `Genesis: AI a kvantum`, en: `Genesis: AI and quantum` },
   terraNova: { cs: `Terra Nova`, en: `Terra Nova` },
   availableIn: { cs: `Dostupné v:`, en: `Available in:` },
+  whereTheStoryHappens: { cs: `Kde se příběh odehrává`, en: `Where the story happens` },
+  theCircleAtTheEternalFire: { cs: `Kruh u věčného ohně — Kailash`, en: `The circle at the eternal fire — Kailash` },
+  frameStoryBody: {
+    cs: `Celá kniha se vypráví v prostém kruhu přítomnosti nad horou Kailash — ne v chrámu, ne v paláci. Scházejí se tu ti, kteří si vzpomněli dřív než ostatní: Ježíš, Buddha, Krishna, Radha, Maria, Rúmí, Lao-c', Mistr Eckhart, Rámakrišna, svatá Terezie — každý jiným jazykem, všichni stejnou pravdou. Uprostřed kruhu hoří oheň, který nespaluje dřevo, ale iluze, a roste Strom života jménem ZION. V síti Terra Nova je Kailash jedenáctý bod L5 — jediné místo, kde se literární rámec knihy fyzicky odehrává. Vision uzel — vztah, ne stavba.`,
+    en: `The whole book is told in a plain circle of presence above Mount Kailash — no temple, no palace. Here gather those who remembered before the others: Jesus, Buddha, Krishna, Radha, Mary, Rumi, Lao Tzu, Meister Eckhart, Ramakrishna, Saint Teresa — each in a different tongue, all the same truth. At the circle's center burns a fire that consumes not wood, but illusion, and grows the Tree of Life named ZION. In the Terra Nova network, Kailash is the eleventh L5 node — the only place where the book's literary frame physically takes place. A vision node — a relationship, not a construction.`,
+  },
+  eleventhLogNote: {
+    cs: `Deset polen je deset kapitol — jedenácté jsi ty: tvůj čas, tvá pozornost, tvá energie, tvá láska. Kailash je jedenáctý bod sítě. Kam své poleno položíš?`,
+    en: `Ten logs are ten chapters — the eleventh is you: your time, your attention, your energy, your love. Kailash is the eleventh node of the network. Where will you lay your log?`,
+  },
+  theEleventhNode: { cs: `Jedenáctý bod sítě →`, en: `The eleventh node →` },
 };
 
 /* ── Mock chapter data (placeholder — will be replaced with real content) ── */
@@ -288,6 +299,41 @@ export default function QuantumRevolutionClient() {
               </div>
             </motion.div>
           )}
+        </div>
+      </section>
+
+      {/* ── Frame story: the circle at the eternal fire ── */}
+      <section className="px-4 py-8">
+        <div className="zion-container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="zion-rainbow-card p-6 md:p-8"
+            style={{ '--rc': PURPLE } as React.CSSProperties}
+          >
+            <div className="space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.36em]" style={{ color: `rgba(${GOLD}, 0.8)` }}>
+                {QuantumRevolutionQuantumRevolutionClientCopy.whereTheStoryHappens[cs ? 'cs' : 'en']}
+              </p>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">
+                {QuantumRevolutionQuantumRevolutionClientCopy.theCircleAtTheEternalFire[cs ? 'cs' : 'en']}
+              </h2>
+              <p className="text-sm text-gray-400 leading-relaxed max-w-3xl">
+                {QuantumRevolutionQuantumRevolutionClientCopy.frameStoryBody[cs ? 'cs' : 'en']}
+              </p>
+              <p className="text-sm italic text-gray-300 leading-relaxed max-w-3xl border-l-2 pl-4" style={{ borderColor: `rgba(${GOLD}, 0.4)` }}>
+                {QuantumRevolutionQuantumRevolutionClientCopy.eleventhLogNote[cs ? 'cs' : 'en']}
+              </p>
+              <div>
+                <Link href="/terranova/kailash" className="zion-button-secondary">
+                  {QuantumRevolutionQuantumRevolutionClientCopy.theEleventhNode[cs ? 'cs' : 'en']}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

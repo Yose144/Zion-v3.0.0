@@ -17,6 +17,7 @@ import {
   MapPin,
   Mountain,
   Network,
+  Scale,
   Shield,
   Sparkles,
   Sun,
@@ -34,22 +35,22 @@ const Copy = {
   visionStage: { cs: `Vize — uzel jako vztah`, en: `Vision — a node as relationship` },
   subtitle: { cs: `Ngari · Tibet · Poušť očištění · Terra Nova ®`, en: `Ngari · Tibet · Desert of purification · Terra Nova ®` },
   quote: {
-    cs: `„Hora, na kterou se nikdy nevyleze — a přesto k ní pořád chodí lidstvo. To je celý test."`,
-    en: `"A mountain no one will ever climb — and humanity keeps walking to it. That is the whole test."`,
+    cs: `„Uprostřed kruhu hoří oheň, který nespaluje dřevo, ale iluze."`,
+    en: `"At the circle’s center burns a fire that consumes not wood, but illusion."`,
   },
   locationLine: { cs: `Ngari · Tibetská autonomní oblast`, en: `Ngari · Tibet Autonomous Region` },
   introTitle: { cs: `Jedenáctý uzel — poušť, kde se ze zdolávání stává kora`, en: `The eleventh node — the desert where conquest becomes kora` },
   introBody: {
-    cs: `Kailash je jedenáctý bod L5 Free World — a záměrně je to vize, ne plán. Gang Rinpoche, čtyřstěnná pyramida v Transhimaláji, je jediná hora světa, na které se dohodly čtyři tradice najednou: hinduisté v ní vidí sídlo Šivy, buddhisté Děmčoka, Bön Kuntu Zangpo a džinisté místo Ríšabhanáthova osvobození. Dohodly se i na druhé věci — na ni se nestoupá. Poutník horu nechodí na ni, ale kolem ní: kora, dvaapadesátikilometrový okruh přes sedlo Dolma La (5 630 m), se koná na očištění. V poušti Ngari, na „střeše Střechy světa", očisťuje krajina tím, že nenabízí nic jiného než cestu. A u nohy hory hoří — v příběhu sítě — prastarý oheň, u kterého sedí mistři všech linií Šambhaly, od tesaře až po Babajiho. Uzel vzniká jako vztah se custodiány čtyř tradic, ne jako stavba.`,
-    en: `Kailash is the eleventh point of L5 Free World — and deliberately a vision, not a plan. Gang Rinpoche, the four-sided pyramid of the Transhimalaya, is the only mountain on Earth that four traditions agree on at once: Hindus see the seat of Shiva, Buddhists Demchok, Bön Kuntu Zangpo, and Jains the place of Rishabhanatha's liberation. They agree on a second thing too — it is not climbed. The pilgrim does not go up the mountain but around it: the kora, a fifty-two-kilometre circuit over the Dolma La pass (5,630 m), is performed as purification. In the Ngari desert, on the "roof of the Roof of the World", the land purifies by offering nothing but the way. And at the mountain's foot burns — in the story of the network — the primordial fire where the masters of all Shambhala lineages sit, from the Carpenter to Babaji. The node is born as a relationship with the custodians of four traditions, not as a construction.`,
+    cs: `Kailash je jedenáctý bod L5 Free World — a záměrně je to vize, ne plán. Gang Rinpoche, čtyřstěnná pyramida v Transhimaláji, je jediná hora světa, na které se dohodly čtyři tradice najednou: hinduisté v ní vidí sídlo Šivy, buddhisté Děmčoka, Bön Kuntu Zangpo a džinisté místo Ríšabhanáthova osvobození. Dohodly se i na druhé věci — na ni se nestoupá. Poutník horu nechodí na ni, ale kolem ní: kora, dvaapadesátikilometrový okruh přes sedlo Dolma La (5 630 m), se koná na očištění. V poušti Ngari, na „střeše Střechy světa", očisťuje krajina tím, že nenabízí nic jiného než cestu — poušť jako Nāgárjunova prázdnota, která je plná: vakuum, ve kterém fluktuuje všechno. V jeskyních Tisé, jak hora zní tibetsky, meditoval před tisíci lety Milarepa — šedý yogi, zpěvák dohá, který dokázal, že bída je učitelka. A u nohy hory hoří — v příběhu sítě — prastarý oheň, u kterého sedí mistři všech linií Šambhaly, od tesaře až po Babajiho. Uzel vzniká jako vztah se custodiány čtyř tradic, ne jako stavba.`,
+    en: `Kailash is the eleventh point of L5 Free World — and deliberately a vision, not a plan. Gang Rinpoche, the four-sided pyramid of the Transhimalaya, is the only mountain on Earth that four traditions agree on at once: Hindus see the seat of Shiva, Buddhists Demchok, Bön Kuntu Zangpo, and Jains the place of Rishabhanatha's liberation. They agree on a second thing too — it is not climbed. The pilgrim does not go up the mountain but around it: the kora, a fifty-two-kilometre circuit over the Dolma La pass (5,630 m), is performed as purification. In the Ngari desert, on the "roof of the Roof of the World", the land purifies by offering nothing but the way — a desert like Nagarjuna's emptiness that is full: a vacuum where everything fluctuates. In the caves of Tisé, as the Tibetans call the mountain, Milarepa meditated a thousand years ago — the grey yogi, singer of dohas, who proved that poverty is a teacher. And at the mountain's foot burns — in the story of the network — the primordial fire where the masters of all Shambhala lineages sit, from the Carpenter to Babaji. The node is born as a relationship with the custodians of four traditions, not as a construction.`,
   },
   featuresTitle: { cs: `Co uzel drží`, en: `What the node holds` },
   featuresSubtitle: { cs: `Oheň & poušť`, en: `Fire & desert` },
   fireTitle: { cs: `Scháziště mistrů — prastarý oheň`, en: `The council of masters — the primordial fire` },
   fireSubtitle: { cs: `Jeden krb, čtyři jazyky`, en: `One hearth, four tongues` },
   fireBody: {
-    cs: `Boa Esperança je scháziště trupů na vodě — Kailash je scháziště mistrů na suchu. V mýtické geografii sítě hoří uprostřed pouště Ngari oheň, který nikdy nezhasl: sedí u něj mistři všech linií Šambhaly — od tesaře, který v příbězích korpusu staví a vyřezává znaky do trámů, až po Mahávatára Bábadžího, himalájského mistra paramparā. Čtyři tradice, které se neshodnou na ničem jiném, se u této hory shodnou na všem. Šambhala tu není skryté království k nalezení — je to stav, který korpus čte striktně symbolicky: válečník bez nepřítele, meč rozlišující moudrosti.`,
-    en: `Boa Esperança is the rendezvous of hulls on water — Kailash is the council of masters on land. In the mythic geography of the network, a fire that has never gone out burns in the middle of the Ngari desert: beside it sit the masters of all Shambhala lineages — from the Carpenter, who builds and carves marks into beams in the corpus stories, to Mahavatar Babaji, the Himalayan master of the paramparā. Four traditions that agree on nothing else agree on everything at this mountain. Shambhala here is not a hidden kingdom to be found — it is a state the corpus reads strictly symbolically: the warrior with no enemy, the sword of discriminating wisdom.`,
+    cs: `Boa Esperança je scháziště trupů na vodě — Kailash je scháziště mistrů na suchu. Kvantová revoluce, literární osa celého projektu, se odehrává přesně tady: v prostém kruhu přítomnosti nad horou — ne v chrámu, ne v paláci — kde hoří oheň, který nespaluje dřevo, ale iluze. V kruhu sedí ti, kteří si vzpomněli dřív než ostatní: Ježíš s otevřenýma rukama, Buddha dýchající tiše, Krishna s flétnou, Maria se soucitem pro každé dítě, Rúmí, Lao-c', Mistr Eckhart, Rámakrišna — a s nimi, v příběhu sítě, mistři všech linií Šambhaly od tesaře až po Babajiho. Každý jiným jazykem, všichni stejnou pravdou. Šambhala tu není skryté království k nalezení — je to stav: válečník bez nepřítele, meč rozlišující moudrosti. A oheň má tři povahy — plamen, uhlí, popel. Kailash drží uhlí: kvantový oheň, který Issobella zkoumá jako hypotézu, tu hoří jako krbová teplota custodiánů. Hořet, ne vyhořet — a počítat i s popelem.`,
+    en: `Boa Esperança is the rendezvous of hulls on water — Kailash is the council of masters on land. The Quantum Revolution, the literary spine of the whole project, takes place exactly here: in a plain circle of presence above the mountain — no temple, no palace — where a fire burns that consumes not wood, but illusion. In the circle sit those who remembered before the others: Jesus with open hands, Buddha breathing quietly, Krishna with his flute, Mary with compassion for every child, Rumi, Lao Tzu, Meister Eckhart, Ramakrishna — and with them, in the network’s story, the masters of all Shambhala lineages from the Carpenter to Babaji. Each in a different tongue, all the same truth. Shambhala here is no hidden kingdom to be found — it is a state: the warrior with no enemy, the sword of discriminating wisdom. And the fire has three natures — flame, ember, ash. Kailash keeps the ember: the quantum fire Issobella studies as a hypothesis burns here as the hearth-warmth of custodians. To burn, not burn out — and to reckon with the ash.`,
   },
   firePoints: {
     cs: [`Čtyři tradice — jediná hora, na které se shodly`, `Šambhala jako mapa, ne jako místo — striktně symbolicky`, `Kora namísto vrcholu — obcházet, ne zdolávat`],
@@ -85,6 +86,13 @@ const Copy = {
     en: `Can you walk around a mountain instead of climbing it? Are you a Guardian for the desert of purification?`,
   },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
+  anchorTitle: { cs: `Kotva pravdy — co je fakt, co je mýtus`, en: `Truth anchor — what is fact, what is myth` },
+  anchorSubtitle: { cs: `Jako každá kapitola korpusu`, en: `As in every corpus chapter` },
+  anchorBody: {
+    cs: `Uzel, který ctí custodiány, musí umět oddělit ověřitelné od příběhu sítě — stejné rozlišení, jaké používají kapitoly Kvantové revoluce.`,
+    en: `A node that honours custodians must separate the verifiable from the network’s story — the same distinction used by the chapters of the Quantum Revolution.`,
+  },
+  quantumLink: { cs: `Kvantová revoluce — literární osa projektu →`, en: `Quantum Revolution — the project’s literary spine →` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
   documentationSubtitle: { cs: `Koncept a vize uzlu Kailash — poušť očištění, čtyři tradice, prastarý oheň, Šambhala jako mapa.`, en: `Concept and vision of the Kailash node — the desert of purification, four traditions, the primordial fire, Shambhala as a map.` },
   documentationLoading: { cs: `Načítání dokumentace…`, en: `Loading documentation…` },
@@ -180,6 +188,24 @@ const FEATURES: FeatureItem[] = [
     color: '#C4B5FD',
     rgb: '196, 181, 253',
   },
+  {
+    icon: Leaf,
+    titleCs: 'Milarepa — yogi z Tisé',
+    titleEn: 'Milarepa — the yogi of Tisé',
+    descCs: 'Šedý yogi sítě (avatar #73) meditoval v jeskyních Tisé — dokázal, že bída je učitelka. Legenda praví, že horu „získal" jedině on — závodem s bönským knězem na slunečním paprsku.',
+    descEn: 'The network’s grey yogi (avatar #73) meditated in the caves of Tisé — proving poverty is a teacher. Legend says he alone “won” the mountain — racing the Bön priest on a sunbeam.',
+    color: '#86EFAC',
+    rgb: '134, 239, 172',
+  },
+  {
+    icon: Feather,
+    titleCs: 'Jedenácté poleno',
+    titleEn: 'The eleventh log',
+    descCs: 'Deset polen, deset kapitol Kvantové revoluce — a jedenácté jsi ty: čas, pozornost, energie, láska. Jedenáctý bod sítě se ptá: kam své poleno položíš?',
+    descEn: 'Ten logs, ten chapters of the Quantum Revolution — and the eleventh is you: your time, attention, energy, love. The eleventh node of the network asks: where will you lay your log?',
+    color: '#FDBA74',
+    rgb: '253, 186, 116',
+  },
 ];
 
 const PHASES = [
@@ -214,6 +240,51 @@ const PHASES = [
     descCs: 'Setkání linií u prastarého ohně — ceremonie očištění a razítko credencialu „hořím, ne vyhořel jsem".',
     descEn: 'The meeting of lineages at the primordial fire — the purification ceremony and the credential stamp "I burn, not burn out".',
     active: false,
+  },
+];
+
+const ANCHORS: { whatCs: string; whatEn: string; statusCs: string; statusEn: string; noteCs: string; noteEn: string; color: string }[] = [
+  {
+    whatCs: 'Gang Rinpoche, shoda čtyř tradic, kora ~52 km, Manasarovar, prameny čtyř řek',
+    whatEn: 'Gang Rinpoche, the agreement of four traditions, the ~52 km kora, Manasarovar, the four river sources',
+    statusCs: 'ŽIVÉ', statusEn: 'LIVE',
+    noteCs: 'geografie + živá náboženská tradice', noteEn: 'geography + living religious tradition',
+    color: '#34D399',
+  },
+  {
+    whatCs: 'Milarepa v jeskyních Tisé; legenda závodu s Naro Bönchungem na slunečním paprsku',
+    whatEn: 'Milarepa in the caves of Tisé; the legend of the race against Naro Bönchung on a sunbeam',
+    statusCs: 'ŽIVÉ + MÝTUS', statusEn: 'LIVE + MYTH',
+    noteCs: 'tradiční poutní příběh, ne historický záznam', noteEn: 'traditional pilgrim story, not a historical record',
+    color: '#4ADE80',
+  },
+  {
+    whatCs: 'Kruh přítomnosti, prastarý oheň, scháziště mistrů, jedenácté poleno, Šambhala jako kraj',
+    whatEn: 'The circle of presence, the primordial fire, the council of masters, the eleventh log, Shambhala as a land',
+    statusCs: 'MÝTUS', statusEn: 'MYTH',
+    noteCs: 'rámcové dějiště Kvantové revoluce — literární obraz, ne geologie', noteEn: 'the frame setting of the Quantum Revolution — a literary image, not geology',
+    color: '#C4B5FD',
+  },
+  {
+    whatCs: 'Poušť jako Nāgárjunova prázdnota — „vakuum, které je plné"',
+    whatEn: 'The desert as Nagarjuna’s emptiness — “the vacuum that is full”',
+    statusCs: 'INTERPRETACE', statusEn: 'READING',
+    noteCs: 'poetická paralela, ne fyzikální tvrzení', noteEn: 'a poetic parallel, not a physics claim',
+    color: '#93C5FD',
+  },
+  {
+    whatCs: 'Kvantový oheň jako výzkumná osa L6 Issobella',
+    whatEn: 'The quantum fire as an L6 Issobella research axis',
+    statusCs: 'HYPOTÉZA', statusEn: 'HYPOTHESIS',
+    noteCs: 'otevřená otázka, ne slib — viz Kvantová revoluce', noteEn: 'an open question, not a promise — see Quantum Revolution',
+    color: '#67E8F9',
+  },
+  {
+    whatCs: 'Uzel L5, fáze vztahu, razítko credencialu „hořím, ne vyhořel jsem"',
+    whatEn: 'The L5 node, the phases of relationship, the “I burn, not burn out” credential stamp',
+    statusCs: 'VIZE', statusEn: 'VISION',
+    noteCs: 'záměr sítě — neexistuje žádná parcela ani harmonogram', noteEn: 'network intent — no parcel and no timeline exist',
+    color: '#FCD34D',
   },
 ];
 
@@ -315,6 +386,9 @@ export default function KailashPage() {
 
                   <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-white/70 italic leading-relaxed max-w-lg">
                     {Copy.quote[cs ? 'cs' : 'en']}
+                    <cite className="block mt-2 not-italic text-[10px] uppercase tracking-[0.25em] text-white/35">
+                      {cs ? 'Kvantová revoluce — prolog „Kruh u věčného ohně"' : 'Quantum Revolution — prologue, "The circle at the eternal fire"'}
+                    </cite>
                   </blockquote>
 
                   <div className="grid gap-3 pt-3 sm:grid-cols-3">
@@ -520,6 +594,48 @@ export default function KailashPage() {
                 ))}
               </ul>
             </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ KOTVA PRAVDY / TRUTH ANCHOR ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
+            <div className="mb-6">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.anchorSubtitle[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
+                <Scale className="h-7 w-7 text-emerald-300" />
+                {Copy.anchorTitle[cs ? 'cs' : 'en']}
+              </h2>
+              <p className="text-sm text-gray-400 mt-2">{Copy.anchorBody[cs ? 'cs' : 'en']}</p>
+            </div>
+            <div className="space-y-3">
+              {ANCHORS.map((a) => (
+                <div key={a.whatCs} className="zion-rainbow-sub p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ '--rc': '52, 211, 153' } as React.CSSProperties}>
+                  <span
+                    className="shrink-0 inline-flex items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-widest"
+                    style={{ borderColor: `${a.color}55`, color: a.color, background: `${a.color}14` }}
+                  >
+                    {cs ? a.statusCs : a.statusEn}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-200">{cs ? a.whatCs : a.whatEn}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{cs ? a.noteCs : a.noteEn}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link
+              href="/quantum-revolution"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-emerald-200 transition-colors"
+            >
+              {Copy.quantumLink[cs ? 'cs' : 'en']}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </motion.section>
 
