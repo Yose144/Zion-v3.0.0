@@ -195,6 +195,12 @@ mod imp {
                 },
             },
             Case {
+                algo: "qpow",
+                header: Vec::new(),
+                height: 0,
+                verify: |_ctx, _nonce, _hash, _mix| Ok(()),
+            },
+            Case {
                 algo: "zelhash",
                 header: vec![0x99u8; 140],
                 height: 0,
@@ -236,7 +242,44 @@ mod imp {
         Ok(())
     }
 
+    /// QPoW has its own backend (`QpowCudaMiner`, not `GpuMiner`) and the
+    /// kernel's lazy 128-bit reduction is CPU-reverified per candidate inside
+    /// `mine_batch` — a returned result is definitionally consensus-valid.
+    fn kat_qpow(batch: u64) -> Result<String> {
+        use cudarc::driver::CudaDevice;
+        use zion_miner::auxpow::qpow;
+        use zion_miner::gpu::qpow_cuda::QpowCudaMiner;
+
+        let dev = CudaDevice::new(0).context("qpow: CUDA device 0")?;
+        let mut miner = QpowCudaMiner::new_with_device(batch as usize, dev)
+            .context("qpow miner init")?;
+        let header = [0x33u8; qpow::QPOW_HEADER_LEN];
+        let nonce = [0u8; qpow::QPOW_NONCE_LEN];
+        let target = [0xFFu8; qpow::QPOW_TARGET_LEN];
+        let res = miner
+            .mine_batch(&header, &nonce, &target, batch)
+            .context("qpow mine_batch")?
+            .ok_or_else(|| anyhow::anyhow!("qpow: no candidate in {} nonces", batch))?;
+        // Independent recheck against the CPU reference hash.
+        let expect = qpow::get_nonce_hash(&header, &res.nonce);
+        if res.hash != expect {
+            anyhow::bail!(
+                "qpow mismatch: gpu={} cpu={}",
+                hex::encode(&res.hash[..8]),
+                hex::encode(&expect[..8])
+            );
+        }
+        Ok(format!(
+            "nonce={} hash={} (CPU-verified)",
+            hex::encode(&res.nonce[56..64]),
+            hex::encode(&res.hash[..8])
+        ))
+    }
+
     fn kat_one(c: &Case, ctx: &CudaCaseCtx, batch: u64) -> Result<String> {
+        if c.algo == "qpow" {
+            return kat_qpow(batch);
+        }
         let mut miner = CudaExternalMiner::new(c.algo, batch as usize)
             .with_context(|| format!("{} miner init", c.algo))?;
         if c.algo == "autolykos" {
