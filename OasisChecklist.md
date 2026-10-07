@@ -29,7 +29,7 @@
 | Katalog 410 světů z OASIS API | ✅ | `GET /api/v1/oasis/worlds` — 410 po doplnění L5 |
 | L5 Terra Nova uzly jako světy (8/8) | ✅ | všech 8 uzlů first-class světy v API katalogu: Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, LUMI, **Uluru**, **María del Camino** (nově); klikatelné galaxy nody, full panel, live registry karta |
 | L5 live Free World registry | ✅ | same-origin `/api/free-world/*` → `:8095` (nginx prefix map); `src/lib/l5.ts` — projects/grants/rounds/fund, flowers→ZION; panel: live status, budget, founding tranche (10M ZION × 6 komunit), L5 fund (17.44M ZION), QV pilot round |
-| L5 Nova Zeme projekty (beacon markery + panel list) | ✅ | `novaZemeProjects.ts` — všech 8 uzlů, statusy `Preparation`/`Vision`, live merge z registry |
+| L5 Nova Zeme projekty (beacon markery + panel list) | ✅ | `novaZemeProjects.ts` — **11 bodů** (8 uzlů + Ekam[Built], Boa Esperança + Kailash[Vision]); Genesis Garden přesunuta do Sabacheira (Tomar), María del Camino = Tres Marias flotila; live merge z registry (nové id fallback na canon) |
 | L6 Issobella orbitální stanice | ✅ | dedikované 3D env (rotating ring, sails, spires), DAO Parlament + Free World linky |
 | On-chain persistence světů (L1 UTXO pozemky/artefakty) | 🔭 | canon V3.3 — kryptografické vázání pozemků není implementováno |
 | Marketplace bridge (artefakt → 3D preview) | 🔭 | plán G3 v `WebOasis.md` |
