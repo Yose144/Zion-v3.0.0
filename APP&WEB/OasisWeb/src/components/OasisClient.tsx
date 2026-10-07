@@ -17,7 +17,7 @@ import ControlHud from './ControlHud';
 import type { CompassData } from './Compass';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
-import { getQuests, getAvatars, getTerritories, getWorlds, scanWorld as apiScanWorld, approachWorld as apiApproachWorld } from '../lib/api';
+import { getQuests, getAvatars, getTerritories, getWorlds, scanWorld as apiScanWorld, approachWorld as apiApproachWorld, discoverWorld as apiDiscoverWorld } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { useAuth } from '../contexts/AuthContext';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
@@ -33,7 +33,14 @@ const MAX_FLIGHT_SPEED = 18;
 
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
-  const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>('intro');
+  // Returning pilgrims skip WarpIntro and land straight at the stargate
+  // (its threshold click still performs the audio-unlock gesture).
+  const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('oasis.visited') === '1') {
+      return 'stargate';
+    }
+    return 'intro';
+  });
   const inGame = phase === 'scene';
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
   const [activeLayers, setActiveLayers] = useState<WorldLayer[]>(ALL_LAYERS);
@@ -120,13 +127,13 @@ export default function OasisClient() {
       if (quests) setRealQuests(quests);
       if (avatars) setAvatars(avatars);
       if (territories) setTerritories(territories);
-      await syncPlayer();
+      await syncPlayer(authenticated);
     }
     load();
     return () => {
       mounted = false;
     };
-  }, [address, setRealQuests, setAvatars, setTerritories, syncPlayer]);
+  }, [address, authenticated, setRealQuests, setAvatars, setTerritories, syncPlayer]);
 
   useEffect(() => {
     const check = () => {
@@ -250,9 +257,12 @@ export default function OasisClient() {
     return () => window.removeEventListener('keydown', onKey);
   }, [inGame, flightMode, view, selectedWorld, menuOpen]);
 
-  // Expose phase for E2E/debug tooling.
+  // Expose phase for E2E/debug tooling + mark returning visitors.
   useEffect(() => {
     (window as unknown as { __oasisPhase?: string }).__oasisPhase = phase;
+    if (phase === 'scene') {
+      try { localStorage.setItem('oasis.visited', '1'); } catch { /* private mode */ }
+    }
   }, [phase]);
 
   if (!mounted) {
@@ -284,8 +294,9 @@ export default function OasisClient() {
   };
 
   const handleArrived = () => {
-    // On mobile, skip PilgrimRite (avatar config) — go straight to scene for preview.
-    setPhase(isMobile ? 'scene' : 'rite');
+    // PilgrimRite is a single responsive card grid — mobile pilgrims pick
+    // their archetype too (it carries real loadout bonuses).
+    setPhase('rite');
   };
 
   const handleRiteEnter = () => {
@@ -301,6 +312,11 @@ export default function OasisClient() {
     discoverWorld(world.id);
     if (firstDiscovery) {
       addToast(`New world discovered: ${world.name}`, 'success', 2500);
+      // Persist discovery to the player record when ZIS-authenticated —
+      // fail-soft, local state is already updated above.
+      if (authenticated && address) {
+        apiDiscoverWorld(address, world.id).catch(() => {});
+      }
     }
   };
 
@@ -353,6 +369,9 @@ export default function OasisClient() {
     setView('galaxy');
     const firstDiscovery = !discoveredWorlds.includes(world.id);
     discoverWorld(world.id);
+    if (firstDiscovery && authenticated && address) {
+      apiDiscoverWorld(address, world.id).catch(() => {});
+    }
     addToast(`Approaching ${world.name}`, 'info', 3000);
     const xp = 25;
     addXp(xp);
@@ -511,6 +530,17 @@ export default function OasisClient() {
         {phase === 'intro' && <WarpIntro onEnter={handleEnter} />}
         {phase === 'stargate' && <BabylonIntro onEnter={handleStargateEnter} />}
       </AnimatePresence>
+
+      {/* Skip intro — always available so a stuck/quiet intro never blocks entry */}
+      {phase === 'intro' && (
+        <button
+          type="button"
+          onClick={handleEnter}
+          className="fixed bottom-6 right-6 z-[60] rounded-full border border-white/15 bg-black/50 px-4 py-1.5 text-xs font-semibold text-white/60 backdrop-blur-sm transition hover:bg-white/10 hover:text-white"
+        >
+          Skip intro →
+        </button>
+      )}
 
       <WarpFlash active={warping} worldName={selectedWorld?.name} />
 

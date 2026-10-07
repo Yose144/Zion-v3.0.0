@@ -95,6 +95,9 @@ interface GameState {
   avatars: any[];
   territories: any[];
   collectedEggs: string[];
+  /* In-world objective nodes — 'worldId:nodeId' keys for scan/harvest/
+     relic interactives collected inside WorldEnvironment. */
+  collectedNodes: string[];
   /* Fruit of the Tree — collect N fruits → Tree Blessing bonus XP */
   collectedFruits: string[];
   fruitBlessings: number;
@@ -114,7 +117,7 @@ interface GameState {
   setAvatars: (avatars: any[]) => void;
   setTerritories: (territories: any[]) => void;
   setXp: (xp: number) => void;
-  syncPlayer: () => Promise<void>;
+  syncPlayer: (trusted?: boolean) => Promise<void>;
   addXp: (amount: number) => void;
   addCredits: (amount: number) => void;
   completeQuest: (id: string, xp: number) => void;
@@ -122,6 +125,7 @@ interface GameState {
   scanWorld: (id: string) => void;
   setRealQuests: (quests: any[]) => void;
   claimGoldenEgg: (worldId: string) => boolean;
+  collectNode: (nodeId: string) => boolean;
   collectFruit: (fruitId: string) => boolean;
   resetFruitBlessing: () => void;
   collectHiranKey: (keyId: string) => boolean;
@@ -150,6 +154,7 @@ export const useGameStore = create<GameState>()(
       avatars: [],
       territories: [],
       collectedEggs: [],
+      collectedNodes: [],
       collectedFruits: [],
       fruitBlessings: 0,
       fruitThreshold: 7,
@@ -167,13 +172,28 @@ export const useGameStore = create<GameState>()(
 
       setXp: (xp) => set({ xp }),
 
-      syncPlayer: async () => {
+      syncPlayer: async (trusted?: boolean) => {
         const state = get();
         if (!state.address) return;
         const player = await getPlayer(state.address);
-        if (player && typeof player.total_xp === 'number') {
-          set({ xp: player.total_xp });
+        if (!player) return;
+        // Only trust the server record for authenticated (ZIS-linked)
+        // identities — the shared 'pilgrim-0001' fallback would leak other
+        // players' aggregate progress into this browser.
+        if (!trusted) return;
+        const stats = player.stats ?? {};
+        const scanned = new Set(state.scannedWorlds);
+        const discovered = new Set(state.discoveredWorlds);
+        for (const key of Object.keys(stats)) {
+          if (key.startsWith('scanned:')) scanned.add(key.slice(8));
+          else if (key.startsWith('approached:') || key.startsWith('discovered:'))
+            discovered.add(key.slice(key.indexOf(':') + 1));
         }
+        set({
+          ...(typeof player.total_xp === 'number' ? { xp: Math.max(state.xp, player.total_xp) } : {}),
+          scannedWorlds: [...scanned],
+          discoveredWorlds: [...discovered],
+        });
       },
 
       addXp: (amount) =>
@@ -222,6 +242,14 @@ export const useGameStore = create<GameState>()(
           xp: s.xp + 500,
           collectedEggs: [...s.collectedEggs, worldId],
         }));
+        return true;
+      },
+
+      /* In-world objective node — returns true if newly collected. */
+      collectNode: (nodeId) => {
+        const state = get();
+        if (state.collectedNodes.includes(nodeId)) return false;
+        set((s) => ({ collectedNodes: [...s.collectedNodes, nodeId] }));
         return true;
       },
 
@@ -372,6 +400,7 @@ export const useGameStore = create<GameState>()(
         avatars: state.avatars,
         territories: state.territories,
         collectedEggs: state.collectedEggs,
+        collectedNodes: state.collectedNodes,
         collectedFruits: state.collectedFruits,
         fruitBlessings: state.fruitBlessings,
         collectedHiranKeys: state.collectedHiranKeys,

@@ -258,6 +258,12 @@ export const approachWorld = (address: string, worldId: string, xp: number) =>
     { xp },
   );
 
+export const discoverWorld = (address: string, worldId: string, xp = 10) =>
+  postJson<WorldActionResponse>(
+    `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/discover`,
+    { xp },
+  );
+
 export const discoverWorldClue = (address: string, worldId: string) =>
   postJson<WorldClueResponse>(
     `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/clue`,

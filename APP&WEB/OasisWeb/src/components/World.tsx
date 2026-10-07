@@ -101,6 +101,9 @@ export interface WorldNodeProps {
   isSelected?: boolean;
   isDiscovered?: boolean;
   isMobile?: boolean;
+  /** When defined, overrides internal hover state — used when the node is
+   *  hovered via the shared instanced mesh in GalaxyMap. */
+  hoveredOverride?: boolean;
   onSelect?: (id: string) => void;
 }
 
@@ -116,12 +119,14 @@ export default function World({
   isSelected = false,
   isDiscovered = true,
   isMobile = false,
+  hoveredOverride,
   onSelect,
 }: WorldNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
   const gateRef = useRef<THREE.Mesh>(null);
   const rayRef = useRef<THREE.Sprite>(null);
-  const [hovered, setHovered] = useState(false);
+  const [internalHovered, setInternalHovered] = useState(false);
+  const hovered = hoveredOverride ?? internalHovered;
   // WarpGateVortex is raw GLSL — WebGPU backend skips it (G1).
   const backend = useGpuBackend();
 
@@ -172,11 +177,11 @@ export default function World({
       }}
       onPointerOver={(e) => {
         e.stopPropagation();
-        setHovered(true);
+        setInternalHovered(true);
         document.body.style.cursor = 'pointer';
       }}
       onPointerOut={() => {
-        setHovered(false);
+        setInternalHovered(false);
         document.body.style.cursor = 'auto';
       }}
     >

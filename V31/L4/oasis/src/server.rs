@@ -118,6 +118,10 @@ pub fn build_router(state: OasisState) -> Router {
             post(approach_world),
         )
         .route(
+            "/api/v1/oasis/player/:address/worlds/:id/discover",
+            post(discover_world),
+        )
+        .route(
             "/api/v1/oasis/player/:address/worlds/:id/clue",
             post(discover_world_clue),
         )
@@ -420,19 +424,23 @@ fn apply_world_action(
     let first = match action {
         "scan" => player.record_world_scan(world_id),
         "approach" => player.record_world_approach(world_id),
+        "discover" => player.record_world_discovery(world_id),
         _ => false,
     };
 
-    let source = if action == "scan" {
-        XpSource::WorldScan {
+    let source = match action {
+        "scan" => XpSource::WorldScan {
             world_id: world_id.to_string(),
             xp,
-        }
-    } else {
-        XpSource::WorldApproach {
+        },
+        "discover" => XpSource::WorldDiscovery {
             world_id: world_id.to_string(),
             xp,
-        }
+        },
+        _ => XpSource::WorldApproach {
+            world_id: world_id.to_string(),
+            xp,
+        },
     };
 
     let award = xp_sys.award(player.total_xp, player.level, &source, player.daily_xp);
@@ -568,6 +576,66 @@ async fn approach_world(
                 xp_awarded,
             });
         }
+    }
+
+    (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
+}
+
+/// POST /api/v1/oasis/player/:address/worlds/:id/discover
+///
+/// Lightweight world-discovery ping — the client calls this the first time a
+/// world is revealed/selected so discovery state persists on the player record
+/// (ZIS-linked via address) and can be hydrated on other devices.
+async fn discover_world(
+    State(state): State<OasisState>,
+    Path((address, world_id)): Path<(String, String)>,
+    Json(req): Json<WorldActionRequest>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let mut player = match state.db.get_or_create_player(&address) {
+        Ok(p) => p,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()>::error(&e.to_string())),
+            )
+                .into_response();
+        }
+    };
+
+    let xp = req.xp.unwrap_or(10);
+    let (xp_awarded, first, leveled_up) =
+        apply_world_action(&mut player, &world_id, xp, "discover", &state.xp_sys);
+
+    if let Err(e) = state.db.save_player(&player) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response();
+    }
+
+    let resp = WorldActionResponse {
+        address: address.clone(),
+        world_id: world_id.clone(),
+        action: "discover".to_string(),
+        first,
+        xp_awarded,
+        total_xp: player.total_xp,
+        level: player.level.name().to_string(),
+        leveled_up,
+    };
+
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::XpAward {
+            address: address.clone(),
+            amount: xp_awarded,
+            total_xp: player.total_xp,
+        });
     }
 
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
