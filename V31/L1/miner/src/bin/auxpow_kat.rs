@@ -211,6 +211,24 @@ fn real_main() {
             cpu: |_h, _e, _n| anyhow::bail!("no real CPU ref (keccak stub)"),
         },
         Case {
+            algo: "progpowz",
+            header: vec![0x67u8; 32],
+            extra: vec![],
+            cpu: |_h, _e, _n| anyhow::bail!("via progpow branch"),
+        },
+        Case {
+            algo: "evrprogpow",
+            header: vec![0x78u8; 32],
+            extra: vec![],
+            cpu: |_h, _e, _n| anyhow::bail!("via kawpow branch"),
+        },
+        Case {
+            algo: "meowpow",
+            header: vec![0x79u8; 32],
+            extra: vec![],
+            cpu: |_h, _e, _n| anyhow::bail!("via kawpow branch"),
+        },
+        Case {
             algo: "nexapow",
             header: vec![0x11u8; 32],
             extra: vec![],
@@ -342,8 +360,10 @@ fn real_main() {
                 "ethash" | "etchash" | "octopus" => {
                     Some(miner.generate_ethash_dag_on_gpu(0))
                 }
-                "kawpow" => Some(miner.generate_kawpow_dag_on_gpu(0)),
-                "progpow" => Some(miner.generate_progpow_dag_on_gpu(0)),
+                "kawpow" | "evrprogpow" | "meowpow" => {
+                    Some(miner.generate_kawpow_dag_on_gpu(0))
+                }
+                "progpow" | "progpowz" => Some(miner.generate_progpow_dag_on_gpu(0)),
                 "verthash" => {
                     // Verthash needs the ~1.2GB static data file. Look for it
                     // in the usual locations; skip cleanly if absent.
@@ -421,6 +441,120 @@ fn real_main() {
                     );
                 }
                 Ok::<_, anyhow::Error>(format!("mine mix_hash≡CPU nonce={}", share.nonce))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
+        // KawPow/ProgPow: verify the GPU digest against the ProgOp CPU
+        // interpreter. The CPU ref consumes the SAME op sequence the codegen
+        // renders into the kernel, so a match proves the kernel executes the
+        // intended ProgPow math (fill_mix → 64 DAG loops → lane fold →
+        // keccak_f800 bookends). DAG words are computed on demand via the
+        // ethash dataset-item reference (the GPU DAG is built by the same
+        // kawpow_dag.cl generator the KAT already verified byte-exact).
+        if matches!(
+            c.algo,
+            "kawpow" | "evrprogpow" | "meowpow" | "progpow" | "progpowz"
+        ) {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                use std::collections::HashMap;
+                use zion_miner::auxpow::gpu_opencl_full::{
+                    ethash_dag_entries, ethash_dataset_item, ethash_light_cache,
+                };
+                use zion_miner::auxpow::progpow_codegen::{
+                    kawpow_digest_ref, progpow_digest_ref, select_progpow_params,
+                };
+                let params = select_progpow_params(c.algo);
+
+                let cache = ethash_light_cache(0);
+                // Host: PROGPOW_DAG_ELEMENTS = size_entries/2 (entries=128B).
+                let dag_elements = (ethash_dag_entries(0) / 2) as u32;
+                // DAG word w: entry e = w/32, item = 2e + (w%32)/16,
+                // word offset w%16 inside the 64-byte item.
+                let mut item_memo: HashMap<usize, [u8; 64]> = HashMap::new();
+                let cache_ref = &cache;
+                let mut dag_word = |w: usize| -> u32 {
+                    let e = w / 32;
+                    let item = 2 * e + (w % 32) / 16;
+                    let word = w % 16;
+                    let bytes = item_memo
+                        .entry(item)
+                        .or_insert_with(|| ethash_dataset_item(cache_ref, item));
+                    u32::from_le_bytes(bytes[word * 4..word * 4 + 4].try_into().unwrap())
+                };
+
+                let share = miner
+                    .mine(c.algo, &c.header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .ok_or_else(|| anyhow::anyhow!("{} mine: no share found", c.algo))?;
+
+                let (expect, _) = if matches!(c.algo, "kawpow" | "evrprogpow" | "meowpow") {
+                    // KawPow-family: host packs header LE into 10 words; the
+                    // kernel overwrites word 8 with gid; word 9 = header
+                    // bytes 36..40 or 0.
+                    let mut blob = [0u32; 10];
+                    let hlen = c.header.len().min(40);
+                    for i in (0..hlen).step_by(4) {
+                        let rem = hlen - i;
+                        if rem >= 4 {
+                            blob[i / 4] =
+                                u32::from_le_bytes(c.header[i..i + 4].try_into().unwrap());
+                        } else {
+                            let mut b = [0u8; 4];
+                            b[..rem].copy_from_slice(&c.header[i..i + rem]);
+                            blob[i / 4] = u32::from_le_bytes(b);
+                        }
+                    }
+                    // KawPow kernel reports gid (batch-local index).
+                    kawpow_digest_ref(
+                        params,
+                        0,
+                        &blob,
+                        share.nonce as u32,
+                        dag_elements,
+                        &mut dag_word,
+                    )
+                } else {
+                    let mut h32 = [0u8; 32];
+                    let copy = c.header.len().min(32);
+                    h32[..copy].copy_from_slice(&c.header[..copy]);
+                    progpow_digest_ref(
+                        params,
+                        0,
+                        &h32,
+                        share.nonce,
+                        dag_elements,
+                        &mut dag_word,
+                        c.algo == "progpowz",
+                    )
+                };
+                let got = share.mix_hash.unwrap_or([0u8; 32]);
+                let mut expect_bytes = [0u8; 32];
+                for (i, w) in expect.iter().enumerate() {
+                    expect_bytes[i * 4..i * 4 + 4].copy_from_slice(&w.to_le_bytes());
+                }
+                if got != expect_bytes {
+                    anyhow::bail!(
+                        "{} digest mismatch nonce={}: gpu={} cpu={}",
+                        c.algo,
+                        share.nonce,
+                        hex::encode(got),
+                        hex::encode(expect_bytes)
+                    );
+                }
+                Ok::<_, anyhow::Error>(format!("mine mix≡CPU nonce={}", share.nonce))
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());

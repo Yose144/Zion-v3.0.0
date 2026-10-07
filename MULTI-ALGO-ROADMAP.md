@@ -161,10 +161,10 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 ### Checklist — co máme / co ne (2026-10-07)
 
 **✅ Consensus-ověřené GPU kernely (KAT PASS bit-exact):**
-kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU)
+kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace)
 
 **✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
-qhash, ghostrider, neoscrypt, eaglesong, octopus, verthash, kawpow+progpow (mix_hash ≠ 0; pravý progpow CPU ref absent), **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
+qhash, ghostrider, neoscrypt, eaglesong, octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže), verthash, **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
 
 **⚠️ Kernel spustitelný, ale široké oprávnění chybí:**
 - dynexsolve — běží, syntetický SAT bez řešení (EMPTY = OK signál)
@@ -190,6 +190,7 @@ qhash, ghostrider, neoscrypt, eaglesong, octopus, verthash, kawpow+progpow (mix_
 - **autolykos consensus rewrite**: `autolykos_gen_table` (streaming b2b256, 65 blocks/entry) + `autolykos_mine` (f31 seed, sliding-window genIndexes, 31B bigint sum, height-N calc); miner csrc copy synced (měl špatný rotate-scheme genIndexes ≠ Scala sliding-window)
 - **fishhash/karlsenhash DAG gen**: `build_fishhash_light_cache` (fixed seed `blake3("FishHash")`, 1.18M×64B keccak-512 + 3 randmemhash rundy), GPU `build` kernel chunked dispatch (`fishhash_build_dag_slice`/`generate_fishhash_dag_on_gpu`), CPU refs `fishhash_dataset_item`/`fishhash_hash_ref`/`karlsenhash_hash_ref`; nonce výstup v obou kernelech fixnut (vracel byte-reversed)
 - **ethash consensus fix**: `ethash_mine` kernel přepsán na standard hashimoto — fnv1a `(a^b)*P` → fnv1 `(a*P)^b`, index `fnv(i^s[0], mix[i%32])` se statickým s0 (dřív `fnv(i^mix[0], mix[0])` — mutující mix); CPU refs `ethash_dataset_item`/`ethash_hash_ref` (hashimoto-light z cache); KAT: GPU DAG items ≡ CPU + mix_hash ≡ CPU
+- **progpow/kawpow CPU ref**: `progpow_ops()` = strukturovaný op-seznam (single source of truth — renderery i interpretér z něj čtou), `render_loop_ops`/`render_dag_ops` produkují identický OpenCL kód; CPU interpretér `progpow_mix_ref` simuluje 16 lanes (fill_mix → 64 DAG-loopů s broadcast `mix[0]` → per-lane fold → 8-word digest), `kawpow_digest_ref` (job_blob + gid do st[8] + RAVENCOIN_RNDC) a `progpow_digest_ref` (header‖nonce‖0 → seed bswap → digest) — keccak-f800 v Rustu; KAT ověřuje `output_mix` ≡ CPU pro všech 5 variant
 - `free_dag_caches()` — uvolní VRAM mezi KAT casy (progpow OOM fix); qhash batch cap 4096→1024; nexapow cap 64 + default SKIP (JIT >10min)
 - KAT: autolykos Rust ref + native cross-check @2²⁶, kawpow DAG wiring, ZION_KAT_REPEATS/NONCE env, fishhash/karlsenhash reduced-DAG E2E (DAG-slice≡CPU + mine≡CPU)
 

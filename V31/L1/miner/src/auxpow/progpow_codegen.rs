@@ -124,6 +124,111 @@ pub const MEOWPOW_PARAMS: ProgPowParams = ProgPowParams {
     period: 6,
 };
 
+// ── Shared op sequence ──────────────────────────────────────────────
+// Single source of truth: the random math/cache/dag-load sequence is
+// generated ONCE as structured ops and then either rendered to OpenCL
+// source (for the GPU kernels) or interpreted directly on the CPU (for
+// the KAT reference). This guarantees the CPU ref can never drift from
+// the generated kernel code.
+
+/// One step of the generated progPow loop body.
+#[derive(Clone, Copy, Debug)]
+pub enum ProgOp {
+    /// offset = mix[src] % PROGPOW_CACHE_WORDS; data = c_dag[offset];
+    /// mix[dst] = merge(mix[dst], data, r)
+    Cache { src: u32, dst: u32, r: u32 },
+    /// data = math(mix[src1], mix[src2], r1); mix[dst] = merge(mix[dst], data, r2)
+    Math {
+        src1: u32,
+        src2: u32,
+        dst: u32,
+        r1: u32,
+        r2: u32,
+    },
+    /// mix[dst] = merge(mix[dst], data_dag.s[word], r)
+    Dag { dst: u32, word: u32, r: u32 },
+}
+
+/// Generate the op sequence for one progPowLoop iteration.
+///
+/// Returns `(loop_ops, dag_load_ops)`. Consumes the KISS99 stream in
+/// exactly the same order as the original inline generators.
+pub fn progpow_ops(params: &ProgPowParams, prog_seed: u64) -> (Vec<ProgOp>, Vec<ProgOp>) {
+    let seed0 = prog_seed as u32;
+    let seed1 = (prog_seed >> 32) as u32;
+
+    let mut fnv_hash = 0x811c9dc5u32;
+    let mut rng = Kiss99::new(
+        fnv1a(&mut fnv_hash, seed0),
+        fnv1a(&mut fnv_hash, seed1),
+        fnv1a(&mut fnv_hash, seed0),
+        fnv1a(&mut fnv_hash, seed1),
+    );
+
+    let regs = params.regs;
+    let mut mix_seq_dst: Vec<u32> = (0..regs).collect();
+    let mut mix_seq_cache: Vec<u32> = (0..regs).collect();
+    let mut dst_cnt = 0usize;
+    let mut cache_cnt = 0usize;
+
+    for i in (1..regs as usize).rev() {
+        let j = (rng.next() % (i as u32 + 1)) as usize;
+        mix_seq_dst.swap(i, j);
+        let j = (rng.next() % (i as u32 + 1)) as usize;
+        mix_seq_cache.swap(i, j);
+    }
+
+    let mut loop_ops = Vec::new();
+    let max_ops = params.cnt_cache.max(params.cnt_math);
+    for i in 0..max_ops {
+        if i < params.cnt_cache {
+            let src = mix_seq_cache[cache_cnt % regs as usize];
+            cache_cnt += 1;
+            let dst = mix_seq_dst[dst_cnt % regs as usize];
+            dst_cnt += 1;
+            let r = rng.next();
+            loop_ops.push(ProgOp::Cache { src, dst, r });
+        }
+        if i < params.cnt_math {
+            let src_rnd = rng.next() % ((params.regs - 1) * params.regs);
+            let src1 = src_rnd % params.regs;
+            let mut src2 = src_rnd / params.regs;
+            if src2 >= src1 {
+                src2 += 1;
+            }
+            let r1 = rng.next();
+            let dst = mix_seq_dst[dst_cnt % regs as usize];
+            dst_cnt += 1;
+            let r2 = rng.next();
+            loop_ops.push(ProgOp::Math {
+                src1,
+                src2,
+                dst,
+                r1,
+                r2,
+            });
+        }
+    }
+
+    let mut dag_ops = Vec::new();
+    dag_ops.push(ProgOp::Dag {
+        dst: 0,
+        word: 0,
+        r: rng.next(),
+    });
+    for i in 1..params.dag_loads {
+        let dst = mix_seq_dst[dst_cnt % regs as usize];
+        dst_cnt += 1;
+        dag_ops.push(ProgOp::Dag {
+            dst,
+            word: i,
+            r: rng.next(),
+        });
+    }
+
+    (loop_ops, dag_ops)
+}
+
 // ── Code generation helpers ─────────────────────────────────────────
 
 fn merge_code(a: &str, b: &str, r: u32) -> String {
@@ -183,132 +288,74 @@ fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
 // Generates inline code that replaces XMRIG_INCLUDE_PROGPOW_RANDOM_MATH
 // and XMRIG_INCLUDE_PROGPOW_DATA_LOADS in the xmrig kawpow.cl kernel.
 
+/// Render the loop ops (cache loads + random math) to OpenCL source.
+fn render_loop_ops(ops: &[ProgOp], math_code_fn: fn(&str, &str, &str, u32) -> String, comments: bool) -> String {
+    let mut ret = String::new();
+    let mut cache_i = 0u32;
+    let mut math_i = 0u32;
+    for op in ops {
+        match *op {
+            ProgOp::Cache { src, dst, r } => {
+                if comments {
+                    ret.push_str(&format!("// cache load {cache_i}\n"));
+                }
+                cache_i += 1;
+                ret.push_str(&format!("offset = mix[{src}] % PROGPOW_CACHE_WORDS;\n"));
+                ret.push_str("data = c_dag[offset];\n");
+                ret.push_str(&merge_code(&format!("mix[{dst}]"), "data", r));
+            }
+            ProgOp::Math {
+                src1,
+                src2,
+                dst,
+                r1,
+                r2,
+            } => {
+                if comments {
+                    ret.push_str(&format!("// random math {math_i}\n"));
+                }
+                math_i += 1;
+                ret.push_str(&math_code_fn(
+                    "data",
+                    &format!("mix[{src1}]"),
+                    &format!("mix[{src2}]"),
+                    r1,
+                ));
+                ret.push_str(&merge_code(&format!("mix[{dst}]"), "data", r2));
+            }
+            ProgOp::Dag { .. } => unreachable!("dag ops are rendered separately"),
+        }
+    }
+    ret
+}
+
+/// Render the DAG-load merge ops to OpenCL source.
+fn render_dag_ops(ops: &[ProgOp]) -> String {
+    let mut ret = String::new();
+    for op in ops {
+        if let ProgOp::Dag { dst, word, r } = *op {
+            ret.push_str(&merge_code(
+                &format!("mix[{dst}]"),
+                &format!("data_dag.s[{word}]"),
+                r,
+            ));
+        }
+    }
+    ret
+}
+
 /// Generate the random math + cache access code for KawPow (xmrig kernel).
 /// Replaces XMRIG_INCLUDE_PROGPOW_RANDOM_MATH.
 pub fn gen_kawpow_random_math(params: &ProgPowParams, prog_seed: u64) -> String {
-    let seed0 = prog_seed as u32;
-    let seed1 = (prog_seed >> 32) as u32;
-
-    let mut fnv_hash = 0x811c9dc5u32;
-    let mut rng = Kiss99::new(
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-    );
-
-    // Create shuffled sequences for mix destinations and cache sources
-    let regs = params.regs as usize;
-    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_dst_cnt = 0usize;
-    let mut mix_seq_cache_cnt = 0usize;
-
-    for i in (1..regs).rev() {
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_dst.swap(i, j);
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_cache.swap(i, j);
-    }
-
-    let mut ret = String::new();
-
-    let max_ops = params.cnt_cache.max(params.cnt_math);
-    for i in 0..max_ops {
-        if i < params.cnt_cache {
-            // Cached memory access
-            let src = format!("mix[{}]", mix_seq_cache[mix_seq_cache_cnt % regs]);
-            mix_seq_cache_cnt += 1;
-            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-            mix_seq_dst_cnt += 1;
-            let r = rng.next();
-            ret.push_str(&format!("offset = {} % PROGPOW_CACHE_WORDS;\n", src));
-            ret.push_str("data = c_dag[offset];\n");
-            ret.push_str(&merge_code(&dest, "data", r));
-        }
-
-        if i < params.cnt_math {
-            // Random math — generate 2 unique sources
-            let src_rnd = rng.next() % ((params.regs - 1) * params.regs);
-            let src1 = src_rnd % params.regs;
-            let mut src2 = src_rnd / params.regs;
-            if src2 >= src1 {
-                src2 += 1;
-            }
-            let src1_str = format!("mix[{}]", src1);
-            let src2_str = format!("mix[{}]", src2);
-            let r1 = rng.next();
-            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-            mix_seq_dst_cnt += 1;
-            let r2 = rng.next();
-            ret.push_str(&math_code("data", &src1_str, &src2_str, r1));
-            ret.push_str(&merge_code(&dest, "data", r2));
-        }
-    }
-
-    ret
+    let (loop_ops, _) = progpow_ops(params, prog_seed);
+    render_loop_ops(&loop_ops, math_code, false)
 }
 
 /// Generate the DAG data load code for KawPow (xmrig kernel).
 /// Replaces XMRIG_INCLUDE_PROGPOW_DATA_LOADS.
 pub fn gen_kawpow_data_loads(params: &ProgPowParams, prog_seed: u64) -> String {
-    let seed0 = prog_seed as u32;
-    let seed1 = (prog_seed >> 32) as u32;
-
-    let mut fnv_hash = 0x811c9dc5u32;
-    let mut rng = Kiss99::new(
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-    );
-
-    let regs = params.regs as usize;
-    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_dst_cnt = 0usize;
-    let mut mix_seq_cache_cnt = 0usize;
-
-    for i in (1..regs).rev() {
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_dst.swap(i, j);
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_cache.swap(i, j);
-    }
-
-    // Consume the same number of RNG values as gen_kawpow_random_math
-    // so the RNG state is consistent for the data loads
-    let max_ops = params.cnt_cache.max(params.cnt_math);
-    for i in 0..max_ops {
-        if i < params.cnt_cache {
-            let _ = mix_seq_cache[mix_seq_cache_cnt % regs];
-            mix_seq_cache_cnt += 1;
-            let _ = mix_seq_dst[mix_seq_dst_cnt % regs];
-            mix_seq_dst_cnt += 1;
-            let _ = rng.next(); // r
-        }
-        if i < params.cnt_math {
-            let _ = rng.next(); // src_rnd
-            let _ = rng.next(); // r1
-            let _ = mix_seq_dst[mix_seq_dst_cnt % regs];
-            mix_seq_dst_cnt += 1;
-            let _ = rng.next(); // r2
-        }
-    }
-
-    // Now generate data load code
-    let mut ret = String::new();
-
-    let num_words_per_lane = 256 / (4 * params.lanes) as usize; // 256 bits / (uint32 * lanes)
-    ret.push_str(&merge_code("mix[0]", "data_dag.s[0]", rng.next()));
-    for i in 1..num_words_per_lane {
-        let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-        mix_seq_dst_cnt += 1;
-        let r = rng.next();
-        ret.push_str(&merge_code(&dest, &format!("data_dag.s[{}]", i), r));
-    }
-
-    ret
+    let (_, dag_ops) = progpow_ops(params, prog_seed);
+    render_dag_ops(&dag_ops)
 }
 
 // ── EPIC ProgPow code generation ────────────────────────────────────
@@ -326,66 +373,8 @@ fn gen_progpow_random_math_impl(
     math_code_fn: fn(&str, &str, &str, u32) -> String,
 ) -> String {
     let prog_seed = block_height / params.period as u64;
-    let seed0 = prog_seed as u32;
-    let seed1 = (prog_seed >> 32) as u32;
-
-    let mut fnv_hash = 0x811c9dc5u32;
-    let mut rng = Kiss99::new(
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-    );
-
-    let regs = params.regs as usize;
-    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_dst_cnt = 0usize;
-    let mut mix_seq_cache_cnt = 0usize;
-
-    for i in (1..regs).rev() {
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_dst.swap(i, j);
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_cache.swap(i, j);
-    }
-
-    let mut ret = String::new();
-
-    // Cache accesses + random math (inline, not in a function)
-    let max_ops = params.cnt_cache.max(params.cnt_math);
-    for i in 0..max_ops {
-        if i < params.cnt_cache {
-            let src = format!("mix[{}]", mix_seq_cache[mix_seq_cache_cnt % regs]);
-            mix_seq_cache_cnt += 1;
-            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-            mix_seq_dst_cnt += 1;
-            let r = rng.next();
-            ret.push_str(&format!("// cache load {}\n", i));
-            ret.push_str(&format!("offset = {} % PROGPOW_CACHE_WORDS;\n", src));
-            ret.push_str("data = c_dag[offset];\n");
-            ret.push_str(&merge_code(&dest, "data", r));
-        }
-        if i < params.cnt_math {
-            let src_rnd = rng.next() % ((params.regs - 1) * params.regs);
-            let src1 = src_rnd % params.regs;
-            let mut src2 = src_rnd / params.regs;
-            if src2 >= src1 {
-                src2 += 1;
-            }
-            let src1_str = format!("mix[{}]", src1);
-            let src2_str = format!("mix[{}]", src2);
-            let r1 = rng.next();
-            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-            mix_seq_dst_cnt += 1;
-            let r2 = rng.next();
-            ret.push_str(&format!("// random math {}\n", i));
-            ret.push_str(&math_code_fn("data", &src1_str, &src2_str, r1));
-            ret.push_str(&merge_code(&dest, "data", r2));
-        }
-    }
-
-    ret
+    let (loop_ops, _) = progpow_ops(params, prog_seed);
+    render_loop_ops(&loop_ops, math_code_fn, true)
 }
 
 /// Generate the random math + cache load code for EPIC ProgPow (inline).
@@ -404,61 +393,8 @@ pub fn gen_zano_progpow_random_math(params: &ProgPowParams, block_height: u64) -
 /// Replaces PROGPOW_INCLUDE_DATA_LOADS.
 pub fn gen_epic_progpow_data_loads(params: &ProgPowParams, block_height: u64) -> String {
     let prog_seed = block_height / params.period as u64;
-    let seed0 = prog_seed as u32;
-    let seed1 = (prog_seed >> 32) as u32;
-
-    let mut fnv_hash = 0x811c9dc5u32;
-    let mut rng = Kiss99::new(
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-    );
-
-    let regs = params.regs as usize;
-    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_dst_cnt = 0usize;
-    let mut mix_seq_cache_cnt = 0usize;
-
-    for i in (1..regs).rev() {
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_dst.swap(i, j);
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_cache.swap(i, j);
-    }
-
-    // Advance the RNG past the random math section to maintain the same
-    // sequence as the original gen_epic_progpow_loop.
-    let max_ops = params.cnt_cache.max(params.cnt_math);
-    for i in 0..max_ops {
-        if i < params.cnt_cache {
-            let _ = mix_seq_cache[mix_seq_cache_cnt % regs];
-            mix_seq_cache_cnt += 1;
-            let _ = mix_seq_dst[mix_seq_dst_cnt % regs];
-            mix_seq_dst_cnt += 1;
-            let _ = rng.next();
-        }
-        if i < params.cnt_math {
-            let _ = rng.next();
-            let _ = mix_seq_dst[mix_seq_dst_cnt % regs];
-            mix_seq_dst_cnt += 1;
-            let _ = rng.next();
-            let _ = rng.next();
-        }
-    }
-
-    // Consume global load data (inline)
-    let mut ret = String::new();
-    ret.push_str(&merge_code("mix[0]", "data_dag.s[0]", rng.next()));
-    for i in 1..params.dag_loads {
-        let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-        mix_seq_dst_cnt += 1;
-        let r = rng.next();
-        ret.push_str(&merge_code(&dest, &format!("data_dag.s[{}]", i), r));
-    }
-
-    ret
+    let (_, dag_ops) = progpow_ops(params, prog_seed);
+    render_dag_ops(&dag_ops)
 }
 
 /// Generate the complete progPowLoop function for a ProgPow variant.
@@ -468,29 +404,7 @@ fn gen_progpow_loop_impl(
     math_code_fn: fn(&str, &str, &str, u32) -> String,
 ) -> String {
     let prog_seed = block_height / params.period as u64;
-    let seed0 = prog_seed as u32;
-    let seed1 = (prog_seed >> 32) as u32;
-
-    let mut fnv_hash = 0x811c9dc5u32;
-    let mut rng = Kiss99::new(
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-        fnv1a(&mut fnv_hash, seed0),
-        fnv1a(&mut fnv_hash, seed1),
-    );
-
-    let regs = params.regs as usize;
-    let mut mix_seq_dst: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_cache: Vec<u32> = (0..regs as u32).collect();
-    let mut mix_seq_dst_cnt = 0usize;
-    let mut mix_seq_cache_cnt = 0usize;
-
-    for i in (1..regs).rev() {
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_dst.swap(i, j);
-        let j = (rng.next() % (i as u32 + 1)) as usize;
-        mix_seq_cache.swap(i, j);
-    }
+    let (loop_ops, dag_ops) = progpow_ops(params, prog_seed);
 
     let mut ret = String::new();
 
@@ -528,48 +442,12 @@ fn gen_progpow_loop_impl(
     ret.push_str("// hack to prevent compiler from reordering LD and usage\n");
     ret.push_str("if (hack_false) barrier(CLK_LOCAL_MEM_FENCE);\n\n");
 
-    let max_ops = params.cnt_cache.max(params.cnt_math);
-    for i in 0..max_ops {
-        if i < params.cnt_cache {
-            let src = format!("mix[{}]", mix_seq_cache[mix_seq_cache_cnt % regs]);
-            mix_seq_cache_cnt += 1;
-            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-            mix_seq_dst_cnt += 1;
-            let r = rng.next();
-            ret.push_str(&format!("// cache load {}\n", i));
-            ret.push_str(&format!("offset = {} % PROGPOW_CACHE_WORDS;\n", src));
-            ret.push_str("data = c_dag[offset];\n");
-            ret.push_str(&merge_code(&dest, "data", r));
-        }
-        if i < params.cnt_math {
-            let src_rnd = rng.next() % ((params.regs - 1) * params.regs);
-            let src1 = src_rnd % params.regs;
-            let mut src2 = src_rnd / params.regs;
-            if src2 >= src1 {
-                src2 += 1;
-            }
-            let src1_str = format!("mix[{}]", src1);
-            let src2_str = format!("mix[{}]", src2);
-            let r1 = rng.next();
-            let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-            mix_seq_dst_cnt += 1;
-            let r2 = rng.next();
-            ret.push_str(&format!("// random math {}\n", i));
-            ret.push_str(&math_code_fn("data", &src1_str, &src2_str, r1));
-            ret.push_str(&merge_code(&dest, "data", r2));
-        }
-    }
+    ret.push_str(&render_loop_ops(&loop_ops, math_code_fn, true));
 
     ret.push_str("// consume global load data\n");
     ret.push_str("// hack to prevent compiler from reordering LD and usage\n");
     ret.push_str("if (hack_false) barrier(CLK_LOCAL_MEM_FENCE);\n");
-    ret.push_str(&merge_code("mix[0]", "data_dag.s[0]", rng.next()));
-    for i in 1..params.dag_loads {
-        let dest = format!("mix[{}]", mix_seq_dst[mix_seq_dst_cnt % regs]);
-        mix_seq_dst_cnt += 1;
-        let r = rng.next();
-        ret.push_str(&merge_code(&dest, &format!("data_dag.s[{}]", i), r));
-    }
+    ret.push_str(&render_dag_ops(&dag_ops));
 
     ret.push_str("}\n\n");
 
@@ -686,6 +564,293 @@ pub fn select_progpow_params(algorithm: &str) -> &'static ProgPowParams {
         // and fallback use standard KawPow params.
         _ => &KAWPOW_PARAMS,
     }
+}
+
+// ── CPU reference implementation (KAT) ──────────────────────────────
+//
+// Bit-exact interpreter of the generated OpenCL: the GPU kernel and this
+// reference consume the SAME ProgOp sequence (progpow_ops), so a KAT
+// match proves the kernel performs the intended ProgPow-family math.
+
+const FNV_OFFSET: u32 = 0x811c9dc5;
+const FNV_PRIME: u32 = 0x01000193;
+const PROGPOW_LANES: u32 = 16;
+const PROGPOW_CNT_DAG: u32 = 64;
+/// Both kernels define PROGPOW_CACHE_WORDS = 4096 (16 KB of the DAG head).
+const PROGPOW_CACHE_WORDS: usize = 4096;
+
+/// Ravencoin keccak padding ("RAVENCOINKAWPOW" + 0).
+const RAVENCOIN_RNDC: [u32; 15] = [
+    0x00000072, 0x00000041, 0x00000056, 0x00000045, 0x0000004e, 0x00000043, 0x0000004f, 0x00000049,
+    0x0000004e, 0x0000004b, 0x00000041, 0x00000057, 0x00000050, 0x0000004f, 0x00000057,
+];
+
+// keccak-f800 round constants (low 32 bits of keccak-f1600 RCs), rot/piln
+// tables from the OpenCL kernels.
+const KECCAKF800_RNDC: [u32; 22] = [
+    0x00000001, 0x00008082, 0x0000808a, 0x80008000, 0x0000808b, 0x80000001, 0x80008081, 0x00008009,
+    0x0000008a, 0x00000088, 0x80008009, 0x8000000a, 0x8000808b, 0x0000008b, 0x00008089, 0x00008003,
+    0x00008002, 0x00000080, 0x0000800a, 0x8000000a, 0x80008081, 0x00008080,
+];
+const KECCAKF_ROTC: [u32; 24] = [
+    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44,
+];
+const KECCAKF_PILN: [usize; 24] = [
+    10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1,
+];
+
+fn keccak_f800_round(st: &mut [u32; 25], r: usize) {
+    // Theta
+    let mut bc = [0u32; 5];
+    for i in 0..5 {
+        bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
+    }
+    for i in 0..5 {
+        let t = bc[(i + 4) % 5] ^ bc[(i + 1) % 5].rotate_left(1);
+        for j in (0..25).step_by(5) {
+            st[j + i] ^= t;
+        }
+    }
+    // Rho Pi
+    let mut t = st[1];
+    for i in 0..24 {
+        let j = KECCAKF_PILN[i];
+        bc[0] = st[j];
+        st[j] = t.rotate_left(KECCAKF_ROTC[i]);
+        t = bc[0];
+    }
+    // Chi
+    for j in (0..25).step_by(5) {
+        for i in 0..5 {
+            bc[i] = st[j + i];
+        }
+        for i in 0..5 {
+            st[j + i] ^= !bc[(i + 1) % 5] & bc[(i + 2) % 5];
+        }
+    }
+    // Iota
+    st[0] ^= KECCAKF800_RNDC[r];
+}
+
+fn keccak_f800(st: &mut [u32; 25]) {
+    for r in 0..22 {
+        keccak_f800_round(st, r);
+    }
+}
+
+#[inline]
+fn fnv1a_val(h: u32, d: u32) -> u32 {
+    (h ^ d).wrapping_mul(FNV_PRIME)
+}
+
+#[inline]
+fn merge_val(a: u32, b: u32, r: u32) -> u32 {
+    match r % 4 {
+        0 => a.wrapping_mul(33).wrapping_add(b),
+        1 => (a ^ b).wrapping_mul(33),
+        2 => a.rotate_left((r >> 16) % 31 + 1) ^ b,
+        _ => a.rotate_right((r >> 16) % 31 + 1) ^ b,
+    }
+}
+
+#[inline]
+fn math_val(sel: u32, a: u32, b: u32, zano: bool) -> u32 {
+    if zano {
+        match sel % 11 {
+            0 => a.leading_zeros() + b.leading_zeros(),
+            1 => a.count_ones() + b.count_ones(),
+            2 => a.wrapping_add(b),
+            3 => a.wrapping_mul(b),
+            4 => ((a as u64 * b as u64) >> 32) as u32,
+            5 => a.min(b),
+            6 => a.rotate_left(b % 32),
+            7 => a.rotate_right(b % 32),
+            8 => a & b,
+            9 => a | b,
+            _ => a ^ b,
+        }
+    } else {
+        match sel % 11 {
+            0 => a.wrapping_add(b),
+            1 => a.wrapping_mul(b),
+            2 => ((a as u64 * b as u64) >> 32) as u32,
+            3 => a.min(b),
+            4 => a.rotate_left(b & 31),
+            5 => a.rotate_right(b & 31),
+            6 => a & b,
+            7 => a | b,
+            8 => a ^ b,
+            9 => a.leading_zeros() + b.leading_zeros(),
+            _ => a.count_ones() + b.count_ones(),
+        }
+    }
+}
+
+fn fill_mix_ref(seed_lo: u32, seed_hi: u32, lane_id: u32, mix: &mut [u32]) {
+    let mut fnv = FNV_OFFSET;
+    let z = fnv1a_val_fnv(&mut fnv, seed_lo);
+    let w = fnv1a_val_fnv(&mut fnv, seed_hi);
+    let jsr = fnv1a_val_fnv(&mut fnv, lane_id);
+    let jcong = fnv1a_val_fnv(&mut fnv, lane_id);
+    let mut st = Kiss99::new(z, w, jsr, jcong);
+    for m in mix.iter_mut() {
+        *m = st.next();
+    }
+}
+
+#[inline]
+fn fnv1a_val_fnv(h: &mut u32, d: u32) -> u32 {
+    *h = (*h ^ d).wrapping_mul(FNV_PRIME);
+    *h
+}
+
+/// Core ProgPow mix: simulates all 16 lanes of one hash on the CPU.
+///
+/// `dag_word(w)` returns the DAG u32 word at index `w` (dag_t = 4 words,
+/// c_dag is just words 0..PROGPOW_CACHE_WORDS). Lazy closure form so the
+/// caller can compute ethash dataset items on demand.
+/// `dag_elements` — the PROGPOW_DAG_ELEMENTS build define (dag_t_count/16).
+/// Returns the per-hash 8-word digest (the kernel's `output_mix`).
+fn progpow_mix_ref(
+    params: &ProgPowParams,
+    prog_seed: u64,
+    hash_seed: u64,
+    dag_elements: u32,
+    dag_word: &mut dyn FnMut(usize) -> u32,
+    zano: bool,
+) -> [u32; 8] {
+    let (loop_ops, dag_ops) = progpow_ops(params, prog_seed);
+    let lanes = PROGPOW_LANES as usize;
+    let regs = params.regs as usize;
+
+    // One 16-lane mix set for this hash.
+    let mut mixes = vec![vec![0u32; regs]; lanes];
+    for lane in 0..lanes {
+        fill_mix_ref(
+            hash_seed as u32,
+            (hash_seed >> 32) as u32,
+            lane as u32,
+            &mut mixes[lane],
+        );
+    }
+
+    for l in 0..PROGPOW_CNT_DAG {
+        // Broadcast mix[0] of lane (l % LANES) to all lanes.
+        let src0 = mixes[(l % PROGPOW_LANES) as usize][0];
+        let base = src0 % dag_elements;
+        for (lane, mix) in mixes.iter_mut().enumerate() {
+            let off = (base as usize) * lanes + ((lane as u32 ^ l) % PROGPOW_LANES) as usize;
+            let data_dag: Vec<u32> =
+                (0..params.dag_loads as usize).map(|i| dag_word(off * 4 + i)).collect();
+            for op in &loop_ops {
+                match *op {
+                    ProgOp::Cache { src, dst, r } => {
+                        let offset = (mix[src as usize] as usize) % PROGPOW_CACHE_WORDS;
+                        let data = dag_word(offset);
+                        let d = merge_val(mix[dst as usize], data, r);
+                        mix[dst as usize] = d;
+                    }
+                    ProgOp::Math {
+                        src1,
+                        src2,
+                        dst,
+                        r1,
+                        r2,
+                    } => {
+                        let data = math_val(r1, mix[src1 as usize], mix[src2 as usize], zano);
+                        let d = merge_val(mix[dst as usize], data, r2);
+                        mix[dst as usize] = d;
+                    }
+                    ProgOp::Dag { .. } => unreachable!(),
+                }
+            }
+            for op in &dag_ops {
+                if let ProgOp::Dag { dst, word, r } = *op {
+                    let d = merge_val(mix[dst as usize], data_dag[word as usize], r);
+                    mix[dst as usize] = d;
+                }
+            }
+        }
+    }
+
+    // Reduce each lane to a 32-bit mix_hash, then fold lanes into digest.
+    let mut digest = [FNV_OFFSET; 8];
+    for lane in 0..lanes {
+        let mut mix_hash = FNV_OFFSET;
+        for &v in &mixes[lane] {
+            mix_hash = fnv1a_val(mix_hash, v);
+        }
+        digest[lane % 8] = fnv1a_val(digest[lane % 8], mix_hash);
+    }
+    digest
+}
+
+/// KawPow reference digest + final compare value for one gid.
+///
+/// `job_blob` — 10 LE u32 words (header ≤ 40 B, packed like the host does).
+/// The kernel overwrites word 8 with `gid` and appends RAVENCOIN_RNDC.
+/// Returns (digest[8], result_u64) — result compares `<= target` (bswap64).
+pub fn kawpow_digest_ref(
+    params: &ProgPowParams,
+    prog_seed: u64,
+    job_blob: &[u32; 10],
+    gid: u32,
+    dag_elements: u32,
+    dag_word: &mut dyn FnMut(usize) -> u32,
+) -> ([u32; 8], u64) {
+    let mut st = [0u32; 25];
+    st[..10].copy_from_slice(job_blob);
+    st[8] = gid;
+    st[10..25].copy_from_slice(&RAVENCOIN_RNDC);
+    keccak_f800(&mut st);
+    let state2: [u32; 8] = st[..8].try_into().unwrap();
+    let seed = (state2[1] as u64) << 32 | state2[0] as u64;
+
+    let digest = progpow_mix_ref(params, prog_seed, seed, dag_elements, dag_word, false);
+
+    let mut st = [0u32; 25];
+    st[..8].copy_from_slice(&state2);
+    st[8..16].copy_from_slice(&digest);
+    st[16..25].copy_from_slice(&RAVENCOIN_RNDC[..9]);
+    keccak_f800(&mut st);
+    let res = ((st[1] as u64) << 32 | st[0] as u64).swap_bytes();
+    (digest, res)
+}
+
+/// EPIC/Zano ProgPow reference digest + final compare value.
+///
+/// `header` — 32-byte pre-hashed header (the kernel hashes it with
+/// keccak_f800(header ‖ nonce ‖ digest=0)). Returns (digest, result_u64).
+pub fn progpow_digest_ref(
+    params: &ProgPowParams,
+    prog_seed: u64,
+    header: &[u8; 32],
+    nonce: u64,
+    dag_elements: u32,
+    dag_word: &mut dyn FnMut(usize) -> u32,
+    zano: bool,
+) -> ([u32; 8], u64) {
+    let mut st = [0u32; 25];
+    for i in 0..8 {
+        st[i] = u32::from_le_bytes(header[i * 4..i * 4 + 4].try_into().unwrap());
+    }
+    st[8] = nonce as u32;
+    st[9] = (nonce >> 32) as u32;
+    keccak_f800(&mut st);
+    let seed = ((st[1] as u64) << 32 | st[0] as u64).swap_bytes();
+
+    let digest = progpow_mix_ref(params, prog_seed, seed, dag_elements, dag_word, zano);
+
+    let mut st = [0u32; 25];
+    for i in 0..8 {
+        st[i] = u32::from_le_bytes(header[i * 4..i * 4 + 4].try_into().unwrap());
+    }
+    st[8] = seed as u32;
+    st[9] = (seed >> 32) as u32;
+    st[10..18].copy_from_slice(&digest);
+    keccak_f800(&mut st);
+    let res = ((st[1] as u64) << 32 | st[0] as u64).swap_bytes();
+    (digest, res)
 }
 
 #[cfg(test)]
