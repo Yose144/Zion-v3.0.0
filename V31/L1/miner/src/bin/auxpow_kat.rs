@@ -504,11 +504,13 @@ fn real_main() {
         .and_then(|v| v.parse().ok())
         .unwrap_or(0);
     // Repeat count for probabilistic algos (equihash: solutions are
-    // Poisson-distributed per header, a single EMPTY run is inconclusive).
+    // Poisson-distributed per header — P(0) ≈ 13% for 200,9, so a single
+    // EMPTY run is inconclusive). Deterministic algos break on the first
+    // rep, so a higher default costs nothing for them.
     let repeats: u32 = std::env::var("ZION_KAT_REPEATS")
         .ok()
         .and_then(|v| v.parse().ok())
-        .unwrap_or(1);
+        .unwrap_or(8);
     let target = [0xFFu8; 32];
 
     let mut miner = match ExtGpuMiner::new() {
