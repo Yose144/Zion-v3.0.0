@@ -578,6 +578,258 @@ fn autolykos_m_array() -> [u8; 8192] {
     m
 }
 
+// ── FishHash (IRON / KLS) DAG construction ───────────────────────────
+//
+// Constants from the official spec (iron-fish/fish-hash, FIP-3):
+//   SEED        = blake3("FishHash") — FIXED for all epochs
+//   light cache = 1,179,641 × 64 B ≈ 75 MB   (keccak-512 chain + 3 rounds)
+//   full DAG    = 37,748,717 × 128 B ≈ 4.6 GB (each item = 2 × 64 B nodes)
+pub const FISHHASH_LIGHT_CACHE_ITEMS: u32 = 1_179_641;
+pub const FISHHASH_DATASET_ITEMS: u32 = 37_748_717;
+pub const FISHHASH_DATASET_PARENTS: u32 = 512;
+pub const FISHHASH_SEED: [u8; 32] = [
+    0xeb, 0x01, 0x63, 0xae, 0xf2, 0xab, 0x1c, 0x5a, 0x66, 0x31, 0x0c, 0x1c, 0x14, 0xd6, 0x0f, 0x42,
+    0x55, 0xa9, 0xb3, 0x9b, 0x0e, 0xdf, 0x26, 0x53, 0x98, 0x44, 0xf1, 0x17, 0xad, 0x67, 0x21, 0x19,
+];
+
+/// Build the FishHash light cache on the host (~75 MB).
+/// Same structure as ethash mkcache: keccak-512 chain from a fixed seed,
+/// then 3 randmemhash rounds (in-place, index order matters).
+pub fn build_fishhash_light_cache() -> Vec<u8> {
+    use sha3::{Digest, Keccak512};
+
+    const N: usize = FISHHASH_LIGHT_CACHE_ITEMS as usize;
+    let mut cache = vec![0u8; N * 64];
+
+    // item[0] = keccak512(SEED)
+    let mut h = Keccak512::new();
+    h.update(&FISHHASH_SEED);
+    let mut item: [u8; 64] = h.finalize().into();
+    cache[..64].copy_from_slice(&item);
+
+    // item[i] = keccak512(item[i-1])
+    for i in 1..N {
+        let mut h = Keccak512::new();
+        h.update(&item);
+        item = h.finalize().into();
+        cache[i * 64..(i + 1) * 64].copy_from_slice(&item);
+    }
+
+    // 3 randmemhash rounds: cache[i] = keccak512(cache[v] ^ cache[w])
+    //   v = LE32(cache[i][0..4]) % N ; w = (i + N - 1) % N   (sequential!)
+    for _ in 0..3 {
+        for i in 0..N {
+            let v =
+                (u32::from_le_bytes(cache[i * 64..i * 64 + 4].try_into().unwrap()) as usize) % N;
+            let w = (i + N - 1) % N;
+            let mut tmp = [0u8; 64];
+            for j in 0..64 {
+                tmp[j] = cache[v * 64 + j] ^ cache[w * 64 + j];
+            }
+            let mut h = Keccak512::new();
+            h.update(&tmp);
+            let out: [u8; 64] = h.finalize().into();
+            cache[i * 64..(i + 1) * 64].copy_from_slice(&out);
+        }
+    }
+
+    cache
+}
+
+/// CPU reference: one 128-byte FishHash dataset item (`calculate_dataset_item_1024`
+/// from the official fish-hash crate). `cache` = light cache bytes (64B items).
+pub fn fishhash_dataset_item(cache: &[u8], index: usize) -> [u8; 128] {
+    use sha3::{Digest, Keccak512};
+
+    const N: usize = FISHHASH_LIGHT_CACHE_ITEMS as usize;
+    const FNV_PRIME: u32 = 0x01000193;
+    let item_at = |i: usize| -> [u8; 64] {
+        cache[(i % N) * 64..(i % N) * 64 + 64].try_into().unwrap()
+    };
+    let keccak = |d: &[u8; 64]| -> [u8; 64] {
+        let mut h = Keccak512::new();
+        h.update(d);
+        h.finalize().into()
+    };
+    let get_u32 = |m: &[u8; 64], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
+    let set_u32 = |m: &mut [u8; 64], i: usize, v: u32| m[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
+    let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
+    let fnv1_512 = |a: &[u8; 64], b: &[u8; 64]| -> [u8; 64] {
+        let mut r = [0u8; 64];
+        for i in 0..16 {
+            set_u32(&mut r, i, fnv1(get_u32(a, i), get_u32(b, i)));
+        }
+        r
+    };
+
+    let seed0 = (index * 2) as u32;
+    let seed1 = seed0 + 1;
+    let mut mix0 = item_at(seed0 as usize);
+    let mut mix1 = item_at(seed1 as usize);
+    let m0w = get_u32(&mix0, 0) ^ seed0;
+    let m1w = get_u32(&mix1, 0) ^ seed1;
+    set_u32(&mut mix0, 0, m0w);
+    set_u32(&mut mix1, 0, m1w);
+    mix0 = keccak(&mix0);
+    mix1 = keccak(&mix1);
+
+    for j in 0..FISHHASH_DATASET_PARENTS {
+        let j = j as usize;
+        let t0 = fnv1(seed0 ^ j as u32, get_u32(&mix0, j % 16));
+        let t1 = fnv1(seed1 ^ j as u32, get_u32(&mix1, j % 16));
+        mix0 = fnv1_512(&mix0, &item_at(t0 as usize));
+        mix1 = fnv1_512(&mix1, &item_at(t1 as usize));
+    }
+    mix0 = keccak(&mix0);
+    mix1 = keccak(&mix1);
+
+    let mut out = [0u8; 128];
+    out[..64].copy_from_slice(&mix0);
+    out[64..].copy_from_slice(&mix1);
+    out
+}
+
+/// CPU reference FishHash (`fishhash_kernel` in the official crate) over an
+/// arbitrary dataset. `dag` = 128 B per item, `dag_items` = item count —
+/// pass a reduced slice for KAT (`p` indices are taken `mod dag_items`,
+/// matching the GPU kernel's `% dagSize`).
+///
+/// Header layout mirrors `fishhash_mine`: the 180-byte message is
+/// `header[0..172] || nonce_BE8` (nonce occupies the last 8 bytes of the
+/// third blake3 chunk; shorter headers are zero-padded).
+pub fn fishhash_hash_ref(header: &[u8], nonce: u64, dag: &[u8], dag_items: usize) -> [u8; 32] {
+    const FNV_PRIME: u32 = 0x01000193;
+
+    let mut msg = [0u8; 180];
+    let hl = header.len().min(172);
+    msg[..hl].copy_from_slice(&header[..hl]);
+    msg[172..].copy_from_slice(&nonce.to_be_bytes());
+
+    // seed = blake3 XOF-64 of the 180-byte message
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(&msg);
+    let mut seed = [0u8; 64];
+    hasher.finalize_xof().fill(&mut seed);
+
+    let gu32 = |m: &[u8], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
+    let gu64 = |m: &[u8], i: usize| u64::from_le_bytes(m[i * 8..i * 8 + 8].try_into().unwrap());
+    let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
+    let item = |p: usize| -> [u8; 128] {
+        dag[(p % dag_items) * 128..(p % dag_items) * 128 + 128].try_into().unwrap()
+    };
+
+    let mut mix = [0u8; 128];
+    mix[..64].copy_from_slice(&seed);
+    mix[64..].copy_from_slice(&seed);
+
+    for _ in 0..32 {
+        let p0 = gu32(&mix, 0) as usize % dag_items;
+        let p1 = gu32(&mix, 4) as usize % dag_items;
+        let p2 = gu32(&mix, 8) as usize % dag_items;
+        let f0 = item(p0);
+        let mut f1 = item(p1);
+        let mut f2 = item(p2);
+        for j in 0..32 {
+            let f1w = fnv1(gu32(&mix, j), gu32(&f1, j));
+            f1[j * 4..j * 4 + 4].copy_from_slice(&f1w.to_le_bytes());
+            let f2w = gu32(&mix, j) ^ gu32(&f2, j);
+            f2[j * 4..j * 4 + 4].copy_from_slice(&f2w.to_le_bytes());
+        }
+        for i in 0..16 {
+            mix[i * 8..i * 8 + 8].copy_from_slice(
+                &gu64(&f0, i)
+                    .wrapping_mul(gu64(&f1, i))
+                    .wrapping_add(gu64(&f2, i))
+                    .to_le_bytes(),
+            );
+        }
+    }
+
+    // Collapse 128 B mix → 32 B: fnv chain over each group of 4 u32.
+    let mut mix_hash = [0u8; 32];
+    for i in (0..32).step_by(4) {
+        let h = fnv1(
+            fnv1(fnv1(gu32(&mix, i), gu32(&mix, i + 1)), gu32(&mix, i + 2)),
+            gu32(&mix, i + 3),
+        );
+        mix_hash[i / 4 * 4..i / 4 * 4 + 4].copy_from_slice(&h.to_le_bytes());
+    }
+
+    let mut final_data = [0u8; 96];
+    final_data[..64].copy_from_slice(&seed);
+    final_data[64..].copy_from_slice(&mix_hash);
+    *blake3::hash(&final_data).as_bytes()
+}
+
+/// CPU reference for KarlsenHash (FishHashPlus variant used by KLS).
+/// Mirrors `karlsenhash_mine`: 80-byte msg = `header[0..72] || nonce_BE8`,
+/// xor-group index derivation, and final `blake3(mix_hash)` (32 B only —
+/// no seed prefix unlike FishHash).
+pub fn karlsenhash_hash_ref(header: &[u8], nonce: u64, dag: &[u8], dag_items: usize) -> [u8; 32] {
+    const FNV_PRIME: u32 = 0x01000193;
+
+    let mut msg = [0u8; 80];
+    // Kernel reads blockHeader[1] but zeroes s01 and injects the nonce into
+    // s23 — so msg bytes 64..71 are always zero regardless of header input.
+    let hl = header.len().min(64);
+    msg[..hl].copy_from_slice(&header[..hl]);
+    msg[72..].copy_from_slice(&nonce.to_be_bytes());
+
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(&msg);
+    let mut seed = [0u8; 64];
+    hasher.finalize_xof().fill(&mut seed);
+
+    let gu32 = |m: &[u8], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
+    let gu64 = |m: &[u8], i: usize| u64::from_le_bytes(m[i * 8..i * 8 + 8].try_into().unwrap());
+    let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
+    let item = |p: usize| -> [u8; 128] {
+        dag[(p % dag_items) * 128..(p % dag_items) * 128 + 128].try_into().unwrap()
+    };
+
+    let mut mix = [0u8; 128];
+    mix[..64].copy_from_slice(&seed);
+    mix[64..].copy_from_slice(&seed);
+
+    for a in 0..32usize {
+        // mg[i] = XOR of the 4 u32s in mix-group i (groups of 4 words).
+        let mg = |g: usize| {
+            gu32(&mix, g * 4) ^ gu32(&mix, g * 4 + 1) ^ gu32(&mix, g * 4 + 2) ^ gu32(&mix, g * 4 + 3)
+        };
+        let (mg0, mg1, mg2, mg3) = (mg(0), mg(1), mg(2), mg(3));
+        let p0 = (mg0 ^ mg3 ^ mg2) as usize % dag_items;
+        let p1 = (mg1 ^ mg0 ^ mg3) as usize % dag_items;
+        let p2 = (mg2 ^ mg1 ^ a as u32) as usize % dag_items;
+        let f0 = item(p0);
+        let mut f1 = item(p1);
+        let mut f2 = item(p2);
+        for j in 0..32 {
+            let f1w = fnv1(gu32(&mix, j), gu32(&f1, j));
+            f1[j * 4..j * 4 + 4].copy_from_slice(&f1w.to_le_bytes());
+            let f2w = gu32(&mix, j) ^ gu32(&f2, j);
+            f2[j * 4..j * 4 + 4].copy_from_slice(&f2w.to_le_bytes());
+        }
+        for i in 0..16 {
+            mix[i * 8..i * 8 + 8].copy_from_slice(
+                &gu64(&f0, i)
+                    .wrapping_mul(gu64(&f1, i))
+                    .wrapping_add(gu64(&f2, i))
+                    .to_le_bytes(),
+            );
+        }
+    }
+
+    let mut mix_hash = [0u8; 32];
+    for i in (0..32).step_by(4) {
+        let h = fnv1(
+            fnv1(fnv1(gu32(&mix, i), gu32(&mix, i + 1)), gu32(&mix, i + 2)),
+            gu32(&mix, i + 3),
+        );
+        mix_hash[i / 4 * 4..i / 4 * 4 + 4].copy_from_slice(&h.to_le_bytes());
+    }
+    *blake3::hash(&mix_hash).as_bytes()
+}
+
 impl ExtGpuMiner {
     /// Create a new GPU miner, initializing OpenCL on the first available
     /// GPU device.
@@ -2156,6 +2408,124 @@ impl ExtGpuMiner {
     /// Returns the number of items in the currently uploaded FishHash DAG, if any.
     pub fn fishhash_dag_size(&self) -> Option<u32> {
         self.fishhash_dag.as_ref().map(|d| d.size_items)
+    }
+
+    /// Build a slice of the FishHash DAG on the GPU via the `build` kernel.
+    ///
+    /// Generates `node_count` consecutive 64-byte DAG nodes starting at
+    /// `node_start` (a dataset item covers nodes `2*i`, `2*i+1`; the full DAG
+    /// is `2 * FISHHASH_DATASET_ITEMS` nodes ≈ 4.6 GB). Returns the generated
+    /// bytes so callers can verify against [`fishhash_dataset_item`].
+    fn fishhash_build_dag_into(
+        pro_que: &ocl::ProQue,
+        dag_buf: &Buffer<u8>,
+        cache_buf: &Buffer<u8>,
+        node_start: u32,
+        node_count: u32,
+    ) -> Result<()> {
+        let kernel = Kernel::builder()
+            .queue(pro_que.queue().clone())
+            .program(pro_que.program())
+            .name("build")
+            .arg(dag_buf)
+            .arg(cache_buf)
+            .arg(FISHHASH_DATASET_ITEMS)
+            .arg(FISHHASH_LIGHT_CACHE_ITEMS)
+            .arg(node_start)
+            .build()
+            .map_err(|e| anyhow!("fishhash build kernel: {e}"))?;
+
+        let gws = ((node_count as usize + 127) / 128) * 128;
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(gws)
+                .local_work_size(128)
+                .enq()
+                .map_err(|e| anyhow!("fishhash build enqueue: {e}"))?;
+        }
+        pro_que
+            .queue()
+            .finish()
+            .map_err(|e| anyhow!("fishhash build finish: {e}"))?;
+        Ok(())
+    }
+
+    /// Build a slice of the FishHash DAG on the GPU and read it back.
+    /// Used by KAT to verify the `build` kernel against
+    /// [`fishhash_dataset_item`] without allocating the full 4.6 GB DAG.
+    pub fn fishhash_build_dag_slice(
+        &mut self,
+        node_start: u32,
+        node_count: u32,
+    ) -> Result<Vec<u8>> {
+        let pro_que = self.ensure_proque("fishhash_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let cache = build_fishhash_light_cache();
+        let cache_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(cache.len())
+            .copy_host_slice(&cache)
+            .build()?;
+        let dag_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(node_count as usize * 64)
+            .fill_val(0u8)
+            .build()?;
+
+        Self::fishhash_build_dag_into(pro_que, &dag_buf, &cache_buf, node_start, node_count)?;
+
+        let mut out = vec![0u8; node_count as usize * 64];
+        dag_buf.read(&mut out).enq()?;
+        Ok(out)
+    }
+
+    /// Generate the full FishHash DAG on the GPU (~4.6 GB) and install it for
+    /// `fishhash`/`karlsenhash` mining. Dispatches the `build` kernel in
+    /// chunks; fails cleanly when VRAM is insufficient.
+    pub fn generate_fishhash_dag_on_gpu(&mut self) -> Result<()> {
+        if self.fishhash_dag.is_some() {
+            return Ok(());
+        }
+        let pro_que = self.ensure_proque("fishhash_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let cache = build_fishhash_light_cache();
+        let cache_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(cache.len())
+            .copy_host_slice(&cache)
+            .build()?;
+
+        let total_nodes: u64 = FISHHASH_DATASET_ITEMS as u64 * 2;
+        let dag_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len((total_nodes * 64) as usize)
+            .build()
+            .map_err(|e| {
+                anyhow!(
+                    "FishHash DAG alloc failed ({:.1} GB): {e}",
+                    total_nodes as f64 * 64.0 / 1e9
+                )
+            })?;
+
+        crate::ext_info!("auxpow_gpu_fishhash generating DAG (4.6 GB)…");
+        let t0 = Instant::now();
+        const CHUNK: u32 = 8 * 1024 * 1024; // 8M nodes per dispatch
+        let mut start = 0u32;
+        while (start as u64) < total_nodes {
+            let count = (total_nodes - start as u64).min(CHUNK as u64) as u32;
+            Self::fishhash_build_dag_into(pro_que, &dag_buf, &cache_buf, start, count)?;
+            start = start.wrapping_add(count);
+        }
+        crate::ext_info!("auxpow_gpu_fishhash DAG ready in {:.1?}", t0.elapsed());
+
+        self.fishhash_dag = Some(FishhashDag {
+            buf: dag_buf,
+            size_items: FISHHASH_DATASET_ITEMS,
+        });
+        Ok(())
     }
 
     /// Upload the Verthash data file (verthash.dat) to the GPU.

@@ -126,8 +126,8 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | nexapow (NEXA) | ✅ compile | ⏳ neprakticky pomalé | ❌ authorize (wallet) | blocked | secp256k1 Schnorr per-nonce; 128 nonce > 10min → potřeba timeout+microbench |
 | octopus (CFX) | ✅ | ⚠️ RUN | ❌ TCP connect (port) | pending | **dispatch + DAG wiring** (sdílí ethash DAG) |
 | verthash (VTC) | ✅ | ⚠️ **RUN** | ✅ OK (zpool) | pending | verthash.dat stažen (1.28GB); early-dispatch fix; CPU ref chybí |
-| fishhash (IRON) | ✅ kernel | — | ❌ authorize (wallet) | blocked | FishHash DAG gen absent (4.6GB, generátor k portu) |
-| karlsenhash (KLS) | ✅ kernel | — | ❌ authorize (wallet) | blocked | DAG gen absent |
+| fishhash (IRON) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | **DAG gen na GPU** (build kernel ≡ CPU ref, 256 items) + mine≡CPU na reduced DAG; full DAG 4.6GB = VRAM blocker |
+| karlsenhash (KLS) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | stejný DAG + xor-index mix + blake3(mix) finále; mine≡CPU na reduced DAG |
 | beamhash (BEAM) | ✅ solver | ❌ VRAM | ⏱️ beam.2miners timeout | blocked | solver tabulky 2×2.28GB=4.56GB; **pre_pow fix hotový**; potřeba volná karta |
 | randomx (XMR) | CPU only | n/a | ⚠️ authorized, no job | — | cryptonote login OK; stub GPU |
 | quai (QUAI) | kawpow path | — | ❌ TCP connect | blocked | port mrtvý |
@@ -161,7 +161,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 ### Checklist — co máme / co ne (2026-10-07)
 
 **✅ Consensus-ověřené GPU kernely (KAT PASS bit-exact):**
-kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶)
+kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref)
 
 **✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
 qhash, ghostrider, neoscrypt, eaglesong, octopus, verthash, ethash+kawpow (mix_hash), progpow, **equihash 200,9** (Wagner kompletní, řešení nalezeno)
@@ -176,7 +176,7 @@ qhash, ghostrider, neoscrypt, eaglesong, octopus, verthash, ethash+kawpow (mix_h
 - zelhash — potřeba ~6.5GB VRAM (busy karta); samostatný run nutný
 - equihashzero (192,7) — 2×2GB tabulky > volná VRAM
 - beamhash — 2×2.28GB solver tabulky; pre_pow fix hotový
-- fishhash/karlsenhash — FishHash DAG generátor absent (4.6GB DAG)
+- fishhash/karlsenhash **full DAG 4.6GB** — generátor hotový (`generate_fishhash_dag_on_gpu`, chunked dispatch), VRAM blocker na busy kartě
 - Stratum authorize = nevalidní test wallet (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB); mrtvé endpointy: CLORE/FLUX/NEOX/QUAI/CFX/ZEC
 
 **Opraveno v tomto sweepu (tohle + předchozí commity):**
@@ -187,8 +187,9 @@ qhash, ghostrider, neoscrypt, eaglesong, octopus, verthash, ethash+kawpow (mix_h
 - equihash: args deklarované při buildu + EQ_WG_SIZE=32 (84KB→43KB local pod NVIDIA limit) + K=9 rounds 6-8 + sols_buf dynamicky + blake (200,9) + **NR_SLOTS host fix 4→8** (OOB write = round0 context crash) + k_rounds loop bound (1..=K-2)
 - octopus: ethash DAG wiring v mine()
 - **autolykos consensus rewrite**: `autolykos_gen_table` (streaming b2b256, 65 blocks/entry) + `autolykos_mine` (f31 seed, sliding-window genIndexes, 31B bigint sum, height-N calc); miner csrc copy synced (měl špatný rotate-scheme genIndexes ≠ Scala sliding-window)
-- KAT: autolykos Rust ref + native cross-check @2²⁶, kawpow DAG wiring, ZION_KAT_REPEATS/NONCE env
+- **fishhash/karlsenhash DAG gen**: `build_fishhash_light_cache` (fixed seed `blake3("FishHash")`, 1.18M×64B keccak-512 + 3 randmemhash rundy), GPU `build` kernel chunked dispatch (`fishhash_build_dag_slice`/`generate_fishhash_dag_on_gpu`), CPU refs `fishhash_dataset_item`/`fishhash_hash_ref`/`karlsenhash_hash_ref`; nonce výstup v obou kernelech fixnut (vracel byte-reversed)
+- KAT: autolykos Rust ref + native cross-check @2²⁶, kawpow DAG wiring, ZION_KAT_REPEATS/NONCE env, fishhash/karlsenhash reduced-DAG E2E (DAG-slice≡CPU + mine≡CPU)
 
-**Zbývá:** fishhash DAG gen (4.6GB), nexapow timeout/microbench, VRAM-blocked algos potřebují volnou kartu, live share-level E2E pro RUN algos s validními wallets.
+**Zbývá:** full fishhash DAG 4.6GB na volné kartě, nexapow timeout/microbench, VRAM-blocked algos (zelhash/equihashzero/beamhash) potřebují volnou kartu, live share-level E2E pro RUN algos s validními wallets.
 
 Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_pool_semantics`, `kheavyhash_matches_native`, KAT GPU≡CPU — vše PASS.

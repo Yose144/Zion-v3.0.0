@@ -388,6 +388,7 @@ __kernel void karlsenhash_mine (
     const uint gid = get_global_id(0);
     
     ulong nonce = startNonce + gid;	
+    const ulong raw_nonce = nonce;
     // We need to flip the endianess of the nonce to be sure the extra nonce is in right position
     nonce = as_ulong(as_uchar8(nonce).s76543210);	
 
@@ -596,7 +597,7 @@ __kernel void karlsenhash_mine (
     if (meets) {
         uint old = atomic_xchg(found_flag, 1);
         if (old == 0) {
-            output_nonce[0] = nonce;
+            output_nonce[0] = raw_nonce;
             for (int i = 0; i < 32; i++)
                 output_hash[i] = hash_out[i];
         }
