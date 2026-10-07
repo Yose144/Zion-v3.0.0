@@ -1117,6 +1117,272 @@ impl ExtGpuMiner {
         Ok(hash.try_into().expect("64 bytes from GPU"))
     }
 
+    /// NexaPow bisect: run the `schnorr_sign` kernel entry on one
+    /// (priv, msg, aux) triple. `priv_be` is the 32-byte big-endian secret;
+    /// the kernel's Scalar layout is 4×u64 little-endian limbs.
+    /// Returns (sig_bytes[64], success_flag).
+    #[cfg(feature = "gpu-opencl")]
+    pub fn nexapow_schnorr_debug(
+        &mut self,
+        priv_be: &[u8; 32],
+        msg: &[u8; 32],
+        aux: &[u8; 32],
+    ) -> Result<([u8; 64], u32)> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("nexapow_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        // Scalar: limbs[0] = least-significant u64, limbs built from the BE
+        // input in 8-byte groups (limbs[i] = BE u64 of bytes[ (3-i)*8 .. ]).
+        let mut priv_limbs = [0u64; 4];
+        for i in 0..4 {
+            let base = (3 - i) * 8;
+            priv_limbs[i] =
+                u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
+        }
+
+        let msgs_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&msg[..])
+            .build()?;
+        let privs_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(4)
+            .copy_host_slice(&priv_limbs[..])
+            .build()?;
+        let aux_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&aux[..])
+            .build()?;
+        let sigs_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(64).build()?;
+        let flags_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("schnorr_sign")
+            .arg(&msgs_buf)
+            .arg(&privs_buf)
+            .arg(&aux_buf)
+            .arg(&sigs_buf)
+            .arg(&flags_buf)
+            .arg(1u32)
+            .build()
+            .map_err(|e| anyhow!("schnorr_sign kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut sig = vec![0u8; 64];
+        sigs_buf.read(&mut sig).enq()?;
+        let mut flag = vec![0u32; 1];
+        flags_buf.read(&mut flag).enq()?;
+        Ok((sig.try_into().expect("64 bytes"), flag[0]))
+    }
+
+    /// NexaPow bisect #2: `schnorr_verify` on a (pubkey_x, msg, sig) triple.
+    /// `sig` = 64B wire format (r bytes || s scalar as 4×u64 LE limbs).
+    /// Returns the kernel's validity flag.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn nexapow_verify_debug(
+        &mut self,
+        pubkey_x: &[u8; 32],
+        msg: &[u8; 32],
+        sig_wire: &[u8; 64],
+    ) -> Result<u32> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("nexapow_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        // sig_wire s half is big-endian — convert to Scalar limbs (LE).
+        let mut sig_dev = [0u8; 64];
+        sig_dev[..32].copy_from_slice(&sig_wire[..32]);
+        for i in 0..4 {
+            let base = (3 - i) * 8;
+            let limb = u64::from_be_bytes(
+                sig_wire[32 + base..32 + base + 8].try_into().unwrap(),
+            );
+            sig_dev[32 + i * 8..32 + i * 8 + 8]
+                .copy_from_slice(&limb.to_le_bytes());
+        }
+
+        let pk_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&pubkey_x[..])
+            .build()?;
+        let msg_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&msg[..])
+            .build()?;
+        let sig_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(64)
+            .copy_host_slice(&sig_dev[..])
+            .build()?;
+        let res_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("schnorr_verify")
+            .arg(&pk_buf)
+            .arg(&msg_buf)
+            .arg(&sig_buf)
+            .arg(&res_buf)
+            .arg(1u32)
+            .build()
+            .map_err(|e| anyhow!("schnorr_verify kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut res = vec![0u32; 1];
+        res_buf.read(&mut res).enq()?;
+        Ok(res[0])
+    }
+
+    /// NexaPow bisect #3: `generator_mul_windowed` — priv·G returned as a
+    /// JacobianPoint (128B: x,y,z FieldElement (4×u64 LE limbs each) +
+    /// infinity + pad). Host normalizes z.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn nexapow_gmul_debug(&mut self, priv_be: &[u8; 32]) -> Result<[u64; 16]> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("nexapow_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let mut priv_limbs = [0u64; 4];
+        for i in 0..4 {
+            let base = (3 - i) * 8;
+            priv_limbs[i] =
+                u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
+        }
+
+        let privs_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(4)
+            .copy_host_slice(&priv_limbs[..])
+            .build()?;
+        // JacobianPoint = x(32) + y(32) + z(32) + infinity(4) + pad(28) = 128B
+        let res_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(128).build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("generator_mul_windowed")
+            .arg(&privs_buf)
+            .arg(&res_buf)
+            .arg(1u32)
+            .build()
+            .map_err(|e| anyhow!("generator_mul_windowed kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut raw = vec![0u8; 128];
+        res_buf.read(&mut raw).enq()?;
+        let mut limbs = [0u64; 16];
+        for i in 0..16 {
+            limbs[i] = u64::from_le_bytes(raw[i * 8..i * 8 + 8].try_into().unwrap());
+        }
+        Ok(limbs)
+    }
+
+    /// NexaPow bisect #4: `ecdsa_sign` — exercises `rfc6979_nonce_impl` +
+    /// `ct_generator_mul_impl` + scalar mod-n ops on the same CT path the
+    /// Schnorr signer uses. Returns (flag, sig64) where sig64 = r||s, each a
+    /// Scalar (4×u64 LE limbs).
+    #[cfg(feature = "gpu-opencl")]
+    pub fn nexapow_ecdsa_debug(
+        &mut self,
+        priv_be: &[u8; 32],
+        msg: &[u8; 32],
+    ) -> Result<(u32, [u8; 64])> {
+        use ocl::{Buffer, Kernel};
+
+        let pro_que = self.ensure_proque("nexapow_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let mut priv_limbs = [0u64; 4];
+        for i in 0..4 {
+            let base = (3 - i) * 8;
+            priv_limbs[i] =
+                u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
+        }
+
+        let msgs_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&msg[..])
+            .build()?;
+        let privs_buf: Buffer<u64> = Buffer::builder()
+            .queue(q.clone())
+            .len(4)
+            .copy_host_slice(&priv_limbs[..])
+            .build()?;
+        let sigs_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(64).build()?;
+        let flags_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("ecdsa_sign")
+            .arg(&msgs_buf)
+            .arg(&privs_buf)
+            .arg(&sigs_buf)
+            .arg(&flags_buf)
+            .arg(1u32)
+            .build()
+            .map_err(|e| anyhow!("ecdsa_sign kernel build failed: {e}"))?;
+
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(1)
+                .local_work_size(1)
+                .enq()
+                .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
+        }
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+
+        let mut sig = vec![0u8; 64];
+        sigs_buf.read(&mut sig).enq()?;
+        let mut flag = vec![0u32; 1];
+        flags_buf.read(&mut flag).enq()?;
+        Ok((flag[0], sig.try_into().expect("64 bytes")))
+    }
+
     /// Test cn_hash_fast on GPU. Returns 32-byte hash.
     #[cfg(feature = "gpu-opencl")]
     pub fn cn_test(&mut self, input: &[u8]) -> Result<[u8; 32]> {

@@ -78,6 +78,7 @@ ocl = { version = "0.19", optional = true }
 base64 = { workspace = true }
 blake2 = { workspace = true }
 blake2b_simd = "1"
+k256 = { workspace = true, features = ["schnorr"] }
 blake3 = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
