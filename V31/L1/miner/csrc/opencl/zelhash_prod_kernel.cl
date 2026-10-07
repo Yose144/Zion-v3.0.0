@@ -193,7 +193,8 @@ vb = rotate((vb ^ vc), (ulong)64 - 63);
 */
 __kernel __attribute__((reqd_work_group_size(64, 1, 1)))
 void kernel_round0(__global ulong *blake_state, __global char *ht,
-	__global uint *rowCounters, __global uint *debug)
+	__global uint *rowCounters, __global uint *debug,
+	ulong tail0, ulong tail1)
 {
     uint                tid = get_global_id(0);
     ulong               v[16];
@@ -203,9 +204,10 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
     uint                dropped = 0;
     while (input < input_end)
       {
-	// shift "i" to occupy the high 32 bits of the second ulong word in the
-	// message block
-	ulong word1 = (ulong)input << 32;
+	// The final blake2b block is header[128..140] || i: tail0 carries
+	// header[128..136], tail1 carries header[136..140] in its low 32 bits,
+	// and the block index i occupies the high 32 bits of the second word.
+	ulong word1 = tail1 | ((ulong)input << 32);
 	// init vector v
 	v[0] = blake_state[0];
 	v[1] = blake_state[1];
@@ -229,7 +231,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	v[14] ^= (ulong)-1;
 
 	// round 1
-	mix(v[0], v[4], v[8],  v[12], 0, word1);
+	mix(v[0], v[4], v[8],  v[12], tail0, word1);
 	mix(v[1], v[5], v[9],  v[13], 0, 0);
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
@@ -243,12 +245,12 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
 	mix(v[0], v[5], v[10], v[15], word1, 0);
-	mix(v[1], v[6], v[11], v[12], 0, 0);
+	mix(v[1], v[6], v[11], v[12], tail0, 0);
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
 	mix(v[3], v[4], v[9],  v[14], 0, 0);
 	// round 3
 	mix(v[0], v[4], v[8],  v[12], 0, 0);
-	mix(v[1], v[5], v[9],  v[13], 0, 0);
+	mix(v[1], v[5], v[9],  v[13], 0, tail0);
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
 	mix(v[0], v[5], v[10], v[15], 0, 0);
@@ -263,9 +265,9 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[0], v[5], v[10], v[15], 0, 0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
-	mix(v[3], v[4], v[9],  v[14], 0, 0);
+	mix(v[3], v[4], v[9],  v[14], 0, tail0);
 	// round 5
-	mix(v[0], v[4], v[8],  v[12], 0, 0);
+	mix(v[0], v[4], v[8],  v[12], 0, tail0);
 	mix(v[1], v[5], v[9],  v[13], 0, 0);
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
@@ -276,7 +278,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	// round 6
 	mix(v[0], v[4], v[8],  v[12], 0, 0);
 	mix(v[1], v[5], v[9],  v[13], 0, 0);
-	mix(v[2], v[6], v[10], v[14], 0, 0);
+	mix(v[2], v[6], v[10], v[14], tail0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
 	mix(v[0], v[5], v[10], v[15], 0, 0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
@@ -287,7 +289,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[1], v[5], v[9],  v[13], word1, 0);
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
-	mix(v[0], v[5], v[10], v[15], 0, 0);
+	mix(v[0], v[5], v[10], v[15], tail0, 0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
 	mix(v[3], v[4], v[9],  v[14], 0, 0);
@@ -296,7 +298,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[1], v[5], v[9],  v[13], 0, 0);
 	mix(v[2], v[6], v[10], v[14], 0, word1);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
-	mix(v[0], v[5], v[10], v[15], 0, 0);
+	mix(v[0], v[5], v[10], v[15], 0, tail0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
 	mix(v[3], v[4], v[9],  v[14], 0, 0);
@@ -304,7 +306,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[0], v[4], v[8],  v[12], 0, 0);
 	mix(v[1], v[5], v[9],  v[13], 0, 0);
 	mix(v[2], v[6], v[10], v[14], 0, 0);
-	mix(v[3], v[7], v[11], v[15], 0, 0);
+	mix(v[3], v[7], v[11], v[15], tail0, 0);
 	mix(v[0], v[5], v[10], v[15], 0, 0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
 	mix(v[2], v[7], v[8],  v[13], word1, 0);
@@ -317,9 +319,9 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[0], v[5], v[10], v[15], 0, 0);
 	mix(v[1], v[6], v[11], v[12], 0, 0);
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
-	mix(v[3], v[4], v[9],  v[14], 0, 0);
+	mix(v[3], v[4], v[9],  v[14], 0, tail0);
 	// round 11
-	mix(v[0], v[4], v[8],  v[12], 0, word1);
+	mix(v[0], v[4], v[8],  v[12], tail0, word1);
 	mix(v[1], v[5], v[9],  v[13], 0, 0);
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
@@ -333,7 +335,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[2], v[6], v[10], v[14], 0, 0);
 	mix(v[3], v[7], v[11], v[15], 0, 0);
 	mix(v[0], v[5], v[10], v[15], word1, 0);
-	mix(v[1], v[6], v[11], v[12], 0, 0);
+	mix(v[1], v[6], v[11], v[12], tail0, 0);
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
 	mix(v[3], v[4], v[9],  v[14], 0, 0);
 

@@ -4681,6 +4681,100 @@ typedef unsigned long ulong;
         out
     }
 
+    /// Reconstruct the canonical Wagner tree for a GPU-found Equihash
+    /// solution. `inputs` is the leaf index list in the order kernel_sols
+    /// emitted it — leaf pairs are adjacent, but higher-level subtree order
+    /// can be scrambled. We recompute each leaf's Xi on CPU (reference
+    /// Blake2b semantics), rebuild the merge tree bottom-up by matching the
+    /// unique collision partner at each level, and rewrite `inputs` into
+    /// consensus-canonical order. Returns false if the index set cannot form
+    /// a valid tree (invalid candidate).
+    fn reorder_equihash_solution(
+        inputs: &mut Vec<u32>,
+        header_buf: &[u8; 140],
+        n: u32,
+        k: u32,
+    ) -> bool {
+        let iph = (512 / n) as usize; // indices per hash output
+        let xi_len = (n / 8) as usize; // bytes per leaf Xi
+        let clen = (n / (k + 1)) as usize; // collision bits per round
+        let leaf_hash = |i: u32| -> Vec<u8> {
+            let mut personal = b"ZcashPoW".to_vec();
+            personal.extend_from_slice(&n.to_le_bytes());
+            personal.extend_from_slice(&k.to_le_bytes());
+            let mut st = blake2b_simd::Params::new()
+                .hash_length(50)
+                .personal(&personal)
+                .to_state();
+            st.update(header_buf);
+            st.update(&(i / iph as u32).to_le_bytes());
+            let h = st.finalize();
+            let start = (i as usize % iph) * xi_len;
+            h.as_bytes()[start..start + xi_len].to_vec()
+        };
+        // Compare bits [off, off+len) of two Xi arrays (MSB-first order).
+        let bits_equal = |a: &[u8], b: &[u8], off: usize, len: usize| -> bool {
+            (0..len).all(|b_i| {
+                let p = off + b_i;
+                ((a[p / 8] >> (7 - p % 8)) & 1) == ((b[p / 8] >> (7 - p % 8)) & 1)
+            })
+        };
+        let mut nodes: Vec<(Vec<u32>, Vec<u8>)> =
+            inputs.iter().map(|&i| (vec![i], leaf_hash(i))).collect();
+        for level in 0..k as usize {
+            let off = level * clen;
+            let mut used = vec![false; nodes.len()];
+            let mut next = Vec::with_capacity(nodes.len() / 2);
+            for i in 0..nodes.len() {
+                if used[i] {
+                    continue;
+                }
+                // Level 0: the kernel emits true slot-pairs adjacently — trust
+                // them (20-bit collisions aren't unique, global search would
+                // pair wrong). Deeper levels: partner = the unique colliding
+                // node anywhere in the set.
+                let j = if level == 0 {
+                    i + 1
+                } else {
+                    match (i + 1..nodes.len()).find(|&j| {
+                        !used[j] && bits_equal(&nodes[i].1, &nodes[j].1, off, clen)
+                    }) {
+                        Some(j) => j,
+                        None => return false,
+                    }
+                };
+                if j >= nodes.len()
+                    || !bits_equal(&nodes[i].1, &nodes[j].1, off, clen)
+                {
+                    return false;
+                }
+                used[i] = true;
+                used[j] = true;
+                // Canonical order: subtree with the smaller first index first.
+                let (a_i, b_i) = if nodes[i].0[0] <= nodes[j].0[0] {
+                    (i, j)
+                } else {
+                    (j, i)
+                };
+                let mut merged = nodes[a_i].0.clone();
+                merged.extend_from_slice(&nodes[b_i].0);
+                let x: Vec<u8> = nodes[a_i]
+                    .1
+                    .iter()
+                    .zip(&nodes[b_i].1)
+                    .map(|(x, y)| x ^ y)
+                    .collect();
+                next.push((merged, x));
+            }
+            nodes = next;
+        }
+        if nodes.len() != 1 {
+            return false;
+        }
+        inputs.clone_from(&nodes[0].0);
+        true
+    }
+
     /// Mine Equihash 192,7 (ZCL) using multi-kernel Wagner's algorithm.
     ///
     /// This is a fundamentally different flow from single-kernel algorithms:
@@ -4778,6 +4872,11 @@ typedef unsigned long ulong;
 
         // Compute Blake2b state with ZelProof personalization
         let blake_state = Self::zelhash_blake2b_state(&header_buf);
+        // kernel_round0 absorbs the final 12 header bytes: tail0 = hdr[128..136],
+        // tail1 = hdr[136..140] (the block index occupies the high 32 bits).
+        let eq_tail0 = u64::from_le_bytes(header_buf[128..136].try_into().unwrap());
+        let eq_tail1 =
+            u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
 
         // Allocate GPU buffers
         crate::ext_info!("auxpow_gpu_zelhash_prod allocating hash tables...");
@@ -4848,6 +4947,8 @@ typedef unsigned long ulong;
             .arg(&ht0)
             .arg(&rc0)
             .arg(&dbg_buf)
+            .arg(eq_tail0)
+            .arg(eq_tail1)
             .build()?;
 
         // For K=4: rounds 1-2 are collision-finding (no sols arg),
@@ -5182,6 +5283,11 @@ typedef unsigned long ulong;
         } else {
             Self::zcash_blake2b_state(&header_buf)
         };
+        // kernel_round0 absorbs the final 12 header bytes: tail0 = hdr[128..136],
+        // tail1 = hdr[136..140] (the block index occupies the high 32 bits).
+        let eq_tail0 = u64::from_le_bytes(header_buf[128..136].try_into().unwrap());
+        let eq_tail1 =
+            u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
 
         // Allocate GPU buffers
         crate::ext_info!("auxpow_gpu_equihash allocating hash tables...");
@@ -5250,6 +5356,8 @@ typedef unsigned long ulong;
             .arg(&ht0)
             .arg(&rc0)
             .arg(&dbg_buf)
+            .arg(eq_tail0)
+            .arg(eq_tail1)
             .build()?;
 
         // For K=7, rounds 1-5 are collision-finding (no sols arg),
@@ -5461,8 +5569,8 @@ typedef unsigned long ulong;
 
         crate::ext_info!("auxpow_gpu_equihash {nr_sols} potential solutions found");
 
-        // valid[] array starts at offset 8, MAX_SOLS=10 bytes
-        // values[] array starts at offset 12 (after padding), each solution is 128 u32s = 512 bytes
+        // sols_t layout: nr(4) + likely_invalids(4) + valid[10](10) + pad(2) + values[10][n]
+        // valid[] starts at offset 8; values[] is u32-aligned at offset 20
         let nr_sols_capped = nr_sols.min(MAX_SOLS);
         for sol_i in 0..nr_sols_capped {
             let valid = sols_data[8 + sol_i];
@@ -5472,7 +5580,7 @@ typedef unsigned long ulong;
 
             // Read 2^k u32 values for this solution
             let n_inputs = 1usize << param_k;
-            let values_offset = 12 + sol_i * n_inputs * 4;
+            let values_offset = 20 + sol_i * n_inputs * 4;
             let mut inputs = vec![0u32; n_inputs];
             for j in 0..n_inputs {
                 let off = values_offset + j * 4;
@@ -5487,6 +5595,35 @@ typedef unsigned long ulong;
                 ]);
             }
 
+            // Filter Wagner candidates with duplicate leaf indices — they are
+            // invalid per Equihash consensus (reference impls reject them).
+            {
+                let mut seen = std::collections::HashSet::with_capacity(inputs.len());
+                if !inputs.iter().all(|i| seen.insert(*i)) {
+                    crate::ext_info!(
+                        "auxpow_gpu_equihash sol_{sol_i} has duplicate indices, skipping"
+                    );
+                    continue;
+                }
+            }
+
+            // Reconstruct the canonical Wagner tree: the kernel emits leaf
+            // indices with scrambled subtree order, so recompute leaf Xis and
+            // rebuild the merge tree deterministically. n = prefix * (k+1)
+            // (192,7 → 24*8, 200,9 → 20*10).
+            let param_n = prefix * (param_k + 1);
+            if !Self::reorder_equihash_solution(
+                &mut inputs,
+                &header_buf,
+                param_n,
+                param_k,
+            ) {
+                crate::ext_info!(
+                    "auxpow_gpu_equihash sol_{sol_i} tree reconstruction failed, skipping"
+                );
+                continue;
+            }
+
             // Encode solution
             let encoded_sol = Self::encode_equihash_solution(&inputs, prefix, param_k);
             if encoded_sol.len() != zcash_sol_len {
@@ -5497,11 +5634,20 @@ typedef unsigned long ulong;
                 continue;
             }
 
-            // Compute double-SHA256(header + varint + encoded_sol)
-            // Varint for 400 bytes: 0xfd 0x90 0x01 (little-endian u16)
+            // Compute double-SHA256(header + varint + encoded_sol).
+            // CompactSize varint for the solution length (400 for 192,7,
+            // 1344 for 200,9) — derive it from zcash_sol_len, not hardcoded.
             let mut verify_buf = Vec::with_capacity(ZCASH_BLOCK_HEADER_LEN + 3 + zcash_sol_len);
             verify_buf.extend_from_slice(&header_buf);
-            verify_buf.extend_from_slice(&[0xfd, 0x90, 0x01]); // varint 400
+            if zcash_sol_len < 0xfd {
+                verify_buf.push(zcash_sol_len as u8);
+            } else if zcash_sol_len <= 0xffff {
+                verify_buf.push(0xfd);
+                verify_buf.extend_from_slice(&(zcash_sol_len as u16).to_le_bytes());
+            } else {
+                verify_buf.push(0xfe);
+                verify_buf.extend_from_slice(&(zcash_sol_len as u32).to_le_bytes());
+            }
             verify_buf.extend_from_slice(&encoded_sol);
 
             use sha2::{Digest, Sha256};

@@ -7,6 +7,146 @@
 //!   cargo run --release -p zion-miner --features gpu-opencl --bin auxpow_kat [ALGO ...]
 //!   env: ZION_KAT_BATCH (default 4096), ZION_OCL_PLATFORM_IDX/DEVICE_IDX
 
+/// Diagnose an invalid Equihash 200,9 solution: decode the 21-bit index
+/// stream, compute leaf Xi hashes with reference Blake2b semantics, and
+/// report which pair levels actually collide on 20 bits.
+#[cfg(feature = "gpu-opencl")]
+fn equihash_debug_sol(hdr140: &[u8; 140], sol: &[u8], err: &str) {
+    // Decode minimal-encoded indices: 21 bits each, MSB-first bit order.
+    let n_idx = 512usize;
+    let bits = 21usize;
+    let mut indices = Vec::with_capacity(n_idx);
+    for k in 0..n_idx {
+        let bit_pos = k * bits;
+        let mut v = 0u32;
+        for b in 0..bits {
+            let p = bit_pos + b;
+            let bit = (sol[p / 8] >> (7 - p % 8)) & 1;
+            v = (v << 1) | bit as u32;
+        }
+        indices.push(v);
+    }
+    // Leaf hash: blake2b(state(hdr140) ‖ (i/2)LE) → 50B → 25B slice i%2.
+    let leaf = |i: u32| -> [u8; 25] {
+        let mut params = blake2b_simd::Params::new();
+        params.hash_length(50);
+        let mut personal = b"ZcashPoW".to_vec();
+        personal.extend_from_slice(&200u32.to_le_bytes());
+        personal.extend_from_slice(&9u32.to_le_bytes());
+        params.personal(&personal);
+        let mut st = params.to_state();
+        st.update(&hdr140[..]);
+        st.update(&(i / 2).to_le_bytes());
+        let h = st.finalize();
+        let start = (i % 2) as usize * 25;
+        let mut out = [0u8; 25];
+        out.copy_from_slice(&h.as_bytes()[start..start + 25]);
+        out
+    };
+    let n_bad = (0..n_idx / 2)
+        .filter(|p| {
+            let a = leaf(indices[p * 2]);
+            let b = leaf(indices[p * 2 + 1]);
+            // 20-bit collision: XOR of first 2 bytes zero + top 4 bits of third.
+            !(a[0] == b[0] && a[1] == b[1] && (a[2] ^ b[2]) & 0xf0 == 0)
+        })
+        .count();
+    // Walk the Wagner tree level by level on raw 25-byte Xi hashes.
+    // Level l consumes the next 20 bits: byte offset = l*2.5 bytes.
+    let mut nodes: Vec<[u8; 25]> = indices.iter().map(|&i| leaf(i)).collect();
+    let mut level_report = String::new();
+    for lvl in 0..9usize {
+        // XOR window for this level: bits [lvl*20, lvl*20+20)
+        let byte = lvl * 5 / 2; // 20 bits = 2.5 bytes
+        let odd = (lvl * 20) % 8 != 0;
+        let collide = |a: &[u8; 25], b: &[u8; 25]| -> bool {
+            if !odd {
+                a[byte] == b[byte]
+                    && a[byte + 1] == b[byte + 1]
+                    && (a[byte + 2] ^ b[byte + 2]) & 0xf0 == 0
+            } else {
+                (a[byte] ^ b[byte]) & 0x0f == 0
+                    && a[byte + 1] == b[byte + 1]
+                    && a[byte + 2] == b[byte + 2]
+            }
+        };
+        let mut next = Vec::with_capacity(nodes.len() / 2);
+        let mut bad = 0usize;
+        for pair in nodes.chunks(2) {
+            let (a, b) = (&pair[0], &pair[1]);
+            if !collide(a, b) {
+                bad += 1;
+            }
+            let mut x = [0u8; 25];
+            for i in 0..25 {
+                x[i] = a[i] ^ b[i];
+            }
+            next.push(x);
+        }
+        level_report.push_str(&format!(" L{}:bad={}/{}", lvl, bad, nodes.len() / 2));
+        nodes = next;
+        if bad > nodes.len() / 2 {
+            break;
+        }
+    }
+    // If level-1 fails, probe alternate quad groupings to learn the
+    // extraction order the GPU emitted.
+    let l1 = |a: &[u8; 25], b: &[u8; 25]| -> bool {
+        // bits 20..40: byte2 low nibble, bytes 3,4
+        (a[2] ^ b[2]) & 0x0f == 0 && a[3] == b[3] && a[4] == b[4]
+    };
+    let xor25 = |a: &[u8; 25], b: &[u8; 25]| -> [u8; 25] {
+        let mut x = [0u8; 25];
+        for i in 0..25 {
+            x[i] = a[i] ^ b[i];
+        }
+        x
+    };
+    let leaves: Vec<[u8; 25]> = indices.iter().map(|&i| leaf(i)).collect();
+    let mut probe = String::new();
+    for q in 0..3usize {
+        let n = &leaves[q * 4..q * 4 + 4];
+        let cases = [
+            ("01|23", xor25(&n[0], &n[1]), xor25(&n[2], &n[3])),
+            ("02|13", xor25(&n[0], &n[2]), xor25(&n[1], &n[3])),
+            ("03|12", xor25(&n[0], &n[3]), xor25(&n[1], &n[2])),
+        ];
+        for (name, a, b) in cases {
+            probe.push_str(&format!(" q{}:{}={}", q, name, l1(&a, &b) as u8));
+        }
+    }
+    // Level-1 nodes: XOR each adjacent leaf pair, then check how many of the
+    // 256 resulting nodes have a level-1-colliding partner anywhere in the set.
+    let l1_nodes: Vec<[u8; 25]> = leaves
+        .chunks(2)
+        .map(|p| xor25(&p[0], &p[1]))
+        .collect();
+    let mut with_partner = 0usize;
+    for (i, a) in l1_nodes.iter().enumerate() {
+        if l1_nodes
+            .iter()
+            .enumerate()
+            .any(|(j, b)| j != i && l1(a, b))
+        {
+            with_partner += 1;
+        }
+    }
+    probe.push_str(&format!(" l1_partnered={with_partner}/256"));
+    eprintln!(
+        "  equihash debug ({err}): pair0 idx=({}, {}) leaf_bad={n_bad}/256; tree:{level_report} quad_probe:{probe}",
+        indices[0], indices[1]
+    );
+    // CPU solver on the same header+nonce for ground truth.
+    if std::env::var("ZION_KAT_CPU_SOLVE").is_ok() {
+        let mut once = Some(<[u8; 32]>::try_from(&hdr140[108..140]).unwrap());
+        let sols = equihash::tromp::solve_200_9(&hdr140[..108], || once.take());
+        eprintln!("  equihash cpu-solver: {} solution(s)", sols.len());
+        for s in sols.iter().take(2) {
+            eprintln!("    cpu sol first8={}", hex::encode(&s[..8]));
+        }
+    }
+}
+
 fn main() {
     #[cfg(not(feature = "gpu-opencl"))]
     {
@@ -702,6 +842,186 @@ fn real_main() {
                     "DAG-slice≡CPU + mine≡CPU nonce={}",
                     share.nonce
                 ))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
+        // Equihash 200,9: verify the GPU Wagner solution with the consensus
+        // `equihash` crate (collision tree + ordering + ZcashPoW Blake2b
+        // personalization) and re-check the sha256d share hash.
+        if c.algo == "equihash" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                for rep in 0..repeats {
+                    let nonce = base_nonce.wrapping_add(rep as u64);
+                    if std::env::var("ZION_KAT_CPU_SOLVE").is_ok() {
+                        // Ground truth: does a valid solution exist for this nonce?
+                        let mut hdr = [0u8; 140];
+                        let copy = c.header.len().min(140);
+                        hdr[..copy].copy_from_slice(&c.header[..copy]);
+                        hdr[108..140].fill(0);
+                        hdr[108..116].copy_from_slice(&nonce.to_le_bytes());
+                        let mut once =
+                            Some(<[u8; 32]>::try_from(&hdr[108..140]).unwrap());
+                        let sols = equihash::tromp::solve_200_9(&hdr[..108], || once.take());
+                        eprintln!("  cpu-solve nonce={nonce}: {} sol(s)", sols.len());
+                        if let Ok(path) = std::env::var("ZION_EQ_DUMP_IDX") {
+                            for (si, s) in sols.iter().enumerate() {
+                                let mut idx = Vec::with_capacity(512);
+                                for k in 0..512usize {
+                                    let mut v = 0u32;
+                                    for b in 0..21 {
+                                        let p = k * 21 + b;
+                                        v = (v << 1)
+                                            | ((s[p / 8] >> (7 - p % 8)) & 1) as u32;
+                                    }
+                                    idx.push(v);
+                                }
+                                let bytes: Vec<u8> =
+                                    idx.iter().flat_map(|i| i.to_le_bytes()).collect();
+                                let _ = std::fs::write(
+                                    format!("{path}.cpu.{nonce}.{si}.bin"),
+                                    &bytes,
+                                );
+                            }
+                        }
+                        // Sanity: run my leaf/XOR tree check on a REAL solution.
+                        if let Some(s) = sols.first() {
+                            let mut idx = Vec::with_capacity(512);
+                            for k in 0..512usize {
+                                let mut v = 0u32;
+                                for b in 0..21 {
+                                    let p = k * 21 + b;
+                                    v = (v << 1) | ((s[p / 8] >> (7 - p % 8)) & 1) as u32;
+                                }
+                                idx.push(v);
+                            }
+                            let leaf = |i: u32| -> [u8; 25] {
+                                let mut personal = b"ZcashPoW".to_vec();
+                                personal.extend_from_slice(&200u32.to_le_bytes());
+                                personal.extend_from_slice(&9u32.to_le_bytes());
+                                let mut st = blake2b_simd::Params::new()
+                                    .hash_length(50)
+                                    .personal(&personal)
+                                    .to_state();
+                                st.update(&hdr[..]);
+                                st.update(&(i / 2).to_le_bytes());
+                                let h = st.finalize();
+                                let start = (i % 2) as usize * 25;
+                                let mut o = [0u8; 25];
+                                o.copy_from_slice(&h.as_bytes()[start..start + 25]);
+                                o
+                            };
+                            let mut nodes: Vec<[u8; 25]> =
+                                idx.iter().map(|&i| leaf(i)).collect();
+                            let mut rep = String::new();
+                            for lvl in 0..9usize {
+                                let byte = lvl * 5 / 2;
+                                let odd = (lvl * 20) % 8 != 0;
+                                let col = |a: &[u8; 25], b: &[u8; 25]| {
+                                    if !odd {
+                                        a[byte] == b[byte]
+                                            && a[byte + 1] == b[byte + 1]
+                                            && (a[byte + 2] ^ b[byte + 2]) & 0xf0 == 0
+                                    } else {
+                                        (a[byte] ^ b[byte]) & 0x0f == 0
+                                            && a[byte + 1] == b[byte + 1]
+                                            && a[byte + 2] == b[byte + 2]
+                                    }
+                                };
+                                let mut bad = 0usize;
+                                let mut next = Vec::new();
+                                for p in nodes.chunks(2) {
+                                    if !col(&p[0], &p[1]) {
+                                        bad += 1;
+                                    }
+                                    let mut x = [0u8; 25];
+                                    for i in 0..25 {
+                                        x[i] = p[0][i] ^ p[1][i];
+                                    }
+                                    next.push(x);
+                                }
+                                rep.push_str(&format!(" L{lvl}:bad={bad}"));
+                                nodes = next;
+                            }
+                            eprintln!("  cpu-sol tree check:{rep}");
+                            if let Ok(path) = std::env::var("ZION_EQ_DUMP_IDX") {
+                                let bytes: Vec<u8> =
+                                    idx.iter().flat_map(|i| i.to_le_bytes()).collect();
+                                let _ = std::fs::write(
+                                    format!("{path}.cpu.{nonce}.bin"),
+                                    &bytes,
+                                );
+                            }
+                        }
+                    }
+                    let share = match miner
+                        .mine("equihash", &c.header, &c.extra, &target, nonce, batch)
+                    {
+                        Ok(Some(s)) => s,
+                        Ok(None) => continue,
+                        Err(e) => anyhow::bail!("mine err: {e}"),
+                    };
+                    // Reconstruct the 140-byte Zcash header the host used:
+                    // input prefix = [0..108], nonce field = [108..140] with
+                    // the share nonce in the first 8 bytes (LE), rest zero.
+                    let mut hdr = [0u8; 140];
+                    let copy = c.header.len().min(140);
+                    hdr[..copy].copy_from_slice(&c.header[..copy]);
+                    hdr[108..140].fill(0);
+                    hdr[108..116].copy_from_slice(&share.nonce.to_le_bytes());
+                    let sol = share
+                        .solution
+                        .as_deref()
+                        .ok_or_else(|| anyhow::anyhow!("share has no solution"))?;
+                    if let Err(e) =
+                        equihash::is_valid_solution(200, 9, &hdr[..108], &hdr[108..140], sol)
+                    {
+                        // Diagnose: decode the 21-bit index stream and check
+                        // whether adjacent leaves collide on 20 bits using the
+                        // reference Blake2b personalization.
+                        equihash_debug_sol(&hdr, sol, &e.to_string());
+                        if let Ok(path) = std::env::var("ZION_KAT_DUMP_SOL") {
+                            let mut d = hdr.to_vec();
+                            d.extend_from_slice(&share.nonce.to_le_bytes());
+                            d.extend_from_slice(sol);
+                            std::fs::write(&path, &d).ok();
+                        }
+                        anyhow::bail!("solution invalid: {e}");
+                    }
+                    // Re-verify sha256d(hdr ‖ varint(1344) ‖ sol) == share.hash
+                    use sha2::{Digest, Sha256};
+                    let mut buf = Vec::with_capacity(140 + 3 + sol.len());
+                    buf.extend_from_slice(&hdr);
+                    buf.extend_from_slice(&[0xfd, 0x40, 0x05]); // varint 1344
+                    buf.extend_from_slice(sol);
+                    let h1 = Sha256::digest(&buf);
+                    let h2: [u8; 32] = Sha256::digest(&h1).into();
+                    if h2 != share.hash {
+                        anyhow::bail!(
+                            "sha256d mismatch: gpu={} cpu={}",
+                            hex::encode(&share.hash[..8]),
+                            hex::encode(&h2[..8])
+                        );
+                    }
+                    return Ok::<_, anyhow::Error>(format!(
+                        "Wagner sol valid + sha256d≡ nonce={}",
+                        share.nonce
+                    ));
+                }
+                anyhow::bail!("no solution in {repeats} reps")
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
