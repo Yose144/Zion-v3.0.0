@@ -420,8 +420,8 @@ export default function ZahradaGenesisPage() {
               <img
                 src="/images/genesis-garden/hero.webp"
                 alt={cs ? 'Genesis Garden — koncept' : 'Genesis Garden — concept render'}
-                width={1616}
-                height={973}
+                width={1280}
+                height={720}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
