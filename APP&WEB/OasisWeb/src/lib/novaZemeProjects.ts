@@ -120,7 +120,7 @@ export const NOVA_ZEME_PROJECTS = [
     location: 'Ngari · Tibet',
     color: '#a5b4fc',
     status: 'Vision',
-    desc: 'Jedenáctý bod — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo; shoda čtyř tradic, kora ~52 km, prastarý oheň a scháziště mistrů Šambhaly. Uzel jako vztah.',
+    desc: 'Jedenáctý bod — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo; shoda čtyř tradic, kora ~52 km, Milarepa z Tisé, prastarý oheň a kruh přítomnosti, kde se odehrává celá Kvantová revoluce. Uzel jako vztah.',
     href: 'https://app.zionterranova.com/terranova/kailash',
     lat: 31.07,
     lon: 81.31,

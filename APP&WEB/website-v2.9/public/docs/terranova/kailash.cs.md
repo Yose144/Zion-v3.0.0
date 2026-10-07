@@ -1,7 +1,7 @@
 # Kailash — Ngari, Tibet
 
 > **L5 Free World · jedenáctý bod Terra Nova** · Stav: 🟣 Vize — uzel jako vztah, ne stavba
-> *„Hora, na kterou se nikdy nevyleze — a přesto k ní pořád chodí lidstvo. To je celý test."*
+> *„Uprostřed kruhu hoří oheň, který nespaluje dřevo, ale iluze."* — Kvantová revoluce
 
 ---
 
@@ -19,6 +19,14 @@ Každý uzel nese jednu iniciaci. Kailash nese **Očištění**:
 - **Kora (~52 km)** — poutní okruh kolem hory přes sedlo **Dolma La (5 630 m)**. Hinduisté a buddhisté jdou po směru, Bön proti směru — jediné místo, kde se tradice rozejdou jen ve směru chůze.
 - **Razítko credencialu** — *„hořím, ne vyhořel jsem"* — iniciace mezi dokončením (Ekam) a obratem domů (Boa Esperança): po satori se jde do pouště, než se poutník otáčí domů.
 
+### Prázdnota, která je plná
+
+Korpus projektu čte poušť Ngari paralelou, kterou nabízí sama tradice: **Nāgárjuna** napsal ve 2. století o śūnyatā — „prázdnotě, která je plná" — a kvantová fyzika o **vakuu, ve kterém fluktuuje všechno**. Není to fyzikální tvrzení, je to poetická mapa: krajina, která nenabízí nic, se stává místem, kde se objeví všechno. Přesně tak očisťuje poušť — odebíráním, ne přidáváním.
+
+### Milarepa z Tisé
+
+Tibetsky hora zní **Tisé** — a v jejích jeskyních meditoval před tisíci lety **Milarepa**, šedý yogi v kopřivovém plášti, zpěvák dohá, avatar č. 73 korpusu: člověk, který proměnil bídu v učitelku a těžkou karmu v píseň. Legenda vypráví, že horu „získal" jedině on — v závodě s bönským knězem Naro Bönchungem, na slunečním paprsku. Je to jediný „výstup", který tradice připouští — a je to legenda: i ten, kdo horu „pokořil", to udělal zpívaním, ne lezením.
+
 ## Čtyři tradice — jedna hora
 
 | Tradice | Co Kailash znamená |
@@ -34,7 +42,19 @@ Každý uzel nese jednu iniciaci. Kailash nese **Očištění**:
 
 V mýtické geografii sítě hoří uprostřed pouště Ngari **oheň, který nikdy nezhasl**: sedí u něj mistři všech linií Šambhaly — **od tesaře**, který v příbězích korpusu staví a vyřezává znaky do trámů, **až po Mahávatára Bábadžího**, himalájského mistra paramparā. Boa Esperança je scháziště trupů na vodě — Kailash je scháziště mistrů na suchu.
 
+### Kruh přítomnosti — dějiště Kvantové revoluce
+
+Ten samý oheň je rámcové dějiště celé knihy. *Kvantová revoluce* otevírá prologem **„Místo nad světem"**: nad Kailashem, v prostoru mezi hvězdami a tichým poznáním, existuje **prostý kruh přítomnosti — ne chrám, ne palác**. Scházejí se v něm „ti, kteří si vzpomněli dřív než ostatní — mistři, bódhisattvové, svatí; ne proto, že by byli lepší, ale proto, že nezapomněli": Ježíš s otevřenýma rukama, Buddha dýchající tiše, Krishna s flétnou, Radha a Maria, Rúmí, Lao-c', Mistr Eckhart, Rámakrišna, svatá Terezie — **každý jiným jazykem, všichni stejnou pravdou**. Uprostřed kruhu roste Strom života, kterému se říká ZION. Kailash je jediný bod sítě, kde se literární rámec celé knihy fyzicky odehrává — a zároveň jediný, kde se nic nestaví. **Uzel je kruh, ne budova.**
+
+### Jedenácté poleno
+
+Epilog knihy zavře kruh: „Nejsi na Kailásu — jsi doma, u svého ohně… Hora byla obraz. Mistři byli průvodci. Ale pravda byla vždy uvnitř." Deset polen v plamenu je deset kapitol — **a jedenácté jsi ty**: tvůj čas, tvá pozornost, tvá energie, tvá láska. Kailash je jedenáctý bod sítě a klade otázku epilogu: **kam své poleno položíš?** A když se dost srdcí rozhodne hořet, vzniká les světla — 144 000 ohňů.
+
 Šambhala zde není skryté království k nalezení — korpus ji čte striktně symbolicky (`NirvanaCloud/04`): **šambhalský válečník nemá nepřítele; má ostrý meč rozlišující moudrosti a zůstává přítomný, dokud se temnota sama nerozpustí nedostatkem paliva.**
+
+### Tři povahy ohně (Kvantová revoluce)
+
+Kruh tiskařů pravdy v *Kvantové revoluci* učí: **oheň má tři povahy — plamen, uhlí a popel.** Plamen vidíš v obrazech a snech. Uhlí drží teplo dlouho po setmění. Popel je to, z čeho se rodí půda — a kdo chce zapálit kvantový oheň, musí počítat i s ním. Kailash drží **uhlí**: kvantový oheň, který L6 Issobella zkoumá jako hypotézu (otevřenou otázku, ne slib), tu v příběhu sítě hoří jako krbová teplota custodiánů. *„Oheň, který neví, čím je, shoří. Oheň, který ví, čím je, hřeje dál, než dosedne ruka."* — **hořet, ne vyhořet.**
 
 ## Zdroj vody kontinentu
 
@@ -58,3 +78,16 @@ V okruhu Kailashu pramení **Indus, Sutlej, Brahmaputra a Karnali (→Ganga)** �
 ## Custodiánský rámec
 
 Kailash patří čtyřem živým tradicím a leží mezi dvěma národy. Uzel proto znamená **vztah, ne přítomnost**: žádná parcela, žádný znak na hřeben, žádná stavba. Geopolitika (TAR permity, Nepál/Lhasa koridor, sezónní okno květen–září) se zapisuje do uzlu, ne obchází. Vícero tradic = vícero podmínek — custodiáni rozhodují, co se sdílí a jak.
+
+## Kotva pravdy — co je fakt, co je mýtus
+
+Jako každá kapitola korpusu i tento uzel odděluje ověřitelné od příběhu sítě:
+
+| Obraz | Stav | Poznámka |
+|-------|------|----------|
+| Gang Rinpoche, shoda čtyř tradic, kora ~52 km, Manasarovar, prameny čtyř řek | **ŽIVÉ** | Geografie + živá náboženská tradice |
+| Milarepa v jeskyních Tisé; legenda závodu s Naro Bönchungem | **ŽIVÉ + MÝTUS** | Tradiční poutní příběh, ne historický záznam |
+| Kruh přítomnosti, prastarý oheň, scháziště mistrů, jedenácté poleno, Šambhala jako kraj | **MÝTUS** | Rámcové dějiště Kvantové revoluce — literární obraz, ne geologie |
+| Poušť jako Nāgárjunova prázdnota — „vakuum, které je plné" | **INTERPRETACE** | Poetická paralela, ne fyzikální tvrzení |
+| Kvantový oheň jako výzkumná osa L6 Issobella | **HYPOTÉZA** | Otevřená otázka, ne slib — viz Kvantová revoluce |
+| Uzel L5, fáze vztahu, razítko credencialu | **VIZE** | Záměr sítě — neexistuje žádná parcela ani harmonogram |
