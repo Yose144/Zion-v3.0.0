@@ -1160,7 +1160,7 @@ impl ExtGpuMiner {
         memory: u32,
         iter_div: u32,
         cn_aes_init: u32,
-    ) -> Result<([u8; 32], [u8; 200])> {
+    ) -> Result<([u8; 32], Vec<u8>)> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -1181,13 +1181,15 @@ impl ExtGpuMiner {
 
         let debug_state_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(200)
-            .copy_host_slice(&vec![0xAAu8; 200])
+            .len(664)
+            .copy_host_slice(&vec![0xAAu8; 664])
             .build()?;
 
         let scratchpad_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(2097152) // 2MB max
+            // 2MB + 16B tweak spillover (cn_hash_full writes tweak_tmp at
+            // scratchpad[memory..memory+16) for variant-1 algorithms)
+            .len(2097152 + 16)
             .build()?;
 
         let kernel = Kernel::builder()
@@ -1218,12 +1220,9 @@ impl ExtGpuMiner {
 
         let mut hash = vec![0u8; 32];
         output_hash_buf.read(&mut hash).enq()?;
-        let mut debug_state = vec![0u8; 200];
+        let mut debug_state = vec![0u8; 664];
         debug_state_buf.read(&mut debug_state).enq()?;
-        Ok((
-            hash.try_into().expect("32 bytes from GPU"),
-            debug_state.try_into().expect("200 bytes from GPU"),
-        ))
+        Ok((hash.try_into().expect("32 bytes from GPU"), debug_state))
     }
 
     /// Test extra hash (blake/groestl/jh/skein) on a 200-byte state. Returns 32-byte hash.
