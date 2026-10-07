@@ -906,7 +906,7 @@ impl StratumServer {
             height: job.height,
             extranonce1_hex: job.extranonce1_hex.clone(),
             protocol: "stratum".to_string(),
-            seed_hash_hex: String::new(),
+            seed_hash_hex: job.seed_hash_hex.clone(),
             timestamp: 0,
             ntime_hex: job.ntime.clone(),
         }
@@ -3169,6 +3169,7 @@ mod tests {
                 algorithm: coin.algorithm().to_string(),
                 extranonce1_hex: String::new(),
                 ntime: "00000000".to_string(),
+                seed_hash_hex: String::new(),
                 received_at: Some(Instant::now()),
             },
         );

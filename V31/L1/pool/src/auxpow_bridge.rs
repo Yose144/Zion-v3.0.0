@@ -16,6 +16,9 @@ pub struct JobPackage {
     pub algorithm: String,
     pub extranonce1_hex: String,
     pub ntime: String,
+    /// RandomX seed hash hex (XMR) — forwarded to miners so their RandomX
+    /// VM initializes with the correct epoch seed.
+    pub seed_hash_hex: String,
     /// Wall-clock time when the job was received from the upstream pool.
     /// Used to drop stale jobs before they are sent to miners.
     pub received_at: Option<Instant>,
@@ -341,6 +344,7 @@ mod tests {
             algorithm: "blake3".into(),
             extranonce1_hex: "00".into(),
             ntime: "00000000".into(),
+            seed_hash_hex: String::new(),
             received_at: None,
         };
         bridge.push_job(job.clone());
@@ -362,6 +366,7 @@ mod tests {
                 algorithm: "blake3".into(),
                 extranonce1_hex: String::new(),
                 ntime: String::new(),
+                seed_hash_hex: String::new(),
                 received_at: None,
             });
         }
@@ -382,6 +387,7 @@ mod tests {
             algorithm: "blake3".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            seed_hash_hex: String::new(),
             received_at: None,
         });
         bridge.push_job(JobPackage {
@@ -393,6 +399,7 @@ mod tests {
             algorithm: "blake3".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            seed_hash_hex: String::new(),
             received_at: None,
         });
         let popped = bridge.pop_job().unwrap();
@@ -424,6 +431,7 @@ mod tests {
             algorithm: "kheavyhash".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            seed_hash_hex: String::new(),
             received_at: None,
         });
         multi.insert(ExternalCoin::Kaspa, bridge);
@@ -445,6 +453,7 @@ mod tests {
             algorithm: "kawpow".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            seed_hash_hex: String::new(),
             received_at: None,
         });
         let job = bridge.get_job_by_id("findme").unwrap();
@@ -494,6 +503,7 @@ mod tests {
                     algorithm: "verushash".into(),
                     extranonce1_hex: String::new(),
                     ntime: "00000000".into(),
+                    seed_hash_hex: String::new(),
                     received_at: None,
                 },
             );

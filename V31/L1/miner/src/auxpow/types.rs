@@ -87,6 +87,9 @@ pub struct Job {
     pub ntime: String,
     /// Block height / block number from the external pool (for DAG/epoch derivation).
     pub height: u64,
+    /// RandomX seed hash (XMR stream 3) — forwarded from the upstream pool
+    /// via `ExternalStreamJob.seed_hash_hex`. `None` for non-RandomX coins.
+    pub seed_hash: Option<Vec<u8>>,
 }
 
 impl Default for Job {
@@ -101,6 +104,7 @@ impl Default for Job {
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
             height: 0,
+            seed_hash: None,
         }
     }
 }
