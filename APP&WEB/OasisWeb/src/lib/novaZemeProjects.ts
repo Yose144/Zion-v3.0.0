@@ -114,4 +114,15 @@ export const NOVA_ZEME_PROJECTS = [
     lat: -34.35,
     lon: 18.47,
   },
+  {
+    id: 'kailash',
+    name: 'Kailash',
+    location: 'Ngari · Tibet',
+    color: '#a5b4fc',
+    status: 'Vision',
+    desc: 'Jedenáctý bod — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo; shoda čtyř tradic, kora ~52 km, prastarý oheň a scháziště mistrů Šambhaly. Uzel jako vztah.',
+    href: 'https://app.zionterranova.com/terranova/kailash',
+    lat: 31.07,
+    lon: 81.31,
+  },
 ] as const;

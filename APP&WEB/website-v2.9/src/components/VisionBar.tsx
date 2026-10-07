@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun, Flame } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -92,6 +92,14 @@ const VISIONS = [
     desc: 'Mys dobré naděje — šev dvou oceánů, kde se bouře přejmenovává na naději; domov nejstarší lidské linie.',
     rc: '245, 158, 11', // amber — hope
     accent: 'text-amber-300',
+  },
+  {
+    href: '/terranova/kailash',
+    icon: Flame,
+    label: 'Kailash',
+    desc: 'Poušť očištění u nezlané hory — kora místo vrcholu, prastarý oheň a scháziště mistrů Šambhaly.',
+    rc: '165, 180, 252', // indigo ice — snow & fire
+    accent: 'text-indigo-300',
   },
 ];
 

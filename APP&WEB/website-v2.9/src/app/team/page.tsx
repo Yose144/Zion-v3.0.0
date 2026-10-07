@@ -258,6 +258,16 @@ const L5_LEADS = [
     href: '/terranova/boa-esperanca',
   },
   {
+    key: 'kailash',
+    name: 'Kailash',
+    element: { cs: 'Oheň · Očištění', en: 'Fire · Purification' },
+    location: { cs: 'Ngari, Tibet', en: 'Ngari, Tibet' },
+    icon: Flame,
+    accent: '165, 180, 252',
+    text: 'text-indigo-300',
+    href: '/terranova/kailash',
+  },
+  {
     key: 'issobella',
     name: 'ZION Issobella',
     element: { cs: 'Kosmos · Nirvana', en: 'Cosmos · Nirvana' },

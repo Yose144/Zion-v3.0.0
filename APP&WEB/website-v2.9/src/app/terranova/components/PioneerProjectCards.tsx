@@ -25,6 +25,7 @@ import {
   Users,
   Sailboat,
   Sunrise,
+  Flame,
   LucideIcon,
 } from 'lucide-react';
 
@@ -288,6 +289,29 @@ const PROJECTS: ProjectCardData[] = [
       { value: '~100k', labelCs: 'Let kořenů', labelEn: 'Years of roots' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'ZA', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/kailash',
+    title: 'Kailash',
+    location: 'Ngari · Tibet',
+    eyebrow: 'L5 · Purification',
+    statusCs: 'Vize',
+    statusEn: 'Vision',
+    descriptionCs:
+      'Jedenáctý bod L5 Free World — poušť očištění kolem jediné hory, na kterou se nikdy nevylezlo. Gang Rinpoche drží shodu čtyř tradic; u prastarého ohně sedí mistři všech linií Šambhaly — od tesaře až po Babajiho. Uzel jako vztah, ne stavba.',
+    descriptionEn:
+      'The eleventh point of L5 Free World — the desert of purification around the only mountain never climbed. Gang Rinpoche holds the agreement of four traditions; at the primordial fire sit the masters of all Shambhala lineages — from the Carpenter to Babaji. A node as a relationship, not a construction.',
+    features: [
+      { icon: Flame, labelCs: 'Prastarý oheň', labelEn: 'Primordial fire' },
+      { icon: Mountain, labelCs: 'Nikdy nezlaná', labelEn: 'Never climbed' },
+      { icon: Compass, labelCs: 'Kora ~52 km', labelEn: 'Kora ~52 km' },
+      { icon: Users, labelCs: 'Čtyři tradice', labelEn: 'Four traditions' },
+    ],
+    metrics: [
+      { value: '6 638 m', labelCs: 'Gang Rinpoche', labelEn: 'Gang Rinpoche' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'TAR', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];

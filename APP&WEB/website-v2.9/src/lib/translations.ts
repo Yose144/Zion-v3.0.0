@@ -67,6 +67,7 @@ const t = {
     terra_maria_del_camino: { cs: 'María del Camino', en: 'María del Camino' },
     terra_boa_esperanca: { cs: 'Boa Esperança', en: 'Boa Esperança' },
     terra_ekam: { cs: 'Ekam', en: 'Ekam' },
+    terra_kailash: { cs: 'Kailash', en: 'Kailash' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
