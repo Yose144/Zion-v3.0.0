@@ -89,10 +89,10 @@ From this position grows the **Caminho do Jardim** — a new detour, just as the
 
 | Leg | ~km | What happens |
 |---|---:|---|
-| **Fátima → Sabacheira** | ~20 | From the shrine across the plateau and olive groves into the Nabão valley (partly the Caminho de Fátima Nascente walked backwards). |
-| **Sabacheira — Albergue do Jardim** | stamp | A night in the garden, kitchen, work in the beds — and the **Garden stamp** in the credencial. The Earth initiation (hands in the soil) before the sea. |
-| **Sabacheira → Agroal** | ~5 | The greatest spring of the Nabão — a Blue-Flag river beach, cold clear water; the water threshold before the voyage. |
-| **Agroal → Tomar** | ~11 | Down the Nabão valley into the Templar city — the Convento de Cristo — and back onto the yellow arrows of the Caminho Central. |
+| **Fátima → Seiça** | ~15 | From the shrine along the red waymark across the plateau and olive groves north-east to the quiet village of Seiça. |
+| **Seiça → Sabacheira — Albergue do Jardim** | ~5 | South into the Nabão valley: a night in the garden, kitchen, work in the beds — and the **Garden stamp** in the credencial. The Earth initiation (hands in the soil) before the water. |
+| **Genesis Garden → Agroal** | ~4 | The greatest spring of the Nabão — a Blue-Flag river beach, cold clear water; the water threshold at the spring. |
+| **Agroal → Tomar ⛵** | ~14 by water | Down the Nabão **with the current** by kayak/canoe into the Templar city (a proven descent; season ~Nov–May depending on flow, weirs mean short portages; riverside walking variant ~13 km). The Convento de Cristo above the river — and back onto the yellow arrows of the Caminho Central. |
 
 **The Garden stamp qualifies a pilgrim to request a berth aboard the Tres Marias.** Whoever walks through the Garden boards as a pilgrim, not a tourist — passage itself is governed by hull capacity, safety and program rules (pilgrims join as voyage crew). At Tomar the way rejoins the Caminho Central and leads through Coimbra, Porto and Tui to **Pontevedra** — the home port of Santa María la Mayor. Sabacheira itself was a comenda of the Order of Christ in the 15th–16th century — pilgrimage tradition has deep roots here.
 
@@ -100,7 +100,7 @@ From this position grows the **Caminho do Jardim** — a new detour, just as the
 
 ## Open Questions
 
-- Parcel selection within the Sabacheira parish and its area (in negotiation).
+- Parcel identified — ~39.6788, −8.4778 in Sabacheira; area and legal transfer in negotiation.
 - Legal form: Associação vs Cooperativa vs hybrid.
 - Solar system capacity (kWp / kWh per day).
 - Albergue do Jardim — capacity, licensing, partnership with the Sabacheira parish and the Central Caminho.

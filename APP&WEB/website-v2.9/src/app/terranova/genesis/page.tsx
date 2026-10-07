@@ -42,6 +42,15 @@ const GenesisGardenPreviewLazy = dynamic(
   }
 );
 
+const CaminhoDoJardimMap = dynamic(() => import('@/components/CaminhoDoJardimMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[380px] md:h-[460px] items-center justify-center rounded-2xl border border-white/10 bg-black/40">
+      <span className="text-xs uppercase tracking-widest text-white/60">Loading map…</span>
+    </div>
+  ),
+});
+
 const TerranovaGenesisCopy = {
   backToTerraNova: { cs: `Zpět na Terra Nova`, en: `Back to Terra Nova` },
   inPreparation: { cs: `V přípravě`, en: `In preparation` },
@@ -116,8 +125,8 @@ const TerranovaGenesisCopy = {
   openQuestionsLookingForGuardia: { cs: `Otevřené otázky — hledáme Guardians`, en: `Open Questions — looking for Guardians` },
   joinDiscord: { cs: `Připojit se na Discord`, en: `Join Discord` },
   caminoTitle: { cs: `Caminho do Jardim — poutní odbočka`, en: `Caminho do Jardim — the pilgrim detour` },
-  caminoSubtitle: { cs: `Fátima → Sabacheira → Agroal → Tomar · ~35 km`, en: `Fátima → Sabacheira → Agroal → Tomar · ~35 km` },
-  caminoLead: { cs: `Zahrada Genesis stojí na křižovatce dvou cest: Caminho de Fátima (Nascente) a Caminho Central Português, který prochází templářským Tomarem. Z ní vyrůstá nová odbočka — tak, jak portugalské Camino zná svou Variante Espiritual. **Albergue do Jardim** je její hostinec: poutník tu získá do credencialu razítko Zahrady — a s ním kvalifikaci vstoupit na paluby Tres Marias.`, en: `Genesis Garden stands at the crossing of two ways: the Caminho de Fátima (Nascente) and the Caminho Central Português, which runs through the Templar city of Tomar. A new detour grows out of it — just as the Portuguese Camino knows its Variante Espiritual. **Albergue do Jardim** is its hostel: here the pilgrim receives the Garden stamp in the credencial — and with it the qualification to step aboard the Tres Marias.` },
+  caminoSubtitle: { cs: `Fátima → Seiça → Sabacheira → Agroal → ⛵ Nabão → Tomar · ~38 km`, en: `Fátima → Seiça → Sabacheira → Agroal → ⛵ Nabão → Tomar · ~38 km` },
+  caminoLead: { cs: `Zahrada Genesis stojí na křižovatce dvou cest: Caminho de Fátima (Nascente) a Caminho Central Português, který prochází templářským Tomarem. Z ní vyrůstá nová odbočka — tak, jak portugalské Camino zná svou Variante Espiritual. Ze svatyně se jde po červené značce přes pláň do Seiçy, pak na jih do Sabacheiry: **Albergue do Jardim** je její hostinec, kde poutník získá razítko Zahrady do credencialu — a s ním kvalifikaci vstoupit na paluby Tres Marias. Závěr leg patří vodě: z pramene Agroal se řekou Nabão **po proudu** sjíždí do Tomaru.`, en: `Genesis Garden stands at the crossing of two ways: the Caminho de Fátima (Nascente) and the Caminho Central Português, which runs through the Templar city of Tomar. A new detour grows out of it — just as the Portuguese Camino knows its Variante Espiritual. From the shrine you walk the red-marked trail across the plateau to Seiça, then south into Sabacheira: **Albergue do Jardim** is its hostel, where the pilgrim receives the Garden stamp in the credencial — and with it the qualification to step aboard the Tres Marias. The leg ends on water: from the Agroal spring, the Nabão runs **downstream** to Tomar.` },
   caminoFoot: { cs: `V Tomaru se cesta vrací na Caminho Central — přes Coimbru a Porto až do Pontevedry, domácího přístavu Santa María la Mayor. Kdo projde Zahradou, nasedá jako poutník — ne jako turista.`, en: `At Tomar the way rejoins the Caminho Central — through Coimbra and Porto all the way to Pontevedra, home port of Santa María la Mayor. Whoever walks through the Garden boards as a pilgrim — not as a tourist.` },
 
 };
@@ -237,31 +246,31 @@ const FEATURES: FeatureItem[] = [
 const CAMINO_LEGS = [
   {
     from: 'Fátima',
-    to: 'Sabacheira',
-    km: '~20 km',
-    descCs: 'Ze svatyně — modré šipky Nascente obráceně; den po pláni a olivových hájích do údolí Nabão.',
-    descEn: 'From the shrine — the blue Nascente arrows walked backwards; a day across the plateau and olive groves into the Nabão valley.',
+    to: 'Seiça',
+    km: '~15 km',
+    descCs: 'Ze svatyně po červené značce přes pláň a olivové háje na severovýchod — den chůze ke klidné vsi Seiça u hranice freguesií.',
+    descEn: 'From the sanctuary along the red waymark across the plateau and olive groves to the north-east — a day of walking to quiet Seiça on the parish border.',
   },
   {
-    from: 'Sabacheira',
-    to: 'Genesis Garden — Albergue',
-    km: 'carimbo',
-    descCs: 'Albergue do Jardim: noc, kuchyň, zahrada — a razítko Zahrady do credencialu. Iniciace Země se děje rukama v hlíně, ještě před mořem.',
-    descEn: 'Albergue do Jardim: a bed, a kitchen, the garden — and the Garden stamp in the credencial. The Earth initiation happens hands-in-soil, before the sea.',
+    from: 'Seiça',
+    to: 'Sabacheira · Genesis Garden — Albergue',
+    km: '~5 km · carimbo',
+    descCs: 'Na jih přes Sabacheiru k Zahradě: Albergue do Jardim — noc, kuchyň, zahrada a razítko Zahrady do credencialu. Iniciace Země se děje rukama v hlíně, ještě před vodou.',
+    descEn: 'South past Sabacheira to the Garden: Albergue do Jardim — a bed, a kitchen, the garden and the Garden stamp in the credencial. The Earth initiation happens hands-in-soil, before the water.',
   },
   {
-    from: 'Sabacheira',
+    from: 'Genesis Garden',
     to: 'Agroal',
-    km: '~5 km',
-    descCs: 'K největšímu prameni Nabão — praia fluvial s modrou vlajkou, ledová čistá voda 16–18 °C. Práh vody: koupel před odletem.',
-    descEn: 'To the greatest spring of the Nabão — a Blue-Flag river beach, cold clear water at 16–18 °C. The water threshold: a bath before setting sail.',
+    km: '~4 km',
+    descCs: 'K největšímu prameni Nabão — praia fluvial s modrou vlajkou, ledová čistá voda 16–18 °C. Práh vody: koupel u pramene před sjezdem.',
+    descEn: 'To the greatest spring of the Nabão — a Blue-Flag river beach, cold clear water at 16–18 °C. The water threshold: a bath at the spring before the descent.',
   },
   {
     from: 'Agroal',
-    to: 'Tomar',
-    km: '~11 km',
-    descCs: 'Po údolí Nabão na jih do templářského města — Convento de Cristo nad řekou, nádraží, a zpět na žluté šipky Caminha Central.',
-    descEn: 'Down the Nabão valley to the Templar city — the Convento de Cristo above the river, the station, and back onto the yellow arrows of the Caminho Central.',
+    to: 'Tomar ⛵',
+    km: '~14 km po vodě',
+    descCs: 'Po proudu Nabão kajakem/kánoí do templářského města — prověřený sjezd údolím s açudy (sezóna cca XI–V dle průtoku; suchou sezónou pěší varianta po břehu ~13 km). U řeky Convento de Cristo — a zpět na žluté šipky Caminha Central.',
+    descEn: 'Downstream on the Nabão by kayak/canoe into the Templar city — a proven descent through the weir-dotted valley (season ~Nov–May depending on flow; a riverside walking variant ~13 km in the dry season). The Convento de Cristo above the river — and back onto the yellow arrows of the Caminho Central.',
   },
 ];
 
@@ -865,6 +874,14 @@ export default function ZahradaGenesisPage() {
               <p className="text-white/70 text-sm leading-relaxed max-w-3xl mb-6">
                 {TerranovaGenesisCopy.caminoLead[cs ? 'cs' : 'en']}
               </p>
+              <div className="mb-6">
+                <CaminhoDoJardimMap lang={cs ? 'cs' : 'en'} />
+                <p className="mt-2 text-[10px] uppercase tracking-widest text-white/40">
+                  {cs
+                    ? 'Koncept — schematické vedení, trasa není vyznačená ani proměřená (GPX pending)'
+                    : 'Concept — schematic alignment, not waymarked or surveyed (GPX pending)'}
+                </p>
+              </div>
               <div className="space-y-3">
                 {CAMINO_LEGS.map((leg, i) => (
                   <div key={i} className="zion-rainbow-sub px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>

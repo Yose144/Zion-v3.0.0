@@ -232,8 +232,8 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     rgb: '16, 185, 129',
     descCs: 'Uzel Terra Nova v údolí Nabão mezi Fátimou a Tomarem — farma, albergue Caminho do Jardim, voda, energie, komunita.',
     descEn: 'Terra Nova node in the Nabão valley between Fátima and Tomar — farm, the Caminho do Jardim albergue, water, energy, community.',
-    lat: 39.68,
-    lon: -8.48,
+    lat: 39.6788,
+    lon: -8.4778,
   },
   {
     id: 'dharma',

@@ -12,8 +12,8 @@ export const NOVA_ZEME_PROJECTS = [
     status: 'Preparation',
     desc: 'Uzel Terra Nova v údolí Nabão mezi Fátimou a Tomarem — organická farma, albergue Caminho do Jardim, solar off-grid a sázení stromů. Razítko Zahrady otevírá paluby Tres Marias.',
     href: 'https://app.zionterranova.com/terranova/genesis',
-    lat: 39.68,
-    lon: -8.48,
+    lat: 39.6788,
+    lon: -8.4778,
   },
   {
     id: 'dharma',
