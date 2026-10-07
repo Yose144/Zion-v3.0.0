@@ -1640,6 +1640,29 @@ function setupMiningConsole() {
       if (body) body.scrollTop = body.scrollHeight;
     });
   }
+  const selftestBtn = document.getElementById('console-selftest-btn');
+  if (selftestBtn && window.electronAPI?.runKernelSelftest) {
+    let running = false;
+    selftestBtn.addEventListener('click', async () => {
+      if (running) return;
+      running = true;
+      selftestBtn.disabled = true;
+      try {
+        const res = await window.electronAPI.runKernelSelftest({});
+        const line = document.createElement('div');
+        line.className = 'mc-line';
+        const summary = res?.success === false
+          ? ` * Kernel self-test failed${res?.error ? ': ' + res.error : ''}`
+          : ` * Kernel self-test done — ${(res?.results || []).map(r => `${r.ticker}:${r.verdict}`).join('  ')}`;
+        line.innerHTML = `<span class="mc-info">${summary.replace(/</g, '&lt;')}</span>`;
+        body?.appendChild(line);
+        if (body) body.scrollTop = body.scrollHeight;
+      } finally {
+        running = false;
+        selftestBtn.disabled = false;
+      }
+    });
+  }
 }
 
 // Update console status dot

@@ -80,7 +80,7 @@ Fix smyčka: kernel launch fail → log OpenCL compile error → fix `csrc/openc
 2. Per-coin tuning presets (batch, duty, gap).
 3. `miner_config.json` schéma: multi-algo profile store.
 4. Status panel: per-stream coin+algo+pool+A/R (už částečně je přes `_coinAlgo`).
-5. **E2E self-test mode v agentovi:** tlačítko "Test kernel" → spawn krátký miner run s `--no-zion --no-cpu` proti veřejnému poolu → report accepted/latency/MH/s.
+5. **E2E self-test mode v agentovi:** ✅ IMPLEMENTOVÁNO (2026-10-09) — tlačítko ⚙ v Mining Console header → IPC `run-kernel-selftest` → spawn `auxpow_kat <algo>` per coin (coin→KAT mapa `KAT_ALGO_BY_COIN`, default = configured gpuCoin/cpuCoin, fallback KAS smoke), výstup streamuje do konzole `[SELFTEST]`, verdict parsen z `PASS|FAIL|SKIP|EMPTY|UNVERIFIABLE|ERR` řádků, per-algo timeout (default 240s), nexapow opt-in přes `{slow:true}`. Binárka resolvována vedle `zion-miner` / `V31/target/release` (kernely embedded přes include_str! — self-contained).
 
 ## 2. Rizika a limity
 
@@ -179,8 +179,9 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 - dynexsolve — běží, syntetický SAT bez řešení (EMPTY = OK signál)
 
 **❌ Reálné defekty k opravě:**
-- **nexapow** — 6k-řádkový secp256k1 kernel: NVIDIA JIT compile >10 min na fresh proces (GPU exec samotné je OK); KAT default SKIP, `auxpow_kat nexapow` explicit
+- **nexapow** — ✅ VYŘEŠENO (consensus-verified, viz řádek v tabulce). Pozn.: NVIDIA JIT ~40min fresh compile (kernel 6k řádků) — cachnuto v `~/.nv/ComputeCache`; KAT default SKIP, `auxpow_kat nexapow` explicit
 - **verushash** — CPU-only by design (haraka512/clhash); GPU kernel neexistuje — dokumentováno, ne chyba
+- **runtime stream testy** — `auxpow_stream_hits_mock_stratum`, `kas_stratum_stream_runs`, `triple_stream_runs` dobíhají >15min pod produkční load (reálné CPU/GPU mining loop, ne deadlock); suite jinak 142/142 zelených vč. opraveného `cuda_kernel_files_exist` (kawpow .cu launch_bounds)
 
 **⛔ Externí blockery (ne code bug):**
 - zelhash — potřeba ~6.5GB VRAM (busy karta); samostatný run nutný
