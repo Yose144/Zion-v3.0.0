@@ -298,6 +298,7 @@ export default function WarpBtcSwapWidget() {
       hashHex: rec.hashlock,
       preimageHex: sec.preimageHex,
       recipient: rec.user_zion_address || sec.zion.address,
+      chain: 'zion',
     });
     setClaimingId(null);
     if (!r.success) setQuoteErr(r.message);
