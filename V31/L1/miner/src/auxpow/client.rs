@@ -1302,6 +1302,56 @@ impl AuxPowClient {
             return Some(job);
         }
 
+        // f2pool Conflux (Octopus) notify:
+        //   [seq_or_difficulty, height_or_jobid, pow_hash_hex(0x), boundary_hex(0x)]
+        if params.len() == 4
+            && params
+                .get(2)
+                .and_then(Value::as_str)
+                .map(|s| s.starts_with("0x"))
+                .unwrap_or(false)
+        {
+            let job_id = params
+                .get(1)
+                .and_then(|v| {
+                    v.as_str()
+                        .map(String::from)
+                        .or_else(|| v.as_u64().map(|n| n.to_string()))
+                })
+                .unwrap_or_default();
+            let header_hex = params[2].as_str().unwrap_or("").to_string();
+            let target_hex = params[3].as_str().unwrap_or("").to_string();
+            let header =
+                hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+            let target = if let Some(tb) = *self.current_target_bytes.lock().await {
+                tb
+            } else {
+                hasher::parse_target_hex(&target_hex).unwrap_or([0xFF; 32])
+            };
+            let height = params
+                .get(1)
+                .and_then(|v| {
+                    v.as_u64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
+                });
+
+            let job = ExternalJob {
+                job_id,
+                header_hex,
+                target_hex,
+                block_number: height,
+                algorithm: self.config.algorithm.clone(),
+                external_coin: self.config.coin,
+                header_bytes: header,
+                target_bytes: target,
+                extranonce1: self.extranonce1.lock().await.clone(),
+                ..Default::default()
+            };
+            *self.latest_job_id.lock().await = Some(job.job_id.clone());
+            *self.latest_job_time.lock().await = Some(Instant::now());
+            return Some(job);
+        }
+
         if params.len() == 3 || params.len() == 5 {
             // 3-param: [job_id, header_hex, target_hex]
             // 5-param (ZION simplified): [job_id, header_hex, target_hex, height, clean_jobs]
@@ -2442,6 +2492,49 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32])
         };
         let height = params.get(3).and_then(Value::as_u64).unwrap_or(0);
+        return Some(StratumJob {
+            job_id,
+            header,
+            target,
+            target_512: None,
+            extranonce1: state.extranonce1.lock().await.clone(),
+            extranonce2_size: *state.extranonce2_size.lock().await,
+            ntime: "00000000".to_string(),
+            difficulty: *state.difficulty.lock().await,
+            coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+            height,
+            seed_hash: None,
+        });
+    }
+
+    // f2pool Conflux (Octopus) notify:
+    //   [seq_or_difficulty, height_or_jobid, pow_hash_hex(0x), boundary_hex(0x)]
+    // params[1] advances with the chain tip (doubles as the block height, used
+    // for DAG stage derivation); params[2] is the 32-byte PoW input hash and
+    // params[3] the 256-bit boundary target.
+    if params.len() == 4
+        && params
+            .get(2)
+            .and_then(Value::as_str)
+            .map(|s| s.starts_with("0x"))
+            .unwrap_or(false)
+    {
+        let job_id = params
+            .get(1)
+            .and_then(|v| v.as_str().map(String::from).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .unwrap_or_default();
+        let header_hex = params[2].as_str().unwrap_or("");
+        let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+        let target_hex = params[3].as_str().unwrap_or("");
+        let target = if let Some(tb) = *state.target_bytes.lock().await {
+            tb
+        } else {
+            hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32])
+        };
+        let height = params
+            .get(1)
+            .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.parse().ok())))
+            .unwrap_or(0);
         return Some(StratumJob {
             job_id,
             header,
