@@ -97,19 +97,25 @@ fn main() {
         // duplicate symbol errors.
         let has_native_verushash = std::env::var("CARGO_FEATURE_NATIVE_VERUSHASH").is_ok();
 
+        // Sources live in zion-native-ffi/csrc — single source of truth.
+        // (These used to be duplicated under miner/csrc; the linker resolved
+        // duplicate FFI symbols to whichever archive came first, so fixes
+        // applied to only one copy silently did not take effect.)
+        let ffi = "../native-ffi/csrc";
         let mut sources = vec![
-            "csrc/blake3_native.c",
-            "csrc/kheavyhash_native.c",
-            "csrc/autolykos_native.c",
-            "csrc/kawpow_native.c",
-            "csrc/etchash_native.c",
+            format!("{ffi}/blake3/blake3_native.c"),
+            format!("{ffi}/kheavyhash/kheavyhash_native.c"),
+            format!("{ffi}/autolykos/autolykos_native.c"),
+            format!("{ffi}/kawpow/kawpow_native.c"),
+            format!("{ffi}/etchash/etchash_native.c"),
         ];
 
         if !has_native_verushash {
-            sources.push("csrc/verushash_portable.c");
+            sources.push(format!("{ffi}/verushash/verushash_portable.c"));
         }
 
         for src in &sources {
+            println!("cargo:rerun-if-changed={src}");
             build.file(src);
         }
 
