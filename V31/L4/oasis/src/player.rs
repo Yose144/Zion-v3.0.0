@@ -205,6 +205,28 @@ impl Player {
         first
     }
 
+    /// Check whether a world has already been discovered by this player.
+    pub fn has_discovered_world(&self, world_id: &str) -> bool {
+        self.stats.contains_key(&format!("discovered:{}", world_id))
+    }
+
+    /// Record a world discovery in player stats and return true if it was the first one.
+    pub fn record_world_discovery(&mut self, world_id: &str) -> bool {
+        let first = !self.has_discovered_world(world_id);
+        *self
+            .stats
+            .entry("world_discoveries".to_string())
+            .or_insert(0) += 1;
+        if first {
+            *self
+                .stats
+                .entry("unique_worlds_discovered".to_string())
+                .or_insert(0) += 1;
+            self.stats.insert(format!("discovered:{}", world_id), 1);
+        }
+        first
+    }
+
     /// Update streak
     pub fn update_streak(&mut self, is_consecutive: bool) {
         if is_consecutive {

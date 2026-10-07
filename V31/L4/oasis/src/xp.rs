@@ -30,6 +30,8 @@ pub enum XpSource {
     WorldScan { world_id: String, xp: u64 },
     /// Approaching a world in the OASIS galaxy
     WorldApproach { world_id: String, xp: u64 },
+    /// Discovering a world in the OASIS galaxy (first look / reveal)
+    WorldDiscovery { world_id: String, xp: u64 },
 }
 
 impl XpSource {
@@ -52,6 +54,7 @@ impl XpSource {
             XpSource::Referral { .. } => 50,
             XpSource::WorldScan { xp, .. } => *xp,
             XpSource::WorldApproach { xp, .. } => *xp,
+            XpSource::WorldDiscovery { xp, .. } => *xp,
         }
     }
 }

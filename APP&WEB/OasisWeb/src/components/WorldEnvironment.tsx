@@ -19,6 +19,7 @@ import {
   planetSecondaryColor,
 } from '../lib/planetTexture';
 import { NOVA_ZEME_PROJECTS } from '../lib/novaZemeProjects';
+import WorldObjectives from './WorldObjectives';
 
 /**
  * Fresnel-based atmosphere glow — the rim brightens with viewing angle like
@@ -546,6 +547,10 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
           <AvatarHologram world={world} color={color} size={size} />
         </>
       )}
+
+      {/* In-world objectives — clickable scan/harvest/relic nodes orbiting
+          the body, persisted per world */}
+      <WorldObjectives world={world} size={size} isMobile={isMobile} />
 
       {/* World title */}
       <Html center position={[0, size * 1.6 + 0.8, 0]} distanceFactor={8}>
