@@ -358,6 +358,7 @@ void eaglesong_mine(
     const uint header_len,              // length of header (typically 80)
     const ulong base_nonce,             // first nonce in this batch
     __global uchar *output_hash,        // 32-byte winning hash output
+    __global ulong *output_nonce,       // u64 winning nonce output
     __global uint *found_flag,          // atomic flag: 0 = not found, 1 = found
     __global const uchar *target        // 32-byte target (big-endian)
 ) {
@@ -409,10 +410,11 @@ void eaglesong_mine(
         // Atomically claim the found flag so only one work-item writes.
         uint old = atomic_xchg(found_flag, 1u);
         if (old == 0u) {
-            // Write the winning hash to the output buffer.
+            // Write the winning hash + nonce to the output buffers.
             #pragma unroll
             for (int i = 0; i < 32; i++)
                 output_hash[i] = hash[i];
+            output_nonce[0] = nonce;
         }
     }
 }

@@ -279,6 +279,7 @@ __kernel void octopus_mine(
     uint header_len,                     // length of header buffer
     ulong base_nonce,                    // first nonce in this batch
     __global uchar *output_hash,         // 32-byte final hash output (on find)
+    __global ulong *output_nonce,        // u64 winning nonce output
     __global uint *found_flag,           // atomic found flag
     __global const uchar *target,        // 32-byte target (big-endian)
     __global uchar *dag,                 // DAG buffer (128 bytes per entry)
@@ -381,6 +382,7 @@ __kernel void octopus_mine(
         if (old == 0u) {
             #pragma unroll 32
             for (int i = 0; i < 32; i++) output_hash[i] = hash[i];
+            output_nonce[0] = nonce;
         }
     }
 }

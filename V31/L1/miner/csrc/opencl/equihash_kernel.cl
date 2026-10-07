@@ -27,6 +27,9 @@
 
 #define OPTIM_SIMPLIFY_ROUND            1
 
+#ifndef EQ_WG_SIZE
+#define EQ_WG_SIZE 64
+#endif
 #define COLL_DATA_SIZE_PER_TH           (NR_SLOTS * 5)
 
 #define NR_ROWS                         (1 << NR_ROWS_LOG)
@@ -278,7 +281,7 @@ vb = rotate((vb ^ vc), (ulong)64 - 63);
 ** Memory (LDS) Optimization 2-10" in:
 ** http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/opencl-optimization-guide/
 */
-__kernel __attribute__((reqd_work_group_size(64, 1, 1)))
+__kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1)))
 void kernel_round0(__global ulong *blake_state, __global char *ht,
 	__global uint *rowCounters, __global uint *debug)
 {
@@ -753,13 +756,13 @@ part2:
 ** (kernel_round6_final below) that takes the extra sols argument.
 */
 #define KERNEL_ROUND(N) \
-__kernel __attribute__((reqd_work_group_size(64, 1, 1))) \
+__kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1))) \
 void kernel_round ## N(__global char *ht_src, __global char *ht_dst, \
 	__global uint *rowCountersSrc, __global uint *rowCountersDst, \
        	__global uint *debug) \
 { \
-    __local uchar first_words_data[(NR_SLOTS+2)*64]; \
-    __local uint    collisionsData[COLL_DATA_SIZE_PER_TH * 64]; \
+    __local uchar first_words_data[(NR_SLOTS+2)*EQ_WG_SIZE]; \
+    __local uint    collisionsData[COLL_DATA_SIZE_PER_TH * EQ_WG_SIZE]; \
     __local uint    collisionsNum; \
     equihash_round(N, ht_src, ht_dst, debug, first_words_data, collisionsData, \
 	    &collisionsNum, rowCountersSrc, rowCountersDst); \
@@ -772,14 +775,14 @@ KERNEL_ROUND(5)
 
 // kernel_round6 is the final round for K=7 (round K-1 = 6).
 // It takes an extra argument "sols" and initializes sols->nr = 0.
-__kernel __attribute__((reqd_work_group_size(64, 1, 1)))
+__kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1)))
 void kernel_round6(__global char *ht_src, __global char *ht_dst,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst,
 	__global uint *debug, __global sols_t *sols)
 {
     uint		tid = get_global_id(0);
-    __local uchar	first_words_data[(NR_SLOTS+2)*64];
-    __local uint	collisionsData[COLL_DATA_SIZE_PER_TH * 64];
+    __local uchar	first_words_data[(NR_SLOTS+2)*EQ_WG_SIZE];
+    __local uint	collisionsData[COLL_DATA_SIZE_PER_TH * EQ_WG_SIZE];
     __local uint	collisionsNum;
     equihash_round(6, ht_src, ht_dst, debug, first_words_data, collisionsData,
 	    &collisionsNum, rowCountersSrc, rowCountersDst);
@@ -862,7 +865,7 @@ void potential_sol(__global char **htabs, __global sols_t *sols,
 /*
 ** Scan the hash tables to find Equihash solutions.
 */
-__kernel __attribute__((reqd_work_group_size(64, 1, 1)))
+__kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1)))
 void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst)
 {
