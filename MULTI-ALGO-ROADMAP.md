@@ -12,7 +12,7 @@
 | OpenCL | ~28 | plná sbírka v `csrc/opencl/` |
 | CUDA | ~16 | `csrc/cuda/` + nativní `qpow_cuda.rs` |
 | Metal | 3 | jen blake3-rodina |
-| CPU | 3 | VRSC, XMR(stub), RTM |
+| CPU | 3 | VRSC, XMR (randomx — oficiální vektory PASS), RTM |
 
 **Ověřené E2E (pool→upstream accepted):** QTU (QPoW), ZANO (ProgPoWz, herominers), VRSC (verushash). Všechno ostatní = kernel existuje, ale E2E neprokázán.
 
@@ -22,7 +22,7 @@
 - `pearlhash` → placeholder kernel (BLAKE3); skutečný PoUW je `pearl_pouw_native.cl` mimo kernel_info path
 - `equihashzero`/`equihash`/`zelhash` → vyžadují multi-kernel host orchestraci (Wagner), zelhash prod path existuje (`zelhash_prod_kernel.cl`)
 - `verthash` → kernel OK, ale chybí 1.2 GB data-file loading na hostu
-- `randomx` → jen stub
+- `randomx` → ✅ reálný tevador/RandomX přes native-ffi — ověřen vůči upstream test vektorům (viz tabulka)
 - `bitcoin` → sha256d nemá žádný pool endpoint (merge-mining speciální)
 - `pearl` stream je v mineru disabled (`ZION_STREAM2_ENABLED` legacy)
 
@@ -131,7 +131,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | fishhash (IRON) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | **DAG gen na GPU** (build kernel ≡ CPU ref, 256 items) + mine≡CPU na reduced DAG; full DAG 4.6GB = VRAM blocker |
 | karlsenhash (KLS) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | stejný DAG + xor-index mix + blake3(mix) finále; mine≡CPU na reduced DAG |
 | beamhash (BEAM) | ✅ solver | ✅ **seed PASS** | ⏱️ beam.2miners timeout | partial | **seed stage consensus-verified**: `beamHashIII_seed` elems (blake2b prepow → siphash24 workBits → mixer → bucket scatter) ≡ `beamhash_ref.rs` CPU port bit-exact; R1-R5 solver VRAM-blocked (2×2.28GB tables > volné VRAM) |
-| randomx (XMR) | CPU only | n/a | ✅ **OK** (moneroocean, valid addr) | — | cryptonote login+job parse OK — **pool vyžaduje kryptograficky validní ed25519 adresu** (ne jen checksum); blob 76B + seed_hash + height parsovány; stub GPU |
+| randomx (XMR) | CPU only | ✅ **official vectors PASS** (a,b,d,e — včetně seed-reinit) | ✅ **OK** (moneroocean, valid addr) | **verified CPU** | cryptonote login+job parse OK — pool vyžaduje kryptograficky validní ed25519 adresu; blob 76B + seed_hash + height parsovány. **Fixy:** arbitrary-length seed (byl hardcoded len==32 → odmítal validní klíče), **seed-rotation UAF fix** — thread-local VM držela dangling dataset pointer (generační čítač + deferred reclamation), nonce embed blob[39..43] + epoch `init_with_seed` plumbing do `dispatch_algorithm`; GPU kernel není (by design) |
 | quai (QUAI) | kawpow path | — | ⚠️ authorize (wallet) | pending | herominers:1185 connect+authorize OK protokol — fake wallet zamítnut (2miners:4848 mrtvý → default updated) |
 | evrprogpow (EVR) | ✅ | ✅ **PASS** | ✅ **OK** (zpool, job parsed) | verified | ProgOp interpretér ≡ GPU (vlastní parametry); **parser: YiiMP 7-param notify** `[job,hdr,seed,target,clean,height,ntime]` → seed+height propažovány do `StratumJob` |
 | meowpow (MEWC) | ✅ | ✅ **PASS** | ✅ **OK** (zpool, job parsed) | verified | ProgOp interpretér ≡ GPU (regs=16 varianta); stejný 7-param parser fix |

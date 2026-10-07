@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <atomic>
 #include <mutex>
 #include <vector>
 #include <thread>
@@ -52,19 +53,37 @@
 /* ---- Global state ---- */
 static randomx_cache*   g_cache   = nullptr;
 static randomx_dataset* g_dataset = nullptr;
-static uint8_t          g_current_seed[32] = {0};
+/* RandomX accepts arbitrary-length cache keys (official test vectors use
+ * e.g. the 12-byte string "test key 000"; Monero seed_hash is 32 bytes). */
+#define RANDOMX_ZION_MAX_SEED_LEN 1024
+static uint8_t          g_current_seed[RANDOMX_ZION_MAX_SEED_LEN] = {0};
+static size_t           g_seed_len = 0;
 static bool             g_initialized = false;
 static std::mutex       g_init_mutex;  /* protects seed updates */
+/* Bumped on every cache/dataset reinit — thread-local VMs capture the
+ * dataset pointer at creation, so they must be discarded after a seed
+ * change (otherwise they hash against freed memory → use-after-free). */
+static std::atomic<unsigned> g_seed_generation{0};
+
+/* Deferred reclamation: a hashing thread may still be inside
+ * randomx_calculate_hash on the previous dataset when the seed rotates
+ * (epoch change ~2h, hash ~ms — rare but real use-after-free). Instead of
+ * releasing immediately, the old cache/dataset are parked here and freed
+ * on the NEXT seed change — by then every VM referencing them has been
+ * destroyed via the generation check. */
+static randomx_cache*   g_retired_cache   = nullptr;
+static randomx_dataset* g_retired_dataset = nullptr;
 
 /* Per-thread VM — each thread gets its own VM sharing the global dataset */
 static thread_local randomx_vm* t_vm = nullptr;
 static thread_local bool        t_vm_initialized = false;
+static thread_local unsigned    t_vm_generation = 0;
 
 /* ---- Helpers ---- */
 
 static bool seed_matches(const uint8_t* seed, size_t len) {
-    if (len != 32) return false;
-    return memcmp(g_current_seed, seed, 32) == 0;
+    if (len != g_seed_len) return false;
+    return len == 0 || memcmp(g_current_seed, seed, len) == 0;
 }
 
 /* Determine VM flags based on auto-detection + architecture */
@@ -188,17 +207,22 @@ static void init_dataset_parallel(randomx_dataset* dataset, randomx_cache* cache
 }
 
 static void update_seed(const uint8_t* seed, size_t len) {
-    if (len != 32) {
-        fprintf(stderr, "randomx_zion: invalid seed length %zu (expected 32)\n", len);
+    if (len == 0 || len > RANDOMX_ZION_MAX_SEED_LEN) {
+        fprintf(stderr, "randomx_zion: invalid seed length %zu (max %d)\n", len,
+                RANDOMX_ZION_MAX_SEED_LEN);
         return;
     }
 
     /* Skip reinit if seed is identical */
     if (g_initialized && seed_matches(seed, len)) return;
 
-    /* Destroy old state */
-    if (g_dataset) { randomx_release_dataset(g_dataset); g_dataset = nullptr; }
-    if (g_cache)   { randomx_release_cache(g_cache);   g_cache = nullptr; }
+    /* Retire (not free) the old state — in-flight hashes on other threads
+     * may still reference it. The previously retired pair is freed now:
+     * a full generation passed since it was in use. */
+    if (g_retired_dataset) { randomx_release_dataset(g_retired_dataset); g_retired_dataset = nullptr; }
+    if (g_retired_cache)   { randomx_release_cache(g_retired_cache);   g_retired_cache = nullptr; }
+    g_retired_dataset = g_dataset; g_dataset = nullptr;
+    g_retired_cache   = g_cache;   g_cache = nullptr;
 
     /* On Windows, try to enable SeLockMemoryPrivilege for large pages */
 #if defined(_WIN32)
@@ -223,7 +247,7 @@ static void update_seed(const uint8_t* seed, size_t len) {
         fprintf(stderr, "randomx_zion: failed to allocate cache\n");
         return;
     }
-    randomx_init_cache(g_cache, seed, 32);
+    randomx_init_cache(g_cache, seed, len);
 
     /* Allocate + init dataset (full mode for max hashrate) */
     bool dataset_large_pages = false;
@@ -246,8 +270,12 @@ static void update_seed(const uint8_t* seed, size_t len) {
         g_dataset = nullptr; /* light mode — cache only */
     }
 
-    memcpy(g_current_seed, seed, 32);
+    memcpy(g_current_seed, seed, len);
+    g_seed_len = len;
     g_initialized = true;
+    /* Invalidate all thread-local VMs — they reference the just-freed
+     * dataset/cache. They will be lazily recreated on next hash. */
+    g_seed_generation.fetch_add(1, std::memory_order_release);
 
 #if defined(__APPLE__)
     (void)mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -264,19 +292,25 @@ static void update_seed(const uint8_t* seed, size_t len) {
             (vm_flags & RANDOMX_FLAG_SECURE) ? "yes" : "no");
 }
 
-/* Ensure this thread has a VM */
+/* Ensure this thread has a VM bound to the current dataset generation */
 static randomx_vm* ensure_thread_vm() {
-    if (t_vm && t_vm_initialized) {
+    if (t_vm && t_vm_initialized
+        && t_vm_generation == g_seed_generation.load(std::memory_order_acquire)) {
         return t_vm;
     }
 
-    /* Destroy old VM if it exists (seed may have changed) */
+    /* Destroy stale VM — its dataset/cache pointers are dangling after a
+     * seed change (randomx_destroy_vm only frees the VM's own allocations;
+     * the captured dataset member is non-owning). */
     if (t_vm) {
         randomx_destroy_vm(t_vm);
         t_vm = nullptr;
     }
     t_vm = create_thread_vm();
     t_vm_initialized = (t_vm != nullptr);
+    if (t_vm_initialized) {
+        t_vm_generation = g_seed_generation.load(std::memory_order_acquire);
+    }
     if (!t_vm) {
         fprintf(stderr, "randomx_zion: failed to create VM for thread\n");
     }

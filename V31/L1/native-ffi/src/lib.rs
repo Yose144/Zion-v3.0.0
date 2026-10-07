@@ -2174,9 +2174,15 @@ mod tests {
         println!("verushash smoke: {:02x?}", &h1[..8]);
     }
 
+    /// All RandomX tests share the process-global FFI dataset — serialize
+    /// them so a seed change mid-test can't perturb another test's hashes.
+    #[cfg(feature = "native-randomx")]
+    static RANDOMX_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[cfg(feature = "native-randomx")]
     #[test]
     fn randomx_smoke() {
+        let _guard = RANDOMX_TEST_LOCK.lock().unwrap();
         let header = [0x08u8; 76];
         randomx::init(); // ensure dataset is initialized before hashing
         let h1 = randomx::hash(&header, 0);
@@ -2184,6 +2190,64 @@ mod tests {
         assert_eq!(h1, h2, "randomx must be deterministic");
         assert_ne!(h1, [0u8; 32], "randomx must produce non-zero output");
         println!("randomx smoke: {:02x?}", &h1[..8]);
+    }
+
+    /// Official RandomX test vectors from upstream `src/tests/tests.cpp`
+    /// (non-V2 flag set). The cache key is the arbitrary-length byte string
+    /// `"test key 000"` — this also exercises the variable-length seed path.
+    #[cfg(feature = "native-randomx")]
+    #[test]
+    fn randomx_official_vectors() {
+        let _guard = RANDOMX_TEST_LOCK.lock().unwrap();
+        fn expected(hexstr: &str) -> [u8; 32] {
+            let mut out = [0u8; 32];
+            for i in 0..32 {
+                out[i] =
+                    u8::from_str_radix(&hexstr[i * 2..i * 2 + 2], 16).expect("hex");
+            }
+            out
+        }
+
+        randomx::init_with_seed(b"test key 000");
+        let h1 = randomx::hash(b"This is a test", 0);
+        assert_eq!(
+            h1,
+            expected("639183aae1bf4c9a35884cb46b09cad9175f04efd7684e7262a0ac1c2f0b4e3f"),
+            "RandomX vector a (key 'test key 000', input 'This is a test')"
+        );
+        let h2 = randomx::hash(b"Lorem ipsum dolor sit amet", 0);
+        assert_eq!(
+            h2,
+            expected("300a0adb47603dedb42228ccb2b211104f4da45af709cd7547cd049e9489c969"),
+            "RandomX vector b (same key, different input)"
+        );
+
+        // Seed change must trigger cache/dataset reinit.
+        randomx::init_with_seed(b"test key 001");
+        let h3 = randomx::hash(
+            b"sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+            0,
+        );
+        assert_eq!(
+            h3,
+            expected("e9ff4503201c0c2cca26d285c93ae883f9b1d30c9eb240b820756f2d5a7905fc"),
+            "RandomX vector d (key 'test key 001' — reinit path)"
+        );
+
+        // Hex input vector (key 'test key 001'): 76-byte blob.
+        const HEX_BLOB: &str = "0b0b98bea7e805e0010a2126d287a2a0cc833d312cb786385a7c2f9de69d25537f584a9bc9977b00000000666fd8753bf61a8631f12984e3fd44f4014eca629276817b56f32e9b68bd82f416";
+        let blob: Vec<u8> = (0..HEX_BLOB.len())
+            .step_by(2)
+            .map(|i| {
+                u8::from_str_radix(&HEX_BLOB[i..i + 2], 16).unwrap()
+            })
+            .collect();
+        let h4 = randomx::hash(&blob, 0);
+        assert_eq!(
+            h4,
+            expected("c56414121acda1713c2f2a819d8ae38aed7c80c35c2a769298d34f03833cd5f1"),
+            "RandomX vector e (76-byte hex blob)"
+        );
     }
 
     // ----------------------------------------------------------------------
