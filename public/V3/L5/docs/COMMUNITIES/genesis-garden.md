@@ -2,8 +2,8 @@
 
 > *"Base Camp · Terra Nova ® Portugal"*
 >
-> **Location:** Algarve / western coast, Portugal
-> **Climate:** Mediterranean Atlantic — 300+ sunny days, ocean wind
+> **Location:** Sabacheira, concelho Tomar — parish between Fátima and Tomar, Nabão valley, Portugal
+> **Climate:** Continental-Mediterranean — hot dry summers, cold spring water of the Nabão (~16–18 °C)
 > **Status:** 🟡 Preparation — construction earliest 2029 (post-Oasis)
 > **Last modified:** 2026-05-21
 
@@ -11,7 +11,7 @@
 
 ## 1. Identity and Purpose
 
-Genesis Garden is the **first physical node** of the Terra Nova network in Europe — an eco-farm where organic agriculture, surf, off-grid technology, and community life intersect. It serves as the **Base Camp**: a place where Guardians and supporters come for retreats, work stays, and educational programs, and where everyone can experience real off-grid operation.
+Genesis Garden is the **first physical node** of the Terra Nova network in Europe — an eco-farm in the parish of Sabacheira where organic agriculture, pilgrimage, off-grid technology, and community life intersect. It serves as the **Base Camp**: a place where Guardians, supporters and Camino pilgrims come for retreats, work stays, rest and educational programs, and where everyone can experience real off-grid operation.
 
 The intent is not perfection — the intent is **real operation open to people**. A farm that grows alongside humans, not without them.
 
@@ -221,7 +221,7 @@ General Circle (all Guardians + long-stay members)
 
 ### Phase 0 — Seed (2026–2028) 🟡
 - [x] Core team formation (3 Guardians)
-- [x] Land scouting (Algarve region)
+- [x] Land scouting (Sabacheira–Tomar area)
 - [x] Legal research (Associação vs Cooperativa)
 - [x] Budget draft (EUR 50,000 Phase 1)
 - [x] First trial crops (0.1 ha)
@@ -249,7 +249,7 @@ General Circle (all Guardians + long-stay members)
 - [ ] Expansion to 2 ha cultivation
 - [ ] Seed library network (3+ L5 nodes)
 - [ ] Educational center operational
-- [ ] Surf school (seasonal)
+- [ ] Albergue do Jardim — pilgrim hostel on the Caminho do Jardim
 - [ ] Revenue target: EUR 300,000/year
 - [ ] Second L5 node in Portugal (expansion or partnership)
 
@@ -281,7 +281,7 @@ General Circle (all Guardians + long-stay members)
 - [ ] Exact GPS coordinates and land area (pending acquisition)
 - [ ] Solar system capacity confirmation (kWp / kWh daily)
 - [ ] Legal entity: Associação vs Cooperativa vs hybrid
-- [ ] Surf school timeline and partnership with local surf club
+- [ ] Albergue do Jardim timeline + Caminho do Jardim waymarking (Fátima → Sabacheira → Agroal → Tomar)
 - [ ] ZION node installation coordinator (Tech Guardian recruitment)
 - [ ] Dharma Temple La Palma — shared protocol specifications
 - [ ] Seed library: which varieties? Exchange partners?
@@ -310,7 +310,7 @@ General Circle (all Guardians + long-stay members)
 | Persona | Demographics | Motivation | Channel | Price Sensitivity |
 |---------|-----------|-----------|---------|-------------------|
 | **Digital nomad** | 25–35, remote worker | Fast WiFi, community, nature | Nomad List, Facebook groups | Medium |
-| **Surf traveler** | 20–40, active | Waves, yoga, healthy food | Instagram, surf blogs, word-of-mouth | Low–Medium |
+| **Camino pilgrim** | 20–70, walking | Rest, credencial stamp, meaning | Camino associations, albergues, waymarks | Low |
 | **Regenerative farmer** | 30–50, WWOOFer alumnus | Skills, land experience, network | WWOOF, Workaway, organic farming forums | Very low (work exchange) |
 | **Burned-out professional** | 35–55, corporate escapee | Silence, digital detox, reconnection | Wellness blogs, LinkedIn, retreats | Medium–High |
 | **ZION curious** | Any age, crypto-adjacent | See L5 in action, meet Guardians | Discord, crypto Twitter, conferences | Low |
@@ -319,10 +319,10 @@ General Circle (all Guardians + long-stay members)
 
 | Channel | Phase 1 Budget | Phase 2 Budget | Tactics |
 |---------|---------------|---------------|---------|
-| **Instagram / TikTok** | EUR 200/month | EUR 500/month | Daily stories, drone footage, Guardian takeovers, surf clips |
+| **Instagram / TikTok** | EUR 200/month | EUR 500/month | Daily stories, drone footage, Guardian takeovers, camino diaries |
 | **Nomad List / Workaway** | EUR 0 (organic) | EUR 300/year | Profile optimization, photo updates, reviews |
 | **WWOOF Portugal** | EUR 100/year | EUR 100/year | Host listing, volunteer testimonials |
-| **Surf schools (partnership)** | EUR 0 | Revenue share 10% | Referral program, package deals |
+| **Camino albergues & pilgrim associations** | EUR 0 | Mutual referrals | Credencial stamp exchange, package stays |
 | **ZION Discord / OASIS** | EUR 0 | EUR 0 | Special rates for Guardians, quest rewards for visits |
 | **Retreat aggregators** | EUR 0 | EUR 1,000/year | BookRetreats, RetreatGuru listings |
 | **SEO / blog** | EUR 0 | EUR 0 | Weekly blog: farm diary, recipes, off-grid tips |
@@ -331,9 +331,9 @@ General Circle (all Guardians + long-stay members)
 
 | Season | Safari Tent | Eco-Cabin | Yurt (pp) | Notes |
 |--------|-------------|-----------|-----------|-------|
-| **Low (Nov–Mar)** | 35 | 55 | 12 | Rainy, fewer surfers, focus on workshops |
-| **Shoulder (Apr, Oct)** | 50 | 75 | 18 | Good waves, mild weather |
-| **High (May–Sep)** | 65 | 95 | 25 | Peak surf season, full occupancy target |
+| **Low (Nov–Mar)** | 35 | 55 | 12 | Quiet winter; focus on workshops |
+| **Shoulder (Apr, Oct)** | 50 | 75 | 18 | Spring/autumn pilgrim flow (Fátima 13 May & 13 Oct) |
+| **High (May–Sep)** | 65 | 95 | 25 | Peak walking season, full occupancy target |
 | **Work exchange** | 0 | 0 | 0 | 25 hrs/week labor → free accommodation + food |
 
 **Work exchange ratio:** 2 work-exchanged guests per 4 paying guests (max). Ensures labor while maintaining revenue.
@@ -354,13 +354,13 @@ General Circle (all Guardians + long-stay members)
 | **LEADER / PDRL (rural development)** | EUR 50,000–200,000 | Portuguese rural municipalities, agricultural projects, eco-tourism | Annual calls | 🔵 Researching |
 | **Erasmus+ (KA1, youth exchanges)** | EUR 10,000–30,000/project | Non-profit, youth education, sustainability | Feb/Oct | 🔵 Drafting |
 | **Horizon Europe (EIC Accelerator)** | EUR 0.5–2.5M | Innovative tech (could include ZION node + agri-tech) | Rolling | 🔵 Long shot |
-| **Portugal 2030 / CCDR-Algarve** | Varies | Regional development, renewable energy, tourism | Annual | 🔵 Researching |
+| **Portugal 2030 / CCDR Centro — Médio Tejo** | Varies | Regional development, renewable energy, tourism | Annual | 🔵 Researching |
 | **European Social Fund+** | EUR 20,000–100,000 | Social inclusion, rural employment | Varies | 🔵 Researching |
 | **LIFE Programme (environment)** | EUR 60,000–500,000 | Biodiversity, climate adaptation | Annual | 🔵 Researching |
 
 **Action items:**
 - [ ] Register entity (Associação) to unlock grant eligibility
-- [ ] Hire grant writer / partner with local development agency (ADRA, INAlentejo)
+- [ ] Hire grant writer / partner with local development agency (Médio Tejo region)
 - [ ] Prepare first LEADER application (2027 call)
 - [ ] Build Erasmus+ partnership network (3+ EU countries)
 
@@ -370,13 +370,29 @@ General Circle (all Guardians + long-stay members)
 
 | Partner Type | Specific Examples | Value Exchange | Contact Strategy |
 |-------------|-------------------|--------------|----------------|
-| **Surf schools** | Algarve Surf School (Lagos), Wavy Surf Camp (Sagres) | Referral fee 10% or guest exchange | Instagram DM + in-person visit |
-| **Organic markets** | Mercado Biológico de Lagos, Algarve Farmers Market | Wholesale produce + farm visibility | Market manager introduction |
+| **Camino associations** | Via Lusitana, Federação Portuguesa de Peregrinos a Santiago | Pilgrim flow + waymarking legitimacy | Formal letter + meeting |
+| **Organic markets** | Tomar municipal market (Praça), local quintas | Wholesale produce + farm visibility | Market manager introduction |
 | **Yoga teachers** | Local freelancers + traveling teachers | Revenue share 70/30 or flat fee | Retreat aggregator outreach |
 | **Eco-builders** | Terra Lusa (cob/strawbale), local timber framers | Labor exchange + testimonial | Visit existing projects |
-| **Universities** | University of Algarve (agriculture), ISA Lisbon | Research partnership, student interns | Email department heads |
-| **Local municipality** | Câmara Municipal de Vila do Bispo / Odemira | Permits, publicity, potential land concession | Formal presentation |
+| **Universities** | IPT Tomar, UC Coimbra (agriculture/heritage) | Research partnership, student interns | Email department heads |
+| **Local municipality** | Câmara Municipal de Tomar + Junta de Freguesia de Sabacheira | Permits, publicity, potential land concession | Formal presentation |
 | **Seed banks** | Banco Português de Germoplasma Vegetal | Rare variety access, conservation partnership | Formal collaboration request |
+
+---
+
+## 14. Caminho do Jardim — Pilgrim Detour (proposed)
+
+Genesis Garden sits inside Portugal's pilgrimage geography: **Sabacheira** parish (~39.68, −8.48, historically a comenda of the Order of Christ) lies ~20 km from **Fátima**, ~11 km from **Tomar** (a stage of the Caminho Central Português and seat of the Order) and ~5 km from **Agroal** — the largest spring of the Nabão river, a Blue-Flag river beach. The parish even hosts the **Chão de Maçãs–Fátima** station on the Linha do Norte.
+
+| Leg | ~km | Character |
+|-----|-----|-----------|
+| **Fátima → Sabacheira** | ~20 | Detour off the Caminho de Fátima Nascente (Tomar ↔ Fátima ~29 km); blue arrows toward Fátima, yellow toward Santiago |
+| **Sabacheira → Agroal** | ~5 | Short walk to the Nabão spring — bathing, picnic, water threshold |
+| **Agroal → Tomar** | ~11 | Down the Nabão valley into the Templar city → back onto the Caminho Central |
+
+**Albergue do Jardim** — a planned pilgrim hostel on the farm: beds, shared kitchen, orientation to Agroal and Tomar, and the **Garden carimbo into the credencial**. A pilgrim carrying the Garden stamp is **qualified to request a berth aboard one of the Tres Marias** (María del Camino fleet) — the stamp is a program onboarding credential, not a passage guarantee: hull capacity, safety and operating rules apply (pilgrims join as voyage crew).
+
+*Status: proposal — the route is not yet formally waymarked; distances are approximate; GPX survey, safety review and local permissions pending.*
 
 ---
 

@@ -4,6 +4,21 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 ---
 
+## 2026-10-07 — Zahrada Genesis: korekce lokality Algarve → Sabacheira (Tomar)
+
+### Změněno
+
+- Lokalita projektu Zahrada Genesis sjednocena ze zastaralého „Algarve" na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem, údolí řeky Nabão; ~39.68, −8.48) napříč korpusem, komunitními dokumenty, weby a mapami.
+- Přidán koncept **Caminho do Jardim** — navrhovaná poutní odbočka Fátima → Sabacheira → Agroal (pramen Nabão) → Tomar (~20 + ~5 + ~11 km; vzdálenosti orientační, bez oficiálního vyznačení) s plánovaným **Albergue do Jardim**, jehož carimbo do credencialu kvalifikuje poutníka požádat o místo na palubě Tres Marias (podmíněno kapacitou a provozními pravidly).
+- Rozpor #2 v `BodhiGaia/09` §4 označen jako vyřešený touto sjednocující opravou.
+- Dotčené story texty (`Ruze/` epilog, `NaCeste/`) přepsány na říční/inland setting: „jiná voda" = pramen Nabão, ne Atlantik.
+
+### Status pravdy
+
+- Geografie Sabacheira/Agroal/Tomar/Fátima = ověřená realita; trasa Caminho do Jardim = **návrh** (GPX survey, povolení a vyznačení pending); albergue = **plánováno**; razítko→paluba = **programový credential**, ne garance plavby.
+
+---
+
 ## 2026-08-31 — Kanonizace 3.3 „Nirvana“
 
 ### Přidáno
@@ -166,7 +181,7 @@ Tento changelog je součástí kanonu. Zachovává důvod změny, ne jen seznam 
 
 - Narativní lore (epilog, scéna Lumi + Ana, OASIS copy) = **MÝTUS** — žádná událost, žádný fyzický čin.
 - Existence zdrojového řádku `GENESIS_GARDEN` = **ŽIVÉ** (repozitářový fakt); nová klientská metadata = **STAVBA** do deploy (build prošel, deploy neproběhl); jejich obsah = **MÝTUS**.
-- Fyzická růže zasazená v Algarve = **NEDOLOŽENO** — žádné zasazení se nestalo.
+- Fyzická růže zasazená v Sabacheiře (Tomar) = **NEDOLOŽENO** — žádné zasazení se nestalo.
 - Pilot `GENESIS-ROSE-001` = **HORIZONT / NEZAHÁJENO** — nesmí začít bez Gate A–D, nenahrazuje M5 exit gate.
 - Žádný deploy, žádný L5/DAO spend, žádný token/NFT/reward, žádné finance, žádné „posvátné" ani genealogické nároky; Zahrada Genesis zůstává **STAVBA**.
 

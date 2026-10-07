@@ -21,7 +21,7 @@ The fleet carries the names of the three Marian apparitions of the pilgrim's jou
 | **Nossa Senhora de Fátima** | Pacific | Fátima — the White Lady | Wedding dress — the mystical wedding, the white orchid, the new apparition |
 | **María de las Nieves** | Indian Ocean | La Palma — patroness of the island and the whole network | Golden robes — unfinished miracles, the upright child in her arms |
 
-- **Santa María la Mayor (Atlantic)** — a classic sailing ship in the Camino de Santiago tradition. Home waters Galicia (the Pontevedra ría — the port where seafarers built Mary their most beautiful church), route Finisterre → the Algarve → La Palma → LUMI's Caribbean shore; a northern sortie can run up the Elbe to Bohemia.
+- **Santa María la Mayor (Atlantic)** — a classic sailing ship in the Camino de Santiago tradition. Home waters Galicia (the Pontevedra ría — the port where seafarers built Mary their most beautiful church), route Finisterre → Lisbon (overland detour to Tomar–Sabacheira) → La Palma → LUMI's Caribbean shore; a northern sortie can run up the Elbe to Bohemia.
 - **Nossa Senhora de Fátima (Pacific)** — a solar catamaran in the *wa'a kaulua* line, the Polynesian double canoe carried by Hōkūleʻa and the whole wayfinding culture. Home at Te Pīko Ora (Raiatea); route Costa Rica → Polynesia → Aboriginal Australia → Sri Lanka → Ekam.
 - **María de las Nieves (Indian Ocean)** — the third ship, the ship of unfinished miracles. She carries the third apparition: Mary in golden robes holding the upright child — the little prince, the symbol of the Golden Age (in the network's story, the child LUMI and Elizabeth). The patroness of La Palma is also the patroness of all of ZION — which is why she is given the ocean where the journey reaches its summit: Ekam → Boa Esperança → the return to the Atlantic.
 
@@ -58,7 +58,7 @@ The route is not a service loop — it is a journey where **each node is an init
 | # | Stop | Initiation | Ship | What happens |
 |---|------|-----------|------|-------------|
 | 0 | **Pontevedra · Galicia** | The Pilgrim | I | Departure from the home port — the María Mayor basilica, credencials, the flame carried from Finisterre |
-| 1 | **Genesis Garden · Algarve** | Earth | I | Hands in the soil — work in the garden, the source, the seeds |
+| 1 | **Genesis Garden · Sabacheira, Tomar** | Earth | I | Hands in the soil — work in the garden, the source, the seeds; **Albergue do Jardim**: the Garden stamp in the credencial qualifies a pilgrim to enter the boarding process |
 | 2 | **Dharma Temple · La Palma** | Silence | I | The island of the third apparition — temple practice under the network's patroness |
 | 3 | **LUMI · Nová Amerika** | The Bridge | I→II | The isthmus overland (Camino de Cruces) — the handoff between oceans, crew and cargo exchange |
 | 4 | **Te Pīko Ora · Raiatea** | Ocean | II | The wayfinding school — star navigation, the wa'a tradition |

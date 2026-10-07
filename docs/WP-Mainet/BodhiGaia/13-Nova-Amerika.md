@@ -7,7 +7,7 @@
 
 ## Příběh
 
-Poutníci stáli na konci mapy, kterou sami nakreslili. Kořen v Algarve. Kmen na La Palmě. Koruna v Raiatea. Srdce v Čechách. Prostor na Lance. Pět uzlů, pět elementů, pět odpovědí. A přesto — když se nad mapou naposledy sklonili — zůstalo na ní jedno místo, kam žádná čára nevedla, a přesto skrz něj vedly všechny.
+Poutníci stáli na konci mapy, kterou sami nakreslili. Kořen v údolí Nabão u Tomaru. Kmen na La Palmě. Koruna v Raiatea. Srdce v Čechách. Prostor na Lance. Pět uzlů, pět elementů, pět odpovědí. A přesto — když se nad mapou naposledy sklonili — zůstalo na ní jedno místo, kam žádná čára nevedla, a přesto skrz něj vedly všechny.
 
 *„Mezi Severem a Jihem,"* řekla Sítá a položila dlaň na průsečík dvou oceánů, *„leží země tak úzká, že ji na mapě skoro nevidíš. Ale bez ní by Amerika byla dvě poloviny, které se nikdy nesetkaly."*
 

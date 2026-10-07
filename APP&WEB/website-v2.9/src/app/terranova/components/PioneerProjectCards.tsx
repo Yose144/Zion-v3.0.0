@@ -63,18 +63,18 @@ const PROJECTS: ProjectCardData[] = [
   {
     href: '/terranova/genesis',
     title: 'Zahrada Genesis',
-    location: 'Algarve · Portugalsko',
+    location: 'Sabacheira · Tomar · Portugalsko',
     eyebrow: 'L5 · Portugal Base Camp',
     statusCs: 'V přípravě',
     statusEn: 'In preparation',
     descriptionCs:
-      'Atlantický uzel Terra Nova pro farmaření, glamping, vodu, energii a první dlouhodobou komunitní infrastrukturu.',
+      'Uzel Terra Nova v údolí Nabão — farma, poutní albergue, voda, energie a první dlouhodobou komunitní infrastrukturu.',
     descriptionEn:
-      'Atlantic Terra Nova node for farming, glamping, water, energy, and the first long-term community infrastructure.',
+      'Terra Nova node in the Nabão valley — farm, pilgrim albergue, water, energy, and the first long-term community infrastructure.',
     features: [
       { icon: Leaf, labelCs: 'Organická farma', labelEn: 'Organic farm' },
       { icon: Sun, labelCs: 'Solar & off-grid', labelEn: 'Solar & off-grid' },
-      { icon: Waves, labelCs: 'Surf & oceán', labelEn: 'Surf & ocean' },
+      { icon: Waves, labelCs: 'Agroal & Nabão', labelEn: 'Agroal & Nabão' },
       { icon: Trees, labelCs: 'Sázení stromů', labelEn: 'Tree planting' },
     ],
     metrics: [

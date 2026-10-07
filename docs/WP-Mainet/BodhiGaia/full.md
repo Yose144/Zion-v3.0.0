@@ -128,7 +128,7 @@ Na jaře vyryl tesař do trámu nad dveřmi vedle semene tři malé čárky. Ko�
 
 | Uzel | Element | Archetyp stromu | Role v síti | Místo | Energie |
 |---|---|---|---|---|---|
-| **Zahrada Genesis** | Země | **Kořen** | Base Camp — vstupní brána, farma, práce, oceán | Algarve, Portugalsko | Pohyb, surf, ranní světlo |
+| **Zahrada Genesis** | Země | **Kořen** | Base Camp — vstupní brána, farma, práce, poutní stezka | Sabacheira, Tomar, Portugalsko | Pohyb, albergue, ranní světlo |
 | **Dharma Temple** | Oheň | **Kmen** | Svatyně — ticho, praxe, vzdělání, hloubka | La Palma, Kanárské ostrovy | Klid sopky, noc, hvězdy |
 | **Te Pīko Ora** | Voda | **Koruna** | Naplnění — hojnost, integrace, mořská permakultura | Raiatea, Francouzská Polynésie | Tok, věčné poledne |
 | **Golden Republic Bohemia** | Vzduch | **Srdce** | Governance lab — kruh rozhodování, česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV), protokol Zlatá republika | Čechy, Česká republika | Most, most mezi tradicí a experimentem |
@@ -184,14 +184,14 @@ V [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../Zohar/01-SEFIROT-VRSTVY.md) odpovíd
 
 ---
 
-*→ Pokračování: [Kapitola 3 — Zahrada Genesis (Base Camp, Algarve)](./03-Zahrada-Genesis.md)*
+*→ Pokračování: [Kapitola 3 — Zahrada Genesis (Base Camp, Sabacheira–Tomar)](./03-Zahrada-Genesis.md)*
 
 ---
 
 *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)*
 
 # BODHI GAIA — Kapitola 3: Zahrada Genesis
-## Base Camp · Algarve, Portugalsko — farma na hranici dvou světů a první strom zasazený jako rituál
+## Base Camp · Sabacheira, Tomar, Portugalsko — zahrada mezi Fátimou a templářským městem a první strom zasazený jako rituál
 
 > *„Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, tu bude dál, když tenhle tým dávno odejde."*
 
@@ -227,7 +227,7 @@ O mnoho příběhů později — v jiné knize této řady — došla k téhle z
 
 ## Co to znamená
 
-**Zahrada Genesis je první fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se protíná organické zemědělství, surf, off-grid technologie a komunitní život. Její role v L5 Free World je Kořen: Base Camp, vstupní brána, místo, kam se dá přijet poprvé.**
+**Zahrada Genesis je první fyzický uzel Terra Nova v Evropě — eko-farma ve freguesii Sabacheira u Tomaru, v údolí Nabão, kde se protíná organické zemědělství, surf, off-grid technologie a komunitní život. Její role v L5 Free World je Kořen: Base Camp, vstupní brána, místo, kam se dá přijet poprvé.**
 
 Záměrem není dokonalost. Záměrem je **reálný provoz otevřený lidem** — farma, která roste spolu s lidmi, ne bez nich.
 
@@ -271,7 +271,7 @@ Cíl Fáze 1: 50 000 EUR/rok, break-even při 120 nocích/měsíc. Pracovní vý
 
 | Fáze | Období | Stav | Klíčové body |
 |---|---|---|---|
-| 0 — Zárodek | 2025 Q3–Q4 | ✅ | Tým 3 strážců, scouting Algarve, právní rešerše (Associação vs Cooperativa), rozpočet 50 000 EUR, zkušební záhony 0,1 ha |
+| 0 — Zárodek | 2025 Q3–Q4 | ✅ | Tým 3 strážců, scouting Sabacheira/Tomar, právní rešerše (Associação vs Cooperativa), rozpočet 50 000 EUR, zkušební záhony 0,1 ha |
 | 1 — Kořeny | 2026 | 🟡 | Pozemek (koupě / dlouhodobý nájem), registrace, solar 5 kWp, vrt, glamping 4–6 jednotek, 0,5 ha, první platící hosté (Q3 2026), ZION wallet + DAO rámec |
 | 2 — Komunita | 2027 | 🔵 | Guardian node, stálé bydlení 3–5 chat, měsíční program, LoRa mesh, Medical Table pavilon, propojení s Dharma Temple |
 | 3 — Síť | 2028 | 🔵 | 2 ha, semenná síť 3+ uzlů, vzdělávací centrum, surf škola, druhý uzel v Portugalsku |
@@ -299,9 +299,9 @@ Sucho a nedostatek vody (vrt + déšť + šedá voda), **letní požáry** (prot
 | **Ekonomika: 50 000 EUR / 120 nocí** | **HYPOTÉZA** | Break-even a příjmový model v §4 komunitního dokumentu; marketingové persony, kanály a sezónní ceník (§11); EU granty LEADER / Erasmus+ / LIFE ve fázi rešerše (§12). | Skutečné účetnictví po první sezóně; žádná z grantových žádostí není podána. |
 | **Ana, olivový list na kůlu** | **MÝTUS** | Postava vytvořená pro tuto knihu; motiv „biologický čas" je citát z komunitního dokumentu a webu. | — |
 | **Lumi a Ana sázejí druhé semínko růže** | **MÝTUS** | Epilog [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna, ne událost. | — |
-| **Fyzická růže zasazená v Algarve** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
+| **Fyzická růže zasazená v Sabacheiře** | **NEDOLOŽENO** | Žádná evidence výsadby neexistuje; návrh [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) je **HORIZONT / NEZAHÁJENO**. | Splnění Gate A–D + Day 0 packet podle pilotního rámce. |
 
-> **Známý rozpor k opravě:** stránka `/l5-free-world` označuje lokalitu Genesis Garden jako *Střední Evropa* (`L5FreeWorldCopy.centralEurope`), zatímco komunitní dokument, `/terranova/genesis`, karty Pioneer Projects i OASIS panel uvádějí **Algarve, Portugalsko**. Web je třeba sjednotit (viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
+> **Známý rozpor k opravě:** lokalita Genesis Garden byla historicky uváděna jako *Algarve* i jako *Střední Evropa* — od 2026-10-07 je sjednocena na **Sabacheira, concelho Tomar** (freguesie mezi Fátimou a Tomarem; viz [kap. 9](./09-Kotva-Pravdy-a-Hranice.md)).
 
 ---
 
@@ -411,7 +411,7 @@ Mikro-hydro vyžaduje posouzení vlivu na životní prostředí (kanárské vodn
 
 | Dimenze | Zahrada Genesis | Dharma Temple |
 |---|---|---|
-| Energie místa | Atlantický vítr, oceán, pohyb | Vulkanické ticho, hory, vnitřní praxe |
+| Energie místa | Údolí Nabão, prameny, poutní stezky | Vulkanické ticho, hory, vnitřní praxe |
 | Role | Base Camp — vstup | Svatyně — hlubší zastavení |
 | Ekonomická vazba | Hosté odesíláni na tiché retreaty | Hosté odesíláni na aktivní farmářské pobyty |
 | Výměna | Olivový olej, víno, sušené bylinky → kuchyně chrámu | Subtropické ovoce, léčivé byliny → trh Zahrady |
@@ -834,7 +834,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 - Svět **`DHARMA_TEMPLE_LA_PALMA`** v galaxii (`worlds.ts`): „Sacred L5 sanctuary on La Palma — a geodesic temple of enlightenment, education and community", `goldenEggClue: 7`, pozice `(-16.2, 0.2, 31.8)`.
 - Svět **`GOLDEN_REPUBLIC_BOHEMIA`** v galaxii (`worlds.ts`): governance lab, kruh rozhodování, česká moudrost — most mezi tradicí a experimentem.
 - Svět **`BODHI_LANKA`** v galaxii (`worlds.ts`): Bhakti protokol, Sri Maha Bodhi, Rama Setu most — láska jako kořen, nejstarší žijící strom.
-- Svět **`GENESIS_GARDEN`** v galaxii (`worlds.ts`, layer 5): story-world zrcadlící projekt Zahrady Genesis v Algarve — jeho metadata nesou **Rose lore** (Lumi sází Růži z *Příběhu Růže*), výslovně označenou jako literární **MÝTUS** (tagy `rose`, `lore`, `myth`), ne evidence rostliny ani infrastruktury na místě.
+- Svět **`GENESIS_GARDEN`** v galaxii (`worlds.ts`, layer 5): story-world zrcadlící projekt Zahrady Genesis v Sabacheiře u Tomaru — jeho metadata nesou **Rose lore** (Lumi sází Růži z *Příběhu Růže*), výslovně označenou jako literární **MÝTUS** (tagy `rose`, `lore`, `myth`), ne evidence rostliny ani infrastruktury na místě.
 - Planeta **SAMANTABHADRA** (layer 5, „Nekonečná Zahrada", deset velkých slibů) — buddhistický archetyp všeobjímající praxe.
 
 **OASIS backend (`V31/L4/oasis`)**
@@ -861,7 +861,7 @@ Nechal sklíčko v kapse a šel si pro motyku.
 | 2 | Veřejný L5 portál s živým zůstatkem fondu, návrhy, příjemci, milníky, výsledky (M5) | web | HORIZONT (`freeworld.zionterranova.com` v plánu N5) |
 | 3 | Označení každého L5 světa v OASIS stavovou značkou (koncept / stavba / živé) přímo v UI | L4 | HORIZONT |
 | 4 | Quest „Jeď do Zahrady" s ověřením přes impact packet a souhlas; žádná monetizace ceremonií | L4 ↔ L5 | HORIZONT (vyžaduje M5 gate a privacy review) |
-| 5 | Ověřit deploy metadat Dharma Temple (zdroj už má layer 5); Genesis lokalita na `/l5-free-world` → Algarve | L4 / web | STAVBA |
+| 5 | Ověřit deploy metadat Dharma Temple (zdroj už má layer 5); Genesis lokalita všude → Sabacheira, Tomar | L4 / web | STAVBA |
 
 ---
 
@@ -963,7 +963,7 @@ Muž stál dlouho před deskou. Pak ukázal na první dveře. *„Začnu tady."*
 - **KYC, kádrový posudek, geografickou blokaci.** Vstup do komunity je konsent kruhu, ne identifikační dokument. (Právní entity samozřejmě dodržují místní zákony — to je jiná věc než blockchainová identita.)
 - **Nákup ZIONu.** Žádná brána nevyžaduje držení tokenu. Guardian node je dobrovolný projekt komunity, ne podmínka členství.
 - **Víru.** Bodhi, Dharma, piko, Merkaba jsou obrazy. Zkouška je z uklizené kuchyně, ne z doktríny.
-- **Mlčení o rizicích.** Požár v Algarve, sopka na La Palmě, cyklon na Raiatea, povodeň v Čechách, monzun na Srí Lance, evakuace, pojištění, volatilita — všechno je v komunitních dokumentech a musí být i v každém rezervačním toku.
+- **Mlčení o rizicích.** Požár ve středním Portugalsku, sopka na La Palmě, cyklon na Raiatea, povodeň v Čechách, monzun na Srí Lance, evakuace, pojištění, volatilita — všechno je v komunitních dokumentech a musí být i v každém rezervačním toku.
 
 ### Co ti nikdo v L5 nesmí slíbit
 
@@ -1099,7 +1099,7 @@ Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../Mi
 | Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
 | Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
 | Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
-| Lumi, Ana a zasazení druhého semínka u Atlantiku. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
+| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
 
 ---
 
@@ -1121,7 +1121,7 @@ Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany id
 | # | Rozpor | Kde | Doporučená oprava | Třída |
 |---|---|---|---|---|
 | 1 | Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
-| 2 | Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve, Portugalsko**. | `APP&WEB/website-v2.9/src/app/l5-free-world/page.tsx` (`L5FreeWorldCopy.centralEurope`) | Sjednotit s `/terranova/genesis`, kartami a OASIS panelem. | A |
+| 2 | ~~Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve**~~ → **VYŘEŠENO 2026-10-07:** správná lokalita je **Sabacheira, concelho Tomar** — sjednoceno napříč `/l5-free-world`, `/terranova/genesis`, kartami, OASIS, mapami i registry. | — | Zápis ponechán jako historie rozhodnutí. | A |
 | 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
 | 4 | Lokalita Te Pīko Ora: web/OASIS **Tahiti**, komunitní dokument preferuje **Raiatea** (Tahiti jako záloha). | `PioneerProjectCards.tsx`, `WorldPanel.tsx` vs `te-piko-ora.md` §3.3 | Uvést „Raiatea / Tahiti (výběr probíhá)" všude stejně. | A |
 | 5 | Komunitní dokumenty datovány **2026-05-21**; timeline Genesis Fáze 1 „první hosté Q3 2026" — Q3 2026 již probíhá bez evidence. | `public/V3/L5/docs/COMMUNITIES/*.md` | Refresh stavů a dat; přidat sekci „Evidence" s odkazy. | B |
@@ -1694,7 +1694,7 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 | **Epilog a scéna: Lumi, Ana, semínko u sudu** | **MÝTUS** | [`Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md); tato kapitola — literární bajka, žádná událost. | — |
 | **Zahrada Genesis jako projekt** | **STAVBA** | Stejná evidence jako [Kapitola 3](./03-Zahrada-Genesis.md): `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (Fáze 0 ✅, Fáze 1 🟡), web `/terranova/genesis`, OASIS panel *Active*. | Pozemek, entita, nezávislé ověření — stejné jako kap. 3. |
 | **OASIS svět `GENESIS_GARDEN` obsahuje Rose lore** | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH), ne evidence na místě. | Deploy a ověření veřejného klienta; napojení metadat na L5 API je HORIZONT (kap. 7). |
-| **Fyzická růže byla v Algarve zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–D + kompletní Day 0 packet. |
+| **Fyzická růže byla v Sabacheiře zasazena** | **NEDOLOŽENO** | Žádný Day 0 packet, foto s původem, svědek ani záznam neexistuje; pilot dokument to sám potvrzuje. | Splnění Gate A–D + kompletní Day 0 packet. |
 | **Pilotní dokument GENESIS-ROSE-001** | **ŽIVÉ** (dokument) / **HORIZONT** (akce) | [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) — rozhodovací rámec, gaty A–D, záznamová pole, prahy D0/D30/D90/D365. | Vlastní provedení: souhlas, botanická kontrola, pečující osoba a den výsadby. |
 | **Žádný L5 fond / DAO spend na pilot schválen** | **ŽIVÉ** (hranice) | Žádný proposal, žádná on-chain reference, žádný rozpočet — Gate D pilotu to výslovně zakazuje bez skutečného DAO procesu. | Skutečný DAO proces, pokud by někdy financování vzniklo. |
 
@@ -1720,7 +1720,7 @@ Literatura semínko zasadila. Fyzicky zatím nikdo — a pokud se to jednou stan
 
 ## Příběh
 
-Poutníci stáli na konci mapy, kterou sami nakreslili. Kořen v Algarve. Kmen na La Palmě. Koruna v Raiatea. Srdce v Čechách. Prostor na Lance. Pět uzlů, pět elementů, pět odpovědí. A přesto — když se nad mapou naposledy sklonili — zůstalo na ní jedno místo, kam žádná čára nevedla, a přesto skrz něj vedly všechny.
+Poutníci stáli na konci mapy, kterou sami nakreslili. Kořen v údolí Nabão u Tomaru. Kmen na La Palmě. Koruna v Raiatea. Srdce v Čechách. Prostor na Lance. Pět uzlů, pět elementů, pět odpovědí. A přesto — když se nad mapou naposledy sklonili — zůstalo na ní jedno místo, kam žádná čára nevedla, a přesto skrz něj vedly všechny.
 
 *„Mezi Severem a Jihem,"* řekla Sítá a položila dlaň na průsečík dvou oceánů, *„leží země tak úzká, že ji na mapě skoro nevidíš. Ale bez ní by Amerika byla dvě poloviny, které se nikdy nesetkaly."*
 
@@ -1836,3 +1836,4 @@ Nová Amerika sdílí lokalitu s **pozemní stanicí Issobella** (`L6data/Pozemn
 ---
 
 *→ Předchozí: [Kapitola 12 — Růže v Zahradě Genesis](./12-Ruze-v-Zahrade-Genesis.md)* · *[Zpět na index Knihy Země → `00-README.md`](./00-README.md)* · *[Projektový list → `../../TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md`](../../TerraNova/Projects/NOVA-AMERIKA-KOSTARIKA.md)*
+

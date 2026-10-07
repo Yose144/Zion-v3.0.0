@@ -8,7 +8,7 @@ Každý projekt je "živý dokument" — průběžně se zpřesňuje s tím, jak
 
 | Projekt | Lokace | Status | Soubor |
 |---------|--------|--------|--------|
-| **Zahrada Genesis** | Algarve, Portugalsko | 🟡 Aktivní rozvoj | [ZAHRADA-GENESIS-PORTUGAL.md](ZAHRADA-GENESIS-PORTUGAL.md) |
+| **Zahrada Genesis** | Sabacheira, Tomar, Portugalsko | 🟡 Aktivní rozvoj | [ZAHRADA-GENESIS-PORTUGAL.md](ZAHRADA-GENESIS-PORTUGAL.md) |
 | **Dharma Temple** | La Palma, Kanárské ostrovy | 🔵 Příprava | [DHARMA-TEMPLE-LA-PALMA.md](DHARMA-TEMPLE-LA-PALMA.md) |
 | **Te Pīko Ora** | Raiatea / Tahiti, Francouzská Polynésie | 🔵 Vize / Příprava | [TE-PIKO-ORA.md](TE-PIKO-ORA.md) |
 | **Golden Republic Bohemia** | Čechy, Česká republika | 🔵 Vize / Příprava | [GOLDEN-REPUBLIC-BOHEMIA.md](GOLDEN-REPUBLIC-BOHEMIA.md) |

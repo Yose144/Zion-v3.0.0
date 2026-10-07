@@ -61,7 +61,7 @@ Pět zahrad. Lumi viděla, že z pěti stojí na papíře pět dokumentů — ka
 
 ## Co to znamená
 
-**Pět zahrad má jeden kód — a nad kódem stojí jedno pravidlo: žádný dopad bez důkazu.** Kniha Země popsala pět uzlů L5 (Zahrada Genesis na Algarve, Dharma Temple na La Palmě, Te Pīko Ora na Raiatea, Golden Republic Bohemia v Čechách, Bodhi Lanka na Srí Lance), sedm sdílených protokolů a osmý — impact packet. Tato kapitola k tomu přidává jen Lumiinu roli: **ona nenese vědro, ona svítí na kořen.** To je přesně role registru pravdy.
+**Pět zahrad má jeden kód — a nad kódem stojí jedno pravidlo: žádný dopad bez důkazu.** Kniha Země popsala pět uzlů L5 (Zahrada Genesis v Sabacheiře u Tomaru, Dharma Temple na La Palmě, Te Pīko Ora na Raiatea, Golden Republic Bohemia v Čechách, Bodhi Lanka na Srí Lance), sedm sdílených protokolů a osmý — impact packet. Tato kapitola k tomu přidává jen Lumiinu roli: **ona nenese vědro, ona svítí na kořen.** To je přesně role registru pravdy.
 
 1. **Sedm otázek = sedm protokolů.** Guardian Node (kdo hlídá noc), Seed Library (kde jsou semínka), Medical Table (kdo ošetří ránu), LoRa/Meshtastic mesh (když nejde telefon), sociokratická DAO (jak se rozhodujeme), Consciousness Admission (koho pustíme dovnitř) a Resonance Protocol (zvuk před rozhodnutím — ceremoniální). Všechny jsou dnes specifikace; Seed Library má v Genesis zárodek katalogu.
 2. **Guardian Node 90/10 není protokol, je to dohoda.** Split 90 % operátor / 10 % pokladna komunity je komunitní pravidlo z dokumentů, ne vlastnost konsensu. Žádný L5 uzel dnes neběží; instalace je plánovaná ve Fázi 2 (2027–2029).

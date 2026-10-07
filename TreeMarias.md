@@ -274,7 +274,7 @@ Trup III se **nepodrobuje stejné specifikaci jako I/II v tomto dokumentu** — 
 - [ ] Tender: Dykstra/van Meer/De Villiers-van Schaik na koncept → basic design → class approval
 - [ ] Tender loděnic: Metalships & Docks / Freire / Nodosa / West Sea / Balk
 - [ ] Stavba nebo refit; zkoušky; flag registration; ISM; pojištění
-- [ ] Nabírání kapitána → crew (pilot legy Pontevedra–Finisterre–Algarve–La Palma)
+- [ ] Nabírání kapitána → crew (pilot legy Pontevedra–Finisterre–Lisabon→Tomar/Sabacheira–La Palma)
 
 ### Fáze 3 — Atlantický okruh v provozu (rok 1–2 provozu)
 

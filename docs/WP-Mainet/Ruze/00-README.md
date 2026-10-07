@@ -41,7 +41,7 @@ Tahle kniha si pokládá vlastní otázku: může vztah zůstat jedinečný, ani
 | 7 | [Noc bez svědků](./07-Noc-bez-Svedku.md) | Přijde sucho a Lumi pečuje i v noci, kdy ji nikdo nevidí, dokud sama nezačne usychat; Růže ji přiměje postarat se i o sebe — péče je vzájemná. |
 | 8 | [Dovolení odejít](./08-Dovoleni-Odejit.md) | Lumi musí pokračovat s lucernou; Růže ji nedrží slibem návratu a Lumi Růži neutrhne — zralé semeno spadne samo do prázdné nádoby. |
 | 9 | [Oba břehy](./09-Oba-Brehy.md) | Po čase se Lumi vrací; růže rostou na obou březích a bránu nikdo nezamyká — první Růži pozná podle způsobu vztahu, který naučila celou zahradu. |
-| E | [Zahrada Genesis](./Epilog-Zahrada-Genesis.md) | Epilog: druhé semínko z nádoby dorazí do skromné Zahrady Genesis u Atlantiku; Lumi a Ana je zasadí na okraj záhonu bez cedule — celá scéna je MÝTUS, žádný fyzický čin. |
+| E | [Zahrada Genesis](./Epilog-Zahrada-Genesis.md) | Epilog: druhé semínko z nádoby dorazí do skromné Zahrady Genesis v údolí Nabão; Lumi a Ana je zasadí na okraj záhonu bez cedule — celá scéna je MÝTUS, žádný fyzický čin. |
 | 10 | [Kotva příběhu](./10-Kotva-Pribehu.md) | Jediná dokumentární kapitola: co je MÝTUS, jaká kontinuita je doložená, vztah ke starým textům i k Malému princi, co kniha není a stav review. |
 
 ---

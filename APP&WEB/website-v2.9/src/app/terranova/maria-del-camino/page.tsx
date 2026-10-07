@@ -49,8 +49,8 @@ const Copy = {
   fleetTitle: { cs: `Tři lodě — tres Marias`, en: `Three ships — tres Marias` },
   fleetSubtitle: { cs: `Tři zjevení · tři oceány · scháziště LUMI a Cape`, en: `Three apparitions · three oceans · LUMI & the Cape seam` },
   fleetAtlantic: {
-    cs: `Klasická plachetnice v tradici Camina — pokřtěná po prvním zjevení v Pontevedře, kde se María Mayor ukázala v červených královských rouchech jako španělská královna. Domácí voda Galicie; trasa Finisterre → Algarve → La Palma → karibský břeh LUMI, severský výběžek Labem k Bohemii.`,
-    en: `A classic sailing ship in the Camino tradition — christened after the first apparition at Pontevedra, where María Mayor appeared in red royal robes like a Spanish queen. Home waters Galicia; route Finisterre → the Algarve → La Palma → the Caribbean shore of LUMI, with a northern sortie up the Elbe to Bohemia.`,
+    cs: `Klasická plachetnice v tradici Camina — pokřtěná po prvním zjevení v Pontevedře, kde se María Mayor ukázala v červených královských rouchech jako španělská královna. Domácí voda Galicie; trasa Finisterre → Lisabon (odbočka Tomar–Sabacheira) → La Palma → karibský břeh LUMI, severský výběžek Labem k Bohemii.`,
+    en: `A classic sailing ship in the Camino tradition — christened after the first apparition at Pontevedra, where María Mayor appeared in red royal robes like a Spanish queen. Home waters Galicia; route Finisterre → Lisbon (Tomar–Sabacheira detour) → La Palma → the Caribbean shore of LUMI, with a northern sortie up the Elbe to Bohemia.`,
   },
   fleetPacific: {
     cs: `Solární katamarán v linii wa'a kaulua — pokřtěný po druhém zjevení u Fátimy, kde se objevila Bílá Paní ve svatebních šatech: mystická svatba, bílá orchidej, nové zjevení. Domov Te Pīko Ora (Raiatea); trasa Kostarika → Polynésie → australské pobřeží → Srí Lanka → Ekam.`,
@@ -256,8 +256,8 @@ const PHASES = [
     num: '3',
     cs: 'Atlantický okruh',
     en: 'Atlantic circuit',
-    descCs: 'První okruh atlantické trasy — Finisterre → Algarve → La Palma → Karibik → karibský břeh LUMI.',
-    descEn: 'The first circuit of the Atlantic route — Finisterre → the Algarve → La Palma → the Caribbean → LUMI.',
+    descCs: 'První okruh atlantické trasy — Finisterre → Lisabon (Tomar–Sabacheira) → La Palma → Karibik → karibský břeh LUMI.',
+    descEn: 'The first circuit of the Atlantic route — Finisterre → Lisbon (Tomar–Sabacheira) → La Palma → the Caribbean → LUMI.',
     active: false,
   },
   {
@@ -289,7 +289,7 @@ const ROUTE = [
   {
     num: '1',
     hull: 'I',
-    stop: { cs: 'Genesis Garden · Algarve', en: 'Genesis Garden · Algarve' },
+    stop: { cs: 'Genesis Garden · Sabacheira', en: 'Genesis Garden · Sabacheira' },
     initiation: { cs: 'Země', en: 'Earth' },
     desc: { cs: 'Ruce v hlíně — první iniciace je práce v zahradě, zdroj vody a semínka.', en: 'Hands in the soil — the first initiation is work in the garden, the source and the seeds.' },
   },
@@ -382,7 +382,7 @@ const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
 ];
 
 const SISTERS = [
-  { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Algarve, Portugalsko', en: 'Algarve, Portugal' } },
+  { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Sabacheira · Tomar, Portugalsko', en: 'Sabacheira · Tomar, Portugal' } },
   { name: 'Dharma Temple', href: '/terranova/dharma-temple', region: { cs: 'La Palma', en: 'La Palma' } },
   { name: 'Te Pīko Ora', href: '/terranova/te-piko-ora', region: { cs: 'Raiatea · Polynésie', en: 'Raiatea · Polynesia' } },
   { name: 'Golden Republic Bohemia', href: '/terranova/golden-republic-bohemia', region: { cs: 'Čechy', en: 'Bohemia' } },

@@ -8,16 +8,16 @@
    "en": "Three Pyramids · Terra Nova Base Camp"
   },
   "tagline": {
-   "cs": "První fyzický uzel Terra Nova v Evropě — eko-farma na atlantickém pobřeží Algarve, kde se potkává půda, oceán, komunita a ZION.",
-   "en": "The first physical Terra Nova node in Europe — an eco-farm on the Atlantic coast of the Algarve where soil, ocean, community and ZION meet."
+   "cs": "První fyzický uzel Terra Nova v Evropě — eko-farma ve freguesii Sabacheira u Tomaru, mezi Fátimou a templářským městem, kde se potkává půda, pramen Nabão, komunita a ZION. Domov Albergue do Jardim — razítko Zahrady z credencialu kvalifikuje poutníka požádat o palubu Tres Marias.",
+   "en": "The first physical Terra Nova node in Europe — an eco-farm in the parish of Sabacheira by Tomar, between Fátima and the Templar city, where soil, the Nabão spring, community and ZION meet. Home of the Albergue do Jardim — the Garden stamp in the credencial qualifies the pilgrim to request a deck aboard the Tres Marias."
   },
   "location": {
-   "cs": "Algarve, Portugalsko",
-   "en": "Algarve, Portugal"
+   "cs": "Sabacheira · Tomar, Portugalsko",
+   "en": "Sabacheira · Tomar, Portugal"
   },
   "status": "preparation",
-  "lat": 37.17,
-  "lon": -8.62,
+  "lat": 39.678,
+  "lon": -8.482,
   "accent": "#fcd116",
   "tags": [
    "Permaculture",

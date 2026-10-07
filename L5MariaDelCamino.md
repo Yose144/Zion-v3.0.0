@@ -67,7 +67,7 @@ Centrální technická idea: **plachta = solární článek**.
 **Trup I — Santa María la Mayor (Atlantik)**
 
 - **Kategorie:** klasická plachetnice navazující na caminskou námořní tradici — ocelový/alu schooner, brigantina nebo DynaRig koncept; ~55–70 m.
-- **Domov:** **Pontevedra, Galicie** (ría de Pontevedra — ROZHODNUTO home port; bazilika María Mayor stojí přímo u vody, postavili ji mořští lidé). Působiště: Atlantik + Karibik — Pontevedra, Algarve, La Palma, karibský břeh LUMI; severský výběžek umí i říční leg k Bohemii (Labe z Hamburku — landlocked uzel dostává námořní dotek); při uzavření Velké cesty návratový oblouk Cape → Azory → Pontevedra.
+- **Domov:** **Pontevedra, Galicie** (ría de Pontevedra — ROZHODNUTO home port; bazilika María Mayor stojí přímo u vody, postavili ji mořští lidé). Působiště: Atlantik + Karibik — Pontevedra, Lisabon (odbočka Tomar–Sabacheira), La Palma, karibský břeh LUMI; severský výběžek umí i říční leg k Bohemii (Labe z Hamburku — landlocked uzel dostává námořní dotek); při uzavření Velké cesty návratový oblouk Cape → Azory → Pontevedra.
 - **Vizuální identita:** tall-ship linie (render `Maria.jpg`) — zlatá světelná plachta, poutníkova loď.
 
 **Trup II — Nossa Senhora de Fátima (Pacifik)**
@@ -189,7 +189,7 @@ Trasa není servisní okruh — je to **cesta**. Každý uzel představuje jednu
 | # | Uzel | Iniciace | Co Guardian dostává |
 |---|------|----------|---------------------|
 | 0 | **Pontevedra — odchod** | Poutník | Credencial; plamen Finisterra; „tvá cesta teprve začíná" |
-| 1 | **Genesis Garden** (Algarve) | Země | Ruce v hlíně — pěstování, seed library, péče o živé |
+| 1 | **Genesis Garden** (Sabacheira, Tomar) | Země | Ruce v hlíně — pěstování, seed library, péče o živé; **Albergue do Jardim**: carimbo Zahrady do credencialu = kvalifikace k nástupu na palubu (viz §Caminho do Jardim) |
 | 2 | **Dharma Temple** (La Palma) | Ticho | Chrámová praxe — resonance před rozhodnutím; třetí zjevení na ostrově |
 | 3 | **LUMI** (Kostarika) | Most | Přechod mezi oceány po souši — výměna trupů; most nejste dokud jej nepřejdeš |
 | 4 | **Te Pīko Ora** (Raiatea) | Oceán | Wayfinding — navigace hvězdami, vlnami, ptáky; fetu'u consensus |
@@ -233,12 +233,26 @@ Trasa kolem světa má díry — budoucí uzly, které ji uzavřou (pipeline, ne
 ### Legy trasy — Atlantická loď (Santa María la Mayor)
 
 0. **Vyplutí Pontevedra** — bazilika, credencialy, plamen z Finisterra.
-1. **Algarve** — Genesis Garden (iniciace 1).
-2. **Fátima leg** (pobřežně, Lisboa odbočka — druhé zjevení).
+1. **Lisabon → Sabacheira (Tomar)** — Genesis Garden (iniciace 1): loď kotví na Teju, poutníci pokračují po souši do freguesie Sabacheira — vlakem na nádraží Chão de Maçãs–Fátima (Linha do Norte leží přímo ve freguesii) nebo přes Tomar. Iniciace Země probíhá v zahradě — albergue, záhony, razítko. **Caminho do Jardim** (odbočka): Fátima → Sabacheira ~20 km → Agroal (pramen Nabão, praia fluvial) ~5 km → Tomar ~11 km — v Tomaru návrat na Caminho Central, který vede zpět přes Coimbru, Porto a Tui do Pontevedry.
+2. **Fátima leg** (na souši, součást Caminho do Jardim — druhé zjevení je cíl, ne pobřežní zastávka).
 3. **La Palma** — Dharma Temple + María de las Nieves (iniciace 2).
 4. **Atlantická přeplavba** → Karibik (kandidátská stanice Barbados/Windwards).
 5. **LUMI karibský břeh** — výměna s pacifickou lodí (iniciace 3 přechází po souši).
 6. **Volitelné legy:** severská — Hamburk → Labe → Bohemia (řeka nese moře do landlocked uzlu); návratová — Cape Town → St Helena → Azory → Pontevedra (kruh při ext. plánování).
+
+### Caminho do Jardim — poutní odbočka a onboarding na Tres Marias (concept)
+
+Zahrada Genesis leží přímo v poutní krajině Portugalska: **Sabacheira** (freguesia concelho Tomar, ~39.68/−8.48, historická comenda Řádu Kristova) sedí ~20 km od **Fátimy**, ~11 km od **Tomaru** (etapa Caminho Central Português + sídlo Kristova řádu) a ~5 km od **Agroalu** — praia fluvial na největším prameni řeky Nabão (Modrá vlajka; řeka teče přímo freguesií). Linha do Norte má ve freguesii nádraží **Chão de Maçãs–Fátima** — vlakový příjezd z Lisabonu/Porta přes Caxarias.
+
+**Navrhovaná odbočka** (status: *concept* — trasa zatím není oficiálně vyznačena, vzdálenosti orientační, vyžaduje GPX survey, posouzení bezpečnosti a povolení):
+
+| Úsek | ~Vzdálenost | Charakter |
+|---|---|---|
+| **Fátima → Sabacheira** | ~20 km | Odbočka z Caminho de Fátima Nascente (Tomar ↔ Fátima ~29 km); modré šipky směr Fátima, žluté směr Santiago |
+| **Sabacheira → Agroal** | ~5 km | Krátká cesta k prameni Nabão — koupání, piknik, voda |
+| **Agroal → Tomar** | ~11 km | Dolů po Nabão do templářského města → návrat na Caminho Central |
+
+**Albergue do Jardim** — navrhovaná poutní noclehárna přímo v Zahrádce/na farmě: lůžka, společná večeře, orientace na Agroal a Tomar a **carimbo Zahrady do credencialu**. Poutník nesoucí razítko Zahrady je **kvalifikován požádat o místo na palubě jedné z Tres Marias** — razítko je onboarding credential programu, ne garance plavby: rozhoduje kapacita trupu, bezpečnostní podmínky a pravidla provozu (SPS/sail-training režim — poutník jako voyage crew, viz `TreeMarias.md` §posádka/regulace). Tím se Genesis stává **vstupní branou flotily po souši** — Camino, které vede na vodu.
 
 ### Legy trasy — Pacifická loď (Nossa Senhora de Fátima)
 

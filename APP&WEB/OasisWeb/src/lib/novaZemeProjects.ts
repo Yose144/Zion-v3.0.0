@@ -7,13 +7,13 @@ export const NOVA_ZEME_PROJECTS = [
   {
     id: 'genesis',
     name: 'Zahrada Genesis',
-    location: 'Algarve · Portugalsko',
+    location: 'Sabacheira · Tomar',
     color: '#10b981',
     status: 'Preparation',
-    desc: 'Atlantický uzel Terra Nova — organická farma, glamping, solar off-grid, surf a sázení stromů. První dlouhodobá komunitní infrastruktura.',
+    desc: 'Uzel Terra Nova v údolí Nabão mezi Fátimou a Tomarem — organická farma, albergue Caminho do Jardim, solar off-grid a sázení stromů. Razítko Zahrady otevírá paluby Tres Marias.',
     href: 'https://app.zionterranova.com/terranova/genesis',
-    lat: 37.0,
-    lon: -8.0,
+    lat: 39.68,
+    lon: -8.48,
   },
   {
     id: 'dharma',

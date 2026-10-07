@@ -273,9 +273,9 @@ const SYMBOLISM = [
 ];
 
 const COMPARE = [
-  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Atlantický vítr & oceán', en: 'Atlantic wind & ocean' }, bodhi: { cs: 'Bodhi strom & Indický oceán', en: 'Bodhi tree & Indian Ocean' } },
+  { dim: { cs: 'Energie místa', en: 'Place Energy' }, genesis: { cs: 'Údolí Nabão & prameny', en: 'Nabão valley & springs' }, bodhi: { cs: 'Bodhi strom & Indický oceán', en: 'Bodhi tree & Indian Ocean' } },
   { dim: { cs: 'Primární role', en: 'Primary Role' }, genesis: { cs: 'Base Camp', en: 'Base Camp' }, bodhi: { cs: 'Akasha Node', en: 'Akasha Node' } },
-  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, surf, community', en: 'Farm, surf, community' }, bodhi: { cs: 'Ayurveda, meditace, bhakti governance', en: 'Ayurveda, meditation, bhakti governance' } },
+  { dim: { cs: 'Klíčová aktivita', en: 'Key Activity' }, genesis: { cs: 'Farma, poutníci, komunita', en: 'Farm, pilgrims, community' }, bodhi: { cs: 'Ayurveda, meditace, bhakti governance', en: 'Ayurveda, meditation, bhakti governance' } },
   { dim: { cs: 'Architektonický symbol', en: 'Architectural symbol' }, genesis: { cs: '3 pyramidy — Memory / Consciousness / Future', en: '3 pyramids — Memory / Consciousness / Future' }, bodhi: { cs: 'Tři pavilony — Bodhi / Ayurveda / Bhakti', en: 'Three Pavilions — Bodhi / Ayurveda / Bhakti' } },
 ];
 

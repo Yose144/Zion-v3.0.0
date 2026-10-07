@@ -98,7 +98,7 @@ Mikro-hydro vyžaduje posouzení vlivu na životní prostředí (kanárské vodn
 
 | Dimenze | Zahrada Genesis | Dharma Temple |
 |---|---|---|
-| Energie místa | Atlantický vítr, oceán, pohyb | Vulkanické ticho, hory, vnitřní praxe |
+| Energie místa | Údolí Nabão, prameny, poutní stezky | Vulkanické ticho, hory, vnitřní praxe |
 | Role | Base Camp — vstup | Svatyně — hlubší zastavení |
 | Ekonomická vazba | Hosté odesíláni na tiché retreaty | Hosté odesíláni na aktivní farmářské pobyty |
 | Výměna | Olivový olej, víno, sušené bylinky → kuchyně chrámu | Subtropické ovoce, léčivé byliny → trh Zahrady |

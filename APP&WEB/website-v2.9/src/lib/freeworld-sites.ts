@@ -24,8 +24,8 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
   {
     key: 'genesis-garden',
     name: 'Genesis Garden',
-    lat: 37.17,
-    lon: -8.62,
+    lat: 39.678,
+    lon: -8.482,
     status: 'preparation',
     href: '/terranova/genesis',
     allocationZion: 500_000_000,

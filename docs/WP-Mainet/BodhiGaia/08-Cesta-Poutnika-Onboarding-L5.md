@@ -71,7 +71,7 @@ Muž stál dlouho před deskou. Pak ukázal na první dveře. *„Začnu tady."*
 - **KYC, kádrový posudek, geografickou blokaci.** Vstup do komunity je konsent kruhu, ne identifikační dokument. (Právní entity samozřejmě dodržují místní zákony — to je jiná věc než blockchainová identita.)
 - **Nákup ZIONu.** Žádná brána nevyžaduje držení tokenu. Guardian node je dobrovolný projekt komunity, ne podmínka členství.
 - **Víru.** Bodhi, Dharma, piko, Merkaba jsou obrazy. Zkouška je z uklizené kuchyně, ne z doktríny.
-- **Mlčení o rizicích.** Požár v Algarve, sopka na La Palmě, cyklon na Raiatea, povodeň v Čechách, monzun na Srí Lance, evakuace, pojištění, volatilita — všechno je v komunitních dokumentech a musí být i v každém rezervačním toku.
+- **Mlčení o rizicích.** Požár ve středním Portugalsku, sopka na La Palmě, cyklon na Raiatea, povodeň v Čechách, monzun na Srí Lance, evakuace, pojištění, volatilita — všechno je v komunitních dokumentech a musí být i v každém rezervačním toku.
 
 ### Co ti nikdo v L5 nesmí slíbit
 

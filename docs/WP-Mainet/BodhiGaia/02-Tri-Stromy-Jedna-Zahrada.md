@@ -39,7 +39,7 @@ Na jaře vyryl tesař do trámu nad dveřmi vedle semene tři malé čárky. Ko�
 
 | Uzel | Element | Archetyp stromu | Role v síti | Místo | Energie |
 |---|---|---|---|---|---|
-| **Zahrada Genesis** | Země | **Kořen** | Base Camp — vstupní brána, farma, práce, oceán | Algarve, Portugalsko | Pohyb, surf, ranní světlo |
+| **Zahrada Genesis** | Země | **Kořen** | Base Camp — vstupní brána, farma, práce, poutní stezka | Sabacheira, Tomar, Portugalsko | Pohyb, albergue, ranní světlo |
 | **Dharma Temple** | Oheň | **Kmen** | Svatyně — ticho, praxe, vzdělání, hloubka | La Palma, Kanárské ostrovy | Klid sopky, noc, hvězdy |
 | **Te Pīko Ora** | Voda | **Koruna** | Naplnění — hojnost, integrace, mořská permakultura | Raiatea, Francouzská Polynésie | Tok, věčné poledne |
 | **Golden Republic Bohemia** | Vzduch | **Srdce** | Governance lab — kruh rozhodování, česká moudrost (sůl, most, Zlatý býk, Přemysl Oráč, Libuše, Karel IV), protokol Zlatá republika | Čechy, Česká republika | Most, most mezi tradicí a experimentem |
@@ -95,7 +95,7 @@ V [`docs/Zohar/01-SEFIROT-VRSTVY.md`](../../Zohar/01-SEFIROT-VRSTVY.md) odpovíd
 
 ---
 
-*→ Pokračování: [Kapitola 3 — Zahrada Genesis (Base Camp, Algarve)](./03-Zahrada-Genesis.md)*
+*→ Pokračování: [Kapitola 3 — Zahrada Genesis (Base Camp, Sabacheira–Tomar)](./03-Zahrada-Genesis.md)*
 
 ---
 

@@ -161,7 +161,7 @@ const L5_LEADS = [
     key: 'genesis',
     name: 'Genesis Garden',
     element: { cs: 'Země · Kořen', en: 'Earth · Root' },
-    location: { cs: 'Algarve, Portugalsko', en: 'Algarve, Portugal' },
+    location: { cs: 'Sabacheira · Tomar, Portugalsko', en: 'Sabacheira · Tomar, Portugal' },
     icon: Sprout,
     accent: '16, 185, 129',
     text: 'text-emerald-300',

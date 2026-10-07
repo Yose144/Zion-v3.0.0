@@ -1,11 +1,11 @@
 # PŘÍBĚH RŮŽE — Epilog: Zahrada Genesis
-## Semeno z alabastrové nádoby dorazí k Atlantiku — a příběh se dotkne hlíny, aniž by se vydával za důkaz
+## Semeno z alabastrové nádoby dorazí do údolí Nabão — a příběh se dotkne hlíny, aniž by se vydával za důkaz
 
-Ta jiná voda měla chuť Atlantiku.
+Ta jiná voda měla chuť pramene — studená, vápenatá, jako by tekla přímo ze země.
 
 Stalo se to ještě před jejím návratem k řece, když v alabastrové nádobě nesla semínko darované Růží.
 
-Lumi ji ucítila dřív, než ji uviděla — vzduch se změnil, všechno vonělo solí a větrem a pod větrem rozmarýnem. Říkala jí „jiná voda“, protože řeka u brány zůstala daleko a moře se jí ještě nikdy neukázalo.
+Lumi ji ucítila dřív, než ji uviděla — vzduch se změnil, všechno vonělo vlhkou hlínou a pod hlínou rozmarýnem. Říkala jí „jiná voda“, protože řeka u brány zůstala daleko a Nabão ji nesl jinak — pomaleji, tišeji, jako voda, která má čas.
 
 Zahrada Genesis ji nepřekvapila. Žádné kopule, žádné zlato, žádná svatyně. Plátěný stan, sud s vodou, kruh kamenů, na kterém se dalo sedět — a u první olivy žena s mozoly na dlaních, která klečela v záhonu a plela.
 
