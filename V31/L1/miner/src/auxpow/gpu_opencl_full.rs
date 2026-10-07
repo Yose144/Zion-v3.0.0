@@ -284,6 +284,9 @@ pub struct ExtGpuMiner {
     /// Cached BeamHash III solver buffers (large hash tables reused per job).
     #[cfg(feature = "gpu-opencl")]
     beamhash_buffers: Option<BeamhashSolverBuffers>,
+    /// Autolykos v2 element table on GPU (per height+N).
+    #[cfg(feature = "gpu-opencl")]
+    autolykos_table: Option<AutolykosGpuTable>,
     /// Current block height for KawPow/ProgPow period calculation.
     /// Must be set via `set_block_height()` before mining KawPow/ProgPow.
     block_height: u64,
@@ -304,6 +307,14 @@ struct BeamhashSolverBuffers {
     buf1: Buffer<ocl::prm::Ulong8>,
     counters: Buffer<u32>,
     results: Buffer<u32>,
+}
+
+/// Autolykos v2 element table resident on the GPU (N × 32 bytes).
+#[cfg(feature = "gpu-opencl")]
+struct AutolykosGpuTable {
+    buf: Buffer<u8>,
+    n: u32,
+    height: u32,
 }
 
 /// Cached OpenCL buffers for Pearl PoUW pipeline, reused across nonces.
@@ -543,58 +554,28 @@ pub fn generate_kheavy_matrix(pre_pow_hash: &[u8; 32]) -> [u16; 4096] {
     }
 }
 
-/// Default Autolykos v2 table size (number of u64 entries).
-pub fn autolykos_table_size() -> usize {
-    std::env::var("ZION_AUTOLYKOS_TABLE_SIZE")
-        .ok()
-        .and_then(|v| v.trim().parse::<usize>().ok())
-        .unwrap_or(1 << 23)
+/// Autolykos v2: N grows ~5% every 51200 blocks after height 614400.
+/// Matches native-ffi `calcN()` and the Ergo reference.
+pub fn autolykos_calc_n(height: u32) -> u32 {
+    let base: u32 = 1 << 26;
+    if height < 614400 {
+        return base;
+    }
+    let iters = (height - 614400) / (50 * 1024) + 1;
+    let mut n = base;
+    for _ in 0..iters {
+        n = n / 100 * 105;
+    }
+    n
 }
 
-/// Generate a single Autolykos v2 table element via BLAKE2b-256.
-fn gen_autolykos_element(i: u64, seed: &[u8; 32], height: u32) -> u64 {
-    use blake2::digest::{Update, VariableOutput};
-    let mut hasher = blake2::Blake2bVar::new(32).expect("blake2b256");
-    hasher.update(seed);
-    hasher.update(&i.to_be_bytes());
-    hasher.update(&height.to_be_bytes());
-    let mut out = [0u8; 32];
-    hasher
-        .finalize_variable(&mut out)
-        .expect("blake2b256 finalize");
-    u64::from_be_bytes(out[0..8].try_into().unwrap())
-}
-
-/// Generate the full Autolykos v2 table (M u64 entries) from header + height.
-pub fn generate_autolykos_table(header: &[u8], height: u32, table_size: usize) -> Vec<u64> {
-    use sha2::Digest;
-    let mut h = sha2::Sha256::new();
-    h.update(header);
-    let seed: [u8; 32] = h.finalize().into();
-    (0..table_size)
-        .map(|i| gen_autolykos_element(i as u64, &seed, height))
-        .collect()
-}
-
-// ── Autolykos v2 table cache (process-wide) ──────────────────────────
-
-/// Process-wide cache of Autolykos v2 tables, keyed by `(height, table_size)`.
-type AutolykosTableCache = std::collections::HashMap<(u32, usize), Vec<u64>>;
-
-fn autolykos_table_cache() -> &'static std::sync::Mutex<AutolykosTableCache> {
-    use std::sync::OnceLock;
-    static CACHE: OnceLock<std::sync::Mutex<AutolykosTableCache>> = OnceLock::new();
-    CACHE.get_or_init(|| std::sync::Mutex::new(AutolykosTableCache::new()))
-}
-
-/// Ensure the Autolykos v2 table for `(height, table_size)` is present in the
-/// process-wide cache, generating it on a cache miss.  Called from `mine()`
-/// before building the kernel (and before borrowing `self` for the ProQue).
-fn ensure_autolykos_table(header: &[u8], height: u32, table_size: usize) {
-    let mut cache = autolykos_table_cache().lock().unwrap();
-    cache
-        .entry((height, table_size))
-        .or_insert_with(|| generate_autolykos_table(header, height, table_size));
+/// Build the 8192-byte Autolykos `M` array: concat of i64-BE for i in 0..1024.
+fn autolykos_m_array() -> [u8; 8192] {
+    let mut m = [0u8; 8192];
+    for i in 0..1024u64 {
+        m[i as usize * 8..i as usize * 8 + 8].copy_from_slice(&i.to_be_bytes());
+    }
+    m
 }
 
 impl ExtGpuMiner {
@@ -638,6 +619,7 @@ impl ExtGpuMiner {
             #[cfg(feature = "gpu-opencl")]
             pearl_buffers: None,
             beamhash_buffers: None,
+            autolykos_table: None,
             block_height: 0,
             progpow_group_size: 256,
             last_batch_tested: 0,
@@ -1073,6 +1055,9 @@ impl ExtGpuMiner {
             "zelhash" | "zelhash_flux" => {
                 return self.mine_zelhash_prod(header, target, base_nonce);
             }
+            "autolykos" | "autolykos_erg" => {
+                return self.mine_autolykos_v2(header, extra, target, base_nonce, batch_size);
+            }
             _ => {}
         }
 
@@ -1223,49 +1208,9 @@ impl ExtGpuMiner {
                     &found_flag_buf,
                 )?
             }
-            "autolykos" | "autolykos_erg" => {
-                // Prepare (and cache) the Autolykos v2 precomputed table.
-                // `extra` carries the block height as a little-endian u32 in
-                // its first 4 bytes, optionally followed by a little-endian
-                // u32 table-size override in bytes 4..8.
-                let height: u32 = if extra.len() >= 4 {
-                    u32::from_le_bytes(extra[..4].try_into().unwrap())
-                } else {
-                    0
-                };
-                let table_size: usize = if extra.len() >= 8 {
-                    u32::from_le_bytes(extra[4..8].try_into().unwrap()) as usize
-                } else {
-                    autolykos_table_size()
-                };
-                let table_size = table_size.next_power_of_two().max(1);
-
-                ensure_autolykos_table(header, height, table_size);
-                let table_buf = {
-                    let cache = autolykos_table_cache().lock().unwrap();
-                    let table = cache
-                        .get(&(height, table_size))
-                        .expect("autolykos table must be cached");
-                    Buffer::<u64>::builder()
-                        .queue(q.clone())
-                        .len(table.len())
-                        .copy_host_slice(table)
-                        .build()?
-                };
-
-                Self::build_autolykos_kernel(
-                    pro_que,
-                    kernel_name,
-                    header,
-                    target,
-                    base_nonce,
-                    &table_buf,
-                    table_size as u32,
-                    &output_nonce_buf,
-                    &output_hash_buf,
-                    &found_flag_buf,
-                )?
-            }
+            "autolykos" | "autolykos_erg" => unreachable!(
+                "autolykos dispatches via mine_autolykos_v2 before ensure_proque"
+            ),
             "ethash" | "etchash" | "ethash_etc" => {
                 // Ethash requires the per-epoch DAG to be uploaded first.
                 let dag = ethash_dag.ok_or_else(|| {
@@ -4180,8 +4125,9 @@ typedef unsigned long ulong;
         target: &[u8; 32],
         base_nonce: u64,
     ) -> Result<Option<GpuFoundShare>> {
-        // Equihash 200,9 constants (must match equihash_200_9_param.h)
-        // PARAM_K=9, PREFIX=20, NR_SLOTS=4 (OVERHEAD=4 for 200,9)
+        // Equihash 200,9 constants (must match equihash200_kernel.cl):
+        // PARAM_K=9, PREFIX=20, OVERHEAD=4 → NR_SLOTS = 2*4 = 8.
+        // Host slot count MUST equal kernel NR_SLOTS or ht_store writes OOB.
         self.mine_equihash_impl(
             header,
             target,
@@ -4189,7 +4135,7 @@ typedef unsigned long ulong;
             "equihash200_kernel.cl",
             9,
             20,
-            4,
+            8,
         )
     }
 
@@ -4822,9 +4768,10 @@ typedef unsigned long ulong;
         }
         q.finish().map_err(|e| anyhow!("equihash round0 finish: {e}"))?;
 
-        // 3. Rounds 1..K-2: collision finding (alternating ht_src/ht_dst)
-        //    For K=7: rounds 1-5 use k_rounds[0..4] (no sols arg)
-        for round in 1..=(param_k - 1) {
+        // 3. Rounds 1..=K-2: collision finding (alternating ht_src/ht_dst).
+        //    k_rounds[round-1] = kernel_round{round}; the final round K-1
+        //    is dispatched separately with the sols argument.
+        for round in 1..=(param_k - 2) {
             let round_idx = (round - 1) as usize;
             let k = &k_rounds[round_idx];
             let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
@@ -5634,38 +5581,112 @@ typedef unsigned long ulong;
         Ok(kernel)
     }
 
-    /// Build the Autolykos v2 mining kernel.
+    /// Generate the Autolykos v2 element table on the GPU for `height`.
     ///
-    /// The precomputed table (generated on the host from `SHA-256(header)` and
-    /// the block height) is passed in as `table_buf`.  The kernel signature
-    /// (in `autolykos_kernel.cl`) is, in order:
-    ///   header (__global uchar *), header_len (u32), target (__global uchar *),
-    ///   base_nonce (u64), table (__global ulong *), table_size (u32),
-    ///   output_nonce, output_hash, found.
-    #[allow(clippy::too_many_arguments)]
-    fn build_autolykos_kernel(
-        pro_que: &ProQue,
-        kernel_name: &str,
-        header: &[u8],
-        target: &[u8; 32],
-        base_nonce: u64,
-        table_buf: &Buffer<u64>,
-        table_size: u32,
-        output_nonce_buf: &Buffer<u64>,
-        output_hash_buf: &Buffer<u8>,
-        found_flag_buf: &Buffer<u32>,
-    ) -> Result<Kernel> {
+    /// `extra` may carry a little-endian u32 at offset 4..8 overriding N
+    /// (used by KAT/tests to avoid the 2 GiB mainnet table).  Otherwise
+    /// N = autolykos_calc_n(height) — 2^26 on mainnet today (~2 GiB).
+    pub fn generate_autolykos_table_gpu(&mut self, height: u32, n: u32) -> Result<()> {
+        if let Some(ref t) = self.autolykos_table {
+            if t.height == height && t.n == n {
+                return Ok(());
+            }
+        }
+
+        let pro_que = self.ensure_proque("autolykos_kernel.cl")?;
         let q = pro_que.queue().clone();
 
-        // The kernel reads up to 112 header bytes; pad to a fixed 128-byte
-        // buffer (the kernel clamps the length itself).
-        let header_len = header.len().min(128);
-        let mut header_padded = vec![0u8; 128];
-        header_padded[..header_len].copy_from_slice(&header[..header_len]);
+        let m = autolykos_m_array();
+        let m_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(m.len())
+            .copy_host_slice(&m)
+            .build()?;
 
+        let table_len = n as usize * 32;
+        let table_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(table_len)
+            .build()
+            .map_err(|e| {
+                anyhow!(
+                    "Autolykos table alloc failed ({:.1} GB, N={n}): {e}",
+                    table_len as f64 / 1e9
+                )
+            })?;
+
+        let kernel = Kernel::builder()
+            .queue(q.clone())
+            .program(pro_que.program())
+            .name("autolykos_gen_table")
+            .arg(&table_buf)
+            .arg(&m_buf)
+            .arg(height)
+            .arg(n)
+            .build()
+            .map_err(|e| anyhow!("autolykos_gen_table build failed: {e}"))?;
+
+        crate::ext_info!(
+            "auxpow_gpu_autolykos generating table: N={n} ({:.1} GB) height={height}",
+            table_len as f64 / 1e9
+        );
+        let t0 = Instant::now();
+        unsafe {
+            kernel
+                .cmd()
+                .global_work_size(n as usize)
+                .enq()
+                .map_err(|e| anyhow!("autolykos_gen_table enqueue: {e}"))?;
+        }
+        q.finish()
+            .map_err(|e| anyhow!("autolykos_gen_table finish: {e}"))?;
+        crate::ext_info!(
+            "auxpow_gpu_autolykos table ready in {:.1?}",
+            t0.elapsed()
+        );
+
+        self.autolykos_table = Some(AutolykosGpuTable {
+            buf: table_buf,
+            n,
+            height,
+        });
+        Ok(())
+    }
+
+    /// Consensus-exact Autolykos v2 mining (Ergo).
+    ///
+    /// `extra` layout (all little-endian): height u32 at [0..4], optional
+    /// N override u32 at [4..8] (tests only; real jobs use calcN).
+    fn mine_autolykos_v2(
+        &mut self,
+        header: &[u8],
+        extra: &[u8],
+        target: &[u8; 32],
+        base_nonce: u64,
+        batch_size: u64,
+    ) -> Result<Option<GpuFoundShare>> {
+        let height: u32 = if extra.len() >= 4 {
+            u32::from_le_bytes(extra[..4].try_into().unwrap())
+        } else {
+            0
+        };
+        let n: u32 = if extra.len() >= 8 {
+            u32::from_le_bytes(extra[4..8].try_into().unwrap())
+        } else {
+            autolykos_calc_n(height)
+        };
+
+        self.generate_autolykos_table_gpu(height, n)?;
+
+        let pro_que = self.ensure_proque("autolykos_kernel.cl")?;
+        let q = pro_que.queue().clone();
+
+        let header_len = header.len().min(80);
+        let mut header_padded = [0u8; 80];
+        header_padded[..header_len].copy_from_slice(&header[..header_len]);
         let header_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(header_padded.len())
+            .len(80)
             .copy_host_slice(&header_padded)
             .build()?;
         let target_buf: Buffer<u8> = Buffer::builder()
@@ -5673,24 +5694,79 @@ typedef unsigned long ulong;
             .len(32)
             .copy_host_slice(target.as_slice())
             .build()?;
-
-        let kernel = Kernel::builder()
+        let output_nonce_buf: Buffer<u64> = Buffer::builder()
             .queue(q.clone())
-            .program(pro_que.program())
-            .name(kernel_name)
-            .arg(&header_buf)
-            .arg(header_len as u32)
-            .arg(&target_buf)
-            .arg(base_nonce)
-            .arg(table_buf)
-            .arg(table_size)
-            .arg(output_nonce_buf)
-            .arg(output_hash_buf)
-            .arg(found_flag_buf)
-            .build()
-            .map_err(|e| anyhow!("kernel build failed: {e}"))?;
+            .len(1)
+            .fill_val(0u64)
+            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder()
+            .queue(q.clone())
+            .len(32)
+            .fill_val(0u8)
+            .build()?;
+        let found_flag_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(1)
+            .fill_val(0u32)
+            .build()?;
 
-        Ok(kernel)
+        // Move the table out of `self` for the duration of the dispatch so
+        // `ensure_proque` can hold its borrow (same pattern as beamhash).
+        let table = self.autolykos_table.take().unwrap();
+        let result = (|| {
+            let pro_que = self.ensure_proque("autolykos_kernel.cl")?;
+            let kernel = Kernel::builder()
+                .queue(q.clone())
+                .program(pro_que.program())
+                .name("autolykos_mine")
+                .arg(&header_buf)
+                .arg(header_len as u32)
+                .arg(base_nonce)
+                .arg(&table.buf)
+                .arg(n)
+                .arg(&output_nonce_buf)
+                .arg(&output_hash_buf)
+                .arg(&found_flag_buf)
+                .arg(&target_buf)
+                .build()
+                .map_err(|e| anyhow!("autolykos_mine build failed: {e}"))?;
+
+            // 4 nonces per work-item.
+            let gws = (batch_size / 4).max(1) as usize;
+            unsafe {
+                kernel
+                    .cmd()
+                    .global_work_size(gws)
+                    .local_work_size(128)
+                    .enq()
+                    .map_err(|e| anyhow!("autolykos_mine enqueue: {e}"))?;
+            }
+            q.finish()
+                .map_err(|e| anyhow!("autolykos_mine finish: {e}"))?;
+            self.last_batch_tested = gws as u64 * 4;
+            Ok::<(), anyhow::Error>(())
+        })();
+        self.autolykos_table = Some(table);
+        result?;
+
+        let mut found = vec![0u32; 1];
+        found_flag_buf.read(&mut found).enq()?;
+        if found[0] == 0 {
+            return Ok(None);
+        }
+        let mut nonce_out = vec![0u64; 1];
+        output_nonce_buf.read(&mut nonce_out).enq()?;
+        let mut hash_out = vec![0u8; 32];
+        output_hash_buf.read(&mut hash_out).enq()?;
+
+        let mut hash = [0u8; 32];
+        hash.copy_from_slice(&hash_out);
+        Ok(Some(GpuFoundShare {
+            nonce: nonce_out[0],
+            hash,
+            mix_hash: None,
+            solution: None,
+        }))
     }
 
     /// Build the Ethash mining kernel.
@@ -7778,7 +7854,6 @@ pub mod opencl_backend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::auxpow::gpu_opencl_full::gen_autolykos_element;
 
     #[test]
     fn kernel_sources_exist() {
@@ -8096,30 +8171,42 @@ mod tests {
         assert_eq!(out, expected, "BLAKE2b-256(abc) must match RFC 7693 vector");
     }
 
-    /// Autolykos v2 table generation must be deterministic for a fixed
-    /// header + height, and elements must depend on the index.
+    /// Autolykos v2 N(height): 2^26 below 614400, ~5% growth per 51200 after.
+    /// Matches native-ffi `calcN`.
     #[test]
-    fn autolykos_table_deterministic() {
-        let header = [42u8; 32];
-        let t0 = generate_autolykos_table(&header, 1_000_000, 1024);
-        let t1 = generate_autolykos_table(&header, 1_000_000, 1024);
-        assert_eq!(t0, t1, "table must be deterministic");
-        // Different indices produce different elements (overwhelmingly likely).
-        assert_ne!(t0[0], t0[1], "neighbouring elements should differ");
-        // Different height produces a different table.
-        let t2 = generate_autolykos_table(&header, 1_000_001, 1024);
-        assert_ne!(t0, t2, "table must depend on height");
+    fn autolykos_calc_n_matches_spec() {
+        assert_eq!(autolykos_calc_n(0), 1u32 << 26);
+        assert_eq!(autolykos_calc_n(614399), 1u32 << 26);
+        assert_eq!(autolykos_calc_n(614400), (1u32 << 26) / 100 * 105);
+        assert_eq!(
+            autolykos_calc_n(614400 + 51200),
+            ((1u32 << 26) / 100 * 105) / 100 * 105
+        );
     }
 
-    /// `gen_autolykos_element` returns a u64 derived from BLAKE2b-256.
+    /// Table element spec: T[i] = Blake2b256(i_BE4 || height_BE4 || M)[1..32)
+    /// stored as 32-byte BE bigint with a zero top byte.  This is the host-side
+    /// mirror of `autolykos_gen_table` — sanity-checked here so the kernel
+    /// contract is pinned by a unit test.
     #[test]
-    fn autolykos_element_is_u64() {
-        use sha2::Digest;
-        let mut h = sha2::Sha256::new();
-        h.update(&[1u8; 32]);
-        let seed: [u8; 32] = h.finalize().into();
-        let e = gen_autolykos_element(7, &seed, 417_792);
-        // Should be deterministic.
-        assert_eq!(e, gen_autolykos_element(7, &seed, 417_792));
+    fn autolykos_element_matches_spec() {
+        use blake2::digest::{Update, VariableOutput};
+        let m = autolykos_m_array();
+        assert_eq!(&m[..8], &0u64.to_be_bytes());
+        assert_eq!(&m[8192 - 8..], &1023u64.to_be_bytes());
+
+        let i: u32 = 7;
+        let height: u32 = 417_792;
+        let mut hasher = blake2::Blake2bVar::new(32).unwrap();
+        hasher.update(&i.to_be_bytes());
+        hasher.update(&height.to_be_bytes());
+        hasher.update(&m);
+        let mut digest = [0u8; 32];
+        hasher.finalize_variable(&mut digest).unwrap();
+        // Element bytes: [0] = 0, [1..32) = digest[1..32)
+        let mut elem = [0u8; 32];
+        elem[1..].copy_from_slice(&digest[1..]);
+        assert_eq!(elem[0], 0);
+        assert_eq!(&elem[1..], &digest[1..]);
     }
 }
