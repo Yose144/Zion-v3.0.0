@@ -182,7 +182,7 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 - dynexsolve — **ODE model fixed + KAT PASS**: dřív clause-feedback s invertovaným znaménkem (nesplněná klauzule zesilovala nesplněný stav → 0/~16k sols); nový model pressure+bistable řeší trivial 100% chipů, pipeline ověřena sha256≡ přes sol_dump; na syntetické ratio-4 instanci reálné mine() pořád EMPTY (near-threshold random 3-SAT — solver limitace, ne GPU bug; skutečné DNX joby jdou z mallob)
 
 **❌ Reálné defekty k opravě:**
-- **nexapow** — ✅ VYŘEŠENO (consensus-verified, viz řádek v tabulce). Pozn.: NVIDIA JIT ~40min fresh compile (kernel 6k řádků) — cachnuto v `~/.nv/ComputeCache`; KAT default SKIP, `auxpow_kat nexapow` explicit
+- **nexapow** — ✅ VYŘEŠENO (consensus-verified, viz řádek v tabulce). Pozn.: NVIDIA JIT ~40min fresh compile (kernel 6k řádků) — cachnuto v `~/.nv/ComputeCache`; KAT default SKIP, `auxpow_kat nexapow` explicit. **Microbench: ~26 H/s** na GTX 1070 Ti (4096 nonces / 157s — BIP-340 Schnorr per nonce je inherentně pomalý, ~3 řády pod typickým hash-PoW)
 - **verushash** — CPU-only by design (haraka512/clhash); GPU kernel neexistuje — dokumentováno, ne chyba
 - **runtime stream testy** — ✅ VYŘEŠENO: `auxpow_stream_hits_mock_stratum`, `kas_stratum_stream_runs`, `triple_stream_runs`, `zion_stream_runs` všechny zelené (145/145 suite). Root cause visení: **zero-seeded xoshiro256++** — mock `mining.notify` s all-zero headerem → `XoShiRo256PlusPlus` degenerate state produkuje 0 navždy → `generate_kheavy_matrix` rank-64 retry loop nikdy neskončil v spawn_blocking workeru (reálný liveness bug — hostile pool job by trvale uvězněl thread; fix = golden-ratio seed fallback pro all-zero state). Testy navíc: forced KAS/VRSC coiny (profit router vybíral nexapow s ~40min JIT) + okna 8-12s→90s (shared-GPU JIT).
 
@@ -209,6 +209,6 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 - `free_dag_caches()` — uvolní VRAM mezi KAT casy (progpow OOM fix); qhash batch cap 4096→1024; nexapow cap 64 + default SKIP (JIT >10min)
 - KAT: autolykos Rust ref + native cross-check @2²⁶, kawpow DAG wiring, ZION_KAT_REPEATS/NONCE env, fishhash/karlsenhash reduced-DAG E2E (DAG-slice≡CPU + mine≡CPU)
 
-**Zbývá:** full fishhash DAG 4.6GB na volné kartě, nexapow timeout/microbench, VRAM-blocked algos (zelhash/equihashzero/beamhash) potřebují volnou kartu, live share-level E2E pro RUN algos s validními wallets.
+**Zbývá:** full fishhash DAG 4.6GB na volné kartě, VRAM-blocked algos (zelhash ~6.5GB/equihashzero 4GB/beamhash 4.6GB — volno ~3GB pod produkčním loadem, potřebují volnou kartu), live share-level E2E pro RUN algos s validními wallets (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB/QUAI), mrtvé endpointy CLORE/FLUX/EPIC (egress/pool dead).
 
 Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_pool_semantics`, `kheavyhash_matches_native`, KAT GPU≡CPU — vše PASS.
