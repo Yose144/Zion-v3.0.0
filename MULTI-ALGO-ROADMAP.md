@@ -131,14 +131,14 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | fishhash (IRON) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | **DAG gen na GPU** (build kernel ≡ CPU ref, 256 items) + mine≡CPU na reduced DAG; full DAG 4.6GB = VRAM blocker |
 | karlsenhash (KLS) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | stejný DAG + xor-index mix + blake3(mix) finále; mine≡CPU na reduced DAG |
 | beamhash (BEAM) | ✅ solver | ✅ **seed PASS** | ⏱️ beam.2miners timeout | partial | **seed stage consensus-verified**: `beamHashIII_seed` elems (blake2b prepow → siphash24 workBits → mixer → bucket scatter) ≡ `beamhash_ref.rs` CPU port bit-exact; R1-R5 solver VRAM-blocked (2×2.28GB tables > volné VRAM) |
-| randomx (XMR) | CPU only | n/a | ⚠️ authorized, no job | — | cryptonote login OK; stub GPU |
+| randomx (XMR) | CPU only | n/a | ✅ **OK** (moneroocean, valid addr) | — | cryptonote login+job parse OK — **pool vyžaduje kryptograficky validní ed25519 adresu** (ne jen checksum); blob 76B + seed_hash + height parsovány; stub GPU |
 | quai (QUAI) | kawpow path | — | ⚠️ authorize (wallet) | pending | herominers:1185 connect+authorize OK protokol — fake wallet zamítnut (2miners:4848 mrtvý → default updated) |
 | evrprogpow (EVR) | ✅ | ✅ **PASS** | ✅ **OK** (zpool, job parsed) | verified | ProgOp interpretér ≡ GPU (vlastní parametry); **parser: YiiMP 7-param notify** `[job,hdr,seed,target,clean,height,ntime]` → seed+height propažovány do `StratumJob` |
 | meowpow (MEWC) | ✅ | ✅ **PASS** | ✅ **OK** (zpool, job parsed) | verified | ProgOp interpretér ≡ GPU (regs=16 varianta); stejný 7-param parser fix |
 | sha256d (BTC) | — | — | SKIP | — | merge-mining, žádný pool |
 | quantus (QTU) | qpow native | ✅ live | ⚠️ login: potřeba 36B wallet | ✅ produkce | QuantusStratum custom |
 | epic (EPIC) | progpow | ✅ **PASS** (progpow) | ⚠️ authorized, no job | verified | progpow kernel ≡ interpretér |
-| monero (XMR) | CPU randomx | — | ⚠️ authorized, no job | — | cryptonote OK |
+| monero (XMR) | CPU randomx | — | ✅ **OK** (valid addr) | — | cryptonote OK — viz randomx řádek |
 
 ### Stratum probe — mapa connectivity (2026-10-06, fake wallet `zion1probe`)
 
@@ -147,7 +147,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 - **TCP connect fail / mrtvý endpoint → FIXED:** ZEC→`zec.f2pool.com:3357` (8-param zcash notify parser), CFX→`cfx.f2pool.com:6800` (nový 4-param `[diff,height,hdr,boundary]` parser — height→DAG stage), NEOX→`stratum-eu.rplant.xyz:7057` (kawpow OK, header 32B), QUAI→`de.quai.herominers.com:1185` (protokol živý, fake wallet zamítnut = reálný signál)
 - **TCP connect fail (bez ověřené alternativy — egress/pool block):** CLORE (vipor/kryptex/aikapool + woolypooly vše unreachable), FLUX (minerpool/fluxpools/rplant/cruxpool/2miners vše unreachable), EPIC (epicmine connect ale tichý po subscribe; herominers/51pool mrtvé) — pravděpodobně outbound egress filtr nebo mrtvé pooly; defaults ponechány, E2E blokováno
 - **Timeout:** ALPH, DCR, PRL, BEAM (woolypooly/beam.2miners nedostupné odsud)
-- **Authorized, žádný job:** XMR (pool zavře conn po fake wallet — expected), EPIC (pool tichý po subscribe — endpoint/protocol, ne parser). **EVR + MEWC vyřešeno** — YiiMP 7-param `[job,hdr,seed,target,clean,height,ntime]` notify parser (obě path: `StratumJob` i legacy `ExternalJob`/`AuxPowClient`)
+- **Authorized, žádný job:** ~~XMR~~ **vyřešeno** — moneroocean validuje ed25519 adresu (ne jen checksum); s validní adresou login+job OK (blob 76B, seed_hash, height). EPIC (pool tichý po subscribe — endpoint/protocol, ne parser). **EVR + MEWC vyřešeno** — YiiMP 7-param `[job,hdr,seed,target,clean,height,ntime]` notify parser (obě path: `StratumJob` i legacy `ExternalJob`/`AuxPowClient`)
 - **QTU:** Quantus login vyžaduje dekódovatelnou 36B adresu
 
 ### kHeavyHash — opravené defekty (commit 749d112b1)
