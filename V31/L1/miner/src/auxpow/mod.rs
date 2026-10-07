@@ -12,6 +12,7 @@ pub mod gpu_miner;
 pub mod gpu_opencl_full;
 pub mod hasher;
 pub mod neoscrypt_ref;
+pub mod octopus_ref;
 #[cfg(feature = "native-hashers")]
 pub mod native;
 pub mod parent_chains;

@@ -223,6 +223,16 @@ struct ProgpowDag {
     epoch: u32,
 }
 
+/// Cached Octopus (CFX / CIP-3) DAG buffer.
+/// Flat array of 64-byte nodes (ethash-style item structure); `size_nodes`
+/// is the node count = the kernel's `dag_size` argument (pages = nodes/4).
+#[derive(Clone)]
+struct OctopusDag {
+    buf: Buffer<u64>,
+    size_nodes: u64,
+    stage: u64,
+}
+
 /// Cached FishHash DAG buffer (used by FishHash/IRON and KarlsenHashV2/KLS).
 /// The DAG is ~4.6GB (37,748,717 items × 128 bytes), generated with Blake3
 /// and 512 parent elements per item (vs Ethash's 256).
@@ -274,6 +284,8 @@ pub struct ExtGpuMiner {
     kawpow_dag: Option<KawpowDag>,
     /// Cached ProgPow DAG buffer (set via `set_progpow_dag` before mining EPIC).
     progpow_dag: Option<ProgpowDag>,
+    /// Cached Octopus DAG buffer (set via `generate_octopus_dag_on_gpu`).
+    octopus_dag: Option<OctopusDag>,
     /// Cached FishHash DAG buffer (set via `set_fishhash_dag` before mining IRON/KLS).
     fishhash_dag: Option<FishhashDag>,
     /// Cached Verthash data file (set via `set_verthash_data` before mining VTC).
@@ -971,6 +983,7 @@ impl ExtGpuMiner {
             ethash_dag: None,
             kawpow_dag: None,
             progpow_dag: None,
+            octopus_dag: None,
             fishhash_dag: None,
             verthash_data: None,
             #[cfg(feature = "gpu-opencl")]
@@ -1419,11 +1432,13 @@ impl ExtGpuMiner {
 
         // Ethash/KawPow need the per-epoch DAG; clone the Arc-backed buffer
         // handle before borrowing `self` for the ProQue below.
-        let ethash_dag = if matches!(
-            algorithm,
-            "ethash" | "etchash" | "ethash_etc" | "octopus" | "octopus_cfx"
-        ) {
+        let ethash_dag = if matches!(algorithm, "ethash" | "etchash" | "ethash_etc") {
             self.ethash_dag.clone()
+        } else {
+            None
+        };
+        let octopus_dag = if matches!(algorithm, "octopus" | "octopus_cfx") {
+            self.octopus_dag.clone()
         } else {
             None
         };
@@ -1789,13 +1804,12 @@ impl ExtGpuMiner {
                 )?
             }
             "octopus" | "octopus_cfx" => {
-                // Octopus (CFX): Ethash-like DAG lookup — reuses the
-                // uploaded Ethash DAG buffer for now (proper Octopus DAG
-                // sizing constants are a TODO — same 128-byte entries).
-                let dag = ethash_dag.ok_or_else(|| {
+                // Octopus (CFX, CIP-3): flat 64B-node DAG generated from the
+                // Octopus light cache (stage = height / 524288). `size_nodes`
+                // is the node count the kernel divides by 4 into 256B pages.
+                let dag = octopus_dag.ok_or_else(|| {
                     anyhow!(
-                        "Octopus DAG not set; call ExtGpuMiner::set_ethash_dag() \
-                         before mining CFX (shares ethash DAG machinery)"
+                        "Octopus DAG not set; call                          ExtGpuMiner::generate_octopus_dag_on_gpu() first"
                     )
                 })?;
                 Self::build_octopus_kernel(
@@ -1805,7 +1819,7 @@ impl ExtGpuMiner {
                     target,
                     base_nonce,
                     &dag.buf,
-                    dag.size_entries,
+                    dag.size_nodes,
                     &output_nonce_buf,
                     &output_hash_buf,
                     &found_flag_buf,
@@ -3092,6 +3106,7 @@ typedef unsigned long ulong;
         self.ethash_dag = None;
         self.kawpow_dag = None;
         self.progpow_dag = None;
+        self.octopus_dag = None;
         self.fishhash_dag = None;
         #[cfg(feature = "gpu-opencl")]
         {
@@ -3114,6 +3129,106 @@ typedef unsigned long ulong;
                 Some(ocl::flags::MEM_READ_ONLY),
                 (start * 16) as usize,
                 (count * 16) as usize,
+            )?
+            .read(&mut out)
+            .enq()?;
+        Ok(out)
+    }
+
+    /// Generate the Octopus (CFX, CIP-3) DAG **on the GPU**.
+    ///
+    /// Octopus datasets are flat arrays of 64-byte nodes with the same item
+    /// structure as Ethash (`calculate_dag_item` ≡ `ethash_dataset_item`),
+    /// generated from the Octopus light cache:
+    ///   stage       = block_height / 524288 (POW_STAGE_LENGTH)
+    ///   cache_size  = 16 MiB + 64 KiB/stage, prime count of 64B nodes
+    ///   data_size   = 4 GiB + 16 MiB/stage, prime count of 256B pages
+    ///
+    /// `max_nodes == 0` builds the real full dataset (~4 GiB at stage 0);
+    /// a nonzero value truncates to `max_nodes` nodes (rounded down to a
+    /// multiple of 4 so num_pages stays integral) — used by the KAT on
+    /// VRAM-constrained cards. Node contents are identical either way;
+    /// only the page count visible to the mining kernel changes.
+    #[cfg(feature = "native-hashers")]
+    pub fn generate_octopus_dag_on_gpu(
+        &mut self,
+        block_height: u64,
+        max_nodes: u64,
+    ) -> Result<()> {
+        use crate::auxpow::octopus_ref::{
+            octopus_cache_size, octopus_data_size, octopus_ident, octopus_make_cache,
+        };
+        let stage = block_height / (1 << 19);
+        let real_nodes = octopus_data_size(block_height) / 64;
+        let mut nodes = if max_nodes == 0 {
+            real_nodes
+        } else {
+            real_nodes.min(max_nodes)
+        };
+        nodes &= !3u64; // keep num_pages = nodes/4 integral
+
+        if let Some(ref dag) = self.octopus_dag {
+            if dag.stage == stage && dag.size_nodes == nodes {
+                return Ok(());
+            }
+        }
+
+        crate::ext_warn!(
+            "dag_manager: generating Octopus light cache stage={} on CPU...",
+            stage
+        );
+        let cache_nodes = (octopus_cache_size(block_height) / 64) as usize;
+        let ident = octopus_ident(stage);
+        let cache = octopus_make_cache(cache_nodes, &ident);
+
+        // generate_dag_on_gpu_impl takes 128-byte "entries" (2 nodes each).
+        let (dag_buf, entries) = self.generate_dag_on_gpu_impl(
+            &cache,
+            cache_nodes as u64,
+            nodes / 2,
+            "Octopus",
+        )?;
+
+        self.octopus_dag = Some(OctopusDag {
+            buf: dag_buf,
+            size_nodes: entries * 2,
+            stage,
+        });
+
+        crate::ext_warn!(
+            "dag_manager: Octopus DAG stage={} ready on GPU ({} nodes, {:.1} MB)",
+            stage,
+            nodes,
+            (nodes * 64) as f64 / (1024.0 * 1024.0)
+        );
+        Ok(())
+    }
+
+    #[cfg(not(feature = "native-hashers"))]
+    pub fn generate_octopus_dag_on_gpu(
+        &mut self,
+        _block_height: u64,
+        _max_nodes: u64,
+    ) -> Result<()> {
+        anyhow::bail!("Octopus DAG generation requires native-hashers feature.");
+    }
+
+    /// Read back `count` 64-byte Octopus DAG nodes starting at `start`
+    /// (KAT/debug). Returns `count * 8` u64 words.
+    pub fn octopus_dag_read_slice(&self, start: u64, count: u64) -> Result<Vec<u64>> {
+        let dag = self
+            .octopus_dag
+            .as_ref()
+            .ok_or_else(|| anyhow!("octopus DAG not generated"))?;
+        if start + count > dag.size_nodes {
+            anyhow::bail!("slice out of range");
+        }
+        let mut out = vec![0u64; (count * 8) as usize];
+        dag.buf
+            .create_sub_buffer(
+                Some(ocl::flags::MEM_READ_ONLY),
+                (start * 8) as usize,
+                (count * 8) as usize,
             )?
             .read(&mut out)
             .enq()?;
@@ -3972,7 +4087,7 @@ typedef unsigned long ulong;
         target: &[u8; 32],
         base_nonce: u64,
         dag_buf: &Buffer<u64>,
-        dag_size_entries: u64,
+        dag_size_nodes: u64,
         output_nonce_buf: &Buffer<u64>,
         output_hash_buf: &Buffer<u8>,
         found_flag_buf: &Buffer<u32>,
@@ -4006,7 +4121,7 @@ typedef unsigned long ulong;
             .arg(found_flag_buf)
             .arg(&target_buf)
             .arg(dag_buf)
-            .arg(dag_size_entries)
+            .arg(dag_size_nodes)
             .build()
             .map_err(|e| anyhow!("Octopus kernel build failed: {e}"))?;
 
