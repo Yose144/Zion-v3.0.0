@@ -366,6 +366,88 @@ fn real_main() {
                 continue;
             }
         }
+        // FishHash-family: verify the on-GPU `build` kernel against the CPU
+        // dataset-item reference on a small slice (full DAG = 4.6 GB, so we
+        // validate the construction path, not the full mining kernel).
+        if c.algo == "fishhash" || c.algo == "karlsenhash" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                use zion_miner::auxpow::gpu_opencl_full::{
+                    build_fishhash_light_cache, fishhash_dataset_item, fishhash_hash_ref,
+                    karlsenhash_hash_ref,
+                };
+                // 1) DAG construction: GPU `build` kernel ≡ CPU dataset item ref.
+                let nodes = miner.fishhash_build_dag_slice(0, 512)?; // 256 items
+                let cache = build_fishhash_light_cache();
+                let mut mismatches = 0usize;
+                for item in 0..256usize {
+                    let expect = fishhash_dataset_item(&cache, item);
+                    let got = &nodes[item * 128..item * 128 + 128];
+                    if got != expect {
+                        if mismatches == 0 {
+                            eprintln!(
+                                "  {} item {item} mismatch: gpu={} cpu={}",
+                                c.algo,
+                                hex::encode(&got[..8]),
+                                hex::encode(&expect[..8])
+                            );
+                        }
+                        mismatches += 1;
+                    }
+                }
+                if mismatches > 0 {
+                    anyhow::bail!("{mismatches}/256 DAG items mismatch");
+                }
+                // 2) Mine kernel on a reduced DAG (4096 items = 512 KB):
+                //    same code path as production (dagSize is a runtime arg),
+                //    max target → every nonce is a share, then verify the hash.
+                const ITEMS: usize = 4096;
+                let dag = miner.fishhash_build_dag_slice(0, 2 * ITEMS as u32)?;
+                miner.set_fishhash_dag(&dag, ITEMS as u32)?;
+                let hlen = if c.algo == "fishhash" { 180 } else { 80 };
+                let mut header = vec![0u8; hlen];
+                let copy = c.header.len().min(hlen);
+                header[..copy].copy_from_slice(&c.header[..copy]);
+                for i in 0..hlen {
+                    header[i] ^= 0x5au8.rotate_left((i % 8) as u32);
+                }
+                let share = miner
+                    .mine(c.algo, &header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .ok_or_else(|| anyhow::anyhow!("{} mine: no share found", c.algo))?;
+                let expect = if c.algo == "fishhash" {
+                    fishhash_hash_ref(&header, share.nonce, &dag, ITEMS)
+                } else {
+                    karlsenhash_hash_ref(&header, share.nonce, &dag, ITEMS)
+                };
+                if share.hash != expect {
+                    anyhow::bail!(
+                        "{} hash mismatch nonce={}: gpu={} cpu={}",
+                        c.algo,
+                        share.nonce,
+                        hex::encode(share.hash),
+                        hex::encode(expect)
+                    );
+                }
+                Ok::<_, anyhow::Error>(format!(
+                    "DAG-slice≡CPU + mine≡CPU nonce={}",
+                    share.nonce
+                ))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
         let mut res = Ok(Ok(None));
         for rep in 0..repeats {
             let nonce = base_nonce.wrapping_add(rep as u64);
