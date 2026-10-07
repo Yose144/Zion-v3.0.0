@@ -19,11 +19,11 @@
 // Each SAT variable is mapped to a neuron with continuous state x[i] in [-1,1].
 // Each CNF clause is mapped to a clause-satisfaction neuron c[k].
 //
-// Variable neuron ODE:
-//   dx[i]/dt = -x[i] + I[i] + Sum_k (sign(lit_k_i) * c[k])
+// Variable neuron ODE (bistable + clause-pressure formulation):
+//   dx[i]/dt = G·x[i]·(1−x[i]²) + I[i] + η·Sum_k (sign(lit_k_i) · p[k])
 //
-// Clause neuron ODE:
-//   dc[k]/dt = -c[k] + f(x[l1]) + f(x[l2]) + f(x[l3]) - 2.5
+// Clause pressure (instantaneous, replaces the old clause-neuron ODE):
+//   p[k] = max(0, 2.5 − (f(x[l1]) + f(x[l2]) + f(x[l3])))
 //
 // where:
 //   f(x) = tanh(x * gain)           (activation function)
@@ -285,6 +285,21 @@ static inline void decode_literal(int lit, int *var_idx, int *sign) {
 // Derivative computation with x in private memory, c in global memory.
 // Used for k1 (evaluated at the original state) and for intermediate
 // RK4 stages where x is a private temporary.
+// Analog-SAT formulation (pressure + bistable wells). The previous model
+// used a clause "satisfaction level" c[k] (dc/dt = -c + Σf - 2.5) fed back
+// as dx += s·c — this reinforced UNSATISFIED states (unsatisfied clause →
+// c ≈ −5.5 → positive literals pushed further negative), so the solver
+// could essentially never find a solution (measured: 0/~16k chips).
+//
+// Corrected dynamics:
+//   p[k]     = max(0, 2.5 − (f(l1) + f(l2) + f(l3)))   clause pressure —
+//              positive only while the clause is unsatisfied
+//   dx[i]/dt = G·x·(1−x²) + bias[i] + η·Σ_k s_ki·p[k]  — double-well drives
+//              |x|→±1 (convergence) while clause pressure tilts toward
+//              satisfying assignments
+//   dc[k]    = p[k]  (c accumulates pressure — kept for ABI, unused later)
+#define DYNEX_DW_GAIN   30.0f   // bistable well strength
+#define DYNEX_ETA       1.0f    // clause pressure coupling
 static inline void compute_derivatives_priv(
     __private const float *x,
     __global const float *c,
@@ -296,11 +311,11 @@ static inline void compute_derivatives_priv(
     const float gain,
     __private const float *bias
 ) {
-    // Initialize dx with decay + bias.
+    // Bistable double-well drift + bias.
     for (uint i = 0; i < num_variables; i++)
-        dx[i] = -x[i] + bias[i];
+        dx[i] = DYNEX_DW_GAIN * x[i] * (1.0f - x[i] * x[i]) + bias[i];
 
-    // Compute clause neuron derivatives and accumulate feedback to variables.
+    // Clause pressure and literal-signed feedback to variables.
     for (uint k = 0; k < num_clauses; k++) {
         int l1 = clause_literals[k * 3];
         int l2 = clause_literals[k * 3 + 1];
@@ -311,18 +326,16 @@ static inline void compute_derivatives_priv(
         decode_literal(l2, &v2, &s2);
         decode_literal(l3, &v3, &s3);
 
-        // Clause neuron ODE: dc[k]/dt = -c[k] + f(x[l1]) + f(x[l2]) + f(x[l3]) - 2.5
-        float ck = c[k];
-        dc[k] = -ck
-              + activate(x[v1], gain)
-              + activate(x[v2], gain)
-              + activate(x[v3], gain)
-              - 2.5f;
+        float p = fmax(2.5f
+              - (activate(x[v1], gain)
+               + activate(x[v2], gain)
+               + activate(x[v3], gain)),
+              0.0f);
+        dc[k] = p;
 
-        // Feedback to variable neurons: dx[vi] += si * c[k]
-        dx[v1] += (float)s1 * ck;
-        dx[v2] += (float)s2 * ck;
-        dx[v3] += (float)s3 * ck;
+        dx[v1] += DYNEX_ETA * (float)s1 * p;
+        dx[v2] += DYNEX_ETA * (float)s2 * p;
+        dx[v3] += DYNEX_ETA * (float)s3 * p;
     }
 }
 
@@ -725,6 +738,10 @@ void dynexsolve_mine(
 //   clause_scratch  — global scratch (same as dynexsolve_mine)
 //   hash_counter    — atomic uint counter incremented per completed chip
 //   solution_counter — atomic uint counter incremented per valid SAT solution
+//   sol_dump         — optional debug capture: [0]=dump_flag (atomic),
+//                      [1..2]=winning nonce (u64 LE), [3..10]=solution bytes
+//                      (one uint per byte), [11..42]=pow_hash (32 uints).
+//                      Pass a >=43-element uint buffer, or NULL.
 __kernel __attribute__((reqd_work_group_size(64, 1, 1)))
 void dynexsolve_benchmark(
     __global const int *clause_literals,
@@ -734,7 +751,8 @@ void dynexsolve_benchmark(
     __global float *clause_neurons,
     __global float *clause_scratch,
     __global volatile uint *hash_counter,
-    __global volatile uint *solution_counter
+    __global volatile uint *solution_counter,
+    __global volatile uint *sol_dump
 )
 {
     num_variables = min(num_variables, (uint)MAX_VARIABLES);
@@ -752,6 +770,7 @@ void dynexsolve_benchmark(
     init_state_from_nonce(x, bias, nonce, num_variables);
     init_clause_neurons(c, num_clauses);
 
+    int solution_found = 0;
     for (int step = 0; step < MAX_STEPS; step++) {
         float gain = 1.0f + 0.1f * (float)step;
         rk4_step(x, c, scratch, clause_literals, num_clauses, num_variables,
@@ -760,10 +779,29 @@ void dynexsolve_benchmark(
         if (step >= 14 && (step % 5 == 4 || step == MAX_STEPS - 1)) {
             if (check_convergence(x, num_variables)) {
                 if (check_solution(x, clause_literals, num_clauses)) {
-                    atomic_add(solution_counter, 1u);
+                    solution_found = 1;
                     break;
                 }
             }
+        }
+    }
+    if (!solution_found && check_solution(x, clause_literals, num_clauses))
+        solution_found = 1;
+
+    if (solution_found) {
+        atomic_add(solution_counter, 1u);
+        // First solver wins the debug dump slot.
+        if (sol_dump && atomic_xchg(&sol_dump[0], 1u) == 0u) {
+            uchar sol[32];
+            extract_solution(x, num_variables, sol);
+            uchar pow_hash[32];
+            hash_solution(x, num_variables, nonce, pow_hash);
+            sol_dump[1] = (uint)(nonce & 0xFFFFFFFFu);
+            sol_dump[2] = (uint)(nonce >> 32);
+            for (int i = 0; i < 8; i++)
+                sol_dump[3 + i] = (uint)sol[i];
+            for (int i = 0; i < 32; i++)
+                sol_dump[11 + i] = (uint)pow_hash[i];
         }
     }
 
