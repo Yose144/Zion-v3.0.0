@@ -2711,6 +2711,74 @@ impl ExtGpuMiner {
         self.verthash_data.as_ref().map(|d| d.mdiv)
     }
 
+    /// Debug: run only the `sha3_512_256` stage and return io_hashes for
+    /// nonces `base_nonce..base_nonce+count` (32 bytes each). Used by KAT to
+    /// bisect the verthash pipeline (keccak input stage vs memory seeks).
+    pub fn verthash_io_hashes_debug(
+        &mut self,
+        header: &[u8],
+        base_nonce: u64,
+        count: usize,
+    ) -> Result<Vec<[u8; 32]>> {
+        let q = self.ensure_proque("sha3_512_256.cl")?.queue().clone();
+        let program = self.ensure_proque("sha3_512_256.cl")?.program().clone();
+
+        let mut uheader = [0u32; 20];
+        for i in 0..20 {
+            let off = i * 4;
+            if off + 4 <= header.len().min(80) {
+                uheader[i] = u32::from_be_bytes([
+                    header[off],
+                    header[off + 1],
+                    header[off + 2],
+                    header[off + 3],
+                ]);
+            }
+        }
+        let in18 = uheader[18];
+        let header_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(18)
+            .copy_host_slice(&uheader[0..18])
+            .build()?;
+
+        let batch = count.max(256); // reqd_work_group_size(256)
+        let io_buf: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(batch * 8)
+            .build()?;
+
+        let k = Kernel::builder()
+            .queue(q.clone())
+            .program(&program)
+            .name("sha3_512_256")
+            .arg(&io_buf)
+            .arg(&header_buf)
+            .arg(in18)
+            .arg(base_nonce as u32)
+            .build()?;
+        unsafe {
+            k.cmd()
+                .global_work_size(batch)
+                .local_work_size(256)
+                .enq()?;
+        }
+        q.finish()?;
+
+        let mut all = vec![0u32; batch * 8];
+        io_buf.read(&mut all).enq()?;
+        let mut out = Vec::with_capacity(count);
+        for i in 0..count {
+            let mut b = [0u8; 32];
+            for j in 0..8 {
+                b[j * 4..j * 4 + 4]
+                    .copy_from_slice(&all[i * 8 + j].to_le_bytes());
+            }
+            out.push(b);
+        }
+        Ok(out)
+    }
+
     /// Generate the KawPow DAG **on the GPU** from a light cache.
     ///
     /// This is the standard approach used by professional miners (kawpowminer,
@@ -5631,7 +5699,7 @@ typedef unsigned long ulong;
             .arg(&io_hashes_buf) // 0: output (batch × 8 uint32)
             .arg(&header_buf) // 1: header (18 uint32)
             .arg(in18) // 2: in18 (header[18])
-            .arg(batch_u32) // 3: firstNonce (will be updated per batch)
+            .arg(base_nonce as u32) // 3: firstNonce — the actual base nonce
             .build()
             .map_err(|e| anyhow!("Verthash sha3_256 kernel build failed: {e}"))?;
 
@@ -5645,7 +5713,7 @@ typedef unsigned long ulong;
             .arg(&kstates_buf) // 1: kStates (200 ulong)
             .arg(&verthash.buf) // 2: memory (verthash.dat)
             .arg(in18) // 3: in18
-            .arg(batch_u32) // 4: firstNonce (will be updated per batch)
+            .arg(base_nonce as u32) // 4: firstNonce — the actual base nonce
             .arg(&target_results_buf) // 5: targetResults
             .arg(target_u32) // 6: target (high 32 bits)
             .build()

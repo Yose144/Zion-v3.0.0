@@ -91,6 +91,30 @@ fn ghostrider_cpu(_h: &[u8], _n: u64) -> anyhow::Result<[u8; 32]> {
     anyhow::bail!("no CPU ref; build with native-all")
 }
 
+/// Verthash CPU ref — loads verthash.dat once (same candidate paths as the
+/// GPU setup below).
+fn verthash_cpu(h: &[u8], n: u64) -> anyhow::Result<[u8; 32]> {
+    static DAT: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+    let data = DAT.get_or_init(|| {
+        for p in [
+            std::env::var("VERTHASH_DAT").unwrap_or_default(),
+            "/home/zionserver/verthash.dat".to_string(),
+            "./verthash.dat".to_string(),
+        ] {
+            if !p.is_empty() {
+                if let Ok(d) = std::fs::read(&p) {
+                    return d;
+                }
+            }
+        }
+        Vec::new()
+    });
+    if data.is_empty() {
+        anyhow::bail!("verthash.dat not loaded");
+    }
+    Ok(zion_miner::auxpow::verthash_ref::verthash_hash_ref(h, n, data))
+}
+
 #[cfg(feature = "gpu-opencl")]
 fn real_main() {
     use zion_miner::auxpow::gpu_opencl_full::ExtGpuMiner;
@@ -278,7 +302,7 @@ fn real_main() {
             algo: "verthash",
             header: vec![0x88u8; 80],
             extra: vec![],
-            cpu: |_h, _e, _n| anyhow::bail!("no CPU ref; needs data file"),
+            cpu: |h, _e, n| verthash_cpu(h, n),
         },
         Case {
             algo: "beamhash",
@@ -346,7 +370,7 @@ fn real_main() {
     let mut pass = 0;
     let mut fail = 0;
     let mut skip = 0;
-    for c in &cases {
+    'cases: for c in &cases {
         if !args.is_empty() && !args.iter().any(|a| a == c.algo) {
             continue;
         }
@@ -406,6 +430,37 @@ fn real_main() {
                 println!("{:<14} ERR   DAG/data gen failed: {e}", c.algo);
                 fail += 1;
                 continue;
+            }
+        }
+        // Verthash bisect: verify the keccak input stage (sha3_512_256 →
+        // io_hashes) against the CPU ref before running the full pipeline.
+        if c.algo == "verthash" {
+            match miner.verthash_io_hashes_debug(&c.header, base_nonce, 4) {
+                Ok(io) => {
+                    for (i, gpu_hash) in io.iter().enumerate() {
+                        let want = zion_miner::auxpow::verthash_ref::verthash_io_hash_ref(
+                            &c.header,
+                            base_nonce + i as u64,
+                        );
+                        if *gpu_hash != want {
+                            println!(
+                                "{:<14} FAIL  io_hash[{}] mismatch gpu={} cpu={} (keccak input stage)",
+                                c.algo,
+                                i,
+                                hex::encode(&gpu_hash[..8]),
+                                hex::encode(&want[..8])
+                            );
+                            fail += 1;
+                            continue 'cases;
+                        }
+                    }
+                    eprintln!("  verthash io_hash ≡ CPU ref");
+                }
+                Err(e) => {
+                    println!("{:<14} ERR   io_hash debug failed: {e}", c.algo);
+                    fail += 1;
+                    continue;
+                }
             }
         }
         // Ethash: hashimoto CPU ref — verify the GPU kernel's mix_hash against

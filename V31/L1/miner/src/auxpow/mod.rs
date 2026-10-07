@@ -22,6 +22,7 @@ pub mod qpow;
 pub mod scheduler;
 pub mod true_auxpow;
 pub mod types;
+pub mod verthash_ref;
 
 pub use client::{
     AuxPowClient, AuxPowClientConfig, ExternalJob, ShareResult, StratumClient, StratumJob,

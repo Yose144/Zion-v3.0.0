@@ -125,7 +125,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | dynexsolve (DNX) | ✅ | EMPTY (kernel běží) | ❌ authorize (wallet) | pending | **ABI fix**: 12→10 args, 1-based literály; syntetický SAT bez řešení v batchi = očekávané |
 | nexapow (NEXA) | ✅ compile | ⏳ JIT >10min | ❌ authorize (wallet) | blocked | 6k-řádkový secp256k1 kernel — NVIDIA JIT compile pathologický; batch cap 64 + SKIP default ve sweepu (`auxpow_kat nexapow` explicit) |
 | octopus (CFX) | ✅ | ⚠️ RUN | ❌ TCP connect (port) | pending | **dispatch + DAG wiring** (sdílí ethash DAG) |
-| verthash (VTC) | ✅ | ⚠️ **RUN** | ✅ OK (zpool) | pending | verthash.dat stažen (1.28GB); early-dispatch fix; CPU ref chybí |
+| verthash (VTC) | ✅ | ✅ **PASS** | ✅ OK (zpool) | pending | **2 fixy**: host posílal `firstNonce=batch_size` místo `base_nonce` (GPU hashoval jiný nonce než reportoval → invalid shares) + CPU ref `verthash_ref.rs` (keccak::f1600, 4096 seeků, 4-lane) ≡ GPU |
 | fishhash (IRON) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | **DAG gen na GPU** (build kernel ≡ CPU ref, 256 items) + mine≡CPU na reduced DAG; full DAG 4.6GB = VRAM blocker |
 | karlsenhash (KLS) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | stejný DAG + xor-index mix + blake3(mix) finále; mine≡CPU na reduced DAG |
 | beamhash (BEAM) | ✅ solver | ❌ VRAM | ⏱️ beam.2miners timeout | blocked | solver tabulky 2×2.28GB=4.56GB; **pre_pow fix hotový**; potřeba volná karta |
@@ -161,10 +161,10 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 ### Checklist — co máme / co ne (2026-10-07)
 
 **✅ Consensus-ověřené GPU kernely (KAT PASS bit-exact):**
-kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace), **eaglesong** (RFC-0010 ref ≡ GPU), **qhash** (16q circuit ref ≡ GPU), **neoscrypt** (kernel blake2s fix; kernel-variant ≡ CPU ref — variantu pozn. ve výše řádku)
+kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace), **eaglesong** (RFC-0010 ref ≡ GPU), **qhash** (16q circuit ref ≡ GPU), **neoscrypt** (kernel blake2s fix; kernel-variant ≡ CPU ref — variantu pozn. ve výše řádku), **verthash** (io_hash + 4096-seek pipeline ≡ CPU ref; keccak přes `keccak::f1600`)
 
 **✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
-octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže), verthash, **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
+octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže), **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
 
 **❌ Známý defekt (GPU ≠ reference):**
 ghostrider — GPU produkuje jiný digest než native-ffi (sphlib+CN); potřeba bisect přes `ghostrider_sph_test` per-stage
