@@ -69,6 +69,7 @@ const KAWPOW_CU: &str = include_str!("../../csrc/cuda/kawpow_kernel.cu");
 const PROGPOW_CU: &str = include_str!("../../csrc/cuda/progpow_kernel.cu");
 const ETHASH_DAG_GEN_CU: &str = include_str!("../../csrc/cuda/ethash_dag_gen.cu");
 const VERUSHASH_CU: &str = include_str!("../../csrc/cuda/verushash_kernel.cu");
+const KERYXHASH_CU: &str = include_str!("../../csrc/cuda/keryxhash_kernel.cu");
 
 /// Preprocess kernel source: strip #pragma once and #include lines,
 /// prepend standard typedefs, fix NVRTC-incompatible constructs.
@@ -120,6 +121,7 @@ pub enum CudaExtAlgo {
     Kawpow,
     Progpow,
     Verushash,
+    Keryxhash,
 }
 
 impl CudaExtAlgo {
@@ -136,6 +138,7 @@ impl CudaExtAlgo {
             }
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Some(Self::Progpow),
             "verushash" | "verushash_vrsc" | "verus" => Some(Self::Verushash),
+            "keryxhash" | "keryxhash_krx" | "keryx" => Some(Self::Keryxhash),
             _ => None,
         }
     }
@@ -153,6 +156,7 @@ impl CudaExtAlgo {
             Self::Kawpow => "progpow_search",
             Self::Progpow => "progpow_mine",
             Self::Verushash => "verus_mine",
+            Self::Keryxhash => "keryxhash_mine",
         }
     }
 
@@ -167,6 +171,7 @@ impl CudaExtAlgo {
             Self::Kawpow => "kawpow",
             Self::Progpow => "progpow",
             Self::Verushash => "verushash",
+            Self::Keryxhash => "keryxhash",
         }
     }
 
@@ -180,6 +185,7 @@ impl CudaExtAlgo {
             Self::Kawpow => KAWPOW_CU,
             Self::Progpow => PROGPOW_CU,
             Self::Verushash => VERUSHASH_CU,
+            Self::Keryxhash => KERYXHASH_CU,
         }
     }
 
@@ -244,6 +250,10 @@ pub struct CudaExternalMiner {
     dag_gen_loaded: bool,
     // Cached timestamp for kheavyhash
     kheavy_timestamp: u64,
+    /// KeryxHash DAA score — selects the active matrix salt (v1/v2/v4).
+    keryx_daa_score: u64,
+    /// DAA score the current matrix buffer was generated with.
+    kheavy_matrix_daa: u64,
     // Block height set by update_epoch(); used for algorithms that need height
     // in mine_batch_raw where the MiningHeader timestamp is not available.
     current_height: u64,
@@ -349,7 +359,7 @@ impl CudaExternalMiner {
 
         // Algorithm-specific buffers — kheavyhash matrix is regenerated
         // per job (seeded by pre_pow_hash); start with a zero seed.
-        let kheavy_matrix = if algo == CudaExtAlgo::Kheavyhash {
+        let kheavy_matrix = if matches!(algo, CudaExtAlgo::Kheavyhash | CudaExtAlgo::Keryxhash) {
             let matrix = generate_kheavy_matrix_cuda(&[0u8; 32]);
             Some(
                 dev.htod_copy(matrix.to_vec())
@@ -434,6 +444,8 @@ impl CudaExternalMiner {
             light_cache_items: 0,
             dag_gen_loaded: false,
             kheavy_timestamp: 0,
+            keryx_daa_score: 0,
+            kheavy_matrix_daa: u64::MAX, // force first-job regen
             current_height: 0,
             verus_vkey: None,
             verus_blockhash_half: None,
@@ -925,18 +937,30 @@ impl CudaExternalMiner {
 
         // kHeavyHash: the 64×64 matrix is seeded by the block's pre_pow_hash
         // (rusty-kaspa Matrix::generate) — regenerate + reupload on job change.
-        if self.algo == CudaExtAlgo::Kheavyhash {
+        // KeryxHash uses the salted variant (pre_pow_hash XOR salt(daa_score)).
+        if matches!(self.algo, CudaExtAlgo::Kheavyhash | CudaExtAlgo::Keryxhash) {
             let mut pp = [0u8; 32];
             let n = header.len().min(32);
             pp[..n].copy_from_slice(&header[..n]);
-            if pp != self.kheavy_pre_pow {
-                let matrix = generate_kheavy_matrix_cuda(&pp);
+            let daa = self.keryx_daa_score;
+            if pp != self.kheavy_pre_pow || daa != self.kheavy_matrix_daa {
+                let matrix = if self.algo == CudaExtAlgo::Keryxhash {
+                    let m2d = crate::auxpow::hasher::generate_keryx_matrix(&pp, daa);
+                    let mut flat = [0u16; 4096];
+                    for i in 0..64 {
+                        flat[i * 64..i * 64 + 64].copy_from_slice(&m2d[i]);
+                    }
+                    flat
+                } else {
+                    generate_kheavy_matrix_cuda(&pp)
+                };
                 self.kheavy_matrix = Some(
                     self.dev
                         .htod_copy(matrix.to_vec())
                         .map_err(|e| anyhow::anyhow!("kheavy_matrix upload: {e}"))?,
                 );
                 self.kheavy_pre_pow = pp;
+                self.kheavy_matrix_daa = daa;
             }
         }
 
@@ -982,7 +1006,7 @@ impl CudaExternalMiner {
 
             unsafe {
                 match self.algo {
-                    CudaExtAlgo::Kheavyhash => {
+                    CudaExtAlgo::Kheavyhash | CudaExtAlgo::Keryxhash => {
                         let matrix = self.kheavy_matrix.as_ref().unwrap();
                         func.clone()
                             .launch(
@@ -998,7 +1022,7 @@ impl CudaExternalMiner {
                                     &mut self.found_flag,
                                 ),
                             )
-                            .map_err(|e| anyhow::anyhow!("kheavyhash launch: {e}"))?;
+                            .map_err(|e| anyhow::anyhow!("{} launch: {e}", self.algorithm))?;
                     }
                     CudaExtAlgo::Blake3Alph => {
                         let header_len_u32 = header_len as u32;
@@ -1546,9 +1570,12 @@ impl GpuMiner for CudaExternalMiner {
     ) -> Result<GpuBatchResult> {
         let header_bytes = header.to_bytes();
 
-        if self.algo == CudaExtAlgo::Kheavyhash {
+        if matches!(self.algo, CudaExtAlgo::Kheavyhash | CudaExtAlgo::Keryxhash) {
             let pre_pow_hash = &header_bytes[..32];
             self.kheavy_timestamp = header.timestamp;
+            // MiningHeader has no DAA field — default to the current mainnet
+            // salt (v4) for keryx, matching the OpenCL extra.len()<16 default.
+            self.keryx_daa_score = crate::auxpow::hasher::KERYX_SALT_V4_ACTIVATION_DAA;
             return self.run_kernel(pre_pow_hash, &target.bytes, nonce_start, batch_size);
         }
 
@@ -1594,7 +1621,7 @@ impl GpuMiner for CudaExternalMiner {
         nonce_start: u64,
         batch_size: u64,
     ) -> Result<GpuBatchResult> {
-        if self.algo == CudaExtAlgo::Kheavyhash {
+        if matches!(self.algo, CudaExtAlgo::Kheavyhash | CudaExtAlgo::Keryxhash) {
             let pre_pow_hash = &raw_header[..32.min(raw_header.len())];
             // For live KaspaStratum the raw header is the 32-byte pre_pow_hash
             // followed by the 8-byte little-endian block timestamp.
@@ -1602,6 +1629,13 @@ impl GpuMiner for CudaExternalMiner {
                 u64::from_le_bytes(raw_header[32..40].try_into().unwrap_or([0u8; 8]))
             } else {
                 0
+            };
+            // KeryxHash: raw_header[40..48] carries the DAA score (same layout
+            // as the OpenCL `extra` buffer); absent → current mainnet salt v4.
+            self.keryx_daa_score = if raw_header.len() >= 48 {
+                u64::from_le_bytes(raw_header[40..48].try_into().unwrap_or([0u8; 8]))
+            } else {
+                crate::auxpow::hasher::KERYX_SALT_V4_ACTIVATION_DAA
             };
             return self.run_kernel(pre_pow_hash, &target.bytes, nonce_start, batch_size);
         }
