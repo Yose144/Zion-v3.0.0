@@ -234,6 +234,13 @@ Po nasazení G2 produkce hlásila `NodeMaterial: Material "MeshStandardMaterial"
 
 Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém OS** — headless Chrome neukáže swapchain/IOSurface validační cesty; `materialNodes.keys()`/`lightNodes` dump je rychlý diagnostický hook přes `window.__oasisGl.nodes.library`.
 
+### Post-G2 gameplay/perf kolo (2026-10-07, commit `d57d8cba6`)
+- **Galaxy instancing:** 354 non-star světů → 2 instanced draw cally (`instancedMesh` sphere + ring, `instanceColor` pro kategorii + discovered dimming). Star systemy + selected zůstávají full `World` nody (rays/gate/vortex). Hovered instanced node dostane raycast-free overlay (aura + Html label) — handoff raycast targetu mid-hover by flickeroval. **Produkce: ~1 900 → ~240 draw calls**, per-instance raycast/click zachován (`e.instanceId`).
+- **In-world objectives:** `WorldObjectives` — seeded scan/harvest/relic nody orbitující svět (5 desktop / 3 mobil), one-shot collect per `world:id` v `collectedNodes` (zustand persist), XP/credits/lore toasty, velikost škáluje se `SIZES[category]`.
+- **Discovery sync → ZIS/OASIS profil:** nový `POST /api/v1/oasis/player/:addr/worlds/:id/discover` (sensitive router → `require_auth` + rate limit, `XpSource::WorldDiscovery`, stats `discovered:<id>`); klient pushuje jen při ZIS session; `syncPlayer(trusted)` hydratuje `scanned:`/`approached:`/`discovered:` → `discoveredWorlds`. `pilgrim-0001` fallback se nehydratuje (sdílený záznam).
+- **Onboarding:** `oasis.visited` → returning skip warp intro na stargate; „Skip intro →" button; mobil dostává Pilgrim Rite (archetype + loadout bonus persistován).
+- **E2E poučení:** canvas click auto-minimalizuje panely na 2,5 s (`pointerdown` trigger) — testy musí počkat na re-show; kamera po vstupu do scény ještě driftuje ~1 s — projekce→klik atomicky, ne přes wait.
+
 ### G3 — Asset & bridge track
 - Draco/KTX2 pipeline + avatar/artifact preview viewer (Marketplace bridge)
 - WASM world-gen modul (pokud profiling ukáže potřebu)

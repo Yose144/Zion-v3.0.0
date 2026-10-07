@@ -12,12 +12,14 @@
 | Intro (warp) → stargate → arrival → rite → scene | ✅ | E2E ověřený desktop i mobil; `window.__oasisPhase` hook |
 | Stargate threshold tlačítko | ✅ | Babylon GUI + DOM fallback + pointer-up fallback; na produkci ověřeno |
 | Desktop rite (Warrior/Explorer/Sage/Trader) | ✅ | `__oasisPhase: rite → scene` |
-| Mobile flow (arrival → přímo scene) | ✅ | camera fix `[0,4,22]`, MobileTouchControls init na prvním framu |
+| Mobile flow (arrival → rite → scene) | ✅ | mobil nově dostává Pilgrim Rite (archetype + loadout bonus); camera fix `[0,4,22]`, MobileTouchControls |
+| Returning visitor (skip warp intro) | ✅ | `localStorage['oasis.visited']` → start na stargate; viditelné „Skip intro →" během intro fáze |
 | Klávesové zkratky (M/Esc/H/F/1-3) | ✅ | ignorují input fokus |
 | Search napříč ~408 světy | ✅ | name/location/tags, layer badge, discovery status |
 | World panel (intel, lore, questy, CTA) | ✅ | sticky Enter/Return buttony |
 | Hover labely nad galaxy node | ✅ | desktop; na mobilu jen vybraný |
 | Discovery dimming + "New world discovered" toast | ✅ | toasty přesunuty nahoru doprostřed (nepřekrývají CTA) |
+| In-world objectives (scan/harvest/relic nody) | ✅ | `WorldObjectives` — 5 (3 mobil) seeded nodů orbitujících svět; klik → XP/credits/lore toast; one-shot per `world:id` v `collectedNodes` (persist); velikost škáluje se světem |
 | Flight mode (WASD, throttle 1/2/3, approach/land prompt) | 🚧 | UI živé; landing/quest logika nedotestována E2E |
 | Quest progression vázaná na discovery | 🚧 | quest data z API žijí; herní smyčka neověřena |
 | Zvuky / hudba v herní smyčce | 🚧 | AudioEngine/MusicPlayer existují; coverage neprověřená |
@@ -56,7 +58,7 @@
 | Logout + session expiry handling | ✅ | `AuthContext.logout`, 401 → signed-out stav |
 | ZIS avatar v identitě | ✅ | `ZisAvatar` + `zisAvatarUrl` (`/api/auth/avatar/:seed.svg`) |
 | Soulbound avatar ↔ L1 vazba | 🚧 | `oasisPlayer` pole v ZIS user existuje; on-chain vazba neověřená |
-| Discovery/progress sync do profilu | 🚧 | discovery je per-session; persistentní sync neimplementován |
+| Discovery/progress sync do profilu | ✅ | `POST /player/:addr/worlds/:id/discover` (rate-limit + `require_auth` jako scan/approach); klient pushuje first-discovery jen když ZIS-authenticated; `syncPlayer(trusted)` hydratuje `scanned:`/`approached:`/`discovered:` stats zpět — anonymní `pilgrim-0001` se nehydratuje (sdílený záznam by leakoval cizí progress) |
 
 ## 5. Performance & stabilita
 
@@ -64,6 +66,7 @@
 |---|---|---|
 | Adaptive quality (PerformanceMonitor → one-way degrade) | ✅ | fps < ~40 % refresh → lehčí pipeline na zbytek session |
 | `lowPower` detekce (cores/RAM/saveData/mobil) | ✅ | méně hvězd/částic, žádný bloom/MatrixCore |
+| Galaxy node instancing | ✅ | 354 non-star světů → 2 instanced draw cally (sphere + ring, per-instance barva/discovered dimming); star systemy + selected zůstávají full nody; hover = raycast-free overlay label (žádný handoff flicker); **~1900 → ~240 draw calls** na produkci |
 | `DirectRenderer` (manual-render freeze fix) | ✅ | ověřeno `calls: 1→16` po vstupu do světa |
 | R3F error boundaries | ✅ | per-component `R3FErrorBoundary` |
 | WebGPU bundle laziness | ✅ | `three/tsl` chunk ~724K se stáhne jen při `?gpu=webgpu` |
@@ -96,9 +99,9 @@
 1. **G2 resty:** `Environment` HDRI ověřit na WebGPU; mobile WebGPU device matrix → rozhodnout `auto` promoci; kosmetická parita (stars/leaves).
 2. **Load-time budget:** měření navigace→scéna na referenčních zařízeních (DoD ≤ 3 s).
 3. **Quest/landing smyčka E2E:** approach→land→quest completion flow test.
-4. **Discovery persistence:** sync discovered světů do ZIS `oasisPlayer` profilu.
-5. **API contract (M4.2):** versioning + rate limits + asset ownership model před G3.
-6. **M4 exit gate:** accessibility review, security review, privacy policy, device-matrix perf report.
-7. **G3:** Draco/KTX2 asset pipeline, Marketplace bridge viewer, WASM world-gen (dle profilingu).
+4. **API contract (M4.2):** versioning + rate limits + asset ownership model před G3.
+5. **M4 exit gate:** accessibility review, security review, privacy policy, device-matrix perf report.
+6. **G3:** Draco/KTX2 asset pipeline, Marketplace bridge viewer, WASM world-gen (dle profilingu).
+7. **Objectives depth:** in-world nody jsou jednorázové collectibles — rozšířit na quest-vázané objekty, respawn/loot tabulky, L5-specifický obsah (registry úkoly).
 
 *Aktualizovat při každém gate přechodu. Rozpor s live stavem řeší ověřený kód a `StatusV3.md`.*
