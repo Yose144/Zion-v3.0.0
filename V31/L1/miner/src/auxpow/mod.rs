@@ -5,6 +5,7 @@
 //! operation.
 
 pub mod client;
+pub mod beamhash_ref;
 pub mod dual_stratum;
 pub mod eaglesong_ref;
 pub mod gpu_miner;

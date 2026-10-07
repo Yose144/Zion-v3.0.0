@@ -128,7 +128,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | verthash (VTC) | ✅ | ✅ **PASS** | ✅ OK (zpool) | pending | **2 fixy**: host posílal `firstNonce=batch_size` místo `base_nonce` (GPU hashoval jiný nonce než reportoval → invalid shares) + CPU ref `verthash_ref.rs` (keccak::f1600, 4096 seeků, 4-lane) ≡ GPU |
 | fishhash (IRON) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | **DAG gen na GPU** (build kernel ≡ CPU ref, 256 items) + mine≡CPU na reduced DAG; full DAG 4.6GB = VRAM blocker |
 | karlsenhash (KLS) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | verified | stejný DAG + xor-index mix + blake3(mix) finále; mine≡CPU na reduced DAG |
-| beamhash (BEAM) | ✅ solver | ❌ VRAM | ⏱️ beam.2miners timeout | blocked | solver tabulky 2×2.28GB=4.56GB; **pre_pow fix hotový**; potřeba volná karta |
+| beamhash (BEAM) | ✅ solver | ✅ **seed PASS** | ⏱️ beam.2miners timeout | partial | **seed stage consensus-verified**: `beamHashIII_seed` elems (blake2b prepow → siphash24 workBits → mixer → bucket scatter) ≡ `beamhash_ref.rs` CPU port bit-exact; R1-R5 solver VRAM-blocked (2×2.28GB tables > volné VRAM) |
 | randomx (XMR) | CPU only | n/a | ⚠️ authorized, no job | — | cryptonote login OK; stub GPU |
 | quai (QUAI) | kawpow path | — | ❌ TCP connect | blocked | port mrtvý |
 | evrprogpow (EVR) | ✅ | ✅ **PASS** | ⚠️ authorized, no job | verified | ProgOp interpretér ≡ GPU (vlastní parametry) |
@@ -161,7 +161,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 ### Checklist — co máme / co ne (2026-10-07)
 
 **✅ Consensus-ověřené GPU kernely (KAT PASS bit-exact):**
-kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace), **eaglesong** (RFC-0010 ref ≡ GPU), **qhash** (16q circuit ref ≡ GPU), **neoscrypt** (kernel blake2s fix; kernel-variant ≡ CPU ref — variantu pozn. ve výše řádku), **verthash** (io_hash + 4096-seek pipeline ≡ CPU ref; keccak přes `keccak::f1600`), **equihash 200,9** (Wagner GPU solver; sol ≡ `equihash` crate + sha256d≡; sols_t offset fix), **octopus** (CIP-3 rewrite — SipHash warp matice + gcd/powmod remap + 1024-poly + 4×64B DAG mix; DAG nodes + mine ≡ CPU ref na stage 0 i 1)
+kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶), **fishhash** (DAG-build ≡ CPU item ref + mine ≡ CPU ref na reduced DAG), **karlsenhash** (stejný DAG, xor-index mix, mine ≡ CPU ref), **ethash** (standard hashimoto — kernel fixnut z fnv1a/mix[0]² na fnv1/mix[i%32]; DAG items ≡ CPU + mix_hash ≡ CPU), **ProgPow rodina: kawpow, evrprogpow, meowpow, progpow, progpowz** (CPU ref = ProgOp interpretér nad stejnou op-sekvencí co codegen renderuje do kernelu; digest ≡ GPU pro všech 5 variant vč. zano math-table permutace), **eaglesong** (RFC-0010 ref ≡ GPU), **qhash** (16q circuit ref ≡ GPU), **neoscrypt** (kernel blake2s fix; kernel-variant ≡ CPU ref — variantu pozn. ve výše řádku), **verthash** (io_hash + 4096-seek pipeline ≡ CPU ref; keccak přes `keccak::f1600`), **equihash 200,9** (Wagner GPU solver; sol ≡ `equihash` crate + sha256d≡; sols_t offset fix), **octopus** (CIP-3 rewrite — SipHash warp matice + gcd/powmod remap + 1024-poly + 4×64B DAG mix; DAG nodes + mine ≡ CPU ref na stage 0 i 1), **beamhash seed** (siphash24 workBits + mixer ≡ `beamhash_ref.rs`; R1-R5 solver VRAM-blocked), **qpow** (poseidon2 OpenCL kernel na 1070Ti — mine_batch ≡ CPU verify)
 
 **✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
 — (octopus ověřen, viz PASS list)
@@ -183,7 +183,7 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 **⛔ Externí blockery (ne code bug):**
 - zelhash — potřeba ~6.5GB VRAM (busy karta); samostatný run nutný
 - equihashzero (192,7) — 2×2GB tabulky > volná VRAM
-- beamhash — 2×2.28GB solver tabulky; pre_pow fix hotový
+- beamhash R1-R5 solver — 2×2.28GB tabulky; seed stage ověřen ≡ CPU (`beamhash_seed_elem_debug`), zbývá full-solver run na volné kartě
 - fishhash/karlsenhash **full DAG 4.6GB** — generátor hotový (`generate_fishhash_dag_on_gpu`, chunked dispatch), VRAM blocker na busy kartě
 - Stratum authorize = nevalidní test wallet (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB); mrtvé endpointy: CLORE/FLUX/NEOX/QUAI/CFX/ZEC
 
@@ -193,6 +193,8 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 - ghostrider batch cap 512→128 (OOM fix)
 - verthash/equihash/zelhash early-dispatch před generickou kompilací
 - equihash: args deklarované při buildu + EQ_WG_SIZE=32 (84KB→43KB local pod NVIDIA limit) + K=9 rounds 6-8 + sols_buf dynamicky + blake (200,9) + **NR_SLOTS host fix 4→8** (OOB write = round0 context crash) + k_rounds loop bound (1..=K-2)
+- beamhash: seed-stage KAT — `beamhash_seed_elem_debug` alokuje jen buf0+scatter (R1-R5 přeskočeny), `beamhash_ref.rs` (siphash24 + mixer + stepElem port z `beamHashIII_ref.cpp`)
+- qpow: KAT case — `QpowOpenclMiner::mine_batch` na NVIDIA (poseidon2 OpenCL kernel compile+run+CPU-verify end-to-end)
 - octopus: **CIP-3 consensus rewrite** — kernel nahrazen skutečným Conflux algoritmem (`octopus_ref.rs` CPU port Conflux-Rust `compute.rs`), octopus-specifický DAG path `generate_octopus_dag_on_gpu` (stage sizing, 64B nody, reuse `kawpow_dag.cl` item generátoru), `octopus_dag_read_slice`, KAT ověřuje DAG nodes + final hash ≡ CPU (ZION_KAT_OCTOPUS_NODES/HEIGHT env override)
 - **autolykos consensus rewrite**: `autolykos_gen_table` (streaming b2b256, 65 blocks/entry) + `autolykos_mine` (f31 seed, sliding-window genIndexes, 31B bigint sum, height-N calc); miner csrc copy synced (měl špatný rotate-scheme genIndexes ≠ Scala sliding-window)
 - **fishhash/karlsenhash DAG gen**: `build_fishhash_light_cache` (fixed seed `blake3("FishHash")`, 1.18M×64B keccak-512 + 3 randmemhash rundy), GPU `build` kernel chunked dispatch (`fishhash_build_dag_slice`/`generate_fishhash_dag_on_gpu`), CPU refs `fishhash_dataset_item`/`fishhash_hash_ref`/`karlsenhash_hash_ref`; nonce výstup v obou kernelech fixnut (vracel byte-reversed)
