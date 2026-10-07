@@ -572,6 +572,123 @@ fn real_main() {
                 continue;
             }
         }
+        // GhostRider per-stage bisect: ZION_GR_BISECT=1 runs each of the 15
+        // core SPH hashes on the case header and prints hex for diffing
+        // against a native sphlib harness.
+        if c.algo == "ghostrider"
+            && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("1")
+        {
+            let names = [
+                "blake", "bmw", "groestl", "jh", "keccak", "skein", "luffa",
+                "cubehash", "shavite", "simd", "echo", "hamsi", "fugue",
+                "shabal", "whirlpool",
+            ];
+            let hdr_len: u32 = std::env::var("ZION_GR_HDRLEN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(c.header.len() as u32);
+            let mut hdr_buf = [0u8; 80];
+            let copy = (hdr_len as usize).min(80).min(c.header.len());
+            hdr_buf[..copy].copy_from_slice(&c.header[..copy]);
+            for (i, name) in names.iter().enumerate() {
+                match miner.ghostrider_sph_test(&hdr_buf[..hdr_len as usize], i as u32) {
+                    Ok(h) => println!("{i:>2} {name:<10} {}", hex::encode(h)),
+                    Err(e) => println!("{i:>2} {name:<10} ERR {e}"),
+                }
+            }
+            continue 'cases;
+        }
+        // GhostRider CN-variant bisect: ZION_GR_BISECT=cn runs cn_full_test
+        // for each of the 6 consensus variants with their native parameters.
+        if c.algo == "ghostrider" && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("cn") {
+            // (name, memory, iter_div, cn_aes_init) per native cryptonight_*.c
+            let variants: [(&str, u32, u32, u32); 6] = [
+                ("dark", 524288, 131072, 32768),
+                ("darklite", 524288, 131072, 16384),
+                ("fast", 2097152, 262144, 131072),
+                ("lite", 1048576, 262144, 65536),
+                ("turtle", 262144, 65536, 16384),
+                ("turtlelite", 262144, 65536, 8192),
+            ];
+            // ZION_GR_INPUT=<hex> overrides the CN input (default: case header).
+            let raw: Vec<u8> = std::env::var("ZION_GR_INPUT")
+                .ok()
+                .and_then(|h| hex::decode(h).ok())
+                .unwrap_or_else(|| c.header.to_vec());
+            let hdr_len: u32 = std::env::var("ZION_GR_HDRLEN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(raw.len() as u32);
+            let mut hdr_buf = vec![0u8; hdr_len as usize];
+            let copy = (hdr_len as usize).min(raw.len());
+            hdr_buf[..copy].copy_from_slice(&raw[..copy]);
+            for (name, mem, iter, aes_init) in variants {
+                match miner.ghostrider_cn_full_test(
+                    &hdr_buf[..hdr_len as usize],
+                    hdr_len,
+                    mem,
+                    iter,
+                    aes_init,
+                ) {
+                    Ok((h, dbg)) => {
+                        println!("{name:<10} {}", hex::encode(h));
+                        if std::env::var("ZION_GR_PHASES").is_ok() {
+                            println!("  A {}", hex::encode(&dbg[0..200]));
+                            println!("  D {}", hex::encode(&dbg[200..400]));
+                            println!("  E {}", hex::encode(&dbg[400..600]));
+                            println!("  C {}", hex::encode(&dbg[600..664]));
+                        }
+                    }
+                    Err(e) => println!("{name:<10} ERR {e}"),
+                }
+            }
+            continue 'cases;
+        }
+        // GhostRider extra-hash bisect: ZION_GR_BISECT=extra runs the four
+        // CN final hashes (blake/groestl/jh/skein) on a 200-byte state
+        // (case header zero-padded).
+        if c.algo == "ghostrider"
+            && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("extra")
+        {
+            let names = ["blake", "groestl", "jh", "skein"];
+            for (i, name) in names.iter().enumerate() {
+                match miner.extra_hash_test(&c.header, i as u32) {
+                    Ok(h) => println!("{i} {name:<8} {}", hex::encode(h)),
+                    Err(e) => println!("{i} {name:<8} ERR {e}"),
+                }
+            }
+            continue 'cases;
+        }
+        // GhostRider full-pipeline bisect: ZION_GR_BISECT=pipe dumps the
+        // selected algo lists and all 18 stage intermediates (64B each) for
+        // diffing against a native gr.c harness.
+        if c.algo == "ghostrider"
+            && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("pipe")
+        {
+            let nonce: u64 = std::env::var("ZION_KAT_NONCE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0);
+            match miner.ghostrider_single_hash(&c.header, nonce) {
+                Ok(dump) => {
+                    print!("core:");
+                    for i in 0..15 {
+                        print!(" {}", dump[i]);
+                    }
+                    println!();
+                    print!("cn:  ");
+                    for i in 0..6 {
+                        print!(" {}", dump[15 + i]);
+                    }
+                    println!();
+                    for st in 0..18 {
+                        println!("st{:<2} {}", st, hex::encode(&dump[29 + st * 64..29 + st * 64 + 64]));
+                    }
+                }
+                Err(e) => println!("pipe ERR {e}"),
+            }
+            continue 'cases;
+        }
         // Verthash bisect: verify the keccak input stage (sha3_512_256 →
         // io_hashes) against the CPU ref before running the full pipeline.
         if c.algo == "verthash" {

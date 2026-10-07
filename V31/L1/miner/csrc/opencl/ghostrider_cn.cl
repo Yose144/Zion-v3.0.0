@@ -805,8 +805,13 @@ void jh256_hash(__private uchar *output, __private const uchar *input, int len)
         JH_XOR(in);
     }
 
-    for (int i = 0; i < 32; ++i)
-        output[i] = ((__private uchar*)&h6h)[i];
+    // JH-256 output = last 32 bytes of the 1024-bit chaining state
+    // (h6h, h6l, h7h, h7l). Store via ulong writes — a __private uchar*
+    // cast over ulong lanes reads only the first lane on NVIDIA.
+    ((__private ulong*)output)[0] = h6h;
+    ((__private ulong*)output)[1] = h6l;
+    ((__private ulong*)output)[2] = h7h;
+    ((__private ulong*)output)[3] = h7l;
 }
 
 #undef JH_Ceven_hi
@@ -930,36 +935,89 @@ inline ulong8 Skein512Block(ulong8 p, ulong8 h, ulong h8, const ulong *t)
     return p;
 }
 
+// Skein-512-256 written with scalar ulong arrays — the vectorized
+// ulong8/shuffle variant produced wrong digests on the NVIDIA OpenCL
+// compiler (private ulong*<->uchar* casts and .even/.odd swizzles).
+static const __constant ulong SKEIN_R512[8][4] = {
+    {46, 36, 19, 37}, {33, 27, 14, 42}, {17, 49, 36, 39}, {44, 9, 54, 56},
+    {39, 30, 34, 24}, {13, 50, 10, 17}, {25, 29, 39, 43}, {8, 35, 56, 22}
+};
+
+static void skein512_block(__private ulong *x, __private const ulong *h,
+                           __private const ulong *t)
+{
+    // x starts as message; h = chaining key
+    ulong ks[9], ts[3];
+    for (int i = 0; i < 8; ++i) ks[i] = h[i];
+    ks[8] = SKEIN_KS_PARITY ^ ks[0] ^ ks[1] ^ ks[2] ^ ks[3] ^ ks[4] ^ ks[5] ^ ks[6] ^ ks[7];
+    ts[0] = t[0]; ts[1] = t[1]; ts[2] = t[0] ^ t[1];
+
+    for (int s = 0; s <= 18; ++s) {
+        // Key injection
+        for (int i = 0; i < 8; ++i) x[i] += ks[(s + i) % 9];
+        x[5] += ts[s % 3];
+        x[6] += ts[(s + 1) % 3];
+        x[7] += (ulong)s;
+        if (s == 18) break;
+        // 4 rounds of MIX + permute
+        for (int r = 0; r < 4; ++r) {
+            int rd = s * 4 + r;
+            for (int j = 0; j < 4; ++j) {
+                int i0 = j * 2, i1 = j * 2 + 1;
+                x[i0] += x[i1];
+                x[i1] = rotate(x[i1], SKEIN_R512[rd % 8][j]) ^ x[i0];
+            }
+            // permute: (2,1,4,7,6,5,0,3)
+            ulong x0 = x[0], x2 = x[2], x4 = x[4], x6 = x[6];
+            x[0] = x2; x[2] = x4; x[4] = x6; x[6] = x0;
+            ulong x3 = x[3], x7 = x[7];
+            x[3] = x7; x[7] = x3;
+        }
+    }
+}
+
 void skein256_hash(__private uchar *output, __private const uchar *input, int len)
 {
-    ulong8 h = vload8(0, SKEIN256_IV);
-    ulong t[3] = { 0x00UL, 0x7000000000000000UL, 0x00UL };
-    ulong8 p, m;
+    ulong h[8];
+    for (int i = 0; i < 8; ++i) h[i] = SKEIN256_IV[i];
 
-    for (uint i = 0; i < 4; ++i) {
-        t[0] += i < 3 ? 0x40UL : 0x08UL;
-        t[2] = t[0] ^ t[1];
-
-        m = (i < 3) ? vload8(i, (__private const ulong*)input) :
-            (ulong8)(((__private const ulong*)input)[24], 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL);
-        const ulong h8 = h.s0 ^ h.s1 ^ h.s2 ^ h.s3 ^ h.s4 ^ h.s5 ^ h.s6 ^ h.s7 ^ SKEIN_KS_PARITY;
-        p = Skein512Block(m, h, h8, t);
-
-        h = m ^ p;
-
-        t[1] = i < 2 ? 0x3000000000000000UL : 0xB000000000000000UL;
+    int pos = 0;
+    int first = 1;
+    int last = 0;
+    while (!last) {
+        int n = len - pos;
+        if (n > 64) n = 64;
+        else last = 1;
+        ulong m[8];
+        for (int w = 0; w < 8; ++w) {
+            ulong v = 0;
+            for (int b = 0; b < 8; ++b) {
+                int idx = pos + w * 8 + b;
+                if (idx < len) v |= ((ulong)input[idx]) << (8 * b);
+            }
+            m[w] = v;
+        }
+        ulong t[3];
+        t[0] = (ulong)(pos + n);
+        t[1] = (0x30UL | (first ? 0x40UL : 0UL) | (last ? 0x80UL : 0UL)) << 56;
+        ulong x[8];
+        for (int i = 0; i < 8; ++i) x[i] = m[i];
+        skein512_block(x, h, t);
+        for (int i = 0; i < 8; ++i) h[i] = x[i] ^ m[i];
+        pos += n;
+        first = 0;
     }
 
-    t[0] = 0x08UL;
-    t[1] = 0xFF00000000000000UL;
+    // Output transform: UBI type=OUT (0x3F), FIRST|FINAL, 8-byte block
+    ulong m[8];
+    for (int w = 0; w < 8; ++w) m[w] = 0;
+    ulong t[3] = { 8UL, 0xFF00000000000000UL, 0UL };
     t[2] = t[0] ^ t[1];
-
-    p = (ulong8)(0);
-    const ulong h8 = h.s0 ^ h.s1 ^ h.s2 ^ h.s3 ^ h.s4 ^ h.s5 ^ h.s6 ^ h.s7 ^ SKEIN_KS_PARITY;
-    p = Skein512Block(p, h, h8, t);
-
-    for (int i = 0; i < 32; ++i)
-        output[i] = ((__private uchar*)&p)[i];
+    ulong x[8];
+    for (int i = 0; i < 8; ++i) x[i] = m[i];
+    skein512_block(x, h, t);
+    for (int i = 0; i < 4; ++i)
+        ((__private ulong*)output)[i] = x[i];
 }
 
 #undef SKEIN_KS_PARITY
@@ -1028,18 +1086,21 @@ void cn_hash_full(
     __global uchar *tweak_tmp = scratchpad + memory;
 
     // 1. Keccak-1600 of input → 200-byte state
-    __private uchar state[200];
+    __private uchar state[200] __attribute__((aligned(16)));
     keccak1600(input, len, state);
+
+    // Phase-A debug dump: state right after keccak1600(input)
+    if (debug_state) { for (int i = 0; i < 200; i++) debug_state[i] = state[i]; }
 
     // Save state[192..199] to global memory byte-by-byte.
     for (int i = 0; i < 8; i++) tweak_tmp[8 + i] = state[192 + i];
 
     // 2. Extract key and init from state
-    __private uchar text[CN_INIT_SIZE_BYTE];  // state[64..191]
+    __private uchar text[CN_INIT_SIZE_BYTE] __attribute__((aligned(16)));  // state[64..191]
     for (int i = 0; i < CN_INIT_SIZE_BYTE; ++i)
         text[i] = state[64 + i];
 
-    __private uchar aes_key[32];  // state[0..31]
+    __private uchar aes_key[32] __attribute__((aligned(32)));  // state[0..31]
     for (int i = 0; i < 32; ++i)
         aes_key[i] = state[i];
 
@@ -1075,14 +1136,16 @@ void cn_hash_full(
     }
 
     // 6. Initialize a and b
-    __private uchar a[16], b[32];
+    __private uchar a[16] __attribute__((aligned(16)));
+    __private uchar b[32] __attribute__((aligned(16)));
     for (int i = 0; i < 16; ++i) {
         a[i] = state[i] ^ state[32 + i];
         b[i] = state[16 + i] ^ state[48 + i];
     }
 
     // 7. Main loop
-    __private uchar c[16];
+    __private uchar c[16] __attribute__((aligned(16)));
+    __private uchar t[16] __attribute__((aligned(16)));
     for (uint i = 0; i < iter_div; ++i) {
         // Iteration 1
         uint j = cn_e2i(a, cn_aes_init);
@@ -1107,7 +1170,6 @@ void cn_hash_full(
         __global uchar *dptr = scratchpad + (ulong)j * CN_AES_BLOCK_SIZE;
 
         // t = scratchpad[j]
-        __private uchar t[16];
         ulong t0 = ((__global const ulong*)dptr)[0];
         ulong t1 = ((__global const ulong*)dptr)[1];
         ((__private ulong*)t)[0] = t0;
@@ -1135,6 +1197,13 @@ void cn_hash_full(
         // b[16..31] = b[0..15]; b[0..15] = c
         cn_copy_block(b + 16, b);
         cn_copy_block(b, c);
+    }
+
+    // Phase-C debug dump: a[0..16] ‖ b[0..32] ‖ scratchpad[0..16] after main loop
+    if (debug_state) {
+        for (int i = 0; i < 16; i++) debug_state[600 + i] = a[i];
+        for (int i = 0; i < 32; i++) debug_state[616 + i] = b[i];
+        for (int i = 0; i < 16; i++) debug_state[648 + i] = scratchpad[i];
     }
 
     // 8. Final: re-init text, second AES key from state[32..63]
@@ -1165,8 +1234,14 @@ void cn_hash_full(
     for (int i = 0; i < CN_INIT_SIZE_BYTE; ++i)
         state[64 + i] = text[i];
 
+    // Phase-D debug dump: state right before the final keccakf1600
+    if (debug_state) { for (int i = 0; i < 200; i++) debug_state[200 + i] = state[i]; }
+
     // 10. Keccak permutation on state
     keccakf1600((__private ulong*)state);
+
+    // Phase-E debug dump: state after keccakf1600 (extra-hash input)
+    if (debug_state) { for (int i = 0; i < 200; i++) debug_state[400 + i] = state[i]; }
 
     // 11. Extra hash: state[0] & 3 selects which hash
     // (pre-extra-hash state debug output removed to avoid overwriting earlier debug data)
@@ -1184,7 +1259,7 @@ void cn_hash_full(
 
 void cn_hash_fast(__private const uchar *input, uint len, __private uchar *output)
 {
-    __private uchar state[200];
+    __private uchar state[200] __attribute__((aligned(16)));
     keccak1600(input, len, state);
     for (int i = 0; i < 32; ++i)
         output[i] = state[i];
@@ -1212,7 +1287,7 @@ void cn_dispatch(
         case 1:  cn_hash_fast(input, len, output); break; // CNDarkf
         case 2:  { __global uchar *t = scratchpad + 524288;  for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 524288,  131072, 16384,  AES0, AES1, AES2, AES3, 0, 0); break; } // CNDarklite
         case 3:  cn_hash_fast(input, len, output); break; // CNDarklitef
-        case 4:  cn_hash_full(input, len, output, scratchpad, 2097152, 262144, 131072, AES0, AES1, AES2, AES3, 0, 0); break; // CNFast (variant 2, no tweak1_2)
+        case 4:  { __global uchar *t = scratchpad + 2097152; for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 2097152, 262144, 131072, AES0, AES1, AES2, AES3, 0, 0); break; } // CNFast — native calls it with variant=1: tweak1_2 still applies, must save input[35..42] like the others
         case 5:  cn_hash_fast(input, len, output); break; // CNFastf
         case 6:  cn_hash_fast(input, len, output); break; // CNF
         case 7:  { __global uchar *t = scratchpad + 1048576; for (int i = 0; i < 8; i++) t[i] = input[35+i]; cn_hash_full(input, len, output, scratchpad, 1048576, 262144, 65536,  AES0, AES1, AES2, AES3, 0, 0); break; } // CNLite

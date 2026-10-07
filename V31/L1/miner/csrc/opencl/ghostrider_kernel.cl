@@ -172,7 +172,7 @@ __kernel void ghostrider_mine(
 
     // Step 5: CN[0]
     {
-        uchar cn_out[32];
+        uchar cn_out[32] __attribute__((aligned(8)));
         cn_dispatch(cn_variant_map(selectedCNAlgo[0]), hash.h1, size, cn_out, scratchpad,
                     AES0, AES1, AES2, AES3);
         // Copy CN output to hash (first 32 bytes)
@@ -188,7 +188,7 @@ __kernel void ghostrider_mine(
 
     // Step 11: CN[1]
     {
-        uchar cn_out[32];
+        uchar cn_out[32] __attribute__((aligned(8)));
         cn_dispatch(cn_variant_map(selectedCNAlgo[1]), hash.h1, size, cn_out, scratchpad,
                     AES0, AES1, AES2, AES3);
         for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
@@ -202,7 +202,7 @@ __kernel void ghostrider_mine(
 
     // Step 17: CN[2] (final)
     {
-        uchar cn_out[32];
+        uchar cn_out[32] __attribute__((aligned(8)));
         cn_dispatch(cn_variant_map(selectedCNAlgo[2]), hash.h1, size, cn_out, scratchpad,
                     AES0, AES1, AES2, AES3);
         for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
@@ -291,7 +291,7 @@ __kernel void ghostrider_benchmark(
             core_hash_dispatch(selectedAlgo[coreSelection], &hash, size);
         }
         if (cnSelection >= 0) {
-            uchar cn_out[32];
+            uchar cn_out[32] __attribute__((aligned(8)));
             cn_dispatch(cn_variant_map(selectedCNAlgo[cnSelection]), hash.h1, size, cn_out, scratchpad,
                         AES0, AES1, AES2, AES3);
             for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
@@ -503,10 +503,10 @@ __kernel void cn_test(
     uint gid = get_global_id(0);
     if (gid != 0) return;
 
-    __private uchar in_buf[200];
+    __private uchar in_buf[200] __attribute__((aligned(16)));
     for (uint i = 0; i < input_len && i < 200; i++) in_buf[i] = input[i];
 
-    __private uchar out_buf[32];
+    __private uchar out_buf[32] __attribute__((aligned(8)));
     cn_hash_fast(in_buf, input_len, out_buf);
 
     for (int i = 0; i < 32; i++) output_hash[i] = out_buf[i];
@@ -530,10 +530,10 @@ __kernel void cn_full_test(
     __local uint AES0[256], AES1[256], AES2[256], AES3[256];
     cn_populate_aes_tables(AES0, AES1, AES2, AES3);
 
-    __private uchar in_buf[200];
+    __private uchar in_buf[200] __attribute__((aligned(16)));
     for (uint i = 0; i < input_len && i < 200; i++) in_buf[i] = input[i];
 
-    __private uchar out_buf[32];
+    __private uchar out_buf[32] __attribute__((aligned(8)));
     __global uchar* scratchpad = scratchpad_pool + (ulong)gid * (ulong)GHOSTRIDER_WI_SCRATCH;
 
     // Save input[35..42] to scratchpad (global memory) BEFORE calling cn_hash_full.
@@ -563,7 +563,7 @@ __kernel void extra_hash_test(
     __private uchar state[200];
     for (int i = 0; i < 200; i++) state[i] = state_in[i];
 
-    __private uchar out_buf[32];
+    __private uchar out_buf[32] __attribute__((aligned(8)));
     if (hash_sel == 0) {
         blake256_hash(out_buf, state, 200);
     } else if (hash_sel == 1) {

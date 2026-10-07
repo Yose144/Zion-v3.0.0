@@ -119,7 +119,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | equihashzero (ZCL) | ⚠️ compile | ❌ VRAM | ✅ OK (zpool) | blocked | 2×2GB tabulky > volná VRAM (192,7 NR_SLOTS=64); args-at-build + EQ_WG_SIZE=32 hotovo |
 | equihash 200,9 (ZEC) | ✅ | ✅ **PASS** | ❌ TCP connect (port mrtvý) | verified | **Consensus-verified**: Wagner sol ≡ `equihash` crate verifier + sha256d≡; fixy: sols_t values offset 12→20 (u32 align — host četl 8B dřív = alien pair z předchozího řešení), Blake2b header tail 128..140 do round0 kernelů, varint fd4005, NR_SLOTS 4→8, dup-index + canonical-tree reorder filtry |
 | qhash (QTC) | ✅ | ✅ **PASS** | ✅ OK (suprnova) | pending | **CPU ref** (SHA256→16q stavovec RY/RZ/CNOT→SHA256, bit-exact); batch cap 1024 |
-| ghostrider (RTM) | ✅ | ❌ **FAIL** | ✅ OK (zpool) | pending | **fixy**: CN selection mod14→mod6 (consensus enum) + WI scratchpad OOB (cn_hash_full tweak spill o +16B → crash fix); residual: digest ≠ native-ffi → bisect per-stage potřeba |
+| ghostrider (RTM) | ✅ | ✅ **PASS** | ✅ OK (zpool) | **verified** | **Consensus-verified GPU ≡ native-ffi** (všech 18 stages bit-exact, KAT PASS nonce=32). Fixy: CN selection mod14→mod6 (consensus enum), WI scratchpad OOB (+16B pad), CNFast dispatch chyběl tweak_tmp save (četl neinit paměť), JH output přes private-byte-cast → explicitní ulong stores, skein256 vector→scalar rewrite, **private-array alignment** (uchar[]→uint*/ulong* casts bez `aligned()` = nondeterministická korupce state ve final AES pass — input-dependent; `aligned(16)` na state/text/aes_key/a/b/c/t) |
 | neoscrypt (PHX) | ✅ | ✅ **PASS** | ✅ OK (zpool) | pending | **kernel fix**: blake2s_256 double-compressoval poslední blok při len%64==0 → standardní blokování; CPU ref (`neoscrypt_ref.rs`) ≡ GPU. Pozn.: kernelová varianta (N=32, blake2s BlockMix) ≠ mainline NeoScrypt — port konsistentní, consensus-vůči-mainnet = samostatná otázka |
 | eaglesong (CKB) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | pending | **CPU ref** (`eaglesong_ref.rs`: 43 rounds, bitmatrix+circulant+ARX, 0x06 pad) ≡ GPU |
 | dynexsolve (DNX) | ✅ | EMPTY (kernel běží) | ❌ authorize (wallet) | pending | **ABI fix**: 12→10 args, 1-based literály; syntetický SAT bez řešení v batchi = očekávané |
@@ -166,8 +166,12 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 **✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
 octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže)
 
-**❌ Známý defekt (GPU ≠ reference):**
-ghostrider — selection + scratchpad-OOB opraveny (kernel už padat nesmí); digest stále ≠ native-ffi → zbývá bisect konkrétního core/CN pod-hashe (`ghostrider_benchmark` debug výstup 1181B = per-stage dump)
+**✅ GhostRider vyřešen (consensus-verified):**
+- Všech 15 SPH core hashů ≡ native sphlib (80B i 64B vstupy)
+- Všech 6 CN variant ≡ native (dark/darklite/fast/lite/turtle/turtlelite)
+- 4 CN extra-hashe ≡ native (po JH ulong-store fix + skein scalar rewrite)
+- Plná 18-stage pipeline ≡ native gr.c (bisect harness `ZION_GR_BISECT=pipe`, nativní counterpart `/tmp/grbisect/pipe_bisect`)
+- Root causes: mod14→mod6 selection, CNFast tweak_tmp save, private-array alignment (uchar→uint/ulong casts na NVIDIA = data corruption — `__attribute__((aligned))` fix), JH byte-cast, skein vector impl
 
 **⚠️ Kernel spustitelný, ale široké oprávnění chybí:**
 - dynexsolve — běží, syntetický SAT bez řešení (EMPTY = OK signál)
