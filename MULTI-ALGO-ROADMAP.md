@@ -119,7 +119,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | zelhash (FLUX) | ✅ compile | ❌ VRAM | ❌ TCP connect (woolypooly mrtvý) | blocked | potřebuje ~6.5GB volné VRAM; na busy kartě OOM |
 | verushash (VRSC) | — | n/a (no kernel) | ✅ OK (luckpool, zcashstratum) | ✅ **CPU path live** | 1487B header; GPU kernel absent |
 | equihashzero (ZCL) | ⚠️ compile | ❌ VRAM | ✅ OK (zpool) | blocked | 2×2GB tabulky > volná VRAM (192,7 NR_SLOTS=64); args-at-build + EQ_WG_SIZE=32 hotovo |
-| equihash 200,9 (ZEC) | ✅ | ✅ **PASS** | ❌ TCP connect (port mrtvý) | verified | **Consensus-verified**: Wagner sol ≡ `equihash` crate verifier + sha256d≡; fixy: sols_t values offset 12→20 (u32 align — host četl 8B dřív = alien pair z předchozího řešení), Blake2b header tail 128..140 do round0 kernelů, varint fd4005, NR_SLOTS 4→8, dup-index + canonical-tree reorder filtry |
+| equihash 200,9 (ZEC) | ✅ | ✅ **PASS** | ✅ **OK** (f2pool:3357, 8-param zcash notify) | verified | **Consensus-verified**: Wagner sol ≡ `equihash` crate verifier + sha256d≡; fixy: sols_t values offset 12→20 (u32 align — host četl 8B dřív = alien pair z předchozího řešení), Blake2b header tail 128..140 do round0 kernelů, varint fd4005, NR_SLOTS 4→8, dup-index + canonical-tree reorder filtry; **parser: 8-param ZEC notify** (bez solution field) + `Zcash→ZcashStratum` map + `default_pool` → `zec.f2pool.com:3357` (2miners:7070 mrtvý) |
 | qhash (QTC) | ✅ | ✅ **PASS** | ✅ OK (suprnova) | pending | **CPU ref** (SHA256→16q stavovec RY/RZ/CNOT→SHA256, bit-exact); batch cap 1024 |
 | ghostrider (RTM) | ✅ | ✅ **PASS** | ✅ OK (zpool) | **verified** | **Consensus-verified GPU ≡ native-ffi** (všech 18 stages bit-exact, KAT PASS nonce=32). Fixy: CN selection mod14→mod6 (consensus enum), WI scratchpad OOB (+16B pad), CNFast dispatch chyběl tweak_tmp save (četl neinit paměť), JH output přes private-byte-cast → explicitní ulong stores, skein256 vector→scalar rewrite, **private-array alignment** (uchar[]→uint*/ulong* casts bez `aligned()` = nondeterministická korupce state ve final AES pass — input-dependent; `aligned(16)` na state/text/aes_key/a/b/c/t) |
 | neoscrypt (PHX) | ✅ | ✅ **PASS** | ✅ OK (zpool) | pending | **kernel fix**: blake2s_256 double-compressoval poslední blok při len%64==0 → standardní blokování; CPU ref (`neoscrypt_ref.rs`) ≡ GPU. Pozn.: kernelová varianta (N=32, blake2s BlockMix) ≠ mainline NeoScrypt — port konsistentní, consensus-vůči-mainnet = samostatná otázka |
@@ -133,8 +133,8 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | beamhash (BEAM) | ✅ solver | ✅ **seed PASS** | ⏱️ beam.2miners timeout | partial | **seed stage consensus-verified**: `beamHashIII_seed` elems (blake2b prepow → siphash24 workBits → mixer → bucket scatter) ≡ `beamhash_ref.rs` CPU port bit-exact; R1-R5 solver VRAM-blocked (2×2.28GB tables > volné VRAM) |
 | randomx (XMR) | CPU only | n/a | ⚠️ authorized, no job | — | cryptonote login OK; stub GPU |
 | quai (QUAI) | kawpow path | — | ❌ TCP connect | blocked | port mrtvý |
-| evrprogpow (EVR) | ✅ | ✅ **PASS** | ⚠️ authorized, no job | verified | ProgOp interpretér ≡ GPU (vlastní parametry) |
-| meowpow (MEWC) | ✅ | ✅ **PASS** | ⚠️ authorized, no job | verified | ProgOp interpretér ≡ GPU (regs=16 varianta) |
+| evrprogpow (EVR) | ✅ | ✅ **PASS** | ✅ **OK** (zpool, job parsed) | verified | ProgOp interpretér ≡ GPU (vlastní parametry); **parser: YiiMP 7-param notify** `[job,hdr,seed,target,clean,height,ntime]` → seed+height propažovány do `StratumJob` |
+| meowpow (MEWC) | ✅ | ✅ **PASS** | ✅ **OK** (zpool, job parsed) | verified | ProgOp interpretér ≡ GPU (regs=16 varianta); stejný 7-param parser fix |
 | sha256d (BTC) | — | — | SKIP | — | merge-mining, žádný pool |
 | quantus (QTU) | qpow native | ✅ live | ⚠️ login: potřeba 36B wallet | ✅ produkce | QuantusStratum custom |
 | epic (EPIC) | progpow | ✅ **PASS** (progpow) | ⚠️ authorized, no job | verified | progpow kernel ≡ interpretér |
@@ -144,9 +144,9 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 
 - **OK s fake wallet (pool nevaliduje adresu):** VTC, VRSC, ZCL, QTC, RTM, PHX, KRX
 - **Authorize fail (pool validuje formát adresy):** KAS, RVN, ETC, ERG, KLS, IRON, NEXA, DNX, CKB — pro share-level E2E potřeba validní adresa
-- **TCP connect fail (mrtvý endpoint):** CLORE, FLUX, NEOX, QUAI, CFX, ZEC:7070 — default_pool() potřebuje update
+- **TCP connect fail (mrtvý endpoint):** CLORE, FLUX, NEOX, QUAI, CFX (herominers odmítá subscribe params), zec.2miners:7070 → **ZEC fixed: `zec.f2pool.com:3357` v `default_pool()`** (subscribuje+authorizuje fake wallet, posílá 8-param zcash notify — parser rozšířen na `len>=8` + optional solution + `Zcash→ZcashStratum` pro správný submit)
 - **Timeout:** ALPH, DCR, PRL, BEAM (woolypooly/beam.2miners nedostupné odsud)
-- **Authorized, žádný job:** XMR, EPIC, MEWC, EVR — možný job-parse gap
+- **Authorized, žádný job:** XMR (pool zavře conn po fake wallet — expected), EPIC (pool tichý po subscribe — endpoint/protocol, ne parser). **EVR + MEWC vyřešeno** — YiiMP 7-param `[job,hdr,seed,target,clean,height,ntime]` notify parser (obě path: `StratumJob` i legacy `ExternalJob`/`AuxPowClient`)
 - **QTU:** Quantus login vyžaduje dekódovatelnou 36B adresu
 
 ### kHeavyHash — opravené defekty (commit 749d112b1)

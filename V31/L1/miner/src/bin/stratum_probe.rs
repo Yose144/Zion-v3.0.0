@@ -21,6 +21,12 @@ fn main() {
         std::process::exit(2);
     }
 
+    // Init tracing so ZION_STRATUM_TRACE=1 raw rx/tx lines and ext_* logs are
+    // actually visible when probing.
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .try_init();
+
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
