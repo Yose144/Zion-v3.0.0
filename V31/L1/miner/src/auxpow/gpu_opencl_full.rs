@@ -4299,9 +4299,11 @@ typedef unsigned long ulong;
         }
     }
 
-    /// CryptoNight scratchpad: max 2MB per work-item (CNFast variant)
-    /// CN variants: 256KB (turtle), 512KB (dark), 1MB (lite), 2MB (fast)
-    const GHOSTRIDER_SCRATCH_BYTES: usize = 2 * 1024 * 1024; // 2MB max
+    /// CryptoNight scratchpad per work-item: 2MB usable (CNFast max) + 16B
+    /// headroom for the variant-1 tweak_tmp spill written at
+    /// scratchpad[memory..memory+16] — must match GHOSTRIDER_WI_SCRATCH in
+    /// ghostrider_kernel.cl.
+    const GHOSTRIDER_SCRATCH_BYTES: usize = 2 * 1024 * 1024 + 16; // 2MB + 16B
 
     fn build_ghostrider_kernel(
         pro_que: &ProQue,

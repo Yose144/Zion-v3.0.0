@@ -119,7 +119,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | equihashzero (ZCL) | ⚠️ compile | ❌ VRAM | ✅ OK (zpool) | blocked | 2×2GB tabulky > volná VRAM (192,7 NR_SLOTS=64); args-at-build + EQ_WG_SIZE=32 hotovo |
 | equihash 200,9 (ZEC) | ✅ | ⚠️ **RUN** (řešení nalezeno) | ❌ TCP connect (port mrtvý) | pending | **Wagner pipeline kompletní**: init→r0→r1-7→r8→sols; host/kernel NR_SLOTS mismatch fix (4→8); K=9 rounds doplněny |
 | qhash (QTC) | ✅ | ✅ **PASS** | ✅ OK (suprnova) | pending | **CPU ref** (SHA256→16q stavovec RY/RZ/CNOT→SHA256, bit-exact); batch cap 1024 |
-| ghostrider (RTM) | ✅ | ❌ **FAIL** | ✅ OK (zpool) | pending | GPU ≠ native-ffi (684cd098 vs f5c2b739) — defekt v 15-algo selection/CN stage; batch cap 128 WI OK |
+| ghostrider (RTM) | ✅ | ❌ **FAIL** | ✅ OK (zpool) | pending | **fixy**: CN selection mod14→mod6 (consensus enum) + WI scratchpad OOB (cn_hash_full tweak spill o +16B → crash fix); residual: digest ≠ native-ffi → bisect per-stage potřeba |
 | neoscrypt (PHX) | ✅ | ✅ **PASS** | ✅ OK (zpool) | pending | **kernel fix**: blake2s_256 double-compressoval poslední blok při len%64==0 → standardní blokování; CPU ref (`neoscrypt_ref.rs`) ≡ GPU. Pozn.: kernelová varianta (N=32, blake2s BlockMix) ≠ mainline NeoScrypt — port konsistentní, consensus-vůči-mainnet = samostatná otázka |
 | eaglesong (CKB) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | pending | **CPU ref** (`eaglesong_ref.rs`: 43 rounds, bitmatrix+circulant+ARX, 0x06 pad) ≡ GPU |
 | dynexsolve (DNX) | ✅ | EMPTY (kernel běží) | ❌ authorize (wallet) | pending | **ABI fix**: 12→10 args, 1-based literály; syntetický SAT bez řešení v batchi = očekávané |
@@ -167,7 +167,7 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 octopus (syntetický hashimoto-variant, odlišný od CIP-3 — ke statusu níže), **equihash 200,9** (Wagner kompletní, řešení nalezeno; EMPTY/PASS alternuje — Poisson)
 
 **❌ Známý defekt (GPU ≠ reference):**
-ghostrider — GPU produkuje jiný digest než native-ffi (sphlib+CN); potřeba bisect přes `ghostrider_sph_test` per-stage
+ghostrider — selection + scratchpad-OOB opraveny (kernel už padat nesmí); digest stále ≠ native-ffi → zbývá bisect konkrétního core/CN pod-hashe (`ghostrider_benchmark` debug výstup 1181B = per-stage dump)
 
 **⚠️ Kernel spustitelný, ale široké oprávnění chybí:**
 - dynexsolve — běží, syntetický SAT bez řešení (EMPTY = OK signál)

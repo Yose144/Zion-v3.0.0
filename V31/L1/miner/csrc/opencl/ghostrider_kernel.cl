@@ -22,6 +22,25 @@
 //   bytes 76-79: nonce (miner varies this)
 // =============================================================================
 
+// Consensus CN enum (6 variants) → this kernel's 14-entry dispatch table
+// (xmrig-style: every "full" variant followed by its fast sibling).
+uchar cn_variant_map(uchar v) {
+    switch (v) {
+        case 0: return 0;   // CNDark
+        case 1: return 2;   // CNDarklite
+        case 2: return 4;   // CNFast
+        case 3: return 7;   // CNLite
+        case 4: return 10;  // CNTurtle
+        case 5: return 12;  // CNTurtlelite
+        default: return 14; // skip
+    }
+}
+
+// Per-work-item scratchpad stride: 2MB usable + 16B tweak spillover
+// (cn_hash_full stores tweak_tmp at scratchpad[memory..memory+16),
+// which for the 2MB CNFast variant would otherwise overwrite the next WI).
+#define GHOSTRIDER_WI_SCRATCH 2097168u
+
 // ── Algorithm selection (Fisher-Yates style from header nibbles) ────────────
 
 void select_algo(uchar nibble, __private bool* selectedAlgos,
@@ -113,7 +132,7 @@ __kernel void ghostrider_mine(
     ulong nonce = base_nonce + (ulong)gid;
 
     // Each work-item gets its own scratchpad (max 2MB for CNFast)
-    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
+    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * (ulong)GHOSTRIDER_WI_SCRATCH;
 
     // Build 80-byte header with nonce at bytes 76-79
     hash_t hash;
@@ -127,10 +146,13 @@ __kernel void ghostrider_mine(
     hash.h1[79] = (uchar)((nonce >> 24) & 0xFF);
 
     // Select algorithms from header bytes 4-67 (prevhash + merkle root)
+    // Consensus: 15 core algos, 6 CN variants (Raptoreum daemon enum:
+    // CNDark, CNDarklite, CNFast, CNLite, CNTurtle, CNTurtlelite).
     __private uchar selectedAlgo[15];
-    __private uchar selectedCNAlgo[14];
+    __private uchar selectedCNAlgo[6];
     get_algo_string(&hash.h1[4], 64, selectedAlgo, 15);
-    get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 14);
+    get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 6);
+
 
     // Execute 18-step hash chain
     // Steps 0-4: core algos (input = 80-byte header for step 0, 64-byte hash for rest)
@@ -151,7 +173,7 @@ __kernel void ghostrider_mine(
     // Step 5: CN[0]
     {
         uchar cn_out[32];
-        cn_dispatch(selectedCNAlgo[0], hash.h1, size, cn_out, scratchpad,
+        cn_dispatch(cn_variant_map(selectedCNAlgo[0]), hash.h1, size, cn_out, scratchpad,
                     AES0, AES1, AES2, AES3);
         // Copy CN output to hash (first 32 bytes)
         for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
@@ -167,7 +189,7 @@ __kernel void ghostrider_mine(
     // Step 11: CN[1]
     {
         uchar cn_out[32];
-        cn_dispatch(selectedCNAlgo[1], hash.h1, size, cn_out, scratchpad,
+        cn_dispatch(cn_variant_map(selectedCNAlgo[1]), hash.h1, size, cn_out, scratchpad,
                     AES0, AES1, AES2, AES3);
         for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
         for (int j = 32; j < 64; j++) hash.h1[j] = 0;
@@ -181,7 +203,7 @@ __kernel void ghostrider_mine(
     // Step 17: CN[2] (final)
     {
         uchar cn_out[32];
-        cn_dispatch(selectedCNAlgo[2], hash.h1, size, cn_out, scratchpad,
+        cn_dispatch(cn_variant_map(selectedCNAlgo[2]), hash.h1, size, cn_out, scratchpad,
                     AES0, AES1, AES2, AES3);
         for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
         // Final CN: zeroing happens for ALL CN steps including the last one
@@ -220,7 +242,7 @@ __kernel void ghostrider_benchmark(
     cn_populate_aes_tables(AES0, AES1, AES2, AES3);
 
     ulong nonce = base_nonce + (ulong)gid;
-    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
+    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * (ulong)GHOSTRIDER_WI_SCRATCH;
 
     hash_t hash;
     for (uint i = 0; i < 80 && i < header_len; i++) {
@@ -232,17 +254,20 @@ __kernel void ghostrider_benchmark(
     hash.h1[79] = (uchar)((nonce >> 24) & 0xFF);
 
     __private uchar selectedAlgo[15];
-    __private uchar selectedCNAlgo[14];
+    __private uchar selectedCNAlgo[6];
     get_algo_string(&hash.h1[4], 64, selectedAlgo, 15);
-    get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 14);
+    get_algo_string(&hash.h1[4], 64, selectedCNAlgo, 6);
+
 
     // Debug: output all 18 steps × 64 bytes = 1152 bytes + 29 bytes algos = 1181
     // output_hash[0..14]  = selectedAlgo[0..14]
-    // output_hash[15..28] = selectedCNAlgo[0..13]
+    // output_hash[15..28] = selectedCNAlgo mapped to kernel dispatch idx
     // output_hash[29 + step*64 .. 29 + (step+1)*64] = hash after step
     if (gid == 0) {
         for (int i = 0; i < 15; i++) output_hash[i] = selectedAlgo[i];
-        for (int i = 0; i < 14; i++) output_hash[15 + i] = selectedCNAlgo[i];
+        for (int i = 0; i < 14; i++) {
+            output_hash[15 + i] = (i < 6) ? cn_variant_map(selectedCNAlgo[i]) : 0xff;
+        }
     }
 
     uint size = 80;
@@ -267,7 +292,7 @@ __kernel void ghostrider_benchmark(
         }
         if (cnSelection >= 0) {
             uchar cn_out[32];
-            cn_dispatch(selectedCNAlgo[cnSelection], hash.h1, size, cn_out, scratchpad,
+            cn_dispatch(cn_variant_map(selectedCNAlgo[cnSelection]), hash.h1, size, cn_out, scratchpad,
                         AES0, AES1, AES2, AES3);
             for (int j = 0; j < 32; j++) hash.h1[j] = cn_out[j];
             for (int j = 32; j < 64; j++) hash.h1[j] = 0;
@@ -509,7 +534,7 @@ __kernel void cn_full_test(
     for (uint i = 0; i < input_len && i < 200; i++) in_buf[i] = input[i];
 
     __private uchar out_buf[32];
-    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * 2097152;
+    __global uchar* scratchpad = scratchpad_pool + (ulong)gid * (ulong)GHOSTRIDER_WI_SCRATCH;
 
     // Save input[35..42] to scratchpad (global memory) BEFORE calling cn_hash_full.
     // This is needed for VARIANT1_INIT (tweak1_2) because the OpenCL compiler on M1
