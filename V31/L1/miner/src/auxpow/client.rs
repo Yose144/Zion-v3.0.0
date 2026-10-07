@@ -107,7 +107,9 @@ pub fn coin_protocol(coin: ExternalCoin) -> StratumProtocol {
     match coin {
         ExternalCoin::Quantus => StratumProtocol::QuantusStratum,
         ExternalCoin::Monero => StratumProtocol::CryptonoteStratum,
-        ExternalCoin::Flux | ExternalCoin::Verus => StratumProtocol::ZcashStratum,
+        ExternalCoin::Flux | ExternalCoin::Verus | ExternalCoin::Zcash => {
+            StratumProtocol::ZcashStratum
+        }
         ExternalCoin::EpicCash => StratumProtocol::EpicStratum,
         ExternalCoin::Zano => StratumProtocol::EthStratum,
         _ => StratumProtocol::Stratum,
@@ -1074,12 +1076,14 @@ impl AuxPowClient {
     async fn parse_notify(&self, msg: &Value) -> Option<ExternalJob> {
         let params = msg.get("params").and_then(Value::as_array)?;
 
-        if params.len() >= 9 {
+        if params.len() >= 8 {
             let job_id = params[0].as_str().unwrap_or("").to_string();
 
             // Detect ZcashStratum (VRSC/FLUX/ZEC) format:
-            //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+            //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution?]
             // The first field after job_id is version (4 bytes = 8 hex chars).
+            // Plain ZEC pools (f2pool) send only 8 params — no solution field;
+            // the miner constructs the equihash solution itself.
             // Standard stratum (BTC/LTC): [job_id, prevhash, coinb1, coinb2, merkle, version, nbits, ntime, clean]
             // where params[1] is a 64-char hex (32-byte prevhash).
             let first_hex = params[1].as_str().unwrap_or("");
@@ -1100,7 +1104,10 @@ impl AuxPowClient {
                     .or_else(|| params[6].as_u64().map(|n| format!("{:08x}", n)))
                     .or_else(|| params[6].as_i64().map(|n| format!("{:08x}", n)))
                     .unwrap_or_default();
-                let mut solution = parse_hex_value(&params[8]).unwrap_or_default();
+                let mut solution = params
+                    .get(8)
+                    .and_then(|v| parse_hex_value(v))
+                    .unwrap_or_default();
                 // Pad solution to VERUS_SOLUTION_SIZE (1344 bytes) — the pool
                 // may send an empty or partial solution; the miner fills the
                 // nonceSpace during mining, but the header must be full-size.
@@ -1211,7 +1218,12 @@ impl AuxPowClient {
                 return Some(job);
             }
 
-            // ── Standard stratum (BTC/LTC/VRSC-legacy) ──
+            // ── Standard stratum (BTC/LTC/VRSC-legacy) — needs the full
+            // 9-param layout (clean_jobs at index 8). ──
+            if params.len() < 9 {
+                ext_warn!(len = params.len(), "unsupported mining.notify param count");
+                return None;
+            }
             let prevhash = parse_hex_value(&params[1]).unwrap_or_default();
             let _coinb1 = params[2].as_str().unwrap_or("");
             let _coinb2 = params[3].as_str().unwrap_or("");
@@ -1245,6 +1257,43 @@ impl AuxPowClient {
                 nbits: Some(nbits.to_string()),
                 algorithm: self.config.algorithm.clone(),
                 external_coin: self.config.coin,
+                extranonce1: self.extranonce1.lock().await.clone(),
+                ..Default::default()
+            };
+            *self.latest_job_id.lock().await = Some(job.job_id.clone());
+            *self.latest_job_time.lock().await = Some(Instant::now());
+            return Some(job);
+        }
+
+        // YiiMP ProgPoW/KawPow-family notify (zpool EVR/MEWC/…):
+        //   [job_id, header_hash_hex, seed_hash_hex, target_hex,
+        //    clean_jobs(bool), height(u64), ntime_hex]
+        if params.len() == 7 && params.get(4).map(|v| v.is_boolean()).unwrap_or(false) {
+            let job_id = params[0].as_str().unwrap_or("").to_string();
+            let header_hex = params[1].as_str().unwrap_or("").to_string();
+            let seed_hex = params[2].as_str().unwrap_or("").to_string();
+            let target_hex = params[3].as_str().unwrap_or("").to_string();
+            let header =
+                hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+            let target = if let Some(tb) = *self.current_target_bytes.lock().await {
+                tb
+            } else {
+                hasher::parse_target_hex(&target_hex).unwrap_or([0xFF; 32])
+            };
+            let height = params.get(5).and_then(Value::as_u64);
+            let ntime = params[6].as_str().unwrap_or("00000000").to_string();
+
+            let job = ExternalJob {
+                job_id,
+                header_hex,
+                target_hex,
+                seed_hash: if seed_hex.is_empty() { None } else { Some(seed_hex) },
+                block_number: height,
+                algorithm: self.config.algorithm.clone(),
+                external_coin: self.config.coin,
+                header_bytes: header,
+                target_bytes: target,
+                ntime,
                 extranonce1: self.extranonce1.lock().await.clone(),
                 ..Default::default()
             };
@@ -1673,6 +1722,10 @@ pub struct StratumJob {
     pub coin: zion_cosmic_harmony::ExternalCoin,
     /// Block height / block number from the external pool (for DAG/epoch derivation).
     pub height: u64,
+    /// Epoch seed hash carried by YiiMP ProgPoW/KawPow notifies
+    /// (`[job_id, header_hash, seed_hash, target, clean, height, ntime]`).
+    /// `None` for protocols that don't deliver one.
+    pub seed_hash: Option<Vec<u8>>,
 }
 
 impl From<StratumJob> for super::Job {
@@ -1687,7 +1740,7 @@ impl From<StratumJob> for super::Job {
             extranonce2: "00".to_string(),
             ntime: j.ntime,
             height: j.height,
-            seed_hash: None,
+            seed_hash: j.seed_hash,
         }
     }
 }
@@ -2223,6 +2276,7 @@ fn parse_qpow_stratum_job_sync(job: &Value, state: &StratumState) -> Option<Stra
         difficulty,
         coin: zion_cosmic_harmony::ExternalCoin::Quantus,
         height: seq,
+        seed_hash: None,
     })
 }
 
@@ -2290,6 +2344,11 @@ fn parse_eth_getwork(value: &Value) -> Option<StratumJob> {
     }
 
     let header = parse_hex_value(&params[0]).unwrap_or_default();
+    // eth_getWork: [header_hash, seed_hash, target, block_number]
+    let seed_hash = params
+        .get(1)
+        .and_then(parse_hex_value)
+        .filter(|s| !s.is_empty());
     let target = hasher::parse_target_hex(params[2].as_str().unwrap_or("")).unwrap_or([0xFF; 32]);
     let height = params
         .get(3)
@@ -2312,6 +2371,7 @@ fn parse_eth_getwork(value: &Value) -> Option<StratumJob> {
         difficulty: 1.0,
         coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
         height,
+        seed_hash,
     })
 }
 
@@ -2357,6 +2417,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
                     difficulty,
                     coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
                     height: timestamp,
+                    seed_hash: None,
                 });
             }
         }
@@ -2392,15 +2453,57 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             difficulty: *state.difficulty.lock().await,
             coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
             height,
+            seed_hash: None,
         });
     }
 
-    if params.len() >= 9 {
+    // YiiMP ProgPoW/KawPow-family notify (zpool EVR/MEWC/…):
+    //   [job_id, header_hash_hex, seed_hash_hex, target_hex,
+    //    clean_jobs(bool), height(u64), ntime_hex]
+    if params.len() == 7 && params.get(4).map(|v| v.is_boolean()).unwrap_or(false) {
+        let job_id = params[0].as_str().unwrap_or("").to_string();
+        let header_hex = params[1].as_str().unwrap_or("");
+        let seed_hex = params[2].as_str().unwrap_or("");
+        let target_hex = params[3].as_str().unwrap_or("");
+        let header = match hex::decode(header_hex.trim_start_matches("0x")) {
+            Ok(h) => h,
+            Err(_) => header_hex.as_bytes().to_vec(),
+        };
+        let seed_hash = hex::decode(seed_hex.trim_start_matches("0x"))
+            .ok()
+            .filter(|s| !s.is_empty());
+        let target = if let Some(tb) = *state.target_bytes.lock().await {
+            tb
+        } else {
+            hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32])
+        };
+        let height = params.get(5).and_then(Value::as_u64).unwrap_or(0);
+        let ntime = params[6].as_str().unwrap_or("00000000").to_string();
+        *state.ntime.lock().await = ntime.clone();
+        return Some(StratumJob {
+            job_id,
+            header,
+            target,
+            target_512: None,
+            extranonce1: state.extranonce1.lock().await.clone(),
+            extranonce2_size: *state.extranonce2_size.lock().await,
+            ntime,
+            difficulty: *state.difficulty.lock().await,
+            coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+            height,
+            seed_hash,
+        });
+    }
+
+    if params.len() >= 8 {
         let job_id = params[0].as_str().unwrap_or("").to_string();
 
         // ZcashStratum (VRSC / FLUX / ZEC): params are
-        //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+        //   [job_id, version, prevhash, merkle, reserved, ntime, nbits,
+        //    clean_jobs, solution?]
         // The first field after job_id is version (4 bytes = 8 hex chars).
+        // Plain ZEC pools (f2pool, flypool-style) send only 8 params — the
+        // miner constructs the equihash solution, none is delivered.
         let first_hex = params[1].as_str().unwrap_or("");
         let first_len = first_hex.trim_start_matches("0x").len();
         if first_len == 8 {
@@ -2411,7 +2514,10 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             let ntime = params[5].as_str().unwrap_or("00000000").to_string();
             *state.ntime.lock().await = ntime.clone();
             let nbits = params[6].as_str().unwrap_or("");
-            let solution = parse_hex_value(&params[8]).unwrap_or_default();
+            let solution = params
+                .get(8)
+                .and_then(|v| parse_hex_value(v))
+                .unwrap_or_default();
 
             // Honor an explicit mining.set_target override (used by the ZION pool's
             // per-session vardiff and mock pools). If none was sent, fall back to
@@ -2466,6 +2572,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
                 difficulty: *state.difficulty.lock().await,
                 coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
                 height,
+                seed_hash: None,
             });
         }
 
@@ -2496,6 +2603,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             difficulty: *state.difficulty.lock().await,
             coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
             height,
+            seed_hash: None,
         });
     }
 

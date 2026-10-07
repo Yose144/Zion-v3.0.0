@@ -430,7 +430,7 @@ impl ExternalCoin {
             ExternalCoin::Dynex => "pool.deepminerz.com:3333",
             ExternalCoin::Nervos => "ckb.2miners.com:6464",
             ExternalCoin::Conflux => "cfx.2miners.com:6565",
-            ExternalCoin::Zcash => "zec.2miners.com:7070",
+            ExternalCoin::Zcash => "zec.f2pool.com:3357",
             ExternalCoin::PhoenixCoin => "neoscrypt.eu.mine.zpool.ca:4233",
             ExternalCoin::Keryx => "keryxhash.eu.mine.zpool.ca:4233",
             ExternalCoin::Quantus => "quantus.qelvhash.com:4444",
