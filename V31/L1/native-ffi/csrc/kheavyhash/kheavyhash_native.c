@@ -222,12 +222,21 @@ typedef struct {
 } xoshiro256pp;
 
 static void xoshiro_init(xoshiro256pp* r, const uint8_t seed[32]) {
+    int all_zero = 1;
     for (int i = 0; i < 4; i++) {
         uint64_t v = 0;
         for (int j = 0; j < 8; j++) {
             v |= (uint64_t)seed[i * 8 + j] << (j * 8);
         }
         r->s[i] = v;
+        if (v != 0) all_zero = 0;
+    }
+    /* xoshiro256++ degenerates on an all-zero state (next() = 0 forever),
+     * which would spin the rank-64 retry loop in ensure_matrix forever on a
+     * zero pre_pow_hash (mock/malformed jobs). Substitute the golden-ratio
+     * constant — matches the Rust guard in hasher.rs/gpu_opencl_full.rs. */
+    if (all_zero) {
+        r->s[0] = 0x9E3779B97F4A7C15ULL;
     }
 }
 

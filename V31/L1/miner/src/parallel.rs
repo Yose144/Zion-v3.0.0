@@ -47,8 +47,7 @@ pub fn dispatch_algorithm(
             let pre_pow_hash = &header[..header.len().min(32)];
             #[cfg(feature = "native-kheavyhash")]
             {
-                // Native FFI currently lacks a timestamp argument; fall back to
-                // the Rust implementation so the correct timestamp is used.
+                return zion_native_ffi::kheavyhash::mine(pre_pow_hash, height, nonce);
             }
             #[allow(unreachable_code)]
             {
@@ -812,5 +811,27 @@ mod tests {
         assert_eq!(share.coin, job.coin);
         assert!(share.solution.is_some());
         assert_eq!(share.solution.as_ref().unwrap().len(), 3 + 1344);
+    }
+
+    /// The native C++ kHeavyHash (xoshiro matrix + cSHAKE256) must produce
+    /// identical output to the pure-Rust reference used by the GPU KAT.
+    #[test]
+    #[cfg(feature = "native-kheavyhash")]
+    fn kheavyhash_native_equiv_rust_ref() {
+        for seed_byte in [0x00u8, 0xAA, 0x55, 0xFF] {
+            let pre_pow_hash = [seed_byte; 32];
+            for timestamp in [0u64, 1_762_000_200] {
+                for nonce in [0u64, 29184, u64::MAX] {
+                    let native =
+                        zion_native_ffi::kheavyhash::mine(&pre_pow_hash, timestamp, nonce);
+                    let rust =
+                        crate::auxpow::hash_kheavyhash(&pre_pow_hash, timestamp, nonce);
+                    assert_eq!(
+                        native, rust,
+                        "native != rust: seed={seed_byte:#04x} ts={timestamp} nonce={nonce}"
+                    );
+                }
+            }
+        }
     }
 }
