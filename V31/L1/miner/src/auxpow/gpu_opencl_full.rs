@@ -2316,6 +2316,124 @@ impl ExtGpuMiner {
         result
     }
 
+    /// KAT/debug helper: run only `cleanUp` + `beamHashIII_seed` on a
+    /// dedicated buf0/counters pair (buf1 left tiny — rounds R1-R5 don't
+    /// run), then read back the bucket slot holding element `gid` and return
+    /// its 8 words. Verifies the seed front-end (blake2b prepow → siphash24
+    /// workBits → mixer → bucket scatter) without needing the full
+    /// 4.56 GB solver tables.
+    ///
+    /// Requires ~2.3 GB free VRAM for buffer0.
+    pub fn beamhash_seed_elem_debug(
+        &mut self,
+        header: &[u8],
+        extra: &[u8],
+        base_nonce: u64,
+        gids: &[u32],
+    ) -> Result<Vec<[u64; 8]>> {
+        let prefix_len = extra.len().min(8);
+        let mut full_nonce = [0u8; 8];
+        full_nonce[..prefix_len].copy_from_slice(&extra[..prefix_len]);
+        let suffix_len = 8 - prefix_len;
+        full_nonce[prefix_len..].copy_from_slice(&base_nonce.to_le_bytes()[..suffix_len]);
+
+        let prepow_u64 = crate::auxpow::beamhash_ref::beamhash_prepow(header, &full_nonce);
+        let prepow = ocl::prm::Ulong4::new(
+            prepow_u64[0],
+            prepow_u64[1],
+            prepow_u64[2],
+            prepow_u64[3],
+        );
+
+        const WG_SIZE: usize = 256;
+        const NUM_BUCKETS: usize = 4096;
+        const BUCKET_SIZE: usize = 8720;
+        const HASH_TABLE_BYTES: usize = NUM_BUCKETS * BUCKET_SIZE * 64;
+        const COUNTERS_LEN: usize = 20480;
+        const SEED_ELEMS: usize = 33_554_432;
+
+        let q = Queue::new(&self.context, self.device, None)
+            .map_err(|e| anyhow!("BeamHash seed debug queue failed: {e}"))?;
+
+        let buf0 = Buffer::<ocl::prm::Ulong8>::builder()
+            .queue(q.clone())
+            .len(HASH_TABLE_BYTES / 64)
+            .build()
+            .map_err(|e| anyhow!("beamhash seed buf0 alloc failed: {e}"))?;
+        let buf1 = Buffer::<ocl::prm::Ulong8>::builder()
+            .queue(q.clone())
+            .len(64)
+            .build()?;
+        let counters = Buffer::<u32>::builder()
+            .queue(q.clone())
+            .len(COUNTERS_LEN)
+            .build()?;
+        let results = Buffer::<u32>::builder()
+            .queue(q.clone())
+            .len(324)
+            .build()?;
+
+        let pro_que = self.ensure_proque("beamhash_solver.cl")?;
+        for (name, gws) in [("cleanUp", COUNTERS_LEN), ("beamHashIII_seed", SEED_ELEMS)] {
+            let kernel = Kernel::builder()
+                .queue(q.clone())
+                .program(pro_que.program())
+                .name(name)
+                .arg(&buf0)
+                .arg(&buf1)
+                .arg(&counters)
+                .arg(&results)
+                .arg(prepow)
+                .build()
+                .map_err(|e| anyhow!("beamhash seed kernel '{name}' build failed: {e}"))?;
+            unsafe {
+                kernel
+                    .cmd()
+                    .global_work_size(gws)
+                    .local_work_size(WG_SIZE)
+                    .enq()
+                    .map_err(|e| anyhow!("beamhash seed kernel '{name}' enq failed: {e}"))?;
+            }
+            q.finish().map_err(|e| anyhow!("beamhash seed '{name}' finish: {e}"))?;
+        }
+
+        // Read back counters, then scan each requested gid's bucket.
+        let mut ctrs = vec![0u32; COUNTERS_LEN];
+        counters.read(&mut ctrs).enq()?;
+
+        let mut out = Vec::with_capacity(gids.len());
+        for &gid in gids {
+            let expect = crate::auxpow::beamhash_ref::beamhash_seed_elem(
+                &prepow_u64,
+                gid as u64,
+            );
+            let bucket = (expect[0] & 0xFFF) as usize;
+            let count = (ctrs[bucket] as usize).min(BUCKET_SIZE);
+            let mut slot_words = vec![ocl::prm::Ulong8::zero(); count];
+            buf0
+                .create_sub_buffer(
+                    Some(ocl::flags::MEM_READ_ONLY),
+                    bucket * BUCKET_SIZE,
+                    count,
+                )?
+                .read(&mut slot_words)
+                .enq()?;
+            q.finish().map_err(|e| anyhow!("beamhash seed readback: {e}"))?;
+            let mut found = None;
+            for w8 in &slot_words {
+                let w: [u64; 8] = w8[..8].try_into().unwrap();
+                if w[7] == gid as u64 {
+                    found = Some(w);
+                    break;
+                }
+            }
+            out.push(found.ok_or_else(|| {
+                anyhow!("beamhash seed elem gid={gid} not found in bucket {bucket} (count={count})")
+            })?);
+        }
+        Ok(out)
+    }
+
     /// Convenience: mine with a 32-byte header and no extra data.
     pub fn mine_simple(
         &mut self,

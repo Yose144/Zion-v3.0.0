@@ -480,6 +480,12 @@ fn real_main() {
             extra: vec![],
             cpu: |_h, _e, _n| anyhow::bail!("no CPU ref; needs fishhash DAG"),
         },
+        Case {
+            algo: "qpow",
+            header: vec![0x77u8; 32],
+            extra: vec![],
+            cpu: |_h, _e, _n| anyhow::bail!("handled by QpowOpenclMiner block"),
+        },
     ];
 
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -889,6 +895,110 @@ fn real_main() {
                     );
                 }
                 Ok::<_, anyhow::Error>(format!("mine mix≡CPU nonce={}", share.nonce))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
+        // QPoW (Poseidon2/Goldilocks, native ZION algo): exercise the
+        // persistent OpenCL miner on this device. Every returned candidate
+        // is CPU-verified inside `mine_batch` (lazy 128-bit reduction can
+        // slip ±1 limb), so a returned result is by-construction correct —
+        // this KAT additionally cross-checks it and reports the hit rate.
+        if c.algo == "qpow" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                use zion_miner::auxpow::qpow;
+                use zion_miner::gpu::qpow_opencl::QpowOpenclMiner;
+                let mut qm = QpowOpenclMiner::new(1 << 20)
+                    .map_err(|e| anyhow::anyhow!("qpow OpenCL init: {e}"))?;
+                let mut header = [0u8; qpow::QPOW_HEADER_LEN];
+                header.copy_from_slice(&c.header[..32]);
+                let mut nonce = [0u8; qpow::QPOW_NONCE_LEN];
+                nonce[56..64].copy_from_slice(&base_nonce.to_be_bytes());
+                let target = [0xffu8; qpow::QPOW_TARGET_LEN];
+                let res = qm
+                    .mine_batch(&header, &nonce, &target, batch)?
+                    .ok_or_else(|| anyhow::anyhow!("qpow: no candidate in {batch} nonces"))?;
+                // Independent re-verification of the returned candidate.
+                let expect = qpow::get_nonce_hash(&header, &res.nonce);
+                if res.hash != expect {
+                    anyhow::bail!(
+                        "qpow hash mismatch: gpu={} cpu={}",
+                        hex::encode(&res.hash[..8]),
+                        hex::encode(&expect[..8])
+                    );
+                }
+                Ok::<_, anyhow::Error>(format!(
+                    "mine_batch≡CPU nonce_le={:016x} tested={}",
+                    u64::from_be_bytes(res.nonce[56..64].try_into().unwrap()),
+                    res.nonces_tested
+                ))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
+        // BeamHash III: verify the seed stage (blake2b prepow → siphash24
+        // workBits → mixer → bucket scatter) against the CPU ref. The full
+        // R1-R5 solver needs 4.56 GB of tables (VRAM-blocked), but the seed
+        // stage alone proves the hashing front-end is consensus-exact.
+        if c.algo == "beamhash" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                use zion_miner::auxpow::beamhash_ref::{
+                    beamhash_prepow, beamhash_seed_elem,
+                };
+                let gids: Vec<u32> = vec![0, 1, 7, 1000, 33_554_431];
+                let got = miner.beamhash_seed_elem_debug(
+                    &c.header,
+                    &c.extra,
+                    base_nonce,
+                    &gids,
+                )?;
+                // Reconstruct full_nonce the same way the host does.
+                let prefix_len = c.extra.len().min(8);
+                let mut full_nonce = [0u8; 8];
+                full_nonce[..prefix_len].copy_from_slice(&c.extra[..prefix_len]);
+                let suffix_len = 8 - prefix_len;
+                full_nonce[prefix_len..]
+                    .copy_from_slice(&base_nonce.to_le_bytes()[..suffix_len]);
+                let prepow = beamhash_prepow(&c.header, &full_nonce);
+                for (i, &gid) in gids.iter().enumerate() {
+                    let expect = beamhash_seed_elem(&prepow, gid as u64);
+                    if got[i] != expect {
+                        anyhow::bail!(
+                            "beamhash seed gid={gid}: gpu=[s0={:016x} s6={:016x}] cpu=[s0={:016x} s6={:016x}]",
+                            got[i][0], got[i][6], expect[0], expect[6]
+                        );
+                    }
+                }
+                Ok::<_, anyhow::Error>(format!(
+                    "seed elems ≡ CPU ref ({} gids)",
+                    gids.len()
+                ))
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
