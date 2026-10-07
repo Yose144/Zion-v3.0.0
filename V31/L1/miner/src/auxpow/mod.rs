@@ -6,15 +6,18 @@
 
 pub mod client;
 pub mod dual_stratum;
+pub mod eaglesong_ref;
 pub mod gpu_miner;
 #[cfg(feature = "gpu-opencl")]
 pub mod gpu_opencl_full;
 pub mod hasher;
+pub mod neoscrypt_ref;
 #[cfg(feature = "native-hashers")]
 pub mod native;
 pub mod parent_chains;
 pub mod progpow_codegen;
 pub(crate) mod pure;
+pub mod qhash_ref;
 pub mod qpow;
 pub mod scheduler;
 pub mod true_auxpow;
