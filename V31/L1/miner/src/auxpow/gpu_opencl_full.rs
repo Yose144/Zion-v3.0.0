@@ -4915,29 +4915,10 @@ typedef unsigned long ulong;
         //    clause_neurons, clause_scratch)
         //
         // For mining we synthesize a deterministic random 3-SAT instance
-        // from the job header (SHA-256 driven): num_variables=64,
+        // from the job header (xorshift64* driven): num_variables=64,
         // num_clauses=256 — well under MAX_CLAUSES=1024.
-        let num_variables: u32 = 64;
-        let num_clauses: u32 = 256;
-        let mut seed = [0u8; 32];
-        let copy_len = header.len().min(32);
-        seed[..copy_len].copy_from_slice(&header[..copy_len]);
-        let mut rng_state = u64::from_le_bytes(seed[..8].try_into().unwrap())
-            .wrapping_add(0x9E3779B97F4A7C15);
-        let mut next_u32 = || {
-            // xorshift64*
-            rng_state ^= rng_state >> 12;
-            rng_state ^= rng_state << 25;
-            rng_state ^= rng_state >> 27;
-            (rng_state.wrapping_mul(0x2545F4914F6CDD1D) >> 32) as u32
-        };
-        let mut clause_literals = vec![0i32; 3 * num_clauses as usize];
-        for lit in clause_literals.iter_mut() {
-            // Kernel decode_literal() uses 1-based sign-encoded literals:
-            // lit > 0 → var (lit-1) positive, lit < 0 → var (-lit-1) negated.
-            let var = (next_u32() % num_variables) as i32 + 1;
-            *lit = if next_u32() & 1 == 0 { var } else { -var };
-        }
+        let (clause_literals, num_variables, num_clauses) =
+            Self::dynex_clause_literals(header);
 
         let literals_buf: Buffer<i32> = Buffer::builder()
             .queue(q.clone())
@@ -4982,6 +4963,132 @@ typedef unsigned long ulong;
             .map_err(|e| anyhow!("DynexSolve kernel build failed: {e}"))?;
 
         Ok(kernel)
+    }
+
+    /// Replicates the clause-generation logic of `build_dynexsolve_kernel`:
+    /// a deterministic pseudo-random 3-SAT instance (64 vars / 256 clauses)
+    /// seeded from the first 8 header bytes via xorshift64*.
+    /// Sign-encoded literals: +v → var (v-1) positive, −v → negated.
+    pub fn dynex_clause_literals(header: &[u8]) -> (Vec<i32>, u32, u32) {
+        let num_variables: u32 = 64;
+        let num_clauses: u32 = 256;
+        let mut seed = [0u8; 32];
+        let copy_len = header.len().min(32);
+        seed[..copy_len].copy_from_slice(&header[..copy_len]);
+        let mut rng_state = u64::from_le_bytes(seed[..8].try_into().unwrap())
+            .wrapping_add(0x9E3779B97F4A7C15);
+        let mut next_u32 = || {
+            rng_state ^= rng_state >> 12;
+            rng_state ^= rng_state << 25;
+            rng_state ^= rng_state >> 27;
+            (rng_state.wrapping_mul(0x2545F4914F6CDD1D) >> 32) as u32
+        };
+        let mut clause_literals = vec![0i32; 3 * num_clauses as usize];
+        for lit in clause_literals.iter_mut() {
+            let var = (next_u32() % num_variables) as i32 + 1;
+            *lit = if next_u32() & 1 == 0 { var } else { -var };
+        }
+        (clause_literals, num_variables, num_clauses)
+    }
+
+    /// Runs `dynexsolve_benchmark` for `batches` rounds of `batch` chips each
+    /// and returns (chips_simulated, sat_solutions_found, first_solution_dump).
+    /// The dump is (nonce, solution_bytes[8], pow_hash[32]) captured from the
+    /// first chip that found a solution — lets the KAT verify the hash path
+    /// end-to-end (sha256(sol‖nonce) ≡ GPU pow_hash).
+    /// `clause_literals` uses the kernel's sign-encoded 1-based layout;
+    /// `num_clauses = clause_literals.len()/3`.
+    #[cfg(feature = "gpu-opencl")]
+    pub fn dynexsolve_bench_stats(
+        &mut self,
+        clause_literals: &[i32],
+        num_variables: u32,
+        base_nonce: u64,
+        batch: u64,
+        batches: u32,
+    ) -> Result<(u64, u64, Option<(u64, [u8; 8], [u8; 32])>)> {
+        let num_clauses = (clause_literals.len() / 3) as u32;
+        let q = Queue::new(&self.context, self.device, None)
+            .map_err(|e| anyhow!("dynexsolve bench queue failed: {e}"))?;
+        let pro_que = self.ensure_proque("dynexsolve_kernel.cl")?;
+
+        let gws = ((batch as usize) + 63) & !63;
+        let literals_buf: Buffer<i32> = Buffer::builder()
+            .queue(q.clone())
+            .len(clause_literals.len())
+            .copy_host_slice(&clause_literals)
+            .build()?;
+        let clause_neurons: Buffer<f32> = Buffer::builder()
+            .queue(q.clone())
+            .len(gws * num_clauses as usize)
+            .build()?;
+        let clause_scratch: Buffer<f32> = Buffer::builder()
+            .queue(q.clone())
+            .len(gws * 3 * Self::DYNEX_MAX_CLAUSES)
+            .build()?;
+        let hash_counter: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(1)
+            .fill_val(0u32)
+            .build()?;
+        let solution_counter: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(1)
+            .fill_val(0u32)
+            .build()?;
+        let sol_dump: Buffer<u32> = Buffer::builder()
+            .queue(q.clone())
+            .len(43)
+            .fill_val(0u32)
+            .build()?;
+
+        for r in 0..batches {
+            let kernel = Kernel::builder()
+                .queue(q.clone())
+                .program(pro_que.program())
+                .name("dynexsolve_benchmark")
+                .arg(&literals_buf)
+                .arg(num_clauses)
+                .arg(num_variables)
+                .arg(base_nonce.wrapping_add(r as u64 * gws as u64))
+                .arg(&clause_neurons)
+                .arg(&clause_scratch)
+                .arg(&hash_counter)
+                .arg(&solution_counter)
+                .arg(&sol_dump)
+                .build()
+                .map_err(|e| anyhow!("dynexsolve bench kernel build failed: {e}"))?;
+            unsafe {
+                kernel
+                    .cmd()
+                    .global_work_size(gws)
+                    .local_work_size(64)
+                    .enq()
+                    .map_err(|e| anyhow!("dynexsolve bench enq failed: {e}"))?;
+            }
+        }
+        q.finish().map_err(|e| anyhow!("dynexsolve bench finish: {e}"))?;
+
+        let mut hc = vec![0u32; 1];
+        let mut sc = vec![0u32; 1];
+        let mut dump = vec![0u32; 43];
+        hash_counter.read(&mut hc[..]).enq()?;
+        solution_counter.read(&mut sc[..]).enq()?;
+        sol_dump.read(&mut dump[..]).enq()?;
+        q.finish()?;
+        let sol = (dump[0] != 0).then(|| {
+            let nonce = dump[1] as u64 | ((dump[2] as u64) << 32);
+            let mut sb = [0u8; 8];
+            for (i, b) in sb.iter_mut().enumerate() {
+                *b = dump[3 + i] as u8;
+            }
+            let mut ph = [0u8; 32];
+            for (i, b) in ph.iter_mut().enumerate() {
+                *b = dump[11 + i] as u8;
+            }
+            (nonce, sb, ph)
+        });
+        Ok((hc[0] as u64, sc[0] as u64, sol))
     }
 
     // -----------------------------------------------------------------

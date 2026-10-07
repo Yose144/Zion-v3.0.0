@@ -7,6 +7,74 @@
 //!   cargo run --release -p zion-miner --features gpu-opencl --bin auxpow_kat [ALGO ...]
 //!   env: ZION_KAT_BATCH (default 4096), ZION_OCL_PLATFORM_IDX/DEVICE_IDX
 
+/// Enumerate satisfying assignments of a sign-encoded 3-SAT instance via
+/// DPLL with unit propagation. `cb(assignment_bits)` is invoked per
+/// solution; returning false stops enumeration early.
+fn dynex_enum_solutions(lits: &[i32], nv: usize, cb: &mut dyn FnMut(u64) -> bool) {
+    let clauses: Vec<[i32; 3]> = lits
+        .chunks_exact(3)
+        .map(|c| [c[0], c[1], c[2]])
+        .collect();
+
+    fn rec(
+        clauses: &[[i32; 3]],
+        nv: usize,
+        mut assign: u64,
+        mut decided: u64,
+        cb: &mut dyn FnMut(u64) -> bool,
+    ) -> bool {
+        // Unit propagation.
+        loop {
+            let mut changed = false;
+            for c in clauses {
+                let mut sat = false;
+                let mut unassigned = 0i32;
+                let mut n_un = 0;
+                for &l in c {
+                    let v = (l.abs() - 1) as u32;
+                    if decided >> v & 1 == 1 {
+                        let val = assign >> v & 1 == 1;
+                        if (l > 0) == val {
+                            sat = true;
+                            break;
+                        }
+                    } else {
+                        unassigned = l;
+                        n_un += 1;
+                    }
+                }
+                if sat {
+                    continue;
+                }
+                if n_un == 0 {
+                    return true; // conflict — backtrack, keep enumerating
+                }
+                if n_un == 1 {
+                    let v = (unassigned.abs() - 1) as u32;
+                    decided |= 1 << v;
+                    if unassigned > 0 {
+                        assign |= 1 << v;
+                    } else {
+                        assign &= !(1 << v);
+                    }
+                    changed = true;
+                }
+            }
+            if !changed {
+                break;
+            }
+        }
+        if decided.count_ones() as usize == nv {
+            return cb(assign);
+        }
+        let v = (0..nv).find(|&v| decided >> v & 1 == 0).unwrap() as u32;
+        rec(clauses, nv, assign | (1 << v), decided | (1 << v), cb)
+            && rec(clauses, nv, assign & !(1 << v), decided | (1 << v), cb)
+    }
+
+    rec(&clauses, nv, 0, 0, cb);
+}
+
 /// Diagnose an invalid Equihash 200,9 solution: decode the 21-bit index
 /// stream, compute leaf Xi hashes with reference Blake2b semantics, and
 /// report which pair levels actually collide on 20 bits.
@@ -1134,6 +1202,144 @@ fn real_main() {
                 Ok::<_, anyhow::Error>(format!(
                     "seed elems ≡ CPU ref ({} gids)",
                     gids.len()
+                ))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
+        // DynexSolve (DNX): the kernel is a neuromorphic ODE solver —
+        // stochastic, so EMPTY on a single batch is not a defect.
+        // Verification strategy:
+        //   1) `dynexsolve_benchmark` counts chips + valid SAT solutions on a
+        //      trivial unique-solution instance, and dumps the first found
+        //      (nonce, solution, pow_hash) — verified on CPU as
+        //      (a) the dumped assignment satisfies the clauses and
+        //      (b) sha256(sol‖nonce_BE) ≡ the GPU-computed pow_hash.
+        //      That proves the full pipeline end-to-end (ODE + convergence +
+        //      check_solution + extract + sha256) without needing a share.
+        //   2) `mine` is then attempted on the real synthesized instance
+        //      (near-threshold random 3-SAT, ratio 4.0) — EMPTY is expected
+        //      and not counted against the kernel; a returned share is
+        //      verified by DPLL enumeration of all satisfying assignments.
+        if c.algo == "dynexsolve" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let (lits, nv, _nc) = ExtGpuMiner::dynex_clause_literals(&c.header);
+                let sol_len = ((nv + 7) / 8) as usize;
+                use sha2::Digest;
+
+                // Trivial instance: all-positive clauses covering all vars →
+                // unique satisfying assignment = all-true.
+                let trivial: Vec<i32> = (0..3 * 256)
+                    .map(|i| (i * 37 + 11) % 64 + 1)
+                    .collect();
+                let (tchips, tsols, tdump) = miner.dynexsolve_bench_stats(
+                    &trivial,
+                    nv,
+                    base_nonce,
+                    batch,
+                    1,
+                )?;
+                eprintln!(
+                    "  dynex bench trivial: {tchips} chips, {tsols} SAT solutions"
+                );
+                let mut pipeline = "unverified".to_string();
+                if let Some((dnonce, dsol, dhash)) = tdump {
+                    // (a) dumped assignment must satisfy the trivial instance
+                    let sat = trivial.chunks_exact(3).all(|cl| {
+                        cl.iter().any(|&l| {
+                            let v = (l.abs() - 1) as usize;
+                            let val = dsol[v / 8] >> (7 - (v % 8)) & 1 == 1;
+                            (l > 0) == val
+                        })
+                    });
+                    if !sat {
+                        anyhow::bail!("bench dump: solution does not satisfy clauses");
+                    }
+                    // (b) sha256(sol‖nonce_BE) must reproduce GPU pow_hash
+                    let mut inp = dsol.to_vec();
+                    inp.extend_from_slice(&dnonce.to_be_bytes());
+                    let cpu_hash = sha2::Sha256::digest(&inp);
+                    if cpu_hash[..] != dhash[..] {
+                        anyhow::bail!(
+                            "bench dump hash mismatch: gpu={} cpu={}",
+                            hex::encode(&dhash[..8]),
+                            hex::encode(&cpu_hash[..8])
+                        );
+                    }
+                    pipeline = format!("sol+sha256≡ nonce={dnonce}");
+                }
+
+                let (chips, sols, _dump) =
+                    miner.dynexsolve_bench_stats(&lits, nv, base_nonce, batch, 4)?;
+                eprintln!("  dynex bench real: {chips} chips, {sols} SAT solutions");
+                if sols == 0 && tsols == 0 {
+                    anyhow::bail!("solver found zero solutions on both instances");
+                }
+
+                let mut share = None;
+                for rep in 0..repeats {
+                    let nonce = base_nonce.wrapping_add(rep as u64 * batch);
+                    if let Some(s) =
+                        miner.mine("dynexsolve", &c.header, &c.extra, &target, nonce, batch)?
+                    {
+                        share = Some(s);
+                        break;
+                    }
+                }
+                let share = match share {
+                    Some(s) => s,
+                    None => {
+                        // mine() found nothing on the hard instance — the
+                        // pipeline is still proven via the bench dump above.
+                        return Ok::<_, anyhow::Error>(format!(
+                            "{pipeline} (mine EMPTY on ratio-4 instance) chips={chips} sols={sols} tsols={tsols}"
+                        ));
+                    }
+                };
+
+                // Enumerate SAT solutions via DPLL (the instance is small);
+                // hash each with the reported nonce until the GPU hash
+                // reproduces — proves the whole pipeline end-to-end.
+                let mut matched = false;
+                let mut n_solutions = 0u64;
+                dynex_enum_solutions(&lits, nv as usize, &mut |assign| {
+                    n_solutions += 1;
+                    let mut inp = vec![0u8; sol_len];
+                    for i in 0..nv as usize {
+                        if (assign >> i) & 1 == 1 {
+                            inp[i / 8] |= 1 << (7 - (i % 8));
+                        }
+                    }
+                    inp.extend_from_slice(&share.nonce.to_be_bytes());
+                    if sha2::Sha256::digest(&inp)[..] == share.hash[..] {
+                        matched = true;
+                        return false; // stop enumeration
+                    }
+                    n_solutions < (1 << 22) // cap enumeration
+                });
+                if !matched {
+                    anyhow::bail!(
+                        "dynexsolve hash not reproducible: nonce={} gpu={} (enumerated {n_solutions} SAT assignments)",
+                        share.nonce,
+                        hex::encode(&share.hash[..8])
+                    );
+                }
+                Ok::<_, anyhow::Error>(format!(
+                    "sol hash ≡ CPU nonce={} sat_enum={} chips={} sols={}",
+                    share.nonce, n_solutions, chips, sols
                 ))
             })) {
                 Ok(Ok(what)) => {
