@@ -1511,8 +1511,13 @@ async fn htlc_claim(
     headers: HeaderMap,
     Json(req): Json<HtlcClaimRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)
-        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    // Trustless WARP path: knowledge of a valid preimage is itself the
+    // authorization (verified in `do_claim`), so public callers may claim —
+    // but the payout is pinned to the claimant committed in the HTLC record
+    // and `target_address` is ignored. Admin sessions keep the override as
+    // an operator rescue path.
+    let is_admin =
+        require_admin(&state, user.as_ref().map(|u| &u.0), &headers).is_ok();
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
@@ -1526,9 +1531,24 @@ async fn htlc_claim(
                 Json(serde_json::json!({"message": "HTLC not found"})),
             )
         })?;
-    let recipient = req
-        .target_address
-        .unwrap_or(record.counterparty_addr.clone());
+    let recipient = if is_admin {
+        req.target_address
+            .unwrap_or_else(|| record.counterparty_addr.clone())
+    } else {
+        let pinned = match record.claimant_pubkey {
+            Some(pk) if to_id == ChainId::ZionL1 => {
+                zion_core::crypto::derive_address(&pk)
+            }
+            _ => record.counterparty_addr.clone(),
+        };
+        if pinned.is_empty() {
+            return Err((
+                StatusCode::FORBIDDEN,
+                Json(serde_json::json!({"message": "HTLC has no committed claimant — admin required"})),
+            ));
+        }
+        pinned
+    };
 
     let secret = hex::decode(&req.secret_hex).map_err(|_| bad_request("invalid secret_hex"))?;
 
@@ -1587,8 +1607,11 @@ async fn htlc_refund(
     headers: HeaderMap,
     Json(req): Json<HtlcRefundRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)
-        .map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
+    // Public callers may trigger a refund (the timelock expiry check lives
+    // in `refund()`), but the payout is pinned to the committed locker —
+    // `source_address` is only honored for admin sessions.
+    let is_admin =
+        require_admin(&state, user.as_ref().map(|u| &u.0), &headers).is_ok();
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex).ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
@@ -1602,7 +1625,11 @@ async fn htlc_refund(
                 Json(serde_json::json!({"message": "HTLC not found"})),
             )
         })?;
-    let locker = req.source_address.unwrap_or(record.locker_address.clone());
+    let locker = if is_admin {
+        req.source_address.unwrap_or_else(|| record.locker_address.clone())
+    } else {
+        record.locker_address.clone()
+    };
 
     let source = build_endpoint(
         state.service.as_ref(),
@@ -2949,5 +2976,230 @@ mod tests {
                 "{method} {uri} right key must pass auth, got {status}"
             );
         }
+    }
+
+    /// Build an in-memory service + router sharing the same service so tests
+    /// can seed HTLC records and observe the result afterwards.
+    fn seeded_htlc_app() -> (Arc<crate::service::MultichainService>, Router) {
+        let mut config = crate::config::MultichainConfig {
+            l1_rpc_url: String::new(),
+            ..Default::default()
+        };
+        config.database.path = ":memory:".to_string();
+        let service = Arc::new(
+            crate::service::MultichainService::new_with_adapters(
+                config,
+                crate::chain::adapter::ChainAdapterRegistry::new(),
+            )
+            .expect("in-memory service builds"),
+        );
+        let app = ApiServer::new(ServerConfig::default(), service.clone())
+            .build_router(true, None);
+        (service, app)
+    }
+
+    /// Trustless claim path: an anonymous caller with a valid preimage may
+    /// claim — but the payout is pinned to the claimant committed in the
+    /// HTLC record. A caller-supplied `target_address` must not redirect
+    /// funds; only admin sessions keep the override (rescue path).
+    #[tokio::test]
+    async fn htlc_claim_public_pins_recipient_to_committed_claimant() {
+        use sha2::Digest;
+        let (service, app) = seeded_htlc_app();
+
+        let secret = [0x42u8; 32];
+        let hashlock = Hash::new(sha2::Sha256::digest(secret).into());
+        let hash_hex = hashlock.to_hex();
+        let claimant_pk = [0x09u8; 32];
+        let claimant_addr = zion_core::crypto::derive_address(&claimant_pk);
+        let expires = chrono::Utc::now().timestamp() + 3600;
+        service
+            .htlc()
+            .register_external_lock(
+                hashlock,
+                "zion1operatorlocker",
+                1_000,
+                "oplock-tx",
+                expires,
+                "bitcoin",
+                "zion1committedcounterparty",
+                None,
+                Some(claimant_pk),
+            )
+            .await
+            .unwrap();
+        service
+            .htlc()
+            .set_source_lock(&hash_hex, "user-src-tx", expires)
+            .await
+            .unwrap();
+
+        let claim_uri = "/v1/multichain/swaps/htlc/claim";
+        let body = serde_json::json!({
+            "hash_hex": hash_hex,
+            "secret_hex": hex::encode(secret),
+            "to": "zion",
+            // Attacker tries to redirect the payout to their own address.
+            "target_address": "zion1attacker",
+        });
+        let status = call(&app, "POST", claim_uri, Some(body), None, None).await;
+        assert_eq!(status, StatusCode::OK, "public claim with valid preimage must pass");
+        let rec = service.htlc().get_record(&hash_hex).await.unwrap();
+        assert_eq!(
+            rec.release_recipient.as_deref(),
+            Some(claimant_addr.as_str()),
+            "payout must pin to the committed claimant, not target_address"
+        );
+
+        // Wrong preimage is still rejected for public callers.
+        let secret2 = [0x43u8; 32];
+        let hashlock2 = Hash::new(sha2::Sha256::digest(secret2).into());
+        let hash_hex2 = hashlock2.to_hex();
+        service
+            .htlc()
+            .register_external_lock(
+                hashlock2,
+                "zion1operatorlocker",
+                1_000,
+                "oplock-tx2",
+                expires,
+                "bitcoin",
+                claimant_addr.as_str(),
+                None,
+                Some(claimant_pk),
+            )
+            .await
+            .unwrap();
+        service
+            .htlc()
+            .set_source_lock(&hash_hex2, "user-src-tx2", expires)
+            .await
+            .unwrap();
+        let bad = serde_json::json!({
+            "hash_hex": hash_hex2,
+            "secret_hex": hex::encode([0x00u8; 32]),
+            "to": "zion",
+        });
+        let status = call(&app, "POST", claim_uri, Some(bad), None, None).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "wrong preimage must fail");
+
+        // Admin keeps the target_address override — on a legacy record with
+        // no committed claimant_pubkey (records that commit one reject even
+        // admin overrides in `do_claim`, matching the on-chain script).
+        let secret3 = [0x44u8; 32];
+        let hashlock3 = Hash::new(sha2::Sha256::digest(secret3).into());
+        let hash_hex3 = hashlock3.to_hex();
+        service
+            .htlc()
+            .register_external_lock(
+                hashlock3,
+                "zion1operatorlocker",
+                1_000,
+                "oplock-tx3",
+                expires,
+                "bitcoin",
+                "zion1legacycp",
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+        service
+            .htlc()
+            .set_source_lock(&hash_hex3, "user-src-tx3", expires)
+            .await
+            .unwrap();
+        let ok = serde_json::json!({
+            "hash_hex": hash_hex3,
+            "secret_hex": hex::encode(secret3),
+            "to": "zion",
+            "target_address": "zion1rescue",
+        });
+        let status = call(
+            &app,
+            "POST",
+            claim_uri,
+            Some(ok),
+            Some(test_zis_user("admin")),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        let rec = service.htlc().get_record(&hash_hex3).await.unwrap();
+        assert_eq!(
+            rec.release_recipient.as_deref(),
+            Some("zion1rescue"),
+            "admin override must reach the record"
+        );
+    }
+
+    /// Public refund path: anyone may trigger a refund (it can only pay the
+    /// committed locker), but `source_address` must not redirect it, and the
+    /// timelock must have expired.
+    #[tokio::test]
+    async fn htlc_refund_public_pins_locker_and_expiry() {
+        use sha2::Digest;
+        let (service, app) = seeded_htlc_app();
+        let refund_uri = "/v1/multichain/swaps/htlc/refund";
+
+        // Not-yet-expired lock: refund must fail even for public callers.
+        let live_hashlock = Hash::new(sha2::Sha256::digest([0x51u8; 32]).into());
+        let live_hex = live_hashlock.to_hex();
+        let future = chrono::Utc::now().timestamp() + 3600;
+        service
+            .htlc()
+            .register_external_lock(
+                live_hashlock,
+                "zion1locker",
+                1_000,
+                "live-tx",
+                future,
+                "bitcoin",
+                "zion1cp",
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+        let early = serde_json::json!({
+            "hash_hex": live_hex,
+            "from": "zion",
+            "source_address": "zion1attacker",
+        });
+        let status = call(&app, "POST", refund_uri, Some(early), None, None).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "unexpired refund must fail");
+
+        // Expired lock: public refund succeeds, payout stays with the locker.
+        let dead_hashlock = Hash::new(sha2::Sha256::digest([0x52u8; 32]).into());
+        let dead_hex = dead_hashlock.to_hex();
+        let past = chrono::Utc::now().timestamp() - 60;
+        service
+            .htlc()
+            .register_external_lock(
+                dead_hashlock,
+                "zion1rightful_locker",
+                1_000,
+                "dead-tx",
+                past,
+                "bitcoin",
+                "zion1cp",
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+        let refund = serde_json::json!({
+            "hash_hex": dead_hex,
+            "from": "zion",
+            "source_address": "zion1attacker",
+        });
+        let status = call(&app, "POST", refund_uri, Some(refund), None, None).await;
+        assert_eq!(status, StatusCode::OK, "expired refund must pass publicly");
+        let rec = service.htlc().get_record(&dead_hex).await.unwrap();
+        assert_eq!(
+            rec.release_recipient.as_deref(),
+            Some("zion1rightful_locker"),
+            "refund must pin to the committed locker, not source_address"
+        );
     }
 }

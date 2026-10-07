@@ -79,6 +79,8 @@ export async function submitClaim(input: {
   hashHex: string;
   preimageHex: string;
   recipient: string;
+  /** Chain the HTLC lives on — `to` is a chain name server-side, not an address. */
+  chain?: string;
   token?: string;
 }): Promise<{ success: boolean; message: string; release_tx_id?: string }> {
   try {
@@ -92,7 +94,7 @@ export async function submitClaim(input: {
       body: JSON.stringify({
         hash_hex: input.hashHex,
         secret_hex: input.preimageHex,
-        to: input.recipient,
+        to: input.chain ?? (input.recipient.startsWith('zion1') ? 'zion' : 'base'),
         target_address: input.recipient,
       }),
     });
