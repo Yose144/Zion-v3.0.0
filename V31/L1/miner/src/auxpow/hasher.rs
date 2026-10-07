@@ -166,6 +166,13 @@ impl XoShiRo256PlusPlus {
         for i in 0..4 {
             s[i] = u64::from_le_bytes(seed[i * 8..(i + 1) * 8].try_into().unwrap());
         }
+        if s.iter().all(|&x| x == 0) {
+            // xoshiro256++ degenerates on an all-zero state (next() = 0
+            // forever) — the rank-64 retry loop in generate() would never
+            // terminate on a zero pre_pow_hash. Same guard as the OpenCL
+            // host copy in gpu_opencl_full.rs and the C FFI.
+            s[0] = 0x9E37_79B9_7F4A_7C15;
+        }
         Self { s }
     }
 
