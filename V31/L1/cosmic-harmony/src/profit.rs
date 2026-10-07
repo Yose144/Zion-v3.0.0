@@ -418,7 +418,7 @@ impl ExternalCoin {
             ExternalCoin::Pearl => "us2.alphapool.tech:5566",
             ExternalCoin::EpicCash => "de.epicmine.io:3334",
             ExternalCoin::Zano => "de.zano.herominers.com:1110",
-            ExternalCoin::Quai => "quai.2miners.com:4848",
+            ExternalCoin::Quai => "de.quai.herominers.com:1185",
             ExternalCoin::Beam => "beam.2miners.com:5252",
             ExternalCoin::Karlsen => "karlsencoin.cedric-crispin.com:4154",
             ExternalCoin::Zclassic => "equihash192.eu.mine.zpool.ca:2144",
@@ -429,12 +429,12 @@ impl ExternalCoin {
             ExternalCoin::Raptoreum => "ghostrider.eu.mine.zpool.ca:5354",
             ExternalCoin::Dynex => "pool.deepminerz.com:3333",
             ExternalCoin::Nervos => "ckb.2miners.com:6464",
-            ExternalCoin::Conflux => "cfx.2miners.com:6565",
+            ExternalCoin::Conflux => "cfx.f2pool.com:6800",
             ExternalCoin::Zcash => "zec.f2pool.com:3357",
             ExternalCoin::PhoenixCoin => "neoscrypt.eu.mine.zpool.ca:4233",
             ExternalCoin::Keryx => "keryxhash.eu.mine.zpool.ca:4233",
             ExternalCoin::Quantus => "quantus.qelvhash.com:4444",
-            ExternalCoin::Neoxa => "neox.2miners.com:4040",
+            ExternalCoin::Neoxa => "stratum-eu.rplant.xyz:7057",
             // Bitcoin SHA-256d merge-mining is not via standard stratum pools;
             // leave empty so auxpow_runtime skips it until a real endpoint is configured.
             ExternalCoin::Bitcoin => "",
