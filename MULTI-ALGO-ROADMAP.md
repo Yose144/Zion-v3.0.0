@@ -110,14 +110,14 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | blake3_dcr (DCR) | ✅ | ✅ PASS | ⏱️ woolypooly timeout | pending | 180B header, nonce@140 |
 | blake3_alph (ALPH) | ✅ | ✅ PASS | ⏱️ woolypooly timeout | pending | en1-high nonce |
 | pearlhash (PRL) | ✅ | ✅ PASS | ⏱️ alphapool timeout | pending | user fix BLAKE3 state layout `[12]=cnt_lo,[13]=cnt_hi,[14]=len,[15]=flags` |
-| autolykos (ERG) | ✅ běží | ❌ **non-consensus** | ❌ authorize (wallet) | blocked | GPU kernel = zjednodušená u64-table varianta ≠ Autolykos v2 (31B bigints, N=2²⁶, sum-mod); native CPU ref existuje → kernel rewrite needed |
+| autolykos (ERG) | ✅ | ✅ **PASS** | ❌ authorize (wallet) | pending | **consensus-exact rewrite**: GPU table-gen (T[j]=b2b256(j‖h‖M)) + mining kernel (bigint sum mod 2²⁵⁶); GPU ≡ Rust port ≡ native-ffi @ N=2²⁶ ✓ |
 | ethash (ETC) | ✅ | ⚠️ RUN (mix≠0 ✓) | ❌ authorize (wallet) | pending | DAG gen OK; hash=0 by-design (mix_hash je artefakt) |
 | kawpow (RVN) | ✅ | ⚠️ RUN (mix≠0 ✓) | ❌ authorize (wallet) | pending | **DAG gen implementován** (sdílí ethash light-cache; epoch 7500) |
 | progpow (EPIC/ZANO) | ✅ | ⚠️ RUN | ZANO ✅ live dřív | ✅ ZANO | DAG OOM při sweep (DAG buffery se kumulují — samostatný run OK) |
 | zelhash (FLUX) | ✅ compile | ❌ VRAM | ❌ TCP connect (woolypooly mrtvý) | blocked | potřebuje ~6.5GB volné VRAM; na busy kartě OOM |
 | verushash (VRSC) | — | n/a (no kernel) | ✅ OK (luckpool, zcashstratum) | ✅ **CPU path live** | 1487B header; GPU kernel absent |
-| equihashzero (ZCL) | ⚠️ init only | — | ✅ OK (zpool) | blocked | Wagner orchestrace chybí |
-| equihash 200,9 (ZEC) | ⚠️ init only | — | ❌ TCP connect (port mrtvý) | blocked | Wagner orchestrace chybí |
+| equihashzero (ZCL) | ⚠️ compile | ❌ VRAM | ✅ OK (zpool) | blocked | 2×2GB tabulky > volná VRAM (192,7 NR_SLOTS=64); args-at-build + EQ_WG_SIZE=32 hotovo |
+| equihash 200,9 (ZEC) | ✅ | ⚠️ **RUN** (řešení nalezeno) | ❌ TCP connect (port mrtvý) | pending | **Wagner pipeline kompletní**: init→r0→r1-7→r8→sols; host/kernel NR_SLOTS mismatch fix (4→8); K=9 rounds doplněny |
 | qhash (QTC) | ✅ | ⚠️ RUN | ✅ OK (suprnova) | pending | produkuje kandidáty; CPU ref chybí |
 | ghostrider (RTM) | ✅ | ⚠️ RUN | ✅ OK (zpool) | pending | **fixed**: batch cap 128 WI (2MB scratchpad/WI) — byl OOM |
 | neoscrypt (PHX) | ✅ | ⚠️ RUN | ✅ OK (zpool) | pending | **dispatch doplněn** (byl "unsupported") |
@@ -125,12 +125,10 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 | dynexsolve (DNX) | ✅ | EMPTY (kernel běží) | ❌ authorize (wallet) | pending | **ABI fix**: 12→10 args, 1-based literály; syntetický SAT bez řešení v batchi = očekávané |
 | nexapow (NEXA) | ✅ compile | ⏳ neprakticky pomalé | ❌ authorize (wallet) | blocked | secp256k1 Schnorr per-nonce; 128 nonce > 10min → potřeba timeout+microbench |
 | octopus (CFX) | ✅ | ⚠️ RUN | ❌ TCP connect (port) | pending | **dispatch + DAG wiring** (sdílí ethash DAG) |
-| verthash (VTC) | ✅ compile | ⏳ | ✅ OK (zpool) | pending | **early-dispatch fix** (-DWORK_SIZE/-DMDIV); verthash.dat se stahuje |
+| verthash (VTC) | ✅ | ⚠️ **RUN** | ✅ OK (zpool) | pending | verthash.dat stažen (1.28GB); early-dispatch fix; CPU ref chybí |
 | fishhash (IRON) | ✅ kernel | — | ❌ authorize (wallet) | blocked | FishHash DAG gen absent (4.6GB, generátor k portu) |
 | karlsenhash (KLS) | ✅ kernel | — | ❌ authorize (wallet) | blocked | DAG gen absent |
 | beamhash (BEAM) | ✅ solver | ❌ VRAM | ⏱️ beam.2miners timeout | blocked | solver tabulky 2×2.28GB=4.56GB; **pre_pow fix hotový**; potřeba volná karta |
-| equihashzero (ZCL) | ⚠️ init only | ❌ VRAM | ✅ OK (zpool) | blocked | 2×2GB tabulky > volná VRAM; **args-at-build fix + EQ_WG_SIZE=32** (84KB→43KB local) |
-| equihash 200,9 (ZEC) | ⚠️ partial | ❌ round0 fault | ❌ TCP connect (port mrtvý) | blocked | rounds 6-8 pro K=9 doplněny, blake n/k=200,9 fix; **kernel round0 crashuje kontext na NVIDIA — needs dedicated debug** |
 | randomx (XMR) | CPU only | n/a | ⚠️ authorized, no job | — | cryptonote login OK; stub GPU |
 | quai (QUAI) | kawpow path | — | ❌ TCP connect | blocked | port mrtvý |
 | evrprogpow (EVR) | kawpow fallback | — | ⚠️ authorized, no job | pending | per-coin progpow params chybí |
@@ -163,36 +161,34 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 ### Checklist — co máme / co ne (2026-10-07)
 
 **✅ Consensus-ověřené GPU kernely (KAT PASS bit-exact):**
-kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash
+kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU table-gen + bigint-sum; ≡ native-ffi @ N=2²⁶)
 
-**✅ Kernel běží, produkuje kandidáty (RUN — čeká CPU ref):**
-qhash, ghostrider, neoscrypt, eaglesong, octopus, ethash+kawpow (mix_hash), progpow
+**✅ Kernel běží, produkuje kandidáty/řešení (RUN — čeká CPU ref):**
+qhash, ghostrider, neoscrypt, eaglesong, octopus, verthash, ethash+kawpow (mix_hash), progpow, **equihash 200,9** (Wagner kompletní, řešení nalezeno)
 
 **⚠️ Kernel spustitelný, ale široké oprávnění chybí:**
 - dynexsolve — běží, syntetický SAT bez řešení (EMPTY = OK signál)
-- dynexsolve ver2 — kernel existuje, orchestrace na cestě
 
 **❌ Reálné defekty k opravě:**
-- **autolykos** — GPU není consensus (zjednodušená u64 tabulka ≠ Autolykos v2 bigints) → kernel rewrite
-- **equihash 200,9** — kernel round0 fault na NVIDIA (debug session potřeba)
-- **nexapow** — secp256k1 Schnorr/nonce → neprakticky pomalé, potřeba timeout + microbench
+- **nexapow** — secp256k1 Schnorr/nonce → neprakticky pomalé/hang, potřeba timeout + microbench
 
 **⛔ Externí blockery (ne code bug):**
 - zelhash — potřeba ~6.5GB VRAM (busy karta); samostatný run nutný
-- equihashzero — 2×2GB tabulky > volná VRAM
+- equihashzero (192,7) — 2×2GB tabulky > volná VRAM
 - beamhash — 2×2.28GB solver tabulky; pre_pow fix hotový
-- verthash — potřeba verthash.dat (stahuje se); early-dispatch fix hotový
 - fishhash/karlsenhash — FishHash DAG generátor absent (4.6GB DAG)
 - Stratum authorize = nevalidní test wallet (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB); mrtvé endpointy: CLORE/FLUX/NEOX/QUAI/CFX/ZEC
 
-**Opraveno v tomto sweepu (nepushnuto ještě před tímto commitem):**
+**Opraveno v tomto sweepu (tohle + předchozí commity):**
 - dispatch pro eaglesong/neoscrypt/octopus + output_nonce v kernelu
 - dynexsolve ABI 12→10 + 1-based literály (byl context crash)
 - ghostrider batch cap 512→128 (OOM fix)
 - verthash/equihash/zelhash early-dispatch před generickou kompilací
-- equihash: args deklarované při buildu + EQ_WG_SIZE=32 (84KB→43KB local pod NVIDIA limit) + K=9 rounds 6-8 + sols_buf dynamicky + blake (200,9)
+- equihash: args deklarované při buildu + EQ_WG_SIZE=32 (84KB→43KB local pod NVIDIA limit) + K=9 rounds 6-8 + sols_buf dynamicky + blake (200,9) + **NR_SLOTS host fix 4→8** (OOB write = round0 context crash) + k_rounds loop bound (1..=K-2)
 - octopus: ethash DAG wiring v mine()
+- **autolykos consensus rewrite**: `autolykos_gen_table` (streaming b2b256, 65 blocks/entry) + `autolykos_mine` (f31 seed, sliding-window genIndexes, 31B bigint sum, height-N calc); miner csrc copy synced (měl špatný rotate-scheme genIndexes ≠ Scala sliding-window)
+- KAT: autolykos Rust ref + native cross-check @2²⁶, kawpow DAG wiring, ZION_KAT_REPEATS/NONCE env
 
-**Zbývá:** autolykos rewrite (největší), equihash round0 debug, fishhash DAG gen, nexapow timeout/microbench, live share-level E2E pro RUN algos s validními wallets.
+**Zbývá:** fishhash DAG gen (4.6GB), nexapow timeout/microbench, VRAM-blocked algos potřebují volnou kartu, live share-level E2E pro RUN algos s validními wallets.
 
 Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_pool_semantics`, `kheavyhash_matches_native`, KAT GPU≡CPU — vše PASS.
