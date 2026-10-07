@@ -1351,6 +1351,9 @@ function normalizeAlgorithmName(algo) {
   }
   const valid = ['deeksha_lite_v1','cosmic_harmony_ekam_deeksha_v2','deeksha_lite_fire'];
   if (valid.includes(raw)) return raw;
+  if (raw) {
+    console.warn(`[config] unknown algorithm "${algo}" — falling back to deeksha_lite_v1`);
+  }
   return 'deeksha_lite_v1';
 }
 

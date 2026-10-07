@@ -6,7 +6,8 @@
 //! `hasher.rs` falls back to the functions in this module.
 
 use blake3;
-use sha3::{Digest, Keccak256, Sha3_256};
+use sha2::{Digest as Sha2Digest, Sha256};
+use sha3::Keccak256;
 use zion_cosmic_harmony::ExternalCoin;
 
 /// Hash `header || nonce_le` with the algorithm used by `coin`.
@@ -18,10 +19,10 @@ pub fn hash_for_coin(coin: ExternalCoin, header: &[u8], nonce: u64) -> [u8; 32] 
     match coin.algorithm() {
         // Blake3 family
         "blake3_alph" | "blake3_dcr" => blake3::hash(&input).into(),
-        // SHA-256d family (Bitcoin-style)
+        // SHA-256d family (Bitcoin-style) — real double-SHA256, not a stub
         "sha256d" => {
-            let first = Sha3_256::digest(&input);
-            let second = Sha3_256::digest(first);
+            let first = Sha256::digest(&input);
+            let second = Sha256::digest(first);
             second.into()
         }
         // Keccak / Ethash placeholders
