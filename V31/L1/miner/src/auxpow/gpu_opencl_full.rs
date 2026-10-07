@@ -4214,8 +4214,9 @@ typedef unsigned long ulong;
             // = 256MB. (512 WI = 1GB still hit CL_OUT_OF_HOST_MEMORY on
             // NVIDIA driver under memory pressure.)
             "ghostrider" | "ghostrider_rtm" => 128,
-            // Qhash: 512KB quantum state vector per work-item.
-            "qhash" | "qhash_qtc" => 4096,
+            // Qhash: 512KB quantum state vector per work-item → 1024 WI
+            // = 512MB (4096 WI = 2GB OOMs on a shared 8GB card).
+            "qhash" | "qhash_qtc" => 1024,
             // DynexSolve: ~30KB clause/var arrays per work-item.
             "dynexsolve" | "dynexsolve_dnx" => 8192,
             // NeoScrypt: 32KB scratchpad per work-item → 8192 WI = 256MB.
