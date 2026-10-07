@@ -326,7 +326,10 @@ fn real_main() {
         // DAG-family algorithms need an epoch DAG uploaded first.
         #[cfg(feature = "native-hashers")]
         {
-            let dag_res = match c.algo {
+            // Release previously cached DAG/data buffers so multi-GB tables
+        // don't accumulate across cases on an 8 GB card.
+        miner.free_dag_caches();
+        let dag_res = match c.algo {
                 "ethash" | "etchash" | "octopus" => {
                     Some(miner.generate_ethash_dag_on_gpu(0))
                 }
@@ -366,6 +369,66 @@ fn real_main() {
                 continue;
             }
         }
+        // Ethash: hashimoto CPU ref — verify the GPU kernel's mix_hash against
+        // the standard spec (light cache + on-demand dataset items).
+        if c.algo == "ethash" {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                use zion_miner::auxpow::gpu_opencl_full::{
+                    ethash_dag_entries, ethash_dataset_item, ethash_hash_ref,
+                };
+                let cache = zion_miner::auxpow::gpu_opencl_full::ethash_light_cache(0);
+                let dag_items = ethash_dag_entries(0);
+                // Bisect 1: GPU DAG entries ≡ CPU dataset items.
+                for e in [0u64, 1, 7, 1024] {
+                    let gpu_entry = miner.ethash_dag_read_slice(e, 1)?;
+                    let mut gpu_bytes = [0u8; 128];
+                    for (i, w) in gpu_entry.iter().enumerate() {
+                        gpu_bytes[i * 8..i * 8 + 8].copy_from_slice(&w.to_le_bytes());
+                    }
+                    let d0 = ethash_dataset_item(&cache, (2 * e) as usize);
+                    let d1 = ethash_dataset_item(&cache, (2 * e + 1) as usize);
+                    if gpu_bytes[..64] != d0 || gpu_bytes[64..] != d1 {
+                        anyhow::bail!(
+                            "ethash DAG entry {e} mismatch: gpu={} cpu={}||{}",
+                            hex::encode(&gpu_bytes[..8]),
+                            hex::encode(&d0[..8]),
+                            hex::encode(&d1[..8])
+                        );
+                    }
+                }
+                eprintln!("  ethash DAG items ≡ CPU ref");
+                let share = miner
+                    .mine("ethash", &c.header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .ok_or_else(|| anyhow::anyhow!("ethash mine: no share found"))?;
+                let (mix_expect, _) =
+                    ethash_hash_ref(&c.header, share.nonce, &cache, dag_items);
+                let got = share.mix_hash.unwrap_or([0u8; 32]);
+                if got != mix_expect {
+                    anyhow::bail!(
+                        "ethash mix mismatch nonce={}: gpu={} cpu={}",
+                        share.nonce,
+                        hex::encode(got),
+                        hex::encode(mix_expect)
+                    );
+                }
+                Ok::<_, anyhow::Error>(format!("mine mix_hash≡CPU nonce={}", share.nonce))
+            })) {
+                Ok(Ok(what)) => {
+                    println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
+                    pass += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("{:<14} ERR   {e}", c.algo);
+                    fail += 1;
+                }
+                Err(_) => {
+                    println!("{:<14} PANIC", c.algo);
+                    fail += 1;
+                }
+            }
+            continue;
+        }
+
         // FishHash-family: verify the on-GPU `build` kernel against the CPU
         // dataset-item reference on a small slice (full DAG = 4.6 GB, so we
         // validate the construction path, not the full mining kernel).

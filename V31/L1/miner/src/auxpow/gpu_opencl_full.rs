@@ -830,6 +830,111 @@ pub fn karlsenhash_hash_ref(header: &[u8], nonce: u64, dag: &[u8], dag_items: us
     *blake3::hash(&mix_hash).as_bytes()
 }
 
+// ── Ethash (ETC/ETHW) consensus reference ────────────────────────────
+// Standard hashimoto per the ethash spec: dataset items are 64 B and each
+// 128 B DAG entry = items[2e] || items[2e+1]. The GPU `build` kernel
+// (kawpow_dag.cl) already implements the standard fnv1 item generation;
+// `ethash_mine` was fixed to the same fnv1 + rotating-word indexing.
+
+/// Ethash light cache bytes for `epoch` (keccak-512 chain + 3 randmemhash
+/// rounds).  Thin public wrapper for KAT/tests.
+pub fn ethash_light_cache(epoch: u32) -> Vec<u8> {
+    generate_light_cache(epoch)
+}
+
+/// Number of 128-byte DAG entries for `epoch`.
+pub fn ethash_dag_entries(epoch: u32) -> usize {
+    (dataset_size_for_epoch(epoch) / 128) as usize
+}
+
+/// CPU reference: one 64-byte ethash dataset item (standard calc_dataset_item).
+pub fn ethash_dataset_item(cache: &[u8], index: usize) -> [u8; 64] {
+    use sha3::{Digest, Keccak512};
+
+    const FNV_PRIME: u32 = 0x01000193;
+    let n = cache.len() / 64;
+    let gu32 = |m: &[u8; 64], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
+    let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
+
+    let mut mix: [u8; 64] = cache[(index % n) * 64..(index % n) * 64 + 64].try_into().unwrap();
+    let w0 = gu32(&mix, 0) ^ index as u32;
+    mix[0..4].copy_from_slice(&w0.to_le_bytes());
+    {
+        let mut h = Keccak512::new();
+        h.update(&mix);
+        mix = h.finalize().into();
+    }
+    for j in 0..256 {
+        let p = fnv1(index as u32 ^ j as u32, gu32(&mix, j % 16)) as usize % n;
+        for w in 0..16 {
+            let v = fnv1(gu32(&mix, w), gu32(
+                &cache[p * 64..p * 64 + 64].try_into().unwrap(),
+                w,
+            ));
+            mix[w * 4..w * 4 + 4].copy_from_slice(&v.to_le_bytes());
+        }
+    }
+    let mut h = Keccak512::new();
+    h.update(&mix);
+    h.finalize().into()
+}
+
+/// CPU reference: full ethash (hashimoto) over `header_hash`(32 B) + `nonce`
+/// (u64, little-endian in the seed). `dag_items` = number of 128-byte DAG
+/// entries on the GPU (= dataset_size / 128). Returns `(mix_hash, pow_hash)`.
+pub fn ethash_hash_ref(
+    header_hash: &[u8],
+    nonce: u64,
+    cache: &[u8],
+    dag_items: usize,
+) -> ([u8; 32], [u8; 32]) {
+    use sha3::{Digest, Keccak256, Keccak512};
+
+    const FNV_PRIME: u32 = 0x01000193;
+    let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
+    let gu32 = |m: &[u8], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
+
+    // seed = keccak512(header_hash || nonce_le)
+    let mut h = Keccak512::new();
+    h.update(&header_hash[..32.min(header_hash.len())]);
+    h.update(nonce.to_le_bytes());
+    let seed: [u8; 64] = h.finalize().into();
+
+    let mut mix = [0u32; 32];
+    for j in 0..16 {
+        let w = gu32(&seed, j);
+        mix[j] = w;
+        mix[j + 16] = w;
+    }
+    let s0 = mix[0];
+
+    for i in 0..64u32 {
+        let p = fnv1(i ^ s0, mix[i as usize % 32]) as usize % dag_items;
+        // 128-byte entry = dataset items 2p || 2p+1; kernel mixes each u32
+        // word straight through: mix[k] = fnv1(mix[k], entry_u32[k]).
+        let d0 = ethash_dataset_item(cache, 2 * p);
+        let d1 = ethash_dataset_item(cache, 2 * p + 1);
+        let mut entry = [0u8; 128];
+        entry[..64].copy_from_slice(&d0);
+        entry[64..].copy_from_slice(&d1);
+        for k in 0..32 {
+            mix[k] = fnv1(mix[k], gu32(&entry, k));
+        }
+    }
+
+    let mut cmix = [0u8; 32];
+    for i in (0..32).step_by(4) {
+        let v = fnv1(fnv1(fnv1(mix[i], mix[i + 1]), mix[i + 2]), mix[i + 3]);
+        cmix[i / 4 * 4..i / 4 * 4 + 4].copy_from_slice(&v.to_le_bytes());
+    }
+
+    let mut h = Keccak256::new();
+    h.update(&seed);
+    h.update(&cmix);
+    let hash: [u8; 32] = h.finalize().into();
+    (cmix, hash)
+}
+
 impl ExtGpuMiner {
     /// Create a new GPU miner, initializing OpenCL on the first available
     /// GPU device.
@@ -2913,6 +3018,41 @@ typedef unsigned long ulong;
         Ok(())
     }
 
+    /// Drop all cached DAG/data buffers (ethash/kawpow/progpow/fishhash/
+    /// autolykos table) to release VRAM — e.g. between KAT cases where several
+    /// multi-GB DAGs would otherwise accumulate on the card.
+    pub fn free_dag_caches(&mut self) {
+        self.ethash_dag = None;
+        self.kawpow_dag = None;
+        self.progpow_dag = None;
+        self.fishhash_dag = None;
+        #[cfg(feature = "gpu-opencl")]
+        {
+            self.autolykos_table = None;
+        }
+    }
+
+    /// Read back `count` 128-byte DAG entries starting at `start` (KAT/debug).
+    pub fn ethash_dag_read_slice(&self, start: u64, count: u64) -> Result<Vec<u64>> {
+        let dag = self
+            .ethash_dag
+            .as_ref()
+            .ok_or_else(|| anyhow!("ethash DAG not generated"))?;
+        if start + count > dag.size_entries {
+            anyhow::bail!("slice out of range");
+        }
+        let mut out = vec![0u64; (count * 16) as usize];
+        dag.buf
+            .create_sub_buffer(
+                Some(ocl::flags::MEM_READ_ONLY),
+                (start * 16) as usize,
+                (count * 16) as usize,
+            )?
+            .read(&mut out)
+            .enq()?;
+        Ok(out)
+    }
+
     /// Generate the ProgPow DAG **on the GPU** from a light cache.
     ///
     /// ProgPow uses the same DAG format as Ethash (epoch length 30000, 128-byte
@@ -4082,6 +4222,10 @@ typedef unsigned long ulong;
             "neoscrypt" | "neoscrypt_phx" => 8192,
             // Verthash: 4-way cooperative work-items, heavy __local state.
             "verthash" | "verthash_vtc" => 4096,
+            // NexaPow: full secp256k1 Schnorr sign per nonce — ~ms/WI, so
+            // cap at 64 to keep a batch under a second and prevent the KAT
+            // sweep from stalling on a multi-thousand nonce dispatch.
+            "nexapow" | "nexapow_nexa" => 64,
             _ => u64::MAX,
         }
     }
