@@ -163,29 +163,53 @@ Přes existující `bridge/` + `multichain_wallet` flow:
 - [ ] Dashboard: `/multichain` UI — přidat QTC chain card (deposit adresy,
       bridge status, fee, min/max).
 
-### F4 — Pool payouty v QTC i ZION
+### F4 — Pool payouty v QTC i ZION 🚧 PIPELINE IMPLEMENTOVÁNO (2026-10-09)
 
 Dnes: upstream AuxPoW earnings padají na náš bridge wallet, minery
 dostávají jen ZION PPLNS. Cíl: **per-coin attribution + volitelné payouty**.
 
-- [ ] `ShareStore`: záznam `(miner, coin, share_diff_weight, ts)` pro každý
-      forwarded accepted share — `record_external_share` už bucketuje per
-      coin; rozšířit o durable per-miner váhy (SQLite tabulka
-      `ext_share_credits`).
-- [ ] Miner identity na payout adresu: V3 `Hello` rozšířit o
-      `payout_addresses{qtu: "qz…", …}` nebo per-coin suffix ve worker
-      jménu (`worker.qz…`); canonical: nastavení v dashboardu via ZIS.
-- [ ] `QtcPayoutSweeper` (paralelně k `PayoutSweeper`): periodický sweep —
-      sesumarizovat ext credits coin=QTU, přepočet na QTC dle upstream
-      výnosu (upstream pool payout → naše QTC wallet → rozdělení
-      proporcionálně), odečíst `ZION_POOL_AUXPOW_FEE_PCT` (pool fee —
-      transparentně v dashboardu), `QuantusAdapter.send_payment` na
-      registrované adresy, min threshold (`QUANTUS_MIN_PAYOUT`).
-- [ ] Alternativa pro early phase: payout jen v ZION s interním rate +
-      „withdraw in QTC" opt-in per miner.
-- [ ] **Pool fee model:** explicitní `auxpow_fee_pct` config (např. 1–2 %),
-      vykreslen v `miners-dashboard` (profi pooly to ukazují) + fee ledger
-      pro reconciliation.
+**Implementováno — chain-aware payout pipeline:**
+
+- [x] `PayoutEntry.payout_chain: Option<String>` + `chain()` helper;
+      `PplnsEngine` drží `chains[]` paralelně k `addresses[]`,
+      `register_address_with_chain`, `payout_chain_for`; snapshot pole
+      `payout_chains` (`#[serde(default)]` — zpětně kompatibilní).
+- [x] Worker→payout routing (`pool.rs`): `qtc:<ss58>` / `qtu:<ss58>` /
+      bare `qz…` SS58-189 → chain `"quantus"`; `zion1…` → `"zion"`;
+      jiné → pool wallet fallback. Funguje pro stratum `mining.authorize`
+      (`register_worker`), per-share (`record_share` →
+      `worker_payout_target`) i v3 Hello `payout_address`
+      (`register_payout_address` — pole se dřív ignorovalo!).
+- [x] `Pool::take_pending_payouts` drainuje jen ZION entries (externí
+      zůstávají); `take_external_payouts(chain)` + `pending_external_payouts`.
+- [x] Admin API: `GET/POST /admin/external-payouts?chain=quantus`
+      (X-Admin-Key auth) — GET preview, POST atomicky drainuje a vrací
+      `{height, miner_id, address, amount_flowers, share_count}[]`.
+- [x] **`QtcPayoutSweeper`** (`zion-multichain/src/qtc_payout.rs`, spawn v
+      `server.rs`): env `QTC_PAYOUT_ENABLED=1` + `QTC_PAYOUT_POOL_API` +
+      `QTC_PAYOUT_ADMIN_KEY` + **`QTC_PLANKS_PER_FLOWER`** (kurz flowers→
+      planks, povinný — žádný default) + interval/min/max-attempts.
+      Ledger `ext_payout_records` (sqlite): `queued → submitted →
+      confirmed | stalled`. **Fail-closed:** `queued` rows přeživší
+      restart → `stalled` (crash mezi submit a ledger-write je
+      nerozlišitelný → manuální review, žádné auto-retry double-pay).
+      Pool fee zůstává v ZION (amount je post-fee miner share).
+- [x] Testy: 4 nové v `pool.rs` (parse prefix, ext registrace, v3
+      payout_address routing, drain partitioning) — 185/185 pool,
+      714/714 multichain PASS.
+
+**Zbývá:**
+
+- [ ] Per-coin share attribution pro AuxPoW zdroje (credits) — ZION-share
+      reward konverze je model „ZION mined → vyplaceno v QTC dle
+      `QTC_PLANKS_PER_FLOWER`"; upstream-earnings passthrough (QTC z QTU
+      bridgů) je navrch.
+- [ ] Fee pro QTC payout leg — `QTC_PAYOUT_FEE_PCT` (odpočet před
+      konverzí) + fee ledger pole v `ext_payout_records`.
+- [ ] API/admin surface: payout history endpoint + dashboard sloupec
+      (chain, tx hash, stav).
+- [ ] `payment_queryInfo` fee odhad před submitem (fee-cap guard).
+- [ ] E2E na Heisenberg s funded test účtem.
 
 ### F5 — Nativní QTC wallet pod ZIS + desktop agentem
 
@@ -291,8 +315,11 @@ V31/L2/multichain/src/chain/unified_registry.rs   + ChainId::Quantus
 V31/L2/multichain/src/wallet/mod.rs               + ML-DSA derivace
 V31/L2/multichain/src/multichain_wallet/*          deposit/ledger rozšíření
 V31/L2/multichain/src/solvency.rs                  + QTC hot wallet
-V31/L1/pool/src/payout.rs | qtc_payout.rs          NOVÝ sweeper
-V31/L1/pool/src/v3_protocol.rs                     + payout_addresses hello
+V31/L1/pool/src/v3_pplns.rs                        + payout_chain (✅)
+V31/L1/pool/src/pool.rs                            + qtc:/qz routing (✅)
+V31/L1/pool/src/api.rs                             + /admin/external-payouts (✅)
+V31/L2/multichain/src/qtc_payout.rs                NOVÝ sweeper (✅)
+V31/L2/multichain/src/db.rs                        + ext_payout_records (✅)
 V31/L1/pool/src/store.rs                           + ext_share_credits tabulka
 V31/L1/cosmic-harmony/src/profit.rs                (příp. QBC re-ticker)
 APP&WEB/desktop-agent/src/wallet-generator.js      + generateQuantusWallet
@@ -302,6 +329,7 @@ edge-deploy/config/edge-environment.sh             + QUANTUS_* placeholders
 docs/quantus-spike.md                              NOVÝ (F0 výstup)
 ```
 
-**Další krok:** F1 dokončení — live gated test na Heisenberg testnetu
-(deposit detect + `author_submitExtrinsic` acceptance), `payment_queryInfo`,
-pak F2 keyring/HD derivace. F0 spike = GO.
+**Další krok:** F4 dokončení — funded Heisenberg E2E (deposit detect +
+`author_submitExtrinsic` + mikro-payout přes sweeper), `payment_queryInfo`
+fee-cap, `QTC_PAYOUT_FEE_PCT`, payout-history admin endpoint. F0 spike = GO,
+F1/F2 základ + F4 pipeline hotovy.

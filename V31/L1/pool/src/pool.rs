@@ -47,6 +47,11 @@ pub struct Pool {
     pub session_counters: SessionCounters,
     /// Authorized worker name -> payout address (anonymous mining).
     pub worker_addresses: HashMap<String, Address>,
+    /// Worker name -> (external chain, raw address) for non-ZION payouts
+    /// (e.g. `qtc:<ss58>` Quantus payouts).  Entries here bypass the ZION
+    /// UTXO sweeper and are drained by the multichain payout sweeper via
+    /// `POST /admin/external-payouts/drain`.
+    pub worker_ext_payouts: HashMap<String, (String, String)>,
     /// Last computed payouts for a found block, keyed by block height.
     pub last_payouts: Option<(u64, Vec<PayoutEntry>)>,
     /// Ed25519 signing key for the pool payout wallet (hex 32 bytes).
@@ -88,6 +93,7 @@ impl Pool {
             rejected: AtomicU64::new(0),
             session_counters: SessionCounters::default(),
             worker_addresses: HashMap::new(),
+            worker_ext_payouts: HashMap::new(),
             last_payouts: None,
             signing_key,
             pending_payouts: Vec::new(),
@@ -111,29 +117,86 @@ impl Pool {
 
     fn record_share(&mut self, submission: &ShareSubmission, height: u64) {
         let worker = &submission.worker;
-        let address = self.worker_address(worker);
-        self.pplns.register_address(worker, &address.encoded);
+        let (chain, address) = self.worker_payout_target(worker);
+        self.pplns
+            .register_address_with_chain(worker, &address, &chain);
         let share_difficulty = submission.difficulty.max(1);
         self.pplns
             .record_share_with_diff(worker, worker, height, share_difficulty);
     }
 
-    fn worker_address(&self, worker: &str) -> Address {
-        if let Some(addr) = self.worker_addresses.get(worker) {
-            return addr.clone();
+    /// Resolve a worker string to its `(chain, payout_address)` target.
+    ///
+    /// `qtc:<ss58>` / bare `qz…` SS58 → `("quantus", ss58)`; `zion1…` →
+    /// `("zion", encoded)`; anything else falls back to the pool wallet
+    /// (shares still counted, payout retained by the pool).
+    fn worker_payout_target(&self, worker: &str) -> (String, String) {
+        let wallet = worker.split('.').next().unwrap_or(worker).trim();
+        if let Some((chain, addr)) = self
+            .worker_ext_payouts
+            .get(worker)
+            .or_else(|| self.worker_ext_payouts.get(wallet))
+        {
+            return (chain.clone(), addr.clone());
         }
-        if let Some(addr) = parse_worker_address(worker) {
-            return addr;
+        if let Some(ss58) = parse_quantus_payout(wallet) {
+            return ("quantus".to_string(), ss58);
         }
-        self.config.pool_address.clone()
+        if let Some(addr) = self
+            .worker_addresses
+            .get(worker)
+            .cloned()
+            .or_else(|| parse_worker_address(worker))
+        {
+            return ("zion".to_string(), addr.encoded);
+        }
+        ("zion".to_string(), self.config.pool_address.encoded.clone())
     }
 
     pub fn register_worker(&mut self, worker: &str) {
+        let wallet = worker.split('.').next().unwrap_or(worker).trim();
+        if let Some(ss58) = parse_quantus_payout(wallet) {
+            self.worker_ext_payouts
+                .insert(worker.to_string(), ("quantus".to_string(), ss58.clone()));
+            self.pplns
+                .register_address_with_chain(worker, &ss58, "quantus");
+            return;
+        }
         if let Some(addr) = parse_worker_address(worker) {
             self.worker_addresses
                 .insert(worker.to_string(), addr.clone());
             self.pplns.register_address(worker, &addr.encoded);
         }
+    }
+
+    /// Register an explicit payout address for a miner (v3 Hello
+    /// `payout_address` field).  Accepts `qtc:<ss58>`/`qtu:<ss58>`/bare
+    /// `qz…` for Quantus payouts and `zion1…` for native payouts.
+    /// Returns the registered `(chain, address)` on success.
+    pub fn register_payout_address<'a>(
+        &mut self,
+        miner_id: &str,
+        address: &'a str,
+    ) -> Option<(&'static str, &'a str)> {
+        let addr = address.trim();
+        if let Some(ss58) = parse_quantus_payout(addr) {
+            self.worker_ext_payouts
+                .insert(miner_id.to_string(), ("quantus".to_string(), ss58.clone()));
+            self.pplns
+                .register_address_with_chain(miner_id, &ss58, "quantus");
+            return Some(("quantus", addr));
+        }
+        if addr.starts_with("zion1") {
+            if let Ok(parsed) =
+                Address::new(ChainId::ZionL1, addr.as_bytes().to_vec(), addr)
+            {
+                self.worker_addresses
+                    .insert(miner_id.to_string(), parsed.clone());
+                self.pplns.register_address(miner_id, &parsed.encoded);
+                return Some(("zion", addr));
+            }
+        }
+        None
     }
 
     pub fn submit_zion(
@@ -256,9 +319,35 @@ impl Pool {
         }
     }
 
-    /// Drain and return the queued payouts for the sweep thread.
+    /// Drain and return the queued ZION payouts for the sweep thread.
+    /// External-chain entries (e.g. Quantus) stay queued — they are drained
+    /// via [`take_external_payouts`].
     pub fn take_pending_payouts(&mut self) -> Vec<(u64, PayoutEntry)> {
-        std::mem::take(&mut self.pending_payouts)
+        let (zion, ext): (Vec<_>, Vec<_>) = std::mem::take(&mut self.pending_payouts)
+            .into_iter()
+            .partition(|(_, p)| p.chain() == "zion");
+        self.pending_payouts = ext;
+        zion
+    }
+
+    /// Drain queued payouts for a non-ZION chain (`"quantus"`).  ZION
+    /// entries and other chains stay queued.
+    pub fn take_external_payouts(&mut self, chain: &str) -> Vec<(u64, PayoutEntry)> {
+        let (taken, kept): (Vec<_>, Vec<_>) = std::mem::take(&mut self.pending_payouts)
+            .into_iter()
+            .partition(|(_, p)| p.chain() == chain);
+        self.pending_payouts = kept;
+        taken
+    }
+
+    /// Snapshot (without draining) of queued external-chain payouts for a
+    /// chain — used by the status API.
+    pub fn pending_external_payouts(&self, chain: &str) -> Vec<&PayoutEntry> {
+        self.pending_payouts
+            .iter()
+            .map(|(_, p)| p)
+            .filter(|p| p.chain() == chain)
+            .collect()
     }
 
     /// Put payouts back into the queue for a later retry.
@@ -277,6 +366,31 @@ fn parse_worker_address(worker: &str) -> Option<Address> {
     let wallet = worker.split('.').next().unwrap_or(worker).trim();
     if wallet.starts_with("zion1") {
         Address::new(ChainId::ZionL1, wallet.as_bytes().to_vec(), wallet).ok()
+    } else {
+        None
+    }
+}
+
+/// Parse a Quantus payout target from a worker wallet field.
+///
+/// Accepts `qtc:<ss58>` / `qtu:<ss58>` (explicit) or a bare `qz…` SS58-189
+/// address (Quantus account IDs encode with prefix 189 → base58 `qz`).
+/// Full checksum verification happens in the multichain sweeper — the pool
+/// only needs routing, not custody, so a shape check suffices here.
+fn parse_quantus_payout(wallet: &str) -> Option<String> {
+    // Strip an explicit chain tag (case-insensitive) but keep the SS58
+    // address itself verbatim — base58 is case-sensitive.
+    let lower = wallet.to_ascii_lowercase();
+    let bare = if lower.starts_with("qtc:") || lower.starts_with("qtu:") {
+        &wallet[4..]
+    } else {
+        wallet
+    };
+    // SS58 prefix 189 addresses are 47-48 base58 chars starting with "qz".
+    if bare.len() >= 45 && bare.len() <= 50 && bare.starts_with("qz")
+        && bare.chars().all(|c| c.is_ascii_alphanumeric())
+    {
+        Some(bare.to_string())
     } else {
         None
     }
@@ -414,7 +528,93 @@ mod tests {
     fn anonymous_worker_address_parsed_from_username() {
         let mut pool = Pool::new(config(), telemetry());
         pool.register_worker("zion1abc.worker1");
-        let addr = pool.worker_address("zion1abc.worker1");
-        assert_eq!(addr.encoded, "zion1abc");
+        let (chain, addr) = pool.worker_payout_target("zion1abc.worker1");
+        assert_eq!(chain, "zion");
+        assert_eq!(addr, "zion1abc");
+    }
+
+    const QTC_ADDR: &str = "qzmAAFv4c7tprk5UyJfav4hgkGR8xyckGeZL2KhwM1FWMW1gk";
+
+    #[test]
+    fn quantus_worker_parses_qtc_prefix() {
+        assert_eq!(
+            parse_quantus_payout(&format!("qtc:{QTC_ADDR}")).as_deref(),
+            Some(QTC_ADDR)
+        );
+        assert_eq!(
+            parse_quantus_payout(&format!("QTU:{QTC_ADDR}")).as_deref(),
+            Some(QTC_ADDR)
+        );
+        assert_eq!(
+            parse_quantus_payout(QTC_ADDR).as_deref(),
+            Some(QTC_ADDR)
+        );
+        assert_eq!(parse_quantus_payout("zion1abc"), None);
+        assert_eq!(parse_quantus_payout("qzshort"), None);
+        assert_eq!(parse_quantus_payout("qtc:notqz_address!"), None);
+    }
+
+    #[test]
+    fn quantus_worker_registers_external_payout() {
+        let mut pool = Pool::new(config(), telemetry());
+        pool.register_worker(&format!("qtc:{QTC_ADDR}.rig1"));
+        let (chain, addr) = pool.worker_payout_target(&format!("qtc:{QTC_ADDR}.rig1"));
+        assert_eq!(chain, "quantus");
+        assert_eq!(addr, QTC_ADDR);
+    }
+
+    #[test]
+    fn explicit_payout_address_routes_quantus() {
+        let mut pool = Pool::new(config(), telemetry());
+        // v3 Hello payout_address
+        let pa = format!("qtc:{QTC_ADDR}");
+        let res = pool.register_payout_address("miner42", &pa);
+        assert_eq!(res.map(|(c, a)| (c, a)), Some(("quantus", &pa[..])));
+        let (chain, addr) = pool.worker_payout_target("miner42.rigA");
+        assert_eq!(chain, "quantus");
+        assert_eq!(addr, QTC_ADDR);
+        // zion1 still works, garbage rejected
+        assert_eq!(
+            pool.register_payout_address("m2", "zion1zz"),
+            Some(("zion", "zion1zz"))
+        );
+        assert_eq!(pool.register_payout_address("m3", "garbage"), None);
+    }
+
+    #[test]
+    fn external_payouts_partition_from_zion() {
+        let mut pool = Pool::new(
+            PoolConfig {
+                min_payout_flowers: 1,
+                ..config()
+            },
+            telemetry(),
+        );
+        // One QTC miner + one ZION miner submit shares at height 1.
+        pool.register_worker(&format!("qtc:{QTC_ADDR}.rig1"));
+        let sub_qtc = ShareSubmission {
+            worker: format!("qtc:{QTC_ADDR}.rig1"),
+            job_id: "zion_1".into(),
+            nonce_hex: "0000000000000000".into(),
+            difficulty: 1,
+        };
+        let sub_zion = ShareSubmission {
+            worker: "zion1miner".into(),
+            job_id: "zion_2".into(),
+            nonce_hex: "0000000000000001".into(),
+            difficulty: 1,
+        };
+        pool.submit_zion(sub_qtc, b"h", 1).unwrap();
+        pool.submit_zion(sub_zion, b"h", 1).unwrap();
+        pool.on_block_found(1, 1_000_000);
+
+        // ZION drain must leave the quantus entry behind.
+        let zion = pool.take_pending_payouts();
+        assert!(zion.iter().all(|(_, p)| p.chain() == "zion"));
+        assert_eq!(zion.len(), 1);
+        let ext = pool.take_external_payouts("quantus");
+        assert_eq!(ext.len(), 1);
+        assert_eq!(ext[0].1.chain(), "quantus");
+        assert_eq!(ext[0].1.address, QTC_ADDR);
     }
 }

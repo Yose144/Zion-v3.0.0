@@ -110,6 +110,32 @@ impl MultichainService {
         Arc::clone(&self.node_rewards)
     }
 
+    /// Spawn the QTC (Quantus) pool payout sweeper when `QTC_PAYOUT_ENABLED=1`.
+    ///
+    /// The sweeper drains the pool's external-chain payout queue
+    /// (`POST /admin/external-payouts?chain=quantus`) and settles entries
+    /// with native Quantus transfers signed by the custodial wallet keyring
+    /// (`quantus_keypair(0,0)`, same account as the registered adapter).
+    /// Returns `None` when disabled or misconfigured (warn logged).
+    pub fn spawn_qtc_payout_sweeper(&self) -> Option<tokio::task::JoinHandle<()>> {
+        match crate::qtc_payout::QtcPayoutConfig::from_env() {
+            Ok(Some(cfg)) => {
+                let adapter = crate::chain::adapters::quantus::QuantusAdapter::new("")
+                    .with_keyring(self.wallet_keyring.clone());
+                Some(crate::qtc_payout::spawn_qtc_payout_sweeper(
+                    cfg,
+                    Arc::new(adapter),
+                    Arc::clone(&self.db),
+                ))
+            }
+            Ok(None) => None,
+            Err(e) => {
+                tracing::warn!("QTC payout sweeper disabled: {e}");
+                None
+            }
+        }
+    }
+
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
         let bridge_keyring = load_bridge_keyring(&config)?;

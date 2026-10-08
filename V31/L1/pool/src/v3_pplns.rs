@@ -113,8 +113,21 @@ pub struct PayoutEntry {
     pub miner_id: String,
     pub address: String,
     /// Amount in flowers (1 ZION = 1_000_000 flowers, post-3.0.3).
+    /// For non-ZION payout chains this stays denominated in flowers — the
+    /// external sweeper converts at send time with its configured rate.
     pub amount: u64,
     pub share_count: u64,
+    /// Payout chain: `None`/`"zion"` = native ZION sweep; `"quantus"` =
+    /// drained by the multichain QTC payout sweeper.
+    #[serde(default)]
+    pub payout_chain: Option<String>,
+}
+
+impl PayoutEntry {
+    /// Normalized payout chain label (`"zion"` when unset).
+    pub fn chain(&self) -> &str {
+        self.payout_chain.as_deref().unwrap_or("zion")
+    }
 }
 
 /// Cumulative per-miner shares and blocks (persistent across restarts).
@@ -229,6 +242,9 @@ pub struct PplnsEngine {
     share_weights: Vec<u128>,
     /// Registered payout addresses per miner_index.
     addresses: Vec<Option<String>>,
+    /// Payout chain per miner_index (`"zion"` | `"quantus"`); `None`/missing
+    /// = `"zion"`.  Kept parallel to `addresses`.
+    chains: Vec<Option<String>>,
     /// Accumulated unpaid balance per miner_index (flowers).
     unpaid: Vec<u64>,
     /// Cumulative paid amount per miner_index (flowers).
@@ -265,6 +281,10 @@ pub struct PplnsSnapshot {
     pub window_total_difficulty: u128,
     pub addresses: HashMap<String, String>,
     pub unpaid: HashMap<String, u64>,
+    /// Miner payout chain labels (miner_id → `"zion"`/`"quantus"`).
+    /// `#[serde(default)]` keeps pre-QTC snapshots loadable.
+    #[serde(default)]
+    pub payout_chains: HashMap<String, String>,
     #[serde(with = "u128_str::map")]
     pub paid_per_miner: HashMap<String, u128>,
     pub shares_per_miner: HashMap<String, MinerShareStats>,
@@ -286,6 +306,7 @@ impl PplnsEngine {
             window_total_difficulty: 0,
             share_weights: Vec::new(),
             addresses: Vec::new(),
+            chains: Vec::new(),
             unpaid: Vec::new(),
             paid_per_miner: Vec::new(),
             shares_per_miner: Vec::new(),
@@ -306,6 +327,7 @@ impl PplnsEngine {
         if self.share_weights.len() < needed {
             self.share_weights.resize(needed, 0);
             self.addresses.resize(needed, None);
+            self.chains.resize(needed, None);
             self.unpaid.resize(needed, 0);
             self.paid_per_miner.resize(needed, 0);
             self.shares_per_miner
@@ -332,6 +354,7 @@ impl PplnsEngine {
 
         // Convert Vec-indexed per-miner data back to HashMap format for serialization.
         let mut addresses = HashMap::with_capacity(self.registry.len());
+        let mut payout_chains = HashMap::new();
         let mut unpaid = HashMap::with_capacity(self.registry.len());
         let mut paid_per_miner = HashMap::with_capacity(self.registry.len());
         let mut shares_per_miner = HashMap::with_capacity(self.registry.len());
@@ -341,6 +364,9 @@ impl PplnsEngine {
             let id = self.registry.index_to_id[i].clone();
             if let Some(ref addr) = self.addresses[i] {
                 addresses.insert(id.clone(), addr.clone());
+            }
+            if let Some(ref chain) = self.chains[i] {
+                payout_chains.insert(id.clone(), chain.clone());
             }
             if self.unpaid[i] > 0 {
                 unpaid.insert(id.clone(), self.unpaid[i]);
@@ -360,6 +386,7 @@ impl PplnsEngine {
             window,
             window_total_difficulty: self.window_total_difficulty,
             addresses,
+            payout_chains,
             unpaid,
             paid_per_miner,
             shares_per_miner,
@@ -388,6 +415,9 @@ impl PplnsEngine {
         for id in snap.addresses.keys() {
             self.registry.lookup_or_register(id);
         }
+        for id in snap.payout_chains.keys() {
+            self.registry.lookup_or_register(id);
+        }
         for id in snap.unpaid.keys() {
             self.registry.lookup_or_register(id);
         }
@@ -405,6 +435,7 @@ impl PplnsEngine {
         let n = self.registry.len();
         self.share_weights = vec![0u128; n];
         self.addresses = vec![None; n];
+        self.chains = vec![None; n];
         self.unpaid = vec![0u64; n];
         self.paid_per_miner = vec![0u128; n];
         self.shares_per_miner = vec![MinerShareStats::default(); n];
@@ -429,6 +460,10 @@ impl PplnsEngine {
         for (id, addr) in snap.addresses {
             let idx = self.registry.lookup_or_register(&id);
             self.addresses[idx as usize] = Some(addr);
+        }
+        for (id, chain) in snap.payout_chains {
+            let idx = self.registry.lookup_or_register(&id);
+            self.chains[idx as usize] = Some(chain);
         }
         for (id, bal) in snap.unpaid {
             let idx = self.registry.lookup_or_register(&id);
@@ -556,10 +591,26 @@ impl PplnsEngine {
 
     /// Register (or update) the payout address for a miner.
     pub fn register_address(&mut self, miner_id: &str, address: &str) {
+        self.register_address_with_chain(miner_id, address, "zion");
+    }
+
+    /// Register a payout address on a specific chain (`"zion"`, `"quantus"`).
+    pub fn register_address_with_chain(&mut self, miner_id: &str, address: &str, chain: &str) {
         let idx = self.registry.lookup_or_register(miner_id);
         self.ensure_capacity(idx);
         self.addresses[idx as usize] = Some(address.to_string());
+        self.chains[idx as usize] =
+            (chain != "zion").then(|| chain.to_string());
         self.dirty = true;
+    }
+
+    /// Payout chain registered for a miner (`"zion"` default).
+    pub fn payout_chain_for(&self, miner_id: &str) -> &str {
+        self.registry
+            .lookup(miner_id)
+            .and_then(|idx| self.chains.get(idx as usize))
+            .and_then(|c| c.as_deref())
+            .unwrap_or("zion")
     }
 
     /// Returns the registered payout address for a miner, if any.
@@ -821,6 +872,7 @@ impl PplnsEngine {
                         miner_id,
                         address: address.clone(),
                         amount: *unpaid,
+                        payout_chain: self.chains[i].clone(),
                     });
                     paid_indices.push(i);
                 }
