@@ -311,32 +311,51 @@ mineři → shares (share-diff validace) ────────┘
 QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
 ```
 
+**⚠️ Korekce topologie (2026-10-08, live probe):**
+- `--chain mainnet` je **nový řetězec** (symbol `QTC`, 7 bootnodů
+  `a{1-7}-p2p-mainnet.quantus.com`); `a1-planck.quantus.cat` = **retired
+  public testnet** (symbol `PLK`) — náš `QUANTUS_RPC` default ukazoval na
+  starou síť; produkčně použít vlastní node `:9944`.
+- **Mining rewards jdou POUZE na wormhole adresy** — node dostává
+  `--rewards-inner-hash <32B>` (preimage → wormhole adresa). Sweep na
+  transparent účet = `quantus wormhole collect-rewards` přes CLI.
+- Nový protokol: `Ready { token }` — node generuje `miner-auth-token`
+  soubor (0600) + `miner-tls-cert-sha256` pro pinning.
+
 **Kroky:**
 
-- [ ] **F8.1 Node deploy (Edge):** `quantus-node` binary (upstream release
-      nebo build z `Quantus-Network/chain`), Planck sync, systemd
-      `zion-quantus-node`, `--miner-listen-port 9833` + reward-address flag
-      (ověřit přesný CLI název — Mining Guide), `--pool` token auth.
-      Pozor: node musí být **fully synced** jinak node→miner joby nejsou na tipu.
-- [ ] **F8.2 `QtcJobSource` (pool):** QUIC klient (quinn+rustls, ALPN
-      `quantus-miner`, InsecureCertVerifier) — Ready→NewJob loop → expose
-      jako external-stream job source pro ticker QTU (stejné rozhraní jako
-      AuxPowClient: `latest_job`/`submit`); share-diff validace lokálně,
-      net-diff nonce → `JobResult`. Protokol typy: vendor ~80 řádek
-      (`MinerMessage`/`MiningRequest`/`MiningResult`, serde) — ne git dep.
-- [ ] **F8.3 Hybrid policy:** `QTC_NATIVE_SHARE_PCT` (0–100, default 0 dokud
-      nezměříme) — % QPoW sessions dostává native joby vs k1pool upstream;
-      auto-fallback na upstream když node stale (`job_age` guard existuje).
-      Miner-facing: QTU stream jednotný, pool interně volí zdroj.
-- [ ] **F8.4 Reward→payout wiring:** node reward address = QTC payout účet
-      (keyring (0,0) nebo dedikovaný seed); block-found credit event →
-      PPLNS miner distribution přes `QtcPayoutSweeper`; fee držíme.
+- [x] **F8.1 Node deploy (Edge):** `quantus-node v1.0.2-Qm` z GitHub
+      release → `/opt/quantus/bin`; node key + wormhole vygenerováno
+      (secret `/opt/quantus/wormhole-key.secret` 0600); rewards wormhole
+      **`qzk8Rna5KBtuqb5g6eEzEVRAsdbpCo5Mhn7k6eggeR4ZVn2aP`**; systemd
+      `zion-quantus-node` (`--validator --miner-listen-port 9833 --chain
+      mainnet --sync full`); ufw 30333; token file
+      `/opt/quantus/data/chains/mainnet/miner-auth-token`; RPC localhost
+      :9944. Sync probíhá — **mining paused dokud node není na tipu**
+      (joby nechodí, správně). **2026-10-08**
+- [x] **F8.2 `QtcJobSource` (pool):** `qtc_native.rs` — vendored protokol
+      (Ready{token}/NewJob/JobResult, 4B-BE len+JSON, QUIC ALPN
+      `quantus-miner`, insecure verifier); JobPackage `qtun:` prefix;
+      local share validation `get_nonce_hash` vs share_target;
+      net-target → `JobResult` do node. Config `QTC_NATIVE_ENABLED` +
+      `_NODE_ADDR` + `_TOKEN_FILE` + `_SHARE_PCT` + `_SHARE_DIFF`.
+      **2026-10-08, `caaf52008`**
+- [x] **F8.3 Hybrid policy:** per-**job** `serve_native` flag
+      (`job_seq %100 < pct` — každý miner dostane stejný zdroj per-block,
+      fingerprint-safe); stale native (>90s) → auto upstream fallback.
+      Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=0` (dokud sync +
+      verify). **2026-10-08**
+- [ ] **F8.4 Reward→payout wiring:** block rewards akumulují na wormhole
+      `qzk8Rna…` → periodický `quantus wormhole collect-rewards` sweep na
+      transparent payout účet (keyring (0,0) nebo dedikovaný seed) →
+      `QtcPayoutSweeper` vyplatí minerům; fee držíme. Sweep = cron/systemd
+      timer s `quantus` CLI binary.
 - [ ] **F8.5 Měření a rozhodnutí:** `NewJob.difficulty` = network difficulty
       přímo → expected blocks/day pro náš hashrate → nastavit split;
       dokumentovat v dashboardu (`coin_details` přidat `source:native|k1pool`).
 - [ ] **F8.6 Testy:** codec roundtrip unit testy; mock QUIC server (quinn
-      self-signed) — NewJob→share→JobResult E2E v testu; Heisenberg node
-      dry-run před Planckem.
+      self-signed) — NewJob→share→JobResult E2E v testu; live ověření po
+      syncu (pct bump → joby do minerů → JobResult → wormhole credit).
 
 **Hashrate strategie (variance):** native leg má variance (platíme jen
 z bloků) → hybrid drží k1pool leg jako guaranteed-earnings floor.
