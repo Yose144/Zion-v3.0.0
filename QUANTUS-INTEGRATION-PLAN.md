@@ -400,8 +400,13 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
 - [x] **F8.3 Hybrid policy:** per-**job** `serve_native` flag
       (`job_seq %100 < pct` — každý miner dostane stejný zdroj per-block,
       fingerprint-safe); stale native (>90s) → auto upstream fallback.
-      Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=0` (dokud sync +
-      verify). **2026-10-08** + fix `d3fb50f88` (target inversion).
+      Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=5` (lottery).
+      **2026-10-08** + fix `d3fb50f88` (target inversion).
+      **E2E OVĚŘENO:** při `_SHARE_PCT=50` stratum probe viděla
+      `external_stream.job_id="qtun:N"` v broadcast Job lines; desktop
+      miner (1070 Ti, QPoW CUDA) joby přijal a **native shares accepted
+      live** (`qtun:188…193`, pool lokálně validoval hash < share_target
+      → Accepted/PPLNS). Dial zpět na 5 (lottery split).
 - [~] **F8.4 Reward→payout wiring:** block rewards akumulují jako **ZK-trie
       leaves** na wormhole `qzk8Rna…`. Sweep = `quantus wormhole
       collect-rewards` (CLI 2.3.0 — interně: subsquid dotaz na pending
