@@ -166,10 +166,14 @@ impl MultiAuxPowBridge {
     }
 
     fn default_cpu_coins() -> HashSet<ExternalCoin> {
-        let mut s = HashSet::new();
-        s.insert(ExternalCoin::Monero);
-        s.insert(ExternalCoin::Verus);
-        s
+        // Derived from the canonical classification so a newly-registered
+        // CPU coin can never drift out of sync (RTM was missing here once
+        // and would have been served on the GPU stream).
+        ExternalCoin::ALL
+            .iter()
+            .copied()
+            .filter(|c| c.is_cpu())
+            .collect()
     }
 
     pub fn is_cpu_coin(&self, coin: &ExternalCoin) -> bool {
