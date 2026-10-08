@@ -66,7 +66,8 @@
 |---|---|---|
 | Adaptive quality (PerformanceMonitor → one-way degrade) | ✅ | fps < ~40 % refresh → lehčí pipeline na zbytek session |
 | `lowPower` detekce (cores/RAM/saveData/mobil) | ✅ | méně hvězd/částic, žádný bloom/MatrixCore |
-| Galaxy node instancing | ✅ | 354 non-star světů → 2 instanced draw cally (sphere + ring, per-instance barva/discovered dimming); star systemy + selected zůstávají full nody; hover = raycast-free overlay label (žádný handoff flicker); **~1900 → ~240 draw calls** na produkci |
+| Galaxy node instancing | ✅ | Všech ~410 world bases → 2 instanced draw cally (sphere + ring, per-instance barva/discovered dimming); star systemy renderují jen extras (rays/gate/vortex/labels) přes `instancedBase`, selected = full node; hover = raycast-free overlay label (žádný handoff flicker); distant star gates/vortices distance-gated; **~1900 → ~153 draw calls desktop / ~102 mobil**, ověřeno na produkci (`3ff6b7363`) |
+| Nova Zeme beacon instancing | ✅ | 11 pioneer markerů (dot + halo) → 2 instanced draw cally, per-instance barva; DOM labely zachovány |
 | `DirectRenderer` (manual-render freeze fix) | ✅ | ověřeno `calls: 1→16` po vstupu do světa |
 | R3F error boundaries | ✅ | per-component `R3FErrorBoundary` |
 | WebGPU bundle laziness | ✅ | `three/tsl` chunk ~724K se stáhne jen při `?gpu=webgpu` |

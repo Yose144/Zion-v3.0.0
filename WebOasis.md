@@ -241,6 +241,12 @@ Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém 
 - **Onboarding:** `oasis.visited` → returning skip warp intro na stargate; „Skip intro →" button; mobil dostává Pilgrim Rite (archetype + loadout bonus persistován).
 - **E2E poučení:** canvas click auto-minimalizuje panely na 2,5 s (`pointerdown` trigger) — testy musí počkat na re-show; kamera po vstupu do scény ještě driftuje ~1 s — projekce→klik atomicky, ne přes wait.
 
+### Full-instancing perf kolo (2026-10-07, commit `3ff6b7363`)
+- **Všechny world bases instanced:** galaxy mapa renderuje ~410 sfér + ~410 ringů ve 2 draw callech — star systemy dostaly `instancedBase` flag na `World` (přeskočí vlastní sphere/ring, renderují jen rays/gate/vortex/label extras); jejich hover jede přes instanced raycast + `hoveredOverride`.
+- **Distance-gating:** star system mimo hover/selected zahazuje warp gate + vortex mesh (v galaxii sub-pixel) — přibližně −4 draw cally na star node.
+- **Nova Zeme beacons:** 11 pioneer markerů (dot + glow halo) → 2 instanced meshe s per-instance barvou; DOM labely zůstávají, `raycast={() => null}` (select vlastní parent planet).
+- **Výsledek:** galaxy view **~240 → ~153 draw calls desktop / ~102 mobil** (baseline před instancingem ~1 900 → −92 %); produkce ověřena (`calls:153, tris:~215k, 0 errors`), mobile viewport scéna čistá.
+
 ### G3 — Asset & bridge track
 - Draco/KTX2 pipeline + avatar/artifact preview viewer (Marketplace bridge)
 - WASM world-gen modul (pokud profiling ukáže potřebu)
