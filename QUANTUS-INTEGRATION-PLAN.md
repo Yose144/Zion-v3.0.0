@@ -317,10 +317,24 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
   public testnet** (symbol `PLK`) — náš `QUANTUS_RPC` default ukazoval na
   starou síť; produkčně použít vlastní node `:9944`.
 - **Mining rewards jdou POUZE na wormhole adresy** — node dostává
-  `--rewards-inner-hash <32B>` (preimage → wormhole adresa). Sweep na
-  transparent účet = `quantus wormhole collect-rewards` přes CLI.
+  `--rewards-inner-hash <32B>` (preimage → wormhole adresa). Sweep =
+  wormhole **exit** přes ZK proof (`wormhole prove` → verify extrinsic),
+  ne plain transfer.
 - Nový protokol: `Ready { token }` — node generuje `miner-auth-token`
   soubor (0600) + `miner-tls-cert-sha256` pro pinning.
+- **⚠️ ALPN je verzovaný** — v1.0.2-Qm vyžaduje `quantus-miner/2`
+  (bare `quantus-miner` → TLS error 120, ověřeno live).
+
+**Wormhole spend-chain (live ověřeno 2026-10-08):**
+`secret = hash(seed)` z `WormholePair`; `inner_hash = poseidon("wormhole"‖secret)`
+= náš `--rewards-inner-hash`; `wormhole_addr = poseidon(inner_hash)` =
+`poseidon²("wormhole"‖secret)` = `qzk8Rna5…`. Leaf `secret` pro
+`wormhole prove` = `pair.secret()` — derivovatelné z keygen mnemonic přes
+`derive_wormhole_from_mnemonic` (hdwallet 4.1.1). Nástroj:
+`derive_addr --qtc-wormhole-secret [idx]` — **E2E ověřeno**: test key →
+`address`+`inner_hash` ≡ node output, `quantus wormhole address
+--secret-file` → identická adresa. Spend secret na Edge:
+`/opt/quantus/rewards-spend.secret` (0600).
 
 **Kroky:**
 
@@ -335,24 +349,33 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       (joby nechodí, správně). **2026-10-08**
 - [x] **F8.2 `QtcJobSource` (pool):** `qtc_native.rs` — vendored protokol
       (Ready{token}/NewJob/JobResult, 4B-BE len+JSON, QUIC ALPN
-      `quantus-miner`, insecure verifier); JobPackage `qtun:` prefix;
+      `quantus-miner/2`, insecure verifier); JobPackage `qtun:` prefix;
       local share validation `get_nonce_hash` vs share_target;
       net-target → `JobResult` do node. Config `QTC_NATIVE_ENABLED` +
       `_NODE_ADDR` + `_TOKEN_FILE` + `_SHARE_PCT` + `_SHARE_DIFF`.
-      **2026-10-08, `caaf52008`**
+      **2026-10-08, `caaf52008`** — live handshake OK (fixy: rustls
+      CryptoProvider explicit ring `b820c2dfa`, ALPN `/2` `a4f17f96a`,
+      token file `root:zion 640` + ExecStartPost).
 - [x] **F8.3 Hybrid policy:** per-**job** `serve_native` flag
       (`job_seq %100 < pct` — každý miner dostane stejný zdroj per-block,
       fingerprint-safe); stale native (>90s) → auto upstream fallback.
       Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=0` (dokud sync +
       verify). **2026-10-08**
-- [ ] **F8.4 Reward→payout wiring:** block rewards akumulují na wormhole
-      `qzk8Rna…` → periodický `quantus wormhole collect-rewards` sweep na
-      transparent payout účet (keyring (0,0) nebo dedikovaný seed) →
-      `QtcPayoutSweeper` vyplatí minerům; fee držíme. Sweep = cron/systemd
-      timer s `quantus` CLI binary.
+- [ ] **F8.4 Reward→payout wiring:** block rewards akumulují jako **ZK-trie
+      leaves** na wormhole `qzk8Rna…` (mint přes `TransferProofRecorder`,
+      quantized na leaf quantum). Exit flow per deposit:
+      `zkTree_getMerkleProof(leaf_index, block)` → `quantus wormhole prove
+      --secret-file rewards-spend.secret --amount <q> --exit-account
+      <payout_qz> --block <h> --transfer-count <n> --leaf-index <i>
+      --funding-account <mint>` → aggregate/verify extrinsic → mint spendable
+      QTC na exit account → `QtcPayoutSweeper` vyplatí minerům; fee držíme.
+      Leaf metadata z reward events/`Wormhole::TransferCount` storage.
+      Spend secret na Edge hotov (`rewards-spend.secret` 0600).
+      Sweep = systemd timer / skript; ZK proof gen je CPU-náročný (minuty).
 - [ ] **F8.5 Měření a rozhodnutí:** `NewJob.difficulty` = network difficulty
-      přímo → expected blocks/day pro náš hashrate → nastavit split;
-      dokumentovat v dashboardu (`coin_details` přidat `source:native|k1pool`).
+      přímo → expected blocks/day pro náš hashrate → nastavit split.
+      ~~dashboard `coin_details[].native`~~ ✅ `{enabled,connected,share_pct,
+      job_id,job_age_ms}` (`dcc651fd3`).
 - [ ] **F8.6 Testy:** codec roundtrip unit testy; mock QUIC server (quinn
       self-signed) — NewJob→share→JobResult E2E v testu; live ověření po
       syncu (pct bump → joby do minerů → JobResult → wormhole credit).
