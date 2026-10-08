@@ -674,9 +674,17 @@ function _coinAlgo(coin) {
   const c = String(coin || '').toUpperCase();
   if (c === 'ZION') return 'ekam_deeksha';
   if (c === 'QTU' || c === 'QUANTUS') return 'qpow-poseidon2';
-  if (c === 'ZANO') return 'progpow';
-  if (c === 'VRSC') return 'verushash';
-  return '';
+  const ALGO = {
+    ZANO: 'progpowz', KAS: 'kheavyhash', ALPH: 'blake3_alph', DCR: 'blake3_dcr',
+    BEAM: 'beamhash', CFX: 'octopus', CKB: 'eaglesong', CLORE: 'kawpow',
+    DNX: 'dynexsolve', EPIC: 'progpow', ERG: 'autolykos', ETC: 'etchash',
+    EVR: 'evrprogpow', FLUX: 'zelhash', IRON: 'fishhash', KLS: 'karlsenhash',
+    KRX: 'keryxhash', MEWC: 'meowpow', NEXA: 'nexapow', NEOX: 'kawpow',
+    PHX: 'neoscrypt', QTC: 'qhash', QUAI: 'kawpow', RVN: 'kawpow',
+    VTC: 'verthash', ZCL: 'equihashzero', ZEC: 'equihash',
+    VRSC: 'verushash', XMR: 'randomx', RTM: 'ghostrider',
+  };
+  return ALGO[c] || '';
 }
 
 function _coinStreamIndex(coin) {
@@ -1322,8 +1330,10 @@ const DEFAULT_CONFIG = {
   // cpuCoin: Stream 3 CPU external coin preference ("auto" = pool decides).
   //   Supported: "auto", "VRSC", "XMR", "RTM"
   // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
-  //   Supported: "auto", "KAS", "ALPH", "DCR", "ERG", "ETC", "RVN", "CLORE",
-  //              "MEWC", "EVR", "FLUX", "EPIC", "QTU"
+  //   Supported (kernel-capable, pool bridge permitting): "auto", "QTU",
+  //   "ZANO", "KAS", "ALPH", "BEAM", "CFX", "CKB", "CLORE", "DCR", "DNX",
+  //   "EPIC", "ERG", "ETC", "EVR", "FLUX", "IRON", "KLS", "KRX", "MEWC",
+  //   "NEXA", "NEOX", "PHX", "QTC", "QUAI", "RVN", "VTC", "ZCL", "ZEC"
   // tripleStream: master toggle. When true, --no-gpu/--no-cpu are omitted and
   //   ZION_STREAM2_FORCE_COIN / ZION_STREAM3_FORCE_COIN are forwarded to the
   //   V31 miner. When false, both AuxPoW streams are disabled.
@@ -4403,9 +4413,77 @@ ipcMain.handle('start-mining', (event, config) => {
   return startMining(config);
 });
 
+// One-click profile switching ("Home" quick controls):
+// Persists the merged config immediately. When the miner is running (or a
+// start is pending), performs a safe hot-swap — full stop, wait for the
+// process to exit, then spawn with the new config — so an algorithm/coin
+// change takes effect end-to-end without the user touching Start/Stop.
+// Concurrent calls coalesce: the config is re-read from disk right before
+// spawn so the latest selection always wins.
+let applyMiningConfigInProgress = false;
+ipcMain.handle('apply-mining-config', async (_event, patch) => {
+  const merged = { ...loadConfig(), ...(patch || {}) };
+  saveConfig(merged);
+
+  const running = !!minerProcess || startMiningInProgress;
+  if (!running) {
+    return { success: true, applied: 'saved', config: loadConfig() };
+  }
+
+  if (applyMiningConfigInProgress) {
+    // Another switch is mid-flight — the new values are already persisted
+    // and will be picked up when it re-reads the config before spawning.
+    return { success: true, applied: 'queued', config: merged };
+  }
+  applyMiningConfigInProgress = true;
+  try {
+    const stopResult = await stopMiningAsync();
+    if (!stopResult?.success && minerProcess) {
+      return { success: false, error: stopResult?.error || 'Stop failed — keeping current miner' };
+    }
+    // Re-read from disk so a coin selected while we were stopping wins.
+    const fresh = loadConfig();
+    const res = startMining(fresh);
+    return { ...res, applied: 'restarted', config: fresh };
+  } finally {
+    applyMiningConfigInProgress = false;
+  }
+});
+
 ipcMain.handle('stop-mining', async () => {
   const result = await stopMiningAsync();
   return result.success ? { success: true } : { success: false, error: result.error };
+});
+
+// Pool capability probe: returns the auxpow coin list the pool currently
+// serves (bridge-enabled external coins). Used by the renderer to mark
+// which one-click coin options are live. Auth-exempt public endpoint;
+// failure degrades gracefully (UI keeps all options selectable).
+ipcMain.handle('get-pool-auxpow', async () => {
+  const urls = [
+    'https://dashboard.zionterranova.com/api/pool/miners-dashboard'
+  ];
+  for (const url of urls) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const aux = data?.stats?.auxpow || data?.auxpow;
+        if (aux && typeof aux === 'object') {
+          return {
+            ok: true,
+            enabled: aux.enabled !== false,
+            coins: Array.isArray(aux.coins) ? aux.coins : [],
+            coin_details: Array.isArray(aux.coin_details) ? aux.coin_details : [],
+          };
+        }
+      } finally { clearTimeout(timer); }
+    } catch { /* try next */ }
+  }
+  return { ok: false, enabled: false, coins: [], coin_details: [] };
 });
 
 

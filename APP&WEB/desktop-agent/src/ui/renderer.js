@@ -77,6 +77,45 @@ const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/json
 const DESKTOP_PURE_ZION_DEFAULT = true;
 const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
 
+// ═══ Canonical external-coin registry (single source for all selects) ═══
+// Mirrors ExternalCoin in V31 cosmic-harmony/profit.rs + miner's
+// gpu_kernel_available() (opencl+cuda union). The pool may serve only a
+// subset — the live set is probed via getPoolAuxpow() and unserved coins
+// are marked in the option label rather than silently idling the stream.
+const EXT_GPU_COINS = [
+  // Preferred / pool-verified first, then the rest alphabetically.
+  'QTU', 'ZANO', 'KAS', 'ALPH', 'BEAM', 'CFX', 'CKB', 'CLORE', 'DCR',
+  'DNX', 'EPIC', 'ERG', 'ETC', 'EVR', 'FLUX', 'IRON', 'KLS', 'KRX',
+  'MEWC', 'NEXA', 'NEOX', 'PHX', 'QTC', 'QUAI', 'RVN', 'VTC', 'ZCL', 'ZEC',
+];
+const EXT_CPU_COINS = ['VRSC', 'XMR', 'RTM'];
+// Canonical algorithm names — identical to ExternalCoin::algorithm() in
+// V31/L1/cosmic-harmony/src/profit.rs so UI labels match pool reporting.
+const EXT_COIN_ALGO = {
+  QTU: 'qpow-poseidon2', ZANO: 'progpow_zano', KAS: 'kheavyhash',
+  ALPH: 'blake3_alph', BEAM: 'beamhash', CFX: 'octopus', CKB: 'eaglesong',
+  CLORE: 'kawpow', DCR: 'blake3_dcr', DNX: 'dynexsolve', EPIC: 'progpow',
+  ERG: 'autolykos', ETC: 'etchash', EVR: 'evrprogpow', FLUX: 'zelhash',
+  IRON: 'fishhash', KLS: 'karlsenhash', KRX: 'keryxhash', MEWC: 'meowpow',
+  NEXA: 'nexapow', NEOX: 'kawpow', PHX: 'neoscrypt', QTC: 'qhash',
+  QUAI: 'kawpow', RVN: 'kawpow', VTC: 'verthash', ZCL: 'equihashzero',
+  ZEC: 'equihash',
+  VRSC: 'verushash', XMR: 'randomx', RTM: 'ghostrider',
+};
+// Tickers the pool currently bridges (null = probe failed/never ran →
+// treat every option as available rather than blocking the UI).
+let poolServedCoins = null;
+
+function extCoinLabel(ticker) {
+  const algo = EXT_COIN_ALGO[ticker];
+  return algo ? `${ticker} (${algo})` : ticker;
+}
+function coinIsServed(ticker) {
+  if (!ticker || ticker === 'auto') return true;
+  if (!Array.isArray(poolServedCoins)) return true; // unknown → don't block
+  return poolServedCoins.includes(ticker);
+}
+
 function currentPureZionDefault(cfg = config) {
   if (cfg && typeof cfg.desktopPureZionDefault === 'boolean') {
     return cfg.desktopPureZionDefault;
@@ -786,6 +825,53 @@ function setupControls() {
   const cpuCoinSelectDashboard = document.getElementById('cpu-coin-select-dashboard');
   const tripleStreamCheckbox = document.getElementById('trinity-checkbox');
 
+  // Populate all coin selects from the canonical registry so the option
+  // set can never drift between Home and Settings. Unserved coins (pool
+  // has no bridge for them) stay selectable but are marked — the pool
+  // will simply not assign that stream a job.
+  const rebuildCoinOptions = (selectEl, tickers, prefix) => {
+    if (!selectEl) return;
+    const cur = selectEl.value;
+    selectEl.innerHTML = '';
+    const autoOpt = document.createElement('option');
+    autoOpt.value = 'auto';
+    autoOpt.textContent = `${prefix}: Auto`;
+    selectEl.appendChild(autoOpt);
+    for (const t of tickers) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      const served = coinIsServed(t);
+      opt.textContent = `${prefix}: ${extCoinLabel(t)}${served ? '' : ' · offline'}`;
+      selectEl.appendChild(opt);
+    }
+    if (cur && selectEl.querySelector(`option[value="${cur}"]`)) {
+      selectEl.value = cur;
+    }
+  };
+  const rebuildAllCoinSelects = () => {
+    rebuildCoinOptions(gpuCoinSelect, EXT_GPU_COINS, 'GPU');
+    rebuildCoinOptions(gpuCoinSelectDashboard, EXT_GPU_COINS, 'GPU');
+    rebuildCoinOptions(cpuCoinSelect, EXT_CPU_COINS, 'CPU');
+    rebuildCoinOptions(cpuCoinSelectDashboard, EXT_CPU_COINS, 'CPU');
+  };
+  rebuildAllCoinSelects();
+
+  // Probe the pool for the coins it actually serves, then mark the rest.
+  const refreshPoolServedCoins = async () => {
+    if (typeof window.electronAPI.getPoolAuxpow !== 'function') return;
+    try {
+      const res = await window.electronAPI.getPoolAuxpow();
+      if (res?.ok && Array.isArray(res.coins)) {
+        poolServedCoins = res.coins.map(c => String(c).toUpperCase());
+        rebuildAllCoinSelects();
+      }
+    } catch { /* keep previous state */ }
+  };
+  void refreshPoolServedCoins();
+  if (!setupControls._poolProbeTimer) {
+    setupControls._poolProbeTimer = setInterval(() => void refreshPoolServedCoins(), 300000);
+  }
+
   const updateBackendStatus = (value) => {
     const labels = {
       auto: 'Canonical cosmic_harmony prefers the native Ekam Rust miner and falls back only if needed.',
@@ -864,44 +950,95 @@ function setupControls() {
     gpuCheckbox.disabled = false;
   };
 
-  // Sync config.algorithm from the select whenever user changes it
-  if (algoSelect) {
-    algoSelect.addEventListener('change', () => {
-      config.algorithm = algoSelect.value;
-      syncAlgoUi();
-    });
-    // init from persisted config
-    if (config.algorithm && algoSelect.querySelector(`option[value="${config.algorithm}"]`)) {
-      algoSelect.value = config.algorithm;
+  // ═══ One-click profile switching — shared apply pipeline ═══
+  // Every algo/coin control (Home + Settings) goes through the same path:
+  // update config → persist via apply-mining-config → when the miner is
+  // running, the main process hot-restarts it so the change applies E2E.
+  let applySwitchInFlight = false;
+  let applySwitchPending = null;
+  const applyMiningSelection = async (reason) => {
+    if (typeof window.electronAPI.applyMiningConfig !== 'function') {
+      try { await window.electronAPI.saveConfig(config); } catch {}
+      return;
     }
-  }
-
-  // Dashboard algo select — sync with config and settings select
-  if (algoSelectDashboard) {
-    algoSelectDashboard.addEventListener('change', () => {
-      config.algorithm = algoSelectDashboard.value;
-      syncAlgoUi();
-      // Also sync with settings select if exists
-      if (algoSelect) {
-        algoSelect.value = algoSelectDashboard.value;
+    if (applySwitchInFlight) {
+      // Queue the newest selection — after the in-flight call resolves we
+      // re-send the (already mutated) config so the last click always wins.
+      applySwitchPending = reason;
+      return;
+    }
+    applySwitchInFlight = true;
+    try {
+      updateStatusBadge('starting');
+      const res = await window.electronAPI.applyMiningConfig(config);
+      if (res && res.config) {
+        config = res.config;
       }
-    });
-    // init from persisted config
-    if (config.algorithm && algoSelectDashboard.querySelector(`option[value="${config.algorithm}"]`)) {
-      algoSelectDashboard.value = config.algorithm;
+      if (!res?.success) {
+        updateStatusBadge(isRunning ? 'mining' : 'stopped');
+        const msg = res?.error || 'unknown error';
+        addLogEntry(`Profile switch failed (${reason}): ${msg}`, 'error');
+      } else {
+        if (res.applied !== 'restarted') {
+          updateStatusBadge(isRunning ? 'mining' : 'stopped');
+        }
+        addLogEntry(
+          res.applied === 'restarted'
+            ? `Profile applied (${reason}) — miner restarting with new selection`
+            : `Profile saved (${reason})`,
+          'info'
+        );
+      }
+    } catch (err) {
+      updateStatusBadge(isRunning ? 'mining' : 'stopped');
+      addLogEntry(`Profile switch error (${reason}): ${err?.message || err}`, 'error');
+    } finally {
+      applySwitchInFlight = false;
+      if (applySwitchPending) {
+        const next = applySwitchPending;
+        applySwitchPending = null;
+        void applyMiningSelection(next);
+      }
     }
-  }
+  };
+
+  // Selecting an external coin only does something when triple-stream is
+  // enabled — auto-enable it so a Home pick is genuinely one-click.
+  const ensureTrinityForCoin = (ticker) => {
+    if (!ticker || ticker === 'auto') return;
+    if (config.tripleStream === true) return;
+    config.tripleStream = true;
+    if (tripleStreamCheckbox) tripleStreamCheckbox.checked = true;
+    addLogEntry('Trinity enabled automatically (external coin selected)', 'info');
+  };
+
+  const bindAlgoSelect = (selectEl, mirrorEl) => {
+    if (!selectEl) return;
+    selectEl.addEventListener('change', () => {
+      config.algorithm = selectEl.value;
+      syncAlgoUi();
+      if (mirrorEl) mirrorEl.value = selectEl.value;
+      void applyMiningSelection(`algorithm ${selectEl.value}`);
+    });
+    if (config.algorithm && selectEl.querySelector(`option[value="${config.algorithm}"]`)) {
+      selectEl.value = config.algorithm;
+    }
+  };
+  bindAlgoSelect(algoSelect, algoSelectDashboard);
+  bindAlgoSelect(algoSelectDashboard, algoSelect);
 
   // ═══ Trinity coin selectors — bind to config ═══
   // GPU coin (Stream 2) and CPU coin (Stream 3) are persisted in config and
   // forwarded to the V31 miner via ZION_STREAM2_FORCE_COIN /
   // ZION_STREAM3_FORCE_COIN environment variables. "auto" means the pool's
   // profit router decides.
-  const syncCoinSelect = (selectEl, configKey, mirrorEl) => {
+  const bindCoinSelect = (selectEl, configKey, mirrorEl) => {
     if (!selectEl) return;
     selectEl.addEventListener('change', () => {
       config[configKey] = selectEl.value;
+      ensureTrinityForCoin(selectEl.value);
       if (mirrorEl) mirrorEl.value = selectEl.value;
+      void applyMiningSelection(`${configKey}=${selectEl.value}`);
     });
     // init from persisted config
     const persisted = config[configKey];
@@ -909,14 +1046,15 @@ function setupControls() {
       selectEl.value = persisted;
     }
   };
-  syncCoinSelect(gpuCoinSelect, 'gpuCoin', gpuCoinSelectDashboard);
-  syncCoinSelect(gpuCoinSelectDashboard, 'gpuCoin', gpuCoinSelect);
-  syncCoinSelect(cpuCoinSelect, 'cpuCoin', cpuCoinSelectDashboard);
-  syncCoinSelect(cpuCoinSelectDashboard, 'cpuCoin', cpuCoinSelect);
+  bindCoinSelect(gpuCoinSelect, 'gpuCoin', gpuCoinSelectDashboard);
+  bindCoinSelect(gpuCoinSelectDashboard, 'gpuCoin', gpuCoinSelect);
+  bindCoinSelect(cpuCoinSelect, 'cpuCoin', cpuCoinSelectDashboard);
+  bindCoinSelect(cpuCoinSelectDashboard, 'cpuCoin', cpuCoinSelect);
 
   if (tripleStreamCheckbox) {
     tripleStreamCheckbox.addEventListener('change', () => {
       config.tripleStream = tripleStreamCheckbox.checked;
+      void applyMiningSelection(`trinity=${tripleStreamCheckbox.checked}`);
     });
     if (typeof config.tripleStream === 'boolean') {
       tripleStreamCheckbox.checked = config.tripleStream;
