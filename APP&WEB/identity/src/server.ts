@@ -68,6 +68,25 @@ async function start() {
   await app.register(rateLimit, {
     max: 30,
     timeWindow: '1 minute',
+    // Bucket per authenticated user when the request carries a valid session:
+    // server-side callers (warpd) proxy many users through one egress IP, so a
+    // per-IP key would share a single bucket across all users. Invalid/forged
+    // tokens fall back to the caller IP — brute-force protection is preserved.
+    keyGenerator: (req) => {
+      const raw = req.cookies?.zion_session;
+      const bearer = req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.slice(7)
+        : null;
+      const unsigned = raw ? req.unsignCookie(raw) : null;
+      const token = unsigned?.valid && unsigned.value ? unsigned.value : bearer;
+      if (token) {
+        try {
+          const payload = app.jwt.verify<{ sub?: string }>(token);
+          if (payload?.sub) return `sess:${payload.sub}`;
+        } catch { /* fall through to per-IP bucket */ }
+      }
+      return req.ip;
+    },
   });
 
   // ── Decorate ────────────────────────────────────────────────────

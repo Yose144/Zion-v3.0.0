@@ -73,7 +73,8 @@ function loadSession() {
 function saveSession(session) {
   try {
     ensureDir(_storageDir);
-    fs.writeFileSync(sessionFile(), JSON.stringify(session, null, 2));
+    fs.writeFileSync(sessionFile(), JSON.stringify(session, null, 2), { mode: 0o600 });
+    fs.chmodSync(sessionFile(), 0o600);
   } catch (e) {
     console.error('[ZIS] saveSession error:', e.message);
   }
