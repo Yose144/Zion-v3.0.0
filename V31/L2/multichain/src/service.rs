@@ -136,6 +136,90 @@ impl MultichainService {
         }
     }
 
+    /// List external-chain payout records (`ext_payout_records` ledger) for
+    /// the admin API.  `chain`/`status` filter; rows newest first.
+    pub async fn ext_payout_records(
+        &self,
+        chain: Option<&str>,
+        status: Option<&str>,
+        limit: u32,
+    ) -> MultichainResult<Vec<serde_json::Value>> {
+        let db = self.db.lock().await;
+        let mut sql = String::from(
+            "SELECT id, chain, source_height, miner_id, address, \
+             amount_flowers, amount_native, fee_native, tx_hash, status, \
+             attempts, error, created_at, updated_at \
+             FROM ext_payout_records WHERE 1=1",
+        );
+        let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        if let Some(c) = chain {
+            sql.push_str(" AND chain=?");
+            params.push(Box::new(c.to_string()));
+        }
+        if let Some(s) = status {
+            sql.push_str(" AND status=?");
+            params.push(Box::new(s.to_string()));
+        }
+        sql.push_str(" ORDER BY created_at DESC LIMIT ?");
+        params.push(Box::new(limit.min(500) as i64));
+        let mut stmt = db.conn().prepare(&sql)?;
+        let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+            params.iter().map(|p| p.as_ref()).collect();
+        let rows = stmt
+            .query_map(param_refs.as_slice(), |r| {
+                Ok(serde_json::json!({
+                    "id": r.get::<_, String>(0)?,
+                    "chain": r.get::<_, String>(1)?,
+                    "source_height": r.get::<_, i64>(2)?,
+                    "miner_id": r.get::<_, String>(3)?,
+                    "address": r.get::<_, String>(4)?,
+                    "amount_flowers": r.get::<_, i64>(5)?,
+                    "amount_native": r.get::<_, Option<String>>(6)?,
+                    "fee_native": r.get::<_, Option<String>>(7)?,
+                    "tx_hash": r.get::<_, Option<String>>(8)?,
+                    "status": r.get::<_, String>(9)?,
+                    "attempts": r.get::<_, i64>(10)?,
+                    "error": r.get::<_, Option<String>>(11)?,
+                    "created_at": r.get::<_, i64>(12)?,
+                    "updated_at": r.get::<_, i64>(13)?,
+                }))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    /// Resolve a 'stalled' payout record: `action` = `"resubmit"` (back to
+    /// 'queued', attempts reset) or `"dismiss"` (mark 'failed', no pay).
+    /// Fail-closed: only 'stalled' rows are actionable.
+    pub async fn ext_payout_resolve(
+        &self,
+        id: &str,
+        action: &str,
+    ) -> MultichainResult<bool> {
+        let new_status = match action {
+            "resubmit" => "queued",
+            "dismiss" => "failed",
+            _ => {
+                return Err(MultichainError::Validation(format!(
+                    "bad resolve action '{action}' (resubmit|dismiss)"
+                )))
+            }
+        };
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        let db = self.db.lock().await;
+        let n = db.conn().execute(
+            "UPDATE ext_payout_records SET status=?2, attempts=0, \
+             error=CASE WHEN ?2='queued' THEN NULL ELSE error END, \
+             updated_at=?3 \
+             WHERE id=?1 AND status='stalled'",
+            rusqlite::params![id, new_status, now],
+        )?;
+        Ok(n > 0)
+    }
+
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
         let bridge_keyring = load_bridge_keyring(&config)?;

@@ -407,6 +407,11 @@ impl PoolApi {
                 "issobella_pct": fees.issobella_pct,
                 "port": pool.config.port
             },
+            "external_payouts": {
+                "quantus": {
+                    "pending": pool.pending_external_payouts("quantus").len()
+                }
+            },
             "auxpow": auxpow_json,
             "routing": routing_json,
             "api": {

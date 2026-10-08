@@ -198,18 +198,43 @@ dostávají jen ZION PPLNS. Cíl: **per-coin attribution + volitelné payouty**.
       payout_address routing, drain partitioning) — 185/185 pool,
       714/714 multichain PASS.
 
+**Operátorský env (Edge `/etc/zion/edge-environment.sh`, necommitovat):**
+
+```sh
+# QTC payout leg — multichain (warpd) service
+QTC_PAYOUT_ENABLED=1
+QTC_PAYOUT_POOL_API=http://127.0.0.1:<pool-api-port>
+QTC_PAYOUT_ADMIN_KEY=<same value as pool ZION_ADMIN_KEY>
+QTC_PLANKS_PER_FLOWER=<rate: planks per 1 flower of pool reward — REQUIRED>
+QTC_PAYOUT_INTERVAL_S=60        # default 60
+QTC_PAYOUT_MIN_PLANKS=0         # dust threshold
+QTC_PAYOUT_MAX_ATTEMPTS=3       # → 'stalled' po N submit chybách
+QTC_PAYOUT_FEE_BPS=0            # pool fee na QTC legu (200 = 2 %)
+QTC_PAYOUT_MAX_FEE_PLANKS=0     # fee-cap přes payment_queryInfo (0 = bez capu)
+# Quantus signing/RPC (sdílené s adaptérem — payout účet = wallet keyring (0,0)
+# nebo QUANTUS_SEED hex 32B; MUSÍ být funded na Plancku jinak InsufficientFunds)
+QUANTUS_RPC=https://a1-planck.quantus.cat
+# QUANTUS_SEED=<hex — jen pokud není wallet keyring; 600 perms!>
+```
+
 **Zbývá:**
 
 - [ ] Per-coin share attribution pro AuxPoW zdroje (credits) — ZION-share
       reward konverze je model „ZION mined → vyplaceno v QTC dle
       `QTC_PLANKS_PER_FLOWER`"; upstream-earnings passthrough (QTC z QTU
       bridgů) je navrch.
-- [ ] Fee pro QTC payout leg — `QTC_PAYOUT_FEE_PCT` (odpočet před
-      konverzí) + fee ledger pole v `ext_payout_records`.
-- [ ] API/admin surface: payout history endpoint + dashboard sloupec
-      (chain, tx hash, stav).
-- [ ] `payment_queryInfo` fee odhad před submitem (fee-cap guard).
-- [ ] E2E na Heisenberg s funded test účtem.
+- [x] Fee na QTC legu — `QTC_PAYOUT_FEE_BPS` + `fee_native` ledger sloupec
+      (backfill migrace). **2026-10-09**
+- [x] `payment_queryInfo` fee estimate (`estimate_transfer_fee`) +
+      `QTC_PAYOUT_MAX_FEE_PLANKS` cap — over-cap rows čekají další tick.
+      **2026-10-09**
+- [x] Admin surface: `GET /v1/admin/ext-payouts?chain&status&limit` +
+      `POST /v1/admin/ext-payouts/resolve` (`resubmit`/`dismiss` — jen
+      'stalled' rows, fail-closed). Pool `/stats` expose
+      `external_payouts.quantus.pending`. **2026-10-09**
+- [ ] E2E na Heisenberg s funded test účtem — gated test
+      `quantus_live_send_testnet` připraven (`QUANTUS_LIVE=1` +
+      `QUANTUS_RPC=…heisenberg` + `QUANTUS_SEED`), potřebuje HEI faucet.
 
 ### F5 — Nativní QTC wallet pod ZIS + desktop agentem
 
@@ -230,12 +255,20 @@ Dvě vrstvy:
       c) HD seed pod ZIS accountem: agent drží jen mnemonic, derivace
          on-demand.
       → Spike v F0 ověří wasm build; fallback = (b).
-- [ ] `wallet-generator.js` rozšířit: `generateQuantusWallet()` →
-      `{mnemonic?, qtcAddress, pubkey}`; store pod `wallets[].quantus`.
-- [ ] UI: Wallet sekce — QTC tab (adresa + QR + balance přes RPC proxy
-      `/api/multichain/quantus/balance/:addr` + send form → IPC →
-      `QuantusAdapter.send_payment` přes multichain service nebo přímý
-      ws submit s lokálně podepsaným extrinsicem).
+- [x] ~~`wallet-generator.js`~~ → `quantus-wallet.js` (2026-10-08):
+      `generate-quantus-wallet` / `derive-quantus-address` /
+      `validate-quantus-address` / `quantus-get-balance` IPC; derivace přes
+      bundled `zion-derive-addr` helper (možnost (b), stejná derivace jako
+      ZIS custodial); `qtcAddress` persistováno ve wallet JSON.
+- [x] UI: Wallet overview — **QTC karta** (2026-10-09): linked qz… adresa +
+      live balance (`quantusGetBalance`, 12-dec precision string) + copy +
+      refresh; unlinked stav: link input (`wallet-set-qtc` IPC) nebo
+      generate (`generate-quantus-wallet` → 24-word mnemonic reveal +
+      auto-link); `list-wallets` vrací `qtcAddress`.
+- [ ] Send flow: `send_payment` přes multichain service nebo přímý submit
+      s lokálně podepsaným extrinsicem — ZATÍM jen přes custodial ZIS
+      withdraw; non-custodial send vyžaduje ML-DSA signing mimo renderer
+      (helper CLI už umí derivační seed → rozšířit o `sign` podpříkaz).
 - [ ] Receive flow: `wormhole` adresa pro mining rewards není potřeba —
       pool payout jde na transparent adresu; ale umožnit import
       existující Quantus 24-word phrase.

@@ -5240,6 +5240,7 @@ ipcMain.handle('list-wallets', () => {
         wallets.push({
           name: data.name,
           address: data.address,
+          qtcAddress: data.qtcAddress || null,
           createdAt: data.createdAt,
           lastUsed: data.lastUsed
         });
@@ -5251,6 +5252,35 @@ ipcMain.handle('list-wallets', () => {
     return { success: true, wallets };
   } catch (error) {
     console.error('List wallets failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Link (or re-link) a Quantus QTC address to an existing ZION wallet file —
+// for wallets created before QTC support, or linking a separately generated
+// QTC account.  Only the address is stored; no keys.
+ipcMain.handle('wallet-set-qtc', (event, { zionAddress, qtcAddress }) => {
+  try {
+    if (!QuantusWallet.isValidQuantusAddress(qtcAddress)) {
+      return { success: false, error: 'invalid QTC (ss58-189) address' };
+    }
+    if (!fs.existsSync(WALLETS_PATH)) {
+      return { success: false, error: 'no wallets directory' };
+    }
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    for (const file of files) {
+      const filePath = path.join(WALLETS_PATH, file);
+      let data;
+      try {
+        data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      } catch { continue; }
+      if (data?.address !== zionAddress) continue;
+      data.qtcAddress = qtcAddress;
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      return { success: true, qtcAddress };
+    }
+    return { success: false, error: 'wallet not found' };
+  } catch (error) {
     return { success: false, error: error.message };
   }
 });

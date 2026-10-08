@@ -348,7 +348,9 @@ fn compute_address_checksum(body_35: &str) -> String {
     ck
 }
 
-fn derive_zion_address(public_key_bytes: &[u8]) -> String {
+/// Encode a raw ed25519 public key as a `zion1…` address (sha256→ripemd160
+/// → custom base32 + checksum). Public for the `zion-derive-addr` helper.
+pub fn derive_zion_address(public_key_bytes: &[u8]) -> String {
     let sha = Sha256::digest(public_key_bytes);
     let key_hash = Ripemd160::digest(sha);
     let key_hash: &[u8] = key_hash.as_ref();

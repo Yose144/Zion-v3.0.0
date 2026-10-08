@@ -247,6 +247,7 @@ impl Db {
                 address TEXT NOT NULL,
                 amount_flowers INTEGER NOT NULL,
                 amount_native TEXT,
+                fee_native TEXT,
                 tx_hash TEXT,
                 status TEXT NOT NULL DEFAULT 'queued',
                 attempts INTEGER NOT NULL DEFAULT 0,
@@ -341,6 +342,30 @@ impl Db {
             let _ = self
                 .conn
                 .execute("ALTER TABLE dex_orders ADD COLUMN htlc_hash TEXT", []);
+        }
+
+        // Backfill fee_native column on ext_payout_records created before
+        // the QTC payout-fee field existed.
+        let mut stmt = self
+            .conn
+            .prepare("PRAGMA table_info(ext_payout_records)")?;
+        let mut has_fee_native = false;
+        {
+            let mut rows = stmt.query([])?;
+            while let Some(row) = rows.next()? {
+                let col_name: String = row.get(1)?;
+                if col_name == "fee_native" {
+                    has_fee_native = true;
+                    break;
+                }
+            }
+        }
+        drop(stmt);
+        if !has_fee_native {
+            let _ = self.conn.execute(
+                "ALTER TABLE ext_payout_records ADD COLUMN fee_native TEXT",
+                [],
+            );
         }
 
         // Backfill refund_pubkey / claimant_pubkey columns on htlc_records

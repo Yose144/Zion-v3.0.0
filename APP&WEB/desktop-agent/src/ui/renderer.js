@@ -3219,6 +3219,122 @@ function setupWalletControls() {
     if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${rpcSourceText}${rpcFallbackText}${payoutDeltaText}${pendingDriftText}`;
   });
 
+  // ── Quantus (QTC) card — native payout wallet linked to the ZION wallet ──
+  const qtcEls = {
+    card: document.getElementById('qtc-wallet-card'),
+    balance: document.getElementById('qtc-balance'),
+    address: document.getElementById('qtc-address'),
+    linked: document.getElementById('qtc-linked'),
+    unlinked: document.getElementById('qtc-unlinked'),
+    status: document.getElementById('qtc-status'),
+    linkInput: document.getElementById('qtc-link-input'),
+    linkBtn: document.getElementById('qtc-link-btn'),
+    generateBtn: document.getElementById('qtc-generate-btn'),
+    copyBtn: document.getElementById('qtc-copy-btn'),
+    refreshBtn: document.getElementById('qtc-refresh-btn'),
+    newMnemonic: document.getElementById('qtc-new-mnemonic'),
+    mnemonicOut: document.getElementById('qtc-mnemonic-out'),
+  };
+  let activeQtcAddress = null;
+
+  const walletQtcFor = async (zionAddr) => {
+    try {
+      const res = await window.electronAPI.listWallets();
+      const w = (res?.wallets || []).find(x => x.address === zionAddr);
+      return w?.qtcAddress || null;
+    } catch { return null; }
+  };
+
+  const refreshQtcCard = async () => {
+    if (!qtcEls.card) return;
+    const zionAddr = getActiveAddress();
+    activeQtcAddress = zionAddr ? await walletQtcFor(zionAddr) : null;
+    const linked = !!activeQtcAddress;
+    if (qtcEls.linked) qtcEls.linked.style.display = linked ? '' : 'none';
+    if (qtcEls.unlinked) qtcEls.unlinked.style.display = linked ? 'none' : '';
+    if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = 'none';
+    if (qtcEls.address) qtcEls.address.textContent = activeQtcAddress || '';
+    if (!linked) {
+      if (qtcEls.balance) qtcEls.balance.textContent = '—';
+      if (qtcEls.status) {
+        qtcEls.status.textContent = zionAddr
+          ? 'No QTC wallet linked — paste a qz… address or generate one.'
+          : 'Set an active ZION wallet first.';
+      }
+      return;
+    }
+    if (qtcEls.status) qtcEls.status.textContent = 'loading…';
+    try {
+      const bal = await window.electronAPI.quantusGetBalance(activeQtcAddress);
+      if (bal?.success) {
+        if (qtcEls.balance) qtcEls.balance.textContent = bal.freeQtc;
+        if (qtcEls.status) qtcEls.status.textContent = `Planck mainnet · nonce ${bal.nonce}`;
+      } else {
+        if (qtcEls.balance) qtcEls.balance.textContent = '—';
+        if (qtcEls.status) qtcEls.status.textContent = 'QTC RPC unreachable — balance unavailable';
+      }
+    } catch {
+      if (qtcEls.balance) qtcEls.balance.textContent = '—';
+      if (qtcEls.status) qtcEls.status.textContent = 'QTC balance fetch error';
+    }
+  };
+
+  qtcEls.refreshBtn?.addEventListener('click', refreshQtcCard);
+
+  qtcEls.copyBtn?.addEventListener('click', () => {
+    if (activeQtcAddress) {
+      navigator.clipboard?.writeText(activeQtcAddress);
+      if (qtcEls.status) qtcEls.status.textContent = 'QTC address copied.';
+    }
+  });
+
+  qtcEls.linkBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      if (qtcEls.status) qtcEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    let raw = (qtcEls.linkInput?.value || '').trim();
+    raw = raw.replace(/^(qtc:|qtu:)/i, '');
+    const check = await window.electronAPI.validateQuantusAddress(raw);
+    if (!check?.valid) {
+      if (qtcEls.status) qtcEls.status.textContent = 'Invalid SS58-189 (qz…) address.';
+      return;
+    }
+    const res = await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: raw });
+    if (qtcEls.status) {
+      qtcEls.status.textContent = res?.success
+        ? 'QTC address linked.'
+        : `Link failed: ${res?.error || 'wallet not found'}`;
+    }
+    if (res?.success) refreshQtcCard();
+  });
+
+  qtcEls.generateBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      if (qtcEls.status) qtcEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    const res = await window.electronAPI.generateQuantusWallet();
+    if (!res?.success) {
+      if (qtcEls.status) qtcEls.status.textContent = `QTC generation failed: ${res?.error || 'helper unavailable'}`;
+      return;
+    }
+    const w = res.wallet;
+    if (qtcEls.mnemonicOut) qtcEls.mnemonicOut.value = w.mnemonic;
+    if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
+    await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: w.address });
+    addLogEntry(`QTC wallet generated: ${w.address}`, 'info');
+    refreshQtcCard();
+    if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
+  });
+
+  // Kick once at init and whenever the balance card refreshes.
+  refreshQtcCard();
+  document.querySelector('.section-tab[data-section="wallet-overview"]')
+    ?.addEventListener('click', () => setTimeout(refreshQtcCard, 80));
+
   generateQrBtn?.addEventListener('click', async () => {
     const address = getActiveAddress();
     if (receiveQrStatusEl) receiveQrStatusEl.textContent = 'Generating...';
