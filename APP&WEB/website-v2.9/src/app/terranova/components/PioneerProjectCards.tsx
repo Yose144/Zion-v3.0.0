@@ -26,6 +26,9 @@ import {
   Sailboat,
   Sunrise,
   Flame,
+  Pyramid,
+  ScrollText,
+  BookOpen,
   LucideIcon,
 } from 'lucide-react';
 
@@ -312,6 +315,29 @@ const PROJECTS: ProjectCardData[] = [
       { value: '6 638 m', labelCs: 'Gang Rinpoche', labelEn: 'Gang Rinpoche' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'TAR', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/amenti',
+    title: 'Amenti',
+    location: 'Gíza · Egypt',
+    eyebrow: 'L5 · Remembrance',
+    statusCs: 'Vize',
+    statusEn: 'Vision',
+    descriptionCs:
+      'Dvanáctý a poslední bod L5 Free World — kolébka záznamu na plateu Gízy: poslední dochovaný div antického světa a v mýtické geografii sítě Síně Amenti, kde 32 Dětí Světla hlídá Kvetoucí Plamen. Uzel jako vztah, ne stavba.',
+    descriptionEn:
+      'The twelfth and final point of L5 Free World — the cradle of the record on the Giza plateau: the last surviving Wonder of the ancient world and, in the network’s mythic geography, the Halls of Amenti where the 32 Children of Light keep the Flower of Light. A node as a relationship, not a construction.',
+    features: [
+      { icon: Pyramid, labelCs: 'Poslední div světa', labelEn: 'The last Wonder' },
+      { icon: ScrollText, labelCs: 'Thovt — Merkle písař', labelEn: 'Thoth — Merkle scribe' },
+      { icon: Flame, labelCs: 'Kvetoucí Plamen', labelEn: 'Flower of Light' },
+      { icon: BookOpen, labelCs: 'Amenti Library', labelEn: 'Amenti Library' },
+    ],
+    metrics: [
+      { value: '~4 500 let', labelCs: 'Záznam v kameni', labelEn: 'Record in stone' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'EG', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];

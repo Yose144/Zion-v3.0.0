@@ -345,6 +345,17 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     lat: 31.07,
     lon: 81.31,
   },
+  {
+    id: 'amenti',
+    name: 'Amenti',
+    location: 'Gíza · Egypt',
+    color: '#34d399',
+    rgb: '52, 211, 153',
+    descCs: 'Dvanáctý a poslední bod — síně záznamu na plateu Gízy: poslední div antického světa, 32 Dětí Světla u Kvetoucího Plamene, Sedm Pánů = sedm ctností v L3.',
+    descEn: 'The twelfth and final node — the halls of records on the Giza plateau: the last Wonder of the ancient world, the 32 Children of Light around the Flower of Light, Seven Lords = seven virtues in L3.',
+    lat: 29.98,
+    lon: 31.13,
+  },
 ];
 
 function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {
@@ -356,8 +367,8 @@ function latLonToVec3(lat: number, lon: number, r: number): [number, number, num
   return [x, y, z];
 }
 
-/** Pioneer project surface markers as two instanced draws — 11 markers
- *  × (dot + glow halo) collapse from ~22 draw calls to 2. Labels stay DOM. */
+/** Pioneer project surface markers as two instanced draws — 12 markers
+ *  × (dot + glow halo) collapse from ~24 draw calls to 2. Labels stay DOM. */
 function InstancedMarkers({ radius }: { radius: number }) {
   const dotsRef = useRef<THREE.InstancedMesh>(null);
   const halosRef = useRef<THREE.InstancedMesh>(null);

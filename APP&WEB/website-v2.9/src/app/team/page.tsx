@@ -7,7 +7,7 @@ import {
   Sprout, Flame, Waves, Wind, Sparkles, Layers,
   GitBranch, Heart, BookOpen, Compass, Globe2, UserPlus,
   Rocket, Cpu, Network, Brain, Code2, Server, TestTube2, FileText,
-  Mountain, Sailboat, Sunrise, Sun,
+  Mountain, Sailboat, Sunrise, Sun, Pyramid,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -266,6 +266,16 @@ const L5_LEADS = [
     accent: '165, 180, 252',
     text: 'text-indigo-300',
     href: '/terranova/kailash',
+  },
+  {
+    key: 'amenti',
+    name: 'Amenti',
+    element: { cs: 'Záznam · Vzpomínka', en: 'Record · Remembrance' },
+    location: { cs: 'Gíza, Egypt', en: 'Giza, Egypt' },
+    icon: Pyramid,
+    accent: '52, 211, 153',
+    text: 'text-emerald-300',
+    href: '/terranova/amenti',
   },
   {
     key: 'issobella',

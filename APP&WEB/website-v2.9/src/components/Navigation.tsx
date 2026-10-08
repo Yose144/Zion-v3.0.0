@@ -88,6 +88,7 @@ export default function Navigation() {
             { href: '/terranova/boa-esperanca', label: tr('nav', 'terra_boa_esperanca', lang) },
             { href: '/terranova/ekam', label: tr('nav', 'terra_ekam', lang) },
             { href: '/terranova/kailash', label: tr('nav', 'terra_kailash', lang) },
+            { href: '/terranova/amenti', label: tr('nav', 'terra_amenti', lang) },
           ],
         },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },

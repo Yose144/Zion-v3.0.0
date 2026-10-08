@@ -2,9 +2,10 @@
  * The L5 Free World community sites — shared between the planetary
  * map and the community/registry sections. Six founding communities
  * carry a funded 500M allocation; María del Camino (the vessel node)
- * carries a 300M founding reserve; Uluru + Boa Esperança + Kailash stay
- * vision-stage with no committed allocation — and Ekam is the only
- * node already built (2008), held as a relationship, not a project.
+ * carries a 300M founding reserve; Uluru + Boa Esperança + Kailash +
+ * Amenti stay vision-stage with no committed allocation — and Ekam is
+ * the only node already built (2008), held as a relationship, not a
+ * project. Amenti (Giza) is the twelfth and final node.
  */
 
 export type FreeWorldSiteStatus = 'development' | 'preparation' | 'vision' | 'built';
@@ -134,6 +135,20 @@ export const FREE_WORLD_SITES: FreeWorldSite[] = [
     lon: 81.31,
     status: 'vision',
     href: '/terranova/kailash',
+    allocationZion: 0,
+  },
+  {
+    // The Giza plateau — the last surviving Wonder of the ancient world
+    // (~4,500 yrs of record) and, in the network's mythic geography, the
+    // Halls of Amenti: the hall of records beneath the sand. The twelfth
+    // and final node — a vision/relationship node like Uluru and Boa:
+    // no parcel, no construction, custodians lead.
+    key: 'amenti',
+    name: 'Amenti · Giza',
+    lat: 29.98,
+    lon: 31.13,
+    status: 'vision',
+    href: '/terranova/amenti',
     allocationZion: 0,
   },
 ];

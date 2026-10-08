@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun, Flame } from 'lucide-react';
+import { Sprout, Landmark, Crown, Flower2, ArrowUpRight, Scale, TreePalm, Feather, Mountain, Sailboat, Sunrise, Sun, Flame, Pyramid } from 'lucide-react';
 
 const VISIONS = [
   {
@@ -100,6 +100,14 @@ const VISIONS = [
     desc: 'Poušť očištění u nezlané hory — kora místo vrcholu, prastarý oheň a scháziště mistrů Šambhaly.',
     rc: '165, 180, 252', // indigo ice — snow & fire
     accent: 'text-indigo-300',
+  },
+  {
+    href: '/terranova/amenti',
+    icon: Pyramid,
+    label: 'Amenti',
+    desc: 'Síně záznamu na plateu Gízy — poslední div antického světa a smaragdový záznam, který přežije dobu. Dvanáctý a poslední bod.',
+    rc: '52, 211, 153', // emerald — the Emerald Tablets
+    accent: 'text-emerald-300',
   },
 ];
 
