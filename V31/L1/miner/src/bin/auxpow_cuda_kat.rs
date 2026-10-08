@@ -185,13 +185,37 @@ mod imp {
                 algo: "verushash",
                 header: vec![0x88u8; 32],
                 height: 0,
-                // The CUDA verus_mine kernel emits only a 32-bit compare word
-                // (output_hash[28..32]); it cannot be byte-compared to the
-                // full 32-byte CPU reference — needs a full-hash kernel path.
-                verify: |_ctx, _nonce, _hash, _mix| {
-                    anyhow::bail!(
-                        "SKIP verushash CUDA kernel emits partial 32-bit result"
-                    )
+                // Full-hash kernel path: nonceSpace15 = 11B template + u32
+                // nonce at offset 11 — verify vs native hash_with_nonce.
+                verify: |ctx, nonce, hash, _mix| {
+                    #[cfg(feature = "native-verushash")]
+                    {
+                        let mut header_padded = [0u8; 64];
+                        let len = ctx.header.len().min(64);
+                        header_padded[..len].copy_from_slice(&ctx.header[..len]);
+                        let intermediate =
+                            zion_native_ffi::verushash::hash_half(&header_padded);
+                        zion_native_ffi::verushash::prepare_key(&intermediate);
+                        let mut ns = [0u8; 15];
+                        ns[11..15].copy_from_slice(&(nonce as u32).to_le_bytes());
+                        let expect = zion_native_ffi::verushash::hash_with_nonce(
+                            &intermediate,
+                            &ns,
+                        );
+                        if *hash != expect {
+                            anyhow::bail!(
+                                "verushash mismatch nonce={nonce}: gpu={} cpu={}",
+                                hex::encode(&hash[..8]),
+                                hex::encode(&expect[..8])
+                            );
+                        }
+                        Ok(())
+                    }
+                    #[cfg(not(feature = "native-verushash"))]
+                    {
+                        let _ = (ctx, nonce, hash);
+                        anyhow::bail!("SKIP verushash needs native-verushash")
+                    }
                 },
             },
             Case {

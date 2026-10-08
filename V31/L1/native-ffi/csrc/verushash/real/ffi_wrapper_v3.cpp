@@ -325,6 +325,12 @@ void verushash_hash_with_nonce(
     acc = _mm_xor_si128(Q3, Q4);
     uint64_t intermediate = _mm_cvtsi128_si64(acc);
 
+    if (getenv("ZION_VERUS_DEBUG")) {
+        fprintf(stderr, "CPUIM ns=%02x%02x%02x%02x im=%016lx\n",
+            nonceSpace15[11], nonceSpace15[12], nonceSpace15[13], nonceSpace15[14],
+            (unsigned long)intermediate);
+    }
+
     /* FillExtra with CLHash result */
     __m128i intVec = _mm_loadl_epi64((const __m128i*)&intermediate);
     __m128i fill2 = _mm_shuffle_epi8(intVec, tl_shuf2);
