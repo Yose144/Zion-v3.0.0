@@ -126,6 +126,30 @@ Nový adaptér `chain/adapters/quantus.rs` implementující `ChainAdapter`:
 - [ ] **PENDING:** Heisenberg send test (`QUANTUS_LIVE=1` + faucet HEI) —
       `author_submitExtrinsic` acceptance end-to-end.
 - [ ] **PENDING:** `transfer_all`/`batch` decode (jiné legální deposit cesty).
+- [x] **2026-10-08 MAINNET SIGNING — ROOT-CAUSE OPRAVENO (2 bugy):**
+      Live `--qtc-send` proti mainnetu padal `1010 bad signature`. Wire-level
+      rekonstrukce skutečné mainnet transfer extrinsice (blok 11042, sqm
+      indexer → raw bytes z vlastního nodu) + offline ML-DSA verify izolovalo
+      přesnou příčinu:
+      1. **`QUANTUS_EXTRINSIC` ctx** — Quantus doménově odděluje extrinsic
+         podpisy FIPS-204 kontextem `b"QUANTUS_EXTRINSIC"`
+         (`primitives/dilithium-crypto/src/signing_context.rs` v chain repu;
+         jejich `Pair::sign` = `sign_with_context`). Sign bez ctx = runtime
+         reject. Náš `QuantusKeypair::sign` nově předává `Some(QUANTUS_EXTRINSIC_CTX)`.
+      2. **Era anchor na finalized head** — Quantus mainnet má finality lag
+         ~105 bloků > era period 64 → `era.birth(current)` při validaci doběhne
+         za anchor → checkpoint hash mismatch. `signing_context` nově anchuruje
+         na **best head** (`chain_getHeader` + `chain_getBlockHash`), validity
+         okno 64 bloků dopředu.
+      **Důkaz:** reálný podpis z bloku 11042 verifikuje offline nad námi
+      rekonstruovaným payloadem (call‖extra‖spec‖txv‖genesis‖checkpoint‖opt)
+      s ctx=QUANTUS_EXTRINSIC → `VERIFY=true`; náš self-built extrinsic test
+      `extrinsic_sig_self_verifies` interně konzistentní; live `--qtc-send`
+      nově hlásí `Inability to pay some fees` (= podpis VALIDNÍ, selhává až
+      platba poplatku na nefunded účtu). **Zbývá: první funded mainnet submit.**
+      Pozn.: payload formát (extra=era‖nonce‖tip‖mode, additional=spec‖txv‖
+      genesis‖checkpoint‖Option, mortal_era quantize=period>>12) byl celou
+      dobu správně — spec 152 vs 153 metadata identická (12 extensions).
 
 ### F2 — Keyring + multichain wallet QTC support 🚧 ZÁKLAD HOTOV
 
