@@ -1,7 +1,14 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import { createChallenge, verifyEd25519, verifySiwe } from '../lib/challenge.js';
+import {
+  createChallenge,
+  verifyEd25519,
+  verifySiwe,
+  verifySolana,
+  verifyBitcoin,
+  verifyQuantusAttestation,
+} from '../lib/challenge.js';
 import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
 import { issueSessionForUser } from '../lib/session-issue.js';
@@ -10,7 +17,9 @@ import { createHash } from 'node:crypto';
 
 const ChallengeSchema = z.object({
   address: z.string().min(8),
-  chainType: z.enum(['zion-l1', 'evm', 'bitcoin']).default('zion-l1'),
+  chainType: z
+    .enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus'])
+    .default('zion-l1'),
 });
 
 const VerifyEd25519Schema = z.object({
@@ -39,13 +48,17 @@ const UpdateProfileSchema = z.object({
 
 const LinkAddressSchema = z.object({
   address: z.string().min(8),
-  chainType: z.enum(['zion-l1', 'evm', 'bitcoin']),
+  chainType: z.enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus']),
   chainId: z.string().optional(),
   // Ed25519 linking
   publicKey: z.string().optional(),
   signature: z.string().min(1),
   // SIWE linking
   message: z.string().optional(),
+  // Quantus attestation: the challenge is issued for this ZION address and
+  // the signature binds `challenge + "\nquantus:" + address`.
+  zionAddress: z.string().optional(),
+  zionPublicKey: z.string().optional(),
 });
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
@@ -344,7 +357,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
     }
-    const { address: rawAddress, chainType, chainId, publicKey, signature, message } = parsed.data;
+    const {
+      address: rawAddress,
+      chainType,
+      chainId,
+      publicKey,
+      signature,
+      message,
+      zionAddress,
+      zionPublicKey,
+    } = parsed.data;
     // Normalize EVM addresses to lowercase for storage/lookup consistency.
     const address = chainType === 'evm' ? rawAddress.toLowerCase() : rawAddress;
     const payload = req.user as { sub: string };
@@ -361,15 +383,24 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       }
       ok = await verifySiwe(address, signature, message);
     } else if (chainType === 'bitcoin') {
-      // Bitcoin address linking requires BIP-322 signature verification,
-      // which is not implemented yet. Previously any non-empty signature was
-      // accepted — that let anyone link an arbitrary BTC address to their
-      // account, so the endpoint now fails closed until real verification
-      // lands (tracked for the WARP/bridge phase).
-      return reply.code(501).send({
-        error: 'NOT_IMPLEMENTED',
-        message: 'Bitcoin address linking is not available yet (BIP-322 verification pending)',
-      });
+      // Custom proof-of-key: recoverable ECDSA over
+      // sha256("ZION-BTC-LINK-V1"‖0x00‖challenge); server recomputes the
+      // P2WPKH address from the recovered pubkey.
+      ok = await verifyBitcoin(address, signature);
+    } else if (chainType === 'solana') {
+      // Solana address = base58(ed25519 pubkey) — the signature verifies
+      // against the address itself.
+      ok = await verifySolana(address, signature);
+    } else if (chainType === 'quantus') {
+      // ML-DSA-87 has no JS implementation — the client attests with the
+      // ZION key derived from the same mnemonic.
+      if (!zionAddress || !zionPublicKey) {
+        return reply.code(400).send({
+          error: 'BAD_REQUEST',
+          message: 'zionAddress and zionPublicKey are required for quantus',
+        });
+      }
+      ok = await verifyQuantusAttestation(zionAddress, zionPublicKey, signature, address);
     } else {
       return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Unsupported chainType' });
     }

@@ -35,6 +35,7 @@ const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
 const QuantusWallet = require('./quantus-wallet');
+const NativeWallet = require('./native-wallet');
 const UtxoBuilder = require('./utxo-builder');
 const AccountBuilder = require('./account-builder');
 const QRCode = require('qrcode');
@@ -4360,12 +4361,14 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
       : null;
 
-    // Quantus (QTC) address derived from the same mnemonic — deterministic,
-    // identical to the ZIS custodial derivation. Best-effort: helper may be
-    // absent in dev environments, wallet still works without it.
-    const qtcAddress = wallet.mnemonic
-      ? QuantusWallet.deriveQuantusAddress(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
+    // Native multichain addresses derived from the same mnemonic (best-effort —
+    // helper may be absent; wallet saves fine without them). Only public
+    // addresses are persisted — private keys stay in the encrypted mnemonic.
+    const nativeBundle = wallet.mnemonic
+      ? NativeWallet.deriveNativeBundle(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
       : null;
+    const nativeAddresses = nativeAddressMap(nativeBundle);
+    const qtcAddress = nativeAddresses?.quantus || null;
 
     const walletData = {
       version: '2.9.6',
@@ -4373,6 +4376,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       address: wallet.address,
       publicKey: wallet.publicKey,
       qtcAddress,
+      nativeAddresses,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: wallet.createdAt,
@@ -4395,7 +4399,8 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
         address: wallet.address,
         mnemonic: wallet.mnemonic,
         publicKey: wallet.publicKey,
-        qtcAddress
+        qtcAddress,
+        nativeAddresses
       },
       config
     };
@@ -5193,11 +5198,13 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
       ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
       : null;
     
-    // Quantus (QTC) address derived from the same mnemonic (best-effort —
-    // helper may be absent; wallet saves fine without it).
-    const qtcAddress = wallet.mnemonic
-      ? QuantusWallet.deriveQuantusAddress(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
+    // Native multichain addresses derived from the same mnemonic (best-effort —
+    // helper may be absent; wallet saves fine without them). Addresses only.
+    const nativeBundle = wallet.mnemonic
+      ? NativeWallet.deriveNativeBundle(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
       : null;
+    const nativeAddresses = nativeAddressMap(nativeBundle);
+    const qtcAddress = nativeAddresses?.quantus || null;
 
     // Wallet data to save
     const walletData = {
@@ -5206,6 +5213,7 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
       address: wallet.address,
       publicKey: wallet.publicKey,
       qtcAddress,
+      nativeAddresses,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: wallet.createdAt,
@@ -5241,6 +5249,7 @@ ipcMain.handle('list-wallets', () => {
           name: data.name,
           address: data.address,
           qtcAddress: data.qtcAddress || null,
+          nativeAddresses: data.nativeAddresses || null,
           createdAt: data.createdAt,
           lastUsed: data.lastUsed
         });
@@ -5289,20 +5298,29 @@ ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
   try {
     // Recover wallet from mnemonic
     const wallet = WalletGenerator.recoverWallet(mnemonic.trim());
-    
+
     // Encrypt private key
     const encrypted = WalletGenerator.encryptPrivateKey(wallet.privateKey, password);
     // Encrypt mnemonic with the same password (never store plaintext)
     const encryptedMnemonic = wallet.mnemonic
       ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
       : null;
-    
+
+    // Native multichain addresses (best-effort; addresses only)
+    const nativeBundle = wallet.mnemonic
+      ? NativeWallet.deriveNativeBundle(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
+      : null;
+    const nativeAddresses = nativeAddressMap(nativeBundle);
+    const qtcAddress = nativeAddresses?.quantus || null;
+
     // Wallet data to save
     const walletData = {
       version: '2.9.6',
       name: name || 'Imported Wallet',
       address: wallet.address,
       publicKey: wallet.publicKey,
+      qtcAddress,
+      nativeAddresses,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: wallet.recoveredAt,
@@ -5452,6 +5470,162 @@ ipcMain.handle('quantus-get-balance', async (event, address) => {
   const free = bal.free.toString();
   const qtc = (Number(bal.free) / 1e12).toFixed(6);
   return { success: true, address, free, freeQtc: qtc, nonce: bal.nonce };
+});
+
+// ── Native multichain wallet IPC ────────────────────────────────────────────
+// One ZION mnemonic → native addresses/keys on all supported chains.
+// Derivation happens in the bundled Rust helper (`zion-derive-addr`, mnemonic
+// via stdin). Only public addresses are persisted in the wallet file —
+// private material never touches disk unencrypted.
+
+function nativeAddressMap(bundle) {
+  if (!bundle) return null;
+  const pick = (c) => (c && c.address) || null;
+  return {
+    zion: pick(bundle.zion),
+    evm: pick(bundle.evm),
+    bitcoin: pick(bundle.bitcoin),
+    solana: pick(bundle.solana),
+    quantus: pick(bundle.quantus),
+  };
+}
+
+function _nativeLoadWalletData(zionAddress) {
+  const files = fs.readdirSync(WALLETS_PATH).filter((f) => f.endsWith('.json'));
+  for (const f of files) {
+    try {
+      const data = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'));
+      if (data?.address === zionAddress) return { file: f, data };
+    } catch { /* skip invalid */ }
+  }
+  return null;
+}
+
+// Decrypt the mnemonic of a saved wallet. Throws on wrong password.
+function _nativeMnemonic(zionAddress, password) {
+  const found = _nativeLoadWalletData(zionAddress);
+  if (!found) throw new Error('wallet not found');
+  const { data } = found;
+  // Validate the password against the private key first (every wallet has it).
+  try {
+    WalletGenerator.decryptPrivateKey(data.encryptedPrivateKey, password);
+  } catch {
+    throw new Error('wrong wallet password');
+  }
+  if (!data.encryptedMnemonic) throw new Error('wallet has no mnemonic (key-only import)');
+  try {
+    return WalletGenerator.decryptPrivateKey(data.encryptedMnemonic, password);
+  } catch {
+    throw new Error('mnemonic decrypt failed');
+  }
+}
+
+// Derive (or re-derive) the native multichain address map for a wallet and
+// persist it back into the wallet file. Requires the wallet password.
+ipcMain.handle('native-derive-addresses', (event, { zionAddress, password }) => {
+  try {
+    const mnemonic = _nativeMnemonic(zionAddress, password);
+    const bundle = NativeWallet.deriveNativeBundle(mnemonic, APP_ROOT, IS_PACKAGED);
+    const map = nativeAddressMap(bundle);
+    if (!map) return { success: false, error: 'derivation helper unavailable' };
+    const found = _nativeLoadWalletData(zionAddress);
+    if (found) {
+      found.data.nativeAddresses = map;
+      if (map.quantus && !found.data.qtcAddress) found.data.qtcAddress = map.quantus;
+      fs.writeFileSync(path.join(WALLETS_PATH, found.file), JSON.stringify(found.data, null, 2));
+    }
+    return { success: true, nativeAddresses: map };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Balances for all chains — address-only, no password needed.
+ipcMain.handle('native-balances', async (event, { nativeAddresses }) => {
+  try {
+    const map = nativeAddresses || {};
+    const bundle = {
+      zion: map.zion ? { address: map.zion } : null,
+      evm: map.evm ? { address: map.evm } : null,
+      bitcoin: map.bitcoin ? { address: map.bitcoin } : null,
+      solana: map.solana ? { address: map.solana } : null,
+      quantus: map.quantus ? { address: map.quantus } : null,
+    };
+    // ZION balance via the existing public wallet snapshot fetcher.
+    const zionFetcher = async (addr) => {
+      const snap = await fetchWalletSnapshotPublic(addr);
+      return snap?.balance ?? null;
+    };
+    const balances = await NativeWallet.fetchNativeBalances(bundle, zionFetcher).catch(() => ({}));
+    return { success: true, balances };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Send on a foreign chain. Amount is in human units (ETH/BTC/SOL/QTC).
+ipcMain.handle('native-send', async (event, { chain, zionAddress, to, amount, password }) => {
+  try {
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) return { success: false, error: 'invalid amount' };
+    const mnemonic = _nativeMnemonic(zionAddress, password);
+    const bundle = NativeWallet.deriveNativeBundle(mnemonic, APP_ROOT, IS_PACKAGED);
+    if (!bundle) return { success: false, error: 'derivation helper unavailable' };
+
+    const UNIT = { evm: 'ETH', bitcoin: 'BTC', solana: 'SOL', quantus: 'QTC' };
+    const unit = UNIT[chain];
+    if (!unit) return { success: false, error: `unsupported chain: ${chain}` };
+
+    const confirm = await dialog.showMessageBox(mainWindow || undefined, {
+      type: 'warning',
+      title: `Confirm ${chain} send`,
+      message: `Send ${amt} ${unit}?`,
+      detail: `Chain: ${chain}\nFrom: ${bundle[chain].address}\nTo: ${to}\n\nThis action cannot be undone.`,
+      buttons: ['Send', 'Cancel'],
+      defaultId: 1,
+      cancelId: 1,
+    });
+    if (confirm.response !== 0) return { success: false, error: 'cancelled' };
+
+    const { ethers } = require('ethers');
+    let result;
+    if (chain === 'evm') {
+      result = await NativeWallet.sendEvm(
+        bundle.evm.privateKey, to, ethers.utils.parseEther(String(amt)).toString());
+    } else if (chain === 'bitcoin') {
+      const sats = Math.round(amt * 1e8);
+      result = await NativeWallet.sendBitcoin(
+        bundle.bitcoin.privateKey, bundle.bitcoin.address, to, sats);
+    } else if (chain === 'solana') {
+      const lamports = Math.round(amt * 1e9);
+      result = await NativeWallet.sendSolana(
+        bundle.solana.secretKey, bundle.solana.address, to, lamports);
+    } else if (chain === 'quantus') {
+      const planks = BigInt(Math.round(amt * 1e6)) * 1000000n;
+      result = await NativeWallet.sendQuantus(mnemonic, to, planks, APP_ROOT, IS_PACKAGED);
+    }
+    return { success: !!result?.ok, txHash: result?.txHash, error: result?.error };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Link all derived native addresses to the signed-in ZIS account.
+ipcMain.handle('native-link-zis', async (event, { zionAddress, password }) => {
+  try {
+    if (!zisClient.isLoggedIn()) return { success: false, error: 'not signed in to ZIS' };
+    const mnemonic = _nativeMnemonic(zionAddress, password);
+    const bundle = NativeWallet.deriveNativeBundle(mnemonic, APP_ROOT, IS_PACKAGED);
+    if (!bundle) return { success: false, error: 'derivation helper unavailable' };
+    const zis = {
+      challenge: (addr, chainType) => zisClient.challenge(addr, chainType),
+      linkAddress: (payload) => zisClient.linkAddress(payload),
+    };
+    const results = await NativeWallet.linkAllToZis(bundle, mnemonic, zis, APP_ROOT, IS_PACKAGED);
+    return { success: true, results };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 /**

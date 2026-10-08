@@ -228,6 +228,7 @@ fn derive_bundle(mnemonic: &str) -> Result<String, String> {
         "bitcoin": {
             "chain": "bitcoin",
             "address": btc_addr.encoded,
+            "privateKey": hex::encode(btc_priv.inner.secret_bytes()),
             "privateKeyWif": btc_priv.to_wif(),
             "path": "m/84'/0'/0'/0/0",
             "standard": "bip84 p2wpkh",

@@ -35,7 +35,7 @@ blake2 = "0.10"
 blake3 = "1"
 bs58 = "0.5"
 bip39 = "2.0"
-bitcoin = { version = "0.31", default-features = false, features = ["std"] }
+bitcoin = { version = "0.31", default-features = false, features = ["std", "secp-recovery"] }
 aes = "=0.9.1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }

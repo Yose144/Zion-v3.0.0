@@ -48,6 +48,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quantusGetBalance: (address) => ipcRenderer.invoke('quantus-get-balance', address),
   walletSetQtc: (data) => ipcRenderer.invoke('wallet-set-qtc', data),
 
+  // Native multichain wallet (derived from the ZION mnemonic, non-custodial)
+  nativeDeriveAddresses: (data) => ipcRenderer.invoke('native-derive-addresses', data),
+  nativeGetBalances: (data) => ipcRenderer.invoke('native-balances', data),
+  nativeSend: (data) => ipcRenderer.invoke('native-send', data),
+  nativeLinkZis: (data) => ipcRenderer.invoke('native-link-zis', data),
+
   // Wallet RPC
   walletGetBalance: (data) => ipcRenderer.invoke('wallet-get-balance', data),
   walletSendTransaction: (data) => ipcRenderer.invoke('wallet-send-transaction', data),

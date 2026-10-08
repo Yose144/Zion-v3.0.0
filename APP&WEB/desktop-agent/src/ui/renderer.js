@@ -3335,6 +3335,165 @@ function setupWalletControls() {
   document.querySelector('.section-tab[data-section="wallet-overview"]')
     ?.addEventListener('click', () => setTimeout(refreshQtcCard, 80));
 
+  // ── Native multichain card — non-custodial addresses from the ZION phrase ──
+  const nativeEls = {
+    card: document.getElementById('native-wallet-card'),
+    rows: document.getElementById('native-rows'),
+    status: document.getElementById('native-status'),
+    deriveBtn: document.getElementById('native-derive-btn'),
+    refreshBtn: document.getElementById('native-refresh-btn'),
+    linkBtn: document.getElementById('native-link-btn'),
+    sendForm: document.getElementById('native-send-form'),
+    sendChain: document.getElementById('native-send-chain'),
+    sendTo: document.getElementById('native-send-to'),
+    sendAmount: document.getElementById('native-send-amount'),
+    sendPassword: document.getElementById('native-send-password'),
+    sendBtn: document.getElementById('native-send-btn'),
+  };
+  let nativeMap = null;       // {zion, evm, bitcoin, solana, quantus} — addresses only
+  let nativeBalances = {};
+
+  const NATIVE_CHAINS = [
+    { key: 'zion',    label: 'ZION',  unit: 'ZION' },
+    { key: 'evm',     label: 'EVM',   unit: 'ETH', fmt: (b) => (b.wei ? (Number(b.wei) / 1e18).toFixed(6) : null) },
+    { key: 'bitcoin', label: 'BTC',   unit: 'BTC', fmt: (b) => (b.sats != null ? (Number(b.sats) / 1e8).toFixed(8) : null) },
+    { key: 'solana',  label: 'SOL',   unit: 'SOL', fmt: (b) => (b.lamports != null ? (Number(b.lamports) / 1e9).toFixed(6) : null) },
+    { key: 'quantus', label: 'QTC',   unit: 'QTC', fmt: (b) => (b.planks != null ? (Number(b.planks) / 1e12).toFixed(6) : null) },
+  ];
+
+  const shortAddr = (a) => (a && a.length > 24 ? `${a.slice(0, 12)}…${a.slice(-8)}` : a || '—');
+
+  const nativeFor = async (zionAddr) => {
+    try {
+      const res = await window.electronAPI.listWallets();
+      const w = (res?.wallets || []).find((x) => x.address === zionAddr);
+      return w?.nativeAddresses || null;
+    } catch { return null; }
+  };
+
+  const renderNativeRows = () => {
+    if (!nativeEls.rows) return;
+    if (!nativeMap) {
+      nativeEls.rows.innerHTML = '<div class="status-note" style="margin:6px 0">Not derived yet — press Derive (needs wallet password).</div>';
+      return;
+    }
+    nativeEls.rows.innerHTML = NATIVE_CHAINS.map(({ key, label, unit, fmt }) => {
+      const addr = nativeMap[key];
+      if (!addr) return '';
+      const bal = nativeBalances[key];
+      const balText = fmt && bal ? fmt(bal) : (bal?.balance != null ? String(bal.balance) : null);
+      return `<div class="wallet-meta-row" style="align-items:center">
+        <span class="wallet-kicker" style="width:52px;display:inline-block">${label}</span>
+        <span class="wallet-meta-value" title="${addr}" style="flex:1;font-size:11px">${shortAddr(addr)}</span>
+        <span class="wallet-meta-value" style="min-width:80px;text-align:right">${balText ?? '—'}</span>
+        <button class="btn btn-ghost btn-sm native-copy" data-addr="${addr}">⧉</button>
+        ${key === 'zion' ? '' : `<button class="btn btn-ghost btn-sm native-send-row" data-chain="${key}">➤</button>`}
+      </div>`;
+    }).join('');
+    nativeEls.rows.querySelectorAll('.native-copy').forEach((b) =>
+      b.addEventListener('click', () => {
+        navigator.clipboard?.writeText(b.dataset.addr);
+        if (nativeEls.status) nativeEls.status.textContent = 'Address copied.';
+      }));
+    nativeEls.rows.querySelectorAll('.native-send-row').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (nativeEls.sendChain) nativeEls.sendChain.value = b.dataset.chain;
+        if (nativeEls.sendForm) nativeEls.sendForm.style.display = '';
+        nativeEls.sendTo?.focus();
+      }));
+  };
+
+  const refreshNativeCard = async () => {
+    if (!nativeEls.card) return;
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      nativeMap = null;
+      renderNativeRows();
+      if (nativeEls.status) nativeEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    nativeMap = await nativeFor(zionAddr);
+    renderNativeRows();
+    if (!nativeMap) {
+      if (nativeEls.status) nativeEls.status.textContent = 'Press Derive to generate multichain addresses from your ZION phrase.';
+      return;
+    }
+    try {
+      const res = await window.electronAPI.nativeGetBalances({ nativeAddresses: nativeMap });
+      nativeBalances = res?.success ? (res.balances || {}) : {};
+      renderNativeRows();
+      if (nativeEls.status) nativeEls.status.textContent = `Native chains: ${Object.keys(nativeMap).filter(k => nativeMap[k]).length}/5 · ${new Date().toLocaleTimeString()}`;
+    } catch {
+      if (nativeEls.status) nativeEls.status.textContent = 'Balance fetch failed';
+    }
+  };
+
+  nativeEls.refreshBtn?.addEventListener('click', refreshNativeCard);
+
+  nativeEls.deriveBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    const password = nativeEls.sendPassword?.value || '';
+    if (!zionAddr) { nativeEls.status.textContent = 'Set an active ZION wallet first.'; return; }
+    if (!password) {
+      nativeEls.status.textContent = 'Enter wallet password in the send form below, then Derive.';
+      if (nativeEls.sendForm) nativeEls.sendForm.style.display = '';
+      return;
+    }
+    nativeEls.status.textContent = 'Deriving…';
+    const res = await window.electronAPI.nativeDeriveAddresses({ zionAddress: zionAddr, password });
+    if (res?.success) {
+      nativeMap = res.nativeAddresses;
+      renderNativeRows();
+      nativeEls.status.textContent = 'Derived — addresses stored with the wallet.';
+      refreshNativeCard();
+    } else {
+      nativeEls.status.textContent = `Derive failed: ${res?.error}`;
+    }
+  });
+
+  nativeEls.linkBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    const password = nativeEls.sendPassword?.value || '';
+    if (!zionAddr || !password) {
+      nativeEls.status.textContent = 'Active wallet + password required (send form below).';
+      if (nativeEls.sendForm) nativeEls.sendForm.style.display = '';
+      return;
+    }
+    nativeEls.status.textContent = 'Linking to ZIS…';
+    const res = await window.electronAPI.nativeLinkZis({ zionAddress: zionAddr, password });
+    if (!res?.success) {
+      nativeEls.status.textContent = `Link failed: ${res?.error}`;
+      return;
+    }
+    const parts = Object.entries(res.results || {})
+      .map(([c, r]) => `${c}:${r?.ok ? 'ok' : r?.conflict ? 'conflict' : 'fail'}`);
+    nativeEls.status.textContent = `ZIS link → ${parts.join(' · ')}`;
+  });
+
+  nativeEls.sendBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    const chain = nativeEls.sendChain?.value;
+    const to = (nativeEls.sendTo?.value || '').trim();
+    const amount = (nativeEls.sendAmount?.value || '').trim();
+    const password = nativeEls.sendPassword?.value || '';
+    if (!zionAddr || !to || !amount || !password) {
+      nativeEls.status.textContent = 'Fill recipient, amount and password.';
+      return;
+    }
+    nativeEls.status.textContent = `Sending ${chain}…`;
+    const res = await window.electronAPI.nativeSend({
+      chain, zionAddress: zionAddr, to, amount, password,
+    });
+    nativeEls.status.textContent = res?.success
+      ? `Sent — tx ${res.txHash}`
+      : `Send failed: ${res?.error}`;
+    if (res?.success) refreshNativeCard();
+  });
+
+  refreshNativeCard();
+  document.querySelector('.section-tab[data-section="wallet-overview"]')
+    ?.addEventListener('click', () => setTimeout(refreshNativeCard, 120));
+
   generateQrBtn?.addEventListener('click', async () => {
     const address = getActiveAddress();
     if (receiveQrStatusEl) receiveQrStatusEl.textContent = 'Generating...';
