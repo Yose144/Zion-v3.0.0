@@ -18,6 +18,7 @@ use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 use crate::chain::adapter::{ChainAdapter, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
 use crate::types::Transfer;
+use crate::wallet::Keyring;
 
 // ---------------------------------------------------------------------------
 // SS58 (Substrate address format, prefix 189 for Quantus)
@@ -242,6 +243,9 @@ pub struct QuantusAdapter {
     request_id: std::sync::atomic::AtomicU64,
     /// Last finalized block we scanned (watch cursor).
     cursor: std::sync::Mutex<u64>,
+    /// Custodial keyring for outbound signing (bridge/payout wallet = (0,0)).
+    /// Falls back to `QUANTUS_SEED` env when absent.
+    keyring: Option<Keyring>,
 }
 
 impl QuantusAdapter {
@@ -261,7 +265,36 @@ impl QuantusAdapter {
                 .unwrap_or_else(|_| reqwest::Client::new()),
             request_id: std::sync::atomic::AtomicU64::new(1),
             cursor: std::sync::Mutex::new(0),
+            keyring: None,
         }
+    }
+
+    /// Adapter with a custodial keyring — outbound sends sign with
+    /// `keyring.quantus_keypair(0, 0)` instead of the `QUANTUS_SEED` env.
+    pub fn with_keyring(mut self, keyring: Keyring) -> Self {
+        self.keyring = Some(keyring);
+        self
+    }
+
+    /// Hot signing keypair: keyring (0,0) when configured, else QUANTUS_SEED.
+    fn signer(&self) -> MultichainResult<QuantusKeypair> {
+        if let Some(kr) = &self.keyring {
+            return Ok(kr.quantus_keypair(0, 0));
+        }
+        let seed_hex = std::env::var("QUANTUS_SEED")
+            .map_err(|_| MultichainError::Config("QUANTUS_SEED not set".into()))?;
+        let seed_raw = seed_hex.trim_start_matches("0x");
+        let seed_bytes = hex::decode(seed_raw)
+            .map_err(|e| MultichainError::Config(format!("bad QUANTUS_SEED hex: {e}")))?;
+        if seed_bytes.len() != 32 {
+            return Err(MultichainError::Config(format!(
+                "QUANTUS_SEED must be 32 bytes, got {}",
+                seed_bytes.len()
+            )));
+        }
+        let mut seed = [0u8; 32];
+        seed.copy_from_slice(&seed_bytes);
+        Ok(QuantusKeypair::from_seed(seed))
     }
 
     async fn rpc<T: serde::de::DeserializeOwned>(
@@ -693,22 +726,7 @@ impl ChainAdapter for QuantusAdapter {
 
     async fn send_payment(&self, to: &Address, amount: Amount) -> MultichainResult<Hash> {
         let dest32 = Self::decode_address(to)?;
-        // Signing key from env: QUANTUS_SEED hex (32B) — operator hot wallet.
-        let seed_hex = std::env::var("QUANTUS_SEED")
-            .map_err(|_| MultichainError::Config("QUANTUS_SEED not set".into()))?;
-        let seed_raw = seed_hex.trim_start_matches("0x");
-        let seed_bytes = hex::decode(seed_raw)
-            .map_err(|e| MultichainError::Config(format!("bad QUANTUS_SEED hex: {e}")))?;
-        if seed_bytes.len() != 32 {
-            return Err(MultichainError::Config(format!(
-                "QUANTUS_SEED must be 32 bytes, got {}",
-                seed_bytes.len()
-            )));
-        }
-        let mut seed = [0u8; 32];
-        seed.copy_from_slice(&seed_bytes);
-        let keypair = QuantusKeypair::from_seed(seed);
-
+        let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
         let (spec, txv, genesis, fin_hash, fin_height) = self.signing_context().await?;

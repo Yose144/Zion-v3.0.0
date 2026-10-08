@@ -1488,9 +1488,10 @@ fn build_adapter(
             } else {
                 cfg.rpc_url.as_str()
             };
-            Ok(Box::new(crate::chain::adapters::quantus::QuantusAdapter::new(
-                url,
-            )))
+            Ok(Box::new(
+                crate::chain::adapters::quantus::QuantusAdapter::new(url)
+                    .with_keyring(keyring.clone()),
+            ))
         }
         "solana" => {
             let rpc = if cfg.rpc_url.is_empty() { None } else { Some(cfg.rpc_url.as_str()) };

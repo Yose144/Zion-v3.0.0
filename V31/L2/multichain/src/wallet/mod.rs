@@ -17,6 +17,7 @@ use sha2::{Digest, Sha256};
 use sha3::Keccak256;
 use zion_l1_types::{Address, ChainFamily, ChainId};
 
+use crate::chain::adapters::quantus::{QuantusKeypair, QUANTUS_SS58_PREFIX};
 use crate::error::{MultichainError, MultichainResult};
 
 /// In-memory keyring derived from a single BIP39 mnemonic.
@@ -116,6 +117,7 @@ impl Keyring {
             ChainFamily::Evm => self.evm_address(chain, account, index),
             ChainFamily::Zion => self.zion_address(chain, account, index),
             ChainFamily::Utxo => self.bitcoin_address(chain, account, index),
+            ChainFamily::Substrate => self.substrate_address(chain, account, index),
             _ => Err(MultichainError::Unsupported(format!(
                 "address derivation for {}",
                 chain.as_str()
@@ -134,6 +136,7 @@ impl Keyring {
         match chain.family() {
             ChainFamily::Evm => self.sign_evm(message, account, index),
             ChainFamily::Zion => self.sign_zion(message, account, index),
+            ChainFamily::Substrate => self.sign_substrate(message, account, index),
             _ => Err(MultichainError::Unsupported(format!(
                 "signing for {}",
                 chain.as_str()
@@ -203,6 +206,53 @@ impl Keyring {
     fn sign_zion(&self, message: &[u8], account: u32, index: u32) -> MultichainResult<Vec<u8>> {
         let signing_key = self.zion_signing_key(account, index)?;
         Ok(EdSigner::sign(&signing_key, message).to_bytes().to_vec())
+    }
+
+    // ── Substrate / Quantus (ML-DSA-87) ────────────────────────────────────
+    // Dilithium is not BIP32; we derive a deterministic 32-byte seed from
+    // keccak256(path ‖ master_seed) — the same construction as zion_seed —
+    // and expand it through `QuantusKeypair::from_seed`.
+
+    fn substrate_seed(&self, chain: ChainId, account: u32, index: u32) -> [u8; 32] {
+        let seed = self.seed.unwrap_or_else(|| self.mnemonic.to_seed(""));
+        // coin type 189 = Quantus ss58 prefix (reused as BIP44 coin type)
+        let path = match chain {
+            ChainId::Quantus => format!("m/44'/{QUANTUS_SS58_PREFIX}'/{account}'/0/{index}"),
+            _ => format!("m/44'/0'/{account}'/0/{index}"),
+        };
+        let mut hasher = Keccak256::new();
+        hasher.update(path.as_bytes());
+        hasher.update(seed);
+        let hash = hasher.finalize();
+        hash[..32].try_into().expect("keccak256 output is 32 bytes")
+    }
+
+    /// Deterministic ML-DSA-87 keypair for a Substrate chain account.
+    pub fn quantus_keypair(&self, account: u32, index: u32) -> QuantusKeypair {
+        QuantusKeypair::from_seed(self.substrate_seed(ChainId::Quantus, account, index))
+    }
+
+    fn substrate_address(
+        &self,
+        chain: ChainId,
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Address> {
+        let kp = QuantusKeypair::from_seed(self.substrate_seed(chain, account, index));
+        let acct = kp.account_id();
+        Ok(Address::new(chain, acct.to_vec(), kp.ss58_address())?)
+    }
+
+    /// ML-DSA-87 signature (4627 bytes). For extrinsic signing the caller
+    /// appends the public key itself (sig‖pubkey = 7219 B wire form).
+    fn sign_substrate(
+        &self,
+        message: &[u8],
+        account: u32,
+        index: u32,
+    ) -> MultichainResult<Vec<u8>> {
+        let kp = self.quantus_keypair(account, index);
+        kp.sign(message)
     }
 
     fn bitcoin_xpriv(
@@ -344,6 +394,28 @@ mod tests {
         let addr = keyring.address(ChainId::Ethereum, 0, 2).unwrap();
         let expected = "0x1D86AD5eBb2380dAdEAF52f61f4F428C485460E9";
         assert_eq!(addr.encoded.to_lowercase(), expected.to_lowercase());
+    }
+
+    #[test]
+    fn quantus_address_is_deterministic_and_valid_ss58() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let a = keyring.address(ChainId::Quantus, 0, 0).unwrap();
+        let b = keyring.address(ChainId::Quantus, 0, 0).unwrap();
+        assert_eq!(a.encoded, b.encoded);
+        let (acct, prefix) =
+            crate::chain::adapters::quantus::ss58_decode(&a.encoded).unwrap();
+        assert_eq!(prefix, crate::chain::adapters::quantus::QUANTUS_SS58_PREFIX);
+        assert_eq!(acct.to_vec(), a.bytes);
+        // different index → different address
+        let c = keyring.address(ChainId::Quantus, 0, 1).unwrap();
+        assert_ne!(a.encoded, c.encoded);
+    }
+
+    #[test]
+    fn quantus_sign_returns_4627_byte_dilithium_signature() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let sig = keyring.sign(ChainId::Quantus, b"test payload", 0, 0).unwrap();
+        assert_eq!(sig.len(), 4627);
     }
 
     #[test]
