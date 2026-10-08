@@ -69,6 +69,23 @@ const Copy = {
   },
   libraryCta: { cs: `Vstoupit do Amenti knihovny`, en: `Enter the Amenti Library` },
   libraryCta2: { cs: `Free World portál →`, en: `Free World portal →` },
+  hallsAlt: { cs: `Síně Amenti — síně mrtvých a živých pod pískem`, en: `The Halls of Amenti — halls of the dead and the living beneath the sand` },
+  heartAlt: { cs: `Srdce Amenti — planoucí srdce sítě`, en: `The Heart of Amenti — the network's burning heart` },
+  featuredBookTag: { cs: `HLAVNÍ SVAZEK · 11 JAZYKŮ`, en: `FEATURED TOME · 11 LANGUAGES` },
+  featuredBookTitle: { cs: `Kvantová revoluce & One Love`, en: `Quantum Revolution & One Love` },
+  featuredBookDesc: {
+    cs: `Kniha, která síť vypráví: deset kapitol v kruhu u věčného ohně nad Kailashem, jedenácté poleno jsi ty. PDF zdarma ve všech jazycích — a Desky v ní jako kořen č. 1 Stromu života.`,
+    en: `The book that tells the network: ten chapters in the circle around the eternal fire above Kailash — the eleventh log is you. Free PDF in every language — with the Tablets in it as root no. 1 of the Tree of Life.`,
+  },
+  booksTitle: { cs: `Regal síní — knihy a desky`, en: `The shelf of the halls — books & tablets` },
+  booksSubtitle: { cs: `Katalog živé knihovny · PDF zdarma na hlavním portálu`, en: `The living library catalogue · free PDFs on the main portal` },
+  booksNote: { cs: `Ke stažení zdarma ke studiu a sdílení — soubory žijí na zionterranova.com`, en: `Free to download for study and sharing — files live on zionterranova.com` },
+  heartTitle: { cs: `Srdce Amenti — mantra protokolu`, en: `The Heart of Amenti — the protocol's mantra` },
+  heartBody: {
+    cs: `Srdcem síní není legenda, ale matematika: on-chain fee split každého bloku — 89 % těžařům, 5 % humanitárnímu fondu, 5 % fondu budoucnosti, 1 % spálení. Dharma, která hoří v kódu — ne ve slibu.`,
+    en: `The heart of the halls is not legend but mathematics: the on-chain fee split of every block — 89 % to miners, 5 % to the humanitarian fund, 5 % to the future fund, 1 % burned. Dharma burning in code — not in promises.`,
+  },
+  heartMantra: { cs: `OM NAMO BHAGAVATE VASUDEVAYA`, en: `OM NAMO BHAGAVATE VASUDEVAYA` },
   phasesTitle: { cs: `Fáze vztahu`, en: `Phases of relationship` },
   phasesSubtitle: { cs: `Od respektu ke Kvetoucímu Plameni`, en: `From respect to the Flower of Light` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
@@ -310,6 +327,100 @@ const ZION_ITEMS: { label: string; icon: LucideIcon }[] = [
   { label: 'Seven Virtues Gate', icon: Scale },
 ];
 
+const APEX = 'https://zionterranova.com';
+
+// The Amenti Library shelf — same catalogue as zionterranova.com/amenti, PDFs live on the apex domain
+const BOOKS: { titleCs: string; titleEn: string; links: Record<string, string> }[] = [
+  {
+    titleCs: 'Kvantová revoluce — Claude',
+    titleEn: 'Quantum Revolution — Claude',
+    links: {
+      CZ: '/legacy/books/Bonus/Quantova%20Revoluce%20Claude.pdf',
+      EN: '/legacy/books/Bonus/Quantova%20Revoluce%20Claude_EN.pdf',
+      ES: '/legacy/books/Bonus/Quantova%20Revoluce%20Claude_ES.pdf',
+      FR: '/legacy/books/Bonus/Quantova%20Revoluce%20Claude_FR.pdf',
+      PT: '/legacy/books/Bonus/Quantova%20Revoluce%20Claude_PT.pdf',
+    },
+  },
+  {
+    titleCs: 'Tajemství Amenti',
+    titleEn: 'The Secret of Amenti',
+    links: {
+      CZ: '/legacy/src/cz/Tajemstv%C3%AD%20amenti.PDF',
+      EN: '/legacy/src/en/AmentiEN.PDF',
+      ES: '/legacy/src/sp/AmentiSpain.PDF',
+      FR: '/legacy/src/fr/AmentiFR.PDF',
+      PT: '/legacy/src/pt/Tajemstv%C3%AD%20amenti%20pt.PDF',
+    },
+  },
+  {
+    titleCs: 'Smaragdové desky Thovta',
+    titleEn: 'The Emerald Tablets of Thoth',
+    links: {
+      CZ: '/legacy/src/cz/SmaragdoveDesky.pdf',
+      EN: '/legacy/src/en/SmaragdoveDesky%20en.pdf',
+      ES: '/legacy/src/sp/SmaragdoveDesky%20es.pdf',
+      FR: '/legacy/src/fr/SmaragdoveDesky%20fr.pdf',
+      PT: '/legacy/src/pt/SmaragdoveDesky%20pt.pdf',
+    },
+  },
+  {
+    titleCs: 'Kniha Amenti 2012',
+    titleEn: 'Book of Amenti 2012',
+    links: {
+      CZ: '/legacy/src/cz/ZIONOneLove%20CZ.pdf',
+      EN: '/legacy/src/en/ZIONOneLoveEN.pdf',
+      ES: '/legacy/src/sp/ZIONOneLoveSP.pdf',
+      FR: '/legacy/src/fr/ZIONOneLoveFR.pdf',
+    },
+  },
+  {
+    titleCs: 'Kosmické vejce',
+    titleEn: 'Cosmic Egg',
+    links: {
+      CZ: '/legacy/src/cz/CosmicEgg.pdf',
+      EN: '/legacy/src/en/CosmicEgg-EN.pdf',
+      ES: '/legacy/src/sp/CosmicEgg-SP.pdf',
+      FR: '/legacy/src/fr/CosmicEgg-FR.pdf',
+    },
+  },
+  {
+    titleCs: 'Dohrmanovo proroctví',
+    titleEn: 'Dohrman Prophecy',
+    links: {
+      CZ: '/legacy/src/cz/Dohrmanovo-proroctvi.pdf',
+      EN: '/legacy/src/en/DP-EN.pdf',
+      ES: '/legacy/src/sp/DP-SP.pdf',
+      FR: '/legacy/src/fr/DP-FR.pdf',
+    },
+  },
+  {
+    titleCs: 'Starobylý šíp',
+    titleEn: 'Ancient Arrow',
+    links: {
+      CZ: '/legacy/src/cz/Starobyly_sip.pdf',
+      EN: '/legacy/src/en/AA-EN.pdf',
+      ES: '/legacy/src/sp/AA-SP.pdf',
+      FR: '/legacy/src/fr/AA-FR.pdf',
+    },
+  },
+];
+
+// Quantum Revolution featured book — all 11 language editions
+const FEATURED_LANGS: Record<string, string> = {
+  CZ: '/legacy/books/QuantumRevolutionCZ.pdf',
+  EN: '/legacy/books/QuantumRevolution_EN.pdf',
+  ES: '/legacy/books/QuantumRevolution_ES.pdf',
+  FR: '/legacy/books/QuantumRevolution_FR.pdf',
+  PT: '/legacy/books/QuantumRevolution_PT.pdf',
+  DE: '/legacy/books/QuantumRevolution_DE.pdf',
+  JP: '/legacy/books/QuantumRevolution_JP.pdf',
+  HI: '/legacy/books/QuantumRevolution_HIND.pdf',
+  LA: '/legacy/books/QuantumRevolution_LA.pdf',
+  SAN: '/legacy/books/QuantumRevolution_SANS.pdf',
+  HAW: '/legacy/books/QuantumRevolution_HAWAI.pdf',
+};
+
 const SISTERS = [
   { name: 'Genesis Garden', href: '/terranova/genesis', region: { cs: 'Sabacheira · Tomar, Portugalsko', en: 'Sabacheira · Tomar, Portugal' } },
   { name: 'Dharma Temple', href: '/terranova/dharma-temple', region: { cs: 'La Palma', en: 'La Palma' } },
@@ -519,6 +630,15 @@ export default function AmentiPage() {
                 );
               })}
             </div>
+            <img
+              src="/images/amenti/logos.webp"
+              alt={cs ? 'Loga Síní Amenti — symboly strážců' : 'Logos of Amenti — the sigils of the guardians'}
+              width={800}
+              height={914}
+              loading="lazy"
+              decoding="async"
+              className="mx-auto mt-6 w-full max-w-sm rounded-xl border border-white/10 opacity-90"
+            />
           </div>
         </motion.section>
 
@@ -540,6 +660,17 @@ export default function AmentiPage() {
             <p className="text-gray-300 leading-relaxed mb-6">
               {Copy.libraryBody[cs ? 'cs' : 'en']}
             </p>
+            <div className="mb-8 overflow-hidden rounded-2xl border border-emerald-300/20 bg-black/30">
+              <img
+                src="/images/amenti/halls.webp"
+                alt={Copy.hallsAlt[cs ? 'cs' : 'en']}
+                width={1400}
+                height={415}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-cover"
+              />
+            </div>
             <div className="grid gap-3 sm:grid-cols-3 mb-8">
               {Copy.libraryStats[cs ? 'cs' : 'en'].map((stat) => (
                 <div key={stat} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': ACCENT } as React.CSSProperties}>
@@ -550,6 +681,65 @@ export default function AmentiPage() {
                 </div>
               ))}
             </div>
+
+            {/* Featured tome — Quantum Revolution in 11 languages */}
+            <div className="zion-rainbow-sub mb-8 flex flex-col gap-5 p-5 md:flex-row md:items-start" style={{ '--rc': ACCENT } as React.CSSProperties}>
+              <img
+                src="/images/amenti/book-quantum.webp"
+                alt={Copy.featuredBookTitle[cs ? 'cs' : 'en']}
+                width={240}
+                height={340}
+                loading="lazy"
+                decoding="async"
+                className="w-32 shrink-0 rounded-lg border border-emerald-300/20 md:w-40"
+              />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-300">{Copy.featuredBookTag[cs ? 'cs' : 'en']}</p>
+                <h3 className="mt-1 text-xl font-semibold text-white">{Copy.featuredBookTitle[cs ? 'cs' : 'en']}</h3>
+                <p className="mt-2 text-sm text-gray-400">{Copy.featuredBookDesc[cs ? 'cs' : 'en']}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {Object.entries(FEATURED_LANGS).map(([langCode, href]) => (
+                    <a
+                      key={langCode}
+                      href={`${APEX}${href}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-bold tracking-widest text-emerald-200 transition hover:bg-emerald-300/20"
+                    >
+                      {langCode}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* The shelf — same catalogue as the apex library */}
+            <div className="mb-8">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.booksSubtitle[cs ? 'cs' : 'en']}</p>
+              <h3 className="mt-1 mb-4 text-xl font-semibold text-white">{Copy.booksTitle[cs ? 'cs' : 'en']}</h3>
+              <div className="space-y-2">
+                {BOOKS.map((book) => (
+                  <div key={book.titleEn} className="zion-rainbow-sub flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" style={{ '--rc': ACCENT } as React.CSSProperties}>
+                    <p className="text-sm font-medium text-gray-200">{cs ? book.titleCs : book.titleEn}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(book.links).map(([langCode, href]) => (
+                        <a
+                          key={langCode}
+                          href={`${APEX}${href}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-widest text-gray-400 transition hover:border-emerald-300/40 hover:text-emerald-200"
+                        >
+                          {langCode}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-gray-500">{Copy.booksNote[cs ? 'cs' : 'en']}</p>
+            </div>
+
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href="https://zionterranova.com/amenti/"
@@ -646,6 +836,22 @@ export default function AmentiPage() {
                     {item.label}
                   </span>
                 ))}
+              </div>
+              <div className="mt-5 overflow-hidden rounded-xl border border-emerald-300/20">
+                <img
+                  src="/images/amenti/heart.webp"
+                  alt={Copy.heartAlt[cs ? 'cs' : 'en']}
+                  width={1200}
+                  height={781}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full object-cover"
+                />
+                <div className="bg-black/40 p-4">
+                  <p className="text-sm font-semibold text-white">{Copy.heartTitle[cs ? 'cs' : 'en']}</p>
+                  <p className="mt-1 text-xs text-gray-400">{Copy.heartBody[cs ? 'cs' : 'en']}</p>
+                  <p className="mt-2 text-[10px] font-bold tracking-[0.3em] text-emerald-300">{Copy.heartMantra[cs ? 'cs' : 'en']}</p>
+                </div>
               </div>
             </div>
             <div className="zion-rainbow-card p-6" style={{ '--rc': ACCENT } as React.CSSProperties}>
