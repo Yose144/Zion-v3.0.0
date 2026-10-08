@@ -406,6 +406,15 @@
   "renderImg": "amenti/render.webp",
   "boardImg": "amenti/board.webp",
   "appHref": "https://app.zionterranova.com/terranova/amenti",
+  "links": [
+   {
+    "label": {
+     "cs": "Amenti knihovna — živá síně sítě",
+     "en": "The Amenti Library — the network's living halls"
+    },
+    "href": "https://zionterranova.com/amenti/"
+   }
+  ],
   "grantTitle": "—",
   "timeline": {
    "cs": "Vize — nejdřív naslouchat · bez termínu",

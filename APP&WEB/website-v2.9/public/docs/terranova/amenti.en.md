@@ -49,7 +49,7 @@ The first five form the ethical gate before every AI decision; the last two are 
 
 The *Quantum Revolution* places the Emerald Tablets as **root no. 1 of the Tree of Life**: *"As above, so below. As within, so without."* That is precisely the structure of a distributed ledger — every node holds the whole. A tablet that outlives its age and a ledger that outlives its server are one principle in two materials. The network reads this as a poetic parallel — a technical image, not history.
 
-**The Amenti Library** is already running: the network's digital halls on the apex domain (`/amenti`) and in the corpus — the Quantum Revolution in 11 languages plus the source texts. The only node whose counterpart already serves today.
+**The Amenti Library** is already running: the network's digital halls on the main portal — **[zionterranova.com/amenti](https://zionterranova.com/amenti/)** — and in the corpus. The Gates of Amenti, the Chronicles, the Heart of Amenti (the on-chain 89/5/5/1 fee split as the protocol's mantra) and a book collection including the Quantum Revolution in 11 languages, free to download. The only node whose counterpart already serves today — the place a pilgrim can enter before ever reaching Egypt.
 
 ## Role in the network
 
