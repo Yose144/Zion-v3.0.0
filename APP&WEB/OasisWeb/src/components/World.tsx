@@ -104,6 +104,9 @@ export interface WorldNodeProps {
   /** When defined, overrides internal hover state — used when the node is
    *  hovered via the shared instanced mesh in GalaxyMap. */
   hoveredOverride?: boolean;
+  /** Base sphere + orbit ring are drawn by the shared instanced meshes —
+   *  this node renders only the extras (rays, gate, vortex, labels). */
+  instancedBase?: boolean;
   onSelect?: (id: string) => void;
 }
 
@@ -120,6 +123,7 @@ export default function World({
   isDiscovered = true,
   isMobile = false,
   hoveredOverride,
+  instancedBase = false,
   onSelect,
 }: WorldNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -137,8 +141,8 @@ export default function World({
 
   const seed = useMemo(() => id.split('').reduce((a, c) => a + c.charCodeAt(0), 0), [id]);
   const surfaceTexture = useMemo(
-    () => (isStarSystem ? null : createMiniSurfaceTexture(color, seed)),
-    [isStarSystem, color, seed]
+    () => (isStarSystem || instancedBase ? null : createMiniSurfaceTexture(color, seed)),
+    [isStarSystem, instancedBase, color, seed]
   );
   const rayTexture = useMemo(() => (isStarSystem ? createSunRayTexture() : null), [isStarSystem]);
 
@@ -187,24 +191,27 @@ export default function World({
     >
       {/* Core sphere — physical material picks up HDRI reflections for a
           polished look. Non-star worlds get a tiny procedural surface
-          texture so they read as little textured planets, not flat balls. */}
-      <mesh>
-        <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 16, 16]} />
-        <meshStandardMaterial
-          map={surfaceTexture ?? undefined}
-          color={surfaceTexture ? '#ffffff' : color}
-          emissive={color}
-          emissiveIntensity={
-            (surfaceTexture ? (hovered || selected ? 0.55 : 0.3) : hovered || selected ? 0.9 : 0.55)
-            * (isDiscovered || hovered || selected ? 1 : 0.45)
-          }
-          roughness={0.4}
-          metalness={0.1}
-          toneMapped={false}
-          transparent={!isDiscovered}
-          opacity={isDiscovered || hovered || selected ? 1 : 0.55}
-        />
-      </mesh>
+          texture so they read as little textured planets, not flat balls.
+          Skipped when the shared instanced mesh already draws the base. */}
+      {!instancedBase && (
+        <mesh>
+          <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 16, 16]} />
+          <meshStandardMaterial
+            map={surfaceTexture ?? undefined}
+            color={surfaceTexture ? '#ffffff' : color}
+            emissive={color}
+            emissiveIntensity={
+              (surfaceTexture ? (hovered || selected ? 0.55 : 0.3) : hovered || selected ? 0.9 : 0.55)
+              * (isDiscovered || hovered || selected ? 1 : 0.45)
+            }
+            roughness={0.4}
+            metalness={0.1}
+            toneMapped={false}
+            transparent={!isDiscovered}
+            opacity={isDiscovered || hovered || selected ? 1 : 0.55}
+          />
+        </mesh>
+      )}
 
       {/* Radiating sun rays — star systems are the anchors of the galaxy
           map, so they should visibly shine rather than just glow. */}
@@ -236,14 +243,17 @@ export default function World({
         </mesh>
       )}
 
-      {/* Rotating ring */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[displaySize * 1.45, displaySize * 1.5, 24]} />
-        <meshBasicMaterial color={color} transparent opacity={(hovered || selected ? 0.55 : isDiscovered ? 0.22 : 0.08)} side={THREE.DoubleSide} />
-      </mesh>
+      {/* Rotating ring — skipped when instanced */}
+      {!instancedBase && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[displaySize * 1.45, displaySize * 1.5, 24]} />
+          <meshBasicMaterial color={color} transparent opacity={(hovered || selected ? 0.55 : isDiscovered ? 0.22 : 0.08)} side={THREE.DoubleSide} />
+        </mesh>
+      )}
 
-      {/* Warp gate ring (star systems + selected) */}
-      {(isStarSystem || selected) && (!isMobile || hovered || selected) && (
+      {/* Warp gate ring (star systems + selected) — distant stars render
+          only when hovered/selected; the gate is sub-pixel at range anyway */}
+      {(isStarSystem || selected) && (!isDistant || hovered || selected) && (!isMobile || hovered || selected) && (
         <group ref={gateRef}>
           <mesh>
             <torusGeometry args={[displaySize * (isStarSystem ? 2.4 : 2.0), displaySize * 0.07, 8, 32]} />

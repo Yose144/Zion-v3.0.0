@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
@@ -356,6 +356,53 @@ function latLonToVec3(lat: number, lon: number, r: number): [number, number, num
   return [x, y, z];
 }
 
+/** Pioneer project surface markers as two instanced draws — 11 markers
+ *  × (dot + glow halo) collapse from ~22 draw calls to 2. Labels stay DOM. */
+function InstancedMarkers({ radius }: { radius: number }) {
+  const dotsRef = useRef<THREE.InstancedMesh>(null);
+  const halosRef = useRef<THREE.InstancedMesh>(null);
+  const count = PIONEER_PROJECTS.length;
+
+  useLayoutEffect(() => {
+    const dots = dotsRef.current;
+    const halos = halosRef.current;
+    if (!dots || !halos) return;
+    const m = new THREE.Matrix4();
+    const pos = new THREE.Vector3();
+    const one = new THREE.Vector3(1, 1, 1);
+    const two = new THREE.Vector3(2, 2, 2);
+    const col = new THREE.Color();
+    PIONEER_PROJECTS.forEach((p, i) => {
+      const [x, y, z] = latLonToVec3(p.lat, p.lon, radius * 1.02);
+      pos.set(x, y, z);
+      m.compose(pos, new THREE.Quaternion(), one);
+      dots.setMatrixAt(i, m);
+      m.compose(pos, new THREE.Quaternion(), two);
+      halos.setMatrixAt(i, m);
+      col.set(p.color);
+      dots.setColorAt(i, col);
+      halos.setColorAt(i, col);
+    });
+    dots.instanceMatrix.needsUpdate = true;
+    halos.instanceMatrix.needsUpdate = true;
+    if (dots.instanceColor) dots.instanceColor.needsUpdate = true;
+    if (halos.instanceColor) halos.instanceColor.needsUpdate = true;
+  }, [radius]);
+
+  return (
+    <>
+      <instancedMesh ref={dotsRef} args={[undefined, undefined, count]} frustumCulled={false} raycast={() => null}>
+        <sphereGeometry args={[0.04, 10, 10]} />
+        <meshBasicMaterial toneMapped={false} />
+      </instancedMesh>
+      <instancedMesh ref={halosRef} args={[undefined, undefined, count]} frustumCulled={false} raycast={() => null}>
+        <sphereGeometry args={[0.04, 8, 8]} />
+        <meshBasicMaterial transparent opacity={0.3} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      </instancedMesh>
+    </>
+  );
+}
+
 export function NovaZeme({
   position = [0, 0, 8] as [number, number, number],
   isMobile = false,
@@ -417,27 +464,12 @@ export function NovaZeme({
           rotationSpeed={0.08}
         />
 
-        {/* 3 Pioneer Project markers on surface */}
+        {/* Pioneer Project markers — instanced dots+halos, DOM labels only */}
+        <InstancedMarkers radius={radius} />
         {PIONEER_PROJECTS.map((p) => {
           const [mx, my, mz] = latLonToVec3(p.lat, p.lon, radius * 1.02);
           return (
             <group key={p.id} position={[mx, my, mz]}>
-              {/* Glowing marker */}
-              <mesh>
-                <sphereGeometry args={[0.04, 12, 12]} />
-                <meshBasicMaterial color={p.color} />
-              </mesh>
-              {/* Glow halo */}
-              <mesh scale={2}>
-                <sphereGeometry args={[0.04, 8, 8]} />
-                <meshBasicMaterial
-                  color={p.color}
-                  transparent
-                  opacity={0.3}
-                  blending={THREE.AdditiveBlending}
-                  depthWrite={false}
-                />
-              </mesh>
               {/* Label (desktop only) */}
               {!isMobile && (
                 <Html
