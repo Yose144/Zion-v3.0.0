@@ -236,8 +236,9 @@ QTC_PAYOUT_MAX_ATTEMPTS=3       # → 'stalled' po N submit chybách
 QTC_PAYOUT_FEE_BPS=0            # pool fee na QTC legu (200 = 2 %)
 QTC_PAYOUT_MAX_FEE_PLANKS=0     # fee-cap přes payment_queryInfo (0 = bez capu)
 # Quantus signing/RPC (sdílené s adaptérem — payout účet = wallet keyring (0,0)
-# nebo QUANTUS_SEED hex 32B; MUSÍ být funded na Plancku jinak InsufficientFunds)
-QUANTUS_RPC=https://a1-planck.quantus.cat
+# nebo QUANTUS_SEED hex 32B; MUSÍ být funded, jinak InsufficientFunds)
+# MAINNET: žádný public RPC neexistuje — náš node je endpoint:
+QUANTUS_RPC=http://127.0.0.1:9944      # Edge (nebo https://rpc.zionterranova.com/qtc)
 # QUANTUS_SEED=<hex — jen pokud není wallet keyring; 600 perms!>
 ```
 
@@ -256,6 +257,17 @@ QUANTUS_RPC=https://a1-planck.quantus.cat
       `POST /v1/admin/ext-payouts/resolve` (`resubmit`/`dismiss` — jen
       'stalled' rows, fail-closed). Pool `/stats` expose
       `external_payouts.quantus.pending`. **2026-10-09**
+- [x] **Payout chain E2E live ověřen (2026-10-08, do queue):**
+      v3 Hello `payout_address="qtc:qz…"` → `v3_payout chain=quantus`;
+      reálný miner `--wallet qtc:qz…` → 6 valid shares accepted →
+      `unpaid` pod `quantus` chain tagem → `payout_chains` persist v
+      `pool-pplns.json` → admin `GET /admin/external-payouts?chain=
+      quantus` → `pending:0` (správně — unpaid 0.18 Z < min 10 ZION).
+      Zbývá už jen organický unpaid threshold → drain → sweeper submit.
+- [ ] První reálný QTC payout submit — čeká na unpaid ≥ min +
+      `QTC_PAYOUT_ENABLED=1` + kurz `QTC_PLANKS_PER_FLOWER` + funded
+      payout účet (`warpd` Oct-8 redeploy má `QUANTUS_EXTRINSIC` fix;
+      unfunded účet by jinak validně selhal InsufficientFunds).
 - [ ] E2E na Heisenberg s funded test účtem — gated test
       `quantus_live_send_testnet` připraven (`QUANTUS_LIVE=1` +
       `QUANTUS_RPC=…heisenberg` + `QUANTUS_SEED`), potřebuje HEI faucet.
@@ -289,10 +301,22 @@ Dvě vrstvy:
       refresh; unlinked stav: link input (`wallet-set-qtc` IPC) nebo
       generate (`generate-quantus-wallet` → 24-word mnemonic reveal +
       auto-link); `list-wallets` vrací `qtcAddress`.
-- [ ] Send flow: `send_payment` přes multichain service nebo přímý submit
-      s lokálně podepsaným extrinsicem — ZATÍM jen přes custodial ZIS
-      withdraw; non-custodial send vyžaduje ML-DSA signing mimo renderer
-      (helper CLI už umí derivační seed → rozšířit o `sign` podpříkaz).
+- [x] UI: Wallet → **Quantus network tab** (2026-10-08, `955a086ce`):
+      `quantus-network.js` agreguje node status (`system_health`/`version`),
+      pool native leg (`coin_details[].native`), wormhole rewards
+      (sqm `minerRewards`), network feed + adresní lookup
+      (balance + transfer history); IPC `qtc-network-status`,
+      renderer `initQtcView` s 15s pollem. Public RPC default
+      `rpc.zionterranova.com/qtc` (náš node — Safe methods, unsafe
+      z proxy zamítnuty).
+- [x] Send flow (non-custodial): `native-send` IPC →
+      `NativeWallet.sendQuantus` → bundled `derive_addr --qtc-send`
+      (mnemonic jen stdin). **Wire+signing live-validováno mainnet:**
+      extrinsic s `QUANTUS_EXTRINSIC` ctx + tip-anchored era projde
+      podpisem → runtime hlásí `InsufficientFunds` (ne Bad signature)
+      pro unfunded sender — `f7422d661`. Bundled helper rebuildnutý
+      2026-10-08 (ctx + mainnet RPC + `--qtc-balance`). Gated: reálný
+      funded submit.
 - [ ] Receive flow: `wormhole` adresa pro mining rewards není potřeba —
       pool payout jde na transparent adresu; ale umožnit import
       existující Quantus 24-word phrase.
@@ -422,8 +446,12 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       být transparentní účet — wormhole adresa nemá Dilithium klíč.
       Installed: `/opt/quantus/collect-rewards.sh` (flock+guard) +
       `zion-quantus-collect.timer` (hodinový, **neaktivní** — zapnout po
-      prvním mined bloku). Zbývá: první live collect + ledger credit
-      wiring do QtcPayoutSweeper účetnictví.
+      prvním mined bloku). **`zion-quantus-reward-watch.timer`** (10 min,
+      sqm `minerRewards` probe → journald `pending_leaves=N`) běží —
+      detekce prvního bloku bez collectu. **`warpd` redeployed Oct-8**
+      @`2cf818fa1` — má `QUANTUS_EXTRINSIC` signing fix (předchozí Oct-7
+      binárka by produkovala Bad signature). Zbývá: první live collect +
+      ledger credit wiring do QtcPayoutSweeper účetnictví.
 - [~] **F8.5 Měření a rozhodnutí:** ~~dashboard `coin_details[].native`~~ ✅
       `{enabled,connected,share_pct,job_id,job_age_ms}` (`dcc651fd3`).
       **2026-10-08 post-sync fakta:**
