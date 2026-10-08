@@ -94,10 +94,10 @@ const L5FreeWorldCopy = {
   network: { cs: `Síť`, en: `Network` },
 
   planetaryMap: { cs: `Planetární mapa`, en: `Planetary map` },
-  sixNodesOnPlanet: { cs: `Jedenáct bodů na planetě`, en: `Eleven nodes on the planet` },
+  sixNodesOnPlanet: { cs: `Dvanáct bodů na planetě`, en: `Twelve nodes on the planet` },
   l5MapDesc: {
-    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança a Kailash zůstávají vizemi — vztahové uzly na posvátných a historických místech. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. A María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány.`,
-    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança and Kailash remain visions — relationship nodes on sacred and historic ground. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. And María del Camino — a sailing node on solar sails — physically connects every point across the oceans.`,
+    cs: `Zakládající L5 komunity napříč kontinenty — od údolí Nabão po poušť Ngari pod Kailashem a síň záznamu na plateu Gízy. Šest financovaných uzlů je v přípravě do roku 2028, stavba začíná nejdříve v roce 2029 po OASIS. Uluru, Boa Esperança, Kailash a Amenti zůstávají vizemi — vztahové uzly na posvátných a historických místech; Amenti je dvanáctý a poslední bod. Ekam je jediný uzel, který už stojí — chrám z roku 2008 slouží jako předloha všem ostatním. A María del Camino — plující uzel se solárními plachtami — všechny body fyzicky spojuje přes oceány.`,
+    en: `The L5 communities across the continents — from the Nabão valley to the Ngari desert under Kailash and the hall of records on the Giza plateau. The six funded nodes are in preparation until 2028, construction starts no earlier than 2029 after OASIS. Uluru, Boa Esperança, Kailash and Amenti remain visions — relationship nodes on sacred and historic ground; Amenti is the twelfth and final node. Ekam is the only node already standing — a temple built in 2008 that serves as the template for all the others. And María del Camino — a sailing node on solar sails — physically connects every point across the oceans.`,
   },
   liveRegistry: { cs: `Živý registr`, en: `Live registry` },
   projectsAndGrants: { cs: `Projekty & granty`, en: `Projects & Grants` },
@@ -274,6 +274,17 @@ const getCommunities = (cs: boolean) => [
     tags: cs ? ['Očištění', 'Kora', 'Šambhala'] : ['Purification', 'Kora', 'Shambhala'],
     href: '/terranova/kailash',
     cover: '/images/kailash/hero.webp',
+  },
+  {
+    name: 'Amenti',
+    location: cs ? 'Gíza, Egypt' : 'Giza, Egypt',
+    status: 'vision' as const,
+    desc: cs
+      ? 'Dvanáctý a poslední bod sítě — kolébka záznamu na plateu Gízy: poslední dochovaný div antického světa (~4 500 let) a v mýtické geografii sítě Síně Amenti pod pískem — síně, kde 32 Dětí Světla hlídá Kvetoucí Plamen. Sedm Pánů = sedm ctností implementovaných v L3; Amenti Library už sítí běží. Uzel jako vztah, ne stavba.'
+      : 'The twelfth and final point of the network — the cradle of the record on the Giza plateau: the last surviving Wonder of the ancient world (~4,500 yrs) and, in the network’s mythic geography, the Halls of Amenti beneath the sand — where the 32 Children of Light keep the Flower of Light. Seven Lords = seven virtues implemented in L3; the Amenti Library already runs on the network. A node as a relationship, not a construction.',
+    tags: cs ? ['Vzpomínka', 'Síně záznamu', 'Smaragdové desky'] : ['Remembrance', 'Halls of Records', 'Emerald Tablets'],
+    href: '/terranova/amenti',
+    cover: '/images/amenti/hero.webp',
   },
 ];
 
@@ -469,7 +480,7 @@ export default function L5FreeWorldPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l5-free-world/hero.webp"
-                alt={cs ? 'L5 Free World — deset bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the ten Terra Nova nodes in the physical world'}
+                alt={cs ? 'L5 Free World — dvanáct bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the twelve Terra Nova nodes in the physical world'}
                 width={1672}
                 height={941}
                 loading="eager"

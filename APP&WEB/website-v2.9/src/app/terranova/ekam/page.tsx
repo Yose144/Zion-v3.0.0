@@ -249,6 +249,7 @@ const SISTERS = [
   { name: 'María del Camino', href: '/terranova/maria-del-camino', region: { cs: 'Světové oceány · Galicie', en: 'World oceans · Galicia' } },
   { name: 'Boa Esperança', href: '/terranova/boa-esperanca', region: { cs: 'Mys dobré naděje', en: 'Cape of Good Hope' } },
   { name: 'Kailash', href: '/terranova/kailash', region: { cs: 'Ngari, Tibet', en: 'Ngari, Tibet' } },
+  { name: 'Amenti', href: '/terranova/amenti', region: { cs: 'Gíza, Egypt', en: 'Giza, Egypt' } },
 ];
 
 export default function EkamPage() {

@@ -392,6 +392,7 @@ const SISTERS = [
   { name: 'Boa Esperança', href: '/terranova/boa-esperanca', region: { cs: 'Mys dobré naděje', en: 'Cape of Good Hope' } },
   { name: 'Ekam · Oneness Temple', href: '/terranova/ekam', region: { cs: 'Andhra Pradesh, Indie', en: 'Andhra Pradesh, India' } },
   { name: 'Kailash', href: '/terranova/kailash', region: { cs: 'Ngari, Tibet', en: 'Ngari, Tibet' } },
+  { name: 'Amenti', href: '/terranova/amenti', region: { cs: 'Gíza, Egypt', en: 'Giza, Egypt' } },
 ];
 
 export default function MariaDelCaminoPage() {
@@ -499,7 +500,7 @@ export default function MariaDelCaminoPage() {
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/maria-del-camino/hero.webp"
-                alt="María del Camino — noční oceán, plachetnice pod Mléčnou dráhou"
+                alt="María del Camino — tři plachetnice Tres Marías na oceánu při západu slunce"
                 width={1600}
                 height={900}
                 loading="eager"

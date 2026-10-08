@@ -704,6 +704,7 @@ const TERRA_NOVA_MARKERS = [
   { lat: 42.4, lon: -8.7, color: '#0ea5e9', glow: '#0ea5e9', nameCs: 'María del Camino', nameEn: 'María del Camino', href: '/terranova/maria-del-camino' },
   { lat: -34.35, lon: 18.47, color: '#f59e0b', glow: '#f59e0b', nameCs: 'Boa Esperança', nameEn: 'Boa Esperança', href: '/terranova/boa-esperanca' },
   { lat: 31.07, lon: 81.31, color: '#a5b4fc', glow: '#a5b4fc', nameCs: 'Kailash', nameEn: 'Kailash', href: '/terranova/kailash' },
+  { lat: 29.98, lon: 31.13, color: '#34d399', glow: '#34d399', nameCs: 'Amenti — Síně záznamu', nameEn: 'Amenti — Halls of Records', href: '/terranova/amenti' },
 ];
 
 function TerraNovaMarkers() {

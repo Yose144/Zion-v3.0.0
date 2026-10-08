@@ -125,4 +125,15 @@ export const NOVA_ZEME_PROJECTS = [
     lat: 31.07,
     lon: 81.31,
   },
+  {
+    id: 'amenti',
+    name: 'Amenti',
+    location: 'Gíza · Egypt',
+    color: '#34d399',
+    status: 'Vision',
+    desc: 'Dvanáctý a poslední bod — kolébka záznamu na plateu Gízy: poslední div antického světa a v mýtické geografii sítě Síně Amenti pod pískem — 32 Dětí Světla u Kvetoucího Plamene, Sedm Pánů = sedm ctností v L3, Amenti Library už běží. Uzel jako vztah.',
+    href: 'https://app.zionterranova.com/terranova/amenti',
+    lat: 29.98,
+    lon: 31.13,
+  },
 ] as const;

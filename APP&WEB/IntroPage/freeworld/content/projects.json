@@ -376,5 +376,40 @@
    "cs": "Vize — nejdřív naslouchat · bez termínu",
    "en": "Vision — listening first · no deadline"
   }
+ },
+ {
+  "slug": "amenti",
+  "docSlug": "amenti",
+  "name": "Amenti",
+  "subtitle": {
+   "cs": "Síně záznamu — Kolébka záznamu",
+   "en": "The Halls of Records — Cradle of the Record"
+  },
+  "tagline": {
+   "cs": "Dvanáctý a poslední bod sítě. Plateau Gízy — poslední dochovaný div antického světa (~4 500 let trvání jednoho záznamu). V mýtické geografii sítě leží pod pískem Síně Amenti ze Smaragdových desek: 32 Dětí Světla u Kvetoucího Plamene, Sedm Pánů čtených jako sedm ctností implementovaných v L3, Amenti Library už běžící jako digitální síně sítě (Kvantová revoluce v 11 jazycích). Desky = novodobý esoterní text — literární archetyp, ne egyptologie. Uzel jako vztah, ne stavba.",
+   "en": "The twelfth and final node of the network. The Giza plateau — the last surviving Wonder of the ancient world (~4,500 years of a single record). In the network's mythic geography, the Halls of Amenti lie beneath the sand — the Emerald Tablets' 32 Children of Light around the Flower of Light, the Seven Lords read as seven virtues implemented in L3, and the Amenti Library already serving as the network's digital hall (the Quantum Revolution in 11 languages). The Tablets = a modern esoteric text — a literary archetype, not Egyptology. A node as relationship, not construction."
+  },
+  "location": {
+   "cs": "Plateau Gízy · Egypt",
+   "en": "Giza Plateau · Egypt"
+  },
+  "status": "vision",
+  "lat": 29.98,
+  "lon": 31.13,
+  "accent": "#34d399",
+  "tags": [
+   "Remembrance",
+   "Halls of Records",
+   "Emerald Tablets",
+   "Seven Virtues"
+  ],
+  "renderImg": "amenti/render.webp",
+  "boardImg": "amenti/board.webp",
+  "appHref": "https://app.zionterranova.com/terranova/amenti",
+  "grantTitle": "—",
+  "timeline": {
+   "cs": "Vize — nejdřív naslouchat · bez termínu",
+   "en": "Vision — listening first · no deadline"
+  }
  }
 ]

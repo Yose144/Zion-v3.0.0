@@ -19,12 +19,14 @@ SOURCES = {
     'lumi-nova-amerika': ('Lumi.png', 'Lumi project.png'),
     'uluru': ('Uluru copy.png', 'UluruProject.png'),
     # TODO(interim): board is placeholder art — replace with real vessel masterplan
-    'maria-del-camino': ('Caminos3.jpg', 'MariaDelCaminoProject.png'),
+    'maria-del-camino': ('L5Hero.png', 'MariaDelCaminoProject.png'),
     # TODO(interim): board is placeholder art — replace with real cape masterplan
     'boa-esperanca': ('BoaEsp.jpg', 'BoaEsperancaProject.png'),
     # TODO(interim): board is placeholder art — replace with real temple masterplan
     'ekam': ('Ekam.png', 'EkamProject.png'),
     'kailash': ('Kailash_ Brána k sobě.png', 'KailashProject.png'),
+    # TODO(interim): render+board are PIL interim art — replace with real Amenti art
+    'amenti': ('Amenti.png', 'AmentiProject.png'),
 }
 
 def save_webp(im: Image.Image, out: Path, max_w: int, q: int):

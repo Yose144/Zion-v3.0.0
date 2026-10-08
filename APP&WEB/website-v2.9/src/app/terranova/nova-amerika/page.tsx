@@ -212,6 +212,7 @@ const SISTERS = [
   { name: 'Bodhi Lanka', href: '/terranova/bodhi-lanka', region: { cs: 'Srí Lanka', en: 'Sri Lanka' } },
   { name: 'Uluru', href: '/terranova/uluru', region: { cs: 'Northern Territory · Austrálie', en: 'Northern Territory · Australia' } },
   { name: 'Kailash', href: '/terranova/kailash', region: { cs: 'Ngari, Tibet', en: 'Ngari, Tibet' } },
+  { name: 'Amenti', href: '/terranova/amenti', region: { cs: 'Gíza, Egypt', en: 'Giza, Egypt' } },
 ];
 
 export default function NovaAmerikaPage() {

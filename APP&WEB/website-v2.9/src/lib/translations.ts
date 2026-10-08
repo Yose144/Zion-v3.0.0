@@ -68,6 +68,7 @@ const t = {
     terra_boa_esperanca: { cs: 'Boa Esperança', en: 'Boa Esperança' },
     terra_ekam: { cs: 'Ekam', en: 'Ekam' },
     terra_kailash: { cs: 'Kailash', en: 'Kailash' },
+    terra_amenti: { cs: 'Amenti — Síně záznamu', en: 'Amenti — Halls of Records' },
     resonance: { cs: 'Rezonance', en: 'Resonance' },
     team: { cs: 'Tým', en: 'Team' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
