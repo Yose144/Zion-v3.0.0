@@ -71,6 +71,8 @@ const Copy = {
   libraryCta2: { cs: `Free World portál →`, en: `Free World portal →` },
   hallsAlt: { cs: `Síně Amenti — síně mrtvých a živých pod pískem`, en: `The Halls of Amenti — halls of the dead and the living beneath the sand` },
   heartAlt: { cs: `Srdce Amenti — planoucí srdce sítě`, en: `The Heart of Amenti — the network's burning heart` },
+  logosAlt: { cs: `Kristův klíč — loga strážců Síní Amenti`, en: `The Christ key — the guardian sigils of the Halls of Amenti` },
+  logosCaption: { cs: `Kristův klíč — loga strážců; malá pečeť věrnosti síní`, en: `The Christ key — the guardians' sigils; a small seal of fidelity to the halls` },
   featuredBookTag: { cs: `HLAVNÍ SVAZEK · 11 JAZYKŮ`, en: `FEATURED TOME · 11 LANGUAGES` },
   featuredBookTitle: { cs: `Kvantová revoluce & One Love`, en: `Quantum Revolution & One Love` },
   featuredBookDesc: {
@@ -616,6 +618,22 @@ export default function AmentiPage() {
             <p className="text-gray-300 leading-relaxed mb-6">
               {Copy.hallsBody[cs ? 'cs' : 'en']}
             </p>
+            <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-300/20 bg-black/30">
+              <img
+                src="/images/amenti/heart.webp"
+                alt={Copy.heartAlt[cs ? 'cs' : 'en']}
+                width={1200}
+                height={781}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-cover"
+              />
+              <div className="p-4 md:p-6">
+                <p className="text-base md:text-lg font-semibold text-white">{Copy.heartTitle[cs ? 'cs' : 'en']}</p>
+                <p className="mt-1 text-sm md:text-base text-gray-400 leading-relaxed">{Copy.heartBody[cs ? 'cs' : 'en']}</p>
+                <p className="mt-3 text-[10px] md:text-xs font-bold tracking-[0.3em] text-emerald-300">{Copy.heartMantra[cs ? 'cs' : 'en']}</p>
+              </div>
+            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {Copy.hallsPoints[cs ? 'cs' : 'en'].map((point, i) => {
                 const PointIcon = [BookOpen, Shield, Users][i];
@@ -630,15 +648,6 @@ export default function AmentiPage() {
                 );
               })}
             </div>
-            <img
-              src="/images/amenti/logos.webp"
-              alt={cs ? 'Loga Síní Amenti — symboly strážců' : 'Logos of Amenti — the sigils of the guardians'}
-              width={800}
-              height={914}
-              loading="lazy"
-              decoding="async"
-              className="mx-auto mt-6 w-full max-w-sm rounded-xl border border-white/10 opacity-90"
-            />
           </div>
         </motion.section>
 
@@ -837,21 +846,17 @@ export default function AmentiPage() {
                   </span>
                 ))}
               </div>
-              <div className="mt-5 overflow-hidden rounded-xl border border-emerald-300/20">
+              <div className="mt-5 flex items-center gap-4 rounded-xl border border-emerald-300/20 bg-black/20 p-3 sm:gap-5 sm:p-4">
                 <img
-                  src="/images/amenti/heart.webp"
-                  alt={Copy.heartAlt[cs ? 'cs' : 'en']}
-                  width={1200}
-                  height={781}
+                  src="/images/amenti/logos.webp"
+                  alt={Copy.logosAlt[cs ? 'cs' : 'en']}
+                  width={160}
+                  height={183}
                   loading="lazy"
                   decoding="async"
-                  className="w-full object-cover"
+                  className="w-16 shrink-0 rounded-lg opacity-90 sm:w-24"
                 />
-                <div className="bg-black/40 p-4">
-                  <p className="text-sm font-semibold text-white">{Copy.heartTitle[cs ? 'cs' : 'en']}</p>
-                  <p className="mt-1 text-xs text-gray-400">{Copy.heartBody[cs ? 'cs' : 'en']}</p>
-                  <p className="mt-2 text-[10px] font-bold tracking-[0.3em] text-emerald-300">{Copy.heartMantra[cs ? 'cs' : 'en']}</p>
-                </div>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{Copy.logosCaption[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
             <div className="zion-rainbow-card p-6" style={{ '--rc': ACCENT } as React.CSSProperties}>
