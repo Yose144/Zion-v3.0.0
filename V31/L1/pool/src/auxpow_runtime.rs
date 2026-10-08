@@ -74,6 +74,22 @@ impl AuxPowRuntimeConfig {
     pub fn worker(&self) -> &str {
         &self.worker_name
     }
+
+    /// Get the stratum password for a specific coin.
+    ///
+    /// Per-coin override `ZION_POOL_AUXPOW_PASSWORD_<TICKER>` wins over the
+    /// global `ZION_POOL_AUXPOW_PASSWORD`. This matters for auto-exchange
+    /// pools: zpool requires `c=BTC` to credit the BTC payout address, while
+    /// NiceHash and most coin-native pools accept any password ("x").
+    pub fn password_for_coin(&self, coin: &ExternalCoin) -> String {
+        std::env::var(format!(
+            "ZION_POOL_AUXPOW_PASSWORD_{}",
+            coin.as_str().to_uppercase()
+        ))
+        .ok()
+        .filter(|p| !p.is_empty())
+        .unwrap_or_else(|| self.password.clone())
+    }
 }
 
 /// Build the runtime config from environment variables.
@@ -104,8 +120,11 @@ pub fn config_from_env() -> AuxPowRuntimeConfig {
         }
     }
 
-    // Also check per-coin wallet env vars
-    for profile in CoinProfile::defaults() {
+    // Also check per-coin wallet env vars — iterate the full catalogue so
+    // every registered coin is auto-detectable, not only the defaults()
+    // subset (a ZION_POOL_AUXPOW_WALLET_<COIN> for e.g. BEAM or KRX must
+    // enable the bridge too).
+    for profile in CoinProfile::all() {
         let env_var = format!(
             "ZION_POOL_AUXPOW_WALLET_{}",
             profile.coin.as_str().to_uppercase()
@@ -165,18 +184,21 @@ pub fn spawn_auxpow_runtime(multi_bridge: MultiAuxPowBridge, cfg: AuxPowRuntimeC
         return;
     }
 
-    let profiles = CoinProfile::defaults();
     let enabled: Vec<ExternalCoin> = cfg.enabled_coins.iter().copied().collect();
 
     for coin in enabled {
-        let profile = profiles.iter().find(|p| p.coin == coin);
-        let profile = match profile {
-            Some(p) => p.clone(),
-            None => {
-                tracing::warn!("auxpow_runtime: no CoinProfile for {:?}, skipping", coin);
-                continue;
-            }
-        };
+        // CoinProfile::for_coin falls back to a generic profile for coins
+        // outside defaults() — registered coins (BEAM, KRX, ...) must be
+        // bridgeable via env even before they get a tuned default profile.
+        let profile = CoinProfile::for_coin(coin);
+        if profile.disabled {
+            tracing::warn!(
+                "auxpow_runtime: coin {:?} is disabled ({}), skipping",
+                coin,
+                profile.disabled_reason.as_deref().unwrap_or("no reason")
+            );
+            continue;
+        }
 
         // Check if a per-coin wallet override exists
         let per_coin_wallet = std::env::var(format!(
@@ -228,6 +250,7 @@ pub fn spawn_auxpow_runtime(multi_bridge: MultiAuxPowBridge, cfg: AuxPowRuntimeC
         let bridge = multi_bridge.clone();
         let reconnect_base = cfg.reconnect_base_delay_secs;
         let reconnect_max = cfg.reconnect_max_delay_secs;
+        let coin_password = cfg.password_for_coin(&coin);
 
         // Insert bridge for this coin
         let (aux_bridge, share_rx) = crate::auxpow_bridge::AuxPowBridge::new(true);
@@ -241,7 +264,7 @@ pub fn spawn_auxpow_runtime(multi_bridge: MultiAuxPowBridge, cfg: AuxPowRuntimeC
         );
 
         let pool_addr_clone = pool_addr.clone();
-        let password = cfg.password.clone();
+        let password = coin_password;
 
         std::thread::spawn(move || {
             let rt = match tokio::runtime::Builder::new_multi_thread()

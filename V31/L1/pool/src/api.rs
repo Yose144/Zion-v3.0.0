@@ -319,16 +319,7 @@ impl PoolApi {
         let stats = pool.pplns.stats();
         let fees = pool.pplns.fee_stats();
 
-        let auxpow_json = if let Some(ref bridge) = self.auxpow_bridge {
-            let coins: Vec<String> = bridge
-                .enabled_coins()
-                .iter()
-                .map(|c| c.as_str().to_string())
-                .collect();
-            json!({"enabled":true,"coins":coins})
-        } else {
-            json!({"enabled":false})
-        };
+        let auxpow_json = self.auxpow_summary_json();
 
         // Routing stats (sources + groups) for dashboard Trinity Mining panel
         let routing_json = if let Some(ref rs) = self.routing_stats {
@@ -407,35 +398,104 @@ impl PoolApi {
         .to_string()
     }
 
-    fn build_auxpow_payload(&self) -> String {
+    /// Shared auxpow summary used by both `/stats` (folded into the big
+    /// payload) and `/api/v1/auxpow` (standalone). Shape:
+    /// `{enabled, coins:[ticker], coin_details:[{ticker,algorithm,device,
+    /// upstream,job_id,job_age_ms,job_fresh}]}`.
+    fn auxpow_summary_json(&self) -> serde_json::Value {
         match &self.auxpow_bridge {
             Some(bridge) => {
-                let coins: Vec<String> = bridge
-                    .enabled_coins()
+                let enabled = bridge.enabled_coins();
+                let coins: Vec<serde_json::Value> = enabled
                     .iter()
-                    .map(|c| format!("\"{}\"", c.as_str()))
+                    .map(|c| json!(c.as_str()))
                     .collect();
-                format!(
-                    "{{\"ok\":true,\"enabled\":true,\"coins\":[{}]}}",
-                    coins.join(",")
-                )
+                // Per-coin details for pool dashboards and the desktop agent:
+                // ticker, consensus algorithm, upstream stratum endpoint, and
+                // whether the bridge currently holds a fresh job to serve.
+                let details: Vec<serde_json::Value> = enabled
+                    .iter()
+                    .map(|c| {
+                        let upstream = std::env::var(format!(
+                            "ZION_POOL_AUXPOW_POOL_{}",
+                            c.as_str().to_uppercase()
+                        ))
+                        .ok()
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or_else(|| {
+                            zion_cosmic_harmony::CoinProfile::for_coin(*c).pool_address()
+                        })
+                        .trim_start_matches("stratum+tcp://")
+                        .to_string();
+                        let job = bridge.latest_job_for_coin(c);
+                        let (job_id, job_age_ms) = match &job {
+                            Some(j) => {
+                                let age = j
+                                    .received_at
+                                    .map(|t| t.elapsed().as_millis() as u64)
+                                    .unwrap_or(0);
+                                (Some(j.external_job_id.clone()), Some(age))
+                            }
+                            None => (None, None),
+                        };
+                        json!({
+                            "ticker": c.as_str(),
+                            "algorithm": c.algorithm(),
+                            "device": if bridge.is_cpu_coin(c) { "cpu" } else { "gpu" },
+                            "upstream": upstream,
+                            "job_id": job_id,
+                            "job_age_ms": job_age_ms,
+                            "job_fresh": job_age_ms.map(|a| a < 120_000).unwrap_or(false),
+                        })
+                    })
+                    .collect();
+                json!({
+                    "enabled": true,
+                    "coins": coins,
+                    "coin_details": details,
+                })
             }
-            None => "{\"ok\":true,\"enabled\":false}".to_string(),
+            None => json!({"enabled": false}),
         }
     }
 
+    fn build_auxpow_payload(&self) -> String {
+        let mut v = self.auxpow_summary_json();
+        v["ok"] = json!(true);
+        v.to_string()
+    }
+
     /// Build the profit switcher status payload.
+    ///
+    /// Lists every known external coin (CoinProfile::all) — professional
+    /// pools expose the full algorithm catalogue with per-coin
+    /// enabled/disabled state, not only the enabled subset. `served`
+    /// marks coins with a live AuxPoW bridge; `algorithm` uses the
+    /// canonical kernel name so dashboards can group by PoW family.
     fn build_profit_switch_payload(&self) -> String {
-        let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+        let served: std::collections::HashSet<String> = self
+            .auxpow_bridge
+            .as_ref()
+            .map(|b| {
+                b.enabled_coins()
+                    .iter()
+                    .map(|c| c.as_str().to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let profiles = zion_cosmic_harmony::CoinProfile::all();
         let entries: Vec<serde_json::Value> = profiles
             .iter()
             .map(|p| {
+                let ticker = p.coin.as_str();
                 json!({
-                    "coin": p.coin.as_str(),
+                    "coin": ticker,
+                    "algorithm": p.coin.algorithm(),
                     "device": format!("{:?}", p.device),
                     "profit_usd_day": p.estimate_profit(1.0),
                     "enabled": p.enabled && !p.disabled,
                     "disabled_reason": p.disabled_reason,
+                    "served": served.contains(ticker),
                 })
             })
             .collect();
@@ -1061,5 +1121,103 @@ mod tests {
         assert_eq!(payload["sessions"], 3);
         assert_eq!(payload["total_connections"], 7);
         assert_eq!(payload["pool"]["port"], 8444);
+    }
+
+    fn test_pool() -> Arc<Mutex<Pool>> {
+        let telemetry = Arc::new(Mutex::new(crate::telemetry::MinerTelemetryRegistry::new()));
+        Arc::new(Mutex::new(Pool::new(
+            crate::config::PoolConfig::default(),
+            telemetry,
+        )))
+    }
+
+    fn test_job(coin: zion_cosmic_harmony::ExternalCoin, job_id: &str, fresh: bool) -> crate::auxpow_bridge::JobPackage {
+        crate::auxpow_bridge::JobPackage {
+            external_job_id: job_id.into(),
+            coin,
+            header_hex: "deadbeef".into(),
+            target_hex: "ffff".into(),
+            height: 1,
+            algorithm: coin.algorithm().into(),
+            extranonce1_hex: "00".into(),
+            ntime: "00000000".into(),
+            seed_hash_hex: String::new(),
+            received_at: if fresh {
+                Some(Instant::now())
+            } else {
+                Some(Instant::now() - Duration::from_secs(600))
+            },
+        }
+    }
+
+    #[test]
+    fn auxpow_summary_disabled_when_no_bridge() {
+        let api = PoolApi::new(test_pool(), None, None);
+        let v = api.auxpow_summary_json();
+        assert_eq!(v["enabled"], false);
+        assert!(v.get("coins").is_none());
+    }
+
+    #[test]
+    fn auxpow_summary_lists_coins_and_freshness() {
+        use zion_cosmic_harmony::ExternalCoin;
+
+        let bridge = crate::auxpow_bridge::MultiAuxPowBridge::new();
+        let (gpu_bridge, _rx1) = crate::auxpow_bridge::AuxPowBridge::new(true);
+        let (cpu_bridge, _rx2) = crate::auxpow_bridge::AuxPowBridge::new(true);
+        bridge.insert(ExternalCoin::Quantus, gpu_bridge.clone());
+        bridge.insert(ExternalCoin::Verus, cpu_bridge.clone());
+
+        gpu_bridge.push_job(test_job(ExternalCoin::Quantus, "qtu-job-1", true));
+        cpu_bridge.push_job(test_job(ExternalCoin::Verus, "vrsc-job-1", false));
+
+        std::env::set_var("ZION_POOL_AUXPOW_POOL_QTU", "eu.quantus.k1pool.com:5660");
+        let api = PoolApi::new(test_pool(), None, Some(bridge));
+        let v = api.auxpow_summary_json();
+        std::env::remove_var("ZION_POOL_AUXPOW_POOL_QTU");
+
+        assert_eq!(v["enabled"], true);
+        let coins: Vec<&str> = v["coins"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c.as_str().unwrap())
+            .collect();
+        assert_eq!(coins, ["QTU", "VRSC"]); // deterministic ticker order
+
+        let details = v["coin_details"].as_array().unwrap();
+        assert_eq!(details.len(), 2);
+
+        let qtu = &details[0];
+        assert_eq!(qtu["ticker"], "QTU");
+        assert_eq!(qtu["algorithm"], "qpow-poseidon2");
+        assert_eq!(qtu["device"], "gpu");
+        assert_eq!(qtu["upstream"], "eu.quantus.k1pool.com:5660");
+        assert_eq!(qtu["job_id"], "qtu-job-1");
+        assert_eq!(qtu["job_fresh"], true);
+
+        let vrsc = &details[1];
+        assert_eq!(vrsc["ticker"], "VRSC");
+        assert_eq!(vrsc["algorithm"], "verushash");
+        assert_eq!(vrsc["device"], "cpu");
+        // 10-minute-old job is stale → not fresh
+        assert_eq!(vrsc["job_fresh"], false);
+        assert_eq!(vrsc["job_id"], "vrsc-job-1");
+    }
+
+    #[test]
+    fn profit_switch_lists_full_coin_catalogue() {
+        let api = PoolApi::new(test_pool(), None, None);
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_profit_switch_payload()).unwrap();
+        let coins = payload["coins"].as_array().unwrap();
+        // CoinProfile::all() exposes every known ExternalCoin, not just the
+        // enabled defaults() subset — professional catalogue exposure.
+        assert!(coins.len() >= 30, "expected full catalogue, got {}", coins.len());
+        assert!(coins.iter().all(|c| c.get("served").is_some()));
+        // Pearl is registered but deliberately disabled.
+        let prl = coins.iter().find(|c| c["coin"] == "PRL").unwrap();
+        assert_eq!(prl["enabled"], false);
+        assert!(prl["disabled_reason"].is_string());
     }
 }
