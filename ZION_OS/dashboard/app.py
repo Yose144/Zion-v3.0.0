@@ -8204,6 +8204,275 @@ def _warp_excluded_assets() -> list:
         return []
 
 
+# ── Quantus (QTC) panel ──────────────────────────────────────────────────
+# Local node RPC (Safe methods only — the node runs --rpc-methods Safe),
+# pool public /stats auxpow section for the native leg, and the public
+# sqm squid indexer for the rewards feed. Everything fail-soft: one dead
+# dependency must not blank the whole panel.
+QTC_RPC_LOCAL = os.environ.get("QTC_RPC_LOCAL", "http://127.0.0.1:9944")
+QTC_RPC_PUBLIC = os.environ.get("QTC_RPC_PUBLIC", "https://rpc.zionterranova.com/qtc")
+QTC_INDEXER = os.environ.get("QTC_INDEXER", "https://sqm.quantus.com/v1/graphql")
+
+
+def _qtc_rpc(method: str, params: list | None = None, timeout: float = 4.0,
+             url: str | None = None) -> dict:
+    """JSON-RPC call to the Quantus node. Returns {} on any failure."""
+    try:
+        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method,
+                           "params": params or []}).encode()
+        req = _urlreq.Request(url or QTC_RPC_LOCAL, data=body,
+                              headers={"content-type": "application/json",
+                                       "user-agent": "zion-dashboard"})
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            out = json.loads(r.read().decode())
+        if out.get("error"):
+            return {"_rpc_error": out["error"]}
+        return out.get("result") if out.get("result") is not None else {}
+    except Exception as e:
+        return {"_rpc_error": str(e)[:120]}
+
+
+def _qtc_indexer(query: str, timeout: float = 8.0) -> dict:
+    """GraphQL query against the public mainnet squid. Returns data {} or {}."""
+    try:
+        body = json.dumps({"query": query}).encode()
+        req = _urlreq.Request(QTC_INDEXER, data=body,
+                              headers={"content-type": "application/json",
+                                       "user-agent": "zion-dashboard"})
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            out = json.loads(r.read().decode())
+        return out.get("data") or {}
+    except Exception:
+        return {}
+
+
+def _qtc_rewards_address() -> str:
+    """Rewards wormhole address: env override wins, else scrape it from the
+    node's startup log (`Rewards wormhole address: qz…`)."""
+    env = os.environ.get("QTC_REWARDS_ADDRESS", "").strip()
+    if env:
+        return env
+    try:
+        r = _run_edge_cmd(
+            "journalctl -u zion-quantus-node --no-pager -b 2>/dev/null | "
+            "grep -oE 'wormhole address: qz[0-9A-Za-z]+' | tail -1",
+            timeout=8)
+        m = re.search(r"qz[0-9A-Za-z]+", r.stdout or "")
+        if m:
+            return m.group(0)
+    except Exception:
+        pass
+    return ""
+
+
+@_ttl_cache_fn(15.0, max_size=64)
+def get_qtc_status(addr: str = "") -> dict:
+    """Comprehensive Quantus/QTC ops payload for the dashboard tab."""
+    import concurrent.futures
+
+    result: dict = {"ok": True, "ts": int(time.time()), "node": {},
+                    "service": {}, "pool": {}, "rpc_public": {},
+                    "rewards": {}, "history": [], "network_feed": []}
+
+    def _node():
+        h = _qtc_rpc("system_health")
+        head = _qtc_rpc("chain_getHeader")
+        ver = _qtc_rpc("system_version")
+        chain = _qtc_rpc("system_chain")
+        rt = _qtc_rpc("state_getRuntimeVersion")
+        node = {}
+        if isinstance(h, dict) and "_rpc_error" not in h:
+            node["peers"] = h.get("peers")
+            node["syncing"] = h.get("isSyncing")
+            node["rpc_ok"] = True
+        else:
+            node["rpc_ok"] = False
+            node["rpc_error"] = (h or {}).get("_rpc_error", "unreachable")
+        if isinstance(head, dict) and head.get("number"):
+            node["height"] = int(head["number"], 16)
+            bh = _qtc_rpc("chain_getBlockHash", [node["height"]])
+            if isinstance(bh, str):
+                node["hash"] = bh
+        if isinstance(ver, str):
+            node["version"] = ver
+        if isinstance(chain, str):
+            node["chain"] = chain
+        if isinstance(rt, dict):
+            node["spec_version"] = rt.get("specVersion")
+            node["tx_version"] = rt.get("transactionVersion")
+        result["node"] = node
+
+    def _service():
+        props = _systemctl_show("zion-quantus-node")
+        svc = {"active": props.get("ActiveState") == "active",
+               "state": props.get("ActiveState", "unknown"),
+               "pid": props.get("MainPID")}
+        try:
+            r = _run_edge_cmd(
+                "systemctl show zion-quantus-node -p ActiveEnterTimestamp "
+                "--value 2>/dev/null", timeout=4)
+            svc["since"] = (r.stdout or "").strip()
+        except Exception:
+            pass
+        result["service"] = svc
+
+    def _pool():
+        try:
+            with _urlreq.urlopen(
+                    f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/stats",
+                    timeout=4.0) as r:
+                stats = json.loads(r.read().decode())
+            details = (stats.get("auxpow", {}) or {}).get("coin_details") or []
+            for c in details:
+                if c.get("ticker") == "QTU":
+                    result["pool"] = {
+                        "upstream": c.get("upstream"),
+                        "upstream_job_id": c.get("job_id"),
+                        "upstream_job_age_ms": c.get("job_age_ms"),
+                        "upstream_fresh": c.get("job_fresh"),
+                        "native": c.get("native") or {},
+                        "pending_payouts": ((stats.get("external_payouts", {}) or {})
+                                           .get("quantus", {}) or {}).get("pending"),
+                    }
+                    return
+            result["pool"] = {"error": "QTU coin not enabled in pool"}
+        except Exception as e:
+            result["pool"] = {"error": str(e)[:120]}
+
+    def _public_probe():
+        t0 = time.time()
+        r = _qtc_rpc("system_health", url=QTC_RPC_PUBLIC, timeout=6.0)
+        result["rpc_public"] = {
+            "ok": isinstance(r, dict) and "peers" in r,
+            "ms": int((time.time() - t0) * 1000),
+            "url": QTC_RPC_PUBLIC,
+        }
+
+    def _rewards():
+        waddr = _qtc_rewards_address()
+        rw: dict = {"address": waddr}
+        if waddr:
+            data = _qtc_indexer(
+                '{ transfer(where: {to_id: {_eq: "%s"}, '
+                'extrinsic_id: {_is_null: true}}, '
+                'order_by: {timestamp: desc}, limit: 8) '
+                '{ amount block_height timestamp leaf_index }, '
+                'agg: transfer_aggregate(where: {to_id: {_eq: "%s"}, '
+                'extrinsic_id: {_is_null: true}}) '
+                '{ aggregate { count } }' % (waddr, waddr))
+            rows = data.get("transfer") or []
+            rw["recent"] = [{
+                "amount_qtc": round(int(r.get("amount") or 0) / 1e12, 6),
+                "height": r.get("block_height"),
+                "ts": r.get("timestamp"),
+                "leaf": r.get("leaf_index"),
+            } for r in rows]
+            agg = ((data.get("agg") or {}).get("aggregate") or {})
+            rw["mined_count"] = agg.get("count")
+            if rows:
+                rw["last_ts"] = rows[0].get("timestamp")
+        result["rewards"] = rw
+
+    def _netfeed():
+        data = _qtc_indexer(
+            '{ transfer(order_by: {timestamp: desc}, limit: 8) '
+            '{ amount fee from_id to_id block_height timestamp '
+            'extrinsic_id } }')
+        result["network_feed"] = [{
+            "amount_qtc": round(int(r.get("amount") or 0) / 1e12, 6),
+            "from": r.get("from_id"), "to": r.get("to_id"),
+            "height": r.get("block_height"), "ts": r.get("timestamp"),
+            "is_reward": not r.get("extrinsic_id"),
+        } for r in (data.get("transfer") or [])]
+
+    def _wallet_hist():
+        if not addr or not addr.startswith("qz"):
+            return
+        data = _qtc_indexer(
+            '{ transfer(where: {_or: [{from_id: {_eq: "%s"}}, '
+            '{to_id: {_eq: "%s"}}]}, order_by: {timestamp: desc}, '
+            'limit: 15) { amount fee from_id to_id block_height '
+            'timestamp extrinsic_id leaf_index } }' % (addr, addr))
+        rows = []
+        for r in (data.get("transfer") or []):
+            inbound = r.get("to_id") == addr
+            rows.append({
+                "direction": "in" if inbound else "out",
+                "counterparty": r.get("from_id") if inbound else r.get("to_id"),
+                "amount_qtc": round(int(r.get("amount") or 0) / 1e12, 6),
+                "fee_qtc": round(int(r.get("fee") or 0) / 1e12, 6),
+                "height": r.get("block_height"), "ts": r.get("timestamp"),
+                "extrinsic": r.get("extrinsic_id"),
+                "leaf": r.get("leaf_index"),
+            })
+        result["history"] = rows
+        # Balance via System.Account (twox128 prefix + blake2-128 concat).
+        try:
+            raw = _ss58_decode_account(addr)
+            if raw:
+                key = "0x" + (
+                    "26aa394eea5630e07c48ae0c9558cef7"
+                    "b99d880ec681799c0cf30e888fb1cb00"
+                    + raw["h16"] + raw["account"]
+                )
+                st = _qtc_rpc("state_getStorage", [key])
+                if isinstance(st, str) and len(st) >= 162:
+                    b = bytes.fromhex(st[2:])
+                    free = int.from_bytes(b[16:32], "little")
+                    result["wallet_balance"] = {
+                        "free_planks": str(free),
+                        "free_qtc": free / 1e12,
+                        "nonce": int.from_bytes(b[0:4], "little"),
+                    }
+                else:
+                    # null storage = account never received a plain deposit
+                    # (rewards accrue as wormhole leaves, not System.Account)
+                    result["wallet_balance"] = {
+                        "free_planks": "0", "free_qtc": 0.0, "nonce": 0,
+                        "note": "no System.Account entry — wormhole-only?",
+                    }
+        except Exception:
+            pass
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+        list(ex.map(lambda f: f(),
+                    [_node, _service, _pool, _public_probe, _rewards,
+                     _netfeed, _wallet_hist]))
+    return result
+
+
+_B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
+def _ss58_decode_account(addr: str):
+    """Decode an ss58-189 Quantus address → {'account': hex32, 'h16': hex16}
+    (h16 = blake2-128 of the account, for the storage-key concat)."""
+    try:
+        num = 0
+        for ch in addr.strip():
+            num = num * 58 + _B58_ALPHABET.index(ch)
+        full = num.to_bytes((num.bit_length() + 7) // 8, "big")
+        zeros = len(addr) - len(addr.lstrip("1"))
+        raw = b"\x00" * zeros + full
+        if len(raw) not in (35, 36):
+            return None
+        plen = 1 if (raw[0] & 0x40) == 0 else 2
+        if plen == 2:
+            prefix = ((raw[0] & 0x3F) << 2) | (raw[1] >> 6) | ((raw[1] & 0x3F) << 8)
+            if prefix != 189:
+                return None
+        elif raw[0] != 189:
+            return None
+        acct = raw[plen:plen + 32]
+        if len(acct) != 32:
+            return None
+        import hashlib
+        h16 = hashlib.blake2b(acct, digest_size=16).hexdigest()
+        return {"account": acct.hex(), "h16": h16}
+    except Exception:
+        return None
+
+
 def get_multichain_detail() -> dict:
     """Extended L2/WARP ops detail for the Multichain tab.
 
@@ -12842,6 +13111,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_multichain_dashboard())
         elif route == "/api/multichain/detail":
             self._json(get_multichain_detail())
+        elif route == "/api/qtc":
+            q = urllib.parse.parse_qs(
+                urllib.parse.urlparse(self.path).query)
+            addr = (q.get("addr") or [""])[0].strip()[:64]
+            self._json(get_qtc_status(addr))
         elif route == "/api/oasis/stats":
             alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
             health = fetch_service_json("127.0.0.1", 8094, "/health") if alive else {}

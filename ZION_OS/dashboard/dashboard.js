@@ -41,7 +41,7 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','qtc','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -51,6 +51,7 @@ let _poolBlocksTimer = null;  // Pool Blocks tab auto-refresh timer
 let _poolDebugTimer = null;   // Pool Debug tab auto-refresh timer
 let _revenueTimer = null;     // Revenue System tab auto-refresh timer
 let _cexTimer = null;         // CEX panel auto-refresh timer
+let _qtcTimer = null;         // QTC panel auto-refresh timer
 let friendlyMode = false;
 let _overviewWidgetTimer = null;
 let _countdownTimer = null;
@@ -201,6 +202,7 @@ function clearTabTimers(except){
   if(except !== 'pool-blocks'){ clearInterval(_poolBlocksTimer); _poolBlocksTimer = null; }
   if(except !== 'revenue'){ clearInterval(_revenueTimer); _revenueTimer = null; }
   if(except !== 'cex'){ clearInterval(_cexTimer); _cexTimer = null; }
+  if(except !== 'qtc'){ clearInterval(_qtcTimer); _qtcTimer = null; }
   if(except !== 'pool-debug'){ clearInterval(_poolDebugTimer); _poolDebugTimer = null; }
   if(except !== 'launch-day'){ clearInterval(_countdownTimer); _countdownTimer = null; }
   if(except !== 'overview'){ clearInterval(_overviewWidgetTimer); _overviewWidgetTimer = null; }
@@ -223,6 +225,7 @@ function switchTab(name){
   const extraBtns = {
     'wallets': ['tab-pool-wallets'],
     'marketplace-orders': ['tab-marketplace-orders-quick'],
+    'qtc': ['tab-qtc-quick'],
   };
   for(const [tab, ids] of Object.entries(extraBtns)){
     ids.forEach(id => {
@@ -247,6 +250,7 @@ function switchTab(name){
   else if(name === 'dao'){ clearTabTimers('dao'); loadDaoAll(); if(!_daoTimer) _daoTimer = setInterval(loadDaoAll, 10000); }
   else if(name === 'cex'){ clearTabTimers(null); loadCexPanel(); if(!_cexTimer) _cexTimer = setInterval(loadCexPanel, 60000); }
   else if(name === 'multichain'){ clearTabTimers(null); loadMultichainPanel(); }
+  else if(name === 'qtc'){ clearTabTimers('qtc'); loadQtcPanel(); if(!_qtcTimer) _qtcTimer = setInterval(loadQtcPanel, 15000); }
   else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
@@ -13154,5 +13158,112 @@ async function maestroOrchestrate(){
     if(sl) sl.innerHTML='<div class="text-red-400">'+e.message+'</div>';
   }finally{
     if(btn){btn.disabled=false;btn.textContent='🎼 Orchestrate';}
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Quantus (QTC) panel — node + native pool leg + wormhole rewards
+// ─────────────────────────────────────────────────────────────────────
+
+let _qtcAddr = '';  // sticky address for the lookup card
+
+async function loadQtcPanel(withAddr){
+  if(withAddr){
+    const inp = document.getElementById('qtc-addr-input');
+    _qtcAddr = (inp ? inp.value.trim() : '') || '';
+  }
+  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  const setColor = (id, v, ok) => { const e = document.getElementById(id); if(e){ e.textContent = v; e.style.color = ok ? 'rgb(7 137 48)' : 'rgb(228 30 43)'; } };
+  const age = (ms) => ms == null ? '—' : ms < 1000 ? ms + ' ms' : (ms/1000).toFixed(1) + ' s';
+  const ts = (s) => { try { return s ? new Date(s).toLocaleString() : '—'; } catch(e){ return String(s||'—'); } };
+  try{
+    const url = _qtcAddr ? '/api/qtc?addr=' + encodeURIComponent(_qtcAddr) : '/api/qtc';
+    const d = await apiFetch(url, {cache: false}, 12000);
+
+    // ── Node card ──
+    const n = d.node || {}, svc = d.service || {};
+    const nodeOk = n.rpc_ok === true && n.syncing === false;
+    setColor('qtc-node-badge', nodeOk ? 'LIVE' : (n.rpc_ok ? 'SYNC' : 'DOWN'), nodeOk);
+    set('qtc-height', n.height != null ? n.height.toLocaleString() : '—');
+    set('qtc-peers', n.peers != null ? String(n.peers) : '—');
+    set('qtc-svc', svc.active ? '● active (pid ' + (svc.pid||'?') + ')' : '● ' + (svc.state || 'unknown'));
+    document.getElementById('qtc-svc')?.style.setProperty('color', svc.active ? 'rgb(7 137 48)' : 'rgb(228 30 43)');
+    set('qtc-version', n.version || '—');
+    set('qtc-chain', n.chain || '—');
+    set('qtc-runtime', (n.spec_version != null ? 'spec ' + n.spec_version : '—') + (n.tx_version != null ? ' · tx ' + n.tx_version : ''));
+    setColor('qtc-syncing', n.syncing === undefined ? '—' : (n.syncing ? 'yes' : 'no'), n.syncing === false);
+    set('qtc-hash', n.hash ? n.hash.slice(0, 18) + '…' : '—');
+    const hashEl = document.getElementById('qtc-hash'); if(hashEl && n.hash) hashEl.title = n.hash;
+    set('qtc-since', svc.since || '—');
+    const rp = d.rpc_public || {};
+    setColor('qtc-rpc-public', rp.ok === undefined ? '—' : (rp.ok ? 'OK (' + rp.ms + ' ms)' : 'FAIL'), !!rp.ok);
+
+    // ── Pool native leg ──
+    const p = d.pool || {}, nv = p.native || {};
+    setColor('qtc-native-badge', nv.connected ? 'LINKED' : 'DOWN', !!nv.connected);
+    set('qtc-native-enabled', nv.enabled === undefined ? '—' : (nv.enabled ? 'yes' : 'no'));
+    set('qtc-native-conn', nv.connected === undefined ? '—' : (nv.connected ? 'yes' : 'no'));
+    set('qtc-native-job', nv.job_id || '—');
+    set('qtc-native-age', age(nv.job_age_ms));
+    set('qtc-share-pct', nv.share_pct != null ? nv.share_pct + ' %' : '—');
+    set('qtc-native-pct', (nv.share_pct != null ? nv.share_pct + ' % lottery' : '—') + ' · rest → ' + (p.upstream || '—'));
+    set('qtc-upstream', p.upstream || '—');
+    set('qtc-upstream-job', p.upstream_job_id || '—');
+    setColor('qtc-upstream-age', age(p.upstream_job_age_ms), !!p.upstream_fresh);
+    set('qtc-pending-payouts', p.pending_payouts != null ? String(p.pending_payouts) : '—');
+
+    // ── Wormhole rewards ──
+    const rw = d.rewards || {};
+    set('qtc-rewards-addr', rw.address || '—');
+    set('qtc-mined', rw.mined_count != null ? String(rw.mined_count) : '0');
+    set('qtc-mined-count', rw.mined_count != null ? String(rw.mined_count) : '0');
+    set('qtc-reward-last', ts(rw.last_ts));
+    const rbody = document.getElementById('qtc-rewards-body');
+    if(rbody){
+      const rows = rw.recent || [];
+      rbody.innerHTML = rows.length ? rows.map(r =>
+        `<tr class="border-b border-white/5"><td class="py-1.5 px-2">${r.height ?? '—'}</td>
+         <td class="py-1.5 px-2 text-right text-emerald-400">+${r.amount_qtc}</td>
+         <td class="py-1.5 px-2 font-mono text-gray-400">#${r.leaf ?? '—'}</td>
+         <td class="py-1.5 px-2 text-gray-400">${ts(r.ts)}</td></tr>`).join('')
+        : '<tr><td colspan="4" class="py-3 text-gray-500 italic text-center">No rewards indexed yet — keep hashing.</td></tr>';
+    }
+
+    // ── Address lookup ──
+    if(_qtcAddr){
+      const wb = d.wallet_balance || {};
+      set('qtc-wallet-balance', wb.free_qtc != null ? wb.free_qtc.toFixed(6) : '0.000000');
+      set('qtc-wallet-nonce', wb.nonce != null ? String(wb.nonce) : '0');
+      const hist = d.history || [];
+      set('qtc-wallet-txcount', String(hist.length));
+      const hbody = document.getElementById('qtc-history-body');
+      if(hbody){
+        hbody.innerHTML = hist.length ? hist.map(r =>
+          `<tr class="border-b border-white/5">
+           <td class="py-1.5 px-2">${r.direction === 'in' ? '<span class="text-emerald-400">◀ in</span>' : '<span class="text-red-400">▶ out</span>'}</td>
+           <td class="py-1.5 px-2 font-mono text-gray-400">${r.counterparty ? escapeHtml(r.counterparty.slice(0, 12)) + '…' : '—'}</td>
+           <td class="py-1.5 px-2 text-right">${r.amount_qtc}</td>
+           <td class="py-1.5 px-2 text-gray-400">${r.height ?? '—'}</td>
+           <td class="py-1.5 px-2 text-gray-400">${ts(r.ts)}</td></tr>`).join('')
+          : '<tr><td colspan="5" class="py-3 text-gray-500 italic text-center">No transfers for this address.</td></tr>';
+      }
+    }
+
+    // ── Network feed ──
+    const fbody = document.getElementById('qtc-feed-body');
+    if(fbody){
+      const feed = d.network_feed || [];
+      fbody.innerHTML = feed.length ? feed.map(r =>
+        `<tr class="border-b border-white/5"><td class="py-2 px-2">${r.height ?? '—'}</td>
+         <td class="py-2 px-2 font-mono text-gray-400">${r.from ? escapeHtml(r.from.slice(0, 14)) + '…' : '—'}</td>
+         <td class="py-2 px-2 font-mono text-gray-400">${r.to ? escapeHtml(r.to.slice(0, 14)) + '…' : '—'}</td>
+         <td class="py-2 px-2 text-right">${r.amount_qtc}</td>
+         <td class="py-2 px-2">${r.is_reward ? '<span class="text-emerald-400">reward</span>' : '<span class="text-cyan-400">transfer</span>'}</td>
+         <td class="py-2 px-2 text-gray-400">${ts(r.ts)}</td></tr>`).join('')
+        : '<tr><td colspan="6" class="py-4 text-gray-500 italic text-center">Indexer unreachable.</td></tr>';
+    }
+  } catch(e){
+    console.warn('QTC panel load failed:', e);
+    setColor('qtc-node-badge', 'ERR', false);
   }
 }
