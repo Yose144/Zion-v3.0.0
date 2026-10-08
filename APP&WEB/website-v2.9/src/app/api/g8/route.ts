@@ -44,6 +44,34 @@ export async function GET() {
         )
       : {};
 
+    // Public-safe incident summary: counts + downtime per signal, plus the
+    // most recent incidents (timestamps/duration/signal names only).
+    const rawIncidents = Array.isArray(d.incidents) ? d.incidents : [];
+    const criticalSet = new Set(
+      (Array.isArray(d.critical_incidents) ? d.critical_incidents : []).map((c: any) => c?.started),
+    );
+    const bySignal: Record<string, { count: number; downtime_seconds: number }> = {};
+    let totalDowntime = 0;
+    for (const inc of rawIncidents) {
+      const dur = typeof inc?.duration_seconds === 'number' ? inc.duration_seconds : 0;
+      totalDowntime += dur;
+      const svcs = Array.isArray(inc?.services) ? inc.services : [];
+      for (const s of svcs) {
+        const label = SIGNAL_LABELS[s] || String(s);
+        const cur = bySignal[label] ?? { count: 0, downtime_seconds: 0 };
+        cur.count += 1;
+        cur.downtime_seconds += dur;
+        bySignal[label] = cur;
+      }
+    }
+    const recentIncidents = rawIncidents.slice(-8).reverse().map((inc: any) => ({
+      started: typeof inc?.started === 'string' ? inc.started : null,
+      ended: typeof inc?.ended === 'string' ? inc.ended : null,
+      duration_seconds: typeof inc?.duration_seconds === 'number' ? inc.duration_seconds : null,
+      signals: (Array.isArray(inc?.services) ? inc.services : []).map((s: any) => SIGNAL_LABELS[s] || String(s)),
+      critical: criticalSet.has(inc?.started),
+    }));
+
     const body = {
       schema_version: d.schema_version ?? null,
       run_id: d.run_id ?? null,
@@ -61,8 +89,13 @@ export async function GET() {
         typeof d.evidence_coverage_percent === 'number' ? d.evidence_coverage_percent : null,
       service_uptime_percent: serviceUptime,
       active_alert_count: typeof d.active_alert_count === 'number' ? d.active_alert_count : 0,
-      incident_count: Array.isArray(d.incidents) ? d.incidents.length : 0,
+      incident_count: rawIncidents.length,
       critical_incident_count: Array.isArray(d.critical_incidents) ? d.critical_incidents.length : 0,
+      incident_summary: {
+        total_downtime_seconds: totalDowntime,
+        by_signal: bySignal,
+        recent: recentIncidents,
+      },
       sample_counts: d.sample_counts && typeof d.sample_counts === 'object' ? d.sample_counts : null,
       last_evidence_update: d.last_evidence_update ?? null,
       policy: {
