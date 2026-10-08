@@ -264,6 +264,9 @@ pub struct CudaExternalMiner {
     // TOTAL_MAX (0x10000) * VERUS_KEY_SIZE128 (552) uint4 = 0x10000 * 552 * 16 bytes = ~578 MB
     // This is too large — use a smaller buffer that covers threads_per_block * blocks
     verus_scratch: Option<CudaSlice<u32>>,
+    /// ZION_VERUS_DEBUG=1: per-thread CLHash intermediate dump (u64/thread)
+    verus_debug_im: Option<CudaSlice<u64>>,
+    verus_nonce_space: Option<CudaSlice<u32>>,
     // ProgPoW: current period for random math recompilation.
     // 0xFFFFFFFF = no ProgPoW kernel compiled yet.
     progpow_period: u32,
@@ -450,6 +453,8 @@ impl CudaExternalMiner {
             verus_vkey: None,
             verus_blockhash_half: None,
             verus_scratch: None,
+            verus_debug_im: None,
+            verus_nonce_space: None,
             progpow_period: 0xFFFFFFFF,
             progpow_dag_elements: 0,
             progpow_g_output,
@@ -569,6 +574,15 @@ impl CudaExternalMiner {
                 .dev
                 .htod_copy(scratch_zeros)
                 .map_err(|e| anyhow::anyhow!("verus scratch alloc: {e}"))?;
+
+            // Default nonceSpace template: 11 zero bytes (en1) + u32 nonce at
+            // offset 11 — matches VRSC stratum en1‖nonce layout. A live pool
+            // path can overwrite this buffer with the real template.
+            let ns_buf = self
+                .dev
+                .htod_copy(vec![0u32; 4])
+                .map_err(|e| anyhow::anyhow!("verus nonce_space upload: {e}"))?;
+            self.verus_nonce_space = Some(ns_buf);
 
             self.verus_vkey = Some(key_buf);
             self.verus_blockhash_half = Some(blockhash_buf);
@@ -996,7 +1010,15 @@ impl CudaExternalMiner {
         let mut left = batch_size;
 
         while left > 0 {
-            let chunk = (left as u32).min(self.work_size as u32);
+            // Verushash per-thread key workspace is capped at TOTAL_MAX=4096
+            // threads by the kernel (thread & 0xfff aliases scratch) — never
+            // launch more than that in one go.
+            let max_chunk = if self.algo == CudaExtAlgo::Verushash {
+                4096u32
+            } else {
+                self.work_size as u32
+            };
+            let chunk = (left as u32).min(self.work_size as u32).min(max_chunk);
             let blocks = chunk.div_ceil(threads_per_block);
             let cfg = LaunchConfig {
                 grid_dim: (blocks, 1, 1),
@@ -1251,18 +1273,36 @@ impl CudaExternalMiner {
                             .verus_scratch
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("verus scratch not allocated"))?;
+                        let nonce_space = self
+                            .verus_nonce_space
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus nonce_space not set"))?;
+                        if self.verus_debug_im.is_none() {
+                            let dbg = std::env::var("ZION_VERUS_DEBUG")
+                                .map(|v| v == "1")
+                                .unwrap_or(false);
+                            let buf = self
+                                .dev
+                                .alloc_zeros::<u64>(if dbg { 4096 } else { 0 })
+                                .map_err(|e| anyhow::anyhow!("verus debug alloc: {e}"))?;
+                            self.verus_debug_im = Some(buf);
+                        }
+                        let debug_im = self.verus_debug_im.as_ref().unwrap();
                         func.clone()
                             .launch(
                                 cfg,
                                 (
                                     vkey,
                                     blockhash_half,
+                                    nonce_space,
+                                    11u32, // ns_off: nonce u32 at bytes 11..14
                                     &self.target_buf,
                                     scratch,
                                     current_nonce,
                                     &mut self.output_nonce,
                                     &mut self.output_hash,
                                     &mut self.found_flag,
+                                    debug_im,
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("verushash launch: {e}"))?;
@@ -1279,6 +1319,22 @@ impl CudaExternalMiner {
         self.dev
             .synchronize()
             .map_err(|e| anyhow::anyhow!("device sync: {e}"))?;
+
+        if self.algo == CudaExtAlgo::Verushash
+            && std::env::var("ZION_VERUS_DEBUG").ok().as_deref() == Some("1")
+        {
+            if let Some(buf) = self.verus_debug_im.as_ref() {
+                if let Ok(ims) = self.dev.dtoh_sync_copy(buf) {
+                    let dump: Vec<String> = ims
+                        .iter()
+                        .take(64)
+                        .enumerate()
+                        .map(|(i, v)| format!("{i}:{v:016x}"))
+                        .collect();
+                    eprintln!("VERUS_IM {}", dump.join(" "));
+                }
+            }
+        }
 
         let found_host = self
             .dev

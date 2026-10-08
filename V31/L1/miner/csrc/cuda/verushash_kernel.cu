@@ -346,14 +346,15 @@ __device__ __forceinline__ void case_4(uint128m &prand, uint128m &prandex, const
 	const uint128m add1 = _mm_xor_si128_emu(temp1, temp2);
 	const uint128m clprod1 = _mm_clmulepi64_si128_emu(add1, add1, 0x10);
 	acc = _mm_xor_si128_emu(clprod1, acc);
+	const uint128m clprod2 = _mm_clmulepi64_si128_emu(temp2, temp2, 0x10);
+	acc = _mm_xor_si128_emu(clprod2, acc);
 	const uint128m tempa1 = _mm_mulhrs_epi16_emu(acc, temp1);
 	const uint128m tempa2 = _mm_xor_si128_emu(tempa1, temp1);
 	const uint128m temp12 = prandex;
 	prandex = tempa2;
 	const uint128m temp22 = _mm_load_si128_emu(pbuf - ((selector & 1) ? 1 : -1));
 	const uint128m add12 = _mm_xor_si128_emu(temp12, temp22);
-	const uint128m clprod12 = _mm_clmulepi64_si128_emu(add12, add12, 0x10);
-	acc = _mm_xor_si128_emu(clprod12, acc);
+	acc = _mm_xor_si128_emu(add12, acc);
 	const uint128m tempb1 = _mm_mulhrs_epi16_emu(acc, temp12);
 	const uint128m tempb2 = _mm_xor_si128_emu(tempb1, temp12);
 	prand = tempb2;
@@ -765,12 +766,49 @@ __device__ __forceinline__ uint32_t haraka512_port_keyed2222(
 	return s3.z ^ in[3].y;
 }
 
+// ── Haraka512 port keyed — full 32-byte output ─────────────────────────────
+// Standard pipeline: 5×(AES4+MIX4), feed-forward XOR, truncated store
+// out = perm(in)[8..16]‖[24..32]‖[32..40]‖[48..56] — matches haraka512_keyed.
+
+__device__ __forceinline__ void haraka512_keyed_full(
+	const uint128m * __restrict__ in, const uint128m * __restrict__ rc,
+	uint32_t * __restrict__ sharedMemory1, uint32_t * __restrict__ out32)
+{
+	uint128m s1, s2, s3, s4, tmp;
+	s1 = in[0];
+	s2 = in[1];
+	s3 = in[2];
+	s4 = in[3];
+	AES4(s1, s2, s3, s4, 0);
+	MIX4(s1, s2, s3, s4);
+	AES4(s1, s2, s3, s4, 8);
+	MIX4(s1, s2, s3, s4);
+	AES4(s1, s2, s3, s4, 16);
+	MIX4(s1, s2, s3, s4);
+	AES4(s1, s2, s3, s4, 24);
+	MIX4(s1, s2, s3, s4);
+	AES4(s1, s2, s3, s4, 32);
+	MIX4(s1, s2, s3, s4);
+	// feed-forward + TRUNCSTORE: out = s1.hi64 ‖ s2.hi64 ‖ s3.lo64 ‖ s4.lo64
+	out32[0] = s1.z ^ in[0].z;
+	out32[1] = s1.w ^ in[0].w;
+	out32[2] = s2.z ^ in[1].z;
+	out32[3] = s2.w ^ in[1].w;
+	out32[4] = s3.x ^ in[2].x;
+	out32[5] = s3.y ^ in[2].y;
+	out32[6] = s4.x ^ in[3].x;
+	out32[7] = s4.y ^ in[3].y;
+}
+
 // ── Main mining kernel ────────────────────────────────────────────────────
 
 extern "C" {
 //
 // vkey:           precomputed VerusHash key (552 uint4 = 8832 bytes)
-// blockhash_half: 4 uint4 = 64 bytes of block header hash (first half)
+// blockhash_half: 4 uint4 = 64 bytes of tl_curBuf (intermediate + ch + fill1)
+// nonce_space:    4 uint32 = 15-byte nonceSpace template (LE-packed)
+// ns_off:         byte offset of the 4-byte miner nonce inside the template
+//                 (0, 4, 8 or 11 — 11 matches the VRSC en1‖nonce layout)
 // ptarget:        8 uint32 = 32 bytes target (big-endian)
 // scratch:        per-thread key workspace (TOTAL_MAX * VERUS_KEY_SIZE128 uint4)
 // base_nonce:     starting nonce
@@ -782,12 +820,15 @@ __global__ __launch_bounds__(THREADS, 1)
 void verus_mine(
 	const uint128m * __restrict__ vkey,
 	const uint128m * __restrict__ blockhash_half,
+	const uint32_t * __restrict__ nonce_space,
+	const uint32_t ns_off,
 	const uint32_t * __restrict__ ptarget,
 	uint128m * __restrict__ scratch,
 	const uint64_t base_nonce,
 	uint64_t *output_nonce,
 	unsigned char *output_hash,
-	unsigned int *found
+	unsigned int *found,
+	uint64_t * __restrict__ debug_im
 )
 {
 	const uint32_t thread = (blockDim.x * blockIdx.x + threadIdx.x);
@@ -827,34 +868,74 @@ void verus_mine(
 		randomsource[i] = sharedMemory3[i];
 	}
 
-	// Inject nonce into the state (s[3].w = nonce low 32 bits)
-	s[3].w = (s[3].w & 0x00ffffff) | ((uint32_t)(nonce & 0xff) << 24);
+	// nonceSpace15 goes into curBuf[32..46] = s[2] bytes 0..14; byte 15 = ch.
+	uint32_t ns0 = nonce_space[0];
+	uint32_t ns1 = nonce_space[1];
+	uint32_t ns2 = nonce_space[2];
+	uint32_t ns3 = nonce_space[3];
+	const uint32_t n32 = (uint32_t)nonce;
+	if (ns_off == 0) {
+		ns0 = n32;
+	} else if (ns_off == 4) {
+		ns1 = n32;
+	} else if (ns_off == 8) {
+		ns2 = n32;
+	} else if (ns_off == 11) {
+		// ns bytes 11..14 = n32 LE: byte11 = n32.b0 (ns2 top byte),
+		// bytes 12..14 = n32.b1..b3 (ns3 low 3 bytes), byte15 = template.
+		ns2 = (ns2 & 0x00ffffffu) | (n32 << 24);
+		ns3 = (ns3 & 0xff000000u) | ((n32 >> 8) & 0x00ffffffu);
+	}
+	s[2].x = ns0;
+	s[2].y = ns1;
+	s[2].z = ns2;
+	s[2].w = (s[2].w & 0xff000000u) | (ns3 & 0x00ffffffu);
 
-	// Run the VerusHash CLMUL loop
+	// Run the VerusHash CLMUL loop (v2.2). sv2_2 reads from pbuf_copy =
+	// [b0^b2, b1^b3, b2, b3] — not the raw buf (see verus_clhash.cpp).
+	uint128m buf_copy[4];
+	buf_copy[0] = s[0] ^ s[2];
+	buf_copy[1] = s[1] ^ s[3];
+	buf_copy[2] = s[2];
+	buf_copy[3] = s[3];
 	uint2 acc = __verusclmulwithoutreduction64alignedrepeatgpu(
-		randomsource, s, sharedMemory1[0], vkey, 4);
+		randomsource, buf_copy, sharedMemory1[0], vkey, 4);
 
-	// acc.x contains the final hash bits used for index
-	// Build the final haraka512 input
-	s[2].w = (s[2].w & 0x00ffffff) | (acc.x & 0xff) << 24;
-	acc.x &= 511;
+	// intermediate (u64) = reduced acc — used for FillExtra + key offset
+	const uint64_t im = ((uint64_t)acc.y << 32) | (uint64_t)acc.x;
+	if (debug_im) debug_im[thread] = im;
+
+	// FillExtra: curBuf[47] = intermediate[0]; curBuf[48..63] = fill2 ×2.
+	// fill2[i] = im_bytes[(i+1)%8] — a byte-rotate-left of im's bytes, i.e.
+	// a rotate RIGHT by 8 of the u64 value (shuf2 = 1..7,0 ×2).
+	const uint64_t ror8 = (im >> 8) | (im << 56);
+	s[2].w = (s[2].w & 0x00ffffffu) | ((uint32_t)(im & 0xffu) << 24);
+	s[3].x = (uint32_t)ror8;
+	s[3].y = (uint32_t)(ror8 >> 32);
+	s[3].z = s[3].x;
+	s[3].w = s[3].y;
 
 	// Final haraka512 keyed with the appropriate key offset
-	uint128m *rc = &randomsource[acc.x];
-	uint32_t hash = haraka512_port_keyed2222(s, rc, sharedMemory1[0]);
+	// (IntermediateTo128Offset: im & (keyMask>>4) = im & 511)
+	uint128m *rc = &randomsource[im & 511];
+	uint32_t hash32[8];
+	haraka512_keyed_full(s, rc, sharedMemory1[0], hash32);
 
-	// Compare against target (big-endian, last word)
-	if (hash < ptarget[7]) {
-		// Found a solution
-		*found = 1;
+	// Target check: VerusHash output is little-endian (byte 31 = MSB);
+	// ptarget is big-endian. Compare reversed — meets_target_le semantics.
+	int ge = 0;
+	for (int i = 31; i >= 0; i--) {
+		const uint32_t hb = ((uint8_t *)hash32)[i];
+		const uint32_t tb = ((const uint8_t *)ptarget)[31 - i];
+		if (hb < tb) { ge = 1; break; }
+		if (hb > tb) { ge = -1; break; }
+	}
+	// Found a solution — claim the output slot atomically so concurrent
+	// winners can't interleave (nonce,hash) pairs from different threads.
+	if (ge >= 0 && atomicCAS(found, 0, 1) == 0) {
 		*output_nonce = nonce;
-		// Write hash to output (32 bytes)
-		((uint32_t*)output_hash)[7] = hash;
-		// Fill remaining bytes with zeros (simplified — real VerusHash
-		// produces a full 32-byte hash, but for mining only the
-		// comparison word matters)
-		for (int i = 0; i < 7; i++)
-			((uint32_t*)output_hash)[i] = 0;
+		for (int i = 0; i < 8; i++)
+			((uint32_t*)output_hash)[i] = hash32[i];
 	}
 }
 
