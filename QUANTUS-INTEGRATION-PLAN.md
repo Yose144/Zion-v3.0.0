@@ -235,6 +235,7 @@ QTC_PAYOUT_MIN_PLANKS=0         # dust threshold
 QTC_PAYOUT_MAX_ATTEMPTS=3       # → 'stalled' po N submit chybách
 QTC_PAYOUT_FEE_BPS=0            # pool fee na QTC legu (200 = 2 %)
 QTC_PAYOUT_MAX_FEE_PLANKS=0     # fee-cap přes payment_queryInfo (0 = bez capu)
+                              #   mainnet observed fee ≈ 0.8–1.0e9 planks/tx
 # Quantus signing/RPC (sdílené s adaptérem — payout účet = wallet keyring (0,0)
 # nebo QUANTUS_SEED hex 32B; MUSÍ být funded, jinak InsufficientFunds)
 # MAINNET: žádný public RPC neexistuje — náš node je endpoint:
@@ -265,9 +266,27 @@ QUANTUS_RPC=http://127.0.0.1:9944      # Edge (nebo https://rpc.zionterranova.co
       quantus` → `pending:0` (správně — unpaid 0.18 Z < min 10 ZION).
       Zbývá už jen organický unpaid threshold → drain → sweeper submit.
 - [ ] První reálný QTC payout submit — čeká na unpaid ≥ min +
-      `QTC_PAYOUT_ENABLED=1` + kurz `QTC_PLANKS_PER_FLOWER` + funded
-      payout účet (`warpd` Oct-8 redeploy má `QUANTUS_EXTRINSIC` fix;
-      unfunded účet by jinak validně selhal InsufficientFunds).
+      `QTC_PAYOUT_ENABLED=1` + funded payout účet (`warpd` Oct-8 redeploy
+      má `QUANTUS_EXTRINSIC` fix).
+- [x] **Kurz + treasury gate (2026-10-09, `32467e141`):**
+      `QTC_PLANKS_PER_FLOWER` přijímá **decimal** přes exact ratio
+      (`"1.2386"` → 12386/10000 — integer u128 by ztratil ~19 % při
+      sub-1 rate). Konfigurováno na Edge: **1.2386** (CoinGecko
+      `quantus` = $161.47; ZION $0.0002 → 1 QTC ≈ 807 350 ZION;
+      1 flower = $2e-10 → 1.2386 planks). Re-derive:
+      `planks_per_flower = (0.0002 / qtc_usd) * 1e12 / 1e6`.
+      **Treasury balance gate:** před submitem sweeper čte free balance
+      payout účtu; `amount+fee > free` → row se parkne jako **'deferred'**
+      (attempts=0, nikdy submitted → přežije restart) místo pálení
+      attempts na deterministický InsufficientFunds. Deferred→queued
+      přechod se zapíše před submitem (crash-window fail-closed).
+      Mainnet fee změřen z indexeru: **0.8–1.0e9 planks/tx** → cap 2e9.
+      Treasury `qzpnKFmb…` = 0 → enable bezpečné: vše se queueuje jako
+      deferred, vyplatí se až po collectu prvního bloku.
+- [x] Desktop payout routing (2026-10-09): `payoutCoin` config
+      ('zion'|'qtc') + **Pool payout select** v QTC kartě → miner start
+      posílá `--wallet qtc:<linked qz…>` (pool crediting do quantus
+      queue). Chybějící link → fail-closed dialog, ne tichý ZION.
 - [ ] E2E na Heisenberg s funded test účtem — gated test
       `quantus_live_send_testnet` připraven (`QUANTUS_LIVE=1` +
       `QUANTUS_RPC=…heisenberg` + `QUANTUS_SEED`), potřebuje HEI faucet.
@@ -300,7 +319,14 @@ Dvě vrstvy:
       live balance (`quantusGetBalance`, 12-dec precision string) + copy +
       refresh; unlinked stav: link input (`wallet-set-qtc` IPC) nebo
       generate (`generate-quantus-wallet` → 24-word mnemonic reveal +
-      auto-link); `list-wallets` vrací `qtcAddress`.
+      auto-link); `list-wallets` vrací `qtcAddress`; **Pool payout**
+      select (ZION/QTC → `payoutCoin` config).
+- [x] **Generate-fix (2026-10-09, `32467e141`):** root cause selhání „nejde
+      generate" = unhandled IPC rejection na starém procesu
+      (`No handler registered` → status řádek zůstal prázdný, tiché „nic
+      se neděje"). `deriveQuantusAddressDetailed` vrací konkrétní důvod
+      (helper path/spawn/exit-status/stderr tail, `sk=`/`pk=` redacted);
+      renderer chytá invoke chyby a hlásí „restart the app".
 - [x] UI: Wallet → **Quantus network tab** (2026-10-08, `955a086ce`):
       `quantus-network.js` agreguje node status (`system_health`/`version`),
       pool native leg (`coin_details[].native`), wormhole rewards
@@ -308,7 +334,8 @@ Dvě vrstvy:
       (balance + transfer history); IPC `qtc-network-status`,
       renderer `initQtcView` s 15s pollem. Public RPC default
       `rpc.zionterranova.com/qtc` (náš node — Safe methods, unsafe
-      z proxy zamítnuty).
+      z proxy zamítnuty). Market řádek: CoinGecko `quantus` USD +
+      odvozený cross (zion_per_qtc, planks/flower).
 - [x] Send flow (non-custodial): `native-send` IPC →
       `NativeWallet.sendQuantus` → bundled `derive_addr --qtc-send`
       (mnemonic jen stdin). **Wire+signing live-validováno mainnet:**
