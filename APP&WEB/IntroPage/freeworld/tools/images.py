@@ -25,8 +25,8 @@ SOURCES = {
     # TODO(interim): board is placeholder art — replace with real temple masterplan
     'ekam': ('Ekam.png', 'EkamProject.png'),
     'kailash': ('Kailash_ Brána k sobě.png', 'KailashProject.png'),
-    # TODO(interim): render+board are PIL interim art — replace with real Amenti art
-    'amenti': ('Amenti.png', 'AmentiProject.png'),
+    # TODO(interim): board is placeholder art — replace with real halls masterplan
+    'amenti': ('Amenti.jpg', 'AmentiProject.png'),
 }
 
 def save_webp(im: Image.Image, out: Path, max_w: int, q: int):

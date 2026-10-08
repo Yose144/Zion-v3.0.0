@@ -542,9 +542,9 @@ export default function AmentiPage() {
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/amenti/hero.webp"
-                alt="Amenti — pyramidy Gízy za soumraku, smaragdová záře Síní pod pískem"
-                width={1600}
-                height={900}
+                alt="ZION Amenti — Kvetoucí Plamen nad pyramidami a sfingou, světelný strom a síť vědomí"
+                width={1280}
+                height={720}
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
