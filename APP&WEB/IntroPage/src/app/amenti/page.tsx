@@ -65,6 +65,38 @@ export default function AmentiPage() {
           <blockquote className="my-6 border-l-4 border-[#fcd116] bg-[rgba(252,209,22,0.04)] p-4 italic text-[#fcd116]">
             {t.introQuote}
           </blockquote>
+
+          {/* L5 Terra Nova node banner */}
+          <div className="my-8 rounded-xl border border-[#34d399]/30 bg-gradient-to-r from-[#34d399]/15 via-black/20 to-[#34d399]/10 p-5">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#34d399]/40 bg-[#34d399]/10">
+                <LucideIcon name="fa-mountain" size={24} className="text-[#34d399]" />
+              </div>
+              <div className="flex-1 text-left">
+                <span className="text-xs font-bold tracking-wider text-[#34d399]">{t.nodeBannerTag}</span>
+                <h3 className="!my-1 !text-lg text-white">{t.nodeBannerTitle}</h3>
+                <p className="!my-0 !text-sm !text-white/60">{t.nodeBannerDesc}</p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <a
+                    href="https://app.zionterranova.com/terranova/amenti"
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/40 bg-[#34d399]/15 px-4 py-1.5 text-sm font-semibold text-[#34d399] no-underline transition hover:bg-[#34d399]/25"
+                  >
+                    <LucideIcon name="fa-scroll" size={14} /> {t.nodeBannerCta}
+                  </a>
+                  <a
+                    href="https://freeworld.zionterranova.com/p/amenti/"
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-sm text-white/70 no-underline transition hover:border-[#34d399]/40 hover:text-[#34d399]"
+                  >
+                    {t.nodeBannerCta2}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Guardians */}

@@ -361,6 +361,16 @@ body.fw-menu-open { overflow: hidden; }
 }
 .fw-card-more { font-size: 0.78rem; color: var(--card-accent, var(--gold)); margin-top: 0.5rem; letter-spacing: 0.08em; }
 
+/* project external links (e.g. live counterparts like the Amenti Library) */
+.fw-links { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.2rem; }
+.fw-linkpill {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em;
+  border: 1px solid var(--gold); border-radius: 999px; padding: 0.4rem 1rem;
+  color: var(--gold); text-decoration: none; transition: background 0.2s, color 0.2s;
+}
+.fw-linkpill:hover { background: rgba(255, 255, 255, 0.06); }
+
 .fw-status {
   position: absolute; top: 0.9rem; right: 0.9rem; z-index: 2;
   font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700;

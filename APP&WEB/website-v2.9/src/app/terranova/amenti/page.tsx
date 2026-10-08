@@ -57,6 +57,18 @@ const Copy = {
     cs: [`Deska přežije dobu — záznam, který se nepotápí`, `Sedm ctností před každým výstupem — etika v kódu`, `Zvát, ne verbovat — Amenti je svobodná`],
     en: [`The tablet outlives its age — a record that does not sink`, `Seven virtues before every output — ethics in code`, `To invite, not conscript — Amenti is free`],
   },
+  libraryTitle: { cs: `Síně, která už slouží — Amenti Library`, en: `The halls already serving — the Amenti Library` },
+  librarySubtitle: { cs: `digitální protějšek dvanáctého bodu`, en: `the digital counterpart of the twelfth node` },
+  libraryBody: {
+    cs: `Amenti je jediný uzel sítě, jehož digitální protějšek slouží už dnes. Na hlavním portálu stojí živá knihovna — Brány Amenti, Kroniky, Srdce Amenti (on-chain fee split 89/5/5/1 čtený jako mantra protokolu) a knihovna knih s Kvantovou revolucí v jedenácti jazycích ke stažení zdarma. To, co je na plateu Gízy zatím jen vztah, je v síti už prací: archiv otevřený všem s čistým úmyslem — přesně jak říkají Desky, „Amenti je svobodná pro syna člověka". Když jednou fyzický uzel vznikne, knihovna bude jeho první síní — a už teď je to místo, kam poutník může vstoupit dřív, než vůbec dorazí do Egypta.`,
+    en: `Amenti is the only node in the network whose digital counterpart already serves today. On the main portal stands a living library — the Gates of Amenti, the Chronicles, the Heart of Amenti (the on-chain 89/5/5/1 fee split read as the protocol's mantra) and a book collection including the Quantum Revolution in eleven languages, free to download. What is only a relationship on the Giza plateau is already work in the network: an archive open to all with pure intent — just as the Tablets say, "Amenti is free for the sons of man". When the physical node one day exists, the library will be its first hall — and already today it is the place a pilgrim can enter before ever reaching Egypt.`,
+  },
+  libraryStats: {
+    cs: [`11 jazyků — Kvantová revoluce ke stažení`, `Kroniky & Srdce — on-chain záznam jako mantra`, `Zdarma a otevřené — knihovna pro každého`],
+    en: [`11 languages — the Quantum Revolution to download`, `Chronicles & the Heart — on-chain record as mantra`, `Free & open — a library for everyone`],
+  },
+  libraryCta: { cs: `Vstoupit do Amenti knihovny`, en: `Enter the Amenti Library` },
+  libraryCta2: { cs: `Free World portál →`, en: `Free World portal →` },
   phasesTitle: { cs: `Fáze vztahu`, en: `Phases of relationship` },
   phasesSubtitle: { cs: `Od respektu ke Kvetoucímu Plameni`, en: `From respect to the Flower of Light` },
   zionTitle: { cs: `Blockchain integrace`, en: `Blockchain Integration` },
@@ -506,6 +518,57 @@ export default function AmentiPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ AMENTI LIBRARY — živý digitální protějšek ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16"
+        >
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': ACCENT } as React.CSSProperties}>
+            <div className="mb-4">
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Copy.librarySubtitle[cs ? 'cs' : 'en']}</p>
+              <h2 className="text-2xl md:text-3xl font-semibold text-white flex items-center gap-3 mt-1">
+                <BookOpen className={`h-7 w-7 ${ACCENT_SUB}`} />
+                {Copy.libraryTitle[cs ? 'cs' : 'en']}
+              </h2>
+            </div>
+            <p className="text-gray-300 leading-relaxed mb-6">
+              {Copy.libraryBody[cs ? 'cs' : 'en']}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3 mb-8">
+              {Copy.libraryStats[cs ? 'cs' : 'en'].map((stat) => (
+                <div key={stat} className="zion-rainbow-sub px-4 py-3" style={{ '--rc': ACCENT } as React.CSSProperties}>
+                  <p className="text-sm text-gray-300 flex items-center gap-2">
+                    <ScrollText className={`h-4 w-4 shrink-0 ${ACCENT_SUB}`} />
+                    {stat}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="https://zionterranova.com/amenti/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-300/10 px-6 py-2.5 text-sm font-semibold ${ACCENT_SUB} transition hover:bg-emerald-300/20`}
+              >
+                <BookOpen className="h-4 w-4" />
+                {Copy.libraryCta[cs ? 'cs' : 'en']}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href="https://freeworld.zionterranova.com/p/amenti/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-2.5 text-sm text-gray-300 transition hover:border-emerald-300/40 hover:text-emerald-300"
+              >
+                {Copy.libraryCta2[cs ? 'cs' : 'en']}
+              </a>
             </div>
           </div>
         </motion.section>

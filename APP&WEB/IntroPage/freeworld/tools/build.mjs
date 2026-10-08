@@ -97,6 +97,9 @@ for (const [i, p] of projects.entries()) {
     TAGLINE: `<span data-lang-show="cs">${esc(p.tagline.cs)}</span><span class="fw-hidden" data-lang-show="en">${esc(p.tagline.en)}</span>`,
     TAGLINE_EN: esc(p.tagline.en),
     TAGS: p.tags.map((t) => `<span>${esc(t)}</span>`).join(''),
+    LINKS: (p.links || []).length
+      ? `<div class="fw-links">${p.links.map((l) => `<a class="fw-linkpill" href="${esc(l.href)}" target="_blank" rel="noopener" style="color:${esc(p.accent)};border-color:${esc(p.accent)}"><span data-lang-show="cs">${esc(l.label.cs)}</span><span class="fw-hidden" data-lang-show="en">${esc(l.label.en)}</span> →</a>`).join('')}</div>`
+      : '',
     RENDER: `${p.renderImg}?v=${imgV(p.renderImg)}`,
     BOARD: `${p.boardImg}?v=${imgV(p.boardImg)}`,
     DOC_CS: renderDoc(p.docSlug, 'cs'),

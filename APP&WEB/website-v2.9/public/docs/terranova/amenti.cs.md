@@ -49,7 +49,7 @@ Prvních pět je etická brána před každým rozhodnutím AI; poslední dvě v
 
 *Kvantová revoluce* klade Smaragdové desky jako **kořen č. 1 Stromu života**: *„Jak nahoře, tak dole. Jak uvnitř, tak vně."* To je přesně struktura distribuovaného účetního stromu — každý uzel nese celek. Deska, která přežije dobu, a ledger, který přežije server, jsou jeden princip v dvou materiálech. Síť to čte jako poetickou paralelu — technický obraz, ne historii.
 
-**Amenti Library** už běží: digitální síně sítě na apex doméně (`/amenti`) a v korpusu — Kvantová revoluce v 11 jazycích plus zdrojové texty. Jediný uzel, jehož protějšek slouží už dnes.
+**Amenti Library** už běží: digitální síně sítě na hlavním portálu — **[zionterranova.com/amenti](https://zionterranova.com/amenti/)** — a v korpusu. Brány Amenti, Kroniky, Srdce Amenti (on-chain fee split 89/5/5/1 jako mantra protokolu) a knihovna knih s Kvantovou revolucí v 11 jazycích zdarma. Jediný uzel, jehož protějšek slouží už dnes — místo, kam poutník vstoupí dřív, než dorazí do Egypta.
 
 ## Role v síti
 
