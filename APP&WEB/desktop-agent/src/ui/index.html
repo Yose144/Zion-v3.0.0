@@ -5938,6 +5938,47 @@
                 </div>
                 <div id="qtc-status" class="wallet-status-row"></div>
               </div>
+
+              <!-- Native multichain — non-custodial addresses derived from the
+                   ZION mnemonic (zion / evm / bitcoin / solana / quantus) -->
+              <div class="wallet-card" id="native-wallet-card">
+                <div class="wallet-kicker">NATIVE MULTICHAIN</div>
+                <div class="wallet-meta-row">
+                  <span class="status-note">One ZION phrase → native keys on every chain. Keys never leave this device.</span>
+                </div>
+                <div id="native-rows"></div>
+                <div class="inline-row" style="margin-top:8px">
+                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="native-derive-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                    Derive
+                  </button>
+                  <button class="btn btn-ghost btn-sm btn-ghost-green" id="native-refresh-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                    Refresh
+                  </button>
+                  <button class="btn btn-ghost btn-sm" id="native-link-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-link"></use></svg>
+                    Link to ZIS
+                  </button>
+                </div>
+                <div id="native-send-form" style="display:none;margin-top:8px">
+                  <div class="inline-row" style="margin-bottom:6px">
+                    <select id="native-send-chain" class="input-flex">
+                      <option value="evm">ETH (Base)</option>
+                      <option value="bitcoin">BTC</option>
+                      <option value="solana">SOL</option>
+                      <option value="quantus">QTC</option>
+                    </select>
+                  </div>
+                  <input type="text" id="native-send-to" placeholder="Recipient address" class="input-flex-mono" style="width:100%;margin-bottom:6px" />
+                  <div class="inline-row" style="margin-bottom:6px">
+                    <input type="text" id="native-send-amount" placeholder="Amount" class="input-flex" style="flex:1" />
+                    <input type="password" id="native-send-password" placeholder="Wallet password" class="input-flex" style="flex:1" />
+                  </div>
+                  <button class="btn btn-primary btn-sm" id="native-send-btn">Send</button>
+                </div>
+                <div id="native-status" class="wallet-status-row"></div>
+              </div>
             </div>
           </div>
 

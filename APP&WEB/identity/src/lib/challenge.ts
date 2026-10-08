@@ -3,6 +3,8 @@
 import * as ed from 'noble-ed25519';
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
+import { blake2b } from '@noble/hashes/blake2b';
+import { secp256k1 } from '@noble/curves/secp256k1';
 import { randomBytes } from 'node:crypto';
 import { SiweMessage } from 'siwe';
 
@@ -154,4 +156,162 @@ export async function verifySiwe(
 
   clearChallenge(address);
   return true;
+}
+
+// ── Native multichain wallet linking ────────────────────────────────────────
+// The native wallet derives per-chain keys from the user's own BIP39 mnemonic
+// (non-custodial). Linking proves on-chain key ownership per chain.
+
+const B58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+function b58decode(str: string): Uint8Array {
+  let num = 0n;
+  for (const ch of str.trim()) {
+    const d = B58_ALPHABET.indexOf(ch);
+    if (d < 0) throw new Error(`invalid base58 char '${ch}'`);
+    num = num * 58n + BigInt(d);
+  }
+  let hex = num.toString(16);
+  if (hex.length % 2) hex = '0' + hex;
+  const bytes = hex === '00' ? new Uint8Array(0) : Uint8Array.from(Buffer.from(hex, 'hex'));
+  let zeros = 0;
+  while (zeros < str.length && str[zeros] === '1') zeros++;
+  const out = new Uint8Array(zeros + bytes.length);
+  out.set(bytes, zeros);
+  return out;
+}
+
+const BECH32_ALPHABET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+
+function bech32Polymod(values: number[]): number {
+  const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+  let chk = 1;
+  for (const v of values) {
+    const top = chk >> 25;
+    chk = ((chk & 0x1ffffff) << 5) ^ v;
+    for (let i = 0; i < 5; i++) if ((top >> i) & 1) chk ^= GEN[i];
+  }
+  return chk;
+}
+
+function bech32HrpExpand(hrp: string): number[] {
+  return [...hrp].map((c) => c.charCodeAt(0) >> 5)
+    .concat([0], [...hrp].map((c) => c.charCodeAt(0) & 31));
+}
+
+/** BIP-173 bech32 encode of a segwit v0 program (P2WPKH). */
+function bech32EncodeP2wpkh(prog20: Uint8Array): string {
+  const hrp = 'bc';
+  const data: number[] = [0]; // witness version 0
+  // convertbits 8→5
+  let acc = 0, bits = 0;
+  for (const b of prog20) {
+    acc = (acc << 8) | b;
+    bits += 8;
+    while (bits >= 5) { bits -= 5; data.push((acc >> bits) & 31); }
+  }
+  if (bits) data.push((acc << (5 - bits)) & 31);
+  const values = bech32HrpExpand(hrp).concat(data);
+  const mod = bech32Polymod(values.concat([0, 0, 0, 0, 0, 0])) ^ 1;
+  const checksum = [0, 1, 2, 3, 4, 5].map((i) => (mod >> (5 * (5 - i))) & 31);
+  return hrp + '1' + data.concat(checksum).map((d) => BECH32_ALPHABET[d]).join('');
+}
+
+/**
+ * Verify a Solana link signature. A Solana address IS the base58-encoded
+ * ed25519 public key — so the challenge signature verifies against the
+ * address itself (no pubkey→address derivation needed).
+ */
+export async function verifySolana(
+  address: string,
+  signatureHex: string,
+): Promise<boolean> {
+  const challenge = getChallenge(address);
+  if (!challenge) return false;
+  let pub: Uint8Array;
+  try {
+    pub = b58decode(address);
+    if (pub.length !== 32) return false;
+  } catch {
+    return false;
+  }
+  const ok = await ed.verify(
+    Buffer.from(signatureHex, 'hex'),
+    Buffer.from(challenge, 'utf8'),
+    Buffer.from(pub),
+  );
+  if (ok) clearChallenge(address);
+  return ok;
+}
+
+/**
+ * Verify a Bitcoin link signature — custom proof-of-key scheme:
+ *   digest = sha256("ZION-BTC-LINK-V1" ‖ 0x00 ‖ challenge_utf8)
+ *   signature = 65-byte compact ECDSA (r‖s‖recid) over that digest.
+ * The server recovers the pubkey, derives the P2WPKH (bc1q…) address and
+ * compares it to the claimed one — real key ownership, no BIP-322 machinery.
+ */
+export async function verifyBitcoin(
+  address: string,
+  signatureHex: string,
+): Promise<boolean> {
+  const challenge = getChallenge(address);
+  if (!challenge) return false;
+  try {
+    const sig = Buffer.from(signatureHex, 'hex');
+    if (sig.length !== 65) return false;
+    const recid = sig[64];
+    if (recid > 3) return false;
+    const digest = sha256(
+      Buffer.concat([Buffer.from('ZION-BTC-LINK-V1'), Buffer.from([0]), Buffer.from(challenge, 'utf8')]),
+    );
+    const pub = secp256k1.Signature.fromCompact(sig.subarray(0, 64))
+      .addRecoveryBit(recid)
+      .recoverPublicKey(digest)
+      .toRawBytes(true);
+    const derived = bech32EncodeP2wpkh(ripemd160(sha256(pub)));
+    if (derived !== address.trim()) return false;
+    clearChallenge(address);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Quantus linking by ZION-key attestation. ML-DSA-87 has no JS implementation,
+ * so the client proves ownership of the ZION key controlling the same mnemonic
+ * by signing `challenge + "\nquantus:" + <qz address>` where the challenge was
+ * issued for the ZION address. The qz address itself is ss58-189 validated.
+ */
+export async function verifyQuantusAttestation(
+  zionAddress: string,
+  zionPublicKey: string,
+  signatureHex: string,
+  qzAddress: string,
+): Promise<boolean> {
+  const challenge = getChallenge(zionAddress);
+  if (!challenge) return false;
+  if (!isValidQuantusAddress(qzAddress)) return false;
+  const pub = Buffer.from(zionPublicKey, 'hex');
+  if (publicKeyToAddress(Uint8Array.from(pub)) !== zionAddress) return false;
+  const message = Buffer.from(`${challenge}\nquantus:${qzAddress}`, 'utf8');
+  const ok = await ed.verify(Buffer.from(signatureHex, 'hex'), message, pub);
+  if (ok) clearChallenge(zionAddress);
+  return ok;
+}
+
+/** ss58 checksum validation for Quantus (prefix 189). */
+export function isValidQuantusAddress(addr: string): boolean {
+  try {
+    const raw = b58decode(addr.trim());
+    if (raw.length !== 36) return false;
+    const prefix = ((raw[0] & 0x3f) << 2) | (raw[1] >> 6) | ((raw[1] & 0x3f) << 8);
+    if (prefix !== 189) return false;
+    const ctx = Buffer.concat([Buffer.from('SS58PRE'), Buffer.from(raw.subarray(0, 34))]);
+    const checksum = blake2b(ctx, { dkLen: 64 });
+    return raw[34] === checksum[0] && raw[35] === checksum[1];
+  } catch {
+    return false;
+  }
 }

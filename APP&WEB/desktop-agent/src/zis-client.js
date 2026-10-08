@@ -311,6 +311,26 @@ class ZisClient {
     return json;
   }
 
+  /** Request an auth challenge for any supported chainType. Returns the
+   *  challenge string (5-minute TTL, single use). */
+  async challenge(address, chainType) {
+    const { json } = await zisFetch('POST', '/api/auth/challenge', {
+      address,
+      chainType: chainType || 'zion-l1',
+    });
+    if (!json?.challenge) throw new Error('No challenge from ZIS');
+    return json.challenge;
+  }
+
+  /** Link a cryptographically-proven address to the signed-in account.
+   *  POST /api/auth/link — requires an active session. */
+  async linkAddress(payload) {
+    const { json, status } = await zisFetch('POST', '/api/auth/link', payload, authHeaders());
+    if (status === 409) return { ok: false, conflict: true, error: 'address linked to another account' };
+    if (json?.user || json?.linked) return { ok: true, linked: json.linked || json };
+    return { ok: false, error: json?.message || json?.error || `link failed (${status})` };
+  }
+
   async logout() {
     await zisFetch('POST', '/api/auth/logout', null, authHeaders());
     _inMemorySession = { token: null, user: null, expiresAt: null, apiKey: null, mode: null };
