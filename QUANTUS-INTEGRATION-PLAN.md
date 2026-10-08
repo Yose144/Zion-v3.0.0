@@ -283,10 +283,64 @@ Dvě vrstvy:
       profit-switch tabulce na poolu (pool side `AUXPOW_COIN` default QTU —
       už je), dokumentovat `ZION_STREAM2_FORCE_COIN=QTU`.
 - [ ] SMOS zip / public release notes: „Dual mine ZION + QTC, jeden miner".
-- [ ] Když bude vlastní quantus-node: možnost **solo mining QTC přes náš
-      pool jako upstream** (pool = QTC stratum + template z node) —
-      separate epic, `pool/src/` nový `qtc_stratum` modul (devel level:
-      reuse AuxPowClient inverzí — náš stratum serve, miner connect).
+- [ ] Když bude vlastní quantus-node: viz **F8 — nativní QTC pool**.
+
+### F8 — Nativní QTC pool (hybrid native + upstream) — **ROZHODNUTO 2026-10-09**
+
+**Protokol (zjištěno ze spike + docs.quantus.com/deep-dives/miner-protocol):**
+Quantus mining je **invertovaný proti stratenu** — node je block-author:
+staví blok (včetně reward adresy) a jako QUIC server (`--miner-listen-port`,
+default 9833) rozesílá miner-klientům `NewJob{job_id, mining_hash,
+difficulty(U512 dec)}`. Miner hledá `poseidon2_squeeze_twice(header_hash‖nonce)
+< target` a vrací `JobResult{job_id, nonce, work(64B hex), hash_count}`.
+Žádný getWork/stratum RPC. Autentizace: `Ready{token}` + QUIC ALPN
+`quantus-miner`, insecure cert verifier (self-signed node cert).
+
+**Architektura (žádný externí pool — jen náš node + náš pool):**
+
+```
+quantus-node (Edge, Planck sync, --miner-listen-port, reward → pool QTC účet)
+   │ QUIC NewJob ─────────────────────────────┐
+   ▼                                         │
+QtcJobSource (pool/src/qtc_native.rs)         │ JobResult (net-diff nonce)
+   │ v3 stratum jobs (QPoW kernel existuje)   │
+   ▼                                         │
+mineři → shares (share-diff validace) ────────┘
+   │
+   ▼ block found → reward na náš payout účet
+QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
+```
+
+**Kroky:**
+
+- [ ] **F8.1 Node deploy (Edge):** `quantus-node` binary (upstream release
+      nebo build z `Quantus-Network/chain`), Planck sync, systemd
+      `zion-quantus-node`, `--miner-listen-port 9833` + reward-address flag
+      (ověřit přesný CLI název — Mining Guide), `--pool` token auth.
+      Pozor: node musí být **fully synced** jinak node→miner joby nejsou na tipu.
+- [ ] **F8.2 `QtcJobSource` (pool):** QUIC klient (quinn+rustls, ALPN
+      `quantus-miner`, InsecureCertVerifier) — Ready→NewJob loop → expose
+      jako external-stream job source pro ticker QTU (stejné rozhraní jako
+      AuxPowClient: `latest_job`/`submit`); share-diff validace lokálně,
+      net-diff nonce → `JobResult`. Protokol typy: vendor ~80 řádek
+      (`MinerMessage`/`MiningRequest`/`MiningResult`, serde) — ne git dep.
+- [ ] **F8.3 Hybrid policy:** `QTC_NATIVE_SHARE_PCT` (0–100, default 0 dokud
+      nezměříme) — % QPoW sessions dostává native joby vs k1pool upstream;
+      auto-fallback na upstream když node stale (`job_age` guard existuje).
+      Miner-facing: QTU stream jednotný, pool interně volí zdroj.
+- [ ] **F8.4 Reward→payout wiring:** node reward address = QTC payout účet
+      (keyring (0,0) nebo dedikovaný seed); block-found credit event →
+      PPLNS miner distribution přes `QtcPayoutSweeper`; fee držíme.
+- [ ] **F8.5 Měření a rozhodnutí:** `NewJob.difficulty` = network difficulty
+      přímo → expected blocks/day pro náš hashrate → nastavit split;
+      dokumentovat v dashboardu (`coin_details` přidat `source:native|k1pool`).
+- [ ] **F8.6 Testy:** codec roundtrip unit testy; mock QUIC server (quinn
+      self-signed) — NewJob→share→JobResult E2E v testu; Heisenberg node
+      dry-run před Planckem.
+
+**Hashrate strategie (variance):** native leg má variance (platíme jen
+z bloků) → hybrid drží k1pool leg jako guaranteed-earnings floor.
+Bootstrap: 0 % fee / ZION bonus pro native-leg minery zvažte.
 
 ### F7 — Miners community rollout
 
@@ -323,6 +377,7 @@ Dvě vrstvy:
 | F5 | desktop: QTC wallet create/balance/send na testnetu; ZIS linked address |
 | F6 | public preset „ZION+QTC" one-click v release buildu |
 | F7 | release notes + guide + dashboard coins page live |
+| F8 | native-leg blok nalezen na Heisenbergu; Planck: reward připsán na payout účet, miner vyplacen v QTC přes sweeper; hybrid split měřitelný v dashboardu |
 
 ## 8. Rizika a blockery
 

@@ -25,6 +25,8 @@ use std::io::Read;
 
 use bip39::Mnemonic;
 use ed25519_dalek::{Signer as EdSigner, SigningKey as EdSigningKey};
+use ethers::core::types::PathOrString;
+use ethers::signers::{coins_bip39::English, MnemonicBuilder, Signer};
 use sha2::{Digest, Sha512};
 use zion_l1_types::ChainId;
 use zion_multichain::chain::adapters::quantus::{
@@ -156,7 +158,7 @@ fn main() {
 /// Full native-wallet bundle for one mnemonic.
 fn derive_bundle(mnemonic: &str) -> Result<String, String> {
     let kr = Keyring::from_mnemonic(mnemonic).map_err(|e| e.to_string())?;
-    let parsed = Mnemonic::parse_normalized(mnemonic).map_err(|e| e.to_string())?;
+    let parsed = Mnemonic::parse(mnemonic).map_err(|e| e.to_string())?;
     let seed = parsed.to_seed("");
 
     // zion — wallet-compat: first 32 bytes of the BIP39 seed → ed25519.
@@ -168,8 +170,14 @@ fn derive_bundle(mnemonic: &str) -> Result<String, String> {
     let zion_pk = zion_sk.verifying_key().to_bytes();
     let zion_addr = derive_zion_address(&zion_pk);
 
-    // evm — BIP32 m/44'/60'/0'/0/0 (MetaMask-compatible).
-    let evm_wallet = kr.evm_wallet(0, 0).map_err(|e| e.to_string())?;
+    // evm — BIP32 m/44'/60'/0'/0/0 (MetaMask-compatible). Built directly via
+    // MnemonicBuilder (Keyring::evm_wallet is crate-private).
+    let evm_wallet = MnemonicBuilder::<English>::default()
+        .phrase(PathOrString::String(mnemonic.to_string()))
+        .derivation_path("m/44'/60'/0'/0/0")
+        .map_err(|e| e.to_string())?
+        .build()
+        .map_err(|e| e.to_string())?;
     let evm_addr = format!("0x{}", hex::encode(evm_wallet.address().as_bytes()));
     let evm_priv = format!("0x{}", hex::encode(evm_wallet.signer().to_bytes()));
 
@@ -253,7 +261,7 @@ fn sign_message(
     account: u32,
     index: u32,
 ) -> Result<Vec<u8>, String> {
-    let parsed = Mnemonic::parse_normalized(mnemonic).map_err(|e| e.to_string())?;
+    let parsed = Mnemonic::parse(mnemonic).map_err(|e| e.to_string())?;
     let seed = parsed.to_seed("");
     match chain {
         // Native zion key (wallet-compat seed[0:32]) — for ZIS account linking.
@@ -270,13 +278,35 @@ fn sign_message(
                 .to_bytes()
                 .to_vec())
         }
-        "evm" | "zion-keyring" | "bitcoin" | "quantus" => {
+        // Custom ZIS link proof-of-key: 65B compact recoverable ECDSA over
+        // sha256("ZION-BTC-LINK-V1" ‖ 0x00 ‖ msg). Server recomputes P2WPKH.
+        "bitcoin" => {
+            let kr = Keyring::from_mnemonic(mnemonic).map_err(|e| e.to_string())?;
+            let (priv_key, _pub) = kr
+                .bitcoin_key_pair(bitcoin::Network::Bitcoin, account, index)
+                .map_err(|e| e.to_string())?;
+            let digest = sha2::Sha256::digest(
+                [
+                    b"ZION-BTC-LINK-V1".as_slice(),
+                    &[0u8],
+                    msg,
+                ]
+                .concat(),
+            );
+            let secp = bitcoin::secp256k1::Secp256k1::new();
+            let m = bitcoin::secp256k1::Message::from_digest(digest.into());
+            let sig = secp.sign_ecdsa_recoverable(&m, &priv_key.inner);
+            let (recid, compact) = sig.serialize_compact();
+            let mut out = compact.to_vec();
+            out.push(recid.to_i32() as u8);
+            Ok(out)
+        }
+        "evm" | "zion-keyring" | "quantus" => {
             let kr = Keyring::from_mnemonic(mnemonic).map_err(|e| e.to_string())?;
             let cid = match chain {
                 "evm" => ChainId::Base,
                 "zion-keyring" => ChainId::ZionL1,
-                "quantus" => ChainId::Quantus,
-                _ => ChainId::Bitcoin,
+                _ => ChainId::Quantus,
             };
             kr.sign(cid, msg, account, index).map_err(|e| e.to_string())
         }
