@@ -10,6 +10,7 @@ import {
   Compass,
   Crown,
   Feather,
+  Flame,
   Heart,
   Landmark,
   LucideIcon,
@@ -64,8 +65,8 @@ const Copy = {
     cs: `Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na švech světa: na šíji Amerik (LUMI — atlantická × pacifická) a na švu oceánů u Mysu dobré naděje (Boa Esperança — atlantická × indická). Credencial sbírá razítka „tří moří".`,
     en: `The three Marys do not meet mid-ocean — their worlds touch at the seams of the world: on the isthmus of the Americas (LUMI — Atlantic × Pacific) and on the ocean seam at the Cape of Good Hope (Boa Esperança — Atlantic × Indian). The credencial collects the "three seas" stamps.`,
   },
-  patronTitle: { cs: `Patron flotily — Malý princ`, en: `Patron of the fleet — the Little Prince` },
-  patronSubtitle: { cs: `Pražské Jezulátko · dítě Lumi · zrod nového světa`, en: `The Infant of Prague · the child of Lumi · the birth of the new world` },
+  patronTitle: { cs: `Patron flotily — Malý princ a Elizabeth`, en: `Patron of the fleet — the Little Prince and Elizabeth` },
+  patronSubtitle: { cs: `Pražské Jezulátko · Elizabeth s lucernou · zrod nového světa`, en: `The Infant of Prague · Elizabeth with the lantern · the birth of the new world` },
   patronBody: {
     cs: `Patronem cest všech tří Marií je Malý princ — dítě ze zlatého zjevení na La Palmě, jehož tváří je Pražské Jezulátko: dítě-král v rouše a korunce, jež v dlani drží celý svět. Dítě, které kdysi poputovalo ze Španělska do Prahy — ze země moří do země bez moře — se teď na lodích vrací na vodu. V příběhu sítě je to dítě linie LUMI / Elizabeth — a zároveň platí: každý z nás je malý princ, když se plně probudí.`,
     en: `The patron of all three Marys' journeys is the Little Prince — the child of the golden apparition on La Palma, whose face is the Infant Jesus of Prague: the child-king in robes and crown, holding the whole world in his little palm. The child who once travelled from Spain to Prague — from a land of seas to a land without one — now sails back to the water aboard the fleet. In the network's story he is the child of the LUMI / Elizabeth line — and at the same time: each of us is the little prince, once fully awake.`,
@@ -81,6 +82,15 @@ const Copy = {
       `The world in a child's palm — the orb is read as the planet carried in a child's hand: the birth of a new world, not its conquest`,
       `A patron who has already sailed — an image of the Child crossed the Pacific on a Manila galleon (Santo Niño de Cebú, 1521/1565); the Pacific hull follows his route`,
     ],
+  },
+  elizabethTitle: { cs: `Elizabeth — dívka s lucernou`, en: `Elizabeth — the girl with the lantern` },
+  elizabethBody: {
+    cs: `A matka-linie Malého prince je Elizabeth — Alžběta, po babičce, ne po hvězdě. Její jméno znamená „Bůh je má přísaha": ne titul, ale slib. V příběhu sítě je to dítě, které na přídi archy ukázalo na první paprsek světla; rybářova dcera, jež na hřebeni nad mořem složila jméno Issobella — „krásná všemi směry stejně" — nevěda, že nese své vlastní, protože v jižní řeči zní Elizabeth jako Isabel. U brány OASIS stojí jako kněžka s lucernou vedle Rádhy: drží světlo pro ty, kdo přijdou za sto let, a ptá se každého příchozího, co po něm zůstane. Její lucerna ukazuje dvě věci — co by mohlo být, a co skutečně je. Matka nese světlo, dítě nese svět — proto stojí na přídi spolu.`,
+    en: `And the mother-line of the Little Prince is Elizabeth — Elizabeth after her grandmother, not after a star. Her name means "God is my oath": not a title, but a promise. In the network's story she is the child who pointed at the first ray of light from the ark's prow; the fisherman's daughter who composed the name Issobella on the ridge above the sea — "beautiful in every direction alike" — not knowing she carried her own, for in the southern tongue Elizabeth sounds as Isabel. At the OASIS gate she stands as the priestess with the lantern beside Rádha: she holds the light for those who will come a hundred years from now, and asks every arrival what will remain of them. Her lantern shows two things — what could be, and what truly is. The mother carries the light, the child carries the world — which is why they stand on the prow together.`,
+  },
+  elizabethQuote: {
+    cs: `„Drží lucernu pro ty, kdo přijdou za sto let. Ptá se, co z naší práce zůstane."`,
+    en: `"She holds the lantern for those who will come a hundred years from now. She asks what will remain of our work."`,
   },
   routeTitle: { cs: `Velká cesta — obeplutí světa`, en: `The Great Route — around the world` },
   routeSubtitle: { cs: `Každý uzel = jedna iniciace · credencial tří moří`, en: `Every node is an initiation · the three-seas credencial` },
@@ -648,6 +658,20 @@ export default function MariaDelCaminoPage() {
                       <p className="text-sm text-gray-300">{point}</p>
                     </div>
                   ))}
+                </div>
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <div className="flex items-center gap-2 text-amber-200 mb-2">
+                    <Flame className="h-4 w-4" />
+                    <span className="text-[10px] uppercase tracking-widest text-gray-500">
+                      {Copy.elizabethTitle[cs ? 'cs' : 'en']}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-300 leading-relaxed mb-3">
+                    {Copy.elizabethBody[cs ? 'cs' : 'en']}
+                  </p>
+                  <p className="text-xs italic text-amber-100/70">
+                    {Copy.elizabethQuote[cs ? 'cs' : 'en']}
+                  </p>
                 </div>
               </div>
             </div>
