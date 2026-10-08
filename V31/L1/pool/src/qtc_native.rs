@@ -778,4 +778,167 @@ mod tests {
         st.push_job(pkg("qtun:z", Some(Duration::from_secs(1))), ctx("z"));
         assert!(st.pick_job().is_none());
     }
+
+    // ------------------------------------------------------------------
+    // F8.6 — codec round-trip + mock QUIC node E2E
+    // ------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn codec_roundtrip_all_variants() {
+        let cases = vec![
+            MinerMessage::Ready {
+                token: "tok123".into(),
+            },
+            MinerMessage::NewJob(MiningRequest {
+                job_id: "77".into(),
+                mining_hash: hex::encode([0xABu8; 32]),
+                difficulty: "12345678901234567890".into(),
+            }),
+            MinerMessage::JobResult(MiningResult {
+                status: ApiResponseStatus::Completed,
+                job_id: "77".into(),
+                nonce: Some("ff".into()),
+                work: Some(hex::encode([7u8; 64])),
+                hash_count: 1234,
+                elapsed_time: 1.5,
+                miner_id: Some(9),
+            }),
+        ];
+        for msg in cases {
+            let (mut a, mut b) = tokio::io::duplex(4096);
+            write_message(&mut a, &msg).await.unwrap();
+            let got = read_message(&mut b).await.unwrap();
+            // Serde tag encoding: re-serialize both and compare bytes.
+            assert_eq!(
+                serde_json::to_vec(&got).unwrap(),
+                serde_json::to_vec(&msg).unwrap()
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn codec_rejects_oversized_length_prefix() {
+        let (mut a, mut b) = tokio::io::duplex(64);
+        a.write_all(&(MAX_MESSAGE_SIZE + 1).to_be_bytes())
+            .await
+            .unwrap();
+        let err = read_message(&mut b).await.unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+    }
+
+    #[tokio::test]
+    async fn codec_rejects_truncated_payload() {
+        let (mut a, mut b) = tokio::io::duplex(64);
+        a.write_all(&100u32.to_be_bytes()).await.unwrap();
+        a.write_all(b"{}").await.unwrap();
+        drop(a); // EOF mid-payload
+        assert!(read_message(&mut b).await.is_err());
+    }
+
+    /// Full wire E2E against a mock node: real `connect()` client (quinn +
+    /// insecure verifier + `quantus-miner/2` ALPN) vs a quinn server with a
+    /// self-signed cert. Exercises Ready auth → NewJob → JobResult framing
+    /// exactly as the production node speaks it.
+    #[tokio::test]
+    async fn mock_node_ready_newjob_result_e2e() {
+        // --- mock node cert + server -----------------------------------
+        let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()])
+            .expect("cert gen");
+        let cert_der = rustls::pki_types::CertificateDer::from(
+            cert.cert.der().to_vec(),
+        );
+        let key_der =
+            rustls::pki_types::PrivateKeyDer::Pkcs8(cert.key_pair.serialize_der().into());
+        let mut tls = rustls::ServerConfig::builder_with_provider(Arc::new(
+            rustls::crypto::ring::default_provider(),
+        ))
+        .with_safe_default_protocol_versions()
+        .unwrap()
+        .with_no_client_auth()
+        .with_single_cert(vec![cert_der], key_der)
+        .unwrap();
+        tls.alpn_protocols = vec![MINER_ALPN.to_vec()];
+        let server_cfg = quinn::ServerConfig::with_crypto(Arc::new(
+            quinn::crypto::rustls::QuicServerConfig::try_from(tls).unwrap(),
+        ));
+        let endpoint = quinn::Endpoint::server(server_cfg, "127.0.0.1:0".parse().unwrap())
+            .unwrap();
+        let addr = endpoint.local_addr().unwrap();
+
+        let expected_token = "secret-token".to_string();
+        let new_job = MinerMessage::NewJob(MiningRequest {
+            job_id: "9001".into(),
+            mining_hash: hex::encode([0x11u8; 32]),
+            difficulty: BigUint::from_bytes_be(&[0x0Fu8; 64]).to_string(),
+        });
+        let expected_nonce = hex::encode([0x42u8; 64]);
+
+        let server = tokio::spawn({
+            let expected_token = expected_token.clone();
+            let new_job_json = serde_json::to_vec(&new_job).unwrap();
+            let expected_nonce = expected_nonce.clone();
+            async move {
+                let conn = endpoint.accept().await.unwrap().await.unwrap();
+                let (mut send, mut recv) = conn.accept_bi().await.unwrap();
+                // Client must authenticate first.
+                match read_message(&mut recv).await.unwrap() {
+                    MinerMessage::Ready { token } => {
+                        assert_eq!(token, expected_token, "wrong auth token")
+                    }
+                    other => panic!("expected Ready, got {other:?}"),
+                }
+                send.write_all(&(new_job_json.len() as u32).to_be_bytes())
+                    .await
+                    .unwrap();
+                send.write_all(&new_job_json).await.unwrap();
+                send.flush().await.unwrap();
+                // Then the client sends back a JobResult.
+                match read_message(&mut recv).await.unwrap() {
+                    MinerMessage::JobResult(res) => {
+                        assert_eq!(res.job_id, "9001");
+                        assert_eq!(res.status, ApiResponseStatus::Completed);
+                        assert_eq!(res.work.as_deref(), Some(expected_nonce.as_str()));
+                    }
+                    other => panic!("expected JobResult, got {other:?}"),
+                }
+            }
+        });
+
+        // --- real client path ------------------------------------------
+        let connection = connect(addr).await.expect("quic connect");
+        let (mut send, mut recv) = connection.open_bi().await.unwrap();
+        write_message(
+            &mut send,
+            &MinerMessage::Ready {
+                token: expected_token,
+            },
+        )
+        .await
+        .unwrap();
+        match read_message(&mut recv).await.unwrap() {
+            MinerMessage::NewJob(req) => {
+                assert_eq!(req.job_id, "9001");
+                assert_eq!(req.mining_hash, hex::encode([0x11u8; 32]));
+                assert!(dec_to_be64(&req.difficulty).is_some());
+            }
+            other => panic!("expected NewJob, got {other:?}"),
+        }
+        write_message(
+            &mut send,
+            &MinerMessage::JobResult(MiningResult {
+                status: ApiResponseStatus::Completed,
+                job_id: "9001".into(),
+                nonce: Some("42".into()),
+                work: Some(expected_nonce),
+                hash_count: 1,
+                elapsed_time: 0.01,
+                miner_id: None,
+            }),
+        )
+        .await
+        .unwrap();
+
+        server.await.unwrap();
+        connection.close(0u32.into(), b"done");
+    }
 }

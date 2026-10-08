@@ -361,23 +361,32 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       fingerprint-safe); stale native (>90s) → auto upstream fallback.
       Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=0` (dokud sync +
       verify). **2026-10-08**
-- [ ] **F8.4 Reward→payout wiring:** block rewards akumulují jako **ZK-trie
-      leaves** na wormhole `qzk8Rna…` (mint přes `TransferProofRecorder`,
-      quantized na leaf quantum). Exit flow per deposit:
-      `zkTree_getMerkleProof(leaf_index, block)` → `quantus wormhole prove
-      --secret-file rewards-spend.secret --amount <q> --exit-account
-      <payout_qz> --block <h> --transfer-count <n> --leaf-index <i>
-      --funding-account <mint>` → aggregate/verify extrinsic → mint spendable
-      QTC na exit account → `QtcPayoutSweeper` vyplatí minerům; fee držíme.
-      Leaf metadata z reward events/`Wormhole::TransferCount` storage.
-      Spend secret na Edge hotov (`rewards-spend.secret` 0600).
-      Sweep = systemd timer / skript; ZK proof gen je CPU-náročný (minuty).
+- [~] **F8.4 Reward→payout wiring:** block rewards akumulují jako **ZK-trie
+      leaves** na wormhole `qzk8Rna…`. Sweep = `quantus wormhole
+      collect-rewards` (CLI 2.3.0 — interně: subsquid dotaz na pending
+      transfery → per-leaf ZK proof → verify extrinsic → mint spendable
+      QTC na exit account). **Live ověřeno:** `generated-bins` circuits
+      (284K, deterministické — postaveny lokálně kvůli Edge OOM při
+      prvním buildu, rsyncnuty; ~5.9GB vm / ~30s build), subsquid
+      `sub2.quantus.com` indexuje mainnet live (miner_reward tabulka,
+      ~270–280 QTC/blok), `--dry-run` → 0 pending (žádné bloky zatím).
+      Provisioned: `rewards-spend.secret` (0600), `payout-destination.txt`
+      = **`qzpnKFmb96enuCGmxnmW45n3F57xuwwwabyCeLA9fLv8sFaec`** (keyring
+      (0,0) — stejný signer jako QtcPayoutSweeper). ⚠️ destination MUSÍ
+      být transparentní účet — wormhole adresa nemá Dilithium klíč.
+      Installed: `/opt/quantus/collect-rewards.sh` (flock+guard) +
+      `zion-quantus-collect.timer` (hodinový, **neaktivní** — zapnout po
+      prvním mined bloku). Zbývá: první live collect + ledger credit
+      wiring do QtcPayoutSweeper účetnictví.
 - [ ] **F8.5 Měření a rozhodnutí:** `NewJob.difficulty` = network difficulty
       přímo → expected blocks/day pro náš hashrate → nastavit split.
       ~~dashboard `coin_details[].native`~~ ✅ `{enabled,connected,share_pct,
       job_id,job_age_ms}` (`dcc651fd3`).
-- [ ] **F8.6 Testy:** codec roundtrip unit testy; mock QUIC server (quinn
-      self-signed) — NewJob→share→JobResult E2E v testu; live ověření po
+- [~] **F8.6 Testy:** ~~codec roundtrip unit testy~~ ✅ (3 varianty +
+      oversize/truncated reject); ~~mock QUIC server~~ ✅
+      `mock_node_ready_newjob_result_e2e` — rcgen self-signed + quinn server
+      vs **reálný `connect()`** (ALPN `/2`, insecure verifier): Ready auth →
+      NewJob → JobResult E2E. **9/9 qtc_native testů**. Live ověření po
       syncu (pct bump → joby do minerů → JobResult → wormhole credit).
 
 **Hashrate strategie (variance):** native leg má variance (platíme jen
