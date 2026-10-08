@@ -174,10 +174,15 @@ impl QtcNativeConfig {
         let token = std::env::var("QTC_NATIVE_TOKEN")
             .ok()
             .or_else(|| {
-                std::env::var("QTC_NATIVE_TOKEN_FILE")
-                    .ok()
-                    .and_then(|p| std::fs::read_to_string(p).ok())
-                    .map(|s| s.trim().to_string())
+                std::env::var("QTC_NATIVE_TOKEN_FILE").ok().and_then(|p| {
+                    match std::fs::read_to_string(&p) {
+                        Ok(s) => Some(s.trim().to_string()),
+                        Err(e) => {
+                            tracing::warn!("qtc_native: cannot read token file {p}: {e}");
+                            None
+                        }
+                    }
+                })
             })
             .unwrap_or_default();
         let share_pct = std::env::var("QTC_NATIVE_SHARE_PCT")
@@ -468,10 +473,15 @@ fn handle_new_job(bridge: &MultiAuxPowBridge, req: &MiningRequest, share_diff: u
 // ---------------------------------------------------------------------------
 
 async fn connect(addr: SocketAddr) -> anyhow::Result<quinn::Connection> {
-    let mut crypto = rustls::ClientConfig::builder()
-        .dangerous()
-        .with_custom_certificate_verifier(Arc::new(InsecureCertVerifier))
-        .with_no_client_auth();
+    // Explicit provider: quinn pulls aws-lc-rs while the pool pins ring —
+    // ClientConfig::builder() panics when both are compiled in.
+    let mut crypto = rustls::ClientConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()?
+    .dangerous()
+    .with_custom_certificate_verifier(Arc::new(InsecureCertVerifier))
+    .with_no_client_auth();
     crypto.alpn_protocols = vec![MINER_ALPN.to_vec()];
 
     let mut client_config = quinn::ClientConfig::new(Arc::new(
