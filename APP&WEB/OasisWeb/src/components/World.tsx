@@ -53,7 +53,7 @@ function createMiniSurfaceTexture(baseColor: string, seed: number): THREE.Textur
 
 /** Radiating sun-ray sprite so star-system nodes visibly radiate light,
  *  matching their role as suns anchoring the galaxy map. */
-function createSunRayTexture(): THREE.Texture {
+export function createSunRayTexture(): THREE.Texture {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -107,6 +107,12 @@ export interface WorldNodeProps {
   /** Base sphere + orbit ring are drawn by the shared instanced meshes —
    *  this node renders only the extras (rays, gate, vortex, labels). */
   instancedBase?: boolean;
+  /** Sun rays drawn by the shared instanced billboard mesh — skip the
+   *  per-node sprite. */
+  instancedRays?: boolean;
+  /** Warp gate drawn by the shared instanced torus mesh — the per-node
+   *  gate + vortex render only when hovered/selected. */
+  instancedGate?: boolean;
   onSelect?: (id: string) => void;
 }
 
@@ -124,6 +130,8 @@ export default function World({
   isMobile = false,
   hoveredOverride,
   instancedBase = false,
+  instancedRays = false,
+  instancedGate = false,
   onSelect,
 }: WorldNodeProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -144,17 +152,29 @@ export default function World({
     () => (isStarSystem || instancedBase ? null : createMiniSurfaceTexture(color, seed)),
     [isStarSystem, instancedBase, color, seed]
   );
-  const rayTexture = useMemo(() => (isStarSystem ? createSunRayTexture() : null), [isStarSystem]);
+  const rayTexture = useMemo(
+    () => (isStarSystem && !instancedRays ? createSunRayTexture() : null),
+    [isStarSystem, instancedRays]
+  );
 
+  // The gate mounts lazily (hover/selected when instanced) — re-aim it at
+  // the core each time it appears, not just on node mount.
+  const gateMounted =
+    (isStarSystem || isSelected) && ((!instancedGate && !isDistant) || hovered || isSelected) && (!isMobile || hovered || isSelected);
   useLayoutEffect(() => {
     if (gateRef.current) {
       gateRef.current.lookAt(0, 0.4, 0);
     }
-  }, []);
+  }, [gateMounted]);
 
   const selected = isSelected;
 
+  // Idle extras-only nodes (instanced base + instanced rays/gate, nothing
+  // hovered) have no visible animated children — skip the per-frame work
+  // for all ~57 star nodes.
+  const idle = instancedBase && instancedRays && instancedGate && !hovered && !selected;
   useFrame((state) => {
+    if (idle) return;
     if (groupRef.current) {
       groupRef.current.rotation.y += 0.003;
       if (hovered || selected) {
@@ -215,7 +235,7 @@ export default function World({
 
       {/* Radiating sun rays — star systems are the anchors of the galaxy
           map, so they should visibly shine rather than just glow. */}
-      {isStarSystem && rayTexture && (
+      {isStarSystem && rayTexture && !instancedRays && (
         <sprite ref={rayRef} scale={[displaySize * 5, displaySize * 5, 1]}>
           <spriteMaterial
             map={rayTexture}
@@ -251,9 +271,10 @@ export default function World({
         </mesh>
       )}
 
-      {/* Warp gate ring (star systems + selected) — distant stars render
-          only when hovered/selected; the gate is sub-pixel at range anyway */}
-      {(isStarSystem || selected) && (!isDistant || hovered || selected) && (!isMobile || hovered || selected) && (
+      {/* Warp gate ring (star systems + selected) — when the shared
+          instanced torus covers the idle state, the per-node gate renders
+          only while hovered/selected (brighter, with the vortex). */}
+      {(isStarSystem || selected) && ((!instancedGate && !isDistant) || hovered || selected) && (!isMobile || hovered || selected) && (
         <group ref={gateRef}>
           <mesh>
             <torusGeometry args={[displaySize * (isStarSystem ? 2.4 : 2.0), displaySize * 0.07, 8, 32]} />

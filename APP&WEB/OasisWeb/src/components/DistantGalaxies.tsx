@@ -3,6 +3,8 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import InstancedBillboards, { type BillboardInstance } from './InstancedBillboards';
+import { useGpuBackend } from '../lib/gpuBackend';
 
 function createGalaxyTexture(): THREE.Texture {
   const size = 256;
@@ -75,6 +77,19 @@ const GALAXIES: {
 export default function DistantGalaxies() {
   const texture = useMemo(createGalaxyTexture, []);
   const groupRef = useRef<THREE.Group>(null);
+  const backend = useGpuBackend();
+
+  const instances = useMemo<BillboardInstance[]>(
+    () =>
+      GALAXIES.map((g, i) => ({
+        position: g.position,
+        scale: [g.scale[0], g.scale[1]],
+        color: g.color,
+        opacity: 0.35,
+        phase: i * 2.1,
+      })),
+    []
+  );
 
   useFrame((_, delta) => {
     if (groupRef.current) {
@@ -85,20 +100,25 @@ export default function DistantGalaxies() {
 
   return (
     <group ref={groupRef}>
-      {GALAXIES.map((g) => (
-        <sprite key={g.name} position={g.position} scale={g.scale}>
-          <spriteMaterial
-            map={texture}
-            color={g.color}
-            transparent
-            opacity={0.35}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            alphaTest={0.02}
-            fog={false}
-          />
-        </sprite>
-      ))}
+      {backend === 'webgl2' ? (
+        // 10 sprite draws collapse to one instanced billboard call.
+        <InstancedBillboards texture={texture} instances={instances} />
+      ) : (
+        GALAXIES.map((g) => (
+          <sprite key={g.name} position={g.position} scale={g.scale}>
+            <spriteMaterial
+              map={texture}
+              color={g.color}
+              transparent
+              opacity={0.35}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              alphaTest={0.02}
+              fog={false}
+            />
+          </sprite>
+        ))
+      )}
     </group>
   );
 }
