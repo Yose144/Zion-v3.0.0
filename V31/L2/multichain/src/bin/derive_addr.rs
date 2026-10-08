@@ -45,7 +45,7 @@ const DEFAULT_QUANTUS_RPC: &str = "https://rpc.zionterranova.com/qtc";
 
 fn usage() -> ! {
     eprintln!(
-        "usage: zion-derive-addr [--json] | --sign <chain> | --qtc-send <dest> <planks>\n\
+        "usage: zion-derive-addr [--json] | --sign <chain> | --qtc-send <dest> <planks> | --qtc-balance <ss58>\n\
          mnemonic is read from stdin (never argv)."
     );
     std::process::exit(2);
@@ -124,6 +124,29 @@ fn main() {
                 Ok(hash) => println!("txhash=0x{}", hex::encode(hash.0)),
                 Err(e) => {
                     eprintln!("ERROR qtc-send: {e}");
+                    std::process::exit(1);
+                }
+            }
+        }
+        Some("--qtc-balance") => {
+            let addr = args.get(2).cloned().unwrap_or_else(|| usage());
+            let rpc = std::env::var("QUANTUS_RPC")
+                .unwrap_or_else(|_| DEFAULT_QUANTUS_RPC.to_string());
+            let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+            let res = rt.block_on(async {
+                use zion_multichain::chain::adapter::ChainAdapter;
+                let adapter = QuantusAdapter::new(rpc);
+                let parsed = zion_l1_types::Address::new(ChainId::Quantus, Vec::new(), addr)
+                    .map_err(|e| e.to_string())?;
+                adapter
+                    .balance(&parsed)
+                    .await
+                    .map_err(|e| e.to_string())
+            });
+            match res {
+                Ok(amt) => println!("balance={} planks ({} QTC)", amt.0, amt.0 as f64 / 1e12),
+                Err(e) => {
+                    eprintln!("ERROR qtc-balance: {e}");
                     std::process::exit(1);
                 }
             }
