@@ -230,6 +230,33 @@ impl Db {
             CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
             CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status);
 
+            -- External-chain pool payout ledger (QTC/Quantus etc.).
+            -- Idempotency key: (chain, source_height, miner_id) — a payout for
+            -- a given pool block is recorded once; the sweeper owns
+            -- redelivery after a successful drain.  Status lifecycle:
+            --   queued → submitted → confirmed | failed | stalled
+            -- 'queued' rows surviving a process restart are promoted to
+            -- 'stalled' (fail-closed): a crash between author_submitExtrinsic
+            -- and the ledger update cannot be distinguished from a crash
+            -- before it, so an operator must resolve them manually.
+            CREATE TABLE IF NOT EXISTS ext_payout_records (
+                id TEXT PRIMARY KEY,
+                chain TEXT NOT NULL,
+                source_height INTEGER NOT NULL,
+                miner_id TEXT NOT NULL,
+                address TEXT NOT NULL,
+                amount_flowers INTEGER NOT NULL,
+                amount_native TEXT,
+                tx_hash TEXT,
+                status TEXT NOT NULL DEFAULT 'queued',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                error TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_ext_payout_status ON ext_payout_records(status);
+            CREATE INDEX IF NOT EXISTS idx_ext_payout_chain ON ext_payout_records(chain);
+
             CREATE TABLE IF NOT EXISTS dex_orders (
                 id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,

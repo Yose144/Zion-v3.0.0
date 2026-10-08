@@ -273,6 +273,55 @@ impl PoolApi {
                 let body = self.build_routing_metrics_payload();
                 ("200 OK", "application/json", body)
             }
+            // External-chain payout queue (QTC etc.).  GET previews without
+            // consuming; POST drains — the multichain sweeper owns idempotent
+            // redelivery from its own ledger after a successful drain.
+            "/admin/external-payouts" => {
+                let chain = parse_query_param(raw_path, "chain")
+                    .unwrap_or_else(|| "quantus".to_string());
+                if method == "POST" {
+                    let drained = {
+                        let mut pool = self.pool.lock().expect("pool lock poisoned");
+                        pool.take_external_payouts(&chain)
+                    };
+                    let entries: Vec<String> = drained
+                        .iter()
+                        .map(|(h, p)| {
+                            format!(
+                                "{{\"height\":{h},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"share_count\":{}}}",
+                                p.miner_id, p.address, p.amount, p.share_count
+                            )
+                        })
+                        .collect();
+                    let body = format!(
+                        "{{\"ok\":true,\"chain\":\"{}\",\"count\":{},\"payouts\":[{}]}}",
+                        chain,
+                        entries.len(),
+                        entries.join(",")
+                    );
+                    ("200 OK", "application/json", body)
+                } else {
+                    let pending = {
+                        let pool = self.pool.lock().expect("pool lock poisoned");
+                        pool.pending_external_payouts(&chain)
+                            .iter()
+                            .map(|p| {
+                                format!(
+                                    "{{\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{}}}",
+                                    p.miner_id, p.address, p.amount
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                    };
+                    let body = format!(
+                        "{{\"ok\":true,\"chain\":\"{}\",\"pending\":{},\"payouts\":[{}]}}",
+                        chain,
+                        pending.len(),
+                        pending.join(",")
+                    );
+                    ("200 OK", "application/json", body)
+                }
+            }
             p if p.starts_with("/api/v1/miners/") => {
                 let miner_id = p.strip_prefix("/api/v1/miners/").unwrap_or("");
                 let body = self.build_miner_detail_payload(miner_id);
@@ -999,6 +1048,16 @@ fn miner_to_json(
 /// Escape a Prometheus label value: backslash and double-quote must be escaped.
 fn sanitize_prometheus_label(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn parse_query_param(path: &str, key: &str) -> Option<String> {
+    let q = path.split('?').nth(1)?;
+    for pair in q.split('&') {
+        if let Some(val) = pair.strip_prefix(&format!("{key}=")) {
+            return Some(val.to_string());
+        }
+    }
+    None
 }
 
 fn parse_query_limit(path: &str, default: u32) -> u32 {

@@ -1620,6 +1620,7 @@ impl StratumServer {
                 worker_name: wn,
                 algorithm: alg,
                 backend: bk,
+                payout_address: pa,
                 ..
             }) => {
                 miner_id = mid.clone();
@@ -1635,6 +1636,24 @@ impl StratumServer {
                     backend,
                     ip
                 );
+
+                // Explicit payout address (e.g. `qtc:<ss58>` for Quantus
+                // payouts or `zion1…`) — registered once per miner_id.
+                if !pa.is_empty() {
+                    if let Some((chain, addr)) = self
+                        .pool
+                        .lock()
+                        .unwrap()
+                        .register_payout_address(&miner_id, &pa)
+                    {
+                        tracing::info!(
+                            "v3_payout miner={} chain={} addr={}",
+                            miner_id,
+                            chain,
+                            addr
+                        );
+                    }
+                }
 
                 session_gpu_pref =
                     Self::session_coin_pref(&self.gpu_coin_routes, &miner_id, &worker_name);

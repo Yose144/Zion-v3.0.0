@@ -446,6 +446,10 @@ impl ApiServer {
             }
         });
 
+        // QTC (Quantus) pool payout sweeper — no-op unless
+        // QTC_PAYOUT_ENABLED=1 with pool API + admin key configured.
+        self.service.spawn_qtc_payout_sweeper();
+
         let app = self.router();
 
         let bind = format!("{}:{}", self.config.bind, self.config.port);
