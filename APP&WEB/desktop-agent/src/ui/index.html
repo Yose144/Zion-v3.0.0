@@ -5804,6 +5804,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Payouts</span>
           </div>
+          <div class="section-tab" data-section="wallet-qtc">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+            <span>Quantus</span>
+          </div>
           <div class="section-tab" data-section="wallet-manage">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
             <span>Manage</span>
@@ -6154,6 +6158,104 @@
               </div>
               <div id="payout-history-list" style="font-size:12px;color:rgba(255,255,255,0.5)">No payouts recorded yet.</div>
             </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Quantus (QTC network) ═══ -->
+        <div id="wallet-qtc" class="section-panel">
+
+          <!-- Header + KPI strip -->
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+              <span>Quantus Network (QTC)</span>
+              <span class="flex-1"></span>
+              <button class="btn btn-ghost btn-sm" id="qtcnet-refresh-btn">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                Refresh
+              </button>
+            </h2>
+            <div class="status-note" style="margin-bottom:12px">Post-quantum chain · native mining leg · wormhole rewards · live indexer</div>
+            <div class="metric-grid">
+              <div class="metric-card purple">
+                <div class="metric-kicker">NODE</div>
+                <div class="metric-value purple" id="qtcnet-node-state">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">HEIGHT</div>
+                <div class="metric-value blue" id="qtcnet-height">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">PEERS</div>
+                <div class="metric-value blue" id="qtcnet-peers">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">NATIVE LEG</div>
+                <div class="metric-value green" id="qtcnet-native">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">NATIVE SHARE</div>
+                <div class="metric-value gold" id="qtcnet-share">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">BLOCKS MINED</div>
+                <div class="metric-value green" id="qtcnet-mined">—</div>
+              </div>
+            </div>
+            <div class="wallet-status-row" id="qtcnet-updated">—</div>
+          </div>
+
+          <!-- Node + Native leg -->
+          <div class="send-grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+            <div class="control-panel">
+              <h2 class="panel-title-row">
+                <svg class="icon" aria-hidden="true"><use href="#i-monitor-cpu"></use></svg>
+                <span>Quantus Node</span>
+              </h2>
+              <div id="qtcnet-node" class="wallet-meta"></div>
+            </div>
+            <div class="control-panel">
+              <h2 class="panel-title-row">
+                <svg class="icon" aria-hidden="true"><use href="#i-pickaxe"></use></svg>
+                <span>Native Mining Leg</span>
+              </h2>
+              <div class="status-note" style="margin-bottom:8px">Native jobs share a small split of pool miners (lottery mode); the rest rides the external upstream.</div>
+              <div id="qtcnet-pool" class="wallet-meta"></div>
+            </div>
+          </div>
+
+          <!-- Wormhole rewards -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+              <span>Wormhole Rewards</span>
+            </h2>
+            <div class="status-note" style="margin-bottom:8px">Block rewards accrue as ZK leaves on the wormhole address. Indexer lags ~20–90 min behind the chain tip.</div>
+            <div id="qtcnet-rewards-addr" class="wallet-meta" style="word-break:break-all;font-size:10px;margin-bottom:8px"></div>
+            <table class="lottery-table" id="qtcnet-rewards-table"></table>
+          </div>
+
+          <!-- Address lookup -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              <span>QTC Address Lookup</span>
+            </h2>
+            <div class="status-note" style="margin-bottom:8px">On-chain balance (System.Account) + indexed transfer history.</div>
+            <div class="inline-row" style="margin-bottom:10px">
+              <input type="text" id="qtcnet-addr-input" placeholder="qz… address" class="input-flex-mono" />
+              <button class="btn btn-primary btn-sm" id="qtcnet-lookup-btn">Lookup</button>
+            </div>
+            <div id="qtcnet-lookup-result"></div>
+          </div>
+
+          <!-- Network feed -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              <span>Network Feed</span>
+            </h2>
+            <table class="lottery-table" id="qtcnet-feed-table"></table>
           </div>
         </div>
 

@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   validateQuantusAddress: (address) => ipcRenderer.invoke('validate-quantus-address', address),
   quantusGetBalance: (address) => ipcRenderer.invoke('quantus-get-balance', address),
   quantusGetHistory: (address) => ipcRenderer.invoke('quantus-get-history', address),
+  qtcNetworkStatus: (addr) => ipcRenderer.invoke('qtc-network-status', addr),
   walletSetQtc: (data) => ipcRenderer.invoke('wallet-set-qtc', data),
 
   // Native multichain wallet (derived from the ZION mnemonic, non-custodial)

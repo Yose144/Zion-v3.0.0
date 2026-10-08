@@ -35,6 +35,7 @@ const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
 const QuantusWallet = require('./quantus-wallet');
+const QuantusNetwork = require('./quantus-network');
 const NativeWallet = require('./native-wallet');
 const UtxoBuilder = require('./utxo-builder');
 const AccountBuilder = require('./account-builder');
@@ -5476,6 +5477,18 @@ ipcMain.handle('quantus-get-history', async (event, address) => {
   const rows = await QuantusWallet.quantusHistory(address, 20);
   if (!rows) return { success: false, error: 'indexer query failed' };
   return { success: true, rows };
+});
+
+// Aggregated Quantus network status for the Quantus tab — public app API
+// (node + native pool leg + wormhole rewards + indexer feed + optional
+// address lookup), with direct-RPC fallback inside the module.
+ipcMain.handle('qtc-network-status', async (event, addr) => {
+  try {
+    const data = await QuantusNetwork.fetchQtcStatus(addr);
+    return { success: true, data };
+  } catch (e) {
+    return { success: false, error: e?.message || 'qtc status failed' };
+  }
 });
 
 // ── Native multichain wallet IPC ────────────────────────────────────────────
