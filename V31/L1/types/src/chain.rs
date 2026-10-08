@@ -16,6 +16,8 @@ pub enum ChainFamily {
     Stellar,
     Cardano,
     Lightning,
+    /// Substrate-family chains (Polkadot SDK): Quantus Planck, ...
+    Substrate,
 }
 
 /// Canonical chain identifier. New chains can be added here; no stringly-typed
@@ -50,6 +52,9 @@ pub enum ChainId {
     EthereumClassic,
     Monero,
     Zano,
+    /// Quantus Network mainnet (Planck) — post-quantum ML-DSA-87 chain.
+    /// Market ticker QTC, on-chain symbol PLK; internal code `quantus`.
+    Quantus,
 }
 
 impl ChainId {
@@ -80,6 +85,7 @@ impl ChainId {
             ChainId::Stellar => ChainFamily::Stellar,
             ChainId::Cardano => ChainFamily::Cardano,
             ChainId::Lightning => ChainFamily::Lightning,
+            ChainId::Quantus => ChainFamily::Substrate,
         }
     }
 
@@ -111,6 +117,7 @@ impl ChainId {
             ChainId::EthereumClassic => "ethereum_classic",
             ChainId::Monero => "monero",
             ChainId::Zano => "zano",
+            ChainId::Quantus => "quantus",
         }
     }
 
@@ -142,6 +149,7 @@ impl ChainId {
             ChainId::Stellar => 7,
             ChainId::Cardano => 6,
             ChainId::Lightning => 8,
+            ChainId::Quantus => 12,
         }
     }
 }

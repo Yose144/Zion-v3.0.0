@@ -3573,6 +3573,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5872607e25ea4ee5fb37e64bf1462168e1a36a4e719cdc8a105533c708253918"
 
 [[package]]
+name = "qp-rusty-crystals-dilithium"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0f6eb664c03395b3892f7f18d4f08bff0e256a967bb0146598a0f771d5e99ba"
+dependencies = [
+ "zeroize",
+]
+
+[[package]]
 name = "quinn"
 version = "0.11.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5984,9 +5993,9 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.9.0"
+version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
+checksum = "b97154e67e32c85465826e8bcc1c59429aaaf107c1e4a9e53c8d8ccd5eff88d0"
 dependencies = [
  "zeroize_derive",
 ]
@@ -6311,6 +6320,8 @@ dependencies = [
  "k256",
  "num-bigint",
  "num-traits 0.2.19",
+ "qp-poseidon-core",
+ "qp-rusty-crystals-dilithium",
  "rand 0.8.7",
  "reqwest 0.12.28",
  "ripemd",
