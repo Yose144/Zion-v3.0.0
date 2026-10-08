@@ -541,7 +541,6 @@ interface KodamaFieldProps {
 
 function KodamaField({ anchors, count = 6, rng }: KodamaFieldProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const figureRefs = useRef<THREE.Group[]>([]);
 
   const kodamas = useMemo(() => {
     const figures: {
@@ -577,87 +576,96 @@ function KodamaField({ anchors, count = 6, rng }: KodamaFieldProps) {
     return figures;
   }, [anchors, count, rng]);
 
+  /* Merged vertex-colored geometry: each kodama renders as TWO draw calls
+     (body + head-with-face) instead of five separate meshes — the face
+     spheres are baked into the head geometry so the head rattle still
+     animates the whole face. */
   const shared = useMemo(() => {
-    const bodyGeo = new THREE.SphereGeometry(0.07, 12, 12);
-    const headGeo = new THREE.SphereGeometry(0.16, 16, 16);
-    const eyeGeo = new THREE.SphereGeometry(0.035, 10, 10);
-    const mouthGeo = new THREE.SphereGeometry(0.012, 8, 8);
-    const whiteMat = new THREE.MeshBasicMaterial({
-      color: '#ffffff',
+    const paint = (geo: THREE.BufferGeometry, hex: string) => {
+      const c = new THREE.Color(hex);
+      const n = geo.attributes.position.count;
+      const arr = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) arr.set([c.r, c.g, c.b], i * 3);
+      geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+      return geo;
+    };
+    const bodyGeo = paint(new THREE.SphereGeometry(0.07, 12, 12), '#ffffff');
+    const headGeo = paint(new THREE.SphereGeometry(0.16, 16, 16), '#ffffff');
+    const eyeL = paint(new THREE.SphereGeometry(0.035, 10, 10).translate(-0.055, 0.06, 0.135), '#000000');
+    const eyeR = paint(new THREE.SphereGeometry(0.035, 10, 10).translate(0.055, 0.06, 0.135), '#000000');
+    const mouth = paint(new THREE.SphereGeometry(0.012, 8, 8).translate(0, -0.06, 0.145), '#000000');
+    const faceGeo = mergeGeometries([headGeo, eyeL, eyeR, mouth]) ?? headGeo;
+    const mat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
       transparent: true,
       opacity: 0.9,
       toneMapped: false,
     });
-    const blackMat = new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false });
-    return { bodyGeo, headGeo, eyeGeo, mouthGeo, whiteMat, blackMat };
+    return { bodyGeo, faceGeo, mat };
   }, []);
 
-  useEffect(() => {
-    if (!groupRef.current) return;
-    const parent = groupRef.current;
-    parent.clear();
-    figureRefs.current = [];
+  const bodiesRef = useRef<THREE.InstancedMesh>(null);
+  const headsRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useRef(new THREE.Object3D());
+  const headDummy = useRef(new THREE.Object3D());
+  const headMat = useRef(new THREE.Matrix4());
 
-    for (const k of kodamas) {
-      const figure = new THREE.Group();
-
-      // Tiny body, oversized bobble head.
-      const body = new THREE.Mesh(shared.bodyGeo, shared.whiteMat);
-      body.position.y = 0.02;
-
-      const head = new THREE.Mesh(shared.headGeo, shared.whiteMat);
-      head.position.y = 0.22;
-
-      const leftEye = new THREE.Mesh(shared.eyeGeo, shared.blackMat);
-      leftEye.position.set(-0.055, 0.06, 0.135);
-      const rightEye = new THREE.Mesh(shared.eyeGeo, shared.blackMat);
-      rightEye.position.set(0.055, 0.06, 0.135);
-      const mouth = new THREE.Mesh(shared.mouthGeo, shared.blackMat);
-      mouth.position.set(0, -0.06, 0.145);
-      head.add(leftEye, rightEye, mouth);
-
-      figure.add(body, head);
-      figure.position.copy(k.pos);
-      figure.rotation.copy(k.rot);
-      figure.scale.setScalar(k.scale);
-      parent.add(figure);
-      figureRefs.current.push(figure);
-    }
-
-    return () => {
-      parent.clear();
-      figureRefs.current = [];
-    };
-  }, [kodamas, shared]);
-
+  /* Two instanced draws render the whole field — per-instance matrices
+     carry the sway/bob/pulse and the head rattle (head matrix = body
+     matrix × local head transform). */
   useFrame((state) => {
+    const bodies = bodiesRef.current;
+    const heads = headsRef.current;
+    if (!bodies || !heads) return;
     const t = state.clock.elapsedTime;
-    figureRefs.current.forEach((figure, i) => {
-      const k = kodamas[i];
-      const head = figure.children[1] as THREE.Mesh | undefined;
+    const bd = dummy.current;
+    const hd = headDummy.current;
 
-      // Classic kodama head rattle / bobble.
-      if (head) {
-        const rattle = Math.sin(t * k.headSpeed + k.phase);
-        head.rotation.z = rattle * 0.45 + Math.sin(t * k.headSpeed * 2.2 + k.phase) * 0.15;
-        head.rotation.x = Math.cos(t * k.headSpeed * 1.5 + k.phase) * 0.28;
-        head.rotation.y = Math.sin(t * k.headSpeed * 0.7 + k.phase) * 0.18;
-      }
-
-      // Wiggle / wander on the branch and a gentle body bob.
+    kodamas.forEach((k, i) => {
       const sway = Math.sin(t * 0.6 + k.phase);
-      figure.position.copy(k.pos).addScaledVector(k.dir, sway * 0.12);
-      figure.position.y += Math.sin(t * 1.8 + k.phase) * 0.015;
-      figure.rotation.z = sway * 0.08;
-
-      // Subtle scale pulse (almost appearing/disappearing).
+      bd.position.copy(k.pos).addScaledVector(k.dir, sway * 0.12);
+      bd.position.y += Math.sin(t * 1.8 + k.phase) * 0.015;
+      bd.rotation.set(k.rot.x, k.rot.y, k.rot.z + sway * 0.08);
       const pulse = 0.94 + 0.06 * Math.sin(t * 2.5 + k.phase);
-      figure.scale.setScalar(k.scale * pulse);
+      bd.scale.setScalar(k.scale * pulse);
+      bd.updateMatrix();
+      bodies.setMatrixAt(i, bd.matrix);
+
+      // Head rides on the body transform, offset 0.22 up, with rattle.
+      const rattle = Math.sin(t * k.headSpeed + k.phase);
+      hd.position.set(0, 0.22, 0);
+      hd.rotation.set(
+        Math.cos(t * k.headSpeed * 1.5 + k.phase) * 0.28,
+        Math.sin(t * k.headSpeed * 0.7 + k.phase) * 0.18,
+        rattle * 0.45 + Math.sin(t * k.headSpeed * 2.2 + k.phase) * 0.15
+      );
+      hd.scale.setScalar(1);
+      hd.updateMatrix();
+      headMat.current.multiplyMatrices(bd.matrix, hd.matrix);
+      heads.setMatrixAt(i, headMat.current);
     });
+
+    bodies.instanceMatrix.needsUpdate = true;
+    heads.instanceMatrix.needsUpdate = true;
   });
 
   if (kodamas.length === 0) return null;
-  return <group ref={groupRef} />;
+  return (
+    <group ref={groupRef}>
+      <instancedMesh
+        ref={bodiesRef}
+        args={[shared.bodyGeo, shared.mat, kodamas.length]}
+        frustumCulled={false}
+        raycast={() => null}
+      />
+      <instancedMesh
+        ref={headsRef}
+        args={[shared.faceGeo, shared.mat, kodamas.length]}
+        frustumCulled={false}
+        raycast={() => null}
+      />
+    </group>
+  );
 }
 
 /* ── Contact-style light fountain: vertical streaks spiraling upward ── */

@@ -6,8 +6,10 @@ import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
 import { useGameStore } from '../store/gameStore';
-import WorldNode from './World';
+import WorldNode, { createSunRayTexture } from './World';
 import Hyperlanes from './Hyperlanes';
+import InstancedBillboards, { type BillboardInstance } from './InstancedBillboards';
+import { useGpuBackend } from '../lib/gpuBackend';
 
 const CATEGORY_SIZES: Record<string, number> = {
   'star-system': 0.34,
@@ -30,6 +32,64 @@ interface GalaxyMapProps {
 
 const RING_QUAT = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
 const IDENTITY_QUAT = new THREE.Quaternion();
+const UP = new THREE.Vector3(0, 1, 0);
+
+/** Warp-gate torus for every star system as ONE instanced draw — the
+ *  per-node gate in World.tsx only mounts on hover/selected for the
+ *  brighter variant + vortex. Orientation is baked (gate faces the core),
+ *  matching the original lookAt. MeshBasicMaterial converts cleanly on
+ *  both WebGL2 and WebGPU backends. */
+function InstancedGates({ worlds }: { worlds: World[] }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const rot = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const pos = new THREE.Vector3();
+    const scl = new THREE.Vector3();
+    const col = new THREE.Color();
+    worlds.forEach((w, i) => {
+      const p = w.galaxyPosition!;
+      const size = CATEGORY_SIZES[w.category] || 0.28;
+      const dist = Math.sqrt(p.x ** 2 + p.y ** 2 + p.z ** 2);
+      const ds = (dist > 55 ? size * 1.6 : size) * 2.4;
+      pos.set(p.x, p.y, p.z);
+      // +Z of the gate faces the core — same convention as Object3D.lookAt.
+      rot.lookAt(CORE, pos, UP);
+      q.setFromRotationMatrix(rot);
+      scl.setScalar(ds);
+      m.compose(pos, q, scl);
+      mesh.setMatrixAt(i, m);
+      col.set(CATEGORY_COLORS[w.category] || '#ffffff');
+      mesh.setColorAt(i, col);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [worlds]);
+
+  // Unit torus with tube ratio matching displaySize*0.07 / radius*2.4.
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[undefined, undefined, worlds.length]}
+      frustumCulled={false}
+      raycast={() => null}
+    >
+      <torusGeometry args={[1, 0.03, 8, 32]} />
+      <meshBasicMaterial
+        transparent
+        opacity={0.25}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
+    </instancedMesh>
+  );
+}
 
 /**
  * Far-field world nodes as two instanced draws (spheres + orbit rings).
@@ -155,6 +215,39 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
     () => visibleWorlds.filter((w) => w.category === 'star-system' || w.id === selectedWorldId),
     [visibleWorlds, selectedWorldId]
   );
+
+  const backend = useGpuBackend();
+  // ShaderMaterial can't run on the WebGPU node pipeline — star rays stay
+  // per-node sprites there (correctness over draw calls on the opt-in
+  // path). Gates are MeshBasicMaterial, so they instance on both.
+  const instancedRays = backend === 'webgl2';
+
+  // Star-system extras drawn shared: sun-ray billboards + warp gates.
+  const instancedStars = useMemo(
+    () => instancedWorlds.filter((w) => w.category === 'star-system'),
+    [instancedWorlds]
+  );
+  const rayTexture = useMemo(
+    () => (instancedRays && instancedStars.length > 0 ? createSunRayTexture() : null),
+    [instancedRays, instancedStars]
+  );
+  const rayInstances = useMemo<BillboardInstance[]>(
+    () =>
+      instancedStars.map((w, i) => {
+        const p = w.galaxyPosition!;
+        const size = CATEGORY_SIZES[w.category] || 0.28;
+        const dist = Math.sqrt(p.x ** 2 + p.y ** 2 + p.z ** 2);
+        const ds = (dist > 55 ? size * 1.6 : size) * 5;
+        return {
+          position: [p.x, p.y, p.z],
+          scale: [ds, ds],
+          color: CATEGORY_COLORS[w.category] || '#ffffff',
+          opacity: 0.5,
+          phase: i * 1.37,
+        };
+      }),
+    [instancedStars]
+  );
   const hoveredWorld = useMemo(
     () => visibleWorlds.find((w) => w.id === hoveredId && w.id !== selectedWorldId) ?? null,
     [visibleWorlds, hoveredId, selectedWorldId]
@@ -206,6 +299,18 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
         onSelect={onWorldSelect}
       />
 
+      {/* Shared star extras — one billboard draw for all rays, one torus
+          draw for all gates (gates skipped on mobile as before). */}
+      {instancedRays && rayTexture && (
+        <InstancedBillboards
+          texture={rayTexture}
+          instances={rayInstances}
+          rotationSpeed={0.15}
+          pulse
+        />
+      )}
+      {!isMobile && <InstancedGates worlds={instancedStars} />}
+
       {detailedWorlds.map((w) => {
         const color = CATEGORY_COLORS[w.category] || '#ffffff';
         const size = CATEGORY_SIZES[w.category] || 0.28;
@@ -226,6 +331,8 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
             isDiscovered={discoveredSet.has(w.id)}
             isMobile={isMobile}
             instancedBase={!isSelected}
+            instancedRays={instancedRays && !isSelected}
+            instancedGate={!isSelected}
             hoveredOverride={w.id === hoveredId}
             onSelect={() => onWorldSelect?.(w)}
           />
