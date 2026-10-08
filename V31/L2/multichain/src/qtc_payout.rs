@@ -5,7 +5,7 @@
 //! (v3 Hello `payout_address` supported too).  Their ZION-share rewards
 //! stay denominated in flowers in the pool's PPLNS queue; this sweeper
 //! drains the external-chain queue (`POST /admin/external-payouts`) and
-//! settles each entry on Quantus Planck with a native
+//! settles each entry on Quantus mainnet with a native
 //! `balances.transfer_keep_alive` signed by the payout keyring
 //! (`keyring.quantus_keypair(0,0)`, fallback `QUANTUS_SEED`).
 //!
@@ -16,6 +16,11 @@
 //! the ledger update is indistinguishable from a crash before it, so
 //! automatic redelivery could double-pay.  Stalled rows need operator
 //! review (check the chain, then resubmit or refund).
+//!
+//! Treasury gate: before submitting, the sweeper reads the payout
+//! account's free balance; rows that can't afford `amount + fee` are
+//! parked as 'deferred' (attempts=0, never submitted — safe across
+//! restarts) and go out once collected rewards fund the treasury.
 //!
 //! Pool fee accounting stays in ZION: `amount_flowers` is the miner's
 //! post-fee share; the operator's fee never leaves the pool wallet.
@@ -46,8 +51,10 @@ pub struct QtcPayoutConfig {
     pub admin_key: String,
     /// Planks (QTC base unit, 12 decimals) paid per flower of pool reward
     /// (`QTC_PLANKS_PER_FLOWER`).  Required when enabled — there is no
-    /// safe default rate.
-    pub planks_per_flower: u128,
+    /// safe default rate.  Accepts decimals ("1.2386" → 12386/10000) —
+    /// stored as exact rational so sub-1 rates don't lose precision.
+    pub planks_per_flower_num: u128,
+    pub planks_per_flower_den: u128,
     /// Poll interval (`QTC_PAYOUT_INTERVAL_S`, default 60).
     pub interval: Duration,
     /// Minimum per-payout planks — entries below stay 'queued' as dust
@@ -66,6 +73,25 @@ pub struct QtcPayoutConfig {
     pub max_fee_planks: u128,
 }
 
+/// Parse a decimal string into an exact (num, den) ratio — "1.2386" →
+/// (12386, 10_000).  Rejects empty/garbage; den is always ≥ 1.
+fn parse_decimal_ratio(s: &str) -> Option<(u128, u128)> {
+    if s.is_empty() || s.starts_with(['+', '-']) {
+        return None;
+    }
+    let (int, frac) = s.split_once('.').unwrap_or((s, ""));
+    if int.is_empty() && frac.is_empty() {
+        return None;
+    }
+    if !int.chars().all(|c| c.is_ascii_digit()) || !frac.chars().all(|c| c.is_ascii_digit())
+    {
+        return None;
+    }
+    let num: u128 = format!("{}{}", int, frac).parse().ok()?;
+    let den = 10u128.checked_pow(frac.len() as u32)?;
+    Some((num, den))
+}
+
 impl QtcPayoutConfig {
     pub fn from_env() -> MultichainResult<Option<Self>> {
         if std::env::var("QTC_PAYOUT_ENABLED").ok().as_deref() != Some("1") {
@@ -75,11 +101,13 @@ impl QtcPayoutConfig {
             .map_err(|_| MultichainError::Config("QTC_PAYOUT_POOL_API not set".into()))?;
         let admin_key = std::env::var("QTC_PAYOUT_ADMIN_KEY")
             .map_err(|_| MultichainError::Config("QTC_PAYOUT_ADMIN_KEY not set".into()))?;
-        let planks_per_flower: u128 = std::env::var("QTC_PLANKS_PER_FLOWER")
-            .map_err(|_| MultichainError::Config("QTC_PLANKS_PER_FLOWER not set".into()))?
-            .parse()
-            .map_err(|e| MultichainError::Config(format!("bad QTC_PLANKS_PER_FLOWER: {e}")))?;
-        if planks_per_flower == 0 {
+        let rate_raw = std::env::var("QTC_PLANKS_PER_FLOWER")
+            .map_err(|_| MultichainError::Config("QTC_PLANKS_PER_FLOWER not set".into()))?;
+        let (planks_per_flower_num, planks_per_flower_den) =
+            parse_decimal_ratio(rate_raw.trim()).ok_or_else(|| {
+                MultichainError::Config(format!("bad QTC_PLANKS_PER_FLOWER: {rate_raw}"))
+            })?;
+        if planks_per_flower_num == 0 {
             return Err(MultichainError::Config(
                 "QTC_PLANKS_PER_FLOWER must be > 0".into(),
             ));
@@ -109,7 +137,8 @@ impl QtcPayoutConfig {
             enabled: true,
             pool_api: pool_api.trim_end_matches('/').to_string(),
             admin_key,
-            planks_per_flower,
+            planks_per_flower_num,
+            planks_per_flower_den,
             interval: Duration::from_secs(interval_s.max(5)),
             min_planks,
             max_attempts,
@@ -215,8 +244,9 @@ async fn tick(
     for p in &resp.payouts {
         let id = format!("quantus:{}:{}", p.height, p.miner_id);
         let gross_planks = (p.amount_flowers as u128)
-            .checked_mul(config.planks_per_flower)
-            .unwrap_or(u128::MAX);
+            .checked_mul(config.planks_per_flower_num)
+            .unwrap_or(u128::MAX)
+            / config.planks_per_flower_den;
         // Pool fee on the QTC leg: deducted from the converted amount;
         // it never leaves the payout account (we simply send less).
         let fee_planks = gross_planks.saturating_mul(config.fee_bps as u128) / 10_000;
@@ -244,19 +274,21 @@ async fn tick(
         )?;
     }
 
-    // 3. Submit due 'queued' rows (bounded attempts).
+    // 3. Submit due rows (bounded attempts). 'deferred' = parked by the
+    // treasury-balance gate — never submitted, safe to keep across restarts.
     struct Row {
         id: String,
         address: String,
         planks: String,
         attempts: u32,
+        deferred: bool,
     }
     let due: Vec<Row> = {
         let db = db.lock().await;
         let mut stmt = db.conn().prepare(
-            "SELECT id, address, amount_native, attempts FROM ext_payout_records \
-             WHERE chain='quantus' AND status='queued' AND amount_native IS NOT NULL \
-             ORDER BY created_at LIMIT 50",
+            "SELECT id, address, amount_native, attempts, status FROM ext_payout_records \
+             WHERE chain='quantus' AND status IN ('queued','deferred') \
+             AND amount_native IS NOT NULL ORDER BY created_at LIMIT 50",
         )?;
         let rows = stmt
             .query_map([], |r| {
@@ -265,10 +297,41 @@ async fn tick(
                     address: r.get(1)?,
                     planks: r.get(2)?,
                     attempts: r.get::<_, u32>(3)?,
+                    deferred: r.get::<_, String>(4)? == "deferred",
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
         rows
+    };
+
+    // Treasury balance gate: with an unfunded payout account every submission
+    // deterministically fails InsufficientFunds and would burn attempts
+    // toward 'stalled'. Defer instead — rows stay 'queued' and go out once
+    // collected rewards land. A failed balance query fails closed (no sends).
+    let mut treasury_free: Option<u128> = match adapter.signer_account_id() {
+        Ok(acct) => {
+            let ss58 = crate::chain::adapters::quantus::ss58_encode(
+                &acct,
+                crate::chain::adapters::quantus::QUANTUS_SS58_PREFIX,
+            );
+            match Address::new(ChainId::Quantus, acct.to_vec(), ss58) {
+                Ok(a) => match adapter.balance(&a).await {
+                    Ok(bal) => Some(bal.0),
+                    Err(e) => {
+                        warn!("qtc treasury balance query failed — deferring sends: {e}");
+                        None
+                    }
+                },
+                Err(e) => {
+                    warn!("qtc treasury address build failed — deferring sends: {e}");
+                    None
+                }
+            }
+        }
+        Err(e) => {
+            warn!("qtc signer unavailable — deferring sends: {e}");
+            None
+        }
     };
 
     for row in due {
@@ -283,11 +346,14 @@ async fn tick(
         let to = Address::new(ChainId::Quantus, account.to_vec(), row.address.clone())
             .map_err(|e| MultichainError::Validation(format!("bad payout addr: {e}")))?;
 
-        // Fee-cap guard: estimate via payment_queryInfo; over-cap rows stay
-        // 'queued' and retry next tick (fee market may settle).
-        if config.max_fee_planks > 0 {
-            match adapter.estimate_transfer_fee(&to, planks).await {
-                Ok(est) if est.partial_fee > config.max_fee_planks => {
+        // Fee estimate via payment_queryInfo: over-cap rows stay 'queued'
+        // and retry next tick (fee market may settle). The estimate also
+        // feeds the treasury-balance check below.
+        let mut est_fee = 2_000_000_000u128; // observed mainnet fee ~0.8–1.0e9
+        match adapter.estimate_transfer_fee(&to, planks).await {
+            Ok(est) => {
+                est_fee = est.partial_fee.max(1);
+                if config.max_fee_planks > 0 && est.partial_fee > config.max_fee_planks {
                     warn!(
                         id = %row.id,
                         fee = est.partial_fee,
@@ -296,13 +362,46 @@ async fn tick(
                     );
                     continue;
                 }
-                Err(e) => {
-                    // Estimation failing is transient — don't block the
-                    // payout on it, just log and proceed.
-                    warn!(id = %row.id, "qtc fee estimate failed, sending anyway: {e}");
-                }
-                _ => {}
             }
+            Err(e) => {
+                // Estimation failing is transient — don't block the
+                // payout on it, just log and proceed.
+                warn!(id = %row.id, "qtc fee estimate failed, sending anyway: {e}");
+            }
+        }
+
+        // Balance check: amount + fee must fit the current free balance.
+        match treasury_free {
+            Some(free) if planks.saturating_add(est_fee) <= free => {
+                treasury_free = Some(free.saturating_sub(planks.saturating_add(est_fee)));
+            }
+            _ => {
+                info!(
+                    id = %row.id,
+                    planks,
+                    treasury_free,
+                    "qtc payout deferred — treasury balance insufficient/unknown"
+                );
+                // Only never-submitted rows may park as 'deferred' — a row
+                // with attempts>0 may have already landed on-chain and
+                // must stay 'queued' so a restart stalls it for review.
+                if row.attempts == 0 {
+                    mark_deferred(db, &row.id, "awaiting treasury funding").await;
+                }
+                continue;
+            }
+        }
+
+        // A 'deferred' row was never submitted — but a crash between
+        // send_payment() and the ledger write below is ambiguous. Record
+        // the submit intent ('queued') first so a restart stalls it
+        // instead of resubmitting a possibly-landed payment.
+        if row.deferred {
+            let db = db.lock().await;
+            db.conn().execute(
+                "UPDATE ext_payout_records SET status='queued', updated_at=?2 WHERE id=?1",
+                rusqlite::params![row.id, now_secs() as i64],
+            )?;
         }
 
         match adapter
@@ -356,6 +455,19 @@ async fn tick(
     Ok(())
 }
 
+/// Park a never-submitted row as 'deferred' — the payout is recorded and
+/// pending, but the treasury lacks funds. Unlike 'queued', a deferred row
+/// survives restarts (it is unambiguously not on-chain).
+async fn mark_deferred(db: &Arc<Mutex<Db>>, id: &str, reason: &str) {
+    let now = now_secs() as i64;
+    let db = db.lock().await;
+    let _ = db.conn().execute(
+        "UPDATE ext_payout_records SET status='deferred', error=?2, updated_at=?3 \
+         WHERE id=?1 AND attempts=0",
+        rusqlite::params![id, reason, now],
+    );
+}
+
 async fn mark_error(
     db: &Arc<Mutex<Db>>,
     id: &str,
@@ -377,5 +489,35 @@ async fn mark_error(
     );
     if status == "stalled" {
         warn!(id = %id, error = %error, "qtc payout stalled — manual review");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_decimal_ratio;
+
+    #[test]
+    fn decimal_ratio_parses_exact() {
+        assert_eq!(parse_decimal_ratio("1"), Some((1, 1)));
+        assert_eq!(parse_decimal_ratio("1.2386"), Some((12386, 10_000)));
+        assert_eq!(parse_decimal_ratio("0.5"), Some((5, 10)));
+        assert_eq!(parse_decimal_ratio("12."), Some((12, 1)));
+        assert_eq!(parse_decimal_ratio(".5"), Some((5, 10)));
+        // invalid
+        assert_eq!(parse_decimal_ratio(""), None);
+        assert_eq!(parse_decimal_ratio("-1.5"), None);
+        assert_eq!(parse_decimal_ratio("1.2.3"), None);
+        assert_eq!(parse_decimal_ratio("abc"), None);
+        assert_eq!(parse_decimal_ratio("1,5"), None);
+    }
+
+    #[test]
+    fn decimal_ratio_applies_sub_one_rate() {
+        // QTC at ~$161 vs ZION $0.0002 → ~1.24 planks per flower.
+        // 10 ZION (10e6 flowers) must convert to ~12.4e6 planks, not 10e6.
+        let (num, den) = parse_decimal_ratio("1.2386").unwrap();
+        let flowers: u128 = 10_000_000;
+        let planks = flowers.checked_mul(num).unwrap() / den;
+        assert_eq!(planks, 12_386_000);
     }
 }

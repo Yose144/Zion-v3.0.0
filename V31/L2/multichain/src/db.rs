@@ -234,11 +234,13 @@ impl Db {
             -- Idempotency key: (chain, source_height, miner_id) — a payout for
             -- a given pool block is recorded once; the sweeper owns
             -- redelivery after a successful drain.  Status lifecycle:
-            --   queued → submitted → confirmed | failed | stalled
+            --   queued → submitted → confirmed | failed | stalled | deferred
             -- 'queued' rows surviving a process restart are promoted to
             -- 'stalled' (fail-closed): a crash between author_submitExtrinsic
             -- and the ledger update cannot be distinguished from a crash
             -- before it, so an operator must resolve them manually.
+            -- 'deferred' (attempts=0, parked by the treasury-balance gate)
+            -- is unambiguous — never submitted — and survives restarts.
             CREATE TABLE IF NOT EXISTS ext_payout_records (
                 id TEXT PRIMARY KEY,
                 chain TEXT NOT NULL,

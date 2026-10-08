@@ -1317,6 +1317,9 @@ const DEFAULT_CONFIG = {
   rpcUrl: DEFAULT_RPC_URL,
   algorithm: 'deeksha_lite_v1',
   wallet: '',
+  // 'zion' = pay pool earnings to the ZION wallet (default);
+  // 'qtc' = route payout to the wallet's linked Quantus address (qtc:qz…).
+  payoutCoin: 'zion',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
   // Apple Silicon Metal deeksha kernel is not yet reliable; default to CPU
@@ -2326,6 +2329,25 @@ function startMiningV31(config, v31Path) {
     return { success: false, error: 'Invalid wallet address' };
   }
 
+  // Payout coin routing: default pays the miner's ZION earnings to the zion1
+  // wallet. 'qtc' routes the whole payout to the wallet's linked Quantus
+  // address (`qtc:` prefix → pool credits the 'quantus' external chain and
+  // the sweeper pays native QTC to that address).
+  let minerWallet = wallet;
+  if (String(config?.payoutCoin || '').trim().toLowerCase() === 'qtc') {
+    const qtcAddr = _nativeLoadWalletData(wallet)?.data?.qtcAddress || null;
+    if (!qtcAddr || !QuantusWallet.isValidQuantusAddress(qtcAddr)) {
+      dialog.showErrorBox(
+        'QTC Payout Selected',
+        'The active wallet has no linked QTC address. Generate or link one in Wallet → QTC card, or switch Pool payout back to ZION.'
+      );
+      startMiningInProgress = false;
+      if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+      return { success: false, error: 'QTC payout selected but no QTC address linked' };
+    }
+    minerWallet = `qtc:${qtcAddr}`;
+  }
+
   // ── 2. Verify binary exists ────────────────────────────────────────────────
   if (!fs.existsSync(v31Path)) {
     const defMsg = process.platform === 'win32'
@@ -2392,7 +2414,7 @@ function startMiningV31(config, v31Path) {
   const gpuCoinAuto = !gpuCoin || gpuCoin.toLowerCase() === 'auto';
   const METRICS_BIND = '127.0.0.1:9116';
 
-  const args = ['--pool', pool, '--wallet', wallet, '--worker', worker, '--threads', String(effectiveThreads), '--metrics', METRICS_BIND, '--log-interval', '30'];
+  const args = ['--pool', pool, '--wallet', minerWallet, '--worker', worker, '--threads', String(effectiveThreads), '--metrics', METRICS_BIND, '--log-interval', '30'];
   if (!tripleStreamEnabled) {
     args.push('--no-gpu', '--no-cpu');
   } else if (!wantsGpu) {
@@ -2541,7 +2563,7 @@ function startMiningV31(config, v31Path) {
   }
 
   log(`[V31-FAST] Spawned PID ${minerProcess?.pid} in ${Date.now() - t0}ms\n`);
-  logApp('v31-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: wallet.slice(0, 12) + '...', threads: effectiveThreads }));
+  logApp('v31-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: minerWallet.slice(0, 12) + '...', payoutCoin: String(config?.payoutCoin || 'zion'), threads: effectiveThreads }));
 
   resetMinerTelemetryForNewSpawn();
 
@@ -5420,13 +5442,11 @@ ipcMain.handle('generate-quantus-wallet', () => {
   try {
     const bip39lib = require('bip39');
     const mnemonic = bip39lib.generateMnemonic(256); // 24 words
-    const qtc = QuantusWallet.deriveQuantusAddress(mnemonic, APP_ROOT, IS_PACKAGED);
-    if (!qtc) {
-      return {
-        success: false,
-        error: 'zion-derive-addr helper unavailable or derivation failed'
-      };
+    const res = QuantusWallet.deriveQuantusAddressDetailed(mnemonic, APP_ROOT, IS_PACKAGED);
+    if (!res.address) {
+      return { success: false, error: res.error || 'derivation failed' };
     }
+    const qtc = res.address;
     dbg('Generated Quantus wallet:', qtc);
     return {
       success: true,
@@ -5449,10 +5469,10 @@ ipcMain.handle('generate-quantus-wallet', () => {
 // is a pure function of their ZION mnemonic.
 ipcMain.handle('derive-quantus-address', (event, mnemonic) => {
   try {
-    const qtc = QuantusWallet.deriveQuantusAddress(mnemonic, APP_ROOT, IS_PACKAGED);
-    return qtc
-      ? { success: true, address: qtc }
-      : { success: false, error: 'derivation failed (helper missing or bad mnemonic)' };
+    const res = QuantusWallet.deriveQuantusAddressDetailed(mnemonic, APP_ROOT, IS_PACKAGED);
+    return res.address
+      ? { success: true, address: res.address }
+      : { success: false, error: res.error || 'derivation failed' };
   } catch (error) {
     return { success: false, error: error.message };
   }
