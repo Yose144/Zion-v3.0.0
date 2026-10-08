@@ -352,7 +352,11 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
   (miner_reward ~0.31 QTC/blok (310e9 planks, 12 dec), height ≡ našemu tipu);
   `sub2.quantus.com` = **Planck testnet** (~1.23M blk). `collect-rewards`
   default je sub2 → na Edge script předává explicitně `--subsquid-url
-  https://sqm.quantus.com/v1/graphql`.
+  https://sqm.quantus.com/v1/graphql`. **Lag:** sqm indexer běží ~200–300
+  bloků (~20–90 min) za node tipem (ověřeno 2026-10-08: node 189293 vs
+  indexer 189029) → history v UI je záměrně zpožděná; pro real-time
+  nonce/balance vždy node RPC (`system_accountNextIndex`/`state_getStorage`),
+  indexer jen pro přehled.
 - **Mining rewards jdou POUZE na wormhole adresy** — node dostává
   `--rewards-inner-hash <32B>` (preimage → wormhole adresa). Sweep =
   wormhole **exit** přes ZK proof (`wormhole prove` → verify extrinsic),
