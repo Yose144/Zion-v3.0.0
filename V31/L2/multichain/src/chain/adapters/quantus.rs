@@ -355,6 +355,17 @@ impl QuantusAdapter {
         Ok(Hash(decode_hex32(&tx_hash)?))
     }
 
+    /// Account id of the hot signer (treasury/payout account) — used by the
+    /// QTC payout sweeper to gate submissions on available balance.
+    pub fn signer_account_id(&self) -> MultichainResult<[u8; 32]> {
+        Ok(self.signer()?.account_id())
+    }
+
+    /// SS58 address of the hot signer.
+    pub fn signer_ss58(&self) -> MultichainResult<String> {
+        Ok(self.signer()?.ss58_address())
+    }
+
     /// Hot signing keypair: keyring (0,0) when configured, else QUANTUS_SEED.
     fn signer(&self) -> MultichainResult<QuantusKeypair> {
         if let Some(kr) = &self.keyring {

@@ -105,7 +105,7 @@ function ss58EncodeQuantus(account32) {
 function resolveHelperPath(appRoot, isPackaged) {
   const exe = process.platform === 'win32' ? 'zion-derive-addr.exe' : 'zion-derive-addr';
   const candidates = [
-    isPackaged ? path.join(process.resourcesPath, exe) : null,
+    isPackaged && process.resourcesPath ? path.join(process.resourcesPath, exe) : null,
     path.join(appRoot, 'resources', exe),
     path.join(appRoot, 'resources', 'bin', exe),
     exe // PATH fallback
@@ -119,27 +119,53 @@ function resolveHelperPath(appRoot, isPackaged) {
 }
 
 /**
- * Derive the Quantus (QTC) ss58 address for a BIP39 mnemonic using the
- * bundled `zion-derive-addr` helper (Rust `Keyring::address(Quantus)`).
- * Returns null when the helper is unavailable or derivation fails.
+ * Like deriveQuantusAddress but returns `{ address }` on success or
+ * `{ error }` with a specific reason — helper path resolution, spawn
+ * errors, non-zero exit (with stderr tail), malformed output, or an
+ * invalid ss58 address are surfaced instead of a bare null.
  */
-function deriveQuantusAddress(mnemonic, appRoot, isPackaged) {
+function deriveQuantusAddressDetailed(mnemonic, appRoot, isPackaged) {
   const helper = resolveHelperPath(appRoot, isPackaged);
-  if (!helper) return null;
+  if (!helper) {
+    return { error: 'zion-derive-addr helper not found (resources/, resources/bin/, PATH)' };
+  }
+  const scrub = (s) => String(s || '').replace(/(sk|pk)=[0-9a-fA-F]+/g, '$1=<redacted>');
+  let res;
   try {
-    const res = spawnSync(helper, [], {
+    res = spawnSync(helper, [], {
       input: String(mnemonic).trim() + '\n',
       encoding: 'utf8',
       timeout: 15_000,
       maxBuffer: 64 * 1024
     });
-    if (res.status !== 0 || !res.stdout) return null;
-    const m = /(?:^|\s)qtc=([1-9A-HJ-NP-Za-km-z]+)/.exec(res.stdout);
-    if (!m) return null;
-    return isValidQuantusAddress(m[1]) ? m[1] : null;
-  } catch {
-    return null;
+  } catch (e) {
+    return { error: `helper spawn failed: ${e.message}` };
   }
+  if (res.error) return { error: `helper spawn error: ${res.error.message}` };
+  if (res.status !== 0) {
+    const tail = scrub(res.stderr || res.stdout).trim().split('\n').pop();
+    return { error: `helper exited ${res.status}${tail ? `: ${tail.slice(0, 160)}` : ''}` };
+  }
+  const m = /(?:^|\s)qtc=([1-9A-HJ-NP-Za-km-z]+)/.exec(res.stdout || '');
+  if (!m) {
+    const tail = scrub(res.stdout || res.stderr).trim().split('\n').pop()
+      || scrub(res.stderr).trim().split('\n').pop()
+      || 'empty output';
+    return { error: `helper output missing qtc= address (${tail.slice(0, 160)})` };
+  }
+  if (!isValidQuantusAddress(m[1])) {
+    return { error: 'helper produced an invalid ss58-189 address' };
+  }
+  return { address: m[1] };
+}
+
+/**
+ * Derive the Quantus (QTC) ss58 address for a BIP39 mnemonic using the
+ * bundled `zion-derive-addr` helper (Rust `Keyring::address(Quantus)`).
+ * Returns null when the helper is unavailable or derivation fails.
+ */
+function deriveQuantusAddress(mnemonic, appRoot, isPackaged) {
+  return deriveQuantusAddressDetailed(mnemonic, appRoot, isPackaged).address || null;
 }
 
 // ── balance via public HTTPS JSON-RPC ───────────────────────────────────────
@@ -242,6 +268,7 @@ module.exports = {
   ss58EncodeQuantus,
   ss58Decode,
   deriveQuantusAddress,
+  deriveQuantusAddressDetailed,
   resolveHelperPath,
   quantusBalance,
   quantusHistory

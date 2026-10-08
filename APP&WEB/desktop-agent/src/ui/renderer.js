@@ -781,10 +781,11 @@ function initQtcView() {
           metaRow('Public RPC', '<a href="#" data-ext="https://rpc.zionterranova.com/qtc" style="color:#22d3ee">rpc.zionterranova.com/qtc</a>');
       }
 
-      // Native leg card
+      // Native leg card (+ market cross rate when CoinGecko answers)
+      const mk = d.market;
       const poolHost = $('qtcnet-pool');
       if (poolHost) {
-        poolHost.innerHTML = p.available === false
+        poolHost.innerHTML = (p.available === false
           ? '<div class="status-note">Pool leg data unavailable.</div>'
           : metaRow('Enabled', nv.enabled == null ? '—' : (nv.enabled ? 'yes' : 'no')) +
             metaRow('Connected', nv.connected == null ? '—' : (nv.connected ? '● connected' : '● disconnected'), nv.connected ? '#4ade80' : '#f87171') +
@@ -792,7 +793,14 @@ function initQtcView() {
             metaRow('Job age', fmtAge(nv.job_age_ms)) +
             metaRow('Upstream', esc(p.upstream || '—')) +
             metaRow('Upstream job', `${esc(p.upstream_job_id || '—')} · ${fmtAge(p.upstream_job_age_ms)}`) +
-            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—');
+            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—')) +
+          (mk
+            ? metaRow(
+                'Market',
+                `QTC $${mk.qtc_usd.toFixed(2)} · 1 QTC ≈ ${Math.round(mk.zion_per_qtc).toLocaleString()} ZION · ${mk.planks_per_flower.toFixed(4)} planks/flower`,
+                '#22d3ee'
+              )
+            : metaRow('Market', 'CoinGecko unavailable', '#fbbf24'));
       }
 
       // Wormhole rewards
@@ -3381,8 +3389,25 @@ function setupWalletControls() {
     newMnemonic: document.getElementById('qtc-new-mnemonic'),
     mnemonicOut: document.getElementById('qtc-mnemonic-out'),
     history: document.getElementById('qtc-history'),
+    payoutCoin: document.getElementById('qtc-payout-coin'),
   };
   let activeQtcAddress = null;
+
+  // Pool payout target selector: 'zion' pays earnings to the ZION wallet,
+  // 'qtc' routes the miner's --wallet to `qtc:<linked qz…>` so the pool
+  // credits the Quantus external-payout queue and the sweeper pays QTC.
+  if (qtcEls.payoutCoin) {
+    qtcEls.payoutCoin.value = (config.payoutCoin || 'zion').toLowerCase() === 'qtc' ? 'qtc' : 'zion';
+    qtcEls.payoutCoin.addEventListener('change', async () => {
+      config.payoutCoin = qtcEls.payoutCoin.value === 'qtc' ? 'qtc' : 'zion';
+      try { await window.electronAPI.saveConfig(config); } catch {}
+      if (qtcEls.status) {
+        qtcEls.status.textContent = config.payoutCoin === 'qtc'
+          ? (activeQtcAddress ? 'Payout → QTC (applies on next miner start)' : 'Payout → QTC — link/generate a QTC address first')
+          : 'Payout → ZION';
+      }
+    });
+  }
 
   const walletQtcFor = async (zionAddr) => {
     try {
@@ -3470,12 +3495,25 @@ function setupWalletControls() {
     }
     let raw = (qtcEls.linkInput?.value || '').trim();
     raw = raw.replace(/^(qtc:|qtu:)/i, '');
-    const check = await window.electronAPI.validateQuantusAddress(raw);
+    let check;
+    try {
+      check = await window.electronAPI.validateQuantusAddress(raw);
+    } catch (e) {
+      if (qtcEls.status) qtcEls.status.textContent =
+        `Validation unavailable: ${e?.message || 'ipc error'} — restart the app if it was just updated`;
+      return;
+    }
     if (!check?.valid) {
       if (qtcEls.status) qtcEls.status.textContent = 'Invalid SS58-189 (qz…) address.';
       return;
     }
-    const res = await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: raw });
+    let res;
+    try {
+      res = await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: raw });
+    } catch (e) {
+      if (qtcEls.status) qtcEls.status.textContent = `Link failed: ${e?.message || 'ipc error'}`;
+      return;
+    }
     if (qtcEls.status) {
       qtcEls.status.textContent = res?.success
         ? 'QTC address linked.'
@@ -3490,7 +3528,14 @@ function setupWalletControls() {
       if (qtcEls.status) qtcEls.status.textContent = 'Set an active ZION wallet first.';
       return;
     }
-    const res = await window.electronAPI.generateQuantusWallet();
+    let res;
+    try {
+      res = await window.electronAPI.generateQuantusWallet();
+    } catch (e) {
+      if (qtcEls.status) qtcEls.status.textContent =
+        `QTC generation failed: ${e?.message || 'ipc error'} — restart the app if it was just updated`;
+      return;
+    }
     if (!res?.success) {
       if (qtcEls.status) qtcEls.status.textContent = `QTC generation failed: ${res?.error || 'helper unavailable'}`;
       return;
@@ -3498,7 +3543,12 @@ function setupWalletControls() {
     const w = res.wallet;
     if (qtcEls.mnemonicOut) qtcEls.mnemonicOut.value = w.mnemonic;
     if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
-    await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: w.address });
+    try {
+      const link = await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: w.address });
+      if (!link?.success && qtcEls.status) {
+        qtcEls.status.textContent = `Generated but not linked: ${link?.error || 'wallet not found'}`;
+      }
+    } catch { /* link best-effort */ }
     addLogEntry(`QTC wallet generated: ${w.address}`, 'info');
     refreshQtcCard();
     if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
