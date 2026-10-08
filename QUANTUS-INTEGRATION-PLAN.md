@@ -397,7 +397,7 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       (`job_seq %100 < pct` — každý miner dostane stejný zdroj per-block,
       fingerprint-safe); stale native (>90s) → auto upstream fallback.
       Env na Edge: `QTC_NATIVE_ENABLED=1`, `_SHARE_PCT=0` (dokud sync +
-      verify). **2026-10-08**
+      verify). **2026-10-08** + fix `d3fb50f88` (target inversion).
 - [~] **F8.4 Reward→payout wiring:** block rewards akumulují jako **ZK-trie
       leaves** na wormhole `qzk8Rna…`. Sweep = `quantus wormhole
       collect-rewards` (CLI 2.3.0 — interně: subsquid dotaz na pending
@@ -415,10 +415,32 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       `zion-quantus-collect.timer` (hodinový, **neaktivní** — zapnout po
       prvním mined bloku). Zbývá: první live collect + ledger credit
       wiring do QtcPayoutSweeper účetnictví.
-- [ ] **F8.5 Měření a rozhodnutí:** `NewJob.difficulty` = network difficulty
-      přímo → expected blocks/day pro náš hashrate → nastavit split.
-      ~~dashboard `coin_details[].native`~~ ✅ `{enabled,connected,share_pct,
-      job_id,job_age_ms}` (`dcc651fd3`).
+- [~] **F8.5 Měření a rozhodnutí:** ~~dashboard `coin_details[].native`~~ ✅
+      `{enabled,connected,share_pct,job_id,job_age_ms}` (`dcc651fd3`).
+      **2026-10-08 post-sync fakta:**
+      - Node fully synced: `currentBlock=highestBlock=189215`,
+        `isSyncing:false`, 28 peers. `NewJob` streamuje (`qtun:N`),
+        dashboard `native{connected:true, job_id:"qtun:21"}`.
+      - **`difficulty` v `MiningRequest` je DIFFICULTY (expected
+        hashes/block), NE target** — `qpow_math::is_valid_nonce`:
+        `target = U512::MAX / difficulty; hash < target`. Náš kód
+        porovnával `hash < difficulty` → **kritický bug** (winning
+        nonce by se nikdy neforwardoval; `d3fb50f88` fix).
+      - `QPoW.CurrentDifficulty` storage (mainnet) =
+        **622 135 548 984 111** (~6.2e14 expected hashes/block);
+        bloky jdou ~5–20s ⇒ implikovaný network hashrate **~5×10¹³ H/s
+        (~50 TH/s)** — náš ~40–73 MH/s je ~7–8 řádů pod ⇒ **native
+        leg = čistá loterie** (odhad ~100–360 dní/blok při současném
+        hashrate). Upstream k1pool zůstává povinný earnings floor;
+        `QTC_NATIVE_SHARE_PCT` držet nízké (1–5 %) jako lottery +
+        protokolová validace, ne jako výdělečná cesta.
+      - ⚠️ **Ops gotcha (2026-10-08):** pool čte `miner-auth-token`
+        **jen při startu**. Node při restartu přegeneruje token file
+        na `600` (ExecStartPost `sleep 2` může předběhnout zápis) →
+        pool bez práva čtení → `cannot read token file` → **prázdný
+        token na všechny reconnecty** → node `invalid auth token`
+        loop. Postup po restartu nodu: ověřit `ls -l` (očekáváno
+        `-rw-r----- root zion`), jinak `chmod 640` + restart poolu.
 - [~] **F8.6 Testy:** ~~codec roundtrip unit testy~~ ✅ (3 varianty +
       oversize/truncated reject); ~~mock QUIC server~~ ✅
       `mock_node_ready_newjob_result_e2e` — rcgen self-signed + quinn server
