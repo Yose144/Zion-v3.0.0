@@ -11,6 +11,7 @@ pub mod notifications;
 pub mod payout;
 pub mod pool;
 pub mod pplns;
+pub mod qtc_native;
 pub mod profit_switcher;
 pub mod rate_limit;
 pub mod revenue_proxy;

@@ -24,6 +24,8 @@ pub struct JobPackage {
     pub received_at: Option<Instant>,
 }
 
+pub use crate::qtc_native::{NativeJobCtx, NativeQtcState, NATIVE_JOB_PREFIX};
+
 #[derive(Clone, Debug)]
 pub struct ShareForwardRequest {
     pub job_id: String,
@@ -146,6 +148,9 @@ impl AuxPowBridge {
 pub struct MultiAuxPowBridge {
     bridges: Arc<Mutex<HashMap<ExternalCoin, AuxPowBridge>>>,
     cpu_coins: HashSet<ExternalCoin>,
+    /// Native Quantus leg — jobs from our own quantus-node (vs upstream
+    /// pools). See `qtc_native.rs`.
+    native: Arc<Mutex<NativeQtcState>>,
 }
 
 impl Clone for MultiAuxPowBridge {
@@ -153,6 +158,7 @@ impl Clone for MultiAuxPowBridge {
         Self {
             bridges: Arc::clone(&self.bridges),
             cpu_coins: self.cpu_coins.clone(),
+            native: Arc::clone(&self.native),
         }
     }
 }
@@ -162,7 +168,72 @@ impl MultiAuxPowBridge {
         Self {
             bridges: Arc::new(Mutex::new(HashMap::new())),
             cpu_coins: Self::default_cpu_coins(),
+            native: Arc::new(Mutex::new(NativeQtcState::default())),
         }
+    }
+
+    /// Called by `qtc_native::maybe_spawn` — enables the native job path.
+    pub fn configure_native(
+        &self,
+        tx: tokio::sync::mpsc::UnboundedSender<crate::qtc_native::MiningResult>,
+        share_pct: u8,
+    ) {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .configure(tx, share_pct);
+    }
+
+    /// Push a job arriving from our own quantus-node (native leg).
+    pub fn push_native_job(&self, pkg: JobPackage, ctx: NativeJobCtx) {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .push_job(pkg, ctx);
+    }
+
+    /// Hybrid pick: native job when the rolling counter lands below
+    /// `QTC_NATIVE_SHARE_PCT` and the job is fresh — else None (caller falls
+    /// back to the upstream bridge).
+    pub fn native_pick_job(&self) -> Option<JobPackage> {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .pick_job()
+    }
+
+    /// Latest native job regardless of pct (dashboard/diag).
+    pub fn native_latest_job(&self) -> Option<JobPackage> {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .latest_job()
+    }
+
+    /// JobPackage for a native job id — the share path needs the same
+    /// lookup it does for upstream jobs (extranonce, ntime fields).
+    pub fn native_job_by_id(&self, job_id: &str) -> Option<JobPackage> {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .job_by_id(job_id)
+    }
+
+    /// Verify context for a native job (share validation).
+    pub fn native_job_ctx(&self, job_id: &str) -> Option<NativeJobCtx> {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .job_ctx(job_id)
+    }
+
+    /// Validate + account a share submitted against a native job.
+    fn native_submit_share(&self, req: &ShareForwardRequest) -> ShareForwardOutcome {
+        let nonce_hex = req.nonce_hex.as_deref().unwrap_or("");
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .submit_share(&req.job_id, nonce_hex)
     }
 
     fn default_cpu_coins() -> HashSet<ExternalCoin> {
@@ -300,6 +371,11 @@ impl MultiAuxPowBridge {
         ticker: &str,
         req: ShareForwardRequest,
     ) -> Option<ShareForwardOutcome> {
+        // Native Quantus leg: `qtun:` job ids are validated locally — the
+        // winning nonce is queued for our node, there is no upstream pool.
+        if req.job_id.starts_with(NATIVE_JOB_PREFIX) {
+            return Some(self.native_submit_share(&req));
+        }
         let coin = ExternalCoin::from_str_loose(ticker)?;
         self.forward(&coin, req)
     }
