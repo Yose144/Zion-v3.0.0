@@ -325,7 +325,7 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
   přepnuty: adapter `DEFAULT_RPC_URL`, derive_addr, desktop
   `quantus-wallet.js`.
 - **Indexer duality:** `sqm.quantus.com` = **mainnet** squid
-  (miner_reward ~310 QTC/blok, height ≡ našemu tipu);
+  (miner_reward ~0.31 QTC/blok (310e9 planks, 12 dec), height ≡ našemu tipu);
   `sub2.quantus.com` = **Planck testnet** (~1.23M blk). `collect-rewards`
   default je sub2 → na Edge script předává explicitně `--subsquid-url
   https://sqm.quantus.com/v1/graphql`.
@@ -382,7 +382,7 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       (284K, deterministické — postaveny lokálně kvůli Edge OOM při
       prvním buildu, rsyncnuty; ~5.9GB vm / ~30s build), subsquid
       `sub2.quantus.com` indexuje mainnet live (miner_reward tabulka,
-      ~270–280 QTC/blok), `--dry-run` → 0 pending (žádné bloky zatím).
+      ~0.27–0.31 QTC/blok), `--dry-run` → 0 pending (žádné bloky zatím).
       Provisioned: `rewards-spend.secret` (0600), `payout-destination.txt`
       = **`qzpnKFmb96enuCGmxnmW45n3F57xuwwwabyCeLA9fLv8sFaec`** (keyring
       (0,0) — stejný signer jako QtcPayoutSweeper). ⚠️ destination MUSÍ

@@ -144,6 +144,8 @@ function deriveQuantusAddress(mnemonic, appRoot, isPackaged) {
 
 // ── balance via public HTTPS JSON-RPC ───────────────────────────────────────
 const DEFAULT_RPC = 'https://rpc.zionterranova.com/qtc';
+/** Mainnet squid indexer — `sub2.quantus.com` indexes the Planck TESTNET. */
+const INDEXER_URL = 'https://sqm.quantus.com/v1/graphql';
 
 // twox128("System") ‖ twox128("Account") — string-hash constants identical
 // on every Substrate chain (matches the Rust adapter).
@@ -190,13 +192,57 @@ async function quantusBalance(address, rpcUrl = DEFAULT_RPC) {
   }
 }
 
+/**
+ * Recent transfers for an address from the mainnet squid indexer.
+ * Returns [{direction:'in'|'out', counterparty, amountQtc, feeQtc,
+ *           blockHeight, timestamp, extrinsic, leafIndex}] or null on error.
+ * Miner rewards appear as `to_id` = our address with extrinsic_id = null
+ * (protocol-minted, leaf_index tracks the wormhole leaf).
+ */
+async function quantusHistory(address, limit = 20, indexerUrl = INDEXER_URL) {
+  const addr = String(address || '').trim();
+  if (!isValidQuantusAddress(addr)) return null;
+  const query = `{
+    transfer(
+      where: { _or: [{ from_id: { _eq: "${addr}" } }, { to_id: { _eq: "${addr}" } }] },
+      order_by: { timestamp: desc },
+      limit: ${Math.min(Math.max(1, limit | 0), 100)}
+    ) { amount fee from_id to_id block_height timestamp extrinsic_id leaf_index }
+  }`;
+  try {
+    const res = await fetch(indexerUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const json = await res.json();
+    const rows = json?.data?.transfer;
+    if (!Array.isArray(rows)) return null;
+    const q = (v) => (Number(v || 0) / 1e12).toFixed(6);
+    return rows.map((r) => ({
+      direction: r.to_id === addr ? 'in' : 'out',
+      counterparty: r.to_id === addr ? r.from_id : r.to_id,
+      amountQtc: q(r.amount),
+      feeQtc: q(r.fee),
+      blockHeight: r.block_height,
+      timestamp: r.timestamp,
+      extrinsic: r.extrinsic_id || null,
+      leafIndex: r.leaf_index != null ? String(r.leaf_index) : null
+    }));
+  } catch {
+    return null;
+  }
+}
+
 module.exports = {
   QUANTUS_SS58_PREFIX,
   DEFAULT_RPC,
+  INDEXER_URL,
   isValidQuantusAddress,
   ss58EncodeQuantus,
   ss58Decode,
   deriveQuantusAddress,
   resolveHelperPath,
-  quantusBalance
+  quantusBalance,
+  quantusHistory
 };

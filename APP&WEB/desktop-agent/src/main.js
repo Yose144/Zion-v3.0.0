@@ -5472,6 +5472,12 @@ ipcMain.handle('quantus-get-balance', async (event, address) => {
   return { success: true, address, free, freeQtc: qtc, nonce: bal.nonce };
 });
 
+ipcMain.handle('quantus-get-history', async (event, address) => {
+  const rows = await QuantusWallet.quantusHistory(address, 20);
+  if (!rows) return { success: false, error: 'indexer query failed' };
+  return { success: true, rows };
+});
+
 // ── Native multichain wallet IPC ────────────────────────────────────────────
 // One ZION mnemonic → native addresses/keys on all supported chains.
 // Derivation happens in the bundled Rust helper (`zion-derive-addr`, mnemonic

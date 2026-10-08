@@ -3234,6 +3234,7 @@ function setupWalletControls() {
     refreshBtn: document.getElementById('qtc-refresh-btn'),
     newMnemonic: document.getElementById('qtc-new-mnemonic'),
     mnemonicOut: document.getElementById('qtc-mnemonic-out'),
+    history: document.getElementById('qtc-history'),
   };
   let activeQtcAddress = null;
 
@@ -3269,6 +3270,7 @@ function setupWalletControls() {
       if (bal?.success) {
         if (qtcEls.balance) qtcEls.balance.textContent = bal.freeQtc;
         if (qtcEls.status) qtcEls.status.textContent = `Quantus mainnet · nonce ${bal.nonce}`;
+        renderQtcHistory();
       } else {
         if (qtcEls.balance) qtcEls.balance.textContent = '—';
         if (qtcEls.status) qtcEls.status.textContent = 'QTC RPC unreachable — balance unavailable';
@@ -3276,6 +3278,32 @@ function setupWalletControls() {
     } catch {
       if (qtcEls.balance) qtcEls.balance.textContent = '—';
       if (qtcEls.status) qtcEls.status.textContent = 'QTC balance fetch error';
+    }
+  };
+
+  const renderQtcHistory = async () => {
+    const host = qtcEls.history;
+    if (!host || !activeQtcAddress) return;
+    try {
+      const res = await window.electronAPI.quantusGetHistory(activeQtcAddress);
+      if (!res?.success || !res.rows?.length) {
+        host.innerHTML = '<div class="status-note">No transfers indexed yet.</div>';
+        return;
+      }
+      const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      host.innerHTML = res.rows.slice(0, 10).map((r) => {
+        const dir = r.direction === 'in' ? '+' : '−';
+        const when = r.timestamp ? r.timestamp.slice(0, 19).replace('T', ' ') : '';
+        const who = r.counterparty ? `${r.counterparty.slice(0, 10)}…${r.counterparty.slice(-6)}` : '—';
+        const tag = r.leafIndex && !r.extrinsic ? ' · reward leaf' : '';
+        return `<div class="wallet-meta-row" style="font-size:11px">
+          <span class="wallet-meta-value" style="min-width:70px;color:${r.direction === 'in' ? 'var(--accent-green,#4ade80)' : 'var(--accent-red,#f87171)'}">${dir}${r.amountQtc}</span>
+          <span class="wallet-meta-value" style="flex:1" title="${esc(r.counterparty || '')}">${who}${tag}</span>
+          <span class="wallet-meta-value">#${r.blockHeight ?? '—'} ${esc(when)}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      host.innerHTML = '';
     }
   };
 
