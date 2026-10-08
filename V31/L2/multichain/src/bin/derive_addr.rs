@@ -15,11 +15,19 @@ fn main() {
                 let addr = k.address(ChainId::ZionL1, 0, 0).unwrap();
                 let pk = k.zion_public_key(0, 0).unwrap();
                 let sk = k.zion_signing_key(0, 0).unwrap();
+                // Quantus (QTC) address from the same keyring — deterministic
+                // ML-DSA-87 derivation m/44'/189'/0'/0/0, identical to the
+                // custodial ZIS wallet path.
+                let qtc = k
+                    .address(ChainId::Quantus, 0, 0)
+                    .map(|a| a.encoded)
+                    .unwrap_or_else(|_| String::new());
                 println!(
-                    "addr={} pk={} sk={}",
+                    "addr={} pk={} sk={} qtc={}",
                     addr.encoded,
                     pk,
-                    hex::encode(sk.to_bytes())
+                    hex::encode(sk.to_bytes()),
+                    qtc,
                 );
             }
             Err(e) => eprintln!("ERROR: {} — {}", &m[..m.len().min(30)], e),
