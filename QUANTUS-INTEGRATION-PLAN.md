@@ -443,6 +443,11 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
         hashrate). Upstream k1pool zůstává povinný earnings floor;
         `QTC_NATIVE_SHARE_PCT` držet nízké (1–5 %) jako lottery +
         protokolová validace, ne jako výdělečná cesta.
+      - **Změřeno live (2026-10-08, 3min okno):** 12.0 s/blok, 7195
+        bloků/den ⇒ network ~5.18e13 H/s (**~52 TH/s**). Očekávaný
+        výnos native legu: 30 MH/s → **~240 dní/blok**, 73 MH/s →
+        **~99 dní/blok**. Potvrzuje: pct zůstává 5, k1pool floor
+        povinný — nativní = lottery + protokolová připravenost.
       - ⚠️ **Ops gotcha (2026-10-08):** pool čte `miner-auth-token`
         **jen při startu**. Node při restartu přegeneruje token file
         na `600` (ExecStartPost `sleep 2` může předběhnout zápis) →
