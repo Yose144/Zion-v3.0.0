@@ -283,6 +283,8 @@ QUANTUS_RPC=http://127.0.0.1:9944      # Edge (nebo https://rpc.zionterranova.co
       Mainnet fee změřen z indexeru: **0.8–1.0e9 planks/tx** → cap 2e9.
       Treasury `qzpnKFmb…` = 0 → enable bezpečné: vše se queueuje jako
       deferred, vyplatí se až po collectu prvního bloku.
+      **ENABLED 2026-10-09:** warpd redeploy (`32467e141`, atomic swap +
+      backup), `QTC_PAYOUT_ENABLED=1`, sweeper running (60s).
 - [x] Desktop payout routing (2026-10-09): `payoutCoin` config
       ('zion'|'qtc') + **Pool payout select** v QTC kartě → miner start
       posílá `--wallet qtc:<linked qz…>` (pool crediting do quantus
