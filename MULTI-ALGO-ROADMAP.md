@@ -164,7 +164,7 @@ Legenda: **KAT** = `auxpow_kat` GPU↔CPU bit-exact; **RUN** = kernel běží, C
 
 ### Checklist — co máme / co ne (2026-10-07)
 
-> **Finální clean sweep (`gpu-opencl native-all`, default batch, po `ac61bb3e9`): 22 PASS / 5 ERR / 1 SKIP** — všechny ERR = VRAM `CL_MEM_OBJECT_ALLOCATION_FAILURE` (zelhash ~6.5GB / equihashzero 4GB / beamhash 4.6GB / equihash při VRAM špičce — izolovaně PASS) nebo by-design (verushash CPU-only); nexapow SKIP v default sweepu, ověřen separátně PASS. **dynexsolve opraven → PASS** (ODE pressure+bistable, sol+sha256≡ přes bench dump). ⚠️ Sweep vyžaduje features `gpu-opencl native-all` — bez native-all se DAG arms a CPU refy vykomplikují ven a DAG algos failnou "not generated".
+> **Finální clean sweep (`gpu-opencl native-all`, default batch): 18 PASS / 0 FAIL / 10 env-SKIP; izolované reruny +6 PASS + nexapow PASS ⇒ celkem ověřeno 25 PASS / 0 FAIL / 3 zbývající env-blockery.** Env-failures se nově klasifikují jako SKIP (`env_skip_reason` v `auxpow_kat`): `CL_MEM_OBJECT_ALLOCATION_FAILURE`/`alloc failed` → „VRAM allocation failed (host limit)", `kernel not available` → „no GPU kernel (by design)". Sweep v jednom procesu narazí na VRAM kontenci (fragmentace + lazy-clCreateBuffer rezervace po odmítnuté 3.2GB zelhash alokaci otráví zbytek runu) — **izolované reruny potvrdily PASS**: beamhash seed, dynexsolve, octopus, equihash, fishhash, qpow. Reálně zbývá: **zelhash** (2×3.2GB Wagner tabulky — intrinsikní, neškáluje dolů) a **equihashzero** (2×2GB) — oba nad ~2.9GB volné VRAM pod produkčním loadem (llama 2GB + miner 2.2GB); **verushash** CPU-only by design. ⚠️ Sweep vyžaduje features `gpu-opencl native-all` — bez native-all se DAG arms a CPU refy vykomplikují ven a DAG algos failnou "not generated".
 
 > **CUDA backend sweep (`gpu-cuda gpu-opencl native-all`, `auxpow_cuda_kat`, 2026-10-07): 10 PASS / 0 FAIL / 1 SKIP** — všechny dispatchované CUDA kernely ověřeny bit-exact ≡ CPU ref: kheavyhash, **keryxhash** (newly wired `CudaExtAlgo::Keryxhash` — salted matrix `generate_keryx_matrix(pp, daa)` s daa z raw_header[40..48] nebo V4 default, launch arm sdílený s kheavyhash), blake3_dcr, blake3_alph, **autolykos** (launch_bounds 64 + `gen_indexes` přepsán z byte-perm rotací na spec sliding-window `ext=h32‖h32[0..3]`, BE32 % N — původní CUDA impl produkovala jinou index sekvenci = consensus-incompatible; R-table teď generuje `autolykos_precompute` on-device s M=i64BE bufferem, cache per height), **ethash** (epoch-0 DAG on-GPU), **kawpow** + **progpow** (XMRIG_INCLUDE codegen path zapnut i pro KawPow — `needs_period_recompile` teď oba; `XMRIG_INCLUDE_OFFSET_MOD_DAG_ELEMENTS` → `offset %= PROGPOW_DAG_ELEMENTS` doplněn do `prepare_kawpow_kernel_source_for_algo`; progpow `g_output` arg obnoven — kernel ho má jako param 0; **kawpow blockDim fix 256→128** — `share[HASHES_PER_GROUP]`=8 při GROUP_SIZE=128 → 256-thread launch indexoval share[8..15] OOB a korumpoval c_dag → digest mismatch), **zelhash** (launch + solution blob), verushash SKIP (CUDA kernel emituje jen 32-bit compare word — full-hash path chybí, byte-verify nemožný). **qpow** přes `QpowCudaMiner` (poseidon2 dedikovaný backend — GPU candidate + vestavěný CPU reverify, KAT PASS). Zbylé `.cu`: beamhash_solver = multi-stage Wagner (VRAM-blocked), ethash_dag_gen = utility pro DAG build.
 
@@ -189,11 +189,11 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 - **verushash** — CPU-only by design (haraka512/clhash); GPU kernel neexistuje — dokumentováno, ne chyba
 - **runtime stream testy** — ✅ VYŘEŠENO: `auxpow_stream_hits_mock_stratum`, `kas_stratum_stream_runs`, `triple_stream_runs`, `zion_stream_runs` všechny zelené (145/145 suite). Root cause visení: **zero-seeded xoshiro256++** — mock `mining.notify` s all-zero headerem → `XoShiRo256PlusPlus` degenerate state produkuje 0 navždy → `generate_kheavy_matrix` rank-64 retry loop nikdy neskončil v spawn_blocking workeru (reálný liveness bug — hostile pool job by trvale uvězněl thread; fix = golden-ratio seed fallback pro all-zero state). Testy navíc: forced KAS/VRSC coiny (profit router vybíral nexapow s ~40min JIT) + okna 8-12s→90s (shared-GPU JIT).
 
-**⛔ Externí blockery (ne code bug):**
-- zelhash — potřeba ~6.5GB VRAM (busy karta); samostatný run nutný
-- equihashzero (192,7) — 2×2GB tabulky > volná VRAM
-- beamhash R1-R5 solver — 2×2.28GB tabulky; seed stage ověřen ≡ CPU (`beamhash_seed_elem_debug`), zbývá full-solver run na volné kartě
-- fishhash/karlsenhash **full DAG 4.6GB** — generátor hotový (`generate_fishhash_dag_on_gpu`, chunked dispatch), VRAM blocker na busy kartě
+**⛔ Externí blockery (ne code bug) — zbytek je all-green:**
+- zelhash — potřeba 2×3.2GB Wagner tabulky (intrinsikní layout, OVERHEAD=1 už je minimum); volno ~2.9GB → SKIP
+- equihashzero (192,7) — 2×2GB tabulky (NR_SLOTS=64 nutný ENCODE packingem); volno ~2.9GB → SKIP
+- beamhash R1-R5 solver — 2×2.28GB tabulky; seed stage ověřen ≡ CPU (`beamhash_seed_elem_debug`), full-solver run čeká na volnou kartu → seed PASS / solver SKIP
+- fishhash/karlsenhash **full DAG 4.6GB** — generátor hotový (`generate_fishhash_dag_on_gpu`, chunked dispatch), VRAM blocker na busy kartě (reduced DAG ověřen)
 - Stratum authorize = nevalidní test wallet (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB); mrtvé endpointy: CLORE/FLUX/NEOX/QUAI/CFX/ZEC
 
 **Opraveno v tomto sweepu (tohle + předchozí commity):**
@@ -212,6 +212,6 @@ kheavyhash, keryxhash, blake3_dcr, blake3_alph, pearlhash, **autolykos** (GPU ta
 - `free_dag_caches()` — uvolní VRAM mezi KAT casy (progpow OOM fix); qhash batch cap 4096→1024; nexapow cap 64 + default SKIP (JIT >10min)
 - KAT: autolykos Rust ref + native cross-check @2²⁶, kawpow DAG wiring, ZION_KAT_REPEATS/NONCE env, fishhash/karlsenhash reduced-DAG E2E (DAG-slice≡CPU + mine≡CPU)
 
-**Zbývá:** full fishhash DAG 4.6GB na volné kartě, VRAM-blocked algos (zelhash ~6.5GB/equihashzero 4GB/beamhash 4.6GB — volno ~3GB pod produkčním loadem, potřebují volnou kartu), live share-level E2E pro RUN algos s validními wallets (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB/QUAI), mrtvé endpointy CLORE/FLUX/EPIC (egress/pool dead).
+**Zbývá (čistě externí):** full fishhash DAG 4.6GB + beamhash R1-R5 + zelhash + equihashzero na kartě s >4.6GB volné VRAM (volno ~2.9GB pod produkčním loadem — llama 2GB + miner 2.2GB; zelhash/equihashzero ještě nikdy neběžely — alloc fail před prvním kernelem), live share-level E2E pro RUN algos s validními wallets (KAS/RVN/ETC/ERG/KLS/IRON/NEXA/DNX/CKB/QUAI), mrtvé endpointy CLORE/FLUX/EPIC (egress/pool dead).
 
 Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_pool_semantics`, `kheavyhash_matches_native`, KAT GPU≡CPU — vše PASS.
