@@ -618,9 +618,9 @@ export default function MariaDelCaminoPage() {
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                   <img
                     src="/images/maria-del-camino/patron.webp"
-                    alt="Malý princ — zlatá postavička s korunkou a světem v dlani nad mořem"
-                    width={1280}
-                    height={900}
+                    alt="Malý princ — Pražské Jezulátko s korunou a světem v dlani, Elizabeth s lucernou a tři lodě na moři"
+                    width={1200}
+                    height={800}
                     loading="lazy"
                     decoding="async"
                     className="w-full object-cover"
