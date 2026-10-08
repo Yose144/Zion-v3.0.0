@@ -117,24 +117,30 @@ Nový adaptér `chain/adapters/quantus.rs` implementující `ChainAdapter`:
       `QUANTUS_SEED`, `QUANTUS_DEPOSIT_ADDRESSES`, `QUANTUS_MIN_CONF`.
 - [x] Registrace v `service.rs`: `build_adapter` + `chain_id_by_name`
       (`"quantus"|"qtc"|"qtu"`).
-- [ ] **PENDING:** live gated test na Heisenbergu (`QUANTUS_LIVE=1`):
-      deposit detect + send tx acceptance — vyžaduje testnet HEI.
-- [ ] **PENDING:** `payment_queryInfo` fee estimate; `transfer_all`/`batch`
-      decode (množné legální deposit cesty mimo keep_alive).
+- [x] **LIVE ověřeno na Plancku (`QUANTUS_LIVE=1`):** `health_check` → synced,
+      finalized height 1 229 291, `balance()` ss58→storage→decode celá cesta OK.
+      **`payment_queryInfo` na ručně postaveném extrinsicu vrátilo
+      `partialFee=1015602500` + weight → extrinsic dekódován chainem, encoding
+      a signature layout validní.** `system_dryRun` je na public RPC disabled
+      (unsafe) — podpisová validace se potvrdí prvním reálným submitem.
+- [ ] **PENDING:** Heisenberg send test (`QUANTUS_LIVE=1` + faucet HEI) —
+      `author_submitExtrinsic` acceptance end-to-end.
+- [ ] **PENDING:** `transfer_all`/`batch` decode (jiné legální deposit cesty).
 
-### F2 — Keyring + multichain wallet QTC support
+### F2 — Keyring + multichain wallet QTC support 🚧 ZÁKLAD HOTOV
 
-- [ ] `wallet/mod.rs`: `ChainId::Quantus` branch — derivace ML-DSA-87
-      keypairu z BIP39 seedu přes `qp-rusty-crystals-hdwallet`
-      (derivation path ověřit v F0 — quantus používá `m/44'/…'` Substrate
-      path nebo jejich vlastní scheme; `quantus-node key quantus` CLI je
-      reference).
-- [ ] `zion_seed`-ekvivalent `quantus_seed(account, index)` → 32B seed →
-      `Keypair` → `AccountId32` → SS58 adresa.
-- [ ] `multichain_wallet::derive_deposit_address` — bez změny logiky,
-      automaticky funguje pro nový ChainId (per-user account_index).
-- [ ] ZIS: `ZisLinkedAddress.chain_type` přijmout `"quantus"`; verify
-      adresy = validace ss58 checksum + prefix.
+- [x] `wallet/mod.rs`: `ChainFamily::Substrate` branch — `substrate_seed`
+      = `keccak256("m/44'/189'/a'/0/i" ‖ master_seed)` →
+      `QuantusKeypair::from_seed` (stejná konstrukce jako `zion_seed`;
+      Dilithium není BIP32, oficiální HD scheme ověřit vůči `quantus key`
+      CLI při prvním interoperabilita testu).
+- [x] `keyring.address(Quantus)` → ss58-189 adresa; `keyring.sign(Quantus)`
+      → 4627B ML-DSA-87 podpis; `quantus_keypair(a,i)` export pro adaptér.
+- [x] `multichain_wallet::derive_deposit_address` — funguje automaticky
+      (volá `keyring.address`), deposit finality = 30 bloků, ticker QTC.
+- [x] `QuantusAdapter::with_keyring` — custodial signer (0,0), fallback env.
+- [ ] ZIS: ověřit `ZisLinkedAddress.chain_type="quantus"` end-to-end
+      (zis_auth mapping hotový, API cesta neověřená).
 
 ### F3 — Bridge ZION↔QTC (watchtower)
 

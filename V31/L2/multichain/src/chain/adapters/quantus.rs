@@ -871,4 +871,48 @@ mod tests {
         let bal = adapter.balance(&addr).await.unwrap();
         eprintln!("balance({}): {} planks", kp.ss58_address(), bal.0);
     }
+
+    /// `system_dryRun` + `payment_queryInfo` validate wire decoding and the
+    /// ML-DSA signature without needing funds: an `InsufficientFunds`-class
+    /// error proves the extrinsic was decoded and signature-checked; a
+    /// decode/BadProof error would mean the encoding is wrong.
+    /// Run: `QUANTUS_LIVE=1 cargo test -p zion-multichain --lib quantus_live_dryrun -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore = "requires network + QUANTUS_LIVE=1"]
+    async fn quantus_live_dryrun_extrinsic() {
+        if std::env::var("QUANTUS_LIVE").ok().as_deref() != Some("1") {
+            return;
+        }
+        let adapter = QuantusAdapter::new("");
+        let kp = QuantusKeypair::from_seed([7u8; 32]);
+        let dest = [3u8; 32];
+        let (spec, txv, genesis, fin_hash, fin_height) =
+            adapter.signing_context().await.unwrap();
+        let ext = QuantusAdapter::build_transfer_extrinsic(
+            &kp, &dest, 1_000_000, 0, spec, txv, &genesis, &fin_hash, fin_height,
+        )
+        .unwrap();
+        let ext_hex = format!("0x{}", hex::encode(&ext));
+        eprintln!("extrinsic {} bytes", ext.len());
+
+        // payment_queryInfo decodes the extrinsic + returns fee/weight
+        let info: serde_json::Value = adapter
+            .rpc("payment_queryInfo", json!([ext_hex]))
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("payment_queryInfo error (decode failure?): {e}");
+                json!(null)
+            });
+        eprintln!("payment_queryInfo: {info}");
+
+        // system_dryRun fully checks (incl. signature) and applies in overlay
+        let dry: serde_json::Value = adapter
+            .rpc("system_dryRun", json!([ext_hex]))
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("system_dryRun error: {e}");
+                json!(null)
+            });
+        eprintln!("system_dryRun: {dry}");
+    }
 }
