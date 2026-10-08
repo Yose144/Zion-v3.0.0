@@ -247,6 +247,13 @@ Poučení do device-matrix: WebGPU preview **vždy testovat headed na cílovém 
 - **Nova Zeme beacons:** 11 pioneer markerů (dot + glow halo) → 2 instanced meshe s per-instance barvou; DOM labely zůstávají, `raycast={() => null}` (select vlastní parent planet).
 - **Výsledek:** galaxy view **~240 → ~153 draw calls desktop / ~102 mobil** (baseline před instancingem ~1 900 → −92 %); produkce ověřena (`calls:153, tris:~215k, 0 errors`), mobile viewport scéna čistá.
 
+### Billboard/gate/kodama perf kolo (2026-10-07, commit `452642167`)
+- **`InstancedBillboards`:** sdílený instanced-plane ShaderMaterial — billboard z view-matice, UV rotace + ±8 % pulse in-shader (žádný per-frame JS), per-instance `aOffset/aScale/aColor/aOpacity/aPhase`. Nahradilo ~57 ray spritů star systémů i 10 `DistantGalaxies` spritů → 2 cally. GLSL = jen WebGL2; na WebGPU zůstávají sprity (opt-in path, korektnost > calls).
+- **`InstancedGates`:** všechny star-system gates → 1 instanced torus (`rot.lookAt(CORE, pos, UP)` — Matrix4.lookAt(eye=CORE, target=pos) dává +Z→core stejně jako Object3D.lookAt); MeshBasicMaterial konvertuje na obou backendech. Per-node gate+vortex jen hovered/selected.
+- **`World` idle skip:** extras-only nody bez hoveru nepouští `useFrame` tělo (~57 × per-frame math ušetřeno).
+- **Kodamy:** ~12 figurek × 5 meshů (tělo+hlava+2oči+zobák) → merged vertex-colored `faceGeo` + 2 instanced mesh; ~60 → 2 cally.
+- **Výsledek:** **~153 → ~100 desktop / ~81 mobil** (−95 % od baseline ~1 900); produkce `calls:100, tris:~275k, 0 errors`; WebGPU ověřen (sprite fallback, instanced gates).
+
 ### G3 — Asset & bridge track
 - Draco/KTX2 pipeline + avatar/artifact preview viewer (Marketplace bridge)
 - WASM world-gen modul (pokud profiling ukáže potřebu)
