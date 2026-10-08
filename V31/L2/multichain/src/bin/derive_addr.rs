@@ -41,7 +41,7 @@ use zion_multichain::chain::adapters::quantus::{
 };
 use zion_multichain::wallet::{derive_zion_address, Keyring};
 
-const DEFAULT_QUANTUS_RPC: &str = "https://a1-planck.quantus.cat";
+const DEFAULT_QUANTUS_RPC: &str = "https://rpc.zionterranova.com/qtc";
 
 fn usage() -> ! {
     eprintln!(

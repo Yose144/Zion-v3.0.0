@@ -3268,7 +3268,7 @@ function setupWalletControls() {
       const bal = await window.electronAPI.quantusGetBalance(activeQtcAddress);
       if (bal?.success) {
         if (qtcEls.balance) qtcEls.balance.textContent = bal.freeQtc;
-        if (qtcEls.status) qtcEls.status.textContent = `Planck mainnet · nonce ${bal.nonce}`;
+        if (qtcEls.status) qtcEls.status.textContent = `Quantus mainnet · nonce ${bal.nonce}`;
       } else {
         if (qtcEls.balance) qtcEls.balance.textContent = '—';
         if (qtcEls.status) qtcEls.status.textContent = 'QTC RPC unreachable — balance unavailable';

@@ -25,8 +25,8 @@ use crate::wallet::Keyring;
 // ---------------------------------------------------------------------------
 
 pub const QUANTUS_SS58_PREFIX: u16 = 189;
-/// Public Planck mainnet RPC — plain HTTPS JSON-RPC works (no WS needed).
-pub const DEFAULT_RPC_URL: &str = "https://a1-planck.quantus.cat";
+/// Public Quantus mainnet RPC (our Edge node, Safe methods) — plain HTTPS JSON-RPC (no WS needed).
+pub const DEFAULT_RPC_URL: &str = "https://rpc.zionterranova.com/qtc";
 /// `Balances` pallet index on Quantus runtime (V14 metadata spec153).
 pub const PALLET_BALANCES: u8 = 2;
 /// `System` pallet index.
