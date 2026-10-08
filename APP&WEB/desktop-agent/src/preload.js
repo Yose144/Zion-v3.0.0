@@ -41,6 +41,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportWallet: (data) => ipcRenderer.invoke('export-wallet', data),
   validateAddress: (address) => ipcRenderer.invoke('validate-address', address),
 
+  // Quantus (QTC / Planck) wallet
+  generateQuantusWallet: () => ipcRenderer.invoke('generate-quantus-wallet'),
+  deriveQuantusAddress: (mnemonic) => ipcRenderer.invoke('derive-quantus-address', mnemonic),
+  validateQuantusAddress: (address) => ipcRenderer.invoke('validate-quantus-address', address),
+  quantusGetBalance: (address) => ipcRenderer.invoke('quantus-get-balance', address),
+
   // Wallet RPC
   walletGetBalance: (data) => ipcRenderer.invoke('wallet-get-balance', data),
   walletSendTransaction: (data) => ipcRenderer.invoke('wallet-send-transaction', data),

@@ -34,6 +34,7 @@ const { spawn, spawnSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
+const QuantusWallet = require('./quantus-wallet');
 const UtxoBuilder = require('./utxo-builder');
 const AccountBuilder = require('./account-builder');
 const QRCode = require('qrcode');
@@ -4359,11 +4360,19 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
       : null;
 
+    // Quantus (QTC) address derived from the same mnemonic — deterministic,
+    // identical to the ZIS custodial derivation. Best-effort: helper may be
+    // absent in dev environments, wallet still works without it.
+    const qtcAddress = wallet.mnemonic
+      ? QuantusWallet.deriveQuantusAddress(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
+      : null;
+
     const walletData = {
       version: '2.9.6',
       name: 'My Wallet',
       address: wallet.address,
       publicKey: wallet.publicKey,
+      qtcAddress,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: wallet.createdAt,
@@ -4385,7 +4394,8 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       wallet: {
         address: wallet.address,
         mnemonic: wallet.mnemonic,
-        publicKey: wallet.publicKey
+        publicKey: wallet.publicKey,
+        qtcAddress
       },
       config
     };
@@ -5183,12 +5193,19 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
       ? WalletGenerator.encryptPrivateKey(wallet.mnemonic, password)
       : null;
     
+    // Quantus (QTC) address derived from the same mnemonic (best-effort —
+    // helper may be absent; wallet saves fine without it).
+    const qtcAddress = wallet.mnemonic
+      ? QuantusWallet.deriveQuantusAddress(wallet.mnemonic, APP_ROOT, IS_PACKAGED)
+      : null;
+
     // Wallet data to save
     const walletData = {
       version: '2.9.6',
       name: name || 'My Wallet',
       address: wallet.address,
       publicKey: wallet.publicKey,
+      qtcAddress,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
       createdAt: wallet.createdAt,
@@ -5342,6 +5359,69 @@ ipcMain.handle('validate-address', (event, address) => {
     valid: type === 'zion1',
     type
   };
+});
+
+// ── Quantus (QTC / Planck) wallet IPC ───────────────────────────────────────
+
+// Derive a Quantus address for a NEW mnemonic (24 words). The actual
+// ML-DSA-87 keypair derivation runs in the bundled `zion-derive-addr`
+// helper — same custodial path as the ZIS multichain wallet, so a mnemonic
+// backed up here also recovers the matching ZIS-side QTC account.
+ipcMain.handle('generate-quantus-wallet', () => {
+  try {
+    const bip39lib = require('bip39');
+    const mnemonic = bip39lib.generateMnemonic(256); // 24 words
+    const qtc = QuantusWallet.deriveQuantusAddress(mnemonic, APP_ROOT, IS_PACKAGED);
+    if (!qtc) {
+      return {
+        success: false,
+        error: 'zion-derive-addr helper unavailable or derivation failed'
+      };
+    }
+    dbg('Generated Quantus wallet:', qtc);
+    return {
+      success: true,
+      wallet: {
+        chain: 'quantus',
+        ticker: 'QTC',
+        address: qtc,
+        mnemonic,
+        createdAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Quantus wallet generation failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Derive the Quantus address belonging to an EXISTING wallet mnemonic —
+// same derivation as the ZIS custodial wallet, so the user's QTC address
+// is a pure function of their ZION mnemonic.
+ipcMain.handle('derive-quantus-address', (event, mnemonic) => {
+  try {
+    const qtc = QuantusWallet.deriveQuantusAddress(mnemonic, APP_ROOT, IS_PACKAGED);
+    return qtc
+      ? { success: true, address: qtc }
+      : { success: false, error: 'derivation failed (helper missing or bad mnemonic)' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('validate-quantus-address', (event, address) => ({
+  success: true,
+  valid: QuantusWallet.isValidQuantusAddress(address),
+  type: 'ss58-189'
+}));
+
+ipcMain.handle('quantus-get-balance', async (event, address) => {
+  const bal = await QuantusWallet.quantusBalance(address);
+  if (!bal) return { success: false, error: 'quantus rpc failed' };
+  // QTC has 12 decimals; keep string form to avoid float precision loss.
+  const free = bal.free.toString();
+  const qtc = (Number(bal.free) / 1e12).toFixed(6);
+  return { success: true, address, free, freeQtc: qtc, nonce: bal.nonce };
 });
 
 /**
