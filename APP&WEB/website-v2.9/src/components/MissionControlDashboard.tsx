@@ -357,6 +357,17 @@ interface G8Run {
   active_alert_count?: number;
   incident_count?: number;
   critical_incident_count?: number;
+  incident_summary?: {
+    total_downtime_seconds?: number;
+    by_signal?: Record<string, { count: number; downtime_seconds: number }>;
+    recent?: Array<{
+      started: string | null;
+      ended: string | null;
+      duration_seconds: number | null;
+      signals: string[];
+      critical: boolean;
+    }>;
+  };
   sample_counts?: { expected?: number; covered?: number; good?: number };
   last_evidence_update?: string | null;
   _error?: string;
@@ -822,6 +833,13 @@ function getFallbackReadinessMap(cs: boolean): ReadinessMap {
       { title: 'G10 — L5/L6 run mode decided', detail: cs ? 'Pasivní trackery fondů + DAO proposal bridge' : 'Passive fund trackers + DAO proposal bridge' },
       { title: cs ? 'Rychlý restart nodu' : 'Node fast-restart fix', detail: cs ? 'Perzistentní stavová cache — ověřeno v produkci' : 'Persistent state cache — verified in production' },
       { title: 'Run evidence + alerting', detail: cs ? 'Vzorkování 60 s, persistentní alerty, retence 40 dní' : '60s sampling, persistent alerts, 40-day retention' },
+      { title: 'Multi-algo GPU verification sweep', detail: cs ? 'Konsensově-exaktní CPU reference + GPU kernely ověřené; finální KAT sweep čistý' : 'Consensus-exact CPU references + GPU kernels verified; final KAT sweep clean' },
+      { title: 'CUDA verified backend', detail: cs ? 'GPU kernely bit-exact vůči CPU referenci; QPoW CUDA prošlo' : 'GPU kernels bit-exact vs CPU reference; QPoW CUDA passed' },
+      { title: 'Pool AuxPoW catalogue', detail: cs ? 'Katalog merged-mining coinů na poolu + one-click přepínání v Desktop Agentu' : 'Merged-mining coin catalogue on the pool + one-click switching in Desktop Agent' },
+      { title: 'Trustless WARP HTLC claim/refund', detail: cs ? 'Veřejný claim/refund autorizovaný preimage, payout pinning — nasazeno na bridgi' : 'Preimage-authorized public claim/refund with payout pinning — deployed on the bridge' },
+      { title: 'Mining duplicate-share fix', detail: cs ? 'Per-session nonce partitioning odstranil duplicitní submity napříč rigy' : 'Per-session nonce partitioning eliminated duplicate submissions across rigs' },
+      { title: 'BTC key lottery fleet', detail: cs ? 'Distribuovaný coordinator + workery + veřejná telemetrie; SQLite persistence' : 'Distributed coordinator + workers + public telemetry; SQLite persistence' },
+      { title: 'L2/WARP ops detail', detail: cs ? 'Operátorský panel — pilot gates, AMM pooly, ledger, reconciliation' : 'Operator panel — pilot gates, AMM pools, ledger, reconciliation' },
     ],
     missing: [],
     not_missing: [
@@ -934,9 +952,19 @@ function BigProgress({ run }: { run?: StabilityRun }) {
   );
 }
 
+function fmtG8Downtime(s: number, cs: boolean) {
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return cs ? `${m} min` : `${m}m`;
+}
+
 function G8RunCard({ run }: { run: G8Run | null }) {
   const { lang } = useLang();
   const cs = lang === 'cs';
+  const [showIncidents, setShowIncidents] = useState(false);
   if (!run?.started) {
     return (
       <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
@@ -1072,6 +1100,46 @@ function G8RunCard({ run }: { run: G8Run | null }) {
           </p>
         </div>
       </div>
+      {/* Verdict banner — gate already decided */}
+      {gateStatus === 'failed' && (
+        <div className="mb-4 rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
+          <p className="text-xs font-semibold text-zion-gold uppercase tracking-wider">
+            {cs ? 'Verdikt: gate nesplněn' : 'Verdict: gate failed'}
+          </p>
+          <p className="mt-1 text-xs text-gray-300">
+            {cs
+              ? 'Okno dobíhá pouze pro sběr evidence — kritické výpadky těžby (chain liveness) 3.–5. 10. vyčerpaly downtime budget. Run #3 po nasazení stabilizace těžby.'
+              : 'Window continues for evidence collection only — critical mining (chain liveness) outages on Oct 3–5 exhausted the downtime budget. Run #3 follows after mining stability fixes.'}
+          </p>
+        </div>
+      )}
+
+      {/* Per-signal uptime breakdown */}
+      {run.service_uptime_percent && Object.keys(run.service_uptime_percent).length > 0 && (
+        <div className="mb-4">
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">{cs ? 'Uptime per signál' : 'Uptime per signal'}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+            {Object.entries(run.service_uptime_percent).map(([name, v]) => (
+              <div key={name} className="flex items-center gap-2">
+                <span className="w-28 sm:w-32 shrink-0 truncate text-[10px] text-gray-400">{name}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(v ?? 0, 100)}%`,
+                      background: (v ?? 0) >= 99.9 ? '#22C55E' : (v ?? 0) >= 99 ? '#F59E0B' : '#EF4444',
+                    }}
+                  />
+                </div>
+                <span className="w-16 shrink-0 text-right font-mono text-[10px]" style={{ color: (v ?? 0) >= 99.9 ? '#22C55E' : (v ?? 0) >= 99 ? '#F59E0B' : '#EF4444' }}>
+                  {v != null ? `${v.toFixed(2)}%` : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <div className="flex justify-between text-[10px] text-gray-400 mb-1">
           <span>{cs ? 'Průběh okna' : 'Window progress'}</span>
@@ -1079,6 +1147,45 @@ function G8RunCard({ run }: { run: G8Run | null }) {
         </div>
         <ProgressBar pct={pct} />
       </div>
+
+      {/* Incident breakdown + expandable recent list */}
+      {incidents > 0 && (
+        <div className="mt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.entries(run.incident_summary?.by_signal ?? {}).map(([sig, s]) => (
+              <span key={sig} className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-300">
+                {sig}: {s.count}× · {fmtG8Downtime(s.downtime_seconds, cs)}
+              </span>
+            ))}
+            <button
+              onClick={() => setShowIncidents(v => !v)}
+              className="text-[10px] font-semibold uppercase tracking-wider text-zion-cyan hover:text-white transition-colors"
+            >
+              {showIncidents ? (cs ? 'Skrýt incidenty ▲' : 'Hide incidents ▲') : (cs ? `Poslední incidenty (${incidents}) ▼` : `Recent incidents (${incidents}) ▼`)}
+            </button>
+          </div>
+          {showIncidents && (
+            <div className="mt-2 space-y-1.5">
+              {(run.incident_summary?.recent ?? []).map((inc, i) => (
+                <div key={i} className="zion-tile px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${inc.critical ? 'bg-red-400' : 'bg-amber-400'}`} />
+                  <span className="font-mono text-gray-400">{inc.started ? new Date(inc.started).toLocaleString() : '—'}</span>
+                  <span className="font-mono text-gray-300">{inc.duration_seconds != null ? fmtG8Downtime(inc.duration_seconds, cs) : '—'}</span>
+                  <span className="text-gray-400">{inc.signals.join(', ')}</span>
+                  {inc.critical && <span className="text-[9px] font-semibold uppercase tracking-wider text-red-300">{cs ? 'kritický' : 'critical'}</span>}
+                </div>
+              ))}
+              <p className="text-[10px] text-gray-500 pt-1">
+                {cs
+                  ? 'Většina incidentů = chain liveness (žádný nový blok > 15 min při výpadku těžby). Celkový downtime: '
+                  : 'Most incidents = chain liveness (no new block > 15 min during mining outages). Total downtime: '}
+                {fmtG8Downtime(run.incident_summary?.total_downtime_seconds ?? 0, cs)}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[10px] text-gray-500">
         <span className="font-mono truncate">
           {run.run_id ?? 'g8'}
@@ -2075,17 +2182,6 @@ export default function MissionControlDashboard() {
   const anyHealthy = onlineCount > 0;
   const launchGate = environment?.public_launch_status ?? stabilityRun?.public_launch_gate ?? 'NO-GO';
   const missingCount = readinessMap?.missing?.length ?? 0;
-  const rehearsalStatus = stabilityRun?.status ?? 'SCHEDULED';
-  const stabilityStatus = rehearsalStatus;
-  const stabilityStatusColor = stabilityStatus === 'PASS'
-    ? 'text-zion-cyan'
-    : stabilityStatus === 'RUNNING'
-    ? 'text-zion-cyan'
-    : stabilityStatus === 'DEGRADED' || stabilityStatus === 'REVIEW REQUIRED'
-    ? 'text-zion-gold'
-    : stabilityStatus === 'ISSUE'
-    ? 'text-zion-purple'
-    : 'text-gray-300';
   const tipAgreement = stabilityRun?.agreement?.tip_agreement ?? false;
   const heightSpread = stabilityRun?.agreement?.height_spread;
   const samplesCollected = stabilityRun?.collector?.samples_collected ?? 0;
@@ -2527,10 +2623,11 @@ export default function MissionControlDashboard() {
                     {[
                       { name: 'ZION core (blockchain)', pct: 100, loc: 'production' },
                       { name: 'Ekam Deeksha v3.2 (PoW)', pct: 100, loc: 'canonical · KAT locked' },
-                      { name: 'ZION pool (PPLNS)', pct: 100, loc: 'production' },
-                      { name: 'zion-miner v3.2.0', pct: 100, loc: 'public build' },
-                      { name: 'ZION multichain (bridge/DEX)', pct: 95, loc: 'E4 round-trip ✅' },
-                      { name: 'desktop-agent v3.2.0', pct: 95, loc: 'release workflows' },
+                      { name: 'ZION pool (PPLNS + AuxPoW catalogue)', pct: 100, loc: 'production · 10 coins' },
+                      { name: 'zion-miner v3.2.0 (multi-algo)', pct: 100, loc: 'public build · GPU verified' },
+                      { name: 'ZION multichain (bridge/DEX)', pct: 95, loc: 'E4 ✅ · trustless HTLC' },
+                      { name: 'desktop-agent v3.2.0', pct: 95, loc: 'one-click coin switching' },
+                      { name: 'BTC key lottery fleet', pct: 90, loc: 'distributed · SQLite' },
                       { name: 'website-v2.9 (Next.js)', pct: 95, loc: 'live' },
                     ].map(c => (
                       <tr key={c.name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -3130,6 +3227,13 @@ export default function MissionControlDashboard() {
                   { hash: '345b8fdaa', msg: 'perf(metal): port CUDA/OpenCL optimizations to Ekam Deeksha Metal backend', date: '2026-08-20' },
                   { hash: 'eccf43faf', msg: 'disable(metal): route Ekam Deeksha v3.2 to CPU on Apple Silicon M1-M5', date: '2026-08-20' },
                   { hash: 'c7787a2c7', msg: 'release(miner): zion-miner v3.2.0 public build with public build log masking', date: '2026-08-21' },
+                  { hash: '782ab2b7e', msg: 'cuda: verified backend — kernels bit-exact vs CPU reference', date: '2026-10-07' },
+                  { hash: '34ee2a072', msg: 'kat: qpow CUDA case — clean KAT sweep', date: '2026-10-07' },
+                  { hash: '03aa2eb7b', msg: 'verushash CUDA: full-hash consensus fix — kernel ≡ native ref', date: '2026-10-08' },
+                  { hash: 'e9d60b109', msg: 'pool: full AuxPoW coin catalogue exposure + parity fixes', date: '2026-10-08' },
+                  { hash: '7d206fc86', msg: 'desktop-agent: one-click algo/coin switching E2E + pool capability probe', date: '2026-10-08' },
+                  { hash: 'd3186799e', msg: 'fix(multichain): trustless public HTLC claim/refund with payout pinning', date: '2026-10-07' },
+                  { hash: '08783ca49', msg: 'miner: per-session QPoW nonce partition — duplicate-share fix', date: '2026-10-08' },
                 ].map(c => (
                   <div key={c.hash} className="flex items-center gap-3 text-sm py-2 px-4 zion-tile">
                     <span className="font-mono text-xs text-zion-gold bg-zion-gold/10 px-2 py-1 rounded">{c.hash}</span>
@@ -3220,12 +3324,24 @@ export default function MissionControlDashboard() {
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 4 — G8 30-Day Continuous Run' : 'Phase 4 — G8 30-Day Continuous Run'} pct={2} status="RUNNING" statusColor="border-zion-gold/30 bg-zion-gold/10 text-amber-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? '23. 8. 2026 07:00 CET → 22. 9. 2026 07:00 CET · uptime cíl ≥ 99,9 %' : '23 Aug 2026 07:00 CET → 22 Sep 2026 07:00 CET · uptime target ≥ 99.9%'}</p>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-zion-cyan" />} title={cs ? 'Fáze 4 — G8 30-Day Continuous Run' : 'Phase 4 — G8 30-Day Continuous Run'} pct={29} status={cs ? 'GATE FAIL · RUN #3 PENDING' : 'GATE FAIL · RUN #3 PENDING'} statusColor="border-zion-gold/30 bg-zion-gold/10 text-amber-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Run #2: 29. 9. – 29. 10. 2026 · uptime cíl ≥ 99,9 % · gate nesplněn (kritické výpadky těžby 3.–5. 10.)' : 'Run #2: 29 Sep – 29 Oct 2026 · uptime target ≥ 99.9% · gate failed (critical mining outages Oct 3–5)'}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="4.1 Continuous Run" content={cs ? 'Celá ZION síť pod trvalým dohledem — node, pool, bridge, web' : 'Full ZION network under continuous watch — node, pool, bridge, web'} status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
-                  <SprintRow name="4.2 F2 Transaction Fuzz" content={cs ? '24h transaction fuzz běží na pozadí' : '24h transaction fuzz running in background'} status={<span className="text-zion-gold inline-flex items-center gap-1"><RefreshCw className="h-3.5 w-3.5" /> RUNNING</span>} />
-                  <SprintRow name="4.3 Closure Report" content={cs ? 'Vyhodnocení po 22. 9. — uptime ≥ 99,9 % → G8 COMPLETE' : 'Evaluation after 22 Sep — uptime ≥ 99.9% → G8 COMPLETE'} status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="4.1 Continuous Run #2" content={cs ? 'Celá ZION síť pod trvalým dohledem — node, pool, bridge, web · okno běží do 29. 10. jen pro evidence' : 'Full ZION network under continuous watch — node, pool, bridge, web · window runs to Oct 29 for evidence only'} status={<span className="text-zion-gold inline-flex items-center gap-1"><XCircle className="h-3.5 w-3.5" /> GATE FAIL</span>} highlight />
+                  <SprintRow name="4.2 Mining Liveness Hardening" content={cs ? 'Duplicate-share fix napříč rigy + restart-safe state + duty-cycle tuning — nasazeno 8. 10.' : 'Duplicate-share fix across rigs + restart-safe state + duty-cycle tuning — deployed Oct 8'} status={<CheckCircle2 className="h-4 w-4 text-zion-cyan" />} />
+                  <SprintRow name="4.3 F2 Transaction Fuzz" content={cs ? '24h transaction fuzz evidence pending' : '24h transaction fuzz evidence pending'} status={<span className="text-zion-gold inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> PENDING</span>} />
+                  <SprintRow name="4.4 Run #3 + Closure Report" content={cs ? 'Nový 30denní běh po stabilizaci těžby — uptime ≥ 99,9 % → G8 COMPLETE' : 'New 30-day run after mining stabilization — uptime ≥ 99.9% → G8 COMPLETE'} status={<Square className="h-4 w-4 text-gray-500" />} />
+                </tbody></table></div>
+              </PhaseAccordion>
+
+              <PhaseAccordion icon={<Cpu className="h-6 w-6 text-zion-purple" />} title={cs ? 'Fáze 4b — Multi-Algo Expansion & Ops Hardening (říjen 2026)' : 'Phase 4b — Multi-Algo Expansion & Ops Hardening (Oct 2026)'} pct={90} status={cs ? 'PROBÍHÁ' : 'IN PROGRESS'} statusColor="border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
+                <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
+                  <SprintRow name="GPU Kernel Verification" content={cs ? 'Konsensově-exaktní CPU reference + CUDA/OpenCL kernely — KAT sweep čistý napříč katalogem' : 'Consensus-exact CPU references + CUDA/OpenCL kernels — clean KAT sweep across the catalogue'} status={<span className="text-zion-cyan">DONE</span>} highlight />
+                  <SprintRow name="AuxPoW Coin Catalogue" content={cs ? 'Merged-mining coin catalogue na poolu + one-click přepínání v Desktop Agentu' : 'Merged-mining coin catalogue on the pool + one-click switching in Desktop Agent'} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="WARP Trustless HTLC" content={cs ? 'Veřejný claim/refund autorizovaný preimage s payout pinning — poslední code blocker vyřešen' : 'Preimage-authorized public claim/refund with payout pinning — last code blocker resolved'} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="BTC Key Lottery Fleet" content={cs ? 'Distribuovaný coordinator + worker fleet s SQLite persistence, leasemi a veřejnou telemetrií' : 'Distributed coordinator + worker fleet with SQLite persistence, leases and public telemetry'} status={<span className="text-zion-cyan">LIVE</span>} />
+                  <SprintRow name="L2/WARP Ops Observability" content={cs ? 'Operátorský detail panel — pilot gates, AMM pooly, ledger, reconciliation alerting' : 'Operator detail panel — pilot gates, AMM pools, ledger, reconciliation alerting'} status={<span className="text-zion-cyan">DONE</span>} />
+                  <SprintRow name="WARP BTC↔ZION Swap Pilot" content={cs ? 'Capped-pilot provisioning připraven — čeká na externí audit + mainnet relay klíč' : 'Capped-pilot provisioning ready — awaiting external audit + mainnet relay key'} status={<span className="text-zion-gold inline-flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> SAFETY HOLD</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
@@ -3271,7 +3387,7 @@ export default function MissionControlDashboard() {
                   { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-zion-gold/5', title: 'Sovereign Governance Layer', desc: cs ? 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic' : 'Fully decentralized governance, community governance, free ecosystem without borders', tags: ['Governance', 'Sovereignty', 'Community', 'Fund Tracker'], date: cs ? '2026 Q3 — fund tracker live (G10 ✅)' : '2026 Q3 — fund tracker live (G10 ✅)', labelColor: 'text-zion-gold', active: true, Icon: Globe2 },
                   { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-zion-purple/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : 'UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-zion-purple', active: false, Icon: Gamepad2 },
                   { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-zion-purple/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP chain registry config-driven (G2 uzavřen), non-EVM chainy gated, NCL gateway a AI Native SDK navazují' : 'WARP chain registry config-driven (G2 closed), non-EVM chains gated, NCL gateway and AI Native SDK follow', tags: ['WARP Registry', 'NCL Gateway', cs ? 'AI Orchestrátor' : 'AI Orchestrator', cs ? 'GPU za ZION' : 'GPU for ZION'], date: cs ? '2026 Q3 — gated (G2 ✅)' : '2026 Q3 — gated (G2 ✅)', labelColor: 'text-zion-purple', active: true, Icon: Brain },
-                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 lock → mint → burn → unlock round-trip ověřen' : 'wZION bridge live on Base mainnet — E4 lock → mint → burn → unlock round-trip verified', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅)', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },
+                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-zion-purple/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge live na Base mainnetu — E4 round-trip ověřen; trustless BTC↔ZION HTLC claim/refund nasazen, capped pilot v safety hold' : 'wZION bridge live on Base mainnet — E4 round-trip verified; trustless BTC↔ZION HTLC claim/refund deployed, capped pilot in safety hold', tags: ['HTLC Swaps', 'wZION Bridge', 'BTC↔ZION HTLC', 'Base Mainnet', 'DAO Voting'], date: '2026 Q3 — mainnet live (E4 ✅) · HTLC deployed 10/2026', labelColor: 'text-zion-purple', active: true, Icon: ArrowLeftRight },
                   { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-zion-cyan/[0.08] border-2 border-zion-cyan/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Ekam Deeksha v3.2 — Canonical', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sekvenční průchody, 128 náhodných čtení, 2 AES rundy — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identické.' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, Boost multi-stream mining. Ekam Deeksha v3.2: 512 KiB scratchpad, 2 sequential passes, 128 random reads, 2 AES rounds — KAT-locked, CPU/CUDA/OpenCL/Metal bit-identical.', tags: ['Ekam Deeksha v3.2', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Boost Mining'], date: cs ? 'Mainnet Alpha live · public launch odložen (TBD)' : 'Mainnet Alpha live · public launch postponed (TBD)', labelColor: 'text-zion-cyan', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
@@ -3511,6 +3627,10 @@ export default function MissionControlDashboard() {
                   cs ? 'fail2ban + ufw operator allowlists, nginx IP allowlists pro RPC/DAO' : 'fail2ban + ufw operator allowlists, nginx IP allowlists for RPC/DAO',
                   cs ? 'Wallet SDK v2 UTXO + CLI zarovnané na nativní ZION transaction format' : 'Wallet SDK v2 UTXO + CLI aligned to the native ZION transaction format',
                   cs ? 'Watchdog hardened — startup grace během tx_index backfillu' : 'Watchdog hardened — startup grace during tx_index backfill',
+                  cs ? 'WARP trustless HTLC — claim/refund autorizovaný preimage, payout pinning na lockera/claimanta' : 'WARP trustless HTLC — preimage-authorized claim/refund, payout pinned to locker/claimant',
+                  cs ? 'Per-session nonce partitioning v mineru — eliminace duplicate-share mezi rigy' : 'Per-session nonce partitioning in the miner — eliminates duplicate shares across rigs',
+                  cs ? 'L2/WARP mutující routy admin-gated; BTC↔ZION swap capped-pilot safety hold' : 'L2/WARP mutating routes admin-gated; BTC↔ZION swap capped-pilot safety hold',
+                  cs ? 'TLS auto-renewal opraveno — ACME webroot + renewal configs pro všechny weby' : 'TLS auto-renewal repaired — ACME webroot + renewal configs for all sites',
                 ].map((text) => (
                   <div key={text} className="flex items-center gap-3 text-sm py-2.5 px-4 zion-tile">
                     <CheckCircle2 className="h-4 w-4 text-zion-cyan shrink-0" />
@@ -3559,18 +3679,32 @@ export default function MissionControlDashboard() {
                 <div className="zion-rainbow-sub p-4 sm:p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> 2026 — One Love Mainnet & Launch</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
-                    {[
-                      { done: true, date: cs ? '1. ledna 2026' : '1 January 2026', title: 'MAINNET GENESIS', desc: cs ? 'Genesis block (timestamp 1767225600) — chain start' : 'Genesis block (timestamp 1767225600) — chain start', color: 'text-zion-cyan' },
-                      { done: true, date: cs ? '6. srpna 2026' : '6 August 2026', title: 'v3.2.0 ONE LOVE RESET', desc: cs ? 'Nová genesis, kompletní rotace klíčů (BIP39), přechod na mainnet' : 'New genesis, full key rotation (BIP39), mainnet cutover', color: 'text-zion-cyan' },
-                      { done: true, date: cs ? '22. srpna 2026' : '22 August 2026', title: 'GATES G1–G5/G7/G11 + E4', desc: cs ? 'Rigy E2E, chaos/load, bridge round-trip, migrace na veřejný mainnet uzavřeny' : 'Rigs E2E, chaos/load, bridge round-trip, public mainnet migration closed', color: 'text-zion-cyan' },
-                      { date: cs ? '29. 9. — 29. 10. 2026' : '29 Sep — 29 Oct 2026', title: 'G8 30-DAY RUN #2', desc: cs ? 'Nesplnil gate — kritické výpadky těžby; run #3 po zajištění těžby' : 'Gate failed — critical mining outages; run #3 after mining is secured', color: 'text-zion-gold' },
-                      { active: true, date: cs ? 'TBD' : 'TBD', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : 'One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', color: 'text-zion-cyan' },
-                    ].map((item, i) => (
+                    {([
+                      { done: true, pct: 100, date: cs ? '1. ledna 2026' : '1 January 2026', title: 'MAINNET GENESIS', desc: cs ? 'Genesis block (timestamp 1767225600) — chain start' : 'Genesis block (timestamp 1767225600) — chain start', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '6. srpna 2026' : '6 August 2026', title: 'v3.2.0 ONE LOVE RESET', desc: cs ? 'Nová genesis, kompletní rotace klíčů (BIP39), přechod na mainnet' : 'New genesis, full key rotation (BIP39), mainnet cutover', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '22. srpna 2026' : '22 August 2026', title: 'GATES G1–G5/G7/G11 + E4', desc: cs ? 'Rigy E2E, chaos/load, bridge round-trip, migrace na veřejný mainnet uzavřeny' : 'Rigs E2E, chaos/load, bridge round-trip, public mainnet migration closed', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '5. – 7. října 2026' : '5 – 7 Oct 2026', title: 'MULTI-ALGO GPU VERIFICATION', desc: cs ? 'Konsensově-exaktní CPU reference + CUDA/OpenCL kernely ověřené napříč katalogem — čistý KAT sweep' : 'Consensus-exact CPU references + CUDA/OpenCL kernels verified across the catalogue — clean KAT sweep', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '7. října 2026' : '7 Oct 2026', title: 'WARP TRUSTLESS HTLC', desc: cs ? 'Veřejný claim/refund s payout pinning nasazen — poslední code blocker BTC↔ZION swapu vyřešen' : 'Public claim/refund with payout pinning deployed — last BTC↔ZION swap code blocker resolved', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '7. – 8. října 2026' : '7 – 8 Oct 2026', title: 'AUXPOW CATALOGUE + BTC LOTTERY FLEET', desc: cs ? 'Merged-mining katalog na poolu, one-click switching v agentu, distribuovaný lottery fleet s SQLite persistence' : 'Merged-mining catalogue on the pool, one-click switching in the agent, distributed lottery fleet with SQLite persistence', color: 'text-zion-cyan' },
+                      { done: true, pct: 100, date: cs ? '8. října 2026' : '8 Oct 2026', title: 'MINING LIVENESS HARDENING', desc: cs ? 'Duplicate-share fix napříč rigy nasazen — odstraněn hlavní zdroj rejectů; příprava run #3' : 'Duplicate-share fix deployed across rigs — main reject source eliminated; run #3 preparation', color: 'text-zion-cyan' },
+                      { pct: g8?.progress_percent ?? 29, failed: true, date: cs ? '29. 9. — 29. 10. 2026' : '29 Sep — 29 Oct 2026', title: 'G8 30-DAY RUN #2', desc: cs ? `Gate nesplněn — kritické výpadky těžby (${g8?.incident_count ?? '—'} incidentů, ${g8?.critical_incident_count ?? '—'} kritických); okno dobíhá jen pro evidence, run #3 po stabilizaci` : `Gate failed — critical mining outages (${g8?.incident_count ?? '—'} incidents, ${g8?.critical_incident_count ?? '—'} critical); window runs for evidence only, run #3 after stabilization`, color: 'text-zion-gold' },
+                      { pct: 0, date: cs ? 'po stabilizaci těžby' : 'after mining stabilizes', title: 'G8 RUN #3', desc: cs ? 'Nový 30denní běh s vytvrzeným mining stackem — cíl ≥ 99,9 % uptime' : 'New 30-day run on the hardened mining stack — target ≥ 99.9% uptime', color: 'text-gray-300' },
+                      { active: true, pct: 0, date: cs ? 'TBD' : 'TBD', title: 'PUBLIC LAUNCH', desc: cs ? 'One Love Mainnet public GO — odloženo; nové datum po uzavření G8/G9/G10 a splnění Maturity Gate' : 'One Love Mainnet public GO — postponed; new date after G8/G9/G10 closure and Maturity Gate', color: 'text-zion-cyan' },
+                    ] as Array<{ done?: boolean; active?: boolean; failed?: boolean; pct?: number; date: string; title: string; desc: string; color?: string }>).map((item, i) => (
                       <div key={i} className="relative">
-                        <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-zion-cyan border-zion-cyan' : item.active ? 'bg-zion-cyan border-zion-cyan shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />
-                        <p className="text-[11px] text-gray-500">{item.date}</p>
+                        <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-zion-cyan border-zion-cyan' : item.failed ? 'bg-zion-gold border-zion-gold' : item.active ? 'bg-zion-cyan border-zion-cyan shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-[11px] text-gray-500">{item.date}</p>
+                          {item.failed && <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-zion-gold/40 bg-zion-gold/10 text-zion-gold">GATE FAIL</span>}
+                          {item.done && <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border border-zion-cyan/40 bg-zion-cyan/10 text-zion-cyan">DONE</span>}
+                        </div>
                         <p className={`text-sm font-semibold ${item.color ?? 'text-white'}`}>{item.title}</p>
                         <p className="text-xs text-gray-500">{item.desc}</p>
+                        {typeof item.pct === 'number' && item.pct > 0 && item.pct < 100 && (
+                          <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden max-w-xs">
+                            <div className={`h-full rounded-full ${item.failed ? 'bg-zion-gold' : 'bg-zion-cyan'}`} style={{ width: `${item.pct}%` }} />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -3685,10 +3819,16 @@ export default function MissionControlDashboard() {
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G3 — solver network + G2 WARP registry gating', phase: 'L2/L3', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'G4 — public subtree sync s v3-Mainnet', phase: 'DOCS', status: 'CLOSED', sColor: 'text-zion-cyan' },
                       { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: 'Public releases v3.2.0 — miner, CLI, Desktop Agent', phase: 'RELEASE', status: 'CLOSED', sColor: 'text-zion-cyan' },
-                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'G8 — 30-day continuous run #2 (29. 9. — 29. 10. 2026)', phase: 'G8', status: 'FAILED', sColor: 'text-zion-gold' },
-                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'F2 — 24h transaction fuzz evidence', phase: 'F2', status: 'RUNNING', sColor: 'text-zion-gold' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'Multi-algo GPU verifikace — konsensově-exaktní kernely, čistý KAT sweep' : 'Multi-algo GPU verification — consensus-exact kernels, clean KAT sweep', phase: 'MINING', status: 'VERIFIED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'AuxPoW katalog na poolu + one-click přepínání v agentu' : 'AuxPoW catalogue on pool + one-click agent switching', phase: 'POOL', status: 'CLOSED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'WARP trustless HTLC claim/refund — payout pinning' : 'WARP trustless HTLC claim/refund — payout pinning', phase: 'L2', status: 'DEPLOYED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'Duplicate-share fix — per-session nonce partitioning' : 'Duplicate-share fix — per-session nonce partitioning', phase: 'MINING', status: 'DEPLOYED', sColor: 'text-zion-cyan' },
+                      { prio: 'DONE', prioColor: 'text-zion-cyan font-bold', task: cs ? 'BTC key lottery — distribuovaný fleet + SQLite + telemetrie' : 'BTC key lottery — distributed fleet + SQLite + telemetry', phase: 'OPS', status: 'LIVE', sColor: 'text-zion-cyan' },
+                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G8 — run #3 po stabilizaci těžby (run #2 gate fail)' : 'G8 — run #3 after mining stabilization (run #2 gate fail)', phase: 'G8', status: 'PENDING', sColor: 'text-zion-gold' },
+                      { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'F2 — 24h transaction fuzz evidence', phase: 'F2', status: 'PENDING', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: cs ? 'G9 — externí security audit' : 'G9 — external security audit', phase: 'G9', status: 'SCHEDULED', sColor: 'text-zion-gold' },
                       { prio: 'BLOCKER', prioColor: 'text-zion-purple font-bold', task: 'G10 — L5/L6 governance decision', phase: 'G10', status: 'PENDING', sColor: 'text-zion-purple' },
+                      { prio: 'NB', prioColor: 'text-zion-cyan font-semibold', task: cs ? 'WARP BTC↔ZION capped pilot — čeká na externí audit + mainnet relay klíč' : 'WARP BTC↔ZION capped pilot — awaiting external audit + mainnet relay key', phase: 'L2', status: 'SAFETY HOLD', sColor: 'text-zion-gold' },
                       { prio: 'NB', prioColor: 'text-zion-cyan font-semibold', task: cs ? 'L2/L3 rozšíření, exchange onboarding a mobile polish' : 'L2/L3 expansion, exchange onboarding, and mobile polish', phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-zion-cyan' },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
