@@ -11,6 +11,13 @@
 //!                         chains: zion | zion-keyring | evm | bitcoin | solana | quantus
 //!   --qtc-send <to> <planks>  submit a QTC balances.transfer_keep_alive via
 //!                             the Planck RPC (`QUANTUS_RPC` env override).
+//!   --qtc-wormhole-secret [index]  derive the wormhole spend secret for a
+//!                             mining-rewards wormhole key (mnemonic on stdin,
+//!                             same 24-word phrase `quantus-node key quantus
+//!                             --scheme wormhole` generated). Emits the
+//!                             wormhole address, inner hash and the raw
+//!                             32-byte secret `quantus wormhole prove`
+//!                             expects in --secret-file.
 //!
 //! Derivation spec (native wallet — MUST match the JS implementation):
 //!   zion    seed[0:32] → ed25519 → zion1…   (existing desktop/web wallet compat)
@@ -117,6 +124,35 @@ fn main() {
                 Ok(hash) => println!("txhash=0x{}", hex::encode(hash.0)),
                 Err(e) => {
                     eprintln!("ERROR qtc-send: {e}");
+                    std::process::exit(1);
+                }
+            }
+        }
+        Some("--qtc-wormhole-secret") => {
+            let index: u32 = args
+                .get(2)
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
+            let mnemonic = lines.next().unwrap_or("").trim().to_string();
+            let path = format!("m/44'/189189189'/{}'/0'/0'", index);
+            match qp_rusty_crystals_hdwallet::derive_wormhole_from_mnemonic(
+                &mnemonic,
+                None,
+                &path,
+            ) {
+                Ok(pair) => {
+                    println!(
+                        "address={}",
+                        zion_multichain::chain::adapters::quantus::ss58_encode(
+                            pair.address(),
+                            189
+                        )
+                    );
+                    println!("inner_hash=0x{}", hex::encode(pair.first_hash()));
+                    println!("secret=0x{}", hex::encode(pair.secret().as_bytes()));
+                }
+                Err(e) => {
+                    eprintln!("ERROR wormhole derive: {e}");
                     std::process::exit(1);
                 }
             }
