@@ -1,4 +1,4 @@
-// Quantus (QTC / Planck) wallet helpers for Desktop Agent.
+// Quantus (QTC / Quantus mainnet) wallet helpers for Desktop Agent.
 //
 // SS58 validation is pure JS (base58 + blake2b-512 "SS58PRE" checksum,
 // two-byte prefix 189). Address *derivation* (ML-DSA-87 keypair +
@@ -143,7 +143,7 @@ function deriveQuantusAddress(mnemonic, appRoot, isPackaged) {
 }
 
 // ── balance via public HTTPS JSON-RPC ───────────────────────────────────────
-const DEFAULT_RPC = 'https://a1-planck.quantus.cat';
+const DEFAULT_RPC = 'https://rpc.zionterranova.com/qtc';
 
 // twox128("System") ‖ twox128("Account") — string-hash constants identical
 // on every Substrate chain (matches the Rust adapter).

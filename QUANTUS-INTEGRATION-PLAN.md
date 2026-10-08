@@ -312,10 +312,23 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
 ```
 
 **⚠️ Korekce topologie (2026-10-08, live probe):**
-- `--chain mainnet` je **nový řetězec** (symbol `QTC`, 7 bootnodů
-  `a{1-7}-p2p-mainnet.quantus.com`); `a1-planck.quantus.cat` = **retired
-  public testnet** (symbol `PLK`) — náš `QUANTUS_RPC` default ukazoval na
-  starou síť; produkčně použít vlastní node `:9944`.
+- `--chain mainnet` je **nový řetězec** (`system_chain`="Quantus", symbol
+  `QTC`, 7 bootnodů `a{1-7}-p2p-mainnet.quantus.com`);
+  `a1-planck.quantus.cat` = **retired public testnet** (symbol `PLK`).
+- **Žádný public mainnet node RPC neexistuje** (privacy-first chain —
+  explorer/mobile jedou čistě přes indexer) → **náš Edge node JE náš
+  endpoint**: vystaveno `https://rpc.zionterranova.com/qtc` →
+  `127.0.0.1:9944` (nginx `location = /qtc`, POST-only,
+  `Host: 127.0.0.1:9944` — node host-whitelist chce port-formu) + node
+  `--rpc-methods Safe` (unsafe RPC i z localhost proxy zamítnuty — ověřeno
+  `system_addReservedPeer`/`author_rotateKeys` → -32601). Defaults
+  přepnuty: adapter `DEFAULT_RPC_URL`, derive_addr, desktop
+  `quantus-wallet.js`.
+- **Indexer duality:** `sqm.quantus.com` = **mainnet** squid
+  (miner_reward ~310 QTC/blok, height ≡ našemu tipu);
+  `sub2.quantus.com` = **Planck testnet** (~1.23M blk). `collect-rewards`
+  default je sub2 → na Edge script předává explicitně `--subsquid-url
+  https://sqm.quantus.com/v1/graphql`.
 - **Mining rewards jdou POUZE na wormhole adresy** — node dostává
   `--rewards-inner-hash <32B>` (preimage → wormhole adresa). Sweep =
   wormhole **exit** přes ZK proof (`wormhole prove` → verify extrinsic),
