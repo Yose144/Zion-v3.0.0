@@ -8152,6 +8152,195 @@ def get_multichain_dashboard() -> dict:
     }
 
 
+def _bitcoin_rpc(method: str, params=None, wallet: str = None):
+    """JSON-RPC call to the local pruned bitcoind (WARP BTC backend).
+
+    Credentials are read from bitcoin.conf per call and never returned or
+    logged. Returns the `result` field, or None on any failure."""
+    try:
+        conf = Path("/opt/zion/bitcoin/bitcoin.conf")
+        if not conf.exists():
+            return None
+        user = password = None
+        port = 8332
+        for ln in conf.read_text(encoding="utf-8", errors="replace").splitlines():
+            ln = ln.strip()
+            if ln.startswith("rpcuser="):
+                user = ln.split("=", 1)[1].strip()
+            elif ln.startswith("rpcpassword="):
+                password = ln.split("=", 1)[1].strip()
+            elif ln.startswith("rpcport="):
+                try:
+                    port = int(ln.split("=", 1)[1].strip())
+                except ValueError:
+                    pass
+        if not user or not password:
+            return None
+        url = f"http://127.0.0.1:{port}" + (f"/wallet/{wallet}" if wallet else "")
+        req = urllib.request.Request(
+            url,
+            data=json.dumps({"jsonrpc": "1.0", "id": "dash", "method": method,
+                             "params": params or []}).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + base64.b64encode(
+                    f"{user}:{password}".encode()).decode(),
+            },
+        )
+        with urllib.request.urlopen(req, timeout=4.0) as r:
+            return json.loads(r.read()).get("result")
+    except Exception:
+        return None
+
+
+def _warp_excluded_assets() -> list:
+    """Parse [reconciliation].excluded_assets from /etc/zion/warp.toml."""
+    try:
+        import tomllib
+        with open("/etc/zion/warp.toml", "rb") as f:
+            cfg = tomllib.load(f)
+        return list(cfg.get("reconciliation", {}).get("excluded_assets", []))
+    except Exception:
+        return []
+
+
+def get_multichain_detail() -> dict:
+    """Extended L2/WARP ops detail for the Multichain tab.
+
+    Aggregates safety gates (env PRESENCE only — never values), BTC swap
+    pilot state, local bitcoind sync, AMM pools, pending HTLCs, the latest
+    reconciliation row per asset and deposit/withdrawal activity — all
+    read-only."""
+    import sqlite3
+
+    host = "127.0.0.1"
+    api_port = 8454  # full ApiServer (warpd listen_port + 1)
+    out: dict = {"ok": True}
+
+    warp_alive = check_port_open(host, 8453, timeout=1.5)
+    out["api_alive"] = check_port_open(host, api_port, timeout=1.0)
+
+    btc_list = fetch_service_json(host, api_port, "/v1/multichain/swaps/btc/list", timeout=2.0) or {}
+    btc_metrics = fetch_service_json(host, api_port, "/v1/multichain/swaps/btc/metrics", timeout=2.0) or {}
+    htlc_pending = fetch_service_json(host, api_port, "/v1/multichain/swaps/htlc/pending", timeout=2.0) or {}
+    pools_resp = fetch_service_json(host, api_port, "/v1/swap/pools", timeout=2.0) or {}
+
+    out["btc_swap"] = {
+        "enabled": bool(btc_list.get("enabled")),
+        "swaps": btc_list.get("swaps", []) if isinstance(btc_list.get("swaps"), list) else [],
+        "metrics": btc_metrics if isinstance(btc_metrics, dict) else {},
+    }
+    out["htlcs"] = htlc_pending.get("htlcs", []) if isinstance(htlc_pending.get("htlcs"), list) else []
+    out["pools"] = (pools_resp.get("pools", []) if isinstance(pools_resp.get("pools"), list) else [])[:20]
+
+    # ── Safety gates — presence/format booleans only, never values ──
+    network = _read_edge_env_var("BITCOIN_NETWORK") or "unknown"
+    relay_wif = _read_edge_env_var("WARP_BTC_RELAY_KEY")
+    relay_matches = None
+    if relay_wif:
+        # mainnet WIF payloads start with 5/K/L, testnet with 9/c
+        is_mainnet_fmt = relay_wif[0] in "5KL"
+        is_testnet_fmt = relay_wif[0] in "9c"
+        if network == "bitcoin":
+            relay_matches = is_mainnet_fmt
+        elif network in ("testnet", "signet", "regtest"):
+            relay_matches = is_testnet_fmt
+    enabled_flag = _read_edge_env_var("WARP_BTC_SWAP_ENABLED")
+    gates = {
+        "btc_swap_enabled": enabled_flag == "1",
+        "bitcoin_network": network,
+        "relay_key_present": bool(relay_wif),
+        "relay_key_matches_network": relay_matches,
+        "offer_key_present": bool(_read_edge_env_var("WARP_BTC_SWAP_OFFER_KEY")),
+        "preimage_key_present": bool(_read_edge_env_var("ZION_HTLC_PREIMAGE_KEY")),
+        "warp_write_key_present": bool(_read_edge_env_var("WARP_API_KEY")),
+        "pilot": {
+            "zion_per_sat": _read_edge_env_var("WARP_BTC_SWAP_ZION_PER_SAT") or "—",
+            "min_sats": _read_edge_env_var("WARP_BTC_SWAP_MIN_SATS") or "—",
+            "max_sats": _read_edge_env_var("WARP_BTC_SWAP_MAX_SATS") or "—",
+            "max_active": _read_edge_env_var("WARP_BTC_SWAP_MAX_ACTIVE") or "—",
+        },
+    }
+    hold = []
+    if not gates["btc_swap_enabled"]:
+        hold.append("swap disabled")
+    if not gates["relay_key_present"]:
+        hold.append("relay key unset")
+    elif gates["relay_key_matches_network"] is False:
+        hold.append("relay key network mismatch")
+    if not gates["warp_write_key_present"]:
+        hold.append("warp write key unset")
+    gates["hold_reasons"] = hold
+    out["gates"] = gates
+
+    # ── Local pruned bitcoind (WARP BTC backend) ──
+    chain = _bitcoin_rpc("getblockchaininfo")
+    net = _bitcoin_rpc("getnetworkinfo")
+    wallet = _bitcoin_rpc("getwalletinfo", wallet="warpwatch")
+    out["bitcoin"] = {
+        "available": chain is not None,
+        "blocks": chain.get("blocks") if isinstance(chain, dict) else None,
+        "headers": chain.get("headers") if isinstance(chain, dict) else None,
+        "ibd": chain.get("initialblockdownload") if isinstance(chain, dict) else None,
+        "pruned": chain.get("pruned") if isinstance(chain, dict) else None,
+        "progress": chain.get("verificationprogress") if isinstance(chain, dict) else None,
+        "block_time": chain.get("time") if isinstance(chain, dict) else None,
+        "connections": net.get("connections") if isinstance(net, dict) else None,
+        "wallet": wallet.get("walletname") if isinstance(wallet, dict) else None,
+        "watch_only": (not wallet.get("private_keys_enabled", True)) if isinstance(wallet, dict) else None,
+    }
+
+    # ── SQLite state: reconciliation + ledger activity ──
+    db = Path("/opt/zion/data/warp_multichain.db")
+    excluded = set(_warp_excluded_assets())
+    out["reconciliation"] = {"rows": [], "alerts_24h": 0, "excluded": sorted(excluded)}
+    out["activity"] = {}
+    if db.exists():
+        try:
+            con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=2)
+            try:
+                out["reconciliation"]["rows"] = [
+                    {"asset": r[0], "on_chain": r[1], "internal": r[2], "pool": r[3],
+                     "alert": bool(r[4]), "note": r[5] or "", "ts": r[6]}
+                    for r in con.execute(
+                        "SELECT r.asset_key, r.on_chain, r.internal, r.pool_reserves, r.alert, "
+                        "r.notes, r.timestamp FROM reconciliation_reports r JOIN (SELECT asset_key, "
+                        "MAX(timestamp) m FROM reconciliation_reports GROUP BY asset_key) x "
+                        "ON r.asset_key=x.asset_key AND r.timestamp=x.m ORDER BY r.alert DESC, r.asset_key"
+                    ).fetchall()
+                ]
+                out["reconciliation"]["alerts_24h"] = con.execute(
+                    "SELECT COUNT(*) FROM reconciliation_reports WHERE alert=1 "
+                    "AND timestamp > datetime('now','-1 day')").fetchone()[0]
+            except Exception:
+                pass
+            act = {}
+            for name, q in (
+                ("deposits", "SELECT status, COUNT(*) FROM deposits GROUP BY status"),
+                ("withdrawals", "SELECT status, COUNT(*) FROM withdrawals GROUP BY status"),
+                ("htlc_states", "SELECT state, COUNT(*) FROM htlc_records GROUP BY state"),
+            ):
+                try:
+                    act[name] = {r[0]: r[1] for r in con.execute(q).fetchall()}
+                except Exception:
+                    act[name] = {}
+            try:
+                act["withdrawals_recent"] = [
+                    {"asset": r[0], "amount": r[1], "status": r[2], "tx": r[3] or "", "ts": r[4]}
+                    for r in con.execute(
+                        "SELECT asset_key, amount, status, tx_hash, substr(created_at,1,16) "
+                        "FROM withdrawals ORDER BY created_at DESC LIMIT 6").fetchall()
+                ]
+            except Exception:
+                act["withdrawals_recent"] = []
+            con.close()
+            out["activity"] = act
+        except Exception:
+            pass
+
+    return out
+
+
 # ── AuxPow / external-pool configuration helpers ─────────────────────────────
 
 # Path to the Edge shared environment file loaded by zion-pool.service.
@@ -12651,6 +12840,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "transfers_pending": health.get("transfers_pending", 0) if health else 0})
         elif route == "/api/multichain":
             self._json(get_multichain_dashboard())
+        elif route == "/api/multichain/detail":
+            self._json(get_multichain_detail())
         elif route == "/api/oasis/stats":
             alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
             health = fetch_service_json("127.0.0.1", 8094, "/health") if alive else {}
