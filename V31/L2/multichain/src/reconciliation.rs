@@ -587,6 +587,7 @@ fn native_asset_for_chain(chain: ChainId) -> Asset {
         ChainFamily::Cardano => "ADA",
         ChainFamily::Lightning => "BTC",
         ChainFamily::Move => "MOVE",
+        ChainFamily::Substrate => "QTC",
     };
     Asset::native(chain, ticker, chain.decimals(), ticker)
 }

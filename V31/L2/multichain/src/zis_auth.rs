@@ -110,6 +110,7 @@ pub fn zis_chain_type(chain: ChainId) -> (String, Option<String>) {
         ChainFamily::Stellar => "stellar".to_string(),
         ChainFamily::Cardano => "cardano".to_string(),
         ChainFamily::Lightning => "lightning".to_string(),
+        ChainFamily::Substrate => chain.as_str().to_string(),
     };
     let chain_id = if chain_type == "evm" {
         Some(chain.as_str().to_string())

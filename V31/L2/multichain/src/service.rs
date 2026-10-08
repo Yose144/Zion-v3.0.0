@@ -1482,6 +1482,16 @@ fn build_adapter(
         "zion-l1" | "zion" | "zionl1" => {
             Ok(Box::new(ZionL1Adapter::new(&cfg.rpc_url, keyring.clone())))
         }
+        "quantus" | "qtc" | "qtu" => {
+            let url = if cfg.rpc_url.is_empty() {
+                crate::chain::adapters::quantus::DEFAULT_RPC_URL
+            } else {
+                cfg.rpc_url.as_str()
+            };
+            Ok(Box::new(crate::chain::adapters::quantus::QuantusAdapter::new(
+                url,
+            )))
+        }
         "solana" => {
             let rpc = if cfg.rpc_url.is_empty() { None } else { Some(cfg.rpc_url.as_str()) };
             Ok(Box::new(SolanaAdapter::new(rpc, None)?))
@@ -1533,6 +1543,7 @@ fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {
     match name_lower.as_str() {
         "bitcoin" | "btc" => Ok(ChainId::Bitcoin),
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
+        "quantus" | "qtc" | "qtu" => Ok(ChainId::Quantus),
         "solana" => Ok(ChainId::Solana),
         _ => Err(MultichainError::AdapterNotFound(format!(
             "unknown chain id mapping for '{}': add it to chain_id_by_name()",

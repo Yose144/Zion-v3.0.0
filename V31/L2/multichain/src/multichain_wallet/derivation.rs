@@ -108,6 +108,10 @@ fn derivation_path(chain: ChainId, account: u32, index: u32) -> MultichainResult
         ChainFamily::Stellar => Ok(format!("m/44'/148'/{account}'/{index}")),
         ChainFamily::Cardano => Ok(format!("m/1852'/1815'/{account}'/0/{index}")),
         ChainFamily::Lightning => Ok(format!("m/84'/0'/{account}'/0/{index}")),
+        // Quantus: ML-DSA-87 — dilithium is not BIP32; the seed is derived
+        // from keccak256(path || master_seed) and expanded via
+        // qp-rusty-crystals-hdwallet-style hashing in `Keyring`.
+        ChainFamily::Substrate => Ok(format!("m/44'/189'/{account}'/0/{index}")),
         ChainFamily::Move => Err(MultichainError::Unsupported(format!(
             "derivation path for {} (Move family)",
             chain.as_str()
