@@ -142,12 +142,13 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
     [worlds, activeCategories, activeLayers]
   );
 
-  // Star systems keep their rays/gate/vortex as full nodes; everything else
-  // renders instanced. The selected node mounts as a full World node (stable
-  // click target); the hovered node stays instanced and gets a raycast-free
-  // overlay — handing the raycast target mid-hover would flicker.
+  // ALL world bases (sphere + ring) render instanced — ~410 nodes in 2 draw
+  // calls. Star systems additionally mount an extras-only World node (rays,
+  // gate, vortex, labels) and the selected node mounts a full World node.
+  // Hovered instanced nodes get a raycast-free overlay — handing the raycast
+  // target mid-hover would flicker.
   const instancedWorlds = useMemo(
-    () => visibleWorlds.filter((w) => w.category !== 'star-system' && w.id !== selectedWorldId),
+    () => visibleWorlds.filter((w) => w.id !== selectedWorldId),
     [visibleWorlds, selectedWorldId]
   );
   const detailedWorlds = useMemo(
@@ -155,7 +156,7 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
     [visibleWorlds, selectedWorldId]
   );
   const hoveredWorld = useMemo(
-    () => visibleWorlds.find((w) => w.id === hoveredId && w.category !== 'star-system' && w.id !== selectedWorldId) ?? null,
+    () => visibleWorlds.find((w) => w.id === hoveredId && w.id !== selectedWorldId) ?? null,
     [visibleWorlds, hoveredId, selectedWorldId]
   );
 
@@ -224,6 +225,8 @@ export default function GalaxyMap({ worlds, activeCategories, activeLayers, sele
             isSelected={isSelected}
             isDiscovered={discoveredSet.has(w.id)}
             isMobile={isMobile}
+            instancedBase={!isSelected}
+            hoveredOverride={w.id === hoveredId}
             onSelect={() => onWorldSelect?.(w)}
           />
         );
