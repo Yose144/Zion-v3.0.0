@@ -723,6 +723,151 @@ function initMultichainView() {
 function initMarketView() {}
 function initOasisView() {}
 
+// ── Quantus (QTC) network panel — wallet > Quantus tab ─────────────────────
+let _qtcnetInit = false;
+let _qtcnetPollTimer = null;
+let _qtcnetLookupAddr = '';
+
+function initQtcView() {
+  const panel = document.getElementById('wallet-qtc');
+  if (!panel) return;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const fmtAge = (ms) => {
+    if (ms == null) return '—';
+    if (ms < 1000) return `${ms} ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)} s`;
+    return `${Math.floor(ms / 60000)} min`;
+  };
+  const fmtTs = (s) => { try { return s ? new Date(s).toLocaleString() : '—'; } catch { return '—'; } };
+  const short = (a, n = 14) => (a ? a.slice(0, n) + '…' : '—');
+  const metaRow = (k, v, color) =>
+    `<div class="wallet-meta-row"><span class="wallet-meta" style="min-width:110px">${k}</span><span class="wallet-meta-value" ${color ? `style="color:${color}"` : ''}>${v}</span></div>`;
+
+  async function refresh() {
+    try {
+      const res = await window.electronAPI.qtcNetworkStatus(_qtcnetLookupAddr || undefined);
+      if (!res?.success || !res.data) {
+        if ($('qtcnet-updated')) $('qtcnet-updated').textContent = 'QTC status unreachable';
+        return;
+      }
+      const d = res.data;
+      const n = d.node || {};
+      const p = d.pool || {};
+      const nv = p.native || {};
+      const rw = d.rewards || {};
+      const w = d.wallet;
+
+      // KPI strip
+      const nodeOk = n.ok === true;
+      $('qtcnet-node-state').textContent = nodeOk ? (n.syncing ? 'SYNC' : 'LIVE') : (n.ok === false ? 'DOWN' : '—');
+      $('qtcnet-node-state').style.color = nodeOk ? (n.syncing ? '#fbbf24' : '') : '#f87171';
+      $('qtcnet-height').textContent = n.height != null ? n.height.toLocaleString() : '—';
+      $('qtcnet-peers').textContent = n.peers != null ? n.peers : '—';
+      $('qtcnet-native').textContent = nv.connected == null ? '—' : (nv.connected ? 'LINKED' : 'DOWN');
+      $('qtcnet-share').textContent = nv.share_pct != null ? `${nv.share_pct} %` : '—';
+      $('qtcnet-mined').textContent = rw.mined_count != null ? rw.mined_count : '0';
+      $('qtcnet-updated').textContent = `updated ${new Date().toLocaleTimeString()} · source ${d.source || 'app-api'}`;
+
+      // Node card
+      const nodeHost = $('qtcnet-node');
+      if (nodeHost) {
+        nodeHost.innerHTML =
+          metaRow('Chain', esc(n.chain || 'Quantus')) +
+          metaRow('Version', esc(n.version || '—')) +
+          metaRow('Runtime', n.spec_version != null ? `spec ${n.spec_version}${n.tx_version != null ? ` · tx ${n.tx_version}` : ''}` : '—') +
+          metaRow('Sync', n.syncing == null ? '—' : (n.syncing ? 'syncing…' : 'synced'), n.syncing === false ? '#4ade80' : '#fbbf24') +
+          metaRow('Public RPC', '<a href="#" data-ext="https://rpc.zionterranova.com/qtc" style="color:#22d3ee">rpc.zionterranova.com/qtc</a>');
+      }
+
+      // Native leg card
+      const poolHost = $('qtcnet-pool');
+      if (poolHost) {
+        poolHost.innerHTML = p.available === false
+          ? '<div class="status-note">Pool leg data unavailable.</div>'
+          : metaRow('Enabled', nv.enabled == null ? '—' : (nv.enabled ? 'yes' : 'no')) +
+            metaRow('Connected', nv.connected == null ? '—' : (nv.connected ? '● connected' : '● disconnected'), nv.connected ? '#4ade80' : '#f87171') +
+            metaRow('Native job', esc(nv.job_id || '—')) +
+            metaRow('Job age', fmtAge(nv.job_age_ms)) +
+            metaRow('Upstream', esc(p.upstream || '—')) +
+            metaRow('Upstream job', `${esc(p.upstream_job_id || '—')} · ${fmtAge(p.upstream_job_age_ms)}`) +
+            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—');
+      }
+
+      // Wormhole rewards
+      if ($('qtcnet-rewards-addr')) {
+        $('qtcnet-rewards-addr').textContent = rw.address ? `rewards · ${rw.address}` : '';
+      }
+      const rt = $('qtcnet-rewards-table');
+      if (rt) {
+        const rows = rw.recent || [];
+        rt.innerHTML = '<tr><th>Height</th><th>Reward</th><th>Leaf</th><th>Time</th></tr>' +
+          (rows.length
+            ? rows.map((r) => `<tr><td>${r.height}</td><td style="color:#4ade80">+${r.amount_qtc}</td><td>#${esc(String(r.leaf))}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+            : '<tr><td colspan="4" style="color:rgba(255,255,255,0.3);font-style:italic">No indexed rewards yet — mining is live.</td></tr>');
+      }
+
+      // Network feed
+      const ft = $('qtcnet-feed-table');
+      if (ft) {
+        const rows = d.network_feed || [];
+        ft.innerHTML = '<tr><th>Height</th><th>From</th><th>To</th><th>Amount</th><th>Kind</th><th>Time</th></tr>' +
+          (rows.length
+            ? rows.map((r) => `<tr><td>${r.height}</td><td title="${esc(r.from)}">${short(r.from)}</td><td title="${esc(r.to)}">${short(r.to)}</td><td>${r.amount_qtc}</td><td style="color:${r.is_reward ? '#4ade80' : '#22d3ee'}">${r.is_reward ? 'reward' : 'transfer'}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+            : '<tr><td colspan="6" style="color:rgba(255,255,255,0.3);font-style:italic">Indexer unreachable.</td></tr>');
+      }
+
+      // Address lookup result (only when an addr was queried)
+      const lr = $('qtcnet-lookup-result');
+      if (lr && w) {
+        if (w.valid === false) {
+          lr.innerHTML = '<div class="status-note" style="color:#f87171">Invalid QTC address (ss58-189 expected).</div>';
+        } else if (w.valid) {
+          const bal = w.balance;
+          const hist = w.history || [];
+          lr.innerHTML =
+            `<div class="metric-grid" style="margin-bottom:10px">
+              <div class="metric-card green"><div class="metric-kicker">BALANCE</div><div class="metric-value green">${bal ? bal.free_qtc.toFixed(6) : '0.000000'}</div></div>
+              <div class="metric-card blue"><div class="metric-kicker">NONCE</div><div class="metric-value blue">${bal ? bal.nonce : '0'}</div></div>
+              <div class="metric-card blue"><div class="metric-kicker">TRANSFERS</div><div class="metric-value blue">${hist.length}</div></div>
+            </div>` +
+            '<table class="lottery-table"><tr><th></th><th>Counterparty</th><th>Amount</th><th>Height</th><th>Time</th></tr>' +
+            (hist.length
+              ? hist.map((r) => `<tr><td style="color:${r.direction === 'in' ? '#4ade80' : '#f87171'}">${r.direction === 'in' ? '↓' : '↑'}</td><td title="${esc(r.counterparty)}">${short(r.counterparty, 12)}</td><td>${r.amount_qtc}</td><td>${r.height}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+              : '<tr><td colspan="5" style="color:rgba(255,255,255,0.3);font-style:italic">No transfers for this address.</td></tr>') +
+            '</table>';
+        }
+      }
+    } catch {
+      if ($('qtcnet-updated')) $('qtcnet-updated').textContent = 'QTC status fetch error';
+    }
+  }
+
+  if (!_qtcnetInit) {
+    _qtcnetInit = true;
+    $('qtcnet-refresh-btn')?.addEventListener('click', refresh);
+    const doLookup = () => {
+      _qtcnetLookupAddr = ($('qtcnet-addr-input')?.value || '').trim();
+      if (_qtcnetLookupAddr) void refresh();
+    };
+    $('qtcnet-lookup-btn')?.addEventListener('click', doLookup);
+    $('qtcnet-addr-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLookup(); });
+    // External links inside dynamically rendered cards
+    panel.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-ext]');
+      if (a) { e.preventDefault(); void window.electronAPI.openExternal(a.dataset.ext); }
+    });
+    // Poll while the section is visible; self-clears when the user leaves it.
+    _qtcnetPollTimer = setInterval(() => {
+      const p = document.getElementById('wallet-qtc');
+      if (!p || !p.classList.contains('active')) return;
+      void refresh();
+    }, 15000);
+  }
+  void refresh();
+}
+
 // Section lazy-init dispatch table (used by setupSectionTabs for nested panels)
 const _sectionInitFns = {
   'bridge-view': () => initBridgeView(),
@@ -730,6 +875,7 @@ const _sectionInitFns = {
   'defi-view':   () => initDefiView(),
   'dao-view':    () => initDaoView(),
   'node-view':   () => initNodeView(),
+  'wallet-qtc':  () => initQtcView(),
 };
 
 // Lazy-init dispatch table — avoids long if-else chain
