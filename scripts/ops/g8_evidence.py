@@ -63,31 +63,27 @@ def prometheus_url() -> str:
     return os.environ.get("G8_PROMETHEUS_URL", DEFAULT_PROMETHEUS_URL)
 
 
-EXPORTER_FRESHNESS = '(time() - timestamp(up{job="zion_g8"})) <= bool 30'
+# A bucket is "covered" when the exporter was scraped within the last 30s;
+# last_over_time is used instead of the (time() - timestamp()) scalar form,
+# which costs ~70x more CPU on long range queries (~34s vs ~0.5s measured).
+EXPORTER_FRESHNESS = 'last_over_time(up{job="zion_g8"}[30s])'
 
 
 def signal_expr(name: str) -> str:
     """Prometheus range expression for one required signal.
 
     A signal counts as up at a bucket only when the underlying sample is fresh
-    (<=30s old — Prometheus instant-vector lookback must not resurrect stale
-    samples), the scrape succeeded (up == bool 1), and the exporter itself was
-    freshly scraped. The `or on() vector(0)` fallback yields a full-length
-    zero series when a signal never existed.
+    (a raw sample exists within the last 30s — instant-vector lookback must
+    not resurrect stale samples), the scrape succeeded (latest up sample == 1),
+    and the exporter itself was freshly scraped. The `or on() vector(0)`
+    fallback yields a full-length zero series when a signal never existed.
     """
+    freshness = f'* on(instance) ({EXPORTER_FRESHNESS} >= bool 0.5)'
     if name == "chain_live":
-        return (
-            '(zion_g8_chain_live '
-            '* scalar(up{job="zion_g8"} == bool 1) '
-            '* scalar((time() - timestamp(zion_g8_chain_live)) <= bool 30) '
-            f'* scalar({EXPORTER_FRESHNESS})) or on() vector(0)'
-        )
-    return (
-        f'(zion_g8_probe_success{{service="{name}"}} '
-        '* scalar(up{job="zion_g8"} == bool 1) '
-        f'* scalar((time() - timestamp(zion_g8_probe_success{{service="{name}"}})) <= bool 30) '
-        f'* scalar({EXPORTER_FRESHNESS})) or on() vector(0)'
-    )
+        metric = 'zion_g8_chain_live'
+    else:
+        metric = f'zion_g8_probe_success{{service="{name}"}}'
+    return f'(last_over_time({metric}[30s]) {freshness}) or on() vector(0)'
 
 
 COVERAGE_EXPR = EXPORTER_FRESHNESS
@@ -202,19 +198,53 @@ def archive_existing(path: str) -> str:
     return dest
 
 
+# Prometheus /api/v1/query_range rejects ranges that would produce more than
+# 11,000 points per timeseries. A 30-day run at step=60 needs ~43,200 buckets,
+# so queries must be split into step-aligned chunks below the cap.
+MAX_POINTS_PER_QUERY = 10_000
+
+
+def chunk_range(start: float, end: float, step: int,
+                max_points: int = MAX_POINTS_PER_QUERY) -> list:
+    """Split [start, end] into step-aligned (start, end) sub-ranges.
+
+    Each chunk yields at most `max_points` evaluation points and chunk
+    boundaries stay aligned to the original grid (start + n*step), so the
+    concatenated result is identical to a single unlimited query.
+    """
+    if step <= 0:
+        raise ValueError("step must be positive")
+    span = (max_points - 1) * step
+    chunks = []
+    s = start
+    while s <= end:
+        e = min(s + span, end)
+        chunks.append((s, e))
+        s = e + step
+    return chunks
+
+
 def query_range(prom_url: str, expr: str, start: float, end: float, step: int) -> list:
-    """Run a Prometheus /api/v1/query_range query; returns the matrix list."""
-    qs = urllib.parse.urlencode({
-        "query": expr,
-        "start": start,
-        "end": end,
-        "step": step,
-    })
-    with urllib.request.urlopen(f"{prom_url}/api/v1/query_range?{qs}", timeout=30) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-    if data.get("status") != "success":
-        raise ValueError(f"Prometheus query failed: {data.get('error', data.get('status'))}")
-    return data.get("data", {}).get("result", [])
+    """Run a Prometheus /api/v1/query_range query; returns the matrix list.
+
+    Ranges wider than the server's 11k-point cap are fetched in chunks and
+    concatenated — chunk boundaries are step-aligned so no bucket is skipped
+    or duplicated.
+    """
+    result = []
+    for chunk_start, chunk_end in chunk_range(start, end, step):
+        qs = urllib.parse.urlencode({
+            "query": expr,
+            "start": chunk_start,
+            "end": chunk_end,
+            "step": step,
+        })
+        with urllib.request.urlopen(f"{prom_url}/api/v1/query_range?{qs}", timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if data.get("status") != "success":
+            raise ValueError(f"Prometheus query failed: {data.get('error', data.get('status'))}")
+        result.extend(data.get("data", {}).get("result", []))
+    return result
 
 
 def merge_matrix(result: list) -> dict:

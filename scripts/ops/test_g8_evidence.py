@@ -34,20 +34,52 @@ def matrix(values):
 class ExpressionTests(unittest.TestCase):
     def test_signal_expressions_require_freshness(self):
         chain = g8e.signal_expr("chain_live")
-        self.assertIn("timestamp(zion_g8_chain_live)", chain)
-        self.assertIn('up{job="zion_g8"} == bool 1', chain)
+        self.assertIn("last_over_time(zion_g8_chain_live[30s])", chain)
+        self.assertIn('up{job="zion_g8"}', chain)
         self.assertIn("or on() vector(0)", chain)
         self.assertIn(g8e.EXPORTER_FRESHNESS, chain)
 
         svc = g8e.signal_expr("pool_http")
-        self.assertIn('timestamp(zion_g8_probe_success{service="pool_http"})', svc)
-        self.assertIn('up{job="zion_g8"} == bool 1', svc)
+        self.assertIn('last_over_time(zion_g8_probe_success{service="pool_http"}[30s])', svc)
+        self.assertIn('up{job="zion_g8"}', svc)
         self.assertIn("or on() vector(0)", svc)
         self.assertIn(g8e.EXPORTER_FRESHNESS, svc)
 
     def test_coverage_expr_is_exporter_freshness(self):
-        self.assertIn("timestamp(up", g8e.COVERAGE_EXPR)
-        self.assertIn("<= bool 30", g8e.COVERAGE_EXPR)
+        self.assertIn("last_over_time(up", g8e.COVERAGE_EXPR)
+        self.assertIn("[30s]", g8e.COVERAGE_EXPR)
+
+
+class ChunkRangeTests(unittest.TestCase):
+    """Prometheus caps query_range at 11k points/series — long windows chunk."""
+
+    def test_short_range_single_chunk(self):
+        self.assertEqual(g8e.chunk_range(T0, T0 + 300, 60), [(T0, T0 + 300)])
+
+    def test_empty_range_no_chunks(self):
+        self.assertEqual(g8e.chunk_range(T0 + 60, T0, 60), [])
+
+    def test_chunk_boundaries_stay_grid_aligned(self):
+        # 30d @ 60s = 43,200 buckets > 10k cap -> 5 chunks, no gaps/overlap.
+        end = T0 + 30 * 86400
+        chunks = g8e.chunk_range(T0, end, 60)
+        self.assertEqual(len(chunks), 5)
+        covered = []
+        for s, e in chunks:
+            points = (e - s) // 60 + 1
+            self.assertLessEqual(points, g8e.MAX_POINTS_PER_QUERY)
+            covered.extend(range(int(s), int(e) + 1, 60))
+        self.assertEqual(covered, list(range(T0, end + 1, 60)))
+
+    def test_last_chunk_can_be_partial(self):
+        # 10k-point cap at step 60 -> span 599,940s; 600,060s needs 2 chunks.
+        chunks = g8e.chunk_range(T0, T0 + 600_060, 60)
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[1], (T0 + 600_000, T0 + 600_060))
+
+    def test_rejects_nonpositive_step(self):
+        with self.assertRaises(ValueError):
+            g8e.chunk_range(T0, T0 + 60, 0)
 
 
 class MergeTests(unittest.TestCase):
