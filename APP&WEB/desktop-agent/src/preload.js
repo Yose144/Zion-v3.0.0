@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Mining control
   startMining: (config) => ipcRenderer.invoke('start-mining', config),
   stopMining: () => ipcRenderer.invoke('stop-mining'),
+  // One-click algorithm/coin switching: persists the patch and, when the
+  // miner is running, hot-restarts it so the change applies end-to-end.
+  applyMiningConfig: (patch) => ipcRenderer.invoke('apply-mining-config', patch),
+  getPoolAuxpow: () => ipcRenderer.invoke('get-pool-auxpow'),
 
 
   
