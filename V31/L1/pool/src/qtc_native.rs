@@ -44,7 +44,9 @@ use crate::share_forwarder::ShareForwardResult;
 pub const NATIVE_JOB_PREFIX: &str = "qtun:";
 
 /// QUIC ALPN required by the quantus node miner protocol.
-const MINER_ALPN: &[u8] = b"quantus-miner";
+/// ALPN is versioned with the wire protocol in quantus-node ≥ v1.0.2-Qm:
+/// `/2` = authenticated `Ready { token }` (bare `quantus-miner` = legacy).
+const MINER_ALPN: &[u8] = b"quantus-miner/2";
 
 /// Default share difficulty when `QTC_NATIVE_SHARE_DIFF` is unset. Chosen to
 /// roughly match upstream k1pool QPoW share rates (~3e9) so existing miner
