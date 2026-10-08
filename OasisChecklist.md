@@ -70,6 +70,8 @@
 | Star extras instancing | ✅ | `InstancedBillboards` (billboard+UV rotace+pulse+per-instance color/scale/phase/opacity, 1 call) pro ~57 ray spritů + 10 distant galaxies (webgl2; webgpu padá na sprity); `InstancedGates` = 1 instanced torus pro všechny star gates (oba backendy), per-node gate+vortex jen na hover/selected |
 | Nova Zeme beacon instancing | ✅ | 12 pioneer markerů (dot + halo) → 2 instanced draw cally, per-instance barva; DOM labely zachovány |
 | Kodama instancing | ✅ | ~12 figurek × 5 meshů → 2 instanced draws (tělo + vertex-colored merged hlava s obličejem); rattle/sway v per-instance maticích |
+| Earth texture payload | ✅ | blue-marble 4096px jpg 1376K → 2048px webp 291K, topology png→lossless webp, dark jpg→webp — **1.85MB → 609K** (`467e81e0e`) |
+| Load budget (produkce) | ✅ změřeno | TTFB ~270ms, DOMContentLoaded ~370ms, load ~650ms, JS ~0.7MB, celkem ~1.9MB po WebP — hluboko pod 3s budgetem |
 | `DirectRenderer` (manual-render freeze fix) | ✅ | ověřeno `calls: 1→16` po vstupu do světa |
 | R3F error boundaries | ✅ | per-component `R3FErrorBoundary` |
 | WebGPU bundle laziness | ✅ | `three/tsl` chunk ~724K se stáhne jen při `?gpu=webgpu` |
