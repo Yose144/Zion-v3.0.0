@@ -144,3 +144,26 @@ ZION_POOL_AUXPOW_CPU_REGION="eu"
 # pool-side per-coin vars actually read by auxpow_runtime.rs (CPU_WALLET above is miner-side)
 ZION_POOL_AUXPOW_WALLET_VRSC="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
 ZION_POOL_AUXPOW_POOL_VRSC="eu.luckpool.net:3956"
+
+# ── ZPool BTC-payout bridges (auto-exchange, fallback BTC wallet) ──
+# These coins pay out in BTC to ZION_POOL_AUXPOW_WALLET — no per-coin wallet
+# needed. zpool requires password "c=BTC" to credit the BTC payout address
+# (per-coin override ZION_POOL_AUXPOW_PASSWORD_<TICKER>).
+# Enable by adding the tickers to ZION_POOL_AUXPOW_COINS (comma-separated).
+# All listed kernels are KAT-verified on the miner side (OpenCL+CUDA).
+#
+# GPU coins:
+#   EVR  evrprogpow.eu.mine.zpool.ca:1330
+#   MEWC meowpow.eu.mine.zpool.ca:1327
+#   ZCL  equihash192.eu.mine.zpool.ca:2144   (EquihashZero — needs ≥4GB VRAM)
+#   PHX  neoscrypt.eu.mine.zpool.ca:4233
+#   KRX  keryxhash.eu.mine.zpool.ca:4233
+#   ZEC  equihash.eu.mine.zpool.ca:1080      (ZcashStratum protocol)
+# CPU coins:
+#   RTM  ghostrider.eu.mine.zpool.ca:5354
+#
+# Example (server-side only — wallets stay in the secure env file):
+#   ZION_POOL_AUXPOW_COINS="QTU,ZANO,VRSC,EVR,MEWC,PHX,KRX,ZEC,RTM"
+#   ZION_POOL_AUXPOW_POOL_EVR="evrprogpow.eu.mine.zpool.ca:1330"
+#   ZION_POOL_AUXPOW_PASSWORD_EVR="c=BTC"
+#   (…repeat POOL_/PASSWORD_ per coin; wallet falls back to the BTC address)

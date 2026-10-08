@@ -499,7 +499,7 @@ impl ExternalCoin {
             ExternalCoin::Raptoreum => ("ghostrider", 5354),
             ExternalCoin::PhoenixCoin => ("neoscrypt", 4233),
             ExternalCoin::Keryx => ("keryxhash", 4233),
-            ExternalCoin::Zcash => ("equihash", 1080),
+            ExternalCoin::Zcash => ("equihash", 2142),
             _ => return None,
         };
         let zp_region = match region.to_ascii_lowercase().as_str() {
