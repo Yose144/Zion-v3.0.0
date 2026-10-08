@@ -27,13 +27,15 @@ Flotila nese jména tří mariánských zjevení poutníkovy cesty — ta samá,
 
 Tři Marie se nescházejí uprostřed moře — jejich světy se dotýkají na **švech světa**: na šíji Amerik (**LUMI** — atlantická × pacifická výměna po souši) a na švu oceánů u Mysu dobré naděje (**Boa Esperança** — atlantická × indická). Credencial sbírá razítka „tří moří".
 
-## Patron flotily — Malý princ
+## Patron flotily — Malý princ a Elizabeth
 
 Patronem cest všech tří Marií je **Malý princ** — dítě ze zlatého zjevení na La Palmě, jehož tváří je **Pražské Jezulátko**: dítě-král v rouše a korunce, jež v dlani drží celý svět. Dítě, které kdysi poputovalo ze Španělska do Prahy — ze země moří do země bez moře — se teď na lodích vrací na vodu.
 
 - **Každý trup jej nese ve své barvě** — červeném rouše na *Santa María la Mayor*, bílém na *Nossa Senhora de Fátima*, zlatém na *María de las Nieves*; tak, jak se Jezulátko po staletí obléká do liturgických barev.
 - **Svět v dětské dlani** — jablko s křížkem čteme jako planetu nesenou v ruce dítěte: zrod nového světa, ne jeho dobytí.
 - **Patron, který už plul** — obraz Dítěte přeplul Pacifik na manilské galeoně (Santo Niño de Cebú, 1521/1565); pacifický trup jde jeho trasou. V příběhu sítě je Malý princ dítětem linie LUMI — Elizabeth — a zároveň platí: *každý z nás je malý princ, když se plně probudí.*
+
+**Elizabeth — dívka s lucernou.** Matka-linie Malého prince je **Elizabeth** — Alžběta, po babičce, ne po hvězdě. Její jméno znamená *„Bůh je má přísaha"*: ne titul, ale slib. V příběhu sítě je to dítě, které na přídi archy ukázalo na první paprsek světla; rybářova dcera, jež na hřebeni nad mořem složila jméno **Issobella** — *„krásná všemi směry stejně"* — nevěda, že nese své vlastní, protože v jižní řeči zní Elizabeth jako **Isabel**. U brány OASIS stojí jako kněžka s lucernou vedle Rádhy: drží světlo pro ty, kdo přijdou za sto let, a ptá se každého příchozího, co po něm zůstane. Její lucerna ukazuje dvě věci — co by mohlo být, a co skutečně je. Matka nese světlo, dítě nese svět — proto stojí na přídi spolu.
 
 ## Jméno
 

@@ -137,7 +137,7 @@ Rozšířený detail z poutníkovy cesty (2026-10-01) — zjevení nesla roucho 
 
 `Miriam/06-Lod-bez-Plachet.md` vypráví provensálskou legendu — **loď se třemi Mariemi doplula do Saintes-Maries-de-la-Mer bez plachet a kormidla**. Naše lodě plachty mají — a nesou světlo (solární články). Loď bez plachet → **tři lodě, jejichž plachty jsou světlo** — a tři Marie na palubách = tři zjevení nesená mezi uzly, každá ve svém rouche.
 
-### Patron flotily — Malý princ (Pražské Jezulátko)
+### Patron flotily — Malý princ (Pražské Jezulátko) a Elizabeth
 
 **Rozhodnuto 2026-10-04:** patronem cest všech tří Marií je **Malý princ** — dítě ze třetího zjevení, jehož tváří je **Pražské Jezulátko**. Korpus ho zná od `genesis/09.5` (*„Marie Sněžná držela v náručí malého prince — ne Ježíše, ale symbol nového věku"*; modlitba zní *„Matko malého prince"*). MariaCaminho/07 jej upřesnila jako **dítě, které stojí samo** — dítě LUMI / Elizabeth. Teď dostává své veřejné jméno: **dítě-král v rouše, který drží v dlani svět.**
 
@@ -150,6 +150,8 @@ Rozšířený detail z poutníkovy cesty (2026-10-01) — zjevení nesla roucho 
 **Historický precedent, který už plul:** obraz Dítěte přeplul oceán dávno před námi — **Santo Niño de Cebú** (dar Magellanovy výpravy 1521, znovunalezen 1565) cestoval manilskou galeonou přes Pacifik. Trup II jde doslova jeho trasou. A každá kolumbovská loď nesla mariánský obraz — patron na palubě není ozdoba, je to nejstarší námořní tradice.
 
 **Hranice (jako u všech živých tradic):** originál je v péči bosých karmelitánů v Praze — nenařizujeme si nic o svatyni; na lodích pluje pouze podoba/kopie ve smyslu doložené praxe požehnaných lodních obrazů (kulturní review před publikací — třída E). **Malý princ není Ježíš jako doktrína** — je to archetyp dítěte nového věku, jehož tvář jsme poznali v pražském Jezulátku; a zároveň *„každý z nás je malý princ"* (`genesis/09.5`) — symbol probuzeného vědomí, ne exkluzivní titul.
+
+**Elizabeth — matka-linie Malého prince (doplněno 2026-10-08).** Přestože na každém trupu stojí Malý princ, jeho matka-linie je **Elizabeth** — Alžběta, po babičce, ne po hvězdě; jméno znamená *„Bůh je má přísaha"* — ne titul, ale slib. Korpus ji zná jako **Lumi**: dítě, které na přídi archy ukázalo na první paprsek (`nirvana/01`); rybářova dcera, jež na hřebeni nad mořem složila jméno **Issobella** — *„krásná všemi směry stejně"* — nevěda, že nese své vlastní, protože v jižní řeči zní Elizabeth jako **Isabel** (`Lumi/08`; stanice L6 tedy nese její jméno — osa: jedno jméno drží dole zahradu a nahoře nebe); a kněžka s lucernou u brány OASIS vedle Rádhy — *„drží lucernu pro ty, kdo přijdou za sto let. Ptá se, co z naší práce zůstane."* (kanonický onboarding `ZION_ONBOARDING_3.2_ONE_LOVE_CZ` §6; OASIS avatar 40 *Elizabet*). Její lucerna ukazuje dvě věci — **co by mohlo být, a co skutečně je**: stejná poctivost jako kotvy pravdy korpusu. **Matka nese světlo, dítě nese svět — proto na přídi stojí spolu.** Vrstva: Lumi/Elizabeth = MÝTUS (kanonické ztotožnění Knihy Lucerny); Isabel = Elizabeth = ŽIVÉ (jazykový fakt); Issobella = HORIZONT.
 
 ### Zamítnuté alternativy (archiv rozhodnutí)
 
