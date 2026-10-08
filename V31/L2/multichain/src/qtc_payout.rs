@@ -56,6 +56,14 @@ pub struct QtcPayoutConfig {
     /// Max submit attempts per record before 'stalled'
     /// (`QTC_PAYOUT_MAX_ATTEMPTS`, default 3).
     pub max_attempts: u32,
+    /// Pool fee on the QTC leg, basis points of the converted amount
+    /// (`QTC_PAYOUT_FEE_BPS`, e.g. 200 = 2%; default 0).  The fee stays
+    /// on the payout account (we simply send less).
+    pub fee_bps: u64,
+    /// Max acceptable per-tx fee in planks (`QTC_PAYOUT_MAX_FEE_PLANKS`;
+    /// default 0 = no cap).  Checked via `payment_queryInfo` before
+    /// broadcast — over-cap rows stay 'queued' for the next tick.
+    pub max_fee_planks: u128,
 }
 
 impl QtcPayoutConfig {
@@ -88,6 +96,15 @@ impl QtcPayoutConfig {
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(3);
+        let fee_bps: u64 = std::env::var("QTC_PAYOUT_FEE_BPS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
+            .min(10_000);
+        let max_fee_planks: u128 = std::env::var("QTC_PAYOUT_MAX_FEE_PLANKS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
         Ok(Some(Self {
             enabled: true,
             pool_api: pool_api.trim_end_matches('/').to_string(),
@@ -96,6 +113,8 @@ impl QtcPayoutConfig {
             interval: Duration::from_secs(interval_s.max(5)),
             min_planks,
             max_attempts,
+            fee_bps,
+            max_fee_planks,
         }))
     }
 }
@@ -195,9 +214,13 @@ async fn tick(
     // 2. Ledger each drained entry (queued) before touching the chain.
     for p in &resp.payouts {
         let id = format!("quantus:{}:{}", p.height, p.miner_id);
-        let planks = (p.amount_flowers as u128)
+        let gross_planks = (p.amount_flowers as u128)
             .checked_mul(config.planks_per_flower)
             .unwrap_or(u128::MAX);
+        // Pool fee on the QTC leg: deducted from the converted amount;
+        // it never leaves the payout account (we simply send less).
+        let fee_planks = gross_planks.saturating_mul(config.fee_bps as u128) / 10_000;
+        let planks = gross_planks.saturating_sub(fee_planks);
         if planks < config.min_planks {
             continue; // dust — record nothing, keep queue small
         }
@@ -206,8 +229,8 @@ async fn tick(
         db.conn().execute(
             "INSERT OR IGNORE INTO ext_payout_records \
              (id, chain, source_height, miner_id, address, amount_flowers, \
-              amount_native, status, created_at, updated_at) \
-             VALUES (?1,'quantus',?2,?3,?4,?5,?6,'queued',?7,?7)",
+              amount_native, fee_native, status, created_at, updated_at) \
+             VALUES (?1,'quantus',?2,?3,?4,?5,?6,?7,'queued',?8,?8)",
             rusqlite::params![
                 id,
                 p.height as i64,
@@ -215,6 +238,7 @@ async fn tick(
                 p.address,
                 p.amount_flowers as i64,
                 planks.to_string(),
+                fee_planks.to_string(),
                 now
             ],
         )?;
@@ -258,6 +282,29 @@ async fn tick(
         };
         let to = Address::new(ChainId::Quantus, account.to_vec(), row.address.clone())
             .map_err(|e| MultichainError::Validation(format!("bad payout addr: {e}")))?;
+
+        // Fee-cap guard: estimate via payment_queryInfo; over-cap rows stay
+        // 'queued' and retry next tick (fee market may settle).
+        if config.max_fee_planks > 0 {
+            match adapter.estimate_transfer_fee(&to, planks).await {
+                Ok(est) if est.partial_fee > config.max_fee_planks => {
+                    warn!(
+                        id = %row.id,
+                        fee = est.partial_fee,
+                        cap = config.max_fee_planks,
+                        "qtc payout fee over cap — deferring"
+                    );
+                    continue;
+                }
+                Err(e) => {
+                    // Estimation failing is transient — don't block the
+                    // payout on it, just log and proceed.
+                    warn!(id = %row.id, "qtc fee estimate failed, sending anyway: {e}");
+                }
+                _ => {}
+            }
+        }
+
         match adapter
             .send_payment(&to, Amount(planks))
             .await

@@ -5897,6 +5897,47 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Quantus (QTC) — native payout wallet, Planck mainnet -->
+              <div class="wallet-card" id="qtc-wallet-card">
+                <div class="wallet-kicker">QUANTUS · QTC</div>
+                <div class="wallet-main">
+                  <div class="wallet-main-value" id="qtc-balance">—</div>
+                  <div class="wallet-main-unit">QTC</div>
+                </div>
+                <div id="qtc-linked">
+                  <div class="wallet-meta-row">
+                    <div class="wallet-meta flex-2" style="word-break:break-all">
+                      <span id="qtc-address" class="wallet-meta-value">—</span>
+                    </div>
+                  </div>
+                  <div class="inline-row" style="margin-top:8px">
+                    <button class="btn btn-ghost btn-sm" id="qtc-copy-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-copy"></use></svg>
+                      Copy
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-ghost-green" id="qtc-refresh-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+                <div id="qtc-unlinked">
+                  <div class="inline-row" style="margin:8px 0">
+                    <input type="text" id="qtc-link-input" placeholder="qz… (SS58-189) or qtc:qz…" class="input-flex-mono" />
+                    <button class="btn btn-primary btn-sm" id="qtc-link-btn">Link</button>
+                  </div>
+                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="qtc-generate-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                    Generate new QTC wallet
+                  </button>
+                </div>
+                <div id="qtc-new-mnemonic" style="display:none">
+                  <textarea id="qtc-mnemonic-out" readonly rows="3" class="input-flex-mono" style="width:100%;margin-top:8px"></textarea>
+                  <div class="status-note">Save this 24-word phrase — it is your QTC wallet. Linked to the active wallet.</div>
+                </div>
+                <div id="qtc-status" class="wallet-status-row"></div>
+              </div>
             </div>
           </div>
 

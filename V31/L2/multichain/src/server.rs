@@ -360,6 +360,8 @@ impl ApiServer {
                 post(trigger_reconciliation),
             )
             .route("/v1/admin/solvency", get(get_solvency_status))
+            .route("/v1/admin/ext-payouts", get(get_ext_payouts))
+            .route("/v1/admin/ext-payouts/resolve", post(resolve_ext_payout))
             .layer(axum::middleware::from_fn_with_state(
                 state.limiter.clone(),
                 auth_rate_limit,
@@ -2589,6 +2591,69 @@ async fn trigger_reconciliation(
         Err(e) => {
             tracing::warn!("manual reconciliation failed: {e}");
             Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct ExtPayoutsQuery {
+    chain: Option<String>,
+    status: Option<String>,
+    #[serde(default = "default_payout_limit")]
+    limit: u32,
+}
+fn default_payout_limit() -> u32 {
+    100
+}
+
+/// `GET /v1/admin/ext-payouts` — external-chain payout ledger
+/// (QTC etc.): queue, submissions, confirmations, stalled rows.
+async fn get_ext_payouts(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
+    Query(query): Query<ExtPayoutsQuery>,
+) -> Result<Json<Vec<serde_json::Value>>, StatusCode> {
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
+    match state
+        .service
+        .ext_payout_records(
+            query.chain.as_deref(),
+            query.status.as_deref(),
+            query.limit,
+        )
+        .await
+    {
+        Ok(rows) => Ok(Json(rows)),
+        Err(e) => {
+            tracing::warn!("list ext payouts failed: {e}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct ExtPayoutResolveReq {
+    id: String,
+    /// `"resubmit"` → back to 'queued'; `"dismiss"` → mark 'failed'.
+    action: String,
+}
+
+/// `POST /v1/admin/ext-payouts/resolve` — operator resolution for
+/// 'stalled' records (fail-closed crash recovery).
+async fn resolve_ext_payout(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    headers: HeaderMap,
+    Json(req): Json<ExtPayoutResolveReq>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_admin(&state, user.as_ref().map(|u| &u.0), &headers)?;
+    match state.service.ext_payout_resolve(&req.id, &req.action).await {
+        Ok(true) => Ok(Json(serde_json::json!({"ok": true}))),
+        Ok(false) => Err(StatusCode::NOT_FOUND),
+        Err(e) => {
+            tracing::warn!("resolve ext payout failed: {e}");
+            Err(StatusCode::BAD_REQUEST)
         }
     }
 }

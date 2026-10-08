@@ -276,6 +276,73 @@ impl QuantusAdapter {
         self
     }
 
+    /// Fee estimate for `balances.transfer_keep_alive` via
+    /// `payment_queryInfo` — builds a fully-formed signed extrinsic; the
+    /// RPC only decodes it, nothing is submitted.  Used by the payout
+    /// sweeper for a fee-cap guard before broadcasting.
+    pub async fn estimate_transfer_fee(
+        &self,
+        to: &Address,
+        amount: u128,
+    ) -> MultichainResult<QuantusFeeEstimate> {
+        let dest32 = Self::decode_address(to)?;
+        let keypair = self.signer()?;
+        let sender_acct = keypair.account_id();
+        let nonce = self.account_nonce(&sender_acct).await?;
+        let (spec, txv, genesis, fin_hash, fin_height) =
+            self.signing_context().await?;
+        let ext = Self::build_transfer_extrinsic(
+            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &fin_hash,
+            fin_height,
+        )?;
+        let ext_hex = format!("0x{}", hex::encode(&ext));
+        let info: serde_json::Value = self
+            .rpc("payment_queryInfo", json!([ext_hex]))
+            .await
+            .map_err(|e| MultichainError::Internal(format!("queryInfo: {e}")))?;
+        let partial_fee = parse_json_u128(&info["partialFee"]).ok_or_else(|| {
+            MultichainError::Internal(format!(
+                "queryInfo partialFee missing: {}",
+                &info.to_string()[..info.to_string().len().min(200)]
+            ))
+        })?;
+        // weight.ref_time — v14+ runtimes report a struct, older a bare u64.
+        let weight_ref_time = info["weight"]["ref_time"]
+            .as_u64()
+            .or_else(|| info["weight"]["refTime"].as_u64())
+            .or_else(|| info["weight"].as_u64())
+            .unwrap_or(0);
+        Ok(QuantusFeeEstimate {
+            partial_fee,
+            weight_ref_time,
+        })
+    }
+
+    /// Native-wallet facing transfer: sign + submit `balances.transfer_keep_alive`
+    /// of `amount` planks to `dest_ss58` with the configured signer (keyring
+    /// (0,0) or QUANTUS_SEED). Used by the `zion-derive-addr --qtc-send` helper.
+    pub async fn send_transfer(&self, dest_ss58: &str, amount: u128) -> MultichainResult<Hash> {
+        let (dest32, prefix) = ss58_decode(dest_ss58)?;
+        if prefix != QUANTUS_SS58_PREFIX {
+            return Err(MultichainError::Validation(format!(
+                "ss58 prefix {prefix} != quantus {QUANTUS_SS58_PREFIX}"
+            )));
+        }
+        let keypair = self.signer()?;
+        let sender_acct = keypair.account_id();
+        let nonce = self.account_nonce(&sender_acct).await?;
+        let (spec, txv, genesis, fin_hash, fin_height) = self.signing_context().await?;
+        let ext = Self::build_transfer_extrinsic(
+            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &fin_hash, fin_height,
+        )?;
+        let ext_hex = format!("0x{}", hex::encode(&ext));
+        let tx_hash: String = self
+            .rpc("author_submitExtrinsic", json!([ext_hex]))
+            .await
+            .map_err(|e| MultichainError::Internal(format!("submit: {e}")))?;
+        Ok(Hash(decode_hex32(&tx_hash)?))
+    }
+
     /// Hot signing keypair: keyring (0,0) when configured, else QUANTUS_SEED.
     fn signer(&self) -> MultichainResult<QuantusKeypair> {
         if let Some(kr) = &self.keyring {
@@ -768,6 +835,21 @@ impl ChainAdapter for QuantusAdapter {
     }
 }
 
+/// `payment_queryInfo` result — fee in planks + weight.
+#[derive(Debug, Clone, Copy)]
+pub struct QuantusFeeEstimate {
+    pub partial_fee: u128,
+    pub weight_ref_time: u64,
+}
+
+/// Parse a JSON integer that may be a number or decimal string
+/// (runtime RPCs return u128-ish values as strings).
+fn parse_json_u128(v: &serde_json::Value) -> Option<u128> {
+    v.as_u64()
+        .map(|n| n as u128)
+        .or_else(|| v.as_str().and_then(|s| s.parse::<u128>().ok()))
+}
+
 fn decode_hex32(s: &str) -> MultichainResult<[u8; 32]> {
     let raw = hex::decode(s.trim_start_matches("0x"))
         .map_err(|e| MultichainError::Validation(format!("hex: {e}")))?;
@@ -914,5 +996,82 @@ mod tests {
                 json!(null)
             });
         eprintln!("system_dryRun: {dry}");
+    }
+
+    /// Live send on Heisenberg testnet: funded `QUANTUS_SEED` account →
+    /// dust transfer to a fresh address, then poll `confirmations()` and
+    /// verify deposit scanning (`watch_addresses`) sees it after finality.
+    ///
+    /// Run:
+    /// `QUANTUS_LIVE=1 QUANTUS_RPC=https://a1-heisenberg.quantus.cat \
+    ///  QUANTUS_SEED=<32-byte hex> \
+    ///  cargo test -p zion-multichain --lib quantus_live_send -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore = "requires funded Heisenberg account + QUANTUS_LIVE=1"]
+    async fn quantus_live_send_testnet() {
+        if std::env::var("QUANTUS_LIVE").ok().as_deref() != Some("1") {
+            return;
+        }
+        if std::env::var("QUANTUS_SEED").is_err() {
+            eprintln!("skipped: QUANTUS_SEED not set");
+            return;
+        }
+        let adapter = QuantusAdapter::new("");
+
+        let kp = adapter.signer().expect("signer");
+        let sender_addr = Address::new(
+            ChainId::Quantus,
+            kp.account_id().to_vec(),
+            kp.ss58_address(),
+        )
+        .unwrap();
+        let bal = adapter.balance(&sender_addr).await.unwrap();
+        eprintln!("sender {} balance {} planks", kp.ss58_address(), bal.0);
+        assert!(bal.0 > 0, "test account needs funds on Heisenberg");
+
+        // Fee estimate sanity — must be a sane fraction of the balance.
+        let dest_kp = QuantusKeypair::from_seed([9u8; 32]);
+        let dest = Address::new(
+            ChainId::Quantus,
+            dest_kp.account_id().to_vec(),
+            dest_kp.ss58_address(),
+        )
+        .unwrap();
+        let est = adapter
+            .estimate_transfer_fee(&dest, 1_000_000)
+            .await
+            .unwrap();
+        eprintln!(
+            "fee estimate: {} planks (weight {})",
+            est.partial_fee, est.weight_ref_time
+        );
+        assert!(est.partial_fee > 0 && est.partial_fee < bal.0);
+
+        // Send dust; verify the tx hash parses and confirmations accrue.
+        let hash = adapter.send_payment(&dest, Amount(1_000_000)).await.unwrap();
+        eprintln!("submitted tx {}", hash.to_hex());
+        let mut confs = adapter.confirmations(&hash).await.unwrap_or(0);
+        for _ in 0..20 {
+            if confs >= 1 {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(12)).await;
+            confs = adapter.confirmations(&hash).await.unwrap_or(0);
+        }
+        eprintln!("confirmations: {confs}");
+        assert!(confs >= 1, "tx did not finalize within ~4 minutes");
+
+        // Deposit watcher sees the finalized transfer.
+        let events = adapter
+            .watch_addresses(&[dest.clone()])
+            .await
+            .unwrap();
+        assert!(
+            events
+                .iter()
+                .any(|e| e.recipient.as_str() == dest.as_str()),
+            "deposit scan did not find the sent transfer"
+        );
+        eprintln!("deposit scan found {} event(s)", events.len());
     }
 }
