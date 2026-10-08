@@ -3,6 +3,7 @@
 import { ArrowRight, CalendarDays, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 const RoadmapPulseCopy = {
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
@@ -72,7 +73,7 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-2">
             <p className="text-xs uppercase tracking-[0.3em] text-zion-gold">{RoadmapPulseCopy.roadmap[cs ? 'cs' : 'en']}</p>
             <h2 className="text-2xl md:text-3xl font-bold text-white">
-              3.1.0 <span className="text-gradient">{RoadmapPulseCopy.currentStatus[cs ? 'cs' : 'en']}</span>
+              {SITE_RELEASE_LABEL} <span className="text-gradient">{RoadmapPulseCopy.currentStatus[cs ? 'cs' : 'en']}</span>
             </h2>
             <p className="text-sm text-gray-300 max-w-2xl">
               {RoadmapPulseCopy.v31CutoverComplete[cs ? 'cs' : 'en']}
