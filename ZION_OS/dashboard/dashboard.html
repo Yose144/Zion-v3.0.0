@@ -8221,6 +8221,64 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
       </div>
     </div>
 
+    <!-- ── L2/WARP ops detail — gates, BTC backend, swap pilot, HTLCs,
+         pools, reconciliation, ledger activity (/api/multichain/detail) ── -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div class="zion-panel p-5 border border-amber-500/20">
+        <h2 class="text-base font-bold mb-1">🛡️ Pilot Gates &amp; Safety</h2>
+        <p class="text-[10px] text-gray-500 mb-3">Environment presence flags only — secret values are never exposed.</p>
+        <div id="mc-gates-body" class="space-y-1.5 text-xs"><div class="text-gray-500 italic">Loading…</div></div>
+        <div id="mc-gates-hold" class="mt-3 text-[11px] font-semibold text-amber-400"></div>
+      </div>
+      <div class="zion-panel p-5 border border-orange-500/20">
+        <h2 class="text-base font-bold mb-1">₿ Bitcoin Backend <span class="text-[10px] text-gray-500 font-normal">· local pruned node, wallet warpwatch</span></h2>
+        <div id="mc-bitcoin-body" class="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs mt-3"><div class="text-gray-500 italic col-span-3">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">⚛️ BTC ↔ ZION Atomic Swap <span id="mc-swap-badge" class="text-[10px] font-normal"></span></h2>
+        <div id="mc-btcswap-body" class="text-xs space-y-2"><div class="text-gray-500 italic">Loading…</div></div>
+      </div>
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">🔐 HTLC Records <span id="mc-htlc-badge" class="text-[10px] text-gray-500 font-normal"></span></h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-1.5 px-2">Hashlock</th><th class="py-1.5 px-2 text-right">Amount</th><th class="py-1.5 px-2">Counterparty</th><th class="py-1.5 px-2 text-right">Expires</th></tr></thead>
+            <tbody id="mc-htlc-body"><tr><td colspan="4" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">💧 AMM Pools <span id="mc-pools-badge" class="text-[10px] text-gray-500 font-normal"></span></h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-1.5 px-2">Pair</th><th class="py-1.5 px-2 text-right">Reserve A</th><th class="py-1.5 px-2 text-right">Reserve B</th><th class="py-1.5 px-2 text-right">Fee</th><th class="py-1.5 px-2">AMM pair</th></tr></thead>
+            <tbody id="mc-pools-body"><tr><td colspan="5" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">📒 Ledger Activity</h2>
+        <div id="mc-activity-body" class="text-xs space-y-2"><div class="text-gray-500 italic">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="zion-panel p-5">
+      <h2 class="text-base font-bold mb-1">📋 Reconciliation <span id="mc-recon-badge" class="text-[10px] font-normal"></span></h2>
+      <p class="text-[10px] text-gray-500 mb-3">Latest report per asset — excluded assets report but never alert.</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-1.5 px-2">Asset</th><th class="py-1.5 px-2 text-right">On-chain</th><th class="py-1.5 px-2 text-right">Internal</th><th class="py-1.5 px-2 text-right">Pool</th><th class="py-1.5 px-2 text-center">State</th><th class="py-1.5 px-2">Note</th><th class="py-1.5 px-2 text-right">Time</th></tr></thead>
+          <tbody id="mc-recon-body"><tr><td colspan="7" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="zion-panel p-4 flex flex-wrap items-center gap-3 text-xs">
       <span class="text-gray-500">Quick links:</span>
       <a href="https://zion.cz/warp" target="_blank" class="text-purple-400 hover:text-white">WARP Page ↗</a>

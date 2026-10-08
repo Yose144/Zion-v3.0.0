@@ -11813,6 +11813,195 @@ async function loadWarpSwapPanel(){
   }
 }
 
+// ── V31 Multichain — L2/WARP ops detail (/api/multichain/detail) ──────
+// Gates, BTC backend, swap pilot, HTLCs, pools, reconciliation, ledger.
+function _mcBadge(ok, warn){
+  const cls = ok ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+    : warn ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+    : 'text-red-400 border-red-500/30 bg-red-500/10';
+  return `px-1.5 py-0.5 rounded border text-[10px] font-semibold ${cls}`;
+}
+function _mcGateRow(label, ok, okText, badText, warn){
+  const txt = ok ? okText : badText;
+  return `<div class="flex items-center justify-between"><span class="text-gray-400">${label}</span><span class="${_mcBadge(ok, warn)}">${txt}</span></div>`;
+}
+function _mcFmt(raw, decimals){
+  if(raw === null || raw === undefined || raw === '') return '—';
+  try {
+    const v = Number(raw) / Math.pow(10, decimals || 0);
+    if(!isFinite(v)) return String(raw).slice(0, 18);
+    return v >= 1e6 ? v.toLocaleString('en-US', {maximumFractionDigits: 0})
+      : v.toLocaleString('en-US', {maximumFractionDigits: 6});
+  } catch(e){ return '—'; }
+}
+function _mcAssetDecimals(assetKey){
+  const t = (assetKey || '').split(':')[1] || '';
+  return {ZION: 6, BTC: 8}[t] !== undefined ? {ZION: 6, BTC: 8}[t] : 18;
+}
+function _mcAssetName(assetKey){
+  const p = (assetKey || '').split(':');
+  const contract = p[2] ? ` · ${p[2].slice(0, 6)}…${p[2].slice(-4)}` : '';
+  return `${p[0]}:${p[1] || ''}${contract}`;
+}
+
+async function loadMultichainDetail(){
+  let d;
+  try { d = await apiFetch('/api/multichain/detail'); } catch(e){ return; }
+  if(!d || !d.ok) return;
+  const g = d.gates || {};
+
+  // Pilot gates & safety
+  const gatesEl = document.getElementById('mc-gates-body');
+  if(gatesEl){
+    const rows = [
+      _mcGateRow('BTC swap enabled', g.btc_swap_enabled, 'LIVE', 'DISABLED', true),
+      _mcGateRow('Bitcoin network', g.bitcoin_network === 'bitcoin', escapeHtml(g.bitcoin_network || '—'), escapeHtml(g.bitcoin_network || '—')),
+      _mcGateRow('Relay key configured', g.relay_key_present, 'present', 'missing'),
+      g.relay_key_present ? _mcGateRow('Relay key matches network', g.relay_key_matches_network === true, 'match', g.relay_key_matches_network === false ? 'MISMATCH' : 'unknown') : '',
+      _mcGateRow('Offer key (signed quotes)', g.offer_key_present, 'present', 'missing'),
+      _mcGateRow('HTLC preimage key', g.preimage_key_present, 'present', 'missing'),
+      _mcGateRow('WARP write key', g.warp_write_key_present, 'present', 'unset → writes disabled', true),
+    ].filter(Boolean).join('');
+    const p = g.pilot || {};
+    gatesEl.innerHTML = rows + `
+      <div class="pt-2 mt-2 border-t border-white/10 text-[11px] text-gray-500">
+        Pilot bounds: rate <span class="text-gray-300 font-mono">${escapeHtml(String(p.zion_per_sat))}</span> ZION/sat
+        · <span class="font-mono">${escapeHtml(String(p.min_sats))}–${escapeHtml(String(p.max_sats))}</span> sats
+        · max <span class="font-mono">${escapeHtml(String(p.max_active))}</span> active
+      </div>`;
+    const hold = document.getElementById('mc-gates-hold');
+    if(hold){
+      const reasons = g.hold_reasons || [];
+      hold.textContent = reasons.length ? `Safety hold: ${reasons.join(' · ')}` : 'All gates green — pilot-ready';
+      hold.className = `mt-3 text-[11px] font-semibold ${reasons.length ? 'text-amber-400' : 'text-emerald-400'}`;
+    }
+  }
+
+  // Bitcoin backend
+  const btcEl = document.getElementById('mc-bitcoin-body');
+  if(btcEl){
+    const b = d.bitcoin || {};
+    if(!b.available){
+      btcEl.innerHTML = '<div class="text-gray-500 italic col-span-3">bitcoind RPC unavailable</div>';
+    } else {
+      const cell = (l, v, cls) => `<div><div class="text-[10px] text-gray-500">${l}</div><div class="font-mono text-sm ${cls || 'text-gray-200'}">${v}</div></div>`;
+      const ageS = b.block_time ? Math.max(0, Math.round(Date.now()/1000 - b.block_time)) : null;
+      btcEl.innerHTML = [
+        cell('Height', (b.blocks ?? '—').toLocaleString?.() ?? b.blocks),
+        cell('IBD', b.ibd ? 'yes' : 'no', b.ibd ? 'text-amber-400' : 'text-emerald-400'),
+        cell('Peers', b.connections ?? '—'),
+        cell('Pruned', b.pruned ? 'yes' : 'no'),
+        cell('Tip age', ageS !== null ? `${ageS}s` : '—', ageS !== null && ageS > 600 ? 'text-amber-400' : 'text-emerald-400'),
+        cell('warpwatch', b.watch_only ? 'watch-only' : (b.wallet ? 'has keys' : 'not loaded'), b.watch_only ? 'text-emerald-400' : 'text-amber-400'),
+      ].join('');
+    }
+  }
+
+  // BTC swap pilot
+  const swapEl = document.getElementById('mc-btcswap-body');
+  if(swapEl){
+    const s = d.btc_swap || {};
+    const badge = document.getElementById('mc-swap-badge');
+    if(badge) badge.innerHTML = `<span class="${_mcBadge(s.enabled, true)}">${s.enabled ? 'ENABLED' : 'SAFETY HOLD'}</span>`;
+    const swaps = s.swaps || [];
+    const m = s.metrics || {};
+    let html = `<div class="flex flex-wrap gap-4 text-gray-400">
+      <span>API: <span class="${d.api_alive ? 'text-emerald-400' : 'text-red-400'}">${d.api_alive ? 'online' : 'offline'}</span></span>
+      <span>Swaps: <span class="text-gray-200 font-mono">${swaps.length}</span></span>
+      ${Object.keys(m).filter(k => k !== 'enabled').map(k => `<span>${escapeHtml(k)}: <span class="text-gray-200 font-mono">${escapeHtml(String(m[k]))}</span></span>`).join('')}
+    </div>`;
+    if(swaps.length){
+      html += '<div class="overflow-x-auto mt-2"><table class="w-full text-left"><thead><tr class="text-gray-500 border-b border-white/10"><th class="py-1 px-2">Swap</th><th class="py-1 px-2">Direction</th><th class="py-1 px-2 text-right">Sats</th><th class="py-1 px-2">State</th></tr></thead><tbody>' +
+        swaps.slice(0, 8).map(x => `<tr class="border-b border-white/5"><td class="py-1.5 px-2 font-mono text-cyan-400">${escapeHtml((x.swap_id || x.id || '—').slice(0, 12))}…</td><td class="py-1.5 px-2">${escapeHtml(x.direction || '—')}</td><td class="py-1.5 px-2 text-right font-mono">${escapeHtml(String(x.btc_sats ?? x.sats ?? '—'))}</td><td class="py-1.5 px-2">${escapeHtml(x.state || x.status || '—')}</td></tr>`).join('') + '</tbody></table></div>';
+    } else {
+      html += '<div class="text-gray-500 italic">No swaps — pilot not activated (quote/offer endpoints fail-closed).</div>';
+    }
+    swapEl.innerHTML = html;
+  }
+
+  // HTLCs
+  const htlcBody = document.getElementById('mc-htlc-body');
+  if(htlcBody){
+    const h = d.htlcs || [];
+    const badge = document.getElementById('mc-htlc-badge');
+    if(badge) badge.textContent = `(${h.length})`;
+    htlcBody.innerHTML = h.length ? h.slice(0, 10).map(x => {
+      const exp = x.expires_at ? new Date(Number(x.expires_at) * 1000).toLocaleDateString() : '—';
+      return `<tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="py-1.5 px-2 font-mono text-cyan-400 text-[10px]">${escapeHtml((x.hash_hex || '').slice(0, 12))}…</td>
+        <td class="py-1.5 px-2 text-right font-mono">${_mcFmt(x.amount, 6)}</td>
+        <td class="py-1.5 px-2 font-mono text-[10px] text-gray-400">${escapeHtml(x.counterparty_chain || '')} ${escapeHtml((x.counterparty_addr || '').slice(0, 14))}…</td>
+        <td class="py-1.5 px-2 text-right text-gray-400">${exp}</td></tr>`;
+    }).join('') : '<tr><td colspan="4" class="py-4 text-gray-500 italic text-center">No pending HTLCs</td></tr>';
+  }
+
+  // Pools
+  const poolsBody = document.getElementById('mc-pools-body');
+  if(poolsBody){
+    const pools = d.pools || [];
+    const badge = document.getElementById('mc-pools-badge');
+    if(badge) badge.textContent = `(${pools.length})`;
+    poolsBody.innerHTML = pools.length ? pools.map(x => {
+      const a = x.asset_a || {}, b = x.asset_b || {};
+      const ta = (a.id || {}).ticker || '?', tb = (b.id || {}).ticker || '?';
+      const chain = `${(a.id || {}).chain || ''}/${(b.id || {}).chain || ''}`;
+      return `<tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="py-1.5 px-2"><span class="font-semibold text-white">${escapeHtml(ta)}/${escapeHtml(tb)}</span> <span class="text-[10px] text-gray-500">${escapeHtml(chain)}</span></td>
+        <td class="py-1.5 px-2 text-right font-mono">${_mcFmt(x.reserve_a, a.decimals)}</td>
+        <td class="py-1.5 px-2 text-right font-mono">${_mcFmt(x.reserve_b, b.decimals)}</td>
+        <td class="py-1.5 px-2 text-right text-gray-400">${x.fee_bps !== undefined ? (x.fee_bps/100) + '%' : '—'}</td>
+        <td class="py-1.5 px-2 font-mono text-[10px] text-gray-500">${x.amm_pair ? escapeHtml(x.amm_pair.slice(0, 10) + '…') : '—'}</td></tr>`;
+    }).join('') : '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No pools</td></tr>';
+  }
+
+  // Ledger activity
+  const actEl = document.getElementById('mc-activity-body');
+  if(actEl){
+    const a = d.activity || {};
+    const cnt = (o) => Object.entries(o || {}).map(([k, v]) => `${escapeHtml(k)}: <span class="text-gray-200 font-mono">${v}</span>`).join(' · ') || '—';
+    const rec = a.withdrawals_recent || [];
+    actEl.innerHTML = `
+      <div class="flex flex-wrap gap-4 text-gray-400">
+        <span>Deposits: ${cnt(a.deposits)}</span>
+        <span>Withdrawals: ${cnt(a.withdrawals)}</span>
+        <span>HTLC states: ${cnt(a.htlc_states)}</span>
+      </div>
+      ${rec.length ? '<div class="pt-2 mt-1 border-t border-white/10"><div class="text-[10px] text-gray-500 mb-1">Recent withdrawals</div>' +
+        rec.map(w => `<div class="flex justify-between py-0.5 border-b border-white/5">
+          <span class="font-mono text-gray-300">${escapeHtml(w.asset || '—')}</span>
+          <span class="font-mono">${escapeHtml(String(w.amount))}</span>
+          <span class="${w.status === 'sent' ? 'text-emerald-400' : w.status === 'failed' ? 'text-red-400' : 'text-amber-400'}">${escapeHtml(w.status || '—')}</span>
+          <span class="text-gray-500 text-[10px]">${escapeHtml(w.ts || '')}</span>
+        </div>`).join('') + '</div>' : ''}`;
+  }
+
+  // Reconciliation
+  const reconBody = document.getElementById('mc-recon-body');
+  if(reconBody){
+    const r = d.reconciliation || {};
+    const badge = document.getElementById('mc-recon-badge');
+    const alerts = r.alerts_24h ?? 0;
+    if(badge) badge.innerHTML = `<span class="${_mcBadge(alerts === 0)}">${alerts} alerts / 24h</span>`;
+    const rows = r.rows || [];
+    const excl = new Set(r.excluded || []);
+    reconBody.innerHTML = rows.length ? rows.map(x => {
+      const dec = _mcAssetDecimals(x.asset);
+      const excluded = excl.has(x.asset) || excl.has(x.asset.split(':').slice(0, 2).join(':'));
+      const state = x.alert ? '<span class="text-red-400 font-semibold">ALERT</span>'
+        : excluded ? '<span class="text-gray-500">excluded</span>'
+        : '<span class="text-emerald-400">ok</span>';
+      return `<tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="py-1.5 px-2 font-mono text-[10px] text-gray-300">${escapeHtml(_mcAssetName(x.asset))}</td>
+        <td class="py-1.5 px-2 text-right font-mono">${_mcFmt(x.on_chain, dec)}</td>
+        <td class="py-1.5 px-2 text-right font-mono">${_mcFmt(x.internal, dec)}</td>
+        <td class="py-1.5 px-2 text-right font-mono">${_mcFmt(x.pool, dec)}</td>
+        <td class="py-1.5 px-2 text-center">${state}</td>
+        <td class="py-1.5 px-2 text-[10px] text-gray-500 max-w-[220px] truncate" title="${escapeHtml(x.note)}">${escapeHtml(x.note || '—')}</td>
+        <td class="py-1.5 px-2 text-right text-gray-500 text-[10px]">${escapeHtml((x.ts || '').slice(5, 16))}</td></tr>`;
+    }).join('') : '<tr><td colspan="7" class="py-4 text-gray-500 italic text-center">No reconciliation reports</td></tr>';
+  }
+}
+
 // ── V31 Multichain Panel ─────────────────────────────────────────────
 async function loadMultichainPanel(){
   try {
@@ -11870,6 +12059,7 @@ async function loadMultichainPanel(){
   } catch(e){
     console.error('Multichain panel load failed:', e);
   }
+  loadMultichainDetail();
 }
 
 async function loadAiAgentsPanel(){
