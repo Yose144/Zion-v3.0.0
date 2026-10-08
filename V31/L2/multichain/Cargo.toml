@@ -49,6 +49,7 @@ ripemd = "0.1.3"
 
 # Quantus (Substrate/Planck) — ML-DSA-87 signing + poseidon2 account derivation
 qp-rusty-crystals-dilithium = "3.0.1"
+qp-rusty-crystals-hdwallet = "4.1.1"
 qp-poseidon-core = { workspace = true }
 
 [dev-dependencies]
