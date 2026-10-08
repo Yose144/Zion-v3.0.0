@@ -454,9 +454,25 @@ fn handle_new_job(bridge: &MultiAuxPowBridge, req: &MiningRequest, share_diff: u
         tracing::warn!("qtc_native: bad mining_hash in job {}", req.job_id);
         return;
     };
-    let Some(net_target) = dec_to_be64(&req.difficulty) else {
+    // `MiningRequest.difficulty` is the *difficulty* (expected hashes per
+    // block), not the target: qpow_math::is_valid_nonce computes
+    // `target = U512::MAX / difficulty` and accepts hash < target.
+    let Some(net_diff) = BigUint::parse_bytes(req.difficulty.as_bytes(), 10) else {
         tracing::warn!("qtc_native: bad difficulty in job {}", req.job_id);
         return;
+    };
+    if net_diff == BigUint::from(0u8) {
+        tracing::warn!("qtc_native: zero difficulty in job {}", req.job_id);
+        return;
+    }
+    let net_target = {
+        let max = BigUint::from_bytes_be(&[0xFFu8; 64]);
+        let t = max / net_diff;
+        let bytes = t.to_bytes_be();
+        let mut out = [0u8; 64];
+        out[64 - bytes.len().min(64)..]
+            .copy_from_slice(&bytes[..bytes.len().min(64)]);
+        out
     };
     let share_target = share_target_from_diff(share_diff);
     let external_job_id = format!("{NATIVE_JOB_PREFIX}{}", req.job_id);
