@@ -68,10 +68,10 @@ export default function Planet({
   useEffect(() => {
     if (variant !== 'earth') return;
     const loader = new THREE.TextureLoader();
-    loader.load('/textures/earth-blue-marble.jpg', (color) => {
+    loader.load('/textures/earth-blue-marble.webp', (color) => {
       color.colorSpace = THREE.SRGBColorSpace;
-      loader.load('/textures/earth-topology.png', (bump) => {
-        loader.load('/textures/earth-dark.jpg', (night) => {
+      loader.load('/textures/earth-topology.webp', (bump) => {
+        loader.load('/textures/earth-dark.webp', (night) => {
           night.colorSpace = THREE.SRGBColorSpace;
           setTextures({ color, bump, night });
         });
