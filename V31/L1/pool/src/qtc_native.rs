@@ -238,6 +238,7 @@ pub struct NativeQtcState {
     jobs: std::collections::VecDeque<JobPackage>,
     ctx: HashMap<String, NativeJobCtx>,
     result_tx: Option<mpsc::UnboundedSender<MiningResult>>,
+    connected: bool,
 }
 
 impl Default for NativeQtcState {
@@ -249,6 +250,7 @@ impl Default for NativeQtcState {
             jobs: std::collections::VecDeque::new(),
             ctx: HashMap::new(),
             result_tx: None,
+            connected: false,
         }
     }
 }
@@ -299,6 +301,24 @@ impl NativeQtcState {
 
     pub fn job_ctx(&self, job_id: &str) -> Option<NativeJobCtx> {
         self.ctx.get(job_id).cloned()
+    }
+
+    /// Set by the QUIC task on connect/disconnect — dashboard signal only.
+    pub fn set_connected(&mut self, v: bool) {
+        self.connected = v;
+    }
+
+    /// `(enabled, connected, share_pct, latest_job_id, latest_job_age_ms)` —
+    /// condensed status for `/stats`/`auxpow` coin_details.
+    pub fn status(&self) -> (bool, bool, u8, Option<String>, Option<u64>) {
+        let (job_id, age_ms) = match self.jobs.back() {
+            Some(j) => (
+                Some(j.external_job_id.clone()),
+                j.received_at.map(|t| t.elapsed().as_millis() as u64),
+            ),
+            None => (None, None),
+        };
+        (self.enabled, self.connected, self.share_pct, job_id, age_ms)
     }
 
     pub fn job_by_id(&self, job_id: &str) -> Option<JobPackage> {
@@ -387,6 +407,7 @@ async fn run(
             Ok(()) => tracing::warn!("qtc_native: connection ended — reconnecting"),
             Err(e) => tracing::warn!("qtc_native: {e} — reconnecting in {backoff:?}"),
         }
+        bridge.set_native_connected(false);
         tokio::time::sleep(backoff).await;
         backoff = (backoff * 2).min(MAX_BACKOFF);
     }
@@ -407,6 +428,7 @@ async fn run_connection(
     )
     .await?;
     tracing::info!("qtc_native: connected to {}", cfg.node_addr);
+    bridge.set_native_connected(true);
 
     loop {
         tokio::select! {

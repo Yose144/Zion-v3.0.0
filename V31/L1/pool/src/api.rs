@@ -10,6 +10,7 @@ use tracing::{error, info};
 
 use crate::auxpow_bridge::MultiAuxPowBridge;
 use crate::pool::Pool;
+use zion_cosmic_harmony::ExternalCoin;
 use crate::store::ShareStore;
 use crate::telemetry::now_unix_seconds;
 
@@ -492,7 +493,7 @@ impl PoolApi {
                             }
                             None => (None, None),
                         };
-                        json!({
+                        let mut entry = json!({
                             "ticker": c.as_str(),
                             "algorithm": c.algorithm(),
                             "device": if bridge.is_cpu_coin(c) { "cpu" } else { "gpu" },
@@ -500,7 +501,21 @@ impl PoolApi {
                             "job_id": job_id,
                             "job_age_ms": job_age_ms,
                             "job_fresh": job_age_ms.map(|a| a < 120_000).unwrap_or(false),
-                        })
+                        });
+                        // Hybrid native leg: expose connect status, configured
+                        // split and the freshest node-sourced job for QTU.
+                        if *c == ExternalCoin::Quantus {
+                            let (enabled, connected, pct, njid, nage) =
+                                bridge.native_status();
+                            entry["native"] = json!({
+                                "enabled": enabled,
+                                "connected": connected,
+                                "share_pct": pct,
+                                "job_id": njid,
+                                "job_age_ms": nage,
+                            });
+                        }
+                        entry
                     })
                     .collect();
                 json!({
@@ -1267,6 +1282,36 @@ mod tests {
         // 10-minute-old job is stale → not fresh
         assert_eq!(vrsc["job_fresh"], false);
         assert_eq!(vrsc["job_id"], "vrsc-job-1");
+        // native block is QTU-only
+        assert!(vrsc.get("native").is_none());
+
+        // QTU exposes the native-leg status even when not configured
+        assert_eq!(qtu["native"]["enabled"], false);
+        assert_eq!(qtu["native"]["connected"], false);
+        assert_eq!(qtu["native"]["share_pct"], 0);
+    }
+
+    #[test]
+    fn auxpow_summary_qtu_native_status() {
+        use zion_cosmic_harmony::ExternalCoin;
+
+        let bridge = crate::auxpow_bridge::MultiAuxPowBridge::new();
+        let (gpu_bridge, _rx) = crate::auxpow_bridge::AuxPowBridge::new(true);
+        bridge.insert(ExternalCoin::Quantus, gpu_bridge);
+
+        // Configure native leg at 25% and mark the QUIC link as connected.
+        let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
+        bridge.configure_native(tx, 25);
+        bridge.set_native_connected(true);
+
+        let api = PoolApi::new(test_pool(), None, Some(bridge));
+        let v = api.auxpow_summary_json();
+        let qtu = &v["coin_details"][0];
+
+        assert_eq!(qtu["native"]["enabled"], true);
+        assert_eq!(qtu["native"]["connected"], true);
+        assert_eq!(qtu["native"]["share_pct"], 25);
+        assert_eq!(qtu["native"]["job_id"], serde_json::Value::Null);
     }
 
     #[test]

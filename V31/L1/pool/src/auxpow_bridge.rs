@@ -227,6 +227,23 @@ impl MultiAuxPowBridge {
             .job_ctx(job_id)
     }
 
+    /// Set by the QUIC task on connect/disconnect — dashboard signal only.
+    pub fn set_native_connected(&self, v: bool) {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .set_connected(v);
+    }
+
+    /// `(enabled, connected, share_pct, latest_job_id, latest_job_age_ms)` —
+    /// condensed native-leg status for stats/dashboard endpoints.
+    pub fn native_status(&self) -> (bool, bool, u8, Option<String>, Option<u64>) {
+        self.native
+            .lock()
+            .expect("native lock poisoned")
+            .status()
+    }
+
     /// Validate + account a share submitted against a native job.
     fn native_submit_share(&self, req: &ShareForwardRequest) -> ShareForwardOutcome {
         let nonce_hex = req.nonce_hex.as_deref().unwrap_or("");
