@@ -25,6 +25,10 @@ use crate::wallet::Keyring;
 // ---------------------------------------------------------------------------
 
 pub const QUANTUS_SS58_PREFIX: u16 = 189;
+
+/// FIPS 204 ML-DSA context string Quantus requires on all extrinsic
+/// signatures (chain repo `primitives/dilithium-crypto/src/signing_context.rs`).
+pub const QUANTUS_EXTRINSIC_CTX: &[u8] = b"QUANTUS_EXTRINSIC";
 /// Public Quantus mainnet RPC (our Edge node, Safe methods) — plain HTTPS JSON-RPC (no WS needed).
 pub const DEFAULT_RPC_URL: &str = "https://rpc.zionterranova.com/qtc";
 /// `Balances` pallet index on Quantus runtime (V14 metadata spec153).
@@ -177,9 +181,10 @@ fn compact_decode(b: &[u8]) -> MultichainResult<(u128, usize)> {
 }
 
 /// Mortal era encoding (period 64, anchored at `current` block).
+/// Mirrors `sp_runtime::generic::Era::mortal` — quantize_factor = period>>12.
 fn mortal_era(period: u64, current: u64) -> [u8; 2] {
     let period = period.max(4).next_power_of_two();
-    let quantize = (period / 16).max(1);
+    let quantize = (period >> 12).max(1);
     let phase = (current % period) / quantize * quantize;
     let encoded = ((period.trailing_zeros() as u16 - 1) | ((phase / quantize) as u16) << 4)
         .min(0xffff);
@@ -224,9 +229,14 @@ impl QuantusKeypair {
     }
 
     /// Sign payload. Returns the 4627-byte ML-DSA-87 signature.
+    ///
+    /// Quantus domain-separates all extrinsic signatures with the FIPS 204
+    /// context string `QUANTUS_EXTRINSIC` (chain repo:
+    /// primitives/dilithium-crypto/src/signing_context.rs). Signing with an
+    /// empty context produces signatures the runtime rejects as invalid.
     pub fn sign(&self, payload: &[u8]) -> MultichainResult<Vec<u8>> {
         self.inner
-            .sign(payload, None, None)
+            .sign(payload, Some(QUANTUS_EXTRINSIC_CTX), None)
             .map(|s| s.as_ref().to_vec())
             .map_err(|e| MultichainError::Internal(format!("dilithium sign: {e}")))
     }
@@ -289,11 +299,11 @@ impl QuantusAdapter {
         let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
-        let (spec, txv, genesis, fin_hash, fin_height) =
+        let (spec, txv, genesis, anchor_hash, anchor_height) =
             self.signing_context().await?;
         let ext = Self::build_transfer_extrinsic(
-            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &fin_hash,
-            fin_height,
+            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &anchor_hash,
+            anchor_height,
         )?;
         let ext_hex = format!("0x{}", hex::encode(&ext));
         let info: serde_json::Value = self
@@ -331,9 +341,11 @@ impl QuantusAdapter {
         let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
-        let (spec, txv, genesis, fin_hash, fin_height) = self.signing_context().await?;
+        let (spec, txv, genesis, anchor_hash, anchor_height) =
+            self.signing_context().await?;
         let ext = Self::build_transfer_extrinsic(
-            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &fin_hash, fin_height,
+            &keypair, &dest32, amount, nonce, spec, txv, &genesis, &anchor_hash,
+            anchor_height,
         )?;
         let ext_hex = format!("0x{}", hex::encode(&ext));
         let tx_hash: String = self
@@ -436,8 +448,8 @@ impl QuantusAdapter {
         Some((nonce, free))
     }
 
-    /// Fetch (spec_version, tx_version, genesis_hash, finalized_head_hash,
-    /// finalized_height) needed for a mortal extrinsic.
+    /// Fetch (spec_version, tx_version, genesis_hash, best_head_hash,
+    /// best_height) needed for a mortal extrinsic.
     async fn signing_context(&self) -> MultichainResult<(u32, u32, [u8; 32], [u8; 32], u64)> {
         let rv: serde_json::Value = self.rpc("state_getRuntimeVersion", json!([])).await?;
         let spec = rv["specVersion"].as_u64().unwrap_or(0) as u32;
@@ -448,16 +460,21 @@ impl QuantusAdapter {
             .ok_or_else(|| MultichainError::Internal("no genesis hash".into()))?;
         let genesis = decode_hex32(&genesis_hex)?;
 
-        let fin_hex: Option<String> = self.rpc("chain_getFinalizedHead", json!([])).await?;
-        let fin_hex = fin_hex.ok_or_else(|| MultichainError::Internal("no finalized".into()))?;
-        let fin_hash = decode_hex32(&fin_hex)?;
-
-        let hdr: serde_json::Value = self
-            .rpc("chain_getHeader", json!([fin_hex]))
-            .await?;
+        // Anchor the mortal era at the BEST head, not finalized: the runtime
+        // derives `checkpoint = block_hash(era.birth(current))` at validation
+        // time, and on Quantus mainnet finalized lags the tip by >64 blocks —
+        // anchoring at finalized head makes `era.birth(current)` advance past
+        // the anchor → checkpoint mismatch → "Transaction has a bad signature".
+        let hdr: serde_json::Value = self.rpc("chain_getHeader", json!([])).await?;
         let height = parse_block_number(&hdr)?;
+        let anchor_hex: Option<String> = self
+            .rpc("chain_getBlockHash", json!([height]))
+            .await?;
+        let anchor_hex = anchor_hex
+            .ok_or_else(|| MultichainError::Internal("no best-block hash".into()))?;
+        let anchor_hash = decode_hex32(&anchor_hex)?;
 
-        Ok((spec, txv, genesis, fin_hash, height))
+        Ok((spec, txv, genesis, anchor_hash, height))
     }
 
     /// nonce for an account via `system_accountNextIndex`.
@@ -796,10 +813,12 @@ impl ChainAdapter for QuantusAdapter {
         let keypair = self.signer()?;
         let sender_acct = keypair.account_id();
         let nonce = self.account_nonce(&sender_acct).await?;
-        let (spec, txv, genesis, fin_hash, fin_height) = self.signing_context().await?;
+        let (spec, txv, genesis, anchor_hash, anchor_height) =
+            self.signing_context().await?;
 
         let ext = Self::build_transfer_extrinsic(
-            &keypair, &dest32, amount.0, nonce, spec, txv, &genesis, &fin_hash, fin_height,
+            &keypair, &dest32, amount.0, nonce, spec, txv, &genesis, &anchor_hash,
+            anchor_height,
         )?;
         let ext_hex = format!("0x{}", hex::encode(&ext));
         let tx_hash: String = self
@@ -1073,5 +1092,52 @@ mod tests {
             "deposit scan did not find the sent transfer"
         );
         eprintln!("deposit scan found {} event(s)", events.len());
+    }
+
+    #[test]
+    fn extrinsic_sig_self_verifies() {
+        // Offline wire-level check: build the exact extrinsic bytes the node
+        // receives, then verify the embedded Dilithium87 signature under the
+        // QUANTUS_EXTRINSIC ctx against the reconstructed signer payload.
+        let kp = QuantusKeypair::from_seed([7u8; 32]);
+        let dest = [0xAAu8; 32];
+        let genesis = [0x11u8; 32];
+        let checkpoint = [0x22u8; 32];
+        let ext = QuantusAdapter::build_transfer_extrinsic(
+            &kp, &dest, 5_000_000_000_000, 0, 153, 6, &genesis, &checkpoint, 10940,
+        )
+        .unwrap();
+
+        // body = 0x84 | 0x00 | acct32 | 0x00 | sig(4627) | pub(2592) | extra | call
+        // `ext` is compact-length-prefixed: first byte 0x0D means 2-byte compact.
+        let body = &ext[2..];
+        assert_eq!(body[0], 0x84);
+        let sig_bytes = &body[35..35 + 4627];
+        let pub_bytes = &body[35 + 4627..35 + 7219];
+        assert_eq!(pub_bytes, kp.public_key().as_slice());
+        let extra = &body[35 + 7219..35 + 7219 + 5];
+        let call = &body[35 + 7219 + 5..];
+
+        let mut payload = Vec::new();
+        payload.extend_from_slice(call);
+        payload.extend_from_slice(extra);
+        payload.extend_from_slice(&153u32.to_le_bytes());
+        payload.extend_from_slice(&6u32.to_le_bytes());
+        payload.extend_from_slice(&genesis);
+        payload.extend_from_slice(&checkpoint);
+        payload.push(0x00);
+        let msg: &[u8] = if payload.len() > 256 {
+            &blake2_256(&payload)
+        } else {
+            &payload
+        };
+
+        let pub_arr: [u8; 2592] = pub_bytes.try_into().unwrap();
+        let pk = qp_rusty_crystals_dilithium::ml_dsa_87::PublicKey::from_bytes(&pub_arr)
+            .unwrap();
+        assert!(
+            pk.verify(msg, sig_bytes, Some(QUANTUS_EXTRINSIC_CTX)),
+            "self-built extrinsic signature does not verify under QUANTUS_EXTRINSIC ctx"
+        );
     }
 }
