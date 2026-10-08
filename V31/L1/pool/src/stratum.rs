@@ -878,6 +878,14 @@ impl StratumServer {
             }
         }
         for coin in &order {
+            // Hybrid native Quantus leg: when enabled, a share of broadcasts
+            // is served from our own quantus-node job queue (fresh jobs
+            // only — stale native automatically falls back to upstream).
+            if *coin == ExternalCoin::Quantus {
+                if let Some(job) = self.multi_bridge.native_pick_job() {
+                    return Some(Self::job_to_ext_stream(coin, &job));
+                }
+            }
             if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
                 if !Self::job_is_fresh(&job) {
                     tracing::debug!(
@@ -2074,6 +2082,7 @@ impl StratumServer {
                                     coin_enum.as_ref().and_then(|c| self.multi_bridge.latest_job_for_coin(c))
                                 } else {
                                     coin_enum.as_ref().and_then(|c| self.multi_bridge.job_for_coin_and_id(c, &external_job_id))
+                                        .or_else(|| self.multi_bridge.native_job_by_id(&external_job_id))
                                 };
 
                                 let bridge_result = match job_pkg_opt {

@@ -23,6 +23,7 @@ use zion_pool::deferred_payout::{
 use zion_pool::ncl_gateway::{NclGatewayClient, NclHeartbeatConfig, NclPricing};
 use zion_pool::notifications::{NotificationsConfig, Notifier};
 use zion_pool::payout::PayoutSweeper;
+use zion_pool::qtc_native;
 use zion_pool::revenue_scheduler::RevenueScheduler;
 use zion_pool::share_relay::ShareRelayConfig;
 use zion_pool::telemetry::MinerTelemetryRegistry;
@@ -231,6 +232,12 @@ async fn main() -> anyhow::Result<()> {
         auxpow_runtime::spawn_auxpow_runtime(multi_bridge.clone(), auxpow_cfg.clone());
     } else {
         info!("auxpow_runtime: disabled (no coins configured)");
+    }
+
+    // ── Native Quantus leg (own quantus-node via QUIC miner protocol) ────
+    // Enabled only via QTC_NATIVE_* env — see qtc_native.rs.
+    if qtc_native::maybe_spawn(&multi_bridge).is_some() {
+        info!("qtc_native: native Quantus source enabled");
     }
 
     // Wire the bridge into the stratum server for triple-stream mining
