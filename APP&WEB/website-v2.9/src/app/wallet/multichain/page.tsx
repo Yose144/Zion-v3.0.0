@@ -24,7 +24,14 @@ import {
   Layers,
   Shield,
   Globe2,
+  KeyRound,
 } from 'lucide-react';
+import {
+  deriveNativeBundle,
+  fetchNativeBalances,
+  linkAllToZis,
+  type NativeBundle,
+} from '@/lib/native-multichain';
 
 const CopyText = {
   title: { cs: `Multichain Wallet`, en: `Multichain Wallet` },
@@ -67,16 +74,182 @@ const CopyText = {
   txHash: { cs: `TX hash`, en: `TX hash` },
   deriveSuccess: { cs: `Adresa vygenerována`, en: `Address generated` },
   error: { cs: `Chyba`, en: `Error` },
+  native: { cs: `Nativní`, en: `Native` },
+  nativeDesc: {
+    cs: `Nativní (non-custodial) adresy odvozené z tvé ZION fráze — klíče nikdy neopustí prohlížeč.`,
+    en: `Native (non-custodial) addresses derived from your ZION phrase — keys never leave the browser.`,
+  },
+  nativeMnemonicLabel: { cs: `ZION mnemonic fráze`, en: `ZION mnemonic phrase` },
+  nativeDerive: { cs: `Odvodit adresy`, en: `Derive addresses` },
+  nativeLinkZis: { cs: `Propojit se ZIS účtem`, en: `Link to ZIS account` },
+  nativeQtcNote: {
+    cs: `QTC (ML-DSA-87) se odvozuje jen v desktop agentovi — klíče nelze generovat v prohlížeči.`,
+    en: `QTC (ML-DSA-87) derivation is desktop-agent only — keys cannot be generated in the browser.`,
+  },
+  nativeLinked: { cs: `Propojeno`, en: `Linked` },
+  nativeLinkResults: { cs: `Výsledky propojení`, en: `Link results` },
 };
 
-type Tab = 'overview' | 'deposits' | 'withdrawals' | 'orders';
+type Tab = 'overview' | 'deposits' | 'withdrawals' | 'orders' | 'native';
 
 const TABS: { key: Tab; labelCs: string; labelEn: string; icon: typeof Activity }[] = [
   { key: 'overview', labelCs: 'Přehled', labelEn: 'Overview', icon: Shield },
   { key: 'deposits', labelCs: 'Vklady', labelEn: 'Deposits', icon: Download },
   { key: 'withdrawals', labelCs: 'Výběry', labelEn: 'Withdrawals', icon: Send },
   { key: 'orders', labelCs: 'Objednávky', labelEn: 'Orders', icon: ArrowRightLeft },
+  { key: 'native', labelCs: 'Nativní', labelEn: 'Native', icon: KeyRound },
 ];
+
+/** Native (non-custodial) multichain panel — derives keys locally from the
+ *  user's ZION mnemonic. The phrase lives only in React state. */
+function NativeSection({ cs }: { cs: boolean }) {
+  const [mnemonic, setMnemonic] = useState('');
+  const [bundle, setBundle] = useState<NativeBundle | null>(null);
+  const [balances, setBalances] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [linkResults, setLinkResults] = useState<Record<string, { ok: boolean; error?: string; conflict?: boolean }> | null>(null);
+  const [status, setStatus] = useState('');
+  const t = (k: keyof typeof CopyText) => (cs ? CopyText[k].cs : CopyText[k].en);
+
+  const rows: { key: string; label: string; entry: { address: string; standard: string } | null }[] = bundle
+    ? [
+        { key: 'zion', label: 'ZION', entry: bundle.zion },
+        { key: 'evm', label: 'EVM', entry: bundle.evm },
+        { key: 'bitcoin', label: 'BTC', entry: bundle.bitcoin },
+        { key: 'solana', label: 'SOL', entry: bundle.solana },
+        { key: 'quantus', label: 'QTC', entry: bundle.quantus },
+      ]
+    : [];
+
+  const doDerive = useCallback(async () => {
+    if (!mnemonic.trim()) return;
+    setBusy(true);
+    setStatus('');
+    setLinkResults(null);
+    try {
+      const b = await deriveNativeBundle(mnemonic);
+      setBundle(b);
+      const bal = await fetchNativeBalances(b);
+      setBalances(bal);
+      setStatus('');
+    } catch (e: any) {
+      setStatus(e?.message || 'derivation failed');
+    } finally {
+      setBusy(false);
+    }
+  }, [mnemonic]);
+
+  const doLink = useCallback(async () => {
+    if (!bundle) return;
+    setBusy(true);
+    try {
+      const r = await linkAllToZis(bundle);
+      setLinkResults(r);
+    } catch (e: any) {
+      setStatus(e?.message || 'link failed');
+    } finally {
+      setBusy(false);
+    }
+  }, [bundle]);
+
+  return (
+    <div>
+      <p className="text-sm text-gray-400 mb-4">{t('nativeDesc')}</p>
+
+      {!bundle && (
+        <div className="space-y-3">
+          <label className="block text-xs uppercase tracking-wider text-gray-500">
+            {t('nativeMnemonicLabel')}
+          </label>
+          <textarea
+            value={mnemonic}
+            onChange={(e) => setMnemonic(e.target.value)}
+            rows={2}
+            spellCheck={false}
+            autoComplete="off"
+            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white focus:border-zion-cyan/50 focus:outline-none"
+            placeholder="word1 word2 word3 …"
+          />
+          <button
+            onClick={doDerive}
+            disabled={busy || !mnemonic.trim()}
+            className="zion-button-primary inline-flex items-center gap-2 text-sm disabled:opacity-40"
+          >
+            <KeyRound className="h-4 w-4" />
+            {busy ? '…' : t('nativeDerive')}
+          </button>
+        </div>
+      )}
+
+      {bundle && (
+        <div className="space-y-4">
+          <ul className="space-y-2">
+            {rows.map(({ key, label, entry }) => (
+              <li key={key} className="zion-rainbow-sub p-3">
+                {entry ? (
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <p className="text-xs font-semibold text-zion-cyan">{label}</p>
+                      <p className="text-xs font-mono text-gray-300 break-all">{entry.address}</p>
+                      <p className="text-[10px] text-gray-500">{entry.standard}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono text-white">{balances[key] ?? '—'}</p>
+                      <button
+                        onClick={() => navigator.clipboard?.writeText(entry.address)}
+                        className="text-gray-400 hover:text-white transition-colors"
+                        aria-label={`Copy ${label} address`}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500">{label}: {t('nativeQtcNote')}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={doLink}
+              disabled={busy}
+              className="zion-button-primary inline-flex items-center gap-2 text-sm disabled:opacity-40"
+            >
+              <Shield className="h-4 w-4" />
+              {busy ? '…' : t('nativeLinkZis')}
+            </button>
+            <button
+              onClick={() => { setBundle(null); setMnemonic(''); setBalances({}); setLinkResults(null); }}
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+
+          {linkResults && (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">{t('nativeLinkResults')}</p>
+              <ul className="space-y-1">
+                {Object.entries(linkResults).map(([chain, r]) => (
+                  <li key={chain} className="text-xs font-mono">
+                    <span className="text-gray-400">{chain}</span>
+                    <span className={r.ok ? 'text-emerald-400' : r.conflict ? 'text-amber-400' : 'text-red-400'}>
+                      {' → '}{r.ok ? t('nativeLinked') : r.conflict ? 'conflict' : r.error}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {status && <p className="mt-3 text-sm text-red-400">{status}</p>}
+    </div>
+  );
+}
 
 function StatCard({
   icon,
@@ -561,6 +734,8 @@ export default function MultichainWalletPage() {
                 )}
               </>
             )}
+
+            {tab === 'native' && <NativeSection cs={cs} />}
 
             {tab === 'orders' && (
               <>
