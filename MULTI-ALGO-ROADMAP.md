@@ -229,3 +229,15 @@ Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_p
 **Live EVR E2E (2026-10-08):** test miner se `ZION_STREAM2_FORCE_COIN=EVR` (`e2e-evr-test@g=zion`) → pool session dostala EVR joby (`job_fresh:true`), miner hashoval gpu-external stream **3.94 MH/s po celých 5 min** a současně produkoval ZION shares + **ZION block h=74099**. EVR accepted share za oknem nepadl — statistika (4 MH/s vs zpool share-diff), ne defekt: chain bridge→routing→miner stream ověřen end-to-end, submit path je stejný kód jako QTU/ZANO/VRSC (denně Accepted).
 
 **Zbývá:** první accepted share na nových zpool coinech (probabilistické — bridgy jedou, joby fresh, EVR stream reálně hashoval; zpool `c=BTC` kredit potvrdit až po prvním acceptu), repackage desktop-agent app, VRAM-blocked algos (beze změny).
+
+### Yiimp coinbase-family pipeline — PRVNÍ ZPOOL ACCEPT (2026-10-09, `5407671cd`,`9b71acca0`)
+
+Diagnostika KRX `Invalid nonce size` odhalila **tři vrstvy defektů pro všechny yiimp coinbase coiny** (KRX/PHX/RTM/ZCL-adjacent) — všechny opraveny + live ověřeny:
+
+1. **Nonce width** (`submit_share` + `build_submit_params`): generic stratum posílal `0x{:016x}` (18 chars) → yiimp chce 4-byte nonce jako 8 hex. Nový algo-dispatch: `kheavyhash`→3-param KaspaStratum, wide-nonce rodina (kawpow/progpow/ethash)→16hex+mix, coinbase rodina→`{:08x}`. Test `build_submit_params_yiimp_nonce_width` (keryxhash 8hex / kaspa 3-param / meowpow 16hex+mix).
+2. **extranonce2 size**: forward posílal `"00"` místo `extranonce2_size` nul (zpool=4 → `"00000000"`) → další `invalid nonce2 size` vrstva.
+3. **Reálný 80B header + share target**: 9-param yiimp notify dřív forwardoval jen `prevhash` jako "header" + `target_hex=nbits` string (miner parse fail → max target → každý hash "platný"). Teď: coinb1‖en1‖en2‖coinb2 → sha256d merkle fold → version‖prev‖merkle‖ntime‖nbits‖nonce(0) jako mining template, `target_hex` = `set_target`/`set_difficulty`-derived share target, `ntime`/`extranonce2` naplněné na jobu.
+
+**Live důkaz E2E (Edge `9b71acca0`):** RTM ghostrider CPU stream → `share forwarded job=3c2ed nonce=55000436 result=Result(Accepted)` — **první accepted share na zpool coinu vůbec**. KRX přešlo z `Invalid nonce size` na `Invalid share` (formát OK; hash-kompozice neshoda — zpool KRX je coinbase-chain, náš `hash_keryxhash` je kaspa-layout (pre_pow_hash+ts+nonce+daa) → upstream layout vyžaduje referenční miner/spec, coin je prozatím `blocked: upstream-hash-layout`).
+
+**Zbývající residue:** RTM accept rate ~1/12 — per-job variance ukazuje na stage-selection/prevhash-endianita detail v ghostrider kompozici (FFI je consensus-verified vůči GPU KAT, ne nutně vůči chain pro všechny headery); další krok = diff našeho hash vs referenční cpuminer share na stejném jobu. PHX neoscrypt = kernel-variant (N=32) ≠ mainline → samostatný consensus port.
