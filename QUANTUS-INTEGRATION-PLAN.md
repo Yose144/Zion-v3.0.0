@@ -55,7 +55,8 @@ navrhnout upstream (HTLC pallet) nebo přes wormhole-burn směr QTC→ZION.
 
 - **Mining:** `ExternalCoin::Quantus` na Trinity Stream 2 — CPU fast-path,
   OpenCL kernel, CUDA kernel (vše KAT-ověřené vs `qp-poseidon-core 3.1.0`);
-  pool bridgy na k1pool/qelvhash/suprnova LIVE (`job_fresh`).
+  upstream = **suprnova** (`quantus.suprnova.cc:7071`, 2026-10-09 přepnuto
+  z k1pool — viz F8 ops note).
 - **Pool:** 10 AuxPoW bridgů vč. QTU, per-session coin routing
   (`CoinPreference`), `coin_details` v public API, profit-switch katalog 33.
 - **Desktop agent:** one-click algo/coin switching, QTU v selectech,
@@ -497,14 +498,34 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
         bloky jdou ~5–20s ⇒ implikovaný network hashrate **~5×10¹³ H/s
         (~50 TH/s)** — náš ~40–73 MH/s je ~7–8 řádů pod ⇒ **native
         leg = čistá loterie** (odhad ~100–360 dní/blok při současném
-        hashrate). Upstream k1pool zůstává povinný earnings floor;
+        hashrate). Upstream pool zůstává povinný earnings floor;
         `QTC_NATIVE_SHARE_PCT` držet nízké (1–5 %) jako lottery +
         protokolová validace, ne jako výdělečná cesta.
       - **Změřeno live (2026-10-08, 3min okno):** 12.0 s/blok, 7195
         bloků/den ⇒ network ~5.18e13 H/s (**~52 TH/s**). Očekávaný
         výnos native legu: 30 MH/s → **~240 dní/blok**, 73 MH/s →
-        **~99 dní/blok**. Potvrzuje: pct zůstává 5, k1pool floor
+        **~99 dní/blok**. Potvrzuje: pct zůstává 5, upstream floor
         povinný — nativní = lottery + protokolová připravenost.
+      - **Upstream přepnut k1pool → suprnova (2026-10-09):** kandidáti
+        pro „vyplácí hned" otestováni live login probem (všechny mluví
+        stejným miningcore `login`/`job`/`submit` dialektem — bridge
+        kompatibilní bez změny kódu): suprnova :7071 (1% PPLNS,
+        **min 0.01 QTC**, hourly — NEJNIŽŠÍ práh), luckypool
+        `eu.lproute.com:5660` (1%, min 0.11 QTC, 30min maturity,
+        hourly), qelvhash :4444 (1%, min 0.10 QTC, hourly, 110 confs),
+        kryptex :7049 (3% PROP, statická diff 18.2e9 — příliš vysoká
+        pro náš hashrate). **⚠️ Wallet gotcha:** k1pool login byl
+        account-name `KrUVFgKLb…` (off-chain balance → payout přes
+        jejich UI); suprnova login = přímo `qz…` adresa → výplata jde
+        **on-chain přímo do treasury `qzpnKFmb…`** (ta samá, ze které
+        QtcPayoutSweeper rozesílá) → deferred payouts se zafundují
+        prvním upstream payoutem, ne čeká se na lottery blok. Edge env:
+        `ZION_POOL_AUXPOW_POOL_QTU=quantus.suprnova.cc:7071` +
+        `ZION_POOL_AUXPOW_WALLET_QTU=qzpnKFmb…`; code default
+        `ExternalCoin::Quantus::default_pool()` přepsán (`779116a27`).
+        E2E ověřeno: shares `Accepted` na suprnově, API
+        `/api/pools/quantus/miners/<addr>` → `pendingShares`, worker
+        `zion-pool` ~0.9 GH/s.
       - ⚠️ **Ops gotcha (2026-10-08):** pool čte `miner-auth-token`
         **jen při startu**. Node při restartu přegeneruje token file
         na `600` (ExecStartPost `sleep 2` může předběhnout zápis) →
@@ -520,7 +541,8 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
       syncu (pct bump → joby do minerů → JobResult → wormhole credit).
 
 **Hashrate strategie (variance):** native leg má variance (platíme jen
-z bloků) → hybrid drží k1pool leg jako guaranteed-earnings floor.
+z bloků) → hybrid drží upstream (suprnova) leg jako guaranteed-earnings
+floor.
 Bootstrap: 0 % fee / ZION bonus pro native-leg minery zvažte.
 
 ### F7 — Miners community rollout
