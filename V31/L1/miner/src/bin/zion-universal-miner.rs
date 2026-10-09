@@ -93,6 +93,9 @@ async fn main() -> Result<()> {
     config.stream1_enabled = !args.no_zion;
     config.stream2_enabled = !args.no_gpu;
     config.stream3_enabled = !args.no_cpu;
+    if args.no_gpu {
+        config.stream4_enabled = false;
+    }
     config.autonomous = args.autonomous;
     config.profit_interval_sec = args.profit_interval;
     // Scale the ZION nonce batch with the number of threads.

@@ -671,7 +671,7 @@ let _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1,
 // Resolved external coins for the active miner spawn ('' = auto/none).
 // Set when the miner env is built; used by the parsers below to map
 // coin → stream index / label / algorithm dynamically (QTU, ZANO, VRSC…).
-let _activeExtCoins = { gpu: '', cpu: '' };
+let _activeExtCoins = { gpu: '', cpu: '', gpu2: '' };
 
 function _coinAlgo(coin) {
   const c = String(coin || '').toUpperCase();
@@ -693,6 +693,7 @@ function _coinAlgo(coin) {
 function _coinStreamIndex(coin) {
   const c = String(coin || '').toUpperCase();
   if (c === 'ZION') return 1;
+  if (c && _activeExtCoins.gpu2 && c === _activeExtCoins.gpu2) return 4;
   if (c && _activeExtCoins.cpu && c === _activeExtCoins.cpu) return 3;
   if (c && _activeExtCoins.gpu && c === _activeExtCoins.gpu) return 2;
   // Legacy/static mapping: known GPU coins → 2, CPU coins → 3.
@@ -1347,6 +1348,10 @@ const DEFAULT_CONFIG = {
   //   triple-stream / revenue mining and supplies valid AuxPoW pool URLs.
   cpuCoin: 'auto',
   gpuCoin: 'auto',
+  // gpuCoin2: Stream 4 second GPU external coin (Quad mode). Empty/'auto'
+  //   = disabled. Must differ from gpuCoin — the pool dedups by nulling
+  //   the second stream on collision.
+  gpuCoin2: '',
   tripleStream: false,
   // Triple-stream tuning (CUDA primary + ext coin)
   extGpuBackend: 'cuda',
@@ -2448,7 +2453,7 @@ function startMiningV31(config, v31Path) {
   }
   // V31 uses stream2 (GPU) / stream3 (CPU) force-coin env vars, and
   // ZION_AUTONOMOUS to toggle the profit router.
-  _activeExtCoins = { gpu: '', cpu: '' };
+  _activeExtCoins = { gpu: '', cpu: '', gpu2: '' };
   if (tripleStreamEnabled) {
     if (!cpuCoinAuto) {
       env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
@@ -2457,6 +2462,16 @@ function startMiningV31(config, v31Path) {
     if (wantsGpu && !gpuCoinAuto) {
       env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
       _activeExtCoins.gpu = gpuCoin.toUpperCase();
+    }
+    // Quad mode: second GPU external stream. Requires tripleStream + GPU
+    // and a coin different from gpuCoin (pool dedups on collision).
+    const gpuCoin2 = String(config.gpuCoin2 || '').trim();
+    const gpuCoin2Valid = gpuCoin2 && gpuCoin2.toLowerCase() !== 'auto'
+      && gpuCoin2.toUpperCase() !== gpuCoin.toUpperCase();
+    if (wantsGpu && gpuCoin2Valid) {
+      env.ZION_STREAM4_ENABLED = '1';
+      env.ZION_STREAM4_FORCE_COIN = gpuCoin2.toUpperCase();
+      _activeExtCoins.gpu2 = gpuCoin2.toUpperCase();
     }
     env.ZION_AUTONOMOUS = (config.autonomous === true && cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
   } else {
@@ -4077,14 +4092,16 @@ function parseMinerOutput(output) {
 
   // ─── V31 per-stream telemetry ───
   // INFO zion_miner: stream stats stream=zion coin=zion accepted=1 rejected=0 hashrate=0 status=active
-  // Three streams: zion (Stream 1), gpu-external (Stream 2 = forced GPU coin, e.g. QTU/ZANO),
-  // cpu-external (Stream 3 = forced CPU coin, e.g. VRSC)
+  // Four streams: zion (Stream 1), gpu-external (Stream 2 = forced GPU coin, e.g. QTU/ZANO),
+  // cpu-external (Stream 3 = forced CPU coin, e.g. VRSC),
+  // gpu-external-2 (Stream 4 = second GPU coin in Quad mode, e.g. ZANO alongside QTC)
   const gpuExtCoin = _activeExtCoins.gpu || 'ZANO';
   const cpuExtCoin = _activeExtCoins.cpu || 'VRSC';
-  const streamIndex = { zion: 1, 'gpu-external': 2, 'cpu-external': 3 };
-  const streamLabels = { zion: 'ZION', 'gpu-external': gpuExtCoin, 'cpu-external': cpuExtCoin };
-  const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': _coinAlgo(gpuExtCoin), 'cpu-external': _coinAlgo(cpuExtCoin) };
-  const streamDefaultCoins = { zion: 'ZION', 'gpu-external': gpuExtCoin, 'cpu-external': cpuExtCoin };
+  const gpuExtCoin2 = _activeExtCoins.gpu2 || 'ZANO';
+  const streamIndex = { zion: 1, 'gpu-external': 2, 'cpu-external': 3, 'gpu-external-2': 4 };
+  const streamLabels = { zion: 'ZION', 'gpu-external': gpuExtCoin, 'cpu-external': cpuExtCoin, 'gpu-external-2': gpuExtCoin2 };
+  const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': _coinAlgo(gpuExtCoin), 'cpu-external': _coinAlgo(cpuExtCoin), 'gpu-external-2': _coinAlgo(gpuExtCoin2) };
+  const streamDefaultCoins = { zion: 'ZION', 'gpu-external': gpuExtCoin, 'cpu-external': cpuExtCoin, 'gpu-external-2': gpuExtCoin2 };
   if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
   // Use a temp object keyed by 1-based index to avoid sparse array issues.
   // Direct array assignment (streams[1]=...) + filter() compaction causes
@@ -4099,7 +4116,7 @@ function parseMinerOutput(output) {
     const rejected = parseInt(m[4], 10) || 0;
     // Coin from miner; fallback to default if miner reports generic stream id
     let coin = String(m[2] || '');
-    if (coin === streamId || coin === 'gpu-external' || coin === 'cpu-external') {
+    if (coin === streamId || coin === 'gpu-external' || coin === 'gpu-external-2' || coin === 'cpu-external') {
       coin = streamDefaultCoins[streamId] || coin;
     }
     _newStreams[idx] = {

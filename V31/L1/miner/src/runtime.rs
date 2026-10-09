@@ -190,6 +190,15 @@ pub struct MinerRuntime {
     /// Current algorithm for gpu_ext (for DAG/epoch reload detection).
     #[cfg(feature = "auxpow")]
     gpu_ext_algo: Arc<std::sync::Mutex<Option<String>>>,
+    /// GPU backend for Stream 4 (second external GPU coin — Quad mode).
+    /// Separate backend+algo state from Stream 2: two different
+    /// algorithms must not flip-flop a shared backend through re-init on
+    /// every batch.
+    #[cfg(feature = "auxpow")]
+    gpu_ext2: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>>,
+    /// Current algorithm for gpu_ext2.
+    #[cfg(feature = "auxpow")]
+    gpu_ext2_algo: Arc<std::sync::Mutex<Option<String>>>,
     /// Dedicated Poseidon2/QPoW miner for Stream 2 (Quantus). Lazily
     /// initialized; the 512-bit nonce/target cannot ride the generic
     /// `GpuMiner` interface so this is a separate dedicated backend.
@@ -200,6 +209,11 @@ pub struct MinerRuntime {
     /// the kernel compile on every batch on CPU-only rigs.
     #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
     gpu_qpow_disabled: Arc<std::sync::atomic::AtomicBool>,
+    /// Dedicated QPoW backend for Stream 4 (same constraints as gpu_qpow).
+    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    gpu_qpow2: Arc<std::sync::Mutex<Option<crate::gpu::QpowGpuMiner>>>,
+    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    gpu_qpow2_disabled: Arc<std::sync::atomic::AtomicBool>,
     /// ZION nonce cursor — advances between batches so we don't always
     /// re-scan from 0. Wrapped in a mutex for safe concurrent access.
     zion_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
@@ -217,6 +231,16 @@ pub struct MinerRuntime {
     #[cfg(feature = "auxpow")]
     /// Per-job counter used to make the Stream 2 nonce base unique.
     gpu_ext_job_counter: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
+    /// Stream 4 nonce/job state — independent from Stream 2 so the two
+    /// GPU streams never collide on nonce ranges or job tracking.
+    gpu_ext2_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
+    gpu_ext2_last_job_id: Arc<Mutex<String>>,
+    #[cfg(feature = "auxpow")]
+    gpu_ext2_job_base: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
+    gpu_ext2_job_counter: Arc<std::sync::atomic::AtomicU64>,
     #[cfg(feature = "auxpow")]
     /// Stream 3 (CPU external AuxPoW) nonce cursor.
     cpu_ext_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
@@ -241,6 +265,8 @@ impl MinerRuntime {
         #[cfg(feature = "auxpow")]
         let stream2_force_coin = config.stream2_force_coin;
         #[cfg(feature = "auxpow")]
+        let stream4_force_coin = config.stream4_force_coin;
+        #[cfg(feature = "auxpow")]
         let profit_hysteresis_pct = config.profit_hysteresis_pct;
         #[cfg(feature = "auxpow")]
         let profit_interval_sec = config.profit_interval_sec;
@@ -256,6 +282,10 @@ impl MinerRuntime {
         map.insert(
             StreamId::CpuExternal,
             StreamStats::new(StreamId::CpuExternal),
+        );
+        map.insert(
+            StreamId::GpuExternal2,
+            StreamStats::new(StreamId::GpuExternal2),
         );
         let stats = Arc::new(Mutex::new(map));
         let config = Arc::new(config);
@@ -320,6 +350,9 @@ impl MinerRuntime {
             if let Some(coin) = stream3_force_coin {
                 profit_router.stream3_coin = Some(coin);
             }
+            if let Some(coin) = stream4_force_coin {
+                profit_router.stream4_coin = Some(coin);
+            }
 
             // Warn at startup if a forced coin is not compatible, disabled, or has
             // no usable default pool (MIN-001 from SECURITY_AUDIT_3.2.md).
@@ -353,6 +386,23 @@ impl MinerRuntime {
                     }
                 }
             }
+            if let Some(coin) = stream4_force_coin {
+                if !coin.is_gpu() {
+                    warn!(stream = "stream4", coin = %coin, "forced coin is not a GPU coin");
+                } else if !coin.gpu_kernel_available(&config.gpu_backend) {
+                    warn!(stream = "stream4", coin = %coin, backend = %config.gpu_backend, "forced coin has no kernel for the selected GPU backend");
+                } else {
+                    let profile = zion_cosmic_harmony::CoinProfile::for_coin(coin);
+                    if profile.disabled {
+                        warn!(stream = "stream4", coin = %coin, reason = profile.disabled_reason.as_deref().unwrap_or("unknown"), "forced coin is disabled");
+                    }
+                }
+                // Same-coin force on both GPU slots is a config error —
+                // the pool dedups by nulling stream 2, but flag it here.
+                if stream2_force_coin == Some(coin) {
+                    warn!(stream = "stream4", coin = %coin, "forced coin duplicates stream2 — pick a different GPU coin");
+                }
+            }
 
             Self {
                 config,
@@ -361,15 +411,25 @@ impl MinerRuntime {
                 gpu_zion,
                 gpu_ext: Arc::new(std::sync::Mutex::new(None)),
                 gpu_ext_algo: Arc::new(std::sync::Mutex::new(None)),
+                gpu_ext2: Arc::new(std::sync::Mutex::new(None)),
+                gpu_ext2_algo: Arc::new(std::sync::Mutex::new(None)),
                 #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
                 gpu_qpow: Arc::new(std::sync::Mutex::new(None)),
                 #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
                 gpu_qpow_disabled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+                gpu_qpow2: Arc::new(std::sync::Mutex::new(None)),
+                #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+                gpu_qpow2_disabled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_last_job_id: Arc::new(Mutex::new(String::new())),
                 gpu_ext_job_base: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_job_counter: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                gpu_ext2_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                gpu_ext2_last_job_id: Arc::new(Mutex::new(String::new())),
+                gpu_ext2_job_base: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                gpu_ext2_job_counter: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 cpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
@@ -679,6 +739,17 @@ impl MinerRuntime {
                 .as_ref()
                 .and_then(|m| m.per_gpu_hashrates())
                 .unwrap_or_default(),
+            #[cfg(all(
+                feature = "auxpow",
+                any(feature = "gpu-cuda", feature = "gpu-opencl")
+            ))]
+            StreamId::GpuExternal2 => self
+                .gpu_qpow2
+                .lock()
+                .unwrap()
+                .as_ref()
+                .and_then(|m| m.per_gpu_hashrates())
+                .unwrap_or_default(),
             _ => Vec::new(),
         }
     }
@@ -698,23 +769,37 @@ impl MinerRuntime {
         let batch = match stream {
             StreamId::GpuExternal => self.config.stream2_batch,
             StreamId::CpuExternal => self.config.stream3_batch,
+            StreamId::GpuExternal2 => self.config.stream4_batch,
             _ => self.config.auxpow_nonce_batch,
         };
         self.mine_auxpow_share_batch(stream, job, batch).await
     }
 
+    /// The nonce cursor owned by a GPU external slot (Stream 2 vs 4).
+    /// Every scanning path on a GPU stream — GPU kernel or CPU fallback —
+    /// draws from this stream's own cursor, so two GPU coins never
+    /// overlap nonce ranges.
+    #[cfg(feature = "auxpow")]
+    fn gpu_ext_cursor(&self, stream: StreamId) -> &Arc<std::sync::atomic::AtomicU64> {
+        match stream {
+            StreamId::GpuExternal2 => &self.gpu_ext2_nonce_cursor,
+            _ => &self.gpu_ext_nonce_cursor,
+        }
+    }
+
     /// Whether the dedicated QPoW GPU backend is live (initialized and not
-    /// disabled by a previous init failure).
+    /// disabled by a previous init failure) for the given GPU stream.
     #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
-    fn qpow_gpu_live(&self) -> bool {
-        !self
-            .gpu_qpow_disabled
-            .load(std::sync::atomic::Ordering::Relaxed)
-            && self.gpu_qpow.lock().unwrap().is_some()
+    fn qpow_gpu_live(&self, stream: StreamId) -> bool {
+        let (disabled, backend) = match stream {
+            StreamId::GpuExternal2 => (&self.gpu_qpow2_disabled, &self.gpu_qpow2),
+            _ => (&self.gpu_qpow_disabled, &self.gpu_qpow),
+        };
+        !disabled.load(std::sync::atomic::Ordering::Relaxed) && backend.lock().unwrap().is_some()
     }
 
     #[cfg(not(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl"))))]
-    fn qpow_gpu_live(&self) -> bool {
+    fn qpow_gpu_live(&self, _stream: StreamId) -> bool {
         false
     }
 
@@ -731,13 +816,13 @@ impl MinerRuntime {
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
-        // Stream 2: GPU with duty-cycle time-slicing (like V3 reference)
-        if stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu" {
+        // GPU external streams (2 and 4): GPU with duty-cycle time-slicing
+        if stream.is_gpu_external() && self.config.gpu_backend != "cpu" {
             let t_batch = Instant::now();
-            let gpu_share = self.try_gpu_ext_share(job, batch).await;
+            let gpu_share = self.try_gpu_ext_share(stream, job, batch).await;
             let batch_ms = t_batch.elapsed().as_millis() as u64;
             if gpu_share.is_some()
-                || (job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live())
+                || (job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live(stream))
             {
                 // Duty-cycle yield after EVERY GPU batch (hit or miss) so
                 // Stream 1 (ZION) gets GPU time on shared cards.
@@ -773,7 +858,7 @@ impl MinerRuntime {
                 // A live Poseidon2 backend already scanned this whole
                 // `batch` — falling through to the CPU scanner would rescan
                 // the same range at ~100 kH/s.
-                if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live()
+                if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live(stream)
                 {
                     return Err(MinerError::NoAuxPoWSolution);
                 }
@@ -814,8 +899,9 @@ impl MinerRuntime {
         // Every CPU-scan path needs a persistent nonce cursor — otherwise
         // GPU-stream CPU fallbacks (e.g. kheavyhash, which has no GPU path)
         // rescan from 0 every batch and resubmit the same share forever.
-        let cursor = if is_qpow {
-            Some(&self.gpu_ext_nonce_cursor)
+        // Each GPU slot owns its cursor so the two streams never overlap.
+        let cursor = if is_qpow || stream.is_gpu_external() {
+            Some(self.gpu_ext_cursor(stream))
         } else {
             Some(&self.cpu_ext_nonce_cursor)
         };
@@ -860,19 +946,22 @@ impl MinerRuntime {
         }
     }
 
-    /// Try GPU mining for Stream 2 (external GPU coin) using a persistent
-    /// GPU backend. The backend is lazily initialized on first call and
-    /// reused across batches (avoiding expensive DAG reload + kernel
-    /// compile per batch). When the algorithm changes, the backend is
-    /// recreated.
+    /// Try GPU mining for a GPU external stream (2 or 4) using a
+    /// persistent per-stream GPU backend. The backend is lazily
+    /// initialized on first call and reused across batches (avoiding
+    /// expensive DAG reload + kernel compile per batch). When the
+    /// algorithm changes on THAT stream, its backend is recreated — the
+    /// other GPU stream's backend is untouched, so two different
+    /// algorithms (e.g. ProgPoW ZANO + QPoW QTU) run truly concurrently
+    /// without flip-flopping a shared context.
     #[cfg(feature = "auxpow")]
-    async fn try_gpu_ext_share(&self, job: &Job, batch: u64) -> Option<Share> {
+    async fn try_gpu_ext_share(&self, stream: StreamId, job: &Job, batch: u64) -> Option<Share> {
         let algorithm = job.coin.algorithm();
         if algorithm == "qpow-poseidon2" {
             // Quantus needs a dedicated 512-bit Poseidon2 kernel — the generic
             // u64/[u8;32] GPU interface cannot represent it.
             #[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
-            return self.try_qpow_gpu_share(job, batch).await;
+            return self.try_qpow_gpu_share(stream, job, batch).await;
             #[cfg(not(any(feature = "gpu-cuda", feature = "gpu-opencl")))]
             return None;
         }
@@ -895,9 +984,18 @@ impl MinerRuntime {
         let copy_len = header.len().min(32);
         header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
 
-        let gpu_ext = self.gpu_ext.clone();
-        let gpu_ext_algo = self.gpu_ext_algo.clone();
-        let gpu_ext_nonce_cursor = self.gpu_ext_nonce_cursor.clone();
+        let (gpu_ext, gpu_ext_algo, gpu_ext_nonce_cursor) = match stream {
+            StreamId::GpuExternal2 => (
+                self.gpu_ext2.clone(),
+                self.gpu_ext2_algo.clone(),
+                self.gpu_ext2_nonce_cursor.clone(),
+            ),
+            _ => (
+                self.gpu_ext.clone(),
+                self.gpu_ext_algo.clone(),
+                self.gpu_ext_nonce_cursor.clone(),
+            ),
+        };
         let kind = parse_gpu_backend(&self.config.gpu_backend);
 
         // Extract shared CUDA device from the ZION (Stream 1) GPU backend.
@@ -998,8 +1096,7 @@ impl MinerRuntime {
         match gpu_result {
             Ok(Ok(Some(gpu_result))) => {
                 let nonces_tested = gpu_result.nonces_tested.min(batch);
-                self.update_hashrate(StreamId::GpuExternal, nonces_tested, elapsed)
-                    .await;
+                self.update_hashrate(stream, nonces_tested, elapsed).await;
                 if let Some((nonce, hash, mix)) = gpu_result.solutions.into_iter().next() {
                     let solution =
                         if algorithm == "verushash" || algorithm.starts_with("verushash_") {
@@ -1047,12 +1144,14 @@ impl MinerRuntime {
     /// Backend is picked by `ZION_GPU_BACKEND`: CUDA on NVIDIA, OpenCL on
     /// AMD (Vega).
     #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
-    async fn try_qpow_gpu_share(&self, job: &Job, batch: u64) -> Option<Share> {
+    async fn try_qpow_gpu_share(&self, stream: StreamId, job: &Job, batch: u64) -> Option<Share> {
         use crate::auxpow::qpow;
 
-        if self
-            .gpu_qpow_disabled
-            .load(std::sync::atomic::Ordering::Relaxed)
+        if match stream {
+            StreamId::GpuExternal2 => &self.gpu_qpow2_disabled,
+            _ => &self.gpu_qpow_disabled,
+        }
+        .load(std::sync::atomic::Ordering::Relaxed)
         {
             return None;
         }
@@ -1071,11 +1170,21 @@ impl MinerRuntime {
         let work_size = batch as usize;
         let backend_kind = parse_gpu_backend(&self.config.gpu_backend);
 
-        let gpu_qpow = self.gpu_qpow.clone();
-        let gpu_qpow_disabled = self.gpu_qpow_disabled.clone();
+        let (gpu_qpow, gpu_qpow_disabled, gpu_ext, gpu_ext_nonce_cursor) = match stream {
+            StreamId::GpuExternal2 => (
+                self.gpu_qpow2.clone(),
+                self.gpu_qpow2_disabled.clone(),
+                self.gpu_ext2.clone(),
+                self.gpu_ext2_nonce_cursor.clone(),
+            ),
+            _ => (
+                self.gpu_qpow.clone(),
+                self.gpu_qpow_disabled.clone(),
+                self.gpu_ext.clone(),
+                self.gpu_ext_nonce_cursor.clone(),
+            ),
+        };
         let gpu_zion = self.gpu_zion.clone();
-        let gpu_ext = self.gpu_ext.clone();
-        let gpu_ext_nonce_cursor = self.gpu_ext_nonce_cursor.clone();
 
         let start = Instant::now();
         let gpu_result = task::spawn_blocking(move || {
@@ -1118,8 +1227,7 @@ impl MinerRuntime {
 
         match gpu_result {
             Ok(Ok(Some(res))) => {
-                self.update_hashrate(StreamId::GpuExternal, res.nonces_tested, elapsed)
-                    .await;
+                self.update_hashrate(stream, res.nonces_tested, elapsed).await;
                 let low64 = u64::from_be_bytes(res.nonce[56..64].try_into().unwrap());
                 let mut hash32 = [0u8; 32];
                 hash32.copy_from_slice(&res.hash[..32]);
@@ -1138,8 +1246,7 @@ impl MinerRuntime {
                 })
             }
             Ok(Ok(None)) => {
-                self.update_hashrate(StreamId::GpuExternal, count, elapsed)
-                    .await;
+                self.update_hashrate(stream, count, elapsed).await;
                 None
             }
             Ok(Err(e)) => {
@@ -1246,7 +1353,12 @@ impl MinerRuntime {
                 let mut active_streams = 0usize;
 
                 // Log per-stream metrics
-                for stream in [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal] {
+                for stream in [
+                    StreamId::Zion,
+                    StreamId::GpuExternal,
+                    StreamId::CpuExternal,
+                    StreamId::GpuExternal2,
+                ] {
                     if let Some(s) = snapshot.get(&stream) {
                         if !s.active && s.hashrate == 0.0 && s.accepted == 0 {
                             continue;
@@ -1309,6 +1421,13 @@ impl MinerRuntime {
 
     /// Run all enabled mining streams until the shutdown signal is received.
     pub async fn run(&self, shutdown: watch::Receiver<bool>) -> Result<(), MinerError> {
+        if self.config.stream4_enabled {
+            // The second GPU stream only exists in V3 Trinity mode, where
+            // the pool multiplexes two external_stream slots over one
+            // connection. Legacy mode gives each AuxPoW stream its own
+            // upstream stratum — stream4 has no scheduler slot there.
+            warn!("stream4 (ZION_STREAM4_ENABLED) is only supported in V3 Trinity mode — ignoring");
+        }
         let mut shutdown_for_changed = shutdown.clone();
 
         // Spawn periodic metrics summary task (every 30s)
@@ -1586,11 +1705,13 @@ impl MinerRuntime {
         // rig on ZANO while the pool's default GPU coin is QTU).
         let gpu_pref = self.config.stream2_force_coin.map(|c| c.ticker());
         let cpu_pref = self.config.stream3_force_coin.map(|c| c.ticker());
-        if gpu_pref.is_some() || cpu_pref.is_some() {
+        let gpu2_pref = self.config.stream4_force_coin.map(|c| c.ticker());
+        if gpu_pref.is_some() || cpu_pref.is_some() || gpu2_pref.is_some() {
             let gpu_coin = gpu_pref.unwrap_or("");
             let cpu_coin = cpu_pref.unwrap_or("");
+            let gpu_coin_2 = gpu2_pref.unwrap_or("");
             if let Err(e) = client
-                .send_coin_preference(gpu_coin, cpu_coin, 0.0, 0.0)
+                .send_coin_preference(gpu_coin, cpu_coin, gpu_coin_2, 0.0, 0.0)
                 .await
             {
                 warn!(error = %e, "V3 pool: coin preference send failed");
@@ -1940,6 +2061,116 @@ impl MinerRuntime {
             tokio::spawn(async move { Ok::<(), MinerError>(()) })
         };
 
+        // ── Stream 4: second GPU AuxPoW (Quad mode) ──
+        // Same job-subscription pattern as Stream 2, keyed on
+        // `bundle.gpu_external_2`. The pool guarantees a different coin
+        // than `gpu_external`; a same-coin bundle is skipped defensively
+        // so two tasks can never race the same upstream job/nonce space.
+        let mut h4 = if self.config.stream4_enabled {
+            let this = self.clone();
+            let client = client.clone();
+            let mut job_rx = client.subscribe_jobs();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                // Wait for the first job bundle.
+                let mut bundle: Option<crate::v3_pool_client::V3JobBundle> =
+                    (*job_rx.borrow_and_update()).clone();
+                while bundle.is_none() {
+                    tokio::select! {
+                        _ = shutdown.changed() => return Ok(()),
+                        result = job_rx.changed() => {
+                            if result.is_err() {
+                                warn!("V3 Quad: external job channel closed");
+                                return Err(MinerError::Connection(
+                                    "external job watch channel closed".into(),
+                                ));
+                            }
+                            bundle = (*job_rx.borrow_and_update()).clone();
+                        }
+                    }
+                }
+                let mut bundle = bundle.unwrap();
+                let mut dup_warned = false;
+
+                loop {
+                    if *shutdown.borrow() {
+                        break;
+                    }
+                    this.mark_active(StreamId::GpuExternal2).await;
+                    if let Some(ref ext) = bundle.gpu_external_2 {
+                        // Defensive dedup: pool never sends the same coin on
+                        // both GPU slots, but if it ever does, refuse to
+                        // mine a duplicate job — duplicate nonce space would
+                        // only earn upstream "duplicate share" rejects.
+                        let dup = bundle
+                            .gpu_external
+                            .as_ref()
+                            .map(|e| e.coin.eq_ignore_ascii_case(&ext.coin))
+                            .unwrap_or(false);
+                        if dup {
+                            if !dup_warned {
+                                ext_warn!(
+                                    coin = %ext.coin,
+                                    "V3 Quad: stream4 coin duplicates stream2 — idling (pool dedup should prevent this)"
+                                );
+                                dup_warned = true;
+                            }
+                            sleep(Duration::from_secs(2)).await;
+                        } else {
+                            dup_warned = false;
+                            match this
+                                .mine_v3_external_share(
+                                    client.clone(),
+                                    StreamId::GpuExternal2,
+                                    ext.clone(),
+                                    &job_rx,
+                                )
+                                .await
+                            {
+                                Ok(true) => {}
+                                Ok(false) => {}
+                                Err(MinerError::NoAuxPoWSolution) => {}
+                                Err(e) => {
+                                    warn!(error = %e, "V3 Quad: GPU2 AuxPoW error");
+                                    if matches!(e, MinerError::Connection(_)) {
+                                        return Err(e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    match job_rx.has_changed() {
+                        Ok(true) => {
+                            bundle = match (*job_rx.borrow_and_update()).clone() {
+                                Some(b) => b,
+                                None => break,
+                            };
+                        }
+                        Ok(false) => {}
+                        Err(_) => {
+                            warn!("V3 Quad: external job watch channel closed, exiting");
+                            return Err(MinerError::Connection(
+                                "external job watch channel closed".into(),
+                            ));
+                        }
+                    }
+                    // No gpu_external_2 in this bundle (pool without Quad
+                    // support, or a collision-null) — wait briefly instead
+                    // of spinning the bundle-check loop.
+                    if bundle.gpu_external_2.is_none() {
+                        tokio::select! {
+                            _ = shutdown.changed() => break,
+                            _ = job_rx.changed() => {}
+                            _ = sleep(Duration::from_secs(5)) => {}
+                        }
+                    }
+                }
+                Ok::<(), MinerError>(())
+            })
+        } else {
+            tokio::spawn(async move { Ok::<(), MinerError>(()) })
+        };
+
         // Supervise the stream tasks: a stream that exits with an error
         // (e.g. a dropped pool connection) must end the session so the outer
         // loop reconnects. Joining the handles only after shutdown would
@@ -1963,6 +2194,11 @@ impl MinerRuntime {
                     Ok(Err(e)) => break Err(e),
                     Err(e) => break Err(MinerError::Join(e)),
                 },
+                r = &mut h4, if !h4.is_finished() => match r {
+                    Ok(Ok(())) => continue,
+                    Ok(Err(e)) => break Err(e),
+                    Err(e) => break Err(MinerError::Join(e)),
+                },
                 else => break Ok(()),
             }
         };
@@ -1972,10 +2208,11 @@ impl MinerRuntime {
             h1.abort();
             h2.abort();
             h3.abort();
+            h4.abort();
         } else {
             // Graceful shutdown: each stream watches the same shutdown
             // signal and exits on its own.
-            let _ = tokio::join!(h1, h2, h3);
+            let _ = tokio::join!(h1, h2, h3, h4);
         }
         session_result
     }
@@ -2218,10 +2455,12 @@ impl MinerRuntime {
     /// The base is derived from the reward address, worker name, job ID,
     /// process ID and a per-job counter, so different rigs and even different
     /// jobs on the same rig start scanning from different nonce ranges.
-    fn compute_gpu_ext_nonce_base(&self, ext: &ExternalStreamJob) -> u64 {
-        let counter = self
-            .gpu_ext_job_counter
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    fn compute_gpu_ext_nonce_base(&self, stream: StreamId, ext: &ExternalStreamJob) -> u64 {
+        let counter = match stream {
+            StreamId::GpuExternal2 => &self.gpu_ext2_job_counter,
+            _ => &self.gpu_ext_job_counter,
+        }
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let mut seed = format!(
             "{}:{}:{}:{}:{}",
             self.config.reward_address.encoded,
@@ -2258,24 +2497,35 @@ impl MinerRuntime {
         // On a new GPU external job, reset the nonce cursor to a unique base.
         // Without this, multiple miners on the same upstream EthStratum/ProgPoW
         // job all scan from nonce 0, find the same first solution, and one of
-        // them gets an upstream "duplicate share" reject.
-        if stream == StreamId::GpuExternal {
-            let mut last_job = self.gpu_ext_last_job_id.lock().await;
+        // them gets an upstream "duplicate share" reject. Each GPU slot keeps
+        // its own cursor/job tracking so the two streams never collide.
+        if stream.is_gpu_external() {
+            let (last_job_cell, nonce_cursor, job_base) = match stream {
+                StreamId::GpuExternal2 => (
+                    &self.gpu_ext2_last_job_id,
+                    &self.gpu_ext2_nonce_cursor,
+                    &self.gpu_ext2_job_base,
+                ),
+                _ => (
+                    &self.gpu_ext_last_job_id,
+                    &self.gpu_ext_nonce_cursor,
+                    &self.gpu_ext_job_base,
+                ),
+            };
+            let mut last_job = last_job_cell.lock().await;
             if *last_job != ext.job_id {
                 *last_job = ext.job_id.clone();
                 // Always mix in a per-miner/session salt — the upstream
                 // extranonce1 is shared by every session mining the same
                 // job, so starting every rig from it made them scan the
                 // same low64 range and lose to "duplicate share" rejects.
-                let session_salt = self.compute_gpu_ext_nonce_base(&ext);
+                let session_salt = self.compute_gpu_ext_nonce_base(stream, &ext);
                 let base = Self::parse_hex_u64(&ext.extranonce1_hex)
                     .filter(|&v| v != 0)
                     .map(|en1| en1.wrapping_add(session_salt))
                     .unwrap_or(session_salt);
-                self.gpu_ext_nonce_cursor
-                    .store(base, std::sync::atomic::Ordering::Relaxed);
-                self.gpu_ext_job_base
-                    .store(base, std::sync::atomic::Ordering::Relaxed);
+                nonce_cursor.store(base, std::sync::atomic::Ordering::Relaxed);
+                job_base.store(base, std::sync::atomic::Ordering::Relaxed);
                 ext_debug!(
                     coin = %ext.coin, job_id = %ext.job_id, base,
                     "GPU ext nonce base set"
@@ -2322,6 +2572,7 @@ impl MinerRuntime {
         let batch = match stream {
             StreamId::GpuExternal => self.config.stream2_batch,
             StreamId::CpuExternal => self.config.stream3_batch,
+            StreamId::GpuExternal2 => self.config.stream4_batch,
             _ => self.config.auxpow_nonce_batch,
         };
 
@@ -2347,16 +2598,20 @@ impl MinerRuntime {
             } else {
                 false
             }
-        } else if matches!(stream, StreamId::GpuExternal) {
-            // Same stale check for the GPU stream (QTU/ZANO on fast-rotating
-            // upstream pools): if a newer bundle carries a different
-            // gpu_external job id, this share would only earn an upstream
-            // "Invalid job id" — drop it instead of burning a round-trip.
+        } else if stream.is_gpu_external() {
+            // Same stale check for the GPU streams (QTU/ZANO on
+            // fast-rotating upstream pools): if a newer bundle carries a
+            // different job id on THIS stream's slot, this share would only
+            // earn an upstream "Invalid job id" — drop it instead of
+            // burning a round-trip.
             if job_rx.has_changed().unwrap_or(false) {
                 let new_gpu_id = job_rx
                     .borrow()
                     .as_ref()
-                    .and_then(|b| b.gpu_external.as_ref())
+                    .and_then(|b| match stream {
+                        StreamId::GpuExternal2 => b.gpu_external_2.as_ref(),
+                        _ => b.gpu_external.as_ref(),
+                    })
                     .map(|e| e.job_id.clone());
                 new_gpu_id.is_some() && new_gpu_id.as_deref() != Some(&ext.job_id)
             } else {
@@ -2401,7 +2656,6 @@ impl MinerRuntime {
                         &en1,
                         &solution_hex,
                         &ntime_hex,
-                        true, // is_vrsc
                     )
                     .await;
                 match result {
@@ -2446,7 +2700,9 @@ impl MinerRuntime {
             return Ok(true);
         }
 
-        // For ZANO (GpuExternal): submit synchronously (30s blocks, low share rate)
+        // For GPU streams (ZANO/QTU): submit synchronously (30s blocks, low
+        // share rate). Results route by coin ticker — stream identity is
+        // implicit in the coin, which the pool keeps unique per GPU slot.
         // QPoW shares carry the full 64-byte result/nonce hex.
         let hash_hex = share.qpow_hash_hex();
         let nonce_hex = share.nonce_512.map(hex::encode);
@@ -2465,7 +2721,6 @@ impl MinerRuntime {
                 &ext.extranonce1_hex,
                 &solution_hex,
                 &ntime_hex,
-                false, // is_vrsc = false (ZANO)
             )
             .await
             .map_err(|e| MinerError::Connection(format!("V3 external submit: {e}")))?;

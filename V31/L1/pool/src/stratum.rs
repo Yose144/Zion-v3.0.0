@@ -139,6 +139,10 @@ pub struct StratumServer {
     /// Default CPU AuxPoW coin — `ZION_POOL_AUXPOW_CPU_COIN` when it names
     /// a CPU coin, else the first enabled CPU coin by ticker.
     cpu_coin_default: Option<ExternalCoin>,
+    /// Default second GPU AuxPoW coin (Quad mode) —
+    /// `ZION_POOL_AUXPOW_COIN2` when it names a GPU coin, else the first
+    /// enabled GPU coin by ticker different from `gpu_coin_default`.
+    gpu_coin_default_2: Option<ExternalCoin>,
     /// Per-miner GPU coin routes from `ZION_POOL_AUXPOW_GPU_COIN_ROUTE`
     /// (`pattern=COIN,...` — `*` glob, case-insensitive; matched against
     /// the worker tail, full worker_name, miner_id and "miner/worker").
@@ -250,6 +254,10 @@ impl StratumServer {
                 .ok()
                 .and_then(|s| ExternalCoin::from_str_loose(s.trim()))
                 .filter(|c| c.is_cpu()),
+            gpu_coin_default_2: std::env::var("ZION_POOL_AUXPOW_COIN2")
+                .ok()
+                .and_then(|s| ExternalCoin::from_str_loose(s.trim()))
+                .filter(|c| c.is_gpu()),
             gpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_GPU_COIN_ROUTE"),
             cpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_CPU_COIN_ROUTE"),
         }
@@ -816,8 +824,14 @@ impl StratumServer {
         let vardiff_target = difficulty_to_target(share_difficulty);
         let vardiff_target_hex = hex::encode(vardiff_target);
 
-        // Triple-stream: fetch external jobs from AuxPoW bridge
+        // Quad-stream: fetch external jobs from AuxPoW bridge. The second
+        // GPU slot excludes whatever coin stream 1 picked so the two GPU
+        // streams never duplicate.
         let external_stream = self.build_external_stream_gpu(None);
+        let stream1_coin = external_stream
+            .as_ref()
+            .and_then(|j| ExternalCoin::from_ticker(&j.coin));
+        let external_stream_2 = self.build_external_stream_gpu2(None, stream1_coin);
         let external_stream_cpu = self.build_external_stream_cpu(None);
 
         let job_msg = PoolMessage::Job {
@@ -831,6 +845,7 @@ impl StratumServer {
             stream_weights: String::new(),
             external_stream,
             external_stream_cpu,
+            external_stream_2,
         };
         encode_message(&job_msg).ok()
     }
@@ -840,7 +855,18 @@ impl StratumServer {
     /// default is tried next, then the remaining enabled GPU coins in
     /// ticker order — deterministic regardless of HashMap order.
     fn build_external_stream_gpu(&self, prefer: Option<ExternalCoin>) -> Option<ExternalStreamJob> {
-        self.build_external_stream(prefer, false, self.gpu_coin_default)
+        self.build_external_stream(prefer, false, self.gpu_coin_default, None)
+    }
+
+    /// Build the second GPU external stream (Quad mode). `exclude` drops
+    /// the coin already embedded in `external_stream` so the two slots
+    /// never carry the same coin.
+    fn build_external_stream_gpu2(
+        &self,
+        prefer: Option<ExternalCoin>,
+        exclude: Option<ExternalCoin>,
+    ) -> Option<ExternalStreamJob> {
+        self.build_external_stream(prefer, false, self.gpu_coin_default_2, exclude)
     }
 
     /// Build the CPU external stream job from the AuxPoW bridge.
@@ -849,7 +875,7 @@ impl StratumServer {
     /// V3 philosophy: use the upstream pool's target as-is (no override).
     /// V3 didn't override VRSC difficulty and achieved 95% accept rate.
     fn build_external_stream_cpu(&self, prefer: Option<ExternalCoin>) -> Option<ExternalStreamJob> {
-        self.build_external_stream(prefer, true, self.cpu_coin_default)
+        self.build_external_stream(prefer, true, self.cpu_coin_default, None)
     }
 
     /// Pick the freshest external job among enabled coins of the given
@@ -860,9 +886,13 @@ impl StratumServer {
         prefer: Option<ExternalCoin>,
         cpu: bool,
         env_default: Option<ExternalCoin>,
+        exclude: Option<ExternalCoin>,
     ) -> Option<ExternalStreamJob> {
         let mut coins = self.multi_bridge.enabled_coins();
         coins.retain(|c| self.multi_bridge.is_cpu_coin(c) == cpu);
+        if let Some(ex) = exclude {
+            coins.retain(|c| *c != ex);
+        }
         if coins.is_empty() {
             return None;
         }
@@ -929,8 +959,9 @@ impl StratumServer {
         line: &str,
         gpu_pref: Option<ExternalCoin>,
         cpu_pref: Option<ExternalCoin>,
+        gpu2_pref: Option<ExternalCoin>,
     ) -> String {
-        if gpu_pref.is_none() && cpu_pref.is_none() {
+        if gpu_pref.is_none() && cpu_pref.is_none() && gpu2_pref.is_none() {
             return line.to_string();
         }
         let mut v: serde_json::Value = match serde_json::from_str(line.trim()) {
@@ -946,6 +977,27 @@ impl StratumServer {
         }
         if let Some(coin) = cpu_pref {
             changed |= self.rewrite_ext_field(&mut v, "external_stream_cpu", coin);
+        }
+        if let Some(coin) = gpu2_pref {
+            // Never serve the same coin on both GPU slots — a duplicate
+            // stream would waste the miner's GPU time on identical jobs.
+            let stream1_coin = v
+                .get("external_stream")
+                .and_then(|f| f.get("coin"))
+                .and_then(|c| c.as_str())
+                .map(|s| s.to_string());
+            let collides = stream1_coin
+                .as_deref()
+                .map(|c| c.eq_ignore_ascii_case(coin.ticker()) || c.eq_ignore_ascii_case(coin.as_str()))
+                .unwrap_or(false);
+            if collides {
+                if v.get("external_stream_2").is_some_and(|f| !f.is_null()) {
+                    v["external_stream_2"] = serde_json::Value::Null;
+                    changed = true;
+                }
+            } else {
+                changed |= self.rewrite_ext_field(&mut v, "external_stream_2", coin);
+            }
         }
         if !changed {
             return line.to_string();
@@ -1026,10 +1078,12 @@ impl StratumServer {
     fn apply_coin_preference(
         gpu_pref: &mut Option<ExternalCoin>,
         cpu_pref: &mut Option<ExternalCoin>,
+        gpu2_pref: &mut Option<ExternalCoin>,
         gpu_coin: &str,
         cpu_coin: &str,
+        gpu_coin_2: &str,
     ) {
-        for raw in [gpu_coin, cpu_coin] {
+        for (raw, is_gpu2) in [(gpu_coin, false), (cpu_coin, false), (gpu_coin_2, true)] {
             let raw = raw.trim();
             if raw.is_empty() {
                 continue;
@@ -1042,6 +1096,8 @@ impl StratumServer {
             };
             if coin.is_cpu() {
                 *cpu_pref = Some(coin);
+            } else if is_gpu2 {
+                *gpu2_pref = Some(coin);
             } else {
                 *gpu_pref = Some(coin);
             }
@@ -1317,6 +1373,7 @@ impl StratumServer {
         // Hello and updated by CoinPreference messages.
         let mut session_gpu_pref: Option<ExternalCoin>;
         let mut session_cpu_pref: Option<ExternalCoin>;
+        let mut session_gpu2_pref: Option<ExternalCoin> = None;
 
         // For now, just handle Hello and forward jobs.
         // Full V3 handling over TLS uses the same logic as plain TCP.
@@ -1373,7 +1430,12 @@ impl StratumServer {
                 // even when the template fingerprint has not changed since the last broadcast.
                 let last_job = self.last_v3_job.lock().unwrap().clone();
                 if let Some(job) = last_job {
-                    let job = self.session_job_line(&job, session_gpu_pref, session_cpu_pref);
+                    let job = self.session_job_line(
+                        &job,
+                        session_gpu_pref,
+                        session_cpu_pref,
+                        session_gpu2_pref,
+                    );
                     let mut w = writer.lock().await;
                     if w.write_all(job.as_bytes()).await.is_err() {
                         return;
@@ -1550,13 +1612,15 @@ impl StratumServer {
                                     }
                                 }
                                 Ok(PoolMessage::CoinPreference {
-                                    gpu_coin, cpu_coin, ..
+                                    gpu_coin, cpu_coin, gpu_coin_2, ..
                                 }) => {
                                     Self::apply_coin_preference(
                                         &mut session_gpu_pref,
                                         &mut session_cpu_pref,
+                                        &mut session_gpu2_pref,
                                         &gpu_coin,
                                         &cpu_coin,
+                                        &gpu_coin_2,
                                     );
                                 }
                                 Ok(_) => { /* ignore other messages */ }
@@ -1573,6 +1637,7 @@ impl StratumServer {
                                 msg.trim_end(),
                                 session_gpu_pref,
                                 session_cpu_pref,
+                                session_gpu2_pref,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
@@ -1587,6 +1652,7 @@ impl StratumServer {
                                 &job,
                                 session_gpu_pref,
                                 session_cpu_pref,
+                                session_gpu2_pref,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(job.as_bytes()).await.is_err() { break; }
@@ -1620,6 +1686,7 @@ impl StratumServer {
         // updated by CoinPreference messages.
         let mut session_gpu_pref: Option<ExternalCoin>;
         let mut session_cpu_pref: Option<ExternalCoin>;
+        let mut session_gpu2_pref: Option<ExternalCoin> = None;
 
         // Process first line (should be Hello)
         match decode_message(first_line) {
@@ -1702,7 +1769,12 @@ impl StratumServer {
                 // even when the template fingerprint has not changed since the last broadcast.
                 let last_job = self.last_v3_job.lock().unwrap().clone();
                 if let Some(job) = last_job {
-                    let job = self.session_job_line(&job, session_gpu_pref, session_cpu_pref);
+                    let job = self.session_job_line(
+                        &job,
+                        session_gpu_pref,
+                        session_cpu_pref,
+                        session_gpu2_pref,
+                    );
                     let mut w = writer.lock().await;
                     if w.write_all(job.as_bytes()).await.is_err() {
                         return;
@@ -2006,12 +2078,13 @@ impl StratumServer {
                                 miner_id: pref_miner,
                                 gpu_coin,
                                 cpu_coin,
+                                gpu_coin_2,
                                 gpu_profit_usd_day,
                                 cpu_profit_usd_day,
                             }) => {
                                 tracing::info!(
-                                    "v3_coin_preference miner={} gpu={} cpu={} gpu_profit={:.2}/day cpu_profit={:.2}/day",
-                                    pref_miner, gpu_coin, cpu_coin, gpu_profit_usd_day, cpu_profit_usd_day
+                                    "v3_coin_preference miner={} gpu={} gpu2={} cpu={} gpu_profit={:.2}/day cpu_profit={:.2}/day",
+                                    pref_miner, gpu_coin, gpu_coin_2, cpu_coin, gpu_profit_usd_day, cpu_profit_usd_day
                                 );
                                 // Pin this session's external streams to the
                                 // miner's declared coins — the broadcast embeds
@@ -2020,8 +2093,10 @@ impl StratumServer {
                                 Self::apply_coin_preference(
                                     &mut session_gpu_pref,
                                     &mut session_cpu_pref,
+                                    &mut session_gpu2_pref,
                                     &gpu_coin,
                                     &cpu_coin,
+                                    &gpu_coin_2,
                                 );
                             }
 
@@ -2325,6 +2400,7 @@ impl StratumServer {
                                 msg.trim_end(),
                                 session_gpu_pref,
                                 session_cpu_pref,
+                                session_gpu2_pref,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(line.as_bytes()).await.is_err() { break; }
@@ -2341,6 +2417,7 @@ impl StratumServer {
                                 &job,
                                 session_gpu_pref,
                                 session_cpu_pref,
+                                session_gpu2_pref,
                             );
                             let mut w = writer.lock().await;
                             if w.write_all(job.as_bytes()).await.is_err() { break; }
@@ -3215,6 +3292,7 @@ mod tests {
             stream_weights: String::new(),
             external_stream: ext,
             external_stream_cpu: None,
+            external_stream_2: None,
         })
         .unwrap()
     }
@@ -3306,19 +3384,29 @@ mod tests {
         }));
 
         // Session pinned to ZANO: broadcast carries QTU → rewritten to ZANO.
-        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None);
+        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None, None);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(v["external_stream"]["coin"], "ZANO");
         assert_eq!(v["external_stream"]["job_id"], "zano_job_9");
         assert_eq!(v["external_stream"]["algorithm"], "progpow_zano");
 
         // Session pinned to the embedded coin: identical line passes through.
-        let out = server.session_job_line(&line, Some(ExternalCoin::Quantus), None);
+        let out = server.session_job_line(&line, Some(ExternalCoin::Quantus), None, None);
         assert_eq!(out, line);
 
         // No prefs at all: byte-identical passthrough.
-        let out = server.session_job_line(&line, None, None);
+        let out = server.session_job_line(&line, None, None, None);
         assert_eq!(out, line);
+
+        // gpu2_pref=ZANO rewrites external_stream_2; gpu2_pref=QTU collides
+        // with the embedded stream-1 coin → stream_2 nulled.
+        let out = server.session_job_line(&line, None, None, Some(ExternalCoin::Zano));
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["external_stream_2"]["coin"], "ZANO");
+        assert_eq!(v["external_stream_2"]["job_id"], "zano_job_9");
+        let out = server.session_job_line(&line, None, None, Some(ExternalCoin::Quantus));
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert!(v["external_stream_2"].is_null());
     }
 
     #[test]
@@ -3339,7 +3427,7 @@ mod tests {
             timestamp: 0,
             ntime_hex: "00000000".into(),
         }));
-        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None);
+        let out = server.session_job_line(&line, Some(ExternalCoin::Zano), None, None);
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert!(v["external_stream"].is_null());
     }
@@ -3348,13 +3436,20 @@ mod tests {
     fn apply_coin_preference_slots_by_class() {
         let mut gpu = None;
         let mut cpu = None;
+        let mut gpu2 = None;
         // A miner sending gpu_coin=VRSC (a CPU coin) lands on the CPU stream.
-        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, "VRSC", "QTU");
+        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, &mut gpu2, "VRSC", "QTU", "");
         assert_eq!(gpu, Some(ExternalCoin::Quantus));
         assert_eq!(cpu, Some(ExternalCoin::Verus));
+        assert_eq!(gpu2, None);
+        // gpu_coin_2 goes to the second GPU slot; a CPU coin there reroutes
+        // to the CPU slot by class.
+        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, &mut gpu2, "", "", "ZANO");
+        assert_eq!(gpu2, Some(ExternalCoin::Zano));
         // Unknown coins are ignored, prefs untouched.
-        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, "NOPE", "");
+        StratumServer::apply_coin_preference(&mut gpu, &mut cpu, &mut gpu2, "NOPE", "", "");
         assert_eq!(gpu, Some(ExternalCoin::Quantus));
         assert_eq!(cpu, Some(ExternalCoin::Verus));
+        assert_eq!(gpu2, Some(ExternalCoin::Zano));
     }
 }

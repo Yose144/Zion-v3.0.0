@@ -2,12 +2,15 @@
 
 use zion_cosmic_harmony::ExternalCoin;
 
-/// Identifies one of the three concurrent mining streams.
+/// Identifies one of the four concurrent mining streams.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum StreamId {
     Zion,
     GpuExternal,
     CpuExternal,
+    /// Second GPU AuxPoW stream (Quad mode, Stream 4). Shares the card
+    /// with Stream 1 and Stream 2 via the same duty-cycle time-slicing.
+    GpuExternal2,
 }
 
 impl StreamId {
@@ -16,6 +19,7 @@ impl StreamId {
             StreamId::Zion => "zion",
             StreamId::GpuExternal => "gpu-external",
             StreamId::CpuExternal => "cpu-external",
+            StreamId::GpuExternal2 => "gpu-external-2",
         }
     }
 
@@ -24,7 +28,14 @@ impl StreamId {
             StreamId::Zion => 0,
             StreamId::GpuExternal => 1,
             StreamId::CpuExternal => 2,
+            StreamId::GpuExternal2 => 3,
         }
+    }
+
+    /// Both GPU external slots — they share the same device class and
+    /// each keeps its own backend + nonce state.
+    pub fn is_gpu_external(&self) -> bool {
+        matches!(self, StreamId::GpuExternal | StreamId::GpuExternal2)
     }
 }
 

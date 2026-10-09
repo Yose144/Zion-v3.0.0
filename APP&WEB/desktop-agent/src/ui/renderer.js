@@ -977,6 +977,8 @@ function setupControls() {
   const gpuCoinSelectDashboard = document.getElementById('gpu-coin-select-dashboard');
   const cpuCoinSelect = document.getElementById('cpu-coin-select');
   const cpuCoinSelectDashboard = document.getElementById('cpu-coin-select-dashboard');
+  const gpuCoin2Select = document.getElementById('gpu-coin2-select');
+  const gpuCoin2SelectDashboard = document.getElementById('gpu-coin2-select-dashboard');
   const tripleStreamCheckbox = document.getElementById('trinity-checkbox');
 
   // Populate all coin selects from the canonical registry so the option
@@ -1002,11 +1004,34 @@ function setupControls() {
       selectEl.value = cur;
     }
   };
+  // Stream-4 (Quad) select: no "Auto" — empty value = stream disabled.
+  // Pool only serves the second GPU stream when the miner opts in.
+  const rebuildGpu2Options = (selectEl) => {
+    if (!selectEl) return;
+    const cur = selectEl.value;
+    selectEl.innerHTML = '';
+    const offOpt = document.createElement('option');
+    offOpt.value = '';
+    offOpt.textContent = 'GPU2: Off';
+    selectEl.appendChild(offOpt);
+    for (const t of EXT_GPU_COINS) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      const served = coinIsServed(t);
+      opt.textContent = `GPU2: ${extCoinLabel(t)}${served ? '' : ' · offline'}`;
+      selectEl.appendChild(opt);
+    }
+    if (cur && selectEl.querySelector(`option[value="${cur}"]`)) {
+      selectEl.value = cur;
+    }
+  };
   const rebuildAllCoinSelects = () => {
     rebuildCoinOptions(gpuCoinSelect, EXT_GPU_COINS, 'GPU');
     rebuildCoinOptions(gpuCoinSelectDashboard, EXT_GPU_COINS, 'GPU');
     rebuildCoinOptions(cpuCoinSelect, EXT_CPU_COINS, 'CPU');
     rebuildCoinOptions(cpuCoinSelectDashboard, EXT_CPU_COINS, 'CPU');
+    rebuildGpu2Options(gpuCoin2Select);
+    rebuildGpu2Options(gpuCoin2SelectDashboard);
   };
   rebuildAllCoinSelects();
 
@@ -1204,6 +1229,9 @@ function setupControls() {
   bindCoinSelect(gpuCoinSelectDashboard, 'gpuCoin', gpuCoinSelect);
   bindCoinSelect(cpuCoinSelect, 'cpuCoin', cpuCoinSelectDashboard);
   bindCoinSelect(cpuCoinSelectDashboard, 'cpuCoin', cpuCoinSelect);
+  // Quad stream uses the same bind helper; empty value disables stream 4.
+  bindCoinSelect(gpuCoin2Select, 'gpuCoin2', gpuCoin2SelectDashboard);
+  bindCoinSelect(gpuCoin2SelectDashboard, 'gpuCoin2', gpuCoin2Select);
 
   if (tripleStreamCheckbox) {
     tripleStreamCheckbox.addEventListener('change', () => {
@@ -1349,6 +1377,7 @@ function setupControls() {
       tripleStream: tripleStreamCheckbox ? tripleStreamCheckbox.checked : config.tripleStream,
       cpuCoin: cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin,
       gpuCoin: gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin,
+      gpuCoin2: gpuCoin2Select ? gpuCoin2Select.value : (config.gpuCoin2 || ''),
       // GPU Revenue Mining configuration
       poolPreference: nextRevenue.gpu.poolPreference || 'herominers',
       poolRegion: nextRevenue.gpu.poolRegion || 'eu',
@@ -4370,21 +4399,24 @@ function updateTripleStreamPanel(stats) {
     }
   }
 
-  // Render each stream card (1-indexed: stream-1, stream-2, stream-3).
-  // Prefer the explicit `index` field; fall back to array order if missing.
-  for (let i = 1; i <= 3; i++) {
+  // Render each stream card. Mining stream index → DOM card id:
+  //   1→1, 2→2, 3→3, 4→5.  DOM slot 4 (stream-card-4 / stream-4-*) is the
+  //   BTCunlock keyscan service card, driven by updateKeyscanCard — not a
+  //   pool stream.  Quad mode's second GPU stream renders in stream-card-5.
+  for (let i = 1; i <= 4; i++) {
+    const domIdx = i === 4 ? 5 : i;
     const stream = streams.find(s => s && Number(s.index) === i) || streams[i - 1];
-    const card = document.getElementById(`stream-card-${i}`);
+    const card = document.getElementById(`stream-card-${domIdx}`);
     if (!card) continue;
 
-    const coinEl = document.getElementById(`stream-${i}-coin`);
-    const hrEl = document.getElementById(`stream-${i}-hashrate`);
-    const algoEl = document.getElementById(`stream-${i}-algo`);
-    const sharesEl = document.getElementById(`stream-${i}-shares`);
-    const statusBadge = document.getElementById(`stream-${i}-status`);
+    const coinEl = document.getElementById(`stream-${domIdx}-coin`);
+    const hrEl = document.getElementById(`stream-${domIdx}-hashrate`);
+    const algoEl = document.getElementById(`stream-${domIdx}-algo`);
+    const sharesEl = document.getElementById(`stream-${domIdx}-shares`);
+    const statusBadge = document.getElementById(`stream-${domIdx}-status`);
     // Extra detail row: 60s average, accept rate, time since last share.
     const setDetail = (suffix, text, cls) => {
-      const el = document.getElementById(`stream-${i}-${suffix}`);
+      const el = document.getElementById(`stream-${domIdx}-${suffix}`);
       if (!el) return;
       el.textContent = text || '—';
       el.className = `stream-detail-value${cls ? ' ' + cls : ''}`;

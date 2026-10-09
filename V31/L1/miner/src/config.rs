@@ -62,16 +62,28 @@ pub struct MinerConfig {
     pub stream2_enabled: bool,
     /// Enable Stream 3 (CPU external AuxPoW).
     pub stream3_enabled: bool,
+    /// Enable Stream 4 (second GPU external AuxPoW — Quad mode).
+    /// Off by default: a second GPU stream only makes sense when the pool
+    /// serves `external_stream_2` and the miner wants two concurrent GPU
+    /// coins (e.g. ZANO + QTC alongside ZION + VRSC).
+    pub stream4_enabled: bool,
+    /// Optional Stream 4 stratum URL, from `ZION_STREAM4_URL`.
+    pub stream4_url: Option<String>,
     /// Nonce batch for Stream 2 (GPU).
     pub stream2_batch: u64,
     /// Nonce batch for Stream 3 (CPU).
     pub stream3_batch: u64,
+    /// Nonce batch for Stream 4 (second GPU).
+    pub stream4_batch: u64,
     /// Force Stream 2 (GPU) to this external coin, ignoring profit estimates.
     /// Parsed from `ZION_STREAM2_FORCE_COIN`.
     pub stream2_force_coin: Option<ExternalCoin>,
     /// Force Stream 3 (CPU) to this external coin, ignoring profit estimates.
     /// Parsed from `ZION_STREAM3_FORCE_COIN`.
     pub stream3_force_coin: Option<ExternalCoin>,
+    /// Force Stream 4 (second GPU) to this external coin.
+    /// Parsed from `ZION_STREAM4_FORCE_COIN`.
+    pub stream4_force_coin: Option<ExternalCoin>,
     /// How long to wait (ms) before retrying a failed AuxPoW operation.
     pub auxpow_retry_ms: u64,
     /// Enable autonomous profit switching for Stream 2/3.
@@ -137,6 +149,11 @@ impl MinerConfig {
         let stream3_enabled = std::env::var("ZION_STREAM3_ENABLED")
             .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
             .unwrap_or(auto.stream3_enabled);
+        // Stream 4 (Quad mode) is opt-in — default off, auto-detect has
+        // no fourth stream concept.
+        let stream4_enabled = std::env::var("ZION_STREAM4_ENABLED")
+            .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+            .unwrap_or(false);
 
         // ── Stream 2 batch ──
         let stream2_batch = std::env::var("ZION_STREAM2_BATCH")
@@ -155,6 +172,7 @@ impl MinerConfig {
             auxpow_pool: std::env::var("ZION_AUXPOW_POOL").ok(),
             stream2_url: std::env::var("ZION_STREAM2_URL").ok(),
             stream3_url: std::env::var("ZION_STREAM3_URL").ok(),
+            stream4_url: std::env::var("ZION_STREAM4_URL").ok(),
             gpu_backend,
             miner_threads,
             ext_cpu_threads,
@@ -167,12 +185,22 @@ impl MinerConfig {
             stream1_enabled,
             stream2_enabled,
             stream3_enabled,
+            stream4_enabled,
             stream2_batch,
             stream3_batch: verushash_nonce_count,
+            // Stream 4 batch defaults to the Stream 2 GPU batch — same
+            // device class, same kernel granularity.
+            stream4_batch: std::env::var("ZION_STREAM4_BATCH")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(stream2_batch),
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")
                 .ok()
                 .and_then(|s| s.trim().to_uppercase().parse().ok()),
             stream3_force_coin: std::env::var("ZION_STREAM3_FORCE_COIN")
+                .ok()
+                .and_then(|s| s.trim().to_uppercase().parse().ok()),
+            stream4_force_coin: std::env::var("ZION_STREAM4_FORCE_COIN")
                 .ok()
                 .and_then(|s| s.trim().to_uppercase().parse().ok()),
             auxpow_retry_ms: 5000,
