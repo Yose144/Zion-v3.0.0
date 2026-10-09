@@ -1221,6 +1221,8 @@ mod tests {
             extranonce1_hex: "00".into(),
             ntime: "00000000".into(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: if fresh {
                 Some(Instant::now())
             } else {

@@ -46,6 +46,12 @@ pub struct ExternalStreamJob {
     /// Used for ZcashStratum (VRSC) submit format.
     #[serde(default)]
     pub ntime_hex: String,
+    /// Equihash "N_K" params from upstream notify (e.g. "144_5").
+    #[serde(default)]
+    pub eq_params: String,
+    /// Blake2b personalization from upstream notify (e.g. "sngemPoW").
+    #[serde(default)]
+    pub eq_pers: String,
 }
 
 /// Miner → pool: coin preference for autonomous profit routing.
@@ -292,6 +298,8 @@ mod tests {
                 seed_hash_hex: "".into(),
                 timestamp: 0,
                 ntime_hex: "".into(),
+                eq_params: "".into(),
+                eq_pers: "".into(),
             }),
             external_stream_cpu: Some(ExternalStreamJob {
                 coin: "VRSC".into(),
@@ -305,6 +313,8 @@ mod tests {
                 seed_hash_hex: "".into(),
                 timestamp: 0,
                 ntime_hex: "".into(),
+                eq_params: "".into(),
+                eq_pers: "".into(),
             }),
             external_stream_2: Some(ExternalStreamJob {
                 coin: "QTU".into(),
@@ -318,6 +328,8 @@ mod tests {
                 seed_hash_hex: "".into(),
                 timestamp: 0,
                 ntime_hex: "".into(),
+                eq_params: "".into(),
+                eq_pers: "".into(),
             }),
         };
         let encoded = encode_message(&msg).unwrap();

@@ -162,6 +162,25 @@ fn main() {
         println!("cargo:rerun-if-env-changed=ZION_CPU_TARGET");
     }
 
+    // ── Equihash 144,5 CPU solver (vendored tromp equi_miner.c) ──
+    // Built under the `auxpow` feature — used by the external-coin path for
+    // zpool equihash144 jobs (e.g. ZCL port serving "144_5"/"sngemPoW").
+    // Symbols are namespaced eq144_* inside equi144.c so this never collides
+    // with the `equihash` crate's 200,9 equitromp build.
+    if std::env::var("CARGO_FEATURE_AUXPOW").is_ok() {
+        let mut b = cc::Build::new();
+        b.file("csrc/equihash144/equi144.c")
+            .file("csrc/equihash144/eq144_blake.c")
+            .include("csrc/equihash144")
+            .warnings(false)
+            .opt_level(3);
+        if !is_msvc {
+            b.flag_if_supported("-D_DEFAULT_SOURCE");
+        }
+        b.compile("equitromp144");
+        println!("cargo:rerun-if-changed=csrc/equihash144");
+    }
+
     // ── GPU OpenCL linking ──
     #[cfg(feature = "gpu-opencl")]
     {

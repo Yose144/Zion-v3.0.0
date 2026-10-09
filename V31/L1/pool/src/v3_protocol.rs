@@ -42,6 +42,14 @@ pub struct ExternalStreamJob {
     /// Used for ZcashStratum (VRSC) submit format.
     #[serde(default)]
     pub ntime_hex: String,
+    /// Equihash "N_K" params from upstream notify (e.g. "144_5" on zpool
+    /// equihash192). Empty = default params for the algorithm.
+    #[serde(default)]
+    pub eq_params: String,
+    /// Blake2b personalization from upstream notify (e.g. "sngemPoW").
+    /// Empty = algorithm default ("ZcashPoW").
+    #[serde(default)]
+    pub eq_pers: String,
 }
 
 /// V3 pool wire protocol message enum.
@@ -249,6 +257,8 @@ mod tests {
                 extranonce1_hex: "".into(),
                 protocol: "stratum".into(),
                 seed_hash_hex: "".into(),
+                eq_params: String::new(),
+                eq_pers: String::new(),
                 timestamp: 0,
                 ntime_hex: "".into(),
             }),

@@ -488,6 +488,8 @@ fn handle_new_job(bridge: &MultiAuxPowBridge, req: &MiningRequest, share_diff: u
         extranonce1_hex: hex::encode(rand_bytes()),
         ntime: String::new(),
         seed_hash_hex: String::new(),
+        eq_params: String::new(),
+        eq_pers: String::new(),
         received_at: Some(Instant::now()),
     };
     let ctx = NativeJobCtx {
@@ -681,6 +683,8 @@ mod tests {
                 extranonce1_hex: "01020304".into(),
                 ntime: String::new(),
                 seed_hash_hex: String::new(),
+                eq_params: String::new(),
+                eq_pers: String::new(),
                 received_at: Some(Instant::now()),
             },
             NativeJobCtx {
@@ -732,6 +736,8 @@ mod tests {
                 extranonce1_hex: String::new(),
                 ntime: String::new(),
                 seed_hash_hex: String::new(),
+                eq_params: String::new(),
+                eq_pers: String::new(),
                 received_at: None,
             },
             ctx,
@@ -761,6 +767,8 @@ mod tests {
             extranonce1_hex: String::new(),
             ntime: String::new(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: age.map(|a| Instant::now() - a),
         };
         let ctx = |id: &str| NativeJobCtx {

@@ -666,6 +666,8 @@ mod tests {
                 seed_hash_hex: String::new(),
                 timestamp: 0,
                 ntime_hex: "00000000".into(),
+                eq_params: "".into(),
+                eq_pers: "".into(),
             }),
             external_stream_2: None,
         })
@@ -685,6 +687,8 @@ mod tests {
             seed_hash_hex: String::new(),
             timestamp: 0,
             ntime_hex: "00000000".into(),
+            eq_params: "".into(),
+            eq_pers: "".into(),
         }
     }
 
