@@ -9,7 +9,7 @@ const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'), { ssr: tru
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'), { ssr: true });
 const Features = dynamicImport(() => import('@/components/Features'), { ssr: true });
 const StoryTriptych = dynamicImport(() => import('@/components/StoryTriptych'), { ssr: true });
-const HiranSection = dynamicImport(() => import('@/components/HiranSection'), { ssr: true });
+const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'), { ssr: true });
 const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'), { ssr: true });
 const DocsRail = dynamicImport(() => import('@/components/DocsRail'), { ssr: true });
 
@@ -30,7 +30,7 @@ export default function Home() {
       <LiveDashboard />
       <NewsFeed />
       <StoryTriptych />
-      <HiranSection />
+      <GoldenEggHaraniagharba />
       <Features />
       <RoadmapPulse />
       <DocsRail />

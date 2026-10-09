@@ -17,7 +17,7 @@ export default function GoldenEggHaraniagharba() {
   const cs = lang === 'cs';
 
   return (
-    <section className="relative px-4 py-8">
+    <section className="relative px-4 py-6">
       <div className="zion-container">
         <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="absolute -right-10 top-[-40px] h-32 w-32 rounded-full bg-zion-gold/15 blur-3xl" />
@@ -48,34 +48,8 @@ export default function GoldenEggHaraniagharba() {
                   <h2 className="mt-2 text-xl font-bold leading-tight text-white sm:text-2xl">
                     {GoldenEggHaraniagharbaCopy.hiranAsTheAiGatewayIntoTerraNo[cs ? 'cs' : 'en']}
                   </h2>
-                  <p className="mt-1 text-sm text-amber-100/80 max-w-2xl">
+                  <p className="mt-1 text-sm text-amber-100/80 max-w-2xl line-clamp-3">
                     {tr('goldenEgg', 'featured_body', lang)}
-                  </p>
-                </div>
-
-                <Link
-                  href="/docs#book-ekam-full"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zion-gold/40 bg-black/35 px-4 py-2 text-sm font-semibold text-zion-gold transition hover:bg-black/55 shrink-0"
-                >
-                  {tr('goldenEgg', 'featured_cta', lang)}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-
-              {/* Compact knowledge row */}
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="zion-rainbow-sub p-3 backdrop-blur-sm" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">{tr('goldenEgg', 'what_title', lang)}</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{tr('goldenEgg', 'what_head', lang)}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-gray-400 line-clamp-2">
-                    {tr('goldenEgg', 'what_body', lang)}
-                  </p>
-                </div>
-                <div className="zion-rainbow-sub p-3 backdrop-blur-sm" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">{tr('goldenEgg', 'ekam_title', lang)}</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{tr('goldenEgg', 'ekam_head', lang)}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-gray-400 line-clamp-2">
-                    {tr('goldenEgg', 'ekam_body', lang)}
                   </p>
                 </div>
               </div>
@@ -97,13 +71,6 @@ export default function GoldenEggHaraniagharba() {
                 >
                   <BookOpen className="h-4 w-4" />
                   {tr('goldenEgg', 'book_card_body', lang)}
-                </Link>
-                <Link
-                  href="/network"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-amber-200/15 bg-amber-200/5 px-4 py-2 text-sm font-semibold text-amber-100/80 transition hover:bg-amber-200/10"
-                >
-                  {tr('goldenEgg', 'cta_network', lang)}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>
             </div>
