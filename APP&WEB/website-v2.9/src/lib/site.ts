@@ -32,13 +32,14 @@ export const SITE_POOL_PRIMARY = `${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 's
 // Network topology descriptor (operational details are injected via environment variables only)
 export const SITE_NETWORK_TOPOLOGY = 'single-node Mainnet Alpha';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
-export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
-export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';
+export const EKAM_HERO_IMAGE = '/images/ekam/hero.webp';
+export const EKAM_BANNER_IMAGE = '/images/ekam/temple.webp';
+export const EKAM_FOUNDERS_BANNER_IMAGE = '/images/ekam/founders.webp';
 export const EKAM_SOURCE_URL = 'https://www.theonenessmovement.org/about-oneness';
 
 /* ── Ekam extended image gallery ── */
-export const EKAM_PREETHAJI_KRISHNAJI_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/18b2aa8-d063-5aa1-0e7-145623a46531_a2012e18-e98c-4e65-8212-ff2823f727ae.png';
-export const EKAM_NORDIC_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/831114-c24e-e4a-5a4a-d84434bb22c_ot.jpeg';
-export const EKAM_TURIYA_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/0ea3f2-e65e-3cc-3cca-e6f67bd6e7cc_TheOnenessTuriya_Intorior-Page_V5_07.jpg';
+export const EKAM_PREETHAJI_KRISHNAJI_IMAGE = '/images/ekam/preethaji.webp';
+export const EKAM_NORDIC_IMAGE = '/images/ekam/nordic.webp';
+export const EKAM_TURIYA_IMAGE = '/images/ekam/turiya.webp';
 export const EKAM_PREETHAJI_KRISHNAJI_URL = 'https://www.theonenessmovement.org/sri-preethaji-and-sri-krishnaji';
 export const EKAM_YOUTUBE_CHANNEL = 'https://www.youtube.com/@theonenessmovement';
