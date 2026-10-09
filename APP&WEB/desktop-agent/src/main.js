@@ -2608,6 +2608,23 @@ function startMiningV31(config, v31Path) {
     if (Number.isFinite(zionDuty) && zionDuty >= 1 && zionDuty <= 100) {
       env.ZION_GPU_TIME_DUTY_PCT = String(Math.floor(zionDuty));
     }
+    // External GPU stream duty cycles (percent of GPU time each ext stream
+    // holds the card after a batch). Stream 2 uses ZION_EXT_GPU_TIME_DUTY_PCT,
+    // stream 4 (Quad) has its own ZION_EXT_GPU2_TIME_DUTY_PCT so the two can
+    // be biased — e.g. QTU=100 / ZANO=20 lets QTC dominate the shared card.
+    const extDuty = Number(config?.extGpuDutyPct);
+    if (Number.isFinite(extDuty) && extDuty >= 1 && extDuty <= 100) {
+      env.ZION_EXT_GPU_TIME_DUTY_PCT = String(Math.floor(extDuty));
+    }
+    const ext2Duty = Number(config?.gpuExt2DutyPct);
+    if (Number.isFinite(ext2Duty) && ext2Duty >= 1 && ext2Duty <= 100) {
+      env.ZION_EXT_GPU2_TIME_DUTY_PCT = String(Math.floor(ext2Duty));
+    }
+    // Opt-in stream-4 batch size (nonces per GPU launch for the 2nd GPU coin).
+    const s4Batch = Number(config?.gpuStream4Batch);
+    if (Number.isFinite(s4Batch) && s4Batch >= 262144) {
+      env.ZION_STREAM4_BATCH = String(Math.floor(s4Batch));
+    }
     // Opt-in stream-3 batch (VerusHash CPU nonces per scan round) —
     // smaller batches refresh upstream jobs sooner, cutting stale
     // "job not found" rejects on fast-rotating pools (LuckPool ~15-60s).

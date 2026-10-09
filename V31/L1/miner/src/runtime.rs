@@ -828,12 +828,25 @@ impl MinerRuntime {
                 // Stream 1 (ZION) gets GPU time on shared cards.
                 // ZION_EXT_GPU_TIME_DUTY_PCT = target % of GPU time for the
                 // ext stream: sleep = batch_ms * (100-duty)/duty.
+                // ZION_EXT_GPU2_TIME_DUTY_PCT = stream-4-specific override so
+                // the two GPU ext streams can be biased (e.g. QTU=100 vs
+                // ZANO=20 → QTU dominates the shared card).
                 // <100 only when ZION has its own GPU backend sharing the
                 // card; 100 = legacy behavior (free contention).
-                let duty_pct = std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
+                let duty_env = match stream {
+                    StreamId::GpuExternal2 => "ZION_EXT_GPU2_TIME_DUTY_PCT",
+                    _ => "ZION_EXT_GPU_TIME_DUTY_PCT",
+                };
+                let duty_pct = std::env::var(duty_env)
                     .ok()
                     .and_then(|v| v.parse::<u64>().ok())
                     .filter(|&d| (1..=100).contains(&d))
+                    .or_else(|| {
+                        std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
+                            .ok()
+                            .and_then(|v| v.parse::<u64>().ok())
+                            .filter(|&d| (1..=100).contains(&d))
+                    })
                     .unwrap_or(100);
                 let gap_ms = if duty_pct < 100
                     && self.gpu_zion.lock().unwrap().is_some()
