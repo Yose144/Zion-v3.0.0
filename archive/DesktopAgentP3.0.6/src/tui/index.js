@@ -1,16 +1,30 @@
 /**
  * ZION Desktop Agent — Terminal UI (TUI) Mode
  *
- * A professional terminal dashboard for mining monitoring.
- * Launched with: npm run tui  OR  node src/tui/index.js
+ * Launches the built-in V31 miner ratatui TUI (`--interactive`).
  *
- * Features:
- *  - Live hashrate (10s / 60s / 15m) with sparkline
- *  - GPU temp / power / VRAM / clock / CUs
- *  - Share log (accept / reject with timestamps)
- *  - Public mining stream card (single ZION/Deeksha stream)
- *  - Pool connection status
- *  - Keyboard shortcuts: [s]tart, [x]stop, [q]uit, [r]eset sparkline
+ * Usage:
+ *   npm run tui
+ *   node src/tui/index.js
+ *
+ * Configuration is read from the desktop agent's `miner_config.json`:
+ *   - wallet / payoutAddress / address
+ *   - worker / workerName
+ *   - pool (object: {host, port} or string)
+ *   - threads
+ *   - gpu (boolean) / gpuBackend
+ *   - tripleStream (boolean)
+ *   - autonomous (boolean)
+ *
+ * If no wallet is configured, the script exits with instructions.
+ *
+ * Keyboard shortcuts are handled by the miner itself:
+ *   q / Esc    quit
+ *   p          pause/resume (planned)
+ *   1-9        thread count (planned)
+ *   r          reconnect (planned)
+ *   i          hardware info (planned)
+ *   v          verbose (planned)
  */
 
 'use strict';
@@ -19,30 +33,65 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn } = require('child_process');
-const blessed = require('blessed');
 
 // ── Paths ──
-const APP_ROOT = path.resolve(__dirname, '..', '..', '..');
-const IS_PACKAGED = !!process.versions.electron && process.versions.electron.includes('resources');
-const USER_DATA_PATH = process.env.ZION_DATA_DIR
-  || path.join(os.homedir(), 'AppData', 'Roaming', 'ZionMiner')
-  || path.join(os.homedir(), '.zion-miner');
+// src/tui -> src -> desktop-agent -> APP&WEB -> repo root
+const APP_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
+const IS_PACKAGED = !!process.versions.electron;
+const HOME = os.homedir();
 
-const CONFIG_PATH = path.join(USER_DATA_PATH, 'miner_config.json');
-const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats_tui.json');
+function userDataDir() {
+  if (process.env.ZION_DATA_DIR) return process.env.ZION_DATA_DIR;
+  if (IS_PACKAGED) {
+    // Electron packaged mode: resourcesPath is provided by Electron.
+    // Fall through to platform defaults, which is what a packaged terminal
+    // invocation would also use.
+  }
+  if (process.platform === 'darwin') {
+    return path.join(HOME, 'Library', 'Application Support', 'zion-desktop-agent');
+  }
+  if (process.platform === 'win32') {
+    return path.join(HOME, 'AppData', 'Roaming', 'zion-desktop-agent');
+  }
+  return path.join(HOME, '.config', 'zion-desktop-agent');
+}
+
+function findConfigPath() {
+  const envDir = process.env.ZION_DATA_DIR;
+  if (envDir) return path.join(envDir, 'miner_config.json');
+
+  const candidates = [
+    path.join(HOME, '.zion-miner', 'miner_config.json'),
+    path.join(userDataDir(), 'miner_config.json'),
+    path.join(HOME, 'Library', 'Application Support', 'ZION Miner', 'miner_config.json'),
+    path.join(HOME, 'AppData', 'Roaming', 'ZION Miner', 'miner_config.json'),
+    path.join(HOME, '.config', 'ZION Miner', 'miner_config.json'),
+  ];
+
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  // Default to the legacy ~/.zion-miner location if nothing exists.
+  return candidates[0];
+}
+
+const CONFIG_PATH = findConfigPath();
+const CONFIG_DIR = path.dirname(CONFIG_PATH);
 
 // ── Miner binary discovery (mirrors main.js findRustMiner) ──
 function findRustMiner() {
-  const v3Names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner'];
+  const names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner', 'zion-universal-miner'];
   const searchPaths = IS_PACKAGED
     ? [process.resourcesPath]
     : [
-        path.join(APP_ROOT, 'APP&WEB', 'desktop-agent', 'resources'),
-        path.join(APP_ROOT, 'V3', 'target', 'release'),
-        path.join(APP_ROOT, 'V3', 'L1', 'miner', 'target', 'release'),
+        // Prefer the freshly built V31 workspace binary over a stale
+        // resources/ copy during development.
+        path.join(APP_ROOT, 'V31', 'target', 'release'),
         path.join(APP_ROOT, 'target', 'release'),
+        path.join(APP_ROOT, 'APP&WEB', 'desktop-agent', 'resources'),
+        path.join(APP_ROOT, 'V31', 'L1', 'miner', 'target', 'release'),
       ];
-  for (const name of v3Names) {
+  for (const name of names) {
     for (const sp of searchPaths) {
       const fp = path.join(sp, name);
       if (fs.existsSync(fp)) return fp;
@@ -53,382 +102,268 @@ function findRustMiner() {
 
 // ── Config ──
 const DEFAULT_CONFIG = {
-  pool: { host: '62.171.141.136', port: 8444 },
-  payoutAddress: '',
-  workerName: 'w11-tui',
-  threads: 2,
-  gpuWorkSize: 8192,
-  backend: 'opencl',
+  pool: { host: 'stratum.zionterranova.com', port: 8444 },
+  wallet: '',
+  worker: 'desktop-tui',
+  threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
+  // Default to CPU for a safe out-of-the-box TUI experience on all platforms.
+  // Users can set gpuBackend to "auto", "opencl", "metal", or "cuda" to enable GPU.
+  gpu: false,
+  gpuBackend: 'cpu',
+  tripleStream: false,
+  autonomous: false,
 };
 
+function parsePool(pool) {
+  if (typeof pool === 'string') {
+    const [host, port] = pool.split(':');
+    return { host: host || 'stratum.zionterranova.com', port: parseInt(port || '8444', 10) };
+  }
+  if (pool && typeof pool === 'object') {
+    return {
+      host: pool.host || 'stratum.zionterranova.com',
+      port: Number(pool.port) || 8444,
+    };
+  }
+  return { ...DEFAULT_CONFIG.pool };
+}
+
 function loadConfig() {
+  let disk = {};
   try {
     if (fs.existsSync(CONFIG_PATH)) {
-      const disk = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-      return { ...DEFAULT_CONFIG, ...disk, pool: { ...DEFAULT_CONFIG.pool, ...(disk.pool || {}) } };
+      disk = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
     }
-  } catch {}
-  return { ...DEFAULT_CONFIG };
+  } catch (err) {
+    console.error('WARNING: failed to load config:', err.message);
+  }
+
+  const pool = parsePool(disk.pool || DEFAULT_CONFIG.pool);
+  const wallet = String(disk.wallet || disk.payoutAddress || disk.address || DEFAULT_CONFIG.wallet).trim();
+  const worker = String(disk.worker || disk.workerName || DEFAULT_CONFIG.worker).trim();
+  const threads = Number(disk.threads) || DEFAULT_CONFIG.threads;
+
+  const gpu = disk.gpu !== undefined ? !!disk.gpu : DEFAULT_CONFIG.gpu;
+  const gpuBackend = String(disk.gpuBackend || disk.backend || DEFAULT_CONFIG.gpuBackend).trim().toLowerCase();
+  const tripleStream = !!disk.tripleStream;
+  const autonomous = !!disk.autonomous;
+  const gpuCoin = String(disk.gpuCoin || 'auto').trim();
+  const cpuCoin = String(disk.cpuCoin || 'auto').trim();
+  const gpuStream2Batch = Number(disk.gpuStream2Batch) || 0;
+  const gpuExtGapMs = Number(disk.gpuExtGapMs);
+  const cpuStream3Batch = Number(disk.cpuStream3Batch) || 0;
+
+  return {
+    pool,
+    wallet,
+    worker,
+    threads,
+    gpu,
+    gpuBackend,
+    tripleStream,
+    autonomous,
+    gpuCoin,
+    cpuCoin,
+    gpuStream2Batch,
+    gpuExtGapMs,
+    cpuStream3Batch,
+  };
 }
 
-// ── Stats polling ──
-function readStats() {
+function sanitizeWorkerName(raw) {
+  return String(raw || 'desktop-tui')
+    .trim()
+    .replace(/[^a-zA-Z0-9_.\-=@]/g, '')
+    .slice(0, 32) || 'desktop-tui';
+}
+
+function saveConfig(config) {
   try {
-    if (!fs.existsSync(STATS_PATH)) return null;
-    const raw = fs.readFileSync(STATS_PATH, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return null;
+    if (!fs.existsSync(CONFIG_DIR)) {
+      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    }
+    const persist = {
+      pool: config.pool,
+      wallet: config.wallet,
+      worker: config.worker,
+      threads: config.threads,
+      gpu: config.gpu,
+      gpuBackend: config.gpuBackend,
+      tripleStream: config.tripleStream,
+      autonomous: config.autonomous,
+      gpuCoin: config.gpuCoin,
+      cpuCoin: config.cpuCoin,
+      gpuStream2Batch: config.gpuStream2Batch,
+      gpuExtGapMs: config.gpuExtGapMs,
+      cpuStream3Batch: config.cpuStream3Batch,
+    };
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(persist, null, 2));
+  } catch (err) {
+    console.error('WARNING: failed to save config:', err.message);
   }
 }
 
-// ── Hashrate formatting ──
-function fmtHr(hps) {
-  if (!hps || hps <= 0) return '—';
-  if (hps >= 1e12) return (hps / 1e12).toFixed(2) + ' TH/s';
-  if (hps >= 1e9) return (hps / 1e9).toFixed(2) + ' GH/s';
-  if (hps >= 1e6) return (hps / 1e6).toFixed(2) + ' MH/s';
-  if (hps >= 1e3) return (hps / 1e3).toFixed(2) + ' kH/s';
-  return hps.toFixed(0) + ' H/s';
-}
-
-function fmtBytes(b) {
-  if (!b) return '—';
-  if (b >= 1e9) return (b / 1e9).toFixed(1) + ' GB';
-  if (b >= 1e6) return (b / 1e6).toFixed(0) + ' MB';
-  return b + ' B';
-}
-
-// ── Sparkline (ASCII) ──
-const SPARK_CHARS = '▁▂▃▄▅▆▇█';
-function sparkline(history, width) {
-  if (!history || history.length < 2) return 'collecting…';
-  const w = width || 60;
-  const slice = history.slice(-w);
-  const max = Math.max(...slice);
-  const min = Math.min(...slice);
-  const range = max - min || 1;
-  let out = '';
-  for (const v of slice) {
-    const idx = Math.floor(((v - min) / range) * (SPARK_CHARS.length - 1));
-    out += SPARK_CHARS[Math.max(0, Math.min(SPARK_CHARS.length - 1, idx))];
-  }
-  return out;
-}
-
-// ── Main TUI ──
+// ── Main TUI launcher ──
 async function main() {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.error('ERROR: This TUI must be run from an interactive terminal.');
+    console.error('       Run: npm run tui   (not from a non-TTY pipe)');
+    process.exit(1);
+  }
+
   const minerPath = findRustMiner();
   if (!minerPath) {
-    console.error('ERROR: zion-miner binary not found. Build V3/L1/miner first:');
-    console.error('  cd V3 && cargo build --release -p zion-miner --features gpu-opencl,...');
+    console.error('ERROR: zion-miner binary not found.');
+    console.error('       Build it first with:');
+    console.error('  cd V31 && cargo build --release -p zion-miner --bin zion-miner --features public_build,native-all,tui');
+    console.error('       Or use the desktop agent build:');
+    console.error('  npm run prepare:rust-miner');
     process.exit(1);
   }
 
   const config = loadConfig();
-  if (!config.payoutAddress) {
-    console.error('ERROR: No payout address configured. Set it in the desktop agent GUI first,');
-    console.error('or edit:', CONFIG_PATH);
+
+  if (!config.wallet) {
+    console.error('ERROR: No ZION wallet address configured.');
+    console.error('       Set it in the desktop agent Settings / Wallet tab,');
+    console.error('       or edit:', CONFIG_PATH);
     process.exit(1);
   }
 
-  // Ensure user data dir exists
-  if (!fs.existsSync(USER_DATA_PATH)) fs.mkdirSync(USER_DATA_PATH, { recursive: true });
+  const pool = `${config.pool.host}:${config.pool.port}`;
+  const worker = sanitizeWorkerName(config.worker);
 
-  // ── Blessed screen ──
-  const screen = blessed.screen({
-    smartCSR: true,
-    title: 'ZION Public Miner — TUI Dashboard',
-    fullUnicode: true,
-  });
-
-  // Header
-  const header = blessed.box({
-    parent: screen,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    content: ' {bold}ZION Public Miner — TUI Dashboard{/}  {grey-fg}v3.1.0{/}',
-    tags: true,
-    border: { type: 'line' },
-    style: { border: { fg: 'cyan' }, fg: 'white' },
-  });
-
-  // Status bar
-  const statusBar = blessed.box({
-    parent: screen,
-    top: 3,
-    left: 0,
-    right: 0,
-    height: 1,
-    content: ' Status: {red-fg}STOPPED{/}  |  Pool: —  |  [s]tart  [x]stop  [q]uit',
-    tags: true,
-    style: { fg: 'white', bg: 'blue' },
-  });
-
-  // ── Hashrate panel ──
-  const hrBox = blessed.box({
-    parent: screen,
-    top: 5,
-    left: 0,
-    width: '50%',
-    height: 8,
-    label: ' Hashrate ',
-    border: { type: 'line' },
-    style: { border: { fg: 'cyan' } },
-    tags: true,
-  });
-
-  // ── GPU panel ──
-  const gpuBox = blessed.box({
-    parent: screen,
-    top: 5,
-    left: '50%',
-    width: '50%',
-    height: 8,
-    label: ' GPU Hardware ',
-    border: { type: 'line' },
-    style: { border: { fg: 'green' } },
-    tags: true,
-  });
-
-  // ── Sparkline ──
-  const sparkBox = blessed.box({
-    parent: screen,
-    top: 13,
-    left: 0,
-    right: 0,
-    height: 3,
-    label: ' Hashrate Sparkline ',
-    border: { type: 'line' },
-    style: { border: { fg: 'cyan' } },
-    tags: true,
-  });
-
-  // ── Mining streams ──
-  const streamBox = blessed.box({
-    parent: screen,
-    top: 16,
-    left: 0,
-    right: 0,
-    height: 7,
-    label: ' Mining Streams ',
-    border: { type: 'line' },
-    style: { border: { fg: 'magenta' } },
-    tags: true,
-  });
-
-  // ── Share log ──
-  const shareLog = blessed.log({
-    parent: screen,
-    top: 23,
-    left: 0,
-    right: 0,
-    bottom: 3,
-    label: ' Share Log ',
-    border: { type: 'line' },
-    style: { border: { fg: 'yellow' } },
-    tags: true,
-    scrollable: true,
-    alwaysScroll: true,
-    scrollbar: { ch: ' ' },
-  });
-
-  // ── Miner output log (bottom) ──
-  const minerLog = blessed.log({
-    parent: screen,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    label: ' Miner Output ',
-    border: { type: 'line' },
-    style: { border: { fg: 'grey' } },
-    tags: true,
-    scrollable: true,
-  });
-
-  // ── State ──
-  let minerProc = null;
-  let isRunning = false;
-  let hrHistory = [];
-  let lastShareCount = 0;
-
-  // ── Update dashboard from stats ──
-  function updateDashboard() {
-    const stats = readStats();
-    if (!stats) {
-      hrBox.setContent(' {grey-fg}Waiting for stats…{/}');
-      gpuBox.setContent(' {grey-fg}No GPU data{/}');
-      sparkBox.setContent(' {grey-fg}collecting…{/}');
-      streamBox.setContent(' {grey-fg}No stream data{/}');
-      return;
+  // The miner resolves the GPU backend from env if --gpu is not supplied.
+  // "cpu" means the ZION PoW runs on CPU; "auto" tries CUDA/OpenCL/Metal.
+  let selectedBackend = config.gpuBackend;
+  if (!selectedBackend || selectedBackend === 'opencl' || selectedBackend === 'auto') {
+    if (!config.gpu) {
+      selectedBackend = 'cpu';
+    } else if (!selectedBackend || selectedBackend === 'opencl') {
+      selectedBackend = 'auto';
     }
+  }
 
-    // Hashrate
-    const hr10 = fmtHr(stats.hashrate_10s || stats.hashrate_10s_hps);
-    const hr60 = fmtHr(stats.hashrate_60s || stats.hashrate_60s_hps);
-    const hr15 = fmtHr(stats.hashrate_15m || stats.hashrate_15m_hps);
-    const hrMax = fmtHr(stats.hashrate_max);
-    const hrNow = fmtHr(stats.hashrate || stats.hashrate_hps);
-    hrBox.setContent(
-      ` Current: {bold}{cyan-fg}${hrNow}{/}\n` +
-      ` 10s: {cyan-fg}${hr10}{/}   60s: {cyan-fg}${hr60}{/}\n` +
-      ` 15m: {cyan-fg}${hr15}{/}   Max: {green-fg}${hrMax}{/}\n` +
-      ` Shares: {green-fg}${stats.accepted || 0}{/}/${stats.rejected || 0}  ` +
-      `Uptime: ${stats.uptime_sec || 0}s`
-    );
+  const args = [
+    '--pool', pool,
+    '--wallet', config.wallet,
+    '--worker', worker,
+    '--threads', String(config.threads),
+    '--metrics', '127.0.0.1:9116',
+    '--log-interval', '30',
+    '--interactive',
+  ];
 
-    // GPU
-    const gpuName = stats.gpu_name || stats.gpu_info || '—';
-    const temp = stats.gpu_temp_c != null ? stats.gpu_temp_c + '°C' : '—';
-    const power = stats.gpu_power_w != null ? stats.gpu_power_w + 'W' : '—';
-    const vram = stats.gpu_vram_mib ? stats.gpu_vram_mib + ' MiB' : '—';
-    const clock = stats.gpu_clock_mhz ? stats.gpu_clock_mhz + ' MHz' : '—';
-    const cus = stats.gpu_compute_units || '—';
-    const tempColor = stats.gpu_temp_c >= 80 ? 'red-fg' : stats.gpu_temp_c >= 70 ? 'yellow-fg' : 'green-fg';
-    gpuBox.setContent(
-      ` {bold}${gpuName}{/}\n` +
-      ` Temp: {${tempColor}}${temp}{/}  Power: {yellow-fg}${power}{/}\n` +
-      ` VRAM: ${vram}  Clock: ${clock}\n` +
-      ` CUs: ${cus}  Backend: ${stats.backend || '—'}`
-    );
+  if (!config.tripleStream) {
+    // Pure ZION mode: disable merged AuxPoW streams.
+    args.push('--no-gpu', '--no-cpu');
+  } else if (!config.gpu) {
+    // Trinity mode without a GPU: only CPU external stream.
+    args.push('--no-gpu');
+  }
 
-    // Sparkline
-    const hps = stats.hashrate_10s || stats.hashrate_10s_hps || stats.hashrate || 0;
-    if (hps > 0) {
-      hrHistory.push(hps);
-      if (hrHistory.length > 120) hrHistory.shift();
+  if (config.tripleStream) {
+    args.push('--v3-trinity');
+  }
+
+  if (config.tripleStream && config.autonomous) {
+    args.push('--autonomous');
+  }
+
+  const env = {
+    ...process.env,
+    ZION_POOL_ADDR: pool,
+    ZION_WORKER: worker,
+    ZION_WORKER_NAME: worker,
+    ZION_MINER_THREADS: String(config.threads),
+    ZION_GPU_BACKEND: selectedBackend,
+    ZION_BACKEND: selectedBackend,
+    ZION_AUTONOMOUS: config.tripleStream && config.autonomous ? '1' : '0',
+    ZION_PROFIT_INTERVAL: '300',
+    // Keep terminal quiet so the ratatui TUI is not corrupted by tracing output.
+    // Users can override via RUST_LOG if they need logs for debugging.
+    RUST_LOG: process.env.RUST_LOG || 'error',
+  };
+
+  // Triple-stream force-coin envs (mirror main.js): when the user picks a
+  // specific coin for stream2/3 the miner skips the profit router.
+  if (config.tripleStream) {
+    const gpuCoin = config.gpuCoin.toLowerCase();
+    const cpuCoin = config.cpuCoin.toLowerCase();
+    if (config.gpu && gpuCoin && gpuCoin !== 'auto') {
+      env.ZION_STREAM2_FORCE_COIN = config.gpuCoin.toUpperCase();
     }
-    sparkBox.setContent(' ' + sparkline(hrHistory, 80));
+    if (cpuCoin && cpuCoin !== 'auto') {
+      env.ZION_STREAM3_FORCE_COIN = config.cpuCoin.toUpperCase();
+    }
+    // Opt-in stream-2 tuning (QPoW CUDA): batch size in nonces and the
+    // duty-cycle gap that yields GPU time to the ZION stream.
+    if (config.gpuStream2Batch >= 262144) {
+      env.ZION_STREAM2_BATCH = String(Math.floor(config.gpuStream2Batch));
+    }
+    if (Number.isFinite(config.gpuExtGapMs) && config.gpuExtGapMs >= 0 && config.gpuExtGapMs <= 1000) {
+      env.ZION_EXT_GPU_GAP_MS = String(Math.floor(config.gpuExtGapMs));
+    }
+    // Opt-in stream-3 batch (VerusHash CPU nonces per scan round).
+    // Smaller batches refresh the upstream job sooner — cuts stale
+    // "job not found" rejects on pools with sub-minute job rotation.
+    if (Number.isFinite(config.cpuStream3Batch) && config.cpuStream3Batch >= 100000) {
+      env.ZION_EXT_CPU_NONCE_COUNT = String(Math.floor(config.cpuStream3Batch));
+    }
+  }
 
-    // Mining streams
-    if (Array.isArray(stats.streams) && stats.streams.length > 0) {
-      let lines = '';
-      for (const s of stats.streams) {
-        const active = s.active ? '{green-fg}●{/}' : '{red-fg}○{/}';
-        const hr = fmtHr(s.hashrate_10s);
-        const rawCoin = (s.coin || s.label || '—').toString().trim();
-        const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
-        const idx = Number(s.index) || 0;
-        const coin = isZion ? rawCoin : (idx === 3 ? 'Boost Stream 2' : 'Boost Stream 1');
-        const algo = isZion ? (s.algorithm || '') : 'Boost';
-        const acc = s.accepted || 0;
-        const rej = s.rejected || 0;
-        lines += ` ${active} ${coin.padEnd(10)} ${hr.padEnd(12)} ${algo.padEnd(20)} A:${acc} R:${rej}\n`;
-      }
-      streamBox.setContent(lines.trim());
+  // Persist any resolved defaults (e.g. default pool) so the GUI sees the same values.
+  saveConfig({ ...config, worker });
+
+  console.log(`[TUI] Miner: ${minerPath}`);
+  console.log(`[TUI] Pool:  ${pool}`);
+  console.log(`[TUI] Wallet: ${config.wallet}`);
+  console.log(`[TUI] Worker: ${worker}`);
+  console.log(`[TUI] Threads: ${config.threads}`);
+  console.log(`[TUI] Backend: ${selectedBackend}`);
+  console.log('[TUI] Press q or Esc in the miner TUI to quit.\n');
+
+  const child = spawn(minerPath, args, {
+    env,
+    stdio: 'inherit',
+    cwd: APP_ROOT,
+  });
+
+  let childExited = false;
+  child.on('exit', (code, signal) => {
+    childExited = true;
+    if (signal) {
+      console.error(`\n[TUI] Miner exited on signal ${signal}`);
+      process.exit(0);
+    } else if (code !== 0 && code !== null) {
+      console.error(`\n[TUI] Miner exited with code ${code}`);
+      process.exit(code);
     } else {
-      streamBox.setContent(' {grey-fg}No active streams{/}');
+      console.log('\n[TUI] Miner finished.');
+      process.exit(0);
     }
-
-    // Share log — detect new shares
-    const totalShares = (stats.accepted || 0) + (stats.rejected || 0);
-    if (totalShares > lastShareCount) {
-      const newShares = totalShares - lastShareCount;
-      const time = new Date().toLocaleTimeString();
-      if (stats.accepted > 0 && stats.accepted > (lastShareCount - (stats.rejected || 0))) {
-        shareLog.log(`{green-fg}[${time}] ✓ share accepted (A:${stats.accepted} R:${stats.rejected}){/}`);
-      }
-      if (stats.rejected > 0) {
-        shareLog.log(`{red-fg}[${time}] ✗ share rejected (A:${stats.accepted} R:${stats.rejected}){/}`);
-      }
-      lastShareCount = totalShares;
-    }
-
-    // Status bar
-    const poolHost = config.pool.host + ':' + config.pool.port;
-    const statusStr = isRunning ? '{green-fg}RUNNING{/}' : '{red-fg}STOPPED{/}';
-    statusBar.setContent(` Status: ${statusStr}  |  Pool: ${poolHost}  |  Nonces: ${stats.total_hashes || 0}  |  [s]tart  [x]stop  [q]uit`);
-
-    screen.render();
-  }
-
-  // ── Start mining ──
-  function startMining() {
-    if (isRunning || minerProc) return;
-    // Clean up old stats file
-    try { if (fs.existsSync(STATS_PATH)) fs.unlinkSync(STATS_PATH); } catch {}
-
-    const env = {
-      ...process.env,
-      ZION_STATS_FILE: STATS_PATH,
-      ZION_BACKEND: config.backend || 'opencl',
-      ZION_GPU_WORK_SIZE: String(config.gpuWorkSize || 8192),
-      ZION_THREADS: String(config.threads || 2),
-      ZION_INTERACTIVE: '0',
-      ZION_NO_STICKY: '1',
-      ZION_QUIET: '1',
-      ZION_METRICS_REPORT_SECS: '2',
-      ZION_PAYOUT_ADDRESS: config.payoutAddress,
-      ZION_WORKER_NAME: config.workerName || 'w11-tui',
-      ZION_POOL_ADDR: `${config.pool.host}:${config.pool.port}`,
-    };
-
-    const args = [
-      '--stats-file', STATS_PATH,
-      '--payout-address', config.payoutAddress,
-      '--worker-name', config.workerName || 'w11-tui',
-      '--pool-addr', `${config.pool.host}:${config.pool.port}`,
-      '--backend', config.backend || 'opencl',
-      '--threads', String(config.threads || 2),
-      '--gpu-work-size', String(config.gpuWorkSize || 8192),
-    ];
-
-    minerProc = spawn(minerPath, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
-    isRunning = true;
-    lastShareCount = 0;
-    hrHistory = [];
-
-    minerProc.stdout.on('data', (data) => {
-      const lines = data.toString().split('\n').filter(l => l.trim());
-      for (const line of lines.slice(-2)) {
-        minerLog.log(' ' + line.substring(0, 120));
-      }
-    });
-    minerProc.stderr.on('data', (data) => {
-      const lines = data.toString().split('\n').filter(l => l.trim());
-      for (const line of lines.slice(-2)) {
-        minerLog.log(' {red-fg}' + line.substring(0, 120) + '{/}');
-      }
-    });
-    minerProc.on('close', (code) => {
-      isRunning = false;
-      minerProc = null;
-      shareLog.log(`{yellow-fg}[${new Date().toLocaleTimeString()}] Miner exited (code=${code}){/}`);
-      statusBar.setContent(` Status: {red-fg}STOPPED{/}  |  Pool: ${config.pool.host}:${config.pool.port}  |  [s]tart  [x]stop  [q]uit`);
-      screen.render();
-    });
-
-    shareLog.log(`{green-fg}[${new Date().toLocaleTimeString()}] Mining started — ${config.pool.host}:${config.pool.port}{/}`);
-    screen.render();
-  }
-
-  // ── Stop mining ──
-  function stopMining() {
-    if (!minerProc) return;
-    try { minerProc.kill('SIGTERM'); } catch {}
-    shareLog.log(`{yellow-fg}[${new Date().toLocaleTimeString()}] Stopping miner…{/}`);
-    screen.render();
-  }
-
-  // ── Keyboard ──
-  screen.key(['s'], () => startMining());
-  screen.key(['x'], () => stopMining());
-  screen.key(['r'], () => { hrHistory = []; screen.render(); });
-  screen.key(['q', 'C-c'], () => {
-    stopMining();
-    setTimeout(() => process.exit(0), 500);
   });
 
-  // ── Polling loop ──
-  setInterval(updateDashboard, 1000);
-  updateDashboard();
+  child.on('error', (err) => {
+    console.error(`\n[TUI] Failed to start miner: ${err.message}`);
+    process.exit(1);
+  });
 
-  // Welcome message
-  shareLog.log('{grey-fg}ZION TUI Dashboard ready. Press [s] to start mining, [q] to quit.{/}');
-  screen.render();
+  // Forward Ctrl-C / SIGTERM to the child so the miner's TUI restores the terminal.
+  function forwardSignal(signal) {
+    return () => {
+      if (!childExited && child.pid) {
+        try {
+          child.kill(signal);
+        } catch (err) {
+          // ignore
+        }
+      }
+    };
+  }
+
+  process.on('SIGINT', forwardSignal('SIGINT'));
+  process.on('SIGTERM', forwardSignal('SIGTERM'));
 }
 
 main().catch((err) => {

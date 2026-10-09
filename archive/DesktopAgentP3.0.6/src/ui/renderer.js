@@ -1,7 +1,7 @@
-// ZION V3 Mainnet Ready v3.1.0 - Renderer Process
+// ZION Public Miner v3.2.0 - Renderer Process
 // UI logic and state management
-
-// Public build: coin selectors are hidden; Boost streams shown as branded labels.
+// Public build: internal AuxPoW stream coin names are masked as "Boost"
+// streams; only ZION and QTC are shown to the user.
 const PUBLIC_BUILD = true;
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -21,7 +21,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// ── SVG icon helpers for XSS-safe status messages ──
+// ── SVG icon helper for status messages ──────────────────────────────────
 // Sets an element's innerHTML to an SVG icon + escaped text (XSS-safe).
 const _SVG_ICONS = {
   warn:   '<svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px;color:#fcd34d;"><use href="#i-alert-triangle"></use></svg>',
@@ -65,43 +65,13 @@ function showPrompt(title, defaultValue = '') {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-// Hide coin selector dropdowns in public builds (the pool handles Boost streams).
-function applyPublicBuildHiding() {
-  if (!PUBLIC_BUILD) return;
-  const hideIds = [
-    'gpu-coin-select', 'gpu-coin-select-dashboard',
-    'cpu-coin-select', 'cpu-coin-select-dashboard',
-    'trinity-checkbox'
-  ];
-  for (const id of hideIds) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    if (/^select$/i.test(el.tagName)) {
-      el.innerHTML = '';
-    }
-    el.style.display = 'none';
-    const label = el.previousElementSibling;
-    if (label && /^label$/i.test(label.tagName)) label.style.display = 'none';
-    const hint = el.nextElementSibling;
-    if (hint && hint.classList && hint.classList.contains('slider-hint')) hint.style.display = 'none';
-    const labelWrapper = el.closest && el.closest('label');
-    if (labelWrapper) labelWrapper.style.display = 'none';
-  }
-
-  // Show Boost stream cards.
-  for (const id of ['stream-card-2', 'stream-card-3']) {
-    const card = document.getElementById(id);
-    if (card) card.style.display = '';
-  }
-}
-
 let currentView = 'dashboard';
 let config = {};
 let isRunning = false;
 let isStarting = false;
 
 // Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '62.171.141.136';
+const PRIMARY_MAINNET_HOST = 'stratum.zionterranova.com';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Legacy alias
@@ -110,6 +80,97 @@ const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/json
 const DESKTOP_PURE_ZION_DEFAULT = true;
 const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
 
+// ═══ Canonical external-coin registry (single source for all selects) ═══
+// Mirrors ExternalCoin in V31 cosmic-harmony/profit.rs + miner's
+// gpu_kernel_available() (opencl+cuda union). The pool may serve only a
+// subset — the live set is probed via getPoolAuxpow() and unserved coins
+// are marked in the option label rather than silently idling the stream.
+const EXT_GPU_COINS = PUBLIC_BUILD
+  ? ['QTU']
+  : [
+    // Preferred / pool-verified first, then the rest alphabetically.
+    'QTU', 'ZANO', 'KAS', 'ALPH', 'BEAM', 'CFX', 'CKB', 'CLORE', 'DCR',
+    'DNX', 'EPIC', 'ERG', 'ETC', 'EVR', 'FLUX', 'IRON', 'KLS', 'KRX',
+    'MEWC', 'NEXA', 'NEOX', 'PHX', 'QTC', 'QUAI', 'RVN', 'VTC', 'ZCL', 'ZEC',
+  ];
+const EXT_CPU_COINS = PUBLIC_BUILD ? [] : ['VRSC', 'XMR', 'RTM'];
+
+// ── Public build coin masking ────────────────────────────────────────────
+// Internal AuxPoW revenue streams run alongside the user-visible ZION + QTC
+// selection, but their coin/algo identities are not part of the public
+// product surface. Everything non-ZION / non-QTU renders as "Boost".
+const PUBLIC_HIDDEN_COIN_RE = /\b(?:ZANO|VRSC|XMR|RTM|NANO|GRIN|KAS|ALPH|DCR|ERG|ETC|RVN|CLORE|MEWC|EVR|FLUX|EPIC|KLS|KRX|NEXA|NEOX|PHX|QUAI|VTC|ZCL|ZEC|BEAM|CFX|CKB|DNX|IRON|PIRC|AIPG|PYI|SATI|AUR|XNA)\b/g;
+const PUBLIC_HIDDEN_ALGO_RE = /\b(?:progpow_zano|progpowz|progpow|kheavyhash|blake3_alph|beamhash|octopus|eaglesong|kawpow|blake3_dcr|dynexsolve|autolykos|etchash|ethash|evrprogpow|meowpow|zelhash|fishhash|karlsenhash|keryxhash|nexapow|neoscrypt|verushash|randomx|ghostrider|equihash\w*|yespower\w*)\b/gi;
+function maskPublicLine(line) {
+  if (!PUBLIC_BUILD || line == null) return line;
+  return String(line)
+    .replace(PUBLIC_HIDDEN_ALGO_RE, 'boost')
+    .replace(PUBLIC_HIDDEN_COIN_RE, 'BOOST')
+    .replace(/\bQTU\b/g, 'QTC')
+    .replace(/\bqpow_poseidon2\b|\bqpow-poseidon2\b|\bqhash\b/g, 'qtc');
+}
+// Hide internal-only controls in the public build. The Trinity toggle stays
+// visible — it is the public ZION + QTC on/off switch; the per-coin pickers,
+// the license field and any internal telemetry toggles stay hidden.
+function applyPublicBuildHiding() {
+  if (!PUBLIC_BUILD) return;
+  const hideIds = [
+    'gpu-coin-select', 'gpu-coin-select-dashboard',
+    'cpu-coin-select', 'cpu-coin-select-dashboard',
+    'gpu-coin2-select', 'gpu-coin2-select-dashboard',
+    'license-section', 'lottery-detail-btn', 'test-block-found-btn',
+    'console-selftest-btn',
+  ];
+  for (const id of hideIds) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.style.display = 'none';
+    const label = el.previousElementSibling;
+    if (label && /^label$/i.test(label.tagName)) label.style.display = 'none';
+    const hint = el.nextElementSibling;
+    if (hint && hint.classList && hint.classList.contains('slider-hint')) hint.style.display = 'none';
+    const labelWrapper = el.closest && el.closest('label');
+    if (labelWrapper && /^select$/i.test(el.tagName)) labelWrapper.style.display = 'none';
+  }
+}
+
+// Display label for a stream coin. Public: only ZION + QTC are named;
+// internal streams get generic Boost labels.
+function publicCoinLabel(coin, streamIndex) {
+  const c = String(coin || '').toUpperCase();
+  if (!PUBLIC_BUILD) return coin;
+  if (c === 'ZION') return 'ZION';
+  if (c === 'QTU' || c === 'QTC' || c === 'QUANTUS') return 'QTC';
+  if (streamIndex === 3) return 'Boost Stream';
+  return 'Boost Stream 2';
+}
+// Canonical algorithm names — identical to ExternalCoin::algorithm() in
+// V31/L1/cosmic-harmony/src/profit.rs so UI labels match pool reporting.
+const EXT_COIN_ALGO = {
+  QTU: 'qpow-poseidon2', ZANO: 'progpow_zano', KAS: 'kheavyhash',
+  ALPH: 'blake3_alph', BEAM: 'beamhash', CFX: 'octopus', CKB: 'eaglesong',
+  CLORE: 'kawpow', DCR: 'blake3_dcr', DNX: 'dynexsolve', EPIC: 'progpow',
+  ERG: 'autolykos', ETC: 'etchash', EVR: 'evrprogpow', FLUX: 'zelhash',
+  IRON: 'fishhash', KLS: 'karlsenhash', KRX: 'keryxhash', MEWC: 'meowpow',
+  NEXA: 'nexapow', NEOX: 'kawpow', PHX: 'neoscrypt', QTC: 'qhash',
+  QUAI: 'kawpow', RVN: 'kawpow', VTC: 'verthash', ZCL: 'equihashzero',
+  ZEC: 'equihash',
+  VRSC: 'verushash', XMR: 'randomx', RTM: 'ghostrider',
+};
+// Tickers the pool currently bridges (null = probe failed/never ran →
+// treat every option as available rather than blocking the UI).
+let poolServedCoins = null;
+
+function extCoinLabel(ticker) {
+  const algo = EXT_COIN_ALGO[ticker];
+  return algo ? `${ticker} (${algo})` : ticker;
+}
+function coinIsServed(ticker) {
+  if (!ticker || ticker === 'auto') return true;
+  if (!Array.isArray(poolServedCoins)) return true; // unknown → don't block
+  return poolServedCoins.includes(ticker);
+}
+
 function currentPureZionDefault(cfg = config) {
   if (cfg && typeof cfg.desktopPureZionDefault === 'boolean') {
     return cfg.desktopPureZionDefault;
@@ -117,8 +178,10 @@ function currentPureZionDefault(cfg = config) {
   return DESKTOP_PURE_ZION_DEFAULT;
 }
 
-// V3: pure-ZION stubs — these replace the removed multi-coin revenue helpers.
-function isPureZionDesktopMode(_cfg) { return true; }
+// V31: pure-ZION when the user has not explicitly enabled triple-stream.
+function isPureZionDesktopMode(cfg = config) {
+  return cfg && cfg.tripleStream !== true;
+}
 function normalizeMiningMode(val) {
   const VALID = ['cpu', 'gpu', 'dual'];
   return VALID.includes(val) ? val : 'dual';
@@ -423,7 +486,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupControls();
     setupZisControls();
     setupWalletControls();
-    applyPublicBuildHiding();
 
     dbg('AI/chat removed for mainnet');
     
@@ -716,6 +778,159 @@ function initMultichainView() {
 function initMarketView() {}
 function initOasisView() {}
 
+// ── Quantus (QTC) network panel — wallet > Quantus tab ─────────────────────
+let _qtcnetInit = false;
+let _qtcnetPollTimer = null;
+let _qtcnetLookupAddr = '';
+
+function initQtcView() {
+  const panel = document.getElementById('wallet-qtc');
+  if (!panel) return;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const fmtAge = (ms) => {
+    if (ms == null) return '—';
+    if (ms < 1000) return `${ms} ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)} s`;
+    return `${Math.floor(ms / 60000)} min`;
+  };
+  const fmtTs = (s) => { try { return s ? new Date(s).toLocaleString() : '—'; } catch { return '—'; } };
+  const short = (a, n = 14) => (a ? a.slice(0, n) + '…' : '—');
+  const metaRow = (k, v, color) =>
+    `<div class="wallet-meta-row"><span class="wallet-meta" style="min-width:110px">${k}</span><span class="wallet-meta-value" ${color ? `style="color:${color}"` : ''}>${v}</span></div>`;
+
+  async function refresh() {
+    try {
+      const res = await window.electronAPI.qtcNetworkStatus(_qtcnetLookupAddr || undefined);
+      if (!res?.success || !res.data) {
+        if ($('qtcnet-updated')) $('qtcnet-updated').textContent = 'QTC status unreachable';
+        return;
+      }
+      const d = res.data;
+      const n = d.node || {};
+      const p = d.pool || {};
+      const nv = p.native || {};
+      const rw = d.rewards || {};
+      const w = d.wallet;
+
+      // KPI strip
+      const nodeOk = n.ok === true;
+      $('qtcnet-node-state').textContent = nodeOk ? (n.syncing ? 'SYNC' : 'LIVE') : (n.ok === false ? 'DOWN' : '—');
+      $('qtcnet-node-state').style.color = nodeOk ? (n.syncing ? '#fbbf24' : '') : '#f87171';
+      $('qtcnet-height').textContent = n.height != null ? n.height.toLocaleString() : '—';
+      $('qtcnet-peers').textContent = n.peers != null ? n.peers : '—';
+      $('qtcnet-native').textContent = nv.connected == null ? '—' : (nv.connected ? 'LINKED' : 'DOWN');
+      $('qtcnet-share').textContent = nv.share_pct != null ? `${nv.share_pct} %` : '—';
+      $('qtcnet-mined').textContent = rw.mined_count != null ? rw.mined_count : '0';
+      $('qtcnet-updated').textContent = `updated ${new Date().toLocaleTimeString()} · source ${d.source || 'app-api'}`;
+
+      // Node card
+      const nodeHost = $('qtcnet-node');
+      if (nodeHost) {
+        nodeHost.innerHTML =
+          metaRow('Chain', esc(n.chain || 'Quantus')) +
+          metaRow('Version', esc(n.version || '—')) +
+          metaRow('Runtime', n.spec_version != null ? `spec ${n.spec_version}${n.tx_version != null ? ` · tx ${n.tx_version}` : ''}` : '—') +
+          metaRow('Sync', n.syncing == null ? '—' : (n.syncing ? 'syncing…' : 'synced'), n.syncing === false ? '#4ade80' : '#fbbf24') +
+          metaRow('Public RPC', '<a href="#" data-ext="https://rpc.zionterranova.com/qtc" style="color:#22d3ee">rpc.zionterranova.com/qtc</a>');
+      }
+
+      // Native leg card (+ market cross rate when CoinGecko answers)
+      const mk = d.market;
+      const poolHost = $('qtcnet-pool');
+      if (poolHost) {
+        poolHost.innerHTML = (p.available === false
+          ? '<div class="status-note">Pool leg data unavailable.</div>'
+          : metaRow('Enabled', nv.enabled == null ? '—' : (nv.enabled ? 'yes' : 'no')) +
+            metaRow('Connected', nv.connected == null ? '—' : (nv.connected ? '● connected' : '● disconnected'), nv.connected ? '#4ade80' : '#f87171') +
+            metaRow('Native job', esc(nv.job_id || '—')) +
+            metaRow('Job age', fmtAge(nv.job_age_ms)) +
+            metaRow('Upstream', esc(p.upstream || '—')) +
+            metaRow('Upstream job', `${esc(p.upstream_job_id || '—')} · ${fmtAge(p.upstream_job_age_ms)}`) +
+            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—')) +
+          (mk
+            ? metaRow(
+                'Market',
+                `QTC $${mk.qtc_usd.toFixed(2)} · 1 QTC ≈ ${Math.round(mk.zion_per_qtc).toLocaleString()} ZION · ${mk.planks_per_flower.toFixed(4)} planks/flower`,
+                '#22d3ee'
+              )
+            : metaRow('Market', 'CoinGecko unavailable', '#fbbf24'));
+      }
+
+      // Wormhole rewards
+      if ($('qtcnet-rewards-addr')) {
+        $('qtcnet-rewards-addr').textContent = rw.address ? `rewards · ${rw.address}` : '';
+      }
+      const rt = $('qtcnet-rewards-table');
+      if (rt) {
+        const rows = rw.recent || [];
+        rt.innerHTML = '<tr><th>Height</th><th>Reward</th><th>Leaf</th><th>Time</th></tr>' +
+          (rows.length
+            ? rows.map((r) => `<tr><td>${r.height}</td><td style="color:#4ade80">+${r.amount_qtc}</td><td>#${esc(String(r.leaf))}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+            : '<tr><td colspan="4" style="color:rgba(255,255,255,0.3);font-style:italic">No indexed rewards yet — mining is live.</td></tr>');
+      }
+
+      // Network feed
+      const ft = $('qtcnet-feed-table');
+      if (ft) {
+        const rows = d.network_feed || [];
+        ft.innerHTML = '<tr><th>Height</th><th>From</th><th>To</th><th>Amount</th><th>Kind</th><th>Time</th></tr>' +
+          (rows.length
+            ? rows.map((r) => `<tr><td>${r.height}</td><td title="${esc(r.from)}">${short(r.from)}</td><td title="${esc(r.to)}">${short(r.to)}</td><td>${r.amount_qtc}</td><td style="color:${r.is_reward ? '#4ade80' : '#22d3ee'}">${r.is_reward ? 'reward' : 'transfer'}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+            : '<tr><td colspan="6" style="color:rgba(255,255,255,0.3);font-style:italic">Indexer unreachable.</td></tr>');
+      }
+
+      // Address lookup result (only when an addr was queried)
+      const lr = $('qtcnet-lookup-result');
+      if (lr && w) {
+        if (w.valid === false) {
+          lr.innerHTML = '<div class="status-note" style="color:#f87171">Invalid QTC address (ss58-189 expected).</div>';
+        } else if (w.valid) {
+          const bal = w.balance;
+          const hist = w.history || [];
+          lr.innerHTML =
+            `<div class="metric-grid" style="margin-bottom:10px">
+              <div class="metric-card green"><div class="metric-kicker">BALANCE</div><div class="metric-value green">${bal ? bal.free_qtc.toFixed(6) : '0.000000'}</div></div>
+              <div class="metric-card blue"><div class="metric-kicker">NONCE</div><div class="metric-value blue">${bal ? bal.nonce : '0'}</div></div>
+              <div class="metric-card blue"><div class="metric-kicker">TRANSFERS</div><div class="metric-value blue">${hist.length}</div></div>
+            </div>` +
+            '<table class="lottery-table"><tr><th></th><th>Counterparty</th><th>Amount</th><th>Height</th><th>Time</th></tr>' +
+            (hist.length
+              ? hist.map((r) => `<tr><td style="color:${r.direction === 'in' ? '#4ade80' : '#f87171'}">${r.direction === 'in' ? '↓' : '↑'}</td><td title="${esc(r.counterparty)}">${short(r.counterparty, 12)}</td><td>${r.amount_qtc}</td><td>${r.height}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+              : '<tr><td colspan="5" style="color:rgba(255,255,255,0.3);font-style:italic">No transfers for this address.</td></tr>') +
+            '</table>';
+        }
+      }
+    } catch {
+      if ($('qtcnet-updated')) $('qtcnet-updated').textContent = 'QTC status fetch error';
+    }
+  }
+
+  if (!_qtcnetInit) {
+    _qtcnetInit = true;
+    $('qtcnet-refresh-btn')?.addEventListener('click', refresh);
+    const doLookup = () => {
+      _qtcnetLookupAddr = ($('qtcnet-addr-input')?.value || '').trim();
+      if (_qtcnetLookupAddr) void refresh();
+    };
+    $('qtcnet-lookup-btn')?.addEventListener('click', doLookup);
+    $('qtcnet-addr-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLookup(); });
+    // External links inside dynamically rendered cards
+    panel.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-ext]');
+      if (a) { e.preventDefault(); void window.electronAPI.openExternal(a.dataset.ext); }
+    });
+    // Poll while the section is visible; self-clears when the user leaves it.
+    _qtcnetPollTimer = setInterval(() => {
+      const p = document.getElementById('wallet-qtc');
+      if (!p || !p.classList.contains('active')) return;
+      void refresh();
+    }, 15000);
+  }
+  void refresh();
+}
+
 // Section lazy-init dispatch table (used by setupSectionTabs for nested panels)
 const _sectionInitFns = {
   'bridge-view': () => initBridgeView(),
@@ -723,6 +938,7 @@ const _sectionInitFns = {
   'defi-view':   () => initDefiView(),
   'dao-view':    () => initDaoView(),
   'node-view':   () => initNodeView(),
+  'wallet-qtc':  () => initQtcView(),
 };
 
 // Lazy-init dispatch table — avoids long if-else chain
@@ -811,12 +1027,86 @@ function setupControls() {
   const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
   const backendStatusEl = document.getElementById('backend-status');
-  // ── Boost coin selectors ──
+  // ── Trinity coin selectors ──
   const gpuCoinSelect = document.getElementById('gpu-coin-select');
   const gpuCoinSelectDashboard = document.getElementById('gpu-coin-select-dashboard');
   const cpuCoinSelect = document.getElementById('cpu-coin-select');
   const cpuCoinSelectDashboard = document.getElementById('cpu-coin-select-dashboard');
+  const gpuCoin2Select = document.getElementById('gpu-coin2-select');
+  const gpuCoin2SelectDashboard = document.getElementById('gpu-coin2-select-dashboard');
   const tripleStreamCheckbox = document.getElementById('trinity-checkbox');
+
+  // Populate all coin selects from the canonical registry so the option
+  // set can never drift between Home and Settings. Unserved coins (pool
+  // has no bridge for them) stay selectable but are marked — the pool
+  // will simply not assign that stream a job.
+  const rebuildCoinOptions = (selectEl, tickers, prefix) => {
+    if (!selectEl) return;
+    const cur = selectEl.value;
+    selectEl.innerHTML = '';
+    const autoOpt = document.createElement('option');
+    autoOpt.value = 'auto';
+    autoOpt.textContent = `${prefix}: Auto`;
+    selectEl.appendChild(autoOpt);
+    for (const t of tickers) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      const served = coinIsServed(t);
+      opt.textContent = `${prefix}: ${extCoinLabel(t)}${served ? '' : ' · offline'}`;
+      selectEl.appendChild(opt);
+    }
+    if (cur && selectEl.querySelector(`option[value="${cur}"]`)) {
+      selectEl.value = cur;
+    }
+  };
+  // Stream-4 (Quad) select: no "Auto" — empty value = stream disabled.
+  // Pool only serves the second GPU stream when the miner opts in.
+  const rebuildGpu2Options = (selectEl) => {
+    if (!selectEl) return;
+    const cur = selectEl.value;
+    selectEl.innerHTML = '';
+    const offOpt = document.createElement('option');
+    offOpt.value = '';
+    offOpt.textContent = 'GPU2: Off';
+    selectEl.appendChild(offOpt);
+    for (const t of EXT_GPU_COINS) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      const served = coinIsServed(t);
+      opt.textContent = `GPU2: ${extCoinLabel(t)}${served ? '' : ' · offline'}`;
+      selectEl.appendChild(opt);
+    }
+    if (cur && selectEl.querySelector(`option[value="${cur}"]`)) {
+      selectEl.value = cur;
+    }
+  };
+  const rebuildAllCoinSelects = () => {
+    rebuildCoinOptions(gpuCoinSelect, EXT_GPU_COINS, 'GPU');
+    rebuildCoinOptions(gpuCoinSelectDashboard, EXT_GPU_COINS, 'GPU');
+    rebuildCoinOptions(cpuCoinSelect, EXT_CPU_COINS, 'CPU');
+    rebuildCoinOptions(cpuCoinSelectDashboard, EXT_CPU_COINS, 'CPU');
+    rebuildGpu2Options(gpuCoin2Select);
+    rebuildGpu2Options(gpuCoin2SelectDashboard);
+  };
+  rebuildAllCoinSelects();
+  // Public build: coin pickers + license + internal telemetry are hidden.
+  applyPublicBuildHiding();
+
+  // Probe the pool for the coins it actually serves, then mark the rest.
+  const refreshPoolServedCoins = async () => {
+    if (typeof window.electronAPI.getPoolAuxpow !== 'function') return;
+    try {
+      const res = await window.electronAPI.getPoolAuxpow();
+      if (res?.ok && Array.isArray(res.coins)) {
+        poolServedCoins = res.coins.map(c => String(c).toUpperCase());
+        rebuildAllCoinSelects();
+      }
+    } catch { /* keep previous state */ }
+  };
+  void refreshPoolServedCoins();
+  if (!setupControls._poolProbeTimer) {
+    setupControls._poolProbeTimer = setInterval(() => void refreshPoolServedCoins(), 300000);
+  }
 
   const updateBackendStatus = (value) => {
     const labels = {
@@ -896,43 +1186,95 @@ function setupControls() {
     gpuCheckbox.disabled = false;
   };
 
-  // Sync config.algorithm from the select whenever user changes it
-  if (algoSelect) {
-    algoSelect.addEventListener('change', () => {
-      config.algorithm = algoSelect.value;
-      syncAlgoUi();
-    });
-    // init from persisted config
-    if (config.algorithm && algoSelect.querySelector(`option[value="${config.algorithm}"]`)) {
-      algoSelect.value = config.algorithm;
+  // ═══ One-click profile switching — shared apply pipeline ═══
+  // Every algo/coin control (Home + Settings) goes through the same path:
+  // update config → persist via apply-mining-config → when the miner is
+  // running, the main process hot-restarts it so the change applies E2E.
+  let applySwitchInFlight = false;
+  let applySwitchPending = null;
+  const applyMiningSelection = async (reason) => {
+    if (typeof window.electronAPI.applyMiningConfig !== 'function') {
+      try { await window.electronAPI.saveConfig(config); } catch {}
+      return;
     }
-  }
-
-  // Dashboard algo select — sync with config and settings select
-  if (algoSelectDashboard) {
-    algoSelectDashboard.addEventListener('change', () => {
-      config.algorithm = algoSelectDashboard.value;
-      syncAlgoUi();
-      // Also sync with settings select if exists
-      if (algoSelect) {
-        algoSelect.value = algoSelectDashboard.value;
+    if (applySwitchInFlight) {
+      // Queue the newest selection — after the in-flight call resolves we
+      // re-send the (already mutated) config so the last click always wins.
+      applySwitchPending = reason;
+      return;
+    }
+    applySwitchInFlight = true;
+    try {
+      updateStatusBadge('starting');
+      const res = await window.electronAPI.applyMiningConfig(config);
+      if (res && res.config) {
+        config = res.config;
       }
-    });
-    // init from persisted config
-    if (config.algorithm && algoSelectDashboard.querySelector(`option[value="${config.algorithm}"]`)) {
-      algoSelectDashboard.value = config.algorithm;
+      if (!res?.success) {
+        updateStatusBadge(isRunning ? 'mining' : 'stopped');
+        const msg = res?.error || 'unknown error';
+        addLogEntry(`Profile switch failed (${reason}): ${msg}`, 'error');
+      } else {
+        if (res.applied !== 'restarted') {
+          updateStatusBadge(isRunning ? 'mining' : 'stopped');
+        }
+        addLogEntry(
+          res.applied === 'restarted'
+            ? `Profile applied (${reason}) — miner restarting with new selection`
+            : `Profile saved (${reason})`,
+          'info'
+        );
+      }
+    } catch (err) {
+      updateStatusBadge(isRunning ? 'mining' : 'stopped');
+      addLogEntry(`Profile switch error (${reason}): ${err?.message || err}`, 'error');
+    } finally {
+      applySwitchInFlight = false;
+      if (applySwitchPending) {
+        const next = applySwitchPending;
+        applySwitchPending = null;
+        void applyMiningSelection(next);
+      }
     }
-  }
+  };
 
-  // ═══ Boost coin selectors — bind to config ═══
+  // Selecting an external coin only does something when triple-stream is
+  // enabled — auto-enable it so a Home pick is genuinely one-click.
+  const ensureTrinityForCoin = (ticker) => {
+    if (!ticker || ticker === 'auto') return;
+    if (config.tripleStream === true) return;
+    config.tripleStream = true;
+    if (tripleStreamCheckbox) tripleStreamCheckbox.checked = true;
+    addLogEntry('Trinity enabled automatically (external coin selected)', 'info');
+  };
+
+  const bindAlgoSelect = (selectEl, mirrorEl) => {
+    if (!selectEl) return;
+    selectEl.addEventListener('change', () => {
+      config.algorithm = selectEl.value;
+      syncAlgoUi();
+      if (mirrorEl) mirrorEl.value = selectEl.value;
+      void applyMiningSelection(`algorithm ${selectEl.value}`);
+    });
+    if (config.algorithm && selectEl.querySelector(`option[value="${config.algorithm}"]`)) {
+      selectEl.value = config.algorithm;
+    }
+  };
+  bindAlgoSelect(algoSelect, algoSelectDashboard);
+  bindAlgoSelect(algoSelectDashboard, algoSelect);
+
+  // ═══ Trinity coin selectors — bind to config ═══
   // GPU coin (Stream 2) and CPU coin (Stream 3) are persisted in config and
-  // forwarded to the V3 miner as --gpu-coin / --cpu-coin CLI flags. "auto"
-  // means the pool's profit router decides.
-  const syncCoinSelect = (selectEl, configKey, mirrorEl) => {
+  // forwarded to the V31 miner via ZION_STREAM2_FORCE_COIN /
+  // ZION_STREAM3_FORCE_COIN environment variables. "auto" means the pool's
+  // profit router decides.
+  const bindCoinSelect = (selectEl, configKey, mirrorEl) => {
     if (!selectEl) return;
     selectEl.addEventListener('change', () => {
       config[configKey] = selectEl.value;
+      ensureTrinityForCoin(selectEl.value);
       if (mirrorEl) mirrorEl.value = selectEl.value;
+      void applyMiningSelection(`${configKey}=${selectEl.value}`);
     });
     // init from persisted config
     const persisted = config[configKey];
@@ -940,14 +1282,26 @@ function setupControls() {
       selectEl.value = persisted;
     }
   };
-  syncCoinSelect(gpuCoinSelect, 'gpuCoin', gpuCoinSelectDashboard);
-  syncCoinSelect(gpuCoinSelectDashboard, 'gpuCoin', gpuCoinSelect);
-  syncCoinSelect(cpuCoinSelect, 'cpuCoin', cpuCoinSelectDashboard);
-  syncCoinSelect(cpuCoinSelectDashboard, 'cpuCoin', cpuCoinSelect);
+  if (!PUBLIC_BUILD) {
+    bindCoinSelect(gpuCoinSelect, 'gpuCoin', gpuCoinSelectDashboard);
+    bindCoinSelect(gpuCoinSelectDashboard, 'gpuCoin', gpuCoinSelect);
+    bindCoinSelect(cpuCoinSelect, 'cpuCoin', cpuCoinSelectDashboard);
+    bindCoinSelect(cpuCoinSelectDashboard, 'cpuCoin', cpuCoinSelect);
+    // Quad stream uses the same bind helper; empty value disables stream 4.
+    bindCoinSelect(gpuCoin2Select, 'gpuCoin2', gpuCoin2SelectDashboard);
+    bindCoinSelect(gpuCoin2SelectDashboard, 'gpuCoin2', gpuCoin2Select);
+  } else {
+    // Public build: coin pickers stay hidden and pinned — the only choice is
+    // ZION vs ZION + QTC on the trinity toggle.
+    config.gpuCoin = 'QTU';
+    config.cpuCoin = 'auto';
+    config.gpuCoin2 = '';
+  }
 
   if (tripleStreamCheckbox) {
     tripleStreamCheckbox.addEventListener('change', () => {
       config.tripleStream = tripleStreamCheckbox.checked;
+      void applyMiningSelection(`trinity=${tripleStreamCheckbox.checked}`);
     });
     if (typeof config.tripleStream === 'boolean') {
       tripleStreamCheckbox.checked = config.tripleStream;
@@ -1084,10 +1438,11 @@ function setupControls() {
       ),
       // New mining mode system
       miningMode: selectedMode,
-      // Boost configuration
+      // Trinity / triple-stream configuration
       tripleStream: tripleStreamCheckbox ? tripleStreamCheckbox.checked : config.tripleStream,
-      cpuCoin: cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin,
-      gpuCoin: gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin,
+      cpuCoin: PUBLIC_BUILD ? 'auto' : (cpuCoinSelect ? cpuCoinSelect.value : config.cpuCoin),
+      gpuCoin: PUBLIC_BUILD ? 'QTU' : (gpuCoinSelect ? gpuCoinSelect.value : config.gpuCoin),
+      gpuCoin2: PUBLIC_BUILD ? '' : (gpuCoin2Select ? gpuCoin2Select.value : (config.gpuCoin2 || '')),
       // GPU Revenue Mining configuration
       poolPreference: nextRevenue.gpu.poolPreference || 'herominers',
       poolRegion: nextRevenue.gpu.poolRegion || 'eu',
@@ -1127,6 +1482,23 @@ function setupControls() {
       debugToggle.style.color = visible ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)';
       debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(228, 30, 43,0.5)';
       debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(228, 30, 43,0.15)';
+    });
+  }
+
+  // Lottery drawer toggle (BTC key lottery — distributed scan detail)
+  const lotToggle = document.getElementById('lottery-detail-btn');
+  const lotDrawer = document.getElementById('lottery-drawer');
+  if (lotToggle && lotDrawer) {
+    lotToggle.addEventListener('click', () => {
+      const hidden = lotDrawer.classList.contains('view-hidden');
+      lotDrawer.classList.toggle('view-hidden', !hidden);
+      lotToggle.style.color = hidden ? 'rgba(110,231,183,0.9)' : 'rgba(255,255,255,0.45)';
+      if (hidden) {
+        _lotteryDrawerOpen = true;
+        renderLotteryDrawer();
+      } else {
+        _lotteryDrawerOpen = false;
+      }
     });
   }
 }
@@ -1261,60 +1633,6 @@ let _streamLogSuppressed = 0;
 const _streamLogWindowMs = 1000;
 const _streamLogMaxPerWindow = 25; // Increased from 8 to 25 lines per second
 
-// ── Public build log filter ──
-// In public builds, completely drop any log line that reveals external
-// coin names, external algorithm names, or verbose internal GPU mining
-// details.  These lines never reach the Live Activity feed, the Mining
-// Console, or the deferred queue.
-//
-// ZION's own algorithms (deeksha_lite_v1, cosmic_harmony_v3, etc.) are
-// never filtered.
-const _PUBLIC_DROP_PATTERNS = [
-  // Verbose internal GPU mining lines (no user value, reveal algo)
-  /^cuda_mine_batch_raw\b/i,
-  /^cuda_mine\b/i,
-  /^cuda_kernel_launch\b/i,
-  /^cuda_set_device\b/i,
-  /^opencl_mine\b/i,
-  // Boost stream infrastructure lines
-  /^ext_gpu_job_received\b/i,
-  /^ext_gpu_backend_init\b/i,
-  /^ext_gpu_dag_loading\b/i,
-  /^ext_gpu_tx_send\b/i,
-  /^ext_gpu_adaptive_update\b/i,
-  /^ext_cpu_thread\b/i,
-  /^ext_share_submitted\b/i,
-  /^external_stream\b/i,
-  /^external_stream_cpu\b/i,
-  /^external_stream_ignore\b/i,
-  /^stream_weights\b/i,
-  /^adaptive_duty_cycle\b/i,
-];
-
-// Coin names that must never appear in public logs
-const _PUBLIC_DROP_COIN_RE = /\b(?:ZANO|VRSC|ERG|KAS|ALPH|DCR|ETC|RVN|CLORE|MEWC|EVR|XMR|RTM|NANO|GRIN)\b/i;
-// External algorithm names that must never appear in public logs
-const _PUBLIC_DROP_ALGO_RE = /\b(?:progpow_zano|progpow|kheavyhash|blake3|autolykos|ethash|etchash|kawpow|verushash|randomx|ghosstrider|octopus|firopr|flexminer|yespower)\b/i;
-
-function shouldDropLineForPublic(line) {
-  if (!PUBLIC_BUILD) return false;
-  // Quick prefix match
-  for (const re of _PUBLIC_DROP_PATTERNS) {
-    if (re.test(line)) return true;
-  }
-  // Drop any line that mentions a coin name
-  if (_PUBLIC_DROP_COIN_RE.test(line)) return true;
-  // Drop any line that mentions an external algorithm name
-  if (_PUBLIC_DROP_ALGO_RE.test(line)) return true;
-  // Drop lines with coin=<external> or algo=<external>
-  const coinMatch = line.match(/coin=(\S+)/i);
-  if (coinMatch) {
-    const c = coinMatch[1].toUpperCase();
-    if (c !== 'ZION') return true;
-  }
-  return false;
-}
-
 function flushSuppressedStreamLogs() {
   if (_streamLogSuppressed > 0) {
     addLogEntry(`Suppressed ${_streamLogSuppressed} log lines`, 'info');
@@ -1322,22 +1640,43 @@ function flushSuppressedStreamLogs() {
   }
 }
 
-// Parse V3 Rust miner stdout lines and return a short summary for the
+// Parse V31 Rust miner stdout lines and return a short summary for the
 // Live Activity feed.  Returns null for lines that should not appear
 // in the feed (verbose / repetitive lines).
 function parseMinerEventForFeed(line) {
   // Strip optional timestamp prefix: "[2026-07-26 18:26:03] ..."
   const stripped = line.replace(/^\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s*/, '');
 
+  // ── V31 live events ──
+  // zion-miner (triple stream) starting
+  if (/zion-(?:universal-)?miner\s+\(triple\s+stream\)\s+starting/i.test(stripped)) {
+    return { msg: 'V31 triple-stream miner starting', type: 'info' };
+  }
+
+  // zion pool stratum connected
+  let m = stripped.match(/zion\s+pool\s+stratum\s+connected/i);
+  if (m) return { msg: 'Pool connected', type: 'ok' };
+
+  // mined auxpow share
+  m = stripped.match(/coin\s*=\s*([^\s,]+).*?mined\s+auxpow\s+share/i);
+  if (m) return { msg: `AuxPoW share (${m[1]})`, type: 'ok' };
+
+  // block submitted to node
+  m = stripped.match(/block\s+submitted\s+to\s+node:\s*height=(\d+)/i);
+  if (m) return { msg: `Block submitted — height ${m[1]}`, type: 'success' };
+
+  // Skip repetitive V31 telemetry from the live feed
+  if (/\bstream\s+stats\b|\btui_log\b|\bhashrate=\d+\s+H\/s\b/i.test(stripped)) return null;
+
   // SHARE_ACCEPTED
-  let m = stripped.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  m = stripped.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
   if (m) return { msg: `Share accepted — job #${m[1]} h=${m[2]} ${m[4]}ms`, type: 'ok' };
 
   // SHARE_REJECTED
   m = stripped.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
   if (m) return { msg: `Share rejected — job #${m[1]} ${m[3]}`, type: 'error' };
 
-  // new job (V3 Rust: ">> new job #6216 height=6216 algo=deeksha_lite_v1")
+  // new job (V31 Rust: ">> new job #6216 height=6216 algo=deeksha_lite_v1")
   m = stripped.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
   if (m) return { msg: `New job #${m[1]} — height ${m[2]} algo ${m[3]}`, type: 'info' };
 
@@ -1345,58 +1684,36 @@ function parseMinerEventForFeed(line) {
   m = stripped.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
   if (m) return { msg: `New job — height ${m[1]} diff ${m[2]} algo ${m[3]}`, type: 'info' };
 
-  // Boost share found — mask coin name in public build
+  // VRSC_SHARE_FOUND (triple stream)
   m = stripped.match(/(\w+)_SHARE_FOUND\s+nonce=\d+\s+hash=[0-9a-fA-F]+\s+\((\S+)\)/i);
-  if (m) {
-    const coinLabel = PUBLIC_BUILD ? 'Boost Stream 2' : m[1];
-    return { msg: `${coinLabel} share found (${m[2]})`, type: 'ok' };
-  }
+  if (m) return { msg: `${m[1]} share found (${m[2]})`, type: 'ok' };
 
-  // ── Boost streams ──
-  // In public build, all coin/algo names are masked as "Boost
-  // Stream 1" (GPU, internal stream 2) or "Boost Stream 2" (CPU, internal
-  // stream 3). No real coin name ever appears in the feed.
+  // ── External streams (Stream 2 GPU profit / Stream 3 CPU profit) ──
+  // These were previously dropped wholesale, so a triple-stream session
+  // looked single-stream in the log. Surface the meaningful events.
   m = stripped.match(/external_share_accepted\s+coin=(\S+)(?:\s+status=(\S+))?/i);
-  if (m) {
-    const label = PUBLIC_BUILD ? (m[1] === 'VRSC' ? 'Boost Stream 2' : 'Boost Stream 1') : m[1];
-    return { msg: `${label} share accepted`, type: 'ok' };
-  }
+  if (m) return { msg: `${m[1]} share accepted`, type: 'ok' };
 
   m = stripped.match(/external_share_rejected\s+coin=(\S+)(?:\s+status=(\S+))?/i);
-  if (m) {
-    const label = PUBLIC_BUILD ? (m[1] === 'VRSC' ? 'Boost Stream 2' : 'Boost Stream 1') : m[1];
-    return { msg: `${label} share rejected${m[2] ? ` — ${m[2]}` : ''}`, type: 'error' };
-  }
+  if (m) return { msg: `${m[1]} share rejected${m[2] ? ` — ${m[2]}` : ''}`, type: 'error' };
 
   m = stripped.match(/external_share_stale\s+.*?coin=(\S+)/i);
-  if (m) {
-    const label = PUBLIC_BUILD ? (m[1] === 'VRSC' ? 'Boost Stream 2' : 'Boost Stream 1') : m[1];
-    return { msg: `${label} share stale — job rotated`, type: 'warn' };
-  }
+  if (m) return { msg: `${m[1]} share stale — job rotated`, type: 'warn' };
 
   m = stripped.match(/ext_gpu_share_found\s+coin=(\S+)/i);
-  if (m) {
-    const label = PUBLIC_BUILD ? 'Boost Stream 1' : m[1];
-    return { msg: `${label} share found (GPU)`, type: 'ok' };
-  }
+  if (m) return { msg: `${m[1]} share found (GPU)`, type: 'ok' };
 
   m = stripped.match(/ext_gpu_backend_init\s+algo=(\S+)\s+backend=(\S+)\s+work_size=(\d+)/i);
-  if (m) return { msg: PUBLIC_BUILD ? 'Boost Stream 1 init' : `Stream 2 init — ${m[1]} on ${m[2]} (ws ${m[3]})`, type: 'info' };
+  if (m) return { msg: `Stream 2 init — ${m[1]} on ${m[2]} (ws ${m[3]})`, type: 'info' };
 
   m = stripped.match(/ext_gpu_dag_loading\s+algo=(\S+)\s+epoch=(\d+)/i);
-  if (m) return { msg: PUBLIC_BUILD ? `Boost Stream 1 DAG loading — epoch ${m[2]}` : `Stream 2 DAG loading — ${m[1]} epoch ${m[2]}`, type: 'info' };
+  if (m) return { msg: `Stream 2 DAG loading — ${m[1]} epoch ${m[2]}`, type: 'info' };
 
   m = stripped.match(/ext_gpu_job_received\s+coin=(\S+)\s+algo=(\S+)/i);
-  if (m) return { msg: PUBLIC_BUILD ? 'Boost Stream 1 job received' : `Stream 2 job — ${m[1]} (${m[2]})`, type: 'info' };
+  if (m) return { msg: `Stream 2 job — ${m[1]} (${m[2]})`, type: 'info' };
 
   m = stripped.match(/stream(\d)_(?:gpu_external|ext_cpu)_(started|disabled)/i);
-  if (m) {
-    const internalStream = Number(m[1]);
-    const label = PUBLIC_BUILD
-      ? (internalStream === 3 ? 'Boost Stream 2' : 'Boost Stream 1')
-      : `Stream ${internalStream}`;
-    return { msg: `${label} ${m[2]}`, type: m[2] === 'started' ? 'ok' : 'info' };
-  }
+  if (m) return { msg: `Stream ${m[1]} ${m[2]}`, type: m[2] === 'started' ? 'ok' : 'info' };
 
   // pool_set_difficulty
   m = stripped.match(/pool_set_difficulty=(\d+)/i);
@@ -1471,7 +1788,7 @@ function parseMinerEventForFeed(line) {
   }
 
   // Startup lines
-  if (/V3-FAST|Starting|started|Initializ/i.test(stripped)) {
+  if (/V31-FAST|Starting|started|Initializ/i.test(stripped)) {
     return { msg: stripped.substring(0, 100), type: 'info' };
   }
 
@@ -1480,10 +1797,9 @@ function parseMinerEventForFeed(line) {
 }
 
 function logStreamLine(stream, line) {
-  // Public build: drop any line that reveals coin/algo names
-  // or verbose internal GPU details before it reaches any UI surface.
-  if (shouldDropLineForPublic(line)) return;
-
+  // Public build: mask internal AuxPoW coin/algo names before the line
+  // reaches either the Live Activity feed or the Mining Console.
+  if (PUBLIC_BUILD) line = maskPublicLine(line);
   const now = Date.now();
   if (now - _streamLogWindowStart > _streamLogWindowMs) {
     _streamLogWindowStart = now;
@@ -1491,7 +1807,7 @@ function logStreamLine(stream, line) {
     flushSuppressedStreamLogs();
   }
 
-  // Parse V3 Rust miner events for the Live Activity feed.
+  // Parse V31 Rust miner events for the Live Activity feed.
   // Only parsed events appear in the feed; unparsed/verbose lines are
   // skipped entirely (they still show in the Mining Console / Logs tab).
   const feedMsg = parseMinerEventForFeed(line);
@@ -1518,7 +1834,7 @@ function logStreamLine(stream, line) {
 // MINING CONSOLE — Professional XMRig/SRBMiner-style terminal
 // ────────────────────────────────────────────────────────────
 // Scrollback for the Logs tab. 80 lines was far too small to follow a
-// Boost session: streams interleave, so stream 2/3
+// triple-stream session: ZION, ZANO and VRSC interleave, so stream 2/3
 // activity scrolled out of view within seconds.
 const MC_MAX_LINES = 2000;
 let _mcQueue = [];
@@ -1532,11 +1848,7 @@ function appendMiningConsole(raw) {
   const body = document.getElementById('console-body');
   if (!body) return;
 
-  // Public build: drop any line that reveals coin/algo names
-  // or verbose internal GPU details.
-  if (shouldDropLineForPublic(raw)) return;
-
-  // Drop verbose/duplicate status lines; the sticky console-metrics panel and
+  // Drop verbose/duplicate status lines; the Session Metrics panel and
   // [METRICS] line already display this data compactly.
   if (/^\[STATUS\]/i.test(raw)) return;
   if (/^session_status\b/.test(raw)) return;
@@ -1580,48 +1892,47 @@ function appendMiningConsole(raw) {
 }
 
 function colorizeConsoleLine(raw) {
+  if (PUBLIC_BUILD) raw = maskPublicLine(raw);
   const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
   const tsHtml = `<span class="mc-ts">[${ts}]</span> `;
   const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // ── V3 Rust miner: SHARE_ACCEPTED ──
+  // ── V31 Rust miner: SHARE_ACCEPTED ──
   // "SHARE_ACCEPTED  job=6242  height=6242  nonce=...  algo=deeksha_lite_v1  latency_ms=564"
   let m = raw.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+latency_ms=(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-accepted">[+] SHARE ACCEPTED</span> job=<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[4])}</span> <span class="mc-ts">${m[5]}ms</span>`, _cls: ' mc-highlight' };
   }
 
-  // ── V3 Rust miner: SHARE_REJECTED ──
+  // ── V31 Rust miner: SHARE_REJECTED ──
   // "SHARE_REJECTED  job=6243  height=6243  nonce=...  algo=...  reason="NoSolution"  hash=..."
   m = raw.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+reason="([^"]+)"(?:\s+hash=([0-9a-fA-F]+))?/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-rejected">[✗] SHARE REJECTED</span> job=<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[4])}</span> <span class="mc-err">${esc(m[5])}</span>`, _cls: ' mc-highlight' };
   }
 
-  // ── V3 Rust miner: new job ──
+  // ── V31 Rust miner: new job ──
   // ">> new job #6216 height=6216 algo=deeksha_lite_v1"
   m = raw.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-job">[▶] NEW JOB</span> #<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[3])}</span>` };
   }
 
-  // ── V3 Rust miner: Boost share found ──
+  // ── V31 Rust miner: VRSC_SHARE_FOUND (triple-stream CPU coin) ──
   // "VRSC_SHARE_FOUND nonce=... hash=... (batch-scan)"
-  // Mask coin name in public build.
   m = raw.match(/(\w+)_SHARE_FOUND\s+nonce=(\d+)\s+hash=([0-9a-fA-F]+)\s+\((\S+)\)/i);
   if (m) {
-    const coinLabel = PUBLIC_BUILD ? 'BOOST STREAM 2' : m[1];
-    return { html: `${tsHtml}<span class="mc-ok">[◆] ${esc(coinLabel)} SHARE FOUND</span> <span class="mc-info">(${esc(m[4])})</span> <span class="mc-ts">nonce=${m[2]}</span>` };
+    return { html: `${tsHtml}<span class="mc-ok">[◆] ${esc(m[1])} SHARE FOUND</span> <span class="mc-info">(${esc(m[4])})</span> <span class="mc-ts">nonce=${m[2]}</span>` };
   }
 
-  // ── V3 Rust miner: pool_set_difficulty ──
+  // ── V31 Rust miner: pool_set_difficulty ──
   // "pool_set_difficulty=1024"
   m = raw.match(/pool_set_difficulty=(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-warn">[~] POOL DIFFICULTY</span> → <span class="mc-diff">${m[1]}</span>` };
   }
 
-  // ── V3 Rust miner: wire_stale / wire_cancel ──
+  // ── V31 Rust miner: wire_stale / wire_cancel ──
   if (/^wire_stale\b/.test(raw)) {
     return { html: `${tsHtml}<span class="mc-warn">[~] STALE</span> <span class="mc-info">${esc(raw)}</span>` };
   }
@@ -1629,25 +1940,17 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-warn">[~] CANCEL</span> <span class="mc-info">${esc(raw)}</span>` };
   }
 
-  // ── V3 Rust miner: gpu_init / gpu_backend ──
+  // ── V31 Rust miner: gpu_init / gpu_backend ──
   if (/^gpu_init\b|^gpu_backend\b|^gpu_epoch_fallback\b/.test(raw)) {
     return { html: `${tsHtml}<span class="mc-algo">${esc(raw)}</span>` };
   }
 
-  // ── V3 Rust miner: external_stream / ext_gpu ──
+  // ── V31 Rust miner: external_stream / ext_gpu ──
   if (/^external_stream|^ext_gpu|^ext_cpu|^ext_share/.test(raw)) {
-    if (PUBLIC_BUILD) {
-      // Mask all coin/algo names so no real coin name appears
-      let masked = raw
-        .replace(/coin=\S+/gi, 'coin=Boost')
-        .replace(/algo=\S+/gi, 'algo=Boost')
-        .replace(/\bVRSC\b|\bZANO\b|\bERG\b|\bKAS\b|\bALPH\b|\bDCR\b|\bETC\b|\bRVN\b|\bCLORE\b|\bXMR\b|\bRTM\b|\bProgPoWZ\b|\bautolykos\b|\bkawpow\b|\betchash\b|\bsha256\b|\bRandomX\b/gi, 'Boost');
-      return { html: `${tsHtml}<span class="mc-info">${esc(masked)}</span>` };
-    }
     return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
   }
 
-  // ── V3 Rust miner: BLOCK FOUND ──
+  // ── V31 Rust miner: BLOCK FOUND ──
   m = raw.match(/BLOCK\s+FOUND.*?height[=:]\s*(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-block">█ BLOCK FOUND █ ★</span> height=<span class="mc-hr">${m[1]}</span>`, _cls: ' mc-block-line' };
@@ -1703,7 +2006,7 @@ function colorizeConsoleLine(raw) {
   }
 
   // ── Startup info lines ──
-  if (/^\s*\*|Starting|started|Initializ|threads|algorithm|pool|wallet|miner|V3-FAST/i.test(raw)) {
+  if (/^\s*\*|Starting|started|Initializ|threads|algorithm|pool|wallet|miner|V31-FAST/i.test(raw)) {
     return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
   }
 
@@ -1725,6 +2028,29 @@ function setupMiningConsole() {
   if (scrollBtn) {
     scrollBtn.addEventListener('click', () => {
       if (body) body.scrollTop = body.scrollHeight;
+    });
+  }
+  const selftestBtn = document.getElementById('console-selftest-btn');
+  if (selftestBtn && window.electronAPI?.runKernelSelftest) {
+    let running = false;
+    selftestBtn.addEventListener('click', async () => {
+      if (running) return;
+      running = true;
+      selftestBtn.disabled = true;
+      try {
+        const res = await window.electronAPI.runKernelSelftest({});
+        const line = document.createElement('div');
+        line.className = 'mc-line';
+        const summary = res?.success === false
+          ? ` * Kernel self-test failed${res?.error ? ': ' + res.error : ''}`
+          : ` * Kernel self-test done — ${(res?.results || []).map(r => `${r.ticker}:${r.verdict}`).join('  ')}`;
+        line.innerHTML = `<span class="mc-info">${summary.replace(/</g, '&lt;')}</span>`;
+        body?.appendChild(line);
+        if (body) body.scrollTop = body.scrollHeight;
+      } finally {
+        running = false;
+        selftestBtn.disabled = false;
+      }
     });
   }
 }
@@ -1971,7 +2297,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v3.1.0 — Mining started');
+    appendMiningConsole(' * ZION V31 Mainnet Alpha v3.1.0 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
@@ -2025,6 +2351,18 @@ function setupEventListeners() {
     addLogEntry(`Miner error: ${msg}`, 'error');
   });
 
+  if (typeof window.electronAPI.onQuadVramWarning === 'function') {
+    window.electronAPI.onQuadVramWarning((data) => {
+      const coin = data?.coin || 'GPU2';
+      const free = data?.freeMib ?? '?';
+      const need = data?.needMib ?? '?';
+      const msg = `Quad stream skipped: ${coin} needs ~${need} MiB GPU memory ` +
+        `but only ${free} MiB is free. Free VRAM or choose a lighter coin.`;
+      addLogEntry(msg, 'warning');
+      appendMiningConsole(` ⚠ ${msg}`);
+    });
+  }
+
   window.electronAPI.onMinerOutput((data) => {
     const text = (data?.text || '').toString();
     const stream = data?.stream === 'stderr' ? 'stderr' : 'stdout';
@@ -2061,20 +2399,12 @@ function setupEventListeners() {
 
   window.electronAPI.onBlockFound((data) => {
     const height = data?.height;
-    const now = Date.now();
-    // Deduplicate repeated events for the same block within a short window.
-    if (height != null && _lastBlockFound.height === height && (now - _lastBlockFound.ts) < 5000) {
-      return;
-    }
-    _lastBlockFound = { height, ts: now };
-
-    const title = PUBLIC_BUILD ? 'BLOCK FOUND' : 'BLOK NALEZEN';
+    const coin = publicCoinLabel(data?.coin || 'ZION', Number(data?.stream) || 1);
     const msg = height != null
-      ? `${title}! Block #${height.toLocaleString()} mined.`
-      : `${title}! New block mined.`;
+      ? `GRATULUJI! ${coin} blok #${height} nalezen!`
+      : `GRATULUJI! ${coin} blok nalezen!`;
     addLogEntry(msg, 'success');
-    updateBlockFoundCounter(height);
-    showBlockFoundToast(height);
+    showBlockFoundToast(height, coin);
   });
 
   // ── Share event log (per-share accept/reject with timestamps) ──
@@ -2085,19 +2415,16 @@ function setupEventListeners() {
     const si = Number(data.stream);
     if (si >= 1 && si <= 3) _streamLastShareAt[si] = data.ts || Date.now();
     renderShareLog();
-    const coin = data.coin || '—';
-    const isZion = coin === 'ZION' || coin.startsWith('ZION');
-    const displayCoin = PUBLIC_BUILD && !isZion
-      ? (si === 3 ? 'Boost Stream 2' : 'Boost Stream 1')
-      : coin;
+    const shareCoin = publicCoinLabel(data.coin, Number(data.stream));
     if (data.accepted) {
-      const detail = isZion
-        ? `job=${data.job} h=${data.height} nonce=${data.nonce} ${data.latencyMs}ms`
-        : `status=${data.status}`;
-      addLogEntry(`✓ ${displayCoin} share accepted (${detail})`, 'success');
+      const latStr = data.latencyMs != null ? ` ${data.latencyMs}ms` : '';
+      const detail = data.coin === 'ZION'
+        ? `job=${data.job} h=${data.height} nonce=${data.nonce}${latStr}`
+        : `${data.stream === 2 ? 'GPU' : data.stream === 3 ? 'CPU' : 'stream'} ${PUBLIC_BUILD ? maskPublicLine(data.algorithm || '') : (data.algorithm || '')}`.trim();
+      addLogEntry(`✓ ${shareCoin} share accepted (${detail})`, 'success');
     } else {
-      const reason = data.reason || data.status || 'rejected';
-      addLogEntry(`✗ ${displayCoin} share rejected (${reason})`, 'error');
+      const reason = PUBLIC_BUILD ? maskPublicLine(data.reason || data.status || 'rejected') : (data.reason || data.status || 'rejected');
+      addLogEntry(`✗ ${shareCoin} share rejected (${reason})`, 'error');
     }
   });
 
@@ -2105,6 +2432,121 @@ function setupEventListeners() {
     _lastIpcStatsAt = Date.now();
     scheduleStatsUpdate(stats);
   });
+
+  // Stream 4 — BTCunlock key lottery (polled by main on :8777)
+  if (typeof window.electronAPI.onKeyscanStatus === 'function') {
+    window.electronAPI.onKeyscanStatus((d) => updateKeyscanCard(d));
+  }
+
+  // Distributed lottery — coordinator fleet status (public read endpoint)
+  if (typeof window.electronAPI.onLotteryStatus === 'function') {
+    window.electronAPI.onLotteryStatus((d) => {
+      _lastLotteryStatus = d;
+      if (_lotteryDrawerOpen) renderLotteryDrawer();
+    });
+  }
+}
+
+// Stream 4 card: BTCunlock keyscan (independent service, GPU-shared).
+// Payload is already trimmed server-side; hits are a count only — raw
+// key material never crosses this channel.
+function updateKeyscanCard(d) {
+  const card = document.getElementById('stream-card-4');
+  if (!card) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmtSI = (n, suf) => {
+    if (!Number.isFinite(n)) return '—';
+    const u = ['', 'K', 'M', 'G', 'T', 'P']; let i = 0;
+    while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+    return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + ' ' + u[i] + suf;
+  };
+  const badge = document.getElementById('stream-4-status');
+  if (!d || !d.ok) {
+    card.classList.remove('active'); card.classList.add('inactive');
+    set('stream-4-hashrate', 'off');
+    set('stream-4-coin', 'svc down');
+    if (badge) { badge.textContent = 'inactive'; badge.className = 'stream-status inactive'; }
+    return;
+  }
+  if (d.alive) { card.classList.add('active'); card.classList.remove('inactive'); }
+  else { card.classList.remove('active'); card.classList.add('inactive'); }
+  set('stream-4-coin', (d.label || 'keyscan').replace(/^puzzle #?/i, 'P'));
+  set('stream-4-hashrate', d.alive ? fmtSI((d.rate_mks || 0) * 1e6, '/s') : '0 /s');
+  set('stream-4-shares', `${d.hits || 0} hits`);
+  set('stream-4-tested', fmtSI(d.tested || 0, ''));
+  const cov = d.coverage_ppm;
+  set('stream-4-cover', cov != null ? (cov < 0.01 ? cov.toExponential(1) : cov.toFixed(3)) + ' ppm' : '—');
+  set('stream-4-eta', d.eta || '—');
+  if (badge) {
+    badge.textContent = d.alive ? 'active' : 'stopped';
+    badge.className = 'stream-status ' + (d.alive ? 'active' : 'inactive');
+  }
+}
+
+// ── BTC key lottery drawer (Logs view → "Lottery" button) ──
+// Fleet-wide progress from the public coordinator endpoint — aggregate
+// telemetry only; worker tokens and hit keys never cross this channel.
+let _lotteryDrawerOpen = false;
+let _lastLotteryStatus = null;
+let _lotteryUnitsFetched = 0;
+
+function renderLotteryDrawer() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmtSI = (n, suf) => {
+    if (!Number.isFinite(n)) return '—';
+    const u = ['', 'K', 'M', 'G', 'T', 'P']; let i = 0;
+    while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
+    return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + ' ' + u[i] + suf;
+  };
+  const fmtNum = (n) => { try { return BigInt(n).toLocaleString('en-US'); } catch { return String(n); } };
+  const esc = (s) => String(s ?? '').replace(/[<>&"]/g, '');
+  const d = _lastLotteryStatus;
+  if (!d || !d.ok) {
+    set('lot-fleet-frontier', 'coordinator unreachable — the scan may still be local-only');
+    set('lot-fleet-rate', 'off');
+    return;
+  }
+  set('lot-fleet-rate', fmtSI((d.rate_mks || 0) * 1e6, '/s'));
+  set('lot-fleet-tested', fmtSI(d.tested_total || 0, ''));
+  const covPct = (d.coverage || 0) * 100;
+  set('lot-fleet-coverage', (covPct < 0.0001 ? covPct.toExponential(2) : covPct.toFixed(4)) + '%');
+  set('lot-fleet-units', `${fmtNum(d.units_done || 0)} / ${fmtNum(d.n_units || 0)}`);
+  const ws = d.workers || [];
+  set('lot-fleet-workers', `${ws.filter(w => w.active).length} / ${ws.length}`);
+  set('lot-fleet-hits', String(d.hits_total || 0));
+  const bar = document.getElementById('lot-fleet-bar');
+  if (bar) bar.style.width = Math.min(100, Math.max(0.05, covPct)) + '%';
+  const etaS = d.eta_s;
+  const etaStr = etaS == null ? '—' : etaS > 315360000000 ? '>10k yr'
+    : etaS > 86400 ? Math.round(etaS / 86400) + ' d' : Math.round(etaS / 3600) + ' h';
+  set('lot-fleet-frontier',
+    `${d.label || 'scan'} · frontier ${String(d.frontier || '—').slice(0, 20)}… · ETA ~${etaStr}`);
+  const wtb = document.getElementById('lottery-workers-tbody');
+  if (wtb) {
+    wtb.innerHTML = ws.length ? ws.slice(0, 15).map(w =>
+      `<tr><td>${esc(w.worker_id)}${w.label ? ' <span style="opacity:.5">' + esc(w.label) + '</span>' : ''}</td>`
+      + `<td>${fmtSI((w.rate_mks || 0) * 1e6, '/s')}</td>`
+      + `<td>${fmtNum(w.total_tested || 0)}</td>`
+      + `<td>${w.units_done || 0}</td>`
+      + `<td>${w.active ? '🟢' : '⚪'}</td></tr>`).join('')
+      : '<tr><td colspan="5">no workers yet</td></tr>';
+  }
+  // Units are heavier — refresh them at most every 30 s while the drawer is open.
+  if (Date.now() - _lotteryUnitsFetched > 30000 && typeof window.electronAPI.lotteryGetUnits === 'function') {
+    _lotteryUnitsFetched = Date.now();
+    window.electronAPI.lotteryGetUnits().then(u => {
+      const utb = document.getElementById('lottery-units-tbody');
+      if (!utb || !u || !u.ok) return;
+      const units = (u.units || []).slice(0, 20);
+      utb.innerHTML = units.length ? units.map(x =>
+        `<tr><td>#${x.unit_id}</td>`
+        + `<td>${x.status === 'done' ? '🟢 done' : '🟡 leased'}</td>`
+        + `<td>${esc(x.worker_id)}</td>`
+        + `<td>${fmtNum(x.tested || 0)}</td>`
+        + `<td>${x.hits ? '🎯 ' + x.hits : '0'}</td></tr>`).join('')
+        : '<tr><td colspan="5">no units yet</td></tr>';
+    }).catch(() => {});
+  }
 }
 
 function updateControlButtons() {
@@ -2294,8 +2736,11 @@ function updateStats(stats) {
   // ---- CH3 Stream / GPU / Revenue ----
   updateCH3Dashboard(stats);
 
-  // ---- Boost per-stream telemetry ----
+  // ---- Trinity per-stream telemetry ----
   updateTripleStreamPanel(stats);
+
+  // ---- Static session metrics (replaces the old scrolling feed) ----
+  updateSessionMetrics(stats);
 
   // ---- Sticky metrics panel in Mining Console (new TUI-style header) ----
   updateConsoleMetrics(stats);
@@ -2358,7 +2803,7 @@ function buildStatsSignature(stats) {
   // Include a compact signature of the streams array so the UI refreshes
   // when per-stream hashrate/shares/coin/active state changes.
   const streamsSig = Array.isArray(stats.streams)
-    ? stats.streams.map(s =>
+    ? stats.streams.filter(s => s).map(s =>
         `${s.index}:${s.coin}:${s.algorithm}:${s.hashrate_10s}:${s.hashrate_60s}:${s.accepted}:${s.rejected}:${s.active ? 1 : 0}`
       ).join(',')
     : '';
@@ -2379,6 +2824,8 @@ function buildStatsSignature(stats) {
     stats.pool_latency_ms,
     stats.stream_algorithm,
     stats.overall_accept_rate,
+    stats.gpu_info,
+    stats.cpu_threads,
     streamsSig,
   ].join('|');
 }
@@ -2454,7 +2901,7 @@ const _SHARE_LOG_MAX = 50;
 
 // Timestamp (ms) of the most recent share per stream index (1/2/3).
 // The miner's stats JSON has no per-stream "last share" field, so this is
-// derived from the live share-event IPC stream and rendered in the Boost
+// derived from the live share-event IPC stream and rendered in the Trinity
 // detail rows.
 const _streamLastShareAt = { 1: 0, 2: 0, 3: 0 };
 
@@ -2528,17 +2975,15 @@ function renderShareLog() {
     const ok = s.accepted;
     const icon = ok ? '<svg class="icon icon-12" aria-hidden="true"><use href="#i-check-circle"></use></svg>' : '<svg class="icon icon-12" aria-hidden="true"><use href="#i-x-circle"></use></svg>';
     const cls = ok ? 'share-acc' : 'share-rej';
-    const rawCoin = (s.coin || '—').toString();
-    const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
-    const si = Number(s.stream);
-    const displayCoin = PUBLIC_BUILD && !isZion
-      ? (si === 3 ? 'Boost Stream 2' : 'Boost Stream 1')
-      : rawCoin;
     let detail = '';
-    if (isZion) {
+    if (s.coin === 'ZION') {
+      const latStr = s.latencyMs != null ? ` ${s.latencyMs}ms` : '';
       detail = ok
-        ? `job=${s.job} h=${s.height} ${s.latencyMs}ms`
+        ? `job=${s.job} h=${s.height}${latStr}`
         : `job=${s.job} reason=${s.reason || '?'}`;
+    } else if (Number(s.stream) === 2 || Number(s.stream) === 3) {
+      const dev = Number(s.stream) === 2 ? 'GPU' : 'CPU';
+      detail = ok ? `${dev} ${s.algorithm || ''} accepted`.trim() : `reason=${s.reason || 'rejected'}`;
     } else {
       detail = s.status || (ok ? 'accepted' : 'rejected');
     }
@@ -2546,9 +2991,9 @@ function renderShareLog() {
       `<div class="share-log-row ${cls}">` +
       `<span class="share-log-ts">${time}</span>` +
       `<span class="share-log-icon">${icon}</span>` +
-      `<span class="share-log-coin">${displayCoin}</span>` +
-      `<span class="share-log-detail">${detail}</span>` +
-      `<span class="share-log-algo">${(PUBLIC_BUILD && !isZion) ? 'Boost' : (s.algorithm || '')}</span>` +
+      `<span class="share-log-coin">${publicCoinLabel(s.coin, Number(s.stream)) || '—'}</span>` +
+      `<span class="share-log-detail">${PUBLIC_BUILD ? maskPublicLine(detail) : detail}</span>` +
+      `<span class="share-log-algo">${PUBLIC_BUILD ? maskPublicLine(s.algorithm || '') : (s.algorithm || '')}</span>` +
       `</div>`
     );
   }
@@ -2559,8 +3004,9 @@ function addLogEntry(message, type = 'info') {
   const timestamp = new Date().toLocaleTimeString();
 
   // NOTE: the dashboard no longer mirrors log lines. The old scrolling
-  // "Live Activity" feed was removed; scrolling miner output lives in the
-  // Logs tab, which shows every stream unfiltered.
+  // "Live Activity" feed was replaced by the static Session Metrics panel
+  // (see #session-metrics). Scrolling miner output lives in the Logs tab,
+  // which shows every stream unfiltered.
 
   const logViewer = document.getElementById('log-viewer');
   if (!logViewer) return;
@@ -2606,43 +3052,15 @@ function addLogEntry(message, type = 'info') {
 
 // ── Block Found Toast — celebratory notification ──
 let _blockFoundToastTimer = null;
-let _lastBlockFound = { height: null, ts: 0 };
-
-function updateBlockFoundCounter(height) {
-  // Increment the dashboard counter immediately so the user sees it without
-  // waiting for the next stats poll.
-  const blocksValue = document.getElementById('blocks-value');
-  const blocksLabel = document.getElementById('blocks-label');
-  const blocksCard = document.getElementById('blocks-card');
-  if (blocksValue) {
-    const current = parseInt(blocksValue.textContent, 10) || 0;
-    const next = current + 1;
-    blocksValue.textContent = String(next);
-    if (blocksCard) {
-      blocksCard.classList.add('has-blocks');
-    }
-    if (blocksLabel) {
-      blocksLabel.textContent = `${next} block${next > 1 ? 's' : ''} mined!`;
-    }
-  }
-  const lastBlockEl = document.getElementById('last-block-height');
-  if (lastBlockEl && height != null) {
-    lastBlockEl.textContent = String(height);
-  }
-}
-
-function showBlockFoundToast(height) {
+function showBlockFoundToast(height, coin) {
   const toast = document.getElementById('block-found-toast');
   if (!toast) return;
-  const title = toast.querySelector('.block-found-toast-title');
   const subtitle = document.getElementById('block-found-toast-subtitle');
-  if (title) {
-    title.textContent = PUBLIC_BUILD ? 'BLOCK FOUND!' : 'KEPORKAK! BLOK NALEZEN!';
-  }
   if (subtitle) {
+    const coinStr = coin ? `${coin} — ` : '';
     subtitle.textContent = height != null
-      ? `Block #${height.toLocaleString()}`
-      : 'Block found!';
+      ? `${coinStr}Block #${height.toLocaleString()}`
+      : `${coinStr}Block found!`;
   }
   toast.classList.remove('view-hidden', 'fading');
   // Auto-hide after 15 seconds
@@ -2660,11 +3078,19 @@ function hideBlockFoundToast() {
   }, 400);
 }
 
-// Close button handler
+// Close button handler + test button
 document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('block-found-toast-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', hideBlockFoundToast);
+  }
+  // Test: trigger fake block found to verify toast + counter work
+  const testBtn = document.getElementById('test-block-found-btn');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      const r = await window.electronAPI.testBlockFound({});
+      dbg('[TEST] block-found triggered:', r);
+    });
   }
 });
 
@@ -2979,7 +3405,7 @@ function setupWalletControls() {
       const poolPend = Number(result.pool_pending ?? 0);
       const poolPd = Number(result.pool_paid ?? 0);
       if (onChainBal === 0 && poolPend > 0 && poolPd === 0) {
-        if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = '⏳ Pool payouts pending — rewards not yet sent on-chain';
+        if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = 'Pool payouts pending — rewards not yet sent on-chain';
       } else {
         if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = '';
       }
@@ -3057,6 +3483,351 @@ function setupWalletControls() {
 
     if (walletBalanceStatusEl) walletBalanceStatusEl.textContent = `OK · ${new Date().toLocaleTimeString()}${rpcSourceText}${rpcFallbackText}${payoutDeltaText}${pendingDriftText}`;
   });
+
+  // ── Quantus (QTC) card — native payout wallet linked to the ZION wallet ──
+  const qtcEls = {
+    card: document.getElementById('qtc-wallet-card'),
+    balance: document.getElementById('qtc-balance'),
+    address: document.getElementById('qtc-address'),
+    linked: document.getElementById('qtc-linked'),
+    unlinked: document.getElementById('qtc-unlinked'),
+    status: document.getElementById('qtc-status'),
+    linkInput: document.getElementById('qtc-link-input'),
+    linkBtn: document.getElementById('qtc-link-btn'),
+    generateBtn: document.getElementById('qtc-generate-btn'),
+    copyBtn: document.getElementById('qtc-copy-btn'),
+    refreshBtn: document.getElementById('qtc-refresh-btn'),
+    newMnemonic: document.getElementById('qtc-new-mnemonic'),
+    mnemonicOut: document.getElementById('qtc-mnemonic-out'),
+    history: document.getElementById('qtc-history'),
+    payoutCoin: document.getElementById('qtc-payout-coin'),
+  };
+  let activeQtcAddress = null;
+
+  // Pool payout target selector: 'zion' pays earnings to the ZION wallet,
+  // 'qtc' routes the miner's --wallet to `qtc:<linked qz…>` so the pool
+  // credits the Quantus external-payout queue and the sweeper pays QTC.
+  if (qtcEls.payoutCoin) {
+    qtcEls.payoutCoin.value = (config.payoutCoin || 'zion').toLowerCase() === 'qtc' ? 'qtc' : 'zion';
+    qtcEls.payoutCoin.addEventListener('change', async () => {
+      config.payoutCoin = qtcEls.payoutCoin.value === 'qtc' ? 'qtc' : 'zion';
+      try { await window.electronAPI.saveConfig(config); } catch {}
+      if (qtcEls.status) {
+        qtcEls.status.textContent = config.payoutCoin === 'qtc'
+          ? (activeQtcAddress ? 'Payout → QTC (applies on next miner start)' : 'Payout → QTC — link/generate a QTC address first')
+          : 'Payout → ZION';
+      }
+    });
+  }
+
+  const walletQtcFor = async (zionAddr) => {
+    try {
+      const res = await window.electronAPI.listWallets();
+      const w = (res?.wallets || []).find(x => x.address === zionAddr);
+      return w?.qtcAddress || null;
+    } catch { return null; }
+  };
+
+  const refreshQtcCard = async () => {
+    if (!qtcEls.card) return;
+    const zionAddr = getActiveAddress();
+    activeQtcAddress = zionAddr ? await walletQtcFor(zionAddr) : null;
+    const linked = !!activeQtcAddress;
+    if (qtcEls.linked) qtcEls.linked.style.display = linked ? '' : 'none';
+    if (qtcEls.unlinked) qtcEls.unlinked.style.display = linked ? 'none' : '';
+    if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = 'none';
+    if (qtcEls.address) qtcEls.address.textContent = activeQtcAddress || '';
+    if (!linked) {
+      if (qtcEls.balance) qtcEls.balance.textContent = '—';
+      if (qtcEls.status) {
+        qtcEls.status.textContent = zionAddr
+          ? 'No QTC wallet linked — paste a qz… address or generate one.'
+          : 'Set an active ZION wallet first.';
+      }
+      return;
+    }
+    if (qtcEls.status) qtcEls.status.textContent = 'loading…';
+    try {
+      const bal = await window.electronAPI.quantusGetBalance(activeQtcAddress);
+      if (bal?.success) {
+        if (qtcEls.balance) qtcEls.balance.textContent = bal.freeQtc;
+        if (qtcEls.status) qtcEls.status.textContent = `Quantus mainnet · nonce ${bal.nonce}`;
+        renderQtcHistory();
+      } else {
+        if (qtcEls.balance) qtcEls.balance.textContent = '—';
+        if (qtcEls.status) qtcEls.status.textContent = 'QTC RPC unreachable — balance unavailable';
+      }
+    } catch {
+      if (qtcEls.balance) qtcEls.balance.textContent = '—';
+      if (qtcEls.status) qtcEls.status.textContent = 'QTC balance fetch error';
+    }
+  };
+
+  const renderQtcHistory = async () => {
+    const host = qtcEls.history;
+    if (!host || !activeQtcAddress) return;
+    try {
+      const res = await window.electronAPI.quantusGetHistory(activeQtcAddress);
+      if (!res?.success || !res.rows?.length) {
+        host.innerHTML = '<div class="status-note">No transfers indexed yet.</div>';
+        return;
+      }
+      const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      host.innerHTML = res.rows.slice(0, 10).map((r) => {
+        const dir = r.direction === 'in' ? '+' : '−';
+        const when = r.timestamp ? r.timestamp.slice(0, 19).replace('T', ' ') : '';
+        const who = r.counterparty ? `${r.counterparty.slice(0, 10)}…${r.counterparty.slice(-6)}` : '—';
+        const tag = r.leafIndex && !r.extrinsic ? ' · reward leaf' : '';
+        return `<div class="wallet-meta-row" style="font-size:11px">
+          <span class="wallet-meta-value" style="min-width:70px;color:${r.direction === 'in' ? 'var(--accent-green,#4ade80)' : 'var(--accent-red,#f87171)'}">${dir}${r.amountQtc}</span>
+          <span class="wallet-meta-value" style="flex:1" title="${esc(r.counterparty || '')}">${who}${tag}</span>
+          <span class="wallet-meta-value">#${r.blockHeight ?? '—'} ${esc(when)}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      host.innerHTML = '';
+    }
+  };
+
+  qtcEls.refreshBtn?.addEventListener('click', refreshQtcCard);
+
+  qtcEls.copyBtn?.addEventListener('click', () => {
+    if (activeQtcAddress) {
+      navigator.clipboard?.writeText(activeQtcAddress);
+      if (qtcEls.status) qtcEls.status.textContent = 'QTC address copied.';
+    }
+  });
+
+  qtcEls.linkBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      if (qtcEls.status) qtcEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    let raw = (qtcEls.linkInput?.value || '').trim();
+    raw = raw.replace(/^(qtc:|qtu:)/i, '');
+    let check;
+    try {
+      check = await window.electronAPI.validateQuantusAddress(raw);
+    } catch (e) {
+      if (qtcEls.status) qtcEls.status.textContent =
+        `Validation unavailable: ${e?.message || 'ipc error'} — restart the app if it was just updated`;
+      return;
+    }
+    if (!check?.valid) {
+      if (qtcEls.status) qtcEls.status.textContent = 'Invalid SS58-189 (qz…) address.';
+      return;
+    }
+    let res;
+    try {
+      res = await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: raw });
+    } catch (e) {
+      if (qtcEls.status) qtcEls.status.textContent = `Link failed: ${e?.message || 'ipc error'}`;
+      return;
+    }
+    if (qtcEls.status) {
+      qtcEls.status.textContent = res?.success
+        ? 'QTC address linked.'
+        : `Link failed: ${res?.error || 'wallet not found'}`;
+    }
+    if (res?.success) refreshQtcCard();
+  });
+
+  qtcEls.generateBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      if (qtcEls.status) qtcEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    let res;
+    try {
+      res = await window.electronAPI.generateQuantusWallet();
+    } catch (e) {
+      if (qtcEls.status) qtcEls.status.textContent =
+        `QTC generation failed: ${e?.message || 'ipc error'} — restart the app if it was just updated`;
+      return;
+    }
+    if (!res?.success) {
+      if (qtcEls.status) qtcEls.status.textContent = `QTC generation failed: ${res?.error || 'helper unavailable'}`;
+      return;
+    }
+    const w = res.wallet;
+    if (qtcEls.mnemonicOut) qtcEls.mnemonicOut.value = w.mnemonic;
+    if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
+    try {
+      const link = await window.electronAPI.walletSetQtc({ zionAddress: zionAddr, qtcAddress: w.address });
+      if (!link?.success && qtcEls.status) {
+        qtcEls.status.textContent = `Generated but not linked: ${link?.error || 'wallet not found'}`;
+      }
+    } catch { /* link best-effort */ }
+    addLogEntry(`QTC wallet generated: ${w.address}`, 'info');
+    refreshQtcCard();
+    if (qtcEls.newMnemonic) qtcEls.newMnemonic.style.display = '';
+  });
+
+  // Kick once at init and whenever the balance card refreshes.
+  refreshQtcCard();
+  document.querySelector('.section-tab[data-section="wallet-overview"]')
+    ?.addEventListener('click', () => setTimeout(refreshQtcCard, 80));
+
+  // ── Native multichain card — non-custodial addresses from the ZION phrase ──
+  const nativeEls = {
+    card: document.getElementById('native-wallet-card'),
+    rows: document.getElementById('native-rows'),
+    status: document.getElementById('native-status'),
+    deriveBtn: document.getElementById('native-derive-btn'),
+    refreshBtn: document.getElementById('native-refresh-btn'),
+    linkBtn: document.getElementById('native-link-btn'),
+    sendForm: document.getElementById('native-send-form'),
+    sendChain: document.getElementById('native-send-chain'),
+    sendTo: document.getElementById('native-send-to'),
+    sendAmount: document.getElementById('native-send-amount'),
+    sendPassword: document.getElementById('native-send-password'),
+    sendBtn: document.getElementById('native-send-btn'),
+  };
+  let nativeMap = null;       // {zion, evm, bitcoin, solana, quantus} — addresses only
+  let nativeBalances = {};
+
+  const NATIVE_CHAINS = [
+    { key: 'zion',    label: 'ZION',  unit: 'ZION' },
+    { key: 'evm',     label: 'EVM',   unit: 'ETH', fmt: (b) => (b.wei ? (Number(b.wei) / 1e18).toFixed(6) : null) },
+    { key: 'bitcoin', label: 'BTC',   unit: 'BTC', fmt: (b) => (b.sats != null ? (Number(b.sats) / 1e8).toFixed(8) : null) },
+    { key: 'solana',  label: 'SOL',   unit: 'SOL', fmt: (b) => (b.lamports != null ? (Number(b.lamports) / 1e9).toFixed(6) : null) },
+    { key: 'quantus', label: 'QTC',   unit: 'QTC', fmt: (b) => (b.planks != null ? (Number(b.planks) / 1e12).toFixed(6) : null) },
+  ];
+
+  const shortAddr = (a) => (a && a.length > 24 ? `${a.slice(0, 12)}…${a.slice(-8)}` : a || '—');
+
+  const nativeFor = async (zionAddr) => {
+    try {
+      const res = await window.electronAPI.listWallets();
+      const w = (res?.wallets || []).find((x) => x.address === zionAddr);
+      return w?.nativeAddresses || null;
+    } catch { return null; }
+  };
+
+  const renderNativeRows = () => {
+    if (!nativeEls.rows) return;
+    if (!nativeMap) {
+      nativeEls.rows.innerHTML = '<div class="status-note" style="margin:6px 0">Not derived yet — press Derive (needs wallet password).</div>';
+      return;
+    }
+    nativeEls.rows.innerHTML = NATIVE_CHAINS.map(({ key, label, unit, fmt }) => {
+      const addr = nativeMap[key];
+      if (!addr) return '';
+      const bal = nativeBalances[key];
+      const balText = fmt && bal ? fmt(bal) : (bal?.balance != null ? String(bal.balance) : null);
+      return `<div class="wallet-meta-row" style="align-items:center">
+        <span class="wallet-kicker" style="width:52px;display:inline-block">${label}</span>
+        <span class="wallet-meta-value" title="${addr}" style="flex:1;font-size:11px">${shortAddr(addr)}</span>
+        <span class="wallet-meta-value" style="min-width:80px;text-align:right">${balText ?? '—'}</span>
+        <button class="btn btn-ghost btn-sm native-copy" data-addr="${addr}">⧉</button>
+        ${key === 'zion' ? '' : `<button class="btn btn-ghost btn-sm native-send-row" data-chain="${key}">➤</button>`}
+      </div>`;
+    }).join('');
+    nativeEls.rows.querySelectorAll('.native-copy').forEach((b) =>
+      b.addEventListener('click', () => {
+        navigator.clipboard?.writeText(b.dataset.addr);
+        if (nativeEls.status) nativeEls.status.textContent = 'Address copied.';
+      }));
+    nativeEls.rows.querySelectorAll('.native-send-row').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (nativeEls.sendChain) nativeEls.sendChain.value = b.dataset.chain;
+        if (nativeEls.sendForm) nativeEls.sendForm.style.display = '';
+        nativeEls.sendTo?.focus();
+      }));
+  };
+
+  const refreshNativeCard = async () => {
+    if (!nativeEls.card) return;
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      nativeMap = null;
+      renderNativeRows();
+      if (nativeEls.status) nativeEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    nativeMap = await nativeFor(zionAddr);
+    renderNativeRows();
+    if (!nativeMap) {
+      if (nativeEls.status) nativeEls.status.textContent = 'Press Derive to generate multichain addresses from your ZION phrase.';
+      return;
+    }
+    try {
+      const res = await window.electronAPI.nativeGetBalances({ nativeAddresses: nativeMap });
+      nativeBalances = res?.success ? (res.balances || {}) : {};
+      renderNativeRows();
+      if (nativeEls.status) nativeEls.status.textContent = `Native chains: ${Object.keys(nativeMap).filter(k => nativeMap[k]).length}/5 · ${new Date().toLocaleTimeString()}`;
+    } catch {
+      if (nativeEls.status) nativeEls.status.textContent = 'Balance fetch failed';
+    }
+  };
+
+  nativeEls.refreshBtn?.addEventListener('click', refreshNativeCard);
+
+  nativeEls.deriveBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    const password = nativeEls.sendPassword?.value || '';
+    if (!zionAddr) { nativeEls.status.textContent = 'Set an active ZION wallet first.'; return; }
+    if (!password) {
+      nativeEls.status.textContent = 'Enter wallet password in the send form below, then Derive.';
+      if (nativeEls.sendForm) nativeEls.sendForm.style.display = '';
+      return;
+    }
+    nativeEls.status.textContent = 'Deriving…';
+    const res = await window.electronAPI.nativeDeriveAddresses({ zionAddress: zionAddr, password });
+    if (res?.success) {
+      nativeMap = res.nativeAddresses;
+      renderNativeRows();
+      nativeEls.status.textContent = 'Derived — addresses stored with the wallet.';
+      refreshNativeCard();
+    } else {
+      nativeEls.status.textContent = `Derive failed: ${res?.error}`;
+    }
+  });
+
+  nativeEls.linkBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    const password = nativeEls.sendPassword?.value || '';
+    if (!zionAddr || !password) {
+      nativeEls.status.textContent = 'Active wallet + password required (send form below).';
+      if (nativeEls.sendForm) nativeEls.sendForm.style.display = '';
+      return;
+    }
+    nativeEls.status.textContent = 'Linking to ZIS…';
+    const res = await window.electronAPI.nativeLinkZis({ zionAddress: zionAddr, password });
+    if (!res?.success) {
+      nativeEls.status.textContent = `Link failed: ${res?.error}`;
+      return;
+    }
+    const parts = Object.entries(res.results || {})
+      .map(([c, r]) => `${c}:${r?.ok ? 'ok' : r?.conflict ? 'conflict' : 'fail'}`);
+    nativeEls.status.textContent = `ZIS link → ${parts.join(' · ')}`;
+  });
+
+  nativeEls.sendBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    const chain = nativeEls.sendChain?.value;
+    const to = (nativeEls.sendTo?.value || '').trim();
+    const amount = (nativeEls.sendAmount?.value || '').trim();
+    const password = nativeEls.sendPassword?.value || '';
+    if (!zionAddr || !to || !amount || !password) {
+      nativeEls.status.textContent = 'Fill recipient, amount and password.';
+      return;
+    }
+    nativeEls.status.textContent = `Sending ${chain}…`;
+    const res = await window.electronAPI.nativeSend({
+      chain, zionAddress: zionAddr, to, amount, password,
+    });
+    nativeEls.status.textContent = res?.success
+      ? `Sent — tx ${res.txHash}`
+      : `Send failed: ${res?.error}`;
+    if (res?.success) refreshNativeCard();
+  });
+
+  refreshNativeCard();
+  document.querySelector('.section-tab[data-section="wallet-overview"]')
+    ?.addEventListener('click', () => setTimeout(refreshNativeCard, 120));
 
   generateQrBtn?.addEventListener('click', async () => {
     const address = getActiveAddress();
@@ -3482,7 +4253,7 @@ function renderNetworkGpuPanel(info) {
     if (nameEl) nameEl.textContent = 'None detected';
     if (typeEl) typeEl.textContent = 'CPU-Only';
     if (memEl) memEl.textContent = '—';
-    if (modeEl) modeEl.textContent = 'CPU-Only';
+    if (modeEl) modeEl.textContent = 'CPU-Only (XMR Revenue)';
     if (modeEl) modeEl.style.color = '#f59e0b';
   }
 }
@@ -3552,8 +4323,81 @@ function computeEfficiency(accepted, rejected) {
   return { text: `${pct.toFixed(1)}%`, cls };
 }
 
+// ── Session metrics panel (interactive Trinity stream overview) ─────────────
+// Renders a compact, live stream panel on the Home tab using the active TUI
+// stream data. Mirrors the console metrics panel but styled as a dashboard card.
+function updateSessionMetrics(stats) {
+  const panel = document.getElementById('session-metrics');
+  if (!panel) return;
+
+  const fmtHr = fmtHashrate;
+  const fmtA = (n) => Number.isFinite(n) ? String(n) : '0';
+
+  // Backend pill (GPU / backend name)
+  const backendEl = document.getElementById('metrics-backend');
+  if (backendEl) {
+    const backend = String(stats.backend || stats.minerBackendResolved || '').trim();
+    const gpu = String(stats.gpu_name || '').trim();
+    backendEl.textContent = backend
+      ? (gpu ? `${backend.toUpperCase()} · ${gpu}` : backend.toUpperCase())
+      : '—';
+  }
+
+  // Render Trinity stream rows
+  const streamsEl = document.getElementById('session-metrics-streams');
+  if (streamsEl) {
+    const streams = Array.isArray(stats.streams) ? stats.streams : [];
+    if (!stats.isRunning || streams.length === 0) {
+      streamsEl.innerHTML = `<div class="session-metrics-empty">${stats.isRunning ? 'Waiting for stream telemetry...' : 'Waiting for mining to start...'}</div>`;
+    } else {
+      const icons = { 1: '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-pickaxe"></use></svg>', 2: '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-zap"></use></svg>', 3: '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-monitor-cpu"></use></svg>' };
+      const labels = { 1: 'ZION', 2: 'GPU', 3: 'CPU' };
+      streamsEl.innerHTML = streams.map((s) => {
+        const idx = Number(s.index) || 1;
+        const active = s.active !== false;
+        const coin = publicCoinLabel(s.coin, idx) || '—';
+        const algo = PUBLIC_BUILD ? maskPublicLine(s.algorithm || '') : (s.algorithm || '');
+        const label = PUBLIC_BUILD && idx >= 3
+          ? 'BOOST'
+          : (s.label || labels[idx] || `STREAM ${idx}`);
+        const hr = fmtHr(Number(s.hashrate_60s) || Number(s.hashrate) || 0);
+        const acc = Number(s.accepted) || 0;
+        const rej = Number(s.rejected) || 0;
+        const sharesClass = rej > 0 ? 'bad' : acc > 0 ? 'good' : '';
+        return `<div class="session-metrics-row ${active ? 'active' : 'inactive'}">
+          <div class="session-metrics-row-icon">${icons[idx] || '◆'}</div>
+          <div class="session-metrics-row-label">${escapeHtml(label)}</div>
+          <div>
+            <div class="session-metrics-row-coin">${escapeHtml(coin)}</div>
+            <div class="session-metrics-row-algo">${escapeHtml(algo)}</div>
+          </div>
+          <div class="session-metrics-row-hr">${hr}</div>
+          <div class="session-metrics-row-shares"><span class="${sharesClass}">${acc}</span>${rej > 0 ? ' / <span class="bad">' + rej + '</span>' : ''}</div>
+          <div class="session-metrics-row-status ${active ? 'active' : 'inactive'}">${active ? 'ONLINE' : 'OFFLINE'}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Footer stats
+  const acc = Number(stats.shares_accepted ?? stats.accepted) || 0;
+  const rej = Number(stats.shares_rejected ?? stats.rejected) || 0;
+  const eff = computeEfficiency(acc, rej);
+
+  const setFooter = (id, text, cls) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = `metric-value${cls ? ' ' + cls : ''}`;
+  };
+  setFooter('session-metrics-accepted', fmtA(acc), acc > 0 ? ' good' : '');
+  setFooter('session-metrics-rejected', fmtA(rej), rej > 0 ? ' bad' : ' muted');
+  setFooter('session-metrics-efficiency', eff.text, eff.cls ? ' ' + eff.cls : '');
+  setFooter('session-metrics-uptime', fmtDuration(stats.uptime_sec), ' muted');
+}
+
 // ── Sticky Mining Console metrics panel (modern TUI-style header) ───────────
-// Renders a compact Boost overview at the top of the Logs tab so users get
+// Renders a compact Trinity overview at the top of the Logs tab so users get
 // live numbers without scrolling through the raw miner output.
 function updateConsoleMetrics(stats) {
   const panel = document.getElementById('console-metrics-panel');
@@ -3579,14 +4423,14 @@ function updateConsoleMetrics(stats) {
 
   const streamsEl = document.getElementById('console-metrics-streams');
   if (streamsEl) {
-    const allStreams = Array.isArray(stats.streams) ? stats.streams : [];
-    const streams = PUBLIC_BUILD
-      ? allStreams.filter((s) => (s.label || '').toUpperCase() === 'ZION' || s.index === 1)
-      : allStreams;
+    const streams = Array.isArray(stats.streams) ? stats.streams : [];
     const rows = streams.map((s) => {
-      const label = s.label || (s.index === 1 ? 'ZION' : s.index === 2 ? 'GPU PROFIT' : 'CPU PROFIT');
-      const coin = s.coin || '—';
-      const algo = s.algorithm || '';
+      const idx = Number(s.index) || 1;
+      const coin = publicCoinLabel(s.coin, idx) || '—';
+      const algo = PUBLIC_BUILD ? maskPublicLine(s.algorithm || '') : (s.algorithm || '');
+      const label = PUBLIC_BUILD && idx >= 3
+        ? 'BOOST'
+        : (s.label || (idx === 1 ? 'ZION' : 'QTC'));
       const hr = fmtHr(Number(s.hashrate_60s) || Number(s.hashrate) || 0);
       const acc = Number(s.accepted) || 0;
       const rej = Number(s.rejected) || 0;
@@ -3612,7 +4456,7 @@ function updateConsoleMetrics(stats) {
   }
 }
 
-// ═══ Boost panel renderer ═══
+// ═══ Trinity panel renderer (DeekshaChv3 parallel streaming) ═══
 // Renders per-stream hashrate, shares, coin, and algorithm for the 3-stream
 // dashboard cards. Reads `stats.streams` — an array of:
 //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
@@ -3624,7 +4468,7 @@ function updateTripleStreamPanel(stats) {
 
   const fmtHr = fmtHashrate;
 
-  const streams = Array.isArray(stats.streams) ? stats.streams : [];
+  const streams = Array.isArray(stats.streams) ? stats.streams.filter(s => s) : [];
   const statusEl = document.getElementById('trinity-status');
 
   // Panel visibility: always show, but reflect idle/active state
@@ -3636,27 +4480,30 @@ function updateTripleStreamPanel(stats) {
       statusEl.textContent = 'Single Stream';
       statusEl.className = 'pill pill-compact';
     } else {
-      const activeCount = streams.filter(s => s.active).length;
+      const activeCount = streams.filter(s => s && s.active).length;
       statusEl.textContent = `${activeCount}/${streams.length} active`;
       statusEl.className = 'pill pill-compact';
     }
   }
 
-  // Render each stream card (1-indexed: stream-1, stream-2, stream-3).
-  // Prefer the explicit `index` field; fall back to array order if missing.
-  for (let i = 1; i <= 3; i++) {
+  // Render each stream card. Mining stream index → DOM card id:
+  //   1→1, 2→2, 3→3, 4→5.  DOM slot 4 (stream-card-4 / stream-4-*) is the
+  //   BTCunlock keyscan service card, driven by updateKeyscanCard — not a
+  //   pool stream.  Quad mode's second GPU stream renders in stream-card-5.
+  for (let i = 1; i <= 4; i++) {
+    const domIdx = i === 4 ? 5 : i;
     const stream = streams.find(s => s && Number(s.index) === i) || streams[i - 1];
-    const card = document.getElementById(`stream-card-${i}`);
+    const card = document.getElementById(`stream-card-${domIdx}`);
     if (!card) continue;
 
-    const coinEl = document.getElementById(`stream-${i}-coin`);
-    const hrEl = document.getElementById(`stream-${i}-hashrate`);
-    const algoEl = document.getElementById(`stream-${i}-algo`);
-    const sharesEl = document.getElementById(`stream-${i}-shares`);
-    const statusBadge = document.getElementById(`stream-${i}-status`);
+    const coinEl = document.getElementById(`stream-${domIdx}-coin`);
+    const hrEl = document.getElementById(`stream-${domIdx}-hashrate`);
+    const algoEl = document.getElementById(`stream-${domIdx}-algo`);
+    const sharesEl = document.getElementById(`stream-${domIdx}-shares`);
+    const statusBadge = document.getElementById(`stream-${domIdx}-status`);
     // Extra detail row: 60s average, accept rate, time since last share.
     const setDetail = (suffix, text, cls) => {
-      const el = document.getElementById(`stream-${i}-${suffix}`);
+      const el = document.getElementById(`stream-${domIdx}-${suffix}`);
       if (!el) return;
       el.textContent = text || '—';
       el.className = `stream-detail-value${cls ? ' ' + cls : ''}`;
@@ -3694,25 +4541,20 @@ function updateTripleStreamPanel(stats) {
       card.classList.add('inactive');
     }
 
-    if (coinEl) {
-      if (PUBLIC_BUILD && i > 1) {
-        coinEl.textContent = i === 3 ? 'Boost Stream 2' : 'Boost Stream 1';
-      } else {
-        coinEl.textContent = stream.coin || '—';
-      }
+    if (coinEl) coinEl.textContent = publicCoinLabel(stream.coin, i) || '—';
+    const labelEl = card.querySelector('.stream-label');
+    if (labelEl && stream.coin && stream.coin !== '—') {
+      const lbl = publicCoinLabel(stream.coin, i);
+      labelEl.textContent = PUBLIC_BUILD && i > 2
+        ? lbl
+        : `Stream ${i} · ${lbl}`;
     }
     if (hrEl) {
       // Prefer 10s window, fallback to 60s
       const hr = Number(stream.hashrate_10s) || Number(stream.hashrate_60s) || 0;
       hrEl.textContent = fmtHr(hr);
     }
-    if (algoEl) {
-      if (PUBLIC_BUILD && i > 1) {
-        algoEl.textContent = 'Boost';
-      } else {
-        algoEl.textContent = stream.algorithm || '—';
-      }
-    }
+    if (algoEl) algoEl.textContent = PUBLIC_BUILD && i > 2 ? 'boost' : (stream.algorithm || '—');
     if (sharesEl) {
       const acc = Number(stream.accepted) || 0;
       const rej = Number(stream.rejected) || 0;
@@ -3906,7 +4748,7 @@ async function refreshPeerList() {
       const failStr = p.failed_attempts > 0 ? `<span style="color:#f87171;font-size:10px;margin-left:6px;"><svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;"><use href="#i-alert-triangle"></use></svg> ${Number(p.failed_attempts)} fails</span>` : '';
       const safeHost = escapeHtml(String(p.host || p.address || ''));
       const safeSource = p.source_node ? `<span style="color:rgba(255,255,255,0.25);font-size:10px;">via ${escapeHtml(String(p.source_node))}</span>` : '';
-      const safePort = escapeHtml(String(p.port || '8334'));
+      const safePort = escapeHtml(String(p.port || '8335'));
 
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${bgColor};border-radius:10px;border:1px solid ${borderColor};transition:border-color 0.3s;">
         <div style="display:flex;align-items:center;gap:10px;">
@@ -4015,14 +4857,8 @@ function initUpdateUI() {
   const licenseBtn = document.getElementById('license-activate-btn');
   const licenseStatus = document.getElementById('license-status');
 
-  // Public build: hide license key UI (updates are free via GitHub releases)
-  if (PUBLIC_BUILD) {
-    const licenseSection = document.getElementById('license-section');
-    if (licenseSection) licenseSection.style.display = 'none';
-  }
-
-  // ── License key activation (private build only) ─────────────────────────────
-  if (licenseBtn && !licenseBtn._bound) {
+  // ── License key activation (private builds only — public updates are free) ──
+  if (licenseBtn && !licenseBtn._bound && !PUBLIC_BUILD) {
     licenseBtn._bound = true;
 
     // Load saved license key
@@ -4085,8 +4921,7 @@ function initUpdateUI() {
     checkBtn.addEventListener('click', async () => {
       if (_updateState.checking) return;
       _updateState.checking = true;
-      const statusText = PUBLIC_BUILD ? 'Checking GitHub releases...' : 'Contacting update server...';
-      _setUpdateStatus('Checking...', statusText, '#fcd116');
+      _setUpdateStatus('Checking...', 'Contacting update server...', '#fcd116');
       checkBtn.disabled = true;
       checkBtn.textContent = 'Checking...';
 
@@ -4102,12 +4937,7 @@ function initUpdateUI() {
           _updateState.available = true;
           _setUpdateStatus('Update Available!', `v${result.latestVersion} ready`, '#6ee7b7');
           _showChangelog(result.releaseNotes, result.latestVersion);
-          if (PUBLIC_BUILD) {
-            // Public build: auto-download is on, just show "downloading" status
-            _setUpdateStatus('Downloading...', `v${result.latestVersion} downloading in background`, '#fcd116');
-          } else {
-            _showDownloadPrompt(result);
-          }
+          _showDownloadPrompt(result);
         } else {
           _setUpdateStatus('Up to Date', `v${result.currentVersion} is the latest`, '#6ee7b7');
         }
@@ -4479,7 +5309,8 @@ function initBridgeView() {
   const resultEl   = document.getElementById('bridge-lock-tx-result');
   const txHashEl   = document.getElementById('bridge-lock-txhash');
 
-  const BRIDGE_VAULT = 'zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0';
+  // Canonical V31 Mainnet Alpha bridge vault (E4 round-trip, 2026-08-22).
+  const BRIDGE_VAULT = 'zion1j3w3h7k8m635h734y786j5804305m822t5uk546';
 
   // Auto-generate memo when EVM address changes
   function rebuildMemo() {
@@ -4563,7 +5394,7 @@ function initBridgeView() {
       try {
         // Reuse wallet-send IPC with memo field (bridge lock TX)
         const result = await window.electronAPI?.walletSendTransaction?.({
-          rpcUrl: 'http://62.171.141.136:8443/jsonrpc',
+          rpcUrl: 'http://rpc.zionterranova.com:8443/jsonrpc',
           from,
           to: BRIDGE_VAULT,
           amount: amt,
@@ -4668,7 +5499,7 @@ function initNodeView() {
         toggleBtn.disabled = false;
       } else {
         // Gather config
-        const p2pPort = Number(document.getElementById('node-cfg-p2p')?.value || 8334);
+        const p2pPort = Number(document.getElementById('node-cfg-p2p')?.value || 8335);
         const rpcPort = Number(document.getElementById('node-cfg-rpc')?.value || 8545);
         const network = document.getElementById('node-cfg-network')?.value || 'mainnet';
         toggleBtn.disabled = true;
@@ -4780,7 +5611,7 @@ async function _nodeRefresh() {
         const svgIcon = (id) => `<svg class="icon icon-inline" aria-hidden="true"><use href="#${id}"></use></svg>`;
         if (isRemote) {
           if (syncIcon) syncIcon.innerHTML = svgIcon('i-link');
-          syncTxt.innerHTML = `Připojeno k <b>Edge node</b> (${r.remoteHost || '62.171.141.136'}) — blok <b>#${s.current_height ?? 0}</b>`;
+          syncTxt.innerHTML = `Připojeno k <b>Edge node</b> (${r.remoteHost || 'stratum.zionterranova.com'}) — blok <b>#${s.current_height ?? 0}</b>`;
           syncBar.classList.add('synced');
         } else if (s.state === 'IBD') {
           if (syncIcon) syncIcon.innerHTML = svgIcon('i-arrow-down');
@@ -5815,7 +6646,7 @@ function initCliView() {
   document.getElementById('cli-btn-mine-start')?.addEventListener('click', async () => {
     if (!requireValues([['cli-mine-wallet', 'wallet address']])) return;
     const wallet = getValue('cli-mine-wallet');
-    const pool = getValue('cli-mine-pool') || '62.171.141.136:8444';
+    const pool = getValue('cli-mine-pool') || 'stratum.zionterranova.com:8444';
     const worker = getValue('cli-mine-worker');
     await runCli('cliMineStart', 'miner start', { pool, wallet, worker });
   });

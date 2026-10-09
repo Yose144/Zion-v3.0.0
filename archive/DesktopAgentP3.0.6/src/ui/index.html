@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://62.171.141.136:* http://62.171.141.136:* https://openrouter.ai https://sepolia.basescan.org; frame-src 'self' https://market.zionterranova.com https://oasis.zionterranova.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://stratum.zionterranova.com:* http://rpc.zionterranova.com:* https://openrouter.ai https://sepolia.basescan.org; frame-src 'self' https://market.zionterranova.com https://oasis.zionterranova.com; object-src 'none'; base-uri 'self'; form-action 'self';">
   <title>ZION Public Miner v3.2.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1161,7 +1161,7 @@
       background-clip: text;
     }
 
-    /* ═══ Boost Panel ═══ */
+    /* ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ */
     .trinity-panel {
       background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.07);
@@ -1189,7 +1189,7 @@
     }
     .trinity-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 12px;
     }
     .stream-card {
@@ -1205,6 +1205,8 @@
     .stream-card.stream-zion { border-left: 3px solid #10b981; }
     .stream-card.stream-gpu  { border-left: 3px solid #fcd116; }
     .stream-card.stream-cpu  { border-left: 3px solid #f59e0b; }
+    .stream-card.stream-ks   { border-left: 3px solid #34d399; }
+    .stream-card.stream-gpu2 { border-left: 3px solid #38bdf8; }
     .stream-card.active {
       background: rgba(255,255,255,0.06);
       border-color: rgba(255,255,255,0.12);
@@ -1233,6 +1235,7 @@
     .stream-zion .stream-coin { color: #10b981; background: rgba(16,185,129,0.12); }
     .stream-gpu  .stream-coin { color: #fcd116; background: rgba(252,209,22,0.12); }
     .stream-cpu  .stream-coin { color: #fbbf24; background: rgba(245,158,11,0.12); }
+    .stream-ks   .stream-coin { color: #34d399; background: rgba(52,211,153,0.12); }
     .stream-card-body {
       display: flex;
       flex-direction: column;
@@ -1372,6 +1375,136 @@
       display: block;
       border-radius: 6px;
       background: rgba(0,0,0,0.2);
+    }
+
+    /* ═══ Session Metrics (interactive stream panel) ═══
+       Live Trinity stream rows with a console-metrics-like compact layout. */
+    .session-metrics {
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 24px;
+      padding: 20px 24px;
+      margin-top: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+    .session-metrics .metrics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .session-metrics .metrics-header h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .session-metrics-streams {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 14px 0;
+      min-height: 80px;
+    }
+    .session-metrics-empty {
+      color: rgba(255,255,255,0.3);
+      font-size: 13px;
+      text-align: center;
+      padding: 28px 0;
+    }
+    .session-metrics-row {
+      display: grid;
+      grid-template-columns: 32px 120px 1fr 120px 80px 70px;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all .2s;
+      cursor: default;
+    }
+    .session-metrics-row:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(0,255,136,0.15);
+      transform: translateY(-1px);
+    }
+    .session-metrics-row.active {
+      background: rgba(0,255,136,0.06);
+      border-color: rgba(0,255,136,0.18);
+    }
+    .session-metrics-row.inactive {
+      opacity: 0.55;
+    }
+    .session-metrics-row-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      background: rgba(255,255,255,0.06);
+    }
+    .session-metrics-row.active .session-metrics-row-icon { background: rgba(0,255,136,0.12); }
+    .session-metrics-row-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.05em; }
+    .session-metrics-row-coin { font-weight: 700; color: #fff; font-size: 14px; }
+    .session-metrics-row-algo { color: rgba(255,255,255,0.5); font-size: 12px; }
+    .session-metrics-row-hr { font-weight: 800; color: #34d399; text-align: right; font-family: 'SF Mono', 'Menlo', monospace; }
+    .session-metrics-row-shares { text-align: right; font-size: 12px; }
+    .session-metrics-row-shares .good { color: #34d399; font-weight: 700; }
+    .session-metrics-row-shares .bad { color: #f87171; font-weight: 700; }
+    .session-metrics-row-status { text-align: right; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .session-metrics-row-status.active { color: #00ff88; }
+    .session-metrics-row-status.inactive { color: rgba(255,255,255,0.3); }
+    .session-metrics-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .session-metrics-footer-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px 20px;
+    }
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e5e7eb;
+      font-variant-numeric: tabular-nums;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .metric-value.good { color: #34d399; }
+    .metric-value.warn { color: #fbbf24; }
+    .metric-value.bad  { color: #f87171; }
+    .metric-value.muted { color: #9ca3af; }
+    @media (max-width: 1100px) {
+      .metrics-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 820px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     /* Control Panel — pool-style glass */
@@ -1607,6 +1740,41 @@
       font-size: 10px;
       color: rgba(255,255,255,0.2);
     }
+    #lottery-drawer:not(.view-hidden) { display: block; }
+    .lottery-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .lottery-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .lottery-val { font-size: 15px; font-weight: 700; color: #6ee7b7; }
+    .lottery-lbl { font-size: 9px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .lottery-bar {
+      height: 5px; border-radius: 3px; overflow: hidden;
+      background: rgba(255,255,255,0.06); margin: 6px 0 4px;
+    }
+    .lottery-bar-fill { height: 100%; background: #34d399; width: 0%; transition: width .4s; }
+    .lottery-frontier { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+    .lottery-sub {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      color: rgba(255,255,255,0.4); margin: 10px 0 4px;
+    }
+    .lottery-table { width: 100%; font-size: 10px; border-collapse: collapse; }
+    .lottery-table th { text-align: left; color: rgba(255,255,255,0.3); font-weight: 500; padding: 2px 8px 2px 0; }
+    .lottery-table td { padding: 2px 8px 2px 0; color: rgba(255,255,255,0.65); border-top: 1px solid rgba(255,255,255,0.05); }
+    .lottery-join {
+      font-size: 9px; color: rgba(255,255,255,0.5);
+      background: rgba(0,0,0,0.3); border-radius: 8px;
+      padding: 8px 10px; overflow-x: auto; white-space: pre;
+    }
+    .lottery-note { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 6px; }
     .log-viewer-compact {
       height: 200px;
       border-radius: 12px;
@@ -4412,7 +4580,7 @@
   <!-- ═══════════════════════════════════════════════════════ -->
   <div id="block-found-toast" class="block-found-toast view-hidden">
     <div class="block-found-toast-inner">
-      <div class="block-found-toast-icon">🐋</div>
+      <div class="block-found-toast-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-whale"></use></svg></div>
       <div class="block-found-toast-content">
         <div class="block-found-toast-title">BLOCK FOUND!</div>
         <div class="block-found-toast-subtitle" id="block-found-toast-subtitle">Block #—</div>
@@ -4509,7 +4677,7 @@
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Mining</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">Dashboard</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION V3 Mainnet v3.0.6 • Mainnet LIVE</div>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>ZION V31 Mainnet Alpha v3.2.0 • Mainnet LIVE</div>
             </div>
           </div>
           <div class="header-badge-wrap">
@@ -4531,25 +4699,14 @@
                 <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony Ekam v2</option>
                 <option value="deeksha_lite_fire">Deeksha Lite Fire</option>
               </select>
-              <select id="gpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 130px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Boost Stream 1">
-                <option value="auto">GPU: Auto</option>
-                <option value="KAS">GPU: KAS</option>
-                <option value="ALPH">GPU: ALPH</option>
-                <option value="DCR">GPU: DCR</option>
-                <option value="ERG">GPU: ERG</option>
-                <option value="ETC">GPU: ETC</option>
-                <option value="RVN">GPU: RVN</option>
-                <option value="CLORE">GPU: CLORE</option>
-                <option value="MEWC">GPU: MEWC</option>
-                <option value="EVR">GPU: EVR</option>
-                <option value="FLUX">GPU: FLUX</option>
-                <option value="EPIC">GPU: EPIC</option>
+              <select id="gpu-coin-select-dashboard" class="algo-select" style="display:none" title="Stream 2 — QTC (Quantus)">
+                <option value="QTU" selected>GPU: QTC</option>
               </select>
-              <select id="cpu-coin-select-dashboard" class="algo-select" style="width: auto; min-width: 120px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Boost Stream 2">
-                <option value="auto">CPU: Auto</option>
-                <option value="VRSC">CPU: VRSC</option>
-                <option value="XMR">CPU: XMR</option>
-                <option value="RTM">CPU: RTM</option>
+              <select id="cpu-coin-select-dashboard" class="algo-select" style="display:none" title="Stream 3 — Boost Stream">
+                <option value="auto" selected>CPU: Auto</option>
+              </select>
+              <select id="gpu-coin2-select-dashboard" class="algo-select" style="display:none" title="Boost Stream">
+                <option value="" selected>Off</option>
               </select>
               <span id="algo-status" class="view-hidden"></span>
               <span id="backend-pill" class="pill pill-compact">Backend: Auto</span>
@@ -4640,10 +4797,10 @@
 
         </div>
 
-        <!-- ═══ Boost Panel ═══ -->
+        <!-- ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ -->
         <div id="trinity-panel" class="trinity-panel">
           <div class="trinity-header">
-            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Mining</h3>
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Trinity</h3>
             <span id="trinity-status" class="pill pill-compact">Idle</span>
           </div>
           <div class="trinity-grid">
@@ -4676,10 +4833,10 @@
                 </div>
               </div>
             </div>
-            <!-- Stream 2: Boost 1 -->
-            <div class="stream-card stream-gpu" id="stream-card-2" style="display:none">
+            <!-- Stream 2: QTC (Quantus) GPU AuxPoW -->
+            <div class="stream-card stream-gpu" id="stream-card-2">
               <div class="stream-card-header">
-                <span class="stream-label">Stream 2 · Boost 1</span>
+                <span class="stream-label">Stream 2 · QTC</span>
                 <span class="stream-coin" id="stream-2-coin">—</span>
               </div>
               <div class="stream-card-body">
@@ -4705,10 +4862,10 @@
                 </div>
               </div>
             </div>
-            <!-- Stream 3: Boost 2 -->
-            <div class="stream-card stream-cpu" id="stream-card-3" style="display:none">
+            <!-- Boost Stream: internal AuxPoW stream (identity masked) -->
+            <div class="stream-card stream-cpu" id="stream-card-3">
               <div class="stream-card-header">
-                <span class="stream-label">Stream 3 · Boost 2</span>
+                <span class="stream-label">Boost Stream</span>
                 <span class="stream-coin" id="stream-3-coin">—</span>
               </div>
               <div class="stream-card-body">
@@ -4748,6 +4905,23 @@
           </div>
         </div>
 
+        <!-- ═══ Session Metrics (interactive stream panel) ═══
+             Live stream overview like the sticky console metrics, but on Home. -->
+        <div id="session-metrics" class="session-metrics">
+          <div class="metrics-header">
+            <h3><svg class="icon icon-inline" aria-hidden="true"><use href="#i-logs"></use></svg>Session Metrics</h3>
+            <span id="metrics-backend" class="pill pill-compact">—</span>
+          </div>
+          <div class="session-metrics-streams" id="session-metrics-streams">
+            <div class="session-metrics-empty">Waiting for mining to start...</div>
+          </div>
+          <div class="session-metrics-footer">
+            <span class="session-metrics-footer-item"><span class="metric-label">Accepted</span> <span id="session-metrics-accepted" class="metric-value good">0</span></span>
+            <span class="session-metrics-footer-item"><span class="metric-label">Rejected</span> <span id="session-metrics-rejected" class="metric-value">0</span></span>
+            <span class="session-metrics-footer-item"><span class="metric-label">Efficiency</span> <span id="session-metrics-efficiency" class="metric-value">—</span></span>
+            <span class="session-metrics-footer-item"><span class="metric-label">Uptime</span> <span id="session-metrics-uptime" class="metric-value muted">—</span></span>
+          </div>
+        </div>
       </div>
 
 
@@ -5085,7 +5259,7 @@
             </div>
 
             <div class="dex-swap-divider">
-              <button id="dex-swap-direction" class="dex-swap-btn" title="Swap direction">⇅</button>
+              <button id="dex-swap-direction" class="dex-swap-btn" title="Swap direction"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-swap-vert"></use></svg></button>
             </div>
 
             <div class="dex-swap-section">
@@ -5397,7 +5571,7 @@
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>Layer 2 · Governance</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">DAO</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>4B ZION Treasury · 5-of-7 Multisig · Token Governance</div>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>1.5B ZION Treasury · 5-of-7 Multisig · Token Governance</div>
             </div>
           </div>
         </div>
@@ -5431,7 +5605,7 @@
         <div id="dao-treasury" class="section-panel">
           <div class="dao-treasury-card">
             <div class="dao-treasury-label">Total Treasury Balance</div>
-            <div class="dao-treasury-value" id="dao-treasury-balance">4,000,000,000 ZION</div>
+            <div class="dao-treasury-value" id="dao-treasury-balance">1,500,000,000 ZION</div>
             <div class="dao-treasury-label">3 multisig wallets · 100M ZION/day spend limit</div>
           </div>
           <div class="oasis-stats-row" style="margin-top:20px">
@@ -5588,6 +5762,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Payouts</span>
           </div>
+          <div class="section-tab" data-section="wallet-qtc">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+            <span>Quantus</span>
+          </div>
           <div class="section-tab" data-section="wallet-manage">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
             <span>Manage</span>
@@ -5681,6 +5859,96 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Quantus (QTC) — native payout wallet, Quantus mainnet -->
+              <div class="wallet-card" id="qtc-wallet-card">
+                <div class="wallet-kicker">QUANTUS · QTC</div>
+                <div class="wallet-main">
+                  <div class="wallet-main-value" id="qtc-balance">—</div>
+                  <div class="wallet-main-unit">QTC</div>
+                </div>
+                <div id="qtc-linked">
+                  <div class="wallet-meta-row">
+                    <div class="wallet-meta flex-2" style="word-break:break-all">
+                      <span id="qtc-address" class="wallet-meta-value">—</span>
+                    </div>
+                  </div>
+                  <div class="inline-row" style="margin-top:8px">
+                    <button class="btn btn-ghost btn-sm" id="qtc-copy-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-copy"></use></svg>
+                      Copy
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-ghost-green" id="qtc-refresh-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+                <div id="qtc-unlinked">
+                  <div class="inline-row" style="margin:8px 0">
+                    <input type="text" id="qtc-link-input" placeholder="qz… (SS58-189) or qtc:qz…" class="input-flex-mono" />
+                    <button class="btn btn-primary btn-sm" id="qtc-link-btn">Link</button>
+                  </div>
+                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="qtc-generate-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                    Generate new QTC wallet
+                  </button>
+                </div>
+                <div id="qtc-new-mnemonic" style="display:none">
+                  <textarea id="qtc-mnemonic-out" readonly rows="3" class="input-flex-mono" style="width:100%;margin-top:8px"></textarea>
+                  <div class="status-note">Save this 24-word phrase — it is your QTC wallet. Linked to the active wallet.</div>
+                </div>
+                <div id="qtc-history" style="margin-top:8px"></div>
+                <div class="inline-row" style="margin-top:8px;align-items:center;gap:6px">
+                  <span class="wallet-meta">Pool payout</span>
+                  <select id="qtc-payout-coin" class="input-flex-mono" style="flex:0 0 auto;padding:2px 6px">
+                    <option value="zion">ZION → this wallet</option>
+                    <option value="qtc">QTC → qz… address</option>
+                  </select>
+                </div>
+                <div id="qtc-status" class="wallet-status-row"></div>
+              </div>
+
+              <!-- Native multichain — non-custodial addresses derived from the
+                   ZION mnemonic (zion / evm / bitcoin / solana / quantus) -->
+              <div class="wallet-card" id="native-wallet-card">
+                <div class="wallet-kicker">NATIVE MULTICHAIN</div>
+                <div class="wallet-meta-row">
+                  <span class="status-note">One ZION phrase → native keys on every chain. Keys never leave this device.</span>
+                </div>
+                <div id="native-rows"></div>
+                <div class="inline-row" style="margin-top:8px">
+                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="native-derive-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                    Derive
+                  </button>
+                  <button class="btn btn-ghost btn-sm btn-ghost-green" id="native-refresh-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                    Refresh
+                  </button>
+                  <button class="btn btn-ghost btn-sm" id="native-link-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-link"></use></svg>
+                    Link to ZIS
+                  </button>
+                </div>
+                <div id="native-send-form" style="display:none;margin-top:8px">
+                  <div class="inline-row" style="margin-bottom:6px">
+                    <select id="native-send-chain" class="input-flex">
+                      <option value="evm">ETH (Base)</option>
+                      <option value="bitcoin">BTC</option>
+                      <option value="solana">SOL</option>
+                      <option value="quantus">QTC</option>
+                    </select>
+                  </div>
+                  <input type="text" id="native-send-to" placeholder="Recipient address" class="input-flex-mono" style="width:100%;margin-bottom:6px" />
+                  <div class="inline-row" style="margin-bottom:6px">
+                    <input type="text" id="native-send-amount" placeholder="Amount" class="input-flex" style="flex:1" />
+                    <input type="password" id="native-send-password" placeholder="Wallet password" class="input-flex" style="flex:1" />
+                  </div>
+                  <button class="btn btn-primary btn-sm" id="native-send-btn">Send</button>
+                </div>
+                <div id="native-status" class="wallet-status-row"></div>
+              </div>
             </div>
           </div>
 
@@ -5712,7 +5980,7 @@
 
             <!-- From address card -->
             <div id="send-no-wallet-warn" class="status-warning" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);border-radius:10px;color:#f87171;font-size:12px;">
-              ⚠ No wallet configured. Go to <strong>Overview</strong> tab → set your active wallet address first.
+              <svg class="icon icon-inline" aria-hidden="true"><use href="#i-alert-triangle"></use></svg> No wallet configured. Go to <strong>Overview</strong> tab → set your active wallet address first.
             </div>
 
             <!-- Compact from-address row -->
@@ -5855,6 +6123,104 @@
               </div>
               <div id="payout-history-list" style="font-size:12px;color:rgba(255,255,255,0.5)">No payouts recorded yet.</div>
             </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Quantus (QTC network) ═══ -->
+        <div id="wallet-qtc" class="section-panel">
+
+          <!-- Header + KPI strip -->
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+              <span>Quantus Network (QTC)</span>
+              <span class="flex-1"></span>
+              <button class="btn btn-ghost btn-sm" id="qtcnet-refresh-btn">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                Refresh
+              </button>
+            </h2>
+            <div class="status-note" style="margin-bottom:12px">Post-quantum chain · native mining leg · wormhole rewards · live indexer</div>
+            <div class="metric-grid">
+              <div class="metric-card purple">
+                <div class="metric-kicker">NODE</div>
+                <div class="metric-value purple" id="qtcnet-node-state">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">HEIGHT</div>
+                <div class="metric-value blue" id="qtcnet-height">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">PEERS</div>
+                <div class="metric-value blue" id="qtcnet-peers">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">NATIVE LEG</div>
+                <div class="metric-value green" id="qtcnet-native">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">NATIVE SHARE</div>
+                <div class="metric-value gold" id="qtcnet-share">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">BLOCKS MINED</div>
+                <div class="metric-value green" id="qtcnet-mined">—</div>
+              </div>
+            </div>
+            <div class="wallet-status-row" id="qtcnet-updated">—</div>
+          </div>
+
+          <!-- Node + Native leg -->
+          <div class="send-grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+            <div class="control-panel">
+              <h2 class="panel-title-row">
+                <svg class="icon" aria-hidden="true"><use href="#i-monitor-cpu"></use></svg>
+                <span>Quantus Node</span>
+              </h2>
+              <div id="qtcnet-node" class="wallet-meta"></div>
+            </div>
+            <div class="control-panel">
+              <h2 class="panel-title-row">
+                <svg class="icon" aria-hidden="true"><use href="#i-pickaxe"></use></svg>
+                <span>Native Mining Leg</span>
+              </h2>
+              <div class="status-note" style="margin-bottom:8px">Native jobs share a small split of pool miners (lottery mode); the rest rides the external upstream.</div>
+              <div id="qtcnet-pool" class="wallet-meta"></div>
+            </div>
+          </div>
+
+          <!-- Wormhole rewards -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+              <span>Wormhole Rewards</span>
+            </h2>
+            <div class="status-note" style="margin-bottom:8px">Block rewards accrue as ZK leaves on the wormhole address. Indexer lags ~20–90 min behind the chain tip.</div>
+            <div id="qtcnet-rewards-addr" class="wallet-meta" style="word-break:break-all;font-size:10px;margin-bottom:8px"></div>
+            <table class="lottery-table" id="qtcnet-rewards-table"></table>
+          </div>
+
+          <!-- Address lookup -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              <span>QTC Address Lookup</span>
+            </h2>
+            <div class="status-note" style="margin-bottom:8px">On-chain balance (System.Account) + indexed transfer history.</div>
+            <div class="inline-row" style="margin-bottom:10px">
+              <input type="text" id="qtcnet-addr-input" placeholder="qz… address" class="input-flex-mono" />
+              <button class="btn btn-primary btn-sm" id="qtcnet-lookup-btn">Lookup</button>
+            </div>
+            <div id="qtcnet-lookup-result"></div>
+          </div>
+
+          <!-- Network feed -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-dashboard"></use></svg>
+              <span>Network Feed</span>
+            </h2>
+            <table class="lottery-table" id="qtcnet-feed-table"></table>
           </div>
         </div>
 
@@ -6034,7 +6400,7 @@
                   <span>Chain RPC URL</span>
                   <input type="text" id="rpc-url" placeholder="http://127.0.0.1:8443/jsonrpc" />
                   <small style="color:rgba(255,255,255,0.5); font-size:11px; margin-top:4px; display:block;">
-                    Local node: http://127.0.0.1:8443/jsonrpc | Edge VPN: http://62.171.141.136:8443/jsonrpc
+                    Local node: http://127.0.0.1:8443/jsonrpc | Edge VPN: http://rpc.zionterranova.com:8443/jsonrpc
                   </small>
                 </label>
               </div>
@@ -6147,14 +6513,14 @@
 
               <div class="pool-grid">
                 <label class="pool-card">
-                  <input type="radio" name="pool-select" value="62.171.141.136:8444" id="pool-primary" checked />
+                  <input type="radio" name="pool-select" value="stratum.zionterranova.com:8444" id="pool-primary" checked />
                   <div class="pool-card-body">
                     <div class="pool-meta">
                       <span class="pill pill-purple">Canonical</span>
                       <span class="pill pill-gold">Primary</span>
                     </div>
                     <h4>Canonical Pool</h4>
-                    <p>62.171.141.136:8444</p>
+                    <p>stratum.zionterranova.com:8444</p>
                     <div class="pool-meta pool-meta-secondary">
                       <span class="pill pill-cyan">Deeksha</span>
                       <span class="pill pill-gold">ZION only</span>
@@ -6240,47 +6606,30 @@
                   <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
                 </div>
                 <div>
-                  <p class="card-kicker">Boost</p>
-                  <h3>Boost Streams</h3>
+                  <p class="card-kicker">Trinity</p>
+                  <h3>ZION + QTC Dual Mining</h3>
                 </div>
               </div>
-              <label class="wizard-label-sm">Boost Stream 1</label>
-              <select id="gpu-coin-select" class="algo-select">
-                <option value="auto" selected>Auto (pool profit router)</option>
-                <option value="KAS">KAS — kheavyhash</option>
-                <option value="ALPH">ALPH — blake3</option>
-                <option value="DCR">DCR — blake3</option>
-                <option value="ERG">ERG — autolykos</option>
-                <option value="ETC">ETC — ethash</option>
-                <option value="RVN">RVN — kawpow</option>
-                <option value="CLORE">CLORE — kawpow</option>
-                <option value="MEWC">MEWC — kawpow</option>
-                <option value="EVR">EVR — kawpow</option>
-                <option value="FLUX">FLUX — zelhash</option>
-                <option value="EPIC">EPIC — progpow</option>
+              <label class="wizard-label-sm" style="display:none">Stream 2 — GPU coin</label>
+              <select id="gpu-coin-select" class="algo-select" style="display:none">
+                <option value="QTU" selected>QTC — Quantus</option>
               </select>
-              <div class="slider-hint">ZION on GPU + Boost Stream 1 simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
-
-              <div class="section-divider">CPU Stream</div>
-
-              <label class="wizard-label-sm">Boost Stream 2</label>
-              <select id="cpu-coin-select" class="algo-select">
-                <option value="auto" selected>Auto (pool profit router)</option>
-                <option value="VRSC">VRSC — verushash</option>
-                <option value="XMR">XMR — randomx</option>
-                <option value="RTM">RTM — ghosstrider</option>
+              <select id="gpu-coin2-select" class="algo-select" style="display:none">
+                <option value="" selected>Off</option>
               </select>
-              <div class="slider-hint">Boost Stream 2 runs on CPU alongside ZION GPU.</div>
+              <select id="cpu-coin-select" class="algo-select" style="display:none">
+                <option value="auto" selected>Auto</option>
+              </select>
+              <div class="slider-hint">Mine ZION and Quantus (QTC) at the same time on one machine. Both payouts land in your linked wallets.</div>
 
-              <div class="section-divider">Toggle</div>
               <label class="mode-pill" style="cursor:pointer">
                 <input type="checkbox" id="trinity-checkbox" style="width:18px;height:18px" checked />
                 <div>
-                  <div class="mode-title">Enable Boost</div>
-                  <p>Run ZION + Boost Stream 1 + Boost Stream 2 simultaneously</p>
+                  <div class="mode-title">Enable Trinity (ZION + QTC)</div>
+                  <p>Mine ZION and QTC simultaneously — one miner, two rewards</p>
                 </div>
               </label>
-              <div class="slider-hint">When disabled, the miner runs ZION-only (legacy single-stream mode).</div>
+              <div class="slider-hint">When disabled, the miner runs ZION-only.</div>
             </section>
           </div>
         </div>
@@ -6309,7 +6658,7 @@
                 <label class="mode-pill">
                   <input type="radio" name="miner-backend" value="rust" id="backend-rust" />
                   <div>
-                    <div class="mode-title">Rust (v3.0.6)</div>
+                    <div class="mode-title">Rust (v3.2.0)</div>
                     <p>Fast native Ekam miner • primary desktop backend</p>
                   </div>
                 </label>
@@ -6598,7 +6947,7 @@
           </div>
           <!-- Status message bar -->
           <div id="node-sync-bar" class="sync-bar">
-            <span id="node-sync-icon">⚡</span>
+            <span id="node-sync-icon"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-zap"></use></svg></span>
             <span id="node-sync-text">Node není spuštěn — klikni na <b>Spustit Node</b></span>
           </div>
         </div>
@@ -6645,7 +6994,7 @@
             <div class="node-settings-grid">
               <label class="node-settings-label">
                 P2P Port
-                <input id="node-cfg-p2p" class="wizard-input" type="number" value="8334" min="1024" max="65535">
+                <input id="node-cfg-p2p" class="wizard-input" type="number" value="8335" min="1024" max="65535">
               </label>
               <label class="node-settings-label">
                 RPC Port
@@ -6724,20 +7073,20 @@
             </div>
             <div class="controls">
               <button class="ctrl-btn" id="console-clear-btn" title="Clear">⌫</button>
-              <button class="ctrl-btn" id="console-scroll-btn" title="Scroll to bottom">↓</button>
+              <button class="ctrl-btn" id="console-scroll-btn" title="Scroll to bottom"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-arrow-down"></use></svg></button>
             </div>
           </div>
           <div class="mining-console-body" id="console-body">
             <!-- Live metrics strip — sticky at top of Mining Console -->
             <div id="console-metrics-panel" class="console-metrics-panel view-hidden">
               <div class="console-metrics-header">
-                <span class="console-metrics-title">ZION Public Miner v3.0.6</span>
+                <span class="console-metrics-title">ZION Public Miner v3.2.0</span>
                 <span class="console-metrics-uptime" id="console-metrics-uptime">uptime 00:00</span>
               </div>
               <div class="console-metrics-streams" id="console-metrics-streams"></div>
               <div class="console-metrics-footer" id="console-metrics-footer">pool — | height —</div>
             </div>
-            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V3 Mainnet v3.0.6</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION Public Miner v3.2.0</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
           </div>
         </div>
@@ -6801,7 +7150,7 @@
           <div class="control-panel">
             <h2 class="inline-heading">
               <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
-              <span>ZION V3 Mainnet v3.0.6</span>
+              <span>ZION V31 Mainnet Alpha v3.2.0</span>
             </h2>
             <p class="about-lead">
               <strong>Desktop Mining Agent</strong> — Professional mining software with one-click Rust miner, real-time statistics, and full wallet management.
@@ -6813,8 +7162,8 @@
                 <div class="info-card-kicker">
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> VERSION
                 </div>
-                <div class="info-card-value version">3.0.6</div>
-                <div class="info-card-sub">V3 Mainnet Ready</div>
+                <div class="info-card-value version">3.2.0</div>
+                <div class="info-card-sub">V31 Mainnet Alpha Ready</div>
               </div>
               <div class="info-card algo">
                 <div class="info-card-kicker">
@@ -6828,7 +7177,7 @@
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> NETWORK
                 </div>
                 <div class="info-card-value network">Mainnet LIVE</div>
-                <div class="info-card-sub">Edge Pool: 62.171.141.136:8444 · Prague</div>
+                <div class="info-card-sub">Edge Pool: stratum.zionterranova.com:8444 · Prague</div>
               </div>
               <div class="info-card engine">
                 <div class="info-card-kicker">
@@ -6849,8 +7198,8 @@
               <span>Automatic Updates</span>
             </h2>
 
-            <!-- License key input (private build only — hidden in public build) -->
-            <div id="license-section" class="license-section" style="margin-bottom:20px;">
+            <!-- License key input -->
+            <div id="license-section" class="license-section" style="margin-bottom:20px; display:none;">
               <label for="license-key-input" style="display:block; font-size:13px; color:#94a3b8; margin-bottom:6px;">
                 License Key
               </label>
@@ -6870,7 +7219,7 @@
                 </button>
               </div>
               <div id="license-status" style="font-size:12px; color:#94a3b8; margin-top:6px;">
-                Enter your license key to enable auto-updates.
+                Public build — updates via GitHub Releases.
               </div>
             </div>
 
@@ -6881,14 +7230,14 @@
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-info"></use></svg> CURRENT VERSION
                 </div>
                 <div class="info-card-value version" id="update-current-ver">3.2.0</div>
-                <div class="info-card-sub">V3 Mainnet Ready</div>
+                <div class="info-card-sub">V31 Mainnet Alpha Ready</div>
               </div>
               <div class="info-card network">
                 <div class="info-card-kicker">
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> UPDATE STATUS
                 </div>
                 <div class="info-card-value network" id="update-status-label">Ready</div>
-                <div class="info-card-sub" id="update-status-sub">Enter license key to check for updates</div>
+                <div class="info-card-sub" id="update-status-sub">Updates are checked automatically from GitHub Releases</div>
               </div>
             </div>
 
@@ -6958,17 +7307,17 @@
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">
-                  <span class="emoji-16">⛏️</span>
+                  <span class="emoji-16"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-pickaxe"></use></svg></span>
                   <span class="resource-item-label">Mining Pools</span>
                 </div>
-                <span class="resource-item-value">62.171.141.136:8444 · custom endpoint supported</span>
+                <span class="resource-item-value">stratum.zionterranova.com:8444 · custom endpoint supported</span>
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">
                   <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
                   <span class="resource-item-label">RPC Endpoints</span>
                 </div>
-                <span class="resource-item-value">:8443/jsonrpc · P2P :8333</span>
+                <span class="resource-item-value">:8443/jsonrpc · P2P :8335</span>
               </div>
             </div>
           </div>
@@ -6978,7 +7327,7 @@
         <div id="about-philosophy" class="section-panel">
           <div class="control-panel">
             <div class="about-quote-wrap">
-              <div class="about-quote-icon">✨</div>
+              <div class="about-quote-icon"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-sparkles"></use></svg></div>
               <p class="about-quote">
                 "Where Technology Meets Spirit"
               </p>
@@ -7108,7 +7457,7 @@
               </div>
 
               <p style="color:var(--text-third); font-size:12px; margin:12px 0 0 0;">
-                💡 Pokud Defender smaže miner, aplikace automaticky přepne na Python fallback — těží se dál.
+                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-bulb"></use></svg> Pokud Defender smaže miner, aplikace automaticky přepne na Python fallback — těží se dál.
               </p>
             </div>
 
@@ -7116,7 +7465,7 @@
             <!-- 🍎 macOS — Kompletní průvodce                         -->
             <!-- ═══════════════════════════════════════════════════════ -->
             <div class="glass-panel" style="padding:20px; margin-bottom:16px;">
-              <h3 style="margin:0 0 12px 0; color:var(--accent-1); font-size:16px;">🍎 macOS — Kompletní průvodce</h3>
+              <h3 style="margin:0 0 12px 0; color:var(--accent-1); font-size:16px;"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-apple"></use></svg> macOS — Kompletní průvodce</h3>
 
               <!-- Gatekeeper -->
               <div style="margin-bottom:16px;">
@@ -7191,7 +7540,7 @@
               </div>
 
               <p style="color:var(--text-third); font-size:12px; margin:12px 0 0 0;">
-                💡 Aplikace automaticky opravuje quarantine příznak a permissions při každém spuštění.
+                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-bulb"></use></svg> Aplikace automaticky opravuje quarantine příznak a permissions při každém spuštění.
               </p>
             </div>
 
@@ -7199,16 +7548,16 @@
             <!-- 🐧 Linux                                              -->
             <!-- ═══════════════════════════════════════════════════════ -->
             <div class="glass-panel" style="padding:20px; margin-bottom:16px;">
-              <h3 style="margin:0 0 12px 0; color:var(--accent-3); font-size:16px;">🐧 Linux — Průvodce</h3>
+              <h3 style="margin:0 0 12px 0; color:var(--accent-3); font-size:16px;"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-linux"></use></svg> Linux — Průvodce</h3>
 
               <div style="margin-bottom:16px;">
                 <h4 style="margin:0 0 6px 0; color:#34d399; font-size:14px;">Quick Start — Linux</h4>
                 <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
                   <span style="color:#6b7280;"># AppImage</span><br/>
-                  chmod +x zion-desktop-agent-v3.0.6-linux-x64.AppImage<br/>
-                  ./zion-desktop-agent-v3.0.6-linux-x64.AppImage<br/><br/>
+                  chmod +x zion-desktop-agent-v3.2.0-linux-x64.AppImage<br/>
+                  ./zion-desktop-agent-v3.2.0-linux-x64.AppImage<br/><br/>
                   <span style="color:#6b7280;"># Nebo .deb</span><br/>
-                  sudo dpkg -i zion-desktop-agent-v3.0.6-linux-x64.deb<br/>
+                  sudo dpkg -i zion-desktop-agent-v3.2.0-linux-x64.deb<br/>
                   zion-miner<br/><br/>
                   <span style="color:#6b7280;"># Pokud miner nefunguje — nastavte permissions</span><br/>
                   chmod +x /opt/ZION\ Miner/resources/zion-universal-miner<br/>
@@ -7221,7 +7570,7 @@
               </div>
 
               <p style="color:var(--text-third); font-size:12px; margin:8px 0 0 0;">
-                💡 Linux typicky nemá problémy s antivirem. Aplikace automaticky nastavuje execute permissions.
+                <svg class="icon icon-inline" aria-hidden="true"><use href="#i-bulb"></use></svg> Linux typicky nemá problémy s antivirem. Aplikace automaticky nastavuje execute permissions.
               </p>
             </div>
 
@@ -7229,7 +7578,7 @@
             <!-- ❓ FAQ                                                 -->
             <!-- ═══════════════════════════════════════════════════════ -->
             <div class="glass-panel" style="padding:20px;">
-              <h3 style="margin:0 0 16px 0; color:var(--text-primary); font-size:16px;">❓ FAQ — Často kladené otázky</h3>
+              <h3 style="margin:0 0 16px 0; color:var(--text-primary); font-size:16px;"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-help"></use></svg> FAQ — Často kladené otázky</h3>
 
               <div style="margin-bottom:14px;">
                 <div style="color:var(--accent-1); font-weight:600; font-size:13px; margin-bottom:3px;">Q: Je ZION Miner virus?</div>
@@ -7440,7 +7789,7 @@
               <h2>Start Mining</h2>
               <div class="stack-col" style="gap:8px;">
                 <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
-                <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 62.171.141.136:8444)">
+                <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: stratum.zionterranova.com:8444)">
                 <input id="cli-mine-worker" class="wizard-input" type="text" placeholder="Worker name (optional)">
                 <div class="actions-row" style="gap:8px;">
                   <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>

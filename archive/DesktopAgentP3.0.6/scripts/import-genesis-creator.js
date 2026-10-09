@@ -117,7 +117,7 @@ try {
     importedAt: wallet.importedAt,
     // Standard config fields for desktop agent
     worker: 'desktop-agent',
-    rpcUrl: 'http://62.171.141.136:8443/jsonrpc',
+    rpcUrl: 'http://rpc.zionterranova.com:8443/jsonrpc',
     algorithm: 'cosmic_harmony',
     threads: Math.max(1, (require('os').cpus().length - 1)),
     gpu: true,
@@ -129,7 +129,7 @@ try {
     minimizeToTray: true,
     startMinimized: false,
     pool: {
-      host: '62.171.141.136',
+      host: 'rpc.zionterranova.com',
       port: 8444
     }
   };
@@ -153,7 +153,7 @@ try {
   console.log('  1. Launch desktop agent: npm run dev:wallet');
   console.log('  2. Wallet should appear automatically');
   console.log('  3. Verify balance via RPC:');
-  console.log('     node -e "const net=require(\'net\'); const s=net.connect(8443,\'62.171.141.136\',()=>{s.write(JSON.stringify({jsonrpc:\'2.0\',id:1,method:\'getBalance\',params:{address:\'' + wallet.address + '\'}})+\'\\n\');}); s.on(\'data\',c=>{console.log(c.toString()); s.end();});"');
+  console.log('     node -e "const net=require(\'net\'); const s=net.connect(8443,\'rpc.zionterranova.com\',()=>{s.write(JSON.stringify({jsonrpc:\'2.0\',id:1,method:\'getBalance\',params:{address:\'' + wallet.address + '\'}})+\'\\n\');}); s.on(\'data\',c=>{console.log(c.toString()); s.end();});"');
   console.log('');
 
 } catch (error) {

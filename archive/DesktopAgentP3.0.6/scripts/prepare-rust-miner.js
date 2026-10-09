@@ -1,24 +1,21 @@
 #!/usr/bin/env node
 /*
-  Prepares all V31 Mainnet Alpha binaries for the public desktop agent bundle.
+  Prepares all V31 Mainnet Alpha binaries for the desktop agent bundle.
 
   Builds the V31 Rust workspace in release mode and copies the required
   binaries into desktop-agent/resources/ so electron-builder bundles them
   for one-click install on all platforms.
 
-  Public build: the bundled zion-miner is compiled with the `public_build`
-  feature, which keeps the UI on a single ZION/Boost stream and hides
-  Trinity/AuxPoW coin names (ZANO, VRSC, etc.) while still running the
-  external GPU/CPU streams in the background.
-
   Required binaries:
-    - zion-miner / zion-universal-miner  (mining client — CPU/GPU backends)
-    - zion-node (aliased as `node`)      (ZION L1 full node — P2P + RPC)
-    - zion                               (unified CLI — wallet, send, balance, etc.)
+    - zion-miner            (mining client — CPU/GPU backends, triple-stream)
+    - zion-universal-miner  (same binary, canonical desktop entry point)
+    - zion-node             (ZION L1 full node — P2P + RPC; copied as `node` alias)
+    - zion                  (unified CLI — wallet, send, balance, mine status, etc.)
 
   Platform-aware GPU features:
-    macOS (arm64/x86_64) -> public_build,gpu-opencl,gpu-metal,native-all
-    Linux/Windows        -> public_build,gpu-opencl,(+gpu-cuda when NVIDIA/NVRTC),native-all
+    macOS (arm64)  -> --features gpu-metal
+    macOS (x86_64) -> --features gpu-opencl
+    Linux/Windows  -> --features gpu-opencl (with optional gpu-cuda when NVIDIA/NVRTC present)
 
   Usage:
     node scripts/prepare-rust-miner.js [--no-build] [--features <f>] [--require]
@@ -26,7 +23,7 @@
 
   Notes:
     - Requires Rust toolchain + cargo in PATH
-    - Output binaries are placed in desktop-agent/resources/
+    - Output binaries are placed in APP&WEB/desktop-agent/resources/
 */
 
 const fs = require('fs');
@@ -34,19 +31,16 @@ const path = require('path');
 const os = require('os');
 const { spawnSync } = require('child_process');
 
-// Public release build: the bundled zion-miner is compiled with the
-// `public_build` feature, which keeps the UI on a single ZION/Boost stream
-// and hides Trinity/AuxPoW coin names (ZANO, VRSC, etc.) while still running
-// the external GPU/CPU streams in the background.
-const PUBLIC_BUILD = true;
-
 // ── Constants ──────────────────────────────────────────────────────
 
 const BINS = [
-  { crate: 'zion-miner',  bin: 'zion-miner',           aliases: [] },
-  { crate: 'zion-miner',  bin: 'zion-universal-miner', aliases: [] },
-  { crate: 'zion-core',   bin: 'zion-node',            aliases: ['node'] },
-  { crate: 'zion-cli',    bin: 'zion',                 aliases: [] },
+  { crate: 'zion-miner',  bin: 'zion-miner',            aliases: [] },
+  { crate: 'zion-miner',  bin: 'zion-universal-miner',  aliases: [] },
+  { crate: 'zion-core',   bin: 'zion-node',             aliases: ['node'] },
+  { crate: 'zion-cli',    bin: 'zion',                  aliases: [] },
+  // Multichain address/signing helper — required by the native QTC wallet
+  // (QuantusWallet/NativeWallet shell out to it for ML-DSA-87 derivation).
+  { crate: 'zion-multichain', bin: 'derive_addr', aliases: ['zion-derive-addr'] },
 ];
 
 const V31_WORKSPACE_MANIFEST = 'V31/Cargo.toml';
@@ -71,11 +65,7 @@ function copyIfExists(src, dst) {
   return true;
 }
 
-function findNvrtcRuntime(workspaceRoot) {
-  // The CUDA backend needs NVRTC at runtime (not the full CUDA Toolkit).
-  // Look for the redistributable DLLs / shared libraries that ship with the miner
-  // or may already be present in the V31 target/release directory.
-  const resourcesDir = path.resolve(__dirname, '..', 'resources');
+function findNvrtcRuntime(resourcesDir, workspaceRoot) {
   const targetDir = path.join(workspaceRoot, 'V31', 'target', 'release');
   const isWindows = process.platform === 'win32';
   const searchPaths = isWindows
@@ -101,7 +91,7 @@ function findNvrtcRuntime(workspaceRoot) {
   return null;
 }
 
-function checkCudaCapability(workspaceRoot) {
+function checkCudaCapability(workspaceRoot, resourcesDir) {
   const result = { hasCuda: false, gpuCount: 0, driverVersion: 'unknown', hasNvrtc: false };
   try {
     const nvSmi = spawnSync('nvidia-smi', ['--query-gpu=count', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
@@ -109,15 +99,12 @@ function checkCudaCapability(workspaceRoot) {
       const gpuCount = parseInt(nvSmi.stdout.toString().trim());
       if (gpuCount > 0) {
         result.gpuCount = gpuCount;
-        result.hasCuda = true; // Runtime CUDA only needs the driver + libcuda; nvcc is optional.
+        result.hasCuda = true;
         const driverCheck = spawnSync('nvidia-smi', ['--query-gpu=driver_version', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
         if (driverCheck.status === 0) {
           result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
         }
-        // NVRTC (runtime JIT compiler) is what the miner actually uses. It is
-        // bundled as the standalone ~40 MB cuda_nvrtc redistributable, no full
-        // 3 GB CUDA Toolkit required. Prefer a local copy over nvcc.
-        const nvrtcPath = findNvrtcRuntime(workspaceRoot);
+        const nvrtcPath = findNvrtcRuntime(resourcesDir, workspaceRoot);
         if (nvrtcPath) {
           result.hasNvrtc = true;
           console.log(`[prepare-v31] NVRTC runtime found: ${nvrtcPath}`);
@@ -128,7 +115,7 @@ function checkCudaCapability(workspaceRoot) {
         } else if (result.hasNvrtc) {
           console.log('[prepare-v31] nvidia-smi found GPU and NVRTC runtime available -> building with CUDA backend');
         } else {
-          console.log('[prepare-v31] nvidia-smi found GPU but no NVRTC runtime -> building OpenCL/full stack, add nvrtc64_*.dll for CUDA runtime');
+          console.log('[prepare-v31] nvidia-smi found GPU but no NVRTC runtime -> building OpenCL-only, add nvrtc64_*.dll for CUDA runtime');
         }
       }
     }
@@ -136,63 +123,60 @@ function checkCudaCapability(workspaceRoot) {
   return result;
 }
 
-function detectPlatformFeatures(workspaceRoot) {
+function detectPlatformFeatures(workspaceRoot, resourcesDir) {
   const platform = process.platform;
   const arch = os.arch();
 
-  // Native algorithm acceleration is always included for public bundles so a
-  // single binary can switch coins by changing --pool / --wallet / --algorithm.
+  // V31 zion-miner default already enables auxpow. GPU and native algorithm
+  // features must be enabled explicitly.
   const nativeFeatures = 'native-all';
 
-  // IMPORTANT: gpu-cuda pulls in cudarc which tries to dlopen libcuda at
-  // startup. On macOS there is no CUDA driver, so including gpu-cuda causes
-  // an immediate panic. The gpu-metal crate is Apple-only, so including it on
-  // Linux/Windows causes a build failure. We therefore build per-platform
-  // feature sets instead of using the convenience `full` alias.
+  // The desktop agent is the public-facing bundle: always use public_build
+  // so the TUI/banner/logs show only ZION + BOOST streams.
+  const publicFlag = 'public_build';
+
+  // Always bundle the built-in ratatui TUI so `npm run tui` can use --interactive.
+  const tuiFlag = 'tui';
+
   if (platform === 'darwin') {
-    const macFeatures = `gpu-opencl,gpu-metal,${nativeFeatures}`;
     if (arch === 'arm64') {
-      console.log('[prepare-v31] Apple Silicon detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
-    } else {
-      console.log('[prepare-v31] Intel Mac detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
+      console.log('[prepare-v31] Apple Silicon detected -> enabling public build with Metal + OpenCL + all native hashers + TUI');
+      return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
     }
-    return macFeatures;
+    console.log('[prepare-v31] Intel Mac detected -> enabling public build with OpenCL + Metal + all native hashers + TUI');
+    return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures},${tuiFlag}`;
   }
 
   if (platform === 'win32') {
-    const cudaCheck = checkCudaCapability(workspaceRoot);
+    const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `gpu-opencl,${nativeFeatures}`;
+    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> public build with CUDA backend');
+      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> building public build with CUDA backend + TUI');
       return `${base},gpu-cuda`;
     }
     if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (place nvrtc64_*.dll for CUDA)');
+      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only public build + TUI (place nvrtc64_*.dll in resources for CUDA)');
     } else {
-      console.log('[prepare-v31] Windows detected -> OpenCL + all native hashers');
+      console.log('[prepare-v31] Windows detected -> enabling public build with OpenCL + native hashers + TUI');
     }
     return base;
   }
 
   if (platform === 'linux') {
-    const cudaCheck = checkCudaCapability(workspaceRoot);
+    const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `gpu-opencl,${nativeFeatures}`;
+    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> public build with CUDA backend');
+      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> building public build with CUDA backend + TUI');
       return `${base},gpu-cuda`;
     }
-    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Linux + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (add libnvrtc.so for CUDA runtime)');
-    } else {
-      console.log('[prepare-v31] Linux detected -> OpenCL + all native hashers');
-    }
+    console.log('[prepare-v31] Linux detected -> enabling public build with OpenCL + native hashers + TUI');
     return base;
   }
 
-  console.log('[prepare-v31] Unknown platform -> OpenCL + all native hashers');
-  return `gpu-opencl,${nativeFeatures}`;
+  console.log('[prepare-v31] Unknown platform -> enabling public build with OpenCL + native hashers + TUI');
+  return `${publicFlag},auxpow,gpu-opencl,${nativeFeatures},${tuiFlag}`;
 }
 
 function parseArgs(argv) {
@@ -212,39 +196,20 @@ function parseArgs(argv) {
 function buildV31Workspace(workspaceRoot, features) {
   const cargoArgs = ['build', '--release', '--manifest-path', V31_WORKSPACE_MANIFEST];
 
-  // On macOS, AuXpow's native-hashers C code links libomp by default.
-  // Homebrew libomp is not available on a clean user machine, so disable
-  // OpenMP for DAG generation. This makes DAG generation single-threaded
-  // but removes the libomp runtime dependency for the shipped DMG.
   const buildEnv = { ...process.env };
   if (process.platform === 'darwin') {
     buildEnv.ZION_DISABLE_OPENMP = '1';
   }
 
-  // Public build compiles the public_build feature into zion-miner.
-  // This suppresses external coin names in the UI while keeping the Trinity
-  // streams 2/3 active for revenue.
-  let minerFeatures = features;
-  if (PUBLIC_BUILD && minerFeatures) {
-    minerFeatures = minerFeatures.startsWith('public_build')
-      ? minerFeatures
-      : `public_build,${minerFeatures}`;
-  } else if (PUBLIC_BUILD) {
-    minerFeatures = 'public_build';
-  }
-
-  // Build miner with GPU features (both zion-miner and zion-universal-miner bins)
+  // Build zion-miner + zion-universal-miner
   const minerArgs = [...cargoArgs, '-p', 'zion-miner', '--bin', 'zion-miner', '--bin', 'zion-universal-miner'];
-  if (minerFeatures) minerArgs.push('--features', minerFeatures);
+  if (features) minerArgs.push('--features', features);
 
-  console.log(`[prepare-v31] Building zion-miner (features=${minerFeatures || 'default'})...`);
+  console.log(`[prepare-v31] Building zion-miner (features=${features || 'default'})...`);
   const minerRes = spawnSync('cargo', minerArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (minerRes.error) throw minerRes.error;
   if (minerRes.status !== 0) {
     if (features && features.includes('gpu-cuda')) {
-      // A CUDA build that falls back to OpenCL would silently ship a broken
-      // deeksha_lite_v1 kernel on NVIDIA (observed 43-45 % reject rate on
-      // GTX 1070 Ti). Fail loudly instead of hiding it.
       throw new Error(
         `CUDA build for zion-miner failed (exit ${minerRes.status}). ` +
         `Install the CUDA Toolkit or place nvrtc64_*.dll in V31/target/release/. ` +
@@ -252,7 +217,7 @@ function buildV31Workspace(workspaceRoot, features) {
       );
     }
     if (features && features !== 'default') {
-      const fallbackFeatures = PUBLIC_BUILD ? 'public_build,native-all' : 'native-all';
+      const fallbackFeatures = 'public_build,native-all,tui';
       console.warn(`[prepare-v31] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
       const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--bin', 'zion-miner', '--bin', 'zion-universal-miner', '--features', fallbackFeatures];
       const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
@@ -276,6 +241,17 @@ function buildV31Workspace(workspaceRoot, features) {
   const cliRes = spawnSync('cargo', cliArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
   if (cliRes.error) throw cliRes.error;
   if (cliRes.status !== 0) throw new Error(`cargo build for zion-cli failed (exit ${cliRes.status})`);
+
+  // Build the multichain address helper (native QTC wallet derivation)
+  console.log('[prepare-v31] Building zion-derive-addr (zion-multichain/derive_addr)...');
+  const deriveArgs = [...cargoArgs, '-p', 'zion-multichain', '--bin', 'derive_addr'];
+  const deriveRes = spawnSync('cargo', deriveArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
+  if (deriveRes.error) throw deriveRes.error;
+  if (deriveRes.status !== 0) {
+    // Non-fatal: wallet derivation degrades gracefully at runtime when the
+    // helper is absent — never block the whole miner build on it.
+    console.warn(`[prepare-v31] zion-derive-addr build failed (exit ${deriveRes.status}) — QTC wallet derive will report 'helper not found'`);
+  }
 }
 
 // ── Copy ───────────────────────────────────────────────────────────
@@ -298,7 +274,6 @@ function copyBinaries(workspaceRoot, resourcesDir) {
     copyIfExists(src, mainDst);
     copied++;
 
-    // Aliases (e.g. zion-universal-miner for backward compat, node alias for zion-node)
     for (const alias of spec.aliases) {
       const aliasDst = path.join(resourcesDir, alias + ext);
       console.log(`[prepare-v31] Copying alias ${alias}${ext}`);
@@ -323,7 +298,7 @@ function copyBinaries(workspaceRoot, resourcesDir) {
 
   // On Windows MSVC builds, bundle system DLLs that the miner needs at load
   // time but that may not be present on a clean user machine:
-  //   - OpenCL.dll      — ICD loader required by the `full` feature
+  //   - OpenCL.dll       — ICD loader required by the OpenCL backend
   //   - VCRUNTIME140.dll — MSVC C runtime (usually present but bundle to be safe)
   //   - VCRUNTIME140_1.dll
   if (process.platform === 'win32') {
@@ -347,9 +322,6 @@ function copyBinaries(workspaceRoot, resourcesDir) {
  * `gpu-cuda` is useless at runtime unless `nvrtc64_*.dll` ships alongside the
  * miner. The NVIDIA driver does NOT provide it — it comes from the CUDA
  * toolkit or the standalone `cuda_nvrtc` redistributable.
- *
- * Without NVRTC the miner initialises a CUDA device, fails at kernel compile
- * time and falls back all the way to CPU, so surface this loudly at build time.
  */
 function warnIfCudaRuntimeMissing(dllNames) {
   if (process.platform !== 'win32') return;
@@ -360,18 +332,15 @@ function warnIfCudaRuntimeMissing(dllNames) {
   console.warn(
     '[prepare-v31] WARNING: no nvrtc64_*.dll next to the miner binary.\n' +
     '[prepare-v31]   The CUDA backend needs NVRTC at runtime; without it the\n' +
-    '[prepare-v31]   miner falls back to OpenCL (~6x slower on NVIDIA).\n' +
+    '[prepare-v31]   miner falls back to OpenCL.\n' +
     '[prepare-v31]   Fix: install the CUDA toolkit, or drop the standalone\n' +
     '[prepare-v31]   cuda_nvrtc redistributable DLLs into V31/target/release/.'
   );
 }
 
-// ── Main ───────────────────────────────────────────────────────────
-
 function cleanResources(resourcesDir) {
-  // Remove stale cross-platform binaries AND old same-platform known binaries
-  // from a previous build so we never package the wrong platform's binaries
-  // (e.g. Windows .exe inside a Linux DEB) or bundle stale old versions.
+  // Remove stale cross-platform binaries from a previous build so we do not
+  // package the wrong platform's binaries (e.g. Windows .exe inside a Linux DEB).
   if (!exists(resourcesDir)) return;
 
   const isWindows = process.platform === 'win32';
@@ -409,25 +378,24 @@ function cleanResources(resourcesDir) {
   }
 }
 
+// ── Main ───────────────────────────────────────────────────────────
+
 function main() {
   const args = parseArgs(process.argv);
   const desktopAgentRoot = path.resolve(__dirname, '..');
-  // archive/DesktopAgentP3.0.6 -> archive -> project root (where V31/ lives)
   const workspaceRoot = path.resolve(desktopAgentRoot, '..', '..');
   const resourcesDir = path.join(desktopAgentRoot, 'resources');
 
-  if (!args.features || args.autoDetect) {
-    args.features = detectPlatformFeatures(workspaceRoot);
-  }
-
-  // Clean stale cross-platform binaries BEFORE building/copying
+  // Clean stale cross-platform binaries BEFORE building or copying
   console.log('[prepare-v31] Cleaning resources/ of stale cross-platform binaries...');
   cleanResources(resourcesDir);
   ensureDir(resourcesDir);
 
+  const features = args.features || detectPlatformFeatures(workspaceRoot, resourcesDir);
+
   if (!args.noBuild) {
     console.log('[prepare-v31] Building V31 workspace binaries...');
-    buildV31Workspace(workspaceRoot, args.features);
+    buildV31Workspace(workspaceRoot, features);
   } else {
     console.log('[prepare-v31] --no-build set; skipping cargo build');
   }

@@ -1,7 +1,10 @@
-// ZION Ekam Deeksha v3.0.5 - Preload Script
+// ZION Ekam Deeksha v3.1.0 - Preload Script
 // IPC bridge between main process and renderer (security layer)
 
 const { contextBridge, ipcRenderer } = require('electron');
+
+// Public release build — license-gated update channels stay unexposed.
+const PUBLIC_BUILD = true;
 
 // Expose protected methods to renderer
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -19,6 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Mining control
   startMining: (config) => ipcRenderer.invoke('start-mining', config),
   stopMining: () => ipcRenderer.invoke('stop-mining'),
+  // One-click algorithm/coin switching: persists the patch and, when the
+  // miner is running, hot-restarts it so the change applies end-to-end.
+  applyMiningConfig: (patch) => ipcRenderer.invoke('apply-mining-config', patch),
+  getPoolAuxpow: () => ipcRenderer.invoke('get-pool-auxpow'),
 
 
   
@@ -36,6 +43,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   importWallet: (data) => ipcRenderer.invoke('import-wallet', data),
   exportWallet: (data) => ipcRenderer.invoke('export-wallet', data),
   validateAddress: (address) => ipcRenderer.invoke('validate-address', address),
+
+  // Quantus (QTC / Planck) wallet
+  generateQuantusWallet: () => ipcRenderer.invoke('generate-quantus-wallet'),
+  deriveQuantusAddress: (mnemonic) => ipcRenderer.invoke('derive-quantus-address', mnemonic),
+  validateQuantusAddress: (address) => ipcRenderer.invoke('validate-quantus-address', address),
+  quantusGetBalance: (address) => ipcRenderer.invoke('quantus-get-balance', address),
+  quantusGetHistory: (address) => ipcRenderer.invoke('quantus-get-history', address),
+  qtcNetworkStatus: (addr) => ipcRenderer.invoke('qtc-network-status', addr),
+  walletSetQtc: (data) => ipcRenderer.invoke('wallet-set-qtc', data),
+
+  // Native multichain wallet (derived from the ZION mnemonic, non-custodial)
+  nativeDeriveAddresses: (data) => ipcRenderer.invoke('native-derive-addresses', data),
+  nativeGetBalances: (data) => ipcRenderer.invoke('native-balances', data),
+  nativeSend: (data) => ipcRenderer.invoke('native-send', data),
+  nativeLinkZis: (data) => ipcRenderer.invoke('native-link-zis', data),
 
   // Wallet RPC
   walletGetBalance: (data) => ipcRenderer.invoke('wallet-get-balance', data),
@@ -58,10 +80,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   installUpdate: () => ipcRenderer.invoke('install-update'),
   getUpdateSettings: () => ipcRenderer.invoke('get-update-settings'),
   setUpdateAutoCheck: (enabled) => ipcRenderer.invoke('set-update-auto-check', enabled),
-  // License key management
-  getLicenseKey: () => ipcRenderer.invoke('get-license-key'),
-  setLicenseKey: (key) => ipcRenderer.invoke('set-license-key', key),
-  validateLicense: (key) => ipcRenderer.invoke('validate-license', key),
+  // License key management — private builds only (public updates are
+  // license-free GitHub releases).
+  ...(PUBLIC_BUILD ? {} : {
+    getLicenseKey: () => ipcRenderer.invoke('get-license-key'),
+    setLicenseKey: (key) => ipcRenderer.invoke('set-license-key', key),
+    validateLicense: (key) => ipcRenderer.invoke('validate-license', key),
+  }),
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update-status', (event, data) => callback(data));
   },
@@ -94,11 +119,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onStatsUpdate: (callback) => {
     ipcRenderer.on('stats-update', (event, data) => callback(data));
   },
+  // Key-lottery scanner + coordinator telemetry — private build only.
+  ...(PUBLIC_BUILD ? {} : {
+    onKeyscanStatus: (callback) => {
+      ipcRenderer.on('keyscan-status', (event, data) => callback(data));
+    },
+    onLotteryStatus: (callback) => {
+      ipcRenderer.on('lottery-status', (event, data) => callback(data));
+    },
+    lotteryGetUnits: () => ipcRenderer.invoke('lottery-get-units'),
+  }),
   onMinerBackend: (callback) => {
     ipcRenderer.on('miner-backend', (event, data) => callback(data));
   },
   onConfigUpdated: (callback) => {
     ipcRenderer.on('config-updated', (event) => callback());
+  },
+  onQuadVramWarning: (callback) => {
+    ipcRenderer.on('quad-vram-warning', (event, data) => callback(data));
   },
 
 
@@ -109,6 +147,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   nodeStart: (options) => ipcRenderer.invoke('node-start', options),
   nodeStop: () => ipcRenderer.invoke('node-stop'),
   nodeGetCheckpoints: () => ipcRenderer.invoke('node-get-checkpoints'),
+  nodeRewardsRegister: (opts) => ipcRenderer.invoke('node-rewards-register', opts),
+  nodeRewardsHeartbeat: (opts) => ipcRenderer.invoke('node-rewards-heartbeat', opts),
+  nodeRewardsPayouts: () => ipcRenderer.invoke('node-rewards-payouts'),
   onNodeOutput: (callback) => ipcRenderer.on('node-output', (event, data) => callback(data)),
   onNodeStopped: (callback) => ipcRenderer.on('node-stopped', (event, data) => callback(data)),
 
@@ -129,8 +170,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   nclSubmitJob: (data) => ipcRenderer.invoke('ncl-submit-job', data),
   nclGetPrice: () => ipcRenderer.invoke('ncl-get-price'),
 
-  // ── Ekam Deeksha v3.0.5 GPU + Dual Mining ──────────────────────────────
+  // ── Ekam Deeksha v3.1.0 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
+  runKernelSelftest: (options) => ipcRenderer.invoke('run-kernel-selftest', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
 
   // ── ZION CLI Integration (v3 unified CLI) ────────────────────────────
