@@ -231,13 +231,24 @@ export default function EkamMuseumLanding() {
 
       {/* ═══════════ HERO ═══════════ */}
       <section className="relative pt-16 pb-16 sm:pt-18 sm:pb-20">
-        <div className="relative h-[40vh] overflow-hidden border-y border-white/10 bg-slate-950 sm:h-[48vh] lg:h-[56vh]">
+        <div className="relative h-[58vw] overflow-hidden border-y border-white/10 bg-slate-950 sm:h-[52vh] lg:h-[66vh]">
+          {/* blurred backdrop fill — letterbox sides */}
+          <Image
+            src={EKAM_HERO_IMAGE}
+            alt=""
+            aria-hidden
+            fill
+            sizes="100vw"
+            className="object-cover object-center opacity-60 blur-2xl scale-110"
+            priority
+          />
+          {/* full artwork — celý obrázek viditelný */}
           <Image
             src={EKAM_HERO_IMAGE}
             alt="EKAM — Oneness Temple"
             fill
-            sizes="100vw"
-            className="object-cover object-center"
+            sizes="(min-width: 1280px) 1100px, 100vw"
+            className="object-contain object-center"
             priority
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,16,0.16),rgba(5,8,16,0.24)_24%,rgba(5,8,16,0.58)_72%,rgba(5,8,16,0.82)_100%)]" />
