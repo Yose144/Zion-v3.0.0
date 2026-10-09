@@ -106,7 +106,7 @@ function maskPublicLine(line) {
   return String(line)
     .replace(PUBLIC_HIDDEN_ALGO_RE, 'boost')
     .replace(PUBLIC_HIDDEN_COIN_RE, 'BOOST')
-    .replace(/\bQTU\b/g, 'QTC')
+    .replace(/\bQTU\b/gi, 'QTC')
     .replace(/\bqpow_poseidon2\b|\bqpow-poseidon2\b|\bqhash\b/g, 'qtc');
 }
 // Hide internal-only controls in the public build. The Trinity toggle stays

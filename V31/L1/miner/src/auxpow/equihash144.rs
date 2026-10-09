@@ -205,6 +205,25 @@ pub fn compress_indices(indices: &[u32; PROOFSIZE]) -> Vec<u8> {
     out
 }
 
+/// Reorder a solver-emitted index tree into the consensus-canonical form:
+/// at every merge level, each left subtree's first index must be smaller
+/// than its right sibling's (zcash `indices_before` rule). Tromp emits
+/// leaves in discovery order — leaf pairs stay adjacent but deeper subtree
+/// order can be scrambled.
+pub fn canonicalize(indices: &mut [u32; PROOFSIZE]) {
+    let mut w = 1usize;
+    while w < PROOFSIZE {
+        let mut s = 0;
+        while s < PROOFSIZE {
+            if indices[s] > indices[s + w] {
+                indices[s..s + 2 * w].rotate_left(w);
+            }
+            s += 2 * w;
+        }
+        w *= 2;
+    }
+}
+
 /// sha256d(header140 || varint(sol_len) || solution) — the PoW block hash
 /// the share target applies to. CompactSize(100) is the single byte 0x64
 /// (fd-prefixed varints only apply at >= 253 bytes).
@@ -316,12 +335,13 @@ pub fn scan(
         let mut nsols_total = 0usize;
         let mut nverify_fail = 0usize;
         let mut min_h0 = 0xFFu8;
-        for indices in solver.run(ctx) {
+        for mut indices in solver.run(ctx) {
             nsols_total += 1;
             if !verify_indices(header108, pers8, &nonce_field, &indices) {
                 nverify_fail += 1;
                 continue;
             }
+            canonicalize(&mut indices);
             let sol = compress_indices(&indices);
             let h = share_hash(&hdr, &sol);
             if h[0] < min_h0 {
@@ -335,9 +355,23 @@ pub fn scan(
             // "low difficulty" (format correct) rather than malformed-soln.
             let force = std::env::var_os("ZION_EQ144_FORCE_SUBMIT").is_some();
             if force || hasher::meets_target(&h, target) {
-                let mut sol_wire = hasher::zcash_varint_for_len(SOL_LEN);
-                sol_wire.extend_from_slice(&sol);
-                return Some((nonce, sol_wire, h));
+                // Soln prefix probes — upstream verifyEH slices the soln at a
+                // fixed offset past the 140B header: +143 assumes a 3-byte
+                // varint (fd6400), +141 assumes CompactSize (0x64), +140 none.
+                // ZION_EQ144_SOLN=fd|raw overrides the default 0x64 prefix.
+                match std::env::var("ZION_EQ144_SOLN").as_deref() {
+                    Ok("raw") => return Some((nonce, sol, h)),
+                    Ok("fd") => {
+                        let mut w = vec![0xfd, 0x64, 0x00];
+                        w.extend_from_slice(&sol);
+                        return Some((nonce, w, h));
+                    }
+                    _ => {
+                        let mut sol_wire = hasher::zcash_varint_for_len(SOL_LEN);
+                        sol_wire.extend_from_slice(&sol);
+                        return Some((nonce, sol_wire, h));
+                    }
+                }
             }
         }
         crate::ext_info!(nonce, nsols_total, nverify_fail, min_h0, "eq144: run complete");
@@ -369,7 +403,28 @@ mod tests {
                 verify_indices(&header[..INPUT_LEN], b"sngemPoW", &nonce, idx),
                 "solver emitted invalid solution"
             );
-            let sol = compress_indices(idx);
+            let mut cidx = *idx;
+            canonicalize(&mut cidx);
+            // Canonical reorder must preserve tree validity.
+            assert!(
+                verify_indices(&header[..INPUT_LEN], b"sngemPoW", &nonce, &cidx),
+                "canonicalized solution no longer verifies"
+            );
+            // Canonical ordering: at every merge level each left subtree's
+            // first index < its right sibling's (zcash indices_before).
+            let mut w = 1usize;
+            while w < PROOFSIZE {
+                for s in (0..PROOFSIZE).step_by(2 * w) {
+                    assert!(
+                        cidx[s] < cidx[s + w],
+                        "noncanonical order at level w={w} block {s}: {} !< {}",
+                        cidx[s],
+                        cidx[s + w]
+                    );
+                }
+                w *= 2;
+            }
+            let sol = compress_indices(&cidx);
             assert_eq!(sol.len(), SOL_LEN);
         }
     }
