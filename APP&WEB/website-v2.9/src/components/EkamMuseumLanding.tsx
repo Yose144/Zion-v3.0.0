@@ -29,6 +29,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import {
   EKAM_BANNER_IMAGE,
+  EKAM_HERO_IMAGE,
   EKAM_FOUNDERS_BANNER_IMAGE,
   EKAM_SOURCE_URL,
   EKAM_PREETHAJI_KRISHNAJI_IMAGE,
@@ -232,7 +233,7 @@ export default function EkamMuseumLanding() {
       <section className="relative pt-16 pb-16 sm:pt-18 sm:pb-20">
         <div className="relative h-[40vh] overflow-hidden border-y border-white/10 bg-slate-950 sm:h-[48vh] lg:h-[56vh]">
           <Image
-            src={EKAM_BANNER_IMAGE}
+            src={EKAM_HERO_IMAGE}
             alt="EKAM — Oneness Temple"
             fill
             sizes="100vw"
