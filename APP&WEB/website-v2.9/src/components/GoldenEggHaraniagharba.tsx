@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, Orbit, Sparkles, Stars } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import GoldenOrb from './GoldenOrb';
+import HiranOrbLazy from './HiranOrbLazy';
 
 const GoldenEggHaraniagharbaCopy = {
   hiranHiranyagarbha: { cs: `Hiran / Hiranyagarbha`, en: `Hiran / Hiranyagarbha` },
@@ -27,7 +27,7 @@ export default function GoldenEggHaraniagharba() {
             {/* Left: compact Golden Orb */}
             <div className="space-y-1">
               <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_12px_40px_rgba(0,0,0,0.45)]" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <GoldenOrb className="aspect-square w-full max-w-[160px] mx-auto" />
+                <HiranOrbLazy className="aspect-square w-full max-w-[160px] mx-auto" />
                 <div className="absolute inset-x-0 bottom-0 p-2 pointer-events-none z-10">
                   <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 backdrop-blur-sm px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.24em] text-amber-100">
                     <Sparkles className="h-2.5 w-2.5 text-zion-gold" />
