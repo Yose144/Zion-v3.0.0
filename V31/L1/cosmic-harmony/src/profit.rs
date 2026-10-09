@@ -433,7 +433,7 @@ impl ExternalCoin {
             ExternalCoin::Zcash => "zec.f2pool.com:3357",
             ExternalCoin::PhoenixCoin => "neoscrypt.eu.mine.zpool.ca:4233",
             ExternalCoin::Keryx => "keryxhash.eu.mine.zpool.ca:4233",
-            ExternalCoin::Quantus => "quantus.qelvhash.com:4444",
+            ExternalCoin::Quantus => "quantus.suprnova.cc:7071",
             ExternalCoin::Neoxa => "stratum-eu.rplant.xyz:7057",
             // Bitcoin SHA-256d merge-mining is not via standard stratum pools;
             // leave empty so auxpow_runtime skips it until a real endpoint is configured.
