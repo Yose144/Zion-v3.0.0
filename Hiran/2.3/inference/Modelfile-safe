@@ -1,0 +1,11 @@
+FROM hiran-v2.2-fast
+
+# Safe for 6 GB VRAM (RX 5600 XT) — offload some layers to 32 GB system RAM
+PARAMETER num_ctx 2048
+PARAMETER num_gpu 28
+PARAMETER num_thread 8
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+
+SYSTEM """You are the Zion DAO technical assistant. You help with ZION blockchain, mining, DAO governance, and the Issobella ecosystem. Be concise and accurate."""
