@@ -35,6 +35,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'trinity-miner-qtc-quantus-mining',
+    date: '2026-10-09',
+    tag: { cs: 'Mining', en: 'Mining' },
+    tagColor: 'text-zion-cyan',
+    title: {
+      cs: 'Nová vlna miningu: Trinity Miner teď těží ZION + QTC současně',
+      en: 'A new wave of mining: Trinity Miner now mines ZION + QTC at once',
+    },
+    summary: {
+      cs: 'Jeden miner, dvě sítě, dvojí odměna. Trinity Miner je rozšířený o těžbu Quantus (QTC) — těžíš ZION a zároveň sbíráš QTC payouty na stejném hardware, bez extra nastavení. Stačí se nalodit: stáhni Desktop App, spusť miner a sleduj obě odměny žít. App už umí i nativní QTC peněženku s qz… adresami — vše odvozené z jednoho seedu. Připravujeme multichain payouty a ZIS přístup s avatary: tvůj těžební profil se brzy stane tvým digitálním pasmem. Stáhni, pusť, těž.',
+      en: 'One miner, two networks, double rewards. Trinity Miner is now extended with Quantus (QTC) mining — you mine ZION and collect QTC payouts on the same hardware, with no extra setup. Just hop aboard: download the Desktop App, start the miner and watch both rewards live. The app already includes a native QTC wallet with qz… addresses — all derived from a single seed. Multichain payouts and ZIS access with avatars are next: your mining profile will soon become your digital passport. Download, launch, mine.',
+    },
+    href: '/download',
+  },
+  {
     slug: 'l5-vision-complete-12-nodes',
     date: '2026-10-09',
     tag: { cs: 'Free World', en: 'Free World' },
