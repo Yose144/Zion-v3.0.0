@@ -196,7 +196,7 @@ const getCommunities = (cs: boolean) => [
       : 'Governance laboratory for the Golden Republic — decision circle, Czech wisdom and ZION protocol in the heart of Europe.',
     tags: ['Governance', 'DAO Circle', 'Golden Republic'],
     href: '/terranova/golden-republic-bohemia',
-    cover: '/images/golden-republic-bohemia/hero.jpg',
+    cover: '/images/golden-republic-bohemia/hero.webp',
   },
   {
     name: 'Bodhi Lanka',
@@ -207,7 +207,7 @@ const getCommunities = (cs: boolean) => [
       : 'Akasha node — the space that holds all elements. Infinite love of Rama and Sita, the oldest living tree on Earth, and ZION protocol.',
     tags: ['Bhakti', 'Ayurveda', 'Bodhi Tree'],
     href: '/terranova/bodhi-lanka',
-    cover: '/images/bodhi-lanka/hero.jpg',
+    cover: '/images/bodhi-lanka/hero.webp',
   },
   {
     name: 'Ekam · Oneness Temple',
@@ -480,6 +480,8 @@ export default function L5FreeWorldPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l5-free-world/hero.webp"
+                srcSet="/images/l5-free-world/hero-m.webp 960w, /images/l5-free-world/hero.webp 1672w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs ? 'L5 Free World — dvanáct bodů Terra Nova ve fyzickém světě' : 'L5 Free World — the twelve Terra Nova nodes in the physical world'}
                 width={1672}
                 height={941}
@@ -680,7 +682,9 @@ export default function L5FreeWorldPage() {
                   {community.cover && (
                     <div className="-m-1 mb-3 overflow-hidden rounded-t-xl">
                       <img
-                        src={community.cover}
+                        src={community.cover.replace('/hero.webp', '/hero-m.webp')}
+                        srcSet={`${community.cover.replace('/hero.webp', '/hero-m.webp')} 960w, ${community.cover} 1600w`}
+                        sizes="(min-width: 768px) 33vw, calc(100vw - 4rem)"
                         alt={community.name}
                         width={1400}
                         height={900}

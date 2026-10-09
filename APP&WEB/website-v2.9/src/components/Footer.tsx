@@ -78,6 +78,8 @@ export default function Footer() {
                 alt="ZION TerraNova"
                 width={48}
                 height={48}
+                loading="lazy"
+                decoding="async"
                 className="w-12 h-12 rounded-xl object-contain border border-white/10"
               />
               <h3 className="text-2xl font-extrabold text-gradient tracking-tight">ZION TerraNova</h3>

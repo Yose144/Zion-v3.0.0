@@ -544,6 +544,8 @@ export default function AmentiPage() {
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/amenti/hero.webp"
+                srcSet="/images/amenti/hero-m.webp 960w, /images/amenti/hero.webp 1280w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="ZION Amenti — Kvetoucí Plamen nad pyramidami a sfingou, světelný strom a síť vědomí"
                 width={1280}
                 height={720}
