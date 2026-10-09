@@ -6,11 +6,14 @@
 
 ## 1. Incident
 
-- `/mnt/data/Recovered/Hiran/*` = **zero-filled stuby** (jména+velikosti OK, obsah nuly).
-  Recovery obnovila metadata, ne datové clustery. Totéž `Recovered/WalletKeys/*`
-  ⚠️ — ověřit, že klíče existují jinde.
+- `/mnt/data/Recovered/Hiran/*` = převážně **zero-filled stuby** (jména+velikosti OK,
+  obsah nuly). Totéž `Recovered/WalletKeys/*` ⚠️ — ověřit, že klíče existují jinde.
+- **ALE: `hiran_curriculum_v2.1.jsonl` PŘEŽIL (10.7 MB, 3 056 párů, 100 % valid JSON,
+  žádné nulové díry)** → `Hiran/2.3/data/` + SHA256 manifesty v2.1 artefaktů
+  (`Hiran/2.3/baseline/*.SHA256` — hashe původních weights pro budoucí verifikaci).
 - Ztraceno: `hiran-v2.3-8000-q5_k_m.gguf` (21.6 G), `checkpoint-8000` LoRA (~2 G),
-  v2.3 dataset (48 436 párů), v2.2 modely (f16/q8/q5/q4/onnx), v2.1 weights.
+  v2.3 dataset (48 436 párů), v2.2 modely (f16/q8/q5/q4/onnx), v2.1 weights
+  (sha256 známy — pro verify budoucích nálezů), `hiran_project_scripts_data.tar.gz`.
 - Git nikdy netrackoval weights/datasety → ztráta nevratná, jedině **retrain**.
 
 ## 2. Co přežilo — recovery map
@@ -19,6 +22,7 @@
 |---|---|---|
 | v2.2 pipeline (curriculum, dataset buildery, eval, hybrid quant, RAG, inference) | `Hiran/2.3/` (copy z `archive/HiranV2.2`) | ✅ plná |
 | v2.1 finetune (collect_dataset, finetune_lora, merge_export, vast scripts) | `Hiran/2.3/v21-legacy/` | ✅ plná |
+| **🏆 v2.1 curriculum** `hiran_curriculum_v2.1.jsonl` — **3 056 párů** (system=„Hiranyagarbha v2" prompt), 100 % valid | `Hiran/2.3/data/` (z `/mnt/data/Recovered/Hiran/` — jediný velký soubor co přežil) | ✅ RECOVERED |
 | Dataset shard `zion_train_buddhism_guided.jsonl` (19 párů, messages) | `Hiran/2.3/data/` | ✅ |
 | v2.4 Maestro design (arch/agents/mesh/tool-registry) | `Hiran/2.4/` | ✅ docs |
 | **AI-native archive snapshots** | `archive/V3/L3/ai-native` = starší v2.4 snapshot (maestro/planner/tool_registry, odlišný od V31); `archive/2.9.9/legacy-code/L3/ai-native` = pre-Maestro (19 modulů). V31/L3 = kanonický | ✅ historie |
@@ -52,9 +56,12 @@
 
 ## 4. Rebuild state — DONE ✅
 
-- `Hiran/2.3/scripts/rebuild_dataset.sh` → **1 558 unikátních párů**
-  (`rebuild/merged_seed.jsonl`, messages format, dedupe). Zdroje: archive/V3/docs
-  scrape + NCL curriculum + boost + buddhism shard + v2.1 seeds (47).
+- `Hiran/2.3/scripts/rebuild_dataset.sh` + `merge_rebuilt.py` →
+  **`rebuild/merged_seed.jsonl` = 7 059 unikátních párů** (roste):
+  - v2.1 curriculum **3 056** (RECOVERED — viz §1)
+  - deterministic rebuild 1 558 (V3 scrape + boost + seeds)
+  - syntetika Qwen3-4B **2 683+ a roste** (generátor běží → ~6k)
+  - buddhism shard 19
 - Rebuild/ output dir je reálný (ne symlink) → archive zůstává frozen.
 - Baselines v `Hiran/2.3/baseline/`; merge tooling `scripts/merge_rebuilt.py`.
 
@@ -63,7 +70,7 @@
 | Blokér | Stav |
 |---|---|
 | **vast.ai instance 40791384** | ❌ **pryč — ověřeno API** (key nastaven 2026-10-09, account kredit **$0.61**). Checkpoint-8000 ztracen definitivně. |
-| **Dataset gap**: 1 558 vs 22 181 (v2.2) / 48 436 (v2.3) | 🟢 **lokální syntéza běží** — `gen_qa_pairs.py` + llama-server (Qwen3-4B-Q4_K_M, ngl15, :8002): 6 185 chunků, ~4.5 s/pár → ~6k párů / ~14 h. Korpus: `V31/` + `docs/{3.0.1Genesis,3.0.4,3.0.5,3.0.6,TerraNova,ops}` + `archive/V3/docs` + Edge `l3-rag-docs`. Resumable (`generated_qa.done`). |
+| **Dataset gap**: **7 059 → ~10.5k** vs 22 181 (v2.2) / 48 436 (v2.3) | 🟢 výrazně lepší po nálezu v2.1 curriculum (3 056) — lokální syntéza dobíhá (2960/6185 chunků, ~47 parse errs). ~48 % v2.2 scale. Dál: víc párů/chunk, větší korpus, nebo NIM. |
 | Retrain | QLoRA smoke: vast RTX 3090 $0.179/h (3.4 h za kredit) · real run: A100 40GB $0.375/h — potřeba dobít kredit |
 | 2.4 wiring | ✅ **mapováno → `Hiran/2.4/WIRING_MAP.md`** — live Edge topology ověřena (ss+systemctl): 11 port-diffů v kódu (issobella 8097, dao 8456, node2/3 9446/9447, stats 8080…), :8002 = sshd inference tunnel, Maestro je CLI-only (není v :8001 API). Robustní plán: env endpoints, `/v2/*` mount + mutation gate + audit + breaker. `cargo check` čistý. |
 
