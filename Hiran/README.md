@@ -38,16 +38,49 @@
 
 ## Rebuild path (2.3)
 
-1. **Dataset**: `python3 Hiran/2.3/data/scrape_v3_docs.py` + `build_dataset.py` +
-   `boost_dataset.py` → curriculum `data/curriculum/*.jsonl` (target 8 000+ párů);
-   seed shard `zion_train_buddhism_guided.jsonl` + l3-rag-docs corpus.
-2. **Training**: vast.ai ≥ A100 80GB (zeptat se na existenci instance 40791384 —
-   pokud žije, checkpoint-8000 tam může být!), `v21-legacy/finetune/vast_deploy.sh`,
-   `train_v2.2.py` nebo full-FT recept z `HIRAN_V23_FULL_TRAIN_GUIDE.md`
-   (DeepSpeed ZeRO-3, `save_total_limit=1`, ≥1 TB disk).
+1. **Dataset** — `Hiran/2.3/scripts/rebuild_dataset.sh` (verified 2026-10-09):
+   rebuilds `merged_seed.jsonl` = **1 558 unikátních párů** z `archive/V3/docs`
+   (68 md) + NCL curriculum + buddhism shard (19) + v2.1 seed (47).
+   **Dataset gap:** původní v2.2 = 22 181 párů (`baseline/dataset_stats.json`),
+   v2.3 = 48 436 (train guide). Deterministický rebuild pokryje ~3 %.
+   Doplnění vyžaduje generátor:
+   - `collect_dataset.py` bez `--seed-only` potřebuje `NVIDIA_API_KEY` (NIM),
+   - alternativa: lokální `~/zion-hiran/models/Qwen3-4B-Q4_K_M.gguf`
+     (sha256 ověřen, přežil) jako syntetický QA generátor přes llama-server,
+   - nebo nový scrape nad `V31/` + `docs/` (116+ md — dnes větší korpus než V3).
+2. **Training**: vast.ai ≥ A100 80GB — **ověřit instanci 40791384**
+   (lokální `~/.config/vastai/vast_api_key` je 401 invalid — potřeba čerstvý
+   klíč; SSH `hiran_v2.4_key` byl na ztraceném D:). Recept:
+   `HIRAN_V23_FULL_TRAIN_GUIDE.md` (DeepSpeed ZeRO-3, `save_total_limit=1`,
+   ≥1 TB disk) nebo QLoRA varianta `scripts/train_v2.2.py` pro RTX 4090.
 3. **Merge+Quant**: `scripts/merge_and_quantize.py`, `quantization/hybrid_quant.py`
    → `convert_hf_to_gguf.py` → Q4_K_M/Q5_K_M/Q8_0.
-4. **Inference**: `inference/serve.py` + Ollama Modelfiles + `V31/L3/ai-native` API.
+4. **Inference**: `inference/serve.py` + Edge `scripts/start-hiran-inference.sh`
+   (port 8002, llama-server/Ollama/LM Studio chain) + `zion-v31-ai-native.service`
+   (port 8001, RAG `/opt/zion/data/l3-rag-docs`).
+
+## Edge L3 deployment (jak běžel před ztrátou)
+
+```
+zion-v31-ai-native.service (Rust API :8001)
+  → LLM_BASE_URL=http://127.0.0.1:8002/v1  (llama-server + hiran-v2.2 GGUF)
+  → ZION_DOCS_PATH=/opt/zion/data/l3-rag-docs (49 md — zálohováno)
+  → ZION_NODE_RPC_ADDR=:9445, ZION_POOL_API_URL=:8080
+```
+
+Kanonický ai-native kód = **lokální `V31/L3/ai-native` (29 modulů, vč.
+`lexical.rs`)**; Edge `V31` checkout je starší (28 modulů, jiný `lib.rs` +
+`zion-ai-native-api.rs`), Edge `canonical-main`/`wt-main` = shodné s lokálem.
+
+## Baseline (historická eval evidence → `Hiran/2.3/baseline/`)
+
+- `model_interview_results.json` — v2.2 = **Llama-3.1-8B-Instruct** base
+  (v2.3 přešel na Qwen3-32B), 20 otázek
+- `e2e_test_results{,_v2}.json`, `gpu_experiment_results{,_v2}.json` —
+  inferenční metriky (ollama backend :8002)
+- `dataset_stats.json` — v2.2 curriculum rozpis: 22 181 párů
+  (foundation 3 869 / zion_core 2 368 / zion_advanced 2 458 /
+  cross_domain 11 434 / rag_synthesis 2 052)
 
 ## 2.4 Maestro → 2.5 Amṛtabhoja
 
