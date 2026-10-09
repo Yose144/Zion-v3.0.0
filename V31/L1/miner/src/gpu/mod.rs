@@ -362,6 +362,7 @@ impl GpuBackendKind {
 }
 
 /// Result of a GPU batch mining operation.
+#[derive(Default)]
 pub struct GpuBatchResult {
     /// Nonces that met the target: (nonce, final_hash, mix_hash).
     /// mix_hash is None for algorithms that don't produce one.
@@ -778,8 +779,39 @@ pub struct MultiGpuMiner {
     /// ranges proportionally so both GPUs finish at the same time →
     /// maximum utilization on both cards (no idle waiting).
     hashrates: Vec<f64>,
+    /// Per-GPU range-share bias (1.0 = full share).  Parsed from
+    /// ZION_EXT_GPU_RANGE_WEIGHT="gfx900:100,gfx1010:15" for external
+    /// algorithms: a biased GPU receives a smaller nonce slice of every
+    /// batch, finishes early and idles for the rest of the window —
+    /// effectively a per-device duty cycle ("lite" mode) while the
+    /// full-weight card runs the whole batch.
+    weight_bias: Vec<f64>,
     /// Batch counter for logging.
     batch_count: u64,
+}
+
+/// Parse ZION_EXT_GPU_RANGE_WEIGHT="gfx900:100,gfx1010:15" into a per-sub-miner
+/// bias vector (1.0 default). Each token is `name-or-class:pct` — the same
+/// name matching as device filters (substring or classification keyword).
+fn parse_gpu_range_weights(miners: &[Box<dyn GpuMiner>]) -> Vec<f64> {
+    let mut bias = vec![1.0; miners.len()];
+    let Ok(spec) = std::env::var("ZION_EXT_GPU_RANGE_WEIGHT") else {
+        return bias;
+    };
+    for token in spec.split(',') {
+        let Some((name, pct)) = token.split_once(':') else {
+            continue;
+        };
+        let Ok(p) = pct.trim().parse::<f64>() else {
+            continue;
+        };
+        for (i, m) in miners.iter().enumerate() {
+            if device_name_matches_filter(&m.device_name(), name.trim()) {
+                bias[i] = (p / 100.0).max(0.0);
+            }
+        }
+    }
+    bias
 }
 
 impl MultiGpuMiner {
@@ -791,6 +823,16 @@ impl MultiGpuMiner {
             .map(|m| m.device_name())
             .collect::<Vec<_>>()
             .join(" + ");
+        // Per-device range-share bias for external algorithms:
+        // ZION_EXT_GPU_RANGE_WEIGHT="gfx900:100,gfx1010:15" — each token is
+        // name-or-class : percent. The biased device gets a proportionally
+        // smaller nonce slice of every batch (lite mode). Only applies to
+        // external/AuxPoW algos — native ZION keeps the pure hashrate split.
+        let weight_bias = if is_external_algorithm(algorithm) {
+            parse_gpu_range_weights(&miners)
+        } else {
+            vec![1.0; n]
+        };
         Self {
             miners,
             device_name_cache,
@@ -799,6 +841,7 @@ impl MultiGpuMiner {
             // Start with equal hashrates (1.0 each) — will adapt after
             // the first batch based on real measurements.
             hashrates: vec![1.0; n],
+            weight_bias,
             batch_count: 0,
         }
     }
@@ -829,16 +872,35 @@ impl MultiGpuMiner {
                 .collect();
         }
 
-        // Proportional split: each GPU gets batch_size * (hr_i / total_hr)
+        // Proportional split: each GPU gets batch_size * (hr_i*bias_i / total).
+        // weight_bias < 1.0 shrinks the device's slice → it finishes early and
+        // idles for the remainder of the batch window (per-device "lite" mode).
+        let weighted: Vec<f64> = self
+            .hashrates
+            .iter()
+            .zip(self.weight_bias.iter())
+            .map(|(h, b)| h * b.max(0.0))
+            .collect();
+        let total_w: f64 = weighted.iter().sum();
+        if total_w <= 0.0 {
+            // All weights zeroed out — nothing to mine this batch.
+            return vec![(nonce_start, 0); n];
+        }
+        // The remainder goes to the largest-weight device (never a zero-weight
+        // one, which would turn a "lite" card into a full one via rounding).
+        let last_idx = weighted
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .map(|(i, _)| i)
+            .unwrap_or(n - 1);
         let mut ranges = Vec::with_capacity(n);
         let mut allocated: u64 = 0;
         for i in 0..n {
-            let frac = self.hashrates[i] / total_hr;
-            let size = if i == n - 1 {
-                // Last GPU gets the remainder to avoid rounding gaps
+            let size = if i == last_idx {
                 batch_size.saturating_sub(allocated)
             } else {
-                (batch_size as f64 * frac) as u64
+                (batch_size as f64 * (weighted[i] / total_w)) as u64
             };
             let ns = nonce_start.wrapping_add(allocated);
             allocated = allocated.saturating_add(size);
@@ -953,6 +1015,8 @@ impl GpuMiner for MultiGpuMiner {
         let ranges = self.compute_weighted_ranges(nonce_start, batch_size);
 
         // Dispatch each sub-miner in a scoped thread with per-GPU timing.
+        // Zero-size ranges (weight-biased "off" devices) are skipped — the GPU
+        // idles through this batch window instead of launching an empty kernel.
         let results: Vec<(Result<GpuBatchResult>, u64)> = std::thread::scope(|s| {
             let handles: Vec<_> = self
                 .miners
@@ -963,14 +1027,23 @@ impl GpuMiner for MultiGpuMiner {
                     let t = target;
                     let ns = *ns;
                     let sz = *sz;
-                    s.spawn(move || {
+                    if sz == 0 {
+                        return None;
+                    }
+                    Some(s.spawn(move || {
                         let t0 = std::time::Instant::now();
                         let r = miner.mine_batch(h, t, ns, sz);
                         (r, t0.elapsed().as_millis() as u64)
-                    })
+                    }))
                 })
                 .collect();
-            handles.into_iter().map(|h| h.join().unwrap()).collect()
+            handles
+                .into_iter()
+                .map(|h| match h {
+                    Some(h) => h.join().unwrap(),
+                    None => (Ok(GpuBatchResult::default()), 0),
+                })
+                .collect()
         });
 
         // Update hashrate estimates for next batch's weighted split.
@@ -1043,14 +1116,23 @@ impl GpuMiner for MultiGpuMiner {
                     let t = target;
                     let ns = *ns;
                     let sz = *sz;
-                    s.spawn(move || {
+                    if sz == 0 {
+                        return None;
+                    }
+                    Some(s.spawn(move || {
                         let t0 = std::time::Instant::now();
                         let r = miner.mine_batch_raw(&hb, t, ns, sz);
                         (r, t0.elapsed().as_millis() as u64)
-                    })
+                    }))
                 })
                 .collect();
-            handles.into_iter().map(|h| h.join().unwrap()).collect()
+            handles
+                .into_iter()
+                .map(|h| match h {
+                    Some(h) => h.join().unwrap(),
+                    None => (Ok(GpuBatchResult::default()), 0),
+                })
+                .collect()
         });
 
         // Update hashrate estimates.
@@ -2494,8 +2576,33 @@ pub fn create_gpu_backend(
             // explicitly requested), the external stream runs on ALL GPUs in
             // parallel via MultiGpuMiner, sharing the GPU with ZION through the
             // runtime's duty-cycle time-slicing (ZION_EXT_GPU_TIME_DUTY_PCT/GAP_MS).
+            // ZION_ZANO_DEVICES="gfx900,gfx1010" (comma-separated name/class
+            // filters) gives the external stream an explicit multi-device
+            // target list — the same algo mines on every listed card via
+            // MultiGpuMiner while the single ZANO reservation (zano_idx)
+            // still excludes the primary ProgPoW card from the ZION stream.
+            // Combine with ZION_EXT_GPU_RANGE_WEIGHT for asymmetric per-card
+            // intensity (e.g. Vega full + Navi "lite").
+            let zano_devices: Vec<usize> = std::env::var("ZION_ZANO_DEVICES")
+                .ok()
+                .map(|list| {
+                    gpu_devices
+                        .iter()
+                        .filter(|d| {
+                            list.split(',')
+                                .map(str::trim)
+                                .filter(|f| !f.is_empty())
+                                .any(|f| device_name_matches_filter(&d.name, f))
+                        })
+                        .map(|d| d.global_idx)
+                        .collect()
+                })
+                .unwrap_or_default();
+
             let target_indices: Vec<usize> = if is_external_algorithm(algorithm) {
-                if let Some(idx) = zano_idx {
+                if !zano_devices.is_empty() {
+                    zano_devices
+                } else if let Some(idx) = zano_idx {
                     vec![idx]
                 } else {
                     // No reservation: external ProgPoW uses all GPUs for parallel
