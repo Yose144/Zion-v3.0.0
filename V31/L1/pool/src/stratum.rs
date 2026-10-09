@@ -2350,8 +2350,17 @@ impl StratumServer {
                                     // upstream job likely missed the job broadcast (or
                                     // runs a build without external-job refresh). Push
                                     // the latest bundled job so it stops hashing dead work.
+                                    // Must apply session coin preferences — a raw
+                                    // broadcast would stomp a forced-coin stream and
+                                    // trigger a reject↔resync churn loop.
                                     let resync_job = self.last_v3_job.lock().unwrap().clone();
                                     if let Some(job) = resync_job {
+                                        let job = self.session_job_line(
+                                            &job,
+                                            session_gpu_pref,
+                                            session_cpu_pref,
+                                            session_gpu2_pref,
+                                        );
                                         let mut w = writer.lock().await;
                                         let _ = w.write_all(job.as_bytes()).await;
                                         let _ = w.write_all(b"\n").await;
