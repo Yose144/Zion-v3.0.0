@@ -549,6 +549,13 @@ z bloků) → hybrid drží upstream (suprnova) leg jako guaranteed-earnings
 floor.
 Bootstrap: 0 % fee / ZION bonus pro native-leg minery zvažte.
 
+**Native leg = pool revenue (2026-10-09, rozhodnutí):**
+`QTC_NATIVE_SHARE_PCT=15` + `/opt/quantus/payout-destination.txt` →
+canonical `qzjoHwa…`. QTC z native bloků jde do **ZION liquidity** na
+canonical wallet — **nevyplácí se minerům**; minery dostávají
+standardní ZION PPLNS credit za všechny shary vč. `qtun:` (pool si
+nechává coin — standardní PPLNS accounting, ne free-work).
+
 ### F7 — Miners community rollout
 
 - [ ] Release: desktop-agent packaged installer + SMOS image s presetem.
