@@ -1233,9 +1233,23 @@ impl AuxPowClient {
             let ntime = params[7].as_str().unwrap_or("00000000").to_string();
             let _clean_jobs = params[8].as_bool();
 
-            let target = hasher::parse_target_hex(nbits)
-                .or_else(|| hasher::nbits_to_target(nbits))
-                .unwrap_or([0xFF; 32]);
+            // Share target: mining.set_target / mining.set_difficulty are
+            // authoritative (upstream rejects shares hashed against the
+            // network-level nbits target). nbits stays on the job as block
+            // metadata; the scan target comes from the share difficulty.
+            let target = if let Some(t) = *self.current_target_bytes.lock().await {
+                t
+            } else {
+                let diff = *self.current_difficulty.lock().await;
+                if diff.is_finite() && diff > 0.0 {
+                    let max_target = hasher::algorithm_max_target(&self.config.algorithm);
+                    hasher::difficulty_to_target_with_max(diff, &max_target)
+                } else {
+                    hasher::parse_target_hex(nbits)
+                        .or_else(|| hasher::nbits_to_target(nbits))
+                        .unwrap_or([0xFF; 32])
+                }
+            };
 
             // Build the real 80-byte block header for yiimp coinbase-family
             // coins (keryxhash, neoscrypt, ghostrider, sha256d, …):
@@ -1281,7 +1295,7 @@ impl AuxPowClient {
             let job = ExternalJob {
                 job_id,
                 header_hex: hex::encode(&header),
-                target_hex: nbits.to_string(),
+                target_hex: hex::encode(target),
                 header_bytes: header,
                 target_bytes: target,
                 timestamp,
