@@ -2534,11 +2534,12 @@ function startMiningV31(config, v31Path) {
     env.ZION_NODE_RPC = nodeRpc;
   }
   // Stream coin selection. Public build: the only user-visible parallel
-  // stream is Quantus (QTU) on stream 2 — the ZION + QTC selection. The
-  // additional AuxPoW streams (stream 3 CPU, stream 4 second GPU) run
-  // silently with pinned coins for network revenue; the coin pickers and
-  // the autonomous profit router are not part of the public build, so
-  // nothing can re-route to another coin.
+  // stream is Quantus (QTU) on stream 2 — the ZION + QTC selection. Stream 3
+  // (CPU) runs silently pinned to VRSC for network revenue and is masked in
+  // the UI as a Boost Stream. Stream 4 stays DISABLED: a co-resident DAG coin
+  // on the user's GPU was measured to cost ~3.3x QTU throughput at any duty
+  // (memory-bandwidth saturation, not time-share), so enabling it would eat
+  // most of the user's visible QTC earnings. Autodetect/profit routing off.
   _activeExtCoins = { gpu: '', cpu: '', gpu2: '' };
   if (tripleStreamEnabled) {
     if (PUBLIC_BUILD) {
@@ -2548,22 +2549,7 @@ function startMiningV31(config, v31Path) {
       }
       env.ZION_STREAM3_FORCE_COIN = 'VRSC';
       _activeExtCoins.cpu = 'VRSC';
-      if (wantsGpu) {
-        // Hidden second GPU stream — VRAM-gated so the DAG-family coin can
-        // never destabilise the primary streams on small cards.
-        const freeMib = _gpuFreeMib();
-        const needMib = 1600 + _coinGpuMemMib('QTU') + _coinGpuMemMib('ZANO') + 300;
-        if (freeMib === null || freeMib >= needMib) {
-          env.ZION_STREAM4_ENABLED = '1';
-          env.ZION_STREAM4_FORCE_COIN = 'ZANO';
-          _activeExtCoins.gpu2 = 'ZANO';
-        }
-        // Keep QTC dominant on a shared card — the hidden second GPU stream
-        // gets at most ~35% of GPU time unless the config overrides it.
-        if (!Number.isFinite(Number(config?.gpuExt2DutyPct))) {
-          env.ZION_EXT_GPU2_TIME_DUTY_PCT = '35';
-        }
-      }
+      env.ZION_STREAM4_ENABLED = '0';
       env.ZION_AUTONOMOUS = '0';
     } else {
       if (!cpuCoinAuto) {
