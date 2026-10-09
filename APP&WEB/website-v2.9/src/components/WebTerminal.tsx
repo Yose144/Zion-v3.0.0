@@ -89,6 +89,7 @@ const CATEGORY_ICONS: Record<CommandCategory, typeof Cpu> = {
 };
 
 const COMMAND_HISTORY_KEY = 'zion-cli-history';
+const EXPAND_KEY = 'zion-terminal-expanded';
 const CLEAR_MARKER = '__CLEAR__';
 
 const GENESIS_BANNER = String.raw`
@@ -142,7 +143,11 @@ export default function WebTerminal() {
   const [loadingCmd, setLoadingCmd] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIdx, setHistoryIdx] = useState(-1);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpandedState] = useState(false);
+  const setExpanded = (v: boolean) => {
+    setExpandedState(v);
+    try { localStorage.setItem(EXPAND_KEY, v ? '1' : '0'); } catch { /* ignore */ }
+  };
   const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CommandCategory | 'All'>('All');
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
@@ -180,6 +185,7 @@ export default function WebTerminal() {
     try {
       const saved = localStorage.getItem(COMMAND_HISTORY_KEY);
       if (saved) setHistory(JSON.parse(saved));
+      if (localStorage.getItem(EXPAND_KEY) === '1') setExpandedState(true);
     } catch {}
   }, []);
 
@@ -190,8 +196,10 @@ export default function WebTerminal() {
     }
   }, [lines, loading]);
 
-  // Poll node health every 30s
+  // Poll node health every 30s — only while the terminal is expanded
+  // (the status dot lives in the expanded title bar; collapsed bar shows nothing)
   useEffect(() => {
+    if (!expanded) return;
     let active = true;
     const checkHealth = async () => {
       try {
@@ -208,7 +216,7 @@ export default function WebTerminal() {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [expanded]);
 
   // Autocomplete suggestions as user types
   useEffect(() => {
@@ -551,7 +559,7 @@ export default function WebTerminal() {
             <div
               ref={scrollRef}
               onClick={() => inputRef.current?.focus()}
-              className="h-[420px] overflow-y-auto px-3 py-3 font-mono text-xs leading-relaxed cursor-text sm:px-4 md:h-[520px] lg:h-[600px]"
+              className="h-[300px] overflow-y-auto px-3 py-3 font-mono text-xs leading-relaxed cursor-text sm:px-4 md:h-[360px] lg:h-[420px]"
             >
               {lines.map((line) => (
                 <div key={line.id} className="group mb-1">
@@ -615,7 +623,7 @@ export default function WebTerminal() {
                 exit={{ width: 0, opacity: 0 }}
                 className="hidden shrink-0 overflow-hidden border-l border-white/10 bg-black/60 lg:block"
               >
-                <div className="h-[600px] w-72 overflow-y-auto px-4 py-3">
+                <div className="h-[420px] w-72 overflow-y-auto px-4 py-3">
                   <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zion-cyan">Command Reference</p>
                   {CATEGORIES.map((cat) => {
                     const Icon = CATEGORY_ICONS[cat];
