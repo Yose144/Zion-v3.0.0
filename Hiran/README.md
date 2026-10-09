@@ -37,7 +37,8 @@
 |---|---|
 | `hiran-v2.3-8000-q5_k_m.gguf` (21.6 G) | Retrain z checkpointu nutný — recept v `HIRAN_V23_FULL_TRAIN_GUIDE.md` |
 | `HiranV2.3-Checkpoints/checkpoint-8000` (LoRA HF, ~2 G) | — |
-| v2.3 dataset `zion_train_hiran_v2.jsonl` (~11 M, 48 436 párů v guide) | Rebuild přes `data/build_dataset.py` + `boost_dataset.py` + scrape_v3_docs |
+| v2.3 dataset `zion_train_hiran_v2.jsonl` (~11 M, 48 436 párů v guide) | Rebuild přes `data/build_dataset.py` + `boost_dataset.py` + scrape_v3_docs + `gen_qa_pairs.py` (lokální syntéza) |
+| ~~v2.1 curriculum~~ | ✅ **PŘEŽIL** — `Hiran/2.3/data/hiran_curriculum_v2.1.jsonl` (3 056 párů, 10.7 M, 100 % valid) + SHA256 manifesty weights v `baseline/` |
 | v2.2 trained models (f16/q8/q5/q4/onnx) | Rebuild pipeline v `Hiran/2.3/` |
 | `Recovered/WalletKeys/*` | ⚠️ nezávislá ztráta — ověřit klíče jinde |
 

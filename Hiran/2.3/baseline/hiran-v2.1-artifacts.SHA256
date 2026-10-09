@@ -1,0 +1,3 @@
+0b3a12a874addc6364df2fcfa0d837bf0f8b5e66cabef15e285d7d32045d477e  outputs/hiran-v2.1-merged/hiran-v2.1-q5_k_m.gguf
+13a920a9474fc019dec5f744327786583df945e7bbec6f6b8275d45eb1201a85  outputs/hiran-v2.1-lora/adapter_model.safetensors
+8af3a01e4e2e8293dc5d1ef9d9bd5d0745b32fa68d8fe5c30f229ffb9c9553b5  outputs/hiran-v2.1-lora/adapter_config.json

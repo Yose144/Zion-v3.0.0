@@ -51,7 +51,9 @@ with OUT.open("w", encoding="utf-8") as OUT_HANDLE:  # noqa: N806
                 emit(msgs, f"{domain}:{d.get('source','curriculum')}")
 
     # 2) Messages-format fragments
-    for f, tag in [("collected_seed.jsonl", "v21_seed"),
+    for f, tag in [("../data/hiran_curriculum_v2.1.jsonl", "v21_curriculum"),
+                   ("generated_qa.jsonl", "qwen3_gen"),
+                   ("collected_seed.jsonl", "v21_seed"),
                    ("../data/zion_train_buddhism_guided.jsonl", "buddhism_shard")]:
         p = Path(f)
         if not p.exists():
