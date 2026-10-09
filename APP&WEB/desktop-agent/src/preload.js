@@ -126,6 +126,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onConfigUpdated: (callback) => {
     ipcRenderer.on('config-updated', (event) => callback());
   },
+  onQuadVramWarning: (callback) => {
+    ipcRenderer.on('quad-vram-warning', (event, data) => callback(data));
+  },
 
 
 
