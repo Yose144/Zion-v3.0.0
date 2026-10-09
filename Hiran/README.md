@@ -23,6 +23,11 @@
 | **AI Native spec** | `HiranV2.1/AI_NATIVE_CONCEPT_2.9.md`, `AiNativev2.md`, `public/docs/*/ai-native/{README,cuda-x,ncl,oasis}.md`, `docs/v2.9.6/L3_AI_ARCHITECTURE.md`, `docs/2.9.9/archive/{AI-L3,CUDAX_L3_AI_NATIVE_PLAN,HIRANYAGARBHA_AI_NATIVE}.md` | ✅ docs |
 | **PoC** | `archive/PoC-lab/poc-hiran/` (client, mock, types) | ✅ |
 | **Docker inference** | `archive/V3/docker/hiran-inference/` | ✅ |
+| **v1 Modelfile + system prompt** | `Hiran/2.3/inference/hiranyagarbha-v1.Modelfile` | ✅ |
+| **v2.1 eval + RAG manifesty** (SuttaCentral classical/tibetan recept) | `Hiran/2.3/{baseline/e2e_results_v21.json, data/rag/}` | ✅ |
+| **CLI integrace + docker + desktop integrace** | `archive/V3/cli` hiran commands, `docker-compose.ai-native.yml`, `DesktopAgentP3.0.6/AI_NATIVE_*` → kopie v `Hiran/2.4/reference/` | ✅ |
+| **Grafana inference dashboard** | `Hiran/2.3/inference/grafana-dashboard.json` | ✅ |
+| **Archive ai-native snapshots** | `archive/V3/L3/ai-native` (v2.4-era snapshot), `archive/2.9.9/legacy-code/L3/ai-native` (pre-Maestro) | ✅ ref |
 | **Učebnice** | `docs/book/ekam-deeksha/UCEBNICE-09-HIRANYAGARBHA.md` + nirvana/gemini chapters | ✅ |
 | **Public page** | `APP&WEB/website-v2.9/src/app/l3-hiran/page.tsx` (v2.3 + AI Native + Amitabha v2.5 popis) | ✅ live |
 
