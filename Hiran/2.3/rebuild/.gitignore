@@ -1,0 +1,5 @@
+# Generated dataset artifacts (large, reproducible via scripts/rebuild_dataset.sh
+# + scripts/gen_qa_pairs.py). Keep the scripts tracked, ignore outputs.
+generated_qa.jsonl
+generated_qa.done
+gen.log
