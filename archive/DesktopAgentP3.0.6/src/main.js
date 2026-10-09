@@ -2425,9 +2425,12 @@ function startMiningV31(config, v31Path) {
   // ── 3b. Reap foreign miner processes ────────────────────────────────────────
   // A stray zion-miner (manual launch, crashed respawn, stale binary) holds
   // VRAM and makes Quad DAG allocations fail silently. Kill leftovers that
-  // are not this agent's child before spawning.
+  // are not this agent's child before spawning — but ONLY strays executing
+  // our own binary (resolved v31Path). A zion-miner from another install
+  // (private agent bundle, manual build) must never be touched.
   try {
     if (process.platform !== 'win32') {
+      const ourExe = fs.realpathSync(v31Path);
       const out = execFileSync('pgrep', ['-f', 'zion-miner'], {
         timeout: 4000, encoding: 'utf8'
       });
@@ -2435,19 +2438,21 @@ function startMiningV31(config, v31Path) {
       const strays = out.trim().split('\n')
         .map(l => parseInt(l.trim(), 10))
         .filter(pid => Number.isFinite(pid) && pid > 0 && pid !== ownPid && pid !== process.pid);
+      let reaped = 0;
       for (const pid of strays) {
         try {
-          // Verify it's really a miner binary, not e.g. an editor with the
-          // string in its title — check the executable basename.
-          const exe = fs.readlinkSync(`/proc/${pid}/exe`);
-          const base = path.basename(exe);
-          if (base === 'zion-miner' || base === 'zion-miner.bin' || base.startsWith('zion-miner')) {
-            log(`[V31-FAST] Reaping stray miner process PID ${pid} (${base})\n`);
-            process.kill(pid, 'SIGTERM');
-          }
+          // /proc exe may carry a " (deleted)" suffix after an in-place
+          // binary upgrade — strip it before comparing paths.
+          const exe = fs.readlinkSync(`/proc/${pid}/exe`).replace(/ \(deleted\)$/, '');
+          let exeReal = exe;
+          try { exeReal = fs.realpathSync(exe); } catch {}
+          if (exeReal !== ourExe) continue;
+          log(`[V31-FAST] Reaping stray miner process PID ${pid} (${path.basename(exe)})\n`);
+          process.kill(pid, 'SIGTERM');
+          reaped++;
         } catch {}
       }
-      if (strays.length) {
+      if (reaped) {
         // Give SIGTERM a moment before we measure VRAM / spawn.
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 800);
       }
