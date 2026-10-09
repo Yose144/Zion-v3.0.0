@@ -4158,10 +4158,10 @@ function parseMinerOutput(output) {
   }
 
   // ─── V31 startup banner ───
-  // zion-miner (triple stream) starting stream1=true stream2=true stream3=true threads=4
-  const v31StartMatch = output.match(/zion-(?:universal-)?miner\s+\(triple\s+stream\)\s+starting.*?stream1=(\S+)\s+stream2=(\S+)\s+stream3=(\S+)\s+threads=(\d+)/is);
+  // zion-miner (triple stream) starting stream1=true stream2=true stream3=true [stream4=true] threads=4
+  const v31StartMatch = output.match(/zion-(?:universal-)?miner\s+\(triple\s+stream\)\s+starting.*?stream1=(\S+)\s+stream2=(\S+)\s+stream3=(\S+)(?:\s+stream4=(\S+))?\s+threads=(\d+)/is);
   if (v31StartMatch) {
-    minerStats.threads = v31StartMatch[4];
+    minerStats.threads = v31StartMatch[5];
   }
 
   // ─── V31 per-stream telemetry ───

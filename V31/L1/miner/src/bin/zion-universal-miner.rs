@@ -163,6 +163,7 @@ async fn main() -> Result<()> {
         stream1 = %(!args.no_zion),
         stream2 = %(!args.no_gpu),
         stream3 = %(!args.no_cpu),
+        stream4 = %runtime.config().stream4_enabled,
         "zion-universal-miner starting"
     );
 

@@ -231,10 +231,11 @@ async fn main() -> Result<()> {
         }
     }
 
-    let (s1, s2, s3) = (
+    let (s1, s2, s3, s4) = (
         config.stream1_enabled,
         config.stream2_enabled,
         config.stream3_enabled,
+        config.stream4_enabled,
     );
     let runtime = MinerRuntime::new(config);
     let pool_addr = runtime
@@ -507,6 +508,7 @@ async fn main() -> Result<()> {
         stream1 = %s1,
         stream2 = %s2,
         stream3 = %s3,
+        stream4 = %s4,
         threads = args.threads,
         tui = %tui_enabled,
         "zion-miner (triple stream) starting"
