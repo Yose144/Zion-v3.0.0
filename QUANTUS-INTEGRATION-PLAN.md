@@ -516,12 +516,16 @@ QtcPayoutSweeper (F4 ✅) → PPLNS výplata v QTC, fee zůstává
         kryptex :7049 (3% PROP, statická diff 18.2e9 — příliš vysoká
         pro náš hashrate). **⚠️ Wallet gotcha:** k1pool login byl
         account-name `KrUVFgKLb…` (off-chain balance → payout přes
-        jejich UI); suprnova login = přímo `qz…` adresa → výplata jde
-        **on-chain přímo do treasury `qzpnKFmb…`** (ta samá, ze které
-        QtcPayoutSweeper rozesílá) → deferred payouts se zafundují
-        prvním upstream payoutem, ne čeká se na lottery blok. Edge env:
+        jejich UI); suprnova login = přímo `qz…` adresa → on-chain
+        výplata. **Canonical QTC wallet =
+        `qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb`**
+        (SS58-189 ✓, externí — secret mimo Edge) → suprnova vyplácí
+        pool revenue tam; sweeper hot treasury zůstává `qzpnKFmb…`
+        (keyring (0,0), signuje miner payouty) → deferred řádky se
+        zafundují převodem canonical→treasury po prvním upstream
+        payoutu (nemusí se čekat na lottery blok). Edge env:
         `ZION_POOL_AUXPOW_POOL_QTU=quantus.suprnova.cc:7071` +
-        `ZION_POOL_AUXPOW_WALLET_QTU=qzpnKFmb…`; code default
+        `ZION_POOL_AUXPOW_WALLET_QTU=qzjoHwa…`; code default
         `ExternalCoin::Quantus::default_pool()` přepsán (`779116a27`).
         E2E ověřeno: shares `Accepted` na suprnově, API
         `/api/pools/quantus/miners/<addr>` → `pendingShares`, worker
