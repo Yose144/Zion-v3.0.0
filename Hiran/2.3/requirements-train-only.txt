@@ -1,0 +1,15 @@
+# Hiran v2.2 — Phase 2 training stack for RTX 5090 (Blackwell, sm_120).
+# PyTorch 2.7.0+cu128 required for RTX 5090 support.
+# Use with CUDA 12.8 environment + build-essential (gcc).
+# Tested with Qwen/Qwen2.5-14B-Instruct QLoRA.
+torch==2.7.0
+transformers==4.43.1
+peft==0.11.0
+bitsandbytes>=0.45.3
+accelerate==0.30.0
+datasets==2.19.0
+sentencepiece==0.1.99
+protobuf==4.21.0
+safetensors>=0.4.1
+tensorboard==2.14.0
+tokenizers==0.19.1
