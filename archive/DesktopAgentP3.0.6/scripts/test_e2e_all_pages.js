@@ -118,8 +118,8 @@ async function runAllTests() {
   await testChannel('cli-mine-status');
   await testChannel('cli-wallet-list');
   await testChannel('cli-config-get', { key: 'pool' });
-  await testChannel('cli-pool-stats', { pool: '62.171.141.136:8444' });
-  await testChannel('cli-pool-miners', { pool: '62.171.141.136:8444' });
+  await testChannel('cli-pool-stats', { pool: 'rpc.zionterranova.com:8444' });
+  await testChannel('cli-pool-miners', { pool: 'rpc.zionterranova.com:8444' });
 
   // ── Settings ──
   log('\n━━━ SETTINGS ━━━');
