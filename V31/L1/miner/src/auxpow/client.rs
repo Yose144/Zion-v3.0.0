@@ -1225,10 +1225,10 @@ impl AuxPowClient {
                 return None;
             }
             let prevhash = parse_hex_value(&params[1]).unwrap_or_default();
-            let _coinb1 = params[2].as_str().unwrap_or("");
-            let _coinb2 = params[3].as_str().unwrap_or("");
-            let _merkle_branch = params[4].as_array();
-            let _version = params[5].as_str().unwrap_or("");
+            let coinb1 = params[2].as_str().unwrap_or("");
+            let coinb2 = params[3].as_str().unwrap_or("");
+            let merkle_branch = params[4].as_array();
+            let version = params[5].as_str().unwrap_or("");
             let nbits = params[6].as_str().unwrap_or("");
             let ntime = params[7].as_str().unwrap_or("00000000").to_string();
             let _clean_jobs = params[8].as_bool();
@@ -1237,11 +1237,42 @@ impl AuxPowClient {
                 .or_else(|| hasher::nbits_to_target(nbits))
                 .unwrap_or([0xFF; 32]);
 
-            let header = if prevhash.is_empty() {
-                vec![0u8; 32]
-            } else {
-                prevhash
-            };
+            // Build the real 80-byte block header for yiimp coinbase-family
+            // coins (keryxhash, neoscrypt, ghostrider, sha256d, …):
+            //   coinbase    = coinb1 ‖ extranonce1 ‖ extranonce2 ‖ coinb2
+            //   merkle_root = sha256d(coinbase) folded over the branch
+            //   header      = version ‖ prevhash ‖ merkle_root ‖ ntime ‖
+            //                 nbits ‖ nonce(4B, zeroed — miner iterates)
+            // extranonce2 is fixed to `extranonce2_size` zero bytes; the
+            // forwarding path must echo the same value on submit.
+            let en1 = self.extranonce1.lock().await.clone();
+            let en2_size = self.extranonce2_size.lock().await.unwrap_or(0) as usize;
+            let en2 = vec![0u8; en2_size];
+            let en2_hex = "00".repeat(en2_size);
+
+            let mut coinbase = hex::decode(coinb1).unwrap_or_default();
+            coinbase.extend_from_slice(&en1);
+            coinbase.extend_from_slice(&en2);
+            coinbase.extend_from_slice(&hex::decode(coinb2).unwrap_or_default());
+
+            let mut merkle_root = sha256d(&coinbase);
+            if let Some(branch) = merkle_branch {
+                for step in branch {
+                    let step_bytes = parse_hex_value(step).unwrap_or_default();
+                    let mut buf = Vec::with_capacity(64);
+                    buf.extend_from_slice(&merkle_root);
+                    buf.extend_from_slice(&step_bytes);
+                    merkle_root = sha256d(&buf);
+                }
+            }
+
+            let mut header = Vec::with_capacity(80);
+            header.extend_from_slice(&hex::decode(version).unwrap_or_default());
+            header.extend_from_slice(&prevhash);
+            header.extend_from_slice(&merkle_root);
+            header.extend_from_slice(&hex::decode(&ntime).unwrap_or_default());
+            header.extend_from_slice(&hex::decode(nbits).unwrap_or_default());
+            header.extend_from_slice(&[0u8; 4]);
 
             let timestamp = u32::from_str_radix(ntime.trim_start_matches("0x"), 16)
                 .ok()
@@ -1255,9 +1286,11 @@ impl AuxPowClient {
                 target_bytes: target,
                 timestamp,
                 nbits: Some(nbits.to_string()),
+                ntime: ntime.clone(),
                 algorithm: self.config.algorithm.clone(),
                 external_coin: self.config.coin,
-                extranonce1: self.extranonce1.lock().await.clone(),
+                extranonce1: en1,
+                extranonce2: en2_hex,
                 ..Default::default()
             };
             *self.latest_job_id.lock().await = Some(job.job_id.clone());
@@ -1497,6 +1530,7 @@ impl AuxPowClient {
         mix_hash: Option<&str>,
         header_hash: Option<&str>,
         solution_hex: &str,
+        algo: &str,
     ) -> Result<ShareResult> {
         if self.protocol == StratumProtocol::QuantusStratum {
             // QPoW shares need the full 64-byte nonce/result — the u64 API
@@ -1585,11 +1619,39 @@ impl AuxPowClient {
                     "params": [worker, job_id, ntime, extranonce2, sol]
                 })
             }
-            _ => json!({
-                "id": self.next_rpc_id(),
-                "method": "mining.submit",
-                "params": [worker, job_id, extranonce2, ntime, nonce_hex(nonce)]
-            }),
+            _ => {
+                if algo.contains("kheavyhash") {
+                    // KaspaStratum (2miners/woolypooly): [worker, job_id, nonce16]
+                    json!({
+                        "id": self.next_rpc_id(),
+                        "method": "mining.submit",
+                        "params": [worker, job_id, format!("{nonce:016x}")]
+                    })
+                } else if is_wide_nonce_algo(algo) {
+                    // Yiimp ProgPoW/KawPoW-family: 8-byte nonce + optional
+                    // mix_hash as 6th param.
+                    let mut params =
+                        json!([worker, job_id, extranonce2, ntime, format!("{nonce:016x}")]);
+                    if let Some(m) = mix_hash {
+                        params.as_array_mut().unwrap().push(json!(m));
+                    }
+                    json!({
+                        "id": self.next_rpc_id(),
+                        "method": "mining.submit",
+                        "params": params
+                    })
+                } else {
+                    // Yiimp coinbase-family (keryxhash, neoscrypt, ghostrider,
+                    // x11, …): the header nonce field is 4 bytes. Sending
+                    // 0x+16hex gets `Invalid nonce size` — the upstream
+                    // expects exactly 8 hex chars.
+                    json!({
+                        "id": self.next_rpc_id(),
+                        "method": "mining.submit",
+                        "params": [worker, job_id, extranonce2, ntime, format!("{:08x}", nonce as u32)]
+                    })
+                }
+            }
         };
 
         match self.send_request(&req).await {
@@ -1656,6 +1718,22 @@ impl AuxPowClient {
 
 fn nonce_hex(nonce: u64) -> String {
     format!("0x{:016x}", nonce)
+}
+
+/// Double-SHA256 for yiimp coinbase-family merkle construction.
+fn sha256d(data: &[u8]) -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    let first = Sha256::digest(data);
+    Sha256::digest(first).into()
+}
+
+/// Algorithms whose block header carries an 8-byte nonce (Ethash/ProgPoW/
+/// KawPoW family). Everything else on a yiimp coinbase notify uses a
+/// 4-byte nonce field.
+fn is_wide_nonce_algo(algo: &str) -> bool {
+    ["kawpow", "progpow", "meowpow", "ethash", "etchash", "firopow", "autolykos"]
+        .iter()
+        .any(|w| algo.contains(w))
 }
 
 /// CryptonoteStratum (XMR) 32-bit nonce as an 8-char lowercase hex string.
@@ -2782,7 +2860,14 @@ fn build_submit_params(
         }
     }
 
-    // Default Bitcoin-style / kHeavyHash / blake3 stratum submit.
+    // Default yiimp coinbase-family submit: the header nonce field is 4
+    // bytes — 8 hex chars, no 0x prefix (16hex gets `Invalid nonce size`).
+    // Wide-nonce families were handled above.
+    let nonce = if is_wide_nonce_algo(algo) {
+        nonce
+    } else {
+        format!("{:08x}", (share.nonce & 0xFFFF_FFFF) as u32)
+    };
     json!({"id": id, "method": "mining.submit", "params": [worker, share.job_id, share.extranonce2, share.ntime, nonce]})
 }
 
@@ -3103,6 +3188,43 @@ mod tests {
         let result = client.submit_share(&share).await.unwrap();
         assert_eq!(result, ShareResult::Accepted);
         server.abort();
+    }
+
+    #[test]
+    fn build_submit_params_yiimp_nonce_width() {
+        let mk = |coin: ExternalCoin, mix: Option<[u8; 32]>| super::super::Share {
+            job_id: "j1".to_string(),
+            coin,
+            nonce: 0x1234_5678_9abc_def0,
+            hash: [0u8; 32],
+            header_hash: [0u8; 32],
+            mix_hash: mix,
+            solution: None,
+            nonce_512: None,
+            hash_512: None,
+            extranonce2: "00".to_string(),
+            ntime: "00000000".to_string(),
+        };
+        // KeryxHash (yiimp coinbase notify): 4-byte nonce → 8 hex chars,
+        // otherwise zpool rejects "Invalid nonce size".
+        let p = build_submit_params("w", &mk(ExternalCoin::Keryx, None), 7, None);
+        assert_eq!(p["params"].as_array().unwrap().len(), 5);
+        assert_eq!(p["params"][4], "9abcdef0");
+        // Neoscrypt / ghostrider share the same 4-byte header nonce field.
+        for coin in [ExternalCoin::PhoenixCoin, ExternalCoin::Raptoreum] {
+            let p = build_submit_params("w", &mk(coin, None), 7, None);
+            assert_eq!(p["params"][4], "9abcdef0", "{:?}", coin);
+        }
+        // kHeavyHash (KaspaStratum): 3 params, full 8-byte nonce.
+        let p = build_submit_params("w", &mk(ExternalCoin::Kaspa, None), 7, None);
+        assert_eq!(p["params"].as_array().unwrap().len(), 3);
+        assert_eq!(p["params"][2], "123456789abcdef0");
+        // ProgPoW-family (yiimp 7-param notify): 8-byte nonce + mix 6th.
+        let mix = [0xabu8; 32];
+        let p = build_submit_params("w", &mk(ExternalCoin::Meowcoin, Some(mix)), 7, None);
+        assert_eq!(p["params"][4], "123456789abcdef0");
+        assert_eq!(p["params"].as_array().unwrap().len(), 6);
+        assert_eq!(p["params"][5], format!("0x{}", hex::encode(mix)));
     }
 
     #[tokio::test]
