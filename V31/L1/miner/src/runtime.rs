@@ -1916,6 +1916,7 @@ impl MinerRuntime {
                     }
                     this.mark_active(StreamId::GpuExternal).await;
                     if let Some(ref ext) = bundle.gpu_external {
+                        this.set_stream_coin(StreamId::GpuExternal, &ext.coin).await;
                         match this
                             .mine_v3_external_share(
                                 client.clone(),
@@ -2004,6 +2005,7 @@ impl MinerRuntime {
                     }
                     this.mark_active(StreamId::CpuExternal).await;
                     if let Some(ref ext) = bundle.cpu_external {
+                        this.set_stream_coin(StreamId::CpuExternal, &ext.coin).await;
                         if ext_job_since.elapsed() < EXT_CPU_JOB_MAX_AGE {
                             match this
                                 .mine_v3_external_share(
@@ -2098,6 +2100,7 @@ impl MinerRuntime {
                     }
                     this.mark_active(StreamId::GpuExternal2).await;
                     if let Some(ref ext) = bundle.gpu_external_2 {
+                        this.set_stream_coin(StreamId::GpuExternal2, &ext.coin).await;
                         // Defensive dedup: pool never sends the same coin on
                         // both GPU slots, but if it ever does, refuse to
                         // mine a duplicate job — duplicate nonce space would
@@ -2899,6 +2902,25 @@ impl MinerRuntime {
         }
     }
 
+    /// Record which coin a stream is currently mining so metrics/UI show the
+    /// real ticker (e.g. "ZANO") instead of the stream id ("gpu-external-2").
+    #[cfg(feature = "auxpow")]
+    async fn set_stream_coin(&self, stream: StreamId, coin_ticker: &str) {
+        use zion_cosmic_harmony::ExternalCoin;
+        let coin = coin_ticker
+            .parse::<ExternalCoin>()
+            .ok()
+            .or_else(|| ExternalCoin::from_str_loose(coin_ticker));
+        let Some(coin) = coin else { return };
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            if s.coin != Some(coin) {
+                s.coin = Some(coin);
+                s.algorithm = Some(coin.algorithm().to_string());
+            }
+        }
+    }
+
     async fn record_accepted(&self, stream: StreamId) {
         let mut stats = self.stats.lock().await;
         if let Some(s) = stats.get_mut(&stream) {
@@ -3069,10 +3091,12 @@ fn create_qpow_gpu_miner(
                     match crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size)
                     {
                         Ok(m) => miners.push(crate::gpu::QpowGpuMiner::OpenCl(m)),
-                        Err(e) => crate::ext_warn!(
-                            "gpu_qpow_opencl_sub_init device=\"{}\" failed: {e}",
-                            dev.name
-                        ),
+                        Err(e) => {
+                            crate::ext_warn!(
+                                "gpu_qpow_opencl_sub_init device=\"{}\" failed: {e}",
+                                dev.name
+                            );
+                        }
                     }
                 }
                 match saved_name {

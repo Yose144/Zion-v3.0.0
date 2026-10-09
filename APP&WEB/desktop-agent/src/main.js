@@ -690,6 +690,33 @@ function _coinAlgo(coin) {
   return ALGO[c] || '';
 }
 
+// Estimated extra GPU memory a stream needs on top of the miner's base
+// context (ZION + QTU/QPoW kernels ≈ 2.3 GiB observed). DAG-family
+// algorithms must allocate an epoch DAG; estimates are conservative.
+function _coinGpuMemMib(coin) {
+  const algo = _coinAlgo(coin);
+  const DAG_MIB = {
+    progpowz: 2300, progpow: 2300, kawpow: 3300, evrprogpow: 2300,
+    etchash: 3100, ethash: 4700, autolykos: 2400, meowpow: 3300,
+    dynexsolve: 3300, verthash: 1300, zelhash: 1700, fishhash: 4800,
+    karlsenhash: 2000, octopus: 5200, beamhash: 600,
+  };
+  if (DAG_MIB[algo]) return DAG_MIB[algo];
+  return algo ? 500 : 0;
+}
+
+function _gpuFreeMib() {
+  try {
+    const out = execFileSync('nvidia-smi', [
+      '--query-gpu=memory.free', '--format=csv,noheader,nounits'
+    ], { timeout: 4000, encoding: 'utf8' });
+    const frees = out.trim().split('\n')
+      .map(l => parseInt(l.trim(), 10))
+      .filter(n => Number.isFinite(n));
+    return frees.length ? Math.min(...frees) : null;
+  } catch { return null; }
+}
+
 function _coinStreamIndex(coin) {
   const c = String(coin || '').toUpperCase();
   if (c === 'ZION') return 1;
@@ -2372,6 +2399,38 @@ function startMiningV31(config, v31Path) {
     return { success: true, alreadyRunning: true };
   }
 
+  // ── 3b. Reap foreign miner processes ────────────────────────────────────────
+  // A stray zion-miner (manual launch, crashed respawn, stale binary) holds
+  // VRAM and makes Quad DAG allocations fail silently. Kill leftovers that
+  // are not this agent's child before spawning.
+  try {
+    if (process.platform !== 'win32') {
+      const out = execFileSync('pgrep', ['-f', 'zion-miner'], {
+        timeout: 4000, encoding: 'utf8'
+      });
+      const ownPid = minerProcess?.pid;
+      const strays = out.trim().split('\n')
+        .map(l => parseInt(l.trim(), 10))
+        .filter(pid => Number.isFinite(pid) && pid > 0 && pid !== ownPid && pid !== process.pid);
+      for (const pid of strays) {
+        try {
+          // Verify it's really a miner binary, not e.g. an editor with the
+          // string in its title — check the executable basename.
+          const exe = fs.readlinkSync(`/proc/${pid}/exe`);
+          const base = path.basename(exe);
+          if (base === 'zion-miner' || base === 'zion-miner.bin' || base.startsWith('zion-miner')) {
+            log(`[V31-FAST] Reaping stray miner process PID ${pid} (${base})\n`);
+            process.kill(pid, 'SIGTERM');
+          }
+        } catch {}
+      }
+      if (strays.length) {
+        // Give SIGTERM a moment before we measure VRAM / spawn.
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 800);
+      }
+    }
+  } catch {}
+
   // ── 4. Update global state ─────────────────────────────────────────────────
   MINER_PATH = v31Path;
   MINER_IS_RUST = true;
@@ -2469,9 +2528,24 @@ function startMiningV31(config, v31Path) {
     const gpuCoin2Valid = gpuCoin2 && gpuCoin2.toLowerCase() !== 'auto'
       && gpuCoin2.toUpperCase() !== gpuCoin.toUpperCase();
     if (wantsGpu && gpuCoin2Valid) {
-      env.ZION_STREAM4_ENABLED = '1';
-      env.ZION_STREAM4_FORCE_COIN = gpuCoin2.toUpperCase();
-      _activeExtCoins.gpu2 = gpuCoin2.toUpperCase();
+      // VRAM preflight: a DAG-family coin on stream4 (e.g. ZANO ProgPoW
+      // ~2 GiB) plus the base miner context must fit in free GPU memory,
+      // otherwise the miner's DAG init fails and stream4 sits idle.
+      const freeMib = _gpuFreeMib();
+      const needMib = 1600 + _coinGpuMemMib(gpuCoin)
+        + _coinGpuMemMib(gpuCoin2) + 300;
+      if (freeMib !== null && freeMib < needMib) {
+        console.warn(`[quad] stream4 ${gpuCoin2.toUpperCase()} skipped — ` +
+          `VRAM preflight: ${freeMib} MiB free < ${needMib} MiB required ` +
+          `(DAG + stream buffers). Free GPU memory or pick a lighter coin.`);
+        sendToRendererNow('quad-vram-warning', {
+          coin: gpuCoin2.toUpperCase(), freeMib, needMib
+        });
+      } else {
+        env.ZION_STREAM4_ENABLED = '1';
+        env.ZION_STREAM4_FORCE_COIN = gpuCoin2.toUpperCase();
+        _activeExtCoins.gpu2 = gpuCoin2.toUpperCase();
+      }
     }
     env.ZION_AUTONOMOUS = (config.autonomous === true && cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
   } else {

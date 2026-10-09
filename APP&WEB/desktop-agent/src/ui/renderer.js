@@ -2282,6 +2282,18 @@ function setupEventListeners() {
     addLogEntry(`Miner error: ${msg}`, 'error');
   });
 
+  if (typeof window.electronAPI.onQuadVramWarning === 'function') {
+    window.electronAPI.onQuadVramWarning((data) => {
+      const coin = data?.coin || 'GPU2';
+      const free = data?.freeMib ?? '?';
+      const need = data?.needMib ?? '?';
+      const msg = `Quad stream skipped: ${coin} needs ~${need} MiB GPU memory ` +
+        `but only ${free} MiB is free. Free VRAM or choose a lighter coin.`;
+      addLogEntry(msg, 'warning');
+      appendMiningConsole(` ⚠ ${msg}`);
+    });
+  }
+
   window.electronAPI.onMinerOutput((data) => {
     const text = (data?.text || '').toString();
     const stream = data?.stream === 'stderr' ? 'stderr' : 'stdout';
