@@ -581,6 +581,8 @@ export default function L3HiranPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/l3-hiran/hero.webp"
+                srcSet="/images/l3-hiran/hero-m.webp 960w, /images/l3-hiran/hero.webp 1672w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs ? 'ZION Hiranyagarbha — L3 AI vrstva' : 'ZION Hiranyagarbha — L3 AI layer'}
                 width={1672}
                 height={941}

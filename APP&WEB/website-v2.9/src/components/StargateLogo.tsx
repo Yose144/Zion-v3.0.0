@@ -85,6 +85,10 @@ function StargateLogo({ className = '' }: { className?: string }) {
               <img
                 src="/stargate/Z.gif"
                 alt="Zion"
+                width={64}
+                height={64}
+                loading="lazy"
+                decoding="async"
                 style={{
                   filter: 'grayscale(100%) contrast(180%)',
                   boxShadow: '0 0 1px #000',

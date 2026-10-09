@@ -345,6 +345,8 @@ export default function BoaEsperancaPage() {
             <div className="relative z-10 mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/boa-esperanca/hero.webp"
+                srcSet="/images/boa-esperanca/hero-m.webp 960w, /images/boa-esperanca/hero.webp 1600w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt="Boa Esperança — úsvit nad Mysem dobré naděje, šev dvou oceánů"
                 width={1672}
                 height={941}

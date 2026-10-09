@@ -214,7 +214,8 @@ export default function PortfolioPage() {
                 </Link>
               </div>
             ) : (
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="border-b border-zinc-700/30">
                     <th className="text-left px-4 py-3 text-xs text-zinc-400 uppercase">Pool</th>
@@ -254,6 +255,7 @@ export default function PortfolioPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>
@@ -275,7 +277,8 @@ export default function PortfolioPage() {
                 </Link>
               </div>
             ) : (
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="border-b border-zinc-700/30">
                     <th className="text-left px-4 py-3 text-xs text-zinc-400 uppercase">Status</th>
@@ -309,6 +312,7 @@ export default function PortfolioPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>

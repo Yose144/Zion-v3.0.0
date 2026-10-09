@@ -370,6 +370,8 @@ export default function TeamPage() {
             <div className="relative z-10 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               <img
                 src="/images/team/hero.webp"
+                srcSet="/images/team/hero-m.webp 960w, /images/team/hero.webp 1672w"
+                sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
                 alt={cs ? 'ZION Team — lidé, agenti a komunita kolem Stromu života' : 'ZION Team — people, agents and community around the Tree of Life'}
                 width={1672}
                 height={941}
