@@ -504,7 +504,11 @@ async fn forward_share_to_upstream(
         let en1_len = client.extranonce1().await.len().min(31);
         "00".repeat(32usize - en1_len)
     } else {
-        "00".to_string()
+        // Yiimp coinbase-family pools require extranonce2 of exactly
+        // `extranonce2_size` bytes (zpool = 4 → "00000000"); sending a
+        // single "00" gets "invalid nonce2 size" rejects.
+        let en2_len = client.extranonce2_size().await.unwrap_or(1).max(1) as usize;
+        "00".repeat(en2_len)
     };
     tracing::debug!(
         "auxpow forward_share job={} nonce={} ntime={} ntime_len={} en2_len={} sol_hex_len={} sol_bytes={}",
@@ -541,6 +545,7 @@ async fn forward_share_to_upstream(
             req.mix_hash_hex.as_deref(),
             header_hash_opt.as_deref(),
             &req.solution_hex,
+            &req.algorithm,
         )
         .await
     {

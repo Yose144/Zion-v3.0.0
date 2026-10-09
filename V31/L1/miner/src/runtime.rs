@@ -1125,10 +1125,10 @@ impl MinerRuntime {
             }
             Ok(Ok(None)) => {} // no solution in batch — normal
             Ok(Err(e)) => {
-                warn!(stream = "gpu_ext", error = %e, "GPU ext mining failed");
+                warn!(stream = ?stream, error = %e, "GPU ext mining failed");
             }
             Err(e) => {
-                warn!(stream = "gpu_ext", error = %e, "GPU ext task failed");
+                warn!(stream = ?stream, error = %e, "GPU ext task failed");
             }
         }
         None
@@ -1250,11 +1250,11 @@ impl MinerRuntime {
                 None
             }
             Ok(Err(e)) => {
-                warn!(stream = "gpu_ext", error = %e, "QPoW GPU mining failed");
+                warn!(stream = ?stream, error = %e, "QPoW GPU mining failed");
                 None
             }
             Err(e) => {
-                warn!(stream = "gpu_ext", error = %e, "QPoW GPU task failed");
+                warn!(stream = ?stream, error = %e, "QPoW GPU task failed");
                 None
             }
         }
