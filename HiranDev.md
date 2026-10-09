@@ -21,8 +21,14 @@
 | v2.1 finetune (collect_dataset, finetune_lora, merge_export, vast scripts) | `Hiran/2.3/v21-legacy/` | ✅ plná |
 | Dataset shard `zion_train_buddhism_guided.jsonl` (19 párů, messages) | `Hiran/2.3/data/` | ✅ |
 | v2.4 Maestro design (arch/agents/mesh/tool-registry) | `Hiran/2.4/` | ✅ docs |
+| **AI-native archive snapshots** | `archive/V3/L3/ai-native` = starší v2.4 snapshot (maestro/planner/tool_registry, odlišný od V31); `archive/2.9.9/legacy-code/L3/ai-native` = pre-Maestro (19 modulů). V31/L3 = kanonický | ✅ historie |
+| **v2.1 eval + RAG manifesty** | `Hiran/2.3/baseline/e2e_results_v21.json` (reálné CZ RAG odpovědi) · `Hiran/2.3/data/rag/` (SuttaCentral classical+tibetan manifesty + pipeline config — recept přežil i bez corpus dat) | ✅ |
+| **v1 Modelfile + system prompt** | `Hiran/2.3/inference/hiranyagarbha-v1.Modelfile` — originální Ollama system prompt Hiranyagarbha | ✅ |
+| **Grafana dashboard** | `Hiran/2.3/inference/grafana-dashboard.json` (hiran-inference-overview) | ✅ |
+| **CLI integrace** | `archive/V3/cli/src/{commands/hiran.rs,rpc/hiran_rpc.rs}` (352+94 ř.) → kopie v `Hiran/2.4/reference/` | ✅ |
+| **Docker stack + desktop integrace** | `docker-compose.ai-native.yml`, `Dockerfile.v3.ai-native`, `HIRAN_V2.2_{CLI_INTEGRATION,COMPLETION_PLAN}.md`, `DesktopAgentP3.0.6/AI_NATIVE_*.md` → `Hiran/2.4/reference/` | ✅ |
 | v2.5 Amṛtabhoja | `docs/3.0.5/archive-root-md/HIRAN_EVOLUTION_2.3_TO_2.5_AMATHABOJ.md` (1155 ř.) | ✅ docs |
-| **ai-native crate — 29 modulů ~10k ř.** (hiranyagarbha/Dharma Validator, orchestrator, rag, llm_backend, ekam_field, memory, message_bus, pool_optimizer, warp_agent, consciousness_engine) | `V31/L3/ai-native/` — **lokální = kanonický** | ✅ živý kód |
+| **ai-native crate — 29 modulů ~17k ř.** (hiranyagarbha/Dharma Validator, maestro, orchestrator, planner, tool_registry, layer_agents, health_poller, intent, rag, llm_backend, ekam_field, memory, message_bus, pool_optimizer, warp_agent, consciousness_engine, telemetry, task, autotuner, lexical, in_context, knowledge_base, oasis_bridge, hiran_inference, types, error) | `V31/L3/ai-native/` — **lokální = kanonický** | ✅ živý kód |
 | Bridges | `V31/L4/oasis/hiran_bridge.rs`, `V31/L6/issobella/hiran_bridge.rs`, `ZION_OS/agent-cli/src/l3/` | ✅ |
 | RAG korpus 49 md | `/mnt/data/zion-backups/edge/opt_zion/data/l3-rag-docs/` | ✅ |
 | v2.3 train recept (Qwen3-32B, ZeRO-3, 48 436 párů, 2×A100, ckpt-8000) | `docs/3.0.1Genesis/HIRAN_V23_*` + `Hiran2.3Agent.md` | ✅ |
