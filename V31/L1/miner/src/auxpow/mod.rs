@@ -8,6 +8,7 @@ pub mod client;
 pub mod beamhash_ref;
 pub mod dual_stratum;
 pub mod eaglesong_ref;
+pub mod equihash144;
 pub mod gpu_miner;
 #[cfg(feature = "gpu-opencl")]
 pub mod gpu_opencl_full;

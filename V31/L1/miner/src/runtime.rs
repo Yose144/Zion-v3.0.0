@@ -816,8 +816,15 @@ impl MinerRuntime {
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
-        // GPU external streams (2 and 4): GPU with duty-cycle time-slicing
-        if stream.is_gpu_external() && self.config.gpu_backend != "cpu" {
+        // GPU external streams (2 and 4): GPU with duty-cycle time-slicing.
+        // Equihash jobs skip the GPU path — the OpenCL kernel carries a
+        // wrong Xi byte layout (192,7 skeleton); the vendored tromp CPU
+        // solver handles 144,5 correctly below.
+        let is_equihash_algo = job.coin.algorithm().starts_with("equihash");
+        if stream.is_gpu_external()
+            && self.config.gpu_backend != "cpu"
+            && !is_equihash_algo
+        {
             let t_batch = Instant::now();
             let gpu_share = self.try_gpu_ext_share(stream, job, batch).await;
             let batch_ms = t_batch.elapsed().as_millis() as u64;
@@ -921,6 +928,20 @@ impl MinerRuntime {
         let nonce_start = cursor
             .map(|c| c.load(std::sync::atomic::Ordering::Relaxed))
             .unwrap_or(0);
+        // Equihash: one "nonce" = one full Wagner run (~1.4 GB ctx, ~seconds).
+        // The stream batch sizes are tuned for per-nonce-hash algos — cap the
+        // scan window so the cursor and hashrate reflect real runs.
+        let batch = if algorithm.starts_with("equihash") {
+            batch.min(
+                std::env::var("ZION_EQ144_RUNS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(64)
+                    .max(1),
+            )
+        } else {
+            batch
+        };
         let share = task::spawn_blocking(move || {
             crate::parallel::find_auxpow_share_from(&job, threads, batch, nonce_start)
         })
@@ -2582,6 +2603,16 @@ impl MinerRuntime {
             seed_hash: hex::decode(&ext.seed_hash_hex)
                 .ok()
                 .filter(|v| !v.is_empty()),
+            eq_params: if ext.eq_params.is_empty() {
+                None
+            } else {
+                Some(ext.eq_params.clone())
+            },
+            eq_pers: if ext.eq_pers.is_empty() {
+                None
+            } else {
+                Some(ext.eq_pers.clone())
+            },
         };
 
         // Mine the share using existing GPU/CPU infrastructure
@@ -3382,6 +3413,8 @@ mod tests {
             ntime: "00000000".to_string(),
             height: 0,
             seed_hash: None,
+            eq_params: None,
+            eq_pers: None,
         };
         let share = runtime
             .mine_auxpow_share(StreamId::GpuExternal, &job)

@@ -947,6 +947,8 @@ impl StratumServer {
             seed_hash_hex: job.seed_hash_hex.clone(),
             timestamp: 0,
             ntime_hex: job.ntime.clone(),
+            eq_params: job.eq_params.clone(),
+            eq_pers: job.eq_pers.clone(),
         }
     }
 
@@ -3284,6 +3286,8 @@ mod tests {
                 extranonce1_hex: String::new(),
                 ntime: "00000000".to_string(),
                 seed_hash_hex: String::new(),
+                eq_params: String::new(),
+                eq_pers: String::new(),
                 received_at: Some(Instant::now()),
             },
         );
@@ -3388,6 +3392,8 @@ mod tests {
             extranonce1_hex: String::new(),
             protocol: "stratum".into(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             timestamp: 0,
             ntime_hex: "00000000".into(),
         }));
@@ -3433,6 +3439,8 @@ mod tests {
             extranonce1_hex: String::new(),
             protocol: "stratum".into(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             timestamp: 0,
             ntime_hex: "00000000".into(),
         }));

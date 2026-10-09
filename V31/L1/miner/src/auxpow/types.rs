@@ -90,6 +90,10 @@ pub struct Job {
     /// RandomX seed hash (XMR stream 3) — forwarded from the upstream pool
     /// via `ExternalStreamJob.seed_hash_hex`. `None` for non-RandomX coins.
     pub seed_hash: Option<Vec<u8>>,
+    /// Equihash "N_K" params forwarded from upstream notify (e.g. "144_5").
+    pub eq_params: Option<String>,
+    /// Blake2b personalization from upstream notify (e.g. "sngemPoW").
+    pub eq_pers: Option<String>,
 }
 
 impl Default for Job {
@@ -105,6 +109,8 @@ impl Default for Job {
             ntime: "00000000".to_string(),
             height: 0,
             seed_hash: None,
+            eq_params: None,
+            eq_pers: None,
         }
     }
 }

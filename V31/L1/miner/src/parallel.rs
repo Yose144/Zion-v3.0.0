@@ -421,6 +421,13 @@ pub fn find_auxpow_share_from(
         return find_verushash_share(job, threads, nonce_count, start_nonce);
     }
 
+    // Equihash: the OpenCL kernel is a 192,7-layout skeleton; for 144,5 jobs
+    // (zpool "equihash192" ports serving "144_5"/"sngemPoW") use the vendored
+    // tromp CPU solver which produces genuinely valid solutions.
+    if algorithm.starts_with("equihash") {
+        return find_equihash144_share(job, threads, nonce_count, start_nonce);
+    }
+
     if threads == 1 || nonce_count < threads as u64 {
         for offset in 0..nonce_count {
             let suffix = start_nonce.saturating_add(offset);
@@ -660,6 +667,95 @@ fn find_verushash_share(
     })
 }
 
+/// Equihash 144,5 CPU scan (vendored tromp solver). One nonce = one full
+/// Wagner run (~seconds), so `nonce_count` is capped to a small per-batch
+/// run count. Each rayon thread owns a ~1.4 GB solver ctx — cap threads via
+/// `ZION_EQ144_THREADS` (default 4).
+fn find_equihash144_share(
+    job: &crate::auxpow::Job,
+    _threads: usize,
+    nonce_count: u64,
+    start_nonce: u64,
+) -> Option<crate::auxpow::Share> {
+    use crate::auxpow::equihash144 as eq;
+
+    let eq_params = job.eq_params.as_deref().unwrap_or("144_5");
+    if eq_params != "144_5" {
+        crate::ext_warn!(
+            eq_params,
+            "equihash CPU solver only supports 144_5 — job has different params"
+        );
+        return None;
+    }
+    if job.header.len() != eq::HEADER_LEN {
+        crate::ext_warn!(
+            len = job.header.len(),
+            "equihash job header is not 140 bytes — parser bug?"
+        );
+        return None;
+    }
+    let pers = job.eq_pers.clone().unwrap_or_else(|| "sngemPoW".to_string());
+    let pers8 = pers.as_bytes();
+    if pers8.len() > 8 {
+        return None;
+    }
+
+    let threads = std::env::var("ZION_EQ144_THREADS")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(4)
+        .clamp(1, 8);
+    let runs = nonce_count.min(
+        std::env::var("ZION_EQ144_RUNS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(64)
+            .max(1),
+    );
+
+    let header = job.header.clone();
+    let target = job.target;
+    let en1_len = job.extranonce.len().min(eq::NONCE_LEN - 8);
+    let job_id = job.job_id.clone();
+    let coin = job.coin;
+    let ntime = job.ntime.clone();
+    let extranonce2 = job.extranonce2.clone();
+    let mut header_hash = [0u8; 32];
+    let copy_len = header.len().min(32);
+    header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let chunk = (runs / threads as u64).max(1);
+    (0..threads).into_par_iter().find_map_any(|ti| {
+        let mut solver = eq::Solver::new()?;
+        let start = start_nonce.wrapping_add(ti as u64 * chunk);
+        let count = if ti == threads - 1 {
+            runs.saturating_sub(ti as u64 * chunk)
+        } else {
+            chunk
+        };
+        eq::scan(
+            &mut solver, &header, en1_len, pers8, &target, start, count, &cancelled,
+        )
+        .map(|(nonce, solution, hash)| {
+            cancelled.store(true, Ordering::Relaxed);
+            crate::auxpow::Share {
+                job_id: job_id.clone(),
+                coin,
+                nonce,
+                hash,
+                header_hash,
+                mix_hash: None,
+                solution: Some(solution),
+                nonce_512: None,
+                hash_512: None,
+                extranonce2: extranonce2.clone(),
+                ntime: ntime.clone(),
+            }
+        })
+    })
+}
+
 /// Detect optimal thread count from env or CPU cores.
 pub fn detect_threads() -> usize {
     match std::env::var("ZION_THREADS") {
@@ -763,6 +859,8 @@ mod tests {
             ntime: "00000000".to_string(),
             height: 0,
             seed_hash: None,
+            eq_params: None,
+            eq_pers: None,
         };
         let share = find_auxpow_share(&job, 2, 1_000).expect("should find share with max target");
         assert_eq!(share.coin, job.coin);
@@ -805,6 +903,8 @@ mod tests {
             ntime: "5a5ac000".to_string(),
             height: 0,
             seed_hash: None,
+            eq_params: None,
+            eq_pers: None,
         };
         let share = find_auxpow_share(&job, 2, 1_000)
             .expect("verushash CPU scanner should find a share with max target");

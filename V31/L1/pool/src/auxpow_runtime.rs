@@ -166,6 +166,8 @@ fn external_job_to_package(job: &ExternalJob, coin: ExternalCoin) -> JobPackage 
             job.ntime.clone()
         },
         seed_hash_hex: job.seed_hash.clone().unwrap_or_default(),
+        eq_params: job.eq_params.clone().unwrap_or_default(),
+        eq_pers: job.eq_pers.clone().unwrap_or_default(),
         received_at: Some(Instant::now()),
     }
 }

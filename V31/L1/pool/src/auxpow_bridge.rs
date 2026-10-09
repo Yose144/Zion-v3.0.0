@@ -19,6 +19,10 @@ pub struct JobPackage {
     /// RandomX seed hash hex (XMR) — forwarded to miners so their RandomX
     /// VM initializes with the correct epoch seed.
     pub seed_hash_hex: String,
+    /// Equihash "N_K" params from zcash-family notify (e.g. "144_5").
+    pub eq_params: String,
+    /// Blake2b personalization from zcash-family notify (e.g. "sngemPoW").
+    pub eq_pers: String,
     /// Wall-clock time when the job was received from the upstream pool.
     /// Used to drop stale jobs before they are sent to miners.
     pub received_at: Option<Instant>,
@@ -442,6 +446,8 @@ mod tests {
             extranonce1_hex: "00".into(),
             ntime: "00000000".into(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: None,
         };
         bridge.push_job(job.clone());
@@ -464,6 +470,8 @@ mod tests {
                 extranonce1_hex: String::new(),
                 ntime: String::new(),
                 seed_hash_hex: String::new(),
+                eq_params: String::new(),
+                eq_pers: String::new(),
                 received_at: None,
             });
         }
@@ -485,6 +493,8 @@ mod tests {
             extranonce1_hex: String::new(),
             ntime: String::new(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: None,
         });
         bridge.push_job(JobPackage {
@@ -497,6 +507,8 @@ mod tests {
             extranonce1_hex: String::new(),
             ntime: String::new(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: None,
         });
         let popped = bridge.pop_job().unwrap();
@@ -529,6 +541,8 @@ mod tests {
             extranonce1_hex: String::new(),
             ntime: String::new(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: None,
         });
         multi.insert(ExternalCoin::Kaspa, bridge);
@@ -551,6 +565,8 @@ mod tests {
             extranonce1_hex: String::new(),
             ntime: String::new(),
             seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
             received_at: None,
         });
         let job = bridge.get_job_by_id("findme").unwrap();
@@ -601,6 +617,8 @@ mod tests {
                     extranonce1_hex: String::new(),
                     ntime: "00000000".into(),
                     seed_hash_hex: String::new(),
+                    eq_params: String::new(),
+                    eq_pers: String::new(),
                     received_at: None,
                 },
             );

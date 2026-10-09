@@ -153,6 +153,14 @@ pub struct ExternalJob {
     pub extranonce2: String,
     #[serde(skip)]
     pub epoch: Option<u32>,
+    /// Equihash "N_K" params from zcash-family notify params[8]
+    /// (e.g. "144_5" on zpool equihash192). None = default for the algo.
+    #[serde(skip)]
+    pub eq_params: Option<String>,
+    /// Blake2b personalization from zcash-family notify params[9]
+    /// (e.g. "sngemPoW" on zpool, "ZcashPoW" default).
+    #[serde(skip)]
+    pub eq_pers: Option<String>,
 }
 
 impl Default for ExternalJob {
@@ -176,6 +184,8 @@ impl Default for ExternalJob {
             extranonce1: Vec::new(),
             extranonce2: String::new(),
             epoch: None,
+            eq_params: None,
+            eq_pers: None,
         }
     }
 }
@@ -1079,17 +1089,33 @@ impl AuxPowClient {
         if params.len() >= 8 {
             let job_id = params[0].as_str().unwrap_or("").to_string();
 
-            // Detect ZcashStratum (VRSC/FLUX/ZEC) format:
-            //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution?]
+            // Detect ZcashStratum (VRSC/FLUX/ZEC/zpool-equihash) format:
+            //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution_or_params?, pers?]
             // The first field after job_id is version (4 bytes = 8 hex chars).
             // Plain ZEC pools (f2pool) send only 8 params — no solution field;
             // the miner constructs the equihash solution itself.
+            // zpool equihash ports append params[8]="N_K" (e.g. "144_5") and
+            // params[9]=personalization (e.g. "sngemPoW").
             // Standard stratum (BTC/LTC): [job_id, prevhash, coinb1, coinb2, merkle, version, nbits, ntime, clean]
             // where params[1] is a 64-char hex (32-byte prevhash).
             let first_hex = params[1].as_str().unwrap_or("");
             let first_len = first_hex.trim_start_matches("0x").len();
+            // Shape-detect zcash-family even when protocol is generic
+            // Stratum: params[4] is the 64-hex "reserved" field and
+            // params[7] is the clean_jobs bool — yiimp coinbase-family
+            // jobs have a 64-hex prevhash at params[1] instead.
+            let zcash_shape = first_len == 8
+                && params.len() >= 8
+                && params[4]
+                    .as_str()
+                    .map(|s| s.trim_start_matches("0x").len() == 64)
+                    .unwrap_or(false)
+                && params[7].is_boolean();
 
-            if first_len == 8 && self.protocol == StratumProtocol::ZcashStratum {
+            if zcash_shape
+                && (self.protocol == StratumProtocol::ZcashStratum
+                    || self.protocol == StratumProtocol::Stratum)
+            {
                 // ── ZcashStratum (VRSC) full header construction ──
                 let version = parse_hex_value(&params[1]).unwrap_or_default();
                 let prevhash = parse_hex_value(&params[2]).unwrap_or_default();
@@ -1104,15 +1130,31 @@ impl AuxPowClient {
                     .or_else(|| params[6].as_u64().map(|n| format!("{:08x}", n)))
                     .or_else(|| params[6].as_i64().map(|n| format!("{:08x}", n)))
                     .unwrap_or_default();
-                let mut solution = params
-                    .get(8)
-                    .and_then(|v| parse_hex_value(v))
-                    .unwrap_or_default();
+                // params[8] is context-dependent: Verus/zcash pools may send
+                // a partial solution blob; zpool equihash sends "N_K" params
+                // (e.g. "144_5") and params[9] the Blake2b personalization
+                // (e.g. "sngemPoW"). Distinguish by the N_K shape.
+                let is_equihash_algo = self.config.algorithm.starts_with("equihash");
+                let param8_str = params.get(8).and_then(|v| v.as_str()).unwrap_or("");
+                let (eq_params, solution_param) =
+                    if is_equihash_algo && param8_str.contains('_') {
+                        (Some(param8_str.to_string()), None)
+                    } else {
+                        (None, params.get(8).and_then(|v| parse_hex_value(v)))
+                    };
+                let eq_pers = if is_equihash_algo {
+                    params.get(9).and_then(|v| v.as_str()).map(String::from)
+                } else {
+                    None
+                };
+                let mut solution = solution_param.unwrap_or_default();
                 // Pad solution to VERUS_SOLUTION_SIZE (1344 bytes) — the pool
                 // may send an empty or partial solution; the miner fills the
                 // nonceSpace during mining, but the header must be full-size.
+                // Equihash jobs hash only the 140-byte header — skip the
+                // varint+solution append there.
                 const VERUS_SOLUTION_SIZE: usize = 1344;
-                if solution.len() < VERUS_SOLUTION_SIZE {
+                if !is_equihash_algo && solution.len() < VERUS_SOLUTION_SIZE {
                     solution.resize(VERUS_SOLUTION_SIZE, 0);
                 }
 
@@ -1171,6 +1213,9 @@ impl AuxPowClient {
                 let ntime_bytes = parse_hex_value(&params[5]).unwrap_or_else(|| vec![0u8; 4]);
                 let nbits_bytes = parse_hex_value(&params[6]).unwrap_or_else(|| vec![0u8; 4]);
 
+                // Equihash: hash input is the 140-byte header alone (the
+                // solution is consensus data, not hashed). Verus et al. hash
+                // header || varint || solution placeholder.
                 let varint = hasher::zcash_varint_for_len(solution.len());
                 let mut header = Vec::with_capacity(
                     version.len()
@@ -1190,8 +1235,10 @@ impl AuxPowClient {
                 header.extend_from_slice(&ntime_bytes);
                 header.extend_from_slice(&nbits_bytes);
                 header.extend_from_slice(&nonce_field);
-                header.extend_from_slice(&varint);
-                header.extend_from_slice(&solution);
+                if !is_equihash_algo {
+                    header.extend_from_slice(&varint);
+                    header.extend_from_slice(&solution);
+                }
 
                 let timestamp = u32::from_str_radix(ntime.trim_start_matches("0x"), 16)
                     .ok()
@@ -1211,6 +1258,8 @@ impl AuxPowClient {
                     extranonce1: en1,
                     block_number: Some(block_number),
                     ntime: ntime.clone(),
+                    eq_params,
+                    eq_pers,
                     ..Default::default()
                 };
                 *self.latest_job_id.lock().await = Some(job.job_id.clone());
@@ -1634,7 +1683,31 @@ impl AuxPowClient {
                 })
             }
             _ => {
-                if algo.contains("kheavyhash") {
+                if algo.contains("equihash") {
+                    // zpool/z-nomp equihash submit:
+                    //   [worker, job_id, ntime, nonce(32B hex), soln]
+                    // The nonce field = extranonce1 prefix + miner-written
+                    // suffix (base_nonce LE at offset en1_len) + zero pad.
+                    let en1 = self.extranonce1.lock().await.clone();
+                    let mut nonce32 = [0u8; 32];
+                    let en1_len = en1.len().min(32);
+                    nonce32[..en1_len].copy_from_slice(&en1[..en1_len]);
+                    let nb = nonce.to_le_bytes();
+                    let suffix_len = nb.len().min(32 - en1_len);
+                    nonce32[en1_len..en1_len + suffix_len]
+                        .copy_from_slice(&nb[..suffix_len]);
+                    json!({
+                        "id": self.next_rpc_id(),
+                        "method": "mining.submit",
+                        "params": [
+                            worker,
+                            job_id,
+                            ntime,
+                            hex::encode(nonce32),
+                            solution_hex,
+                        ]
+                    })
+                } else if algo.contains("kheavyhash") {
                     // KaspaStratum (2miners/woolypooly): [worker, job_id, nonce16]
                     json!({
                         "id": self.next_rpc_id(),
@@ -1883,6 +1956,8 @@ impl From<StratumJob> for super::Job {
             ntime: j.ntime,
             height: j.height,
             seed_hash: j.seed_hash,
+            eq_params: None,
+            eq_pers: None,
         }
     }
 }
