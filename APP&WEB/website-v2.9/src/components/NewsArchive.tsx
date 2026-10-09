@@ -72,6 +72,24 @@ export default function NewsArchive() {
                     </span>
                   </div>
 
+                  {/* Visual preview */}
+                  {article.image && (
+                    <div className="relative mb-4 aspect-[16/9] overflow-hidden rounded-xl border border-white/10">
+                      <img
+                        src={article.image}
+                        srcSet={article.imageSrcSet}
+                        sizes="(min-width: 768px) 46vw, 100vw"
+                        alt={article.imageAlt ? (cs ? article.imageAlt.cs : article.imageAlt.en) : ''}
+                        width={1672}
+                        height={941}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    </div>
+                  )}
+
                   {/* Title */}
                   <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors mb-3 leading-snug">
                     {cs ? article.title.cs : article.title.en}

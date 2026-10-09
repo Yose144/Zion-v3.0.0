@@ -25,12 +25,36 @@ export interface NewsArticle {
   href: string;            // internal or external link
   external?: boolean;
   banner?: 'doge-vs-zion'; // special visual banner
+  image?: string;          // visual preview (public/ path)
+  imageSrcSet?: string;    // optional responsive srcSet for image
+  imageAlt?: { cs: string; en: string };
   homepage?: boolean;      // false = hide on homepage feed (still in /news archive)
 }
 
 // ─── Articles data ────────────────────────────────────────────────────────────
 
 export const NEWS_ARTICLES: NewsArticle[] = [
+  {
+    slug: 'l5-vision-complete-12-nodes',
+    date: '2026-10-09',
+    tag: { cs: 'Free World', en: 'Free World' },
+    tagColor: 'text-emerald-300',
+    title: {
+      cs: 'L5 Vision je kompletní — dvanáct bodů, jedna planeta, jeden příběh',
+      en: 'L5 Vision is complete — twelve points, one planet, one story',
+    },
+    summary: {
+      cs: 'Amenti pod pyramidy Gízy se stala dvanáctým a posledním bodem mapy — L5 Free World je kompletní. Dvanáct míst, dvanáct světů: Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, Ekam, LUMI Nová Amerika, Uluru, Boa Esperança, Kailash, Amenti… a María del Camino, kde příběh pokračuje jako první živý uzel sítě. Každý bod má vlastní stránku, artwork a své místo na holografické planetě. Projděte si celou mapu dvanácti bodů.',
+      en: 'Amenti beneath the Giza pyramids became the twelfth and final point on the map — L5 Free World is complete. Twelve places, twelve worlds: Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, Ekam, LUMI Nová Amerika, Uluru, Boa Esperança, Kailash, Amenti… and María del Camino, where the story continues as the network’s first living node. Every point has its own page, artwork and place on the holographic planet. Explore the full twelve-point map.',
+    },
+    href: '/l5-free-world',
+    image: '/images/home/hero.webp',
+    imageSrcSet: '/images/home/hero-m.webp 960w, /images/home/hero.webp 1672w',
+    imageAlt: {
+      cs: 'Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6',
+      en: 'L5 Free World map — twelve points and layers L1–L6',
+    },
+  },
   {
     slug: 'zion-v320-alpha-beta-stable-path',
     date: '2026-10-05',
@@ -638,6 +662,24 @@ export default function NewsFeed() {
                     {article.banner === 'doge-vs-zion' && (
                       <div className="mb-4">
                         <DogeVsZionBanner cs={cs} />
+                      </div>
+                    )}
+
+                    {/* Visual preview */}
+                    {article.image && (
+                      <div className="relative mb-3 aspect-[16/9] overflow-hidden rounded-xl border border-white/10">
+                        <img
+                          src={article.image}
+                          srcSet={article.imageSrcSet}
+                          sizes="(min-width: 768px) 46vw, 100vw"
+                          alt={article.imageAlt ? (cs ? article.imageAlt.cs : article.imageAlt.en) : ''}
+                          width={1672}
+                          height={941}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                       </div>
                     )}
 
