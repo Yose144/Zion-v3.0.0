@@ -59,7 +59,7 @@
 | **vast.ai instance 40791384** | ❌ **pryč — ověřeno API** (key nastaven 2026-10-09, account kredit **$0.61**). Checkpoint-8000 ztracen definitivně. |
 | **Dataset gap**: 1 558 vs 22 181 (v2.2) / 48 436 (v2.3) | 🟢 **lokální syntéza běží** — `gen_qa_pairs.py` + llama-server (Qwen3-4B-Q4_K_M, ngl15, :8002): 6 185 chunků, ~4.5 s/pár → ~6k párů / ~14 h. Korpus: `V31/` + `docs/{3.0.1Genesis,3.0.4,3.0.5,3.0.6,TerraNova,ops}` + `archive/V3/docs` + Edge `l3-rag-docs`. Resumable (`generated_qa.done`). |
 | Retrain | QLoRA smoke: vast RTX 3090 $0.179/h (3.4 h za kredit) · real run: A100 40GB $0.375/h — potřeba dobít kredit |
-| 2.4 wiring | napojení orchestrator.rs/message_bus/tool_registry na živé služby (node :9445, pool :8080, warpd) |
+| 2.4 wiring | ✅ **mapováno → `Hiran/2.4/WIRING_MAP.md`** — live Edge topology ověřena (ss+systemctl): 11 port-diffů v kódu (issobella 8097, dao 8456, node2/3 9446/9447, stats 8080…), :8002 = sshd inference tunnel, Maestro je CLI-only (není v :8001 API). Robustní plán: env endpoints, `/v2/*` mount + mutation gate + audit + breaker. `cargo check` čistý. |
 
 **Lokální inference (běží)**: `~/zion-hiran/bin/llama-b11065/llama-server` +
 `models/Qwen3-4B-Q4_K_M.gguf` na :8002 — GPU 1070 Ti částečný offload (15/36 vrstev,
