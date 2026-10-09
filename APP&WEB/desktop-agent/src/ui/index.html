@@ -1206,6 +1206,7 @@
     .stream-card.stream-gpu  { border-left: 3px solid #fcd116; }
     .stream-card.stream-cpu  { border-left: 3px solid #f59e0b; }
     .stream-card.stream-ks   { border-left: 3px solid #34d399; }
+    .stream-card.stream-gpu2 { border-left: 3px solid #38bdf8; }
     .stream-card.active {
       background: rgba(255,255,255,0.06);
       border-color: rgba(255,255,255,0.12);
@@ -4719,6 +4720,9 @@
                 <option value="XMR">CPU: XMR</option>
                 <option value="RTM">CPU: RTM</option>
               </select>
+              <select id="gpu-coin2-select-dashboard" class="algo-select" style="width: auto; min-width: 120px; padding: 6px 28px 6px 12px; font-size: 11px;" title="Stream 4 — second GPU external coin (Quad mode)">
+                <option value="">GPU2: Off</option>
+              </select>
               <span id="algo-status" class="view-hidden"></span>
               <span id="backend-pill" class="pill pill-compact">Backend: Auto</span>
             </div>
@@ -4903,11 +4907,41 @@
                 </div>
               </div>
             </div>
-            <!-- Stream 4: BTCunlock key lottery — separate local service
+            <!-- Stream 4 (Quad mode): second GPU AuxPoW coin — DOM id 5
+                 because slot 4 is the BTCunlock service card below. -->
+            <div class="stream-card stream-gpu2" id="stream-card-5">
+              <div class="stream-card-header">
+                <span class="stream-label">Stream 4 · GPU</span>
+                <span class="stream-coin" id="stream-5-coin">—</span>
+              </div>
+              <div class="stream-card-body">
+                <div class="stream-hashrate" id="stream-5-hashrate">—</div>
+                <div class="stream-algo" id="stream-5-algo">—</div>
+              </div>
+              <div class="stream-card-footer">
+                <span class="stream-shares" id="stream-5-shares">0 / 0</span>
+                <span class="stream-status" id="stream-5-status">inactive</span>
+              </div>
+              <div class="stream-detail">
+                <div class="stream-detail-item">
+                  <span class="stream-detail-label">Avg 60s</span>
+                  <span class="stream-detail-value" id="stream-5-avg60">—</span>
+                </div>
+                <div class="stream-detail-item">
+                  <span class="stream-detail-label">Eff.</span>
+                  <span class="stream-detail-value" id="stream-5-eff">—</span>
+                </div>
+                <div class="stream-detail-item">
+                  <span class="stream-detail-label">Last</span>
+                  <span class="stream-detail-value" id="stream-5-last">—</span>
+                </div>
+              </div>
+            </div>
+            <!-- BTCunlock key lottery — separate local service
                  (btcunlock-ui :8777) sharing the GPU, not a pool stream. -->
             <div class="stream-card stream-ks" id="stream-card-4">
               <div class="stream-card-header">
-                <span class="stream-label">Stream 4 · BTC LOTTERY</span>
+                <span class="stream-label">BTC LOTTERY</span>
                 <span class="stream-coin" id="stream-4-coin">—</span>
               </div>
               <div class="stream-card-body">
@@ -6669,6 +6703,14 @@
                 <option value="QTU">QTU — qpow-poseidon2 (Quantus)</option>
               </select>
               <div class="slider-hint">ZION on GPU + external GPU coin simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
+
+              <div class="section-divider">Quad Mode — Second GPU Coin</div>
+
+              <label class="wizard-label-sm">Stream 4 — GPU external coin 2</label>
+              <select id="gpu-coin2-select" class="algo-select">
+                <option value="" selected>Off</option>
+              </select>
+              <div class="slider-hint">Quad mode: a second GPU coin time-sliced on the same card (e.g. QTC on Stream 2 + ZANO on Stream 4). Must differ from Stream 2 — the pool drops the second stream on collision.</div>
 
               <div class="section-divider">CPU Stream</div>
 

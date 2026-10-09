@@ -75,6 +75,10 @@ pub struct AutonomousProfitRouter {
     pub stream2_coin: Option<ExternalCoin>,
     /// Current Stream 3 coin (CPU external), or None if disabled.
     pub stream3_coin: Option<ExternalCoin>,
+    /// Current Stream 4 coin (second GPU external, Quad mode).
+    /// Autonomous selection does not pick this yet — it is populated from
+    /// `ZION_STREAM4_FORCE_COIN` only.
+    pub stream4_coin: Option<ExternalCoin>,
     /// Cached profit data per coin.
     profit_cache: HashMap<ExternalCoin, CoinProfit>,
     /// Last profit fetch time.
@@ -158,6 +162,7 @@ impl AutonomousProfitRouter {
             oracle: StreamProfitOracle::new(),
             stream2_coin: None,
             stream3_coin: None,
+            stream4_coin: None,
             profit_cache: HashMap::new(),
             last_fetch: None,
             fetch_interval: Duration::from_secs(fetch_interval_secs),
@@ -528,6 +533,10 @@ impl AutonomousProfitRouter {
             .stream3_coin
             .map(|c| c.ticker().to_string())
             .unwrap_or_default();
+        let gpu_coin_2 = self
+            .stream4_coin
+            .map(|c| c.ticker().to_string())
+            .unwrap_or_default();
 
         let gpu_profit = self
             .stream2_coin
@@ -544,6 +553,7 @@ impl AutonomousProfitRouter {
             miner_id: miner_id.to_string(),
             gpu_coin,
             cpu_coin,
+            gpu_coin_2,
             gpu_profit_usd_day: gpu_profit,
             cpu_profit_usd_day: cpu_profit,
         })

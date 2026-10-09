@@ -129,7 +129,7 @@ impl App {
         let stats = self.runtime.stats().await;
 
         // Detect accepted/rejected share events and append to the log pane.
-        for id in [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal] {
+        for id in [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal, StreamId::GpuExternal2] {
             let current = stats.get(&id).cloned().unwrap_or_else(|| StreamStats::new(id));
             let prev = self.last_stats.get(&id).cloned().unwrap_or_else(|| StreamStats::new(id));
 
@@ -266,7 +266,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn draw_streams_table(frame: &mut Frame, app: &App, area: Rect) {
-    let rows: Vec<Row> = [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal]
+    let rows: Vec<Row> = [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal, StreamId::GpuExternal2]
         .iter()
         .map(|id| {
             let s = app.stats.get(id).cloned().unwrap_or_else(|| StreamStats::new(*id));
@@ -395,6 +395,7 @@ fn stream_label(id: StreamId) -> &'static str {
         StreamId::Zion => "ZION",
         StreamId::GpuExternal => "GPU",
         StreamId::CpuExternal => "CPU",
+        StreamId::GpuExternal2 => "GPU2",
     }
 }
 
@@ -405,6 +406,7 @@ fn stream_coin_name(s: &StreamStats, id: StreamId) -> String {
             StreamId::Zion => "ZION".to_string(),
             StreamId::GpuExternal => "BOOST 1".to_string(),
             StreamId::CpuExternal => "BOOST 2".to_string(),
+            StreamId::GpuExternal2 => "BOOST 3".to_string(),
         }
     }
     #[cfg(not(feature = "public_build"))]

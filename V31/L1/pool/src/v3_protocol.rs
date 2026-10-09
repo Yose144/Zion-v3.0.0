@@ -79,6 +79,10 @@ pub enum PoolMessage {
         external_stream: Option<ExternalStreamJob>,
         #[serde(default)]
         external_stream_cpu: Option<ExternalStreamJob>,
+        /// Second GPU AuxPoW stream (Quad mode) — e.g. ZANO alongside QTU.
+        /// Absent on pre-Quad pools; miners treat it as disabled.
+        #[serde(default)]
+        external_stream_2: Option<ExternalStreamJob>,
     },
     Submit {
         job_id: u64,
@@ -184,6 +188,9 @@ pub enum PoolMessage {
         gpu_coin: String,
         #[serde(default)]
         cpu_coin: String,
+        /// Optional second GPU stream coin (Quad mode).
+        #[serde(default)]
+        gpu_coin_2: String,
         #[serde(default)]
         gpu_profit_usd_day: f64,
         #[serde(default)]
@@ -246,6 +253,7 @@ mod tests {
                 ntime_hex: "".into(),
             }),
             external_stream_cpu: None,
+            external_stream_2: None,
         };
         let encoded = encode_message(&msg).unwrap();
         let decoded = decode_message(&encoded).unwrap();
@@ -258,6 +266,7 @@ mod tests {
             miner_id: "bob".into(),
             gpu_coin: "KAS".into(),
             cpu_coin: "VRSC".into(),
+            gpu_coin_2: "ZANO".into(),
             gpu_profit_usd_day: 1.5,
             cpu_profit_usd_day: 0.8,
         };

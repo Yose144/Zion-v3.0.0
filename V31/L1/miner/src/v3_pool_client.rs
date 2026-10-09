@@ -39,6 +39,10 @@ pub struct V3JobBundle {
     pub zion: V3ZionJob,
     pub gpu_external: Option<ExternalStreamJob>,
     pub cpu_external: Option<ExternalStreamJob>,
+    /// Second GPU external stream (Quad mode). None on pools that don't
+    /// emit `external_stream_2`, or when the embedded stream-1 coin
+    /// collided with the configured gpu2 preference.
+    pub gpu_external_2: Option<ExternalStreamJob>,
 }
 
 /// Result of a ZION share submission.
@@ -80,10 +84,17 @@ pub struct V3PoolClient {
     // We use a simpler approach: the read loop dispatches Result/ExternalResult
     // to dedicated channels.
     zion_result_rx: Mutex<mpsc::Receiver<V3ShareResult>>,
-    // Per-coin external result channels to prevent cross-coin result mismatch.
-    // VRSC (CpuExternal) and ZANO (GpuExternal) each get their own channel.
-    vrsc_result_rx: Mutex<mpsc::Receiver<V3ExternalResult>>,
-    zano_result_rx: Mutex<mpsc::Receiver<V3ExternalResult>>,
+    // Per-coin external result channels, keyed by uppercase coin ticker.
+    // A dedicated channel per coin prevents cross-coin result mismatch
+    // when two GPU streams (e.g. QTU + ZANO) submit concurrently.
+    // Senders are shared with the read loop; receivers are created lazily
+    // on first submit for a coin and held per-coin so concurrent submits
+    // for the SAME coin serialize on the receiver mutex.
+    ext_result_senders:
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, mpsc::Sender<V3ExternalResult>>>>,
+    ext_result_receivers: Mutex<
+        std::collections::HashMap<String, std::sync::Arc<Mutex<mpsc::Receiver<V3ExternalResult>>>>,
+    >,
     // Becomes true when the read loop detects the pool has closed the
     // connection.  Used to fail fast on subsequent submits.
     conn_closed: watch::Receiver<bool>,
@@ -187,11 +198,13 @@ impl V3PoolClient {
         let (job_tx, job_rx) = watch::channel::<Option<V3JobBundle>>(None);
         let job_tx_loop = job_tx.clone();
         let (zion_result_tx, zion_result_rx) = mpsc::channel::<V3ShareResult>(16);
-        // Per-coin channels: VRSC results and ZANO results are dispatched
-        // separately to prevent result mismatch when shares are submitted
-        // concurrently.
-        let (vrsc_result_tx, vrsc_result_rx) = mpsc::channel::<V3ExternalResult>(16);
-        let (zano_result_tx, zano_result_rx) = mpsc::channel::<V3ExternalResult>(16);
+        // Per-coin result dispatch: the read loop looks up the channel for
+        // the result's coin ticker; submit creates channel pairs lazily so
+        // any coin (ZANO, QTU, VRSC, …) gets isolated result routing.
+        let ext_result_senders = std::sync::Arc::new(std::sync::Mutex::new(
+            std::collections::HashMap::<String, mpsc::Sender<V3ExternalResult>>::new(),
+        ));
+        let ext_senders_loop = ext_result_senders.clone();
 
         // Watch channel to signal when the pool closes the connection.
         let (conn_closed_tx, conn_closed_rx) = watch::channel(false);
@@ -223,13 +236,15 @@ impl V3PoolClient {
                                 stream_weights,
                                 external_stream,
                                 external_stream_cpu,
+                                external_stream_2,
                             }) => {
                                 debug!(
-                                    "V3 job received: id={} height={} gpu_ext={} cpu_ext={}",
+                                    "V3 job received: id={} height={} gpu_ext={} cpu_ext={} gpu_ext2={}",
                                     job_id,
                                     height,
                                     external_stream.is_some(),
-                                    external_stream_cpu.is_some()
+                                    external_stream_cpu.is_some(),
+                                    external_stream_2.is_some()
                                 );
                                 let bundle = V3JobBundle {
                                     zion: V3ZionJob {
@@ -245,6 +260,7 @@ impl V3PoolClient {
                                     },
                                     gpu_external: external_stream,
                                     cpu_external: external_stream_cpu,
+                                    gpu_external_2: external_stream_2,
                                 };
                                 latest_zion_in_loop
                                     .store(job_id, std::sync::atomic::Ordering::Relaxed);
@@ -291,18 +307,29 @@ impl V3PoolClient {
                                     status,
                                     coin: coin.clone(),
                                 };
-                                // Dispatch to per-coin channel.  Coin names
-                                // from the pool are uppercase tickers
-                                // ("VRSC", "ZANO").  Match case-insensitively.
+                                // Dispatch by coin ticker — each stream's
+                                // submissions wait on the channel for the
+                                // coin they submitted, so two concurrent
+                                // GPU coins can never consume each
+                                // other's results.
                                 let coin_upper = coin.to_uppercase();
-                                let send_result = if coin_upper == "VRSC" {
-                                    vrsc_result_tx.try_send(result)
-                                } else {
-                                    // ZANO and any other GPU-external coin
-                                    zano_result_tx.try_send(result)
-                                };
-                                if send_result.is_err() {
-                                    warn!("V3 read loop: external result channel full, dropping result");
+                                let tx = ext_senders_loop
+                                    .lock()
+                                    .unwrap()
+                                    .get(&coin_upper)
+                                    .cloned();
+                                match tx {
+                                    Some(tx) => {
+                                        if tx.try_send(result).is_err() {
+                                            warn!("V3 read loop: external result channel full, dropping result");
+                                        }
+                                    }
+                                    None => {
+                                        warn!(
+                                            coin = %coin_upper,
+                                            "V3 read loop: external result for unsubscribed coin, dropping"
+                                        );
+                                    }
                                 }
                             }
                             Ok(PoolMessage::Cancel { job_id, reason }) => {
@@ -356,8 +383,8 @@ impl V3PoolClient {
             job_rx: Mutex::new(job_rx),
             job_tx,
             zion_result_rx: Mutex::new(zion_result_rx),
-            vrsc_result_rx: Mutex::new(vrsc_result_rx),
-            zano_result_rx: Mutex::new(zano_result_rx),
+            ext_result_senders,
+            ext_result_receivers: Mutex::new(std::collections::HashMap::new()),
             conn_closed: conn_closed_rx,
             latest_zion_job_id,
         })
@@ -481,8 +508,14 @@ impl V3PoolClient {
     }
 
     /// Submit an AuxPoW (external) share to the pool for forwarding to the
-    /// external pool (ZANO, VRSC, etc.).  The `is_vrsc` parameter selects
-    /// the correct per-coin result channel.
+    /// external pool (ZANO, VRSC, QTU, …). The result is awaited on the
+    /// per-coin channel — results are dispatched by coin ticker, so two
+    /// concurrent GPU streams never consume each other's results.
+    ///
+    /// IMPORTANT: results for the same coin can arrive concurrently from
+    /// both GPU slots only if the miner config serves the same coin twice
+    /// — pool-side dedup prevents that, and the receiver mutex serializes
+    /// same-coin submits anyway.
     #[allow(clippy::too_many_arguments)]
     pub async fn submit_external_share(
         &self,
@@ -496,9 +529,28 @@ impl V3PoolClient {
         extranonce1_hex: &str,
         solution_hex: &str,
         ntime_hex: &str,
-        is_vrsc: bool,
     ) -> Result<V3ExternalResult> {
         self.ensure_connected()?;
+        // Ensure the per-coin result channel exists BEFORE the submit is
+        // written — a fast result arriving before the sender is registered
+        // would be dropped by the read loop and this call would time out.
+        let coin_key = coin.to_uppercase();
+        let rx_arc = {
+            let mut rxs = self.ext_result_receivers.lock().await;
+            match rxs.get(&coin_key) {
+                Some(rx) => rx.clone(),
+                None => {
+                    let (tx, rx) = mpsc::channel::<V3ExternalResult>(16);
+                    self.ext_result_senders
+                        .lock()
+                        .unwrap()
+                        .insert(coin_key.clone(), tx);
+                    let rx = std::sync::Arc::new(Mutex::new(rx));
+                    rxs.insert(coin_key, rx.clone());
+                    rx
+                }
+            }
+        };
         let msg = PoolMessage::ExternalSubmit {
             miner_id: self.miner_id.clone(),
             worker_name: self.worker_name.clone(),
@@ -520,12 +572,7 @@ impl V3PoolClient {
         // submissions — without this, a late-arriving result from a previous
         // share would be picked up as the result for THIS share, causing
         // false rejections ("result shifting").
-        let rx_lock = if is_vrsc {
-            self.vrsc_result_rx.lock().await
-        } else {
-            self.zano_result_rx.lock().await
-        };
-        let mut rx = rx_lock;
+        let mut rx = rx_arc.lock().await;
         while let Ok(stale) = rx.try_recv() {
             ext_warn!(
                 coin = %stale.coin,
@@ -542,10 +589,13 @@ impl V3PoolClient {
     }
 
     /// Send a CoinPreference message (for autonomous profit routing).
+    /// `gpu_coin_2` pins the second GPU stream (Quad mode); pass "" when
+    /// the miner runs a single GPU external stream.
     pub async fn send_coin_preference(
         &self,
         gpu_coin: &str,
         cpu_coin: &str,
+        gpu_coin_2: &str,
         gpu_profit_usd_day: f64,
         cpu_profit_usd_day: f64,
     ) -> Result<()> {
@@ -554,6 +604,7 @@ impl V3PoolClient {
             miner_id: self.miner_id.clone(),
             gpu_coin: gpu_coin.to_string(),
             cpu_coin: cpu_coin.to_string(),
+            gpu_coin_2: gpu_coin_2.to_string(),
             gpu_profit_usd_day,
             cpu_profit_usd_day,
         };
@@ -616,8 +667,111 @@ mod tests {
                 timestamp: 0,
                 ntime_hex: "00000000".into(),
             }),
+            external_stream_2: None,
         })
         .unwrap()
+    }
+
+    fn ext_job(coin: &str, algo: &str, job_id: &str) -> ExternalStreamJob {
+        ExternalStreamJob {
+            coin: coin.into(),
+            algorithm: algo.into(),
+            job_id: job_id.into(),
+            header_hex: "22".repeat(64),
+            target_hex: "ff".repeat(64),
+            height: 1,
+            extranonce1_hex: "aabbccdd".into(),
+            protocol: String::new(),
+            seed_hash_hex: String::new(),
+            timestamp: 0,
+            ntime_hex: "00000000".into(),
+        }
+    }
+
+    /// Quad mode: the Job line's `external_stream_2` must land in
+    /// `V3JobBundle.gpu_external_2` alongside the first GPU stream.
+    #[tokio::test]
+    async fn job_bundle_carries_second_gpu_stream() {
+        let addr = spawn_mock_pool(|_lines, mut writer| async move {
+            let line = encode_message(&PoolMessage::Job {
+                job_id: 9,
+                algorithm: "ekam_deeksha".into(),
+                start_nonce: 0,
+                nonce_count: 1_000_000,
+                target_hex: "ff".repeat(64),
+                header_hex: "00".repeat(64),
+                height: 9,
+                stream_weights: String::new(),
+                external_stream: Some(ext_job("QTU", "qpow-poseidon2", "qtu_1")),
+                external_stream_cpu: Some(ext_job("VRSC", "verushash", "vrsc_1")),
+                external_stream_2: Some(ext_job("ZANO", "progpow_zano", "zano_1")),
+            })
+            .unwrap();
+            writer.write_all(line.as_bytes()).await.unwrap();
+            writer.flush().await.unwrap();
+            tokio::time::sleep(Duration::from_secs(5)).await;
+        })
+        .await;
+
+        let client = V3PoolClient::connect(&addr, "m", "w", "ekam_deeksha", "cpu", "p")
+            .await
+            .unwrap();
+        let bundle = client
+            .next_job(Duration::from_secs(5))
+            .await
+            .expect("quad job never arrived");
+        assert_eq!(bundle.gpu_external.unwrap().job_id, "qtu_1");
+        assert_eq!(bundle.cpu_external.unwrap().coin, "VRSC");
+        let gpu2 = bundle.gpu_external_2.expect("gpu_external_2 missing");
+        assert_eq!(gpu2.coin, "ZANO");
+        assert_eq!(gpu2.job_id, "zano_1");
+    }
+
+    /// Two concurrent GPU streams submitting different coins must each get
+    /// their own result even when the pool replies in the opposite order —
+    /// the old is_vrsc two-channel dispatch cross-consumed results.
+    #[tokio::test]
+    async fn external_results_routed_by_coin() {
+        let addr = spawn_mock_pool(|mut lines, mut writer| async move {
+            // Read both ExternalSubmit lines (order of submission is
+            // nondeterministic — just consume two).
+            let l1 = lines.next_line().await.unwrap().unwrap();
+            let l2 = lines.next_line().await.unwrap().unwrap();
+            assert!(l1.contains("external_submit") && l2.contains("external_submit"));
+            // Reply REVERSED: ZANO result first, then QTU.
+            for coin in ["ZANO", "QTU"] {
+                let line = encode_message(&PoolMessage::ExternalResult {
+                    accepted: true,
+                    status: format!("{coin}-ok"),
+                    coin: coin.into(),
+                })
+                .unwrap();
+                writer.write_all(line.as_bytes()).await.unwrap();
+            }
+            writer.flush().await.unwrap();
+            tokio::time::sleep(Duration::from_secs(5)).await;
+        })
+        .await;
+
+        let client = std::sync::Arc::new(
+            V3PoolClient::connect(&addr, "m", "w", "ekam_deeksha", "cpu", "p")
+                .await
+                .unwrap(),
+        );
+        let c2 = client.clone();
+        let zano = tokio::spawn(async move {
+            c2.submit_external_share("ZANO", "progpow_zano", "z1", 1, None, &"ab".repeat(32), None, "", "", "")
+                .await
+        });
+        let qtu = client
+            .submit_external_share("QTU", "qpow-poseidon2", "q1", 1, None, &"cd".repeat(32), None, "", "", "")
+            .await
+            .expect("QTU submit failed");
+        let zano = zano.await.unwrap().expect("ZANO submit failed");
+        assert_eq!(qtu.coin, "QTU");
+        assert_eq!(qtu.status, "QTU-ok");
+        assert_eq!(zano.coin, "ZANO");
+        assert_eq!(zano.status, "ZANO-ok");
     }
 
     /// Spawns a mock V3 pool on loopback. Returns the address the client

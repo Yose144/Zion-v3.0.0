@@ -174,6 +174,7 @@ async fn main() -> Result<()> {
     }
     if args.no_gpu {
         config.stream2_enabled = false;
+        config.stream4_enabled = false;
     }
     if args.no_cpu {
         config.stream3_enabled = false;
