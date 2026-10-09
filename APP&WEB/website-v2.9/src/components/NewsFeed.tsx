@@ -571,7 +571,7 @@ function getAccent(tag: string) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const HOMEPAGE_LIMIT = 4;
+const HOMEPAGE_LIMIT = 3;
 
 export default function NewsFeed() {
   const { lang } = useLang();
