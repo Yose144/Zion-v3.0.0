@@ -1001,12 +1001,17 @@ function emitMinerStatusLine(reason) {
 function resolveResourcePath(...parts) {
   // In dev: assets live under __dirname/assets
   // In packaged: assets may live inside app.asar OR be copied into Resources via electron-builder extraResources.
+  // process.resourcesPath only exists inside Electron — guard so the resolver
+  // also works under plain node (tests, tooling).
+  const resPath = process.resourcesPath;
   const candidates = [
     path.join(__dirname, ...parts),
-    path.join(process.resourcesPath, ...parts),
-    path.join(process.resourcesPath, 'assets', ...parts),
-    path.join(process.resourcesPath, 'app.asar', ...parts),
-    path.join(process.resourcesPath, 'app.asar', 'src', ...parts)
+    ...(resPath ? [
+      path.join(resPath, ...parts),
+      path.join(resPath, 'assets', ...parts),
+      path.join(resPath, 'app.asar', ...parts),
+      path.join(resPath, 'app.asar', 'src', ...parts)
+    ] : [])
   ];
 
   for (const p of candidates) {

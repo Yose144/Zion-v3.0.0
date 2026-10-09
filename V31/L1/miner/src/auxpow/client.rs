@@ -1119,7 +1119,7 @@ impl AuxPowClient {
                 // ── ZcashStratum (VRSC) full header construction ──
                 let version = parse_hex_value(&params[1]).unwrap_or_default();
                 let prevhash = parse_hex_value(&params[2]).unwrap_or_default();
-                let merkle = parse_hex_value(&params[3]).unwrap_or_default();
+                let mut merkle = parse_hex_value(&params[3]).unwrap_or_default();
                 let reserved = parse_hex_value(&params[4]).unwrap_or_default();
                 let ntime = params[5].as_str().unwrap_or("00000000").to_string();
                 // nbits may be sent as a hex string ("1d00ffff") or as a JSON
@@ -1212,6 +1212,15 @@ impl AuxPowClient {
 
                 let ntime_bytes = parse_hex_value(&params[5]).unwrap_or_else(|| vec![0u8; 4]);
                 let nbits_bytes = parse_hex_value(&params[6]).unwrap_or_else(|| vec![0u8; 4]);
+                // yiimp equihash (zpool): notify sends merkleRootReversed =
+                // string_be(mr_hex) but the submit header uses mr_hex itself —
+                // the notify value must be byte-reversed for the hashed
+                // header. ZION_EQ144_MERKLE_REV=0 disables for probing.
+                if is_equihash_algo
+                    && std::env::var("ZION_EQ144_MERKLE_REV").as_deref() != Ok("0")
+                {
+                    merkle.reverse();
+                }
 
                 // Equihash: hash input is the 140-byte header alone (the
                 // solution is consensus data, not hashed). Verus et al. hash
