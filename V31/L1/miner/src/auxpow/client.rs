@@ -1684,10 +1684,12 @@ impl AuxPowClient {
             }
             _ => {
                 if algo.contains("equihash") {
-                    // zpool/z-nomp equihash submit:
-                    //   [worker, job_id, ntime, nonce(32B hex), soln]
-                    // The nonce field = extranonce1 prefix + miner-written
-                    // suffix (base_nonce LE at offset en1_len) + zero pad.
+                    // zpool equihash stratum submit (probed upstream):
+                    //   [worker, job_id, ntime, nonce_tail(28B hex), soln]
+                    // The nonce param is the 32-byte header nonce MINUS the
+                    // extranonce1 prefix — 56 hex chars, no separate en2 or
+                    // 4-byte nonce field. 64-hex and 8-hex both rejected
+                    // with "Invalid nonce size".
                     let en1 = self.extranonce1.lock().await.clone();
                     let mut nonce32 = [0u8; 32];
                     let en1_len = en1.len().min(32);
@@ -1703,7 +1705,7 @@ impl AuxPowClient {
                             worker,
                             job_id,
                             ntime,
-                            hex::encode(nonce32),
+                            hex::encode(&nonce32[en1_len..]),
                             solution_hex,
                         ]
                     })

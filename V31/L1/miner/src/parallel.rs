@@ -697,8 +697,17 @@ fn find_equihash144_share(
     let pers = job.eq_pers.clone().unwrap_or_else(|| "sngemPoW".to_string());
     let pers8 = pers.as_bytes();
     if pers8.len() > 8 {
+        crate::ext_warn!(pers = %pers, "equihash personalization too long");
         return None;
     }
+    crate::ext_warn!(
+        header_len = job.header.len(),
+        eq_params,
+        pers = %pers,
+        en1_len = job.extranonce.len(),
+        target = %hex::encode(job.target),
+        "eq144: starting CPU solver scan"
+    );
 
     let threads = std::env::var("ZION_EQ144_THREADS")
         .ok()
@@ -727,7 +736,10 @@ fn find_equihash144_share(
     let cancelled = Arc::new(AtomicBool::new(false));
     let chunk = (runs / threads as u64).max(1);
     (0..threads).into_par_iter().find_map_any(|ti| {
-        let mut solver = eq::Solver::new()?;
+        let Some(mut solver) = eq::Solver::new() else {
+            crate::ext_warn!(thread = ti, "eq144: solver alloc failed");
+            return None;
+        };
         let start = start_nonce.wrapping_add(ti as u64 * chunk);
         let count = if ti == threads - 1 {
             runs.saturating_sub(ti as u64 * chunk)

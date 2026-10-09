@@ -205,13 +205,14 @@ pub fn compress_indices(indices: &[u32; PROOFSIZE]) -> Vec<u8> {
     out
 }
 
-/// sha256d(header140 || "fd6400" || solution100) — the PoW block hash that
-/// the share target applies to.
+/// sha256d(header140 || varint(sol_len) || solution) — the PoW block hash
+/// the share target applies to. CompactSize(100) is the single byte 0x64
+/// (fd-prefixed varints only apply at >= 253 bytes).
 pub fn share_hash(header140: &[u8], solution: &[u8]) -> [u8; 32] {
     use sha2::Digest;
     let mut buf = Vec::with_capacity(HEADER_LEN + 3 + SOL_LEN);
     buf.extend_from_slice(header140);
-    buf.extend_from_slice(&[0xfd, (SOL_LEN & 0xff) as u8, 0x00]);
+    buf.extend_from_slice(&hasher::zcash_varint_for_len(solution.len()));
     buf.extend_from_slice(solution);
     let h1 = sha2::Sha256::digest(&buf);
     let h2 = sha2::Sha256::digest(h1);
@@ -280,8 +281,9 @@ pub fn verify_indices(
 /// Scan `nonce_count` nonces starting at `start` on one solver ctx.
 /// `header140` must already contain extranonce1 at bytes [108..108+en1).
 /// The varying u64 nonce is written at [108+en1_len .. +8] little-endian.
-/// Returns (nonce, solution100, share_hash) of the first target-meeting
-/// valid share.
+/// Returns (nonce, wire_solution, share_hash) of the first target-meeting
+/// valid share — `wire_solution` includes the CompactSize prefix (0x64 for
+/// 100 bytes), matching what equihash pools expect in mining.submit.
 pub fn scan(
     solver: &mut Solver,
     header140: &[u8],
@@ -305,21 +307,40 @@ pub fn scan(
         nonce_field[en1_len..en1_len + 8].copy_from_slice(&nonce.to_le_bytes());
         let ctx = ctx_for_nonce(&pers16, header108, &nonce_field);
         if ctx.is_null() {
+            crate::ext_warn!("eq144: ctx alloc failed");
             return None;
         }
         let mut hdr = [0u8; HEADER_LEN];
         hdr.copy_from_slice(header140);
         hdr[INPUT_LEN..].copy_from_slice(&nonce_field);
+        let mut nsols_total = 0usize;
+        let mut nverify_fail = 0usize;
+        let mut min_h0 = 0xFFu8;
         for indices in solver.run(ctx) {
+            nsols_total += 1;
             if !verify_indices(header108, pers8, &nonce_field, &indices) {
+                nverify_fail += 1;
                 continue;
             }
             let sol = compress_indices(&indices);
             let h = share_hash(&hdr, &sol);
-            if hasher::meets_target(&h, target) {
-                return Some((nonce, sol, h));
+            if h[0] < min_h0 {
+                min_h0 = h[0];
+                if h[0] <= 0x0f {
+                    crate::ext_warn!(nonce, hash = %hex::encode(h), "eq144: low-hex sol hash");
+                }
+            }
+            // ZION_EQ144_FORCE_SUBMIT: emit the first valid sol regardless
+            // of target — wire-path probe; upstream must reject with
+            // "low difficulty" (format correct) rather than malformed-soln.
+            let force = std::env::var_os("ZION_EQ144_FORCE_SUBMIT").is_some();
+            if force || hasher::meets_target(&h, target) {
+                let mut sol_wire = hasher::zcash_varint_for_len(SOL_LEN);
+                sol_wire.extend_from_slice(&sol);
+                return Some((nonce, sol_wire, h));
             }
         }
+        crate::ext_info!(nonce, nsols_total, nverify_fail, min_h0, "eq144: run complete");
     }
     None
 }
@@ -351,5 +372,32 @@ mod tests {
             let sol = compress_indices(idx);
             assert_eq!(sol.len(), SOL_LEN);
         }
+    }
+
+    /// scan() with a trivially-passed target must return on the first
+    /// verified solution, and the wire solution must be varint(0x64) ||
+    /// 100B minimal encoding — the exact bytes submitted upstream.
+    #[test]
+    fn scan_returns_wire_formatted_share() {
+        let mut solver = Solver::new().expect("solver alloc");
+        let mut header = [0u8; HEADER_LEN];
+        for (i, b) in header.iter_mut().enumerate() {
+            *b = (i * 11 + 5) as u8;
+        }
+        let target = [0xFFu8; 32];
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        // One run finds ~1.8 sols on average — try up to 5 nonces so a
+        // zero-solution run can't flake the test.
+        let mut found = None;
+        for n in 7..12u64 {
+            if let Some(s) = scan(&mut solver, &header, 4, b"sngemPoW", &target, n, 1, &cancel) {
+                found = Some(s);
+                break;
+            }
+        }
+        let (nonce, sol_wire, _h) = found.expect("easy target must produce a share within 5 runs");
+        assert!((7..12).contains(&nonce));
+        assert_eq!(sol_wire.len(), 1 + SOL_LEN);
+        assert_eq!(sol_wire[0], 0x64);
     }
 }
