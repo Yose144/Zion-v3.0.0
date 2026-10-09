@@ -78,11 +78,27 @@ Hot behavior favors 4–6 M (kernel ~0.1–0.15 s → boost clocks partially rec
 - all 12 `qpow` unit tests ✅ (`scan_finds_valid_share`, `kernel_compare_is_strict_full_width`, `u512_limb_packing_roundtrips`, …)
 - Production stream: QTU shares **Accepted** upstream post-deploy, 0 rejects observed.
 
+## Overclocking experiment (2026-10-09, via LACT daemon / NVML)
+
+`nvidia-smi -ac/-lgc` and `nvidia-settings` OC are unavailable on this setup (Pascal consumer + Wayland), **but** the LACT daemon (`/run/lactd.sock`, root) applies NVML per-pstate clock offsets, `pmfw_options.target_temperature`, and `power_cap` — confirmed working:
+
+| Setting | sustained QTU | note |
+|---|---|---|
+| stock (target 75, PL 180, no offsets) | ~37.6–39.3 MH/s | SW Thermal Slowdown pins 1607 MHz |
+| mem offset −400..−1000 (P2) | ~37.7 MH/s | −20 W, ~10 °C cooler, **0 % hashrate** — QPoW is compute-bound |
+| core offset ± (P2) | ~37.0–37.5 MH/s | binds (± verified) but thermal cap holds 1607 |
+| **target_temperature 75→90** | **~41–43.7 MH/s** (+10–16 %) | the real lever — unlocks boost 1746–1809 MHz sustained, peaks 2138 |
+| + core +250..300, mem −1000, PL 217 | ~41–42.4 MH/s | stacked on top of raised target |
+
+**Why OC gains exist but were reverted:** the only real lever is the *driver thermal target* (`pmfw_options.target_temperature`, was stale at **75** while the card already runs 82–92 °C edge / ~100 °C hotspot). Raising it frees ~+9–13 % — but the same GPU also drives the desktop compositor, and at ~89 °C + aggressive offsets the session **froze and needed a hard reboot**. Reverted to stock (`target 75`, PL 180, zero offsets, persisted to `/etc/lact/config.yaml`) — mining stability > +3 MH/s on the desktop's display GPU.
+
+SRBMiner cross-check: stock ~41.0–41.4 MH/s, with `--gpu-coffset0 75 --gpu-moffset0 -400` ~41.1–42.0 MH/s — identical thermal wall, no gain. Its kernel is ~5 %/clock faster than ours at the same 1607 MHz cap (kernel-side headroom, not clock headroom).
+
 ## Limitations / why not 70 MH/s
 
-- Kryptex's published 74.2 MH/s for 1070 Ti is not reproducible here — SRBMiner (reference implementation) tops at ~40–41.7 MH/s on this card; our kernel now benches ~38–43 depending on thermals — **at parity with the dedicated miner**.
-- The card throttles to 1607 MHz (max 1911) at ~80 °C with the fan at 100 % — ~16 % of SM clock is lost to cooling, not software. Hardware-level OC is unavailable: `nvidia-smi -ac/-lgc/-lmc` unsupported on Pascal consumer, `-pl` needs root (and is moot at 131 W draw), `nvidia-settings` OC needs Xorg+CoolBits but the session is Wayland.
-- The remaining gap to the burst numbers is physics: repaste/airflow would recover the clock deficit, nothing in software will.
+- Kryptex's published 74.2 MH/s for 1070 Ti is not reproducible here — SRBMiner (reference implementation) tops at ~41 MH/s sustained on this card; our kernel now benches ~38–43 depending on thermals — **at parity with the dedicated miner**.
+- The card throttles to 1607 MHz at ~80 °C+ with the fan at 100 % — the thermal limiter, not software, is the wall. Raising the driver thermal target does unlock ~1700–1900 MHz but pushes hotspot temps past spec and destabilized the desktop session — not a viable 24/7 setting on this GPU.
+- The remaining gap to the burst numbers is physics: repaste/airflow + a dedicated headless miner card would recover the clock deficit.
 
 ## Reproduce
 
