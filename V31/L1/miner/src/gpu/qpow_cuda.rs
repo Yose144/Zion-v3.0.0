@@ -27,7 +27,9 @@ const POSEIDON2_CU: &str = include_str!("../../csrc/cuda/poseidon2_kernel.cu");
 
 const QPOW_MODULE: &str = "qpow_poseidon2";
 const QPOW_KERNEL: &str = "qpow_mine";
-const QPOW_THREADS_PER_BLOCK: u32 = 256;
+/// Must equal `QPOW_LB_MAX` in poseidon2_kernel.cu (512 was the measured
+/// optimum on sm_61 vs. the upstream 256).
+const QPOW_THREADS_PER_BLOCK: u32 = 512;
 /// Grid cap mirroring upstream `MAX_BLOCKS` — bounds resident threads so the
 /// inner nonce loop amortizes thread setup across `nonces_per_thread` hashes.
 const QPOW_MAX_BLOCKS: u32 = 4096;
@@ -60,14 +62,23 @@ impl QpowCudaMiner {
             .unwrap_or_else(|_| "unknown CUDA device".to_string());
         let arch = detect_cuda_arch(&dev);
         let processed = preprocess_kernel(POSEIDON2_CU);
+        // Extra NVRTC options for tuning experiments (e.g.
+        // `QPOW_NVRTC_OPTS="-DQPOW_IUNROLL=5 -maxrregcount=80"`). The kernel
+        // exposes QPOW_LB_MAX / QPOW_LB_MIN / QPOW_IUNROLL / QPOW_EUNROLL
+        // defines with measured-optimal defaults; unset env = production
+        // behavior unchanged.
+        let mut options = vec![
+            "--use_fast_math".to_string(),
+            format!("-arch={}", arch),
+            "--std=c++14".to_string(),
+        ];
+        if let Ok(extra) = std::env::var("QPOW_NVRTC_OPTS") {
+            options.extend(extra.split_whitespace().map(str::to_string));
+        }
         let ptx = compile_ptx_with_opts(
             &processed,
             CompileOptions {
-                options: vec![
-                    "--use_fast_math".to_string(),
-                    format!("-arch={}", arch),
-                    "--std=c++14".to_string(),
-                ],
+                options,
                 ..Default::default()
             },
         )
@@ -164,9 +175,20 @@ impl QpowCudaMiner {
         // a 12-lane u64 sponge state; looping nonces inside a thread loses
         // ~12% on sm_61 vs. simply launching more blocks (measured: npt=1
         // ≈ 40 MH/s, npt=5 ≈ 35 MH/s on GTX 1070 Ti).
-        let total_threads = total32;
-        let nonces_per_thread = 1u32;
-        let blocks = total_threads.div_ceil(QPOW_THREADS_PER_BLOCK);
+        // QPOW_TPB / QPOW_NPT envs exist for tuning runs; defaults are the
+        // measured optimum.
+        let tpb = std::env::var("QPOW_TPB")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .filter(|v| *v >= 32 && *v <= 1024)
+            .unwrap_or(QPOW_THREADS_PER_BLOCK);
+        let nonces_per_thread = std::env::var("QPOW_NPT")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .filter(|v| *v >= 1)
+            .unwrap_or(1u32);
+        let total_threads = total32.div_ceil(nonces_per_thread);
+        let blocks = total_threads.div_ceil(tpb);
 
         let t_up = std::time::Instant::now();
         // Reset + upload
@@ -195,7 +217,7 @@ impl QpowCudaMiner {
             .ok_or_else(|| anyhow::anyhow!("kernel {} not found", QPOW_KERNEL))?;
         let cfg = LaunchConfig {
             grid_dim: (blocks, 1, 1),
-            block_dim: (QPOW_THREADS_PER_BLOCK, 1, 1),
+            block_dim: (tpb, 1, 1),
             shared_mem_bytes: 0,
         };
         let up_ms = t_up.elapsed();

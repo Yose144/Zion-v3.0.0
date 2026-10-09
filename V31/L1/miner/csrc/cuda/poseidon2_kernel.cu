@@ -22,6 +22,26 @@
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
+// Tuning knobs — overridable at NVRTC compile time via -D options
+// (QPOW_NVRTC_OPTS / bench harness). Defaults = measured optimum on
+// GTX 1070 Ti (sm_61): (512,2) blocks beat (256,4) by ~7% sustained —
+// same 1024 resident threads/SM and 64-reg budget, larger blocks win on
+// warp scheduling granularity.
+#ifndef QPOW_LB_MAX
+#define QPOW_LB_MAX 512
+#endif
+#ifndef QPOW_LB_MIN
+#define QPOW_LB_MIN 2
+#endif
+// Internal Poseidon2 round loop unroll factor (21 rounds).
+#ifndef QPOW_IUNROLL
+#define QPOW_IUNROLL 3
+#endif
+// External (initial/terminal) 4-round loop unroll factor.
+#ifndef QPOW_EUNROLL
+#define QPOW_EUNROLL 1
+#endif
+
 #define MAX_HITS 8
 
 const u64 P64 = 0xFFFFFFFF00000001ULL;
@@ -332,7 +352,7 @@ __device__ __forceinline__ u64 int_round_p(u64 *state, u64 x, u64 rc0) {
 }
 
 __device__ __forceinline__ void permute64_after_initial(u64 *state) {
-    #pragma unroll 1
+    #pragma unroll QPOW_EUNROLL
     for (int r = 0; r < 4; r++) {
         #pragma unroll
         for (int i = 0; i < 12; i++) {
@@ -341,7 +361,7 @@ __device__ __forceinline__ void permute64_after_initial(u64 *state) {
         ext_layer64(state, RC_INITIAL[r + 1]);
     }
     u64 x = gf64_sbox(state[0]);
-    #pragma unroll 1
+    #pragma unroll QPOW_IUNROLL
     for (int r = 0; r < 21; r++) {
         x = gf64_sbox(int_round_p(state, x, RC_INTERNAL[r + 1]));
     }
@@ -350,7 +370,7 @@ __device__ __forceinline__ void permute64_after_initial(u64 *state) {
     for (int i = 0; i < 12; i++) {
         state[i] = gf64_add(state[i], RC_TERMINAL[0][i]);
     }
-    #pragma unroll 1
+    #pragma unroll QPOW_EUNROLL
     for (int r = 0; r < 4; r++) {
         #pragma unroll
         for (int i = 0; i < 12; i++) {
@@ -381,7 +401,7 @@ __device__ __forceinline__ u32 bswap32(u32 v) {
     return __byte_perm(v, 0u, 0x0123u);
 }
 
-extern "C" __global__ void __launch_bounds__(256, 4) qpow_mine(
+extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine(
     u32 *results,
     const u32 *prestate,
     const u32 *start_nonce,
