@@ -22,11 +22,11 @@ const SUGGESTED_QUESTIONS = [
   { cs: 'Co je AI Native?', en: 'What is AI Native?' },
 ];
 
-export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
+export default function HiranMiniChat({ lang = 'cs', defaultOpen = false }: { lang?: 'cs' | 'en'; defaultOpen?: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -92,7 +92,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="group flex items-center gap-3 w-full rounded-2xl border border-zion-purple/20 bg-gradient-to-br from-zion-purple/8 via-zion-cyan/4 to-transparent p-4 backdrop-blur-sm transition-all duration-300 hover:border-zion-purple/40 hover:shadow-[0_0_32px_rgba(228, 30, 43,0.12)]"
+        className="group flex items-center gap-3 w-full rounded-2xl border border-zion-purple/20 bg-gradient-to-br from-zion-purple/8 via-zion-cyan/4 to-transparent p-4 backdrop-blur-sm transition-all duration-300 hover:border-zion-purple/40 hover:shadow-[0_0_32px_rgba(147,51,234,0.12)]"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zion-purple/25 bg-zion-purple/12 ring-1 ring-zion-purple/15 transition-transform duration-300 group-hover:scale-110">
           <Brain className="h-5 w-5 text-zion-purple" />
@@ -116,7 +116,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
           <Brain className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-white font-semibold text-sm">Hiranyagarbha v2.2</h3>
+          <h3 className="text-white font-semibold text-sm">Hiran v2.2</h3>
           <p className="text-gray-400 text-[10px]">
             {HiranMiniChatCopy.zionAiNativeZionExpertModel[lang === 'cs' ? 'cs' : 'en']}
           </p>

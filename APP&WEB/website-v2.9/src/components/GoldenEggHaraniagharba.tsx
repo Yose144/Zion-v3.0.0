@@ -6,6 +6,7 @@ import { ArrowRight, BookOpen, Orbit, Sparkles, Stars } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import HiranOrbLazy from './HiranOrbLazy';
+import HiranMiniChat from './HiranMiniChat';
 
 const GoldenEggHaraniagharbaCopy = {
   hiranHiranyagarbha: { cs: `Hiran / Hiranyagarbha`, en: `Hiran / Hiranyagarbha` },
@@ -23,7 +24,7 @@ export default function GoldenEggHaraniagharba() {
           <div className="absolute -right-10 top-[-40px] h-32 w-32 rounded-full bg-zion-gold/15 blur-3xl" />
           <div className="absolute -bottom-16 -left-4 h-40 w-40 rounded-full bg-zion-purple/10 blur-3xl" />
 
-          <div className="relative grid gap-4 lg:grid-cols-[160px_1fr] lg:items-center">
+          <div className="relative grid gap-4 lg:grid-cols-[160px_1fr_minmax(340px,400px)] lg:items-center">
             {/* Left: compact Golden Orb */}
             <div className="space-y-1">
               <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_12px_40px_rgba(0,0,0,0.45)]" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
@@ -73,6 +74,11 @@ export default function GoldenEggHaraniagharba() {
                   {tr('goldenEgg', 'book_card_body', lang)}
                 </Link>
               </div>
+            </div>
+
+            {/* Right: live Hiran chat interface */}
+            <div className="lg:pl-2">
+              <HiranMiniChat lang={lang} defaultOpen />
             </div>
           </div>
         </div>
