@@ -444,6 +444,11 @@ pub trait GpuMiner: Send {
         batch_size: u64,
     ) -> Result<GpuBatchResult>;
 
+    /// Supply the pool extranonce1 bytes for protocols whose header embeds
+    /// them (Equihash-family stratums put en1 inside the 32-byte nonce
+    /// field at offset 108).  Backends that don't need it ignore it.
+    fn set_extranonce(&mut self, _en1: &[u8]) {}
+
     /// Mine a batch using raw header bytes (for external algorithms with
     /// headers longer than 80 bytes, e.g. DCR = 180 bytes).
     /// Default: falls back to mine_batch with truncated header.
@@ -5332,6 +5337,9 @@ pub mod opencl_external {
         work_size: usize,
         device_name_cached: String,
         block_height: u64,
+        /// Pool extranonce1 — embedded in the header nonce field for
+        /// Equihash-family stratums; forwarded as `extra` on mine calls.
+        en1: Vec<u8>,
     }
 
     impl OpenClExternalMiner {
@@ -5347,6 +5355,7 @@ pub mod opencl_external {
                 work_size,
                 device_name_cached: device_name,
                 block_height: 0,
+                en1: Vec::new(),
             })
         }
     }
@@ -5409,6 +5418,10 @@ pub mod opencl_external {
             Ok(())
         }
 
+        fn set_extranonce(&mut self, en1: &[u8]) {
+            self.en1 = en1.to_vec();
+        }
+
         fn mine_batch(
             &mut self,
             header: MiningHeader,
@@ -5417,10 +5430,17 @@ pub mod opencl_external {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
+            // `extra` = en1 only for Equihash-family algorithms; other
+            // algos interpret `extra` differently (kheavyhash timestamp…).
+            let extra: &[u8] = if self.algorithm.starts_with("equihash") {
+                &self.en1
+            } else {
+                &[]
+            };
             let found = self.miner.mine(
                 &self.algorithm,
                 &header_bytes,
-                &[],
+                extra,
                 &target.bytes,
                 nonce_start,
                 batch_size,
@@ -5456,10 +5476,15 @@ pub mod opencl_external {
             nonce_start: u64,
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
+            let extra: &[u8] = if self.algorithm.starts_with("equihash") {
+                &self.en1
+            } else {
+                &[]
+            };
             let found = self.miner.mine(
                 &self.algorithm,
                 raw_header,
-                &[],
+                extra,
                 &target.bytes,
                 nonce_start,
                 batch_size,

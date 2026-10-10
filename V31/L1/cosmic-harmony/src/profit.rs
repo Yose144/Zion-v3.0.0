@@ -421,7 +421,7 @@ impl ExternalCoin {
             ExternalCoin::Quai => "de.quai.herominers.com:1185",
             ExternalCoin::Beam => "beam.2miners.com:5252",
             ExternalCoin::Karlsen => "karlsencoin.cedric-crispin.com:4154",
-            ExternalCoin::Zclassic => "equihash192.eu.mine.zpool.ca:2144",
+            ExternalCoin::Zclassic => "equihash192.eu.mine.zpool.ca:2192",
             ExternalCoin::Qubitcoin => "qtc.suprnova.cc:5555",
             ExternalCoin::Vertcoin => "verthash.eu.mine.zpool.ca:4533",
             ExternalCoin::IronFish => "fr.grandpool.io:2027",
@@ -495,7 +495,7 @@ impl ExternalCoin {
         let (algo, port): (&str, u16) = match self {
             ExternalCoin::Evrmore => ("evrprogpow", 1330),
             ExternalCoin::Meowcoin => ("meowpow", 1327),
-            ExternalCoin::Zclassic => ("equihash192", 2144),
+            ExternalCoin::Zclassic => ("equihash192", 2192),
             ExternalCoin::Raptoreum => ("ghostrider", 5354),
             ExternalCoin::PhoenixCoin => ("neoscrypt", 4233),
             ExternalCoin::Keryx => ("keryxhash", 4233),

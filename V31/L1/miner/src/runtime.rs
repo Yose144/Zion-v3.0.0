@@ -817,13 +817,19 @@ impl MinerRuntime {
         batch: u64,
     ) -> Result<Share, MinerError> {
         // GPU external streams (2 and 4): GPU with duty-cycle time-slicing.
-        // Equihash jobs skip the GPU path — the OpenCL kernel carries a
-        // wrong Xi byte layout (192,7 skeleton); the vendored tromp CPU
-        // solver handles 144,5 correctly below.
+        // Equihash: only genuine 192,7 jobs (ZCL / ZcashPoW) take the GPU
+        // Wagner path — 144,5 stays on the vendored tromp CPU solver below.
         let is_equihash_algo = job.coin.algorithm().starts_with("equihash");
+        let eq_gpu_ok = is_equihash_algo
+            && job.eq_params.as_deref() == Some("192_7")
+            && job
+                .eq_pers
+                .as_deref()
+                .map(|p| p.eq_ignore_ascii_case("ZcashPoW"))
+                .unwrap_or(true);
         if stream.is_gpu_external()
             && self.config.gpu_backend != "cpu"
-            && !is_equihash_algo
+            && (!is_equihash_algo || eq_gpu_ok)
         {
             let t_batch = Instant::now();
             let gpu_share = self.try_gpu_ext_share(stream, job, batch).await;
@@ -1111,6 +1117,14 @@ impl MinerRuntime {
             } else {
                 nonce_start
             };
+
+            // Equihash-family stratums embed extranonce1 inside the 32-byte
+            // nonce field of the header (offset 108): the backend must write
+            // its nonce counter AFTER that prefix so the submitted nonce
+            // matches the hashed bytes.  No-op for other backends.
+            if algorithm.starts_with("equihash") {
+                gpu.set_extranonce(&extranonce1_gpu);
+            }
 
             let result = gpu
                 .mine_batch_raw(&header, target, nonce_start, batch)
