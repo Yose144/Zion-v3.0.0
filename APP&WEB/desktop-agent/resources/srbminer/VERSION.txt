@@ -1,4 +1,5 @@
 SRBMiner-MULTI 3.7.4 (release 2026-10-09)
 Source: https://github.com/doktor83/SRBMiner-Multi/releases/download/3.7.4/SRBMiner-Multi-3-7-4-Linux.tar.gz
 Archive MD5: c000bcaaa10a7a82a4456ae4b7617ccd (verified 2026-10-10)
+Binary SHA256: 5adfd630de2fe1da04d30a7175b02497ac157dc285dedda3dc2f5f295c359062
 Platform: Linux x86-64 ELF only (no macOS build exists)

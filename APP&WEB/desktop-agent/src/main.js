@@ -2453,6 +2453,31 @@ async function pollSrbStats() {
   } catch { /* API not up yet / miner restarting */ }
 }
 
+// Verify the sidecar binary against the SHA-256 recorded in VERSION.txt
+// (sits next to the bundled binary — written at download time from the
+// official release). The bundled resource refuses to launch on mismatch
+// (corrupted/tampered binary); a user-supplied srbminerPath only warns —
+// custom binaries are the operator's own responsibility.
+function verifySrbBinaryIntegrity(srbPath, isCustom) {
+  const versionFile = path.join(path.dirname(srbPath), 'VERSION.txt');
+  try {
+    const meta = fs.readFileSync(versionFile, 'utf8');
+    const m = meta.match(/Binary SHA256:\s*([0-9a-f]{64})/i);
+    if (!m) return true; // no hash recorded — nothing to verify
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(srbPath)).digest('hex');
+    if (actual === m[1].toLowerCase()) return true;
+    const msg = `SRBMiner SHA256 mismatch: expected ${m[1]}, got ${actual}`;
+    if (isCustom) {
+      logApp('srb-integrity-warn', msg);
+      console.error(`[SRB] ${msg} — custom srbminerPath, launching anyway`);
+      return true;
+    }
+    logApp('srb-integrity-fail', msg);
+    console.error(`[SRB] ${msg} — refusing to launch bundled binary`);
+    return false;
+  } catch { return true; } // unreadable VERSION.txt — nothing to verify against
+}
+
 function startSrbMiner(config, worker) {
   if (srbProcess) return;
   const srbPath = resolveSrbMinerPath(config);
@@ -2461,6 +2486,8 @@ function startSrbMiner(config, worker) {
     console.error('[SRB] binary not found — set srbminerPath in miner_config.json');
     return;
   }
+  const isCustomBin = !!config?.srbminerPath && srbPath === String(config.srbminerPath);
+  if (!verifySrbBinaryIntegrity(srbPath, isCustomBin)) return;
   let srbPool = String(config?.srbminerPool || SRB_DEFAULT_POOL).trim();
   // SRBMiner requires an explicit stratum scheme — bare host:port fails to
   // connect even though the endpoint is reachable.
