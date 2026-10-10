@@ -78,12 +78,13 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Expected <seed>.svg' });
     }
     const seed = file.slice(0, -4);
-    const q = req.query as { s?: string; t?: string; sz?: string };
+    const q = req.query as { s?: string; t?: string; sz?: string; a?: string };
     const variant = Math.min(Math.max(parseInt(q.s ?? '0', 10) || 0, 0), 1_000_000);
     const style = (AVATAR_STYLES as readonly string[]).includes(q.t ?? '') ? q.t! : 'sigil';
     const size = Math.min(Math.max(parseInt(q.sz ?? '128', 10) || 128, 16), 512);
+    const animated = q.a === '1' || q.a === 'true';
 
-    const svg = renderAvatarSvg(seed, variant, style, size);
+    const svg = renderAvatarSvg(seed, variant, style, size, animated);
     return reply
       .header('Content-Type', 'image/svg+xml; charset=utf-8')
       .header('Cache-Control', 'public, max-age=31536000, immutable')

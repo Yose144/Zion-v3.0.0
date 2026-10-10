@@ -62,12 +62,13 @@ export type ZisAvatarStyle = 'sigil' | 'rings' | 'prism';
  */
 export function zisAvatarUrl(
   seed: string,
-  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number },
+  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number; a?: boolean },
 ): string {
   const params = new URLSearchParams();
   if (opts?.s !== undefined) params.set('s', String(opts.s));
   if (opts?.t) params.set('t', opts.t);
   if (opts?.sz) params.set('sz', String(opts.sz));
+  if (opts?.a) params.set('a', '1');
   const qs = params.toString();
   return `${CLIENT_PROXY_BASE}/avatar/${encodeURIComponent(seed)}.svg${qs ? `?${qs}` : ''}`;
 }

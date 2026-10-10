@@ -2883,9 +2883,13 @@ async function updateConnectedMiners(){
       const onChain = onChainZion != null ? _zionFmt(onChainZion) + ' ZION' : '—';
       const blocks = payoutMiner?.blocks_found ?? m.blocks_found ?? '—';
       const minerIdShort = mAddr.length > 28 ? mAddr.slice(0,14)+'…'+mAddr.slice(-12) : mAddr;
+      // ZIS avatar — bound session user wins, else deterministic address avatar.
+      const avSeed = (m.zis_user && String(m.zis_user).trim()) || mAddr;
+      const avUrl = avSeed ? `https://auth.zionterranova.com/api/auth/avatar/${encodeURIComponent(avSeed)}.svg?sz=32` : '';
+      const avTag = avSeed ? `<img src="${escapeHtml(avUrl)}" alt="" width="16" height="16" class="rounded inline-block align-middle mr-1" style="vertical-align:-3px" onerror="this.style.display='none'">` : '';
       const rowCls = isActive ? '' : (isRecent ? 'opacity-75' : 'opacity-40');
       return `<tr class="border-b border-white/5 hover:bg-white/5 transition ${rowCls}">
-        <td class="py-2 px-2 font-mono text-[10px] text-gray-300" title="${escapeHtml(mAddr)}">${escapeHtml(minerIdShort)}</td>
+        <td class="py-2 px-2 font-mono text-[10px] text-gray-300" title="${escapeHtml(mAddr)}${m.zis_user ? ' · ZIS ' + escapeHtml(m.zis_user) : ''}">${avTag}${escapeHtml(minerIdShort)}</td>
         <td class="py-2 px-2 text-gray-300">${escapeHtml(mWorker || '—')}</td>
         <td class="py-2 px-2 text-right font-mono ${isActive?'text-amber-400':'text-gray-500'}">${hashrate}</td>
         <td class="py-2 px-2 text-right font-mono text-emerald-400">${(m.valid_shares || 0).toLocaleString()}</td>

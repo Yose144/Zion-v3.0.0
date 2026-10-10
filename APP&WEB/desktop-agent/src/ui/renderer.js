@@ -2034,7 +2034,99 @@ function setupZisControls() {
     try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
   };
 
-  const updateStatus = (session = null, loggedIn = false) => {
+  // ── Avatar studio state ──
+  const avatarImg = document.getElementById('zis-avatar');
+  const avatarName = document.getElementById('zis-profile-name');
+  const avatarAddr = document.getElementById('zis-profile-addr');
+  const studioEl = document.getElementById('zis-avatar-studio');
+  const avatarGrid = document.getElementById('zis-avatar-grid');
+  const AVATAR_VARIANTS = 8;
+  let avatarStyle = 'sigil';
+  let avatarSelected = -1; // -1 = none picked yet
+  let sessionSeed = null;
+
+  const fillProfile = (session, avatarUrl) => {
+    const user = session?.user;
+    const dockAvatar = document.getElementById('dock-avatar');
+    const dockImg = document.getElementById('dock-avatar-img');
+    if (avatarImg && avatarUrl) avatarImg.src = avatarUrl;
+    if (dockAvatar && dockImg && avatarUrl) {
+      dockImg.src = avatarUrl;
+      dockAvatar.style.display = 'flex';
+      dockAvatar.classList.add('signed-in');
+      const label = user?.displayName || (user?.primaryAddress ? `${user.primaryAddress.slice(0, 10)}…` : 'Account');
+      const dockLabel = document.getElementById('dock-avatar-label');
+      if (dockLabel) dockLabel.textContent = label;
+      dockAvatar.title = `ZIS: ${user?.primaryAddress || 'signed in'}`;
+    }
+    if (avatarName) {
+      avatarName.textContent = user?.displayName || user?.email || 'ZIS account';
+    }
+    if (avatarAddr) avatarAddr.textContent = user?.primaryAddress || '';
+    sessionSeed = user?.id || user?.primaryAddress || null;
+  };
+
+  const clearProfile = () => {
+    const dockAvatar = document.getElementById('dock-avatar');
+    if (dockAvatar) { dockAvatar.style.display = 'none'; dockAvatar.classList.remove('signed-in'); }
+    if (avatarImg) avatarImg.removeAttribute('src');
+    sessionSeed = null;
+  };
+
+  const renderAvatarGrid = async () => {
+    if (!avatarGrid || !sessionSeed) return;
+    avatarGrid.innerHTML = '';
+    for (let s = 0; s < AVATAR_VARIANTS; s++) {
+      const btn = document.createElement('button');
+      btn.className = 'zis-avatar-opt' + (s === avatarSelected ? ' selected' : '');
+      btn.type = 'button';
+      try {
+        const { url } = await window.electronAPI.zisAvatarUrl({ seed: sessionSeed, variant: s, style: avatarStyle, size: 96 });
+        btn.innerHTML = `<img src="${url}" alt="variant ${s}" loading="lazy" />`;
+      } catch { /* skip broken variant */ }
+      btn.addEventListener('click', () => {
+        avatarSelected = s;
+        avatarGrid.querySelectorAll('.zis-avatar-opt').forEach((el, i) => el.classList.toggle('selected', i === s));
+      });
+      avatarGrid.appendChild(btn);
+    }
+  };
+
+  document.getElementById('zis-avatar-toggle')?.addEventListener('click', async () => {
+    if (!studioEl) return;
+    const open = studioEl.style.display === 'none';
+    studioEl.style.display = open ? 'block' : 'none';
+    if (open && avatarGrid && !avatarGrid.children.length) await renderAvatarGrid();
+  });
+
+  document.querySelectorAll('.zis-style-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('.zis-style-btn').forEach((b) => b.classList.toggle('selected', b === btn));
+      avatarStyle = btn.dataset.style || 'sigil';
+      avatarSelected = -1;
+      await renderAvatarGrid();
+    });
+  });
+
+  document.getElementById('zis-avatar-save')?.addEventListener('click', async () => {
+    if (avatarSelected < 0 || !sessionSeed) return alert('Pick a variant first.');
+    const { url } = await window.electronAPI.zisAvatarUrl({ seed: sessionSeed, variant: avatarSelected, style: avatarStyle, size: 256 });
+    const res = await window.electronAPI.zisUpdateMe({ data: { avatar: url } });
+    if (!res.success) return alert(res.error || 'Avatar save failed');
+    if (avatarImg) avatarImg.src = url;
+    const dockImg = document.getElementById('dock-avatar-img');
+    if (dockImg) dockImg.src = url;
+    alert('Avatar saved — it now shows across the whole ecosystem.');
+  });
+
+  document.getElementById('zis-avatar-reset')?.addEventListener('click', async () => {
+    const res = await window.electronAPI.zisUpdateMe({ data: { avatar: null } });
+    if (!res.success) return alert(res.error || 'Reset failed');
+    avatarSelected = -1;
+    await refreshSession();
+  });
+
+  const updateStatus = (session = null, loggedIn = false, avatarUrl = null) => {
     if (!statusEl || !loggedOutEl || !loggedInEl || !sessionOutput) return;
     if (loggedIn && session?.token) {
       statusEl.textContent = 'Signed in' + (session.user?.primaryAddress ? `: ${session.user.primaryAddress}` : '');
@@ -2042,19 +2134,22 @@ function setupZisControls() {
       loggedOutEl.style.display = 'none';
       loggedInEl.style.display = 'grid';
       sessionOutput.textContent = safeJson(session);
+      fillProfile(session, avatarUrl);
     } else {
       statusEl.textContent = 'Not signed in';
       statusEl.className = 'badge badge-neutral';
       loggedOutEl.style.display = 'grid';
       loggedInEl.style.display = 'none';
       sessionOutput.textContent = 'Not loaded';
+      if (studioEl) studioEl.style.display = 'none';
+      clearProfile();
     }
   };
 
   const refreshSession = async () => {
     try {
-      const { session, loggedIn } = await window.electronAPI.zisGetSession();
-      updateStatus(session, loggedIn);
+      const { session, loggedIn, avatarUrl } = await window.electronAPI.zisGetSession();
+      updateStatus(session, loggedIn, avatarUrl);
       if (loggedIn) await refreshApiKeys();
     } catch (err) {
       console.error('[ZIS] refresh session failed:', err);

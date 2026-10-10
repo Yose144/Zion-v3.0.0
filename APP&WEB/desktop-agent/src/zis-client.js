@@ -311,6 +311,41 @@ class ZisClient {
     return json;
   }
 
+  /** PATCH /api/auth/me — update profile fields (displayName, avatar, bio). */
+  async updateMe(data) {
+    const { json, status } = await zisFetch('PATCH', '/api/auth/me', data, authHeaders());
+    if (!json || status >= 400) {
+      throw new Error(json?.message || json?.error || `update failed (${status})`);
+    }
+    // Keep the cached session user in sync (server returns the full user).
+    const updated = json.user || json;
+    if (_inMemorySession.user && updated && typeof updated === 'object') {
+      _inMemorySession.user = { ..._inMemorySession.user, ...updated };
+      saveSession(_inMemorySession);
+    }
+    return json;
+  }
+
+  /** Deterministic ZIS avatar URL for any identity seed (user id, zion1…,
+   *  0x…). Empty avatar fields in the session fall back to this. */
+  avatarUrl(seed, { variant = 0, style = 'sigil', size = 128, animated = false } = {}) {
+    const q = new URLSearchParams();
+    if (variant) q.set('s', String(variant));
+    if (style && style !== 'sigil') q.set('t', style);
+    if (size && size !== 128) q.set('sz', String(size));
+    if (animated) q.set('a', '1');
+    const qs = q.toString();
+    return `${_zisUrl}/api/auth/avatar/${encodeURIComponent(seed)}.svg${qs ? `?${qs}` : ''}`;
+  }
+
+  /** Resolve the avatar URL shown for a session user: explicit user.avatar
+   *  wins, else the deterministic generated avatar for the user id. */
+  sessionAvatarUrl(user, opts) {
+    if (user?.avatar) return user.avatar;
+    const seed = user?.id || user?.primaryAddress;
+    return seed ? this.avatarUrl(seed, opts) : null;
+  }
+
   /** Request an auth challenge for any supported chainType. Returns the
    *  challenge string (5-minute TTL, single use). */
   async challenge(address, chainType) {

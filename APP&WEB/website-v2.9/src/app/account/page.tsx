@@ -299,6 +299,7 @@ export default function AccountPage() {
                     alt={user.displayName ?? 'avatar'}
                     className="rounded-2xl border border-white/15"
                     initial={(user.displayName ?? 'Z')[0]?.toUpperCase() ?? 'Z'}
+                    animated
                   />
                   <div className="zion-badge-gold">
                     <User className="h-4 w-4" />

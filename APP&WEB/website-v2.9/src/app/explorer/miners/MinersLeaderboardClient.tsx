@@ -153,7 +153,7 @@ export default function MinersLeaderboardClient() {
                           </td>
                           <td className="px-3 py-3">
                             <span className="inline-flex items-center gap-2">
-                              <ZisAvatar seed={m.address} size={18} className="rounded shrink-0" />
+                              <ZisAvatar seed={m.zis_user || m.address} size={18} className="rounded shrink-0" />
                               <Link href={`/explorer/address?addr=${encodeURIComponent(m.address)}`}
                                 className="text-zion-cyan hover:text-white transition font-mono text-xs">
                                 {m.label || `${m.address.slice(0, 12)}…${m.address.slice(-8)}`}

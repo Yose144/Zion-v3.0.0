@@ -7340,6 +7340,8 @@ def get_pool_registered_miners() -> dict:
             "worker_name": worker_name,
             "pplns_key": pplns_key,
             "payout_address": payout_address,
+            # ZIS identity bound at Hello (V3 auth_token) — empty for anonymous.
+            "zis_user": (active or {}).get("zis_user") or "",
             "hashrate_hps": float(hashrate or 0),
             "hashrate_1h": float(hashrate_1h or 0),
             "hashrate_24h": float(hashrate_24h or 0),
