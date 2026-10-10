@@ -203,16 +203,44 @@ pub struct MinerRuntime {
     /// initialized; the 512-bit nonce/target cannot ride the generic
     /// `GpuMiner` interface so this is a separate dedicated backend.
     /// CUDA on NVIDIA, OpenCL on AMD (Vega/gfx900).
-    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    #[cfg(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    ))]
     gpu_qpow: Arc<std::sync::Mutex<Option<crate::gpu::QpowGpuMiner>>>,
     /// Set once the QPoW GPU backend fails to initialize — avoids retrying
     /// the kernel compile on every batch on CPU-only rigs.
-    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    #[cfg(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    ))]
     gpu_qpow_disabled: Arc<std::sync::atomic::AtomicBool>,
     /// Dedicated QPoW backend for Stream 4 (same constraints as gpu_qpow).
-    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    #[cfg(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    ))]
     gpu_qpow2: Arc<std::sync::Mutex<Option<crate::gpu::QpowGpuMiner>>>,
-    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    #[cfg(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    ))]
     gpu_qpow2_disabled: Arc<std::sync::atomic::AtomicBool>,
     /// ZION nonce cursor — advances between batches so we don't always
     /// re-scan from 0. Wrapped in a mutex for safe concurrent access.
@@ -413,13 +441,41 @@ impl MinerRuntime {
                 gpu_ext_algo: Arc::new(std::sync::Mutex::new(None)),
                 gpu_ext2: Arc::new(std::sync::Mutex::new(None)),
                 gpu_ext2_algo: Arc::new(std::sync::Mutex::new(None)),
-                #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+                #[cfg(all(
+                    feature = "auxpow",
+                    any(
+                        feature = "gpu-cuda",
+                        feature = "gpu-opencl",
+                        all(feature = "gpu-metal", target_os = "macos")
+                    )
+                ))]
                 gpu_qpow: Arc::new(std::sync::Mutex::new(None)),
-                #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+                #[cfg(all(
+                    feature = "auxpow",
+                    any(
+                        feature = "gpu-cuda",
+                        feature = "gpu-opencl",
+                        all(feature = "gpu-metal", target_os = "macos")
+                    )
+                ))]
                 gpu_qpow_disabled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
-                #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+                #[cfg(all(
+                    feature = "auxpow",
+                    any(
+                        feature = "gpu-cuda",
+                        feature = "gpu-opencl",
+                        all(feature = "gpu-metal", target_os = "macos")
+                    )
+                ))]
                 gpu_qpow2: Arc::new(std::sync::Mutex::new(None)),
-                #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+                #[cfg(all(
+                    feature = "auxpow",
+                    any(
+                        feature = "gpu-cuda",
+                        feature = "gpu-opencl",
+                        all(feature = "gpu-metal", target_os = "macos")
+                    )
+                ))]
                 gpu_qpow2_disabled: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
@@ -730,7 +786,11 @@ impl MinerRuntime {
                 .unwrap_or_default(),
             #[cfg(all(
                 feature = "auxpow",
-                any(feature = "gpu-cuda", feature = "gpu-opencl")
+                any(
+                    feature = "gpu-cuda",
+                    feature = "gpu-opencl",
+                    all(feature = "gpu-metal", target_os = "macos")
+                )
             ))]
             StreamId::GpuExternal => self
                 .gpu_qpow
@@ -741,7 +801,11 @@ impl MinerRuntime {
                 .unwrap_or_default(),
             #[cfg(all(
                 feature = "auxpow",
-                any(feature = "gpu-cuda", feature = "gpu-opencl")
+                any(
+                    feature = "gpu-cuda",
+                    feature = "gpu-opencl",
+                    all(feature = "gpu-metal", target_os = "macos")
+                )
             ))]
             StreamId::GpuExternal2 => self
                 .gpu_qpow2
@@ -789,7 +853,14 @@ impl MinerRuntime {
 
     /// Whether the dedicated QPoW GPU backend is live (initialized and not
     /// disabled by a previous init failure) for the given GPU stream.
-    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    #[cfg(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    ))]
     fn qpow_gpu_live(&self, stream: StreamId) -> bool {
         let (disabled, backend) = match stream {
             StreamId::GpuExternal2 => (&self.gpu_qpow2_disabled, &self.gpu_qpow2),
@@ -798,7 +869,14 @@ impl MinerRuntime {
         !disabled.load(std::sync::atomic::Ordering::Relaxed) && backend.lock().unwrap().is_some()
     }
 
-    #[cfg(not(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl"))))]
+    #[cfg(not(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    )))]
     fn qpow_gpu_live(&self, _stream: StreamId) -> bool {
         false
     }
@@ -861,12 +939,8 @@ impl MinerRuntime {
                             .filter(|&d| (1..=100).contains(&d))
                     })
                     .unwrap_or(100);
-                let gap_ms = if duty_pct < 100
-                    && self.gpu_zion.lock().unwrap().is_some()
-                {
-                    batch_ms
-                        .saturating_mul(100 - duty_pct)
-                        / duty_pct.max(1)
+                let gap_ms = if duty_pct < 100 && self.gpu_zion.lock().unwrap().is_some() {
+                    batch_ms.saturating_mul(100 - duty_pct) / duty_pct.max(1)
                 } else {
                     std::env::var("ZION_EXT_GPU_GAP_MS")
                         .ok()
@@ -884,8 +958,7 @@ impl MinerRuntime {
                 // A live Poseidon2 backend already scanned this whole
                 // `batch` — falling through to the CPU scanner would rescan
                 // the same range at ~100 kH/s.
-                if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live(stream)
-                {
+                if job.coin.algorithm() == "qpow-poseidon2" && self.qpow_gpu_live(stream) {
                     return Err(MinerError::NoAuxPoWSolution);
                 }
             }
@@ -1000,9 +1073,17 @@ impl MinerRuntime {
         if algorithm == "qpow-poseidon2" {
             // Quantus needs a dedicated 512-bit Poseidon2 kernel — the generic
             // u64/[u8;32] GPU interface cannot represent it.
-            #[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+            #[cfg(any(
+                feature = "gpu-cuda",
+                feature = "gpu-opencl",
+                all(feature = "gpu-metal", target_os = "macos")
+            ))]
             return self.try_qpow_gpu_share(stream, job, batch).await;
-            #[cfg(not(any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+            #[cfg(not(any(
+                feature = "gpu-cuda",
+                feature = "gpu-opencl",
+                all(feature = "gpu-metal", target_os = "macos")
+            )))]
             return None;
         }
 
@@ -1191,7 +1272,14 @@ impl MinerRuntime {
     /// Full-width nonce/hash are carried on `Share::nonce_512`/`hash_512`.
     /// Backend is picked by `ZION_GPU_BACKEND`: CUDA on NVIDIA, OpenCL on
     /// AMD (Vega).
-    #[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+    #[cfg(all(
+        feature = "auxpow",
+        any(
+            feature = "gpu-cuda",
+            feature = "gpu-opencl",
+            all(feature = "gpu-metal", target_os = "macos")
+        )
+    ))]
     async fn try_qpow_gpu_share(&self, stream: StreamId, job: &Job, batch: u64) -> Option<Share> {
         use crate::auxpow::qpow;
 
@@ -1275,7 +1363,8 @@ impl MinerRuntime {
 
         match gpu_result {
             Ok(Ok(Some(res))) => {
-                self.update_hashrate(stream, res.nonces_tested, elapsed).await;
+                self.update_hashrate(stream, res.nonces_tested, elapsed)
+                    .await;
                 let low64 = u64::from_be_bytes(res.nonce[56..64].try_into().unwrap());
                 let mut hash32 = [0u8; 32];
                 hash32.copy_from_slice(&res.hash[..32]);
@@ -2148,7 +2237,8 @@ impl MinerRuntime {
                     }
                     this.mark_active(StreamId::GpuExternal2).await;
                     if let Some(ref ext) = bundle.gpu_external_2 {
-                        this.set_stream_coin(StreamId::GpuExternal2, &ext.coin).await;
+                        this.set_stream_coin(StreamId::GpuExternal2, &ext.coin)
+                            .await;
                         // Defensive dedup: pool never sends the same coin on
                         // both GPU slots, but if it ever does, refuse to
                         // mine a duplicate job — duplicate nonce space would
@@ -3068,7 +3158,14 @@ fn parse_gpu_backend(s: &str) -> GpuBackendKind {
 /// backend (a second context on a consumer GPU corrupts results /
 /// deadlocks); OpenCL picks its device via the standard `ZION_OCL_*` env
 /// overrides so `ZION_ZANO_DEVICE_NAME=vega` keeps QPoW on the reserved GPU.
-#[cfg(all(feature = "auxpow", any(feature = "gpu-cuda", feature = "gpu-opencl")))]
+#[cfg(all(
+    feature = "auxpow",
+    any(
+        feature = "gpu-cuda",
+        feature = "gpu-opencl",
+        all(feature = "gpu-metal", target_os = "macos")
+    )
+))]
 fn create_qpow_gpu_miner(
     backend: GpuBackendKind,
     work_size: usize,
@@ -3079,6 +3176,21 @@ fn create_qpow_gpu_miner(
     // context params are unused in OpenCL-only builds.
     #[cfg(not(feature = "gpu-cuda"))]
     let _ = (gpu_zion, gpu_ext);
+    // On macOS the integrated Apple GPU is the right device — try Metal
+    // first under `auto`; a Metal init failure degrades to the remaining
+    // compiled backends instead of killing the stream.
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+    if matches!(backend, GpuBackendKind::Metal | GpuBackendKind::Auto) {
+        match crate::gpu::qpow_metal::QpowMetalMiner::new(work_size) {
+            Ok(m) => return Ok(crate::gpu::QpowGpuMiner::Metal(m)),
+            Err(e) => {
+                if matches!(backend, GpuBackendKind::Metal) {
+                    return Err(e.context("QPoW Metal init failed"));
+                }
+                crate::ext_warn!("gpu_qpow_metal_init failed, falling back: {e}");
+            }
+        }
+    }
     #[cfg(feature = "gpu-cuda")]
     if matches!(backend, GpuBackendKind::Cuda | GpuBackendKind::Auto) {
         let shared_dev = {
@@ -3146,8 +3258,7 @@ fn create_qpow_gpu_miner(
                 for dev in &devices {
                     std::env::remove_var("ZION_OCL_DEVICE_IDX");
                     std::env::set_var("ZION_OCL_DEVICE_NAME", &dev.name);
-                    match crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size)
-                    {
+                    match crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size) {
                         Ok(m) => miners.push(crate::gpu::QpowGpuMiner::OpenCl(m)),
                         Err(e) => {
                             crate::ext_warn!(
@@ -3183,16 +3294,12 @@ fn create_qpow_gpu_miner(
             }
             // Filter left exactly one device — run single on that card.
             if devices.len() == 1 {
-                crate::ext_info!(
-                    "gpu_qpow_opencl_single device=\"{}\"",
-                    devices[0].name
-                );
+                crate::ext_info!("gpu_qpow_opencl_single device=\"{}\"", devices[0].name);
                 let saved_name = std::env::var("ZION_OCL_DEVICE_NAME").ok();
                 let saved_idx = std::env::var("ZION_OCL_DEVICE_IDX").ok();
                 std::env::set_var("ZION_OCL_DEVICE_NAME", &devices[0].name);
                 std::env::remove_var("ZION_OCL_DEVICE_IDX");
-                let res =
-                    crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size);
+                let res = crate::gpu::qpow_opencl::QpowOpenclMiner::new(work_size);
                 match saved_name {
                     Some(v) => std::env::set_var("ZION_OCL_DEVICE_NAME", v),
                     None => std::env::remove_var("ZION_OCL_DEVICE_NAME"),
