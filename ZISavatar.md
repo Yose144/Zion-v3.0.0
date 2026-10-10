@@ -161,9 +161,18 @@ initial (současné chování).
       timingy, žádný script → bezpečné ve veřejném renderu, fungují
       i uvnitř `<img>`; helpery `zisAvatarUrl/…AbsoluteUrl` mají opt `a`,
       desktop `avatarUrl` + mobile `zisAvatarUrl` taky
-- [ ] ZION_OS dashboard — miner/worker avatary (python dashboard,
-      `zis_user` z pool API jako seed)
-- [ ] MarketPlace — prodávající/kupující avatar (seed = adresa)
+- [x] ZION_OS dashboard — miner/worker avatary (python dashboard,
+      `zis_user` z pool API jako seed, fallback adresa)
+- [x] MarketPlace — profil header avatar (seed = adresa, animated)
+- [x] website-v2.9 account hero + OasisWeb GamePanel identity — animated;
+      miners leaderboard preferuje `zis_user` seed (forward-compat typ)
+
+**Deployed 2026-10-10 (commit `adae7ace1`):** ZIS `a=1` live na
+auth.zionterranova.com (SMIL animace ověřena veřejným endpointem),
+website-v2.9 + OasisWeb + MarketPlace + ZION_OS dashboard aktualizovány;
+`zis_user` propaguje v `/api/pool/miners-dashboard` (anonymous → `""`,
+fallback na adresu). Desktop agent + mobile app = kód v repu, distribuce
+s příští release.
 
 ### Fáze 5 — konceptuální (design pending)
 - [ ] OASIS NFT avatar binding — vlastník OASIS avatar NFT (MarketPlace
