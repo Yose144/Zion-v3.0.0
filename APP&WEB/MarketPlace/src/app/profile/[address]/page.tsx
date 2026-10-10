@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import ItemCard, { type ArtifactCardData } from '@/components/ItemCard';
+import ZisAvatar from '@/components/ZisAvatar';
 import { getProfileItems, getProfileActivity, type ProfileItemsResponse, type ProfileActivity } from '@/lib/market-api';
 import { useLangT } from '@/lib/useTranslation';
 
@@ -119,10 +120,15 @@ export default function ProfilePage() {
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rasta-green via-rasta-red to-rasta-gold flex items-center justify-center text-3xl font-black text-rasta-black font-display">
-              {addr.slice(2, 4).toUpperCase()}
-            </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rasta-green via-rasta-red to-rasta-gold blur-lg opacity-30" />
+            <ZisAvatar
+              seed={addr}
+              size={80}
+              alt={short}
+              initial={addr.slice(2, 4)}
+              className="w-20 h-20 rounded-2xl"
+              animated
+            />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rasta-green via-rasta-red to-rasta-gold blur-lg opacity-30 -z-10" />
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-black text-white mb-2 font-mono">{short}</h1>

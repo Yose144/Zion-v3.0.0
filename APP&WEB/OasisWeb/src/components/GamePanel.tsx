@@ -411,6 +411,7 @@ export function IdentityTab() {
                     size={18}
                     alt={user.displayName ?? 'avatar'}
                     initial={(user.displayName ?? 'Z')[0]}
+                    animated
                   />
                 )}
                 <span className="font-mono text-oasis-cyan">{(user?.address ?? address ?? '').slice(0, 18)}…</span>

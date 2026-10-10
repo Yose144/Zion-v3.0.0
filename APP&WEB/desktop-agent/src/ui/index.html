@@ -4346,6 +4346,107 @@
       background: rgba(228,30,43,0.25);
     }
 
+    /* ── ZIS avatar ── */
+    .zis-profile {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .zis-avatar-img {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      flex-shrink: 0;
+      background: #0a0a14;
+      border: 1px solid rgba(255,255,255,0.12);
+      object-fit: cover;
+    }
+    .zis-profile-meta {
+      min-width: 0;
+      flex: 1;
+    }
+    .zis-profile-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.92);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .zis-profile-addr {
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: rgba(255,255,255,0.5);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .zis-avatar-studio {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .zis-avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .zis-avatar-opt {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      padding: 0;
+      background: none;
+      transition: transform 0.12s ease, border-color 0.12s ease;
+    }
+    .zis-avatar-opt img {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      display: block;
+    }
+    .zis-avatar-opt:hover { transform: scale(1.06); }
+    .zis-avatar-opt.selected { border-color: #06b6d4; }
+    .zis-style-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .zis-style-btn {
+      flex: 1;
+      padding: 6px 0;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+    }
+    .zis-style-btn.selected {
+      background: rgba(6,182,212,0.18);
+      border-color: #06b6d4;
+      color: #7dd3fc;
+    }
+
+    .dock-avatar-img {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: #0a0a14;
+      object-fit: cover;
+      display: block;
+    }
+    .dock-avatar.signed-in { color: rgba(125,211,252,0.9); }
+
   </style>
 </head>
 <body>
@@ -6532,6 +6633,36 @@
               </div>
 
               <div class="form-grid two-col" id="zis-logged-in" style="display:none;">
+                <div class="form-group span-2" style="margin-bottom:4px;">
+                  <div class="zis-profile">
+                    <img id="zis-avatar" class="zis-avatar-img" alt="ZIS avatar" />
+                    <div class="zis-profile-meta">
+                      <div class="zis-profile-name" id="zis-profile-name">ZIS account</div>
+                      <div class="zis-profile-addr" id="zis-profile-addr"></div>
+                    </div>
+                    <button class="btn btn-secondary" id="zis-avatar-toggle" style="padding:6px 12px; font-size:12px;">
+                      <span>Avatar</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group span-2" id="zis-avatar-studio" style="display:none;">
+                  <div class="zis-avatar-studio">
+                    <div class="zis-style-row">
+                      <button class="zis-style-btn selected" data-style="sigil">Sigil</button>
+                      <button class="zis-style-btn" data-style="rings">Rings</button>
+                      <button class="zis-style-btn" data-style="prism">Prism</button>
+                    </div>
+                    <div class="zis-avatar-grid" id="zis-avatar-grid"></div>
+                    <div class="button-group" style="margin-top:8px;">
+                      <button class="btn btn-primary" id="zis-avatar-save" style="font-size:12px; padding:6px 12px;">Use Selected</button>
+                      <button class="btn btn-secondary" id="zis-avatar-reset" style="font-size:12px; padding:6px 12px;">Reset</button>
+                    </div>
+                    <small class="muted-note" style="display:block; margin-top:8px;">
+                      Avatars are generated deterministically from your ZIS identity — pick a style and variant.
+                      Same avatar shows on the website, OASIS, DAO and explorer.
+                    </small>
+                  </div>
+                </div>
                 <div class="form-group span-2">
                   <label>Session</label>
                   <pre id="zis-session-output" class="code-preview">Not loaded</pre>
@@ -8166,6 +8297,10 @@
       <div class="nav-item" data-view="about">
         <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
         <span>About</span>
+      </div>
+      <div class="nav-item dock-avatar" id="dock-avatar" data-view="settings" title="ZIS account" style="display:none; margin-left:auto;">
+        <img id="dock-avatar-img" class="dock-avatar-img" alt="" />
+        <span id="dock-avatar-label">Account</span>
       </div>
     </nav>
   </div>

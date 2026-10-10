@@ -61,8 +61,13 @@ function polygon(cx: number, cy: number, r: number, sides: number, rot: number):
   return pts.join(' ');
 }
 
+/** Rotate a <g> group around the avatar centre (SMIL). */
+function spin(cx: number, deg: number, durS: number): string {
+  return `<animateTransform attributeName="transform" type="rotate" from="0 ${fmt(cx)} ${fmt(cx)}" to="${deg} ${fmt(cx)} ${fmt(cx)}" dur="${fmt(durS)}s" repeatCount="indefinite"/>`;
+}
+
 // ── Style: sigil — arcs + rotated polygon + center prism + sparkles ──
-function renderSigil(rand: () => number, S: number, id: string): string {
+function renderSigil(rand: () => number, S: number, id: string, anim = false): string {
   const c = S / 2;
   const main = pick(rand, PALETTE);
   const accent = pick(rand, PALETTE);
@@ -71,22 +76,23 @@ function renderSigil(rand: () => number, S: number, id: string): string {
   // outer arc segments
   const arcs = 2 + Math.floor(rand() * 3);
   const outerR = S * 0.38;
+  const arcParts: string[] = [];
   let cursor = rand() * Math.PI * 2;
   for (let i = 0; i < arcs; i++) {
     const span = (Math.PI * 2) / (arcs + 1) * (0.5 + rand() * 0.45);
     const col = i % 2 === 0 ? main : accent;
-    parts.push(
+    arcParts.push(
       `<path d="${arc(c, c, outerR, cursor, cursor + span)}" fill="none" stroke="${col}" stroke-width="${fmt(S * 0.045)}" stroke-linecap="round" opacity="0.9"/>`,
     );
     cursor += span + (Math.PI * 2) / arcs * 0.35;
   }
+  parts.push(`<g>${arcParts.join('')}${anim ? spin(c, 360, 24 + rand() * 8) : ''}</g>`);
 
   // rotated polygon ring
   const sides = 3 + Math.floor(rand() * 4); // triangle..hexagon
   const polyR = S * (0.24 + rand() * 0.06);
-  parts.push(
-    `<polygon points="${polygon(c, c, polyR, sides, rand() * Math.PI)}" fill="none" stroke="${accent}" stroke-width="${fmt(S * 0.025)}" opacity="0.75"/>`,
-  );
+  const poly = `<polygon points="${polygon(c, c, polyR, sides, rand() * Math.PI)}" fill="none" stroke="${accent}" stroke-width="${fmt(S * 0.025)}" opacity="0.75"/>`;
+  parts.push(anim ? `<g>${poly}${spin(c, -360, 36 + rand() * 12)}</g>` : poly);
 
   // center prism (triangle) with gradient
   const prismR = S * (0.13 + rand() * 0.03);
@@ -103,15 +109,16 @@ function renderSigil(rand: () => number, S: number, id: string): string {
   for (let i = 0; i < sparks; i++) {
     const a = rand() * Math.PI * 2;
     const r = S * (0.42 + rand() * 0.05);
-    parts.push(
-      `<circle cx="${fmt(c + r * Math.cos(a))}" cy="${fmt(c + r * Math.sin(a))}" r="${fmt(S * (0.008 + rand() * 0.012))}" fill="${rand() > 0.5 ? main : accent}" opacity="0.85"/>`,
-    );
+    const circ = `<circle cx="${fmt(c + r * Math.cos(a))}" cy="${fmt(c + r * Math.sin(a))}" r="${fmt(S * (0.008 + rand() * 0.012))}" fill="${rand() > 0.5 ? main : accent}" opacity="0.85">` +
+      (anim ? `<animate attributeName="opacity" values="0.85;0.15;0.85" dur="${fmt(2.2 + rand() * 2.4)}s" repeatCount="indefinite"/>` : '') +
+      `</circle>`;
+    parts.push(circ);
   }
   return parts.join('');
 }
 
 // ── Style: rings — concentric planetary arcs ─────────────────────────
-function renderRings(rand: () => number, S: number, id: string): string {
+function renderRings(rand: () => number, S: number, id: string, anim = false): string {
   const c = S / 2;
   const parts: string[] = [];
   const count = 3 + Math.floor(rand() * 3);
@@ -121,16 +128,16 @@ function renderRings(rand: () => number, S: number, id: string): string {
     const a0 = rand() * Math.PI * 2;
     const span = Math.PI * (0.6 + rand() * 1.2);
     const w = S * (0.02 + rand() * 0.035);
-    parts.push(
-      `<path d="${arc(c, c, r, a0, a0 + span)}" fill="none" stroke="${col}" stroke-width="${fmt(w)}" stroke-linecap="round" opacity="${fmt(0.55 + rand() * 0.4)}"/>`,
-    );
+    const ring = `<path d="${arc(c, c, r, a0, a0 + span)}" fill="none" stroke="${col}" stroke-width="${fmt(w)}" stroke-linecap="round" opacity="${fmt(0.55 + rand() * 0.4)}"/>`;
+    // Alternating spin directions → planetarium effect.
+    const deg = i % 2 === 0 ? 360 : -360;
+    parts.push(anim ? `<g>${ring}${spin(c, deg, 16 + i * 7 + rand() * 5)}</g>` : ring);
   }
-  // orbit dot
+  // orbit dot — animated it circles the core.
   const orbitR = S * (0.2 + rand() * 0.25);
   const oa = rand() * Math.PI * 2;
-  parts.push(
-    `<circle cx="${fmt(c + orbitR * Math.cos(oa))}" cy="${fmt(c + orbitR * Math.sin(oa))}" r="${fmt(S * 0.035)}" fill="#ffffff" opacity="0.9"/>`,
-  );
+  const dot = `<circle cx="${fmt(c + orbitR * Math.cos(oa))}" cy="${fmt(c + orbitR * Math.sin(oa))}" r="${fmt(S * 0.035)}" fill="#ffffff" opacity="0.9"/>`;
+  parts.push(anim ? `<g>${dot}${spin(c, 360, 9 + rand() * 6)}</g>` : dot);
   // core
   const coreR = S * (0.09 + rand() * 0.04);
   parts.push(`<circle cx="${c}" cy="${c}" r="${fmt(coreR)}" fill="url(#${id}g)"/>`);
@@ -141,7 +148,7 @@ function renderRings(rand: () => number, S: number, id: string): string {
 }
 
 // ── Style: prism — tessellated triangles ─────────────────────────────
-function renderPrism(rand: () => number, S: number, id: string): string {
+function renderPrism(rand: () => number, S: number, id: string, anim = false): string {
   const c = S / 2;
   const parts: string[] = [];
   // central upward prism
@@ -149,31 +156,33 @@ function renderPrism(rand: () => number, S: number, id: string): string {
   const accent = pick(rand, PALETTE);
   const r1 = S * 0.3;
   const rot = rand() * Math.PI * 2;
-  parts.push(
-    `<polygon points="${polygon(c, c, r1, 3, rot)}" fill="url(#${id}g)" opacity="0.95"/>`,
-  );
+  const prism = `<polygon points="${polygon(c, c, r1, 3, rot)}" fill="url(#${id}g)" opacity="0.95"/>`;
+  parts.push(anim ? `<g>${prism}${spin(c, 360, 48 + rand() * 12)}</g>` : prism);
   // inverted inner prism
   parts.push(
     `<polygon points="${polygon(c, c, r1 * 0.55, 3, rot + Math.PI)}" fill="${accent}" opacity="0.55"/>`,
   );
-  // satellite triangles
+  // satellite triangles — animated they orbit the core like shards.
   const sats = 3 + Math.floor(rand() * 3);
+  const satParts: string[] = [];
   for (let i = 0; i < sats; i++) {
     const a = rot + (i * 2 * Math.PI) / sats;
     const sr = S * (0.055 + rand() * 0.03);
     const d = S * (0.36 + rand() * 0.06);
     const sx = c + d * Math.cos(a);
     const sy = c + d * Math.sin(a);
-    parts.push(
+    satParts.push(
       `<polygon points="${polygon(sx, sy, sr, 3, a + Math.PI / 2)}" fill="${i % 2 ? main : accent}" opacity="0.8"/>`,
     );
   }
+  parts.push(`<g>${satParts.join('')}${anim ? spin(c, 360, 30 + rand() * 10) : ''}</g>`);
   // facet lines from center
   for (let i = 0; i < 3; i++) {
     const a = rot + (i * 2 * Math.PI) / 3;
-    parts.push(
-      `<line x1="${c}" y1="${c}" x2="${fmt(c + r1 * Math.cos(a))}" y2="${fmt(c + r1 * Math.sin(a))}" stroke="#ffffff" stroke-width="${fmt(S * 0.008)}" opacity="0.3"/>`,
-    );
+    const line = `<line x1="${c}" y1="${c}" x2="${fmt(c + r1 * Math.cos(a))}" y2="${fmt(c + r1 * Math.sin(a))}" stroke="#ffffff" stroke-width="${fmt(S * 0.008)}" opacity="0.3">` +
+      (anim ? `<animate attributeName="opacity" values="0.3;0.08;0.3" dur="${fmt(3 + rand() * 2)}s" repeatCount="indefinite"/>` : '') +
+      `</line>`;
+    parts.push(line);
   }
   return parts.join('');
 }
@@ -184,12 +193,16 @@ function renderPrism(rand: () => number, S: number, id: string): string {
  * @param variant regeneration seed (user picks among variants)
  * @param style   'sigil' | 'rings' | 'prism' (unknown → sigil)
  * @param size    viewBox size, clamped to 16..512
+ * @param animated when true, decorate the SVG with SMIL motion (spinning
+ *                 arcs/rings, pulsing sparkles). Still deterministic —
+ *                 same params = same animation timings.
  */
 export function renderAvatarSvg(
   seed: string,
   variant = 0,
   style: string = 'sigil',
   size = 128,
+  animated = false,
 ): string {
   const s = Math.min(Math.max(Math.floor(size) || 128, 16), 512);
   const safeStyle: string = (AVATAR_STYLES as readonly string[]).includes(style) ? style : 'sigil';
@@ -202,10 +215,10 @@ export function renderAvatarSvg(
 
   const body =
     safeStyle === 'rings'
-      ? renderRings(rand, s, id)
+      ? renderRings(rand, s, id, animated)
       : safeStyle === 'prism'
-        ? renderPrism(rand, s, id)
-        : renderSigil(rand, s, id);
+        ? renderPrism(rand, s, id, animated)
+        : renderSigil(rand, s, id, animated);
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}" width="${s}" height="${s}">` +

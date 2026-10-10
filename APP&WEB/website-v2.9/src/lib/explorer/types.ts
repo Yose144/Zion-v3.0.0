@@ -425,6 +425,9 @@ export interface ExplorerConsensus {
 export interface ExplorerMiner {
   rank: number;
   address: string;
+  /** ZIS sub bound at V3 Hello when the pool session is authenticated.
+   *  Empty/absent for anonymous miners — avatar seed falls back to address. */
+  zis_user?: string | null;
   hashrate: number;
   hashrate_formatted: string;
   shares_accepted: number;

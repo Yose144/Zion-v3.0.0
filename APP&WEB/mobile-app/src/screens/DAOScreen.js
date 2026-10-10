@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import GlassCard from '../components/common/GlassCard';
+import ZisAvatar from '../components/common/ZisAvatar';
 import { colors, spacing, typography, borderRadius } from '../constants/theme';
 import {
   getDAOHealth,
@@ -253,6 +254,14 @@ const DAOScreen = () => {
               <Text style={styles.proposalTitle} numberOfLines={2}>
                 {p.title ?? p.description ?? 'Untitled proposal'}
               </Text>
+              {(p.proposer || p.author) ? (
+                <View style={styles.proposerRow}>
+                  <ZisAvatar seed={p.proposer || p.author} size={18} />
+                  <Text style={styles.proposerText} numberOfLines={1}>
+                    {String(p.proposer || p.author)}
+                  </Text>
+                </View>
+              ) : null}
               {p.votes_for !== undefined && (
                 <View style={styles.voteRow}>
                   <Text style={styles.voteFor}>✓ {p.votes_for ?? 0}</Text>
@@ -444,6 +453,18 @@ const styles = StyleSheet.create({
   proposalTitle: {
     ...typography.body,
     color: colors.text.primary,
+  },
+  proposerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  proposerText: {
+    ...typography.caption,
+    color: colors.text.muted,
+    fontFamily: 'monospace',
+    flex: 1,
   },
   voteRow: {
     flexDirection: 'row',

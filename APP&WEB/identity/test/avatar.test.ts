@@ -67,4 +67,19 @@ describe('renderAvatarSvg', () => {
   it('output is compact (usable inline, <5 KB)', () => {
     assert.ok(renderAvatarSvg('x'.repeat(100), 0, 'sigil', 512).length < 5120);
   });
+
+  it('animated flag adds SMIL motion, still deterministic and safe', () => {
+    for (const style of AVATAR_STYLES) {
+      const anim = renderAvatarSvg('seed', 2, style, 128, true);
+      const still = renderAvatarSvg('seed', 2, style, 128, false);
+      assert.match(anim, /<animate/, `${style}: animated output lacks SMIL`);
+      assert.ok(!still.includes('<animate'), `${style}: static output has SMIL`);
+      // animated is deterministic too
+      assert.equal(anim, renderAvatarSvg('seed', 2, style, 128, true));
+      // animation never introduces unsafe content
+      assert.ok(!anim.includes('<script'));
+      assert.ok(!anim.includes('javascript:'));
+      assert.ok(!anim.includes('foreignObject'));
+    }
+  });
 });

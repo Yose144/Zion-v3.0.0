@@ -7734,11 +7734,15 @@ ipcMain.handle('cli-atomic-swap-refund', async (_event, { hash, token }) => {
 // ZIS — ZION Identity Service (auth + authenticated multichain public API)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-ipcMain.handle('zis-get-session', async () => ({
-  success: true,
-  session: zisClient.getSession(),
-  loggedIn: zisClient.isLoggedIn(),
-}));
+ipcMain.handle('zis-get-session', async () => {
+  const session = zisClient.getSession();
+  return {
+    success: true,
+    session,
+    loggedIn: zisClient.isLoggedIn(),
+    avatarUrl: zisClient.sessionAvatarUrl(session.user, { size: 256 }),
+  };
+});
 
 ipcMain.handle('zis-login-mnemonic', async (_event, { mnemonic }) => {
   try {
@@ -7784,6 +7788,20 @@ ipcMain.handle('zis-me', async () => {
     return { success: false, error: err.message };
   }
 });
+
+ipcMain.handle('zis-update-me', async (_event, { data }) => {
+  try {
+    const json = await zisClient.updateMe(data || {});
+    return { success: true, data: json };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-avatar-url', async (_event, { seed, variant, style, size, animated }) => ({
+  success: true,
+  url: zisClient.avatarUrl(seed, { variant, style, size, animated }),
+}));
 
 ipcMain.handle('zis-list-keys', async () => {
   try {

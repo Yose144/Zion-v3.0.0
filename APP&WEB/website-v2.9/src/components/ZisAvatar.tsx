@@ -21,11 +21,13 @@ interface Props {
   className?: string;
   /** Fallback letter (displayName initial). Defaults to 'Z'. */
   initial?: string;
+  /** When true and no explicit src, request the SMIL-animated variant (a=1). */
+  animated?: boolean;
 }
 
-export default function ZisAvatar({ seed, src, size = 28, alt = '', className = '', initial = 'Z' }: Props) {
+export default function ZisAvatar({ seed, src, size = 28, alt = '', className = '', initial = 'Z', animated = false }: Props) {
   const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
-  const url = src || zisAvatarUrl(seed, { sz: 128 });
+  const url = src || zisAvatarUrl(seed, { sz: 128, a: animated });
 
   if (brokenUrl === url) {
     return (

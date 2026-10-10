@@ -1,6 +1,7 @@
 # ZIS Avatar — specifikace a roadmap
 
-> Stav: **fáze 1 + část fáze 2 NASAZENY na produkci** (2026-09-30).
+> Stav: **fáze 1 + 2 + upload NASAZENY na produkci** (2026-09-30);
+> **fáze 4 (všech povrchů + animace) v implementaci** (2026-10-10).
 > Kanonický dokument pro avatar systém ZION identity napříč ekosystémem.
 > Live: `https://auth.zionterranova.com/api/auth/avatar/<seed>.svg` a
 > same-origin proxy na app/oasis hostech.
@@ -40,6 +41,7 @@ Veřejný endpoint (bez auth). Parametry query:
 | `s` | `0` | variant seed (celé číslo — "regenerate" = nové `s`) |
 | `t` | `sigil` | styl: `sigil` \| `rings` \| `prism` |
 | `sz` | `128` | velikost viewBox (px ekvivalent), 16–512 |
+| `a` | `0` | `a=1` → SMIL animace (rotace oblouků, pulz sparkle; stále deterministic) |
 
 Response: `image/svg+xml`, `Cache-Control: public, max-age=31536000, immutable`
 (URL je content-addressed parametery → agresivní cache OK).
@@ -143,6 +145,37 @@ initial (současné chování).
       limit velikosti řeší payload, prohlížeč škáluje.
 - [ ] OASIS NFT avatary (on-chain ownership → `avatar` URL na token art)
 - [ ] 3D/animated avatar varianty pro OASIS world
+
+### Fáze 4 — všude, kde žije identita (2026-10-10)
+- [x] **Desktop agent** — profil řádek v ZIS sekci (avatar + displayName +
+      adresa), mini Avatar Studio (styly + mřížka 8 variant + Use Selected
+      → `PATCH /me`, Reset), dock-bar avatar chip (celoappkově viditelný,
+      klik → Settings); IPC `zis-update-me` + `zis-avatar-url`,
+      `zis-get-session` vrací i `avatarUrl` (explicit avatar → generovaný
+      fallback)
+- [x] **Mobile app** — `ZisAvatar` RN komponenta (`SvgUri` pro generované
+      SVG, `<Image>` pro uploadované rastery); proposer avatar + adresa
+      v DAO screen kartách (seed = `proposal.proposer`, bez auth)
+- [x] **Animované avatary** — query `a=1` → SMIL (`animateTransform`
+      rotace skupin, `<animate>` pulz sparkles/facet lines); deterministic
+      timingy, žádný script → bezpečné ve veřejném renderu, fungují
+      i uvnitř `<img>`; helpery `zisAvatarUrl/…AbsoluteUrl` mají opt `a`,
+      desktop `avatarUrl` + mobile `zisAvatarUrl` taky
+- [ ] ZION_OS dashboard — miner/worker avatary (python dashboard,
+      `zis_user` z pool API jako seed)
+- [ ] MarketPlace — prodávající/kupující avatar (seed = adresa)
+
+### Fáze 5 — konceptuální (design pending)
+- [ ] OASIS NFT avatar binding — vlastník OASIS avatar NFT (MarketPlace
+      `ZIONArtifact`, `notifyAvatarMint` flow už existuje) si může
+      nastavit token art jako `user.avatar`. Potřebuje: ownership proof
+      čtení z chainu (EVM `ownerOf` / L1 registry) → ZIS endpoint
+      `POST /api/auth/avatar/nft` {contract, tokenId} → verify → PATCH.
+      Do té doby jede přes existující „vlastní URL" cestu.
+- [ ] 3D avatar — OASIS `AvatarConfig` (callsign/bodyType/neonColor/
+      augmentation) × ZIS avatar (sigil jako chest emblem / neonColor z
+      avatar palety); animované varianty (`a=1`) jako in-world hologram
+- [ ] NotificationsPanel — až bude zobrazovat cizí identity
 
 ## Poznámky
 

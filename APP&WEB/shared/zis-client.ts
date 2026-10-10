@@ -97,12 +97,13 @@ export type ZisAvatarStyle = 'sigil' | 'rings' | 'prism';
  */
 export function zisAvatarUrl(
   seed: string,
-  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number },
+  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number; a?: boolean },
 ): string {
   const params = new URLSearchParams();
   if (opts?.s !== undefined) params.set('s', String(opts.s));
   if (opts?.t) params.set('t', opts.t);
   if (opts?.sz) params.set('sz', String(opts.sz));
+  if (opts?.a) params.set('a', '1');
   const qs = params.toString();
   return `/api/auth/avatar/${encodeURIComponent(seed)}.svg${qs ? `?${qs}` : ''}`;
 }
@@ -113,7 +114,7 @@ export function zisAvatarUrl(
  */
 export function zisAvatarAbsoluteUrl(
   seed: string,
-  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number },
+  opts?: { s?: number; t?: ZisAvatarStyle; sz?: number; a?: boolean },
 ): string {
   return `${getZisUrl()}${zisAvatarUrl(seed, opts)}`;
 }
