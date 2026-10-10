@@ -1389,6 +1389,15 @@ const DEFAULT_CONFIG = {
   extGpuBackend: 'cuda',
   extGpuDutyPct: 50,
   extGpuBatchSize: 262144,
+  // minerApi: SRBMiner-compatible HTTP stats API bind address.
+  //   ''       = disabled (default)
+  //   '21550'  = listen on 0.0.0.0:21550 (LAN monitoring tools)
+  //   '127.0.0.1:21550' = localhost only
+  //   '0.0.0.0:21550'   = explicit any-interface bind
+  // The miner serves SRBMiner-shaped JSON on `GET /` and `GET /stats`, so
+  // existing SRB-aware dashboards (Awesome Miner, SMOS-style monitors)
+  // can poll a zion-miner rig unchanged.
+  minerApi: '',
 };
 
 function normalizeAlgorithmName(algo) {
@@ -2748,6 +2757,11 @@ function startMiningV31(config, v31Path) {
   if (tripleStreamEnabled && config.autonomous === true && cpuCoinAuto && gpuCoinAuto) {
     args.push('--autonomous');
   }
+  // SRBMiner-compatible HTTP stats API (config.minerApi — see DEFAULT_CONFIG).
+  const minerApiRaw = String(config?.minerApi || '').trim();
+  if (minerApiRaw) {
+    args.push('--api-enable', '--api-rig-name', worker);
+  }
 
   // ── 7. Build V31 environment ───────────────────────────────────────────────
   const env = {
@@ -2767,6 +2781,12 @@ function startMiningV31(config, v31Path) {
   const nodeRpc = config?.rpcUrl || DEFAULT_RPC_URL;
   if (nodeRpc) {
     env.ZION_NODE_RPC = nodeRpc;
+  }
+  if (minerApiRaw) {
+    // Normalize: bare port → any-interface bind; host:port → verbatim.
+    env.ZION_API_HTTP_ADDR = /^\d+$/.test(minerApiRaw)
+      ? `0.0.0.0:${minerApiRaw}`
+      : minerApiRaw;
   }
   // ZIS auth (phase C): explicit config key wins, else the stored ZIS
   // session apiKey. Forwarded as ZION_ZIS_TOKEN; never logged.
