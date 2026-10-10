@@ -119,9 +119,13 @@ Commercial options, in order of feasibility:
    **lane-parallel QPoW kernel IP** if it beats their 73 MH/s. Requires:
    frozen algorithm spec, test vectors, reference implementation, live pool.
 3. **ZionSMR as our own commercial miner** — brand `zion-miner` with an
-   SRBMiner-style feature set (HTTP API, `--list-algorithms`, devfee plumbing,
-   multi-algo/multi-stream already done via Trinity). Decision gate *after*
-   Phase B lands; licensing model to be decided (repo is currently source-open).
+   SRBMiner-style feature set. **Shipped:** `--api-enable`/`--api-port`/
+   `--api-rig-name` → SRBMiner-compatible HTTP JSON stats (`GET /` — same
+   schema monitoring tools parse: rig_name, miner_version, gpu_devices,
+   algorithms[] with pool/shares/hashrate per stream incl. per-GPU hashrates);
+   `--list-algorithms` (30 algos incl. `qpow-poseidon2`); plus the existing
+   sgminer/TRM TCP API (`ZION_API_ADDR`) for SMOS custom-miner slots.
+   Remaining decisions: devfee plumbing + licensing model.
 
 ## Definition of done (Phase B)
 

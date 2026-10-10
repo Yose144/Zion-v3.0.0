@@ -128,6 +128,27 @@ struct Args {
     /// Also read from `ZION_WATCHDOG_TIMEOUT_SEC`.
     #[arg(long, default_value = "300")]
     watchdog_timeout: u64,
+
+    /// Enable the SRBMiner-compatible HTTP statistics API
+    /// (`GET http://<addr>/` → JSON stats — same shape monitoring tools
+    /// parse from `--api-enable` miners). Bind address via
+    /// `ZION_API_HTTP_ADDR` (default 0.0.0.0:`--api-port`).
+    #[arg(long)]
+    api_enable: bool,
+
+    /// Port for the SRBMiner-compatible API. Same default as SRBMiner.
+    #[arg(long, default_value = "21550")]
+    api_port: u16,
+
+    /// Rig name reported by the API (`rig_name` field).
+    /// Defaults to `--worker`.
+    #[arg(long)]
+    api_rig_name: Option<String>,
+
+    /// List supported mining algorithms and exit (like
+    /// `--list-algorithms` on other multi-algo miners).
+    #[arg(long)]
+    list_algorithms: bool,
 }
 
 /// Parse a bool env var (1/true/yes → true).
@@ -141,6 +162,21 @@ fn env_bool(key: &str, default: bool) -> bool {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
+
+    // `--list-algorithms`: print supported algorithms and exit before any
+    // config validation (no wallet/pool needed for a help-style flag).
+    if args.list_algorithms {
+        let mut algos: std::collections::BTreeSet<&'static str> =
+            ["ekam_deeksha"].into_iter().collect();
+        for coin in zion_cosmic_harmony::ExternalCoin::all() {
+            algos.insert(coin.algorithm());
+        }
+        println!("Supported algorithms:");
+        for a in algos {
+            println!("  {a}");
+        }
+        return Ok(());
+    }
 
     // ── Determine TUI mode ──
     #[cfg(feature = "tui")]
@@ -267,6 +303,28 @@ async fn main() -> Result<()> {
                 Err(e) => warn!("{var}={val}: invalid socket addr: {e}"),
             }
         }
+    }
+
+    // SRBMiner-compatible HTTP JSON API (GET / → stats JSON).
+    // Enabled via --api-enable, or by setting ZION_API_HTTP_ADDR directly
+    // (which also overrides the bind address).
+    let api_http_addr = std::env::var("ZION_API_HTTP_ADDR")
+        .ok()
+        .and_then(|v| v.parse::<SocketAddr>().ok());
+    if args.api_enable || api_http_addr.is_some() {
+        let bind = api_http_addr
+            .unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], args.api_port)));
+        let rig = args
+            .api_rig_name
+            .clone()
+            .unwrap_or_else(|| args.worker.clone());
+        let rt = runtime.clone();
+        let wallet = args.wallet.clone();
+        tokio::spawn(async move {
+            if let Err(e) = srbminer_api_serve(rt, bind, rig, wallet).await {
+                warn!("srbminer-compat api {bind}: {e}");
+            }
+        });
     }
 
     // ── Shutdown signal ──
@@ -824,5 +882,203 @@ async fn sgminer_api_serve(rt: MinerRuntime, addr: SocketAddr, dual: bool) -> Re
             out.push(0);
             let _ = sock.write_all(&out).await;
         });
+    }
+}
+
+/// SRBMiner-compatible HTTP statistics API. `GET /` returns a JSON body in
+/// the same shape SRBMiner-MULTI emits on `--api-enable` (rig_name,
+/// miner_version, mining_time, worker/device counts, gpu_devices,
+/// algorithms[] with pool/shares/hashrate), so mining-OS dashboards and
+/// SRB-aware tooling can parse zion-miner stats unchanged.
+async fn srbminer_api_serve(
+    rt: MinerRuntime,
+    addr: SocketAddr,
+    rig_name: String,
+    wallet: String,
+) -> Result<()> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    info!("srbminer-compat api listening on http://{addr} (GET /)");
+    let start = Instant::now();
+    loop {
+        let (mut sock, peer) = listener.accept().await?;
+        let rt = rt.clone();
+        let rig = rig_name.clone();
+        let wallet = wallet.clone();
+        tokio::spawn(async move {
+            let mut buf = [0u8; 8192];
+            let n = match sock.read(&mut buf).await {
+                Ok(0) | Err(_) => return,
+                Ok(n) => n,
+            };
+            let req = String::from_utf8_lossy(&buf[..n]);
+            let first_line = req.lines().next().unwrap_or_default();
+            let is_get_root = first_line.starts_with("GET / ")
+                || first_line.starts_with("GET /stats")
+                || first_line.starts_with("get / ");
+            let (status, body, ctype) = if is_get_root {
+                let stats = rt.stats().await;
+                let json = srbminer_json(&rt, &stats, &rig, &wallet, start.elapsed().as_secs()).await;
+                (
+                    "200 OK",
+                    serde_json::to_string_pretty(&json).unwrap_or_default(),
+                    "application/json",
+                )
+            } else {
+                ("404 Not Found", "not found\n".to_string(), "text/plain")
+            };
+            let resp = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: {ctype}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = sock.write_all(resp.as_bytes()).await;
+            if is_get_root {
+                info!("srbminer-compat api {peer} GET /");
+            }
+        });
+    }
+}
+
+/// Build the SRBMiner-shaped stats JSON from live runtime stream stats.
+async fn srbminer_json(
+    rt: &MinerRuntime,
+    stats: &std::collections::HashMap<StreamId, StreamStats>,
+    rig_name: &str,
+    wallet: &str,
+    uptime: u64,
+) -> serde_json::Value {
+    let cfg = rt.config();
+    let streams: [(StreamId, &str, Option<String>, bool); 4] = [
+        (
+            StreamId::Zion,
+            "ekam_deeksha",
+            cfg.pool_url.clone().or_else(|| cfg.node_rpc_url.clone()),
+            cfg.stream1_enabled,
+        ),
+        (
+            StreamId::GpuExternal,
+            "qpow-poseidon2",
+            cfg.stream2_url.clone().or_else(|| cfg.auxpow_pool.clone()),
+            cfg.stream2_enabled,
+        ),
+        (
+            StreamId::CpuExternal,
+            "verushash",
+            cfg.stream3_url.clone().or_else(|| cfg.auxpow_pool.clone()),
+            cfg.stream3_enabled,
+        ),
+        (
+            StreamId::GpuExternal2,
+            "qpow-poseidon2",
+            cfg.stream4_url.clone().or_else(|| cfg.auxpow_pool.clone()),
+            cfg.stream4_enabled,
+        ),
+    ];
+
+    let mut algorithms = Vec::new();
+    let mut gpu_devices: Vec<serde_json::Value> = Vec::new();
+    let mut gpu_workers = 0u64;
+    let mut cpu_workers = 0u64;
+    let zion_on_gpu = !matches!(cfg.gpu_backend.as_str(), "cpu" | "");
+
+    for (stream, default_algo, pool, enabled) in &streams {
+        if !enabled {
+            continue;
+        }
+        let s = stats.get(stream);
+        let algo = s
+            .and_then(|s| s.algorithm.clone())
+            .unwrap_or_else(|| default_algo.to_string());
+        let coin = s
+            .and_then(|s| s.coin.as_ref().map(|c| c.ticker().to_string()))
+            .unwrap_or_default();
+        let hashrate = s.map(|s| s.hashrate).unwrap_or(0.0);
+        let accepted = s.map(|s| s.accepted).unwrap_or(0);
+        let rejected = s.map(|s| s.rejected).unwrap_or(0);
+        let is_gpu = stream.is_gpu_external()
+            || matches!(stream, StreamId::Zion if zion_on_gpu);
+        if is_gpu {
+            gpu_workers += 1;
+        } else {
+            cpu_workers += 1;
+        }
+
+        // Per-device hashrates when the backend reports them; otherwise the
+        // whole stream rides a single logical gpu0 / cpu total.
+        let mut gpu_hr = serde_json::Map::new();
+        if is_gpu {
+            let devs = rt.gpu_devices(*stream).await;
+            if devs.is_empty() {
+                gpu_hr.insert("gpu0".into(), serde_json::json!(hashrate));
+            } else {
+                for (idx, (name, hps)) in devs.iter().enumerate() {
+                    let dev = format!("gpu{idx}");
+                    gpu_hr.insert(dev.clone(), serde_json::json!(hps));
+                    if gpu_devices.iter().all(|d| d["model"] != name.as_str()) {
+                        gpu_devices.push(serde_json::json!({
+                            "id": gpu_devices.len(),
+                            "device": dev,
+                            "vendor": srb_vendor(name),
+                            "model": name,
+                        }));
+                    }
+                }
+            }
+            gpu_hr.insert("total".into(), serde_json::json!(hashrate));
+        }
+
+        algorithms.push(serde_json::json!({
+            "id": stream.index(),
+            "name": algo,
+            "coin": coin,
+            "pool": {
+                "pool": pool.clone().unwrap_or_default(),
+                "wallet": wallet,
+                "uptime": uptime,
+            },
+            "shares": {
+                "total": accepted + rejected,
+                "accepted": accepted,
+                "rejected": rejected,
+                "avg_find_time": if accepted > 0 { uptime / accepted } else { 0 },
+            },
+            "hashrate": {
+                "1min": hashrate,
+                "1hr": hashrate,
+                "6hr": hashrate,
+                "12hr": hashrate,
+                "gpu": gpu_hr,
+                "cpu": { "total": if is_gpu { 0.0 } else { hashrate } },
+            },
+        }));
+    }
+
+    serde_json::json!({
+        "rig_name": rig_name,
+        "miner_version": env!("CARGO_PKG_VERSION"),
+        "miner": "zion-miner",
+        "mining_time": uptime,
+        "total_cpu_workers": cpu_workers,
+        "total_gpu_workers": gpu_workers,
+        "total_workers": cpu_workers + gpu_workers,
+        "gpu_devices": gpu_devices,
+        "algorithms": algorithms,
+    })
+}
+
+fn srb_vendor(name: &str) -> &'static str {
+    let n = name.to_lowercase();
+    if n.contains("apple") {
+        "apple"
+    } else if n.contains("radeon") || n.contains("amd") || n.contains("gfx") {
+        "amd"
+    } else if n.contains("nvidia") || n.contains("geforce") || n.contains("rtx")
+        || n.contains("gtx")
+    {
+        "nvidia"
+    } else if n.contains("intel") || n.contains("arc") {
+        "intel"
+    } else {
+        "unknown"
     }
 }
