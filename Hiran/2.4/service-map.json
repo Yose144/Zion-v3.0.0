@@ -1,0 +1,260 @@
+{
+  "generated": "2026-10-10T14:00:00+02:00",
+  "verified_against": "edge 62.171.141.136 (ss -tlnp + curl probes + systemd)",
+  "scope": "Hiran 2.4 Maestro — canonical live service map. Single source of truth for health_poller probes, tool_registry endpoints and env wiring. All URLs are Edge-local (127.0.0.1).",
+  "layers": ["L1", "L2", "L3", "L4", "L5", "L6", "System"],
+  "services": {
+    "v31-node1": {
+      "layer": "L1", "unit": "zion-v31-node.service", "proc": "zion-node",
+      "endpoints": { "rpc": "http://127.0.0.1:9445", "p2p": "tcp://127.0.0.1:8335" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9445/health", "expect_json": "zion-v31-rpc" },
+      "rpc": { "style": "jsonrpc-2.0", "post_to": "/",
+        "methods_read": ["getChainInfo", "getStatus", "getNodeInfo", "getPeerInfo", "getNetworkStats", "getBlock", "getBlockByHeight", "getBlockByHash", "getBlockRange", "getTransaction", "getAccountTransaction", "getTransactionHistory", "getBalance", "getAccountBalance", "getBalanceAtHeight", "getAddressInfo", "getMempoolInfo", "getMempoolTransactions", "getSupplyInfo", "getUtxos", "getTokenInfo", "getBridgeLocks", "getBridgeVaultBalance", "getAdminUnlocks"],
+        "methods_write": ["sendRawTransaction", "submitTransaction", "submitAccountTransaction", "submitUtxoTransaction", "submitBlock", "submitBridgeUnlock", "getBlockTemplate"]
+      },
+      "env": { "ZION_NODE1_RPC": "http://127.0.0.1:9445", "ZION_NODE1_P2P": "127.0.0.1:8335" },
+      "notes": "camelCase methods — NOT bitcoin-style. getblockcount→getChainInfo(chain_height), getnetworkinfo→getNetworkStats/getNodeInfo, getmininginfo→getChainInfo(difficulty,mempool), getsupplyinfo→getSupplyInfo, getpeerinfo→getPeerInfo."
+    },
+    "v31-node2": {
+      "layer": "L1", "unit": "zion-v31-node2.service", "proc": "zion-node",
+      "endpoints": { "rpc": "http://127.0.0.1:9446", "p2p": "tcp://127.0.0.1:8336" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9446/health" },
+      "rpc": { "style": "jsonrpc-2.0", "inherits": "v31-node1" },
+      "env": { "ZION_NODE2_RPC": "http://127.0.0.1:9446", "ZION_NODE2_P2P": "127.0.0.1:8336" },
+      "notes": "follower, syncs from node1"
+    },
+    "v31-node3": {
+      "layer": "L1", "unit": "zion-v31-node3.service", "proc": "zion-node",
+      "endpoints": { "rpc": "http://127.0.0.1:9447", "p2p": "tcp://127.0.0.1:8337" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9447/health" },
+      "rpc": { "style": "jsonrpc-2.0", "inherits": "v31-node1" },
+      "env": { "ZION_NODE3_RPC": "http://127.0.0.1:9447", "ZION_NODE3_P2P": "127.0.0.1:8337" },
+      "notes": "NEW — absent in old probes/code"
+    },
+    "v31-pool": {
+      "layer": "L1", "unit": "zion-v31-pool.service", "proc": "zion-pool",
+      "endpoints": { "api": "http://127.0.0.1:8080", "stratum": "tcp://0.0.0.0:8444" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8080/health" },
+      "routes_public": ["/health", "/stats", "/miners", "/blocks", "/metrics", "/pool"],
+      "routes_auth": ["/api/v1/miners", "/api/v1/auxpow", "/api/v1/blocks", "/api/v1/payouts", "/api/v1/pplns", "/admin"],
+      "env": { "ZION_POOL_API": "http://127.0.0.1:8080" },
+      "notes": "/stats returns API index + auxpow coin_details (multi-coin jobs). /miners = worker table w/ hashrate_1h/24h. Old code pointed at :8455 (dead) and /sessions (404)."
+    },
+    "v31-warp": {
+      "layer": "L3", "unit": "zion-v31-multichain.service", "proc": "warpd",
+      "endpoints": { "api": "http://127.0.0.1:8453", "dex": "http://127.0.0.1:8454" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8453/health" },
+      "routes": ["/health", "/status", "/chains", "/transfers", "/transfers/:id", "/transfers/inbound", "/transfers/outbound", "/transfers/pending", "/txs", "/utxo", "/metrics"],
+      "env": { "ZION_WARP_API": "http://127.0.0.1:8453", "ZION_DEX_API": "http://127.0.0.1:8454" },
+      "notes": "warpd serves both 8453 (warp api) + 8454 (dex/swap api). Old code had bridge :9101 (dead — bridge = warpd) and swap :8452."
+    },
+    "v31-dao": {
+      "layer": "L2", "unit": "zion-v31-dao.service", "proc": "zion-dao",
+      "endpoints": { "api": "http://127.0.0.1:8456" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8456/api/dao/health" },
+      "routes": ["/api/dao/health", "/api/dao/stats", "/api/dao/proposals/:id", "/api/dao/proposals/:id/vote", "/api/dao/proposals/:id/votes", "/api/dao/proposals/:id/tally", "/api/dao/proposals/:id/execute", "/api/dao/proposals/:id/cancel", "/api/dao/proposals/:id/events", "/api/dao/treasury", "/api/dao/treasury/ops", "/api/dao/treasury/submit", "/api/dao/treasury/:op_id/sign", "/api/dao/delegations", "/api/dao/guardians", "/metrics"],
+      "env": { "ZION_DAO_API": "http://127.0.0.1:8456" },
+      "notes": "old code: :8450 + /proposals|/treasury|/vote — all wrong; real base is /api/dao/*"
+    },
+    "v31-oasis": {
+      "layer": "L4", "unit": "zion-v31-oasis.service", "proc": "zion-oasis",
+      "endpoints": { "api": "http://127.0.0.1:8094", "metrics": "http://127.0.0.1:9102" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8094/health" },
+      "routes_ai": ["POST /api/v1/oasis/ai/hiran-health", "POST /api/v1/oasis/ai/npc-dialogue", "POST /api/v1/oasis/ai/quest-narrative"],
+      "routes_game": ["/api/v1/oasis/avatars", "/api/v1/oasis/player/:address", "/api/v1/oasis/quests", "/api/v1/oasis/guilds", "/api/v1/oasis/leaderboard", "/api/v1/oasis/map", "/api/v1/oasis/worlds", "/api/v1/oasis/rewards/pools", "/api/v1/oasis/ws/events"],
+      "env_to_enable_ai": { "OASIS_HIRAN_URL": "http://127.0.0.1:8001", "OASIS_HIRAN_ENABLED": "1" },
+      "notes": "AI-facing endpoints exist but hiran integration DISABLED (env not set in unit)."
+    },
+    "v31-free-world": {
+      "layer": "L5", "unit": "zion-v31-free-world.service", "proc": "zion-free-world",
+      "endpoints": { "api": "http://127.0.0.1:8095" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8095/health" },
+      "routes_ai": ["/ai/analyze-grant", "/ai/suggest-projects"],
+      "routes": ["/api/v1/fund/balance", "/api/v1/grants", "/api/v1/grants/:id/approve", "/api/v1/projects", "/api/v1/rounds", "/api/v1/rounds/:id/results", "/metrics"],
+      "notes": "old tool paths /donations /impact wrong — quadratic-funding API shape"
+    },
+    "v31-issobella": {
+      "layer": "L6", "unit": "zion-v31-issobella.service", "proc": "zion-issobella",
+      "endpoints": { "api": "http://127.0.0.1:8097" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8097/health" },
+      "routes_ai": ["POST /api/v1/ai/hiran-health", "POST /api/v1/ai/analyze-proposal", "POST /api/v1/ai/evaluate-mission", "POST /api/v1/ai/optimize-network", "GET /api/v1/ai/mission-log"],
+      "routes": ["/api/v1/missions", "/api/v1/missions/:id/launch", "/api/v1/missions/:id/status", "/api/v1/fund/balance", "/api/v1/fund/disbursements", "/api/v1/proposals/:id/approve", "/metrics"],
+      "env_to_enable_ai": { "ISSOBELLA_HIRAN_URL": "http://127.0.0.1:8001", "ISSOBELLA_HIRAN_ENABLED": "1" },
+      "notes": "old code pointed :8096 (that's ZIS). AI endpoints exist, disabled via missing env."
+    },
+    "zis-identity": {
+      "layer": "System", "unit": "zion-zis.service", "proc": "node /opt/zion/identity/server.js",
+      "endpoints": { "api": "http://127.0.0.1:8096" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8096/health" },
+      "env": { "ZION_ZIS_API": "http://127.0.0.1:8096" },
+      "notes": "auth.zionterranova.com — Fastify/tsx. Occupies the port old maps assigned to issobella."
+    },
+    "quantus-node": {
+      "layer": "L1-adjacent", "unit": "zion-quantus-node.service", "proc": "quantus-node",
+      "endpoints": { "rpc": "http://127.0.0.1:9944", "metrics": "http://127.0.0.1:9615", "p2p": "tcp://127.0.0.1:30333" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9944/health" },
+      "rpc": { "style": "substrate-jsonrpc", "methods": ["system_health", "system_name", "system_version", "chain_getHeader", "chain_getBlock", "system_syncState"] },
+      "env": { "ZION_QUANTUS_RPC": "http://127.0.0.1:9944" },
+      "notes": "native QTC mining leg for pool auxpow. system_health: peers/isSyncing."
+    },
+    "bitcoind-mainnet": {
+      "layer": "L1-adjacent", "unit": "zion-bitcoind.service", "proc": "bitcoind",
+      "endpoints": { "rpc": "http://127.0.0.1:8332", "p2p": "tcp://127.0.0.1:8333" },
+      "probe": { "method": "TcpConnect", "url": "tcp://127.0.0.1:8332" },
+      "notes": "pruned mainnet, WARP BTC backend. RPC needs auth — probe TCP only."
+    },
+    "bitcoind-regtest": {
+      "layer": "L1-adjacent", "unit": "zion-bitcoind-regtest.service", "proc": "bitcoind",
+      "endpoints": { "rpc": "http://127.0.0.1:18443" },
+      "probe": { "method": "TcpConnect", "url": "tcp://127.0.0.1:18443" },
+      "notes": "WARP BTC swap rehearsal"
+    },
+    "hiranyagarbha-api": {
+      "layer": "L3", "unit": "zion-v31-ai-native.service", "proc": "zion-ai-native-api",
+      "endpoints": { "api": "http://127.0.0.1:8001" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8001/health" },
+      "routes": ["/health", "/status", "/config", "POST /chat", "/memory", "POST /memory/flush", "POST /rag/index", "POST /rag/query", "POST /rag/autotune", "/tasks", "POST /tasks/dispatch", "/warp/status", "/ncl/status", "/ncl/price", "/ncl/* (full NCL router)", "/oasis/status", "/agents", "/agents/:id/*", "/orchestrator/status", "/telemetry", "POST /optimizer/run"],
+      "routes_planned_v2": ["POST /v2/orchestrate", "POST /v2/plan", "POST /v2/classify", "GET /v2/health-matrix", "GET /v2/info", "GET /v2/tools"],
+      "env": { "HIRANYAGARBHA_BIND": "127.0.0.1:8001", "LLM_BASE_URL": "http://127.0.0.1:8002/v1", "LLM_MODEL": "zion-l3", "ZION_DOCS_PATH": "/opt/zion/data/l3-rag-docs", "ZION_NODE_RPC_ADDR": "127.0.0.1:9445", "ZION_POOL_API_URL": "http://127.0.0.1:8080" },
+      "notes": "Maestro exists in-code (CLI only) — NOT mounted. /chat falls back to template when :8002 LLM unreachable."
+    },
+    "hiran-inference": {
+      "layer": "L3", "unit": "(none — SSH reverse tunnel)", "proc": "sshd (hirantunnel)",
+      "endpoints": { "openai": "http://127.0.0.1:8002" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8002/v1/models" },
+      "contract": ["GET /v1/models", "POST /v1/chat/completions", "POST /v1/embeddings", "POST /completion (llama.cpp)", "GET /health"],
+      "env": { "HIRAN_INFERENCE_URL": "http://127.0.0.1:8002" },
+      "notes": "2026-10-10: tunnel UP (hirantunnel@...:2222 from 109.81.93.67) but llama-server behind it not answering POSTs — desktop-box backend dead or saturated. Served model: alias zion-l3, Q8_0 ~1.7B (Qwen3-1.7B-class)."
+    },
+    "dashboard": {
+      "layer": "System", "unit": "zion-edge-python-dashboard.service", "proc": "python3 app.py",
+      "endpoints": { "api": "http://127.0.0.1:8766" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:8766/api/health" },
+      "routes_of_interest": ["/api/g8", "/api/history", "/api/health", "/api/services"],
+      "notes": "G8 monitoring + service registry + miner heartbeat aggregation"
+    },
+    "g8-probe": {
+      "layer": "System", "unit": "zion-g8-probe.service", "proc": "python3 g8_probe_exporter.py",
+      "endpoints": { "metrics": "http://127.0.0.1:9105" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9105/health" }
+    },
+    "g8-alert-sink": {
+      "layer": "System", "unit": "zion-g8-alert-sink.service", "proc": "python3 g8_alert_sink.py",
+      "endpoints": { "api": "http://127.0.0.1:9094" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9094/health" }
+    },
+    "prometheus": {
+      "layer": "System", "unit": "prometheus.service", "proc": "prometheus",
+      "endpoints": { "api": "http://127.0.0.1:9090" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9090/-/healthy" },
+      "routes": ["/api/v1/query", "/api/v1/query_range", "/api/v1/alerts", "/api/v1/targets", "/-/healthy"]
+    },
+    "alertmanager": {
+      "layer": "System", "unit": "prometheus-alertmanager.service", "proc": "prometheus-alertmanager",
+      "endpoints": { "api": "http://127.0.0.1:9093" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9093/-/healthy" }
+    },
+    "node-exporter": {
+      "layer": "System", "unit": "prometheus-node-exporter.service", "proc": "prometheus-node-exporter",
+      "endpoints": { "metrics": "http://127.0.0.1:9100" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:9100/metrics" },
+      "notes": "port 9100 is NODE-EXPORTER, not v31 node metrics (code had it as node1-metrics — same port, different meaning; v31 node has no metrics port)"
+    },
+    "grafana": {
+      "layer": "System", "unit": "grafana-server.service", "proc": "grafana",
+      "endpoints": { "ui": "http://127.0.0.1:3001" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:3001/api/health" }
+    },
+    "website": {
+      "layer": "System", "unit": "zion-website.service", "proc": "next-server",
+      "endpoints": { "ui": "http://127.0.0.1:3000" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:3000/api/health" }
+    },
+    "marketplace": {
+      "layer": "System", "unit": "zion-marketplace.service", "proc": "next-server",
+      "endpoints": { "ui": "http://127.0.0.1:3100" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:3100/" },
+      "notes": "OASIS artifact marketplace (Next.js)"
+    },
+    "nginx": {
+      "layer": "System", "unit": "nginx.service", "proc": "nginx",
+      "endpoints": { "http": "http://127.0.0.1:80", "https": "https://127.0.0.1:443", "proxy-alt": "https://127.0.0.1:8443" },
+      "probe": { "method": "HttpGet", "url": "http://127.0.0.1:80/" },
+      "notes": "8443 = nginx proxy vhost, not a service"
+    },
+    "postgres": {
+      "layer": "System", "unit": "postgresql@16-main.service", "proc": "postgres",
+      "endpoints": { "db": "tcp://127.0.0.1:5432" },
+      "probe": { "method": "TcpConnect", "url": "tcp://127.0.0.1:5432" },
+      "notes": "zion + zion_marketplace DBs; zion-db-sync writes here"
+    },
+    "db-sync": {
+      "layer": "System", "unit": "zion-db-sync.service", "proc": "tsx",
+      "endpoints": {},
+      "probe": { "method": "Systemd", "unit": "zion-db-sync.service" },
+      "notes": "no port — probe via systemctl is-active; runs via /opt/zion/tools tsx (drop-in)"
+    },
+    "wedgewatch": {
+      "layer": "System", "unit": "zion-pool-wedgewatch.service", "proc": "bash/python",
+      "endpoints": {},
+      "probe": { "method": "Systemd", "unit": "zion-pool-wedgewatch.service" }
+    },
+    "btcunlock-coord": {
+      "layer": "System", "unit": "zion-btcunlock-coord.service",
+      "endpoints": {},
+      "probe": { "method": "Systemd", "unit": "zion-btcunlock-coord.service" }
+    },
+    "v31-miner": {
+      "layer": "L1", "unit": "zion-v31-miner.service",
+      "endpoints": {},
+      "probe": { "method": "Systemd", "unit": "zion-v31-miner.service" },
+      "notes": "intentionally inactive — CPU miner superseded by rig miners"
+    }
+  },
+  "dead_or_remap": {
+    "9101": "bridge api — dead, bridge = warpd (use 8453)",
+    "9116": "node2-metrics — dead",
+    "8448": "old node2-rpc — real is 9446",
+    "8450": "old dao — real is 8456",
+    "8452": "old swap — real is warpd :8454",
+    "8455": "old pool-stats — real is :8080/stats",
+    "8096-was-issobella": "is ZIS now — issobella is :8097",
+    "2375": "docker tcp — not exposed (correct); use socket/systemd probes",
+    "8004": "hiran-orchestrator — free; reserved for standalone Maestro if split",
+    "8899": "⚠️ python 'rig-exfil' POST receiver on 0.0.0.0 — verify owner/intent, no auth"
+  },
+  "ai_interface_contract": {
+    "openai_compatible": {
+      "base": "http://127.0.0.1:8002",
+      "endpoints": ["GET /v1/models", "POST /v1/chat/completions", "POST /v1/embeddings"],
+      "model_aliases": ["zion-l3 (current)", "hiran-v2.2 (desktop-agent sends this — keep alias or map)"]
+    },
+    "maestro_api_v2": {
+      "base": "http://127.0.0.1:8001/v2",
+      "endpoints": ["POST /orchestrate {q}", "POST /plan {q|intent}", "POST /classify {q}", "GET /health-matrix", "GET /info", "GET /tools", "GET /tools/:name"],
+      "mutation_gate": { "env": "HIRAN_MAESTRO_MUTATIONS", "default": "0 (read-only)", "approve_header": "X-Maestro-Approve: <MAESTRO_APPROVAL_TOKEN>" }
+    },
+    "ai_facing_endpoints_in_services": {
+      "oasis": "POST :8094/api/v1/oasis/ai/{hiran-health,npc-dialogue,quest-narrative} — enable via OASIS_HIRAN_URL + OASIS_HIRAN_ENABLED",
+      "issobella": "POST :8097/api/v1/ai/{hiran-health,analyze-proposal,evaluate-mission,optimize-network} — enable via ISSOBELLA_HIRAN_URL + ISSOBELLA_HIRAN_ENABLED",
+      "free_world": ":8095/ai/{analyze-grant,suggest-projects}",
+      "desktop_agent": "IPC ai-chat-ask → HIRAN_INFERENCE_URL/v1/chat/completions; ai-native-status → HIRANYAGARBHA_URL"
+    }
+  },
+  "env_block_proposed": {
+    "ZION_NODE1_RPC": "http://127.0.0.1:9445", "ZION_NODE1_P2P": "127.0.0.1:8335",
+    "ZION_NODE2_RPC": "http://127.0.0.1:9446", "ZION_NODE2_P2P": "127.0.0.1:8336",
+    "ZION_NODE3_RPC": "http://127.0.0.1:9447", "ZION_NODE3_P2P": "127.0.0.1:8337",
+    "ZION_POOL_API": "http://127.0.0.1:8080",
+    "ZION_DAO_API": "http://127.0.0.1:8456",
+    "ZION_WARP_API": "http://127.0.0.1:8453", "ZION_DEX_API": "http://127.0.0.1:8454",
+    "ZION_OASIS_API": "http://127.0.0.1:8094", "ZION_FREE_WORLD_API": "http://127.0.0.1:8095",
+    "ZION_ISOBELLA_API": "http://127.0.0.1:8097", "ZION_ZIS_API": "http://127.0.0.1:8096",
+    "ZION_QUANTUS_RPC": "http://127.0.0.1:9944",
+    "ZION_DASHBOARD_API": "http://127.0.0.1:8766", "ZION_PROMETHEUS_API": "http://127.0.0.1:9090",
+    "HIRAN_INFERENCE_URL": "http://127.0.0.1:8002", "LLM_BASE_URL": "http://127.0.0.1:8002/v1",
+    "LLM_MODEL": "zion-l3",
+    "HIRAN_MAESTRO_ENABLED": "1", "HIRAN_MAESTRO_MUTATIONS": "0",
+    "ZION_L3_AUDIT_DIR": "/opt/zion/data/l3-audit"
+  }
+}
