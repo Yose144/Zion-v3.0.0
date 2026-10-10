@@ -5856,17 +5856,9 @@ typedef unsigned long ulong;
             let hash1 = Sha256::digest(&verify_buf);
             let hash2 = Sha256::digest(&hash1);
 
-            // Compare hash2 (little-endian) with target (little-endian)
-            let meets_target = {
-                let mut meets = true;
-                for i in (0..32).rev() {
-                    if hash2[i] != target[i] {
-                        meets = hash2[i] < target[i];
-                        break;
-                    }
-                }
-                meets
-            };
+            // Big-endian compare (yiimp targets lead with significant
+            // bytes) — same convention as hasher::meets_target.
+            let meets_target = hash2[..] <= target[..];
 
             if meets_target {
                 let mut hash_arr = [0u8; 32];
@@ -6544,18 +6536,11 @@ typedef unsigned long ulong;
             let hash1 = Sha256::digest(&verify_buf);
             let hash2 = Sha256::digest(&hash1);
 
-            // Compare hash2 (little-endian) with target (little-endian)
-            // Target comparison: hash2 <= target (both as little-endian 256-bit integers)
-            let meets_target = {
-                let mut meets = true;
-                for i in (0..32).rev() {
-                    if hash2[i] != target[i] {
-                        meets = hash2[i] < target[i];
-                        break;
-                    }
-                }
-                meets
-            };
+            // yiimp/zpool equihash targets are big-endian hex (the
+            // significant bytes lead — e.g. "003fffc0000…" ≈ diff ~1/1024).
+            // Compare hash2 <= target byte-wise big-endian, the same
+            // convention as hasher::meets_target used by the CPU path.
+            let meets_target = hash2[..] <= target[..];
 
             if meets_target {
                 let mut hash_arr = [0u8; 32];
