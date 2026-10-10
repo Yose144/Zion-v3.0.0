@@ -887,9 +887,7 @@ mod tests {
     #[test]
     #[ignore]
     fn qpow_kernel_info() {
-        use ocl::core::{
-            KernelWorkGroupInfo, KernelWorkGroupInfoResult,
-        };
+        use ocl::core::{KernelWorkGroupInfo, KernelWorkGroupInfoResult};
         let work_size: usize = std::env::var("QPOW_BENCH_BATCH")
             .ok()
             .and_then(|v| v.parse().ok())

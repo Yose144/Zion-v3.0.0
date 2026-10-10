@@ -102,9 +102,11 @@ async fn run(pool: &str, wallet: &str, threads: usize, verdicts_wanted: u32) -> 
     let cfg = AuxPowClientConfig::new(coin, pool.to_string(), "eq144probe", "c=BTC");
     let client = AuxPowClient::new(cfg);
 
-    println!("[{:6.1}] == eq144_probe: connect {pool} wallet={wallet} threads={threads}", ts());
-    if let Err(e) = tokio::time::timeout(Duration::from_secs(30), client.connect(wallet)).await
-    {
+    println!(
+        "[{:6.1}] == eq144_probe: connect {pool} wallet={wallet} threads={threads}",
+        ts()
+    );
+    if let Err(e) = tokio::time::timeout(Duration::from_secs(30), client.connect(wallet)).await {
         println!("[{:6.1}] CONNECT TIMEOUT/ERR: {e:?}", ts());
         return 1;
     }
@@ -356,7 +358,11 @@ async fn submit(
     sol: &FoundSol,
     job_age_s: f64,
 ) -> String {
-    let meets_tag = if sol.meets_real { "MEETS-TARGET" } else { "below" };
+    let meets_tag = if sol.meets_real {
+        "MEETS-TARGET"
+    } else {
+        "below"
+    };
     let res = client
         .submit_share(
             &sol.job_id,

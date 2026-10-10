@@ -4,8 +4,8 @@
 //! stratum pool is unreachable or disabled, the miner falls back to ZION-only
 //! operation.
 
-pub mod client;
 pub mod beamhash_ref;
+pub mod client;
 pub mod dual_stratum;
 pub mod eaglesong_ref;
 pub mod equihash144;
@@ -13,11 +13,11 @@ pub mod gpu_miner;
 #[cfg(feature = "gpu-opencl")]
 pub mod gpu_opencl_full;
 pub mod hasher;
+#[cfg(feature = "native-hashers")]
+pub mod native;
 pub mod neoscrypt_ref;
 pub mod nexapow_ref;
 pub mod octopus_ref;
-#[cfg(feature = "native-hashers")]
-pub mod native;
 pub mod parent_chains;
 pub mod progpow_codegen;
 pub(crate) mod pure;

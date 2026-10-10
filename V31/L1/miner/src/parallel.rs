@@ -312,7 +312,9 @@ fn hash_auxpow(
     }
 
     (
-        dispatch_algorithm(coin, header, nonce, height, extranonce, algorithm, seed_hash),
+        dispatch_algorithm(
+            coin, header, nonce, height, extranonce, algorithm, seed_hash,
+        ),
         None,
     )
 }
@@ -436,7 +438,12 @@ pub fn find_auxpow_share_from(
             }
             let nonce = make_nonce(suffix);
             let (hash, mix) = hash_auxpow(
-                coin, &header, nonce, height, &extranonce, algorithm,
+                coin,
+                &header,
+                nonce,
+                height,
+                &extranonce,
+                algorithm,
                 seed_hash.as_deref(),
             );
             // Kaspa interprets the PoW hash as a little-endian u256 (pool-side
@@ -487,7 +494,12 @@ pub fn find_auxpow_share_from(
             }
             let nonce = make_nonce(suffix);
             let (hash, mix) = hash_auxpow(
-                coin, &header, nonce, height, &extranonce, algorithm,
+                coin,
+                &header,
+                nonce,
+                height,
+                &extranonce,
+                algorithm,
                 seed_hash.as_deref(),
             );
             let meets = if is_kheavyhash {
@@ -573,8 +585,7 @@ fn find_qpow_share(
             if span == 0 {
                 return None;
             }
-            if let Some((low, hash64)) =
-                qpow::scan_low64(&prestate, &target, start + offset, span)
+            if let Some((low, hash64)) = qpow::scan_low64(&prestate, &target, start + offset, span)
             {
                 cancelled.store(true, Ordering::Relaxed);
                 let nonce_be = qpow::build_nonce(&extranonce, low);
@@ -694,7 +705,10 @@ fn find_equihash144_share(
         );
         return None;
     }
-    let pers = job.eq_pers.clone().unwrap_or_else(|| "sngemPoW".to_string());
+    let pers = job
+        .eq_pers
+        .clone()
+        .unwrap_or_else(|| "sngemPoW".to_string());
     let pers8 = pers.as_bytes();
     if pers8.len() > 8 {
         crate::ext_warn!(pers = %pers, "equihash personalization too long");
@@ -747,7 +761,14 @@ fn find_equihash144_share(
             chunk
         };
         eq::scan(
-            &mut solver, &header, en1_len, pers8, &target, start, count, &cancelled,
+            &mut solver,
+            &header,
+            en1_len,
+            pers8,
+            &target,
+            start,
+            count,
+            &cancelled,
         )
         .map(|(nonce, solution, hash)| {
             cancelled.store(true, Ordering::Relaxed);
@@ -934,10 +955,8 @@ mod tests {
             let pre_pow_hash = [seed_byte; 32];
             for timestamp in [0u64, 1_762_000_200] {
                 for nonce in [0u64, 29184, u64::MAX] {
-                    let native =
-                        zion_native_ffi::kheavyhash::mine(&pre_pow_hash, timestamp, nonce);
-                    let rust =
-                        crate::auxpow::hash_kheavyhash(&pre_pow_hash, timestamp, nonce);
+                    let native = zion_native_ffi::kheavyhash::mine(&pre_pow_hash, timestamp, nonce);
+                    let rust = crate::auxpow::hash_kheavyhash(&pre_pow_hash, timestamp, nonce);
                     assert_eq!(
                         native, rust,
                         "native != rust: seed={seed_byte:#04x} ts={timestamp} nonce={nonce}"

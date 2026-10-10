@@ -282,12 +282,8 @@ async fn main() -> Result<()> {
             let tui_shutdown_rx = shutdown_rx.clone();
             let tui_shutdown_tx = shutdown_tx.clone();
             tokio::spawn(async move {
-                if let Err(e) = zion_miner::tui::run_tui(
-                    tui_runtime,
-                    tui_shutdown_rx,
-                    tui_shutdown_tx,
-                )
-                .await
+                if let Err(e) =
+                    zion_miner::tui::run_tui(tui_runtime, tui_shutdown_rx, tui_shutdown_tx).await
                 {
                     warn!("TUI error: {e}");
                 }
@@ -463,10 +459,7 @@ async fn main() -> Result<()> {
                             " [{}]",
                             devs.iter()
                                 .map(|(n, h)| {
-                                    let short = n
-                                        .split(':')
-                                        .next()
-                                        .unwrap_or(n.as_str());
+                                    let short = n.split(':').next().unwrap_or(n.as_str());
                                     let hs = if *h >= 1e6 {
                                         format!("{:.2}M", h / 1e6)
                                     } else {
@@ -563,12 +556,7 @@ async fn main() -> Result<()> {
 
 fn sg_dev(idx: usize, name: &str, algo: String, s: Option<&StreamStats>) -> serde_json::Value {
     let (mhs, acc, rej, active) = match s {
-        Some(s) => (
-            s.hashrate / 1e6,
-            s.accepted,
-            s.rejected,
-            s.active,
-        ),
+        Some(s) => (s.hashrate / 1e6, s.accepted, s.rejected, s.active),
         None => (0.0, 0, 0, false),
     };
     let now = std::time::SystemTime::now()
@@ -679,12 +667,7 @@ fn sgminer_response(
         &format!("{} ({})", algo_of(gpu, "qpow-poseidon2"), ticker(gpu)),
         elapsed,
     );
-    let dual_devs = vec![sg_dev(
-        0,
-        "RX 5600 XT",
-        algo_of(zion, "ekam_deeksha"),
-        zion,
-    )];
+    let dual_devs = vec![sg_dev(0, "RX 5600 XT", algo_of(zion, "ekam_deeksha"), zion)];
     let dual_summary = sg_summary(
         zion.map(|s| s.hashrate / 1e6).unwrap_or(0.0),
         zion.map(|s| s.accepted).unwrap_or(0),
@@ -713,7 +696,11 @@ fn sgminer_response(
             c.pop();
         }
         let devs = if dual { &dual_devs } else { &primary_devs };
-        let summary = if dual { &dual_summary } else { &primary_summary };
+        let summary = if dual {
+            &dual_summary
+        } else {
+            &primary_summary
+        };
         let flat = |base: &str| format!("{}{}", base, if dual { "2" } else { "" });
         if c.starts_with("dev") {
             let mut sub = serde_json::json!({
@@ -799,11 +786,7 @@ fn sgminer_response(
     resp
 }
 
-async fn sgminer_api_serve(
-    rt: MinerRuntime,
-    addr: SocketAddr,
-    dual: bool,
-) -> Result<()> {
+async fn sgminer_api_serve(rt: MinerRuntime, addr: SocketAddr, dual: bool) -> Result<()> {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let listener = tokio::net::TcpListener::bind(addr).await?;
     info!("sgminer api listening on {addr} (dual={dual})");
@@ -821,9 +804,19 @@ async fn sgminer_api_serve(
             let head = raw.split('\0').next().unwrap_or("").trim();
             let cmd = serde_json::from_str::<serde_json::Value>(head)
                 .ok()
-                .and_then(|v| v.get("command").and_then(|c| c.as_str()).map(str::to_string))
+                .and_then(|v| {
+                    v.get("command")
+                        .and_then(|c| c.as_str())
+                        .map(str::to_string)
+                })
                 .filter(|c| !c.is_empty())
-                .unwrap_or_else(|| if head.is_empty() { "summary".into() } else { head.to_string() });
+                .unwrap_or_else(|| {
+                    if head.is_empty() {
+                        "summary".into()
+                    } else {
+                        head.to_string()
+                    }
+                });
             let stats = rt.stats().await;
             let resp = sgminer_response(&cmd, &stats, dual, start.elapsed().as_secs());
             info!("sgminer api {peer} cmd={cmd} dual={dual}");

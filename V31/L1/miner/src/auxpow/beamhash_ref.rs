@@ -63,9 +63,7 @@ pub fn beamhash_prepow(header: &[u8], full_nonce: &[u8; 8]) -> [u64; 4] {
     let mut buf = header.to_vec();
     buf.extend_from_slice(full_nonce);
     let h = blake2b_simd::blake2b(&buf);
-    core::array::from_fn(|i| {
-        u64::from_le_bytes(h.as_bytes()[i * 8..i * 8 + 8].try_into().unwrap())
-    })
+    core::array::from_fn(|i| u64::from_le_bytes(h.as_bytes()[i * 8..i * 8 + 8].try_into().unwrap()))
 }
 
 /// Full seed element for `gid` — the 8 words stored into buffer0 by

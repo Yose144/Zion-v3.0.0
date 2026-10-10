@@ -174,8 +174,16 @@ pub fn octopus_make_cache(num_nodes: usize, ident: &[u8; 32]) -> Vec<u8> {
             let prev = (n - 1 + i) % n;
             let mut data = [0u8; 64];
             for j in 0..8 {
-                let a = u64::from_le_bytes(cache[prev * 64 + j * 8..prev * 64 + j * 8 + 8].try_into().unwrap());
-                let b = u64::from_le_bytes(cache[idx * 64 + j * 8..idx * 64 + j * 8 + 8].try_into().unwrap());
+                let a = u64::from_le_bytes(
+                    cache[prev * 64 + j * 8..prev * 64 + j * 8 + 8]
+                        .try_into()
+                        .unwrap(),
+                );
+                let b = u64::from_le_bytes(
+                    cache[idx * 64 + j * 8..idx * 64 + j * 8 + 8]
+                        .try_into()
+                        .unwrap(),
+                );
                 data[j * 8..j * 8 + 8].copy_from_slice(&(a ^ b).to_le_bytes());
             }
             let mut h = Keccak512::new();

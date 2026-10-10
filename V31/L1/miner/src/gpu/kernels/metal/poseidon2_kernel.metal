@@ -464,3 +464,318 @@ kernel void qpow_mine(
         }
     }
 }
+
+// ============================================================================
+// Lane-parallel variant — 3 lanes × 4 felts per nonce, 10 nonces per
+// simdgroup32 (lanes 30/31 idle). Lane `fl` (0..2) owns the 4 felts of mat4
+// chunk `fl`, which makes the external-layer mat4 entirely thread-local;
+// only the circulant sums and the internal-round row sum cross lanes
+// (8 + 2 simd_shuffles respectively). Remote contributions are transported
+// as reduced u64 and accumulated locally in Wide — residue-equivalent to the
+// scalar Wide schedule (same ~2^-33 lazy-fold contract).
+// ============================================================================
+
+// u64 simd_shuffle is not a valid simdgroup type — transport as two u32s.
+static inline u64 shuffle_u64(u64 v, ushort lane) {
+    u32 lo = simd_shuffle((u32)v, lane);
+    u32 hi = simd_shuffle((u32)(v >> 32), lane);
+    return ((u64)hi << 32) | (u64)lo;
+}
+
+// mat4 of the lane-owned chunk in Wide arithmetic (identical math to the
+// scalar ext_layer64 chunk loop).
+static inline void mat4_wide(thread const u64 x[4], thread Wide y[4]) {
+    Wide t01 = wide_from(x[0]);
+    wide_add(&t01, x[1]);
+    Wide t23 = wide_from(x[2]);
+    wide_add(&t23, x[3]);
+    Wide t0123 = t01;
+    wide_add_wide(&t0123, t23);
+    Wide t01123 = t0123;
+    wide_add(&t01123, x[1]);
+    Wide t01233 = t0123;
+    wide_add(&t01233, x[3]);
+    y[3] = t01233;
+    wide_add(&y[3], x[0]);
+    wide_add(&y[3], x[0]);
+    y[1] = t01123;
+    wide_add(&y[1], x[2]);
+    wide_add(&y[1], x[2]);
+    y[0] = t01123;
+    wide_add_wide(&y[0], t01);
+    y[2] = t01233;
+    wide_add_wide(&y[2], t23);
+}
+
+// External linear layer on the lane-owned 4-felt slice.
+// `gl` = simdgroup-local index of this group's lane 0 (= 3*nl), `fl` = 0..2.
+static inline void ext_layer_lane(thread u64 st[4], constant u64 *rc12,
+                                  u32 gl, u32 fl) {
+    Wide y[4];
+    mat4_wide(st, y);
+    u64 yr[4];
+#pragma unroll
+    for (int k = 0; k < 4; k++) {
+        yr[k] = wide_reduce(y[k]);
+    }
+    // sums[k] = y_lane0[k] + y_lane1[k] + y_lane2[k] — every lane assembles
+    // the same four sums from two remote shuffles each.
+    u32 r1 = gl + (fl + 1) % 3;
+    u32 r2 = gl + (fl + 2) % 3;
+    Wide sw[4];
+#pragma unroll
+    for (int k = 0; k < 4; k++) {
+        sw[k] = wide_from(yr[k]);
+        wide_add(&sw[k], shuffle_u64(yr[k], (ushort)r1));
+        wide_add(&sw[k], shuffle_u64(yr[k], (ushort)r2));
+    }
+    u32 o = fl * 4;
+#pragma unroll
+    for (int i = 0; i < 4; i++) {
+        Wide w = y[i];
+        wide_add_wide(&w, sw[i]);
+        wide_add(&w, rc12[o + i]);
+        st[i] = wide_reduce(w);
+    }
+}
+
+// Internal round on the lane-owned slice. `x` lives on lane 0 (its felt 0 is
+// implicit — carried in `x` between calls, exactly like the scalar
+// int_round_p pipeline). All lanes return the round's row sum; lane 0 also
+// computes the next sbox input via *out0.
+static inline void int_round_lane(thread u64 st[4], u64 x, u64 rc0,
+                                  u32 gl, u32 fl, thread u64 *out0) {
+    // s = sum(felts 1..11) + x  →  lane0's part is local[1..3] + x, the
+    // other lanes contribute all four felts.
+    Wide part;
+    if (fl == 0) {
+        part = wide_from(st[1]);
+        wide_add(&part, st[2]);
+        wide_add(&part, st[3]);
+        wide_add(&part, x);
+    } else {
+        part = wide_from(st[0]);
+        wide_add(&part, st[1]);
+        wide_add(&part, st[2]);
+        wide_add(&part, st[3]);
+    }
+    u64 pr = wide_reduce(part);
+    u32 r1 = gl + (fl + 1) % 3;
+    u32 r2 = gl + (fl + 2) % 3;
+    Wide sw = wide_from(pr);
+    wide_add(&sw, shuffle_u64(pr, (ushort)r1));
+    wide_add(&sw, shuffle_u64(pr, (ushort)r2));
+    u64 s = wide_reduce(sw);
+
+    if (fl == 0) {
+        // out0 = (s + rc0) + x*diag[0] — feeds the next round's sbox.
+        u32 r0, r1w, r2w, r3w;
+        Wide acc = wide_from(s);
+        wide_add(&acc, rc0);
+        mul128_add_wide(x, MDS_DIAG[0], acc, &r0, &r1w, &r2w, &r3w);
+        *out0 = reduce128(r0, r1w, r2w, r3w);
+    }
+    u32 o = fl * 4;
+#pragma unroll
+    for (int i = (fl == 0 ? 1 : 0); i < 4; i++) {
+        u32 r0, r1w, r2w, r3w;
+        mul128_add_wide(st[i], MDS_DIAG[o + i], wide_from(s), &r0, &r1w,
+                        &r2w, &r3w);
+        st[i] = reduce128(r0, r1w, r2w, r3w);
+    }
+}
+
+static void permute64_after_initial_lane(thread u64 st[4], u32 gl, u32 fl) {
+#pragma unroll QPOW_EUNROLL
+    for (int r = 0; r < 4; r++) {
+#pragma unroll
+        for (int i = 0; i < 4; i++) {
+            st[i] = gf64_sbox(st[i]);
+        }
+        ext_layer_lane(st, RC_INITIAL[r + 1], gl, fl);
+    }
+    // The sbox on felt 0 runs on lane 0 only; other lanes never touch `x`.
+    u64 x = 0;
+    if (fl == 0) {
+        x = gf64_sbox(st[0]);
+    }
+#pragma unroll QPOW_IUNROLL
+    for (int r = 0; r < 21; r++) {
+        u64 out0 = 0;
+        int_round_lane(st, x, RC_INTERNAL[r + 1], gl, fl, &out0);
+        if (fl == 0) {
+            x = gf64_sbox(out0);
+        }
+    }
+    // Final internal round (rc0 = 0): all lanes must run it — the shuffle
+    // exchange is only legal when the whole 3-lane group participates —
+    // and every lane's non-felt-0 slice gets its last update here.
+    u64 last0 = 0;
+    int_round_lane(st, x, 0UL, gl, fl, &last0);
+    if (fl == 0) {
+        st[0] = last0;
+    }
+    // RC_TERMINAL[0] constants, then the terminal external rounds.
+#pragma unroll
+    for (int i = 0; i < 4; i++) {
+        st[i] = gf64_add(st[i], RC_TERMINAL[0][fl * 4 + i]);
+    }
+#pragma unroll QPOW_EUNROLL
+    for (int r = 0; r < 4; r++) {
+#pragma unroll
+        for (int i = 0; i < 4; i++) {
+            st[i] = gf64_sbox(st[i]);
+        }
+        ext_layer_lane(st, RC_TERMINAL[r + 1], gl, fl);
+    }
+}
+
+static void permute64_twice_after_initial_lane(thread u64 st[4], u32 gl,
+                                               u32 fl) {
+    for (int pass = 0; pass < 2; pass++) {
+        if (pass != 0) {
+            ext_layer_lane(st, RC_INITIAL[0], gl, fl);
+        }
+        permute64_after_initial_lane(st, gl, fl);
+        if (pass == 0) {
+            // Padding block [1,1] lands on felts 0 and 1 — both on lane 0.
+            if (fl == 0) {
+                st[0] = gf64_add(st[0], 1UL);
+                st[1] = gf64_add(st[1], 1UL);
+            }
+        }
+    }
+}
+
+// Nonce injection on the lane-owned slice — every lane computes the x6/x7
+// constants redundantly (two bswaps + ~10 adds, cheaper than shuffles),
+// then applies only its own four felt updates.
+static void inject_nonce_lane(u64 nonce_base_low, u32 logical_index,
+                              thread u64 st[4], u32 fl) {
+    u64 nonce_low = nonce_base_low + (u64)logical_index;
+    u64 x6 = (u64)bswap32((u32)(nonce_low >> 32));
+    u64 x7 = (u64)bswap32((u32)nonce_low);
+    if (fl == 0) {
+        u64 x6_2 = x6 + x6;
+        u64 x6_3 = x6_2 + x6;
+        u64 x7_2 = x7 + x7;
+        u64 x7_3 = x7_2 + x7;
+        u64 c0 = x6 + x7;
+        u64 c1 = x6_3 + x7;
+        u64 c2 = x6_2 + x7_3;
+        u64 c3 = x6 + x7_2;
+        st[0] = gf64_add(st[0], c0);
+        st[1] = gf64_add(st[1], c1);
+        st[2] = gf64_add(st[2], c2);
+        st[3] = gf64_add(st[3], c3);
+    } else if (fl == 1) {
+        u64 x6_2 = x6 + x6;
+        u64 x6_3 = x6_2 + x6;
+        u64 x6_4 = x6_2 + x6_2;
+        u64 x6_6 = x6_3 + x6_3;
+        u64 x7_2 = x7 + x7;
+        u64 x7_3 = x7_2 + x7;
+        u64 x7_4 = x7_2 + x7_2;
+        u64 x7_6 = x7_3 + x7_3;
+        st[0] = gf64_add(st[0], x6_2 + x7_2);
+        st[1] = gf64_add(st[1], x6_6 + x7_2);
+        st[2] = gf64_add(st[2], x6_4 + x7_6);
+        st[3] = gf64_add(st[3], x6_2 + x7_4);
+    } else {
+        u64 x6_2 = x6 + x6;
+        u64 x6_3 = x6_2 + x6;
+        u64 x7_2 = x7 + x7;
+        u64 x7_3 = x7_2 + x7;
+        u64 c0 = x6 + x7;
+        u64 c1 = x6_3 + x7;
+        u64 c2 = x6_2 + x7_3;
+        u64 c3 = x6 + x7_2;
+        st[0] = gf64_add(st[0], c0);
+        st[1] = gf64_add(st[1], c1);
+        st[2] = gf64_add(st[2], c2);
+        st[3] = gf64_add(st[3], c3);
+    }
+}
+
+// Load this lane's 4-felt slice of the prestate, inject the nonce and run
+// the two permutations. `st` ends ready for the first squeeze (all on lane 0).
+static void eval_nonce_state_lane(device const u32 *prestate,
+                                  u64 nonce_base_low, u32 logical_index,
+                                  thread u64 st[4], u32 gl, u32 fl) {
+    u32 o = fl * 8; // 4 felts × 2 u32 limbs
+#pragma unroll
+    for (int i = 0; i < 4; i++) {
+        st[i] = ((u64)prestate[o + 2 * i + 1] << 32) | (u64)prestate[o + 2 * i];
+    }
+    inject_nonce_lane(nonce_base_low, logical_index, st, fl);
+    permute64_twice_after_initial_lane(st, gl, fl);
+}
+
+kernel void qpow_lane(
+    device u32 *results                 [[buffer(0)]],
+    device const u32 *prestate          [[buffer(1)]],
+    device const u32 *start_nonce       [[buffer(2)]],
+    device const u32 *difficulty_target [[buffer(3)]],
+    device const u32 *dispatch_config   [[buffer(4)]],
+    uint thread_id [[thread_position_in_grid]]) {
+    u32 total_threads = dispatch_config[0];
+    u32 nonces_per_thread = dispatch_config[1];
+    u32 total_nonces = dispatch_config[2];
+    if (thread_id >= total_threads) {
+        return;
+    }
+    u32 lane = thread_id & 31u;          // simdgroup-local lane index
+    if (lane >= 30u) {
+        return;                          // 3 lanes × 10 nonces per simdgroup
+    }
+    u32 nl = lane / 3u;                  // nonce slot within the simdgroup
+    u32 fl = lane % 3u;                  // felt-lane (chunk owner)
+    u32 gl = nl * 3u;                    // group base lane
+    u32 group_idx = (thread_id >> 5) * 10u + nl;
+    u32 base_index = group_idx * nonces_per_thread;
+
+    u32 tgt_hi[8];
+#pragma unroll
+    for (int i = 0; i < 8; i++) {
+        tgt_hi[i] = difficulty_target[8 + i];
+    }
+    u64 nonce_base_low = ((u64)start_nonce[1] << 32) | (u64)start_nonce[0];
+
+    for (u32 j = 0; j < nonces_per_thread; j++) {
+        u32 logical_index = base_index + j;
+        if (logical_index >= total_nonces) {
+            break;
+        }
+        u64 st[4];
+        eval_nonce_state_lane(prestate, nonce_base_low, logical_index, st,
+                              gl, fl);
+
+        // First squeeze = felts 0..3 → all on lane 0 — the compare and the
+        // hit record are entirely lane-local there.
+        if (fl == 0) {
+            u32 first[8];
+#pragma unroll
+            for (int i = 0; i < 4; i++) {
+                u64 c = gf64_canon(st[i]);
+                first[2 * i] = (u32)(c & EPS64);
+                first[2 * i + 1] = (u32)(c >> 32);
+            }
+            u32 cmp = 0u;
+            for (int i = 0; i < 8; i++) {
+                u32 h = bswap32(first[i]);
+                u32 t = tgt_hi[7 - i];
+                if (h != t) {
+                    cmp = (h > t) ? 1u : 2u;
+                    break;
+                }
+            }
+            if (cmp != 1u) {
+                u32 slot = atomic_fetch_add_explicit(
+                    (device atomic_uint *)results, 1u, memory_order_relaxed);
+                if (slot < MAX_HITS) {
+                    results[1 + slot] = logical_index;
+                }
+            }
+        }
+    }
+}

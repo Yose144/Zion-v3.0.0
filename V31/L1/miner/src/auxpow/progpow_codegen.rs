@@ -289,7 +289,11 @@ fn math_code_zano(d: &str, a: &str, b: &str, r: u32) -> String {
 // and XMRIG_INCLUDE_PROGPOW_DATA_LOADS in the xmrig kawpow.cl kernel.
 
 /// Render the loop ops (cache loads + random math) to OpenCL source.
-fn render_loop_ops(ops: &[ProgOp], math_code_fn: fn(&str, &str, &str, u32) -> String, comments: bool) -> String {
+fn render_loop_ops(
+    ops: &[ProgOp],
+    math_code_fn: fn(&str, &str, &str, u32) -> String,
+    comments: bool,
+) -> String {
     let mut ret = String::new();
     let mut cache_i = 0u32;
     let mut math_i = 0u32;
@@ -744,8 +748,9 @@ fn progpow_mix_ref(
         let base = src0 % dag_elements;
         for (lane, mix) in mixes.iter_mut().enumerate() {
             let off = (base as usize) * lanes + ((lane as u32 ^ l) % PROGPOW_LANES) as usize;
-            let data_dag: Vec<u32> =
-                (0..params.dag_loads as usize).map(|i| dag_word(off * 4 + i)).collect();
+            let data_dag: Vec<u32> = (0..params.dag_loads as usize)
+                .map(|i| dag_word(off * 4 + i))
+                .collect();
             for op in &loop_ops {
                 match *op {
                     ProgOp::Cache { src, dst, r } => {
