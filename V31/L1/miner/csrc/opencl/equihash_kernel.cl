@@ -1,27 +1,42 @@
 // Equihash 192,7 OpenCL kernel for Zclassic (ZCL) mining.
 //
-// Adapted from silentarmy (https://github.com/mbevand/silentarmy)
-// which was originally for Equihash 200,9. Modified for 192,7 parameters.
+// Wagner's algorithm adapted for byte-aligned PREFIX=24.  Unlike the
+// silentarmy 200,9 original (PREFIX=20, nibble-packed slots), the 192,7
+// parameter set consumes exactly 3 bytes of Xi per round, so the slot
+// layout stores the Xi tail starting at a whole-byte boundary and the
+// per-row collision compare is a single uniform 4-bit nibble.
 //
-// Equihash is a memory-hard PoW based on the generalized birthday problem
-// (Wagner's algorithm). Parameters for ZCL: N=192, K=7
-//   - 7 rounds of collision finding
-//   - Blake2b hash function
-//   - Solution size: 2^7 * 25 bits = 400 bytes
-//   - Memory requirement: >6GB GPU VRAM
+// Equihash: N=192, K=7 — 2^7 = 128-leaf solutions, 400-byte encoded soln.
+//   - blake2b output 48 bytes → 2 Xi of 24 B per hash
+//   - NR_INPUTS = 2^24 blake blocks → 2^25 leaf indices
+//   - 2^20 bucket rows × NR_SLOTS slots × 28 B → ~1.32 GB per table
 //
-// References:
-//   - silentarmy: https://github.com/mbevand/silentarmy
-//   - Equihash paper: https://eprint.iacr.org/2014/942.pdf
-//   - Zcash Stratum Protocol: ZIP 301
+// Slot layout (SLOT_LEN = 28) — staggered ref/tail, following silentarmy:
+// each round stores its 4-byte "i" ref immediately before its Xi tail, and
+// the tail start marches right every two rounds.  Because round r+2 writes
+// strictly to the right of round r's ref field, all earlier refs survive in
+// the slot head even though tables ping-pong between just two buffers —
+// expand_refs() therefore only ever reads ref fields, never Xi bytes.
+//
+//   ref_off(r)  = 4*(r>>1)         → 0,0,4,4, 8, 8,12  for r = 0..6
+//   tail_off(r) = ref_off(r)+4     → 4,4,8,8,12,12,16
+//   tail bytes  = X[3r+2 .. 24)    → 22,19,16,13,10,7,4 B
+//
+//   buffer ht0 slots: r0 ref@0 | r2 ref@4 | r4 ref@8 | r6 ref@12 | r6 tail
+//   buffer ht1 slots: r1 ref@0 | r3 ref@4 | r5 ref@8 | r5 tail
+//
+// Tail byte 0 of a table-r entry = X[3r+2]: high nibble is row bits,
+// low nibble is the 4-bit intra-row compare value for the *next* round.
+//
+// Window W_r = X bytes [3r .. 3r+3).  Round r (r>=1) pairs table_{r-1}
+// entries sharing row (W_{r-1} top 20 bits) AND tail[0]&0xf equal (the
+// remaining 4 bits) — a full 24-bit W_{r-1} collision.
 
 // (inlined equihash_192_7_param.h)
-// Equihash 192,7 parameters for Zclassic (ZCL)
-// Adapted from silentarmy param.h (originally for 200,9)
 #define PARAM_N                        192
 #define PARAM_K                        7
 #define PREFIX                          (PARAM_N / (PARAM_K + 1))  // 24
-#define NR_INPUTS                       (1 << PREFIX)  // 2^24 = 16777216
+#define NR_INPUTS                       (1 << PREFIX)  // 2^24 blake blocks
 #define APX_NR_ELMS_LOG                 (PREFIX + 1)   // 25
 #define NR_ROWS_LOG                     20
 
@@ -33,43 +48,34 @@
 #define COLL_DATA_SIZE_PER_TH           (NR_SLOTS * 5)
 
 #define NR_ROWS                         (1 << NR_ROWS_LOG)
-// OVERHEAD controls the hash table slot multiplier. With Poisson mean
-// λ=32 elements/row (2^24 inputs / 2^20 rows), P(X > 64) ≈ 1.5e-9, so
-// OVERHEAD=2 (64 slots) captures essentially all elements.
-// NR_SLOTS must be ≤ 64 for NR_ROWS_LOG=20 (ENCODE_INPUTS packs row(20b)
-// + 2 slots(6b each) into 32 bits). OVERHEAD=2 → NR_SLOTS=64 → fits.
-// VRAM: 2 × (2^20 × 64 × 32) = 2 × 2GB = 4GB total (fits 8GB GPUs).
-#if NR_ROWS_LOG == 20 && OPTIM_SIMPLIFY_ROUND
-#define OVERHEAD                        2
-#else
-#define OVERHEAD                        9
-#endif
-#define NR_SLOTS            ((1 << (APX_NR_ELMS_LOG - NR_ROWS_LOG)) * OVERHEAD)
-#define SLOT_LEN                        32
+// Poisson mean lambda=32 elements/row (2^25 Xis / 2^20 rows).
+// 48 slots/row ≈ +2.8σ headroom → ~0.2% rows drop one tail element.
+// SLOT_LEN=28 fits the largest stored tail (4B ref + 22B Xi tail = 26B)
+// and keeps every slot 4-byte aligned; two tables then take ~2.63 GiB,
+// leaving VRAM headroom for co-resident streams on 8 GB cards.
+#define NR_SLOTS                        48
+#define SLOT_LEN                        28
 #define HT_SIZE                         (NR_ROWS * NR_SLOTS * SLOT_LEN)
 #define ZCASH_BLOCK_HEADER_LEN          140
-#define ZCASH_BLOCK_OFFSET_NTIME        (4 + 3 * 32)
 #define ZCASH_NONCE_LEN                 32
-#define ZCASH_SOLSIZE_LEN               3
 // Solution: 2^7 * (24+1) / 8 = 128 * 25 / 8 = 400 bytes
 #define ZCASH_SOL_LEN                   ((1 << PARAM_K) * (PREFIX + 1) / 8)
-#define N_ZERO_BYTES                    12
-#define ZCASH_HASH_LEN                  50
-#define BLAKE_WPS                       10
+// blake2b digest length for (192,7): (512/N)*N/8 = 48 bytes.
+#define ZCASH_HASH_LEN                  48
 #define MAX_SOLS                        10
-#define SHA256_TARGET_LEN               (256 / 8)
 
-#if (NR_SLOTS < 16)
-#define BITS_PER_ROW 4
-#define ROWS_PER_UINT 8
-#define ROW_MASK 0x0F
-#else
+// Row counters: 8 bits per row packed 4-per-uint.
 #define BITS_PER_ROW 8
 #define ROWS_PER_UINT 4
 #define ROW_MASK 0xFF
-#endif
 
-#define xi_offset_for_round(round)      (8 + ((round) / 2) * 4)
+// Per-round byte offsets inside a slot.  The 4-byte "i" ref sits
+// immediately before the round's Xi tail; the tail start advances 4 bytes
+// every two rounds so that a buffer reused by rounds r, r+2, r+4… keeps a
+// surviving ref log at distinct offsets (see the layout comment above).
+#define xi_offset_for_round(round)      (4 * ((round) >> 1) + 4)
+#define ref_offset_for_round(round)     (xi_offset_for_round(round) - 4)
+
 #define SOL_SIZE                        ((1 << PARAM_K) * 4)
 
 typedef struct sols_s {
@@ -79,41 +85,8 @@ typedef struct sols_s {
     uint values[MAX_SOLS][(1 << PARAM_K)];
 } sols_t;
 
-
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
-
-/*
-** Assuming NR_ROWS_LOG == 16, the hash table slots have this layout (length in
-** bytes in parens):
-**
-** round 0, table 0: cnt(4) i(4)                     pad(0)   Xi(23.0) pad(1)
-** round 1, table 1: cnt(4) i(4)                     pad(0.5) Xi(20.5) pad(3)
-** round 2, table 0: cnt(4) i(4) i(4)                pad(0)   Xi(18.0) pad(2)
-** round 3, table 1: cnt(4) i(4) i(4)                pad(0.5) Xi(15.5) pad(4)
-** round 4, table 0: cnt(4) i(4) i(4) i(4)           pad(0)   Xi(13.0) pad(3)
-** round 5, table 1: cnt(4) i(4) i(4) i(4)           pad(0.5) Xi(10.5) pad(5)
-** round 6, table 0: cnt(4) i(4) i(4) i(4) i(4)      pad(0)   Xi( 8.0) pad(4)
-** round 7, table 1: cnt(4) i(4) i(4) i(4) i(4)      pad(0.5) Xi( 5.5) pad(6)
-** round 8, table 0: cnt(4) i(4) i(4) i(4) i(4) i(4) pad(0)   Xi( 3.0) pad(5)
-**
-** If the first byte of Xi is 0xAB then:
-** - on even rounds, 'A' is part of the colliding PREFIX, 'B' is part of Xi
-** - on odd rounds, 'A' and 'B' are both part of the colliding PREFIX, but
-**   'A' is considered redundant padding as it was used to compute the row #
-**
-** - cnt is an atomic counter keeping track of the number of used slots.
-**   it is used in the first slot only; subsequent slots replace it with
-**   4 padding bytes
-** - i encodes either the 21-bit input value (round 0) or a reference to two
-**   inputs from the previous round
-**
-** Formula for Xi length and pad length above:
-** > for i in range(9):
-** >   xi=(200-20*i-NR_ROWS_LOG)/8.; ci=8+4*((i)/2); print xi,32-ci-xi
-**
-** Note that the fractional .5-byte/4-bit padding following Xi for odd rounds
-** is the 4 most significant bits of the last byte of Xi.
-*/
+#pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 
 __constant ulong blake_iv[] =
 {
@@ -127,139 +100,93 @@ __constant ulong blake_iv[] =
 ** Reset counters in hash table.
 */
 __kernel
-void kernel_init_ht(__global char *ht, __global uint *rowCounters)
+void kernel_init_ht(__global uchar *ht, __global uint *rowCounters)
 {
     rowCounters[get_global_id(0)] = 0;
 }
 
 /*
-** If xi0,xi1,xi2,xi3 are stored consecutively in little endian then they
-** represent (hex notation, group of 5 hex digits are a group of PREFIX bits):
-**   aa aa ab bb bb cc cc cd dd...  [round 0]
-**         --------------------
-**      ...ab bb bb cc cc cd dd...  [odd round]
-**               --------------
-**               ...cc cc cd dd...  [next even round]
-**                        -----
-** Bytes underlined are going to be stored in the slot. Preceding bytes
-** (and possibly part of the underlined bytes, depending on NR_ROWS_LOG) are
-** used to compute the row number.
-**
-** Round 0: xi0,xi1,xi2,xi3 is a 25-byte Xi (xi3: only the low byte matter)
-** Round 1: xi0,xi1,xi2 is a 23-byte Xi (incl. the colliding PREFIX nibble)
-** TODO: update lines below with padding nibbles
-** Round 2: xi0,xi1,xi2 is a 20-byte Xi (xi2: only the low 4 bytes matter)
-** Round 3: xi0,xi1,xi2 is a 17.5-byte Xi (xi2: only the low 1.5 bytes matter)
-** Round 4: xi0,xi1 is a 15-byte Xi (xi1: only the low 7 bytes matter)
-** Round 5: xi0,xi1 is a 12.5-byte Xi (xi1: only the low 4.5 bytes matter)
-** Round 6: xi0,xi1 is a 10-byte Xi (xi1: only the low 2 bytes matter)
-** Round 7: xi0 is a 7.5-byte Xi (xi0: only the low 7.5 bytes matter)
-** Round 8: xi0 is a 5-byte Xi (xi0: only the low 5 bytes matter)
-**
-** Return 0 if successfully stored, or 1 if the row overflowed.
+** Byte b of a little-endian ulong (b in 0..7).
 */
-uint ht_store(uint round, __global char *ht, uint i,
-	ulong xi0, ulong xi1, ulong xi2, ulong xi3, __global uint *rowCounters)
+#define B(x, b)   (((x) >> (8 * (b))) & 0xffUL)
+
+/*
+** Store one element in table `ht`.  `xj0..xj2` are 3 little-endian ulongs
+** holding the 24 bytes of the "incoming" value:
+**
+**   round 0:   incoming = full Xi (24 B); row from bytes 0,1,2hi;
+**              stores tail = X[2..24) — 22 B.
+**   round r>=1: incoming = XOR tail from table_{r-1}, i.e. X[3r-1..24)
+**              where byte 0 = consumed W_{r-1} byte (0 for true pairs);
+**              row from bytes 1,2,3hi; stores tail = X[3r+2..24).
+**
+** `off` is the byte index of the row triple inside the incoming window:
+** 2 for round 0, 3 for later rounds.  The stored tail begins at byte off,
+** and its byte 0 keeps [row hi nibble | next-round compare nibble].
+**
+** Return 0 if stored, 1 if the row overflowed.
+*/
+uint ht_store(uint round, __global uchar *ht, uint i,
+	ulong xj0, ulong xj1, ulong xj2, __global uint *rowCounters)
 {
     uint    row;
-    __global char       *p;
+    __global uchar       *p;
     uint                cnt;
-#if NR_ROWS_LOG == 16
-    if (!(round % 2))
-	row = (xi0 & 0xffff);
-    else
-	// if we have in hex: "ab cd ef..." (little endian xi0) then this
-	// formula computes the row as 0xdebc. it skips the 'a' nibble as it
-	// is part of the PREFIX. The Xi will be stored starting with "ef...";
-	// 'e' will be considered padding and 'f' is part of the current PREFIX
-	row = ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
-#elif NR_ROWS_LOG == 18
-    if (!(round % 2))
-	row = (xi0 & 0xffff) | ((xi0 & 0xc00000) >> 6);
-    else
-	row = ((xi0 & 0xc0000) >> 2) |
-	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
-#elif NR_ROWS_LOG == 19
-    if (!(round % 2))
-	row = (xi0 & 0xffff) | ((xi0 & 0xe00000) >> 5);
-    else
-	row = ((xi0 & 0xe0000) >> 1) |
-	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
-#elif NR_ROWS_LOG == 20
-    if (!(round % 2))
-	row = (xi0 & 0xffff) | ((xi0 & 0xf00000) >> 4);
-    else
-	row = ((xi0 & 0xf0000) >> 0) |
-	    ((xi0 & 0xf00) << 4) | ((xi0 & 0xf00000) >> 12) |
-	    ((xi0 & 0xf) << 4) | ((xi0 & 0xf000) >> 12);
-#else
-#error "unsupported NR_ROWS_LOG"
-#endif
-    xi0 = (xi0 >> 16) | (xi1 << (64 - 16));
-    xi1 = (xi1 >> 16) | (xi2 << (64 - 16));
-    xi2 = (xi2 >> 16) | (xi3 << (64 - 16));
+    const uint off = (round == 0) ? 2 : 3;
+    // tail length = 24 - (3r + 2) → 22,19,16,13,10,7,4 for r=0..6
+    const uint tail_len = (round == 0) ? 22 : (22 - 3 * round);
+
+    // row = incoming[off-2]<<12 | incoming[off-1]<<4 | incoming[off]>>4
+    // incoming byte n sits in xj word n/8, byte n%8.
+    ulong words[3] = { xj0, xj1, xj2 };
+    uint b0 = (uint)B(words[(off - 2) / 8], (off - 2) % 8);
+    uint b1 = (uint)B(words[(off - 1) / 8], (off - 1) % 8);
+    uint b2 = (uint)B(words[off / 8], off % 8);
+    row = (b0 << 12) | (b1 << 4) | (b2 >> 4);
+
     p = ht + row * NR_SLOTS * SLOT_LEN;
-    uint rowIdx = row/ROWS_PER_UINT;
-    uint rowOffset = BITS_PER_ROW*(row%ROWS_PER_UINT);
+    uint rowIdx = row / ROWS_PER_UINT;
+    uint rowOffset = BITS_PER_ROW * (row % ROWS_PER_UINT);
     uint xcnt = atomic_add(rowCounters + rowIdx, 1 << rowOffset);
-    xcnt = (xcnt >> rowOffset) & ROW_MASK;
-    cnt = xcnt;
+    cnt = (xcnt >> rowOffset) & ROW_MASK;
     if (cnt >= NR_SLOTS)
       {
 	// avoid overflows
 	atomic_sub(rowCounters + rowIdx, 1 << rowOffset);
 	return 1;
       }
-    p += cnt * SLOT_LEN + xi_offset_for_round(round);
-    // store "i" (always 4 bytes before Xi)
-    *(__global uint *)(p - 4) = i;
-    if (round == 0 || round == 1)
-      {
-	// store 24 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global ulong *)(p + 8) = xi1;
-	*(__global ulong *)(p + 16) = xi2;
-      }
-    else if (round == 2)
-      {
-	// store 20 bytes
-	*(__global uint *)(p + 0) = xi0;
-	*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
-	*(__global ulong *)(p + 12) = (xi1 >> 32) | (xi2 << 32);
-      }
-    else if (round == 3)
-      {
-	// store 16 bytes
-	*(__global uint *)(p + 0) = xi0;
-	*(__global ulong *)(p + 4) = (xi0 >> 32) | (xi1 << 32);
-	*(__global uint *)(p + 12) = (xi1 >> 32);
-      }
-    else if (round == 4)
-      {
-	// store 16 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global ulong *)(p + 8) = xi1;
-      }
-    else if (round == 5)
-      {
-	// store 12 bytes
-	*(__global ulong *)(p + 0) = xi0;
-	*(__global uint *)(p + 8) = xi1;
-      }
-    else if (round == 6 || round == 7)
-      {
-	// store 8 bytes
-	*(__global uint *)(p + 0) = xi0;
-	*(__global uint *)(p + 4) = (xi0 >> 32);
-      }
-    else if (round == 8)
-      {
-	// store 4 bytes
-	*(__global uint *)(p + 0) = xi0;
-      }
+    p += cnt * SLOT_LEN;
+    // Store "i" (4-byte ref) right before this round's Xi tail — the
+    // staggered offsets keep every round's ref alive in the slot head.
+    const uint xoff = xi_offset_for_round(round);
+    *(__global uint *)(p + xoff - 4) = i;
+    __global uchar *t = p + xoff;
+
+    // Shift the incoming 24-byte window right by `off` bytes and store the
+    // first tail_len bytes.  Assemble ulongs s0 = incoming[off..off+8) etc.
+    ulong s0, s1, s2;
+    if (off == 2) {
+	s0 = (xj0 >> 16) | (xj1 << 48);
+	s1 = (xj1 >> 16) | (xj2 << 48);
+	s2 = (xj2 >> 16);
+    } else {
+	s0 = (xj0 >> 24) | (xj1 << 40);
+	s1 = (xj1 >> 24) | (xj2 << 40);
+	s2 = (xj2 >> 24);
+    }
+    // Tail write: tail_len ∈ {22,19,16,13,10,7,4} bytes starting at t
+    // (4-byte aligned).  Store whole u32s then the 0-3 spare bytes.
+    uint w[6] = {
+	(uint)(s0 & 0xffffffff), (uint)(s0 >> 32),
+	(uint)(s1 & 0xffffffff), (uint)(s1 >> 32),
+	(uint)(s2 & 0xffffffff), (uint)(s2 >> 32)
+    };
+    uint full4 = tail_len / 4;
+    for (uint wi = 0; wi < full4; wi++)
+	*(__global uint *)(t + 4 * wi) = w[wi];
+    uint rem = tail_len & 3;
+    for (uint b = 0; b < rem; b++)
+	t[4 * full4 + b] = (uchar)(w[full4] >> (8 * b));
     return 0;
 }
 
@@ -269,20 +196,24 @@ vd = rotate((vd ^ va), (ulong)64 - 32); \
 vc = (vc + vd); \
 vb = rotate((vb ^ vc), (ulong)64 - 24); \
 va = (va + vb + y); \
-vd = rotate((vd ^ va), (ulong)64 - 16); \
+vd = (vd ^ va); vd = rotate(vd, (ulong)64 - 16); \
 vc = (vc + vd); \
-vb = rotate((vb ^ vc), (ulong)64 - 63);
+vb = (vb ^ vc); vb = rotate(vb, (ulong)64 - 63);
 
 /*
 ** Execute round 0 (blake).
 **
-** Note: making the work group size less than or equal to the wavefront size
-** allows the OpenCL compiler to remove the barrier() calls, see "2.2 Local
-** Memory (LDS) Optimization 2-10" in:
-** http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/opencl-optimization-guide/
+** The host uploads `blake_state` = the blake2b midstate after absorbing the
+** first 128 bytes of the 140-byte header (digest length 48, personal
+** "ZcashPoW" || LE32(N) || LE32(K)).  Each work-item finishes the second
+** (final) block = header[128..140] || block_index; the 48-byte digest yields
+** two 24-byte Xis: X[0..24) for leaf 2i and X[24..48) for leaf 2i+1.
+**
+** tail0 carries header[128..136], tail1 carries header[136..140] in its low
+** 32 bits; the block index occupies the high 32 bits of the second word.
 */
 __kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1)))
-void kernel_round0(__global ulong *blake_state, __global char *ht,
+void kernel_round0(__global ulong *blake_state, __global uchar *ht,
 	__global uint *rowCounters, __global uint *debug,
 	ulong tail0, ulong tail1)
 {
@@ -294,11 +225,7 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
     uint                dropped = 0;
     while (input < input_end)
       {
-	// The final blake2b block is header[128..140] || i: tail0 carries
-	// header[128..136], tail1 carries header[136..140] in its low 32 bits,
-	// and the block index i occupies the high 32 bits of the second word.
 	ulong word1 = tail1 | ((ulong)input << 32);
-	// init vector v
 	v[0] = blake_state[0];
 	v[1] = blake_state[1];
 	v[2] = blake_state[2];
@@ -315,8 +242,8 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	v[13] = blake_iv[5];
 	v[14] = blake_iv[6];
 	v[15] = blake_iv[7];
-	// mix in length of data
-	v[12] ^= ZCASH_BLOCK_HEADER_LEN + 4 /* length of "i" */;
+	// mix in total length: 140 header bytes + 4 index bytes
+	v[12] ^= ZCASH_BLOCK_HEADER_LEN + 4;
 	// last block
 	v[14] ^= (ulong)-1;
 
@@ -429,191 +356,145 @@ void kernel_round0(__global ulong *blake_state, __global char *ht,
 	mix(v[2], v[7], v[8],  v[13], 0, 0);
 	mix(v[3], v[4], v[9],  v[14], 0, 0);
 
-	// compress v into the blake state; this produces the 50-byte hash
-	// (two Xi values)
-	ulong h[7];
+	// compress — 48-byte digest = two 24-byte Xis.
+	ulong h[6];
 	h[0] = blake_state[0] ^ v[0] ^ v[8];
 	h[1] = blake_state[1] ^ v[1] ^ v[9];
 	h[2] = blake_state[2] ^ v[2] ^ v[10];
 	h[3] = blake_state[3] ^ v[3] ^ v[11];
 	h[4] = blake_state[4] ^ v[4] ^ v[12];
 	h[5] = blake_state[5] ^ v[5] ^ v[13];
-	h[6] = (blake_state[6] ^ v[6] ^ v[14]) & 0xffff;
 
-	// store the two Xi values in the hash table
-#if ZCASH_HASH_LEN == 50
+	// leaf 2i   = Xi bytes [0,24)  = h[0],h[1],h[2]
+	// leaf 2i+1 = Xi bytes [24,48) = h[3],h[4],h[5]
 	dropped += ht_store(0, ht, input * 2,
-		h[0],
-		h[1],
-		h[2],
-		h[3], rowCounters);
+		h[0], h[1], h[2], rowCounters);
 	dropped += ht_store(0, ht, input * 2 + 1,
-		(h[3] >> 8) | (h[4] << (64 - 8)),
-		(h[4] >> 8) | (h[5] << (64 - 8)),
-		(h[5] >> 8) | (h[6] << (64 - 8)),
-		(h[6] >> 8), rowCounters);
-#else
-#error "unsupported ZCASH_HASH_LEN"
-#endif
+		h[3], h[4], h[5], rowCounters);
+
+	// KAT hook: dump raw digests for inputs 0 and 388 (leaves 0,1 and
+	// 776,777) into debug[0..12) / debug[12..24) so the host can compare
+	// GPU digests bit-exactly against the reference leaf hashes.
+	uint dbase;
+	if (input == 0) dbase = 0;
+	else if (input == 388) dbase = 12;
+	else dbase = 0xffffffff;
+	if (dbase != 0xffffffff)
+	  {
+	    // raw word1 the compression actually consumed
+	    debug[dbase + 24] = (uint)(word1 & 0xffffffff);
+	    debug[dbase + 25] = (uint)(word1 >> 32);
+	    // raw midstate words actually read from the __global buffer
+	    debug[dbase + 26] = (uint)(blake_state[0] & 0xffffffff);
+	    debug[dbase + 27] = (uint)(blake_state[0] >> 32);
+	    debug[dbase + 28] = (uint)(blake_state[1] & 0xffffffff);
+	    debug[dbase + 29] = (uint)(blake_state[1] >> 32);
+	    debug[dbase + 30] = (uint)(tail0 & 0xffffffff);
+	    debug[dbase + 31] = (uint)(tail0 >> 32);
+	    debug[dbase + 0] = (uint)(h[0] & 0xffffffff);
+	    debug[dbase + 1] = (uint)(h[0] >> 32);
+	    debug[dbase + 2] = (uint)(h[1] & 0xffffffff);
+	    debug[dbase + 3] = (uint)(h[1] >> 32);
+	    debug[dbase + 4] = (uint)(h[2] & 0xffffffff);
+	    debug[dbase + 5] = (uint)(h[2] >> 32);
+	    debug[dbase + 6] = (uint)(h[3] & 0xffffffff);
+	    debug[dbase + 7] = (uint)(h[3] >> 32);
+	    debug[dbase + 8] = (uint)(h[4] & 0xffffffff);
+	    debug[dbase + 9] = (uint)(h[4] >> 32);
+	    debug[dbase + 10] = (uint)(h[5] & 0xffffffff);
+	    debug[dbase + 11] = (uint)(h[5] >> 32);
+	  }
 
 	input++;
       }
+
 #ifdef ENABLE_DEBUG
     debug[tid * 2] = 0;
     debug[tid * 2 + 1] = dropped;
 #endif
 }
 
-#if NR_ROWS_LOG <= 16 && NR_SLOTS <= (1 << 8)
-
-#define ENCODE_INPUTS(row, slot0, slot1) \
-    ((row << 16) | ((slot1 & 0xff) << 8) | (slot0 & 0xff))
-#define DECODE_ROW(REF)   (REF >> 16)
-#define DECODE_SLOT1(REF) ((REF >> 8) & 0xff)
-#define DECODE_SLOT0(REF) (REF & 0xff)
-
-#elif NR_ROWS_LOG == 18 && NR_SLOTS <= (1 << 7)
-
-#define ENCODE_INPUTS(row, slot0, slot1) \
-    ((row << 14) | ((slot1 & 0x7f) << 7) | (slot0 & 0x7f))
-#define DECODE_ROW(REF)   (REF >> 14)
-#define DECODE_SLOT1(REF) ((REF >> 7) & 0x7f)
-#define DECODE_SLOT0(REF) (REF & 0x7f)
-
-#elif NR_ROWS_LOG == 19 && NR_SLOTS <= (1 << 6)
-
-#define ENCODE_INPUTS(row, slot0, slot1) \
-    ((row << 13) | ((slot1 & 0x3f) << 6) | (slot0 & 0x3f)) /* 1 spare bit */
-#define DECODE_ROW(REF)   (REF >> 13)
-#define DECODE_SLOT1(REF) ((REF >> 6) & 0x3f)
-#define DECODE_SLOT0(REF) (REF & 0x3f)
-
-#elif NR_ROWS_LOG == 20 && NR_SLOTS <= (1 << 6)
-
+/*
+** Reference encoding: row(20b) | slot_a(6b) | slot_b(6b).
+*/
 #define ENCODE_INPUTS(row, slot0, slot1) \
     ((row << 12) | ((slot1 & 0x3f) << 6) | (slot0 & 0x3f))
 #define DECODE_ROW(REF)   (REF >> 12)
 #define DECODE_SLOT1(REF) ((REF >> 6) & 0x3f)
 #define DECODE_SLOT0(REF) (REF & 0x3f)
 
-#else
-#error "unsupported NR_ROWS_LOG"
-#endif
-
 /*
-** Access a half-aligned long, that is a long aligned on a 4-byte boundary.
+** Read `len` bytes from the 4-byte-aligned pointer `p` as up to three
+** little-endian ulongs (via two aligned u32 loads per ulong).
 */
 ulong half_aligned_long(__global ulong *p, uint offset)
 {
     return
-	(((ulong)*(__global uint *)((__global char *)p + offset + 0)) << 0) |
-	(((ulong)*(__global uint *)((__global char *)p + offset + 4)) << 32);
+	(((ulong)*(__global uint *)((__global uchar *)p + offset + 0)) << 0) |
+	(((ulong)*(__global uint *)((__global uchar *)p + offset + 4)) << 32);
 }
 
 /*
-** Access a well-aligned int.
-*/
-uint well_aligned_int(__global ulong *_p, uint offset)
-{
-    __global char *p = (__global char *)_p;
-    return *(__global uint *)(p + offset);
-}
-
-/*
-** XOR a pair of Xi values computed at "round - 1" and store the result in the
-** hash table being built for "round". Note that when building the table for
-** even rounds we need to skip 1 padding byte present in the "round - 1" table
-** (the "0xAB" byte mentioned in the description at the top of this file.) But
-** also note we can't load data directly past this byte because this would
-** cause an unaligned memory access which is undefined per the OpenCL spec.
+** XOR a colliding pair of table_{round-1} tails and store the result in
+** table_{round}.  Each source tail is (25 - 3r) bytes long starting at
+** xi_offset_for_round(round - 1); the incoming XOR value covers
+** X[3r-1 .. 24) where byte 0 is the consumed W_{r-1} byte (zero for true
+** pairs).
 **
-** Return 0 if successfully stored, or 1 if the row overflowed.
+** Returns 1 if the pair is discarded (all-zero XOR = duplicate-input tree).
 */
-uint xor_and_store(uint round, __global char *ht_dst, uint row,
-	uint slot_a, uint slot_b, __global ulong *a, __global ulong *b,
+uint xor_and_store(uint round, __global uchar *ht_dst, uint row,
+	uint slot_a, uint slot_b, __global uchar *a, __global uchar *b,
 	__global uint *rowCounters)
 {
-    ulong xi0, xi1, xi2;
-#if NR_ROWS_LOG >= 16 && NR_ROWS_LOG <= 20
-    // Note: for NR_ROWS_LOG == 20, for odd rounds, we could optimize by not
-    // storing the byte containing bits from the previous PREFIX block for
-    if (round == 1 || round == 2)
+    // Source tail length = 25 - 3r bytes (r=1..6 → 22,19,16,13,10,7).
+    // Load only whole-ulong pieces covering it; mask any tail spill so
+    // out-of-tail bytes of the neighbouring slot can't corrupt the XOR.
+    ulong xj0, xj1, xj2;
+    xj0 = half_aligned_long((__global ulong *)a, 0)
+	^ half_aligned_long((__global ulong *)b, 0);
+    xj1 = xj2 = 0;
+    if (round <= 2)
       {
-	// xor 24 bytes
-	xi0 = *(a++) ^ *(b++);
-	xi1 = *(a++) ^ *(b++);
-	xi2 = *a ^ *b;
-	if (round == 2)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
-	    xi1 = (xi1 >> 8) | (xi2 << (64 - 8));
-	    xi2 = (xi2 >> 8);
-	  }
+	xj1 = half_aligned_long((__global ulong *)a, 8)
+	    ^ half_aligned_long((__global ulong *)b, 8);
+	xj2 = half_aligned_long((__global ulong *)a, 16)
+	    ^ half_aligned_long((__global ulong *)b, 16);
+	// r=1 tail 22 B: keep xj2's low 6 bytes. r=2 tail 19 B: low 3 bytes.
+	ulong spill = (round == 1) ? 48 : 24;
+	xj2 &= (1UL << spill) - 1;
       }
-    else if (round == 3)
+    else if (round <= 5)
       {
-	// xor 20 bytes
-	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
-	xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
-	xi2 = well_aligned_int(a, 16) ^ well_aligned_int(b, 16);
-      }
-    else if (round == 4 || round == 5)
-      {
-	// xor 16 bytes
-	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
-	xi1 = half_aligned_long(a, 8) ^ half_aligned_long(b, 8);
-	xi2 = 0;
+	// r=3 tail 16 B / r=4 tail 13 B / r=5 tail 10 B — xj1 covers them.
+	xj1 = half_aligned_long((__global ulong *)a, 8)
+	    ^ half_aligned_long((__global ulong *)b, 8);
 	if (round == 4)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
-	    xi1 = (xi1 >> 8);
-	  }
+	    xj1 &= (1UL << 40) - 1;
+	else if (round == 5)
+	    xj1 &= (1UL << 16) - 1;
       }
-    else if (round == 6)
+    // r=6 source tail 7 B → xj0 alone suffices
+    else
       {
-	// xor 12 bytes
-	xi0 = *a++ ^ *b++;
-	xi1 = *(__global uint *)a ^ *(__global uint *)b;
-	xi2 = 0;
-	if (round == 6)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8) | (xi1 << (64 - 8));
-	    xi1 = (xi1 >> 8);
-	  }
+	xj0 &= (1UL << 56) - 1;
       }
-    else if (round == 7 || round == 8)
-      {
-	// xor 8 bytes
-	xi0 = half_aligned_long(a, 0) ^ half_aligned_long(b, 0);
-	xi1 = 0;
-	xi2 = 0;
-	if (round == 8)
-	  {
-	    // skip padding byte
-	    xi0 = (xi0 >> 8);
-	  }
-      }
-    // invalid solutions (which start happenning in round 5) have duplicate
-    // inputs and xor to zero, so discard them
-    if (!xi0 && !xi1)
-	return 0;
-#else
-#error "unsupported NR_ROWS_LOG"
-#endif
+
+    // all-zero XOR = the pair shares a leaf tree (invalid solution)
+    if (!xj0 && !xj1 && !xj2)
+	return 1;
     return ht_store(round, ht_dst, ENCODE_INPUTS(row, slot_a, slot_b),
-	    xi0, xi1, xi2, 0, rowCounters);
+	    xj0, xj1, xj2, rowCounters);
 }
 
 /*
-** Execute one Equihash round. Read from ht_src, XOR colliding pairs of Xi,
-** store them in ht_dst.
+** Execute one Equihash round.  Read table_{round-1}, find in-row pairs whose
+** tail byte0 low nibble matches (the 4 prefix bits not covered by the row
+** index), XOR them, and store into table_{round}.
 */
 void equihash_round(uint round,
-	__global char *ht_src,
-	__global char *ht_dst,
+	__global uchar *ht_src,
+	__global uchar *ht_dst,
 	__global uint *debug,
 	__local uchar *first_words_data,
 	__local uint *collisionsData,
@@ -623,33 +504,15 @@ void equihash_round(uint round,
 {
     uint		tid = get_global_id(0);
     uint		tlid = get_local_id(0);
-    __global char	*p;
+    __global uchar	*p;
     uint		cnt;
     __local uchar	*first_words = &first_words_data[(NR_SLOTS+2)*tlid];
-    uchar		mask;
     uint		i, j;
-    // NR_SLOTS is already oversized (by a factor of OVERHEAD), but we want to
-    // make it even larger
-    uint		n;
-    uint		dropped_coll = 0;
     uint		dropped_stor = 0;
-    __global ulong	*a, *b;
-    uint		xi_offset;
-    // read first words of Xi from the previous (round - 1) hash table
-    xi_offset = xi_offset_for_round(round - 1);
-    // the mask is also computed to read data from the previous round
-#if NR_ROWS_LOG == 16
-    mask = ((!(round % 2)) ? 0x0f : 0xf0);
-#elif NR_ROWS_LOG == 18
-    mask = ((!(round % 2)) ? 0x03 : 0x30);
-#elif NR_ROWS_LOG == 19
-    mask = ((!(round % 2)) ? 0x01 : 0x10);
-#elif NR_ROWS_LOG == 20
-    mask = 0; /* we can vastly simplify the code below */
-#else
-#error "unsupported NR_ROWS_LOG"
-#endif
-    uint thCollNum = 0;
+    __global uchar	*a, *b;
+    // read compare nibbles (tail byte0 low nibble) of the source row;
+    // table_{round-1} tails sit at their own staggered offset
+    const uint src_xi_off = xi_offset_for_round(round - 1);
     *collisionsNum = 0;
     barrier(CLK_LOCAL_MEM_FENCE);
     p = (ht_src + tid * NR_SLOTS * SLOT_LEN);
@@ -660,69 +523,23 @@ void equihash_round(uint round,
     if (!cnt)
 	// no elements in row, no collisions
 	goto part2;
-    p += xi_offset;
+    p += src_xi_off;
     for (i = 0; i < cnt; i++, p += SLOT_LEN)
-	first_words[i] = (*(__global uchar *)p) & mask;
-    // find collisions
-    for (i = 0; i < cnt-1 && thCollNum < COLL_DATA_SIZE_PER_TH; i++)
+	first_words[i] = (*(__global uchar *)p) & 0x0f;
+    // find collisions — pack (tid20 | i6 | j6): tid < 2^20, slots < 64
+    for (i = 0; i + 1 < cnt; i++)
       {
 	uchar data_i = first_words[i];
-	uint collision = (tid << 10) | (i << 5) | (i + 1);
-	for (j = i+1; (j+4) < cnt;)
+	uint collision = (tid << 12) | (i << 6) | (i + 1);
+	for (j = i + 1; j < cnt; j++)
 	  {
+	    if (data_i == first_words[j])
 	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	      {
-		uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-		if (isColl)
-		  {
-		    thCollNum++;
-		    uint index = atomic_inc(collisionsNum);
-		    collisionsData[index] = collision;
-		  }
-		collision++;
-		j++;
-	      }
-	  }
-	for (; j < cnt; j++)
-	  {
-	    uint isColl = ((data_i == first_words[j]) ? 1 : 0);
-	    if (isColl)
-	      {
-		thCollNum++;
 		uint index = atomic_inc(collisionsNum);
-		collisionsData[index] = collision;
+		if (index < COLL_DATA_SIZE_PER_TH * EQ_WG_SIZE)
+		    collisionsData[index] = collision;
+		else
+		    atomic_dec(collisionsNum);
 	      }
 	    collision++;
 	  }
@@ -731,35 +548,33 @@ void equihash_round(uint round,
 part2:
     barrier(CLK_LOCAL_MEM_FENCE);
     uint totalCollisions = *collisionsNum;
-    for (uint index = tlid; index < totalCollisions; index += get_local_size(0))
+    if (totalCollisions > COLL_DATA_SIZE_PER_TH * EQ_WG_SIZE)
+	totalCollisions = COLL_DATA_SIZE_PER_TH * EQ_WG_SIZE;
+    for (uint index = tlid; index < totalCollisions;
+	    index += get_local_size(0))
       {
 	uint collision = collisionsData[index];
-	uint collisionThreadId = collision >> 10;
-	uint i = (collision >> 5) & 0x1F;
-	uint j = collision & 0x1F;
-	__global uchar *ptr = ht_src + collisionThreadId * NR_SLOTS * SLOT_LEN +
-	    xi_offset;
-	a = (__global ulong *)(ptr + i * SLOT_LEN);
-	b = (__global ulong *)(ptr + j * SLOT_LEN);
-	dropped_stor += xor_and_store(round, ht_dst, collisionThreadId, i, j,
-		a, b, rowCountersDst);
+	uint collisionThreadId = collision >> 12;
+	uint i = (collision >> 6) & 0x3F;
+	uint j = collision & 0x3F;
+	__global uchar *ptr = ht_src + collisionThreadId * NR_SLOTS * SLOT_LEN;
+	a = ptr + src_xi_off + i * SLOT_LEN;
+	b = ptr + src_xi_off + j * SLOT_LEN;
+	dropped_stor += xor_and_store(round, ht_dst, collisionThreadId,
+		i, j, a, b, rowCountersDst);
       }
 #ifdef ENABLE_DEBUG
-    debug[tid * 2] = dropped_coll;
+    debug[tid * 2] = 0;
     debug[tid * 2 + 1] = dropped_stor;
 #endif
 }
 
 /*
-** This defines kernel_round1 through kernel_round5 (collision finding rounds
-** that do NOT need the sols argument). For Equihash 192,7 (K=7), the loop
-** runs rounds 0..K-1 = 0..6. Round 0 is kernel_round0 (Blake2b), rounds 1-5
-** are the macro-generated collision rounds, and round 6 is the final round
-** (kernel_round6_final below) that takes the extra sols argument.
+** kernel_round1 .. kernel_round5 — collision rounds (no sols argument).
 */
 #define KERNEL_ROUND(N) \
 __kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1))) \
-void kernel_round ## N(__global char *ht_src, __global char *ht_dst, \
+void kernel_round ## N(__global uchar *ht_src, __global uchar *ht_dst, \
 	__global uint *rowCountersSrc, __global uint *rowCountersDst, \
        	__global uint *debug) \
 { \
@@ -775,13 +590,15 @@ KERNEL_ROUND(3)
 KERNEL_ROUND(4)
 KERNEL_ROUND(5)
 
-// kernel_round6 is the final round for K=7 (round K-1 = 6).
-// It takes an extra argument "sols" and initializes sols->nr = 0.
+/*
+** kernel_round6 — final collision round for K=7; also zeroes sols->nr.
+*/
 __kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1)))
-void kernel_round6(__global char *ht_src, __global char *ht_dst,
+void kernel_round6(__global uchar *ht_src, __global uchar *ht_dst,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst,
-	__global uint *debug, __global sols_t *sols)
+	__global uint *debug, __global uchar *sols_raw)
 {
+    __global sols_t *sols = (__global sols_t *)sols_raw;
     uint		tid = get_global_id(0);
     __local uchar	first_words_data[(NR_SLOTS+2)*EQ_WG_SIZE];
     __local uint	collisionsData[COLL_DATA_SIZE_PER_TH * EQ_WG_SIZE];
@@ -792,31 +609,34 @@ void kernel_round6(__global char *ht_src, __global char *ht_dst,
 	sols->nr = sols->likely_invalids = 0;
 }
 
-uint expand_ref(__global char *ht, uint xi_offset, uint row, uint slot)
+/*
+** expand_ref: the "i" ref u32 that round `round` stored at its staggered
+** offset.  Table `ht` is the buffer holding table_round — earlier rounds'
+** refs in the same slot are at *lower* offsets and must not be read here.
+*/
+uint expand_ref(__global uchar *ht, uint round, uint row, uint slot)
 {
     return *(__global uint *)(ht + row * NR_SLOTS * SLOT_LEN +
-	    slot * SLOT_LEN + xi_offset - 4);
+	    slot * SLOT_LEN + ref_offset_for_round(round));
 }
 
 /*
-** Expand references to inputs. Return 1 if so far the solution appears valid,
-** or 0 otherwise (an invalid solution would be a solution with duplicate
-** inputs, which can be detected at the last step: round == 0).
+** Expand references to inputs.  Returns 1 while the solution appears valid
+** (a duplicate leaf index detected at round 0 disqualifies it).
 */
-uint expand_refs(uint *ins, uint nr_inputs, __global char **htabs,
+uint expand_refs(uint *ins, uint nr_inputs, __global uchar **htabs,
 	uint round)
 {
-    __global char	*ht = htabs[round % 2];
+    __global uchar	*ht = htabs[round % 2];
     uint		i = nr_inputs - 1;
     uint		j = nr_inputs * 2 - 1;
-    uint		xi_offset = xi_offset_for_round(round);
     int			dup_to_watch = -1;
     do
       {
-	ins[j] = expand_ref(ht, xi_offset,
-		DECODE_ROW(ins[i]), DECODE_SLOT1(ins[i]));
-	ins[j - 1] = expand_ref(ht, xi_offset,
-		DECODE_ROW(ins[i]), DECODE_SLOT0(ins[i]));
+	ins[j] = expand_ref(ht, round, DECODE_ROW(ins[i]),
+		DECODE_SLOT1(ins[i]));
+	ins[j - 1] = expand_ref(ht, round, DECODE_ROW(ins[i]),
+		DECODE_SLOT0(ins[i]));
 	if (!round)
 	  {
 	    if (dup_to_watch == -1)
@@ -836,7 +656,7 @@ uint expand_refs(uint *ins, uint nr_inputs, __global char **htabs,
 /*
 ** Verify if a potential solution is in fact valid.
 */
-void potential_sol(__global char **htabs, __global sols_t *sols,
+void potential_sol(__global uchar **htabs, __global sols_t *sols,
 	uint ref0, uint ref1)
 {
     uint	nr_values;
@@ -865,46 +685,42 @@ void potential_sol(__global char **htabs, __global sols_t *sols,
 }
 
 /*
-** Scan the hash tables to find Equihash solutions.
+** Scan the final hash table (round K-1 = 6 → table0) for solutions.
+** A solution requires the remaining 4-byte tail (X[20..24)) to be fully
+** equal — same row covers X[18..19]+X[20]hi, so comparing the stored tail
+** catches X[20]lo and the last window X[21..24).
 */
 __kernel __attribute__((reqd_work_group_size(EQ_WG_SIZE, 1, 1)))
-void kernel_sols(__global char *ht0, __global char *ht1, __global sols_t *sols,
+void kernel_sols(__global uchar *ht0, __global uchar *ht1,
+	__global uchar *sols_raw,
 	__global uint *rowCountersSrc, __global uint *rowCountersDst)
 {
     uint		tid = get_global_id(0);
-    __global char	*htabs[2] = { ht0, ht1 };
-    __global char	*hcounters[2] = { rowCountersSrc, rowCountersDst };
-    uint		ht_i = (PARAM_K - 1) % 2; // table filled at last round
+    __global sols_t	*sols = (__global sols_t *)sols_raw;
+    __global uchar	*htabs[2] = { ht0, ht1 };
     uint		cnt;
-    uint		xi_offset = xi_offset_for_round(PARAM_K - 1);
     uint		i, j;
-    __global char	*a, *b;
+    __global uchar	*a, *b;
     uint		ref_i, ref_j;
-    // it's ok for the collisions array to be so small, as if it fills up
-    // the potential solutions are likely invalid (many duplicate inputs)
     ulong		collisions;
-    uint		coll;
-#if NR_ROWS_LOG >= 16 && NR_ROWS_LOG <= 20
-    // in the final hash table, we are looking for a match on both the bits
-    // part of the previous PREFIX colliding bits, and the last PREFIX bits.
-    uint		mask = 0xffffff;
-#else
-#error "unsupported NR_ROWS_LOG"
-#endif
-    a = htabs[ht_i] + tid * NR_SLOTS * SLOT_LEN;
+
+    // final table = ht0 (round 6 is even); row counters live in
+    // rowCountersSrc == rc0.  Table_6 tails sit at xi_offset_for_round(6)
+    // = 16, their 4-byte refs at offset 12.
+    const uint final_xi_off = xi_offset_for_round(PARAM_K - 1);
+    a = ht0 + tid * NR_SLOTS * SLOT_LEN;
     uint rowIdx = tid/ROWS_PER_UINT;
     uint rowOffset = BITS_PER_ROW*(tid%ROWS_PER_UINT);
     cnt = (rowCountersSrc[rowIdx] >> rowOffset) & ROW_MASK;
-    cnt = min(cnt, (uint)NR_SLOTS); // handle possible overflow in last round
-    coll = 0;
-    a += xi_offset;
+    cnt = min(cnt, (uint)NR_SLOTS);
+    a += final_xi_off;
     for (i = 0; i < cnt; i++, a += SLOT_LEN)
       {
-	uint a_data = ((*(__global uint *)a) & mask);
+	uint a_data = *(__global uint *)a;
 	ref_i = *(__global uint *)(a - 4);
 	for (j = i + 1, b = a + SLOT_LEN; j < cnt; j++, b += SLOT_LEN)
 	  {
-	    if (a_data == ((*(__global uint *)b) & mask))
+	    if (a_data == *(__global uint *)b)
 	      {
 		ref_j = *(__global uint *)(b - 4);
 		collisions = ((ulong)ref_i << 32) | ref_j;

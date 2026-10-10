@@ -1688,10 +1688,12 @@ impl ExtGpuMiner {
                 return self.mine_verthash(header, target, base_nonce);
             }
             "equihashzero" | "equihashzero_zcl" => {
-                return self.mine_equihash(header, target, base_nonce);
+                // `extra` carries the pool extranonce1 bytes — the nonce
+                // counter must be written after that prefix (see impl).
+                return self.mine_equihash(header, extra, target, base_nonce);
             }
             "equihash" | "equihash_zec" => {
-                return self.mine_equihash200(header, target, base_nonce);
+                return self.mine_equihash200(header, extra, target, base_nonce);
             }
             "zelhash" | "zelhash_flux" => {
                 return self.mine_zelhash_prod(header, target, base_nonce);
@@ -5147,8 +5149,10 @@ typedef unsigned long ulong;
 
     /// Blake2b midstate for Equihash (N,K) with ZcashPoW personalization.
     /// 192,7 → Zclassic, 200,9 → Zcash.
+    /// The digest length is (512/N)*N/8: 48 B for 192,7, 50 B for 200,9 —
+    /// it feeds the blake2b parameter block, so it changes every Xi bit.
     fn equihash_blake2b_state(header: &[u8], n: u64, k: u64) -> [u64; 8] {
-        let hash_len: u64 = 50; // ZCASH_HASH_LEN
+        let hash_len: u64 = (512 / n) * n / 8;
 
         // Initialize state (zcash_blake2b_init)
         let mut h: [u64; 8] = Self::EQ_BLAKE_IV;
@@ -5302,6 +5306,26 @@ typedef unsigned long ulong;
         out
     }
 
+    /// Reference leaf-Xi computation for Equihash: the 24/25-byte Xi slice of
+    /// Blake2b(hash_len, ZcashPoW||n||k, header || LE32(block_index)).
+    fn equihash_leaf_hash(header_buf: &[u8; 140], n: u32, k: u32, i: u32) -> Vec<u8> {
+        let iph = (512 / n) as usize; // indices per hash output
+        let xi_len = (n / 8) as usize; // bytes per leaf Xi
+        let hash_len = iph * xi_len; // digest length: 48 for 192,7, 50 for 200,9
+        let mut personal = b"ZcashPoW".to_vec();
+        personal.extend_from_slice(&n.to_le_bytes());
+        personal.extend_from_slice(&k.to_le_bytes());
+        let mut st = blake2b_simd::Params::new()
+            .hash_length(hash_len)
+            .personal(&personal)
+            .to_state();
+        st.update(header_buf);
+        st.update(&(i / iph as u32).to_le_bytes());
+        let h = st.finalize();
+        let start = (i as usize % iph) * xi_len;
+        h.as_bytes()[start..start + xi_len].to_vec()
+    }
+
     /// Reconstruct the canonical Wagner tree for a GPU-found Equihash
     /// solution. `inputs` is the leaf index list in the order kernel_sols
     /// emitted it — leaf pairs are adjacent, but higher-level subtree order
@@ -5316,23 +5340,9 @@ typedef unsigned long ulong;
         n: u32,
         k: u32,
     ) -> bool {
-        let iph = (512 / n) as usize; // indices per hash output
-        let xi_len = (n / 8) as usize; // bytes per leaf Xi
         let clen = (n / (k + 1)) as usize; // collision bits per round
-        let leaf_hash = |i: u32| -> Vec<u8> {
-            let mut personal = b"ZcashPoW".to_vec();
-            personal.extend_from_slice(&n.to_le_bytes());
-            personal.extend_from_slice(&k.to_le_bytes());
-            let mut st = blake2b_simd::Params::new()
-                .hash_length(50)
-                .personal(&personal)
-                .to_state();
-            st.update(header_buf);
-            st.update(&(i / iph as u32).to_le_bytes());
-            let h = st.finalize();
-            let start = (i as usize % iph) * xi_len;
-            h.as_bytes()[start..start + xi_len].to_vec()
-        };
+        let leaf_hash =
+            |i: u32| -> Vec<u8> { Self::equihash_leaf_hash(header_buf, n, k, i) };
         // Compare bits [off, off+len) of two Xi arrays (MSB-first order).
         let bits_equal = |a: &[u8], b: &[u8], off: usize, len: usize| -> bool {
             (0..len).all(|b_i| {
@@ -5340,6 +5350,7 @@ typedef unsigned long ulong;
                 ((a[p / 8] >> (7 - p % 8)) & 1) == ((b[p / 8] >> (7 - p % 8)) & 1)
             })
         };
+        let eq_dbg = std::env::var_os("ZION_EQ192_DEBUG").is_some();
         let mut nodes: Vec<(Vec<u32>, Vec<u8>)> =
             inputs.iter().map(|&i| (vec![i], leaf_hash(i))).collect();
         for level in 0..k as usize {
@@ -5361,12 +5372,26 @@ typedef unsigned long ulong;
                         !used[j] && bits_equal(&nodes[i].1, &nodes[j].1, off, clen)
                     }) {
                         Some(j) => j,
-                        None => return false,
+                        None => {
+                            if eq_dbg {
+                                crate::ext_info!(
+                                    "eq192dbg reorder fail: level={level} i={i} nodes={} no-partner",
+                                    nodes.len()
+                                );
+                            }
+                            return false;
+                        }
                     }
                 };
                 if j >= nodes.len()
                     || !bits_equal(&nodes[i].1, &nodes[j].1, off, clen)
                 {
+                    if eq_dbg {
+                        crate::ext_info!(
+                            "eq192dbg reorder fail: level={level} i={i} j={j} nodes={} bits-mismatch",
+                            nodes.len()
+                        );
+                    }
                     return false;
                 }
                 used[i] = true;
@@ -5405,15 +5430,17 @@ typedef unsigned long ulong;
     /// 4. Read back solutions, verify with double-SHA256
     /// 5. Return first solution under target as GpuFoundShare
     ///
-    /// Requires ≥8 GB GPU VRAM (two 2GB hash tables with OVERHEAD=2).
+    /// Requires ~4.1 GB GPU VRAM (two 2 GiB hash tables at NR_SLOTS=64).
     fn mine_equihash(
         &mut self,
         header: &[u8],
+        en1: &[u8],
         target: &[u8; 32],
         base_nonce: u64,
     ) -> Result<Option<GpuFoundShare>> {
         // Delegate to the parameterized implementation with 192,7 constants.
-        self.mine_equihash_impl(header, target, base_nonce, "equihash_kernel.cl", 7, 24, 64)
+        // NR_SLOTS=48 must match the kernel define (λ=32 + ~2.8σ headroom).
+        self.mine_equihash_impl(header, en1, target, base_nonce, "equihash_kernel.cl", 7, 24, 48)
     }
 
     /// Equihash 200,9 mining (Zcash / ZEC).
@@ -5422,6 +5449,7 @@ typedef unsigned long ulong;
     fn mine_equihash200(
         &mut self,
         header: &[u8],
+        en1: &[u8],
         target: &[u8; 32],
         base_nonce: u64,
     ) -> Result<Option<GpuFoundShare>> {
@@ -5430,6 +5458,7 @@ typedef unsigned long ulong;
         // Host slot count MUST equal kernel NR_SLOTS or ht_store writes OOB.
         self.mine_equihash_impl(
             header,
+            en1,
             target,
             base_nonce,
             "equihash200_kernel.cl",
@@ -5842,6 +5871,7 @@ typedef unsigned long ulong;
     fn mine_equihash_impl(
         &mut self,
         header: &[u8],
+        en1: &[u8],
         target: &[u8; 32],
         base_nonce: u64,
         kernel_file: &str,
@@ -5851,8 +5881,10 @@ typedef unsigned long ulong;
     ) -> Result<Option<GpuFoundShare>> {
         // Use parameterized values (passed from mine_equihash / mine_equihash200)
         const NR_ROWS: usize = 1 << 20; // 2^20 = 1,048,576
-        const SLOT_LEN: usize = 32;
-        let ht_size: usize = NR_ROWS * nr_slots * SLOT_LEN;
+        // 192,7 kernel uses byte-aligned SLOT_LEN=28 (4B ref + ≤22B tail);
+        // the 200,9 kernel keeps its own staggered 32-byte slots.
+        let slot_len: usize = if param_k == 7 { 28 } else { 32 };
+        let ht_size: usize = NR_ROWS * nr_slots * slot_len;
         const ROWS_PER_UINT: usize = 4; // BITS_PER_ROW=8 → ROWS_PER_UINT=4
         const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT; // 262,144 u32s
         const MAX_SOLS: usize = 10;
@@ -5863,14 +5895,16 @@ typedef unsigned long ulong;
         // allocate ~84KB of __local at WG=64. Compiled with -DEQ_WG_SIZE=32.
         const EQ_WG: usize = 32;
         let zcash_sol_len: usize = (1usize << param_k) * (prefix as usize + 1) / 8;
+        // Full N (= prefix * (k+1)): 192 for the 192,7 path, 200 for 200,9.
+        let param_n = prefix * (param_k + 1);
 
         // sols_t layout (matching the kernel struct):
         //   uint nr;           // 4 bytes
         //   uint likely_invalids; // 4 bytes
-        //   uchar valid[MAX_SOLS]; // 10 bytes → padded to 12 for uint alignment
+        //   uchar valid[MAX_SOLS]; // 10 bytes + 2 pad → values at offset 20
         //   uint values[MAX_SOLS][1<<PARAM_K]; // 10 * (1<<K) * 4 bytes
-        // K=7: 12 + 5120 = 5132; K=9: 12 + 20480 = 20492.
-        let sols_buf_size: usize = 16 + MAX_SOLS * (1usize << param_k) * 4;
+        // K=7: 20 + 5120 = 5140; K=9: 20 + 20480 = 20500.
+        let sols_buf_size: usize = 20 + MAX_SOLS * (1usize << param_k) * 4;
 
         // Check VRAM — need at least 2 * ht_size + overhead
         let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + sols_buf_size + 1024;
@@ -5885,15 +5919,18 @@ typedef unsigned long ulong;
         let pro_que = self.ensure_proque_with_opts(kernel_file, "-DEQ_WG_SIZE=32")?;
         let q = pro_que.queue().clone();
 
-        // Prepare 140-byte header with nonce
+        // Prepare 140-byte header with nonce.  The nonce field is
+        // `en1 || nonce64_le || zeros` — the upstream notify already embeds
+        // extranonce1 at bytes 108.. and our counter must start AFTER it,
+        // otherwise the pool-side reconstruction `en1 || nonce` hashes a
+        // different header than the GPU did (silent "Invalid share").
         let mut header_buf = [0u8; ZCASH_BLOCK_HEADER_LEN];
         let copy_len = header.len().min(ZCASH_BLOCK_HEADER_LEN);
         header_buf[..copy_len].copy_from_slice(&header[..copy_len]);
-        // Set nonce: first 8 bytes = base_nonce (LE), rest = 0
-        let nonce_bytes = base_nonce.to_le_bytes();
-        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8].copy_from_slice(&nonce_bytes);
-        // Zero remaining nonce bytes
-        for i in (ZCASH_NONCE_OFFSET + 8)..ZCASH_BLOCK_HEADER_LEN {
+        let en1_len = en1.len().min(ZCASH_NONCE_LEN - 8); // ≤ 24
+        let noff = ZCASH_NONCE_OFFSET + en1_len;
+        header_buf[noff..noff + 8].copy_from_slice(&base_nonce.to_le_bytes());
+        for i in (noff + 8)..ZCASH_BLOCK_HEADER_LEN {
             header_buf[i] = 0;
         }
 
@@ -6041,6 +6078,25 @@ typedef unsigned long ulong;
         let sols_local = EQ_WG;
 
         let start = Instant::now();
+        let eq_dbg = std::env::var_os("ZION_EQ192_DEBUG").is_some();
+        let dump_rows = |q: &ocl::Queue, rc: &Buffer<u32>, tag: &str| -> Result<()> {
+            let mut rcv = vec![0u32; ROW_COUNTERS_SIZE];
+            rc.read(&mut rcv).enq()?;
+            let _ = q; // counters read is ordered on the same queue
+            let (mut rows, mut elems, mut mx) = (0usize, 0usize, 0u32);
+            for &w in &rcv {
+                for s in 0..4 {
+                    let c = (w >> (8 * s)) & 0xff;
+                    if c > 0 {
+                        rows += 1;
+                        elems += c as usize;
+                        mx = mx.max(c);
+                    }
+                }
+            }
+            crate::ext_info!("eq192dbg {tag}: rows={rows} elems={elems} max_slot={mx}");
+            Ok(())
+        };
 
         // --- Dispatch sequence ---
         // Use set_arg() to set kernel arguments, then cmd().enq() to dispatch.
@@ -6081,6 +6137,109 @@ typedef unsigned long ulong;
                 .enq()?;
         }
         q.finish().map_err(|e| anyhow!("equihash round0 finish: {e}"))?;
+        if eq_dbg {
+            dump_rows(&q, &rc0, "round0")?;
+
+            // Direct digest KAT: kernel wrote block-0's 48-byte digest to
+            // debug[0..12).  Compare bit-exactly against CPU leaf_hash for
+            // leaves 0 (bytes 0..24) and 1 (bytes 24..48).
+            {
+                let mut dbg = vec![0u32; 64];
+                dbg_buf.read(&mut dbg).enq()?;
+                let w1_0 = (dbg[25] as u64) << 32 | dbg[24] as u64;
+                let w1_388 = (dbg[37] as u64) << 32 | dbg[36] as u64;
+                crate::ext_info!(
+                    "eq192dbg kat word1: input0={w1_0:#018x} input388={w1_388:#018x} \
+                     (expect tail1|0 and tail1|{:#x})",
+                    388u64 << 32
+                );
+                // also verify the midstate/tail0 words the GPU read
+                let ms0_0 = (dbg[27] as u64) << 32 | dbg[26] as u64;
+                let ms1_0 = (dbg[29] as u64) << 32 | dbg[28] as u64;
+                let t0_0 = (dbg[31] as u64) << 32 | dbg[30] as u64;
+                crate::ext_info!(
+                    "eq192dbg kat input0 reads: h0={ms0_0:#018x} h1={ms1_0:#018x} \
+                     tail0={t0_0:#018x} (host h0={:#018x} h1={:#018x} tail0={:#018x})",
+                    blake_state[0], blake_state[1], eq_tail0
+                );
+                let mut gpu_d = [0u8; 96];
+                for (i, w) in dbg[..24].iter().enumerate() {
+                    gpu_d[i * 4..i * 4 + 4].copy_from_slice(&w.to_le_bytes());
+                }
+                for leaf in [0u32, 1, 776, 777] {
+                    let xi = Self::equihash_leaf_hash(
+                        &header_buf, param_n, param_k, leaf,
+                    );
+                    // block 0 digest → gpu_d[0..48), block 388 → [48..96);
+                    // leaf%2 selects the 24-byte half.
+                    let base = if leaf < 2 { 0 } else { 48 };
+                    let lo = base + ((leaf % 2) as usize) * 24;
+                    let gpu_xi = &gpu_d[lo..lo + 24];
+                    crate::ext_info!(
+                        "eq192dbg kat leaf{leaf}: match={} gpu={:02x?} cpu={:02x?}",
+                        gpu_xi == &xi[..],
+                        gpu_xi,
+                        &xi[..]
+                    );
+                }
+                // Which block index did the GPU actually hash for the
+                // "input==388" dump?  Brute-force the whole 2^24 range.
+                let mut hit = None;
+                for idx in 0u32..(1 << 24) {
+                    let xi0 = Self::equihash_leaf_hash(
+                        &header_buf, param_n, param_k, idx * 2,
+                    );
+                    if gpu_d[48..72] == xi0[..] {
+                        hit = Some(idx);
+                        break;
+                    }
+                }
+                crate::ext_info!(
+                    "eq192dbg kat block388-dump actually hashed block idx={hit:?}"
+                );
+            }
+
+            // KAT: for a fixed leaf, compute the *expected* table-0 row on
+            // CPU (top-20 bits of the reference Xi), read that GPU row, and
+            // look for the slot holding our leaf index.  Found+tail-match ⇒
+            // GPU Blake2b is bit-exact; not-found ⇒ the GPU digest differs.
+            if let Ok(leaf_s) = std::env::var("ZION_EQ192_DUMP_T0") {
+                if let Ok(leaf) = leaf_s.parse::<u32>() {
+                    let xi = Self::equihash_leaf_hash(&header_buf, param_n, param_k, leaf);
+                    let row = (((xi[0] as u32) << 12)
+                        | ((xi[1] as u32) << 4)
+                        | ((xi[2] as u32) >> 4)) as usize;
+                    let mut rowbuf = vec![0u8; nr_slots * slot_len];
+                    ht0.read(&mut rowbuf)
+                        .offset(row * nr_slots * slot_len)
+                        .enq()?;
+                    let mut found = false;
+                    for s in 0..nr_slots {
+                        let base = s * slot_len;
+                        let stored = u32::from_le_bytes(
+                            rowbuf[base..base + 4].try_into().unwrap(),
+                        );
+                        if stored == leaf {
+                            let gpu_tail =
+                                &rowbuf[base + 4..base + 4 + xi.len() - 2];
+                            crate::ext_info!(
+                                "eq192dbg kat leaf={leaf} row={row} slot={s} \
+                                 tail_match={} gpu={gpu_tail:02x?} cpu={:02x?}",
+                                gpu_tail == &xi[2..],
+                                &xi[2..]
+                            );
+                            found = true;
+                        }
+                    }
+                    if !found {
+                        crate::ext_info!(
+                            "eq192dbg kat leaf={leaf} NOT FOUND in cpu-row {row} \
+                             (GPU digest differs or leaf dropped)"
+                        );
+                    }
+                }
+            }
+        }
 
         // 3. Rounds 1..=K-2: collision finding (alternating ht_src/ht_dst).
         //    k_rounds[round-1] = kernel_round{round}; the final round K-1
@@ -6117,6 +6276,9 @@ typedef unsigned long ulong;
                     .enq()?;
             }
             q.finish().map_err(|e| anyhow!("equihash round{round} finish: {e}"))?;
+            if eq_dbg {
+                dump_rows(&q, rc_dst, &format!("round{round}"))?;
+            }
         }
 
         // 4. Round K-1 (= 6): final round with sols argument
@@ -6153,6 +6315,9 @@ typedef unsigned long ulong;
                     .enq()?;
             }
             q.finish().map_err(|e| anyhow!("equihash final-round finish: {e}"))?;
+            if eq_dbg {
+                dump_rows(&q, rc_dst, "round6-final")?;
+            }
         }
 
         // 5. kernel_sols: extract solutions
@@ -6221,6 +6386,21 @@ typedef unsigned long ulong;
             {
                 let mut seen = std::collections::HashSet::with_capacity(inputs.len());
                 if !inputs.iter().all(|i| seen.insert(*i)) {
+                    if eq_dbg {
+                        let mut d = std::collections::HashMap::new();
+                        for &v in &inputs {
+                            *d.entry(v).or_insert(0u32) += 1;
+                        }
+                        let dups: Vec<u32> = d
+                            .iter()
+                            .filter(|(_, c)| **c > 1)
+                            .map(|(v, c)| (*v << 4) | (*c & 0xf))
+                            .collect();
+                        crate::ext_info!(
+                            "eq192dbg sol_{sol_i} dups(idx<<4|cnt)={dups:?} first8={:?}",
+                            &inputs[..8.min(inputs.len())]
+                        );
+                    }
                     crate::ext_info!(
                         "auxpow_gpu_equihash sol_{sol_i} has duplicate indices, skipping"
                     );
@@ -6228,17 +6408,41 @@ typedef unsigned long ulong;
                 }
             }
 
+            // XOR diagnostic (debug only): a genuine 128-leaf solution XORs to
+            // zero over the whole Xi — order-independent, so it cleanly splits
+            // "wrong leaf set" from "right leaves, wrong pairing".
+            if eq_dbg {
+                let xi_len = (param_n / 8) as usize;
+                let mut acc = vec![0u8; xi_len];
+                for &li in &inputs {
+                    let xi =
+                        Self::equihash_leaf_hash(&header_buf, param_n, param_k, li);
+                    for (b, &x) in acc.iter_mut().zip(xi.iter()) {
+                        *b ^= x;
+                    }
+                }
+                let nz = acc.iter().filter(|&&b| b != 0).count();
+                crate::ext_info!(
+                    "eq192dbg sol_{sol_i} leafset xor_nonzero_bytes={nz}/{xi_len}"
+                );
+            }
+
             // Reconstruct the canonical Wagner tree: the kernel emits leaf
             // indices with scrambled subtree order, so recompute leaf Xis and
             // rebuild the merge tree deterministically. n = prefix * (k+1)
             // (192,7 → 24*8, 200,9 → 20*10).
-            let param_n = prefix * (param_k + 1);
             if !Self::reorder_equihash_solution(
                 &mut inputs,
                 &header_buf,
                 param_n,
                 param_k,
             ) {
+                if eq_dbg {
+                    crate::ext_info!(
+                        "eq192dbg sol_{sol_i} reorder-fail first8={:?}",
+                        &inputs[..8.min(inputs.len())]
+                    );
+                }
                 crate::ext_info!(
                     "auxpow_gpu_equihash sol_{sol_i} tree reconstruction failed, skipping"
                 );
@@ -6251,6 +6455,22 @@ typedef unsigned long ulong;
                 crate::ext_info!(
                     "auxpow_gpu_equihash sol_{sol_i} encoded size {} != expected {zcash_sol_len}, skipping",
                     encoded_sol.len()
+                );
+                continue;
+            }
+
+            // Independent validity gate: the vendored verifier re-checks the
+            // encoded solution against (N,K) + ZcashPoW — catches any tree
+            // reconstruction or bit-order bug before the pool sees it.
+            if let Err(e) = equihash::is_valid_solution(
+                param_n,
+                param_k,
+                &header_buf[..ZCASH_NONCE_OFFSET],
+                &header_buf[ZCASH_NONCE_OFFSET..],
+                &encoded_sol,
+            ) {
+                crate::ext_info!(
+                    "auxpow_gpu_equihash sol_{sol_i} failed is_valid_solution ({e}), skipping"
                 );
                 continue;
             }
@@ -6291,6 +6511,11 @@ typedef unsigned long ulong;
             if meets_target {
                 let mut hash_arr = [0u8; 32];
                 hash_arr.copy_from_slice(&hash2);
+                // Share.solution carries the wire format: CompactSize length
+                // prefix + minimal soln (fd9001 + 400 B for 192,7).
+                let mut sol_wire =
+                    crate::auxpow::hasher::zcash_varint_for_len(encoded_sol.len());
+                sol_wire.extend_from_slice(&encoded_sol);
                 crate::ext_info!(
                     "auxpow_gpu_equihash SHARE FOUND sol_{sol_i} nonce={base_nonce} hash_first8={:016x}",
                     u64::from_le_bytes(hash_arr[0..8].try_into().unwrap())
@@ -6299,7 +6524,7 @@ typedef unsigned long ulong;
                     nonce: base_nonce,
                     hash: hash_arr,
                     mix_hash: None,
-                    solution: Some(encoded_sol),
+                    solution: Some(sol_wire),
                 }));
             } else {
                 crate::ext_info!("auxpow_gpu_equihash sol_{sol_i} above target, skipping");
@@ -9507,6 +9732,68 @@ mod tests {
             encoded2[0], 0,
             "Non-zero input must produce non-zero encoding"
         );
+    }
+
+    /// CPU replica of `kernel_round0`'s Blake2b path: midstate from
+    /// `equihash_blake2b_state` (128-byte block 1) + the kernel's literal
+    /// final-block schedule (m0 = header[128..136], m1 = header[136..140]
+    /// || LE32(block_index), rest zero, t = 144, last-block flag).
+    /// Compared against `equihash_leaf_hash` (blake2b_simd reference).
+    #[test]
+    fn eq192_kernel_round0_cpu_replica() {
+        let mut header = [0u8; 140];
+        for (i, b) in header.iter_mut().enumerate() {
+            *b = ((i * 31 + 7) & 0xff) as u8;
+        }
+        let midstate = ExtGpuMiner::equihash_blake2b_state(&header, 192, 7);
+        let tail0 = u64::from_le_bytes(header[128..136].try_into().unwrap());
+        let tail1 = u32::from_le_bytes(header[136..140].try_into().unwrap()) as u64;
+
+        for input in [0u32, 1, 42, 65535, 1 << 22] {
+            let word1 = tail1 | ((input as u64) << 32);
+            let m = {
+                let mut m = [0u64; 16];
+                m[0] = tail0;
+                m[1] = word1;
+                m
+            };
+            let mut v = [0u64; 16];
+            v[..8].copy_from_slice(&midstate);
+            v[8..].copy_from_slice(&ExtGpuMiner::EQ_BLAKE_IV);
+            v[12] ^= 140 + 4; // total input bytes
+            v[14] ^= u64::MAX; // last block
+            for round in 0..12 {
+                let s = &ExtGpuMiner::EQ_BLAKE_SIGMA[round];
+                ExtGpuMiner::eq_mix(&mut v, 0, 4, 8, 12, m[s[0]], m[s[1]]);
+                ExtGpuMiner::eq_mix(&mut v, 1, 5, 9, 13, m[s[2]], m[s[3]]);
+                ExtGpuMiner::eq_mix(&mut v, 2, 6, 10, 14, m[s[4]], m[s[5]]);
+                ExtGpuMiner::eq_mix(&mut v, 3, 7, 11, 15, m[s[6]], m[s[7]]);
+                ExtGpuMiner::eq_mix(&mut v, 0, 5, 10, 15, m[s[8]], m[s[9]]);
+                ExtGpuMiner::eq_mix(&mut v, 1, 6, 11, 12, m[s[10]], m[s[11]]);
+                ExtGpuMiner::eq_mix(&mut v, 2, 7, 8, 13, m[s[12]], m[s[13]]);
+                ExtGpuMiner::eq_mix(&mut v, 3, 4, 9, 14, m[s[14]], m[s[15]]);
+            }
+            let mut digest = [0u8; 48];
+            for i in 0..6 {
+                let w = midstate[i] ^ v[i] ^ v[i + 8];
+                digest[i * 8..i * 8 + 8].copy_from_slice(&w.to_le_bytes());
+            }
+            let xi0 = ExtGpuMiner::equihash_leaf_hash(&header, 192, 7, input * 2);
+            let xi1 =
+                ExtGpuMiner::equihash_leaf_hash(&header, 192, 7, input * 2 + 1);
+            assert_eq!(
+                &digest[..24],
+                &xi0[..],
+                "replica leaf {} mismatch vs blake2b_simd",
+                input * 2
+            );
+            assert_eq!(
+                &digest[24..],
+                &xi1[..],
+                "replica leaf {} mismatch vs blake2b_simd",
+                input * 2 + 1
+            );
+        }
     }
 
     /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)
