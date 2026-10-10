@@ -147,13 +147,17 @@ impl V3PoolClient {
         let (reader, writer) = tokio::io::split(stream);
         let writer = Arc::new(Mutex::new(writer));
 
-        // Send Hello
+        // Send Hello.  ZION_ZIS_TOKEN carries a ZIS API key (`zis_…`)
+        // which binds the session to a ZIS user when the pool has ZIS
+        // auth enabled (phase C); empty = anonymous wallet-mode session.
+        let auth_token = std::env::var("ZION_ZIS_TOKEN").unwrap_or_default();
         let hello = PoolMessage::Hello {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
             algorithm: algorithm.to_string(),
             payout_address: payout_address.to_string(),
             backend: backend.to_string(),
+            auth_token,
         };
         let hello_line = encode_message(&hello)?;
         {
@@ -178,10 +182,16 @@ impl V3PoolClient {
                 protocol_version,
                 algorithm: welcome_algo,
                 job_ttl_ms,
+                zis_user,
             } => {
                 info!(
-                    "V3 pool connected: protocol={} algo={} job_ttl={}ms",
-                    protocol_version, welcome_algo, job_ttl_ms
+                    "V3 pool connected: protocol={} algo={} job_ttl={}ms{}",
+                    protocol_version, welcome_algo, job_ttl_ms,
+                    if zis_user.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" zis_user={}", zis_user)
+                    }
                 );
             }
             other => {
@@ -803,6 +813,7 @@ mod tests {
                 protocol_version: "zion-v3-stratum/0.2".into(),
                 algorithm: "ekam_deeksha".into(),
                 job_ttl_ms: 60_000,
+                zis_user: String::new(),
             })
             .unwrap();
             writer.write_all(welcome.as_bytes()).await.unwrap();

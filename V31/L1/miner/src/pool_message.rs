@@ -106,11 +106,19 @@ pub enum PoolMessage {
         payout_address: String,
         #[serde(default)]
         backend: String,
+        /// Optional ZIS API key (`zis_…`) — binds the session to a ZIS
+        /// user when the pool has ZIS auth enabled.
+        #[serde(default)]
+        auth_token: String,
     },
     Welcome {
         protocol_version: String,
         algorithm: String,
         job_ttl_ms: u64,
+        /// ZIS user id the session was bound to ("" = anonymous).
+        /// Absent on pre-ZIS pools.
+        #[serde(default)]
+        zis_user: String,
     },
     Job {
         job_id: u64,
@@ -269,6 +277,7 @@ mod tests {
             algorithm: "ekam_deeksha".into(),
             payout_address: "".into(),
             backend: "cpu".into(),
+            auth_token: "".into(),
         };
         let encoded = encode_message(&msg).unwrap();
         let decoded = decode_message(&encoded).unwrap();

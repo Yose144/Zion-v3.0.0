@@ -149,6 +149,15 @@ pub struct StratumServer {
     gpu_coin_routes: Vec<(String, ExternalCoin)>,
     /// Per-miner CPU coin routes (`ZION_POOL_AUXPOW_CPU_COIN_ROUTE`).
     cpu_coin_routes: Vec<(String, ExternalCoin)>,
+    /// ZIS session verifier — `Some` when `ZION_POOL_ZIS_AUTH` is
+    /// optional/required, `None` in the default off mode.
+    zis: Option<Arc<crate::zis::ZisVerifier>>,
+    /// Whether an invalid/absent auth_token rejects the session
+    /// (`ZION_POOL_ZIS_AUTH=required`).
+    zis_required: bool,
+    /// Latest ZION template height broadcast — used as the bookkeeping
+    /// height when crediting external-stream shares into PPLNS.
+    current_height: Arc<AtomicU64>,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -260,6 +269,16 @@ impl StratumServer {
                 .filter(|c| c.is_gpu()),
             gpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_GPU_COIN_ROUTE"),
             cpu_coin_routes: parse_coin_routes("ZION_POOL_AUXPOW_CPU_COIN_ROUTE"),
+            zis: {
+                let mode = crate::zis::ZisVerifier::auth_mode();
+                match mode {
+                    crate::zis::ZisAuthMode::Off => None,
+                    _ => Some(Arc::new(crate::zis::ZisVerifier::from_env())),
+                }
+            },
+            zis_required: crate::zis::ZisVerifier::auth_mode()
+                == crate::zis::ZisAuthMode::Required,
+            current_height: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -383,6 +402,7 @@ impl StratumServer {
                         &worker_name,
                         &ctx.session.algorithm,
                         &ctx.session.backend,
+                        "",
                     );
                 }
                 success_response(id, Value::Bool(true))
@@ -809,6 +829,7 @@ impl StratumServer {
         // Parse as generic JSON to avoid requiring full CoreBlockTemplate fields
         let template: Value = serde_json::from_str(template_json).ok()?;
         let height = template.get("height").and_then(Value::as_u64).unwrap_or(0);
+        self.current_height.store(height, Ordering::Relaxed);
         let network_difficulty = template
             .get("difficulty")
             .and_then(Value::as_u64)
@@ -1385,6 +1406,8 @@ impl StratumServer {
                 worker_name,
                 algorithm,
                 backend,
+                payout_address,
+                auth_token,
                 ..
             }) => {
                 tracing::info!(
@@ -1394,6 +1417,52 @@ impl StratumServer {
                     algorithm,
                     ip
                 );
+
+                // Same ZIS auth contract as the plain-TCP path (phase C):
+                // required mode must not be bypassable over TLS.
+                let mut zis_user = String::new();
+                if let Some(verifier) = &self.zis {
+                    let identity = if auth_token.is_empty() {
+                        None
+                    } else {
+                        verifier.verify(&auth_token).await
+                    };
+                    match identity {
+                        Some(idn) if !verifier.is_banned(&idn.sub) => {
+                            zis_user = idn.sub.clone();
+                            tracing::info!(
+                                "v3_zis_auth miner={} worker={} sub={} (tls)",
+                                miner_id, worker_name, idn.sub
+                            );
+                            if payout_address.is_empty() {
+                                if let Some(zaddr) = &idn.zion_address {
+                                    if let Some((chain, addr)) = self
+                                        .pool
+                                        .lock()
+                                        .unwrap()
+                                        .register_payout_address(&miner_id, zaddr)
+                                    {
+                                        tracing::info!(
+                                            "v3_payout miner={} chain={} addr={} (zis-linked)",
+                                            miner_id, chain, addr
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            if self.zis_required {
+                                tracing::warn!(
+                                    "v3_zis_reject miner={} ip={} reason={} (tls)",
+                                    miner_id, ip,
+                                    if auth_token.is_empty() { "no_token" }
+                                    else { "invalid_or_banned" }
+                                );
+                                return;
+                            }
+                        }
+                    }
+                }
 
                 session_gpu_pref =
                     Self::session_coin_pref(&self.gpu_coin_routes, &miner_id, &worker_name);
@@ -1413,6 +1482,7 @@ impl StratumServer {
                     protocol_version: PROTOCOL_VERSION.to_string(),
                     algorithm: algorithm.clone(),
                     job_ttl_ms: 60_000,
+                    zis_user: zis_user.clone(),
                 };
                 if write_v3_message(writer, &welcome).await.is_err() {
                     return;
@@ -1455,6 +1525,7 @@ impl StratumServer {
                     &worker_name,
                     &algorithm,
                     &backend,
+                    &zis_user,
                 );
             }
             _ => return,
@@ -1690,6 +1761,9 @@ impl StratumServer {
         let mut session_cpu_pref: Option<ExternalCoin>;
         let mut session_gpu2_pref: Option<ExternalCoin> = None;
 
+        // ZIS user bound at Hello ("" = anonymous session).
+        let mut zis_user = String::new();
+
         // Process first line (should be Hello)
         match decode_message(first_line) {
             Ok(PoolMessage::Hello {
@@ -1698,6 +1772,7 @@ impl StratumServer {
                 algorithm: alg,
                 backend: bk,
                 payout_address: pa,
+                auth_token: at,
                 ..
             }) => {
                 miner_id = mid.clone();
@@ -1713,6 +1788,60 @@ impl StratumServer {
                     backend,
                     ip
                 );
+
+                // ZIS session auth (multi-algo phase C): verify the API key
+                // against the identity service; a valid, unbanned key binds
+                // the session to the ZIS user (per-user accounting) and can
+                // auto-resolve the linked payout address.  Required mode
+                // rejects absent/invalid tokens.
+                if let Some(verifier) = &self.zis {
+                    let identity = if at.is_empty() {
+                        None
+                    } else {
+                        verifier.verify(&at).await
+                    };
+                    match identity {
+                        Some(idn) if !verifier.is_banned(&idn.sub) => {
+                            zis_user = idn.sub.clone();
+                            tracing::info!(
+                                "v3_zis_auth miner={} worker={} sub={}",
+                                miner_id, worker_name, idn.sub
+                            );
+                            if pa.is_empty() {
+                                if let Some(zaddr) = &idn.zion_address {
+                                    if let Some((chain, addr)) = self
+                                        .pool
+                                        .lock()
+                                        .unwrap()
+                                        .register_payout_address(&miner_id, zaddr)
+                                    {
+                                        tracing::info!(
+                                            "v3_payout miner={} chain={} addr={} (zis-linked)",
+                                            miner_id, chain, addr
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            if self.zis_required {
+                                tracing::warn!(
+                                    "v3_zis_reject miner={} ip={} reason={}",
+                                    miner_id, ip,
+                                    if at.is_empty() { "no_token" }
+                                    else { "invalid_or_banned" }
+                                );
+                                return;
+                            }
+                            if !at.is_empty() {
+                                tracing::warn!(
+                                    "v3_zis_invalid miner={} — continuing anonymous",
+                                    miner_id
+                                );
+                            }
+                        }
+                    }
+                }
 
                 // Explicit payout address (e.g. `qtc:<ss58>` for Quantus
                 // payouts or `zion1…`) — registered once per miner_id.
@@ -1751,6 +1880,7 @@ impl StratumServer {
                     protocol_version: PROTOCOL_VERSION.to_string(),
                     algorithm: algorithm.clone(),
                     job_ttl_ms: 60_000,
+                    zis_user: zis_user.clone(),
                 };
                 if write_v3_message(writer, &welcome).await.is_err() {
                     return;
@@ -1795,6 +1925,7 @@ impl StratumServer {
                     &worker_name,
                     &algorithm,
                     &backend,
+                    &zis_user,
                 );
 
                 // Resolve session group for revenue routing
@@ -2370,6 +2501,26 @@ impl StratumServer {
                                     }
                                 }
 
+                                // Credit upstream-accepted external shares
+                                // into PPLNS at their configured weight so
+                                // the miner earns ZION for verified work
+                                // (multi-algo phase C).
+                                if accepted {
+                                    let h = self
+                                        .current_height
+                                        .load(Ordering::Relaxed);
+                                    let w = auxpow_share_weight(&coin);
+                                    self.pool
+                                        .lock()
+                                        .unwrap()
+                                        .record_external_share(
+                                            &sub_miner_id,
+                                            &sub_worker_name,
+                                            h,
+                                            w,
+                                        );
+                                }
+
                                 // Route external shares to the coin's own telemetry
                                 // stream so they appear under `streams` in /miners
                                 // without polluting ZION share/hashrate stats.
@@ -2858,6 +3009,26 @@ fn parse_coin_routes(var: &str) -> Vec<(String, ExternalCoin)> {
     routes
 }
 
+/// PPLNS work-weight credited for one upstream-accepted external share of
+/// `coin` (multi-algo phase C): per-coin override
+/// `ZION_POOL_AUXPOW_WEIGHT_<TICKER>`, else `ZION_POOL_AUXPOW_PPLNS_WEIGHT`
+/// (default 500 ≈ the vardiff floor).  Upstream share targets are
+/// coin-specific and not comparable to ZION difficulty, so the credit is
+/// an explicit policy knob rather than a derived quantity.
+fn auxpow_share_weight(coin: &str) -> u64 {
+    let per_coin = format!("ZION_POOL_AUXPOW_WEIGHT_{}", coin.to_uppercase());
+    std::env::var(&per_coin)
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .or_else(|| {
+            std::env::var("ZION_POOL_AUXPOW_PPLNS_WEIGHT")
+                .ok()
+                .and_then(|s| s.trim().parse().ok())
+        })
+        .unwrap_or(500u64)
+        .max(1)
+}
+
 /// Case-insensitive `*` glob: `vega*`, `*smos`, `vega-*-rig`, plain
 /// equality when no `*` is present.
 fn glob_match(pattern: &str, text: &str) -> bool {
@@ -3115,6 +3286,143 @@ mod tests {
         let (miner, worker) = split_worker("zion1abc");
         assert_eq!(miner, "zion1abc");
         assert_eq!(worker, "default");
+    }
+
+    // ── Phase C E2E: real TCP session + mock ZIS HTTP ──────────────────
+    // NOTE: sync tests — `Notifier` inside `StratumServer` owns a
+    // `reqwest::blocking::Client` whose internal runtime must not be
+    // dropped inside an async context (see session_counters test), so
+    // all async work runs inside `rt.block_on` on a dedicated thread and
+    // the server is dropped there afterwards.
+
+    /// Drive one full V3 session against `handle_v3_client`: spawn a mock
+    /// ZIS when `zis_body` is Some, wire a StratumServer with a verifier,
+    /// accept one TCP connection, send `hello_json` as the client, and
+    /// return the first line the server sends back ("" on close).
+    fn run_v3_zis_session(
+        hello_json: &str,
+        zis_body: Option<&'static str>,
+        required: bool,
+    ) -> String {
+        let mut server = make_server();
+        server.zis_required = required;
+        let hello = hello_json.to_string();
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+
+                if let Some(body) = zis_body {
+                    let zl = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+                    let zaddr = zl.local_addr().unwrap();
+                    let body = body.to_string();
+                    tokio::spawn(async move {
+                        if let Ok((mut s, _)) = zl.accept().await {
+                            let mut buf = vec![0u8; 8192];
+                            let _ = s.read(&mut buf).await;
+                            let resp = format!(
+                                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                                body.len(),
+                                body
+                            );
+                            let _ = s.write_all(resp.as_bytes()).await;
+                        }
+                    });
+                    server.zis = Some(Arc::new(crate::zis::ZisVerifier::for_test(
+                        format!("http://{zaddr}"),
+                    )));
+                }
+
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+                let addr = listener.local_addr().unwrap();
+                let srv = Arc::new(server);
+                let srv2 = srv.clone();
+                let session = tokio::spawn(async move {
+                    let Ok((sock, _)) = listener.accept().await else { return };
+                    let (rd, wr) = tokio::io::split(sock);
+                    let mut lines = BufReader::new(rd).lines();
+                    let Ok(Some(first)) = lines.next_line().await else { return };
+                    let writer = Arc::new(tokio::sync::Mutex::new(wr));
+                    srv2.handle_v3_client(
+                        &first,
+                        &mut lines,
+                        &writer,
+                        "127.0.0.1".parse().unwrap(),
+                    )
+                    .await;
+                });
+
+                let mut client = tokio::net::TcpStream::connect(addr).await.unwrap();
+                client
+                    .write_all(format!("{hello}\n").as_bytes())
+                    .await
+                    .unwrap();
+                let (crd, _cwr) = client.split();
+                let mut reader = BufReader::new(crd);
+                let mut line = String::new();
+                let _ = tokio::time::timeout(
+                    Duration::from_secs(5),
+                    reader.read_line(&mut line),
+                )
+                .await;
+                let _ = tx.send(line);
+                drop(client);
+                let _ = tokio::time::timeout(Duration::from_secs(3), session).await;
+            });
+            // `server` (Arc inside srv) drops here — dedicated thread,
+            // outside any async context.
+        });
+        rx.recv_timeout(Duration::from_secs(10))
+            .expect("v3 session produced no response")
+    }
+
+    #[test]
+    fn v3_hello_zis_optional_binds_user() {
+        let line = run_v3_zis_session(
+            "{\"type\":\"hello\",\"miner_id\":\"zion1t\",\"worker_name\":\"zion1t.rig\",\"algorithm\":\"ekam_deeksha\",\"backend\":\"cpu\",\"auth_token\":\"zis_0123456789abcdef\"}",
+            Some(r#"{"valid":true,"user":{"id":"u77","linkedAddresses":[{"address":"zion1linked","chainType":"zion-l1"}]}}"#),
+            false,
+        );
+        let v: serde_json::Value = serde_json::from_str(line.trim()).unwrap();
+        assert_eq!(v["type"], "welcome");
+        assert_eq!(v["zis_user"], "u77");
+    }
+
+    #[test]
+    fn v3_hello_zis_optional_allows_anonymous() {
+        // Mock ZIS is never contacted for tokenless sessions.
+        let line = run_v3_zis_session(
+            "{\"type\":\"hello\",\"miner_id\":\"zion1t\",\"worker_name\":\"zion1t.rig\",\"algorithm\":\"ekam_deeksha\",\"backend\":\"cpu\"}",
+            Some(r#"{"valid":false}"#),
+            false,
+        );
+        let v: serde_json::Value = serde_json::from_str(line.trim()).unwrap();
+        assert_eq!(v["type"], "welcome");
+        assert_eq!(v["zis_user"], "");
+    }
+
+    #[test]
+    fn v3_hello_zis_required_rejects_anonymous() {
+        let line = run_v3_zis_session(
+            "{\"type\":\"hello\",\"miner_id\":\"zion1t\",\"worker_name\":\"zion1t.rig\",\"algorithm\":\"ekam_deeksha\",\"backend\":\"cpu\"}",
+            Some(r#"{"valid":false}"#),
+            true,
+        );
+        assert!(line.is_empty(), "expected connection close, got {line:?}");
+    }
+
+    #[test]
+    fn v3_hello_zis_required_rejects_invalid_token() {
+        let line = run_v3_zis_session(
+            "{\"type\":\"hello\",\"miner_id\":\"zion1t\",\"worker_name\":\"zion1t.rig\",\"algorithm\":\"ekam_deeksha\",\"backend\":\"cpu\",\"auth_token\":\"zis_badbadbadbadbadb\"}",
+            Some(r#"{"error":"UNAUTHORIZED","message":"Invalid API key"}"#),
+            true,
+        );
+        assert!(line.is_empty(), "expected connection close, got {line:?}");
     }
 
     #[test]
