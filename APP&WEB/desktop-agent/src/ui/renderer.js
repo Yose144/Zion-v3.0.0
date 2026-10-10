@@ -1233,7 +1233,7 @@ function setupControls() {
   bindCoinSelect(gpuCoin2Select, 'gpuCoin2', gpuCoin2SelectDashboard);
   bindCoinSelect(gpuCoin2SelectDashboard, 'gpuCoin2', gpuCoin2Select);
 
-  // QTC engine selector (internal OpenCL kernel vs SRBMiner sidecar).
+  // QTC engine selector (auto / internal OpenCL kernel / SRBMiner sidecar).
   const qtcEngineSelect = document.getElementById('qtc-engine-select');
   if (qtcEngineSelect) {
     if (config.qtcEngine && qtcEngineSelect.querySelector(`option[value="${config.qtcEngine}"]`)) {
@@ -1242,6 +1242,19 @@ function setupControls() {
     qtcEngineSelect.addEventListener('change', () => {
       config.qtcEngine = qtcEngineSelect.value;
       void applyMiningSelection(`qtcEngine=${qtcEngineSelect.value}`);
+    });
+  }
+
+  // SRBMiner GPU selection — 'auto'/empty = all detected GPUs, otherwise a
+  // comma-separated --gpu-id list (e.g. "0,1"). Debounced apply on change.
+  const srbGpuIdInput = document.getElementById('srbminer-gpuid-input');
+  if (srbGpuIdInput) {
+    srbGpuIdInput.value = config.srbminerGpuId || 'auto';
+    srbGpuIdInput.addEventListener('change', () => {
+      const v = srbGpuIdInput.value.trim().replace(/[^0-9,a-zA-Z]/g, '');
+      config.srbminerGpuId = v || 'auto';
+      srbGpuIdInput.value = config.srbminerGpuId;
+      void applyMiningSelection(`srbminerGpuId=${encodeURIComponent(config.srbminerGpuId)}`);
     });
   }
 
@@ -1788,9 +1801,45 @@ let _mcFlushScheduled = false;
 const MC_DEFERRED_MAX = 2000;
 let _mcDeferredQueue = [];
 
+const SRB_MC_MAX_LINES = 800;
+let _srbQueue = [];
+let _srbFlushScheduled = false;
+
+// Dedicated SRBMiner console — receives [SRB] sidecar lines and [GPU]
+// telemetry rows so the main console stays zion-miner only.
+function appendSrbConsole(raw) {
+  const html = colorizeConsoleLine(raw);
+  if (!html) return;
+  _srbQueue.push(html);
+  if (_srbFlushScheduled) return;
+  _srbFlushScheduled = true;
+  requestAnimationFrame(() => {
+    _srbFlushScheduled = false;
+    const el = document.getElementById('srb-console-body');
+    if (!el) { _srbQueue = []; return; }
+    const atBottom = (el.scrollTop + el.clientHeight) >= (el.scrollHeight - 20);
+    const frag = document.createDocumentFragment();
+    for (const h of _srbQueue) {
+      if (!h) continue;
+      const div = document.createElement('div');
+      div.className = 'mc-line' + (h._cls || '');
+      div.innerHTML = h.html || h;
+      frag.appendChild(div);
+    }
+    _srbQueue = [];
+    el.appendChild(frag);
+    while (el.children.length > SRB_MC_MAX_LINES) el.removeChild(el.firstChild);
+    if (atBottom) el.scrollTop = el.scrollHeight;
+  });
+}
+
 function appendMiningConsole(raw) {
   const body = document.getElementById('console-body');
   if (!body) return;
+
+  // SRBMiner sidecar output goes to its own console section — keeps the
+  // main scrollback readable (zion-miner streams only).
+  if (/^\[(SRB|GPU)\]/.test(raw)) { appendSrbConsole(raw); return; }
 
   // Drop verbose/duplicate status lines; the Session Metrics panel and
   // [METRICS] line already display this data compactly.
@@ -1873,6 +1922,60 @@ function colorizeConsoleLine(raw) {
   m = raw.match(/pool_set_difficulty=(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-warn">[~] POOL DIFFICULTY</span> → <span class="mc-diff">${m[1]}</span>` };
+  }
+
+  // ── SRBMiner sidecar lines (mirrored with [SRB] prefix) ──
+  // Per-GPU hashrate table row:
+  // "[SRB] [m#0  Radeon RX 5600 XT          74.79 MH/s    91.0W   0.822 2703RPM   47C   1732    100    62"
+  m = raw.match(/^\[SRB\]\s+\[?m?#?(\d+)\s+([A-Za-z0-9 ()\/_-]{6,40}?)\s{2,}([\d.]+)\s*([kKmMgGtT]?H\/s)\s+([\d.]+)W\s+([\d.]+)\s+(\d+)RPM\s+(\d+)C\s+(\d+)\s+(\d+)/i);
+  if (m) {
+    const tempC = Number(m[8]);
+    const tCls = tempC >= 80 ? 'mc-rejected' : tempC >= 65 ? 'mc-warn' : 'mc-ok';
+    return { html: `${tsHtml}<span class="mc-srb">SRB</span> gpu<span class="mc-ok">${m[1]}</span> <span class="mc-info">${esc(m[2].trim())}</span> <span class="mc-hr">${m[3]} ${m[4]}</span> <span class="mc-diff">${m[5]}W</span> eff <span class="mc-ok">${m[6]}</span> fan <span class="mc-info">${m[7]}</span> <span class="${tCls}">${m[8]}°C</span> <span class="mc-ts">${m[9]}/${m[10]}MHz</span>` };
+  }
+  // "[SRB] Total: 119.23 MH/s [P:193.0W EFF:0.618 A:1 R:0 HW:0]"
+  m = raw.match(/^\[SRB\]\s+Total:\s*([\d.]+)\s*([kKmMgGtT]?H\/s)\s*\[P:([\d.]+)W\s+EFF:([\d.]+)\s+A:(\d+)\s+R:(\d+)/i);
+  if (m) {
+    return { html: `${tsHtml}<span class="mc-srb">SRB</span> total <span class="mc-hr">${m[1]} ${m[2]}</span> <span class="mc-diff">${m[3]}W</span> eff <span class="mc-ok">${m[4]}</span> A:<span class="mc-accepted">${m[5]}</span> R:<span class="mc-rejected">${m[6]}</span>` };
+  }
+  // "[SRB] GPU0 Radeon RX 5600 XT: 75.45 MH/s [T:46C FAN:2710RPM P:89.7W EFF:0.841 CC:1731 MC:100 A:1 R:0 HW:0]"
+  m = raw.match(/^\[SRB\].*?GPU(\d+)\s+([^:]{3,32}):\s*([\d.]+)\s*([kKmMgGtT]?H\/s)\s*\[T:(\d+)C.*?P:([\d.]+)W\s+EFF:([\d.]+)\s+CC:(\d+)\s+MC:(\d+)\s+A:(\d+)\s+R:(\d+)/i);
+  if (m) {
+    const tempC = Number(m[5]);
+    const tCls = tempC >= 80 ? 'mc-rejected' : tempC >= 65 ? 'mc-warn' : 'mc-ok';
+    return { html: `${tsHtml}<span class="mc-srb">SRB</span> gpu<span class="mc-ok">${m[1]}</span> <span class="mc-info">${esc(m[2].trim())}</span> <span class="mc-hr">${m[3]} ${m[4]}</span> <span class="${tCls}">${m[5]}°C</span> <span class="mc-diff">${m[6]}W</span> eff <span class="mc-ok">${m[7]}</span> <span class="mc-ts">${m[8]}/${m[9]}MHz</span> A:<span class="mc-accepted">${m[10]}</span> R:<span class="mc-rejected">${m[11]}</span>` };
+  }
+  // "[SRB] share accepted ..." / pool events / autotune noise
+  if (/^\[SRB\]/.test(raw)) {
+    const inner = raw.replace(/^\[SRB\]\s*/, '');
+    if (/share\s+accepted|result\s+accepted|accepted\s+share/i.test(inner)) {
+      return { html: `${tsHtml}<span class="mc-srb">SRB</span> <span class="mc-accepted">[+] SHARE ACCEPTED</span> <span class="mc-info">${esc(inner)}</span>`, _cls: ' mc-highlight' };
+    }
+    if (/reject/i.test(inner)) {
+      return { html: `${tsHtml}<span class="mc-srb">SRB</span> <span class="mc-rejected">[✗] SHARE REJECTED</span> <span class="mc-err">${esc(inner)}</span>`, _cls: ' mc-highlight' };
+    }
+    if (/error|failed|cannot|unable/i.test(inner)) {
+      return { html: `${tsHtml}<span class="mc-srb">SRB</span> <span class="mc-err">${esc(inner)}</span>` };
+    }
+    if (/detecting|found\s+\d+\s*gpu|device|autotune|intensity|connect|pool|algorithm|miner version|logging|watchdog/i.test(inner)) {
+      return { html: `${tsHtml}<span class="mc-srb">SRB</span> <span class="mc-info">${esc(inner)}</span>` };
+    }
+    // Table borders / empty TUI fragments — drop
+    if (/^[\s═─━\-+|#m\]\[\d:hrWMH/s.]*$/.test(inner)) return null;
+    return { html: `${tsHtml}<span class="mc-srb">SRB</span> ${esc(inner)}` };
+  }
+
+  // ── Synthetic [GPU] telemetry line (emitted by main-process poller) ──
+  // "[GPU] gpu0 76.3M 46C 89W eff0.86 | gpu1 100.2M 70C 95W eff1.05 dip"
+  if (/^\[GPU\]/.test(raw)) {
+    let html = esc(raw.replace(/^\[GPU\]\s*/, ''));
+    html = html.replace(/gpu(\d+)/g, 'gpu<span class="mc-ok">$1</span>');
+    html = html.replace(/([\d.]+)M/g, '<span class="mc-hr">$1M</span>');
+    html = html.replace(/(\d+)C/g, '<span class="mc-warn">$1°C</span>');
+    html = html.replace(/(\d+)W/g, '<span class="mc-diff">$1W</span>');
+    html = html.replace(/eff([\d.]+)/g, 'eff<span class="mc-ok">$1</span>');
+    html = html.replace(/\bdip\b/g, '<span class="mc-warn">dip</span>');
+    return { html: `${tsHtml}<span class="mc-srb">GPU</span> ${html}` };
   }
 
   // ── V31 Rust miner: wire_stale / wire_cancel ──
@@ -1971,6 +2074,20 @@ function setupMiningConsole() {
   if (scrollBtn) {
     scrollBtn.addEventListener('click', () => {
       if (body) body.scrollTop = body.scrollHeight;
+    });
+  }
+  // SRBMiner console controls
+  const srbClear = document.getElementById('srb-clear-btn');
+  const srbScroll = document.getElementById('srb-scroll-btn');
+  const srbBody = document.getElementById('srb-console-body');
+  if (srbClear && srbBody) {
+    srbClear.addEventListener('click', () => {
+      srbBody.innerHTML = '<div class="mc-line"><span class="mc-info"> * SRBMiner console cleared</span></div>';
+    });
+  }
+  if (srbScroll && srbBody) {
+    srbScroll.addEventListener('click', () => {
+      srbBody.scrollTop = srbBody.scrollHeight;
     });
   }
   const selftestBtn = document.getElementById('console-selftest-btn');
@@ -2792,11 +2909,17 @@ function updateStats(stats) {
   // ---- Trinity per-stream telemetry ----
   updateTripleStreamPanel(stats);
 
+  // ---- Per-GPU telemetry cards (multi-GPU rigs, SRBMiner-fed) ----
+  renderGpuTelemetry(stats.gpus);
+
   // ---- Static session metrics (replaces the old scrolling feed) ----
   updateSessionMetrics(stats);
 
   // ---- Sticky metrics panel in Mining Console (new TUI-style header) ----
   updateConsoleMetrics(stats);
+
+  // ---- SRBMiner dedicated console section ----
+  updateSrbConsole(stats);
 
   // ---- Mining Console status dot ----
   updateConsoleDot(!!stats?.isRunning);
@@ -2860,6 +2983,11 @@ function buildStatsSignature(stats) {
         `${s.index}:${s.coin}:${s.algorithm}:${s.hashrate_10s}:${s.hashrate_60s}:${s.accepted}:${s.rejected}:${s.active ? 1 : 0}`
       ).join(',')
     : '';
+  const gpusSig = Array.isArray(stats.gpus)
+    ? stats.gpus.filter(g => g).map(g =>
+        `${g.idx}:${g.model}:${g.hashrate}:${g.temp_c}:${g.clock_mhz}:${g.fan_rpm}:${g.power_w}`
+      ).join(',')
+    : '';
   return [
     stats.hashrate,
     stats.hashrate_10s,
@@ -2880,6 +3008,7 @@ function buildStatsSignature(stats) {
     stats.gpu_info,
     stats.cpu_threads,
     streamsSig,
+    gpusSig,
   ].join('|');
 }
 
@@ -4496,6 +4625,23 @@ function updateConsoleMetrics(stats) {
     streamsEl.innerHTML = rows || '<div class="console-metrics-row"><span class="console-metrics-label">IDLE</span></div>';
   }
 
+  // Per-GPU TUI row — compact "gpu0 76.3M·47°C·89W" chips for multi-GPU rigs.
+  const gpusEl = document.getElementById('console-metrics-gpus');
+  if (gpusEl) {
+    const gpus = Array.isArray(stats.gpus) ? stats.gpus.filter(g => g) : [];
+    gpusEl.innerHTML = gpus.map((g) => {
+      const idx = Number(g.idx) || 0;
+      const name = String(g.model || 'gpu').replace(/amd\s+radeon\s+/i, '').trim();
+      const hr = Number(g.hashrate) || 0;
+      const temp = Number.isFinite(g.temp_c) ? `${g.temp_c}°C` : '';
+      const tempCls = Number.isFinite(g.temp_c) && g.temp_c >= 80 ? 'cm-gpu-temp-hot'
+        : Number.isFinite(g.temp_c) && g.temp_c >= 65 ? 'cm-gpu-temp-warm' : '';
+      const pwr = Number.isFinite(g.power_w) ? `${Math.round(g.power_w)}W` : '';
+      const parts = [fmtHr(hr), temp && `<span class="${tempCls}">${temp}</span>`, pwr].filter(Boolean).join('·');
+      return `<span class="cm-gpu"><span class="cm-gpu-name">gpu${idx}</span> ${escapeHtml(name)} <span class="cm-gpu-hr">${parts}</span></span>`;
+    }).join('');
+  }
+
   const footerEl = document.getElementById('console-metrics-footer');
   if (footerEl) {
     const pool = stats.pool_addr || stats.pool || '—';
@@ -4503,6 +4649,52 @@ function updateConsoleMetrics(stats) {
     const lat = Number(stats.pool_latency_ms);
     const latencyText = Number.isFinite(lat) && lat > 0 ? `${Math.round(lat)} ms` : '—';
     footerEl.textContent = `pool ${pool} | height ${height} | latency ${latencyText}`;
+  }
+}
+
+// ── SRBMiner console section ─────────────────────────────────────────────
+// Visible only while the sidecar engine produces GPU telemetry. Header gets
+// a live dot/status/total; the strip gets one chip per GPU (rate·temp·pwr·eff
+// + dip flag), mirroring the dashboard GPU cards in compact TUI form.
+function updateSrbConsole(stats) {
+  const panel = document.getElementById('srb-console');
+  if (!panel) return;
+  const gpus = Array.isArray(stats?.gpus) ? stats.gpus.filter(g => g) : [];
+  const stream2 = Array.isArray(stats?.streams) ? stats.streams.find(s => s && Number(s.index) === 2) : null;
+  const srbActive = gpus.length > 0 || (stream2 && stream2.engine === 'srbminer' && stream2.active);
+  panel.classList.toggle('view-hidden', !srbActive);
+  if (!srbActive) return;
+
+  const totalHr = gpus.reduce((a, g) => a + (Number(g.hashrate) || 0), 0);
+  const totalP = gpus.reduce((a, g) => a + (Number.isFinite(g.power_w) ? g.power_w : 0), 0);
+  const acc = Number(stream2?.accepted) || 0;
+  const rej = Number(stream2?.rejected) || 0;
+
+  const dot = document.getElementById('srb-console-dot');
+  if (dot) dot.className = 'dot' + (totalHr > 0 ? '' : ' offline');
+  const st = document.getElementById('srb-console-status');
+  if (st) st.textContent = totalHr > 0 ? 'mining' : 'idle';
+  const tot = document.getElementById('srb-console-total');
+  if (tot) tot.textContent = totalHr > 0
+    ? `${fmtHashrate(totalHr)} · ${Math.round(totalP)}W · A${acc} R${rej}`
+    : '';
+
+  const strip = document.getElementById('srb-gpu-strip');
+  if (strip) {
+    strip.innerHTML = gpus.map((g) => {
+      const idx = Number(g.idx) || 0;
+      const name = String(g.model || 'gpu').replace(/amd\s+radeon\s+/i, '').trim();
+      const hr = Number(g.hashrate) || 0;
+      const temp = Number.isFinite(g.temp_c) ? g.temp_c : null;
+      const tCls = temp != null && temp >= 80 ? 'c-temp-hot' : temp != null && temp >= 65 ? 'c-temp-warm' : '';
+      const pwr = Number.isFinite(g.power_w) ? `${Math.round(g.power_w)}W` : '';
+      const eff = hr > 0 && g.power_w > 0 ? ` eff${(hr / 1e6 / g.power_w).toFixed(2)}` : '';
+      return `<span class="srb-gpu-chip"><span class="c-name">gpu${idx} ${escapeHtml(name)}</span>` +
+        `<span class="c-hr">${fmtHashrate(hr)}</span>` +
+        `${temp != null ? `<span class="${tCls}">${temp}°C</span>` : ''}` +
+        `${pwr ? `<span>${pwr}${eff}</span>` : ''}` +
+        `${g.dipping ? '<span class="c-dip">DIP</span>' : ''}</span>`;
+    }).join('');
   }
 }
 
@@ -4622,6 +4814,92 @@ function updateTripleStreamPanel(stats) {
       }
     }
   }
+}
+
+// ── Per-GPU telemetry cards ──────────────────────────────────────────────
+// Renders one card per mining GPU from minerStats.gpus (populated by the
+// SRBMiner API poller): model, PCI bus, engine, hashrate + rolling
+// min/avg/max, sparkline, temp, clocks, fan, power, MH/W efficiency.
+// `dipping` flags display-preemption dips (e.g. Vega driving the desktop).
+// Empty array → strip hidden.
+const _gpuTempWarnAt = new Map();
+function renderGpuTelemetry(gpus, stats) {
+  const grid = document.getElementById('gpu-telemetry-grid');
+  if (!grid) return;
+  const list = Array.isArray(gpus) ? gpus.filter(g => g) : [];
+  if (list.length === 0) {
+    if (grid.childElementCount !== 0) grid.innerHTML = '';
+    return;
+  }
+  const tempCls = (t) => t == null ? '' : (t >= 80 ? 'temp-hot' : t >= 65 ? 'temp-warm' : 'temp-ok');
+  const shortModel = (m) => String(m || 'GPU')
+    .replace(/amd\s+radeon\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .trim() || 'GPU';
+  // Mini hashrate sparkline — last ~24 samples (~8 min) as CSS bars.
+  const sparkline = (hist, cur) => {
+    const pts = (Array.isArray(hist) ? hist : []).concat([cur]).filter(v => Number.isFinite(v)).slice(-24);
+    if (pts.length < 3) return '';
+    const max = Math.max(...pts, 1);
+    const bars = pts.map(v => {
+      const h = Math.max(4, Math.round((v / max) * 100));
+      const low = v < max * 0.35 ? ' low' : '';
+      return `<span class="gpu-spark-bar${low}" style="height:${h}%"></span>`;
+    }).join('');
+    return `<div class="gpu-spark" title="hashrate history">${bars}</div>`;
+  };
+  // Rig summary header across all GPUs.
+  const totalHr = list.reduce((a, g) => a + (Number(g.hashrate) || 0), 0);
+  const totalP = list.reduce((a, g) => a + (Number.isFinite(g.power_w) ? g.power_w : 0), 0);
+  const rigEff = totalHr > 0 && totalP > 0 ? (totalHr / 1e6) / totalP : null;
+  const header = `<div class="gpu-rig-summary">
+    <span class="gpu-rig-label">GPU RIG · ${list.length} card${list.length > 1 ? 's' : ''}</span>
+    <span class="gpu-rig-hr">${fmtHashrate(totalHr)}</span>
+    <span class="gpu-rig-meta">${totalP > 0 ? Math.round(totalP) + 'W' : ''}${rigEff != null ? ' · ' + rigEff.toFixed(2) + ' MH/W' : ''}</span>
+  </div>`;
+  const cards = list.map((g) => {
+    const idx = Number(g.idx) || 0;
+    const hr = Number(g.hashrate) || 0;
+    const temp = Number.isFinite(g.temp_c) ? g.temp_c : null;
+    const clock = Number.isFinite(g.clock_mhz) ? g.clock_mhz : null;
+    const mclock = Number.isFinite(g.mclock_mhz) ? g.mclock_mhz : null;
+    const fan = Number.isFinite(g.fan_rpm) ? g.fan_rpm : null;
+    const power = Number.isFinite(g.power_w) ? g.power_w : null;
+    const eff = (hr > 0 && power > 0) ? (hr / 1e6) / power : null;
+    const active = hr > 0;
+    const dipping = g.dipping === true;
+    const hrMin = Number.isFinite(g.hr_min) ? g.hr_min : null;
+    const hrAvg = Number.isFinite(g.hr_avg) ? g.hr_avg : null;
+    const hrMax = Number.isFinite(g.hr_max) ? g.hr_max : null;
+    // Surface overheating GPUs in the event log — once per GPU per 5 min.
+    if (temp != null && temp >= 90) {
+      const last = _gpuTempWarnAt.get(idx) || 0;
+      if (Date.now() - last > 5 * 60 * 1000) {
+        _gpuTempWarnAt.set(idx, Date.now());
+        addLogEntry(`⚠ GPU${idx} ${shortModel(g.model)} temp ${temp}°C — check cooling`, 'warning');
+      }
+    }
+    return `<div class="gpu-card${active ? '' : ' gpu-idle'}${dipping ? ' gpu-dipping' : ''}">
+      <div class="gpu-card-head">
+        <span class="gpu-card-model">GPU${idx} · ${escapeHtml(shortModel(g.model))}</span>
+        <span class="gpu-card-tags">
+          ${g.engine ? `<span class="gpu-engine-badge">${escapeHtml(String(g.engine).toUpperCase().replace('MINER',''))}</span>` : ''}
+          <span class="gpu-card-bus">${escapeHtml(g.bus || '')}</span>
+        </span>
+      </div>
+      <div class="gpu-card-hr${active ? '' : ' idle'}${dipping ? ' dipping' : ''}">${hr > 0 ? fmtHashrate(hr) : 'idle'}${dipping ? '<span class="gpu-dip-flag">dip</span>' : ''}</div>
+      ${sparkline(g.hr_hist, hr)}
+      ${(hrMin != null || hrAvg != null) ? `<div class="gpu-hr-range">${hrMin != null ? 'min ' + fmtHashrate(hrMin) : ''}${hrAvg != null ? ' · avg ' + fmtHashrate(hrAvg) : ''}${hrMax != null ? ' · max ' + fmtHashrate(hrMax) : ''}</div>` : ''}
+      <div class="gpu-card-metrics">
+        <div class="gpu-metric"><span class="gpu-metric-label">Temp</span><span class="gpu-metric-value ${tempCls(temp)}">${temp != null ? temp + '°C' : '—'}</span></div>
+        <div class="gpu-metric"><span class="gpu-metric-label">Clock</span><span class="gpu-metric-value">${clock != null ? clock + ' MHz' : '—'}</span></div>
+        <div class="gpu-metric"><span class="gpu-metric-label">Mem</span><span class="gpu-metric-value">${mclock != null ? mclock + ' MHz' : '—'}</span></div>
+        <div class="gpu-metric"><span class="gpu-metric-label">Fan</span><span class="gpu-metric-value">${fan != null ? fan + ' rpm' : '—'}</span></div>
+        <div class="gpu-metric"><span class="gpu-metric-label">PWR·Eff</span><span class="gpu-metric-value eff">${power != null ? power.toFixed(0) + 'W' : '—'}${eff != null ? ' · ' + eff.toFixed(2) : ''}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  grid.innerHTML = header + cards;
 }
 
 

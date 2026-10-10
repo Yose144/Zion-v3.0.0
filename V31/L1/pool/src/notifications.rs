@@ -137,14 +137,21 @@ impl Notifier {
     /// Build a `Notifier` from the supplied config.
     ///
     /// A `reqwest::blocking::Client` is constructed with a 10-second
-    /// timeout.  If client construction fails (extremely unlikely) the
-    /// notifier still works for the logging-only channels (SMTP) and
-    /// HTTP calls are skipped.
+    /// timeout.  The build runs on a dedicated thread because the blocking
+    /// client spawns and drops an internal runtime during construction —
+    /// doing that inside an async context (e.g. `#[tokio::main]`) panics.
+    /// If client construction fails (extremely unlikely) the notifier still
+    /// works for the logging-only channels (SMTP) and HTTP calls are skipped.
     pub fn new(config: NotificationsConfig) -> Self {
-        let http_client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()
-            .ok();
+        let http_client = std::thread::spawn(|| {
+            reqwest::blocking::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
+                .ok()
+        })
+        .join()
+        .ok()
+        .flatten();
         Self {
             config,
             http_client,

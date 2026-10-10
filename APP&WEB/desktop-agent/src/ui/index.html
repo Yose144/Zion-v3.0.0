@@ -1312,6 +1312,173 @@
       .trinity-grid { grid-template-columns: 1fr; }
     }
 
+    /* ── Per-GPU telemetry strip (multi-GPU rigs, fed by SRBMiner API) ── */
+    .gpu-telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .gpu-telemetry-grid:empty { display: none; }
+    .gpu-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-left: 3px solid #60a5fa;
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .gpu-card.gpu-idle { opacity: 0.55; }
+    .gpu-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .gpu-card-model {
+      font-size: 12px;
+      font-weight: 700;
+      color: #e5e7eb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .gpu-card-bus {
+      font-size: 9px;
+      font-weight: 600;
+      color: #6b7280;
+      background: rgba(255,255,255,0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      white-space: nowrap;
+    }
+    .gpu-card-hr {
+      font-size: 22px;
+      font-weight: 700;
+      color: #34d399;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .gpu-card-hr.idle { color: #6b7280; }
+    .gpu-card-metrics {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      padding-top: 7px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .gpu-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+    .gpu-metric-label {
+      font-size: 8px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .gpu-metric-value {
+      font-size: 10px;
+      font-weight: 600;
+      color: #d1d5db;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .gpu-metric-value.temp-ok   { color: #34d399; }
+    .gpu-metric-value.temp-warm { color: #fbbf24; }
+    .gpu-metric-value.temp-hot  { color: #f87171; }
+    .gpu-metric-value.eff       { color: #60a5fa; }
+
+    /* Rig summary header — spans the full telemetry grid width */
+    .gpu-rig-summary {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 6px 10px;
+      background: rgba(96,165,250,0.06);
+      border: 1px solid rgba(96,165,250,0.15);
+      border-radius: 8px;
+    }
+    .gpu-rig-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #60a5fa;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .gpu-rig-hr {
+      font-size: 18px;
+      font-weight: 800;
+      color: #34d399;
+      font-variant-numeric: tabular-nums;
+    }
+    .gpu-rig-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
+    }
+    /* Engine + bus tags on card head */
+    .gpu-card-tags { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .gpu-engine-badge {
+      font-size: 8px;
+      font-weight: 800;
+      color: #a78bfa;
+      background: rgba(167,139,250,0.14);
+      border: 1px solid rgba(167,139,250,0.3);
+      padding: 1px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+    /* Dip state — display-preempted GPU (e.g. card driving the desktop) */
+    .gpu-card.gpu-dipping { border-left-color: #fbbf24; }
+    .gpu-card-hr.dipping { color: #fbbf24; }
+    .gpu-dip-flag {
+      font-size: 8px;
+      font-weight: 800;
+      color: #fbbf24;
+      background: rgba(251,191,36,0.15);
+      border: 1px solid rgba(251,191,36,0.35);
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-left: 8px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      animation: gpuDipPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes gpuDipPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+    /* Hashrate sparkline + min/avg/max line */
+    .gpu-spark {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 26px;
+      padding: 2px 0;
+    }
+    .gpu-spark-bar {
+      flex: 1;
+      min-width: 2px;
+      background: rgba(52,211,153,0.55);
+      border-radius: 1px;
+    }
+    .gpu-spark-bar.low { background: rgba(251,191,36,0.7); }
+    .gpu-hr-range {
+      font-size: 9px;
+      color: #6b7280;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* ═══ Share Log panel ═══ */
     .share-log-panel {
       background: rgba(0, 0, 0, 0.28);
@@ -3084,6 +3251,22 @@
     .console-metrics-shares { text-align: right; font-size: 11px; }
     .console-metrics-shares .good { color: #34d399; font-weight: 700; }
     .console-metrics-shares .bad { color: #f87171; font-weight: 700; }
+    .console-metrics-gpus {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255,255,255,0.08);
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+    .console-metrics-gpus:empty { display: none; }
+    .cm-gpu { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .cm-gpu .cm-gpu-name { color: #60a5fa; font-weight: 700; }
+    .cm-gpu .cm-gpu-hr { color: #34d399; font-weight: 700; }
+    .cm-gpu .cm-gpu-temp-warm { color: #fbbf24; }
+    .cm-gpu .cm-gpu-temp-hot { color: #f87171; }
     .console-metrics-footer {
       margin-top: 8px;
       padding-top: 6px;
@@ -3110,6 +3293,56 @@
     .mining-console-body::-webkit-scrollbar { width: 6px; }
     .mining-console-body::-webkit-scrollbar-track { background: transparent; }
     .mining-console-body::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple))); border-radius: 4px; }
+
+    /* ── SRBMiner sidecar console — violet accent variant ── */
+    .srb-console { margin-top: 14px; }
+    .srb-console .srb-header {
+      border-bottom: 1px solid rgba(167,139,250,0.22);
+      background: linear-gradient(90deg, rgba(167,139,250,0.08), transparent 60%);
+    }
+    .srb-console .srb-header .title { color: #c4b5fd; }
+    .srb-console .dot { background: #a78bfa; box-shadow: 0 0 10px rgba(167,139,250,0.7); }
+    .srb-console .dot.offline { background: #6b7280; box-shadow: none; animation: none; }
+    .srb-total {
+      font-size: 11px;
+      font-weight: 700;
+      color: #34d399;
+      font-variant-numeric: tabular-nums;
+      margin-left: 10px;
+    }
+    .srb-gpu-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.15);
+    }
+    .srb-gpu-strip:empty { display: none; }
+    .srb-gpu-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono','Fira Code',monospace;
+      font-variant-numeric: tabular-nums;
+      background: rgba(167,139,250,0.08);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 6px;
+      padding: 3px 8px;
+      color: #d1d5db;
+      white-space: nowrap;
+    }
+    .srb-gpu-chip .c-name { color: #a78bfa; font-weight: 800; }
+    .srb-gpu-chip .c-hr { color: #34d399; font-weight: 700; }
+    .srb-gpu-chip .c-temp-warm { color: #fbbf24; }
+    .srb-gpu-chip .c-temp-hot { color: #f87171; }
+    .srb-gpu-chip .c-dip {
+      color: #fbbf24; font-weight: 800; font-size: 8px;
+      border: 1px solid rgba(251,191,36,0.4); border-radius: 3px; padding: 0 3px;
+    }
+    .srb-console .srb-body { max-height: 260px; }
+
     .mc-line {
       white-space: pre-wrap;
       word-break: break-all;
@@ -3131,6 +3364,13 @@
     .mc-line .mc-err { color: #ef4444; }           /* error red */
     .mc-line .mc-warn { color: #f59e0b; }          /* warning amber */
     .mc-line .mc-ok { color: #22c55e; }            /* success green */
+    .mc-line .mc-srb {                              /* SRBMiner sidecar tag */
+      color: #a78bfa; font-weight: 800; font-size: 9px;
+      background: rgba(167,139,250,0.14);
+      border: 1px solid rgba(167,139,250,0.3);
+      border-radius: 4px; padding: 0 5px; margin-right: 4px;
+      letter-spacing: 0.05em;
+    }
     .mc-line.mc-highlight {
       background: rgba(34,197,94,0.08);
       border-left: 2px solid #22c55e;
@@ -5069,6 +5309,10 @@
               </div>
             </div>
           </div>
+          <!-- GPU telemetry strip — one card per mining GPU (model, PCI bus,
+               hashrate, temp, clock, fan, power, MH/W efficiency). Populated
+               from SRBMiner API gpu_devices[]; hidden when empty. -->
+          <div id="gpu-telemetry-grid" class="gpu-telemetry-grid"></div>
         </div>
 
         <!-- ═══ Share Log (per-share event history with timestamps) ═══ -->
@@ -6853,10 +7097,15 @@
 
               <label class="wizard-label-sm" style="margin-top: 10px;">QTC engine</label>
               <select id="qtc-engine-select" class="algo-select">
-                <option value="internal" selected>Internal (built-in OpenCL kernel)</option>
+                <option value="auto" selected>Auto — pick the best available</option>
                 <option value="srbminer">SRBMiner sidecar (~1.7× faster on RDNA)</option>
+                <option value="internal">Internal (built-in OpenCL kernel)</option>
               </select>
-              <div class="slider-hint">When Stream 2 = QTU, run the dedicated SRBMiner binary for QTC instead of the built-in kernel — mines directly to the configured QTU pool, stats still show in this panel.</div>
+              <div class="slider-hint">Auto uses SRBMiner when its binary is present (measured ~1.7× faster than the built-in QPoW kernel on RDNA), internal otherwise. When Stream 2 = QTU the engine mines directly to the configured QTU pool — stats still show in this panel and the GPU telemetry cards.</div>
+
+              <label class="wizard-label-sm" style="margin-top: 10px;">SRBMiner GPUs</label>
+              <input id="srbminer-gpuid-input" class="algo-select" type="text" placeholder="auto — all detected GPUs" spellcheck="false">
+              <div class="slider-hint">Comma-separated OpenCL device ids (e.g. <code>0,1</code>) or <code>auto</code> for every GPU. Pin to a headless card to keep the display GPU free — check the GPU telemetry cards for each card's bus and role.</div>
 
               <div class="section-divider">Quad Mode — Second GPU Coin</div>
 
@@ -7323,6 +7572,18 @@
           </div>
         </div>
 
+        <!-- Live metrics strip — pinned ABOVE the console (not inside the
+             scroll area, so it can never overlap the log lines) -->
+        <div id="console-metrics-panel" class="console-metrics-panel view-hidden">
+          <div class="console-metrics-header">
+            <span class="console-metrics-title">ZION v3.2.0 Trinity</span>
+            <span class="console-metrics-uptime" id="console-metrics-uptime">uptime 00:00</span>
+          </div>
+          <div class="console-metrics-streams" id="console-metrics-streams"></div>
+          <div class="console-metrics-gpus" id="console-metrics-gpus"></div>
+          <div class="console-metrics-footer" id="console-metrics-footer">pool — | height —</div>
+        </div>
+
         <!-- Live Mining Console — full width -->
         <div class="mining-console" id="mining-console">
           <div class="mining-console-header">
@@ -7338,17 +7599,31 @@
             </div>
           </div>
           <div class="mining-console-body" id="console-body">
-            <!-- Live metrics strip — sticky at top of Mining Console -->
-            <div id="console-metrics-panel" class="console-metrics-panel view-hidden">
-              <div class="console-metrics-header">
-                <span class="console-metrics-title">ZION v3.2.0 Trinity</span>
-                <span class="console-metrics-uptime" id="console-metrics-uptime">uptime 00:00</span>
-              </div>
-              <div class="console-metrics-streams" id="console-metrics-streams"></div>
-              <div class="console-metrics-footer" id="console-metrics-footer">pool — | height —</div>
-            </div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-ok">ZION ZION V31 Mainnet Alpha v3.2.0</span> <span class="mc-info">— Cosmic Harmony Miner</span></div>
             <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">Waiting for mining to start...</span></div>
+          </div>
+        </div>
+
+        <!-- SRBMiner sidecar console — dedicated QTC engine section. Shows
+             only [SRB]/[GPU] lines + per-GPU live strip, keeping the main
+             console for zion-miner (ZION/VRSC) output. Hidden when the
+             SRBMiner engine is not in use. -->
+        <div class="mining-console srb-console view-hidden" id="srb-console">
+          <div class="mining-console-header srb-header">
+            <div class="title">
+              <div class="dot offline" id="srb-console-dot"></div>
+              <span>SRBMiner — QTC Engine</span>
+              <span id="srb-console-status" class="console-status">idle</span>
+              <span id="srb-console-total" class="srb-total"></span>
+            </div>
+            <div class="controls">
+              <button class="ctrl-btn" id="srb-clear-btn" title="Clear">⌫</button>
+              <button class="ctrl-btn" id="srb-scroll-btn" title="Scroll to bottom"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-arrow-down"></use></svg></button>
+            </div>
+          </div>
+          <div class="srb-gpu-strip" id="srb-gpu-strip"></div>
+          <div class="mining-console-body srb-body" id="srb-console-body">
+            <div class="mc-line"><span class="mc-info"> * </span><span class="mc-info">SRBMiner sidecar output — per-GPU QTC telemetry, shares and engine events</span></div>
           </div>
         </div>
 
