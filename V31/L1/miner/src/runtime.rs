@@ -2989,6 +2989,18 @@ impl MinerRuntime {
             .map(|c| c.url != url || c.worker != worker)
             .unwrap_or(true);
         if should_recreate {
+            if guard
+                .as_ref()
+                .map(|c| c.url == url && c.worker != worker)
+                .unwrap_or(false)
+            {
+                ext_info!(
+                    stream = ?stream,
+                    coin = %coin,
+                    wallet = %payout_wallet,
+                    "devfee: upstream session wallet switched"
+                );
+            }
             // Stop the previous session's background loop before replacing —
             // otherwise its reconnect task keeps a zombie connection alive.
             if let Some(old) = guard.as_ref() {
