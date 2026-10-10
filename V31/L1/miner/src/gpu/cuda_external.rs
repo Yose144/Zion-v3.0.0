@@ -481,8 +481,7 @@ impl CudaExternalMiner {
         if self.autolykos_m_buf.is_none() {
             let mut m = vec![0u8; 8192];
             for i in 0..1024u64 {
-                m[i as usize * 8..i as usize * 8 + 8]
-                    .copy_from_slice(&(i as i64).to_be_bytes());
+                m[i as usize * 8..i as usize * 8 + 8].copy_from_slice(&(i as i64).to_be_bytes());
             }
             self.autolykos_m_buf = Some(
                 self.dev
@@ -832,8 +831,7 @@ impl CudaExternalMiner {
     /// Uses the AuXpow codegen to inject random math + data load code into the
     /// CUDA kernel template, then compiles with NVRTC.
     fn ensure_progpow_kernel(&mut self, block_height: u64) -> Result<()> {
-        let params =
-            crate::auxpow::progpow_codegen::select_progpow_params(&self.algorithm);
+        let params = crate::auxpow::progpow_codegen::select_progpow_params(&self.algorithm);
         let period = (block_height / params.period as u64) as u32;
         let dag_elements = if self.dag_buf.is_some() {
             self.dag_size_entries / 2 // PROGPOW_DAG_ELEMENTS = dag_entries / 2

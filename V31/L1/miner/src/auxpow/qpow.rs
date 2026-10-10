@@ -62,7 +62,10 @@ pub const QPOW_EXTRANONCE_OFFSET: usize = 0;
 ///
 /// Both inputs are the big-endian wire representations; the result is the
 /// 64-byte big-endian digest (interpreted as U512 for target comparison).
-pub fn get_nonce_hash(header: &[u8; QPOW_HEADER_LEN], nonce: &[u8; QPOW_NONCE_LEN]) -> [u8; QPOW_HASH_LEN] {
+pub fn get_nonce_hash(
+    header: &[u8; QPOW_HEADER_LEN],
+    nonce: &[u8; QPOW_NONCE_LEN],
+) -> [u8; QPOW_HASH_LEN] {
     let mut input = [0u8; QPOW_HEADER_LEN + QPOW_NONCE_LEN];
     input[..QPOW_HEADER_LEN].copy_from_slice(header);
     input[QPOW_HEADER_LEN..].copy_from_slice(nonce);
@@ -89,7 +92,10 @@ pub fn is_valid_nonce(
 /// State after absorbing the header and the high 256 nonce bits
 /// (`mining_midstate` in pow-core). Values are the (non-canonical) Goldilocks
 /// limbs, ready to feed `mining_prestate_low64` / `hash_from_prestate_low64`.
-pub fn mining_midstate(header: &[u8; QPOW_HEADER_LEN], nonce_high_be: &[u8]) -> [u64; SPONGE_WIDTH] {
+pub fn mining_midstate(
+    header: &[u8; QPOW_HEADER_LEN],
+    nonce_high_be: &[u8],
+) -> [u64; SPONGE_WIDTH] {
     assert_eq!(nonce_high_be.len(), 32, "nonce high half must be 32 bytes");
     let mut state = [Goldilocks::ZERO; SPONGE_WIDTH];
 
@@ -115,8 +121,7 @@ pub fn mining_prestate_low64(
     header: &[u8; QPOW_HEADER_LEN],
     nonce_be: &[u8; QPOW_NONCE_LEN],
 ) -> [u64; SPONGE_WIDTH] {
-    let mut state = mining_midstate(header, &nonce_be[..32])
-        .map(Goldilocks::from_u64);
+    let mut state = mining_midstate(header, &nonce_be[..32]).map(Goldilocks::from_u64);
 
     for (i, chunk) in nonce_be[32..56].chunks_exact(4).enumerate() {
         state[i] += Goldilocks::from_u64(u32::from_le_bytes(chunk.try_into().unwrap()) as u64);
@@ -138,10 +143,7 @@ pub fn mining_prestate_low64(
 /// rounds, internal rounds, terminal rounds, padding block and the second
 /// squeeze complete the digest. Bit-exact with `get_nonce_hash` (asserted by
 /// the cross-check tests).
-pub fn hash_from_prestate_low64(
-    prestate: &[u64; SPONGE_WIDTH],
-    low64: u64,
-) -> [u8; QPOW_HASH_LEN] {
+pub fn hash_from_prestate_low64(prestate: &[u64; SPONGE_WIDTH], low64: u64) -> [u8; QPOW_HASH_LEN] {
     let mut st = prestate.map(Goldilocks::from_u64);
 
     // f6/f7 are the two absorbed felts missing from the prestate. Each felt
@@ -191,7 +193,12 @@ pub fn hash_from_prestate_low64(
 fn inject_low64(st: &mut [Goldilocks; SPONGE_WIDTH], a: Goldilocks, b: Goldilocks) {
     // apply_mat4((0,0,a,b)) = (a+b, 3a+b, 2a+3b, a+2b) — this is also the
     // circulant sums vector since the other two chunks are zero.
-    let sums = [a + b, a.double() + a + b, a.double() + b.double() + b, a + b.double()];
+    let sums = [
+        a + b,
+        a.double() + a + b,
+        a.double() + b.double() + b,
+        a + b.double(),
+    ];
     // lanes 0..4 and 8..12 get just the circulant sums; lanes 4..8 get
     // the chunk output plus the sums (chunk output itself == sums here).
     for k in 0..4 {
@@ -279,7 +286,10 @@ fn internal_linear_layer(state: &mut [Goldilocks; SPONGE_WIDTH]) {
 /// `low`; everything above it stays fixed within a job.
 pub fn build_nonce(extranonce: &[u8], low64: u64) -> [u8; QPOW_NONCE_LEN] {
     let mut nonce = [0u8; QPOW_NONCE_LEN];
-    let end = QPOW_EXTRANONCE_OFFSET + extranonce.len().min(QPOW_NONCE_LEN - QPOW_EXTRANONCE_OFFSET);
+    let end = QPOW_EXTRANONCE_OFFSET
+        + extranonce
+            .len()
+            .min(QPOW_NONCE_LEN - QPOW_EXTRANONCE_OFFSET);
     nonce[QPOW_EXTRANONCE_OFFSET..end].copy_from_slice(&extranonce[..end - QPOW_EXTRANONCE_OFFSET]);
     nonce[56..64].copy_from_slice(&low64.to_be_bytes());
     nonce
@@ -443,14 +453,12 @@ mod tests {
                     nonce[56..64].copy_from_slice(&low.to_be_bytes());
 
                     // mining_midstate(header, nonce[..32]) → 12 u64 felts.
-                    let mut st = mining_midstate(&header, &nonce[..32])
-                        .map(Goldilocks::from_u64);
+                    let mut st = mining_midstate(&header, &nonce[..32]).map(Goldilocks::from_u64);
                     // Absorb low half: st[i] += u32::from_le_bytes(nonce[32+4i..])
                     // (== bswap32 of the U512 LE limb on the GPU).
                     for i in 0..8 {
-                        let limb = u32::from_le_bytes(
-                            nonce[32 + 4 * i..36 + 4 * i].try_into().unwrap(),
-                        );
+                        let limb =
+                            u32::from_le_bytes(nonce[32 + 4 * i..36 + 4 * i].try_into().unwrap());
                         st[i] += Goldilocks::from_u64(limb as u64);
                     }
                     permute_full(&mut st);

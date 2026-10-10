@@ -683,16 +683,17 @@ pub fn fishhash_dataset_item(cache: &[u8], index: usize) -> [u8; 128] {
 
     const N: usize = FISHHASH_LIGHT_CACHE_ITEMS as usize;
     const FNV_PRIME: u32 = 0x01000193;
-    let item_at = |i: usize| -> [u8; 64] {
-        cache[(i % N) * 64..(i % N) * 64 + 64].try_into().unwrap()
-    };
+    let item_at =
+        |i: usize| -> [u8; 64] { cache[(i % N) * 64..(i % N) * 64 + 64].try_into().unwrap() };
     let keccak = |d: &[u8; 64]| -> [u8; 64] {
         let mut h = Keccak512::new();
         h.update(d);
         h.finalize().into()
     };
-    let get_u32 = |m: &[u8; 64], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
-    let set_u32 = |m: &mut [u8; 64], i: usize, v: u32| m[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
+    let get_u32 =
+        |m: &[u8; 64], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
+    let set_u32 =
+        |m: &mut [u8; 64], i: usize, v: u32| m[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
     let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
     let fnv1_512 = |a: &[u8; 64], b: &[u8; 64]| -> [u8; 64] {
         let mut r = [0u8; 64];
@@ -755,7 +756,9 @@ pub fn fishhash_hash_ref(header: &[u8], nonce: u64, dag: &[u8], dag_items: usize
     let gu64 = |m: &[u8], i: usize| u64::from_le_bytes(m[i * 8..i * 8 + 8].try_into().unwrap());
     let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
     let item = |p: usize| -> [u8; 128] {
-        dag[(p % dag_items) * 128..(p % dag_items) * 128 + 128].try_into().unwrap()
+        dag[(p % dag_items) * 128..(p % dag_items) * 128 + 128]
+            .try_into()
+            .unwrap()
     };
 
     let mut mix = [0u8; 128];
@@ -824,7 +827,9 @@ pub fn karlsenhash_hash_ref(header: &[u8], nonce: u64, dag: &[u8], dag_items: us
     let gu64 = |m: &[u8], i: usize| u64::from_le_bytes(m[i * 8..i * 8 + 8].try_into().unwrap());
     let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
     let item = |p: usize| -> [u8; 128] {
-        dag[(p % dag_items) * 128..(p % dag_items) * 128 + 128].try_into().unwrap()
+        dag[(p % dag_items) * 128..(p % dag_items) * 128 + 128]
+            .try_into()
+            .unwrap()
     };
 
     let mut mix = [0u8; 128];
@@ -834,7 +839,10 @@ pub fn karlsenhash_hash_ref(header: &[u8], nonce: u64, dag: &[u8], dag_items: us
     for a in 0..32usize {
         // mg[i] = XOR of the 4 u32s in mix-group i (groups of 4 words).
         let mg = |g: usize| {
-            gu32(&mix, g * 4) ^ gu32(&mix, g * 4 + 1) ^ gu32(&mix, g * 4 + 2) ^ gu32(&mix, g * 4 + 3)
+            gu32(&mix, g * 4)
+                ^ gu32(&mix, g * 4 + 1)
+                ^ gu32(&mix, g * 4 + 2)
+                ^ gu32(&mix, g * 4 + 3)
         };
         let (mg0, mg1, mg2, mg3) = (mg(0), mg(1), mg(2), mg(3));
         let p0 = (mg0 ^ mg3 ^ mg2) as usize % dag_items;
@@ -896,7 +904,9 @@ pub fn ethash_dataset_item(cache: &[u8], index: usize) -> [u8; 64] {
     let gu32 = |m: &[u8; 64], i: usize| u32::from_le_bytes(m[i * 4..i * 4 + 4].try_into().unwrap());
     let fnv1 = |u: u32, v: u32| u.wrapping_mul(FNV_PRIME) ^ v;
 
-    let mut mix: [u8; 64] = cache[(index % n) * 64..(index % n) * 64 + 64].try_into().unwrap();
+    let mut mix: [u8; 64] = cache[(index % n) * 64..(index % n) * 64 + 64]
+        .try_into()
+        .unwrap();
     let w0 = gu32(&mix, 0) ^ index as u32;
     mix[0..4].copy_from_slice(&w0.to_le_bytes());
     {
@@ -907,10 +917,10 @@ pub fn ethash_dataset_item(cache: &[u8], index: usize) -> [u8; 64] {
     for j in 0..256 {
         let p = fnv1(index as u32 ^ j as u32, gu32(&mix, j % 16)) as usize % n;
         for w in 0..16 {
-            let v = fnv1(gu32(&mix, w), gu32(
-                &cache[p * 64..p * 64 + 64].try_into().unwrap(),
-                w,
-            ));
+            let v = fnv1(
+                gu32(&mix, w),
+                gu32(&cache[p * 64..p * 64 + 64].try_into().unwrap(), w),
+            );
             mix[w * 4..w * 4 + 4].copy_from_slice(&v.to_le_bytes());
         }
     }
@@ -1168,8 +1178,7 @@ impl ExtGpuMiner {
         let mut priv_limbs = [0u64; 4];
         for i in 0..4 {
             let base = (3 - i) * 8;
-            priv_limbs[i] =
-                u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
+            priv_limbs[i] = u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
         }
 
         let msgs_buf: Buffer<u8> = Buffer::builder()
@@ -1241,11 +1250,8 @@ impl ExtGpuMiner {
         sig_dev[..32].copy_from_slice(&sig_wire[..32]);
         for i in 0..4 {
             let base = (3 - i) * 8;
-            let limb = u64::from_be_bytes(
-                sig_wire[32 + base..32 + base + 8].try_into().unwrap(),
-            );
-            sig_dev[32 + i * 8..32 + i * 8 + 8]
-                .copy_from_slice(&limb.to_le_bytes());
+            let limb = u64::from_be_bytes(sig_wire[32 + base..32 + base + 8].try_into().unwrap());
+            sig_dev[32 + i * 8..32 + i * 8 + 8].copy_from_slice(&limb.to_le_bytes());
         }
 
         let pk_buf: Buffer<u8> = Buffer::builder()
@@ -1306,8 +1312,7 @@ impl ExtGpuMiner {
         let mut priv_limbs = [0u64; 4];
         for i in 0..4 {
             let base = (3 - i) * 8;
-            priv_limbs[i] =
-                u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
+            priv_limbs[i] = u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
         }
 
         let privs_buf: Buffer<u64> = Buffer::builder()
@@ -1366,8 +1371,7 @@ impl ExtGpuMiner {
         let mut priv_limbs = [0u64; 4];
         for i in 0..4 {
             let base = (3 - i) * 8;
-            priv_limbs[i] =
-                u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
+            priv_limbs[i] = u64::from_be_bytes(priv_be[base..base + 8].try_into().unwrap());
         }
 
         let msgs_buf: Buffer<u8> = Buffer::builder()
@@ -1887,9 +1891,9 @@ impl ExtGpuMiner {
                     &found_flag_buf,
                 )?
             }
-            "autolykos" | "autolykos_erg" => unreachable!(
-                "autolykos dispatches via mine_autolykos_v2 before ensure_proque"
-            ),
+            "autolykos" | "autolykos_erg" => {
+                unreachable!("autolykos dispatches via mine_autolykos_v2 before ensure_proque")
+            }
             "ethash" | "etchash" | "ethash_etc" => {
                 // Ethash requires the per-epoch DAG to be uploaded first.
                 let dag = ethash_dag.ok_or_else(|| {
@@ -2006,8 +2010,8 @@ impl ExtGpuMiner {
             }
             // verthash / equihashzero / equihash / zelhash are dispatched
             // above before the generic ProQue is compiled (dedicated paths).
-            "verthash" | "verthash_vtc" | "equihashzero" | "equihashzero_zcl"
-            | "equihash" | "equihash_zec" | "zelhash" | "zelhash_flux" => {
+            "verthash" | "verthash_vtc" | "equihashzero" | "equihashzero_zcl" | "equihash"
+            | "equihash_zec" | "zelhash" | "zelhash_flux" => {
                 unreachable!("dispatched before generic ProQue build")
             }
             "nexapow" | "nexapow_nexa" => {
@@ -2646,12 +2650,8 @@ impl ExtGpuMiner {
         full_nonce[prefix_len..].copy_from_slice(&base_nonce.to_le_bytes()[..suffix_len]);
 
         let prepow_u64 = crate::auxpow::beamhash_ref::beamhash_prepow(header, &full_nonce);
-        let prepow = ocl::prm::Ulong4::new(
-            prepow_u64[0],
-            prepow_u64[1],
-            prepow_u64[2],
-            prepow_u64[3],
-        );
+        let prepow =
+            ocl::prm::Ulong4::new(prepow_u64[0], prepow_u64[1], prepow_u64[2], prepow_u64[3]);
 
         const WG_SIZE: usize = 256;
         const NUM_BUCKETS: usize = 4096;
@@ -2676,10 +2676,7 @@ impl ExtGpuMiner {
             .queue(q.clone())
             .len(COUNTERS_LEN)
             .build()?;
-        let results = Buffer::<u32>::builder()
-            .queue(q.clone())
-            .len(324)
-            .build()?;
+        let results = Buffer::<u32>::builder().queue(q.clone()).len(324).build()?;
 
         let pro_que = self.ensure_proque("beamhash_solver.cl")?;
         for (name, gws) in [("cleanUp", COUNTERS_LEN), ("beamHashIII_seed", SEED_ELEMS)] {
@@ -2702,7 +2699,8 @@ impl ExtGpuMiner {
                     .enq()
                     .map_err(|e| anyhow!("beamhash seed kernel '{name}' enq failed: {e}"))?;
             }
-            q.finish().map_err(|e| anyhow!("beamhash seed '{name}' finish: {e}"))?;
+            q.finish()
+                .map_err(|e| anyhow!("beamhash seed '{name}' finish: {e}"))?;
         }
 
         // Read back counters, then scan each requested gid's bucket.
@@ -2711,22 +2709,15 @@ impl ExtGpuMiner {
 
         let mut out = Vec::with_capacity(gids.len());
         for &gid in gids {
-            let expect = crate::auxpow::beamhash_ref::beamhash_seed_elem(
-                &prepow_u64,
-                gid as u64,
-            );
+            let expect = crate::auxpow::beamhash_ref::beamhash_seed_elem(&prepow_u64, gid as u64);
             let bucket = (expect[0] & 0xFFF) as usize;
             let count = (ctrs[bucket] as usize).min(BUCKET_SIZE);
             let mut slot_words = vec![ocl::prm::Ulong8::zero(); count];
-            buf0
-                .create_sub_buffer(
-                    Some(ocl::flags::MEM_READ_ONLY),
-                    bucket * BUCKET_SIZE,
-                    count,
-                )?
+            buf0.create_sub_buffer(Some(ocl::flags::MEM_READ_ONLY), bucket * BUCKET_SIZE, count)?
                 .read(&mut slot_words)
                 .enq()?;
-            q.finish().map_err(|e| anyhow!("beamhash seed readback: {e}"))?;
+            q.finish()
+                .map_err(|e| anyhow!("beamhash seed readback: {e}"))?;
             let mut found = None;
             for w8 in &slot_words {
                 let w: [u64; 8] = w8[..8].try_into().unwrap();
@@ -3182,10 +3173,7 @@ impl ExtGpuMiner {
             .build()?;
 
         let batch = count.max(256); // reqd_work_group_size(256)
-        let io_buf: Buffer<u32> = Buffer::builder()
-            .queue(q.clone())
-            .len(batch * 8)
-            .build()?;
+        let io_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(batch * 8).build()?;
 
         let k = Kernel::builder()
             .queue(q.clone())
@@ -3197,10 +3185,7 @@ impl ExtGpuMiner {
             .arg(base_nonce as u32)
             .build()?;
         unsafe {
-            k.cmd()
-                .global_work_size(batch)
-                .local_work_size(256)
-                .enq()?;
+            k.cmd().global_work_size(batch).local_work_size(256).enq()?;
         }
         q.finish()?;
 
@@ -3210,8 +3195,7 @@ impl ExtGpuMiner {
         for i in 0..count {
             let mut b = [0u8; 32];
             for j in 0..8 {
-                b[j * 4..j * 4 + 4]
-                    .copy_from_slice(&all[i * 8 + j].to_le_bytes());
+                b[j * 4..j * 4 + 4].copy_from_slice(&all[i * 8 + j].to_le_bytes());
             }
             out.push(b);
         }
@@ -3576,11 +3560,7 @@ typedef unsigned long ulong;
     /// VRAM-constrained cards. Node contents are identical either way;
     /// only the page count visible to the mining kernel changes.
     #[cfg(feature = "native-hashers")]
-    pub fn generate_octopus_dag_on_gpu(
-        &mut self,
-        block_height: u64,
-        max_nodes: u64,
-    ) -> Result<()> {
+    pub fn generate_octopus_dag_on_gpu(&mut self, block_height: u64, max_nodes: u64) -> Result<()> {
         use crate::auxpow::octopus_ref::{
             octopus_cache_size, octopus_data_size, octopus_ident, octopus_make_cache,
         };
@@ -3608,12 +3588,8 @@ typedef unsigned long ulong;
         let cache = octopus_make_cache(cache_nodes, &ident);
 
         // generate_dag_on_gpu_impl takes 128-byte "entries" (2 nodes each).
-        let (dag_buf, entries) = self.generate_dag_on_gpu_impl(
-            &cache,
-            cache_nodes as u64,
-            nodes / 2,
-            "Octopus",
-        )?;
+        let (dag_buf, entries) =
+            self.generate_dag_on_gpu_impl(&cache, cache_nodes as u64, nodes / 2, "Octopus")?;
 
         self.octopus_dag = Some(OctopusDag {
             buf: dag_buf,
@@ -4943,8 +4919,7 @@ typedef unsigned long ulong;
         // For mining we synthesize a deterministic random 3-SAT instance
         // from the job header (xorshift64* driven): num_variables=64,
         // num_clauses=256 — well under MAX_CLAUSES=1024.
-        let (clause_literals, num_variables, num_clauses) =
-            Self::dynex_clause_literals(header);
+        let (clause_literals, num_variables, num_clauses) = Self::dynex_clause_literals(header);
 
         let literals_buf: Buffer<i32> = Buffer::builder()
             .queue(q.clone())
@@ -5001,8 +4976,8 @@ typedef unsigned long ulong;
         let mut seed = [0u8; 32];
         let copy_len = header.len().min(32);
         seed[..copy_len].copy_from_slice(&header[..copy_len]);
-        let mut rng_state = u64::from_le_bytes(seed[..8].try_into().unwrap())
-            .wrapping_add(0x9E3779B97F4A7C15);
+        let mut rng_state =
+            u64::from_le_bytes(seed[..8].try_into().unwrap()).wrapping_add(0x9E3779B97F4A7C15);
         let mut next_u32 = || {
             rng_state ^= rng_state >> 12;
             rng_state ^= rng_state << 25;
@@ -5093,7 +5068,8 @@ typedef unsigned long ulong;
                     .map_err(|e| anyhow!("dynexsolve bench enq failed: {e}"))?;
             }
         }
-        q.finish().map_err(|e| anyhow!("dynexsolve bench finish: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("dynexsolve bench finish: {e}"))?;
 
         let mut hc = vec![0u32; 1];
         let mut sc = vec![0u32; 1];
@@ -5365,8 +5341,7 @@ typedef unsigned long ulong;
         k: u32,
     ) -> bool {
         let clen = (n / (k + 1)) as usize; // collision bits per round
-        let leaf_hash =
-            |i: u32| -> Vec<u8> { Self::equihash_leaf_hash(header_buf, n, k, i) };
+        let leaf_hash = |i: u32| -> Vec<u8> { Self::equihash_leaf_hash(header_buf, n, k, i) };
         // Compare bits [off, off+len) of two Xi arrays (MSB-first order).
         let bits_equal = |a: &[u8], b: &[u8], off: usize, len: usize| -> bool {
             (0..len).all(|b_i| {
@@ -5392,9 +5367,9 @@ typedef unsigned long ulong;
                 let j = if level == 0 {
                     i + 1
                 } else {
-                    match (i + 1..nodes.len()).find(|&j| {
-                        !used[j] && bits_equal(&nodes[i].1, &nodes[j].1, off, clen)
-                    }) {
+                    match (i + 1..nodes.len())
+                        .find(|&j| !used[j] && bits_equal(&nodes[i].1, &nodes[j].1, off, clen))
+                    {
                         Some(j) => j,
                         None => {
                             if eq_dbg {
@@ -5407,9 +5382,7 @@ typedef unsigned long ulong;
                         }
                     }
                 };
-                if j >= nodes.len()
-                    || !bits_equal(&nodes[i].1, &nodes[j].1, off, clen)
-                {
+                if j >= nodes.len() || !bits_equal(&nodes[i].1, &nodes[j].1, off, clen) {
                     if eq_dbg {
                         crate::ext_info!(
                             "eq192dbg reorder fail: level={level} i={i} j={j} nodes={} bits-mismatch",
@@ -5464,7 +5437,16 @@ typedef unsigned long ulong;
     ) -> Result<Option<GpuFoundShare>> {
         // Delegate to the parameterized implementation with 192,7 constants.
         // NR_SLOTS=48 must match the kernel define (λ=32 + ~2.8σ headroom).
-        self.mine_equihash_impl(header, en1, target, base_nonce, "equihash_kernel.cl", 7, 24, 48)
+        self.mine_equihash_impl(
+            header,
+            en1,
+            target,
+            base_nonce,
+            "equihash_kernel.cl",
+            7,
+            24,
+            48,
+        )
     }
 
     /// Equihash 200,9 mining (Zcash / ZEC).
@@ -5549,8 +5531,7 @@ typedef unsigned long ulong;
         // kernel_round0 absorbs the final 12 header bytes: tail0 = hdr[128..136],
         // tail1 = hdr[136..140] (the block index occupies the high 32 bits).
         let eq_tail0 = u64::from_le_bytes(header_buf[128..136].try_into().unwrap());
-        let eq_tail1 =
-            u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
+        let eq_tail1 = u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
 
         // Allocate GPU buffers
         crate::ext_info!("auxpow_gpu_zelhash_prod allocating hash tables...");
@@ -5897,8 +5878,8 @@ typedef unsigned long ulong;
     ) -> Result<Option<GpuFoundShare>> {
         // Use parameterized values (passed from mine_equihash / mine_equihash200)
         const NR_ROWS: usize = 1 << 20; // 2^20 = 1,048,576
-        // 192,7 kernel uses byte-aligned SLOT_LEN=28 (4B ref + ≤22B tail);
-        // the 200,9 kernel keeps its own staggered 32-byte slots.
+                                        // 192,7 kernel uses byte-aligned SLOT_LEN=28 (4B ref + ≤22B tail);
+                                        // the 200,9 kernel keeps its own staggered 32-byte slots.
         let slot_len: usize = if param_k == 7 { 28 } else { 32 };
         let ht_size: usize = NR_ROWS * nr_slots * slot_len;
         const ROWS_PER_UINT: usize = 4; // BITS_PER_ROW=8 → ROWS_PER_UINT=4
@@ -5907,8 +5888,8 @@ typedef unsigned long ulong;
         const ZCASH_BLOCK_HEADER_LEN: usize = 140;
         const ZCASH_NONCE_LEN: usize = 32;
         const ZCASH_NONCE_OFFSET: usize = ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN; // 108
-        // NVIDIA local-memory ceiling (48KB) forces WG=32: the round kernels
-        // allocate ~84KB of __local at WG=64. Compiled with -DEQ_WG_SIZE=32.
+                                                                                    // NVIDIA local-memory ceiling (48KB) forces WG=32: the round kernels
+                                                                                    // allocate ~84KB of __local at WG=64. Compiled with -DEQ_WG_SIZE=32.
         const EQ_WG: usize = 32;
         let zcash_sol_len: usize = (1usize << param_k) * (prefix as usize + 1) / 8;
         // Full N (= prefix * (k+1)): 192 for the 192,7 path, 200 for 200,9.
@@ -5972,8 +5953,7 @@ typedef unsigned long ulong;
         // kernel_round0 absorbs the final 12 header bytes: tail0 = hdr[128..136],
         // tail1 = hdr[136..140] (the block index occupies the high 32 bits).
         let eq_tail0 = u64::from_le_bytes(header_buf[128..136].try_into().unwrap());
-        let eq_tail1 =
-            u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
+        let eq_tail1 = u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
 
         // Reuse the ~2.8 GB hash-table set across nonces (realloc only
         // when the parameter set changes).  kernel_init_ht re-zeros the
@@ -6163,7 +6143,8 @@ typedef unsigned long ulong;
                 .local_work_size(init_local)
                 .enq()?;
         }
-        q.finish().map_err(|e| anyhow!("equihash init_ht finish: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("equihash init_ht finish: {e}"))?;
 
         // 2. Round 0: Blake2b hashing → fills ht[0]
         k_round0.set_arg(0, &blake_st_buf)?;
@@ -6177,7 +6158,8 @@ typedef unsigned long ulong;
                 .local_work_size(round0_local)
                 .enq()?;
         }
-        q.finish().map_err(|e| anyhow!("equihash round0 finish: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("equihash round0 finish: {e}"))?;
         if eq_dbg {
             dump_rows(&q, rc0, "round0")?;
 
@@ -6201,16 +6183,16 @@ typedef unsigned long ulong;
                 crate::ext_info!(
                     "eq192dbg kat input0 reads: h0={ms0_0:#018x} h1={ms1_0:#018x} \
                      tail0={t0_0:#018x} (host h0={:#018x} h1={:#018x} tail0={:#018x})",
-                    blake_state[0], blake_state[1], eq_tail0
+                    blake_state[0],
+                    blake_state[1],
+                    eq_tail0
                 );
                 let mut gpu_d = [0u8; 96];
                 for (i, w) in dbg[..24].iter().enumerate() {
                     gpu_d[i * 4..i * 4 + 4].copy_from_slice(&w.to_le_bytes());
                 }
                 for leaf in [0u32, 1, 776, 777] {
-                    let xi = Self::equihash_leaf_hash(
-                        &header_buf, param_n, param_k, leaf,
-                    );
+                    let xi = Self::equihash_leaf_hash(&header_buf, param_n, param_k, leaf);
                     // block 0 digest → gpu_d[0..48), block 388 → [48..96);
                     // leaf%2 selects the 24-byte half.
                     let base = if leaf < 2 { 0 } else { 48 };
@@ -6227,17 +6209,13 @@ typedef unsigned long ulong;
                 // "input==388" dump?  Brute-force the whole 2^24 range.
                 let mut hit = None;
                 for idx in 0u32..(1 << 24) {
-                    let xi0 = Self::equihash_leaf_hash(
-                        &header_buf, param_n, param_k, idx * 2,
-                    );
+                    let xi0 = Self::equihash_leaf_hash(&header_buf, param_n, param_k, idx * 2);
                     if gpu_d[48..72] == xi0[..] {
                         hit = Some(idx);
                         break;
                     }
                 }
-                crate::ext_info!(
-                    "eq192dbg kat block388-dump actually hashed block idx={hit:?}"
-                );
+                crate::ext_info!("eq192dbg kat block388-dump actually hashed block idx={hit:?}");
             }
 
             // KAT: for a fixed leaf, compute the *expected* table-0 row on
@@ -6257,12 +6235,9 @@ typedef unsigned long ulong;
                     let mut found = false;
                     for s in 0..nr_slots {
                         let base = s * slot_len;
-                        let stored = u32::from_le_bytes(
-                            rowbuf[base..base + 4].try_into().unwrap(),
-                        );
+                        let stored = u32::from_le_bytes(rowbuf[base..base + 4].try_into().unwrap());
                         if stored == leaf {
-                            let gpu_tail =
-                                &rowbuf[base + 4..base + 4 + xi.len() - 2];
+                            let gpu_tail = &rowbuf[base + 4..base + 4 + xi.len() - 2];
                             crate::ext_info!(
                                 "eq192dbg kat leaf={leaf} row={row} slot={s} \
                                  tail_match={} gpu={gpu_tail:02x?} cpu={:02x?}",
@@ -6316,7 +6291,8 @@ typedef unsigned long ulong;
                     .local_work_size(rounds_local)
                     .enq()?;
             }
-            q.finish().map_err(|e| anyhow!("equihash round{round} finish: {e}"))?;
+            q.finish()
+                .map_err(|e| anyhow!("equihash round{round} finish: {e}"))?;
             if eq_dbg {
                 dump_rows(&q, rc_dst, &format!("round{round}"))?;
             }
@@ -6355,7 +6331,8 @@ typedef unsigned long ulong;
                     .local_work_size(rounds_local)
                     .enq()?;
             }
-            q.finish().map_err(|e| anyhow!("equihash final-round finish: {e}"))?;
+            q.finish()
+                .map_err(|e| anyhow!("equihash final-round finish: {e}"))?;
             if eq_dbg {
                 dump_rows(&q, rc_dst, "round6-final")?;
             }
@@ -6374,7 +6351,8 @@ typedef unsigned long ulong;
                 .local_work_size(sols_local)
                 .enq()?;
         }
-        q.finish().map_err(|e| anyhow!("equihash kernel_sols finish: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("equihash kernel_sols finish: {e}"))?;
 
         let elapsed_ms = start.elapsed().as_millis();
         crate::ext_info!("auxpow_gpu_equihash kernels completed in {elapsed_ms} ms");
@@ -6456,28 +6434,20 @@ typedef unsigned long ulong;
                 let xi_len = (param_n / 8) as usize;
                 let mut acc = vec![0u8; xi_len];
                 for &li in &inputs {
-                    let xi =
-                        Self::equihash_leaf_hash(&header_buf, param_n, param_k, li);
+                    let xi = Self::equihash_leaf_hash(&header_buf, param_n, param_k, li);
                     for (b, &x) in acc.iter_mut().zip(xi.iter()) {
                         *b ^= x;
                     }
                 }
                 let nz = acc.iter().filter(|&&b| b != 0).count();
-                crate::ext_info!(
-                    "eq192dbg sol_{sol_i} leafset xor_nonzero_bytes={nz}/{xi_len}"
-                );
+                crate::ext_info!("eq192dbg sol_{sol_i} leafset xor_nonzero_bytes={nz}/{xi_len}");
             }
 
             // Reconstruct the canonical Wagner tree: the kernel emits leaf
             // indices with scrambled subtree order, so recompute leaf Xis and
             // rebuild the merge tree deterministically. n = prefix * (k+1)
             // (192,7 → 24*8, 200,9 → 20*10).
-            if !Self::reorder_equihash_solution(
-                &mut inputs,
-                &header_buf,
-                param_n,
-                param_k,
-            ) {
+            if !Self::reorder_equihash_solution(&mut inputs, &header_buf, param_n, param_k) {
                 if eq_dbg {
                     crate::ext_info!(
                         "eq192dbg sol_{sol_i} reorder-fail first8={:?}",
@@ -6547,8 +6517,7 @@ typedef unsigned long ulong;
                 hash_arr.copy_from_slice(&hash2);
                 // Share.solution carries the wire format: CompactSize length
                 // prefix + minimal soln (fd9001 + 400 B for 192,7).
-                let mut sol_wire =
-                    crate::auxpow::hasher::zcash_varint_for_len(encoded_sol.len());
+                let mut sol_wire = crate::auxpow::hasher::zcash_varint_for_len(encoded_sol.len());
                 sol_wire.extend_from_slice(&encoded_sol);
                 crate::ext_info!(
                     "auxpow_gpu_equihash SHARE FOUND sol_{sol_i} nonce={base_nonce} hash_first8={:016x}",
@@ -7158,8 +7127,7 @@ typedef unsigned long ulong;
         // Generate the per-block Keryx 64×64 matrix (4096 u16 values) on the host.
         // This matches keryx-miner's Matrix::generate: seed = pre_pow_hash XOR
         // KERYX_MATRIX_SALT_<v>, XoShiRo256++ PRNG, retry until full rank (64).
-        let matrix_2d =
-            crate::auxpow::hasher::generate_keryx_matrix(&pre_pow_hash, daa_score);
+        let matrix_2d = crate::auxpow::hasher::generate_keryx_matrix(&pre_pow_hash, daa_score);
         let mut matrix = [0u16; 4096];
         for i in 0..64 {
             for j in 0..64 {
@@ -7251,10 +7219,7 @@ typedef unsigned long ulong;
         }
         q.finish()
             .map_err(|e| anyhow!("autolykos_gen_table finish: {e}"))?;
-        crate::ext_info!(
-            "auxpow_gpu_autolykos table ready in {:.1?}",
-            t0.elapsed()
-        );
+        crate::ext_info!("auxpow_gpu_autolykos table ready in {:.1?}", t0.elapsed());
 
         self.autolykos_table = Some(AutolykosGpuTable {
             buf: table_buf,
@@ -9813,8 +9778,7 @@ mod tests {
                 digest[i * 8..i * 8 + 8].copy_from_slice(&w.to_le_bytes());
             }
             let xi0 = ExtGpuMiner::equihash_leaf_hash(&header, 192, 7, input * 2);
-            let xi1 =
-                ExtGpuMiner::equihash_leaf_hash(&header, 192, 7, input * 2 + 1);
+            let xi1 = ExtGpuMiner::equihash_leaf_hash(&header, 192, 7, input * 2 + 1);
             assert_eq!(
                 &digest[..24],
                 &xi0[..],

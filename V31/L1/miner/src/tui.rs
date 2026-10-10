@@ -21,9 +21,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::{
-    Block, Borders, Cell, Paragraph, Row, Table, Wrap,
-};
+use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap};
 use ratatui::{DefaultTerminal, Frame};
 use tokio::sync::{mpsc, watch};
 use tokio::time::interval;
@@ -129,9 +127,21 @@ impl App {
         let stats = self.runtime.stats().await;
 
         // Detect accepted/rejected share events and append to the log pane.
-        for id in [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal, StreamId::GpuExternal2] {
-            let current = stats.get(&id).cloned().unwrap_or_else(|| StreamStats::new(id));
-            let prev = self.last_stats.get(&id).cloned().unwrap_or_else(|| StreamStats::new(id));
+        for id in [
+            StreamId::Zion,
+            StreamId::GpuExternal,
+            StreamId::CpuExternal,
+            StreamId::GpuExternal2,
+        ] {
+            let current = stats
+                .get(&id)
+                .cloned()
+                .unwrap_or_else(|| StreamStats::new(id));
+            let prev = self
+                .last_stats
+                .get(&id)
+                .cloned()
+                .unwrap_or_else(|| StreamStats::new(id));
 
             if current.accepted > prev.accepted {
                 let delta = current.accepted - prev.accepted;
@@ -182,7 +192,10 @@ impl App {
                 }
                 (KeyCode::Char('p' | 'P'), _) => {
                     self.paused = !self.paused;
-                    self.log(format!("Pause {} (pause/resume not yet wired)", if self.paused { "ON" } else { "OFF" }));
+                    self.log(format!(
+                        "Pause {} (pause/resume not yet wired)",
+                        if self.paused { "ON" } else { "OFF" }
+                    ));
                 }
                 (KeyCode::Char('r' | 'R'), _) => {
                     self.log("Reconnect requested (not yet wired)".to_string());
@@ -240,8 +253,16 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
 
     let lines = vec![
         Line::from(vec![
-            Span::styled("ZION Miner ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::raw(format!("v3.1.0-beta | consensus={} backend={}", consensus, backend)),
+            Span::styled(
+                "ZION Miner ",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(format!(
+                "v3.1.0-beta | consensus={} backend={}",
+                consensus, backend
+            )),
         ]),
         Line::from(vec![
             Span::styled("Pool: ", Style::default().fg(Color::Yellow)),
@@ -266,47 +287,66 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn draw_streams_table(frame: &mut Frame, app: &App, area: Rect) {
-    let rows: Vec<Row> = [StreamId::Zion, StreamId::GpuExternal, StreamId::CpuExternal, StreamId::GpuExternal2]
-        .iter()
-        .map(|id| {
-            let s = app.stats.get(id).cloned().unwrap_or_else(|| StreamStats::new(*id));
-            let (value, unit) = fmt_hashrate_unit(s.hashrate);
-            let accept_rate = if s.accepted + s.rejected > 0 {
-                (s.accepted as f64 / (s.accepted + s.rejected) as f64) * 100.0
+    let rows: Vec<Row> = [
+        StreamId::Zion,
+        StreamId::GpuExternal,
+        StreamId::CpuExternal,
+        StreamId::GpuExternal2,
+    ]
+    .iter()
+    .map(|id| {
+        let s = app
+            .stats
+            .get(id)
+            .cloned()
+            .unwrap_or_else(|| StreamStats::new(*id));
+        let (value, unit) = fmt_hashrate_unit(s.hashrate);
+        let accept_rate = if s.accepted + s.rejected > 0 {
+            (s.accepted as f64 / (s.accepted + s.rejected) as f64) * 100.0
+        } else {
+            0.0
+        };
+        let status = if s.active {
+            "active".to_string()
+        } else {
+            "idle".to_string()
+        };
+        let coin = if s.active {
+            stream_coin_name(&s, *id)
+        } else {
+            "idle".to_string()
+        };
+        let algo = s.algorithm.clone().unwrap_or_else(|| {
+            if *id == StreamId::Zion {
+                zion_core::node_runtime::consensus_profile().to_string()
             } else {
-                0.0
-            };
-            let status = if s.active { "active".to_string() } else { "idle".to_string() };
-            let coin = if s.active {
-                stream_coin_name(&s, *id)
-            } else {
-                "idle".to_string()
-            };
-            let algo = s.algorithm.clone().unwrap_or_else(|| {
-                if *id == StreamId::Zion {
-                    zion_core::node_runtime::consensus_profile().to_string()
-                } else {
-                    "-".to_string()
-                }
-            });
+                "-".to_string()
+            }
+        });
 
-            let color = if s.active { Color::Green } else { Color::Gray };
+        let color = if s.active { Color::Green } else { Color::Gray };
 
-            Row::new(vec![
-                Cell::from(Span::styled(stream_label(*id), Style::default().fg(color))),
-                Cell::from(Span::styled(status, Style::default().fg(color))),
-                Cell::from(coin),
-                Cell::from(algo),
-                Cell::from(format!("{:.2} {}", value, unit)),
-                Cell::from(format!("{}", s.accepted)),
-                Cell::from(format!("{}", s.rejected)),
-                Cell::from(format!("{:.1}%", accept_rate)),
-            ])
-        })
-        .collect();
+        Row::new(vec![
+            Cell::from(Span::styled(stream_label(*id), Style::default().fg(color))),
+            Cell::from(Span::styled(status, Style::default().fg(color))),
+            Cell::from(coin),
+            Cell::from(algo),
+            Cell::from(format!("{:.2} {}", value, unit)),
+            Cell::from(format!("{}", s.accepted)),
+            Cell::from(format!("{}", s.rejected)),
+            Cell::from(format!("{:.1}%", accept_rate)),
+        ])
+    })
+    .collect();
 
-    let header = Row::new(vec!["Stream", "Status", "Coin", "Algo", "Hashrate", "Acc", "Rej", "AR%"])
-        .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+    let header = Row::new(vec![
+        "Stream", "Status", "Coin", "Algo", "Hashrate", "Acc", "Rej", "AR%",
+    ])
+    .style(
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    );
 
     let table = Table::new(
         rows,

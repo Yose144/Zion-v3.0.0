@@ -374,7 +374,13 @@ pub fn scan(
                 }
             }
         }
-        crate::ext_info!(nonce, nsols_total, nverify_fail, min_h0, "eq144: run complete");
+        crate::ext_info!(
+            nonce,
+            nsols_total,
+            nverify_fail,
+            min_h0,
+            "eq144: run complete"
+        );
     }
     None
 }

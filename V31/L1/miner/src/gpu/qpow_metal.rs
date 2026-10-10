@@ -23,6 +23,8 @@ use crate::auxpow::qpow;
 const POSEIDON2_METAL: &str = include_str!("kernels/metal/poseidon2_kernel.metal");
 
 const QPOW_KERNEL: &str = "qpow_mine";
+/// 3-lane × 4-felt lane-parallel variant (10 nonces per simdgroup32).
+const QPOW_KERNEL_LANE: &str = "qpow_lane";
 /// Candidate slots recorded per launch (mirrors upstream `MAX_HITS`).
 const MAX_HITS: usize = 8;
 /// u32[9]: hit count + up to `MAX_HITS` logical indices.
@@ -35,6 +37,8 @@ pub struct QpowMetalMiner {
     device: Device,
     queue: metal::CommandQueue,
     pipeline: metal::ComputePipelineState,
+    lane_pipeline: Option<metal::ComputePipelineState>,
+    use_lane: bool,
     device_name_cached: String,
     threads_per_tg: usize,
     nonces_per_thread: u32,
@@ -86,6 +90,31 @@ impl QpowMetalMiner {
             .new_compute_pipeline_state_with_function(&func)
             .map_err(|e| anyhow::anyhow!("Metal qpow pipeline creation failed: {e}"))?;
 
+        // ZION_QPOW_METAL_IMPL: scalar | lane | auto (default auto → lane if
+        // the qpow_lane pipeline builds, scalar otherwise). The lane kernel
+        // maps 3 SIMD lanes per nonce and needs a different grid size.
+        let impl_sel =
+            std::env::var("ZION_QPOW_METAL_IMPL").unwrap_or_else(|_| "auto".to_string());
+        let lane_pipeline = if impl_sel == "scalar" {
+            None
+        } else {
+            library
+                .get_function(QPOW_KERNEL_LANE, None)
+                .ok()
+                .and_then(|f| device.new_compute_pipeline_state_with_function(&f).ok())
+        };
+        let use_lane = match impl_sel.as_str() {
+            "lane" => {
+                if lane_pipeline.is_none() {
+                    anyhow::bail!(
+                        "ZION_QPOW_METAL_IMPL=lane but qpow_lane failed to build"
+                    );
+                }
+                true
+            }
+            _ => lane_pipeline.is_some(),
+        };
+
         let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
         // ALU-only kernel: larger threadgroups keep the SIMD units fed.
         let threads_per_tg = std::env::var("ZION_QPOW_METAL_TPG")
@@ -93,6 +122,12 @@ impl QpowMetalMiner {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(256)
             .min(max_tpg);
+        // Lane mode needs whole simdgroups per threadgroup.
+        let threads_per_tg = if use_lane {
+            (threads_per_tg / 32).max(1) * 32
+        } else {
+            threads_per_tg
+        };
         let nonces_per_thread = std::env::var("ZION_QPOW_METAL_NPT")
             .ok()
             .and_then(|v| v.trim().parse::<u32>().ok())
@@ -107,8 +142,9 @@ impl QpowMetalMiner {
         let dispatch_buf = device.new_buffer((3 * 4) as u64, shared);
 
         crate::ext_info!(
-            "gpu_qpow_metal_init device=\"{}\" tpg={} npt={}",
+            "gpu_qpow_metal_init device=\"{}\" impl={} tpg={} npt={}",
             device_name,
+            if use_lane { "lane" } else { "scalar" },
             threads_per_tg,
             nonces_per_thread,
         );
@@ -117,6 +153,8 @@ impl QpowMetalMiner {
             device,
             queue,
             pipeline,
+            lane_pipeline,
+            use_lane,
             device_name_cached: device_name,
             threads_per_tg,
             nonces_per_thread,
@@ -150,6 +188,13 @@ impl QpowMetalMiner {
             h => h,
         };
         let total64 = total.min(headroom).min(u32::MAX as u64);
+        // Lane mode: grid threads = ceil(groups/10)*32 must stay under 2^31,
+        // so cap one launch at 64M nonces (groups ≤ 64M/npt with npt ≥ 1).
+        let total64 = if self.use_lane {
+            total64.min(64_000_000)
+        } else {
+            total64
+        };
         let total32 = total64 as u32;
         if total32 == 0 {
             return Ok(None);
@@ -167,7 +212,18 @@ impl QpowMetalMiner {
         let target_limbs = u512_be_to_limbs(target);
 
         let npt = self.nonces_per_thread;
-        let total_threads = total32.div_ceil(npt);
+        // Scalar kernel: one thread per nonce → grid = ceil(total/npt).
+        // Lane kernel: 3 lanes × 10 nonce-groups per simdgroup32 →
+        // grid = ceil(ceil(total/npt)/10)*32 threads.
+        let (pipeline, total_threads) = if self.use_lane {
+            let groups = total32.div_ceil(npt) as u64;
+            (
+                self.lane_pipeline.as_ref().expect("lane pipeline"),
+                (groups.div_ceil(10) * 32) as u32,
+            )
+        } else {
+            (&self.pipeline, total32.div_ceil(npt))
+        };
 
         let t_up = std::time::Instant::now();
         // Reset + upload (StorageModeShared — CPU writes are GPU-visible).
@@ -203,7 +259,7 @@ impl QpowMetalMiner {
 
         let cb = self.queue.new_command_buffer();
         let enc = cb.new_compute_command_encoder();
-        enc.set_compute_pipeline_state(&self.pipeline);
+        enc.set_compute_pipeline_state(pipeline);
         enc.set_buffer(0, Some(&self.results_buf), 0);
         enc.set_buffer(1, Some(&self.prestate_buf), 0);
         enc.set_buffer(2, Some(&self.start_nonce_buf), 0);

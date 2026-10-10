@@ -63,19 +63,20 @@ pub fn nexapow_hash_ref(candidate_hash: &[u8; 32], nonce: u64) -> Option<[u8; 32
     // BIP-340 with aux_rand = 32 zero bytes — identical construction to the
     // kernel's schnorr_sign_impl (t = d ^ taghash("BIP0340/aux", zeros),
     // rand = taghash("BIP0340/nonce", t || px || msg), …).
-    let sig: k256::schnorr::Signature = signing_key
-        .sign_raw(&h1, &[0u8; 32])
-        .expect("schnorr sign");
+    let sig: k256::schnorr::Signature =
+        signing_key.sign_raw(&h1, &[0u8; 32]).expect("schnorr sign");
     Some(sha256(&sig.to_bytes()))
 }
 // bip340 smoke
 // quick check: k256 sign_raw vs official BIP-340 vector 0
 #[test]
 fn bip340_vector0() {
-    use k256::SecretKey;
     use k256::schnorr::SigningKey;
-    let sk_bytes = hex::decode("0000000000000000000000000000000000000000000000000000000000000003").unwrap();
-    let msg = hex::decode("0000000000000000000000000000000000000000000000000000000000000000").unwrap();
+    use k256::SecretKey;
+    let sk_bytes =
+        hex::decode("0000000000000000000000000000000000000000000000000000000000000003").unwrap();
+    let msg =
+        hex::decode("0000000000000000000000000000000000000000000000000000000000000000").unwrap();
     let aux = [0u8; 32];
     let sk = SecretKey::from_slice(&sk_bytes).unwrap();
     let signing_key = SigningKey::from(&sk);
@@ -93,14 +94,11 @@ mod tests {
     // Official BIP-340 test vector index 0.
     #[test]
     fn bip340_official_vector0() {
-        let sk_bytes = hex::decode(
-            "0000000000000000000000000000000000000000000000000000000000000003",
-        )
-        .unwrap();
-        let msg = hex::decode(
-            "0000000000000000000000000000000000000000000000000000000000000000",
-        )
-        .unwrap();
+        let sk_bytes =
+            hex::decode("0000000000000000000000000000000000000000000000000000000000000003")
+                .unwrap();
+        let msg = hex::decode("0000000000000000000000000000000000000000000000000000000000000000")
+            .unwrap();
         let aux = [0u8; 32];
         let sk = SecretKey::from_slice(&sk_bytes).unwrap();
         let signing_key = SigningKey::from(&sk);

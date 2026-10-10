@@ -38,9 +38,7 @@ mod imp {
                 let wallet = args
                     .get(2)
                     .cloned()
-                    .unwrap_or_else(|| {
-                        "t1UN5WNVHvQSAfBNZVXYhNvvpJKLCK6mcmD".to_string()
-                    });
+                    .unwrap_or_else(|| "t1UN5WNVHvQSAfBNZVXYhNvvpJKLCK6mcmD".to_string());
                 let rounds: u32 = args.get(3).and_then(|v| v.parse().ok()).unwrap_or(6);
                 pool_mode(&pool, &wallet, rounds)
             }
@@ -67,13 +65,7 @@ mod imp {
         } else {
             return format!("BAD-WIRE len={} first={:02x}", sol_wire.len(), sol_wire[0]);
         };
-        match equihash::is_valid_solution(
-            192,
-            7,
-            &header[..108],
-            &header[108..140],
-            sol,
-        ) {
+        match equihash::is_valid_solution(192, 7, &header[..108], &header[108..140], sol) {
             Ok(()) => {}
             Err(e) => return format!("INVALID-SOL ({e}) wireprefix={pref}"),
         }
@@ -85,7 +77,10 @@ mod imp {
 
     fn selftest(iters: u32) -> i32 {
         let t0 = Instant::now();
-        println!("[{:6.1}] == eq192_probe selftest: ExtGpuMiner init…", t0.elapsed().as_secs_f64());
+        println!(
+            "[{:6.1}] == eq192_probe selftest: ExtGpuMiner init…",
+            t0.elapsed().as_secs_f64()
+        );
         let mut miner = match ExtGpuMiner::new() {
             Ok(m) => m,
             Err(e) => {
@@ -93,7 +88,11 @@ mod imp {
                 return 1;
             }
         };
-        println!("[{:6.1}] device={}", t0.elapsed().as_secs_f64(), miner.device_name());
+        println!(
+            "[{:6.1}] device={}",
+            t0.elapsed().as_secs_f64(),
+            miner.device_name()
+        );
 
         // Fixed deterministic header; en1 fake 4 bytes embedded at 108..112.
         let mut header = [0u8; 140];
@@ -117,7 +116,10 @@ mod imp {
             total_ms += ms;
             match r {
                 Err(e) => {
-                    println!("[{:6.1}] iter {it}: mine err {e:?}", t0.elapsed().as_secs_f64());
+                    println!(
+                        "[{:6.1}] iter {it}: mine err {e:?}",
+                        t0.elapsed().as_secs_f64()
+                    );
                     bad += 1;
                 }
                 Ok(None) => {
@@ -154,7 +156,11 @@ mod imp {
         println!(
             "[{:6.1}] == selftest done: {ok} valid, {bad} bad, avg {:.1} ms/batch",
             t0.elapsed().as_secs_f64(),
-            if iters > 0 { total_ms as f64 / iters as f64 } else { 0.0 }
+            if iters > 0 {
+                total_ms as f64 / iters as f64
+            } else {
+                0.0
+            }
         );
         if bad > 0 {
             2
@@ -183,8 +189,12 @@ mod imp {
         let cfg = AuxPowClientConfig::new(coin, pool.to_string(), "eq192probe", "c=ZCL");
         let client = AuxPowClient::new(cfg);
 
-        println!("[{:6.1}] == eq192_probe pool: connect {pool} wallet={wallet}", ts());
-        if let Err(e) = tokio::time::timeout(Duration::from_secs(30), client.connect(wallet)).await {
+        println!(
+            "[{:6.1}] == eq192_probe pool: connect {pool} wallet={wallet}",
+            ts()
+        );
+        if let Err(e) = tokio::time::timeout(Duration::from_secs(30), client.connect(wallet)).await
+        {
             println!("[{:6.1}] CONNECT ERR: {e:?}", ts());
             return 1;
         }
@@ -225,7 +235,11 @@ mod imp {
                 hex::encode(&job.target_bytes[..4]),
             );
             if job.header_bytes.len() != 140 {
-                println!("[{:6.1}] !! header {}B != 140 — skip", ts(), job.header_bytes.len());
+                println!(
+                    "[{:6.1}] !! header {}B != 140 — skip",
+                    ts(),
+                    job.header_bytes.len()
+                );
                 continue;
             }
             if eqp != "192_7" {
@@ -254,15 +268,12 @@ mod imp {
             let mut nonce = 0u64;
             let mut found = None;
             while found.is_none() && Instant::now() < mine_deadline {
-                let tgt = if wire_probe { &max_target } else { &job.target_bytes };
-                let r = miner.mine(
-                    "equihashzero",
-                    &job.header_bytes,
-                    &en1,
-                    tgt,
-                    nonce,
-                    1,
-                );
+                let tgt = if wire_probe {
+                    &max_target
+                } else {
+                    &job.target_bytes
+                };
+                let r = miner.mine("equihashzero", &job.header_bytes, &en1, tgt, nonce, 1);
                 match r {
                     Ok(Some(fs)) => {
                         let mut h2 = [0u8; 140];

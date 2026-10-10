@@ -9,8 +9,8 @@ const NUM_ROUNDS: usize = 43;
 const DELIMITER: u32 = 0x06;
 
 const BIT_MATRIX_COL: [u32; 16] = [
-    0x90F1, 0xB113, 0xF2D7, 0x755F, 0xEABE, 0x458D, 0x8B1A, 0x86C5,
-    0x9D7B, 0xAA07, 0xC4FF, 0x190F, 0x321E, 0x643C, 0xC878, 0x8FAF,
+    0x90F1, 0xB113, 0xF2D7, 0x755F, 0xEABE, 0x458D, 0x8B1A, 0x86C5, 0x9D7B, 0xAA07, 0xC4FF, 0x190F,
+    0x321E, 0x643C, 0xC878, 0x8FAF,
 ];
 const CIRC_ROT1: [u32; 16] = [2, 13, 4, 3, 27, 3, 17, 3, 18, 12, 4, 4, 12, 7, 7, 1];
 const CIRC_ROT2: [u32; 16] = [4, 22, 19, 14, 31, 8, 26, 12, 22, 18, 7, 31, 27, 17, 8, 13];
@@ -195,6 +195,9 @@ mod tests {
         let b = eaglesong_hash_80(&[0u8; 80]);
         assert_eq!(a, b);
         // Different nonce → different hash.
-        assert_ne!(eaglesong_hash_ref(&[0u8; 80], 0), eaglesong_hash_ref(&[0u8; 80], 1));
+        assert_ne!(
+            eaglesong_hash_ref(&[0u8; 80], 0),
+            eaglesong_hash_ref(&[0u8; 80], 1)
+        );
     }
 }

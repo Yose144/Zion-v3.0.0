@@ -131,7 +131,11 @@ pub fn hash_kheavyhash_extranonce(
         en1_val = (en1_val << 8) | b as u64;
     }
     let suffix_bits = (8 - en1_len) * 8;
-    let mask = if suffix_bits == 64 { u64::MAX } else { (1u64 << suffix_bits) - 1 };
+    let mask = if suffix_bits == 64 {
+        u64::MAX
+    } else {
+        (1u64 << suffix_bits) - 1
+    };
     let full_nonce = ((en1_val << suffix_bits) | (suffix & mask)).to_le_bytes();
 
     let mut pow_hasher = CShake256::from_core(CShake256Core::new(b"ProofOfWorkHash"));
@@ -1223,8 +1227,7 @@ mod tests {
                 let rust = hash_kheavyhash(&pre_pow, ts, nonce);
                 let native = zion_native_ffi::kheavyhash::mine(&pre_pow, ts, nonce);
                 assert_eq!(
-                    rust,
-                    native,
+                    rust, native,
                     "kheavyhash mismatch vs native impl (nonce={nonce} ts={ts})"
                 );
             }

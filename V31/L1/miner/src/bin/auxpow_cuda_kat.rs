@@ -150,8 +150,7 @@ mod imp {
                     };
                     let cache = ethash_light_cache(0);
                     let dag_items = ethash_dag_entries(0);
-                    let (cmix, final_hash) =
-                        ethash_hash_ref(&ctx.header, nonce, &cache, dag_items);
+                    let (cmix, final_hash) = ethash_hash_ref(&ctx.header, nonce, &cache, dag_items);
                     let got_mix = *mix.context("ethash: no mix_hash reported")?;
                     if got_mix != cmix || *hash != final_hash {
                         anyhow::bail!(
@@ -169,17 +168,13 @@ mod imp {
                 algo: "kawpow",
                 header: vec![0x77u8; 32],
                 height: 0,
-                verify: |ctx, nonce, _hash, mix| {
-                    kawpow_progpow_verify(ctx, nonce, mix, "kawpow")
-                },
+                verify: |ctx, nonce, _hash, mix| kawpow_progpow_verify(ctx, nonce, mix, "kawpow"),
             },
             Case {
                 algo: "progpow",
                 header: vec![0x66u8; 32],
                 height: 0,
-                verify: |ctx, nonce, _hash, mix| {
-                    kawpow_progpow_verify(ctx, nonce, mix, "progpow")
-                },
+                verify: |ctx, nonce, _hash, mix| kawpow_progpow_verify(ctx, nonce, mix, "progpow"),
             },
             Case {
                 algo: "verushash",
@@ -193,15 +188,12 @@ mod imp {
                         let mut header_padded = [0u8; 64];
                         let len = ctx.header.len().min(64);
                         header_padded[..len].copy_from_slice(&ctx.header[..len]);
-                        let intermediate =
-                            zion_native_ffi::verushash::hash_half(&header_padded);
+                        let intermediate = zion_native_ffi::verushash::hash_half(&header_padded);
                         zion_native_ffi::verushash::prepare_key(&intermediate);
                         let mut ns = [0u8; 15];
                         ns[11..15].copy_from_slice(&(nonce as u32).to_le_bytes());
-                        let expect = zion_native_ffi::verushash::hash_with_nonce(
-                            &intermediate,
-                            &ns,
-                        );
+                        let expect =
+                            zion_native_ffi::verushash::hash_with_nonce(&intermediate, &ns);
                         if *hash != expect {
                             anyhow::bail!(
                                 "verushash mismatch nonce={nonce}: gpu={} cpu={}",
@@ -275,8 +267,8 @@ mod imp {
         use zion_miner::gpu::qpow_cuda::QpowCudaMiner;
 
         let dev = CudaDevice::new(0).context("qpow: CUDA device 0")?;
-        let mut miner = QpowCudaMiner::new_with_device(batch as usize, dev)
-            .context("qpow miner init")?;
+        let mut miner =
+            QpowCudaMiner::new_with_device(batch as usize, dev).context("qpow miner init")?;
         let header = [0x33u8; qpow::QPOW_HEADER_LEN];
         let nonce = [0u8; qpow::QPOW_NONCE_LEN];
         let target = [0xFFu8; qpow::QPOW_TARGET_LEN];
@@ -322,11 +314,7 @@ mod imp {
             .copied()
             .ok_or_else(|| anyhow::anyhow!("{}: no share in {} nonces", c.algo, batch))?;
         (c.verify)(ctx, nonce, &hash, mix.as_ref())?;
-        Ok(format!(
-            "nonce={} hash={}",
-            nonce,
-            hex::encode(&hash[..8])
-        ))
+        Ok(format!("nonce={} hash={}", nonce, hex::encode(&hash[..8])))
     }
 
     /// Shared KawPow/ProgPoW verify — ProgOp CPU interpreter over the same
@@ -363,9 +351,7 @@ mod imp {
             // or 0 for a 32-byte header.
             let mut blob = [0u32; 10];
             for i in 0..8 {
-                blob[i] = u32::from_le_bytes(
-                    ctx.header[i * 4..i * 4 + 4].try_into().unwrap(),
-                );
+                blob[i] = u32::from_le_bytes(ctx.header[i * 4..i * 4 + 4].try_into().unwrap());
             }
             blob[8] = (nonce & 0xFFFF_FFFF) as u32;
             blob[9] = (nonce >> 32) as u32;
@@ -375,15 +361,8 @@ mod imp {
         } else {
             let mut h32 = [0u8; 32];
             h32.copy_from_slice(&ctx.header[..32]);
-            let (expect, _) = progpow_digest_ref(
-                params,
-                0,
-                &h32,
-                nonce,
-                dag_elements,
-                &mut dag_word,
-                false,
-            );
+            let (expect, _) =
+                progpow_digest_ref(params, 0, &h32, nonce, dag_elements, &mut dag_word, false);
             expect
         };
         let got = *mix.context(format!("{algo}: no mix_hash reported"))?;
@@ -409,8 +388,6 @@ fn main() -> anyhow::Result<()> {
     }
     #[cfg(not(all(feature = "gpu-cuda", feature = "gpu-opencl")))]
     {
-        anyhow::bail!(
-            "auxpow_cuda_kat requires --features \"gpu-cuda gpu-opencl native-all\""
-        )
+        anyhow::bail!("auxpow_cuda_kat requires --features \"gpu-cuda gpu-opencl native-all\"")
     }
 }

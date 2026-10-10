@@ -90,8 +90,9 @@ pub struct V3PoolClient {
     // Senders are shared with the read loop; receivers are created lazily
     // on first submit for a coin and held per-coin so concurrent submits
     // for the SAME coin serialize on the receiver mutex.
-    ext_result_senders:
-        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, mpsc::Sender<V3ExternalResult>>>>,
+    ext_result_senders: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, mpsc::Sender<V3ExternalResult>>>,
+    >,
     ext_result_receivers: Mutex<
         std::collections::HashMap<String, std::sync::Arc<Mutex<mpsc::Receiver<V3ExternalResult>>>>,
     >,
@@ -186,7 +187,9 @@ impl V3PoolClient {
             } => {
                 info!(
                     "V3 pool connected: protocol={} algo={} job_ttl={}ms{}",
-                    protocol_version, welcome_algo, job_ttl_ms,
+                    protocol_version,
+                    welcome_algo,
+                    job_ttl_ms,
                     if zis_user.is_empty() {
                         String::new()
                     } else {
@@ -211,9 +214,11 @@ impl V3PoolClient {
         // Per-coin result dispatch: the read loop looks up the channel for
         // the result's coin ticker; submit creates channel pairs lazily so
         // any coin (ZANO, QTU, VRSC, …) gets isolated result routing.
-        let ext_result_senders = std::sync::Arc::new(std::sync::Mutex::new(
-            std::collections::HashMap::<String, mpsc::Sender<V3ExternalResult>>::new(),
-        ));
+        let ext_result_senders =
+            std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
+                String,
+                mpsc::Sender<V3ExternalResult>,
+            >::new()));
         let ext_senders_loop = ext_result_senders.clone();
 
         // Watch channel to signal when the pool closes the connection.
@@ -221,8 +226,7 @@ impl V3PoolClient {
 
         // Tracks the newest ZION job_id seen by the read loop so the mining
         // path can detect a stale share before submitting it.
-        let latest_zion_job_id =
-            std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let latest_zion_job_id = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
         let latest_zion_in_loop = latest_zion_job_id.clone();
 
         // Spawn the read loop
@@ -304,7 +308,9 @@ impl V3PoolClient {
                                     })
                                     .is_err()
                                 {
-                                    warn!("V3 read loop: zion result channel full, dropping result");
+                                    warn!(
+                                        "V3 read loop: zion result channel full, dropping result"
+                                    );
                                 }
                             }
                             Ok(PoolMessage::ExternalResult {
@@ -323,11 +329,7 @@ impl V3PoolClient {
                                 // GPU coins can never consume each
                                 // other's results.
                                 let coin_upper = coin.to_uppercase();
-                                let tx = ext_senders_loop
-                                    .lock()
-                                    .unwrap()
-                                    .get(&coin_upper)
-                                    .cloned();
+                                let tx = ext_senders_loop.lock().unwrap().get(&coin_upper).cloned();
                                 match tx {
                                     Some(tx) => {
                                         if tx.try_send(result).is_err() {
@@ -774,11 +776,33 @@ mod tests {
         );
         let c2 = client.clone();
         let zano = tokio::spawn(async move {
-            c2.submit_external_share("ZANO", "progpow_zano", "z1", 1, None, &"ab".repeat(32), None, "", "", "")
-                .await
+            c2.submit_external_share(
+                "ZANO",
+                "progpow_zano",
+                "z1",
+                1,
+                None,
+                &"ab".repeat(32),
+                None,
+                "",
+                "",
+                "",
+            )
+            .await
         });
         let qtu = client
-            .submit_external_share("QTU", "qpow-poseidon2", "q1", 1, None, &"cd".repeat(32), None, "", "", "")
+            .submit_external_share(
+                "QTU",
+                "qpow-poseidon2",
+                "q1",
+                1,
+                None,
+                &"cd".repeat(32),
+                None,
+                "",
+                "",
+                "",
+            )
             .await
             .expect("QTU submit failed");
         let zano = zano.await.unwrap().expect("ZANO submit failed");
@@ -850,16 +874,10 @@ mod tests {
         })
         .await;
 
-        let client = V3PoolClient::connect(
-            &addr,
-            "miner",
-            "worker",
-            "ekam_deeksha",
-            "cpu",
-            "payout",
-        )
-        .await
-        .unwrap();
+        let client =
+            V3PoolClient::connect(&addr, "miner", "worker", "ekam_deeksha", "cpu", "payout")
+                .await
+                .unwrap();
 
         // The newest job bundle must be visible to subscribers without any
         // next_job() polling in between.
@@ -908,16 +926,10 @@ mod tests {
         })
         .await;
 
-        let client = V3PoolClient::connect(
-            &addr,
-            "miner",
-            "worker",
-            "ekam_deeksha",
-            "cpu",
-            "payout",
-        )
-        .await
-        .unwrap();
+        let client =
+            V3PoolClient::connect(&addr, "miner", "worker", "ekam_deeksha", "cpu", "payout")
+                .await
+                .unwrap();
 
         let bundle = client
             .next_job(Duration::from_secs(5))
@@ -940,16 +952,10 @@ mod tests {
         })
         .await;
 
-        let client = V3PoolClient::connect(
-            &addr,
-            "miner",
-            "worker",
-            "ekam_deeksha",
-            "cpu",
-            "payout",
-        )
-        .await
-        .unwrap();
+        let client =
+            V3PoolClient::connect(&addr, "miner", "worker", "ekam_deeksha", "cpu", "payout")
+                .await
+                .unwrap();
 
         let start = std::time::Instant::now();
         let err = client

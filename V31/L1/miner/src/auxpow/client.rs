@@ -811,7 +811,11 @@ impl AuxPowClient {
         let difficulty = job
             .get("difficulty")
             .and_then(Value::as_f64)
-            .or_else(|| job.get("difficulty").and_then(Value::as_u64).map(|d| d as f64))
+            .or_else(|| {
+                job.get("difficulty")
+                    .and_then(Value::as_u64)
+                    .map(|d| d as f64)
+            })
             .unwrap_or(0.0);
         let seq = job.get("seq").and_then(Value::as_u64);
 
@@ -1136,12 +1140,11 @@ impl AuxPowClient {
                 // (e.g. "sngemPoW"). Distinguish by the N_K shape.
                 let is_equihash_algo = self.config.algorithm.starts_with("equihash");
                 let param8_str = params.get(8).and_then(|v| v.as_str()).unwrap_or("");
-                let (eq_params, solution_param) =
-                    if is_equihash_algo && param8_str.contains('_') {
-                        (Some(param8_str.to_string()), None)
-                    } else {
-                        (None, params.get(8).and_then(|v| parse_hex_value(v)))
-                    };
+                let (eq_params, solution_param) = if is_equihash_algo && param8_str.contains('_') {
+                    (Some(param8_str.to_string()), None)
+                } else {
+                    (None, params.get(8).and_then(|v| parse_hex_value(v)))
+                };
                 let eq_pers = if is_equihash_algo {
                     params.get(9).and_then(|v| v.as_str()).map(String::from)
                 } else {
@@ -1216,8 +1219,7 @@ impl AuxPowClient {
                 // string_be(mr_hex) but the submit header uses mr_hex itself —
                 // the notify value must be byte-reversed for the hashed
                 // header. ZION_EQ144_MERKLE_REV=0 disables for probing.
-                if is_equihash_algo
-                    && std::env::var("ZION_EQ144_MERKLE_REV").as_deref() != Ok("0")
+                if is_equihash_algo && std::env::var("ZION_EQ144_MERKLE_REV").as_deref() != Ok("0")
                 {
                     merkle.reverse();
                 }
@@ -1378,8 +1380,7 @@ impl AuxPowClient {
             let header_hex = params[1].as_str().unwrap_or("").to_string();
             let seed_hex = params[2].as_str().unwrap_or("").to_string();
             let target_hex = params[3].as_str().unwrap_or("").to_string();
-            let header =
-                hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+            let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
             let target = if let Some(tb) = *self.current_target_bytes.lock().await {
                 tb
             } else {
@@ -1392,7 +1393,11 @@ impl AuxPowClient {
                 job_id,
                 header_hex,
                 target_hex,
-                seed_hash: if seed_hex.is_empty() { None } else { Some(seed_hex) },
+                seed_hash: if seed_hex.is_empty() {
+                    None
+                } else {
+                    Some(seed_hex)
+                },
                 block_number: height,
                 algorithm: self.config.algorithm.clone(),
                 external_coin: self.config.coin,
@@ -1426,19 +1431,16 @@ impl AuxPowClient {
                 .unwrap_or_default();
             let header_hex = params[2].as_str().unwrap_or("").to_string();
             let target_hex = params[3].as_str().unwrap_or("").to_string();
-            let header =
-                hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+            let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
             let target = if let Some(tb) = *self.current_target_bytes.lock().await {
                 tb
             } else {
                 hasher::parse_target_hex(&target_hex).unwrap_or([0xFF; 32])
             };
-            let height = params
-                .get(1)
-                .and_then(|v| {
-                    v.as_u64()
-                        .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
-                });
+            let height = params.get(1).and_then(|v| {
+                v.as_u64()
+                    .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
+            });
 
             let job = ExternalJob {
                 job_id,
@@ -1705,8 +1707,7 @@ impl AuxPowClient {
                     nonce32[..en1_len].copy_from_slice(&en1[..en1_len]);
                     let nb = nonce.to_le_bytes();
                     let suffix_len = nb.len().min(32 - en1_len);
-                    nonce32[en1_len..en1_len + suffix_len]
-                        .copy_from_slice(&nb[..suffix_len]);
+                    nonce32[en1_len..en1_len + suffix_len].copy_from_slice(&nb[..suffix_len]);
                     json!({
                         "id": self.next_rpc_id(),
                         "method": "mining.submit",
@@ -1829,9 +1830,17 @@ fn sha256d(data: &[u8]) -> [u8; 32] {
 /// KawPoW family). Everything else on a yiimp coinbase notify uses a
 /// 4-byte nonce field.
 fn is_wide_nonce_algo(algo: &str) -> bool {
-    ["kawpow", "progpow", "meowpow", "ethash", "etchash", "firopow", "autolykos"]
-        .iter()
-        .any(|w| algo.contains(w))
+    [
+        "kawpow",
+        "progpow",
+        "meowpow",
+        "ethash",
+        "etchash",
+        "firopow",
+        "autolykos",
+    ]
+    .iter()
+    .any(|w| algo.contains(w))
 }
 
 /// CryptonoteStratum (XMR) 32-bit nonce as an 8-char lowercase hex string.
@@ -2434,10 +2443,7 @@ async fn handle_line(
 /// Deliver the freshest job to the runtime. `watch::Sender::send` overwrites
 /// the slot and never blocks, so the stratum session loop can never be frozen
 /// by job backpressure; only the newest template is kept anyway.
-fn push_job_latest(
-    job_tx: &tokio::sync::watch::Sender<Option<StratumJob>>,
-    job: StratumJob,
-) {
+fn push_job_latest(job_tx: &tokio::sync::watch::Sender<Option<StratumJob>>, job: StratumJob) {
     let _ = job_tx.send(Some(job));
 }
 
@@ -2469,7 +2475,11 @@ fn parse_qpow_stratum_job_sync(job: &Value, state: &StratumState) -> Option<Stra
     let difficulty = job
         .get("difficulty")
         .and_then(Value::as_f64)
-        .or_else(|| job.get("difficulty").and_then(Value::as_u64).map(|d| d as f64))
+        .or_else(|| {
+            job.get("difficulty")
+                .and_then(Value::as_u64)
+                .map(|d| d as f64)
+        })
         .unwrap_or(0.0);
     let seq = job.get("seq").and_then(Value::as_u64).unwrap_or(0);
 
@@ -2699,7 +2709,11 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
     {
         let job_id = params
             .get(1)
-            .and_then(|v| v.as_str().map(String::from).or_else(|| v.as_u64().map(|n| n.to_string())))
+            .and_then(|v| {
+                v.as_str()
+                    .map(String::from)
+                    .or_else(|| v.as_u64().map(|n| n.to_string()))
+            })
             .unwrap_or_default();
         let header_hex = params[2].as_str().unwrap_or("");
         let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
@@ -2711,7 +2725,10 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
         };
         let height = params
             .get(1)
-            .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.parse().ok())))
+            .and_then(|v| {
+                v.as_u64()
+                    .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
+            })
             .unwrap_or(0);
         return Some(StratumJob {
             job_id,
@@ -2979,7 +2996,11 @@ async fn send_submit(
     state: &StratumState,
 ) -> Result<()> {
     let qpow_session = state.qpow_session_id.lock().await.clone();
-    send_line(writer, &build_submit_params(worker, share, id, qpow_session)).await
+    send_line(
+        writer,
+        &build_submit_params(worker, share, id, qpow_session),
+    )
+    .await
 }
 
 #[cfg(test)]
@@ -3107,7 +3128,9 @@ mod tests {
             .expect("job within 20s");
         eprintln!(
             "live job: id={} header={} target={} en1={}",
-            job.job_id, job.header_hex, job.target_hex,
+            job.job_id,
+            job.header_hex,
+            job.target_hex,
             hex::encode(&job.extranonce1)
         );
         assert_eq!(job.header_bytes.len(), 32);

@@ -11,10 +11,7 @@
 /// DPLL with unit propagation. `cb(assignment_bits)` is invoked per
 /// solution; returning false stops enumeration early.
 fn dynex_enum_solutions(lits: &[i32], nv: usize, cb: &mut dyn FnMut(u64) -> bool) {
-    let clauses: Vec<[i32; 3]> = lits
-        .chunks_exact(3)
-        .map(|c| [c[0], c[1], c[2]])
-        .collect();
+    let clauses: Vec<[i32; 3]> = lits.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect();
 
     fn rec(
         clauses: &[[i32; 3]],
@@ -185,17 +182,10 @@ fn equihash_debug_sol(hdr140: &[u8; 140], sol: &[u8], err: &str) {
     }
     // Level-1 nodes: XOR each adjacent leaf pair, then check how many of the
     // 256 resulting nodes have a level-1-colliding partner anywhere in the set.
-    let l1_nodes: Vec<[u8; 25]> = leaves
-        .chunks(2)
-        .map(|p| xor25(&p[0], &p[1]))
-        .collect();
+    let l1_nodes: Vec<[u8; 25]> = leaves.chunks(2).map(|p| xor25(&p[0], &p[1])).collect();
     let mut with_partner = 0usize;
     for (i, a) in l1_nodes.iter().enumerate() {
-        if l1_nodes
-            .iter()
-            .enumerate()
-            .any(|(j, b)| j != i && l1(a, b))
-        {
+        if l1_nodes.iter().enumerate().any(|(j, b)| j != i && l1(a, b)) {
             with_partner += 1;
         }
     }
@@ -261,7 +251,9 @@ fn verthash_cpu(h: &[u8], n: u64) -> anyhow::Result<[u8; 32]> {
     if data.is_empty() {
         anyhow::bail!("verthash.dat not loaded");
     }
-    Ok(zion_miner::auxpow::verthash_ref::verthash_hash_ref(h, n, data))
+    Ok(zion_miner::auxpow::verthash_ref::verthash_hash_ref(
+        h, n, data,
+    ))
 }
 
 #[cfg(feature = "gpu-opencl")]
@@ -600,9 +592,9 @@ fn real_main() {
         #[cfg(feature = "native-hashers")]
         {
             // Release previously cached DAG/data buffers so multi-GB tables
-        // don't accumulate across cases on an 8 GB card.
-        miner.free_dag_caches();
-        let dag_res = match c.algo {
+            // don't accumulate across cases on an 8 GB card.
+            miner.free_dag_caches();
+            let dag_res = match c.algo {
                 "ethash" | "etchash" => Some(miner.generate_ethash_dag_on_gpu(0)),
                 "octopus" => {
                     // Stage-0 Octopus DAG; real dataset is ~4 GiB — the KAT
@@ -618,9 +610,7 @@ fn real_main() {
                         .unwrap_or(0);
                     Some(miner.generate_octopus_dag_on_gpu(kat_height, kat_nodes))
                 }
-                "kawpow" | "evrprogpow" | "meowpow" => {
-                    Some(miner.generate_kawpow_dag_on_gpu(0))
-                }
+                "kawpow" | "evrprogpow" | "meowpow" => Some(miner.generate_kawpow_dag_on_gpu(0)),
                 "progpow" | "progpowz" => Some(miner.generate_progpow_dag_on_gpu(0)),
                 "verthash" => {
                     // Verthash needs the ~1.2GB static data file. Look for it
@@ -630,9 +620,9 @@ fn real_main() {
                         "/home/zionserver/verthash.dat".to_string(),
                         "./verthash.dat".to_string(),
                     ];
-                    let found = candidates.iter().find(|p| {
-                        !p.is_empty() && std::path::Path::new(p.as_str()).exists()
-                    });
+                    let found = candidates
+                        .iter()
+                        .find(|p| !p.is_empty() && std::path::Path::new(p.as_str()).exists());
                     match found {
                         Some(path) => match std::fs::read(path) {
                             Ok(data) => Some(miner.set_verthash_data(&data)),
@@ -675,40 +665,38 @@ fn real_main() {
                     // convert back to big-endian bytes for comparison.
                     let mut s_be = [0u8; 32];
                     for i in 0..4 {
-                        let limb = u64::from_le_bytes(
-                            sig[32 + i * 8..32 + i * 8 + 8].try_into().unwrap(),
-                        );
+                        let limb =
+                            u64::from_le_bytes(sig[32 + i * 8..32 + i * 8 + 8].try_into().unwrap());
                         let base = (3 - i) * 8;
                         s_be[base..base + 8].copy_from_slice(&limb.to_be_bytes());
                     }
                     println!("schnorr_sign flag={flag}");
                     println!("r = {}", hex::encode(&sig[..32]));
                     println!("s = {}", hex::encode(s_be));
-                    println!("exp.r e907831f80848d1069a5371b402410364bdf1c5f8307b0084c55f1ce2dca8215");
-                    println!("exp.s 25f66a4a85ea8b71e482a74f382d2ce5ebeee8fdb2172f477df4900d310536c0");
+                    println!(
+                        "exp.r e907831f80848d1069a5371b402410364bdf1c5f8307b0084c55f1ce2dca8215"
+                    );
+                    println!(
+                        "exp.s 25f66a4a85ea8b71e482a74f382d2ce5ebeee8fdb2172f477df4900d310536c0"
+                    );
                 }
                 Err(e) => println!("schnorr_sign ERR {e}"),
             }
 
             // verify(official sig) — exercises lift_x + scalar_mul + challenge.
-            let pub_x: [u8; 32] = hex::decode(
-                "f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9",
-            )
-            .unwrap()
-            .try_into()
-            .unwrap();
+            let pub_x: [u8; 32] =
+                hex::decode("f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9")
+                    .unwrap()
+                    .try_into()
+                    .unwrap();
             let mut sig_wire = [0u8; 64];
             sig_wire[..32].copy_from_slice(
-                &hex::decode(
-                    "e907831f80848d1069a5371b402410364bdf1c5f8307b0084c55f1ce2dca8215",
-                )
-                .unwrap(),
+                &hex::decode("e907831f80848d1069a5371b402410364bdf1c5f8307b0084c55f1ce2dca8215")
+                    .unwrap(),
             );
             sig_wire[32..].copy_from_slice(
-                &hex::decode(
-                    "25f66a4a85ea8b71e482a74f382d2ce5ebeee8fdb2172f477df4900d310536c0",
-                )
-                .unwrap(),
+                &hex::decode("25f66a4a85ea8b71e482a74f382d2ce5ebeee8fdb2172f477df4900d310536c0")
+                    .unwrap(),
             );
             match miner.nexapow_verify_debug(&pub_x, &msg, &sig_wire) {
                 Ok(v) => println!("schnorr_verify(official vector) = {v} (expect 1)"),
@@ -721,8 +709,7 @@ fn real_main() {
                     let fe = |l: &[u64]| -> k256::FieldElement {
                         let mut be = [0u8; 32];
                         for i in 0..4 {
-                            be[(3 - i) * 8..(3 - i) * 8 + 8]
-                                .copy_from_slice(&l[i].to_be_bytes());
+                            be[(3 - i) * 8..(3 - i) * 8 + 8].copy_from_slice(&l[i].to_be_bytes());
                         }
                         k256::FieldElement::from_bytes((&be).into()).unwrap()
                     };
@@ -740,7 +727,9 @@ fn real_main() {
                         hex::encode(xa.to_bytes()),
                         hex::encode(ya.to_bytes())
                     );
-                    println!("exp.x f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9");
+                    println!(
+                        "exp.x f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9"
+                    );
                 }
                 Err(e) => println!("gmul ERR {e}"),
             }
@@ -752,29 +741,20 @@ fn real_main() {
                     let mut r_be = [0u8; 32];
                     let mut s_be = [0u8; 32];
                     for i in 0..4 {
-                        let rl = u64::from_le_bytes(
-                            esig[i * 8..i * 8 + 8].try_into().unwrap(),
-                        );
+                        let rl = u64::from_le_bytes(esig[i * 8..i * 8 + 8].try_into().unwrap());
                         let sl = u64::from_le_bytes(
                             esig[32 + i * 8..32 + i * 8 + 8].try_into().unwrap(),
                         );
-                        r_be[(3 - i) * 8..(3 - i) * 8 + 8]
-                            .copy_from_slice(&rl.to_be_bytes());
-                        s_be[(3 - i) * 8..(3 - i) * 8 + 8]
-                            .copy_from_slice(&sl.to_be_bytes());
+                        r_be[(3 - i) * 8..(3 - i) * 8 + 8].copy_from_slice(&rl.to_be_bytes());
+                        s_be[(3 - i) * 8..(3 - i) * 8 + 8].copy_from_slice(&sl.to_be_bytes());
                     }
                     println!("ecdsa_sign flag={eflag}");
                     println!("r = {}", hex::encode(r_be));
                     println!("s = {}", hex::encode(s_be));
-                    let sk = k256::ecdsa::SigningKey::from_bytes(
-                        (&priv_be).into(),
-                    )
-                    .unwrap();
+                    let sk = k256::ecdsa::SigningKey::from_bytes((&priv_be).into()).unwrap();
                     let (esig_ref, _recid) =
-                        k256::ecdsa::signature::hazmat::PrehashSigner::sign_prehash(
-                            &sk, &msg,
-                        )
-                        .unwrap();
+                        k256::ecdsa::signature::hazmat::PrehashSigner::sign_prehash(&sk, &msg)
+                            .unwrap();
                     let (rr, ss) = esig_ref.split_bytes();
                     println!("exp.r {}", hex::encode(rr));
                     println!("exp.s {}", hex::encode(ss));
@@ -786,13 +766,23 @@ fn real_main() {
         // GhostRider per-stage bisect: ZION_GR_BISECT=1 runs each of the 15
         // core SPH hashes on the case header and prints hex for diffing
         // against a native sphlib harness.
-        if c.algo == "ghostrider"
-            && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("1")
-        {
+        if c.algo == "ghostrider" && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("1") {
             let names = [
-                "blake", "bmw", "groestl", "jh", "keccak", "skein", "luffa",
-                "cubehash", "shavite", "simd", "echo", "hamsi", "fugue",
-                "shabal", "whirlpool",
+                "blake",
+                "bmw",
+                "groestl",
+                "jh",
+                "keccak",
+                "skein",
+                "luffa",
+                "cubehash",
+                "shavite",
+                "simd",
+                "echo",
+                "hamsi",
+                "fugue",
+                "shabal",
+                "whirlpool",
             ];
             let hdr_len: u32 = std::env::var("ZION_GR_HDRLEN")
                 .ok()
@@ -873,8 +863,7 @@ fn real_main() {
         // GhostRider full-pipeline bisect: ZION_GR_BISECT=pipe dumps the
         // selected algo lists and all 18 stage intermediates (64B each) for
         // diffing against a native gr.c harness.
-        if c.algo == "ghostrider"
-            && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("pipe")
+        if c.algo == "ghostrider" && std::env::var("ZION_GR_BISECT").ok().as_deref() == Some("pipe")
         {
             let nonce: u64 = std::env::var("ZION_KAT_NONCE")
                 .ok()
@@ -893,7 +882,11 @@ fn real_main() {
                     }
                     println!();
                     for st in 0..18 {
-                        println!("st{:<2} {}", st, hex::encode(&dump[29 + st * 64..29 + st * 64 + 64]));
+                        println!(
+                            "st{:<2} {}",
+                            st,
+                            hex::encode(&dump[29 + st * 64..29 + st * 64 + 64])
+                        );
                     }
                 }
                 Err(e) => println!("pipe ERR {e}"),
@@ -959,10 +952,16 @@ fn real_main() {
                 }
                 eprintln!("  ethash DAG items ≡ CPU ref");
                 let share = miner
-                    .mine("ethash", &c.header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .mine(
+                        "ethash",
+                        &c.header,
+                        &c.extra,
+                        &[0xffu8; 32],
+                        base_nonce,
+                        batch,
+                    )?
                     .ok_or_else(|| anyhow::anyhow!("ethash mine: no share found"))?;
-                let (mix_expect, _) =
-                    ethash_hash_ref(&c.header, share.nonce, &cache, dag_items);
+                let (mix_expect, _) = ethash_hash_ref(&c.header, share.nonce, &cache, dag_items);
                 let got = share.mix_hash.unwrap_or([0u8; 32]);
                 if got != mix_expect {
                     anyhow::bail!(
@@ -1028,7 +1027,14 @@ fn real_main() {
                 };
 
                 let share = miner
-                    .mine(c.algo, &c.header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .mine(
+                        c.algo,
+                        &c.header,
+                        &c.extra,
+                        &[0xffu8; 32],
+                        base_nonce,
+                        batch,
+                    )?
                     .ok_or_else(|| anyhow::anyhow!("{} mine: no share found", c.algo))?;
 
                 let (expect, _) = if matches!(c.algo, "kawpow" | "evrprogpow" | "meowpow") {
@@ -1157,23 +1163,15 @@ fn real_main() {
         // stage alone proves the hashing front-end is consensus-exact.
         if c.algo == "beamhash" {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                use zion_miner::auxpow::beamhash_ref::{
-                    beamhash_prepow, beamhash_seed_elem,
-                };
+                use zion_miner::auxpow::beamhash_ref::{beamhash_prepow, beamhash_seed_elem};
                 let gids: Vec<u32> = vec![0, 1, 7, 1000, 33_554_431];
-                let got = miner.beamhash_seed_elem_debug(
-                    &c.header,
-                    &c.extra,
-                    base_nonce,
-                    &gids,
-                )?;
+                let got = miner.beamhash_seed_elem_debug(&c.header, &c.extra, base_nonce, &gids)?;
                 // Reconstruct full_nonce the same way the host does.
                 let prefix_len = c.extra.len().min(8);
                 let mut full_nonce = [0u8; 8];
                 full_nonce[..prefix_len].copy_from_slice(&c.extra[..prefix_len]);
                 let suffix_len = 8 - prefix_len;
-                full_nonce[prefix_len..]
-                    .copy_from_slice(&base_nonce.to_le_bytes()[..suffix_len]);
+                full_nonce[prefix_len..].copy_from_slice(&base_nonce.to_le_bytes()[..suffix_len]);
                 let prepow = beamhash_prepow(&c.header, &full_nonce);
                 for (i, &gid) in gids.iter().enumerate() {
                     let expect = beamhash_seed_elem(&prepow, gid as u64);
@@ -1184,10 +1182,7 @@ fn real_main() {
                         );
                     }
                 }
-                Ok::<_, anyhow::Error>(format!(
-                    "seed elems ≡ CPU ref ({} gids)",
-                    gids.len()
-                ))
+                Ok::<_, anyhow::Error>(format!("seed elems ≡ CPU ref ({} gids)", gids.len()))
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
@@ -1226,19 +1221,10 @@ fn real_main() {
 
                 // Trivial instance: all-positive clauses covering all vars →
                 // unique satisfying assignment = all-true.
-                let trivial: Vec<i32> = (0..3 * 256)
-                    .map(|i| (i * 37 + 11) % 64 + 1)
-                    .collect();
-                let (tchips, tsols, tdump) = miner.dynexsolve_bench_stats(
-                    &trivial,
-                    nv,
-                    base_nonce,
-                    batch,
-                    1,
-                )?;
-                eprintln!(
-                    "  dynex bench trivial: {tchips} chips, {tsols} SAT solutions"
-                );
+                let trivial: Vec<i32> = (0..3 * 256).map(|i| (i * 37 + 11) % 64 + 1).collect();
+                let (tchips, tsols, tdump) =
+                    miner.dynexsolve_bench_stats(&trivial, nv, base_nonce, batch, 1)?;
+                eprintln!("  dynex bench trivial: {tchips} chips, {tsols} SAT solutions");
                 let mut pipeline = "unverified".to_string();
                 if let Some((dnonce, dsol, dhash)) = tdump {
                     // (a) dumped assignment must satisfy the trivial instance
@@ -1349,8 +1335,8 @@ fn real_main() {
         if c.algo == "octopus" {
             match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 use zion_miner::auxpow::octopus_ref::{
-                    octopus_cache_size, octopus_dag_item, octopus_hash_ref,
-                    octopus_ident, octopus_make_cache,
+                    octopus_cache_size, octopus_dag_item, octopus_hash_ref, octopus_ident,
+                    octopus_make_cache,
                 };
                 let kat_nodes: u64 = std::env::var("ZION_KAT_OCTOPUS_NODES")
                     .ok()
@@ -1390,7 +1376,14 @@ fn real_main() {
                 let cache_ref = &cache;
                 let dag_item = |i: u64| octopus_dag_item(cache_ref, i);
                 let share = miner
-                    .mine("octopus", &c.header, &c.extra, &[0xffu8; 32], base_nonce, batch)?
+                    .mine(
+                        "octopus",
+                        &c.header,
+                        &c.extra,
+                        &[0xffu8; 32],
+                        base_nonce,
+                        batch,
+                    )?
                     .ok_or_else(|| anyhow::anyhow!("octopus mine: no share found"))?;
                 let expect = octopus_hash_ref(&h32, share.nonce, kat_nodes, &dag_item);
                 if share.hash != expect {
@@ -1401,10 +1394,7 @@ fn real_main() {
                         hex::encode(expect)
                     );
                 }
-                Ok::<_, anyhow::Error>(format!(
-                    "DAG≡CPU + mine≡CPU nonce={}",
-                    share.nonce
-                ))
+                Ok::<_, anyhow::Error>(format!("DAG≡CPU + mine≡CPU nonce={}", share.nonce))
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
@@ -1482,10 +1472,7 @@ fn real_main() {
                         hex::encode(expect)
                     );
                 }
-                Ok::<_, anyhow::Error>(format!(
-                    "DAG-slice≡CPU + mine≡CPU nonce={}",
-                    share.nonce
-                ))
+                Ok::<_, anyhow::Error>(format!("DAG-slice≡CPU + mine≡CPU nonce={}", share.nonce))
             })) {
                 Ok(Ok(what)) => {
                     println!("{:<14} PASS  {what} ({:.0?})", c.algo, t0.elapsed());
@@ -1516,8 +1503,7 @@ fn real_main() {
                         hdr[..copy].copy_from_slice(&c.header[..copy]);
                         hdr[108..140].fill(0);
                         hdr[108..116].copy_from_slice(&nonce.to_le_bytes());
-                        let mut once =
-                            Some(<[u8; 32]>::try_from(&hdr[108..140]).unwrap());
+                        let mut once = Some(<[u8; 32]>::try_from(&hdr[108..140]).unwrap());
                         let sols = equihash::tromp::solve_200_9(&hdr[..108], || once.take());
                         eprintln!("  cpu-solve nonce={nonce}: {} sol(s)", sols.len());
                         if let Ok(path) = std::env::var("ZION_EQ_DUMP_IDX") {
@@ -1527,17 +1513,14 @@ fn real_main() {
                                     let mut v = 0u32;
                                     for b in 0..21 {
                                         let p = k * 21 + b;
-                                        v = (v << 1)
-                                            | ((s[p / 8] >> (7 - p % 8)) & 1) as u32;
+                                        v = (v << 1) | ((s[p / 8] >> (7 - p % 8)) & 1) as u32;
                                     }
                                     idx.push(v);
                                 }
                                 let bytes: Vec<u8> =
                                     idx.iter().flat_map(|i| i.to_le_bytes()).collect();
-                                let _ = std::fs::write(
-                                    format!("{path}.cpu.{nonce}.{si}.bin"),
-                                    &bytes,
-                                );
+                                let _ =
+                                    std::fs::write(format!("{path}.cpu.{nonce}.{si}.bin"), &bytes);
                             }
                         }
                         // Sanity: run my leaf/XOR tree check on a REAL solution.
@@ -1567,8 +1550,7 @@ fn real_main() {
                                 o.copy_from_slice(&h.as_bytes()[start..start + 25]);
                                 o
                             };
-                            let mut nodes: Vec<[u8; 25]> =
-                                idx.iter().map(|&i| leaf(i)).collect();
+                            let mut nodes: Vec<[u8; 25]> = idx.iter().map(|&i| leaf(i)).collect();
                             let mut rep = String::new();
                             for lvl in 0..9usize {
                                 let byte = lvl * 5 / 2;
@@ -1603,20 +1585,16 @@ fn real_main() {
                             if let Ok(path) = std::env::var("ZION_EQ_DUMP_IDX") {
                                 let bytes: Vec<u8> =
                                     idx.iter().flat_map(|i| i.to_le_bytes()).collect();
-                                let _ = std::fs::write(
-                                    format!("{path}.cpu.{nonce}.bin"),
-                                    &bytes,
-                                );
+                                let _ = std::fs::write(format!("{path}.cpu.{nonce}.bin"), &bytes);
                             }
                         }
                     }
-                    let share = match miner
-                        .mine("equihash", &c.header, &c.extra, &target, nonce, batch)
-                    {
-                        Ok(Some(s)) => s,
-                        Ok(None) => continue,
-                        Err(e) => anyhow::bail!("mine err: {e}"),
-                    };
+                    let share =
+                        match miner.mine("equihash", &c.header, &c.extra, &target, nonce, batch) {
+                            Ok(Some(s)) => s,
+                            Ok(None) => continue,
+                            Err(e) => anyhow::bail!("mine err: {e}"),
+                        };
                     // Reconstruct the 140-byte Zcash header the host used:
                     // input prefix = [0..108], nonce field = [108..140] with
                     // the share nonce in the first 8 bytes (LE), rest zero.
