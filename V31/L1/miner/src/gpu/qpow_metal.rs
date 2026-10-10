@@ -90,30 +90,27 @@ impl QpowMetalMiner {
             .new_compute_pipeline_state_with_function(&func)
             .map_err(|e| anyhow::anyhow!("Metal qpow pipeline creation failed: {e}"))?;
 
-        // ZION_QPOW_METAL_IMPL: scalar | lane | auto (default auto → lane if
-        // the qpow_lane pipeline builds, scalar otherwise). The lane kernel
-        // maps 3 SIMD lanes per nonce and needs a different grid size.
+        // ZION_QPOW_METAL_IMPL: scalar | lane | auto. The lane kernel
+        // (3 lanes × 4 felts per nonce, simd_shuffle exchange) is golden-test
+        // correct but measured SLOWER on Apple M1 — 4.35 vs 7.07 MH/s — the
+        // shuffle overhead outweighs the ILP gain, so `auto` keeps the scalar
+        // kernel and lane stays an explicit opt-in experiment (it may still
+        // win on silicon with faster simdgroup exchange).
         let impl_sel =
             std::env::var("ZION_QPOW_METAL_IMPL").unwrap_or_else(|_| "auto".to_string());
-        let lane_pipeline = if impl_sel == "scalar" {
-            None
-        } else {
-            library
+        let lane_pipeline = if impl_sel == "lane" {
+            let f = library
                 .get_function(QPOW_KERNEL_LANE, None)
-                .ok()
-                .and_then(|f| device.new_compute_pipeline_state_with_function(&f).ok())
+                .map_err(|e| anyhow::anyhow!("Metal qpow_lane function not found: {e}"))?;
+            Some(
+                device
+                    .new_compute_pipeline_state_with_function(&f)
+                    .map_err(|e| anyhow::anyhow!("Metal qpow_lane pipeline failed: {e}"))?,
+            )
+        } else {
+            None
         };
-        let use_lane = match impl_sel.as_str() {
-            "lane" => {
-                if lane_pipeline.is_none() {
-                    anyhow::bail!(
-                        "ZION_QPOW_METAL_IMPL=lane but qpow_lane failed to build"
-                    );
-                }
-                true
-            }
-            _ => lane_pipeline.is_some(),
-        };
+        let use_lane = lane_pipeline.is_some();
 
         let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
         // ALU-only kernel: larger threadgroups keep the SIMD units fed.
