@@ -1,6 +1,6 @@
 # ZionSMR — QPoW Metal Kernel + SRBMiner Commercial Track
 
-**Created:** 2026-10-10 · **Status:** Phase A done, Phase B in progress
+**Created:** 2026-10-10 · **Status:** Phase A+B done ✅ (live-validated), Phase C in progress
 
 ## Context
 
@@ -125,6 +125,12 @@ Commercial options, in order of feasibility:
    algorithms[] with pool/shares/hashrate per stream incl. per-GPU hashrates);
    `--list-algorithms` (30 algos incl. `qpow-poseidon2`); plus the existing
    sgminer/TRM TCP API (`ZION_API_ADDR`) for SMOS custom-miner slots.
+   Agent-side hardening: bundled SRBMiner binary SHA-256 is verified against
+   `VERSION.txt` before every spawn (bundled mismatch → refuse, custom
+   operator path → warn only). Unit coverage: `srbminer_json` schema test
+   (all SRBMiner fields asserted per-stream), `srbminer_api_http_roundtrip`
+   (GET / + /stats → 200 JSON, unknown → 404), `srb_vendor` mapping —
+   `cargo test --bin zion-miner` 3/3.
    Remaining decisions: devfee plumbing + licensing model.
 
 ## Definition of done (Phase B)
