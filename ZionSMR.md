@@ -31,7 +31,19 @@
 - Linux x86-64 ELF — runs on Edge/SMOS rigs (sidecar path already implemented),
   used locally only as a **hashrate/correctness reference**.
 
-## Phase B — Metal QPoW kernel (active)
+## Phase B — Metal QPoW kernel ✅ (2026-10-10)
+
+**Done:** `src/gpu/kernels/metal/poseidon2_kernel.metal` (line-level MSL port,
+`mulhi`/`atomic_uint`, same lazy-reduce semantics) + `src/gpu/qpow_metal.rs`
+host + `QpowGpuMiner::Metal` wiring (Metal tried first under `auto` on macOS,
+graceful fallback). Verified on-device: golden test
+`metal_kernel_matches_cpu_golden_and_boundaries` **PASS** (KAT `hash±1`
+boundaries, extranonce + low64-carry vectors). Bench on this Mac's integrated
+GPU: **~6.9 MH/s** (tpg 256 / npt 1 default is optimal; tpg 128/npt 4 and 512
+tested slower/equal). Gap vs SRBMiner tracks the hardware ratio (integrated
+GPU vs RX 5600 XT) — lane-parallel variant is the documented stretch.
+
+Work items delivered:
 
 Same Trinity buffer ABI as OpenCL/CUDA so the host-side flow is identical:
 

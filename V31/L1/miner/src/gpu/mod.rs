@@ -26,11 +26,18 @@ use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 pub mod cuda_external;
 #[cfg(feature = "gpu-cuda")]
 pub mod qpow_cuda;
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+pub mod qpow_metal;
 #[cfg(feature = "gpu-opencl")]
 pub mod qpow_opencl;
 
-/// Result of one QPoW GPU batch — shared by the CUDA and OpenCL backends.
-#[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+/// Result of one QPoW GPU batch — shared by the CUDA, OpenCL and Metal
+/// backends.
+#[cfg(any(
+    feature = "gpu-cuda",
+    feature = "gpu-opencl",
+    all(feature = "gpu-metal", target_os = "macos")
+))]
 pub struct QpowGpuResult {
     /// Full 64-byte wire nonce (big-endian U512).
     pub nonce: [u8; 64],
@@ -41,13 +48,20 @@ pub struct QpowGpuResult {
 }
 
 /// Backend-agnostic QPoW GPU miner. Wraps whichever GPU backend the
-/// runtime configured — CUDA on NVIDIA, OpenCL on AMD (Vega/gfx900).
-#[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+/// runtime configured — CUDA on NVIDIA, OpenCL on AMD (Vega/gfx900),
+/// Metal on Apple Silicon.
+#[cfg(any(
+    feature = "gpu-cuda",
+    feature = "gpu-opencl",
+    all(feature = "gpu-metal", target_os = "macos")
+))]
 pub enum QpowGpuMiner {
     #[cfg(feature = "gpu-cuda")]
     Cuda(qpow_cuda::QpowCudaMiner),
     #[cfg(feature = "gpu-opencl")]
     OpenCl(qpow_opencl::QpowOpenclMiner),
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+    Metal(qpow_metal::QpowMetalMiner),
     /// One miner instance per GPU — the low-64 nonce space of each batch is
     /// partitioned across devices (weighted by measured per-GPU hashrate)
     /// and scanned in parallel (one thread per sub-miner per batch).
@@ -59,7 +73,11 @@ pub enum QpowGpuMiner {
     },
 }
 
-#[cfg(any(feature = "gpu-cuda", feature = "gpu-opencl"))]
+#[cfg(any(
+    feature = "gpu-cuda",
+    feature = "gpu-opencl",
+    all(feature = "gpu-metal", target_os = "macos")
+))]
 impl QpowGpuMiner {
     pub fn device_name(&self) -> String {
         match self {
@@ -67,6 +85,8 @@ impl QpowGpuMiner {
             Self::Cuda(m) => m.device_name(),
             #[cfg(feature = "gpu-opencl")]
             Self::OpenCl(m) => m.device_name(),
+            #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+            Self::Metal(m) => m.device_name(),
             Self::Multi { names, .. } => names.join(" + "),
         }
     }
@@ -76,7 +96,13 @@ impl QpowGpuMiner {
         match self {
             Self::Multi {
                 names, hashrates, ..
-            } => Some(names.iter().cloned().zip(hashrates.iter().copied()).collect()),
+            } => Some(
+                names
+                    .iter()
+                    .cloned()
+                    .zip(hashrates.iter().copied())
+                    .collect(),
+            ),
             _ => None,
         }
     }
@@ -104,6 +130,8 @@ impl QpowGpuMiner {
             Self::Cuda(m) => m.mine_batch(header, nonce_be, target, total),
             #[cfg(feature = "gpu-opencl")]
             Self::OpenCl(m) => m.mine_batch(header, nonce_be, target, total),
+            #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+            Self::Metal(m) => m.mine_batch(header, nonce_be, target, total),
             Self::Multi {
                 miners, hashrates, ..
             } => {
@@ -118,9 +146,8 @@ impl QpowGpuMiner {
                 // [base + offset_i, base + offset_i + size_i) where size_i is
                 // proportional to its measured hashrate — both GPUs finish at
                 // the same time (max utilization, no idle waiting).
-                let low64_base = u64::from_be_bytes(
-                    nonce_be[56..64].try_into().expect("nonce len"),
-                );
+                let low64_base =
+                    u64::from_be_bytes(nonce_be[56..64].try_into().expect("nonce len"));
                 let hr_sum: f64 = hashrates.iter().sum();
                 let mut ranges = Vec::with_capacity(n);
                 let mut allocated: u64 = 0;
@@ -144,8 +171,7 @@ impl QpowGpuMiner {
                     (0..n).map(|_| None).collect();
                 std::thread::scope(|s| {
                     let mut handles = Vec::with_capacity(n);
-                    for (i, (m, (start, count))) in
-                        miners.iter_mut().zip(ranges.iter()).enumerate()
+                    for (i, (m, (start, count))) in miners.iter_mut().zip(ranges.iter()).enumerate()
                     {
                         if *count == 0 {
                             continue;
@@ -164,10 +190,7 @@ impl QpowGpuMiner {
                     }
                     for (i, h) in handles {
                         results[i] = Some(h.join().unwrap_or_else(|_| {
-                            (
-                                Err(anyhow::anyhow!("qpow sub-miner panicked")),
-                                0,
-                            )
+                            (Err(anyhow::anyhow!("qpow sub-miner panicked")), 0)
                         }));
                     }
                 });
