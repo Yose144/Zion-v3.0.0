@@ -375,6 +375,9 @@ void kernel_round0(__global ulong *blake_state, __global uchar *ht,
 	// KAT hook: dump raw digests for inputs 0 and 388 (leaves 0,1 and
 	// 776,777) into debug[0..12) / debug[12..24) so the host can compare
 	// GPU digests bit-exactly against the reference leaf hashes.
+	// Compiled in only with -DENABLE_DEBUG (host sets it from
+	// ZION_EQ192_DEBUG).
+#ifdef ENABLE_DEBUG
 	uint dbase;
 	if (input == 0) dbase = 0;
 	else if (input == 388) dbase = 12;
@@ -404,6 +407,7 @@ void kernel_round0(__global ulong *blake_state, __global uchar *ht,
 	    debug[dbase + 10] = (uint)(h[5] & 0xffffffff);
 	    debug[dbase + 11] = (uint)(h[5] >> 32);
 	  }
+#endif // ENABLE_DEBUG
 
 	input++;
       }
