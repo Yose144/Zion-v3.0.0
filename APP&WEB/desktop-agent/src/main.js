@@ -2341,6 +2341,10 @@ let srbPollTimer = null;
 let srbSpawnTimer = null;
 let srbRestarts = 0;
 let srbShareCounts = { accepted: -1, rejected: -1 };
+// Last-known parts of the combined hashrate (sidecar + internal miner),
+// recomposed in srbApplyStats / the metrics-summary parser.
+let _srbLastHr = 0;
+let _v31LastTotalHr = 0;
 const SRB_API_PORT = 21550;
 const SRB_MAX_RESTARTS = 3;
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
@@ -2382,6 +2386,7 @@ function srbApplyStats(stats) {
     index: 2,
     label: 'QTU',
     coin: 'QTU',
+    engine: 'srbminer',
     algorithm: 'qpow-poseidon2',
     hashrate_10s: stats.hashrate,
     hashrate_60s: stats.hashrate,
@@ -2391,6 +2396,28 @@ function srbApplyStats(stats) {
     active: stats.active === true
   };
   minerStats.streams = Object.keys(merged).map(Number).sort((a, b) => a - b).map(i => merged[i]);
+  // Fold sidecar hashrate into the top-line total — recomputed from stored
+  // parts (never +=; the metrics summary would otherwise drift each tick).
+  _srbLastHr = stats.active === true ? (stats.hashrate || 0) : 0;
+  const srbTotal = _v31LastTotalHr + _srbLastHr;
+  if (srbTotal > 0) {
+    minerStats.hashrate = srbTotal;
+    minerStats.hashrate_10s = srbTotal;
+    minerStats.hashrate_60s = srbTotal;
+    minerStats.hashrate_15m = srbTotal;
+    if (!Number.isFinite(Number(minerStats.hashrate_max)) || srbTotal > Number(minerStats.hashrate_max)) {
+      minerStats.hashrate_max = srbTotal;
+    }
+  }
+  // GPU telemetry from SRB API (its ADL path is authoritative for AMD).
+  if (stats.gpu) {
+    const g = stats.gpu;
+    if (Number.isFinite(Number(g.core_clock))) minerStats.gpu_clock_mhz = Number(g.core_clock);
+    if (Number.isFinite(Number(g.temperature))) minerStats.gpu_temp_c = Number(g.temperature);
+    if (Number.isFinite(Number(g.asic_power))) minerStats.gpu_power_w = Number(g.asic_power);
+    if (Number.isFinite(Number(g.fan_speed_rpm))) minerStats.gpu_fan_rpm = Number(g.fan_speed_rpm);
+    if (g.model) { minerStats.gpu_name = String(g.model).replace(/_/g, ' '); minerStats.gpu_detected = true; minerStats.gpu_type = 'amd'; }
+  }
   // Synthetic share events (same mechanism as the stream-stats parser).
   const prev = srbShareCounts;
   if (prev.accepted >= 0) {
@@ -2420,7 +2447,8 @@ async function pollSrbStats() {
       hashrate: hr,
       accepted: Number(algo?.shares?.accepted) || 0,
       rejected: Number(algo?.shares?.rejected) || 0,
-      active: true
+      active: true,
+      gpu: Array.isArray(j?.gpu_devices) ? j.gpu_devices[0] : null
     });
   } catch { /* API not up yet / miner restarting */ }
 }
@@ -2482,6 +2510,13 @@ function startSrbMiner(config, worker) {
   console.error(`[SRB] spawned PID ${srbProcess.pid} → ${srbPool} (wallet ${srbWallet.slice(0, 10)}…)`);
   const onData = (d) => {
     const line = d.toString();
+    // Mirror into the unified miner.log so `tail -f miner.log` shows the
+    // sidecar alongside zion-miner output (SRB's own log-file is separate).
+    try {
+      appendToFileBuffered(LOG_PATH, `[SRB] ${line}`, {
+        flushDelayMs: 200, maxBufferedChars: 512 * 1024
+      });
+    } catch {}
     enqueueMinerOutputToRenderer('stdout', `[SRB] ${line}`);
   };
   srbProcess.stdout.on('data', onData);
@@ -2505,6 +2540,14 @@ function stopSrbMiner() {
   if (srbSpawnTimer) { clearTimeout(srbSpawnTimer); srbSpawnTimer = null; }
   if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
   srbRestarts = 0;
+  _srbLastHr = 0;
+  // Reflect stopped state on the QTU stream card immediately.
+  try {
+    if (Array.isArray(minerStats.streams)) {
+      minerStats.streams = minerStats.streams.map(s =>
+        s && Number(s.index) === 2 ? { ...s, active: false, hashrate_10s: 0, hashrate_60s: 0, hashrate_15m: 0 } : s);
+    }
+  } catch {}
   const proc = srbProcess;
   srbProcess = null;
   if (!proc) return;
@@ -4421,6 +4464,9 @@ function parseMinerOutput(output) {
   for (const m of output.matchAll(/(?:^|\n)[^\n]*?stream\s+stats[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?/gi)) {
     const streamId = String(m[1] || '').toLowerCase();
     const idx = streamIndex[streamId] ?? 1;
+    // When the SRBMiner sidecar owns stream 2, the internal miner reports it
+    // as idle/hr=0 — keep the sidecar's injected entry instead of clobbering.
+    if (idx === 2 && srbProcess) continue;
     const hr = parseFloat(m[5]);
     const active = String(m[6] || '').toLowerCase() === 'active';
     const accepted = parseInt(m[3], 10) || 0;
@@ -4525,12 +4571,16 @@ function parseMinerOutput(output) {
     const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
     const totalHr = parseFloat(v31MetricsSummaryMatch[2]) * mult;
     if (Number.isFinite(totalHr) && totalHr > 0) {
-      minerStats.hashrate = totalHr;
-      minerStats.hashrate_10s = totalHr;
-      minerStats.hashrate_60s = totalHr;
-      minerStats.hashrate_15m = totalHr;
-      if (!Number.isFinite(Number(minerStats.hashrate_max)) || totalHr > Number(minerStats.hashrate_max)) {
-        minerStats.hashrate_max = totalHr;
+      // Internal miner total + SRBMiner sidecar contribution (when the QTU
+      // external engine runs outside the miner process).
+      _v31LastTotalHr = totalHr;
+      const combinedHr = totalHr + (srbProcess ? _srbLastHr : 0);
+      minerStats.hashrate = combinedHr;
+      minerStats.hashrate_10s = combinedHr;
+      minerStats.hashrate_60s = combinedHr;
+      minerStats.hashrate_15m = combinedHr;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || combinedHr > Number(minerStats.hashrate_max)) {
+        minerStats.hashrate_max = combinedHr;
       }
     }
     // Total shares across ALL 3 streams (ZION + ZANO + VRSC)

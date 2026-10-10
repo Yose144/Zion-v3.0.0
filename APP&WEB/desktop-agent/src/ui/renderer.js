@@ -1233,6 +1233,18 @@ function setupControls() {
   bindCoinSelect(gpuCoin2Select, 'gpuCoin2', gpuCoin2SelectDashboard);
   bindCoinSelect(gpuCoin2SelectDashboard, 'gpuCoin2', gpuCoin2Select);
 
+  // QTC engine selector (internal OpenCL kernel vs SRBMiner sidecar).
+  const qtcEngineSelect = document.getElementById('qtc-engine-select');
+  if (qtcEngineSelect) {
+    if (config.qtcEngine && qtcEngineSelect.querySelector(`option[value="${config.qtcEngine}"]`)) {
+      qtcEngineSelect.value = config.qtcEngine;
+    }
+    qtcEngineSelect.addEventListener('change', () => {
+      config.qtcEngine = qtcEngineSelect.value;
+      void applyMiningSelection(`qtcEngine=${qtcEngineSelect.value}`);
+    });
+  }
+
   if (tripleStreamCheckbox) {
     tripleStreamCheckbox.addEventListener('change', () => {
       config.tripleStream = tripleStreamCheckbox.checked;
@@ -4285,7 +4297,8 @@ function updateSessionMetrics(stats) {
       streamsEl.innerHTML = streams.map((s) => {
         const idx = Number(s.index) || 1;
         const active = s.active !== false;
-        const label = s.label || labels[idx] || `STREAM ${idx}`;
+        const baseLabel = s.label || labels[idx] || `STREAM ${idx}`;
+        const label = s.engine ? `${baseLabel}·${String(s.engine).toUpperCase()}` : baseLabel;
         const coin = s.coin || '—';
         const algo = s.algorithm || '';
         const hr = fmtHr(Number(s.hashrate_60s) || Number(s.hashrate) || 0);
@@ -4353,7 +4366,8 @@ function updateConsoleMetrics(stats) {
   if (streamsEl) {
     const streams = Array.isArray(stats.streams) ? stats.streams : [];
     const rows = streams.map((s) => {
-      const label = s.label || (s.index === 1 ? 'ZION' : s.index === 2 ? 'GPU PROFIT' : 'CPU PROFIT');
+      const baseLabel = s.label || (s.index === 1 ? 'ZION' : s.index === 2 ? 'GPU PROFIT' : 'CPU PROFIT');
+      const label = s.engine ? `${baseLabel}·${String(s.engine).toUpperCase()}` : baseLabel;
       const coin = s.coin || '—';
       const algo = s.algorithm || '';
       const hr = fmtHr(Number(s.hashrate_60s) || Number(s.hashrate) || 0);
@@ -4469,7 +4483,10 @@ function updateTripleStreamPanel(stats) {
     if (coinEl) coinEl.textContent = stream.coin || '—';
     const labelEl = card.querySelector('.stream-label');
     if (labelEl && stream.coin && stream.coin !== '—') {
-      labelEl.textContent = `Stream ${i} · ${stream.coin}`;
+      // Engine suffix marks externally-executed streams (e.g. QTU mined by
+      // the SRBMiner sidecar instead of the built-in OpenCL kernel).
+      const engineTag = stream.engine ? ` · ${String(stream.engine).toUpperCase()}` : '';
+      labelEl.textContent = `Stream ${i} · ${stream.coin}${engineTag}`;
     }
     if (hrEl) {
       // Prefer 10s window, fallback to 60s

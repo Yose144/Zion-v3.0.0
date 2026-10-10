@@ -6710,6 +6710,13 @@
               </select>
               <div class="slider-hint">ZION on GPU + external GPU coin simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
 
+              <label class="wizard-label-sm" style="margin-top: 10px;">QTC engine</label>
+              <select id="qtc-engine-select" class="algo-select">
+                <option value="internal" selected>Internal (built-in OpenCL kernel)</option>
+                <option value="srbminer">SRBMiner sidecar (~1.7× faster on RDNA)</option>
+              </select>
+              <div class="slider-hint">When Stream 2 = QTU, run the dedicated SRBMiner binary for QTC instead of the built-in kernel — mines directly to the configured QTU pool, stats still show in this panel.</div>
+
               <div class="section-divider">Quad Mode — Second GPU Coin</div>
 
               <label class="wizard-label-sm">Stream 4 — GPU external coin 2</label>
