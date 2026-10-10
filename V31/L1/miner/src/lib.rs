@@ -14,6 +14,8 @@ pub mod auxpow;
 pub mod b3_verify;
 pub mod config;
 pub mod cpu_features;
+#[cfg(feature = "auxpow")]
+pub mod devfee;
 pub mod ext_log;
 pub mod gpu;
 pub mod gpu_guard;

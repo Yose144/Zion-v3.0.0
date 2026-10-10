@@ -280,6 +280,12 @@ pub struct MinerRuntime {
     cpu_client: Arc<Mutex<Option<StratumClient>>>,
     #[cfg(feature = "auxpow")]
     profit_router: Arc<std::sync::Mutex<AutonomousProfitRouter>>,
+    #[cfg(feature = "auxpow")]
+    /// Devfee scheduler — when configured (ZION_DEVFEE_WALLET), the QTU
+    /// stream periodically reconnects under the dev wallet for ~1% of the
+    /// period (SRBMiner-style fee window). Shared across clones so all
+    /// stream tasks agree on the window.
+    devfee: Option<crate::devfee::DevFee>,
 }
 
 impl MinerRuntime {
@@ -495,6 +501,7 @@ impl MinerRuntime {
                 gpu_client: Arc::new(Mutex::new(None)),
                 cpu_client: Arc::new(Mutex::new(None)),
                 profit_router: Arc::new(std::sync::Mutex::new(profit_router)),
+                devfee: crate::devfee::DevFee::from_env(),
             }
         }
         #[cfg(not(feature = "auxpow"))]
@@ -2952,20 +2959,41 @@ impl MinerRuntime {
         };
 
         let mut guard = client_cell.lock().await;
-        let should_recreate = guard.as_ref().map(|c| c.url != url).unwrap_or(true);
+
+        // Devfee window (QTU stream only): during the fee slice of each
+        // period the upstream session authenticates as dev_wallet.worker
+        // instead of the user's wallet.worker — SRBMiner-style fee model.
+        // The stratum client is recreated on each boundary, which reconnects
+        // the session under the other wallet.
+        let payout_wallet = match self.devfee.as_ref() {
+            Some(df)
+                if stream == StreamId::GpuExternal
+                    && crate::devfee::DevFee::applies_to(coin) =>
+            {
+                df.effective_wallet(self.config.reward_address.as_str())
+                    .to_string()
+            }
+            _ => self.config.reward_address.as_str().to_string(),
+        };
+        // Upstream AuxPoW pools expect username = payout_wallet.worker so
+        // shares can be credited.  Fall back to the bare worker name if no
+        // reward address is configured.
+        let worker = if payout_wallet.is_empty() {
+            self.config.worker.clone()
+        } else {
+            format!("{}.{}", payout_wallet, self.config.worker)
+        };
+
+        let should_recreate = guard
+            .as_ref()
+            .map(|c| c.url != url || c.worker != worker)
+            .unwrap_or(true);
         if should_recreate {
-            // Upstream AuxPoW pools expect username = payout_wallet.worker so
-            // shares can be credited.  Fall back to the bare worker name if no
-            // reward address is configured.
-            let worker = if self.config.reward_address.as_str().is_empty() {
-                self.config.worker.clone()
-            } else {
-                format!(
-                    "{}.{}",
-                    self.config.reward_address.as_str(),
-                    self.config.worker
-                )
-            };
+            // Stop the previous session's background loop before replacing —
+            // otherwise its reconnect task keeps a zombie connection alive.
+            if let Some(old) = guard.as_ref() {
+                old.shutdown();
+            }
             *guard = Some(StratumClient::new(
                 &url,
                 &worker,

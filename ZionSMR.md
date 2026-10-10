@@ -131,7 +131,18 @@ Commercial options, in order of feasibility:
    (all SRBMiner fields asserted per-stream), `srbminer_api_http_roundtrip`
    (GET / + /stats → 200 JSON, unknown → 404), `srb_vendor` mapping —
    `cargo test --bin zion-miner` 3/3.
-   Remaining decisions: devfee plumbing + licensing model.
+   **Devfee plumbing shipped** (user decided: SRBMiner-style reconnect,
+   QTU stream only, 1%): `src/devfee.rs` — every `ZION_DEVFEE_PERIOD_SEC`
+   (default 7200) the QTU auxpow stream reconnects under
+   `ZION_DEVFEE_WALLET` for pct% of the period (72 s @ 1%), window at
+   period end; wallet baked at build time via `option_env!` for commercial
+   dist, runtime env overrides. `StratumClient::shutdown()` added —
+   swapping the client now kills the old reconnect loop (also fixes a
+   pre-existing zombie-session leak on url change). Applies to
+   `ExternalCoin::Quantus` on `StreamId::GpuExternal` in direct-auxpow
+   mode only — V3-Trinity QTU comes through our pool bridge where
+   miner-side devfee can't reach upstream attribution.
+   Remaining decision: licensing model.
 
 ## Definition of done (Phase B)
 
