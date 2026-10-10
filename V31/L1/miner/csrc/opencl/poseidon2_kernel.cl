@@ -21,6 +21,15 @@
 
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
+// Tunable unroll factors (host injects -DQPOW_IUNROLL / -DQPOW_EUNROLL via
+// ZION_OCL_BUILD_OPTS; defaults preserve the original behaviour).
+#ifndef QPOW_IUNROLL
+#define QPOW_IUNROLL 1
+#endif
+#ifndef QPOW_EUNROLL
+#define QPOW_EUNROLL 1
+#endif
+
 typedef uint u32;
 typedef ulong u64;
 
@@ -293,6 +302,7 @@ static inline u64 int_round_p(u64 *state, u64 x, u64 rc0) {
 }
 
 static void permute64_after_initial(u64 *state) {
+#pragma unroll QPOW_EUNROLL
     for (int r = 0; r < 4; r++) {
 #pragma unroll
         for (int i = 0; i < 12; i++) {
@@ -301,6 +311,7 @@ static void permute64_after_initial(u64 *state) {
         ext_layer64(state, RC_INITIAL[r + 1]);
     }
     u64 x = gf64_sbox(state[0]);
+#pragma unroll QPOW_IUNROLL
     for (int r = 0; r < 21; r++) {
         x = gf64_sbox(int_round_p(state, x, RC_INTERNAL[r + 1]));
     }
@@ -309,6 +320,7 @@ static void permute64_after_initial(u64 *state) {
     for (int i = 0; i < 12; i++) {
         state[i] = gf64_add(state[i], RC_TERMINAL[0][i]);
     }
+#pragma unroll QPOW_EUNROLL
     for (int r = 0; r < 4; r++) {
 #pragma unroll
         for (int i = 0; i < 12; i++) {

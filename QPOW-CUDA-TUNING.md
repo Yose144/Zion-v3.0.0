@@ -110,3 +110,46 @@ QPOW_NVRTC_OPTS="-DQPOW_LB_MAX=512 -DQPOW_LB_MIN=2 -DQPOW_IUNROLL=3" \
 QPOW_TPB=512 QPOW_BENCH_BATCH=8388608 QPOW_BENCH_ITERS=12 \
   $BIN qpow_bench_effective_throughput --ignored --nocapture --test-threads=1
 ```
+
+---
+
+# Appendix B — OpenCL Kernel on AMD RX 5600 XT (gfx1010)
+
+**Host:** same desktop, GPU swapped to AMD Radeon RX 5600 XT (Navi 10, RDNA1, 36 CUs, ~6 GiB).
+**Runtime:** AMD APP OpenCL (`amdocl64`), device `gfx1010:xnack-`, wave32.
+
+## Results
+
+| Variant | Clean GPU throughput |
+|---|---|
+| base (lws64, npt1) | 42.8 MH/s |
+| lws 32 / 128 / 256 | 43.4 / 42.2 / 42.5 |
+| npt 2 / npt 4 | 43.1 / 41.1 |
+| iunroll 3 / 7 | 41.8 / 41.8 |
+| eunroll 4 | 32.8 |
+| dual-lane ILP kernel (experimental) | 42.8 |
+| mad_hi fusion in mul128 | 43.0 |
+| **SRBMiner-Multi 3.6.9 (capped 1700 MHz)** | **~73 MH/s** |
+
+**Kernel diagnostics:** PrivateMemSize = 0 (no spills), LocalMemSize = 0, preferred WG multiple = 32, max WG = 256. Compiler codegen is clean — the kernel is ALU-saturated, not latency- or spill-bound.
+
+## Why SRBMiner is ~1.7x
+
+All runtime knobs land in the 41–43 noise band. The remaining gap is **algorithmic**: SRB's RDNA backend almost certainly uses lane-parallel Poseidon2 (state sharded across wavefront lanes, MDS via subgroup shuffles) and/or hand-tuned GCN scheduling — a kernel redesign, not a tuning exercise. Estimated effort: days, needs GPU profiler.
+
+## Stability notes (display-attached GPU)
+
+- **Freezes observed** at sustained ~1780+ MHz full-load launches, and once at a "safe" 1700@900 curve with the default 8M-nonce batch — the likely trigger is **monolithic multi-second kernel launches starving the display pipeline**, not clocks alone.
+- Stable production profile now: **batch 4,194,304 + 10 ms inter-launch gap** (`gpuStream2Batch`/`gpuExtGapMs` in `miner_config.json`), curve capped at 1700@900 mV, PL 130 W, fan 70 % static.
+- Production QTU stream: **~41.6 MH/s sustained, A/R clean** — slightly *better* than the 8M batch thanks to clock recovery in the gaps.
+- OpenCL runtime knobs added (same pattern as CUDA): `ZION_OCL_BUILD_OPTS` (`-DQPOW_IUNROLL/-DQPOW_EUNROLL`), `ZION_QPOW_OCL_SRC` (runtime kernel-source override for sweeps), `ZION_QPOW_OCL_LOCAL_SIZE`/`ZION_QPOW_OCL_NPT`; plus existing `ZION_STREAM2_BATCH`, `ZION_EXT_GPU_GAP_MS`, `ZION_OCL_WORK_CAP`.
+
+## Reproduce
+
+```bash
+cargo test --release -p zion-miner --features gpu-opencl \
+  qpow_bench -- --ignored --nocapture
+ZION_QPOW_OCL_SRC=/tmp/kernel.cl ZION_OCL_BUILD_OPTS='-DQPOW_IUNROLL=3' \
+  QPOW_BENCH_BATCH=8388608 QPOW_BENCH_ITERS=7 ./target/release/deps/zion_miner-* \
+  gpu::qpow_opencl::tests::qpow_bench_effective_throughput --ignored --nocapture
+```
