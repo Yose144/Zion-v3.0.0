@@ -67,7 +67,13 @@ impl QpowOpenclMiner {
             .max(1);
 
         let mut prog = ProgramBuilder::new();
-        prog.src(POSEIDON2_CL);
+        // ZION_QPOW_OCL_SRC loads the kernel source from a file at runtime
+        // (benchmark/tuning iterations without rebuilding the binary).
+        let src = std::env::var("ZION_QPOW_OCL_SRC")
+            .ok()
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .unwrap_or_else(|| POSEIDON2_CL.to_string());
+        prog.src(src);
         // The wrapper ships `-cl-std=CL1.2 -cl-mad-enable` via
         // ZION_OCL_BUILD_OPTS; honor the same env override here.
         let opts = std::env::var("ZION_OCL_BUILD_OPTS")
@@ -872,6 +878,54 @@ mod tests {
             base_low
         );
         assert_eq!(&r.hash, &hash2);
+    }
+
+    /// Diagnostics: dumps kernel work-group info (register/private-mem
+    /// pressure → occupancy ceiling) for the tuned launch.
+    ///
+    /// `cargo test --release -p zion-miner --features gpu-opencl qpow_kernel_info -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn qpow_kernel_info() {
+        use ocl::core::{
+            KernelWorkGroupInfo, KernelWorkGroupInfoResult,
+        };
+        let work_size: usize = std::env::var("QPOW_BENCH_BATCH")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1 << 22);
+        let miner = QpowOpenclMiner::new(work_size).expect("init");
+        let kernel = Kernel::builder()
+            .queue(miner.pro_que.queue().clone())
+            .program(miner.pro_que.program())
+            .name(QPOW_KERNEL)
+            .arg(&miner.results_buf)
+            .arg(&miner.midstate_buf)
+            .arg(&miner.start_nonce_buf)
+            .arg(&miner.target_buf)
+            .arg(&miner.dispatch_buf)
+            .build()
+            .expect("kernel");
+        let dev = miner.pro_que.device();
+        for q in [
+            KernelWorkGroupInfo::PrivateMemSize,
+            KernelWorkGroupInfo::LocalMemSize,
+            KernelWorkGroupInfo::PreferredWorkGroupSizeMultiple,
+            KernelWorkGroupInfo::WorkGroupSize,
+        ] {
+            match ocl::core::get_kernel_work_group_info(&kernel, dev, q) {
+                Ok(KernelWorkGroupInfoResult::LocalMemSize(v))
+                | Ok(KernelWorkGroupInfoResult::PrivateMemSize(v)) => {
+                    eprintln!("qpow_kernel_info {:?} = {} bytes", q, v)
+                }
+                Ok(KernelWorkGroupInfoResult::WorkGroupSize(v))
+                | Ok(KernelWorkGroupInfoResult::PreferredWorkGroupSizeMultiple(v)) => {
+                    eprintln!("qpow_kernel_info {:?} = {}", q, v)
+                }
+                Ok(other) => eprintln!("qpow_kernel_info {:?} = {:?}", q, other),
+                Err(e) => eprintln!("qpow_kernel_info {:?} err {}", q, e),
+            }
+        }
     }
 
     /// Throughput bench: `QPOW_BENCH_BATCH` (default 1<<22),
