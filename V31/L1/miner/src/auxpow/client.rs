@@ -1999,6 +1999,9 @@ pub struct StratumClient {
     job_rx: tokio::sync::watch::Receiver<Option<StratumJob>>,
     submit_tx: tokio::sync::mpsc::Sender<ShareSubmit>,
     next_id: Arc<Mutex<i64>>,
+    /// Shutdown signal for the background `run_stratum_loop` task. Without
+    /// it a dropped client leaves a zombie loop reconnecting forever.
+    stop_tx: tokio::sync::watch::Sender<bool>,
 }
 
 impl std::fmt::Debug for StratumClient {
@@ -2025,6 +2028,7 @@ impl StratumClient {
         // then died with "response timeout" without ever being transmitted.)
         let (job_tx, job_rx) = tokio::sync::watch::channel(None);
         let (submit_tx, submit_rx) = tokio::sync::mpsc::channel(256);
+        let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
         let url = url.into();
         let worker = worker.into();
         let password = password.into();
@@ -2044,6 +2048,7 @@ impl StratumClient {
                 submit_rx,
                 StratumState::for_coin(coin),
                 pending,
+                stop_rx,
             ));
         }
 
@@ -2055,7 +2060,15 @@ impl StratumClient {
             job_rx,
             submit_tx,
             next_id,
+            stop_tx,
         }
+    }
+
+    /// Signal the background stratum loop to exit after the current session
+    /// ends — used when the client is replaced (url change, devfee window).
+    /// In-flight submits are rejected; the TCP session is not re-established.
+    pub fn shutdown(&self) {
+        let _ = self.stop_tx.send(true);
     }
 
     pub async fn connect(&self) -> Result<()> {
@@ -2186,8 +2199,12 @@ async fn run_stratum_loop(
     mut submit_rx: tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: StratumState,
     pending: Arc<Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>>,
+    mut stop_rx: tokio::sync::watch::Receiver<bool>,
 ) {
     loop {
+        if *stop_rx.borrow() {
+            return;
+        }
         if let Err(e) = stratum_session(
             &url,
             &worker,
@@ -2197,12 +2214,16 @@ async fn run_stratum_loop(
             &mut submit_rx,
             &state,
             &pending,
+            &mut stop_rx,
         )
         .await
         {
             ext_warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
         } else {
             ext_warn!(url = %url, "stratum session ended, reconnecting in 5s");
+        }
+        if *stop_rx.borrow() {
+            return;
         }
 
         // Reject any outstanding submissions before reconnecting.
@@ -2213,7 +2234,10 @@ async fn run_stratum_loop(
             ));
         }
 
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::select! {
+            _ = stop_rx.changed() => {}
+            _ = tokio::time::sleep(Duration::from_secs(5)) => {}
+        }
     }
 }
 
@@ -2227,6 +2251,7 @@ async fn stratum_session(
     submit_rx: &mut tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: &StratumState,
     pending: &Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>,
+    stop_rx: &mut tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
     let (host, port) = parse_url(url)?;
     ext_info!(host = %host, port = port, "connecting to stratum pool");
@@ -2312,6 +2337,11 @@ async fn stratum_session(
                 }
                 None => return Ok(()),
             },
+            _ = stop_rx.changed() => {
+                // Devfee window / client replacement asked us to stop —
+                // leave the session so the outer loop can see the flag.
+                return Ok(());
+            }
         }
     }
 }
