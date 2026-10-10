@@ -296,6 +296,13 @@ pub struct ExtGpuMiner {
     /// Cached BeamHash III solver buffers (large hash tables reused per job).
     #[cfg(feature = "gpu-opencl")]
     beamhash_buffers: Option<BeamhashSolverBuffers>,
+    /// Cached Equihash Wagner hash tables (2×~1.4 GB) reused across
+    /// nonces — per-call alloc of the 2.8 GB set would cost ~5-10 % of
+    /// each batch and churn VRAM.  Reuse is safe: kernel_init_ht re-zeros
+    /// the row counters every run and kernel_round6 resets sols->nr, so
+    /// stale slot contents are unreachable.
+    #[cfg(feature = "gpu-opencl")]
+    equihash_tables: Option<EquihashTables>,
     /// Autolykos v2 element table on GPU (per height+N).
     #[cfg(feature = "gpu-opencl")]
     autolykos_table: Option<AutolykosGpuTable>,
@@ -319,6 +326,21 @@ struct BeamhashSolverBuffers {
     buf1: Buffer<ocl::prm::Ulong8>,
     counters: Buffer<u32>,
     results: Buffer<u32>,
+}
+
+/// Cached Equihash Wagner hash tables + row counters + sols buffer.
+/// Keyed by (param_k, nr_slots) — a different parameter set forces
+/// reallocation.
+#[cfg(feature = "gpu-opencl")]
+struct EquihashTables {
+    param_k: u32,
+    nr_slots: usize,
+    ht0: Buffer<u8>,
+    ht1: Buffer<u8>,
+    rc0: Buffer<u32>,
+    rc1: Buffer<u32>,
+    dbg_buf: Buffer<u32>,
+    sols_buf: Buffer<u8>,
 }
 
 /// Autolykos v2 element table resident on the GPU (N × 32 bytes).
@@ -995,6 +1017,8 @@ impl ExtGpuMiner {
             #[cfg(feature = "gpu-opencl")]
             pearl_buffers: None,
             beamhash_buffers: None,
+            #[cfg(feature = "gpu-opencl")]
+            equihash_tables: None,
             autolykos_table: None,
             block_height: 0,
             progpow_group_size: 256,
@@ -5430,7 +5454,7 @@ typedef unsigned long ulong;
     /// 4. Read back solutions, verify with double-SHA256
     /// 5. Return first solution under target as GpuFoundShare
     ///
-    /// Requires ~4.1 GB GPU VRAM (two 2 GiB hash tables at NR_SLOTS=64).
+    /// Requires ~2.8 GB GPU VRAM (two ~1.4 GB hash tables at NR_SLOTS=48).
     fn mine_equihash(
         &mut self,
         header: &[u8],
@@ -5914,10 +5938,22 @@ typedef unsigned long ulong;
             vram_needed as f64 / 1e9
         );
 
+        // ZION_EQ192_DEBUG enables the kernel's ENABLE_DEBUG diagnostics
+        // (digest KAT dumps, per-row drop counters) plus host readbacks.
+        let eq_dbg = std::env::var_os("ZION_EQ192_DEBUG").is_some();
+        let eq_opts: &str = if eq_dbg {
+            "-DEQ_WG_SIZE=32 -DENABLE_DEBUG"
+        } else {
+            "-DEQ_WG_SIZE=32"
+        };
+
         // Get ProQue for equihash kernel — WG=32 keeps __local under the
         // 48KB NVIDIA limit (84KB at WG=64).
-        let pro_que = self.ensure_proque_with_opts(kernel_file, "-DEQ_WG_SIZE=32")?;
+        let pro_que = self.ensure_proque_with_opts(kernel_file, eq_opts)?;
         let q = pro_que.queue().clone();
+        // Clone the program handle so the &mut self borrow ends before we
+        // touch `self.equihash_tables` below.
+        let eq_program = pro_que.program().clone();
 
         // Prepare 140-byte header with nonce.  The nonce field is
         // `en1 || nonce64_le || zeros` — the upstream notify already embeds
@@ -5947,73 +5983,87 @@ typedef unsigned long ulong;
         let eq_tail1 =
             u32::from_le_bytes(header_buf[136..140].try_into().unwrap()) as u64;
 
-        // Allocate GPU buffers
-        crate::ext_info!("auxpow_gpu_equihash allocating hash tables...");
-        let ht0: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(ht_size)
-            .build()
-            .map_err(|e| {
-                anyhow!(
-                    "Equihash ht0 alloc failed ({:.1} GB): {e}",
-                    ht_size as f64 / 1e9
-                )
-            })?;
-        let ht1: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(ht_size)
-            .build()
-            .map_err(|e| {
-                anyhow!(
-                    "Equihash ht1 alloc failed ({:.1} GB): {e}",
-                    ht_size as f64 / 1e9
-                )
-            })?;
+        // Reuse the ~2.8 GB hash-table set across nonces (realloc only
+        // when the parameter set changes).  kernel_init_ht re-zeros the
+        // row counters every run and kernel_round6 resets sols->nr, so
+        // stale slot contents are unreachable.
+        let need_tables = self
+            .equihash_tables
+            .as_ref()
+            .map_or(true, |t| t.param_k != param_k || t.nr_slots != nr_slots);
+        if need_tables {
+            crate::ext_info!("auxpow_gpu_equihash allocating hash tables...");
+            let mk_ht = |name: &str| -> Result<Buffer<u8>> {
+                Buffer::builder()
+                    .queue(q.clone())
+                    .len(ht_size)
+                    .build()
+                    .map_err(|e| {
+                        anyhow!(
+                            "Equihash {name} alloc failed ({:.1} GB): {e}",
+                            ht_size as f64 / 1e9
+                        )
+                    })
+            };
+            self.equihash_tables = Some(EquihashTables {
+                param_k,
+                nr_slots,
+                ht0: mk_ht("ht0")?,
+                ht1: mk_ht("ht1")?,
+                rc0: Buffer::builder()
+                    .queue(q.clone())
+                    .len(ROW_COUNTERS_SIZE)
+                    .build()?,
+                rc1: Buffer::builder()
+                    .queue(q.clone())
+                    .len(ROW_COUNTERS_SIZE)
+                    .build()?,
+                dbg_buf: Buffer::builder()
+                    .queue(q.clone())
+                    .len(NR_ROWS * 2)
+                    .build()?,
+                sols_buf: Buffer::builder()
+                    .queue(q.clone())
+                    .len(sols_buf_size)
+                    .fill_val(0u8)
+                    .build()?,
+            });
+        }
+        let EquihashTables {
+            ht0,
+            ht1,
+            rc0,
+            rc1,
+            dbg_buf,
+            sols_buf,
+            ..
+        } = self.equihash_tables.as_ref().unwrap();
 
-        let rc0: Buffer<u32> = Buffer::builder()
-            .queue(q.clone())
-            .len(ROW_COUNTERS_SIZE)
-            .build()?;
-        let rc1: Buffer<u32> = Buffer::builder()
-            .queue(q.clone())
-            .len(ROW_COUNTERS_SIZE)
-            .build()?;
-
+        // Midstate is nonce-dependent — re-uploaded every call.
         let blake_st_buf: Buffer<u64> = Buffer::builder()
             .queue(q.clone())
             .len(8)
             .copy_host_slice(&blake_state)
             .build()?;
 
-        let dbg_buf: Buffer<u32> = Buffer::builder()
-            .queue(q.clone())
-            .len(NR_ROWS * 2)
-            .build()?;
-
-        let sols_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(sols_buf_size)
-            .fill_val(0u8)
-            .build()?;
-
         // Create kernels — ocl requires all args declared at build time;
         // set_arg() rebinds them per dispatch (alternating ht0/ht1).
         let k_init_ht = Kernel::builder()
             .queue(q.clone())
-            .program(pro_que.program())
+            .program(&eq_program)
             .name("kernel_init_ht")
-            .arg(&ht0)
-            .arg(&rc0)
+            .arg(ht0)
+            .arg(rc0)
             .build()?;
 
         let k_round0 = Kernel::builder()
             .queue(q.clone())
-            .program(pro_que.program())
+            .program(&eq_program)
             .name("kernel_round0")
             .arg(&blake_st_buf)
-            .arg(&ht0)
-            .arg(&rc0)
-            .arg(&dbg_buf)
+            .arg(ht0)
+            .arg(rc0)
+            .arg(dbg_buf)
             .arg(eq_tail0)
             .arg(eq_tail1)
             .build()?;
@@ -6027,13 +6077,13 @@ typedef unsigned long ulong;
             k_rounds.push(
                 Kernel::builder()
                     .queue(q.clone())
-                    .program(pro_que.program())
+                    .program(&eq_program)
                     .name(&name)
-                    .arg(&ht0)
-                    .arg(&ht1)
-                    .arg(&rc0)
-                    .arg(&rc1)
-                    .arg(&dbg_buf)
+                    .arg(ht0)
+                    .arg(ht1)
+                    .arg(rc0)
+                    .arg(rc1)
+                    .arg(dbg_buf)
                     .build()?,
             );
         }
@@ -6041,25 +6091,25 @@ typedef unsigned long ulong;
         // Final round kernel (round K-1) with sols argument
         let k_round_final = Kernel::builder()
             .queue(q.clone())
-            .program(pro_que.program())
+            .program(&eq_program)
             .name(&format!("kernel_round{}", param_k - 1))
-            .arg(&ht0)
-            .arg(&ht1)
-            .arg(&rc0)
-            .arg(&rc1)
-            .arg(&dbg_buf)
-            .arg(&sols_buf)
+            .arg(ht0)
+            .arg(ht1)
+            .arg(rc0)
+            .arg(rc1)
+            .arg(dbg_buf)
+            .arg(sols_buf)
             .build()?;
 
         let k_sols = Kernel::builder()
             .queue(q.clone())
-            .program(pro_que.program())
+            .program(&eq_program)
             .name("kernel_sols")
-            .arg(&ht0)
-            .arg(&ht1)
-            .arg(&sols_buf)
-            .arg(&rc0)
-            .arg(&rc1)
+            .arg(ht0)
+            .arg(ht1)
+            .arg(sols_buf)
+            .arg(rc0)
+            .arg(rc1)
             .build()?;
 
         // Work sizes
@@ -6078,7 +6128,6 @@ typedef unsigned long ulong;
         let sols_local = EQ_WG;
 
         let start = Instant::now();
-        let eq_dbg = std::env::var_os("ZION_EQ192_DEBUG").is_some();
         let dump_rows = |q: &ocl::Queue, rc: &Buffer<u32>, tag: &str| -> Result<()> {
             let mut rcv = vec![0u32; ROW_COUNTERS_SIZE];
             rc.read(&mut rcv).enq()?;
@@ -6104,8 +6153,8 @@ typedef unsigned long ulong;
         // times with different buffer arguments (alternating ht_src/ht_dst).
 
         // 1. Init hash tables (zero row counters for both tables)
-        k_init_ht.set_arg(0, &ht0)?;
-        k_init_ht.set_arg(1, &rc0)?;
+        k_init_ht.set_arg(0, ht0)?;
+        k_init_ht.set_arg(1, rc0)?;
         unsafe {
             k_init_ht
                 .cmd()
@@ -6113,8 +6162,8 @@ typedef unsigned long ulong;
                 .local_work_size(init_local)
                 .enq()?;
         }
-        k_init_ht.set_arg(0, &ht1)?;
-        k_init_ht.set_arg(1, &rc1)?;
+        k_init_ht.set_arg(0, ht1)?;
+        k_init_ht.set_arg(1, rc1)?;
         unsafe {
             k_init_ht
                 .cmd()
@@ -6126,9 +6175,9 @@ typedef unsigned long ulong;
 
         // 2. Round 0: Blake2b hashing → fills ht[0]
         k_round0.set_arg(0, &blake_st_buf)?;
-        k_round0.set_arg(1, &ht0)?;
-        k_round0.set_arg(2, &rc0)?;
-        k_round0.set_arg(3, &dbg_buf)?;
+        k_round0.set_arg(1, ht0)?;
+        k_round0.set_arg(2, rc0)?;
+        k_round0.set_arg(3, dbg_buf)?;
         unsafe {
             k_round0
                 .cmd()
@@ -6138,7 +6187,7 @@ typedef unsigned long ulong;
         }
         q.finish().map_err(|e| anyhow!("equihash round0 finish: {e}"))?;
         if eq_dbg {
-            dump_rows(&q, &rc0, "round0")?;
+            dump_rows(&q, rc0, "round0")?;
 
             // Direct digest KAT: kernel wrote block-0's 48-byte digest to
             // debug[0..12).  Compare bit-exactly against CPU leaf_hash for
@@ -6247,10 +6296,10 @@ typedef unsigned long ulong;
         for round in 1..=(param_k - 2) {
             let round_idx = (round - 1) as usize;
             let k = &k_rounds[round_idx];
-            let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
-            let ht_dst = if round % 2 == 1 { &ht1 } else { &ht0 };
-            let rc_src = if round % 2 == 1 { &rc0 } else { &rc1 };
-            let rc_dst = if round % 2 == 1 { &rc1 } else { &rc0 };
+            let ht_src = if round % 2 == 1 { ht0 } else { ht1 };
+            let ht_dst = if round % 2 == 1 { ht1 } else { ht0 };
+            let rc_src = if round % 2 == 1 { rc0 } else { rc1 };
+            let rc_dst = if round % 2 == 1 { rc1 } else { rc0 };
 
             // Init destination row counters before each round
             k_init_ht.set_arg(0, ht_dst)?;
@@ -6268,7 +6317,7 @@ typedef unsigned long ulong;
             k.set_arg(1, ht_dst)?;
             k.set_arg(2, rc_src)?;
             k.set_arg(3, rc_dst)?;
-            k.set_arg(4, &dbg_buf)?;
+            k.set_arg(4, dbg_buf)?;
             unsafe {
                 k.cmd()
                     .global_work_size(rounds_global)
@@ -6284,10 +6333,10 @@ typedef unsigned long ulong;
         // 4. Round K-1 (= 6): final round with sols argument
         {
             let round = param_k - 1; // 6
-            let ht_src = if round % 2 == 1 { &ht0 } else { &ht1 };
-            let ht_dst = if round % 2 == 1 { &ht1 } else { &ht0 };
-            let rc_src = if round % 2 == 1 { &rc0 } else { &rc1 };
-            let rc_dst = if round % 2 == 1 { &rc1 } else { &rc0 };
+            let ht_src = if round % 2 == 1 { ht0 } else { ht1 };
+            let ht_dst = if round % 2 == 1 { ht1 } else { ht0 };
+            let rc_src = if round % 2 == 1 { rc0 } else { rc1 };
+            let rc_dst = if round % 2 == 1 { rc1 } else { rc0 };
 
             // Init destination row counters
             k_init_ht.set_arg(0, ht_dst)?;
@@ -6305,8 +6354,8 @@ typedef unsigned long ulong;
             k_round_final.set_arg(1, ht_dst)?;
             k_round_final.set_arg(2, rc_src)?;
             k_round_final.set_arg(3, rc_dst)?;
-            k_round_final.set_arg(4, &dbg_buf)?;
-            k_round_final.set_arg(5, &sols_buf)?;
+            k_round_final.set_arg(4, dbg_buf)?;
+            k_round_final.set_arg(5, sols_buf)?;
             unsafe {
                 k_round_final
                     .cmd()
@@ -6321,11 +6370,11 @@ typedef unsigned long ulong;
         }
 
         // 5. kernel_sols: extract solutions
-        k_sols.set_arg(0, &ht0)?;
-        k_sols.set_arg(1, &ht1)?;
-        k_sols.set_arg(2, &sols_buf)?;
-        k_sols.set_arg(3, &rc0)?;
-        k_sols.set_arg(4, &rc1)?;
+        k_sols.set_arg(0, ht0)?;
+        k_sols.set_arg(1, ht1)?;
+        k_sols.set_arg(2, sols_buf)?;
+        k_sols.set_arg(3, rc0)?;
+        k_sols.set_arg(4, rc1)?;
         unsafe {
             k_sols
                 .cmd()

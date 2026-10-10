@@ -243,15 +243,24 @@ mod imp {
 
             // Mine nonces on this job until a share lands or ~40 s passes
             // (yiimp rotates jobs every ~30-60 s).
+            // ZION_PROBE_MAXTARGET=1: tell mine() a max target so every
+            // structurally-valid sol is returned immediately — submits
+            // then get "Invalid share" (yiimp's generic soln-level reject,
+            // indistinguishable from a below-difficulty reject) which only
+            // proves the submit path reaches upstream.  Real "Accepted"
+            // still needs a true target hit (~1/1000 sols on :2192 vardiff).
             let mine_deadline = Instant::now() + Duration::from_secs(40);
+            let max_target = [0xffu8; 32];
+            let wire_probe = std::env::var_os("ZION_PROBE_MAXTARGET").is_some();
             let mut nonce = 0u64;
             let mut found = None;
             while found.is_none() && Instant::now() < mine_deadline {
+                let tgt = if wire_probe { &max_target } else { &job.target_bytes };
                 let r = miner.mine(
                     "equihashzero",
                     &job.header_bytes,
                     &en1,
-                    &job.target_bytes,
+                    tgt,
                     nonce,
                     1,
                 );
