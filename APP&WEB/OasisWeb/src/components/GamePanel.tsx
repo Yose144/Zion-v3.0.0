@@ -505,6 +505,17 @@ export function IdentityTab() {
             <User className="h-3.5 w-3.5" />
           </div>
           <p className="text-xs font-semibold text-white">Avatar</p>
+          {(user?.id || address) && (
+            <span className="ml-auto">
+              <ZisAvatar
+                seed={user?.id ?? address ?? ''}
+                src={user?.avatar}
+                size={22}
+                alt="in-world identity"
+                animated
+              />
+            </span>
+          )}
         </div>
         <div className="mt-2 space-y-1">
           <div className="flex items-center justify-between text-[10px]">

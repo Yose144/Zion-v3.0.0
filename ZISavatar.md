@@ -174,17 +174,28 @@ website-v2.9 + OasisWeb + MarketPlace + ZION_OS dashboard aktualizovány;
 fallback na adresu). Desktop agent + mobile app = kód v repu, distribuce
 s příští release.
 
-### Fáze 5 — konceptuální (design pending)
-- [ ] OASIS NFT avatar binding — vlastník OASIS avatar NFT (MarketPlace
-      `ZIONArtifact`, `notifyAvatarMint` flow už existuje) si může
-      nastavit token art jako `user.avatar`. Potřebuje: ownership proof
-      čtení z chainu (EVM `ownerOf` / L1 registry) → ZIS endpoint
-      `POST /api/auth/avatar/nft` {contract, tokenId} → verify → PATCH.
-      Do té doby jede přes existující „vlastní URL" cestu.
-- [ ] 3D avatar — OASIS `AvatarConfig` (callsign/bodyType/neonColor/
-      augmentation) × ZIS avatar (sigil jako chest emblem / neonColor z
-      avatar palety); animované varianty (`a=1`) jako in-world hologram
-- [ ] NotificationsPanel — až bude zobrazovat cizí identity
+### Fáze 5 — NFT binding + in-world (implementováno 2026-10-10, gating OFF)
+- [x] **NFT avatar binding** — `POST /api/auth/avatar/nft`
+      `{contract, tokenId}` (requireAuth): verify `balanceOf > 0` proti
+      linked `evm` adresám uživatele přes plain JSON-RPC `eth_call`
+      (žádný ethers dep), `uri(tokenId)` → metadata JSON → `image`
+      (ipfs:// → gateway) → `user.avatar`. Chyby: `503 NFT_BIND_DISABLED`,
+      `403 CONTRACT_NOT_ALLOWED/NOT_OWNER`, `422 NO_EVM_ADDRESS`,
+      `404 NO_METADATA_IMAGE/BAD_*`, `502 RPC_*`. Env: `ZIS_NFT_BIND=1`,
+      `ZIS_NFT_CONTRACTS` (csv allowlist — Base `ZIONArtifact`, zatím
+      nedeployed → endpoint drží 503), `ZIS_NFT_RPC` (default
+      mainnet.base.org), `ZIS_NFT_TIMEOUT_MS`, `ZIS_IPFS_GATEWAY`.
+      Binding je set-time — po případném prodeji zůstává URL stale do
+      rebindu (dokumentováno). Testy: `nft.test.ts` 12/12 (ABI codecs,
+      ipfs normalizace, owner resolve, negative pathy).
+- [x] **OASIS in-world avatar** — Avatar Config karta v IdentityTab
+      zobrazuje ZIS avatar (seed `user.id ?? address`, animated) vedle
+      callsign/body/neon config → in-world identita vizuálně svázaná se
+      ZIS avatarem.
+- [ ] 3D avatar — plný mesh/render (sigil jako chest emblem / neonColor
+      z avatar palety deterministicky) — stále design pending.
+- [ ] NotificationsPanel — `ZisNotification` nemá sender pole
+      (system→user), avatary až při zobrazování cizích identit.
 
 ## Poznámky
 
