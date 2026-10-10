@@ -192,8 +192,19 @@ s příští release.
       zobrazuje ZIS avatar (seed `user.id ?? address`, animated) vedle
       callsign/body/neon config → in-world identita vizuálně svázaná se
       ZIS avatarem.
-- [ ] 3D avatar — plný mesh/render (sigil jako chest emblem / neonColor
-      z avatar palety deterministicky) — stále design pending.
+- [x] **NFT bind UI** — contract+tokenId+Bind v desktop Avatar Studiu
+      (IPC `zis-bind-nft` → `zisClient.bindNftAvatar`) i web ProfilePanelu
+      (`bindNftAvatar` přes `/api/auth` catch-all proxy); chyby serveru se
+      ukážou inline (503 disabled / 403 not-owner / 422 no-EVM).
+- [x] **3D hologram** — `ZisAvatarHologram` (R3F): avatar SVG → circle
+      disc textura (same-origin proxy URL = žádné CORS; externí `src`
+      fail → fallback na generated), counter-rotating torus ring +
+      additive GlowSprite podsvit, bob+sway animace v `useFrame`.
+      Umístěný jako hub centerpiece v dashboard Scene (stat-ring orbituje
+      kolem identity); SMIL `a=1` se v textuře neanimuje — motion jede
+      přes 3D transformy (by design).
+- [ ] 3D avatar plný mesh — rigged body (sigil chest emblem, neonColor
+      z avatar palety) — vyšší level, design pending.
 - [ ] NotificationsPanel — `ZisNotification` nemá sender pole
       (system→user), avatary až při zobrazování cizích identit.
 

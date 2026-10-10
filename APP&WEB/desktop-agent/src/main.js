@@ -7830,6 +7830,15 @@ ipcMain.handle('zis-avatar-url', async (_event, { seed, variant, style, size, an
   url: zisClient.avatarUrl(seed, { variant, style, size, animated }),
 }));
 
+ipcMain.handle('zis-bind-nft', async (_event, { contract, tokenId }) => {
+  try {
+    const json = await zisClient.bindNftAvatar({ contract, tokenId });
+    return { success: true, data: json };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('zis-list-keys', async () => {
   try {
     const data = await zisClient.listApiKeys();

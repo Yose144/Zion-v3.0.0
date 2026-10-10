@@ -2126,6 +2126,22 @@ function setupZisControls() {
     await refreshSession();
   });
 
+  document.getElementById('zis-nft-bind')?.addEventListener('click', async () => {
+    const contract = document.getElementById('zis-nft-contract')?.value.trim();
+    const tokenId = document.getElementById('zis-nft-tokenid')?.value.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(contract || '')) return alert('Enter a valid 0x contract address.');
+    if (!/^\d+$/.test(tokenId || '')) return alert('Enter a numeric token ID.');
+    const res = await window.electronAPI.zisBindNft({ contract, tokenId });
+    if (!res.success) return alert(res.error || 'NFT bind failed');
+    const url = res.data?.avatar;
+    if (url) {
+      if (avatarImg) avatarImg.src = url;
+      const dockImg = document.getElementById('dock-avatar-img');
+      if (dockImg) dockImg.src = url;
+    }
+    alert('NFT avatar bound — verified on-chain and saved to your ZIS profile.');
+  });
+
   const updateStatus = (session = null, loggedIn = false, avatarUrl = null) => {
     if (!statusEl || !loggedOutEl || !loggedInEl || !sessionOutput) return;
     if (loggedIn && session?.token) {

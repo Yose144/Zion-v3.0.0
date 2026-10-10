@@ -4,12 +4,18 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import InteractiveObject from '@/components/InteractiveObject';
+import ZisAvatarHologram from '@/components/ZisAvatarHologram';
 import { getZonePosition } from '@/lib/zones';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/store/gameStore';
 
 const zonePos = getZonePosition('dashboard');
 
 export default function DashboardScene() {
   const groupRef = useRef<THREE.Group>(null);
+  const { user } = useAuth();
+  const address = useGameStore((s) => s.address);
+  const avatarSeed = user?.id ?? address ?? undefined;
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -19,6 +25,14 @@ export default function DashboardScene() {
 
   return (
       <group ref={groupRef} position={zonePos}>
+        {avatarSeed && (
+          <ZisAvatarHologram
+            seed={avatarSeed}
+            src={user?.avatar}
+            size={0.7}
+            position={[0, 1.15, 0]}
+          />
+        )}
         {[0, 1, 2, 3].map((i) => {
         const a = (i / 4) * Math.PI * 2;
         const r = 1.6 + Math.sin(i) * 0.15;

@@ -326,6 +326,26 @@ class ZisClient {
     return json;
   }
 
+  /** POST /api/auth/avatar/nft — bind an owned ERC-1155 token image as the
+   *  account avatar. Server verifies on-chain ownership against the user's
+   *  linked EVM addresses. Throws with a readable message on error. */
+  async bindNftAvatar({ contract, tokenId }) {
+    const { json, status } = await zisFetch(
+      'POST',
+      '/api/auth/avatar/nft',
+      { contract, tokenId: String(tokenId) },
+      authHeaders(),
+    );
+    if (!json || status >= 400) {
+      throw new Error(json?.message || json?.error || `NFT bind failed (${status})`);
+    }
+    if (_inMemorySession.user && json.avatar) {
+      _inMemorySession.user = { ..._inMemorySession.user, avatar: json.avatar };
+      saveSession(_inMemorySession);
+    }
+    return json;
+  }
+
   /** Deterministic ZIS avatar URL for any identity seed (user id, zion1…,
    *  0x…). Empty avatar fields in the session fall back to this. */
   avatarUrl(seed, { variant = 0, style = 'sigil', size = 128, animated = false } = {}) {

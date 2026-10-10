@@ -6657,6 +6657,16 @@
                       <button class="btn btn-primary" id="zis-avatar-save" style="font-size:12px; padding:6px 12px;">Use Selected</button>
                       <button class="btn btn-secondary" id="zis-avatar-reset" style="font-size:12px; padding:6px 12px;">Reset</button>
                     </div>
+                    <div class="zis-nft-row" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+                      <small class="muted-note" style="display:block; margin-bottom:6px;">
+                        NFT avatar — bind art from an ERC-1155 token you own (verified on-chain via your linked EVM address).
+                      </small>
+                      <div style="display:flex; gap:6px;">
+                        <input id="zis-nft-contract" type="text" placeholder="0x… contract" class="form-input" style="flex:2; font-size:11px;" spellcheck="false" />
+                        <input id="zis-nft-tokenid" type="text" placeholder="token ID" class="form-input" style="flex:1; font-size:11px;" spellcheck="false" />
+                        <button class="btn btn-secondary" id="zis-nft-bind" style="font-size:12px; padding:6px 12px; white-space:nowrap;">Bind NFT</button>
+                      </div>
+                    </div>
                     <small class="muted-note" style="display:block; margin-top:8px;">
                       Avatars are generated deterministically from your ZIS identity — pick a style and variant.
                       Same avatar shows on the website, OASIS, DAO and explorer.
