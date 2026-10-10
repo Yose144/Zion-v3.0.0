@@ -2330,6 +2330,189 @@ function updateTrayMenu(stats) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SRBMiner sidecar — external QTC engine (qtcEngine: "srbminer").
+// When enabled, the built-in stream2 (internal OpenCL QPoW) is disabled and
+// SRBMiner-MULTI mines QTU on the GPU directly to the upstream pool while
+// zion-miner keeps the ZION + CPU streams. Its stats API feeds the
+// gpu-external stream card (index 2) so the UI keeps showing QTU telemetry.
+// ═══════════════════════════════════════════════════════════════════════════════
+let srbProcess = null;
+let srbPollTimer = null;
+let srbSpawnTimer = null;
+let srbRestarts = 0;
+let srbShareCounts = { accepted: -1, rejected: -1 };
+const SRB_API_PORT = 21550;
+const SRB_MAX_RESTARTS = 3;
+const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
+const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
+
+function srbEngineWanted(config) {
+  if (String(config?.qtcEngine || '').toLowerCase() !== 'srbminer') return false;
+  if (!config || config.gpu !== true) return false;
+  const gpuCoin = String(config.gpuCoin || '').trim().toUpperCase();
+  return gpuCoin === 'QTU' || gpuCoin === 'QTC' || gpuCoin === 'QUANTUS';
+}
+
+function resolveSrbMinerPath(config) {
+  const exe = process.platform === 'win32' ? 'SRBMiner-MULTI.exe' : 'SRBMiner-MULTI';
+  const candidates = [];
+  if (config?.srbminerPath) candidates.push(String(config.srbminerPath));
+  candidates.push(path.join(APP_ROOT, 'resources', 'srbminer', exe));
+  if (IS_PACKAGED) {
+    candidates.push(path.join(process.resourcesPath, 'srbminer', exe));
+    candidates.push(path.join(process.resourcesPath, exe));
+  }
+  for (const c of candidates) {
+    try { if (c && fs.existsSync(c)) return c; } catch {}
+  }
+  return null;
+}
+
+function srbApplyStats(stats) {
+  // Merge SRBMiner API telemetry into the stream-2 (gpu-external) slot using
+  // the same per-index merge as the "stream stats" stdout parser.
+  if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
+  const merged = {};
+  for (const s of minerStats.streams) {
+    if (s && Number(s.index) >= 1) merged[Number(s.index)] = s;
+  }
+  const acc = stats.accepted | 0;
+  const rej = stats.rejected | 0;
+  merged[2] = {
+    index: 2,
+    label: 'QTU',
+    coin: 'QTU',
+    algorithm: 'qpow-poseidon2',
+    hashrate_10s: stats.hashrate,
+    hashrate_60s: stats.hashrate,
+    hashrate_15m: stats.hashrate,
+    accepted: acc,
+    rejected: rej,
+    active: stats.active === true
+  };
+  minerStats.streams = Object.keys(merged).map(Number).sort((a, b) => a - b).map(i => merged[i]);
+  // Synthetic share events (same mechanism as the stream-stats parser).
+  const prev = srbShareCounts;
+  if (prev.accepted >= 0) {
+    if (acc > prev.accepted) {
+      try { sendToRenderer('share-event', { stream: 2, coin: 'QTU', accepted: true, status: 'accepted', algorithm: 'qpow-poseidon2', ts: Date.now() }); } catch {}
+    }
+    if (rej > prev.rejected) {
+      try { sendToRenderer('share-event', { stream: 2, coin: 'QTU', accepted: false, status: 'rejected', reason: 'rejected', algorithm: 'qpow-poseidon2', ts: Date.now() }); } catch {}
+    }
+  }
+  srbShareCounts = { accepted: acc, rejected: rej };
+}
+
+async function pollSrbStats() {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(`http://127.0.0.1:${SRB_API_PORT}/`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!res.ok) return;
+    const j = await res.json();
+    const algo = Array.isArray(j?.algorithms) ? j.algorithms[0] : null;
+    if (!algo) return;
+    const hrGpu = Number(algo?.hashrate?.gpu?.total);
+    const hr = Number.isFinite(hrGpu) && hrGpu > 0 ? hrGpu : Number(algo?.hashrate?.total) || 0;
+    srbApplyStats({
+      hashrate: hr,
+      accepted: Number(algo?.shares?.accepted) || 0,
+      rejected: Number(algo?.shares?.rejected) || 0,
+      active: true
+    });
+  } catch { /* API not up yet / miner restarting */ }
+}
+
+function startSrbMiner(config, worker) {
+  if (srbProcess) return;
+  const srbPath = resolveSrbMinerPath(config);
+  if (!srbPath) {
+    logApp('srb-missing', 'SRBMiner-MULTI binary not found in resources/srbminer');
+    console.error('[SRB] binary not found — set srbminerPath in miner_config.json');
+    return;
+  }
+  let srbPool = String(config?.srbminerPool || SRB_DEFAULT_POOL).trim();
+  // SRBMiner requires an explicit stratum scheme — bare host:port fails to
+  // connect even though the endpoint is reachable.
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(srbPool)) srbPool = `stratum+tcp://${srbPool}`;
+  const srbWallet = String(config?.srbminerWallet || SRB_DEFAULT_WALLET).trim();
+  // Our worker names carry an internal "@g=zion" group hint that upstream
+  // pools reject at login — strip it and keep only safe worker chars.
+  const srbWorkerRaw = String(config?.srbminerWorker || worker || 'desktop').split('@')[0];
+  const srbWorker = sanitizeWorkerName(srbWorkerRaw).replace(/[^A-Za-z0-9._-]/g, '') || 'desktop';
+  const logPath = path.join(USER_DATA_PATH, 'srbminer.log');
+  const args = [
+    '--algorithm', 'quantus',
+    '--pool', srbPool,
+    '--wallet', srbWallet,
+    '--worker', srbWorker,
+    '--password', 'x',
+    '--disable-cpu',
+    '--api-enable',
+    '--api-port', String(SRB_API_PORT),
+    '--api-rig-name', srbWorker,
+    '--log-file', logPath,
+  ];
+  // Multi-GPU: pin SRBMiner to specific GPU(s) — e.g. the card NOT driving
+  // the display, so display freezes don't matter for mining stability.
+  const gpuIds = String(config?.srbminerGpuId || '').trim();
+  if (gpuIds) {
+    args.push('--gpu-id', gpuIds);
+  }
+  if (config?.srbminerExtraArgs) {
+    args.push(...String(config.srbminerExtraArgs).split(/\s+/).filter(Boolean));
+  }
+  try { if (process.platform !== 'win32') fs.chmodSync(srbPath, 0o755); } catch {}
+  try {
+    srbProcess = spawn(srbPath, args, {
+      cwd: path.dirname(srbPath),
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true
+    });
+  } catch (e) {
+    logApp('srb-spawn-fail', JSON.stringify({ error: e?.message || String(e) }));
+    srbProcess = null;
+    return;
+  }
+  srbShareCounts = { accepted: -1, rejected: -1 };
+  logApp('srb-spawn', JSON.stringify({ pid: srbProcess.pid, pool: srbPool, worker: srbWorker }));
+  console.error(`[SRB] spawned PID ${srbProcess.pid} → ${srbPool} (wallet ${srbWallet.slice(0, 10)}…)`);
+  const onData = (d) => {
+    const line = d.toString();
+    enqueueMinerOutputToRenderer('stdout', `[SRB] ${line}`);
+  };
+  srbProcess.stdout.on('data', onData);
+  srbProcess.stderr.on('data', onData);
+  srbProcess.on('close', (code) => {
+    srbProcess = null;
+    if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
+    logApp('srb-exit', JSON.stringify({ code }));
+    console.error(`[SRB] exited code=${code}`);
+    if (!minerStopping && !minerUserStopRequested && srbRestarts < SRB_MAX_RESTARTS) {
+      srbRestarts++;
+      srbSpawnTimer = setTimeout(() => { srbSpawnTimer = null; startSrbMiner(config, worker); }, 15000);
+    }
+  });
+  srbProcess.on('error', () => { srbProcess = null; });
+  srbPollTimer = setInterval(pollSrbStats, 20000);
+  setTimeout(pollSrbStats, 8000);
+}
+
+function stopSrbMiner() {
+  if (srbSpawnTimer) { clearTimeout(srbSpawnTimer); srbSpawnTimer = null; }
+  if (srbPollTimer) { clearInterval(srbPollTimer); srbPollTimer = null; }
+  srbRestarts = 0;
+  const proc = srbProcess;
+  srbProcess = null;
+  if (!proc) return;
+  try { proc.kill('SIGTERM'); } catch {}
+  setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // V31 Fast-Path: clean startup that bypasses all legacy blocking code.
 // Called by startMining() when findRustMiner() returns a V31 binary.
 // Returns { success, ... } or null to fall through to legacy path.
@@ -2525,14 +2708,24 @@ function startMiningV31(config, v31Path) {
   // V31 uses stream2 (GPU) / stream3 (CPU) force-coin env vars, and
   // ZION_AUTONOMOUS to toggle the profit router.
   _activeExtCoins = { gpu: '', cpu: '', gpu2: '' };
+  // SRBMiner sidecar: QTU mined by the dedicated SRBMiner binary instead of
+  // the internal OpenCL QPoW stream — SRB's lane-parallel kernel is ~1.7x
+  // faster on RDNA. Disable stream2 so zion-miner keeps only ZION (stream1,
+  // small GPU duty) + CPU stream; the card otherwise belongs to SRBMiner.
+  const useSrbQtc = wantsGpu && !gpuCoinAuto && srbEngineWanted(config);
   if (tripleStreamEnabled) {
     if (!cpuCoinAuto) {
       env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
       _activeExtCoins.cpu = cpuCoin.toUpperCase();
     }
     if (wantsGpu && !gpuCoinAuto) {
-      env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
-      _activeExtCoins.gpu = gpuCoin.toUpperCase();
+      if (useSrbQtc) {
+        env.ZION_STREAM2_ENABLED = '0';
+        _activeExtCoins.gpu = 'QTU';
+      } else {
+        env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
+        _activeExtCoins.gpu = gpuCoin.toUpperCase();
+      }
     }
     // Quad mode: second GPU external stream. Requires tripleStream + GPU
     // and a coin different from gpuCoin (pool dedups on collision).
@@ -2782,6 +2975,20 @@ function startMiningV31(config, v31Path) {
   if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
   poolFailoverCount = 0;
 
+  // ── 19. SRBMiner sidecar (QTC engine) ──────────────────────────────────────
+  // Delayed so zion-miner initialises its GPU context first; SRBMiner then
+  // takes the rest of the card for QTU.
+  if (useSrbQtc) {
+    if (srbSpawnTimer) { clearTimeout(srbSpawnTimer); srbSpawnTimer = null; }
+    srbSpawnTimer = setTimeout(() => {
+      srbSpawnTimer = null;
+      if (!minerStopping && !minerUserStopRequested && minerProcess) {
+        startSrbMiner(config, worker);
+      }
+    }, 8000);
+    log(`[V31-FAST] QTC engine: SRBMiner sidecar (internal stream2 disabled)\n`);
+  }
+
   log(`[V31-FAST] Startup complete in ${Date.now() - t0}ms\n`);
   return { success: true };
 }
@@ -3008,6 +3215,7 @@ function parsePrometheusMetrics(text) {
 async function stopMiningAsync() {
   const hadPendingStart = startMiningInProgress || !!minerStartAckTimer;
   startMiningInProgress = false;
+  try { stopSrbMiner(); } catch {}
   try {
     if (startMiningGuardTimer) clearTimeout(startMiningGuardTimer);
   } catch {
