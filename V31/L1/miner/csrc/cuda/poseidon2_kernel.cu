@@ -113,14 +113,16 @@ __device__ __forceinline__ u64 gf64_add(u64 a, u64 b) {
     u32 a0 = (u32)a, a1 = (u32)(a >> 32), b0 = (u32)b, b1 = (u32)(b >> 32);
     u32 o0, o1;
     asm("{\n\t"
-        ".reg .u32 c;\n\t"
-        "add.cc.u32 %0, %2, %4;\n\t"
-        "addc.cc.u32 %1, %3, %5;\n\t"
+        ".reg .u32 t0, t1, c;\n\t"
+        "add.cc.u32 t0, %2, %4;\n\t"
+        "addc.cc.u32 t1, %3, %5;\n\t"
         "addc.u32 c, 0, 0;\n\t"
-        "mad.lo.cc.u32 %0, c, %6, %0;\n\t"
-        "madc.hi.u32 %1, c, %6, %1;\n\t"
+        "mad.lo.cc.u32 t0, c, %6, t0;\n\t"
+        "madc.hi.u32 t1, c, %6, t1;\n\t"
+        "mov.u32 %0, t0;\n\t"
+        "mov.u32 %1, t1;\n\t"
         "}"
-        : "=&r"(o0), "=&r"(o1)
+        : "=r"(o0), "=r"(o1)
         : "r"(a0), "r"(a1), "r"(b0), "r"(b1), "r"(EPS32));
     return ((u64)o1 << 32) | (u64)o0;
 }
@@ -146,15 +148,17 @@ __device__ __forceinline__ void mul64wide(u64 a, u64 b, u32 &r0, u32 &r1,
 __device__ __forceinline__ u64 reduce128(u32 r0, u32 r1, u32 r2, u32 r3) {
     u32 o0, o1;
     asm("{\n\t"
-        ".reg .u32 c;\n\t"
-        "mad.lo.cc.u32 %0, %4, %6, %2;\n\t"
-        "madc.hi.cc.u32 %1, %4, %6, %3;\n\t"
+        ".reg .u32 t0, t1, c;\n\t"
+        "mad.lo.cc.u32 t0, %4, %6, %2;\n\t"
+        "madc.hi.cc.u32 t1, %4, %6, %3;\n\t"
         "addc.u32 c, %5, 0;\n\t"
-        "addc.u32 %1, %1, 0;\n\t"
-        "sub.cc.u32 %0, %0, c;\n\t"
-        "subc.u32 %1, %1, 0;\n\t"
+        "addc.u32 t1, t1, 0;\n\t"
+        "sub.cc.u32 t0, t0, c;\n\t"
+        "subc.u32 t1, t1, 0;\n\t"
+        "mov.u32 %0, t0;\n\t"
+        "mov.u32 %1, t1;\n\t"
         "}"
-        : "=&r"(o0), "=&r"(o1)
+        : "=r"(o0), "=r"(o1)
         : "r"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(EPS32));
     return ((u64)o1 << 32) | (u64)o0;
 }
@@ -175,11 +179,15 @@ __device__ __forceinline__ u64 gf64_sqr(u64 a) {
     u32 mid_top = (u32)(lh >> 63);
     u32 r0 = (u32)ll, r1, r2, r3;
     asm("{\n\t"
-        "add.cc.u32 %0, %3, %4;\n\t"
-        "addc.cc.u32 %1, %5, %6;\n\t"
-        "addc.u32 %2, %7, %8;\n\t"
+        ".reg .u32 t0, t1, t2;\n\t"
+        "add.cc.u32 t0, %3, %4;\n\t"
+        "addc.cc.u32 t1, %5, %6;\n\t"
+        "addc.u32 t2, %7, %8;\n\t"
+        "mov.u32 %0, t0;\n\t"
+        "mov.u32 %1, t1;\n\t"
+        "mov.u32 %2, t2;\n\t"
         "}"
-        : "=&r"(r1), "=&r"(r2), "=&r"(r3)
+        : "=r"(r1), "=r"(r2), "=r"(r3)
         : "r"((u32)(ll >> 32)), "r"((u32)mid), "r"((u32)hh),
           "r"((u32)(mid >> 32)), "r"((u32)(hh >> 32)), "r"(mid_top));
     return reduce128(r0, r1, r2, r3);
@@ -274,7 +282,7 @@ __device__ __forceinline__ void mul128_add_wide(u64 a, u64 b, const Wide &w,
         "addc.cc.u32 %2, p3l, m1;\n\t"
         "addc.u32 %3, cw, 0;\n\t"
         "}"
-        : "=&r"(r0), "=&r"(r1), "=&r"(r2), "=&r"(r3)
+        : "=r"(r0), "=r"(r1), "=r"(r2), "=r"(r3)
         : "r"(a0), "r"(a1), "r"(b0), "r"(b1), "l"(w0), "l"(w1), "l"(w2));
 }
 

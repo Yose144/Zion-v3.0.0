@@ -1304,7 +1304,12 @@ impl MinerRuntime {
         // dispatch_config counts are u32 — cap the launch at u32::MAX.
         let count = batch.min(u32::MAX as u64);
         let work_size = batch as usize;
-        let backend_kind = parse_gpu_backend(&self.config.gpu_backend);
+        // `ZION_QPOW_BACKEND` can override the QPoW backend independently of
+        // the primary GPU backend (e.g. ZION on OpenCL + QTU on native CUDA).
+        let backend_kind = std::env::var("ZION_QPOW_BACKEND")
+            .ok()
+            .map(|v| parse_gpu_backend(&v))
+            .unwrap_or_else(|| parse_gpu_backend(&self.config.gpu_backend));
 
         let (gpu_qpow, gpu_qpow_disabled, gpu_ext, gpu_ext_nonce_cursor) = match stream {
             StreamId::GpuExternal2 => (

@@ -425,3 +425,4 @@ scripts/backup-beacon.env
 # SRBMiner sidecar binary (downloaded release, not built)
 SRBMiner-MULTI
 SRBMiner-MULTI.exe
+APP&WEB/desktop-agent/resources/srbminer/Autotune/
