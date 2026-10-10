@@ -29,6 +29,7 @@ pub mod template_cache;
 pub mod tls;
 pub mod v3_pplns;
 pub mod v3_protocol;
+pub mod zis;
 pub mod validator;
 pub mod vardiff;
 

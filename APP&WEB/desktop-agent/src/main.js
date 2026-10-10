@@ -1348,6 +1348,11 @@ const DEFAULT_CONFIG = {
   // 'zion' = pay pool earnings to the ZION wallet (default);
   // 'qtc' = route payout to the wallet's linked Quantus address (qtc:qz…).
   payoutCoin: 'zion',
+  // Optional ZIS API key (`zis_…`) forwarded to the V31 miner as
+  // ZION_ZIS_TOKEN — binds the pool session to the ZIS account when the
+  // pool has ZIS auth enabled (empty = anonymous). When unset the stored
+  // ZIS session apiKey is used automatically if the user is signed in.
+  zisApiKey: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
   // Apple Silicon Metal deeksha kernel is not yet reliable; default to CPU
@@ -2509,6 +2514,13 @@ function startMiningV31(config, v31Path) {
   const nodeRpc = config?.rpcUrl || DEFAULT_RPC_URL;
   if (nodeRpc) {
     env.ZION_NODE_RPC = nodeRpc;
+  }
+  // ZIS auth (phase C): explicit config key wins, else the stored ZIS
+  // session apiKey. Forwarded as ZION_ZIS_TOKEN; never logged.
+  const zisToken = String(config?.zisApiKey || '').trim()
+    || String(zisClient.getSession().apiKey || '').trim();
+  if (zisToken) {
+    env.ZION_ZIS_TOKEN = zisToken;
   }
   // V31 uses stream2 (GPU) / stream3 (CPU) force-coin env vars, and
   // ZION_AUTONOMOUS to toggle the profit router.

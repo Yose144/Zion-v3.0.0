@@ -1038,6 +1038,7 @@ fn miner_to_json(
                 "last_seen_s": m.last_seen_s,
                 "algorithm": m.algorithm,
                 "backend": m.backend,
+                "zis_user": m.zis_user,
                 "paid_total_atomic": m.paid_total_atomic,
                 "streams": serde_json::Value::Object(streams),
             })
@@ -1058,6 +1059,7 @@ fn miner_to_json(
                 "last_seen_s": 0u64,
                 "algorithm": "",
                 "backend": "",
+                "zis_user": "",
                 "paid_total_atomic": 0u64,
                 "streams": serde_json::Value::Object(serde_json::Map::new()),
             })

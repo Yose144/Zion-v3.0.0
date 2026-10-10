@@ -74,6 +74,19 @@ Fix smyčka: kernel launch fail → log OpenCL compile error → fix `csrc/openc
 2. **Multichain payout:** miner těží libovolný externí coin → příslušnost připsaná v ZION na PPLNS účet (existující `payout.rs`/`v3_pplns.rs`) — koň zůstane skrz `deferred_payout`/`revenue_proxy`; alternativa: direct payout v nativním coinu přes multichain bridge (warpd surface).
 3. Definice úspěchu: miner s `gpuCoin=KAS` dostane accepted share na upstream + ZION credit na poolu.
 
+**Implementace (2026-10-10, kód + testy done, live deploy pending):**
+
+- **V3 protokol:** `Hello.auth_token` + `Welcome.zis_user` (serde-default → staré minery/pooly interoperují beze změny) — `pool/src/v3_protocol.rs`, `miner/src/pool_message.rs`.
+- **Pool ZIS verifier** (`pool/src/zis.rs`): `ZisVerifier` ověřuje `zis_…` API klíč přes `POST /api/keys/verify`, módy `off|optional|required` (`ZION_POOL_ZIS_AUTH`), pos/neg cache (300 s/60 s, klíče se ukládají jen jako hash), ban-list `ZION_POOL_BANNED_ZIS`, timeout 3 s, `x-service-key` header `ZION_POOL_ZIS_SERVICE_KEY`.
+- **Stratum:** V3 Hello ověří token (required → reject anonymních/invalid), valid → session vázána na ZIS sub + auto-resolve payout z linked `zion-l1` adresy když miner neposlal payout_address; `Welcome.zis_user` = sub; `current_height` atomic se plní z broadcast templatů.
+- **PPLNS credit za ext shary:** upstream-accepted external submit → `Pool::record_external_share` s váhou `ZION_POOL_AUXPOW_WEIGHT_<COIN>` / `ZION_POOL_AUXPOW_PPLNS_WEIGHT` (default 500 ≈ vardiff floor); externí coin zůstává poolu, miner dostává ZION credit.
+- **Miner:** `ZION_ZIS_TOKEN` env → `Hello.auth_token`; Welcome loguje `zis_user=`.
+- **Desktop agent:** config `zisApiKey` → `ZION_ZIS_TOKEN` (fallback: uložený `zis-session.apiKey` ze zis-client); token se neloguje.
+- **ZIS server:** `x-service-key` → vlastní rate-limit bucket (`svc:<hash>`, timing-safe compare, env `ZIS_SERVICE_KEY`); `/api/keys/verify` limit zvýšen 30→600/min (pool-side cache drží reálný load nízko).
+- **Testy:** `cargo test -p zion-pool` 207/207 ✓ — vč. **TCP E2E** (`stratum::tests::v3_hello_zis_*`): reálná V3 session přes socket + mock ZIS HTTP — optional+bind (`Welcome.zis_user=u77`), optional+anonymous, required reject anonymous, required reject invalid; zis unit: verify E2E + cache důkaz, unreachable, ban; protocol serde-compat; `cargo test -p zion-miner --lib` 132 pass / 0 fail / 1 ignored; `cargo check` pool+miner čistý.
+- **Accounting:** `MinerTelemetry.zis_user` + `/miners` a `/miner/<id>` API emitují `zis_user` per worker (v1 sessions = `""`).
+- **Pending:** Edge deploy (pool env `ZION_POOL_ZIS_AUTH=optional` + `ZION_POOL_ZIS_SERVICE_KEY` + ZIS env `ZIS_SERVICE_KEY`), live E2E miner→pool s reálným `zis_` klíčem, per-user agregace/součty v dashboardu (teď jen per-worker pole).
+
 ### Fáze D — Desktop agent multi-algo E2E
 
 1. UI: coin picker pro `gpuCoin`/`cpuCoin` z `ExternalCoin::ALL` (jen gpu_kernel_available pro zvolený backend) — dropdown v nastavení.

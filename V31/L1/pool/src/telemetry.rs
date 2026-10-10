@@ -90,6 +90,8 @@ pub struct MinerTelemetry {
     /// Per-stream share counters keyed by stream name ("zion", "kheavyhash",
     /// "verushash", etc.)
     pub streams: HashMap<String, StreamStats>,
+    /// ZIS user id bound at V3 Hello (phase C auth); "" = anonymous session.
+    pub zis_user: String,
 }
 
 /// Registry of all known miners keyed by `"{miner_id}/{worker_name}"`.
@@ -122,6 +124,7 @@ impl MinerTelemetry {
             samples: VecDeque::new(),
             payouts: VecDeque::new(),
             streams: HashMap::new(),
+            zis_user: String::new(),
         }
     }
 
@@ -206,20 +209,29 @@ impl MinerTelemetryRegistry {
         }
     }
 
-    /// Create or refresh a miner session entry.
+    /// Create or refresh a miner session entry. `zis_user` carries the ZIS
+    /// user id bound at V3 Hello ("" for anonymous / v1 sessions).
     pub fn touch_session(
         &mut self,
         miner_id: &str,
         worker_name: &str,
         algorithm: &str,
         backend: &str,
+        zis_user: &str,
     ) {
         let now_s = now_unix_seconds();
         let key = format!("{miner_id}/{worker_name}");
         self.miners
             .entry(key)
-            .and_modify(|miner| miner.touch(worker_name, algorithm, backend, now_s))
-            .or_insert_with(|| MinerTelemetry::new(worker_name, algorithm, backend, now_s));
+            .and_modify(|miner| {
+                miner.touch(worker_name, algorithm, backend, now_s);
+                miner.zis_user = zis_user.to_string();
+            })
+            .or_insert_with(|| {
+                let mut m = MinerTelemetry::new(worker_name, algorithm, backend, now_s);
+                m.zis_user = zis_user.to_string();
+                m
+            });
     }
 
     /// Record a job result on the default "zion" stream.

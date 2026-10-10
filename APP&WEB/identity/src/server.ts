@@ -11,6 +11,7 @@ import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 import { authRoutes } from './routes/auth.js';
 import { webauthnRoutes } from './routes/webauthn.js';
@@ -72,7 +73,17 @@ async function start() {
     // server-side callers (warpd) proxy many users through one egress IP, so a
     // per-IP key would share a single bucket across all users. Invalid/forged
     // tokens fall back to the caller IP — brute-force protection is preserved.
+    // Callers presenting the ZIS_SERVICE_KEY in `x-service-key` (e.g. the
+    // mining pool's /api/keys/verify probes) get their own service bucket so
+    // service traffic never competes with the caller's IP bucket.
     keyGenerator: (req) => {
+      const svc = process.env.ZIS_SERVICE_KEY;
+      const hdr = req.headers['x-service-key'];
+      if (svc && typeof hdr === 'string' && hdr.length > 0 && hdr.length === svc.length) {
+        const a = createHash('sha256').update(hdr).digest();
+        const b = createHash('sha256').update(svc).digest();
+        if (timingSafeEqual(a, b)) return `svc:${a.subarray(0, 8).toString('hex')}`;
+      }
       const raw = req.cookies?.zion_session;
       const bearer = req.headers.authorization?.startsWith('Bearer ')
         ? req.headers.authorization.slice(7)

@@ -12,8 +12,12 @@ const VerifyKeySchema = z.object({
 });
 
 export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
-  // Verify an API key and return its owner (service-to-service auth)
-  app.post('/verify', async (req, reply) => {
+  // Verify an API key and return its owner (service-to-service auth).
+  // Higher ceiling than the global 30/min: pool operators batch-verify
+  // miner sessions on reconnect storms (results are cached pool-side).
+  app.post('/verify', {
+    config: { rateLimit: { max: 600, timeWindow: '1 minute' } },
+  }, async (req, reply) => {
     const parsed = VerifyKeySchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });

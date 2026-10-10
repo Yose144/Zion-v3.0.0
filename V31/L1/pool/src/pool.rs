@@ -125,6 +125,33 @@ impl Pool {
             .record_share_with_diff(worker, worker, height, share_difficulty);
     }
 
+    /// Credit an accepted external (AuxPoW) stream share into PPLNS so the
+    /// miner earns ZION for upstream-verified work (multi-algo phase C).
+    ///
+    /// External shares carry no meaningful ZION difficulty — upstream
+    /// targets are coin-specific — so they are credited at an explicit
+    /// configured weight (`ZION_POOL_AUXPOW_WEIGHT_<COIN>` override, else
+    /// `ZION_POOL_AUXPOW_PPLNS_WEIGHT`, default 500 ≈ the vardiff floor).
+    /// The external coin itself stays with the pool as revenue; the ZION
+    /// PPLNS credit is what the miner is paid out of.
+    pub fn record_external_share(
+        &mut self,
+        _miner_id: &str,
+        worker_name: &str,
+        height: u64,
+        weight: u64,
+    ) {
+        let (chain, address) = self.worker_payout_target(worker_name);
+        self.pplns
+            .register_address_with_chain(worker_name, &address, &chain);
+        self.pplns.record_share_with_diff(
+            worker_name,
+            worker_name,
+            height,
+            weight.max(1),
+        );
+    }
+
     /// Resolve a worker string to its `(chain, payout_address)` target.
     ///
     /// `qtc:<ss58>` / bare `qz…` SS58 → `("quantus", ss58)`; `zion1…` →
@@ -145,6 +172,7 @@ impl Pool {
         if let Some(addr) = self
             .worker_addresses
             .get(worker)
+            .or_else(|| self.worker_addresses.get(wallet))
             .cloned()
             .or_else(|| parse_worker_address(worker))
         {
