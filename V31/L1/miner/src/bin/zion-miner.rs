@@ -1082,3 +1082,157 @@ fn srb_vendor(name: &str) -> &'static str {
         "unknown"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    fn test_runtime() -> MinerRuntime {
+        let addr = Address::new(ChainId::ZionL1, vec![0u8; 20], "zion1test").unwrap();
+        let mut cfg = MinerConfig::new(addr);
+        cfg.gpu_backend = "cpu".into();
+        cfg.stream1_enabled = true;
+        cfg.stream2_enabled = true;
+        cfg.stream3_enabled = true;
+        cfg.stream4_enabled = false;
+        cfg.pool_url = Some("zion.pool:4444".into());
+        cfg.stream2_url = Some("qpow.pool:5555".into());
+        MinerRuntime::new(cfg)
+    }
+
+    #[test]
+    fn srb_vendor_maps_gpu_names() {
+        assert_eq!(srb_vendor("Apple M1"), "apple");
+        assert_eq!(srb_vendor("AMD Radeon RX 5600 XT"), "amd");
+        assert_eq!(srb_vendor("gfx1010"), "amd");
+        assert_eq!(srb_vendor("NVIDIA GeForce GTX 1070 Ti"), "nvidia");
+        assert_eq!(srb_vendor("Intel Arc A770"), "intel");
+        assert_eq!(srb_vendor("something else"), "unknown");
+    }
+
+    #[tokio::test]
+    async fn srbminer_json_matches_srbminer_schema() {
+        let rt = test_runtime();
+        let mut stats = HashMap::new();
+        let mut s1 = StreamStats::new(StreamId::Zion);
+        s1.hashrate = 200_000.0;
+        s1.accepted = 4;
+        stats.insert(StreamId::Zion, s1);
+        let mut s2 = StreamStats::new(StreamId::GpuExternal);
+        s2.hashrate = 6_900_000.0;
+        s2.accepted = 10;
+        s2.rejected = 2;
+        s2.algorithm = Some("qpow-poseidon2".into());
+        stats.insert(StreamId::GpuExternal, s2);
+        let mut s3 = StreamStats::new(StreamId::CpuExternal);
+        s3.hashrate = 1_000_000.0;
+        s3.accepted = 1;
+        stats.insert(StreamId::CpuExternal, s3);
+
+        let j = srbminer_json(&rt, &stats, "testrig", "zion1wallet", 3600).await;
+
+        assert_eq!(j["miner"], "zion-miner");
+        assert_eq!(j["rig_name"], "testrig");
+        assert!(j["miner_version"].is_string());
+        assert_eq!(j["mining_time"], 3600);
+        assert!(j["gpu_devices"].is_array());
+        assert_eq!(
+            j["total_workers"].as_u64().unwrap(),
+            j["total_cpu_workers"].as_u64().unwrap()
+                + j["total_gpu_workers"].as_u64().unwrap()
+        );
+        // stream1+3 = CPU workers (gpu_backend=cpu), stream2 = GPU worker
+        assert_eq!(j["total_gpu_workers"], 1);
+        assert_eq!(j["total_cpu_workers"], 2);
+
+        let algos = j["algorithms"].as_array().unwrap();
+        assert_eq!(algos.len(), 3); // stream4 disabled → not listed
+        for a in algos {
+            for k in ["id", "name", "coin", "pool", "shares", "hashrate"] {
+                assert!(a.get(k).is_some(), "algo missing field {k}: {a}");
+            }
+            for k in ["pool", "wallet", "uptime"] {
+                assert!(a["pool"].get(k).is_some(), "pool missing {k}");
+            }
+            for k in ["total", "accepted", "rejected", "avg_find_time"] {
+                assert!(a["shares"].get(k).is_some(), "shares missing {k}");
+            }
+            for k in ["1min", "1hr", "6hr", "12hr", "gpu", "cpu"] {
+                assert!(a["hashrate"].get(k).is_some(), "hashrate missing {k}");
+            }
+        }
+
+        let qpow = algos
+            .iter()
+            .find(|a| a["name"] == "qpow-poseidon2")
+            .expect("qpow algo entry");
+        assert_eq!(qpow["shares"]["accepted"], 10);
+        assert_eq!(qpow["shares"]["rejected"], 2);
+        assert_eq!(qpow["shares"]["total"], 12);
+        assert_eq!(qpow["shares"]["avg_find_time"], 360); // 3600s / 10
+        assert_eq!(qpow["hashrate"]["gpu"]["total"], 6_900_000.0);
+        // No real GPU devices in the test runtime → gpu0 fallback total.
+        assert_eq!(qpow["hashrate"]["gpu"]["gpu0"], 6_900_000.0);
+        assert_eq!(qpow["pool"]["pool"], "qpow.pool:5555");
+        assert_eq!(qpow["pool"]["wallet"], "zion1wallet");
+
+        let vrsc = algos
+            .iter()
+            .find(|a| a["name"] == "verushash")
+            .expect("cpu algo entry");
+        assert_eq!(vrsc["hashrate"]["cpu"]["total"], 1_000_000.0);
+        assert!(vrsc["hashrate"]["gpu"].get("total").is_none());
+    }
+
+    #[tokio::test]
+    async fn srbminer_api_http_roundtrip() {
+        let rt = test_runtime();
+        // Grab an ephemeral port, release it, then let the API bind it.
+        let probe = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = probe.local_addr().unwrap().port();
+        drop(probe);
+        let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
+        let server = tokio::spawn(srbminer_api_serve(
+            rt,
+            addr,
+            "apitest".into(),
+            "zion1w".into(),
+        ));
+        for _ in 0..100 {
+            if tokio::net::TcpStream::connect(addr).await.is_ok() {
+                break;
+            }
+            sleep(Duration::from_millis(20)).await;
+        }
+
+        async fn request(addr: SocketAddr, path: &str) -> String {
+            let mut s = tokio::net::TcpStream::connect(addr).await.unwrap();
+            s.write_all(format!("GET {path} HTTP/1.1\r\nHost: x\r\n\r\n").as_bytes())
+                .await
+                .unwrap();
+            let mut buf = Vec::new();
+            s.read_to_end(&mut buf).await.unwrap();
+            String::from_utf8_lossy(&buf).to_string()
+        }
+
+        let resp = request(addr, "/").await;
+        assert!(resp.starts_with("HTTP/1.1 200 OK"), "{resp}");
+        let body = resp.split("\r\n\r\n").nth(1).expect("json body");
+        let j: serde_json::Value = serde_json::from_str(body).expect("valid json");
+        assert_eq!(j["rig_name"], "apitest");
+        assert_eq!(j["miner"], "zion-miner");
+        assert!(j["algorithms"].is_array());
+
+        // /stats alias must return the same shape
+        let resp = request(addr, "/stats").await;
+        assert!(resp.starts_with("HTTP/1.1 200 OK"), "{resp}");
+
+        // Unknown path → 404
+        let resp = request(addr, "/nope").await;
+        assert!(resp.starts_with("HTTP/1.1 404"), "{resp}");
+
+        server.abort();
+    }
+}
