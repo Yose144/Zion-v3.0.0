@@ -239,6 +239,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   zisRevokeKey: (data) => ipcRenderer.invoke('zis-revoke-key', data),
   zisSetApiKey: (data) => ipcRenderer.invoke('zis-set-api-key', data),
   zisUpdateMe: (data) => ipcRenderer.invoke('zis-update-me', data),
+  zisBindNft: (data) => ipcRenderer.invoke('zis-bind-nft', data),
   zisAvatarUrl: (data) => ipcRenderer.invoke('zis-avatar-url', data),
 
   // Open URL in system browser

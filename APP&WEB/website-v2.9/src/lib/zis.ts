@@ -215,6 +215,29 @@ export async function updateProfile(
 }
 
 /**
+ * Bind an owned ERC-1155 token image as the account avatar.
+ * Server verifies on-chain ownership against the user's linked EVM
+ * addresses; throws with the server error message on failure
+ * (503 NFT_BIND_DISABLED, 403 NOT_OWNER, 422 NO_EVM_ADDRESS…).
+ */
+export async function bindNftAvatar(params: {
+  contract: string;
+  tokenId: string | number;
+}): Promise<{ ok: boolean; avatar: string; owner: string }> {
+  const res = await fetch(`${CLIENT_PROXY_BASE}/avatar/nft`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ contract: params.contract, tokenId: String(params.tokenId) }),
+  });
+  const json = (await res.json().catch(() => ({}))) as {
+    ok?: boolean; avatar?: string; owner?: string; error?: string; message?: string;
+  };
+  if (!res.ok) throw new Error(json.message || json.error || `NFT bind failed (${res.status})`);
+  return json as { ok: boolean; avatar: string; owner: string };
+}
+
+/**
  * Log out via the local proxy.
  */
 export async function logout(): Promise<{ ok: boolean }> {

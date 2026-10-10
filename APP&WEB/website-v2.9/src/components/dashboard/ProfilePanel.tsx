@@ -12,7 +12,7 @@ import { User, Mail, Image as ImageIcon, FileText, Loader2, Check, AlertTriangle
 import { useAuth } from '@/contexts/AuthContext';
 import { useLang } from '@/contexts/LanguageContext';
 import ZisAvatar from '@/components/ZisAvatar';
-import { zisAvatarUrl, zisAvatarAbsoluteUrl, uploadAvatar, type ZisAvatarStyle } from '@/lib/zis';
+import { zisAvatarUrl, zisAvatarAbsoluteUrl, uploadAvatar, bindNftAvatar, type ZisAvatarStyle } from '@/lib/zis';
 
 const copy = {
   en: {
@@ -42,6 +42,11 @@ const copy = {
     uploadHint: 'PNG, JPEG, WebP or GIF, max 256 KB',
     uploadErr: 'Upload failed — check the file type and size.',
     avatarHint: 'Avatars are generated deterministically from your identity — pick a variant, a style, or use your own image URL.',
+    nftBind: 'Bind NFT',
+    nftBinding: 'Verifying…',
+    nftHint: 'Bind art from an ERC-1155 token you own — verified on-chain via your linked EVM address.',
+    nftContractPh: '0x… contract',
+    nftTokenPh: 'token ID',
   },
   cs: {
     profile: 'Profil',
@@ -70,6 +75,11 @@ const copy = {
     uploadHint: 'PNG, JPEG, WebP nebo GIF, max 256 KB',
     uploadErr: 'Nahrání selhalo — zkontroluj typ a velikost souboru.',
     avatarHint: 'Avatary se generují deterministicky z tvé identity — vyber variantu, styl, nebo použij vlastní obrázek.',
+    nftBind: 'Navázat NFT',
+    nftBinding: 'Ověřuji…',
+    nftHint: 'Naváž obrázek z ERC-1155 tokenu, který vlastníš — ověří se on-chain přes tvou linked EVM adresu.',
+    nftContractPh: '0x… kontrakt',
+    nftTokenPh: 'token ID',
   },
 };
 
@@ -117,6 +127,10 @@ export default function ProfilePanel() {
   const [customAvatar, setCustomAvatar] = useState('');
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [nftContract, setNftContract] = useState('');
+  const [nftTokenId, setNftTokenId] = useState('');
+  const [nftBusy, setNftBusy] = useState(false);
+  const [nftErr, setNftErr] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
@@ -171,6 +185,28 @@ export default function ProfilePanel() {
     } finally {
       setUploadBusy(false);
       if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleBindNft = async () => {
+    const contract = nftContract.trim();
+    const tokenId = nftTokenId.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(contract) || !/^\d+$/.test(tokenId)) {
+      setNftErr(lang === 'en' ? 'Enter a valid 0x contract and numeric token ID.' : 'Zadej platný 0x kontrakt a číselné token ID.');
+      return;
+    }
+    setNftBusy(true);
+    setNftErr(null);
+    try {
+      const res = await bindNftAvatar({ contract, tokenId });
+      await refreshUser();
+      setPendingAvatar(res.avatar);
+      setPickedVariant(null);
+      setCustomAvatar('');
+    } catch (err) {
+      setNftErr(err instanceof Error ? err.message : 'NFT bind failed');
+    } finally {
+      setNftBusy(false);
     }
   };
 
@@ -341,6 +377,42 @@ export default function ProfilePanel() {
             className={inputCls}
           />
           <p className="mt-1.5 text-[10px] text-gray-600">{t.uploadHint}</p>
+
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <p className="text-[11px] text-gray-500 mb-2">{t.nftHint}</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={nftContract}
+                onChange={(e) => setNftContract(e.target.value)}
+                placeholder={t.nftContractPh}
+                spellCheck={false}
+                className={`${inputCls} flex-[2] font-mono !text-[11px]`}
+              />
+              <input
+                type="text"
+                value={nftTokenId}
+                onChange={(e) => setNftTokenId(e.target.value)}
+                placeholder={t.nftTokenPh}
+                spellCheck={false}
+                className={`${inputCls} flex-1 font-mono !text-[11px]`}
+              />
+              <button
+                type="button"
+                onClick={() => void handleBindNft()}
+                disabled={nftBusy}
+                className="rounded-lg border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1.5 text-xs text-zion-cyan hover:bg-zion-cyan/20 inline-flex items-center gap-1 justify-center disabled:opacity-50 whitespace-nowrap"
+              >
+                {nftBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                {nftBusy ? t.nftBinding : t.nftBind}
+              </button>
+            </div>
+            {nftErr && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-red-300">
+                <AlertTriangle className="h-3 w-3" /> {nftErr}
+              </p>
+            )}
+          </div>
         </div>
 
         <div>
