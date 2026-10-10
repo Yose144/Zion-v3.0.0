@@ -94,6 +94,7 @@ Fix smyčka: kernel launch fail → log OpenCL compile error → fix `csrc/openc
 3. `miner_config.json` schéma: multi-algo profile store.
 4. Status panel: per-stream coin+algo+pool+A/R (už částečně je přes `_coinAlgo`).
 5. **E2E self-test mode v agentovi:** ✅ IMPLEMENTOVÁNO (2026-10-09) — tlačítko ⚙ v Mining Console header → IPC `run-kernel-selftest` → spawn `auxpow_kat <algo>` per coin (coin→KAT mapa `KAT_ALGO_BY_COIN`, default = configured gpuCoin/cpuCoin, fallback KAS smoke), výstup streamuje do konzole `[SELFTEST]`, verdict parsen z `PASS|FAIL|SKIP|EMPTY|UNVERIFIABLE|ERR` řádků, per-algo timeout (default 240s), nexapow opt-in přes `{slow:true}`. Binárka resolvována vedle `zion-miner` / `V31/target/release` (kernely embedded přes include_str! — self-contained).
+6. **macOS repackage:** ✅ DONE (2026-10-10) — `prepare-rust-miner --auto` (features `public_build,auxpow,gpu-opencl,gpu-metal,native-all,tui`) postavil všechny 4 binárky arm64: `zion-miner`, `zion-universal-miner`, `zion-node` (+alias `node` — dřív stale linux x86-64 ELF!), `zion` CLI. `electron-builder --mac` → **`dist/zion-desktop-agent-v3.2.0-mac-arm64.dmg` (193 MB)** — všechny bundled binárky arm64 Mach-O, `--version` smoke OK, ad-hoc sign (notarizace vyžaduje Apple cert — pending).
 
 ## 2. Rizika a limity
 
@@ -241,7 +242,7 @@ Testy: `kheavyhash_official_vector` (e097f2e4…), `kheavyhash_share_roundtrip_p
 
 **Live EVR E2E (2026-10-08):** test miner se `ZION_STREAM2_FORCE_COIN=EVR` (`e2e-evr-test@g=zion`) → pool session dostala EVR joby (`job_fresh:true`), miner hashoval gpu-external stream **3.94 MH/s po celých 5 min** a současně produkoval ZION shares + **ZION block h=74099**. EVR accepted share za oknem nepadl — statistika (4 MH/s vs zpool share-diff), ne defekt: chain bridge→routing→miner stream ověřen end-to-end, submit path je stejný kód jako QTU/ZANO/VRSC (denně Accepted).
 
-**Zbývá:** první accepted share na nových zpool coinech (probabilistické — bridgy jedou, joby fresh, EVR stream reálně hashoval; zpool `c=BTC` kredit potvrdit až po prvním acceptu), repackage desktop-agent app, VRAM-blocked algos (beze změny).
+**Zbývá:** první accepted share na nových zpool coinech (probabilistické — bridgy jedou, joby fresh, EVR stream reálně hashoval; zpool `c=BTC` kredit potvrdit až po prvním acceptu), ~~repackage desktop-agent app~~ ✅ macOS DMG 2026-10-10 (Win/Linux buildy pending), VRAM-blocked algos (beze změny).
 
 ### Yiimp coinbase-family pipeline — PRVNÍ ZPOOL ACCEPT (2026-10-09, `5407671cd`,`9b71acca0`)
 
