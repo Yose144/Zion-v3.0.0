@@ -926,6 +926,28 @@ mod tests {
         }
     }
 
+    /// Dump the driver-compiled program binary (kernel ISA + VGPR metadata)
+    /// for offline analysis:
+    /// `Q Pow_DUMP_DIR=/tmp/x cargo test ... qpow_dump_binary -- --ignored`
+    #[test]
+    #[ignore]
+    fn qpow_dump_binary() {
+        let miner = QpowOpenclMiner::new(1 << 10).expect("init");
+        let info = miner
+            .pro_que
+            .program()
+            .info(ocl::enums::ProgramInfo::Binaries)
+            .expect("binaries");
+        if let ocl::enums::ProgramInfoResult::Binaries(bins) = info {
+            for (i, b) in bins.iter().enumerate() {
+                let dir = std::env::var("QPOW_DUMP_DIR").unwrap_or_else(|_| "/tmp".into());
+                let path = format!("{dir}/qpow_prog_{i}.bin");
+                std::fs::write(&path, b).expect("write");
+                eprintln!("dumped {} bytes -> {path}", b.len());
+            }
+        }
+    }
+
     /// Throughput bench: `QPOW_BENCH_BATCH` (default 1<<22),
     /// `QPOW_BENCH_ITERS` (default 12, first two are warmup).
     ///
@@ -964,6 +986,120 @@ mod tests {
                 batch,
                 dt,
                 batch as f64 / dt.as_secs_f64() / 1e6
+            );
+        }
+    }
+
+    /// Generic instruction-latency microbench. Compiles an arbitrary kernel
+    /// from `ZION_MB_SRC` (must define `__kernel void mb(__global ulong *out,
+    /// ulong iters)`), launches `ZION_MB_GRID` (default 32) work-items of
+    /// `ZION_MB_LOCAL` (default 32) group size, `ZION_MB_REPS` (default 10)
+    /// times, and prints wall per launch so per-op latency = wall/iters.
+    #[test]
+    #[ignore]
+    fn ocl_microbench() {
+        let src_path = std::env::var("ZION_MB_SRC").expect("ZION_MB_SRC");
+        let src = std::fs::read_to_string(&src_path).expect("read src");
+        let grid: usize = std::env::var("ZION_MB_GRID")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(32);
+        let lws: usize = std::env::var("ZION_MB_LOCAL")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(32)
+            .min(grid);
+        let iters: u64 = std::env::var("ZION_MB_ITERS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10000);
+        let reps: usize = std::env::var("ZION_MB_REPS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10);
+        let (platform, device, platform_name, device_name) =
+            crate::auxpow::gpu_opencl_full::ExtGpuMiner::pick_opencl_device()
+                .expect("pick device");
+        let mut prog = ProgramBuilder::new();
+        prog.src(src);
+        let opts = std::env::var("ZION_OCL_BUILD_OPTS")
+            .unwrap_or_else(|_| "-cl-std=CL1.2 -cl-mad-enable".to_string());
+        prog.cmplr_opt(&opts);
+        let pro_que = ProQue::builder()
+            .platform(platform)
+            .device(device)
+            .prog_bldr(prog)
+            .dims(grid)
+            .build()
+            .expect("mb build");
+        eprintln!("mb on {} / {}", platform_name, device_name);
+        let out = Buffer::<u64>::builder()
+            .queue(pro_que.queue().clone())
+            .flags(MemFlags::READ_WRITE)
+            .len(8)
+            .build()
+            .expect("mb buf");
+        let kernel = Kernel::builder()
+            .queue(pro_que.queue().clone())
+            .program(pro_que.program())
+            .name("mb")
+            .arg(&out)
+            .arg(iters)
+            .build()
+            .expect("mb kernel");
+        for r in 0..reps {
+            let t0 = std::time::Instant::now();
+            unsafe {
+                kernel
+                    .cmd()
+                    .gws([grid])
+                    .lws([lws])
+                    .enq()
+                    .expect("mb enq");
+            }
+            pro_que.queue().finish().expect("finish");
+            let dt = t0.elapsed();
+            eprintln!(
+                "mb rep={} grid={} lws={} iters={} wall={:?} per_iter={:.2}ns",
+                r,
+                grid,
+                lws,
+                iters,
+                dt,
+                dt.as_secs_f64() * 1e9 / iters as f64
+            );
+        }
+    }
+
+    /// Occupancy probe: requires kernel instrumented to track concurrent
+    /// work-items in results[6]/results[7] (see qpow_tune/v7_occ.cl).
+    /// `ZION_QPOW_OCL_SRC=... cargo test ... qpow_occupancy_probe -- --ignored`
+    #[test]
+    #[ignore]
+    fn qpow_occupancy_probe() {
+        let batch = std::env::var("QPOW_BENCH_BATCH")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+            .unwrap_or(1 << 22);
+        let mut miner = QpowOpenclMiner::new(batch).expect("init");
+        let header = [0u8; 32];
+        let mut n = [0u8; 64];
+        n[56..64].copy_from_slice(&0x1234u64.to_be_bytes());
+        // zero target: no candidates -> candidate slots free for counters
+        let target = [0u8; 64];
+        for _ in 0..3 {
+            let _ = miner
+                .mine_batch(&header, &n, &target, batch as u64)
+                .expect("batch");
+            let mut results = vec![0u32; RESULT_WORDS];
+            miner
+                .results_buf
+                .read(&mut results)
+                .enq()
+                .expect("read");
+            eprintln!(
+                "occupancy_probe: inflight_end={} max_concurrent_lanes={} hits={}",
+                results[6], results[7], results[0]
             );
         }
     }

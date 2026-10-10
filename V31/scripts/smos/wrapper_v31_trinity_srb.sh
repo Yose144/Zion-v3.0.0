@@ -236,6 +236,12 @@ SRB_PID=""
 SRB_TAIL_PID=""
 SRB_LOG="/tmp/srbminer.log"
 if [ "${SRB_ENABLED:-1}" = "1" ] && [ -x "${SRB_BIN}" ]; then
+  # SRB_GPU_INTENSITY (0-31) via minerOptions — single-token env, avoids the
+  # whitespace problem of passing '--gpu-intensity N' through SRB_EXTRA_ARGS.
+  SRB_INTENSITY_ARGS=()
+  if [ -n "${SRB_GPU_INTENSITY:-}" ]; then
+    SRB_INTENSITY_ARGS+=(--gpu-intensity "${SRB_GPU_INTENSITY}")
+  fi
   "${SRB_BIN}" \
     --algorithm quantus \
     --pool "${SRB_POOL:-stratum+tcp://eu.lproute.com:5660}" \
@@ -245,6 +251,7 @@ if [ "${SRB_ENABLED:-1}" = "1" ] && [ -x "${SRB_BIN}" ]; then
     --disable-cpu \
     --api-enable --api-port "${SRB_API_PORT:-21550}" \
     --log-file "${SRB_LOG}" \
+    "${SRB_INTENSITY_ARGS[@]}" \
     ${SRB_EXTRA_ARGS:-} &
   SRB_PID=$!
   echo "[smos-wrapper] SRBMiner QTU sidecar started (pid ${SRB_PID}, api :${SRB_API_PORT:-21550})"

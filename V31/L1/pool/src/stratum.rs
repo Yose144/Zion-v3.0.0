@@ -40,6 +40,7 @@ use crate::routing::{resolve_session_group, session_group_name, RoutingStats};
 use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
 use crate::share::ShareSubmission;
 use crate::share_relay::{relay_share_fire_and_forget, ShareRelayConfig};
+use crate::stratum_qtu::{self, is_qtu_stratum};
 use crate::stratum_v1::{build_set_target, is_stratum_v1, StratumV1Session};
 use crate::telemetry::MinerTelemetryRegistry;
 use crate::template_cache::TemplateCache;
@@ -158,6 +159,12 @@ pub struct StratumServer {
     /// Latest ZION template height broadcast — used as the bookkeeping
     /// height when crediting external-stream shares into PPLNS.
     current_height: Arc<AtomicU64>,
+    /// Native Quantus stratum dialect (`login`/`job`/`submit`,
+    /// miningcore-style) for external QPoW miners like SRBMiner.
+    /// `ZION_POOL_QTU_STRATUM=0` disables; default enabled — the `login`
+    /// method was previously a dead path anyway, so this only adds
+    /// capability, it cannot regress V1/V3 traffic.
+    qtu_stratum_enabled: bool,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -279,6 +286,9 @@ impl StratumServer {
             zis_required: crate::zis::ZisVerifier::auth_mode()
                 == crate::zis::ZisAuthMode::Required,
             current_height: Arc::new(AtomicU64::new(0)),
+            qtu_stratum_enabled: std::env::var("ZION_POOL_QTU_STRATUM")
+                .map(|v| v.trim() != "0")
+                .unwrap_or(true),
         }
     }
 
@@ -1206,6 +1216,314 @@ impl StratumServer {
             .is_none_or(|t| t.elapsed().as_secs() <= max_age_secs)
     }
 
+    /// Latest QTU job for the Quantus stratum — native leg first (it only
+    /// returns jobs marked `serve_native` by the share-pct selector at push
+    /// time), then the upstream Quantus bridge queue.
+    fn qtu_current_job(&self) -> Option<crate::auxpow_bridge::JobPackage> {
+        let job = self
+            .multi_bridge
+            .native_pick_job()
+            .or_else(|| self.multi_bridge.latest_job_for_coin(&ExternalCoin::Quantus))?;
+        Self::job_is_fresh(&job).then_some(job)
+    }
+
+    /// Extranonce to advertise for a QTU job — the job's own
+    /// `extranonce1_hex` when set (upstream pools validate the nonce prefix
+    /// against the extranonce they assigned, native jobs carry a random
+    /// per-job one), else the per-session fallback.
+    fn qtu_job_en1<'a>(
+        pkg: &'a crate::auxpow_bridge::JobPackage,
+        session: &'a str,
+    ) -> &'a str {
+        if pkg.extranonce1_hex.is_empty() {
+            session
+        } else {
+            &pkg.extranonce1_hex
+        }
+    }
+
+    async fn qtu_send<W: tokio::io::AsyncWrite + Unpin>(
+        writer: &Arc<tokio::sync::Mutex<W>>,
+        line: &str,
+    ) -> std::io::Result<()> {
+        let mut w = writer.lock().await;
+        w.write_all(line.as_bytes()).await?;
+        w.write_all(b"\n").await?;
+        w.flush().await
+    }
+
+    /// Quantus stratum session — miningcore/XMRig-style `login`/`job`/
+    /// `submit` dialect for external QPoW miners (SRBMiner-MULTI
+    /// `--algorithm quantus`). See `stratum_qtu.rs` for the wire spec.
+    ///
+    /// Jobs come from the same sources as the V3 `external_stream` QTU leg
+    /// (native quantus-node via `native_pick_job`, else the upstream bridge)
+    /// and shares flow through `forward_by_ticker("QTU", ..)` — identical
+    /// validation, upstream forwarding and PPLNS accounting.
+    async fn handle_qtu_session<R, W>(
+        &self,
+        first_line: String,
+        lines: &mut tokio::io::Lines<BufReader<R>>,
+        writer: &Arc<tokio::sync::Mutex<W>>,
+        ip: IpAddr,
+    ) where
+        R: tokio::io::AsyncRead + Unpin,
+        W: tokio::io::AsyncWrite + Unpin,
+    {
+        let Some((rpc_id, login)) = stratum_qtu::parse_login(&first_line) else {
+            tracing::debug!("qtu_stratum: {} malformed first line — closing", ip);
+            return;
+        };
+        // Session id: unique-ish hex (upstream uses UUIDs; any opaque string
+        // is valid — miners echo it in submit `id`).
+        let session_id = format!(
+            "qtu-{:016x}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or_default()
+                ^ (std::process::id() as u64) << 32
+        );
+        // Session-scoped extranonce prefix (4B) — same model as upstream.
+        let extranonce = {
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or_default();
+            hex::encode((nanos ^ (std::process::id() as u64).rotate_left(17)).to_be_bytes()[..4].as_ref())
+        };
+
+        let mut seq: u64 = 0;
+        let mut last_job_id = String::new();
+        let initial = self.qtu_current_job();
+        if let Some(pkg) = &initial {
+            seq += 1;
+            last_job_id = pkg.external_job_id.clone();
+        }
+        let resp = stratum_qtu::login_ok(
+            &rpc_id,
+            &session_id,
+            initial
+                .as_ref()
+                .map(|p| stratum_qtu::job_wire(p, Self::qtu_job_en1(p, &extranonce), seq)),
+        );
+        if Self::qtu_send(writer, &resp).await.is_err() {
+            return;
+        }
+        tracing::info!(
+            "qtu_stratum: {} login wallet={} worker={} agent={} initial_job={}",
+            ip,
+            login.wallet,
+            login.worker,
+            login.agent,
+            if last_job_id.is_empty() {
+                "(none)"
+            } else {
+                &last_job_id
+            }
+        );
+
+        // Poll for job rotation — QTU jobs arrive on the quantus-node/bridge
+        // cadence, decoupled from ZION template broadcasts.
+        let mut poll = tokio::time::interval(Duration::from_millis(1500));
+        poll.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        loop {
+            tokio::select! {
+                line = lines.next_line() => match line {
+                    Ok(Some(l)) => {
+                        let Ok(v) = serde_json::from_str::<Value>(l.trim()) else {
+                            continue;
+                        };
+                        let id = v.get("id").cloned().unwrap_or(Value::Null);
+                        match v.get("method").and_then(|m| m.as_str()) {
+                            Some("submit") => {
+                                let p = v.get("params").cloned().unwrap_or_else(|| json!({}));
+                                let outcome = self
+                                    .qtu_handle_submit(&p, &login, ip)
+                                    .await;
+                                match outcome {
+                                    Ok(status) => {
+                                        if Self::qtu_send(writer, &stratum_qtu::submit_ok(&id)).await.is_err() { break; }
+                                        tracing::debug!("qtu_stratum: {} share ok ({})", ip, status);
+                                    }
+                                    Err(reason) => {
+                                        if Self::qtu_send(writer, &stratum_qtu::submit_err(&id, &reason)).await.is_err() { break; }
+                                        // Resync — a stale submit usually means the
+                                        // miner missed the job rotation.
+                                        if let Some(pkg) = self.qtu_current_job() {
+                                            seq += 1;
+                                            last_job_id = pkg.external_job_id.clone();
+                                            let n = stratum_qtu::job_notify(
+                                                stratum_qtu::job_wire(&pkg, Self::qtu_job_en1(&pkg, &extranonce), seq),
+                                            );
+                                            if Self::qtu_send(writer, &n).await.is_err() { break; }
+                                        }
+                                    }
+                                }
+                            }
+                            Some("keepalive") => {
+                                if Self::qtu_send(writer, &stratum_qtu::keepalive_ok(&id)).await.is_err() { break; }
+                            }
+                            Some(_) => {
+                                if Self::qtu_send(writer, &stratum_qtu::rpc_error(&id, "method not found")).await.is_err() { break; }
+                            }
+                            None => {}
+                        }
+                    }
+                    _ => break,
+                },
+                _ = poll.tick() => {
+                    if let Some(pkg) = self.qtu_current_job() {
+                        if pkg.external_job_id != last_job_id {
+                            seq += 1;
+                            last_job_id = pkg.external_job_id.clone();
+                            let n = stratum_qtu::job_notify(
+                                stratum_qtu::job_wire(&pkg, Self::qtu_job_en1(&pkg, &extranonce), seq),
+                            );
+                            if Self::qtu_send(writer, &n).await.is_err() { break; }
+                            tracing::debug!("qtu_stratum: {} job push {}", ip, last_job_id);
+                        }
+                    }
+                },
+            }
+        }
+        tracing::info!("qtu_stratum: {} session closed (worker={})", ip, login.login);
+    }
+
+    /// Validate + forward one QPoW share and record accounting — mirrors
+    /// the V3 `ExternalSubmit` path (`forward_by_ticker` handles the
+    /// native-vs-upstream routing by job id).
+    ///
+    /// Returns `Ok(status)` for accepted work, `Err(reason)` for rejects.
+    async fn qtu_handle_submit(
+        &self,
+        params: &Value,
+        login: &stratum_qtu::QtuLogin,
+        ip: IpAddr,
+    ) -> Result<&'static str, String> {
+        let job_id = params
+            .get("job_id")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        let nonce_hex = params
+            .get("nonce")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        let result_hex = params
+            .get("result")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        if job_id.is_empty() || nonce_hex.is_empty() {
+            return Err("missing job_id/nonce".to_string());
+        }
+
+        // Look up the exact job the miner claims to have solved — same
+        // discipline as the V3 path (native first by id, then upstream).
+        let pkg_opt = if job_id.starts_with(crate::qtc_native::NATIVE_JOB_PREFIX) {
+            self.multi_bridge.native_job_by_id(&job_id)
+        } else {
+            self.multi_bridge
+                .job_for_coin_and_id(&ExternalCoin::Quantus, &job_id)
+                .or_else(|| self.multi_bridge.native_job_by_id(&job_id))
+        };
+        let Some(pkg) = pkg_opt else {
+            tracing::info!(
+                "qtu_stratum: {} stale submit worker={} job={} reason=unknown_or_stale_job",
+                ip, login.login, job_id
+            );
+            return Err("stale".to_string());
+        };
+
+        // Legacy u64 view of the 64-byte nonce (low bits) — full precision
+        // travels in `nonce_hex` which both validators consume.
+        let nonce_u64 = nonce_hex
+            .get(nonce_hex.len().saturating_sub(16)..)
+            .and_then(|s| u64::from_str_radix(s, 16).ok())
+            .unwrap_or(0);
+        let req = ShareForwardRequest {
+            job_id: pkg.external_job_id.clone(),
+            nonce: nonce_u64,
+            nonce_hex: Some(nonce_hex.clone()),
+            hash_hex: result_hex.clone(),
+            mix_hash_hex: None,
+            algorithm: "qpow-poseidon2".to_string(),
+            header_bytes: Vec::new(),
+            ntime: pkg.ntime.clone(),
+            solution_hex: String::new(),
+            extranonce1_hex: pkg.extranonce1_hex.clone(),
+        };
+        let bridge = self.multi_bridge.clone();
+        let bridge_result = tokio::task::spawn_blocking(move || {
+            bridge.forward_by_ticker("QTU", req)
+        })
+        .await
+        .unwrap_or(None);
+
+        let (accepted, status) = match bridge_result {
+            Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
+                crate::share_forwarder::ShareForwardResult::Accepted,
+            )) => (true, "accepted"),
+            Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
+                crate::share_forwarder::ShareForwardResult::Unknown,
+            )) => (true, "accepted_unknown"),
+            Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
+                crate::share_forwarder::ShareForwardResult::BelowTarget,
+            )) => (false, "below_target"),
+            Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
+                crate::share_forwarder::ShareForwardResult::Rejected(reason),
+            )) => return Err(format!("rejected:{reason}")),
+            Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
+                crate::share_forwarder::ShareForwardResult::NotConnected,
+            )) => return Err("not_connected".to_string()),
+            Some(crate::auxpow_bridge::ShareForwardOutcome::NotEnabled) => {
+                return Err("external_not_enabled".to_string())
+            }
+            Some(crate::auxpow_bridge::ShareForwardOutcome::ChannelClosed) => {
+                return Err("channel_closed".to_string())
+            }
+            None => return Err("timeout".to_string()),
+        };
+
+        tracing::info!(
+            "qtu_stratum: {} share worker={} job={} status={}",
+            ip, login.login, job_id, status
+        );
+
+        if accepted {
+            // Same accounting as the V3 external-submit path: PPLNS credit
+            // at the QTU weight, coin-scoped telemetry, routing stats.
+            let h = self.current_height.load(Ordering::Relaxed);
+            let w = auxpow_share_weight("QTU");
+            self.pool
+                .lock()
+                .unwrap()
+                .record_external_share(&login.wallet, &login.login, h, w);
+        }
+        self.telemetry
+            .lock()
+            .unwrap()
+            .record_external_share(&login.wallet, &login.login, "QTU", accepted);
+        let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
+            "qpow-poseidon2",
+        )
+        .unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+        let group = resolve_session_group(&login.wallet, &login.login);
+        self.routing_stats
+            .lock()
+            .unwrap()
+            .record(group, rev_source, accepted);
+
+        if accepted {
+            Ok(status)
+        } else {
+            Err(status.to_string())
+        }
+    }
+
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {
         let limiter = IpRateLimiter::new(self.config.reconnect_rate_limit);
         let session_id_counter = Arc::new(AtomicU64::new(1));
@@ -1277,6 +1595,17 @@ impl StratumServer {
                         return;
                     }
                 };
+
+                // Quantus stratum (`login`) must be checked BEFORE the
+                // generic `method`-field V1 detection — `is_stratum_v1`
+                // matches any JSON-RPC and would swallow `login`.
+                if server.qtu_stratum_enabled && is_qtu_stratum(&first_line) {
+                    server
+                        .handle_qtu_session(first_line, &mut lines, &writer, ip)
+                        .await;
+                    decrement_ip_sessions(&server.ip_sessions, ip);
+                    return;
+                }
 
                 let is_v1 = is_stratum_v1(&first_line);
 
@@ -1351,6 +1680,12 @@ impl StratumServer {
             Ok(Some(l)) => l,
             _ => return,
         };
+
+        if self.qtu_stratum_enabled && is_qtu_stratum(&first_line) {
+            self.handle_qtu_session(first_line, &mut lines, &writer, ip)
+                .await;
+            return;
+        }
 
         let is_v1 = is_stratum_v1(&first_line);
         if is_v1 {
@@ -3177,6 +3512,277 @@ mod tests {
         let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
         let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default(), telemetry)));
         StratumServer::new(pool)
+    }
+
+    /// Full QTU stratum session over a real TCP listener — mirrors the
+    /// SRBMiner ↔ lproute wire exchange captured on the desktop rig:
+    /// `login` → `result.job` → `job` pushes → `submit` → OK / error.
+    ///
+    /// `StratumServer` is built on the SYNC test thread — `Notifier` inside
+    /// it owns a `reqwest::blocking::Client` which must be neither created
+    /// nor dropped inside an async context (same pattern as the V3 ZIS
+    /// session tests below). Only a `server.clone()` enters the runtime;
+    /// the original server (and its notifier ref) never leaves the sync
+    /// thread, so the reqwest client is dropped legally.
+    #[test]
+    fn qtu_stratum_end_to_end() {
+        use crate::auxpow_bridge::{JobPackage, MultiAuxPowBridge};
+        use crate::qtc_native::{share_target_from_diff, NativeJobCtx};
+
+        let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
+        let pool = Arc::new(Mutex::new(Pool::new(
+            PoolConfig::default(),
+            telemetry.clone(),
+        )));
+
+        // Native QTU leg at 100% — share validation runs fully local, no
+        // upstream pool needed.
+        let bridge = MultiAuxPowBridge::new();
+        let (result_tx, _result_rx) = tokio::sync::mpsc::unbounded_channel();
+        bridge.configure_native(result_tx, 100);
+
+        let header = [0x11u8; 32];
+        // diff=4 → share_target = U512_MAX/4 → ~1 in 4 nonces passes.
+        let share_target = share_target_from_diff(4);
+        let pkg = JobPackage {
+            external_job_id: "qtun:testjob".to_string(),
+            coin: ExternalCoin::Quantus,
+            header_hex: hex::encode(header),
+            target_hex: hex::encode(share_target),
+            height: 1,
+            algorithm: "qpow-poseidon2".to_string(),
+            extranonce1_hex: "aabbccdd".to_string(),
+            ntime: String::new(),
+            seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
+            received_at: Some(Instant::now()),
+        };
+        let ctx = NativeJobCtx {
+            raw_job_id: "testjob".to_string(),
+            header,
+            // net_target zero → no share ever wins a block (PPLNS only).
+            net_target: [0u8; 64],
+            share_target,
+            serve_native: true,
+            received_at: Instant::now(),
+            shares_forwarded: 0,
+        };
+        bridge.push_native_job(pkg.clone(), ctx);
+
+        // `Notifier` (reqwest::blocking::Client) is created HERE in sync
+        // context — `StratumServer::new` would panic inside `block_on`.
+        let server = StratumServer::new(pool).with_multi_bridge(bridge.clone());
+        let telemetry_for_test = telemetry.clone();
+        let bridge_for_push = bridge.clone();
+
+        let server_for_thread = server.clone();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(qtu_stratum_session_body(
+                server_for_thread,
+                bridge_for_push,
+            ));
+        })
+        .join()
+        .expect("qtu e2e thread panicked");
+
+        // The accepted share landed in QTU telemetry under the wallet.
+        let tele = telemetry_for_test.lock().unwrap();
+        let (key, m) = tele
+            .miners
+            .iter()
+            .find(|(k, _)| k.contains("qzTEST"))
+            .map(|(k, m)| (k.clone(), m.clone()))
+            .unwrap_or_else(|| {
+                panic!("qtu miner present in telemetry: {:?}", tele.miners.keys())
+            });
+        assert_eq!(
+            m.streams.get("qtu").map(|s| s.valid_shares).unwrap_or(0),
+            1,
+            "telemetry key={key} streams={:?}",
+            m.streams.keys().collect::<Vec<_>>()
+        );
+    }
+
+    async fn qtu_stratum_session_body(
+        server: StratumServer,
+        bridge: crate::auxpow_bridge::MultiAuxPowBridge,
+    ) {
+        use crate::auxpow_bridge::JobPackage;
+        use crate::qtc_native::NativeJobCtx;
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::{TcpListener, TcpStream};
+
+        let share_target = crate::qtc_native::share_target_from_diff(4);
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server_for_run = server.clone();
+        tokio::spawn(async move {
+            let _ = server_for_run.run(listener).await;
+        });
+
+        let stream = TcpStream::connect(addr).await.unwrap();
+        let (r, mut w) = stream.into_split();
+        let mut reader = BufReader::new(r);
+        let mut line = String::new();
+
+        let header = [0x11u8; 32];
+        // 1) login — verbatim SRBMiner wire format.
+        w.write_all(
+            br#"{"id":1,"method":"login","params":{"login":"qzTEST.w1","pass":"x","agent":"SRBMiner-MULTI/3.6.9"}}"#
+                .as_slice(),
+        )
+        .await
+        .unwrap();
+        w.write_all(b"\n").await.unwrap();
+        reader.read_line(&mut line).await.unwrap();
+        let v: Value = serde_json::from_str(&line).unwrap();
+        assert_eq!(v["id"], json!(1), "login resp={line}");
+        assert_eq!(v["result"]["status"], "OK", "login resp={line}");
+        assert_eq!(v["result"]["extensions"], json!(["keepalive"]));
+        let session_id = v["result"]["id"].as_str().unwrap().to_string();
+        let job = &v["result"]["job"];
+        assert_eq!(job["algo"], "qpow-poseidon2");
+        assert_eq!(job["job_id"], "qtun:testjob");
+        assert_eq!(job["mining_hash"], hex::encode(header));
+        assert_eq!(job["target"].as_str().unwrap().len(), 128);
+        assert_eq!(job["extranonce"].as_str().unwrap().len(), 8);
+
+        // 2) job push on rotation — feed a fresh native job, expect the
+        //    `job` notification within the poll interval.
+        let pkg2 = JobPackage {
+            external_job_id: "qtun:job2".to_string(),
+            coin: ExternalCoin::Quantus,
+            header_hex: hex::encode([0x22u8; 32]),
+            target_hex: hex::encode(share_target),
+            height: 2,
+            algorithm: "qpow-poseidon2".to_string(),
+            extranonce1_hex: "aabbccdd".to_string(),
+            ntime: String::new(),
+            seed_hash_hex: String::new(),
+            eq_params: String::new(),
+            eq_pers: String::new(),
+            received_at: Some(Instant::now()),
+        };
+        let ctx2 = NativeJobCtx {
+            raw_job_id: "job2".to_string(),
+            header: [0x22u8; 32],
+            net_target: [0u8; 64],
+            share_target,
+            serve_native: true,
+            received_at: Instant::now(),
+            shares_forwarded: 0,
+        };
+        bridge.push_native_job(pkg2, ctx2);
+        let pushed = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                line.clear();
+                if reader.read_line(&mut line).await.unwrap() == 0 {
+                    panic!("connection closed before job push");
+                }
+                if let Ok(v) = serde_json::from_str::<Value>(&line) {
+                    if v.get("method").and_then(|m| m.as_str()) == Some("job") {
+                        break v;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("job push within 5s");
+        assert_eq!(pushed["params"]["clean_jobs"], true);
+        assert_eq!(pushed["params"]["job"]["job_id"], "qtun:job2");
+        assert_eq!(pushed["params"]["job"]["algo"], "qpow-poseidon2");
+
+        // 3) submit a REAL valid share on job2 — nonce where
+        //    get_nonce_hash(header, nonce) < share_target.
+        let header2 = [0x22u8; 32];
+        let mut nonce = [0u8; 64];
+        let mut found: Option<([u8; 64], [u8; 64])> = None;
+        for n in 0..2_000_000u64 {
+            nonce[56..].copy_from_slice(&n.to_be_bytes());
+            let h = zion_miner::auxpow::qpow::get_nonce_hash(&header2, &nonce);
+            if h.as_slice() < share_target.as_slice() {
+                found = Some((nonce, h));
+                break;
+            }
+        }
+        let (nonce, hash) = found.expect("a passing nonce within 2M tries");
+        let submit = format!(
+            r#"{{"id":7,"method":"submit","params":{{"id":"{session_id}","job_id":"qtun:job2","nonce":"{}","result":"{}"}}}}"#,
+            hex::encode(nonce),
+            hex::encode(hash)
+        );
+        w.write_all(submit.as_bytes()).await.unwrap();
+        w.write_all(b"\n").await.unwrap();
+        let resp = tokio::time::timeout(Duration::from_secs(10), async {
+            loop {
+                line.clear();
+                reader.read_line(&mut line).await.unwrap();
+                if let Ok(v) = serde_json::from_str::<Value>(&line) {
+                    if v.get("id") == Some(&json!(7)) {
+                        break v;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("submit response within 10s");
+        assert_eq!(resp["result"]["status"], "OK", "submit resp={resp}");
+        assert!(resp["error"].is_null());
+
+        // 4) stale job submit → error response.
+        let bad = format!(
+            r#"{{"id":8,"method":"submit","params":{{"id":"{session_id}","job_id":"qtun:gone","nonce":"{}","result":"{}"}}}}"#,
+            hex::encode(nonce),
+            hex::encode(hash)
+        );
+        w.write_all(bad.as_bytes()).await.unwrap();
+        w.write_all(b"\n").await.unwrap();
+        let resp = tokio::time::timeout(Duration::from_secs(10), async {
+            loop {
+                line.clear();
+                reader.read_line(&mut line).await.unwrap();
+                if let Ok(v) = serde_json::from_str::<Value>(&line) {
+                    if v.get("id") == Some(&json!(8)) {
+                        break v;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("stale submit response within 10s");
+        assert!(resp["error"]["message"].as_str().is_some(), "resp={resp}");
+
+        // 5) keepalive.
+        w.write_all(
+            format!(r#"{{"id":9,"method":"keepalive","params":{{"id":"{session_id}"}}}}"#)
+                .as_bytes(),
+        )
+        .await
+        .unwrap();
+        w.write_all(b"\n").await.unwrap();
+        let resp = tokio::time::timeout(Duration::from_secs(10), async {
+            loop {
+                line.clear();
+                reader.read_line(&mut line).await.unwrap();
+                if let Ok(v) = serde_json::from_str::<Value>(&line) {
+                    if v.get("id") == Some(&json!(9)) {
+                        break v;
+                    }
+                }
+            }
+        })
+        .await
+        .expect("keepalive response within 10s");
+        assert_eq!(resp["result"]["status"], "KEEPALIVED");
+
+        // `server` is dropped inside this async body but the ORIGINAL
+        // server (built on the sync test thread) still holds a Notifier
+        // ref — this clone drop decrements 2→1, never drops the client.
     }
 
     #[test]
