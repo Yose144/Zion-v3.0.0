@@ -41,7 +41,12 @@ graceful fallback). Verified on-device: golden test
 boundaries, extranonce + low64-carry vectors). Bench on this Mac's integrated
 GPU: **~6.9 MH/s** (tpg 256 / npt 1 default is optimal; tpg 128/npt 4 and 512
 tested slower/equal). Gap vs SRBMiner tracks the hardware ratio (integrated
-GPU vs RX 5600 XT) — lane-parallel variant is the documented stretch.
+GPU vs RX 5600 XT). Lane-parallel variant implemented and measured — see §6.
+
+**Live E2E (qelvhash pool, `qpow_probe`):** connect → quantusstratum login →
+job stream → Metal scan → CPU re-verify → `submit_qpow_share` — **10-min soak:
+22 shares Accepted / 0 Rejected / 0 Unknown, 4.2 G nonces, sustained
+6.93 MH/s** under continuous job rotation (~1-2 s cadence, per-job en1).
 
 Work items delivered:
 
@@ -90,9 +95,14 @@ Work items:
    Must pass before any perf tuning.
 5. **Bench** — hashrate vs CPU and vs SRBMiner parity target; iterate
    `nonces_per_thread`, threadgroup size, `-D` unrolls.
-6. **Stretch** — lane-parallel variant (see `QPOW-LANE-KERNEL-PLAN.md`):
-   Metal `simdgroup` functions map 1:1 to `sub_group_broadcast`; deferred until
-   the scalar port is verified and measured.
+6. **Stretch — DONE, measured:** lane-parallel `qpow_lane` in the same
+   `.metal` file — 3 lanes × 4 felts per nonce (10 nonces/simdgroup32, mat4
+   chunk-aligned per lane; `simd_shuffle` exchange via u32 pairs — u64 is not
+   a valid simdgroup type). Golden test PASS (bit-exact vs CPU ref), but
+   **4.35 vs 7.07 MH/s on M1 — scalar stays default**; lane kept as opt-in
+   experiment `ZION_QPOW_METAL_IMPL=lane` (may still win on silicon with
+   faster simdgroup exchange; the scalar kernel on M1 already has good
+   occupancy so the ILP gain didn't materialize).
 
 ## Phase C — "Zion in SRBMiner" commercial track
 
@@ -115,9 +125,9 @@ Commercial options, in order of feasibility:
 
 ## Definition of done (Phase B)
 
-1. `gpu-metal` build compiles the kernel; golden test passes on-device.
-2. `QpowGpuMiner::Metal` reachable via `ZION_GPU_BACKEND=metal` and `auto` on macOS.
+1. `gpu-metal` build compiles the kernel; golden test passes on-device. ✅
+2. `QpowGpuMiner::Metal` reachable via `ZION_GPU_BACKEND=metal` and `auto` on macOS. ✅
 3. Sustained hashrate logged vs CPU baseline; no `MTLCommandBuffer` errors in
-   a 10-min soak.
+   a 10-min soak. ✅ — 22/0/0 Accepted shares live on qelvhash, 6.93 MH/s avg
 4. Plan updated with measured numbers; SRBMiner sidecar remains the production
-   default on Linux rigs.
+   default on Linux rigs. ✅
