@@ -77,17 +77,9 @@ mod imp {
             Ok(()) => {}
             Err(e) => return format!("INVALID-SOL ({e}) wireprefix={pref}"),
         }
-        // share hash vs target
-        let meets = (0..32)
-            .rev()
-            .find_map(|i| {
-                if hash[i] != target[i] {
-                    Some(hash[i] < target[i])
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(true);
+        // share hash vs target — big-endian byte compare (yiimp target
+        // hex leads with the significant bytes, e.g. "003fffc000…").
+        let meets = hash[..] <= target[..];
         format!("VALID wireprefix={pref} meets_target={meets}")
     }
 
@@ -238,6 +230,13 @@ mod imp {
             }
             if eqp != "192_7" {
                 println!("[{:6.1}] !! eq_params={eqp} != 192_7 — skip", ts());
+                continue;
+            }
+            // zpool:2192 rotates personalizations (ZcashPoW ↔ ZERO_PoW for
+            // ZER).  The solver is ZcashPoW-only — mining a ZERO_PoW job
+            // can never be accepted, so wait for the next job instead.
+            if !pers.is_empty() && !pers.eq_ignore_ascii_case("zcashpow") {
+                println!("[{:6.1}] !! pers={pers} != ZcashPoW — skip", ts());
                 continue;
             }
 
