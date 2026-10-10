@@ -36,18 +36,24 @@ export interface NewsArticle {
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
     slug: 'trinity-miner-qtc-quantus-mining',
-    date: '2026-10-09',
+    date: '2026-10-10',
     tag: { cs: 'Mining', en: 'Mining' },
     tagColor: 'text-zion-cyan',
     title: {
-      cs: 'Nová vlna miningu: Trinity Miner teď těží ZION + QTC současně',
-      en: 'A new wave of mining: Trinity Miner now mines ZION + QTC at once',
+      cs: 'ZION se nativně propojil s Quantus — začíná nová infrastrukturní éra',
+      en: 'ZION natively connects with Quantus — a new infrastructure era begins',
     },
     summary: {
-      cs: 'Jeden miner, dvě sítě, dvojí odměna. Trinity Miner je rozšířený o těžbu Quantus (QTC) — těžíš ZION a zároveň sbíráš QTC payouty na stejném hardware, bez extra nastavení. Stačí se nalodit: stáhni Desktop App, spusť miner a sleduj obě odměny žít. App už umí i nativní QTC peněženku s qz… adresami — vše odvozené z jednoho seedu. Připravujeme multichain payouty a ZIS přístup s avatary: tvůj těžební profil se brzy stane tvým digitálním pasmem. Stáhni, pusť, těž.',
-      en: 'One miner, two networks, double rewards. Trinity Miner is now extended with Quantus (QTC) mining — you mine ZION and collect QTC payouts on the same hardware, with no extra setup. Just hop aboard: download the Desktop App, start the miner and watch both rewards live. The app already includes a native QTC wallet with qz… addresses — all derived from a single seed. Multichain payouts and ZIS access with avatars are next: your mining profile will soon become your digital passport. Download, launch, mine.',
+      cs: 'Dvě sítě, jeden domov. Quantus (QTC) — post-kvantově zabezpečená, proof-of-work měna — se stává prvním externím blockchainem nativně propojeným se ZION. Trinity Miner těží obě sítě současně na stejném hardware, desktop peněženka derivuje nativní QTC adresy (qz…) z jediného seedu a payouty umí dorazit přímo v QTC. Ale tohle není jen o těžbě: je to první pilíř multichain infrastruktury, kterou stavíme — mostů, identit a sítí, které do ZION zapadají přirozeně. Stáhni app, spusť miner a buď u toho od začátku.',
+      en: 'Two networks, one home. Quantus (QTC) — a post-quantum secure, proof-of-work currency — becomes the first external blockchain natively connected to ZION. Trinity Miner mines both networks at once on the same hardware, the desktop wallet derives native QTC addresses (qz…) from a single seed, and payouts can arrive directly in QTC. But this is about more than mining: it is the first pillar of the multichain infrastructure we are building — bridges, identities and networks that fit into ZION naturally. Download the app, start the miner and be there from the beginning.',
     },
     href: '/download',
+    image: '/images/quantus/qtc-news.webp',
+    imageSrcSet: '/images/quantus/qtc-news-m.webp 960w, /images/quantus/qtc-news.webp 1280w',
+    imageAlt: {
+      cs: 'Quantus — první blockchain nativně propojený se ZION',
+      en: 'Quantus — the first blockchain natively connected to ZION',
+    },
   },
   {
     slug: 'l5-vision-complete-12-nodes',
