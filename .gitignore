@@ -421,3 +421,7 @@ V31/target_feature/
 
 V31/target_feature
 scripts/backup-beacon.env
+
+# SRBMiner sidecar binary (downloaded release, not built)
+SRBMiner-MULTI
+SRBMiner-MULTI.exe
