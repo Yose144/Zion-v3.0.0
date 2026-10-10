@@ -13,6 +13,7 @@ import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
 import { issueSessionForUser } from '../lib/session-issue.js';
 import { renderAvatarSvg, AVATAR_STYLES } from '../lib/avatar.js';
+import { loadNftConfig, resolveNftAvatar, NftError } from '../lib/nft.js';
 import { createHash } from 'node:crypto';
 
 const ChallengeSchema = z.object({
@@ -44,6 +45,13 @@ const UpdateProfileSchema = z.object({
   email: z.string().email().max(255).optional().nullable(),
   avatar: z.string().url().max(512).optional().nullable(),
   bio: z.string().max(512).optional().nullable(),
+});
+
+const NftAvatarSchema = z.object({
+  contract: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
+  tokenId: z
+    .union([z.string().regex(/^\d+$/), z.number().int().nonnegative()])
+    .transform((v) => BigInt(v)),
 });
 
 const LinkAddressSchema = z.object({
@@ -187,6 +195,58 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       await app.prisma.user.update({ where: { id: payload.sub }, data: { avatar: null } });
     }
     return { ok: true };
+  });
+
+  // ── POST /avatar/nft — bind an owned ERC-1155 token image ────────
+  // Verifies on-chain ownership against the caller's linked EVM
+  // addresses, resolves token metadata → image, stores it as
+  // user.avatar. Enabled via ZIS_NFT_BIND=1 + ZIS_NFT_CONTRACTS allowlist.
+  app.post('/avatar/nft', { preHandler: [requireAuth] }, async (req, reply) => {
+    const cfg = loadNftConfig();
+    if (!cfg.enabled) {
+      return reply
+        .code(503)
+        .send({ error: 'NFT_BIND_DISABLED', message: 'NFT avatar binding is not enabled' });
+    }
+    const parsed = NftAvatarSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const contract = parsed.data.contract.toLowerCase();
+    if (cfg.allowedContracts.size > 0 && !cfg.allowedContracts.has(contract)) {
+      return reply.code(403).send({ error: 'CONTRACT_NOT_ALLOWED', message: 'Contract not allowlisted' });
+    }
+    const { sub: userId } = req.user as { sub: string };
+    const links = await app.prisma.linkedAddress.findMany({
+      where: { userId, chainType: 'evm' },
+    });
+    if (links.length === 0) {
+      return reply
+        .code(422)
+        .send({ error: 'NO_EVM_ADDRESS', message: 'Link an EVM address first' });
+    }
+    try {
+      const { avatar, owner } = await resolveNftAvatar(
+        cfg,
+        contract,
+        parsed.data.tokenId,
+        links.map((l) => l.address),
+      );
+      await app.prisma.user.update({ where: { id: userId }, data: { avatar } });
+      return {
+        ok: true,
+        avatar,
+        owner,
+        contract,
+        tokenId: parsed.data.tokenId.toString(),
+      };
+    } catch (e) {
+      if (e instanceof NftError) {
+        const status = e.code === 'NOT_OWNER' ? 403 : e.code === 'NO_METADATA_IMAGE' || e.code === 'BAD_IMAGE_URL' || e.code === 'BAD_TOKEN_URI' ? 404 : 502;
+        return reply.code(status).send({ error: e.code, message: e.message });
+      }
+      throw e;
+    }
   });
 
   // ── POST /challenge ─────────────────────────────────────────────
