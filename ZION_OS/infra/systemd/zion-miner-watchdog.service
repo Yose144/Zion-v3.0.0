@@ -1,0 +1,6 @@
+[Unit]
+Description=ZION Mining Agent Watchdog + Dashboard Beacon
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/zion-miner-watchdog.sh

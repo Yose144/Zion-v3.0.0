@@ -3294,6 +3294,14 @@ _BACKUP_BEACON_TIME: float = 0.0
 _BACKUP_BEACON_LOCK = threading.Lock()
 BACKUP_BEACON_TTL_SEC: float = 90.0  # offline if no beacon for 90s
 
+# ── Mining rig beacon cache ───────────────────────────────────────────────
+# NAT-ed mining rigs (operator desktop, SMOS rigs, ...) can't expose an agent
+# URL for the fleet view to poll, so they PUSH status to /api/rig-beacon
+# (zion-miner-watchdog.sh on the rig, every 60s). Keyed by rig_id.
+_RIG_BEACONS: dict = {}
+_RIG_BEACON_LOCK = threading.Lock()
+RIG_BEACON_TTL_SEC: float = 180.0  # offline if no beacon for 3 min
+
 def build_status() -> dict:
     global _STATUS_CACHE, _STATUS_CACHE_TIME
     now = time.time()
@@ -12520,6 +12528,40 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "shares_rejected": local_stats.get("shares_rejected", 0),
             }
             rigs.insert(0, local_rig)
+            # Merge beacon rigs (push model — rigs behind NAT can't be polled)
+            with _RIG_BEACON_LOCK:
+                _nowb = time.time()
+                _beacon_items = [(rid, e["received_at"], e["payload"]) for rid, e in _RIG_BEACONS.items()]
+            for _rid, _bts, _pl in sorted(_beacon_items):
+                _age = _nowb - _bts
+                _zm = _pl.get("zion_miner") or {}
+                _qm = _pl.get("qtu_miner") or {}
+                _ag = _pl.get("agent") or {}
+                _wd = _pl.get("watchdog") or {}
+                _sys = _pl.get("system") or {}
+                rigs.append({
+                    "id": f"beacon-{_rid}",
+                    "rig_id": _rid,
+                    "name": _pl.get("name") or _rid,
+                    "agent_url": "",
+                    "source": "beacon",
+                    "status": "online" if _age < RIG_BEACON_TTL_SEC else "offline",
+                    "beacon_age_s": round(_age, 1),
+                    "mode": _zm.get("backend") or "miner",
+                    "miner_running": bool(_zm.get("running")),
+                    "agent_running": bool(_ag.get("running")),
+                    "qtu_running": bool(_qm.get("running")),
+                    "hashrate": _zm.get("hashrate_khs"),
+                    "qtu_hashrate_hs": _qm.get("hashrate_hs"),
+                    "gpus": _pl.get("gpu_count") or len(_pl.get("gpus") or []),
+                    "gpu_detail": _pl.get("gpus") or [],
+                    "shares_accepted": _zm.get("shares_accepted", 0),
+                    "shares_rejected": _zm.get("shares_rejected", 0),
+                    "watchdog_restarts": _wd.get("restarts", 0),
+                    "watchdog_action": _wd.get("last_action", ""),
+                    "uptime_s": _sys.get("uptime_s"),
+                    "load1": _sys.get("load1"),
+                })
             self._json({"rigs": rigs})
         elif route == "/api/orchestrator/status":
             self._json(get_orchestrator_status())
@@ -15058,6 +15100,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 _BACKUP_BEACON = payload
                 _BACKUP_BEACON_TIME = time.time()
             self._json({"ok": True, "received_at": datetime.now().isoformat()})
+        elif route == "/api/rig-beacon":
+            # Receive mining rig status pushed from behind NAT
+            # (zion-miner-watchdog.sh). Surfaced in /api/fleet/rigs.
+            rig_id = str(payload.get("rig_id") or "").strip()[:64]
+            if not rig_id:
+                self._json({"ok": False, "error": "missing rig_id"}, status=400)
+            else:
+                with _RIG_BEACON_LOCK:
+                    _RIG_BEACONS[rig_id] = {"received_at": time.time(), "payload": payload}
+                self._json({"ok": True, "received_at": datetime.now().isoformat()})
         elif route == "/api/v2/batch":
             # v2 batch is an alias for the full status bundle (GET/POST)
             st = build_status()
