@@ -84,12 +84,13 @@ async function _market() {
 async function fetchQtcStatus(addr) {
   const safe = (addr || '').trim().slice(0, 64);
   const url = `${APP_API_BASE}/api/qtc${safe ? `?addr=${encodeURIComponent(safe)}` : ''}`;
-  const [data, market] = await Promise.all([
+  const [data, market, blocks] = await Promise.all([
     _fetch(url, { headers: { accept: 'application/json' } }, 9000),
     _market(),
+    _fetch(`${APP_API_BASE}/api/blocks?limit=30`, { headers: { accept: 'application/json' } }, 9000),
   ]);
   if (data && data.ok) {
-    return { ...data, source: 'app-api', market };
+    return { ...data, source: 'app-api', market, blocks: blocks && blocks.ok ? blocks : null };
   }
   // App API down — degrade to node-only via the public RPC.
   const node = await _rpcFallback();
@@ -103,6 +104,7 @@ async function fetchQtcStatus(addr) {
     network_feed: [],
     wallet: safe ? { address: safe, valid: null } : null,
     market,
+    blocks: null,
   };
 }
 

@@ -733,7 +733,7 @@ function initQtcView() {
   if (!panel) return;
 
   const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmtAge = (ms) => {
     if (ms == null) return '—';
     if (ms < 1000) return `${ms} ms`;
@@ -801,6 +801,39 @@ function initQtcView() {
                 '#22d3ee'
               )
             : metaRow('Market', 'CoinGecko unavailable', '#fbbf24'));
+      }
+
+      // Found blocks (merged ZION pool + QTC native feed)
+      const bl = d.blocks;
+      const bt = $('qtcnet-blocks-table');
+      if (bt) {
+        if (!bl || !Array.isArray(bl.blocks)) {
+          bt.innerHTML = '<tr><td style="color:rgba(255,255,255,0.3);font-style:italic">Block feed unavailable.</td></tr>';
+          if ($('qtcnet-blocks-counts')) $('qtcnet-blocks-counts').textContent = '';
+        } else {
+          const rows = bl.blocks;
+          const chainColor = (c) => (c === 'QTC' ? '#22d3ee' : '#c084fc');
+          const statusColor = (s) =>
+            s === 'confirmed' || s === 'reward' ? '#4ade80' : s === 'orphaned' || s === 'rejected' ? '#f87171' : '#fbbf24';
+          bt.innerHTML = '<tr><th>Chain</th><th>Height</th><th>Detail</th><th>Miner / Source</th><th>Status</th><th>Time</th></tr>' +
+            (rows.length
+              ? rows.map((r) => {
+                  const detail = r.chain === 'QTC'
+                    ? `+${esc(String(r.amount ?? '—'))} QTC · leaf #${esc(String(r.leaf ?? '—'))}`
+                    : `<span title="${esc(r.hash || '')}">${esc(short(r.hash, 12))}</span>`;
+                  const who = r.chain === 'QTC'
+                    ? 'native node'
+                    : `${esc(short(r.miner, 10))}${r.worker ? `·${esc(r.worker)}` : ''}`;
+                  const st = esc(r.status || '—');
+                  return `<tr><td style="color:${chainColor(r.chain)}">${esc(r.chain)}</td><td>${esc(String(r.height ?? '—'))}</td><td>${detail}</td><td title="${esc(r.miner || '')}">${who}</td><td style="color:${statusColor(r.status)}">${st}</td><td>${fmtTs(r.ts_ms)}</td></tr>`;
+                }).join('')
+              : '<tr><td colspan="6" style="color:rgba(255,255,255,0.3);font-style:italic">No found blocks yet — keep mining.</td></tr>');
+          if ($('qtcnet-blocks-counts')) {
+            const c = bl.counts || {};
+            const srcBits = Object.entries(bl.sources || {}).map(([k, v]) => `${k}:${v}`).join(' ');
+            $('qtcnet-blocks-counts').textContent = `ZION ${c.zion ?? 0} · QTC ${c.qtc ?? 0}${srcBits ? ` · ${srcBits}` : ''}`;
+          }
+        }
       }
 
       // Wormhole rewards

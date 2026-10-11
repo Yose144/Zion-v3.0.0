@@ -2887,7 +2887,11 @@ function startMiningV31(config, v31Path) {
   // ── 6. Build V31 CLI args ─────────────────────────────────────────────────
   const algoForMiner = normalizeAlgorithmName(config.algorithm || DEFAULT_CONFIG.algorithm);
   const tripleStreamEnabled = config.tripleStream === true;
-  const cpuCoin = String(config.cpuCoin || 'auto').trim();
+  // cpuCoin "off"/"none"/"disabled" = hard-disable Stream-3 (cpu-external)
+  // instead of forcing a coin — maps to ZION_STREAM3_ENABLED=0.
+  const cpuCoinRaw = String(config.cpuCoin || 'auto').trim();
+  const cpuCoinOff = ['off', 'none', 'disabled'].includes(cpuCoinRaw.toLowerCase());
+  const cpuCoin = cpuCoinOff ? '' : cpuCoinRaw;
   const gpuCoin = String(config.gpuCoin || 'auto').trim();
   const cpuCoinAuto = !cpuCoin || cpuCoin.toLowerCase() === 'auto';
   const gpuCoinAuto = !gpuCoin || gpuCoin.toLowerCase() === 'auto';
@@ -2952,7 +2956,9 @@ function startMiningV31(config, v31Path) {
   // small GPU duty) + CPU stream; the card otherwise belongs to SRBMiner.
   const useSrbQtc = wantsGpu && !gpuCoinAuto && srbEngineWanted(config);
   if (tripleStreamEnabled) {
-    if (!cpuCoinAuto) {
+    if (cpuCoinOff) {
+      env.ZION_STREAM3_ENABLED = '0';
+    } else if (!cpuCoinAuto) {
       env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
       _activeExtCoins.cpu = cpuCoin.toUpperCase();
     }
