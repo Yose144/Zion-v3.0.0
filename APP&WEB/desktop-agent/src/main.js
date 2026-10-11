@@ -2958,9 +2958,15 @@ function startMiningV31(config, v31Path) {
   if (tripleStreamEnabled) {
     if (cpuCoinOff) {
       env.ZION_STREAM3_ENABLED = '0';
-    } else if (!cpuCoinAuto) {
-      env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
-      _activeExtCoins.cpu = cpuCoin.toUpperCase();
+    } else {
+      // public_build miners hide the CPU external stream by default
+      // (derive_auto_config → stream3_enabled=false); ZION_STREAM3_FORCE_COIN
+      // alone does NOT opt it back in. The trinity toggle IS the opt-in.
+      env.ZION_STREAM3_ENABLED = '1';
+      if (!cpuCoinAuto) {
+        env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
+        _activeExtCoins.cpu = cpuCoin.toUpperCase();
+      }
     }
     if (wantsGpu && !gpuCoinAuto) {
       if (useSrbQtc) {

@@ -1618,6 +1618,30 @@ function updateSettingsUI() {
       algoSelectInit.value = 'deeksha_lite_v1';
     }
   }
+
+  // Sync the trinity coin selects + master toggle from persisted config —
+  // without this a config refresh leaves the dropdowns showing stale/auto
+  // values while the miner actually runs the persisted selection.
+  const syncCoinSelectFromConfig = (id, key) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const v = config[key];
+    if (v != null && el.querySelector(`option[value="${v}"]`)) {
+      el.value = v;
+    } else {
+      el.value = el.querySelector('option[value="auto"]') ? 'auto' : '';
+    }
+  };
+  syncCoinSelectFromConfig('gpu-coin-select', 'gpuCoin');
+  syncCoinSelectFromConfig('gpu-coin-select-dashboard', 'gpuCoin');
+  syncCoinSelectFromConfig('cpu-coin-select', 'cpuCoin');
+  syncCoinSelectFromConfig('cpu-coin-select-dashboard', 'cpuCoin');
+  syncCoinSelectFromConfig('gpu-coin2-select', 'gpuCoin2');
+  syncCoinSelectFromConfig('gpu-coin2-select-dashboard', 'gpuCoin2');
+  const trinityEl = document.getElementById('trinity-checkbox');
+  if (trinityEl && typeof config.tripleStream === 'boolean') {
+    trinityEl.checked = config.tripleStream;
+  }
 }
 
 let _streamLogWindowStart = 0;
