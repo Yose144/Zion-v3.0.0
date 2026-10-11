@@ -20,7 +20,10 @@ env.ZION_GPU_FLAGS_SET = '1';
 
 const args = [appRoot];
 if (process.platform === 'linux') {
-  args.push('--ozone-platform=x11', '--disable-gpu-sandbox');
+  // --no-sandbox: chrome-sandbox isn't setuid-root here and Ubuntu's AppArmor
+  // restricts unprivileged userns — under a systemd user service Electron
+  // aborts with a SUID-sandbox FATAL. Local app renders only bundled content.
+  args.push('--ozone-platform=x11', '--disable-gpu-sandbox', '--no-sandbox');
 }
 
 try {
