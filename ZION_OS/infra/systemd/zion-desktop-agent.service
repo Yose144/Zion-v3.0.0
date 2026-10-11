@@ -8,6 +8,9 @@ PartOf=graphical-session.target
 
 [Service]
 Type=simple
+# Best-effort wait for DNS at early boot — remote iframes (market/oasis) and
+# https endpoints otherwise race NetworkManager/resolved. Never blocks start.
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do getent hosts zionterranova.com >/dev/null 2>&1 && exit 0; sleep 2; done; exit 0'
 ExecStart=%h/bin/start-desktop-agent.sh
 Restart=on-failure
 RestartSec=15
