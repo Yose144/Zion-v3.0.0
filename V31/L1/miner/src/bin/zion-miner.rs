@@ -222,6 +222,18 @@ struct Args {
     /// `ZION_EXT_CPU_THREADS` — separate from `--threads` (ZION stream).
     #[arg(long)]
     cpu_threads: Option<usize>,
+
+    /// Restrict mining to the given GPU devices — comma-separated global
+    /// device indices or name substrings (e.g. `--gpu-id 0,2` or
+    /// `--gpu-id vega`). Maps to `ZION_GPU_DEVICES`; the same cap applies
+    /// to every GPU stream (ZION, primary, dual). SRBMiner-compatible flag.
+    #[arg(long, value_name = "LIST")]
+    gpu_id: Option<String>,
+
+    /// Opt back in to the CPU external stream (hidden by default in
+    /// public builds). Maps to `ZION_STREAM3_ENABLED=1`.
+    #[arg(long)]
+    enable_cpu_stream: bool,
 }
 
 /// Parse a bool env var (1/true/yes → true).
@@ -280,6 +292,15 @@ async fn main() -> Result<()> {
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(args.watchdog_timeout);
+
+    // `--gpu-id` caps which devices any GPU stream may use — the GPU
+    // filters are read lazily at miner init, so translating it to the env
+    // var here covers every backend path (ZION, QPoW, ext algos).
+    if let Some(list) = &args.gpu_id {
+        if std::env::var("ZION_GPU_DEVICES").is_err() {
+            std::env::set_var("ZION_GPU_DEVICES", list);
+        }
+    }
 
     // ── SRBMiner mode ──
     // When --algorithm/--dual-algorithm is used, --pool/--wallet/--password
@@ -383,6 +404,11 @@ async fn main() -> Result<()> {
     }
     if let Some(n) = args.cpu_threads {
         config.ext_cpu_threads = n;
+    }
+    // Opt back into the CPU stream hidden by default in public builds —
+    // explicit --disable-cpu/--no-cpu still win over this flag.
+    if args.enable_cpu_stream {
+        config.stream3_enabled = true;
     }
     if args.disable_cpu {
         config.stream3_enabled = false;

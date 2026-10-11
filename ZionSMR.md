@@ -156,6 +156,23 @@ Commercial options, in order of feasibility:
    algo's own wallet and resolves forced coins to algo/ticker before the
    first job. Verified: `kaspa+quantus` → 2 GPU workers each with own
    pool+wallet; `quantus+verushash` → GPU+CPU split.
+   **Public-build surface** (`public_build` feature):
+   - HW autotune runs in every build (`auto_tune_work_sizes` feeds
+     work sizes/threads; plan banner prints a Multi-GPU line when
+     >1 card detected, `AutoTuneResult.gpu_count`).
+   - Multi-GPU: `ZION_ZANO_RESERVE` default flips to 0 — every card
+     mines by default. QPoW CUDA fans out to `QpowGpuMiner::multi`
+     (one miner per `CudaDevice::new(i)`, only when no shared
+     Stream-1 context exists); QPoW OpenCL already had multi via
+     `ZION_QPOW_OCL_DEVICES`; ext algos use `MultiGpuMiner`.
+   - `--gpu-id` (SRBMiner-compatible) / `ZION_GPU_DEVICES` = GLOBAL
+     device cap honored by ZION, QPoW (Metal too — system default =
+     index 0) and ext streams. Numeric items match indices only;
+     non-numeric items match name/class substrings (`vega`,
+     `gfx1010`, `5600xt`).
+   - CPU external stream (VRSC/BOOST) hidden by default —
+     `stream3_enabled=false` in `derive_auto_config`; opt back in
+     via `ZION_STREAM3_ENABLED=1` or `--enable-cpu-stream`.
    Remaining decision: licensing model.
 
 ## Definition of done (Phase B)
