@@ -1,8 +1,18 @@
-# QPoW Lane-Parallel Kernel — Implementation Plan
+# QPoW Lane-Parallel Kernel — Implementation Plan (historical, unimplemented on AMD)
 
-**Goal:** close the ~1.7× gap vs SRBMiner on RDNA (our OpenCL kernel ~43 MH/s vs SRB ~73 MH/s on RX 5600 XT / gfx1010, measured 2026-10-10).
+> **Status 2026-10-11:** this document is a **historical proposal** — the
+> lane-parallel design below was never shipped or validated on AMD. The
+> actual path taken was a scalar AMD ISA implementation inside the existing
+> kernel (`QPOW_GCN_NATIVE`), which reached a frozen local benchmark of
+> **82.07 MH/s (gfx1010) / 103.125 MH/s (gfx900)** vs earlier SRBMiner
+> references ~105/137 MH/s — see `QPOW-ENGINE-REPORT.md` §0 and
+> `V31/AGENTS.md` section 14. No lane approach was demonstrated to be
+> required, and a lane variant is only one unproven option among several for
+> the remaining measured gap.
 
-## Why the current kernel is stuck at ~43 MH/s
+**Original goal (2026-10-10):** close the ~1.7× gap vs SRBMiner on RDNA (our OpenCL kernel ~43 MH/s vs SRB ~73 MH/s on RX 5600 XT / gfx1010, measured 2026-10-10).
+
+## Historical hypothesis — why the portable kernel was stuck at ~43 MH/s
 
 Current architecture: **one lane = one nonce**. Each work-item computes a full
 Poseidon2-64×12 permutation serially:
@@ -19,13 +29,15 @@ latency saturated.** All runtime knobs (lws, npt, unrolls, ILP variants,
 `mad_hi` fusion) land in a 41–43 MH/s noise band: the instruction stream per
 nonce is fixed and the GPU is already issuing near peak rate.
 
-The only way forward is to **change the amount of instruction-level work per
-hash**, i.e. spread one permutation across multiple lanes.
+The proposed experiment was to **change the amount of instruction-level work per
+hash**, i.e. spread one permutation across multiple lanes. (In retrospect this
+was a candidate direction, not a demonstrated requirement — the scalar native
+ISA path later roughly doubled throughput without lane parallelism.)
 
 ## Target architecture: lane-parallel Poseidon2 ("warp-per-nonce")
 
-Idea used by fast implementations (supranational / Ingonyama-style, and almost
-certainly SRB's RDNA backend):
+Idea used by fast implementations (supranational / Ingonyama-style); whether
+SRBMiner's closed-source backend uses it is unknown:
 
 - One **subgroup (wavefront, 32/64 lanes)** cooperates on **one nonce**
 - The 12-element state is sharded across lanes: `lane i` holds `state[i]` —

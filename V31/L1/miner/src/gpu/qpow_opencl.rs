@@ -17,7 +17,7 @@
 use anyhow::Result;
 use ocl::builders::ProgramBuilder;
 use ocl::flags::MemFlags;
-use ocl::{Buffer, Kernel, ProQue};
+use ocl::{Buffer, Device, Kernel, Platform, ProQue};
 
 use crate::auxpow::qpow;
 
@@ -66,27 +66,29 @@ impl QpowOpenclMiner {
             .unwrap_or(1)
             .max(1);
 
-        let mut prog = ProgramBuilder::new();
         // ZION_QPOW_OCL_SRC loads the kernel source from a file at runtime
         // (benchmark/tuning iterations without rebuilding the binary).
-        let src = std::env::var("ZION_QPOW_OCL_SRC")
+        let src_override = std::env::var("ZION_QPOW_OCL_SRC")
             .ok()
-            .and_then(|p| std::fs::read_to_string(p).ok())
-            .unwrap_or_else(|| POSEIDON2_CL.to_string());
-        prog.src(src);
+            .and_then(|p| std::fs::read_to_string(p).ok());
+        let custom_source = src_override.is_some();
+        let src = src_override.unwrap_or_else(|| POSEIDON2_CL.to_string());
         // The wrapper ships `-cl-std=CL1.2 -cl-mad-enable` via
         // ZION_OCL_BUILD_OPTS; honor the same env override here.
-        let opts = std::env::var("ZION_OCL_BUILD_OPTS")
+        let mut opts = std::env::var("ZION_OCL_BUILD_OPTS")
             .unwrap_or_else(|_| "-cl-std=CL1.2 -cl-mad-enable".to_string());
-        prog.cmplr_opt(&opts);
-
-        let pro_que = ProQue::builder()
-            .platform(platform)
-            .device(device)
-            .prog_bldr(prog)
-            .dims(work_size.max(local_size))
-            .build()
-            .map_err(|e| anyhow::anyhow!("OpenCL build failed for qpow: {e}"))?;
+        let native_enabled = std::env::var("ZION_QPOW_OCL_NATIVE")
+            .map(|v| v.trim() != "0")
+            .unwrap_or(true);
+        if !native_enabled {
+            opts = format!("{opts} -DQPOW_GCN_NATIVE=0");
+        }
+        let native_flags =
+            qpow_native_build_flags(&platform_name, &device_name, custom_source, native_enabled);
+        let dims = work_size.max(local_size);
+        let (pro_que, amd_isa) = build_with_native_fallback(&opts, native_flags, |o| {
+            build_qpow_proque(platform, device, &src, o, dims)
+        })?;
         let q = pro_que.queue().clone();
 
         let results_buf = Buffer::<u32>::builder()
@@ -121,9 +123,16 @@ impl QpowOpenclMiner {
             .map_err(|e| anyhow::anyhow!("qpow dispatch alloc: {e}"))?;
 
         crate::ext_info!(
-            "gpu_qpow_opencl_init platform=\"{}\" device=\"{}\" work_size={} lws={} npt={}",
+            "gpu_qpow_opencl_init platform=\"{}\" device=\"{}\" mode={} work_size={} lws={} npt={}",
             platform_name,
             device_name,
+            if amd_isa {
+                "amd-isa"
+            } else if custom_source {
+                "override"
+            } else {
+                "portable"
+            },
             work_size,
             local_size,
             nonces_per_thread,
@@ -306,6 +315,64 @@ impl QpowOpenclMiner {
     }
 }
 
+fn qpow_native_build_flags(
+    platform_name: &str,
+    device_name: &str,
+    custom_source: bool,
+    enabled: bool,
+) -> Option<&'static str> {
+    if !enabled || custom_source {
+        return None;
+    }
+    if !platform_name.eq_ignore_ascii_case("AMD Accelerated Parallel Processing") {
+        return None;
+    }
+    let arch = device_name.split(':').next().unwrap_or("");
+    if arch.eq_ignore_ascii_case("gfx1010") {
+        Some("-DQPOW_GCN_NATIVE=1 -DQPOW_GCN_WAVE32=1")
+    } else if arch.eq_ignore_ascii_case("gfx900") {
+        Some("-DQPOW_GCN_NATIVE=1")
+    } else {
+        None
+    }
+}
+
+fn build_with_native_fallback<T>(
+    base_opts: &str,
+    native_flags: Option<&str>,
+    mut build: impl FnMut(&str) -> Result<T>,
+) -> Result<(T, bool)> {
+    match native_flags {
+        Some(flags) => match build(&format!("{base_opts} {flags}")) {
+            Ok(v) => Ok((v, true)),
+            Err(e) => {
+                crate::ext_warn!("qpow native ISA build failed, retrying portable: {e}");
+                build(&format!("{base_opts} -DQPOW_GCN_NATIVE=0")).map(|v| (v, false))
+            }
+        },
+        None => build(base_opts).map(|v| (v, false)),
+    }
+}
+
+fn build_qpow_proque(
+    platform: Platform,
+    device: Device,
+    src: &str,
+    opts: &str,
+    dims: usize,
+) -> Result<ProQue> {
+    let mut prog = ProgramBuilder::new();
+    prog.src(src);
+    prog.cmplr_opt(opts);
+    ProQue::builder()
+        .platform(platform)
+        .device(device)
+        .prog_bldr(prog)
+        .dims(dims)
+        .build()
+        .map_err(|e| anyhow::anyhow!("OpenCL build failed for qpow: {e}"))
+}
+
 /// Pack a 64-byte big-endian U512 into 16 little-endian u32 limbs
 /// (the kernel/host wire format).
 fn u512_be_to_limbs(wire: &[u8; 64]) -> [u32; 16] {
@@ -339,6 +406,13 @@ mod tests {
     /// semantics as the PTX carry chains, used to bisect kernel bugs on the
     /// host before any GPU is involved.
     mod cl_mirror {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        pub static C_MUL64W: AtomicU64 = AtomicU64::new(0);
+        pub static C_SQRW: AtomicU64 = AtomicU64::new(0);
+        pub static C_REDUCE: AtomicU64 = AtomicU64::new(0);
+        pub static C_ADD: AtomicU64 = AtomicU64::new(0);
+        pub static C_WADD: AtomicU64 = AtomicU64::new(0);
+        pub static C_WADDW: AtomicU64 = AtomicU64::new(0);
         pub const P64: u64 = 0xFFFFFFFF00000001;
         const EPS64: u64 = 0xFFFFFFFF;
         const EPS32: u32 = 0xFFFFFFFF;
@@ -502,6 +576,7 @@ mod tests {
         ];
 
         fn gf64_add(a: u64, b: u64) -> u64 {
+            C_ADD.fetch_add(1, Ordering::Relaxed);
             let mut s = a.wrapping_add(b);
             if s < a {
                 s = s.wrapping_add(EPS64);
@@ -510,6 +585,7 @@ mod tests {
         }
 
         fn mul64wide(a: u64, b: u64) -> (u32, u32, u32, u32) {
+            C_MUL64W.fetch_add(1, Ordering::Relaxed);
             let p = (a as u128) * (b as u128);
             (
                 p as u32,
@@ -521,6 +597,7 @@ mod tests {
 
         /// Exact mirror of `reduce128` in poseidon2_kernel.cl.
         fn reduce128(r0: u32, r1: u32, r2: u32, r3: u32) -> u64 {
+            C_REDUCE.fetch_add(1, Ordering::Relaxed);
             let x0 = ((r1 as u64) << 32) | (r0 as u64);
             let mut s = x0.wrapping_add((r2 as u64).wrapping_mul(EPS64));
             let k = (s < x0) as u64;
@@ -534,6 +611,7 @@ mod tests {
         }
 
         fn gf64_sqr(a: u64) -> u64 {
+            C_SQRW.fetch_add(1, Ordering::Relaxed);
             let a0 = (a as u32) as u64;
             let a1 = a >> 32;
             let ll = a0 * a0;
@@ -571,6 +649,7 @@ mod tests {
             }
         }
         fn wide_add(w: &mut Wide, x: u64) {
+            C_WADD.fetch_add(1, Ordering::Relaxed);
             let s = (w.l0 as u64) + (x as u32 as u64);
             w.l0 = s as u32;
             let t = (w.l1 as u64) + ((x >> 32) as u32 as u64) + (s >> 32);
@@ -578,6 +657,7 @@ mod tests {
             w.h = w.h.wrapping_add((t >> 32) as u32);
         }
         fn wide_add_wide(w: &mut Wide, x: Wide) {
+            C_WADDW.fetch_add(1, Ordering::Relaxed);
             let s = (w.l0 as u64) + (x.l0 as u64);
             w.l0 = s as u32;
             let t = (w.l1 as u64) + (x.l1 as u64) + (s >> 32);
@@ -880,6 +960,364 @@ mod tests {
         assert_eq!(&r.hash, &hash2);
     }
 
+    fn build_test_proque(test_src: &str, dims: usize) -> Result<(ProQue, String, String)> {
+        let (platform, device, platform_name, device_name) =
+            crate::auxpow::gpu_opencl_full::ExtGpuMiner::pick_opencl_device()?;
+        let (src, custom_source) = match std::env::var("ZION_QPOW_OCL_SRC") {
+            Ok(p) => (
+                std::fs::read_to_string(&p)
+                    .map_err(|e| anyhow::anyhow!("ZION_QPOW_OCL_SRC={p} read failed: {e}"))?,
+                true,
+            ),
+            Err(_) => (POSEIDON2_CL.to_string(), false),
+        };
+        let mut opts = std::env::var("ZION_OCL_BUILD_OPTS")
+            .unwrap_or_else(|_| "-cl-std=CL1.2 -cl-mad-enable".to_string());
+        let enabled = std::env::var("ZION_QPOW_OCL_NATIVE")
+            .map(|v| v.trim() != "0")
+            .unwrap_or(true);
+        if !enabled {
+            opts = format!("{opts} -DQPOW_GCN_NATIVE=0");
+        }
+        let native_flags =
+            qpow_native_build_flags(&platform_name, &device_name, custom_source, enabled);
+        let (pro_que, used_native) = build_with_native_fallback(&opts, native_flags, |o| {
+            build_qpow_proque(platform, device, &format!("{src}\n{test_src}"), o, dims)
+        })?;
+        eprintln!(
+            "test proque auto_native={} platform=\"{}\" device=\"{}\"",
+            used_native, platform_name, device_name
+        );
+        Ok((pro_que, platform_name, device_name))
+    }
+
+    const QPOW_TEST_ARITH_CL: &str = r#"
+__kernel void qpow_test_arithmetic(__global const u64 *input,
+                                   __global u64 *out) {
+    size_t i = get_global_id(0);
+    u64 a = input[2 * i];
+    u64 b = input[2 * i + 1];
+    u32 r0, r1, r2, r3;
+    mul64wide(a, b, &r0, &r1, &r2, &r3);
+    __global u64 *o = out + 14 * i;
+    o[0] = ((u64)r1 << 32) | (u64)r0;
+    o[1] = ((u64)r3 << 32) | (u64)r2;
+    o[2] = reduce128((u32)a, (u32)(a >> 32), (u32)b, (u32)(b >> 32));
+    o[3] = gf64_add(a, b);
+    o[4] = gf64_mul(a, b);
+    o[5] = gf64_sqr(a);
+    Wide wa;
+    wa.l0 = (u32)a;
+    wa.l1 = (u32)(a >> 32);
+    wa.h = (u32)(a ^ b);
+    Wide w = wa;
+    wide_add(&w, b);
+    o[6] = ((u64)w.l1 << 32) | (u64)w.l0;
+    o[7] = (u64)w.h;
+    w = wa;
+    Wide xb;
+    xb.l0 = (u32)b;
+    xb.l1 = (u32)(b >> 32);
+    xb.h = (u32)(b >> 32);
+    wide_add_wide(&w, xb);
+    o[8] = ((u64)w.l1 << 32) | (u64)w.l0;
+    o[9] = (u64)w.h;
+    r0 = (u32)a;
+    r1 = (u32)(a >> 32);
+    r2 = (u32)b;
+    r3 = (u32)(b >> 32);
+    add128_wide(&r0, &r1, &r2, &r3, wa);
+    o[10] = ((u64)r1 << 32) | (u64)r0;
+    o[11] = ((u64)r3 << 32) | (u64)r2;
+    mul128_add_wide(a, b, wa, &r0, &r1, &r2, &r3);
+    o[12] = ((u64)r1 << 32) | (u64)r0;
+    o[13] = ((u64)r3 << 32) | (u64)r2;
+}
+"#;
+
+    #[test]
+    #[ignore]
+    fn opencl_arithmetic_matches_lazy_reference() {
+        const P64: u64 = 0xFFFFFFFF00000001;
+        fn lazy_reduce128_t(t: u128) -> u64 {
+            let x0 = t as u64;
+            let s = x0.wrapping_add(((t >> 64) as u32 as u64) * 0xffffffff);
+            let k = (s < x0) as u64;
+            s.wrapping_add(k << 32).wrapping_sub(((t >> 96) as u64) + k)
+        }
+        fn lazy_gf64_add(a: u64, b: u64) -> u64 {
+            let s = a.wrapping_add(b);
+            if s < a {
+                s.wrapping_add(0xffffffff)
+            } else {
+                s
+            }
+        }
+
+        let u64_edges: [u64; 15] = [
+            0,
+            1,
+            2,
+            0xffffffff,
+            0x100000000,
+            0x100000001,
+            P64 - 1,
+            P64,
+            P64 + 1,
+            u64::MAX - 1,
+            u64::MAX,
+            0x8000000000000000,
+            0x00000000fffffffe,
+            0x0000000100000002,
+            0xfffffffeffffffff,
+        ];
+        let u32_edges: [u32; 7] = [0, 1, 2, 0x7fffffff, 0x80000000, 0xfffffffe, 0xffffffff];
+
+        let mut pairs: Vec<(u64, u64)> = Vec::new();
+        for &a in &u64_edges {
+            for &b in &u64_edges {
+                pairs.push((a, b));
+            }
+        }
+        for &r0 in &u32_edges {
+            for &r1 in &u32_edges {
+                for &r2 in &u32_edges {
+                    for &r3 in &u32_edges {
+                        let a = ((r1 as u64) << 32) | r0 as u64;
+                        let b = ((r3 as u64) << 32) | r2 as u64;
+                        pairs.push((a, b));
+                    }
+                }
+            }
+        }
+        let mut prng = 0xd1b54a32d192ed03u64;
+        let mut next_u64 = || {
+            prng ^= prng << 13;
+            prng ^= prng >> 7;
+            prng ^= prng << 17;
+            prng
+        };
+        for _ in 0..65536 {
+            let a = next_u64();
+            let b = next_u64();
+            pairs.push((a, b));
+        }
+
+        let n = pairs.len();
+        let mut input = vec![0u64; 2 * n];
+        for (i, &(a, b)) in pairs.iter().enumerate() {
+            input[2 * i] = a;
+            input[2 * i + 1] = b;
+        }
+
+        let (pro_que, platform_name, device_name) =
+            build_test_proque(QPOW_TEST_ARITH_CL, n).expect("build test proque");
+        eprintln!("opencl_arithmetic on {platform_name} / {device_name}");
+
+        let in_buf = Buffer::<u64>::builder()
+            .queue(pro_que.queue().clone())
+            .flags(MemFlags::READ_ONLY)
+            .len(2 * n)
+            .build()
+            .expect("in buf");
+        let out_buf = Buffer::<u64>::builder()
+            .queue(pro_que.queue().clone())
+            .flags(MemFlags::WRITE_ONLY)
+            .len(14 * n)
+            .build()
+            .expect("out buf");
+        in_buf.write(&input).enq().expect("in upload");
+
+        let kernel = Kernel::builder()
+            .queue(pro_que.queue().clone())
+            .program(pro_que.program())
+            .name("qpow_test_arithmetic")
+            .arg(&in_buf)
+            .arg(&out_buf)
+            .build()
+            .expect("test kernel");
+        unsafe {
+            kernel.cmd().global_work_size(n).enq().expect("test launch");
+        }
+        pro_que.queue().finish().expect("finish");
+
+        let mut out = vec![0u64; 14 * n];
+        out_buf.read(&mut out).enq().expect("out download");
+
+        const OPS: [&str; 14] = [
+            "mul_lo",
+            "mul_hi",
+            "reduce128",
+            "gf64_add",
+            "gf64_mul",
+            "gf64_sqr",
+            "wide_add_lo",
+            "wide_add_hi",
+            "wide_add_wide_lo",
+            "wide_add_wide_hi",
+            "add128_wide_lo",
+            "add128_wide_hi",
+            "mul128_add_wide_lo",
+            "mul128_add_wide_hi",
+        ];
+        let mask96 = (1u128 << 96) - 1;
+        for (i, &(a, b)) in pairs.iter().enumerate() {
+            let p = (a as u128) * (b as u128);
+            let t = (a as u128) | ((b as u128) << 64);
+            let wa128 = (a as u128) | (((a ^ b) as u32 as u128) << 64);
+            let xb128 = (b as u128) | (((b >> 32) as u32 as u128) << 64);
+            let s96 = wa128.wrapping_add(b as u128) & mask96;
+            let wide96 = wa128.wrapping_add(xb128) & mask96;
+            let full128 = t.wrapping_add(wa128);
+            let mul128 = p.wrapping_add(wa128);
+            let want = [
+                p as u64,
+                (p >> 64) as u64,
+                lazy_reduce128_t(t),
+                lazy_gf64_add(a, b),
+                lazy_reduce128_t(p),
+                lazy_reduce128_t((a as u128) * (a as u128)),
+                s96 as u64,
+                (s96 >> 64) as u64,
+                wide96 as u64,
+                (wide96 >> 64) as u64,
+                full128 as u64,
+                (full128 >> 64) as u64,
+                mul128 as u64,
+                (mul128 >> 64) as u64,
+            ];
+            for (op, &w) in want.iter().enumerate() {
+                assert_eq!(
+                    out[14 * i + op],
+                    w,
+                    "idx={i} a={a:#018x} b={b:#018x} op={}: got {:#018x} want {:#018x}",
+                    OPS[op],
+                    out[14 * i + op],
+                    w
+                );
+            }
+        }
+        eprintln!("opencl_arithmetic: {n} cases x 14 outputs verified");
+    }
+
+    const QPOW_TEST_FIRST8_CL: &str = r#"
+__kernel void qpow_test_first8(__global const u32 *prestate, ulong base,
+                               __global u32 *out) {
+    u32 id = get_global_id(0);
+    if (id >= 64) {
+        return;
+    }
+    u64 st[12];
+    eval_nonce_state(prestate, base, id, st);
+#pragma unroll
+    for (int i = 0; i < 4; i++) {
+        u64 c = gf64_canon(st[i]);
+        out[8 * id + 2 * i] = (u32)(c & EPS64);
+        out[8 * id + 2 * i + 1] = (u32)(c >> 32);
+    }
+}
+"#;
+
+    #[test]
+    #[ignore]
+    fn opencl_first_squeeze_matches_cpu_corpus() {
+        let headers: [[u8; 32]; 4] = [
+            [0u8; 32],
+            [0xffu8; 32],
+            std::array::from_fn(|i| i as u8),
+            std::array::from_fn(|i| (i as u8).wrapping_mul(17).wrapping_add(3)),
+        ];
+        let mut p_dead = [0u8; 64];
+        p_dead[..4].copy_from_slice(&[0xde, 0xad, 0xbe, 0xef]);
+        for (i, b) in p_dead.iter_mut().enumerate().take(56).skip(32) {
+            *b = i as u8;
+        }
+        let nonce_prefixes: [[u8; 64]; 4] = [
+            [0u8; 64],
+            [0xffu8; 64],
+            p_dead,
+            std::array::from_fn(|i| (i as u8).wrapping_mul(13).wrapping_add(7)),
+        ];
+        let bases: [u64; 4] = [0, 0xffff_fffc, 0x0123456789abcdef, u64::MAX - 63];
+
+        let (pro_que, platform_name, device_name) =
+            build_test_proque(QPOW_TEST_FIRST8_CL, 64).expect("build test proque");
+        eprintln!("opencl_first_squeeze on {platform_name} / {device_name}");
+
+        let prestate_buf = Buffer::<u32>::builder()
+            .queue(pro_que.queue().clone())
+            .flags(MemFlags::READ_ONLY)
+            .len(24)
+            .build()
+            .expect("prestate buf");
+        let out_buf = Buffer::<u32>::builder()
+            .queue(pro_que.queue().clone())
+            .flags(MemFlags::WRITE_ONLY)
+            .len(64 * 8)
+            .build()
+            .expect("out buf");
+
+        let kernel = Kernel::builder()
+            .queue(pro_que.queue().clone())
+            .program(pro_que.program())
+            .name("qpow_test_first8")
+            .arg(&prestate_buf)
+            .arg(0u64)
+            .arg(&out_buf)
+            .build()
+            .expect("test kernel");
+
+        let mut checked = 0usize;
+        for (hi, header) in headers.iter().enumerate() {
+            for (ni, prefix) in nonce_prefixes.iter().enumerate() {
+                for &base in &bases {
+                    let mut nonce = *prefix;
+                    nonce[56..64].copy_from_slice(&base.to_be_bytes());
+                    let mid = qpow::mining_prestate_low64(header, &nonce);
+                    let mut midstate32 = [0u32; 24];
+                    for i in 0..12 {
+                        midstate32[2 * i] = mid[i] as u32;
+                        midstate32[2 * i + 1] = (mid[i] >> 32) as u32;
+                    }
+                    prestate_buf
+                        .write(&midstate32.to_vec())
+                        .enq()
+                        .expect("prestate upload");
+                    kernel.set_arg(1, base).expect("base arg");
+                    unsafe {
+                        kernel
+                            .cmd()
+                            .global_work_size(64)
+                            .enq()
+                            .expect("test launch");
+                    }
+                    pro_que.queue().finish().expect("finish");
+                    let mut out = vec![0u32; 64 * 8];
+                    out_buf.read(&mut out).enq().expect("out download");
+                    for idx in 0..64u32 {
+                        let mut nn = *prefix;
+                        nn[56..64].copy_from_slice(&(base + idx as u64).to_be_bytes());
+                        let hash = qpow::get_nonce_hash(header, &nn);
+                        for w in 0..8 {
+                            let want =
+                                u32::from_le_bytes(hash[4 * w..4 * w + 4].try_into().unwrap());
+                            assert_eq!(
+                                out[8 * idx as usize + w],
+                                want,
+                                "hdr={hi} nonce={ni} base={base:#018x} idx={idx} w={w}: \
+                                 got {:#010x} want {:#010x}",
+                                out[8 * idx as usize + w],
+                                want
+                            );
+                        }
+                        checked += 1;
+                    }
+                }
+            }
+        }
+        eprintln!("opencl_first_squeeze: {checked} nonces verified");
+    }
+
     /// Diagnostics: dumps kernel work-group info (register/private-mem
     /// pressure → occupancy ceiling) for the tuned launch.
     ///
@@ -1018,8 +1456,7 @@ mod tests {
             .and_then(|v| v.parse().ok())
             .unwrap_or(10);
         let (platform, device, platform_name, device_name) =
-            crate::auxpow::gpu_opencl_full::ExtGpuMiner::pick_opencl_device()
-                .expect("pick device");
+            crate::auxpow::gpu_opencl_full::ExtGpuMiner::pick_opencl_device().expect("pick device");
         let mut prog = ProgramBuilder::new();
         prog.src(src);
         let opts = std::env::var("ZION_OCL_BUILD_OPTS")
@@ -1050,12 +1487,7 @@ mod tests {
         for r in 0..reps {
             let t0 = std::time::Instant::now();
             unsafe {
-                kernel
-                    .cmd()
-                    .gws([grid])
-                    .lws([lws])
-                    .enq()
-                    .expect("mb enq");
+                kernel.cmd().gws([grid]).lws([lws]).enq().expect("mb enq");
             }
             pro_que.queue().finish().expect("finish");
             let dt = t0.elapsed();
@@ -1069,6 +1501,23 @@ mod tests {
                 dt.as_secs_f64() * 1e9 / iters as f64
             );
         }
+    }
+
+    #[test]
+    #[ignore]
+    fn qpow_opcount() {
+        use cl_mirror::*;
+        let mid = [0x123456789abcdefu64; 12];
+        let _ = eval_first8(&mid, 0xfeedface12345678u64, 5);
+        eprintln!(
+            "opcount/nonce: mul64wide={} sqr={} reduce128={} gf64_add={} wide_add={} wide_add_wide={}",
+            C_MUL64W.load(std::sync::atomic::Ordering::Relaxed),
+            C_SQRW.load(std::sync::atomic::Ordering::Relaxed),
+            C_REDUCE.load(std::sync::atomic::Ordering::Relaxed),
+            C_ADD.load(std::sync::atomic::Ordering::Relaxed),
+            C_WADD.load(std::sync::atomic::Ordering::Relaxed),
+            C_WADDW.load(std::sync::atomic::Ordering::Relaxed),
+        );
     }
 
     /// Occupancy probe: requires kernel instrumented to track concurrent
@@ -1092,16 +1541,116 @@ mod tests {
                 .mine_batch(&header, &n, &target, batch as u64)
                 .expect("batch");
             let mut results = vec![0u32; RESULT_WORDS];
-            miner
-                .results_buf
-                .read(&mut results)
-                .enq()
-                .expect("read");
+            miner.results_buf.read(&mut results).enq().expect("read");
             eprintln!(
                 "occupancy_probe: inflight_end={} max_concurrent_lanes={} hits={}",
                 results[6], results[7], results[0]
             );
         }
+    }
+
+    #[test]
+    fn qpow_native_selector_rules() {
+        const AMD: &str = "AMD Accelerated Parallel Processing";
+        assert_eq!(
+            qpow_native_build_flags(AMD, "gfx1010:xnack-", false, true),
+            Some("-DQPOW_GCN_NATIVE=1 -DQPOW_GCN_WAVE32=1")
+        );
+        assert_eq!(
+            qpow_native_build_flags(AMD, "gfx900:xnack-", false, true),
+            Some("-DQPOW_GCN_NATIVE=1")
+        );
+        assert_eq!(
+            qpow_native_build_flags(
+                "amd accelerated parallel processing",
+                "GFX1010:xnack-",
+                false,
+                true
+            ),
+            Some("-DQPOW_GCN_NATIVE=1 -DQPOW_GCN_WAVE32=1")
+        );
+        assert_eq!(
+            qpow_native_build_flags(AMD, "GFX900:xnack-", false, true),
+            Some("-DQPOW_GCN_NATIVE=1")
+        );
+        assert_eq!(
+            qpow_native_build_flags(AMD, "gfx1030:xnack-", false, true),
+            None
+        );
+        assert_eq!(
+            qpow_native_build_flags("rusticl", "gfx1010", false, true),
+            None
+        );
+        assert_eq!(
+            qpow_native_build_flags("NVIDIA CUDA", "NVIDIA GeForce GTX 1070 Ti", false, true),
+            None
+        );
+        assert_eq!(
+            qpow_native_build_flags(AMD, "gfx1010:xnack-", true, true),
+            None
+        );
+        assert_eq!(
+            qpow_native_build_flags(AMD, "gfx1010:xnack-", false, false),
+            None
+        );
+        assert_eq!(
+            qpow_native_build_flags(AMD, "gfx900:xnack-", false, false),
+            None
+        );
+    }
+
+    #[test]
+    fn qpow_native_fallback_build_paths() {
+        let flags = Some("-DQPOW_GCN_NATIVE=1 -DQPOW_GCN_WAVE32=1");
+
+        let mut calls: Vec<String> = Vec::new();
+        let (v, native) = build_with_native_fallback("BASE", flags, |o| {
+            calls.push(o.to_string());
+            Ok(42)
+        })
+        .unwrap();
+        assert_eq!(v, 42);
+        assert!(native);
+        assert_eq!(calls, ["BASE -DQPOW_GCN_NATIVE=1 -DQPOW_GCN_WAVE32=1"]);
+
+        let mut calls: Vec<String> = Vec::new();
+        let (v, native) = build_with_native_fallback("BASE", flags, |o| {
+            calls.push(o.to_string());
+            if calls.len() == 1 {
+                Err(anyhow::anyhow!("native build failed"))
+            } else {
+                Ok(42)
+            }
+        })
+        .unwrap();
+        assert_eq!(v, 42);
+        assert!(!native);
+        assert_eq!(
+            calls,
+            [
+                "BASE -DQPOW_GCN_NATIVE=1 -DQPOW_GCN_WAVE32=1",
+                "BASE -DQPOW_GCN_NATIVE=0"
+            ]
+        );
+
+        let mut calls: Vec<String> = Vec::new();
+        let r: Result<(i32, bool)> = build_with_native_fallback("BASE", flags, |o| {
+            calls.push(o.to_string());
+            Err(anyhow::anyhow!("fail {}", calls.len()))
+        });
+        let e = r.unwrap_err();
+        assert_eq!(e.to_string(), "fail 2");
+        assert_eq!(calls.len(), 2);
+
+        let mut calls: Vec<String> = Vec::new();
+        let (v, native) = build_with_native_fallback("BASE", None, |o| {
+            calls.push(o.to_string());
+            Ok(42)
+        })
+        .unwrap();
+        assert_eq!(v, 42);
+        assert!(!native);
+        assert_eq!(calls, ["BASE"]);
     }
 
     #[test]

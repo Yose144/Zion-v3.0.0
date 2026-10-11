@@ -5,18 +5,24 @@
 ## Context
 
 - **QPoW (Quantus / QTU-QTC)** = Poseidon2 sponge (12×u64 Goldilocks state) squeezed
-  twice → 64-byte hash compared `<=` a 64-byte target. Pure-ALU algorithm — no DAG,
+  twice → 64-byte hash compared strictly `<` a 64-byte target. Pure-ALU algorithm — no DAG,
   no scratchpad, tiny buffers. Ideal fit for Apple Metal (unified memory is a
   non-issue here, unlike the memory-hard Ekam Deeksha).
 - Existing implementations in `V31/L1/miner`:
   - CPU reference `src/auxpow/qpow.rs` — bit-exact vs upstream `pow-core` (KAT-verified).
-  - OpenCL `src/gpu/qpow_opencl.rs` + `csrc/opencl/poseidon2_kernel.cl` — ~43 MH/s on
-    gfx1010 (RX 5600 XT).
+  - OpenCL `src/gpu/qpow_opencl.rs` + `csrc/opencl/poseidon2_kernel.cl` — verified
+    AMD ISA path (`QPOW_GCN_NATIVE`, auto-gated): **82.07 MH/s on gfx1010
+    (RX 5600 XT), 103.125 MH/s on gfx900 (RX Vega 64)** — frozen local
+    benchmark 2026-10-11 (batch 4 194 304, local 64, NPT 1, 128 iters,
+    16 discarded, 112 steady samples/device); not deployed, parity pending —
+    see the AMD ISA section below.
   - CUDA `src/gpu/qpow_cuda.rs` + `csrc/cuda/poseidon2_kernel.cu`.
 - **SRBMiner-MULTI** (doktor83): closed-source, **Win64 + Linux only — no macOS
-  build exists**. Supports `--algorithm quantus`, reaches ~73 MH/s on gfx1010
-  (≈1.7× our OpenCL kernel). Already integrated in the desktop agent as an
-  opt-in sidecar (`qtcEngine: "srbminer"`, pool `eu.lproute.com:5660`).
+  build exists**. Supports `--algorithm quantus`. Historical ~73 MH/s on
+  gfx1010 (2026-10-10); current measured reference on matched hardware is
+  ~105 MH/s (gfx1010) / ~137 MH/s (gfx900) — a comparison reference, not a
+  current pool measurement of our rigs. Already integrated in the desktop
+  agent as an opt-in sidecar (`qtcEngine: "srbminer"`, pool `eu.lproute.com:5660`).
 - Therefore on macOS / Apple Silicon the **Metal kernel is the only GPU path**
   for QTC — and it is also the missing third backend for feature parity
   (CUDA + OpenCL already wired through `QpowGpuMiner`).
@@ -116,7 +122,8 @@ Commercial options, in order of feasibility:
 2. **Upstream algorithm deal** — doktor83 commercially integrates new
    algorithms on request. Candidates to offer: **Ekam Deeksha v3.2** (ZION
    native PoW — we own the spec + CPU ref + all three GPU kernels) and/or our
-   **lane-parallel QPoW kernel IP** if it beats their 73 MH/s. Requires:
+   **lane-parallel QPoW kernel IP** if it beats their measured current
+   reference on matched hardware. Requires:
    frozen algorithm spec, test vectors, reference implementation, live pool.
 3. **ZionSMR as our own commercial miner** — brand `zion-miner` with an
    SRBMiner-style feature set. **Shipped:** `--api-enable`/`--api-port`/
@@ -183,3 +190,31 @@ Commercial options, in order of feasibility:
    a 10-min soak. ✅ — 22/0/0 Accepted shares live on qelvhash, 6.93 MH/s avg
 4. Plan updated with measured numbers; SRBMiner sidecar remains the production
    default on Linux rigs. ✅
+
+## AMD ISA OpenCL status (2026-10-11)
+
+The OpenCL kernel source now includes a verified `QPOW_GCN_NATIVE` branch — 8 native
+arithmetic helpers (schoolbook partial products + carry trees), a
+7-instruction carry-only `reduce128`, and fused `mul128_add_wide` inside
+`int_round_p`. Lazy reduction semantics, round constants, nonce/target/result
+ABI and CPU candidate re-verification are unchanged; portable multiplication
+stays `a*b` + `mul_hi`. Host auto-selection is limited to the
+`AMD Accelerated Parallel Processing` platform with `gfx1010` (wave32) or
+`gfx900` (wave64); `ZION_QPOW_OCL_NATIVE=0` forces portable; a native compile
+failure retries portable, a portable failure propagates; a successful
+`ZION_QPOW_OCL_SRC` override suppresses the automatic injection.
+
+Frozen final local benchmark: **82.07 MH/s (gfx1010), 103.125 MH/s (gfx900)** —
+batch 4 194 304, local 64, NPT 1, 128 iterations, first 16 discarded, 112
+steady samples per device. Not pool-share sustained throughput; earlier
+SRBMiner references ~105/137 MH/s remain unmet — parity pending. The code is
+**verified but not deployed** into production binaries or agent/engine/OC
+configuration.
+
+Verification: `cargo test --release --locked -p zion-miner --features
+gpu-opencl --lib -- --test-threads=1` → 157 passed / 0 failed / 11 ignored;
+on-device gates on both cards (native + forced-portable): 68 162
+edge/random pairs × 14 arithmetic outputs, 4 096 first-squeeze nonces vs CPU,
+golden ±1 + nonce-boundary. Strict clippy `-D warnings` is blocked by 87
+pre-existing diagnostics outside `qpow_opencl.rs`. Reproduction commands are
+in `QPOW.md` § AMD ISA.

@@ -1,11 +1,13 @@
 # QPOW — Quantus nativní integrace do Trinity (Stream 2)
 
-Status: **live-validated na GTX 1070 Ti — CUDA kernel těží, ZION stream opraven**
-Datum: 2026-10-30 (CUDA debug run 2026-10-03)
+Status: **CPU + CUDA + OpenCL + Metal nativní backendy; OpenCL obsahuje ověřenou
+AMD ISA implementaci — zatím nenasazenou do produkce, SRBMiner parity pending**
+Datum: 2026-10-11 (historické CUDA debug runy 2026-10-03 / live E2E viz níže)
 
 Quantus (QPoW = Poseidon2 nad Goldilocks polem) je plně integrovaný jako
 `ExternalCoin::Quantus` na Trinity Stream 2 (GPU external). Těžba běží nativně —
-vlastní CPU fast-path + dedikovaný CUDA kernel — bez externího miner binárky.
+vlastní CPU fast-path + GPU backendy (CUDA / OpenCL / Metal) — bez externího
+miner binárky.
 
 ## Architektura
 
@@ -14,7 +16,7 @@ upstream pool (stratum login-dialekt)
   │  mining_hash 32B, target 64B BE, extranonce 4B, job_id, seq, difficulty
   ▼
 miner: auxpow/client.rs (QuantusStratum)  →  Job{target_512}
-  │  Stream 2: try_qpow_gpu_share (gpu-cuda) → QpowCudaMiner
+  │  Stream 2: try_qpow_gpu_share → QpowGpuMiner (CUDA/OpenCL/Metal/Multi)
   │            fallback: parallel::find_qpow_share (CPU fast-path)
   ▼
 Share{nonce_512[64], hash_512[64]} (+ legacy u64/32B views pro metriky)
@@ -27,20 +29,31 @@ pool: stratum.rs → ShareForwardRequest{nonce_hex} → auxpow_bridge
 ## Algoritmus (bit-exact vs. upstream `qp-poseidon-core 3.1.0`)
 
 - Goldilocks pole, Poseidon2 WIDTH=12, RATE=8, output 4 felty/squeeze, 2 squeezy → 64B hash.
-- Nonce: 64B / 512-bit BE. Layout: `extranonce(4B) + padding(54B) + low64(6B BE použito, zbytek prefix)`.
-  Low 64 bitů iteruje miner (host-pack do LE u32/u64 limbů); prefix nese extranonce.
+- Nonce: 64B / 512-bit BE. Layout z `build_nonce`: první 4B = extranonce,
+  dalších 52B = fixní prefix, posledních 8B = low64 big-endian
+  (`nonce[56..64]`). Low 64 bitů iteruje miner (host-pack do LE u32/u64 limbů);
+  prefix nese extranonce.
 - Validita: **striktní `hash < target`** (U512 compare nad 64B BE poli).
 - Fast-path: `mining_prestate_low64` předpočítá sponge stav z headeru + nonce prefixu →
   kandidát = absorb low64 + 3 permutace (místo 5).
+- GPU kernel počítá 2 povinné permutace pro první squeeze (nelze přeskočit);
+  plný CPU hash `get_nonce_hash` zahrnuje i permutaci druhého squeeze.
 - KAT: header=0,nonce=0 → `8e64e3d8e0f38f88…e8cc` (ověřeno i proti live poolu).
 
 ## Klíčové soubory
+
+Cesty jsou relativní k `V31/L1`.
 
 | Soubor | Obsah |
 |---|---|
 | `miner/src/auxpow/qpow.rs` | CPU hasher: `get_nonce_hash`, `mining_midstate`, `mining_prestate_low64`, `hash_from_prestate_low64`, `build_nonce`, `scan_low64`, `biguint_from_hex`, KAT testy |
 | `miner/csrc/cuda/poseidon2_kernel.cu` | CUDA kernel — port upstream `quantus-miner` engine-cuda G2 (`mining.cu`): `__constant__` RC tabulky, inline-PTX carry, `reduce128`, sparse nonce inject, early-reject po 1. squeeze, candidate-index results |
 | `miner/src/gpu/qpow_cuda.rs` | `QpowCudaMiner`: NVRTC, U512 limb packing, CPU double-check safety net |
+| `miner/csrc/opencl/poseidon2_kernel.cl` | OpenCL kernel — stejná aritmetika + `QPOW_GCN_NATIVE` větev (8 AMD ISA helperů; source default 0, auto-gated) |
+| `miner/src/gpu/qpow_opencl.rs` | `QpowOpenclMiner`: OpenCL host, AMD auto-detekce, portable fallback, CPU re-verifikace |
+| `miner/csrc/metal/poseidon2_kernel.metal` | Metal kernel — line-level MSL port (`metal::mulhi`, `atomic_uint`) |
+| `miner/src/gpu/qpow_metal.rs` | `QpowMetalMiner`: Metal host; na macOS `auto` zkouší Metal první |
+| `miner/src/gpu/mod.rs` | `QpowGpuMiner` enum + `Multi` hashrate-weighted nonce partition |
 | `miner/src/runtime.rs` | `gpu_qpow`, `gpu_qpow_disabled`, `try_qpow_gpu_share`, target_512 decode z V3 `target_hex` |
 | `miner/src/parallel.rs` | `find_qpow_share` — paralelní disjoint CPU ranges |
 | `miner/src/auxpow/client.rs` | `StratumProtocol::QuantusStratum`, login/job-parse/submit (128-hex), `submit_qpow_share` |
@@ -60,7 +73,7 @@ pool: stratum.rs → ShareForwardRequest{nonce_hex} → auxpow_bridge
 Wire submit: `{"id":<session>, "job_id":…, "nonce":<128hex>, "result":<128hex>}` —
 nonce je 64B BE hex, extranonce uvnitř prefixu.
 
-## Nasazení (zion-pool → k1pool)
+## Nasazení (zion-pool → k1pool) — historický příklad
 
 Pool-side bridge se řídí env v `/etc/zion/edge-environment.sh` (Edge) /
 `V31/deploy/config/edge-environment.sh` (template). **Per-coin env suffix =
@@ -95,8 +108,72 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
 | `ZION_QTU_USD_PER_DAY=<x>` | profit override (generic: `ZION_<TICKER>_USD_PER_DAY`, env > live > fallback) |
 | `ZION_CUDA_ARCH=sm_61` | NVRTC arch pro GTX 1070 Ti (Pascal) |
 | `ZION_CUDA_BLOCK_SIZE`, `ZION_GPU_WORK_SIZE`, `ZION_EXT_GPU_GAP_MS` | kernel tuning / duty-cycle s llama |
+| `ZION_QPOW_OCL_NATIVE=0` | vynutí portable OpenCL build (vypne AMD ISA větev) |
+| `ZION_QPOW_OCL_SRC=<path>` | vlastní kernel source — úspěšný override potlačí automatickou injektáž native maker, manuální build opts zůstávají |
+| `ZION_OCL_PLATFORM_IDX`, `ZION_OCL_DEVICE_IDX`, `ZION_OCL_DEVICE_NAME` | výběr OpenCL platformy / zařízení; jmenný filtr má přednost před indexem |
+| `ZION_QPOW_OCL_DEVICES=gfx900,gfx1010` | filtr zařízení pro multi-GPU partition |
+| `ZION_QPOW_OCL_LOCAL_SIZE`, `ZION_QPOW_OCL_NPT` | local size / nonces-per-thread (defaulty 64 / 1) |
 
-## Ověřené
+## AMD ISA (nativní GCN/RDNA aritmetika) — ověřeno 2026-10-11
+
+OpenCL kernel má `QPOW_GCN_NATIVE` větev (source default `0`): 8 nativních
+aritmetických helperů (schoolbook partial products + carry trees),
+7-instrukční carry-only `reduce128` a fused `mul128_add_wide` použitý v
+`int_round_p`. Lazy reducer sémantika, konstanty, počet kol, nonce/target/
+results ABI i CPU re-verifikace kandidátů jsou nezměněné; portable násobení
+zůstává `a*b` + `mul_hi`.
+
+- Automatický výběr: jen platforma `AMD Accelerated Parallel Processing` +
+  arch `gfx1010` (wave32) nebo `gfx900` (wave64), case-insensitive; jinde portable.
+- `ZION_QPOW_OCL_NATIVE=0` → vynucený portable build. Selhání native compile →
+  retry s `-DQPOW_GCN_NATIVE=0`; selhání portable buildu se propaguje.
+  Úspěšný `ZION_QPOW_OCL_SRC` override potlačí automatickou injektáž maker.
+- CPU safety: každý GPU kandidát se před submitem znovu ověří CPU hashem —
+  native větev nemůže odeslat nevalidní share.
+
+### Zmrazené výsledky (lokální benchmark, ne sustained pool rate)
+
+| Zařízení | Medián |
+|---|---|
+| gfx1010 (RX 5600 XT) | 82.07 MH/s |
+| gfx900 (RX Vega 64) | 103.125 MH/s |
+
+Metoda: batch 4 194 304, local size 64, NPT 1, 128 iterací, prvních 16
+zahozeno, 112 steady vzorků na zařízení. Starší SRBMiner reference jsou
+~105/137 MH/s — parity **nebyla** dosažena. Kód není nasazený do produkčních
+binárek ani do agent/engine/OC konfigurace.
+
+### Verifikace
+
+- `cargo test --release --locked -p zion-miner --features gpu-opencl --lib
+  -- --test-threads=1` → 157 passed / 0 failed / 11 ignored.
+- GPU gates na obou kartách (native i forced-portable): aritmetika
+  68 162 edge/random párů × 14 výstupů, první squeeze 4 096 nonců vs CPU,
+  golden hash ±1 + nonce-boundary.
+- Strict clippy `-D warnings` selhává na 87 pre-existing chybách mimo
+  `qpow_opencl.rs` (v novém kódu žádné).
+
+### Reprodukce (GPU testy — izolovaný rig)
+
+Z `V31`:
+
+```sh
+ZION_OCL_PLATFORM_IDX=0 ZION_OCL_DEVICE_IDX=0 cargo test --release --locked \
+  -p zion-miner --features gpu-opencl --lib \
+  opencl_arithmetic_matches_lazy_reference -- --ignored --nocapture --test-threads=1
+```
+
+Stejně `opencl_first_squeeze_matches_cpu_corpus` a
+`opencl_kernel_matches_cpu_golden_and_boundaries`; pro druhou kartu
+`ZION_OCL_DEVICE_IDX=1`. Forced-portable: prefix `ZION_QPOW_OCL_NATIVE=0`.
+Pro auto-selection test nesmí být nastavený `ZION_QPOW_OCL_SRC` ani ruční
+build overrides.
+
+Benchmark: `QPOW_BENCH_BATCH=4194304 QPOW_BENCH_ITERS=128` na existující test
+`qpow_bench_effective_throughput` (stejný cargo příkaz); prvních 16 iterací
+zahodit dle receptu, nepoužívat best-of-N.
+
+## Ověřené (historické záznamy — CUDA live/E2E 2026-10-03, ne aktuální měření)
 
 - KAT bit-exact (CPU + host-shim CUDA kernel, zero i nonzero vstupy)
 - Kernel sponge-flow == `get_nonce_hash` (`midstate_kernel_flow_matches_reference`)
@@ -188,8 +265,11 @@ Miner-side (rig 1070 Ti): `ZION_STREAM2_FORCE_COIN=quantus`
 
 ## Známé limity
 
-- Pouze CUDA; OpenCL port = mechanický přepis kernelu (TODO).
+- AMD ISA větev OpenCL kernelu je ověřená, ale **není nasazená** do produkčních
+  binárek; SRBMiner parity pending (82.07/103.125 MH/s vs ~105/137 MH/s
+  reference — viz AMD ISA sekce).
 - `share_forwarder.rs::try_forward` je dead code (validace u64-only); aktivní path je
   `forward_share_to_upstream` — pokud se forwarder někdy aktivuje, potřebuje qpow branch.
 - Profit feed: WhatToMine/NiceHash QTU nemají → env override nebo custom pool-stats feed.
-- Real-hardware NVRTC compile zatím neověřen (kernel ověřen host-shimem, ne na GPU).
+- Real-hardware NVRTC compile ověřen 2026-10-03 na GTX 1070 Ti (viz historická
+  sekce výše).
