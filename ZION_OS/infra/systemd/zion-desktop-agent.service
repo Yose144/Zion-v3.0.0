@@ -1,0 +1,16 @@
+[Unit]
+Description=ZION Desktop Agent (Electron mining agent)
+Documentation=file:///home/zionserver/2.9.6-main/AGENTS.md
+# Start only once a graphical session exists (DISPLAY/WAYLAND_DISPLAY/
+# XAUTHORITY are imported into the user manager by gnome-session).
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/bin/start-desktop-agent.sh
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=graphical-session.target

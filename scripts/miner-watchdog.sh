@@ -35,33 +35,38 @@ MINER_STREAK=0; SRB_STREAK=0; RESTARTS=0; LAST_ACTION="boot"
 [ -f "$STATE_FILE" ] && . "$STATE_FILE" 2>/dev/null || true
 
 # ── process checks ───────────────────────────────────────────────────────
-AGENT_PID=$(pgrep -f "scripts/launch-electron.js" | head -1 || true)
+AGENT_PID=$(pgrep -f "^node scripts/launch-electron" | head -1 || true)
 MINER_PID=$(pgrep -f "resources/zion-miner" | head -1 || true)
 SRB_PID=$(pgrep -f "SRBMiner-MULTI" | head -1 || true)
 
-SESSION_UP=0
-for s in /run/user/"$UID_NUM"/wayland-*; do [ -S "$s" ] && SESSION_UP=1 && break; done
-
 # ── restart logic ────────────────────────────────────────────────────────
-if [ -z "$AGENT_PID" ]; then
-  if [ "$SESSION_UP" = "1" ] && [ -x "$WRAPPER" ]; then
-    XDG_RUNTIME_DIR="/run/user/$UID_NUM" WAYLAND_DISPLAY="wayland-0" \
-      nohup "$WRAPPER" >/dev/null 2>&1 &
-    RESTARTS=$((RESTARTS + 1)); LAST_ACTION="relaunched agent (was dead)"
-    log "agent dead -> relaunched wrapper pid=$!"
+# The agent runs as user service zion-desktop-agent.service bound to
+# graphical-session.target — restart goes through systemd so the process
+# lands in its own cgroup with the session env (DISPLAY/XAUTHORITY imported
+# by gnome-session). Spawning from here via nohup would die with this
+# oneshot service's cgroup teardown.
+SESSION_ACTIVE=0
+systemctl --user is-active --quiet graphical-session.target && SESSION_ACTIVE=1
+
+restart_agent() {
+  local why="$1"
+  if [ "$SESSION_ACTIVE" = "1" ]; then
+    systemctl --user restart zion-desktop-agent.service >/dev/null 2>&1
+    RESTARTS=$((RESTARTS + 1)); LAST_ACTION="agent restart: $why"
+    log "restart agent ($why)"
   else
     LAST_ACTION="agent dead, no graphical session"
-    log "agent dead, no wayland session -> cannot relaunch"
+    log "cannot restart agent ($why) — graphical-session.target inactive"
   fi
+}
+
+if [ -z "$AGENT_PID" ]; then
+  restart_agent "agent dead"
 elif [ -z "$MINER_PID" ]; then
   MINER_STREAK=$((MINER_STREAK + 1)); LAST_ACTION="zion-miner dead (streak $MINER_STREAK)"
   if [ "$MINER_STREAK" -ge 3 ]; then
-    pkill -f "scripts/launch-electron.js" 2>/dev/null || true
-    sleep 1
-    pkill -f "node_modules/electron.*desktop-agent" 2>/dev/null || true
-    RESTARTS=$((RESTARTS + 1)); MINER_STREAK=0
-    LAST_ACTION="killed agent: zion-miner dead 3 ticks"
-    log "zion-miner dead 3 ticks under live agent -> killed agent for relaunch"
+    MINER_STREAK=0
+    restart_agent "zion-miner dead 3 ticks"
   fi
 else
   MINER_STREAK=0
@@ -70,19 +75,15 @@ fi
 if [ -n "$AGENT_PID" ] && [ -n "$MINER_PID" ] && [ -z "$SRB_PID" ]; then
   SRB_STREAK=$((SRB_STREAK + 1))
   if [ "$SRB_STREAK" -ge 3 ]; then
-    pkill -f "scripts/launch-electron.js" 2>/dev/null || true
-    sleep 1
-    pkill -f "node_modules/electron.*desktop-agent" 2>/dev/null || true
-    RESTARTS=$((RESTARTS + 1)); SRB_STREAK=0
-    LAST_ACTION="killed agent: SRBMiner dead 3 ticks"
-    log "SRBMiner dead 3 ticks under live agent -> killed agent for relaunch"
+    SRB_STREAK=0
+    restart_agent "SRBMiner dead 3 ticks"
   fi
 else
   SRB_STREAK=0
 fi
 
 # re-check after potential relaunch actions
-AGENT_PID=$(pgrep -f "scripts/launch-electron.js" | head -1 || true)
+AGENT_PID=$(pgrep -f "^node scripts/launch-electron" | head -1 || true)
 MINER_PID=$(pgrep -f "resources/zion-miner" | head -1 || true)
 SRB_PID=$(pgrep -f "SRBMiner-MULTI" | head -1 || true)
 
