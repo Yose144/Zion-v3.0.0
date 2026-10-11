@@ -2147,12 +2147,22 @@ function createWindow() {
 
   // Recover from renderer crashes / load failures instead of silently exiting.
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    // Subframe failures (e.g. market/oasis iframes) must not block the app:
+    // a transient DNS/network hiccup at boot would otherwise freeze the main
+    // process behind a modal error box and prevent miner spawn.
+    if (isMainFrame !== true) {
+      try {
+        logApp('subframe-fail-load', `${errorCode} ${errorDescription} ${validatedURL}`);
+      } catch {
+        // ignore
+      }
+      return;
+    }
     // In dev, the React/Vite/Next server might not be running.
     // Don't brick the app: fall back to the packaged/static UI.
     try {
       if (
         !didFallbackToFileUi &&
-        isMainFrame === true &&
         String(errorDescription || '').toUpperCase().includes('ERR_CONNECTION_REFUSED') &&
         typeof validatedURL === 'string' &&
         validatedURL

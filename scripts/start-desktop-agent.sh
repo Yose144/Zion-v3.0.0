@@ -14,6 +14,15 @@ if [ -z "${DISPLAY:-}" ]; then
   fi
 fi
 
+# gnome-shell can move the Electron process out of our service cgroup into an
+# app-*.scope — then systemd can't kill it and a new instance just loses the
+# single-instance lock and exits 0. Kill any leftover first (pattern matches
+# the electron binary path only, never this script or the node launcher).
+for i in $(seq 1 10); do
+  pkill -u "$USER" -f "electron/dist/electron .*desktop-agent" 2>/dev/null || break
+  sleep 1
+done
+
 LOG="$HOME/.config/zion-desktop-agent/agent-autostart.log"
 mkdir -p "$(dirname "$LOG")"
 exec node scripts/launch-electron.js >> "$LOG" 2>&1
