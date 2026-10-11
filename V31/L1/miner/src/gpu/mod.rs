@@ -2771,7 +2771,7 @@ fn count_opencl_gpu_devices() -> usize {
 #[cfg(feature = "gpu-opencl")]
 pub(crate) struct GpuDeviceInfo {
     /// Global enumeration index (stable within a single process).
-    global_idx: usize,
+    pub(crate) global_idx: usize,
     /// Platform index.
     platform_idx: usize,
     /// Device index within platform.

@@ -1,10 +1,44 @@
 # QPoW Engine — Stav, Architektura a Verifikovaný Výkon
 
-**Datum:** 2026-10-06 · **Scope:** QPoW (Quantus/Poseidon2-Goldilocks) GPU mining v nativním zion-mineru — rig + lokální desktop-agent, ext. pool `62.171.141.136:8444` → upstream k1pool.
+**Datum:** 2026-10-11 · **Scope:** QPoW (Quantus/Poseidon2-Goldilocks) GPU mining v nativním zion-mineru. AMD ISA výsledky jsou lokální benchmark; topologie `62.171.141.136:8444` → k1pool níže je historický záznam z 2026-10-06, nikoli nově ověřená produkční konfigurace.
 
 ---
 
-## 1. Topologie a aktuální výkon (pool-verified)
+## 0. Aktuální stav — AMD ISA implementace (2026-10-11)
+
+**Tato sekce nahrazuje všechny starší OpenCL diagnostické závěry níže.**
+Dřívější domněnky „unsupported wide asm" a fixní strop 46–50 MH/s byly
+vyvráceny: `v_mad_u64_u32` má pět operandů (chyběla carry-mask destination) a
+inline GCN/RDNA ISA funguje — viz `V31/AGENTS.md` sekce 14.
+
+**Implementace (v mainu, ověřená, nenasazená):** `poseidon2_kernel.cl` má
+`QPOW_GCN_NATIVE` větev (source default `0`) — 8 nativních helperů
+(schoolbook partial products + carry trees), 7-instrukční carry-only
+`reduce128`, fused `mul128_add_wide` v `int_round_p`. Lazy reducer sémantika,
+konstanty, ABI a CPU re-verifikace kandidátů nezměněny; portable mul =
+`a*b` + `mul_hi`. Host `qpow_opencl.rs` zapíná native jen na platformě
+`AMD Accelerated Parallel Processing` a arch `gfx1010` (wave32) / `gfx900`
+(wave64); `ZION_QPOW_OCL_NATIVE=0` vynutí portable; native compile failure →
+retry `-DQPOW_GCN_NATIVE=0`, portable failure se propaguje; úspěšný
+`ZION_QPOW_OCL_SRC` override potlačí auto-injektáž.
+
+**Zmrazené výsledky** (lokální benchmark, ne pool-share sustained rate):
+**gfx1010 = 82.07 MH/s, gfx900 = 103.125 MH/s** — batch 4 194 304,
+local 64, NPT 1, 128 iterací, 16 zahozeno, 112 steady vzorků/GPU.
+Dřívější SRBMiner reference ~105/137 MH/s — **parity nebyla dosažena**,
+zbývající gap je změřený, ne architektonický strop. Žádné produkční
+binárky / agent config / OC se neměnily.
+
+**Verifikace:** `cargo test --release --locked -p zion-miner --features
+gpu-opencl --lib -- --test-threads=1` → 157 pass / 0 fail / 11 ignored.
+On-device gates (native i forced-portable, obě karty): 68 162 párů × 14
+výstupů aritmetiky, 4 096 nonců první squeeze vs CPU, golden ±1 + boundary.
+Strict clippy `-D warnings` = 87 pre-existing chyb mimo `qpow_opencl.rs`
+(v novém kódu žádné). Repro příkazy: `QPOW.md` § AMD ISA.
+
+---
+
+## 1. Topologie a výkon (historický pool-verified záznam z 2026-10-06)
 
 | Uzel | GPU | Backend | Role | QPoW | Poznámka |
 |---|---|---|---|---|---|
@@ -21,9 +55,9 @@ Share-rate → hashrate: `rate = Σ(upstream_diff) / window`. Upstream diff je s
 
 ### OpenCL (AMD) — `V31/L1/miner/src/gpu/qpow_opencl.rs`
 
-- Kernel `csrc/opencl/poseidon2_kernel.cl` — čistá u64 Goldilocks aritmetika (Poseidon2 nad p = 2⁶⁴−2³²+1), compute-bound.
-- **Vyladěné defaults (sweep 6. 10.):** `ZION_STREAM2_BATCH=8388608` (8M), `ZION_QPOW_OCL_NPT=4` (nonces/thread), `ZION_QPOW_OCL_LOCAL_SIZE=64`.
-- Sweep výsledky: NPT 1→4 = **+10–15 % kernel-rate**; NPT=8 flat; LS 64/128/256 flat; batch 4M→8M +malé, 16M flat → strop kernelu.
+- Kernel `csrc/opencl/poseidon2_kernel.cl` — u64 Goldilocks aritmetika (Poseidon2 nad p = 2⁶⁴−2³²+1) s guarded AMD ISA větví `QPOW_GCN_NATIVE` (auto-gated, portable fallback — viz §0).
+- **Aktuální code defaults:** local size `64`, NPT `1`; finální benchmark použil batch 4 194 304.
+- *Historický sweep 6. 10. (portable kernel, ne aktuální defaulty):* `ZION_STREAM2_BATCH=8388608` (8M), `ZION_QPOW_OCL_NPT=4`; NPT 1→4 = +10–15 %, NPT=8 flat; LS 64/128/256 flat; batch 4M→8M +malé, 16M flat.
 - Multi-GPU: `QpowGpuMiner::Multi` (`gpu/mod.rs`) — **hashrate-weighted nonce partition** přes `thread::scope`, per-device EMA; NENÍ 50/50 split (pomalá karta neblokuje rychlou).
 - Device filter `ZION_QPOW_OCL_DEVICES=gfx900,gfx1010` — funguje i pod `ZION_ZANO_RESERVE=1` (fix `6a1f4173d`).
 
@@ -68,7 +102,7 @@ Console: `ZION_INTERACTIVE=0` + `--log-interval 15` → `[metrics] QTU: .. [gfx1
 
 ## 6. Známé limity / TODO
 
-- OpenCL kernel je na stropu pro tuto architekturu — další výkon jen přes hlubokou přepis (Montgomery repr., fused rounds, INT32 tricks) — risk/effort vysoký.
+- Zbývající gap vůči SRBMiner je **změřený** (~105/137 MH/s reference vs 82.07/103.125 MH/s — §0), ne prokázaný architektonický strop; příčina SRB náskoku je neznámá (closed-source).
 - Miner EMA ≠ wall-clock efektivní rate u duty-cyclu (EMA počítá kernel-time, ne GPU-čas) — agregáty na poolu jsou pravda, `devs`/`devs2` "KHS 30s" je instant rate.
 - `--metrics` endpoint + stats file `/tmp/zion-miner-stats.json` = strojově čitelný stav (per-stream, per-GPU, A/R).
 

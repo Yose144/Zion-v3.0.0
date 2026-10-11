@@ -33,6 +33,25 @@
 typedef uint u32;
 typedef ulong u64;
 
+#ifndef QPOW_GCN_NATIVE
+#define QPOW_GCN_NATIVE 0
+#endif
+#if QPOW_GCN_NATIVE
+#if defined(QPOW_GCN_WAVE32)
+#define QPOW_ASM_VCC "vcc_lo"
+#define QPOW_ASM_ADDC "v_add_co_ci_u32_e64"
+#define QPOW_ASM_SUBBREV "v_subrev_co_ci_u32_e32"
+#define QPOW_ASM_SUBB "v_sub_co_ci_u32_e64"
+typedef u32 QpowCarryMask;
+#else
+#define QPOW_ASM_VCC "vcc"
+#define QPOW_ASM_ADDC "v_addc_co_u32_e64"
+#define QPOW_ASM_SUBBREV "v_subbrev_co_u32_e32"
+#define QPOW_ASM_SUBB "v_subb_co_u32_e64"
+typedef u64 QpowCarryMask;
+#endif
+#endif
+
 #define MAX_HITS 8
 
 __constant const u64 P64 = 0xFFFFFFFF00000001UL;
@@ -100,20 +119,62 @@ __constant const u64 MDS_DIAG[12] = {
 // a + b mod p with the single 2^64 -> EPS carry fold. Same uncorrected
 // second-order wrap as the CUDA mad.cc chain.
 static inline u64 gf64_add(u64 a, u64 b) {
+#if QPOW_GCN_NATIVE
+    u32 lo, hi, eps;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %5\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %4, %6, " QPOW_ASM_VCC "\n\t"
+        "v_cndmask_b32_e64 %2, 0, -1, " QPOW_ASM_VCC "\n\t"
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %0, %2\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %1, 0, " QPOW_ASM_VCC
+        : "=&v"(lo), "=&v"(hi), "=&v"(eps)
+        : "v"((u32)a), "v"((u32)(a >> 32)), "v"((u32)b), "v"((u32)(b >> 32))
+        : "vcc");
+    return ((u64)hi << 32) | lo;
+#else
     u64 s = a + b;
     if (s < a) {
         s += EPS64;
     }
     return s;
+#endif
 }
 
 static inline void mul64wide(u64 a, u64 b, u32 *r0, u32 *r1, u32 *r2, u32 *r3) {
+#if QPOW_GCN_NATIVE
+    u32 a0 = (u32)a, a1 = (u32)(a >> 32);
+    u32 b0 = (u32)b, b1 = (u32)(b >> 32);
+    u64 p00 = (u64)a0 * b0;
+    u64 p01 = (u64)a0 * b1;
+    u64 p10 = (u64)a1 * b0;
+    u64 p11 = (u64)a1 * b1;
+    u32 m0, m1, mc, o1, o2, o3;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %5\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %4, %6, " QPOW_ASM_VCC "\n\t"
+        "v_cndmask_b32_e64 %2, 0, 1, " QPOW_ASM_VCC
+        : "=&v"(m0), "=&v"(m1), "=&v"(mc)
+        : "v"((u32)p01), "v"((u32)(p01 >> 32)), "v"((u32)p10), "v"((u32)(p10 >> 32))
+        : "vcc");
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %4\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %5, %6, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %2, " QPOW_ASM_VCC ", %7, %8, " QPOW_ASM_VCC
+        : "=&v"(o1), "=&v"(o2), "=&v"(o3)
+        : "v"((u32)(p00 >> 32)), "v"(m0), "v"((u32)p11), "v"(m1), "v"((u32)(p11 >> 32)), "v"(mc)
+        : "vcc");
+    *r0 = (u32)p00;
+    *r1 = o1;
+    *r2 = o2;
+    *r3 = o3;
+#else
     u64 lo = a * b;
     u64 hi = mul_hi(a, b);
     *r0 = (u32)lo;
     *r1 = (u32)(lo >> 32);
     *r2 = (u32)hi;
     *r3 = (u32)(hi >> 32);
+#endif
 }
 
 // 128 -> 64 bit fold using 2^64 = EPS and 2^96 = -1 (mod p):
@@ -124,12 +185,27 @@ static inline void mul64wide(u64 a, u64 b, u32 *r0, u32 *r1, u32 *r2, u32 *r3) {
 //   every recorded candidate on the CPU. Verified bit-exact against the
 //   true 128-bit mod-p reduction on 300k random inputs (host mirror test).
 static inline u64 reduce128(u32 r0, u32 r1, u32 r2, u32 r3) {
+#if QPOW_GCN_NATIVE
+    u32 lo, hi, term, k;
+    __asm__(
+        "v_sub_co_u32 %0, " QPOW_ASM_VCC ", %4, %6\n\t"
+        QPOW_ASM_SUBBREV " %2, " QPOW_ASM_VCC ", 0, %6, " QPOW_ASM_VCC "\n\t"
+        "v_add_co_u32 %1, " QPOW_ASM_VCC ", %5, %2\n\t"
+        "v_cndmask_b32_e64 %3, 0, 1, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_SUBB " %0, " QPOW_ASM_VCC ", %0, %7, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_SUBBREV " %1, " QPOW_ASM_VCC ", 0, %1, " QPOW_ASM_VCC "\n\t"
+        "v_add3_u32 %1, %1, %3, 0"
+        : "=&v"(lo), "=&v"(hi), "=&v"(term), "=&v"(k)
+        : "v"(r0), "v"(r1), "v"(r2), "v"(r3) : "vcc");
+    return ((u64)hi << 32) | lo;
+#else
     u64 x0 = ((u64)r1 << 32) | (u64)r0;
     u64 s = x0 + (u64)r2 * EPS64;
     u32 k = (s < x0) ? 1u : 0u;
     s += (u64)k << 32;
     s -= (u64)r3 + k;
     return s;
+#endif
 }
 
 static inline u64 gf64_mul(u64 a, u64 b) {
@@ -141,6 +217,22 @@ static inline u64 gf64_mul(u64 a, u64 b) {
 // Three partial products instead of four: (a1:a0)^2 = a0^2 + a0*a1*2^33 +
 // a1^2*2^64 — assembled as an exact 128-bit value.
 static inline u64 gf64_sqr(u64 a) {
+#if QPOW_GCN_NATIVE
+    u32 a0 = (u32)a, a1 = (u32)(a >> 32);
+    u64 ll = (u64)a0 * a0;
+    u64 lh = (u64)a0 * a1;
+    u64 hh = (u64)a1 * a1;
+    u64 mid = lh << 1;
+    u32 r1, r2, r3;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %4\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %5, %6, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %2, " QPOW_ASM_VCC ", %7, %8, " QPOW_ASM_VCC
+        : "=&v"(r1), "=&v"(r2), "=&v"(r3)
+        : "v"((u32)(ll >> 32)), "v"((u32)mid), "v"((u32)hh), "v"((u32)(mid >> 32)), "v"((u32)(hh >> 32)), "v"((u32)(lh >> 63))
+        : "vcc");
+    return reduce128((u32)ll, r1, r2, r3);
+#else
     u64 a0 = (u32)a, a1 = a >> 32;
     u64 ll = a0 * a0;
     u64 lh = a0 * a1;
@@ -148,6 +240,7 @@ static inline u64 gf64_sqr(u64 a) {
     u64 lo = ll + (lh << 33);
     u64 hi = hh + (lh >> 31) + ((lo < ll) ? 1u : 0u);
     return reduce128((u32)lo, (u32)(lo >> 32), (u32)hi, (u32)(hi >> 32));
+#endif
 }
 
 // x^7 with a depth-3 chain: x3 and x4 come from x2 in parallel.
@@ -177,19 +270,47 @@ static inline Wide wide_from(u64 x) {
 }
 
 static inline void wide_add(Wide *w, u64 x) {
+#if QPOW_GCN_NATIVE
+    u32 lo, hi, top;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %6\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %4, %7, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %2, " QPOW_ASM_VCC ", %5, 0, " QPOW_ASM_VCC
+        : "=&v"(lo), "=&v"(hi), "=&v"(top)
+        : "v"(w->l0), "v"(w->l1), "v"(w->h), "v"((u32)x), "v"((u32)(x >> 32))
+        : "vcc");
+    w->l0 = lo;
+    w->l1 = hi;
+    w->h = top;
+#else
     u64 s = (u64)w->l0 + (u32)x;
     w->l0 = (u32)s;
     u64 t = (u64)w->l1 + (u32)(x >> 32) + (u32)(s >> 32);
     w->l1 = (u32)t;
     w->h += (u32)(t >> 32);
+#endif
 }
 
 static inline void wide_add_wide(Wide *w, Wide x) {
+#if QPOW_GCN_NATIVE
+    u32 lo, hi, top;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %6\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %4, %7, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %2, " QPOW_ASM_VCC ", %5, %8, " QPOW_ASM_VCC
+        : "=&v"(lo), "=&v"(hi), "=&v"(top)
+        : "v"(w->l0), "v"(w->l1), "v"(w->h), "v"(x.l0), "v"(x.l1), "v"(x.h)
+        : "vcc");
+    w->l0 = lo;
+    w->l1 = hi;
+    w->h = top;
+#else
     u64 s = (u64)w->l0 + x.l0;
     w->l0 = (u32)s;
     u64 t = (u64)w->l1 + x.l1 + (u32)(s >> 32);
     w->l1 = (u32)t;
     w->h += x.h + (u32)(t >> 32);
+#endif
 }
 
 // A 96-bit lane is a 128-bit value with a zero top word.
@@ -198,6 +319,21 @@ static inline u64 wide_reduce(Wide w) {
 }
 
 static inline void add128_wide(u32 *r0, u32 *r1, u32 *r2, u32 *r3, Wide w) {
+#if QPOW_GCN_NATIVE
+    u32 o0, o1, o2, o3;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %4, %8\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %5, %9, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %2, " QPOW_ASM_VCC ", %6, %10, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %3, " QPOW_ASM_VCC ", %7, 0, " QPOW_ASM_VCC
+        : "=&v"(o0), "=&v"(o1), "=&v"(o2), "=&v"(o3)
+        : "v"(*r0), "v"(*r1), "v"(*r2), "v"(*r3), "v"(w.l0), "v"(w.l1), "v"(w.h)
+        : "vcc");
+    *r0 = o0;
+    *r1 = o1;
+    *r2 = o2;
+    *r3 = o3;
+#else
     u64 s = (u64)(*r0) + w.l0;
     *r0 = (u32)s;
     u64 t = (u64)(*r1) + w.l1 + (u32)(s >> 32);
@@ -205,6 +341,7 @@ static inline void add128_wide(u32 *r0, u32 *r1, u32 *r2, u32 *r3, Wide w) {
     u64 u = (u64)(*r2) + w.h + (u32)(t >> 32);
     *r2 = (u32)u;
     *r3 += (u32)(u >> 32);
+#endif
 }
 
 // a * b + w as a 128-bit value. Same accumulation as the CUDA mad.wide
@@ -212,6 +349,32 @@ static inline void add128_wide(u32 *r0, u32 *r1, u32 *r2, u32 *r3, Wide w) {
 // Requires b < 2^64 - 2^59 (true for MDS_DIAG) and w.h small.
 static inline void mul128_add_wide(u64 a, u64 b, Wide w, u32 *r0, u32 *r1,
                                    u32 *r2, u32 *r3) {
+#if QPOW_GCN_NATIVE
+    u32 a0 = (u32)a, a1 = (u32)(a >> 32), b0 = (u32)b, b1 = (u32)(b >> 32);
+    u64 p00 = (u64)a0 * b0 + (u64)w.l0;
+    u64 p01 = (u64)a0 * b1;
+    u64 p10 = (u64)a1 * b0 + (u64)w.l1;
+    u64 p11 = (u64)a1 * b1 + (u64)w.h;
+    u32 m0, m1, mc, o1, o2, o3;
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %5\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %4, %6, " QPOW_ASM_VCC "\n\t"
+        "v_cndmask_b32_e64 %2, 0, 1, " QPOW_ASM_VCC
+        : "=&v"(m0), "=&v"(m1), "=&v"(mc)
+        : "v"((u32)p01), "v"((u32)(p01 >> 32)), "v"((u32)p10), "v"((u32)(p10 >> 32))
+        : "vcc");
+    __asm__(
+        "v_add_co_u32 %0, " QPOW_ASM_VCC ", %3, %4\n\t"
+        QPOW_ASM_ADDC " %1, " QPOW_ASM_VCC ", %5, %6, " QPOW_ASM_VCC "\n\t"
+        QPOW_ASM_ADDC " %2, " QPOW_ASM_VCC ", %7, %8, " QPOW_ASM_VCC
+        : "=&v"(o1), "=&v"(o2), "=&v"(o3)
+        : "v"((u32)(p00 >> 32)), "v"(m0), "v"((u32)p11), "v"(m1), "v"((u32)(p11 >> 32)), "v"(mc)
+        : "vcc");
+    *r0 = (u32)p00;
+    *r1 = o1;
+    *r2 = o2;
+    *r3 = o3;
+#else
     u64 lo = a * b;
     u64 hi = mul_hi(a, b);
     u32 c0 = (u32)lo, c1 = (u32)(lo >> 32), c2 = (u32)hi, c3 = (u32)(hi >> 32);
@@ -226,6 +389,7 @@ static inline void mul128_add_wide(u64 a, u64 b, Wide w, u32 *r0, u32 *r1,
     *r1 = c1;
     *r2 = c2;
     *r3 = c3;
+#endif
 }
 
 static inline void ext_layer64(u64 *state, __constant const u64 *rc12) {
@@ -289,13 +453,11 @@ static inline u64 int_round_p(u64 *state, u64 x, u64 rc0) {
     Wide s0 = s;
     wide_add(&s0, rc0);
     u32 r0, r1, r2, r3;
-    mul64wide(x, MDS_DIAG[0], &r0, &r1, &r2, &r3);
-    add128_wide(&r0, &r1, &r2, &r3, s0);
+    mul128_add_wide(x, MDS_DIAG[0], s0, &r0, &r1, &r2, &r3);
     u64 out0 = reduce128(r0, r1, r2, r3);
 #pragma unroll
     for (int i = 1; i < 12; i++) {
-        mul64wide(state[i], MDS_DIAG[i], &r0, &r1, &r2, &r3);
-        add128_wide(&r0, &r1, &r2, &r3, s);
+        mul128_add_wide(state[i], MDS_DIAG[i], s, &r0, &r1, &r2, &r3);
         state[i] = reduce128(r0, r1, r2, r3);
     }
     return out0;
