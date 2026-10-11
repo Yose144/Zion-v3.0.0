@@ -58,9 +58,25 @@ struct Args {
     #[arg(long)]
     stream3_url: Option<String>,
 
-    /// Wallet / reward address for coinbase.
-    #[arg(long, default_value = "zion1pool")]
-    wallet: String,
+    /// Stream 4 (second GPU AuxPoW / dual mining) stratum URL.
+    /// Also read from `ZION_STREAM4_URL`.
+    #[arg(long)]
+    stream4_url: Option<String>,
+
+    /// Wallet / reward address for coinbase. In SRBMiner mode (when
+    /// `--algorithm` or `--dual-algorithm` is used) this is the PRIMARY
+    /// algo's payout wallet — use `--zion-wallet` for the ZION stream.
+    #[arg(long)]
+    wallet: Option<String>,
+
+    /// ZION stream wallet — only needed in SRBMiner mode when the ZION
+    /// stream is also enabled (`--zion`). Defaults to `zion1pool`.
+    #[arg(long)]
+    zion_wallet: Option<String>,
+
+    /// Stratum password. In SRBMiner mode applies to the primary algo.
+    #[arg(long)]
+    password: Option<String>,
 
     /// Worker name.
     #[arg(short, long, default_value = "worker1")]
@@ -149,6 +165,63 @@ struct Args {
     /// `--list-algorithms` on other multi-algo miners).
     #[arg(long)]
     list_algorithms: bool,
+
+    // ── SRBMiner-compatible single/dual-mining CLI ──
+    /// Primary algorithm to mine (SRBMiner semantics). Accepts our algo
+    /// names (`--list-algorithms`), coin tickers, and common SRBMiner
+    /// aliases (e.g. `quantus`, `verushash`, `kaspa`). `--pool`,
+    /// `--wallet` and `--password` attach to this algo; the GPU-class
+    /// algo goes to Stream 2, a CPU-class algo to Stream 3.
+    #[arg(long)]
+    algorithm: Option<String>,
+
+    /// Dual algorithm (SRBMiner semantics) — a second algo mined alongside
+    /// `--algorithm`. A GPU-class dual algo runs on Stream 4 (second GPU
+    /// session on the shared card, duty-cycled with Stream 2); a CPU-class
+    /// dual algo runs on Stream 3.
+    #[arg(long)]
+    dual_algorithm: Option<String>,
+
+    /// Upstream pool (host:port) for `--dual-algorithm`.
+    #[arg(long)]
+    dual_pool: Option<String>,
+
+    /// Payout wallet for `--dual-algorithm` (the dual algo can pay out to
+    /// a different address than the primary one).
+    #[arg(long)]
+    dual_wallet: Option<String>,
+
+    /// Stratum password for `--dual-algorithm` (defaults to `--password`
+    /// or "x").
+    #[arg(long)]
+    dual_password: Option<String>,
+
+    /// GPU time share (%) granted to `--dual-algorithm` on the shared
+    /// card — the rest belongs to the primary GPU algo. Maps to
+    /// `ZION_EXT_GPU2_TIME_DUTY_PCT` (requires the ZION GPU backend to be
+    /// sharing the card to take effect; otherwise streams contend freely
+    /// at batch granularity).
+    #[arg(long)]
+    gpu_dual_intensity: Option<u64>,
+
+    /// Keep the ZION stream enabled in SRBMiner mode (it is off by default
+    /// there — pure commercial-miner behavior). ZION pool/wallet come
+    /// from `ZION_POOL_ADDR`/`ZION_NODE_RPC`/`--zion-wallet`.
+    #[arg(long)]
+    zion: bool,
+
+    /// SRBMiner alias for `--no-cpu` (disable the CPU algo stream).
+    #[arg(long)]
+    disable_cpu: bool,
+
+    /// SRBMiner alias for `--no-gpu` (disable GPU algo streams).
+    #[arg(long)]
+    disable_gpu: bool,
+
+    /// SRBMiner alias: threads for the CPU algo (Stream 3). Maps to
+    /// `ZION_EXT_CPU_THREADS` — separate from `--threads` (ZION stream).
+    #[arg(long)]
+    cpu_threads: Option<usize>,
 }
 
 /// Parse a bool env var (1/true/yes → true).
@@ -156,6 +229,23 @@ fn env_bool(key: &str, default: bool) -> bool {
     std::env::var(key)
         .map(|v| matches!(v.as_str(), "1" | "true" | "yes" | "TRUE" | "YES"))
         .unwrap_or(default)
+}
+
+/// Resolve a user-supplied algorithm name to an external coin. Accepts our
+/// internal algo names (`coin.algorithm()`, see `--list-algorithms`), coin
+/// tickers, and SRBMiner-style aliases (`quantus`/`qpow`/`qtu` → QPoW).
+fn resolve_algo_coin(name: &str) -> Option<zion_cosmic_harmony::ExternalCoin> {
+    let n = name.trim().to_lowercase().replace(['-', ' '], "_");
+    let alias: &str = match n.as_str() {
+        "quantus" | "qpow" | "qpow_poseidon2" | "qtu" | "qtc" => "qpow-poseidon2",
+        _ => n.as_str(),
+    };
+    for c in zion_cosmic_harmony::ExternalCoin::all() {
+        if c.algorithm().eq_ignore_ascii_case(alias) || c.ticker().eq_ignore_ascii_case(alias) {
+            return Some(*c);
+        }
+    }
+    zion_cosmic_harmony::ExternalCoin::from_str_loose(alias)
 }
 
 #[tokio::main]
@@ -191,17 +281,116 @@ async fn main() -> Result<()> {
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(args.watchdog_timeout);
 
-    let reward_address = Address::new(ChainId::ZionL1, vec![], &args.wallet)
-        .with_context(|| format!("invalid reward address: {}", args.wallet))?;
+    // ── SRBMiner mode ──
+    // When --algorithm/--dual-algorithm is used, --pool/--wallet/--password
+    // attach to the primary algo (SRBMiner semantics) instead of the ZION
+    // stream, and the ZION stream defaults to off unless --zion or an
+    // env-configured ZION pool/node is present.
+    let srb_mode = args.algorithm.is_some() || args.dual_algorithm.is_some();
+    let zion_wallet_str = if srb_mode {
+        args.zion_wallet
+            .clone()
+            .unwrap_or_else(|| "zion1pool".to_string())
+    } else {
+        args.wallet
+            .clone()
+            .unwrap_or_else(|| "zion1pool".to_string())
+    };
+    let reward_address = Address::new(ChainId::ZionL1, vec![], &zion_wallet_str)
+        .with_context(|| format!("invalid reward address: {zion_wallet_str}"))?;
 
     let mut config = MinerConfig::new(reward_address);
 
+    if srb_mode {
+        config.auxpow_enabled = true;
+        // SRBMiner mode is self-contained: the algo flags decide which
+        // auxpow streams exist. Auto-detected defaults are cleared so a
+        // bare `--algorithm X --dual-algorithm Y` runs exactly X+Y.
+        config.stream2_enabled = false;
+        config.stream3_enabled = false;
+        config.stream4_enabled = false;
+        // ZION stream: off by default in SRBMiner mode — opt back in with
+        // --zion or by configuring ZION_POOL_ADDR / ZION_NODE_RPC.
+        if !args.zion && config.pool_url.is_none() && config.node_rpc_url.is_none() {
+            config.stream1_enabled = false;
+        }
+        if let Some(algo) = &args.algorithm {
+            let coin = resolve_algo_coin(algo).with_context(|| {
+                format!("unknown --algorithm '{algo}' (see --list-algorithms)")
+            })?;
+            if coin.is_gpu() {
+                config.stream2_enabled = true;
+                config.stream2_force_coin = Some(coin);
+                config.stream2_url = args.pool.clone().or(config.stream2_url);
+                config.stream2_wallet =
+                    args.wallet.clone().or(config.stream2_wallet);
+            } else {
+                config.stream3_enabled = true;
+                config.stream3_force_coin = Some(coin);
+                config.stream3_url = args.pool.clone().or(config.stream3_url);
+                config.stream3_wallet =
+                    args.wallet.clone().or(config.stream3_wallet);
+            }
+        }
+        if let Some(algo) = &args.dual_algorithm {
+            let coin = resolve_algo_coin(algo).with_context(|| {
+                format!("unknown --dual-algorithm '{algo}' (see --list-algorithms)")
+            })?;
+            let dual_pass = args
+                .dual_password
+                .clone()
+                .or_else(|| args.password.clone());
+            if coin.is_gpu() {
+                config.stream4_enabled = true;
+                config.stream4_force_coin = Some(coin);
+                config.stream4_url = args.dual_pool.clone().or(config.stream4_url);
+                config.stream4_wallet = args
+                    .dual_wallet
+                    .clone()
+                    .or(config.stream4_wallet);
+                config.stream4_password = dual_pass.or(config.stream4_password);
+            } else {
+                config.stream3_enabled = true;
+                config.stream3_force_coin = Some(coin);
+                config.stream3_url = args.dual_pool.clone().or(config.stream3_url);
+                config.stream3_wallet = args
+                    .dual_wallet
+                    .clone()
+                    .or(config.stream3_wallet);
+                config.stream3_password = dual_pass.or(config.stream3_password);
+            }
+        }
+        if let Some(intensity) = args.gpu_dual_intensity {
+            // Set before the runtime spawns stream tasks — the duty-cycle
+            // code reads this env var per GPU batch.
+            std::env::set_var(
+                "ZION_EXT_GPU2_TIME_DUTY_PCT",
+                intensity.clamp(1, 100).to_string(),
+            );
+        }
+    } else {
+        config.pool_url = args.pool.or(config.pool_url);
+        config.auxpow_pool = args.auxpow_pool.or(config.auxpow_pool);
+        config.stream2_url = args.stream2_url.or(config.stream2_url);
+        config.stream3_url = args.stream3_url.or(config.stream3_url);
+    }
+
     // CLI flags override environment defaults.
-    config.pool_url = args.pool.or(config.pool_url);
     config.node_rpc_url = args.node.or(config.node_rpc_url);
-    config.auxpow_pool = args.auxpow_pool.or(config.auxpow_pool);
-    config.stream2_url = args.stream2_url.or(config.stream2_url);
-    config.stream3_url = args.stream3_url.or(config.stream3_url);
+    config.stream4_url = args.stream4_url.or(config.stream4_url);
+    if let Some(p) = &args.password {
+        config.password = p.clone();
+    }
+    if let Some(n) = args.cpu_threads {
+        config.ext_cpu_threads = n;
+    }
+    if args.disable_cpu {
+        config.stream3_enabled = false;
+    }
+    if args.disable_gpu {
+        config.stream2_enabled = false;
+        config.stream4_enabled = false;
+    }
     config.worker = args.worker.clone();
     config.miner_threads = args.threads;
     // CLI --no-* flags override env vars; if flag is absent, keep env var value
@@ -245,7 +434,7 @@ async fn main() -> Result<()> {
                 .unwrap_or("solo");
             println!("  algorithm   {}", consensus);
             println!("  pool        {}", pool_addr);
-            println!("  wallet      {}", args.wallet);
+            println!("  wallet      {}", zion_wallet_str);
             println!("  worker      {}", args.worker);
             println!(
                 "  streams     ZION={} GPU={} CPU={}",
@@ -319,7 +508,14 @@ async fn main() -> Result<()> {
             .clone()
             .unwrap_or_else(|| args.worker.clone());
         let rt = runtime.clone();
-        let wallet = args.wallet.clone();
+        // API-reported wallet: in SRBMiner mode the primary algo wallet is
+        // the payout identity; otherwise the ZION reward wallet.
+        let wallet = args
+            .wallet
+            .clone()
+            .or_else(|| rt.config().stream2_wallet.clone())
+            .or_else(|| rt.config().stream4_wallet.clone())
+            .unwrap_or_else(|| zion_wallet_str.clone());
         tokio::spawn(async move {
             if let Err(e) = srbminer_api_serve(rt, bind, rig, wallet).await {
                 warn!("srbminer-compat api {bind}: {e}");
@@ -948,30 +1144,35 @@ async fn srbminer_json(
     uptime: u64,
 ) -> serde_json::Value {
     let cfg = rt.config();
-    let streams: [(StreamId, &str, Option<String>, bool); 4] = [
+    // (stream, fallback algo name, pool url, enabled, per-stream wallet)
+    let streams: [(StreamId, &str, Option<String>, bool, Option<String>); 4] = [
         (
             StreamId::Zion,
             "ekam_deeksha",
             cfg.pool_url.clone().or_else(|| cfg.node_rpc_url.clone()),
             cfg.stream1_enabled,
+            None,
         ),
         (
             StreamId::GpuExternal,
             "qpow-poseidon2",
             cfg.stream2_url.clone().or_else(|| cfg.auxpow_pool.clone()),
             cfg.stream2_enabled,
+            cfg.stream2_wallet.clone(),
         ),
         (
             StreamId::CpuExternal,
             "verushash",
             cfg.stream3_url.clone().or_else(|| cfg.auxpow_pool.clone()),
             cfg.stream3_enabled,
+            cfg.stream3_wallet.clone(),
         ),
         (
             StreamId::GpuExternal2,
             "qpow-poseidon2",
             cfg.stream4_url.clone().or_else(|| cfg.auxpow_pool.clone()),
             cfg.stream4_enabled,
+            cfg.stream4_wallet.clone(),
         ),
     ];
 
@@ -981,16 +1182,27 @@ async fn srbminer_json(
     let mut cpu_workers = 0u64;
     let zion_on_gpu = !matches!(cfg.gpu_backend.as_str(), "cpu" | "");
 
-    for (stream, default_algo, pool, enabled) in &streams {
+    for (stream, default_algo, pool, enabled, stream_wallet) in &streams {
         if !enabled {
             continue;
         }
+        // Forced coins (--algorithm / --dual-algorithm / ZION_STREAM*_FORCE_COIN)
+        // give the right algo/ticker in the API even before the first job
+        // populates stream stats.
+        let force_coin = match stream {
+            StreamId::GpuExternal => cfg.stream2_force_coin,
+            StreamId::CpuExternal => cfg.stream3_force_coin,
+            StreamId::GpuExternal2 => cfg.stream4_force_coin,
+            _ => None,
+        };
         let s = stats.get(stream);
         let algo = s
             .and_then(|s| s.algorithm.clone())
+            .or_else(|| force_coin.map(|c| c.algorithm().to_string()))
             .unwrap_or_else(|| default_algo.to_string());
         let coin = s
             .and_then(|s| s.coin.as_ref().map(|c| c.ticker().to_string()))
+            .or_else(|| force_coin.map(|c| c.ticker().to_string()))
             .unwrap_or_default();
         let hashrate = s.map(|s| s.hashrate).unwrap_or(0.0);
         let accepted = s.map(|s| s.accepted).unwrap_or(0);
@@ -1033,7 +1245,9 @@ async fn srbminer_json(
             "coin": coin,
             "pool": {
                 "pool": pool.clone().unwrap_or_default(),
-                "wallet": wallet,
+                // Per-stream payout wallet (dual mining: each algo can pay
+                // out to a different address); global wallet as fallback.
+                "wallet": stream_wallet.as_deref().unwrap_or(wallet),
                 "uptime": uptime,
             },
             "shares": {
@@ -1099,6 +1313,7 @@ mod tests {
         cfg.stream4_enabled = false;
         cfg.pool_url = Some("zion.pool:4444".into());
         cfg.stream2_url = Some("qpow.pool:5555".into());
+        cfg.stream2_wallet = Some("qpow_payout".into());
         MinerRuntime::new(cfg)
     }
 
@@ -1176,12 +1391,15 @@ mod tests {
         // No real GPU devices in the test runtime → gpu0 fallback total.
         assert_eq!(qpow["hashrate"]["gpu"]["gpu0"], 6_900_000.0);
         assert_eq!(qpow["pool"]["pool"], "qpow.pool:5555");
-        assert_eq!(qpow["pool"]["wallet"], "zion1wallet");
+        // Per-stream wallet override wins over the global --api wallet.
+        assert_eq!(qpow["pool"]["wallet"], "qpow_payout");
 
         let vrsc = algos
             .iter()
             .find(|a| a["name"] == "verushash")
             .expect("cpu algo entry");
+        // No stream3_wallet configured → global wallet fallback.
+        assert_eq!(vrsc["pool"]["wallet"], "zion1wallet");
         assert_eq!(vrsc["hashrate"]["cpu"]["total"], 1_000_000.0);
         assert!(vrsc["hashrate"]["gpu"].get("total").is_none());
     }
