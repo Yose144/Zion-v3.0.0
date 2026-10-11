@@ -3,6 +3,7 @@ import MinerStatsClient from '@/components/MinerStatsClient';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/miner-stats' },
   title: `Miner Statistics | Statistiky minera · ZION ${SITE_RELEASE_LABEL}`,
   description: "Track your mining performance / Sledujte výkon své těžby: hashrate, shares, efektivitu a historii plateb na ZION blockchainu",
   keywords: "ZION mining stats, statistiky těžby, hashrate tracker, mining performance, share statistics",

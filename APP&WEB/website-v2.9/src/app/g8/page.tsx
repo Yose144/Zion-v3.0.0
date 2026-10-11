@@ -5,6 +5,7 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
 const G8Client = dynamic(() => import('./G8Client'));
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/g8' },
   title: `30-Day Stability Run · ZION ${SITE_RELEASE_LABEL}`,
   description:
     'Live public view of the ZION network 30-day continuous stability run: uptime, evidence coverage, monitored signals and run verdict.',
