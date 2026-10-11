@@ -621,9 +621,16 @@ class ZionRpcClient {
 
   private async poolHttpGet<T = any>(path: string, timeoutMs = 8000): Promise<T | null> {
     try {
+      // /api/* routes are default-deny on the pool — present the shared
+      // server-side key when configured. Never exposed to the client.
+      const headers: Record<string, string> = {};
+      if (process.env.ZION_POOL_API_KEY) {
+        headers['x-api-key'] = process.env.ZION_POOL_API_KEY;
+      }
       const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
         cache: 'no-store',
         signal: AbortSignal.timeout(timeoutMs),
+        headers,
       });
 
       if (!response.ok) {

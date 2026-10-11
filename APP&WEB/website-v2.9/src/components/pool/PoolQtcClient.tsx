@@ -99,6 +99,25 @@ const C = {
   refresh: { cs: "Obnovit", en: "Refresh" },
   yes: { cs: "ano", en: "yes" },
   no: { cs: "ne", en: "no" },
+  srbTitle: { cs: "Těžte QTC přes SRBMiner", en: "Mine QTC with SRBMiner" },
+  srbSub: {
+    cs: "Pool mluví nativním Quantus stratumech — SRBMiner-MULTI se připojí přímo, bez bridge. GPU only.",
+    en: "The pool speaks the native Quantus stratum — SRBMiner-MULTI connects directly, no bridge. GPU only.",
+  },
+  srbCmd: { cs: "Příkaz pro připojení", en: "Connect command" },
+  srbWalletNote: {
+    cs: "Za wallet doplňte svou qz… payout adresu, za tečku volitelné jméno workera. Heslo může být cokoliv (x).",
+    en: "Replace the wallet with your qz… payout address; the suffix after the dot is an optional worker name. Password can be anything (x).",
+  },
+  srbGpuNote: {
+    cs: "Quantus je GPU algoritmus — AMD i NVIDIA. CPU nechte vypnuté (--disable-cpu).",
+    en: "Quantus is a GPU algorithm — AMD and NVIDIA. Keep CPU off (--disable-cpu).",
+  },
+  srbPplnsNote: {
+    cs: "Shares se počítají podle vaší qz adresy a workera — výplaty řeší pool automaticky.",
+    en: "Shares are credited to your qz address and worker — payouts are handled by the pool automatically.",
+  },
+  srbDownload: { cs: "Stáhnout SRBMiner", en: "Download SRBMiner" },
 };
 
 type QtcData = {
@@ -331,6 +350,37 @@ export default function PoolQtcClient({ embedded = false }: { embedded?: boolean
           </div>
         </motion.section>
       </div>
+
+      {/* SRBMiner connect */}
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.09 }}
+        className="zion-rainbow-card p-6"
+        style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Gauge className="h-5 w-5 text-amber-400" />
+            {C.srbTitle[cs ? 'cs' : 'en']}
+          </h3>
+          <a href="https://github.com/doktor83/SRBMiner-Multi/releases" target="_blank" rel="noreferrer"
+             className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:border-amber-400/60 transition">
+            {C.srbDownload[cs ? 'cs' : 'en']} <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">{C.srbSub[cs ? 'cs' : 'en']}</p>
+        <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{C.srbCmd[cs ? 'cs' : 'en']}</div>
+        <pre className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-amber-200/90 overflow-x-auto mb-4">{`SRBMiner-MULTI --algorithm quantus \\
+  --pool stratum+tcp://62.171.141.136:8444 \\
+  --wallet qzYourAddress.yourWorker \\
+  --password x --disable-cpu`}</pre>
+        <ul className="space-y-1.5 text-xs text-gray-400 list-disc list-inside">
+          <li>{C.srbWalletNote[cs ? 'cs' : 'en']}</li>
+          <li>{C.srbGpuNote[cs ? 'cs' : 'en']}</li>
+          <li>{C.srbPplnsNote[cs ? 'cs' : 'en']}</li>
+        </ul>
+      </motion.section>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         {/* Wormhole rewards */}
