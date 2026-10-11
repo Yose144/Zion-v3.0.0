@@ -11355,6 +11355,22 @@ async function refreshFleet(){
       let miner = '—';
       let hashrate = '—';
       let gpus = '—';
+      if(rig.source === 'beacon'){
+        // Push-model rig (behind NAT) — beacon payload already carries everything.
+        status = rig.status === 'online' ? 'online' : 'offline';
+        mode = rig.mode || 'miner';
+        miner = rig.miner_running ? 'Running' : (rig.agent_running ? 'Agent only' : 'Stopped');
+        if(rig.qtu_running) miner += ' +QTU';
+        const hz = (typeof _formatHashrate === 'function' && rig.hashrate != null)
+          ? _formatHashrate(rig.hashrate * 1000) : (rig.hashrate != null ? rig.hashrate.toFixed(1) + ' kH/s' : '—');
+        hashrate = hz + (rig.qtu_hashrate_hs ? '<div class="text-[10px] text-cyan-400">' + rig.qtu_hashrate_hs.toFixed(1) + ' MH/s QTU</div>' : '');
+        gpus = rig.gpus != null ? rig.gpus : '—';
+        if(typeof rig.gpus === 'number') totalGpus += rig.gpus;
+        if(status === 'online') onlineCount++;
+        if(rig.hashrate) totalHashrate += rig.hashrate;
+        rigRows.push({rig, status, mode, miner, hashrate, gpus});
+        continue;
+      }
       try{
         const r = await fetch(rig.agent_url + '/api/status', {signal: AbortSignal.timeout(3000)}).then(r => r.json());
         if(!r._error){
@@ -11389,13 +11405,13 @@ async function refreshFleet(){
             <div class="text-xs font-bold text-gray-200">${escapeHtml(rig.name || rig.id)}</div>
             <div class="text-[10px] text-gray-500 font-mono">${escapeHtml(rig.id)}</div>
           </td>
-          <td class="py-2 px-2"><span class="text-[10px] px-2 py-0.5 rounded-full ${status==='online'?'bg-emerald-700/50 text-emerald-300':'bg-red-700/50 text-red-300'}">${status}</span></td>
+          <td class="py-2 px-2"><span class="text-[10px] px-2 py-0.5 rounded-full ${status==='online'?'bg-emerald-700/50 text-emerald-300':'bg-red-700/50 text-red-300'}" title="${rig.source==='beacon' ? escapeHtml('beacon ' + (rig.beacon_age_s ?? '?') + 's ago' + (rig.watchdog_action ? ' | wd: ' + rig.watchdog_action : '')) : ''}">${status}</span></td>
           <td class="py-2 px-2 text-gray-300">${mode}</td>
           <td class="py-2 px-2 text-gray-300">${miner}</td>
           <td class="py-2 px-2 text-right text-gray-300">${hashrate}</td>
           <td class="py-2 px-2 text-right text-gray-300">${gpus}</td>
           <td class="py-2 px-2 text-right">
-            <button onclick="removeFleetRig('${escapeHtml(rig.id)}')" class="text-[10px] text-red-400 hover:text-red-300">Remove</button>
+            ${rig.source==='beacon' ? '<span class="text-[10px] text-gray-600">push</span>' : `<button onclick="removeFleetRig('${escapeHtml(rig.id)}')" class="text-[10px] text-red-400 hover:text-red-300">Remove</button>`}
           </td>
         </tr>
       `).join('');

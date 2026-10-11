@@ -1,0 +1,11 @@
+[Unit]
+Description=ZION Mining Agent Watchdog (every 60s)
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
