@@ -279,6 +279,10 @@ pub struct MinerRuntime {
     #[cfg(feature = "auxpow")]
     cpu_client: Arc<Mutex<Option<StratumClient>>>,
     #[cfg(feature = "auxpow")]
+    /// Stream 4 (second GPU external / dual mining) stratum client — direct
+    /// auxpow mode counterpart of `gpu_client`.
+    gpu_client2: Arc<Mutex<Option<StratumClient>>>,
+    #[cfg(feature = "auxpow")]
     profit_router: Arc<std::sync::Mutex<AutonomousProfitRouter>>,
     #[cfg(feature = "auxpow")]
     /// Devfee scheduler — when configured (ZION_DEVFEE_WALLET), the QTU
@@ -500,6 +504,7 @@ impl MinerRuntime {
                 ))),
                 gpu_client: Arc::new(Mutex::new(None)),
                 cpu_client: Arc::new(Mutex::new(None)),
+                gpu_client2: Arc::new(Mutex::new(None)),
                 profit_router: Arc::new(std::sync::Mutex::new(profit_router)),
                 devfee: crate::devfee::DevFee::from_env(),
             }
@@ -1570,12 +1575,14 @@ impl MinerRuntime {
 
     /// Run all enabled mining streams until the shutdown signal is received.
     pub async fn run(&self, shutdown: watch::Receiver<bool>) -> Result<(), MinerError> {
-        if self.config.stream4_enabled {
-            // The second GPU stream only exists in V3 Trinity mode, where
-            // the pool multiplexes two external_stream slots over one
-            // connection. Legacy mode gives each AuxPoW stream its own
-            // upstream stratum — stream4 has no scheduler slot there.
-            warn!("stream4 (ZION_STREAM4_ENABLED) is only supported in V3 Trinity mode — ignoring");
+        if self.config.stream4_enabled
+            && self.config.stream4_url.is_none()
+            && self.config.stream4_force_coin.is_none()
+        {
+            // Stream 4 needs an explicit upstream (own pool session) — in V3
+            // Trinity the pool multiplexes it, in direct auxpow mode it is
+            // driven purely by ZION_STREAM4_URL + ZION_STREAM4_FORCE_COIN.
+            warn!("stream4 enabled without ZION_STREAM4_URL/FORCE_COIN — stream will idle");
         }
         let mut shutdown_for_changed = shutdown.clone();
 
@@ -1665,9 +1672,9 @@ impl MinerRuntime {
             tokio::spawn(async { Ok::<(), MinerError>(()) })
         };
 
-        // Streams 2 and 3 are compiled only with the `auxpow` feature.
+        // Streams 2, 3 and 4 are compiled only with the `auxpow` feature.
         #[cfg(feature = "auxpow")]
-        let (h2, h3): (MinerHandle, MinerHandle) = {
+        let (h2, h3, h4): (MinerHandle, MinerHandle, MinerHandle) = {
             let profiles = zion_cosmic_harmony::CoinProfile::all();
             let _ = self.refresh_auxpow(&profiles).await;
 
@@ -1715,7 +1722,31 @@ impl MinerRuntime {
                 tokio::spawn(async { Ok::<(), MinerError>(()) })
             };
 
-            (h2, h3)
+            // Stream 4 — second GPU external (dual mining). Explicit config
+            // only (stream4_url + stream4_force_coin); shares GPU time with
+            // Stream 2 through the same duty-cycle mechanism.
+            let h4 = if self.config.stream4_enabled && self.config.auxpow_enabled {
+                let this = self.clone();
+                let mut shutdown = shutdown.clone();
+                tokio::spawn(async move {
+                    loop {
+                        tokio::select! {
+                            _ = shutdown.changed() => break,
+                            result = this.auxpow_stream_round(StreamId::GpuExternal2) => {
+                                this.mark_active(StreamId::GpuExternal2).await;
+                                if let Err(e) = result {
+                                    warn!(stream = "gpu2", error = %e, "auxpow stream round failed; retrying after backoff");
+                                    sleep(Duration::from_millis(this.config.auxpow_retry_ms)).await;
+                                }
+                            }
+                        }
+                    }
+                    Ok(())
+                })
+            } else {
+                tokio::spawn(async { Ok::<(), MinerError>(()) })
+            };
+            (h2, h3, h4)
         };
 
         // Periodically re-evaluate Stream 2/3 coin profitability.
@@ -1752,16 +1783,19 @@ impl MinerRuntime {
         let h_profit: MinerHandle = tokio::spawn(async { Ok::<(), MinerError>(()) });
 
         #[cfg(not(feature = "auxpow"))]
-        let (h2, h3): (MinerHandle, MinerHandle) = (
+        let (h2, h3, h4): (MinerHandle, MinerHandle, MinerHandle) = (
+            tokio::spawn(async { Ok::<(), MinerError>(()) }),
             tokio::spawn(async { Ok::<(), MinerError>(()) }),
             tokio::spawn(async { Ok::<(), MinerError>(()) }),
         );
 
         let _ = shutdown_for_changed.changed().await;
-        let (r1, r2, r3, r_profit, _) = tokio::join!(h1, h2, h3, h_profit, h_metrics);
+        let (r1, r2, r3, r4, r_profit, _) =
+            tokio::join!(h1, h2, h3, h4, h_profit, h_metrics);
         r1??;
         r2??;
         r3??;
+        r4??;
         r_profit??;
         Ok(())
     }
@@ -2925,6 +2959,13 @@ impl MinerRuntime {
             let (c, u) = match stream {
                 StreamId::GpuExternal => scheduler.gpu_url(),
                 StreamId::CpuExternal => scheduler.cpu_url(),
+                // Stream 4 has no scheduler slot — it is driven by explicit
+                // config only (`ZION_STREAM4_FORCE_COIN` / `--dual-algorithm`
+                // resolved by the CLI into force_coin).
+                StreamId::GpuExternal2 => (
+                    self.config.stream4_force_coin,
+                    self.config.stream4_url.as_deref(),
+                ),
                 _ => return Ok(()),
             };
             (c, u.map(|s| s.to_string()))
@@ -2939,12 +2980,21 @@ impl MinerRuntime {
         let explicit_url = match stream {
             StreamId::GpuExternal => self.config.stream2_url.clone(),
             StreamId::CpuExternal => self.config.stream3_url.clone(),
+            // Stream 4 only honors its own explicit url — the shared
+            // `auxpow_pool` fallback would point the second GPU stream at the
+            // same upstream as Stream 2 with a different coin, which most
+            // pools reject.
+            StreamId::GpuExternal2 => self.config.stream4_url.clone(),
             _ => None,
         };
-        let url = explicit_url
-            .or(self.config.auxpow_pool.clone())
-            .or(url)
-            .unwrap_or_default();
+        let url = if stream == StreamId::GpuExternal2 {
+            explicit_url.or(url).unwrap_or_default()
+        } else {
+            explicit_url
+                .or(self.config.auxpow_pool.clone())
+                .or(url)
+                .unwrap_or_default()
+        };
 
         if url.is_empty() {
             ext_warn!(stream = ?stream, coin = %coin, "no stratum url for auxpow coin");
@@ -2955,10 +3005,23 @@ impl MinerRuntime {
         let client_cell = match stream {
             StreamId::GpuExternal => &self.gpu_client,
             StreamId::CpuExternal => &self.cpu_client,
+            StreamId::GpuExternal2 => &self.gpu_client2,
             _ => return Ok(()),
         };
 
         let mut guard = client_cell.lock().await;
+
+        // Per-stream payout wallet: `ZION_STREAM{2,3,4}_WALLET` / CLI
+        // `--dual-wallet` overrides let each auxpow stream credit a
+        // different upstream address; `reward_address` is the default.
+        let user_wallet = match stream {
+            StreamId::GpuExternal => self.config.stream2_wallet.as_deref(),
+            StreamId::CpuExternal => self.config.stream3_wallet.as_deref(),
+            StreamId::GpuExternal2 => self.config.stream4_wallet.as_deref(),
+            _ => None,
+        }
+        .unwrap_or_else(|| self.config.reward_address.as_str())
+        .to_string();
 
         // Devfee window (QTU stream only): during the fee slice of each
         // period the upstream session authenticates as dev_wallet.worker
@@ -2970,10 +3033,9 @@ impl MinerRuntime {
                 if stream == StreamId::GpuExternal
                     && crate::devfee::DevFee::applies_to(coin) =>
             {
-                df.effective_wallet(self.config.reward_address.as_str())
-                    .to_string()
+                df.effective_wallet(&user_wallet).to_string()
             }
-            _ => self.config.reward_address.as_str().to_string(),
+            _ => user_wallet,
         };
         // Upstream AuxPoW pools expect username = payout_wallet.worker so
         // shares can be credited.  Fall back to the bare worker name if no
@@ -2983,6 +3045,14 @@ impl MinerRuntime {
         } else {
             format!("{}.{}", payout_wallet, self.config.worker)
         };
+        let stream_password = match stream {
+            StreamId::GpuExternal => self.config.stream2_password.as_deref(),
+            StreamId::CpuExternal => self.config.stream3_password.as_deref(),
+            StreamId::GpuExternal2 => self.config.stream4_password.as_deref(),
+            _ => None,
+        }
+        .unwrap_or(&self.config.password)
+        .to_string();
 
         let should_recreate = guard
             .as_ref()
@@ -3009,7 +3079,7 @@ impl MinerRuntime {
             *guard = Some(StratumClient::new(
                 &url,
                 &worker,
-                &self.config.password,
+                &stream_password,
                 coin,
             ));
         }

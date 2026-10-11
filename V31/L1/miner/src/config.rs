@@ -84,6 +84,18 @@ pub struct MinerConfig {
     /// Force Stream 4 (second GPU) to this external coin.
     /// Parsed from `ZION_STREAM4_FORCE_COIN`.
     pub stream4_force_coin: Option<ExternalCoin>,
+    /// Per-stream upstream payout wallet overrides. When `None`, the
+    /// stream's upstream worker uses `reward_address`. SRBMiner-style dual
+    /// mining (`--dual-wallet`) maps here so each algo can pay out to a
+    /// different address. Read from `ZION_STREAM{2,3,4}_WALLET`.
+    pub stream2_wallet: Option<String>,
+    pub stream3_wallet: Option<String>,
+    pub stream4_wallet: Option<String>,
+    /// Per-stream upstream passwords (default = `password` / "x").
+    /// Read from `ZION_STREAM{2,3,4}_PASSWORD`.
+    pub stream2_password: Option<String>,
+    pub stream3_password: Option<String>,
+    pub stream4_password: Option<String>,
     /// How long to wait (ms) before retrying a failed AuxPoW operation.
     pub auxpow_retry_ms: u64,
     /// Enable autonomous profit switching for Stream 2/3.
@@ -203,6 +215,12 @@ impl MinerConfig {
             stream4_force_coin: std::env::var("ZION_STREAM4_FORCE_COIN")
                 .ok()
                 .and_then(|s| s.trim().to_uppercase().parse().ok()),
+            stream2_wallet: std::env::var("ZION_STREAM2_WALLET").ok(),
+            stream3_wallet: std::env::var("ZION_STREAM3_WALLET").ok(),
+            stream4_wallet: std::env::var("ZION_STREAM4_WALLET").ok(),
+            stream2_password: std::env::var("ZION_STREAM2_PASSWORD").ok(),
+            stream3_password: std::env::var("ZION_STREAM3_PASSWORD").ok(),
+            stream4_password: std::env::var("ZION_STREAM4_PASSWORD").ok(),
             auxpow_retry_ms: 5000,
             autonomous: std::env::var("ZION_AUTONOMOUS")
                 .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))

@@ -142,6 +142,20 @@ Commercial options, in order of feasibility:
    `ExternalCoin::Quantus` on `StreamId::GpuExternal` in direct-auxpow
    mode only — V3-Trinity QTU comes through our pool bridge where
    miner-side devfee can't reach upstream attribution.
+   **Dual mining shipped** (SRBMiner-style CLI): `--algorithm/--pool/
+   --wallet/--password` bind to the primary algo (GPU-class → Stream 2,
+   CPU-class → Stream 3); `--dual-algorithm/--dual-pool/--dual-wallet/
+   --dual-password` bind the second algo (GPU → **Stream 4, now wired in
+   direct-auxpow mode** with its own `gpu_client2` StratumClient +
+   `ZION_STREAM4_{URL,FORCE_COIN,WALLET,PASSWORD}` config/env surface);
+   `--gpu-dual-intensity` → stream4 GPU-time share;
+   `--disable-cpu/--disable-gpu/--cpu-threads` aliases; `--zion` +
+   `--zion-wallet` to keep stream1 alive in SRBMiner mode (off by
+   default). Per-stream wallets/passwords via
+   `ZION_STREAM{2,3,4}_{WALLET,PASSWORD}`; the SRBMiner API reports each
+   algo's own wallet and resolves forced coins to algo/ticker before the
+   first job. Verified: `kaspa+quantus` → 2 GPU workers each with own
+   pool+wallet; `quantus+verushash` → GPU+CPU split.
    Remaining decision: licensing model.
 
 ## Definition of done (Phase B)
