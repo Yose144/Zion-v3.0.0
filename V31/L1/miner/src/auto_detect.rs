@@ -58,9 +58,19 @@ pub struct AutoMineConfig {
     pub zion_nonce_batch: u64,
     /// Stream 2 nonce batch
     pub stream2_batch: u64,
+    /// Detected GPU device count (drives multi-GPU reporting)
+    pub gpu_count: usize,
     pub stream1_enabled: bool,
     pub stream2_enabled: bool,
     pub stream3_enabled: bool,
+}
+
+/// Default for the CPU external stream (VRSC / BOOST 2). Internal builds
+/// enable it; `public_build` hides it by default so the commercial miner
+/// never silently burns CPU cycles on an unfamiliar coin — users opt back
+/// in via `ZION_STREAM3_ENABLED=1` or `--enable-cpu-stream`.
+fn default_stream3_enabled() -> bool {
+    !cfg!(feature = "public_build")
 }
 
 /// Detect CPU SIMD features at runtime.
@@ -217,17 +227,22 @@ pub fn derive_auto_config(hw: &HardwareProfile, tune: &AutoTuneResult) -> AutoMi
             verushash_nonce_count: tune.verushash_nonce_count,
             zion_nonce_batch: 1_048_576, // 1M — good for GPU
             stream2_batch: tune.secondary_gpu_work_size as u64,
+            gpu_count: hw.gpu_devices.len(),
             stream1_enabled: true,
             stream2_enabled: true,
-            stream3_enabled: true,
+            stream3_enabled: default_stream3_enabled(),
         }
     } else {
         // CPU-only: Dual Stream
         // Stream 1: ZION Deeksha (CPU)
         // Stream 2: Disabled (no GPU)
-        // Stream 3: VRSC (CPU VerusHash)
+        // Stream 3: VRSC (CPU VerusHash) — hidden by default in public_build
         #[cfg(feature = "public_build")]
-        let mode_name = "CPU Dual Stream (ZION + BOOST)".to_string();
+        let mode_name = if default_stream3_enabled() {
+            "CPU Dual Stream (ZION + BOOST)".to_string()
+        } else {
+            "CPU Stream (ZION)".to_string()
+        };
         #[cfg(not(feature = "public_build"))]
         let mode_name = "CPU Dual Stream (ZION + VRSC)".to_string();
         AutoMineConfig {
@@ -240,9 +255,10 @@ pub fn derive_auto_config(hw: &HardwareProfile, tune: &AutoTuneResult) -> AutoMi
             verushash_nonce_count: tune.verushash_nonce_count,
             zion_nonce_batch: 65_536, // 64K — smaller for CPU
             stream2_batch: 0,
+            gpu_count: 0,
             stream1_enabled: true,
             stream2_enabled: false,
-            stream3_enabled: true,
+            stream3_enabled: default_stream3_enabled(),
         }
     }
 }
@@ -337,6 +353,12 @@ pub fn print_mine_plan(cfg: &AutoMineConfig) {
     eprintln!("  ╠══════════════════════════════════════════════════════════╣");
     eprintln!("  ║  Mode:    {:<47}║", truncate(&cfg.mode_name, 47));
     eprintln!("  ║  Backend: {:<47}║", backend_display(cfg.gpu_backend));
+    if cfg.gpu_count > 1 {
+        eprintln!(
+            "  ║  Multi-GPU: {} devices — nonce ranges split per card   ║",
+            cfg.gpu_count
+        );
+    }
     eprintln!("  ╠══════════════════════════════════════════════════════════╣");
     eprintln!(
         "  ║  Stream 1 (ZION):     {:<34} ║",
@@ -418,4 +440,17 @@ pub fn run_auto_detect() -> (HardwareProfile, AutoMineConfig) {
     print_mine_plan(&cfg);
 
     (hw, cfg)
+}
+
+#[cfg(test)]
+mod tests {
+    /// CPU external stream (VRSC/BOOST) default: enabled for internal
+    /// builds, hidden (opt-in) for `public_build`.
+    #[test]
+    fn stream3_default_respects_build_flavor() {
+        #[cfg(feature = "public_build")]
+        assert!(!super::default_stream3_enabled());
+        #[cfg(not(feature = "public_build"))]
+        assert!(super::default_stream3_enabled());
+    }
 }

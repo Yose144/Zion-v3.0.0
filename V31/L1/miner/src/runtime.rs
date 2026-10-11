@@ -3296,13 +3296,27 @@ fn create_qpow_gpu_miner(
     // compiled backends instead of killing the stream.
     #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     if matches!(backend, GpuBackendKind::Metal | GpuBackendKind::Auto) {
-        match crate::gpu::qpow_metal::QpowMetalMiner::new(work_size) {
-            Ok(m) => return Ok(crate::gpu::QpowGpuMiner::Metal(m)),
-            Err(e) => {
-                if matches!(backend, GpuBackendKind::Metal) {
-                    return Err(e.context("QPoW Metal init failed"));
+        // Honor ZION_GPU_DEVICES/--gpu-id: Metal enumerates the system
+        // default as device 0 — a filter that excludes it (numeric list
+        // without 0, or a name list not matching) skips Metal entirely.
+        let filter = crate::gpu::gpu_device_filter();
+        let metal_ok = filter.is_empty()
+            || metal::Device::system_default()
+                .map(|d| crate::gpu::device_matches_filter(&d.name(), 0, &filter))
+                .unwrap_or(false);
+        if !metal_ok {
+            if matches!(backend, GpuBackendKind::Metal) {
+                anyhow::bail!("no Metal device matched ZION_GPU_DEVICES filter");
+            }
+        } else {
+            match crate::gpu::qpow_metal::QpowMetalMiner::new(work_size) {
+                Ok(m) => return Ok(crate::gpu::QpowGpuMiner::Metal(m)),
+                Err(e) => {
+                    if matches!(backend, GpuBackendKind::Metal) {
+                        return Err(e.context("QPoW Metal init failed"));
+                    }
+                    crate::ext_warn!("gpu_qpow_metal_init failed, falling back: {e}");
                 }
-                crate::ext_warn!("gpu_qpow_metal_init failed, falling back: {e}");
             }
         }
     }
@@ -3323,10 +3337,61 @@ fn create_qpow_gpu_miner(
                 .and_then(|m| m.shared_cuda_device())
         });
         let dev = match shared_dev {
-            Some(d) => d,
-            None => cudarc::driver::CudaDevice::new(0)
-                .map_err(|e| anyhow::anyhow!("CUDA device init: {e}"))?,
+            Some(d) => Some(d),
+            None => None,
         };
+        if let Some(d) = dev {
+            return crate::gpu::qpow_cuda::QpowCudaMiner::new_with_device(work_size, d)
+                .map(crate::gpu::QpowGpuMiner::Cuda);
+        }
+        // No shared Stream-1 context — free to spread QPoW across cards.
+        // `ZION_GPU_DEVICES` (indices or name substrings) restricts which
+        // CUDA ordinals are used; with `ZION_ZANO_RESERVE=0` (the
+        // `public_build` default) every card mines in parallel.
+        let filter = crate::gpu::gpu_device_filter();
+        let count = cudarc::driver::CudaDevice::count().unwrap_or(0).max(0) as usize;
+        if count > 0 && (!filter.is_empty() || !crate::gpu::ext_gpu_reserve_enabled()) {
+            let mut miners: Vec<crate::gpu::QpowGpuMiner> = Vec::new();
+            for i in 0..count {
+                let d = match cudarc::driver::CudaDevice::new(i) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        crate::ext_warn!("gpu_qpow_cuda device {} init failed: {e}", i);
+                        continue;
+                    }
+                };
+                let name = d.name().unwrap_or_else(|_| format!("cuda-{i}"));
+                if !crate::gpu::device_matches_filter(&name, i, &filter) {
+                    continue;
+                }
+                match crate::gpu::qpow_cuda::QpowCudaMiner::new_with_device(work_size, d) {
+                    Ok(m) => miners.push(crate::gpu::QpowGpuMiner::Cuda(m)),
+                    Err(e) => {
+                        crate::ext_warn!("gpu_qpow_cuda_sub_init device=\"{name}\" failed: {e}")
+                    }
+                }
+            }
+            if miners.len() > 1 {
+                crate::ext_info!(
+                    "gpu_qpow_cuda_multi devices={} names=\"{}\"",
+                    miners.len(),
+                    miners
+                        .iter()
+                        .map(|m| m.device_name())
+                        .collect::<Vec<_>>()
+                        .join(" + ")
+                );
+                return Ok(crate::gpu::QpowGpuMiner::multi(miners));
+            }
+            if let Some(m) = miners.into_iter().next() {
+                return Ok(m);
+            }
+            if !filter.is_empty() {
+                anyhow::bail!("no CUDA device matched ZION_GPU_DEVICES filter");
+            }
+        }
+        let dev = cudarc::driver::CudaDevice::new(0)
+            .map_err(|e| anyhow::anyhow!("CUDA device init: {e}"))?;
         return crate::gpu::qpow_cuda::QpowCudaMiner::new_with_device(work_size, dev)
             .map(crate::gpu::QpowGpuMiner::Cuda);
     }
@@ -3335,20 +3400,23 @@ fn create_qpow_gpu_miner(
         // With ZION_ZANO_RESERVE=0 no GPU is reserved for the external
         // stream — run one QPoW miner per OpenCL GPU in parallel (the same
         // "all devices" mode the ZION stream uses via MultiGpuMiner).
-        let all_devices = matches!(
-            std::env::var("ZION_ZANO_RESERVE").as_deref(),
-            Ok("0") | Ok("false") | Ok("FALSE") | Ok("no")
-        );
+        // `ext_gpu_reserve_enabled()` makes RESERVE=0 the `public_build`
+        // default so commercial rigs use every card.
+        let all_devices = !crate::gpu::ext_gpu_reserve_enabled();
         // ZION_QPOW_OCL_DEVICES="vega" or "gfx900,ellesmere" (comma-separated
-        // name substrings or indices) restricts which cards carry QPoW.
-        // Setting it explicitly also enables the multi/single-device path when
-        // RESERVE=1 — e.g. Vega pure QPoW while another card dual-mines.
+        // name substrings or indices) restricts which cards carry QPoW;
+        // falls back to the global `ZION_GPU_DEVICES`/`--gpu-id` filter.
+        // Setting either explicitly also enables the multi/single-device path
+        // when RESERVE=1 — e.g. Vega pure QPoW while another card dual-mines.
         let filter: Vec<String> = std::env::var("ZION_QPOW_OCL_DEVICES")
-            .unwrap_or_default()
-            .split(',')
-            .map(|s| s.trim().to_lowercase())
-            .filter(|s| !s.is_empty())
-            .collect();
+            .ok()
+            .map(|v| {
+                v.split(',')
+                    .map(|s| s.trim().to_lowercase())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            })
+            .unwrap_or_else(crate::gpu::gpu_device_filter);
         if all_devices || !filter.is_empty() {
             let devices = crate::gpu::enumerate_opencl_gpu_devices();
             let devices: Vec<_> = if filter.is_empty() {
@@ -3356,14 +3424,9 @@ fn create_qpow_gpu_miner(
             } else {
                 devices
                     .into_iter()
-                    .enumerate()
-                    .filter(|(i, d)| {
-                        let name = d.name.to_lowercase();
-                        filter
-                            .iter()
-                            .any(|f| name.contains(f.as_str()) || f == &i.to_string())
+                    .filter(|d| {
+                        crate::gpu::device_matches_filter(&d.name, d.global_idx, &filter)
                     })
-                    .map(|(_, d)| d)
                     .collect()
             };
             if devices.len() > 1 {

@@ -1541,6 +1541,8 @@ pub struct AutoTuneResult {
     pub cpu_model: String,
     /// Whether a dedicated GPU was detected
     pub has_gpu: bool,
+    /// Number of GPU devices detected (multi-GPU rigs report >1)
+    pub gpu_count: usize,
 }
 
 // ── CPU detection ─────────────────────────────────────────────────────
@@ -1940,6 +1942,7 @@ pub fn auto_tune_work_sizes() -> AutoTuneResult {
         cpu_vendor,
         cpu_model,
         has_gpu,
+        gpu_count: gpus.len(),
     }
 }
 
@@ -2536,20 +2539,26 @@ pub fn create_gpu_backend(
                 );
             }
 
+            // Global device cap: `ZION_GPU_DEVICES` (or the `--gpu-id` CLI
+            // flag which sets it) restricts which global indices ANY stream
+            // may use — reservation and targeting below intersect with it.
+            let global_filter = gpu_device_filter();
+            let allowed = |d: &GpuDeviceInfo| {
+                device_matches_filter(&d.name, d.global_idx, &global_filter)
+            };
+
             // Determine which device to reserve for ZANO ProgPoWZ.
             // Strategy (like reference miners):
             // 1. If ZION_ZANO_RESERVE=0, NO GPU is reserved — all GPUs go to
             //    MultiGpuMiner for ZION.  The ZANO stream independently picks
             //    a GPU via its own pick_opencl_device() and shares it with ZION
             //    via time-slicing (ZION_EXT_GPU_TIME_DUTY_PCT).
+            //    (`public_build` flips the unset default to 0.)
             // 2. If ZION_ZANO_DEVICE_NAME is set, match by name (supports gfx codenames).
             // 3. If ZION_ZANO_DEVICE_IDX is set, use explicit index.
             // 4. Auto-select: pick the device with the highest ProgPoW priority
             //    (Vega > RDNA2 > RDNA3 > NVIDIA > RDNA1 > GCN).
-            let zano_reserve = match std::env::var("ZION_ZANO_RESERVE") {
-                Ok(v) => !v.eq_ignore_ascii_case("false") && v != "0",
-                Err(_) => true, // default: reserve a GPU for ZANO
-            };
+            let zano_reserve = ext_gpu_reserve_enabled();
             let zano_filter =
                 std::env::var("ZION_ZANO_DEVICE_NAME").unwrap_or_else(|_| "vega".to_string());
             let zano_idx_explicit = std::env::var("ZION_ZANO_DEVICE_IDX")
@@ -2560,11 +2569,15 @@ pub fn create_gpu_backend(
                 crate::ext_info!("multi_gpu: ZION_ZANO_RESERVE=0 — all GPUs go to ZION, ZANO will share via time-slicing");
                 None
             } else if let Some(idx) = zano_idx_explicit {
-                if idx < gpu_count {
+                if idx < gpu_count
+                    && gpu_devices
+                        .iter()
+                        .any(|d| d.global_idx == idx && allowed(d))
+                {
                     Some(idx)
                 } else {
                     crate::ext_info!(
-                        "multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range ({} devices)",
+                        "multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range or filtered out ({} devices)",
                         idx,
                         gpu_count
                     );
@@ -2574,7 +2587,7 @@ pub fn create_gpu_backend(
                 // Try name-based matching first
                 let name_match = gpu_devices
                     .iter()
-                    .find(|d| device_name_matches_filter(&d.name, &zano_filter))
+                    .find(|d| allowed(d) && device_name_matches_filter(&d.name, &zano_filter))
                     .map(|d| d.global_idx);
                 if name_match.is_some() {
                     name_match
@@ -2582,6 +2595,7 @@ pub fn create_gpu_backend(
                     // Auto-select: highest ProgPoW priority
                     let best = gpu_devices
                         .iter()
+                        .filter(|d| allowed(d))
                         .max_by_key(|d| d.classification.progpow_priority())
                         .map(|d| d.global_idx);
                     if let Some(idx) = best {
@@ -2617,10 +2631,12 @@ pub fn create_gpu_backend(
                     gpu_devices
                         .iter()
                         .filter(|d| {
-                            list.split(',')
-                                .map(str::trim)
-                                .filter(|f| !f.is_empty())
-                                .any(|f| device_name_matches_filter(&d.name, f))
+                            allowed(d)
+                                && list
+                                    .split(',')
+                                    .map(str::trim)
+                                    .filter(|f| !f.is_empty())
+                                    .any(|f| device_name_matches_filter(&d.name, f))
                         })
                         .map(|d| d.global_idx)
                         .collect()
@@ -2638,12 +2654,19 @@ pub fn create_gpu_backend(
                     // priority (excludes Intel/Other if they were enumerated).
                     gpu_devices
                         .iter()
-                        .filter(|d| d.classification.progpow_priority() > 0)
+                        .filter(|d| allowed(d) && d.classification.progpow_priority() > 0)
                         .map(|d| d.global_idx)
                         .collect()
                 }
             } else {
-                (0..gpu_count).filter(|i| Some(*i) != zano_idx).collect()
+                (0..gpu_count)
+                    .filter(|i| {
+                        Some(*i) != zano_idx
+                            && gpu_devices
+                                .iter()
+                                .any(|d| d.global_idx == *i && allowed(d))
+                    })
+                    .collect()
             };
 
             crate::ext_info!(
@@ -2879,6 +2902,46 @@ fn classify_gpu_name(name: &str) -> GpuClassification {
         return GpuClassification::Nvidia;
     }
     GpuClassification::Other
+}
+
+/// Unified device filter parsed from `ZION_GPU_DEVICES` (comma-separated;
+/// each item is a numeric global device index or a name/class substring).
+/// An empty list means "no filter — all devices may be used".
+/// `ZION_QPOW_OCL_DEVICES` / `ZION_ZANO_DEVICES` remain the per-stream
+/// overrides; this is the global cap applied to every GPU stream.
+pub(crate) fn gpu_device_filter() -> Vec<String> {
+    std::env::var("ZION_GPU_DEVICES")
+        .unwrap_or_default()
+        .split(',')
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Whether the device `(name, global_idx)` passes `filter`. A pure-numeric
+/// filter item matches the global index ONLY (so `--gpu-id 1` doesn't also
+/// match a "GTX 1070 Ti" by name substring); non-numeric items go through
+/// the name/class matcher. Empty filter matches every device.
+pub(crate) fn device_matches_filter(name: &str, global_idx: usize, filter: &[String]) -> bool {
+    filter.is_empty()
+        || filter.iter().any(|f| {
+            if let Ok(i) = f.parse::<usize>() {
+                i == global_idx
+            } else {
+                device_name_matches_filter(name, f)
+            }
+        })
+}
+
+/// Whether a GPU should be reserved for the external (AuxPoW) stream.
+/// `ZION_ZANO_RESERVE` env wins when set; the default is ON for internal
+/// builds and OFF for `public_build` — public/commercial users expect every
+/// card to mine by default, with streams sharing devices via duty cycles.
+pub(crate) fn ext_gpu_reserve_enabled() -> bool {
+    match std::env::var("ZION_ZANO_RESERVE") {
+        Ok(v) => !v.eq_ignore_ascii_case("false") && v != "0",
+        Err(_) => !cfg!(feature = "public_build"),
+    }
 }
 
 /// Check if a device name matches a filter string.
@@ -6046,5 +6109,24 @@ mod tests {
             gpu_hash, cpu_hash,
             "Metal ekam_deeksha hash must be bit-identical to CPU EkamDeeksha"
         );
+    }
+
+    /// `ZION_GPU_DEVICES`/`--gpu-id` matching: numeric items select the
+    /// global device index, everything else goes through the name/class
+    /// matcher; an empty filter admits every device.
+    #[test]
+    fn gpu_device_filter_matches_index_and_name() {
+        let filter: Vec<String> = vec!["1".into(), "vega".into()];
+        // index match
+        assert!(device_matches_filter("NVIDIA GeForce GTX 1070 Ti", 1, &filter));
+        assert!(!device_matches_filter("NVIDIA GeForce GTX 1070 Ti", 0, &filter));
+        // name/class match (gfx900 = Vega)
+        assert!(device_matches_filter("gfx900:xnack-", 5, &filter));
+        assert!(device_matches_filter("Radeon RX Vega 64", 3, &filter));
+        // unrelated device rejected
+        assert!(!device_matches_filter("gfx1010:xnack-", 9, &filter));
+        // empty filter admits all
+        let none: Vec<String> = Vec::new();
+        assert!(device_matches_filter("anything", 42, &none));
     }
 }
