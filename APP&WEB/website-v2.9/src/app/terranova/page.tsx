@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import TerraNovaBookLoader from './TerraNovaBookLoader';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/terranova' },
   title: 'Terra Nova — více edic knihy ZION · ZION',
   description:
     'Terra Nova ve webové čtečce ZION: organická ORG větev, technická FINAL/Cloud edice a sci-fi Gemini odysea v jednom lokálním readeru.',

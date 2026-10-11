@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/network' },
   title: `Network Status · ZION TerraNova ${SITE_RELEASE_LABEL}`,
   description:
     `Real-time status of the ZION native Rust blockchain, mining pool, and P2P network health across the live ${SITE_NETWORK_TOPOLOGY} runtime.`,
