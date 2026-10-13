@@ -682,6 +682,15 @@ mod tests {
     }
 
     #[test]
+    fn tile_counts_match_upstream_partition() {
+        // Default patterns expand to the full periodic partition:
+        // upstream threads_partition yields 256 row-groups × 128 col-groups.
+        let cfg = PearlMineConfig::from_env().unwrap();
+        assert_eq!(cfg.row_offsets().len(), 256);
+        assert_eq!(cfg.col_offsets().len(), 128);
+    }
+
+    #[test]
     fn default_config_is_valid() {
         let cfg = PearlMineConfig::from_env().unwrap();
         assert_eq!(cfg.m, 1024);
