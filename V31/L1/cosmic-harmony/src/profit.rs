@@ -312,6 +312,7 @@ impl ExternalCoin {
                     | ExternalCoin::EpicCash
                     | ExternalCoin::Zano
                     | ExternalCoin::Quantus
+                    | ExternalCoin::Pearl
             ),
             "metal" => matches!(
                 self,
