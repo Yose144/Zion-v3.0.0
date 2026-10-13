@@ -1129,7 +1129,13 @@ impl MinerRuntime {
                 self.gpu_ext_nonce_cursor.clone(),
             ),
         };
-        let kind = parse_gpu_backend(&self.config.gpu_backend);
+        // `ZION_EXT_GPU_BACKEND` can override the external-stream backend
+        // independently of the primary backend — same pattern as
+        // `ZION_QPOW_BACKEND` (e.g. ZION on OpenCL + Pearl PoUW on CUDA).
+        let kind = std::env::var("ZION_EXT_GPU_BACKEND")
+            .ok()
+            .map(|v| parse_gpu_backend(&v))
+            .unwrap_or_else(|| parse_gpu_backend(&self.config.gpu_backend));
 
         // Extract shared CUDA device from the ZION (Stream 1) GPU backend.
         // This is CRITICAL: without sharing the same CudaDevice, both backends
@@ -3021,7 +3027,10 @@ impl MinerRuntime {
             StreamId::GpuExternal2 => (self.gpu_ext2.clone(), self.gpu_ext2_algo.clone()),
             _ => (self.gpu_ext.clone(), self.gpu_ext_algo.clone()),
         };
-        let kind = parse_gpu_backend(&self.config.gpu_backend);
+        let kind = std::env::var("ZION_EXT_GPU_BACKEND")
+            .ok()
+            .map(|v| parse_gpu_backend(&v))
+            .unwrap_or_else(|| parse_gpu_backend(&self.config.gpu_backend));
         let work_size = self.config.auxpow_nonce_batch.max(1) as usize;
         #[cfg(feature = "gpu-cuda")]
         let shared_cuda_dev = {
