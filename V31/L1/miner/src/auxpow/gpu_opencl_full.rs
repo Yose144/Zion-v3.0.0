@@ -7776,96 +7776,13 @@ impl DagManager {
 
 // ─── Pearl PoUW GPU-Native Pipeline (OpenCL) ─────────────────────────────
 
-/// How noise seeds are bound to the matrix Merkle roots — mirrors upstream
-/// `zk-pow::api::seed::SeedDerivation`. `Salted` is required by cert_version=3
-/// (current chain); `Legacy` only verifies pre-V3 jobs.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum PearlSeedDerivation {
-    /// Pre-V3: raw Merkle roots feed the noise-seed chain.
-    #[default]
-    Legacy,
-    /// V3: roots are first bound to dimensions via
-    /// `blake3_keyed(SEED_SALT_{A,B}, root || dim_u32le || 28×00)`.
-    Salted,
-}
-
-/// V3 domain-separation salt for A's root:
-/// `blake3("pearl/cert-v3/noise-seed/A")` (upstream `api/seed.rs`).
-pub const PEARL_SEED_SALT_A: [u8; 32] = [
-    0x82, 0x49, 0x40, 0x6c, 0xa0, 0xed, 0x15, 0x16, 0x96, 0x16, 0xf6, 0x92, 0xfc, 0xf0, 0x76, 0xf8,
-    0x92, 0xdb, 0xdb, 0x2a, 0x70, 0x23, 0xb8, 0x52, 0xf0, 0xd4, 0x77, 0x19, 0xc3, 0x90, 0x01, 0x7b,
-];
-
-/// V3 domain-separation salt for B's root:
-/// `blake3("pearl/cert-v3/noise-seed/B")` (upstream `api/seed.rs`).
-pub const PEARL_SEED_SALT_B: [u8; 32] = [
-    0x11, 0x30, 0x06, 0x32, 0xec, 0x63, 0x01, 0xca, 0x2b, 0xe2, 0xaf, 0x71, 0x8b, 0x3f, 0x4d, 0x4f,
-    0x1a, 0xe9, 0xc6, 0x39, 0x88, 0xe8, 0xcc, 0x04, 0x48, 0x44, 0x30, 0x1d, 0x71, 0xb8, 0x9a, 0xa9,
-];
-
-/// Canonical noise seed labels (`padded_seed_label(b"A_tensor"/b"B_tensor")`) —
-/// they go into the *message body* (bytes 32..64) of `get_random_hash`; the
-/// noise seed is the BLAKE3 *key*.
-pub const PEARL_SEED_LABEL_A: [u8; 32] = {
-    let mut l = [0u8; 32];
-    l[0] = b'A';
-    l[1] = b'_';
-    let rest = *b"tensor";
-    let mut i = 0;
-    while i < 6 {
-        l[2 + i] = rest[i];
-        i += 1;
-    }
-    l
+// The plain data types (derivation enum, seed labels/salts, input/result
+// structs) live in `auxpow::pearl` so runtime dispatch compiles without the
+// `gpu-opencl` feature. Re-exported here for existing call sites.
+pub use crate::auxpow::pearl::{
+    PearlPouwNativeInput, PearlPouwNativeResult, PearlSeedDerivation, PEARL_SEED_LABEL_A,
+    PEARL_SEED_LABEL_B, PEARL_SEED_SALT_A, PEARL_SEED_SALT_B,
 };
-
-/// See [`PEARL_SEED_LABEL_A`].
-pub const PEARL_SEED_LABEL_B: [u8; 32] = {
-    let mut l = [0u8; 32];
-    l[0] = b'B';
-    l[1] = b'_';
-    let rest = *b"tensor";
-    let mut i = 0;
-    while i < 6 {
-        l[2 + i] = rest[i];
-        i += 1;
-    }
-    l
-};
-
-/// Input for GPU-native Pearl PoUW mining (no CPU data prep needed).
-/// Mirrors `gpu_metal::PearlPouwNativeInput` for the OpenCL backend.
-pub struct PearlPouwNativeInput<'a> {
-    pub nonce: u64,
-    pub m: usize,
-    pub n: usize,
-    pub k: usize,
-    pub rank: usize,
-    pub job_key: [u8; 32],
-    /// Big-endian U256 target (byte 0 = MSB); kernel reverses the LE jackpot
-    /// hash for the comparison — same convention as the gateway `target` field.
-    pub target: [u8; 32],
-    pub row_offsets: &'a [u32],
-    pub col_offsets: &'a [u32],
-    pub rows_base: &'a [u32],
-    pub cols_base: &'a [u32],
-    /// Pass [`PEARL_SEED_LABEL_A`]/[`PEARL_SEED_LABEL_B`] — upstream
-    /// `padded_seed_label` constants, embedded in `get_random_hash` messages.
-    pub seed_label_a: [u8; 32],
-    pub seed_label_b: [u8; 32],
-    /// cert_version ≥3 requires [`PearlSeedDerivation::Salted`].
-    pub seed_derivation: PearlSeedDerivation,
-}
-
-/// Result of GPU-native Pearl PoUW mining (includes matrices for Merkle proof).
-/// Mirrors `gpu_metal::PearlPouwNativeResult` for the OpenCL backend.
-pub struct PearlPouwNativeResult {
-    pub tile_index: u32,
-    pub jackpot_hash: [u8; 32],
-    pub nonce: u64,
-    pub matrix_a: Vec<i8>,
-    pub matrix_bt: Vec<i8>,
-}
 
 /// Result of real Pearl PoUW GPU GEMM mining (CPU-prep + GPU dispatch).
 /// Contains the winning hash tile index and jackpot hash, plus dimension
@@ -8844,8 +8761,6 @@ impl ExtGpuMiner {
         let e_br_buf = &cache.e_br_buf;
         let e_ar_perm_buf = &cache.e_ar_perm_buf;
         let e_bl_perm_buf = &cache.e_bl_perm_buf;
-        let noised_a_buf = &cache.noised_a_buf;
-        let noised_b_buf = &cache.noised_b_buf;
         let iv_buf = &cache.iv_buf;
         let seed_label_a_buf = &cache.seed_label_a_buf;
         let seed_label_b_buf = &cache.seed_label_b_buf;

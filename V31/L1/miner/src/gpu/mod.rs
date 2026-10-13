@@ -526,8 +526,8 @@ pub trait GpuMiner: Send {
     /// beat the target. Only the OpenCL backend implements it today.
     fn mine_pearl(
         &mut self,
-        input: &crate::auxpow::gpu_opencl_full::PearlPouwNativeInput<'_>,
-    ) -> Result<Option<crate::auxpow::gpu_opencl_full::PearlPouwNativeResult>> {
+        input: &crate::auxpow::pearl::PearlPouwNativeInput<'_>,
+    ) -> Result<Option<crate::auxpow::pearl::PearlPouwNativeResult>> {
         let _ = input;
         anyhow::bail!("pearlhash unsupported on {:?}", self.backend_kind());
     }
@@ -5428,9 +5428,8 @@ pub mod cpu_external_fallback {
 #[cfg(feature = "gpu-opencl")]
 pub mod opencl_external {
     use super::*;
-    use crate::auxpow::gpu_opencl_full::{
-        ExtGpuMiner, PearlPouwNativeInput, PearlPouwNativeResult,
-    };
+    use crate::auxpow::gpu_opencl_full::ExtGpuMiner;
+    use crate::auxpow::pearl::{PearlPouwNativeInput, PearlPouwNativeResult};
 
     pub struct OpenClExternalMiner {
         algorithm: String,
