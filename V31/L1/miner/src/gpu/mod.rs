@@ -25,6 +25,8 @@ use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 #[cfg(feature = "gpu-cuda")]
 pub mod cuda_external;
 #[cfg(feature = "gpu-cuda")]
+pub mod pearl_cuda;
+#[cfg(feature = "gpu-cuda")]
 pub mod qpow_cuda;
 #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod qpow_metal;
@@ -3165,6 +3167,24 @@ fn create_gpu_backend_inner(
             {
                 // External AuxPoW algorithms — try CUDA kernel first, then CPU fallback
                 if is_external_algorithm(algorithm) {
+                    // Pearl PoUW has a dedicated multi-kernel pipeline that
+                    // doesn't fit CudaExtAlgo's single-hash `mine_batch` shape.
+                    if algorithm == "pearlhash" {
+                        let miner_result = if let Some(ref dev) = shared_dev {
+                            crate::gpu::pearl_cuda::PearlCudaMiner::new_with_device(
+                                work_size,
+                                std::sync::Arc::clone(dev),
+                            )
+                        } else {
+                            crate::gpu::pearl_cuda::PearlCudaMiner::new(work_size)
+                        };
+                        match miner_result {
+                            Ok(miner) => return Ok(Box::new(miner)),
+                            Err(e) => {
+                                eprintln!("[gpu_backend] CUDA pearl miner failed: {} — falling back", e);
+                            }
+                        }
+                    }
                     // Algorithms with dedicated CUDA kernels
                     if crate::gpu::cuda_external::CudaExtAlgo::from_name(algorithm).is_some() {
                         let miner_result = if let Some(ref dev) = shared_dev {
