@@ -8175,7 +8175,6 @@ impl ExtGpuMiner {
             let mut num_nodes = num_chunks_a;
             let mut src_a: &Buffer<u8> = chunk_hashes_buf;
             let mut dst_a: &Buffer<u8> = merkle_buf;
-            let mut level = 0u32;
             while num_nodes > 1 {
                 let num_parents = num_nodes.div_ceil(2);
                 let is_root = num_nodes == 2;
@@ -8203,7 +8202,6 @@ impl ExtGpuMiner {
 
                 std::mem::swap(&mut src_a, &mut dst_a);
                 num_nodes = num_parents;
-                level += 1;
             }
 
             // Reduce B — leaf layer lives in merkle_buf2 (A's ping-pong
@@ -8211,7 +8209,6 @@ impl ExtGpuMiner {
             let mut num_nodes = num_chunks_b;
             let mut src_b: &Buffer<u8> = merkle_buf2;
             let mut dst_b: &Buffer<u8> = merkle_buf;
-            let mut level = 0u32;
             while num_nodes > 1 {
                 let num_parents = num_nodes.div_ceil(2);
                 let is_root = num_nodes == 2;
@@ -8239,7 +8236,6 @@ impl ExtGpuMiner {
 
                 std::mem::swap(&mut src_b, &mut dst_b);
                 num_nodes = num_parents;
-                level += 1;
             }
         }
         if profile {
@@ -9865,321 +9861,16 @@ mod tests {
     }
 }
 
-// ─── Pearl PoUW KAT — CPU reference vs canonical vectors ──────────────────
-// Cross-implementation tests against upstream zk-pow semantics. The CPU
-// reference below mirrors `zk-pow` (pearl_noise.rs, api/seed.rs, ffi/mine.rs)
-// and `pearl-blake3::MerkleTree` — which is byte-identical to standard keyed
-// BLAKE3 because keyed hashing IS that tree (chunk CVs counter=idx +
-// keyed parent merges + root). See PEARL-POUW-INTEGRATION.md.
-#[cfg(test)]
-mod pearl_kat {
+// ─── Pearl PoUW on-device parity (needs OpenCL device) ────────────────────
+// CPU reference helpers live in crate::auxpow::pearl::pearl_kat (shared with
+// the CUDA parity test).
+#[cfg(all(test, feature = "gpu-opencl"))]
+mod pearl_gpu_kat {
     use super::*;
-
-    /// `blake3_digest(msg, key)` — unkeyed when None, keyed otherwise.
-    fn digest_ref(msg: &[u8], key: Option<[u8; 32]>) -> [u8; 32] {
-        match key {
-            Some(k) => *blake3::keyed_hash(&k, msg).as_bytes(),
-            None => *blake3::hash(msg).as_bytes(),
-        }
-    }
-
-    /// `MerkleTree::new(pad_to_chunk_boundary(data), key).root()` — identical
-    /// to `blake3::keyed_hash` of the zero-padded data (same BLAKE3 tree).
-    fn merkle_root_ref(data: &[u8], key: &[u8; 32]) -> [u8; 32] {
-        let mut padded = data.to_vec();
-        padded.resize(data.len().div_ceil(1024) * 1024, 0);
-        *blake3::keyed_hash(key, &padded).as_bytes()
-    }
-
-    fn bind_root_a_ref(root: &[u8; 32], m: u32) -> [u8; 32] {
-        let mut msg = [0u8; 64];
-        msg[..32].copy_from_slice(root);
-        msg[32..36].copy_from_slice(&m.to_le_bytes());
-        digest_ref(&msg, Some(PEARL_SEED_SALT_A))
-    }
-
-    fn bind_root_b_ref(root: &[u8; 32], n: u32) -> [u8; 32] {
-        let mut msg = [0u8; 64];
-        msg[..32].copy_from_slice(root);
-        msg[32..36].copy_from_slice(&n.to_le_bytes());
-        digest_ref(&msg, Some(PEARL_SEED_SALT_B))
-    }
-
-    /// `PublicProofParams::commitment_hash(job_key)` → (b_noise_seed, a_noise_seed).
-    fn commitment_hash_ref(
-        job_key: &[u8; 32],
-        hash_a: &[u8; 32],
-        hash_b: &[u8; 32],
-        m: u32,
-        n: u32,
-        salted: bool,
-    ) -> ([u8; 32], [u8; 32]) {
-        let (ha, hb) = if salted {
-            (bind_root_a_ref(hash_a, m), bind_root_b_ref(hash_b, n))
-        } else {
-            (*hash_a, *hash_b)
-        };
-        let mut msg = [0u8; 64];
-        msg[..32].copy_from_slice(job_key);
-        msg[32..].copy_from_slice(&hb);
-        let b_seed = digest_ref(&msg, None);
-        msg[..32].copy_from_slice(&b_seed);
-        msg[32..].copy_from_slice(&ha);
-        (b_seed, digest_ref(&msg, None))
-    }
-
-    /// `get_random_hash(index, seed, key, prepend_index)` — label in the
-    /// message body, key = noise seed (see kernel arg order fix).
-    fn get_random_hash_ref(
-        index: usize,
-        seed: &[u8; 32],
-        key: &[u8; 32],
-        prepend_index: usize,
-    ) -> [u8; 32] {
-        let mut msg = [0u8; 64];
-        let pv = (1 + index) as i32;
-        msg[prepend_index * 4..prepend_index * 4 + 4].copy_from_slice(&pv.to_le_bytes());
-        msg[32..].copy_from_slice(seed);
-        digest_ref(&msg, Some(*key))
-    }
-
-    /// Uniform noise element at flat row-major index `idx` over `num_cols`
-    /// (canonical `generate_uniform_random_matrix` start_idx scheme).
-    fn uniform_at(start_idx: usize, seed: &[u8; 32], key: &[u8; 32]) -> i8 {
-        let block = start_idx / 32;
-        let byte = start_idx % 32;
-        let h = get_random_hash_ref(block, seed, key, 0);
-        ((h[byte] & 63) as i8).wrapping_sub(32)
-    }
-
-    /// Permutation pair for sparse row `l` (canonical `generate_permutation_matrix`).
-    fn perm_pair(l: usize, rank: usize, seed: &[u8; 32], key: &[u8; 32]) -> (u32, u32) {
-        let h = get_random_hash_ref(l / 8, seed, key, 1);
-        let u = u32::from_le_bytes([
-            h[(l % 8) * 4],
-            h[(l % 8) * 4 + 1],
-            h[(l % 8) * 4 + 2],
-            h[(l % 8) * 4 + 3],
-        ]);
-        let mask = (rank - 1) as u32;
-        let first = u & mask;
-        let second = first ^ (1u32 + ((((rank as u64 - 1) * u as u64) >> 32) as u32));
-        (first, second)
-    }
-
-    /// Kernel `pcg32` mirror.
-    fn pcg32_ref(state: u64) -> u32 {
-        let xorshifted = (((state >> 18) ^ state) as u32) >> 27;
-        let rot = (state >> 59) as u32;
-        xorshifted.rotate_right(rot)
-    }
-
-    /// Kernel `gen_int7` mirror → i8 in [-64, 64].
-    fn gen_int7_ref(nonce: u64, index: u32) -> i8 {
-        let mut st = (nonce ^ ((index as u64) << 32))
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        st = st
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(nonce << 16)
-            .wrapping_add(index as u64);
-        ((pcg32_ref(st) % 129) as i32 - 64) as i8
-    }
-
-    /// Full pipeline reference for one output tile's jackpot hash — mirrors
-    /// `pearl_pouw_mine_native` (TILE_H=4 × TILE_W=8 tile at (row_off, col_off)).
-    #[allow(clippy::too_many_arguments)]
-    fn tile_jackpot_ref(
-        nonce: u64,
-        m: usize,
-        n: usize,
-        k: usize,
-        rank: usize,
-        job_key: &[u8; 32],
-        row_off: u32,
-        col_off: u32,
-        rows_base: &[u32],
-        cols_base: &[u32],
-        salted: bool,
-    ) -> [u8; 32] {
-        // 1. Matrices (kernel gen scheme)
-        let a: Vec<i8> = (0..m * k).map(|i| gen_int7_ref(nonce, i as u32)).collect();
-        let bt: Vec<i8> = (0..n * k)
-            .map(|i| gen_int7_ref(nonce.wrapping_add(1), i as u32))
-            .collect();
-
-        // 2-3. Keyed merkle roots on zero-padded byte layouts (i8 → raw byte)
-        let a_bytes: Vec<u8> = a.iter().map(|&x| x as u8).collect();
-        let bt_bytes: Vec<u8> = bt.iter().map(|&x| x as u8).collect();
-        let hash_a = merkle_root_ref(&a_bytes, job_key);
-        let hash_b = merkle_root_ref(&bt_bytes, job_key);
-
-        // 4. Seed chain (+V3 salted bind)
-        let (b_seed, a_seed) = commitment_hash_ref(
-            job_key,
-            &hash_a,
-            &hash_b,
-            m as u32,
-            n as u32,
-            salted,
-        );
-
-        // 5-6. Noise for the needed rows/cols → noised matrices (i32 accum)
-        let mut a2 = vec![0i32; m * k];
-        let mut b2 = vec![0i32; n * k];
-        for i in 0..m {
-            for l in 0..k {
-                let e = |c: usize| uniform_at(i * rank + c, &PEARL_SEED_LABEL_A, &a_seed);
-                let (f, s) = perm_pair(l, rank, &PEARL_SEED_LABEL_A, &a_seed);
-                let noise = e(f as usize) as i32 - e(s as usize) as i32;
-                a2[i * k + l] = a[i * k + l] as i32 + noise;
-            }
-        }
-        for j in 0..n {
-            for l in 0..k {
-                let e = |c: usize| uniform_at(j * rank + c, &PEARL_SEED_LABEL_B, &b_seed);
-                let (f, s) = perm_pair(l, rank, &PEARL_SEED_LABEL_B, &b_seed);
-                let noise = e(f as usize) as i32 - e(s as usize) as i32;
-                b2[j * k + l] = bt[j * k + l] as i32 + noise;
-            }
-        }
-
-        // 7. Tile accumulation + jackpot transcript (LROT=13, 16 slots)
-        let mut jackpot = [0u32; 16];
-        let mut tile = [0i32; 32];
-        let mut ll = rank;
-        while ll <= k {
-            for u in 0..4usize {
-                let ar = (row_off + rows_base[u]) as usize;
-                for v in 0..8usize {
-                    let bc = (col_off + cols_base[v]) as usize;
-                    let mut acc = 0i32;
-                    for l in (ll - rank)..ll {
-                        acc += a2[ar * k + l] * b2[bc * k + l];
-                    }
-                    tile[u * 8 + v] += acc;
-                }
-            }
-            let xored = tile.iter().fold(0u32, |acc, &x| acc ^ x as u32);
-            let tid = (ll / rank - 1) % 16;
-            jackpot[tid] = jackpot[tid].rotate_left(13) ^ xored;
-            ll += rank;
-        }
-
-        // 8. Keyed jackpot hash
-        let mut msg = [0u8; 64];
-        for (i, w) in jackpot.iter().enumerate() {
-            msg[i * 4..i * 4 + 4].copy_from_slice(&w.to_le_bytes());
-        }
-        digest_ref(&msg, Some(a_seed))
-    }
-
-    // ── Pinned-vector tests (run everywhere, no GPU needed) ────────────
-
-    #[test]
-    fn pearl_seed_salts_match_context_strings() {
-        // Upstream api/seed.rs test: salts are blake3 of domain strings.
-        assert_eq!(
-            PEARL_SEED_SALT_A,
-            *blake3::hash(b"pearl/cert-v3/noise-seed/A").as_bytes()
-        );
-        assert_eq!(
-            PEARL_SEED_SALT_B,
-            *blake3::hash(b"pearl/cert-v3/noise-seed/B").as_bytes()
-        );
-    }
-
-    #[test]
-    fn pearl_seed_labels_are_padded() {
-        let mut a = [0u8; 32];
-        a[..8].copy_from_slice(b"A_tensor");
-        let mut b = [0u8; 32];
-        b[..8].copy_from_slice(b"B_tensor");
-        assert_eq!(PEARL_SEED_LABEL_A, a);
-        assert_eq!(PEARL_SEED_LABEL_B, b);
-    }
-
-    #[test]
-    fn pearl_commitment_hash_upstream_pinned() {
-        // Pinned vectors from upstream zk-pow api/seed.rs
-        // (commitment_hash_pinned_vectors) — consensus break detector.
-        let job_key = [0x11u8; 32];
-        let hash_a = [0xAAu8; 32];
-        let hash_b = [0xBBu8; 32];
-        let (m, n) = (192u32, 320u32);
-
-        let (b_legacy, a_legacy) =
-            commitment_hash_ref(&job_key, &hash_a, &hash_b, m, n, false);
-        assert_eq!(
-            b_legacy,
-            [
-                0xad, 0xd6, 0xf7, 0xea, 0x5f, 0xee, 0xbf, 0x89, 0xc8, 0xa7, 0x7e, 0x2e, 0xbf,
-                0xa0, 0xd8, 0x24, 0x42, 0xe7, 0xdb, 0xb0, 0x04, 0x6d, 0xbd, 0x48, 0x97, 0x18,
-                0x61, 0xd1, 0x2f, 0xcb, 0x01, 0x77
-            ]
-        );
-        assert_eq!(
-            a_legacy,
-            [
-                0x48, 0x3b, 0x07, 0xb6, 0xf7, 0x31, 0x05, 0x03, 0x0b, 0x94, 0x82, 0x25, 0x5f,
-                0x37, 0x72, 0x3f, 0x3f, 0xed, 0x69, 0xae, 0x91, 0x67, 0x24, 0xee, 0x82, 0x91,
-                0x84, 0x8b, 0x8c, 0x28, 0x79, 0x4b
-            ]
-        );
-
-        let (b_salted, a_salted) = commitment_hash_ref(&job_key, &hash_a, &hash_b, m, n, true);
-        assert_eq!(
-            b_salted,
-            [
-                0x60, 0xed, 0x9b, 0x73, 0xc5, 0xa9, 0x59, 0x9b, 0x20, 0x0b, 0x6c, 0xd5, 0x63,
-                0xe7, 0xf0, 0xd5, 0xd9, 0xa6, 0x7d, 0x24, 0x02, 0xd8, 0x5f, 0xd4, 0xef, 0x96,
-                0x6c, 0x58, 0x00, 0x80, 0xd0, 0xe5
-            ]
-        );
-        assert_eq!(
-            a_salted,
-            [
-                0x30, 0x17, 0x84, 0x16, 0x80, 0x05, 0xec, 0x83, 0x3a, 0xb0, 0xaa, 0x60, 0x00,
-                0x6f, 0x7f, 0xe7, 0xfa, 0xaa, 0x95, 0x30, 0x7d, 0x8c, 0x1f, 0xc6, 0x81, 0x9b,
-                0x2f, 0xfd, 0xd7, 0x17, 0xec, 0xcf
-            ]
-        );
-    }
-
-    #[test]
-    fn pearl_merkle_root_is_keyed_blake3() {
-        // Invariant backing the GPU comparison: the canonical keyed Merkle
-        // tree's root equals blake3::keyed_hash(key, padded_data) — including
-        // non-power-of-two chunk counts and single-chunk trees.
-        let key = [0x42u8; 32];
-        for len in [1usize, 512, 1023, 1024, 1025, 2048, 3071, 3072, 3073, 5120] {
-            let data: Vec<u8> = (0..len).map(|i| (i * 7 + 3) as u8).collect();
-            let mut padded = data.clone();
-            padded.resize(len.div_ceil(1024) * 1024, 0);
-            // Reference = keyed hash of the padded layout (what the GPU must produce).
-            let expected = *blake3::keyed_hash(&key, &padded).as_bytes();
-            assert_eq!(merkle_root_ref(&data, &key), expected, "len {len}");
-        }
-    }
-
-    #[test]
-    fn pearl_get_random_hash_layout() {
-        // Layout: (1+index) as i32-LE at 4*prepend_index, seed at bytes 32..64,
-        // keyed by `key`. Guards against a future seed/key swap regression.
-        let seed = [0x5Au8; 32];
-        let key = [0xA5u8; 32];
-        let mut msg = [0u8; 64];
-        msg[4..8].copy_from_slice(&(6i32.to_le_bytes())); // prepend slot 1, index 5
-        msg[32..].copy_from_slice(&seed);
-        let expected = *blake3::keyed_hash(&key, &msg).as_bytes();
-        assert_eq!(get_random_hash_ref(5, &seed, &key, 1), expected);
-    }
-
-    // ── On-device parity (needs OpenCL device; ignored by default) ─────
+    use crate::auxpow::pearl::pearl_kat::*;
 
     /// End-to-end GPU vs CPU reference. Requires an OpenCL device; run with:
     ///   cargo test --features gpu-opencl pearl_gpu_parity -- --ignored --nocapture
-    #[cfg(feature = "gpu-opencl")]
     #[test]
     #[ignore]
     fn pearl_gpu_parity_vs_cpu_reference() {

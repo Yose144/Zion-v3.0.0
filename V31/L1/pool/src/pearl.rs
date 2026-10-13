@@ -960,6 +960,54 @@ mod tests {
     }
 
     #[test]
+    fn pearl_miner_wire_proof_accepted() {
+        // Cross-crate E2E: the MINER's production builder (`build_plain_proof`
+        // + `encode_plain_proof`) must produce bytes the pool verifier
+        // accepts — exercises the real wire path, not the test-local encoder.
+        use zion_miner::auxpow::pearl as mp;
+
+        let job = test_job();
+        let cfg = mp::PearlMineConfig {
+            m: 16,
+            n: 16,
+            k: 128,
+            rank: 128,
+            rows_pattern: mp::PeriodicPattern::from_list(&[0, 1, 2, 3]).unwrap(),
+            cols_pattern: mp::PeriodicPattern::from_list(&[0, 1, 2, 3, 4, 5, 6, 7]).unwrap(),
+        };
+        // Single kernel tile at (row_off=4, col_off=8) → rows 4..8, cols 8..16.
+        let row_offsets = [4u32];
+        let col_offsets = [8u32];
+        let job_key = cfg.job_key(&job.header);
+        let a = gen_matrix(16 * 128);
+        let bt = gen_matrix(16 * 128);
+        // tile_index 0 = roi 0 × nco 0 — only tile.
+        let bytes =
+            mp::build_plain_proof(&cfg, &job_key, &a, &bt, 0, &row_offsets, &col_offsets)
+                .unwrap();
+
+        // Same wire shape as PearlSubmit: base64(bincode(PlainProof)).
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        let decoded = decode_plain_proof(
+            &base64::engine::general_purpose::STANDARD
+                .decode(&b64)
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(decoded.m, 16);
+        assert_eq!(decoded.a.row_indices, vec![4, 5, 6, 7]);
+        assert_eq!(decoded.bt.row_indices, vec![8, 9, 10, 11, 12, 13, 14, 15]);
+
+        let huge = BigUint::parse_bytes(
+            b"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let out = verify_pearl_share(&decoded, &job, &huge).unwrap();
+        assert!(out.is_block);
+    }
+
+    #[test]
     fn pearl_job_parses_gateway_response() {
         let header = [0xABu8; 76];
         let b64 = base64::engine::general_purpose::STANDARD.encode(header);
