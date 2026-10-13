@@ -520,6 +520,18 @@ pub trait GpuMiner: Send {
         })
     }
 
+    /// One Pearl PoUW mining attempt: fresh matrices → keyed-BLAKE3 merkle →
+    /// noise → tile matmul + jackpot scan, all on-device. Returns the winning
+    /// tile + matrices for the CPU Merkle-proof build, or `None` when no tile
+    /// beat the target. Only the OpenCL backend implements it today.
+    fn mine_pearl(
+        &mut self,
+        input: &crate::auxpow::gpu_opencl_full::PearlPouwNativeInput<'_>,
+    ) -> Result<Option<crate::auxpow::gpu_opencl_full::PearlPouwNativeResult>> {
+        let _ = input;
+        anyhow::bail!("pearlhash unsupported on {:?}", self.backend_kind());
+    }
+
     /// Return a shared CUDA device handle, if this backend uses CUDA.
     /// Used by the external GPU thread to avoid creating a second CUDA
     /// context on the same GPU (which causes deadlocks on consumer GPUs).
@@ -1277,6 +1289,7 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "equihash_zec"
             | "neoscrypt"
             | "neoscrypt_phx"
+            | "pearlhash"
     )
 }
 
@@ -5415,7 +5428,9 @@ pub mod cpu_external_fallback {
 #[cfg(feature = "gpu-opencl")]
 pub mod opencl_external {
     use super::*;
-    use crate::auxpow::gpu_opencl_full::ExtGpuMiner;
+    use crate::auxpow::gpu_opencl_full::{
+        ExtGpuMiner, PearlPouwNativeInput, PearlPouwNativeResult,
+    };
 
     pub struct OpenClExternalMiner {
         algorithm: String,
@@ -5506,6 +5521,13 @@ pub mod opencl_external {
 
         fn set_extranonce(&mut self, en1: &[u8]) {
             self.en1 = en1.to_vec();
+        }
+
+        fn mine_pearl(
+            &mut self,
+            input: &PearlPouwNativeInput<'_>,
+        ) -> Result<Option<PearlPouwNativeResult>> {
+            self.miner.pearl_pouw_mine_native(input)
         }
 
         fn mine_batch(

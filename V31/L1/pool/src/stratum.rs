@@ -165,6 +165,10 @@ pub struct StratumServer {
     /// method was previously a dead path anyway, so this only adds
     /// capability, it cannot regress V1/V3 traffic.
     qtu_stratum_enabled: bool,
+    /// Pearl PoUW bridge: polls `pearl-gateway` miner_rpc for jobs and
+    /// verifies/forwards `PearlSubmit` shares. `None` unless
+    /// `ZION_POOL_PEARL_GATEWAY` is set.
+    pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
 }
 
 /// Decrements the shared active-session counter when the session task
@@ -289,6 +293,7 @@ impl StratumServer {
             qtu_stratum_enabled: std::env::var("ZION_POOL_QTU_STRATUM")
                 .map(|v| v.trim() != "0")
                 .unwrap_or(true),
+            pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         }
     }
 
@@ -921,6 +926,15 @@ impl StratumServer {
     ) -> Option<ExternalStreamJob> {
         let mut coins = self.multi_bridge.enabled_coins();
         coins.retain(|c| self.multi_bridge.is_cpu_coin(c) == cpu);
+        // Pearl rides the GPU external stream from our own gateway bridge —
+        // it never arrives via upstream pool connections.
+        if !cpu {
+            if let Some(pearl) = &self.pearl {
+                if pearl.ext_stream_job().is_some() && !coins.contains(&ExternalCoin::Pearl) {
+                    coins.push(ExternalCoin::Pearl);
+                }
+            }
+        }
         if let Some(ex) = exclude {
             coins.retain(|c| *c != ex);
         }
@@ -939,6 +953,16 @@ impl StratumServer {
             }
         }
         for coin in &order {
+            // Pearl leg: served from our own pearl-gateway poll, verified
+            // locally on submit (see PearlSubmit handler).
+            if *coin == ExternalCoin::Pearl {
+                if let Some(pearl) = &self.pearl {
+                    if let Some(job) = pearl.ext_stream_job() {
+                        return Some(job);
+                    }
+                }
+                continue;
+            }
             // Hybrid native Quantus leg: when enabled, a share of broadcasts
             // is served from our own quantus-node job queue (fresh jobs
             // only — stale native automatically falls back to upstream).
@@ -1057,13 +1081,20 @@ impl StratumServer {
         if embedded_matches {
             return false;
         }
-        let fresh = self
-            .multi_bridge
-            .latest_job_for_coin(&coin)
-            .filter(|j| Self::job_is_fresh(j));
-        let new_val = fresh
-            .as_ref()
-            .and_then(|job| serde_json::to_value(Self::job_to_ext_stream(&coin, job)).ok());
+        let new_val = if coin == ExternalCoin::Pearl {
+            self.pearl
+                .as_ref()
+                .and_then(|p| p.ext_stream_job())
+                .and_then(|job| serde_json::to_value(job).ok())
+        } else {
+            let fresh = self
+                .multi_bridge
+                .latest_job_for_coin(&coin)
+                .filter(|j| Self::job_is_fresh(j));
+            fresh
+                .as_ref()
+                .and_then(|job| serde_json::to_value(Self::job_to_ext_stream(&coin, job)).ok())
+        };
         match new_val {
             Some(val) => {
                 v[field] = val;
@@ -1193,7 +1224,8 @@ impl StratumServer {
     /// rotation on ANY coin (not just the embedded default) refreshes
     /// sessions pinned to a different coin via route/CoinPreference.
     fn all_external_job_ids(&self) -> Vec<String> {
-        self.multi_bridge
+        let mut ids: Vec<String> = self
+            .multi_bridge
             .enabled_coins()
             .into_iter()
             .filter_map(|c| {
@@ -1201,7 +1233,17 @@ impl StratumServer {
                     .latest_job_for_coin(&c)
                     .map(|j| format!("{}:{}", c.ticker(), j.external_job_id))
             })
-            .collect()
+            .collect();
+        // Pearl jobs come from the pearl-gateway poller, not multi_bridge —
+        // without this a PRL template rotation would never trigger a
+        // broadcast and miners would hash a stale seed until the next ZION
+        // or aux-coin change.
+        if let Some(pearl) = &self.pearl {
+            if let Some(job) = pearl.latest_job() {
+                ids.push(format!("PRL:{}", crate::pearl_gateway::PearlRuntime::job_id(&job)));
+            }
+        }
+        ids
     }
 
     /// Return true if an external job is fresh enough to send to a miner.
@@ -1525,6 +1567,10 @@ impl StratumServer {
     }
 
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {
+        if let Some(pearl) = &self.pearl {
+            let pearl = pearl.clone();
+            tokio::spawn(async move { pearl.run().await });
+        }
         let limiter = IpRateLimiter::new(self.config.reconnect_rate_limit);
         let session_id_counter = Arc::new(AtomicU64::new(1));
         loop {
@@ -2872,8 +2918,145 @@ impl StratumServer {
                                 self.routing_stats.lock().unwrap().record(group, rev_source, accepted);
                             }
 
-                            Ok(PoolMessage::PearlSubmit { .. }) => {
-                                tracing::debug!("v3_pearl_submit (not yet implemented)");
+                            Ok(PoolMessage::PearlSubmit {
+                                miner_id: sub_miner_id,
+                                worker_name: sub_worker_name,
+                                coin,
+                                external_job_id,
+                                plain_proof_b64,
+                                ..
+                            }) => {
+                                tracing::info!(
+                                    "v3_pearl_submit miner={} worker={} ip={} job={} proof_b64_len={}",
+                                    sub_miner_id, sub_worker_name, ip, external_job_id,
+                                    plain_proof_b64.len()
+                                );
+
+                                // Verify the share locally against the pool's
+                                // own gateway job (server-authoritative — the
+                                // miner's echoed mining_job is advisory only).
+                                let (accepted, status) = match &self.pearl {
+                                    None => (false, "pearl_not_enabled".to_string()),
+                                    Some(pearl) => match pearl.job_for_submit(&external_job_id) {
+                                        None => {
+                                            tracing::info!(
+                                                "v3_pearl_stale miner={} worker={} ip={} job={}",
+                                                sub_miner_id, sub_worker_name, ip, external_job_id
+                                            );
+                                            (false, "stale".to_string())
+                                        }
+                                        Some(job) => {
+                                            let outcome = (|| {
+                                                use base64::Engine as _;
+                                                let bytes = base64::engine::general_purpose::STANDARD
+                                                    .decode(&plain_proof_b64)
+                                                    .context("plain_proof base64")?;
+                                                let proof = crate::pearl::decode_plain_proof(&bytes)
+                                                    .context("plain_proof decode")?;
+                                                let share_target = pearl.share_target(&job);
+                                                crate::pearl::verify_pearl_share(
+                                                    &proof,
+                                                    &job,
+                                                    &share_target,
+                                                )
+                                            })();
+                                            match outcome {
+                                                Ok(outcome) => {
+                                                    if outcome.is_block {
+                                                        tracing::info!(
+                                                            "pearl_block_candidate miner={} job={} jackpot={} forwarding",
+                                                            sub_miner_id, external_job_id,
+                                                            hex::encode(outcome.jackpot_hash)
+                                                        );
+                                                        let pearl = pearl.clone();
+                                                        let job = job.clone();
+                                                        let proof_b64 = plain_proof_b64.clone();
+                                                        tokio::spawn(async move {
+                                                            if let Err(e) = pearl
+                                                                .submit_proof(&proof_b64, &job)
+                                                                .await
+                                                            {
+                                                                tracing::warn!(
+                                                                    "pearl_gateway submit_plain_proof failed: {e:#}"
+                                                                );
+                                                            }
+                                                        });
+                                                    }
+                                                    (true, "accepted".to_string())
+                                                }
+                                                Err(e) => {
+                                                    let msg = format!("{e:#}");
+                                                    (
+                                                        false,
+                                                        format!(
+                                                            "rejected:{}",
+                                                            msg.chars().take(80).collect::<String>()
+                                                        ),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    },
+                                };
+
+                                let result = PoolMessage::ExternalResult {
+                                    accepted,
+                                    status: status.clone(),
+                                    coin: coin.clone(),
+                                };
+                                let _ = write_v3_message(writer, &result).await;
+                                tracing::info!(
+                                    "v3_pearl_result miner={} worker={} ip={} job={} accepted={} status={}",
+                                    sub_miner_id, sub_worker_name, ip, external_job_id, accepted, status
+                                );
+
+                                if !accepted {
+                                    // Same resync semantics as ExternalSubmit:
+                                    // push the freshest job so the miner stops
+                                    // hashing a retired template.
+                                    let resync_job = self.last_v3_job.lock().unwrap().clone();
+                                    if let Some(job) = resync_job {
+                                        let job = self.session_job_line(
+                                            &job,
+                                            session_gpu_pref,
+                                            session_cpu_pref,
+                                            session_gpu2_pref,
+                                        );
+                                        let mut w = writer.lock().await;
+                                        let _ = w.write_all(job.as_bytes()).await;
+                                        let _ = w.write_all(b"\n").await;
+                                        let _ = w.flush().await;
+                                    }
+                                }
+
+                                if accepted {
+                                    let h = self.current_height.load(Ordering::Relaxed);
+                                    let w = auxpow_share_weight(&coin);
+                                    self.pool
+                                        .lock()
+                                        .unwrap()
+                                        .record_external_share(
+                                            &sub_miner_id,
+                                            &sub_worker_name,
+                                            h,
+                                            w,
+                                        );
+                                }
+                                self.telemetry.lock().unwrap().record_external_share(
+                                    &sub_miner_id,
+                                    &sub_worker_name,
+                                    &coin,
+                                    accepted,
+                                );
+                                let group = crate::routing::resolve_session_group(
+                                    &sub_miner_id,
+                                    &sub_worker_name,
+                                );
+                                self.routing_stats.lock().unwrap().record(
+                                    group,
+                                    zion_cosmic_harmony::revenue::RevenueSource::PearlExternal,
+                                    accepted,
+                                );
                             }
 
                             Ok(msg) => {

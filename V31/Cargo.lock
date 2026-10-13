@@ -6615,6 +6615,8 @@ name = "zion-pool"
 version = "3.2.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
+ "blake3",
  "chrono",
  "clap",
  "ed25519-dalek",
