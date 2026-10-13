@@ -95,7 +95,8 @@ __kernel void pearl_blake3_chunk_hash(
     __global const char* data,         // padded data (multiple of 1024 bytes) — char to match Buffer<i8>
     __global const uchar* key,         // 32 bytes (BLAKE3 key, or IV for unkeyed)
     __global uchar* chunk_hashes,      // output: num_chunks × 32 bytes
-    const uint num_chunks
+    const uint num_chunks,
+    const uint single_root             // 1 = data fits one chunk → ROOT flag on last block
 )
 {
     uint gid = get_global_id(0);
@@ -118,6 +119,8 @@ __kernel void pearl_blake3_chunk_hash(
         uint flags = 0u;
         if (block == 0) flags |= CHUNK_START;
         if (block == 15) flags |= CHUNK_END;
+        // Single-chunk tree (data <= 1024B): leaf IS the root → ROOT flag.
+        if (block == 15 && single_root) flags |= ROOT;
 
         // Copy block from global to private
         uint block_words[16];
@@ -125,7 +128,8 @@ __kernel void pearl_blake3_chunk_hash(
         for (int i = 0; i < 16; i++) block_words[i] = block_ptr[i];
 
         uint out[8];
-        blake3_compress(cv, block_words, 0, 64, flags | KEYED_HASH, out);
+        // Counter = chunk index for ALL blocks of this chunk (BLAKE3 spec).
+        blake3_compress(cv, block_words, (ulong)gid, 64, flags | KEYED_HASH, out);
 
         for (int i = 0; i < 8; i++) cv[i] = out[i];
     }
@@ -146,45 +150,69 @@ __kernel void pearl_blake3_chunk_hash(
 
 __kernel void pearl_blake3_merge(
     __global const uchar* child_hashes,  // num_children × 32 bytes
-    __global uchar* parent_hashes,       // (num_children/2) × 32 bytes
-    const uint num_parents,
+    __global const uchar* key,           // 32 bytes (BLAKE3 key — parent nodes are keyed too)
+    __global uchar* parent_hashes,       // ceil(num_children/2) × 32 bytes
+    const uint num_children,
     const uint is_root                   // 1 if this is the final merge (add ROOT flag)
 )
 {
     uint gid = get_global_id(0);
+    uint num_parents = (num_children + 1) >> 1;
     if (gid >= num_parents) return;
 
-    // Load left and right child hashes
+    // Load left child hash
     uint left[8], right[8];
     __global const uchar* l = child_hashes + (ulong)gid * 2 * 32;
-    __global const uchar* r = child_hashes + (ulong)gid * 2 * 32 + 32;
     for (int i = 0; i < 8; i++) {
         left[i] = (uint)l[i*4]
                 | ((uint)l[i*4+1] << 8)
                 | ((uint)l[i*4+2] << 16)
                 | ((uint)l[i*4+3] << 24);
+    }
+
+    __global uchar* out_hash = parent_hashes + (ulong)gid * 32;
+
+    // Odd child count: last unpaired child propagates up unchanged
+    // (canonical MerkleTree::combine_layer pushes the lone CV through).
+    if (gid * 2 + 1 >= num_children) {
+        for (int i = 0; i < 8; i++) {
+            out_hash[i*4+0] = (uchar)left[i];
+            out_hash[i*4+1] = (uchar)(left[i] >> 8);
+            out_hash[i*4+2] = (uchar)(left[i] >> 16);
+            out_hash[i*4+3] = (uchar)(left[i] >> 24);
+        }
+        return;
+    }
+
+    __global const uchar* r = child_hashes + (ulong)gid * 2 * 32 + 32;
+    for (int i = 0; i < 8; i++) {
         right[i] = (uint)r[i*4]
                  | ((uint)r[i*4+1] << 8)
                  | ((uint)r[i*4+2] << 16)
                  | ((uint)r[i*4+3] << 24);
     }
 
-    // Parent node: CV = IV, block = left || right, flags = PARENT | ROOT
+    // Parent node in a KEYED merkle tree: CV = key words (not IV),
+    // flags = PARENT | KEYED_HASH (+ ROOT on the final merge).
     uint cv[8];
-    for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
+    __global const uchar* k = key;
+    for (int i = 0; i < 8; i++) {
+        cv[i] = (uint)k[i*4]
+              | ((uint)k[i*4+1] << 8)
+              | ((uint)k[i*4+2] << 16)
+              | ((uint)k[i*4+3] << 24);
+    }
 
     uint block[16];
     for (int i = 0; i < 8; i++) block[i] = left[i];
     for (int i = 0; i < 8; i++) block[8 + i] = right[i];
 
-    uint flags = PARENT;
+    uint flags = PARENT | KEYED_HASH;
     if (is_root) flags |= ROOT;
 
     uint out[8];
     blake3_compress(cv, block, 0, 64, flags, out);
 
-    // Write parent hash
-    __global uchar* out_hash = parent_hashes + (ulong)gid * 32;
     for (int i = 0; i < 8; i++) {
         out_hash[i*4+0] = (uchar)out[i];
         out_hash[i*4+1] = (uchar)(out[i] >> 8);

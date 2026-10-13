@@ -2681,6 +2681,12 @@ impl MinerRuntime {
         let coin = ExternalCoin::from_ticker(&ext.coin)
             .ok_or_else(|| MinerError::Consensus(format!("unknown coin: {}", ext.coin)))?;
 
+        // Pearl PoUW does not fit the nonce/hash share model — one GPU call is
+        // a full fresh-matrix attempt and the "share" is a PlainProof blob.
+        if coin == ExternalCoin::Pearl {
+            return self.mine_v3_pearl_attempt(client, stream, &ext).await;
+        }
+
         // On a new GPU external job, reset the nonce cursor to a unique base.
         // Without this, multiple miners on the same upstream EthStratum/ProgPoW
         // job all scan from nonce 0, find the same first solution, and one of
@@ -2949,6 +2955,193 @@ impl MinerRuntime {
         }
 
         Ok(result.accepted)
+    }
+
+    /// One Pearl PoUW attempt against a V3 `external_stream` PRL job.
+    ///
+    /// The job carries the raw gateway fields: `header_hex` = 76-byte
+    /// `IncompleteBlockHeader`, `target_hex` = pool share target (32B BE),
+    /// `eq_params` = cert_version (≥3 → salted seed bind). One call performs a
+    /// single complete GPU attempt (fresh matrices, all hash tiles); the outer
+    /// stream loop re-invokes it until the job rotates. On a jackpot the
+    /// matrices are read back, the `PlainProof` (rows/cols strips + Merkle
+    /// proofs) is built on CPU, bincode+b64-encoded and sent as `PearlSubmit`.
+    #[cfg(feature = "auxpow")]
+    async fn mine_v3_pearl_attempt(
+        &self,
+        client: Arc<V3PoolClient>,
+        stream: StreamId,
+        ext: &ExternalStreamJob,
+    ) -> Result<bool, MinerError> {
+        use crate::auxpow::pearl::{
+            build_plain_proof, mining_job_json, PearlMineConfig,
+        };
+        use zion_cosmic_harmony::ExternalCoin;
+        use crate::auxpow::gpu_opencl_full::{
+            PearlPouwNativeInput, PearlSeedDerivation, PEARL_SEED_LABEL_A, PEARL_SEED_LABEL_B,
+        };
+
+        let header_hex = ext.header_hex.strip_prefix("0x").unwrap_or(&ext.header_hex);
+        let header_bytes = hex::decode(header_hex)
+            .map_err(|e| MinerError::Consensus(format!("pearl header decode: {e}")))?;
+        let header: [u8; 76] = header_bytes
+            .try_into()
+            .map_err(|_| MinerError::Consensus("pearl header must be 76 bytes".into()))?;
+        let cert_version: u32 = ext.eq_params.parse().unwrap_or(3);
+        let target_hex = ext.target_hex.strip_prefix("0x").unwrap_or(&ext.target_hex);
+        let target_vec = hex::decode(target_hex)
+            .map_err(|e| MinerError::Consensus(format!("pearl target decode: {e}")))?;
+        let share_target = num_bigint::BigUint::from_bytes_be(&target_vec);
+
+        let cfg = PearlMineConfig::from_env()
+            .map_err(|e| MinerError::Consensus(format!("pearl config: {e:#}")))?;
+        // The kernel's target must be the pool share target times the
+        // rank-penalty adjustment — the same bound the pool verifier applies.
+        let u256_max = (num_bigint::BigUint::from(1u8) << 256) - num_bigint::BigUint::from(1u8);
+        let bound = (share_target.clone() * cfg.adjustment_factor()).min(u256_max);
+        let bound_bytes = bound.to_bytes_be();
+        let mut target = [0u8; 32];
+        target[32 - bound_bytes.len()..].copy_from_slice(&bound_bytes);
+        let job_key = cfg.job_key(&header);
+        let row_offsets = cfg.row_offsets();
+        let col_offsets = cfg.col_offsets();
+        let rows_base = cfg.rows_base();
+        let cols_base = cfg.cols_base();
+
+        let nonce = self
+            .gpu_ext_cursor(stream)
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let seed_derivation = if cert_version >= 3 {
+            PearlSeedDerivation::Salted
+        } else {
+            PearlSeedDerivation::Legacy
+        };
+
+        // Same persistent-backend pattern as try_gpu_ext_share: the OpenCL
+        // external miner is created once per algorithm and reused.
+        let (gpu_ext, gpu_ext_algo) = match stream {
+            StreamId::GpuExternal2 => (self.gpu_ext2.clone(), self.gpu_ext2_algo.clone()),
+            _ => (self.gpu_ext.clone(), self.gpu_ext_algo.clone()),
+        };
+        let kind = parse_gpu_backend(&self.config.gpu_backend);
+        let work_size = self.config.auxpow_nonce_batch.max(1) as usize;
+        #[cfg(feature = "gpu-cuda")]
+        let shared_cuda_dev = {
+            let gpu_guard = self.gpu_zion.lock().unwrap();
+            gpu_guard.as_ref().and_then(|g| g.shared_cuda_device())
+        };
+        #[cfg(not(feature = "gpu-cuda"))]
+        let shared_cuda_dev: Option<()> = None;
+        // spawn_blocking needs 'static — move owned copies in and build the
+        // borrowing `PearlPouwNativeInput` inside the closure.
+        let (dims, rank) = ((cfg.m, cfg.n, cfg.k), cfg.rank);
+        let (ro, co, rb, cb) = (
+            row_offsets.clone(),
+            col_offsets.clone(),
+            rows_base.clone(),
+            cols_base.clone(),
+        );
+        let mine_result = task::spawn_blocking(move || {
+            let need_recreate = gpu_ext_algo.lock().unwrap().as_deref() != Some("pearlhash");
+            if need_recreate {
+                let miner = create_gpu_backend_with_cuda_device(
+                    kind,
+                    work_size,
+                    "pearlhash",
+                    "PRL",
+                    shared_cuda_dev,
+                )
+                .map_err(|e| anyhow::anyhow!("pearl gpu backend init: {e}"))?;
+                *gpu_ext.lock().unwrap() = Some(miner);
+                *gpu_ext_algo.lock().unwrap() = Some("pearlhash".to_string());
+                ext_info!("pearlhash: GPU ext backend ready");
+            }
+            let input = PearlPouwNativeInput {
+                nonce,
+                m: dims.0,
+                n: dims.1,
+                k: dims.2,
+                rank,
+                job_key,
+                target,
+                row_offsets: &ro,
+                col_offsets: &co,
+                rows_base: &rb,
+                cols_base: &cb,
+                seed_label_a: PEARL_SEED_LABEL_A,
+                seed_label_b: PEARL_SEED_LABEL_B,
+                seed_derivation,
+            };
+            let mut guard = gpu_ext.lock().unwrap();
+            let gpu = guard
+                .as_mut()
+                .ok_or_else(|| anyhow::anyhow!("pearl gpu backend unavailable"))?;
+            gpu.mine_pearl(&input)
+        })
+        .await
+        .map_err(|e| MinerError::Consensus(format!("pearl mine join: {e}")))?
+        .map_err(|e| MinerError::Consensus(format!("pearl mine: {e:#}")))?;
+
+        // Duty-cycle gap identical to the generic ext path — Stream 1 (ZION)
+        // shares the card.
+        let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(0);
+        if gap_ms > 0 {
+            sleep(Duration::from_millis(gap_ms)).await;
+        }
+
+        let Some(result) = mine_result else {
+            return Ok(false);
+        };
+
+        let proof_bytes = build_plain_proof(
+            &cfg,
+            &job_key,
+            &result.matrix_a,
+            &result.matrix_bt,
+            result.tile_index,
+            &row_offsets,
+            &col_offsets,
+        )
+        .map_err(|e| MinerError::Consensus(format!("pearl proof build: {e:#}")))?;
+        use base64::Engine as _;
+        let proof_b64 = base64::engine::general_purpose::STANDARD.encode(&proof_bytes);
+        let target_dec = share_target.to_str_radix(10);
+        let job_json = mining_job_json(&header, &target_dec, cert_version);
+        let job_b64 = base64::engine::general_purpose::STANDARD.encode(job_json.as_bytes());
+        let hash_hex = hex::encode(result.jackpot_hash);
+
+        let res = client
+            .submit_pearl_share(&ext.job_id, &hash_hex, &proof_b64, &job_b64)
+            .await
+            .map_err(|e| MinerError::Connection(format!("pearl submit: {e}")))?;
+
+        let share_result = if res.accepted {
+            ShareResult::Accepted
+        } else {
+            ShareResult::Rejected(res.status.clone())
+        };
+        self.record_share_result(stream, ExternalCoin::Pearl, &share_result)
+            .await;
+        if res.accepted {
+            ext_info!(
+                stream = ?stream,
+                nonce = result.nonce,
+                tile = result.tile_index,
+                job_id = %ext.job_id,
+                "V3 Trinity: pearl share accepted"
+            );
+        } else {
+            ext_warn!(
+                stream = ?stream,
+                nonce = result.nonce,
+                status = %res.status,
+                "V3 Trinity: pearl share rejected"
+            );
+        }
+        Ok(res.accepted)
     }
 
     #[cfg(feature = "auxpow")]

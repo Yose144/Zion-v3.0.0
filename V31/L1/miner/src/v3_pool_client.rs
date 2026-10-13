@@ -600,6 +600,64 @@ impl V3PoolClient {
         }
     }
 
+    /// Submit a Pearl PoUW share — the pool verifies the `PlainProof` locally
+    /// and forwards block-meeting proofs to the pearl-gateway.
+    /// `mining_job_b64` echoes the gateway job for forward compatibility (the
+    /// pool currently ignores it and submits its own stored job upstream).
+    /// Results arrive as `ExternalResult` on the "PRL" coin channel.
+    pub async fn submit_pearl_share(
+        &self,
+        external_job_id: &str,
+        hash_hex: &str,
+        plain_proof_b64: &str,
+        mining_job_b64: &str,
+    ) -> Result<V3ExternalResult> {
+        self.ensure_connected()?;
+        let coin_key = "PRL".to_string();
+        let rx_arc = {
+            let mut rxs = self.ext_result_receivers.lock().await;
+            match rxs.get(&coin_key) {
+                Some(rx) => rx.clone(),
+                None => {
+                    let (tx, rx) = mpsc::channel::<V3ExternalResult>(16);
+                    self.ext_result_senders
+                        .lock()
+                        .unwrap()
+                        .insert(coin_key.clone(), tx);
+                    let rx = std::sync::Arc::new(Mutex::new(rx));
+                    rxs.insert(coin_key, rx.clone());
+                    rx
+                }
+            }
+        };
+        let msg = PoolMessage::PearlSubmit {
+            miner_id: self.miner_id.clone(),
+            worker_name: self.worker_name.clone(),
+            coin: "PRL".to_string(),
+            algorithm: "pearlhash".to_string(),
+            external_job_id: external_job_id.to_string(),
+            hash_hex: hash_hex.to_string(),
+            plain_proof_b64: plain_proof_b64.to_string(),
+            mining_job_b64: mining_job_b64.to_string(),
+        };
+        let line = encode_message(&msg)?;
+        self.write_line(&line).await?;
+        let mut rx = rx_arc.lock().await;
+        while let Ok(stale) = rx.try_recv() {
+            ext_warn!(
+                coin = %stale.coin,
+                accepted = stale.accepted,
+                status = %stale.status,
+                "drained stale pearl result (leftover from timed-out submission)"
+            );
+        }
+        match tokio::time::timeout(Duration::from_secs(30), rx.recv()).await {
+            Ok(Some(result)) => Ok(result),
+            Ok(None) => anyhow::bail!("V3 pool: pearl result channel closed"),
+            Err(_) => anyhow::bail!("V3 pool: pearl share result timeout"),
+        }
+    }
+
     /// Send a CoinPreference message (for autonomous profit routing).
     /// `gpu_coin_2` pins the second GPU stream (Quad mode); pass "" when
     /// the miner runs a single GPU external stream.

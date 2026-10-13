@@ -19,6 +19,7 @@ pub mod neoscrypt_ref;
 pub mod nexapow_ref;
 pub mod octopus_ref;
 pub mod parent_chains;
+pub mod pearl;
 pub mod progpow_codegen;
 pub(crate) mod pure;
 pub mod qhash_ref;

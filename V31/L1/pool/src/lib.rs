@@ -9,6 +9,8 @@ pub mod deferred_payout;
 pub mod ncl_gateway;
 pub mod notifications;
 pub mod payout;
+pub mod pearl;
+pub mod pearl_gateway;
 pub mod pool;
 pub mod pplns;
 pub mod qtc_native;
