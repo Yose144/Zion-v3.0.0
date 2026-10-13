@@ -78,6 +78,10 @@ impl PearlRuntime {
         let mut reader = BufReader::new(read);
         let mut line = String::new();
         reader.read_line(&mut line).await?;
+        // `target` is a U256 that overflows serde_json::Number (parses as f64
+        // → scientific notation on to_string). Rewrite `"target":NNN` to a
+        // string literal before parsing so digits survive exactly.
+        let line = quote_target_digits(&line);
         let resp: serde_json::Value =
             serde_json::from_str(line.trim()).context("pearl gateway: bad JSON response")?;
         if let Some(err) = resp.get("error") {
@@ -204,4 +208,44 @@ impl PearlRuntime {
         self.rpc_raw(&req).await?;
         Ok(())
     }
+}
+
+/// Rewrite `"target":NNN` (bare JSON number) as `"target":"NNN"` so a U256
+/// target survives `serde_json` parsing with all digits intact. Only digit
+/// runs longer than 15 chars are quoted — small numbers stay numeric.
+/// Applied to the raw response line before `serde_json::from_str`.
+fn quote_target_digits(line: &str) -> String {
+    let mut out = String::with_capacity(line.len() + 4);
+    let bytes = line.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if line[i..].starts_with("\"target\"") {
+            out.push_str("\"target\"");
+            i += 8;
+            // copy `:` and whitespace
+            while i < bytes.len() && (bytes[i] == b':' || bytes[i].is_ascii_whitespace()) {
+                out.push(bytes[i] as char);
+                i += 1;
+            }
+            // if a bare numeric token follows, read it
+            if i < bytes.len() && (bytes[i] == b'-' || bytes[i].is_ascii_digit()) {
+                let start = i;
+                while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b'-') {
+                    i += 1;
+                }
+                let tok = &line[start..i];
+                if tok.len() > 15 {
+                    out.push('"');
+                    out.push_str(tok);
+                    out.push('"');
+                } else {
+                    out.push_str(tok);
+                }
+            }
+            continue;
+        }
+        out.push(bytes[i] as char);
+        i += 1;
+    }
+    out
 }
