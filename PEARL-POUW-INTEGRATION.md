@@ -229,13 +229,36 @@ POLL_MS=2000,SHARE_EASE=256,JOB_TTL_MS=30000}` (edge-environment.sh, backup
 
 ### Still open before enabling `--pearl`
 
-- pearld full sync (in progress, ~5 blk/s observed).
+- pearld full sync (in progress, ~5 blk/s observed; height ~20 000/127 001).
 - Live `submitPlainProof` round-trip: block-meeting proof → gateway accept.
-- Miner↔pool E2E KAT: `pearl_pouw_mine_native` → `build_plain_proof` →
-  `zion_pool::pearl::verify_pearl_share` on a small config (todo list item).
+- On-device CUDA parity run on the 1070 Ti rig (see §7).
 - `profit.rs` `.with_disabled` flip for `ExternalCoin::Pearl`.
 
-## 7. Open questions
+## 7. CUDA backend (2026-10-13, commit `61a9ee31c`)
+
+Full parity with the OpenCL pipeline on NVIDIA hardware — the 1070 Ti rig
+is CUDA-first (NVRTC JIT through `cudarc`, same pattern as the QPoW CUDA
+backend). Files:
+
+| piece | path |
+|---|---|
+| kernel | `V31/L1/miner/csrc/cuda/pearl_pouw_native.cu` — 9-kernel port of the `.cl` (gen_matrix, keyed chunk/merge/small BLAKE3, gen_uniform/gen_permutation, apply_noise A/B, `pearl_pouw_mine_native_v3` tile matmul + jackpot + LE target check). Scalar params for the mine kernel are packed into a `u32[4]` device buffer (cudarc launch-tuple arity). |
+| host | `V31/L1/miner/src/gpu/pearl_cuda.rs` — `PearlCudaMiner` mirrors `pearl_pouw_mine_native` step-for-step: zero-padded matrix buffers, `chunk_hashes`/`merkle`/`merkle2` ping-pong (B leaf layer must not alias A's merge scratch), salted bind on CPU, `b→a` seed chain via `small_hash`, readback only on `found`. |
+| dispatch | `gpu/mod.rs` — `"pearlhash"` routes to `PearlCudaMiner` under `GpuBackendKind::Cuda` **before** `CudaExtAlgo::from_name` (dedicated pipeline, not a `mine_batch` hasher). `shared_cuda_device` exposed so Stream 1 shares the context. |
+| runtime | `ZION_EXT_GPU_BACKEND` env overrides the external-stream backend (mirrors `ZION_QPOW_BACKEND`) — allows e.g. ZION on OpenCL + Pearl on CUDA on the same rig. |
+
+CPU KAT reference (`pearl_kat`) moved to `auxpow/pearl.rs` as
+`pub(crate)` — OpenCL and CUDA on-device parity tests share ONE consensus
+reference (duplicating it is how the `0x44`/`0x48` salt-typo class of bugs
+happens). CUDA parity test `pearl_cuda_parity_vs_cpu_reference` is
+`#[ignore]`d — runs where a CUDA device exists (the 1070 Ti rig).
+
+Cross-crate wire test (`pool/pearl.rs::pearl_miner_wire_proof_accepted`):
+miner's production `build_plain_proof` + `encode_plain_proof` → base64 →
+pool `decode_plain_proof` → `verify_pearl_share` → `is_block` — proves the
+independently-compiled encoders agree on the wire format.
+
+## 8. Open questions
 
 - Does AlphaPool accept `submitPlainProof`-style shares directly, or is its
   stratum a different dialect? (Wire-capture `alpha-miner` if bridging
