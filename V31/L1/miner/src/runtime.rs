@@ -2974,12 +2974,10 @@ impl MinerRuntime {
         ext: &ExternalStreamJob,
     ) -> Result<bool, MinerError> {
         use crate::auxpow::pearl::{
-            build_plain_proof, mining_job_json, PearlMineConfig,
+            build_plain_proof, mining_job_json, PearlMineConfig, PearlPouwNativeInput,
+            PearlSeedDerivation, PEARL_SEED_LABEL_A, PEARL_SEED_LABEL_B,
         };
         use zion_cosmic_harmony::ExternalCoin;
-        use crate::auxpow::gpu_opencl_full::{
-            PearlPouwNativeInput, PearlSeedDerivation, PEARL_SEED_LABEL_A, PEARL_SEED_LABEL_B,
-        };
 
         let header_hex = ext.header_hex.strip_prefix("0x").unwrap_or(&ext.header_hex);
         let header_bytes = hex::decode(header_hex)
