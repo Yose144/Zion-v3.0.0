@@ -78,10 +78,19 @@ impl PearlJob {
             "getMiningInfo: header {} bytes, expected 76",
             header_bytes.len()
         );
-        let target = match v.get("target") {
+        let (target, target_dec) = match v.get("target") {
+            // Gateway sends a bare JSON number; `rpc_raw` rewrites U256-range
+            // values to strings so digits survive serde_json::Number's f64 path.
+            Some(serde_json::Value::String(s)) => (
+                s.parse::<BigUint>().context("getMiningInfo: bad target")?,
+                s.clone(),
+            ),
             Some(serde_json::Value::Number(n)) => {
                 let s = n.to_string();
-                s.parse::<BigUint>().context("getMiningInfo: bad target")?
+                (
+                    s.parse::<BigUint>().context("getMiningInfo: bad target")?,
+                    s,
+                )
             }
             other => bail!("getMiningInfo: missing/non-numeric target {other:?}"),
         };
@@ -98,11 +107,7 @@ impl PearlJob {
             target,
             cert_version,
             header_b64,
-            target_dec: String::new(),
-        })
-        .map(|mut j| {
-            j.target_dec = j.target.to_str_radix(10);
-            j
+            target_dec,
         })
     }
 }
@@ -969,5 +974,23 @@ mod tests {
         assert_eq!(job.cert_version, 3);
         assert_eq!(job.header_b64, b64);
         assert_eq!(job.target_dec, "123456789");
+    }
+
+    #[test]
+    fn pearl_job_parses_u256_string_target() {
+        // U256 range target arrives as a string (rewritten by quote_target_digits
+        // upstream of serde_json parse) — must survive with all digits intact.
+        let header = [0x11u8; 76];
+        let b64 = base64::engine::general_purpose::STANDARD.encode(header);
+        let dec = "411369862228566123857978459849914418579267864052950501802639360";
+        let v = serde_json::json!({
+            "incomplete_header_bytes": b64,
+            "target": dec,
+            "cert_version": 1,
+        });
+        let job = PearlJob::from_rpc_result(&v).unwrap();
+        assert_eq!(job.target.to_str_radix(10), dec);
+        assert_eq!(job.target_dec, dec);
+        assert_eq!(job.cert_version, 1);
     }
 }
