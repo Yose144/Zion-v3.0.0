@@ -1,6 +1,11 @@
 # Pearl (PRL) PoUW — canonical spec, gap analysis, integration plan
 
-Status: **kernel+host parity fixes done, CPU KAT 5/5 + GPU parity PASS** (2026-10-12).
+Status: **Edge infra deployed 2026-10-13** — `pearld` initial-syncing to
+height 127001, `oyster` wallet created (`prl1pzy8mjq…`), `pearl-gateway`
+serving `getMiningInfo` on `127.0.0.1:8477`, `zion-pool` rebuilt+deployed
+and **live-parsing real gateway jobs** (`cert_version=1` while tip sits
+below the salted-seed fork height). Kernel+host parity fixes done, CPU KAT
+5/5 + GPU parity PASS, pool 219/219 tests.
 Goal: Pearl as a native mining algo in zion-miner, OpenCL first, shares via ZION V3 pool bridge (:8444) → Pearl gateway on Edge → `prl1p…` payout wallet.
 
 Upstream reference: `zk-pow` crate (Pearl Research Labs monorepo, cloned to `/tmp/pearl`).
@@ -93,9 +98,9 @@ gateway template rotation triggers a rebroadcast (1s feed loop).
 | G9 | Sparse noise matvec | `E[x][first]-E[x][second]` | `pearl_apply_noise_a/b` match | ✅ MATCH |
 | G10 | Jackpot accum | `rotl13 ^ xor-fold`, `tid=(ll/rank-1)%16` | exact match incl. `LROT=13` | ✅ MATCH |
 | G11 | Jackpot hash | `blake3_keyed(a_noise_seed, 64B)` | `blake3_keyed_hash_64_gpu` match | ✅ MATCH |
-| G12 | Tile/proof mapping | `compute_leaf_indices_from_rows`, patterns partition | host `decode_tile_indices` exists — verify against `proof_utils.rs` | ⚠️ VERIFY |
-| G13 | PlainProof bincode | serde bincode struct order + Option tag | host builds proofs; wire encode unimplemented? | ⚠️ VERIFY |
-| G14 | Config choice | common_dim/rank/patterns from `getMiningInfo` job | our input takes them — source of truth = gateway | ⚠️ WIRING |
+| G12 | Tile/proof mapping | `compute_leaf_indices_from_rows`, patterns partition | `auxpow/pearl.rs::leaf_indices_from_rows` + `tile_row_col_indices` (kernel 4×8 hash-tile decode) | ✅ DONE (E2E pending) |
+| G13 | PlainProof bincode | serde bincode struct order + Option tag | `auxpow/pearl.rs::encode_plain_proof` + `proof_encoding_layout` test; pool `decode_plain_proof` decodes the same layout | ✅ DONE (E2E pending) |
+| G14 | Config choice | common_dim/rank/patterns from `getMiningInfo` job | miner-chosen `PearlMineConfig` (env-overridable, default m=n=k=1024 rank=128); upstream-legal — `PlainProof` carries the dims | ✅ DONE |
 
 ### Fixes applied beyond gap table (2026-10-12)
 
@@ -122,7 +127,10 @@ gateway template rotation triggers a rebroadcast (1s feed loop).
    5/5 + GPU parity PASS on Apple OpenCL device.
 3. KAT vs upstream `try_mine_one` replay (stronger end-to-end; current KAT is
    local CPU reference + upstream-pinned constants) — still open.
-4. Pearl wallet: `pearld` keygen → `prl1p…` (secrets → Edge env, never repo).
+4. ✅ Pearl wallet (2026-10-13): `oyster --createfromfile` non-interactive →
+   pool payout addr `prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m`;
+   mnemonic + create-file in `/etc/zion/pearl-wallet-*.txt|.json` (600, Edge only,
+   never repo).
 5. ⏳ Pool bridge (DONE server-side 2026-10-12): V3 `PearlSubmit` → local
    verify → gateway `submitPlainProof`; `getMiningInfo` → V3
    `ExternalStreamJob` (header 76B hex in `header_hex`, share target 32B BE
@@ -141,13 +149,93 @@ gateway template rotation triggers a rebroadcast (1s feed loop).
    call per attempt, spawn_blocking + persistent backend (same pattern as
    `try_gpu_ext_share`); effective kernel target = share_target ×
    `tile_size·(k/rank)·128` (rank-penalty adjustment, matches pool bound).
-   12/12 miner pearl tests pass; pool 218/218.
-6. Edge: `pearld` (+ `pearl-gateway`) as systemd units; PPLNS accounting
-   under new stream `pearl` (lowercase, like `"qtu"`).
+   12/12 miner pearl tests pass; pool 219/219.
+6. ✅ Edge infra (2026-10-13, see §6); PPLNS accounting under coin `PRL`
+   via `record_external_share` (weight `ZION_POOL_AUXPOW_WEIGHT_PRL`,
+   fallback `ZION_POOL_AUXPOW_PPLNS_WEIGHT`, default 500).
 7. Enable miner flag `--pearl` next to `--quantus` only after live
-   `submitPlainProof` accepted (or upstream solo block).
+   `submitPlainProof` accepted (or upstream solo block) — **pending pearld
+   initial sync** (ETA ~6h from 2026-10-13 05:15 UTC) and one GPU-miner
+   E2E run.
 
-## 6. Open questions
+## 6. Edge deployment (2026-10-13)
+
+Upstream monorepo lives at **`/opt/pearl`** (outside `/opt/zion` — a nested
+checkout under the ZION workspace breaks cargo resolution:
+`workspace.package` inheritance errors). Build chain:
+
+- `zk-pow`: `cargo build --release --bin build_cache` → run it → writes
+  `src/circuit/v2_cache.bin` + `src/v1/v1_cache.bin` (2.4MB each,
+  gitignored, **required before** building `bindings/go` which enables
+  `embedded_cache`/`include_bytes!`). Then `cd zk-pow/bindings/go &&
+  cargo build --release` → `libzk_pow_ffi.a` (89MB staticlib).
+- `xmss`: `make` → `libxmss.a`.
+- `go build -buildvcs=false -tags xmss,zkpow` → `bin/pearld`,
+  `bin/prlctl` (CGO links via `#cgo` relative paths; `-buildvcs=false`
+  needed — git safe.directory).
+- Wallet: `go build -tags xmss,zkpow` in `wallet/` → `bin/oyster`,
+  `bin/oystercli`.
+- Gateway: `uv sync --package pearl-gateway` → `/opt/pearl/.venv` (4.7G,
+  pulls torch+CUDA wheels).
+
+Systemd units (all enabled, logs `/var/log/zion-pearl-*.log`):
+
+| unit | binary | config/env | listens |
+|---|---|---|---|
+| `zion-pearld` | `/opt/pearl/bin/pearld --configfile=/opt/pearl/pearld.conf` | generated rpcuser/rpcpass, `notls=1`, datadir `/opt/pearl/data` | RPC `127.0.0.1:44107`, P2P `0.0.0.0:44108` (UFW allowed) |
+| `zion-pearl-oyster` | `/opt/pearl/bin/oyster --configfile=/opt/pearl/oyster.conf` | `noservertls`+`noclienttls`, rpcconnect→pearld | RPC `127.0.0.1:44207` |
+| `zion-pearl-gateway` | `/opt/pearl/.venv/bin/pearl-gateway start` (subcommand required!) | `EnvironmentFile=/etc/zion/pearl-environment.sh` | miner_rpc TCP `127.0.0.1:8477` |
+
+`/etc/zion/pearl-environment.sh` (600): `PEARLD_RPC_URL/USER/PASSWORD`,
+`PEARLD_MINING_ADDRESS=prl1pzy8mjq…`, `MINER_RPC_{TRANSPORT=tcp,HOST=127.0.0.1,
+PORT=8477}` — note **8477 not 8337** (8337 is V31 node3 P2P).
+
+Pool side: `zion-v31-pool` env added `ZION_POOL_PEARL_{GATEWAY=127.0.0.1:8477,
+POLL_MS=2000,SHARE_EASE=256,JOB_TTL_MS=30000}` (edge-environment.sh, backup
+`.bak-pearl-20261013`); binary rebuilt from `8354fc5cb`, backup
+`zion-pool.bak-pre-pearl-*`.
+
+### Bugs found during live bring-up
+
+- **U256 `target` vs serde_json**: `serde_json::Number` stores >u64 values as
+  f64 → `to_string()` yields scientific notation → `BigUint` parse fail
+  ("bad target: invalid digit"). Fix `8354fc5cb`: `quote_target_digits()`
+  rewrites bare `"target":NNN…` (>15 digits) to a string literal on the raw
+  response line before `serde_json::from_str`; `PearlJob.target_dec` keeps
+  the verbatim decimal for `submitPlainProof` echo (which is sent as a bare
+  number in hand-assembled JSON).
+- **`gpu-opencl` feature gate**: `runtime.rs`/`gpu/mod.rs` referenced
+  `auxpow::gpu_opencl_full::Pearl*` types — the module is gated → pool build
+  (zion-miner as dep w/o feature) failed E0432. Fix `f1c8a4263`: plain data
+  types (`PearlPouwNativeInput/Result`, `PearlSeedDerivation`,
+  `PEARL_SEED_{LABEL,SALT}_{A,B}`) moved to ungated `auxpow::pearl`;
+  `gpu_opencl_full` re-exports.
+- **`--nousb` flag** doesn't exist on pearld (btcd leftover) — removed from
+  unit.
+- **pearld RPC TLS**: enabled by default; gateway+wallet expect plain HTTP on
+  localhost → `notls=1` on pearld, `noservertls`+`noclienttls` on oyster.
+- **`pearl-gateway` CLI**: requires `start` subcommand (bare binary prints
+  usage and exits 1).
+
+### Live verification so far
+
+- `getMiningInfo` → `{"incomplete_header_bytes":"<b64,76B>","target":411369…
+  (78-digit U256),"cert_version":1}` — parsed by `PearlJob::from_rpc_result`.
+- Pool log: `pearl_gateway: new job cert_version=1 header=AAA…` —
+  `latest` job populated → V3 `ext_stream` broadcasts include `PRL:<id>` in
+  the fingerprint → rebroadcast on rotation works.
+- `cert_version=1` while pearld tip is under the salted-seed fork height —
+  miner maps `>=3→Salted`, else `Legacy`; pool verifier likewise.
+
+### Still open before enabling `--pearl`
+
+- pearld full sync (in progress, ~5 blk/s observed).
+- Live `submitPlainProof` round-trip: block-meeting proof → gateway accept.
+- Miner↔pool E2E KAT: `pearl_pouw_mine_native` → `build_plain_proof` →
+  `zion_pool::pearl::verify_pearl_share` on a small config (todo list item).
+- `profit.rs` `.with_disabled` flip for `ExternalCoin::Pearl`.
+
+## 7. Open questions
 
 - Does AlphaPool accept `submitPlainProof`-style shares directly, or is its
   stratum a different dialect? (Wire-capture `alpha-miner` if bridging
