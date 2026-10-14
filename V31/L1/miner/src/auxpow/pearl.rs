@@ -176,40 +176,56 @@ impl PearlMineConfig {
         let cfg = Self {
             m: dim("ZION_PEARL_M", 1024),
             n: dim("ZION_PEARL_N", 1024),
-            k: dim("ZION_PEARL_K", 1024),
+            k: dim("ZION_PEARL_K", 2048),
             rank: dim("ZION_PEARL_RANK", 128),
             rows_pattern: pattern("ZION_PEARL_ROWS_PATTERN", &[0, 8, 64, 72])?,
             cols_pattern: pattern("ZION_PEARL_COLS_PATTERN", &[0, 1, 8, 9, 64, 65, 72, 73])?,
         };
-        ensure!(
-            cfg.rows_pattern.size() == KERNEL_TILE_H,
-            "rows pattern size {} != kernel TILE_H {KERNEL_TILE_H}",
-            cfg.rows_pattern.size()
-        );
-        ensure!(
-            cfg.cols_pattern.size() == KERNEL_TILE_W,
-            "cols pattern size {} != kernel TILE_W {KERNEL_TILE_W}",
-            cfg.cols_pattern.size()
-        );
-        ensure!(
-            cfg.rank >= 128 && cfg.rank.is_power_of_two() && cfg.rank % 32 == 0,
-            "rank {} must be pow2 >=128 divisible by 32",
-            cfg.rank
-        );
-        ensure!(cfg.k % cfg.rank == 0, "k {} not divisible by rank", cfg.k);
-        ensure!(
-            cfg.m % cfg.rows_pattern.period() as usize == 0,
-            "m {} not divisible by rows period {}",
-            cfg.m,
-            cfg.rows_pattern.period()
-        );
-        ensure!(
-            cfg.n % cfg.cols_pattern.period() as usize == 0,
-            "n {} not divisible by cols period {}",
-            cfg.n,
-            cfg.cols_pattern.period()
-        );
+        cfg.validate()?;
         Ok(cfg)
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        ensure!(
+            self.rows_pattern.size() == KERNEL_TILE_H,
+            "rows pattern size {} != kernel TILE_H {KERNEL_TILE_H}",
+            self.rows_pattern.size()
+        );
+        ensure!(
+            self.cols_pattern.size() == KERNEL_TILE_W,
+            "cols pattern size {} != kernel TILE_W {KERNEL_TILE_W}",
+            self.cols_pattern.size()
+        );
+        ensure!(
+            (1..=(1usize << 24)).contains(&self.m) && (1..=(1usize << 24)).contains(&self.n),
+            "matrix dims must be in 1..=2^24"
+        );
+        ensure!(
+            (128..=1024).contains(&self.rank) && self.rank.is_power_of_two() && self.rank % 32 == 0,
+            "rank must be a power of two in 128..=1024"
+        );
+        ensure!(
+            (1024..=65536).contains(&self.k) && self.k % 64 == 0,
+            "k must be a multiple of 64 in 1024..=65536"
+        );
+        ensure!(
+            self.k >= 16 * self.rank && self.k <= 4 * self.rank * self.rank,
+            "k must satisfy 16*rank <= k <= 4*rank^2"
+        );
+        ensure!(self.k % self.rank == 0, "k not divisible by rank");
+        ensure!(
+            self.m % self.rows_pattern.period() as usize == 0,
+            "m {} not divisible by rows period {}",
+            self.m,
+            self.rows_pattern.period()
+        );
+        ensure!(
+            self.n % self.cols_pattern.period() as usize == 0,
+            "n {} not divisible by cols period {}",
+            self.n,
+            self.cols_pattern.period()
+        );
+        Ok(())
     }
 
     /// `MiningConfiguration::to_bytes` — 52 bytes:
@@ -701,6 +717,51 @@ mod tests {
         assert!((max_row as usize) < cfg.m);
         let max_col = *cfg.col_offsets().last().unwrap() + 73;
         assert!((max_col as usize) < cfg.n);
+    }
+
+    #[test]
+    fn default_config_k2048_rank128_factor() {
+        let cfg = PearlMineConfig::from_env().unwrap();
+        assert_eq!((cfg.m, cfg.n, cfg.k, cfg.rank), (1024, 1024, 2048, 128));
+        cfg.validate().unwrap();
+        assert_eq!(cfg.adjustment_factor(), num_bigint::BigUint::from(65536u64));
+        assert_eq!(cfg.row_offsets().len(), 256);
+        assert_eq!(cfg.col_offsets().len(), 128);
+    }
+
+    #[test]
+    fn validate_rejects_invalid_and_accepts_bounds() {
+        let base = PearlMineConfig::from_env().unwrap();
+
+        let mut c = base.clone();
+        c.k = 1024;
+        assert!(c.validate().is_err());
+
+        let mut c = base.clone();
+        c.rank = 2048;
+        assert!(c.validate().is_err());
+
+        let mut c = base.clone();
+        c.k = 65536 + 64;
+        assert!(c.validate().is_err());
+
+        let mut c = base.clone();
+        c.m = 0;
+        assert!(c.validate().is_err());
+
+        let mut c = base.clone();
+        c.n = 0;
+        assert!(c.validate().is_err());
+
+        let mut c = base.clone();
+        c.k = 2048;
+        c.rank = 128;
+        c.validate().unwrap();
+
+        let mut c = base.clone();
+        c.k = 65536;
+        c.rank = 1024;
+        c.validate().unwrap();
     }
 
     #[test]
