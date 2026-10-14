@@ -501,11 +501,21 @@ pub fn verify_pearl_share(
     share_target: &BigUint,
 ) -> Result<PearlShareOutcome> {
     let (m, n, k, rank) = (proof.m, proof.n, proof.k, proof.noise_rank);
-    ensure!(m > 0 && n > 0 && k > 0, "degenerate matrix dims");
-    ensure!(rank >= PENALTY_BASE_RANK, "rank {rank} < {PENALTY_BASE_RANK}");
     ensure!(
-        rank.is_power_of_two() && rank % 32 == 0,
-        "rank {rank} must be a power of two divisible by 32"
+        (1..=(1usize << 24)).contains(&m) && (1..=(1usize << 24)).contains(&n),
+        "matrix dims must be in 1..=2^24"
+    );
+    ensure!(
+        (128..=1024).contains(&rank) && rank.is_power_of_two() && rank % 32 == 0,
+        "rank must be a power of two in 128..=1024"
+    );
+    ensure!(
+        (1024..=65536).contains(&k) && k % 64 == 0,
+        "k must be a multiple of 64 in 1024..=65536"
+    );
+    ensure!(
+        k >= 16 * rank && k <= 4 * rank * rank,
+        "k must satisfy 16*rank <= k <= 4*rank^2"
     );
     ensure!(k % rank == 0, "k {k} not divisible by rank {rank}");
 
@@ -534,6 +544,16 @@ pub fn verify_pearl_share(
     ensure!(
         proof.bt.row_indices.iter().all(|&c| c < n),
         "B col index out of bounds"
+    );
+    let h = rows_pattern.size() as usize;
+    let w = cols_pattern.size() as usize;
+    ensure!(
+        h % 4 == 0 && w % 4 == 0 && (32..=256).contains(&(h * w)),
+        "invalid hash tile dimensions"
+    );
+    ensure!(
+        (h + w) * (k - k % rank) <= (1usize << 22),
+        "worker input exceeds 4 MiB"
     );
 
     // MiningConfiguration.to_bytes(): k(4) | rank(2) | mma(2) | rows(6) | cols(6) | 32z
@@ -619,6 +639,10 @@ pub fn verify_pearl_share(
         .iter()
         .map(|&r| strip(&proof.bt.proof, r))
         .collect::<Result<_>>()?;
+    ensure!(
+        s_a.iter().chain(&s_b).flatten().all(|&v| (-64..=64).contains(&v)),
+        "matrix signal outside [-64, 64]"
+    );
 
     // Noise (E_AL/E_AR for A rows, E_BL/E_BR for B cols) — sparse matvec.
     let noise_rows = |row_idx: usize, l: usize, seed_label: &[u8; 32], seed: &[u8; 32]| -> i32 {
@@ -848,7 +872,24 @@ mod tests {
         job: &PearlJob,
     ) -> (Vec<u8>, PearlPlainProof) {
         let a = gen_matrix(m * k);
-        let bt = gen_matrix(n * k).iter().map(|&x| x.wrapping_add(7)).collect::<Vec<_>>();
+        let bt = gen_matrix(n * k)
+            .iter()
+            .map(|&x| (((x as i16 + 64 + 7) % 129) - 64) as i8)
+            .collect::<Vec<_>>();
+        make_proof_with_matrices(m, n, k, rank, a_rows, b_cols, job, &a, &bt)
+    }
+
+    fn make_proof_with_matrices(
+        m: usize,
+        n: usize,
+        k: usize,
+        rank: usize,
+        a_rows: &[usize],
+        b_cols: &[usize],
+        job: &PearlJob,
+        a: &[i8],
+        bt: &[i8],
+    ) -> (Vec<u8>, PearlPlainProof) {
         let a_bytes: Vec<u8> = a.iter().map(|&x| x as u8).collect();
         let bt_bytes: Vec<u8> = bt.iter().map(|&x| x as u8).collect();
 
@@ -905,12 +946,12 @@ mod tests {
         // m=16,k=128 → 2048 B A (2 chunks), n=16 → 2 chunks for B^T.
         let a_rows: Vec<usize> = (4..8).collect();
         let b_cols: Vec<usize> = (8..16).collect();
-        let (bytes, proof) = make_proof(16, 16, 128, 128, &a_rows, &b_cols, &job);
+        let (bytes, proof) = make_proof(16, 16, 2048, 128, &a_rows, &b_cols, &job);
 
         let decoded = decode_plain_proof(&bytes).unwrap();
         assert_eq!(decoded.m, 16);
         assert_eq!(decoded.a.row_indices, a_rows);
-        assert_eq!(decoded.a.proof.total_leaves, 2);
+        assert_eq!(decoded.a.proof.total_leaves, 32);
 
         // Any share target ≥ hash works; compute the hash first via the
         // verifier itself by passing an enormous target.
@@ -921,10 +962,7 @@ mod tests {
         .unwrap();
         let out = verify_pearl_share(&decoded, &job, &huge).unwrap();
         assert!(out.is_block);
-        assert_eq!(
-            out.adjustment_factor,
-            BigUint::from(4u64 * 8) * BigUint::from(1u64) * BigUint::from(128u64)
-        );
+        assert_eq!(out.adjustment_factor, BigUint::from(4u64 * 8 * 16 * 128));
         drop(proof);
     }
 
@@ -933,7 +971,7 @@ mod tests {
         let job = test_job();
         let a_rows: Vec<usize> = (4..8).collect();
         let b_cols: Vec<usize> = (8..16).collect();
-        let (bytes, _proof) = make_proof(16, 16, 128, 128, &a_rows, &b_cols, &job);
+        let (bytes, _proof) = make_proof(16, 16, 2048, 128, &a_rows, &b_cols, &job);
         let mut decoded = decode_plain_proof(&bytes).unwrap();
         decoded.a.proof.leaf_data[0][5] ^= 0xff;
         let huge = BigUint::parse_bytes(
@@ -953,7 +991,7 @@ mod tests {
         let job = test_job();
         let a_rows: Vec<usize> = (4..8).collect();
         let b_cols: Vec<usize> = (8..16).collect();
-        let (bytes, _proof) = make_proof(16, 16, 128, 128, &a_rows, &b_cols, &job);
+        let (bytes, _proof) = make_proof(16, 16, 2048, 128, &a_rows, &b_cols, &job);
         let decoded = decode_plain_proof(&bytes).unwrap();
         let err = verify_pearl_share(&decoded, &job, &BigUint::from(0u64)).unwrap_err();
         assert!(err.to_string().contains("above share bound"));
@@ -970,7 +1008,7 @@ mod tests {
         let cfg = mp::PearlMineConfig {
             m: 16,
             n: 16,
-            k: 128,
+            k: 2048,
             rank: 128,
             rows_pattern: mp::PeriodicPattern::from_list(&[0, 1, 2, 3]).unwrap(),
             cols_pattern: mp::PeriodicPattern::from_list(&[0, 1, 2, 3, 4, 5, 6, 7]).unwrap(),
@@ -979,8 +1017,8 @@ mod tests {
         let row_offsets = [4u32];
         let col_offsets = [8u32];
         let job_key = cfg.job_key(&job.header);
-        let a = gen_matrix(16 * 128);
-        let bt = gen_matrix(16 * 128);
+        let a = gen_matrix(16 * 2048);
+        let bt = gen_matrix(16 * 2048);
         // tile_index 0 = roi 0 × nco 0 — only tile.
         let bytes =
             mp::build_plain_proof(&cfg, &job_key, &a, &bt, 0, &row_offsets, &col_offsets)
@@ -1040,5 +1078,83 @@ mod tests {
         assert_eq!(job.target.to_str_radix(10), dec);
         assert_eq!(job.target_dec, dec);
         assert_eq!(job.cert_version, 1);
+    }
+
+    #[test]
+    fn pearl_share_rejects_sanity_violations() {
+        let job = test_job();
+        let huge = BigUint::parse_bytes(
+            b"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let a_rows: Vec<usize> = (4..8).collect();
+        let b_cols: Vec<usize> = (8..16).collect();
+        let (bytes, _proof) = make_proof(16, 16, 2048, 128, &a_rows, &b_cols, &job);
+        let decoded = decode_plain_proof(&bytes).unwrap();
+
+        let mut bad = decoded.clone();
+        bad.k = 1024;
+        let err = verify_pearl_share(&bad, &job, &huge).unwrap_err();
+        assert!(
+            err.to_string().contains("k must satisfy"),
+            "unexpected error: {err}"
+        );
+
+        let mut bad = decoded.clone();
+        bad.noise_rank = 2048;
+        let err = verify_pearl_share(&bad, &job, &huge).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("rank must be a power of two in 128..=1024"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn pearl_share_rejects_out_of_range_signal() {
+        let job = test_job();
+        let huge = BigUint::parse_bytes(
+            b"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            16,
+        )
+        .unwrap();
+        let (m, n, k, rank) = (16usize, 16usize, 2048usize, 128usize);
+        let a_rows: Vec<usize> = (4..8).collect();
+        let b_cols: Vec<usize> = (8..16).collect();
+
+        let a = gen_matrix(m * k);
+        let mut bt = gen_matrix(n * k);
+        bt[8 * k] = 65;
+        let (bytes, _proof) =
+            make_proof_with_matrices(m, n, k, rank, &a_rows, &b_cols, &job, &a, &bt);
+        let decoded = decode_plain_proof(&bytes).unwrap();
+        let err = verify_pearl_share(&decoded, &job, &huge).unwrap_err();
+        assert!(
+            err.to_string().contains("matrix signal outside [-64, 64]"),
+            "unexpected error: {err}"
+        );
+
+        let mut a = gen_matrix(m * k);
+        a[4 * k] = -65;
+        let bt = gen_matrix(n * k);
+        let (bytes, _proof) =
+            make_proof_with_matrices(m, n, k, rank, &a_rows, &b_cols, &job, &a, &bt);
+        let decoded = decode_plain_proof(&bytes).unwrap();
+        let err = verify_pearl_share(&decoded, &job, &huge).unwrap_err();
+        assert!(
+            err.to_string().contains("matrix signal outside [-64, 64]"),
+            "unexpected error: {err}"
+        );
+
+        let mut a = gen_matrix(m * k);
+        a[4 * k] = 64;
+        a[4 * k + 1] = -64;
+        let mut bt = gen_matrix(n * k);
+        bt[8 * k] = -64;
+        let (bytes, _proof) =
+            make_proof_with_matrices(m, n, k, rank, &a_rows, &b_cols, &job, &a, &bt);
+        let decoded = decode_plain_proof(&bytes).unwrap();
+        verify_pearl_share(&decoded, &job, &huge).unwrap();
     }
 }

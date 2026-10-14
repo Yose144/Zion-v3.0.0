@@ -1,12 +1,18 @@
 # Pearl (PRL) PoUW — canonical spec, gap analysis, integration plan
 
-Status: **Edge infra deployed 2026-10-13** — `pearld` initial-syncing to
-height 127001, `oyster` wallet created (`prl1pzy8mjq…`), `pearl-gateway`
-serving `getMiningInfo` on `127.0.0.1:8477`, `zion-pool` rebuilt+deployed
-and **live-parsing real gateway jobs** (`cert_version=1` while tip sits
-below the salted-seed fork height). Kernel+host parity fixes done, CPU KAT
-5/5 + GPU parity PASS, pool 219/219 tests.
-Goal: Pearl as a native mining algo in zion-miner, OpenCL first, shares via ZION V3 pool bridge (:8444) → Pearl gateway on Edge → `prl1p…` payout wallet.
+Status: **2026-10-13 — LOCAL FIXES VERIFIED ON GTX 1070 Ti + OFFLINE
+UPSTREAM V3 PROOF VERIFIED** (see §9). Pool/miner/runtime fixes are
+implemented and tested but **NOT deployed** in this continuation (user
+request: repairs + tests only). Edge infra remains deployed from the
+earlier phase: `pearld`/`oyster`/`pearl-gateway` units live,
+`getMiningInfo` on `127.0.0.1:8477`, `zion-pool` parsing real gateway jobs —
+last recorded node sample `blocks=headers=127309`, `cert_version=3`. No
+live Pearl share has been accepted by the pool and no block has been
+proved/accepted upstream. The production SMOS wrapper (v1.7) miner on the
+rig is untouched.
+Goal: Pearl as a native mining algo in zion-miner — OpenCL **and** a
+dedicated NVIDIA CUDA backend — shares via ZION V3 pool bridge (:8444) →
+Pearl gateway on Edge → `prl1p…` payout wallet.
 
 Upstream reference: `zk-pow` crate (Pearl Research Labs monorepo, cloned to `/tmp/pearl`).
 Canonical miner entry: `zk-pow/src/ffi/mine.rs::try_mine_one` (+ `_moe` variant).
@@ -47,8 +53,12 @@ Constants: `JACKPOT_SIZE=16`, `LROT_PER_TILE=13`, `PENALTY_BASE_RANK=128`,
 `CHUNK_LEN=1024`, `NOISE_RANGE=128`, `UNIFORM range=64`, `ZERO_POINT=32`,
 `RANGE_MASK=63`, `IDXS_PER_COL=2`.
 
-Difficulty: `bound = target_of_nbits / (tile_size × rank_penalty)` where
-rank_penalty = `dot_product_len/rank × 128` — see `api/sanity_checks.rs`.
+Difficulty: effective jackpot bound =
+`min(base_target * tile_size * (dpl/rank) * 128, U256_MAX)` where
+`dpl = k - k % rank` (dot-product length) — see `api/sanity_checks.rs`.
+At rank 128 the multiplier reduces to `tile_size * dpl`. The pool's share
+target is `min(block_target * share_ease, U256_MAX)` — saturation, never
+modulo — and the network block target itself is never modified.
 
 ## 2. Wire formats
 
@@ -100,7 +110,7 @@ gateway template rotation triggers a rebroadcast (1s feed loop).
 | G11 | Jackpot hash | `blake3_keyed(a_noise_seed, 64B)` | `blake3_keyed_hash_64_gpu` match | ✅ MATCH |
 | G12 | Tile/proof mapping | `compute_leaf_indices_from_rows`, patterns partition | `auxpow/pearl.rs::leaf_indices_from_rows` + `tile_row_col_indices` (kernel 4×8 hash-tile decode) | ✅ DONE (E2E pending) |
 | G13 | PlainProof bincode | serde bincode struct order + Option tag | `auxpow/pearl.rs::encode_plain_proof` + `proof_encoding_layout` test; pool `decode_plain_proof` decodes the same layout | ✅ DONE (E2E pending) |
-| G14 | Config choice | common_dim/rank/patterns from `getMiningInfo` job | miner-chosen `PearlMineConfig` (env-overridable, default m=n=k=1024 rank=128); upstream-legal — `PlainProof` carries the dims | ✅ DONE |
+| G14 | Config choice | miner chooses geometry/config; `getMiningInfo` supplies header, target and cert_version | miner-chosen `PearlMineConfig` (env-overridable, current default m=n=1024, k=2048, rank=128 — the prior k=1024/rank=128 was invalid: upstream `public_params_sanity_check` requires `k >= 16·rank`); upstream-legal — `PlainProof` carries the dims | ✅ DONE |
 
 ### Fixes applied beyond gap table (2026-10-12)
 
@@ -138,25 +148,28 @@ gateway template rotation triggers a rebroadcast (1s feed loop).
    `protocol="pearlgw"`); PRL shares credit PPLNS via `record_external_share`
    (`ZION_POOL_AUXPOW_WEIGHT_PRL` override) + telemetry +
    `RevenueSource::PearlExternal` routing. **Miner side DONE (2026-10-12):**
-   `auxpow/pearl.rs` — `PeriodicPattern`/`PearlMineConfig` (env-overridable,
-   defaults m=n=k=1024 rank=128 rows [0,8,64,72] cols [0,1,8,9,64,65,72,73] —
-   kernel tile is 4×8), keyed merkle tree + `multileaf_proof` (upstream
-   sibling-order port), `build_plain_proof` + bincode encoder, tile-index →
-   row/col decode. `GpuMiner::mine_pearl` (default bail, impl on
-   `OpenClExternalMiner`), `"pearlhash"` added to `is_external_algorithm`,
+   `auxpow/pearl.rs` — `PeriodicPattern`/`PearlMineConfig` (env-overridable;
+   prior default m=n=k=1024 rank=128 — superseded by k=2048, see §9 — rows
+   [0,8,64,72] cols [0,1,8,9,64,65,72,73], unchanged — kernel tile is 4×8;
+   tile grid is 256 row groups × 128 col groups at m=n=1024), keyed merkle
+   tree + `multileaf_proof` (upstream sibling-order port),
+   `build_plain_proof` + bincode encoder, tile-index → row/col decode.
+   `GpuMiner::mine_pearl` (default bail, impl on `OpenClExternalMiner` and
+   `PearlCudaMiner`), `"pearlhash"` added to `is_external_algorithm`,
    `V3PoolClient::submit_pearl_share` (PRL per-coin result channel),
    `mine_v3_pearl_attempt` dispatch inside `mine_v3_external_share` — one GPU
    call per attempt, spawn_blocking + persistent backend (same pattern as
-   `try_gpu_ext_share`); effective kernel target = share_target ×
-   `tile_size·(k/rank)·128` (rank-penalty adjustment, matches pool bound).
-   12/12 miner pearl tests pass; pool 219/219.
+   `try_gpu_ext_share`); effective kernel bound =
+   `min(share_target * tile_size * (dpl/rank) * 128, U256_MAX)`
+   (rank-penalty adjustment, matches pool bound — see §1).
 6. ✅ Edge infra (2026-10-13, see §6); PPLNS accounting under coin `PRL`
    via `record_external_share` (weight `ZION_POOL_AUXPOW_WEIGHT_PRL`,
    fallback `ZION_POOL_AUXPOW_PPLNS_WEIGHT`, default 500).
 7. Enable miner flag `--pearl` next to `--quantus` only after live
-   `submitPlainProof` accepted (or upstream solo block) — **pending pearld
-   initial sync** (ETA ~6h from 2026-10-13 05:15 UTC) and one GPU-miner
-   E2E run.
+   `submitPlainProof` accepted (or upstream solo block). pearld initial
+   sync is done (tip 127309 at last sample); the remaining gates are the
+   live round-trips listed under §6 "Still open" — all user-deferred, no
+   production routing change made in this continuation.
 
 ## 6. Edge deployment (2026-10-13)
 
@@ -227,18 +240,28 @@ POLL_MS=2000,SHARE_EASE=256,JOB_TTL_MS=30000}` (edge-environment.sh, backup
 - `cert_version=1` while pearld tip is under the salted-seed fork height —
   miner maps `>=3→Salted`, else `Legacy`; pool verifier likewise.
 
-### Still open before enabling `--pearl`
+### Still open before enabling `--pearl` (all user-deferred 2026-10-13)
 
-- pearld full sync (in progress, ~5 blk/s observed; height ~20 000/127 001).
-- Live `submitPlainProof` round-trip: block-meeting proof → gateway accept.
-- On-device CUDA parity run on the 1070 Ti rig (see §7).
-- `profit.rs` `.with_disabled` flip for `ExternalCoin::Pearl`.
+- Live miner→pool `PearlSubmit` accepted (a real share acknowledged by the
+  pool) — not yet verified; production routing stays disabled.
+- Live `submitPlainProof` round-trip: block-meeting proof → gateway enqueue
+  → **node `Accepted`**. Note the gateway `miner_rpc/server.py` answers
+  `submitted` immediately and processes asynchronously; upstream
+  `submission_service.py` logs `Block accepted by node!` only after pearld
+  acceptance. An RPC enqueue acknowledgement is NOT block acceptance.
+- `profit.rs` `.with_disabled` flip for `ExternalCoin::Pearl` — do NOT
+  enable before an actual node `Accepted`.
+
+Done since this list was written: pearld full sync (last recorded sample
+`blocks=headers=127309`), on-device CUDA parity + default-config runs on
+the 1070 Ti (§7, §9).
 
 ## 7. CUDA backend (2026-10-13, commit `61a9ee31c`)
 
-Full parity with the OpenCL pipeline on NVIDIA hardware — the 1070 Ti rig
-is CUDA-first (NVRTC JIT through `cudarc`, same pattern as the QPoW CUDA
-backend). Files:
+The CUDA implementation mirrors the OpenCL pipeline. On-device parity on
+the GTX 1070 Ti is verified for the two fixtures below, not every possible
+GPU or geometry. The rig is CUDA-first (NVRTC JIT through `cudarc`, same
+pattern as the QPoW CUDA backend). Files:
 
 | piece | path |
 |---|---|
@@ -251,7 +274,12 @@ CPU KAT reference (`pearl_kat`) moved to `auxpow/pearl.rs` as
 `pub(crate)` — OpenCL and CUDA on-device parity tests share ONE consensus
 reference (duplicating it is how the `0x44`/`0x48` salt-typo class of bugs
 happens). CUDA parity test `pearl_cuda_parity_vs_cpu_reference` is
-`#[ignore]`d — runs where a CUDA device exists (the 1070 Ti rig).
+`#[ignore]`d — runs where a CUDA device exists (the 1070 Ti rig). Its
+small fixture (m=48, n=64, k=64, rank=32 — 6 tiles) is a **mathematical
+parity check only**, not a consensus-valid network configuration (k=64
+violates `k >= 16·rank` and `k >= 1024`); the production-geometry run is
+`pearl_cuda_default_config_repeated_attempts` (m=n=1024, k=2048, r=128) —
+both executed on the 1070 Ti, see §9.
 
 Cross-crate wire test (`pool/pearl.rs::pearl_miner_wire_proof_accepted`):
 miner's production `build_plain_proof` + `encode_plain_proof` → base64 →
@@ -268,3 +296,95 @@ independently-compiled encoders agree on the wire format.
   (cost ~one tile matmul + few blake3) — feasible CPU-side per share.
 - int8 wrap semantics for `A'`/`B'` vs int32: canonical adds noise in i8
   domain? — check `pearl_layout.rs`/`pearl_program.rs` add_overflow behavior.
+
+## 9. Continuation 2026-10-13 — confirmed fixes, hardware + offline upstream proof
+
+All changes are **code + tests only** — nothing deployed: no pool restart,
+no Edge `SHARE_EASE` change, no SMOS reload/config change, no real pool
+submissions, no production routing enablement. Production mining, Hiran
+llama-server, SRBMiner, and the reverse tunnel on the rig were left running
+throughout.
+
+### Confirmed fixes (local, tested — not yet live)
+
+- **Pool gateway job TTL**: a healthy but *unchanged* `getMiningInfo`
+  response no longer expires after 30 s. The job cache is now atomic —
+  `(PearlJob, Instant)` in a single `RwLock` — and refreshed on every
+  successfully parsed poll (`run` delegates to `poll_once`), never after a
+  malformed result or JSON-RPC error.
+- **Share target**: `share_ease` is `u64` (the `as u32` narrowing is gone);
+  `min(block_target * share_ease, U256_MAX)` — saturation, never modulo —
+  and `ext_stream_job` serializes the full 32-byte padded BE target without
+  truncation.
+- **Consensus-valid defaults + guards**: miner default `PearlMineConfig`
+  is m=n=1024, **k=2048**, rank=128 (the old k=1024 violated upstream
+  `public_params_sanity_check`'s `k >= 16·rank`); `validate()` enforces the
+  upstream ranges, and `verify_pearl_share` rejects out-of-range dims/rank/k,
+  bad tile geometry, oversized worker input, and matrix signal outside
+  `[-64, 64]` (a guard our verifier previously omitted, upstream
+  `api/verify.rs` parity).
+- **Miner runtime**: stream 2 idles on `mark_idle` and awaits the next job
+  bundle (or shutdown) instead of busy-looping when a bundle carries no
+  `gpu_external` work. The reported PRL rate now counts **completed matrix
+  attempts** — one attempt = one work unit — so the legacy `H/s` figure is
+  attempts/s, NOT the full 32768-tile sweep (the kernel early-exits on a
+  winning tile). Switching coins clears the stale QTU rate. Stream task
+  joins are consumed exactly once (`joined[]` tracking in the supervision
+  loop), and a dropped pool connection terminates the session instead of
+  hanging.
+- **CUDA kernel unchanged** — no `.cu`/`.cl` edits. No kernel or readback
+  hang was reproduced by the fixture tests; the earlier early-return
+  divergence hypothesis remains unconfirmed. These fixes close real
+  pipeline defects, but do not prove they were the runtime's sole cause —
+  that requires a live E2E run (deferred).
+
+### Frozen probability correction
+
+Authoritative sampled block target (frozen snapshot
+`/tmp/pearl-debug-target-snapshot.json`):
+`11808963921168079528047055725729053840763347721829482496` (~1.18e55).
+For this sampled target, using the old k=1024/r=128 and share_ease 1e9,
+expected success is ~1.094987e-4 per matrix attempt ≈ **~9133 attempts per
+share** (assuming independent cryptographic jackpots — not a measured
+hashrate). This ease does NOT make nearly every attempt win. Without a
+measured count of completed attempts, a short run with no submissions
+cannot by itself establish a broken kernel or share pipeline; earlier
+near-constant-share estimates were incorrect. A proposed future isolated
+test ease of `100000000000000000` (1e17) was NOT applied — source default
+stays 256 and no deployed env changed.
+
+### Evidence and tests
+
+- Unit/integration gates: `zion-miner` `auxpow::pearl` **15/15**; runtime
+  regressions **4/4** (`pearl_attempt_records_progress_without_share`,
+  `coin_change_resets_stream_hashrate`,
+  `stream2_idles_without_ext_job_and_resumes`,
+  `session_errors_when_pool_disconnects`); `zion-pool`
+  `pearl_gateway::tests` **7/7**; final pool-lib suite **229/229**.
+- Feature compile `gpu-cuda,gpu-opencl` lib: OK. `git diff --check` clean.
+  Whole-file rustfmt shows pre-existing violations (unchanged, no churn).
+  No full workspace suite claimed.
+- On-device (GTX 1070 Ti, real CUDA — no skip path):
+  `pearl_cuda_parity_vs_cpu_reference` PASS (1.8 s) and
+  `pearl_cuda_default_config_repeated_attempts` PASS (6.6 s — three
+  consecutive salted attempts at m=n=1024/k=2048/r=128 plus a zero-target
+  found-reset). Run on the rig as:
+  `timeout 180 nice -n 19 <test-bin> <filter> --ignored --nocapture --test-threads 1`
+- Independent offline upstream check (diagnostic checker using the
+  deployed official `pearl_mining` library on Edge, no RPC/submission):
+  the frozen CUDA proof verifies `valid=true` at the easy target and at
+  the upper `nbits_override 0x1e38fb51`, and `valid=false` at the adjacent
+  lower `0x1e38fb50` ("Jackpot condition not satisfied: hash does not meet
+  difficulty target") — same GPU jackpot and immutable header throughout.
+  Fixture sha256 `d9d36c49…b209c`, proof sha256 `f07b80d2…d5f4`
+  (26 321 bytes), m=n=1024/k=2048/r=128, tile 4×8, factor 65536.
+- Local evidence dir: `/tmp/pearl-cuda-evidence/` —
+  `pearl-test.log`, `pearl-test2.log`, `miner-screen-hardcopy.txt`,
+  `rig-test-output.txt`, `rework-verification.txt`, `final-pool-tests.txt`,
+  `pearl-kat-proof.json` (emitted via `ZION_PEARL_KAT_PROOF_OUT`),
+  `upstream-verification.json`.
+- Reproducible filters:
+  `cargo test --locked --manifest-path V31/Cargo.toml -p zion-pool --lib`
+  `cargo test --locked --manifest-path V31/Cargo.toml -p zion-miner --lib auxpow::pearl`
+  `cargo test --locked --manifest-path V31/Cargo.toml -p zion-miner --lib -- runtime::tests::<name>`
+  `cargo test --locked --manifest-path V31/Cargo.toml -p zion-miner --features gpu-cuda --lib --no-run`

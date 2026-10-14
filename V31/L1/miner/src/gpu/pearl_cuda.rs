@@ -836,13 +836,8 @@ mod pearl_cuda_kat {
     #[test]
     #[ignore]
     fn pearl_cuda_parity_vs_cpu_reference() {
-        let mut miner = match PearlCudaMiner::new(8192) {
-            Ok(m) => m,
-            Err(e) => {
-                eprintln!("skipping — no CUDA device: {e}");
-                return;
-            }
-        };
+        let mut miner =
+            PearlCudaMiner::new(8192).expect("CUDA device required for pearl parity test");
 
         // Small dims; A tree = 3 chunks (odd-leaf propagation), B tree = 4.
         let (m, n, k, rank) = (48usize, 64usize, 64usize, 32usize);
@@ -902,6 +897,122 @@ mod pearl_cuda_kat {
                 res.jackpot_hash, expected,
                 "jackpot mismatch (salted={salted}, tile={tile})"
             );
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn pearl_cuda_default_config_repeated_attempts() {
+        use crate::auxpow::pearl::PearlMineConfig;
+        use base64::Engine;
+
+        let cfg = PearlMineConfig::from_env().unwrap();
+        cfg.validate().unwrap();
+        assert_eq!((cfg.m, cfg.n, cfg.k, cfg.rank), (1024, 1024, 2048, 128));
+        let mut miner =
+            PearlCudaMiner::new(cfg.k).expect("CUDA device required for pearl default-config test");
+
+        let mut header = [0u8; 76];
+        header[0..4].copy_from_slice(&0x20000000u32.to_le_bytes());
+        header[72..76].copy_from_slice(&0x207fffffu32.to_le_bytes());
+        let job_key = cfg.job_key(&header);
+        let target = [0xFFu8; 32];
+        let row_offsets = cfg.row_offsets();
+        let col_offsets = cfg.col_offsets();
+        let rows_base = cfg.rows_base();
+        let cols_base = cfg.cols_base();
+        let nco = col_offsets.len();
+        let num_tiles = row_offsets.len() * nco;
+
+        let mut first: Option<PearlPouwNativeResult> = None;
+        for nonce in [0x5150u64, 0x5151, 0x5152] {
+            let input = PearlPouwNativeInput {
+                nonce,
+                m: cfg.m,
+                n: cfg.n,
+                k: cfg.k,
+                rank: cfg.rank,
+                job_key,
+                target,
+                row_offsets: &row_offsets,
+                col_offsets: &col_offsets,
+                rows_base: &rows_base,
+                cols_base: &cols_base,
+                seed_label_a: PEARL_SEED_LABEL_A,
+                seed_label_b: PEARL_SEED_LABEL_B,
+                seed_derivation: PearlSeedDerivation::Salted,
+            };
+            let res = miner
+                .mine_native(&input)
+                .expect("mine failed")
+                .expect("max-target must find");
+            assert_eq!(res.nonce, nonce);
+            assert!((res.tile_index as usize) < num_tiles);
+            for (i, &v) in res.matrix_a.iter().enumerate() {
+                assert_eq!(v, gen_int7_ref(nonce, i as u32), "matrix A[{i}]");
+            }
+            for (i, &v) in res.matrix_bt.iter().enumerate() {
+                assert_eq!(v, gen_int7_ref(nonce + 1, i as u32), "matrix BT[{i}]");
+            }
+            let tile = res.tile_index as usize;
+            let row_off = row_offsets[tile / nco];
+            let col_off = col_offsets[tile % nco];
+            let expected = tile_jackpot_ref(
+                nonce, cfg.m, cfg.n, cfg.k, cfg.rank, &job_key, row_off, col_off, &rows_base,
+                &cols_base, true,
+            );
+            assert_eq!(res.jackpot_hash, expected, "jackpot mismatch tile={tile}");
+            if first.is_none() {
+                first = Some(res);
+            }
+        }
+
+        let input = PearlPouwNativeInput {
+            nonce: 0x5153,
+            m: cfg.m,
+            n: cfg.n,
+            k: cfg.k,
+            rank: cfg.rank,
+            job_key,
+            target: [0u8; 32],
+            row_offsets: &row_offsets,
+            col_offsets: &col_offsets,
+            rows_base: &rows_base,
+            cols_base: &cols_base,
+            seed_label_a: PEARL_SEED_LABEL_A,
+            seed_label_b: PEARL_SEED_LABEL_B,
+            seed_derivation: PearlSeedDerivation::Salted,
+        };
+        assert!(
+            miner.mine_native(&input).unwrap().is_none(),
+            "zero target must find nothing (found flag reset)"
+        );
+
+        if let Ok(path) = std::env::var("ZION_PEARL_KAT_PROOF_OUT") {
+            let res = first.expect("no successful attempt recorded");
+            let proof = crate::auxpow::pearl::build_plain_proof(
+                &cfg,
+                &job_key,
+                &res.matrix_a,
+                &res.matrix_bt,
+                res.tile_index,
+                &row_offsets,
+                &col_offsets,
+            )
+            .unwrap();
+            let out = serde_json::json!({
+                "header_hex": hex::encode(header),
+                "plain_proof_b64": base64::engine::general_purpose::STANDARD.encode(&proof),
+                "jackpot_hex": hex::encode(res.jackpot_hash),
+                "cert_version": 3,
+                "m": cfg.m,
+                "n": cfg.n,
+                "k": cfg.k,
+                "rank": cfg.rank,
+                "nonce": res.nonce,
+                "tile_index": res.tile_index,
+            });
+            std::fs::write(&path, serde_json::to_string_pretty(&out).unwrap()).unwrap();
         }
     }
 }
