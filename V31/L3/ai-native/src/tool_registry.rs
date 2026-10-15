@@ -473,8 +473,25 @@ impl ToolExecutor {
     }
 
     /// Execute a concrete Tool struct.
+    ///
+    /// Mutation gate: tools flagged `requires_approval` are refused unless
+    /// `HIRAN_MAESTRO_MUTATIONS=1` (read-only is the fail-closed default).
+    /// Callers that run behind the /v2 API additionally enforce the
+    /// `X-Maestro-Approve` token — this env gate protects direct library use.
     pub async fn execute_tool(&self, tool: &Tool, input: Value) -> AiResult<ToolResult> {
         let started = std::time::Instant::now();
+        if tool.requires_approval && !crate::endpoints::mutations_enabled() {
+            return Ok(ToolResult::err(
+                tool.name,
+                0,
+                0,
+                format!(
+                    "approval required: '{}' is a mutating tool and \
+                     HIRAN_MAESTRO_MUTATIONS=0 (default read-only mode)",
+                    tool.name
+                ),
+            ));
+        }
         let mut last_err: Option<String> = None;
         let mut attempts = 0u32;
 
@@ -507,9 +524,10 @@ impl ToolExecutor {
     }
 
     async fn attempt(&self, tool: &Tool, input: &Value) -> Result<(u16, Value), reqwest::Error> {
+        let endpoint = render_endpoint(&tool.endpoint, input);
         let req = match tool.method {
             HttpMethod::Get => {
-                let mut r = self.client.get(&tool.endpoint).timeout(tool.timeout());
+                let mut r = self.client.get(&endpoint).timeout(tool.timeout());
                 if let Some(obj) = input.as_object() {
                     for (k, v) in obj {
                         if !v.is_null() {
@@ -531,17 +549,17 @@ impl ToolExecutor {
                     input.clone()
                 };
                 self.client
-                    .post(&tool.endpoint)
+                    .post(&endpoint)
                     .timeout(tool.timeout())
                     .json(&body)
             }
             HttpMethod::Put => self
                 .client
-                .put(&tool.endpoint)
+                .put(&endpoint)
                 .timeout(tool.timeout())
                 .json(input),
             HttpMethod::Delete => {
-                let mut r = self.client.delete(&tool.endpoint).timeout(tool.timeout());
+                let mut r = self.client.delete(&endpoint).timeout(tool.timeout());
                 if !input.is_null() {
                     r = r.json(input);
                 }
@@ -561,54 +579,58 @@ impl Default for ToolExecutor {
     }
 }
 
-// ============================================================================
-// All 37 tool definitions
-// ============================================================================
-//
-// Endpoints use 127.0.0.1 + canonical Edge ports:
-//   L1 node (primary): 9445 RPC, 8335 P2P
-//   L1 node (follower): 8448 RPC, 8334 P2P
-//   L1 pool: 8444 Stratum, 8080 metrics
-//   L2 bridge: 9101, L2 dao: 8450, L2 swap: 8452
-//   L3 warp: 8453, L3 dex: 8454, L3 ncl: 8080
-//   L4 oasis: 8094, L5 free-world: 8095, L6 issobella: 8096
-//   hiran-orchestrator: 8004, hiran-inference: 8002
-//   prometheus: 9090
-//
-// Override via env vars in production (see ToolExecutor::with_env).
+/// Substitute `{param}` placeholders in a tool endpoint from input fields.
+/// `format!("{}/api/dao/proposals/{proposal_id}/vote", dao)` + input
+/// `{"proposal_id": "p-7", ...}` → `.../api/dao/proposals/p-7/vote`.
+fn render_endpoint(endpoint: &str, input: &Value) -> String {
+    let mut url = endpoint.to_string();
+    if let Some(obj) = input.as_object() {
+        for (k, v) in obj {
+            let needle = format!("{{{k}}}");
+            if url.contains(&needle) {
+                let val = v
+                    .as_str()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| v.to_string());
+                url = url.replace(&needle, &val);
+            }
+        }
+    }
+    url
+}
 
-const NODE_RPC: &str = "http://127.0.0.1:9445/rpc";
-const POOL_API: &str = "http://127.0.0.1:8080";
-const BRIDGE_API: &str = "http://127.0.0.1:9101";
-const DAO_API: &str = "http://127.0.0.1:8450";
-const SWAP_API: &str = "http://127.0.0.1:8452";
-const WARP_API: &str = "http://127.0.0.1:8453";
-#[allow(dead_code)]
-const DEX_API: &str = "http://127.0.0.1:8454";
-const NCL_API: &str = "http://127.0.0.1:8080";
-const OASIS_API: &str = "http://127.0.0.1:8094";
-const FREE_WORLD_API: &str = "http://127.0.0.1:8095";
-const ISOBELLA_API: &str = "http://127.0.0.1:8096";
-const HIRAN_ORCH: &str = "http://127.0.0.1:8004";
-#[allow(dead_code)]
-const HIRAN_INFER: &str = "http://127.0.0.1:8002";
-const PROMETHEUS_API: &str = "http://127.0.0.1:9090";
-// NEW endpoints for full ecosystem coverage
-const DASHBOARD_API: &str = "http://127.0.0.1:8766";
-#[allow(dead_code)]
-const NODE1_RPC: &str = "http://127.0.0.1:9445/rpc";
-const NODE2_RPC: &str = "http://127.0.0.1:8448/rpc";
-const NODE1_METRICS: &str = "http://127.0.0.1:9100";
-#[allow(dead_code)]
-const NODE2_METRICS: &str = "http://127.0.0.1:9116";
-const POOL_STATS_API: &str = "http://127.0.0.1:8455";
-#[allow(dead_code)]
-const BASE_RPC: &str = "https://mainnet.base.org";
-#[allow(dead_code)]
-const BASESCAN_API: &str = "https://api.basescan.org/api";
+// ============================================================================
+// All 55 tool definitions
+// ============================================================================
+//
+// Endpoints resolve via `crate::endpoints` — single source of truth matching
+// `Hiran/2.4/service-map.json` (live Edge topology, audit 2026-10-10):
+//   node1 RPC :9445 (POST "/"), node2 :9446, node3 :9447 — JSON-RPC methods are
+//   camelCase (getChainInfo, getNetworkStats, getStatus, getPeerInfo, ...).
+//   pool :8080, dao :8456, warp :8453, dex/swap :8454, ncl :8001/ncl,
+//   oasis :8094, free-world :8095, issobella :8097 (8096 = ZIS identity),
+//   dashboard :8766, prometheus :9090, node-exporter :9100,
+//   hiran api :8001, inference :8002 (tunnel), orchestrator :8004 (reserved).
+// Every value is env-overridable (ZION_*_API / ZION_*_RPC / HIRAN_*).
 
 /// Returns all v2.4 Maestro tools (37 original + 18 new = 55 total).
 pub fn all_tools() -> Vec<Tool> {
+    use crate::endpoints as ep;
+    let node_rpc = ep::node1_rpc();
+    let node2_rpc = ep::node2_rpc();
+    let pool_api = ep::pool_api();
+    let dao_api = ep::dao_api();
+    let warp_api = ep::warp_api();
+    let dex_api = ep::dex_api();
+    let ncl_api = ep::ncl_api();
+    let oasis_api = ep::oasis_api();
+    let free_world_api = ep::free_world_api();
+    let issobella_api = ep::issobella_api();
+    let hiran_api = ep::hiran_api();
+    let hiran_orch = ep::hiran_orchestrator();
+    let prometheus_api = ep::prometheus_api();
+    let dashboard_api = ep::dashboard_api();
+    let node_metrics = ep::node_exporter();
     vec![
         // ===== L1 Tools (12) =====
         Tool {
@@ -616,9 +638,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get current blockchain height",
             sub_agent: SubAgent::NodeSync,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getblockcount"),
+            rpc_method: Some("getChainInfo"),
             input_schema: serde_json::json!({}),
             output_schema: serde_json::json!({"result": "integer", "error": "string|null"}),
             timeout_ms: 5000,
@@ -630,9 +652,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get network info: peers, sync status, version",
             sub_agent: SubAgent::NodeSync,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getnetworkinfo"),
+            rpc_method: Some("getNetworkStats"),
             input_schema: serde_json::json!({}),
             output_schema: serde_json::json!({"result": "object", "error": "string|null"}),
             timeout_ms: 5000,
@@ -644,9 +666,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get mining info: difficulty, hashrate, block reward",
             sub_agent: SubAgent::MinerPerformance,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getmininginfo"),
+            rpc_method: Some("getStatus"),
             input_schema: serde_json::json!({}),
             output_schema: serde_json::json!({"result": "object", "error": "string|null"}),
             timeout_ms: 5000,
@@ -658,9 +680,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get address balance (account + UTXO)",
             sub_agent: SubAgent::WalletOps,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getaccountbalance"),
+            rpc_method: Some("getAccountBalance"),
             input_schema: serde_json::json!({"address": "string"}),
             output_schema: serde_json::json!({"result": "object", "error": "string|null"}),
             timeout_ms: 5000,
@@ -672,9 +694,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get supply data: circulating, total, burned",
             sub_agent: SubAgent::WalletOps,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getsupplyinfo"),
+            rpc_method: Some("getSupplyInfo"),
             input_schema: serde_json::json!({}),
             output_schema: serde_json::json!({"result": "object", "error": "string|null"}),
             timeout_ms: 5000,
@@ -686,9 +708,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get peer list with connection details",
             sub_agent: SubAgent::NodeSync,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getpeerinfo"),
+            rpc_method: Some("getPeerInfo"),
             input_schema: serde_json::json!({}),
             output_schema: serde_json::json!({"result": "array", "error": "string|null"}),
             timeout_ms: 5000,
@@ -700,7 +722,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Start/stop/restart zion node service",
             sub_agent: SubAgent::NodeConsensus,
             layer: Layer::L1,
-            endpoint: HIRAN_ORCH.to_string(),
+            endpoint: hiran_orch.to_string(),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"action": "start|stop|restart", "node": "primary|follower"}),
@@ -714,7 +736,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Start/stop/set_algorithm on miner",
             sub_agent: SubAgent::MinerPerformance,
             layer: Layer::L1,
-            endpoint: HIRAN_ORCH.to_string(),
+            endpoint: hiran_orch.to_string(),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"action": "start|stop|set_algorithm", "algorithm": "ekam|fire|lite"}),
@@ -728,7 +750,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Benchmark all 3 algorithms (30s each): ekam, fire, lite",
             sub_agent: SubAgent::MinerPerformance,
             layer: Layer::L1,
-            endpoint: HIRAN_ORCH.to_string(),
+            endpoint: hiran_orch.to_string(),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"duration_s": 30}),
@@ -742,7 +764,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get GPU temperatures",
             sub_agent: SubAgent::MinerThermal,
             layer: Layer::L1,
-            endpoint: HIRAN_ORCH.to_string(),
+            endpoint: hiran_orch.to_string(),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -756,9 +778,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "UTXO management, TX building",
             sub_agent: SubAgent::WalletOps,
             layer: Layer::L1,
-            endpoint: NODE_RPC.to_string(),
+            endpoint: node_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("sendrawtransaction"),
+            rpc_method: Some("sendRawTransaction"),
             input_schema: serde_json::json!({"tx_hex": "string"}),
             output_schema: serde_json::json!({"txid": "string", "error": "string|null"}),
             timeout_ms: 10000,
@@ -770,7 +792,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get active stratum sessions + worker stats",
             sub_agent: SubAgent::PoolWorkers,
             layer: Layer::L1,
-            endpoint: format!("{}/sessions", POOL_API),
+            endpoint: format!("{}/miners", pool_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -785,7 +807,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get 3/5 consensus validator status",
             sub_agent: SubAgent::BridgeValidators,
             layer: Layer::L2,
-            endpoint: format!("{}/validators", BRIDGE_API),
+            endpoint: format!("{}/status", warp_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -799,7 +821,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Track cross-chain TX status",
             sub_agent: SubAgent::BridgeWatcher,
             layer: Layer::L2,
-            endpoint: format!("{}/track", BRIDGE_API),
+            endpoint: format!("{}/transfers", warp_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({"tx_hash": "string"}),
@@ -813,7 +835,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get active DAO proposals",
             sub_agent: SubAgent::DaoProposals,
             layer: Layer::L2,
-            endpoint: format!("{}/proposals", DAO_API),
+            endpoint: format!("{}/api/dao/proposals", dao_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -827,7 +849,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get treasury balance + tithe tracking",
             sub_agent: SubAgent::DaoTreasury,
             layer: Layer::L2,
-            endpoint: format!("{}/treasury", DAO_API),
+            endpoint: format!("{}/api/dao/treasury", dao_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -841,7 +863,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Vote on DAO proposal (requires approval)",
             sub_agent: SubAgent::DaoProposals,
             layer: Layer::L2,
-            endpoint: format!("{}/vote", DAO_API),
+            endpoint: format!("{}/api/dao/proposals/{{proposal_id}}/vote", dao_api),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"proposal_id": "integer", "vote": "yes|no|abstain"}),
@@ -855,7 +877,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get atomic swap status",
             sub_agent: SubAgent::SwapExecutor,
             layer: Layer::L2,
-            endpoint: format!("{}/status", SWAP_API),
+            endpoint: format!("{}/status", dex_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({"swap_id": "string"}),
@@ -869,7 +891,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Execute HTLC atomic swap (requires approval)",
             sub_agent: SubAgent::SwapExecutor,
             layer: Layer::L2,
-            endpoint: format!("{}/execute", SWAP_API),
+            endpoint: format!("{}/transfers", dex_api),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"swap_id": "string", "secret": "string"}),
@@ -883,7 +905,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get liquidity data + market rates",
             sub_agent: SubAgent::SwapMarket,
             layer: Layer::L2,
-            endpoint: format!("{}/rates", SWAP_API),
+            endpoint: format!("{}/chains", dex_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -898,7 +920,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "List AI compute providers in NCL marketplace",
             sub_agent: SubAgent::NclMarket,
             layer: Layer::L3,
-            endpoint: format!("{}/providers", NCL_API),
+            endpoint: format!("{}/workers", ncl_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -912,7 +934,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Submit NCL compute job (requires approval)",
             sub_agent: SubAgent::NclScheduler,
             layer: Layer::L3,
-            endpoint: format!("{}/jobs", NCL_API),
+            endpoint: format!("{}/jobs", ncl_api),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"job_spec": "object"}),
@@ -927,7 +949,7 @@ pub fn all_tools() -> Vec<Tool> {
                 "Get 7-chain routing options (EVM, BTC, Solana, Tron, Stellar, Cardano, Cosmos)",
             sub_agent: SubAgent::WarpRouter,
             layer: Layer::L3,
-            endpoint: format!("{}/routes", WARP_API),
+            endpoint: format!("{}/chains", warp_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({"from": "string", "to": "string", "amount": "number"}),
@@ -941,7 +963,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get WARP adapter health per chain",
             sub_agent: SubAgent::WarpValidators,
             layer: Layer::L3,
-            endpoint: format!("{}/status", WARP_API),
+            endpoint: format!("{}/status", warp_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -955,7 +977,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get Hiran consciousness + memory state",
             sub_agent: SubAgent::AiNativeRuntime,
             layer: Layer::L3,
-            endpoint: format!("{}/state", HIRAN_ORCH),
+            endpoint: format!("{}/status", hiran_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -969,7 +991,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "RAG retrieval over ZION docs",
             sub_agent: SubAgent::AiNativeMemory,
             layer: Layer::L3,
-            endpoint: format!("{}/rag/query", HIRAN_ORCH),
+            endpoint: format!("{}/rag/query", hiran_api),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"query": "string", "top_k": 5}),
@@ -984,7 +1006,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get Oasis game economy status",
             sub_agent: SubAgent::OasisManager,
             layer: Layer::L4,
-            endpoint: format!("{}/economy", OASIS_API),
+            endpoint: format!("{}/api/v1/oasis/worlds", oasis_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -998,7 +1020,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get NPC AI quality metrics",
             sub_agent: SubAgent::OasisManager,
             layer: Layer::L4,
-            endpoint: format!("{}/npc-quality", OASIS_API),
+            endpoint: format!("{}/health", oasis_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1012,7 +1034,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get Free World humanitarian fund status",
             sub_agent: SubAgent::FreeWorldOps,
             layer: Layer::L5,
-            endpoint: format!("{}/donations", FREE_WORLD_API),
+            endpoint: format!("{}/api/v1/fund/balance", free_world_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1026,7 +1048,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get humanitarian impact metrics",
             sub_agent: SubAgent::FreeWorldOps,
             layer: Layer::L5,
-            endpoint: format!("{}/impact", FREE_WORLD_API),
+            endpoint: format!("{}/api/v1/projects", free_world_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1040,7 +1062,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get Issobella satellite link status",
             sub_agent: SubAgent::IsobellaOps,
             layer: Layer::L6,
-            endpoint: format!("{}/links", ISOBELLA_API),
+            endpoint: format!("{}/api/v1/missions", issobella_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1054,7 +1076,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get orbital data quality metrics",
             sub_agent: SubAgent::IsobellaOps,
             layer: Layer::L6,
-            endpoint: format!("{}/data-quality", ISOBELLA_API),
+            endpoint: format!("{}/metrics", issobella_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1097,7 +1119,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Run PromQL query against Prometheus",
             sub_agent: SubAgent::PrometheusAlerts,
             layer: Layer::System,
-            endpoint: format!("{}/api/v1/query", PROMETHEUS_API),
+            endpoint: format!("{}/api/v1/query", prometheus_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({"query": "string"}),
@@ -1111,7 +1133,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get active Prometheus alerts",
             sub_agent: SubAgent::PrometheusAlerts,
             layer: Layer::System,
-            endpoint: format!("{}/api/v1/alerts", PROMETHEUS_API),
+            endpoint: format!("{}/api/v1/alerts", prometheus_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1125,7 +1147,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Trigger manual backup (requires approval)",
             sub_agent: SubAgent::BackupManager,
             layer: Layer::System,
-            endpoint: HIRAN_ORCH.to_string(),
+            endpoint: hiran_orch.to_string(),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({"target": "string"}),
@@ -1140,9 +1162,9 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get blockchain height from Node 2 (follower)",
             sub_agent: SubAgent::NodeSync,
             layer: Layer::L1,
-            endpoint: NODE2_RPC.to_string(),
+            endpoint: node2_rpc.to_string(),
             method: HttpMethod::Post,
-            rpc_method: Some("getblockcount"),
+            rpc_method: Some("getChainInfo"),
             input_schema: serde_json::json!({}),
             output_schema: serde_json::json!({"result": "integer", "error": "string|null"}),
             timeout_ms: 5000,
@@ -1154,7 +1176,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get pool stats: hashrate, shares, miners, payouts",
             sub_agent: SubAgent::PoolWorkers,
             layer: Layer::L1,
-            endpoint: format!("{}/stats", POOL_STATS_API),
+            endpoint: format!("{}/stats", pool_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1168,7 +1190,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Scrape Prometheus metrics from Node 1 (port 9100)",
             sub_agent: SubAgent::NodeMetrics,
             layer: Layer::L1,
-            endpoint: format!("{}/metrics", NODE1_METRICS),
+            endpoint: format!("{}/metrics", node_metrics),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1183,7 +1205,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get ZION Staking status (12% APR, 100K wZION funded) on Base",
             sub_agent: SubAgent::DefiMonitor,
             layer: Layer::L2,
-            endpoint: format!("{}/api/defi/staking", DASHBOARD_API),
+            endpoint: format!("{}/api/defi/staking", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1197,7 +1219,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get ZION Farm status (1 wZION/s, 500K wZION funded) on Base",
             sub_agent: SubAgent::DefiMonitor,
             layer: Layer::L2,
-            endpoint: format!("{}/api/defi/farm", DASHBOARD_API),
+            endpoint: format!("{}/api/defi/farm", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1212,7 +1234,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get dashboard aggregate health (all services)",
             sub_agent: SubAgent::DashboardOps,
             layer: Layer::System,
-            endpoint: format!("{}/api/health", DASHBOARD_API),
+            endpoint: format!("{}/api/health", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1226,7 +1248,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "List all Zion services with health + status",
             sub_agent: SubAgent::DashboardOps,
             layer: Layer::System,
-            endpoint: format!("{}/api/services", DASHBOARD_API),
+            endpoint: format!("{}/api/services", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1240,7 +1262,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get Edge server resource usage (RAM, disk, CPU)",
             sub_agent: SubAgent::DashboardOps,
             layer: Layer::System,
-            endpoint: format!("{}/api/resources", DASHBOARD_API),
+            endpoint: format!("{}/api/resources", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1254,7 +1276,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get alert history from dashboard",
             sub_agent: SubAgent::DashboardOps,
             layer: Layer::System,
-            endpoint: format!("{}/api/alerts", DASHBOARD_API),
+            endpoint: format!("{}/api/alerts", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1268,7 +1290,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get revenue journal (R4 stream telemetry report)",
             sub_agent: SubAgent::DashboardOps,
             layer: Layer::System,
-            endpoint: format!("{}/api/revenue", DASHBOARD_API),
+            endpoint: format!("{}/api/revenue", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1282,7 +1304,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "List all 9 Zion databases (SQLite + JSON) with size + mtime",
             sub_agent: SubAgent::DatabaseInspector,
             layer: Layer::System,
-            endpoint: format!("{}/api/databases", DASHBOARD_API),
+            endpoint: format!("{}/api/databases", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1296,7 +1318,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Inspect a specific database (tables, row counts, sample rows)",
             sub_agent: SubAgent::DatabaseInspector,
             layer: Layer::System,
-            endpoint: format!("{}/api/database/inspect", DASHBOARD_API),
+            endpoint: format!("{}/api/database/inspect", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({"path": "string", "limit": "integer?"}),
@@ -1310,7 +1332,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "List all backups (daily + weekly) with size + timestamp",
             sub_agent: SubAgent::BackupManager,
             layer: Layer::System,
-            endpoint: format!("{}/api/backups", DASHBOARD_API),
+            endpoint: format!("{}/api/backups", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1324,7 +1346,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get backup timer status (last run, next run, retention)",
             sub_agent: SubAgent::BackupManager,
             layer: Layer::System,
-            endpoint: format!("{}/api/backup/status", DASHBOARD_API),
+            endpoint: format!("{}/api/backup/status", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1338,7 +1360,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get watchdog timer status + last check results",
             sub_agent: SubAgent::WatchdogController,
             layer: Layer::System,
-            endpoint: format!("{}/api/watchdog", DASHBOARD_API),
+            endpoint: format!("{}/api/watchdog", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1352,7 +1374,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Trigger immediate watchdog check (requires approval)",
             sub_agent: SubAgent::WatchdogController,
             layer: Layer::System,
-            endpoint: format!("{}/api/watchdog/run", DASHBOARD_API),
+            endpoint: format!("{}/api/watchdog/run", dashboard_api),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1366,7 +1388,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Reload nginx config (requires approval)",
             sub_agent: SubAgent::DockerHealth,
             layer: Layer::System,
-            endpoint: format!("{}/api/nginx/reload", DASHBOARD_API),
+            endpoint: format!("{}/api/nginx/reload", dashboard_api),
             method: HttpMethod::Post,
             rpc_method: None,
             input_schema: serde_json::json!({}),
@@ -1380,7 +1402,7 @@ pub fn all_tools() -> Vec<Tool> {
             description: "Get recent log lines for a service (tail)",
             sub_agent: SubAgent::DashboardOps,
             layer: Layer::System,
-            endpoint: format!("{}/api/logs", DASHBOARD_API),
+            endpoint: format!("{}/api/logs", dashboard_api),
             method: HttpMethod::Get,
             rpc_method: None,
             input_schema: serde_json::json!({"service": "string", "lines": "integer?"}),
@@ -1506,7 +1528,7 @@ mod tests {
         let t = reg.get("zion_rpc_getblockcount").expect("tool exists");
         assert_eq!(t.sub_agent, SubAgent::NodeSync);
         assert_eq!(t.method, HttpMethod::Post);
-        assert_eq!(t.rpc_method, Some("getblockcount"));
+        assert_eq!(t.rpc_method, Some("getChainInfo"));
         assert!(!t.requires_approval);
     }
 

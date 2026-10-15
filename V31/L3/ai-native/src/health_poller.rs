@@ -193,201 +193,93 @@ pub enum ProbeMethod {
     TcpConnect,
 }
 
-/// All Zion ecosystem services (Edge server 62.171.141.136 topology).
+/// All Zion ecosystem services (Edge 62.171.141.136 topology).
 ///
-/// Sources: StatusV3.md service table, dashboard app.py SERVICE_REGISTRY_EDGE,
-/// backup-edge.sh, docker-compose.yml. Covers L1–L6 + System + Infra.
-pub const SERVICES: &[ServiceProbe] = &[
-    // ── L1: Consensus ──────────────────────────────────────────────────────────
-    ServiceProbe {
-        name: "node1-rpc",
-        layer: Layer::L1,
-        endpoint: "http://127.0.0.1:9445",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "node1-p2p",
-        layer: Layer::L1,
-        endpoint: "127.0.0.1:8333",
-        health_path: "",
-        method: ProbeMethod::TcpConnect,
-    },
-    ServiceProbe {
-        name: "node1-metrics",
-        layer: Layer::L1,
-        endpoint: "http://127.0.0.1:9100",
-        health_path: "/metrics",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "node2-rpc",
-        layer: Layer::L1,
-        endpoint: "http://127.0.0.1:8448",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "node2-p2p",
-        layer: Layer::L1,
-        endpoint: "127.0.0.1:8334",
-        health_path: "",
-        method: ProbeMethod::TcpConnect,
-    },
-    ServiceProbe {
-        name: "node2-metrics",
-        layer: Layer::L1,
-        endpoint: "http://127.0.0.1:9116",
-        health_path: "/metrics",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "pool-stratum",
-        layer: Layer::L1,
-        endpoint: "127.0.0.1:8444",
-        health_path: "",
-        method: ProbeMethod::TcpConnect,
-    },
-    ServiceProbe {
-        name: "pool-stats",
-        layer: Layer::L1,
-        endpoint: "http://127.0.0.1:8455",
-        health_path: "/stats",
-        method: ProbeMethod::HttpGet,
-    },
-    // ── L2: Bridge / DAO / Swap / DEX ───────────────────────────────────────────
-    ServiceProbe {
-        name: "bridge",
-        layer: Layer::L2,
-        endpoint: "http://127.0.0.1:9101",
-        health_path: "/metrics",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "dao",
-        layer: Layer::L2,
-        endpoint: "http://127.0.0.1:8450",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "atomic-swap",
-        layer: Layer::L2,
-        endpoint: "http://127.0.0.1:8452",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "dex",
-        layer: Layer::L2,
-        endpoint: "http://127.0.0.1:8454",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    // ── L3: WARP / NCL / AI ─────────────────────────────────────────────────────
-    ServiceProbe {
-        name: "warp",
-        layer: Layer::L3,
-        endpoint: "http://127.0.0.1:8453",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "ai-native",
-        layer: Layer::L3,
-        endpoint: "http://127.0.0.1:8001",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "hiran-orchestrator",
-        layer: Layer::L3,
-        endpoint: "http://127.0.0.1:8004",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "hiran-inference",
-        layer: Layer::L3,
-        endpoint: "http://127.0.0.1:8002",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    // ── L4: OASIS ───────────────────────────────────────────────────────────────
-    ServiceProbe {
-        name: "oasis",
-        layer: Layer::L4,
-        endpoint: "http://127.0.0.1:8094",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "oasis-metrics",
-        layer: Layer::L4,
-        endpoint: "http://127.0.0.1:9102",
-        health_path: "/metrics",
-        method: ProbeMethod::HttpGet,
-    },
-    // ── L5: Free World ──────────────────────────────────────────────────────────
-    ServiceProbe {
-        name: "free-world",
-        layer: Layer::L5,
-        endpoint: "http://127.0.0.1:8095",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    // ── L6: Issobella ───────────────────────────────────────────────────────────
-    ServiceProbe {
-        name: "issobella",
-        layer: Layer::L6,
-        endpoint: "http://127.0.0.1:8096",
-        health_path: "/health",
-        method: ProbeMethod::HttpGet,
-    },
-    // ── System / Infra ──────────────────────────────────────────────────────────
-    ServiceProbe {
-        name: "dashboard",
-        layer: Layer::System,
-        endpoint: "http://127.0.0.1:8766",
-        health_path: "/api/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "web-next",
-        layer: Layer::System,
-        endpoint: "http://127.0.0.1:3000",
-        health_path: "/api/health",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "nginx-http",
-        layer: Layer::System,
-        endpoint: "http://127.0.0.1:80",
-        health_path: "/",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "nginx-https",
-        layer: Layer::System,
-        endpoint: "https://127.0.0.1:443",
-        health_path: "/",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "prometheus",
-        layer: Layer::System,
-        endpoint: "http://127.0.0.1:9090",
-        health_path: "/-/healthy",
-        method: ProbeMethod::HttpGet,
-    },
-    ServiceProbe {
-        name: "docker",
-        layer: Layer::System,
-        endpoint: "http://127.0.0.1:2375",
-        health_path: "/v5/containers/json?limit=1",
-        method: ProbeMethod::HttpGet,
-    },
-];
+/// Defaults verified against `Hiran/2.4/service-map.json` (audit 2026-10-10).
+/// Each endpoint is env-overridable at startup via `ZION_PROBE_<NAME>` —
+/// values are leaked once (config is resolved once per process).
+/// Covers L1–L6 + System + Infra.
+pub fn services() -> Vec<ServiceProbe> {
+    fn e(name: &'static str, default: &'static str) -> &'static str {
+        let key = match name {
+            "zis-identity" => "ZION_ZIS_API",
+            "hiran-inference" => "HIRAN_INFERENCE_URL",
+            "hiran-orchestrator" => "HIRAN_ORCHESTRATOR",
+            _ => "",
+        };
+        if key.is_empty() {
+            let k: &'static str = Box::leak(
+                format!("ZION_PROBE_{}", name.to_uppercase().replace('-', "_")).into_boxed_str(),
+            );
+            crate::endpoints::env_or_leaked(k, default)
+        } else {
+            crate::endpoints::env_or_leaked(key, default)
+        }
+    }
+    use ProbeMethod::*;
+    vec![
+        // ── L1: Consensus ────────────────────────────────────────────────────
+        ServiceProbe { name: "node1-rpc", layer: Layer::L1,
+            endpoint: e("node1-rpc", "http://127.0.0.1:9445"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "node1-p2p", layer: Layer::L1,
+            endpoint: e("node1-p2p", "127.0.0.1:8335"), health_path: "", method: TcpConnect },
+        ServiceProbe { name: "node1-metrics", layer: Layer::L1,
+            endpoint: e("node1-metrics", "http://127.0.0.1:9100"), health_path: "/metrics", method: HttpGet },
+        ServiceProbe { name: "node2-rpc", layer: Layer::L1,
+            endpoint: e("node2-rpc", "http://127.0.0.1:9446"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "node2-p2p", layer: Layer::L1,
+            endpoint: e("node2-p2p", "127.0.0.1:8336"), health_path: "", method: TcpConnect },
+        ServiceProbe { name: "node3-rpc", layer: Layer::L1,
+            endpoint: e("node3-rpc", "http://127.0.0.1:9447"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "pool-stratum", layer: Layer::L1,
+            endpoint: e("pool-stratum", "127.0.0.1:8444"), health_path: "", method: TcpConnect },
+        ServiceProbe { name: "pool-stats", layer: Layer::L1,
+            endpoint: e("pool-stats", "http://127.0.0.1:8080"), health_path: "/stats", method: HttpGet },
+        // ── L2: DAO / Swap / DEX (bridge folded into warpd) ─────────────────
+        ServiceProbe { name: "zis-identity", layer: Layer::L2,
+            endpoint: e("zis-identity", "http://127.0.0.1:8096"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "dao", layer: Layer::L2,
+            endpoint: e("dao", "http://127.0.0.1:8456"), health_path: "/api/dao/health", method: HttpGet },
+        ServiceProbe { name: "atomic-swap", layer: Layer::L2,
+            endpoint: e("atomic-swap", "http://127.0.0.1:8454"), health_path: "/status", method: HttpGet },
+        ServiceProbe { name: "dex", layer: Layer::L2,
+            endpoint: e("dex", "http://127.0.0.1:8454"), health_path: "/health", method: HttpGet },
+        // ── L3: WARP / NCL / AI ─────────────────────────────────────────────
+        ServiceProbe { name: "warp", layer: Layer::L3,
+            endpoint: e("warp", "http://127.0.0.1:8453"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "ai-native", layer: Layer::L3,
+            endpoint: e("ai-native", "http://127.0.0.1:8001"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "hiran-orchestrator", layer: Layer::L3,
+            endpoint: e("hiran-orchestrator", "http://127.0.0.1:8004"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "hiran-inference", layer: Layer::L3,
+            endpoint: e("hiran-inference", "http://127.0.0.1:8002"), health_path: "/v1/models", method: HttpGet },
+        // ── L4: OASIS ───────────────────────────────────────────────────────
+        ServiceProbe { name: "oasis", layer: Layer::L4,
+            endpoint: e("oasis", "http://127.0.0.1:8094"), health_path: "/health", method: HttpGet },
+        ServiceProbe { name: "oasis-metrics", layer: Layer::L4,
+            endpoint: e("oasis-metrics", "http://127.0.0.1:9102"), health_path: "/metrics", method: HttpGet },
+        // ── L5: Free World ──────────────────────────────────────────────────
+        ServiceProbe { name: "free-world", layer: Layer::L5,
+            endpoint: e("free-world", "http://127.0.0.1:8095"), health_path: "/health", method: HttpGet },
+        // ── L6: Issobella ───────────────────────────────────────────────────
+        ServiceProbe { name: "issobella", layer: Layer::L6,
+            endpoint: e("issobella", "http://127.0.0.1:8097"), health_path: "/health", method: HttpGet },
+        // ── System / Infra ──────────────────────────────────────────────────
+        ServiceProbe { name: "dashboard", layer: Layer::System,
+            endpoint: e("dashboard", "http://127.0.0.1:8766"), health_path: "/api/health", method: HttpGet },
+        ServiceProbe { name: "web-next", layer: Layer::System,
+            endpoint: e("web-next", "http://127.0.0.1:3000"), health_path: "/", method: HttpGet },
+        ServiceProbe { name: "nginx-http", layer: Layer::System,
+            endpoint: e("nginx-http", "http://127.0.0.1:80"), health_path: "/", method: HttpGet },
+        ServiceProbe { name: "nginx-https", layer: Layer::System,
+            endpoint: e("nginx-https", "https://127.0.0.1:443"), health_path: "/", method: HttpGet },
+        ServiceProbe { name: "prometheus", layer: Layer::System,
+            endpoint: e("prometheus", "http://127.0.0.1:9090"), health_path: "/-/healthy", method: HttpGet },
+        ServiceProbe { name: "postgres", layer: Layer::System,
+            endpoint: e("postgres", "127.0.0.1:5432"), health_path: "", method: TcpConnect },
+    ]
+}
+
 
 // ============================================================================
 // Health Poller
@@ -436,9 +328,10 @@ impl HealthPoller {
     /// Probe all services concurrently. Returns the assembled health matrix.
     pub async fn poll_all(&self) -> HealthMatrix {
         let start = std::time::Instant::now();
-        let (tx, mut rx) = mpsc::channel(SERVICES.len());
+        let services = services();
+        let (tx, mut rx) = mpsc::channel(services.len());
 
-        for probe in SERVICES {
+        for probe in &services {
             let tx = tx.clone();
             let client = self.client.clone();
             let probe_timeout = self.config.probe_timeout;
@@ -451,14 +344,14 @@ impl HealthPoller {
         }
         drop(tx);
 
-        let mut services: Vec<ServiceHealth> = Vec::with_capacity(SERVICES.len());
+        let mut out: Vec<ServiceHealth> = Vec::with_capacity(services.len());
         while let Some(h) = rx.recv().await {
-            services.push(h);
+            out.push(h);
         }
         // Sort by layer then name for stable display
-        services.sort_by(|a, b| a.layer.cmp(&b.layer).then_with(|| a.name.cmp(&b.name)));
+        out.sort_by(|a, b| a.layer.cmp(&b.layer).then_with(|| a.name.cmp(&b.name)));
         HealthMatrix {
-            services,
+            services: out,
             timestamp: Utc::now(),
             total_poll_ms: start.elapsed().as_millis() as u64,
         }
@@ -466,11 +359,11 @@ impl HealthPoller {
 
     /// Probe a single service by name.
     pub async fn poll_one(&self, name: &str) -> Option<ServiceHealth> {
-        let probe = SERVICES.iter().find(|p| p.name == name)?;
+        let probe = services().iter().find(|p| p.name == name)?.clone();
         Some(
             probe_one(
                 &self.client,
-                probe,
+                &probe,
                 self.config.probe_timeout,
                 self.config.degraded_threshold,
             )
@@ -480,7 +373,7 @@ impl HealthPoller {
 
     /// Probe all services in a specific layer.
     pub async fn poll_layer(&self, layer: Layer) -> Vec<ServiceHealth> {
-        let probes: Vec<_> = SERVICES
+        let probes: Vec<_> = services()
             .iter()
             .filter(|p| p.layer == layer)
             .cloned()
@@ -606,12 +499,12 @@ mod tests {
 
     #[test]
     fn test_services_count_is_26() {
-        assert_eq!(SERVICES.len(), 26, "Should have exactly 26 services");
+        assert_eq!(services().len(), 26, "Should have exactly 26 services");
     }
 
     #[test]
     fn test_services_cover_all_layers() {
-        let layers: Vec<_> = SERVICES.iter().map(|s| s.layer).collect();
+        let layers: Vec<_> = services().iter().map(|s| s.layer).collect();
         assert!(layers.contains(&Layer::L1));
         assert!(layers.contains(&Layer::L2));
         assert!(layers.contains(&Layer::L3));
@@ -623,7 +516,7 @@ mod tests {
 
     #[test]
     fn test_services_unique_names() {
-        let mut names: Vec<_> = SERVICES.iter().map(|s| s.name).collect();
+        let mut names: Vec<_> = services().iter().map(|s| s.name).collect();
         names.sort();
         let before = names.len();
         names.dedup();
@@ -632,25 +525,25 @@ mod tests {
 
     #[test]
     fn test_service_lookup() {
-        assert!(SERVICES.iter().any(|s| s.name == "node1-rpc"));
-        assert!(SERVICES.iter().any(|s| s.name == "node2-rpc"));
-        assert!(SERVICES.iter().any(|s| s.name == "pool-stratum"));
-        assert!(SERVICES.iter().any(|s| s.name == "bridge"));
-        assert!(SERVICES.iter().any(|s| s.name == "dashboard"));
-        assert!(SERVICES.iter().any(|s| s.name == "nginx-http"));
-        assert!(SERVICES.iter().any(|s| s.name == "prometheus"));
-        assert!(!SERVICES.iter().any(|s| s.name == "nonexistent"));
+        assert!(services().iter().any(|s| s.name == "node1-rpc"));
+        assert!(services().iter().any(|s| s.name == "node2-rpc"));
+        assert!(services().iter().any(|s| s.name == "pool-stratum"));
+        assert!(services().iter().any(|s| s.name == "zis-identity"));
+        assert!(services().iter().any(|s| s.name == "dashboard"));
+        assert!(services().iter().any(|s| s.name == "nginx-http"));
+        assert!(services().iter().any(|s| s.name == "prometheus"));
+        assert!(!services().iter().any(|s| s.name == "nonexistent"));
     }
 
     #[test]
     fn test_layer_distribution() {
-        let l1 = SERVICES.iter().filter(|s| s.layer == Layer::L1).count();
-        let l2 = SERVICES.iter().filter(|s| s.layer == Layer::L2).count();
-        let l3 = SERVICES.iter().filter(|s| s.layer == Layer::L3).count();
-        let l4 = SERVICES.iter().filter(|s| s.layer == Layer::L4).count();
-        let l5 = SERVICES.iter().filter(|s| s.layer == Layer::L5).count();
-        let l6 = SERVICES.iter().filter(|s| s.layer == Layer::L6).count();
-        let sys = SERVICES.iter().filter(|s| s.layer == Layer::System).count();
+        let l1 = services().iter().filter(|s| s.layer == Layer::L1).count();
+        let l2 = services().iter().filter(|s| s.layer == Layer::L2).count();
+        let l3 = services().iter().filter(|s| s.layer == Layer::L3).count();
+        let l4 = services().iter().filter(|s| s.layer == Layer::L4).count();
+        let l5 = services().iter().filter(|s| s.layer == Layer::L5).count();
+        let l6 = services().iter().filter(|s| s.layer == Layer::L6).count();
+        let sys = services().iter().filter(|s| s.layer == Layer::System).count();
         assert_eq!(
             l1, 8,
             "L1 should have 8 services (node1×3, node2×3, pool×2)"
@@ -672,18 +565,18 @@ mod tests {
     #[test]
     fn test_probe_methods() {
         // TCP probes: P2P + stratum
-        let tcp: Vec<_> = SERVICES
-            .iter()
+        let tcp: Vec<_> = services()
+            .into_iter()
             .filter(|s| s.method == ProbeMethod::TcpConnect)
-            .collect();
+            .collect::<Vec<_>>();
         assert!(tcp.iter().any(|s| s.name == "node1-p2p"));
         assert!(tcp.iter().any(|s| s.name == "node2-p2p"));
         assert!(tcp.iter().any(|s| s.name == "pool-stratum"));
         // HTTP probes: everything else
-        let http: Vec<_> = SERVICES
-            .iter()
+        let http: Vec<_> = services()
+            .into_iter()
             .filter(|s| s.method == ProbeMethod::HttpGet)
-            .collect();
+            .collect::<Vec<_>>();
         assert!(http.iter().any(|s| s.name == "node1-rpc"));
         assert!(http.iter().any(|s| s.name == "dashboard"));
     }
