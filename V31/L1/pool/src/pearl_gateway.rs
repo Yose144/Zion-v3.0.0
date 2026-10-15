@@ -15,16 +15,19 @@
 //!   `ZION_POOL_PEARL_JOB_TTL_MS`   — drop served jobs older than this
 //!                                    (default 30000).
 
+use std::collections::HashSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use num_bigint::BigUint;
+use std::sync::{Mutex, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use std::sync::RwLock;
+use tokio::sync::Semaphore;
 
-use crate::pearl::PearlJob;
+use crate::pearl::{decode_plain_proof, verify_pearl_share, PearlJob, PearlShareOutcome};
 use crate::v3_protocol::ExternalStreamJob;
 
 const DEFAULT_POLL_MS: u64 = 2_000;
@@ -38,6 +41,41 @@ fn env_u64(name: &str, default: u64) -> u64 {
         .unwrap_or(default)
 }
 
+struct SeenJackpots {
+    job_id: String,
+    jackpots: HashSet<[u8; 32]>,
+}
+
+const SEEN_JACKPOTS_CAP: usize = 65_536;
+const VERIFY_PERMITS: usize = 2;
+const MAX_PROOF_B64_CHARS: usize = 2_500_000;
+
+#[derive(Debug)]
+pub enum PearlSubmitError {
+    Stale,
+    Busy,
+    Duplicate,
+    Invalid(String),
+    Internal(String),
+}
+
+impl PearlSubmitError {
+    pub fn status(&self) -> String {
+        match self {
+            Self::Stale => "stale".to_string(),
+            Self::Busy => "busy".to_string(),
+            Self::Duplicate => "duplicate".to_string(),
+            Self::Invalid(msg) => {
+                format!("rejected:{}", msg.chars().take(80).collect::<String>())
+            }
+            Self::Internal(msg) => {
+                tracing::warn!("pearl verify internal failure: {msg}");
+                "verify_failed".to_string()
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct PearlRuntime {
     addr: String,
@@ -45,22 +83,151 @@ pub struct PearlRuntime {
     share_ease: u64,
     job_ttl: Duration,
     poll_interval: Duration,
+    started: Arc<AtomicBool>,
+    verify_permits: Arc<Semaphore>,
+    seen: Arc<Mutex<SeenJackpots>>,
+}
+
+impl std::fmt::Debug for PearlRuntime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PearlRuntime")
+            .field("addr", &self.addr)
+            .field("share_ease", &self.share_ease)
+            .finish_non_exhaustive()
+    }
 }
 
 impl PearlRuntime {
+    fn with_params(
+        addr: String,
+        share_ease: u64,
+        job_ttl: Duration,
+        poll_interval: Duration,
+    ) -> Self {
+        Self {
+            addr,
+            latest: Arc::new(RwLock::new(None)),
+            share_ease,
+            job_ttl,
+            poll_interval,
+            started: Arc::new(AtomicBool::new(false)),
+            verify_permits: Arc::new(Semaphore::new(VERIFY_PERMITS)),
+            seen: Arc::new(Mutex::new(SeenJackpots {
+                job_id: String::new(),
+                jackpots: HashSet::new(),
+            })),
+        }
+    }
+
     /// `Some` when `ZION_POOL_PEARL_GATEWAY` names a `host:port` endpoint.
     pub fn from_env() -> Option<Arc<Self>> {
         let addr = std::env::var("ZION_POOL_PEARL_GATEWAY")
             .ok()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())?;
-        Some(Arc::new(Self {
+        Some(Arc::new(Self::with_params(
             addr,
-            latest: Arc::new(RwLock::new(None)),
-            share_ease: env_u64("ZION_POOL_PEARL_SHARE_EASE", DEFAULT_SHARE_EASE as u64),
-            job_ttl: Duration::from_millis(env_u64("ZION_POOL_PEARL_JOB_TTL_MS", DEFAULT_JOB_TTL_MS)),
-            poll_interval: Duration::from_millis(env_u64("ZION_POOL_PEARL_POLL_MS", DEFAULT_POLL_MS)),
-        }))
+            env_u64("ZION_POOL_PEARL_SHARE_EASE", DEFAULT_SHARE_EASE as u64),
+            Duration::from_millis(env_u64("ZION_POOL_PEARL_JOB_TTL_MS", DEFAULT_JOB_TTL_MS)),
+            Duration::from_millis(env_u64("ZION_POOL_PEARL_POLL_MS", DEFAULT_POLL_MS)),
+        )))
+    }
+
+    pub fn ensure_started(self: &Arc<Self>) -> bool {
+        if self
+            .started
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
+            let rt = Arc::clone(self);
+            tokio::spawn(async move { rt.run().await });
+            true
+        } else {
+            false
+        }
+    }
+
+    pub async fn verify_submission(
+        self: &Arc<Self>,
+        job_id: &str,
+        proof_b64: &str,
+    ) -> std::result::Result<(PearlJob, PearlShareOutcome), PearlSubmitError> {
+        let Some(job) = self.job_for_submit(job_id) else {
+            return Err(PearlSubmitError::Stale);
+        };
+        if proof_b64.len() > MAX_PROOF_B64_CHARS {
+            return Err(PearlSubmitError::Invalid(format!(
+                "plain_proof exceeds {MAX_PROOF_B64_CHARS} base64 chars"
+            )));
+        }
+        let permit = self
+            .verify_permits
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| PearlSubmitError::Busy)?;
+        let job_verify = job.clone();
+        let share_target = self.share_target(&job);
+        let proof_b64 = proof_b64.to_string();
+        let outcome = tokio::task::spawn_blocking(move || {
+            use base64::Engine as _;
+            let _permit = permit;
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(&proof_b64)
+                .context("plain_proof base64")?;
+            let proof = decode_plain_proof(&bytes).context("plain_proof decode")?;
+            verify_pearl_share(&proof, &job_verify, &share_target)
+        })
+        .await
+        .map_err(|e| PearlSubmitError::Internal(format!("verify task join: {e:#}")))?
+        .map_err(|e| PearlSubmitError::Invalid(format!("{e:#}")))?;
+
+        self.claim_verified(job_id, &job, outcome.jackpot_hash)?;
+        Ok((job, outcome))
+    }
+
+    fn claim_verified(
+        &self,
+        job_id: &str,
+        expected: &PearlJob,
+        jackpot: [u8; 32],
+    ) -> std::result::Result<(), PearlSubmitError> {
+        let guard = self.latest.read().unwrap();
+        let current = match guard.as_ref() {
+            Some((j, t)) if t.elapsed() <= self.job_ttl => j,
+            _ => return Err(PearlSubmitError::Stale),
+        };
+        if Self::job_id(current) != job_id
+            || current.header != expected.header
+            || current.target != expected.target
+            || current.cert_version != expected.cert_version
+        {
+            return Err(PearlSubmitError::Stale);
+        }
+        let mut seen = self.seen.lock().unwrap();
+        if seen.job_id != job_id {
+            seen.job_id = job_id.to_string();
+            seen.jackpots.clear();
+        }
+        if seen.jackpots.contains(&jackpot) {
+            return Err(PearlSubmitError::Duplicate);
+        }
+        if seen.jackpots.len() >= SEEN_JACKPOTS_CAP {
+            return Err(PearlSubmitError::Busy);
+        }
+        seen.jackpots.insert(jackpot);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub fn for_test(addr: &str, share_ease: u64, job_ttl_ms: u64, job: PearlJob) -> Arc<Self> {
+        let rt = Arc::new(Self::with_params(
+            addr.to_string(),
+            share_ease,
+            Duration::from_millis(job_ttl_ms),
+            Duration::from_millis(2_000),
+        ));
+        rt.cache_job(job, Instant::now());
+        rt
     }
 
     /// One JSON-RPC round-trip: connect, write one line, read one line.
@@ -259,13 +426,12 @@ mod tests {
     use super::*;
 
     fn runtime(addr: &str, share_ease: u64, ttl_ms: u64) -> PearlRuntime {
-        PearlRuntime {
-            addr: addr.to_string(),
-            latest: Arc::new(RwLock::new(None)),
+        PearlRuntime::with_params(
+            addr.to_string(),
             share_ease,
-            job_ttl: Duration::from_millis(ttl_ms),
-            poll_interval: Duration::from_millis(2_000),
-        }
+            Duration::from_millis(ttl_ms),
+            Duration::from_millis(2_000),
+        )
     }
 
     fn job(header: [u8; 76], target: BigUint, cert_version: u32) -> PearlJob {
@@ -408,5 +574,197 @@ mod tests {
         assert_eq!(rt.share_target(&j2), u256_max);
         let ext = rt.ext_stream_job().unwrap();
         assert_eq!(ext.target_hex, hex::encode([0xffu8; 32]));
+    }
+
+    const FIXTURE: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/pearl_cuda_live_share.json"
+    ));
+    const FIXTURE_BLOCK_TARGET: &str = "11576915460202502748112183870099358720600496688251011072";
+    const FIXTURE_SHARE_EASE: u64 = 1_907_726_491_192;
+    const FIXTURE_SHARE_TARGET_HEX: &str =
+        "00000000d1b71758e1a3c6c80000000000000000000000000000000000000000";
+    const FIXTURE_JACKPOT_HEX: &str =
+        "e176bd9940d2557799321b87396cb0fcc64e0215c3b5d162d3f7a60e9bbe0000";
+
+    fn fixture() -> (PearlJob, String) {
+        use base64::Engine;
+        let v: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let header: [u8; 76] = hex::decode(v["header_hex"].as_str().unwrap())
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let job = PearlJob {
+            header,
+            target: FIXTURE_BLOCK_TARGET.parse().unwrap(),
+            cert_version: 3,
+            header_b64: base64::engine::general_purpose::STANDARD.encode(header),
+            target_dec: FIXTURE_BLOCK_TARGET.to_string(),
+        };
+        (job, v["plain_proof_b64"].as_str().unwrap().to_string())
+    }
+
+    fn fixture_runtime() -> (Arc<PearlRuntime>, PearlJob, String) {
+        let (job, proof_b64) = fixture();
+        let rt = PearlRuntime::for_test("127.0.0.1:1", FIXTURE_SHARE_EASE, 30_000, job.clone());
+        (rt, job, proof_b64)
+    }
+
+    #[tokio::test]
+    async fn verify_submission_real_cuda_fixture() {
+        let (rt, job, proof_b64) = fixture_runtime();
+        let st = rt.share_target(&job);
+        let mut padded = [0u8; 32];
+        let b = st.to_bytes_be();
+        padded[32 - b.len()..].copy_from_slice(&b);
+        assert_eq!(hex::encode(padded), FIXTURE_SHARE_TARGET_HEX);
+
+        let job_id = PearlRuntime::job_id(&job);
+        let (job_out, outcome) = rt
+            .verify_submission(&job_id, &proof_b64)
+            .await
+            .expect("frozen live proof verifies");
+        assert_eq!(PearlRuntime::job_id(&job_out), job_id);
+        assert_eq!(hex::encode(outcome.jackpot_hash), FIXTURE_JACKPOT_HEX);
+        assert_eq!(outcome.adjustment_factor, BigUint::from(65536u64));
+        assert!(!outcome.is_block);
+    }
+
+    #[tokio::test]
+    async fn verify_submission_duplicate_and_concurrent() {
+        let (rt, job, proof_b64) = fixture_runtime();
+        let job_id = PearlRuntime::job_id(&job);
+        rt.verify_submission(&job_id, &proof_b64).await.unwrap();
+        match rt.verify_submission(&job_id, &proof_b64).await {
+            Err(PearlSubmitError::Duplicate) => {}
+            other => panic!("expected Duplicate, got {other:?}"),
+        }
+
+        let (rt2, job2, proof2) = fixture_runtime();
+        let job_id2 = PearlRuntime::job_id(&job2);
+        let a = {
+            let rt = rt2.clone();
+            let job_id = job_id2.clone();
+            let proof = proof2.clone();
+            async move { rt.verify_submission(&job_id, &proof).await }
+        };
+        let b = {
+            let rt = rt2.clone();
+            let job_id = job_id2.clone();
+            let proof = proof2.clone();
+            async move { rt.verify_submission(&job_id, &proof).await }
+        };
+        let (ra, rb) = tokio::join!(a, b);
+        let accepted = [ra.is_ok(), rb.is_ok()].into_iter().filter(|x| *x).count();
+        assert_eq!(accepted, 1, "exactly one concurrent submit is credited");
+        match (ra, rb) {
+            (Err(e), _) if matches!(e, PearlSubmitError::Duplicate) => {}
+            (_, Err(e)) if matches!(e, PearlSubmitError::Duplicate) => {}
+            (a2, b2) => panic!("the losing submit must be Duplicate: {a2:?} {b2:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn verify_submission_rejects_mutated_and_stale() {
+        let (rt, job, proof_b64) = fixture_runtime();
+        let job_id = PearlRuntime::job_id(&job);
+        use base64::Engine;
+        let mut bytes = base64::engine::general_purpose::STANDARD
+            .decode(&proof_b64)
+            .unwrap();
+        bytes[48] ^= 1;
+        let mutated = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        match rt.verify_submission(&job_id, &mutated).await {
+            Err(PearlSubmitError::Invalid(_)) => {}
+            other => panic!("expected Invalid, got {other:?}"),
+        }
+        match rt.verify_submission("no-such-job", &proof_b64).await {
+            Err(PearlSubmitError::Stale) => {}
+            other => panic!("expected Stale, got {other:?}"),
+        }
+        match rt.verify_submission(&job_id, "!!!").await {
+            Err(PearlSubmitError::Invalid(_)) => {}
+            other => panic!("expected Invalid, got {other:?}"),
+        }
+
+        let rt_exp = PearlRuntime::for_test("127.0.0.1:1", FIXTURE_SHARE_EASE, 1, job.clone());
+        tokio::time::sleep(Duration::from_millis(5)).await;
+        match rt_exp.verify_submission(&job_id, &proof_b64).await {
+            Err(PearlSubmitError::Stale) => {}
+            other => panic!("expected Stale after TTL, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn verify_submission_busy_when_permits_exhausted() {
+        let (rt, job, proof_b64) = fixture_runtime();
+        let job_id = PearlRuntime::job_id(&job);
+        let _p1 = rt.verify_permits.clone().try_acquire_owned().unwrap();
+        let _p2 = rt.verify_permits.clone().try_acquire_owned().unwrap();
+        match rt.verify_submission(&job_id, &proof_b64).await {
+            Err(PearlSubmitError::Busy) => {}
+            other => panic!("expected Busy, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn ensure_started_spawns_poller_only_once() {
+        let (job, _) = fixture();
+        let rt = PearlRuntime::for_test("127.0.0.1:1", 256, 30_000, job);
+        assert!(rt.ensure_started());
+        assert!(!rt.ensure_started());
+        assert!(!rt.ensure_started());
+    }
+
+    #[test]
+    fn claim_verified_rejects_changed_job_metadata() {
+        let (rt, job, _) = fixture_runtime();
+        let job_id = PearlRuntime::job_id(&job);
+        rt.claim_verified(&job_id, &job, [7u8; 32]).unwrap();
+
+        let (rt2, job2, _) = fixture_runtime();
+        let job_id2 = PearlRuntime::job_id(&job2);
+        let mut j2 = job2.clone();
+        j2.target = j2.target.clone() + BigUint::from(1u8);
+        rt2.cache_job(j2, Instant::now());
+        match rt2.claim_verified(&job_id2, &job2, [7u8; 32]) {
+            Err(PearlSubmitError::Stale) => {}
+            other => panic!("expected Stale on changed target, got {other:?}"),
+        }
+
+        let (rt3, job3, _) = fixture_runtime();
+        let job_id3 = PearlRuntime::job_id(&job3);
+        let mut j3 = job3.clone();
+        j3.cert_version = 2;
+        rt3.cache_job(j3, Instant::now());
+        match rt3.claim_verified(&job_id3, &job3, [7u8; 32]) {
+            Err(PearlSubmitError::Stale) => {}
+            other => panic!("expected Stale on changed cert, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn claim_verified_duplicate_beats_capacity() {
+        let (rt, job, _) = fixture_runtime();
+        let job_id = PearlRuntime::job_id(&job);
+        let known = [9u8; 32];
+        rt.claim_verified(&job_id, &job, known).unwrap();
+        {
+            let mut seen = rt.seen.lock().unwrap();
+            for i in 0..SEEN_JACKPOTS_CAP - 1 {
+                let mut k = [0u8; 32];
+                k[..8].copy_from_slice(&(i as u64).to_le_bytes());
+                seen.jackpots.insert(k);
+            }
+            assert_eq!(seen.jackpots.len(), SEEN_JACKPOTS_CAP);
+        }
+        match rt.claim_verified(&job_id, &job, known) {
+            Err(PearlSubmitError::Duplicate) => {}
+            other => panic!("expected Duplicate at cap, got {other:?}"),
+        }
+        match rt.claim_verified(&job_id, &job, [0xeeu8; 32]) {
+            Err(PearlSubmitError::Busy) => {}
+            other => panic!("expected Busy at cap, got {other:?}"),
+        }
     }
 }
