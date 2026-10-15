@@ -369,7 +369,7 @@ impl PoolApi {
         let stats = pool.pplns.stats();
         let fees = pool.pplns.fee_stats();
 
-        let auxpow_json = self.auxpow_summary_json();
+        let auxpow_json = self.auxpow_summary_inner(pool.pearl.clone());
 
         // Routing stats (sources + groups) for dashboard Trinity Mining panel
         let routing_json = if let Some(ref rs) = self.routing_stats {
@@ -458,7 +458,15 @@ impl PoolApi {
     /// `{enabled, coins:[ticker], coin_details:[{ticker,algorithm,device,
     /// upstream,job_id,job_age_ms,job_fresh}]}`.
     fn auxpow_summary_json(&self) -> serde_json::Value {
-        match &self.auxpow_bridge {
+        let pearl = self.pool.lock().expect("pool lock poisoned").pearl.clone();
+        self.auxpow_summary_inner(pearl)
+    }
+
+    fn auxpow_summary_inner(
+        &self,
+        pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
+    ) -> serde_json::Value {
+        let mut summary = match &self.auxpow_bridge {
             Some(bridge) => {
                 let enabled = bridge.enabled_coins();
                 let coins: Vec<serde_json::Value> = enabled
@@ -525,7 +533,26 @@ impl PoolApi {
                 })
             }
             None => json!({"enabled": false}),
+        };
+        if let Some(pearl) = pearl {
+            let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, upend) = pearl.status();
+            summary["pearl"] = json!({
+                "native": {
+                    "enabled": n_en,
+                    "job_id": njid,
+                    "job_age_ms": nage,
+                    "share_pct": npct,
+                },
+                "upstream": {
+                    "enabled": u_en,
+                    "connected": u_conn,
+                    "job_id": ujid,
+                    "job_age_ms": uage,
+                    "pending_submits": upend,
+                },
+            });
         }
+        summary
     }
 
     fn build_auxpow_payload(&self) -> String {
@@ -1316,6 +1343,65 @@ mod tests {
         assert_eq!(qtu["native"]["connected"], true);
         assert_eq!(qtu["native"]["share_pct"], 25);
         assert_eq!(qtu["native"]["job_id"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn auxpow_summary_pearl_block() {
+        let pool = test_pool();
+        pool.lock().unwrap().pearl = None;
+        let api = PoolApi::new(pool.clone(), None, None);
+        let v = api.auxpow_summary_json();
+        assert!(v.get("pearl").is_none());
+
+        let v2: serde_json::Value = serde_json::from_str(
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/pearl_cuda_live_share.json"
+            )),
+        )
+        .unwrap();
+        let header: [u8; 76] = hex::decode(v2["header_hex"].as_str().unwrap())
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let job = crate::pearl::PearlJob {
+            header,
+            target: "11576915460202502748112183870099358720600496688251011072"
+                .parse()
+                .unwrap(),
+            cert_version: 3,
+            header_b64: String::new(),
+            target_dec: String::new(),
+        };
+        let up = crate::pearl_upstream::PearlUpstream::new(
+            crate::pearl_upstream::PearlUpstreamConfig {
+                endpoint: "127.0.0.1:9".to_string(),
+                wallet: "prl1w".to_string(),
+                worker: "w".to_string(),
+                password: "x".to_string(),
+                job_ttl: Duration::from_millis(90_000),
+            },
+        );
+        let rt = crate::pearl_gateway::PearlRuntime::for_test_hybrid(
+            "127.0.0.1:1",
+            256,
+            30_000,
+            Some(job),
+            Some(up),
+            100,
+        );
+        pool.lock().unwrap().pearl = Some(rt);
+        let api = PoolApi::new(pool, None, None);
+        let v = api.auxpow_summary_json();
+        let pearl = &v["pearl"];
+        assert_eq!(pearl["native"]["enabled"], true);
+        assert_eq!(pearl["native"]["share_pct"], 100);
+        assert!(pearl["native"]["job_id"].is_string());
+        assert!(pearl["native"]["job_age_ms"].is_number());
+        assert_eq!(pearl["upstream"]["enabled"], true);
+        assert_eq!(pearl["upstream"]["connected"], false);
+        assert_eq!(pearl["upstream"]["job_id"], serde_json::Value::Null);
+        assert_eq!(pearl["upstream"]["pending_submits"], 0);
     }
 
     #[test]

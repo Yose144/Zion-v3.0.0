@@ -936,7 +936,7 @@ impl StratumServer {
         // it never arrives via upstream pool connections.
         if !cpu {
             if let Some(pearl) = &self.pearl {
-                if pearl.ext_stream_job().is_some() && !coins.contains(&ExternalCoin::Pearl) {
+                if pearl.pick_served_job().is_some() && !coins.contains(&ExternalCoin::Pearl) {
                     coins.push(ExternalCoin::Pearl);
                 }
             }
@@ -963,7 +963,7 @@ impl StratumServer {
             // locally on submit (see PearlSubmit handler).
             if *coin == ExternalCoin::Pearl {
                 if let Some(pearl) = &self.pearl {
-                    if let Some(job) = pearl.ext_stream_job() {
+                    if let Some(job) = pearl.pick_served_job() {
                         return Some(job);
                     }
                 }
@@ -1090,7 +1090,7 @@ impl StratumServer {
         let new_val = if coin == ExternalCoin::Pearl {
             self.pearl
                 .as_ref()
-                .and_then(|p| p.ext_stream_job())
+                .and_then(|p| p.pick_served_job())
                 .and_then(|job| serde_json::to_value(job).ok())
         } else {
             let fresh = self
@@ -1245,8 +1245,8 @@ impl StratumServer {
         // broadcast and miners would hash a stale seed until the next ZION
         // or aux-coin change.
         if let Some(pearl) = &self.pearl {
-            if let Some(job) = pearl.latest_job() {
-                ids.push(format!("PRL:{}", crate::pearl_gateway::PearlRuntime::job_id(&job)));
+            if let Some(job) = pearl.pick_served_job() {
+                ids.push(format!("PRL:{}", job.job_id));
             }
         }
         ids
@@ -1582,26 +1582,53 @@ impl StratumServer {
         let Some(pearl) = &self.pearl else {
             return (false, "pearl_not_enabled".to_string());
         };
-        let (accepted, status) = match pearl.verify_submission(external_job_id, proof_b64).await {
-            Ok((job, outcome)) => {
-                if outcome.is_block {
-                    tracing::info!(
-                        "pearl_block_candidate miner={} job={} jackpot={} forwarding",
-                        miner_id,
-                        external_job_id,
-                        hex::encode(outcome.jackpot_hash)
-                    );
-                    let pearl = pearl.clone();
-                    let proof_b64 = proof_b64.to_string();
-                    tokio::spawn(async move {
-                        if let Err(e) = pearl.submit_proof(&proof_b64, &job).await {
-                            tracing::warn!("pearl_gateway submit_plain_proof failed: {e:#}");
+        let (accepted, status) = if external_job_id
+            .starts_with(crate::pearl_upstream::UPSTREAM_JOB_PREFIX)
+        {
+            match pearl
+                .verify_upstream_submission(external_job_id, proof_b64)
+                .await
+            {
+                Ok((ujob, _outcome)) => {
+                    match pearl.upstream_submit(&ujob, proof_b64).await {
+                        crate::pearl_upstream::UpstreamSubmitReply::Accepted => {
+                            (true, "accepted".to_string())
                         }
-                    });
+                        crate::pearl_upstream::UpstreamSubmitReply::Rejected(m) => {
+                            (false, format!("rejected:{m}"))
+                        }
+                        crate::pearl_upstream::UpstreamSubmitReply::Unknown => {
+                            (true, "accepted_unknown".to_string())
+                        }
+                        crate::pearl_upstream::UpstreamSubmitReply::Busy => {
+                            (false, "busy".to_string())
+                        }
+                    }
                 }
-                (true, "accepted".to_string())
+                Err(e) => (false, e.status()),
             }
-            Err(e) => (false, e.status()),
+        } else {
+            match pearl.verify_submission(external_job_id, proof_b64).await {
+                Ok((job, outcome)) => {
+                    if outcome.is_block {
+                        tracing::info!(
+                            "pearl_block_candidate miner={} job={} jackpot={} forwarding",
+                            miner_id,
+                            external_job_id,
+                            hex::encode(outcome.jackpot_hash)
+                        );
+                        let pearl = pearl.clone();
+                        let proof_b64 = proof_b64.to_string();
+                        tokio::spawn(async move {
+                            if let Err(e) = pearl.submit_proof(&proof_b64, &job).await {
+                                tracing::warn!("pearl_gateway submit_plain_proof failed: {e:#}");
+                            }
+                        });
+                    }
+                    (true, "accepted".to_string())
+                }
+                Err(e) => (false, e.status()),
+            }
         };
 
         tracing::info!(
@@ -1703,7 +1730,7 @@ impl StratumServer {
         let current_params = || {
             self.pearl
                 .as_ref()
-                .and_then(|p| p.ext_stream_job())
+                .and_then(|p| p.pick_served_job())
                 .map(|j| stratum_pearl::notify_params(&j))
         };
         let mut last_params = current_params();
@@ -5253,6 +5280,308 @@ mod tests {
                 assert_eq!(dup_ext["accepted"], json!(false), "resp={dup_ext}");
                 assert_eq!(dup_ext["status"], "duplicate");
                 assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+            });
+        });
+        handle.join().unwrap();
+    }
+
+    #[derive(Clone, Copy)]
+    enum PearlUpVerdict {
+        Accept,
+        Reject(&'static str),
+        Drop,
+    }
+
+    fn spawn_pearl_mock_upstream(
+        std_listener: std::net::TcpListener,
+        header: [u8; 76],
+        verdict: PearlUpVerdict,
+    ) -> Arc<std::sync::Mutex<Vec<String>>> {
+        let calls = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let calls2 = calls.clone();
+        tokio::spawn(async move {
+            let listener = tokio::net::TcpListener::from_std(std_listener).unwrap();
+            while let Ok((socket, _)) = listener.accept().await {
+                let calls = calls2.clone();
+                tokio::spawn(async move {
+                    let (r, mut w) = socket.into_split();
+                    let mut br = BufReader::new(r);
+                    let mut line = String::new();
+                    if br.read_line(&mut line).await.is_err() {
+                        return;
+                    }
+                    calls.lock().unwrap().push(line.trim().to_string());
+                    if w
+                        .write_all(b"{\"id\":1,\"result\":true,\"error\":null}\n")
+                        .await
+                        .is_err()
+                    {
+                        return;
+                    }
+                    let notify = format!(
+                        "{}\n",
+                        serde_json::json!({"jsonrpc":"2.0","method":"mining.notify","params":{
+                            "job_id":"u-1",
+                            "header":hex::encode(header),
+                            "target":PEARL_SHARE_TARGET_HEX,
+                            "height":7u64,
+                            "cert_version":3u64,
+                        }})
+                    );
+                    if w.write_all(notify.as_bytes()).await.is_err() {
+                        return;
+                    }
+                    loop {
+                        line.clear();
+                        match br.read_line(&mut line).await {
+                            Ok(0) | Err(_) => return,
+                            Ok(_) => {
+                                let v: Value =
+                                    serde_json::from_str(line.trim()).unwrap_or_default();
+                                if v["method"].as_str() != Some("mining.submit") {
+                                    continue;
+                                }
+                                calls.lock().unwrap().push(line.trim().to_string());
+                                let resp = match verdict {
+                                    PearlUpVerdict::Accept => format!(
+                                        "{{\"id\":{},\"result\":true,\"error\":null}}\n",
+                                        v["id"]
+                                    ),
+                                    PearlUpVerdict::Reject(m) => format!(
+                                        "{{\"id\":{},\"result\":false,\"error\":{{\"code\":-1,\"message\":\"{m}\"}}}}\n",
+                                        v["id"]
+                                    ),
+                                    PearlUpVerdict::Drop => return,
+                                };
+                                if w.write_all(resp.as_bytes()).await.is_err() {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        calls
+    }
+
+    async fn connected_pearl_upstream(
+        header: [u8; 76],
+        verdict: PearlUpVerdict,
+    ) -> (
+        Arc<crate::pearl_upstream::PearlUpstream>,
+        Arc<std::sync::Mutex<Vec<String>>>,
+    ) {
+        let std_listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        std_listener.set_nonblocking(true).unwrap();
+        let addr = std_listener.local_addr().unwrap().to_string();
+        let calls = spawn_pearl_mock_upstream(std_listener, header, verdict);
+        let up =
+            crate::pearl_upstream::PearlUpstream::new(crate::pearl_upstream::PearlUpstreamConfig {
+                endpoint: addr,
+                wallet: "prl1POOL".to_string(),
+                worker: "zion-pool".to_string(),
+                password: "x".to_string(),
+                job_ttl: Duration::from_millis(90_000),
+            });
+        assert!(up.ensure_started());
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while up.latest_fresh().is_none() {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("upstream notify arrives");
+        (up, calls)
+    }
+
+    #[test]
+    fn pearl_upstream_submit_accept_and_dedup() {
+        let (header, proof_b64) = pearl_fixture_parts();
+        let handle = thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                let (up, calls) = connected_pearl_upstream(header, PearlUpVerdict::Accept).await;
+                let pearl = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+                let pool = pool_with_pearl(Some(pearl));
+                let server = StratumServer::new(pool.clone());
+
+                let (ok0, status0) = server
+                    .process_pearl_submission("miner", "miner.w", "prlu:ghost", &proof_b64)
+                    .await;
+                assert!(!ok0);
+                assert_eq!(status0, "stale");
+                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 0);
+
+                let (ok, status) = server
+                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64)
+                    .await;
+                assert!(ok, "status={status}");
+                assert_eq!(status, "accepted");
+                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+
+                let submits: Vec<String> = calls
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .filter(|l| l.contains("mining.submit"))
+                    .cloned()
+                    .collect();
+                assert_eq!(submits.len(), 1);
+                assert!(submits[0].contains("\"job_id\":\"u-1\""));
+                assert!(!submits[0].contains("prlu:"));
+
+                let (ok2, status2) = server
+                    .process_pearl_submission("miner2", "miner2.w", "prlu:u-1", &proof_b64)
+                    .await;
+                assert!(!ok2);
+                assert_eq!(status2, "duplicate");
+                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+            });
+        });
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn pearl_upstream_submit_reject_no_credit() {
+        let (header, proof_b64) = pearl_fixture_parts();
+        let handle = thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                let (up, _calls) =
+                    connected_pearl_upstream(header, PearlUpVerdict::Reject("low difficulty")).await;
+                let pearl = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+                let pool = pool_with_pearl(Some(pearl));
+                let server = StratumServer::new(pool.clone());
+                let (ok, status) = server
+                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64)
+                    .await;
+                assert!(!ok);
+                assert_eq!(status, "rejected:low difficulty");
+                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 0);
+            });
+        });
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn pearl_upstream_submit_drop_unknown_credits_once() {
+        let (header, proof_b64) = pearl_fixture_parts();
+        let handle = thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                let (up, _calls) = connected_pearl_upstream(header, PearlUpVerdict::Drop).await;
+                let pearl = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+                let pool = pool_with_pearl(Some(pearl));
+                let server = StratumServer::new(pool.clone());
+                let (ok, status) = server
+                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64)
+                    .await;
+                assert!(ok, "status={status}");
+                assert_eq!(status, "accepted_unknown");
+                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+            });
+        });
+        handle.join().unwrap();
+    }
+
+    #[test]
+    fn pearl_v3_submit_upstream_routes() {
+        let (header, proof_b64) = pearl_fixture_parts();
+        let handle = thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                let (up, calls) = connected_pearl_upstream(header, PearlUpVerdict::Accept).await;
+                let pearl = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+                let pool = pool_with_pearl(Some(pearl));
+                let server = StratumServer::new(pool.clone());
+
+                let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+                let addr = listener.local_addr().unwrap();
+                let srv = server.clone();
+                tokio::spawn(async move {
+                    while let Ok((socket, _)) = listener.accept().await {
+                        let s = srv.clone();
+                        tokio::spawn(async move {
+                            let (r, w) = tokio::io::split(socket);
+                            let mut lines = BufReader::new(r).lines();
+                            let writer = Arc::new(tokio::sync::Mutex::new(w));
+                            let Ok(Some(first)) = lines.next_line().await else {
+                                return;
+                            };
+                            s.handle_v3_client(
+                                &first,
+                                &mut lines,
+                                &writer,
+                                IpAddr::V4(std::net::Ipv4Addr::LOCALHOST),
+                            )
+                            .await;
+                        });
+                    }
+                });
+
+                let stream = TcpStream::connect(addr).await.unwrap();
+                let (r, mut w) = stream.into_split();
+                let mut reader = BufReader::new(r);
+                let mut line = String::new();
+                w.write_all(
+                    br#"{"type":"hello","miner_id":"pearl-u","worker_name":"pearl-u.w1","algorithm":"ekam_deeksha","backend":"cpu"}"#
+                        .as_slice(),
+                )
+                .await
+                .unwrap();
+                w.write_all(b"\n").await.unwrap();
+                reader.read_line(&mut line).await.unwrap();
+                assert!(line.contains("welcome"), "hello resp={line}");
+
+                let submit = crate::v3_protocol::encode_message(&PoolMessage::PearlSubmit {
+                    miner_id: "pearl-u".to_string(),
+                    worker_name: "pearl-u.w1".to_string(),
+                    coin: "PRL".to_string(),
+                    algorithm: "pearlhash".to_string(),
+                    external_job_id: "prlu:u-1".to_string(),
+                    hash_hex: String::new(),
+                    plain_proof_b64: proof_b64.clone(),
+                    mining_job_b64: String::new(),
+                })
+                .unwrap();
+                w.write_all(submit.as_bytes()).await.unwrap();
+                let got = tokio::time::timeout(Duration::from_secs(10), async {
+                    loop {
+                        line.clear();
+                        reader.read_line(&mut line).await.unwrap();
+                        let v: Value = serde_json::from_str(line.trim()).unwrap();
+                        if v["type"] == "external_result" {
+                            break v;
+                        }
+                    }
+                })
+                .await
+                .unwrap();
+                assert_eq!(got["accepted"], json!(true), "resp={got}");
+                assert_eq!(got["status"], "accepted");
+                assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 1);
+                let submits: Vec<String> = calls
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .filter(|l| l.contains("mining.submit"))
+                    .cloned()
+                    .collect();
+                assert_eq!(submits.len(), 1);
+                assert!(submits[0].contains("\"job_id\":\"u-1\""));
             });
         });
         handle.join().unwrap();

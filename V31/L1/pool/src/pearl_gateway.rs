@@ -15,8 +15,8 @@
 //!   `ZION_POOL_PEARL_JOB_TTL_MS`   — drop served jobs older than this
 //!                                    (default 30000).
 
-use std::collections::HashSet;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -28,6 +28,7 @@ use tokio::net::TcpStream;
 use tokio::sync::Semaphore;
 
 use crate::pearl::{decode_plain_proof, verify_pearl_share, PearlJob, PearlShareOutcome};
+use crate::pearl_upstream::{PearlUpstream, UpstreamPearlJob, UpstreamSubmitReply};
 use crate::v3_protocol::ExternalStreamJob;
 
 const DEFAULT_POLL_MS: u64 = 2_000;
@@ -42,10 +43,36 @@ fn env_u64(name: &str, default: u64) -> u64 {
 }
 
 struct SeenJackpots {
-    job_id: String,
-    jackpots: HashSet<[u8; 32]>,
+    order: VecDeque<String>,
+    jackpots: HashMap<String, HashSet<[u8; 32]>>,
 }
 
+impl SeenJackpots {
+    fn claim(&mut self, served_id: &str, jackpot: [u8; 32]) -> std::result::Result<(), PearlSubmitError> {
+        let set = match self.jackpots.get_mut(served_id) {
+            Some(s) => s,
+            None => {
+                if self.order.len() >= SEEN_JOB_IDS_CAP {
+                    if let Some(old) = self.order.pop_front() {
+                        self.jackpots.remove(&old);
+                    }
+                }
+                self.order.push_back(served_id.to_string());
+                self.jackpots.entry(served_id.to_string()).or_default()
+            }
+        };
+        if set.contains(&jackpot) {
+            return Err(PearlSubmitError::Duplicate);
+        }
+        if set.len() >= SEEN_JACKPOTS_CAP {
+            return Err(PearlSubmitError::Busy);
+        }
+        set.insert(jackpot);
+        Ok(())
+    }
+}
+
+const SEEN_JOB_IDS_CAP: usize = 8;
 const SEEN_JACKPOTS_CAP: usize = 65_536;
 const VERIFY_PERMITS: usize = 2;
 const MAX_PROOF_B64_CHARS: usize = 2_500_000;
@@ -79,13 +106,16 @@ impl PearlSubmitError {
 #[derive(Clone)]
 pub struct PearlRuntime {
     addr: String,
-    latest: Arc<RwLock<Option<(PearlJob, Instant)>>>,
+    latest: Arc<RwLock<Option<(PearlJob, Instant, bool)>>>,
     share_ease: u64,
     job_ttl: Duration,
     poll_interval: Duration,
     started: Arc<AtomicBool>,
     verify_permits: Arc<Semaphore>,
     seen: Arc<Mutex<SeenJackpots>>,
+    upstream: Option<Arc<PearlUpstream>>,
+    native_pct: u8,
+    job_seq: Arc<AtomicU64>,
 }
 
 impl std::fmt::Debug for PearlRuntime {
@@ -103,6 +133,8 @@ impl PearlRuntime {
         share_ease: u64,
         job_ttl: Duration,
         poll_interval: Duration,
+        upstream: Option<Arc<PearlUpstream>>,
+        native_pct: u8,
     ) -> Self {
         Self {
             addr,
@@ -113,9 +145,12 @@ impl PearlRuntime {
             started: Arc::new(AtomicBool::new(false)),
             verify_permits: Arc::new(Semaphore::new(VERIFY_PERMITS)),
             seen: Arc::new(Mutex::new(SeenJackpots {
-                job_id: String::new(),
-                jackpots: HashSet::new(),
+                order: VecDeque::new(),
+                jackpots: HashMap::new(),
             })),
+            upstream,
+            native_pct,
+            job_seq: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -124,12 +159,23 @@ impl PearlRuntime {
         let addr = std::env::var("ZION_POOL_PEARL_GATEWAY")
             .ok()
             .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())?;
+            .unwrap_or_default();
+        let upstream = PearlUpstream::from_env();
+        if addr.is_empty() && upstream.is_none() {
+            return None;
+        }
+        let native_pct = std::env::var("ZION_POOL_PEARL_NATIVE_PCT")
+            .ok()
+            .and_then(|v| v.trim().parse::<u8>().ok())
+            .unwrap_or(100)
+            .min(100);
         Some(Arc::new(Self::with_params(
             addr,
             env_u64("ZION_POOL_PEARL_SHARE_EASE", DEFAULT_SHARE_EASE as u64),
             Duration::from_millis(env_u64("ZION_POOL_PEARL_JOB_TTL_MS", DEFAULT_JOB_TTL_MS)),
             Duration::from_millis(env_u64("ZION_POOL_PEARL_POLL_MS", DEFAULT_POLL_MS)),
+            upstream,
+            native_pct,
         )))
     }
 
@@ -139,8 +185,13 @@ impl PearlRuntime {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_ok()
         {
-            let rt = Arc::clone(self);
-            tokio::spawn(async move { rt.run().await });
+            if !self.addr.is_empty() {
+                let rt = Arc::clone(self);
+                tokio::spawn(async move { rt.run().await });
+            }
+            if let Some(up) = &self.upstream {
+                up.ensure_started();
+            }
             true
         } else {
             false
@@ -185,6 +236,10 @@ impl PearlRuntime {
         Ok((job, outcome))
     }
 
+    fn claim(&self, served_id: &str, jackpot: [u8; 32]) -> std::result::Result<(), PearlSubmitError> {
+        self.seen.lock().unwrap().claim(served_id, jackpot)
+    }
+
     fn claim_verified(
         &self,
         job_id: &str,
@@ -193,7 +248,7 @@ impl PearlRuntime {
     ) -> std::result::Result<(), PearlSubmitError> {
         let guard = self.latest.read().unwrap();
         let current = match guard.as_ref() {
-            Some((j, t)) if t.elapsed() <= self.job_ttl => j,
+            Some((j, t, _)) if t.elapsed() <= self.job_ttl => j,
             _ => return Err(PearlSubmitError::Stale),
         };
         if Self::job_id(current) != job_id
@@ -203,30 +258,109 @@ impl PearlRuntime {
         {
             return Err(PearlSubmitError::Stale);
         }
-        let mut seen = self.seen.lock().unwrap();
-        if seen.job_id != job_id {
-            seen.job_id = job_id.to_string();
-            seen.jackpots.clear();
+        self.claim(job_id, jackpot)
+    }
+
+    fn claim_upstream_verified(
+        &self,
+        served_id: &str,
+        jackpot: [u8; 32],
+    ) -> std::result::Result<(), PearlSubmitError> {
+        let Some(upstream) = &self.upstream else {
+            return Err(PearlSubmitError::Stale);
+        };
+        if upstream.job_by_served_id(served_id).is_none() {
+            return Err(PearlSubmitError::Stale);
         }
-        if seen.jackpots.contains(&jackpot) {
-            return Err(PearlSubmitError::Duplicate);
+        self.claim(served_id, jackpot)
+    }
+
+    pub async fn verify_upstream_submission(
+        self: &Arc<Self>,
+        served_id: &str,
+        proof_b64: &str,
+    ) -> std::result::Result<(UpstreamPearlJob, PearlShareOutcome), PearlSubmitError> {
+        let Some(upstream) = &self.upstream else {
+            return Err(PearlSubmitError::Stale);
+        };
+        let Some(ujob) = upstream.job_by_served_id(served_id) else {
+            return Err(PearlSubmitError::Stale);
+        };
+        if proof_b64.len() > MAX_PROOF_B64_CHARS {
+            return Err(PearlSubmitError::Invalid(format!(
+                "plain_proof exceeds {MAX_PROOF_B64_CHARS} base64 chars"
+            )));
         }
-        if seen.jackpots.len() >= SEEN_JACKPOTS_CAP {
-            return Err(PearlSubmitError::Busy);
+        let permit = self
+            .verify_permits
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| PearlSubmitError::Busy)?;
+        let target = BigUint::from_bytes_be(&ujob.target_be);
+        let job_verify = PearlJob {
+            header: ujob.header,
+            target: target.clone(),
+            cert_version: ujob.cert_version,
+            header_b64: {
+                use base64::Engine as _;
+                base64::engine::general_purpose::STANDARD.encode(ujob.header)
+            },
+            target_dec: target.to_string(),
+        };
+        let proof_b64 = proof_b64.to_string();
+        let outcome = tokio::task::spawn_blocking(move || {
+            use base64::Engine as _;
+            let _permit = permit;
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(&proof_b64)
+                .context("plain_proof base64")?;
+            let proof = decode_plain_proof(&bytes).context("plain_proof decode")?;
+            verify_pearl_share(&proof, &job_verify, &target)
+        })
+        .await
+        .map_err(|e| PearlSubmitError::Internal(format!("verify task join: {e:#}")))?
+        .map_err(|e| PearlSubmitError::Invalid(format!("{e:#}")))?;
+
+        self.claim_upstream_verified(served_id, outcome.jackpot_hash)?;
+        Ok((ujob, outcome))
+    }
+
+    pub async fn upstream_submit(
+        &self,
+        ujob: &UpstreamPearlJob,
+        proof_b64: &str,
+    ) -> UpstreamSubmitReply {
+        match &self.upstream {
+            Some(up) => up.submit(&ujob.served_id, &ujob.raw_id, proof_b64).await,
+            None => UpstreamSubmitReply::Unknown,
         }
-        seen.jackpots.insert(jackpot);
-        Ok(())
     }
 
     #[cfg(test)]
     pub fn for_test(addr: &str, share_ease: u64, job_ttl_ms: u64, job: PearlJob) -> Arc<Self> {
+        Self::for_test_hybrid(addr, share_ease, job_ttl_ms, Some(job), None, 100)
+    }
+
+    #[cfg(test)]
+    pub fn for_test_hybrid(
+        addr: &str,
+        share_ease: u64,
+        job_ttl_ms: u64,
+        job: Option<PearlJob>,
+        upstream: Option<Arc<PearlUpstream>>,
+        native_pct: u8,
+    ) -> Arc<Self> {
         let rt = Arc::new(Self::with_params(
             addr.to_string(),
             share_ease,
             Duration::from_millis(job_ttl_ms),
             Duration::from_millis(2_000),
+            upstream,
+            native_pct,
         ));
-        rt.cache_job(job, Instant::now());
+        if let Some(job) = job {
+            rt.cache_job(job, Instant::now());
+        }
         rt
     }
 
@@ -276,7 +410,13 @@ impl PearlRuntime {
     }
 
     fn cache_job(&self, job: PearlJob, stamp: Instant) {
-        *self.latest.write().unwrap() = Some((job, stamp));
+        let new_id = Self::job_id(&job);
+        let mut guard = self.latest.write().unwrap();
+        let serve_native = match guard.as_ref() {
+            Some((cur, _, flag)) if Self::job_id(cur) == new_id => *flag,
+            _ => self.job_seq.fetch_add(1, Ordering::Relaxed) % 100 < u64::from(self.native_pct),
+        };
+        *guard = Some((job, stamp, serve_native));
     }
 
     /// Poll `getMiningInfo` forever; update `latest` when the header changes.
@@ -303,8 +443,12 @@ impl PearlRuntime {
 
     /// Fresh latest job, if any.
     pub fn latest_job(&self) -> Option<PearlJob> {
+        self.latest_with_flag().map(|(j, _)| j)
+    }
+
+    fn latest_with_flag(&self) -> Option<(PearlJob, bool)> {
         match self.latest.read().unwrap().as_ref() {
-            Some((j, t)) if t.elapsed() <= self.job_ttl => Some(j.clone()),
+            Some((j, t, serve)) if t.elapsed() <= self.job_ttl => Some((j.clone(), *serve)),
             _ => None,
         }
     }
@@ -327,15 +471,18 @@ impl PearlRuntime {
     /// `cert_version` so the miner can reconstruct the gateway `mining_job`
     /// object for `submitPlainProof`.
     pub fn ext_stream_job(&self) -> Option<ExternalStreamJob> {
-        let job = self.latest_job()?;
-        let target = self.share_target(&job);
+        self.latest_job().map(|j| self.ext_stream_for(&j))
+    }
+
+    fn ext_stream_for(&self, job: &PearlJob) -> ExternalStreamJob {
+        let target = self.share_target(job);
         let target_bytes = target.to_bytes_be();
         let mut padded = [0u8; 32];
         padded[32 - target_bytes.len()..].copy_from_slice(&target_bytes);
-        Some(ExternalStreamJob {
+        ExternalStreamJob {
             coin: "PRL".to_string(),
             algorithm: "pearlhash".to_string(),
-            job_id: Self::job_id(&job),
+            job_id: Self::job_id(job),
             header_hex: hex::encode(job.header),
             target_hex: hex::encode(padded),
             height: 0,
@@ -346,7 +493,55 @@ impl PearlRuntime {
             ntime_hex: String::new(),
             eq_params: job.cert_version.to_string(),
             eq_pers: String::new(),
-        })
+        }
+    }
+
+    pub fn pick_served_job(&self) -> Option<ExternalStreamJob> {
+        if let Some((job, true)) = self.latest_with_flag() {
+            return Some(self.ext_stream_for(&job));
+        }
+        self.upstream
+            .as_ref()
+            .and_then(|u| u.latest_fresh())
+            .map(|j| j.ext_stream_job())
+    }
+
+    #[allow(clippy::type_complexity)]
+    pub fn status(
+        &self,
+    ) -> (
+        bool,
+        Option<String>,
+        Option<u64>,
+        u8,
+        bool,
+        bool,
+        Option<String>,
+        Option<u64>,
+        usize,
+    ) {
+        let (native_job_id, native_age_ms) = match self.latest.read().unwrap().as_ref() {
+            Some((j, t, _)) => (
+                Some(Self::job_id(j)),
+                Some(t.elapsed().as_millis() as u64),
+            ),
+            None => (None, None),
+        };
+        let (up_enabled, up_connected, up_job_id, up_age_ms, up_pending) = match &self.upstream {
+            Some(u) => u.status(),
+            None => (false, false, None, None, 0),
+        };
+        (
+            !self.addr.is_empty(),
+            native_job_id,
+            native_age_ms,
+            self.native_pct,
+            up_enabled,
+            up_connected,
+            up_job_id,
+            up_age_ms,
+            up_pending,
+        )
     }
 
     /// `PearlSubmit` job-id lookup — returns the job iff it is still fresh
@@ -431,6 +626,8 @@ mod tests {
             share_ease,
             Duration::from_millis(ttl_ms),
             Duration::from_millis(2_000),
+            None,
+            100,
         )
     }
 
@@ -754,9 +951,9 @@ mod tests {
             for i in 0..SEEN_JACKPOTS_CAP - 1 {
                 let mut k = [0u8; 32];
                 k[..8].copy_from_slice(&(i as u64).to_le_bytes());
-                seen.jackpots.insert(k);
+                seen.jackpots.get_mut(&job_id).unwrap().insert(k);
             }
-            assert_eq!(seen.jackpots.len(), SEEN_JACKPOTS_CAP);
+            assert_eq!(seen.jackpots.get(&job_id).unwrap().len(), SEEN_JACKPOTS_CAP);
         }
         match rt.claim_verified(&job_id, &job, known) {
             Err(PearlSubmitError::Duplicate) => {}
@@ -766,5 +963,192 @@ mod tests {
             Err(PearlSubmitError::Busy) => {}
             other => panic!("expected Busy at cap, got {other:?}"),
         }
+    }
+
+    fn upstream_seeded(
+        header: [u8; 76],
+        raw_id: &str,
+        target_be: [u8; 32],
+        age: Duration,
+    ) -> Arc<PearlUpstream> {
+        let up = PearlUpstream::new(crate::pearl_upstream::PearlUpstreamConfig {
+            endpoint: "127.0.0.1:1".to_string(),
+            wallet: "prl1w".to_string(),
+            worker: "w".to_string(),
+            password: "x".to_string(),
+            job_ttl: Duration::from_millis(90_000),
+        });
+        up.seed_job(UpstreamPearlJob {
+            served_id: format!("{}{raw_id}", crate::pearl_upstream::UPSTREAM_JOB_PREFIX),
+            raw_id: raw_id.to_string(),
+            header,
+            target_be,
+            height: 0,
+            cert_version: 3,
+            received_at: Instant::now() - age,
+        });
+        up
+    }
+
+    #[test]
+    fn pick_served_job_native_only() {
+        let rt = runtime("127.0.0.1:1", 256, 30_000);
+        let j = job([0xaau8; 76], BigUint::from(10u8), 3);
+        let id = PearlRuntime::job_id(&j);
+        rt.cache_job(j, Instant::now());
+        let ext = rt.pick_served_job().unwrap();
+        assert_eq!(ext.job_id, id);
+        assert_eq!(ext.protocol, "pearlgw");
+    }
+
+    #[test]
+    fn pick_served_job_upstream_only() {
+        let up = upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::ZERO);
+        let rt = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+        let ext = rt.pick_served_job().unwrap();
+        assert_eq!(ext.job_id, "prlu:u1");
+        assert_eq!(ext.protocol, "pearlpool");
+        assert_eq!(ext.coin, "PRL");
+        assert_eq!(ext.algorithm, "pearlhash");
+        assert_eq!(ext.target_hex, hex::encode([0x11u8; 32]));
+        assert_eq!(ext.eq_params, "3");
+    }
+
+    #[test]
+    fn pick_served_job_hybrid_pct_selection() {
+        let j = job([0xaau8; 76], BigUint::from(10u8), 3);
+        let id = PearlRuntime::job_id(&j);
+        let up = upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::ZERO);
+        let rt100 =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up.clone()), 100);
+        assert_eq!(rt100.pick_served_job().unwrap().job_id, id);
+        let rt0 =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up), 0);
+        assert_eq!(rt0.pick_served_job().unwrap().job_id, "prlu:u1");
+    }
+
+    #[test]
+    fn pick_served_job_stale_upstream_and_unselected_native() {
+        let stale_up =
+            upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::from_millis(91_000));
+        let rt = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(stale_up.clone()), 100);
+        assert!(rt.pick_served_job().is_none());
+        let j = job([0xaau8; 76], BigUint::from(10u8), 3);
+        let rt0 =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(stale_up), 0);
+        assert!(rt0.pick_served_job().is_none());
+    }
+
+    #[test]
+    fn cache_job_keeps_serve_flag_per_job_id() {
+        let mut rt = runtime("127.0.0.1:1", 256, 30_000);
+        let ja = job([0xaau8; 76], BigUint::from(10u8), 3);
+        rt.cache_job(ja.clone(), Instant::now());
+        assert!(rt.latest_with_flag().unwrap().1);
+        rt.native_pct = 0;
+        rt.cache_job(ja, Instant::now());
+        assert!(rt.latest_with_flag().unwrap().1);
+        rt.cache_job(job([0xbbu8; 76], BigUint::from(10u8), 3), Instant::now());
+        assert!(!rt.latest_with_flag().unwrap().1);
+        assert!(rt.pick_served_job().is_none());
+    }
+
+    #[test]
+    fn claim_distinct_job_ids_evicts_oldest_beyond_cap() {
+        let rt = runtime("127.0.0.1:1", 256, 30_000);
+        for i in 0..SEEN_JOB_IDS_CAP {
+            rt.claim(&format!("job-{i}"), [i as u8; 32]).unwrap();
+        }
+        rt.claim("job-new", [0xffu8; 32]).unwrap();
+        {
+            let seen = rt.seen.lock().unwrap();
+            assert_eq!(seen.jackpots.len(), SEEN_JOB_IDS_CAP);
+            assert!(!seen.jackpots.contains_key("job-0"));
+            assert!(seen.jackpots.contains_key("job-new"));
+        }
+        rt.claim("job-0", [0u8; 32]).unwrap();
+        match rt.claim("job-new", [0xffu8; 32]) {
+            Err(PearlSubmitError::Duplicate) => {}
+            other => panic!("expected Duplicate, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn verify_upstream_submission_fixture_and_dedup() {
+        let (job, proof_b64) = fixture();
+        let target_be: [u8; 32] = hex::decode(FIXTURE_SHARE_TARGET_HEX)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let up = upstream_seeded(job.header, "u-fix", target_be, Duration::ZERO);
+        let rt = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
+        let (ujob, outcome) = rt
+            .verify_upstream_submission("prlu:u-fix", &proof_b64)
+            .await
+            .expect("fixture share verifies against upstream-issued target");
+        assert_eq!(ujob.raw_id, "u-fix");
+        assert_eq!(hex::encode(outcome.jackpot_hash), FIXTURE_JACKPOT_HEX);
+        match rt.verify_upstream_submission("prlu:u-fix", &proof_b64).await {
+            Err(PearlSubmitError::Duplicate) => {}
+            other => panic!("expected Duplicate, got {other:?}"),
+        }
+        match rt.verify_upstream_submission("prlu:nope", &proof_b64).await {
+            Err(PearlSubmitError::Stale) => {}
+            other => panic!("expected Stale, got {other:?}"),
+        }
+        let rt_no_up = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(job), None, 100);
+        match rt_no_up.verify_upstream_submission("prlu:u-fix", &proof_b64).await {
+            Err(PearlSubmitError::Stale) => {}
+            other => panic!("expected Stale without upstream, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn cross_source_dedup_namespaces() {
+        let (job, proof_b64) = fixture();
+        let target_be: [u8; 32] = hex::decode(FIXTURE_SHARE_TARGET_HEX)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let up = upstream_seeded(job.header, "u-fix", target_be, Duration::ZERO);
+        let rt = PearlRuntime::for_test_hybrid(
+            "127.0.0.1:1",
+            FIXTURE_SHARE_EASE,
+            30_000,
+            Some(job.clone()),
+            Some(up),
+            100,
+        );
+        let nid = PearlRuntime::job_id(&job);
+        rt.verify_submission(&nid, &proof_b64).await.unwrap();
+        rt.verify_upstream_submission("prlu:u-fix", &proof_b64)
+            .await
+            .unwrap();
+        match rt.verify_submission(&nid, &proof_b64).await {
+            Err(PearlSubmitError::Duplicate) => {}
+            other => panic!("expected native Duplicate, got {other:?}"),
+        }
+        match rt.verify_upstream_submission("prlu:u-fix", &proof_b64).await {
+            Err(PearlSubmitError::Duplicate) => {}
+            other => panic!("expected upstream Duplicate, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn status_reports_both_legs() {
+        let (j, _) = fixture();
+        let nid = PearlRuntime::job_id(&j);
+        let up = upstream_seeded(j.header, "u1", [0x11u8; 32], Duration::ZERO);
+        let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(up), 37);
+        let (n_en, njid, nage, pct, u_en, u_conn, ujid, uage, pend) = rt.status();
+        assert!(n_en);
+        assert_eq!(njid.as_deref(), Some(nid.as_str()));
+        assert!(nage.is_some());
+        assert_eq!(pct, 37);
+        assert!(u_en);
+        assert!(!u_conn);
+        assert_eq!(ujid.as_deref(), Some("prlu:u1"));
+        assert!(uage.is_some());
+        assert_eq!(pend, 0);
     }
 }

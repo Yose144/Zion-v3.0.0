@@ -11,6 +11,7 @@ pub mod notifications;
 pub mod payout;
 pub mod pearl;
 pub mod pearl_gateway;
+pub mod pearl_upstream;
 pub mod pool;
 pub mod pplns;
 pub mod qtc_native;
