@@ -25,6 +25,7 @@ pub mod share_forwarder;
 pub mod share_relay;
 pub mod store;
 pub mod stratum;
+pub mod stratum_pearl;
 pub mod stratum_qtu;
 pub mod stratum_v1;
 pub mod telemetry;

@@ -64,6 +64,7 @@ pub struct Pool {
     paid_block_heights: HashSet<u64>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
+    pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
 }
 
 impl Pool {
@@ -100,6 +101,7 @@ impl Pool {
             sent_payouts: HashSet::new(),
             paid_block_heights: HashSet::new(),
             telemetry,
+            pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         }
     }
 

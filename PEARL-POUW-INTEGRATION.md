@@ -548,3 +548,106 @@ Raw verification artifacts in `/tmp/pearl-cuda-evidence/`:
 `probe-final-edge-raw.txt`; the library gate and review history are in
 `probe-hardening-verification.txt`. These record successful command exit
 statuses separately from the frozen mining evidence.
+
+## 11. Quantus-style ZION pool integration (2026-10-15, in progress)
+
+User direction: Pearl must run **through our ZION pool**, with the same
+pool-facing structure as Quantus, rather than leaving the CUDA miner
+connected directly to an external pool. Suprnova in §10 was an isolated
+validation of GPU proof generation and the upstream protocol.
+
+### Confirmed Quantus model
+
+Code and a read-only sample of the live pool's `/stats` agree that Quantus
+has two work sources: our node via QUIC and an external pool. At inspection,
+`QTU.native.enabled=true`, `connected=true`, `share_pct=10`, and upstream
+was `eu.lproute.com:5660` with a fresh job. The percentage selects native
+jobs; it is not a guaranteed wall-time/hashrate percentage. Older values
+in operational notes are historical, not this live sample.
+
+- `qtc_native.rs`: node jobs, separate share/network targets, local PoW
+  verification, only network winners queued back to the node.
+- `stratum_qtu.rs` + `stratum.rs`: standard Quantus `login/job/submit`
+  adapter on our pool, alongside V3; both use the same work sources.
+- Native selection falls back to upstream when the selected native job
+  is unavailable/stale. Source identity follows the served job.
+- Accepted external work enters the common weighted PPLNS accounting and
+  coin-scoped telemetry. This credit is not proof of an external payout
+  or a block accepted by the node.
+
+The current QTU adapter also maps an upstream `Unknown` outcome to
+`accepted_unknown`. Pearl must not present an unknown upstream outcome as
+confirmed upstream acceptance; local verification, pool credit, upstream
+acknowledgement and node acceptance remain distinct observations.
+
+### Pearl parity gaps and staged implementation
+
+Pearl already has a native gateway source, a full local verifier, V3
+`PearlSubmit`, PPLNS and PRL telemetry. Missing are the standalone Pearl
+stratum adapter, a long-running pool-owned upstream connection, and the
+native/upstream source-selection policy/status surface. The existing
+`PearlPoolClient` is currently used by the diagnostic, not the pool.
+
+1. **Native pool front-end (done):** `V31/L1/pool/src/stratum_pearl.rs`
+   implements the object-params `mining.authorize` / `mining.notify` /
+   `mining.submit` dialect the Suprnova probe observed. Pearl detection
+   (`is_pearl_stratum`: `mining.authorize` with object `params`) runs
+   before generic V1 detection on both plain TCP and TLS listeners, so a
+   Pearl authorize can no longer be claimed by `is_stratum_v1`. The new
+   `ZION_POOL_PEARL_STRATUM=1` gate defaults **off** — disabled, the same
+   connection falls into the V1 handler and errors on object-param
+   submits. One `PearlRuntime` is created once in `Pool::new` and shared
+   by every `StratumServer` (asserted by `Arc::ptr_eq` in the E2E test):
+   one job cache, one `Semaphore(2)` verify budget, one
+   `(job_id, jackpot)` duplicate set (65 536 cap, cleared only on job-id
+   change; capacity exhaustion returns `busy`, never evicts).
+   `handle_pearl_session` authorizes (`wallet` 256 B, `worker`/`agent`
+   128 B bounds; `pass` never logged), registers the worker and touches
+   telemetry immediately, pushes the cached job, then loops on
+   `read_frame` (linear, cancellation-safe, 4 MiB cap enforced before
+   over-allocation) versus a 250 ms job-rotation poll that re-notifies
+   whenever the complete wire params change. Writes go through
+   `pearl_send` (10 s timeout); submits flow through the shared
+   `process_pearl_submission`, which also serves the V3 `PearlSubmit`
+   arm — same freshness check, `spawn_blocking` verify, post-verify
+   metadata re-check (`claim_verified` compares header, target and
+   `cert_version` under the job guard before claiming the jackpot, and
+   duplicate is checked before capacity), PPLNS/`PearlExternal`
+   telemetry/routing recorded exactly once. Only `is_block` outcomes are
+   forwarded to the gateway (`submitPlainProof` is an async enqueue —
+   not node acceptance).
+2. **Isolated validation (done):** the frozen, independently verified
+   CUDA proof (`tests/fixtures/pearl_cuda_live_share.json`, sha256
+   `07119029…5db9`, byte-identical to Suprnova `submit-2.json`) was
+   submitted through a real loopback ZION pool connection using the
+   miner's own `PearlPoolClient`: authorize → `mining.notify` →
+   `mining.submit` → `result:true`, one PPLNS share; replay on a second
+   session → `duplicate`, no extra credit; stale job-id → `stale` plus a
+   fresh notify push; malformed proof → `rejected:*`, no credit;
+   `is_block=false` produced zero `submitPlainProof` calls on the mock
+   gateway. A synthetic same-header job whose target equals the issued
+   share target (`share_ease=1`) exercises the block-candidate path: the
+   proof is credited once and `submitPlainProof` reaches the mock with
+   verbatim target digits and `cert_version`; a duplicate does not
+   re-forward. V3 path test covers `coin/algorithm` gating
+   (`unsupported_coin_or_algorithm`), accept, and V3↔native cross-path
+   dedup. These are local-pool semantics on synthetic share targets —
+   not live own-node acceptance, and no production environment was
+   touched. Gates: `stratum_pearl` 12/12, `pearl_gateway::tests` 14/14,
+   `stratum::tests::pearl_` 6/6, `qtu_stratum_end_to_end` 1/1, V1
+   `handles_` 4/4, `git diff --check` clean — raw log
+   `/tmp/pearl-cuda-evidence/pearl-stage1-gates.txt` plus the corrective
+   re-run `pearl-stage1-corrective-gates.txt`.
+3. **Upstream/hybrid stage (pending):** pool-owned Pearl upstream client,
+   source-tagged jobs, bounded forwarding and configurable native share
+   selection/fallback, analogous to Quantus. Only a matching positive
+   upstream submit response can be labelled upstream accepted. Do not
+   copy Quantus nonce/difficulty representation into Pearl PlainProofs.
+4. **Production gate unchanged:** no PRL auto-routing enablement before
+   actual live node `Accepted`. Obtaining a locally accepted pool share
+   is a separate, earlier validation step and does not require finding a
+   network block first.
+
+Stage 1 is implemented and test-verified only; nothing was deployed or
+enabled on the production pool. §10's three Suprnova accepts remain the
+frozen live result.
