@@ -23,6 +23,7 @@ pub mod autotuner;
 pub mod consciousness;
 pub mod consciousness_engine;
 pub mod ekam_field;
+pub mod endpoints;
 pub mod error;
 pub mod health_poller;
 pub mod hiran_inference;
