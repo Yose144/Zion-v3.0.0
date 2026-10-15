@@ -473,9 +473,78 @@ receipt/proof hashes, geometry, and independent verification outcomes.
 - Raw local artifacts: `/tmp/pearl-cuda-evidence/live-probe-v1/run.log`,
   `evidence/submit-{2,3,4}.json`, `evidence/summary.json`, and
   `official-v3-verification.json`; pre/postflight logs are in the parent
-  directory. Original copies remain on the rig and Edge. Raw proof
-  payloads are outside Git; the committed snapshot records their hashes.
+  directory. Original copies were left on the rig at
+  `/home/miner/pearl-probe-evidence-v1/` and on Edge at
+  `/tmp/pearl-probe-evidence-v1/`. Raw proof payloads are outside Git;
+  the committed snapshot records their hashes.
 
 Remaining production gates: live ZION `PearlSubmit` acknowledgement,
 block-meeting proof forwarding through the gateway, and actual node
 `Accepted`. External-pool share acceptance does not waive these gates.
+
+### Reproducing the offline checks
+
+`V31/L1/miner/verify_pearl_pool_proofs.py` is byte-identical to the checker
+used for the frozen verification above. It requires the official
+`pearl_mining` package in the execution interpreter, or `--remote` can
+reuse Edge's existing `/opt/pearl/.venv`. Only frozen input bytes travel
+over SSH; it makes no pool/node RPC calls or mining submissions.
+
+```sh
+python3 V31/L1/miner/verify_pearl_pool_proofs.py --self-test
+python3 V31/L1/miner/verify_pearl_pool_proofs.py \
+  --remote zion-new --output /tmp/pearl-official-v3-recheck.json \
+  /tmp/pearl-cuda-evidence/live-probe-v1/evidence/submit-{2,3,4}.json
+```
+
+Use the original receipt files, not the hash-only committed snapshot, as
+inputs. Choose a fresh output filename: existing evidence is never
+overwritten. Arithmetic self-test needs no upstream package; it is not
+itself proof verification. Python `-O` is rejected so validation assertions
+cannot silently disappear.
+
+### Diagnostic control hardening and final build (2026-10-15)
+
+The external protocol client is `src/auxpow/pearl_pool.rs` and the
+`gpu-cuda`-gated diagnostic binary is `src/bin/pearl_pool_probe.rs` (paths
+relative to `V31/L1/miner`). This does not wire Suprnova into production
+routing. The client caches pre-authorization jobs, validates cert versions
+before narrowing, bounds frames/proofs, rejects target multiplication
+overflow, and only counts a matching `mining.submit` response as accepted.
+
+The final probe preserves one shutdown future across startup, mining,
+proof building and submit waits. Expired/cancelled checkpoints prevent new
+GPU/proof work and submissions; an in-flight owned task is drained once
+without resetting the GPU. Notification floods cannot starve cancellation.
+Unwritten/cancelled submits clear stale request state, do not fabricate
+receipts or rejection counts, and retain the real stop reason. Transport
+failure is not labelled as timeout. Startup/session errors pass through a
+single summary-writing boundary; existing evidence is never overwritten.
+The deadline bounds new work and I/O, not forced preemption of a hung GPU
+kernel; storage failure can still prevent evidence from being written.
+
+Focused verification: **29/29** Pearl/protocol library tests and **15/15**
+probe regression tests passed, including pre/post-write cancellation,
+ready-task priority, notification floods, stale jobs, no-request outcome
+mapping and summary/error handling. `git diff --check` passed; new Rust
+files were formatted without unrelated churn. The versioned Python
+checker passed its arithmetic self-test and byte-identity check against
+the exact checker that produced the frozen official verification. No full
+workspace suite or additional live mining run is claimed.
+
+Final diagnostic artifact on Edge:
+`/tmp/pearl-cuda-out/pearl_pool_probe-hardened-final`, **1,759,576 bytes**,
+MD5 `a8f77f173ea3de4ec73a9e19b265a07f`, SHA-256
+`e07fbd1ef587f9fc032f51ca71333b29a5a1066fb8bbf173a36a3f10ec399bd2`.
+Built `--release --locked --features gpu-cuda` with generic x86-64 CPU
+flags; `--help` passed and maximum required GLIBC is **2.30**, compatible
+with the rig's 2.31. This final control-flow build was **not** deployed or
+live-mined; the three accepted shares belong to the original MD5 `43151874…`
+artifact above. Final elapsed time now includes startup, unlike that
+original sample's mining-only timer.
+
+Raw verification artifacts in `/tmp/pearl-cuda-evidence/`:
+`probe-final-test-raw.txt`, `probe-final-build-dockerlog-raw.txt`,
+`probe-final-edge-raw.txt`; the library gate and review history are in
+`probe-hardening-verification.txt`. These record successful command exit
+statuses separately from the frozen mining evidence.
