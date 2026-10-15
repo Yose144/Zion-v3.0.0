@@ -638,16 +638,38 @@ native/upstream source-selection policy/status surface. The existing
    `handles_` 4/4, `git diff --check` clean — raw log
    `/tmp/pearl-cuda-evidence/pearl-stage1-gates.txt` plus the corrective
    re-run `pearl-stage1-corrective-gates.txt`.
-3. **Upstream/hybrid stage (pending):** pool-owned Pearl upstream client,
-   source-tagged jobs, bounded forwarding and configurable native share
-   selection/fallback, analogous to Quantus. Only a matching positive
-   upstream submit response can be labelled upstream accepted. Do not
-   copy Quantus nonce/difficulty representation into Pearl PlainProofs.
+3. **Upstream/hybrid stage (done):** `V31/L1/pool/src/pearl_upstream.rs`
+   is a pool-owned Pearl stratum client (wraps the diagnostic
+   `PearlPoolClient`): `ZION_POOL_PEARL_UPSTREAM`/`_WALLET`/`_WORKER`/
+   `_PASSWORD`/`_JOB_TTL_MS` env surface, authorize → notify cache →
+   serialized `mining.submit` over a bounded 32-deep channel (excess →
+   `busy`), 30 s read timeout, 5→60 s reconnect backoff, pending submits
+   drained to `Unknown` on disconnect. Upstream jobs are served under
+   `prlu:<upstream_id>`; `PearlRuntime` holds both legs and
+   `pick_served_job()` mirrors `NativeQtcState`: per-new-native-job
+   `serve_native = job_seq % 100 < ZION_POOL_PEARL_NATIVE_PCT`
+   (default 100), native fresh+selected wins, otherwise fresh upstream,
+   otherwise nothing — an unselected native job never self-falls-back.
+   `process_pearl_submission` routes `prlu:` ids to
+   `verify_upstream_submission` (local verify against the upstream-issued
+   share target — `target` field == `share_target`, no `share_ease`
+   multiply; `is_block` meaningless and never gateway-forwarded) → dedup
+   claim → upstream submit → `accepted` only on a literal upstream
+   `result:true`; `result:false` → `rejected:<msg>`; dropped/timeout →
+   `accepted_unknown` (locally verified work is credited, never labelled
+   an upstream accept — same convention as QTU); full channel → `busy`.
+   Dedup generalized to a per-served-id map (8 ids × 65 536 jackpots,
+   duplicate checked before capacity). `/api` auxpow summary exposes
+   `pearl.{native,upstream}` leg status. Gates: full `zion-pool --lib`
+   **275/275** including 10 new `pearl_upstream` tests, hybrid pick,
+   cross-source dedup, upstream accept/reject/drop mapping and V3 `prlu:`
+   routing — log `/tmp/pearl-cuda-evidence/pearl-stage2-gates.txt`.
 4. **Production gate unchanged:** no PRL auto-routing enablement before
    actual live node `Accepted`. Obtaining a locally accepted pool share
    is a separate, earlier validation step and does not require finding a
    network block first.
 
-Stage 1 is implemented and test-verified only; nothing was deployed or
-enabled on the production pool. §10's three Suprnova accepts remain the
-frozen live result.
+Stages 1–2 are implemented and test-verified only; nothing was deployed
+or enabled on the production pool (upstream leg activates only when
+`ZION_POOL_PEARL_UPSTREAM` is configured). §10's three Suprnova accepts
+remain the frozen live result.
