@@ -1,15 +1,16 @@
 # Pearl (PRL) PoUW — canonical spec, gap analysis, integration plan
 
-Status: **2026-10-13 — LOCAL FIXES VERIFIED ON GTX 1070 Ti + OFFLINE
-UPSTREAM V3 PROOF VERIFIED** (see §9). Pool/miner/runtime fixes are
-implemented and tested but **NOT deployed** in this continuation (user
-request: repairs + tests only). Edge infra remains deployed from the
-earlier phase: `pearld`/`oyster`/`pearl-gateway` units live,
-`getMiningInfo` on `127.0.0.1:8477`, `zion-pool` parsing real gateway jobs —
-last recorded node sample `blocks=headers=127309`, `cert_version=3`. No
-live Pearl share has been accepted by the pool and no block has been
-proved/accepted upstream. The production SMOS wrapper (v1.7) miner on the
-rig is untouched.
+Status: **2026-10-14 — LIVE CUDA → SUPRNOVA: 3 ACCEPTED SHARES,
+ALL 3 INDEPENDENTLY VERIFIED BY THE OFFICIAL V3 VERIFIER** (see §10 and
+`PEARL-POUW-LIVE-VERIFICATION.json`). The isolated diagnostic used the
+GTX 1070 Ti native CUDA backend and real cert3 jobs. This establishes
+external-pool share acceptance, **not** live ZION `PearlSubmit` acceptance
+or a block accepted by `pearld`. Production PRL auto-routing remains
+disabled. No production binary, SMOS group/wrapper, Hiran/SRBMiner
+configuration, pool/gateway environment, or running service was changed.
+The local-fixes-only stage in §9 is historical; its last recorded node
+sample was `blocks=headers=127309`. Height 127856 in §10 belongs to the
+external pool's captured job, not a fresh measurement of our node's tip.
 Goal: Pearl as a native mining algo in zion-miner — OpenCL **and** a
 dedicated NVIDIA CUDA backend — shares via ZION V3 pool bridge (:8444) →
 Pearl gateway on Edge → `prl1p…` payout wallet.
@@ -108,8 +109,8 @@ gateway template rotation triggers a rebroadcast (1s feed loop).
 | G9 | Sparse noise matvec | `E[x][first]-E[x][second]` | `pearl_apply_noise_a/b` match | ✅ MATCH |
 | G10 | Jackpot accum | `rotl13 ^ xor-fold`, `tid=(ll/rank-1)%16` | exact match incl. `LROT=13` | ✅ MATCH |
 | G11 | Jackpot hash | `blake3_keyed(a_noise_seed, 64B)` | `blake3_keyed_hash_64_gpu` match | ✅ MATCH |
-| G12 | Tile/proof mapping | `compute_leaf_indices_from_rows`, patterns partition | `auxpow/pearl.rs::leaf_indices_from_rows` + `tile_row_col_indices` (kernel 4×8 hash-tile decode) | ✅ DONE (E2E pending) |
-| G13 | PlainProof bincode | serde bincode struct order + Option tag | `auxpow/pearl.rs::encode_plain_proof` + `proof_encoding_layout` test; pool `decode_plain_proof` decodes the same layout | ✅ DONE (E2E pending) |
+| G12 | Tile/proof mapping | `compute_leaf_indices_from_rows`, patterns partition | `auxpow/pearl.rs::leaf_indices_from_rows` + `tile_row_col_indices` (kernel 4×8 hash-tile decode) | ✅ External CUDA pool + official V3 verified (§10); live ZION path pending |
+| G13 | PlainProof bincode | serde bincode struct order + Option tag | `auxpow/pearl.rs::encode_plain_proof` + `proof_encoding_layout` test; pool `decode_plain_proof` decodes the same layout | ✅ External CUDA pool + official V3 verified (§10); live ZION path pending |
 | G14 | Config choice | miner chooses geometry/config; `getMiningInfo` supplies header, target and cert_version | miner-chosen `PearlMineConfig` (env-overridable, current default m=n=1024, k=2048, rank=128 — the prior k=1024/rank=128 was invalid: upstream `public_params_sanity_check` requires `k >= 16·rank`); upstream-legal — `PlainProof` carries the dims | ✅ DONE |
 
 ### Fixes applied beyond gap table (2026-10-12)
@@ -388,3 +389,93 @@ stays 256 and no deployed env changed.
   `cargo test --locked --manifest-path V31/Cargo.toml -p zion-miner --lib auxpow::pearl`
   `cargo test --locked --manifest-path V31/Cargo.toml -p zion-miner --lib -- runtime::tests::<name>`
   `cargo test --locked --manifest-path V31/Cargo.toml -p zion-miner --features gpu-cuda --lib --no-run`
+
+## 10. Live external-pool verification (2026-10-14)
+
+### Observed workflow and scope
+
+```text
+GTX 1070 Ti native CUDA → isolated pearl_pool_probe
+  → Suprnova mining.submit → 3 matching-id accepted responses
+frozen submitted PlainProofs → official Pearl V3 verifier → all 3 valid
+```
+
+This is not a live test of the ZION V3 pool/gateway/node path. The custom
+ZION `PearlSubmit` round-trip and an actual Pearl block accepted by our
+node remain unobserved. Gateway `submitted` is still only an asynchronous
+enqueue acknowledgement. `profit.rs` PRL auto-routing stays disabled.
+
+The bounded run requested three accepted shares, with `--max-seconds 300`
+and the default 250 ms idle gap. It stopped with `shares_target_met`:
+**3 submitted, 3 accepted, 0 rejected, 0 stale results discarded, 8 completed
+matrix attempts**. The reported mining-session time was 2.257974394 s;
+this original binary started that timer after CUDA init and authorization.
+This small, success-stopped sample on one easy-target job is **not a
+hashrate, profitability, or network-block yield benchmark**.
+
+### Frozen wire evidence
+
+- Pool `prl.suprnova.cc:3370`, worker `zion-prl-cuda-probe`.
+- Job `1cc53726_20000`, external-pool height **127856**, `cert_version=3`.
+- Header 76 bytes; share target 32-byte BE; GPU jackpot interpreted LE.
+- Dimensions `(m,n,k,rank)=(1024,1024,2048,128)`, tile 4×8; adjustment factor
+  `4 * 8 * (2048 / 128) * 128 = 65536`. Each proof is **26,321 bytes**.
+- Issued target:
+  `00000000d1b71758e219652bd3c36113404ea4a8c154c985f06f694467381d7d`.
+- Kernel target, exactly issued target ×65536, without overflow:
+  `0000d1b71758e219652bd3c36113404ea4a8c154c985f06f694467381d7d0000`.
+
+| submit id | nonce (matrix selector) | tile | literal pool response |
+|---|---|---|---|
+| 2 | 1792011319289854184 | 28565 | `{"error":null,"id":2,"result":true}` |
+| 3 | 1792011319289854185 | 12004 | `{"error":null,"id":3,"result":true}` |
+| 4 | 1792011319289854191 | 22430 | `{"error":null,"id":4,"result":true}` |
+
+All receipts have `request_written=true`, matching request/response IDs,
+`method=mining.submit`, matching job/proof fields, and no transport error.
+These are not authorization responses or locally inferred accepts.
+
+### Independent official V3 verification
+
+The checker decodes each saved proof with official `pearl_mining`, checks
+V3 eligibility, exact dimensions/tile/factor and header round-trip, and
+confirms the recorded GPU jackpot is within the exact kernel target.
+The official verifier accepts all three at `nbits_override=0x1d00d1b7`:
+this compact target rounds the issued pool target **down**, so its success
+proves validity under a slightly stricter bound, not a relaxed one.
+The immutable header is retained; only the verifier's difficulty override
+changes for these offline checks. No RPC or further shares were submitted.
+
+| id | adjacent lower compact target (reject) | upper compact target (accept) | proof SHA-256 |
+|---|---|---|---|
+| 2 | `0x1d00be9b` | `0x1d00be9c` | `c37423d18de0656f6bb1ac11f709dd2c80aaf0addbe9300a36f3de71c689b6f1` |
+| 3 | `0x1c7df4d7` | `0x1c7df4d8` | `3c5b568e5576006b4b4fa4f010cad8f90e171f957df329af7093a260dc1aa84d` |
+| 4 | `0x1c3e0c8a` | `0x1c3e0c8b` | `97a48409a6c8b93e31dc8d31b821bcf05ca342be2d08eacab82e768f16131fd0` |
+
+Every lower-bound rejection reports `Jackpot condition not satisfied: hash
+does not meet difficulty target`. Every upper/floor check reports `Mining
+solution verified successfully`. `node_acceptance` remains `not_observed`.
+The committed `PEARL-POUW-LIVE-VERIFICATION.json` pins the responses,
+receipt/proof hashes, geometry, and independent verification outcomes.
+
+### Isolation and artifact identity
+
+- Live binary MD5 **`43151874688fda1705d746f43ac78cb2`**, 1,738,672 bytes,
+  max required `GLIBC_2.30`; installed under an isolated probe filename,
+  not the production miner path. Subsequent control-flow hardening is a
+  separate build, not another live mining sample.
+- Before/after: free GPU memory **909 MiB**, temperature **72°C**, Hiran
+  `/health` OK; unchanged PIDs for Hiran `2723173`, production miner
+  `2762270`, SRBMiner `2746741`. No inference latency/throughput benchmark
+  was made; process continuity and health do not establish zero contention.
+- No SMOS group/wrapper changes, service restarts, production binary swaps,
+  or pool/gateway/share-ease environment changes during this probe.
+- Raw local artifacts: `/tmp/pearl-cuda-evidence/live-probe-v1/run.log`,
+  `evidence/submit-{2,3,4}.json`, `evidence/summary.json`, and
+  `official-v3-verification.json`; pre/postflight logs are in the parent
+  directory. Original copies remain on the rig and Edge. Raw proof
+  payloads are outside Git; the committed snapshot records their hashes.
+
+Remaining production gates: live ZION `PearlSubmit` acknowledgement,
+block-meeting proof forwarding through the gateway, and actual node
+`Accepted`. External-pool share acceptance does not waive these gates.
