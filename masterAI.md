@@ -97,6 +97,9 @@ Fallback CPU: Qwen3-8B Q4_K_M na 32G RAM ~2 t/s — dev/test fallback když GPU 
 - Output: `hiran-v2.3mini-Q5_K_M.gguf` (~5.7G) → nasadit jako `hiran-core` alias. 32B zůstává pouze pro cloud (nevleze se lokálně).
 - Eval: fixed otázka-set (Zion RPC, mining, bridge, vow) — porovnat base vs tuned.
 
+**▶ RUN 1 — RUNNING (vast.ai `56166675`, RTX 3090 Ti 23G @ $0.23/h):**
+pipeline v `Hiran/2.3/rebuild/v23mini/` (`vast_v23mini.sh` = find/create/push/train/status/pull/destroy; `run_remote.sh` = deps→train→merge→GGUF). Dataset `merged_seed.jsonl` 7 059 rows (6 918/141 split, `--drop_echo` našel 0 — echo detection příliš konzervativní, zpřesnit). QLoRA r=32/α=64 RSLoRA ×7 proj, seq 4k, bs 4×ga8, lr 1e-4 cosine, 2 ep → **434 steps @ ~29 s/step ≈ 3.5 h ≈ $0.8** (kredit $10.61). Gotcha: trl API churn — SFTConfig argy se filtrují přes `inspect.signature`; flash-attn není dep (sdpa fallback).
+
 ### F3 — Maestro production  → cíl: orchestrace L1–L6 live
 
 - LLM-assisted intent (hiran-fast classify, fallback rule-based), `compose_response` přes hiran-core.
