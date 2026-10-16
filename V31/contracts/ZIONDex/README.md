@@ -2,10 +2,10 @@
 
 > **⚠️ DEPRECATED (2026-09-03):** ZIONDex AMM je **deprecated**. Swapy se nyní provádějí přes
 > **Uniswap V3** na Base (wZION/WETH pool). Tyto kontrakty nejsou dále udržovány.
-> Viz [`L2contracts.md`](../../../L2contracts.md) §2 (External DEX) a
-> [`ZIS_WALLET_PLAN.md`](../../../ZIS_WALLET_PLAN.md) pro aktuální architekturu.
+> Viz [`L2contracts.md`](../../../docs/3.2/L2contracts.md) §2 (External DEX) a
+> [`ZIS_WALLET_PLAN.md`](../../../docs/3.2/ZIS_WALLET_PLAN.md) pro aktuální architekturu.
 >
-> **Canonical contract addresses:** See [`L2contracts.md`](../../../L2contracts.md) in repo root.
+> **Canonical contract addresses:** See [`L2contracts.md`](../../../docs/3.2/L2contracts.md) in repo root.
 > This README is kept for historical reference only.
 
 ZIONDex is a Uniswap V2–style AMM DEX written in Solidity 0.8.20 with two

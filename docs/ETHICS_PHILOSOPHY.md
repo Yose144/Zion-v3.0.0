@@ -378,6 +378,6 @@ Síť, která neodděluje technologii od moudrosti, ekonomii od péče, umělou 
 **Související dokumenty:**
 - [Whitepaper](./whitepaper.md) — technická specifikace protokolu
 - [Genesis](./genesis.md) — česká dokumentace genesis bloku s ASCII Stromem života
-- [evoluZion V2](../evoluZionV2.md) — vize přechodu PoW → Proof-of-Care
+- [evoluZion V2](3.2/evoluZionV2.md) — vize přechodu PoW → Proof-of-Care
 - [Creator Statement](./CREATOR_STATEMENT.txt) — GPG prohlášení tvůrce
 - [Admin & Gen Z Statement](./ADMIN_GENZ_STATEMENT.txt) — předání governance generaci Z

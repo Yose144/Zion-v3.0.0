@@ -36,7 +36,7 @@ V repozitáři existuje starší esoterický text [`../../docs2.9/ZION_OASIS/SAC
 - **Není terapeutická rada.** Obrazy o hranicích, péči a odchodu jsou literární; nejsou návodem ke zvládání skutečných vztahů.
 - **Není náboženské zasvěcení.** Nezasvěcuje, nekáže a netvrdí duchovní autoritu; nepřidává žádnou novou náboženskou postavu.
 - **Není vztahový příkaz.** Popisuje jednu možnou etiku péče; nepředepisuje nikomu, jak má žít.
-- **Není finanční ani technický dokument.** Nečiní žádný nárok na síť, fondy, tokeny, governance ani provoz. Provozní pravda zůstává v [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a [`../MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md).
+- **Není finanční ani technický dokument.** Nečiní žádný nárok na síť, fondy, tokeny, governance ani provoz. Provozní pravda zůstává v [`StatusV3.md`](../../3.2/StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a [`../MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md).
 
 ## 6. Registr tvrzení
 

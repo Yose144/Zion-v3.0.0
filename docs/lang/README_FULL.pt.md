@@ -19,7 +19,7 @@ Uma blockchain com consenso proof-of-work, algoritmo dual, ponte cross-chain, ca
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)](https://soliditylang.org/)
 [![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)](#status-da-rede)
 
-[English](../../README_FULL.md) · [Čeština](./README_FULL.cs.md) · [Español](./README_FULL.es.md) · [Français](./README_FULL.fr.md) · **Português**
+[English](../3.2/README_FULL.md) · [Čeština](./README_FULL.cs.md) · [Español](./README_FULL.es.md) · [Français](./README_FULL.fr.md) · **Português**
 
 </div>
 
@@ -422,7 +422,7 @@ cargo run --release -p zion-core --bin zion-node
 - [Whitepaper](../../docs/whitepaper.md) — Whitepaper técnico (consenso, economia, arquitetura)
 - [Ética e filosofia](../../docs/ETHICS_PHILOSOPHY.md) — Quatro livros de ZION: Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova
 - [ZION Codex — Voto Bodhisattva](../../docs/ZION_CODEX_BODHISATTVA.md) — Voto fundacional: 4 grandes votos, 8 Bodhisattvas, 8 promessas Guardian, 11 votos de validadores Sefirot
-- [evoluZion V2](../../evoluZionV2.md) — Evolução PoW → Proof-of-Care (roadmap híbrido de 10 anos)
+- [evoluZion V2](../3.2/evoluZionV2.md) — Evolução PoW → Proof-of-Care (roadmap híbrido de 10 anos)
 - [Bloco de gênesis](../../docs/genesis.md) — Bloco de gênesis, alocações de premine, assinatura do criador
 - [Arquitetura](../../V3/docs/) — Documentação de arquitetura L1/L2
 - [Constantes do mainnet](../../V3/docs/MAINNET_CONSTANTS.md) — Parâmetros canônicos da cadeia

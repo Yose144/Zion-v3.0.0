@@ -6,7 +6,7 @@
 > **Místo v kompasu:** **osa času — linie.** Sůl této země je střed, Nirvana západ, Bodhi Gaia země pod námi, Issobella nebe nad námi. Lumi je svislá osa — lucerna, která prochází vrstvami zdola nahoru. Tato kniha je osa vodoravná: **linie, která nese semeno dvaceti stoletími od jezera ke zahradě.**
 > **Navazuje na:** [`Sůl této země`](../SulZeme/00-README.md) (tesař z Galileje, oheň v Bezechuti), [`Nirvana`](../nirvana/00-README.md) (archa, první paprsek), [`NirvanaCloud`](../NirvanaCloud/00-README.md) (Síně Amenti, sedmero ctností), [`Bodhi Gaia — Kniha Země`](../BodhiGaia/00-README.md) (semeno, sůl od Galilejského jezera, Saṅghamittā), [`Issobella — Kniha Nebe`](../Issobella/00-README.md) (Stříž, nádoba do času), [`Lumi — Cesta domů`](../Lumi/00-README.md) (lucerna, brána, babička z pobřeží, prázdná stránka), [`Mise Amenti`](../MiseAmenti/README.md) a přílohu [`C — Zjevení jako blueprints`](../../TerraNova/public/Full.md) (nová země, 144 000, žena oděná sluncem, „Přijď!").
 > **Jazyk:** čeština (kanonická). Anglický index vznikne až po českém review; překlad nesmí zesílit jistotu, emoci ani historický nárok oproti originálu (`MiseAmenti/08` §5.7).
-> **Pravidlo textu:** *Příběh → Kámen, hlína a sen → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, adresách nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a živý repozitář před příběhem. Kde mluví o historii, vítězí nejstarší doložené prameny před pozdějšími vrstvami.
+> **Pravidlo textu:** *Příběh → Kámen, hlína a sen → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, adresách nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../3.2/StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a živý repozitář před příběhem. Kde mluví o historii, vítězí nejstarší doložené prameny před pozdějšími vrstvami.
 
 ---
 
@@ -98,7 +98,7 @@ Doplňkově **NEDOLOŽENO** (raná evidence chybí — nesmí se používat jako
 - **Není tajná historie vydávaná za fakt.** Kde prameny mlčí, kniha mlčí s nimi — nebo to označí hlínou či snem. Canon výslovně zakazuje vydávat mýtus o liniích za historii ([`MiseAmenti/01`](../MiseAmenti/01-Kanon-a-Ustava.md)).
 - **Není životopis.** Nevypráví soukromé příběhy autorů ani jejich blízkých; kde se příběh dotýká skutečných lidí, drží se veřejně známého a označuje to.
 - **Není finanční slib.** Žádná kapitola neříká, kolik bude ZION stát, co vynese těžba ani co bude s fondy.
-- **Není náhrada registrů.** Kde se liší od [`StatusV3.md`](../../../StatusV3.md), [`MiseAmenti/07`](../MiseAmenti/07-Registr-Dukazu.md), [`BodhiGaia/09`](../BodhiGaia/09-Kotva-Pravdy-a-Hranice.md), [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md) nebo [`Lumi/13`](../Lumi/13-Kotva-Pravdy-a-Hranice.md), vítězí ony.
+- **Není náhrada registrů.** Kde se liší od [`StatusV3.md`](../../3.2/StatusV3.md), [`MiseAmenti/07`](../MiseAmenti/07-Registr-Dukazu.md), [`BodhiGaia/09`](../BodhiGaia/09-Kotva-Pravdy-a-Hranice.md), [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md) nebo [`Lumi/13`](../Lumi/13-Kotva-Pravdy-a-Hranice.md), vítězí ony.
 
 ---
 
@@ -107,7 +107,7 @@ Doplňkově **NEDOLOŽENO** (raná evidence chybí — nesmí se používat jako
 - **Kámen:** evangelia (Mk, Mt, Lk, Jan) · Evangelium podle Marie (Berlínský kodex 8502 + řecké zlomky P.Oxy. 3525, P.Ryl. 463) · Evangelium Filipovo · Pistis Sofia · Hippolytos, *Komentář k Písni písní* (~235) · Eusebios, *Církevní dějiny* III,19–20 (Hegesippos o desposyni) · Řehoř Veliký, *Homilie 33* (591) · liturgická reforma 1969 / dekret 2016 · Zjevení Janovo.
 - **Hlína:** provensálská tradice (Saintes-Maries-de-la-Mer, Sainte-Baume, Saint-Maximin, Vézelay) · romská pouť k Sáře e Kali · černé madony · středověké grálové romány.
 - **Sen:** *Holy Blood, Holy Grail* (1982) · „Dossiers secrets" / Prieuré de Sion (prokázaný padělek) · Da Vinciho kód (2003).
-- **Živá síť:** [`StatusV3.md`](../../../StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md) · [`L2contracts.md`](../../../L2contracts.md) · [`docs/genesis.md`](../../genesis.md) (zpráva v genesis, jméno Meriam) · `V31/L4/oasis/data/avatars.json` (avatar 18, 19, 38, 40) · `APP&WEB/OasisWeb` (dvě kněžky, světy) · `V31/L1/core` (emise, split, timelock 144 000) · [`TerraNova/Full.md` příloha C](../../TerraNova/public/Full.md) (Zjevení jako blueprints).
+- **Živá síť:** [`StatusV3.md`](../../3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md) · [`L2contracts.md`](../../3.2/L2contracts.md) · [`docs/genesis.md`](../../genesis.md) (zpráva v genesis, jméno Meriam) · `V31/L4/oasis/data/avatars.json` (avatar 18, 19, 38, 40) · `APP&WEB/OasisWeb` (dvě kněžky, světy) · `V31/L1/core` (emise, split, timelock 144 000) · [`TerraNova/Full.md` příloha C](../../TerraNova/public/Full.md) (Zjevení jako blueprints).
 
 ---
 

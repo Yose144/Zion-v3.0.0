@@ -1,6 +1,6 @@
 # ZION WARP — Contract Addresses & Configuration
 
-> **⚠️ DEPRECATED (2026-09-02):** This file is superseded by [`L2contracts.md`](../../L2contracts.md) in repo root.
+> **⚠️ DEPRECATED (2026-09-02):** This file is superseded by [`L2contracts.md`](../3.2/L2contracts.md) in repo root.
 > Kept for historical reference only. Do NOT update this file — update `L2contracts.md` instead.
 
 > **Status:** 🟢 EVM + LND + ZionDex deployed · 🟡 Non-EVM contracts ready, pending deploy

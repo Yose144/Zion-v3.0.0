@@ -518,7 +518,7 @@ Přechod na PoC probíhá během **Fáze 3-4 governance** (T0+12m → T0+18 let)
 Gen Z (Maitreya Buddha, Sarah Issobela, Elizabeth) přebírá admin role
 v T0+18 let (2044). Plný PoC (2036) probíhá za jejich správy.
 
-Viz: [`docs/genesis.md`](./docs/genesis.md) §Zpráva pro Generaci Z
+Viz: [`docs/genesis.md`](../genesis.md) §Zpráva pro Generaci Z
 
 ---
 
@@ -634,9 +634,9 @@ se chová jako živý organismus, ne jako databáze.
 | evoluZion V1 | `docs/3.0.3/evoluZion.md` (internal) | Původní vize |
 | Cosmic Harmony NPU Mix | `V3/L1/cosmic-harmony/src/algorithms_npu.rs` | Kód |
 | TerraNova kniha | `docs/TerraNova/` (internal) | Filozofie |
-| Whitepaper | [`docs/whitepaper.md`](./docs/whitepaper.md) | Technický |
-| Genesis | [`docs/genesis.md`](./docs/genesis.md) | Genesis blok |
-| Token Disclosure | [`docs/TOKEN_DISCLOSURE.md`](./docs/TOKEN_DISCLOSURE.md) | Tokenomics |
+| Whitepaper | [`docs/whitepaper.md`](../whitepaper.md) | Technický |
+| Genesis | [`docs/genesis.md`](../genesis.md) | Genesis blok |
+| Token Disclosure | [`docs/TOKEN_DISCLOSURE.md`](../TOKEN_DISCLOSURE.md) | Tokenomics |
 
 ---
 

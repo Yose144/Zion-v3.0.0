@@ -14,7 +14,7 @@
 Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zdrojích:
 
 - [`V3/docs/USER_ONBOARDING.md`](../../../archive/V3/docs/USER_ONBOARDING.md) — základní CLI návod pro nové uživatele
-- [`StatusV3.md`](../../../StatusV3.md) — živá topologie, výška chainu, porty a stav služeb
+- [`StatusV3.md`](../../3.2/StatusV3.md) — živá topologie, výška chainu, porty a stav služeb
 - [`AGENTS.md`](../../../AGENTS.md) — operační pravidla, incidenty a migrace
 - [`V3/docs/CLI_REFERENCE.md`](../../../archive/V3/docs/CLI_REFERENCE.md) — kompletní reference příkazů `zion`
 - [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md) — konsensus, emise, smart kontrakty, architektura
@@ -82,7 +82,7 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 |---|---|---|
 | ZION je veřejný blockchain | Zdrojový kód pod MIT: `https://github.com/Zion-TerraNova/v3-Mainnet` | [`AGENTS.md`](../../../AGENTS.md), sekce `public/` |
 | Nový blok každých 60 s | Block time 60 s, DAA LWMA 60 bloků, cílový interval 30–120 s, ±25 % clamp | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
-| Genesis blok 1. 1. 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; po fixu retence bloků proběhl hard genesis reset 2026-07-20; bloky 0–~10913 starého řetězce jsou ztraceny, od fixu se uchovávají všechny | [`StatusV3.md`](../../../StatusV3.md), řádky 6–9; [`AGENTS.md`](../../../AGENTS.md), sekce BLOCK RETENTION FIX |
+| Genesis blok 1. 1. 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; po fixu retence bloků proběhl hard genesis reset 2026-07-20; bloky 0–~10913 starého řetězce jsou ztraceny, od fixu se uchovávají všechny | [`StatusV3.md`](../../3.2/StatusV3.md), řádky 6–9; [`AGENTS.md`](../../../AGENTS.md), sekce BLOCK RETENTION FIX |
 | Odměna 5 400,067 ZION/blok | Dekáda 1 (2026–2036): 5 400,067 ZION/blok; nikdy vyšší; Decade Decay −20 % každou dekádu; tail 724,784723 ZION/blok od ~2126 | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
 | Rozdělení 89/5/5/1 % | `MINER_SHARE_PERCENT = 0,89`; humanitární 5 %; Issobella 5 %; pool fee / burn 1 %; uzly odmítnou blok s jiným poměrem | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../README.md) |
 | Hard cap 144 miliard ZION | `max_supply = 144_000_000_000`; premine 16,78 mld. (11,65 %), zbytek těžbou | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
@@ -553,9 +553,9 @@ rpcCall('getChainInfo').then(console.log);
 
 | Tvrzení | Realita v kódu / síti | Zdroj |
 |---|---|---|
-| **Status sítě** | Mainnet Beta; oficiální public launch odložen (TBD) | [`StatusV3.md`](../../../StatusV3.md), řádky 7–8 |
-| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../../StatusV3.md), řádek 6; [`AGENTS.md`](../../../AGENTS.md) |
-| **Genesis příběh / kódová realita** | 1. ledna 2026 (příběh) / hard genesis reset 2026-08-06 (po fixu retence bloků) | [`StatusV3.md`](../../../StatusV3.md), řádky 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
+| **Status sítě** | Mainnet Beta; oficiální public launch odložen (TBD) | [`StatusV3.md`](../../3.2/StatusV3.md), řádky 7–8 |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../3.2/StatusV3.md), řádek 6; [`AGENTS.md`](../../../AGENTS.md) |
+| **Genesis příběh / kódová realita** | 1. ledna 2026 (příběh) / hard genesis reset 2026-08-06 (po fixu retence bloků) | [`StatusV3.md`](../../3.2/StatusV3.md), řádky 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 bloků; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | **Odměna v 1. dekádě** | 5 400,067 ZION/blok (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
 | **Decade Decay** | Faktor 0,8 (−20 %) každých ~10 let (5 256 000 bloků) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
@@ -563,22 +563,22 @@ rpcCall('getChainInfo').then(console.log);
 | **Rozdělení odměny** | 89 % těžaři, 5 % humanitární fond, 5 % Issobella fond, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../README.md) |
 | **Hard cap** | 144 000 000 000 ZION | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | **PoW algoritmus** | Ekam Deeksha / CosmicHarmony; 6 fází; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`V3/README.md`](../../../README.md) |
-| **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), řádek 114; [`AGENTS.md`](../../../AGENTS.md) |
-| **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` na Edge) | [`StatusV3.md`](../../../StatusV3.md), řádek 112 |
-| **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
-| **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../../StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
+| **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../3.2/StatusV3.md), řádek 114; [`AGENTS.md`](../../../AGENTS.md) |
+| **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` na Edge) | [`StatusV3.md`](../../3.2/StatusV3.md), řádek 112 |
+| **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../3.2/StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
+| **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../3.2/StatusV3.md), tabulka služeb; [`AGENTS.md`](../../../AGENTS.md) |
 | **GitHub** | `https://github.com/Zion-TerraNova/v3-Mainnet` (public, MIT) | [`AGENTS.md`](../../../AGENTS.md), sekce `public/` |
-| **Web** | `https://zionterranova.com`, dashboard `https://dashboard.zionterranova.com`, market `https://market.zionterranova.com` | [`StatusV3.md`](../../../StatusV3.md), sekce Public Endpoints; [`AGENTS.md`](../../../AGENTS.md) |
-| **wZION na Base** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [`StatusV3.md`](../../../StatusV3.md), tabulka DeFi Contracts |
+| **Web** | `https://zionterranova.com`, dashboard `https://dashboard.zionterranova.com`, market `https://market.zionterranova.com` | [`StatusV3.md`](../../3.2/StatusV3.md), sekce Public Endpoints; [`AGENTS.md`](../../../AGENTS.md) |
+| **wZION na Base** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [`StatusV3.md`](../../3.2/StatusV3.md), tabulka DeFi Contracts |
 | **Dharma Credits** | 144 miliard celkem; 1,44 miliardy pro OASIS; eShop tierů | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 13 |
 | **Avataři** | 202 avatárů v 17 kruzích | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 10 |
 | **Consciousness Levels** | 9 úrovní (CL1–CL9) s multiplikátory 1,0x–10,0x | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 11 |
 | **Genesis Teritorií** | 8 počátečních regionů v Oasis, definováno v `TerritoryMap` | [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
 | **Golden Egg** | 5 reward poolů; 4,95 miliardy ZION; 108 stop (sloty 4 a 5 repurposed na L5 Free World Projects) | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 12; [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
 | **Sedm cest** | 7 questových cest v Oasis | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), sekce 11 |
-| **L1–L6 architektura** | L1 blockchain, L2 DeFi/bridge/DAO, L3 AI/WARP, L4 Oasis, L5 Free World, L6 Issobella | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`StatusV3.md`](../../../StatusV3.md) |
-| **V31 Alpha** | V31 node `3.1.0-alpha.2` je LIVE na Edge, synchronizuje se s V3 mainnet přes V3-compatible P2P, port 8335, RPC 9445 | [`StatusV3.md`](../../../StatusV3.md), řádky 8; [`AGENTS.md`](../../../AGENTS.md) |
-| **Bloky 0–~10913 ztraceny** | Bug v `block_retention` způsobil ořezání historie; fix 2026-07-20; staré bloky nejsou obnovitelné | [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX; [`StatusV3.md`](../../../StatusV3.md), řádek 9 |
+| **L1–L6 architektura** | L1 blockchain, L2 DeFi/bridge/DAO, L3 AI/WARP, L4 Oasis, L5 Free World, L6 Issobella | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta; [`StatusV3.md`](../../3.2/StatusV3.md) |
+| **V31 Alpha** | V31 node `3.1.0-alpha.2` je LIVE na Edge, synchronizuje se s V3 mainnet přes V3-compatible P2P, port 8335, RPC 9445 | [`StatusV3.md`](../../3.2/StatusV3.md), řádky 8; [`AGENTS.md`](../../../AGENTS.md) |
+| **Bloky 0–~10913 ztraceny** | Bug v `block_retention` způsobil ořezání historie; fix 2026-07-20; staré bloky nejsou obnovitelné | [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX; [`StatusV3.md`](../../3.2/StatusV3.md), řádek 9 |
 
 ---
 
@@ -591,7 +591,7 @@ rpcCall('getChainInfo').then(console.log);
 - [`V3/docs/MINING_GUIDE.md`](../../../archive/V3/docs/MINING_GUIDE.md) — hlubší návod na těžbu
 - [`V3/docs/NODE_OPERATOR_GUIDE.md`](../../../archive/V3/docs/NODE_OPERATOR_GUIDE.md) — provoz uzlu
 - [`V3/L5/docs/TECH/zion-node-spec.md`](../../../archive/V3/L5/docs/TECH/zion-node-spec.md) — specifikace Guardian uzlu
-- [`StatusV3.md`](../../../StatusV3.md) — live topologie a stav sítě
+- [`StatusV3.md`](../../3.2/StatusV3.md) — live topologie a stav sítě
 - [`AGENTS.md`](../../../AGENTS.md) — pravidla pro agenty, incidenty, porty
 - [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md) — technický whitepaper 3.1
 - [`SulZeme/00-README.md`](./00-README.md) — kniha Sůl této země

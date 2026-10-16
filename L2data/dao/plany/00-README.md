@@ -3,7 +3,7 @@
 > Sbírka plánovacích dokumentů pro **Zlatý dům** — sídlo DAO parlamentu Zlaté republiky,
 > kotveného v L5 uzlu Golden Republic Bohemia (Srdce L5 Pentagramu).
 
-**Master dokument:** [`BohemiaDao.md`](../../../BohemiaDao.md) (root)
+**Master dokument:** [`BohemiaDao.md`](../../../docs/3.2/BohemiaDao.md) (root)
 **Stav:** 🔵 Návrh / Fáze 0 — dokumentace a protokolový design; žádná fyzická ani on-chain instance zatím neexistuje.
 **Datum:** 2026-09-21
 

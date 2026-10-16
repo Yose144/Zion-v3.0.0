@@ -52,7 +52,7 @@ A hranice, kterou kniha říká nahlas: **fond dnes nic nevyplácí.** Rozhodnut
 | Tvrzení | Stav | Kotva |
 |---|---|---|
 | `ISSOBELLA_PCT = 5` v emisním kódu; 5 % každého subsidy → `zion1z4s3a5...` | **ŽIVÉ** | `V31/L1/core/src/emission.rs`, `v3_compat.rs` (`MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET`), `StatusV3.md` („Fee Split") |
-| Premine slot 6 = 2,5 mld ZION pro `l6_issobella`, lock 144 000, adresa `zion1f5h5k6t8...` | **ŽIVÉ** | `V31/L1/core/src/v3_compat.rs`, [`CHANGES_L6_ISSOBELLA.md`](../../../CHANGES_L6_ISSOBELLA.md), `StatusV3.md` 2026-09-12 |
+| Premine slot 6 = 2,5 mld ZION pro `l6_issobella`, lock 144 000, adresa `zion1f5h5k6t8...` | **ŽIVÉ** | `V31/L1/core/src/v3_compat.rs`, [`CHANGES_L6_ISSOBELLA.md`](../../3.2/CHANGES_L6_ISSOBELLA.md), `StatusV3.md` 2026-09-12 |
 | Slot 6 byl převeden z DAO Treasury (Community Governance); genesis hashe beze změny | **ŽIVÉ** | `CHANGES_L6_ISSOBELLA.md`; `StatusV3.md` 2026-09-12 |
 | Fond dnes aktivně financuje výzkum / granty | **NEPLATNÉ TVRZENÍ** | G10: žádná automatická dispozice; DAO cesta je read-only ([`L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)) |
 | Odemykání slotu 6 podmíněno admin multisig (3-of-3) + DAO vote | **ŽIVÉ** (design) | `CHANGES_L6_ISSOBELLA.md`, `/l6-issobella` premine karta |

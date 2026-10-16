@@ -47,7 +47,7 @@ In this epoch, the **first generation that has never known a world without decen
 
 | Category | What may unfold in this epoch |
 |---|---|
-| **HORIZON — infrastructure** | L6 Issobella reaches maturity as an orbital scientific research program (see `docs/TerraNova/BASE_FINAL/en/09-ISSOBELLA.md`); theoretical quantum-engine research (the Alcubierre-Ekam metric, see [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) §7) leaves the purely theoretical phase and enters experimental validation. |
+| **HORIZON — infrastructure** | L6 Issobella reaches maturity as an orbital scientific research program (see `docs/TerraNova/BASE_FINAL/en/09-ISSOBELLA.md`); theoretical quantum-engine research (the Alcubierre-Ekam metric, see [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) §7) leaves the purely theoretical phase and enters experimental validation. |
 | **HORIZON — society** | Decentralized science (DeSci) and open education become a normal alternative to closed academic and patent systems, not a minority experiment. |
 | **HORIZON — generation** | People born after 2050 (the children of today's Generation Z) grow up in an environment where verifying rather than simply trusting is a civilizational skill, not a technical curiosity. |
 

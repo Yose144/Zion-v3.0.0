@@ -8,7 +8,7 @@
 >
 > Hardening je **nasazený na Edge** (2026-09-20, backup `warpd.bak-20260920-hardening`) s green full-suite gate; flow zůstává disabled a offer endpoint je navíc fail-closed bez `WARP_BTC_SWAP_OFFER_KEY` (503). Historických 6/6 regtest E2E a live-ZION leg zůstává validační evidence, nikoli povolení mainnetu.
 >
-> Detaily: [`WarpBeta/STATUS.md`](./WarpBeta/STATUS.md) · [`WarpBeta/AUDIT_PREP.md`](./WarpBeta/AUDIT_PREP.md)
+> Detaily: [`WarpBeta/STATUS.md`](../../WarpBeta/STATUS.md) · [`WarpBeta/AUDIT_PREP.md`](../../WarpBeta/AUDIT_PREP.md)
 
 WARP Beta implementuje nativní trust-minimized atomické swapy **ZION L1 ↔ BTC** přes HTLC na obou chainech. Orchestrátor `BtcSwapFlow` používá koordinátor `HtlcSwap`, SQLite persistence a HTTP/CLI lifecycle.
 

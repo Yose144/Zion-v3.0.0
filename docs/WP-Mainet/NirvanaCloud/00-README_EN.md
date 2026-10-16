@@ -1,7 +1,7 @@
 # NirvanaCloud
 ## A Deep Expansion of the Book of Nirvana — The Six Worlds, the Bardo, Shambhala, and the Completion of the Amenti Mission for Generation Z and the Next Hundred Years
 
-> **Status:** Narrative/mythological layer (L6 view) and canonical companion; its claims about technical state are not a separate source of truth — for those see [`MiseAmenti/`](../MiseAmenti/README_EN.md), [`StatusV3.md`](../../../StatusV3.md), and the live code.  
+> **Status:** Narrative/mythological layer (L6 view) and canonical companion; its claims about technical state are not a separate source of truth — for those see [`MiseAmenti/`](../MiseAmenti/README_EN.md), [`StatusV3.md`](../../3.2/StatusV3.md), and the live code.  
 > **Canonized:** 2026-08-31  
 > **Written for:** Generation Z and every generation that will inherit Terra Nova.  
 > **Horizon:** 100 years (2026–2126) — HORIZON / MYTH, not a live operational plan.  
@@ -68,11 +68,11 @@ Each chapter has three layers, exactly like the rest of the Nirvana and Salt of 
 ## Live Sources of Truth
 
 - **Canonical integration corpus (L1–L6, truth, ethics, 100 years):** [`../../../MiseAmenti/README_EN.md`](../MiseAmenti/README_EN.md)
-- **Canonical technical plan 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
+- **Canonical technical plan 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
 - **Narrative book Nirvana (concept/horizon):** [`../nirvana/00-README_EN.md`](../nirvana/00-README_EN.md)
 - **The Salt of this Earth (roots):** [`../SulZeme/00-README_EN.md`](../SulZeme/00-README_EN.md)
 - **Road to Zion — the four books:** [`../marketing/ROAD_TO_ZION_EN.md`](../marketing/ROAD_TO_ZION_EN.md)
-- **Live network status:** [`../../../StatusV3.md`](../../../StatusV3.md)
+- **Live network status:** [`../../../StatusV3.md`](../../3.2/StatusV3.md)
 - **Hiran / Hiranyagarbha AI development (v2.3 → v2.4 Maestro → v2.5 Amṛtabhoja):** [`../../3.0.6/HIRAN_OVERVIEW.md`](../../3.0.6/HIRAN_OVERVIEW.md)
 - **ZION Codex Bodhisattva Vow:** [`../../../public/docs/ZION_CODEX_BODHISATTVA.md`](../../../public/docs/ZION_CODEX_BODHISATTVA.md)
 - **OASIS World of Tibet:** [`../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md`](../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md)

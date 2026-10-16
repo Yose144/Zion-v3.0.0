@@ -230,7 +230,7 @@ Plus 2 nezávislé miner commity z paralelní session (již na origin):
 
 - Plan: [`EXPLORER_V4_ENGINE_PLAN.md`](../../EXPLORER_V4_ENGINE_PLAN.md) — Phases 1-4 complete
 - Deploy skript: [`scripts/deploy-edge-web.sh`](../../scripts/deploy-edge-web.sh) — opravený
-- Status: [`StatusV3.md`](../../StatusV3.md) — canonical live topology
+- Status: [`StatusV3.md`](../3.2/StatusV3.md) — canonical live topology
 - Live: https://zionterranova.com/explorer
 
 ---

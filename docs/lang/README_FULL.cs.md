@@ -19,7 +19,7 @@ Blockchain s proof-of-work konsenzem, dual-algoritmem, cross-chain bridge, DeFi 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)](https://soliditylang.org/)
 [![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)](#status-sítě)
 
-[English](../../README_FULL.md) · **Čeština** · [Español](./README_FULL.es.md) · [Français](./README_FULL.fr.md) · [Português](./README_FULL.pt.md)
+[English](../3.2/README_FULL.md) · **Čeština** · [Español](./README_FULL.es.md) · [Français](./README_FULL.fr.md) · [Português](./README_FULL.pt.md)
 
 </div>
 
@@ -422,7 +422,7 @@ cargo run --release -p zion-core --bin zion-node
 - [Whitepaper](../../docs/whitepaper.md) — Technický whitepaper (konsensus, ekonomika, architektura)
 - [Etika a filozofie](../../docs/ETHICS_PHILOSOPHY.md) — Čtyři knihy ZIONu: Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova
 - [ZION Codex — Bodhisattva slib](../../docs/ZION_CODEX_BODHISATTVA.md) — Základní slib: 4 velké sliby, 8 Bodhisattvů, 8 Guardian slibů, 11 Sefirot validátorských slibů
-- [evoluZion V2](../../evoluZionV2.md) — Evoluce PoW → Proof-of-Care (10letý hybridní roadmap)
+- [evoluZion V2](../3.2/evoluZionV2.md) — Evoluce PoW → Proof-of-Care (10letý hybridní roadmap)
 - [Genesis blok](../../docs/genesis.md) — Genesis blok, premine alokace, podpis creator
 - [Architektura](../../V3/docs/) — Dokumentace L1/L2 architektury
 - [Mainnet konstanty](../../V3/docs/MAINNET_CONSTANTS.md) — Kanonické parametry chainu

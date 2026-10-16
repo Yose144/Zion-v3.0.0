@@ -16,7 +16,7 @@
 >
 > **Kanonický integrační corpus:** [`MiseAmenti/`](docs/WP-Mainet/MiseAmenti/README.md)
 >
-> **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](./V33_NIRVANA_MASTER_PLAN.md)
+> **Technický execution companion 3.3:** [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md)
 >
 > **Canonical 3.2 forward plan:** [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md)
 >
@@ -26,9 +26,9 @@
 >
 > **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md)
 >
-> **ZIS Multichain Wallet plan:** [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md) (canonical; předchozí [`ZionDexZis.md`](./docs/3.2/ZionDexZis.md) je superseded — historický)
+> **ZIS Multichain Wallet plan:** [`ZIS_WALLET_PLAN.md`](docs/3.2/ZIS_WALLET_PLAN.md) (canonical; předchozí [`ZionDexZis.md`](./docs/3.2/ZionDexZis.md) je superseded — historický)
 >
-> **Live status:** [`StatusV3.md`](./StatusV3.md) · [`V31/STATUS.md`](./V31/STATUS.md)
+> **Live status:** [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](./V31/STATUS.md)
 
 ---
 
@@ -64,7 +64,7 @@ Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/
 4. **L5 Free World** — Dedicated web portal, live 5% L1 coinbase treasury tracker, global water & permaculture projects.
 5. **L6 Issobella** — Quantum warp engine theoretical research (Alcubierre-Ekam metric), DeSci repository, NCL-powered physics simulations.
 
-See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](./V33_NIRVANA_MASTER_PLAN.md), and its deep mythological/philosophical companion — the six worlds, the bardo of transition, Shambhala, the Halls of Amenti, and the 100-year plan for Generation Z — in [`docs/WP-Mainet/NirvanaCloud/`](./docs/WP-Mainet/NirvanaCloud/00-README.md).
+See the complete technical blueprint in [`V33_NIRVANA_MASTER_PLAN.md`](docs/3.2/V33_NIRVANA_MASTER_PLAN.md), and its deep mythological/philosophical companion — the six worlds, the bardo of transition, Shambhala, the Halls of Amenti, and the 100-year plan for Generation Z — in [`docs/WP-Mainet/NirvanaCloud/`](./docs/WP-Mainet/NirvanaCloud/00-README.md).
 
 ---
 

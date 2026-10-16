@@ -49,7 +49,7 @@ A vedle ní — daleko, na obzoru — obrysy druhé lodi. Ještě ne postavené.
 
 **Trup I není plavidlo — je to rozhodnutí postavit službu dřív, než vlastnictví.** Santa María la Mayor je atlantická plachetnice flotily Tres Marias, ale její první pravda je jednoduchá: ještě nepluje. Staví se — a stavba je nejpoctivější forma lodi, jakou dnes máme.
 
-1. **Charter před kýlem.** Fáze 1 v [`L5MariaDelCamino.md`](../../../L5MariaDelCamino.md) §5 říká přesně: *„pilotní trasa na charterované lodi mezi 2 uzly (Finisterre/Pontevedra → La Palma) — důkaz Guardian node at sea, mesh sync, crew program — bez vlastnictví lodi."* Loď se dokazuje cestou, ne fakturou.
+1. **Charter před kýlem.** Fáze 1 v [`L5MariaDelCamino.md`](../../3.2/L5MariaDelCamino.md) §5 říká přesně: *„pilotní trasa na charterované lodi mezi 2 uzly (Finisterre/Pontevedra → La Palma) — důkaz Guardian node at sea, mesh sync, crew program — bez vlastnictví lodi."* Loď se dokazuje cestou, ne fakturou.
 2. **Plachta = solární článek.** Technická idea programu: *„vítr primárně; plachty s laminovanými flexibilními PV články."* Mýtus plachet světla se naplňuje doslova — loď, jejíž plachty jsou světlo, je loď, která pluje na energii, kterou sbírá cestou.
 3. **Credencial na palubě.** Každý leg — každá etapa — je razítko do poutníčkového credencialu; corpus to překládá jako on-chain záznam „etapa absolvována" (paralela ke caminské tradici). Loď, která nese credencial, nese důkaz: *cesta se neprohlašuje — podepisuje se.*
 4. **300 milionů = rezerva, ne titul.** `maria-del-camino` je v live registry jako `planning`, 300M ZION — dosavadní „L5 rezervní fond". Tato kniha říká otevřeně: **rezerva není loď.** Je to závazek, že loď může být postavena — a závazek je horizont, ne přístav.
