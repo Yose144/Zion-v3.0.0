@@ -72,8 +72,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     image: '/images/home/hero.webp',
     imageSrcSet: '/images/home/hero-m.webp 960w, /images/home/hero.webp 1672w',
     imageAlt: {
-      cs: 'Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6',
-      en: 'L5 Free World map — twelve points and layers L1–L6',
+      cs: 'L5 Free World — Strom života a dvanáct bodů jedné planety',
+      en: 'L5 Free World — Tree of Life and the twelve points of one planet',
     },
   },
   {
