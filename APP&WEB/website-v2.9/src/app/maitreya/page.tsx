@@ -548,7 +548,7 @@ export default function MaitreyaPage() {
 
           <div className="flex flex-col items-center gap-2 pt-2">
             <Link
-              href={cs ? '/docs/books/maitreya/MAITREYA-LITE.md' : '/docs/en/books/maitreya/MAITREYA-LITE.md'}
+              href="/maitreya/cist"
               className="zion-button-primary group"
             >
               <BookOpen className="h-5 w-5" />
