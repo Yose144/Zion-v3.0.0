@@ -31,6 +31,9 @@ auxpow-deploy.zip
 # Private L6 lore drafts (kept local, not in repo)
 L6data/proEricku/
 
+# >100MB raw model weights — repo holds xz-split parts instead (see RESTORE.md)
+Hiran/2.3/rebuild/v23mini/artifacts/adapter-final/adapter_model.safetensors
+
 # Build artifacts
 /target/
 **/target/
