@@ -27,7 +27,7 @@ export default function MaitreyaSection() {
   const cs = lang === 'cs';
 
   return (
-    <section className="px-4 pb-10 pt-2 sm:pb-12">
+    <section className="px-4 pb-8 pt-1 sm:pb-10">
       <div className="zion-container">
         <motion.div
           initial={{ opacity: 0, y: 28 }}
@@ -41,11 +41,11 @@ export default function MaitreyaSection() {
           <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-zion-purple/15 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-zion-gold/10 blur-3xl" />
 
-          <div className="relative grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+          <div className="relative grid gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch">
             {/* artwork panel */}
             <Link
               href="/maitreya"
-              className="group/img relative block min-h-[220px] overflow-hidden rounded-xl border border-white/10 sm:min-h-[280px]"
+              className="group/img relative block min-h-[160px] overflow-hidden rounded-xl border border-white/10 sm:min-h-[190px]"
             >
               <img
                 src="/images/maitreya/hero.webp"
@@ -64,7 +64,7 @@ export default function MaitreyaSection() {
             </Link>
 
             {/* copy */}
-            <div className="flex flex-col justify-center gap-4 p-6 sm:p-8 lg:py-10 lg:pr-10 lg:pl-2">
+            <div className="flex flex-col justify-center gap-3 p-4 sm:p-5 lg:py-6 lg:pr-6 lg:pl-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
                   <Egg className="h-3.5 w-3.5" />
@@ -77,23 +77,23 @@ export default function MaitreyaSection() {
               </div>
 
               <div>
-                <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl xl:text-5xl">
+                <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
                   <span className="text-gradient">{MaitreyaSectionCopy.title[cs ? 'cs' : 'en']}</span>
                 </h2>
-                <p className="mt-2 text-base font-semibold text-zion-gold/90 sm:text-lg">
+                <p className="mt-1.5 text-sm font-semibold text-zion-gold/90 sm:text-base">
                   {MaitreyaSectionCopy.subtitle[cs ? 'cs' : 'en']}
                 </p>
               </div>
 
-              <p className="max-w-xl text-sm leading-relaxed text-gray-300 sm:text-base">
+              <p className="max-w-xl text-xs leading-relaxed text-gray-300 sm:text-sm">
                 {MaitreyaSectionCopy.body[cs ? 'cs' : 'en']}
               </p>
 
-              <p className="text-sm italic text-zion-purple/90">
+              <p className="text-xs italic text-zion-purple/90 sm:text-sm">
                 {MaitreyaSectionCopy.quote[cs ? 'cs' : 'en']}
               </p>
 
-              <div className="flex flex-wrap items-center gap-3 pt-1">
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
                 <Link href="/maitreya" className="zion-button-primary group">
                   {MaitreyaSectionCopy.cta[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
