@@ -35,6 +35,27 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'pearl-quantus-new-mining-wave',
+    date: '2026-10-16',
+    tag: { cs: 'Mining', en: 'Mining' },
+    tagColor: 'text-violet-300',
+    title: {
+      cs: 'Quantus i Pearl nativně v ZION — začíná nová vlna těžby',
+      en: 'Quantus and Pearl natively in ZION — a new mining wave begins',
+    },
+    summary: {
+      cs: 'Dvě sítě nové generace, jeden domov. Po Quantus (post-kvantově zabezpečený proof-of-work) ZION nově nativně podporuje i Pearl — blockchain s Proof of Useful Work, kde těžba znamená užitečné výpočty: stejné maticové operace, které pohání AI, zároveň zabezpečují síť. GPU tak jedním hardwarem dělá práci, která má hodnotu dvakrát. ZION pool už Pearl shary reálně přijímá a celý řetězec těžař → pool → síť byl ověřen koncem do konce — ostrá vlna se rozbíhá. Tři sítě, jeden miner, jedna peněženka. Stáhni app a buď u zrodu.',
+      en: 'Two next-generation networks, one home. After Quantus (post-quantum secure proof-of-work), ZION now natively supports Pearl — a Proof of Useful Work blockchain where mining is useful computation: the same matrix math that powers AI also secures the network. One GPU does work that counts twice. The ZION pool already accepts Pearl shares and the full miner → pool → network path has been verified end-to-end — the live wave is rolling. Three networks, one miner, one wallet. Download the app and be there at the beginning.',
+    },
+    href: '/download',
+    image: '/images/pearl/pearl-news.webp',
+    imageSrcSet: '/images/pearl/pearl-news-m.webp 960w, /images/pearl/pearl-news.webp 1280w',
+    imageAlt: {
+      cs: 'Pearl — Proof of Useful Work blockchain nativně podporovaný ZION',
+      en: 'Pearl — Proof of Useful Work blockchain natively supported by ZION',
+    },
+  },
+  {
     slug: 'trinity-miner-qtc-quantus-mining',
     date: '2026-10-10',
     tag: { cs: 'Mining', en: 'Mining' },
