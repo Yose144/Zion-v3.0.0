@@ -36,6 +36,8 @@ const os = require('os');
 const WalletGenerator = require('./wallet-generator');
 const QuantusWallet = require('./quantus-wallet');
 const QuantusNetwork = require('./quantus-network');
+const PearlWallet = require('./pearl-wallet');
+const PearlNetwork = require('./pearl-network');
 const NativeWallet = require('./native-wallet');
 const UtxoBuilder = require('./utxo-builder');
 const AccountBuilder = require('./account-builder');
@@ -2836,6 +2838,18 @@ function startMiningV31(config, v31Path) {
       return { success: false, error: 'QTC payout selected but no QTC address linked' };
     }
     minerWallet = `qtc:${qtcAddr}`;
+  } else if (String(config?.payoutCoin || '').trim().toLowerCase() === 'prl') {
+    const prlAddr = _nativeLoadWalletData(wallet)?.data?.prlAddress || null;
+    if (!prlAddr || !PearlWallet.isValidPearlAddress(prlAddr)) {
+      dialog.showErrorBox(
+        'PRL Payout Selected',
+        'The active wallet has no linked PRL address. Generate or link one in Wallet → PRL card, or switch Pool payout back to ZION.'
+      );
+      startMiningInProgress = false;
+      if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+      return { success: false, error: 'PRL payout selected but no PRL address linked' };
+    }
+    minerWallet = `prl:${prlAddr}`;
   }
 
   // ── 2. Verify binary exists ────────────────────────────────────────────────
@@ -5022,6 +5036,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       : null;
     const nativeAddresses = nativeAddressMap(nativeBundle);
     const qtcAddress = nativeAddresses?.quantus || null;
+    const prlAddress = nativeAddresses?.pearl || null;
 
     const walletData = {
       version: '2.9.6',
@@ -5029,6 +5044,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
       address: wallet.address,
       publicKey: wallet.publicKey,
       qtcAddress,
+      prlAddress,
       nativeAddresses,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
@@ -5053,6 +5069,7 @@ ipcMain.handle('quick-setup', async (event, { password, workerName }) => {
         mnemonic: wallet.mnemonic,
         publicKey: wallet.publicKey,
         qtcAddress,
+        prlAddress,
         nativeAddresses
       },
       config
@@ -5858,6 +5875,7 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
       : null;
     const nativeAddresses = nativeAddressMap(nativeBundle);
     const qtcAddress = nativeAddresses?.quantus || null;
+    const prlAddress = nativeAddresses?.pearl || null;
 
     // Wallet data to save
     const walletData = {
@@ -5866,6 +5884,7 @@ ipcMain.handle('save-wallet', (event, { wallet, password, name }) => {
       address: wallet.address,
       publicKey: wallet.publicKey,
       qtcAddress,
+      prlAddress,
       nativeAddresses,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
@@ -5902,6 +5921,7 @@ ipcMain.handle('list-wallets', () => {
           name: data.name,
           address: data.address,
           qtcAddress: data.qtcAddress || null,
+          prlAddress: data.prlAddress || null,
           nativeAddresses: data.nativeAddresses || null,
           createdAt: data.createdAt,
           lastUsed: data.lastUsed
@@ -5965,6 +5985,7 @@ ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
       : null;
     const nativeAddresses = nativeAddressMap(nativeBundle);
     const qtcAddress = nativeAddresses?.quantus || null;
+    const prlAddress = nativeAddresses?.pearl || null;
 
     // Wallet data to save
     const walletData = {
@@ -5973,6 +5994,7 @@ ipcMain.handle('import-wallet', (event, { mnemonic, password, name }) => {
       address: wallet.address,
       publicKey: wallet.publicKey,
       qtcAddress,
+      prlAddress,
       nativeAddresses,
       encryptedPrivateKey: encrypted,
       encryptedMnemonic: encryptedMnemonic,
@@ -6141,6 +6163,108 @@ ipcMain.handle('qtc-network-status', async (event, addr) => {
   }
 });
 
+// ── Pearl (PRL) wallet IPC ──────────────────────────────────────────────────
+// Mirror of the Quantus block above. Addresses are bech32m `prl1…` (BIP86
+// taproot, coin type 808276); derivation runs in the bundled
+// `zion-derive-addr` helper and is bit-identical to the Oyster wallet.
+
+ipcMain.handle('generate-pearl-wallet', () => {
+  try {
+    const bip39lib = require('bip39');
+    const mnemonic = bip39lib.generateMnemonic(256); // 24 words
+    const res = PearlWallet.derivePearlAddressDetailed(mnemonic, APP_ROOT, IS_PACKAGED);
+    if (!res.address) {
+      return { success: false, error: res.error || 'derivation failed' };
+    }
+    dbg('Generated Pearl wallet:', res.address);
+    return {
+      success: true,
+      wallet: {
+        chain: 'pearl',
+        ticker: 'PRL',
+        address: res.address,
+        mnemonic,
+        createdAt: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    console.error('Pearl wallet generation failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('derive-pearl-address', (event, mnemonic) => {
+  try {
+    const res = PearlWallet.derivePearlAddressDetailed(mnemonic, APP_ROOT, IS_PACKAGED);
+    return res.address
+      ? { success: true, address: res.address }
+      : { success: false, error: res.error || 'derivation failed' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('validate-pearl-address', (event, address) => ({
+  success: true,
+  valid: PearlWallet.isValidPearlAddress(address),
+  type: 'bech32m-prl'
+}));
+
+ipcMain.handle('pearl-get-balance', async (event, address) => {
+  const bal = await PearlWallet.pearlBalance(address);
+  if (!bal) return { success: false, error: 'pearl api failed' };
+  return {
+    success: true,
+    address,
+    confirmedPrl: bal.confirmed_prl,
+    utxoUnspent: bal.utxo_unspent,
+    utxoChecked: bal.utxo_checked
+  };
+});
+
+ipcMain.handle('pearl-get-history', async (event, address) => {
+  const rows = await PearlWallet.pearlHistory(address, 20);
+  if (!rows) return { success: false, error: 'pearl api failed' };
+  return { success: true, rows };
+});
+
+ipcMain.handle('prl-network-status', async (event, addr) => {
+  try {
+    const data = await PearlNetwork.fetchPrlStatus(addr);
+    return { success: true, data };
+  } catch (e) {
+    return { success: false, error: e?.message || 'prl status failed' };
+  }
+});
+
+// Link (or re-link) a Pearl PRL address to an existing ZION wallet file.
+// Only the address is stored; no keys.
+ipcMain.handle('wallet-set-prl', (event, { zionAddress, prlAddress }) => {
+  try {
+    if (!PearlWallet.isValidPearlAddress(prlAddress)) {
+      return { success: false, error: 'invalid PRL (prl1… bech32) address' };
+    }
+    if (!fs.existsSync(WALLETS_PATH)) {
+      return { success: false, error: 'no wallets directory' };
+    }
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    for (const file of files) {
+      const filePath = path.join(WALLETS_PATH, file);
+      let data;
+      try {
+        data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      } catch { continue; }
+      if (data?.address !== zionAddress) continue;
+      data.prlAddress = prlAddress;
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      return { success: true, prlAddress };
+    }
+    return { success: false, error: 'wallet not found' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // ── Native multichain wallet IPC ────────────────────────────────────────────
 // One ZION mnemonic → native addresses/keys on all supported chains.
 // Derivation happens in the bundled Rust helper (`zion-derive-addr`, mnemonic
@@ -6156,6 +6280,7 @@ function nativeAddressMap(bundle) {
     bitcoin: pick(bundle.bitcoin),
     solana: pick(bundle.solana),
     quantus: pick(bundle.quantus),
+    pearl: pick(bundle.pearl),
   };
 }
 
@@ -6201,6 +6326,7 @@ ipcMain.handle('native-derive-addresses', (event, { zionAddress, password }) => 
     if (found) {
       found.data.nativeAddresses = map;
       if (map.quantus && !found.data.qtcAddress) found.data.qtcAddress = map.quantus;
+      if (map.pearl && !found.data.prlAddress) found.data.prlAddress = map.pearl;
       fs.writeFileSync(path.join(WALLETS_PATH, found.file), JSON.stringify(found.data, null, 2));
     }
     return { success: true, nativeAddresses: map };
@@ -6219,6 +6345,7 @@ ipcMain.handle('native-balances', async (event, { nativeAddresses }) => {
       bitcoin: map.bitcoin ? { address: map.bitcoin } : null,
       solana: map.solana ? { address: map.solana } : null,
       quantus: map.quantus ? { address: map.quantus } : null,
+      pearl: map.pearl ? { address: map.pearl } : null,
     };
     // ZION balance via the existing public wallet snapshot fetcher.
     const zionFetcher = async (addr) => {

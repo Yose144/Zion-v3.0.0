@@ -55,6 +55,9 @@ pub enum ChainId {
     /// Quantus Network mainnet (Planck) — post-quantum ML-DSA-87 chain.
     /// Market ticker QTC, on-chain symbol PLK; internal code `quantus`.
     Quantus,
+    /// Pearl Network mainnet — PoUW dense-matrix chain (btcd fork).
+    /// Ticker PRL; segwit/taproot addresses use bech32m HRP `prl`.
+    Pearl,
 }
 
 impl ChainId {
@@ -65,7 +68,8 @@ impl ChainId {
             | ChainId::Decred
             | ChainId::EthereumClassic
             | ChainId::Monero
-            | ChainId::Zano => ChainFamily::Utxo,
+            | ChainId::Zano
+            | ChainId::Pearl => ChainFamily::Utxo,
             ChainId::Ethereum
             | ChainId::Base
             | ChainId::Arbitrum
@@ -118,6 +122,7 @@ impl ChainId {
             ChainId::Monero => "monero",
             ChainId::Zano => "zano",
             ChainId::Quantus => "quantus",
+            ChainId::Pearl => "pearl",
         }
     }
 
@@ -150,6 +155,7 @@ impl ChainId {
             ChainId::Cardano => 6,
             ChainId::Lightning => 8,
             ChainId::Quantus => 12,
+            ChainId::Pearl => 8,
         }
     }
 }

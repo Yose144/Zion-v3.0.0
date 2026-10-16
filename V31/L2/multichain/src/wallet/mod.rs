@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use bip39::Mnemonic;
 use bitcoin::bip32::{DerivationPath, Xpriv};
-use bitcoin::secp256k1::Secp256k1;
+use bitcoin::secp256k1::{Secp256k1, XOnlyPublicKey};
 use ed25519_dalek::{Signer as EdSigner, SigningKey as EdSigningKey};
 use ethers::core::{types::PathOrString, utils::hash_message};
 use ethers::signers::{coins_bip39::English, LocalWallet, MnemonicBuilder, Signer as EthSigner};
@@ -113,6 +113,11 @@ impl Keyring {
 
     /// Derive a chain-specific address for `account` / `index`.
     pub fn address(&self, chain: ChainId, account: u32, index: u32) -> MultichainResult<Address> {
+        // Pearl uses its own BIP86 path — dispatch before the generic UTXO
+        // arm (which follows the Bitcoin BIP84 convention).
+        if chain == ChainId::Pearl {
+            return self.pearl_address(account, index);
+        }
         match chain.family() {
             ChainFamily::Evm => self.evm_address(chain, account, index),
             ChainFamily::Zion => self.zion_address(chain, account, index),
@@ -318,6 +323,41 @@ impl Keyring {
         Ok(Address::new(ChainId::Bitcoin, bytes, &encoded)?)
     }
 
+    // ── Pearl (btcd fork — BIP86 taproot, bech32m `prl`) ───────────────────
+    //
+    // Oyster derives key-only P2TR outputs at
+    // `m/86'/{PEARL_HD_COIN_TYPE}'/{account}'/{branch}/{index}` — same
+    // construction as BIP86 bitcoin taproot but with the Pearl coin type and
+    // `prl` bech32m HRP. `sign()` for Pearl is intentionally unsupported at
+    // the keyring level (spends go through oyster).
+
+    fn pearl_xpriv(&self, account: u32, index: u32) -> MultichainResult<Xpriv> {
+        let seed = self.seed.unwrap_or_else(|| self.mnemonic.to_seed(""));
+        let master = Xpriv::new_master(bitcoin::Network::Bitcoin, &seed)
+            .map_err(|e| MultichainError::Internal(format!("pearl xpriv: {e}")))?;
+        let path = format!(
+            "m/86'/{}'/{account}'/0/{index}",
+            crate::chain::adapters::pearl::PEARL_HD_COIN_TYPE
+        );
+        let derivation = DerivationPath::from_str(&path)
+            .map_err(|e| MultichainError::Internal(format!("pearl derivation path: {e}")))?;
+        let secp = Secp256k1::new();
+        master
+            .derive_priv(&secp, &derivation)
+            .map_err(|e| MultichainError::Internal(format!("pearl derive: {e}")))
+    }
+
+    /// Pearl P2TR address (`prl1p…`) for `account` / `index` — identical to
+    /// the address oyster would show for the same mnemonic at that index.
+    pub fn pearl_address(&self, account: u32, index: u32) -> MultichainResult<Address> {
+        let xpriv = self.pearl_xpriv(account, index)?;
+        let secp = Secp256k1::new();
+        let keypair = bitcoin::secp256k1::Keypair::from_secret_key(&secp, &xpriv.private_key);
+        let internal = XOnlyPublicKey::from_keypair(&keypair).0;
+        let output_key = crate::chain::adapters::pearl::pearl_taproot_output_key(&internal);
+        crate::chain::adapters::pearl::pearl_address_from_key(&output_key)
+    }
+
     /// Return the Bitcoin ECDSA private/public key pair for the default (0,0) address.
     pub fn bitcoin_key_pair(
         &self,
@@ -411,6 +451,27 @@ mod tests {
         // different index → different address
         let c = keyring.address(ChainId::Quantus, 0, 1).unwrap();
         assert_ne!(a.encoded, c.encoded);
+    }
+
+    #[test]
+    fn pearl_address_is_deterministic_and_valid() {
+        let keyring = Keyring::from_mnemonic(TEST_MNEMONIC).unwrap();
+        let a = keyring.address(ChainId::Pearl, 0, 0).unwrap();
+        let b = keyring.address(ChainId::Pearl, 0, 0).unwrap();
+        assert_eq!(a.encoded, b.encoded);
+        assert!(
+            a.encoded.starts_with("prl1p"),
+            "expected P2TR prl addr: {}",
+            a.encoded
+        );
+        let c = keyring.address(ChainId::Pearl, 0, 1).unwrap();
+        assert_ne!(a.encoded, c.encoded);
+        assert!(crate::chain::adapters::pearl::is_valid_pearl_address(
+            &a.encoded
+        ));
+        // Pearl must not collide with the bitcoin-family path.
+        let btc = keyring.address(ChainId::Bitcoin, 0, 0).unwrap();
+        assert!(btc.encoded.starts_with("bc1q"));
     }
 
     #[test]

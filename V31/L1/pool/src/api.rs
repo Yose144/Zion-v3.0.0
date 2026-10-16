@@ -411,6 +411,9 @@ impl PoolApi {
             "external_payouts": {
                 "quantus": {
                     "pending": pool.pending_external_payouts("quantus").len()
+                },
+                "pearl": {
+                    "pending": pool.pending_external_payouts("pearl").len()
                 }
             },
             "auxpow": auxpow_json,

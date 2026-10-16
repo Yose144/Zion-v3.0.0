@@ -50,6 +50,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   qtcNetworkStatus: (addr) => ipcRenderer.invoke('qtc-network-status', addr),
   walletSetQtc: (data) => ipcRenderer.invoke('wallet-set-qtc', data),
 
+  // Pearl (PRL) wallet
+  generatePearlWallet: () => ipcRenderer.invoke('generate-pearl-wallet'),
+  derivePearlAddress: (mnemonic) => ipcRenderer.invoke('derive-pearl-address', mnemonic),
+  validatePearlAddress: (address) => ipcRenderer.invoke('validate-pearl-address', address),
+  pearlGetBalance: (address) => ipcRenderer.invoke('pearl-get-balance', address),
+  pearlGetHistory: (address) => ipcRenderer.invoke('pearl-get-history', address),
+  prlNetworkStatus: (addr) => ipcRenderer.invoke('prl-network-status', addr),
+  walletSetPrl: (data) => ipcRenderer.invoke('wallet-set-prl', data),
+
   // Native multichain wallet (derived from the ZION mnemonic, non-custodial)
   nativeDeriveAddresses: (data) => ipcRenderer.invoke('native-derive-addresses', data),
   nativeGetBalances: (data) => ipcRenderer.invoke('native-balances', data),

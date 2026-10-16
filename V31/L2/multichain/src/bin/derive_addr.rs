@@ -199,12 +199,19 @@ fn main() {
                             .address(ChainId::Quantus, 0, 0)
                             .map(|a| a.encoded)
                             .unwrap_or_else(|_| String::new());
+                        // Pearl (PRL) taproot address — BIP86 coin type
+                        // 808276, oyster-compatible `prl1p…`.
+                        let prl = k
+                            .address(ChainId::Pearl, 0, 0)
+                            .map(|a| a.encoded)
+                            .unwrap_or_else(|_| String::new());
                         println!(
-                            "addr={} pk={} sk={} qtc={}",
+                            "addr={} pk={} sk={} qtc={} prl={}",
                             addr.encoded,
                             pk,
                             hex::encode(sk.to_bytes()),
                             qtc,
+                            prl,
                         );
                     }
                     Err(e) => eprintln!("ERROR: {} — {}", &m[..m.len().min(30)], e),
@@ -262,6 +269,13 @@ fn derive_bundle(mnemonic: &str) -> Result<String, String> {
     let qtc_addr = qtc_kp.ss58_address();
     let qtc_pk = hex::encode(qtc_kp.public_key());
 
+    // pearl — BIP86 taproot (secp256k1) at m/86'/808276'/0'/0/0, the same
+    // address oyster derives for this mnemonic. No secret material exported.
+    let prl_addr = kr
+        .address(ChainId::Pearl, 0, 0)
+        .map(|a| a.encoded)
+        .unwrap_or_default();
+
     // custodial reference addresses (warpd keyring paths — different by design).
     let zion_keyring_addr = kr
         .address(ChainId::ZionL1, 0, 0)
@@ -305,6 +319,12 @@ fn derive_bundle(mnemonic: &str) -> Result<String, String> {
             "publicKey": qtc_pk,
             "path": "m/44'/189'/0'/0/0",
             "standard": "ml-dsa-87 — signing via helper only",
+        },
+        "pearl": {
+            "chain": "pearl",
+            "address": prl_addr,
+            "path": "m/86'/808276'/0'/0/0",
+            "standard": "bip86 p2tr — bech32m prl, oyster-compatible",
         },
         "custodial": {
             "zionKeyring": zion_keyring_addr,
