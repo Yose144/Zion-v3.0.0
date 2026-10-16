@@ -736,3 +736,55 @@ submission paths against the live production pool.
   (solo block at this hashrate is luck-based; gateway forward armed).
 - `profit.rs` PRL auto-routing remains DISABLED until a real node
   `Accepted` is observed.
+
+## 13. Stage 3b — full E2E via isolated regtest: real node `accepted` (2026-10-16)
+
+The remaining unknown was the `submitPlainProof` → node acceptance leg.
+A mainnet block at the current hashrate is luck-based, so the chain was
+exercised on an **isolated Pearl regtest** (powLimit `2^233−1`) wired
+through the *same production code path* — only chain params differ.
+
+### Regtest setup (now stopped, preserved)
+
+- `pearld --regtest` → `/opt/pearl/pearld-regtest.conf`, datadir
+  `/opt/pearl/data-regtest`, RPC `127.0.0.1:45107`, P2P `127.0.0.1:45108`.
+- Second `pearl-gateway` process, `PEARLD_RPC_URL=http://127.0.0.1:45107`,
+  `MINER_RPC_PORT=8577` (log `/tmp/pearl-gw-regtest.log`).
+- Pool env `ZION_POOL_PEARL_GATEWAY` temporarily `8477→8577` (+restart),
+  flipped back after the accept (+restart). Miners reconnected ~10 s.
+
+### Result — block height 1 mined end-to-end by the production miner
+
+| time (CEST) | stage | evidence |
+|---|---|---|
+| 02:07:13 | pool → regtest gateway | `pearl_gateway: new job cert_version=3` (template h=1) |
+| 02:07→02:08 | rig `vega-smos` submits | hundreds of `pearl_submit accepted=true` on regtest job `14d73979…` |
+| 02:08:14 | **pool is_block → forward** | `pearl_block_candidate … job=14d73979 jackpot=d07e44fa… **forwarding**` |
+| 02:08:14 | gateway receives | `Received PlainProof submission for template time 1792109130` |
+| 02:11:12–13 | gateway → pearld | `Submitting block to Pearl node` → **`Block accepted by node!`** → `{'status': 'accepted'}` → template h=2 |
+| 02:11:13 | regtest chain | `getblockcount=1`, block `f8fd5f9e…459d35`, `time=1792109130` **matches the forwarded template**, prev=regtest genesis |
+
+This exercised every production hop: CUDA proof → V3 `PearlSubmit` →
+pool local verify + PPLNS credit → `is_block` detection → async
+`submitPlainProof` → gateway node RPC → **node consensus acceptance**.
+
+### Observations
+
+- **Gateway-side proof validation adds ~3 min latency** between the
+  pool forward and the node submission (zk verification is heavy). The
+  pool's async forward does not block the miner session on it.
+- `share_ease` saturates on regtest (block target 2^233 × 1e9 → clamp) —
+  every bound-hit became a share (~2/s accepted), confirming the submit
+  path sustains higher rates; on mainnet 1e9 the rate is ~1/min.
+- Regtest `cert_version` reported as 3 — the salted path is what the
+  production verifier runs.
+
+### Gate status
+
+- The wire path `pool → gateway → pearld → node accepted` is now
+  **proven live**. Mainnet block acceptance remains luck-based but is
+  now only a parameter difference, not a code unknown.
+- `profit.rs` PRL auto-routing stays DISABLED — the earlier gate was
+  set for mainnet; whether regtest acceptance satisfies it is a policy
+  decision, not a technical one. Production state is fully restored:
+  gateway env back on `8477`, regtest services stopped.
