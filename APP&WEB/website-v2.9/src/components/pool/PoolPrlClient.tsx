@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
+import { SITE_POOL_PRIMARY } from "@/lib/site";
 
 const C = {
   title: { cs: "Pearl Network (PRL)", en: "Pearl Network (PRL)" },
@@ -315,7 +316,7 @@ export default function PoolPrlClient({ embedded = false }: { embedded?: boolean
         <p className="text-xs text-gray-500 mb-4">{C.srbSub[cs ? 'cs' : 'en']}</p>
         <div className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{C.srbCmd[cs ? 'cs' : 'en']}</div>
         <pre className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-pink-200/90 overflow-x-auto mb-4">{`SRBMiner-MULTI --algorithm pearlhash \\
-  --pool stratum+tcp://62.171.141.136:8444 \\
+  --pool stratum+tcp://${SITE_POOL_PRIMARY} \\
   --wallet prl1YourAddress.yourWorker \\
   --password x --disable-cpu`}</pre>
         <ul className="space-y-1.5 text-xs text-gray-400 list-disc list-inside">
