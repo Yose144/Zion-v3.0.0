@@ -171,7 +171,19 @@ export async function POST(req: NextRequest) {
         // ai-native's echo-only mode (no remote backend configured) also has a
         // null source, but its answer always starts with this fixed prefix.
         const isEcho = typeof answer === 'string' && answer.startsWith('Hiranyagarbha bezi v ');
-        if (typeof answer === 'string' && answer.trim().length > 0 && d?.source == null && !isEcho) {
+        // Weak-LLM guard: a bare echo of the user's question (or an answer that
+        // is just the prompt repeated back) is not an answer — treat it as
+        // degraded so the client sees the offline message instead of nonsense.
+        const norm = (s: string) => s.trim().toLowerCase().replace(/[?!.\s]+$/g, '');
+        const isQuestionEcho =
+          typeof answer === 'string' && norm(answer) === norm(prompt.trim());
+        if (
+          typeof answer === 'string' &&
+          answer.trim().length > 0 &&
+          d?.source == null &&
+          !isEcho &&
+          !isQuestionEcho
+        ) {
           return NextResponse.json({ response: answer, model: MODEL_NAME, backend: 'hiranyagarbha' });
         }
         errors.push('hiranyagarbha: degraded or empty answer');
