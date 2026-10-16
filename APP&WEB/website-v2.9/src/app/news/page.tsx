@@ -3,6 +3,7 @@ import NewsArchive from '@/components/NewsArchive';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/news' },
   title: `Novinky | News · ZION ${SITE_RELEASE_LABEL}`,
   description: 'All ZION ecosystem news and updates — DeFi, mining, benchmarks, network, releases. Všechny novinky z ZION ekosystému.',
 };

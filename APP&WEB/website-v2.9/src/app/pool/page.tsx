@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/pool' },
   title: `ZION Mining Pool · TerraNova ${SITE_RELEASE_LABEL}`,
   description: 'Mine ZION with Cosmic Harmony PoW. PPLNS rewards, 89% miner share, 5% humanitarian tithe, 5% Issobella fund. Real-time v3.0.6 pool stats, 2-node P2P mesh, miner dashboard, and getting started guide.',
   openGraph: {

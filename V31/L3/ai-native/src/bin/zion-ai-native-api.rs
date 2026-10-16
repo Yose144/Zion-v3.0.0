@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::Utc;
@@ -18,6 +18,7 @@ use zion_ai_native::consciousness_engine::ConsciousnessEngine;
 use zion_ai_native::knowledge_base::KnowledgeConfig;
 use zion_ai_native::lexical::{truncate_chars, Bm25Index};
 use zion_ai_native::llm_backend::RemoteHttpBackend;
+use zion_ai_native::maestro::Maestro;
 use zion_ai_native::orchestrator::Orchestrator;
 use zion_ai_native::rag::EmbeddingInputType;
 use zion_ai_native::task::{AiTask, AiTaskType, TaskQueue};
@@ -58,6 +59,9 @@ struct AppState {
     pool_api_url: String,
     orchestrator: Mutex<Orchestrator>,
     task_queue: Mutex<TaskQueue>,
+    /// Hiran v2.4 Maestro — intent → plan → DAG → layer agents.
+    /// `None` when `HIRAN_MAESTRO_ENABLED=0`.
+    maestro: Option<Maestro>,
     ncl_state: NclAppState,
     ncl_pricing: PricingEngine,
 }
@@ -186,6 +190,12 @@ async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
         .route("/agents/:id/messages", get(agents_get_messages))
         // ── Orchestrator: status ──────────────────────────────────────────
         .route("/orchestrator/status", get(orchestrator_status))
+        // ── Hiran v2.4 Maestro (orchestration) ─────────────────────────────
+        .route("/v2/orchestrate", post(v2_orchestrate))
+        .route("/v2/classify", post(v2_classify))
+        .route("/v2/plan", post(v2_plan))
+        .route("/v2/health-matrix", get(v2_health_matrix))
+        .route("/v2/info", get(v2_info))
         // ── Telemetry + Optimizer (agent-cli L3 integration) ─────────────────
         .route("/telemetry", get(telemetry_handler))
         .route("/optimizer/run", post(optimizer_run_handler))
@@ -250,6 +260,11 @@ impl AppState {
                 .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string()),
             orchestrator: Mutex::new(Orchestrator::new(max_agents)),
             task_queue: Mutex::new(TaskQueue::new()),
+            maestro: if std::env::var("HIRAN_MAESTRO_ENABLED").ok().as_deref() == Some("0") {
+                None
+            } else {
+                Some(Maestro::new())
+            },
             ncl_state: NclAppState {
                 scheduler: Arc::new(Mutex::new(JobScheduler::new(1000))),
                 reputation: Arc::new(Mutex::new(ReputationRegistry::new())),
@@ -1208,4 +1223,205 @@ mod tests {
             assert_eq!(parse_autotune_flag(val), expected, "value: {val}");
         }
     }
+}
+
+// ============================================================================
+// Hiran v2.4 Maestro — /v2 orchestration API
+// ============================================================================
+//
+// POST /v2/orchestrate {q|text} → classify → plan → execute → result
+// POST /v2/plan        {q|text} → ExecutionPlan (dry-run, no execution)
+// POST /v2/classify    {q|text} → Intent
+// GET  /v2/health-matrix        → live probe of all services
+// GET  /v2/info                 → capabilities + gate status
+//
+// Mutation gate: plans containing approval-flagged steps are refused unless
+// HIRAN_MAESTRO_MUTATIONS=1; when MAESTRO_APPROVAL_TOKEN is set, requests must
+// additionally carry `X-Maestro-Approve: <token>`. Every decision is appended
+// to $ZION_L3_AUDIT_DIR/maestro-YYYYMMDD.jsonl (default /opt/zion/data/l3-audit).
+
+#[derive(Deserialize)]
+struct V2Request {
+    q: Option<String>,
+    text: Option<String>,
+    intent: Option<String>,
+}
+
+impl V2Request {
+    fn input(&self) -> Option<&str> {
+        self.q.as_deref().or(self.text.as_deref())
+    }
+}
+
+fn v2_no_maestro() -> (StatusCode, Json<Value>) {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(json!({"error": "maestro disabled (HIRAN_MAESTRO_ENABLED=0)"})),
+    )
+}
+
+fn v2_audit(event: &str, payload: Value) {
+    use std::io::Write;
+    let dir = zion_ai_native::endpoints::audit_dir();
+    let _ = std::fs::create_dir_all(&dir);
+    let path = format!("{}/maestro-{}.jsonl", dir, Utc::now().format("%Y%m%d"));
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = writeln!(
+            f,
+            "{}",
+            json!({"ts": Utc::now().to_rfc3339(), "event": event, "data": payload})
+        );
+    }
+}
+
+/// Gate for plans containing approval-flagged (mutating) steps.
+/// Returns Some(error_response) when execution must NOT proceed.
+fn v2_gate(
+    plan: &zion_ai_native::planner::ExecutionPlan,
+    headers: &HeaderMap,
+) -> Option<(StatusCode, Json<Value>)> {
+    if !plan.requires_approval() {
+        return None;
+    }
+    if !zion_ai_native::endpoints::mutations_enabled() {
+        return Some((
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "status": "approval_required",
+                "detail": "plan contains mutating steps; enable HIRAN_MAESTRO_MUTATIONS=1 \
+                           and pass X-Maestro-Approve",
+                "approval_steps": plan.steps.iter()
+                    .filter(|s| s.requires_approval)
+                    .map(|s| s.description.clone())
+                    .collect::<Vec<_>>(),
+            })),
+        ));
+    }
+    if let Some(expected) = zion_ai_native::endpoints::approval_token() {
+        let given = headers
+            .get("x-maestro-approve")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+        if !zion_ai_native::endpoints::token_matches(given, &expected) {
+            return Some((
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"status": "approval_token_invalid"})),
+            ));
+        }
+    }
+    None
+}
+
+async fn v2_orchestrate(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(req): Json<V2Request>,
+) -> (StatusCode, Json<Value>) {
+    let Some(m) = state.maestro.as_ref() else {
+        return v2_no_maestro();
+    };
+    let Some(input) = req.input() else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "missing 'q' or 'text'"})),
+        );
+    };
+    let plan = match m.plan_for_input(input) {
+        Ok(p) => p,
+        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({"error": e.to_string()}))),
+    };
+    if let Some(resp) = v2_gate(&plan, &headers) {
+        v2_audit("orchestrate_blocked", json!({"input": input}));
+        return resp;
+    }
+    match m.execute_plan(&plan).await {
+        Ok(res) => {
+            v2_audit(
+                "orchestrate",
+                json!({"input": input, "status": format!("{:?}", res.status)}),
+            );
+            (StatusCode::OK, Json(json!({"plan": plan, "result": res})))
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": e.to_string()})),
+        ),
+    }
+}
+
+async fn v2_plan(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<V2Request>,
+) -> (StatusCode, Json<Value>) {
+    let Some(m) = state.maestro.as_ref() else {
+        return v2_no_maestro();
+    };
+    let Some(input) = req.input() else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "missing 'q' or 'text'"})),
+        );
+    };
+    // Explicit intent overrides classification when provided
+    // (`intent` accepts the enum variant name, e.g. "MinerControl").
+    let plan_result = if let Some(intent_str) = req.intent.as_deref() {
+        match serde_json::from_value::<zion_ai_native::tool_registry::Intent>(json!(intent_str)) {
+            Ok(intent) => m.plan_for_intent(intent, input),
+            Err(_) => Err(zion_ai_native::error::AiError::ToolExecutionFailed(format!(
+                "unknown intent '{intent_str}'"
+            ))),
+        }
+    } else {
+        m.plan_for_input(input)
+    };
+    match plan_result {
+        Ok(plan) => {
+            let needs = plan.requires_approval();
+            (
+                StatusCode::OK,
+                Json(json!({"plan": plan, "requires_approval": needs})),
+            )
+        }
+        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({"error": e.to_string()}))),
+    }
+}
+
+async fn v2_classify(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<V2Request>,
+) -> (StatusCode, Json<Value>) {
+    let Some(m) = state.maestro.as_ref() else {
+        return v2_no_maestro();
+    };
+    let Some(input) = req.input() else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "missing 'q' or 'text'"})),
+        );
+    };
+    let intent = m.classify(input);
+    (StatusCode::OK, Json(json!({"input": input, "intent": intent})))
+}
+
+async fn v2_health_matrix(State(state): State<Arc<AppState>>) -> (StatusCode, Json<Value>) {
+    let Some(m) = state.maestro.as_ref() else {
+        return v2_no_maestro();
+    };
+    let matrix = m.refresh_health().await;
+    (StatusCode::OK, Json(json!(matrix)))
+}
+
+async fn v2_info(State(state): State<Arc<AppState>>) -> Json<Value> {
+    Json(json!({
+        "name": "hiran-maestro",
+        "version": "2.4",
+        "enabled": state.maestro.is_some(),
+        "mutations_enabled": zion_ai_native::endpoints::mutations_enabled(),
+        "approval_token_configured": zion_ai_native::endpoints::approval_token().is_some(),
+        "audit_dir": zion_ai_native::endpoints::audit_dir(),
+        "endpoints": [
+            "POST /v2/orchestrate", "POST /v2/plan", "POST /v2/classify",
+            "GET /v2/health-matrix", "GET /v2/info",
+        ],
+    }))
 }

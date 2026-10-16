@@ -1129,7 +1129,13 @@ impl MinerRuntime {
                 self.gpu_ext_nonce_cursor.clone(),
             ),
         };
-        let kind = parse_gpu_backend(&self.config.gpu_backend);
+        // `ZION_EXT_GPU_BACKEND` can override the external-stream backend
+        // independently of the primary backend — same pattern as
+        // `ZION_QPOW_BACKEND` (e.g. ZION on OpenCL + Pearl PoUW on CUDA).
+        let kind = std::env::var("ZION_EXT_GPU_BACKEND")
+            .ok()
+            .map(|v| parse_gpu_backend(&v))
+            .unwrap_or_else(|| parse_gpu_backend(&self.config.gpu_backend));
 
         // Extract shared CUDA device from the ZION (Stream 1) GPU backend.
         // This is CRITICAL: without sharing the same CudaDevice, both backends
@@ -2097,8 +2103,8 @@ impl MinerRuntime {
                     if *shutdown.borrow() {
                         break;
                     }
-                    this.mark_active(StreamId::GpuExternal).await;
                     if let Some(ref ext) = bundle.gpu_external {
+                        this.mark_active(StreamId::GpuExternal).await;
                         this.set_stream_coin(StreamId::GpuExternal, &ext.coin).await;
                         match this
                             .mine_v3_external_share(
@@ -2133,6 +2139,28 @@ impl MinerRuntime {
                             return Err(MinerError::Connection(
                                 "external job watch channel closed".into(),
                             ));
+                        }
+                    }
+                    if bundle.gpu_external.is_none() {
+                        this.mark_idle(StreamId::GpuExternal).await;
+                        tokio::select! {
+                            _ = shutdown.changed() => break,
+                            result = job_rx.changed() => {
+                                match result {
+                                    Ok(()) => {
+                                        bundle = match (*job_rx.borrow_and_update()).clone() {
+                                            Some(b) => b,
+                                            None => break,
+                                        };
+                                    }
+                                    Err(_) => {
+                                        warn!("V3 Trinity: external job watch channel closed, exiting");
+                                        return Err(MinerError::Connection(
+                                            "external job watch channel closed".into(),
+                                        ));
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -2363,29 +2391,42 @@ impl MinerRuntime {
         // loop reconnects. Joining the handles only after shutdown would
         // leave the miner hashing offline forever.
         let mut shutdown_for_changed = shutdown.clone();
+        let mut joined = [false; 4];
         let session_result: Result<(), MinerError> = loop {
             tokio::select! {
                 _ = shutdown_for_changed.changed() => break Ok(()),
-                r = &mut h1, if !h1.is_finished() => match r {
-                    Ok(Ok(())) => continue,
-                    Ok(Err(e)) => break Err(e),
-                    Err(e) => break Err(MinerError::Join(e)),
-                },
-                r = &mut h2, if !h2.is_finished() => match r {
-                    Ok(Ok(())) => continue,
-                    Ok(Err(e)) => break Err(e),
-                    Err(e) => break Err(MinerError::Join(e)),
-                },
-                r = &mut h3, if !h3.is_finished() => match r {
-                    Ok(Ok(())) => continue,
-                    Ok(Err(e)) => break Err(e),
-                    Err(e) => break Err(MinerError::Join(e)),
-                },
-                r = &mut h4, if !h4.is_finished() => match r {
-                    Ok(Ok(())) => continue,
-                    Ok(Err(e)) => break Err(e),
-                    Err(e) => break Err(MinerError::Join(e)),
-                },
+                r = &mut h1, if !joined[0] => {
+                    joined[0] = true;
+                    match r {
+                        Ok(Ok(())) => continue,
+                        Ok(Err(e)) => break Err(e),
+                        Err(e) => break Err(MinerError::Join(e)),
+                    }
+                }
+                r = &mut h2, if !joined[1] => {
+                    joined[1] = true;
+                    match r {
+                        Ok(Ok(())) => continue,
+                        Ok(Err(e)) => break Err(e),
+                        Err(e) => break Err(MinerError::Join(e)),
+                    }
+                }
+                r = &mut h3, if !joined[2] => {
+                    joined[2] = true;
+                    match r {
+                        Ok(Ok(())) => continue,
+                        Ok(Err(e)) => break Err(e),
+                        Err(e) => break Err(MinerError::Join(e)),
+                    }
+                }
+                r = &mut h4, if !joined[3] => {
+                    joined[3] = true;
+                    match r {
+                        Ok(Ok(())) => continue,
+                        Ok(Err(e)) => break Err(e),
+                        Err(e) => break Err(MinerError::Join(e)),
+                    }
+                }
                 else => break Ok(()),
             }
         };
@@ -2399,7 +2440,28 @@ impl MinerRuntime {
         } else {
             // Graceful shutdown: each stream watches the same shutdown
             // signal and exits on its own.
-            let _ = tokio::join!(h1, h2, h3, h4);
+            let _ = tokio::join!(
+                async {
+                    if !joined[0] {
+                        let _ = h1.await;
+                    }
+                },
+                async {
+                    if !joined[1] {
+                        let _ = h2.await;
+                    }
+                },
+                async {
+                    if !joined[2] {
+                        let _ = h3.await;
+                    }
+                },
+                async {
+                    if !joined[3] {
+                        let _ = h4.await;
+                    }
+                },
+            );
         }
         session_result
     }
@@ -2681,6 +2743,12 @@ impl MinerRuntime {
         let coin = ExternalCoin::from_ticker(&ext.coin)
             .ok_or_else(|| MinerError::Consensus(format!("unknown coin: {}", ext.coin)))?;
 
+        // Pearl PoUW does not fit the nonce/hash share model — one GPU call is
+        // a full fresh-matrix attempt and the "share" is a PlainProof blob.
+        if coin == ExternalCoin::Pearl {
+            return self.mine_v3_pearl_attempt(client, stream, &ext).await;
+        }
+
         // On a new GPU external job, reset the nonce cursor to a unique base.
         // Without this, multiple miners on the same upstream EthStratum/ProgPoW
         // job all scan from nonce 0, find the same first solution, and one of
@@ -2951,6 +3019,207 @@ impl MinerRuntime {
         Ok(result.accepted)
     }
 
+    /// One Pearl PoUW attempt against a V3 `external_stream` PRL job.
+    ///
+    /// The job carries the raw gateway fields: `header_hex` = 76-byte
+    /// `IncompleteBlockHeader`, `target_hex` = pool share target (32B BE),
+    /// `eq_params` = cert_version (≥3 → salted seed bind). One call performs a
+    /// single complete GPU attempt (fresh matrices, all hash tiles); the outer
+    /// stream loop re-invokes it until the job rotates. On a jackpot the
+    /// matrices are read back, the `PlainProof` (rows/cols strips + Merkle
+    /// proofs) is built on CPU, bincode+b64-encoded and sent as `PearlSubmit`.
+    #[cfg(feature = "auxpow")]
+    async fn mine_v3_pearl_attempt(
+        &self,
+        client: Arc<V3PoolClient>,
+        stream: StreamId,
+        ext: &ExternalStreamJob,
+    ) -> Result<bool, MinerError> {
+        use crate::auxpow::pearl::{
+            build_plain_proof, mining_job_json, PearlMineConfig, PearlPouwNativeInput,
+            PearlSeedDerivation, PEARL_SEED_LABEL_A, PEARL_SEED_LABEL_B,
+        };
+        use zion_cosmic_harmony::ExternalCoin;
+
+        let header_hex = ext.header_hex.strip_prefix("0x").unwrap_or(&ext.header_hex);
+        let header_bytes = hex::decode(header_hex)
+            .map_err(|e| MinerError::Consensus(format!("pearl header decode: {e}")))?;
+        let header: [u8; 76] = header_bytes
+            .try_into()
+            .map_err(|_| MinerError::Consensus("pearl header must be 76 bytes".into()))?;
+        let cert_version: u32 = ext.eq_params.parse().unwrap_or(3);
+        let target_hex = ext.target_hex.strip_prefix("0x").unwrap_or(&ext.target_hex);
+        let target_vec = hex::decode(target_hex)
+            .map_err(|e| MinerError::Consensus(format!("pearl target decode: {e}")))?;
+        let share_target = num_bigint::BigUint::from_bytes_be(&target_vec);
+
+        let cfg = PearlMineConfig::from_env()
+            .map_err(|e| MinerError::Consensus(format!("pearl config: {e:#}")))?;
+        // The kernel's target must be the pool share target times the
+        // rank-penalty adjustment — the same bound the pool verifier applies.
+        let u256_max = (num_bigint::BigUint::from(1u8) << 256) - num_bigint::BigUint::from(1u8);
+        let bound = (share_target.clone() * cfg.adjustment_factor()).min(u256_max);
+        let bound_bytes = bound.to_bytes_be();
+        let mut target = [0u8; 32];
+        target[32 - bound_bytes.len()..].copy_from_slice(&bound_bytes);
+        let job_key = cfg.job_key(&header);
+        let row_offsets = cfg.row_offsets();
+        let col_offsets = cfg.col_offsets();
+        let rows_base = cfg.rows_base();
+        let cols_base = cfg.cols_base();
+
+        let nonce = self
+            .gpu_ext_cursor(stream)
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let seed_derivation = if cert_version >= 3 {
+            PearlSeedDerivation::Salted
+        } else {
+            PearlSeedDerivation::Legacy
+        };
+
+        // Same persistent-backend pattern as try_gpu_ext_share: the OpenCL
+        // external miner is created once per algorithm and reused.
+        let (gpu_ext, gpu_ext_algo) = match stream {
+            StreamId::GpuExternal2 => (self.gpu_ext2.clone(), self.gpu_ext2_algo.clone()),
+            _ => (self.gpu_ext.clone(), self.gpu_ext_algo.clone()),
+        };
+        let kind = std::env::var("ZION_EXT_GPU_BACKEND")
+            .ok()
+            .map(|v| parse_gpu_backend(&v))
+            .unwrap_or_else(|| parse_gpu_backend(&self.config.gpu_backend));
+        let work_size = self.config.auxpow_nonce_batch.max(1) as usize;
+        #[cfg(feature = "gpu-cuda")]
+        let shared_cuda_dev = {
+            let gpu_guard = self.gpu_zion.lock().unwrap();
+            gpu_guard.as_ref().and_then(|g| g.shared_cuda_device())
+        };
+        #[cfg(not(feature = "gpu-cuda"))]
+        let shared_cuda_dev: Option<()> = None;
+        // spawn_blocking needs 'static — move owned copies in and build the
+        // borrowing `PearlPouwNativeInput` inside the closure.
+        let (dims, rank) = ((cfg.m, cfg.n, cfg.k), cfg.rank);
+        let (ro, co, rb, cb) = (
+            row_offsets.clone(),
+            col_offsets.clone(),
+            rows_base.clone(),
+            cols_base.clone(),
+        );
+        ext_debug!(stream = ?stream, nonce = nonce, job_id = %ext.job_id, "pearl attempt start");
+        let start = Instant::now();
+        let mine_result = task::spawn_blocking(move || {
+            let need_recreate = gpu_ext_algo.lock().unwrap().as_deref() != Some("pearlhash");
+            if need_recreate {
+                let miner = create_gpu_backend_with_cuda_device(
+                    kind,
+                    work_size,
+                    "pearlhash",
+                    "PRL",
+                    shared_cuda_dev,
+                )
+                .map_err(|e| anyhow::anyhow!("pearl gpu backend init: {e}"))?;
+                *gpu_ext.lock().unwrap() = Some(miner);
+                *gpu_ext_algo.lock().unwrap() = Some("pearlhash".to_string());
+                ext_info!("pearlhash: GPU ext backend ready");
+            }
+            let input = PearlPouwNativeInput {
+                nonce,
+                m: dims.0,
+                n: dims.1,
+                k: dims.2,
+                rank,
+                job_key,
+                target,
+                row_offsets: &ro,
+                col_offsets: &co,
+                rows_base: &rb,
+                cols_base: &cb,
+                seed_label_a: PEARL_SEED_LABEL_A,
+                seed_label_b: PEARL_SEED_LABEL_B,
+                seed_derivation,
+            };
+            let mut guard = gpu_ext.lock().unwrap();
+            let gpu = guard
+                .as_mut()
+                .ok_or_else(|| anyhow::anyhow!("pearl gpu backend unavailable"))?;
+            gpu.mine_pearl(&input)
+        })
+        .await
+        .map_err(|e| MinerError::Consensus(format!("pearl mine join: {e}")))?
+        .map_err(|e| MinerError::Consensus(format!("pearl mine: {e:#}")))?;
+
+        // Duty-cycle gap identical to the generic ext path — Stream 1 (ZION)
+        // shares the card.
+        let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(0);
+        if gap_ms > 0 {
+            sleep(Duration::from_millis(gap_ms)).await;
+        }
+
+        let elapsed = start.elapsed().as_secs_f64();
+        self.update_hashrate(stream, 1, elapsed).await;
+        ext_debug!(
+            stream = ?stream,
+            nonce = nonce,
+            job_id = %ext.job_id,
+            found = mine_result.is_some(),
+            elapsed_secs = elapsed,
+            "pearl attempt completed"
+        );
+
+        let Some(result) = mine_result else {
+            return Ok(false);
+        };
+
+        let proof_bytes = build_plain_proof(
+            &cfg,
+            &job_key,
+            &result.matrix_a,
+            &result.matrix_bt,
+            result.tile_index,
+            &row_offsets,
+            &col_offsets,
+        )
+        .map_err(|e| MinerError::Consensus(format!("pearl proof build: {e:#}")))?;
+        use base64::Engine as _;
+        let proof_b64 = base64::engine::general_purpose::STANDARD.encode(&proof_bytes);
+        let target_dec = share_target.to_str_radix(10);
+        let job_json = mining_job_json(&header, &target_dec, cert_version);
+        let job_b64 = base64::engine::general_purpose::STANDARD.encode(job_json.as_bytes());
+        let hash_hex = hex::encode(result.jackpot_hash);
+
+        let res = client
+            .submit_pearl_share(&ext.job_id, &hash_hex, &proof_b64, &job_b64)
+            .await
+            .map_err(|e| MinerError::Connection(format!("pearl submit: {e}")))?;
+
+        let share_result = if res.accepted {
+            ShareResult::Accepted
+        } else {
+            ShareResult::Rejected(res.status.clone())
+        };
+        self.record_share_result(stream, ExternalCoin::Pearl, &share_result)
+            .await;
+        if res.accepted {
+            ext_info!(
+                stream = ?stream,
+                nonce = result.nonce,
+                tile = result.tile_index,
+                job_id = %ext.job_id,
+                "V3 Trinity: pearl share accepted"
+            );
+        } else {
+            ext_warn!(
+                stream = ?stream,
+                nonce = result.nonce,
+                status = %res.status,
+                "V3 Trinity: pearl share rejected"
+            );
+        }
+        Ok(res.accepted)
+    }
+
     #[cfg(feature = "auxpow")]
     /// One iteration of an AuxPoW stream.
     async fn auxpow_stream_round(&self, stream: StreamId) -> Result<(), MinerError> {
@@ -3165,6 +3434,14 @@ impl MinerRuntime {
         }
     }
 
+    async fn mark_idle(&self, stream: StreamId) {
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            s.active = false;
+            s.hashrate = 0.0;
+        }
+    }
+
     /// Record which coin a stream is currently mining so metrics/UI show the
     /// real ticker (e.g. "ZANO") instead of the stream id ("gpu-external-2").
     #[cfg(feature = "auxpow")]
@@ -3180,6 +3457,7 @@ impl MinerRuntime {
             if s.coin != Some(coin) {
                 s.coin = Some(coin);
                 s.algorithm = Some(coin.algorithm().to_string());
+                s.hashrate = 0.0;
             }
         }
     }
@@ -4039,5 +4317,274 @@ mod tests {
             runtime.total_shares().await >= 3,
             "expected at least 3 shares"
         );
+    }
+
+    #[cfg(feature = "auxpow")]
+    struct FakePearlMiner {
+        calls: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    }
+
+    #[cfg(feature = "auxpow")]
+    impl GpuMiner for FakePearlMiner {
+        fn device_name(&self) -> String {
+            "fake-pearl".into()
+        }
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Cpu
+        }
+        fn algorithm(&self) -> String {
+            "pearlhash".into()
+        }
+        fn mine_batch(
+            &mut self,
+            _header: MiningHeader,
+            _target: DifficultyTarget,
+            _nonce_start: u64,
+            _batch_size: u64,
+        ) -> anyhow::Result<crate::gpu::GpuBatchResult> {
+            anyhow::bail!("unused")
+        }
+        fn benchmark(&mut self, _secs: f64) -> anyhow::Result<(u64, f64, f64)> {
+            anyhow::bail!("unused")
+        }
+        fn mine_pearl(
+            &mut self,
+            _input: &crate::auxpow::pearl::PearlPouwNativeInput<'_>,
+        ) -> anyhow::Result<Option<crate::auxpow::pearl::PearlPouwNativeResult>> {
+            self.calls
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            Ok(None)
+        }
+    }
+
+    #[cfg(feature = "auxpow")]
+    fn pearl_ext_job() -> ExternalStreamJob {
+        ExternalStreamJob {
+            coin: "PRL".to_string(),
+            algorithm: "pearlhash".to_string(),
+            job_id: "prl-job-1".to_string(),
+            header_hex: hex::encode([7u8; 76]),
+            target_hex: "ff".repeat(32),
+            height: 0,
+            extranonce1_hex: String::new(),
+            protocol: "pearlgw".to_string(),
+            seed_hash_hex: String::new(),
+            timestamp: 0,
+            ntime_hex: String::new(),
+            eq_params: "3".to_string(),
+            eq_pers: String::new(),
+        }
+    }
+
+    #[cfg(feature = "auxpow")]
+    async fn mock_v3_handshake() -> (u16, tokio::sync::mpsc::Sender<String>) {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpListener;
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(8);
+        tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            let (reader, mut writer) = socket.into_split();
+            let mut lines = BufReader::new(reader).lines();
+            let _hello = lines.next_line().await.unwrap().unwrap();
+            writer
+                .write_all(
+                    b"{\"type\":\"welcome\",\"protocol_version\":\"zion-v3-stratum/0.2\",\"algorithm\":\"ekam_deeksha\",\"job_ttl_ms\":30000}\n",
+                )
+                .await
+                .unwrap();
+            writer.flush().await.unwrap();
+            while let Some(msg) = rx.recv().await {
+                writer.write_all(msg.as_bytes()).await.unwrap();
+                writer.write_all(b"\n").await.unwrap();
+                writer.flush().await.unwrap();
+            }
+        });
+        (port, tx)
+    }
+
+    #[cfg(feature = "auxpow")]
+    fn v3_job_line(job_id: u64, external: Option<ExternalStreamJob>) -> String {
+        crate::pool_message::encode_message(&crate::pool_message::PoolMessage::Job {
+            job_id,
+            algorithm: "ekam_deeksha".to_string(),
+            start_nonce: 0,
+            nonce_count: 1_000_000,
+            target_hex: "ff".repeat(32),
+            header_hex: "00".repeat(80),
+            height: 1,
+            stream_weights: String::new(),
+            external_stream: external,
+            external_stream_cpu: None,
+            external_stream_2: None,
+        })
+        .unwrap()
+    }
+
+    #[cfg(feature = "auxpow")]
+    #[tokio::test]
+    async fn pearl_attempt_records_progress_without_share() {
+        let (port, _tx) = mock_v3_handshake().await;
+        let client = Arc::new(
+            V3PoolClient::connect(
+                &format!("127.0.0.1:{port}"),
+                "miner",
+                "worker",
+                "ekam_deeksha",
+                "cpu",
+                "payout",
+            )
+            .await
+            .unwrap(),
+        );
+
+        let mut config = MinerConfig::new(test_address());
+        config.gpu_backend = "cpu".to_string();
+        let runtime = MinerRuntime::new(config);
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        *runtime.gpu_ext.lock().unwrap() = Some(Box::new(FakePearlMiner {
+            calls: calls.clone(),
+        }));
+        *runtime.gpu_ext_algo.lock().unwrap() = Some("pearlhash".to_string());
+
+        let accepted = runtime
+            .mine_v3_pearl_attempt(client, StreamId::GpuExternal, &pearl_ext_job())
+            .await
+            .unwrap();
+        assert!(!accepted);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::Relaxed), 1);
+        let stats = runtime.stats.lock().await;
+        let s = stats.get(&StreamId::GpuExternal).unwrap();
+        assert!(s.hashrate > 0.0);
+    }
+
+    #[cfg(feature = "auxpow")]
+    #[tokio::test]
+    async fn coin_change_resets_stream_hashrate() {
+        let mut config = MinerConfig::new(test_address());
+        config.gpu_backend = "cpu".to_string();
+        let runtime = MinerRuntime::new(config);
+        {
+            let mut stats = runtime.stats.lock().await;
+            let s = stats.get_mut(&StreamId::GpuExternal).unwrap();
+            s.coin = Some(zion_cosmic_harmony::ExternalCoin::Quantus);
+            s.hashrate = 891_000.0;
+        }
+        runtime.set_stream_coin(StreamId::GpuExternal, "QTU").await;
+        {
+            let stats = runtime.stats.lock().await;
+            assert_eq!(
+                stats.get(&StreamId::GpuExternal).unwrap().hashrate,
+                891_000.0
+            );
+        }
+        runtime.set_stream_coin(StreamId::GpuExternal, "PRL").await;
+        let stats = runtime.stats.lock().await;
+        let s = stats.get(&StreamId::GpuExternal).unwrap();
+        assert_eq!(s.coin, Some(zion_cosmic_harmony::ExternalCoin::Pearl));
+        assert_eq!(s.hashrate, 0.0);
+    }
+
+    #[cfg(feature = "auxpow")]
+    #[tokio::test]
+    async fn stream2_idles_without_ext_job_and_resumes() {
+        let (port, tx) = mock_v3_handshake().await;
+
+        let mut config = MinerConfig::new(test_address());
+        config.gpu_backend = "cpu".to_string();
+        config.pool_url = Some(format!("127.0.0.1:{port}"));
+        config.stream1_enabled = false;
+        config.stream2_enabled = true;
+        config.stream3_enabled = false;
+        config.stream4_enabled = false;
+        let runtime = Arc::new(MinerRuntime::new(config));
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        *runtime.gpu_ext.lock().unwrap() = Some(Box::new(FakePearlMiner {
+            calls: calls.clone(),
+        }));
+        *runtime.gpu_ext_algo.lock().unwrap() = Some("pearlhash".to_string());
+
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        let handle = {
+            let runtime = Arc::clone(&runtime);
+            tokio::spawn(async move { runtime.run_v3_trinity(shutdown_rx).await })
+        };
+
+        tx.send(v3_job_line(1, None)).await.unwrap();
+        tokio::time::sleep(Duration::from_millis(800)).await;
+        {
+            let stats = runtime.stats.lock().await;
+            let s = stats.get(&StreamId::GpuExternal).unwrap();
+            assert!(!s.active);
+            assert_eq!(s.hashrate, 0.0);
+        }
+        assert_eq!(calls.load(std::sync::atomic::Ordering::Relaxed), 0);
+
+        tx.send(v3_job_line(2, Some(pearl_ext_job())))
+            .await
+            .unwrap();
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            let resumed = calls.load(std::sync::atomic::Ordering::Relaxed) > 0 && {
+                let stats = runtime.stats.lock().await;
+                let s = stats.get(&StreamId::GpuExternal).unwrap();
+                s.active && s.hashrate > 0.0
+            };
+            if resumed {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "pearl mining did not resume"
+            );
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+
+        shutdown_tx.send(true).unwrap();
+        tokio::time::timeout(Duration::from_secs(10), handle)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+    }
+
+    #[cfg(feature = "auxpow")]
+    #[tokio::test]
+    async fn session_errors_when_pool_disconnects() {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpListener;
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            let (reader, mut writer) = socket.into_split();
+            let mut lines = BufReader::new(reader).lines();
+            let _hello = lines.next_line().await.unwrap().unwrap();
+            writer
+                .write_all(
+                    b"{\"type\":\"welcome\",\"protocol_version\":\"zion-v3-stratum/0.2\",\"algorithm\":\"ekam_deeksha\",\"job_ttl_ms\":30000}\n",
+                )
+                .await
+                .unwrap();
+            writer.flush().await.unwrap();
+        });
+
+        let mut config = MinerConfig::new(test_address());
+        config.gpu_backend = "cpu".to_string();
+        config.pool_url = Some(format!("127.0.0.1:{port}"));
+        config.stream1_enabled = false;
+        config.stream2_enabled = true;
+        config.stream3_enabled = false;
+        config.stream4_enabled = false;
+        let runtime = MinerRuntime::new(config);
+        let (_tx, shutdown_rx) = watch::channel(false);
+        let result = tokio::time::timeout(
+            Duration::from_secs(10),
+            runtime.run_v3_trinity_session(shutdown_rx),
+        )
+        .await
+        .expect("session must return on pool disconnect, not hang");
+        assert!(result.is_err());
     }
 }

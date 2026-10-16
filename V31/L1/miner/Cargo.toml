@@ -114,5 +114,10 @@ name = "zion-universal-miner"
 path = "src/bin/zion-universal-miner.rs"
 required-features = ["auxpow"]
 
+[[bin]]
+name = "pearl_pool_probe"
+path = "src/bin/pearl_pool_probe.rs"
+required-features = ["gpu-cuda"]
+
 [build-dependencies]
 cc = "1.0"

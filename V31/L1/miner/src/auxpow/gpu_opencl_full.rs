@@ -365,6 +365,7 @@ struct PearlPouwBufferCache {
     matrix_bt_buf: Buffer<i8>,
     chunk_hashes_buf: Buffer<u8>,
     merkle_buf: Buffer<u8>,
+    merkle_buf2: Buffer<u8>,
     root_a_buf: Buffer<u8>,
     root_b_buf: Buffer<u8>,
     b_noise_seed_buf: Buffer<u8>,
@@ -7775,33 +7776,13 @@ impl DagManager {
 
 // ─── Pearl PoUW GPU-Native Pipeline (OpenCL) ─────────────────────────────
 
-/// Input for GPU-native Pearl PoUW mining (no CPU data prep needed).
-/// Mirrors `gpu_metal::PearlPouwNativeInput` for the OpenCL backend.
-pub struct PearlPouwNativeInput<'a> {
-    pub nonce: u64,
-    pub m: usize,
-    pub n: usize,
-    pub k: usize,
-    pub rank: usize,
-    pub job_key: [u8; 32],
-    pub target: [u8; 32],
-    pub row_offsets: &'a [u32],
-    pub col_offsets: &'a [u32],
-    pub rows_base: &'a [u32],
-    pub cols_base: &'a [u32],
-    pub seed_label_a: [u8; 32],
-    pub seed_label_b: [u8; 32],
-}
-
-/// Result of GPU-native Pearl PoUW mining (includes matrices for Merkle proof).
-/// Mirrors `gpu_metal::PearlPouwNativeResult` for the OpenCL backend.
-pub struct PearlPouwNativeResult {
-    pub tile_index: u32,
-    pub jackpot_hash: [u8; 32],
-    pub nonce: u64,
-    pub matrix_a: Vec<i8>,
-    pub matrix_bt: Vec<i8>,
-}
+// The plain data types (derivation enum, seed labels/salts, input/result
+// structs) live in `auxpow::pearl` so runtime dispatch compiles without the
+// `gpu-opencl` feature. Re-exported here for existing call sites.
+pub use crate::auxpow::pearl::{
+    PearlPouwNativeInput, PearlPouwNativeResult, PearlSeedDerivation, PEARL_SEED_LABEL_A,
+    PEARL_SEED_LABEL_B, PEARL_SEED_SALT_A, PEARL_SEED_SALT_B,
+};
 
 /// Result of real Pearl PoUW GPU GEMM mining (CPU-prep + GPU dispatch).
 /// Contains the winning hash tile index and jackpot hash, plus dimension
@@ -7863,6 +7844,20 @@ fn round_up_gws(global: usize, lws: usize) -> usize {
     ((global + lws - 1) / lws) * lws
 }
 
+/// Enqueue `kernel` with a layout legal for any `global`: the local size is
+/// the largest power-of-2 divisor of `global` (≤ max_lws) and the global size
+/// is rounded up to a multiple of it. Kernel must bounds-check `gid >= global`.
+#[cfg(feature = "gpu-opencl")]
+unsafe fn enq_pow2(kernel: &Kernel, global: usize, max_lws: usize) -> Result<()> {
+    let lws = safe_lws(global, max_lws);
+    kernel
+        .cmd()
+        .global_work_size(round_up_gws(global, lws))
+        .local_work_size(lws)
+        .enq()
+        .map_err(Into::into)
+}
+
 impl ExtGpuMiner {
     /// Fully GPU-native Pearl PoUW mining pipeline (OpenCL).
     ///
@@ -7918,13 +7913,31 @@ impl ExtGpuMiner {
             self.pearl_buffers.take().unwrap()
         } else {
             // Create all new buffers
-            let matrix_a_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(mk).build()?;
-            let matrix_bt_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(nk).build()?;
+            // Matrices are allocated padded to the BLAKE3 chunk boundary and
+            // zero-filled once — gen_matrix writes only the first m*k (n*k)
+            // bytes, so the tail stays the canonical zero-padding
+            // (MerkleTree::new pads with zeros before hashing).
+            let matrix_a_buf: Buffer<i8> = Buffer::builder()
+                .queue(q.clone())
+                .len(num_chunks_a * 1024)
+                .fill_val(0i8)
+                .build()?;
+            let matrix_bt_buf: Buffer<i8> = Buffer::builder()
+                .queue(q.clone())
+                .len(num_chunks_b * 1024)
+                .fill_val(0i8)
+                .build()?;
             let chunk_hashes_buf: Buffer<u8> = Buffer::builder()
                 .queue(q.clone())
                 .len(max_chunks * 32)
                 .build()?;
             let merkle_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(max_chunks * 32)
+                .build()?;
+            // Second tree scratch — B's chunk CVs must not share a buffer with
+            // A's merge ping-pong (A's first merge level would clobber them).
+            let merkle_buf2: Buffer<u8> = Buffer::builder()
                 .queue(q.clone())
                 .len(max_chunks * 32)
                 .build()?;
@@ -7997,6 +8010,7 @@ impl ExtGpuMiner {
                 matrix_bt_buf,
                 chunk_hashes_buf,
                 merkle_buf,
+                merkle_buf2,
                 root_a_buf,
                 root_b_buf,
                 b_noise_seed_buf,
@@ -8045,6 +8059,7 @@ impl ExtGpuMiner {
         let matrix_bt_buf = &cache.matrix_bt_buf;
         let chunk_hashes_buf = &cache.chunk_hashes_buf;
         let merkle_buf = &cache.merkle_buf;
+        let merkle_buf2 = &cache.merkle_buf2;
         let root_a_buf = &cache.root_a_buf;
         let root_b_buf = &cache.root_b_buf;
         let b_noise_seed_buf = &cache.b_noise_seed_buf;
@@ -8079,11 +8094,7 @@ impl ExtGpuMiner {
                 .arg(0u32)
                 .build()?;
             unsafe {
-                kern_gen_a
-                    .cmd()
-                    .global_work_size(mk as usize)
-                    .local_work_size(256)
-                    .enq()?;
+                enq_pow2(&kern_gen_a, mk, 256)?;
             }
 
             let kern_gen_bt = Kernel::builder()
@@ -8097,11 +8108,7 @@ impl ExtGpuMiner {
                 .arg(1u32)
                 .build()?;
             unsafe {
-                kern_gen_bt
-                    .cmd()
-                    .global_work_size(nk as usize)
-                    .local_work_size(256)
-                    .enq()?;
+                enq_pow2(&kern_gen_bt, nk, 256)?;
             }
         }
         if profile {
@@ -8114,39 +8121,38 @@ impl ExtGpuMiner {
         }
 
         // ── Step 2: BLAKE3 chunk hashing ────────────────────────────────
+        // Single-chunk matrices write their chunk CV straight into the root
+        // buffer with the ROOT flag (canonical MerkleTree hashes <=1024B
+        // directly, skipping the tree).
         {
+            let single_a = num_chunks_a == 1;
             let kern_chunk_a = Kernel::builder()
                 .queue(q.clone())
                 .program(&program)
                 .name("pearl_blake3_chunk_hash")
                 .arg(matrix_a_buf)
                 .arg(&job_key_buf)
-                .arg(chunk_hashes_buf)
+                .arg(if single_a { root_a_buf } else { chunk_hashes_buf })
                 .arg(num_chunks_a as u32)
+                .arg(if single_a { 1u32 } else { 0u32 })
                 .build()?;
             unsafe {
-                kern_chunk_a
-                    .cmd()
-                    .global_work_size(num_chunks_a)
-                    .local_work_size(64)
-                    .enq()?;
+                enq_pow2(&kern_chunk_a, num_chunks_a, 64)?;
             }
 
+            let single_b = num_chunks_b == 1;
             let kern_chunk_b = Kernel::builder()
                 .queue(q.clone())
                 .program(&program)
                 .name("pearl_blake3_chunk_hash")
                 .arg(matrix_bt_buf)
                 .arg(&job_key_buf)
-                .arg(merkle_buf)
+                .arg(if single_b { root_b_buf } else { merkle_buf2 })
                 .arg(num_chunks_b as u32)
+                .arg(if single_b { 1u32 } else { 0u32 })
                 .build()?;
             unsafe {
-                kern_chunk_b
-                    .cmd()
-                    .global_work_size(num_chunks_b)
-                    .local_work_size(64)
-                    .enq()?;
+                enq_pow2(&kern_chunk_b, num_chunks_b, 64)?;
             }
         }
         if profile {
@@ -8163,13 +8169,15 @@ impl ExtGpuMiner {
         // Reduce B: merkle_buf → root_b_buf
         {
             // Reduce A
+            // Canonical layer build: pairs merge (keyed PARENT CVs), a lone
+            // last child propagates up unchanged; ROOT flag only on the
+            // final 2→1 merge.
             let mut num_nodes = num_chunks_a;
             let mut src_a: &Buffer<u8> = chunk_hashes_buf;
             let mut dst_a: &Buffer<u8> = merkle_buf;
-            let mut level = 0u32;
             while num_nodes > 1 {
-                let num_parents = num_nodes / 2;
-                let is_root = num_parents == 1;
+                let num_parents = num_nodes.div_ceil(2);
+                let is_root = num_nodes == 2;
                 let dst = if is_root { root_a_buf } else { dst_a };
 
                 let kern_merge = Kernel::builder()
@@ -8177,8 +8185,9 @@ impl ExtGpuMiner {
                     .program(&program)
                     .name("pearl_blake3_merge")
                     .arg(src_a)
+                    .arg(&job_key_buf)
                     .arg(dst)
-                    .arg(num_parents as u32)
+                    .arg(num_nodes as u32)
                     .arg(if is_root { 1u32 } else { 0u32 })
                     .build()?;
                 let lws = safe_lws(num_parents, 64);
@@ -8193,17 +8202,16 @@ impl ExtGpuMiner {
 
                 std::mem::swap(&mut src_a, &mut dst_a);
                 num_nodes = num_parents;
-                level += 1;
             }
 
-            // Reduce B
+            // Reduce B — leaf layer lives in merkle_buf2 (A's ping-pong
+            // scratch in merkle_buf must not alias B's chunks).
             let mut num_nodes = num_chunks_b;
-            let mut src_b: &Buffer<u8> = merkle_buf;
-            let mut dst_b: &Buffer<u8> = chunk_hashes_buf;
-            let mut level = 0u32;
+            let mut src_b: &Buffer<u8> = merkle_buf2;
+            let mut dst_b: &Buffer<u8> = merkle_buf;
             while num_nodes > 1 {
-                let num_parents = num_nodes / 2;
-                let is_root = num_parents == 1;
+                let num_parents = num_nodes.div_ceil(2);
+                let is_root = num_nodes == 2;
                 let dst = if is_root { root_b_buf } else { dst_b };
 
                 let kern_merge = Kernel::builder()
@@ -8211,8 +8219,9 @@ impl ExtGpuMiner {
                     .program(&program)
                     .name("pearl_blake3_merge")
                     .arg(src_b)
+                    .arg(&job_key_buf)
                     .arg(dst)
-                    .arg(num_parents as u32)
+                    .arg(num_nodes as u32)
                     .arg(if is_root { 1u32 } else { 0u32 })
                     .build()?;
                 let lws = safe_lws(num_parents, 64);
@@ -8227,7 +8236,6 @@ impl ExtGpuMiner {
 
                 std::mem::swap(&mut src_b, &mut dst_b);
                 num_nodes = num_parents;
-                level += 1;
             }
         }
         if profile {
@@ -8239,7 +8247,9 @@ impl ExtGpuMiner {
         // ── Step 4: Derive noise seeds ─────────────────────────────────
         // b_noise_seed = blake3(job_key || hash_b)  — unkeyed, 64-byte input
         // a_noise_seed = blake3(b_noise_seed || hash_a)  — unkeyed, 64-byte input
-        // We need to assemble seed_msg = job_key || hash_b on the CPU, then upload.
+        // Under SeedDerivation::Salted (cert_version 3+) the raw roots are
+        // first dimension-bound: hash_eff = blake3_keyed(SEED_SALT_*,
+        // root || dim_u32le || 28×00).
         {
             // Read root_b from GPU
             let mut root_b = [0u8; 32];
@@ -8248,10 +8258,25 @@ impl ExtGpuMiner {
             let mut root_a = [0u8; 32];
             root_a_buf.read(&mut root_a[..]).enq()?;
 
+            let (hash_a_eff, hash_b_eff) = match input.seed_derivation {
+                PearlSeedDerivation::Legacy => (root_a, root_b),
+                PearlSeedDerivation::Salted => {
+                    let mut bind_a = [0u8; 64];
+                    bind_a[..32].copy_from_slice(&root_a);
+                    bind_a[32..36].copy_from_slice(&(m as u32).to_le_bytes());
+                    let bound_a = *blake3::keyed_hash(&PEARL_SEED_SALT_A, &bind_a).as_bytes();
+                    let mut bind_b = [0u8; 64];
+                    bind_b[..32].copy_from_slice(&root_b);
+                    bind_b[32..36].copy_from_slice(&(n as u32).to_le_bytes());
+                    let bound_b = *blake3::keyed_hash(&PEARL_SEED_SALT_B, &bind_b).as_bytes();
+                    (bound_a, bound_b)
+                }
+            };
+
             // seed_msg = job_key || hash_b
             let mut seed_msg = [0u8; 64];
             seed_msg[..32].copy_from_slice(&input.job_key);
-            seed_msg[32..].copy_from_slice(&root_b);
+            seed_msg[32..].copy_from_slice(&hash_b_eff);
             let seed_msg_buf_tmp: Buffer<u8> = Buffer::builder()
                 .queue(q.clone())
                 .len(64)
@@ -8282,7 +8307,7 @@ impl ExtGpuMiner {
 
             // seed_msg = b_noise_seed || hash_a
             seed_msg[..32].copy_from_slice(&b_seed);
-            seed_msg[32..].copy_from_slice(&root_a);
+            seed_msg[32..].copy_from_slice(&hash_a_eff);
             let seed_msg_buf2: Buffer<u8> = Buffer::builder()
                 .queue(q.clone())
                 .len(64)
@@ -8317,81 +8342,68 @@ impl ExtGpuMiner {
         }
 
         // ── Step 5: Generate noise ─────────────────────────────────────
+        // Canonical argument order (compute_noise_for_indices): the SEED
+        // LABEL goes into the hash message body; the NOISE SEED is the
+        // BLAKE3 key — get_random_hash(seed=LABEL_*, key=*_noise_seed).
         {
-            // E_AL: m×rank uniform random int8 (key=seed_label_a, seed=a_noise_seed)
+            // E_AL: m×rank uniform random int8 (seed=label_a, key=a_noise_seed)
             let kern_eal = Kernel::builder()
                 .queue(q.clone())
                 .program(&program)
                 .name("pearl_gen_uniform_noise")
                 .arg(e_al_buf)
-                .arg(a_noise_seed_buf)
                 .arg(seed_label_a_buf)
+                .arg(a_noise_seed_buf)
                 .arg(m as u32)
                 .arg(rank as u32)
                 .build()?;
             unsafe {
-                kern_eal
-                    .cmd()
-                    .global_work_size(m * rank)
-                    .local_work_size(256)
-                    .enq()?;
+                enq_pow2(&kern_eal, m * rank, 256)?;
             }
 
-            // E_BR: n×rank uniform random int8 (key=seed_label_b, seed=b_noise_seed)
+            // E_BR: n×rank uniform random int8 (seed=label_b, key=b_noise_seed)
             let kern_ebr = Kernel::builder()
                 .queue(q.clone())
                 .program(&program)
                 .name("pearl_gen_uniform_noise")
                 .arg(e_br_buf)
-                .arg(b_noise_seed_buf)
                 .arg(seed_label_b_buf)
+                .arg(b_noise_seed_buf)
                 .arg(n as u32)
                 .arg(rank as u32)
                 .build()?;
             unsafe {
-                kern_ebr
-                    .cmd()
-                    .global_work_size(n * rank)
-                    .local_work_size(256)
-                    .enq()?;
+                enq_pow2(&kern_ebr, n * rank, 256)?;
             }
 
-            // E_AR: k×2 permutation pairs (key=seed_label_a, seed=a_noise_seed)
+            // E_AR: k×2 permutation pairs (seed=label_a, key=a_noise_seed)
             let kern_ear = Kernel::builder()
                 .queue(q.clone())
                 .program(&program)
                 .name("pearl_gen_permutation")
                 .arg(e_ar_perm_buf)
-                .arg(a_noise_seed_buf)
                 .arg(seed_label_a_buf)
+                .arg(a_noise_seed_buf)
                 .arg(k as u32)
                 .arg(rank as u32)
                 .build()?;
             unsafe {
-                kern_ear
-                    .cmd()
-                    .global_work_size(k)
-                    .local_work_size(64)
-                    .enq()?;
+                enq_pow2(&kern_ear, k, 64)?;
             }
 
-            // E_BL: k×2 permutation pairs (key=seed_label_b, seed=b_noise_seed)
+            // E_BL: k×2 permutation pairs (seed=label_b, key=b_noise_seed)
             let kern_ebl = Kernel::builder()
                 .queue(q.clone())
                 .program(&program)
                 .name("pearl_gen_permutation")
                 .arg(e_bl_perm_buf)
-                .arg(b_noise_seed_buf)
                 .arg(seed_label_b_buf)
+                .arg(b_noise_seed_buf)
                 .arg(k as u32)
                 .arg(rank as u32)
                 .build()?;
             unsafe {
-                kern_ebl
-                    .cmd()
-                    .global_work_size(k)
-                    .local_work_size(64)
-                    .enq()?;
+                enq_pow2(&kern_ebl, k, 64)?;
             }
         }
         if profile {
@@ -8419,11 +8431,7 @@ impl ExtGpuMiner {
                 .arg(0u32)
                 .build()?;
             unsafe {
-                kern_na
-                    .cmd()
-                    .global_work_size(mk)
-                    .local_work_size(256)
-                    .enq()?;
+                enq_pow2(&kern_na, mk, 256)?;
             }
 
             let kern_nb = Kernel::builder()
@@ -8440,11 +8448,7 @@ impl ExtGpuMiner {
                 .arg(0u32)
                 .build()?;
             unsafe {
-                kern_nb
-                    .cmd()
-                    .global_work_size(nk)
-                    .local_work_size(256)
-                    .enq()?;
+                enq_pow2(&kern_nb, nk, 256)?;
             }
         }
         if profile {
@@ -8591,13 +8595,28 @@ impl ExtGpuMiner {
             self.pearl_buffers.take().unwrap()
         } else {
             // Create all new single-nonce buffers (same as pearl_pouw_mine_native)
-            let matrix_a_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(mk).build()?;
-            let matrix_bt_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(nk).build()?;
+            // Matrices are zero-padded to the 1024B chunk boundary once —
+            // gen_matrix only writes the first m*k (n*k) bytes.
+            let matrix_a_buf: Buffer<i8> = Buffer::builder()
+                .queue(q.clone())
+                .len(num_chunks_a * 1024)
+                .fill_val(0i8)
+                .build()?;
+            let matrix_bt_buf: Buffer<i8> = Buffer::builder()
+                .queue(q.clone())
+                .len(num_chunks_b * 1024)
+                .fill_val(0i8)
+                .build()?;
             let chunk_hashes_buf: Buffer<u8> = Buffer::builder()
                 .queue(q.clone())
                 .len(max_chunks * 32)
                 .build()?;
             let merkle_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(max_chunks * 32)
+                .build()?;
+            // Separate scratch for B's tree (must not alias A's ping-pong).
+            let merkle_buf2: Buffer<u8> = Buffer::builder()
                 .queue(q.clone())
                 .len(max_chunks * 32)
                 .build()?;
@@ -8670,6 +8689,7 @@ impl ExtGpuMiner {
                 matrix_bt_buf,
                 chunk_hashes_buf,
                 merkle_buf,
+                merkle_buf2,
                 root_a_buf,
                 root_b_buf,
                 b_noise_seed_buf,
@@ -8728,6 +8748,7 @@ impl ExtGpuMiner {
         let matrix_bt_buf = &cache.matrix_bt_buf;
         let chunk_hashes_buf = &cache.chunk_hashes_buf;
         let merkle_buf = &cache.merkle_buf;
+        let merkle_buf2 = &cache.merkle_buf2;
         let root_a_buf = &cache.root_a_buf;
         let root_b_buf = &cache.root_b_buf;
         let b_noise_seed_buf = &cache.b_noise_seed_buf;
@@ -8736,8 +8757,6 @@ impl ExtGpuMiner {
         let e_br_buf = &cache.e_br_buf;
         let e_ar_perm_buf = &cache.e_ar_perm_buf;
         let e_bl_perm_buf = &cache.e_bl_perm_buf;
-        let noised_a_buf = &cache.noised_a_buf;
-        let noised_b_buf = &cache.noised_b_buf;
         let iv_buf = &cache.iv_buf;
         let seed_label_a_buf = &cache.seed_label_a_buf;
         let seed_label_b_buf = &cache.seed_label_b_buf;
@@ -8775,11 +8794,7 @@ impl ExtGpuMiner {
                     .arg(0u32)
                     .build()?;
                 unsafe {
-                    kern_gen_a
-                        .cmd()
-                        .global_work_size(mk)
-                        .local_work_size(256)
-                        .enq()?;
+                    enq_pow2(&kern_gen_a, mk, 256)?;
                 }
 
                 let kern_gen_bt = Kernel::builder()
@@ -8793,68 +8808,65 @@ impl ExtGpuMiner {
                     .arg(1u32)
                     .build()?;
                 unsafe {
-                    kern_gen_bt
-                        .cmd()
-                        .global_work_size(nk)
-                        .local_work_size(256)
-                        .enq()?;
+                    enq_pow2(&kern_gen_bt, nk, 256)?;
                 }
             }
 
-            // Step 2: BLAKE3 chunk hashing (A→chunk_hashes, B→merkle_buf)
+            // Step 2: BLAKE3 chunk hashing (A→chunk_hashes, B→merkle_buf2;
+            // single-chunk matrices write straight into the root buffer with
+            // the ROOT flag)
             {
+                let single_a = num_chunks_a == 1;
                 let kern_chunk_a = Kernel::builder()
                     .queue(q.clone())
                     .program(&program)
                     .name("pearl_blake3_chunk_hash")
                     .arg(matrix_a_buf)
                     .arg(&job_key_buf)
-                    .arg(chunk_hashes_buf)
+                    .arg(if single_a { root_a_buf } else { chunk_hashes_buf })
                     .arg(num_chunks_a as u32)
+                    .arg(if single_a { 1u32 } else { 0u32 })
                     .build()?;
                 unsafe {
-                    kern_chunk_a
-                        .cmd()
-                        .global_work_size(num_chunks_a)
-                        .local_work_size(64)
-                        .enq()?;
+                    enq_pow2(&kern_chunk_a, num_chunks_a, 64)?;
                 }
 
+                let single_b = num_chunks_b == 1;
                 let kern_chunk_b = Kernel::builder()
                     .queue(q.clone())
                     .program(&program)
                     .name("pearl_blake3_chunk_hash")
                     .arg(matrix_bt_buf)
                     .arg(&job_key_buf)
-                    .arg(merkle_buf)
+                    .arg(if single_b { root_b_buf } else { merkle_buf2 })
                     .arg(num_chunks_b as u32)
+                    .arg(if single_b { 1u32 } else { 0u32 })
                     .build()?;
                 unsafe {
-                    kern_chunk_b
-                        .cmd()
-                        .global_work_size(num_chunks_b)
-                        .local_work_size(64)
-                        .enq()?;
+                    enq_pow2(&kern_chunk_b, num_chunks_b, 64)?;
                 }
             }
 
-            // Step 3: Merkle tree reduction (A: chunk_hashes→root_a, B: merkle_buf→root_b)
+            // Step 3: Merkle tree reduction (A: chunk_hashes→root_a,
+            // B: merkle_buf2→root_b; keyed parents, odd child propagates,
+            // ROOT flag only on the final 2→1 merge)
             {
                 // Reduce A
                 let mut num_nodes = num_chunks_a;
                 let mut src_a: &Buffer<u8> = chunk_hashes_buf;
                 let mut dst_a: &Buffer<u8> = merkle_buf;
                 while num_nodes > 1 {
-                    let num_parents = num_nodes / 2;
-                    let is_root = num_parents == 1;
+                    let num_parents = num_nodes.div_ceil(2);
+                    let is_root = num_nodes == 2;
                     let dst = if is_root { root_a_buf } else { dst_a };
                     let kern_merge = Kernel::builder()
                         .queue(q.clone())
                         .program(&program)
                         .name("pearl_blake3_merge")
                         .arg(src_a)
+                        .arg(&job_key_buf)
                         .arg(dst)
-                        .arg(num_parents as u32)
+                        .arg(num_nodes as u32)
                         .arg(if is_root { 1u32 } else { 0u32 })
                         .build()?;
                     let lws = safe_lws(num_parents, 64);
@@ -8870,21 +8882,22 @@ impl ExtGpuMiner {
                     num_nodes = num_parents;
                 }
 
-                // Reduce B
+                // Reduce B (leaf layer in merkle_buf2 — no aliasing with A)
                 let mut num_nodes = num_chunks_b;
-                let mut src_b: &Buffer<u8> = merkle_buf;
-                let mut dst_b: &Buffer<u8> = chunk_hashes_buf;
+                let mut src_b: &Buffer<u8> = merkle_buf2;
+                let mut dst_b: &Buffer<u8> = merkle_buf;
                 while num_nodes > 1 {
-                    let num_parents = num_nodes / 2;
-                    let is_root = num_parents == 1;
+                    let num_parents = num_nodes.div_ceil(2);
+                    let is_root = num_nodes == 2;
                     let dst = if is_root { root_b_buf } else { dst_b };
                     let kern_merge = Kernel::builder()
                         .queue(q.clone())
                         .program(&program)
                         .name("pearl_blake3_merge")
                         .arg(src_b)
+                        .arg(&job_key_buf)
                         .arg(dst)
-                        .arg(num_parents as u32)
+                        .arg(num_nodes as u32)
                         .arg(if is_root { 1u32 } else { 0u32 })
                         .build()?;
                     let lws = safe_lws(num_parents, 64);
@@ -8902,16 +8915,34 @@ impl ExtGpuMiner {
             }
 
             // Step 4: Derive noise seeds (reads roots from GPU, assembles on CPU)
+            // Salted (cert_v3): dimension-bind each root before the chain.
             {
                 let mut root_b = [0u8; 32];
                 root_b_buf.read(&mut root_b[..]).enq()?;
                 let mut root_a = [0u8; 32];
                 root_a_buf.read(&mut root_a[..]).enq()?;
 
+                let (hash_a_eff, hash_b_eff) = match input.seed_derivation {
+                    PearlSeedDerivation::Legacy => (root_a, root_b),
+                    PearlSeedDerivation::Salted => {
+                        let mut bind_a = [0u8; 64];
+                        bind_a[..32].copy_from_slice(&root_a);
+                        bind_a[32..36].copy_from_slice(&(m as u32).to_le_bytes());
+                        let bound_a =
+                            *blake3::keyed_hash(&PEARL_SEED_SALT_A, &bind_a).as_bytes();
+                        let mut bind_b = [0u8; 64];
+                        bind_b[..32].copy_from_slice(&root_b);
+                        bind_b[32..36].copy_from_slice(&(n as u32).to_le_bytes());
+                        let bound_b =
+                            *blake3::keyed_hash(&PEARL_SEED_SALT_B, &bind_b).as_bytes();
+                        (bound_a, bound_b)
+                    }
+                };
+
                 // b_noise_seed = blake3(job_key || hash_b) — unkeyed, 64-byte input
                 let mut seed_msg = [0u8; 64];
                 seed_msg[..32].copy_from_slice(&input.job_key);
-                seed_msg[32..].copy_from_slice(&root_b);
+                seed_msg[32..].copy_from_slice(&hash_b_eff);
                 let seed_msg_buf: Buffer<u8> = Buffer::builder()
                     .queue(q.clone())
                     .len(64)
@@ -8942,7 +8973,7 @@ impl ExtGpuMiner {
 
                 // a_noise_seed = blake3(b_noise_seed || hash_a) — unkeyed, 64-byte input
                 seed_msg[..32].copy_from_slice(&b_seed);
-                seed_msg[32..].copy_from_slice(&root_a);
+                seed_msg[32..].copy_from_slice(&hash_a_eff);
                 let seed_msg_buf2: Buffer<u8> = Buffer::builder()
                     .queue(q.clone())
                     .len(64)
@@ -8969,23 +9000,20 @@ impl ExtGpuMiner {
             }
 
             // Step 5: Generate noise (E_AL, E_BR, E_AR_perm, E_BL_perm)
+            // Canonical order: seed=LABEL_* (message body), key=*_noise_seed.
             {
                 let kern_eal = Kernel::builder()
                     .queue(q.clone())
                     .program(&program)
                     .name("pearl_gen_uniform_noise")
                     .arg(e_al_buf)
-                    .arg(a_noise_seed_buf)
                     .arg(seed_label_a_buf)
+                    .arg(a_noise_seed_buf)
                     .arg(m as u32)
                     .arg(rank as u32)
                     .build()?;
                 unsafe {
-                    kern_eal
-                        .cmd()
-                        .global_work_size(m * rank)
-                        .local_work_size(256)
-                        .enq()?;
+                    enq_pow2(&kern_eal, m * rank, 256)?;
                 }
 
                 let kern_ebr = Kernel::builder()
@@ -8993,17 +9021,13 @@ impl ExtGpuMiner {
                     .program(&program)
                     .name("pearl_gen_uniform_noise")
                     .arg(e_br_buf)
-                    .arg(b_noise_seed_buf)
                     .arg(seed_label_b_buf)
+                    .arg(b_noise_seed_buf)
                     .arg(n as u32)
                     .arg(rank as u32)
                     .build()?;
                 unsafe {
-                    kern_ebr
-                        .cmd()
-                        .global_work_size(n * rank)
-                        .local_work_size(256)
-                        .enq()?;
+                    enq_pow2(&kern_ebr, n * rank, 256)?;
                 }
 
                 let kern_ear = Kernel::builder()
@@ -9011,17 +9035,13 @@ impl ExtGpuMiner {
                     .program(&program)
                     .name("pearl_gen_permutation")
                     .arg(e_ar_perm_buf)
-                    .arg(a_noise_seed_buf)
                     .arg(seed_label_a_buf)
+                    .arg(a_noise_seed_buf)
                     .arg(k as u32)
                     .arg(rank as u32)
                     .build()?;
                 unsafe {
-                    kern_ear
-                        .cmd()
-                        .global_work_size(k)
-                        .local_work_size(64)
-                        .enq()?;
+                    enq_pow2(&kern_ear, k, 64)?;
                 }
 
                 let kern_ebl = Kernel::builder()
@@ -9029,17 +9049,13 @@ impl ExtGpuMiner {
                     .program(&program)
                     .name("pearl_gen_permutation")
                     .arg(e_bl_perm_buf)
-                    .arg(b_noise_seed_buf)
                     .arg(seed_label_b_buf)
+                    .arg(b_noise_seed_buf)
                     .arg(k as u32)
                     .arg(rank as u32)
                     .build()?;
                 unsafe {
-                    kern_ebl
-                        .cmd()
-                        .global_work_size(k)
-                        .local_work_size(64)
-                        .enq()?;
+                    enq_pow2(&kern_ebl, k, 64)?;
                 }
             }
 
@@ -9062,11 +9078,7 @@ impl ExtGpuMiner {
                     .arg(a_off)
                     .build()?;
                 unsafe {
-                    kern_apply_a
-                        .cmd()
-                        .global_work_size(mk)
-                        .local_work_size(256)
-                        .enq()?;
+                    enq_pow2(&kern_apply_a, mk, 256)?;
                 }
 
                 let kern_apply_b = Kernel::builder()
@@ -9083,11 +9095,7 @@ impl ExtGpuMiner {
                     .arg(b_off)
                     .build()?;
                 unsafe {
-                    kern_apply_b
-                        .cmd()
-                        .global_work_size(nk)
-                        .local_work_size(256)
-                        .enq()?;
+                    enq_pow2(&kern_apply_b, nk, 256)?;
                 }
             }
 
@@ -9258,7 +9266,7 @@ impl ExtGpuMiner {
         noised_a: &[i8],    // m×k int8 (A' = A + E_AL·E_AR, wrapped to int8)
         noised_bt: &[i8],   // n×k int8 (B'^T)
         pow_key: &[u8; 32], // noise_seed_a (BLAKE3 key for jackpot)
-        target: &[u8; 32],  // little-endian U256 target
+        target: &[u8; 32],  // big-endian U256 target (kernel compares hash[31-i] vs target[i])
         m: usize,
         n: usize,
         k: usize,
@@ -9850,5 +9858,88 @@ mod tests {
         elem[1..].copy_from_slice(&digest[1..]);
         assert_eq!(elem[0], 0);
         assert_eq!(&elem[1..], &digest[1..]);
+    }
+}
+
+// ─── Pearl PoUW on-device parity (needs OpenCL device) ────────────────────
+// CPU reference helpers live in crate::auxpow::pearl::pearl_kat (shared with
+// the CUDA parity test).
+#[cfg(all(test, feature = "gpu-opencl"))]
+mod pearl_gpu_kat {
+    use super::*;
+    use crate::auxpow::pearl::pearl_kat::*;
+
+    /// End-to-end GPU vs CPU reference. Requires an OpenCL device; run with:
+    ///   cargo test --features gpu-opencl pearl_gpu_parity -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn pearl_gpu_parity_vs_cpu_reference() {
+        let mut miner = match ExtGpuMiner::new() {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("skipping — no OpenCL device: {e}");
+                return;
+            }
+        };
+
+        // Small dims; A tree = 3 chunks (odd-leaf propagation), B tree = 4.
+        let (m, n, k, rank) = (48usize, 64usize, 64usize, 32usize);
+        let nonce = 0x5150u64;
+        let job_key = [0x77u8; 32];
+        let target = [0xFFu8; 32]; // max target → any tile accepted
+        let row_offsets: Vec<u32> = vec![0, 16, 32];
+        let col_offsets: Vec<u32> = vec![0, 32];
+        let rows_base: Vec<u32> = vec![0, 4, 8, 12]; // +row_off ≤ 44 < m
+        let cols_base: Vec<u32> = vec![0, 4, 8, 12, 16, 20, 24, 28]; // +col_off ≤ 60 < n
+
+        for salted in [false, true] {
+            let input = PearlPouwNativeInput {
+                nonce,
+                m,
+                n,
+                k,
+                rank,
+                job_key,
+                target,
+                row_offsets: &row_offsets,
+                col_offsets: &col_offsets,
+                rows_base: &rows_base,
+                cols_base: &cols_base,
+                seed_label_a: PEARL_SEED_LABEL_A,
+                seed_label_b: PEARL_SEED_LABEL_B,
+                seed_derivation: if salted {
+                    PearlSeedDerivation::Salted
+                } else {
+                    PearlSeedDerivation::Legacy
+                },
+            };
+
+            let res = miner
+                .pearl_pouw_mine_native(&input)
+                .expect("mine failed")
+                .expect("max-target must find");
+
+            // Matrix gen parity (result carries the matrices back)
+            for (i, &v) in res.matrix_a.iter().enumerate() {
+                assert_eq!(v, gen_int7_ref(nonce, i as u32), "matrix A[{i}]");
+            }
+            for (i, &v) in res.matrix_bt.iter().enumerate() {
+                assert_eq!(v, gen_int7_ref(nonce + 1, i as u32), "matrix BT[{i}]");
+            }
+
+            // Jackpot parity for the winning tile
+            let tile = res.tile_index as usize;
+            let nco = col_offsets.len();
+            let row_off = row_offsets[tile / nco];
+            let col_off = col_offsets[tile % nco];
+            let expected = tile_jackpot_ref(
+                nonce, m, n, k, rank, &job_key, row_off, col_off, &rows_base, &cols_base,
+                salted,
+            );
+            assert_eq!(
+                res.jackpot_hash, expected,
+                "jackpot mismatch (salted={salted}, tile={tile})"
+            );
+        }
     }
 }

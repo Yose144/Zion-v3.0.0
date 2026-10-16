@@ -4,6 +4,7 @@ import ExplorerV4LayoutWrapper from './ExplorerV4LayoutWrapper';
 import SseOverlayWrapper from '@/components/explorer/v4/dashboard/SseOverlayWrapper';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/explorer' },
   title: `Explorer · ZION ${SITE_RELEASE_LABEL}`,
   description: `Explore | Prozkoumejte ZION blockchain blocks, transactions, addresses, and network statistics in real-time on the ${SITE_RELEASE_LABEL} public line with ${SITE_RUNTIME_LABEL} compatibility.`,
 };
