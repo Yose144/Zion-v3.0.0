@@ -19,6 +19,7 @@ import {
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import HolographicEarthLazy from './HolographicEarthLazy';
+import HeroSlider from './HeroSlider';
 import MainnetCountdown from './MainnetCountdown';
 
 const HeroCopy = {
@@ -165,25 +166,14 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        {/* ─── ecosystem map — One Planet · One People · One Love ─── */}
+        {/* ─── hero slider — One Planet · One People · One Love ─── */}
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="relative z-10 mt-10 overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
         >
-          <img
-            src="/images/home/hero.webp"
-            srcSet="/images/home/hero-m.webp 960w, /images/home/hero.webp 1672w"
-            sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-            alt={cs ? 'ZION Terra Nova — Strom života, Maitreya a cesta, která pokračuje: One Love · One Human · One World' : 'ZION Terra Nova — Tree of Life, Maitreya and the journey that continues: One Love · One Human · One World'}
-            width={1672}
-            height={941}
-            loading="lazy"
-            decoding="async"
-            className="w-full object-cover"
-          />
+          <HeroSlider />
         </motion.div>
       </div>
     </section>
