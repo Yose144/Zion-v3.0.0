@@ -142,48 +142,53 @@ export default function MaitreyaPage() {
       </div>
 
       {/* ─── HERO ─── */}
-      <section className="relative">
-        <div className="relative h-[52vh] min-h-[380px] w-full overflow-hidden sm:h-[60vh]">
-          <img
-            src="/images/maitreya/hero.webp"
-            srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1672w"
-            sizes="100vw"
-            alt={MaitreyaCopy.heroAlt[cs ? 'cs' : 'en']}
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#05060a] via-[#05060a]/55 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#05060a]/60 via-transparent to-transparent" />
+      <section className="relative z-10 px-4 pt-8 sm:pt-10">
+        <div className="zion-container max-w-7xl">
+          <motion.header
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="zion-rainbow-card relative overflow-hidden p-6 md:p-8"
+            style={{ '--rc': '168, 85, 247' } as React.CSSProperties}
+          >
+            <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-zion-purple/15 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-zion-gold/10 blur-3xl" />
 
-          <div className="absolute inset-0 flex items-end">
-            <div className="zion-container w-full pb-10 sm:pb-14">
-              <motion.div
-                initial={{ opacity: 0, y: 28 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="space-y-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
-                    <Egg className="h-3.5 w-3.5" />
-                    {MaitreyaCopy.kicker[cs ? 'cs' : 'en']}
-                  </span>
-                  <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
-                    <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                    {MaitreyaCopy.statusBadge[cs ? 'cs' : 'en']}
-                  </span>
-                </div>
-                <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl">
-                  <span className="text-gradient">{MaitreyaCopy.title[cs ? 'cs' : 'en']}</span>
-                </h1>
-                <p className="text-lg font-semibold text-zion-gold/90 sm:text-2xl">
-                  {MaitreyaCopy.subtitle[cs ? 'cs' : 'en']}
-                </p>
-                <p className="max-w-2xl text-base italic text-gray-300 sm:text-lg">
-                  {MaitreyaCopy.tagline[cs ? 'cs' : 'en']}
-                </p>
-              </motion.div>
+            <div className="relative space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
+                  <Egg className="h-3.5 w-3.5" />
+                  {MaitreyaCopy.kicker[cs ? 'cs' : 'en']}
+                </span>
+                <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                  {MaitreyaCopy.statusBadge[cs ? 'cs' : 'en']}
+                </span>
+              </div>
+              <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                <span className="text-gradient">{MaitreyaCopy.title[cs ? 'cs' : 'en']}</span>
+              </h1>
+              <p className="text-base font-semibold text-zion-gold/90 sm:text-lg">
+                {MaitreyaCopy.subtitle[cs ? 'cs' : 'en']}
+              </p>
+              <p className="max-w-2xl text-sm italic text-gray-300 sm:text-base">
+                {MaitreyaCopy.tagline[cs ? 'cs' : 'en']}
+              </p>
             </div>
-          </div>
+
+            <div className="relative z-10 mt-5 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <img
+                src="/images/maitreya/hero.webp"
+                srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1672w"
+                sizes="(max-width: 1280px) calc(100vw - 4rem), 1152px"
+                alt={MaitreyaCopy.heroAlt[cs ? 'cs' : 'en']}
+                width={1672}
+                height={941}
+                fetchPriority="high"
+                className="w-full object-cover"
+              />
+            </div>
+          </motion.header>
         </div>
       </section>
 
