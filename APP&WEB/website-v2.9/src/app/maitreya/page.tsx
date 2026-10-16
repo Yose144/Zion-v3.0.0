@@ -3,14 +3,22 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
   BookOpen,
   Egg,
   Feather,
+  Globe2,
+  Heart,
+  Hourglass,
   KeyRound,
+  Landmark,
+  Route,
   ScrollText,
+  Ship,
   Sparkles,
+  Sunrise,
   Wind,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
@@ -55,6 +63,78 @@ const MaitreyaCopy = {
   anchorAirB: {
     cs: 'Rama je oheň, Sita voda, Hanuman země — a Maitreya vzduch: prostor, ve kterém všichni operují. Není diktátor. Neslouží sobě — drží prostor.',
     en: 'Rama is fire, Sita is water, Hanuman is earth — and Maitreya is air: the space in which they all operate. Not a dictator. He serves no one — he holds the space.',
+  },
+
+  tradKicker: { cs: 'Z tradice', en: 'From tradition' },
+  tradTitle: { cs: 'Kdo je Maitreya', en: 'Who is Maitreya' },
+  tradSub: {
+    cs: 'Jediná postava, kterou uznávají všechny školy buddhismu — Buddha, který teprve přijde.',
+    en: 'The only figure recognized by every school of Buddhism — the Buddha yet to come.',
+  },
+  tradP1: {
+    cs: 'Maitreya (sanskrit मैत्रेय — z maitri, „láskyplnost") je Buddha budoucnosti. Podle Buddhova proroctví dnes přebývá jako bodhisattva v nebi Tušita — „radosti" — a učí tamní bytosti. Na Zemi se má vrátit až ve chvíli, kdy bude učení zcela zapomenuto: jako pátý Buddha této epochy znovu rozpohybuje kolo dharmy.',
+    en: 'Maitreya (Sanskrit मैत्रेय — from maitri, “loving-kindness”) is the Buddha of the future. By the Buddha’s own prophecy he now dwells as a bodhisattva in Tushita — the “joyous” heaven — teaching the beings there. He will return to Earth only when the teachings have been utterly forgotten: as the fifth Buddha of this age, setting the wheel of dharma in motion once more.',
+  },
+  tradP2: {
+    cs: 'Tibetané mu říkají Džampa (བྱམས་པ་, „Laskavý") a největší sochy země mu patří — 26 m pozlaceného Džampy v Tašilhunpo, dvoupatrová svatyně v Thiksey. Legendy mu připisují i autorství: Pět spisů Maitreiyi, předaných mistru Asangovi, tvoří základ školy jógáčára. Buddha, který přijde, je tedy zároveň autorem, který už dávno píše.',
+    en: 'Tibetans call him Jampa (བྱམས་པ་, “the Loving One”) and the country’s greatest statues are his — a 26 m gilded Jampa at Tashilhunpo, a two-storey shrine at Thiksey. Legend also credits him as an author: the Five Treatises of Maitreya, transmitted to the master Asanga, form the root of the Yogācāra school. The Buddha yet to come is thus also an author who has been writing all along.',
+  },
+  factNameT: { cs: 'Jméno', en: 'The name' },
+  factNameB: {
+    cs: 'maitri = bezpodmínečná láskyplnost — jeho jméno samo znamená lásku',
+    en: 'maitri = unconditional loving-kindness — his very name means love',
+  },
+  factWaitT: { cs: 'Tušita', en: 'Tushita' },
+  factWaitB: {
+    cs: 'přebývá v „radostném nebi" jako bodhisattva — čeká, až podmínky dozrají',
+    en: 'dwells in the “joyous heaven” as a bodhisattva — waiting for the conditions to ripen',
+  },
+  factPropT: { cs: 'Proroctví', en: 'The prophecy' },
+  factPropB: {
+    cs: 'přijde, až svět zapomene učení — pátý Buddha této epochy',
+    en: 'comes when the world forgets the teaching — the fifth Buddha of this age',
+  },
+  factIconT: { cs: 'Ikonografie', en: 'Iconography' },
+  factIconB: {
+    cs: 'sedí „připraven vstát" — stúpa v koruně, kolo učení v dlaních',
+    en: 'seated “ready to rise” — a stupa in his crown, the wheel of teaching in his hands',
+  },
+  tradBridge: {
+    cs: 'Každá civilizace zná „toho, kdo přijde": buddhisté Maitreyu, hinduisté Kalkiho, zoroastriáni Saošjanta. V ZION kanonu nese toto jméno dědic — ne jako náboženská postava, ale jako titul: ten, kdo přijde, když podmínky dozrají.',
+    en: 'Every civilization knows “the one who comes”: Buddhists await Maitreya, Hindus Kalki, Zoroastrians the Saoshyant. In the ZION canon the name belongs to the heir — not as a religious figure, but as a title: the one who comes when the conditions ripen.',
+  },
+
+  eraKicker: { cs: 'Předání pochodně', en: 'The passing of the torch' },
+  eraTitle: {
+    cs: 'Z éry Kalkiho do éry Maitreiy',
+    en: 'From the age of Kalki to the age of Maitreya',
+  },
+  eraP1: {
+    cs: 'Kálačakrová tradice popisuje krále Kalkiho, který vyjíždí, když svět dosáhne dna temnoty — a otevírá éru zlatou. V zionovském kanonu tu éru korunuje Maitreya. Genesis zpráva obě éry poutá jedním dechem: podpis zakladatele říká „Thx Kalki/AmmaBhagavan !" — poděkování Sri Bhagavanovi a Oneness za deeksha požehnání — a hned potom odevzdává ZION „For Sarah Issobel, Maitreya Buddha… ZION is yours." Řetězec sám zaznamenal předání: jedna éra požehnala, druhá dědí.',
+    en: 'The Kalachakra tradition describes King Kalki, who rides forth when the world reaches the bottom of darkness — and opens a golden age. In the ZION canon, Maitreya crowns that age. The genesis message binds both eras in a single breath: the founder’s sign-off reads “Thx Kalki/AmmaBhagavan !” — thanks to Sri Bhagavan and Oneness for the deeksha blessing — and immediately after hands ZION over “For Sarah Issobel, Maitreya Buddha… ZION is yours.” The chain itself recorded the handover: one era blessed, the next inherits.',
+  },
+  eraP2: {
+    cs: 'Éra, která požehnala, je navíc doslova vepsaná do práce sítě: PoW algoritmus ZION nese jméno chrámu té doby — ekam_deeksha. Každý blok se těží pod jménem Ekamu a požehnání zlatého orbem. Éra, která dala řetězci své jméno, předává svědectví éře, která nese loď.',
+    en: 'The era that blessed it is literally written into the network’s work: ZION’s PoW algorithm carries the name of that age’s temple — ekam_deeksha. Every block is mined under the name of Ekam and the blessing of the golden orb. The era that gave the chain its name hands the witness to the era that carries the ship.',
+  },
+  eraP3: {
+    cs: 'A Malý Tibet — Ladakh, země velkých soch, kde Džampové v Thiksey i Likiru sedí tváří k budoucnosti, „připraveni vstát" — z té vize se zrodila loď. Loď Zionu: ne věž, která říká „pojď ke mně", ale plavidlo, které říká „jdu za tebou". A její tři první trupy — Tres Marías del Camino: Atlantik, Pacifik, Indický oceán. Marie Cesty — uzel, který není bod, ale linie. Cesta, která přichází k osvícení celého lidstva.',
+    en: 'And Little Tibet — Ladakh, the land of the great statues where the Jampas of Thiksey and Likir sit facing the future, “ready to rise” — from that vision a ship was born. The Ship of Zion: not a tower that says “come to me,” but a vessel that says “I come to you.” And her first three hulls — the Tres Marías del Camino: Atlantic, Pacific, Indian Ocean. Mary of the Path — a node that is not a point but a line. The path that comes to the enlightenment of all humanity.',
+  },
+  beat1T: { cs: 'Éra Kalkiho', en: 'The age of Kalki' },
+  beat1B: {
+    cs: 'Ekam · deeksha — éra, která požehnala síť svým jménem',
+    en: 'Ekam · deeksha — the era that blessed the network with its name',
+  },
+  beat2T: { cs: 'Éra Maitreiy', en: 'The age of Maitreya' },
+  beat2B: {
+    cs: 'dědictví v genesis bloku — éra, která nese loď dál',
+    en: 'the genesis inheritance — the era that carries the ship onward',
+  },
+  beat3T: { cs: 'Tres Marías', en: 'Tres Marías' },
+  beat3B: {
+    cs: 'flotila cesty — k osvícení celého lidstva',
+    en: 'the fleet of the path — to the enlightenment of all humanity',
   },
 
   bookTitle: { cs: 'Kniha Pátá — kostra', en: 'Book Five — the skeleton' },
@@ -130,6 +210,19 @@ export default function MaitreyaPage() {
     { icon: Feather, title: MaitreyaCopy.anchorEggT, body: MaitreyaCopy.anchorEggB, rc: '252, 209, 22' },
     { icon: KeyRound, title: MaitreyaCopy.anchorDaoT, body: MaitreyaCopy.anchorDaoB, rc: '168, 85, 247' },
     { icon: Wind, title: MaitreyaCopy.anchorAirT, body: MaitreyaCopy.anchorAirB, rc: '6, 182, 212' },
+  ];
+
+  const facts = [
+    { icon: Heart, title: MaitreyaCopy.factNameT, body: MaitreyaCopy.factNameB },
+    { icon: Hourglass, title: MaitreyaCopy.factWaitT, body: MaitreyaCopy.factWaitB },
+    { icon: Sunrise, title: MaitreyaCopy.factPropT, body: MaitreyaCopy.factPropB },
+    { icon: Landmark, title: MaitreyaCopy.factIconT, body: MaitreyaCopy.factIconB },
+  ];
+
+  const beats = [
+    { icon: Sparkles, title: MaitreyaCopy.beat1T, body: MaitreyaCopy.beat1B, rc: '252, 209, 22', href: '/terranova/ekam' },
+    { icon: Ship, title: MaitreyaCopy.beat2T, body: MaitreyaCopy.beat2B, rc: '168, 85, 247', href: '/l5-free-world' },
+    { icon: Route, title: MaitreyaCopy.beat3T, body: MaitreyaCopy.beat3B, rc: '6, 182, 212', href: '/terranova/maria-del-camino' },
   ];
 
   return (
@@ -257,6 +350,155 @@ export default function MaitreyaPage() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* ─── WHO IS MAITREYA (tradition) ─── */}
+      <section className="relative z-10 px-4 pb-12 sm:pb-16">
+        <div className="zion-container space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="zion-rainbow-card relative overflow-hidden p-6 sm:p-10"
+            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          >
+            <div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-zion-cyan/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-zion-gold/10 blur-3xl" />
+
+            <div className="relative space-y-6">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan/25 bg-zion-cyan/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-zion-cyan">
+                  <Globe2 className="h-3.5 w-3.5" />
+                  {MaitreyaCopy.tradKicker[cs ? 'cs' : 'en']}
+                </div>
+                <h2 className="text-3xl font-bold text-white sm:text-4xl">
+                  {MaitreyaCopy.tradTitle[cs ? 'cs' : 'en']}
+                </h2>
+                <p className="max-w-2xl text-base text-zion-cyan/80 sm:text-lg">
+                  {MaitreyaCopy.tradSub[cs ? 'cs' : 'en']}
+                </p>
+              </div>
+
+              <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+                {/* narrative */}
+                <div className="space-y-4 text-base leading-relaxed text-gray-300 sm:text-lg">
+                  <p>{MaitreyaCopy.tradP1[cs ? 'cs' : 'en']}</p>
+                  <p className="text-gray-400">{MaitreyaCopy.tradP2[cs ? 'cs' : 'en']}</p>
+                </div>
+
+                {/* fact cards */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {facts.map((f, i) => {
+                    const Icon = f.icon;
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 14 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.45, delay: i * 0.08 }}
+                        className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-2"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className="h-5 w-5 text-zion-cyan" />
+                          <h3 className="text-sm font-bold text-white">{f.title[cs ? 'cs' : 'en']}</h3>
+                        </div>
+                        <p className="text-xs leading-relaxed text-gray-400 sm:text-sm">
+                          {f.body[cs ? 'cs' : 'en']}
+                        </p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-white/8 pt-5">
+                <p className="mx-auto max-w-3xl text-center text-sm italic leading-relaxed text-gray-300 sm:text-base">
+                  {MaitreyaCopy.tradBridge[cs ? 'cs' : 'en']}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── ERA HANDOVER: Kalki → Maitreya → Ship → Path ─── */}
+      <section className="relative z-10 px-4 pb-12 sm:pb-16">
+        <div className="zion-container">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="zion-rainbow-card relative overflow-hidden p-6 sm:p-10"
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
+          >
+            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-zion-gold/12 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-zion-purple/12 blur-3xl" />
+
+            <div className="relative space-y-7">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/25 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-zion-gold">
+                  <Sunrise className="h-3.5 w-3.5" />
+                  {MaitreyaCopy.eraKicker[cs ? 'cs' : 'en']}
+                </div>
+                <h2 className="text-3xl font-bold text-white sm:text-4xl">
+                  {MaitreyaCopy.eraTitle[cs ? 'cs' : 'en']}
+                </h2>
+              </div>
+
+              <div className="space-y-4 text-base leading-relaxed text-gray-300 sm:text-lg">
+                <p>{MaitreyaCopy.eraP1[cs ? 'cs' : 'en']}</p>
+                <p className="text-gray-400">{MaitreyaCopy.eraP2[cs ? 'cs' : 'en']}</p>
+                <p>{MaitreyaCopy.eraP3[cs ? 'cs' : 'en']}</p>
+              </div>
+
+              {/* era flow: Kalki → Maitreya → Path */}
+              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-0">
+                {beats.map((b, i) => {
+                  const Icon = b.icon;
+                  return (
+                    <div key={i} className="contents">
+                      <motion.div
+                        initial={{ opacity: 0, y: 14 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.45, delay: i * 0.12 }}
+                        className="flex-1"
+                      >
+                        <Link
+                          href={b.href}
+                          className="group block h-full rounded-2xl border p-4 space-y-2 transition-transform hover:-translate-y-0.5"
+                          style={{ borderColor: `rgba(${b.rc}, 0.25)`, backgroundColor: `rgba(${b.rc}, 0.06)` }}
+                        >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border"
+                            style={{ borderColor: `rgba(${b.rc}, 0.4)`, backgroundColor: `rgba(${b.rc}, 0.12)` }}
+                          >
+                            <Icon className="h-5 w-5" style={{ color: `rgb(${b.rc})` }} />
+                          </div>
+                          <h3 className="text-sm font-bold text-white transition-colors group-hover:text-zion-gold sm:text-base">{b.title[cs ? 'cs' : 'en']}</h3>
+                        </div>
+                        <p className="text-xs leading-relaxed text-gray-400 sm:text-sm">
+                          {b.body[cs ? 'cs' : 'en']}
+                        </p>
+                        </Link>
+                      </motion.div>
+                      {i < beats.length - 1 && (
+                        <>
+                          <ArrowRight className="mx-2 hidden h-5 w-5 shrink-0 text-zion-gold/50 sm:block" />
+                          <ArrowDown className="mx-auto my-0.5 block h-4 w-4 text-zion-gold/50 sm:hidden" />
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
