@@ -6,6 +6,7 @@ import HomeNoticeBar from '@/components/HomeNoticeBar';
 const WebTerminal = dynamicImport(() => import('@/components/WebTerminal'), {
   loading: () => null,
 });
+const MaitreyaSection = dynamicImport(() => import('@/components/MaitreyaSection'), { ssr: true });
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'), { ssr: true });
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'), { ssr: true });
 const Features = dynamicImport(() => import('@/components/Features'), { ssr: true });
@@ -26,6 +27,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <MaitreyaSection />
       <HomeNoticeBar />
       <WebTerminal />
       <LiveDashboard />
