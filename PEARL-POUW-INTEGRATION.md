@@ -673,3 +673,66 @@ Stages 1–2 are implemented and test-verified only; nothing was deployed
 or enabled on the production pool (upstream leg activates only when
 `ZION_POOL_PEARL_UPSTREAM` is configured). §10's three Suprnova accepts
 remain the frozen live result.
+
+## 12. Stage 3 — production Edge deployment + live E2E (2026-10-16, `d2522f7b4`)
+
+Deployed the Stage 1+2 pool build to Edge and verified both Pearl
+submission paths against the live production pool.
+
+### Deploy steps executed
+
+- Worktree `/tmp/zion-pearl-s2` @ `d2522f7b4`,
+  `CARGO_TARGET_DIR=/opt/zion/V31/target cargo build --release --locked
+  -p zion-pool` (8m50s). Old binary preserved via `/proc/<pid>/exe` →
+  `zion-pool.bak-pre-pearl-s2-20261016011650`.
+- `ZION_POOL_PEARL_STRATUM=1` added to `/etc/zion/edge-environment.sh`
+  (backup `.bak-pearl-stratum-20261016`). Upstream leg NOT configured —
+  `pearl.upstream.enabled=false` by design.
+- `zion-miner` rebuilt in `pearl-cuda-buildenv:snap` docker (bullseye,
+  `--features gpu-opencl,gpu-cuda`, 18m09s, GLIBC ≤2.30) →
+  `/var/www/zion-miner/zion-miner-v31-cuda` (md5 `32176a96…`, previous
+  `.bak-20261016`).
+- SMOS group `ZionTrinity` 1780844 minerOptions +=
+  `ZION_PEARL_K=2048`; `execute-reload` on rig 518837 — wrapper
+  re-downloaded the binary, all three workloads respawned
+  (SRBMiner QTU, zion-miner, llama-server — hiran back up same command).
+
+### Live results (journalctl `zion-v31-pool`)
+
+| path | evidence | result |
+|---|---|---|
+| Native stratum probe (GTX 1070 Ti, `edge-native-v32`) | `pearl_stratum: authorize` → job `7250141c…` notify → 3× `mining.submit` | **3× `pearl_submit accepted=true`**, `session closed`, 0 `submitPlainProof` |
+| V3 `PearlSubmit` (production `zion-miner` worker `.vega-smos`) | `v3_pearl_submit proof_b64_len=35096` job `b2f9fca0…` | **`accepted=true` ×2** within ~40 s |
+| Invalid-proof guard | `vega-smos` submits pre-fix binary (k=1024 < 16·rank) | `rejected:k must satisfy 16*rank <= k <= 4*rank^2` — verifier correctly rejected every invalid proof |
+| API surface | `/stats` auxpow | `pearl.native{enabled:true, job_id 7abe08f2…, job_age_ms ~2s, share_pct:100}`, `pearl.upstream{enabled:false, connected:false}` |
+| Job rotation | probe observed `7abe08f2→40d11c45→17857b76` notifies | live rotation + resync works |
+
+### Bugs found in production during Stage 3
+
+- **Deployed miner binary predated the `k=2048` default fix** — every
+  submitted proof carried `k=1024, rank=128` violating upstream
+  `16·rank ≤ k` and the pool verifier rejected all of them (the guard
+  itself worked exactly as intended — real-world proof it rejects bad
+  work). Fixed by `ZION_PEARL_K=2048` env via minerOptions plus the new
+  binary; first valid proof accepted minutes after reload.
+- **`share_ease` amplifies the kernel's penalized-bound submit rate**:
+  temporary `SHARE_EASE=1e12` for the probe run made the rig miner emit
+  ~5–10 submits/s (each `spawn_blocking` verified) — restored to `1e9`
+  immediately after the probe's 3 accepts; submit rate returned to
+  ~1/min. Operational note: `share_ease` scales BOTH the served share
+  target AND the miner's submit threshold — large values DoS the
+  verifier.
+- Files on the rig (`/home/miner/pearl_pool_probe-v2-*`,
+  `zion-miner-pearl-updated`) had been zeroed by SMOS tmpfs cleanup —
+  probe re-deployed as `pearl_pool_probe-s2` (md5 `a8f77f…`).
+
+### Current live state
+
+- `ZION_POOL_PEARL_{GATEWAY,POLL_MS=2000,SHARE_EASE=1e9,JOB_TTL_MS=30000,STRATUM=1}`
+  active on the production pool; `ZION_POOL_PEARL_UPSTREAM` unset.
+- Rig 518837 earns PPLNS credit on `RevenueSource::PearlExternal` for
+  locally verified PRL shares on our own `pearld` templates.
+- **No `submitPlainProof` call yet** — no block-meeting proof found
+  (solo block at this hashrate is luck-based; gateway forward armed).
+- `profit.rs` PRL auto-routing remains DISABLED until a real node
+  `Accepted` is observed.
