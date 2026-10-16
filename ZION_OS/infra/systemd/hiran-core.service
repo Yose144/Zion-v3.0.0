@@ -1,0 +1,24 @@
+[Unit]
+Description=Hiran core llama-server (v2.3-mini Q5_K_M, Vega partial offload, :8070)
+# WantedBy=default.target — no After=default.target (dependency cycle, see zion-hiran-llm).
+
+[Service]
+Type=simple
+WorkingDirectory=%h/zion-hiran
+# Vulkan0 = RX Vega (verified via --list-devices). Partial offload: mining keeps
+# ~4.2G on this card, so -ngl stays at ~20/36 — see AGENTS.md for VRAM budget.
+Environment=GGML_VULKAN_DEVICE=0
+ExecStart=%h/zion-hiran/bin/llama-b11065/llama-server \
+  -m %h/zion-hiran/models/hiran-v2.3mini-Q5_K_M.gguf \
+  --host 127.0.0.1 --port 8070 --alias hiran-core \
+  -c 8192 --parallel 1 -ngl 26 -fa on \
+  --cache-type-k q8_0 --cache-type-v q8_0 -t 4 \
+  --reasoning-budget 0 --chat-template-kwargs '{"enable_thinking":false}' --no-webui
+Nice=10
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:%h/zion-hiran/logs/llm-8070.log
+StandardError=append:%h/zion-hiran/logs/llm-8070.log
+
+[Install]
+WantedBy=default.target
