@@ -171,6 +171,9 @@ impl Pool {
         if let Some(ss58) = parse_quantus_payout(wallet) {
             return ("quantus".to_string(), ss58);
         }
+        if let Some(prl) = parse_pearl_payout(wallet) {
+            return ("pearl".to_string(), prl);
+        }
         if let Some(addr) = self
             .worker_addresses
             .get(worker)
@@ -190,6 +193,13 @@ impl Pool {
                 .insert(worker.to_string(), ("quantus".to_string(), ss58.clone()));
             self.pplns
                 .register_address_with_chain(worker, &ss58, "quantus");
+            return;
+        }
+        if let Some(prl) = parse_pearl_payout(wallet) {
+            self.worker_ext_payouts
+                .insert(worker.to_string(), ("pearl".to_string(), prl.clone()));
+            self.pplns
+                .register_address_with_chain(worker, &prl, "pearl");
             return;
         }
         if let Some(addr) = parse_worker_address(worker) {
@@ -215,6 +225,13 @@ impl Pool {
             self.pplns
                 .register_address_with_chain(miner_id, &ss58, "quantus");
             return Some(("quantus", addr));
+        }
+        if let Some(_prl) = parse_pearl_payout(addr) {
+            self.worker_ext_payouts
+                .insert(miner_id.to_string(), ("pearl".to_string(), _prl.clone()));
+            self.pplns
+                .register_address_with_chain(miner_id, &_prl, "pearl");
+            return Some(("pearl", addr));
         }
         if addr.starts_with("zion1") {
             if let Ok(parsed) =
@@ -419,6 +436,38 @@ fn parse_quantus_payout(wallet: &str) -> Option<String> {
     // SS58 prefix 189 addresses are 47-48 base58 chars starting with "qz".
     if bare.len() >= 45 && bare.len() <= 50 && bare.starts_with("qz")
         && bare.chars().all(|c| c.is_ascii_alphanumeric())
+    {
+        Some(bare.to_string())
+    } else {
+        None
+    }
+}
+
+/// Parse a Pearl payout target from a worker wallet field.
+///
+/// Accepts `prl:<bech32>` / `pearl:<bech32>` (explicit) or a bare `prl1…`
+/// segwit address (mainnet HRP `prl`, BIP86 taproot `prl1p…`).  Full bech32m
+/// checksum verification happens in the multichain sweeper — the pool only
+/// needs routing, so a shape check suffices here.
+fn parse_pearl_payout(wallet: &str) -> Option<String> {
+    let lower = wallet.to_ascii_lowercase();
+    let bare = if lower.starts_with("prl:") {
+        &wallet[4..]
+    } else if lower.starts_with("pearl:") {
+        &wallet[6..]
+    } else {
+        wallet
+    };
+    // Bech32 segwit address: `prl1` + 6–87 data/checksum chars (v1 p2tr = 62
+    // total).  All-lowercase by spec; reject mixed-case and non-bech32 chars.
+    let lower_bare = bare.to_ascii_lowercase();
+    if bare.len() >= 20
+        && bare.len() <= 90
+        && lower_bare.starts_with("prl1")
+        && bare == lower_bare.as_str()
+        && bare[4..]
+            .chars()
+            .all(|c| "qpzry9x8gf2tvdw0s3jn54khce6mua7l".contains(c))
     {
         Some(bare.to_string())
     } else {
@@ -646,5 +695,59 @@ mod tests {
         assert_eq!(ext.len(), 1);
         assert_eq!(ext[0].1.chain(), "quantus");
         assert_eq!(ext[0].1.address, QTC_ADDR);
+    }
+
+    const PRL_ADDR: &str =
+        "prl1p29st0fecym0gk9zyh8ch90sxkf6apmwqdznk0tvu6kf5wxwsmqxqqzwjdm";
+
+    #[test]
+    fn pearl_worker_parses_prl_prefix() {
+        assert_eq!(
+            parse_pearl_payout(&format!("prl:{PRL_ADDR}")).as_deref(),
+            Some(PRL_ADDR)
+        );
+        assert_eq!(
+            parse_pearl_payout(&format!("pearl:{PRL_ADDR}")).as_deref(),
+            Some(PRL_ADDR)
+        );
+        assert_eq!(
+            parse_pearl_payout(&format!("PRL:{PRL_ADDR}")).as_deref(),
+            Some(PRL_ADDR)
+        );
+        assert_eq!(parse_pearl_payout(PRL_ADDR).as_deref(), Some(PRL_ADDR));
+        assert_eq!(parse_pearl_payout("zion1abc"), None);
+        assert_eq!(parse_pearl_payout("prl1"), None);
+        assert_eq!(
+            parse_pearl_payout(PRL_ADDR.to_ascii_uppercase().as_str()),
+            None
+        );
+        assert_eq!(
+            parse_pearl_payout(&format!("prl:{QTC_ADDR}")),
+            None
+        );
+    }
+
+    #[test]
+    fn pearl_worker_registers_external_payout() {
+        let mut pool = Pool::new(config(), telemetry());
+        pool.register_worker(&format!("prl:{PRL_ADDR}.rig1"));
+        let (chain, addr) = pool.worker_payout_target(&format!("prl:{PRL_ADDR}.rig1"));
+        assert_eq!(chain, "pearl");
+        assert_eq!(addr, PRL_ADDR);
+        // Bare prl1 wallet (native pearl stratum identity) routes too.
+        let (chain, addr) = pool.worker_payout_target(&format!("{PRL_ADDR}.rig1"));
+        assert_eq!(chain, "pearl");
+        assert_eq!(addr, PRL_ADDR);
+    }
+
+    #[test]
+    fn explicit_payout_address_routes_pearl() {
+        let mut pool = Pool::new(config(), telemetry());
+        let pa = format!("prl:{PRL_ADDR}");
+        let res = pool.register_payout_address("miner43", &pa);
+        assert_eq!(res.map(|(c, a)| (c, a)), Some(("pearl", &pa[..])));
+        let (chain, addr) = pool.worker_payout_target("miner43.rigB");
+        assert_eq!(chain, "pearl");
+        assert_eq!(addr, PRL_ADDR);
     }
 }

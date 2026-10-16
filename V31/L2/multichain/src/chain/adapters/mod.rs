@@ -1,5 +1,6 @@
 pub mod bitcoin;
 pub mod evm;
+pub mod pearl;
 pub mod quantus;
 pub mod solana;
 pub mod zion_l1;

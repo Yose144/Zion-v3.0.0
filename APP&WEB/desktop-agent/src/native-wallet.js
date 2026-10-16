@@ -12,6 +12,7 @@
 //   bitcoin BIP84 m/84'/0'/0'/0/0 → P2WPKH bc1q…
 //   solana  SLIP-0010 m/44'/501'/0'/0' → ed25519  (Phantom-compatible)
 //   quantus m/44'/189'/0'/0/0 → ML-DSA-87 → qz…   (sign/send via helper only)
+//   pearl   BIP86 m/86'/808276'/0'/0/0 → P2TR → prl1p… (oyster-compatible)
 
 const { spawnSync } = require('child_process');
 const path = require('path');
@@ -21,6 +22,7 @@ const { ripemd160 } = require('@noble/hashes/ripemd160');
 const ed25519 = require('@noble/ed25519');
 
 const QuantusWallet = require('./quantus-wallet.js');
+const PearlWallet = require('./pearl-wallet.js');
 
 const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
 const B58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -45,7 +47,7 @@ function runHelper(args, input, appRoot, isPackaged, timeoutMs = 15_000) {
 }
 
 /**
- * Derive the full native bundle { zion, evm, bitcoin, solana, quantus }
+ * Derive the full native bundle { zion, evm, bitcoin, solana, quantus, pearl }
  * for a mnemonic. Returns null when the helper is missing/fails.
  * WARNING: the bundle contains private keys — keep in memory only.
  */
@@ -167,7 +169,7 @@ async function solanaBalanceLamports(address, rpcUrl = SOL_RPC) {
 
 /**
  * Fetch balances for every chain in a derived bundle. Returns
- * { zion?, evm, bitcoin, solana, quantus } — zion uses the caller's fetcher.
+ * { zion?, evm, bitcoin, solana, quantus, pearl } — zion uses the caller's fetcher.
  */
 async function fetchNativeBalances(bundle, zionFetcher) {
   const out = {};
@@ -183,6 +185,10 @@ async function fetchNativeBalances(bundle, zionFetcher) {
     [
       'quantus',
       () => QuantusWallet.quantusBalance(bundle.quantus.address).then((r) => (r ? { planks: r.free.toString(), nonce: r.nonce } : null)),
+    ],
+    [
+      'pearl',
+      () => PearlWallet.pearlBalance(bundle.pearl.address).then((r) => (r ? { sats: Math.round(r.confirmed_prl * 1e8).toString() } : null)),
     ],
   ];
   const results = await Promise.allSettled(jobs.map(([, fn]) => fn()));
@@ -462,6 +468,20 @@ async function linkAllToZis(bundle, mnemonic, zis, appRoot, isPackaged) {
     const sig = signNative('zion', mnemonic, msg, appRoot, isPackaged);
     return zis.linkAddress({
       address: bundle.quantus.address, chainType: 'quantus',
+      zionAddress: bundle.zion.address, zionPublicKey: bundle.zion.publicKey,
+      signature: sig,
+    });
+  });
+
+  // pearl: zion-key attestation — same construction as quantus (the bundle
+  // carries the address only; P2TR key stays inside the helper).
+  await doLink('pearl', async () => {
+    if (!bundle.pearl?.address) return { ok: false, error: 'no pearl address' };
+    const ch = await zis.challenge(bundle.zion.address, 'zion-l1');
+    const msg = Buffer.from(`${ch}\npearl:${bundle.pearl.address}`, 'utf8');
+    const sig = signNative('zion', mnemonic, msg, appRoot, isPackaged);
+    return zis.linkAddress({
+      address: bundle.pearl.address, chainType: 'pearl',
       zionAddress: bundle.zion.address, zionPublicKey: bundle.zion.publicKey,
       signature: sig,
     });

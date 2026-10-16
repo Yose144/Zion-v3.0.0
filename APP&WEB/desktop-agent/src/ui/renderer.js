@@ -909,6 +909,131 @@ function initQtcView() {
   void refresh();
 }
 
+// ── Pearl (PRL) network panel — wallet > Pearl tab ─────────────────────────
+let _prlnetInit = false;
+let _prlnetPollTimer = null;
+let _prlnetLookupAddr = '';
+
+function initPrlView() {
+  const panel = document.getElementById('wallet-prl');
+  if (!panel) return;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtAge = (ms) => {
+    if (ms == null) return '—';
+    if (ms < 1000) return `${ms} ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)} s`;
+    return `${Math.floor(ms / 60000)} min`;
+  };
+  const fmtTs = (s) => { try { return s ? new Date(s).toLocaleString() : '—'; } catch { return '—'; } };
+  const fmtHash = (h) => {
+    const n = Number(h);
+    if (!Number.isFinite(n) || n <= 0) return '—';
+    const u = ['H/s', 'KH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s', 'EH/s'];
+    let v = n, i = 0;
+    while (v >= 1000 && i < u.length - 1) { v /= 1000; i++; }
+    return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${u[i]}`;
+  };
+  const metaRow = (k, v, color) =>
+    `<div class="wallet-meta-row"><span class="wallet-meta" style="min-width:110px">${k}</span><span class="wallet-meta-value" ${color ? `style="color:${color}"` : ''}>${v}</span></div>`;
+
+  async function refresh() {
+    try {
+      const res = await window.electronAPI.prlNetworkStatus(_prlnetLookupAddr || undefined);
+      if (!res?.success || !res.data) {
+        if ($('prlnet-updated')) $('prlnet-updated').textContent = 'PRL status unreachable';
+        return;
+      }
+      const d = res.data;
+      const n = d.node || {};
+      const p = d.pool || {};
+      const nv = p.native || {};
+      const up = p.upstream || {};
+      const w = d.wallet;
+
+      // KPI strip
+      const nodeOk = n.ok === true;
+      $('prlnet-node-state').textContent = nodeOk ? 'LIVE' : (n.ok === false ? 'DOWN' : '—');
+      $('prlnet-node-state').style.color = nodeOk ? '' : '#f87171';
+      $('prlnet-height').textContent = n.height != null ? n.height.toLocaleString() : '—';
+      $('prlnet-peers').textContent = n.connections != null ? n.connections : '—';
+      $('prlnet-native').textContent = nv.enabled == null ? '—' : (nv.enabled ? 'LINKED' : 'OFF');
+      $('prlnet-share').textContent = nv.share_pct != null ? `${nv.share_pct} %` : '—';
+      $('prlnet-hashps').textContent = fmtHash(n.network_hashps);
+      $('prlnet-updated').textContent = `updated ${new Date().toLocaleTimeString()} · source ${d.source || 'app-api'}`;
+
+      // Node card
+      const nodeHost = $('prlnet-node');
+      if (nodeHost) {
+        nodeHost.innerHTML =
+          metaRow('Chain', esc(n.chain || 'pearl')) +
+          metaRow('Version', esc(n.version || '—')) +
+          metaRow('Difficulty', n.difficulty != null ? Number(n.difficulty).toLocaleString() : '—') +
+          metaRow('Network power', fmtHash(n.network_hashps), '#22d3ee') +
+          metaRow('Mempool tx', n.mempool_tx != null ? n.mempool_tx : '—') +
+          metaRow('Headers', n.headers != null ? n.headers.toLocaleString() : '—');
+      }
+
+      // Pool legs card
+      const poolHost = $('prlnet-pool');
+      if (poolHost) {
+        poolHost.innerHTML = (p.available === false
+          ? '<div class="status-note">Pool leg data unavailable.</div>'
+          : metaRow('Native leg', nv.enabled == null ? '—' : (nv.enabled ? 'enabled' : 'off'), nv.enabled ? '#4ade80' : '#f87171') +
+            metaRow('Native job', `${esc(nv.job_id || '—')} · ${fmtAge(nv.job_age_ms)}`) +
+            metaRow('Native share', nv.share_pct != null ? `${nv.share_pct} %` : '—') +
+            metaRow('Upstream leg', up.enabled == null ? '—' : (up.enabled ? (up.connected ? 'connected' : 'connecting…') : 'off'), up.enabled && up.connected ? '#4ade80' : (up.enabled ? '#fbbf24' : '')) +
+            metaRow('Upstream job', `${esc(up.job_id || '—')} · ${fmtAge(up.job_age_ms)}`) +
+            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—'));
+      }
+
+      // Address lookup result (only when an addr was queried)
+      const lr = $('prlnet-lookup-result');
+      if (lr && w) {
+        if (w.valid === false) {
+          lr.innerHTML = '<div class="status-note" style="color:#f87171">Invalid PRL address (prl1… bech32 expected).</div>';
+        } else if (w.valid) {
+          const bal = w.balance || {};
+          const hist = w.history || [];
+          const short = (a, n = 14) => (a ? a.slice(0, n) + '…' : '—');
+          lr.innerHTML =
+            `<div class="metric-grid" style="margin-bottom:10px">
+              <div class="metric-card green"><div class="metric-kicker">BALANCE</div><div class="metric-value green">${Number(bal.confirmed_prl ?? 0).toFixed(8)}</div></div>
+              <div class="metric-card blue"><div class="metric-kicker">UTXO</div><div class="metric-value blue">${bal.utxo_unspent ?? 0}/${bal.utxo_checked ?? 0}</div></div>
+              <div class="metric-card blue"><div class="metric-kicker">TXS</div><div class="metric-value blue">${hist.length}</div></div>
+            </div>` +
+            '<table class="lottery-table"><tr><th></th><th>Tx</th><th>Amount PRL</th><th>Conf</th><th>Time</th></tr>' +
+            (hist.length
+              ? hist.map((r) => `<tr><td style="color:${r.direction === 'in' ? '#4ade80' : '#f87171'}">${r.direction === 'in' ? '↓' : '↑'}</td><td title="${esc(r.txid || '')}">${short(r.txid, 12)}</td><td>${r.amount_prl}</td><td>${r.confirmations ?? '—'}</td><td>${fmtTs(r.ts)}</td></tr>`).join('')
+              : '<tr><td colspan="5" style="color:rgba(255,255,255,0.3);font-style:italic">No transactions for this address.</td></tr>') +
+            '</table>';
+        }
+      }
+    } catch {
+      if ($('prlnet-updated')) $('prlnet-updated').textContent = 'PRL status fetch error';
+    }
+  }
+
+  if (!_prlnetInit) {
+    _prlnetInit = true;
+    $('prlnet-refresh-btn')?.addEventListener('click', refresh);
+    const doLookup = () => {
+      _prlnetLookupAddr = ($('prlnet-addr-input')?.value || '').trim().replace(/^prl:/i, '');
+      if (_prlnetLookupAddr) void refresh();
+    };
+    $('prlnet-lookup-btn')?.addEventListener('click', doLookup);
+    $('prlnet-addr-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLookup(); });
+    // Poll while the section is visible; self-clears when the user leaves it.
+    _prlnetPollTimer = setInterval(() => {
+      const p = document.getElementById('wallet-prl');
+      if (!p || !p.classList.contains('active')) return;
+      void refresh();
+    }, 15000);
+  }
+  void refresh();
+}
+
 // Section lazy-init dispatch table (used by setupSectionTabs for nested panels)
 const _sectionInitFns = {
   'bridge-view': () => initBridgeView(),
@@ -917,6 +1042,7 @@ const _sectionInitFns = {
   'dao-view':    () => initDaoView(),
   'node-view':   () => initNodeView(),
   'wallet-qtc':  () => initQtcView(),
+  'wallet-prl':  () => initPrlView(),
 };
 
 // Lazy-init dispatch table — avoids long if-else chain
@@ -3931,6 +4057,195 @@ function setupWalletControls() {
   document.querySelector('.section-tab[data-section="wallet-overview"]')
     ?.addEventListener('click', () => setTimeout(refreshQtcCard, 80));
 
+  // ── Pearl (PRL) card — native payout wallet linked to the ZION wallet ──
+  const prlEls = {
+    card: document.getElementById('prl-wallet-card'),
+    balance: document.getElementById('prl-balance'),
+    address: document.getElementById('prl-address'),
+    linked: document.getElementById('prl-linked'),
+    unlinked: document.getElementById('prl-unlinked'),
+    status: document.getElementById('prl-status'),
+    linkInput: document.getElementById('prl-link-input'),
+    linkBtn: document.getElementById('prl-link-btn'),
+    generateBtn: document.getElementById('prl-generate-btn'),
+    copyBtn: document.getElementById('prl-copy-btn'),
+    refreshBtn: document.getElementById('prl-refresh-btn'),
+    newMnemonic: document.getElementById('prl-new-mnemonic'),
+    mnemonicOut: document.getElementById('prl-mnemonic-out'),
+    history: document.getElementById('prl-history'),
+    payoutCoin: document.getElementById('prl-payout-coin'),
+  };
+  let activePrlAddress = null;
+
+  // Shared payout selector handling — qtc-payout-coin and prl-payout-coin
+  // both drive config.payoutCoin; keep them in sync.
+  if (prlEls.payoutCoin) {
+    const cur = (config.payoutCoin || 'zion').toLowerCase();
+    prlEls.payoutCoin.value = cur === 'prl' ? 'prl' : 'zion';
+    prlEls.payoutCoin.addEventListener('change', async () => {
+      config.payoutCoin = prlEls.payoutCoin.value === 'prl' ? 'prl' : 'zion';
+      try { await window.electronAPI.saveConfig(config); } catch {}
+      if (qtcEls.payoutCoin && config.payoutCoin !== 'qtc') qtcEls.payoutCoin.value = config.payoutCoin === 'prl' ? 'prl' : 'zion';
+      if (prlEls.status) {
+        prlEls.status.textContent = config.payoutCoin === 'prl'
+          ? (activePrlAddress ? 'Payout → PRL (applies on next miner start)' : 'Payout → PRL — link/generate a PRL address first')
+          : 'Payout → ZION';
+      }
+    });
+    // Reflect the shared payoutCoin in the QTC selector too (it may have
+    // been set to 'prl' from this card).
+    if (qtcEls.payoutCoin && cur === 'prl') qtcEls.payoutCoin.value = 'prl';
+  }
+
+  const walletPrlFor = async (zionAddr) => {
+    try {
+      const res = await window.electronAPI.listWallets();
+      const w = (res?.wallets || []).find(x => x.address === zionAddr);
+      return w?.prlAddress || null;
+    } catch { return null; }
+  };
+
+  const refreshPrlCard = async () => {
+    if (!prlEls.card) return;
+    const zionAddr = getActiveAddress();
+    activePrlAddress = zionAddr ? await walletPrlFor(zionAddr) : null;
+    const linked = !!activePrlAddress;
+    if (prlEls.linked) prlEls.linked.style.display = linked ? '' : 'none';
+    if (prlEls.unlinked) prlEls.unlinked.style.display = linked ? 'none' : '';
+    if (prlEls.newMnemonic) prlEls.newMnemonic.style.display = 'none';
+    if (prlEls.address) prlEls.address.textContent = activePrlAddress || '';
+    if (!linked) {
+      if (prlEls.balance) prlEls.balance.textContent = '—';
+      if (prlEls.status) {
+        prlEls.status.textContent = zionAddr
+          ? 'No PRL wallet linked — paste a prl1… address or generate one.'
+          : 'Set an active ZION wallet first.';
+      }
+      return;
+    }
+    if (prlEls.status) prlEls.status.textContent = 'loading…';
+    try {
+      const bal = await window.electronAPI.pearlGetBalance(activePrlAddress);
+      if (bal?.success) {
+        if (prlEls.balance) prlEls.balance.textContent = Number(bal.confirmedPrl ?? 0).toFixed(8);
+        if (prlEls.status) prlEls.status.textContent = `Pearl mainnet · ${bal.utxoUnspent ?? 0} UTXO`;
+        renderPrlHistory();
+      } else {
+        if (prlEls.balance) prlEls.balance.textContent = '—';
+        if (prlEls.status) prlEls.status.textContent = 'PRL API unreachable — balance unavailable';
+      }
+    } catch {
+      if (prlEls.balance) prlEls.balance.textContent = '—';
+      if (prlEls.status) prlEls.status.textContent = 'PRL balance fetch error';
+    }
+  };
+
+  const renderPrlHistory = async () => {
+    const host = prlEls.history;
+    if (!host || !activePrlAddress) return;
+    try {
+      const res = await window.electronAPI.pearlGetHistory(activePrlAddress);
+      if (!res?.success || !res.rows?.length) {
+        host.innerHTML = '<div class="status-note">No transactions indexed yet.</div>';
+        return;
+      }
+      const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      host.innerHTML = res.rows.slice(0, 10).map((r) => {
+        const dir = r.direction === 'in' ? '+' : '−';
+        const when = r.ts ? new Date(r.ts).toLocaleString() : '';
+        const tx = r.txid ? `${r.txid.slice(0, 10)}…${r.txid.slice(-6)}` : '—';
+        const conf = r.confirmations != null ? ` · ${r.confirmations} conf` : '';
+        return `<div class="wallet-meta-row" style="font-size:11px">
+          <span class="wallet-meta-value" style="min-width:90px;color:${r.direction === 'in' ? 'var(--accent-green,#4ade80)' : 'var(--accent-red,#f87171)'}">${dir}${r.amountPrl}</span>
+          <span class="wallet-meta-value" style="flex:1" title="${esc(r.txid || '')}">${tx}</span>
+          <span class="wallet-meta-value">${esc(when)}${conf}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      host.innerHTML = '';
+    }
+  };
+
+  prlEls.refreshBtn?.addEventListener('click', refreshPrlCard);
+
+  prlEls.copyBtn?.addEventListener('click', () => {
+    if (activePrlAddress) {
+      navigator.clipboard?.writeText(activePrlAddress);
+      if (prlEls.status) prlEls.status.textContent = 'PRL address copied.';
+    }
+  });
+
+  prlEls.linkBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      if (prlEls.status) prlEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    let raw = (prlEls.linkInput?.value || '').trim();
+    raw = raw.replace(/^(prl:|pearl:)/i, '');
+    let check;
+    try {
+      check = await window.electronAPI.validatePearlAddress(raw);
+    } catch (e) {
+      if (prlEls.status) prlEls.status.textContent =
+        `Validation unavailable: ${e?.message || 'ipc error'} — restart the app if it was just updated`;
+      return;
+    }
+    if (!check?.valid) {
+      if (prlEls.status) prlEls.status.textContent = 'Invalid prl1… (bech32) address.';
+      return;
+    }
+    let res;
+    try {
+      res = await window.electronAPI.walletSetPrl({ zionAddress: zionAddr, prlAddress: raw });
+    } catch (e) {
+      if (prlEls.status) prlEls.status.textContent = `Link failed: ${e?.message || 'ipc error'}`;
+      return;
+    }
+    if (prlEls.status) {
+      prlEls.status.textContent = res?.success
+        ? 'PRL address linked.'
+        : `Link failed: ${res?.error || 'wallet not found'}`;
+    }
+    if (res?.success) refreshPrlCard();
+  });
+
+  prlEls.generateBtn?.addEventListener('click', async () => {
+    const zionAddr = getActiveAddress();
+    if (!zionAddr) {
+      if (prlEls.status) prlEls.status.textContent = 'Set an active ZION wallet first.';
+      return;
+    }
+    let res;
+    try {
+      res = await window.electronAPI.generatePearlWallet();
+    } catch (e) {
+      if (prlEls.status) prlEls.status.textContent =
+        `PRL generation failed: ${e?.message || 'ipc error'} — restart the app if it was just updated`;
+      return;
+    }
+    if (!res?.success) {
+      if (prlEls.status) prlEls.status.textContent = `PRL generation failed: ${res?.error || 'helper unavailable'}`;
+      return;
+    }
+    const w = res.wallet;
+    if (prlEls.mnemonicOut) prlEls.mnemonicOut.value = w.mnemonic;
+    if (prlEls.newMnemonic) prlEls.newMnemonic.style.display = '';
+    try {
+      const link = await window.electronAPI.walletSetPrl({ zionAddress: zionAddr, prlAddress: w.address });
+      if (!link?.success && prlEls.status) {
+        prlEls.status.textContent = `Generated but not linked: ${link?.error || 'wallet not found'}`;
+      }
+    } catch { /* link best-effort */ }
+    addLogEntry(`PRL wallet generated: ${w.address}`, 'info');
+    refreshPrlCard();
+    if (prlEls.newMnemonic) prlEls.newMnemonic.style.display = '';
+  });
+
+  refreshPrlCard();
+  document.querySelector('.section-tab[data-section="wallet-overview"]')
+    ?.addEventListener('click', () => setTimeout(refreshPrlCard, 80));
+
   // ── Native multichain card — non-custodial addresses from the ZION phrase ──
   const nativeEls = {
     card: document.getElementById('native-wallet-card'),
@@ -3955,6 +4270,7 @@ function setupWalletControls() {
     { key: 'bitcoin', label: 'BTC',   unit: 'BTC', fmt: (b) => (b.sats != null ? (Number(b.sats) / 1e8).toFixed(8) : null) },
     { key: 'solana',  label: 'SOL',   unit: 'SOL', fmt: (b) => (b.lamports != null ? (Number(b.lamports) / 1e9).toFixed(6) : null) },
     { key: 'quantus', label: 'QTC',   unit: 'QTC', fmt: (b) => (b.planks != null ? (Number(b.planks) / 1e12).toFixed(6) : null) },
+    { key: 'pearl',   label: 'PRL',   unit: 'PRL', fmt: (b) => (b.sats != null ? (Number(b.sats) / 1e8).toFixed(8) : null), nosend: true },
   ];
 
   const shortAddr = (a) => (a && a.length > 24 ? `${a.slice(0, 12)}…${a.slice(-8)}` : a || '—');
@@ -3973,7 +4289,7 @@ function setupWalletControls() {
       nativeEls.rows.innerHTML = '<div class="status-note" style="margin:6px 0">Not derived yet — press Derive (needs wallet password).</div>';
       return;
     }
-    nativeEls.rows.innerHTML = NATIVE_CHAINS.map(({ key, label, unit, fmt }) => {
+    nativeEls.rows.innerHTML = NATIVE_CHAINS.map(({ key, label, unit, fmt, nosend }) => {
       const addr = nativeMap[key];
       if (!addr) return '';
       const bal = nativeBalances[key];
@@ -3983,7 +4299,7 @@ function setupWalletControls() {
         <span class="wallet-meta-value" title="${addr}" style="flex:1;font-size:11px">${shortAddr(addr)}</span>
         <span class="wallet-meta-value" style="min-width:80px;text-align:right">${balText ?? '—'}</span>
         <button class="btn btn-ghost btn-sm native-copy" data-addr="${addr}">⧉</button>
-        ${key === 'zion' ? '' : `<button class="btn btn-ghost btn-sm native-send-row" data-chain="${key}">➤</button>`}
+        ${key === 'zion' || nosend ? '' : `<button class="btn btn-ghost btn-sm native-send-row" data-chain="${key}">➤</button>`}
       </div>`;
     }).join('');
     nativeEls.rows.querySelectorAll('.native-copy').forEach((b) =>
@@ -4018,7 +4334,7 @@ function setupWalletControls() {
       const res = await window.electronAPI.nativeGetBalances({ nativeAddresses: nativeMap });
       nativeBalances = res?.success ? (res.balances || {}) : {};
       renderNativeRows();
-      if (nativeEls.status) nativeEls.status.textContent = `Native chains: ${Object.keys(nativeMap).filter(k => nativeMap[k]).length}/5 · ${new Date().toLocaleTimeString()}`;
+      if (nativeEls.status) nativeEls.status.textContent = `Native chains: ${Object.keys(nativeMap).filter(k => nativeMap[k]).length}/${NATIVE_CHAINS.length} · ${new Date().toLocaleTimeString()}`;
     } catch {
       if (nativeEls.status) nativeEls.status.textContent = 'Balance fetch failed';
     }

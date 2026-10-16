@@ -6187,6 +6187,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
             <span>Quantus</span>
           </div>
+          <div class="section-tab" data-section="wallet-prl">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+            <span>Pearl</span>
+          </div>
           <div class="section-tab" data-section="wallet-manage">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
             <span>Manage</span>
@@ -6325,9 +6329,59 @@
                   <select id="qtc-payout-coin" class="input-flex-mono" style="flex:0 0 auto;padding:2px 6px">
                     <option value="zion">ZION → this wallet</option>
                     <option value="qtc">QTC → qz… address</option>
+                    <option value="prl">PRL → prl1… address</option>
                   </select>
                 </div>
                 <div id="qtc-status" class="wallet-status-row"></div>
+              </div>
+
+              <!-- Pearl (PRL) — native payout wallet, Pearl mainnet -->
+              <div class="wallet-card" id="prl-wallet-card">
+                <div class="wallet-kicker">PEARL · PRL</div>
+                <div class="wallet-main">
+                  <div class="wallet-main-value" id="prl-balance">—</div>
+                  <div class="wallet-main-unit">PRL</div>
+                </div>
+                <div id="prl-linked">
+                  <div class="wallet-meta-row">
+                    <div class="wallet-meta flex-2" style="word-break:break-all">
+                      <span id="prl-address" class="wallet-meta-value">—</span>
+                    </div>
+                  </div>
+                  <div class="inline-row" style="margin-top:8px">
+                    <button class="btn btn-ghost btn-sm" id="prl-copy-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-copy"></use></svg>
+                      Copy
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-ghost-green" id="prl-refresh-btn">
+                      <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+                <div id="prl-unlinked">
+                  <div class="inline-row" style="margin:8px 0">
+                    <input type="text" id="prl-link-input" placeholder="prl1… or prl:prl1…" class="input-flex-mono" />
+                    <button class="btn btn-primary btn-sm" id="prl-link-btn">Link</button>
+                  </div>
+                  <button class="btn btn-ghost btn-sm btn-ghost-purple" id="prl-generate-btn">
+                    <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
+                    Generate new PRL wallet
+                  </button>
+                </div>
+                <div id="prl-new-mnemonic" style="display:none">
+                  <textarea id="prl-mnemonic-out" readonly rows="3" class="input-flex-mono" style="width:100%;margin-top:8px"></textarea>
+                  <div class="status-note">Save this 24-word phrase — it is your PRL wallet. Linked to the active wallet.</div>
+                </div>
+                <div id="prl-history" style="margin-top:8px"></div>
+                <div class="inline-row" style="margin-top:8px;align-items:center;gap:6px">
+                  <span class="wallet-meta">Pool payout</span>
+                  <select id="prl-payout-coin" class="input-flex-mono" style="flex:0 0 auto;padding:2px 6px">
+                    <option value="zion">ZION → this wallet</option>
+                    <option value="prl">PRL → prl1… address</option>
+                  </select>
+                </div>
+                <div id="prl-status" class="wallet-status-row"></div>
               </div>
 
               <!-- Native multichain — non-custodial addresses derived from the
@@ -6654,6 +6708,84 @@
               <span>Network Feed</span>
             </h2>
             <table class="lottery-table" id="qtcnet-feed-table"></table>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Pearl (PRL network) ═══ -->
+        <div id="wallet-prl" class="section-panel">
+
+          <!-- Header + KPI strip -->
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+              <span>Pearl Network (PRL)</span>
+              <span class="flex-1"></span>
+              <button class="btn btn-ghost btn-sm" id="prlnet-refresh-btn">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                Refresh
+              </button>
+            </h2>
+            <div class="status-note" style="margin-bottom:12px">PoUW chain · useful-work proofs · native + upstream pool legs · live node feed</div>
+            <div class="metric-grid">
+              <div class="metric-card purple">
+                <div class="metric-kicker">NODE</div>
+                <div class="metric-value purple" id="prlnet-node-state">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">HEIGHT</div>
+                <div class="metric-value blue" id="prlnet-height">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">PEERS</div>
+                <div class="metric-value blue" id="prlnet-peers">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">NATIVE LEG</div>
+                <div class="metric-value green" id="prlnet-native">—</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">NATIVE SHARE</div>
+                <div class="metric-value gold" id="prlnet-share">—</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">NET HASH</div>
+                <div class="metric-value green" id="prlnet-hashps">—</div>
+              </div>
+            </div>
+            <div class="wallet-status-row" id="prlnet-updated">—</div>
+          </div>
+
+          <!-- Node + Pool legs -->
+          <div class="send-grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+            <div class="control-panel">
+              <h2 class="panel-title-row">
+                <svg class="icon" aria-hidden="true"><use href="#i-monitor-cpu"></use></svg>
+                <span>Pearl Node</span>
+              </h2>
+              <div id="prlnet-node" class="wallet-meta"></div>
+            </div>
+            <div class="control-panel">
+              <h2 class="panel-title-row">
+                <svg class="icon" aria-hidden="true"><use href="#i-pickaxe"></use></svg>
+                <span>Pool Legs</span>
+              </h2>
+              <div class="status-note" style="margin-bottom:8px">Native leg proves work on the Pearl network directly; the upstream leg can ride an external pool.</div>
+              <div id="prlnet-pool" class="wallet-meta"></div>
+            </div>
+          </div>
+
+          <!-- PRL Address lookup -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+              <span>PRL Address Lookup</span>
+            </h2>
+            <div class="status-note" style="margin-bottom:8px">Confirmed UTXO balance + address-indexed transaction history.</div>
+            <div class="inline-row" style="margin-bottom:10px">
+              <input type="text" id="prlnet-addr-input" placeholder="prl1… address" class="input-flex-mono" />
+              <button class="btn btn-primary btn-sm" id="prlnet-lookup-btn">Lookup</button>
+            </div>
+            <div id="prlnet-lookup-result"></div>
           </div>
         </div>
 

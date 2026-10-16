@@ -43,8 +43,90 @@ function parseSubver(s: string | undefined): string | null {
   return m ? `pearld ${m[1]}` : s.replaceAll('/', '');
 }
 
+// ── optional per-address wallet lookup (?addr=prl1…) ───────────────────────
+// Pearl is a btcd-derived UTXO chain: validateaddress for validity,
+// searchrawtransactions (address index) for history, gettxout to
+// distinguish spent vs unspent outputs → derived spendable balance.
+const PRL_ADDR_RE = /^prl1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{6,87}$/;
+
+async function pearlWallet(addr: string): Promise<any> {
+  const wallet: any = { address: addr, valid: false };
+  if (!PRL_ADDR_RE.test(addr)) return wallet;
+
+  const va = await rpc('validateaddress', [addr]);
+  if (!va || va._error || va.isvalid !== true) return wallet;
+  wallet.valid = true;
+  wallet.is_script = va.isscript === true;
+  wallet.is_witness = va.iswitness === true;
+
+  // Address-indexed history (verbose=1 so vout scriptPubKey addresses decode).
+  const raw = await rpc('searchrawtransactions', [addr, 1, 0, 20], 8000);
+  const txs: any[] = Array.isArray(raw) ? raw : [];
+
+  const history: any[] = [];
+  const outs: { txid: string; n: number; value: number; confirmations: number; blockhash: string | null }[] = [];
+  for (const tx of txs) {
+    let received = 0;
+    let spent = 0;
+    const vouts: any[] = Array.isArray(tx?.vout) ? tx.vout : [];
+    for (const v of vouts) {
+      const addrs: string[] = v?.scriptPubKey?.addresses ?? [];
+      if (addrs.includes(addr)) {
+        received += Number(v.value || 0);
+        outs.push({
+          txid: tx.txid,
+          n: Number(v.n ?? 0),
+          value: Number(v.value || 0),
+          confirmations: Number(tx.confirmations || 0),
+          blockhash: tx.blockhash ?? null,
+        });
+      }
+    }
+    const vins: any[] = Array.isArray(tx?.vin) ? tx.vin : [];
+    for (const vi of vins) {
+      const addrs: string[] = vi?.prevout?.scriptPubKey?.addresses ?? [];
+      if (addrs.includes(addr)) spent += Number(vi.prevout.value || 0);
+    }
+    history.push({
+      txid: tx.txid ?? null,
+      height: null, // txindex replies carry blockhash, not height — resolved via hash below if needed
+      blockhash: tx.blockhash ?? null,
+      confirmations: Number(tx.confirmations || 0),
+      ts: tx.blocktime ? Number(tx.blocktime) * 1000 : (tx.time ? Number(tx.time) * 1000 : null),
+      direction: spent > 0 ? 'out' : 'in',
+      amount_prl: Math.round((spent > 0 ? spent : received) * 1e8) / 1e8,
+    });
+  }
+
+  // UTXO balance: gettxout returns null for spent outputs — check the last
+  // 40 received outputs (bounded) and sum the unspent ones.
+  let balance = 0;
+  let unspent = 0;
+  const recent = outs.slice(0, 40);
+  const spentChecks = await Promise.all(
+    recent.map((o) => rpc('gettxout', [o.txid, o.n], 3000))
+  );
+  recent.forEach((o, i) => {
+    const r = spentChecks[i];
+    if (r && !r._error) {
+      balance += o.value;
+      unspent += 1;
+    }
+  });
+
+  wallet.balance = {
+    confirmed_prl: Math.round(balance * 1e8) / 1e8,
+    utxo_checked: recent.length,
+    utxo_unspent: unspent,
+    note: outs.length > recent.length ? `balance covers latest ${recent.length} of ${outs.length} outputs` : null,
+  };
+  wallet.history = history;
+  return wallet;
+}
+
 export async function GET(_req: NextRequest) {
-  const [blocks, chainInfo, miningInfo, netInfo, poolStats] = await Promise.all([
+  const addr = (_req.nextUrl.searchParams.get('addr') || '').trim().slice(0, 90);
+  const [blocks, chainInfo, miningInfo, netInfo, poolStats, wallet] = await Promise.all([
     rpc('getblockcount'),
     rpc('getblockchaininfo'),
     rpc('getmininginfo'),
@@ -52,6 +134,7 @@ export async function GET(_req: NextRequest) {
     fetch(`${POOL_API}/stats`, { cache: 'no-store', signal: AbortSignal.timeout(4000) })
       .then((r) => r.json())
       .catch(() => null),
+    addr ? pearlWallet(addr) : Promise.resolve(null),
   ]);
 
   const rpcOk = typeof blocks === 'number' && !blocks?._error;
@@ -93,7 +176,7 @@ export async function GET(_req: NextRequest) {
     : { available: false };
 
   return NextResponse.json(
-    { ok: true, ts: Date.now(), node, pool },
+    { ok: true, ts: Date.now(), node, pool, wallet },
     { headers: { 'cache-control': 'public, s-maxage=10, stale-while-revalidate=20' } }
   );
 }
