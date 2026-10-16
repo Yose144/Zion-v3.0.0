@@ -47,7 +47,7 @@ V této epoše dosahuje dospělosti **první generace, která nikdy nezažila sv
 
 | Kategorie | Co se v této epoše může odehrát |
 |---|---|
-| **HORIZONT — infrastruktura** | L6 Issobella dosahuje zralosti orbitálního vědeckého výzkumu (viz `docs/TerraNova/BASE_FINAL/en/09-ISSOBELLA.md`); teoretický výzkum kvantového motoru (Alcubierre-Ekam metrika, viz [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) §7) opouští čistě teoretickou fázi a vstupuje do experimentální validace. |
+| **HORIZONT — infrastruktura** | L6 Issobella dosahuje zralosti orbitálního vědeckého výzkumu (viz `docs/TerraNova/BASE_FINAL/en/09-ISSOBELLA.md`); teoretický výzkum kvantového motoru (Alcubierre-Ekam metrika, viz [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) §7) opouští čistě teoretickou fázi a vstupuje do experimentální validace. |
 | **HORIZONT — společnost** | Decentralizovaná věda (DeSci) a otevřené vzdělávání se stávají běžnou alternativou k uzavřenému akademickému a patentovému systému, ne experimentem menšiny. |
 | **HORIZONT — generace** | Lidé narození po roce 2050 (děti dnešní Generace Z) vyrůstají v prostředí, kde je normální ověřovat, ne věřit na slovo — civilizační dovednost, ne technická kuriozita. |
 

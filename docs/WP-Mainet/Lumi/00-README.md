@@ -4,9 +4,9 @@
 > **Stav:** DRAFT narativně-technická řada (L1–L6 · ŽIVÉ · STAVBA · HORIZONT · HYPOTÉZA · MÝTUS), navržená ke kanonizaci podle [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (třída E — kulturní / veřejná komunikace; pasáže o fondech, custody a governance třída C).
 > **Vytvořeno:** 2026-09-14 pro verzi **3.3 „Nirvana"**.
 > **Místo v kompasu:** **osa** — lucerna, která prochází všemi směry. Sůl této země je střed, Nirvana západ, Bodhi Gaia je země pod námi, Issobella nebe nad námi. Tato kniha je jediná svislá čára, která ty čtyři body spojuje: jde odspodu nahoru a zpátky k člověku.
-> **Navazuje na:** [`ZION_ONBOARDING_PUBLIC_CZ.md`](../ZION_ONBOARDING_PUBLIC_CZ.md) (kanonický vstup), [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) §6 *Brána do Oasis — Rádha a Elizabeth*, [`Sůl této země`](../SulZeme/00-README.md), [`Nirvana`](../nirvana/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md), [`Bodhi Gaia — Kniha Země`](../BodhiGaia/00-README.md), [`Issobella — Kniha Nebe`](../Issobella/00-README.md), [`Mise Amenti`](../MiseAmenti/README.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) a výzkumný balík [`L6data/`](../../../L6data/README.md).
+> **Navazuje na:** [`ZION_ONBOARDING_PUBLIC_CZ.md`](../ZION_ONBOARDING_PUBLIC_CZ.md) (kanonický vstup), [`ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) §6 *Brána do Oasis — Rádha a Elizabeth*, [`Sůl této země`](../SulZeme/00-README.md), [`Nirvana`](../nirvana/00-README.md), [`NirvanaCloud`](../NirvanaCloud/00-README.md), [`Bodhi Gaia — Kniha Země`](../BodhiGaia/00-README.md), [`Issobella — Kniha Nebe`](../Issobella/00-README.md), [`Mise Amenti`](../MiseAmenti/README.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) a výzkumný balík [`L6data/`](../../../L6data/README.md).
 > **Jazyk:** čeština (kanonická). Anglický index vznikne až po českém review; překlad nesmí zesílit jistotu, emoci ani finanční význam oproti originálu (`MiseAmenti/08` §5.7).
-> **Pravidlo textu:** *Příběh → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, adresách nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a živý repozitář před příběhem.
+> **Pravidlo textu:** *Příběh → Co to znamená → Kotva pravdy*. Kde text mluví o síti, fondu, adresách nebo kódu, vítězí [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../3.2/StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) a živý repozitář před příběhem.
 
 ---
 
@@ -91,7 +91,7 @@ Doplňkově **NEDOLOŽENO** (chybí evidence, nesmí se používat jako fakt) a 
 - **Není finanční slib.** Žádná kapitola neříká, kolik bude ZION stát, co vynese těžba ani kdy se fond otevře.
 - **Není slib letu ani dopadu.** Prstenec nad Zemí a rozkvetlé zahrady jsou obrazy možné budoucnosti. Dokud neexistuje modul nebo impact packet, nic z toho není „hotové".
 - **Není životopis.** Lumi ani nikdo z průvodců není skutečná osoba. Kniha nevypráví soukromé příběhy autorů ani jejich blízkých.
-- **Není náhrada registrů.** Kde se liší od [`StatusV3.md`](../../../StatusV3.md), [`MiseAmenti/07`](../MiseAmenti/07-Registr-Dukazu.md), [`BodhiGaia/09`](../BodhiGaia/09-Kotva-Pravdy-a-Hranice.md) nebo [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md), vítězí ony.
+- **Není náhrada registrů.** Kde se liší od [`StatusV3.md`](../../3.2/StatusV3.md), [`MiseAmenti/07`](../MiseAmenti/07-Registr-Dukazu.md), [`BodhiGaia/09`](../BodhiGaia/09-Kotva-Pravdy-a-Hranice.md) nebo [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md), vítězí ony.
 
 ---
 
@@ -101,9 +101,9 @@ Doplňkově **NEDOLOŽENO** (chybí evidence, nesmí se používat jako fakt) a 
 - **Kanonický integrační corpus 3.3:** [`MiseAmenti/README.md`](../MiseAmenti/README.md) · registr důkazů [`07`](../MiseAmenti/07-Registr-Dukazu.md) · exekuční charta [`04`](../MiseAmenti/04-Exekucni-Charta-3.3.md) · generační kompas [`06`](../MiseAmenti/06-Generacni-Kompas-2026-2126.md)
 - **Registry vrstev:** L5 [`BodhiGaia/09`](../BodhiGaia/09-Kotva-Pravdy-a-Hranice.md) · L6 [`Issobella/10`](../Issobella/10-Kotva-Pravdy-a-Hranice.md)
 - **Rozhodnutí G10 (režim běhu L5/L6):** [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md) · brány 3.2: [`docs/3.2/ROADMAP.md`](../../3.2/ROADMAP.md)
-- **L2 kontrakty a DEX:** [`L2contracts.md`](../../../L2contracts.md)
+- **L2 kontrakty a DEX:** [`L2contracts.md`](../../3.2/L2contracts.md)
 - **Výzkumný balík L6:** [`L6data/`](../../../L6data/README.md)
-- **Živý stav sítě:** [`StatusV3.md`](../../../StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
+- **Živý stav sítě:** [`StatusV3.md`](../../3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
 - **Narativní kořeny:** [`Sůl této země`](../SulZeme/00-README.md) · [`Nirvana`](../nirvana/00-README.md) · [`NirvanaCloud`](../NirvanaCloud/00-README.md) · [`Bodhi Gaia`](../BodhiGaia/00-README.md) · [`Issobella`](../Issobella/00-README.md)
 
 ---

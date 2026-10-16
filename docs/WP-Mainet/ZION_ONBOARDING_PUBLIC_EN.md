@@ -150,7 +150,7 @@ A story may be beautiful, but network facts must be precise. **A story is not a 
 | [`SulZeme/00-README_EN.md`](./SulZeme/00-README_EN.md) | The Salt of the Earth book — 12 stops |
 | [`ZION_Technical_Whitepaper_v3.1_EN.md`](./ZION_Technical_Whitepaper_v3.1_EN.md) | Technical reference (consensus, emission, architecture) |
 | [`../../V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) | Technical plan of the road to Mainnet Stable |
-| [`../../StatusV3.md`](../../StatusV3.md) | Live network status and topology |
+| [`../../StatusV3.md`](../3.2/StatusV3.md) | Live network status and topology |
 
 ---
 

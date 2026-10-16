@@ -113,7 +113,7 @@
 
 | # | Podmínka | Stav | Poznámka |
 |---|---|---|---|
-| 1 | L1 100 000+ bloků bez zásahu | ❌ | height ~62k; 2026-09-21 stall 2 h 23 m, 2026-09-27 4× pool wedge (opraveno); G8 běh #1 neprošel ([report](docs/3.2/REPORTS/REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md)) |
+| 1 | L1 100 000+ bloků bez zásahu | ❌ | height ~62k; 2026-09-21 stall 2 h 23 m, 2026-09-27 4× pool wedge (opraveno); G8 běh #1 neprošel ([report](REPORTS/REPORT_2026-09-28_G8_30DAY_RUN_CLOSURE.md)) |
 | 2 | Obousměrný ZION↔BTC↔ETH auto-settle + HTLC rollback | ❌ | BTC pod safety holdem; jen wZION/USDT na Base |
 | 3 | Passkey login napříč weby | 🔄 | kód v ZIS + web hotový (2026-09-28), čeká DB push + deploy; RP ID `zionterranova.com` pokrývá všechny subdomény |
 | 4 | Maestro řídí ≥3 agenty on-chain s Dharma filtrem | ❌ | L3 API nasazeno 2026-09-29, ale Maestro on-chain agenty neřídí; Dharma = keyword filter |

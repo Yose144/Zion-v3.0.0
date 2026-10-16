@@ -2,7 +2,7 @@
 
 This directory contains historical reports from the V31 Mainnet Alpha / 3.2 "One Love" stabilization track.
 
-> **Status:** Archive of historical incident, tuning, audit and test reports. For the current live state see [`StatusV3.md`](../../../StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) and [`AGENTS.md`](../../../AGENTS.md).
+> **Status:** Archive of historical incident, tuning, audit and test reports. For the current live state see [`StatusV3.md`](../../3.2/StatusV3.md), [`V31/STATUS.md`](../../../V31/STATUS.md) and [`AGENTS.md`](../../../AGENTS.md).
 
 ## Index
 

@@ -5,8 +5,8 @@
 > On-chain, use **existing token standards** (SPL, native asset, TRC-20, etc.).
 >
 > These contracts are kept for historical reference only.
-> See [`L2contracts.md`](../../../L2contracts.md) §7 and
-> [`ZIS_WALLET_PLAN.md`](../../../ZIS_WALLET_PLAN.md).
+> See [`L2contracts.md`](../../../../../docs/3.2/L2contracts.md) §7 and
+> [`ZIS_WALLET_PLAN.md`](../../../../../docs/3.2/ZIS_WALLET_PLAN.md).
 
 ## What was here
 

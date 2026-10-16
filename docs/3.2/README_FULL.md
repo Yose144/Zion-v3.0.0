@@ -19,7 +19,7 @@ A proof-of-work blockchain with dual-algo consensus, cross-chain bridge, DeFi la
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-blue.svg)](https://soliditylang.org/)
 [![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange.svg)](#network-status)
 
-**English** · [Čeština](./docs/lang/README.cs.md) · [Español](./docs/lang/README.es.md) · [Français](./docs/lang/README.fr.md) · [Português](./docs/lang/README.pt.md)
+**English** · [Čeština](../lang/README.cs.md) · [Español](../lang/README.es.md) · [Français](../lang/README.fr.md) · [Português](../lang/README.pt.md)
 
 </div>
 
@@ -66,7 +66,7 @@ ZION v3.2.0 One Love is **live and running** as Mainnet Stable. The network is o
 - ✅ All disclosed vulnerabilities (F1–F5, C1–C8) have been remediated
 - ✅ All 7 DeFi contracts verified on Basescan
 - ⚠️ The network may still contain bugs — mine and transact at your own risk
-- ⚠️ No warranty is provided — see [Legal Disclaimer](./docs/LEGAL_DISCLAIMER.md)
+- ⚠️ No warranty is provided — see [Legal Disclaimer](../LEGAL_DISCLAIMER.md)
 
 **Official Public Launch: postponed (TBD)**
 
@@ -211,7 +211,7 @@ The **Stargate** is ZION's official logo and visual identity — a holographic c
 - **9 chevrons** with cyan glow — representing the 9 consciousness levels of Oasis
 - **Center Z logo** — animated with grayscale + contrast filters
 - **Nebula background** — Hubble deep-space imagery
-- **Assets** — [`docs/stargate/`](./docs/stargate/) (images + CSS for web integration)
+- **Assets** — [`docs/stargate/`](../stargate) (images + CSS for web integration)
 
 The Stargate is the portal through which miners and community members enter the ZION Oasis gaming world.
 
@@ -399,7 +399,7 @@ cargo run --release -p zion-core --bin zion-node
 ## Security
 
 - **Reporting vulnerabilities:** See [SECURITY.md](./SECURITY.md)
-- **Known vulnerabilities:** [docs/security/SECURITY_DISCLOSURE_2026-07.md](./docs/security/SECURITY_DISCLOSURE_2026-07.md)
+- **Known vulnerabilities:** [docs/security/SECURITY_DISCLOSURE_2026-07.md](../security/SECURITY_DISCLOSURE_2026-07.md)
 - **All disclosed vulnerabilities (F1-F5, C1-C8) have been remediated**
 
 ## Canonical Constants
@@ -420,25 +420,25 @@ cargo run --release -p zion-core --bin zion-node
 ## Documentation
 
 ### Technical
-- [Whitepaper](./docs/whitepaper.md) — Technical whitepaper (consensus, economics, architecture)
-- [Ethics & Philosophy](./docs/ETHICS_PHILOSOPHY.md) — Four books of ZION: Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova
-- [ZION Codex — Bodhisattva Vow](./docs/ZION_CODEX_BODHISATTVA.md) — Foundational vow: 4 Great Vows, 8 Bodhisattvas, 8 Guardian pledges, 11 Sefirot validator vows
+- [Whitepaper](../whitepaper.md) — Technical whitepaper (consensus, economics, architecture)
+- [Ethics & Philosophy](../ETHICS_PHILOSOPHY.md) — Four books of ZION: Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova
+- [ZION Codex — Bodhisattva Vow](../ZION_CODEX_BODHISATTVA.md) — Foundational vow: 4 Great Vows, 8 Bodhisattvas, 8 Guardian pledges, 11 Sefirot validator vows
 - [evoluZion V2](./evoluZionV2.md) — PoW → Proof-of-Care evolution (10-year hybrid roadmap)
-- [Genesis Block](./docs/genesis.md) — Genesis block, premine allocations, creator signature
-- [Architecture](./V3/docs/) — L1/L2 architecture docs
-- [Mainnet Constants](./V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
-- [CLI Reference](./V3/docs/CLI_REFERENCE.md) — Full CLI command reference
-- [ZION Oasis](./V3/L4/oasis/README.md) — L4 consciousness mining game (architecture, quests, Golden Egg)
+- [Genesis Block](../genesis.md) — Genesis block, premine allocations, creator signature
+- [Architecture](../../V3/docs) — L1/L2 architecture docs
+- [Mainnet Constants](../../V3/docs/MAINNET_CONSTANTS.md) — Canonical chain parameters
+- [CLI Reference](../../V3/docs/CLI_REFERENCE.md) — Full CLI command reference
+- [ZION Oasis](../../V3/L4/oasis/README.md) — L4 consciousness mining game (architecture, quests, Golden Egg)
 
 ### Legal
-- [Legal Disclaimer](./docs/LEGAL_DISCLAIMER.md) — No investment advice, no warranty, risks
-- [Terms of Use](./docs/TERMS_OF_USE.md) — Conditions for node operators, miners, users
-- [Privacy Policy](./docs/PRIVACY_POLICY.md) — No personal data collected, pseudonymous network
-- [Jurisdiction & Compliance](./docs/JURISDICTION.md) — Decentralized network, regulatory status
-- [Token Disclosure](./docs/TOKEN_DISCLOSURE.md) — Transparent tokenomics, no ICO, premine details
+- [Legal Disclaimer](../LEGAL_DISCLAIMER.md) — No investment advice, no warranty, risks
+- [Terms of Use](../TERMS_OF_USE.md) — Conditions for node operators, miners, users
+- [Privacy Policy](../PRIVACY_POLICY.md) — No personal data collected, pseudonymous network
+- [Jurisdiction & Compliance](../JURISDICTION.md) — Decentralized network, regulatory status
+- [Token Disclosure](../TOKEN_DISCLOSURE.md) — Transparent tokenomics, no ICO, premine details
 
 ### Security
-- [Security Disclosures](./docs/security/) — Public vulnerability disclosures (F1-F5, C1-C8)
+- [Security Disclosures](../security) — Public vulnerability disclosures (F1-F5, C1-C8)
 - [Security Policy](./SECURITY.md) — How to report vulnerabilities
 
 ### Community
@@ -487,7 +487,7 @@ ZION uses a modified semantic versioning scheme:
 
 ### Version History
 
-See [CHANGELOG.md](./CHANGELOG.md) for the full version history, including all changes from v3.0.0 through v3.0.6-beta.
+See [CHANGELOG.md](../../CHANGELOG.md) for the full version history, including all changes from v3.0.0 through v3.0.6-beta.
 
 Key milestones:
 - **v3.0.0** (2026-05-20) — Initial V3 mainnet launch
@@ -526,11 +526,11 @@ ZION v3 is the result of a long iterative journey across the v2.x experimental l
 | **v3.0.3** | 2026-06-27 | Decimal fork (1e12 → 1e6), LI.FI DEX integration, WARP 12 chains, Stargate logo. |
 | **v3.0.5-beta** | 2026-07-10 | Hard genesis reset, DeFi contracts on Base, security hardening, public security disclosures, Mainnet Beta. |
 
-See [CHANGELOG.md](./CHANGELOG.md) for the detailed release notes.
+See [CHANGELOG.md](../../CHANGELOG.md) for the detailed release notes.
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License](../../LICENSE).
 
 ## Links
 

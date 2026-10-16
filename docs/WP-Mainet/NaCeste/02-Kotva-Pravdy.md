@@ -1,6 +1,6 @@
 # Na Cestě — Kotva pravdy a návrh ke kanonizaci
 
-> Editoriál, nikoli literatura. Vychází z [`MiseAmenti/01`](../MiseAmenti/01-Kanon-a-Ustava.md), [`07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) a [`08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md). Živá tvrzení o síti se ověřují v [`StatusV3.md`](../../../StatusV3.md); příběh žádné nepřináší.
+> Editoriál, nikoli literatura. Vychází z [`MiseAmenti/01`](../MiseAmenti/01-Kanon-a-Ustava.md), [`07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) a [`08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md). Živá tvrzení o síti se ověřují v [`StatusV3.md`](../../3.2/StatusV3.md); příběh žádné nepřináší.
 
 ## Klasifikace obsahu
 

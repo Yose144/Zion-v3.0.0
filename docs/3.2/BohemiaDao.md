@@ -10,7 +10,7 @@
 **Doména:** Governance lab → sídlo DAO parlamentu Zlaté republiky
 **Stav:** 🔵 Plán / Fáze 0 (žádná půda, žádný kruh, žádný zvolený parlament — protokol a návrh existují)
 **Verze:** 2026-09-21 · Autor: Yosef + Devin
-**Kanonické zdroje:** [`docs/TerraNova/06-L5-SVOBODA.md`](./docs/TerraNova/06-L5-SVOBODA.md) §6.6 · [`docs/WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md`](./docs/WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md) · [`docs/ZION_CODEX_BODHISATTVA.md`](./docs/ZION_CODEX_BODHISATTVA.md) · [`docs/3.0.4/AI_NATIVE_VOW.md`](./docs/3.0.4/AI_NATIVE_VOW.md) · [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](./docs/3.2/L5_L6_ACTIVATION_PLAN.md)
+**Kanonické zdroje:** [`docs/TerraNova/06-L5-SVOBODA.md`](../TerraNova/06-L5-SVOBODA.md) §6.6 · [`docs/WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md`](../WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md) · [`docs/ZION_CODEX_BODHISATTVA.md`](../ZION_CODEX_BODHISATTVA.md) · [`docs/3.0.4/AI_NATIVE_VOW.md`](../3.0.4/AI_NATIVE_VOW.md) · [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](L5_L6_ACTIVATION_PLAN.md)
 
 ---
 
@@ -84,7 +84,7 @@ Zlatý dům **není většinová demokracie**. Je to **sociokracie s on-chain ko
 
 Rozhodnutí projde, když **nikdo nemá odůvodněnou námitku** (reasoned objection). Ne „všichni souhlasí" — „nikdo nevznesl námitku, kterou kruh uznal za odůvodněnou".
 
-On-chain protějšek už existuje: [`V31/L2/dao/src/consent.rs`](./V31/L2/dao/src/consent.rs) — `ConsentEngine` s atestacemi `Witness / Object / Abstain`, kde `Object` vyžaduje `reason_hash` a consent = quorum witnessů **+ nula námitok**.
+On-chain protějšek už existuje: [`V31/L2/dao/src/consent.rs`](../../V31/L2/dao/src/consent.rs) — `ConsentEngine` s atestacemi `Witness / Object / Abstain`, kde `Object` vyžaduje `reason_hash` a consent = quorum witnessů **+ nula námitok**.
 
 ### 3.2 Dvoukolejný model (hybrid)
 
@@ -326,7 +326,7 @@ Hiran v této vizi **analyzuje a připravuje drafty návrhů**; každý návrh p
 
 ## 10. Sbírka plánů — `L2data/dao/plany/`
 
-Detailní dokumenty žijí v **[`L2data/dao/plany/`](./L2data/dao/plany/00-README.md)**:
+Detailní dokumenty žijí v **[`L2data/dao/plany/`](../../L2data/dao/plany/00-README.md)**:
 
 | Dokument | Obsah |
 |----------|-------|
@@ -356,4 +356,4 @@ Detailní dokumenty žijí v **[`L2data/dao/plany/`](./L2data/dao/plany/00-READM
 
 ---
 
-*[→ Sbírka plánů: L2data/dao/plany/](./L2data/dao/plany/00-README.md) · [← L5 Bohemia koncept](./docs/WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md) · [← Zlatá republika §6.6](./docs/TerraNova/06-L5-SVOBODA.md)*
+*[→ Sbírka plánů: L2data/dao/plany/](../../L2data/dao/plany/00-README.md) · [← L5 Bohemia koncept](../WP-Mainet/BodhiGaia/10-Golden-Republic-Bohemia.md) · [← Zlatá republika §6.6](../TerraNova/06-L5-SVOBODA.md)*

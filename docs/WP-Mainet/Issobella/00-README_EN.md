@@ -4,9 +4,9 @@
 > **Status:** DRAFT narrative-technical series (L6 / BUILDING · HORIZON · MYTH), proposed for canonization under [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (class E — cultural / public communication; fund and governance sections class C).
 > **Created:** 2026-09-12 for version **3.3 "Nirvana"**.
 > **Place in the compass:** the book of the *Upward* direction (the Sky — looking) — a deep expansion of Nirvana episode 11 [*Quantum Fire Issobella*](../nirvana/11-Kvantovy-Ohen-Issobella.md) and the TerraNova prologue (orbital station, year 2040).
-> **Builds on:** [`Salt of the Earth`](../SulZeme/00-README_EN.md), [`Nirvana`](../nirvana/00-README_EN.md), [`NirvanaCloud`](../NirvanaCloud/00-README_EN.md), [`BodhiGaia`](../BodhiGaia/00-README_EN.md), [`Mise Amenti`](../MiseAmenti/README_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) and the research pack [`L6data/`](../../../L6data/README.md).
+> **Builds on:** [`Salt of the Earth`](../SulZeme/00-README_EN.md), [`Nirvana`](../nirvana/00-README_EN.md), [`NirvanaCloud`](../NirvanaCloud/00-README_EN.md), [`BodhiGaia`](../BodhiGaia/00-README_EN.md), [`Mise Amenti`](../MiseAmenti/README_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) and the research pack [`L6data/`](../../../L6data/README.md).
 > **Language:** the full text is currently Czech only — [`00-README.md`](./00-README.md). This English index summarizes the structure and the truth anchors. A translation must not amplify certainty, emotion or financial meaning beyond the Czech original (`MiseAmenti/08` §5.7).
-> **Text rule:** *Story → What it means → Truth anchor*. Wherever the text speaks about the network, the fund, addresses or code, [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../StatusV3.md) and the live repository take precedence over the story.
+> **Text rule:** *Story → What it means → Truth anchor*. Wherever the text speaks about the network, the fund, addresses or code, [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../3.2/StatusV3.md) and the live repository take precedence over the story.
 
 ---
 
@@ -47,7 +47,7 @@ It is the most distant book of the series — and therefore must be the strictes
 | Claim | State | Evidence | Still needed |
 |---|---|---|---|
 | 5 % of every block subsidy goes to the L6 address `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` (coinbase output). | **LIVE** | `V31/L1/core/src/{emission,v3_template,v3_compat}.rs` (`ISSOBELLA_PCT = 5`) | — |
-| Premine slot 6 holds 2.5B ZION for L6 at `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, time-locked until block 144,000. | **LIVE** | `V31/L1/core/src/v3_compat.rs`, [`CHANGES_L6_ISSOBELLA.md`](../../../CHANGES_L6_ISSOBELLA.md), `StatusV3.md` 2026-09-12 | Independent block-explorer view |
+| Premine slot 6 holds 2.5B ZION for L6 at `zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5`, time-locked until block 144,000. | **LIVE** | `V31/L1/core/src/v3_compat.rs`, [`CHANGES_L6_ISSOBELLA.md`](../../3.2/CHANGES_L6_ISSOBELLA.md), `StatusV3.md` 2026-09-12 | Independent block-explorer view |
 | `zion-issobella` tracker runs on Edge (`127.0.0.1:8097`), scans coinbase, exposes fund balance / proposals / metrics. | **LIVE** (read-only) | `V31/L6/issobella/`, `zion-v31-issobella.service`, `StatusV3.md` 2026-08-23 | Public portal; API-key enforcement |
 | The fund disburses grants today. | **INVALID CLAIM** (today) | Gate G10: no automatic disbursement; DAO path is summary-only ([`L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)) | DAO UI, payout flow, guardian multisig, first project |
 | The L6 research pack (station architecture, quantum motor, artificial gravity, human factors, history) is public and served. | **LIVE** (documentation) | [`L6data/`](../../../L6data/README.md), mirror `APP&WEB/website-v2.9/public/docs/l6/`, catalog `/docs` → `l6-*` | Peer review, external experts |
@@ -75,9 +75,9 @@ It is the most distant book of the series — and therefore must be the strictes
 - **G10 decision (L5/L6 run mode):** [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)
 - **L6 research pack:** [`L6data/`](../../../L6data/README.md) · public mirror: `APP&WEB/website-v2.9/public/docs/l6/`
 - **Tracker implementation:** [`V31/L6/issobella/`](../../../V31/L6/issobella/README.md) (incl. `docs/` — timeline, CLI, financing, station, V31 software)
-- **Premine slot 6 change:** [`CHANGES_L6_ISSOBELLA.md`](../../../CHANGES_L6_ISSOBELLA.md)
-- **Technical 3.3 plan:** [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
-- **Live network status:** [`StatusV3.md`](../../../StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
+- **Premine slot 6 change:** [`CHANGES_L6_ISSOBELLA.md`](../../3.2/CHANGES_L6_ISSOBELLA.md)
+- **Technical 3.3 plan:** [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
+- **Live network status:** [`StatusV3.md`](../../3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
 
 ---
 

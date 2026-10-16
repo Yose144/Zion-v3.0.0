@@ -2,7 +2,7 @@
 
 > **Status:** 🟣 **NÁVRH K DISKUSI** — interní pracovní dokument, ne veřejný text.
 > **Datum:** 2026-10-01 · **Příprava:** ZION / Terra Nova L5
-> **Souvisí:** [`L5MariaDelCamino.md`](./L5MariaDelCamino.md) (koncept a Velká cesta), [`L5Ekam.md`](./L5Ekam.md), [`L5BoaEsperanca.md`](./L5BoaEsperanca.md), korpus [`docs/WP-Mainet/MariaCaminho/`](./docs/WP-Mainet/MariaCaminho/00-README.md)
+> **Souvisí:** [`L5MariaDelCamino.md`](./L5MariaDelCamino.md) (koncept a Velká cesta), [`L5Ekam.md`](./L5Ekam.md), [`L5BoaEsperanca.md`](./L5BoaEsperanca.md), korpus [`docs/WP-Mainet/MariaCaminho/`](../WP-Mainet/MariaCaminho/00-README.md)
 > **Registry:** program `maria-del-camino`, status `planning`, founding rezerva **300M ZION**
 
 ---

@@ -480,7 +480,7 @@ One planet. One people. One love.
 
 # References and source of truth
 
-- Live status: [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
+- Live status: [`StatusV3.md`](../3.2/StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
 - Execution plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
 - Launch and marketing plan: [`OneLoveV3.2.md`](../3.2/OneLoveV3.2.md)
 - Agent rules: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)

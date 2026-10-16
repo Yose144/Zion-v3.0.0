@@ -3,7 +3,7 @@
 > **Vrstva:** L4 OASIS · **Track:** V3.3 „Nirvana" **N4** (L4 OASIS UE 5.7 & Web Preview)
 > **Status tohoto dokumentu:** architektura + stav implementace (G0–G2 nasazeny).
 > **Live preview:** `https://oasis.zionterranova.com/` (WebGL2 default) · `?gpu=webgpu` (WebGPU preview) · `?gpu=webgl2` (reset)
-> **Zdroje pravdy:** [`V33_NIRVANA_MASTER_PLAN.md`](./V33_NIRVANA_MASTER_PLAN.md) §5 a §9, [`docs/WP-Mainet/MiseAmenti/03-Zivy-Zaklad-3.3.md`](./docs/WP-Mainet/MiseAmenti/03-Zivy-Zaklad-3.3.md) §6 L4, [`docs/WP-Mainet/MiseAmenti/04-Exekucni-Charta-3.3.md`](./docs/WP-Mainet/MiseAmenti/04-Exekucni-Charta-3.3.md) M4 + gate R6.
+> **Zdroje pravdy:** [`V33_NIRVANA_MASTER_PLAN.md`](./V33_NIRVANA_MASTER_PLAN.md) §5 a §9, [`docs/WP-Mainet/MiseAmenti/03-Zivy-Zaklad-3.3.md`](../WP-Mainet/MiseAmenti/03-Zivy-Zaklad-3.3.md) §6 L4, [`docs/WP-Mainet/MiseAmenti/04-Exekucni-Charta-3.3.md`](../WP-Mainet/MiseAmenti/04-Exekucni-Charta-3.3.md) M4 + gate R6.
 > **Label discipline (canon):** ŽIVÉ = nasazené/ověřené; STAVBA = kód existuje, produkce/důkaz částečný; HORIZONT = legitimní směr bez nároku na dnešek.
 
 ---

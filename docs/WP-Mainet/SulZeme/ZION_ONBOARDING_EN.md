@@ -14,7 +14,7 @@
 This document is one entry point. The detailed truth lives in these sources:
 
 - [`V3/docs/USER_ONBOARDING.md`](../../../archive/V3/docs/USER_ONBOARDING.md) — basic CLI guide for new users
-- [`StatusV3.md`](../../../StatusV3.md) — live topology, chain height, ports and service status
+- [`StatusV3.md`](../../3.2/StatusV3.md) — live topology, chain height, ports and service status
 - [`AGENTS.md`](../../../AGENTS.md) — operating rules, incidents and migrations
 - [`V3/docs/CLI_REFERENCE.md`](../../../archive/V3/docs/CLI_REFERENCE.md) — complete `zion` command reference
 - [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md) — consensus, emission, smart contracts, architecture
@@ -83,7 +83,7 @@ This document is one entry point. The detailed truth lives in these sources:
 |---|---|---|
 | ZION is a public blockchain | Source code under MIT: `https://github.com/Zion-TerraNova/v3-Mainnet` | [`AGENTS.md`](../../../AGENTS.md), `public/` section |
 | New block every 60 s | Block time 60 s, DAA LWMA 60 blocks, target interval 30–120 s, ±25 % clamp | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
-| Genesis block 1 Jan 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; after a block-retention bug fix a hard genesis reset happened on 2026-07-20; blocks 0–~10913 of the old chain are lost, from the fix onward all blocks are retained | [`StatusV3.md`](../../../StatusV3.md), lines 6–9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
+| Genesis block 1 Jan 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; after a block-retention bug fix a hard genesis reset happened on 2026-07-20; blocks 0–~10913 of the old chain are lost, from the fix onward all blocks are retained | [`StatusV3.md`](../../3.2/StatusV3.md), lines 6–9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | Reward 5,400.067 ZION/block | Decade 1 (2026–2036): 5,400.067 ZION/block; never higher; Decade Decay −20 % per decade; tail 724.784723 ZION/block from ~2126 | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
 | 89/5/5/1 % split | `MINER_SHARE_PERCENT = 0.89`; humanitarian 5 %; Issobella 5 %; pool fee / burn 1 %; nodes reject blocks with a different ratio | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../README.md) |
 | Hard cap 144 billion ZION | `max_supply = 144_000_000_000`; premine 16.78 B (11.65 %), rest by mining | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
@@ -590,9 +590,9 @@ rpcCall('getChainInfo').then(console.log);
 
 | Claim | Reality in code / network | Source |
 |---|---|---|
-| **Network status** | Mainnet Beta; official public launch postponed (TBD) | [`StatusV3.md`](../../../StatusV3.md), lines 7–8 |
-| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../../StatusV3.md), line 6; [`AGENTS.md`](../../../AGENTS.md) |
-| **Genesis story / code reality** | 4 December 2025 (story) / hard genesis reset 2026-07-20 (after block retention fix) | [`StatusV3.md`](../../../StatusV3.md), line 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
+| **Network status** | Mainnet Beta; official public launch postponed (TBD) | [`StatusV3.md`](../../3.2/StatusV3.md), lines 7–8 |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../3.2/StatusV3.md), line 6; [`AGENTS.md`](../../../AGENTS.md) |
+| **Genesis story / code reality** | 4 December 2025 (story) / hard genesis reset 2026-07-20 (after block retention fix) | [`StatusV3.md`](../../3.2/StatusV3.md), line 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 blocks; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | **First-decade reward** | 5,400.067 ZION/block (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
 | **Decade Decay** | Factor 0.8 (−20 %) every ~10 years (5,256,000 blocks) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
@@ -600,22 +600,22 @@ rpcCall('getChainInfo').then(console.log);
 | **Reward split** | 89 % miners, 5 % humanitarian fund, 5 % Issobella fund, 1 % burn/pool fee | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../README.md) |
 | **Hard cap** | 144,000,000,000 ZION | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | **PoW algorithm** | Ekam Deeksha / CosmicHarmony; 6 phases; LWMA 60 | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../README.md) |
-| **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../../StatusV3.md), line 114; [`AGENTS.md`](../../../AGENTS.md) |
-| **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` on Edge) | [`StatusV3.md`](../../../StatusV3.md), line 112 |
-| **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../../StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
-| **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../../StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
+| **Public pool** | `pool.zionterranova.com:8444` (Stratum) | [`StatusV3.md`](../../3.2/StatusV3.md), line 114; [`AGENTS.md`](../../../AGENTS.md) |
+| **Public RPC** | `http://rpc.zionterranova.com:8443` (nginx TCP/HTTP proxy → `127.0.0.1:9443` on Edge) | [`StatusV3.md`](../../3.2/StatusV3.md), line 112 |
+| **Edge P2P** | `zionterranova.com:8333`, `8334`, V31 `8335` | [`StatusV3.md`](../../3.2/StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
+| **Edge RPC** | `9443` (node1), `8448` (node2), `9445` (V31) | [`StatusV3.md`](../../3.2/StatusV3.md), service table; [`AGENTS.md`](../../../AGENTS.md) |
 | **GitHub** | `https://github.com/Zion-TerraNova/v3-Mainnet` (public, MIT) | [`AGENTS.md`](../../../AGENTS.md), `public/` section |
-| **Web** | `https://zionterranova.com`, dashboard `https://dashboard.zionterranova.com`, market `https://market.zionterranova.com` | [`StatusV3.md`](../../../StatusV3.md), Public Endpoints; [`AGENTS.md`](../../../AGENTS.md) |
-| **wZION on Base** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [`StatusV3.md`](../../../StatusV3.md), DeFi Contracts table |
+| **Web** | `https://zionterranova.com`, dashboard `https://dashboard.zionterranova.com`, market `https://market.zionterranova.com` | [`StatusV3.md`](../../3.2/StatusV3.md), Public Endpoints; [`AGENTS.md`](../../../AGENTS.md) |
+| **wZION on Base** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [`StatusV3.md`](../../3.2/StatusV3.md), DeFi Contracts table |
 | **Dharma Credits** | 144 billion total; 1.44 billion for Oasis; eShop tiers | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 13 |
 | **Avatars** | 202 avatars in 17 circles | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 10 |
 | **Consciousness Levels** | 9 levels (CL1–CL9) with multipliers 1.0x–10.0x | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 11 |
 | **Genesis Territories** | 8 initial regions in Oasis, defined in `TerritoryMap` | [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
 | **Golden Egg** | 5 reward pools; 4.95 billion ZION; 108 clues (Slots 4 & 5 repurposed to L5 Free World Projects) | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 12; [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) |
 | **Seven paths** | 7 quest paths in Oasis | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), section 11 |
-| **L1–L6 architecture** | L1 blockchain, L2 DeFi/bridge/DAO, L3 AI/WARP, L4 Oasis, L5 Free World, L6 Issobella | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`StatusV3.md`](../../../StatusV3.md) |
-| **V31 Alpha** | V31 node `3.1.0-alpha.2` is LIVE on Edge, syncs with V3 mainnet over V3-compatible P2P, port 8335, RPC 9445 | [`StatusV3.md`](../../../StatusV3.md), line 8; [`AGENTS.md`](../../../AGENTS.md) |
-| **Blocks 0–~10913 lost** | `block_retention` bug caused history pruning; fix 2026-07-20; old blocks are not recoverable | [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX; [`StatusV3.md`](../../../StatusV3.md), line 9 |
+| **L1–L6 architecture** | L1 blockchain, L2 DeFi/bridge/DAO, L3 AI/WARP, L4 Oasis, L5 Free World, L6 Issobella | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`StatusV3.md`](../../3.2/StatusV3.md) |
+| **V31 Alpha** | V31 node `3.1.0-alpha.2` is LIVE on Edge, syncs with V3 mainnet over V3-compatible P2P, port 8335, RPC 9445 | [`StatusV3.md`](../../3.2/StatusV3.md), line 8; [`AGENTS.md`](../../../AGENTS.md) |
+| **Blocks 0–~10913 lost** | `block_retention` bug caused history pruning; fix 2026-07-20; old blocks are not recoverable | [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX; [`StatusV3.md`](../../3.2/StatusV3.md), line 9 |
 
 ---
 
@@ -628,7 +628,7 @@ rpcCall('getChainInfo').then(console.log);
 - [`V3/docs/MINING_GUIDE.md`](../../../archive/V3/docs/MINING_GUIDE.md) — deeper mining guide
 - [`V3/docs/NODE_OPERATOR_GUIDE.md`](../../../archive/V3/docs/NODE_OPERATOR_GUIDE.md) — node operation
 - [`V3/L5/docs/TECH/zion-node-spec.md`](../../../archive/V3/L5/docs/TECH/zion-node-spec.md) — Guardian node specification
-- [`StatusV3.md`](../../../StatusV3.md) — live topology and network status
+- [`StatusV3.md`](../../3.2/StatusV3.md) — live topology and network status
 - [`AGENTS.md`](../../../AGENTS.md) — agent rules, incidents, ports
 - [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md) — technical whitepaper 3.1
 - [`SulZeme/00-README.md`](./00-README.md) — book *Salt of this Earth*

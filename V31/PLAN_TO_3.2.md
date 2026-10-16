@@ -6,7 +6,7 @@
 > **Status:** canonical plan, supersedes `PLAN_TO_3.1_RECONCILED.md` for forward work  
 > **Update 2026-08-07:** CLI migration, miner TUI, native Cargo features, and V3/V31 Solidity + ZionDex contracts are now present in code. Pool payout confirmation sweep with UTXO fallback is live on Edge (37 confirmed / 13 unconfirmed). Non-EVM WARP placeholders, OASIS static export, ZIS Edge deploy, public subtree sync, real GPU E2E, and 30d run remain open.  
 > **Active workspace:** `V31/`  
-> **Live status:** [`StatusV3.md`](../StatusV3.md) · [`V31/STATUS.md`](./STATUS.md)  
+> **Live status:** [`StatusV3.md`](../docs/3.2/StatusV3.md) · [`V31/STATUS.md`](./STATUS.md)  
 > **Agent rules:** [`V31/AGENTS.md`](./AGENTS.md) · [`../AGENTS.md`](../AGENTS.md)
 
 ---
@@ -1073,7 +1073,7 @@ Week 9-10:
 
 ## 15. Canonical references
 
-- Current live status: [`StatusV3.md`](../StatusV3.md)
+- Current live status: [`StatusV3.md`](../docs/3.2/StatusV3.md)
 - V31 status: [`V31/STATUS.md`](./STATUS.md)
 - Reconciled 3.1 plan: [`PLAN_TO_3.1_RECONCILED.md`](../docs/3.1/PLAN_TO_3.1_RECONCILED.md)
 - 30d run: [`V31/30D_RUN_PLAN.md`](./30D_RUN_PLAN.md)

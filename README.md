@@ -9,7 +9,7 @@
 
 > **Last updated: 2026-09-12 (Premine repurpose: DAO Treasury slot 6 → L6 Issobella 2.5B — Orbital Station & Quantum Research Fund; DAO Treasury nyní 1.5B na slotech 7–8; premine 16.78B / 14 výstupů; `cargo test -p zion-core` 316 pass, website build OK, nasazeno na Edge)**
 
-- **ZIS Multichain Wallet plan:** The simplified ZIS-backed multichain wallet architecture (ZIS → L2 multichain → Uniswap V3, no custom AMM) is captured in [`ZIS_WALLET_PLAN.md`](./ZIS_WALLET_PLAN.md). The earlier [`ZionDexZis.md`](docs/3.2/ZionDexZis.md) plan is superseded (historical).
+- **ZIS Multichain Wallet plan:** The simplified ZIS-backed multichain wallet architecture (ZIS → L2 multichain → Uniswap V3, no custom AMM) is captured in [`ZIS_WALLET_PLAN.md`](docs/3.2/ZIS_WALLET_PLAN.md). The earlier [`ZionDexZis.md`](docs/3.2/ZionDexZis.md) plan is superseded (historical).
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
 - **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
@@ -45,7 +45,7 @@
 | **3.2 "One Love" launch & marketing plan** | [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md) |
 | **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
 | **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
-| **Live status + topology** | [`StatusV3.md`](StatusV3.md) |
+| **Live status + topology** | [`StatusV3.md`](docs/3.2/StatusV3.md) |
 | **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive (read-only)** | [`archive/V3/`](archive/V3/) |
@@ -125,7 +125,7 @@ ZION_STREAM3_FORCE_COIN=MONERO ./target/release/zion-miner \
 
 ## Network topology
 
-See [`StatusV3.md`](StatusV3.md) for the authoritative live topology. In brief:
+See [`StatusV3.md`](docs/3.2/StatusV3.md) for the authoritative live topology. In brief:
 
 - **Edge** (Contabo VPS): V31 primary node, follower nodes, V31 pool, multichain, DAO, bridge/WARP, web, marketplace, OASIS, dashboard.
 - Public RPC is served by nginx TCP stream on port 8443.
@@ -138,7 +138,7 @@ This repository has one source of truth per topic:
 
 | Topic | Canonical doc |
 |-------|---------------|
-| **Live operational status** | [`StatusV3.md`](StatusV3.md) |
+| **Live operational status** | [`StatusV3.md`](docs/3.2/StatusV3.md) |
 | **V31 workspace + build notes** | [`V31/README.md`](V31/README.md) |
 | **V31 security / ops rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
 | **3.2 "One Love" launch plan** | [`OneLoveV3.2.md`](docs/3.2/OneLoveV3.2.md) |
@@ -159,4 +159,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-08-17 · Version: 3.1.0-beta (V31 Mainnet Alpha, protocol 3.1.0-alpha) · 3.2 "One Love" docs: [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
+*Last updated: 2026-08-17 · Version: 3.1.0-beta (V31 Mainnet Alpha, protocol 3.1.0-alpha) · 3.2 "One Love" docs: [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) · 3.1 archived reports: [`docs/3.1/README.md`](docs/3.1/README.md) · Live status: [`StatusV3.md`](docs/3.2/StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*

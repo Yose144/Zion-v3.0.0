@@ -4,7 +4,7 @@
 > **Autor:** Devin  
 > **Verze:** 1.0  
 > **Status:** historický plán pro dokončení V31 / 3.1.0 Mainnet Alpha (2026-08-04). Aktuální plán na 3.2.0 "One Love" je [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) / [`OneLoveV3.2.md`](../3.2/OneLoveV3.2.md).  
-> **Zdroje:** [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](../../V31/STATUS.md), [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md), [`V31/AGENTS.md`](../../V31/AGENTS.md), [`StatusV3.md`](../../StatusV3.md)
+> **Zdroje:** [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](../../V31/STATUS.md), [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md), [`V31/AGENTS.md`](../../V31/AGENTS.md), [`StatusV3.md`](../3.2/StatusV3.md)
 
 ---
 
@@ -259,7 +259,7 @@ Týden 6-8: [C8] Dashboard                — monitoring
 
 - Zdroje: [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](../../V31/STATUS.md)
 - Pravidla: [`AGENTS.md`](../../AGENTS.md), [`V31/AGENTS.md`](../../V31/AGENTS.md)
-- Status: [`StatusV3.md`](../../StatusV3.md)
+- Status: [`StatusV3.md`](../3.2/StatusV3.md)
 - Cutover: [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md)
 
 ---

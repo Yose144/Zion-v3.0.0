@@ -1,12 +1,12 @@
 # ZION 3.0.6 Documentation Archive
 
-This directory contains the root-level reports, plans and session notes that were produced during the **3.0.6 "Triple Parallel"** cycle. They are kept here as a historical reference; the current live status is always in the root [`StatusV3.md`](../../StatusV3.md).
+This directory contains the root-level reports, plans and session notes that were produced during the **3.0.6 "Triple Parallel"** cycle. They are kept here as a historical reference; the current live status is always in the root [`StatusV3.md`](../3.2/StatusV3.md).
 
 ## Canonical pointers (current)
 
 | What | Where |
 |------|-------|
-| Live status | [`StatusV3.md`](../../StatusV3.md) |
+| Live status | [`StatusV3.md`](../3.2/StatusV3.md) |
 | Forward roadmap | [`ROADMAP.md`](../../ROADMAP.md) |
 | Agent rules | [`AGENTS.md`](../../AGENTS.md) |
 | Main README | [`README.md`](../../README.md) |

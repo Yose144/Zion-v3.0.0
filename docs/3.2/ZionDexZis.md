@@ -1,7 +1,7 @@
 # ZionDex + ZIS Multichain Wallet — komplexní implementační plán
 
 > **⚠️ SUPERSEDED (2026-09-03):** Tento dokument byl nahrazen
-> [`ZIS_WALLET_PLAN.md`](../../ZIS_WALLET_PLAN.md) v rootu repa.
+> [`ZIS_WALLET_PLAN.md`](ZIS_WALLET_PLAN.md) v rootu repa.
 > ZIONDex AMM je deprecated — swapy se provádějí přes Uniswap V3.
 > Architektura byla radikálně zjednodušena (z 8 fází na 3 kontrakty).
 > Tento soubor je zachován pro historickou referenci.

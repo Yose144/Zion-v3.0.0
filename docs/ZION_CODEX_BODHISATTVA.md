@@ -554,4 +554,4 @@ Slib je **směr**, ne destinace. Zlomení a obnova je způsob, jakým je směr u
 - [Ethics & Philosophy](./ETHICS_PHILOSOPHY.md) — Etika a filozofie 4 knih ZION
 - [Whitepaper](./whitepaper.md) — Technická specifikace protokolu
 - [Genesis](./genesis.md) — Genesis blok, premine alokace, GPG signatura
-- [evoluZion V2](../evoluZionV2.md) — Vize přechodu PoW → Proof-of-Care
+- [evoluZion V2](3.2/evoluZionV2.md) — Vize přechodu PoW → Proof-of-Care

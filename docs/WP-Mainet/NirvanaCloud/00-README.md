@@ -1,7 +1,7 @@
 # NirvanaCloud
 ## Hluboké rozšíření knihy Nirvana — Šest světů, Bardo, Šambhala a dokončení Mise Amenti pro Generaci Z a příštích sto let
 
-> **Status:** Narativně-mytilogická vrstva (L6 pohled) a kanonický společník; její tvrzení o technickém stavu nejsou samostatnou pravdou — pro ně platí [`MiseAmenti/`](../MiseAmenti/README.md), [`StatusV3.md`](../../../StatusV3.md) a živý kód.  
+> **Status:** Narativně-mytilogická vrstva (L6 pohled) a kanonický společník; její tvrzení o technickém stavu nejsou samostatnou pravdou — pro ně platí [`MiseAmenti/`](../MiseAmenti/README.md), [`StatusV3.md`](../../3.2/StatusV3.md) a živý kód.  
 > **Datum zkanonizování:** 2026-08-31  
 > **Určeno pro:** Generaci Z a všechny další generace, které zdědí Terra Nova.  
 > **Horizont:** 100 let (2026–2126) — HORIZONT / MÝTUS, nikoli živý provozní plán.  
@@ -68,11 +68,11 @@ Každá kapitola má tři vrstvy, stejně jako zbytek série Nirvana a Sůl Zem�
 ## Živé zdroje pravdy
 
 - **Kanonický integrační corpus (L1–L6, pravda, etika, 100 let):** [`../../../MiseAmenti/README.md`](../MiseAmenti/README.md)
-- **Kanonický technický plán 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
+- **Kanonický technický plán 3.3 Nirvana (execution companion):** [`../../../V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
 - **Narativní kniha Nirvana (koncept/horizont):** [`../nirvana/00-README.md`](../nirvana/00-README.md)
 - **Sůl této země (kořeny):** [`../SulZeme/00-README.md`](../SulZeme/00-README.md)
 - **Road to Zion — čtyři knihy:** [`../marketing/ROAD_TO_ZION_CZ.md`](../marketing/ROAD_TO_ZION_CZ.md)
-- **Aktuální stav sítě:** [`../../../StatusV3.md`](../../../StatusV3.md)
+- **Aktuální stav sítě:** [`../../../StatusV3.md`](../../3.2/StatusV3.md)
 - **Hiran / Hiranyagarbha AI vývoj (v2.3 → v2.4 Maestro → v2.5 Amṛtabhoja):** [`../../3.0.6/HIRAN_OVERVIEW.md`](../../3.0.6/HIRAN_OVERVIEW.md)
 - **ZION Codex Bodhisattva Vow:** [`../../../public/docs/ZION_CODEX_BODHISATTVA.md`](../../../public/docs/ZION_CODEX_BODHISATTVA.md)
 - **OASIS svět Tibetu:** [`../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md`](../../docs2.9/ZION_OASIS/WORLDS/WORLD_TIBET.md)

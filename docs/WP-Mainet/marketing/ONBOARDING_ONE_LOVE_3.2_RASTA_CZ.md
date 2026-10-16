@@ -242,7 +242,7 @@ Není to slib peněz. Je to možnost nést kus práce.
 - [Kanonický Onboarding & Sůl Země 3.2 — CZ](../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md)
 - [Sůl této země — 12 zastavení](../SulZeme/00-README.md)
 - [Technický plán Mainnet Stable 3.2](../../../V31/PLAN_TO_3.2.md)
-- [Aktuální síťový stav](../../../StatusV3.md)
+- [Aktuální síťový stav](../../3.2/StatusV3.md)
 - [English Rasta Onboarding](./ONBOARDING_ONE_LOVE_3.2_RASTA_EN.md)
 
 *Datum faktického snímku: 2026-08-09. Stav sítě, poolu a OASIS se může měnit; před miningem nebo jakoukoli technickou akcí ověř aktuální dokumentaci.*

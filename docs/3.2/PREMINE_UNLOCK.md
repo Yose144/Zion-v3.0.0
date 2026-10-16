@@ -3,7 +3,7 @@
 > **Status:** IMPLEMENTED (code) · **PENDING** (deployment + first live unlock)
 > **Created:** 2026-09-21
 > **Scope:** V31 native chain (`V31/L1/core`), consensus-level premine locks
-> **Context:** [`docs/3.1/REPORTS/REPORT_2026-08-22_PREMINE_LOCK_BYPASS.md`](docs/3.1/REPORTS/REPORT_2026-08-22_PREMINE_LOCK_BYPASS.md)
+> **Context:** [`docs/3.1/REPORTS/REPORT_2026-08-22_PREMINE_LOCK_BYPASS.md`](../3.1/REPORTS/REPORT_2026-08-22_PREMINE_LOCK_BYPASS.md)
 
 ---
 

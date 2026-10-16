@@ -4,9 +4,9 @@
 > **Status:** DRAFT narrative-technical series (L5 / BUILDING · HORIZON · MYTH), proposed for canonization under [`MiseAmenti/08-Protokol-Zmen.md`](../MiseAmenti/08-Protokol-Zmen.md) (class E — cultural / public communication; fund and governance sections class C).
 > **Created:** 2026-09-02 for version **3.3 "Nirvana"**.
 > **Place in the compass:** the Western book (*Terra Nova — Direction and Goal*) — an expansion of Nirvana episode 10 [*Springs of Life*](../nirvana/10-Prameny-Zivota.md) and episode 3 [*New Earth*](../nirvana/03-Nova-Zeme.md).
-> **Builds on:** [`Salt of the Earth`](../SulZeme/00-README_EN.md), [`Public Onboarding`](../ZION_ONBOARDING_PUBLIC_EN.md), [`Nirvana`](../nirvana/00-README_EN.md), [`NirvanaCloud`](../NirvanaCloud/00-README_EN.md), [`Mise Amenti`](../MiseAmenti/README_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md) (ch. 6 — L5 Free World) and the L5 community docs in [`public/V3/L5/docs/`](../../../public/V3/L5/docs/README.md).
+> **Builds on:** [`Salt of the Earth`](../SulZeme/00-README_EN.md), [`Public Onboarding`](../ZION_ONBOARDING_PUBLIC_EN.md), [`Nirvana`](../nirvana/00-README_EN.md), [`NirvanaCloud`](../NirvanaCloud/00-README_EN.md), [`Mise Amenti`](../MiseAmenti/README_EN.md), [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md) (ch. 6 — L5 Free World) and the L5 community docs in [`public/V3/L5/docs/`](../../../public/V3/L5/docs/README.md).
 > **Language:** the full text is currently Czech only — [`00-README.md`](./00-README.md). This English index summarizes the structure and the truth anchors. A translation must not amplify certainty, emotion or financial meaning beyond the Czech original (`MiseAmenti/08` §5.7).
-> **Text rule:** *Story → What it means → Truth anchor*. Wherever the text speaks about the network, the fund, addresses or code, [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../../StatusV3.md) and the live repository take precedence over the story.
+> **Text rule:** *Story → What it means → Truth anchor*. Wherever the text speaks about the network, the fund, addresses or code, [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md), [`StatusV3.md`](../../3.2/StatusV3.md) and the live repository take precedence over the story.
 
 ---
 
@@ -77,8 +77,8 @@ It is also the strictest book of the series. **Soil does not know marketing.** A
 - **Canonical 3.3 integration corpus:** [`../MiseAmenti/README_EN.md`](../MiseAmenti/README_EN.md) · Evidence registry: [`07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md) · Workstream M5: [`04-Exekucni-Charta-3.3.md`](../MiseAmenti/04-Exekucni-Charta-3.3.md)
 - **G10 decision (L5/L6 run mode):** [`docs/3.2/L5_L6_ACTIVATION_PLAN.md`](../../3.2/L5_L6_ACTIVATION_PLAN.md)
 - **L5 community docs:** [`public/V3/L5/docs/README.md`](../../../public/V3/L5/docs/README.md)
-- **Technical 3.3 plan, ch. 6:** [`V33_NIRVANA_MASTER_PLAN.md`](../../../V33_NIRVANA_MASTER_PLAN.md)
-- **Live network status:** [`StatusV3.md`](../../../StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
+- **Technical 3.3 plan, ch. 6:** [`V33_NIRVANA_MASTER_PLAN.md`](../../3.2/V33_NIRVANA_MASTER_PLAN.md)
+- **Live network status:** [`StatusV3.md`](../../3.2/StatusV3.md) · [`V31/STATUS.md`](../../../V31/STATUS.md)
 
 ---
 

@@ -6,7 +6,7 @@
 > **Status:** canonical root plan for the 3.2.0 public-mainnet-ready push  
 > **One source of truth:** this file  
 > **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)  
-> **Live status:** [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)  
+> **Live status:** [`StatusV3.md`](StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)  
 > **Agent rules:** [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
 
 ---
@@ -498,7 +498,7 @@ The network is in Mainnet Beta and may contain bugs. This is not financial advic
 ## 10. Canonical References
 
 - Technical plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
-- Live status: [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
+- Live status: [`StatusV3.md`](StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
 - 3.1 plan archive: [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](../3.1/PLAN_TO_3.1_RECONCILED.md)
 - Marketing kit: [`docs/WP-Mainet/marketing/MARKETING_PR_LITE_EN.md`](../WP-Mainet/marketing/MARKETING_PR_LITE_EN.md)
 - Onboarding: [`docs/WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md`](../WP-Mainet/SulZeme/ZION_ONBOARDING_EN.md)

@@ -245,7 +245,7 @@ It is not a promise of money. It is a chance to carry part of the work.
 - [Canonical Onboarding & Salt of the Earth 3.2 — EN](../ZION_ONBOARDING_3.2_ONE_LOVE_EN.md)
 - [Salt of the Earth — 12 stops](../SulZeme/00-README.md)
 - [Mainnet Stable 3.2 technical plan](../../../V31/PLAN_TO_3.2.md)
-- [Current network status](../../../StatusV3.md)
+- [Current network status](../../3.2/StatusV3.md)
 - [Český Rasta Onboarding](./ONBOARDING_ONE_LOVE_3.2_RASTA_CZ.md)
 
 *Factual snapshot date: 2026-08-09. Network, pool, and OASIS state can change; verify current documentation before mining or taking any technical action.*
