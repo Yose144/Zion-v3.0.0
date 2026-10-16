@@ -185,6 +185,11 @@ const MaitreyaCopy = {
     },
   ],
   partDraft: { cs: 'draft', en: 'draft' },
+  readLite: { cs: 'Číst lite verzi', en: 'Read the lite version' },
+  readLiteNote: {
+    cs: 'Zhuštěný průchod celou knihou — prolog, 17 kapitol v esenci, epilog.',
+    en: 'A condensed walk through the whole book — prologue, 17 chapters in essence, epilogue.',
+  },
 
   mantraTitle: { cs: 'Otcova mantra', en: 'The father’s mantra' },
   mantraLine: { cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."', en: '“I am Maitreya. I was Krishna/Rama.”' },
@@ -539,6 +544,18 @@ export default function MaitreyaPage() {
                 <BookOpen className="mt-1 h-4 w-4 shrink-0 text-zion-gold/40 transition-colors group-hover:text-zion-gold" />
               </motion.div>
             ))}
+          </div>
+
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <Link
+              href={cs ? '/docs/books/maitreya/MAITREYA-LITE.md' : '/docs/en/books/maitreya/MAITREYA-LITE.md'}
+              className="zion-button-primary group"
+            >
+              <BookOpen className="h-5 w-5" />
+              {MaitreyaCopy.readLite[cs ? 'cs' : 'en']}
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+            <p className="text-xs text-gray-500">{MaitreyaCopy.readLiteNote[cs ? 'cs' : 'en']}</p>
           </div>
         </div>
       </section>
