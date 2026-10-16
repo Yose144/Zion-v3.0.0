@@ -12,6 +12,7 @@ import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MultichainWalletProvider } from "@/contexts/MultichainWalletContext";
 import HeroSection from "@/components/HeroSection";
+import HiranFloatingChat from "@/components/HiranFloatingChat";
 import PerformanceShell from "@/components/PerformanceShell";
 import { SITE_APP_URL, SITE_INTRO_URL, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
@@ -113,6 +114,7 @@ export default function RootLayout({
                       <div className="site-footer">
                         <Footer />
                       </div>
+                      <HiranFloatingChat />
                     </div>
                     </MultichainWalletProvider>
                     </AuthProvider>

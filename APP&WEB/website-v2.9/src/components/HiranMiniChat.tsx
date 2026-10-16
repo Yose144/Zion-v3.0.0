@@ -6,7 +6,7 @@ import { Send, Brain, User, Loader2, Sparkles, MessageCircle } from 'lucide-reac
 const HiranMiniChatCopy = {
   failedToConnectToAiPleaseTryAg: { cs: `Nepodařilo se spojit s AI. Zkuste to znovu.`, en: `Failed to connect to AI. Please try again.` },
   askAiAnythingAboutZion: { cs: `Zeptejte se AI na cokoliv o ZIONu`, en: `Ask AI anything about ZION` },
-  zionAiNativeZionExpertModel: { cs: `ZION AI Native · zion-expert model`, en: `ZION AI Native · zion-expert model` },
+  zionAiNativeZionExpertModel: { cs: `ZION AI Native · Hiran model`, en: `ZION AI Native · Hiran model` },
   askHiranyagarbhaAnythingAboutZ: { cs: `Zeptejte se Hiranyagarbhy na cokoliv o ZIONu`, en: `Ask Hiranyagarbha anything about ZION` },
   typeAMessage: { cs: `Napište zprávu...`, en: `Type a message...` },
 };
@@ -98,7 +98,7 @@ export default function HiranMiniChat({ lang = 'cs', defaultOpen = false }: { la
           <Brain className="h-5 w-5 text-zion-purple" />
         </div>
         <div className="flex-1 text-left">
-          <span className="text-sm font-bold text-zion-purple tracking-wide">Hiran v2.2</span>
+          <span className="text-sm font-bold text-zion-purple tracking-wide">Hiranyagarbha</span>
           <p className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">
             {HiranMiniChatCopy.askAiAnythingAboutZion[lang === 'cs' ? 'cs' : 'en']}
           </p>
@@ -116,7 +116,7 @@ export default function HiranMiniChat({ lang = 'cs', defaultOpen = false }: { la
           <Brain className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-white font-semibold text-sm">Hiran v2.2</h3>
+          <h3 className="text-white font-semibold text-sm">Hiranyagarbha</h3>
           <p className="text-gray-400 text-[10px]">
             {HiranMiniChatCopy.zionAiNativeZionExpertModel[lang === 'cs' ? 'cs' : 'en']}
           </p>
