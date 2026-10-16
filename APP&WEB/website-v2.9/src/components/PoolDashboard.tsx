@@ -8,6 +8,7 @@ import {
   Activity,
   ArrowRight,
   Atom,
+  Gem,
   Bell,
   Box,
   Check,
@@ -47,6 +48,7 @@ const PoolMinersClient = dynamic(() => import('@/components/pool/PoolMinersClien
 const PoolCalculatorClient = dynamic(() => import('@/components/pool/PoolCalculatorClient'));
 const PoolBenchmarksClient = dynamic(() => import('@/components/pool/PoolBenchmarksClient'));
 const PoolQtcClient = dynamic(() => import('@/components/pool/PoolQtcClient'));
+const PoolPrlClient = dynamic(() => import('@/components/pool/PoolPrlClient'));
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
@@ -68,6 +70,7 @@ const PoolDashboardCopy = {
   calculator: { cs: `Kalkulačka`, en: `Calculator` },
   benchmarks: { cs: `Benchmarky`, en: `Benchmarks` },
   qtc: { cs: `QTC / Quantus`, en: `QTC / Quantus` },
+  prl: { cs: `PRL / Pearl`, en: `PRL / Pearl` },
   invalidZionAddressMustStartWit: { cs: `Neplatná ZION adresa — musí začínat na zion1`, en: `Invalid ZION address — must start with zion1` },
   enterYourZionAddressToViewMine: { cs: `Zadejte svou ZION adresu pro zobrazení statistik minera...`, en: `Enter your ZION address to view miner stats...` },
   searchMiner: { cs: `Najít minera`, en: `Search Miner` },
@@ -537,7 +540,7 @@ export default function PoolDashboard() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [miningMode, setMiningMode] = useState<'cpu' | 'gpu'>('cpu');
   const [minerOS, setMinerOS] = useState<'linux' | 'windows'>('linux');
-  const [activeTab, setActiveTab] = useState<'overview' | 'blocks' | 'miners' | 'calculator' | 'benchmarks' | 'qtc'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'blocks' | 'miners' | 'calculator' | 'benchmarks' | 'qtc' | 'prl'>('overview');
   const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const acceptRateHistoryRef = useRef<{ts: number; value: number}[]>([]);
   const activeMinersHistoryRef = useRef<{ts: number; value: number}[]>([]);
@@ -704,6 +707,7 @@ export default function PoolDashboard() {
                 { id: 'calculator', label: PoolDashboardCopy.calculator[cs ? 'cs' : 'en'], icon: TrendingUp },
                 { id: 'benchmarks', label: PoolDashboardCopy.benchmarks[cs ? 'cs' : 'en'], icon: Cpu },
                 { id: 'qtc', label: PoolDashboardCopy.qtc[cs ? 'cs' : 'en'], icon: Atom },
+                { id: 'prl', label: PoolDashboardCopy.prl[cs ? 'cs' : 'en'], icon: Gem },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -1862,6 +1866,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
         {activeTab === 'calculator' && <PoolCalculatorClient embedded />}
         {activeTab === 'benchmarks' && <PoolBenchmarksClient embedded />}
         {activeTab === 'qtc' && <PoolQtcClient embedded />}
+        {activeTab === 'prl' && <PoolPrlClient embedded />}
 
         <p className="text-center text-xs text-gray-600">
           {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · Edge Node 1 · v3.0.6 E2E Trinity` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Edge Node 1 · v3.0.6 E2E Trinity`}

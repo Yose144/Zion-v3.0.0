@@ -44,36 +44,15 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Quantus and Pearl natively in ZION — a new mining wave begins',
     },
     summary: {
-      cs: 'Dvě sítě nové generace, jeden domov. Po Quantus (post-kvantově zabezpečený proof-of-work) ZION nově nativně podporuje i Pearl — blockchain s Proof of Useful Work, kde těžba znamená užitečné výpočty: stejné maticové operace, které pohání AI, zároveň zabezpečují síť. GPU tak jedním hardwarem dělá práci, která má hodnotu dvakrát. ZION pool už Pearl shary reálně přijímá a celý řetězec těžař → pool → síť byl ověřen koncem do konce — ostrá vlna se rozbíhá. Tři sítě, jeden miner, jedna peněženka. Stáhni app a buď u zrodu.',
-      en: 'Two next-generation networks, one home. After Quantus (post-quantum secure proof-of-work), ZION now natively supports Pearl — a Proof of Useful Work blockchain where mining is useful computation: the same matrix math that powers AI also secures the network. One GPU does work that counts twice. The ZION pool already accepts Pearl shares and the full miner → pool → network path has been verified end-to-end — the live wave is rolling. Three networks, one miner, one wallet. Download the app and be there at the beginning.',
+      cs: 'Tři sítě, jeden miner, jedna peněženka. ZION nativně podporuje dva blockchainy nové generace současně: Quantus — post-kvantově zabezpečený proof-of-work s nativními qz… adresami z jediného seedu — a Pearl — Proof of Useful Work, kde těžba znamená užitečné výpočty: stejné maticové operace, které pohání AI, zároveň zabezpečují síť. Quantus leg už běží naplno (peněženka, pool, payouty), Pearl prošel kompletní end-to-end integrací — celý řetězec těžař → pool → síť je ověřený a ostrá vlna se rozbíhá. Jeden hardware, tři sítě, práce co se počítá dvakrát. Stáhni app a buď u zrodu.',
+      en: 'Three networks, one miner, one wallet. ZION natively supports two next-generation blockchains at once: Quantus — post-quantum secure proof-of-work with native qz… addresses derived from a single seed — and Pearl — Proof of Useful Work, where mining is useful computation: the same matrix math that powers AI also secures the network. The Quantus leg already runs at full power (wallet, pool, payouts); Pearl has passed complete end-to-end integration — the whole miner → pool → network path is verified and the live wave is rolling. One rig, three networks, work that counts twice. Download the app and be there at the beginning.',
     },
     href: '/download',
-    image: '/images/pearl/pearl-news.webp',
-    imageSrcSet: '/images/pearl/pearl-news-m.webp 960w, /images/pearl/pearl-news.webp 1280w',
+    image: '/images/pearl/qtc-pearl-news.webp',
+    imageSrcSet: '/images/pearl/qtc-pearl-news-m.webp 960w, /images/pearl/qtc-pearl-news.webp 1280w',
     imageAlt: {
-      cs: 'Pearl — Proof of Useful Work blockchain nativně podporovaný ZION',
-      en: 'Pearl — Proof of Useful Work blockchain natively supported by ZION',
-    },
-  },
-  {
-    slug: 'trinity-miner-qtc-quantus-mining',
-    date: '2026-10-10',
-    tag: { cs: 'Mining', en: 'Mining' },
-    tagColor: 'text-zion-cyan',
-    title: {
-      cs: 'ZION se nativně propojil s Quantus — začíná nová infrastrukturní éra',
-      en: 'ZION natively connects with Quantus — a new infrastructure era begins',
-    },
-    summary: {
-      cs: 'Dvě sítě, jeden domov. Quantus (QTC) — post-kvantově zabezpečená, proof-of-work měna — se stává prvním externím blockchainem nativně propojeným se ZION. Trinity Miner těží obě sítě současně na stejném hardware, desktop peněženka derivuje nativní QTC adresy (qz…) z jediného seedu a payouty umí dorazit přímo v QTC. Ale tohle není jen o těžbě: je to první pilíř multichain infrastruktury, kterou stavíme — mostů, identit a sítí, které do ZION zapadají přirozeně. Stáhni app, spusť miner a buď u toho od začátku.',
-      en: 'Two networks, one home. Quantus (QTC) — a post-quantum secure, proof-of-work currency — becomes the first external blockchain natively connected to ZION. Trinity Miner mines both networks at once on the same hardware, the desktop wallet derives native QTC addresses (qz…) from a single seed, and payouts can arrive directly in QTC. But this is about more than mining: it is the first pillar of the multichain infrastructure we are building — bridges, identities and networks that fit into ZION naturally. Download the app, start the miner and be there from the beginning.',
-    },
-    href: '/download',
-    image: '/images/quantus/qtc-news.webp',
-    imageSrcSet: '/images/quantus/qtc-news-m.webp 960w, /images/quantus/qtc-news.webp 1280w',
-    imageAlt: {
-      cs: 'Quantus — první blockchain nativně propojený se ZION',
-      en: 'Quantus — the first blockchain natively connected to ZION',
+      cs: 'Quantus + Pearl — dva blockchainy nové generace nativně v ZION',
+      en: 'Quantus + Pearl — two next-generation blockchains native to ZION',
     },
   },
   {
