@@ -551,6 +551,36 @@ impl PoolApi {
                     "pending_submits": upend,
                 },
             });
+            // Surface PRL in the served-coins list when a live job source
+            // exists (native gateway stratum or upstream bridge). The desktop
+            // agent's coin picker reads `coins` to mark selectable options —
+            // Pearl bypasses the auxpow bridge so it never appears there
+            // unless we add it explicitly.
+            let served = (n_en && nage.map(|a| a < 120_000).unwrap_or(false))
+                || (u_en && u_conn && uage.map(|a| a < 120_000).unwrap_or(false));
+            if served {
+                let coins = summary["coins"].as_array_mut().cloned().unwrap_or_default();
+                let mut coins = coins;
+                if !coins.iter().any(|c| c.as_str() == Some("PRL")) {
+                    coins.push(json!("PRL"));
+                }
+                summary["coins"] = json!(coins);
+                let details = summary["coin_details"]
+                    .as_array_mut()
+                    .cloned()
+                    .unwrap_or_default();
+                let mut details = details;
+                details.push(json!({
+                    "ticker": "PRL",
+                    "algorithm": "pearlhash",
+                    "device": "gpu",
+                    "upstream": if u_en && u_conn { "bridge+gateway" } else { "native" },
+                    "job_id": njid.or(ujid),
+                    "job_age_ms": nage.or(uage),
+                    "job_fresh": true,
+                }));
+                summary["coin_details"] = json!(details);
+            }
         }
         summary
     }

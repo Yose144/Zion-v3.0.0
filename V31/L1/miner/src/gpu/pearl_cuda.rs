@@ -87,8 +87,8 @@ struct PearlCudaBufs {
     e_br: CudaSlice<i8>,
     e_ar_perm: CudaSlice<u32>,
     e_bl_perm: CudaSlice<u32>,
-    noised_a: CudaSlice<i32>,
-    noised_b: CudaSlice<i32>,
+    noised_a: CudaSlice<i8>,    // m*k i8 — noised values fit [-127,127]
+    noised_b: CudaSlice<i8>,
     iv: CudaSlice<u8>,
     seed_label_a: CudaSlice<u8>,
     seed_label_b: CudaSlice<u8>,
@@ -244,10 +244,6 @@ impl PearlCudaMiner {
             d.alloc_zeros::<u32>(n_)
                 .map_err(|e| anyhow::anyhow!("pearl cuda alloc u32[{n_}]: {e}"))
         };
-        let azi = |n_: usize| -> Result<CudaSlice<i32>> {
-            d.alloc_zeros::<i32>(n_)
-                .map_err(|e| anyhow::anyhow!("pearl cuda alloc i32[{n_}]: {e}"))
-        };
         let up_u8 = |v: &[u8]| -> Result<CudaSlice<u8>> {
             d.htod_copy(v.to_vec())
                 .map_err(|e| anyhow::anyhow!("pearl cuda upload u8: {e}"))
@@ -277,8 +273,8 @@ impl PearlCudaMiner {
             e_br: az(n * rank)?,
             e_ar_perm: azu32(k * 2)?,
             e_bl_perm: azu32(k * 2)?,
-            noised_a: azi(mk)?,
-            noised_b: azi(nk)?,
+            noised_a: az(mk)?,
+            noised_b: az(nk)?,
             iv: up_u8(&IV_BYTES)?,
             seed_label_a: up_u8(&input.seed_label_a)?,
             seed_label_b: up_u8(&input.seed_label_b)?,

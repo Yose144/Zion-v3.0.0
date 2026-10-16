@@ -677,6 +677,7 @@ function _coinAlgo(coin) {
   const c = String(coin || '').toUpperCase();
   if (c === 'ZION') return 'ekam_deeksha';
   if (c === 'QTU' || c === 'QUANTUS') return 'qpow-poseidon2';
+  if (c === 'PRL' || c === 'PEARL' || c === 'PEARLHASH') return 'pearlhash';
   const ALGO = {
     ZANO: 'progpowz', KAS: 'kheavyhash', ALPH: 'blake3_alph', DCR: 'blake3_dcr',
     BEAM: 'beamhash', CFX: 'octopus', CKB: 'eaglesong', CLORE: 'kawpow',
@@ -1379,9 +1380,12 @@ const DEFAULT_CONFIG = {
   //   Supported: "auto", "VRSC", "XMR", "RTM"
   // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
   //   Supported (kernel-capable, pool bridge permitting): "auto", "QTU",
-  //   "ZANO", "KAS", "ALPH", "BEAM", "CFX", "CKB", "CLORE", "DCR", "DNX",
-  //   "EPIC", "ERG", "ETC", "EVR", "FLUX", "IRON", "KLS", "KRX", "MEWC",
-  //   "NEXA", "NEOX", "PHX", "QTC", "QUAI", "RVN", "VTC", "ZCL", "ZEC"
+  //   "PRL" (Pearl PoUW — SRBMiner pearlhash sidecar or internal kernel
+  //   via V3 PearlSubmit; pool endpoint/wallet = srbminerPrlPool /
+  //   srbminerPrlWallet), "ZANO", "KAS", "ALPH", "BEAM", "CFX", "CKB",
+  //   "CLORE", "DCR", "DNX", "EPIC", "ERG", "ETC", "EVR", "FLUX", "IRON",
+  //   "KLS", "KRX", "MEWC", "NEXA", "NEOX", "PHX", "QTC", "QUAI", "RVN",
+  //   "VTC", "ZCL", "ZEC"
   // tripleStream: master toggle. When true, --no-gpu/--no-cpu are omitted and
   //   ZION_STREAM2_FORCE_COIN / ZION_STREAM3_FORCE_COIN are forwarded to the
   //   V31 miner. When false, both AuxPoW streams are disabled.
@@ -2378,6 +2382,12 @@ const SRB_API_PORT = 21550;
 const SRB_MAX_RESTARTS = 3;
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
 const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
+const SRB_DEFAULT_PRL_POOL = 'prl.suprnova.cc:3370';
+const SRB_DEFAULT_PRL_WALLET = 'prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m';
+// What the running sidecar actually mines — feeds stream-2 card labels +
+// share events (was hardcoded QTU before Pearl support landed in 3.7.6).
+let srbActiveCoin = 'QTU';
+let srbActiveAlgo = 'quantus';
 // Rolling per-GPU hashrate history (keyed by PCI bus — survives device-id
 // renumbering). ~60 samples @20s poll ≈ last 20 minutes; used for
 // min/avg/max on the GPU cards and the dip detector.
@@ -2412,11 +2422,21 @@ function resolveQtcEngine(config) {
   return eng;
 }
 
+// Coin → SRBMiner --algorithm mapping. The sidecar also covers Pearl since
+// 3.7.6 — our pool's pearl stratum speaks the same mining.authorize object-
+// params dialect (verified live with SRBMiner-MULTI/3.7.6 on AMD gfx1010).
+function srbCoinIsExternal(coin) {
+  return ['QTU', 'QTC', 'QUANTUS', 'PRL', 'PEARL', 'PEARLHASH'].includes(
+    String(coin || '').trim().toUpperCase());
+}
+function srbAlgoForCoin(coin) {
+  return ['PRL', 'PEARL', 'PEARLHASH'].includes(String(coin || '').trim().toUpperCase())
+    ? 'pearlhash' : 'quantus';
+}
 function srbEngineWanted(config) {
   if (resolveQtcEngine(config) !== 'srbminer') return false;
   if (!config || config.gpu !== true) return false;
-  const gpuCoin = String(config.gpuCoin || '').trim().toUpperCase();
-  return gpuCoin === 'QTU' || gpuCoin === 'QTC' || gpuCoin === 'QUANTUS';
+  return srbCoinIsExternal(config.gpuCoin);
 }
 
 function resolveSrbMinerPath(config) {
@@ -2446,10 +2466,10 @@ function srbApplyStats(stats) {
   const rej = stats.rejected | 0;
   merged[2] = {
     index: 2,
-    label: 'QTU',
-    coin: 'QTU',
+    label: srbActiveCoin,
+    coin: srbActiveCoin,
     engine: 'srbminer',
-    algorithm: 'qpow-poseidon2',
+    algorithm: srbActiveAlgo,
     hashrate_10s: stats.hashrate,
     hashrate_60s: stats.hashrate,
     hashrate_15m: stats.hashrate,
@@ -2497,11 +2517,11 @@ function srbApplyStats(stats) {
   const prev = srbShareCounts;
   if (prev.accepted >= 0) {
     if (acc > prev.accepted) {
-      try { sendToRenderer('share-event', { stream: 2, coin: 'QTU', accepted: true, status: 'accepted', algorithm: 'qpow-poseidon2', ts: Date.now() }); } catch {}
+      try { sendToRenderer('share-event', { stream: 2, coin: srbActiveCoin, accepted: true, status: 'accepted', algorithm: srbActiveAlgo, ts: Date.now() }); } catch {}
       try { enqueueMinerOutputToRenderer('stdout', `[SRB] share accepted (total ${acc})`); } catch {}
     }
     if (rej > prev.rejected) {
-      try { sendToRenderer('share-event', { stream: 2, coin: 'QTU', accepted: false, status: 'rejected', reason: 'rejected', algorithm: 'qpow-poseidon2', ts: Date.now() }); } catch {}
+      try { sendToRenderer('share-event', { stream: 2, coin: srbActiveCoin, accepted: false, status: 'rejected', reason: 'rejected', algorithm: srbActiveAlgo, ts: Date.now() }); } catch {}
       try { enqueueMinerOutputToRenderer('stdout', `[SRB] share rejected (total ${rej})`); } catch {}
     }
   }
@@ -2623,18 +2643,31 @@ function startSrbMiner(config, worker) {
   }
   const isCustomBin = !!config?.srbminerPath && srbPath === String(config.srbminerPath);
   if (!verifySrbBinaryIntegrity(srbPath, isCustomBin)) return;
-  let srbPool = String(config?.srbminerPool || SRB_DEFAULT_POOL).trim();
+  const srbCoin = String(config?.gpuCoin || 'QTU').trim().toUpperCase() || 'QTU';
+  const srbAlgo = srbAlgoForCoin(srbCoin);
+  const srbIsPearl = srbAlgo === 'pearlhash';
+  // Pearl pool: dedicated key → shared srbminerPool (our :8444 serves both
+  // dialects) → public Suprnova default.
+  const srbPoolRaw = srbIsPearl
+    ? (config?.srbminerPrlPool || config?.srbminerPool || SRB_DEFAULT_PRL_POOL)
+    : (config?.srbminerPool || SRB_DEFAULT_POOL);
+  let srbPool = String(srbPoolRaw).trim();
   // SRBMiner requires an explicit stratum scheme — bare host:port fails to
   // connect even though the endpoint is reachable.
   if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(srbPool)) srbPool = `stratum+tcp://${srbPool}`;
-  const srbWallet = String(config?.srbminerWallet || SRB_DEFAULT_WALLET).trim();
+  const srbWallet = String(
+    srbIsPearl
+      ? (config?.srbminerPrlWallet || SRB_DEFAULT_PRL_WALLET)
+      : (config?.srbminerWallet || SRB_DEFAULT_WALLET)).trim();
+  srbActiveCoin = srbIsPearl ? 'PRL' : 'QTU';
+  srbActiveAlgo = srbAlgo;
   // Our worker names carry an internal "@g=zion" group hint that upstream
   // pools reject at login — strip it and keep only safe worker chars.
   const srbWorkerRaw = String(config?.srbminerWorker || worker || 'desktop').split('@')[0];
   const srbWorker = sanitizeWorkerName(srbWorkerRaw).replace(/[^A-Za-z0-9._-]/g, '') || 'desktop';
   const logPath = path.join(USER_DATA_PATH, 'srbminer.log');
   const args = [
-    '--algorithm', 'quantus',
+    '--algorithm', srbAlgo,
     '--pool', srbPool,
     '--wallet', srbWallet,
     '--worker', srbWorker,
@@ -2981,7 +3014,9 @@ function startMiningV31(config, v31Path) {
     if (wantsGpu && !gpuCoinAuto) {
       if (useSrbQtc) {
         env.ZION_STREAM2_ENABLED = '0';
-        _activeExtCoins.gpu = 'QTU';
+        _activeExtCoins.gpu = srbCoinIsExternal(gpuCoin)
+          && ['PRL', 'PEARL', 'PEARLHASH'].includes(gpuCoin.toUpperCase())
+          ? 'PRL' : 'QTU';
       } else {
         env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
         _activeExtCoins.gpu = gpuCoin.toUpperCase();

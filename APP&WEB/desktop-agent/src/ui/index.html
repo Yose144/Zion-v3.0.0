@@ -7107,17 +7107,27 @@
               </select>
               <div class="slider-hint">ZION on GPU + external GPU coin simultaneously. "Auto" lets the pool pick the most profitable coin.</div>
 
-              <label class="wizard-label-sm" style="margin-top: 10px;">QTC engine</label>
+              <label class="wizard-label-sm" style="margin-top: 10px;">Stream 2 engine (QTU / PRL)</label>
               <select id="qtc-engine-select" class="algo-select">
                 <option value="auto" selected>Auto — pick the best available</option>
                 <option value="srbminer">SRBMiner sidecar (~1.7× faster on RDNA)</option>
                 <option value="internal">Internal (built-in OpenCL kernel)</option>
               </select>
-              <div class="slider-hint">Auto uses SRBMiner when its binary is present (measured ~1.7× faster than the built-in QPoW kernel on RDNA), internal otherwise. When Stream 2 = QTU the engine mines directly to the configured QTU pool — stats still show in this panel and the GPU telemetry cards.</div>
+              <div class="slider-hint">Auto uses SRBMiner when its binary is present (measured ~1.7× faster than the built-in QPoW kernel on RDNA; pearlhash works on AMD + Turing/Ampere/Ada NVIDIA), internal otherwise. When Stream 2 = QTU/PRL the engine mines directly to the configured pool — stats still show in this panel and the GPU telemetry cards.</div>
 
               <label class="wizard-label-sm" style="margin-top: 10px;">SRBMiner GPUs</label>
               <input id="srbminer-gpuid-input" class="algo-select" type="text" placeholder="auto — all detected GPUs" spellcheck="false">
               <div class="slider-hint">Comma-separated OpenCL device ids (e.g. <code>0,1</code>) or <code>auto</code> for every GPU. Pin to a headless card to keep the display GPU free — check the GPU telemetry cards for each card's bus and role.</div>
+
+              <div class="section-divider">Pearl (PRL)</div>
+
+              <label class="wizard-label-sm">PRL pool</label>
+              <input id="srbminer-prlpool-input" class="algo-select" type="text" placeholder="auto — same as Stream 2 pool (our pool speaks both)" spellcheck="false">
+              <div class="slider-hint">Pearl stratum endpoint for the sidecar when Stream 2 = PRL. Empty = reuse the QTU pool setting (our <code>62.171.141.136:8444</code> auto-detects the protocol); falls back to <code>prl.suprnova.cc:3370</code> when no pool is configured.</div>
+
+              <label class="wizard-label-sm" style="margin-top: 10px;">PRL wallet</label>
+              <input id="srbminer-prlwallet-input" class="algo-select" type="text" placeholder="prl1… — leave empty for the pool default" spellcheck="false">
+              <div class="slider-hint">Pearl payout address (<code>prl1…</code>) used when Stream 2 = PRL. Set your own wallet — the built-in default belongs to the pool.</div>
 
               <div class="section-divider">Quad Mode — Second GPU Coin</div>
 

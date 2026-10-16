@@ -84,7 +84,7 @@ const DECOMMISSIONED_POOL_HOSTS = new Set(['77.42.71.94', '100.76.16.108']);
 // are marked in the option label rather than silently idling the stream.
 const EXT_GPU_COINS = [
   // Preferred / pool-verified first, then the rest alphabetically.
-  'QTU', 'ZANO', 'KAS', 'ALPH', 'BEAM', 'CFX', 'CKB', 'CLORE', 'DCR',
+  'QTU', 'PRL', 'ZANO', 'KAS', 'ALPH', 'BEAM', 'CFX', 'CKB', 'CLORE', 'DCR',
   'DNX', 'EPIC', 'ERG', 'ETC', 'EVR', 'FLUX', 'IRON', 'KLS', 'KRX',
   'MEWC', 'NEXA', 'NEOX', 'PHX', 'QTC', 'QUAI', 'RVN', 'VTC', 'ZCL', 'ZEC',
 ];
@@ -92,7 +92,7 @@ const EXT_CPU_COINS = ['VRSC', 'XMR', 'RTM'];
 // Canonical algorithm names — identical to ExternalCoin::algorithm() in
 // V31/L1/cosmic-harmony/src/profit.rs so UI labels match pool reporting.
 const EXT_COIN_ALGO = {
-  QTU: 'qpow-poseidon2', ZANO: 'progpow_zano', KAS: 'kheavyhash',
+  QTU: 'qpow-poseidon2', PRL: 'pearlhash', ZANO: 'progpow_zano', KAS: 'kheavyhash',
   ALPH: 'blake3_alph', BEAM: 'beamhash', CFX: 'octopus', CKB: 'eaglesong',
   CLORE: 'kawpow', DCR: 'blake3_dcr', DNX: 'dynexsolve', EPIC: 'progpow',
   ERG: 'autolykos', ETC: 'etchash', EVR: 'evrprogpow', FLUX: 'zelhash',
@@ -1288,6 +1288,28 @@ function setupControls() {
       config.srbminerGpuId = v || 'auto';
       srbGpuIdInput.value = config.srbminerGpuId;
       void applyMiningSelection(`srbminerGpuId=${encodeURIComponent(config.srbminerGpuId)}`);
+    });
+  }
+
+  // Pearl sidecar endpoint + payout — empty keeps the fallback chain
+  // (prlPool → shared srbminerPool → Suprnova default; prlWallet → pool wallet).
+  const srbPrlPoolInput = document.getElementById('srbminer-prlpool-input');
+  if (srbPrlPoolInput) {
+    srbPrlPoolInput.value = config.srbminerPrlPool || '';
+    srbPrlPoolInput.addEventListener('change', () => {
+      config.srbminerPrlPool = srbPrlPoolInput.value.trim();
+      void applyMiningSelection(`srbminerPrlPool=${encodeURIComponent(config.srbminerPrlPool)}`);
+    });
+  }
+  const srbPrlWalletInput = document.getElementById('srbminer-prlwallet-input');
+  if (srbPrlWalletInput) {
+    srbPrlWalletInput.value = config.srbminerPrlWallet || '';
+    srbPrlWalletInput.addEventListener('change', () => {
+      config.srbminerPrlWallet = srbPrlWalletInput.value.trim();
+      if (config.srbminerPrlWallet && !/^prl1[a-z0-9]+$/i.test(config.srbminerPrlWallet)) {
+        addLogEntry('PRL wallet does not look like a prl1… address — saved anyway', 'warn');
+      }
+      void applyMiningSelection(`srbminerPrlWallet=${encodeURIComponent(config.srbminerPrlWallet)}`);
     });
   }
 
