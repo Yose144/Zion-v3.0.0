@@ -13,6 +13,8 @@ Pravidla pro agenty (Devin, Copilot, WARP) pracující na veřejném ZION webu.
 >
 > **Deploy 2026-10-16 — Globální AI chat widget:** `src/components/HiranFloatingChat.tsx` — floating FAB bottom-right (Brain, z-70) → chat panel; mountnutý v root `layout.tsx` (za Footer, uvnitř LanguageProvider). Používá `useLang()`, `usePathname()` hide na `/l3-hiran`+`/ai-native` (embedded chat už tam je), availability probe `GET /api/ai-chat` s 30s repoll. Branding: "Hiranyagarbha" (bez interních verzí/model jmen — i v `HiranMiniChat.tsx` sjednoceno "Hiran v2.2"→"Hiranyagarbha", "zion-expert"→"Hiran model"). SSR: FAB je v HTML na všech stránkách. Pozor na public copy — žádné interní názvy.
 >
+> **Deploy 2026-10-16 — AI answer quality fix:** Uživatelé reportovali nesmyslné odpovědi — root cause byl RAG korpus na Edge (`/opt/zion/data/l3-rag-docs`), který obsahoval interní dev/lore docs (plány, reporty, MiseAmenti kanon, onboard kronika). Vyměněno za 27 kurátorovaných public docs (kopie z `public/docs/cs`+`/en` + hand-written `HIRANYAGARBHA.md`+`SCOPE.md`); kanonická sada + deploy postup je v repu `V31/L3/ai-native/rag-docs/`, backup původního `l3-rag-docs.bak-internal`. Zároveň: `HIRAN_API_URL=http://127.0.0.1:8003` nově v `/etc/zion/website-v31-environment.sh` → availability probe teď testuje skutečný generační backend (dřív `:8002` standby); `route.ts` odmítá bare echo otázky jako degraded.
+>
 > **Deploy 2026-09-25 — DAO navigace:** přímé odkazy `/dao` v desktop shortcutu, multichain skupině (`DAO · Governance`) i mobilním menu; web backup je `/opt/zion/APP&WEB/website-v2.9/.next.bak-20260925T184747Z-dao-nav`.
 
 ---
