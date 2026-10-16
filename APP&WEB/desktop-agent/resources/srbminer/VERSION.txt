@@ -1,5 +1,6 @@
-SRBMiner-MULTI 3.7.4 (release 2026-10-09)
-Source: https://github.com/doktor83/SRBMiner-Multi/releases/download/3.7.4/SRBMiner-Multi-3-7-4-Linux.tar.gz
-Archive MD5: c000bcaaa10a7a82a4456ae4b7617ccd (verified 2026-10-10)
-Binary SHA256: 5adfd630de2fe1da04d30a7175b02497ac157dc285dedda3dc2f5f295c359062
+SRBMiner-MULTI 3.7.6 (release 2026-10-14)
+Source: https://github.com/doktor83/SRBMiner-Multi/releases/download/3.7.6/SRBMiner-Multi-3-7-6-Linux.tar.gz
+Archive MD5: 4bbe92e9eb090a9ee70a2accdd36126c (verified 2026-10-16)
+Binary SHA256: 0c3353a74c1107ac340fef9b77749f634c988c552d9f446d6da3d23a43c25a15
 Platform: Linux x86-64 ELF only (no macOS build exists)
+Notes: pearlhash present but Pascal/SM61 unsupported (E3102) — SM75+ required; quantus ~40.6 MH/s on GTX 1070 Ti (+1.7% vs 3.7.4)

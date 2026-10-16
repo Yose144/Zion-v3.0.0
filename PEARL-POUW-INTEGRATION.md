@@ -788,3 +788,78 @@ pool local verify + PPLNS credit → `is_block` detection → async
   set for mainnet; whether regtest acceptance satisfies it is a policy
   decision, not a technical one. Production state is fully restored:
   gateway env back on `8477`, regtest services stopped.
+
+## 14. Desktop-agent integration + third-party stratum compat (2026-10-16)
+
+### SRBMiner 3.7.6 deployed everywhere
+
+- Release archive `SRBMiner-Multi-3-7-6-Linux.tar.gz` (MD5
+  `4bbe92e9eb090a9ee70a2accdd36126c`, binary SHA256 `0c3353a7…`) —
+  staged on Edge `/var/www/zion-miner/SRBMiner-MULTI` (SMOS wrapper
+  download path; 3.7.4 backup kept), bundled in
+  `APP&WEB/desktop-agent/resources/srbminer/` (gitignored binary,
+  `VERSION.txt` SHA256 updated — the agent refuses a mismatched bundle),
+  and deployed to rig 518837.
+- Measured QTU: rig GTX 1070 Ti 39.9 → **40.6 MH/s**; local AMD
+  (RX 5600 XT + Vega) 232 → **236.6 MH/s**.
+
+### ⚠️ pearlhash unsupported on Pascal (SM_61)
+
+- `Pearl backend error E3102` on both 3.7.4 and 3.7.6 — SRBMiner's
+  pearlhash kernels require SM75+/SM86/SM89/SM120. The 1070 Ti rig can
+  mine Pearl only through our own CUDA kernel (zion-miner stream2).
+- **Our native pearl stratum is SRBMiner-wire-compatible**: SRBMiner
+  3.7.6 on AMD gfx1010 authorized via `mining.authorize` object params,
+  parsed `mining.notify`, submitted ~90 kB proofs → `result:true`,
+  **~50 accepted / 1 reject** against `62.171.141.136:8444`. First
+  third-party miner ever on the pearl stratum.
+
+### Desktop agent (`gpuCoin: "PRL"`)
+
+- `srbEngineWanted` accepts PRL/PEARL/PEARLHASH; `srbAlgoForCoin` maps
+  coin → `quantus|pearlhash`; pool fallback chain `srbminerPrlPool` →
+  `srbminerPool` (our :8444 auto-detects both dialects) →
+  `prl.suprnova.cc:3370`; wallet `srbminerPrlWallet` → pool wallet
+  default (matches the existing project-wallet pattern for QTU).
+- Stream-2 card + share events label dynamically (`srbActiveCoin`,
+  `srbActiveAlgo`); `_coinAlgo` maps PRL → `pearlhash`.
+- UI: `PRL` in the coin select (`pearlhash`), "Stream 2 engine
+  (QTU / PRL)" select covers both — `internal` = the built-in zion-miner
+  pearl stream over V3 `PearlSubmit` (same path the rig used).
+  New wizard fields: **PRL pool** + **PRL wallet** persisted via
+  `applyMiningConfig`.
+- Live E2E on the desktop box: `gpuCoin=PRL` → agent spawned pearlhash
+  → our pool :8444 → **13+ accepted, 0 rejected** (~3.2 TH/s SRB-reported
+  metric on RX 5600 XT) while ZION + VRSC streams kept mining.
+
+### Pool reporting (`api.rs`)
+
+- `auxpow_summary_inner` now appends `"PRL"` to `coins` + a
+  `coin_details` entry (`pearlhash`, gpu, job_fresh) whenever a live
+  pearl job source exists (native gateway stratum or upstream bridge).
+  The desktop `getPoolAuxpow` probe reads this to mark PRL served.
+  8/8 api tests pass. **Edge pool deploy pending** (rebuild + restart
+  with bak, standard procedure).
+
+### CUDA kernel `__dp4a` optimization (compiled, not yet device-tested)
+
+- `pearl_pouw_native.cu`: `pearl_apply_noise_{a,b}` write `signed char*`;
+  mine kernel consumes i8 noised matrices — SM_61+ path loads 16-byte
+  `int4` chunks and runs 4× `__dp4a` per chunk (4 i8 MACs/instr),
+  scalar i32 fallback otherwise. Host `PearlCudaBufs.noised_{a,b}` are
+  now `CudaSlice<i8>` — canonical noised values fit [-127,127] so
+  results are bit-identical.
+- `cargo check` clean; NVRTC `compute_61` compile verified on the rig.
+  **Pending**: `pearl_cuda_parity_vs_cpu_reference` on-device + perf
+  comparison vs the i32 kernel (Edge docker `pearl-cuda-buildenv`).
+
+### Rig 518837 final state
+
+- SMOS group 1780844: `ZION_STREAM2_ENABLED=0` (pearl stream off;
+  `FORCE_COIN=PRL` + `ZION_PEARL_K=2048` left in place — one-flip
+  rollback). QTU sidecar jumped to **~70–77 MH/s** once the pearl
+  stream and a stale duplicate SRBMiner stopped competing for the GPU.
+- llama-server bumped `-c 2048 → 3072` using freed VRAM
+  (`run-cuda.sh.bak-20261016`).
+- `profit.rs` PRL auto-routing remains DISABLED — mainnet `Accepted`
+  is still the gate.

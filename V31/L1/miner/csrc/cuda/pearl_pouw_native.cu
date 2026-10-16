@@ -442,7 +442,7 @@ extern "C" __global__ void pearl_gen_uniform_noise(
 // One thread per (row, k_column).
 
 extern "C" __global__ void pearl_apply_noise_a(
-    int* noised_a,              // output: m×k int32
+    signed char* noised_a,      // output: m×k int8 (a_val+noise ∈ [-127,127])
     const signed char* matrix_a,// m×k
     const signed char* e_al,    // m×rank
     const uint* e_ar_perm,      // k×2 pairs
@@ -467,11 +467,11 @@ extern "C" __global__ void pearl_apply_noise_a(
     int noise_val = e_al_first - e_al_second;
 
     int a_val = (int)matrix_a[i * k_dim + l];
-    noised_a[gid + output_offset] = a_val + noise_val;
+    noised_a[gid + output_offset] = (signed char)(a_val + noise_val);
 }
 
 extern "C" __global__ void pearl_apply_noise_b(
-    int* noised_b_t,            // output: n×k int32
+    signed char* noised_b_t,    // output: n×k int8
     const signed char* matrix_b_t,// n×k
     const signed char* e_br,    // n×rank
     const uint* e_bl_perm,      // k×2 pairs
@@ -496,7 +496,7 @@ extern "C" __global__ void pearl_apply_noise_b(
     int noise_val = e_br_first - e_br_second;
 
     int b_val = (int)matrix_b_t[j * k_dim + l];
-    noised_b_t[gid + output_offset] = b_val + noise_val;
+    noised_b_t[gid + output_offset] = (signed char)(b_val + noise_val);
 }
 
 // ─── BLAKE3 keyed hash of 64-byte message (for jackpot) ─────────────────────
@@ -565,8 +565,8 @@ __device__ void blake3_keyed_hash_64_gpu(
 // Reads noised matrices straight from global memory — L1 cache handles the
 // reuse (8 threads share an a_row, 4 share a b_col).
 extern "C" __global__ void pearl_pouw_mine_native_v3(
-    const int* noised_a,
-    const int* noised_b,
+    const signed char* noised_a,
+    const signed char* noised_b,
     const uchar* a_noise_seed,
     const uchar* target,
     const uint* row_offsets,
@@ -609,15 +609,30 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
     if (lid < JACKPOT_SIZE) jackpot[lid] = 0u;
     __syncthreads();
 
+    // __dp4a path: noised values fit int8 (a∈[-64,64] + noise∈[-63,63] =
+    // [-127,127]) — one IDP does 4 MACs. Requires 16B-aligned rows, i.e.
+    // k_dim and rank multiples of 16 (a_base/l stay aligned).
+    const bool dp4a_ok = ((k_dim | rank) & 15u) == 0u;
     for (uint ll = rank; ll <= k_dim; ll += rank) {
-        // Vectorized int4 loads: 4 elements per transaction, fully unrolled.
         int acc = 0;
         uint a_base = a_row * k_dim + (ll - rank);
         uint b_base = b_col * k_dim + (ll - rank);
-        for (uint l = 0; l < rank; l += 4) {
-            int4 av = *(const int4*)(&noised_a[a_base + l]);
-            int4 bv = *(const int4*)(&noised_b[b_base + l]);
-            acc += av.x * bv.x + av.y * bv.y + av.z * bv.z + av.w * bv.w;
+#if __CUDA_ARCH__ >= 610
+        if (dp4a_ok) {
+            for (uint l = 0; l < rank; l += 16) {
+                int4 av = *(const int4*)(noised_a + a_base + l);
+                int4 bv = *(const int4*)(noised_b + b_base + l);
+                acc = __dp4a(av.x, bv.x, acc);
+                acc = __dp4a(av.y, bv.y, acc);
+                acc = __dp4a(av.z, bv.z, acc);
+                acc = __dp4a(av.w, bv.w, acc);
+            }
+        } else
+#endif
+        {
+            for (uint l = 0; l < rank; l++) {
+                acc += (int)noised_a[a_base + l] * (int)noised_b[b_base + l];
+            }
         }
         jackpot_tile[lid] += acc;
         __syncthreads();
