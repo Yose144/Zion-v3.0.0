@@ -177,7 +177,7 @@ export default function Hero() {
             src="/images/home/hero.webp"
             srcSet="/images/home/hero-m.webp 960w, /images/home/hero.webp 1672w"
             sizes="(max-width: 1320px) calc(100vw - 2rem), 1280px"
-            alt={cs ? 'ZION Terra Nova — mapa ekosystému: 12 uzlů Free World a vrstvy L1–L6' : 'ZION Terra Nova — ecosystem map: 12 Free World nodes and layers L1–L6'}
+            alt={cs ? 'ZION Terra Nova — Strom života, Maitreya a cesta, která pokračuje: One Love · One Human · One World' : 'ZION Terra Nova — Tree of Life, Maitreya and the journey that continues: One Love · One Human · One World'}
             width={1672}
             height={941}
             loading="lazy"
