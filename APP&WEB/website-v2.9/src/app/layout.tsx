@@ -13,7 +13,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { MultichainWalletProvider } from "@/contexts/MultichainWalletContext";
 import HeroSection from "@/components/HeroSection";
 import PerformanceShell from "@/components/PerformanceShell";
-import { SITE_APP_URL, SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_APP_URL, SITE_INTRO_URL, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -41,8 +41,8 @@ export const metadata: Metadata = {
     default: `ZION Blockchain ${SITE_RELEASE_LABEL}`,
     template: '%s | ZION TerraNova',
   },
-  description: `ZION TerraNova ${SITE_VERSION}: native Rust blockchain in active development. Public launch postponed (TBD). ${SITE_NETWORK_TOPOLOGY}, public line ${SITE_RELEASE_LABEL}, runtime ${SITE_RUNTIME_LABEL}, pool telemetry, mining guides, and protocol docs.`,
-  keywords: "blockchain, consciousness mining, ZION, cryptocurrency, native rust, cosmic harmony, WARP bridge, mainnet launch, countdown, V3",
+  description: `ZION TerraNova — native Rust Layer-1 blockchain a ekosystém: mining pool, explorer, peněženka, multichain bridge, OASIS metaverse a humanitární fee model. One Love ${SITE_VERSION}.`,
+  keywords: "ZION TerraNova, ZION blockchain, ZION coin, ZION crypto, zionterranova, native rust blockchain, mining pool, OASIS metaverse, multichain bridge, humanitarian crypto, consciousness mining",
   openGraph: {
     type: 'website',
     locale: 'cs_CZ',
@@ -67,6 +67,30 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://widget.li.fi" />
         <link rel="dns-prefetch" href="https://open.spotify.com" />
         <link rel="dns-prefetch" href="https://api.spotify.com" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                name: 'ZION TerraNova',
+                url: SITE_APP_URL,
+                logo: `${SITE_APP_URL}/logo/org/symbol-200x200.png`,
+                sameAs: [SITE_INTRO_URL],
+              },
+              {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'ZION TerraNova',
+                url: SITE_APP_URL,
+                description:
+                  'Native Rust Layer-1 blockchain ecosystem — mining pool, explorer, wallet, multichain bridge, OASIS metaverse.',
+                inLanguage: ['cs', 'en'],
+              },
+            ]),
+          }}
+        />
       </head>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
         <GlobalErrorBoundary>

@@ -25,6 +25,8 @@ use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
 #[cfg(feature = "gpu-cuda")]
 pub mod cuda_external;
 #[cfg(feature = "gpu-cuda")]
+pub mod pearl_cuda;
+#[cfg(feature = "gpu-cuda")]
 pub mod qpow_cuda;
 #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod qpow_metal;
@@ -518,6 +520,18 @@ pub trait GpuMiner: Send {
             nonces_tested: 0,
             device_name: String::new(),
         })
+    }
+
+    /// One Pearl PoUW mining attempt: fresh matrices → keyed-BLAKE3 merkle →
+    /// noise → tile matmul + jackpot scan, all on-device. Returns the winning
+    /// tile + matrices for the CPU Merkle-proof build, or `None` when no tile
+    /// beat the target. Only the OpenCL backend implements it today.
+    fn mine_pearl(
+        &mut self,
+        input: &crate::auxpow::pearl::PearlPouwNativeInput<'_>,
+    ) -> Result<Option<crate::auxpow::pearl::PearlPouwNativeResult>> {
+        let _ = input;
+        anyhow::bail!("pearlhash unsupported on {:?}", self.backend_kind());
     }
 
     /// Return a shared CUDA device handle, if this backend uses CUDA.
@@ -1277,6 +1291,7 @@ pub fn is_external_algorithm(algorithm: &str) -> bool {
             | "equihash_zec"
             | "neoscrypt"
             | "neoscrypt_phx"
+            | "pearlhash"
     )
 }
 
@@ -3152,6 +3167,24 @@ fn create_gpu_backend_inner(
             {
                 // External AuxPoW algorithms — try CUDA kernel first, then CPU fallback
                 if is_external_algorithm(algorithm) {
+                    // Pearl PoUW has a dedicated multi-kernel pipeline that
+                    // doesn't fit CudaExtAlgo's single-hash `mine_batch` shape.
+                    if algorithm == "pearlhash" {
+                        let miner_result = if let Some(ref dev) = shared_dev {
+                            crate::gpu::pearl_cuda::PearlCudaMiner::new_with_device(
+                                work_size,
+                                std::sync::Arc::clone(dev),
+                            )
+                        } else {
+                            crate::gpu::pearl_cuda::PearlCudaMiner::new(work_size)
+                        };
+                        match miner_result {
+                            Ok(miner) => return Ok(Box::new(miner)),
+                            Err(e) => {
+                                eprintln!("[gpu_backend] CUDA pearl miner failed: {} — falling back", e);
+                            }
+                        }
+                    }
                     // Algorithms with dedicated CUDA kernels
                     if crate::gpu::cuda_external::CudaExtAlgo::from_name(algorithm).is_some() {
                         let miner_result = if let Some(ref dev) = shared_dev {
@@ -5416,6 +5449,7 @@ pub mod cpu_external_fallback {
 pub mod opencl_external {
     use super::*;
     use crate::auxpow::gpu_opencl_full::ExtGpuMiner;
+    use crate::auxpow::pearl::{PearlPouwNativeInput, PearlPouwNativeResult};
 
     pub struct OpenClExternalMiner {
         algorithm: String,
@@ -5506,6 +5540,13 @@ pub mod opencl_external {
 
         fn set_extranonce(&mut self, en1: &[u8]) {
             self.en1 = en1.to_vec();
+        }
+
+        fn mine_pearl(
+            &mut self,
+            input: &PearlPouwNativeInput<'_>,
+        ) -> Result<Option<PearlPouwNativeResult>> {
+            self.miner.pearl_pouw_mine_native(input)
         }
 
         fn mine_batch(

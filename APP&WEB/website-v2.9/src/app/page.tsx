@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
 import HomeNoticeBar from '@/components/HomeNoticeBar';
@@ -37,3 +38,7 @@ export default function Home() {
     </>
   );
 }
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};

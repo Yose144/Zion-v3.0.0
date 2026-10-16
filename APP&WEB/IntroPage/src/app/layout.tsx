@@ -23,9 +23,12 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zionterranova.com"),
-  title: "ZION TerraNova ® OASIS",
+  title: "ZION TerraNova — Native Rust Blockchain & OASIS Ecosystem",
   description:
-    "ZION TerraNova: native Rust multichain blockchain, OASIS metaverse, humanitarian fee split. One Love.",
+    "ZION TerraNova: native Rust Layer-1 blockchain — mining pool, explorer, wallet, multichain bridge, OASIS metaverse, humanitarian fee split. One Love.",
+  keywords:
+    "ZION TerraNova, ZION blockchain, ZION coin, zionterranova, native rust blockchain, OASIS metaverse, consciousness mining, humanitarian crypto",
+  alternates: { canonical: "/" },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",

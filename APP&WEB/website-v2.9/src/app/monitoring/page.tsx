@@ -5,6 +5,7 @@ import { SITE_RELEASE_LABEL } from '@/lib/site';
 const MonitoringClient = dynamic(() => import('./MonitoringClient'));
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/monitoring' },
   title: `Monitoring · ZION ${SITE_RELEASE_LABEL}`,
   description: 'Live Prometheus + Grafana monitoring: chain height, pool metrics, active miners, system health. ZION TerraNova V3 observability stack.',
 };
