@@ -69,11 +69,11 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Amenti beneath the Giza pyramids became the twelfth and final point on the map — L5 Free World is complete. Twelve places, twelve worlds: Genesis Garden, Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka, Ekam, LUMI Nová Amerika, Uluru, Boa Esperança, Kailash, Amenti… and María del Camino, where the story continues as the network’s first living node. Every point has its own page, artwork and place on the holographic planet. Explore the full twelve-point map.',
     },
     href: '/l5-free-world',
-    image: '/images/home/hero.webp',
-    imageSrcSet: '/images/home/hero-m.webp 960w, /images/home/hero.webp 1672w',
+    image: '/images/home/hero-l5-map.webp',
+    imageSrcSet: '/images/home/hero-l5-map-m.webp 960w, /images/home/hero-l5-map.webp 1672w',
     imageAlt: {
-      cs: 'L5 Free World — Strom života a dvanáct bodů jedné planety',
-      en: 'L5 Free World — Tree of Life and the twelve points of one planet',
+      cs: 'Mapa L5 Free World — dvanáct bodů a vrstvy L1–L6',
+      en: 'L5 Free World map — twelve points and layers L1–L6',
     },
   },
   {
