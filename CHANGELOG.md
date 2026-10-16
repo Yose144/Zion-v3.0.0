@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] — 2026-10 (Pearl PRL Ecosystem + Docs Cleanup)
+
+### Added
+- **Pearl (PRL) ecosystem integration** — first-class chain across the stack: `ChainId::Pearl` (UTXO, 8 decimals), bech32m `prl` adapter with BIP86 P2TR encode/decode (`m/86'/808276'/0'/0/index`, live-verified against oyster `getnewaddress` vectors), `zion-derive-addr` `prl=`/`--json pearl` output
+- **Pool PRL payout routing** — `prl:`/`pearl:`/bare `prl1…` addresses accepted at worker registration, `external_payouts.pearl` in `/stats`, `PRL` in `auxpow.coins`, generic drain via `/admin/external-payouts?chain=pearl` (deployed on `zion-v31-pool`)
+- **Desktop agent Pearl support** — `pearl-wallet.js` (JS bech32m validation + helper derivation), `pearl-network.js`, full IPC surface (generate/derive/validate/balance/history/network-status/`wallet-set-prl`), Pearl wallet card + network tab in UI, `payoutCoin:"prl"` routing, `PRL` in `NATIVE_CHAINS`, `gpuCoin:"PRL"` → SRBMiner `pearlhash` sidecar
+- **Website `/api/prl`** — Pearl network status (height, peers, network power, pool legs) plus `?addr=prl1…` wallet lookup (validateaddress + searchrawtransactions history + gettxout balance) backed by `txindex`/`addrindex` on `pearld`
+- **Public pool page PRL tab** — Pearl section mirroring the Quantus tab (KPI strip, node card, pool legs, SRBMiner connect instructions)
+- **SM_61+ `__dp4a` CUDA path** — i8 noised matrix + 4×i8 MAC inner loop for Pascal-era cards (on-device parity test pending)
+
+### Fixed
+- **Unhardened Pearl coin type** — derivation path was `m/86'/808276/…` (missing `'`) producing non-oyster addresses; hardened to `808276'` and covered by KAT vectors
+- **JS bech32m `convertBits` range check** — `(v >>> fromBits) !== v` rejected valid `prl1` addresses; corrected to nonzero check
+- **Pool `api.rs` deployed to correct unit** — production pool is `zion-v31-pool.service`; legacy `zion-pool.service` is defunct (`V3/` path, 203/EXEC)
+
+### Security
+- **Public UI leak fix** — internal pool IP removed from PRL/QTC connect cards; stratum endpoint now references the public hostname only
+
+### Changed
+- **Repository root cleanup** — 52 markdown files moved to `docs/3.2/`; root now holds only `README`, `AGENTS`, `CHANGELOG`, `CONTRIBUTING`, `CODE_OF_CONDUCT`, `SECURITY`, `ROADMAP`. 294 links across 78 files surgically recomputed; `L6data/proEricku/` untracked and gitignored
+
+---
+
 ## [3.0.7-beta] — 2026-07-23 (Boost Streams)
 
 ### Added

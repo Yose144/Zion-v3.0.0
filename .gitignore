@@ -28,6 +28,9 @@ commit_msg*.txt
 2miners/gminer/
 auxpow-deploy.zip
 
+# Private L6 lore drafts (kept local, not in repo)
+L6data/proEricku/
+
 # Build artifacts
 /target/
 **/target/
