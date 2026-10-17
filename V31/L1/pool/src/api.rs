@@ -538,7 +538,8 @@ impl PoolApi {
             None => json!({"enabled": false}),
         };
         if let Some(pearl) = pearl {
-            let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, upend) = pearl.status();
+            let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, _upend, s_native, s_upstream) =
+                pearl.status();
             summary["pearl"] = json!({
                 "native": {
                     "enabled": n_en,
@@ -546,13 +547,9 @@ impl PoolApi {
                     "job_age_ms": nage,
                     "share_pct": npct,
                 },
-                "upstream": {
-                    "enabled": u_en,
-                    "connected": u_conn,
-                    "job_id": ujid,
-                    "job_age_ms": uage,
-                    "pending_submits": upend,
-                },
+                "upstream": pearl.upstream_status_json(),
+                "served_native": s_native,
+                "served_upstream": s_upstream,
             });
             // Surface PRL in the served-coins list when a live job source
             // exists (native gateway stratum or upstream bridge). The desktop
@@ -1435,6 +1432,13 @@ mod tests {
         assert_eq!(pearl["upstream"]["connected"], false);
         assert_eq!(pearl["upstream"]["job_id"], serde_json::Value::Null);
         assert_eq!(pearl["upstream"]["pending_submits"], 0);
+        assert_eq!(pearl["upstream"]["submits"], 0);
+        assert_eq!(pearl["upstream"]["accepted"], 0);
+        assert_eq!(pearl["upstream"]["rejected"], 0);
+        assert_eq!(pearl["upstream"]["unknown"], 0);
+        assert_eq!(pearl["upstream"]["busy"], 0);
+        assert_eq!(pearl["served_native"], 0);
+        assert_eq!(pearl["served_upstream"], 0);
     }
 
     #[test]

@@ -43,6 +43,7 @@ mod kern {
     pub const APPLY_B: &str = "pearl_apply_noise_b";
     pub const MINE_V3: &str = "pearl_pouw_mine_native_v3";
     pub const DERIVE_SEEDS: &str = "pearl_derive_seeds";
+    pub const MERKLE_TREE: &str = "pearl_merkle_tree";
 }
 
 const KERNELS: &[&str] = &[
@@ -56,6 +57,7 @@ const KERNELS: &[&str] = &[
     kern::APPLY_B,
     kern::MINE_V3,
     kern::DERIVE_SEEDS,
+    kern::MERKLE_TREE,
 ];
 
 /// Max attempts queued per `mine_native_batch` call — found/tile/jackpot
@@ -124,6 +126,7 @@ pub struct PearlCudaMiner {
     f_gen_matrix: CudaFunction,
     f_chunk_hash: CudaFunction,
     f_merge: CudaFunction,
+    f_merkle_tree: CudaFunction,
     f_small_hash: CudaFunction,
     f_gen_perm: CudaFunction,
     f_gen_uniform: CudaFunction,
@@ -171,6 +174,7 @@ impl PearlCudaMiner {
         let f_gen_matrix = get(&dev, kern::GEN_MATRIX)?;
         let f_chunk_hash = get(&dev, kern::CHUNK_HASH)?;
         let f_merge = get(&dev, kern::MERGE)?;
+        let f_merkle_tree = get(&dev, kern::MERKLE_TREE)?;
         let f_small_hash = get(&dev, kern::SMALL_HASH)?;
         let f_gen_perm = get(&dev, kern::GEN_PERM)?;
         let f_gen_uniform = get(&dev, kern::GEN_UNIFORM)?;
@@ -192,6 +196,7 @@ impl PearlCudaMiner {
             f_gen_matrix,
             f_chunk_hash,
             f_merge,
+            f_merkle_tree,
             f_small_hash,
             f_gen_perm,
             f_gen_uniform,
@@ -426,73 +431,46 @@ impl PearlCudaMiner {
         }
 
         // ── Step 3: Merkle tree reduction ──────────────────────────────
-        // Canonical layer build: pairs merge (keyed PARENT CVs), a lone last
-        // child propagates up unchanged; ROOT flag only on the final 2→1
-        // merge. Each tree ping-pongs between its leaf store and `merkle`;
-        // B's leaf layer lives in `merkle2` so A's merges cannot clobber B's
-        // chunk CVs. (Duplicated per-tree — keeps the field borrows simple.)
+        // Fused whole-tree kernel — one launch per tree (was ~11 levels × 2
+        // trees = 22 launches). Single block, grid-stride over each level's
+        // parents, __syncthreads between levels; leaf buf <-> `merkle` ping-
+        // pong inside the kernel. Both launches share `merkle` as scratch —
+        // same-stream ordering guarantees they never overlap.
         {
-            let f_merge = self.f_merge.clone();
-            let mut num_nodes = num_chunks_a;
-            let mut src_leaf = true; // true: src=chunk_hashes dst=merkle
-            while num_nodes > 1 {
-                let num_parents = num_nodes.div_ceil(2);
-                let is_root = num_nodes == 2;
-                let cfg = cfg_1d(num_parents, 64);
-                let res = unsafe {
-                    match (src_leaf, is_root) {
-                        (true, true) => f_merge.clone().launch(
-                            cfg,
-                            (&b.chunk_hashes, &b.job_key, &mut b.root_a, num_nodes as u32, 1u32),
+            let cfg_tree = LaunchConfig {
+                grid_dim: (1, 1, 1),
+                block_dim: (1024, 1, 1),
+                shared_mem_bytes: 0,
+            };
+            if num_chunks_a > 1 {
+                unsafe {
+                    self.f_merkle_tree.clone().launch(
+                        cfg_tree,
+                        (
+                            &mut b.chunk_hashes,
+                            &b.job_key,
+                            &mut b.merkle,
+                            &mut b.root_a,
+                            num_chunks_a as u32,
                         ),
-                        (true, false) => f_merge.clone().launch(
-                            cfg,
-                            (&b.chunk_hashes, &b.job_key, &mut b.merkle, num_nodes as u32, 0u32),
-                        ),
-                        (false, true) => f_merge.clone().launch(
-                            cfg,
-                            (&b.merkle, &b.job_key, &mut b.root_a, num_nodes as u32, 1u32),
-                        ),
-                        (false, false) => f_merge.clone().launch(
-                            cfg,
-                            (&b.merkle, &b.job_key, &mut b.chunk_hashes, num_nodes as u32, 0u32),
-                        ),
-                    }
-                };
-                res.map_err(|e| anyhow::anyhow!("pearl merge A launch: {e}"))?;
-                src_leaf = !src_leaf;
-                num_nodes = num_parents;
+                    )
+                }
+                .map_err(|e| anyhow::anyhow!("pearl merkle_tree A launch: {e}"))?;
             }
-
-            let mut num_nodes = num_chunks_b;
-            let mut src_leaf = true; // true: src=merkle2 dst=merkle
-            while num_nodes > 1 {
-                let num_parents = num_nodes.div_ceil(2);
-                let is_root = num_nodes == 2;
-                let cfg = cfg_1d(num_parents, 64);
-                let res = unsafe {
-                    match (src_leaf, is_root) {
-                        (true, true) => f_merge.clone().launch(
-                            cfg,
-                            (&b.merkle2, &b.job_key, &mut b.root_b, num_nodes as u32, 1u32),
+            if num_chunks_b > 1 {
+                unsafe {
+                    self.f_merkle_tree.clone().launch(
+                        cfg_tree,
+                        (
+                            &mut b.merkle2,
+                            &b.job_key,
+                            &mut b.merkle,
+                            &mut b.root_b,
+                            num_chunks_b as u32,
                         ),
-                        (true, false) => f_merge.clone().launch(
-                            cfg,
-                            (&b.merkle2, &b.job_key, &mut b.merkle, num_nodes as u32, 0u32),
-                        ),
-                        (false, true) => f_merge.clone().launch(
-                            cfg,
-                            (&b.merkle, &b.job_key, &mut b.root_b, num_nodes as u32, 1u32),
-                        ),
-                        (false, false) => f_merge.clone().launch(
-                            cfg,
-                            (&b.merkle, &b.job_key, &mut b.merkle2, num_nodes as u32, 0u32),
-                        ),
-                    }
-                };
-                res.map_err(|e| anyhow::anyhow!("pearl merge B launch: {e}"))?;
-                src_leaf = !src_leaf;
-                num_nodes = num_parents;
+                    )
+                }
+                .map_err(|e| anyhow::anyhow!("pearl merkle_tree B launch: {e}"))?;
             }
         }
 

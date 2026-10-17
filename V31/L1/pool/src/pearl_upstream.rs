@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
@@ -22,6 +23,10 @@ const BACKOFF_MAX: Duration = Duration::from_secs(60);
 /// thousands of timeouts per session). Treat the connection as dead only
 /// after this many consecutive silent windows.
 const MAX_CONSECUTIVE_TIMEOUTS: u32 = 10;
+/// Recent upstream jobs kept for `job_by_served_id` matching. Upstream pools
+/// rotate templates; a share built on the previous job must still resolve
+/// (and forward) inside the staleness window instead of dying `Stale`.
+const JOB_RING_CAP: usize = 4;
 
 #[derive(Clone)]
 pub struct PearlUpstreamConfig {
@@ -118,6 +123,7 @@ pub enum UpstreamSubmitReply {
 }
 
 struct SubmitReq {
+    served_id: String,
     job_id: String,
     proof_b64: String,
     reply: oneshot::Sender<UpstreamSubmitReply>,
@@ -140,11 +146,16 @@ pub struct PearlUpstream {
     worker: String,
     password: String,
     job_ttl: Duration,
-    latest: Arc<RwLock<Option<UpstreamPearlJob>>>,
+    jobs: Arc<RwLock<VecDeque<UpstreamPearlJob>>>,
     connected: Arc<AtomicBool>,
     submit_tx: mpsc::Sender<SubmitReq>,
     submit_rx: Arc<Mutex<Option<mpsc::Receiver<SubmitReq>>>>,
     pending: Arc<AtomicUsize>,
+    submits: Arc<AtomicUsize>,
+    accepted: Arc<AtomicUsize>,
+    rejected: Arc<AtomicUsize>,
+    unknown: Arc<AtomicUsize>,
+    busy: Arc<AtomicUsize>,
     started: Arc<AtomicBool>,
 }
 
@@ -157,11 +168,16 @@ impl PearlUpstream {
             worker: cfg.worker,
             password: cfg.password,
             job_ttl: cfg.job_ttl,
-            latest: Arc::new(RwLock::new(None)),
+            jobs: Arc::new(RwLock::new(VecDeque::new())),
             connected: Arc::new(AtomicBool::new(false)),
             submit_tx,
             submit_rx: Arc::new(Mutex::new(Some(submit_rx))),
             pending: Arc::new(AtomicUsize::new(0)),
+            submits: Arc::new(AtomicUsize::new(0)),
+            accepted: Arc::new(AtomicUsize::new(0)),
+            rejected: Arc::new(AtomicUsize::new(0)),
+            unknown: Arc::new(AtomicUsize::new(0)),
+            busy: Arc::new(AtomicUsize::new(0)),
             started: Arc::new(AtomicBool::new(false)),
         })
     }
@@ -187,14 +203,23 @@ impl PearlUpstream {
     }
 
     pub fn latest_fresh(&self) -> Option<UpstreamPearlJob> {
-        match self.latest.read().unwrap().as_ref() {
+        match self.jobs.read().unwrap().back() {
             Some(j) if j.received_at.elapsed() <= self.job_ttl => Some(j.clone()),
             _ => None,
         }
     }
 
+    /// Resolve a served `prlu:` id against the recent-job ring — newest
+    /// first. Entries past `job_ttl` never match, so only the staleness
+    /// window around a template rotation is covered.
     pub fn job_by_served_id(&self, served_id: &str) -> Option<UpstreamPearlJob> {
-        self.latest_fresh().filter(|j| j.served_id == served_id)
+        self.jobs
+            .read()
+            .unwrap()
+            .iter()
+            .rev()
+            .find(|j| j.served_id == served_id && j.received_at.elapsed() <= self.job_ttl)
+            .cloned()
     }
 
     pub async fn submit(
@@ -203,8 +228,10 @@ impl PearlUpstream {
         raw_id: &str,
         proof_b64: &str,
     ) -> UpstreamSubmitReply {
+        self.submits.fetch_add(1, Ordering::Relaxed);
         let (reply, rx) = oneshot::channel();
         let req = SubmitReq {
+            served_id: served_id.to_string(),
             job_id: raw_id.to_string(),
             proof_b64: proof_b64.to_string(),
             reply,
@@ -213,19 +240,27 @@ impl PearlUpstream {
         self.pending.fetch_add(1, Ordering::Relaxed);
         if self.submit_tx.try_send(req).is_err() {
             self.pending.fetch_sub(1, Ordering::Relaxed);
+            self.busy.fetch_add(1, Ordering::Relaxed);
+            tracing::warn!(
+                "pearl_upstream: submit {served_id} rejected — submit queue full ({SUBMIT_CHANNEL_CAP})"
+            );
             return UpstreamSubmitReply::Busy;
         }
         match rx.await {
             Ok(r) => r,
             Err(_) => {
                 self.pending.fetch_sub(1, Ordering::Relaxed);
+                self.unknown.fetch_add(1, Ordering::Relaxed);
+                tracing::warn!(
+                    "pearl_upstream: submit {served_id} verdict=unknown — upstream task dropped the reply"
+                );
                 UpstreamSubmitReply::Unknown
             }
         }
     }
 
     pub fn status(&self) -> (bool, bool, Option<String>, Option<u64>, usize) {
-        let (job_id, age_ms) = match self.latest.read().unwrap().as_ref() {
+        let (job_id, age_ms) = match self.jobs.read().unwrap().back() {
             Some(j) => (
                 Some(j.served_id.clone()),
                 Some(j.received_at.elapsed().as_millis() as u64),
@@ -241,8 +276,26 @@ impl PearlUpstream {
         )
     }
 
+    /// JSON status block for `/stats` — everything `status()` reports plus
+    /// lifetime submit-verdict counters.
+    pub fn status_json(&self) -> Value {
+        let (enabled, connected, job_id, age_ms, pending) = self.status();
+        serde_json::json!({
+            "enabled": enabled,
+            "connected": connected,
+            "job_id": job_id,
+            "job_age_ms": age_ms,
+            "pending_submits": pending,
+            "submits": self.submits.load(Ordering::Relaxed),
+            "accepted": self.accepted.load(Ordering::Relaxed),
+            "rejected": self.rejected.load(Ordering::Relaxed),
+            "unknown": self.unknown.load(Ordering::Relaxed),
+            "busy": self.busy.load(Ordering::Relaxed),
+        })
+    }
+
     fn cache_job(&self, j: PearlPoolJob) {
-        *self.latest.write().unwrap() = Some(UpstreamPearlJob {
+        let cached = UpstreamPearlJob {
             served_id: format!("{UPSTREAM_JOB_PREFIX}{}", j.job_id),
             raw_id: j.job_id,
             header: j.header,
@@ -250,7 +303,30 @@ impl PearlUpstream {
             height: j.height,
             cert_version: j.cert_version,
             received_at: Instant::now(),
-        });
+        };
+        let mut ring = self.jobs.write().unwrap();
+        if ring
+            .back()
+            .map(|cur| cur.raw_id == cached.raw_id)
+            .unwrap_or(false)
+        {
+            // Same template re-seen (post-submit `latest_job` refresh or a
+            // duplicate notify): replace in place to renew the TTL without
+            // growing the ring or re-logging.
+            *ring.back_mut().unwrap() = cached;
+            return;
+        }
+        tracing::info!(
+            "pearl_upstream: new job {} height={} cert_version={} target={}",
+            cached.served_id,
+            cached.height,
+            cached.cert_version,
+            &hex::encode(cached.target_be)[..16]
+        );
+        if ring.len() >= JOB_RING_CAP {
+            ring.pop_front();
+        }
+        ring.push_back(cached);
     }
 
     async fn run(self: Arc<Self>, mut submit_rx: mpsc::Receiver<SubmitReq>) {
@@ -265,11 +341,10 @@ impl PearlUpstream {
                     tracing::warn!("pearl_upstream: {}: {e:#} — reconnecting", self.endpoint)
                 }
             }
-            while let Ok(req) = submit_rx.try_recv() {
-                self.pending.fetch_sub(1, Ordering::Relaxed);
-                let _ = req.reply.send(UpstreamSubmitReply::Unknown);
-            }
-            // Keep the last job cached through the reconnect — upstream jobs
+            // Queued SubmitReqs stay in the channel: each carries its own
+            // reply oneshot, so they resolve with a real verdict on the next
+            // session instead of being silently drained to `Unknown` here.
+            // Keep the job ring cached through the reconnect — upstream jobs
             // stay valid until the pool replaces them, and latest_fresh()
             // still bounds staleness via job_ttl.
             self.connected.store(false, Ordering::SeqCst);
@@ -336,12 +411,28 @@ impl PearlUpstream {
                     let res = client.submit_proof(&req.job_id, &req.proof_b64).await;
                     self.pending.fetch_sub(1, Ordering::Relaxed);
                     let reply = match res {
-                        Ok(r) if r.accepted => UpstreamSubmitReply::Accepted,
-                        Ok(r) => UpstreamSubmitReply::Rejected(reject_reason(&r.raw)),
+                        Ok(r) if r.accepted => {
+                            self.accepted.fetch_add(1, Ordering::Relaxed);
+                            tracing::info!(
+                                "pearl_upstream: submit {} verdict=accepted",
+                                req.served_id
+                            );
+                            UpstreamSubmitReply::Accepted
+                        }
+                        Ok(r) => {
+                            self.rejected.fetch_add(1, Ordering::Relaxed);
+                            let reason = reject_reason(&r.raw);
+                            tracing::info!(
+                                "pearl_upstream: submit {} verdict=rejected reason={reason}",
+                                req.served_id
+                            );
+                            UpstreamSubmitReply::Rejected(reason)
+                        }
                         Err(e) => {
-                            tracing::debug!(
-                                "pearl_upstream: submit {} failed: {e:#}",
-                                req.job_id
+                            self.unknown.fetch_add(1, Ordering::Relaxed);
+                            tracing::warn!(
+                                "pearl_upstream: submit {} verdict=unknown: {e:#}",
+                                req.served_id
                             );
                             UpstreamSubmitReply::Unknown
                         }
@@ -357,7 +448,11 @@ impl PearlUpstream {
 
     #[cfg(test)]
     pub fn seed_job(&self, job: UpstreamPearlJob) {
-        *self.latest.write().unwrap() = Some(job);
+        let mut ring = self.jobs.write().unwrap();
+        if ring.len() >= JOB_RING_CAP {
+            ring.pop_front();
+        }
+        ring.push_back(job);
     }
 }
 
@@ -437,6 +532,36 @@ mod tests {
         up.seed_job(ujob("job-b", Duration::from_millis(91_000)));
         assert!(up.latest_fresh().is_none());
         assert!(up.job_by_served_id("prlu:job-b").is_none());
+        // The ring keeps older entries: the pre-rotation job still matches
+        // while fresh, so stale-window submits forward instead of dying Stale.
+        assert_eq!(
+            up.job_by_served_id("prlu:job-a").unwrap().raw_id,
+            "job-a"
+        );
+    }
+
+    #[tokio::test]
+    async fn served_id_ring_covers_rotation_window_and_caps() {
+        let up = PearlUpstream::new(test_cfg("127.0.0.1:1"));
+        for i in 0..JOB_RING_CAP {
+            up.seed_job(ujob(&format!("job-{i}"), Duration::ZERO));
+        }
+        assert_eq!(
+            up.latest_fresh().unwrap().served_id,
+            format!("prlu:job-{}", JOB_RING_CAP - 1)
+        );
+        // Every job in the ring resolves, not just the newest.
+        for i in 0..JOB_RING_CAP {
+            assert!(up.job_by_served_id(&format!("prlu:job-{i}")).is_some());
+        }
+        // Pushing past the cap evicts the oldest entry.
+        up.seed_job(ujob("job-new", Duration::ZERO));
+        assert!(up.job_by_served_id("prlu:job-0").is_none());
+        assert!(up.job_by_served_id("prlu:job-new").is_some());
+        // A stale ring entry never matches even when the id is still cached.
+        up.seed_job(ujob("job-old", Duration::from_millis(91_000)));
+        assert!(up.job_by_served_id("prlu:job-old").is_none());
+        assert!(up.latest_fresh().is_none());
     }
 
     #[tokio::test]
@@ -447,6 +572,7 @@ mod tests {
             up.pending.fetch_add(1, Ordering::Relaxed);
             up.submit_tx
                 .try_send(SubmitReq {
+                    served_id: "prlu:j".to_string(),
                     job_id: "j".to_string(),
                     proof_b64: "QUJD".to_string(),
                     reply: tx,
@@ -458,12 +584,18 @@ mod tests {
             UpstreamSubmitReply::Busy
         );
         assert_eq!(up.pending.load(Ordering::Relaxed), SUBMIT_CHANNEL_CAP);
+        assert_eq!(up.submits.load(Ordering::Relaxed), 1);
+        assert_eq!(up.busy.load(Ordering::Relaxed), 1);
         let (en, conn, jid, age, pend) = up.status();
         assert!(en);
         assert!(!conn);
         assert_eq!(jid.as_deref(), None);
         assert_eq!(age, None);
         assert_eq!(pend, SUBMIT_CHANNEL_CAP);
+        let sj = up.status_json();
+        assert_eq!(sj["submits"], 1);
+        assert_eq!(sj["busy"], 1);
+        assert_eq!(sj["pending_submits"], SUBMIT_CHANNEL_CAP);
     }
 
     #[derive(Clone, Copy)]
@@ -607,10 +739,17 @@ mod tests {
         assert!(submits[0].contains("\"job_id\":\"up-job-1\""));
         assert!(!submits[0].contains("prlu:"));
         assert_eq!(up.pending.load(Ordering::Relaxed), 0);
+        assert_eq!(up.submits.load(Ordering::Relaxed), 1);
+        assert_eq!(up.accepted.load(Ordering::Relaxed), 1);
         let (en, conn, jid, _age, pend) = up.status();
         assert!(en && conn);
         assert_eq!(jid.as_deref(), Some("prlu:up-job-1"));
         assert_eq!(pend, 0);
+        let sj = up.status_json();
+        assert_eq!(sj["connected"], true);
+        assert_eq!(sj["job_id"], "prlu:up-job-1");
+        assert_eq!(sj["submits"], 1);
+        assert_eq!(sj["accepted"], 1);
     }
 
     #[tokio::test]
@@ -621,6 +760,8 @@ mod tests {
             UpstreamSubmitReply::Rejected(m) => assert_eq!(m, "low difficulty"),
             other => panic!("expected Rejected, got {other:?}"),
         }
+        assert_eq!(up.rejected.load(Ordering::Relaxed), 1);
+        assert_eq!(up.status_json()["rejected"], 1);
     }
 
     #[tokio::test]
@@ -628,10 +769,12 @@ mod tests {
         let (up, _calls) = connected_upstream(Verdict::Drop).await;
         let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD").await;
         assert_eq!(reply, UpstreamSubmitReply::Unknown);
+        assert_eq!(up.unknown.load(Ordering::Relaxed), 1);
+        assert_eq!(up.status_json()["unknown"], 1);
     }
 
     #[tokio::test]
-    async fn disconnect_clears_latest_and_drains() {
+    async fn disconnect_keeps_job_and_resolves_queued_submits() {
         let std_listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         std_listener.set_nonblocking(true).unwrap();
         let addr = std_listener.local_addr().unwrap().to_string();
@@ -642,11 +785,12 @@ mod tests {
         );
         let up = PearlUpstream::new(test_cfg(&addr));
         let mut waiters = Vec::new();
-        for _ in 0..3 {
+        for _ in 0..2 {
             let (tx, rx) = oneshot::channel();
             up.pending.fetch_add(1, Ordering::Relaxed);
             up.submit_tx
                 .try_send(SubmitReq {
+                    served_id: "prlu:up-job-9".to_string(),
                     job_id: "up-job-9".to_string(),
                     proof_b64: "QUJD".to_string(),
                     reply: tx,
@@ -655,20 +799,108 @@ mod tests {
             waiters.push(rx);
         }
         assert!(up.ensure_started());
+        // Queued submits are NOT drained on session end: each one rides the
+        // next reconnect (~BACKOFF_BASE apart) and resolves with a real
+        // verdict — `Unknown` here because the mock drops every session
+        // right after the notify.
         for rx in waiters {
-            let reply = tokio::time::timeout(Duration::from_secs(5), rx)
+            let reply = tokio::time::timeout(Duration::from_secs(30), rx)
                 .await
                 .unwrap()
                 .unwrap();
             assert_eq!(reply, UpstreamSubmitReply::Unknown);
         }
+        assert_eq!(up.pending.load(Ordering::Relaxed), 0);
+        assert!(up.unknown.load(Ordering::Relaxed) >= 2);
+        // The job ring is kept through reconnects (freshness is bounded by
+        // job_ttl, not by session state) — and the mock keeps re-notifying
+        // the same template on every reconnect.
+        assert!(up.latest_fresh().is_some());
+        assert!(up.job_by_served_id("prlu:up-job-9").is_some());
+    }
+
+    #[tokio::test]
+    async fn queued_submit_resolves_on_reconnect() {
+        // First session dies right after the notify; later sessions accept
+        // submits. A share queued while disconnected must wait for the next
+        // session and come back Accepted — not drained to Unknown.
+        let std_listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        std_listener.set_nonblocking(true).unwrap();
+        let addr = std_listener.local_addr().unwrap().to_string();
+        let conn_count = Arc::new(AtomicUsize::new(0));
+        let cc = conn_count.clone();
+        tokio::spawn(async move {
+            let listener = TcpListener::from_std(std_listener).unwrap();
+            while let Ok((socket, _)) = listener.accept().await {
+                let n = cc.fetch_add(1, Ordering::SeqCst);
+                tokio::spawn(async move {
+                    let (r, mut w) = socket.into_split();
+                    let mut br = BufReader::new(r);
+                    let mut line = String::new();
+                    if br.read_line(&mut line).await.is_err() {
+                        return;
+                    }
+                    if w
+                        .write_all(b"{\"id\":1,\"result\":true,\"error\":null}\n")
+                        .await
+                        .is_err()
+                    {
+                        return;
+                    }
+                    let frame = format!(
+                        "{}\n",
+                        serde_json::json!({"jsonrpc":"2.0","method":"mining.notify","params": notify_params("up-job-1")})
+                    );
+                    if w.write_all(frame.as_bytes()).await.is_err() || n == 0 {
+                        return; // first session ends immediately after notify
+                    }
+                    loop {
+                        line.clear();
+                        match br.read_line(&mut line).await {
+                            Ok(0) | Err(_) => return,
+                            Ok(_) => {
+                                let v: Value =
+                                    serde_json::from_str(line.trim()).unwrap_or_default();
+                                if v["method"].as_str() == Some("mining.submit") {
+                                    let resp = format!(
+                                        "{{\"id\":{},\"result\":true,\"error\":null}}\n",
+                                        v["id"]
+                                    );
+                                    if w.write_all(resp.as_bytes()).await.is_err() {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        let up = PearlUpstream::new(test_cfg(&addr));
+        assert!(up.ensure_started());
         tokio::time::timeout(Duration::from_secs(5), async {
-            while up.latest.read().unwrap().is_some() || up.connected.load(Ordering::Relaxed) {
+            while up.latest_fresh().is_none() {
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
         })
         .await
-        .expect("disconnect clears job and connected flag");
-        assert_eq!(up.pending.load(Ordering::Relaxed), 0);
+        .expect("first notify arrives");
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while up.connected.load(Ordering::Relaxed) {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("first session ends");
+        // Submitted while disconnected — rides the next session (≤ BACKOFF).
+        let reply = tokio::time::timeout(
+            Duration::from_secs(30),
+            up.submit("prlu:up-job-1", "up-job-1", "QUJD"),
+        )
+        .await
+        .expect("queued submit resolves");
+        assert_eq!(reply, UpstreamSubmitReply::Accepted);
+        assert_eq!(up.accepted.load(Ordering::Relaxed), 1);
+        assert!(conn_count.load(Ordering::SeqCst) >= 2);
     }
 }
