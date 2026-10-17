@@ -927,6 +927,7 @@ function initPrlView() {
     return `${Math.floor(ms / 60000)} min`;
   };
   const fmtTs = (s) => { try { return s ? new Date(s).toLocaleString() : '—'; } catch { return '—'; } };
+  const short = (a, n = 14) => (a ? a.slice(0, n) + '…' : '—');
   const fmtHash = (h) => {
     const n = Number(h);
     if (!Number.isFinite(n) || n <= 0) return '—';
@@ -972,10 +973,12 @@ function initPrlView() {
           metaRow('Difficulty', n.difficulty != null ? Number(n.difficulty).toLocaleString() : '—') +
           metaRow('Network power', fmtHash(n.network_hashps), '#22d3ee') +
           metaRow('Mempool tx', n.mempool_tx != null ? n.mempool_tx : '—') +
-          metaRow('Headers', n.headers != null ? n.headers.toLocaleString() : '—');
+          metaRow('Headers', n.headers != null ? n.headers.toLocaleString() : '—') +
+          metaRow('Public pool', '<a href="#" data-ext="https://app.zionterranova.com/pool" style="color:#22d3ee">app.zionterranova.com/pool</a>');
       }
 
-      // Pool legs card
+      // Pool legs card (+ market cross rate when CoinGecko answers)
+      const mk = d.market;
       const poolHost = $('prlnet-pool');
       if (poolHost) {
         poolHost.innerHTML = (p.available === false
@@ -985,7 +988,52 @@ function initPrlView() {
             metaRow('Native share', nv.share_pct != null ? `${nv.share_pct} %` : '—') +
             metaRow('Upstream leg', up.enabled == null ? '—' : (up.enabled ? (up.connected ? 'connected' : 'connecting…') : 'off'), up.enabled && up.connected ? '#4ade80' : (up.enabled ? '#fbbf24' : '')) +
             metaRow('Upstream job', `${esc(up.job_id || '—')} · ${fmtAge(up.job_age_ms)}`) +
-            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—'));
+            metaRow('Submit queue', up.pending_submits != null ? up.pending_submits : '—') +
+            metaRow('Merge mining', up.enabled ? 'NOCK via upstream (PRL+NOCK wallet)' : '—') +
+            metaRow('Pending payouts', p.pending_payouts != null ? p.pending_payouts : '—')) +
+          (mk
+            ? metaRow(
+                'Market',
+                `PRL $${mk.prl_usd.toFixed(2)} · 1 PRL ≈ ${Math.round(mk.zion_per_prl).toLocaleString()} ZION`,
+                '#22d3ee'
+              )
+            : metaRow('Market', 'CoinGecko unavailable', '#fbbf24'));
+      }
+
+      // Found blocks (merged pool feed — PRL rows appear once mined)
+      const bl = d.blocks;
+      const bt = $('prlnet-blocks-table');
+      if (bt) {
+        if (!bl || !Array.isArray(bl.blocks)) {
+          bt.innerHTML = '<tr><td style="color:rgba(255,255,255,0.3);font-style:italic">Block feed unavailable.</td></tr>';
+          if ($('prlnet-blocks-counts')) $('prlnet-blocks-counts').textContent = '';
+        } else {
+          const rows = bl.blocks;
+          const chainColor = (c) => (c === 'PRL' ? '#ffd700' : c === 'QTC' ? '#22d3ee' : '#c084fc');
+          const statusColor = (s) =>
+            s === 'confirmed' || s === 'reward' ? '#4ade80' : s === 'orphaned' || s === 'rejected' ? '#f87171' : '#fbbf24';
+          bt.innerHTML = '<tr><th>Chain</th><th>Height</th><th>Detail</th><th>Miner / Source</th><th>Status</th><th>Time</th></tr>' +
+            (rows.length
+              ? rows.map((r) => {
+                  const detail = r.chain === 'QTC'
+                    ? `+${esc(String(r.amount ?? '—'))} QTC · leaf #${esc(String(r.leaf ?? '—'))}`
+                    : r.chain === 'PRL'
+                      ? `+${esc(String(r.amount ?? '—'))} PRL`
+                      : `<span title="${esc(r.hash || '')}">${esc(short(r.hash, 12))}</span>`;
+                  const who = r.chain === 'QTC' || r.chain === 'PRL'
+                    ? 'native node'
+                    : `${esc(short(r.miner, 10))}${r.worker ? `·${esc(r.worker)}` : ''}`;
+                  const st = esc(r.status || '—');
+                  return `<tr><td style="color:${chainColor(r.chain)}">${esc(r.chain)}</td><td>${esc(String(r.height ?? '—'))}</td><td>${detail}</td><td title="${esc(r.miner || '')}">${who}</td><td style="color:${statusColor(r.status)}">${st}</td><td>${fmtTs(r.ts_ms)}</td></tr>`;
+                }).join('')
+              : '<tr><td colspan="6" style="color:rgba(255,255,255,0.3);font-style:italic">No found blocks yet — keep mining.</td></tr>');
+          if ($('prlnet-blocks-counts')) {
+            const c = bl.counts || {};
+            const srcBits = Object.entries(bl.sources || {}).map(([k, v]) => `${k}:${v}`).join(' ');
+            const countBits = Object.entries(c).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(' · ');
+            $('prlnet-blocks-counts').textContent = `${countBits}${srcBits ? ` · ${srcBits}` : ''}`;
+          }
+        }
       }
 
       // Address lookup result (only when an addr was queried)
@@ -996,7 +1044,6 @@ function initPrlView() {
         } else if (w.valid) {
           const bal = w.balance || {};
           const hist = w.history || [];
-          const short = (a, n = 14) => (a ? a.slice(0, n) + '…' : '—');
           lr.innerHTML =
             `<div class="metric-grid" style="margin-bottom:10px">
               <div class="metric-card green"><div class="metric-kicker">BALANCE</div><div class="metric-value green">${Number(bal.confirmed_prl ?? 0).toFixed(8)}</div></div>
@@ -1019,11 +1066,16 @@ function initPrlView() {
     _prlnetInit = true;
     $('prlnet-refresh-btn')?.addEventListener('click', refresh);
     const doLookup = () => {
-      _prlnetLookupAddr = ($('prlnet-addr-input')?.value || '').trim().replace(/^prl:/i, '');
+      _prlnetLookupAddr = ($('prlnet-addr-input')?.value || '').trim().replace(/^(prl|pearl):/i, '');
       if (_prlnetLookupAddr) void refresh();
     };
     $('prlnet-lookup-btn')?.addEventListener('click', doLookup);
     $('prlnet-addr-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLookup(); });
+    // External links inside dynamically rendered cards
+    panel.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-ext]');
+      if (a) { e.preventDefault(); void window.electronAPI.openExternal(a.dataset.ext); }
+    });
     // Poll while the section is visible; self-clears when the user leaves it.
     _prlnetPollTimer = setInterval(() => {
       const p = document.getElementById('wallet-prl');
@@ -1418,7 +1470,7 @@ function setupControls() {
   }
 
   // Pearl sidecar endpoint + payout — empty keeps the fallback chain
-  // (prlPool → shared srbminerPool → Suprnova default; prlWallet → pool wallet).
+  // (prlPool → shared srbminerPool → LuckyPool default; prlWallet → pool wallet).
   const srbPrlPoolInput = document.getElementById('srbminer-prlpool-input');
   if (srbPrlPoolInput) {
     srbPrlPoolInput.value = config.srbminerPrlPool || '';
@@ -1432,8 +1484,10 @@ function setupControls() {
     srbPrlWalletInput.value = config.srbminerPrlWallet || '';
     srbPrlWalletInput.addEventListener('change', () => {
       config.srbminerPrlWallet = srbPrlWalletInput.value.trim();
-      if (config.srbminerPrlWallet && !/^prl1[a-z0-9]+$/i.test(config.srbminerPrlWallet)) {
-        addLogEntry('PRL wallet does not look like a prl1… address — saved anyway', 'warn');
+      // Accept `prl1…` plain or the LuckyPool merge-mining form
+      // `prl1…+nock…` (appended address earns NOCK alongside PRL).
+      if (config.srbminerPrlWallet && !/^prl1[a-z0-9]+(\+\S+)?$/i.test(config.srbminerPrlWallet)) {
+        addLogEntry('PRL wallet does not look like a prl1… (or prl1…+nock…) address — saved anyway', 'warn');
       }
       void applyMiningSelection(`srbminerPrlWallet=${encodeURIComponent(config.srbminerPrlWallet)}`);
     });
@@ -3893,17 +3947,35 @@ function setupWalletControls() {
 
   // Pool payout target selector: 'zion' pays earnings to the ZION wallet,
   // 'qtc' routes the miner's --wallet to `qtc:<linked qz…>` so the pool
-  // credits the Quantus external-payout queue and the sweeper pays QTC.
+  // credits the Quantus external-payout queue and the sweeper pays QTC,
+  // 'prl' does the same via `prl:<linked prl1…>` onto the Pearl queue.
+  // qtc-payout-coin and prl-payout-coin both drive config.payoutCoin —
+  // applyPayoutCoin keeps the two selects mirrored.
+  const PAYOUT_COINS = ['zion', 'qtc', 'prl'];
+  const applyPayoutCoin = async (value) => {
+    config.payoutCoin = PAYOUT_COINS.includes(String(value || '').toLowerCase())
+      ? String(value).toLowerCase() : 'zion';
+    try { await window.electronAPI.saveConfig(config); } catch {}
+    if (qtcEls.payoutCoin) qtcEls.payoutCoin.value = config.payoutCoin;
+    if (prlEls.payoutCoin) prlEls.payoutCoin.value = config.payoutCoin;
+    // Payout target is global — mirror the state text on both cards.
+    const txt = config.payoutCoin === 'qtc'
+      ? (activeQtcAddress ? 'Payout → QTC (applies on next miner start)' : 'Payout → QTC — link/generate a QTC address first')
+      : config.payoutCoin === 'prl'
+        ? (activePrlAddress ? 'Payout → PRL (applies on next miner start)' : 'Payout → PRL — link/generate a PRL address first')
+        : 'Payout → ZION';
+    if (qtcEls.status) qtcEls.status.textContent = txt;
+    if (prlEls.status) prlEls.status.textContent = txt;
+  };
+  const payoutCoinValue = () => {
+    const cur = (config.payoutCoin || 'zion').toLowerCase();
+    return PAYOUT_COINS.includes(cur) ? cur : 'zion';
+  };
+
   if (qtcEls.payoutCoin) {
-    qtcEls.payoutCoin.value = (config.payoutCoin || 'zion').toLowerCase() === 'qtc' ? 'qtc' : 'zion';
-    qtcEls.payoutCoin.addEventListener('change', async () => {
-      config.payoutCoin = qtcEls.payoutCoin.value === 'qtc' ? 'qtc' : 'zion';
-      try { await window.electronAPI.saveConfig(config); } catch {}
-      if (qtcEls.status) {
-        qtcEls.status.textContent = config.payoutCoin === 'qtc'
-          ? (activeQtcAddress ? 'Payout → QTC (applies on next miner start)' : 'Payout → QTC — link/generate a QTC address first')
-          : 'Payout → ZION';
-      }
+    qtcEls.payoutCoin.value = payoutCoinValue();
+    qtcEls.payoutCoin.addEventListener('change', () => {
+      void applyPayoutCoin(qtcEls.payoutCoin.value);
     });
   }
 
@@ -4078,23 +4150,12 @@ function setupWalletControls() {
   let activePrlAddress = null;
 
   // Shared payout selector handling — qtc-payout-coin and prl-payout-coin
-  // both drive config.payoutCoin; keep them in sync.
+  // both drive config.payoutCoin; applyPayoutCoin keeps them in sync.
   if (prlEls.payoutCoin) {
-    const cur = (config.payoutCoin || 'zion').toLowerCase();
-    prlEls.payoutCoin.value = cur === 'prl' ? 'prl' : 'zion';
-    prlEls.payoutCoin.addEventListener('change', async () => {
-      config.payoutCoin = prlEls.payoutCoin.value === 'prl' ? 'prl' : 'zion';
-      try { await window.electronAPI.saveConfig(config); } catch {}
-      if (qtcEls.payoutCoin && config.payoutCoin !== 'qtc') qtcEls.payoutCoin.value = config.payoutCoin === 'prl' ? 'prl' : 'zion';
-      if (prlEls.status) {
-        prlEls.status.textContent = config.payoutCoin === 'prl'
-          ? (activePrlAddress ? 'Payout → PRL (applies on next miner start)' : 'Payout → PRL — link/generate a PRL address first')
-          : 'Payout → ZION';
-      }
+    prlEls.payoutCoin.value = payoutCoinValue();
+    prlEls.payoutCoin.addEventListener('change', () => {
+      void applyPayoutCoin(prlEls.payoutCoin.value);
     });
-    // Reflect the shared payoutCoin in the QTC selector too (it may have
-    // been set to 'prl' from this card).
-    if (qtcEls.payoutCoin && cur === 'prl') qtcEls.payoutCoin.value = 'prl';
   }
 
   const walletPrlFor = async (zionAddr) => {

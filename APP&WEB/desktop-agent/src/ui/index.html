@@ -6378,6 +6378,7 @@
                   <span class="wallet-meta">Pool payout</span>
                   <select id="prl-payout-coin" class="input-flex-mono" style="flex:0 0 auto;padding:2px 6px">
                     <option value="zion">ZION → this wallet</option>
+                    <option value="qtc">QTC → qz… address</option>
                     <option value="prl">PRL → prl1… address</option>
                   </select>
                 </div>
@@ -6772,6 +6773,19 @@
               <div class="status-note" style="margin-bottom:8px">Native leg proves work on the Pearl network directly; the upstream leg can ride an external pool.</div>
               <div id="prlnet-pool" class="wallet-meta"></div>
             </div>
+          </div>
+
+          <!-- Found blocks (merged pool feed — ZION + QTC today, PRL rows
+               appear automatically once the pool lands a Pearl block) -->
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-pickaxe"></use></svg>
+              <span>Found Blocks</span>
+              <span class="flex-1"></span>
+              <span class="wallet-meta" id="prlnet-blocks-counts"></span>
+            </h2>
+            <div class="status-note" style="margin-bottom:8px">Blocks found by pool miners across all legs (ZION · QTC · PRL). No Pearl block yet — mining is live.</div>
+            <table class="lottery-table" id="prlnet-blocks-table"></table>
           </div>
 
           <!-- PRL Address lookup -->
@@ -7255,11 +7269,11 @@
 
               <label class="wizard-label-sm">PRL pool</label>
               <input id="srbminer-prlpool-input" class="algo-select" type="text" placeholder="auto — same as Stream 2 pool (our pool speaks both)" spellcheck="false">
-              <div class="slider-hint">Pearl stratum endpoint for the sidecar when Stream 2 = PRL. Empty = reuse the QTU pool setting (our <code>62.171.141.136:8444</code> auto-detects the protocol); falls back to <code>prl.suprnova.cc:3370</code> when no pool is configured.</div>
+              <div class="slider-hint">Pearl stratum endpoint for the sidecar when Stream 2 = PRL. Empty = reuse the QTU pool setting (our <code>62.171.141.136:8444</code> auto-detects the protocol); falls back to <code>pearl-eu2.luckypool.io:3360</code> when no pool is configured.</div>
 
               <label class="wizard-label-sm" style="margin-top: 10px;">PRL wallet</label>
               <input id="srbminer-prlwallet-input" class="algo-select" type="text" placeholder="prl1… — leave empty for the pool default" spellcheck="false">
-              <div class="slider-hint">Pearl payout address (<code>prl1…</code>) used when Stream 2 = PRL. Set your own wallet — the built-in default belongs to the pool.</div>
+              <div class="slider-hint">Pearl payout address (<code>prl1…</code>) used when Stream 2 = PRL. LuckyPool endpoints also accept the merge-mining form <code>prl1…+nock…</code> — the appended NOCK address earns Nockchain rewards alongside PRL (ignored by pools that do not merge-mine). Set your own wallet — the built-in default belongs to the pool.</div>
 
               <div class="section-divider">Quad Mode — Second GPU Coin</div>
 

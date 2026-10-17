@@ -89,6 +89,29 @@ logs, `ZION_STATS_FILE` (`hashrate_display_hps` alongside raw
 | Upstream `prlu:` jobs served | probe receives LP jobs continuously (pool fix live) |
 | Triple run | ZION ~65-74 KH/s, PRL ~1550 GH/s, QTU ramping — one process |
 
+### 3.5 Warp-shuffle jackpot reduction (Phase 2.1 — DONE)
+
+`pearl_pouw_mine_native_v3`: block = one warp (32 threads, TILE_H×TILE_W).
+The old fold staged per-lane accumulators in `__shared__ jackpot_tile[32]`
+and lane 0 serially XORed all 32 each rank-window — 2 `__syncthreads`
+per window ×16 windows (k=2048/rank=128). Now each lane keeps `my_acc`
+in a register and a 5-step `__shfl_xor_sync(0xffffffff)` butterfly gives
+every lane the full XOR — XOR is order-free so jackpot output is
+**bit-identical**. `__shared__` tile array and both loop syncs removed
+(`jackpot[16]` touched by lane0 only); early-out made warp-uniform via
+`__any_sync` so the full-mask shuffle can't see exited lanes.
+
+Measured on the same vast RTX 3060 (build `7f7b37a6`):
+
+| Config | Before | After shuffle | Δ |
+|---|---|---|---|
+| Solo (PRL only, batch 16) | ~1915 GH/s ≈ 277 att/s | **~2120–2134 GH/s ≈ 308 att/s** | **+11%** |
+| Triple contended (35% duty) | ~650–675 GH/s | **~738–743 GH/s** | **+12%** |
+| Correctness | — | **A2 R0 in ~80 s solo** (pool-verified proofs) | ✓ |
+
+QTU also rose ~86→94–100 MH/s — PRL now finishes its duty slice faster,
+leaving the card to stream 4 sooner.
+
 ## 5. Phase 2 — queued kernel micro-opts
 
 Ordered by expected value:
@@ -96,10 +119,9 @@ Ordered by expected value:
 1. **Merkle fusion** — ~22 tiny launches per attempt (halving layers
    2048→…→1 per tree). One block of 1024 threads can fold a whole tree
    in a single launch (`__syncthreads` between levels): ~22→2 launches.
-2. **Mine kernel `__shfl_xor` reduce** — replace tid0's serial 32-iter
-   XOR + 2 `__syncthreads` per rank-window (16 windows) with warp
-   shuffles; or restructure to warp-per-tile blocks (8 tiles/block) for
-   occupancy.
+2. ~~**Mine kernel `__shfl_xor` reduce**~~ — **DONE (§3.5):** butterfly
+   shuffle fold, solo 277→308 att/s (+11%). Still open: restructure to
+   warp-per-tile blocks (8 tiles/block) for occupancy.
 3. **`gen_matrix` inner loop** — PCG32 per element, `% 129` modulo is
    ~20-cycle; cheaper mapping (multiply-shift) must stay **bit-exact**
    (consensus) — needs parity proof first.
