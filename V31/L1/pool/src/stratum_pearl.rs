@@ -87,6 +87,9 @@ pub fn parse_authorize(line: &str) -> Option<(Value, Result<PearlAuthorize, Stri
 pub struct PearlSubmit {
     pub job_id: String,
     pub plain_proof: String,
+    /// Miner-reported hashrate (H/s). LuckyPool-style upstreams expect
+    /// `hs` in submit params; pass through when present.
+    pub hs: Option<u64>,
 }
 
 pub fn parse_submit(line: &str) -> Option<(Value, Result<PearlSubmit, String>)> {
@@ -110,9 +113,25 @@ pub fn parse_submit(line: &str) -> Option<(Value, Result<PearlSubmit, String>)> 
         Ok(PearlSubmit {
             job_id: job_id.to_string(),
             plain_proof: proof.to_string(),
+            hs: p
+                .get("hs")
+                .and_then(|x| x.as_u64().or_else(|| x.as_f64().map(|f| f as u64))),
         })
     };
     Some((id, parsed))
+}
+
+/// LuckyPool-compatible `diff` for the notify frame. Upstream job ids carry
+/// the pool difficulty as a `_N` suffix (`8c822b51_500000`); native jobs
+/// advertise `1` (the eased share target is fully described by `target`,
+/// and a permissive diff only affects client-side share metering).
+fn job_diff(job_id: &str) -> u64 {
+    job_id
+        .rsplit('_')
+        .next()
+        .and_then(|s| s.parse::<u64>().ok())
+        .filter(|d| *d > 0)
+        .unwrap_or(1)
 }
 
 pub fn notify_params(job: &crate::v3_protocol::ExternalStreamJob) -> Value {
@@ -122,6 +141,7 @@ pub fn notify_params(job: &crate::v3_protocol::ExternalStreamJob) -> Value {
         "target": job.target_hex,
         "height": job.height,
         "cert_version": job.eq_params.parse::<u64>().unwrap_or(0),
+        "diff": job_diff(&job.job_id),
     })
 }
 
@@ -133,7 +153,10 @@ pub fn notify_frame(params: &Value) -> String {
 }
 
 pub fn auth_ok(id: &Value) -> String {
-    format!("{}\n", serde_json::json!({"id":id,"result":true,"error":null}))
+    format!(
+        "{}\n",
+        serde_json::json!({"id":id,"result":true,"error":null,"type":"v2"})
+    )
 }
 
 pub fn auth_err(id: &Value, msg: &str) -> String {
