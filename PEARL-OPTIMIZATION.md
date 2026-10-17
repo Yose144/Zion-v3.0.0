@@ -230,3 +230,38 @@ pipelined staging; all non-tensor paths exhausted.
 GPU 90W / 59°C / ~58% util. vs pre-v6 triple: PRL ~0.85–1.0 TH/s,
 QTU ~77–98 MH/s → both improved (~3–4× PRL, +30–60% QTU from freed duty).
 SRBMiner reference (Test A): 47.0–48.4 TH/s @129.8W/78°C/1725MHz.
+
+## 10. Session 2 — fused stages + B-fragment sharing → 17.6 TH/s (2026-10-17)
+
+Continuation of §8 on the same RTX 3060 (vast.ai 56302165, SM86, 98% util,
+130W/78°C, no contention). All changes parity-gated by the same two KATs.
+
+**Accepted (in order of impact):**
+
+| Change | Effect | Evidence |
+|---|---|---|
+| v6 kc-outer/rg-inner (B frags feed both row-groups) | B gather loads −33%/window; mine 0.33→0.28 ms | A/B same binary |
+| `pearl_merkle_derive_dual` — fused merkle+derive via `atomicAdd` epilogue on last-finishing block; `derive_ctr` zeroed per job | derive stage 0.15→0.001 ms (launch+serial latency gone) | stage timing |
+| `pearl_gen_noise_fused` — uniform+perm one launch, gid-partitioned | one launch fewer; noise ~0.06 ms | stage timing |
+| `ZION_PEARL_STREAMS` default 2→3 (clamp 4); pipes allocated per stream | 16.8→17.5 TH/s; 4 streams → 18.1 TH/s measured | env A/B |
+| `__launch_bounds__(1024)` on fused merkle kernel | fixes NVRTC launch OUT_OF_RESOURCES (derive path reg bloat → spills in cold path only) | parity |
+
+**Rejected / reverted (measured, kept for reference):**
+
+| Experiment | Result | Why it lost |
+|---|---|---|
+| v6 B-window reg prefetch (+8 regs) | 15.9 vs 16.8 TH/s | occupancy loss |
+| v6 2-window mma interleave (cC[64] regs) | ~16.0 TH/s | +32 regs; dots weren't the limiter |
+| chunk blake3 4-way/2-way thread interleave | chunk 0.17→0.27 ms / ~same | reg pressure; 4096 chunks already saturate TLP |
+| v9 ldmatrix / v9 cp.async fill | 0.343 / 0.351 ms | staging serialization + 3 blocks/SM |
+| v10 A-smem + B-global (contig + strided cols) | 0.99 ms | barrier waits on worst-case L2 gather; L2-conflict hypothesis for contiguous cols disproved |
+
+**Current stage profile (3 streams, contended per-stream):**
+`gen=0.09 chunk=0.23 merkle=0.13 derive=0.001 noise=0.05 apply=0.08 mine=0.26 | total≈0.84 ms/attempt-stream → ~17.6 TH/s`
+
+**Honest remaining gap vs SRBMiner (~48 TH/s): ~2.7×.** All incremental
+latency tricks are exhausted; the gap now requires a production-grade
+multi-stage smem GEMM pipeline (cp.async ring + ldmatrix + wide CTA tiles)
+plus faster BLAKE3 (chunk+merkle ≈ 0.36 ms/att ≈ 43% of stream time).
+Attempts so far confirm naive smem staging always loses to `__ldg` gathers
+on this access pattern; profiling tools (ncu) unavailable on the box.
