@@ -265,3 +265,26 @@ multi-stage smem GEMM pipeline (cp.async ring + ldmatrix + wide CTA tiles)
 plus faster BLAKE3 (chunk+merkle ≈ 0.36 ms/att ≈ 43% of stream time).
 Attempts so far confirm naive smem staging always loses to `__ldg` gathers
 on this access pattern; profiling tools (ncu) unavailable on the box.
+
+## 11. Session 3 — deep fusion + regen-apply + streams=4 → 21.0 TH/s (2026-10-17)
+
+Same RTX 3060, parity-gated by both KATs after each step.
+
+**Accepted:**
+
+| Change | Effect |
+|---|---|
+| `pearl_gen_chunk_merkle_fused` — ONE launch does gen + chunk-hash + in-block subtree Merkle. Each block of `PEARL_SUBTREE=128` threads covers a power-of-two-aligned ≤128-leaf subtree (32 blocks/tree → all SMs busy); leaves live only in smem, pairwise reduce in-block (read→barrier→write), block subtree root → `subtree_{a,b}`; `merkle_derive_dual` then folds 16+16 subtree roots (canonical BLAKE3 subtree merge = bit-identical) + derive epilogue | chunk 0.23→0.002 ms; gen+chunk+merkle fused 0.44→~0.27 ms/att |
+| `pearl_apply_noise_regen` — apply computes `gen_int7(nonce,idx)` inline instead of reading the matrix (element-wise, same index ⇒ identical) | −4MB matrix read/att |
+| Matrix store removed from the fused gen path — matrices materialize only on-hit via `f_gen_dual` in `mine_native` before proof readback | −4MB matrix write/att (≈8MB/att less DRAM traffic total) |
+| `ZION_PEARL_STREAMS` default 3→4 (clamp 6) | 19.8→20.9 TH/s; 6 streams ≈ flat |
+
+**Result: ~20.3–21.1 TH/s solo sustained** (stage profile contended: gen 0.18 / chunk 0.002 / merkle 0.16 / derive 0.001 / noise 0.11 / apply 0.10 / mine 0.27 → ~0.83 ms/stream). 10.3× over the v3 baseline; **gap vs SRBMiner ~48 TH/s ≈ 2.3×.**
+
+**Verdict:** the architecture is now a 3-kernel pipeline per attempt
+(gcm_fused → merkle_derive → noise_fused → apply_regen → mine = 5 launches
+down from ~33 at Phase-2 start) with all stages fused as far as data
+dependencies allow. Remaining gap is concentrated in the v6 mma kernel's
+L2-gather latency exposure and BLAKE3 serial chains inside gcm — closing
+it requires the production GEMM pipeline described in §10, i.e. a
+multi-day kernel rewrite rather than another measured iteration.
