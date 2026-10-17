@@ -54,7 +54,7 @@
 
 **Děj:** Synovo dědictví nepřichází z vejce — přichází **dopisem otcovou rukou** (zabaleným ve smolném plátně): pět Gen Z pravidel doslova. Syn se učí roli: návrhy píše komunita, správce první podepisuje to, co komunita schválila — a může odmítnout jen jedno: porušení konstituce. Otec ukazuje tři sedadla uvnitř trupu: **Maitreya → Rama (Admin-1, protokol), Sarah Issobela → Sita (Admin-2, treasury — stanice Issobella nese její jméno), Elizabeth → Hanuman (Admin-3, bridge) — dva sourozenci-admini rameno vedle ramene**, **čtvrtá židle zůstává prázdná — pro tu, co přijde**. Dead man's switch: otec ukazuje synovi pojistku — „kdybych zmizel, řetězec ti klíč předá sám".
 **Pointa:** „DAO správa" jako služba, ne funkce moci. Dědictví = odpovědnost za rozdanou moc.
-**Fakt-box:** treasury 4 mld, blok 525 600, 5-z-7 multisig, 48h cooldown, 1 ZION = 1 hlas, delegace, tabulka neměnných parametrů (144B, 89/5/5/1, Ekam Deeksha, 60 s, fair launch).
+**Fakt-box:** DAO treasury 1,5 mld ZION (2 sloty) + L6 Issobella 2,5 mld, time-lock blok 144 000 (~100 dní); 5-z-7 guardian multisig, 48h min. timelock (parametry sítě 72 h), 1 ZION = 1 hlas, delegace, tabulka neměnných parametrů (144B, 89/5/5/1, Ekam Deeksha, 60 s, fair launch).
 
 ---
 

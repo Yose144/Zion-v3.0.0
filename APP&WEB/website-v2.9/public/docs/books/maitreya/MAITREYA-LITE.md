@@ -100,5 +100,5 @@ Sestra u iluminátoru stanice svého jména — Issobelly. Pod ní flotila, za n
 
 ---
 
-> **Status:** první draft (CS). Plná kapitoly: `docs/WP-Mainet/Maitreya/`. EN překlad se připravuje.
+> **Status:** první draft. Plné kapitoly: `docs/WP-Mainet/Maitreya/`. EN verze: `/docs/en/books/maitreya/MAITREYA-LITE.md`.
 > **Hranice:** postavy jsou archetypy veřejného kanonu — literární inspirace, ne teologický nárok.

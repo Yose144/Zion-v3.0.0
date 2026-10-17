@@ -92,7 +92,7 @@ Poslední zkouška lovce: finální consciousness test vyžaduje darování čá
 Pravda · svoboda · jednota · láska · služba — pět bodů Smlouvy Zionu (One Love, DAO Council 9). Navigační nástroj všech postav; když se ztratíš, nehledej cestu zpět do Babylonu — hledej kompas.
 
 **DAO správa**
-Správa treasury (4 mld ZION, odemknutí blokem 525 600 ≈ rok po genesis): návrhy píše komunita, 1 ZION = 1 hlas, delegace, 48h chladicí lhůta, 5-z-7 multisig exekuce. Správce = první signatář schváleného, ne rozhodčí.
+Správa treasury (DAO Treasury 1,5 mld ZION ve 2 slotech + L6 Issobella 2,5 mld — time-lock blok 144 000 ≈ 100 dní po genesis): návrhy píše komunita, 1 ZION = 1 hlas, delegace, 48h min. chladicí lhůta, 5-z-7 guardian multisig exekuce. Správce = první signatář schváleného, ne rozhodčí.
 
 **Konstituční kameny**
 Neměnné parametry, které žádné hlasování nepřepíše: celková emise 144 mld, rozdělení odměny 89/5/5/1, algoritmus Ekam Deeksha, block time 60 s, fair-launch alokace. V knize: „základní pravdy, které platí i když se jim nikdo neklaní".

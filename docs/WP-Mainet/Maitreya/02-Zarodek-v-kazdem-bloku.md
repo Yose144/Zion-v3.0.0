@@ -96,10 +96,10 @@ Pod kotoučem, který se točil k dalšímu bloku, blikalo světlo — malé, tr
 
 | Tvrzení v kapitole | Co se dá ověřit |
 |---|---|
-| Šest fází PoW pipeline | Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi — názvy fází v kódu (`V31/L1/core/src/`); první fáze je pojmenována po zlatém zárodku |
+| Šest fází PoW pipeline | Hiranyagarbha → Brahma → Yantra → Karma → Chit → Samadhi — kanonická kosmologická jména šesti kroků (ZION Master WP 3.2 §Hiranyagarbha + Deeksha Cosmology mapa: Keccak-256→Hiranyagarbha, expanze→Brahma, Golden Matrix→Yantra, memory-hard→Karma, NPU mix→Chit, cosmic fusion→Samadhi) |
 | Semínko z hlavičky | Seed derivovaný z block headeru — první krok, ze kterého se generuje pracovní prostor |
-| Malá pracovní plocha | 256 KiB memory-hard scratchpad — anti-ASIC design (kód) |
-| Karma váhy se rotují | 100-blokové epochy, 2016 konfigurací — epochální adaptace vážení (kód) |
+| Malá pracovní plocha | Memory-hard scratchpad — anti-ASIC design (kód; deeksha v2 pipeline uvádí 256 KiB) |
+| Karma váhy se rotují | Epochální rotace NPU vah každých **2016 bloků** na mainnetu — stejná perioda jako Bitcoin difficulty adjustment (kód; testnet 100) |
 | „Padesát dva tisíc pět set bloků" | Live stav řetězce — číslo je v době psaní >52 500 bloků (kapitola používá zaokrouhlenou hodnotu jako řeč, ne audit) |
 | Samadhi jako poslední fáze | Šestá fáze pipeline — uzavření bloku, splynutí práce a výsledku |
 | Otec vs. titul | Příběhová vrstva — skutečný podpis „Maitreya Buddha, 2025" je v kanonu; rodičovský motiv je interpretace, ne tvrzení o osobě |

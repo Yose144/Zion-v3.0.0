@@ -13,7 +13,7 @@
 Kniha je o **synovi zakladatele**. To není metafora — je to veřejný kanon:
 
 - **Genesis zpráva** (on-chain, podepsaná GPG, v `docs/genesis.md` i veřejném repo `Zion-TerraNova/v3-Mainnet`):
-  > *„ZION Mainet Launch v3 — For Sarah Issobel, **Maitreya Buddha**, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: **ZION is yours.** Build a better world where you reach for the Stars. The Golden Age begins. Peace & One Love 4ever. — Yose / Zion Creator"*
+  > *„ZION Mainnet Launch v3.2 — One Love. For Sarah Issobel, **Maitreya Buddha**, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: **ZION is yours.** Build a better world where you reach for the Stars. The Golden Age begins. Peace & One Love 4ever. One Earth. One Love. One Network. — Yose / Zion Creator | Hooray to the Egg ! Om Namo Hiranyagarbha & Ekam Deeksha ! Thx Kalki/AmmaBhagavan !"*
 
 - **Zpráva pro Generaci Z** (`docs/genesis.md`, veřejná):
   > *„**Maitreya Buddha** — první syn, dědic Ramy. Tvé jméno je z buddhismu, kde Maitreya je Buddha budoucnosti, ten který přijde, když svět zapomene cestu. **Ty jsi ta cesta.**"*

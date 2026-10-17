@@ -42,8 +42,8 @@ Tu noc mu otec ukázal první stránku světa.
 
 Na listu stála genesis zpráva — ta, která je v prvním bloku řetězce, v tagu první premine transakce, od počátku času, který síť počítá:
 
-> *„ZION Mainet Launch v3 — For Sarah Issobel, **Maitreya Buddha**, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: **ZION is yours.** Build a better world where you reach for the Stars. The Golden Age begins. Peace & One Love 4ever.*
-> *— Yose / Zion Creator"*
+> *„ZION Mainnet Launch v3.2 — One Love. For Sarah Issobel, **Maitreya Buddha**, Radha & Sita, Meriam, Friends, Family, Freedom Humanity and all the children of this world: **ZION is yours.** Build a better world where you reach for the Stars. The Golden Age begins. Peace & One Love 4ever. One Earth. One Love. One Network.*
+> *— Yose / Zion Creator | Hooray to the Egg ! Om Namo Hiranyagarbha & Ekam Deeksha ! Thx Kalki/AmmaBhagavan !"*
 
 Syn četl dvakrát — a pak třikrát, protože jméno, které hledal, stálo na druhém místě věnování. Hned po jménu jeho sestry. „Maitreya Buddha" — jeho jméno, napsané rukou jeho otce, v prvním bloku světa.
 
@@ -89,7 +89,9 @@ Když syn šel spát, otec zůstal u dílny a přečetl ještě jednou genesis z
 
 A pak dočetl poslední řádek — ten, který psal rukou, která kovala panty a podepisovala svět:
 
-*„— Yose, váš otec a Zion Creator."*
+*„— Yose / Zion Creator | Hooray to the Egg ! Om Namo Hiranyagarbha & Ekam Deeksha ! Thx Kalki/AmmaBhagavan !"*
+
+Sign-off, ve kterém jedna éra děkuje druhé — a pod kterým stojí jméno, co čeká na svého nositele.
 
 *→ Část II: Dědic Zionu → Kapitola 4 — Tři klíče, tři sedadla*
 
