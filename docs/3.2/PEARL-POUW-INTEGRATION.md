@@ -1055,3 +1055,33 @@ for more; Phase 1+2 takes the structural overhead out first.
 **Gotcha:** `start-triple.sh` re-downloaded `zion-miner-v31-cuda` from
 Edge — silently reverts any locally-built binary. Download block removed
 on the vast instance; real fix = push new build to Edge download dir.
+
+## 18. Pearl → LuckyPool E2E accepted — wire-compat chain + stale-forward gate (2026-10-17)
+
+**Proven live:** `SRBMiner-MULTI → zion-pool :8444 pearl stratum → prlu: job →
+opaque forward → pearl-eu2.luckypool.io:3360 → LP verdict accepted`.
+LP API (`pearl.luckypool.io/api/stats_address?address=prl1pwqx…`) shows
+`worker=zion-pool` with `acceptedShares` and `hs` = miner-reported hashrate.
+
+### Wire-compatibility fixes (pool → LP + pool → SRBMiner)
+
+| Bug | Fix |
+|---|---|
+| `type:"v2"` missing in authorize request + `auth_ok` response | added both |
+| `hs` (H/s) not forwarded upstream | `PearlSubmit.hs` parse → `SubmitReq.hs` → `submit_proof(hs)` → wire `{job_id, plain_proof, hs}` |
+| double `\n` on every pearl frame (`qtu_send` + already-`\n` builders) | `pearl_send` trims before send — SRBMiner `Exception[15]` on blank line gone |
+| `diff` missing in notify | `job_diff` parses `_N` suffix of `prlu:` ids (native → 1) |
+| stale job_id submits killed LP session + replayed on reconnect | `fwd_max` gate (90s, `ZION_POOL_PEARL_UPSTREAM_FWD_MAX_MS`) at enqueue + dispatch → `StaleForward` → `accepted_stale_upstream`, `/stats.stale_dropped` |
+| SRB `plain_proof` serialization ≠ ours → local decode reject | `submit_upstream_opaque` — base64 sanity + `blake3(payload)` dedup → forward, LP authoritative |
+
+### Operational notes
+
+- LP anti-abuse: stale-job submit → FIN ~10ms; repeated → **IP ban ~45min**
+  (Edge, local, vast all burned once). Never replay queued submits against a
+  retired job_id — gate now enforces it.
+- `ZION_POOL_PEARL_NATIVE_PCT=0` during the LP demo (all miners get `prlu:`
+  jobs); back to `10` for production PoUW blocks.
+- SRBMiner still self-exits `Exception[15]` ~1-3min in (client-side watchdog
+  or an unparsed detail — submits work). Run under tmux restart loop on vast.
+- Verdict truthfulness: only `accepted`/`rejected:` reflect a real LP reply;
+  `accepted_unknown`/`accepted_stale_upstream` are local outcomes.
