@@ -55,6 +55,8 @@ mod kern {
     pub const DERIVE_SEEDS: &str = "pearl_derive_seeds";
     pub const MERKLE_TREE: &str = "pearl_merkle_tree";
     pub const GEN_DUAL: &str = "pearl_gen_matrix_dual";
+    pub const GEN_CHUNK_FUSED: &str = "pearl_gen_chunk_fused";
+    pub const GCM_FUSED: &str = "pearl_gen_chunk_merkle_fused";
     pub const CHUNK_DUAL: &str = "pearl_blake3_chunk_hash_dual";
     pub const CHUNK4_DUAL: &str = "pearl_blake3_chunk_hash4_dual";
     pub const MERKLE_DUAL: &str = "pearl_merkle_tree_dual";
@@ -63,6 +65,7 @@ mod kern {
     pub const PERM_DUAL: &str = "pearl_gen_permutation_dual";
     pub const NOISE_FUSED: &str = "pearl_gen_noise_fused";
     pub const APPLY_DUAL: &str = "pearl_apply_noise_dual";
+    pub const APPLY_REGEN: &str = "pearl_apply_noise_regen";
 }
 
 const KERNELS: &[&str] = &[
@@ -85,6 +88,8 @@ const KERNELS: &[&str] = &[
     kern::DERIVE_SEEDS,
     kern::MERKLE_TREE,
     kern::GEN_DUAL,
+    kern::GEN_CHUNK_FUSED,
+    kern::GCM_FUSED,
     kern::CHUNK_DUAL,
     kern::CHUNK4_DUAL,
     kern::MERKLE_DUAL,
@@ -93,6 +98,7 @@ const KERNELS: &[&str] = &[
     kern::PERM_DUAL,
     kern::NOISE_FUSED,
     kern::APPLY_DUAL,
+    kern::APPLY_REGEN,
 ];
 
 /// Max attempts queued per `mine_native_batch` call — found/tile/jackpot
@@ -117,6 +123,8 @@ struct PearlPipeBufs {
     matrix_a: CudaSlice<i8>,    // num_chunks_a * 1024, zero-padded
     matrix_bt: CudaSlice<i8>,   // num_chunks_b * 1024, zero-padded
     chunk_hashes: CudaSlice<u8>, // max_chunks * 32
+    subtree_a: CudaSlice<u8>,    // ceil(max_chunks/1024) * 32 — block subtree roots
+    subtree_b: CudaSlice<u8>,
     merkle: CudaSlice<u8>,       // max_chunks * 32 — merge ping-pong scratch (A)
     merkle2: CudaSlice<u8>,      // max_chunks * 32 — B leaf layer (no aliasing)
     merkle_b: CudaSlice<u8>,     // max_chunks * 32 — B tree scratch (dual launch)
@@ -174,6 +182,8 @@ pub struct PearlCudaMiner {
     f_merge: CudaFunction,
     f_merkle_tree: CudaFunction,
     f_gen_dual: CudaFunction,
+    f_gen_chunk_fused: CudaFunction,
+    f_gcm_fused: CudaFunction,
     f_chunk_dual: CudaFunction,
     f_chunk4_dual: CudaFunction,
     f_merkle_dual: CudaFunction,
@@ -182,6 +192,7 @@ pub struct PearlCudaMiner {
     f_perm_dual: CudaFunction,
     f_noise_fused: CudaFunction,
     f_apply_dual: CudaFunction,
+    f_apply_regen: CudaFunction,
     f_small_hash: CudaFunction,
     f_gen_perm: CudaFunction,
     f_gen_uniform: CudaFunction,
@@ -249,6 +260,8 @@ impl PearlCudaMiner {
         let f_merge = get(&dev, kern::MERGE)?;
         let f_merkle_tree = get(&dev, kern::MERKLE_TREE)?;
         let f_gen_dual = get(&dev, kern::GEN_DUAL)?;
+        let f_gen_chunk_fused = get(&dev, kern::GEN_CHUNK_FUSED)?;
+        let f_gcm_fused = get(&dev, kern::GCM_FUSED)?;
         let f_chunk_dual = get(&dev, kern::CHUNK_DUAL)?;
         let f_chunk4_dual = get(&dev, kern::CHUNK4_DUAL)?;
         let f_merkle_dual = get(&dev, kern::MERKLE_DUAL)?;
@@ -257,6 +270,7 @@ impl PearlCudaMiner {
         let f_perm_dual = get(&dev, kern::PERM_DUAL)?;
         let f_noise_fused = get(&dev, kern::NOISE_FUSED)?;
         let f_apply_dual = get(&dev, kern::APPLY_DUAL)?;
+        let f_apply_regen = get(&dev, kern::APPLY_REGEN)?;
         let f_small_hash = get(&dev, kern::SMALL_HASH)?;
         let f_gen_perm = get(&dev, kern::GEN_PERM)?;
         let f_gen_uniform = get(&dev, kern::GEN_UNIFORM)?;
@@ -294,8 +308,8 @@ impl PearlCudaMiner {
         let want_streams: usize = std::env::var("ZION_PEARL_STREAMS")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or(3)
-            .clamp(1, 4);
+            .unwrap_or(4)
+            .clamp(1, 6);
         let mut streams = Vec::new();
         for _ in 0..want_streams.max(1) {
             match dev.fork_default_stream() {
@@ -326,6 +340,8 @@ impl PearlCudaMiner {
             f_merge,
             f_merkle_tree,
             f_gen_dual,
+            f_gen_chunk_fused,
+            f_gcm_fused,
             f_chunk_dual,
             f_chunk4_dual,
             f_merkle_dual,
@@ -334,6 +350,7 @@ impl PearlCudaMiner {
             f_perm_dual,
             f_noise_fused,
             f_apply_dual,
+            f_apply_regen,
             f_small_hash,
             f_gen_perm,
             f_gen_uniform,
@@ -424,6 +441,8 @@ impl PearlCudaMiner {
                 matrix_a: az(num_chunks_a * 1024)?,
                 matrix_bt: az(num_chunks_b * 1024)?,
                 chunk_hashes: azu(max_chunks * 32)?,
+                subtree_a: azu(max_chunks.div_ceil(1024).max(1) * 32)?,
+                subtree_b: azu(max_chunks.div_ceil(1024).max(1) * 32)?,
                 merkle: azu(max_chunks * 32)?,
                 merkle2: azu(max_chunks * 32)?,
                 merkle_b: azu(max_chunks * 32)?,
@@ -603,27 +622,66 @@ impl PearlCudaMiner {
             shared_mem_bytes: 0,
         };
 
-        // ── Step 1: Generate matrices A and B^T (fused, one launch) ─────
-        klaunch!(
-            &self.f_gen_dual,
-            cfg_1d(mk + nk, 256),
-            (
-                &mut p.matrix_a,
-                &mut p.matrix_bt,
-                nonce,
-                m as u32,
-                n as u32,
-                k as u32,
+        // ── Steps 1+2: gen + chunk hash ────────────────────────────────
+        // When both matrices are an exact multiple of the 1KB BLAKE3
+        // chunk, ONE kernel generates each chunk in registers, streams it
+        // to global memory, and hashes it in the same pass — saving the
+        // full matrix readback and a launch boundary.
+        let gen_chunk_fused = mk % 1024 == 0 && nk % 1024 == 0;
+        // Subtree-root counts — each 1024-thread block of the fully fused
+        // kernel covers a power-of-two-aligned ≤1024-leaf subtree, so the
+        // downstream merge kernel runs over subtree roots instead of the
+        // raw chunk-leaf layer.
+        // PEARL_SUBTREE must equal the .cu define — the launch block size
+        // IS the subtree leaf capacity.
+        let nsb_a = num_chunks_a.div_ceil(128);
+        let nsb_b = num_chunks_b.div_ceil(128);
+        if gen_chunk_fused {
+            // gen + chunk-hash + in-block subtree Merkle in ONE launch.
+            klaunch!(
+                &self.f_gcm_fused,
+                LaunchConfig {
+                    grid_dim: ((nsb_a + nsb_b) as u32, 1, 1),
+                    block_dim: (128, 1, 1),
+                    shared_mem_bytes: 0,
+                },
+                (
+                    &mut p.matrix_a,
+                    &mut p.matrix_bt,
+                    &b.job_key,
+                    &mut p.subtree_a,
+                    &mut p.subtree_b,
+                    nonce,
+                    num_chunks_a as u32,
+                    num_chunks_b as u32,
+                    (num_chunks_a == 1) as u32,
+                    (num_chunks_b == 1) as u32,
+                    nsb_a as u32,
+                    nsb_b as u32,
+                )
             )
-        )
-        .map_err(|e| anyhow::anyhow!("pearl gen_matrix_dual launch: {e}"))?;
-        rec!(1);
+            .map_err(|e| anyhow::anyhow!("pearl gen_chunk_merkle launch: {e}"))?;
+            rec!(1);
+            rec!(2);
+        } else {
+            klaunch!(
+                &self.f_gen_dual,
+                cfg_1d(mk + nk, 256),
+                (
+                    &mut p.matrix_a,
+                    &mut p.matrix_bt,
+                    nonce,
+                    m as u32,
+                    n as u32,
+                    k as u32,
+                )
+            )
+            .map_err(|e| anyhow::anyhow!("pearl gen_matrix_dual launch: {e}"))?;
+            rec!(1);
 
-        // ── Step 2: BLAKE3 chunk hashing (fused, one launch) ───────────
-        // Single-chunk matrices write the chunk CV straight into the root
-        // buffer with the ROOT flag (canonical MerkleTree hashes <=1024B
-        // directly, skipping the tree).
-        {
+            // Single-chunk matrices write the chunk CV straight into the
+            // root buffer with the ROOT flag (canonical MerkleTree hashes
+            // <=1024B directly, skipping the tree).
             let single_a = num_chunks_a == 1;
             let dst_a: &mut CudaSlice<u8> = if single_a {
                 &mut p.root_a
@@ -652,15 +710,20 @@ impl PearlCudaMiner {
                 )
             )
             .map_err(|e| anyhow::anyhow!("pearl chunk_hash_dual launch: {e}"))?;
+            rec!(2);
         }
-        rec!(2);
 
         // ── Step 3: Merkle tree reduction ──────────────────────────────
         // One dual launch folds BOTH trees — block 0 = A (chunk_hashes ↔
         // merkle), block 1 = B (merkle2 ↔ merkle_b). Per level: grid-stride,
         // __syncthreads between levels; odd-leaf passthrough + ROOT-flag
         // semantics identical to the old per-level merge launches.
-        let fused_derive = num_chunks_a > 1 && num_chunks_b > 1;
+        // When the fully fused kernel ran, the "leaf layer" is the subtree
+        // roots (nsb entries each) — the same dual merge kernel folds them
+        // into the real roots bit-identically (canonical BLAKE3 subtree
+        // merge) and still runs the derive epilogue.
+        let fused_derive =
+            gen_chunk_fused || (num_chunks_a > 1 && num_chunks_b > 1);
         {
             let cfg_tree1 = LaunchConfig {
                 grid_dim: (1, 1, 1),
@@ -673,8 +736,16 @@ impl PearlCudaMiner {
                 // Fused merkle+derive: the second-finishing block derives
                 // the noise seeds inline (derive_ctr[slot] zeroed per job).
                 // 17 params > 12-tuple LaunchAsync limit → raw argv.
-                let n_chunks_a = num_chunks_a as u32;
-                let n_chunks_b = num_chunks_b as u32;
+                let n_chunks_a = if gen_chunk_fused {
+                    nsb_a as u32
+                } else {
+                    num_chunks_a as u32
+                };
+                let n_chunks_b = if gen_chunk_fused {
+                    nsb_b as u32
+                } else {
+                    num_chunks_b as u32
+                };
                 let dim_a = m as u32;
                 let dim_b = n as u32;
                 let salted = match input.seed_derivation {
@@ -682,9 +753,19 @@ impl PearlCudaMiner {
                     PearlSeedDerivation::Legacy => 0u32,
                 };
                 let mut ctr_view = b.derive_ctr.slice_mut(slot..slot + 1);
+                let leaves_a: &mut CudaSlice<u8> = if gen_chunk_fused {
+                    &mut p.subtree_a
+                } else {
+                    &mut p.chunk_hashes
+                };
+                let leaves_b: &mut CudaSlice<u8> = if gen_chunk_fused {
+                    &mut p.subtree_b
+                } else {
+                    &mut p.merkle2
+                };
                 let argv: Vec<*mut std::ffi::c_void> = vec![
-                    (&mut p.chunk_hashes).as_kernel_param(),
-                    (&mut p.merkle2).as_kernel_param(),
+                    leaves_a.as_kernel_param(),
+                    leaves_b.as_kernel_param(),
                     (&mut p.merkle).as_kernel_param(),
                     (&mut p.merkle_b).as_kernel_param(),
                     (&b.job_key).as_kernel_param(),
@@ -804,17 +885,19 @@ impl PearlCudaMiner {
         rec!(5);
 
         // ── Step 6: Apply noise to matrices (fused, one launch) ────────
+        // Matrices are never materialized in the fused pipeline — apply
+        // regenerates each element via gen_int7 (pure function of
+        // nonce+index), saving the 4MB matrix readback.
         klaunch!(
-            &self.f_apply_dual,
+            &self.f_apply_regen,
             cfg_1d(mk + nk, 256),
             (
                 &mut p.noised_a,
-                &p.matrix_a,
+                nonce,
                 &p.e_al,
                 &p.e_ar_perm,
                 m as u32,
                 &mut p.noised_b,
-                &p.matrix_bt,
                 &p.e_br,
                 &p.e_bl_perm,
                 n as u32,
@@ -822,7 +905,7 @@ impl PearlCudaMiner {
                 rank as u32,
             )
         )
-        .map_err(|e| anyhow::anyhow!("pearl apply_noise_dual launch: {e}"))?;
+        .map_err(|e| anyhow::anyhow!("pearl apply_noise_regen launch: {e}"))?;
         rec!(6);
 
         // ── Step 7: MatMul + jackpot + target check ────────────────────
@@ -1037,6 +1120,32 @@ impl PearlCudaMiner {
 
         // Read back matrices for the CPU Merkle-proof build — only the
         // unpadded m·k / n·k prefixes are meaningful to the proof builder.
+        // The fused pipeline never stores matrix bytes (hashed in
+        // registers), so materialize them now — gen_int7 is deterministic
+        // in (nonce, index), this reproduces the exact matrices.
+        {
+            let cfg_gen = LaunchConfig {
+                grid_dim: (Self::grid_for(mk + nk, 256), 1, 1),
+                block_dim: (256, 1, 1),
+                shared_mem_bytes: 0,
+            };
+            unsafe {
+                self.f_gen_dual
+                    .clone()
+                    .launch(
+                        cfg_gen,
+                        (
+                            &mut p.matrix_a,
+                            &mut p.matrix_bt,
+                            input.nonce,
+                            m as u32,
+                            n as u32,
+                            k as u32,
+                        ),
+                    )
+                    .map_err(|e| anyhow::anyhow!("pearl on-hit regen launch: {e}"))?;
+            }
+        }
         let mut matrix_a = vec![0i8; mk];
         {
             let padded: Vec<i8> = self

@@ -64,6 +64,11 @@ __constant__ const uint MSG_SCHEDULE[7][16] = {
 #define ROOT        8u
 #define KEYED_HASH  16u
 
+// Leaves per block subtree in pearl_gen_chunk_merkle_fused — equals the
+// launch block size. 256 balances SM coverage (2048 chunks → 8 blocks per
+// tree) against smem (8KB) and reduction depth (8 levels).
+#define PEARL_SUBTREE 128u
+
 // ─── BLAKE3 compression (single block) ──────────────────────────────────────
 
 __device__ void blake3_compress(
@@ -2031,6 +2036,203 @@ __device__ void pearl_do_chunk(const uchar* data, uint gid, const uchar* key,
     }
 }
 
+// Fused matrix-gen + chunk hash: each thread generates its whole 1KB
+// chunk in registers (64B per block, 4 gen_int7 packed LE per word),
+// streams it to global via int4 stores, and compresses it into the CV —
+// saves the full 4MB matrix readback and one launch vs gen→chunk.
+// Requires m*k and n*k divisible by 1024 (checked host-side).
+extern "C" __global__ void pearl_gen_chunk_fused(
+    signed char* matrix_a,
+    signed char* matrix_bt,
+    const uchar* key,
+    uchar* out_a,
+    uchar* out_b,
+    const ulong nonce,
+    const uint chunks_a,
+    const uint chunks_b,
+    const uint single_a,
+    const uint single_b
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    signed char* data; uchar* out; ulong nc; uint ci; uint single;
+    if (gid < chunks_a) {
+        data = matrix_a; out = out_a; nc = nonce; ci = gid;
+        single = single_a;
+    } else {
+        uint g2 = gid - chunks_a;
+        if (g2 >= chunks_b) return;
+        data = matrix_bt; out = out_b; nc = nonce + 1ULL; ci = g2;
+        single = single_b;
+    }
+    uint cv[8];
+    for (int i = 0; i < 8; i++) {
+        cv[i] = (uint)key[i*4]
+              | ((uint)key[i*4+1] << 8)
+              | ((uint)key[i*4+2] << 16)
+              | ((uint)key[i*4+3] << 24);
+    }
+    uchar* chunk_base = (uchar*)data + (ulong)ci * 1024ULL;
+    for (int block = 0; block < 16; block++) {
+        uint flags = 0u;
+        if (block == 0) flags |= CHUNK_START;
+        if (block == 15) flags |= CHUNK_END;
+        if (block == 15 && single) flags |= ROOT;
+        uint bw[16];
+        const uint e0 = ci * 1024u + (uint)block * 64u;
+#pragma unroll
+        for (int i = 0; i < 16; i++) {
+            uint e = e0 + (uint)i * 4u;
+            bw[i] = (uint)(uchar)gen_int7(nc, e)
+                  | ((uint)(uchar)gen_int7(nc, e + 1u) << 8)
+                  | ((uint)(uchar)gen_int7(nc, e + 2u) << 16)
+                  | ((uint)(uchar)gen_int7(nc, e + 3u) << 24);
+        }
+        int4* dst = (int4*)(chunk_base + block * 64);
+#pragma unroll
+        for (int i = 0; i < 4; i++) {
+            dst[i] = make_int4((int)bw[i * 4], (int)bw[i * 4 + 1],
+                               (int)bw[i * 4 + 2], (int)bw[i * 4 + 3]);
+        }
+        uint out8[8];
+        blake3_compress(cv, bw, (ulong)ci, 64, flags | KEYED_HASH, out8);
+        for (int i = 0; i < 8; i++) cv[i] = out8[i];
+    }
+    uchar* oh = out + (ulong)ci * 32ULL;
+    for (int i = 0; i < 8; i++) {
+        oh[i*4+0] = (uchar)cv[i];
+        oh[i*4+1] = (uchar)(cv[i] >> 8);
+        oh[i*4+2] = (uchar)(cv[i] >> 16);
+        oh[i*4+3] = (uchar)(cv[i] >> 24);
+    }
+}
+
+// Fully fused gen + chunk-hash + in-block subtree Merkle: each block of
+// 1024 threads covers a power-of-two-aligned ≤1024-leaf subtree of one
+// matrix's chunk tree. A thread generates its 1KB chunk in registers
+// (16×64B blocks, 4 gen_int7 packed LE per word), streams it to global
+// via int4 stores, compresses it to the leaf CV, and the block then
+// pairwise-reduces leaves in smem (read→barrier→write avoids in-place
+// races). The block's subtree root is a canonical node of the full tree,
+// so merging subtree roots afterwards is bit-identical to the flat tree
+// (standard BLAKE3 subtree structure). Requires mk/nk divisible by 1024.
+extern "C" __global__ void pearl_gen_chunk_merkle_fused(
+    signed char* matrix_a,
+    signed char* matrix_bt,
+    const uchar* key,
+    uchar* subtree_a,
+    uchar* subtree_b,
+    const ulong nonce,
+    const uint chunks_a,
+    const uint chunks_b,
+    const uint single_a,
+    const uint single_b,
+    const uint nsb_a,
+    const uint nsb_b
+)
+{
+    __shared__ uint s_leaves[PEARL_SUBTREE * 8];
+    const uint tid = threadIdx.x;
+    // Block → (tree, subtree-index) mapping: A subtrees first, then B.
+    signed char* data; uchar* sub_out; ulong nc;
+    uint tree_chunks, single, nsb, sb;
+    if (blockIdx.x < nsb_a) {
+        data = matrix_a; sub_out = subtree_a; nc = nonce;
+        tree_chunks = chunks_a; single = single_a; nsb = nsb_a;
+        sb = blockIdx.x;
+    } else {
+        uint b2 = blockIdx.x - nsb_a;
+        if (b2 >= nsb_b) return;
+        data = matrix_bt; sub_out = subtree_b; nc = nonce + 1ULL;
+        tree_chunks = chunks_b; single = single_b; nsb = nsb_b;
+        sb = b2;
+    }
+    const uint leaves = min(PEARL_SUBTREE, tree_chunks - sb * PEARL_SUBTREE);
+    const uint ci = sb * PEARL_SUBTREE + tid;
+    uint cv_key[8];
+#pragma unroll
+    for (int i = 0; i < 8; i++) {
+        cv_key[i] = (uint)key[i * 4]
+                  | ((uint)key[i * 4 + 1] << 8)
+                  | ((uint)key[i * 4 + 2] << 16)
+                  | ((uint)key[i * 4 + 3] << 24);
+    }
+    if (tid < leaves) {
+        uint cv[8];
+#pragma unroll
+        for (int i = 0; i < 8; i++) cv[i] = cv_key[i];
+        for (int block = 0; block < 16; block++) {
+            uint flags = 0u;
+            if (block == 0) flags |= CHUNK_START;
+            if (block == 15) flags |= CHUNK_END;
+            if (block == 15 && single) flags |= ROOT;
+            uint bw[16];
+            const uint e0 = ci * 1024u + (uint)block * 64u;
+#pragma unroll
+            for (int i = 0; i < 16; i++) {
+                uint e = e0 + (uint)i * 4u;
+                bw[i] = (uint)(uchar)gen_int7(nc, e)
+                      | ((uint)(uchar)gen_int7(nc, e + 1u) << 8)
+                      | ((uint)(uchar)gen_int7(nc, e + 2u) << 16)
+                      | ((uint)(uchar)gen_int7(nc, e + 3u) << 24);
+            }
+            // Matrix bytes are hashed in registers only — never stored.
+            // `apply` regenerates elements on the fly and the on-hit proof
+            // path re-materializes the matrix via pearl_gen_matrix_dual.
+            uint out8[8];
+            blake3_compress(cv, bw, (ulong)ci, 64, flags | KEYED_HASH, out8);
+#pragma unroll
+            for (int i = 0; i < 8; i++) cv[i] = out8[i];
+        }
+#pragma unroll
+        for (int i = 0; i < 8; i++) s_leaves[tid * 8 + i] = cv[i];
+    }
+    __syncthreads();
+    // In-block pairwise subtree reduction (canonical odd-leaf passthrough,
+    // PARENT flag; ROOT only when this block IS the whole tree).
+    uint n = leaves;
+    while (n > 1u) {
+        const uint parents = (n + 1u) >> 1;
+        const bool root_level = (n == 2u) && (nsb == 1u);
+        uint w[8];
+        bool has = false;
+        if (tid < parents) {
+            has = true;
+            const uint* l = s_leaves + tid * 16;
+            if (tid * 2u + 1u >= n) {
+#pragma unroll
+                for (int i = 0; i < 8; i++) w[i] = l[i];
+            } else {
+                const uint* r = s_leaves + tid * 16 + 8;
+                uint block_w[16];
+#pragma unroll
+                for (int i = 0; i < 8; i++) block_w[i] = l[i];
+#pragma unroll
+                for (int i = 0; i < 8; i++) block_w[8 + i] = r[i];
+                uint flags = PARENT | KEYED_HASH;
+                if (root_level) flags |= ROOT;
+                uint cv[8];
+#pragma unroll
+                for (int i = 0; i < 8; i++) cv[i] = cv_key[i];
+                uint o[8];
+                blake3_compress(cv, block_w, 0, 64, flags, o);
+#pragma unroll
+                for (int i = 0; i < 8; i++) w[i] = o[i];
+            }
+        }
+        __syncthreads();
+        if (has) {
+#pragma unroll
+            for (int i = 0; i < 8; i++) s_leaves[tid * 8 + i] = w[i];
+        }
+        __syncthreads();
+        n = parents;
+    }
+    if (tid < 8u) {
+        ((uint*)(sub_out + (ulong)sb * 32ULL))[tid] = s_leaves[tid];
+    }
+}
+
 // gen A (mode 0) + B^T (mode 1 = gen_int7(nonce+1, gid)) in one launch.
 extern "C" __global__ void pearl_gen_matrix_dual(
     signed char* matrix_a,
@@ -2845,6 +3047,50 @@ __device__ void pearl_do_apply(signed char* noised, const signed char* matrix,
     int n_second = (int)e_noise[i * noise_rank + second_idx];
     int v = (int)matrix[gid];
     noised[gid] = (signed char)(v + n_first - n_second);
+}
+
+// apply_noise with on-the-fly matrix regeneration — gen_int7 is a pure
+// function of (nonce, element index), so instead of reading the 4MB
+// matrices back we recompute each element inline (A: gen_int7(nonce, gid),
+// B^T: gen_int7(nonce+1, g2)). Identical bytes, ~4MB less DRAM traffic.
+extern "C" __global__ void pearl_apply_noise_regen(
+    signed char* noised_a,
+    const ulong nonce,
+    const signed char* e_al,
+    const uint* e_ar_perm,
+    const uint m_dim,
+    signed char* noised_b,
+    const signed char* e_br,
+    const uint* e_bl_perm,
+    const uint n_dim,
+    const uint k_dim,
+    const uint noise_rank
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint mk = m_dim * k_dim;
+    if (gid < mk) {
+        uint i = gid / k_dim;
+        uint l = gid % k_dim;
+        uint fi = e_ar_perm[l * 2 + 0];
+        uint si = e_ar_perm[l * 2 + 1];
+        int n1 = (int)e_al[i * noise_rank + fi];
+        int n2 = (int)e_al[i * noise_rank + si];
+        noised_a[gid] =
+            (signed char)((int)gen_int7(nonce, gid) + n1 - n2);
+        return;
+    }
+    uint g2 = gid - mk;
+    if (g2 < n_dim * k_dim) {
+        uint i = g2 / k_dim;
+        uint l = g2 % k_dim;
+        uint fi = e_bl_perm[l * 2 + 0];
+        uint si = e_bl_perm[l * 2 + 1];
+        int n1 = (int)e_br[i * noise_rank + fi];
+        int n2 = (int)e_br[i * noise_rank + si];
+        noised_b[g2] =
+            (signed char)((int)gen_int7(nonce + 1ULL, g2) + n1 - n2);
+    }
 }
 
 // apply_noise A + B in one launch.
