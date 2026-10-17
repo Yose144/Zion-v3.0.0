@@ -1533,7 +1533,9 @@ impl MinerRuntime {
                         } else {
                             0.0
                         };
-                        let hashrate_str = format_hashrate(s.hashrate);
+                        let coin_t = s.coin.map(|c| c.as_str()).unwrap_or("");
+                        let hashrate_str =
+                            format_hashrate(crate::stream::display_hps(coin_t, s.hashrate));
                         if stream == StreamId::Zion {
                             info!(
                                 stream = stream.as_str(),
@@ -3068,9 +3070,18 @@ impl MinerRuntime {
         let rows_base = cfg.rows_base();
         let cols_base = cfg.cols_base();
 
+        // Attempts per spawn_blocking call — the CUDA backend queues the
+        // whole batch on-device with a single trailing sync, which is the
+        // dominant win under GPU timesharing (each mid-attempt sync used to
+        // cost a timeslice quantum). 1 = legacy per-attempt behavior.
+        let pearl_batch = std::env::var("ZION_PEARL_BATCH")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(16)
+            .clamp(1, 64);
         let nonce = self
             .gpu_ext_cursor(stream)
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            .fetch_add(pearl_batch as u64, std::sync::atomic::Ordering::Relaxed);
         let seed_derivation = if cert_version >= 3 {
             PearlSeedDerivation::Salted
         } else {
@@ -3106,7 +3117,7 @@ impl MinerRuntime {
         );
         ext_debug!(stream = ?stream, nonce = nonce, job_id = %ext.job_id, "pearl attempt start");
         let start = Instant::now();
-        let mine_result = task::spawn_blocking(move || {
+        let (mine_result, attempts_run) = task::spawn_blocking(move || {
             let need_recreate = gpu_ext_algo.lock().unwrap().as_deref() != Some("pearlhash");
             if need_recreate {
                 let miner = create_gpu_backend_with_cuda_device(
@@ -3141,29 +3152,54 @@ impl MinerRuntime {
             let gpu = guard
                 .as_mut()
                 .ok_or_else(|| anyhow::anyhow!("pearl gpu backend unavailable"))?;
-            gpu.mine_pearl(&input)
+            gpu.mine_pearl_batch(&input, pearl_batch)
         })
         .await
         .map_err(|e| MinerError::Consensus(format!("pearl mine join: {e}")))?
         .map_err(|e| MinerError::Consensus(format!("pearl mine: {e:#}")))?;
 
         // Duty-cycle gap identical to the generic ext path — Stream 1 (ZION)
-        // shares the card.
-        let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+        // shares the card. The pearl path bypasses the generic ext loop, so
+        // the proportional duty must be applied here as well; otherwise a
+        // batched pearl stream hogs the GPU regardless of the configured
+        // share. ZION_EXT_GPU_TIME_DUTY_PCT = target % of GPU time.
+        let work_ms = start.elapsed().as_millis() as u64;
+        let duty_env = match stream {
+            StreamId::GpuExternal2 => "ZION_EXT_GPU2_TIME_DUTY_PCT",
+            _ => "ZION_EXT_GPU_TIME_DUTY_PCT",
+        };
+        let duty_pct = std::env::var(duty_env)
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(0);
+            .filter(|&d| (1..=100).contains(&d))
+            .or_else(|| {
+                std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .filter(|&d| (1..=100).contains(&d))
+            })
+            .unwrap_or(100);
+        let gap_ms = if duty_pct < 100 && self.gpu_zion.lock().unwrap().is_some() {
+            work_ms.saturating_mul(100 - duty_pct) / duty_pct.max(1)
+        } else {
+            std::env::var("ZION_EXT_GPU_GAP_MS")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .unwrap_or(0)
+        };
         if gap_ms > 0 {
             sleep(Duration::from_millis(gap_ms)).await;
         }
 
         let elapsed = start.elapsed().as_secs_f64();
-        self.update_hashrate(stream, 1, elapsed).await;
+        self.update_hashrate(stream, attempts_run as u64, elapsed)
+            .await;
         ext_debug!(
             stream = ?stream,
             nonce = nonce,
             job_id = %ext.job_id,
             found = mine_result.is_some(),
+            attempts = attempts_run,
             elapsed_secs = elapsed,
             "pearl attempt completed"
         );

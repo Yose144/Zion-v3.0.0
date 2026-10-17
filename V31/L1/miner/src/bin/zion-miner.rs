@@ -603,12 +603,17 @@ async fn main() -> Result<()> {
                                 })
                             })
                             .collect();
+                        let coin_t = s.coin.as_ref().map(|c| c.ticker());
+                        let dhps = coin_t
+                            .map(|c| zion_miner::stream::display_hps(c, s.hashrate))
+                            .unwrap_or(s.hashrate);
                         streams.insert(
                             id.as_str().to_string(),
                             serde_json::json!({
-                                "coin": s.coin.as_ref().map(|c| c.ticker()),
+                                "coin": coin_t,
                                 "algorithm": s.algorithm.as_deref(),
                                 "hashrate_hps": s.hashrate,
+                                "hashrate_display_hps": dhps,
                                 "accepted": s.accepted,
                                 "rejected": s.rejected,
                                 "active": s.active,
@@ -724,12 +729,15 @@ async fn main() -> Result<()> {
                         .as_ref()
                         .map(|c| c.ticker())
                         .unwrap_or_else(|| id.as_str());
-                    let hr = if s.hashrate >= 1e6 {
-                        format!("{:.2} MH/s", s.hashrate / 1e6)
-                    } else if s.hashrate >= 1e3 {
-                        format!("{:.1} KH/s", s.hashrate / 1e3)
+                    let dhps = zion_miner::stream::display_hps(coin, s.hashrate);
+                    let hr = if dhps >= 1e9 {
+                        format!("{:.0} GH/s", dhps / 1e9)
+                    } else if dhps >= 1e6 {
+                        format!("{:.2} MH/s", dhps / 1e6)
+                    } else if dhps >= 1e3 {
+                        format!("{:.1} KH/s", dhps / 1e3)
                     } else {
-                        format!("{:.0} H/s", s.hashrate)
+                        format!("{:.0} H/s", dhps)
                     };
                     let devs = stats_rt.gpu_devices(*id).await;
                     let dev_str = if devs.is_empty() {
@@ -740,10 +748,13 @@ async fn main() -> Result<()> {
                             devs.iter()
                                 .map(|(n, h)| {
                                     let short = n.split(':').next().unwrap_or(n.as_str());
-                                    let hs = if *h >= 1e6 {
-                                        format!("{:.2}M", h / 1e6)
+                                    let dh = zion_miner::stream::display_hps(coin, *h);
+                                    let hs = if dh >= 1e9 {
+                                        format!("{:.0}G", dh / 1e9)
+                                    } else if dh >= 1e6 {
+                                        format!("{:.2}M", dh / 1e6)
                                     } else {
-                                        format!("{:.0}K", h / 1e3)
+                                        format!("{:.0}K", dh / 1e3)
                                     };
                                     format!("{short}={hs}")
                                 })
@@ -1230,7 +1241,9 @@ async fn srbminer_json(
             .and_then(|s| s.coin.as_ref().map(|c| c.ticker().to_string()))
             .or_else(|| force_coin.map(|c| c.ticker().to_string()))
             .unwrap_or_default();
-        let hashrate = s.map(|s| s.hashrate).unwrap_or(0.0);
+        // Report SRB-equivalent hps: pearl native unit is attempts/s, the
+        // API consumer (SMOS/desktop dashboards) expects hash/s.
+        let hashrate = zion_miner::stream::display_hps(&coin, s.map(|s| s.hashrate).unwrap_or(0.0));
         let accepted = s.map(|s| s.accepted).unwrap_or(0);
         let rejected = s.map(|s| s.rejected).unwrap_or(0);
         let is_gpu = stream.is_gpu_external()
@@ -1251,7 +1264,10 @@ async fn srbminer_json(
             } else {
                 for (idx, (name, hps)) in devs.iter().enumerate() {
                     let dev = format!("gpu{idx}");
-                    gpu_hr.insert(dev.clone(), serde_json::json!(hps));
+                    gpu_hr.insert(
+                        dev.clone(),
+                        serde_json::json!(zion_miner::stream::display_hps(&coin, *hps)),
+                    );
                     if gpu_devices.iter().all(|d| d["model"] != name.as_str()) {
                         gpu_devices.push(serde_json::json!({
                             "id": gpu_devices.len(),

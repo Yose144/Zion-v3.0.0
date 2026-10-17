@@ -146,7 +146,7 @@ impl App {
             if current.accepted > prev.accepted {
                 let delta = current.accepted - prev.accepted;
                 let coin = stream_coin_name(&current, id);
-                let hr_unit = fmt_hashrate_unit(current.hashrate);
+                let hr_unit = fmt_hashrate_unit(&current);
                 self.log(format!(
                     "{} share accepted +{} ({:.2} {})",
                     coin, delta, hr_unit.0, hr_unit.1
@@ -300,7 +300,7 @@ fn draw_streams_table(frame: &mut Frame, app: &App, area: Rect) {
             .get(id)
             .cloned()
             .unwrap_or_else(|| StreamStats::new(*id));
-        let (value, unit) = fmt_hashrate_unit(s.hashrate);
+        let (value, unit) = fmt_hashrate_unit(&s);
         let accept_rate = if s.accepted + s.rejected > 0 {
             (s.accepted as f64 / (s.accepted + s.rejected) as f64) * 100.0
         } else {
@@ -373,12 +373,13 @@ fn draw_totals(frame: &mut Frame, app: &App, area: Rect) {
     let mut total_rej = 0u64;
     for s in app.stats.values() {
         if s.active {
-            total_hr += s.hashrate;
+            let coin = s.coin.as_ref().map(|c| c.ticker()).unwrap_or("");
+            total_hr += crate::stream::display_hps(coin, s.hashrate);
         }
         total_acc += s.accepted;
         total_rej += s.rejected;
     }
-    let (value, unit) = fmt_hashrate_unit(total_hr);
+    let (value, unit) = crate::ui::fmt_hashrate(total_hr);
     let accept_rate = if total_acc + total_rej > 0 {
         (total_acc as f64 / (total_acc + total_rej) as f64) * 100.0
     } else {
@@ -458,8 +459,9 @@ fn stream_coin_name(s: &StreamStats, id: StreamId) -> String {
     }
 }
 
-fn fmt_hashrate_unit(hps: f64) -> (String, &'static str) {
-    crate::ui::fmt_hashrate(hps)
+fn fmt_hashrate_unit(s: &StreamStats) -> (String, &'static str) {
+    let coin = s.coin.as_ref().map(|c| c.ticker()).unwrap_or("");
+    crate::ui::fmt_hashrate_coin(coin, s.hashrate)
 }
 
 fn fmt_uptime(secs: u64) -> String {

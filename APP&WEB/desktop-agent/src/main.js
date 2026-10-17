@@ -2384,7 +2384,7 @@ const SRB_API_PORT = 21550;
 const SRB_MAX_RESTARTS = 3;
 const SRB_DEFAULT_POOL = 'eu.lproute.com:5660';
 const SRB_DEFAULT_WALLET = 'qzjoHwaJ2GfiRSHyYkYcpoJFbHct9pb9EAbs7sE51Uhj8r2zb';
-const SRB_DEFAULT_PRL_POOL = 'prl.suprnova.cc:3370';
+const SRB_DEFAULT_PRL_POOL = 'pearl-eu2.luckypool.io:3360';
 const SRB_DEFAULT_PRL_WALLET = 'prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m';
 // What the running sidecar actually mines — feeds stream-2 card labels +
 // share events (was hardcoded QTU before Pearl support landed in 3.7.6).
