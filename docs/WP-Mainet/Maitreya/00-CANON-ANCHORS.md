@@ -49,8 +49,9 @@
 
 | Tvrzení | Fakt / kotva |
 |---|---|
-| „Podpis pod prohlášením" | „Ten, kdo ho jako první najde, zdědí celé jmění. — **Maitreya Buddha, 2025**" (Kniha Zrození kap. IV) |
-| „Tři úrovně ceny" | Úroveň I XP leaderboard 1 mld · Úroveň II Easter Egg 0,5 mld · Úroveň III achievements 0,25 mld → **1,75 mld ZION** (ve WP One Love figuruje 4,95 mld jako celková skrytá suma — použít konzistentně jako „ukryto v řetězci" vs. „grand prize") |
+| „Podpis pod prohlášením" | „Ten, kdo ho jako první najde, zdědí celé jmění. — **Maitreya Buddha, 2025**" (Kniha Zrození kap. IV) — Maitreya je **signatář ceny**, ne soutěžící |
+| **„Výherce OASIS = ten, kdo najde vejce"** | Easter Egg Hunt = úroveň II Velké ceny (500M ZION); finder vyhrává jako hráč/poutník — **odděleno od dědictví DAO sedadel** (ty se předávají jménem, ne výhrou) |
+| „Tři úrovně ceny" | Úroveň I XP leaderboard 1 mld · Úroveň II Easter Egg 0,5 mld · Úroveň III achievements 0,25 mld → **1,75 mld ZION**; premine OASIS+Golden Egg = 3 sloty × 1,65 mld → 4,95 mld (celková alokace, ne výhra) |
 | „Tři klíče" | Měděný, jaspisový, křišťálový |
 | „108 stop" | Ramayana/Mahabharata indície (Kvantová revoluce kap. 5) |
 | „Poslední test není výpočet" | Finální consciousness test: kvantová hádanka, 100h meditace, pomoc 1 000 těžařům, tajná zpráva v genesis — **vítěz musí darovat** |

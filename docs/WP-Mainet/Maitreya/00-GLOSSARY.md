@@ -34,10 +34,15 @@ Ne majitel sítě (ta nemá majitele — fair launch). Ten, komu připadne sprá
 *Kanon: „Ten, kdo ho jako první najde, zdědí celé jmění" — prohlášení 2025.*
 
 **Kovářův syn**
-Hlavní postava části II–V. Syn kováře z Bezechuti — chlapec, který vyrostl u ohně pod vyrytým podpisem. Pomalý hledač s kompasem pěti slibů. Později: nalezenec vejce, první správce DAO, držitel sedadla Ramy. Záměrně bezejmenný v přímém vyprávění — „syn" je jeho funkce (dědic řemesla i smlouvy); čtenář pozná, koho nese, až když padne čtvrtá odpověď.
+Hlavní postava části II–V. Syn kováře z Bezechuti — chlapec, který vyrostl u ohně pod vyrytým podpisem. Pomalý hledač s kompasem pěti slibů; strážce tří klíčů — drží je pro toho, kdo cestu dojde, ne pro sebe. Později: dědic sedadla Ramy (Admin-1), správce DAO — **ne** nalezenec vejce: vejce vyhrává Poutnice. Záměrně bezejmenný v přímém vyprávění — „syn" je jeho funkce (dědic řemesla i smlouvy); čtenář pozná, koho nese, až když padne čtvrtá odpověď.
 
-**Gen Z pravidla (Otcův list)**
-Pět pravidel zapsaných zakladatelem pro dědice — v příběhu dopis uvnitř vejce:
+**Poutnice**
+
+Výherce OASIS — postava, která prošla všech 108 stop pěšky a našla zlaté vejce. U brány odpovídá testem odevzdání: část pokladu vrací cestě. Představuje kanonickou mechaniku hry — *vítězem je ten, kdo vejce najde* — v kontrastu k dědici, který přijímá sedadlo jménem, ne výhrou.
+
+**Gen Z pravidla (dopis otce)**
+
+Pět pravidel zapsaných zakladatelem pro dědice — v příběhu dopis odevzdaný synovi zvlášť (zabalený ve smolném plátně), ne uvnitř vejce:
 1. Klíče = vlastnictví. Kdo má klíč, má moc. Kdo má klíč, má odpovědnost.
 2. DAO = komunita. ZION není váš — patří všem. Vy jste správci, ne vlastníci.
 3. Dědictví = odpovědnost. Odmítněte ZION prodat, změnit nebo zničit.

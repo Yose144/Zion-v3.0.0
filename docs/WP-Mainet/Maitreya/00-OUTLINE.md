@@ -52,15 +52,15 @@ Detektivka vyvrcholí pravdou vrstev: v repozitáři historie existuje jeden pod
 
 ### Kapitola 4 — Tři klíče, tři sedadla
 
-Hra o Zlaté vejce (2035, herní horizont): 108 stop, tři klíče — měděný (práce), jaspisový (trpělivost), křišťálový (pravda). Lovci: Velryba, Gilda kartografů — a **kovářův syn**: chlapec, který vyrostl u ohně pod vyrytým podpisem a hledá pomalu, s kompasem pěti slibů. Paralela, která se odhaluje: tři klíče ~ tři sedadla guardianů (Rama/Sita/Hanuman) — a klíče se nekupují, získávají se prokázáním vlastnosti.
+Hra o Zlaté vejce (2035, herní horizont): 108 stop, tři klíče — měděný (práce), jaspisový (trpělivost), křišťálový (pravda). Lovci: Velryba, Gilda kartografů — a **kovářův syn**: chlapec, který vyrostl u ohně pod vyrytým podpisem a hledá pomalu, s kompasem pěti slibů. Klíče se nekupují, získávají se prokázáním vlastnosti — a syn je drží jako strážce, ne jako soutěžící. Odhalovaný kontrast: klíče otevírají dvířka hry pro toho, kdo projde cestu; sedadla guardianů (Rama/Sita/Hanuman → Maitreya/Sarah/Elizabeth) se nevyhrávají — dědí se.
 
 ### Kapitola 5 — Test odevzdání
 
-Jádro knihy. Poslední stopa není rébus — je to otázka: *„Co uděláš s jměním, které zdědíš?"* Velryba: držet → ticho. Gilda: rozdělit → váhání. Syn odpovídá otcovými slovy, která našel ve stěně trupu: **„Odevzdám ho tomu, kvůli komu jsem ho hledal."** Brána se otevírá ne jako trezor — jako dveře do zahrady. Mechanika: ego zemře → vejce praskne zevnitř.
+Jádro knihy. Poslední stopa není rébus — je to otázka: *„Co uděláš s jměním, které zdědíš?"* Velryba: držet → ticho. Gilda: rozdělit → váhání. **Poutnice** — ta, co prošla všech 108 stop pěšky — odpovídá odevzdáním (část vrátí cestě) a brána se otevírá jako dveře do zahrady. Vejce se rozlomí zevnitř: **výherce OASIS je ten, kdo vejce najde** — a syn je svědkem, ne soutěžícím. Jeho dědictví je jinde: sedadlo, ne cena.
 
 ### Kapitola 6 — Správce, ne majitel
 
-Uvnitř vejce: ne poklad — **klíčová karta s nápisem DAO** a dopis: „ZION není váš — patří všem. Vy jste správci, ne vlastníci." Syn se učí roli: návrhy píše komunita, správce první podepisuje schválené — a odmítnout smí jen porušení konstituce. Sedadla se rozsvěcí: syn → Rama (protokol), sestra → Sita (treasury — stanice Issobella nese její jméno), **třetí židle zůstává prázdná — pro tu, co přijde**. Dead man's switch odhalen jako otcova pojistka: kdyby zmizel, řetězec sám předá klíč.
+Synovo dědictví nepřichází z vejce (to si nese výherce OASIS) — přichází **dopisem otcovou rukou**: „ZION není váš — patří všem. Vy jste správci, ne vlastníci." Syn se učí roli: návrhy píše komunita, správce první podepisuje schválené — a odmítnout smí jen porušení konstituce. Sedadla se rozsvěcí: syn → Rama (Admin-1, protokol), sestra Sarah Issobela → Sita (Admin-2, treasury — stanice Issobella nese její jméno), Elizabeth → Hanuman (Admin-3, bridge — **čtvrtá židle zůstává prázdná**). Dead man's switch odhalen jako otcova pojistka: kdyby zmizel, řetězec sám předá klíč.
 
 ---
 

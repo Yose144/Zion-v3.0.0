@@ -22,7 +22,7 @@ Není to jeden člověk, který přišel jednou. Je to role, která se předáv�
 
 Otec odpověděl svědectvím: napsal synovo jméno do prvního bloku — a podepsal svět, aby svět věděl, že dědictví se nenášuje, ale dokazuje.
 
-Syn odpověděl odevzdáním: vzal kartu DAO a držel ji jako dech — ne jeho, ale celého kruhu. Podepsal protinávrh, který vzdal výsady — a trůn se rozebral na hlasy.
+Syn odpověděl odevzdáním: přijal sedadlo, které mu bylo napsáno — a držel je jako dech, ne jeho, ale celého kruhu. Podepsal protinávrh, který vzdal výsady — a trůn se rozebral na hlasy.
 
 Sestra odpověděla oknem: seděla na stanici svého jména a dívala se dolů — a dole se díváš na svět, který držíš, a nahoru na svět, který tě drží.
 

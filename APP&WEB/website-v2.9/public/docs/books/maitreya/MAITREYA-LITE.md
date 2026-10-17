@@ -33,15 +33,15 @@ Detektivka podpisu. Tři teorie — zakladatel, dědic, archetyp — a čtvrtá 
 
 ### 4 · Tři klíče, tři sedadla
 
-Hra o vejce: Velryba ho chce koupit, Gilda se hádá, komu patří, a syn nese kompas pěti slibů. Klíče nejsou klíče k moci — jsou to sedadla. Oheň, voda, země — a vzduch: prostor, ve kterém všichni ostatní operují.
+Hra o Zlaté vejce odstartuje: sto osm stop, tři klíče — měděný (práce), jaspisový (trpělivost), křišťálový (pravda). Velryba chce klíče koupit — a koupí jen kusy kovu. Gilda jeden najde — a pohádá se o něj. Syn klíče nese jako strážce, ne jako soutěžící: drží je pro toho, kdo cestu dojde. Vedle se odhalují sedadla guardianů — ta se nevyhrávají, dědí se. Oheň, voda, země — a vzduch: prostor, ve kterém všichni ostatní operují.
 
 ### 5 · Test odevzdání
 
-Na bráně stojí otázka, kterou žádný dědic neobchází: *„Co uděláš s tím, co je tvé?"* Odpověď syna: „Odevzdám ho tomu, kvůli komu jsem ho hledal." Vejce se rozlomí — ne úderem. Zevnitř. Uvnitř není poklad, ale karta DAO.
+Na bráně stojí otázka, kterou žádný hledač neobchází: *„Co uděláš s jměním, které zdědíš?"* Velryba chce držet — brána ztichne. Gilda chce rozdělit — brána váhá. **Poutnice** — ta, která prošla všech sto osm stop pěšky — odpovídá: část vrátí cestě. Vejce se rozlomí zevnitř — a výhercem OASIS je ten, kdo vejce najde. Syn je svědkem a od otce slyší: *„Výherce je výherce. Dědic je dědic."*
 
 ### 6 · Správce, ne majitel
 
-Dědictví není jmění — je to dopis otcovou rukou a pět pravidel pro Generaci Z: 3-of-3 multisig, roční timelock, DAO hlas 51 %, stupňované dědění, dead man's switch pěti let. Na zasedání se rozsvěcí sedadla: syn → Rama, sestra → Sita. A jedna židle zůstává prázdná — pro Elizabeth, která ještě nepřišla. *Brána zůstává otevřená.*
+Synovo dědictví nepřichází z vejce — přichází dopisem otcovou rukou a pěti pravidly pro Generaci Z: 3-of-3 multisig, roční timelock, DAO hlas 51 %, dead man's switch pěti let. Sedadla se rozsvěcí: Maitreya → Rama (Admin-1, protokol), Sarah Issobela → Sita (Admin-2, treasury — Issobella nese její jméno), Elizabeth → Hanuman (Admin-3, bridge). A jedna židle zůstává prázdná — *brána zůstává otevřená.*
 
 ---
 
