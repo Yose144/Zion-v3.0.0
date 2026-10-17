@@ -768,29 +768,40 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
     const uint k_dim = params[2];
     const uint rank = params[3];
 
-    __shared__ uint jackpot[JACKPOT_SIZE];          // 16 elements = 64 bytes
+    // 4 warps per block: each warp mines its own tile (tile_id below).
+    // SM86 caps resident blocks at 32 → 32-thread blocks stall occupancy at
+    // 32/48 warps; 128-thread blocks reach 48/48 (+50% latency hiding).
+    __shared__ uint jackpot_all[4 * JACKPOT_SIZE];    // 4 warps × 16 = 256 B
 
     uint lid = threadIdx.x;
-    uint tile_id = blockIdx.x;
+    uint warp = lid >> 5;
+    uint lane = lid & 31;
+    uint* jackpot = jackpot_all + warp * JACKPOT_SIZE;
+    uint tile_id = blockIdx.x * (blockDim.x >> 5) + warp;
 
     // Warp-uniform early out — lanes must stay converged for the butterfly
     // XOR shuffles below (a divergent volatile read would leave the mask short).
     if (__any_sync(0xffffffffu, *found != 0u)) return;
 
-    uint row_off_idx = tile_id / num_col_offsets;
-    uint col_off_idx = tile_id % num_col_offsets;
+    // Col-major tile order: consecutive blocks share the same 8 b_cols
+    // (16KB stays hot in L2 for all 256 row_offs), while A rows stream
+    // through L2 too (256×8KB=2MB < 3MB). Global traffic drops from
+    // ~800MB/attempt (row-major flushes B between tiles) to ~250MB —
+    // measured +40-60% on the dominant mine stage.
+    uint row_off_idx = tile_id % num_row_offsets;
+    uint col_off_idx = tile_id / num_row_offsets;
 
     if (row_off_idx >= num_row_offsets || col_off_idx >= num_col_offsets) return;
 
     uint row_off = row_offsets[row_off_idx];
     uint col_off = col_offsets[col_off_idx];
 
-    uint u = lid / TILE_W;
-    uint v = lid % TILE_W;
+    uint u = lane / TILE_W;
+    uint v = lane % TILE_W;
     uint a_row = row_off + rows_base[u];
     uint b_col = col_off + cols_base[v];
 
-    if (lid == 0) {
+    if (lane == 0) {
         for (int i = 0; i < JACKPOT_SIZE; i++) jackpot[i] = 0u;
     }
 
@@ -811,15 +822,41 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
         uint a_base = a_row * k_dim + (ll - rank);
         uint b_base = b_col * k_dim + (ll - rank);
 #if __CUDA_ARCH__ >= 610
-        if (dp4a_ok) {
+        if (dp4a_ok && rank == 128u) {
+            // Compile-time trip count → the compiler fully unrolls and
+            // hoists all 16 int4 loads (256B) ahead of the dp4a chain —
+            // the runtime-`rank` loop could never unroll, so each lane
+            // stalled per iteration on global latency (kernel is
+            // latency-bound: ~4.5% issue util, ~25% DRAM). 4 independent
+            // accumulators keep the dp4a chains parallel; int add is
+            // associative → bit-identical.
+            int acc0 = 0, acc1 = 0, acc2 = 0, acc3 = 0;
+#pragma unroll
+            for (uint l = 0; l < 128u; l += 16u) {
+                int4 av = *(const int4*)(noised_a + a_base + l);
+                int4 bv = *(const int4*)(noised_b + b_base + l);
+                acc0 = __dp4a(av.x, bv.x, acc0);
+                acc1 = __dp4a(av.y, bv.y, acc1);
+                acc2 = __dp4a(av.z, bv.z, acc2);
+                acc3 = __dp4a(av.w, bv.w, acc3);
+            }
+            acc = (acc0 + acc1) + (acc2 + acc3);
+        } else if (dp4a_ok) {
+            // 4 independent dp4a accumulator chains — breaks the serial RAW
+            // dependency so the unit pipelines 4× per iteration (int add is
+            // associative → bit-identical sum). Partial unroll keeps ~8
+            // int4 loads in flight per lane for global-latency hiding.
+            int acc0 = 0, acc1 = 0, acc2 = 0, acc3 = 0;
+#pragma unroll 4
             for (uint l = 0; l < rank; l += 16) {
                 int4 av = *(const int4*)(noised_a + a_base + l);
                 int4 bv = *(const int4*)(noised_b + b_base + l);
-                acc = __dp4a(av.x, bv.x, acc);
-                acc = __dp4a(av.y, bv.y, acc);
-                acc = __dp4a(av.z, bv.z, acc);
-                acc = __dp4a(av.w, bv.w, acc);
+                acc0 = __dp4a(av.x, bv.x, acc0);
+                acc1 = __dp4a(av.y, bv.y, acc1);
+                acc2 = __dp4a(av.z, bv.z, acc2);
+                acc3 = __dp4a(av.w, bv.w, acc3);
             }
+            acc = (acc0 + acc1) + (acc2 + acc3);
         } else
 #endif
         {
@@ -839,14 +876,14 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
         xored ^= __shfl_xor_sync(0xffffffffu, xored, 4);
         xored ^= __shfl_xor_sync(0xffffffffu, xored, 2);
         xored ^= __shfl_xor_sync(0xffffffffu, xored, 1);
-        if (lid == 0) {
+        if (lane == 0) {
             uint tid = (uint)((ll / rank - 1) % JACKPOT_SIZE);
             jackpot[tid] = (jackpot[tid] << LROT) | (jackpot[tid] >> (32u - LROT));
             jackpot[tid] ^= xored;
         }
     }
 
-    if (lid == 0) {
+    if (lane == 0) {
         uchar jackpot_msg[64];
         for (int i = 0; i < JACKPOT_SIZE; i++) {
             jackpot_msg[i * 4 + 0] = (uchar)(jackpot[i]);
@@ -870,11 +907,632 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
         if (meets) {
             uint old = atomicExch((uint*)found, 1u);
             if (old == 0u) {
-                *output_tile = tile_id;
+                *output_tile = row_off_idx * num_col_offsets + col_off_idx;
                 for (int i = 0; i < 32; i++) output_jackpot[i] = hash[i];
             }
         }
     }
+}
+
+// ─── mine_native_v4 — column-strip batching ─────────────────────────────────
+// One warp mines a STRIP of STRIP_T tiles sharing the same col_off (all 8
+// b_cols common to the strip). Per rank-window iteration each lane issues
+// STRIP_T A-loads + 1 B-load (the B int4 feeds all STRIP_T dot chains) →
+// ~4-9× more loads in flight per lane and ~19× less per-tile traffic vs the
+// one-tile-per-warp v3 (which measured ~4.5% issue util — latency-bound).
+// Strip order is band-major (consecutive strips = same 8 row_offs, different
+// col_off) so a band's A rows (~64KB) stay hot in L2 while B streams.
+// Semantics bit-identical to v3: same per-pair dots, same cumulative my_acc
+// fold per window, same jackpot rotl+xor schedule, same canonical tile_id.
+#define MINE_V4_STRIP_T 8
+extern "C" __global__ void pearl_pouw_mine_native_v4(
+    const signed char* noised_a,
+    const signed char* noised_b,
+    const uchar* a_noise_seed,
+    const uchar* target,
+    const uint* row_offsets,
+    const uint* col_offsets,
+    const uint* rows_base,
+    const uint* cols_base,
+    uint* output_tile,
+    uchar* output_jackpot,
+    volatile uint* found,
+    const uint* params  // [num_row_offsets, num_col_offsets, k_dim, rank]
+)
+{
+    const uint num_row_offsets = params[0];
+    const uint num_col_offsets = params[1];
+    const uint k_dim = params[2];
+    const uint rank = params[3];
+
+    // 4 warps per block (same occupancy rationale as v3).
+    __shared__ uint jackpot_all[4 * MINE_V4_STRIP_T * JACKPOT_SIZE]; // 2KB
+
+    uint lid = threadIdx.x;
+    uint warp = lid >> 5;
+    uint lane = lid & 31;
+    uint* jackpot = jackpot_all + warp * MINE_V4_STRIP_T * JACKPOT_SIZE;
+    uint strip = blockIdx.x * (blockDim.x >> 5) + warp;
+
+    // Band-major strip order: strip = band * num_col_offsets + col_off_idx.
+    uint band = strip / num_col_offsets;
+    uint col_off_idx = strip % num_col_offsets;
+    uint ro0 = band * MINE_V4_STRIP_T;
+    if (ro0 >= num_row_offsets) return;
+
+    uint col_off = col_offsets[col_off_idx];
+    uint u = lane / TILE_W;
+    uint v = lane % TILE_W;
+    uint b_col = col_off + cols_base[v];
+
+    // Per-strip A row per tile slot (OOB slots → a_row 0, skipped at
+    // fold/tail; they still participate in loads harmlessly — my_acc stays
+    // consistent because OOB tiles never touch the jackpot).
+    uint a_row[MINE_V4_STRIP_T];
+    bool live[MINE_V4_STRIP_T];
+#pragma unroll
+    for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+        uint ri = ro0 + (uint)t;
+        live[t] = ri < num_row_offsets;
+        a_row[t] = live[t] ? row_offsets[ri] + rows_base[u] : 0u;
+    }
+
+    if (lane < MINE_V4_STRIP_T) {
+        uint* jp = jackpot + lane * JACKPOT_SIZE;
+        for (int i = 0; i < JACKPOT_SIZE; i++) jp[i] = 0u;
+    }
+    __syncwarp();
+
+    const bool dp4a_ok = ((k_dim | rank) & 15u) == 0u;
+    int my_acc[MINE_V4_STRIP_T];
+#pragma unroll
+    for (int t = 0; t < MINE_V4_STRIP_T; t++) my_acc[t] = 0;
+
+    for (uint ll = rank; ll <= k_dim; ll += rank) {
+        uint b_base = b_col * k_dim + (ll - rank);
+#if __CUDA_ARCH__ >= 610
+        if (dp4a_ok && rank == 128u && k_dim == 2048u) {
+            // STRIP_T=8 dot chains per lane, one B int4 broadcast to all.
+            // Compile-time bounds → full unroll, ~9 loads in flight/lane.
+#pragma unroll 2
+            for (uint l = 0; l < 128u; l += 16u) {
+                int4 bv = *(const int4*)(noised_b + b_base + l);
+                uint w = (ll - rank) + l;
+#pragma unroll
+                for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+                    int4 av = *(const int4*)(noised_a + a_row[t] * k_dim + w);
+                    my_acc[t] = __dp4a(av.x, bv.x, my_acc[t]);
+                    my_acc[t] = __dp4a(av.y, bv.y, my_acc[t]);
+                    my_acc[t] = __dp4a(av.z, bv.z, my_acc[t]);
+                    my_acc[t] = __dp4a(av.w, bv.w, my_acc[t]);
+                }
+            }
+        } else if (dp4a_ok) {
+            for (uint l = 0; l < rank; l += 16) {
+                int4 bv = *(const int4*)(noised_b + b_base + l);
+                uint w = (ll - rank) + l;
+                for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+                    int4 av = *(const int4*)(noised_a + a_row[t] * k_dim + w);
+                    my_acc[t] = __dp4a(av.x, bv.x, my_acc[t]);
+                    my_acc[t] = __dp4a(av.y, bv.y, my_acc[t]);
+                    my_acc[t] = __dp4a(av.z, bv.z, my_acc[t]);
+                    my_acc[t] = __dp4a(av.w, bv.w, my_acc[t]);
+                }
+            }
+        } else
+#endif
+        {
+            for (uint l = 0; l < rank; l++) {
+                int bv = (int)noised_b[b_base + l];
+                uint w = (ll - rank) + l;
+                for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+                    my_acc[t] += (int)noised_a[a_row[t] * k_dim + w] * bv;
+                }
+            }
+        }
+
+        // Per-tile cumulative fold — identical semantics to v3: fold the
+        // RUNNING my_acc of all 32 lanes, rotl+xor into that tile's jackpot.
+        uint widx = (uint)((ll / rank - 1) % JACKPOT_SIZE);
+#pragma unroll
+        for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+            if (!live[t]) continue;
+            uint xored = (uint)my_acc[t];
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 16);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 8);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 4);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 2);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 1);
+            if (lane == 0) {
+                uint* jp = jackpot + t * JACKPOT_SIZE;
+                jp[widx] = (jp[widx] << LROT) | (jp[widx] >> (32u - LROT));
+                jp[widx] ^= xored;
+            }
+        }
+    }
+
+    // Tail — distribute the per-tile hash+target-check over lanes 0..T-1
+    // (8 parallel blake3_64 hashes instead of lane-0 serial ×8).
+    if (lane < MINE_V4_STRIP_T && live[lane]) {
+        uint* jp = jackpot + lane * JACKPOT_SIZE;
+        uchar jackpot_msg[64];
+        for (int i = 0; i < JACKPOT_SIZE; i++) {
+            jackpot_msg[i * 4 + 0] = (uchar)(jp[i]);
+            jackpot_msg[i * 4 + 1] = (uchar)(jp[i] >> 8);
+            jackpot_msg[i * 4 + 2] = (uchar)(jp[i] >> 16);
+            jackpot_msg[i * 4 + 3] = (uchar)(jp[i] >> 24);
+        }
+
+        uchar hash[32];
+        blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
+
+        // hash is little-endian, target is big-endian. Reverse for compare.
+        bool meets = true;
+        for (int i = 0; i < 32; i++) {
+            uchar h = hash[31 - i];
+            uchar t = target[i];
+            if (h < t) { meets = true; break; }
+            if (h > t) { meets = false; break; }
+        }
+
+        if (meets) {
+            uint old = atomicExch((uint*)found, 1u);
+            if (old == 0u) {
+                *output_tile = (ro0 + lane) * num_col_offsets + col_off_idx;
+                for (int i = 0; i < 32; i++) output_jackpot[i] = hash[i];
+            }
+        }
+    }
+}
+
+// ─── mine_native_v5 — block-staged A windows ────────────────────────────────
+// v4 proved the kernel is L2-latency-bound (32 dp4a per ~600cy load round).
+// v5 kills the latency: block = 4 strips of the SAME band share one staged
+// copy of the band's A-window in shared memory (32 rows × rank bytes = 4KB
+// for rank=128). Per lane-iteration: 8 A reads from smem (~30cy) + 1 B read
+// from global (hidden by occupancy) → the dp4a pipe finally feeds.
+// smem budget: 4KB/block → ~12 blocks/SM → full occupancy preserved.
+// Semantics bit-identical to v3/v4 (same dots/fold/jackpot/tile_id).
+extern "C" __global__ void pearl_pouw_mine_native_v5(
+    const signed char* noised_a,
+    const signed char* noised_b,
+    const uchar* a_noise_seed,
+    const uchar* target,
+    const uint* row_offsets,
+    const uint* col_offsets,
+    const uint* rows_base,
+    const uint* cols_base,
+    uint* output_tile,
+    uchar* output_jackpot,
+    volatile uint* found,
+    const uint* params  // [num_row_offsets, num_col_offsets, k_dim, rank]
+)
+{
+    const uint num_row_offsets = params[0];
+    const uint num_col_offsets = params[1];
+    const uint k_dim = params[2];
+    const uint rank = params[3];
+
+    // Staged A window: 32 rows × 8 int4 (rank=128 → 128B) = 4KB.
+    // Row r = (t = r/4, u = r%4) → global row = row_offsets[ro0+t]+rows_base[u].
+    __shared__ int4 sh_a[2][8 * 4 * 8];
+    __shared__ uint jackpot_all[4 * MINE_V4_STRIP_T * JACKPOT_SIZE]; // 2KB
+
+    uint lid = threadIdx.x;
+    uint warp = lid >> 5;
+    uint lane = lid & 31;
+    uint* jackpot = jackpot_all + warp * MINE_V4_STRIP_T * JACKPOT_SIZE;
+
+    // Block covers 4 strips of ONE band: band = blockIdx/32 (32 col-groups
+    // per band when nco=128); col_off_idx = col_base + warp.
+    uint cols_per_band = num_col_offsets;
+    uint band = blockIdx.x * 4 / cols_per_band;
+    uint col_base = (blockIdx.x * 4) % cols_per_band;
+    uint col_off_idx = col_base + warp;
+    uint ro0 = band * MINE_V4_STRIP_T;
+    bool strip_live = (ro0 < num_row_offsets) && (col_off_idx < num_col_offsets);
+    uint col_off = strip_live ? col_offsets[col_off_idx] : 0u;
+
+    uint u = lane / TILE_W;
+    uint v = lane % TILE_W;
+    uint b_col = col_off + cols_base[v];
+
+    bool live[MINE_V4_STRIP_T];
+#pragma unroll
+    for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+        uint ri = ro0 + (uint)t;
+        live[t] = strip_live && ri < num_row_offsets;
+    }
+
+    // The block's 4 strips share the band → the staged A window is the same
+    // for all warps. row index for stage position p: (p/8) → t=(p/8)/4.
+    // Per thread: 2 of 256 int4s (rank=128 → 8 int4/row × 32 rows).
+    if (lane < MINE_V4_STRIP_T) {
+        uint* jp = jackpot + lane * JACKPOT_SIZE;
+        for (int i = 0; i < JACKPOT_SIZE; i++) jp[i] = 0u;
+    }
+
+    const bool dp4a_ok = ((k_dim | rank) & 15u) == 0u;
+    int my_acc[MINE_V4_STRIP_T];
+#pragma unroll
+    for (int t = 0; t < MINE_V4_STRIP_T; t++) my_acc[t] = 0;
+
+    // Warp-uniform early out — found is only set by OTHER blocks' tails (our
+    // tail runs after the loop), so a single entry check keeps every thread
+    // on the same __syncthreads schedule (divergent syncs are UB pre-Volta
+    // and deadlock-prone on sm61).
+    if (__any_sync(0xffffffffu, *found != 0u)) return;
+
+    // Register-prefetch pipeline: each thread owns 2 of the 256 int4 slots.
+    // Iteration w: store prefetched regs→smem[w&1], sync, ISSUE global loads
+    // for window w+1 into regs (latency then hides under compute), compute
+    // from smem[w&1], sync (before the next write to the other buffer would
+    // race with stragglers… actually the other buffer was last read at w-1;
+    // the second sync guards write(w+1) vs compute(w) of THIS buffer).
+    uint ints_per_row = max(1u, rank >> 4); // rank/16 int4s (8 when rank=128)
+    int4 stage_regs[2];
+    uint stage_arow[2];
+    {
+#pragma unroll
+        for (int i = 0; i < 2; i++) {
+            uint p = lid + (uint)(i << 7);
+            uint row = p / ints_per_row;
+            uint t = row >> 2;
+            uint uu = row & 3;
+            uint ri = ro0 + t;
+            stage_arow[i] = (ri < num_row_offsets)
+                ? row_offsets[ri] + rows_base[uu] : 0u;
+        }
+    }
+
+    uint win_idx = 0;
+    for (uint ll = rank; ll <= k_dim; ll += rank, win_idx++) {
+        uint base = ll - rank;
+        if (win_idx == 0) {
+#pragma unroll
+            for (int i = 0; i < 2; i++) {
+                uint off = (lid + (uint)(i << 7)) % ints_per_row;
+                stage_regs[i] =
+                    *(const int4*)(noised_a + stage_arow[i] * k_dim + base + (off << 4));
+            }
+        }
+        // Commit prefetched window to smem and make it visible.
+        sh_a[win_idx & 1][lid] = stage_regs[0];
+        sh_a[win_idx & 1][lid + 128] = stage_regs[1];
+        __syncthreads();
+
+        // Issue next-window loads now — they fly while we compute.
+        if (ll + rank <= k_dim) {
+            uint nbase = base + rank;
+#pragma unroll
+            for (int i = 0; i < 2; i++) {
+                uint off = (lid + (uint)(i << 7)) % ints_per_row;
+                stage_regs[i] =
+                    *(const int4*)(noised_a + stage_arow[i] * k_dim + nbase + (off << 4));
+            }
+        }
+        if (strip_live) {
+
+        uint b_base = b_col * k_dim + (ll - rank);
+        const int4* sw = sh_a[win_idx & 1];
+#if __CUDA_ARCH__ >= 610
+        if (dp4a_ok && rank == 128u && k_dim == 2048u) {
+            // Whole B window (8×int4) into registers up front — one latency
+            // round per window instead of a serial global load every l-iter.
+            int4 breg[8];
+#pragma unroll
+            for (int i = 0; i < 8; i++)
+                breg[i] = *(const int4*)(noised_b + b_base + (i << 4));
+#pragma unroll 2
+            for (uint l = 0; l < 128u; l += 16u) {
+                int4 bv = breg[l >> 4];
+                uint li = l >> 4;
+#pragma unroll
+                for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+                    int4 av = sw[(t * 4 + u) * 8 + li];
+                    my_acc[t] = __dp4a(av.x, bv.x, my_acc[t]);
+                    my_acc[t] = __dp4a(av.y, bv.y, my_acc[t]);
+                    my_acc[t] = __dp4a(av.z, bv.z, my_acc[t]);
+                    my_acc[t] = __dp4a(av.w, bv.w, my_acc[t]);
+                }
+            }
+        } else if (dp4a_ok) {
+            for (uint l = 0; l < rank; l += 16) {
+                int4 bv = *(const int4*)(noised_b + b_base + l);
+                uint li = l >> 4;
+                for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+                    int4 av = sw[(t * 4 + u) * (rank >> 4) + li];
+                    my_acc[t] = __dp4a(av.x, bv.x, my_acc[t]);
+                    my_acc[t] = __dp4a(av.y, bv.y, my_acc[t]);
+                    my_acc[t] = __dp4a(av.z, bv.z, my_acc[t]);
+                    my_acc[t] = __dp4a(av.w, bv.w, my_acc[t]);
+                }
+            }
+        } else
+#endif
+        {
+            for (uint l = 0; l < rank; l++) {
+                int bv = (int)noised_b[b_base + l];
+                uint li = l >> 4, sb = l & 15;
+                for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+                    int4 packed = sw[(t * 4 + u) * (rank >> 4) + li];
+                    int av = (int)((const signed char*)&packed)[sb];
+                    my_acc[t] += av * bv;
+                }
+            }
+        }
+
+        // Per-tile cumulative fold (identical to v4).
+        uint widx = (uint)((ll / rank - 1) % JACKPOT_SIZE);
+#pragma unroll
+        for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+            if (!live[t]) continue;
+            uint xored = (uint)my_acc[t];
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 16);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 8);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 4);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 2);
+            xored ^= __shfl_xor_sync(0xffffffffu, xored, 1);
+            if (lane == 0) {
+                uint* jp = jackpot + t * JACKPOT_SIZE;
+                jp[widx] = (jp[widx] << LROT) | (jp[widx] >> (32u - LROT));
+                jp[widx] ^= xored;
+            }
+        }
+        } // strip_live
+        __syncthreads(); // all reads of sh_a[win_idx&1] done before restage
+    }
+
+    if (!strip_live) return;
+    if (lane < MINE_V4_STRIP_T && live[lane]) {
+        uint* jp = jackpot + lane * JACKPOT_SIZE;
+        uchar jackpot_msg[64];
+        for (int i = 0; i < JACKPOT_SIZE; i++) {
+            jackpot_msg[i * 4 + 0] = (uchar)(jp[i]);
+            jackpot_msg[i * 4 + 1] = (uchar)(jp[i] >> 8);
+            jackpot_msg[i * 4 + 2] = (uchar)(jp[i] >> 16);
+            jackpot_msg[i * 4 + 3] = (uchar)(jp[i] >> 24);
+        }
+
+        uchar hash[32];
+        blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
+
+        bool meets = true;
+        for (int i = 0; i < 32; i++) {
+            uchar h = hash[31 - i];
+            uchar t = target[i];
+            if (h < t) { meets = true; break; }
+            if (h > t) { meets = false; break; }
+        }
+
+        if (meets) {
+            uint old = atomicExch((uint*)found, 1u);
+            if (old == 0u) {
+                *output_tile = (ro0 + lane) * num_col_offsets + col_off_idx;
+                for (int i = 0; i < 32; i++) output_jackpot[i] = hash[i];
+            }
+        }
+    }
+}
+
+// ─── mine_native_v6 — tensor-core (mma.m16n8k32.s8) strip kernel ────────────
+// dp4a ceiling measured ~0.96ms/attempt (issue-bound floor ~0.32ms); closing
+// the remaining ~10× to reference needs 4× MAC density → int8 tensor cores.
+// One warp = one 8-tile strip (same tiling as v4). Per window (rank=128):
+//   2 mma row-groups (16 rows = 4 tiles each) × 4 k-chunks(k=32) = 8 mma.
+// C regs are zeroed per window → each mma chain yields the WINDOW increment;
+// per-element cum[] += d[] reproduces v4's `my_acc` exactly. The per-tile
+// fold XORs the 16 lanes × 2 frag elems covering that tile's 32 outputs —
+// xor is order-free so the value is bit-identical to v4's 32-lane fold.
+// Gated on sm_80+ && rank==128 && k%128==0 (host falls back to v4).
+#if __CUDA_ARCH__ >= 800
+__device__ __forceinline__ void mma_s8_m16n8k32(
+    uint& d0, uint& d1, uint& d2, uint& d3,
+    uint a0, uint a1, uint a2, uint a3, uint b0, uint b1)
+{
+    asm volatile(
+        "mma.sync.aligned.m16n8k32.row.col.s32.s8.s8.s32 "
+        "{%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};"
+        : "+r"(d0), "+r"(d1), "+r"(d2), "+r"(d3)
+        : "r"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(b0), "r"(b1));
+}
+#endif
+
+extern "C" __global__ void pearl_pouw_mine_native_v6(
+    const signed char* __restrict__ noised_a,
+    const signed char* __restrict__ noised_b,
+    const uchar* a_noise_seed,
+    const uchar* target,
+    const uint* row_offsets,
+    const uint* col_offsets,
+    const uint* rows_base,
+    const uint* cols_base,
+    uint* output_tile,
+    uchar* output_jackpot,
+    volatile uint* found,
+    const uint* params  // [num_row_offsets, num_col_offsets, k_dim, rank]
+)
+{
+    const uint num_row_offsets = params[0];
+    const uint num_col_offsets = params[1];
+    const uint k_dim = params[2];
+    const uint rank = params[3];
+
+    // 32 jackpot slots per warp (8 tiles × 4 cols).
+    __shared__ uint jackpot_all[4 * 4 * MINE_V4_STRIP_T * JACKPOT_SIZE];
+    uint lid = threadIdx.x;
+    uint warp = lid >> 5;
+    uint lane = lid & 31;
+    uint* jackpot = jackpot_all + warp * 4 * MINE_V4_STRIP_T * JACKPOT_SIZE;
+
+    // Quad-column strip: each warp owns FOUR col-offsets of the same band
+    // (c + j·ceil(nco/4)). A fragments shared across all four mma outputs
+    // → A gather traffic quarters vs single-col; four mma chains → MLP.
+    // Grid is sized over warp-strips = bands × ceil(nco/4).
+    uint wstrip = blockIdx.x * 4 + warp;
+    uint wcols = (num_col_offsets + 3u) >> 2;
+    uint band = wstrip / wcols;
+    uint ci0 = wstrip % wcols;
+    uint ro0 = band * MINE_V4_STRIP_T;
+    bool strip_live = ro0 < num_row_offsets;
+    uint col_off_idx[4], col_off[4];
+    bool live_c[4];
+#pragma unroll
+    for (int ci = 0; ci < 4; ci++) {
+        uint idx = ci0 + (uint)ci * wcols;
+        col_off_idx[ci] = idx;
+        live_c[ci] = strip_live && idx < num_col_offsets;
+        col_off[ci] = live_c[ci] ? col_offsets[idx] : 0u;
+    }
+
+    bool live[MINE_V4_STRIP_T];
+#pragma unroll
+    for (int t = 0; t < MINE_V4_STRIP_T; t++) {
+        uint ri = ro0 + (uint)t;
+        live[t] = strip_live && ri < num_row_offsets;
+    }
+
+    if (lane < 4 * MINE_V4_STRIP_T) {
+        uint* jp = jackpot + lane * JACKPOT_SIZE;
+        for (int i = 0; i < JACKPOT_SIZE; i++) jp[i] = 0u;
+    }
+    __syncwarp();
+    if (__any_sync(0xffffffffu, *found != 0u)) return;
+
+#if __CUDA_ARCH__ >= 800
+    // ── Fragment mappings (PTX ISA mma.m16n8k32 int8) ────────────────────
+    // A (16×32 s8, row): a0/a2 → row gid=l/4, a1/a3 → row gid+8;
+    //   cols k = (l%4)*4+{0..3} (a0/a1) and +16 (a2/a3).
+    // B (32×8 s8, col): b0 → k=(l%4)*4+{0..3}, b1 → +16; n = l/4.
+    // C/D (16×8 s32): c0,c1 → row gid, cols (l%4)*2+{0,1};
+    //   c2,c3 → row gid+8, same cols.
+    // Our 16-row block packs 4 tiles: local row r → tile (r>>2), u = r&3.
+    uint gid = lane >> 2;      // 0..7  → local A row gid / B col n
+    uint tq = lane & 3;        // lane's k-quad selector
+
+    // Per-element cumulative dots — 4 cols × 2 mma row-groups × 4 frag elems.
+    int cum[4][8];
+#pragma unroll
+    for (int i = 0; i < 32; i++) (&cum[0][0])[i] = 0;
+
+    // A-row bases this lane touches: rowgroup rg, rows gid and gid+8.
+    // local r = gid → tile = rg*4 + gid/4 (= rg*4 + lane/16), u = gid&3.
+    uint u_sel = gid & 3;
+    uint a_row[2][2]; // [rowgroup][row gid | gid+8]
+    uint b_col[4];
+#pragma unroll
+    for (int ci = 0; ci < 4; ci++)
+        b_col[ci] = col_off[ci] + cols_base[gid];
+#pragma unroll
+    for (int rg = 0; rg < 2; rg++) {
+        uint t_a = rg * 4 + (lane >> 4);       // tile of row gid
+        uint t_b = rg * 4 + 2 + (lane >> 4);   // tile of row gid+8
+        uint ro_a = ro0 + t_a, ro_b = ro0 + t_b;
+        a_row[rg][0] = (strip_live && ro_a < num_row_offsets)
+            ? row_offsets[ro_a] + rows_base[u_sel] : 0u;
+        a_row[rg][1] = (strip_live && ro_b < num_row_offsets)
+            ? row_offsets[ro_b] + rows_base[u_sel] : 0u;
+    }
+
+    for (uint ll = rank; ll <= k_dim; ll += rank) {
+        uint base = ll - rank;
+        uint widx = (uint)((ll / rank - 1) % JACKPOT_SIZE);
+#pragma unroll
+        for (int rg = 0; rg < 2; rg++) {
+            uint cC[4][4] = {{0u,0u,0u,0u},{0u,0u,0u,0u},{0u,0u,0u,0u},{0u,0u,0u,0u}};
+#pragma unroll
+            for (uint kc = 0; kc < rank; kc += 32) {
+                // A frags shared across all four cols; B from smem.
+                uint ka = base + kc + tq * 4;
+                uint a0 = *(const uint*)(noised_a + a_row[rg][0] * k_dim + ka);
+                uint a1 = *(const uint*)(noised_a + a_row[rg][1] * k_dim + ka);
+                uint a2 = *(const uint*)(noised_a + a_row[rg][0] * k_dim + ka + 16);
+                uint a3 = *(const uint*)(noised_a + a_row[rg][1] * k_dim + ka + 16);
+#pragma unroll
+                for (int ci = 0; ci < 4; ci++) {
+                    if (!live_c[ci]) continue;
+                    uint b0 = *(const uint*)(noised_b + b_col[ci] * k_dim + ka);
+                    uint b1 = *(const uint*)(noised_b + b_col[ci] * k_dim + ka + 16);
+                    mma_s8_m16n8k32(cC[ci][0], cC[ci][1], cC[ci][2], cC[ci][3],
+                                    a0, a1, a2, a3, b0, b1);
+                }
+            }
+            // Window increments → element cumulatives (all cols).
+#pragma unroll
+            for (int ci = 0; ci < 4; ci++)
+#pragma unroll
+                for (int e = 0; e < 4; e++)
+                    cum[ci][rg * 4 + e] += (int)cC[ci][e];
+
+            // Per-tile folds — each half-warp covers one tile (32 elems =
+            // 16 lanes × 2 frag regs). Tile slot = ci*8 + rg*4 + lane/16
+            // (+2 for c2/c3 rows 8-15).
+            uint t_loc = rg * 4 + (lane >> 4);
+#pragma unroll
+            for (int ci = 0; ci < 4; ci++) {
+                if (!live_c[ci]) continue;
+                // Pack both tile folds into one 64-bit butterfly — halves
+                // the shuffle count vs folding them separately.
+                unsigned long long pk =
+                    (unsigned long long)((uint)cum[ci][rg*4+0] ^ (uint)cum[ci][rg*4+1])
+                    | ((unsigned long long)((uint)cum[ci][rg*4+2] ^ (uint)cum[ci][rg*4+3]) << 32);
+                pk ^= __shfl_xor_sync(0xffffffffu, pk, 8);
+                pk ^= __shfl_xor_sync(0xffffffffu, pk, 4);
+                pk ^= __shfl_xor_sync(0xffffffffu, pk, 2);
+                pk ^= __shfl_xor_sync(0xffffffffu, pk, 1);
+                if ((lane & 15) == 0) {
+                    uint* jp = jackpot + (ci * 8 + t_loc) * JACKPOT_SIZE;
+                    jp[widx] = (jp[widx] << LROT) | (jp[widx] >> (32u - LROT));
+                    jp[widx] ^= (uint)pk;
+                    jp = jackpot + (ci * 8 + t_loc + 2) * JACKPOT_SIZE;
+                    jp[widx] = (jp[widx] << LROT) | (jp[widx] >> (32u - LROT));
+                    jp[widx] ^= (uint)(pk >> 32);
+                }
+            }
+        }
+        __syncwarp();
+    }
+
+    if (!strip_live) return;
+    // 32 tile slots: lane → tile t=lane&7 of col ci=lane>>3 (all 32 lanes).
+    {
+        uint ci = lane >> 3;
+        uint tt = lane & 7;
+        bool ok = live[tt] && live_c[ci];
+        if (ok) {
+            uint* jp = jackpot + (ci * 8 + tt) * JACKPOT_SIZE;
+            uchar jackpot_msg[64];
+            for (int i = 0; i < JACKPOT_SIZE; i++) {
+                jackpot_msg[i * 4 + 0] = (uchar)(jp[i]);
+                jackpot_msg[i * 4 + 1] = (uchar)(jp[i] >> 8);
+                jackpot_msg[i * 4 + 2] = (uchar)(jp[i] >> 16);
+                jackpot_msg[i * 4 + 3] = (uchar)(jp[i] >> 24);
+            }
+
+            uchar hash[32];
+            blake3_keyed_hash_64_gpu(a_noise_seed, jackpot_msg, hash);
+
+            bool meets = true;
+            for (int i = 0; i < 32; i++) {
+                uchar h = hash[31 - i];
+                uchar t = target[i];
+                if (h < t) { meets = true; break; }
+                if (h > t) { meets = false; break; }
+            }
+
+            if (meets) {
+                uint old = atomicExch((uint*)found, 1u);
+                if (old == 0u) {
+                    *output_tile = (ro0 + tt) * num_col_offsets + col_off_idx[ci];
+                    for (int i = 0; i < 32; i++) output_jackpot[i] = hash[i];
+                }
+            }
+        }
+    }
+#else
+    (void)a_noise_seed; (void)target; (void)output_tile;
+    (void)output_jackpot; (void)found;
+#endif
 }
 
 // ─── Dual (A+B fused) kernels ────────────────────────────────────────────────
