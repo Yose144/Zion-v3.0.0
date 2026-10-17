@@ -39,6 +39,23 @@ impl StreamId {
     }
 }
 
+/// Pearl PoUW counts completed attempts/s, not hashes. One attempt
+/// (matrix-gen + merkle + ~2.1 GMAC matmul scan) matches ~6.9 GH of
+/// SRBMiner pearlhash throughput — calibrated from eased-share hit rates
+/// (SRB ~1.5 hits/s @48.4 TH/s vs our ~1/4700-attempt hit), ±20%.
+/// Convert for display so rates are directly comparable with SRBMiner.
+pub const PEARL_GH_PER_ATTEMPT: f64 = 6.9;
+
+/// Raw `hashrate` tracked by a stream is in native units; pearl's native
+/// unit is attempts/s → multiply into SRB-equivalent H/s for display.
+pub fn display_hps(coin: &str, hps: f64) -> f64 {
+    if coin.eq_ignore_ascii_case("prl") || coin.eq_ignore_ascii_case("pearlhash") {
+        hps * PEARL_GH_PER_ATTEMPT * 1e9
+    } else {
+        hps
+    }
+}
+
 /// Mutable statistics for a single stream.
 #[derive(Clone, Debug)]
 pub struct StreamStats {

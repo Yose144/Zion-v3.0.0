@@ -863,3 +863,195 @@ pool local verify + PPLNS credit → `is_block` detection → async
   (`run-cuda.sh.bak-20261016`).
 - `profit.rs` PRL auto-routing remains DISABLED — mainnet `Accepted`
   is still the gate.
+
+## 15. vast.ai RTX 3060 — triple mining + pearl kernel debug (2026-10-16/17)
+
+Isolated Ampere test on a rented vast.ai instance (`56302165`, offer
+`41678963`, RTX 3060 / SM86 / 12 GB / driver 580.159.03, ~$0.068/h,
+image `nvidia/cuda:12.4.1-runtime-ubuntu22.04`). Triple mining
+ZION + PRL + QTU ran end-to-end; the pearl CUDA kernel was verified
+live against the production pool pearl stratum.
+
+### Deployment gotchas found (any clean CUDA box)
+
+| Problem | Symptom | Fix |
+|---|---|---|
+| Missing OpenCL ICD | zion-miner panics `ocl Platform::list` even with `--gpu cuda` (both backends compiled in → enumeration runs unconditionally) | `mkdir -p /etc/OpenCL/vendors && echo libnvidia-opencl.so.1 > /etc/OpenCL/vendors/nvidia.icd` |
+| `libnvrtc` absent (runtime flavor image) | QPoW CUDA kernel never compiles → **0 MH/s, silent** (no error line at default verbosity) | `apt-get install cuda-nvrtc-12-4` |
+| `v3_trinity` is **default-ON** under `auxpow` feature | `--algorithm quantus` mode connects then loops `V3 trinity requires --pool` forever | `ZION_NO_V3_TRINITY=1` for direct-algo-pool mode |
+| `pkill -f` self-match | remote `bash -c` cmdline contains the pattern → kills own shell | use `pkill <comm>` without `-f` |
+
+### Measured rates (RTX 3060, GPU 100 % / ~120-130 W)
+
+| Leg | Solo | Shared (tri) | Notes |
+|---|---|---|---|
+| ZION deeksha (cuda-lite) | ~730-735 KH/s | ~36-70 KH/s @ duty 5-15 % | 22 blocks found in <1 h, 0 invalid shares; ~3× rig 1070 Ti (~213 KH/s) |
+| QTU **SRBMiner** quantus | **222 MH/s** | ~189 (85 %) / ~115 (50/50) | → `eu.lproute.com:5660`, diff 1e10, shares accepted |
+| QTU **native** `qpow_cuda` | **147-148 MH/s** | — | ≈ **66 % of SRBMiner**. ⚠️ direct-lproute `jobs=0` (see bug below) |
+| PRL probe (`pearl_pool_probe`, dp4a path) | **245 attempts/s** | — | 14 113 attempts → **3/3 submits `accepted=true`** on real cert3 job `82c6eee2…` (pool verifier re-checks everything) |
+| PRL zion-miner stream (V3 PearlSubmit) | ~81 att/s | ~32 (w/ SRBMiner) / ~3 (gap 300 ms + duty 15) | ~3× slower than probe path — see open question |
+
+Pool-side log proof (`zion-v31-pool`, job `82c6eee2bb85688395271e5da1fff8d4bab9f54f60821b72a9708b501dfe4189`):
+
+```
+pearl_stratum: authorize wallet=zion1d2k5…8k6 worker=vast-3060-prl agent=zion-miner/3.2.0-pearl-probe
+pearl_submit … worker=…vast-3060-prl job=82c6eee2… accepted=true status=accepted   ×3
+```
+
+**`__dp4a` path is exercised here**: k=2048, rank=128 → `(k|rank)&15==0`
+→ SM86 uses the i8/`int4`/`__dp4a` inner loop; pool-verified accepted
+submits double as live functional parity evidence. Formal KAT
+(`pearl_cuda_parity_vs_cpu_reference`) still worth running — source +
+cargo are on the instance (`/root/V31`).
+
+### Pearl share economics (current eased target)
+
+`share_target ≈ 2^232` (bytes `[5]=0x1b…`, ease `1e9`), adjustment
+`tile(4×8)×(k/rank=16)×128 = 65536`. Measured hit ≈ **1 submit /
+~4 700 attempts** → expected submit interval ≈ 19 s solo (245 att/s),
+~2.5 min at 32 att/s, ~26 min at 3 att/s. Earlier "0 submits in 20 min"
+was purely an attempt-rate problem, not a kernel bug.
+
+### Open bugs / questions found
+
+1. **Direct-lproute quantus stratum: `jobs=0`.** `--algorithm quantus`
+   + `ZION_NO_V3_TRINITY=1` logs `quantus login ok` and hashes a
+   placeholder job at 147 MH/s but **never receives `mining.notify`**
+   from `eu.lproute.com:5660` → 0 submits in 7+ min. The V3-bridge path
+   (external_stream) used by the rig is unaffected; the direct
+   stratum client is broken/untested against LuckyPool's quantus wire.
+2. **zion-miner pearl rate 3× below probe.** Probe `PearlCudaMiner::new
+   (32768)` hits 245 att/s; zion-miner V3 path (`spawn_blocking` +
+   mutex per attempt, `work_size = ZION_STREAM2_BATCH` = 8 388 608 vs
+   probe's 32 768) caps ~81 solo. Worth checking whether pearl ignores
+   `work_size` for the mine launch anyway (mine grid = total_tiles) —
+   then the gap is pure per-attempt Rust overhead.
+3. **Banner lists the same GPU twice** (`NVIDIA CUDA` + `CUDA`
+   backends) → "Multi-GPU: 2 devices" on a 1-card box — cosmetic, but
+   nonce-range splitting may follow it.
+4. **SRBMiner died silently once** (log truncates mid-line, no error,
+   dmesg clean) — needs a respawn supervisor if used long-term on vast.
+5. pearl stratum notify currently sets `height: 0` in jobs (cosmetic —
+   probe accepted anyway).
+
+### Launch script
+
+`/root/start-triple.sh` on the instance (kept locally at
+`/tmp/triple-mine/start-triple.sh`): downloads `zion-miner-v31-cuda` +
+`SRBMiner-MULTI` from `http://62.171.141.136/zion-miner/`, runs
+`--v3-trinity` (stream1 ZION cuda + stream2 `FORCE_COIN=PRL`,
+`ZION_PEARL_K=2048`) + SRBMiner `quantus` → lproute. GPU split via
+`ZION_GPU_TIME_DUTY_PCT` (stream1 self-sleep) +
+`ZION_EXT_GPU_GAP_MS`/`_TIME_DUTY_PCT` (stream2). Current preset: QTU
+≈85 %, ZION ≈10 %, PRL ≈5 %.
+
+### Pearl ↔ QTC ecosystem parity status
+
+| Area | QTC | PRL |
+|---|---|---|
+| Key derivation (keyring/derive-addr) | ✅ `qtu` bip86 | ✅ `prl` bip86, oyster-parity verified |
+| Pool leg / stratum | ✅ auxpow QTU | ✅ native pearl stratum `ZION_POOL_PEARL_STRATUM=1` + V3 PearlSubmit |
+| Third-party miner compat | SRBMiner quantus→lproute | SRBMiner pearlhash→:8444 verified + our probe ✅ |
+| Payout routing | ✅ `external_payouts.quantus` | ✅ `external_payouts.pearl` (`prl:`/`pearl:`/bare `prl1…`) |
+| Desktop wallet + UI | ✅ | ✅ Pearl tab + `prl-wallet-card` |
+| Web lookup | `/api/qtu` | `/api/prl?addr=` (txindex+addrindex deployed) |
+| Node on Edge | quantus-node live | pearld live (128.9k blocks indexed) |
+| Gateway | — | pearl-gateway :8477 live |
+| Miner kernel | qpow_cuda ~66 % SRB | pearl cuda verified; probe 245 att/s |
+| **Gates remaining** | — | `profit.rs` PRL routing DISABLED (policy, post-block), desktop-app E2E manual check, formal KAT on-device |
+
+## 16. Pearl = QTU parity — LuckyPool UPSTREAM LIVE on Edge (2026-10-17)
+
+**Deployed:** `pearl_upstream` leg enabled on Edge pool — Pearl now has
+the exact same dual-leg architecture as QTU (`qtc_native` ↔ lproute).
+
+Edge env (`/etc/zion/edge-environment.sh`, bak `…bak-pearl-upstream-20261017`):
+
+```
+ZION_POOL_PEARL_UPSTREAM=pearl-eu2.luckypool.io:3360
+ZION_POOL_PEARL_UPSTREAM_WALLET=prl1pwqx7esdehf58j4yqq68q0kts3zy5j2cf8c9gnn9tc3qaj6ptaq6qy35v6h   # user wallet (was pool prl1pzy8…)
+ZION_POOL_PEARL_UPSTREAM_WORKER=zion-pool
+ZION_POOL_PEARL_NATIVE_PCT=10        # same split as QTC_NATIVE_SHARE_PCT=10
+```
+
+`/stats` → `auxpow.pearl`: `native.enabled share_pct=10` + `upstream
+{connected:true, job_id:"prlu:<hex>_500000"}` — real LuckyPool jobs
+served to miners. Submit path: miner → `prlu:` job → local verify +
+dedup + PPLNS credit → `upstream_submit` → LuckyPool pays to upstream
+wallet. Wire compat proven live: `pearl_pool_probe` →
+`pearl-eu2.luckypool.io:3360` authorized + streamed real jobs
+(height 128894+, cert v3, `nockchain_parent` field tolerated — client
+was designed against this spec).
+
+LuckyPool facts: `pearl.luckypool.io`, ~4 EH/s pool / ~57 EH/s network,
+1% PPLNS, ~3100 miners, ports 3360/3361/3362 (vardiff tiers; 3360 = diff
+2M for <500 TH/s). Optional NOCK merge-mining via `PRL+NOCK` wallet.
+
+### SRBMiner pearlhash on RTX 3060 (SM86)
+
+- **~48.4 TH/s** SRB-internal metric (vs 3.2 TH/s AMD gfx1010 = ~15×)
+- vs our pool: 26 accepts in ~45 s (~1.5 found/s), then **stale flood** —
+  finds rate (~1.5/s) ≫ proof-upload rate (~0.9/s @ 2.5 s Korea RTT,
+  ~90 kB proofs) → unbounded stale queue; every post-rotation submit
+  referenced the original job. Pool log: all `pearl_submit` on one job
+  → `status=stale`. Restart → accepts resumed (backlog theory confirmed).
+- vs LuckyPool: wire verified (probe); SRB direct would hit the same
+  stale pattern on our eased-everywhere design — **our stratum needs
+  per-miner/vardiff share targets for high-rate pearl miners** (fixed
+  `ZION_POOL_PEARL_SHARE_EASE` is fine for our kernel, spam for SRB).
+- takeaway: SRB pearl kernel is ~15× AMD / works on SM86; usable for
+  direct-LuckyPool mining (their vardiff handles the rate).
+
+### Desktop agent update
+
+`SRB_DEFAULT_PRL_POOL`: `prl.suprnova.cc:3370` →
+`pearl-eu2.luckypool.io:3360` (unity with pool upstream + QTU lproute
+family). `SRB_DEFAULT_PRL_WALLET` stays pool wallet `prl1pzy8…`.
+Native PRL wallet (keyring `m/86'/808276'/0'/0/i`, `prl1` bech32m,
+Pearl tab UI, balance/history, `prl:` payout routing) = already at QTU
+parity — no chain has send capability in the app (read-only lookups).
+
+### Remaining gaps vs QTU
+
+1. `external_payouts.pearl` drain exists; upstream-earned PRL lands in
+   upstream wallet — operational, no periodic sweep needed by pool.
+2. Pearl stratum lacks vardiff → SRB-class miners flood (see §16 stale
+   flood). Fix = per-connection share target like standard stratums.
+3. `profit.rs` PRL routing still DISABLED (policy gate).
+4. `zion-miner` V3 pearl stream vs probe throughput gap (~81 vs 245
+   att/s solo) — runtime overhead, still open (§15).
+
+## 17. Kernel optimization phase 1 — on-device seed derive + async batching (2026-10-17)
+
+Full plan/report: **`PEARL-OPTIMIZATION.md` (repo root)**. Summary:
+
+**Root cause:** 4+ host syncs per attempt; under GPU timesharing each sync
+≈ 2.3 ms timeslice quantum (PEARL_PROFILE showed steps quantized to
+~2.3 ms). GPU idle during host roundtrips.
+
+**Fix:** `pearl_derive_seeds` kernel (single-thread, `blake3_hash64`
+device helper; salted+legacy paths, salts as constant buffers) → Step-4
+host roundtrips (3× `dtoh` + 2× `htod` + 2 launches) → **1 launch**.
+`mine_native_batch` queues `ZION_PEARL_BATCH` (default 16, clamp 64)
+whole attempts on one stream — found/tile/jackpot as `slice_mut` slots,
+**zero mid-batch syncs**, one `dtoh` at the end; hit → one re-run to
+materialize matrices for the proof build. `GpuMiner::mine_pearl_batch`
+default = sequential `mine_pearl` (OpenCL untouched); CUDA overrides.
+Runtime counts `attempts_executed` in `update_hashrate`.
+
+**Measured (RTX 3060):** solo 82 → **277 att/s** (~1.9 TH/s-eq,
+`×6.9 GH/att`), triple-contended ~45-66 → **~224 att/s (~1550 GH/s)** —
+**≈3.4×**. Probe validation: **2/2 `accepted=true`** on native eased job
+(pool verifier recomputes whole proof → on-device derive bit-identical).
+
+**GH/s metrics:** `stream::display_hps` — PRL att/s → ×6.9e9 for
+metrics/TUI/logs/stats/SRB-API (raw `hashrate_hps` kept in stats JSON).
+
+**Phase 2 queued:** merkle fuse (22→2 launches), mine-kernel warp-shuffle
+reduce, gen_matrix modulo→shift (parity-gated), noise-apply fusion,
+2-stream A/B overlap. Gap to SRB ~25× stands — research-grade rewrite
+for more; Phase 1+2 takes the structural overhead out first.
+
+**Gotcha:** `start-triple.sh` re-downloaded `zion-miner-v31-cuda` from
+Edge — silently reverts any locally-built binary. Download block removed
+on the vast instance; real fix = push new build to Edge download dir.

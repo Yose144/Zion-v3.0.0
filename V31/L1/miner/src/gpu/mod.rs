@@ -534,6 +534,41 @@ pub trait GpuMiner: Send {
         anyhow::bail!("pearlhash unsupported on {:?}", self.backend_kind());
     }
 
+    /// `batch` sequential-nonce Pearl attempts starting at `input.nonce`.
+    /// Backends that can queue attempts asynchronously (CUDA) override this
+    /// to amortize per-attempt host synchronization; the default falls back
+    /// to `batch` sequential `mine_pearl` calls. Returns
+    /// `(winning_result, attempts_executed)` — `attempts_executed` is the
+    /// count for hashrate accounting (a hit stops the default loop early).
+    fn mine_pearl_batch(
+        &mut self,
+        input: &crate::auxpow::pearl::PearlPouwNativeInput<'_>,
+        batch: usize,
+    ) -> Result<(Option<crate::auxpow::pearl::PearlPouwNativeResult>, usize)> {
+        for i in 0..batch.max(1) {
+            let inp = crate::auxpow::pearl::PearlPouwNativeInput {
+                nonce: input.nonce.wrapping_add(i as u64),
+                m: input.m,
+                n: input.n,
+                k: input.k,
+                rank: input.rank,
+                job_key: input.job_key,
+                target: input.target,
+                row_offsets: input.row_offsets,
+                col_offsets: input.col_offsets,
+                rows_base: input.rows_base,
+                cols_base: input.cols_base,
+                seed_label_a: input.seed_label_a,
+                seed_label_b: input.seed_label_b,
+                seed_derivation: input.seed_derivation,
+            };
+            if let Some(r) = self.mine_pearl(&inp)? {
+                return Ok((Some(r), i + 1));
+            }
+        }
+        Ok((None, batch.max(1)))
+    }
+
     /// Return a shared CUDA device handle, if this backend uses CUDA.
     /// Used by the external GPU thread to avoid creating a second CUDA
     /// context on the same GPU (which causes deadlocks on consumer GPUs).

@@ -42,6 +42,7 @@ mod kern {
     pub const APPLY_A: &str = "pearl_apply_noise_a";
     pub const APPLY_B: &str = "pearl_apply_noise_b";
     pub const MINE_V3: &str = "pearl_pouw_mine_native_v3";
+    pub const DERIVE_SEEDS: &str = "pearl_derive_seeds";
 }
 
 const KERNELS: &[&str] = &[
@@ -54,7 +55,12 @@ const KERNELS: &[&str] = &[
     kern::APPLY_A,
     kern::APPLY_B,
     kern::MINE_V3,
+    kern::DERIVE_SEEDS,
 ];
+
+/// Max attempts queued per `mine_native_batch` call — found/tile/jackpot
+/// buffers are allocated for this many slots up front.
+const MAX_BATCH: usize = 64;
 
 /// BLAKE3 IV as little-endian bytes — the "key" for unkeyed small_hash calls.
 const IV_BYTES: [u8; 32] = [
@@ -102,9 +108,11 @@ struct PearlCudaBufs {
     /// [num_row_offsets, num_col_offsets, k_dim, rank] for the mine kernel —
     /// packed into a buffer to keep the launch tuple under the cudarc limit.
     mine_params: CudaSlice<u32>,
-    output_tile: CudaSlice<u32>,
-    output_jackpot: CudaSlice<u8>,
-    found: CudaSlice<u32>,
+    output_tile: CudaSlice<u32>,    // MAX_BATCH slots — batch readback
+    output_jackpot: CudaSlice<u8>,  // 32 * MAX_BATCH
+    found: CudaSlice<u32>,          // MAX_BATCH flags — one per queued attempt
+    salt_a: CudaSlice<u8>,          // PEARL_SEED_SALT_A — uploaded once (constant)
+    salt_b: CudaSlice<u8>,
 }
 
 /// Persistent CUDA miner for `pearlhash`. One attempt = one full pipeline
@@ -122,6 +130,7 @@ pub struct PearlCudaMiner {
     f_apply_a: CudaFunction,
     f_apply_b: CudaFunction,
     f_mine_v3: CudaFunction,
+    f_derive: CudaFunction,
     bufs: Option<PearlCudaBufs>,
 }
 
@@ -168,6 +177,7 @@ impl PearlCudaMiner {
         let f_apply_a = get(&dev, kern::APPLY_A)?;
         let f_apply_b = get(&dev, kern::APPLY_B)?;
         let f_mine_v3 = get(&dev, kern::MINE_V3)?;
+        let f_derive = get(&dev, kern::DERIVE_SEEDS)?;
 
         crate::ext_info!(
             "gpu_pearl_cuda_init device=\"{}\" work_size={}",
@@ -188,6 +198,7 @@ impl PearlCudaMiner {
             f_apply_a,
             f_apply_b,
             f_mine_v3,
+            f_derive,
             bufs: None,
         })
     }
@@ -286,20 +297,55 @@ impl PearlCudaMiner {
             target: azu(32)?,
             seed_msg: azu(64)?,
             mine_params: azu32(4)?,
-            output_tile: azu32(1)?,
-            output_jackpot: azu(32)?,
-            found: azu32(1)?,
+            output_tile: azu32(MAX_BATCH)?,
+            output_jackpot: azu(32 * MAX_BATCH)?,
+            found: azu32(MAX_BATCH)?,
+            salt_a: up_u8(&PEARL_SEED_SALT_A)?,
+            salt_b: up_u8(&PEARL_SEED_SALT_B)?,
         });
         Ok(())
     }
 
-    /// One GPU-native Pearl PoUW attempt — CUDA twin of
-    /// `ExtGpuMiner::pearl_pouw_mine_native`.
-    pub fn mine_native(
+    /// Per-job uploads shared by all queued attempts: job_key, target,
+    /// mine_params — plus a one-shot `found` flag reset over `slots` slots.
+    fn prep_job(&mut self, input: &PearlPouwNativeInput<'_>, slots: usize) -> Result<()> {
+        let b = self.bufs.as_mut().expect("bufs ensured");
+        self.dev
+            .htod_copy_into(input.job_key.to_vec(), &mut b.job_key)
+            .map_err(|e| anyhow::anyhow!("pearl job_key upload: {e}"))?;
+        self.dev
+            .htod_copy_into(input.target.to_vec(), &mut b.target)
+            .map_err(|e| anyhow::anyhow!("pearl target upload: {e}"))?;
+        self.dev
+            .memset_zeros(&mut b.found.slice_mut(0..slots))
+            .map_err(|e| anyhow::anyhow!("pearl found reset: {e}"))?;
+        self.dev
+            .memset_zeros(&mut b.output_tile.slice_mut(0..slots))
+            .map_err(|e| anyhow::anyhow!("pearl output_tile reset: {e}"))?;
+        self.dev
+            .htod_copy_into(
+                vec![
+                    input.row_offsets.len() as u32,
+                    input.col_offsets.len() as u32,
+                    input.k as u32,
+                    input.rank as u32,
+                ],
+                &mut b.mine_params,
+            )
+            .map_err(|e| anyhow::anyhow!("pearl mine_params upload: {e}"))?;
+        Ok(())
+    }
+
+    /// Queue one full attempt pipeline (steps 1–7) on the device stream.
+    /// Every launch is async — the only synchronization happens in the
+    /// caller after the whole batch is queued. `slot` picks which
+    /// found/tile/jackpot slot the mine kernel writes.
+    fn queue_attempt(
         &mut self,
         input: &PearlPouwNativeInput<'_>,
-    ) -> Result<Option<PearlPouwNativeResult>> {
-        self.ensure_bufs(input)?;
+        nonce: u64,
+        slot: usize,
+    ) -> Result<()> {
         let m = input.m;
         let n = input.n;
         let k = input.k;
@@ -309,26 +355,7 @@ impl PearlCudaMiner {
         let num_chunks_a = mk.div_ceil(1024);
         let num_chunks_b = nk.div_ceil(1024);
 
-        let profile = std::env::var("PEARL_PROFILE").is_ok();
-        let mut prof_timings: Vec<(&str, f64)> = Vec::new();
-        let prof_t0 = std::time::Instant::now();
-        let mut prof_last = prof_t0;
-
         let b = self.bufs.as_mut().expect("bufs ensured");
-
-        // Per-attempt uploads: job_key, target, found/output resets.
-        self.dev
-            .htod_copy_into(input.job_key.to_vec(), &mut b.job_key)
-            .map_err(|e| anyhow::anyhow!("pearl job_key upload: {e}"))?;
-        self.dev
-            .htod_copy_into(input.target.to_vec(), &mut b.target)
-            .map_err(|e| anyhow::anyhow!("pearl target upload: {e}"))?;
-        self.dev
-            .htod_copy_into(vec![0u32], &mut b.found)
-            .map_err(|e| anyhow::anyhow!("pearl found reset: {e}"))?;
-        self.dev
-            .htod_copy_into(vec![0u32], &mut b.output_tile)
-            .map_err(|e| anyhow::anyhow!("pearl output_tile reset: {e}"))?;
 
         let cfg_1d = |n_: usize, tpb: u32| LaunchConfig {
             grid_dim: (Self::grid_for(n_, tpb), 1, 1),
@@ -340,22 +367,17 @@ impl PearlCudaMiner {
         unsafe {
             self.f_gen_matrix.clone().launch(
                 cfg_1d(mk, 256),
-                (&mut b.matrix_a, input.nonce, m as u32, k as u32, 0u32),
+                (&mut b.matrix_a, nonce, m as u32, k as u32, 0u32),
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl gen_matrix A launch: {e}"))?;
         unsafe {
             self.f_gen_matrix.clone().launch(
                 cfg_1d(nk, 256),
-                (&mut b.matrix_bt, input.nonce, n as u32, k as u32, 1u32),
+                (&mut b.matrix_bt, nonce, n as u32, k as u32, 1u32),
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl gen_matrix Bt launch: {e}"))?;
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step1_gen_matrix", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
-        }
 
         // ── Step 2: BLAKE3 chunk hashing ───────────────────────────────
         // Single-chunk matrices write the chunk CV straight into the root
@@ -401,11 +423,6 @@ impl PearlCudaMiner {
                 )
             }
             .map_err(|e| anyhow::anyhow!("pearl chunk_hash B launch: {e}"))?;
-        }
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step2_blake3_chunk", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
         }
 
         // ── Step 3: Merkle tree reduction ──────────────────────────────
@@ -478,79 +495,35 @@ impl PearlCudaMiner {
                 num_nodes = num_parents;
             }
         }
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step3_merkle", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
-        }
 
-        // ── Step 4: Derive noise seeds ─────────────────────────────────
-        // b_noise_seed = blake3(job_key || hash_b)  — unkeyed, 64-byte input
-        // a_noise_seed = blake3(b_noise_seed || hash_a) — unkeyed, 64-byte input
-        // Salted (cert_version ≥3): hash_eff = keyed(SEED_SALT_*, root||dim||0s).
+        // ── Step 4: Derive noise seeds (fully on-device) ───────────────
+        // salted: hash_eff = keyed(SEED_SALT_*, root||dim||0s); legacy: root.
+        // b_noise_seed = blake3(job_key || hash_b) — unkeyed, 64-byte input
+        // a_noise_seed = blake3(b_noise_seed || hash_a) — unkeyed, 64-byte
+        // input. Replaces the old dtoh→CPU-hash→htod roundtrip (3 syncs).
         {
-            let root_a: Vec<u8> = self
-                .dev
-                .dtoh_sync_copy(&b.root_a)
-                .map_err(|e| anyhow::anyhow!("pearl root_a read: {e}"))?;
-            let root_b: Vec<u8> = self
-                .dev
-                .dtoh_sync_copy(&b.root_b)
-                .map_err(|e| anyhow::anyhow!("pearl root_b read: {e}"))?;
-
-            let (hash_a_eff, hash_b_eff) = match input.seed_derivation {
-                PearlSeedDerivation::Legacy => (root_a, root_b),
-                PearlSeedDerivation::Salted => {
-                    let mut bind_a = [0u8; 64];
-                    bind_a[..32].copy_from_slice(&root_a);
-                    bind_a[32..36].copy_from_slice(&(m as u32).to_le_bytes());
-                    let bound_a = *blake3::keyed_hash(&PEARL_SEED_SALT_A, &bind_a).as_bytes();
-                    let mut bind_b = [0u8; 64];
-                    bind_b[..32].copy_from_slice(&root_b);
-                    bind_b[32..36].copy_from_slice(&(n as u32).to_le_bytes());
-                    let bound_b = *blake3::keyed_hash(&PEARL_SEED_SALT_B, &bind_b).as_bytes();
-                    (bound_a.to_vec(), bound_b.to_vec())
-                }
+            let salted = match input.seed_derivation {
+                PearlSeedDerivation::Salted => 1u32,
+                PearlSeedDerivation::Legacy => 0u32,
             };
-
-            // b_noise_seed = blake3(job_key || hash_b)
-            let mut seed_msg = [0u8; 64];
-            seed_msg[..32].copy_from_slice(&input.job_key);
-            seed_msg[32..].copy_from_slice(&hash_b_eff);
-            self.dev
-                .htod_copy_into(seed_msg.to_vec(), &mut b.seed_msg)
-                .map_err(|e| anyhow::anyhow!("pearl seed_msg upload: {e}"))?;
             unsafe {
-                self.f_small_hash.clone().launch(
+                self.f_derive.clone().launch(
                     cfg_1d(1, 1),
-                    (&b.seed_msg, 64u32, &b.iv, 0u32, &mut b.b_noise_seed),
+                    (
+                        &b.root_a,
+                        &b.root_b,
+                        &b.job_key,
+                        &b.salt_a,
+                        &b.salt_b,
+                        m as u32,
+                        n as u32,
+                        salted,
+                        &mut b.a_noise_seed,
+                        &mut b.b_noise_seed,
+                    ),
                 )
             }
-            .map_err(|e| anyhow::anyhow!("pearl small_hash b launch: {e}"))?;
-
-            let b_seed: Vec<u8> = self
-                .dev
-                .dtoh_sync_copy(&b.b_noise_seed)
-                .map_err(|e| anyhow::anyhow!("pearl b_seed read: {e}"))?;
-
-            // a_noise_seed = blake3(b_noise_seed || hash_a)
-            seed_msg[..32].copy_from_slice(&b_seed);
-            seed_msg[32..].copy_from_slice(&hash_a_eff);
-            self.dev
-                .htod_copy_into(seed_msg.to_vec(), &mut b.seed_msg)
-                .map_err(|e| anyhow::anyhow!("pearl seed_msg2 upload: {e}"))?;
-            unsafe {
-                self.f_small_hash.clone().launch(
-                    cfg_1d(1, 1),
-                    (&b.seed_msg, 64u32, &b.iv, 0u32, &mut b.a_noise_seed),
-                )
-            }
-            .map_err(|e| anyhow::anyhow!("pearl small_hash a launch: {e}"))?;
-        }
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step4_seed_derive", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
+            .map_err(|e| anyhow::anyhow!("pearl derive_seeds launch: {e}"))?;
         }
 
         // ── Step 5: Generate noise ─────────────────────────────────────
@@ -584,11 +557,6 @@ impl PearlCudaMiner {
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl gen_perm e_bl launch: {e}"))?;
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step5_noise_gen", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
-        }
 
         // ── Step 6: Apply noise to matrices ────────────────────────────
         unsafe {
@@ -623,31 +591,18 @@ impl PearlCudaMiner {
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl apply_noise_b launch: {e}"))?;
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step6_apply_noise", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
-        }
 
         // ── Step 7: MatMul + jackpot + target check ────────────────────
         {
             let total_tiles = input.row_offsets.len() * input.col_offsets.len();
-            self.dev
-                .htod_copy_into(
-                    vec![
-                        input.row_offsets.len() as u32,
-                        input.col_offsets.len() as u32,
-                        k as u32,
-                        rank as u32,
-                    ],
-                    &mut b.mine_params,
-                )
-                .map_err(|e| anyhow::anyhow!("pearl mine_params upload: {e}"))?;
             let cfg = LaunchConfig {
                 grid_dim: (total_tiles as u32, 1, 1),
                 block_dim: (32, 1, 1), // TILE_H × TILE_W
                 shared_mem_bytes: 0,
             };
+            let mut tile_view = b.output_tile.slice_mut(slot..slot + 1);
+            let mut jackpot_view = b.output_jackpot.slice_mut(slot * 32..(slot + 1) * 32);
+            let mut found_view = b.found.slice_mut(slot..slot + 1);
             unsafe {
                 self.f_mine_v3.clone().launch(
                     cfg,
@@ -660,47 +615,52 @@ impl PearlCudaMiner {
                         &b.col_off,
                         &b.rows_base,
                         &b.cols_base,
-                        &mut b.output_tile,
-                        &mut b.output_jackpot,
-                        &mut b.found,
+                        &mut tile_view,
+                        &mut jackpot_view,
+                        &mut found_view,
                         &b.mine_params,
                     ),
                 )
             }
             .map_err(|e| anyhow::anyhow!("pearl mine_v3 launch: {e}"))?;
         }
-        if profile {
-            self.dev.synchronize().ok();
-            prof_timings.push(("step7_mine", prof_last.elapsed().as_secs_f64() * 1000.0));
-            prof_last = std::time::Instant::now();
-        }
+
+        Ok(())
+    }
+
+    /// One GPU-native Pearl PoUW attempt — CUDA twin of
+    /// `ExtGpuMiner::pearl_pouw_mine_native`.
+    pub fn mine_native(
+        &mut self,
+        input: &PearlPouwNativeInput<'_>,
+    ) -> Result<Option<PearlPouwNativeResult>> {
+        self.ensure_bufs(input)?;
+        self.prep_job(input, 1)?;
+        self.queue_attempt(input, input.nonce, 0)?;
+
+        let m = input.m;
+        let n = input.n;
+        let k = input.k;
+        let mk = m * k;
+        let nk = n * k;
+        let b = self.bufs.as_mut().expect("bufs ensured");
 
         // ── Read results ───────────────────────────────────────────────
         let found: Vec<u32> = self
             .dev
-            .dtoh_sync_copy(&b.found)
+            .dtoh_sync_copy(&b.found.slice(0..1))
             .map_err(|e| anyhow::anyhow!("pearl found read: {e}"))?;
         if found[0] == 0 {
-            if profile {
-                self.dev.synchronize().ok();
-                prof_timings.push(("readback", prof_last.elapsed().as_secs_f64() * 1000.0));
-                let total = prof_t0.elapsed().as_secs_f64() * 1000.0;
-                eprint!("PEARL_PROFILE nonce={:>3} |", input.nonce);
-                for (name, ms) in &prof_timings {
-                    eprint!(" {}={:.2}ms", name, ms);
-                }
-                crate::ext_warn!(" | TOTAL={:.2}ms", total);
-            }
             return Ok(None);
         }
 
         let tile: Vec<u32> = self
             .dev
-            .dtoh_sync_copy(&b.output_tile)
+            .dtoh_sync_copy(&b.output_tile.slice(0..1))
             .map_err(|e| anyhow::anyhow!("pearl tile read: {e}"))?;
         let jackpot_vec: Vec<u8> = self
             .dev
-            .dtoh_sync_copy(&b.output_jackpot)
+            .dtoh_sync_copy(&b.output_jackpot.slice(0..32))
             .map_err(|e| anyhow::anyhow!("pearl jackpot read: {e}"))?;
         let mut jackpot_hash = [0u8; 32];
         jackpot_hash.copy_from_slice(&jackpot_vec[..32]);
@@ -731,6 +691,52 @@ impl PearlCudaMiner {
             matrix_a,
             matrix_bt,
         }))
+    }
+
+    /// Queue `batch` sequential-nonce attempts back-to-back with a single
+    /// synchronization at the end — removes the ~4 mid-attempt host
+    /// roundtrips per try (the dominant cost under GPU timesharing).
+    /// On a hit the winning pipeline is re-run once to materialize the
+    /// matrices needed for the CPU Merkle-proof build (buffers are
+    /// overwritten by later queued attempts).
+    /// Returns (result, attempts_executed).
+    pub fn mine_native_batch(
+        &mut self,
+        input: &PearlPouwNativeInput<'_>,
+        batch: usize,
+    ) -> Result<(Option<PearlPouwNativeResult>, usize)> {
+        self.ensure_bufs(input)?;
+        let batch = batch.clamp(1, MAX_BATCH);
+        self.prep_job(input, batch)?;
+        for i in 0..batch {
+            self.queue_attempt(input, input.nonce.wrapping_add(i as u64), i)?;
+        }
+
+        let found: Vec<u32> = self
+            .dev
+            .dtoh_sync_copy(&self.bufs.as_ref().unwrap().found.slice(0..batch))
+            .map_err(|e| anyhow::anyhow!("pearl batch found read: {e}"))?;
+        let Some(win) = found.iter().position(|&f| f != 0) else {
+            return Ok((None, batch));
+        };
+        let win_input = PearlPouwNativeInput {
+            nonce: input.nonce.wrapping_add(win as u64),
+            m: input.m,
+            n: input.n,
+            k: input.k,
+            rank: input.rank,
+            job_key: input.job_key,
+            target: input.target,
+            row_offsets: input.row_offsets,
+            col_offsets: input.col_offsets,
+            rows_base: input.rows_base,
+            cols_base: input.cols_base,
+            seed_label_a: input.seed_label_a,
+            seed_label_b: input.seed_label_b,
+            seed_derivation: input.seed_derivation,
+        };
+        let res = self.mine_native(&win_input)?;
+        Ok((res, batch))
     }
 }
 
@@ -769,6 +775,17 @@ impl GpuMiner for PearlCudaMiner {
         input: &PearlPouwNativeInput<'_>,
     ) -> Result<Option<PearlPouwNativeResult>> {
         self.mine_native(input)
+    }
+
+    /// CUDA batch path — queues all `batch` attempt pipelines back-to-back
+    /// with a single sync at the end (per-attempt host roundtrips were the
+    /// dominant cost, especially under GPU timesharing with other streams).
+    fn mine_pearl_batch(
+        &mut self,
+        input: &PearlPouwNativeInput<'_>,
+        batch: usize,
+    ) -> Result<(Option<PearlPouwNativeResult>, usize)> {
+        self.mine_native_batch(input, batch)
     }
 
     fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {

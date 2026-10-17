@@ -216,6 +216,11 @@ fn log_or_sticky(s: &str) {
     }
 }
 
+/// `fmt_hashrate` with per-coin unit conversion (pearl att/s → GH/s-equiv).
+pub fn fmt_hashrate_coin(coin: &str, hps: f64) -> (String, &'static str) {
+    fmt_hashrate(crate::stream::display_hps(coin, hps))
+}
+
 /// Auto-scale hashrate: pick best unit (H/s, KH/s, MH/s, GH/s, TH/s)
 pub fn fmt_hashrate(hps: f64) -> (String, &'static str) {
     if hps >= 1e12 {

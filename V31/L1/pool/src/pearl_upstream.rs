@@ -17,6 +17,11 @@ const READ_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_JOB_TTL_MS: u64 = 90_000;
 const BACKOFF_BASE: Duration = Duration::from_secs(5);
 const BACKOFF_MAX: Duration = Duration::from_secs(60);
+/// Upstream pearl pools only notify on template changes; gaps well over
+/// READ_TIMEOUT are normal (see auxpow_runtime, which polls through
+/// thousands of timeouts per session). Treat the connection as dead only
+/// after this many consecutive silent windows.
+const MAX_CONSECUTIVE_TIMEOUTS: u32 = 10;
 
 #[derive(Clone)]
 pub struct PearlUpstreamConfig {
@@ -264,7 +269,9 @@ impl PearlUpstream {
                 self.pending.fetch_sub(1, Ordering::Relaxed);
                 let _ = req.reply.send(UpstreamSubmitReply::Unknown);
             }
-            *self.latest.write().unwrap() = None;
+            // Keep the last job cached through the reconnect — upstream jobs
+            // stay valid until the pool replaces them, and latest_fresh()
+            // still bounds staleness via job_ttl.
             self.connected.store(false, Ordering::SeqCst);
             if submit_rx.is_closed() {
                 return;
@@ -290,23 +297,39 @@ impl PearlUpstream {
             self.cache_job(j);
         }
         tracing::info!("pearl_upstream: connected to {}", self.endpoint);
+        let mut consecutive_timeouts = 0u32;
         loop {
             tokio::select! {
                 ev = tokio::time::timeout(READ_TIMEOUT, client.next_event()) => match ev {
                     Ok(Ok(PearlPoolEvent::Job(j))) => {
+                        consecutive_timeouts = 0;
                         self.connected.store(true, Ordering::SeqCst);
                         self.cache_job(j);
                     }
                     Ok(Ok(PearlPoolEvent::Response(r))) => {
+                        consecutive_timeouts = 0;
                         tracing::debug!(
                             "pearl_upstream: stray response id={} accepted={}",
                             r.id,
                             r.accepted
                         );
                     }
-                    Ok(Ok(PearlPoolEvent::Other(_))) => {}
+                    Ok(Ok(PearlPoolEvent::Other(_))) => {
+                        consecutive_timeouts = 0;
+                    }
                     Ok(Err(e)) => return Err(e),
-                    Err(_) => anyhow::bail!("read timeout"),
+                    Err(_) => {
+                        consecutive_timeouts += 1;
+                        if consecutive_timeouts >= MAX_CONSECUTIVE_TIMEOUTS {
+                            anyhow::bail!(
+                                "read timeout x{consecutive_timeouts} — upstream silent"
+                            );
+                        }
+                        tracing::debug!(
+                            "pearl_upstream: {} quiet {consecutive_timeouts}/{MAX_CONSECUTIVE_TIMEOUTS}",
+                            self.endpoint
+                        );
+                    }
                 },
                 req = submit_rx.recv() => {
                     let Some(req) = req else { return Ok(()) };

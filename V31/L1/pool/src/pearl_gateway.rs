@@ -150,7 +150,14 @@ impl PearlRuntime {
             })),
             upstream,
             native_pct,
-            job_seq: Arc::new(AtomicU64::new(0)),
+            // Seed from the clock: starting at 0 would flag the first template
+            // after every pool restart as native whenever native_pct > 0.
+            job_seq: Arc::new(AtomicU64::new(
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.subsec_nanos() as u64)
+                    .unwrap_or(0),
+            )),
         }
     }
 
@@ -497,13 +504,16 @@ impl PearlRuntime {
     }
 
     pub fn pick_served_job(&self) -> Option<ExternalStreamJob> {
-        if let Some((job, true)) = self.latest_with_flag() {
+        let native = self.latest_with_flag();
+        if let Some((job, true)) = native {
             return Some(self.ext_stream_for(&job));
         }
-        self.upstream
-            .as_ref()
-            .and_then(|u| u.latest_fresh())
-            .map(|j| j.ext_stream_job())
+        if let Some(job) = self.upstream.as_ref().and_then(|u| u.latest_fresh()) {
+            return Some(job.ext_stream_job());
+        }
+        // Upstream gap: fall back to the native leg so miners always hold a
+        // PRL job instead of starving until the next upstream notify.
+        native.map(|(job, _)| self.ext_stream_for(&job))
     }
 
     #[allow(clippy::type_complexity)]
@@ -1034,9 +1044,12 @@ mod tests {
         let rt = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(stale_up.clone()), 100);
         assert!(rt.pick_served_job().is_none());
         let j = job([0xaau8; 76], BigUint::from(10u8), 3);
+        let id = PearlRuntime::job_id(&j);
         let rt0 =
             PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(stale_up), 0);
-        assert!(rt0.pick_served_job().is_none());
+        // Native fallback: unselected native job still serves when upstream
+        // has nothing fresh — miners never starve during upstream gaps.
+        assert_eq!(rt0.pick_served_job().unwrap().job_id, id);
     }
 
     #[test]
@@ -1050,7 +1063,8 @@ mod tests {
         assert!(rt.latest_with_flag().unwrap().1);
         rt.cache_job(job([0xbbu8; 76], BigUint::from(10u8), 3), Instant::now());
         assert!(!rt.latest_with_flag().unwrap().1);
-        assert!(rt.pick_served_job().is_none());
+        // No upstream leg: the unselected native job still serves as fallback.
+        assert!(rt.pick_served_job().is_some());
     }
 
     #[test]

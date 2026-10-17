@@ -553,6 +553,101 @@ __device__ void blake3_keyed_hash_64_gpu(
     }
 }
 
+// ─── On-device noise-seed derivation ─────────────────────────────────────────
+// Replaces the old host roundtrip path (dtoh roots → CPU blake3 → htod):
+//   salted: hash_eff = blake3_keyed(SALT, root || dim_u32le || 28×00)
+//   legacy: hash_eff = root
+//   b_noise_seed = blake3(job_key || hash_b_eff)
+//   a_noise_seed = blake3(b_noise_seed || hash_a_eff)
+// One thread, ~4 compression calls — runs between merkle and noise-gen with
+// zero host synchronization.
+__device__ void blake3_hash64(const uchar* key, uint keyed, const uchar* msg64, uchar* out)
+{
+    uint cv[8];
+    if (keyed) {
+        for (int i = 0; i < 8; i++) {
+            cv[i] = (uint)key[i * 4]
+                  | ((uint)key[i * 4 + 1] << 8)
+                  | ((uint)key[i * 4 + 2] << 16)
+                  | ((uint)key[i * 4 + 3] << 24);
+        }
+    } else {
+        for (int i = 0; i < 8; i++) cv[i] = BLAKE3_IV[i];
+    }
+    uint block[16];
+    for (int i = 0; i < 16; i++) block[i] = 0u;
+    for (int i = 0; i < 64; i++) {
+        block[i / 4] |= ((uint)msg64[i]) << ((i % 4) * 8);
+    }
+    uint flags = CHUNK_START | CHUNK_END | ROOT;
+    if (keyed) flags |= KEYED_HASH;
+    uint o[8];
+    blake3_compress(cv, block, 0, 64, flags, o);
+    for (int i = 0; i < 8; i++) {
+        out[i * 4 + 0] = (uchar)(o[i]);
+        out[i * 4 + 1] = (uchar)(o[i] >> 8);
+        out[i * 4 + 2] = (uchar)(o[i] >> 16);
+        out[i * 4 + 3] = (uchar)(o[i] >> 24);
+    }
+}
+
+extern "C" __global__ void pearl_derive_seeds(
+    const uchar* root_a,
+    const uchar* root_b,
+    const uchar* job_key,
+    const uchar* salt_a,
+    const uchar* salt_b,
+    uint dim_a,
+    uint dim_b,
+    uint salted,
+    uchar* a_noise_seed,
+    uchar* b_noise_seed
+)
+{
+    if (blockIdx.x != 0 || threadIdx.x != 0) return;
+
+    uchar msg[64];
+    uchar hash_a_eff[32];
+    uchar hash_b_eff[32];
+
+    if (salted) {
+        for (int i = 0; i < 64; i++) msg[i] = 0;
+        for (int i = 0; i < 32; i++) msg[i] = root_a[i];
+        msg[32] = (uchar)(dim_a);
+        msg[33] = (uchar)(dim_a >> 8);
+        msg[34] = (uchar)(dim_a >> 16);
+        msg[35] = (uchar)(dim_a >> 24);
+        blake3_hash64(salt_a, 1u, msg, hash_a_eff);
+
+        for (int i = 0; i < 64; i++) msg[i] = 0;
+        for (int i = 0; i < 32; i++) msg[i] = root_b[i];
+        msg[32] = (uchar)(dim_b);
+        msg[33] = (uchar)(dim_b >> 8);
+        msg[34] = (uchar)(dim_b >> 16);
+        msg[35] = (uchar)(dim_b >> 24);
+        blake3_hash64(salt_b, 1u, msg, hash_b_eff);
+    } else {
+        for (int i = 0; i < 32; i++) {
+            hash_a_eff[i] = root_a[i];
+            hash_b_eff[i] = root_b[i];
+        }
+    }
+
+    // b_noise_seed = blake3(job_key || hash_b_eff)
+    for (int i = 0; i < 32; i++) {
+        msg[i] = job_key[i];
+        msg[32 + i] = hash_b_eff[i];
+    }
+    blake3_hash64(job_key, 0u, msg, b_noise_seed);
+
+    // a_noise_seed = blake3(b_noise_seed || hash_a_eff)
+    for (int i = 0; i < 32; i++) {
+        msg[i] = b_noise_seed[i];
+        msg[32 + i] = hash_a_eff[i];
+    }
+    blake3_hash64(job_key, 0u, msg, a_noise_seed);
+}
+
 // ─── MatMul + Jackpot + Target check (v3 — no shared matrix memory) ─────────
 
 #define TILE_H 4
