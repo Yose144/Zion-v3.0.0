@@ -112,13 +112,24 @@ Measured on the same vast RTX 3060 (build `7f7b37a6`):
 QTU also rose ~86→94–100 MH/s — PRL now finishes its duty slice faster,
 leaving the card to stream 4 sooner.
 
+### 3.6 Fused whole-tree merkle (Phase 2.2 — DONE)
+
+`pearl_merkle_tree` replaces ~11 per-level `pearl_blake3_merge` launches
+per tree (2048→…→1, both trees = ~22 launches/attempt) with **one launch
+per tree**. One block of 1024 threads grid-strides over each level's
+parents; `__syncthreads` between levels; src/dst ping-pongs between the
+leaf buffer and `merkle` scratch (a level's source is fully consumed by
+the previous level, so writing back into it is safe). Identical layering,
+odd-leaf passthrough and ROOT-flag-on-final-merge semantics — validated
+by **A3 R0 accepted** on eased native jobs (pool verifier recomputes the
+full proof incl. both roots). Solo ~2074 GH/s measured; the real win is
+~20 fewer stream serialization points per attempt under timesharing.
+
 ## 5. Phase 2 — queued kernel micro-opts
 
 Ordered by expected value:
 
-1. **Merkle fusion** — ~22 tiny launches per attempt (halving layers
-   2048→…→1 per tree). One block of 1024 threads can fold a whole tree
-   in a single launch (`__syncthreads` between levels): ~22→2 launches.
+1. ~~**Merkle fusion**~~ — **DONE (§3.6):** 22→2 launches, A3 R0 validated.
 2. ~~**Mine kernel `__shfl_xor` reduce**~~ — **DONE (§3.5):** butterfly
    shuffle fold, solo 277→308 att/s (+11%). Still open: restructure to
    warp-per-tile blocks (8 tiles/block) for occupancy.

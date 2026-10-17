@@ -16,7 +16,7 @@
 //!                                    (default 30000).
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -116,6 +116,8 @@ pub struct PearlRuntime {
     upstream: Option<Arc<PearlUpstream>>,
     native_pct: u8,
     job_seq: Arc<AtomicU64>,
+    served_native: Arc<AtomicUsize>,
+    served_upstream: Arc<AtomicUsize>,
 }
 
 impl std::fmt::Debug for PearlRuntime {
@@ -158,6 +160,8 @@ impl PearlRuntime {
                     .map(|d| d.subsec_nanos() as u64)
                     .unwrap_or(0),
             )),
+            served_native: Arc::new(AtomicUsize::new(0)),
+            served_upstream: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -506,13 +510,18 @@ impl PearlRuntime {
     pub fn pick_served_job(&self) -> Option<ExternalStreamJob> {
         let native = self.latest_with_flag();
         if let Some((job, true)) = native {
+            self.served_native.fetch_add(1, Ordering::Relaxed);
             return Some(self.ext_stream_for(&job));
         }
         if let Some(job) = self.upstream.as_ref().and_then(|u| u.latest_fresh()) {
+            self.served_upstream.fetch_add(1, Ordering::Relaxed);
             return Some(job.ext_stream_job());
         }
         // Upstream gap: fall back to the native leg so miners always hold a
         // PRL job instead of starving until the next upstream notify.
+        if native.is_some() {
+            self.served_native.fetch_add(1, Ordering::Relaxed);
+        }
         native.map(|(job, _)| self.ext_stream_for(&job))
     }
 
@@ -528,6 +537,8 @@ impl PearlRuntime {
         bool,
         Option<String>,
         Option<u64>,
+        usize,
+        usize,
         usize,
     ) {
         let (native_job_id, native_age_ms) = match self.latest.read().unwrap().as_ref() {
@@ -551,7 +562,30 @@ impl PearlRuntime {
             up_job_id,
             up_age_ms,
             up_pending,
+            self.served_native.load(Ordering::Relaxed),
+            self.served_upstream.load(Ordering::Relaxed),
         )
+    }
+
+    /// Upstream-leg status as a JSON object for `/stats`. Emits the same
+    /// disabled-shaped object as `status()` reports when no upstream leg is
+    /// configured so the API schema stays stable.
+    pub fn upstream_status_json(&self) -> serde_json::Value {
+        match &self.upstream {
+            Some(u) => u.status_json(),
+            None => serde_json::json!({
+                "enabled": false,
+                "connected": false,
+                "job_id": null,
+                "job_age_ms": null,
+                "pending_submits": 0,
+                "submits": 0,
+                "accepted": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "busy": 0,
+            }),
+        }
     }
 
     /// `PearlSubmit` job-id lookup — returns the job iff it is still fresh
@@ -1154,7 +1188,8 @@ mod tests {
         let nid = PearlRuntime::job_id(&j);
         let up = upstream_seeded(j.header, "u1", [0x11u8; 32], Duration::ZERO);
         let rt = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(up), 37);
-        let (n_en, njid, nage, pct, u_en, u_conn, ujid, uage, pend) = rt.status();
+        let (n_en, njid, nage, pct, u_en, u_conn, ujid, uage, pend, s_native, s_upstream) =
+            rt.status();
         assert!(n_en);
         assert_eq!(njid.as_deref(), Some(nid.as_str()));
         assert!(nage.is_some());
@@ -1164,5 +1199,57 @@ mod tests {
         assert_eq!(ujid.as_deref(), Some("prlu:u1"));
         assert!(uage.is_some());
         assert_eq!(pend, 0);
+        assert_eq!(s_native, 0);
+        assert_eq!(s_upstream, 0);
+        // Every pick lands on exactly one leg — native flag decides which.
+        rt.pick_served_job().unwrap();
+        rt.pick_served_job().unwrap();
+        let (_, _, _, _, _, _, _, _, _, s_native, s_upstream) = rt.status();
+        assert_eq!(s_native + s_upstream, 2);
+    }
+
+    #[test]
+    fn pick_served_job_counts_each_leg() {
+        let j = job([0xaau8; 76], BigUint::from(10u8), 3);
+        let up = upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::ZERO);
+        // native_pct=100 always serves the native leg.
+        let rt100 = PearlRuntime::for_test_hybrid(
+            "127.0.0.1:1",
+            256,
+            30_000,
+            Some(j.clone()),
+            Some(up.clone()),
+            100,
+        );
+        rt100.pick_served_job().unwrap();
+        rt100.pick_served_job().unwrap();
+        let (_, _, _, _, _, _, _, _, _, sn, su) = rt100.status();
+        assert_eq!((sn, su), (2, 0));
+        // native_pct=0 with a fresh upstream job serves the upstream leg.
+        let rt0 =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up), 0);
+        rt0.pick_served_job().unwrap();
+        let (_, _, _, _, _, _, _, _, _, sn, su) = rt0.status();
+        assert_eq!((sn, su), (0, 1));
+        // Upstream gap: the unselected native leg still serves as fallback —
+        // counted as native, not upstream.
+        let stale_up =
+            upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::from_millis(91_000));
+        let rt_stale = PearlRuntime::for_test_hybrid(
+            "127.0.0.1:1",
+            256,
+            30_000,
+            Some(j),
+            Some(stale_up),
+            0,
+        );
+        rt_stale.pick_served_job().unwrap();
+        let (_, _, _, _, _, _, _, _, _, sn, su) = rt_stale.status();
+        assert_eq!((sn, su), (1, 0));
+        // Nothing to serve: no counters move.
+        let rt_empty = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, None, None, 0);
+        assert!(rt_empty.pick_served_job().is_none());
+        let (_, _, _, _, _, _, _, _, _, sn, su) = rt_empty.status();
+        assert_eq!((sn, su), (0, 0));
     }
 }

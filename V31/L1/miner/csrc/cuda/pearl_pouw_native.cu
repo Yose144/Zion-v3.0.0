@@ -231,6 +231,95 @@ extern "C" __global__ void pearl_blake3_merge(
     }
 }
 
+// ─── Fused whole-tree merkle reduction ──────────────────────────────────────
+// One block folds the entire tree: grid-stride over each level's parents,
+// __syncthreads between levels, ping-pong leaf_buf <-> scratch (levels
+// alternate directions; each level's src is fully consumed by the previous
+// level so writing back into it is safe). Layering, odd-leaf passthrough and
+// the ROOT-flag-on-final-merge semantics are identical to the per-level
+// pearl_blake3_merge launches.
+extern "C" __global__ void pearl_merkle_tree(
+    uchar* leaf_hashes,          // num_leaves × 32 (chunk CVs; reused as ping buf)
+    const uchar* key,            // 32 bytes keyed-hash key
+    uchar* scratch,              // num_leaves × 32 second ping buffer
+    uchar* root_out,             // 32 bytes — receives the ROOT-flagged CV
+    const uint num_leaves
+)
+{
+    const uint tid = threadIdx.x;
+    if (num_leaves == 1u) {
+        if (tid < 8u) {
+            uint w = ((const uint*)leaf_hashes)[tid];
+            ((uint*)root_out)[tid] = w;
+        }
+        return;
+    }
+
+    uint cv_key[8];
+    for (int i = 0; i < 8; i++) {
+        cv_key[i] = (uint)key[i*4]
+                  | ((uint)key[i*4+1] << 8)
+                  | ((uint)key[i*4+2] << 16)
+                  | ((uint)key[i*4+3] << 24);
+    }
+
+    uchar* src = leaf_hashes;
+    uchar* dst = scratch;
+    uint n = num_leaves;
+    while (n > 1u) {
+        const uint parents = (n + 1u) >> 1;
+        const bool root_level = (n == 2u);
+        uchar* out_buf = root_level ? root_out : dst;
+        for (uint gid = tid; gid < parents; gid += blockDim.x) {
+            const uchar* l = src + (ulong)gid * 64;
+            uint left[8];
+            for (int i = 0; i < 8; i++) {
+                left[i] = (uint)l[i*4]
+                        | ((uint)l[i*4+1] << 8)
+                        | ((uint)l[i*4+2] << 16)
+                        | ((uint)l[i*4+3] << 24);
+            }
+            uchar* out_hash = out_buf + (ulong)gid * 32;
+            if (gid * 2u + 1u >= n) {
+                // Lone child propagates unchanged (MerkleTree::combine_layer).
+                for (int i = 0; i < 8; i++) {
+                    out_hash[i*4+0] = (uchar)left[i];
+                    out_hash[i*4+1] = (uchar)(left[i] >> 8);
+                    out_hash[i*4+2] = (uchar)(left[i] >> 16);
+                    out_hash[i*4+3] = (uchar)(left[i] >> 24);
+                }
+                continue;
+            }
+            const uchar* r = l + 32;
+            uint right[8];
+            for (int i = 0; i < 8; i++) {
+                right[i] = (uint)r[i*4]
+                         | ((uint)r[i*4+1] << 8)
+                         | ((uint)r[i*4+2] << 16)
+                         | ((uint)r[i*4+3] << 24);
+            }
+            uint block[16];
+            for (int i = 0; i < 8; i++) block[i] = left[i];
+            for (int i = 0; i < 8; i++) block[8 + i] = right[i];
+            uint flags = PARENT | KEYED_HASH;
+            if (root_level) flags |= ROOT;
+            uint cv[8];
+            for (int i = 0; i < 8; i++) cv[i] = cv_key[i];
+            uint out[8];
+            blake3_compress(cv, block, 0, 64, flags, out);
+            for (int i = 0; i < 8; i++) {
+                out_hash[i*4+0] = (uchar)out[i];
+                out_hash[i*4+1] = (uchar)(out[i] >> 8);
+                out_hash[i*4+2] = (uchar)(out[i] >> 16);
+                out_hash[i*4+3] = (uchar)(out[i] >> 24);
+            }
+        }
+        __syncthreads();
+        uchar* t = src; src = dst; dst = t;
+        n = parents;
+    }
+}
+
 // ─── BLAKE3 small message hash (for seed derivation) ────────────────────────
 // Hash a small message (≤ 64 bytes) with optional key.
 // One thread (only gid==0 does work).
