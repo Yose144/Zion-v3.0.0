@@ -153,7 +153,7 @@ impl PearlPoolClient {
             last_request_written: false,
         };
         let req = format!(
-            "{{\"id\":1,\"method\":\"mining.authorize\",\"params\":{{\"wallet\":{},\"worker\":{},\"pass\":{},\"agent\":\"{AGENT}\"}}}}\n",
+            "{{\"id\":1,\"method\":\"mining.authorize\",\"params\":{{\"wallet\":{},\"worker\":{},\"pass\":{},\"agent\":\"{AGENT}\",\"type\":\"v2\"}}}}\n",
             json_str(wallet),
             json_str(worker),
             json_str(password),
@@ -212,6 +212,7 @@ impl PearlPoolClient {
         &mut self,
         job_id: &str,
         plain_proof_b64: &str,
+        hashrate_hps: Option<u64>,
     ) -> Result<PearlPoolResponse> {
         self.reset_submit_state();
         ensure!(
@@ -223,7 +224,11 @@ impl PearlPoolClient {
             .next_id
             .checked_add(1)
             .context("rpc id space exhausted")?;
-        let params = serde_json::json!({"job_id": job_id, "plain_proof": plain_proof_b64});
+        let params = serde_json::json!({
+            "job_id": job_id,
+            "plain_proof": plain_proof_b64,
+            "hs": hashrate_hps.unwrap_or(0),
+        });
         let request = serde_json::json!({"id": id, "method": "mining.submit", "params": params});
         self.last_request = Some(request.clone());
         let line = format!("{}\n", serde_json::to_string(&request)?);
@@ -535,7 +540,7 @@ mod tests {
                 .await
                 .unwrap();
         });
-        let resp = client.submit_proof("job-7f3a", "QUJD").await.unwrap();
+        let resp = client.submit_proof("job-7f3a", "QUJD", Some(1_000_000)).await.unwrap();
         handle.await.unwrap();
         assert_eq!(resp.id, 2);
         assert!(!resp.accepted);
@@ -554,7 +559,7 @@ mod tests {
                 .await
                 .unwrap();
         });
-        let resp = client.submit_proof("j", "QUJD").await.unwrap();
+        let resp = client.submit_proof("j", "QUJD", None).await.unwrap();
         assert!(!resp.accepted);
 
         let (mut client, mut server) = client_pair().await;
@@ -565,7 +570,7 @@ mod tests {
                 .await
                 .unwrap();
         });
-        let resp = client.submit_proof("j", "QUJD").await.unwrap();
+        let resp = client.submit_proof("j", "QUJD", None).await.unwrap();
         assert!(!resp.accepted);
     }
 
@@ -617,7 +622,7 @@ mod tests {
     #[tokio::test]
     async fn oversized_proof_rejected_before_write() {
         let (mut client, mut server) = client_pair().await;
-        let (resp, _) = tokio::join!(client.submit_proof("j", "QUJD"), async {
+        let (resp, _) = tokio::join!(client.submit_proof("j", "QUJD", None), async {
             let _ = server_line(&mut server).await;
             server
                 .write_all(b"{\"id\":2,\"result\":true,\"error\":null}\n")
@@ -630,7 +635,7 @@ mod tests {
         assert_eq!(client.last_request().unwrap()["id"], 2);
 
         let huge = "A".repeat(MAX_PROOF_B64_CHARS + 1);
-        let err = client.submit_proof("j", &huge).await.unwrap_err();
+        let err = client.submit_proof("j", &huge, None).await.unwrap_err();
         assert!(err.to_string().contains("base64"));
         assert!(!client.last_request_written());
         assert!(client.last_request().is_none());
@@ -646,7 +651,7 @@ mod tests {
             let _ = server_line(&mut server).await;
             drop(server);
         });
-        let err = client.submit_proof("j", "QUJD").await.unwrap_err();
+        let err = client.submit_proof("j", "QUJD", None).await.unwrap_err();
         assert!(err.to_string().contains("closed") || err.to_string().contains("read"));
         assert!(client.last_request_written());
         assert_eq!(client.last_request().unwrap()["id"], 2);

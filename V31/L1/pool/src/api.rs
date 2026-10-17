@@ -1410,6 +1410,7 @@ mod tests {
                 worker: "w".to_string(),
                 password: "x".to_string(),
                 job_ttl: Duration::from_millis(90_000),
+            fwd_max: Duration::from_millis(90_000),
             },
         );
         let rt = crate::pearl_gateway::PearlRuntime::for_test_hybrid(

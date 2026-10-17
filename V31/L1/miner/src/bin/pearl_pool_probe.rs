@@ -176,7 +176,7 @@ async fn submit_bounded(
         biased;
         res = shutdown.as_mut() => SubmitOutcome::Cancelled(map_shutdown(res)),
         _ = sleep_until(TokioInstant::from_std(deadline)) => SubmitOutcome::Cancelled("deadline"),
-        res = client.submit_proof(job_id, plain_proof_b64) => SubmitOutcome::Done(res),
+        res = client.submit_proof(job_id, plain_proof_b64, None) => SubmitOutcome::Done(res),
     }
 }
 
@@ -716,7 +716,7 @@ mod tests {
     }
 
     async fn accepted_prior_submit(client: &mut PearlPoolClient, server: &mut TcpStream) {
-        let (resp, _) = tokio::join!(client.submit_proof("j", "QUJD"), async {
+        let (resp, _) = tokio::join!(client.submit_proof("j", "QUJD", None), async {
             let _ = server_line(server).await;
             server
                 .write_all(b"{\"id\":2,\"result\":true,\"error\":null}\n")

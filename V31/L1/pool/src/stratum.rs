@@ -1578,10 +1578,30 @@ impl StratumServer {
         worker_name: &str,
         external_job_id: &str,
         proof_b64: &str,
+        hs: Option<u64>,
     ) -> (bool, String) {
         let Some(pearl) = &self.pearl else {
             return (false, "pearl_not_enabled".to_string());
         };
+        fn map_upstream_reply(reply: crate::pearl_upstream::UpstreamSubmitReply) -> (bool, String) {
+            match reply {
+                crate::pearl_upstream::UpstreamSubmitReply::Accepted => {
+                    (true, "accepted".to_string())
+                }
+                crate::pearl_upstream::UpstreamSubmitReply::Rejected(m) => {
+                    (false, format!("rejected:{m}"))
+                }
+                crate::pearl_upstream::UpstreamSubmitReply::Unknown => {
+                    (true, "accepted_unknown".to_string())
+                }
+                crate::pearl_upstream::UpstreamSubmitReply::Busy => (false, "busy".to_string()),
+                crate::pearl_upstream::UpstreamSubmitReply::StaleForward => {
+                    // Locally valid share on a retired upstream job —
+                    // credited, but never sent upstream.
+                    (true, "accepted_stale_upstream".to_string())
+                }
+            }
+        }
         let (accepted, status) = if external_job_id
             .starts_with(crate::pearl_upstream::UPSTREAM_JOB_PREFIX)
         {
@@ -1590,19 +1610,17 @@ impl StratumServer {
                 .await
             {
                 Ok((ujob, _outcome)) => {
-                    match pearl.upstream_submit(&ujob, proof_b64).await {
-                        crate::pearl_upstream::UpstreamSubmitReply::Accepted => {
-                            (true, "accepted".to_string())
-                        }
-                        crate::pearl_upstream::UpstreamSubmitReply::Rejected(m) => {
-                            (false, format!("rejected:{m}"))
-                        }
-                        crate::pearl_upstream::UpstreamSubmitReply::Unknown => {
-                            (true, "accepted_unknown".to_string())
-                        }
-                        crate::pearl_upstream::UpstreamSubmitReply::Busy => {
-                            (false, "busy".to_string())
-                        }
+                    map_upstream_reply(pearl.upstream_submit(&ujob, proof_b64, hs).await)
+                }
+                // Proof in a serialization we cannot decode (e.g. SRBMiner):
+                // forward it opaque — the upstream pool is authoritative.
+                Err(crate::pearl_gateway::PearlSubmitError::Invalid(_)) => {
+                    match pearl
+                        .submit_upstream_opaque(external_job_id, proof_b64, hs)
+                        .await
+                    {
+                        Ok(reply) => map_upstream_reply(reply),
+                        Err(e) => (false, e.status()),
                     }
                 }
                 Err(e) => (false, e.status()),
@@ -1669,7 +1687,10 @@ impl StratumServer {
     where
         W: tokio::io::AsyncWrite + Unpin,
     {
-        tokio::time::timeout(Duration::from_secs(10), Self::qtu_send(writer, line))
+        // Pearl frame builders already terminate with '\n'; trim so the
+        // wire carries exactly one newline — SRBMiner's line parser rejects
+        // the blank line a double '\n' produces (Exception[15] on connect).
+        tokio::time::timeout(Duration::from_secs(10), Self::qtu_send(writer, line.trim_end()))
             .await
             .map_err(|_| {
                 std::io::Error::new(std::io::ErrorKind::TimedOut, "pearl stratum write timeout")
@@ -1765,6 +1786,7 @@ impl StratumServer {
                                                 &worker_name,
                                                 &sub.job_id,
                                                 &sub.plain_proof,
+                                                sub.hs,
                                             )
                                             .await;
                                         let resp = if accepted {
@@ -3212,6 +3234,7 @@ impl StratumServer {
                                         &sub_worker_name,
                                         &external_job_id,
                                         &plain_proof_b64,
+                                        None,
                                     )
                                     .await
                                 };
@@ -4919,7 +4942,7 @@ mod tests {
                 assert_eq!(job.cert_version, 3);
                 assert_eq!(job.height, 0);
 
-                let resp = client.submit_proof(&job_id, &proof_b64).await.unwrap();
+                let resp = client.submit_proof(&job_id, &proof_b64, None).await.unwrap();
                 assert!(resp.accepted, "resp={:?}", resp.raw);
                 assert_eq!(resp.id, 2);
                 assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
@@ -4928,12 +4951,12 @@ mod tests {
                     PearlPoolClient::connect(&addr.to_string(), "prl1TESTPOOLWALLET2", "rig1", "x")
                         .await
                         .unwrap();
-                let resp2 = client2.submit_proof(&job_id, &proof_b64).await.unwrap();
+                let resp2 = client2.submit_proof(&job_id, &proof_b64, None).await.unwrap();
                 assert!(!resp2.accepted, "resp={:?}", resp2.raw);
                 assert_eq!(resp2.raw["error"]["message"], "duplicate");
                 assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
 
-                let resp3 = client2.submit_proof("stale-job", &proof_b64).await.unwrap();
+                let resp3 = client2.submit_proof("stale-job", &proof_b64, None).await.unwrap();
                 assert!(!resp3.accepted);
                 assert_eq!(resp3.raw["error"]["message"], "stale");
                 let fresh = tokio::time::timeout(Duration::from_secs(5), async {
@@ -4947,7 +4970,7 @@ mod tests {
                 .expect("stale rejection pushes fresh notify");
                 assert_eq!(fresh.job_id, job_id);
 
-                let resp4 = client2.submit_proof(&job_id, "%%%").await.unwrap();
+                let resp4 = client2.submit_proof(&job_id, "%%%", None).await.unwrap();
                 assert!(!resp4.accepted);
                 assert!(resp4.raw["error"]["message"]
                     .as_str()
@@ -4962,6 +4985,7 @@ mod tests {
                         "prl1TESTPOOLWALLET.rig0",
                         &job_id,
                         &proof_b64,
+                        None,
                     )
                     .await;
                 assert!(!ok3);
@@ -5006,7 +5030,7 @@ mod tests {
                 );
 
                 let (ok, status) = server
-                    .process_pearl_submission("miner", "miner.w", &job_id, &proof_b64)
+                    .process_pearl_submission("miner", "miner.w", &job_id, &proof_b64, None)
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted");
@@ -5037,7 +5061,7 @@ mod tests {
                 assert!(forwarded.contains("\"cert_version\":3"));
 
                 let (ok2, status2) = server
-                    .process_pearl_submission("miner2", "miner2.w", &job_id, &proof_b64)
+                    .process_pearl_submission("miner2", "miner2.w", &job_id, &proof_b64, None)
                     .await;
                 assert!(!ok2);
                 assert_eq!(status2, "duplicate");
@@ -5383,6 +5407,7 @@ mod tests {
                 worker: "zion-pool".to_string(),
                 password: "x".to_string(),
                 job_ttl: Duration::from_millis(90_000),
+                fwd_max: Duration::from_millis(90_000),
             });
         assert!(up.ensure_started());
         tokio::time::timeout(Duration::from_secs(5), async {
@@ -5410,14 +5435,14 @@ mod tests {
                 let server = StratumServer::new(pool.clone());
 
                 let (ok0, status0) = server
-                    .process_pearl_submission("miner", "miner.w", "prlu:ghost", &proof_b64)
+                    .process_pearl_submission("miner", "miner.w", "prlu:ghost", &proof_b64, None)
                     .await;
                 assert!(!ok0);
                 assert_eq!(status0, "stale");
                 assert_eq!(pool.lock().unwrap().pplns.stats().window_used, 0);
 
                 let (ok, status) = server
-                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64)
+                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64, None)
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted");
@@ -5435,7 +5460,7 @@ mod tests {
                 assert!(!submits[0].contains("prlu:"));
 
                 let (ok2, status2) = server
-                    .process_pearl_submission("miner2", "miner2.w", "prlu:u-1", &proof_b64)
+                    .process_pearl_submission("miner2", "miner2.w", "prlu:u-1", &proof_b64, None)
                     .await;
                 assert!(!ok2);
                 assert_eq!(status2, "duplicate");
@@ -5460,7 +5485,7 @@ mod tests {
                 let pool = pool_with_pearl(Some(pearl));
                 let server = StratumServer::new(pool.clone());
                 let (ok, status) = server
-                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64)
+                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64, None)
                     .await;
                 assert!(!ok);
                 assert_eq!(status, "rejected:low difficulty");
@@ -5484,7 +5509,7 @@ mod tests {
                 let pool = pool_with_pearl(Some(pearl));
                 let server = StratumServer::new(pool.clone());
                 let (ok, status) = server
-                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64)
+                    .process_pearl_submission("miner", "miner.w", "prlu:u-1", &proof_b64, None)
                     .await;
                 assert!(ok, "status={status}");
                 assert_eq!(status, "accepted_unknown");

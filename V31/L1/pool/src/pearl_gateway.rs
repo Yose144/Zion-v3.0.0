@@ -340,11 +340,48 @@ impl PearlRuntime {
         &self,
         ujob: &UpstreamPearlJob,
         proof_b64: &str,
+        hs: Option<u64>,
     ) -> UpstreamSubmitReply {
         match &self.upstream {
-            Some(up) => up.submit(&ujob.served_id, &ujob.raw_id, proof_b64).await,
+            Some(up) => up.submit(&ujob.served_id, &ujob.raw_id, proof_b64, hs).await,
             None => UpstreamSubmitReply::Unknown,
         }
+    }
+
+    /// Forward an upstream share whose `plain_proof` we cannot decode locally
+    /// (e.g. SRBMiner's LP-native serialization differs from zion-miner's).
+    /// For `prlu:` jobs LuckyPool is the authoritative verifier — an
+    /// undecodable blob earns a normal error reply upstream, not a session
+    /// kill (verified on the wire). Dedup falls back to a hash of the raw
+    /// payload since the jackpot is buried in the undecodable proof.
+    pub async fn submit_upstream_opaque(
+        &self,
+        served_id: &str,
+        proof_b64: &str,
+        hs: Option<u64>,
+    ) -> std::result::Result<UpstreamSubmitReply, PearlSubmitError> {
+        let Some(upstream) = &self.upstream else {
+            return Err(PearlSubmitError::Stale);
+        };
+        let Some(ujob) = upstream.job_by_served_id(served_id) else {
+            return Err(PearlSubmitError::Stale);
+        };
+        if proof_b64.len() > MAX_PROOF_B64_CHARS {
+            return Err(PearlSubmitError::Invalid(format!(
+                "plain_proof exceeds {MAX_PROOF_B64_CHARS} base64 chars"
+            )));
+        }
+        use base64::Engine as _;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(proof_b64)
+            .map_err(|e| PearlSubmitError::Invalid(format!("plain_proof base64: {e}")))?;
+        if bytes.is_empty() {
+            return Err(PearlSubmitError::Invalid("plain_proof empty".to_string()));
+        }
+        self.claim_upstream_verified(served_id, *blake3::hash(&bytes).as_bytes())?;
+        Ok(upstream
+            .submit(&ujob.served_id, &ujob.raw_id, proof_b64, hs)
+            .await)
     }
 
     #[cfg(test)]
@@ -1021,6 +1058,7 @@ mod tests {
             worker: "w".to_string(),
             password: "x".to_string(),
             job_ttl: Duration::from_millis(90_000),
+            fwd_max: Duration::from_millis(90_000),
         });
         up.seed_job(UpstreamPearlJob {
             served_id: format!("{}{raw_id}", crate::pearl_upstream::UPSTREAM_JOB_PREFIX),

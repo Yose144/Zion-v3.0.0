@@ -18,6 +18,11 @@ const READ_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_JOB_TTL_MS: u64 = 90_000;
 const BACKOFF_BASE: Duration = Duration::from_secs(5);
 const BACKOFF_MAX: Duration = Duration::from_secs(60);
+/// LuckyPool retires job_ids on every notify (~15–60s cadence). Forwarding
+/// a share under a retired job_id gets the upstream connection killed
+/// (observed: submit → RST/FIN within ~300 ms), so stale serves are
+/// credited locally but never forwarded.
+const DEFAULT_FWD_MAX_MS: u64 = 90_000;
 /// Upstream pearl pools only notify on template changes; gaps well over
 /// READ_TIMEOUT are normal (see auxpow_runtime, which polls through
 /// thousands of timeouts per session). Treat the connection as dead only
@@ -35,6 +40,7 @@ pub struct PearlUpstreamConfig {
     pub worker: String,
     pub password: String,
     pub job_ttl: Duration,
+    pub fwd_max: Duration,
 }
 
 impl PearlUpstreamConfig {
@@ -73,12 +79,19 @@ impl PearlUpstreamConfig {
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(DEFAULT_JOB_TTL_MS),
         );
+        let fwd_max = Duration::from_millis(
+            std::env::var("ZION_POOL_PEARL_UPSTREAM_FWD_MAX_MS")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(DEFAULT_FWD_MAX_MS),
+        );
         Some(Self {
             endpoint,
             wallet,
             worker,
             password,
             job_ttl,
+            fwd_max,
         })
     }
 }
@@ -120,12 +133,16 @@ pub enum UpstreamSubmitReply {
     Rejected(String),
     Unknown,
     Busy,
+    /// Share served on a retired upstream job — valid locally, but
+    /// forwarding it would hit a dead job_id upstream. Not sent.
+    StaleForward,
 }
 
 struct SubmitReq {
     served_id: String,
     job_id: String,
     proof_b64: String,
+    hs: Option<u64>,
     reply: oneshot::Sender<UpstreamSubmitReply>,
 }
 
@@ -146,6 +163,7 @@ pub struct PearlUpstream {
     worker: String,
     password: String,
     job_ttl: Duration,
+    fwd_max: Duration,
     jobs: Arc<RwLock<VecDeque<UpstreamPearlJob>>>,
     connected: Arc<AtomicBool>,
     submit_tx: mpsc::Sender<SubmitReq>,
@@ -156,6 +174,7 @@ pub struct PearlUpstream {
     rejected: Arc<AtomicUsize>,
     unknown: Arc<AtomicUsize>,
     busy: Arc<AtomicUsize>,
+    stale_dropped: Arc<AtomicUsize>,
     started: Arc<AtomicBool>,
 }
 
@@ -168,6 +187,7 @@ impl PearlUpstream {
             worker: cfg.worker,
             password: cfg.password,
             job_ttl: cfg.job_ttl,
+            fwd_max: cfg.fwd_max,
             jobs: Arc::new(RwLock::new(VecDeque::new())),
             connected: Arc::new(AtomicBool::new(false)),
             submit_tx,
@@ -178,6 +198,7 @@ impl PearlUpstream {
             rejected: Arc::new(AtomicUsize::new(0)),
             unknown: Arc::new(AtomicUsize::new(0)),
             busy: Arc::new(AtomicUsize::new(0)),
+            stale_dropped: Arc::new(AtomicUsize::new(0)),
             started: Arc::new(AtomicBool::new(false)),
         })
     }
@@ -227,13 +248,31 @@ impl PearlUpstream {
         served_id: &str,
         raw_id: &str,
         proof_b64: &str,
+        hs: Option<u64>,
     ) -> UpstreamSubmitReply {
         self.submits.fetch_add(1, Ordering::Relaxed);
+        // Never send upstream a share for a job LP already retired — that
+        // kills the upstream session (their anti-abuse drops the socket).
+        let forwardable = self
+            .jobs
+            .read()
+            .unwrap()
+            .iter()
+            .any(|j| j.served_id == served_id && j.received_at.elapsed() <= self.fwd_max);
+        if !forwardable {
+            self.stale_dropped.fetch_add(1, Ordering::Relaxed);
+            tracing::info!(
+                "pearl_upstream: submit {served_id} dropped — job retired (forward window {}ms)",
+                self.fwd_max.as_millis()
+            );
+            return UpstreamSubmitReply::StaleForward;
+        }
         let (reply, rx) = oneshot::channel();
         let req = SubmitReq {
             served_id: served_id.to_string(),
             job_id: raw_id.to_string(),
             proof_b64: proof_b64.to_string(),
+            hs,
             reply,
         };
         tracing::debug!("pearl_upstream: submit served={} raw={}", served_id, raw_id);
@@ -291,6 +330,7 @@ impl PearlUpstream {
             "rejected": self.rejected.load(Ordering::Relaxed),
             "unknown": self.unknown.load(Ordering::Relaxed),
             "busy": self.busy.load(Ordering::Relaxed),
+            "stale_dropped": self.stale_dropped.load(Ordering::Relaxed),
         })
     }
 
@@ -408,7 +448,29 @@ impl PearlUpstream {
                 },
                 req = submit_rx.recv() => {
                     let Some(req) = req else { return Ok(()) };
-                    let res = client.submit_proof(&req.job_id, &req.proof_b64).await;
+                    // Queued submits may have outlived their job while
+                    // waiting through a reconnect — re-check freshness at
+                    // dispatch so we never send a retired job_id upstream.
+                    let fresh = self
+                        .jobs
+                        .read()
+                        .unwrap()
+                        .iter()
+                        .any(|j| j.served_id == req.served_id && j.received_at.elapsed() <= self.fwd_max);
+                    if !fresh {
+                        self.pending.fetch_sub(1, Ordering::Relaxed);
+                        self.stale_dropped.fetch_add(1, Ordering::Relaxed);
+                        tracing::info!(
+                            "pearl_upstream: submit {} dropped — job retired (forward window {}ms)",
+                            req.served_id,
+                            self.fwd_max.as_millis()
+                        );
+                        let _ = req.reply.send(UpstreamSubmitReply::StaleForward);
+                        continue;
+                    }
+                    let res = client
+                        .submit_proof(&req.job_id, &req.proof_b64, req.hs)
+                        .await;
                     self.pending.fetch_sub(1, Ordering::Relaxed);
                     let reply = match res {
                         Ok(r) if r.accepted => {
@@ -477,6 +539,7 @@ mod tests {
             worker: "zion-pool".to_string(),
             password: "x".to_string(),
             job_ttl: Duration::from_millis(90_000),
+            fwd_max: Duration::from_millis(90_000),
         }
     }
 
@@ -567,6 +630,9 @@ mod tests {
     #[tokio::test]
     async fn submit_busy_when_channel_full() {
         let up = PearlUpstream::new(test_cfg("127.0.0.1:1"));
+        // Fresh matching job so the freshness gate passes and the
+        // channel-full Busy path is what actually rejects the submit.
+        up.seed_job(ujob("j", Duration::ZERO));
         for _ in 0..SUBMIT_CHANNEL_CAP {
             let (tx, _rx) = oneshot::channel();
             up.pending.fetch_add(1, Ordering::Relaxed);
@@ -575,12 +641,13 @@ mod tests {
                     served_id: "prlu:j".to_string(),
                     job_id: "j".to_string(),
                     proof_b64: "QUJD".to_string(),
+                    hs: None,
                     reply: tx,
                 })
                 .unwrap();
         }
         assert_eq!(
-            up.submit("prlu:j", "j", "QUJD").await,
+            up.submit("prlu:j", "j", "QUJD", None).await,
             UpstreamSubmitReply::Busy
         );
         assert_eq!(up.pending.load(Ordering::Relaxed), SUBMIT_CHANNEL_CAP);
@@ -589,8 +656,9 @@ mod tests {
         let (en, conn, jid, age, pend) = up.status();
         assert!(en);
         assert!(!conn);
-        assert_eq!(jid.as_deref(), None);
-        assert_eq!(age, None);
+        // The seeded job is visible in status even though no session is up.
+        assert_eq!(jid.as_deref(), Some("prlu:j"));
+        assert!(age.is_some());
         assert_eq!(pend, SUBMIT_CHANNEL_CAP);
         let sj = up.status_json();
         assert_eq!(sj["submits"], 1);
@@ -726,7 +794,7 @@ mod tests {
         assert_eq!(ext.target_hex, hex::encode([0x11u8; 32]));
         assert_eq!(ext.eq_params, "3");
 
-        let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD").await;
+        let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD", None).await;
         assert_eq!(reply, UpstreamSubmitReply::Accepted);
         let submits: Vec<String> = calls
             .lock()
@@ -755,7 +823,7 @@ mod tests {
     #[tokio::test]
     async fn upstream_reject_maps_message() {
         let (up, _calls) = connected_upstream(Verdict::Reject("low difficulty")).await;
-        let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD").await;
+        let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD", None).await;
         match reply {
             UpstreamSubmitReply::Rejected(m) => assert_eq!(m, "low difficulty"),
             other => panic!("expected Rejected, got {other:?}"),
@@ -767,7 +835,7 @@ mod tests {
     #[tokio::test]
     async fn upstream_drop_maps_unknown() {
         let (up, _calls) = connected_upstream(Verdict::Drop).await;
-        let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD").await;
+        let reply = up.submit("prlu:up-job-1", "up-job-1", "QUJD", None).await;
         assert_eq!(reply, UpstreamSubmitReply::Unknown);
         assert_eq!(up.unknown.load(Ordering::Relaxed), 1);
         assert_eq!(up.status_json()["unknown"], 1);
@@ -793,25 +861,29 @@ mod tests {
                     served_id: "prlu:up-job-9".to_string(),
                     job_id: "up-job-9".to_string(),
                     proof_b64: "QUJD".to_string(),
+                    hs: None,
                     reply: tx,
                 })
                 .unwrap();
             waiters.push(rx);
         }
         assert!(up.ensure_started());
-        // Queued submits are NOT drained on session end: each one rides the
-        // next reconnect (~BACKOFF_BASE apart) and resolves with a real
-        // verdict — `Unknown` here because the mock drops every session
-        // right after the notify.
+        // Queued submits are NOT drained on session end: each one resolves
+        // on a subsequent session with a real verdict — `Unknown` when the
+        // mock drops it, or `StaleForward` when the dispatch freshness gate
+        // fires before the re-notified job lands in the ring.
         for rx in waiters {
             let reply = tokio::time::timeout(Duration::from_secs(30), rx)
                 .await
                 .unwrap()
                 .unwrap();
-            assert_eq!(reply, UpstreamSubmitReply::Unknown);
+            assert!(matches!(
+                reply,
+                UpstreamSubmitReply::Unknown | UpstreamSubmitReply::StaleForward
+            ));
         }
         assert_eq!(up.pending.load(Ordering::Relaxed), 0);
-        assert!(up.unknown.load(Ordering::Relaxed) >= 2);
+        assert!(up.unknown.load(Ordering::Relaxed) + up.stale_dropped.load(Ordering::Relaxed) >= 2);
         // The job ring is kept through reconnects (freshness is bounded by
         // job_ttl, not by session state) — and the mock keeps re-notifying
         // the same template on every reconnect.
@@ -895,7 +967,7 @@ mod tests {
         // Submitted while disconnected — rides the next session (≤ BACKOFF).
         let reply = tokio::time::timeout(
             Duration::from_secs(30),
-            up.submit("prlu:up-job-1", "up-job-1", "QUJD"),
+            up.submit("prlu:up-job-1", "up-job-1", "QUJD", None),
         )
         .await
         .expect("queued submit resolves");
