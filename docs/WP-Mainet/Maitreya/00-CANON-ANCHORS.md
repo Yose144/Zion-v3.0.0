@@ -27,7 +27,7 @@
 
 | Tvrzení | Fakt |
 |---|---|
-| „Pokladnice se otevírá rok po zrození" | DAO Treasury **4 mld ZION**, timelock do bloku **525 600** (≈1 rok při 60 s) |
+| „Pokladnice se otevírá po stovce dní" | DAO Treasury **1,5 mld ZION** (2 sloty) + L6 Issobella **2,5 mld** — timelock do bloku **144 000** (≈100 dní při 60 s) |
 | „Nikdo nerozhoduje sám" | **5 z 7 multisig** na exekuci treasury transakcí |
 | „Každý hlas se počítá stejně" | **1 ZION = 1 hlas**, delegace povolena, 48h chladicí lhůta |
 | „Ani hlas lidu nemůže přepsat zákon" | Neměnné: 144B, 89/5/5/1, Ekam Deeksha, 60 s, genesis alokace |

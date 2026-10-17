@@ -78,7 +78,7 @@ A vzduch nesl ten, kdo se učil držet prostor — aniž ho vlastnil.
 
 | Tvrzení v kapitole | Co se dá ověřit |
 |---|---|
-| 5 % na děti + 5 % na Issobellu z každého bloku | Block split **89/5/5/1** — neměnný konstituční parametr v konsensu (kód): 5 % humanitární fond, 5 % Issobella, 89 % těžaři, 1 % treasury. Protokol to „dýchá" sám — bez žádosti, komise, formuláře |
+| 5 % na děti + 5 % na Issobellu z každého bloku | Block split **89/5/5/1** — neměnný konstituční parametr v konsensu (kód): 89 % těžaři, 5 % L5 humanitární fond, 5 % L6 Issobella věda, 1 % node operator pool. Protokol to „dýchá" sám — bez žádosti, komise, formuláře |
 | „Jde", ne „dejte" — stav, ne rozhodnutí | Split je vestavěný v konsensu — každý coinbase automaticky; nikdo nevybírá příjemce (kód). Kontrast s charity za podmínek: mechanismus vs. instituce |
 | Otcův řádek 4 — doslovný kanon | Gen Z pravidlo 4 z `docs/genesis.md`: *„Humanita první. 5 % každého bloku jde na děti. To je poslání. Nikdy to nezměňte."* |
 | Issobella jako stanice/druhý desátek | L6 Issobella — roadmapový horizont: „stanice nad světem jako okno" (kanon knihy čtvrté + genesis věnování); 5% jde na ni jako na fond, ne na instituci |
