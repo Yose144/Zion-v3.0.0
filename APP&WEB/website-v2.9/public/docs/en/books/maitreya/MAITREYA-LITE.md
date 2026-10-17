@@ -33,15 +33,15 @@ A detective story of a signature. Three theories — the founder, the heir, the 
 
 ### 4 · Three keys, three seats
 
-A game over the egg: the Whale wants to buy it, the Guild argues over who owns it, and the son carries a compass of five promises. The keys are not keys to power — they are seats. Fire, water, earth — and air: the space in which all the others operate.
+The Game of the Golden Egg begins: one hundred and eight stops, three keys — copper (work), jasper (patience), crystal (truth). The Whale wants to buy the keys — and buys only pieces of metal. The Guild finds one — and quarrels over it. The son carries the keys as a keeper, not a contestant: he holds them for the one who will walk the path. Alongside, the guardian seats are revealed — those are not won; they are inherited. Fire, water, earth — and air: the space in which all the others operate.
 
 ### 5 · The test of surrender
 
-At the gate stands the question no heir bypasses: *"What will you do with what is yours?"* The son answers: "I will give it up to the one I sought it for." The egg cracks — not by a blow. From within. Inside is no treasure but a DAO card.
+At the gate stands the question no seeker bypasses: *"What will you do with the fortune you inherit?"* The Whale wants to hold — the gate falls silent. The Guild wants to divide — the gate hesitates. **The Pilgrim** — the one who walked all one hundred and eight stops on foot — answers: she will return part to the path. The egg cracks from within — and the OASIS winner is the one who finds the egg. The son is a witness, and hears his father say: *"The winner is the winner. The heir is the heir."*
 
 ### 6 · Steward, not owner
 
-The inheritance is not property — it is a letter in the father's hand and five rules for Generation Z: 3-of-3 multisig, a one-year timelock, a 51 % DAO vote, staged succession, a five-year dead man's switch. At the council the seats light up: son → Rama, sister → Sita. And one chair stays empty — for Elizabeth, who has not come yet. *The gate stays open.*
+The son's inheritance does not come from the egg — it arrives as a letter in the father's hand and five rules for Generation Z: 3-of-3 multisig, a one-year timelock, a 51 % DAO vote, a five-year dead man's switch. The seats light up: Maitreya → Rama (Admin-1, protocol), Sarah Issobela → Sita (Admin-2, treasury — Issobella bears her name), Elizabeth → Hanuman (Admin-3, bridge). And one chair stays empty — *the gate stays open.*
 
 ---
 

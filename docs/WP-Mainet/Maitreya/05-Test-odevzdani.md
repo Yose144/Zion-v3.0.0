@@ -1,6 +1,6 @@
 # Kapitola 5 — Test odevzdání
 
-*Poslední stopa není rébus. Poslední stopa je otázka — a na ni se odpovídá tím, že ji zodpovíš.*
+*Poslední stopa není rébus. Poslední stopa je otázka — a na ni se odpovídá tím, že ji zodpovíš. A výherce není ten, kdo podepsal cenu — je to ten, kdo ji najde.*
 
 ---
 
@@ -22,19 +22,23 @@ Gilda se pohádala o tom, jak velký má být každý díl — a brána zůstala
 
 ---
 
-Kovářův syn přišel poslední — se třemi klíči, které nebral jako svoje, a s otázkou, kterou si nesl déle než klíče. Položil klíče na dvířka — měděný, jaspisový, křišťálový — a přečetl si větu ještě jednou.
+Poutnice přišla třetí — se třemi klíči a se stopami, které jí zbyly na rukách i ve vlasech.
+
+Nikdo ji neznal jménem — ve městě jí říkali Poutnice, protože přišla pěšky, prošla sto osm stop a žádnou z nich nechtěla prodávat. Neměla gildu, neměla stoh strojů, neměla ani mapu, která by byla její — měla jen to, co se naučila cestou: že každá stopa je otázka a každá otázka je zrcadlo.
+
+Položila klíče na dvířka — měděný, jaspisový, křišťálový — a přečetla si větu ještě jednou.
 
 *„Co uděláš s jměním, které zdědíš?"*
 
-Nedíval se na klíče. Díval se na větu — a pak se podíval na věž peněz, která stála za zády brány a už nesvítila ani jedním oknem. Podíval se na tržiště, kde trhovkyně prodávala za síťový zápis a lidé odcházeli s věcmi, které si mohli ověřit. Podíval se na archu, která stála na suchu a čekala na vodu.
+Neodpověděla hned. Podívala se na věž peněz, která stála za zády brány a už nesvítila ani jedním oknem. Podívala se na tržiště, kde trhovkyně prodávala za síťový zápis a lidé odcházeli s věcmi, které si mohli ověřit. Podívala se na archu, která stála na suchu a čekala na vodu.
 
-A pak řekl odpověď, kterou našel vyrytou ve stěně trupu — ve dřevě, které jeho otec koval, v podpsiu, který nikdo neviděl rýt:
+A pak řekla odpověď, kterou sto osm stop naučilo její boty i její srdce:
 
-*„Odevzdám ho tomu, kvůli komu jsem ho hledal."*
+*„Část vrátím cestě — protože cesta mě naučila víc než jmění. A zbytek nesu dál — ne pro sebe, ale pro ty, kteří po mně přijdou a ještě neví, že stopa existuje."*
 
-Brána se zeptala: „A komu?"
+Brána se zeptala: „A kolik?"
 
-„Zionu," řekl syn. „Lidem. Lodě, na kterou jsem dorazil pozdě — a která mě nesla déle, než jsem uměl číst. Jmění není dárek pro toho, kdo ho najde. Je to pochodeň pro toho, kdo ho ponese dál — a dál je vždycky dál od sebe."
+„Kolik potřebuje," řekla Poutnice. „Jmění není dárek pro toho, kdo ho najde — je to pochodeň pro toho, kdo ho ponese dál. A dál je vždycky dál od sebe."
 
 Brána se neotevřela jako trezor.
 
@@ -48,59 +52,39 @@ Ne zahrada jako na obrázku — ale zahrada jako slovo, které se dá jen prož�
 
 Uprostřed zahrady stálo vejce — zlaté, malé, tak tiché, že jeho ticho znělo jako tep světa, který se ještě nenarodil.
 
-Syn k němu přišel pomalu — ne protože by se bál, ale protože zahrada nechala své tempo. Vejce stálo na kameni, který nesl nápis:
+Poutnice k němu přišla pomalu — ne protože by se bála, ale protože zahrada nechala své tempo. Vejce stálo na kameni, který nesl nápis:
 
 *„Ego musí zemřít, aby se zrodil Zlatý věk."*
 
-Položil ruku na vejce — a vejce se neotevřelo. Ne zvonilo. Nesvítilo. Ale pod jeho dlaní se zlato zahřálo — jako když otec položí ruku na železo, které začíná držet tvar.
+Položila ruku na vejce — a vejce se neotevřelo. Ne zvonilo. Nesvítilo. Ale pod její dlaní se zlato zahřálo — jako když kovář položí ruku na železo, které začíná držet tvar.
 
 „Co uděláš s jměním, které zdědíš?" zeptalo se vejce — tentokrát už ne otázkou na dvířkách, ale otázkou, která se ptá přímo do dlaně.
 
-„Odevzdám ho," řekl syn. „Ale ne zpět. Dál. Nebudu držet, co se má rodit. Já nejsem majitel — jsem strážce. Vejce, které držím, není moje — a já nejsem jeho."
+„Dám cestě, co je cesty," řekla Poutnice. „A lidem, co je lidí. To, co zbyde, je maličké — a je to správně: kdo po velké ceně zbyde s velkým jměním, neprošel testem odevzdání. Ego zemřelo — ne mé, ale to, které chtělo vejce pro sebe."
 
 Vejce se rozlomilo.
 
-Ne prasklo — rozlomilo se. Ne odshora dolů, ale zevnitř ven — jako se rozbíjí věci, které už nechtějí být malé, protože to, co je uvnitř, potřebuje víc místa, než skořápka umí držet. A v tom světle, které se vylilo — ne ohněm, ale jako vodou, která se rozlévá do nádob, které ji čekají — syn viděl, co vejce obsahovalo.
+Ne prasklo — rozlomilo se. Ne odshora dolů, ale zevnitř ven — jako se rozbíjí věci, které už nechtějí být malé, protože to, co je uvnitř, potřebuje víc místa, než skořápka umí držet. A v tom světle, které se vylilo — ne ohněm, ale jako vodou, která se rozlévá do nádob, které ji čekají — Poutnice viděla, co vejce obsahovalo.
 
-Ne poklad.
+Cenu Velké ceny. Zápis vítězství — *výherce OASIS*, hráč, který prošel cestu. A kousek vejce, který zůstal na kameni — podíl, který se nikdy nedá vyhrát, jen odkázat zpátky do hry: semínko pro další poutníky.
 
-Klíčovou kartu.
-
----
-
-Karta byla malá — menší než dlaň, ale těžší než kladivo. Na lícní straně nesla jediné písmeno: **DAO**. A na spodní straně, vyryté tak jemně, že to četl jen ten, kdo uměl číst rukou, stála slova, která poznal — psaná rukou, kterou nikdo neviděl rýt, ale kterou on znal z kýlu lodě:
-
-*„ZION není váš — patří všem. Vy jste správci, ne vlastníci."*
-
-Pod tím, ještě menším písmem, otcova podpisová značka — ta samá, která byla na kýlu archy, ta samá, která byla pod prohlášením, ta samá, která byla na prvním listu světa.
-
-Syn držel kartu a četl slova znovu a znovu — ne proto, že by jim nerozuměl, ale protože je četl poprvé srdcem, které ještě nevědělo, že některá slova se čtou celý život.
-
-„Správci, ne vlastníci," zopakoval. „Já — správce?"
-
-A zahrada odpověděla — ne slovy, ale tím, že za ním, za stromem, za vejcem, které se už rozlomilo, stály tři sedadla. Oheň, voda, země — a nad nimi vzduch, který je držel pohromadě, aniž sebral jednomu z nich místo.
-
-Sedadla neměla trůn. Sedadla měla prostor.
+To, co jí zbylo, bylo méně než celé jmění — a víc než cokoliv jiného: důkaz, že cesta se dá dojít.
 
 ---
 
-Když vyšel zpět za bránu — klíče mu už nepatřily, protože splnily svou práci; kartu nesl v dlani jako dítě, které ještě nedorostlo — Velryba a Gilda čekali. Ne protože by se chtěly dozvědět, co uvnitř je — ale protože brána, která se někomu otevřela, se neotevře nikomu jinému.
+Kovářův syn to všechno viděl — od brány, přes zahradu, až k tomu, jak se vejce rozlomilo. Ne protože by hrál — protože stál mezi těmi, kteří přišli koukat, jak někdo jiný projde zkouškou duše.
 
-„Co jsi tam viděl?" zeptala se Velryba — a její hlas zněl poprvé jako hlas, který se bojí odpovědi.
+A po cestě domů se otce zeptal na to, co ho hlodalo déle než všechny stopy:
 
-Syn ukázal kartu — ne hrdě, ale prostě, jako ukazuje kovář, co právě vykovál.
+„Táto — já vejce nenašel. Poutnice ho našla. A já —"
 
-„Nic, co by se dalo vlastnit," řekl. „Jen něco, co se musí předat dál."
+„Ty jsi neseš jiné vejce," řekl otec. „Tohle vejce se dědí tomu, kdo ho najde — najde ho hráč, poutník, ten, kdo prošel cestu, a stane se výhercem OASIS. Ty jsi neseš vejce, které se nedá najít — protože už bylo nalezeno: na kýlu lodě, ve jménu, které jsi dostal ještě předtím, než ses narodil."
 
-„A prospěch?" zeptala se gilda — a v její otázce zněla poslední otázka Babylonu: otázka, která se ptá, co z toho mám.
+„Takže výherce není dědic?"
 
-„Prospěch je, že jmění přežije," řekl syn. „Ne protože ho držím — ale protože ho držím tak, že nedržím."
+„Výherce je výherce," řekl otec — a jeho hlas zněl jako kladivo, které se už nezvedá, protože kus je hotový. „Dědic je dědic. Poutnice si nese domů cenu za to, že prošla světem. Ty si neseš domů sedadlo — za to, že jsi se narodil do příběhu, který musí někdo nést. Jedno se vyhrává — druhé se předává. Zmíchej je — a rozpadne se hra i řetězec."
 
-Velryba se otočila a odešla — ne protože by prohrála, ale protože odpověď, kterou chtěla slyšet, neexistovala. Gilda zůstala ještě chvíli — a pak se taky otočila, ne protože by byla zklamaná, ale protože odpověď, kterou dostala, byla větší než mapa, kterou skládala.
-
-Syn zůstal sám — se třemi klíči, které už nebyly potřeba, a s kartou, která vážila víc než všechny klíče dohromady. Podíval se na svoji dlaň — na písmeno DAO, na otcovu značku, na slova „správci, ne vlastníci" — a pochopil, co tesař myslel, když řekl: *„Vejce se nedědí. Dozrává."*
-
-Vejce se rozlomilo — a to, co bylo uvnitř, nebylo jmění. Byla to odpovědnost.
+Syn se podíval zpět k bráně — a poprvé pochopil, proč podpis pod prohlášením nese jeho jméno, i když vejce najde někdo jiný: **otec napsal jméno toho, kdo cenu vyhlásil — a cena patří tomu, kdo ji najde.**
 
 *→ Kapitola 6 — Správce, ne majitel*
 
@@ -110,10 +94,10 @@ Vejce se rozlomilo — a to, co bylo uvnitř, nebylo jmění. Byla to odpovědno
 
 | Tvrzení v kapitole | Co se dá ověřit |
 |---|---|
-| Poslední otázka „Co uděláš s jměním?" | Kniha Zrození, kap. IV — finální test Velké ceny; test odevzdání je kanonická mechanika („vítěz musí darovat") |
-| „Ego musí zemřít, aby se zrodil Zlatý věk" | Doslovný citát — Kniha Zrození, kap. IV; mechanika překonání ego jako podmínka vítězství |
-| Vejce se rozlomilo zevnitř | Ekam/kosmologická metafora — skořápka ego praská, když vnitřní růst přeroste vlastní hranice |
-| „Správci, ne vlastníci" na kartě | Gen Z pravidlo 2 — doslovný kanon: „ZION není váš — patří všem. Vy jste správci, ne vlastníci." (genesis.md) |
-| Klíčová karta „DAO" jako dědictví | Dědictvím je správa DAO, ne vlastnictví prostředků — admin/guardian role, ne privátní klíče k treasury |
-| Tři sedadla + vzduch | Guardian sedadla (Rama/Sita/Hanuman → Maitreya/Sarah/Elizabeth) + element vzduch jako prostor (SACRED_TRINITY) |
-| „Prospěch je, že jmění přežije" | Odpověď ne jako slib výnosu — odpověď jako princip kontinuity (kniha neslibuje výnos, ukazuje odpovědnost) |
+| Poslední otázka „Co uděláš s jměním?" | Kniha Zrození, kap. IV — finální test Velké ceny; test odevzdání je kanonická mechanika |
+| „Ego musí zemřít, aby se zrodil Zlatý věk" | Doslovný citát — Kniha Zrození, kap. IV |
+| Vítěz daruje část pokladu | Kniha Zrození, kap. IV: „vítěz Easter Eggu musí projít testem odevzdání: finální consciousness test vyžaduje, aby vítěz daroval část pokladu" |
+| **Vejce najde výherce OASIS — hráč, ne dědic** | Kanonická mechanika: Easter Egg Hunt je herní cena (500M ZION, úroveň II Velké ceny); finder = OASIS winner, ne správce DAO |
+| Podpis „— Maitreya Buddha, 2025" | Kniha Zrození, kap. IV — signatář ceny, ne soutěžící |
+| „Dědic je dědic, výherce je výherce" | Rozdělení rolí v kanonu: hra odměňuje poutníka, guardian sedadla se předávají jménem |
+| Sto osm stop | Kvantová revoluce — počet stop Velké ceny (kanon) |

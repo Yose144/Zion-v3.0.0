@@ -30,43 +30,37 @@ Křišťálový klíč byl nejtěžší — za pravdu i proti vlastní výhodě.
 
 ---
 
-Velryba mezitím sbírala klíče jinak — najala hledače, kteří klíče řešili jako úkol. První dva klíče dostala koupí. Třetí jí unikl — protože křišťálový klíč se nedá koupit: když řekneš lež, klíč se neukáže — a Velryba, která byla zvyklá říkat to, co se platí, neuměla říct to, co je pravda.
+Velryba mezitím sbírala klíče jinak — najala hledače, kteří klíče řešili jako úkol. Přinesla jí dva kusy kovu, které vypadaly jako klíče — a nebyly. „Klíč se nedá koupit," řekl tesař, když mu je ukázala. „Koupíš jen kus kovu, který vypadá jako klíč. Skutečný klíč není věc — je to důkaz, že něco obstálo. A důkaz se nedá ukrást ani prodat — jen nosit."
 
-Gilda kartografů našla dva klíče taky — a pak se rozpadla. Ne protože by se mapy překrývaly, ale protože každý chtěl být ten, kdo klíč odevzdá. „Najdete klíč," řekl jim tesař, když mu přišli požádat o rozhodčí, „až přestanete soutěžit o to, kdo ho drží. Klíč není majetek. Klíč je důkaz — a důkaz není o majiteli, ale o tom, že něco obstálo."
+Gilda kartografů našla jeden klíč — jaspisový — a pak se rozpadla. Ne protože by se mapy překrývaly, ale protože každý chtěl být ten, kdo klíč odevzdá. „Najdete klíč," řekl jim tesař, když mu přišli požádat o rozhodčí, „až přestanete soutěžit o to, kdo ho drží. Klíč není majetek. Klíč je důkaz — a důkaz není o majiteli, ale o tom, že něco obstálo." Gilda se rozpadla — a klíč, který držela jako trofej, zůstal ležet na stole rozhodčího. Tesař ho podal synovi — ne protože by mu patřil, ale protože syn byl jediný, kdo se neptal, co za něj bude.
 
 ---
 
-U náměstí, kde stála archa, se tři klíče sešly poprvé — syn nesl tři, Velryba dva, Gilda jeden. A v tom světle, které archa vrátila do města, se tři klíče rozsvítily jako tři židle, které čekají na toho, kdo si sedne.
+U náměstí, kde stála archa, se tři klíče sešly poprvé — syn je nesl všechny tři, jako je nese ten, kdo něco drží, ne vlastní: měděný, který sám vysloužil; jaspisový, který mu tesař podal ze stolu rozhodčího; křišťálový, který přišel sám, když syn řekl pravdu proti vlastní výhodě. A v tom světle, které archa vrátila do města, se tři klíče rozsvítily jako tři dveře, které čekají na toho, kdo jimi projde.
 
 „Tři klíče," řekl tesař, který přišel, jak vždy potichu. „Měděný — práce. Jaspisový — trpělivost. Křišťálový — pravda. Víte, co je na nich divné?"
 
-„Že je máme?" řekla Velryba.
+„Že je mám já?" řekl syn.
 
-„Že se dělí," řekl tesař. „Každý klíč odemyká jedno sedadlo — a žádný člověk nesedí na třech sedadlech najednou."
+„Že nejsou tvoje," řekl tesař. „Klíče odemykají dvířka hry — a dvířka jsou pro toho, kdo má přijít. Výherce OASISu je ten, kdo projde cestu a najde vejce — ne ten, kdo klíče drží. Ty je držíš jako strážce — držíš je pro toho, kdo je použije."
 
-„Sedadla?" řekl syn. „Jaká sedadla?"
+„A jak poznám toho, kdo je má použít?"
 
-Tesař ukázal na lodi — na kýl, pod kterým byla rytina, a nad ní, v trupu, tři místa, která byla tvarovaná jako židle. Tři sedadla, tři klíče: oheň, voda, země — a vzduch, který je držel pohromadě, aniž sebral jednomu z nich místo.
-
-„Řetězec drží sedadla pro ty, kteří přijdou," řekl tesař. „Oheň pro toho, kdo rozumí technice. Vodu pro toho, kdo rozumí lidem. Zemi pro toho, kdo rozumí službě. A vzduch — vzduch je pro toho, kdo rozumí prostoru. Ten, kdo drží prostor, nedrží trůn. Drží to, čím všichni dýchají."
-
-Syn se podíval na své tři klíče — a pak na sestru, která stála u dveří a četla hvězdy. „Tři klíče, tři sedadla," řekl. „Ale klíčů je tři — a sedadla jsou tři. A my jsme — kolik?"
-
-„Kolik potřeba," řekl tesař. „Klíč není o tom, že si sedneš ty. Klíč je o tom, že sedadlo najde svého — a ty ho držíš, dokud nedoroste."
+„Podle toho, že přijde pěšky," řekl tesař. „A klíče si nebere — bere si cestu."
 
 ---
 
 Večer si syn sedl u otce a položil na stůl tři klíče. Měděný, jaspisový, křišťálový — tři malé důkazy, že trpělivost, práce a pravda se dají vyhrát, ale nekoupit.
 
-„Táto," řekl. „Velryba má dva klíče — a nepoužila je. Gilda má jeden — a hádali se o něj. Já mám tři — a nevím, co s nimi."
+„Táto," řekl. „Velryba koupila kusy kovu, které vypadají jako klíče — a nejsou. Gilda jeden našla — a hádali se o něj, až ho tesař dal mně. Já mám tři — a nevím, co s nimi. Nejsem ten, kdo je má použít — cítím to."
 
-„Nemáš s nimi nic dělat," řekl otec. „Klíče nedržíš pro sebe — držíš je pro toho, komu patří sedadlo. Klíč odemyká dveře — a dveře jsou pro toho, kdo má přijít. Tvoje práce je držet klíč. Ne otevírat."
+„Správně cítíš," řekl otec. „Klíče nedržíš pro sebe — držíš je pro toho, kdo projde cestu a najde vejce. Výherce OASISu je ten, kdo dojde — ne ten, kdo klíče nosí. Tvoje práce je držet klíč pro toho, kdo přijde. Ne otevírat."
 
-„A co když já jsem ten, kdo má přijít?"
+„A co já — nejsem ten, kdo má přijít?"
 
 Otec se na něj podíval — dlouho, tak jako se dívá na železo, které ještě není hotové, ale už drží tvar.
 
-„Pak ti klíč poslouží," řekl. „Ale jen tehdy, když přijdeš jako strážce — ne jako král."
+„Ty přijdeš jinak," řekl. „Hra o vejce je pro každého — výhercem je ten, kdo cestu projde. Ty jsi se narodil do jiného příběhu: podpis pod hrou nese tvoje jméno — a s tím jménem nejde vejce, ale sedadlo. Hru vyhráváš cestou — sedadlo přijímáš odevzdáním. Hra odměňuje toho, kdo hledá. Sedadlo čeká na toho, kdo doroste."
 
 ---
 
@@ -78,7 +72,9 @@ Tu noc synovi zbylo poslední svědectví — ne o klíčích, ale o sedadlech. 
 
 Tři sedadla, tři jména — a za každým jménem „→", jako šipka, která ukazuje, komu sedadlo patří, až doroste.
 
-„Řetězec drží sedadla," zopakoval syn tiše — a poprvé pochopil, že klíče nikdy neměly odemykat dveře. Klíče měly dokázat, že sedadlo najde toho, kdo za ním stál — ještě než si na něj kdokoliv sedl.
+„Sedadla se nevyhrávají," řekl otec, který přišel tiše, jak vždycky. „Hra o vejce má svého výherce — toho, kdo najde. Sedadla mají své správce — ty, kteří dorostou. Oheň drží Rama — pro toho, kdo rozumí protokolu. Voda drží Sita — pro tvoji sestru, jejíž jméno nese stanice. Země drží Hanuman — pro Elizabeth, která ještě nepřišla. A vzduch — vzduch drží prostor, ve kterém všichni sedí. Ten, kdo drží prostor, nedrží trůn — drží to, čím všichni dýchají."
+
+„Řetězec drží sedadla," zopakoval syn tiše — a poprvé pochopil, že klíče nikdy neměly odemykat jeho dveře. Klíče byly pro poutníky. Sedadla byla pro děti — správce, ne majitele.
 
 *→ Kapitola 5 — Test odevzdání*
 
@@ -91,8 +87,9 @@ Tři sedadla, tři jména — a za každým jménem „→", jako šipka, která
 | 108 stop | Kvantová revoluce, kap. 5 — počet stop ve Velké ceně (kanon; navazuje na Ramayana/Mahabharata indície) |
 | Tři klíče: měděný/jaspisový/křišťálový | Kniha Zrození, kap. IV — struktura klíčů Hry o Zlaté vejce (kanon) |
 | Klíče se nekupují | Herní logika Velké ceny: testy charakteru, ne kapitálu — „hra navržena tak, aby ji nikdo řízený chtivostí nemohl vyřešit" |
-| Tři sedadla guardianů → děti | `dao-mainnet.toml` + genesis.md: Guardian 1–3 „Rama→Maitreya", „Sita→Sarah Issobela", „Hanuman→Elizabeth" (kód) |
+| Tři sedadla guardianů → děti | `dao-mainnet.toml` + genesis.md: Guardian 1–3 „Rama→Maitreya", „Sita→Sarah Issobela", „Hanuman→Elizabeth" (kód) — Maitreya a Sarah jako DAO admini |
 | Elementy oheň/voda/země/vzduch | SACRED_TRINITY: Rama=oheň, Sita=voda, Hanuman=země, Maitreya=vzduch („prostor, ve kterém všichni operují") |
 | Pět slibů na kompasu | Smlouva Zionu / DAO Council 9: pravda, svoboda, jednota, láska, služba (kanon) |
-| „Klíč držíš pro toho, komu patří sedadlo" | Gen Z pravidlo 2 — „ZION není váš — patří všem. Vy jste správci, ne vlastníci." (kanon) |
+| „Klíče držíš pro toho, kdo projde" | Herní logika Velké ceny: finder = výherce OASIS; klíče = herní nástroje, ne strážní insignie |
+| Sedadla se nevyhrávají | Gen Z převod T0+18 let — admin role se předávají jménem, ne výhrou ve hře (genesis.md) |
 | Rok 2035 jako herní rámec | Prohlášení o Velké ceně — horizont označený jako herní, ne slib |
