@@ -131,6 +131,19 @@ native jobs (pool verifier recomputes both trees + noise chain).
 
 Cumulative RTX 3060 solo: **82 → ~311 att/s ≈ 3.8×**.
 
+### 3.8 Shared-mem staging in mine kernel — tried, REVERTED (-26%)
+
+Hypothesis: each tile touches only 4 A rows + 8 B cols, so cooperative-
+staging 12 rows × rank into `__shared__` should cut global traffic ~2.5×.
+**Reality: -26% (1578 vs 2147 GH/s), reverted.** The warp already dedupes
+the loads — all 8 lanes of a u-group read the SAME `int4` (broadcast = 1
+transaction) and the 8 distinct b-col int4s coalesce fine; there was no
+redundant traffic to eliminate. Staging instead added 2 `__syncthreads`
+per window (×16) and 8-way smem bank conflicts (128B row stride maps to
+the same bank). Correctness was fine (A4 R0) — the lesson: **warp-level
+broadcast was already the optimal access pattern; don't stage what the
+hardware dedupes.**
+
 QTU also rose ~86→94–100 MH/s — PRL now finishes its duty slice faster,
 leaving the card to stream 4 sooner.
 

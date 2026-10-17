@@ -798,6 +798,13 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
     // [-127,127]) — one IDP does 4 MACs. Requires 16B-aligned rows, i.e.
     // k_dim and rank multiples of 16 (a_base/l stay aligned).
     const bool dp4a_ok = ((k_dim | rank) & 15u) == 0u;
+
+    // NOTE: shared-mem staging tried and REVERTED — measured -26% (1578 vs
+    // 2147 GH/s). The warp already dedupes the "redundant" loads: all 8
+    // lanes of a u-group read the SAME int4 (broadcast = 1 transaction) and
+    // the 8 b-col int4s coalesce well. Staging added 2 syncthreads/window
+    // and 8-way smem bank conflicts (128B row stride = same bank). Keep
+    // direct-global: hardware broadcast is the optimal path here.
     int my_acc = 0;
     for (uint ll = rank; ll <= k_dim; ll += rank) {
         int acc = 0;
