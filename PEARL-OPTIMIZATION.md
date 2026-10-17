@@ -109,6 +109,28 @@ Measured on the same vast RTX 3060 (build `7f7b37a6`):
 | Triple contended (35% duty) | ~650–675 GH/s | **~738–743 GH/s** | **+12%** |
 | Correctness | — | **A2 R0 in ~80 s solo** (pool-verified proofs) | ✓ |
 
+### 3.7 A/B grid fusion (Phase 2.3 — DONE)
+
+Instead of CUDA multi-stream plumbing, the independent A and B pipeline
+halves now ride the **same launch** — threads (or blocks) are routed by
+index. GPU fills all SMs with both halves at once; bit-identical output:
+
+| Kernel | Replaces | Routing |
+|---|---|---|
+| `pearl_gen_matrix_dual` | 2× `pearl_gen_matrix` | `gid < mk` → A, else B^T (`gen_int7(nonce+1)`) |
+| `pearl_blake3_chunk_hash_dual` | 2× `pearl_blake3_chunk_hash` | gid split at `chunks_a`; per-side dst + single flags |
+| `pearl_merkle_tree_dual` | 2× `pearl_merkle_tree` | `blockIdx.x` — block 0 folds A (`chunk_hashes`↔`merkle`), block 1 folds B (`merkle2`↔`merkle_b`) |
+| `pearl_gen_uniform_dual` | 2× `pearl_gen_uniform_noise` | gid split at `m*rank` |
+| `pearl_gen_permutation_dual` | 2× `pearl_gen_permutation` | gid split at `k` |
+| `pearl_apply_noise_dual` | 2× `pearl_apply_noise_{a,b}` | gid split at `mk` |
+
+New scratch `merkle_b` (B tree can't share `merkle` — blocks run
+concurrently). Per-attempt launches: **14 → 8** (was ~33 pre-Phase-1).
+Solo **~2147 GH/s ≈ 311 att/s**, validated **A5 R0 in ~85 s** on eased
+native jobs (pool verifier recomputes both trees + noise chain).
+
+Cumulative RTX 3060 solo: **82 → ~311 att/s ≈ 3.8×**.
+
 QTU also rose ~86→94–100 MH/s — PRL now finishes its duty slice faster,
 leaving the card to stream 4 sooner.
 
@@ -138,13 +160,12 @@ Ordered by expected value:
    (consensus) — needs parity proof first.
 4. **Kernel fusion** — `apply_noise` into `gen_matrix` tail (one fewer
    4.2 M-element global roundtrip).
-5. **CUDA streams overlap** — A and B^T pipelines are independent until
-   `derive_seeds`; two streams halve serial blake3/merkle latency
-   (~2 ms/att saving possible).
+5. ~~**CUDA streams overlap**~~ — **DONE (§3.7) via grid fusion instead**
+   (same overlap, no stream/event plumbing).
 
 ## 6. Honest gap vs SRBMiner
 
-SRBMiner pearlhash ≈ **48 TH/s solo** on this card vs our ~1.9 TH/s-equiv
+SRBMiner pearlhash ≈ **48 TH/s solo** on this card vs our ~2.15 TH/s-equiv
 display — still ~25×. Their kernel fuses far more aggressively and likely
 restructures the whole attempt (matrixgen + merkle in registers/shared).
 Closing that fully is a research-grade kernel rewrite; Phase 1+2 targets

@@ -869,3 +869,294 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
         }
     }
 }
+
+// ─── Dual (A+B fused) kernels ────────────────────────────────────────────────
+// Each fused launch routes threads/blocks to the A or B pipeline by index so
+// both halves run in the same grid — fills every SM instead of serializing two
+// half-empty kernels. Bit-identical to the separate kernels above.
+
+__device__ void pearl_do_chunk(const uchar* data, uint gid, const uchar* key,
+                               uchar* out_hash, uint single_root) {
+    uint cv[8];
+    for (int i = 0; i < 8; i++) {
+        cv[i] = (uint)key[i*4]
+              | ((uint)key[i*4+1] << 8)
+              | ((uint)key[i*4+2] << 16)
+              | ((uint)key[i*4+3] << 24);
+    }
+    const uchar* chunk_bytes = data + (ulong)gid * 1024ULL;
+    for (int block = 0; block < 16; block++) {
+        uint flags = 0u;
+        if (block == 0) flags |= CHUNK_START;
+        if (block == 15) flags |= CHUNK_END;
+        if (block == 15 && single_root) flags |= ROOT;
+        uint block_words[16];
+        const uint* block_ptr = (const uint*)(chunk_bytes + block * 64);
+        for (int i = 0; i < 16; i++) block_words[i] = block_ptr[i];
+        uint out[8];
+        blake3_compress(cv, block_words, (ulong)gid, 64, flags | KEYED_HASH, out);
+        for (int i = 0; i < 8; i++) cv[i] = out[i];
+    }
+    for (int i = 0; i < 8; i++) {
+        out_hash[i*4+0] = (uchar)cv[i];
+        out_hash[i*4+1] = (uchar)(cv[i] >> 8);
+        out_hash[i*4+2] = (uchar)(cv[i] >> 16);
+        out_hash[i*4+3] = (uchar)(cv[i] >> 24);
+    }
+}
+
+// gen A (mode 0) + B^T (mode 1 = gen_int7(nonce+1, gid)) in one launch.
+extern "C" __global__ void pearl_gen_matrix_dual(
+    signed char* matrix_a,
+    signed char* matrix_bt,
+    const ulong nonce,
+    const uint m, const uint n, const uint k
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint mk = m * k;
+    if (gid < mk) {
+        matrix_a[gid] = gen_int7(nonce, gid);
+        return;
+    }
+    uint g2 = gid - mk;
+    if (g2 < n * k) matrix_bt[g2] = gen_int7(nonce + 1ULL, g2);
+}
+
+// chunk-hash A + B in one launch (each side keeps its own dst/single flag).
+extern "C" __global__ void pearl_blake3_chunk_hash_dual(
+    const signed char* data_a,
+    const signed char* data_b,
+    const uchar* key,
+    uchar* out_a,
+    uchar* out_b,
+    const uint chunks_a,
+    const uint chunks_b,
+    const uint single_a,
+    const uint single_b
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid < chunks_a) {
+        pearl_do_chunk((const uchar*)data_a, gid, key,
+                       out_a + (ulong)gid * 32, single_a);
+        return;
+    }
+    uint g2 = gid - chunks_a;
+    if (g2 < chunks_b) {
+        pearl_do_chunk((const uchar*)data_b, g2, key,
+                       out_b + (ulong)g2 * 32, single_b);
+    }
+}
+
+__device__ void pearl_do_merkle_tree(uchar* leaf_hashes, const uchar* key,
+                                     uchar* scratch, uchar* root_out,
+                                     const uint num_leaves) {
+    const uint tid = threadIdx.x;
+    if (num_leaves == 1u) {
+        if (tid < 8u) ((uint*)root_out)[tid] = ((const uint*)leaf_hashes)[tid];
+        return;
+    }
+    uint cv_key[8];
+    for (int i = 0; i < 8; i++) {
+        cv_key[i] = (uint)key[i*4]
+                  | ((uint)key[i*4+1] << 8)
+                  | ((uint)key[i*4+2] << 16)
+                  | ((uint)key[i*4+3] << 24);
+    }
+    uchar* src = leaf_hashes;
+    uchar* dst = scratch;
+    uint n = num_leaves;
+    while (n > 1u) {
+        const uint parents = (n + 1u) >> 1;
+        const bool root_level = (n == 2u);
+        uchar* out_buf = root_level ? root_out : dst;
+        for (uint gid = tid; gid < parents; gid += blockDim.x) {
+            const uchar* l = src + (ulong)gid * 64;
+            uint left[8];
+            for (int i = 0; i < 8; i++) {
+                left[i] = (uint)l[i*4]
+                        | ((uint)l[i*4+1] << 8)
+                        | ((uint)l[i*4+2] << 16)
+                        | ((uint)l[i*4+3] << 24);
+            }
+            uchar* out_hash = out_buf + (ulong)gid * 32;
+            if (gid * 2u + 1u >= n) {
+                for (int i = 0; i < 8; i++) {
+                    out_hash[i*4+0] = (uchar)left[i];
+                    out_hash[i*4+1] = (uchar)(left[i] >> 8);
+                    out_hash[i*4+2] = (uchar)(left[i] >> 16);
+                    out_hash[i*4+3] = (uchar)(left[i] >> 24);
+                }
+                continue;
+            }
+            const uchar* r = l + 32;
+            uint right[8];
+            for (int i = 0; i < 8; i++) {
+                right[i] = (uint)r[i*4]
+                         | ((uint)r[i*4+1] << 8)
+                         | ((uint)r[i*4+2] << 16)
+                         | ((uint)r[i*4+3] << 24);
+            }
+            uint block[16];
+            for (int i = 0; i < 8; i++) block[i] = left[i];
+            for (int i = 0; i < 8; i++) block[8 + i] = right[i];
+            uint flags = PARENT | KEYED_HASH;
+            if (root_level) flags |= ROOT;
+            uint cv[8];
+            for (int i = 0; i < 8; i++) cv[i] = cv_key[i];
+            uint out[8];
+            blake3_compress(cv, block, 0, 64, flags, out);
+            for (int i = 0; i < 8; i++) {
+                out_hash[i*4+0] = (uchar)out[i];
+                out_hash[i*4+1] = (uchar)(out[i] >> 8);
+                out_hash[i*4+2] = (uchar)(out[i] >> 16);
+                out_hash[i*4+3] = (uchar)(out[i] >> 24);
+            }
+        }
+        __syncthreads();
+        uchar* t = src; src = dst; dst = t;
+        n = parents;
+    }
+}
+
+// Both merkle trees in one launch — block 0 folds A, block 1 folds B.
+// Each tree needs its own scratch (blocks run concurrently).
+extern "C" __global__ void pearl_merkle_tree_dual(
+    uchar* leaf_a,
+    uchar* leaf_b,
+    uchar* scratch_a,
+    uchar* scratch_b,
+    const uchar* key,
+    uchar* root_a,
+    uchar* root_b,
+    const uint n_a,
+    const uint n_b
+)
+{
+    if (blockIdx.x == 0) {
+        pearl_do_merkle_tree(leaf_a, key, scratch_a, root_a, n_a);
+    } else {
+        pearl_do_merkle_tree(leaf_b, key, scratch_b, root_b, n_b);
+    }
+}
+
+__device__ void pearl_do_uniform(signed char* noise, const uchar* seed,
+                                 const uchar* key, uint gid, uint num_cols) {
+    uint row_idx = gid / num_cols;
+    uint col_idx = gid % num_cols;
+    uint start_idx = row_idx * num_cols + col_idx;
+    uint block_idx = start_idx / 32;
+    uint byte_idx = start_idx % 32;
+    uchar hash[32];
+    get_random_hash_gpu(block_idx, seed, key, 0, hash);
+    uchar byte_val = hash[byte_idx];
+    noise[gid] = (signed char)((int)(byte_val & (uchar)RANGE_MASK_VAL) - ZERO_POINT);
+}
+
+// E_AL + E_BR uniform noise in one launch.
+extern "C" __global__ void pearl_gen_uniform_dual(
+    signed char* noise_a,
+    signed char* noise_b,
+    const uchar* seed_a,
+    const uchar* key_a,
+    const uint rows_a,
+    const uchar* seed_b,
+    const uchar* key_b,
+    const uint rows_b,
+    const uint cols
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint ta = rows_a * cols;
+    if (gid < ta) {
+        pearl_do_uniform(noise_a, seed_a, key_a, gid, cols);
+        return;
+    }
+    uint g2 = gid - ta;
+    if (g2 < rows_b * cols) {
+        pearl_do_uniform(noise_b, seed_b, key_b, g2, cols);
+    }
+}
+
+__device__ void pearl_do_perm(uint* perm, const uchar* seed, const uchar* key,
+                              uint gid, uint noise_rank) {
+    uint hash_index = gid / 8;
+    uint pair_index = gid % 8;
+    uchar hash[32];
+    get_random_hash_gpu(hash_index, seed, key, 1, hash);
+    uint random_uint32 = (uint)hash[pair_index * 4]
+                       | ((uint)hash[pair_index * 4 + 1] << 8)
+                       | ((uint)hash[pair_index * 4 + 2] << 16)
+                       | ((uint)hash[pair_index * 4 + 3] << 24);
+    uint rank_mask = noise_rank - 1;
+    uint first_idx = random_uint32 & rank_mask;
+    uint mul_hi_val = (uint)(((ulong)(noise_rank - 1) * (ulong)random_uint32) >> 32);
+    uint second_idx = first_idx ^ (1u + mul_hi_val);
+    perm[gid * 2 + 0] = first_idx;
+    perm[gid * 2 + 1] = second_idx;
+}
+
+// E_AR + E_BL permutations in one launch.
+extern "C" __global__ void pearl_gen_permutation_dual(
+    uint* perm_a,
+    const uchar* seed_a,
+    const uchar* key_a,
+    uint* perm_b,
+    const uchar* seed_b,
+    const uchar* key_b,
+    const uint k_dim,
+    const uint noise_rank
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (gid < k_dim) {
+        pearl_do_perm(perm_a, seed_a, key_a, gid, noise_rank);
+        return;
+    }
+    uint g2 = gid - k_dim;
+    if (g2 < k_dim) {
+        pearl_do_perm(perm_b, seed_b, key_b, g2, noise_rank);
+    }
+}
+
+__device__ void pearl_do_apply(signed char* noised, const signed char* matrix,
+                               const signed char* e_noise, const uint* e_perm,
+                               uint gid, uint k_dim, uint noise_rank) {
+    uint i = gid / k_dim;
+    uint l = gid % k_dim;
+    uint first_idx = e_perm[l * 2 + 0];
+    uint second_idx = e_perm[l * 2 + 1];
+    int n_first = (int)e_noise[i * noise_rank + first_idx];
+    int n_second = (int)e_noise[i * noise_rank + second_idx];
+    int v = (int)matrix[gid];
+    noised[gid] = (signed char)(v + n_first - n_second);
+}
+
+// apply_noise A + B in one launch.
+extern "C" __global__ void pearl_apply_noise_dual(
+    signed char* noised_a,
+    const signed char* matrix_a,
+    const signed char* e_al,
+    const uint* e_ar_perm,
+    const uint m_dim,
+    signed char* noised_b,
+    const signed char* matrix_b,
+    const signed char* e_br,
+    const uint* e_bl_perm,
+    const uint n_dim,
+    const uint k_dim,
+    const uint noise_rank
+)
+{
+    uint gid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint mk = m_dim * k_dim;
+    if (gid < mk) {
+        pearl_do_apply(noised_a, matrix_a, e_al, e_ar_perm, gid, k_dim, noise_rank);
+        return;
+    }
+    uint g2 = gid - mk;
+    if (g2 < n_dim * k_dim) {
+        pearl_do_apply(noised_b, matrix_b, e_br, e_bl_perm, g2, k_dim, noise_rank);
+    }
+}
