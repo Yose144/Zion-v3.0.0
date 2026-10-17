@@ -11,6 +11,11 @@
 // `unreachable` and the UI degrades gracefully.
 
 const APP_API_BASE = (process.env.ZION_APP_API_URL || 'https://app.zionterranova.com').replace(/\/+$/, '');
+// CoinGecko id 'pearl-2' is the PoUW Pearl chain (Pearl Research Labs —
+// github.com/pearl-research-labs/pearl), not the unrelated PearlFi token.
+// Reference fiat rate for ZION used to derive the implied ZION/PRL cross.
+const COINGECKO_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=pearl-2&vs_currencies=usd';
+const ZION_USD_REF = 0.0002;
 
 function _fetch(url, timeoutMs = 9000) {
   const ctrl = new AbortController();
@@ -22,6 +27,23 @@ function _fetch(url, timeoutMs = 9000) {
 }
 
 /**
+ * CoinGecko market data for PRL plus the derived ZION↔PRL cross rate.
+ * zion_per_prl = prl_usd / ZION_USD_REF · prl_per_zion = 1/zion_per_prl.
+ */
+async function _market() {
+  const j = await _fetch(COINGECKO_PRICE, 5000);
+  const usd = j?.['pearl-2']?.usd;
+  if (!(usd > 0)) return null;
+  const prlPerZion = ZION_USD_REF / usd;
+  return {
+    prl_usd: usd,
+    zion_usd_ref: ZION_USD_REF,
+    zion_per_prl: usd / ZION_USD_REF,
+    prl_per_zion: prlPerZion,
+  };
+}
+
+/**
  * Fetch the aggregated PRL status.
  * @param {string} [addr] optional prl1… address — adds wallet balance+history
  * @returns {{ok:boolean, source:string, node?:object, pool?:object, wallet?:object, blocks?:object, ts:number}}
@@ -29,12 +51,13 @@ function _fetch(url, timeoutMs = 9000) {
 async function fetchPrlStatus(addr) {
   const safe = (addr || '').trim().slice(0, 90);
   const url = `${APP_API_BASE}/api/prl${safe ? `?addr=${encodeURIComponent(safe)}` : ''}`;
-  const [data, blocks] = await Promise.all([
+  const [data, market, blocks] = await Promise.all([
     _fetch(url),
+    _market(),
     _fetch(`${APP_API_BASE}/api/blocks?limit=30`),
   ]);
   if (data && data.ok) {
-    return { ...data, source: 'app-api', blocks: blocks && blocks.ok ? blocks : null };
+    return { ...data, source: 'app-api', market, blocks: blocks && blocks.ok ? blocks : null };
   }
   return {
     ok: false,
@@ -43,6 +66,7 @@ async function fetchPrlStatus(addr) {
     node: null,
     pool: { available: false },
     wallet: safe ? { address: safe, valid: null } : null,
+    market,
     blocks: null,
   };
 }

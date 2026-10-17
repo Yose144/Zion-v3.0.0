@@ -63,8 +63,9 @@ assert(poolTickers.length > 10, `pool parse failed — only ${poolTickers.length
 
 // Pool tickers that are deliberately not user-selectable in the desktop UI:
 // BTC  — sha256d, ASIC-only territory, no GPU/CPU kernel path.
-// PRL  — Pearl, profile explicitly disabled in CoinProfile::defaults().
-const UI_EXCLUDED = new Set(['BTC', 'PRL']);
+// (PRL IS selectable — Pearl PoUW runs via the SRBMiner pearlhash sidecar or
+// the internal V3 PearlSubmit stream, and the pool serves auxpow.pearl legs.)
+const UI_EXCLUDED = new Set(['BTC']);
 
 // --- Assertions ---
 // 1. Every renderer-listed coin exists in the pool enum.

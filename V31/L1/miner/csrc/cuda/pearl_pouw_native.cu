@@ -679,13 +679,14 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
     const uint k_dim = params[2];
     const uint rank = params[3];
 
-    __shared__ int jackpot_tile[TILE_H * TILE_W];  // 32 elements = 128 bytes
     __shared__ uint jackpot[JACKPOT_SIZE];          // 16 elements = 64 bytes
 
     uint lid = threadIdx.x;
     uint tile_id = blockIdx.x;
 
-    if (*found) return;
+    // Warp-uniform early out — lanes must stay converged for the butterfly
+    // XOR shuffles below (a divergent volatile read would leave the mask short).
+    if (__any_sync(0xffffffffu, *found != 0u)) return;
 
     uint row_off_idx = tile_id / num_col_offsets;
     uint col_off_idx = tile_id % num_col_offsets;
@@ -700,14 +701,15 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
     uint a_row = row_off + rows_base[u];
     uint b_col = col_off + cols_base[v];
 
-    jackpot_tile[lid] = 0;
-    if (lid < JACKPOT_SIZE) jackpot[lid] = 0u;
-    __syncthreads();
+    if (lid == 0) {
+        for (int i = 0; i < JACKPOT_SIZE; i++) jackpot[i] = 0u;
+    }
 
     // __dp4a path: noised values fit int8 (a∈[-64,64] + noise∈[-63,63] =
     // [-127,127]) — one IDP does 4 MACs. Requires 16B-aligned rows, i.e.
     // k_dim and rank multiples of 16 (a_base/l stay aligned).
     const bool dp4a_ok = ((k_dim | rank) & 15u) == 0u;
+    int my_acc = 0;
     for (uint ll = rank; ll <= k_dim; ll += rank) {
         int acc = 0;
         uint a_base = a_row * k_dim + (ll - rank);
@@ -729,20 +731,23 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
                 acc += (int)noised_a[a_base + l] * (int)noised_b[b_base + l];
             }
         }
-        jackpot_tile[lid] += acc;
-        __syncthreads();
+        my_acc += acc;
 
-        // Sequential XOR reduction by tid==0 (2 syncs vs 8 for tree reduction)
+        // Warp butterfly XOR — every lane ends with XOR of all 32 accumulators.
+        // Order-free (XOR associative+commutative) so jackpot output is
+        // bit-identical to the old lane-0 serial fold, minus the shared-mem
+        // staging and both __syncthreads per chunk. Block is exactly one warp.
+        uint xored = (uint)my_acc;
+        xored ^= __shfl_xor_sync(0xffffffffu, xored, 16);
+        xored ^= __shfl_xor_sync(0xffffffffu, xored, 8);
+        xored ^= __shfl_xor_sync(0xffffffffu, xored, 4);
+        xored ^= __shfl_xor_sync(0xffffffffu, xored, 2);
+        xored ^= __shfl_xor_sync(0xffffffffu, xored, 1);
         if (lid == 0) {
-            uint xored = 0u;
-            for (int i = 0; i < TILE_H * TILE_W; i++) {
-                xored ^= (uint)jackpot_tile[i];
-            }
             uint tid = (uint)((ll / rank - 1) % JACKPOT_SIZE);
             jackpot[tid] = (jackpot[tid] << LROT) | (jackpot[tid] >> (32u - LROT));
             jackpot[tid] ^= xored;
         }
-        __syncthreads();
     }
 
     if (lid == 0) {

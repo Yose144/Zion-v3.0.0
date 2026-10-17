@@ -2649,7 +2649,7 @@ function startSrbMiner(config, worker) {
   const srbAlgo = srbAlgoForCoin(srbCoin);
   const srbIsPearl = srbAlgo === 'pearlhash';
   // Pearl pool: dedicated key → shared srbminerPool (our :8444 serves both
-  // dialects) → public Suprnova default.
+  // dialects) → public LuckyPool default (same upstream the pool bridges to).
   const srbPoolRaw = srbIsPearl
     ? (config?.srbminerPrlPool || config?.srbminerPool || SRB_DEFAULT_PRL_POOL)
     : (config?.srbminerPool || SRB_DEFAULT_POOL);
