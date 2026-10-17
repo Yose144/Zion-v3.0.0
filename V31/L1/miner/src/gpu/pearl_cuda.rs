@@ -15,6 +15,7 @@
 //! readbacks, so it stays host-side exactly like the OpenCL host.
 
 use anyhow::Result;
+use cudarc::driver::sys::CUdevice_attribute;
 use cudarc::driver::{CudaDevice, CudaFunction, CudaSlice, LaunchAsync, LaunchConfig};
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 use std::sync::Arc;
@@ -42,6 +43,9 @@ mod kern {
     pub const APPLY_A: &str = "pearl_apply_noise_a";
     pub const APPLY_B: &str = "pearl_apply_noise_b";
     pub const MINE_V3: &str = "pearl_pouw_mine_native_v3";
+    pub const MINE_V4: &str = "pearl_pouw_mine_native_v4";
+    pub const MINE_V5: &str = "pearl_pouw_mine_native_v5";
+    pub const MINE_V6: &str = "pearl_pouw_mine_native_v6";
     pub const DERIVE_SEEDS: &str = "pearl_derive_seeds";
     pub const MERKLE_TREE: &str = "pearl_merkle_tree";
     pub const GEN_DUAL: &str = "pearl_gen_matrix_dual";
@@ -62,6 +66,9 @@ const KERNELS: &[&str] = &[
     kern::APPLY_A,
     kern::APPLY_B,
     kern::MINE_V3,
+    kern::MINE_V4,
+    kern::MINE_V5,
+    kern::MINE_V6,
     kern::DERIVE_SEEDS,
     kern::MERKLE_TREE,
     kern::GEN_DUAL,
@@ -152,8 +159,18 @@ pub struct PearlCudaMiner {
     f_apply_a: CudaFunction,
     f_apply_b: CudaFunction,
     f_mine_v3: CudaFunction,
+    f_mine_v4: CudaFunction,
+    f_mine_v5: CudaFunction,
+    f_mine_v6: CudaFunction,
     f_derive: CudaFunction,
     bufs: Option<PearlCudaBufs>,
+    /// Optional per-stage CUDA events (ZION_PEARL_STAGE_TIMING=1):
+    /// 8 timestamps → 7 stage deltas [gen, chunk, merkle, derive, noise,
+    /// apply, mine]. Read back after the post-batch sync. Stored as usize
+    /// so the miner stays Send (events are used on the owning thread only).
+    stage_ev: Option<[usize; 8]>,
+    stage_ms: [f64; 7],
+    stage_n: u64,
 }
 
 impl PearlCudaMiner {
@@ -206,6 +223,9 @@ impl PearlCudaMiner {
         let f_apply_a = get(&dev, kern::APPLY_A)?;
         let f_apply_b = get(&dev, kern::APPLY_B)?;
         let f_mine_v3 = get(&dev, kern::MINE_V3)?;
+        let f_mine_v4 = get(&dev, kern::MINE_V4)?;
+        let f_mine_v5 = get(&dev, kern::MINE_V5)?;
+        let f_mine_v6 = get(&dev, kern::MINE_V6)?;
         let f_derive = get(&dev, kern::DERIVE_SEEDS)?;
 
         crate::ext_info!(
@@ -234,8 +254,14 @@ impl PearlCudaMiner {
             f_apply_a,
             f_apply_b,
             f_mine_v3,
+            f_mine_v4,
+            f_mine_v5,
+            f_mine_v6,
             f_derive,
             bufs: None,
+            stage_ev: None,
+            stage_ms: [0.0; 7],
+            stage_n: 0,
         })
     }
 
@@ -394,6 +420,40 @@ impl PearlCudaMiner {
 
         let b = self.bufs.as_mut().expect("bufs ensured");
 
+        // Optional per-stage CUDA-event profiling (ZION_PEARL_STAGE_TIMING=1).
+        // Events ride the same stream, so deltas measure GPU-side stage time
+        // (not host launch latency). Deltas are read back post-sync.
+        let ev = if std::env::var_os("ZION_PEARL_STAGE_TIMING").is_some() {
+            if self.stage_ev.is_none() {
+                let mut a = [0usize; 8];
+                for e in a.iter_mut() {
+                    if let Ok(created) = cudarc::driver::result::event::create(
+                        cudarc::driver::sys::CUevent_flags::CU_EVENT_DEFAULT,
+                    ) {
+                        *e = created as usize;
+                    }
+                }
+                self.stage_ev = Some(a);
+            }
+            self.stage_ev
+        } else {
+            None
+        };
+        let stream = *self.dev.cu_stream();
+        macro_rules! rec {
+            ($i:expr) => {
+                if let Some(e) = ev {
+                    unsafe {
+                        let _ = cudarc::driver::result::event::record(
+                            e[$i] as cudarc::driver::sys::CUevent,
+                            stream,
+                        );
+                    }
+                }
+            };
+        }
+        rec!(0);
+
         let cfg_1d = |n_: usize, tpb: u32| LaunchConfig {
             grid_dim: (Self::grid_for(n_, tpb), 1, 1),
             block_dim: (tpb, 1, 1),
@@ -415,6 +475,7 @@ impl PearlCudaMiner {
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl gen_matrix_dual launch: {e}"))?;
+        rec!(1);
 
         // ── Step 2: BLAKE3 chunk hashing (fused, one launch) ───────────
         // Single-chunk matrices write the chunk CV straight into the root
@@ -451,6 +512,7 @@ impl PearlCudaMiner {
             }
             .map_err(|e| anyhow::anyhow!("pearl chunk_hash_dual launch: {e}"))?;
         }
+        rec!(2);
 
         // ── Step 3: Merkle tree reduction ──────────────────────────────
         // One dual launch folds BOTH trees — block 0 = A (chunk_hashes ↔
@@ -520,6 +582,7 @@ impl PearlCudaMiner {
                 }
             }
         }
+        rec!(3);
 
         // ── Step 4: Derive noise seeds (fully on-device) ───────────────
         // salted: hash_eff = keyed(SEED_SALT_*, root||dim||0s); legacy: root.
@@ -550,6 +613,7 @@ impl PearlCudaMiner {
             }
             .map_err(|e| anyhow::anyhow!("pearl derive_seeds launch: {e}"))?;
         }
+        rec!(4);
 
         // ── Step 5: Generate noise (fused duals) ───────────────────────
         // Canonical order (compute_noise_for_indices): seed LABEL goes into
@@ -587,6 +651,7 @@ impl PearlCudaMiner {
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl gen_perm_dual launch: {e}"))?;
+        rec!(5);
 
         // ── Step 6: Apply noise to matrices (fused, one launch) ────────
         unsafe {
@@ -609,20 +674,69 @@ impl PearlCudaMiner {
             )
         }
         .map_err(|e| anyhow::anyhow!("pearl apply_noise_dual launch: {e}"))?;
+        rec!(6);
 
         // ── Step 7: MatMul + jackpot + target check ────────────────────
         {
-            let total_tiles = input.row_offsets.len() * input.col_offsets.len();
-            let cfg = LaunchConfig {
-                grid_dim: (total_tiles as u32, 1, 1),
-                block_dim: (32, 1, 1), // TILE_H × TILE_W
-                shared_mem_bytes: 0,
+            // Kernel select: v5 (default) stages the band's A-window in
+            // shared memory cooperatively (4 strips/block → ~30cy smem reads
+            // replace ~600cy L2 reads); v4 = per-warp strips direct-global;
+            // v3 = one tile per warp. ZION_PEARL_MINE=v3|v4|v5 for A/B.
+            let nro = input.row_offsets.len() as u32;
+            let nco = input.col_offsets.len() as u32;
+            let ver = std::env::var("ZION_PEARL_MINE").unwrap_or_else(|_| "v6".into());
+            // v5's staged window holds 32 rows × rank/16 int4 per buffer
+            // (≤256 slots → rank ≤ 128); larger ranks fall back to v4.
+            let ver = if ver == "v5" && input.rank > 128 { "v4".into() } else { ver };
+            // v6 needs int8 tensor cores (sm_80+) and the canonical window
+            // layout (rank==128, k%128==0); otherwise fall back to v4.
+            let ver = if ver == "v6" {
+                let cc_major = self
+                    .dev
+                    .attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR)
+                    .unwrap_or(0);
+                if cc_major >= 8 && input.rank == 128 && input.k % 128 == 0 {
+                    ver
+                } else {
+                    "v4".into()
+                }
+            } else {
+                ver
+            };
+            let cfg = if ver == "v3" {
+                LaunchConfig {
+                    grid_dim: ((nro * nco).div_ceil(4), 1, 1),
+                    block_dim: (128, 1, 1),
+                    shared_mem_bytes: 0,
+                }
+            } else if ver == "v6" {
+                // warp-strip = 4 col-offsets of one band → bands × ceil(nco/4)
+                let wstrips = nco.div_ceil(4) * nro.div_ceil(8);
+                LaunchConfig {
+                    grid_dim: (wstrips.div_ceil(4), 1, 1),
+                    block_dim: (128, 1, 1),
+                    shared_mem_bytes: 0,
+                }
+            } else {
+                let strips = nco * nro.div_ceil(8);
+                LaunchConfig {
+                    grid_dim: (strips.div_ceil(4), 1, 1),
+                    block_dim: (128, 1, 1), // 4 strips/block
+                    shared_mem_bytes: 0,
+                }
             };
             let mut tile_view = b.output_tile.slice_mut(slot..slot + 1);
             let mut jackpot_view = b.output_jackpot.slice_mut(slot * 32..(slot + 1) * 32);
             let mut found_view = b.found.slice_mut(slot..slot + 1);
             unsafe {
-                self.f_mine_v3.clone().launch(
+                (match ver.as_str() {
+                    "v3" => &self.f_mine_v3,
+                    "v4" => &self.f_mine_v4,
+                    "v5" => &self.f_mine_v5,
+                    _ => &self.f_mine_v6,
+                })
+                .clone()
+                .launch(
                     cfg,
                     (
                         &b.noised_a,
@@ -642,8 +756,52 @@ impl PearlCudaMiner {
             }
             .map_err(|e| anyhow::anyhow!("pearl mine_v3 launch: {e}"))?;
         }
+        rec!(7);
 
         Ok(())
+    }
+
+    /// Read back the last queued attempt's stage deltas (call only after a
+    /// stream sync — dtoh_sync_copy qualifies). Averages are logged every
+    /// 64 samples: gen/chunk/merkle/derive/noise/apply/mine.
+    fn collect_stage_timing(&mut self) {
+        let Some(ev) = self.stage_ev else {
+            return;
+        };
+        if ev[0] == 0 || ev[7] == 0 {
+            return;
+        }
+        for (i, acc) in self.stage_ms.iter_mut().enumerate() {
+            if let Ok(ms) = unsafe {
+                cudarc::driver::result::event::elapsed(
+                    ev[i] as cudarc::driver::sys::CUevent,
+                    ev[i + 1] as cudarc::driver::sys::CUevent,
+                )
+            } {
+                *acc += ms as f64;
+            }
+        }
+        self.stage_n += 1;
+        if self.stage_n % 64 == 0 {
+            const NAMES: [&str; 7] = [
+                "gen", "chunk", "merkle", "derive", "noise", "apply", "mine",
+            ];
+            let n = self.stage_n as f64;
+            let parts: Vec<String> = NAMES
+                .iter()
+                .zip(self.stage_ms.iter())
+                .map(|(name, sum)| format!("{name}={:.3}", sum / n))
+                .collect();
+            let total: f64 = self.stage_ms.iter().sum::<f64>() / n;
+            eprintln!(
+                "[pearl-stage] avg ms/attempt over {} attempts: {} | total={:.3}ms",
+                self.stage_n,
+                parts.join(" "),
+                total
+            );
+            self.stage_ms = [0.0; 7];
+            self.stage_n = 0;
+        }
     }
 
     /// One GPU-native Pearl PoUW attempt — CUDA twin of
@@ -669,6 +827,8 @@ impl PearlCudaMiner {
             .dtoh_sync_copy(&b.found.slice(0..1))
             .map_err(|e| anyhow::anyhow!("pearl found read: {e}"))?;
         if found[0] == 0 {
+            drop(b);
+            self.collect_stage_timing();
             return Ok(None);
         }
 
@@ -702,6 +862,8 @@ impl PearlCudaMiner {
             matrix_bt.copy_from_slice(&padded[..nk]);
         }
 
+        drop(b);
+        self.collect_stage_timing();
         Ok(Some(PearlPouwNativeResult {
             tile_index: tile[0],
             jackpot_hash,
@@ -734,6 +896,7 @@ impl PearlCudaMiner {
             .dev
             .dtoh_sync_copy(&self.bufs.as_ref().unwrap().found.slice(0..batch))
             .map_err(|e| anyhow::anyhow!("pearl batch found read: {e}"))?;
+        self.collect_stage_timing();
         let Some(win) = found.iter().position(|&f| f != 0) else {
             return Ok((None, batch));
         };

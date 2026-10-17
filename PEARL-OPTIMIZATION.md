@@ -192,3 +192,41 @@ overhead) which already gave 3.4×.
 | `ZION_PEARL_BATCH` | 16 | attempts queued per spawn (1 = legacy) |
 | `ZION_PEARL_K` | 2048 | consensus-required k (≥16·rank) |
 | `PEARL_PROFILE` | off | (old per-step sync profiling — removed; batch path is sync-free by design) |
+
+## 8. Kernel iterations v3→v6 (RTX 3060, stage timing `ZION_PEARL_STAGE_TIMING=1`)
+
+Controlled A/B on one binary via `ZION_PEARL_MINE=v3|v4|v5|v6` (default v6,
+auto-fallback sm<80 / rank≠128 → v4). Parity gates:
+`pearl_cuda_parity_vs_cpu_reference` + `default_config_repeated_attempts`
+(v6 path validated at production rank=128).
+
+| Kernel | mine ms | total ms | PRL solo | Note |
+|---|---|---|---|---|
+| v3 (tile/warp) | 2.93 | 3.21 | ~2.04 TH/s | latency-bound, ~4.5% issue |
+| v4 strip8 dp4a | 0.962 | 1.247 | ~4.97 TH/s | 8 A streams + shared B |
+| v4 unroll4 | 1.021 | — | ~4.79 | reg pressure |
+| v4 strip16 | 1.50 | — | ~3.60 | reg cliff |
+| v4+B-reg prefetch | 1.727 | — | — | +32 regs kills occ |
+| v5 smem A-stage | 1.496 | 1.781 | — | barrier serialization, reverted |
+| **v6 mma quad-col** | **0.310** | **0.604** | **11.35 TH/s** | tensor cores, current |
+
+v6 = `mma.sync.aligned.m16n8k32.row.col.s32.s8.s8.s32`: warp = 4 col-offsets
+of one 8-tile band; A fragments shared ×4 cols; per-window C-zeroed mma →
+`cum[e] += d[e]` reproduces `my_acc` bit-exact; per-tile fold = 16-lane ×
+2 frag elems XOR (order-free → bit-identical); canonical row-major
+output_tile preserved. Failed sub-experiments recorded: single-col
+(0.534), dual-col (0.392), B-smem staging (0.351, reverted), u64 fold pack
+(no change). Remaining gap vs SRBMiner ≈ 4.2× — needs cp.async/ldmatrix
+pipelined staging; all non-tensor paths exhausted.
+
+## 9. Test B — native triple ZION 4% / QTU 48% / PRL 48% (v6, live :8444)
+
+| Coin | Rate | Shares |
+|---|---|---|
+| PRL | 2.2–4.4 TH/s (duty-cycled) | — |
+| QTU | 113–126 MH/s | A0 R0 |
+| ZION | 26–28 KH/s | A13 R0 |
+
+GPU 90W / 59°C / ~58% util. vs pre-v6 triple: PRL ~0.85–1.0 TH/s,
+QTU ~77–98 MH/s → both improved (~3–4× PRL, +30–60% QTU from freed duty).
+SRBMiner reference (Test A): 47.0–48.4 TH/s @129.8W/78°C/1725MHz.
