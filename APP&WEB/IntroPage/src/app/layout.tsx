@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   keywords:
     "ZION TerraNova, ZION blockchain, ZION coin, zionterranova, native rust blockchain, OASIS metaverse, consciousness mining, humanitarian crypto",
   alternates: { canonical: "/" },
+  verification: {
+    google: "UwFu4TK29yFmUS28A2W-rDVZeu6YNHXaF-zqGIdAgAE",
+  },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",

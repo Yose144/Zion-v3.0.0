@@ -53,6 +53,9 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
   },
+  verification: {
+    google: 'UwFu4TK29yFmUS28A2W-rDVZeu6YNHXaF-zqGIdAgAE',
+  },
   manifest: '/manifest.json',
 };
 
