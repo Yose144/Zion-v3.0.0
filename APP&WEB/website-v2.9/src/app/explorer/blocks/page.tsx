@@ -8,6 +8,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from "@/hooks/usePolling";
 import { exportToCsv } from "@/lib/csv-export";
 import { useExplorerSSE } from "@/components/explorer/v4/hooks/useExplorerSSE";
+import { KNOWN_ADDRESS_MAP } from "@/lib/explorer/known-addresses";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 import ExplorerCopyButton from "@/components/explorer/v4/shared/ExplorerCopyButton";
 
@@ -25,6 +26,8 @@ const ExplorerBlocksCopy = {
   size: { cs: `Velikost`, en: `Size` },
   difficulty: { cs: `Obtížnost`, en: `Difficulty` },
   reward: { cs: `Odměna`, en: `Reward` },
+  miner: { cs: `Těžař`, en: `Miner` },
+  poolTag: { cs: `ZION Pool`, en: `ZION Pool` },
   exportCsv: { cs: `Export CSV`, en: `Export CSV` },
   loadMore: { cs: `Načíst další`, en: `Load More` },
 };
@@ -224,6 +227,7 @@ export default function BlocksPage() {
                 <tr className="border-b border-white/6">
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-6 py-3.5">{ExplorerBlocksCopy.height[cs ? 'cs' : 'en']}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">{ExplorerBlocksCopy.age[cs ? 'cs' : 'en']}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden lg:table-cell">{ExplorerBlocksCopy.miner[cs ? 'cs' : 'en']}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden md:table-cell">Hash</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5">Txs</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium px-3 py-3.5 hidden sm:table-cell">{ExplorerBlocksCopy.size[cs ? 'cs' : 'en']}</th>
@@ -235,7 +239,7 @@ export default function BlocksPage() {
                 {loading && blocks.length === 0
                   ? [...Array(20)].map((_, i) => (
                       <tr key={i} className="border-b border-white/3">
-                        {[...Array(7)].map((_, j) => (
+                        {[...Array(8)].map((_, j) => (
                           <td key={j} className="px-3 py-3 first:px-6 last:px-6">
                             <div className="h-4 bg-white/5 rounded animate-pulse" />
                           </td>
@@ -252,6 +256,25 @@ export default function BlocksPage() {
                         </td>
                         <td className="px-3 py-3">
                           <span className="text-gray-400 text-xs tabular-nums whitespace-nowrap">{fmtAge(block.timestamp, cs)}</span>
+                        </td>
+                        <td className="px-3 py-3 hidden lg:table-cell">
+                          {(() => {
+                            const known = block.miner ? KNOWN_ADDRESS_MAP.get(block.miner) : undefined;
+                            if (!block.miner) return <span className="text-gray-600 text-xs">—</span>;
+                            return (
+                              <Link href={`/explorer/address?addr=${block.miner}`} className="group/miner inline-flex items-center">
+                                {known ? (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${known.type === 'pool' ? 'bg-zion-gold/15 text-zion-gold border border-zion-gold/30' : 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'}`}>
+                                    {known.label}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500 group-hover/miner:text-gray-300 transition font-mono text-xs">
+                                    {`${block.miner.slice(0, 10)}…${block.miner.slice(-6)}`}
+                                  </span>
+                                )}
+                              </Link>
+                            );
+                          })()}
                         </td>
                         <td className="px-3 py-3 hidden md:table-cell">
                           <div className="flex items-center">

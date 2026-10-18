@@ -40,6 +40,7 @@ export const KNOWN_ADDRESSES: KnownAddress[] = [
 
   // Canonical pool / coinbase recipients (operational, not premine)
   { address: 'zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6', type: 'pool', label: 'Canonical Pool Payout Wallet' },
+  { address: 'zion1n4k4n5e4p0z3g7z2e0z0j7c8w7y0v5m8c6hf8c2', type: 'pool', label: 'ZION Pool', category: 'pool' },
   { address: 'zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8', type: 'humanitarian', label: 'Humanitarian Coinbase Recipient' },
   { address: 'zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0', type: 'premine', label: 'Issobella Coinbase Recipient' },
   { address: 'zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0', type: 'pool', label: 'Pool Fee Wallet' },
