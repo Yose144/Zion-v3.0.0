@@ -112,23 +112,24 @@ fn blake2_512(data: &[u8]) -> [u8; 64] {
 }
 
 fn blake2_256(data: &[u8]) -> [u8; 32] {
-    use blake2::Digest;
-    let mut h = blake2::Blake2b512::new();
+    use blake2::digest::{Update, VariableOutput};
+    // Substrate blake2_256 = Blake2b with a 32-byte output, NOT a truncated
+    // Blake2b-512 (the digest length is part of the parameter block).
+    let mut h = blake2::Blake2bVar::new(32).expect("valid output size");
     h.update(data);
-    let out = h.finalize();
     let mut arr = [0u8; 32];
-    arr.copy_from_slice(&out[..32]);
+    h.finalize_variable(&mut arr).expect("output fits");
     arr
 }
 
 /// Blake2b with 16-byte digest — Substrate `blake2_128` for storage keys.
 fn blake2_128(data: &[u8]) -> [u8; 16] {
-    use blake2::Digest;
-    let mut h = blake2::Blake2b512::new();
+    use blake2::digest::{Update, VariableOutput};
+    // Same caveat as blake2_256: true Blake2b-128, not truncated -512.
+    let mut h = blake2::Blake2bVar::new(16).expect("valid output size");
     h.update(data);
-    let out = h.finalize();
     let mut arr = [0u8; 16];
-    arr.copy_from_slice(&out[..16]);
+    h.finalize_variable(&mut arr).expect("output fits");
     arr
 }
 
@@ -444,8 +445,8 @@ impl QuantusAdapter {
             0xce, 0xf7,
         ];
         const ACC: [u8; 16] = [
-            0xb9, 0x9d, 0x88, 0x0e, 0xc6, 0x81, 0x79, 0x9c, 0x0c, 0xf3, 0x0e, 0x88, 0x8f, 0xb1,
-            0xcb, 0x00,
+            0xb9, 0x9d, 0x88, 0x0e, 0xc6, 0x81, 0x79, 0x9c, 0x0c, 0xf3, 0x0e, 0x88, 0x86, 0x37,
+            0x1d, 0xa9,
         ];
         let mut key = Vec::with_capacity(80);
         key.extend_from_slice(&SYS);
@@ -478,21 +479,13 @@ impl QuantusAdapter {
             .ok_or_else(|| MultichainError::Internal("no genesis hash".into()))?;
         let genesis = decode_hex32(&genesis_hex)?;
 
-        // Anchor the mortal era at the BEST head, not finalized: the runtime
-        // derives `checkpoint = block_hash(era.birth(current))` at validation
-        // time, and on Quantus mainnet finalized lags the tip by >64 blocks —
-        // anchoring at finalized head makes `era.birth(current)` advance past
-        // the anchor → checkpoint mismatch → "Transaction has a bad signature".
-        let hdr: serde_json::Value = self.rpc("chain_getHeader", json!([])).await?;
-        let height = parse_block_number(&hdr)?;
-        let anchor_hex: Option<String> = self
-            .rpc("chain_getBlockHash", json!([height]))
-            .await?;
-        let anchor_hex = anchor_hex
-            .ok_or_else(|| MultichainError::Internal("no best-block hash".into()))?;
-        let anchor_hash = decode_hex32(&anchor_hex)?;
-
-        Ok((spec, txv, genesis, anchor_hash, height))
+        // Anchor the mortal era at GENESIS. The Quantus runtime rejects eras
+        // anchored at a recent block (`AncientBirthBlock` in dryRun — likely a
+        // custom finalized-boundary check, since finalized lags the tip by
+        // >64 blocks on mainnet and on the dev chain). The official `quantus`
+        // CLI signs with a phase-0 period-256 era and genesis checkpoint —
+        // verified byte-for-byte against a real on-chain extrinsic.
+        Ok((spec, txv, genesis, genesis, 0))
     }
 
     /// nonce for an account via `system_accountNextIndex`.
@@ -539,8 +532,17 @@ impl QuantusAdapter {
 
         // --- extra (tuple order per metadata) ---
         let mut extra = Vec::with_capacity(16);
-        // CheckMortality → Era
-        extra.extend_from_slice(&mortal_era(64, era_anchor_height));
+        // CheckMortality → Era. The Quantus runtime rejects block-anchored
+        // mortal eras with `InvalidTransaction::AncientBirthBlock` (verified
+        // on spec153 dev chain: era anchored at best head fails dryRun, the
+        // official CLI's phase-0 period-256 era with a genesis checkpoint
+        // validates). We anchor at genesis — always present in BlockHash and
+        // immune to Quantus's deep finality lag (>64 blocks on mainnet).
+        let era_period: u64 = std::env::var("QTC_ERA_PERIOD")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(256);
+        extra.extend_from_slice(&mortal_era(era_period, era_anchor_height));
         // CheckNonce → Compact(u32)
         extra.extend_from_slice(&compact_encode(nonce as u128));
         // ChargeTransactionPayment → tip
@@ -939,6 +941,42 @@ mod tests {
     }
 
     #[test]
+    fn system_account_key_matches_live_node() {
+        // Regression: twox128("Account") was a transcription typo
+        // (…8fb1cb00 vs real …6371da9) and blake2_128 used truncated
+        // Blake2b-512 instead of true Blake2b-16 — both produced storage
+        // keys that never match on-chain state. Vectors captured from a
+        // live Quantus dev node (state_getKeysPaged + state_getStorage).
+        let acct: [u8; 32] = hex::decode(
+            "0a90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e",
+        )
+        .unwrap()
+        .try_into()
+        .unwrap();
+        let key = QuantusAdapter::system_account_key(&acct);
+        let expected = "26aa394eea5630e07c48ae0c9558cef7\
+            b99d880ec681799c0cf30e8886371da9\
+            f9c070ee7f8344932d86d18809be78b40a\
+            90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e";
+        assert_eq!(hex::encode(&key), expected.replace(' ', ""));
+    }
+
+    #[test]
+    fn blake2_output_sizes_match_substrate() {
+        // Blake2b with N-byte output ≠ truncated Blake2b-512 — the digest
+        // length is in the parameter block. Vector = acct32 above hashed
+        // by the live node (blake2_128_concat suffix of its storage key).
+        let acct = hex::decode(
+            "0a90beba4cce4a8020e016a6ffa365722255f66f8a9163d7fc89977a6fbfc82e",
+        )
+        .unwrap();
+        assert_eq!(
+            hex::encode(blake2_128(&acct)),
+            "f9c070ee7f8344932d86d18809be78b4"
+        );
+    }
+
+    #[test]
     fn compact_encoding_boundaries() {
         assert_eq!(compact_encode(0), vec![0x00]);
         assert_eq!(compact_encode(63), vec![0xfc]);
@@ -1007,12 +1045,13 @@ mod tests {
         let dest = [3u8; 32];
         let (spec, txv, genesis, fin_hash, fin_height) =
             adapter.signing_context().await.unwrap();
+        eprintln!("ctx: spec={spec} txv={txv} anchor_height={fin_height} anchor={}", hex::encode(fin_hash));
         let ext = QuantusAdapter::build_transfer_extrinsic(
             &kp, &dest, 1_000_000, 0, spec, txv, &genesis, &fin_hash, fin_height,
         )
         .unwrap();
         let ext_hex = format!("0x{}", hex::encode(&ext));
-        eprintln!("extrinsic {} bytes", ext.len());
+        eprintln!("extrinsic {} bytes tail {}", ext.len(), &ext_hex[ext_hex.len()-120..]);
 
         // payment_queryInfo decodes the extrinsic + returns fee/weight
         let info: serde_json::Value = adapter
@@ -1033,6 +1072,24 @@ mod tests {
                 json!(null)
             });
         eprintln!("system_dryRun: {dry}");
+
+        // variant B: CLI-style era — period 256, phase 0, checkpoint = genesis
+        std::env::set_var("QTC_ERA_PERIOD", "256");
+        let ext2 = QuantusAdapter::build_transfer_extrinsic(
+            &kp, &dest, 1_000_000, 0, spec, txv, &genesis, &genesis, 0,
+        )
+        .unwrap();
+        std::env::remove_var("QTC_ERA_PERIOD");
+        let ext2_hex = format!("0x{}", hex::encode(&ext2));
+        eprintln!("ext2 tail {}", &ext2_hex[ext2_hex.len()-120..]);
+        let dry2: serde_json::Value = adapter
+            .rpc("system_dryRun", json!([ext2_hex]))
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("system_dryRun ext2 error: {e}");
+                json!(null)
+            });
+        eprintln!("system_dryRun ext2 (period256/phase0/genesis): {dry2}");
     }
 
     /// Live send on Heisenberg testnet: funded `QUANTUS_SEED` account →
