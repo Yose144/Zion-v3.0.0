@@ -430,11 +430,38 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
   UI typy. `USE_MOCK=true` dokud se neověří live endpoint — flip = 1
   konstanta. `tsc --noEmit` clean, `next build` static export OK.
 
-**Zbývá:** F5 část B — samotný deploy na edge (SSH `zion-new`, DNS A
-record → 62.171.141.136, `certbot --nginx -d pool.zionterranova.com`,
-TLS stratum jako primární public port — `tls.rs`/`ZION_POOL_TLS_*`
-existuje), F6 (HA). Před produkcí regtest payout dávky na QTU i PRL a
-`PRL_PAYOUT_DRY_RUN=0` až po ověřené live dávce.
+**F5 ✅ část B — LIVE NA EDGE (2026-10-18, `0b07ceeaa`):**
+
+- Edge SSH: `zion-v6` alias (IPv6 `2a02:c207:2342:5821::1` :2222 — IPv4
+  egress je CGNAT-blokovaná); deploy script default `POOL_DEPLOY_HOST=zion-v6`.
+- Pool binary rebuild na edge z worktree `/root/build/pool-F5` (clean
+  checkout, `CARGO_TARGET_DIR=/opt/zion/V31/target` sdílí dep cache →
+  ~10 min), bak `zion-pool.bak-pre-public-api-20261017`;
+  `systemctl restart zion-v31-pool` (~10 s miner reconnect).
+- DNS `pool.zionterranova.com` → 62.171.141.136 (už existovalo);
+  `certbot --nginx -d pool.zionterranova.com` vydal cert, rewrite do
+  sites-enabled conf.
+- UI: static `dist/` rsync → `/var/www/pool`; **`USE_MOCK=false`** —
+  live adapter ověřen proti reálnému API.
+- **Hotfixy při deployi:** (a) `/public/v1/blocks`+`/payouts` double-wrap
+  (`{"blocks":{"ok":..,"blocks":[..]}}`) — public serializery teď vrací
+  bare array; (b) public feeds leakovaly `worker_name` + `miner_id` s
+  `.worker@group` suffixy → `serialize_public_*` strip na `miner`/jen
+  adresu; (c) miner workers `name` = čistý worker (strip `wallet.`+`@g=`);
+  (d) `/miner/<coin>/<wallet>` = client-side shell `miner/page.tsx`
+  (parsuje pathname) + nginx `try_files …/miner/index.html` — static
+  export nemůže pre-renderovat libovolné wallet paths.
+- **Live ověřeno:** `GET /` 200, `/public/v1/coins` 200 (12 coinů,
+  legs connected), `/coins/{zion}/stats` 200 (hashrate ~270-346 KH/s),
+  `/blocks` 200 (čistý shape, skutečné bloky), `/payouts` 200,
+  `/miner/zion/<wallet>` 200 (workers+unpaid+active), `/api/*` 404,
+  `/admin` 404. HTTPS externě ověřeno.
+
+**Zbývá:** TLS stratum jako primární public port
+(`tls.rs`/`ZION_POOL_TLS_*` existuje — env nastavit na edge), F6 (HA).
+Před produkcí regtest payout dávky na QTU i PRL a `PRL_PAYOUT_DRY_RUN=0`
+až po ověřené live dávce. Edge worktree `/root/build/pool-F5` ponechán
+pro další pool buildy; `/opt/zion` tree zůstává dirty (pre-existing).
 
 ---
 
