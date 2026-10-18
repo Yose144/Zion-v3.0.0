@@ -29,7 +29,12 @@ pub fn load_tls_acceptor(cert_path: &str, key_path: &str) -> Result<TlsAcceptor>
         .context("failed to parse TLS private key")?
         .ok_or_else(|| anyhow::anyhow!("no private key found in {}", key_path))?;
 
-    let mut server_config = rustls::ServerConfig::builder()
+    // Pin the ring provider — with multiple CryptoProviders in the dependency
+    // graph the default builder() panics instead of guessing.
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
+    let mut server_config = rustls::ServerConfig::builder_with_provider(provider)
+        .with_safe_default_protocol_versions()
+        .context("failed to build TLS protocol versions")?
         .with_no_client_auth()
         .with_single_cert(cert_chain, key_der)
         .context("failed to build TLS server config")?;
