@@ -177,12 +177,12 @@ Bonusová edice: **Quantova Revoluce Claude** (11 jazykových variant)
 
 ## Síně Amenti — Digitální Knihovna
 
-[![Kvantová Revoluce — obálka](https://newearth.cz/images/Zion.jpg)](https://newearth.cz/V2/halls.html)
+[![Kvantová Revoluce — obálka](https://zionterranova.com/images/Zion.jpg)](https://zionterranova.com/legacy/halls.html)
 
 Všechny edice jsou dostupné zdarma v **Síních Amenti** — digitální knihovně ZION projektu:
 
-- **Amenti Library:** [https://newearth.cz/V2/halls.html](https://newearth.cz/V2/halls.html)
-- **ZIP ke stažení (všechny jazyky):** [https://newearth.cz/V2/books/QuantumRevolution.zip](https://newearth.cz/V2/books/QuantumRevolution.zip)
+- **Amenti Library:** [https://zionterranova.com/legacy/halls.html](https://zionterranova.com/legacy/halls.html)
+- **ZIP ke stažení (všechny jazyky):** [https://zionterranova.com/legacy/books/QuantumRevolution.zip](https://zionterranova.com/legacy/books/QuantumRevolution.zip)
 
 Knihovna obsahuje také: The Secret of Amenti, Emerald Plates Thot, Book of Amenti 2012, Cosmic Egg, Dohrman Prophecy, Ancient Arrow a další.
 
@@ -194,4 +194,4 @@ Originální markdown zdrojové soubory: `Zion-2.9.5-main/2.9-History/books/Quan
 
 ---
 
-*Reference: [ZION Genesis](/genesis) · [Cosmic Harmony v3](/docs/chv3) · [L1-L6 Roadmap](/docs/roadmap) · [Síně Amenti](https://newearth.cz/V2/halls.html)*
+*Reference: [ZION Genesis](/genesis) · [Cosmic Harmony v3](/docs/chv3) · [L1-L6 Roadmap](/docs/roadmap) · [Síně Amenti](https://zionterranova.com/legacy/halls.html)*

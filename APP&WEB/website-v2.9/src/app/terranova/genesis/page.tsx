@@ -1062,12 +1062,12 @@ export default function ZahradaGenesisPage() {
             </h3>
             <div className="flex flex-wrap gap-3">
               <a
-                href="https://www.newearth.cz/V2/camp.html"
+                href="https://zionterranova.com/legacy/camp.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="zion-button-secondary"
               >
-                <Globe className="w-4 h-4" /> newearth.cz/camp
+                <Globe className="w-4 h-4" /> zionterranova.com/legacy/camp
               </a>
               <a
                 href="https://github.com/Zion-TerraNova"
