@@ -512,3 +512,29 @@ inner work (mma dependency chains + scalar fold serialization per
 window). Next candidate: interleave two INDEPENDENT windows' mma chains
 per warp (2× ILP, reg cost ~32) — tried before at accumulator level and
 lost to reg pressure; a leaner formulation may exist but is unproven.
+
+## 15. Session 6 — `__launch_bounds__` occupancy experiment: REJECTED (2026-10-18)
+
+`ZION_PEARL_MAXBLK=N` (new opt-in) compiles the v6 kernel with
+`__launch_bounds__(128, N)`. Motivation: v6 uses ~86 regs → only ~5
+blocks/SM resident (~31% occupancy). Same RTX 3060 / binary
+`7f462319` / interleaved mb0→mb6→mb8 ×2, parity gates mb6/mb8 PASS.
+
+| N | blocks/SM cap | median att/s | vs mb0 |
+|---|---|---|---|
+| 0 (default, 86 regs) | ~5 | **3069.8** | — |
+| 6 (≤ ~72 regs) | 6 | 3056.1 | −0.45 % (noise) |
+| 8 (≤ 64 regs) | 8 | 2841.5 | **−7.44 %** |
+
+Verdict: v6 is NOT occupancy-bound. Spilling to reach 8 blocks/SM costs
+far more than the extra warps earn; 6 blocks is neutral. Combined with
+the v11 result (gather latency already hidden at 5 blocks), the inner
+loop's serialization point is the per-window fold + the mma dependency
+chain itself, not memory. Keeping `ZION_PEARL_MAXBLK` as an opt-in knob
+for future variants; default build unchanged.
+
+### QPoW launch/reg sweep (same session, same card)
+`QPOW_TPB` {128,192,256,384,512} × `QPOW_NPT` {1,2,4} and
+`QPOW_NVRTC_OPTS=-maxrregcount={48..96}`: all medians in a 143–146 MH/s
+band → launch config and occupancy are saturated; the sponge chain's
+issue rate is the ceiling. No env promotion; defaults stay.

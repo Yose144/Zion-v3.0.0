@@ -315,13 +315,26 @@ impl PearlCudaMiner {
         // Read once at init — never promoted, never re-parsed per attempt.
         let cumulative_mma =
             cumulative_mma_enabled(std::env::var("ZION_PEARL_CUMULATIVE_MMA").ok().as_deref());
+        // Opt-in occupancy experiment: __launch_bounds__(128, N) on the v6
+        // kernel. Off by default — spills into L1 may lose; A/B only.
+        let v6_maxblk = std::env::var("ZION_PEARL_MAXBLK")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .filter(|v| (1..=16).contains(v))
+            .unwrap_or(0);
         // The variant gets its own module name so a shared device never
         // aliases functions between the two flavors.
-        let module = if cumulative_mma {
-            "pearl_pouw_native_cumulative"
-        } else {
-            MODULE
-        };
+        let module: String = format!(
+            "{}{}{}",
+            MODULE,
+            if cumulative_mma { "_cumulative" } else { "" },
+            if v6_maxblk > 0 {
+                format!("_mb{}", v6_maxblk)
+            } else {
+                String::new()
+            }
+        );
+        let module: &'static str = Box::leak(module.into_boxed_str());
         let processed = preprocess_kernel(PEARL_CU);
         let ptx = compile_ptx_with_opts(
             &processed,
@@ -331,6 +344,7 @@ impl PearlCudaMiner {
                     format!("-arch={}", arch),
                     "--std=c++14".to_string(),
                     format!("-DPEARL_CUMULATIVE_MMA={}", cumulative_mma as u32),
+                    format!("-DPEARL_V6_MAXB={}", v6_maxblk),
                 ],
                 ..Default::default()
             },
@@ -423,13 +437,14 @@ impl PearlCudaMiner {
         );
 
         crate::ext_info!(
-            "gpu_pearl_cuda_init device=\"{}\" work_size={} streams={} cc={}.{} cumulative_mma={}",
+            "gpu_pearl_cuda_init device=\"{}\" work_size={} streams={} cc={}.{} cumulative_mma={} v6_maxblk={}",
             device_name,
             work_size,
             streams.len(),
             compute_capability.0,
             compute_capability.1,
             cumulative_mma,
+            v6_maxblk,
         );
         if compute_capability == (7, 5) {
             crate::ext_info!(
