@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::net::{IpAddr, SocketAddr};
+use std::net::IpAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -37,7 +37,7 @@ use crate::pool::{Pool, PoolError, SessionCounters};
 use crate::rate_limit::{IpRateLimiter, ShareRateLimiter};
 use crate::revenue_scheduler::RevenueScheduler;
 use crate::routing::{resolve_session_group, session_group_name, RoutingStats};
-use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
+use crate::rpc_client::L1Endpoints;
 use crate::share::ShareSubmission;
 use crate::share_relay::{relay_share_fire_and_forget, ShareRelayConfig};
 use crate::stratum_pearl::{self, is_pearl_stratum};
@@ -324,8 +324,7 @@ impl StratumServer {
                     _ => Some(Arc::new(crate::zis::ZisVerifier::from_env())),
                 }
             },
-            zis_required: crate::zis::ZisVerifier::auth_mode()
-                == crate::zis::ZisAuthMode::Required,
+            zis_required: crate::zis::ZisVerifier::auth_mode() == crate::zis::ZisAuthMode::Required,
             current_height: Arc::new(AtomicU64::new(0)),
             qtu_stratum_enabled: std::env::var("ZION_POOL_QTU_STRATUM")
                 .map(|v| v.trim() != "0")
@@ -1261,7 +1260,9 @@ impl StratumServer {
                 .map(|s| s.to_string());
             let collides = stream1_coin
                 .as_deref()
-                .map(|c| c.eq_ignore_ascii_case(coin.ticker()) || c.eq_ignore_ascii_case(coin.as_str()))
+                .map(|c| {
+                    c.eq_ignore_ascii_case(coin.ticker()) || c.eq_ignore_ascii_case(coin.as_str())
+                })
                 .unwrap_or(false);
             if collides {
                 if v.get("external_stream_2").is_some_and(|f| !f.is_null()) {
@@ -1491,10 +1492,10 @@ impl StratumServer {
     /// returns jobs marked `serve_native` by the share-pct selector at push
     /// time), then the upstream Quantus bridge queue.
     fn qtu_current_job(&self) -> Option<crate::auxpow_bridge::JobPackage> {
-        let job = self
-            .multi_bridge
-            .native_pick_job()
-            .or_else(|| self.multi_bridge.latest_job_for_coin(&ExternalCoin::Quantus))?;
+        let job = self.multi_bridge.native_pick_job().or_else(|| {
+            self.multi_bridge
+                .latest_job_for_coin(&ExternalCoin::Quantus)
+        })?;
         Self::job_is_fresh(&job).then_some(job)
     }
 
@@ -1502,10 +1503,7 @@ impl StratumServer {
     /// `extranonce1_hex` when set (upstream pools validate the nonce prefix
     /// against the extranonce they assigned, native jobs carry a random
     /// per-job one), else the per-session fallback.
-    fn qtu_job_en1<'a>(
-        pkg: &'a crate::auxpow_bridge::JobPackage,
-        session: &'a str,
-    ) -> &'a str {
+    fn qtu_job_en1<'a>(pkg: &'a crate::auxpow_bridge::JobPackage, session: &'a str) -> &'a str {
         if pkg.extranonce1_hex.is_empty() {
             session
         } else {
@@ -1567,9 +1565,7 @@ impl StratumServer {
         }
         // F4: reject garbage wallet identities — an unparsable wallet would
         // silently mine toward the pool's own payout address.
-        if zis_user.is_empty()
-            && !self.pool.lock().unwrap().wallet_is_valid(&login.wallet)
-        {
+        if zis_user.is_empty() && !self.pool.lock().unwrap().wallet_is_valid(&login.wallet) {
             let _ =
                 Self::qtu_send(writer, &stratum_qtu::rpc_error(&rpc_id, "invalid wallet")).await;
             return;
@@ -1590,7 +1586,9 @@ impl StratumServer {
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_nanos() as u64)
                 .unwrap_or_default();
-            hex::encode((nanos ^ (std::process::id() as u64).rotate_left(17)).to_be_bytes()[..4].as_ref())
+            hex::encode(
+                (nanos ^ (std::process::id() as u64).rotate_left(17)).to_be_bytes()[..4].as_ref(),
+            )
         };
 
         let mut seq: u64 = 0;
@@ -1696,7 +1694,11 @@ impl StratumServer {
                 },
             }
         }
-        tracing::info!("qtu_stratum: {} session closed (worker={})", ip, login.login);
+        tracing::info!(
+            "qtu_stratum: {} session closed (worker={})",
+            ip,
+            login.login
+        );
     }
 
     /// Validate + forward one QPoW share and record accounting — mirrors
@@ -1741,7 +1743,9 @@ impl StratumServer {
         let Some(pkg) = pkg_opt else {
             tracing::info!(
                 "qtu_stratum: {} stale submit worker={} job={} reason=unknown_or_stale_job",
-                ip, login.login, job_id
+                ip,
+                login.login,
+                job_id
             );
             return Err("stale".to_string());
         };
@@ -1765,11 +1769,10 @@ impl StratumServer {
             extranonce1_hex: pkg.extranonce1_hex.clone(),
         };
         let bridge = self.multi_bridge.clone();
-        let bridge_result = tokio::task::spawn_blocking(move || {
-            bridge.forward_by_ticker("QTU", req)
-        })
-        .await
-        .unwrap_or(None);
+        let bridge_result =
+            tokio::task::spawn_blocking(move || bridge.forward_by_ticker("QTU", req))
+                .await
+                .unwrap_or(None);
 
         let (accepted, status) = match bridge_result {
             Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
@@ -1798,7 +1801,10 @@ impl StratumServer {
 
         tracing::info!(
             "qtu_stratum: {} share worker={} job={} status={}",
-            ip, login.login, job_id, status
+            ip,
+            login.login,
+            job_id,
+            status
         );
 
         if accepted {
@@ -1806,19 +1812,22 @@ impl StratumServer {
             // at the QTU weight, coin-scoped telemetry, routing stats.
             let h = self.current_height.load(Ordering::Relaxed);
             let w = auxpow_share_weight("QTU");
-            self.pool
-                .lock()
-                .unwrap()
-                .record_external_share(&login.wallet, &login.login, h, w, "qtu");
+            self.pool.lock().unwrap().record_external_share(
+                &login.wallet,
+                &login.login,
+                h,
+                w,
+                "qtu",
+            );
         }
-        self.telemetry
-            .lock()
-            .unwrap()
-            .record_external_share(&login.wallet, &login.login, "QTU", accepted);
-        let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
-            "qpow-poseidon2",
-        )
-        .unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+        self.telemetry.lock().unwrap().record_external_share(
+            &login.wallet,
+            &login.login,
+            "QTU",
+            accepted,
+        );
+        let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci("qpow-poseidon2")
+            .unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
         let group = resolve_session_group(&login.wallet, &login.login);
         self.routing_stats
             .lock()
@@ -1940,21 +1949,21 @@ impl StratumServer {
         (accepted, status)
     }
 
-    async fn pearl_send<W>(
-        writer: &Arc<tokio::sync::Mutex<W>>,
-        line: &str,
-    ) -> std::io::Result<()>
+    async fn pearl_send<W>(writer: &Arc<tokio::sync::Mutex<W>>, line: &str) -> std::io::Result<()>
     where
         W: tokio::io::AsyncWrite + Unpin,
     {
         // Pearl frame builders already terminate with '\n'; trim so the
         // wire carries exactly one newline — SRBMiner's line parser rejects
         // the blank line a double '\n' produces (Exception[15] on connect).
-        tokio::time::timeout(Duration::from_secs(10), Self::qtu_send(writer, line.trim_end()))
-            .await
-            .map_err(|_| {
-                std::io::Error::new(std::io::ErrorKind::TimedOut, "pearl stratum write timeout")
-            })?
+        tokio::time::timeout(
+            Duration::from_secs(10),
+            Self::qtu_send(writer, line.trim_end()),
+        )
+        .await
+        .map_err(|_| {
+            std::io::Error::new(std::io::ErrorKind::TimedOut, "pearl stratum write timeout")
+        })?
     }
 
     async fn handle_pearl_session<R, W>(
@@ -1980,8 +1989,11 @@ impl StratumServer {
             }
         };
         if self.pearl.is_none() {
-            let _ = Self::pearl_send(writer, &stratum_pearl::auth_err(&rpc_id, "pearl_not_enabled"))
-                .await;
+            let _ = Self::pearl_send(
+                writer,
+                &stratum_pearl::auth_err(&rpc_id, "pearl_not_enabled"),
+            )
+            .await;
             return;
         }
         // F2d: `pass` may carry `zis_<token>` — required mode rejects the
@@ -2005,11 +2017,9 @@ impl StratumServer {
             }
         }
         // F4: reject garbage wallet identities — same rule as QTU login.
-        if zis_user.is_empty()
-            && !self.pool.lock().unwrap().wallet_is_valid(&auth.wallet)
-        {
-            let _ = Self::pearl_send(writer, &stratum_pearl::auth_err(&rpc_id, "invalid wallet"))
-                .await;
+        if zis_user.is_empty() && !self.pool.lock().unwrap().wallet_is_valid(&auth.wallet) {
+            let _ =
+                Self::pearl_send(writer, &stratum_pearl::auth_err(&rpc_id, "invalid wallet")).await;
             return;
         }
         if Self::pearl_send(writer, &stratum_pearl::auth_ok(&rpc_id))
@@ -2417,7 +2427,9 @@ impl StratumServer {
                             zis_user = idn.sub.clone();
                             tracing::info!(
                                 "v3_zis_auth miner={} worker={} sub={} (tls)",
-                                miner_id, worker_name, idn.sub
+                                miner_id,
+                                worker_name,
+                                idn.sub
                             );
                             if payout_address.is_empty() {
                                 if let Some(zaddr) = &idn.zion_address {
@@ -2429,7 +2441,9 @@ impl StratumServer {
                                     {
                                         tracing::info!(
                                             "v3_payout miner={} chain={} addr={} (zis-linked)",
-                                            miner_id, chain, addr
+                                            miner_id,
+                                            chain,
+                                            addr
                                         );
                                     }
                                 }
@@ -2439,9 +2453,13 @@ impl StratumServer {
                             if self.zis_required {
                                 tracing::warn!(
                                     "v3_zis_reject miner={} ip={} reason={} (tls)",
-                                    miner_id, ip,
-                                    if auth_token.is_empty() { "no_token" }
-                                    else { "invalid_or_banned" }
+                                    miner_id,
+                                    ip,
+                                    if auth_token.is_empty() {
+                                        "no_token"
+                                    } else {
+                                        "invalid_or_banned"
+                                    }
                                 );
                                 return;
                             }
@@ -2790,7 +2808,9 @@ impl StratumServer {
                             zis_user = idn.sub.clone();
                             tracing::info!(
                                 "v3_zis_auth miner={} worker={} sub={}",
-                                miner_id, worker_name, idn.sub
+                                miner_id,
+                                worker_name,
+                                idn.sub
                             );
                             if pa.is_empty() {
                                 if let Some(zaddr) = &idn.zion_address {
@@ -2802,7 +2822,9 @@ impl StratumServer {
                                     {
                                         tracing::info!(
                                             "v3_payout miner={} chain={} addr={} (zis-linked)",
-                                            miner_id, chain, addr
+                                            miner_id,
+                                            chain,
+                                            addr
                                         );
                                     }
                                 }
@@ -2812,9 +2834,13 @@ impl StratumServer {
                             if self.zis_required {
                                 tracing::warn!(
                                     "v3_zis_reject miner={} ip={} reason={}",
-                                    miner_id, ip,
-                                    if at.is_empty() { "no_token" }
-                                    else { "invalid_or_banned" }
+                                    miner_id,
+                                    ip,
+                                    if at.is_empty() {
+                                        "no_token"
+                                    } else {
+                                        "invalid_or_banned"
+                                    }
                                 );
                                 return;
                             }
@@ -3651,13 +3677,14 @@ impl StratumServer {
             return;
         }
 
-        let rpc_addr = match parse_rpc_addr(&rpc_url) {
-            Ok(a) => a,
-            Err(e) => {
-                tracing::error!("invalid L1 RPC URL '{}': {}", rpc_url, e);
+        let endpoints = match L1Endpoints::from_urls(&rpc_url) {
+            Some(e) => e,
+            None => {
+                tracing::error!("invalid L1 RPC URL '{}'", rpc_url);
                 return;
             }
         };
+        tracing::info!("template_feed_loop: L1 endpoints {}", endpoints.describe());
 
         // Poll the L1 node every second. VRSC/LuckPool jobs can switch on a
         // 60s block boundary, so a 5s polling interval leaves miners working
@@ -3698,7 +3725,7 @@ impl StratumServer {
                     // job broadcasts to miners.
                     let fetched: Option<Value> = match tokio::time::timeout(
                         Duration::from_secs(5),
-                        jsonrpc_call(rpc_addr, &payload),
+                        endpoints.call(&payload),
                     )
                     .await
                     {
@@ -3914,10 +3941,10 @@ impl StratumServer {
             return Ok(());
         }
 
-        let rpc_addr = parse_rpc_addr(&rpc_url)
+        let endpoints = L1Endpoints::from_urls(&rpc_url)
             .with_context(|| format!("invalid submitBlock RPC URL: {}", rpc_url))?;
 
-        if let Some(tip) = current_chain_height(rpc_addr).await {
+        if let Some(tip) = current_chain_height(&endpoints).await {
             if block.header.height != tip.saturating_add(1) {
                 tracing::warn!(
                     "stale block height={} (tip={}), treating as orphan",
@@ -3937,7 +3964,7 @@ impl StratumServer {
             }
         }
 
-        match submit_block_to_node(rpc_addr, &block).await {
+        match submit_block_to_node(&endpoints, &block).await {
             Ok(()) => {
                 self.record_block_accepted(
                     block_height,
@@ -4141,14 +4168,14 @@ fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
 /// We use `getChainInfo` (not `getStatus`) because `getStatus` returns the V3
 /// chain height which is 0 when running with `--v3-no-genesis`.  The pool
 /// submits native L1 blocks, so we need the native chain height.
-async fn current_chain_height(rpc_addr: SocketAddr) -> Option<u64> {
+async fn current_chain_height(endpoints: &L1Endpoints) -> Option<u64> {
     let request = json!({
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getChainInfo",
         "params": [],
     });
-    let response = jsonrpc_call(rpc_addr, &request).await.ok()?;
+    let response = endpoints.call(&request).await.ok()?;
     // Prefer native_chain_height; fall back to chain_height for older nodes.
     response.get("result").and_then(|r| {
         r.get("native_chain_height")
@@ -4158,14 +4185,14 @@ async fn current_chain_height(rpc_addr: SocketAddr) -> Option<u64> {
 }
 
 /// Submit a solved block to the node RPC.
-async fn submit_block_to_node(rpc_addr: SocketAddr, block: &Block) -> anyhow::Result<()> {
+async fn submit_block_to_node(endpoints: &L1Endpoints, block: &Block) -> anyhow::Result<()> {
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,
         "method": "submitBlock",
         "params": serde_json::to_value(block).expect("block serializes"),
     });
-    let response: serde_json::Value = jsonrpc_call(rpc_addr, &payload).await?;
+    let response: serde_json::Value = endpoints.call(&payload).await?;
 
     if let Some(err) = response.get("error") {
         if !err.is_null() {
@@ -4285,10 +4312,7 @@ mod tests {
                 .enable_all()
                 .build()
                 .unwrap();
-            rt.block_on(qtu_stratum_session_body(
-                server_for_thread,
-                bridge_for_push,
-            ));
+            rt.block_on(qtu_stratum_session_body(server_for_thread, bridge_for_push));
         })
         .join()
         .expect("qtu e2e thread panicked");
@@ -4300,9 +4324,7 @@ mod tests {
             .iter()
             .find(|(k, _)| k.contains("qzTEST"))
             .map(|(k, m)| (k.clone(), m.clone()))
-            .unwrap_or_else(|| {
-                panic!("qtu miner present in telemetry: {:?}", tele.miners.keys())
-            });
+            .unwrap_or_else(|| panic!("qtu miner present in telemetry: {:?}", tele.miners.keys()));
         assert_eq!(
             m.streams.get("qtu").map(|s| s.valid_shares).unwrap_or(0),
             1,
@@ -4509,8 +4531,9 @@ mod tests {
     #[test]
     fn authorize_rejects_invalid_wallet() {
         let server = make_server();
-        let resp = server
-            .handle_request(r#"{"id":2,"method":"mining.authorize","params":["notawallet.rig1","x"]}"#);
+        let resp = server.handle_request(
+            r#"{"id":2,"method":"mining.authorize","params":["notawallet.rig1","x"]}"#,
+        );
         assert!(resp.contains("invalid wallet"), "resp={resp}");
     }
 
@@ -5496,14 +5519,19 @@ mod tests {
                     let _ = server.run(listener).await;
                 });
 
-                let mut client =
-                    PearlPoolClient::connect(&addr.to_string(), "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq", "rig0", "x")
-                        .await
-                        .unwrap();
+                let mut client = PearlPoolClient::connect(
+                    &addr.to_string(),
+                    "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq",
+                    "rig0",
+                    "x",
+                )
+                .await
+                .unwrap();
                 {
                     let pool = pool2.lock().unwrap();
                     let telemetry = pool.telemetry.lock().unwrap();
-                    let entry = &telemetry.miners["prl1pzqqqqqqqqqqqqqqqqqqqqqqqq/prl1pzqqqqqqqqqqqqqqqqqqqqqqqq.rig0"];
+                    let entry = &telemetry.miners
+                        ["prl1pzqqqqqqqqqqqqqqqqqqqqqqqq/prl1pzqqqqqqqqqqqqqqqqqqqqqqqq.rig0"];
                     assert_eq!(entry.algorithm, "pearlhash");
                     assert_eq!(entry.backend, "pearl-stratum");
                 }
@@ -5524,21 +5552,34 @@ mod tests {
                 assert_eq!(job.cert_version, 3);
                 assert_eq!(job.height, 0);
 
-                let resp = client.submit_proof(&job_id, &proof_b64, None).await.unwrap();
+                let resp = client
+                    .submit_proof(&job_id, &proof_b64, None)
+                    .await
+                    .unwrap();
                 assert!(resp.accepted, "resp={:?}", resp.raw);
                 assert_eq!(resp.id, 2);
                 assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
 
-                let mut client2 =
-                    PearlPoolClient::connect(&addr.to_string(), "prl1pzqqqqqqqqqqqqqqqqqqqqqqq2", "rig1", "x")
-                        .await
-                        .unwrap();
-                let resp2 = client2.submit_proof(&job_id, &proof_b64, None).await.unwrap();
+                let mut client2 = PearlPoolClient::connect(
+                    &addr.to_string(),
+                    "prl1pzqqqqqqqqqqqqqqqqqqqqqqq2",
+                    "rig1",
+                    "x",
+                )
+                .await
+                .unwrap();
+                let resp2 = client2
+                    .submit_proof(&job_id, &proof_b64, None)
+                    .await
+                    .unwrap();
                 assert!(!resp2.accepted, "resp={:?}", resp2.raw);
                 assert_eq!(resp2.raw["error"]["message"], "duplicate");
                 assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
 
-                let resp3 = client2.submit_proof("stale-job", &proof_b64, None).await.unwrap();
+                let resp3 = client2
+                    .submit_proof("stale-job", &proof_b64, None)
+                    .await
+                    .unwrap();
                 assert!(!resp3.accepted);
                 assert_eq!(resp3.raw["error"]["message"], "stale");
                 let fresh = tokio::time::timeout(Duration::from_secs(5), async {
@@ -5764,9 +5805,7 @@ mod tests {
         let (_read, write) = tokio::io::duplex(8);
         let writer = Arc::new(tokio::sync::Mutex::new(write));
         let line = "x".repeat(64 * 1024);
-        let err = StratumServer::pearl_send(&writer, &line)
-            .await
-            .unwrap_err();
+        let err = StratumServer::pearl_send(&writer, &line).await.unwrap_err();
         assert_eq!(err.kind(), std::io::ErrorKind::TimedOut);
     }
 
@@ -5917,8 +5956,7 @@ mod tests {
                         return;
                     }
                     calls.lock().unwrap().push(line.trim().to_string());
-                    if w
-                        .write_all(b"{\"id\":1,\"result\":true,\"error\":null}\n")
+                    if w.write_all(b"{\"id\":1,\"result\":true,\"error\":null}\n")
                         .await
                         .is_err()
                     {
@@ -6062,7 +6100,8 @@ mod tests {
                 .unwrap();
             rt.block_on(async move {
                 let (up, _calls) =
-                    connected_pearl_upstream(header, PearlUpVerdict::Reject("low difficulty")).await;
+                    connected_pearl_upstream(header, PearlUpVerdict::Reject("low difficulty"))
+                        .await;
                 let pearl = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(up), 100);
                 let pool = pool_with_pearl(Some(pearl));
                 let server = StratumServer::new(pool.clone());

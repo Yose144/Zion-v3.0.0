@@ -97,12 +97,11 @@ pub async fn check_tx_on_chain(
     rpc_addr: &str,
     tx_id: &str,
 ) -> anyhow::Result<Option<(u64, String)>> {
-    let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let resp = crate::rpc_client::jsonrpc_call(
-        addr,
-        &rpc_request("getTransaction", json!({ "txid": tx_id })),
-    )
-    .await?;
+    let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
+        .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
+    let resp = eps
+        .call(&rpc_request("getTransaction", json!({ "txid": tx_id })))
+        .await?;
 
     let result = resp.get("result").cloned().unwrap_or(Value::Null);
     if result.is_null() {
@@ -119,9 +118,9 @@ pub async fn check_tx_on_chain(
 
 /// Get the current chain height from the node.
 pub async fn get_chain_height(rpc_addr: &str) -> anyhow::Result<u64> {
-    let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let result =
-        crate::rpc_client::jsonrpc_call(addr, &rpc_request("getChainInfo", json!([]))).await?;
+    let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
+        .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
+    let result = eps.call(&rpc_request("getChainInfo", json!([]))).await?;
 
     result
         .get("result")
@@ -139,15 +138,16 @@ pub async fn get_chain_difficulty(rpc_addr: &str) -> u64 {
         Ok(h) => h,
         Err(_) => return 0,
     };
-    let addr = match crate::rpc_client::parse_rpc_addr(rpc_addr) {
-        Ok(a) => a,
-        Err(_) => return 0,
+    let eps = match crate::rpc_client::L1Endpoints::from_urls(rpc_addr) {
+        Some(e) => e,
+        None => return 0,
     };
-    let block = match crate::rpc_client::jsonrpc_call(
-        addr,
-        &rpc_request("getBlockByHeight", json!({ "height": height })),
-    )
-    .await
+    let block = match eps
+        .call(&rpc_request(
+            "getBlockByHeight",
+            json!({ "height": height }),
+        ))
+        .await
     {
         Ok(b) => b,
         Err(_) => return 0,
@@ -255,12 +255,14 @@ pub async fn execute_fee_payout(
     let tx_json = serde_json::to_value(&result.transaction)
         .map_err(|e| anyhow::anyhow!("failed to serialize fee payout tx: {e}"))?;
 
-    let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let resp = crate::rpc_client::jsonrpc_call(
-        addr,
-        &rpc_request("submitUtxoTransaction", json!({ "transaction": tx_json })),
-    )
-    .await?;
+    let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
+        .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
+    let resp = eps
+        .call(&rpc_request(
+            "submitUtxoTransaction",
+            json!({ "transaction": tx_json }),
+        ))
+        .await?;
 
     let tx_id = resp
         .get("result")
@@ -286,12 +288,11 @@ async fn fetch_pool_utxos(
     address: &str,
 ) -> anyhow::Result<Vec<zion_core::v31_wallet::SpendableUtxo>> {
     use zion_core::v31_wallet::SpendableUtxo;
-    let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let resp = crate::rpc_client::jsonrpc_call(
-        addr,
-        &rpc_request("getUtxos", json!({ "address": address })),
-    )
-    .await?;
+    let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
+        .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
+    let resp = eps
+        .call(&rpc_request("getUtxos", json!({ "address": address })))
+        .await?;
 
     let result = resp.get("result").cloned().unwrap_or(Value::Null);
     let utxos = result
@@ -431,21 +432,19 @@ pub fn spawn_deferred_payout_processor(
                                     continue;
                                 }
                             };
-                            let addr = match crate::rpc_client::parse_rpc_addr(&rpc) {
-                                Ok(a) => a,
-                                Err(e) => {
-                                    warn!("deferred_payout: invalid rpc addr: {e}");
+                            let eps = match crate::rpc_client::L1Endpoints::from_urls(&rpc) {
+                                Some(e) => e,
+                                None => {
+                                    warn!("deferred_payout: invalid rpc addr: {}", rpc);
                                     continue;
                                 }
                             };
-                            match crate::rpc_client::jsonrpc_call(
-                                addr,
-                                &rpc_request(
+                            match eps
+                                .call(&rpc_request(
                                     "submitUtxoTransaction",
                                     json!({ "transaction": tx_json }),
-                                ),
-                            )
-                            .await
+                                ))
+                                .await
                             {
                                 Ok(resp) => {
                                     let tx_id = resp
@@ -516,9 +515,10 @@ async fn check_tx_on_chain_via_utxos(
     address: &str,
     tx_id: &str,
 ) -> anyhow::Result<bool> {
-    let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
+    let eps = crate::rpc_client::L1Endpoints::from_urls(rpc_addr)
+        .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_addr))?;
     let request = rpc_request("getUtxos", json!({ "address": address }));
-    let resp = crate::rpc_client::jsonrpc_call(addr, &request).await?;
+    let resp = eps.call(&request).await?;
 
     if let Some(utxos) = resp
         .get("result")

@@ -480,6 +480,33 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
 `/root/build/pool-F5` ponechán pro další pool buildy; `/opt/zion` tree
 zůstává dirty (pre-existing).
 
+### F6 — L1 RPC failover (implementováno, čeká na edge deploy)
+
+- **`L1Endpoints`** (`rpc_client.rs`) — `ZION_L1_RPC_URL`/`--l1-rpc-url`
+  přijímá comma-separated list:
+  `http://127.0.0.1:9445,http://127.0.0.1:9446,http://127.0.0.1:9447`.
+  Poslední funkční endpoint se zkouší první (last-good stickiness), každý
+  pokus bounded na 4 s, cyklický fallback přes zbytek, chyba až když všechny
+  padnou. Single-endpoint chování beze změny.
+- **Migrované call sites:** `template_feed_loop` (kritická mining cesta —
+  1 s poll + reuse-last-template jako druhá vrstva), `submitBlock` +
+  `getChainInfo` v submit cestě, `deferred_payout.rs` (getUtxos /
+  getTransaction / getChainInfo / getBlockByHeight / submitUtxoTransaction),
+  `payout.rs` (fetch_utxos + submit_utxo_transaction). Žádný direct
+  `parse_rpc_addr`+`jsonrpc_call` call site nezbyl.
+- **Write-safety:** `submitBlock` je idempotentní (duplicitní submit = node
+  vrátí error, který se zaloguje); `submitUtxoTransaction` — node mempool
+  deduplikuje podle txid.
+- **Edge topologie:** `zion-v31-node` (RPC 9445) + `zion-v31-node2` (9446) +
+  `zion-v31-node3` (9447) — všechny servírují `getTemplate`.
+- **Testy:** 11 nových v `rpc_client.rs` — parsing, invalid skip, last-good,
+  failover na follower, stickiness po návratu primary, fail-back když
+  follower umře, all-fail error. Celý suite 331+.
+- **Zbývá:** edge env update (`ZION_L1_RPC_URL` → 3 endpointy) + rebuild +
+  kontrolovaný live failover test (stop `zion-v31-node`, ověřit přepnutí na
+  9446/9447, miners dostávají joby, restore); standby pool na jiném hostu
+  zůstává open.
+
 ---
 
 *Příbuzné docs: `PEARL-POUW-INTEGRATION.md` (PRL legs detail),
