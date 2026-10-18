@@ -1253,9 +1253,22 @@ impl PoolApi {
             };
             valid += w_valid;
             invalid += w_invalid;
+            // worker_short is "wallet.worker@group" — show just the worker
+            // part so the dashboard doesn't echo the wallet back.
+            let worker_name = worker_short
+                .strip_prefix(&format!("{miner_id}."))
+                .unwrap_or(&worker_short)
+                .split('@')
+                .next()
+                .unwrap_or(&worker_short);
+            let worker_name = if worker_name.is_empty() {
+                "default"
+            } else {
+                worker_name
+            };
             workers.push(json!({
-                "name": key,
-                "worker": worker_short,
+                "name": worker_name,
+                "worker": worker_name,
                 "accepted": w_valid,
                 "rejected": w_invalid,
                 "last_seen_s": miner.last_seen_s,
