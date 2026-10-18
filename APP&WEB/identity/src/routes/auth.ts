@@ -8,6 +8,7 @@ import {
   verifySolana,
   verifyBitcoin,
   verifyQuantusAttestation,
+  verifyPearlAttestation,
 } from '../lib/challenge.js';
 import { verifyGoogleIdToken } from '../lib/google.js';
 import { requireAuth } from '../lib/auth.js';
@@ -19,7 +20,7 @@ import { createHash } from 'node:crypto';
 const ChallengeSchema = z.object({
   address: z.string().min(8),
   chainType: z
-    .enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus'])
+    .enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus', 'pearl'])
     .default('zion-l1'),
 });
 
@@ -56,7 +57,7 @@ const NftAvatarSchema = z.object({
 
 const LinkAddressSchema = z.object({
   address: z.string().min(8),
-  chainType: z.enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus']),
+  chainType: z.enum(['zion-l1', 'evm', 'bitcoin', 'solana', 'quantus', 'pearl']),
   chainId: z.string().optional(),
   // Ed25519 linking
   publicKey: z.string().optional(),
@@ -462,6 +463,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         });
       }
       ok = await verifyQuantusAttestation(zionAddress, zionPublicKey, signature, address);
+    } else if (chainType === 'pearl') {
+      // XMSS has no JS implementation — the client attests with the ZION
+      // key derived from the same mnemonic (same model as quantus).
+      if (!zionAddress || !zionPublicKey) {
+        return reply.code(400).send({
+          error: 'BAD_REQUEST',
+          message: 'zionAddress and zionPublicKey are required for pearl',
+        });
+      }
+      ok = await verifyPearlAttestation(zionAddress, zionPublicKey, signature, address);
     } else {
       return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Unsupported chainType' });
     }

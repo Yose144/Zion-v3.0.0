@@ -315,3 +315,73 @@ export function isValidQuantusAddress(addr: string): boolean {
     return false;
   }
 }
+
+/**
+ * Pearl linking by ZION-key attestation — same model as Quantus: Pearl's
+ * native cryptography (XMSS) has no JS implementation, so the client proves
+ * ownership of the ZION key controlling the same mnemonic by signing
+ * `challenge + "\npearl:" + <prl1 address>` where the challenge was issued
+ * for the ZION address. The prl1 address itself is bech32m-validated.
+ */
+export async function verifyPearlAttestation(
+  zionAddress: string,
+  zionPublicKey: string,
+  signatureHex: string,
+  prlAddress: string,
+): Promise<boolean> {
+  const challenge = getChallenge(zionAddress);
+  if (!challenge) return false;
+  if (!isValidPearlAddress(prlAddress)) return false;
+  const pub = Buffer.from(zionPublicKey, 'hex');
+  if (publicKeyToAddress(Uint8Array.from(pub)) !== zionAddress) return false;
+  const message = Buffer.from(`${challenge}\npearl:${prlAddress}`, 'utf8');
+  const ok = await ed.verify(Buffer.from(signatureHex, 'hex'), message, pub);
+  if (ok) clearChallenge(zionAddress);
+  return ok;
+}
+
+/** Decode + checksum-verify a bech32/bech32m segwit address. */
+function bech32Decode(addr: string): { hrp: string; version: number; program: Uint8Array } | null {
+  try {
+    const a = addr.trim();
+    if (a.length < 14 || a.length > 90 || a !== a.toLowerCase()) return null;
+    const sep = a.lastIndexOf('1');
+    if (sep < 1 || sep + 7 > a.length) return null;
+    const hrp = a.slice(0, sep);
+    const data: number[] = [];
+    for (const ch of a.slice(sep + 1)) {
+      const d = BECH32_ALPHABET.indexOf(ch);
+      if (d < 0) return null;
+      data.push(d);
+    }
+    const values = bech32HrpExpand(hrp).concat(data);
+    const mod = bech32Polymod(values);
+    const version = data[0];
+    // v0 programs use bech32 (const 1), v1+ (taproot) use bech32m.
+    if (version === 0 && mod !== 1) return null;
+    if (version !== 0 && mod !== 0x2bc830a3) return null;
+    // convertbits 5→8 (no padding) over data minus the 6-char checksum.
+    const payload = data.slice(1, -6);
+    let acc = 0, bits = 0;
+    const prog: number[] = [];
+    for (const v of payload) {
+      acc = (acc << 5) | v;
+      bits += 5;
+      while (bits >= 8) { bits -= 8; prog.push((acc >> bits) & 0xff); }
+    }
+    if (bits >= 5 || ((acc << (8 - bits)) & 0xff) !== 0) return null;
+    return { hrp, version, program: Uint8Array.from(prog) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pearl address validation — mainnet bech32m segwit v1 taproot:
+ * `prl1` + 62 chars total, witness program = 32 bytes (BIP86).
+ */
+export function isValidPearlAddress(addr: string): boolean {
+  const d = bech32Decode(addr);
+  if (!d) return false;
+  return d.hrp === 'prl' && d.version === 1 && d.program.length === 32;
+}
