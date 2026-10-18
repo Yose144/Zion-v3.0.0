@@ -208,10 +208,7 @@ fn decode_merkle_proof(c: &mut Cursor) -> Result<PearlMerkleProof> {
 fn decode_matrix_proof(c: &mut Cursor) -> Result<PearlMatrixProof> {
     let proof = decode_merkle_proof(c)?;
     let row_indices = c.vec_usize()?;
-    Ok(PearlMatrixProof {
-        proof,
-        row_indices,
-    })
+    Ok(PearlMatrixProof { proof, row_indices })
 }
 
 /// Decode `PlainProof` from raw bincode bytes (fixint encoding).
@@ -433,7 +430,12 @@ fn list_to_pattern(indices: &[usize]) -> Result<(PeriodicPattern, u32)> {
 // Noise (pearl_noise.rs port, row-subset variant)
 // ============================================================================
 
-fn get_random_hash(index: usize, seed: &[u8; 32], key: &[u8; 32], prepend_index: usize) -> [u8; 32] {
+fn get_random_hash(
+    index: usize,
+    seed: &[u8; 32],
+    key: &[u8; 32],
+    prepend_index: usize,
+) -> [u8; 32] {
     let mut msg = [0u8; 64];
     let pv = (1 + index) as i32;
     msg[prepend_index * 4..prepend_index * 4 + 4].copy_from_slice(&pv.to_le_bytes());
@@ -570,14 +572,14 @@ pub fn verify_pearl_share(
     let job_key = *blake3::hash(&job_input).as_bytes();
 
     // Merkle proofs → hash_a / hash_b (roots bind the committed matrices).
-    let hash_a = merkle_compute_root(&proof.a.proof, &job_key)
-        .context("A merkle proof malformed")?;
+    let hash_a =
+        merkle_compute_root(&proof.a.proof, &job_key).context("A merkle proof malformed")?;
     ensure!(
         hash_a == proof.a.proof.root,
         "A merkle root mismatch (invalid proof)"
     );
-    let hash_b = merkle_compute_root(&proof.bt.proof, &job_key)
-        .context("B merkle proof malformed")?;
+    let hash_b =
+        merkle_compute_root(&proof.bt.proof, &job_key).context("B merkle proof malformed")?;
     ensure!(
         hash_b == proof.bt.proof.root,
         "B merkle root mismatch (invalid proof)"
@@ -608,9 +610,7 @@ pub fn verify_pearl_share(
 
     // Strips: extract proved rows/cols from leaf data.
     let strip = |p: &PearlMerkleProof, idx: usize| -> Result<Vec<i8>> {
-        let start = idx
-            .checked_mul(k)
-            .context("strip offset overflow")?;
+        let start = idx.checked_mul(k).context("strip offset overflow")?;
         let end = start + k;
         let mut out = vec![0u8; k];
         let mut copied = 0usize;
@@ -640,7 +640,10 @@ pub fn verify_pearl_share(
         .map(|&r| strip(&proof.bt.proof, r))
         .collect::<Result<_>>()?;
     ensure!(
-        s_a.iter().chain(&s_b).flatten().all(|&v| (-64..=64).contains(&v)),
+        s_a.iter()
+            .chain(&s_b)
+            .flatten()
+            .all(|&v| (-64..=64).contains(&v)),
         "matrix signal outside [-64, 64]"
     );
 
@@ -705,10 +708,7 @@ pub fn verify_pearl_share(
     let share_bound = share_target * &factor;
     let block_bound = &job.target * &factor;
     let hash_int = BigUint::from_bytes_le(&jackpot_hash);
-    ensure!(
-        hash_int <= share_bound,
-        "jackpot hash above share bound"
-    );
+    ensure!(hash_int <= share_bound, "jackpot hash above share bound");
 
     Ok(PearlShareOutcome {
         jackpot_hash,
@@ -763,11 +763,7 @@ mod tests {
     }
 
     /// `MerkleTree::get_multileaf_proof` port.
-    fn multileaf_proof(
-        data: &[u8],
-        key: &[u8; 32],
-        leaf_indices: &[usize],
-    ) -> PearlMerkleProof {
+    fn multileaf_proof(data: &[u8], key: &[u8; 32], leaf_indices: &[usize]) -> PearlMerkleProof {
         let layers = tree_layers(data, key);
         let total_leaves = layers[0].len();
         let mut unique: std::collections::BTreeSet<usize> = leaf_indices.iter().copied().collect();
@@ -777,7 +773,11 @@ mod tests {
         padded.resize(data.len().div_ceil(PEARL_CHUNK_LEN) * PEARL_CHUNK_LEN, 0);
         let leaf_data: Vec<[u8; PEARL_CHUNK_LEN]> = sorted
             .iter()
-            .map(|&i| padded[i * PEARL_CHUNK_LEN..(i + 1) * PEARL_CHUNK_LEN].try_into().unwrap())
+            .map(|&i| {
+                padded[i * PEARL_CHUNK_LEN..(i + 1) * PEARL_CHUNK_LEN]
+                    .try_into()
+                    .unwrap()
+            })
             .collect();
         let mut siblings = Vec::new();
         let mut level_len = total_leaves;
@@ -933,7 +933,11 @@ mod tests {
         PearlJob {
             header,
             // Huge block target so `is_block` is also exercised.
-            target: BigUint::parse_bytes(b"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16).unwrap(),
+            target: BigUint::parse_bytes(
+                b"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                16,
+            )
+            .unwrap(),
             cert_version: 3,
             header_b64: base64::engine::general_purpose::STANDARD.encode(header),
             target_dec: String::new(),
@@ -981,7 +985,8 @@ mod tests {
         .unwrap();
         let err = verify_pearl_share(&decoded, &job, &huge).unwrap_err();
         assert!(
-            err.to_string().contains("merkle root mismatch") || err.to_string().contains("merkle proof"),
+            err.to_string().contains("merkle root mismatch")
+                || err.to_string().contains("merkle proof"),
             "unexpected error: {err}"
         );
     }
@@ -1021,8 +1026,7 @@ mod tests {
         let bt = gen_matrix(16 * 2048);
         // tile_index 0 = roi 0 × nco 0 — only tile.
         let bytes =
-            mp::build_plain_proof(&cfg, &job_key, &a, &bt, 0, &row_offsets, &col_offsets)
-                .unwrap();
+            mp::build_plain_proof(&cfg, &job_key, &a, &bt, 0, &row_offsets, &col_offsets).unwrap();
 
         // Same wire shape as PearlSubmit: base64(bincode(PlainProof)).
         let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);

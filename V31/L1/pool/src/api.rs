@@ -10,9 +10,9 @@ use tracing::{error, info};
 
 use crate::auxpow_bridge::MultiAuxPowBridge;
 use crate::pool::Pool;
-use zion_cosmic_harmony::ExternalCoin;
 use crate::store::ShareStore;
 use crate::telemetry::now_unix_seconds;
+use zion_cosmic_harmony::ExternalCoin;
 
 /// Per-IP sliding-window counter for the unauthenticated `/public/v1`
 /// tier — `PUBLIC_RATE_LIMIT` requests per `PUBLIC_RATE_WINDOW_S` seconds.
@@ -255,9 +255,7 @@ impl PoolApi {
                 let limit = parse_query_limit(raw_path, 50);
                 match &self.share_store {
                     Some(store) => {
-                        let blocks = store
-                            .query_blocks_for_coin(coin, limit)
-                            .unwrap_or_default();
+                        let blocks = store.query_blocks_for_coin(coin, limit).unwrap_or_default();
                         let body = format!(
                             "{{\"ok\":true,\"coin\":\"{}\",\"blocks\":{}}}",
                             coin,
@@ -273,8 +271,10 @@ impl PoolApi {
                 }
             }
             p if p.starts_with("/public/v1/miner/") && p.ends_with("/payouts") => {
-                let parts: Vec<&str> =
-                    p.trim_start_matches("/public/v1/miner/").split('/').collect();
+                let parts: Vec<&str> = p
+                    .trim_start_matches("/public/v1/miner/")
+                    .split('/')
+                    .collect();
                 let (coin, wallet) = (
                     parts.first().copied().unwrap_or(""),
                     parts.get(1).copied().unwrap_or(""),
@@ -305,8 +305,10 @@ impl PoolApi {
                 }
             }
             p if p.starts_with("/public/v1/miner/") => {
-                let parts: Vec<&str> =
-                    p.trim_start_matches("/public/v1/miner/").split('/').collect();
+                let parts: Vec<&str> = p
+                    .trim_start_matches("/public/v1/miner/")
+                    .split('/')
+                    .collect();
                 let (coin, wallet) = (
                     parts.first().copied().unwrap_or(""),
                     parts.get(1).copied().unwrap_or(""),
@@ -460,8 +462,8 @@ impl PoolApi {
             // consuming; POST drains — the multichain sweeper owns idempotent
             // redelivery from its own ledger after a successful drain.
             "/admin/external-payouts" => {
-                let chain = parse_query_param(raw_path, "chain")
-                    .unwrap_or_else(|| "quantus".to_string());
+                let chain =
+                    parse_query_param(raw_path, "chain").unwrap_or_else(|| "quantus".to_string());
                 if method == "POST" {
                     let drained = {
                         let mut pool = self.pool.lock().expect("pool lock poisoned");
@@ -524,7 +526,11 @@ impl PoolApi {
             "/admin/coin-revenue" => {
                 if method != "POST" {
                     let body = "{\"ok\":false,\"error\":\"POST required\"}";
-                    ("405 Method Not Allowed", "application/json", body.to_string())
+                    (
+                        "405 Method Not Allowed",
+                        "application/json",
+                        body.to_string(),
+                    )
                 } else {
                     #[derive(serde::Deserialize)]
                     struct RevenueReq {
@@ -767,10 +773,8 @@ impl PoolApi {
         let mut summary = match &self.auxpow_bridge {
             Some(bridge) => {
                 let enabled = bridge.enabled_coins();
-                let coins: Vec<serde_json::Value> = enabled
-                    .iter()
-                    .map(|c| json!(c.as_str()))
-                    .collect();
+                let coins: Vec<serde_json::Value> =
+                    enabled.iter().map(|c| json!(c.as_str())).collect();
                 // Per-coin details for pool dashboards and the desktop agent:
                 // ticker, consensus algorithm, upstream stratum endpoint, and
                 // whether the bridge currently holds a fresh job to serve.
@@ -811,8 +815,7 @@ impl PoolApi {
                         // Hybrid native leg: expose connect status, configured
                         // split and the freshest node-sourced job for QTU.
                         if *c == ExternalCoin::Quantus {
-                            let (enabled, connected, pct, njid, nage) =
-                                bridge.native_status();
+                            let (enabled, connected, pct, njid, nage) = bridge.native_status();
                             entry["native"] = json!({
                                 "enabled": enabled,
                                 "connected": connected,
@@ -1188,13 +1191,15 @@ impl PoolApi {
         }
         drop(reg);
 
-        let coin_stats = pool
-            .pplns
-            .coin_stats()
-            .into_iter()
-            .find(|s| s.coin == coin);
+        let coin_stats = pool.pplns.coin_stats().into_iter().find(|s| s.coin == coin);
         let (window_weight, active_miners, accepted_total) = coin_stats
-            .map(|s| (s.window_weight.to_string(), s.active_miners, s.accepted_total))
+            .map(|s| {
+                (
+                    s.window_weight.to_string(),
+                    s.active_miners,
+                    s.accepted_total,
+                )
+            })
             .unwrap_or_else(|| ("0".into(), 0, 0));
 
         // Hashrate is only meaningful for ZION (external shares don't feed
@@ -1284,10 +1289,7 @@ impl PoolApi {
         // Unpaid balance — unified flowers or native coin units.
         let miner_ids = pool.pplns.miner_ids_for_address(wallet);
         let (unpaid, unpaid_unit) = if coin.is_empty() || coin == "zion" {
-            let total: u64 = miner_ids
-                .iter()
-                .map(|m| pool.pplns.unpaid_balance(m))
-                .sum();
+            let total: u64 = miner_ids.iter().map(|m| pool.pplns.unpaid_balance(m)).sum();
             (total, "flowers")
         } else {
             let total: u64 = miner_ids
@@ -1463,15 +1465,11 @@ impl PoolApi {
                 let coin = sanitize_prometheus_label(&leg.coin.to_ascii_lowercase());
                 body.push_str(&format!(
                     "zion_pool_leg_enabled{{leg=\"{}\",coin=\"{}\"}} {}\n",
-                    id,
-                    coin,
-                    leg.enabled as u8
+                    id, coin, leg.enabled as u8
                 ));
                 body.push_str(&format!(
                     "zion_pool_leg_connected{{leg=\"{}\",coin=\"{}\"}} {}\n",
-                    id,
-                    coin,
-                    leg.connected as u8
+                    id, coin, leg.connected as u8
                 ));
                 if let Some(age) = leg.job_age_ms {
                     body.push_str(&format!(
@@ -1887,7 +1885,11 @@ mod tests {
         )))
     }
 
-    fn test_job(coin: zion_cosmic_harmony::ExternalCoin, job_id: &str, fresh: bool) -> crate::auxpow_bridge::JobPackage {
+    fn test_job(
+        coin: zion_cosmic_harmony::ExternalCoin,
+        job_id: &str,
+        fresh: bool,
+    ) -> crate::auxpow_bridge::JobPackage {
         crate::auxpow_bridge::JobPackage {
             external_job_id: job_id.into(),
             coin,
@@ -2001,12 +2003,10 @@ mod tests {
         let v = api.auxpow_summary_json();
         assert!(v.get("pearl").is_none());
 
-        let v2: serde_json::Value = serde_json::from_str(
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/tests/fixtures/pearl_cuda_live_share.json"
-            )),
-        )
+        let v2: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/pearl_cuda_live_share.json"
+        )))
         .unwrap();
         let header: [u8; 76] = hex::decode(v2["header_hex"].as_str().unwrap())
             .unwrap()
@@ -2021,16 +2021,15 @@ mod tests {
             header_b64: String::new(),
             target_dec: String::new(),
         };
-        let up = crate::pearl_upstream::PearlUpstream::new(
-            crate::pearl_upstream::PearlUpstreamConfig {
+        let up =
+            crate::pearl_upstream::PearlUpstream::new(crate::pearl_upstream::PearlUpstreamConfig {
                 endpoint: "127.0.0.1:9".to_string(),
                 wallet: "prl1w".to_string(),
                 worker: "w".to_string(),
                 password: "x".to_string(),
                 job_ttl: Duration::from_millis(90_000),
-            fwd_max: Duration::from_millis(90_000),
-            },
-        );
+                fwd_max: Duration::from_millis(90_000),
+            });
         let rt = crate::pearl_gateway::PearlRuntime::for_test_hybrid(
             "127.0.0.1:1",
             256,
@@ -2068,7 +2067,11 @@ mod tests {
         let coins = payload["coins"].as_array().unwrap();
         // CoinProfile::all() exposes every known ExternalCoin, not just the
         // enabled defaults() subset — professional catalogue exposure.
-        assert!(coins.len() >= 30, "expected full catalogue, got {}", coins.len());
+        assert!(
+            coins.len() >= 30,
+            "expected full catalogue, got {}",
+            coins.len()
+        );
         assert!(coins.iter().all(|c| c.get("served").is_some()));
         // Pearl is registered but deliberately disabled.
         let prl = coins.iter().find(|c| c["coin"] == "PRL").unwrap();
@@ -2112,7 +2115,13 @@ mod tests {
 
         // Public-safe shape: no raw job ids, endpoints, or worker names.
         let body = payload.to_string();
-        for forbidden in ["job_id", "upstream_url", "endpoint", "worker", "pool_address"] {
+        for forbidden in [
+            "job_id",
+            "upstream_url",
+            "endpoint",
+            "worker",
+            "pool_address",
+        ] {
             assert!(!body.contains(forbidden), "leaked field: {forbidden}");
         }
     }
@@ -2158,11 +2167,12 @@ mod tests {
             reg.record_external_share("other-miner", "rig9", "qtu", true);
         }
         let api = PoolApi::new(pool, None, None);
-        let payload: serde_json::Value = serde_json::from_str(&api.build_public_miner_payload(
-            "qtu",
-            "qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab",
-        ))
-        .unwrap();
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_public_miner_payload(
+                "qtu",
+                "qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab",
+            ))
+            .unwrap();
         assert_eq!(payload["shares"]["accepted"], 1);
         assert_eq!(payload["worker_count"], 1);
         assert_eq!(
@@ -2201,9 +2211,9 @@ mod tests {
         assert!(pool.wallet_is_valid("qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab"));
         assert!(pool.wallet_is_valid("qtu:qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab"));
         // PRL bech32.
-        assert!(pool.wallet_is_valid(
-            "prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m"
-        ));
+        assert!(
+            pool.wallet_is_valid("prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m")
+        );
         // Garbage rejected — previously mined silently to the pool wallet.
         assert!(!pool.wallet_is_valid("garbage"));
         assert!(!pool.wallet_is_valid("rig1"));

@@ -50,7 +50,9 @@ impl PearlUpstreamConfig {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())?;
         if endpoint.contains("://") {
-            tracing::warn!("pearl_upstream: ZION_POOL_PEARL_UPSTREAM must be a plain host:port endpoint");
+            tracing::warn!(
+                "pearl_upstream: ZION_POOL_PEARL_UPSTREAM must be a plain host:port endpoint"
+            );
             return None;
         }
         let wallet = match std::env::var("ZION_POOL_PEARL_UPSTREAM_WALLET")
@@ -71,8 +73,8 @@ impl PearlUpstreamConfig {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| "zion-pool".to_string());
-        let password = std::env::var("ZION_POOL_PEARL_UPSTREAM_PASSWORD")
-            .unwrap_or_else(|_| "x".to_string());
+        let password =
+            std::env::var("ZION_POOL_PEARL_UPSTREAM_PASSWORD").unwrap_or_else(|_| "x".to_string());
         let job_ttl = Duration::from_millis(
             std::env::var("ZION_POOL_PEARL_UPSTREAM_JOB_TTL_MS")
                 .ok()
@@ -396,17 +398,10 @@ impl PearlUpstream {
         }
     }
 
-    async fn run_connection(
-        &self,
-        submit_rx: &mut mpsc::Receiver<SubmitReq>,
-    ) -> Result<()> {
-        let mut client = PearlPoolClient::connect(
-            &self.endpoint,
-            &self.wallet,
-            &self.worker,
-            &self.password,
-        )
-        .await?;
+    async fn run_connection(&self, submit_rx: &mut mpsc::Receiver<SubmitReq>) -> Result<()> {
+        let mut client =
+            PearlPoolClient::connect(&self.endpoint, &self.wallet, &self.worker, &self.password)
+                .await?;
         self.connected.store(true, Ordering::SeqCst);
         if let Some(j) = client.latest_job() {
             self.cache_job(j);
@@ -597,10 +592,7 @@ mod tests {
         assert!(up.job_by_served_id("prlu:job-b").is_none());
         // The ring keeps older entries: the pre-rotation job still matches
         // while fresh, so stale-window submits forward instead of dying Stale.
-        assert_eq!(
-            up.job_by_served_id("prlu:job-a").unwrap().raw_id,
-            "job-a"
-        );
+        assert_eq!(up.job_by_served_id("prlu:job-a").unwrap().raw_id, "job-a");
     }
 
     #[tokio::test]
@@ -912,8 +904,7 @@ mod tests {
                     if br.read_line(&mut line).await.is_err() {
                         return;
                     }
-                    if w
-                        .write_all(b"{\"id\":1,\"result\":true,\"error\":null}\n")
+                    if w.write_all(b"{\"id\":1,\"result\":true,\"error\":null}\n")
                         .await
                         .is_err()
                     {

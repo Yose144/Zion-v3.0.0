@@ -167,7 +167,11 @@ impl ZisVerifier {
         {
             let cache = self.cache.lock().unwrap();
             if let Some((cached, at)) = cache.get(&kh) {
-                let ttl = if cached.is_some() { self.pos_ttl } else { self.neg_ttl };
+                let ttl = if cached.is_some() {
+                    self.pos_ttl
+                } else {
+                    self.neg_ttl
+                };
                 if at.elapsed() < ttl {
                     return cached.clone();
                 }
@@ -175,7 +179,10 @@ impl ZisVerifier {
         }
         let mut req = self
             .client
-            .post(format!("{}/api/keys/verify", self.url.trim_end_matches('/')))
+            .post(format!(
+                "{}/api/keys/verify",
+                self.url.trim_end_matches('/')
+            ))
             .json(&serde_json::json!({ "apiKey": token }));
         if let Some(sk) = &self.service_key {
             req = req.header("x-service-key", sk);
@@ -230,9 +237,7 @@ mod tests {
 
     /// Minimal mock ZIS: serves `responses` one per accepted connection,
     /// counting connections so cache behaviour is observable.
-    async fn mock_zis(
-        responses: Vec<String>,
-    ) -> (String, tokio::task::JoinHandle<usize>) {
+    async fn mock_zis(responses: Vec<String>) -> (String, tokio::task::JoinHandle<usize>) {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         let url = format!("http://{addr}");

@@ -66,7 +66,9 @@ const NATIVE_JOB_MAX_AGE: Duration = Duration::from_secs(90);
 pub enum MinerMessage {
     /// Current protocol (miner-api v1.0.x): shared-secret token read from
     /// the node's `<base>/chains/<chain>/miner-auth-token` file.
-    Ready { token: String },
+    Ready {
+        token: String,
+    },
     NewJob(MiningRequest),
     JobResult(MiningResult),
 }
@@ -169,10 +171,7 @@ impl QtcNativeConfig {
         if std::env::var("QTC_NATIVE_ENABLED").ok().as_deref() != Some("1") {
             return None;
         }
-        let node_addr: SocketAddr = std::env::var("QTC_NATIVE_NODE_ADDR")
-            .ok()?
-            .parse()
-            .ok()?;
+        let node_addr: SocketAddr = std::env::var("QTC_NATIVE_NODE_ADDR").ok()?.parse().ok()?;
         let token = std::env::var("QTC_NATIVE_TOKEN")
             .ok()
             .or_else(|| {
@@ -470,8 +469,7 @@ fn handle_new_job(bridge: &MultiAuxPowBridge, req: &MiningRequest, share_diff: u
         let t = max / net_diff;
         let bytes = t.to_bytes_be();
         let mut out = [0u8; 64];
-        out[64 - bytes.len().min(64)..]
-            .copy_from_slice(&bytes[..bytes.len().min(64)]);
+        out[64 - bytes.len().min(64)..].copy_from_slice(&bytes[..bytes.len().min(64)]);
         out
     };
     let share_target = share_target_from_diff(share_diff);
@@ -793,7 +791,10 @@ mod tests {
         }
         // Pushing jobs until seq % 100 == 25 → unselected → upstream fallback.
         for i in 2..=25 {
-            st.push_job(pkg(&format!("qtun:{i}"), Some(Duration::from_secs(1))), ctx("x"));
+            st.push_job(
+                pkg(&format!("qtun:{i}"), Some(Duration::from_secs(1))),
+                ctx("x"),
+            );
         }
         assert!(st.pick_job().is_none());
         // Disabled → None.
@@ -866,13 +867,9 @@ mod tests {
     #[tokio::test]
     async fn mock_node_ready_newjob_result_e2e() {
         // --- mock node cert + server -----------------------------------
-        let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()])
-            .expect("cert gen");
-        let cert_der = rustls::pki_types::CertificateDer::from(
-            cert.cert.der().to_vec(),
-        );
-        let key_der =
-            rustls::pki_types::PrivateKeyDer::Pkcs8(cert.key_pair.serialize_der().into());
+        let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()]).expect("cert gen");
+        let cert_der = rustls::pki_types::CertificateDer::from(cert.cert.der().to_vec());
+        let key_der = rustls::pki_types::PrivateKeyDer::Pkcs8(cert.key_pair.serialize_der().into());
         let mut tls = rustls::ServerConfig::builder_with_provider(Arc::new(
             rustls::crypto::ring::default_provider(),
         ))
@@ -885,8 +882,7 @@ mod tests {
         let server_cfg = quinn::ServerConfig::with_crypto(Arc::new(
             quinn::crypto::rustls::QuicServerConfig::try_from(tls).unwrap(),
         ));
-        let endpoint = quinn::Endpoint::server(server_cfg, "127.0.0.1:0".parse().unwrap())
-            .unwrap();
+        let endpoint = quinn::Endpoint::server(server_cfg, "127.0.0.1:0".parse().unwrap()).unwrap();
         let addr = endpoint.local_addr().unwrap();
 
         let expected_token = "secret-token".to_string();
