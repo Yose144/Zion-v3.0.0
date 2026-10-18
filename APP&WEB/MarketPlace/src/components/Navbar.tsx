@@ -58,6 +58,14 @@ export default function Navbar() {
                 {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
               </Link>
             ))}
+            <a
+              href="https://pool.zionterranova.com"
+              target="_blank"
+              rel="noreferrer"
+              className="rasta-nav-link"
+            >
+              {t('nav.pool')}
+            </a>
           </div>
 
           <div className="rasta-nav-right">
@@ -116,6 +124,15 @@ export default function Navbar() {
             {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
           </Link>
         ))}
+        <a
+          href="https://pool.zionterranova.com"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setOpen(false)}
+          className="rasta-nav-link"
+        >
+          {t('nav.pool')}
+        </a>
 
         <div className="rasta-mobile-actions">
           <LanguageSwitcher variant="rasta" />
