@@ -66,10 +66,27 @@ impl ZionL1Adapter {
             "params": params,
         });
 
-        let addr = Self::clean_rpc_url(&self.rpc_url);
-        let mut stream = TcpStream::connect(addr)
-            .await
-            .map_err(|e| MultichainError::Internal(format!("zion rpc connect failed: {e}")))?;
+        // rpc_url may carry a comma-separated endpoint list (L1 failover,
+        // same convention as the pool's ZION_L1_RPC_URL) — try each in
+        // order and use the first one that connects.
+        let mut stream = None;
+        let mut last_err = String::from("no endpoints");
+        for part in self.rpc_url.split(',') {
+            let addr = Self::clean_rpc_url(part);
+            if addr.is_empty() {
+                continue;
+            }
+            match TcpStream::connect(addr).await {
+                Ok(s) => {
+                    stream = Some(s);
+                    break;
+                }
+                Err(e) => last_err = format!("{addr}: {e}"),
+            }
+        }
+        let mut stream = stream.ok_or_else(|| {
+            MultichainError::Internal(format!("zion rpc connect failed: {last_err}"))
+        })?;
 
         let payload = serde_json::to_string(&body)
             .map_err(|e| MultichainError::Internal(format!("zion rpc serialize failed: {e}")))?;
