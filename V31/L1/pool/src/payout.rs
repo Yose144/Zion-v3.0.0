@@ -4,7 +4,6 @@
 //! multi-output V31 UTXO transaction, signs it with the pool wallet key, and
 //! submits it to the connected Zion V31 L1 node.
 
-use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -18,7 +17,7 @@ use zion_core::v31_wallet::{build_batch_payout, BatchRecipient, SpendableUtxo};
 
 use crate::notifications::Notifier;
 use crate::pool::Pool;
-use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
+use crate::rpc_client::L1Endpoints;
 use crate::store::{PayoutRecord, ShareStore};
 use crate::v3_pplns::PayoutEntry;
 
@@ -98,7 +97,8 @@ impl PayoutSweeper {
             return Ok(());
         }
 
-        let rpc_addr = parse_rpc_addr(&rpc_url)?;
+        let endpoints = L1Endpoints::from_urls(&rpc_url)
+            .ok_or_else(|| anyhow::anyhow!("invalid L1 RPC URL: {}", rpc_url))?;
         let current_height = crate::deferred_payout::get_chain_height(&rpc_url)
             .await
             .unwrap_or(0);
@@ -110,7 +110,7 @@ impl PayoutSweeper {
         }
 
         let pool_encoded = pool_address.encoded;
-        let utxos = fetch_utxos(rpc_addr, &pool_encoded, current_height).await?;
+        let utxos = fetch_utxos(&endpoints, &pool_encoded, current_height).await?;
         if utxos.is_empty() {
             warn!(
                 "payout sweep skipped: no UTXOs available for pool wallet {}",
@@ -173,7 +173,7 @@ impl PayoutSweeper {
             change
         );
 
-        let response = submit_utxo_transaction(rpc_addr, &tx).await?;
+        let response = submit_utxo_transaction(&endpoints, &tx).await?;
 
         let tx_id = response
             .get("tx_id")
@@ -254,7 +254,7 @@ impl PayoutSweeper {
 /// Only includes outputs that are mature: coinbase outputs require
 /// `COINBASE_MATURITY` confirmations.
 async fn fetch_utxos(
-    rpc_addr: SocketAddr,
+    endpoints: &L1Endpoints,
     address: &str,
     current_height: u64,
 ) -> Result<Vec<SpendableUtxo>> {
@@ -264,7 +264,7 @@ async fn fetch_utxos(
         "method": "getUtxos",
         "params": { "address": address }
     });
-    let resp = jsonrpc_call(rpc_addr, &payload).await?;
+    let resp = endpoints.call(&payload).await?;
 
     if let Some(error) = resp.get("error").filter(|v| !v.is_null()) {
         let msg = error
@@ -359,7 +359,7 @@ async fn fetch_utxos(
 
 /// Submit a signed V31 UTXO transaction to the node.
 async fn submit_utxo_transaction(
-    rpc_addr: SocketAddr,
+    endpoints: &L1Endpoints,
     tx: &Transaction,
 ) -> Result<serde_json::Value> {
     let tx_json = serde_json::to_value(tx)?;
@@ -369,7 +369,7 @@ async fn submit_utxo_transaction(
         "method": "submitUtxoTransaction",
         "params": { "transaction": tx_json }
     });
-    let resp = jsonrpc_call(rpc_addr, &payload).await?;
+    let resp = endpoints.call(&payload).await?;
 
     if let Some(error) = resp.get("error").filter(|v| !v.is_null()) {
         let msg = error

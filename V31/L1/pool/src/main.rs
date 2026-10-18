@@ -40,7 +40,9 @@ struct Args {
     #[arg(short, long, env = "ZION_POOL_BIND", default_value = "0.0.0.0:8444")]
     bind: String,
 
-    /// Zion L1 node RPC URL for getTemplate / submitBlock.
+    /// Zion L1 node RPC URL for getTemplate / submitBlock. Comma-separated
+    /// list enables HA failover with last-good stickiness, e.g.
+    /// `http://127.0.0.1:9445,http://127.0.0.1:9446,http://127.0.0.1:9447`.
     #[arg(short, long, env = "ZION_L1_RPC_URL")]
     l1_rpc_url: Option<String>,
 
@@ -174,9 +176,7 @@ async fn main() -> anyhow::Result<()> {
         native_payout_coins: zion_pool::config::parse_native_payout_coins(
             &args.native_payout_coins,
         ),
-        min_payout_native: zion_pool::config::parse_min_payout_native(
-            &args.min_payout_native,
-        ),
+        min_payout_native: zion_pool::config::parse_min_payout_native(&args.min_payout_native),
     };
 
     let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
