@@ -83,6 +83,7 @@
       'nav.about': `O nás`,
       'nav.docs': `Docs`,
       'nav.mine': `Těžba`,
+      'nav.pool': `Pool`,
       'nav.freeworld': `Free World`,
 
       'freeworld.title': `Free World`,
@@ -207,6 +208,7 @@
       'nav.about': `About`,
       'nav.docs': `Docs`,
       'nav.mine': `Mine`,
+      'nav.pool': `Pool`,
       'nav.freeworld': `Free World`,
 
       'freeworld.title': `Free World`,
