@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Book, BookOpen, Code2, Rocket, Shield, Zap, FileText, Github, ExternalLink, ChevronRight, ChevronDown, Sparkles, Menu, X, Infinity, Users, HelpCircle, Globe, GitBranch, Lock, Layers, Coins, Cpu, Map, AlertTriangle, Building2, LayoutList } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr, tx } from '@/lib/translations';
+import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
 
 const PhilosophyContent = dynamic(() => import('@/components/docs/PhilosophyContent'));
 const DocMarkdownArticle = dynamic(() => import('@/components/docs/DocMarkdownArticle'));
@@ -225,6 +226,12 @@ const docTitles: Record<string, LocalizedText> = {
   'l6-human-factors': { cs: 'Lidské faktory', en: 'Human Factors' },
   'l6-history': { cs: 'Historie vesmírných stanic', en: 'Space Station History' },
   'l6-ground-station': { cs: 'Pozemní stanice Kostarika', en: 'Costa Rica Ground Station' },
+  ...Object.fromEntries(
+    MAITREYA_CHAPTERS.map((c) => [
+      `book-maitreya-${c.slug}`,
+      { cs: `${c.num.cs} — ${c.title.cs}`, en: `${c.num.en} — ${c.title.en}` },
+    ]),
+  ),
 };
 
 function resolveLabel(value: string | LocalizedText, lang: 'cs' | 'en') {
@@ -368,6 +375,24 @@ const sections: Section[] = [
     docs: [
       { id: 'wp-v3-mainnet', title: 'Whitepaper V3 Mainnet (EN)', file: 'whitepaper/ZION_V3_Whitepaper.md' },
       { id: 'wp-lite', title: 'Whitepaper Lite (CS summary)', file: 'whitepaper-lite.md' },
+    ],
+  },
+  {
+    id: 'books',
+    title: 'Books',
+    icon: Book,
+    accentText: 'text-zion-gold',
+    accentBorder: 'border-zion-gold/30',
+    docs: [
+      ...MAITREYA_CHAPTERS.map((c) => ({
+        id: `book-maitreya-${c.slug}`,
+        title: c.title.cs,
+        file: `books/maitreya/kapitoly/${c.slug}.md`,
+      })),
+      { id: 'book-genesis', title: 'Genesis — Kniha probuzení', file: 'mainnet/genesis-book.md' },
+      { id: 'book-ekam-full', title: 'Ekam Deeksha — kompletní kniha', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
+      { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
+      { id: 'book-qr', title: 'Kvantová revoluce', file: 'books/quantum-revolution.md' },
     ],
   },
   {
