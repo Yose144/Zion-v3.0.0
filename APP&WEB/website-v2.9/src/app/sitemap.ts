@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { SITE_APP_URL } from '@/lib/site';
+import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
 
 const BASE = SITE_APP_URL;
 
@@ -98,6 +99,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     r('/doge-vs-zion', 0.6, 'monthly'),
     r('/team', 0.5, 'monthly'),
     r('/benchmarks', 0.5, 'monthly'),
+
+    // ── Maitreya — Book Five (full book, 19 chapters) ────────────────
+    r('/maitreya', 0.8, 'monthly'),
+    r('/maitreya/cist', 0.7, 'monthly'),
+    ...MAITREYA_CHAPTERS.map((c) => r(`/maitreya/cist/${c.slug}`, 0.6, 'monthly')),
 
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),

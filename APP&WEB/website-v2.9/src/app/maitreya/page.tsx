@@ -31,7 +31,7 @@ const MaitreyaCopy = {
     cs: '„Ten, kdo přijde — vždy, když podmínky dozrají."',
     en: '“The one who comes — whenever the conditions ripen.”',
   },
-  statusBadge: { cs: 'Ve vzniku · první draft', en: 'In progress · first draft' },
+  statusBadge: { cs: 'Kompletní kniha · CZ + EN', en: 'Complete book · CZ + EN' },
   heroAlt: {
     cs: 'Strom života, Maitreya a cesta, která pokračuje — One Love · One Human · One World',
     en: 'Tree of Life, Maitreya and the journey that continues — One Love · One Human · One World',
@@ -137,10 +137,10 @@ const MaitreyaCopy = {
     en: 'the fleet of the path — to the enlightenment of all humanity',
   },
 
-  bookTitle: { cs: 'Kniha Pátá — kostra', en: 'Book Five — the skeleton' },
+  bookTitle: { cs: 'Kniha Pátá — celá kniha', en: 'Book Five — the full book' },
   bookSub: {
-    cs: 'Příběh o tom, jak padají věže Babylonu — a jak láska a pravda rodí Nový svět. První draft česky.',
-    en: 'The story of how the towers of Babylon fall — and how love and truth give birth to the New World. First draft, in Czech.',
+    cs: 'Příběh o tom, jak padají věže Babylonu — a jak láska a pravda rodí Nový svět. Kompletní první draft, česky i anglicky.',
+    en: 'The story of how the towers of Babylon fall — and how love and truth give birth to the New World. Complete first draft, in Czech and English.',
   },
   parts: [
     {
@@ -184,11 +184,11 @@ const MaitreyaCopy = {
       },
     },
   ],
-  partDraft: { cs: 'draft', en: 'draft' },
-  readLite: { cs: 'Číst lite verzi', en: 'Read the lite version' },
+  partDraft: { cs: 'číst', en: 'read' },
+  readLite: { cs: 'Číst celou knihu', en: 'Read the full book' },
   readLiteNote: {
-    cs: 'Zhuštěný průchod celou knihou — prolog, 17 kapitol v esenci, epilog.',
-    en: 'A condensed walk through the whole book — prologue, 17 chapters in essence, epilogue.',
+    cs: 'Prolog, 17 kapitol a epilog — česky i anglicky. Každá kapitola končí tabulkou ověřitelných faktů.',
+    en: 'Prologue, 17 chapters and an epilogue — in Czech and English. Every chapter ends with a table of verifiable facts.',
   },
 
   mantraTitle: { cs: 'Otcova mantra', en: 'The father’s mantra' },
@@ -202,8 +202,8 @@ const MaitreyaCopy = {
   ctaGenesis: { cs: 'Genesis příběh', en: 'The Genesis story' },
   back: { cs: 'Zpět na homepage', en: 'Back to homepage' },
   note: {
-    cs: 'Tato stránka je skeleton — korpus knihy se právě píše v docs/WP-Mainet/Maitreya. Postavy jsou archetypy veřejného kanonu; fakta oddělena od příběhu.',
-    en: 'This page is a skeleton — the book’s corpus is being written in docs/WP-Mainet/Maitreya. The figures are archetypes of the public canon; facts are separated from the story.',
+    cs: 'Korpus je kompletní první draft — česky i anglicky. Postavy jsou archetypy veřejného kanonu; fakta jsou oddělena od příběhu.',
+    en: 'The corpus is a complete first draft — in Czech and English. The figures are archetypes of the public canon; facts are separated from the story.',
   },
 };
 
