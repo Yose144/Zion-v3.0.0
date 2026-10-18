@@ -20,11 +20,37 @@ const PUBLIC_RATE_LIMIT: u32 = 120;
 const PUBLIC_RATE_WINDOW_S: u64 = 60;
 const PUBLIC_RATE_TABLE_MAX: usize = 4096;
 
+/// History sampler cadence + retention: one sample per minute, 24h kept.
+const HISTORY_INTERVAL_S: u64 = 60;
+const HISTORY_CAP: usize = 24 * 60;
+/// A miner counts as online for a coin when its last share is younger.
+const ONLINE_WINDOW_S: u64 = 600;
+
+/// One periodic pool snapshot for `/public/v1/history` and the
+/// authenticated `/api/v1/hashrate-history` alias.
+#[derive(Clone, serde::Serialize)]
+struct HistorySample {
+    ts: u64,
+    /// Pool-wide live (10-minute trailing) hashrate — ZION leg only,
+    /// external coins do not feed the estimator.
+    hashrate: f64,
+    /// Miners with a share on any stream inside the online window.
+    miners_online: u64,
+    /// Miners online per coin stream (e.g. {"zion": 3, "qtu": 1}).
+    online_by_coin: std::collections::HashMap<String, u64>,
+    /// Cumulative accepted/rejected share counters at sample time —
+    /// per-interval deltas are derived client-side.
+    accepted: u64,
+    rejected: u64,
+}
+
 pub struct PoolApi {
     pool: Arc<Mutex<Pool>>,
     share_store: Option<Arc<ShareStore>>,
     auxpow_bridge: Option<MultiAuxPowBridge>,
     routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
+    /// Ring buffer of periodic pool snapshots (60s cadence, 24h cap).
+    history: Arc<Mutex<std::collections::VecDeque<HistorySample>>>,
     /// `(window_start_s, count)` per client IP for `/public/v1` requests.
     public_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
     started_at: Instant,
@@ -41,6 +67,9 @@ impl PoolApi {
             share_store,
             auxpow_bridge,
             routing_stats: None,
+            history: Arc::new(Mutex::new(std::collections::VecDeque::with_capacity(
+                HISTORY_CAP,
+            ))),
             public_rate: Mutex::new(std::collections::HashMap::new()),
             started_at: Instant::now(),
         }
@@ -83,6 +112,24 @@ impl PoolApi {
     pub fn serve(self: Arc<Self>, bind_addr: &str) -> Result<()> {
         let listener = TcpListener::bind(bind_addr)?;
         info!("pool API listening on {bind_addr}");
+
+        // History sampler — one snapshot per HISTORY_INTERVAL_S, ring
+        // buffer capped at HISTORY_CAP (24h).  In-memory only: a restart
+        // starts a fresh series, which the UI tolerates.
+        {
+            let pool = Arc::clone(&self.pool);
+            let history = Arc::clone(&self.history);
+            std::thread::spawn(move || loop {
+                let sample = sample_history(&pool);
+                let mut h = history.lock().expect("history lock poisoned");
+                if h.len() >= HISTORY_CAP {
+                    h.pop_front();
+                }
+                h.push_back(sample);
+                drop(h);
+                std::thread::sleep(Duration::from_secs(HISTORY_INTERVAL_S));
+            });
+        }
 
         for stream in listener.incoming() {
             let stream = match stream {
@@ -237,6 +284,11 @@ impl PoolApi {
             // names, wallet-key existence, anything admin.
             "/public/v1/coins" => {
                 let body = self.build_public_coins_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/public/v1/history" => {
+                let limit = parse_query_limit(raw_path, HISTORY_CAP as u32) as usize;
+                let body = self.build_history_payload(limit);
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/public/v1/coins/") && p.ends_with("/stats") => {
@@ -981,15 +1033,25 @@ impl PoolApi {
         .to_string()
     }
 
-    /// Build hashrate history payload (placeholder — returns empty array
-    /// until a hashrate history store is wired in).
-    fn build_hashrate_history_payload(&self, _limit: usize) -> String {
+    /// Serialize up to `limit` most recent history samples (ascending ts).
+    fn build_history_payload(&self, limit: usize) -> String {
+        let samples: Vec<HistorySample> = {
+            let h = self.history.lock().expect("history lock poisoned");
+            let skip = h.len().saturating_sub(limit.min(h.len()));
+            h.iter().skip(skip).cloned().collect()
+        };
         json!({
             "ok": true,
-            "history": [],
-            "note": "hashrate history requires telemetry persistence"
+            "interval_s": HISTORY_INTERVAL_S,
+            "samples": samples,
         })
         .to_string()
+    }
+
+    /// Authenticated alias for the public history feed — same data,
+    /// kept on the admin tier for dashboard compatibility.
+    fn build_hashrate_history_payload(&self, limit: usize) -> String {
+        self.build_history_payload(limit)
     }
 
     /// Build per-miner detail payload.
@@ -1598,6 +1660,43 @@ fn split_worker(username: &str) -> (String, String) {
         (wallet.to_string(), worker[1..].to_string())
     } else {
         (username.to_string(), "default".to_string())
+    }
+}
+
+/// Take one periodic pool snapshot for the history ring buffer.
+/// Mirrors the online-share logic in `build_public_coin_stats_payload`:
+/// a miner is online for a coin when its stream's last share is inside
+/// `ONLINE_WINDOW_S`.
+fn sample_history(pool: &Arc<Mutex<Pool>>) -> HistorySample {
+    let now_s = now_unix_seconds();
+    let pool = pool.lock().expect("pool lock poisoned");
+    let (accepted, rejected) = pool.stats();
+    let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
+    let hashrate = reg.pool_hashrate_live();
+    let mut online_by_coin: std::collections::HashMap<String, u64> =
+        std::collections::HashMap::new();
+    let mut miners_online = 0u64;
+    for (_, miner) in reg.all_miners() {
+        let mut any_online = false;
+        for (coin, s) in miner.streams.iter() {
+            if s.last_share_time_s > 0
+                && now_s.saturating_sub(s.last_share_time_s) < ONLINE_WINDOW_S
+            {
+                *online_by_coin.entry(coin.clone()).or_insert(0) += 1;
+                any_online = true;
+            }
+        }
+        if any_online {
+            miners_online += 1;
+        }
+    }
+    HistorySample {
+        ts: now_s,
+        hashrate,
+        miners_online,
+        online_by_coin,
+        accepted,
+        rejected,
     }
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
-import { fetchBlocks, fetchOverview } from '@/lib/api';
+import { fetchBlocks, fetchHistory, fetchOverview, type HistorySample } from '@/lib/api';
 import {
   fmtDifficulty,
   fmtDuration,
@@ -32,8 +32,9 @@ export default function StatsPage() {
     const tick = () =>
       fetchOverview().then((o) => {
         setOv(o);
-        // Accumulate a per-coin hashrate time series (rolling, persisted
-        // to localStorage) — the public API has no history endpoint yet.
+        // Per-coin series: server-side /public/v1/history (60s samples,
+        // 24h retention) is authoritative when present; otherwise keep
+        // accumulating into localStorage as a rolling fallback.
         const next = { ...historiesRef.current };
         for (const c of o.coins) {
           const s = o.stats[c.id];
@@ -44,6 +45,25 @@ export default function StatsPage() {
       });
     tick();
     const iv = setInterval(tick, 15_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Server-side history (pool restart resets it — localStorage above is
+  // the fallback so charts still populate on a fresh backend).
+  useEffect(() => {
+    const pull = () =>
+      fetchHistory()
+        .then((s: HistorySample[]) => {
+          if (!s.length) return;
+          const zionSeries: SeriesPoint[] = s.map((p) => ({
+            t: p.ts * 1000,
+            v: p.hashrate,
+          }));
+          setHistories((h) => ({ ...h, zion: zionSeries }));
+        })
+        .catch(() => {});
+    pull();
+    const iv = setInterval(pull, 60_000);
     return () => clearInterval(iv);
   }, []);
 
