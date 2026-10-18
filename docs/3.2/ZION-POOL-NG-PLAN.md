@@ -395,11 +395,30 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
 - Testy: 320/320 (+6: coins shape+leak check, per-coin stats, miner
   wallet scope, rate limit, wallet_is_valid, authorize reject).
 
-**Zbývá:** F4 část B (connection caps, share-flood/invalid-ratio bany,
-revenue-lane opt-in flag pro public shares, per-coin Prometheus metriky,
-TLS public entrypoint — viz §5), F5 (deploy UI + nginx `/public/v1`
-proxy + cert), F6 (HA). Před produkcí regtest payout dávky na QTU i PRL
-a `PRL_PAYOUT_DRY_RUN=0` až po ověřené live dávce.
+**F4 ✅ část B — hardening doplňky:**
+
+- Global session cap `ZION_POOL_MAX_SESSIONS` (default 2048) — doplňuje
+  per-IP cap `ZION_POOL_MAX_SESSIONS_PER_IP` (10), accept-loop drop.
+- V1 invalid-share ban — `consecutive_invalid` na `StratumV1Ctx`,
+  threshold = existující `ZION_POOL_MAX_NO_SOLUTION` (10); po překročení
+  `no_solution_bans` IP ban (`ZION_POOL_NOSOLUTION_BAN_SECS`, 300 s) +
+  session drop po odeslání error response. V3 mělo ekvivalent dřív.
+- Per-coin Prometheus metriky — `zion_pool_coin_shares_{accepted,rejected}`,
+  `zion_pool_coin_miners_online` (streams agregace), leg health gauges
+  `zion_pool_leg_{enabled,connected,job_age_ms}` pro alert na stale/
+  disconnected legs.
+- Revenue-lane policy verifikována: lane = opt-in (`g=`/`group=` hint,
+  backend env lists `ZION_POOL_BACKEND_*`, default `zion`); anonymous
+  public miner nemůže tiše skončit v externí/NCL lanu.
+- Share-flood `ZION_POOL_SHARE_RATE_PER_SEC` (V1), frame limits per
+  dialect, reconnect `IpRateLimiter` — existovaly; ověřeno.
+- Testy: 321/321 (+1: V1 ban threshold/reset).
+
+**Zbývá:** TLS public entrypoint (existuje `tls.rs`/`ZION_POOL_TLS_*` —
+při F5 nasazení nakonfigurovat jako primární public port, plaintext jen
+localhost/legacy), F5 (deploy UI + nginx `/public/v1` proxy + cert),
+F6 (HA). Před produkcí regtest payout dávky na QTU i PRL a
+`PRL_PAYOUT_DRY_RUN=0` až po ověřené live dávce.
 
 ---
 
