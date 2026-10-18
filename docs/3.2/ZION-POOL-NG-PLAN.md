@@ -502,10 +502,12 @@ zůstává dirty (pre-existing).
 - **Testy:** 11 nových v `rpc_client.rs` — parsing, invalid skip, last-good,
   failover na follower, stickiness po návratu primary, fail-back když
   follower umře, all-fail error. Celý suite 331+.
-- **Zbývá:** edge env update (`ZION_L1_RPC_URL` → 3 endpointy) + rebuild +
-  kontrolovaný live failover test (stop `zion-v31-node`, ověřit přepnutí na
-  9446/9447, miners dostávají joby, restore); standby pool na jiném hostu
-  zůstává open.
+- **DEPLOYED + live failover test (2026-10-19):** unit `--l1-rpc-url` →
+  3 endpointy (⚠️ ExecStart arg má přednost před `ZION_L1_RPC_URL` env),
+  rebuild `f02617abf`. `stop zion-v31-node` → `9445 failed` → pool
+  broadcastoval `mining.notify` přes follower bez přerušení → restore OK.
+  Last-good zůstává na followeru (nechurnuje zpět). Standby pool na jiném
+  hostu zůstává open.
 
 ---
 
