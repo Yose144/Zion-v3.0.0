@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LangProvider } from '@/lib/i18n';
+import { AuthProvider } from '@/lib/auth';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#050508',
+  themeColor: '#0d0d0d',
   width: 'device-width',
   initialScale: 1,
 };
@@ -25,9 +26,11 @@ export default function RootLayout({
     <html lang="cs">
       <body>
         <LangProvider>
-          <Nav />
-          <main className="mx-auto min-h-[70vh] max-w-6xl px-4">{children}</main>
-          <Footer />
+          <AuthProvider>
+            <Nav />
+            <main className="mx-auto min-h-[70vh] max-w-6xl px-4">{children}</main>
+            <Footer />
+          </AuthProvider>
         </LangProvider>
       </body>
     </html>

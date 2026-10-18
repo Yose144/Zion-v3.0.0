@@ -11,10 +11,10 @@ const config = {
   theme: {
     extend: {
       colors: {
-        'zion-gold': '#ffd700',
-        'zion-purple': '#9333ea',
-        'zion-cyan': '#06b6d4',
-        'zion-blue': '#1e3a8a',
+        'zion-gold': '#fcd116',
+        'zion-purple': '#e41e2b',
+        'zion-cyan': '#078930',
+        'zion-blue': '#0d0d0d',
         'zion-dark': '#0a0a0f',
         'zion-black': '#050508',
         'rasta-red': '#e41e2b',

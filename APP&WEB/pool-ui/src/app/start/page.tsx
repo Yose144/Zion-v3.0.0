@@ -1,58 +1,102 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Copy, Cpu, MonitorSmartphone, Terminal } from 'lucide-react';
+import { Copy, Cpu, MonitorSmartphone, Terminal, Wand2 } from 'lucide-react';
 import { useState } from 'react';
 import { COINS } from '@/lib/mock';
 import { useLang } from '@/lib/i18n';
 import type { CoinInfo } from '@/lib/types';
 
-function connectCmd(coin: CoinInfo): { miner: string; label: string }[] {
-  const host = 'stratum.zionterranova.com';
+const HOST = 'pool.zionterranova.com';
+
+interface Cmd {
+  miner: string;
+  label: string;
+}
+
+function connectCmds(
+  coin: CoinInfo,
+  wallet: string,
+  worker: string,
+  tls: boolean,
+): Cmd[] {
+  const w = wallet || `<${t_wallet_placeholder(coin.id)}>`;
+  const wrk = worker || 'rig-1';
+  const addr = `${w}.${wrk}`;
+  const port = tls ? coin.tls_port : coin.port;
+  const scheme = tls ? 'stratum+ssl' : 'stratum+tcp';
+
   switch (coin.id) {
     case 'zion':
       return [
         {
-          miner: 'zion-miner',
-          label: 'zion-miner --pool ' + `${host}:${coin.port}` + ' --wallet <zion1…> --worker muj-rig',
+          miner: 'zion-miner (nativní)',
+          label: `zion-miner --pool ${scheme}://${HOST}:${port} --wallet ${w} --worker ${wrk}`,
         },
         {
           miner: 'stratum v1',
-          label: `-o stratum+tcp://${host}:${coin.port} -u <zion1…>.muj-rig -p x`,
+          label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p x`,
         },
       ];
     case 'qtc':
       return [
         {
-          miner: 'SRBMiner-MULTI',
-          label: `SRBMiner-MULTI --algorithm quantus --pool ${host}:${coin.port} --wallet <qz…>.muj-rig`,
+          miner: 'zion-miner',
+          label: `zion-miner --force-coin qtc --pool ${scheme}://${HOST}:${port} --wallet ${w} --worker ${wrk}`,
         },
         {
-          miner: 'zion-miner',
-          label: `zion-miner --force-coin qtc --pool ${host}:${coin.port} --wallet <qz…>`,
+          miner: 'SRBMiner-MULTI',
+          label: `SRBMiner-MULTI --algorithm quantus --pool ${HOST}:${port} --wallet ${addr} ${tls ? '--tls true' : ''}`.trim(),
         },
       ];
     case 'prl':
       return [
         {
+          miner: 'zion-miner',
+          label: `zion-miner --force-coin prl --pool ${scheme}://${HOST}:${port} --wallet ${w} --worker ${wrk}`,
+        },
+        {
           miner: 'SRBMiner-MULTI ≥3.7.6',
-          label: `SRBMiner-MULTI --algorithm pearlhash --pool ${host}:${coin.port} --wallet <prl1…>.muj-rig --gpu`,
+          label: `SRBMiner-MULTI --algorithm pearlhash --pool ${HOST}:${port} --wallet ${addr} --gpu ${tls ? '--tls true' : ''}`.trim(),
         },
       ];
     case 'multi':
       return [
         {
           miner: 'stratum v1',
-          label: `-o stratum+tcp://${host}:${coin.port} -u <wallet>.muj-rig -p z=<coin>`,
+          label: `-o ${scheme}://${HOST}:${port} -u ${addr} -p z=<coin>`,
         },
       ];
   }
 }
 
-function CoinSection({ coin }: { coin: CoinInfo }) {
+function t_wallet_placeholder(coin: string): string {
+  switch (coin) {
+    case 'zion':
+      return 'zion1…';
+    case 'qtc':
+      return 'qz…';
+    case 'prl':
+      return 'prl1…';
+    default:
+      return 'wallet';
+  }
+}
+
+function CoinSection({
+  coin,
+  wallet,
+  worker,
+  tls,
+}: {
+  coin: CoinInfo;
+  wallet: string;
+  worker: string;
+  tls: boolean;
+}) {
   const { t } = useLang();
   const [copied, setCopied] = useState<number | null>(null);
-  const cmds = connectCmd(coin);
+  const cmds = connectCmds(coin, wallet, worker, tls);
 
   return (
     <motion.section
@@ -70,13 +114,13 @@ function CoinSection({ coin }: { coin: CoinInfo }) {
           <p className="mt-1 text-xs text-white/50">{coin.algorithm} · {coin.dialect}</p>
         </div>
         <div className="text-right text-[0.72rem] leading-relaxed text-white/50">
-          <p>port <span className="stat-value text-gold">{coin.port}</span> · TLS <span className="stat-value text-cyan">{coin.tls_port}</span></p>
+          <p>port <span className="stat-value text-rasta-gold">{coin.port}</span> · TLS <span className="stat-value text-rasta-green">{coin.tls_port}</span></p>
           <p>fee {coin.fee_bps / 100}% · min {coin.min_payout} {coin.payout_unit}</p>
         </div>
       </div>
 
       {coin.requirements && (
-        <p className="mt-3 rounded-lg border border-zion-gold/25 bg-zion-gold/5 px-3 py-2 text-[0.72rem] text-zion-gold">
+        <p className="mt-3 rounded-lg border border-rasta-gold/25 bg-rasta-gold/5 px-3 py-2 text-[0.72rem] text-rasta-gold">
           ⚠ {coin.requirements}
         </p>
       )}
@@ -85,8 +129,8 @@ function CoinSection({ coin }: { coin: CoinInfo }) {
         {cmds.map((c, i) => (
           <div key={i}>
             <p className="kicker mb-1.5">{c.miner}</p>
-            <div className="code-block relative pr-12">
-              {c.label}
+            <div className="code-block relative overflow-x-auto pr-12">
+              <span className="whitespace-nowrap">{c.label}</span>
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(c.label);
@@ -96,7 +140,7 @@ function CoinSection({ coin }: { coin: CoinInfo }) {
                 className="absolute right-3 top-3 text-white/40 hover:text-white"
                 aria-label="copy"
               >
-                {copied === i ? <span className="text-green text-[0.7rem]">OK</span> : <Copy size={14} />}
+                {copied === i ? <span className="text-rasta-green text-[0.7rem]">OK</span> : <Copy size={14} />}
               </button>
             </div>
           </div>
@@ -108,6 +152,10 @@ function CoinSection({ coin }: { coin: CoinInfo }) {
 
 export default function StartPage() {
   const { t } = useLang();
+  const [wallet, setWallet] = useState('');
+  const [worker, setWorker] = useState('');
+  const [tls, setTls] = useState(true);
+
   return (
     <div className="pt-10">
       <p className="kicker">{t('Návod', 'Guide')}</p>
@@ -145,18 +193,18 @@ export default function StartPage() {
             icon: Cpu,
             title: 'SRBMiner / TRM',
             body: t(
-              'Připojte se standardními dialaekty — CryptoNote pro QTC, Pearl stratum pro PRL, v1 pro ostatní.',
+              'Připojte se standardními dialekty — CryptoNote pro QTC, Pearl stratum pro PRL, v1 pro ostatní.',
               'Connect over standard dialects — CryptoNote for QTC, Pearl stratum for PRL, v1 elsewhere.',
             ),
             href: undefined,
           },
         ].map((c, i) => (
           <div key={i} className="pool-card">
-            <c.icon size={20} className="text-zion-gold" />
+            <c.icon size={20} className="text-rasta-gold" />
             <h3 className="mt-3 text-sm font-bold text-white">{c.title}</h3>
             <p className="mt-1.5 text-xs leading-relaxed text-white/50">{c.body}</p>
             {c.href && (
-              <a href={c.href} className="mt-3 inline-block text-xs font-semibold text-gold">
+              <a href={c.href} className="mt-3 inline-block text-xs font-semibold text-rasta-gold">
                 {t('Stáhnout →', 'Download →')}
               </a>
             )}
@@ -164,9 +212,60 @@ export default function StartPage() {
         ))}
       </div>
 
-      <div className="mt-10 flex flex-col gap-5">
+      {/* ── Config generator ─────────────────────────────── */}
+      <div className="pool-card mt-10 border-rasta-gold/20">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+          <Wand2 size={15} className="text-rasta-gold" />
+          {t('Generátor konfigurace', 'Config generator')}
+        </h3>
+        <p className="mt-1 text-xs text-white/45">
+          {t(
+            'Vyplň wallet a worker — příkazy níže se přegenerují na míru.',
+            'Fill in wallet and worker — the commands below regenerate to fit.',
+          )}
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <label className="block">
+            <span className="kicker mb-1 block">{t('payout adresa', 'payout address')}</span>
+            <input
+              value={wallet}
+              onChange={(e) => setWallet(e.target.value.trim())}
+              placeholder="zion1… / qz… / prl1…"
+              className="w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 font-mono text-xs text-white placeholder:text-white/25 focus:border-rasta-gold/60 focus:outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="kicker mb-1 block">{t('jméno rigu', 'worker name')}</span>
+            <input
+              value={worker}
+              onChange={(e) => setWorker(e.target.value.trim())}
+              placeholder="rig-1"
+              className="w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 font-mono text-xs text-white placeholder:text-white/25 focus:border-rasta-gold/60 focus:outline-none"
+            />
+          </label>
+          <label className="block">
+            <span className="kicker mb-1 block">{t('spojení', 'connection')}</span>
+            <div className="flex overflow-hidden rounded-lg border border-white/15 text-[0.72rem] font-bold">
+              <button
+                onClick={() => setTls(true)}
+                className={`flex-1 px-3 py-2 transition-colors ${tls ? 'bg-rasta-green text-black' : 'text-white/50 hover:text-white'}`}
+              >
+                TLS :8445
+              </button>
+              <button
+                onClick={() => setTls(false)}
+                className={`flex-1 px-3 py-2 transition-colors ${!tls ? 'bg-rasta-gold text-black' : 'text-white/50 hover:text-white'}`}
+              >
+                TCP :8444
+              </button>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-8 flex flex-col gap-5">
         {COINS.map((c) => (
-          <CoinSection key={c.id} coin={c} />
+          <CoinSection key={c.id} coin={c} wallet={wallet} worker={worker} tls={tls} />
         ))}
       </div>
 
@@ -179,6 +278,12 @@ export default function StartPage() {
 <span className="c-dim"># ZIS account — unified stats + payout auto-resolve across all coins</span>
 -p <span className="c-cyan">zis_&lt;api-token&gt;</span>
         </div>
+        <p className="mt-3 text-[0.68rem] leading-relaxed text-white/40">
+          {t(
+            'S ZIS tokenem se mining automaticky páruje k tvému účtu — statistiky a výplaty všech coinů na jednom místě v /account.',
+            'With a ZIS token your mining auto-links to your account — stats and payouts for all coins in one place on /account.',
+          )}
+        </p>
       </div>
     </div>
   );

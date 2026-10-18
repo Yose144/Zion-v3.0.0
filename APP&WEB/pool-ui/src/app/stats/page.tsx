@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Activity } from 'lucide-react';
-import { fetchOverview } from '@/lib/api';
+import { fetchBlocks, fetchOverview } from '@/lib/api';
 import {
   fmtDifficulty,
   fmtDuration,
@@ -10,26 +10,75 @@ import {
   fmtInt,
 } from '@/lib/format';
 import { useLang } from '@/lib/i18n';
-import type { PoolOverview } from '@/lib/types';
+import type { BlockRow, CoinId, PoolOverview } from '@/lib/types';
+import AreaChart, { pushSample, type SeriesPoint } from '@/components/AreaChart';
 
 const ACCENT: Record<string, string> = {
-  gold: '#ffd700',
-  cyan: '#06b6d4',
-  purple: '#c084fc',
-  green: '#4ade80',
+  gold: '#fcd116',
+  cyan: '#078930',
+  purple: '#e41e2b',
+  green: '#00ff41',
 };
 
 export default function StatsPage() {
   const { t } = useLang();
   const [ov, setOv] = useState<PoolOverview | null>(null);
+  const [blocks, setBlocks] = useState<BlockRow[]>([]);
+  const [histories, setHistories] = useState<Record<string, SeriesPoint[]>>({});
+  const historiesRef = useRef(histories);
+  historiesRef.current = histories;
 
   useEffect(() => {
-    fetchOverview().then(setOv);
-    const iv = setInterval(() => fetchOverview().then(setOv), 15_000);
+    const tick = () =>
+      fetchOverview().then((o) => {
+        setOv(o);
+        // Accumulate a per-coin hashrate time series (rolling, persisted
+        // to localStorage) — the public API has no history endpoint yet.
+        const next = { ...historiesRef.current };
+        for (const c of o.coins) {
+          const s = o.stats[c.id];
+          if (!s) continue;
+          next[c.id] = pushSample(`pool-hr-${c.id}`, s.hashrate);
+        }
+        setHistories(next);
+      });
+    tick();
+    const iv = setInterval(tick, 15_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    fetchBlocks().then(setBlocks);
+    const iv = setInterval(() => fetchBlocks().then(setBlocks), 30_000);
     return () => clearInterval(iv);
   }, []);
 
   if (!ov) return <div className="pt-20 text-center text-white/40">…</div>;
+
+  const totalHashrate = ov.coins.reduce(
+    (sum, c) => sum + (ov.stats[c.id]?.hashrate ?? 0),
+    0,
+  );
+  const totalMiners = ov.coins.reduce(
+    (sum, c) => sum + (ov.stats[c.id]?.miners_online ?? 0),
+    0,
+  );
+
+  // blocks per day histogram (last 14 days, all coins)
+  const dayBuckets: { day: string; count: number }[] = [];
+  if (blocks.length) {
+    const now = Date.now();
+    const map = new Map<string, number>();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now - i * 86400_000);
+      map.set(d.toISOString().slice(0, 10), 0);
+    }
+    blocks.forEach((b) => {
+      const k = new Date(b.ts * 1000).toISOString().slice(0, 10);
+      if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+    });
+    map.forEach((count, day) => dayBuckets.push({ day, count }));
+  }
 
   return (
     <div className="pt-10">
@@ -38,9 +87,21 @@ export default function StatsPage() {
         <Activity className="text-zion-cyan" size={26} />
         {t('Statistiky poolu', 'Pool stats')}
       </h1>
-      <p className="mt-2 text-sm text-white/50">
-        {t('Uptime', 'Uptime')}: <span className="stat-value text-white">{fmtDuration(ov.uptime_s)}</span>
-      </p>
+
+      {/* Pool-wide KPI strip */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { k: t('celkový hashrate', 'total hashrate'), v: fmtHashrate(totalHashrate) },
+          { k: t('mineři online', 'miners online'), v: fmtInt(totalMiners) },
+          { k: t('coinů', 'coins'), v: String(ov.coins.length) },
+          { k: t('nalezené bloky', 'blocks found'), v: fmtInt(blocks.length) },
+        ].map((x, i) => (
+          <div key={i} className="pool-card p-4">
+            <p className="kicker">{x.k}</p>
+            <p className="stat-value mt-1 text-lg font-bold text-white">{x.v}</p>
+          </div>
+        ))}
+      </div>
 
       <div className="mt-8 flex flex-col gap-5">
         {ov.coins.map((c) => {
@@ -49,6 +110,8 @@ export default function StatsPage() {
           const acc = s.shares_1h.accepted;
           const rej = s.shares_1h.rejected;
           const rejPct = acc + rej > 0 ? (rej / (acc + rej)) * 100 : 0;
+          const accPct = acc + rej > 0 ? (acc / (acc + rej)) * 100 : 100;
+          const history = histories[c.id] ?? [];
           return (
             <div
               key={c.id}
@@ -77,7 +140,7 @@ export default function StatsPage() {
                   { k: t('pool hashrate', 'pool hashrate'), v: fmtHashrate(s.hashrate) },
                   { k: t('síť', 'network'), v: s.network_hashrate != null ? fmtHashrate(s.network_hashrate) : '—' },
                   { k: t('mineři', 'miners'), v: fmtInt(s.miners_online) },
-                  { k: t('workers', 'workers'), v: fmtInt(s.workers_online) },
+                  { k: 'workers', v: fmtInt(s.workers_online) },
                   { k: 'diff', v: fmtDifficulty(s.network_difficulty) },
                   { k: t('bloky 24h', 'blocks 24h'), v: fmtInt(s.blocks_24h) },
                   { k: t('rej 1h', 'rej 1h'), v: `${rejPct.toFixed(2)}%` },
@@ -88,15 +151,80 @@ export default function StatsPage() {
                   </div>
                 ))}
               </div>
+
+              {/* share accept/reject bar */}
+              <div className="mt-4">
+                <div className="mb-1 flex justify-between text-[0.65rem] text-white/40">
+                  <span>
+                    {t('shares', 'shares')}: {fmtInt(acc)}{' '}
+                    {t('accepted', 'accepted')} / {fmtInt(rej)}{' '}
+                    {t('rejected', 'rejected')}
+                  </span>
+                  <span>{accPct.toFixed(1)}% ok</span>
+                </div>
+                <div className="flex h-2 overflow-hidden rounded-full bg-white/5">
+                  <div
+                    className="h-full rounded-l-full bg-rasta-green transition-all"
+                    style={{ width: `${accPct}%` }}
+                  />
+                  <div
+                    className="h-full bg-rasta-red/70 transition-all"
+                    style={{ width: `${100 - accPct}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* hashrate history chart (client-accumulated) */}
+              <div className="mt-4">
+                <p className="kicker mb-2">
+                  {t('hashrate historie', 'hashrate history')}
+                </p>
+                <AreaChart
+                  data={history}
+                  color={ACCENT[c.accent]}
+                  height={110}
+                  fmt={(v) => fmtHashrate(v)}
+                  emptyLabel={t(
+                    'Graf se plní živými daty během sledování stránky…',
+                    'Chart fills with live data while this page is open…',
+                  )}
+                />
+              </div>
             </div>
           );
         })}
       </div>
 
+      {/* Blocks-per-day histogram */}
+      {dayBuckets.some((d) => d.count > 0) && (
+        <div className="pool-card mt-6 p-5">
+          <p className="kicker mb-3">
+            {t('bloky za 14 dní', 'blocks · 14 days')}
+          </p>
+          <div className="flex h-24 items-end gap-1">
+            {dayBuckets.map((d) => {
+              const max = Math.max(...dayBuckets.map((x) => x.count), 1);
+              return (
+                <div
+                  key={d.day}
+                  className="group relative flex-1 rounded-t bg-gradient-to-t from-rasta-green/60 to-rasta-gold/60 transition hover:from-rasta-green hover:to-rasta-gold"
+                  style={{ height: `${(d.count / max) * 100}%`, minHeight: d.count ? 3 : 1 }}
+                  title={`${d.day}: ${d.count}`}
+                >
+                  <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/90 px-1.5 py-0.5 text-[0.6rem] text-white opacity-0 transition group-hover:opacity-100">
+                    {d.day.slice(5)} · {d.count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <p className="mt-6 text-center text-[0.68rem] text-white/30">
         {t(
-          'Data z veřejného pool API · refresh 15 s',
-          'Data from the public pool API · 15s refresh',
+          'Data z veřejného pool API · refresh 15 s · historie se ukládá lokálně',
+          'Data from the public pool API · 15s refresh · history stored locally',
         )}
       </p>
     </div>

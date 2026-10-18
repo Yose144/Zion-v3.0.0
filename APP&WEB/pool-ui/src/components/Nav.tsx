@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Gem, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useLang } from '@/lib/i18n';
+import AuthButton from '@/components/AuthButton';
 
 const LINKS = [
   { href: '/', cs: 'Přehled', en: 'Overview' },
@@ -24,7 +25,7 @@ export default function Nav() {
     <header className="pool-nav sticky top-0 z-50">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-zion-gold to-zion-purple">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rasta-green via-rasta-gold to-rasta-red">
             <Gem className="h-4.5 w-4.5 text-black" size={18} strokeWidth={2.4} />
           </span>
           <span className="text-[0.95rem] font-bold tracking-tight text-white">
@@ -45,6 +46,9 @@ export default function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <div className="hidden md:block">
+            <AuthButton />
+          </div>
           <div className="flex overflow-hidden rounded-lg border border-white/15 text-[0.72rem] font-bold">
             {(['cs', 'en'] as const).map((l) => (
               <button
@@ -82,6 +86,9 @@ export default function Nav() {
               {lang === 'cs' ? l.cs : l.en}
             </Link>
           ))}
+          <div className="mt-3 border-t border-white/10 pt-3 md:hidden">
+            <AuthButton />
+          </div>
         </nav>
       )}
       <span className="hidden">{t('', '')}</span>

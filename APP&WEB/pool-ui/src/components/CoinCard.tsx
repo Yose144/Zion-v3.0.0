@@ -6,10 +6,10 @@ import { useLang } from '@/lib/i18n';
 import type { CoinInfo, CoinStats } from '@/lib/types';
 
 const ACCENT: Record<string, string> = {
-  gold: '#ffd700',
-  cyan: '#06b6d4',
-  purple: '#c084fc',
-  green: '#4ade80',
+  gold: '#fcd116',
+  cyan: '#078930',
+  purple: '#e41e2b',
+  green: '#00ff41',
 };
 
 function LegPill({ leg }: { leg: CoinInfo['legs'][number] }) {

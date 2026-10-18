@@ -6,7 +6,7 @@ export default function Footer() {
   const { t } = useLang();
   return (
     <footer className="mt-20 border-t border-white/8">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-3">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-4">
         <div>
           <p className="mb-2 text-sm font-bold text-white">
             ZION <span className="gradient-text">Pool</span>
@@ -34,6 +34,21 @@ export default function Footer() {
             <span>{t('Fee 1 % · 5 % humanitarian · 5 % issobella', 'Fee 1% · 5% humanitarian · 5% issobella')}</span>
             <span>{t('Výplaty v nativním coinu · PPLNS', 'Native-coin payouts · PPLNS')}</span>
             <span>{t('Open-source stack · MIT', 'Open-source stack · MIT')}</span>
+          </div>
+        </div>
+        <div>
+          <p className="kicker mb-3">{t('Právní', 'Legal')}</p>
+          <div className="flex flex-col gap-1.5 text-xs text-white/55">
+            <a href="/legal/" className="hover:text-white">
+              {t('Právní informace', 'Legal information')}
+            </a>
+            <a href="/terms/" className="hover:text-white">
+              {t('Podmínky používání', 'Terms of use')}
+            </a>
+            <a href="/gdpr/" className="hover:text-white">
+              {t('Ochrana osobních údajů (GDPR)', 'Privacy (GDPR)')}
+            </a>
+            <span className="mt-1 text-white/35">Omnity.One s.r.o.</span>
           </div>
         </div>
       </div>

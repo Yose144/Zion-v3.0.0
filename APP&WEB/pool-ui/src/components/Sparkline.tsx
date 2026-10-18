@@ -4,7 +4,7 @@
 
 export default function Sparkline({
   data,
-  color = '#ffd700',
+  color = '#fcd116',
   height = 120,
 }: {
   data: { ts: number; hps: number }[];
