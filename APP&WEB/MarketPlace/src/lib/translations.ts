@@ -19,6 +19,7 @@ const t = {
     explore: { cs: 'Prozkoumat', en: 'Explore' },
     shop: { cs: 'Obchod', en: 'Shop' },
     create: { cs: 'Vytvořit', en: 'Create' },
+    pool: { cs: 'Pool', en: 'Pool' },
     cart: { cs: 'Košík', en: 'Cart' },
     cartAria: { cs: 'Košík', en: 'Cart' },
     menu: { cs: 'Menu', en: 'Menu' },
