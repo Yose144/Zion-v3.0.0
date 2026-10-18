@@ -474,3 +474,41 @@ contended); the gap to 46.55 TH/s is a kernel-architecture problem
 (multi-stage smem GEMM pipeline + faster BLAKE3), not a tuning one —
 documented in §10–§11. The cumulative path is a marginal step; no
 production flip recommended yet.
+
+## 14. Session 5 — v7 octo-col + v11 cp.async ring: both REJECTED (2026-10-18)
+
+Same RTX 3060 / binary `269e2201` / batch 16 / streams 4 / interleaved
+v6c1→v7→v11×2, 24 steady samples each. Gates first: v7-batch, v11-batch,
+v6c1-batch, v11-fragment all PASS (parity clean for all three kernels).
+
+| kernel | median att/s | vs v6c1 |
+|---|---|---|
+| v6 + cumulative MMA (baseline) | **3071.0** | — |
+| v7 (8 cols/warp, B shared ×8) | 2637.9 | **−14.1 %** |
+| v11 (v6 + per-lane cp.async B ring) | 2626.9 | **−14.5 %** |
+
+### v11 design (kept opt-in)
+
+`pearl_pouw_mine_native_v11`: each lane cp.asyncs its OWN next-step B
+fragments into a private 4-slot shared ring (4 warps × 4 slots × 32
+lanes × 8 words = 16 KiB/block), continuous across window boundaries,
+`wait_group 3` pacing, dead lanes via src-size=0 zero-fill — **no
+__syncthreads anywhere** (smem = prefetch buffer, not shared staging).
+Same mma/cum/fold/jackpot semantics as v6.
+
+### Why both lost
+
+- v7 halves B loads per output but `cum[8][8]` = 64 accumulators → reg
+  cliff; net loss.
+- v11 converts blocking `__ldg` gathers into async smem copies but pays
+  LDS+STS issue overhead per fragment plus 16 KiB/block occupancy cost —
+  the latency it hides was apparently already covered by warp-level
+  parallelism at 5-6 resident blocks/SM.
+
+**Takeaway:** the remaining ~2.2× gap to SRBMiner's 46.55 TH/s is not a
+gather-latency fix — v6's memory pattern is already well-hidden by
+occupancy. The bottleneck is more likely issue-rate/dependency-chained
+inner work (mma dependency chains + scalar fold serialization per
+window). Next candidate: interleave two INDEPENDENT windows' mma chains
+per warp (2× ILP, reg cost ~32) — tried before at accumulator level and
+lost to reg pressure; a leaner formulation may exist but is unproven.

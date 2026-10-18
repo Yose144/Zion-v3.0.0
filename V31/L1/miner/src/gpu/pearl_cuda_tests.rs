@@ -176,7 +176,7 @@ fn pearl_cuda_tensor_fragment_matches_cpu() {
 }
 
 #[test]
-#[ignore = "requires an isolated SM75+ device and ZION_PEARL_MINE=v6"]
+#[ignore = "requires an isolated SM75+ device; default kernel v6"]
 fn pearl_cuda_tensor_batch_slots_match_cpu() {
     const BATCH: usize = 16;
     let cfg = PearlMineConfig::from_env().expect("Pearl configuration");
@@ -184,6 +184,8 @@ fn pearl_cuda_tensor_batch_slots_match_cpu() {
     let dev = tensor_device();
     let mut miner = PearlCudaMiner::new_with_device(cfg.k, dev).expect("Pearl miner");
     let request = std::env::var("ZION_PEARL_MINE").ok();
+    // The selected kernel must equal the REQUESTED one — a silent fallback
+    // must never pass this parity gate.
     assert_eq!(
         select_mine_version(
             request.as_deref(),
@@ -192,8 +194,8 @@ fn pearl_cuda_tensor_batch_slots_match_cpu() {
             cfg.rank,
             cfg.k,
         ),
-        "v6",
-        "set ZION_PEARL_MINE=v6: this test must not pass via a fallback"
+        request.as_deref().unwrap_or("v6"),
+        "requested kernel must be the selected kernel (no fallback allowed)"
     );
     let row_offsets = cfg.row_offsets();
     let col_offsets = cfg.col_offsets();
