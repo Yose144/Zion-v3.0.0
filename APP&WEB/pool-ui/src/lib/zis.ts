@@ -1,10 +1,12 @@
 // ZIS — ZION Identity Service client (pool-ui subset).
 //
-// pool-ui is a STATIC export, so there is no same-origin proxy available.
-// Calls go directly to auth.zionterranova.com with credentials:'include' —
-// ZIS configures CORS for *.zionterranova.com and issues the `zion_session`
-// httpOnly cookie scoped to `.zionterranova.com`, so a session opened in any
-// ZION app (app, market, oasis) is shared with the pool UI automatically.
+// pool-ui is a STATIC export, but the pool nginx vhost proxies
+// /api/auth/* and /api/session/* to the ZIS backend — same pattern as
+// MarketPlace/Oasis. Same-origin means zero CORS and the shared
+// `zion_session` cookie (Domain=.zionterranova.com) just works.
+// Direct calls to auth.zionterranova.com remain as an opt-in override
+// (NEXT_PUBLIC_ZIS_URL) for local dev; the pool origin is also in the
+// ZIS CORS + WebAuthn allowlists.
 //
 // API surface used (see APP&WEB/identity/src/routes/*):
 //   GET  /api/auth/me                        — current user
@@ -16,8 +18,9 @@
 //   GET  /api/auth/avatar/:seed.svg          — deterministic avatar
 
 export const ZIS_URL =
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_ZIS_URL) ||
-  'https://auth.zionterranova.com';
+  typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_ZIS_URL
+    ? process.env.NEXT_PUBLIC_ZIS_URL
+    : '';
 
 export const ZIS_SESSION_COOKIE = 'zion_session';
 export const ZION_APP_LOGIN = 'https://app.zionterranova.com/login';

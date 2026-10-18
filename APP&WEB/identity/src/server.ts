@@ -53,6 +53,7 @@ async function start() {
       'https://oasis.zionterranova.com',
       'https://dashboard.zionterranova.com',
       'https://freeworld.zionterranova.com',
+      'https://pool.zionterranova.com',
     ],
     credentials: true,
   });
