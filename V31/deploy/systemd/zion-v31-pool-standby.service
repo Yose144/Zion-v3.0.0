@@ -1,0 +1,54 @@
+[Unit]
+# ZION V31 Pool — STANDBY instance template.
+#
+# Deploy on a SECOND host (the real SPOF is the single Edge machine).
+# Before enabling, provision that host with:
+#   - zion-pool release binary at /opt/zion/V31/target/release/zion-pool
+#   - a synced pool store seed: copy /opt/zion/data/v31/pool-store.db +
+#     pool-pplns.json from the primary (see docs runbook — PPLNS debt
+#     carries over, so miners keep unpaid balances)
+#   - ZION_L1_RPC_URL on the standby pointing at reachable L1 endpoints
+#     (cross-host RPC to the primary's nodes, or local node replicas)
+#   - /etc/zion/edge-environment.sh with the same secrets
+#
+# The standby relays shares Edge→Core via share_relay when
+# ZION_UPSTREAM_POOL_ADDR is set — but for a promoted standby it is the
+# CORE, so leave that unset (it would relay into itself/the old primary).
+#
+# Promotion steps are in docs/3.2/ZION-POOL-NG-PLAN.md §F6 runbook.
+Description=ZION V31 Pool (Standby — activate on primary loss)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion
+EnvironmentFile=/etc/zion/edge-environment.sh
+Environment="RUST_LOG=info,zion_pool=debug"
+ExecStart=/opt/zion/V31/target/release/zion-pool \
+    --bind 0.0.0.0:8444 \
+    --l1-rpc-url "${ZION_STANDBY_L1_RPC_URL:-http://127.0.0.1:9445}" \
+    --miner-address ${ZION_POOL_WALLET} \
+    --state-path /opt/zion/data/v31/pool-pplns.json \
+    --pool-fee-bps 100 \
+    --pplns-window-size 500000000 \
+    --store-db-path /opt/zion/data/v31/pool-store.db
+Restart=always
+RestartSec=10
+KillMode=process
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/data/zion /opt/zion/data /opt/zion/logs /var/log/zion
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
