@@ -81,6 +81,14 @@ pub struct StratumV1Ctx {
     zis_auth: Option<ZisPasswordOutcome>,
     /// ZIS user bound at authorize ("" = anonymous).
     zis_user: String,
+    /// F4-B: peer IP for the invalid-share ban path.
+    peer_ip: Option<IpAddr>,
+    /// F4-B: consecutive rejected submits — mirrors the V3
+    /// `max_consecutive_no_solution` ban semantics for V1 sessions.
+    consecutive_invalid: u32,
+    /// F4-B: set when the session crossed the ban threshold — the flush
+    /// loop closes after sending the last error response.
+    banned: bool,
 }
 
 impl StratumV1Ctx {
@@ -94,6 +102,9 @@ impl StratumV1Ctx {
             pending_notification: None,
             zis_auth: None,
             zis_user: String::new(),
+            peer_ip: None,
+            consecutive_invalid: 0,
+            banned: false,
         }
     }
 
@@ -130,6 +141,8 @@ pub struct StratumServer {
     no_solution_bans: Arc<Mutex<HashMap<IpAddr, Instant>>>,
     /// Max concurrent sessions per IP.
     max_sessions_per_ip: usize,
+    /// Global concurrent-session cap (F4-B).
+    max_sessions_total: usize,
     /// Max consecutive NoSolution before ban.
     max_consecutive_no_solution: u32,
     /// NoSolution ban duration.
@@ -257,6 +270,9 @@ impl StratumServer {
         };
 
         let max_sessions_per_ip = env_or("ZION_POOL_MAX_SESSIONS_PER_IP", 10) as usize;
+        // F4-B: global concurrent-session cap — bounds accept-loop work
+        // under a connect storm regardless of source-IP diversity.
+        let max_sessions_total = env_or("ZION_POOL_MAX_SESSIONS", 2048) as usize;
         let max_consecutive_no_solution = env_or("ZION_POOL_MAX_NO_SOLUTION", 10) as u32;
         let no_solution_ban_duration =
             Duration::from_secs(env_or("ZION_POOL_NOSOLUTION_BAN_SECS", 300));
@@ -273,6 +289,7 @@ impl StratumServer {
             ip_sessions: Arc::new(Mutex::new(HashMap::new())),
             no_solution_bans: Arc::new(Mutex::new(HashMap::new())),
             max_sessions_per_ip,
+            max_sessions_total,
             max_consecutive_no_solution,
             no_solution_ban_duration,
             vardiff_config,
@@ -611,6 +628,15 @@ impl StratumServer {
             w.write_all(b"\n").await?;
         }
         w.flush().await?;
+        drop(w);
+        // F4-B: the invalid-share ban fires after its error response is
+        // on the wire — the session loop then drops the connection.
+        if ctx.banned {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::ConnectionAborted,
+                "banned",
+            ));
+        }
         Ok(())
     }
 
@@ -696,6 +722,7 @@ impl StratumServer {
 
         match result {
             Ok(true) => {
+                ctx.consecutive_invalid = 0;
                 tracing::info!(
                     "share accepted — job={}, worker={}, nonce={}",
                     job_id,
@@ -743,6 +770,9 @@ impl StratumServer {
                     attempted_hashes,
                     elapsed_ms,
                 );
+                if self.v1_invalid_share_ban(ctx) {
+                    return rejected_response(id, "banned: too many invalid shares");
+                }
                 rejected_response(id, "low difficulty")
             }
             Err(e) => {
@@ -760,9 +790,36 @@ impl StratumServer {
                     attempted_hashes,
                     elapsed_ms,
                 );
+                if self.v1_invalid_share_ban(ctx) {
+                    return rejected_response(id, "banned: too many invalid shares");
+                }
                 error_response(Some(id), -32000, &format!("share error: {}", e))
             }
         }
+    }
+
+    /// F4-B: V1 invalid-share ban — mirrors the V3 consecutive-NoSolution
+    /// rule.  `true` when the session just crossed the threshold (response
+    /// is still sent, then the flush loop drops the connection).
+    fn v1_invalid_share_ban(&self, ctx: &mut StratumV1Ctx) -> bool {
+        ctx.consecutive_invalid = ctx.consecutive_invalid.saturating_add(1);
+        if ctx.consecutive_invalid >= self.max_consecutive_no_solution && !ctx.banned {
+            ctx.banned = true;
+            if let Some(ip) = ctx.peer_ip {
+                tracing::warn!(
+                    "v1_invalid_share_ban ip={} miner={} consecutive={}",
+                    ip,
+                    ctx.session.miner_id,
+                    ctx.consecutive_invalid,
+                );
+                self.no_solution_bans
+                    .lock()
+                    .unwrap()
+                    .insert(ip, Instant::now() + self.no_solution_ban_duration);
+            }
+            return true;
+        }
+        false
     }
 
     /// Parse Stratum v1 `mining.submit` params.
@@ -2118,6 +2175,19 @@ impl StratumServer {
                 continue;
             }
 
+            // F4-B: global session cap — refuse before spawning work.
+            if self
+                .session_counters
+                .active_sessions
+                .load(Ordering::Relaxed)
+                >= self.max_sessions_total as u64
+            {
+                tracing::warn!("global session cap reached — dropping {}", peer.ip());
+                decrement_ip_sessions(&self.ip_sessions, peer.ip());
+                drop(socket);
+                continue;
+            }
+
             self.session_counters
                 .total_connections
                 .fetch_add(1, Ordering::Relaxed);
@@ -2172,6 +2242,7 @@ impl StratumServer {
                     // Stratum v1 protocol — handle with per-session state.
                     let session_id = counter.fetch_add(1, Ordering::Relaxed);
                     let mut ctx = StratumV1Ctx::new(session_id, &server.vardiff_config);
+                    ctx.peer_ip = Some(ip);
 
                     if server
                         .flush_stratum_response(&writer, &mut ctx, &first_line, ip)
@@ -2256,6 +2327,7 @@ impl StratumServer {
         if is_v1 {
             // Stratum v1 over TLS — persistent ctx + ZIS precheck (F2d).
             let mut ctx = StratumV1Ctx::new(0, &self.vardiff_config);
+            ctx.peer_ip = Some(ip);
             self.v1_zis_precheck(&mut ctx, &first_line, ip).await;
             let response = self.handle_request_with_ctx(&first_line, &mut ctx);
             {
@@ -4440,6 +4512,33 @@ mod tests {
         let resp = server
             .handle_request(r#"{"id":2,"method":"mining.authorize","params":["notawallet.rig1","x"]}"#);
         assert!(resp.contains("invalid wallet"), "resp={resp}");
+    }
+
+    /// F4-B: consecutive invalid submits trigger the same ban as the V3
+    /// no-solution rule — `banned` flag set + IP ban recorded.
+    #[test]
+    fn v1_invalid_share_ban_fires_at_threshold() {
+        let server = make_server();
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        ctx.peer_ip = Some("9.9.9.9".parse().unwrap());
+        ctx.session.miner_id = "bad".into();
+
+        // Below threshold — no ban.
+        for _ in 0..server.max_consecutive_no_solution - 1 {
+            assert!(!server.v1_invalid_share_ban(&mut ctx));
+        }
+        // Threshold crossing fires exactly once.
+        assert!(server.v1_invalid_share_ban(&mut ctx));
+        assert!(ctx.banned);
+        assert!(!server.v1_invalid_share_ban(&mut ctx), "ban fires once");
+        let bans = server.no_solution_bans.lock().unwrap();
+        assert!(bans.contains_key(&"9.9.9.9".parse::<IpAddr>().unwrap()));
+        drop(bans);
+
+        // A clean accept resets the counter.
+        ctx.banned = false;
+        ctx.consecutive_invalid = 0;
+        assert!(!server.v1_invalid_share_ban(&mut ctx));
     }
 
     /// F2d: stage a `ZisPasswordOutcome` in `ctx.zis_auth` — the sync

@@ -1364,6 +1364,72 @@ impl PoolApi {
             ));
         }
 
+        // F4-B: per-coin stream aggregates + leg health.  Shares are
+        // keyed by telemetry `streams[coin]` — the same source the
+        // /public/v1 tier reports.
+        {
+            let mut coin_valid: std::collections::HashMap<String, u64> =
+                std::collections::HashMap::new();
+            let mut coin_invalid: std::collections::HashMap<String, u64> =
+                std::collections::HashMap::new();
+            let mut coin_online: std::collections::HashMap<String, u64> =
+                std::collections::HashMap::new();
+            for (_, miner) in reg.all_miners() {
+                for (coin, s) in &miner.streams {
+                    *coin_valid.entry(coin.clone()).or_default() += s.valid_shares;
+                    *coin_invalid.entry(coin.clone()).or_default() += s.invalid_shares;
+                    if s.last_share_time_s > 0 && now_s.saturating_sub(s.last_share_time_s) < 600 {
+                        *coin_online.entry(coin.clone()).or_default() += 1;
+                    }
+                }
+            }
+            for coin in coin_valid.keys().chain(coin_invalid.keys()) {
+                body.push_str(&format!(
+                    "zion_pool_coin_shares_accepted{{coin=\"{}\"}} {}\n",
+                    sanitize_prometheus_label(coin),
+                    coin_valid.get(coin).copied().unwrap_or(0)
+                ));
+                body.push_str(&format!(
+                    "zion_pool_coin_shares_rejected{{coin=\"{}\"}} {}\n",
+                    sanitize_prometheus_label(coin),
+                    coin_invalid.get(coin).copied().unwrap_or(0)
+                ));
+                body.push_str(&format!(
+                    "zion_pool_coin_miners_online{{coin=\"{}\"}} {}\n",
+                    sanitize_prometheus_label(coin),
+                    coin_online.get(coin).copied().unwrap_or(0)
+                ));
+            }
+        }
+
+        // F4-B: leg health gauges — alert on enabled-but-disconnected or
+        // stale legs (job_age_ms > threshold).
+        if let Some(ref bridge) = self.auxpow_bridge {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            for leg in pool.leg_statuses(bridge) {
+                let id = sanitize_prometheus_label(&leg.leg_id);
+                let coin = sanitize_prometheus_label(&leg.coin.to_ascii_lowercase());
+                body.push_str(&format!(
+                    "zion_pool_leg_enabled{{leg=\"{}\",coin=\"{}\"}} {}\n",
+                    id,
+                    coin,
+                    leg.enabled as u8
+                ));
+                body.push_str(&format!(
+                    "zion_pool_leg_connected{{leg=\"{}\",coin=\"{}\"}} {}\n",
+                    id,
+                    coin,
+                    leg.connected as u8
+                ));
+                if let Some(age) = leg.job_age_ms {
+                    body.push_str(&format!(
+                        "zion_pool_leg_job_age_ms{{leg=\"{}\",coin=\"{}\"}} {}\n",
+                        id, coin, age
+                    ));
+                }
+            }
+        }
+
         // AuxPoW bridge metrics
         if let Some(ref bridge) = self.auxpow_bridge {
             let coins = bridge.enabled_coins();
