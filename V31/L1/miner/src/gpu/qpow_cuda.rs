@@ -28,6 +28,7 @@ const POSEIDON2_CU: &str = include_str!("../../csrc/cuda/poseidon2_kernel.cu");
 const QPOW_MODULE: &str = "qpow_poseidon2";
 const QPOW_KERNEL: &str = "qpow_mine";
 const QPOW_SINGLE_NONCE_KERNEL: &str = "qpow_mine_single_nonce";
+const QPOW_DUAL_KERNEL: &str = "qpow_mine_dual";
 /// Must equal `QPOW_LB_MAX` in poseidon2_kernel.cu (512 was the measured
 /// optimum on sm_61 vs. the upstream 256).
 const QPOW_THREADS_PER_BLOCK: u32 = 512;
@@ -48,11 +49,24 @@ fn single_nonce_enabled(value: Option<&str>) -> bool {
     value == Some("1")
 }
 
+/// `ZION_QPOW_ILP2` is strictly opt-in: only the literal "1" enables the
+/// two-nonce interleaved kernel.
+fn ilp2_enabled(value: Option<&str>) -> bool {
+    value == Some("1")
+}
+
 /// Kernel pick for a batch: the single-nonce entry is used ONLY when the
-/// flag is on AND the actual runtime nonces_per_thread is 1 — any other
-/// NPT (env tuning, future defaults) falls back to the legacy kernel.
-fn select_qpow_kernel(enabled: bool, nonces_per_thread: u32) -> &'static str {
-    if enabled && nonces_per_thread == 1 {
+/// flag is on AND the actual runtime nonces_per_thread is 1, the dual
+/// entry ONLY when ilp2 is on AND npt is 2 — any other NPT falls back to
+/// the legacy kernel.
+fn select_qpow_kernel(
+    single: bool,
+    ilp2: bool,
+    nonces_per_thread: u32,
+) -> &'static str {
+    if ilp2 && nonces_per_thread == 2 {
+        QPOW_DUAL_KERNEL
+    } else if single && nonces_per_thread == 1 {
         QPOW_SINGLE_NONCE_KERNEL
     } else {
         QPOW_KERNEL
@@ -67,6 +81,8 @@ pub struct QpowCudaMiner {
     /// Whether the single-nonce kernel entry was enabled at init —
     /// read-only after init (the flag is only consulted here).
     single_nonce: bool,
+    /// Whether the dual-nonce ILP2 kernel entry was enabled at init.
+    ilp2: bool,
     results_buf: CudaSlice<u32>,
     midstate_buf: CudaSlice<u32>,
     start_nonce_buf: CudaSlice<u32>,
@@ -107,12 +123,17 @@ impl QpowCudaMiner {
         .map_err(|e| anyhow::anyhow!("NVRTC compile failed for qpow: {e}"))?;
         // Both entries live in the same module — load_ptx registers both so
         // no variant aliasing is possible on a shared device.
-        dev.load_ptx(ptx, QPOW_MODULE, &[QPOW_KERNEL, QPOW_SINGLE_NONCE_KERNEL])
+        dev.load_ptx(
+            ptx,
+            QPOW_MODULE,
+            &[QPOW_KERNEL, QPOW_SINGLE_NONCE_KERNEL, QPOW_DUAL_KERNEL],
+        )
             .map_err(|e| anyhow::anyhow!("PTX load failed for qpow: {e}"))?;
 
         // Read once at init — never promoted, never re-parsed per batch.
         let single_nonce =
             single_nonce_enabled(std::env::var("ZION_QPOW_SINGLE_NONCE").ok().as_deref());
+        let ilp2 = ilp2_enabled(std::env::var("ZION_QPOW_ILP2").ok().as_deref());
 
         let results_buf = dev
             .alloc_zeros::<u32>(RESULT_WORDS)
@@ -131,10 +152,11 @@ impl QpowCudaMiner {
             .map_err(|e| anyhow::anyhow!("qpow dispatch alloc: {e}"))?;
 
         crate::ext_info!(
-            "gpu_qpow_cuda_init device=\"{}\" work_size={} single_nonce={}",
+            "gpu_qpow_cuda_init device=\"{}\" work_size={} single_nonce={} ilp2={}",
             device_name,
             work_size,
             single_nonce,
+            ilp2,
         );
 
         Ok(Self {
@@ -142,6 +164,7 @@ impl QpowCudaMiner {
             work_size: work_size.max(QPOW_THREADS_PER_BLOCK as usize),
             device_name_cached: device_name,
             single_nonce,
+            ilp2,
             results_buf,
             midstate_buf,
             start_nonce_buf,
@@ -241,7 +264,7 @@ impl QpowCudaMiner {
             )
             .map_err(|e| anyhow::anyhow!("qpow dispatch upload: {e}"))?;
 
-        let kernel = select_qpow_kernel(self.single_nonce, nonces_per_thread);
+        let kernel = select_qpow_kernel(self.single_nonce, self.ilp2, nonces_per_thread);
         let func = self
             .dev
             .get_func(QPOW_MODULE, kernel)

@@ -312,3 +312,26 @@ SRBMiner-MULTI 3.7.6 on this RTX 3060 through the project pool (real
 ~141 MH/s native → **≈ 1.50× gap** — larger than on the GTX 1070 Ti
 (~1.05×). Hypothesis (unverified): SRB's kernel benefits more from
 Ampere scheduling/ILP; closing it is a kernel redesign exercise.
+
+
+## Appendix E — ILP2 dual-nonce kernel: REJECTED (2026-10-18)
+
+`qpow_mine_dual` (opt-in via `ZION_QPOW_ILP2=1` + `QPOW_NPT=2`):
+each thread holds two independent 12-limb sponge states and runs
+`permute64_twice_after_initial_dual` — the identical two-pass schedule
+with every step applied to both states so the compiler can interleave
+the dependency chains (the serial internal-round `x` chain is the
+theorized latency source).
+
+Measured on RTX 3060 (`33698eec`): **52.4 vs 144.5 MH/s = −63.7 %**.
+Two live 12×u64 states plus the wide-mul temporaries blow the register
+file: states demote to local memory and the extra occupancy is
+worthless. Correctness is clean (inject_nonce refactor verified by the
+4096-case corpus; dual path by 8192 nonce-state checks against CPU;
+boundary candidates through the real kernel). Kept strictly opt-in —
+default path untouched.
+
+The sponge per-thread state is inherently serial; interleaving requires
+a second full state which doesn't fit the register budget. Remaining
+~1.5x SRB gap is structural (their instruction mix is unknown,
+closed-source) — native ~145 MH/s is the measured plateau.
