@@ -119,6 +119,7 @@ const t = {
     btn_warp:          { cs: 'Prozkoumat síť',      en: 'Explore Network' },
     btn_guardian_docs: { cs: 'Otevřít dokumentaci',   en: 'Open Docs' },
     btn_native_miner:  { cs: 'Stáhnout miner',          en: 'Download Miner' },
+    btn_book:          { cs: 'Kniha Maitreya',          en: 'Maitreya Book' },
     teaser_title: { cs: 'Živá Edge server síť', en: 'Live Edge server network' },
     teaser_badge: { cs: 'Aktivní', en: 'Active' },
     teaser_body: {
@@ -535,6 +536,11 @@ const t = {
     res_explorer_body: {
       cs: 'Projdi bloky, transakce, adresy a mempool v reálném čase.',
       en: 'Browse blocks, transactions, addresses, and the mempool in real time.',
+    },
+    res_book_title: { cs: 'Kniha Maitreya', en: 'Maitreya Book' },
+    res_book_body: {
+      cs: 'Kniha Pátá kompletní — prolog, 17 kapitol a epilog v češtině i angličtině.',
+      en: 'Book Five complete — prologue, 17 chapters and an epilogue in Czech and English.',
     },
     cta_roadmap_title: { cs: 'Roadmap → veřejná launch gate', en: 'Roadmap → Public Launch Gate' },
     cta_roadmap_body: {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Book, Compass, Github, Route, ScrollText } from 'lucide-react';
+import { Book, BookOpen, Compass, Github, Route, ScrollText } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
@@ -29,6 +29,13 @@ export default function DocsRail() {
       icon: Compass,
       href: '/explorer',
       accent: 'from-zion-purple/20 to-zion-gold/10',
+    },
+    {
+      title: tr('docsRail', 'res_book_title', lang),
+      description: tr('docsRail', 'res_book_body', lang),
+      icon: BookOpen,
+      href: '/maitreya/cist',
+      accent: 'from-zion-gold/20 to-zion-purple/10',
     },
   ];
 
