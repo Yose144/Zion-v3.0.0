@@ -1,5 +1,13 @@
 # AGENTS.md — V31 Mainnet Alpha
 
+
+## 2026-10-18 (2) — Pearl v7/v11 measured on SM86: both rejected, v6c1 stays champion
+
+- `pearl_pouw_mine_native_v11` added (sm_80+ opt-in): per-lane cp.async B prefetch ring, zero __syncthreads — measured **−14.5 %** vs v6c1 (LDS/STS overhead + 16 KiB smem occupancy cost > latency saved).
+- v7 octo-col measured **−14.1 %** (cum[8][8] reg cliff).
+- Gates v7/v11/v6c1 batch + v11 fragment: 4/4 PASS parity-clean.
+- Standing result: v6 (+ optional cumulative +1.46 %) remains the production kernel at ~3070 att/s; gap to SRBMiner 46.55 TH/s ≈ 2.2× is issue-rate/dependency-chains, not gather latency.
+
 ## 2026-10-18 — GPU gates on RTX 3060 SM86 (instance 56527570): cumulative-MMA +1.46 % opt-in; qpow fused-MDS −3.28 % and single-nonce −1.65 % rejected; SRB ref 46.55 TH/s / 212.72 MH/s on same card
 
 - **Pearl `ZION_PEARL_CUMULATIVE_MMA=1`** (new opt-in): MMA C regs carried across rank windows instead of per-window `cC`+scalar merge; exact via s32 mod-2^32 bound (|a|,|b|<=127, k=2048). Own NVRTC module `pearl_pouw_native_cumulative`. Gates 4/4 PASS on SM86 binary `3d92527d`; A/B 3057.3 vs 3013.3 att/s = **+1.46 %** (SASS v6 REG 118→86). **Stays opt-in** — no default flip without soak.
