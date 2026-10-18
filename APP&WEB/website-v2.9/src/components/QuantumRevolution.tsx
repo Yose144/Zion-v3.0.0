@@ -130,13 +130,13 @@ export default function QuantumRevolution() {
           <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
             {/* Book cover */}
             <a
-              href="https://newearth.cz/V2/halls.html"
+              href="https://zionterranova.com/legacy/halls.html"
               target="_blank"
               rel="noopener noreferrer"
               className="block shrink-0 mx-auto lg:mx-0"
             >
                 <Image
-                src="https://newearth.cz/images/Zion.jpg"
+                src="https://zionterranova.com/images/Zion.jpg"
                 alt="Kvantová Revoluce — obálka knihy"
                 width={220}
                 height={310}
@@ -158,7 +158,7 @@ export default function QuantumRevolution() {
               </p>
               <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
                 <a
-                  href="https://newearth.cz/V2/halls.html"
+                  href="https://zionterranova.com/legacy/halls.html"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="zion-button-primary group text-sm"
@@ -169,7 +169,7 @@ export default function QuantumRevolution() {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </a>
                 <a
-                  href="https://newearth.cz/V2/books/QuantumRevolution.zip"
+                  href="https://zionterranova.com/legacy/books/QuantumRevolution.zip"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="zion-button-secondary text-sm"
@@ -226,7 +226,7 @@ export default function QuantumRevolution() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
-                href="https://newearth.cz/V2/halls.html"
+                href="https://zionterranova.com/legacy/halls.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="zion-button-secondary group text-sm"

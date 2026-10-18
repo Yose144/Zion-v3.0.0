@@ -347,13 +347,13 @@ export default function QuantumRevolutionClient() {
             <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
               {/* Book cover */}
               <a
-                href="https://newearth.cz/V2/halls.html"
+                href="https://zionterranova.com/legacy/halls.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block shrink-0 mx-auto lg:mx-0"
               >
                 <Image
-                  src="https://newearth.cz/images/Zion.jpg"
+                  src="https://zionterranova.com/images/Zion.jpg"
                   alt={QuantumRevolutionQuantumRevolutionClientCopy.quantumRevolutionBookCover[cs ? 'cs' : 'en']}
                   width={220}
                   height={310}
@@ -377,7 +377,7 @@ export default function QuantumRevolutionClient() {
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
                   <a
-                    href="https://newearth.cz/V2/halls.html"
+                    href="https://zionterranova.com/legacy/halls.html"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="zion-button-primary"
@@ -386,7 +386,7 @@ export default function QuantumRevolutionClient() {
                     {QuantumRevolutionQuantumRevolutionClientCopy.enterAmentiLibrary[cs ? 'cs' : 'en']}
                   </a>
                   <a
-                    href="https://newearth.cz/V2/books/QuantumRevolution.zip"
+                    href="https://zionterranova.com/legacy/books/QuantumRevolution.zip"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="zion-button-secondary"
