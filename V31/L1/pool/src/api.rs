@@ -314,6 +314,31 @@ impl PoolApi {
                 let body = self.build_public_miner_payload(coin, wallet);
                 ("200 OK", "application/json", body)
             }
+            "/public/v1/blocks" => {
+                let coin = parse_query_param(raw_path, "coin").unwrap_or_default();
+                let limit = parse_query_limit(raw_path, 50);
+                match &self.share_store {
+                    Some(store) => {
+                        let blocks = if coin.is_empty() {
+                            store.query_blocks(limit).unwrap_or_default()
+                        } else {
+                            store
+                                .query_blocks_for_coin(&coin, limit)
+                                .unwrap_or_default()
+                        };
+                        let body = format!(
+                            "{{\"ok\":true,\"blocks\":{}}}",
+                            serialize_blocks_json(&blocks)
+                        );
+                        ("200 OK", "application/json", body)
+                    }
+                    None => (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                    ),
+                }
+            }
             "/public/v1/payouts" => {
                 let coin = parse_query_param(raw_path, "coin").unwrap_or_default();
                 let limit = parse_query_limit(raw_path, 50);
@@ -1204,10 +1229,10 @@ impl PoolApi {
 
         let mut valid = 0u64;
         let mut invalid = 0u64;
-        let mut workers: Vec<String> = Vec::new();
+        let mut workers: Vec<serde_json::Value> = Vec::new();
         let mut last_seen = 0u64;
         for (key, miner) in reg.all_miners() {
-            let (miner_id, _) = split_worker_key(key);
+            let (miner_id, worker_short) = split_worker_key(key);
             let matches = miner_id == wallet
                 || miner_id.starts_with(&format!("{wallet}."))
                 || pool
@@ -1219,14 +1244,27 @@ impl PoolApi {
                 continue;
             }
             last_seen = last_seen.max(miner.last_seen_s);
-            if coin.is_empty() {
-                valid += miner.valid_shares;
-                invalid += miner.invalid_shares;
+            let (w_valid, w_invalid) = if coin.is_empty() {
+                (miner.valid_shares, miner.invalid_shares)
             } else if let Some(s) = miner.streams.get(&coin) {
-                valid += s.valid_shares;
-                invalid += s.invalid_shares;
-            }
-            workers.push(key.clone());
+                (s.valid_shares, s.invalid_shares)
+            } else {
+                (0, 0)
+            };
+            valid += w_valid;
+            invalid += w_invalid;
+            workers.push(json!({
+                "name": key,
+                "worker": worker_short,
+                "accepted": w_valid,
+                "rejected": w_invalid,
+                "last_seen_s": miner.last_seen_s,
+                "hashrate": if coin.is_empty() || coin == "zion" {
+                    json!(miner.hashrate_live(now_s))
+                } else {
+                    serde_json::Value::Null
+                },
+            }));
         }
         drop(reg);
 
@@ -1250,7 +1288,8 @@ impl PoolApi {
             "ok": true,
             "coin": coin,
             "wallet": wallet,
-            "workers": workers.len(),
+            "worker_count": workers.len(),
+            "workers": workers,
             "shares": {"accepted": valid, "rejected": invalid},
             "unpaid": unpaid.to_string(),
             "unpaid_unit": unpaid_unit,
@@ -2066,14 +2105,18 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(payload["shares"]["accepted"], 1);
-        assert_eq!(payload["workers"], 1);
+        assert_eq!(payload["worker_count"], 1);
+        assert_eq!(
+            payload["workers"][0]["worker"], "rig1",
+            "worker row carries the short name"
+        );
         assert_eq!(payload["unpaid_unit"], "native");
         // Unknown wallet → zeroed payload, not an error.
         let unknown: serde_json::Value = serde_json::from_str(
             &api.build_public_miner_payload("qtu", "prl1qqqqqqqqqqqqqqqqqqqqqq"),
         )
         .unwrap();
-        assert_eq!(unknown["workers"], 0);
+        assert_eq!(unknown["worker_count"], 0);
         assert_eq!(unknown["shares"]["accepted"], 0);
     }
 

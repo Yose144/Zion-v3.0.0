@@ -414,10 +414,26 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
   dialect, reconnect `IpRateLimiter` — existovaly; ověřeno.
 - Testy: 321/321 (+1: V1 ban threshold/reset).
 
-**Zbývá:** TLS public entrypoint (existuje `tls.rs`/`ZION_POOL_TLS_*` —
-při F5 nasazení nakonfigurovat jako primární public port, plaintext jen
-localhost/legacy), F5 (deploy UI + nginx `/public/v1` proxy + cert),
-F6 (HA). Před produkcí regtest payout dávky na QTU i PRL a
+**F5 ✅ část A — deploy assets připraveny:**
+
+- `V31/deploy/nginx/pool.zionterranova.com.conf` — static `/var/www/pool`,
+  `/public/v1/` proxy → `127.0.0.1:8080` (jediný proxied prefix;
+  `/api/`+`/admin` explicitní 404), `limit_req`, security headers,
+  Certbot-managed TLS bloky.
+- `APP&WEB/pool-ui/deploy/deploy-pool.sh` — `npm run build` → rsync
+  `dist/` → `/var/www/pool`; `--nginx` instaluje+reloadne vhost;
+  `--build-only` pro lokální build.
+- `GET /public/v1/blocks?coin=` — globální blocks feed (per-coin feed
+  už existoval); miner payload rozšířen o `workers[]` rows.
+- `pool-ui/src/lib/api.ts` — live adapter: `COIN_META` (name/algo/ports/
+  accent zůstává UI-side), `qtc`↔`qtu` coin mapping, `/public/v1` →
+  UI typy. `USE_MOCK=true` dokud se neověří live endpoint — flip = 1
+  konstanta. `tsc --noEmit` clean, `next build` static export OK.
+
+**Zbývá:** F5 část B — samotný deploy na edge (SSH `zion-new`, DNS A
+record → 62.171.141.136, `certbot --nginx -d pool.zionterranova.com`,
+TLS stratum jako primární public port — `tls.rs`/`ZION_POOL_TLS_*`
+existuje), F6 (HA). Před produkcí regtest payout dávky na QTU i PRL a
 `PRL_PAYOUT_DRY_RUN=0` až po ověřené live dávce.
 
 ---
