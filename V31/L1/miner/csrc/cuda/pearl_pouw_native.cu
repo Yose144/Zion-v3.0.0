@@ -946,6 +946,16 @@ extern "C" __global__ void pearl_pouw_mine_native_v3(
 // Semantics bit-identical to v3: same per-pair dots, same cumulative my_acc
 // fold per window, same jackpot rotl+xor schedule, same canonical tile_id.
 #define MINE_V4_STRIP_T 8
+
+// v6 cumulative-mma variant (default off — opt-in via
+// -DPEARL_CUMULATIVE_MMA=1 through ZION_PEARL_* host plumbing): the mma C
+// registers carry the cumulative dots directly across rank windows instead
+// of a per-window cC + scalar merge. Exact: mod-2^32 int add/mul is
+// associative, and canonical inputs (|a|,|b| <= 127, k=2048) bound each dot
+// at 33,032,192 < 2^31 — no i32 overflow.
+#ifndef PEARL_CUMULATIVE_MMA
+#define PEARL_CUMULATIVE_MMA 0
+#endif
 extern "C" __global__ void pearl_pouw_mine_native_v4(
     const signed char* noised_a,
     const signed char* noised_b,
@@ -1345,19 +1355,49 @@ extern "C" __global__ void pearl_pouw_mine_native_v5(
 // per-element cum[] += d[] reproduces v4's `my_acc` exactly. The per-tile
 // fold XORs the 16 lanes × 2 frag elems covering that tile's 32 outputs —
 // xor is order-free so the value is bit-identical to v4's 32-lane fold.
-// Gated on sm_80+ && rank==128 && k%128==0 (host falls back to v4).
-#if __CUDA_ARCH__ >= 800
+// Gated on sm_75+ && rank==128 && k%128==0 (host falls back to v4);
+// sm_80+ uses the native m16n8k32 s8 mma, sm_75 emulates it with four
+// m8n8k16 ops — the Turing path is an explicit host opt-in, not default.
+#if __CUDA_ARCH__ >= 750
 __device__ __forceinline__ void mma_s8_m16n8k32(
     uint& d0, uint& d1, uint& d2, uint& d3,
     uint a0, uint a1, uint a2, uint a3, uint b0, uint b1)
 {
+#if __CUDA_ARCH__ >= 800
     asm volatile(
         "mma.sync.aligned.m16n8k32.row.col.s32.s8.s8.s32 "
         "{%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};"
         : "+r"(d0), "+r"(d1), "+r"(d2), "+r"(d3)
         : "r"(a0), "r"(a1), "r"(a2), "r"(a3), "r"(b0), "r"(b1));
+#else
+    // sm_75 emulation: four m8n8k16 mmas preserve the m16n8k32 fragment
+    // mapping — d0/d1 (rows 0-7) accumulate a0·b0 then a2·b1, d2/d3
+    // (rows 8-15) accumulate a1·b0 then a3·b1.
+    asm volatile(
+        "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 "
+        "{%0,%1}, {%2}, {%3}, {%0,%1};"
+        : "+r"(d0), "+r"(d1)
+        : "r"(a0), "r"(b0));
+    asm volatile(
+        "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 "
+        "{%0,%1}, {%2}, {%3}, {%0,%1};"
+        : "+r"(d0), "+r"(d1)
+        : "r"(a2), "r"(b1));
+    asm volatile(
+        "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 "
+        "{%0,%1}, {%2}, {%3}, {%0,%1};"
+        : "+r"(d2), "+r"(d3)
+        : "r"(a1), "r"(b0));
+    asm volatile(
+        "mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32 "
+        "{%0,%1}, {%2}, {%3}, {%0,%1};"
+        : "+r"(d2), "+r"(d3)
+        : "r"(a3), "r"(b1));
+#endif
 }
+#endif
 
+#if __CUDA_ARCH__ >= 800
 // ldmatrix loads a full mma fragment in ONE instruction (vs 4/2 LDS.32):
 // x4 → A frag {a0..a3}, x2 → B frag {b0,b1}. Layout verified vs PTX ISA:
 // lane l reg j = matrix_j row l>>2, byte (l&3)*4 — exactly the mma s8
@@ -1439,7 +1479,7 @@ extern "C" __global__ void pearl_pouw_mine_native_v6(
     __syncwarp();
     if (__any_sync(0xffffffffu, *found != 0u)) return;
 
-#if __CUDA_ARCH__ >= 800
+#if __CUDA_ARCH__ >= 750
     // ── Fragment mappings (PTX ISA mma.m16n8k32 int8) ────────────────────
     // A (16×32 s8, row): a0/a2 → row gid=l/4, a1/a3 → row gid+8;
     //   cols k = (l%4)*4+{0..3} (a0/a1) and +16 (a2/a3).
@@ -1451,7 +1491,13 @@ extern "C" __global__ void pearl_pouw_mine_native_v6(
     uint tq = lane & 3;        // lane's k-quad selector
 
     // Per-element cumulative dots — 4 cols × 2 mma row-groups × 4 frag elems.
+#if PEARL_CUMULATIVE_MMA
+    // The mma D registers ARE the cumulative dots — the per-window cC
+    // array and its post-window scalar merge disappear.
+    uint cum[4][8];
+#else
     int cum[4][8];
+#endif
 #pragma unroll
     for (int i = 0; i < 32; i++) (&cum[0][0])[i] = 0;
 
@@ -1479,9 +1525,11 @@ extern "C" __global__ void pearl_pouw_mine_native_v6(
         uint widx = (uint)((ll / rank - 1) % JACKPOT_SIZE);
         // kc-outer / rg-inner: each B fragment feeds BOTH mma row-groups
         // (same B cols, different A rows) → B gather loads halved.
+#if !PEARL_CUMULATIVE_MMA
         uint cC[2][4][4];
 #pragma unroll
         for (int i = 0; i < 32; i++) (&cC[0][0][0])[i] = 0;
+#endif
 #pragma unroll
         for (uint kc = 0; kc < rank; kc += 32) {
             uint ka = base + kc + tq * 4;
@@ -1501,12 +1549,19 @@ extern "C" __global__ void pearl_pouw_mine_native_v6(
 #pragma unroll
                 for (int ci = 0; ci < 4; ci++) {
                     if (!live_c[ci]) continue;
+#if PEARL_CUMULATIVE_MMA
+                    mma_s8_m16n8k32(cum[ci][rg * 4 + 0], cum[ci][rg * 4 + 1],
+                                    cum[ci][rg * 4 + 2], cum[ci][rg * 4 + 3],
+                                    a0, a1, a2, a3, bv[ci][0], bv[ci][1]);
+#else
                     mma_s8_m16n8k32(cC[rg][ci][0], cC[rg][ci][1],
                                     cC[rg][ci][2], cC[rg][ci][3],
                                     a0, a1, a2, a3, bv[ci][0], bv[ci][1]);
+#endif
                 }
             }
         }
+#if !PEARL_CUMULATIVE_MMA
         // Window increments → element cumulatives (all cols).
 #pragma unroll
         for (int rg = 0; rg < 2; rg++)
@@ -1515,6 +1570,7 @@ extern "C" __global__ void pearl_pouw_mine_native_v6(
 #pragma unroll
                 for (int e = 0; e < 4; e++)
                     cum[ci][rg * 4 + e] += (int)cC[rg][ci][e];
+#endif
 #pragma unroll
         for (int rg = 0; rg < 2; rg++) {
 
@@ -1594,7 +1650,7 @@ extern "C" __global__ void pearl_pouw_mine_native_v6(
 // mma chains → per-tile gather traffic drops 256B→192B and loads/mma
 // 2→1.5 vs v6. Same fragment layout, cum/fold semantics, canonical
 // tile mapping — the only change is C coverage and tail handling.
-// Gated like v6 (sm_80+, rank==128, k%128==0).
+// Gated like v6 (sm_75+ opt-in, rank==128, k%128==0).
 extern "C" __global__ void pearl_pouw_mine_native_v7(
     const signed char* __restrict__ noised_a,
     const signed char* __restrict__ noised_b,
@@ -1652,7 +1708,7 @@ extern "C" __global__ void pearl_pouw_mine_native_v7(
     __syncwarp();
     if (__any_sync(0xffffffffu, *found != 0u)) return;
 
-#if __CUDA_ARCH__ >= 800
+#if __CUDA_ARCH__ >= 750
     uint gid = lane >> 2;
     uint tq = lane & 3;
 

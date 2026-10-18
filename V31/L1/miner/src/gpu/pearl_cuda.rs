@@ -171,12 +171,85 @@ struct PearlCudaBufs {
     derive_ctr: CudaSlice<u32>,
 }
 
+/// Pick the mine kernel for an attempt.
+///
+/// `requested` is the raw `ZION_PEARL_MINE` env value; `cc_*` is the
+/// cached device compute capability. The default is v6 on sm_80+ and v4
+/// elsewhere — on sm_75 (Turing) the mma path exists only via explicit
+/// `ZION_PEARL_MINE=v6|v7` opt-in (m8n8k16 emulation; its performance
+/// and correctness on Turing silicon are not yet verified). v8-v10 need
+/// real sm_80 features (cp.async/ldmatrix). Unmet or unknown → v4.
+fn select_mine_version<'a>(
+    requested: Option<&'a str>,
+    cc_major: i32,
+    cc_minor: i32,
+    rank: usize,
+    k: usize,
+) -> &'a str {
+    match requested {
+        // Default: v6 only on sm_80+ with the canonical window layout;
+        // non-canonical rank/k and every sm<80 device keep v4 — the
+        // sm_75 mma path is never promoted by default.
+        None => {
+            if cc_major >= 8 && rank == 128 && k % 128 == 0 {
+                "v6"
+            } else {
+                "v4"
+            }
+        }
+        // v5's staged window holds rank ≤ 128; larger ranks fall back.
+        Some("v5") => {
+            if rank <= 128 {
+                "v5"
+            } else {
+                "v4"
+            }
+        }
+        // v6/v7 mma: native on sm_80+, m8n8k16 emulation on sm_75 —
+        // either way the canonical rank==128, k%128==0 window is required.
+        Some(v @ ("v6" | "v7")) => {
+            if (cc_major >= 8 || (cc_major == 7 && cc_minor >= 5))
+                && rank == 128
+                && k % 128 == 0
+            {
+                v
+            } else {
+                "v4"
+            }
+        }
+        // v8+ additionally require real sm_80 features (cp.async/ldmatrix).
+        Some(v @ ("v8" | "v9" | "v10")) => {
+            if cc_major >= 8 && rank == 128 && k % 128 == 0 {
+                v
+            } else {
+                "v4"
+            }
+        }
+        Some(v @ ("v3" | "v4")) => v,
+        Some(_) => "v4",
+    }
+}
+
+/// `ZION_PEARL_CUMULATIVE_MMA` is strictly opt-in: only the literal "1"
+/// enables the cumulative-mma v6 variant; anything else (incl. unset)
+/// keeps the default per-window merge path.
+fn cumulative_mma_enabled(value: Option<&str>) -> bool {
+    value == Some("1")
+}
+
 /// Persistent CUDA miner for `pearlhash`. One attempt = one full pipeline
 /// (steps 1–7); the caller rebuilds `PlainProof` on the CPU when a tile wins.
 pub struct PearlCudaMiner {
     dev: Arc<CudaDevice>,
     work_size: usize,
     device_name_cached: String,
+    /// Cached (major, minor) compute capability — queried once at init so
+    /// the per-attempt mine-kernel selector avoids driver attribute calls.
+    compute_capability: (i32, i32),
+    /// Which v6 flavor the loaded module was compiled with — test/bench
+    /// metadata only (the init log reports the actual flag at runtime).
+    #[cfg(test)]
+    cumulative_mma: bool,
     f_gen_matrix: CudaFunction,
     f_chunk_hash: CudaFunction,
     f_merge: CudaFunction,
@@ -235,6 +308,16 @@ impl PearlCudaMiner {
             .name()
             .unwrap_or_else(|_| "unknown CUDA device".to_string());
         let arch = detect_cuda_arch(&dev);
+        // Read once at init — never promoted, never re-parsed per attempt.
+        let cumulative_mma =
+            cumulative_mma_enabled(std::env::var("ZION_PEARL_CUMULATIVE_MMA").ok().as_deref());
+        // The variant gets its own module name so a shared device never
+        // aliases functions between the two flavors.
+        let module = if cumulative_mma {
+            "pearl_pouw_native_cumulative"
+        } else {
+            MODULE
+        };
         let processed = preprocess_kernel(PEARL_CU);
         let ptx = compile_ptx_with_opts(
             &processed,
@@ -243,18 +326,19 @@ impl PearlCudaMiner {
                     "--use_fast_math".to_string(),
                     format!("-arch={}", arch),
                     "--std=c++14".to_string(),
+                    format!("-DPEARL_CUMULATIVE_MMA={}", cumulative_mma as u32),
                 ],
                 ..Default::default()
             },
         )
         .map_err(|e| anyhow::anyhow!("NVRTC compile failed for pearl: {e}"))?;
-        dev.load_ptx(ptx, MODULE, KERNELS)
+        dev.load_ptx(ptx, module, KERNELS)
             .map_err(|e| anyhow::anyhow!("PTX load failed for pearl: {e}"))?;
 
-        fn get(dev: &Arc<CudaDevice>, name: &str) -> Result<CudaFunction> {
-            dev.get_func(MODULE, name)
+        let get = |dev: &Arc<CudaDevice>, name: &str| -> Result<CudaFunction> {
+            dev.get_func(module, name)
                 .ok_or_else(|| anyhow::anyhow!("pearl kernel {} not found", name))
-        }
+        };
         let f_gen_matrix = get(&dev, kern::GEN_MATRIX)?;
         let f_chunk_hash = get(&dev, kern::CHUNK_HASH)?;
         let f_merge = get(&dev, kern::MERGE)?;
@@ -324,17 +408,37 @@ impl PearlCudaMiner {
             }
         }
 
+        // Cached once — the per-attempt kernel selector must not pay a
+        // cuDeviceGetAttribute round-trip on every mine call.
+        let compute_capability = (
+            dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR)
+                .unwrap_or(0),
+            dev.attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR)
+                .unwrap_or(0),
+        );
+
         crate::ext_info!(
-            "gpu_pearl_cuda_init device=\"{}\" work_size={} streams={}",
+            "gpu_pearl_cuda_init device=\"{}\" work_size={} streams={} cc={}.{} cumulative_mma={}",
             device_name,
             work_size,
             streams.len(),
+            compute_capability.0,
+            compute_capability.1,
+            cumulative_mma,
         );
+        if compute_capability == (7, 5) {
+            crate::ext_info!(
+                "gpu_pearl_cuda_init sm_75 device — tensor mine kernels (v6/v7) only via explicit ZION_PEARL_MINE opt-in"
+            );
+        }
 
         Ok(Self {
             dev,
             work_size,
             device_name_cached: device_name,
+            compute_capability,
+            #[cfg(test)]
+            cumulative_mma,
             f_gen_matrix,
             f_chunk_hash,
             f_merge,
@@ -910,31 +1014,21 @@ impl PearlCudaMiner {
 
         // ── Step 7: MatMul + jackpot + target check ────────────────────
         {
-            // Kernel select: v5 (default) stages the band's A-window in
-            // shared memory cooperatively (4 strips/block → ~30cy smem reads
-            // replace ~600cy L2 reads); v4 = per-warp strips direct-global;
-            // v3 = one tile per warp. ZION_PEARL_MINE=v3|v4|v5 for A/B.
+            // Kernel select: v6 (default on sm_80+) = quad-col tensor mma;
+            // v4 = per-warp strips direct-global; v3 = one tile per warp;
+            // v5 = smem-staged A window (rank ≤ 128). ZION_PEARL_MINE
+            // overrides; v6/v7 are additionally opt-in on sm_75 where the
+            // mma is emulated via m8n8k16 (see select_mine_version).
             let nro = input.row_offsets.len() as u32;
             let nco = input.col_offsets.len() as u32;
-            let ver = std::env::var("ZION_PEARL_MINE").unwrap_or_else(|_| "v6".into());
-            // v5's staged window holds 32 rows × rank/16 int4 per buffer
-            // (≤256 slots → rank ≤ 128); larger ranks fall back to v4.
-            let ver = if ver == "v5" && input.rank > 128 { "v4".into() } else { ver };
-            // v6/v7 need int8 tensor cores (sm_80+) and the canonical window
-            // layout (rank==128, k%128==0); otherwise fall back to v4.
-            let ver = if ver == "v6" || ver == "v7" || ver == "v8" || ver == "v9" || ver == "v10" {
-                let cc_major = self
-                    .dev
-                    .attribute(CUdevice_attribute::CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR)
-                    .unwrap_or(0);
-                if cc_major >= 8 && input.rank == 128 && input.k % 128 == 0 {
-                    ver
-                } else {
-                    "v4".into()
-                }
-            } else {
-                ver
-            };
+            let requested = std::env::var("ZION_PEARL_MINE").ok();
+            let ver = select_mine_version(
+                requested.as_deref(),
+                self.compute_capability.0,
+                self.compute_capability.1,
+                input.rank,
+                input.k,
+            );
             let cfg = if ver == "v3" {
                 LaunchConfig {
                     grid_dim: ((nro * nco).div_ceil(4), 1, 1),
@@ -988,7 +1082,7 @@ impl PearlCudaMiner {
             let mut jackpot_view = b.output_jackpot.slice_mut(slot * 32..(slot + 1) * 32);
             let mut found_view = b.found.slice_mut(slot..slot + 1);
             klaunch!(
-                match ver.as_str() {
+                match ver {
                     "v3" => &self.f_mine_v3,
                     "v4" => &self.f_mine_v4,
                     "v5" => &self.f_mine_v5,
@@ -1326,6 +1420,10 @@ impl GpuMiner for PearlCudaMiner {
 }
 
 // ─── On-device parity (needs a CUDA device; ignored by default) ──────────
+
+#[cfg(test)]
+#[path = "pearl_cuda_tests.rs"]
+mod direct_tests;
 
 #[cfg(test)]
 mod pearl_cuda_kat {

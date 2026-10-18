@@ -1,7 +1,11 @@
 # Pearl PoUW Kernel Optimization — Plan & Report
 
-> Status: **Phase 1 deployed & validated on-device** (RTX 3060, vast 56302165).
-> Phase 2 (kernel micro-opts) queued. Last updated: 2026-10-17.
+> Status: the Phase 5 result on the rented RTX 3060 (vast 56302165, SM86)
+> was ~20.3–21.1 TH/s solo sustained (§10–11) — a historical measurement,
+> not a statement of current instance or process liveness. The 2026-10-18
+> SM75 (Turing) tensor continuation (§12) is **compile-/assembler-validated
+> ONLY**: not GPU-validated, not deployed, no new performance measured.
+> Last updated: 2026-10-18.
 
 ---
 
@@ -180,8 +184,9 @@ Ordered by expected value:
 
 SRBMiner pearlhash ≈ **48 TH/s solo** on this card vs our ~2.15 TH/s-equiv
 display — still ~25×. Their kernel fuses far more aggressively and likely
-restructures the whole attempt (matrixgen + merkle in registers/shared).
-Closing that fully is a research-grade kernel rewrite; Phase 1+2 targets
+restructures the whole attempt (matrixgen + merkle in registers/shared) —
+inferred, not verified SRBMiner internals. Closing that fully is
+hypothesized to be a research-grade kernel rewrite; Phase 1+2 targets
 the low-hanging fruit (host roundtrips, launch storms, reduction
 overhead) which already gave 3.4×.
 
@@ -260,11 +265,13 @@ Continuation of §8 on the same RTX 3060 (vast.ai 56302165, SM86, 98% util,
 `gen=0.09 chunk=0.23 merkle=0.13 derive=0.001 noise=0.05 apply=0.08 mine=0.26 | total≈0.84 ms/attempt-stream → ~17.6 TH/s`
 
 **Honest remaining gap vs SRBMiner (~48 TH/s): ~2.7×.** All incremental
-latency tricks are exhausted; the gap now requires a production-grade
+latency tricks tried so far are exhausted (hypothesis — a broader redesign
+could change this); the gap appears to require a production-grade
 multi-stage smem GEMM pipeline (cp.async ring + ldmatrix + wide CTA tiles)
 plus faster BLAKE3 (chunk+merkle ≈ 0.36 ms/att ≈ 43% of stream time).
-Attempts so far confirm naive smem staging always loses to `__ldg` gathers
-on this access pattern; profiling tools (ncu) unavailable on the box.
+Attempts so far suggest naive smem staging loses to `__ldg` gathers
+on this access pattern (measured on the tried variants — not a proven
+architectural limit); profiling tools (ncu) unavailable on the box.
 
 ## 11. Session 3 — deep fusion + regen-apply + streams=4 → 21.0 TH/s (2026-10-17)
 
@@ -274,17 +281,196 @@ Same RTX 3060, parity-gated by both KATs after each step.
 
 | Change | Effect |
 |---|---|
-| `pearl_gen_chunk_merkle_fused` — ONE launch does gen + chunk-hash + in-block subtree Merkle. Each block of `PEARL_SUBTREE=128` threads covers a power-of-two-aligned ≤128-leaf subtree (32 blocks/tree → all SMs busy); leaves live only in smem, pairwise reduce in-block (read→barrier→write), block subtree root → `subtree_{a,b}`; `merkle_derive_dual` then folds 16+16 subtree roots (canonical BLAKE3 subtree merge = bit-identical) + derive epilogue | chunk 0.23→0.002 ms; gen+chunk+merkle fused 0.44→~0.27 ms/att |
+| `pearl_gen_chunk_merkle_fused` — ONE launch does gen + chunk-hash + in-block subtree Merkle. Each block of `PEARL_SUBTREE=128` threads covers a power-of-two-aligned ≤128-leaf subtree (16 blocks/tree, 32 total → all SMs busy); leaves live only in smem, pairwise reduce in-block (read→barrier→write), block subtree root → `subtree_{a,b}`; `merkle_derive_dual` then folds 16+16 subtree roots (canonical BLAKE3 subtree merge = bit-identical) + derive epilogue | chunk 0.23→0.002 ms; gen+chunk+merkle fused 0.44→~0.27 ms/att |
 | `pearl_apply_noise_regen` — apply computes `gen_int7(nonce,idx)` inline instead of reading the matrix (element-wise, same index ⇒ identical) | −4MB matrix read/att |
 | Matrix store removed from the fused gen path — matrices materialize only on-hit via `f_gen_dual` in `mine_native` before proof readback | −4MB matrix write/att (≈8MB/att less DRAM traffic total) |
 | `ZION_PEARL_STREAMS` default 3→4 (clamp 6) | 19.8→20.9 TH/s; 6 streams ≈ flat |
 
 **Result: ~20.3–21.1 TH/s solo sustained** (stage profile contended: gen 0.18 / chunk 0.002 / merkle 0.16 / derive 0.001 / noise 0.11 / apply 0.10 / mine 0.27 → ~0.83 ms/stream). 10.3× over the v3 baseline; **gap vs SRBMiner ~48 TH/s ≈ 2.3×.**
 
-**Verdict:** the architecture is now a 3-kernel pipeline per attempt
+**Verdict:** the architecture is now a 5-kernel pipeline per attempt
 (gcm_fused → merkle_derive → noise_fused → apply_regen → mine = 5 launches
 down from ~33 at Phase-2 start) with all stages fused as far as data
 dependencies allow. Remaining gap is concentrated in the v6 mma kernel's
 L2-gather latency exposure and BLAKE3 serial chains inside gcm — closing
-it requires the production GEMM pipeline described in §10, i.e. a
-multi-day kernel rewrite rather than another measured iteration.
+it appears to require the production GEMM pipeline described in §10, i.e.
+a multi-day kernel rewrite rather than another measured iteration
+(hypothesis, not a proven limit).
+
+## 12. SM75 (Turing) tensor path + direct probes — compile-validated only (2026-10-18)
+
+Status: **NOT GPU-validated, not deployed, no performance measured.** The
+changes below are NVRTC/assembler-accepted on every target arch but have
+not run on any GPU — the local host is AMD-only and remote access
+approval is pending. Everything in this section is settled code state or
+offline compiler evidence, not measurements; no current accepted-share or
+process state is asserted.
+
+### 12.1 What changed
+
+- `mma_s8_m16n8k32` (`csrc/cuda/pearl_pouw_native.cu`): guard widened
+  `__CUDA_ARCH__ >= 800` → `>= 750`. sm_80+ keeps the native
+  `mma.m16n8k32.s8` instruction bit-for-bit; on sm_75 the same fragment
+  contract is emulated by FOUR
+  `mma.sync.aligned.m8n8k16.row.col.s32.s8.s8.s32` ops — `{d0,d1} +=
+  a0·b0` then `a2·b1`; `{d2,d3} += a1·b0` then `a3·b1` (each m8 op:
+  two `+r` accumulators, one `r` A, one `r` B).
+- The v6/v7 compute `#if`s widened to `>= 750` only — same fragment
+  mapping, `cum`/fold/jackpot semantics, and B-fragment sharing are
+  unchanged. v8–v10 stay sm_80-only (cp.async/ldmatrix); the ldmatrix
+  helper guard is untouched.
+- New pure `select_mine_version` (`src/gpu/pearl_cuda.rs`) replaces the
+  inline selector; the physical `(major, minor)` compute capability is
+  cached once on `PearlCudaMiner` at init (no per-attempt attribute
+  calls):
+  - env unset → v6 **iff** `cc_major>=8 && rank==128 && k%128==0`, else
+    v4 — the canonical-window guard applies to the default too, and SM75
+    is **never promoted by default** (default SM75 = v4, unchanged);
+  - explicit `ZION_PEARL_MINE=v6|v7` additionally accepted on sm_75 —
+    opt-in only;
+  - `v8|v9|v10` still require sm_80+; `v5` requires rank ≤ 128;
+    unknown/unmet → v4.
+
+### 12.2 Validation performed (2026-10-18)
+
+- `python3 V31/scripts/check-native-cuda.py --output /tmp/NEW_EMPTY_CHILD_DIR`
+  (run from the repo root; the output path must NOT exist, its parent
+  must). Emits per-case `.cubin`/`.ptx`/`.log` plus `manifest.json` —
+  NVRTC 12.4, 9/9 cases `compiled_only`: pearl sm61/sm75/sm86 (sm75 and
+  sm86 include the direct MMA probe) and qpow sm61/75/86 ×
+  `QPOW_FUSED_MDS=0|1`. Evidence:
+  `/tmp/zion-cuda-check.t5SMCU/compile/manifest.json` — an ephemeral
+  operator `/tmp` artifact; regenerate with the command above.
+- `cargo test --offline --locked -p zion-miner --features gpu-cuda --lib
+  pearl_selector -- --nocapture` →
+  `pearl_selector_keeps_unverified_turing_opt_in` PASSED (pure CPU
+  selector matrix).
+- Final local gate `cargo test --offline --locked -p zion-miner
+  --features gpu-cuda --lib -- --test-threads=1` → **exit 101:
+  `163 passed; 11 failed; 11 ignored`**. All 11 failures are
+  `runtime::tests::*` integration tests panicking in cudarc's loader —
+  `Unable to dynamically load the "cuda" shared library` — because this
+  host has no `libcuda` (AMD-only; device init precedes every code path
+  changed here). The `#[ignore]`d hardware/bench tests were
+  intentionally not run. Log:
+  `/tmp/zion-cuda-check.t5SMCU/cargo-test-lib-final-gate.log`. **The
+  suite is NOT green on this host** — and no baseline run of the old
+  tree was performed, so whether the failures pre-existed is
+  unverified; GPU validation remains pending.
+- The small older rank=32 parity fixture exercises the **fallback** path,
+  not the tensor path — it is not evidence for v6/v7 correctness.
+
+### 12.3 Direct validation tests (compiled, NOT yet executed — no NVIDIA host)
+
+- `pearl_cuda_tensor_fragment_matches_cpu` — 32 fragment matrices × 128
+  outputs each vs a straight CPU dot-product reference (boundary ±127
+  patterns + random inputs, non-zero initial accumulators).
+- `pearl_cuda_tensor_batch_slots_match_cpu` — production rank=128,
+  batch=16: every slot's found flag asserted and every jackpot checked
+  against the CPU reference, then a zero-target batch verifies the
+  found-flag reset. Requires `ZION_PEARL_MINE=v6` (the test asserts the
+  selector did not silently fall back).
+- `pearl_cuda_bench_sustained_windows` — 16 consecutive ≥1 s windows,
+  first 4 warm-up, 12 steady; reports raw attempts + wall_ns only (no
+  TH/s number, no SRBMiner parity claim).
+
+### 12.4 On-device runbook (execute later on an SM75+/SM86 box — NOT locally)
+
+Correctness gates first, from `V31` (explicit v6 on all host paths so
+the default-config test cannot silently use v4 on SM75):
+
+```bash
+for gate in \
+  gpu::pearl_cuda::direct_tests::pearl_cuda_tensor_fragment_matches_cpu \
+  gpu::pearl_cuda::direct_tests::pearl_cuda_tensor_batch_slots_match_cpu \
+  gpu::pearl_cuda::pearl_cuda_kat::pearl_cuda_parity_vs_cpu_reference \
+  gpu::pearl_cuda::pearl_cuda_kat::pearl_cuda_default_config_repeated_attempts
+do
+  ZION_PEARL_MINE=v6 ZION_PEARL_K=2048 ZION_PEARL_RANK=128 \
+    cargo test --release --offline --locked -p zion-miner --features gpu-cuda \
+    --lib "$gate" -- --exact --ignored --nocapture --test-threads=1 || exit 1
+done
+```
+
+Hardware benchmarks ONLY after all gates pass — exclusive same GPU,
+unchanged clocks/power limits, no concurrent miners; interleave
+v4,v6,v4,v6 (no best-of-N); streams=4 / batch=16; `ZION_PEARL_STAGE_TIMING`
+unset; 16 windows / first 4 warm-up; preserve raw attempts + wall_ns:
+
+```bash
+for kernel in v4 v6 v4 v6; do
+  env -u ZION_PEARL_STAGE_TIMING ZION_PEARL_STREAMS=4 ZION_PEARL_MINE="$kernel" \
+    ZION_PEARL_K=2048 ZION_PEARL_RANK=128 \
+    cargo test --release --offline --locked -p zion-miner --features gpu-cuda \
+    --lib gpu::pearl_cuda::direct_tests::pearl_cuda_bench_sustained_windows \
+    -- --exact --ignored --nocapture --test-threads=1 || exit 1
+done
+```
+
+Any SRBMiner comparison must be contemporaneous on the same GPU/config —
+the old RTX 3060 results and the calibrated GH/s display do not prove
+parity.
+
+## 13. Session 4 — cumulative-MMA v6 + on-card SRBMiner reference (2026-10-18, RTX 3060 SM86)
+
+Instance `56527570`, driver 580.159.03, NVRTC 12.4, GPU isolated (0%
+util before every run), 16 windows/run first 4 warm-up, interleaved
+c0,c1,c0,c1 — same binary `zion_miner-…259833da` (sha
+`3d92527d…855fe3`), batch 16, streams 4, `ZION_PEARL_MINE=v6`.
+
+### 13.1 Opt-in `ZION_PEARL_CUMULATIVE_MMA=1`
+
+v6 keeps a per-window `cC` fragment and merges it into `cum` each window.
+The cumulative variant carries the MMA C registers directly across all
+k=2048 rank windows — `cC` becomes the running accumulator and the scalar
+`cum[e]+=d[e]` merge disappears. Exactness: s32 MMA accumulation mod 2^32;
+canonical inputs bound each dot to |a|,|b| <= 127, k=2048 → 33,032,192
+(< 2^31). Enabled ONLY by literal `ZION_PEARL_CUMULATIVE_MMA=1`; separate
+NVRTC module `pearl_pouw_native_cumulative` prevents function aliasing on
+a shared device; `-DPEARL_CUMULATIVE_MMA=0|1` compiled in.
+
+**Gates (all PASS, same binary):** c0 batch16, c1 batch16, c1 small CPU
+reference, c1 repeated default attempts — `PASS` in
+`cumulative-gates-20261018-1/results.txt`.
+
+**A/B result (24 steady samples each):**
+
+| variant | median att/s | aggregate |
+|---|---|---|
+| c0 (merge) | 3013.33 | 3013.75 |
+| c1 (cumulative) | 3057.32 | 3057.75 |
+
+**+1.46 %** (ratio 1.0146). SASS metadata: v6 REG 118→86, STACK 32 and
+SHARED 8192 unchanged — the freed registers are real but occupancy was
+already not the binding constraint at this tile size. **Decision: stays
+opt-in** — small measured gain, parity-clean, but not large enough to
+justify flipping the default without production soak.
+
+**First-AB v4/v6 cross-check (same session, earlier binary):** v4 998.17
+vs v6 3014.29 att/s aggregate → **3.02×** (median ratio 3.022) —
+consistent with previous v6 numbers.
+
+### 13.2 Contemporaneous SRBMiner reference — same GPU
+
+SRBMiner-MULTI 3.7.6 (sha `0c3353a7…25a15`, verified) on THIS RTX 3060,
+90 s capture per algo against the project pool through a transparent
+relay (unmodified wire data retained; CPU/MSR/OC tweaks disabled):
+
+| algo | SRBMiner-reported | ours (native, sustained) | gap |
+|---|---|---|---|
+| pearlhash | **46.55 TH/s** | ~20.3–21.1 TH/s solo | **≈ 2.2×** |
+| quantus | **212.72 MH/s** | ~141 MH/s | **≈ 1.50×** |
+
+Raw evidence `/tmp/…/srb-reference-20261018-1/` (api.jsonl, console.log,
+wire .bin, telemetry.csv). These are SRB self-reported numbers against
+real `prlu:`/`qtu` jobs — the reference target, not a kernel benchmark.
+Earlier "48 TH/s" readings came from a different card/session; **46.55
+TH/s is the number for this exact GPU.**
+
+### 13.3 What remains
+
+v6 mine is still the dominant stage (~0.27 ms of ~0.83 ms/attempt
+contended); the gap to 46.55 TH/s is a kernel-architecture problem
+(multi-stage smem GEMM pipeline + faster BLAKE3), not a tuning one —
+documented in §10–§11. The cumulative path is a marginal step; no
+production flip recommended yet.
