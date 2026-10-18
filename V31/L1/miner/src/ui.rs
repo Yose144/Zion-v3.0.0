@@ -805,7 +805,7 @@ pub struct StreamStats {
 /// │  STREAM 3  CPU PROFIT VRSC / verushash    234.5 H/s  ██░░░░░  12/0  ✓  │
 /// ├─────────────────────────────────────────────────────────────────────────┤
 /// │  TOTAL      12.57 MH/s    57 accepted / 0 rejected  (100.0%)            │
-/// │  pool 62.171.141.136:8444   height 3623114   latency 12/45 ms           │
+/// │  pool pool.zionterranova.com:8444   height 3623114   latency 12/45 ms   │
 /// └─────────────────────────────────────────────────────────────────────────┘
 /// ```
 pub fn print_trinity_stats(

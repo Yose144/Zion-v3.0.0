@@ -62,7 +62,7 @@ fn run_menu() {
     println!();
 
     // Defaults
-    let default_pool = "62.171.141.136:8444";
+    let default_pool = "pool.zionterranova.com:8444";
     let default_worker = format!(
         "{}-rig",
         std::env::var("USER").unwrap_or_else(|_| "desktop".into())
