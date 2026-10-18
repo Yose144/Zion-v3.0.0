@@ -683,6 +683,10 @@ export default function PoolDashboard() {
                 <a href="#start-mining" className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
                   {PoolDashboardCopy.gettingStartedGuide[cs ? 'cs' : 'en']} <ArrowRight className="h-3.5 w-3.5" />
                 </a>
+                <a href="https://pool.zionterranova.com" target="_blank" rel="noreferrer"
+                  className="mt-2 inline-flex items-center gap-2 text-sm text-zion-gold hover:text-white transition-colors">
+                  {cs ? 'Nový pool portál — pool.zionterranova.com' : 'New pool portal — pool.zionterranova.com'} <ArrowRight className="h-3.5 w-3.5" />
+                </a>
               </div>
             </div>
           </div>
