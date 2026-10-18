@@ -544,6 +544,60 @@ ne automaticky); PPLNS diverzence mezi okamžikem snapshotu a ztrátou
 (denní backup → do 24 h unpaid drift, řeší ruční reconcile přes
 `list_coin_revenue`/blocks audit).
 
+### F3 — regtest payout verifikace (2026-10-19, průběžně)
+
+**PRL sweeper — wire path ověřen, funded broadcast blokován:**
+
+- **Fix nasazen:** oyster wallet API používá `sendfrom(account, address,
+  amount, fee_rate)` — `sendtoaddress` na oysteru **neexistuje** (původní
+  default by selhal při prvním live sendu). Nové env `PRL_RPC_SEND_ACCOUNT`
+  (default `default`) + `PRL_RPC_FEE_RATE` (`0.0001`); alternativní metody
+  drží legacy `(address, amount)` parametry. `PRL_ADDRESS_HRPS` povoluje
+  regtest `rprl` adresy (default HRP = `prl`, produkce beze změny).
+- **Live wire test:** regtest oyster (`:45207`…`/tmp/regtest` wallet)
+  přijal `sendfrom` parametry a doběhl až do konstrukce tx —
+  `insufficient funds available to construct transaction` = metoda +
+  podpis + serializace korektní.
+- **⚠️ Funded broadcast zatím nemožný:** pearld `--generate` CPU miner
+  na regtestu ani simnetu **neprodukuje bloky** — zk-PoW je
+  proving-bound (~3 min/proof), interní miner negeneruje proofy
+  (0 submit pokusů, `networkhashps: 0`). Funded payout vyžaduje GPU-rig
+  session přes `pearl-gateway` (stejná cesta jako 2026-10-16 E2E blok)
+  → **PRL_PAYOUT_DRY_RUN=1 zůstává** dokud není ověřená funded tx.
+- Regtest/simnet stack ponechán zastavený (mainnet `pearld`+`oyster`
+  nedotčeny); conf soubory + regtest wallet v `/tmp/regtest/` na edge.
+
+**QTU sweeper — dev-chain test:** `quantus-node --dev` (instant-seal,
+RPC `:19944`) + endowed custodial account v chainspec patchi
+(ss58-42 forma — plain spec odmítá `qz`/189 prefix v genesis blobu).
+Stub pool API `:18099` servíruje drain entries.
+
+**QTU extrinsic — root causes nalezené a opravené (dev chain spec153,
+CLI cross-check):**
+
+- **Storage key `System::Account`** — dvě chyby: typo v
+  `twox128("Account")` konstantě (`…8fb1cb00` místo `…6371da9`) a
+  `blake2_128`/`blake2_256` používaly zkrácený Blake2b-512 místo
+  pravého Blake2b s proměnnou délkou výstupu (digest-length je v
+  parameter bloku — `Blake2bVar::new(16|32)`). `balance()` četl
+  neexistující klíč → vždy 0 → treasury gate by deferroval vše.
+  Regresní testy s live-node vektory.
+- **Mortal era `AncientBirthBlock`** — runtime odmítá éry ankorované
+  na best head (`system_dryRun` → `Invalid(5)`); pravděpodobně custom
+  check proti finalized (dev chain finalized = 28, tip = 190). Oficiální
+  `quantus` CLI signuje **period-256, phase-0 era s genesis checkpointem**
+  — extrakováno byte-po-bytu z on-chain extrinsicu (`02 00` =
+  `balances.transfer_allow_death`, extra `0700 00 00 00`). Po fixu
+  `signing_context` vrací genesis/0 → dryRun `Invalid(1)=Payment`
+  (jen nedostatek fondů u test accountu) = decode + ML-DSA podpis +
+  všechny signed extensions prošly.
+- **Call index ověřen mutací on-chain extrinsicu:** `02 03` =
+  `transfer_keep_alive` je správně (mutace → BadProof jen na sig);
+  index `01` je deprecated stub → wasm trap (vysvětluje dřívější
+  transient `payment_queryInfo` trap při špatné cestě).
+- Zbývá: funded send + celý sweep drain→ledger→submit→balance-change
+  na dev chainu po návratu edge boxu (offline incident 2026-10-19).
+
 ---
 
 *Příbuzné docs: `PEARL-POUW-INTEGRATION.md` (PRL legs detail),
