@@ -457,11 +457,28 @@ Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
   `/miner/zion/<wallet>` 200 (workers+unpaid+active), `/api/*` 404,
   `/admin` 404. HTTPS externě ověřeno.
 
-**Zbývá:** TLS stratum jako primární public port
-(`tls.rs`/`ZION_POOL_TLS_*` existuje — env nastavit na edge), F6 (HA).
-Před produkcí regtest payout dávky na QTU i PRL a `PRL_PAYOUT_DRY_RUN=0`
-až po ověřené live dávce. Edge worktree `/root/build/pool-F5` ponechán
-pro další pool buildy; `/opt/zion` tree zůstává dirty (pre-existing).
+**F5 ✅ část C — TLS stratum live (2026-10-18, `51f505359`):**
+
+- `ZION_POOL_TLS_BIND=0.0.0.0:8445` + cert z
+  `/etc/zion/stratum-tls/` (kopie LE `pool.zionterranova.com` certu,
+  `zion:zion` — `/etc/letsencrypt` je root-only); certbot deploy hook
+  `/etc/letsencrypt/renewal-hooks/deploy/zion-pool-stratum-tls.sh`
+  re-copies + `try-restart` při renewal.
+- UFW `8445/tcp ALLOW Anywhere`; envs v `edge-environment.sh`
+  (`.bak-tls-stratum-20261018`).
+- **rustls fix:** `ServerConfig::builder()` panicoval na ambiguitu
+  CryptoProvider (víc providerů v dep grafu → crash-loop status=101) —
+  `builder_with_provider(ring)` + explicitní protocol versions.
+- **E2E ověřeno:** `openssl s_client` → `mining.subscribe` + V1
+  `mining.authorize` → `result:true` přes
+  `stratum+ssl://pool.zionterranova.com:8445` (a `stratum.zionterranova.com`).
+- UI `COIN_META` — reálné porty 8444/8445 (všechny coiny multiplex
+  na jednom listeneru, dialekt = auth vrstva).
+
+**Zbývá:** F6 (HA). Před produkcí regtest payout dávky na QTU i PRL a
+`PRL_PAYOUT_DRY_RUN=0` až po ověřené live dávce. Edge worktree
+`/root/build/pool-F5` ponechán pro další pool buildy; `/opt/zion` tree
+zůstává dirty (pre-existing).
 
 ---
 
