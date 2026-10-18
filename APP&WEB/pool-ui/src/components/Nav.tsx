@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Gem, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useLang } from '@/lib/i18n';
 import AuthButton from '@/components/AuthButton';
 
@@ -21,42 +21,117 @@ export default function Nav() {
   const { lang, setLang, t } = useLang();
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    document.body.classList.toggle('rasta-menu-open', open);
+    return () => document.body.classList.remove('rasta-menu-open');
+  }, [open]);
+
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(href));
+
   return (
-    <header className="pool-nav sticky top-0 z-50">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rasta-green via-rasta-gold to-rasta-red">
-            <Gem className="h-4.5 w-4.5 text-black" size={18} strokeWidth={2.4} />
-          </span>
-          <span className="text-[0.95rem] font-bold tracking-tight text-white">
-            ZION <span className="gradient-text">Pool</span>
-          </span>
-        </Link>
+    <>
+      <nav className="rasta-nav">
+        <div className="rasta-nav-pill">
+          <Link
+            href="/"
+            className="rasta-nav-logo-link"
+            onClick={() => setOpen(false)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/zion-symbol.png"
+              alt="ZION"
+              width={38}
+              height={38}
+              className="rasta-nav-logo-img"
+            />
+            <div className="rasta-nav-logo-text">
+              <span className="rasta-nav-brand">ZION Pool</span>
+              <span className="rasta-nav-kicker">
+                {t('TerraNova ekosystém', 'TerraNova ecosystem')}
+              </span>
+            </div>
+          </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`nav-link ${pathname === l.href ? 'nav-link-active' : ''}`}
-            >
-              {lang === 'cs' ? l.cs : l.en}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <div className="hidden md:block">
-            <AuthButton />
+          <div className="rasta-nav-menu rasta-desktop-menu">
+            {LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`rasta-nav-link ${isActive(l.href) ? 'active' : ''}`}
+              >
+                {lang === 'cs' ? l.cs : l.en}
+              </Link>
+            ))}
           </div>
-          <div className="flex overflow-hidden rounded-lg border border-white/15 text-[0.72rem] font-bold">
+
+          <div className="rasta-nav-right">
+            <div className="rasta-nav-actions">
+              <div className="flex overflow-hidden rounded-full border border-white/15 text-[0.68rem] font-bold">
+                {(['cs', 'en'] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`px-2.5 py-1.5 uppercase transition-colors ${
+                      lang === l
+                        ? 'bg-rasta-gold text-black'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <AuthButton />
+            </div>
+            <button
+              className="rasta-hamburger"
+              onClick={() => setOpen(!open)}
+              aria-label="menu"
+            >
+              {open ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile slide-in menu */}
+      <div className={`rasta-mobile-menu ${open ? 'open' : ''}`}>
+        <div className="rasta-mobile-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/zion-symbol.png"
+            alt="ZION"
+            width={34}
+            height={34}
+            className="rasta-nav-logo-img"
+          />
+          <span className="rasta-nav-brand">ZION Pool</span>
+        </div>
+        {LINKS.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            onClick={() => setOpen(false)}
+            className={`rasta-nav-link ${isActive(l.href) ? 'active' : ''}`}
+          >
+            {lang === 'cs' ? l.cs : l.en}
+          </Link>
+        ))}
+        <div className="rasta-mobile-actions">
+          <AuthButton />
+          <div className="flex overflow-hidden rounded-full border border-white/15 text-[0.72rem] font-bold">
             {(['cs', 'en'] as const).map((l) => (
               <button
                 key={l}
-                onClick={() => setLang(l)}
-                className={`px-2.5 py-1.5 uppercase transition-colors ${
+                onClick={() => {
+                  setLang(l);
+                  setOpen(false);
+                }}
+                className={`flex-1 px-3 py-2 uppercase transition-colors ${
                   lang === l
-                    ? 'bg-zion-gold text-black'
+                    ? 'bg-rasta-gold text-black'
                     : 'text-white/50 hover:text-white'
                 }`}
               >
@@ -64,34 +139,14 @@ export default function Nav() {
               </button>
             ))}
           </div>
-          <button
-            className="p-2 text-white/70 md:hidden"
-            onClick={() => setOpen(!open)}
-            aria-label="menu"
-          >
-            {open ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </div>
-
       {open && (
-        <nav className="border-t border-white/10 px-4 py-3 md:hidden">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setOpen(false)}
-              className={`nav-link mb-1 block ${pathname === l.href ? 'nav-link-active' : ''}`}
-            >
-              {lang === 'cs' ? l.cs : l.en}
-            </Link>
-          ))}
-          <div className="mt-3 border-t border-white/10 pt-3 md:hidden">
-            <AuthButton />
-          </div>
-        </nav>
+        <div
+          className="fixed inset-0 z-[48] bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setOpen(false)}
+        />
       )}
-      <span className="hidden">{t('', '')}</span>
-    </header>
+    </>
   );
 }
