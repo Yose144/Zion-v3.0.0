@@ -41,6 +41,13 @@ typedef unsigned long long u64;
 #ifndef QPOW_EUNROLL
 #define QPOW_EUNROLL 1
 #endif
+// Fused MDS multiply+add in the internal round: one mul128_add_wide per
+// element replaces the mul64wide + add128_wide pair (same lazy reduce,
+// different instruction mix — experimental). Enable via
+// QPOW_NVRTC_OPTS="-DQPOW_FUSED_MDS=1".
+#ifndef QPOW_FUSED_MDS
+#define QPOW_FUSED_MDS 0
+#endif
 
 #define MAX_HITS 8
 
@@ -347,13 +354,21 @@ __device__ __forceinline__ u64 int_round_p(u64 *state, u64 x, u64 rc0) {
     Wide s0 = s;
     wide_add(s0, rc0);
     u32 r0, r1, r2, r3;
+#if QPOW_FUSED_MDS
+    mul128_add_wide(x, MDS_DIAG[0], s0, r0, r1, r2, r3);
+#else
     mul64wide(x, MDS_DIAG[0], r0, r1, r2, r3);
     add128_wide(r0, r1, r2, r3, s0);
+#endif
     u64 out0 = reduce128(r0, r1, r2, r3);
     #pragma unroll
     for (int i = 1; i < 12; i++) {
+#if QPOW_FUSED_MDS
+        mul128_add_wide(state[i], MDS_DIAG[i], s, r0, r1, r2, r3);
+#else
         mul64wide(state[i], MDS_DIAG[i], r0, r1, r2, r3);
         add128_wide(r0, r1, r2, r3, s);
+#endif
         state[i] = reduce128(r0, r1, r2, r3);
     }
     return out0;
@@ -409,6 +424,48 @@ __device__ __forceinline__ u32 bswap32(u32 v) {
     return __byte_perm(v, 0u, 0x0123u);
 }
 
+// Per-nonce sponge evaluation: copy the shared prestate into `st`, inject
+// the linear image of the nonce's two varying lanes, and run the two
+// permutations needed for the first squeeze. Extracted 1:1 from qpow_mine
+// so tests exercise the exact production nonce path.
+__device__ __forceinline__ void eval_nonce_state(const u64 *mid,
+                                               u64 nonce_low, u64 *st) {
+    #pragma unroll
+    for (int i = 0; i < 12; i++) {
+        st[i] = mid[i];
+    }
+    // Sparse inject: the prestate already ran the initial linear layer,
+    // so only the linear image of the two varying lanes (6,7) is added —
+    // x6/x7 are the byte-swapped low 64 bits of the nonce.
+    u64 x6 = (u64)bswap32((u32)(nonce_low >> 32));
+    u64 x7 = (u64)bswap32((u32)nonce_low);
+    u64 x6_2 = x6 + x6;
+    u64 x6_3 = x6_2 + x6;
+    u64 x6_4 = x6_2 + x6_2;
+    u64 x6_6 = x6_3 + x6_3;
+    u64 x7_2 = x7 + x7;
+    u64 x7_3 = x7_2 + x7;
+    u64 x7_4 = x7_2 + x7_2;
+    u64 x7_6 = x7_3 + x7_3;
+    u64 c0 = x6 + x7;
+    u64 c1 = x6_3 + x7;
+    u64 c2 = x6_2 + x7_3;
+    u64 c3 = x6 + x7_2;
+    st[0] = gf64_add(st[0], c0);
+    st[1] = gf64_add(st[1], c1);
+    st[2] = gf64_add(st[2], c2);
+    st[3] = gf64_add(st[3], c3);
+    st[4] = gf64_add(st[4], x6_2 + x7_2);
+    st[5] = gf64_add(st[5], x6_6 + x7_2);
+    st[6] = gf64_add(st[6], x6_4 + x7_6);
+    st[7] = gf64_add(st[7], x6_2 + x7_4);
+    st[8] = gf64_add(st[8], c0);
+    st[9] = gf64_add(st[9], c1);
+    st[10] = gf64_add(st[10], c2);
+    st[11] = gf64_add(st[11], c3);
+    permute64_twice_after_initial(st);
+}
+
 extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine(
     u32 *results,
     const u32 *prestate,
@@ -443,41 +500,7 @@ extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine
             break;
         }
         u64 st[12];
-        #pragma unroll
-        for (int i = 0; i < 12; i++) {
-            st[i] = mid[i];
-        }
-        // Sparse inject: the prestate already ran the initial linear layer,
-        // so only the linear image of the two varying lanes (6,7) is added —
-        // x6/x7 are the byte-swapped low 64 bits of the nonce.
-        u64 nonce_low = nonce_base_low + (u64)logical_index;
-        u64 x6 = (u64)bswap32((u32)(nonce_low >> 32));
-        u64 x7 = (u64)bswap32((u32)nonce_low);
-        u64 x6_2 = x6 + x6;
-        u64 x6_3 = x6_2 + x6;
-        u64 x6_4 = x6_2 + x6_2;
-        u64 x6_6 = x6_3 + x6_3;
-        u64 x7_2 = x7 + x7;
-        u64 x7_3 = x7_2 + x7;
-        u64 x7_4 = x7_2 + x7_2;
-        u64 x7_6 = x7_3 + x7_3;
-        u64 c0 = x6 + x7;
-        u64 c1 = x6_3 + x7;
-        u64 c2 = x6_2 + x7_3;
-        u64 c3 = x6 + x7_2;
-        st[0] = gf64_add(st[0], c0);
-        st[1] = gf64_add(st[1], c1);
-        st[2] = gf64_add(st[2], c2);
-        st[3] = gf64_add(st[3], c3);
-        st[4] = gf64_add(st[4], x6_2 + x7_2);
-        st[5] = gf64_add(st[5], x6_6 + x7_2);
-        st[6] = gf64_add(st[6], x6_4 + x7_6);
-        st[7] = gf64_add(st[7], x6_2 + x7_4);
-        st[8] = gf64_add(st[8], c0);
-        st[9] = gf64_add(st[9], c1);
-        st[10] = gf64_add(st[10], c2);
-        st[11] = gf64_add(st[11], c3);
-        permute64_twice_after_initial(st);
+        eval_nonce_state(mid, nonce_base_low + (u64)logical_index, st);
 
         // First squeeze = the most significant 256 bits of the 64-byte BE
         // hash; compare them against the target high half and pay for the
@@ -509,5 +532,67 @@ extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine
         if (slot < MAX_HITS) {
             results[1 + slot] = logical_index;
         }
+    }
+}
+
+// Single-nonce variant — host selects it ONLY when nonces_per_thread==1
+// (ZION_QPOW_SINGLE_NONCE=1 opt-in, default off): one nonce per thread, so
+// the mid[] staging array, the j-loop and the pre-permutation target words
+// are never materialized. Same buffers/ABI, same first-squeeze +
+// strict-prefix compare + atomic candidate record as qpow_mine.
+extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine_single_nonce(
+    u32 *results,
+    const u32 *prestate,
+    const u32 *start_nonce,
+    const u32 *difficulty_target,
+    const u32 *dispatch_config) {
+    u32 thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    u32 total_threads = dispatch_config[0];
+    u32 total_nonces = dispatch_config[2];
+    u32 logical_index = thread_id;
+    if (logical_index >= total_threads || logical_index >= total_nonces) {
+        return;
+    }
+    u64 nonce_base_low = ((u64)start_nonce[1] << 32) | (u64)start_nonce[0];
+    u64 st[12];
+    #pragma unroll
+    for (int i = 0; i < 12; i++) {
+        st[i] = ((u64)prestate[2 * i + 1] << 32) | (u64)prestate[2 * i];
+    }
+    // In-place aliasing is valid: eval_nonce_state copies mid[0..12] into
+    // st before reading anything else, so the self-copy elides when
+    // inlined (verified by the in-place first-squeeze probe).
+    eval_nonce_state(st, nonce_base_low + (u64)logical_index, st);
+
+    // Target high words are only needed on the post-permutation compare —
+    // loaded here so they are not retained across the permutation.
+    u32 tgt_hi[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        tgt_hi[i] = difficulty_target[8 + i];
+    }
+    u32 first[8];
+    #pragma unroll
+    for (int i = 0; i < 4; i++) {
+        u64 c = gf64_canon(st[i]);
+        first[2 * i] = (u32)(c & EPS64);
+        first[2 * i + 1] = (u32)(c >> 32);
+    }
+    u32 cmp = 0u;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        u32 h = bswap32(first[i]);
+        u32 t = tgt_hi[7 - i];
+        if (h != t) {
+            cmp = (h > t) ? 1u : 2u;
+            break;
+        }
+    }
+    if (cmp == 1u) {
+        return;
+    }
+    u32 slot = atomicAdd(&results[0], 1u);
+    if (slot < MAX_HITS) {
+        results[1 + slot] = logical_index;
     }
 }

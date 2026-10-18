@@ -27,6 +27,7 @@ const POSEIDON2_CU: &str = include_str!("../../csrc/cuda/poseidon2_kernel.cu");
 
 const QPOW_MODULE: &str = "qpow_poseidon2";
 const QPOW_KERNEL: &str = "qpow_mine";
+const QPOW_SINGLE_NONCE_KERNEL: &str = "qpow_mine_single_nonce";
 /// Must equal `QPOW_LB_MAX` in poseidon2_kernel.cu (512 was the measured
 /// optimum on sm_61 vs. the upstream 256).
 const QPOW_THREADS_PER_BLOCK: u32 = 512;
@@ -41,11 +42,31 @@ const RESULT_WORDS: usize = 1 + MAX_HITS;
 /// Result of one QPoW GPU batch — shared with the OpenCL backend.
 pub use crate::gpu::QpowGpuResult;
 
+/// `ZION_QPOW_SINGLE_NONCE` is strictly opt-in: only the literal "1"
+/// enables the single-nonce kernel entry.
+fn single_nonce_enabled(value: Option<&str>) -> bool {
+    value == Some("1")
+}
+
+/// Kernel pick for a batch: the single-nonce entry is used ONLY when the
+/// flag is on AND the actual runtime nonces_per_thread is 1 — any other
+/// NPT (env tuning, future defaults) falls back to the legacy kernel.
+fn select_qpow_kernel(enabled: bool, nonces_per_thread: u32) -> &'static str {
+    if enabled && nonces_per_thread == 1 {
+        QPOW_SINGLE_NONCE_KERNEL
+    } else {
+        QPOW_KERNEL
+    }
+}
+
 /// Persistent CUDA miner for `qpow-poseidon2`.
 pub struct QpowCudaMiner {
     dev: Arc<CudaDevice>,
     work_size: usize,
     device_name_cached: String,
+    /// Whether the single-nonce kernel entry was enabled at init —
+    /// read-only after init (the flag is only consulted here).
+    single_nonce: bool,
     results_buf: CudaSlice<u32>,
     midstate_buf: CudaSlice<u32>,
     start_nonce_buf: CudaSlice<u32>,
@@ -65,8 +86,9 @@ impl QpowCudaMiner {
         // Extra NVRTC options for tuning experiments (e.g.
         // `QPOW_NVRTC_OPTS="-DQPOW_IUNROLL=5 -maxrregcount=80"`). The kernel
         // exposes QPOW_LB_MAX / QPOW_LB_MIN / QPOW_IUNROLL / QPOW_EUNROLL
-        // defines with measured-optimal defaults; unset env = production
-        // behavior unchanged.
+        // defines with measured-optimal defaults, plus the experimental
+        // QPOW_FUSED_MDS multiply+add variant (default off); unset env =
+        // production behavior unchanged.
         let mut options = vec![
             "--use_fast_math".to_string(),
             format!("-arch={}", arch),
@@ -83,8 +105,14 @@ impl QpowCudaMiner {
             },
         )
         .map_err(|e| anyhow::anyhow!("NVRTC compile failed for qpow: {e}"))?;
-        dev.load_ptx(ptx, QPOW_MODULE, &[QPOW_KERNEL])
+        // Both entries live in the same module — load_ptx registers both so
+        // no variant aliasing is possible on a shared device.
+        dev.load_ptx(ptx, QPOW_MODULE, &[QPOW_KERNEL, QPOW_SINGLE_NONCE_KERNEL])
             .map_err(|e| anyhow::anyhow!("PTX load failed for qpow: {e}"))?;
+
+        // Read once at init — never promoted, never re-parsed per batch.
+        let single_nonce =
+            single_nonce_enabled(std::env::var("ZION_QPOW_SINGLE_NONCE").ok().as_deref());
 
         let results_buf = dev
             .alloc_zeros::<u32>(RESULT_WORDS)
@@ -103,15 +131,17 @@ impl QpowCudaMiner {
             .map_err(|e| anyhow::anyhow!("qpow dispatch alloc: {e}"))?;
 
         crate::ext_info!(
-            "gpu_qpow_cuda_init device=\"{}\" work_size={}",
+            "gpu_qpow_cuda_init device=\"{}\" work_size={} single_nonce={}",
             device_name,
             work_size,
+            single_nonce,
         );
 
         Ok(Self {
             dev,
             work_size: work_size.max(QPOW_THREADS_PER_BLOCK as usize),
             device_name_cached: device_name,
+            single_nonce,
             results_buf,
             midstate_buf,
             start_nonce_buf,
@@ -211,10 +241,11 @@ impl QpowCudaMiner {
             )
             .map_err(|e| anyhow::anyhow!("qpow dispatch upload: {e}"))?;
 
+        let kernel = select_qpow_kernel(self.single_nonce, nonces_per_thread);
         let func = self
             .dev
-            .get_func(QPOW_MODULE, QPOW_KERNEL)
-            .ok_or_else(|| anyhow::anyhow!("kernel {} not found", QPOW_KERNEL))?;
+            .get_func(QPOW_MODULE, kernel)
+            .ok_or_else(|| anyhow::anyhow!("kernel {} not found", kernel))?;
         let cfg = LaunchConfig {
             grid_dim: (blocks, 1, 1),
             block_dim: (tpb, 1, 1),
@@ -335,6 +366,10 @@ fn limbs_to_u512_be(limbs: &[u32; 16]) -> [u8; 64] {
     }
     wire
 }
+
+#[cfg(test)]
+#[path = "qpow_cuda_tests.rs"]
+mod direct_tests;
 
 #[cfg(test)]
 mod tests {

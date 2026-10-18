@@ -4,6 +4,13 @@
 **Driver:** 580.178.04 · **Build:** `zion-miner` release, features `auxpow,gpu-opencl,gpu-cuda,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash`
 **Harness:** `qpow_bench_effective_throughput` (`cargo test --release -p zion-miner --features gpu-cuda qpow_bench -- --ignored --nocapture`), batch default 8 Mi nonces, 10–12 iters, median of iters 3+.
 
+> **Continuation 2026-10-18:** every measured number in this document is
+> HISTORICAL — each section carries its own measurement date (GTX 1070 Ti
+> 2026-10-09; see Appendix B for the AMD run) — and none reflects the
+> current tree or any current process state. See the appended
+> **QPOW_FUSED_MDS + direct probes** section at the bottom: compile-
+> validated only, GPU execution pending.
+
 ## TL;DR
 
 | Config | Hot steady-state (≈70–74 °C, 1607 MHz) | Δ vs orig |
@@ -153,3 +160,155 @@ ZION_QPOW_OCL_SRC=/tmp/kernel.cl ZION_OCL_BUILD_OPTS='-DQPOW_IUNROLL=3' \
   QPOW_BENCH_BATCH=8388608 QPOW_BENCH_ITERS=7 ./target/release/deps/zion_miner-* \
   gpu::qpow_opencl::tests::qpow_bench_effective_throughput --ignored --nocapture
 ```
+
+---
+
+# Appendix C — QPOW_FUSED_MDS + direct probes: compile-validated only (2026-10-18)
+
+Status: **NOT GPU-validated, not deployed, no performance measured.** The
+local host is AMD-only and remote access approval is pending; everything
+below is settled code state plus offline compiler evidence, not
+measurements. No new MH/s, speedup, or SRBMiner parity is claimed.
+
+## What changed
+
+- `csrc/cuda/poseidon2_kernel.cu` gained a default-off `QPOW_FUSED_MDS`
+  knob — opt-in via the existing `QPOW_NVRTC_OPTS='-DQPOW_FUSED_MDS=1'`
+  (default 0 = production path bit-identical). Behind the flag the
+  internal-round MDS updates use the existing `mul128_add_wide` (fused
+  multiply + 96-bit wide add) instead of the `mul64wide` + `add128_wide`
+  pair per element. The lazy-reduction trade and host CPU candidate
+  revalidation are unchanged; strict-target/candidate ABI and nonce
+  layout unchanged.
+- The per-nonce sponge evaluation was mechanically extracted into
+  `__device__ eval_nonce_state(mid, nonce_low, st)` — shared verbatim by
+  production `qpow_mine` and the direct first-squeeze probe, so the test
+  exercises the exact production nonce path.
+
+## Direct validation tests (compiled, NOT yet executed — no NVIDIA host)
+
+- `cuda_fused_mds_arithmetic_matches_wide_reference` — `mul128_add_wide`
+  vs plain `u128` multiply+add on the real `MDS_DIAG` multiplier domain
+  with small 96-bit addend sums, plus `reduce128` / `gf64_sqr` /
+  `add128_wide` reference checks.
+- `cuda_first_squeeze_matches_cpu_corpus` — first-squeeze state over a
+  4096-nonce corpus vs the CPU reference, compared BEFORE any
+  candidate/strict-target filtering so host candidate revalidation cannot
+  mask kernel errors.
+- The existing strict-target gate
+  `cuda_kernel_matches_cpu_golden_and_boundaries` (hash±1 + low64 carry
+  boundary) remains in place.
+
+## Validation performed (2026-10-18)
+
+`python3 V31/scripts/check-native-cuda.py --output /tmp/NEW_EMPTY_CHILD_DIR`
+(run from the repo root; the output path must NOT exist, its parent
+must). Emits per-case `.cubin`/`.ptx`/`.log` plus `manifest.json` —
+NVRTC 12.4, 9/9 cases `compiled_only`, including
+`qpow_sm{61,75,86}_fused{0,1}` with both probes.
+Evidence: `/tmp/zion-cuda-check.t5SMCU/compile/manifest.json` (ephemeral
+operator `/tmp` artifact — regenerate with the command above).
+
+Final local gate `cargo test --offline --locked -p zion-miner --features
+gpu-cuda --lib -- --test-threads=1` → **exit 101: `163 passed; 11 failed;
+11 ignored`**. All 11 failures are `runtime::tests::*` integration tests
+panicking in cudarc's loader — `Unable to dynamically load the "cuda"
+shared library` — because this host has no `libcuda` (AMD-only). The
+`#[ignore]`d hardware/bench tests were intentionally not run. Log:
+`/tmp/zion-cuda-check.t5SMCU/cargo-test-lib-final-gate.log`. **The suite
+is NOT green on this host** — no baseline run of the old tree was
+performed, so whether the failures pre-existed is unverified; GPU
+validation remains pending.
+
+## On-device runbook (execute later on an NVIDIA box — NOT locally)
+
+Each correctness gate once with fused-MDS off and once on, from `V31`:
+
+```bash
+for fused in 0 1; do
+  for gate in \
+    gpu::qpow_cuda::direct_tests::cuda_fused_mds_arithmetic_matches_wide_reference \
+    gpu::qpow_cuda::direct_tests::cuda_first_squeeze_matches_cpu_corpus \
+    gpu::qpow_cuda::tests::cuda_kernel_matches_cpu_golden_and_boundaries
+  do
+    QPOW_NVRTC_OPTS="-DQPOW_FUSED_MDS=$fused" \
+      cargo test --release --offline --locked -p zion-miner --features gpu-cuda \
+      --lib "$gate" -- --exact --ignored --nocapture --test-threads=1 || exit 1
+  done
+done
+```
+
+Hardware benchmarks ONLY after all gates pass — exclusive same GPU,
+unchanged clocks/power limits, no concurrent miners; interleave
+fused0,fused1,fused0,fused1 (no best-of-N); `QPOW_TPB=512 QPOW_NPT=1`;
+preserve raw counts + wall_ns (16 consecutive >=1 s windows, first 4
+warm-up, 12 steady):
+
+```bash
+for fused in 0 1 0 1; do
+  env -u QPOW_TIMING QPOW_TPB=512 QPOW_NPT=1 \
+    QPOW_NVRTC_OPTS="-DQPOW_FUSED_MDS=$fused" \
+    cargo test --release --offline --locked -p zion-miner --features gpu-cuda \
+    --lib gpu::qpow_cuda::direct_tests::cuda_bench_sustained_windows \
+    -- --exact --ignored --nocapture --test-threads=1 || exit 1
+done
+```
+
+Any SRBMiner comparison must be contemporaneous on the same GPU/config —
+the old numbers in this document do not prove parity.
+
+---
+
+# Appendix D — SM86 (RTX 3060) measured results: fused MDS + single-nonce (2026-10-18)
+
+Instance `56527570`, driver 580.159.03, NVRTC 12.4, isolated GPU, same
+binary per comparison, 16 windows/run (first 4 warm-up), interleaved
+trials, `QPOW_TPB=512 QPOW_NPT=1`.
+
+## D.1 `QPOW_FUSED_MDS` — REJECTED (regression)
+
+Binary `…e2a91a32`, fused0 vs fused1 (`QPOW_NVRTC_OPTS`), 24 steady
+samples each:
+
+| variant | median MH/s | aggregate |
+|---|---|---|
+| fused 0 | 140.60 | 140.65 |
+| fused 1 | 135.98 | 135.99 |
+
+**−3.28 %** (ratio 0.967). Fused MDS stays compile-gated and off; the
+gate coverage (67,696 arithmetic cases + 4,096×2 squeeze + boundaries)
+passed for both flavors, so this is a measured perf rejection, not a
+correctness problem.
+
+## D.2 `ZION_QPOW_SINGLE_NONCE=1` — REJECTED (regression)
+
+New `qpow_mine_single_nonce` entry: for `QPOW_NPT=1` only, drops the
+`mid[12]` staging array, the j-loop and pre-permutation `tgt_hi` —
+`st[12]` loaded straight from `prestate`, `eval_nonce_state(st,…,st)`
+in-place (alias proven by the 4,096-case dual-path squeeze probe).
+Opt-in via literal `ZION_QPOW_SINGLE_NONCE=1`; host selects it only when
+the actual runtime npt==1 (npt≥2 always uses `qpow_mine`).
+
+Gates PASS: dual-path squeeze corpus, `cuda_kernel_matches_cpu_…` for
+s0, s1 and s1+npt2 fallback.
+
+Binary `…860283af`, s0 vs s1, 24 steady samples each:
+
+| variant | median MH/s | aggregate |
+|---|---|---|
+| single 0 | 141.76 | 141.98 |
+| single 1 | 139.42 | 139.61 |
+
+**−1.65 %** (ratio 0.983). Why the hypothesis failed: SM86 SASS shows the
+compiler already keeps 18 of 24 midstate words in uniform registers and
+spills only ~24 B to stack — the "duplicated 24-register state" premise
+was mostly wrong. Keeping the code (opt-in, no cost when off) but the
+default stays `qpow_mine`.
+
+## D.3 Contemporaneous SRBMiner reference — same GPU
+
+SRBMiner-MULTI 3.7.6 on this RTX 3060 through the project pool (real
+`qtu` jobs, wire capture retained): **212.72 MH/s** self-reported vs
+~141 MH/s native → **≈ 1.50× gap** — larger than on the GTX 1070 Ti
+(~1.05×). Hypothesis (unverified): SRB's kernel benefits more from
+Ampere scheduling/ILP; closing it is a kernel redesign exercise.
