@@ -1,0 +1,101 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Boxes, Clock, ShieldCheck } from 'lucide-react';
+import CoinCard from '@/components/CoinCard';
+import MinerSearch from '@/components/MinerSearch';
+import { fetchOverview } from '@/lib/api';
+import { fmtDuration, fmtHashrate } from '@/lib/format';
+import { useLang } from '@/lib/i18n';
+import type { PoolOverview } from '@/lib/types';
+
+export default function HomePage() {
+  const { t } = useLang();
+  const [ov, setOv] = useState<PoolOverview | null>(null);
+
+  useEffect(() => {
+    fetchOverview().then(setOv);
+    const iv = setInterval(() => fetchOverview().then(setOv), 15_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const totalHps = ov
+    ? Object.values(ov.stats).reduce((a, s) => a + s.hashrate, 0)
+    : 0;
+
+  return (
+    <div className="pt-10">
+      {/* Hero */}
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center"
+      >
+        <p className="kicker mb-4">ZION TerraNova · public mining pool</p>
+        <h1 className="mx-auto max-w-3xl text-4xl font-black leading-tight text-white md:text-5xl">
+          {t('Jeden pool.', 'One pool.')}{' '}
+          <span className="gradient-text">
+            {t('Čtyři coiny.', 'Four coins.')}
+          </span>{' '}
+          {t('Nativní výplaty.', 'Native payouts.')}
+        </h1>
+        <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/55">
+          {t(
+            'Těžte ZION, Quantus, Pearl nebo multi-algo. Transparentní PPLNS, výplata vždy v coinu, který těžíte.',
+            'Mine ZION, Quantus, Pearl or multi-algo. Transparent PPLNS, always paid in the coin you mine.',
+          )}
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-[0.72rem] text-white/50">
+          <span className="pill pill-native"><Clock size={11} /> {t('uptime', 'uptime')} {ov ? fmtDuration(ov.uptime_s) : '…'}</span>
+          <span className="pill pill-live"><ShieldCheck size={11} /> PPLNS</span>
+          <span className="pill pill-bridged"><Boxes size={11} /> {fmtHashrate(totalHps)} {t('celkem', 'total')}</span>
+        </div>
+      </motion.section>
+
+      {/* Miner lookup */}
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="mx-auto mt-10 max-w-3xl"
+      >
+        <MinerSearch />
+      </motion.section>
+
+      {/* Coin cards */}
+      <section className="mt-12 grid gap-5 md:grid-cols-2">
+        {ov?.coins.map((c, i) => (
+          <motion.div
+            key={c.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.2 + i * 0.07 }}
+          >
+            <CoinCard coin={c} stats={ov.stats[c.id]} />
+          </motion.div>
+        ))}
+      </section>
+
+      {/* CTA strip */}
+      <section className="pool-card mt-12 flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div>
+          <h2 className="text-lg font-bold text-white">
+            {t('Začněte za 2 minuty', 'Start in 2 minutes')}
+          </h2>
+          <p className="mt-1 text-sm text-white/50">
+            {t(
+              'Trinity Miner na jedno kliknutí, nebo SRBMiner / teamredminer pro pokročilé. Porty, TLS i config snippet najdete v návodu.',
+              'One-click Trinity Miner, or SRBMiner / teamredminer for power users. Ports, TLS and config snippets in the guide.',
+            )}
+          </p>
+        </div>
+        <a href="/start/" className="btn-gold shrink-0">
+          {t('Jak těžit', 'How to mine')} <ArrowRight size={16} />
+        </a>
+      </section>
+    </div>
+  );
+}

@@ -1,0 +1,95 @@
+// Public API types — mirror the planned pool `/public/v1/*` surface
+// (docs/3.2/ZION-POOL-NG-PLAN.md §5a). The mock layer returns these
+// shapes so swapping to the live API is a base-URL change only.
+
+export type CoinId = 'zion' | 'qtc' | 'prl' | 'multi';
+
+export type LegStatus = 'native' | 'upstream' | 'down';
+
+export interface CoinLeg {
+  kind: 'native' | 'upstream';
+  status: 'live' | 'sync' | 'down';
+  job_age_ms: number | null;
+  share_pct: number; // fraction of served shares on this leg
+}
+
+export interface CoinInfo {
+  id: CoinId;
+  ticker: string;
+  name: string;
+  algorithm: string;
+  port: number;
+  tls_port: number;
+  dialect: string;
+  payout_mode: 'onchain' | 'node-wallet-batch' | 'bridged-batch';
+  min_payout: number;
+  payout_unit: string;
+  fee_bps: number;
+  legs: CoinLeg[];
+  accent: 'gold' | 'cyan' | 'purple' | 'green';
+  requirements?: string;
+}
+
+export interface CoinStats {
+  coin: CoinId;
+  hashrate: number;        // H/s pool-side estimate
+  miners_online: number;
+  workers_online: number;
+  network_hashrate: number | null;
+  network_difficulty: number | null;
+  height: number | null;
+  blocks_24h: number;
+  luck_pct: number | null; // pool luck, 100 = average
+  shares_1h: { accepted: number; rejected: number };
+}
+
+export interface BlockRow {
+  coin: CoinId;
+  height: number;
+  hash: string;
+  ts: number; // unix seconds
+  miner: string;
+  worker: string;
+  status: 'pending' | 'confirmed' | 'orphaned';
+  effort_pct: number | null;
+}
+
+export interface PayoutRow {
+  coin: CoinId;
+  ts: number;
+  address: string;
+  amount: number;
+  unit: string;
+  tx: string;
+  confirmations: number;
+  confirmed: boolean;
+}
+
+export interface WorkerRow {
+  name: string;
+  algorithm: string;
+  hashrate: number;
+  shares_accepted: number;
+  shares_rejected: number;
+  last_seen: number;
+}
+
+export interface MinerStats {
+  coin: CoinId;
+  wallet: string;
+  hashrate: number;
+  hashrate_history: { ts: number; hps: number }[];
+  workers: WorkerRow[];
+  shares_24h: { accepted: number; rejected: number };
+  immature: number;
+  pending: number;
+  total_paid: number;
+  unit: string;
+  payouts: PayoutRow[];
+}
+
+export interface PoolOverview {
+  uptime_s: number;
+  coins: CoinInfo[];
+  stats: Record<string, CoinStats>;
+}
