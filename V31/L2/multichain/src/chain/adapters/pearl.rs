@@ -184,8 +184,14 @@ pub fn pearl_encode_p2tr(output_key: &[u8; 32]) -> String {
 /// True iff `addr` is a well-formed Pearl mainnet segwit address
 /// (`prl` HRP, bech32m for v1+, bech32 for v0, sane program length).
 pub fn is_valid_pearl_address(addr: &str) -> bool {
+    is_valid_pearl_address_for_hrp(addr, &[PEARL_BECH32_HRP])
+}
+
+/// Same as `is_valid_pearl_address` but accepts any HRP in `hrps` —
+/// regtest/testnet wallets emit `rprl`/`tprl` instead of `prl`.
+pub fn is_valid_pearl_address_for_hrp(addr: &str, hrps: &[&str]) -> bool {
     match segwit_decode(addr) {
-        Ok((hrp, _v, _prog, _spec)) => hrp == PEARL_BECH32_HRP,
+        Ok((hrp, _v, _prog, _spec)) => hrps.iter().any(|h| *h == hrp),
         Err(_) => false,
     }
 }

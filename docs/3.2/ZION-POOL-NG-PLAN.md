@@ -509,6 +509,41 @@ zůstává dirty (pre-existing).
   Last-good zůstává na followeru (nechurnuje zpět). Standby pool na jiném
   hostu zůstává open.
 
+### F6 — HA runbook (operátor)
+
+**Vrstvy redundancy (co je kryté dnes):**
+
+| SPOF | Krytí | Stav |
+|---|---|---|
+| L1 node RPC (9445) | `L1Endpoints` failover → 9446/9447 (last-good, 4 s/attempt) | ✅ live-ověřeno |
+| Pool proces | systemd `Restart=always` (10 s) | ✅ |
+| PPLNS stát | `pool-pplns.json` snapshot + `pool-store.db` (sqlite, denní backup) | ✅ |
+| **Edge host** | **žádný — jediný stroj** → standby postup níže | ⚠️ open |
+
+**Standby pool — aktivace při ztrátě primary hostu:**
+
+1. Zprovoznit druhý VPS (Contabo/Hetzner), user `zion`, UFW 8444+8445/tcp.
+2. Nainstalovat binárku + env:
+   `rsync -avz /opt/zion/V31/target/release/zion-pool root@STANDBY:/opt/zion/V31/target/release/`
+   `rsync -avz /etc/zion/edge-environment.sh root@STANDBY:/etc/zion/`
+3. **Přenést PPLNS dluh** (miners musí zůstat s unpaid balances):
+   `rsync /opt/zion/data/v31/pool-store.db /opt/zion/data/v31/pool-pplns.json → STANDBY` — sqlite db + JSON snapshot. Pool při startu restore oba.
+4. `ZION_STANDBY_L1_RPC_URL` na standby = L1 endpointy dosažitelné ze standby hostu (cross-host na primary nody, nebo lokální node replica — follower seed z primary `datadir`).
+5. Unit `deploy/systemd/zion-v31-pool-standby.service` → `/etc/systemd/system/`, `daemon-reload`, `enable --now`.
+6. DNS failover: `pool.zionterranova.com` A-record → standby IP (TTL krátké; lepší = geo-DNS / health-check failover). Miners reconnectují automaticky (stratum reconnect logika v zion-miner/SRBMiner).
+7. **⚠️ ZION_UPSTREAM_POOL_ADDR na standby NENASTAVOVAT** — share_relay by relayoval do sebe/starého primary.
+
+**share_relay role (Edge→Core primitiv):** `share_relay.rs` je fire-and-forget
+relay shareků na upstream — použitý pro split-pool accounting. Pro standby
+se NEPOUŽÍVÁ (standby se po promoci stává core); slouží jako základ pro
+budoucí edge→core replikaci, kdyby vznikl druhý core.
+
+**Co není kryté:** split-brain při flaky network mezi hosty (standby +
+primary by těžily paralelně → promote jen po potvrzené ztrátě primary,
+ne automaticky); PPLNS diverzence mezi okamžikem snapshotu a ztrátou
+(denní backup → do 24 h unpaid drift, řeší ruční reconcile přes
+`list_coin_revenue`/blocks audit).
+
 ---
 
 *Příbuzné docs: `PEARL-POUW-INTEGRATION.md` (PRL legs detail),

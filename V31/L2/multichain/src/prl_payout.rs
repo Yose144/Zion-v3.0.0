@@ -25,7 +25,7 @@ use serde::Deserialize;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 
-use crate::chain::adapters::pearl::is_valid_pearl_address;
+use crate::chain::adapters::pearl::is_valid_pearl_address_for_hrp;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 
@@ -65,6 +65,10 @@ pub struct PrlPayoutConfig {
     /// + ledger + mark `dryrun`; nothing is broadcast.  `=0` enables live
     /// sends — only after regtest verification.
     pub dry_run: bool,
+    /// Accepted address HRPs (`PRL_ADDRESS_HRPS`, comma-separated, default
+    /// `prl`).  Regtest/testnet oyster wallets emit `rprl`/`tprl` — set
+    /// `PRL_ADDRESS_HRPS=rprl` for regtest verification.
+    pub address_hrps: Vec<String>,
 }
 
 impl PrlPayoutConfig {
@@ -113,6 +117,15 @@ impl PrlPayoutConfig {
                 .ok()
                 .as_deref()
                 != Some("0"),
+            address_hrps: std::env::var("PRL_ADDRESS_HRPS")
+                .ok()
+                .map(|v| {
+                    v.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                })
+                .unwrap_or_else(|| vec!["prl".into()]),
         }))
     }
 }
@@ -339,7 +352,8 @@ async fn tick(
 
     for row in due {
         let units: u128 = row.units.parse().unwrap_or(0);
-        if !is_valid_pearl_address(&row.address) {
+        let hrps: Vec<&str> = config.address_hrps.iter().map(|s| s.as_str()).collect();
+        if !is_valid_pearl_address_for_hrp(&row.address, &hrps) {
             mark_error(
                 db,
                 &row.id,
@@ -479,7 +493,18 @@ mod tests {
             max_attempts: 3,
             fee_bps: 0,
             dry_run: std::env::var("PRL_PAYOUT_DRY_RUN").ok().as_deref() != Some("0"),
+            address_hrps: vec!["prl".into()],
         };
         assert!(cfg.dry_run);
+    }
+
+    #[test]
+    fn regtest_hrp_addresses_validate() {
+        // Regtest oyster wallets emit `rprl` — the sweeper must accept
+        // them when PRL_ADDRESS_HRPS includes the regtest HRP.
+        let rprl = "rprl1p5g5urdz6w25vsjshetw9kw0xjndspmuurerr7p4z5fn64teuhjgsdz5fjy";
+        assert!(is_valid_pearl_address_for_hrp(rprl, &["prl", "rprl"]));
+        assert!(!is_valid_pearl_address_for_hrp(rprl, &["prl"]));
+        assert!(!is_valid_pearl_address_for_hrp("garbage", &["prl", "rprl"]));
     }
 }
