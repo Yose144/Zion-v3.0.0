@@ -1,118 +1,339 @@
 'use client';
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, BookOpen, Egg, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import {
+  BookOpen,
+  FileText,
+  ChevronRight,
+  ChevronDown,
+  Menu,
+  X,
+  Egg,
+  Compass,
+  KeyRound,
+  Landmark,
+  Heart,
+  Sailboat,
+  Eye,
+  Sparkles,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { MAITREYA_CHAPTERS, MAITREYA_PARTS } from '../chapters';
+import { MAITREYA_CHAPTERS, MAITREYA_PARTS, maitreyaDocPath } from '../chapters';
 
-const CistCopy = {
-  kicker: { cs: 'Kniha Pátá · celá kniha', en: 'Book Five · the full book' },
-  title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
-  subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
-  status: { cs: 'První draft · CZ + EN', en: 'First draft · CZ + EN' },
-  back: { cs: 'Zpět na stránku', en: 'Back to the page' },
-  intro: {
-    cs: 'Příběh o tom, jak padají věže Babylonu — a jak láska a pravda rodí Nový svět. Prolog, 17 kapitol a epilog. Každá kapitola končí tabulkou ověřitelných faktů.',
-    en: 'The story of how the towers of Babylon fall — and how love and truth give birth to the New World. Prologue, 17 chapters and an epilogue. Every chapter ends with a table of verifiable facts.',
+const ACCENT = '252, 209, 22'; // gold — Maitreya
+
+const PART_ICONS: React.ComponentType<{ className?: string }>[] = [
+  Egg,        // Prolog
+  Compass,    // I · Lord of Hiranyagarbha
+  KeyRound,   // II · The Heir of Zion
+  Landmark,   // III · The Fall of Babylon's Towers
+  Heart,      // IV · Love and Truth Prevail
+  Sailboat,   // V · The New World
+  Eye,        // Epilog
+];
+
+const Copy = {
+  heroKicker: { cs: 'Kniha Pátá · kompletní · CZ + EN', en: 'Book Five · complete · CZ + EN' },
+  heroTitle: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
+  heroSubtitle: {
+    cs: 'Pán Hiranyagarbhy · Dědic Zionu — příběh o tom, jak padají věže Babylonu a jak láska a pravda rodí Nový svět.',
+    en: 'Lord of Hiranyagarbha · Heir of Zion — the story of Babylon’s towers falling and love and truth birthing a New World.',
+  },
+  heroDescription: {
+    cs: 'Kompletní první draft knihy: prolog, sedmnáct kapitol v pěti částech a epilog. Literární text s ověřitelnými fakty oddělenými v každé kapitole.',
+    en: 'The complete first draft of the book: prologue, seventeen chapters in five parts, and an epilogue. Literary narrative with verifiable facts separated in every chapter.',
+  },
+  notAvailable: {
+    cs: 'Kapitolu se nepodařilo načíst. Zkuste to prosím později.',
+    en: 'The chapter could not be loaded. Please try again later.',
   },
 };
 
-export default function MaitreyaCistPage() {
-  const { lang } = useLang();
-  const cs = lang === 'cs';
-  const l = cs ? 'cs' : 'en';
+interface Category {
+  part: number;
+  chapters: typeof MAITREYA_CHAPTERS;
+}
 
-  const parts: { part: number; title: string; chapters: typeof MAITREYA_CHAPTERS }[] = [];
-  for (const ch of MAITREYA_CHAPTERS) {
-    let bucket = parts.find((p) => p.part === ch.part);
-    if (!bucket) {
-      bucket = { part: ch.part, title: MAITREYA_PARTS[ch.part][l], chapters: [] };
-      parts.push(bucket);
-    }
-    bucket.chapters.push(ch);
+const categories: Category[] = [];
+for (const ch of MAITREYA_CHAPTERS) {
+  let bucket = categories.find((c) => c.part === ch.part);
+  if (!bucket) {
+    bucket = { part: ch.part, chapters: [] };
+    categories.push(bucket);
   }
+  bucket.chapters.push(ch);
+}
+
+function findPartByChapter(slug: string): number {
+  return MAITREYA_CHAPTERS.find((c) => c.slug === slug)?.part ?? 0;
+}
+
+export default function MaitreyaBookPage() {
+  const { lang } = useLang();
+  const l = lang === 'cs' ? 'cs' : 'en';
+  const [selectedChapter, setSelectedChapter] = useState(MAITREYA_CHAPTERS[0].slug);
+  const [activePart, setActivePart] = useState(0);
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({ 0: true, 1: true });
+
+  const currentChapter = MAITREYA_CHAPTERS.find((c) => c.slug === selectedChapter);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash.replace('#', '');
+    if (hash && MAITREYA_CHAPTERS.find((c) => c.slug === hash)) {
+      setSelectedChapter(hash);
+      setActivePart(findPartByChapter(hash));
+    }
+    const onHashChange = () => {
+      const id = window.location.hash.replace('#', '');
+      if (MAITREYA_CHAPTERS.find((c) => c.slug === id)) {
+        setSelectedChapter(id);
+        setActivePart(findPartByChapter(id));
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const currentHash = window.location.hash.replace('#', '');
+    if (selectedChapter && currentHash !== selectedChapter) {
+      window.history.replaceState(null, '', `#${selectedChapter}`);
+    }
+  }, [selectedChapter]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadChapter() {
+      if (!currentChapter) return;
+      setLoading(true);
+      try {
+        const response = await fetch(maitreyaDocPath(currentChapter.slug, l));
+        if (!response.ok) throw new Error(String(response.status));
+        const text = await response.text();
+        if (!isCancelled) setContent(text);
+      } catch {
+        if (!isCancelled) setContent(`# ${currentChapter.title[l]}\n\n${Copy.notAvailable[l]}`);
+      } finally {
+        if (!isCancelled) setLoading(false);
+      }
+    }
+    loadChapter();
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedChapter, currentChapter, l]);
+
+  const handleChapterSelect = (slug: string, part: number) => {
+    setSelectedChapter(slug);
+    setActivePart(part);
+    setExpanded((prev) => ({ ...prev, [part]: true }));
+    setMobileMenuOpen(false);
+  };
+
+  const togglePart = (part: number) => {
+    setExpanded((prev) => ({ ...prev, [part]: !prev[part] }));
+  };
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 -left-32 h-[520px] w-[520px] rounded-full bg-zion-purple/12 blur-3xl" />
-        <div className="absolute top-1/2 -right-40 h-[480px] w-[480px] rounded-full bg-zion-gold/8 blur-3xl" />
+    <div className="">
+      {/* Hero */}
+      <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-zion-gold/10 via-transparent to-transparent">
+        <div className="zion-container py-20 relative">
+          <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': ACCENT } as React.CSSProperties}>
+            <div className="zion-kicker mx-auto mb-6 w-fit border-zion-gold/30 bg-zion-gold/10 text-amber-200">
+              <BookOpen className="w-4 h-4 text-zion-gold" />
+              <span className="text-sm text-amber-200 font-semibold">{Copy.heroKicker[l]}</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
+              {Copy.heroTitle[l]}
+            </h1>
+            <p className="text-xl text-gray-400 mb-4">{Copy.heroSubtitle[l]}</p>
+            <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': ACCENT } as React.CSSProperties}>
+              {Copy.heroDescription[l]}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-2">
+              {[
+                { label: { cs: 'Textů', en: 'Texts' }, value: '19' },
+                { label: { cs: 'Částí', en: 'Parts' }, value: '5' },
+                { label: { cs: 'Jazyky', en: 'Languages' }, value: 'CZ + EN' },
+              ].map((fact, i) => (
+                <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm px-3 py-3">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">{fact.label[l]}</p>
+                  <p className="text-sm font-semibold text-white font-mono break-all">{fact.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <section className="relative z-10 px-4 pt-8 sm:pt-10">
-        <div className="zion-container max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-4"
+      {/* Main content */}
+      <div className="zion-container py-12">
+        {/* Mobile toggle */}
+        <div className="lg:hidden sticky top-20 z-30 mb-6">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
+            style={{ '--rc': ACCENT } as React.CSSProperties}
           >
-            <Link
-              href="/maitreya"
-              className="inline-flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-zion-gold"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {CistCopy.back[l]}
-            </Link>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
-                <Egg className="h-3.5 w-3.5" />
-                {CistCopy.kicker[l]}
-              </span>
-              <span className="zion-kicker border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                {CistCopy.status[l]}
-              </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <BookOpen className="w-5 h-5 text-zion-gold shrink-0" />
+              <span className="font-semibold min-w-0 break-words">{MAITREYA_PARTS[activePart][l]}</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
-              <span className="text-gradient">{CistCopy.title[l]}</span>
-            </h1>
-            <p className="text-base font-semibold text-zion-gold/90 sm:text-lg">
-              {CistCopy.subtitle[l]}
-            </p>
-            <p className="max-w-2xl text-sm text-gray-400 sm:text-base">{CistCopy.intro[l]}</p>
-          </motion.div>
-        </div>
-      </section>
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
 
-      <section className="relative z-10 px-4 py-8 pb-20 sm:py-12">
-        <div className="zion-container max-w-4xl space-y-10">
-          {parts.map((p, pi) => (
-            <motion.div
-              key={p.part}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: pi * 0.05 }}
-            >
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.32em] text-zion-gold">
-                {p.title}
-              </h2>
-              <div className="space-y-2">
-                {p.chapters.map((ch) => (
-                  <Link
-                    key={ch.slug}
-                    href={`/maitreya/cist/${ch.slug}`}
-                    className="group zion-rainbow-sub flex items-center gap-4 p-4 transition-colors hover:border-zion-gold/40"
-                    style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
-                  >
-                    <BookOpen className="h-4 w-4 shrink-0 text-zion-gold/70" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
-                        {ch.num[l]}
+          {mobileMenuOpen && (
+            <div className="mt-4 zion-rainbow-card p-4 space-y-2 max-h-[70vh] overflow-y-auto" style={{ '--rc': ACCENT } as React.CSSProperties}>
+              {categories.map((category) => {
+                const Icon = PART_ICONS[category.part] ?? Sparkles;
+                const isExpanded = expanded[category.part];
+                const isActive = activePart === category.part;
+                return (
+                  <div key={category.part}>
+                    <button
+                      onClick={() => togglePart(category.part)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all ${
+                        isActive ? 'zion-rainbow-sub text-white' : 'rounded-lg border border-white/10 bg-black/40 text-gray-400 hover:border-white/20 hover:text-gray-300'
+                      }`}
+                      style={isActive ? { '--rc': ACCENT } as React.CSSProperties : undefined}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-zion-gold" />
+                        {MAITREYA_PARTS[category.part][l]}
                       </div>
-                      <div className="truncate text-base font-semibold text-gray-100 group-hover:text-zion-gold">
-                        {ch.title[l]}
-                      </div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-gray-600 transition-transform group-hover:translate-x-1 group-hover:text-zion-gold" />
-                  </Link>
-                ))}
-              </div>
-            </motion.div>
-          ))}
+                      <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isExpanded && category.chapters.map((ch) => (
+                      <button
+                        key={ch.slug}
+                        onClick={() => handleChapterSelect(ch.slug, category.part)}
+                        className={`w-full text-left pl-10 pr-3 py-2 text-xs transition-all ${
+                          selectedChapter === ch.slug
+                            ? 'zion-rainbow-sub text-amber-200 font-medium'
+                            : 'rounded text-gray-500 hover:text-gray-300'
+                        }`}
+                        style={selectedChapter === ch.slug ? { '--rc': ACCENT } as React.CSSProperties : undefined}
+                      >
+                        {ch.num[l]} — {ch.title[l]}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </section>
-    </main>
+
+        <div className="flex gap-8">
+          {/* Sidebar */}
+          <aside className="hidden lg:block w-80 shrink-0">
+            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': ACCENT } as React.CSSProperties}>
+              <nav className="px-3 py-3 max-h-[calc(100vh-140px)] overflow-y-auto space-y-2">
+                {categories.map((category) => {
+                  const Icon = PART_ICONS[category.part] ?? Sparkles;
+                  const isExpanded = expanded[category.part];
+                  const isActive = activePart === category.part;
+                  return (
+                    <div key={category.part}>
+                      <button
+                        onClick={() => togglePart(category.part)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 transition-all text-sm ${
+                          isActive
+                            ? 'zion-rainbow-sub text-white'
+                            : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
+                        }`}
+                        style={isActive ? { '--rc': ACCENT } as React.CSSProperties : undefined}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4 text-zion-gold" />
+                          <span className="font-semibold">{MAITREYA_PARTS[category.part][l]}</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="ml-3 mt-1 border-l border-white/5 pl-2 space-y-0.5 pb-2">
+                          {category.chapters.map((ch) => (
+                            <button
+                              key={ch.slug}
+                              onClick={() => handleChapterSelect(ch.slug, category.part)}
+                              className={`w-full text-left px-3 py-2 text-xs transition-all flex items-center gap-2 ${
+                                selectedChapter === ch.slug
+                                  ? 'zion-rainbow-sub text-amber-200 font-medium'
+                                  : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
+                              }`}
+                              style={selectedChapter === ch.slug ? { '--rc': ACCENT } as React.CSSProperties : undefined}
+                            >
+                              <FileText className="w-3.5 h-3.5 shrink-0" />
+                              {ch.num[l]} — {ch.title[l]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0 max-w-3xl xl:max-w-4xl mx-auto">
+            {currentChapter && (
+              <div className="mb-10 pb-8 border-b border-white/10">
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                  <span className="text-zion-gold">{MAITREYA_PARTS[currentChapter.part][l]}</span>
+                  <ChevronRight className="w-3 h-3" />
+                  <span className="text-zion-purple">{currentChapter.num[l]}</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
+                  {currentChapter.title[l]}
+                </h2>
+                <p className="text-gray-400">
+                  {MAITREYA_PARTS[currentChapter.part][l]} · {currentChapter.num[l]}
+                </p>
+              </div>
+            )}
+
+            <div className="zion-docs-prose">
+              {loading ? (
+                <div className="space-y-6 py-12">
+                  <div className="h-10 w-2/3 rounded-lg bg-white/10 animate-pulse mx-auto" />
+                  <div className="h-px w-full bg-white/5" />
+                  <div className="h-5 w-full rounded bg-white/5 animate-pulse" />
+                  <div className="h-5 w-5/6 rounded bg-white/5 animate-pulse" />
+                  <div className="h-5 w-4/6 rounded bg-white/5 animate-pulse" />
+                  <div className="h-32 w-full rounded-xl bg-white/5 animate-pulse mt-8" />
+                </div>
+              ) : (
+                <article className="prose prose-invert prose-lg max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({ children }) => (
+                        <div className="overflow-x-auto my-6 rounded-xl border border-white/10">
+                          <table className="min-w-full">{children}</table>
+                        </div>
+                      ),
+                    }}
+                  >
+                    {content}
+                  </ReactMarkdown>
+                </article>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
