@@ -105,6 +105,16 @@ struct Args {
     /// When set, enables /api/v1/blocks, /api/v1/payouts, /api/v1/miners endpoints.
     #[arg(long, env = "ZION_POOL_STORE_DB_PATH")]
     store_db_path: Option<String>,
+
+    /// Coins paid in native units via revenue events (comma list, e.g.
+    /// "qtu,prl").  Their shares are excluded from the unified ZION PPLNS
+    /// distribution — payouts come from the per-coin treasury oracle.
+    #[arg(long, env = "ZION_POOL_NATIVE_PAYOUT_COINS", default_value = "")]
+    native_payout_coins: String,
+
+    /// Per-coin minimum native-unit payout, `coin:amount` comma list.
+    #[arg(long, env = "ZION_POOL_MIN_PAYOUT_NATIVE", default_value = "")]
+    min_payout_native: String,
 }
 
 fn parse_address(encoded: &str) -> anyhow::Result<Address> {
@@ -161,6 +171,12 @@ async fn main() -> anyhow::Result<()> {
         pool_wallet_key: args.pool_wallet_key,
         payout_interval_s: args.payout_interval_s,
         payout_tx_fee_flowers: zion_core::fee::MIN_TX_FEE.max(1),
+        native_payout_coins: zion_pool::config::parse_native_payout_coins(
+            &args.native_payout_coins,
+        ),
+        min_payout_native: zion_pool::config::parse_min_payout_native(
+            &args.min_payout_native,
+        ),
     };
 
     let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));

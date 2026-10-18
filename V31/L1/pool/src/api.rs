@@ -124,11 +124,14 @@ impl PoolApi {
                 }
             }
         }
+        let mut request_body = String::new();
         if method == "POST" && content_length > 0 {
             // Cap body size — the API only needs small JSON payloads and an
             // unbounded allocation here is an easy OOM footgun.
             let mut buf = vec![0u8; content_length.min(1 << 20)];
-            let _ = reader.read_exact(&mut buf);
+            if reader.read_exact(&mut buf).is_ok() {
+                request_body = String::from_utf8_lossy(&buf).into_owned();
+            }
         }
 
         // API key authorization for /api/* and admin endpoints. Only paths
@@ -288,9 +291,20 @@ impl PoolApi {
                     let entries: Vec<String> = drained
                         .iter()
                         .map(|(h, p)| {
+                            let coin = p
+                                .coin
+                                .as_deref()
+                                .map(|c| format!(",\"coin\":\"{c}\""))
+                                .unwrap_or_default();
+                            let event = p
+                                .revenue_event
+                                .as_deref()
+                                .map(|e| format!(",\"event\":\"{e}\""))
+                                .unwrap_or_default();
                             format!(
-                                "{{\"height\":{h},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"share_count\":{}}}",
-                                p.miner_id, p.address, p.amount, p.share_count
+                                "{{\"height\":{h},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"share_count\":{},\"unit\":\"{}\"{}{}}}",
+                                p.miner_id, p.address, p.amount, p.share_count,
+                                p.unit(), coin, event
                             )
                         })
                         .collect();
@@ -321,6 +335,108 @@ impl PoolApi {
                         pending.join(",")
                     );
                     ("200 OK", "application/json", body)
+                }
+            }
+            // Native-coin revenue event intake (F3).  The multichain
+            // treasury oracle POSTs {"coin","amount","ref_height","event"}
+            // after observing a balance increase; the pool distributes the
+            // amount across the coin's PPLNS slice and queues native-unit
+            // payout entries (drained via /admin/external-payouts).
+            "/admin/coin-revenue" => {
+                if method != "POST" {
+                    let body = "{\"ok\":false,\"error\":\"POST required\"}";
+                    ("405 Method Not Allowed", "application/json", body.to_string())
+                } else {
+                    #[derive(serde::Deserialize)]
+                    struct RevenueReq {
+                        coin: String,
+                        #[serde(deserialize_with = "de_u64_str_or_num")]
+                        amount: u64,
+                        #[serde(default)]
+                        ref_height: u64,
+                        event: String,
+                    }
+                    match serde_json::from_str::<RevenueReq>(&request_body) {
+                        Err(e) => (
+                            "400 Bad Request",
+                            "application/json",
+                            format!("{{\"ok\":false,\"error\":\"bad json: {e}\"}}"),
+                        ),
+                        Ok(req) => {
+                            // One critical section for dedup + distribute +
+                            // audit record — a retry POST must never slip
+                            // between the dedup check and the ledger write.
+                            // Order matters for crash safety: distribute
+                            // first, then record; a crash between the two
+                            // loses the in-memory payout entries anyway
+                            // (snapshot restore keeps unpaid_native intact),
+                            // while a committed dedup row blocks any later
+                            // re-post from double-paying.
+                            let mut pool = self.pool.lock().expect("pool lock poisoned");
+                            let known = self
+                                .share_store
+                                .as_ref()
+                                .and_then(|s| s.coin_revenue_amount(&req.event).ok().flatten());
+                            if let Some(recorded) = known {
+                                (
+                                    "200 OK",
+                                    "application/json",
+                                    format!(
+                                        "{{\"ok\":true,\"duplicate\":true,\"amount\":{recorded}}}"
+                                    ),
+                                )
+                            } else {
+                                match pool.on_coin_revenue(
+                                    &req.coin,
+                                    req.amount,
+                                    req.ref_height,
+                                    &req.event,
+                                ) {
+                                    Ok(o) => {
+                                        if let Some(ref store) = self.share_store {
+                                            if let Err(e) = store.record_coin_revenue(
+                                                &req.event,
+                                                &o.coin,
+                                                o.amount,
+                                                req.ref_height,
+                                                o.emitted,
+                                                o.emitted_total,
+                                            ) {
+                                                tracing::warn!(
+                                                    event = %req.event,
+                                                    "coin_revenue audit write failed: {e}"
+                                                );
+                                            }
+                                        }
+                                        (
+                                            "200 OK",
+                                            "application/json",
+                                            format!(
+                                                "{{\"ok\":true,\"coin\":\"{}\",\"amount\":{},\"emitted\":{},\"emitted_total\":{}}}",
+                                                o.coin, o.amount, o.emitted, o.emitted_total
+                                            ),
+                                        )
+                                    }
+                                    Err(crate::pool::PoolError::CoinNotNative) => (
+                                        "400 Bad Request",
+                                        "application/json",
+                                        "{\"ok\":false,\"error\":\"coin not enabled for native payouts\"}"
+                                            .to_string(),
+                                    ),
+                                    Err(crate::pool::PoolError::DuplicateRevenueEvent) => (
+                                        "200 OK",
+                                        "application/json",
+                                        "{\"ok\":true,\"duplicate\":true}".to_string(),
+                                    ),
+                                    Err(e) => (
+                                        "400 Bad Request",
+                                        "application/json",
+                                        format!("{{\"ok\":false,\"error\":\"{e}\"}}"),
+                                    ),
+                                }
+                            }
+                        }
+                    }
                 }
             }
             p if p.starts_with("/api/v1/miners/") => {
@@ -1129,6 +1245,25 @@ fn sanitize_prometheus_label(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
+/// Deserialize a u64 that may arrive as a JSON number or a decimal string
+/// (native base units on 12-decimal chains overflow JS-safe integers, so
+/// oracle clients may quote them).
+fn de_u64_str_or_num<'de, D>(d: D) -> Result<u64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(serde::Deserialize)]
+    #[serde(untagged)]
+    enum NumOrStr {
+        N(u64),
+        S(String),
+    }
+    match <NumOrStr as serde::Deserialize>::deserialize(d)? {
+        NumOrStr::N(n) => Ok(n),
+        NumOrStr::S(s) => s.trim().parse::<u64>().map_err(serde::de::Error::custom),
+    }
+}
+
 fn parse_query_param(path: &str, key: &str) -> Option<String> {
     let q = path.split('?').nth(1)?;
     for pair in q.split('&') {
@@ -1176,8 +1311,8 @@ fn serialize_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
             out.push(',');
         }
         out.push_str(&format!(
-            "{{\"height\":{},\"hash\":\"{}\",\"miner_id\":\"{}\",\"worker_name\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
-            b.height, b.hash, b.miner_id, b.worker_name,
+            "{{\"coin\":\"{}\",\"height\":{},\"hash\":\"{}\",\"miner_id\":\"{}\",\"worker_name\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
+            b.coin, b.height, b.hash, b.miner_id, b.worker_name,
             b.share_difficulty, b.network_difficulty, b.status, b.ts,
             b.confirmed_at.map(|t| t.to_string()).unwrap_or_else(|| "null".to_string())
         ));
@@ -1193,8 +1328,8 @@ fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
             out.push(',');
         }
         out.push_str(&format!(
-            "{{\"ts\":{},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
-            p.ts, p.miner_id, p.address, p.amount_flowers,
+            "{{\"ts\":{},\"miner_id\":\"{}\",\"address\":\"{}\",\"coin\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
+            p.ts, p.miner_id, p.address, p.coin, p.amount_flowers,
             p.tx_id, p.height, p.block_hash, p.confirmations, p.confirmed
         ));
     }

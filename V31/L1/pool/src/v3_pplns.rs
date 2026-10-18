@@ -25,7 +25,7 @@
 //!   files.  Conversion between `u32` indices and `String` IDs happens only
 //!   during save/load.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -49,16 +49,63 @@ pub struct PplnsShare {
     /// as 1000× more work than a share at difficulty 1.  For backward
     /// compatibility, 0 is treated as 1.
     pub difficulty: u64,
+    /// Coin the share was mined for — lowercase ticker (`"zion"`, `"qtu"`,
+    /// `"prl"`, bridged coin ids).  `#[serde(default)]` keeps pre-F2
+    /// snapshots loadable; all historical shares were ZION.
+    #[serde(default = "default_share_coin")]
+    pub coin: String,
+}
+
+fn default_share_coin() -> String {
+    "zion".to_string()
 }
 
 /// Internal window entry using u32 miner index (zero-allocation hot path).
 #[derive(Debug, Clone)]
 struct WindowEntry {
     miner_index: u32,
+    /// u16 index into [`CoinRegistry`] — which leg/coin the share was for.
+    coin_index: u16,
     worker_name: String,
     timestamp_ms: u64,
     height: u64,
     difficulty: u64,
+}
+
+/// Coin key registry — maps lowercase coin tickers (`"zion"`, `"qtu"`,
+/// `"prl"`, bridged ids) to compact `u16` indices used in
+/// [`WindowEntry`].  Follows the same interning pattern as
+/// [`MinerRegistry`]; the coin set is small (<64) so `u16` is ample.
+#[derive(Debug, Clone, Default)]
+struct CoinRegistry {
+    key_to_index: HashMap<String, u16>,
+    index_to_key: Vec<String>,
+}
+
+impl CoinRegistry {
+    /// Normalize a coin label to its canonical key (lowercase ticker).
+    fn key(coin: &str) -> String {
+        coin.to_ascii_lowercase()
+    }
+
+    fn lookup_or_register(&mut self, coin: &str) -> u16 {
+        let key = Self::key(coin);
+        if let Some(&idx) = self.key_to_index.get(&key) {
+            return idx;
+        }
+        let idx = self.index_to_key.len() as u16;
+        self.index_to_key.push(key.clone());
+        self.key_to_index.insert(key, idx);
+        idx
+    }
+
+    fn lookup(&self, coin: &str) -> Option<u16> {
+        self.key_to_index.get(&Self::key(coin)).copied()
+    }
+
+    fn key_for(&self, index: u16) -> &str {
+        &self.index_to_key[index as usize]
+    }
 }
 
 /// Miner ID registry — maps between `String` miner IDs and compact `u32`
@@ -107,6 +154,20 @@ impl MinerRegistry {
     }
 }
 
+/// Per-coin accounting snapshot (F2) — emitted by
+/// [`PplnsEngine::coin_stats`] for APIs and ops tooling.
+#[derive(Debug, Clone, Serialize)]
+pub struct CoinShareStats {
+    /// Canonical coin key (lowercase ticker).
+    pub coin: String,
+    /// Lifetime accepted shares recorded for this coin.
+    pub accepted_total: u64,
+    /// Sum of difficulties of this coin's shares in the current window.
+    pub window_weight: u128,
+    /// Miners with nonzero window weight in this coin.
+    pub active_miners: u64,
+}
+
 /// Per-miner payout entry produced by [`PplnsEngine::compute_payouts`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PayoutEntry {
@@ -121,12 +182,37 @@ pub struct PayoutEntry {
     /// drained by the multichain QTC payout sweeper.
     #[serde(default)]
     pub payout_chain: Option<String>,
+    /// `true` when `amount` is denominated in the payout chain's own base
+    /// units (e.g. QTU planks) rather than flowers.  Set by the per-coin
+    /// revenue distribution path (F3); the drain response surfaces it as
+    /// `"unit":"native"` so external sweepers skip FX conversion.
+    #[serde(default)]
+    pub native_units: bool,
+    /// Coin ticker whose revenue produced this entry (`"qtu"`, `"prl"`).
+    /// `None` on the unified (ZION block reward) distribution path.
+    #[serde(default)]
+    pub coin: Option<String>,
+    /// Revenue event idempotency key (e.g. `"qtu:rev:42"`) supplied by the
+    /// coin-revenue oracle.  Sweepers must include it in their ledger key
+    /// so two events at the same source height cannot collide.
+    #[serde(default)]
+    pub revenue_event: Option<String>,
 }
 
 impl PayoutEntry {
     /// Normalized payout chain label (`"zion"` when unset).
     pub fn chain(&self) -> &str {
         self.payout_chain.as_deref().unwrap_or("zion")
+    }
+
+    /// Drain unit: `"native"` for per-coin revenue payouts, `"flowers"`
+    /// for the unified ZION distribution (external sweepers FX-convert).
+    pub fn unit(&self) -> &str {
+        if self.native_units {
+            "native"
+        } else {
+            "flowers"
+        }
     }
 }
 
@@ -212,6 +298,17 @@ pub struct PplnsConfig {
     pub min_payout_flowers: u64,
     /// Fee split configuration (humanitarian tithe, issobella, pool fee).
     pub fee_config: FeeConfig,
+    /// Coin tickers (lowercase) whose shares earn **only** their own
+    /// coin's revenue events (native-unit payouts, F3) — they are excluded
+    /// from the unified ZION distribution.  Empty default preserves
+    /// pre-F3 unified semantics (external shares share ZION rewards).
+    /// Configured via `ZION_POOL_NATIVE_PAYOUT_COINS=qtu,prl`.
+    pub native_payout_coins: Vec<String>,
+    /// Per-coin minimum payout in the coin's native base units
+    /// (key = lowercase ticker, e.g. `qtu` → planks).  Unset = 0 (every
+    /// distribution emits all balances — the sweeper's own dust guard
+    /// applies downstream).
+    pub min_payout_native: HashMap<String, u64>,
 }
 
 impl Default for PplnsConfig {
@@ -220,8 +317,21 @@ impl Default for PplnsConfig {
             window_size: 500_000,
             min_payout_flowers: zion_core::MIN_PAYOUT_AMOUNT,
             fee_config: FeeConfig::default(),
+            native_payout_coins: Vec::new(),
+            min_payout_native: HashMap::new(),
         }
     }
+}
+
+/// Per-coin (native-unit) distribution target for `distribute_weighted` —
+/// routes earnings into `unpaid_native` keyed by (miner, coin) instead of
+/// the flowers `unpaid` bucket, and forces the entry's payout chain.
+struct NativeDest {
+    coin_idx: u16,
+    /// Lowercase coin ticker — keys `min_payout_native` and `PayoutEntry.coin`.
+    coin_key: String,
+    /// Required registered payout chain (`"quantus"`, `"pearl"`, …).
+    chain: String,
 }
 
 /// Miner address registry and PPLNS share window.
@@ -253,6 +363,24 @@ pub struct PplnsEngine {
     shares_per_miner: Vec<MinerShareStats>,
     /// Last share timestamp (seconds) per miner_index.
     last_share_time_per_miner: Vec<u64>,
+    /// Coin registry — lowercase ticker → u16 index used in WindowEntry.
+    coin_registry: CoinRegistry,
+    /// Incremental window weight per coin (indexed by coin_index) — the
+    /// per-coin slice of `window_total_difficulty`.  Updated on each
+    /// record/eviction alongside `share_weights`.
+    coin_window_weight: Vec<u128>,
+    /// Incremental window weight per (miner_index, coin_index) — lets a
+    /// per-coin payout round find each miner's weight in that coin's
+    /// slice without scanning the window.
+    miner_coin_weights: HashMap<(u32, u16), u128>,
+    /// Cumulative accepted share count per coin (lifetime stat for API).
+    coin_share_counts: HashMap<u16, u64>,
+    /// Accumulated unpaid balances for native-unit coins, keyed
+    /// `(miner_index, coin_index)` (F3).  Kept separate from `unpaid`
+    /// (flowers) so ZION and e.g. QTU-plank balances never mix units.
+    unpaid_native: HashMap<(u32, u16), u64>,
+    /// Total native-unit payouts emitted per coin (lifetime stat).
+    total_paid_native: HashMap<u16, u128>,
     /// Total block rewards distributed via this engine (flowers).
     total_paid_flowers: u128,
     /// Number of payout rounds executed.
@@ -285,6 +413,18 @@ pub struct PplnsSnapshot {
     /// `#[serde(default)]` keeps pre-QTC snapshots loadable.
     #[serde(default)]
     pub payout_chains: HashMap<String, String>,
+    /// Cumulative accepted share counts per coin key (F2).  `#[serde(default)]`
+    /// keeps pre-F2 snapshots loadable.
+    #[serde(default)]
+    pub coin_share_counts: HashMap<String, u64>,
+    /// Native-unit unpaid balances, serialized as `"<miner_id>|<coin>"` →
+    /// amount (F3).  `#[serde(default)]` keeps pre-F3 snapshots loadable.
+    #[serde(default)]
+    pub unpaid_native: HashMap<String, u64>,
+    /// Total native-unit payouts emitted per coin key (F3 lifetime stat).
+    #[serde(default)]
+    #[serde(with = "u128_str::map")]
+    pub total_paid_native: HashMap<String, u128>,
     #[serde(with = "u128_str::map")]
     pub paid_per_miner: HashMap<String, u128>,
     pub shares_per_miner: HashMap<String, MinerShareStats>,
@@ -311,6 +451,12 @@ impl PplnsEngine {
             paid_per_miner: Vec::new(),
             shares_per_miner: Vec::new(),
             last_share_time_per_miner: Vec::new(),
+            coin_registry: CoinRegistry::default(),
+            coin_window_weight: Vec::new(),
+            miner_coin_weights: HashMap::new(),
+            coin_share_counts: HashMap::new(),
+            unpaid_native: HashMap::new(),
+            total_paid_native: HashMap::new(),
             total_paid_flowers: 0,
             payout_rounds: 0,
             fee_humanitarian_flowers: 0,
@@ -349,6 +495,7 @@ impl PplnsEngine {
                 timestamp_ms: e.timestamp_ms,
                 height: e.height,
                 difficulty: e.difficulty,
+                coin: self.coin_registry.key_for(e.coin_index).to_string(),
             })
             .collect();
 
@@ -387,6 +534,26 @@ impl PplnsEngine {
             window_total_difficulty: self.window_total_difficulty,
             addresses,
             payout_chains,
+            coin_share_counts: self
+                .coin_share_counts
+                .iter()
+                .map(|(idx, n)| (self.coin_registry.key_for(*idx).to_string(), *n))
+                .collect(),
+            unpaid_native: self
+                .unpaid_native
+                .iter()
+                .map(|((m, c), bal)| {
+                    (
+                        format!("{}|{}", self.registry.id(*m), self.coin_registry.key_for(*c)),
+                        *bal,
+                    )
+                })
+                .collect(),
+            total_paid_native: self
+                .total_paid_native
+                .iter()
+                .map(|(idx, n)| (self.coin_registry.key_for(*idx).to_string(), *n))
+                .collect(),
             unpaid,
             paid_per_miner,
             shares_per_miner,
@@ -421,6 +588,11 @@ impl PplnsEngine {
         for id in snap.unpaid.keys() {
             self.registry.lookup_or_register(id);
         }
+        for key in snap.unpaid_native.keys() {
+            if let Some((miner_id, _)) = key.split_once('|') {
+                self.registry.lookup_or_register(miner_id);
+            }
+        }
         for id in snap.paid_per_miner.keys() {
             self.registry.lookup_or_register(id);
         }
@@ -441,12 +613,21 @@ impl PplnsEngine {
         self.shares_per_miner = vec![MinerShareStats::default(); n];
         self.last_share_time_per_miner = vec![0u64; n];
 
-        // Restore window entries with u32 indices + rebuild share_weights.
+        // Restore window entries with u32 indices + rebuild share_weights
+        // and the per-coin weight maps (derived state — not serialized).
+        self.coin_registry = CoinRegistry::default();
+        self.coin_window_weight.clear();
+        self.miner_coin_weights.clear();
         for share in snap.window {
             let idx = self.registry.lookup_or_register(&share.miner_id);
+            let coin_idx = self.coin_registry.lookup_or_register(&share.coin);
+            if self.coin_window_weight.len() <= coin_idx as usize {
+                self.coin_window_weight.resize(coin_idx as usize + 1, 0);
+            }
             let diff = share.difficulty.max(1);
             self.window.push_back(WindowEntry {
                 miner_index: idx,
+                coin_index: coin_idx,
                 worker_name: share.worker_name,
                 timestamp_ms: share.timestamp_ms,
                 height: share.height,
@@ -454,7 +635,32 @@ impl PplnsEngine {
             });
             self.window_total_difficulty += diff as u128;
             self.share_weights[idx as usize] += diff as u128;
+            self.coin_window_weight[coin_idx as usize] += diff as u128;
+            *self.miner_coin_weights.entry((idx, coin_idx)).or_insert(0) += diff as u128;
         }
+
+        // Restore cumulative per-coin counts (independent of window).
+        self.coin_share_counts = snap
+            .coin_share_counts
+            .into_iter()
+            .map(|(key, n)| (self.coin_registry.lookup_or_register(&key), n))
+            .collect();
+
+        // Restore native-unit unpaid balances + per-coin paid totals (F3).
+        // Keys serialize as "<miner_id>|<coin>"; malformed keys are skipped.
+        self.unpaid_native.clear();
+        for (key, bal) in snap.unpaid_native {
+            if let Some((miner_id, coin)) = key.split_once('|') {
+                let m = self.registry.lookup_or_register(miner_id);
+                let c = self.coin_registry.lookup_or_register(coin);
+                self.unpaid_native.insert((m, c), bal);
+            }
+        }
+        self.total_paid_native = snap
+            .total_paid_native
+            .into_iter()
+            .map(|(key, n)| (self.coin_registry.lookup_or_register(&key), n))
+            .collect();
 
         // Restore per-miner data.
         for (id, addr) in snap.addresses {
@@ -669,41 +875,36 @@ impl PplnsEngine {
         height: u64,
         difficulty: u64,
     ) {
+        self.record_share_with_diff_for_coin(miner_id, worker_name, height, difficulty, "zion");
+    }
+
+    /// Record an accepted share tagged with the coin it was mined for.
+    ///
+    /// Per-coin accounting (F2): every window entry carries a coin index so
+    /// the engine can later slice payouts per coin.  The unified
+    /// [`compute_miner_payouts`] distribution (ZION block → whole window)
+    /// is unchanged — coin slices feed [`compute_miner_payouts_for_coin`]
+    /// used by the per-coin payout engines (F3).
+    pub fn record_share_with_diff_for_coin(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        height: u64,
+        difficulty: u64,
+        coin: &str,
+    ) {
         let timestamp_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
-
-        let idx = self.registry.lookup_or_register(miner_id);
-        self.ensure_capacity(idx);
-
-        let diff = difficulty.max(1);
-        self.window.push_back(WindowEntry {
-            miner_index: idx,
-            worker_name: worker_name.to_string(),
-            timestamp_ms,
+        self.record_share_at_diff_for_coin(
+            miner_id,
+            worker_name,
             height,
-            difficulty: diff,
-        });
-        self.window_total_difficulty += diff as u128;
-        self.share_weights[idx as usize] += diff as u128; // P8: incremental weight
-
-        // Update per-miner stats (O(1) array access, no String alloc).
-        let now_s = timestamp_ms / 1000;
-        self.last_share_time_per_miner[idx as usize] = now_s;
-        self.shares_per_miner[idx as usize].valid += 1;
-
-        // Evict oldest shares until total difficulty fits the window limit.
-        while self.window_total_difficulty > self.config.window_size as u128 {
-            if let Some(oldest) = self.window.pop_front() {
-                self.window_total_difficulty -= oldest.difficulty as u128;
-                self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128;
-            // P8
-            } else {
-                break;
-            }
-        }
-        self.dirty = true;
+            timestamp_ms,
+            difficulty,
+            coin,
+        );
     }
 
     /// Like [`record_share`] but with an explicit timestamp (for testing).
@@ -726,12 +927,38 @@ impl PplnsEngine {
         timestamp_ms: u64,
         difficulty: u64,
     ) {
+        self.record_share_at_diff_for_coin(
+            miner_id,
+            worker_name,
+            height,
+            timestamp_ms,
+            difficulty,
+            "zion",
+        );
+    }
+
+    /// Record a coin-tagged share with explicit timestamp — the single
+    /// implementation all record paths delegate to.
+    pub fn record_share_at_diff_for_coin(
+        &mut self,
+        miner_id: &str,
+        worker_name: &str,
+        height: u64,
+        timestamp_ms: u64,
+        difficulty: u64,
+        coin: &str,
+    ) {
         let idx = self.registry.lookup_or_register(miner_id);
+        let coin_idx = self.coin_registry.lookup_or_register(coin);
         self.ensure_capacity(idx);
+        if self.coin_window_weight.len() <= coin_idx as usize {
+            self.coin_window_weight.resize(coin_idx as usize + 1, 0);
+        }
 
         let diff = difficulty.max(1);
         self.window.push_back(WindowEntry {
             miner_index: idx,
+            coin_index: coin_idx,
             worker_name: worker_name.to_string(),
             timestamp_ms,
             height,
@@ -739,6 +966,9 @@ impl PplnsEngine {
         });
         self.window_total_difficulty += diff as u128;
         self.share_weights[idx as usize] += diff as u128; // P8
+        self.coin_window_weight[coin_idx as usize] += diff as u128;
+        *self.miner_coin_weights.entry((idx, coin_idx)).or_insert(0) += diff as u128;
+        *self.coin_share_counts.entry(coin_idx).or_insert(0) += 1;
 
         // Update per-miner stats.
         self.last_share_time_per_miner[idx as usize] = timestamp_ms / 1000;
@@ -748,12 +978,62 @@ impl PplnsEngine {
             if let Some(oldest) = self.window.pop_front() {
                 self.window_total_difficulty -= oldest.difficulty as u128;
                 self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128;
-            // P8
+                // P8
+                self.coin_window_weight[oldest.coin_index as usize] -=
+                    oldest.difficulty as u128;
+                if let Some(w) = self
+                    .miner_coin_weights
+                    .get_mut(&(oldest.miner_index, oldest.coin_index))
+                {
+                    *w = w.saturating_sub(oldest.difficulty as u128);
+                    if *w == 0 {
+                        self.miner_coin_weights
+                            .remove(&(oldest.miner_index, oldest.coin_index));
+                    }
+                }
             } else {
                 break;
             }
         }
         self.dirty = true;
+    }
+
+    /// Per-coin share statistics — one entry per coin that ever recorded a
+    /// share (F2, feeds `/public/v1/coins` and ops tooling).
+    ///
+    /// Each row: `(coin_key, lifetime_accepted, window_weight, active_miners)`
+    /// where `window_weight` is the coin's slice of the current window and
+    /// `active_miners` counts miners with nonzero weight in that slice.
+    pub fn coin_stats(&self) -> Vec<CoinShareStats> {
+        let mut out = Vec::new();
+        for (idx, key) in self.coin_registry.index_to_key.iter().enumerate() {
+            let coin_idx = idx as u16;
+            let window_weight = self
+                .coin_window_weight
+                .get(coin_idx as usize)
+                .copied()
+                .unwrap_or(0);
+            let active_miners = self
+                .miner_coin_weights
+                .iter()
+                .filter(|(&(_, c), &w)| c == coin_idx && w > 0)
+                .count() as u64;
+            out.push(CoinShareStats {
+                coin: key.clone(),
+                accepted_total: self.coin_share_counts.get(&coin_idx).copied().unwrap_or(0),
+                window_weight,
+                active_miners,
+            });
+        }
+        out
+    }
+
+    /// Current window weight of a single coin (`"qtu"` → its slice only).
+    pub fn window_weight_for_coin(&self, coin: &str) -> u128 {
+        self.coin_registry
+            .lookup(coin)
+            .and_then(|idx| self.coin_window_weight.get(idx as usize).copied())
+            .unwrap_or(0)
     }
 
     /// Number of shares currently in the window.
@@ -815,24 +1095,79 @@ impl PplnsEngine {
         self.distribute_to_miners(miner_reward_flowers)
     }
 
+    /// `true` when `coin` is configured for native-unit payouts
+    /// (`native_payout_coins`) — its shares earn only coin revenue events
+    /// and are excluded from the unified ZION distribution.
+    pub fn is_native_payout_coin(&self, coin: &str) -> bool {
+        let key = coin.trim().to_ascii_lowercase();
+        self.config
+            .native_payout_coins
+            .iter()
+            .any(|c| c == &key)
+    }
+
+    /// Resolve configured native-payout tickers to coin indexes.
+    fn native_coin_indexes(&self) -> HashSet<u16> {
+        self.config
+            .native_payout_coins
+            .iter()
+            .filter_map(|c| self.coin_registry.lookup(c))
+            .collect()
+    }
+
+    /// Accumulated unpaid balance for a miner on a native-unit coin.
+    pub fn unpaid_native_balance(&self, miner_id: &str, coin: &str) -> u64 {
+        let (Some(m), Some(c)) = (
+            self.registry.lookup(miner_id),
+            self.coin_registry.lookup(coin),
+        ) else {
+            return 0;
+        };
+        self.unpaid_native.get(&(m, c)).copied().unwrap_or(0)
+    }
+
+    /// Lifetime native-unit payouts emitted for a coin (F3 stat).
+    pub fn total_paid_native_for(&self, coin: &str) -> u128 {
+        self.coin_registry
+            .lookup(coin)
+            .and_then(|c| self.total_paid_native.get(&c).copied())
+            .unwrap_or(0)
+    }
+
     /// Shared distribution + threshold-collection logic for the PPLNS window.
     ///
     /// P8: Uses incremental `share_weights` (Vec<u128>) maintained on each
     /// record_share/eviction, making this O(active_miners) instead of
     /// O(window_len).  At 10k miners with 500k shares in the window, this
     /// is 50× faster than iterating the window.
+    ///
+    /// F3: miners' weight in `native_payout_coins` is excluded — those
+    /// coins are paid only by their own revenue events
+    /// ([`compute_miner_payouts_for_coin`]) so a QTU miner's shares never
+    /// draw on ZION rewards and ZION shares never dilute QTU revenue.
     fn distribute_to_miners(&mut self, miner_reward: u64) -> Vec<PayoutEntry> {
-        // Collect active miners (weight > 0) from incremental share_weights.
+        let native = self.native_coin_indexes();
+
+        // Collect active miners (weight > 0).  With no native coins
+        // configured the incremental share_weights path is exact; once a
+        // native set exists we recompose weights from miner_coin_weights
+        // filtered to non-native coins.
         let mut active_miners: Vec<(u32, u128)> = Vec::new();
-        let mut total_weight: u128 = 0;
-        for (i, &w) in self.share_weights.iter().enumerate() {
-            if w > 0 {
-                active_miners.push((i as u32, w));
-                total_weight += w;
+        if native.is_empty() {
+            for (i, &w) in self.share_weights.iter().enumerate() {
+                if w > 0 {
+                    active_miners.push((i as u32, w));
+                }
             }
-        }
-        if total_weight == 0 {
-            total_weight = 1;
+        } else {
+            let mut combined: HashMap<u32, u128> = HashMap::new();
+            for (&(m, c), &w) in self.miner_coin_weights.iter() {
+                if w > 0 && !native.contains(&c) {
+                    *combined.entry(m).or_insert(0) += w;
+                }
+            }
+            active_miners.extend(combined);
+            active_miners.sort_unstable_by_key(|(m, _)| *m);
         }
 
         // Count shares per miner in the window for PayoutEntry.share_count.
@@ -841,10 +1176,99 @@ impl PplnsEngine {
         // difficulty-weighted, not count-weighted).
         let mut share_counts: Vec<u64> = vec![0; self.share_weights.len()];
         for entry in &self.window {
-            share_counts[entry.miner_index as usize] += 1;
+            if native.is_empty() || !native.contains(&entry.coin_index) {
+                share_counts[entry.miner_index as usize] += 1;
+            }
+        }
+        self.distribute_weighted(active_miners, share_counts, miner_reward, None)
+    }
+
+    /// Distribute a reward across a single coin's window slice — the per-coin
+    /// payout path used by the coin payout engines (F3).  Only shares tagged
+    /// with `coin` participate; entries are produced exactly like
+    /// [`distribute_to_miners`] (same unpaid/threshold/registry semantics).
+    ///
+    /// `coin` is a lowercase/uppercase-tolerant ticker (`"qtu"`, `"prl"`, …).
+    /// Returns `Vec::new()` when the coin has no window weight.
+    /// `expected_chain` is the coin's native payout chain
+    /// (`qtu`→`"quantus"`, `prl`→`"pearl"`).  Miners whose registered
+    /// payout address lives on a different chain keep their unpaid_native
+    /// balance until they register an address on the right chain — a
+    /// QTU revenue event must never route planks to a `zion1…` address.
+    pub fn compute_miner_payouts_for_coin(
+        &mut self,
+        coin: &str,
+        miner_reward: u64,
+        expected_chain: &str,
+    ) -> Vec<PayoutEntry> {
+        if miner_reward == 0 {
+            return Vec::new();
+        }
+        let Some(coin_idx) = self.coin_registry.lookup(coin) else {
+            return Vec::new();
+        };
+        let mut active_miners: Vec<(u32, u128)> = Vec::new();
+        for (&(m, c), &w) in self.miner_coin_weights.iter() {
+            if c == coin_idx && w > 0 {
+                active_miners.push((m, w));
+            }
+        }
+        if active_miners.is_empty() {
+            return Vec::new();
+        }
+        // Deterministic ordering keeps the "last miner gets remainder" rule
+        // reproducible across runs.
+        active_miners.sort_unstable_by_key(|(m, _)| *m);
+
+        // Share counts limited to this coin's entries for PayoutEntry.
+        let mut share_counts: Vec<u64> = vec![0; self.share_weights.len()];
+        for entry in &self.window {
+            if entry.coin_index == coin_idx {
+                share_counts[entry.miner_index as usize] += 1;
+            }
+        }
+        let dest = NativeDest {
+            coin_idx,
+            coin_key: self.coin_registry.key_for(coin_idx).to_string(),
+            chain: expected_chain.to_string(),
+        };
+        self.distribute_weighted(active_miners, share_counts, miner_reward, Some(dest))
+    }
+
+    /// Weighted distribution core shared by [`distribute_to_miners`]
+    /// (unified window) and [`compute_miner_payouts_for_coin`] (coin slice).
+    /// `active_miners` is `(miner_index, weight)` pairs; `share_counts`
+    /// indexes raw per-miner share counts for `PayoutEntry.share_count`.
+    ///
+    /// `dest == Some(NativeDest)` switches accounting to per-coin
+    /// native-unit buckets (`unpaid_native`), per-coin min threshold, and
+    /// a forced payout chain — entries below threshold or on a mismatched
+    /// registered chain stay accrued for the next revenue event.
+    fn distribute_weighted(
+        &mut self,
+        active_miners: Vec<(u32, u128)>,
+        share_counts: Vec<u64>,
+        miner_reward: u64,
+        dest: Option<NativeDest>,
+    ) -> Vec<PayoutEntry> {
+        let mut total_weight: u128 = 0;
+        for &(_, w) in &active_miners {
+            total_weight += w;
+        }
+        if total_weight == 0 {
+            total_weight = 1;
         }
 
-        // Distribute miner_reward proportionally and accumulate in `unpaid`.
+        let native_min_payout = dest.as_ref().and_then(|d| {
+            self.config
+                .min_payout_native
+                .get(&d.coin_key)
+                .copied()
+        });
+
+        // Distribute miner_reward proportionally into the right bucket:
+        // `unpaid` (flowers) for unified, `unpaid_native` (coin base units)
+        // for per-coin revenue events — the two never mix.
         let mut distributed = 0u64;
         for (i, (idx, weight)) in active_miners.iter().enumerate() {
             let amount = if i == active_miners.len() - 1 {
@@ -857,31 +1281,87 @@ impl PplnsEngine {
                 u64::try_from(part).unwrap_or(0)
             };
             distributed = distributed.saturating_add(amount);
-            self.unpaid[*idx as usize] = self.unpaid[*idx as usize].saturating_add(amount);
+            match &dest {
+                Some(d) => {
+                    *self.unpaid_native.entry((*idx, d.coin_idx)).or_insert(0) += amount;
+                }
+                None => {
+                    self.unpaid[*idx as usize] =
+                        self.unpaid[*idx as usize].saturating_add(amount);
+                }
+            }
         }
 
-        // Collect payouts for miners above the minimum threshold with a registered address.
+        // Collect payouts for miners above the minimum threshold with a
+        // registered address on the required payout chain.
         let mut payouts = Vec::new();
-        let mut paid_indices = Vec::new();
-        for (i, unpaid) in self.unpaid.iter().enumerate() {
-            if *unpaid >= self.config.min_payout_flowers {
-                if let Some(ref address) = self.addresses[i] {
-                    let miner_id = self.registry.id(i as u32).to_string();
-                    payouts.push(PayoutEntry {
-                        share_count: share_counts[i],
-                        miner_id,
-                        address: address.clone(),
-                        amount: *unpaid,
-                        payout_chain: self.chains[i].clone(),
-                    });
-                    paid_indices.push(i);
+        let mut paid_keys: Vec<(usize, Option<u16>)> = Vec::new();
+        match &dest {
+            Some(d) => {
+                let min = native_min_payout.unwrap_or(0);
+                for (&(m, c), &bal) in self.unpaid_native.iter() {
+                    if c != d.coin_idx || bal < min {
+                        continue;
+                    }
+                    let chain_ok = if d.chain == "zion" {
+                        self.chains[m as usize].is_none()
+                    } else {
+                        self.chains[m as usize].as_deref() == Some(d.chain.as_str())
+                    };
+                    if !chain_ok {
+                        continue;
+                    }
+                    if let Some(ref address) = self.addresses[m as usize] {
+                        payouts.push(PayoutEntry {
+                            share_count: share_counts
+                                .get(m as usize)
+                                .copied()
+                                .unwrap_or(0),
+                            miner_id: self.registry.id(m as u32).to_string(),
+                            address: address.clone(),
+                            amount: bal,
+                            payout_chain: (d.chain != "zion")
+                                .then(|| d.chain.clone()),
+                            native_units: true,
+                            coin: Some(d.coin_key.clone()),
+                            revenue_event: None,
+                        });
+                        paid_keys.push((m as usize, Some(c)));
+                    }
+                }
+            }
+            None => {
+                for (i, unpaid) in self.unpaid.iter().enumerate() {
+                    if *unpaid >= self.config.min_payout_flowers {
+                        if let Some(ref address) = self.addresses[i] {
+                            let miner_id = self.registry.id(i as u32).to_string();
+                            payouts.push(PayoutEntry {
+                                share_count: share_counts[i],
+                                miner_id,
+                                address: address.clone(),
+                                amount: *unpaid,
+                                payout_chain: self.chains[i].clone(),
+                                native_units: false,
+                                coin: None,
+                                revenue_event: None,
+                            });
+                            paid_keys.push((i, None));
+                        }
+                    }
                 }
             }
         }
 
         // Clear paid balances.
-        for i in &paid_indices {
-            self.unpaid[*i] = 0;
+        for (i, coin) in &paid_keys {
+            match coin {
+                Some(c) => {
+                    self.unpaid_native.remove(&(*i as u32, *c));
+                }
+                None => {
+                    self.unpaid[*i] = 0;
+                }
+            }
         }
 
         if !payouts.is_empty() {
@@ -889,11 +1369,19 @@ impl PplnsEngine {
             let round_total: u128 = payouts
                 .iter()
                 .fold(0u128, |acc, p| acc.saturating_add(p.amount as u128));
-            self.total_paid_flowers = self.total_paid_flowers.saturating_add(round_total);
-            for payout in &payouts {
-                let idx = self.registry.lookup(&payout.miner_id).unwrap_or(0);
-                self.paid_per_miner[idx as usize] =
-                    self.paid_per_miner[idx as usize].saturating_add(payout.amount as u128);
+            match &dest {
+                Some(d) => {
+                    *self.total_paid_native.entry(d.coin_idx).or_insert(0) += round_total;
+                }
+                None => {
+                    self.total_paid_flowers =
+                        self.total_paid_flowers.saturating_add(round_total);
+                    for payout in &payouts {
+                        let idx = self.registry.lookup(&payout.miner_id).unwrap_or(0);
+                        self.paid_per_miner[idx as usize] =
+                            self.paid_per_miner[idx as usize].saturating_add(payout.amount as u128);
+                    }
+                }
             }
         }
         self.dirty = true;
@@ -904,25 +1392,36 @@ impl PplnsEngine {
     /// Roll back a previously computed payout batch.
     ///
     /// Used by the pool when payout execution fails after `compute_payouts`
-    /// has already moved balances out of `unpaid`.
+    /// has already moved balances out of `unpaid`.  Native-unit entries
+    /// (`payout.coin` set) roll back into `unpaid_native` so units stay
+    /// isolated.
     pub fn rollback_payouts(&mut self, payouts: &[PayoutEntry]) {
         if payouts.is_empty() {
             return;
         }
 
         for payout in payouts {
-            if let Some(idx) = self.registry.lookup(&payout.miner_id) {
-                let i = idx as usize;
-                self.unpaid[i] = self.unpaid[i].saturating_add(payout.amount);
-                self.paid_per_miner[i] =
-                    self.paid_per_miner[i].saturating_sub(payout.amount as u128);
+            let Some(idx) = self.registry.lookup(&payout.miner_id) else {
+                continue;
+            };
+            let i = idx as usize;
+            match payout.coin.as_deref().and_then(|c| self.coin_registry.lookup(c)) {
+                Some(c) => {
+                    *self.unpaid_native.entry((idx, c)).or_insert(0) += payout.amount;
+                    let cur = self.total_paid_native.get(&c).copied().unwrap_or(0);
+                    self.total_paid_native
+                        .insert(c, cur.saturating_sub(payout.amount as u128));
+                }
+                None => {
+                    self.unpaid[i] = self.unpaid[i].saturating_add(payout.amount);
+                    self.paid_per_miner[i] =
+                        self.paid_per_miner[i].saturating_sub(payout.amount as u128);
+                    self.total_paid_flowers =
+                        self.total_paid_flowers.saturating_sub(payout.amount as u128);
+                }
             }
         }
 
-        let round_total: u128 = payouts
-            .iter()
-            .fold(0u128, |acc, p| acc.saturating_add(p.amount as u128));
-        self.total_paid_flowers = self.total_paid_flowers.saturating_sub(round_total);
         if self.payout_rounds > 0 {
             self.payout_rounds -= 1;
         }
@@ -1080,6 +1579,8 @@ mod tests {
             window_size,
             min_payout_flowers: min_payout,
             fee_config: FeeConfig::no_fees(),
+            native_payout_coins: Vec::new(),
+            min_payout_native: HashMap::new(),
         })
     }
 
@@ -1088,6 +1589,28 @@ mod tests {
             window_size,
             min_payout_flowers: min_payout,
             fee_config: FeeConfig::default(), // 5/5/1 split
+            native_payout_coins: Vec::new(),
+            min_payout_native: HashMap::new(),
+        })
+    }
+
+    /// Engine with `native_coins` siloed for native-unit payouts (F3) and
+    /// per-coin minimum thresholds in native base units.
+    fn engine_native(
+        window_size: usize,
+        min_payout: u64,
+        native_coins: &[&str],
+        min_native: &[(&str, u64)],
+    ) -> PplnsEngine {
+        PplnsEngine::new(PplnsConfig {
+            window_size,
+            min_payout_flowers: min_payout,
+            fee_config: FeeConfig::no_fees(),
+            native_payout_coins: native_coins.iter().map(|c| c.to_string()).collect(),
+            min_payout_native: min_native
+                .iter()
+                .map(|(c, m)| (c.to_string(), *m))
+                .collect(),
         })
     }
 
@@ -1692,5 +2215,259 @@ mod tests {
         assert_eq!(fs.humanitarian_accumulated_flowers, 50_000);
         assert_eq!(fs.issobella_accumulated_flowers, 50_000);
         assert_eq!(fs.pool_fee_accumulated_flowers, 10_000);
+    }
+
+    // ── F2: per-coin share accounting ────────────────────────────────
+
+    #[test]
+    fn coin_tagged_shares_slice_window() {
+        let mut e = engine_with_fees(1_000_000, 1);
+        e.register_address("alice", "zion1alice");
+        e.register_address("bob", "qz1bob");
+        e.record_share_at_diff_for_coin("alice", "rig1", 1, 1000, 100, "zion");
+        e.record_share_at_diff_for_coin("alice", "rig1", 1, 1100, 200, "qtu");
+        e.record_share_at_diff_for_coin("bob", "rig2", 1, 1200, 400, "qtu");
+        e.record_share_at_diff_for_coin("bob", "rig2", 1, 1300, 50, "prl");
+
+        let stats = e.coin_stats();
+        assert_eq!(stats.len(), 3);
+        let zion = stats.iter().find(|s| s.coin == "zion").unwrap();
+        assert_eq!(zion.accepted_total, 1);
+        assert_eq!(zion.window_weight, 100);
+        assert_eq!(zion.active_miners, 1);
+        let qtu = stats.iter().find(|s| s.coin == "qtu").unwrap();
+        assert_eq!(qtu.accepted_total, 2);
+        assert_eq!(qtu.window_weight, 600);
+        assert_eq!(qtu.active_miners, 2);
+        let prl = stats.iter().find(|s| s.coin == "prl").unwrap();
+        assert_eq!(prl.window_weight, 50);
+
+        assert_eq!(e.window_weight_for_coin("qtu"), 600);
+        assert_eq!(e.window_weight_for_coin("QTU"), 600); // case-insensitive
+        assert_eq!(e.window_weight_for_coin("vrsc"), 0); // unknown coin
+        assert_eq!(e.stats().window_total_difficulty, 750);
+    }
+
+    #[test]
+    fn coin_payouts_distribute_within_slice_only() {
+        let mut e = engine_with_fees(1_000_000, 1);
+        e.register_address("alice", "zion1alice");
+        e.register_address_with_chain("bob", "qz1bob", "quantus");
+        // alice mines zion, bob mines qtu — coin slices must not mix.
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "zion");
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 300, "qtu");
+
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 1000, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].miner_id, "bob");
+        assert_eq!(payouts[0].amount, 1000);
+        assert_eq!(payouts[0].share_count, 1);
+
+        // ZION slice pays only alice.
+        let payouts = e.compute_miner_payouts_for_coin("zion", 1000, "zion");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].miner_id, "alice");
+
+        // Unknown/empty coin → no payouts.
+        assert!(e.compute_miner_payouts_for_coin("vrsc", 1000, "vrsc").is_empty());
+        assert!(e.compute_miner_payouts_for_coin("qtu", 0, "quantus").is_empty());
+    }
+
+    #[test]
+    fn coin_payouts_proportional_within_slice() {
+        let mut e = engine_with_fees(1_000_000, 1);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.register_address_with_chain("bob", "qz1bob", "quantus");
+        // alice 300 diff qtu, bob 100 diff qtu + zion noise that must not
+        // dilute the qtu round.
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 300, "qtu");
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 10_000, "zion");
+
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 400, "quantus");
+        assert_eq!(payouts.len(), 2);
+        let alice = payouts.iter().find(|p| p.miner_id == "alice").unwrap();
+        let bob = payouts.iter().find(|p| p.miner_id == "bob").unwrap();
+        assert_eq!(alice.amount, 300);
+        assert_eq!(bob.amount, 100);
+    }
+
+    #[test]
+    fn coin_tags_survive_window_eviction() {
+        // Window of 100 difficulty — evictions must decrement per-coin
+        // weights too.  A share larger than the whole window evicts
+        // itself, so the overflow share must stay <= 100.
+        let mut e = engine_with_fees(100, 1);
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 60, "qtu");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1001, 40, "zion");
+        // Push 60 diff of zion — total 160 evicts only the oldest qtu share.
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1002, 60, "zion");
+
+        assert_eq!(e.window_weight_for_coin("qtu"), 0);
+        assert_eq!(e.window_weight_for_coin("zion"), 100); // alice 40 + bob 60
+                                                           // Miner-coin weight map fully drained for evicted entries.
+        let qtu = e
+            .coin_stats()
+            .into_iter()
+            .find(|s| s.coin == "qtu")
+            .unwrap();
+        assert_eq!(qtu.window_weight, 0);
+        assert_eq!(qtu.active_miners, 0);
+        assert_eq!(qtu.accepted_total, 1); // lifetime count survives
+    }
+
+    #[test]
+    fn coin_snapshot_roundtrip() {
+        let mut e = engine_with_fees(1_000_000, 1);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1001, 50, "prl");
+
+        let snap = e.snapshot();
+        let mut e2 = engine_with_fees(1_000_000, 1);
+        e2.restore(snap);
+
+        assert_eq!(e2.window_weight_for_coin("qtu"), 100);
+        assert_eq!(e2.window_weight_for_coin("prl"), 50);
+        let stats = e2.coin_stats();
+        assert_eq!(stats.len(), 2);
+        // Coin-sliced payout works post-restore.
+        let payouts = e2.compute_miner_payouts_for_coin("qtu", 1000, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].amount, 1000);
+    }
+
+    #[test]
+    fn pre_f2_snapshot_defaults_to_zion() {
+        // Shares serialized before F2 have no `coin` field — serde default
+        // must tag them "zion" so old snapshots keep loading.
+        let json =
+            r#"{"miner_id":"m","worker_name":"w","timestamp_ms":1,"height":1,"difficulty":5}"#;
+        let share: PplnsShare = serde_json::from_str(json).unwrap();
+        assert_eq!(share.coin, "zion");
+    }
+
+    // ---- F3: native-unit payout isolation ----
+
+    #[test]
+    fn native_revenue_pays_in_coin_units() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.register_address_with_chain("bob", "zion1bob", "zion");
+        // alice mines QTU, bob mines ZION.
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 100, "zion");
+
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 5_000_000, "quantus");
+        assert_eq!(payouts.len(), 1);
+        let p = &payouts[0];
+        assert_eq!(p.miner_id, "alice");
+        assert_eq!(p.amount, 5_000_000); // planks, not flowers
+        assert!(p.native_units);
+        assert_eq!(p.coin.as_deref(), Some("qtu"));
+        assert_eq!(p.payout_chain.as_deref(), Some("quantus"));
+        // Native units never leaked into the flowers bucket.
+        assert_eq!(e.unpaid_balance("alice"), 0);
+        assert_eq!(e.unpaid_native_balance("alice", "qtu"), 0); // paid out
+    }
+
+    #[test]
+    fn native_coin_excluded_from_unified_distribution() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.register_address_with_chain("bob", "zion1bob", "zion");
+        // Equal weights, different coins.
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 100, "zion");
+
+        // Unified ZION block reward must go entirely to bob — alice's
+        // QTU weight earns only QTU revenue events.
+        let payouts = e.compute_payouts(1_000_000);
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].miner_id, "bob");
+        assert_eq!(payouts[0].amount, 1_000_000);
+        assert!(!payouts[0].native_units);
+    }
+
+    #[test]
+    fn native_threshold_accumulates_across_events() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[("qtu", 500)]);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+
+        // First event below threshold — nothing emitted, balance accrues.
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 300, "quantus");
+        assert!(payouts.is_empty());
+        assert_eq!(e.unpaid_native_balance("alice", "qtu"), 300);
+
+        // Second event pushes over the threshold — pays the full accrued
+        // amount, not just this event's delta.
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 300, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].amount, 600);
+        assert!(payouts[0].native_units);
+        assert_eq!(e.unpaid_native_balance("alice", "qtu"), 0);
+    }
+
+    #[test]
+    fn native_chain_mismatch_keeps_balance() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        // alice registered a *zion* payout address but mines qtu —
+        // sending planks to a ZION address must never happen.
+        e.register_address_with_chain("alice", "zion1alice", "zion");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 1_000, "quantus");
+        assert!(payouts.is_empty());
+        assert_eq!(e.unpaid_native_balance("alice", "qtu"), 1_000);
+
+        // She re-registers a quantus address — next event pays her.
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 500, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].amount, 1_500);
+    }
+
+    #[test]
+    fn native_snapshot_preserves_balances() {
+        let mut e = engine_native(1_000_000, 1, &["qtu", "prl"], &[("qtu", 1_000)]);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.register_address_with_chain("bob", "prl1bob", "pearl");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+        e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 100, "prl");
+
+        // Accrue below-threshold qtu + emit a prl payout (lifetime stat).
+        assert!(e.compute_miner_payouts_for_coin("qtu", 300, "quantus").is_empty());
+        let prl = e.compute_miner_payouts_for_coin("prl", 700, "pearl");
+        assert_eq!(prl.len(), 1);
+
+        let snap = e.snapshot();
+        let mut e2 = engine_native(1_000_000, 1, &["qtu", "prl"], &[("qtu", 1_000)]);
+        e2.restore(snap);
+
+        assert_eq!(e2.unpaid_native_balance("alice", "qtu"), 300);
+        assert_eq!(e2.unpaid_native_balance("bob", "prl"), 0);
+        // The emitted prl payout counted toward the lifetime total.
+        assert_eq!(e2.total_paid_native_for("prl"), 700);
+        // Threshold is still enforced post-restore: 300+500=800 < 1000,
+        // another 500 pushes it to 1300 ≥ 1000 → pays the full balance.
+        assert!(e2.compute_miner_payouts_for_coin("qtu", 500, "quantus").is_empty());
+        let payouts = e2.compute_miner_payouts_for_coin("qtu", 500, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(payouts[0].amount, 1_300);
+    }
+
+    #[test]
+    fn native_rollback_restores_coin_bucket() {
+        let mut e = engine_native(1_000_000, 1, &["qtu"], &[]);
+        e.register_address_with_chain("alice", "qz1alice", "quantus");
+        e.record_share_at_diff_for_coin("alice", "r", 1, 1000, 100, "qtu");
+        let payouts = e.compute_miner_payouts_for_coin("qtu", 800, "quantus");
+        assert_eq!(payouts.len(), 1);
+        assert_eq!(e.unpaid_native_balance("alice", "qtu"), 0);
+
+        e.rollback_payouts(&payouts);
+        assert_eq!(e.unpaid_native_balance("alice", "qtu"), 800);
+        assert_eq!(e.unpaid_balance("alice"), 0); // flowers untouched
     }
 }

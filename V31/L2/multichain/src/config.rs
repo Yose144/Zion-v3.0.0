@@ -383,6 +383,11 @@ impl PoolConfigFile {
             pool_wallet_key: self.pool_wallet_key.clone(),
             payout_interval_s: self.payout_interval_s,
             payout_tx_fee_flowers: self.payout_tx_fee_flowers,
+            // Native-coin payout config lives in the pool binary env
+            // (ZION_POOL_NATIVE_PAYOUT_COINS / _MIN_PAYOUT_NATIVE); the
+            // multichain-hosted pool leaves it disabled.
+            native_payout_coins: Vec::new(),
+            min_payout_native: Default::default(),
         }
     }
 }

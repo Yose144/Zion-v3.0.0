@@ -161,6 +161,52 @@ struct DrainEntry {
     miner_id: String,
     address: String,
     amount_flowers: u64,
+    /// "native" = amount is already in QTC planks (per-coin revenue
+    /// distribution); anything else = ZION flowers needing FX conversion.
+    #[serde(default)]
+    unit: String,
+    /// Source coin for native payouts (e.g. "qtu") — informational.
+    #[serde(default)]
+    coin: Option<String>,
+    /// Revenue event id for native payouts — feeds the ledger key so
+    /// multiple events at the same reference height can't collide.
+    #[serde(default)]
+    event: Option<String>,
+}
+
+/// Decide `(ledger_id, gross_planks)` for a drained entry — `None` when
+/// the entry must be skipped.  `unit:"native"` entries arrive already
+/// denominated in planks (no FX conversion) and carry a revenue `event`
+/// id that scopes the ledger key, so two events at the same reference
+/// height can't collapse into one row.
+fn plan_entry(p: &DrainEntry, config: &QtcPayoutConfig) -> Option<(String, u128)> {
+    let native = p.unit == "native";
+    if native {
+        // Native-unit entries come from a coin's own revenue event —
+        // sanity-check the coin actually settles on Quantus.
+        let coin = p.coin.as_deref().unwrap_or("");
+        if !matches!(coin, "qtu" | "qtc" | "quantus") {
+            warn!(
+                miner = %p.miner_id,
+                coin,
+                "qtc_sweeper skipping native entry for non-quantus coin"
+            );
+            return None;
+        }
+    }
+    let id = match p.event.as_deref() {
+        Some(ev) if native => format!("quantus:rev:{ev}:{}", p.miner_id),
+        _ => format!("quantus:{}:{}", p.height, p.miner_id),
+    };
+    let gross_planks = if native {
+        p.amount_flowers as u128
+    } else {
+        (p.amount_flowers as u128)
+            .checked_mul(config.planks_per_flower_num)
+            .unwrap_or(u128::MAX)
+            / config.planks_per_flower_den
+    };
+    Some((id, gross_planks))
 }
 
 /// Spawn the sweeper task.  `adapter` is shared with the registry-registered
@@ -242,11 +288,9 @@ async fn tick(
 
     // 2. Ledger each drained entry (queued) before touching the chain.
     for p in &resp.payouts {
-        let id = format!("quantus:{}:{}", p.height, p.miner_id);
-        let gross_planks = (p.amount_flowers as u128)
-            .checked_mul(config.planks_per_flower_num)
-            .unwrap_or(u128::MAX)
-            / config.planks_per_flower_den;
+        let Some((id, gross_planks)) = plan_entry(p, config) else {
+            continue;
+        };
         // Pool fee on the QTC leg: deducted from the converted amount;
         // it never leaves the payout account (we simply send less).
         let fee_planks = gross_planks.saturating_mul(config.fee_bps as u128) / 10_000;
@@ -494,7 +538,54 @@ async fn mark_error(
 
 #[cfg(test)]
 mod tests {
-    use super::parse_decimal_ratio;
+    use super::*;
+
+    fn cfg() -> QtcPayoutConfig {
+        QtcPayoutConfig {
+            enabled: true,
+            pool_api: "http://x".into(),
+            admin_key: "k".into(),
+            planks_per_flower_num: 2,
+            planks_per_flower_den: 1,
+            interval: Duration::from_secs(60),
+            min_planks: 0,
+            max_attempts: 3,
+            fee_bps: 0,
+            max_fee_planks: 0,
+        }
+    }
+
+    fn entry(unit: &str, coin: Option<&str>, event: Option<&str>) -> DrainEntry {
+        DrainEntry {
+            height: 42,
+            miner_id: "alice".into(),
+            address: "qz1alice".into(),
+            amount_flowers: 1_000,
+            unit: unit.into(),
+            coin: coin.map(|c| c.into()),
+            event: event.map(|e| e.into()),
+        }
+    }
+
+    #[test]
+    fn flowers_entry_fx_converts() {
+        let (id, planks) = plan_entry(&entry("flowers", None, None), &cfg()).unwrap();
+        assert_eq!(id, "quantus:42:alice");
+        assert_eq!(planks, 2_000); // 1000 flowers × 2 planks
+    }
+
+    #[test]
+    fn native_entry_skips_fx_and_scopes_key() {
+        let (id, planks) =
+            plan_entry(&entry("native", Some("qtu"), Some("qtu:bal:0:1k")), &cfg()).unwrap();
+        assert_eq!(id, "quantus:rev:qtu:bal:0:1k:alice");
+        assert_eq!(planks, 1_000); // already planks — no conversion
+    }
+
+    #[test]
+    fn native_wrong_coin_skipped() {
+        assert!(plan_entry(&entry("native", Some("prl"), Some("e1")), &cfg()).is_none());
+    }
 
     #[test]
     fn decimal_ratio_parses_exact() {

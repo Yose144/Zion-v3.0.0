@@ -200,6 +200,7 @@ impl PayoutSweeper {
                     tx_id: tx_id.clone(),
                     height: block_height,
                     block_hash: String::new(),
+                    coin: "zion".to_string(),
                 })
                 .collect();
             let store = Arc::clone(store);

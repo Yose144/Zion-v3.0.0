@@ -55,6 +55,34 @@ pub struct PoolConfig {
     pub payout_interval_s: u64,
     /// Per-payout transaction fee in flowers.
     pub payout_tx_fee_flowers: u64,
+    /// Coins paid in their own native units via revenue events (F3) —
+    /// excluded from the unified ZION distribution.  Lowercase tickers,
+    /// `ZION_POOL_NATIVE_PAYOUT_COINS=qtu,prl`.
+    pub native_payout_coins: Vec<String>,
+    /// Per-coin minimum payout in the coin's native base units,
+    /// `ZION_POOL_MIN_PAYOUT_NATIVE=qtu:1000000,prl:50000000`.
+    pub min_payout_native: std::collections::HashMap<String, u64>,
+}
+
+/// Parse `ZION_POOL_NATIVE_PAYOUT_COINS` (`"qtu,prl"` → lowercase tickers).
+pub fn parse_native_payout_coins(raw: &str) -> Vec<String> {
+    raw.split(',')
+        .map(|c| c.trim().to_ascii_lowercase())
+        .filter(|c| !c.is_empty())
+        .collect()
+}
+
+/// Parse `ZION_POOL_MIN_PAYOUT_NATIVE` (`"qtu:1000000,prl:50000000"` →
+/// lowercase ticker → native base-unit threshold).
+pub fn parse_min_payout_native(raw: &str) -> std::collections::HashMap<String, u64> {
+    raw.split(',')
+        .filter_map(|pair| {
+            let (coin, amount) = pair.split_once(':')?;
+            let coin = coin.trim().to_ascii_lowercase();
+            let amount: u64 = amount.trim().parse().ok()?;
+            (!coin.is_empty()).then_some((coin, amount))
+        })
+        .collect()
 }
 
 impl Default for PoolConfig {
@@ -81,6 +109,8 @@ impl Default for PoolConfig {
             pool_wallet_key: None,
             payout_interval_s: 30,
             payout_tx_fee_flowers: zion_core::fee::MIN_TX_FEE.max(1),
+            native_payout_coins: Vec::new(),
+            min_payout_native: std::collections::HashMap::new(),
         }
     }
 }

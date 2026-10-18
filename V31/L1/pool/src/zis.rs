@@ -45,6 +45,8 @@ pub struct ZisIdentity {
     pub zion_address: Option<String>,
     /// First linked `quantus` address, if any.
     pub quantus_address: Option<String>,
+    /// First linked `pearl` address, if any (PRL payout fallback — F2e).
+    pub pearl_address: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -198,6 +200,11 @@ impl ZisVerifier {
                         .iter()
                         .find(|a| a.chain_type == "quantus")
                         .map(|a| a.address.clone()),
+                    pearl_address: u
+                        .linked_addresses
+                        .iter()
+                        .find(|a| a.chain_type == "pearl")
+                        .map(|a| a.address.clone()),
                 })
             });
         {
@@ -270,6 +277,26 @@ mod tests {
         let id2 = v.verify("zis_aaaaaaaaaaaaaaaa").await.unwrap();
         assert_eq!(id2.sub, "u42");
         let _ = tokio::time::timeout(Duration::from_millis(200), hits).await;
+    }
+
+    #[tokio::test]
+    async fn verify_binds_pearl_linked_address() {
+        // F2e: a `chainType:"pearl"` linked address lands on
+        // `ZisIdentity::pearl_address` (PRL payout fallback).
+        let body = r#"{"valid":true,"user":{"id":"u9","linkedAddresses":[
+            {"address":"prl1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq","chainType":"pearl"},
+            {"address":"qz77","chainType":"quantus"}]}}"#
+            .to_string();
+        let (url, _hits) = mock_zis(vec![body]).await;
+        let v = verifier_for(url);
+        let idn = v.verify("zis_pearlpearlpearl0").await.unwrap();
+        assert_eq!(idn.sub, "u9");
+        assert_eq!(
+            idn.pearl_address.as_deref(),
+            Some("prl1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+        );
+        assert_eq!(idn.quantus_address.as_deref(), Some("qz77"));
+        assert!(idn.zion_address.is_none());
     }
 
     #[tokio::test]

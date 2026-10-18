@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use crate::coin_leg::{self, JobRoute};
 use anyhow::Context;
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWrite, AsyncWriteExt, BufReader};
@@ -58,6 +58,14 @@ use crate::vardiff::{difficulty_to_target, VarDiff, VarDiffConfig};
 /// - full node template needed to rebuild the solved block.
 type JobEntry = (Vec<u8>, [u8; 32], [u8; 32], u64, Option<CoreBlockTemplate>);
 
+/// Outcome of [`StratumServer::zis_password_auth`] (F2d).
+enum ZisPasswordOutcome {
+    /// Session continues; `Some(identity)` when bound to a ZIS user.
+    Allow(Option<crate::zis::ZisIdentity>),
+    /// Session must be rejected (`zis_required` + absent/invalid token).
+    Reject,
+}
+
 /// Per-connection state for a Stratum v1 miner session.
 pub struct StratumV1Ctx {
     pub session: StratumV1Session,
@@ -66,6 +74,13 @@ pub struct StratumV1Ctx {
     pub authorized: bool,
     /// Notification to send to the client after the current response (e.g. set_difficulty).
     pub pending_notification: Option<String>,
+    /// ZIS outcome computed asynchronously for the in-flight
+    /// `mining.authorize` (F2d — `handle_request_with_ctx` is sync, so
+    /// `flush_stratum_response` verifies first and the handler consumes
+    /// this).  `Some(Reject)` fails the authorize.
+    zis_auth: Option<ZisPasswordOutcome>,
+    /// ZIS user bound at authorize ("" = anonymous).
+    zis_user: String,
 }
 
 impl StratumV1Ctx {
@@ -77,6 +92,8 @@ impl StratumV1Ctx {
             share_rate: ShareRateLimiter::new(share_rate_per_sec),
             authorized: false,
             pending_notification: None,
+            zis_auth: None,
+            zis_user: String::new(),
         }
     }
 
@@ -367,6 +384,92 @@ impl StratumServer {
         (out_attempted, out_elapsed)
     }
 
+    /// ZIS auth via the password field (F2d) — shared by stratum dialects
+    /// that have no `auth_token` field: QTU `login.pass`, PRL
+    /// `authorize.pass`, V1 `mining.authorize` password.
+    ///
+    /// Semantics mirror the V3 Hello path: `pass` not starting with
+    /// `zis_` is anonymous; a `zis_`-prefixed pass is verified against
+    /// the identity service and a valid, unbanned key binds the session.
+    /// `required` mode rejects absent/invalid tokens; `optional` logs
+    /// and continues anonymous.
+    async fn zis_password_auth(
+        &self,
+        pass: &str,
+        dialect: &str,
+        miner_id: &str,
+        ip: IpAddr,
+    ) -> ZisPasswordOutcome {
+        let Some(verifier) = &self.zis else {
+            return ZisPasswordOutcome::Allow(None);
+        };
+        let token = pass.strip_prefix("zis_");
+        let identity = match token {
+            Some(_) => verifier.verify(pass).await,
+            None => None,
+        };
+        match identity {
+            Some(idn) if !verifier.is_banned(&idn.sub) => {
+                tracing::info!(
+                    "{}_zis_auth miner={} sub={} ip={}",
+                    dialect,
+                    miner_id,
+                    idn.sub,
+                    ip
+                );
+                ZisPasswordOutcome::Allow(Some(idn))
+            }
+            _ => {
+                if self.zis_required {
+                    let reason = if token.is_none() {
+                        "no_token"
+                    } else {
+                        "invalid_or_banned"
+                    };
+                    tracing::warn!(
+                        "{}_zis_reject miner={} ip={} reason={}",
+                        dialect,
+                        miner_id,
+                        ip,
+                        reason
+                    );
+                    return ZisPasswordOutcome::Reject;
+                }
+                if token.is_some() {
+                    tracing::warn!(
+                        "{}_zis_invalid miner={} — continuing anonymous",
+                        dialect,
+                        miner_id
+                    );
+                }
+                ZisPasswordOutcome::Allow(None)
+            }
+        }
+    }
+
+    /// Register a ZIS-linked payout address for `key` (wallet or miner
+    /// id), mirroring the V3 Hello auto-resolve.  No-op without a
+    /// matching linked address for `chain` (`"quantus"`, `"pearl"`,
+    /// `"zion"`).
+    fn zis_register_linked_payout(&self, idn: &crate::zis::ZisIdentity, chain: &str, key: &str) {
+        let addr = match chain {
+            "quantus" => idn.quantus_address.as_deref(),
+            "pearl" => idn.pearl_address.as_deref(),
+            _ => idn.zion_address.as_deref(),
+        };
+        if let Some(a) = addr {
+            if let Some((c, registered)) = self.pool.lock().unwrap().register_payout_address(key, a)
+            {
+                tracing::info!(
+                    "pool_payout miner={} chain={} addr={} (zis-linked)",
+                    key,
+                    c,
+                    registered
+                );
+            }
+        }
+    }
+
     /// Handle a Stratum v1 JSON-RPC request line (stateless convenience wrapper).
     pub fn handle_request(&self, line: &str) -> String {
         let mut ctx = StratumV1Ctx::new(0, &self.vardiff_config);
@@ -411,6 +514,23 @@ impl StratumServer {
                     .and_then(Value::as_str)
                     .unwrap_or("")
                     .to_string();
+                // F2d: consume the ZIS outcome pre-verified by
+                // `flush_stratum_response` (async) — Reject fails the
+                // authorize without touching session state.
+                if let Some(outcome) = ctx.zis_auth.take() {
+                    match outcome {
+                        ZisPasswordOutcome::Reject => {
+                            return error_response(Some(id), -33000, "unauthorized");
+                        }
+                        ZisPasswordOutcome::Allow(idn) => {
+                            if let Some(idn) = idn {
+                                ctx.zis_user = idn.sub.clone();
+                                let (miner_id, _) = StratumV1Session::parse_username(&username);
+                                self.zis_register_linked_payout(&idn, "zion", &miner_id);
+                            }
+                        }
+                    }
+                }
                 if !username.is_empty() {
                     let (miner_id, worker_name) = StratumV1Session::parse_username(&username);
                     ctx.session.miner_id = miner_id.clone();
@@ -423,7 +543,7 @@ impl StratumServer {
                         &worker_name,
                         &ctx.session.algorithm,
                         &ctx.session.backend,
-                        "",
+                        &ctx.zis_user,
                     );
                 }
                 success_response(id, Value::Bool(true))
@@ -437,16 +557,42 @@ impl StratumServer {
         }
     }
 
+    /// F2d: when `line` is `mining.authorize`, run the async ZIS password
+    /// check and stage the outcome in `ctx.zis_auth` for the sync handler.
+    async fn v1_zis_precheck(&self, ctx: &mut StratumV1Ctx, line: &str, ip: IpAddr) {
+        if !line.contains("\"mining.authorize\"") {
+            return;
+        }
+        if let Ok(v) = serde_json::from_str::<Value>(line) {
+            let pass = v
+                .get("params")
+                .and_then(|p| p.get(1))
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let miner = v
+                .get("params")
+                .and_then(|p| p.get(0))
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            ctx.zis_auth = Some(self.zis_password_auth(pass, "v1", miner, ip).await);
+        }
+    }
+
     /// Write the response for a Stratum v1 request plus any queued notification.
     async fn flush_stratum_response<W>(
         &self,
         writer: &Arc<tokio::sync::Mutex<W>>,
         ctx: &mut StratumV1Ctx,
         line: &str,
+        ip: IpAddr,
     ) -> std::io::Result<()>
     where
         W: AsyncWrite + Unpin + Send,
     {
+        // F2d: `mining.authorize` password may carry `zis_<token>` — verify
+        // here at the async boundary; the sync handler consumes
+        // `ctx.zis_auth` to accept/reject the authorize.
+        self.v1_zis_precheck(ctx, line, ip).await;
         let response = self.handle_request_with_ctx(line, ctx);
         let mut w = writer.lock().await;
         w.write_all(response.as_bytes()).await?;
@@ -522,24 +668,21 @@ impl StratumServer {
 
         let height = template.as_ref().map(|t| t.height).unwrap_or(0);
 
-        let result = if job_id.starts_with("zion_") || job_id.starts_with("j") {
-            self.pool.lock().unwrap().submit_zion_with_target(
+        let result = match coin_leg::route_job_id(&job_id) {
+            JobRoute::ZionV1 => self.pool.lock().unwrap().submit_zion_with_target(
                 submission,
                 &header,
                 height,
                 &share_target,
-            )
-        } else if job_id.starts_with("aux_") {
-            let coin = parse_aux_coin(&job_id);
-            self.pool.lock().unwrap().submit_auxpow_with_target(
+            ),
+            JobRoute::Auxpow(coin) => self.pool.lock().unwrap().submit_auxpow_with_target(
                 coin,
                 submission,
                 &header,
                 height,
                 &share_target,
-            )
-        } else {
-            Err(PoolError::UnknownJob)
+            ),
+            _ => Err(PoolError::UnknownJob),
         };
 
         match result {
@@ -677,15 +820,16 @@ impl StratumServer {
     ) {
         let (is_block, rpc_url) = {
             let pool = self.pool.lock().unwrap();
-            let is_block = if job_id.starts_with("zion_") || job_id.starts_with("j") {
-                let hash = pool.validator.zion_hash(header, nonce);
-                hash.as_bytes() <= block_target
-            } else if job_id.starts_with("aux_") {
-                let coin = parse_aux_coin(job_id);
-                let hash = pool.validator.auxpow_hash(coin, header, nonce);
-                &hash <= block_target
-            } else {
-                false
+            let is_block = match coin_leg::route_job_id(&job_id) {
+                JobRoute::ZionV1 => {
+                    let hash = pool.validator.zion_hash(header, nonce);
+                    hash.as_bytes() <= block_target
+                }
+                JobRoute::Auxpow(coin) => {
+                    let hash = pool.validator.auxpow_hash(coin, header, nonce);
+                    &hash <= block_target
+                }
+                _ => false,
             };
             (is_block, pool.config.l1_rpc_url.clone())
         };
@@ -1246,10 +1390,125 @@ impl StratumServer {
         // or aux-coin change.
         if let Some(pearl) = &self.pearl {
             if let Some(job) = pearl.pick_served_job() {
-                ids.push(format!("PRL:{}", job.job_id));
+                ids.push(format!(
+                    "{}{}",
+                    coin_leg::PRL_FINGERPRINT_PREFIX,
+                    job.job_id
+                ));
             }
         }
         ids
+    }
+
+    /// Live snapshot of every coin leg — the runtime counterpart of
+    /// `coin_leg`'s static registry. Sourced from the same accessors the
+    /// `/stats` auxpow payload uses; consumed by ops tooling and the
+    /// future `/public/v1/coins` tier (plan §5a).
+    pub fn leg_statuses(&self) -> Vec<coin_leg::LegStatus> {
+        let mut legs: Vec<coin_leg::LegStatus> = Vec::new();
+
+        // ZION native — always served; "connected" = node RPC configured.
+        legs.push(coin_leg::LegStatus {
+            leg_id: "zion".into(),
+            coin: "ZION".into(),
+            kind: coin_leg::LegKind::Native,
+            enabled: true,
+            connected: self.config.l1_rpc_url.is_some(),
+            job_id: None,
+            job_age_ms: None,
+            share_pct: None,
+        });
+
+        // QTC native leg (own quantus-node over QUIC).
+        let (q_en, q_conn, q_pct, q_jid, q_age) = self.multi_bridge.native_status();
+        legs.push(coin_leg::LegStatus {
+            leg_id: "qtc-native".into(),
+            coin: "QTU".into(),
+            kind: coin_leg::LegKind::Native,
+            enabled: q_en,
+            connected: q_conn,
+            job_id: q_jid,
+            job_age_ms: q_age,
+            share_pct: Some(q_pct),
+        });
+
+        // PRL native + upstream legs (pearl-gateway / LuckyPool).
+        if let Some(pearl) = &self.pearl {
+            let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, _upend, _sn, _su) =
+                pearl.status();
+            legs.push(coin_leg::LegStatus {
+                leg_id: "prl-native".into(),
+                coin: "PRL".into(),
+                kind: coin_leg::LegKind::Native,
+                enabled: n_en,
+                connected: njid.is_some(),
+                job_id: njid,
+                job_age_ms: nage,
+                share_pct: Some(npct),
+            });
+            legs.push(coin_leg::LegStatus {
+                leg_id: "prl-upstream".into(),
+                coin: "PRL".into(),
+                kind: coin_leg::LegKind::Upstream,
+                enabled: u_en,
+                connected: u_conn,
+                job_id: ujid,
+                job_age_ms: uage,
+                share_pct: None,
+            });
+        }
+
+        // Bridged auxpow legs — one per enabled coin. "connected" is the
+        // job-freshness proxy the dashboard already uses (<120 s).
+        for coin in self.multi_bridge.enabled_coins() {
+            if coin == ExternalCoin::Quantus {
+                // QTU upstream leg — same source as the coin row above,
+                // but tracked under its own leg id.
+                let job = self.multi_bridge.latest_job_for_coin(&coin);
+                let (jid, age) = job
+                    .as_ref()
+                    .map(|j| {
+                        (
+                            Some(j.external_job_id.clone()),
+                            j.received_at.map(|t| t.elapsed().as_millis() as u64),
+                        )
+                    })
+                    .unwrap_or((None, None));
+                legs.push(coin_leg::LegStatus {
+                    leg_id: "qtc-upstream".into(),
+                    coin: "QTU".into(),
+                    kind: coin_leg::LegKind::Upstream,
+                    enabled: true,
+                    connected: age.map(|a| a < 120_000).unwrap_or(false),
+                    job_id: jid,
+                    job_age_ms: age,
+                    share_pct: None,
+                });
+                continue;
+            }
+            let job = self.multi_bridge.latest_job_for_coin(&coin);
+            let (jid, age) = job
+                .as_ref()
+                .map(|j| {
+                    (
+                        Some(j.external_job_id.clone()),
+                        j.received_at.map(|t| t.elapsed().as_millis() as u64),
+                    )
+                })
+                .unwrap_or((None, None));
+            legs.push(coin_leg::LegStatus {
+                leg_id: format!("aux-{}", coin.as_str().to_lowercase()),
+                coin: coin.as_str().to_string(),
+                kind: coin_leg::LegKind::Upstream,
+                enabled: true,
+                connected: age.map(|a| a < 120_000).unwrap_or(false),
+                job_id: jid,
+                job_age_ms: age,
+                share_pct: None,
+            });
+        }
+
+        legs
     }
 
     /// Return true if an external job is fresh enough to send to a miner.
@@ -1322,6 +1581,26 @@ impl StratumServer {
             tracing::debug!("qtu_stratum: {} malformed first line — closing", ip);
             return;
         };
+        // F2d: `pass` may carry `zis_<token>` — required mode rejects the
+        // session before login_ok; optional binds the identity + linked
+        // Quantus payout address.
+        let mut zis_user = String::new();
+        match self
+            .zis_password_auth(&login.pass, "qtu", &login.wallet, ip)
+            .await
+        {
+            ZisPasswordOutcome::Reject => {
+                let _ =
+                    Self::qtu_send(writer, &stratum_qtu::rpc_error(&rpc_id, "unauthorized")).await;
+                return;
+            }
+            ZisPasswordOutcome::Allow(idn) => {
+                if let Some(idn) = idn {
+                    zis_user = idn.sub.clone();
+                    self.zis_register_linked_payout(&idn, "quantus", &login.wallet);
+                }
+            }
+        }
         // Session id: unique-ish hex (upstream uses UUIDs; any opaque string
         // is valid — miners echo it in submit `id`).
         let session_id = format!(
@@ -1359,16 +1638,24 @@ impl StratumServer {
             return;
         }
         tracing::info!(
-            "qtu_stratum: {} login wallet={} worker={} agent={} initial_job={}",
+            "qtu_stratum: {} login wallet={} worker={} agent={} zis={} initial_job={}",
             ip,
             login.wallet,
             login.worker,
             login.agent,
+            if zis_user.is_empty() { "-" } else { &zis_user },
             if last_job_id.is_empty() {
                 "(none)"
             } else {
                 &last_job_id
             }
+        );
+        self.telemetry.lock().unwrap().touch_session(
+            &login.wallet,
+            &login.login,
+            "qpow",
+            &login.agent,
+            &zis_user,
         );
 
         // Poll for job rotation — QTU jobs arrive on the quantus-node/bridge
@@ -1471,7 +1758,7 @@ impl StratumServer {
 
         // Look up the exact job the miner claims to have solved — same
         // discipline as the V3 path (native first by id, then upstream).
-        let pkg_opt = if job_id.starts_with(crate::qtc_native::NATIVE_JOB_PREFIX) {
+        let pkg_opt = if coin_leg::route_job_id(&job_id) == JobRoute::QtcNative {
             self.multi_bridge.native_job_by_id(&job_id)
         } else {
             self.multi_bridge
@@ -1549,7 +1836,7 @@ impl StratumServer {
             self.pool
                 .lock()
                 .unwrap()
-                .record_external_share(&login.wallet, &login.login, h, w);
+                .record_external_share(&login.wallet, &login.login, h, w, "qtu");
         }
         self.telemetry
             .lock()
@@ -1602,8 +1889,8 @@ impl StratumServer {
                 }
             }
         }
-        let (accepted, status) = if external_job_id
-            .starts_with(crate::pearl_upstream::UPSTREAM_JOB_PREFIX)
+        let (accepted, status) = if coin_leg::route_job_id(external_job_id)
+            == JobRoute::PearlUpstream
         {
             match pearl
                 .verify_upstream_submission(external_job_id, proof_b64)
@@ -1663,7 +1950,7 @@ impl StratumServer {
             self.pool
                 .lock()
                 .unwrap()
-                .record_external_share(miner_id, worker_name, h, w);
+                .record_external_share(miner_id, worker_name, h, w, "prl");
         }
         self.telemetry.lock().unwrap().record_external_share(
             miner_id,
@@ -1724,6 +2011,26 @@ impl StratumServer {
                 .await;
             return;
         }
+        // F2d: `pass` may carry `zis_<token>` — required mode rejects the
+        // session before auth_ok; optional binds the identity + linked
+        // Pearl payout address.
+        let mut zis_user = String::new();
+        match self
+            .zis_password_auth(&auth.pass, "prl", &auth.wallet, ip)
+            .await
+        {
+            ZisPasswordOutcome::Reject => {
+                let _ = Self::pearl_send(writer, &stratum_pearl::auth_err(&rpc_id, "unauthorized"))
+                    .await;
+                return;
+            }
+            ZisPasswordOutcome::Allow(idn) => {
+                if let Some(idn) = idn {
+                    zis_user = idn.sub.clone();
+                    self.zis_register_linked_payout(&idn, "pearl", &auth.wallet);
+                }
+            }
+        }
         if Self::pearl_send(writer, &stratum_pearl::auth_ok(&rpc_id))
             .await
             .is_err()
@@ -1738,7 +2045,7 @@ impl StratumServer {
             &worker_name,
             "pearlhash",
             "pearl-stratum",
-            "",
+            &zis_user,
         );
         tracing::info!(
             "pearl_stratum: {} authorize wallet={} worker={} agent={}",
@@ -1943,7 +2250,7 @@ impl StratumServer {
                     let mut ctx = StratumV1Ctx::new(session_id, &server.vardiff_config);
 
                     if server
-                        .flush_stratum_response(&writer, &mut ctx, &first_line)
+                        .flush_stratum_response(&writer, &mut ctx, &first_line, ip)
                         .await
                         .is_err()
                     {
@@ -1955,7 +2262,7 @@ impl StratumServer {
                         tokio::select! {
                             line = lines.next_line() => match line {
                                 Ok(Some(line)) => {
-                                    if server.flush_stratum_response(&writer, &mut ctx, &line).await.is_err() { break; }
+                                    if server.flush_stratum_response(&writer, &mut ctx, &line, ip).await.is_err() { break; }
                                 }
                                 _ => break,
                             },
@@ -2023,13 +2330,26 @@ impl StratumServer {
 
         let is_v1 = is_stratum_v1(&first_line);
         if is_v1 {
-            // Stratum v1 over TLS
+            // Stratum v1 over TLS — persistent ctx + ZIS precheck (F2d).
+            let mut ctx = StratumV1Ctx::new(0, &self.vardiff_config);
+            self.v1_zis_precheck(&mut ctx, &first_line, ip).await;
+            let response = self.handle_request_with_ctx(&first_line, &mut ctx);
+            {
+                let mut w = writer.lock().await;
+                if w.write_all(response.as_bytes()).await.is_err() {
+                    return;
+                }
+                if w.write_all(b"\n").await.is_err() {
+                    return;
+                }
+            }
             loop {
                 let line = match lines.next_line().await {
                     Ok(Some(l)) => l,
                     _ => break,
                 };
-                let response = self.handle_request(&line);
+                self.v1_zis_precheck(&mut ctx, &line, ip).await;
+                let response = self.handle_request_with_ctx(&line, &mut ctx);
                 let mut w = writer.lock().await;
                 if w.write_all(response.as_bytes()).await.is_err() {
                     break;
@@ -3187,6 +3507,7 @@ impl StratumServer {
                                             &sub_worker_name,
                                             h,
                                             w,
+                                            &coin,
                                         );
                                 }
 
@@ -3513,6 +3834,7 @@ impl StratumServer {
 
         if let Some(ref store) = self.share_store {
             let rec = crate::store::BlockRecord {
+                coin: "zion".to_string(),
                 height: block_height,
                 hash: block_hash.to_string(),
                 miner_id: miner_id.to_string(),
@@ -3548,6 +3870,7 @@ impl StratumServer {
 
         if let Some(ref store) = self.share_store {
             let rec = crate::store::BlockRecord {
+                coin: "zion".to_string(),
                 height: block_height,
                 hash: block_hash.to_string(),
                 miner_id: miner_id.to_string(),
@@ -3796,16 +4119,6 @@ fn build_solved_block(tpl: CoreBlockTemplate, nonce: u64) -> Result<Block, serde
     let mut header: BlockHeader = serde_json::from_str(&tpl.header_json)?;
     header.nonce = nonce;
     Ok(Block::new(header, tpl.transactions))
-}
-
-fn parse_aux_coin(job_id: &str) -> ExternalCoin {
-    let parts: Vec<&str> = job_id.split('_').collect();
-    if parts.len() >= 2 {
-        if let Ok(c) = ExternalCoin::from_str(parts[1]) {
-            return c;
-        }
-    }
-    ExternalCoin::Bitcoin
 }
 
 fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
@@ -4193,6 +4506,242 @@ mod tests {
         let resp = server
             .handle_request(r#"{"id":2,"method":"mining.authorize","params":["worker","x"]}"#);
         assert!(resp.contains("true"));
+    }
+
+    /// F2d: stage a `ZisPasswordOutcome` in `ctx.zis_auth` — the sync
+    /// `mining.authorize` handler must consume it exactly once.
+    #[test]
+    fn v1_authorize_consumes_staged_zis_reject() {
+        let server = make_server();
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        ctx.zis_auth = Some(ZisPasswordOutcome::Reject);
+        let resp = server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","zis_tok"]}"#,
+            &mut ctx,
+        );
+        assert!(resp.contains("unauthorized"), "resp={resp}");
+        assert!(!ctx.authorized);
+        assert!(ctx.zis_auth.is_none(), "staged outcome must be consumed");
+        assert!(ctx.zis_user.is_empty());
+    }
+
+    #[test]
+    fn v1_authorize_consumes_staged_zis_allow_binds_user() {
+        let server = make_server();
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        ctx.zis_auth = Some(ZisPasswordOutcome::Allow(Some(crate::zis::ZisIdentity {
+            sub: "u7".to_string(),
+            zion_address: None,
+            quantus_address: None,
+            pearl_address: None,
+        })));
+        let resp = server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","zis_tok"]}"#,
+            &mut ctx,
+        );
+        assert!(resp.contains("true"), "resp={resp}");
+        assert!(ctx.authorized);
+        assert_eq!(ctx.zis_user, "u7");
+        assert!(ctx.zis_auth.is_none());
+    }
+
+    #[test]
+    fn v1_authorize_without_staged_outcome_is_anonymous() {
+        let server = make_server();
+        let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+        let resp = server.handle_request_with_ctx(
+            r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#,
+            &mut ctx,
+        );
+        assert!(resp.contains("true"));
+        assert!(ctx.authorized);
+        assert!(ctx.zis_user.is_empty());
+    }
+
+    /// F2d: `zis_password_auth` verdicts across auth modes.  The server is
+    /// built on the sync test thread (reqwest::blocking `Notifier`); only
+    /// the verifier + async call enter the runtime.
+    fn zis_auth_outcome(
+        pass: &str,
+        zis_body: Option<&'static str>,
+        required: bool,
+    ) -> ZisPasswordOutcome {
+        let mut server = make_server();
+        server.zis_required = required;
+        let listener = zis_body.map(|body| {
+            let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let url = format!("http://{}", l.local_addr().unwrap());
+            (l, url, body)
+        });
+        if let Some((_, url, _)) = &listener {
+            server.zis = Some(Arc::new(crate::zis::ZisVerifier::for_test(url.clone())));
+        } else {
+            server.zis = None;
+        }
+        let pass = pass.to_string();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(async move {
+                if let Some((l, _, body)) = listener {
+                    l.set_nonblocking(true).unwrap();
+                    let zl = tokio::net::TcpListener::from_std(l).unwrap();
+                    tokio::spawn(async move {
+                        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+                        while let Ok((mut s, _)) = zl.accept().await {
+                            let mut buf = vec![0u8; 8192];
+                            let _ = s.read(&mut buf).await;
+                            let resp = format!(
+                                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                                body.len(),
+                                body
+                            );
+                            let _ = s.write_all(resp.as_bytes()).await;
+                        }
+                    });
+                }
+                server
+                    .zis_password_auth(&pass, "v1", "miner1", IpAddr::V4(Ipv4Addr::LOCALHOST))
+                    .await
+            })
+        })
+        .join()
+        .expect("zis auth thread panicked")
+    }
+
+    #[test]
+    fn zis_password_auth_off_mode_ignores_tokens() {
+        // Off mode: no verifier — even a `zis_` pass is anonymous.
+        assert!(matches!(
+            zis_auth_outcome("zis_whatever", None, false),
+            ZisPasswordOutcome::Allow(None)
+        ));
+        assert!(matches!(
+            zis_auth_outcome("x", None, false),
+            ZisPasswordOutcome::Allow(None)
+        ));
+    }
+
+    #[test]
+    fn zis_password_auth_optional_anonymous_and_invalid() {
+        // Plain "x" is anonymous — verifier is never consulted.
+        assert!(matches!(
+            zis_auth_outcome("x", Some(r#"{"valid":false}"#), false),
+            ZisPasswordOutcome::Allow(None)
+        ));
+        // Invalid `zis_` token in optional mode → anonymous, not reject.
+        assert!(matches!(
+            zis_auth_outcome(
+                "zis_badbadbadbadbadb",
+                Some(r#"{"error":"UNAUTHORIZED","message":"Invalid API key"}"#),
+                false
+            ),
+            ZisPasswordOutcome::Allow(None)
+        ));
+    }
+
+    #[test]
+    fn zis_password_auth_optional_binds_identity() {
+        let outcome = zis_auth_outcome(
+            "zis_goodgoodgoodgood",
+            Some(r#"{"valid":true,"user":{"id":"u33","linkedAddresses":[]}}"#),
+            false,
+        );
+        match outcome {
+            ZisPasswordOutcome::Allow(Some(idn)) => assert_eq!(idn.sub, "u33"),
+            _ => panic!("expected bound identity"),
+        }
+    }
+
+    #[test]
+    fn zis_password_auth_required_rejects_absent_and_invalid() {
+        // Missing token → reject before contacting ZIS.
+        assert!(matches!(
+            zis_auth_outcome("x", Some(r#"{"valid":false}"#), true),
+            ZisPasswordOutcome::Reject
+        ));
+        // Invalid token → reject.
+        assert!(matches!(
+            zis_auth_outcome(
+                "zis_badbadbadbadbadb",
+                Some(r#"{"error":"UNAUTHORIZED","message":"Invalid API key"}"#),
+                true
+            ),
+            ZisPasswordOutcome::Reject
+        ));
+    }
+
+    #[test]
+    fn zis_password_auth_required_accepts_valid() {
+        match zis_auth_outcome(
+            "zis_goodgoodgoodgood",
+            Some(r#"{"valid":true,"user":{"id":"u8","linkedAddresses":[]}}"#),
+            true,
+        ) {
+            ZisPasswordOutcome::Allow(Some(idn)) => assert_eq!(idn.sub, "u8"),
+            _ => panic!("expected bound identity"),
+        }
+    }
+
+    /// F2d: `v1_zis_precheck` parses the authorize password and stages the
+    /// verdict; the sync handler then binds the identity.  Covers the full
+    /// async→sync handoff without a pool socket.
+    #[test]
+    fn v1_zis_precheck_stages_and_authorize_binds() {
+        let mut server = make_server();
+        server.zis_required = false;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        server.zis = Some(Arc::new(crate::zis::ZisVerifier::for_test(url)));
+        let line = r#"{"id":9,"method":"mining.authorize","params":["zion1m.w","zis_validtok"]}"#
+            .to_string();
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            let mut ctx = StratumV1Ctx::new(0, &server.vardiff_config);
+            rt.block_on(async {
+                listener.set_nonblocking(true).unwrap();
+                let zl = tokio::net::TcpListener::from_std(listener).unwrap();
+                tokio::spawn(async move {
+                    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+                    while let Ok((mut s, _)) = zl.accept().await {
+                        let mut buf = vec![0u8; 8192];
+                        let _ = s.read(&mut buf).await;
+                        let body =
+                            r#"{"valid":true,"user":{"id":"u99","linkedAddresses":[]}}"#;
+                        let resp = format!(
+                            "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = s.write_all(resp.as_bytes()).await;
+                    }
+                });
+                server
+                    .v1_zis_precheck(&mut ctx, &line, IpAddr::V4(Ipv4Addr::LOCALHOST))
+                    .await;
+            });
+            // Precheck must have staged an Allow(Some(_)) verdict.
+            match ctx.zis_auth.take() {
+                Some(ZisPasswordOutcome::Allow(Some(idn))) => assert_eq!(idn.sub, "u99"),
+                other => panic!("expected staged Allow(Some(u99)), got {:?}", other.is_some()),
+            }
+            // Non-authorize lines stage nothing.
+            ctx.zis_auth = None;
+            rt.block_on(server.v1_zis_precheck(
+                &mut ctx,
+                r#"{"id":1,"method":"mining.subscribe","params":[]}"#,
+                IpAddr::V4(Ipv4Addr::LOCALHOST),
+            ));
+            assert!(ctx.zis_auth.is_none());
+            // server drops here — sync context of the dedicated thread.
+        })
+        .join()
+        .expect("precheck thread panicked");
     }
 
     #[test]

@@ -452,6 +452,13 @@ impl ApiServer {
         // QTC_PAYOUT_ENABLED=1 with pool API + admin key configured.
         self.service.spawn_qtc_payout_sweeper();
 
+        // F3: PRL payout sweeper (dry-run default — live sends need
+        // PRL_PAYOUT_DRY_RUN=0 after regtest verification) and the
+        // treasury revenue oracle posting balance deltas to the pool's
+        // /admin/coin-revenue.  Both no-op unless explicitly enabled.
+        self.service.spawn_prl_payout_sweeper();
+        self.service.spawn_revenue_oracle();
+
         let app = self.router();
 
         let bind = format!("{}:{}", self.config.bind, self.config.port);
