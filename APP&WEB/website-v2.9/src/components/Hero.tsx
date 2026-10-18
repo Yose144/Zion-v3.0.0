@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
+  BookOpen,
   BrainCircuit,
   CircuitBoard,
   Gauge,
@@ -123,6 +124,13 @@ export default function Hero() {
               >
                 <CircuitBoard className="w-5 h-5 text-zion-cyan" />
                 {tr('hero', 'btn_native_miner', lang)}
+              </Link>
+              <Link
+                href="/maitreya/cist"
+                className="zion-button-secondary w-full sm:w-auto justify-center border-zion-purple/30 hover:border-zion-purple/60 hover:bg-zion-purple/10 hover:text-violet-200 transition-colors"
+              >
+                <BookOpen className="w-5 h-5 text-zion-purple" />
+                {tr('hero', 'btn_book', lang)}
               </Link>
             </div>
 
