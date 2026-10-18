@@ -261,7 +261,7 @@ impl PoolApi {
                         let body = format!(
                             "{{\"ok\":true,\"coin\":\"{}\",\"blocks\":{}}}",
                             coin,
-                            serialize_blocks_json(&blocks)
+                            serialize_public_blocks_json(&blocks)
                         );
                         ("200 OK", "application/json", body)
                     }
@@ -293,7 +293,7 @@ impl PoolApi {
                             "{{\"ok\":true,\"coin\":\"{}\",\"wallet\":\"{}\",\"payouts\":{}}}",
                             coin,
                             wallet,
-                            serialize_payouts_json(&payouts)
+                            serialize_public_payouts_json(&payouts)
                         );
                         ("200 OK", "application/json", body)
                     }
@@ -328,7 +328,7 @@ impl PoolApi {
                         };
                         let body = format!(
                             "{{\"ok\":true,\"blocks\":{}}}",
-                            serialize_blocks_json(&blocks)
+                            serialize_public_blocks_json(&blocks)
                         );
                         ("200 OK", "application/json", body)
                     }
@@ -353,7 +353,7 @@ impl PoolApi {
                             .collect();
                         let body = format!(
                             "{{\"ok\":true,\"payouts\":{}}}",
-                            serialize_payouts_json(&payouts)
+                            serialize_public_payouts_json(&payouts)
                         );
                         ("200 OK", "application/json", body)
                     }
@@ -1726,6 +1726,52 @@ fn parse_query_miner_limit(path: &str, default_limit: u32) -> (Option<String>, u
         }
     }
     (miner, limit)
+}
+
+/// Strip ".worker" and "@group" suffixes so the public feed only exposes the
+/// wallet/address part of a miner id.
+fn public_miner_id(miner_id: &str) -> &str {
+    let end = miner_id
+        .find(|c| c == '.' || c == '@')
+        .unwrap_or(miner_id.len());
+    &miner_id[..end]
+}
+
+/// Public blocks feed — bare array (the route adds the {"ok":..} envelope) and
+/// no worker names / raw miner ids.
+fn serialize_public_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
+    let mut out = String::from("[");
+    for (i, b) in blocks.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"coin\":\"{}\",\"height\":{},\"hash\":\"{}\",\"miner\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
+            b.coin, b.height, b.hash, public_miner_id(&b.miner_id),
+            b.share_difficulty, b.network_difficulty, b.status, b.ts,
+            b.confirmed_at.map(|t| t.to_string()).unwrap_or_else(|| "null".to_string())
+        ));
+    }
+    out.push(']');
+    out
+}
+
+/// Public payouts feed — bare array; `address` is authoritative, `miner_id`
+/// (worker-suffixed) stays internal.
+fn serialize_public_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
+    let mut out = String::from("[");
+    for (i, p) in payouts.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"ts\":{},\"address\":\"{}\",\"coin\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
+            p.ts, p.address, p.coin, p.amount_flowers,
+            p.tx_id, p.height, p.block_hash, p.confirmations, p.confirmed
+        ));
+    }
+    out.push(']');
+    out
 }
 
 fn serialize_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
