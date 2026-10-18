@@ -140,6 +140,26 @@ export async function fetchOverview(): Promise<PoolOverview> {
   return { uptime_s: 0, coins: infos, stats };
 }
 
+export interface HistorySample {
+  ts: number;
+  hashrate: number;
+  miners_online: number;
+  online_by_coin: Record<string, number>;
+  accepted: number;
+  rejected: number;
+}
+
+/** Server-side 1-minute pool snapshots (24h retention). Empty when the
+ *  pool predates the history endpoint or has just restarted — callers
+ *  should fall back to client-accumulated series. */
+export async function fetchHistory(limit = 1440): Promise<HistorySample[]> {
+  if (USE_MOCK) return [];
+  const res = await get<{ ok: boolean; interval_s: number; samples: HistorySample[] }>(
+    `/history?limit=${limit}`,
+  );
+  return res.samples ?? [];
+}
+
 export async function fetchBlocks(coin?: CoinId): Promise<BlockRow[]> {
   if (USE_MOCK) {
     return mock.BLOCKS.filter((b) => !coin || b.coin === coin);
