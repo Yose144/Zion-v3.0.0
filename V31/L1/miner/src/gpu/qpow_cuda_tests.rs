@@ -9,13 +9,28 @@ fn qpow_single_nonce_is_opt_in_and_requires_npt_one() {
     for value in [None, Some("0"), Some(""), Some("true")] {
         assert!(!single_nonce_enabled(value));
     }
-    assert_eq!(select_qpow_kernel(true, 1), QPOW_SINGLE_NONCE_KERNEL);
+    assert_eq!(select_qpow_kernel(true, false, 1), QPOW_SINGLE_NONCE_KERNEL);
     for npt in [0, 1, 2, 4, 8] {
-        assert_eq!(select_qpow_kernel(false, npt), QPOW_KERNEL);
+        assert_eq!(select_qpow_kernel(false, false, npt), QPOW_KERNEL);
         if npt != 1 {
-            assert_eq!(select_qpow_kernel(true, npt), QPOW_KERNEL);
+            assert_eq!(select_qpow_kernel(true, false, npt), QPOW_KERNEL);
+        }
+        if npt != 2 {
+            assert_eq!(select_qpow_kernel(false, true, npt), QPOW_KERNEL);
         }
     }
+}
+
+#[test]
+fn qpow_ilp2_is_opt_in_and_requires_npt_two() {
+    assert!(ilp2_enabled(Some("1")));
+    for value in [None, Some("0"), Some(""), Some("true")] {
+        assert!(!ilp2_enabled(value));
+    }
+    assert_eq!(select_qpow_kernel(false, true, 2), QPOW_DUAL_KERNEL);
+    // ilp2 never steals the single-nonce slot and vice versa
+    assert_eq!(select_qpow_kernel(true, true, 1), QPOW_SINGLE_NONCE_KERNEL);
+    assert_eq!(select_qpow_kernel(true, true, 2), QPOW_DUAL_KERNEL);
 }
 
 const ARITH_PROBE: &str = r#"
@@ -69,6 +84,35 @@ extern "C" __global__ void qpow_test_first_squeeze(
             output[16 * id + path * 8 + 2 * i] = (u32)c;
             output[16 * id + path * 8 + 2 * i + 1] = (u32)(c >> 32);
         }
+    }
+}
+"#;
+
+// Dual-path probe: each thread runs inject_nonce on two nonces and the
+// interleaved permute64_twice_after_initial_dual; outputs both states'
+// canonical first-squeeze words so the host can compare them against the
+// independent CPU hash for each nonce.
+const DUAL_SQUEEZE_PROBE: &str = r#"
+extern "C" __global__ void qpow_test_dual_squeeze(
+    const u32* prestate, u64 base, u32* output)
+{
+    u32 id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= 64u) return;
+    u64 mid[12], st0[12], st1[12];
+    #pragma unroll
+    for (int i = 0; i < 12; i++)
+        mid[i] = ((u64)prestate[2 * i + 1] << 32) | prestate[2 * i];
+    inject_nonce(mid, base + 2 * id, st0);
+    inject_nonce(mid, base + 2 * id + 1, st1);
+    permute64_twice_after_initial_dual(st0, st1);
+    #pragma unroll
+    for (int i = 0; i < 4; i++) {
+        u64 c0 = gf64_canon(st0[i]);
+        u64 c1 = gf64_canon(st1[i]);
+        output[32 * id + 2 * i] = (u32)c0;
+        output[32 * id + 2 * i + 1] = (u32)(c0 >> 32);
+        output[32 * id + 8 + 2 * i] = (u32)c1;
+        output[32 * id + 8 + 2 * i + 1] = (u32)(c1 >> 32);
     }
 }
 "#;
@@ -322,4 +366,82 @@ fn cuda_bench_sustained_windows() {
             start.elapsed().as_nanos(),
         );
     }
+}
+
+#[test]
+#[ignore = "requires an isolated CUDA device"]
+fn cuda_dual_squeeze_matches_cpu_corpus() {
+    let headers: [[u8; 32]; 4] = [
+        [0; 32],
+        [0xff; 32],
+        std::array::from_fn(|i| i as u8),
+        std::array::from_fn(|i| (i as u8).wrapping_mul(17).wrapping_add(3)),
+    ];
+    let prefixes: [[u8; 64]; 4] = [
+        [0; 64],
+        [0xff; 64],
+        std::array::from_fn(|i| i as u8),
+        std::array::from_fn(|i| (i as u8).wrapping_mul(13).wrapping_add(7)),
+    ];
+    let bases = [0u64, 0xffff_fffc, 0x0123_4567_89ab_cdef, u64::MAX - 255];
+    let dev = load_probe(DUAL_SQUEEZE_PROBE, "qpow_test_dual_squeeze");
+    let mut prestate = dev.alloc_zeros::<u32>(24).expect("prestate");
+    let mut output = dev.alloc_zeros::<u32>(64 * 32).expect("output");
+    let function = dev
+        .get_func(PROBE_MODULE, "qpow_test_dual_squeeze")
+        .unwrap();
+    let mut checked = 0;
+    for (hi, header) in headers.iter().enumerate() {
+        for (pi, prefix) in prefixes.iter().enumerate() {
+            for base in bases {
+                // Guard the base+2*id+1 overflow window: keep the nonce
+                // low64 inside u64 range for every id.
+                let base = base & !(127u64);
+                let mut nonce = *prefix;
+                nonce[56..64].copy_from_slice(&base.to_be_bytes());
+                let mid = qpow::mining_prestate_low64(header, &nonce);
+                let packed: Vec<u32> = mid
+                    .iter()
+                    .flat_map(|&value| [value as u32, (value >> 32) as u32])
+                    .collect();
+                dev.htod_copy_into(packed, &mut prestate)
+                    .expect("prestate upload");
+                unsafe {
+                    function
+                        .clone()
+                        .launch(
+                            LaunchConfig {
+                                grid_dim: (1, 1, 1),
+                                block_dim: (64, 1, 1),
+                                shared_mem_bytes: 0,
+                            },
+                            (&prestate, base, &mut output),
+                        )
+                        .expect("dual-squeeze probe launch");
+                }
+                let words = dev.dtoh_sync_copy(&output).expect("dual readback");
+                for index in 0..128u64 {
+                    let mut n = *prefix;
+                    n[56..64].copy_from_slice(&(base + index).to_be_bytes());
+                    let hash = qpow::get_nonce_hash(header, &n);
+                    for word in 0..8 {
+                        let expected = u32::from_le_bytes(
+                            hash[word * 4..word * 4 + 4].try_into().unwrap(),
+                        );
+                        // st0 nonces occupy half-slots at index/2, st1 at +8
+                        let id = index / 2;
+                        let half = (index % 2) as usize;
+                        assert_eq!(
+                            words[id as usize * 32 + half * 8 + word],
+                            expected,
+                            "header={hi} prefix={pi} base={base:#018x} index={index} word={word}"
+                        );
+                    }
+                    checked += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(checked, 8192);
+    eprintln!("qpow_cuda_dual_squeeze checked={checked}");
 }

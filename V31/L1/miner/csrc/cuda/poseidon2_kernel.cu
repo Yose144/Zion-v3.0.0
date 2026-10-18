@@ -428,8 +428,12 @@ __device__ __forceinline__ u32 bswap32(u32 v) {
 // the linear image of the nonce's two varying lanes, and run the two
 // permutations needed for the first squeeze. Extracted 1:1 from qpow_mine
 // so tests exercise the exact production nonce path.
-__device__ __forceinline__ void eval_nonce_state(const u64 *mid,
-                                               u64 nonce_low, u64 *st) {
+// Midstate copy + nonce injection (the pre-permutation part of
+// eval_nonce_state). Extracted so the dual kernel can inject two
+// independent states before running them through one interleaved
+// permutation pass.
+__device__ __forceinline__ void inject_nonce(const u64 *mid,
+                                             u64 nonce_low, u64 *st) {
     #pragma unroll
     for (int i = 0; i < 12; i++) {
         st[i] = mid[i];
@@ -463,7 +467,68 @@ __device__ __forceinline__ void eval_nonce_state(const u64 *mid,
     st[9] = gf64_add(st[9], c1);
     st[10] = gf64_add(st[10], c2);
     st[11] = gf64_add(st[11], c3);
+}
+
+__device__ __forceinline__ void eval_nonce_state(const u64 *mid,
+                                               u64 nonce_low, u64 *st) {
+    inject_nonce(mid, nonce_low, st);
     permute64_twice_after_initial(st);
+}
+
+// Dual-state permutation: runs the identical two-pass schedule as
+// permute64_twice_after_initial on states sa/sb, with every step applied
+// to both states adjacently so the compiler interleaves two independent
+// dependency chains (the serial `x` chain in the 21 internal rounds is
+// the main latency source — this is the ILP fix).
+__device__ __forceinline__ void permute64_twice_after_initial_dual(u64 *sa,
+                                                                 u64 *sb) {
+    #pragma unroll 1
+    for (int pass = 0; pass < 2; pass++) {
+        if (pass != 0) {
+            ext_layer64(sa, RC_INITIAL[0]);
+            ext_layer64(sb, RC_INITIAL[0]);
+        }
+        #pragma unroll QPOW_EUNROLL
+        for (int r = 0; r < 4; r++) {
+            #pragma unroll
+            for (int i = 0; i < 12; i++) {
+                sa[i] = gf64_sbox(sa[i]);
+                sb[i] = gf64_sbox(sb[i]);
+            }
+            ext_layer64(sa, RC_INITIAL[r + 1]);
+            ext_layer64(sb, RC_INITIAL[r + 1]);
+        }
+        u64 xa = gf64_sbox(sa[0]);
+        u64 xb = gf64_sbox(sb[0]);
+        #pragma unroll QPOW_IUNROLL
+        for (int r = 0; r < 21; r++) {
+            xa = gf64_sbox(int_round_p(sa, xa, RC_INTERNAL[r + 1]));
+            xb = gf64_sbox(int_round_p(sb, xb, RC_INTERNAL[r + 1]));
+        }
+        sa[0] = int_round_p(sa, xa, 0ULL);
+        sb[0] = int_round_p(sb, xb, 0ULL);
+        #pragma unroll
+        for (int i = 0; i < 12; i++) {
+            sa[i] = gf64_add(sa[i], RC_TERMINAL[0][i]);
+            sb[i] = gf64_add(sb[i], RC_TERMINAL[0][i]);
+        }
+        #pragma unroll QPOW_EUNROLL
+        for (int r = 0; r < 4; r++) {
+            #pragma unroll
+            for (int i = 0; i < 12; i++) {
+                sa[i] = gf64_sbox(sa[i]);
+                sb[i] = gf64_sbox(sb[i]);
+            }
+            ext_layer64(sa, RC_TERMINAL[r + 1]);
+            ext_layer64(sb, RC_TERMINAL[r + 1]);
+        }
+        if (pass == 0) {
+            sa[0] = gf64_add(sa[0], 1ULL);
+            sa[1] = gf64_add(sa[1], 1ULL);
+            sb[0] = gf64_add(sb[0], 1ULL);
+            sb[1] = gf64_add(sb[1], 1ULL);
+        }
+    }
 }
 
 extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine(
@@ -594,5 +659,99 @@ extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine
     u32 slot = atomicAdd(&results[0], 1u);
     if (slot < MAX_HITS) {
         results[1 + slot] = logical_index;
+    }
+}
+
+// ILP2 variant — host selects it ONLY when ZION_QPOW_ILP2=1 (opt-in,
+// default off) AND nonces_per_thread==2: each thread evaluates two
+// nonces through permute64_twice_after_initial_dual, whose two
+// independent sponge chains interleave instruction streams and hide the
+// serial internal-round `x` latency. Same buffers/ABI; candidate indices
+// and compare semantics identical to qpow_mine.
+extern "C" __global__ void __launch_bounds__(QPOW_LB_MAX, QPOW_LB_MIN) qpow_mine_dual(
+    u32 *results,
+    const u32 *prestate,
+    const u32 *start_nonce,
+    const u32 *difficulty_target,
+    const u32 *dispatch_config) {
+    u32 thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    u32 total_threads = dispatch_config[0];
+    u32 total_nonces = dispatch_config[2];
+    if (thread_id >= total_threads) {
+        return;
+    }
+    u32 idx0 = thread_id * 2u;
+    u32 idx1 = idx0 + 1u;
+    if (idx0 >= total_nonces) {
+        return;
+    }
+    u64 nonce_base_low = ((u64)start_nonce[1] << 32) | (u64)start_nonce[0];
+
+    u64 mid[12];
+    #pragma unroll
+    for (int i = 0; i < 12; i++) {
+        mid[i] = ((u64)prestate[2 * i + 1] << 32) | (u64)prestate[2 * i];
+    }
+    u64 st0[12];
+    u64 st1[12];
+    inject_nonce(mid, nonce_base_low + (u64)idx0, st0);
+    inject_nonce(mid, nonce_base_low + (u64)idx1, st1);
+    permute64_twice_after_initial_dual(st0, st1);
+
+    u32 tgt_hi[8];
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        tgt_hi[i] = difficulty_target[8 + i];
+    }
+    // Per-state first-squeeze compare — same strict-prefix rule as
+    // qpow_mine; idx1 is only recorded when in range. Written twice
+    // explicitly: a runtime st0/st1 pointer select would demote the
+    // states from registers to local memory.
+    u32 first[8];
+    #pragma unroll
+    for (int i = 0; i < 4; i++) {
+        u64 c = gf64_canon(st0[i]);
+        first[2 * i] = (u32)(c & EPS64);
+        first[2 * i + 1] = (u32)(c >> 32);
+    }
+    u32 cmp = 0u;
+    #pragma unroll
+    for (int i = 0; i < 8; i++) {
+        u32 h = bswap32(first[i]);
+        u32 t = tgt_hi[7 - i];
+        if (h != t) {
+            cmp = (h > t) ? 1u : 2u;
+            break;
+        }
+    }
+    if (cmp != 1u) {
+        u32 slot = atomicAdd(&results[0], 1u);
+        if (slot < MAX_HITS) {
+            results[1 + slot] = idx0;
+        }
+    }
+    if (idx1 < total_nonces) {
+        #pragma unroll
+        for (int i = 0; i < 4; i++) {
+            u64 c = gf64_canon(st1[i]);
+            first[2 * i] = (u32)(c & EPS64);
+            first[2 * i + 1] = (u32)(c >> 32);
+        }
+        cmp = 0u;
+        #pragma unroll
+        for (int i = 0; i < 8; i++) {
+            u32 h = bswap32(first[i]);
+            u32 t = tgt_hi[7 - i];
+            if (h != t) {
+                cmp = (h > t) ? 1u : 2u;
+                break;
+            }
+        }
+        if (cmp != 1u) {
+            u32 slot = atomicAdd(&results[0], 1u);
+            if (slot < MAX_HITS) {
+                results[1 + slot] = idx1;
+            }
+        }
     }
 }
