@@ -369,9 +369,37 @@ statistiky; `zis_<token>` přes password pole QTU/PRL/V1 (shared
 
 Testy: `zion-pool` 314/314, `zion-multichain` 731/731.
 
-**Zbývá:** F4 (public surface + `/public/v1`), F5 (deploy UI), F6 (HA);
-před produkcí regtest payout dávky na QTU i PRL a `PRL_PAYOUT_DRY_RUN=0`
-až po ověřené live dávce.
+**F4 ✅ část A — `/public/v1` tier + public hardening základ:**
+
+- `api.rs` — unauthenticated public read tier (bez klíče; `/api`+`/admin`
+  auth nezměněn):
+  - `GET /public/v1/coins` — coin registry (coin, payout_mode, min_payout,
+    fee_bps) + live leg health (`Pool::leg_statuses`, přesunuto z
+    `StratumServer` — sdílený zdroj pro stratum i API). Public-safe:
+    žádné job ids, upstream endpointy, interní porty/worker names.
+  - `GET /public/v1/coins/{coin}/stats` — per-coin stream telemetry
+    (miners online <600 s, acc/rej), PPLNS coin window stats; hashrate
+    jen pro zion (external shary nemají srovnatelnou obtížnost → null).
+  - `GET /public/v1/coins/{coin}/blocks` — `query_blocks_for_coin`.
+  - `GET /public/v1/miner/{coin}/{wallet}` — workers, shares, unpaid
+    (flowers nebo native units dle coin), last_seen.
+  - `GET /public/v1/miner/{coin}/{wallet}/payouts` — historie per coin.
+  - `GET /public/v1/payouts?coin=` — globální feed, `coin` filtr.
+- Per-IP rate limit pro `/public/v1` — 120 req/60 s, bounded tabulka
+  (4096 IP, fail-closed při přeplnění, oportunistický GC), 429 response.
+- `Pool::wallet_is_valid` (zion1/qz/prl1 + chain: prefixy) — vynuceno
+  při V1 `mining.authorize`, QTU `login`, PRL `authorize`. Garbage
+  identity dřív tiše těžily na pool wallet; teď `invalid wallet`
+  reject. ZIS sessions s non-address miner id procházejí (payout přes
+  linked adresu).
+- Testy: 320/320 (+6: coins shape+leak check, per-coin stats, miner
+  wallet scope, rate limit, wallet_is_valid, authorize reject).
+
+**Zbývá:** F4 část B (connection caps, share-flood/invalid-ratio bany,
+revenue-lane opt-in flag pro public shares, per-coin Prometheus metriky,
+TLS public entrypoint — viz §5), F5 (deploy UI + nginx `/public/v1`
+proxy + cert), F6 (HA). Před produkcí regtest payout dávky na QTU i PRL
+a `PRL_PAYOUT_DRY_RUN=0` až po ověřené live dávce.
 
 ---
 

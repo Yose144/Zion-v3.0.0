@@ -14,11 +14,19 @@ use zion_cosmic_harmony::ExternalCoin;
 use crate::store::ShareStore;
 use crate::telemetry::now_unix_seconds;
 
+/// Per-IP sliding-window counter for the unauthenticated `/public/v1`
+/// tier — `PUBLIC_RATE_LIMIT` requests per `PUBLIC_RATE_WINDOW_S` seconds.
+const PUBLIC_RATE_LIMIT: u32 = 120;
+const PUBLIC_RATE_WINDOW_S: u64 = 60;
+const PUBLIC_RATE_TABLE_MAX: usize = 4096;
+
 pub struct PoolApi {
     pool: Arc<Mutex<Pool>>,
     share_store: Option<Arc<ShareStore>>,
     auxpow_bridge: Option<MultiAuxPowBridge>,
     routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
+    /// `(window_start_s, count)` per client IP for `/public/v1` requests.
+    public_rate: Mutex<std::collections::HashMap<std::net::IpAddr, (u64, u32)>>,
     started_at: Instant,
 }
 
@@ -33,8 +41,31 @@ impl PoolApi {
             share_store,
             auxpow_bridge,
             routing_stats: None,
+            public_rate: Mutex::new(std::collections::HashMap::new()),
             started_at: Instant::now(),
         }
+    }
+
+    /// `true` when the IP is over the public-tier rate limit.  The table is
+    /// bounded — a flood of spoofed sources stops tracking rather than
+    /// growing memory without limit.
+    fn public_rate_limited(&self, ip: std::net::IpAddr) -> bool {
+        let now_s = now_unix_seconds();
+        let mut table = self.public_rate.lock().expect("rate lock poisoned");
+        if table.len() >= PUBLIC_RATE_TABLE_MAX && !table.contains_key(&ip) {
+            return true; // table full — fail closed for new IPs
+        }
+        let entry = table.entry(ip).or_insert((now_s, 0));
+        if now_s.saturating_sub(entry.0) >= PUBLIC_RATE_WINDOW_S {
+            *entry = (now_s, 0);
+        }
+        entry.1 = entry.1.saturating_add(1);
+        let over = entry.1 > PUBLIC_RATE_LIMIT;
+        if table.len() > PUBLIC_RATE_TABLE_MAX / 2 {
+            // Opportunistic GC — drop expired windows so the cap rarely binds.
+            table.retain(|_, (start, _)| now_s.saturating_sub(*start) < PUBLIC_RATE_WINDOW_S);
+        }
+        over
     }
 
     pub fn with_routing_stats(
@@ -86,6 +117,21 @@ impl PoolApi {
         let method = *parts.first().unwrap_or(&"GET");
         let raw_path = *parts.get(1).unwrap_or(&"/stats");
         let path = raw_path.split('?').next().unwrap_or(raw_path);
+
+        // Rate-limit the unauthenticated public tier per client IP.
+        if path.starts_with("/public/v1") {
+            let ip = stream
+                .peer_addr()
+                .map(|a| a.ip())
+                .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+            if self.public_rate_limited(ip) {
+                let body = "{\"ok\":false,\"error\":\"rate limited\"}";
+                let _ = write!(stream,
+                    "HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
+                    body.len(), body);
+                return Ok(());
+            }
+        }
 
         let mut content_length = 0usize;
         let mut api_key_header = None;
@@ -184,6 +230,114 @@ impl PoolApi {
                 let limit = parse_query_limit(raw_path, 200);
                 let body = self.build_miners_payload(limit as usize);
                 ("200 OK", "application/json", body)
+            }
+            // ---- /public/v1 — unauthenticated public read tier (F4) ----
+            // No key required; exposes only wallet-scoped public data.
+            // Never leak: internal leg addresses/ports, upstream worker
+            // names, wallet-key existence, anything admin.
+            "/public/v1/coins" => {
+                let body = self.build_public_coins_payload();
+                ("200 OK", "application/json", body)
+            }
+            p if p.starts_with("/public/v1/coins/") && p.ends_with("/stats") => {
+                let coin = p
+                    .trim_start_matches("/public/v1/coins/")
+                    .trim_end_matches("/stats")
+                    .trim_matches('/');
+                let body = self.build_public_coin_stats_payload(coin);
+                ("200 OK", "application/json", body)
+            }
+            p if p.starts_with("/public/v1/coins/") && p.ends_with("/blocks") => {
+                let coin = p
+                    .trim_start_matches("/public/v1/coins/")
+                    .trim_end_matches("/blocks")
+                    .trim_matches('/');
+                let limit = parse_query_limit(raw_path, 50);
+                match &self.share_store {
+                    Some(store) => {
+                        let blocks = store
+                            .query_blocks_for_coin(coin, limit)
+                            .unwrap_or_default();
+                        let body = format!(
+                            "{{\"ok\":true,\"coin\":\"{}\",\"blocks\":{}}}",
+                            coin,
+                            serialize_blocks_json(&blocks)
+                        );
+                        ("200 OK", "application/json", body)
+                    }
+                    None => (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                    ),
+                }
+            }
+            p if p.starts_with("/public/v1/miner/") && p.ends_with("/payouts") => {
+                let parts: Vec<&str> =
+                    p.trim_start_matches("/public/v1/miner/").split('/').collect();
+                let (coin, wallet) = (
+                    parts.first().copied().unwrap_or(""),
+                    parts.get(1).copied().unwrap_or(""),
+                );
+                let limit = parse_query_limit(raw_path, 50);
+                match &self.share_store {
+                    Some(store) => {
+                        let payouts: Vec<_> = store
+                            .query_payouts_by_address(wallet, limit * 4)
+                            .unwrap_or_default()
+                            .into_iter()
+                            .filter(|r| r.coin == coin || coin.is_empty())
+                            .take(limit as usize)
+                            .collect();
+                        let body = format!(
+                            "{{\"ok\":true,\"coin\":\"{}\",\"wallet\":\"{}\",\"payouts\":{}}}",
+                            coin,
+                            wallet,
+                            serialize_payouts_json(&payouts)
+                        );
+                        ("200 OK", "application/json", body)
+                    }
+                    None => (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                    ),
+                }
+            }
+            p if p.starts_with("/public/v1/miner/") => {
+                let parts: Vec<&str> =
+                    p.trim_start_matches("/public/v1/miner/").split('/').collect();
+                let (coin, wallet) = (
+                    parts.first().copied().unwrap_or(""),
+                    parts.get(1).copied().unwrap_or(""),
+                );
+                let body = self.build_public_miner_payload(coin, wallet);
+                ("200 OK", "application/json", body)
+            }
+            "/public/v1/payouts" => {
+                let coin = parse_query_param(raw_path, "coin").unwrap_or_default();
+                let limit = parse_query_limit(raw_path, 50);
+                match &self.share_store {
+                    Some(store) => {
+                        let payouts: Vec<_> = store
+                            .query_all_payouts(limit * 4)
+                            .unwrap_or_default()
+                            .into_iter()
+                            .filter(|r| coin.is_empty() || r.coin == coin)
+                            .take(limit as usize)
+                            .collect();
+                        let body = format!(
+                            "{{\"ok\":true,\"payouts\":{}}}",
+                            serialize_payouts_json(&payouts)
+                        );
+                        ("200 OK", "application/json", body)
+                    }
+                    None => (
+                        "503 Service Unavailable",
+                        "application/json",
+                        "{\"ok\":false,\"error\":\"database not configured\"}".to_string(),
+                    ),
+                }
             }
             "/api/v1/blocks" => {
                 let limit = parse_query_limit(raw_path, 50);
@@ -941,6 +1095,171 @@ impl PoolApi {
         .to_string()
     }
 
+    /// `/public/v1/coins` — coin registry + live leg health, public-safe.
+    fn build_public_coins_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let legs = match &self.auxpow_bridge {
+            Some(b) => pool.leg_statuses(b),
+            None => Vec::new(),
+        };
+        let fees = pool.pplns.fee_stats();
+
+        // One row per coin — legs folded in.  Public-safe fields only:
+        // no internal ports, upstream endpoints, or worker names.
+        let mut coins: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+        for leg in &legs {
+            let key = leg.coin.to_ascii_lowercase();
+            let entry = coins.entry(key.clone()).or_insert_with(|| {
+                json!({
+                    "coin": key,
+                    "payout_mode": if pool.pplns.is_native_payout_coin(&key) {
+                        "native"
+                    } else {
+                        "unified"
+                    },
+                    "min_payout": pool.pplns.min_payout_for(&key).to_string(),
+                    "fee_bps": fees.pool_fee_pct * 100,
+                    "legs": []
+                })
+            });
+            entry["legs"].as_array_mut().unwrap().push(json!({
+                "id": leg.leg_id,
+                "kind": match leg.kind {
+                    crate::coin_leg::LegKind::Native => "native",
+                    crate::coin_leg::LegKind::Upstream => "upstream",
+                },
+                "enabled": leg.enabled,
+                "connected": leg.connected,
+                "job_age_ms": leg.job_age_ms,
+            }));
+        }
+        json!({
+            "ok": true,
+            "coins": coins.values().collect::<Vec<_>>()
+        })
+        .to_string()
+    }
+
+    /// `/public/v1/coins/{coin}/stats` — per-coin telemetry + window stats.
+    fn build_public_coin_stats_payload(&self, coin: &str) -> String {
+        let coin = coin.to_ascii_lowercase();
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let now_s = now_unix_seconds();
+        let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
+
+        // Aggregate the per-miner coin streams: a miner counts as online
+        // when it submitted a share on this coin within the live window.
+        let mut online = 0u64;
+        let mut valid = 0u64;
+        let mut invalid = 0u64;
+        for (_, miner) in reg.all_miners() {
+            if let Some(s) = miner.streams.get(&coin) {
+                valid += s.valid_shares;
+                invalid += s.invalid_shares;
+                if s.last_share_time_s > 0 && now_s.saturating_sub(s.last_share_time_s) < 600 {
+                    online += 1;
+                }
+            }
+        }
+        drop(reg);
+
+        let coin_stats = pool
+            .pplns
+            .coin_stats()
+            .into_iter()
+            .find(|s| s.coin == coin);
+        let (window_weight, active_miners, accepted_total) = coin_stats
+            .map(|s| (s.window_weight.to_string(), s.active_miners, s.accepted_total))
+            .unwrap_or_else(|| ("0".into(), 0, 0));
+
+        // Hashrate is only meaningful for ZION (external shares don't feed
+        // the estimator — different difficulty scales).
+        let hashrate = if coin == "zion" {
+            json!({"live": pool.telemetry.lock().expect("telemetry lock").pool_hashrate_live()})
+        } else {
+            serde_json::Value::Null
+        };
+
+        json!({
+            "ok": true,
+            "coin": coin,
+            "miners_online": online,
+            "active_miners": active_miners,
+            "shares": {"accepted": valid, "rejected": invalid},
+            "window_weight": window_weight,
+            "accepted_total": accepted_total,
+            "hashrate": hashrate,
+        })
+        .to_string()
+    }
+
+    /// `/public/v1/miner/{coin}/{wallet}` — wallet-scoped dashboard data.
+    /// Miners are keyed `miner_id/worker`; the wallet matches the miner id
+    /// prefix or a registered payout address.
+    fn build_public_miner_payload(&self, coin: &str, wallet: &str) -> String {
+        let coin = coin.to_ascii_lowercase();
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let now_s = now_unix_seconds();
+        let reg = pool.telemetry.lock().expect("telemetry lock poisoned");
+
+        let mut valid = 0u64;
+        let mut invalid = 0u64;
+        let mut workers: Vec<String> = Vec::new();
+        let mut last_seen = 0u64;
+        for (key, miner) in reg.all_miners() {
+            let (miner_id, _) = split_worker_key(key);
+            let matches = miner_id == wallet
+                || miner_id.starts_with(&format!("{wallet}."))
+                || pool
+                    .pplns
+                    .address_for(&miner_id)
+                    .map(|a| a == wallet)
+                    .unwrap_or(false);
+            if !matches {
+                continue;
+            }
+            last_seen = last_seen.max(miner.last_seen_s);
+            if coin.is_empty() {
+                valid += miner.valid_shares;
+                invalid += miner.invalid_shares;
+            } else if let Some(s) = miner.streams.get(&coin) {
+                valid += s.valid_shares;
+                invalid += s.invalid_shares;
+            }
+            workers.push(key.clone());
+        }
+        drop(reg);
+
+        // Unpaid balance — unified flowers or native coin units.
+        let miner_ids = pool.pplns.miner_ids_for_address(wallet);
+        let (unpaid, unpaid_unit) = if coin.is_empty() || coin == "zion" {
+            let total: u64 = miner_ids
+                .iter()
+                .map(|m| pool.pplns.unpaid_balance(m))
+                .sum();
+            (total, "flowers")
+        } else {
+            let total: u64 = miner_ids
+                .iter()
+                .map(|m| pool.pplns.unpaid_native_balance(m, &coin))
+                .sum();
+            (total, "native")
+        };
+
+        json!({
+            "ok": true,
+            "coin": coin,
+            "wallet": wallet,
+            "workers": workers.len(),
+            "shares": {"accepted": valid, "rejected": invalid},
+            "unpaid": unpaid.to_string(),
+            "unpaid_unit": unpaid_unit,
+            "last_seen_s": last_seen,
+            "active": last_seen > 0 && now_s.saturating_sub(last_seen) < 600,
+        })
+        .to_string()
+    }
+
     fn build_prometheus_payload(&self) -> String {
         let (accepted, rejected, telemetry, stats, fees, sessions) = {
             let pool = self.pool.lock().expect("pool lock poisoned");
@@ -1591,5 +1910,135 @@ mod tests {
         let prl = coins.iter().find(|c| c["coin"] == "PRL").unwrap();
         assert_eq!(prl["enabled"], false);
         assert!(prl["disabled_reason"].is_string());
+    }
+
+    // ---- F4: /public/v1 tier -------------------------------------------
+
+    #[test]
+    fn public_coins_lists_legs_without_internal_fields() {
+        use zion_cosmic_harmony::ExternalCoin;
+
+        let bridge = crate::auxpow_bridge::MultiAuxPowBridge::new();
+        let (gpu_bridge, _rx) = crate::auxpow_bridge::AuxPowBridge::new(true);
+        bridge.insert(ExternalCoin::Quantus, gpu_bridge.clone());
+        gpu_bridge.push_job(test_job(ExternalCoin::Quantus, "qtu-job-x", true));
+
+        let api = PoolApi::new(test_pool(), None, Some(bridge));
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_public_coins_payload()).unwrap();
+        assert_eq!(payload["ok"], true);
+        let coins = payload["coins"].as_array().unwrap();
+
+        // ZION always present even without bridge legs.
+        let zion = coins.iter().find(|c| c["coin"] == "zion").unwrap();
+        assert!(zion["legs"].as_array().unwrap().len() >= 1);
+        assert!(zion["fee_bps"].is_number());
+        assert!(zion["min_payout"].is_string());
+
+        // QTU has both native and upstream legs folded under one coin.
+        let qtu = coins.iter().find(|c| c["coin"] == "qtu").unwrap();
+        let kinds: Vec<&str> = qtu["legs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| l["kind"].as_str().unwrap())
+            .collect();
+        assert!(kinds.contains(&"native"));
+        assert!(kinds.contains(&"upstream"));
+
+        // Public-safe shape: no raw job ids, endpoints, or worker names.
+        let body = payload.to_string();
+        for forbidden in ["job_id", "upstream_url", "endpoint", "worker", "pool_address"] {
+            assert!(!body.contains(forbidden), "leaked field: {forbidden}");
+        }
+    }
+
+    #[test]
+    fn public_coin_stats_aggregates_streams_per_coin() {
+        let pool = test_pool();
+        {
+            let pool = pool.lock().unwrap();
+            let mut reg = pool.telemetry.lock().unwrap();
+            reg.record_external_share("miner-a", "w1", "qtu", true);
+            reg.record_external_share("miner-b", "w2", "qtu", true);
+            reg.record_external_share("miner-c", "w3", "vrsc", false);
+        }
+        let api = PoolApi::new(pool, None, None);
+        let payload: serde_json::Value =
+            serde_json::from_str(&api.build_public_coin_stats_payload("qtu")).unwrap();
+        assert_eq!(payload["coin"], "qtu");
+        assert_eq!(payload["shares"]["accepted"], 2);
+        assert_eq!(payload["shares"]["rejected"], 0);
+        assert_eq!(payload["miners_online"], 2);
+        // Non-ZION coins report null hashrate (external shares don't feed
+        // the ZION estimator — different difficulty scale).
+        assert_eq!(payload["hashrate"], serde_json::Value::Null);
+
+        let z = api.build_public_coin_stats_payload("zion");
+        let zp: serde_json::Value = serde_json::from_str(&z).unwrap();
+        assert!(zp["hashrate"].is_object());
+    }
+
+    #[test]
+    fn public_miner_payload_wallet_scoped() {
+        let pool = test_pool();
+        {
+            let pool = pool.lock().unwrap();
+            let mut reg = pool.telemetry.lock().unwrap();
+            reg.record_external_share(
+                "qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab",
+                "rig1",
+                "qtu",
+                true,
+            );
+            reg.record_external_share("other-miner", "rig9", "qtu", true);
+        }
+        let api = PoolApi::new(pool, None, None);
+        let payload: serde_json::Value = serde_json::from_str(&api.build_public_miner_payload(
+            "qtu",
+            "qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab",
+        ))
+        .unwrap();
+        assert_eq!(payload["shares"]["accepted"], 1);
+        assert_eq!(payload["workers"], 1);
+        assert_eq!(payload["unpaid_unit"], "native");
+        // Unknown wallet → zeroed payload, not an error.
+        let unknown: serde_json::Value = serde_json::from_str(
+            &api.build_public_miner_payload("qtu", "prl1qqqqqqqqqqqqqqqqqqqqqq"),
+        )
+        .unwrap();
+        assert_eq!(unknown["workers"], 0);
+        assert_eq!(unknown["shares"]["accepted"], 0);
+    }
+
+    #[test]
+    fn public_rate_limit_enforced_per_ip() {
+        let api = PoolApi::new(test_pool(), None, None);
+        let ip: std::net::IpAddr = "1.2.3.4".parse().unwrap();
+        for _ in 0..PUBLIC_RATE_LIMIT {
+            assert!(!api.public_rate_limited(ip));
+        }
+        assert!(api.public_rate_limited(ip));
+        // A different IP is unaffected.
+        assert!(!api.public_rate_limited("5.6.7.8".parse().unwrap()));
+    }
+
+    #[test]
+    fn wallet_is_valid_accepts_known_formats() {
+        let pool = test_pool();
+        let pool = pool.lock().unwrap();
+        // ZION bech32.
+        assert!(pool.wallet_is_valid("zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2"));
+        // QTU bare qz-SS58 + chain-tagged.
+        assert!(pool.wallet_is_valid("qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab"));
+        assert!(pool.wallet_is_valid("qtu:qzABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234567890ab"));
+        // PRL bech32.
+        assert!(pool.wallet_is_valid(
+            "prl1pzy8mjq96a0yhw6luuv2m55xqvsujw23u0mqsa2rw4jxsefd82chqca7a5m"
+        ));
+        // Garbage rejected — previously mined silently to the pool wallet.
+        assert!(!pool.wallet_is_valid("garbage"));
+        assert!(!pool.wallet_is_valid("rig1"));
+        assert!(!pool.wallet_is_valid(""));
     }
 }

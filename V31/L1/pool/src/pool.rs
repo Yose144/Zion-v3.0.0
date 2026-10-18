@@ -218,6 +218,16 @@ impl Pool {
         ("zion".to_string(), self.config.pool_address.encoded.clone())
     }
 
+    /// `true` when `wallet` parses to a known payout target (ZION / QTU /
+    /// PRL address, optionally `chain:`-tagged).  Public-authorize guard —
+    /// garbage wallets would otherwise silently mine to the pool address.
+    pub fn wallet_is_valid(&self, wallet: &str) -> bool {
+        let wallet = wallet.split('.').next().unwrap_or(wallet).trim();
+        parse_quantus_payout(wallet).is_some()
+            || parse_pearl_payout(wallet).is_some()
+            || parse_worker_address(wallet).is_some()
+    }
+
     pub fn register_worker(&mut self, worker: &str) {
         let wallet = worker.split('.').next().unwrap_or(worker).trim();
         if let Some(ss58) = parse_quantus_payout(wallet) {
@@ -453,6 +463,105 @@ impl Pool {
             .partition(|(_, p)| p.chain() == "zion");
         self.pending_payouts = ext;
         zion
+    }
+
+    /// Live snapshot of every coin leg — the runtime counterpart of
+    /// `coin_leg`'s static registry.  Consumed by the stratum router and
+    /// the `/public/v1/coins` API tier.
+    pub fn leg_statuses(
+        &self,
+        multi_bridge: &crate::auxpow_bridge::MultiAuxPowBridge,
+    ) -> Vec<crate::coin_leg::LegStatus> {
+        use crate::coin_leg::{LegKind, LegStatus};
+        let mut legs: Vec<LegStatus> = Vec::new();
+
+        // ZION native — always served; "connected" = node RPC configured.
+        legs.push(LegStatus {
+            leg_id: "zion".into(),
+            coin: "ZION".into(),
+            kind: LegKind::Native,
+            enabled: true,
+            connected: self.config.l1_rpc_url.is_some(),
+            job_id: None,
+            job_age_ms: None,
+            share_pct: None,
+        });
+
+        // QTC native leg (own quantus-node over QUIC).
+        let (q_en, q_conn, q_pct, q_jid, q_age) = multi_bridge.native_status();
+        legs.push(LegStatus {
+            leg_id: "qtc-native".into(),
+            coin: "QTU".into(),
+            kind: LegKind::Native,
+            enabled: q_en,
+            connected: q_conn,
+            job_id: q_jid,
+            job_age_ms: q_age,
+            share_pct: Some(q_pct),
+        });
+
+        // PRL native + upstream legs (pearl-gateway / LuckyPool).
+        if let Some(pearl) = &self.pearl {
+            let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, _upend, _sn, _su) =
+                pearl.status();
+            legs.push(LegStatus {
+                leg_id: "prl-native".into(),
+                coin: "PRL".into(),
+                kind: LegKind::Native,
+                enabled: n_en,
+                connected: njid.is_some(),
+                job_id: njid,
+                job_age_ms: nage,
+                share_pct: Some(npct),
+            });
+            legs.push(LegStatus {
+                leg_id: "prl-upstream".into(),
+                coin: "PRL".into(),
+                kind: LegKind::Upstream,
+                enabled: u_en,
+                connected: u_conn,
+                job_id: ujid,
+                job_age_ms: uage,
+                share_pct: None,
+            });
+        }
+
+        // Bridged auxpow legs — one per enabled coin. "connected" is the
+        // job-freshness proxy the dashboard already uses (<120 s).
+        for coin in multi_bridge.enabled_coins() {
+            let job = multi_bridge.latest_job_for_coin(&coin);
+            let (jid, age) = job
+                .as_ref()
+                .map(|j| {
+                    (
+                        Some(j.external_job_id.clone()),
+                        j.received_at.map(|t| t.elapsed().as_millis() as u64),
+                    )
+                })
+                .unwrap_or((None, None));
+            let (leg_id, kind) = if coin == zion_cosmic_harmony::ExternalCoin::Quantus {
+                // QTU upstream leg — same source as the coin row above,
+                // but tracked under its own leg id.
+                ("qtc-upstream".to_string(), LegKind::Upstream)
+            } else {
+                (
+                    format!("aux-{}", coin.as_str().to_lowercase()),
+                    LegKind::Upstream,
+                )
+            };
+            legs.push(LegStatus {
+                leg_id,
+                coin: coin.as_str().to_string(),
+                kind,
+                enabled: true,
+                connected: age.map(|a| a < 120_000).unwrap_or(false),
+                job_id: jid,
+                job_age_ms: age,
+                share_pct: None,
+            });
+        }
+
+        legs
     }
 
     /// Drain queued payouts for a non-ZION chain (`"quantus"`).  ZION

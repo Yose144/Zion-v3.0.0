@@ -1095,6 +1095,17 @@ impl PplnsEngine {
         self.distribute_to_miners(miner_reward_flowers)
     }
 
+    /// Minimum payout threshold for `coin` — `min_payout_native` for
+    /// native-payout coins, `min_payout_flowers` for the unified pool.
+    pub fn min_payout_for(&self, coin: &str) -> u64 {
+        let key = coin.trim().to_ascii_lowercase();
+        self.config
+            .min_payout_native
+            .get(&key)
+            .copied()
+            .unwrap_or(self.config.min_payout_flowers)
+    }
+
     /// `true` when `coin` is configured for native-unit payouts
     /// (`native_payout_coins`) — its shares earn only coin revenue events
     /// and are excluded from the unified ZION distribution.

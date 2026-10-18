@@ -533,6 +533,15 @@ impl StratumServer {
                 }
                 if !username.is_empty() {
                     let (miner_id, worker_name) = StratumV1Session::parse_username(&username);
+                    // F4 public hardening: reject garbage wallet identities —
+                    // an unparsable wallet would silently mine toward the
+                    // pool's own address.  ZIS sessions may legitimately use
+                    // a non-address miner id (payout via linked address).
+                    if ctx.zis_user.is_empty()
+                        && !self.pool.lock().unwrap().wallet_is_valid(&miner_id)
+                    {
+                        return error_response(Some(id), -33000, "invalid wallet");
+                    }
                     ctx.session.miner_id = miner_id.clone();
                     ctx.session.worker_name = worker_name.clone();
                     ctx.authorized = true;
@@ -1400,115 +1409,13 @@ impl StratumServer {
         ids
     }
 
-    /// Live snapshot of every coin leg — the runtime counterpart of
-    /// `coin_leg`'s static registry. Sourced from the same accessors the
-    /// `/stats` auxpow payload uses; consumed by ops tooling and the
-    /// future `/public/v1/coins` tier (plan §5a).
+    /// Live snapshot of every coin leg — delegates to
+    /// [`Pool::leg_statuses`] so the same snapshot can serve the API.
     pub fn leg_statuses(&self) -> Vec<coin_leg::LegStatus> {
-        let mut legs: Vec<coin_leg::LegStatus> = Vec::new();
-
-        // ZION native — always served; "connected" = node RPC configured.
-        legs.push(coin_leg::LegStatus {
-            leg_id: "zion".into(),
-            coin: "ZION".into(),
-            kind: coin_leg::LegKind::Native,
-            enabled: true,
-            connected: self.config.l1_rpc_url.is_some(),
-            job_id: None,
-            job_age_ms: None,
-            share_pct: None,
-        });
-
-        // QTC native leg (own quantus-node over QUIC).
-        let (q_en, q_conn, q_pct, q_jid, q_age) = self.multi_bridge.native_status();
-        legs.push(coin_leg::LegStatus {
-            leg_id: "qtc-native".into(),
-            coin: "QTU".into(),
-            kind: coin_leg::LegKind::Native,
-            enabled: q_en,
-            connected: q_conn,
-            job_id: q_jid,
-            job_age_ms: q_age,
-            share_pct: Some(q_pct),
-        });
-
-        // PRL native + upstream legs (pearl-gateway / LuckyPool).
-        if let Some(pearl) = &self.pearl {
-            let (n_en, njid, nage, npct, u_en, u_conn, ujid, uage, _upend, _sn, _su) =
-                pearl.status();
-            legs.push(coin_leg::LegStatus {
-                leg_id: "prl-native".into(),
-                coin: "PRL".into(),
-                kind: coin_leg::LegKind::Native,
-                enabled: n_en,
-                connected: njid.is_some(),
-                job_id: njid,
-                job_age_ms: nage,
-                share_pct: Some(npct),
-            });
-            legs.push(coin_leg::LegStatus {
-                leg_id: "prl-upstream".into(),
-                coin: "PRL".into(),
-                kind: coin_leg::LegKind::Upstream,
-                enabled: u_en,
-                connected: u_conn,
-                job_id: ujid,
-                job_age_ms: uage,
-                share_pct: None,
-            });
-        }
-
-        // Bridged auxpow legs — one per enabled coin. "connected" is the
-        // job-freshness proxy the dashboard already uses (<120 s).
-        for coin in self.multi_bridge.enabled_coins() {
-            if coin == ExternalCoin::Quantus {
-                // QTU upstream leg — same source as the coin row above,
-                // but tracked under its own leg id.
-                let job = self.multi_bridge.latest_job_for_coin(&coin);
-                let (jid, age) = job
-                    .as_ref()
-                    .map(|j| {
-                        (
-                            Some(j.external_job_id.clone()),
-                            j.received_at.map(|t| t.elapsed().as_millis() as u64),
-                        )
-                    })
-                    .unwrap_or((None, None));
-                legs.push(coin_leg::LegStatus {
-                    leg_id: "qtc-upstream".into(),
-                    coin: "QTU".into(),
-                    kind: coin_leg::LegKind::Upstream,
-                    enabled: true,
-                    connected: age.map(|a| a < 120_000).unwrap_or(false),
-                    job_id: jid,
-                    job_age_ms: age,
-                    share_pct: None,
-                });
-                continue;
-            }
-            let job = self.multi_bridge.latest_job_for_coin(&coin);
-            let (jid, age) = job
-                .as_ref()
-                .map(|j| {
-                    (
-                        Some(j.external_job_id.clone()),
-                        j.received_at.map(|t| t.elapsed().as_millis() as u64),
-                    )
-                })
-                .unwrap_or((None, None));
-            legs.push(coin_leg::LegStatus {
-                leg_id: format!("aux-{}", coin.as_str().to_lowercase()),
-                coin: coin.as_str().to_string(),
-                kind: coin_leg::LegKind::Upstream,
-                enabled: true,
-                connected: age.map(|a| a < 120_000).unwrap_or(false),
-                job_id: jid,
-                job_age_ms: age,
-                share_pct: None,
-            });
-        }
-
-        legs
+        self.pool
+            .lock()
+            .expect("pool lock poisoned")
+            .leg_statuses(&self.multi_bridge)
     }
 
     /// Return true if an external job is fresh enough to send to a miner.
@@ -1600,6 +1507,15 @@ impl StratumServer {
                     self.zis_register_linked_payout(&idn, "quantus", &login.wallet);
                 }
             }
+        }
+        // F4: reject garbage wallet identities — an unparsable wallet would
+        // silently mine toward the pool's own payout address.
+        if zis_user.is_empty()
+            && !self.pool.lock().unwrap().wallet_is_valid(&login.wallet)
+        {
+            let _ =
+                Self::qtu_send(writer, &stratum_qtu::rpc_error(&rpc_id, "invalid wallet")).await;
+            return;
         }
         // Session id: unique-ish hex (upstream uses UUIDs; any opaque string
         // is valid — miners echo it in submit `id`).
@@ -2030,6 +1946,14 @@ impl StratumServer {
                     self.zis_register_linked_payout(&idn, "pearl", &auth.wallet);
                 }
             }
+        }
+        // F4: reject garbage wallet identities — same rule as QTU login.
+        if zis_user.is_empty()
+            && !self.pool.lock().unwrap().wallet_is_valid(&auth.wallet)
+        {
+            let _ = Self::pearl_send(writer, &stratum_pearl::auth_err(&rpc_id, "invalid wallet"))
+                .await;
+            return;
         }
         if Self::pearl_send(writer, &stratum_pearl::auth_ok(&rpc_id))
             .await
@@ -4340,7 +4264,7 @@ mod tests {
         let header = [0x11u8; 32];
         // 1) login — verbatim SRBMiner wire format.
         w.write_all(
-            br#"{"id":1,"method":"login","params":{"login":"qzTEST.w1","pass":"x","agent":"SRBMiner-MULTI/3.6.9"}}"#
+            br#"{"id":1,"method":"login","params":{"login":"qzTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTTT.w1","pass":"x","agent":"SRBMiner-MULTI/3.6.9"}}"#
                 .as_slice(),
         )
         .await
@@ -4504,8 +4428,18 @@ mod tests {
     fn handles_authorize() {
         let server = make_server();
         let resp = server
-            .handle_request(r#"{"id":2,"method":"mining.authorize","params":["worker","x"]}"#);
+            .handle_request(r#"{"id":2,"method":"mining.authorize","params":["zion1x.w1","x"]}"#);
         assert!(resp.contains("true"));
+    }
+
+    /// F4: anonymous authorize with a garbage wallet is rejected — it would
+    /// otherwise silently mine toward the pool's own payout address.
+    #[test]
+    fn authorize_rejects_invalid_wallet() {
+        let server = make_server();
+        let resp = server
+            .handle_request(r#"{"id":2,"method":"mining.authorize","params":["notawallet.rig1","x"]}"#);
+        assert!(resp.contains("invalid wallet"), "resp={resp}");
     }
 
     /// F2d: stage a `ZisPasswordOutcome` in `ctx.zis_auth` — the sync
@@ -5464,13 +5398,13 @@ mod tests {
                 });
 
                 let mut client =
-                    PearlPoolClient::connect(&addr.to_string(), "prl1TESTPOOLWALLET", "rig0", "x")
+                    PearlPoolClient::connect(&addr.to_string(), "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq", "rig0", "x")
                         .await
                         .unwrap();
                 {
                     let pool = pool2.lock().unwrap();
                     let telemetry = pool.telemetry.lock().unwrap();
-                    let entry = &telemetry.miners["prl1TESTPOOLWALLET/prl1TESTPOOLWALLET.rig0"];
+                    let entry = &telemetry.miners["prl1pzqqqqqqqqqqqqqqqqqqqqqqqq/prl1pzqqqqqqqqqqqqqqqqqqqqqqqq.rig0"];
                     assert_eq!(entry.algorithm, "pearlhash");
                     assert_eq!(entry.backend, "pearl-stratum");
                 }
@@ -5497,7 +5431,7 @@ mod tests {
                 assert_eq!(pool2.lock().unwrap().pplns.stats().window_used, 1);
 
                 let mut client2 =
-                    PearlPoolClient::connect(&addr.to_string(), "prl1TESTPOOLWALLET2", "rig1", "x")
+                    PearlPoolClient::connect(&addr.to_string(), "prl1pzqqqqqqqqqqqqqqqqqqqqqqq2", "rig1", "x")
                         .await
                         .unwrap();
                 let resp2 = client2.submit_proof(&job_id, &proof_b64, None).await.unwrap();
@@ -5530,8 +5464,8 @@ mod tests {
                 let server3 = StratumServer::new(pool2.clone());
                 let (ok3, status3) = server3
                     .process_pearl_submission(
-                        "prl1TESTPOOLWALLET",
-                        "prl1TESTPOOLWALLET.rig0",
+                        "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq",
+                        "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq.rig0",
                         &job_id,
                         &proof_b64,
                         None,
@@ -5710,7 +5644,7 @@ mod tests {
                 });
                 let err = PearlPoolClient::connect(
                     &addr.to_string(),
-                    "prl1TESTPOOLWALLET",
+                    "prl1pzqqqqqqqqqqqqqqqqqqqqqqqq",
                     "rig0",
                     "x",
                 )
