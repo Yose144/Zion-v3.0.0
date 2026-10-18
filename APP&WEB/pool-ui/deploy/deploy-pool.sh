@@ -13,7 +13,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 UI_DIR="$REPO_ROOT/APP&WEB/pool-ui"
 WEB_ROOT="/var/www/pool"
-SSH_CMD="ssh zion-new"
+# IPv4 egress to edge is CGNAT-blocked; zion-v6 (IPv6 :2222) is the reliable alias.
+SSH_HOST="${POOL_DEPLOY_HOST:-zion-v6}"
+SSH_CMD="ssh $SSH_HOST"
 NGINX_SRC="$REPO_ROOT/V31/deploy/nginx/pool.zionterranova.com.conf"
 NGINX_DST="/etc/nginx/sites-available/pool.zionterranova.com.conf"
 NGINX_LINK="/etc/nginx/sites-enabled/pool.zionterranova.com.conf"
@@ -35,17 +37,17 @@ fi
 
 # 2. Sync the static export.
 echo "[2/4] Syncing to $WEB_ROOT..."
-$SSH_CMD "sudo mkdir -p $WEB_ROOT"
-rsync -avz --delete --rsync-path="sudo rsync" -e "ssh" \
+$SSH_CMD "mkdir -p $WEB_ROOT"
+rsync -avz --delete --rsync-path="rsync" -e "ssh" \
     "$UI_DIR/dist/" \
-    "zion-new:$WEB_ROOT/"
+    "$SSH_HOST:$WEB_ROOT/"
 
 # 3. Optionally install + enable the nginx vhost.
 if [[ " $* " == *" --nginx "* ]]; then
     echo "[3/4] Installing nginx vhost..."
-    rsync -avz --rsync-path="sudo rsync" -e "ssh" \
-        "$NGINX_SRC" "zion-new:$NGINX_DST"
-    $SSH_CMD "sudo ln -sfn $NGINX_DST $NGINX_LINK && sudo nginx -t && sudo systemctl reload nginx"
+    rsync -avz --rsync-path="rsync" -e "ssh" \
+        "$NGINX_SRC" "$SSH_HOST:$NGINX_DST"
+    $SSH_CMD "ln -sfn $NGINX_DST $NGINX_LINK && nginx -t && systemctl reload nginx"
 else
     echo "[3/4] Skipping nginx (pass --nginx to install the vhost)."
 fi

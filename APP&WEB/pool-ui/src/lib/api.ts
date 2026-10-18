@@ -6,7 +6,7 @@
 import * as mock from './mock';
 import { BlockRow, CoinId, CoinInfo, CoinLeg, CoinStats, MinerStats, PayoutRow, PoolOverview } from './types';
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const API_BASE = '/public/v1';
 
 // UI coin id -> pool coin key (`/public/v1` uses pool-side tickers).
