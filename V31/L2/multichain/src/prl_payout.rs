@@ -44,10 +44,16 @@ pub struct PrlPayoutConfig {
     /// RPC basic-auth credentials (`PRL_RPC_USER` / `PRL_RPC_PASS`).
     pub rpc_user: String,
     pub rpc_pass: String,
-    /// `sendtoaddress` RPC method name (`PRL_RPC_SEND_METHOD`, default
-    /// `sendtoaddress`) — kept configurable until oyster wire semantics
-    /// are pinned by a live tx.
+    /// Send RPC method name (`PRL_RPC_SEND_METHOD`, default `sendfrom` —
+    /// the real oyster wallet API; `sendtoaddress` does not exist on
+    /// oyster). `sendfrom` takes `(account, address, amount, feerate)`.
     pub rpc_send_method: String,
+    /// Oyster wallet account for sends (`PRL_RPC_SEND_ACCOUNT`, default
+    /// `default`).
+    pub rpc_send_account: String,
+    /// Fee rate per KB passed to `sendfrom` (`PRL_RPC_FEE_RATE`, default
+    /// `0.0001`).
+    pub rpc_fee_rate: String,
     /// `getbalance` RPC method name (`PRL_RPC_BALANCE_METHOD`, default
     /// `getbalance`).
     pub rpc_balance_method: String,
@@ -90,7 +96,11 @@ impl PrlPayoutConfig {
             rpc_user: std::env::var("PRL_RPC_USER").unwrap_or_default(),
             rpc_pass: std::env::var("PRL_RPC_PASS").unwrap_or_default(),
             rpc_send_method: std::env::var("PRL_RPC_SEND_METHOD")
-                .unwrap_or_else(|_| "sendtoaddress".into()),
+                .unwrap_or_else(|_| "sendfrom".into()),
+            rpc_send_account: std::env::var("PRL_RPC_SEND_ACCOUNT")
+                .unwrap_or_else(|_| "default".into()),
+            rpc_fee_rate: std::env::var("PRL_RPC_FEE_RATE")
+                .unwrap_or_else(|_| "0.0001".into()),
             rpc_balance_method: std::env::var("PRL_RPC_BALANCE_METHOD")
                 .unwrap_or_else(|_| "getbalance".into()),
             interval: Duration::from_secs(
@@ -391,15 +401,21 @@ async fn tick(
             continue;
         }
 
-        // Live send.  oyster expects the amount in whole-coin decimal —
-        // Pearl base units use 8 decimals (btcd-derived).
+        // Live send.  oyster `sendfrom` takes
+        // (account, address, whole-coin amount, fee-rate-per-kb); Pearl
+        // base units use 8 decimals (btcd-derived).  Numeric JSON amounts —
+        // oyster parses both, numbers avoid string coercion quirks.
         let whole = format!("{}.{:08}", units / 100_000_000, units % 100_000_000);
-        let result = rpc
-            .call(
-                &config.rpc_send_method,
-                serde_json::json!([row.address, whole]),
-            )
-            .await;
+        let amount: serde_json::Number = whole.parse().unwrap_or_else(|_| 0.into());
+        let fee_rate: serde_json::Number =
+            config.rpc_fee_rate.parse().unwrap_or_else(|_| 0.into());
+        let params = if config.rpc_send_method == "sendfrom" {
+            serde_json::json!([config.rpc_send_account, row.address, amount, fee_rate])
+        } else {
+            // Legacy/alternate method override (e.g. sendtoaddress-style).
+            serde_json::json!([row.address, whole])
+        };
+        let result = rpc.call(&config.rpc_send_method, params).await;
         match result {
             Ok(v) => {
                 let tx = v.as_str().unwrap_or("").to_string();
@@ -486,7 +502,9 @@ mod tests {
             rpc_url: "http://y".into(),
             rpc_user: String::new(),
             rpc_pass: String::new(),
-            rpc_send_method: "sendtoaddress".into(),
+            rpc_send_method: "sendfrom".into(),
+            rpc_send_account: "default".into(),
+            rpc_fee_rate: "0.0001".into(),
             rpc_balance_method: "getbalance".into(),
             interval: Duration::from_secs(60),
             min_units: 0,
