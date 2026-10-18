@@ -7,7 +7,7 @@ import { ArrowRight, Egg, Sparkles, Wind } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const MaitreyaSectionCopy = {
-  kicker: { cs: 'Kniha Pátá · ve vzniku', en: 'Book Five · in the making' },
+  kicker: { cs: 'Kniha Pátá · kompletní · CZ + EN', en: 'Book Five · complete · CZ + EN' },
   title: { cs: 'Maitreya Buddha', en: 'Maitreya Buddha' },
   subtitle: { cs: 'Pán Hiranyagarbhy · Dědic Zionu', en: 'Lord of Hiranyagarbha · Heir of Zion' },
   body: {
@@ -18,7 +18,8 @@ const MaitreyaSectionCopy = {
     cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."',
     en: '“I am Maitreya. I was Krishna/Rama.”',
   },
-  cta: { cs: 'Otevřít stránku', en: 'Open the page' },
+  cta: { cs: 'Číst knihu', en: 'Read the book' },
+  ctaPage: { cs: 'O knize', en: 'About the book' },
   ctaGenesis: { cs: 'Genesis', en: 'Genesis' },
 };
 
@@ -94,9 +95,15 @@ export default function MaitreyaSection() {
               </p>
 
               <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-                <Link href="/maitreya" className="zion-button-primary group">
+                <Link href="/maitreya/cist" className="zion-button-primary group">
                   {MaitreyaSectionCopy.cta[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href="/maitreya"
+                  className="zion-button-secondary border-white/15 hover:border-zion-purple/40 hover:text-zion-purple"
+                >
+                  {MaitreyaSectionCopy.ctaPage[cs ? 'cs' : 'en']}
                 </Link>
                 <Link
                   href="/genesis"
