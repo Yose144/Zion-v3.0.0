@@ -1418,7 +1418,17 @@ __device__ __forceinline__ void ldsm_x2(uint& r0, uint& r1, const void* smem_ptr
 }
 #endif
 
-extern "C" __global__ void pearl_pouw_mine_native_v6(
+// Opt-in occupancy cap: -DPEARL_V6_MAXB=N adds __launch_bounds__(128, N),
+// forcing ptxas to fit more resident blocks/SM (spills into L1). v6 sits at
+// ~86 regs → ~5 blocks/SM (~31% occupancy); N=8 → 50%. Pure experiment —
+// spills may lose; gated by env, default unchanged.
+#if defined(PEARL_V6_MAXB) && (PEARL_V6_MAXB) > 0
+#define PEARL_V6_LAUNCH_BOUNDS __launch_bounds__(128, PEARL_V6_MAXB)
+#else
+#define PEARL_V6_LAUNCH_BOUNDS
+#endif
+
+extern "C" __global__ void PEARL_V6_LAUNCH_BOUNDS pearl_pouw_mine_native_v6(
     const signed char* __restrict__ noised_a,
     const signed char* __restrict__ noised_b,
     const uchar* a_noise_seed,
