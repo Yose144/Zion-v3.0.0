@@ -20,19 +20,22 @@ const POOL_COIN: Record<CoinId, string> = {
 // Static connect metadata — displayed on cards/start page; the API's
 // /coins payload only carries payout_mode/min_payout/fee_bps + legs.
 const COIN_META: Record<string, Omit<CoinInfo, 'id' | 'legs' | 'fee_bps' | 'min_payout' | 'payout_mode'>> = {
+  // All coins share the multiplexed stratum: stratum+tcp://…:8444 (plaintext)
+  // and stratum+ssl://…:8445 (TLS).  The dialect below is how each coin is
+  // authenticated on that listener.
   zion: {
     ticker: 'ZION', name: 'ZION TerraNova', algorithm: 'Ekam Deeksha (GPU)',
-    port: 3333, tls_port: 3334, dialect: 'ZION native + Stratum v1',
+    port: 8444, tls_port: 8445, dialect: 'ZION native + Stratum v1',
     payout_unit: 'ZION', accent: 'gold',
   },
   qtu: {
     ticker: 'QTC', name: 'Quantus', algorithm: 'QPoW · Poseidon2',
-    port: 3334, tls_port: 3335, dialect: 'CryptoNote (SRBMiner / XMRig)',
+    port: 8444, tls_port: 8445, dialect: 'CryptoNote (SRBMiner / XMRig)',
     payout_unit: 'QTC', accent: 'cyan',
   },
   prl: {
     ticker: 'PRL', name: 'Pearl', algorithm: 'Pearl PoUW · matrix PoW',
-    port: 3335, tls_port: 3336, dialect: 'Pearl stratum (SRBMiner ≥3.7.6)',
+    port: 8444, tls_port: 8445, dialect: 'Pearl stratum (SRBMiner ≥3.7.6)',
     payout_unit: 'PRL', accent: 'purple',
   },
 };
