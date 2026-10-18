@@ -148,13 +148,8 @@ impl Pool {
         self.pplns
             .register_address_with_chain(worker, &address, &chain);
         let share_difficulty = submission.difficulty.max(1);
-        self.pplns.record_share_with_diff_for_coin(
-            worker,
-            worker,
-            height,
-            share_difficulty,
-            coin,
-        );
+        self.pplns
+            .record_share_with_diff_for_coin(worker, worker, height, share_difficulty, coin);
     }
 
     /// Credit an accepted external (AuxPoW) stream share into PPLNS so the
@@ -276,9 +271,7 @@ impl Pool {
             return Some(("pearl", addr));
         }
         if addr.starts_with("zion1") {
-            if let Ok(parsed) =
-                Address::new(ChainId::ZionL1, addr.as_bytes().to_vec(), addr)
-            {
+            if let Ok(parsed) = Address::new(ChainId::ZionL1, addr.as_bytes().to_vec(), addr) {
                 self.worker_addresses
                     .insert(miner_id.to_string(), parsed.clone());
                 self.pplns.register_address(miner_id, &parsed.encoded);
@@ -621,7 +614,9 @@ fn parse_quantus_payout(wallet: &str) -> Option<String> {
         wallet
     };
     // SS58 prefix 189 addresses are 47-48 base58 chars starting with "qz".
-    if bare.len() >= 45 && bare.len() <= 50 && bare.starts_with("qz")
+    if bare.len() >= 45
+        && bare.len() <= 50
+        && bare.starts_with("qz")
         && bare.chars().all(|c| c.is_ascii_alphanumeric())
     {
         Some(bare.to_string())
@@ -864,10 +859,7 @@ mod tests {
             parse_quantus_payout(&format!("QTU:{QTC_ADDR}")).as_deref(),
             Some(QTC_ADDR)
         );
-        assert_eq!(
-            parse_quantus_payout(QTC_ADDR).as_deref(),
-            Some(QTC_ADDR)
-        );
+        assert_eq!(parse_quantus_payout(QTC_ADDR).as_deref(), Some(QTC_ADDR));
         assert_eq!(parse_quantus_payout("zion1abc"), None);
         assert_eq!(parse_quantus_payout("qzshort"), None);
         assert_eq!(parse_quantus_payout("qtc:notqz_address!"), None);
@@ -937,8 +929,7 @@ mod tests {
         assert_eq!(ext[0].1.address, QTC_ADDR);
     }
 
-    const PRL_ADDR: &str =
-        "prl1p29st0fecym0gk9zyh8ch90sxkf6apmwqdznk0tvu6kf5wxwsmqxqqzwjdm";
+    const PRL_ADDR: &str = "prl1p29st0fecym0gk9zyh8ch90sxkf6apmwqdznk0tvu6kf5wxwsmqxqqzwjdm";
 
     #[test]
     fn pearl_worker_parses_prl_prefix() {
@@ -961,10 +952,7 @@ mod tests {
             parse_pearl_payout(PRL_ADDR.to_ascii_uppercase().as_str()),
             None
         );
-        assert_eq!(
-            parse_pearl_payout(&format!("prl:{QTC_ADDR}")),
-            None
-        );
+        assert_eq!(parse_pearl_payout(&format!("prl:{QTC_ADDR}")), None);
     }
 
     #[test]

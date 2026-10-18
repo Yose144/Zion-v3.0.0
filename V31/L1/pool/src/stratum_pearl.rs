@@ -59,7 +59,9 @@ pub fn parse_authorize(line: &str) -> Option<(Value, Result<PearlAuthorize, Stri
             None => return Err("authorize.wallet missing".to_string()),
         };
         if wallet.is_empty() || wallet.len() > MAX_WALLET_BYTES {
-            return Err(format!("authorize.wallet must be 1..={MAX_WALLET_BYTES} bytes"));
+            return Err(format!(
+                "authorize.wallet must be 1..={MAX_WALLET_BYTES} bytes"
+            ));
         }
         let worker = match p.get("worker") {
             Some(Value::String(s)) => s.as_str(),
@@ -67,7 +69,9 @@ pub fn parse_authorize(line: &str) -> Option<(Value, Result<PearlAuthorize, Stri
             None => "",
         };
         if worker.len() > MAX_WORKER_BYTES {
-            return Err(format!("authorize.worker must be <= {MAX_WORKER_BYTES} bytes"));
+            return Err(format!(
+                "authorize.worker must be <= {MAX_WORKER_BYTES} bytes"
+            ));
         }
         let agent = match p.get("agent") {
             Some(Value::String(s)) => s.as_str(),
@@ -75,7 +79,9 @@ pub fn parse_authorize(line: &str) -> Option<(Value, Result<PearlAuthorize, Stri
             None => "",
         };
         if agent.len() > MAX_AGENT_BYTES {
-            return Err(format!("authorize.agent must be <= {MAX_AGENT_BYTES} bytes"));
+            return Err(format!(
+                "authorize.agent must be <= {MAX_AGENT_BYTES} bytes"
+            ));
         }
         let pass = match p.get("pass") {
             Some(Value::String(s)) => s.as_str(),
@@ -116,7 +122,9 @@ pub fn parse_submit(line: &str) -> Option<(Value, Result<PearlSubmit, String>)> 
     let job_id = p.get("job_id").and_then(|j| j.as_str()).unwrap_or("");
     let proof = p.get("plain_proof").and_then(|x| x.as_str()).unwrap_or("");
     let parsed = if job_id.is_empty() || job_id.len() > MAX_JOB_ID_BYTES {
-        Err(format!("submit.job_id must be 1..={MAX_JOB_ID_BYTES} bytes"))
+        Err(format!(
+            "submit.job_id must be 1..={MAX_JOB_ID_BYTES} bytes"
+        ))
     } else if proof.is_empty() || proof.len() > MAX_PROOF_B64_CHARS {
         Err(format!(
             "submit.plain_proof must be 1..={MAX_PROOF_B64_CHARS} base64 chars"
@@ -179,7 +187,10 @@ pub fn auth_err(id: &Value, msg: &str) -> String {
 }
 
 pub fn submit_ok(id: &Value) -> String {
-    format!("{}\n", serde_json::json!({"id":id,"result":true,"error":null}))
+    format!(
+        "{}\n",
+        serde_json::json!({"id":id,"result":true,"error":null})
+    )
 }
 
 pub fn submit_err(id: &Value, msg: &str) -> String {
@@ -206,7 +217,10 @@ pub(crate) async fn read_frame<R: AsyncBufRead + Unpin>(
             return if pending.is_empty() {
                 Ok(None)
             } else {
-                Err(io::Error::new(ErrorKind::InvalidData, "eof with partial frame"))
+                Err(io::Error::new(
+                    ErrorKind::InvalidData,
+                    "eof with partial frame",
+                ))
             };
         }
         let nl = buf.iter().position(|b| *b == b'\n');
@@ -223,9 +237,9 @@ pub(crate) async fn read_frame<R: AsyncBufRead + Unpin>(
         pending.extend_from_slice(&buf[..plen]);
         reader.consume(consumed);
         if nl.is_some() {
-            return Ok(Some(String::from_utf8(mem::take(pending)).map_err(|e| {
-                io::Error::new(ErrorKind::InvalidData, format!("invalid UTF-8: {e}"))
-            })?));
+            return Ok(Some(String::from_utf8(mem::take(pending)).map_err(
+                |e| io::Error::new(ErrorKind::InvalidData, format!("invalid UTF-8: {e}")),
+            )?));
         }
     }
 }
@@ -363,10 +377,9 @@ mod tests {
 
     #[test]
     fn rejects_bad_submit_fields() {
-        let (_, bad) = parse_submit(
-            "{\"id\":2,\"method\":\"mining.submit\",\"params\":[\"job\",\"AA\"]}",
-        )
-        .unwrap();
+        let (_, bad) =
+            parse_submit("{\"id\":2,\"method\":\"mining.submit\",\"params\":[\"job\",\"AA\"]}")
+                .unwrap();
         assert!(bad.is_err());
 
         let (_, bad) = parse_submit(&submit_line(2, "", "QUJD")).unwrap();
@@ -436,15 +449,24 @@ mod tests {
         let mut pending = Vec::new();
         let mut reader = BufReader::new(b);
         assert_eq!(
-            read_frame(&mut reader, &mut pending).await.unwrap().unwrap(),
+            read_frame(&mut reader, &mut pending)
+                .await
+                .unwrap()
+                .unwrap(),
             "{\"a\":1}"
         );
         assert_eq!(
-            read_frame(&mut reader, &mut pending).await.unwrap().unwrap(),
+            read_frame(&mut reader, &mut pending)
+                .await
+                .unwrap()
+                .unwrap(),
             "{\"b\":2}"
         );
         assert_eq!(
-            read_frame(&mut reader, &mut pending).await.unwrap().unwrap(),
+            read_frame(&mut reader, &mut pending)
+                .await
+                .unwrap()
+                .unwrap(),
             "{\"c\":3}"
         );
     }
@@ -475,7 +497,10 @@ mod tests {
             a.write_all(b":1}\n").await.unwrap();
         }
         assert_eq!(
-            read_frame(&mut reader, &mut pending).await.unwrap().unwrap(),
+            read_frame(&mut reader, &mut pending)
+                .await
+                .unwrap()
+                .unwrap(),
             "{\"partial\":1}"
         );
     }
@@ -511,7 +536,10 @@ mod tests {
         });
         let mut pending = Vec::new();
         let mut reader = BufReader::new(b);
-        let f = read_frame(&mut reader, &mut pending).await.unwrap().unwrap();
+        let f = read_frame(&mut reader, &mut pending)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(f.len(), MAX_FRAME_BYTES);
         let err = read_frame(&mut reader, &mut pending).await.unwrap_err();
         assert!(err.to_string().contains("exceeds"));
@@ -523,7 +551,10 @@ mod tests {
         drop(a);
         let mut pending = Vec::new();
         let mut reader = BufReader::new(b);
-        assert!(read_frame(&mut reader, &mut pending).await.unwrap().is_none());
+        assert!(read_frame(&mut reader, &mut pending)
+            .await
+            .unwrap()
+            .is_none());
         pending.extend_from_slice(b"{\"x\":1}");
         let err = read_frame(&mut reader, &mut pending).await.unwrap_err();
         assert!(err.to_string().contains("partial"));

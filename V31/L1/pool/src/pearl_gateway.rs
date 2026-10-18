@@ -48,7 +48,11 @@ struct SeenJackpots {
 }
 
 impl SeenJackpots {
-    fn claim(&mut self, served_id: &str, jackpot: [u8; 32]) -> std::result::Result<(), PearlSubmitError> {
+    fn claim(
+        &mut self,
+        served_id: &str,
+        jackpot: [u8; 32],
+    ) -> std::result::Result<(), PearlSubmitError> {
         let set = match self.jackpots.get_mut(served_id) {
             Some(s) => s,
             None => {
@@ -247,7 +251,11 @@ impl PearlRuntime {
         Ok((job, outcome))
     }
 
-    fn claim(&self, served_id: &str, jackpot: [u8; 32]) -> std::result::Result<(), PearlSubmitError> {
+    fn claim(
+        &self,
+        served_id: &str,
+        jackpot: [u8; 32],
+    ) -> std::result::Result<(), PearlSubmitError> {
         self.seen.lock().unwrap().claim(served_id, jackpot)
     }
 
@@ -343,7 +351,10 @@ impl PearlRuntime {
         hs: Option<u64>,
     ) -> UpstreamSubmitReply {
         match &self.upstream {
-            Some(up) => up.submit(&ujob.served_id, &ujob.raw_id, proof_b64, hs).await,
+            Some(up) => {
+                up.submit(&ujob.served_id, &ujob.raw_id, proof_b64, hs)
+                    .await
+            }
             None => UpstreamSubmitReply::Unknown,
         }
     }
@@ -434,7 +445,10 @@ impl PearlRuntime {
         if let Some(err) = resp.get("error") {
             anyhow::bail!("pearl gateway error: {err}");
         }
-        Ok(resp.get("result").cloned().unwrap_or(serde_json::Value::Null))
+        Ok(resp
+            .get("result")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null))
     }
 
     async fn rpc(&self, method: &str, params: serde_json::Value) -> Result<serde_json::Value> {
@@ -579,10 +593,7 @@ impl PearlRuntime {
         usize,
     ) {
         let (native_job_id, native_age_ms) = match self.latest.read().unwrap().as_ref() {
-            Some((j, t, _)) => (
-                Some(Self::job_id(j)),
-                Some(t.elapsed().as_millis() as u64),
-            ),
+            Some((j, t, _)) => (Some(Self::job_id(j)), Some(t.elapsed().as_millis() as u64)),
             None => (None, None),
         };
         let (up_enabled, up_connected, up_job_id, up_age_ms, up_pending) = match &self.upstream {
@@ -1101,8 +1112,14 @@ mod tests {
         let j = job([0xaau8; 76], BigUint::from(10u8), 3);
         let id = PearlRuntime::job_id(&j);
         let up = upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::ZERO);
-        let rt100 =
-            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up.clone()), 100);
+        let rt100 = PearlRuntime::for_test_hybrid(
+            "127.0.0.1:1",
+            256,
+            30_000,
+            Some(j.clone()),
+            Some(up.clone()),
+            100,
+        );
         assert_eq!(rt100.pick_served_job().unwrap().job_id, id);
         let rt0 =
             PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j.clone()), Some(up), 0);
@@ -1111,8 +1128,12 @@ mod tests {
 
     #[test]
     fn pick_served_job_stale_upstream_and_unselected_native() {
-        let stale_up =
-            upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::from_millis(91_000));
+        let stale_up = upstream_seeded(
+            [0xaau8; 76],
+            "u1",
+            [0x11u8; 32],
+            Duration::from_millis(91_000),
+        );
         let rt = PearlRuntime::for_test_hybrid("", 256, 30_000, None, Some(stale_up.clone()), 100);
         assert!(rt.pick_served_job().is_none());
         let j = job([0xaau8; 76], BigUint::from(10u8), 3);
@@ -1174,7 +1195,10 @@ mod tests {
             .expect("fixture share verifies against upstream-issued target");
         assert_eq!(ujob.raw_id, "u-fix");
         assert_eq!(hex::encode(outcome.jackpot_hash), FIXTURE_JACKPOT_HEX);
-        match rt.verify_upstream_submission("prlu:u-fix", &proof_b64).await {
+        match rt
+            .verify_upstream_submission("prlu:u-fix", &proof_b64)
+            .await
+        {
             Err(PearlSubmitError::Duplicate) => {}
             other => panic!("expected Duplicate, got {other:?}"),
         }
@@ -1182,8 +1206,12 @@ mod tests {
             Err(PearlSubmitError::Stale) => {}
             other => panic!("expected Stale, got {other:?}"),
         }
-        let rt_no_up = PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(job), None, 100);
-        match rt_no_up.verify_upstream_submission("prlu:u-fix", &proof_b64).await {
+        let rt_no_up =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(job), None, 100);
+        match rt_no_up
+            .verify_upstream_submission("prlu:u-fix", &proof_b64)
+            .await
+        {
             Err(PearlSubmitError::Stale) => {}
             other => panic!("expected Stale without upstream, got {other:?}"),
         }
@@ -1214,7 +1242,10 @@ mod tests {
             Err(PearlSubmitError::Duplicate) => {}
             other => panic!("expected native Duplicate, got {other:?}"),
         }
-        match rt.verify_upstream_submission("prlu:u-fix", &proof_b64).await {
+        match rt
+            .verify_upstream_submission("prlu:u-fix", &proof_b64)
+            .await
+        {
             Err(PearlSubmitError::Duplicate) => {}
             other => panic!("expected upstream Duplicate, got {other:?}"),
         }
@@ -1271,16 +1302,14 @@ mod tests {
         assert_eq!((sn, su), (0, 1));
         // Upstream gap: the unselected native leg still serves as fallback —
         // counted as native, not upstream.
-        let stale_up =
-            upstream_seeded([0xaau8; 76], "u1", [0x11u8; 32], Duration::from_millis(91_000));
-        let rt_stale = PearlRuntime::for_test_hybrid(
-            "127.0.0.1:1",
-            256,
-            30_000,
-            Some(j),
-            Some(stale_up),
-            0,
+        let stale_up = upstream_seeded(
+            [0xaau8; 76],
+            "u1",
+            [0x11u8; 32],
+            Duration::from_millis(91_000),
         );
+        let rt_stale =
+            PearlRuntime::for_test_hybrid("127.0.0.1:1", 256, 30_000, Some(j), Some(stale_up), 0);
         rt_stale.pick_served_job().unwrap();
         let (_, _, _, _, _, _, _, _, _, sn, su) = rt_stale.status();
         assert_eq!((sn, su), (1, 0));

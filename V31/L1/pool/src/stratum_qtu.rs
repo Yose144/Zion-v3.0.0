@@ -310,7 +310,7 @@ mod tests {
             external_job_id: "qtun:98765".into(),
             coin: zion_cosmic_harmony::ExternalCoin::Quantus,
             header_hex: "aa".repeat(32),
-            target_hex: format!("{:0128x}", 1_000_000u64) ,
+            target_hex: format!("{:0128x}", 1_000_000u64),
             height: 98765,
             algorithm: "qpow-poseidon2".into(),
             extranonce1_hex: "00a1d265".into(),
@@ -346,10 +346,16 @@ mod tests {
         assert_eq!(v["method"], "job");
         assert_eq!(v["params"]["clean_jobs"], true);
 
-        assert!(serde_json::from_str::<Value>(&submit_ok(&json!(2))).unwrap()["result"]["status"] == "OK");
+        assert!(
+            serde_json::from_str::<Value>(&submit_ok(&json!(2))).unwrap()["result"]["status"]
+                == "OK"
+        );
         let e: Value = serde_json::from_str(&submit_err(&json!(3), "low difficulty")).unwrap();
         assert_eq!(e["error"]["message"], "low difficulty");
-        assert!(serde_json::from_str::<Value>(&keepalive_ok(&json!(4))).unwrap()["result"]["status"] == "KEEPALIVED");
+        assert!(
+            serde_json::from_str::<Value>(&keepalive_ok(&json!(4))).unwrap()["result"]["status"]
+                == "KEEPALIVED"
+        );
     }
 
     #[test]

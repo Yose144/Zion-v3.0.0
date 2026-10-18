@@ -443,16 +443,12 @@ async fn forward_share_to_upstream(
     // Quantus QPoW — dedicated submit path: 64-byte nonce + 64-byte result.
     if req.algorithm == "qpow-poseidon2" {
         let nonce_hex = req.nonce_hex.as_deref().unwrap_or("");
-        let Some(nonce) =
-            zion_miner::auxpow::qpow::biguint_from_hex::<64>(nonce_hex)
-        else {
+        let Some(nonce) = zion_miner::auxpow::qpow::biguint_from_hex::<64>(nonce_hex) else {
             return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
                 "bad qpow nonce".to_string(),
             ));
         };
-        let Some(hash) =
-            zion_miner::auxpow::qpow::biguint_from_hex::<64>(&req.hash_hex)
-        else {
+        let Some(hash) = zion_miner::auxpow::qpow::biguint_from_hex::<64>(&req.hash_hex) else {
             return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
                 "bad qpow result".to_string(),
             ));

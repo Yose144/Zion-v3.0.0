@@ -200,10 +200,7 @@ impl MultiAuxPowBridge {
     /// `QTC_NATIVE_SHARE_PCT` and the job is fresh — else None (caller falls
     /// back to the upstream bridge).
     pub fn native_pick_job(&self) -> Option<JobPackage> {
-        self.native
-            .lock()
-            .expect("native lock poisoned")
-            .pick_job()
+        self.native.lock().expect("native lock poisoned").pick_job()
     }
 
     /// Latest native job regardless of pct (dashboard/diag).
@@ -242,10 +239,7 @@ impl MultiAuxPowBridge {
     /// `(enabled, connected, share_pct, latest_job_id, latest_job_age_ms)` —
     /// condensed native-leg status for stats/dashboard endpoints.
     pub fn native_status(&self) -> (bool, bool, u8, Option<String>, Option<u64>) {
-        self.native
-            .lock()
-            .expect("native lock poisoned")
-            .status()
+        self.native.lock().expect("native lock poisoned").status()
     }
 
     /// Validate + account a share submitted against a native job.

@@ -544,7 +544,11 @@ impl PplnsEngine {
                 .iter()
                 .map(|((m, c), bal)| {
                     (
-                        format!("{}|{}", self.registry.id(*m), self.coin_registry.key_for(*c)),
+                        format!(
+                            "{}|{}",
+                            self.registry.id(*m),
+                            self.coin_registry.key_for(*c)
+                        ),
                         *bal,
                     )
                 })
@@ -805,8 +809,7 @@ impl PplnsEngine {
         let idx = self.registry.lookup_or_register(miner_id);
         self.ensure_capacity(idx);
         self.addresses[idx as usize] = Some(address.to_string());
-        self.chains[idx as usize] =
-            (chain != "zion").then(|| chain.to_string());
+        self.chains[idx as usize] = (chain != "zion").then(|| chain.to_string());
         self.dirty = true;
     }
 
@@ -979,8 +982,7 @@ impl PplnsEngine {
                 self.window_total_difficulty -= oldest.difficulty as u128;
                 self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128;
                 // P8
-                self.coin_window_weight[oldest.coin_index as usize] -=
-                    oldest.difficulty as u128;
+                self.coin_window_weight[oldest.coin_index as usize] -= oldest.difficulty as u128;
                 if let Some(w) = self
                     .miner_coin_weights
                     .get_mut(&(oldest.miner_index, oldest.coin_index))
@@ -1111,10 +1113,7 @@ impl PplnsEngine {
     /// and are excluded from the unified ZION distribution.
     pub fn is_native_payout_coin(&self, coin: &str) -> bool {
         let key = coin.trim().to_ascii_lowercase();
-        self.config
-            .native_payout_coins
-            .iter()
-            .any(|c| c == &key)
+        self.config.native_payout_coins.iter().any(|c| c == &key)
     }
 
     /// Resolve configured native-payout tickers to coin indexes.
@@ -1270,12 +1269,9 @@ impl PplnsEngine {
             total_weight = 1;
         }
 
-        let native_min_payout = dest.as_ref().and_then(|d| {
-            self.config
-                .min_payout_native
-                .get(&d.coin_key)
-                .copied()
-        });
+        let native_min_payout = dest
+            .as_ref()
+            .and_then(|d| self.config.min_payout_native.get(&d.coin_key).copied());
 
         // Distribute miner_reward proportionally into the right bucket:
         // `unpaid` (flowers) for unified, `unpaid_native` (coin base units)
@@ -1297,8 +1293,7 @@ impl PplnsEngine {
                     *self.unpaid_native.entry((*idx, d.coin_idx)).or_insert(0) += amount;
                 }
                 None => {
-                    self.unpaid[*idx as usize] =
-                        self.unpaid[*idx as usize].saturating_add(amount);
+                    self.unpaid[*idx as usize] = self.unpaid[*idx as usize].saturating_add(amount);
                 }
             }
         }
@@ -1324,15 +1319,11 @@ impl PplnsEngine {
                     }
                     if let Some(ref address) = self.addresses[m as usize] {
                         payouts.push(PayoutEntry {
-                            share_count: share_counts
-                                .get(m as usize)
-                                .copied()
-                                .unwrap_or(0),
+                            share_count: share_counts.get(m as usize).copied().unwrap_or(0),
                             miner_id: self.registry.id(m as u32).to_string(),
                             address: address.clone(),
                             amount: bal,
-                            payout_chain: (d.chain != "zion")
-                                .then(|| d.chain.clone()),
+                            payout_chain: (d.chain != "zion").then(|| d.chain.clone()),
                             native_units: true,
                             coin: Some(d.coin_key.clone()),
                             revenue_event: None,
@@ -1385,8 +1376,7 @@ impl PplnsEngine {
                     *self.total_paid_native.entry(d.coin_idx).or_insert(0) += round_total;
                 }
                 None => {
-                    self.total_paid_flowers =
-                        self.total_paid_flowers.saturating_add(round_total);
+                    self.total_paid_flowers = self.total_paid_flowers.saturating_add(round_total);
                     for payout in &payouts {
                         let idx = self.registry.lookup(&payout.miner_id).unwrap_or(0);
                         self.paid_per_miner[idx as usize] =
@@ -1416,7 +1406,11 @@ impl PplnsEngine {
                 continue;
             };
             let i = idx as usize;
-            match payout.coin.as_deref().and_then(|c| self.coin_registry.lookup(c)) {
+            match payout
+                .coin
+                .as_deref()
+                .and_then(|c| self.coin_registry.lookup(c))
+            {
                 Some(c) => {
                     *self.unpaid_native.entry((idx, c)).or_insert(0) += payout.amount;
                     let cur = self.total_paid_native.get(&c).copied().unwrap_or(0);
@@ -1427,8 +1421,9 @@ impl PplnsEngine {
                     self.unpaid[i] = self.unpaid[i].saturating_add(payout.amount);
                     self.paid_per_miner[i] =
                         self.paid_per_miner[i].saturating_sub(payout.amount as u128);
-                    self.total_paid_flowers =
-                        self.total_paid_flowers.saturating_sub(payout.amount as u128);
+                    self.total_paid_flowers = self
+                        .total_paid_flowers
+                        .saturating_sub(payout.amount as u128);
                 }
             }
         }
@@ -2280,8 +2275,12 @@ mod tests {
         assert_eq!(payouts[0].miner_id, "alice");
 
         // Unknown/empty coin → no payouts.
-        assert!(e.compute_miner_payouts_for_coin("vrsc", 1000, "vrsc").is_empty());
-        assert!(e.compute_miner_payouts_for_coin("qtu", 0, "quantus").is_empty());
+        assert!(e
+            .compute_miner_payouts_for_coin("vrsc", 1000, "vrsc")
+            .is_empty());
+        assert!(e
+            .compute_miner_payouts_for_coin("qtu", 0, "quantus")
+            .is_empty());
     }
 
     #[test]
@@ -2448,7 +2447,9 @@ mod tests {
         e.record_share_at_diff_for_coin("bob", "r", 1, 1000, 100, "prl");
 
         // Accrue below-threshold qtu + emit a prl payout (lifetime stat).
-        assert!(e.compute_miner_payouts_for_coin("qtu", 300, "quantus").is_empty());
+        assert!(e
+            .compute_miner_payouts_for_coin("qtu", 300, "quantus")
+            .is_empty());
         let prl = e.compute_miner_payouts_for_coin("prl", 700, "pearl");
         assert_eq!(prl.len(), 1);
 
@@ -2462,7 +2463,9 @@ mod tests {
         assert_eq!(e2.total_paid_native_for("prl"), 700);
         // Threshold is still enforced post-restore: 300+500=800 < 1000,
         // another 500 pushes it to 1300 ≥ 1000 → pays the full balance.
-        assert!(e2.compute_miner_payouts_for_coin("qtu", 500, "quantus").is_empty());
+        assert!(e2
+            .compute_miner_payouts_for_coin("qtu", 500, "quantus")
+            .is_empty());
         let payouts = e2.compute_miner_payouts_for_coin("qtu", 500, "quantus");
         assert_eq!(payouts.len(), 1);
         assert_eq!(payouts[0].amount, 1_300);

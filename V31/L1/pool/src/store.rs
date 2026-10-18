@@ -888,14 +888,20 @@ mod tests {
             .record_coin_revenue("qtu:bal:0:100", "qtu", 100, 42, 2, 95)
             .unwrap();
         assert!(store.has_coin_revenue("qtu:bal:0:100").unwrap());
-        assert_eq!(store.coin_revenue_amount("qtu:bal:0:100").unwrap(), Some(100));
+        assert_eq!(
+            store.coin_revenue_amount("qtu:bal:0:100").unwrap(),
+            Some(100)
+        );
 
         // Re-recording the same id is a no-op (INSERT OR IGNORE) — the
         // first distribution's audit row wins.
         store
             .record_coin_revenue("qtu:bal:0:100", "qtu", 999, 43, 9, 999)
             .unwrap();
-        assert_eq!(store.coin_revenue_amount("qtu:bal:0:100").unwrap(), Some(100));
+        assert_eq!(
+            store.coin_revenue_amount("qtu:bal:0:100").unwrap(),
+            Some(100)
+        );
     }
 
     #[test]
