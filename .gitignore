@@ -33,6 +33,8 @@ L6data/proEricku/
 
 # >100MB raw model weights — repo holds xz-split parts instead (see RESTORE.md)
 Hiran/2.3/rebuild/v23mini/artifacts/adapter-final/adapter_model.safetensors
+# 5.4G GGUF export — binary artifact, backed up to edge /opt/zion/hiran-models/
+Hiran/2.3/rebuild/v23mini/artifacts/*.gguf
 
 # Build artifacts
 /target/
