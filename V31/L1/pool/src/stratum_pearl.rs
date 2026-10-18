@@ -26,6 +26,9 @@ pub struct PearlAuthorize {
     pub wallet: String,
     pub worker: String,
     pub agent: String,
+    /// `pass` field — anonymous `x` or `zis_<token>` for ZIS-bound
+    /// sessions (F2d).  Optional; absent/empty = anonymous.
+    pub pass: String,
 }
 
 pub fn worker_name(auth: &PearlAuthorize) -> String {
@@ -74,10 +77,19 @@ pub fn parse_authorize(line: &str) -> Option<(Value, Result<PearlAuthorize, Stri
         if agent.len() > MAX_AGENT_BYTES {
             return Err(format!("authorize.agent must be <= {MAX_AGENT_BYTES} bytes"));
         }
+        let pass = match p.get("pass") {
+            Some(Value::String(s)) => s.as_str(),
+            Some(_) => return Err("authorize.pass must be a string".to_string()),
+            None => "",
+        };
+        if pass.len() > MAX_AGENT_BYTES {
+            return Err(format!("authorize.pass must be <= {MAX_AGENT_BYTES} bytes"));
+        }
         Ok(PearlAuthorize {
             wallet: wallet.clone(),
             worker: worker.to_string(),
             agent: agent.to_string(),
+            pass: pass.to_string(),
         })
     })();
     Some((id, auth))
@@ -279,6 +291,19 @@ mod tests {
         assert_eq!(auth2.worker, "");
         assert_eq!(auth2.agent, "");
         assert_eq!(worker_name(&auth2), "prl1abc");
+        // F2d: `pass` defaults to anonymous "" when absent.
+        assert_eq!(auth2.pass, "");
+    }
+
+    #[test]
+    fn parses_authorize_pass_field() {
+        // Fixture `auth_line` carries `"pass":"x"`.
+        let (_, auth) = parse_authorize(&auth_line("prl1abc", "rig1")).unwrap();
+        assert_eq!(auth.unwrap().pass, "x");
+        // `zis_<token>` survives verbatim for the server-side verify.
+        let zis = "{\"id\":1,\"method\":\"mining.authorize\",\"params\":{\"wallet\":\"prl1abc\",\"pass\":\"zis_deadbeef00\"}}";
+        let (_, auth) = parse_authorize(zis).unwrap();
+        assert_eq!(auth.unwrap().pass, "zis_deadbeef00");
     }
 
     #[test]
@@ -310,8 +335,12 @@ mod tests {
         let (_, bad) = parse_authorize(bad_agent).unwrap();
         assert_eq!(bad.unwrap_err(), "authorize.agent must be a string");
 
-        let bad_wallet =
-            "{\"id\":1,\"method\":\"mining.authorize\",\"params\":{\"wallet\":42}}";
+        let bad_pass =
+            "{\"id\":1,\"method\":\"mining.authorize\",\"params\":{\"wallet\":\"prl1abc\",\"pass\":42}}";
+        let (_, bad) = parse_authorize(bad_pass).unwrap();
+        assert_eq!(bad.unwrap_err(), "authorize.pass must be a string");
+
+        let bad_wallet = "{\"id\":1,\"method\":\"mining.authorize\",\"params\":{\"wallet\":42}}";
         let (_, bad) = parse_authorize(bad_wallet).unwrap();
         assert_eq!(bad.unwrap_err(), "authorize.wallet must be a string");
 

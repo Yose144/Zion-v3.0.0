@@ -366,6 +366,13 @@ impl QuantusAdapter {
         Ok(self.signer()?.ss58_address())
     }
 
+    /// Best known block height — used by the revenue oracle to stamp
+    /// `ref_height` on coin revenue events.
+    pub async fn block_height(&self) -> MultichainResult<u64> {
+        let hdr: serde_json::Value = self.rpc("chain_getHeader", json!([])).await?;
+        parse_block_number(&hdr)
+    }
+
     /// Hot signing keypair: keyring (0,0) when configured, else QUANTUS_SEED.
     fn signer(&self) -> MultichainResult<QuantusKeypair> {
         if let Some(kr) = &self.keyring {

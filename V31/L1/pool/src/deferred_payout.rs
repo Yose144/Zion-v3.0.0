@@ -713,6 +713,9 @@ mod tests {
             amount: 100,
             share_count: 1,
             payout_chain: None,
+            native_units: false,
+            coin: None,
+            revenue_event: None,
         }];
         enqueue_deferred(&queue, payouts, 42);
         assert_eq!(queue.lock().unwrap().len(), 1);

@@ -260,6 +260,16 @@ impl Db {
             CREATE INDEX IF NOT EXISTS idx_ext_payout_status ON ext_payout_records(status);
             CREATE INDEX IF NOT EXISTS idx_ext_payout_chain ON ext_payout_records(chain);
 
+            -- Per-coin treasury balance observed by the revenue oracle.
+            -- Persisted so restarts don't re-emit or drop revenue events
+            -- (F3 native-coin payouts).
+            CREATE TABLE IF NOT EXISTS coin_oracle_state (
+                coin TEXT PRIMARY KEY,
+                last_balance TEXT NOT NULL DEFAULT '0',
+                last_height INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS dex_orders (
                 id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,

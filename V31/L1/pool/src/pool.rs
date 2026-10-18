@@ -22,6 +22,25 @@ pub enum PoolError {
     UnknownJob,
     #[error("unauthorized worker")]
     Unauthorized,
+    #[error("coin not enabled for native payouts")]
+    CoinNotNative,
+    #[error("revenue event already processed")]
+    DuplicateRevenueEvent,
+}
+
+/// Result of applying a native-coin revenue event (`on_coin_revenue`).
+#[derive(Debug, Clone)]
+pub struct CoinRevenueOutcome {
+    /// Normalized coin ticker.
+    pub coin: String,
+    /// Revenue distributed (native base units).
+    pub amount: u64,
+    /// Payout entries emitted this event (below-threshold balances keep
+    /// accruing in `unpaid_native` and are not listed here).
+    pub emitted: usize,
+    /// Sum of emitted amounts — equals `amount` only when every share
+    /// holder had a valid payout address on the coin's chain.
+    pub emitted_total: u64,
 }
 
 /// Stratum connection/session counters shared between every
@@ -62,6 +81,9 @@ pub struct Pool {
     pub sent_payouts: HashSet<(u64, String)>,
     /// Block heights that have already been processed for payout (idempotency guard).
     paid_block_heights: HashSet<u64>,
+    /// Revenue event ids already distributed (`on_coin_revenue` dedup —
+    /// the oracle may retry a POST after a timeout).
+    seen_revenue_events: HashSet<String>,
     /// Shared per-worker telemetry registry (hashrate, shares, blocks).
     pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     pub(crate) pearl: Option<Arc<crate::pearl_gateway::PearlRuntime>>,
@@ -73,6 +95,8 @@ impl Pool {
             window_size: config.pplns_window_size,
             min_payout_flowers: config.min_payout_flowers,
             fee_config: config.fee_config.clone(),
+            native_payout_coins: config.native_payout_coins.clone(),
+            min_payout_native: config.min_payout_native.clone(),
         };
         let mut pplns = PplnsEngine::new(pplns_config);
         if let Some(path) = config.state_path.as_ref() {
@@ -100,6 +124,7 @@ impl Pool {
             pending_payouts: Vec::new(),
             sent_payouts: HashSet::new(),
             paid_block_heights: HashSet::new(),
+            seen_revenue_events: HashSet::new(),
             telemetry,
             pearl: crate::pearl_gateway::PearlRuntime::from_env(),
         }
@@ -117,14 +142,19 @@ impl Pool {
         u64::from_str_radix(s, 16).map_err(|_| PoolError::Parse)
     }
 
-    fn record_share(&mut self, submission: &ShareSubmission, height: u64) {
+    fn record_share(&mut self, submission: &ShareSubmission, height: u64, coin: &str) {
         let worker = &submission.worker;
         let (chain, address) = self.worker_payout_target(worker);
         self.pplns
             .register_address_with_chain(worker, &address, &chain);
         let share_difficulty = submission.difficulty.max(1);
-        self.pplns
-            .record_share_with_diff(worker, worker, height, share_difficulty);
+        self.pplns.record_share_with_diff_for_coin(
+            worker,
+            worker,
+            height,
+            share_difficulty,
+            coin,
+        );
     }
 
     /// Credit an accepted external (AuxPoW) stream share into PPLNS so the
@@ -142,15 +172,17 @@ impl Pool {
         worker_name: &str,
         height: u64,
         weight: u64,
+        coin: &str,
     ) {
         let (chain, address) = self.worker_payout_target(worker_name);
         self.pplns
             .register_address_with_chain(worker_name, &address, &chain);
-        self.pplns.record_share_with_diff(
+        self.pplns.record_share_with_diff_for_coin(
             worker_name,
             worker_name,
             height,
             weight.max(1),
+            coin,
         );
     }
 
@@ -265,7 +297,7 @@ impl Pool {
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
         if self.validator.validate_zion(header, nonce, target) {
-            self.record_share(&submission, height);
+            self.record_share(&submission, height, "zion");
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
         } else {
@@ -295,7 +327,7 @@ impl Pool {
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
         if self.validator.validate_auxpow(coin, header, nonce, target) {
-            self.record_share(&submission, height);
+            self.record_share(&submission, height, coin.as_str());
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
         } else {
@@ -332,6 +364,52 @@ impl Pool {
                 .map(|(_, p)| p.clone())
                 .collect(),
         ));
+    }
+
+    /// Apply a native-coin revenue event (F3): the treasury oracle observed
+    /// `amount_native` base units of new income for `coin` (node-authored
+    /// blocks landing in the node wallet, or upstream-pool payouts into our
+    /// per-coin account).  Distributes it across the coin's PPLNS slice and
+    /// queues `native_units` payout entries tagged with `event_id`.
+    ///
+    /// Fail-closed rules:
+    /// - `coin` must be listed in `native_payout_coins` — otherwise its
+    ///   shares would also earn from the unified ZION distribution and the
+    ///   event would double-pay.
+    /// - `event_id` must be unique (oracle-supplied, e.g. `"qtu:rev:42"`);
+    ///   repeats are rejected so POST retries cannot double-distribute.
+    pub fn on_coin_revenue(
+        &mut self,
+        coin: &str,
+        amount_native: u64,
+        ref_height: u64,
+        event_id: &str,
+    ) -> Result<CoinRevenueOutcome, PoolError> {
+        let coin = coin.trim().to_ascii_lowercase();
+        if !self.pplns.is_native_payout_coin(&coin) {
+            return Err(PoolError::CoinNotNative);
+        }
+        if event_id.is_empty() || !self.seen_revenue_events.insert(event_id.to_string()) {
+            return Err(PoolError::DuplicateRevenueEvent);
+        }
+
+        let chain = crate::coin_leg::payout_chain_for_coin(&coin).into_owned();
+        let mut entries = self
+            .pplns
+            .compute_miner_payouts_for_coin(&coin, amount_native, &chain);
+        let emitted_total: u64 = entries.iter().map(|p| p.amount).sum();
+        for entry in &mut entries {
+            entry.revenue_event = Some(event_id.to_string());
+        }
+        for entry in entries.iter() {
+            self.pending_payouts.push((ref_height, entry.clone()));
+        }
+        Ok(CoinRevenueOutcome {
+            coin,
+            amount: amount_native,
+            emitted: entries.len(),
+            emitted_total,
+        })
     }
 
     pub fn stats(&self) -> (u64, u64) {
@@ -597,6 +675,59 @@ mod tests {
     }
 
     #[test]
+    fn coin_revenue_distributes_native_units() {
+        let mut pool = Pool::new(
+            PoolConfig {
+                native_payout_coins: vec!["qtu".into()],
+                ..config()
+            },
+            telemetry(),
+        );
+        pool.pplns
+            .register_address_with_chain("alice", "qz1alice", "quantus");
+        pool.pplns
+            .record_share_with_diff_for_coin("alice", "rig", 1, 100, "qtu");
+
+        // Coin not enabled for native payouts → CoinNotNative.
+        assert!(matches!(
+            pool.on_coin_revenue("zion", 1000, 42, "zion:bal:0:1000"),
+            Err(PoolError::CoinNotNative)
+        ));
+        // Empty event id → DuplicateRevenueEvent.
+        assert!(matches!(
+            pool.on_coin_revenue("qtu", 1000, 42, ""),
+            Err(PoolError::DuplicateRevenueEvent)
+        ));
+
+        let out = pool
+            .on_coin_revenue("QTU", 5_000_000, 42, "qtu:bal:0:5m")
+            .unwrap();
+        assert_eq!(out.coin, "qtu");
+        assert_eq!(out.emitted, 1);
+        assert_eq!(out.emitted_total, 5_000_000);
+
+        // Duplicate event id is rejected — retries can't double-pay.
+        assert!(matches!(
+            pool.on_coin_revenue("qtu", 5_000_000, 42, "qtu:bal:0:5m"),
+            Err(PoolError::DuplicateRevenueEvent)
+        ));
+
+        // The emitted entry is a native-unit quantus payout carrying the
+        // event id, drained via the quantus external queue.
+        let drained = pool.take_external_payouts("quantus");
+        assert_eq!(drained.len(), 1);
+        let (h, p) = &drained[0];
+        assert_eq!(*h, 42);
+        assert_eq!(p.miner_id, "alice");
+        assert_eq!(p.amount, 5_000_000);
+        assert_eq!(p.unit(), "native");
+        assert_eq!(p.coin.as_deref(), Some("qtu"));
+        assert_eq!(p.revenue_event.as_deref(), Some("qtu:bal:0:5m"));
+        // Nothing leaked into the ZION queue.
+        assert!(pool.take_pending_payouts().is_empty());
+    }
+
+    #[test]
     fn next_job_id_increments() {
         let pool = Pool::new(config(), telemetry());
         assert_eq!(pool.next_job_id(), 2);
@@ -749,5 +880,43 @@ mod tests {
         let (chain, addr) = pool.worker_payout_target("miner43.rigB");
         assert_eq!(chain, "pearl");
         assert_eq!(addr, PRL_ADDR);
+    }
+
+    /// F2c: shares recorded through the pool carry a coin tag that lands
+    /// in `PplnsEngine::coin_stats` — auxpow submits take the ExternalCoin
+    /// ticker, external-stream credits take the leg's coin string.
+    #[test]
+    fn shares_carry_coin_tags_into_pplns() {
+        let mut pool = Pool::new(config(), telemetry());
+        let sub = ShareSubmission {
+            worker: "zion1m".into(),
+            job_id: "j1".into(),
+            nonce_hex: "0000000000000000".into(),
+            difficulty: 1,
+        };
+        pool.submit_zion(sub, b"h", 1).unwrap();
+
+        let sub = ShareSubmission {
+            worker: "zion1m".into(),
+            job_id: "j2".into(),
+            nonce_hex: "0000000000000000".into(),
+            difficulty: 2,
+        };
+        pool.submit_auxpow(ExternalCoin::Quantus, sub, b"h", 1)
+            .unwrap();
+
+        // Native QTU leg credits via record_external_share with "qtu".
+        pool.record_external_share("wallet", "wallet.rig", 1, 4, "qtu");
+        // Pearl native leg credits via record_external_share with "prl".
+        pool.record_external_share("wallet2", "wallet2.rig", 1, 8, "prl");
+
+        let stats = pool.pplns.coin_stats();
+        let find = |c: &str| stats.iter().find(|s| s.coin == c).unwrap();
+        assert_eq!(find("zion").accepted_total, 1);
+        // auxpow Quantus submit (weight 2) + external "qtu" credit (4) → 6
+        assert_eq!(find("qtu").accepted_total, 2);
+        assert_eq!(find("qtu").window_weight, 6);
+        assert_eq!(find("prl").accepted_total, 1);
+        assert_eq!(find("prl").window_weight, 8);
     }
 }

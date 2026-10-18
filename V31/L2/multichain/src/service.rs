@@ -136,6 +136,40 @@ impl MultichainService {
         }
     }
 
+    /// Spawn the PRL (Pearl) payout sweeper when `PRL_PAYOUT_ENABLED=1`.
+    /// Dry-run by default — see `PRL_PAYOUT_DRY_RUN` (must be `=0` for
+    /// live sends, only after regtest verification).
+    pub fn spawn_prl_payout_sweeper(&self) -> Option<tokio::task::JoinHandle<()>> {
+        match crate::prl_payout::PrlPayoutConfig::from_env() {
+            Ok(Some(cfg)) => Some(crate::prl_payout::spawn_prl_payout_sweeper(
+                cfg,
+                Arc::clone(&self.db),
+            )),
+            Ok(None) => None,
+            Err(e) => {
+                tracing::warn!("PRL payout sweeper disabled: {e}");
+                None
+            }
+        }
+    }
+
+    /// Spawn the treasury revenue oracle when `REVENUE_ORACLE_ENABLED=1`.
+    /// Watches `REVENUE_ORACLE_COINS` (qtu/prl) treasury balances and posts
+    /// observed increases to the pool's `/admin/coin-revenue` endpoint.
+    pub fn spawn_revenue_oracle(&self) -> Option<tokio::task::JoinHandle<()>> {
+        match crate::revenue_oracle::RevenueOracleConfig::from_env() {
+            Ok(Some(cfg)) => Some(crate::revenue_oracle::spawn_revenue_oracle(
+                cfg,
+                Arc::clone(&self.db),
+            )),
+            Ok(None) => None,
+            Err(e) => {
+                tracing::warn!("revenue oracle disabled: {e}");
+                None
+            }
+        }
+    }
+
     /// List external-chain payout records (`ext_payout_records` ledger) for
     /// the admin API.  `chain`/`status` filter; rows newest first.
     pub async fn ext_payout_records(

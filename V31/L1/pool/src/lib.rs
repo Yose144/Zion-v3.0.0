@@ -4,6 +4,7 @@ pub mod api;
 pub mod auxpow_bridge;
 pub mod auxpow_runtime;
 pub mod block_tracker;
+pub mod coin_leg;
 pub mod config;
 pub mod deferred_payout;
 pub mod ncl_gateway;

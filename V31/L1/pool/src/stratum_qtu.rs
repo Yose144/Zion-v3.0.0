@@ -279,12 +279,12 @@ mod tests {
         assert_eq!(id, json!(1));
         assert_eq!(l.wallet, "qzABC123");
         assert_eq!(l.worker, "wallet1");
+        assert_eq!(l.pass, "x"); // F2d: zis_<token> rides in `pass`
         assert_eq!(l.agent, "SRBMiner-MULTI/3.6.9");
         // No worker suffix
-        let (_, l2) = parse_login(
-            r#"{"id":1,"method":"login","params":{"login":"qzSOLO","pass":""}}"#,
-        )
-        .unwrap();
+        let (_, l2) =
+            parse_login(r#"{"id":1,"method":"login","params":{"login":"qzSOLO","pass":""}}"#)
+                .unwrap();
         assert_eq!(l2.wallet, "qzSOLO");
         assert_eq!(l2.worker, "");
     }
