@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Wallet } from 'lucide-react';
-import Sparkline from '@/components/Sparkline';
+import AreaChart, { pushSample, type SeriesPoint } from '@/components/AreaChart';
 import MinerSearch from '@/components/MinerSearch';
 import { fetchMiner } from '@/lib/api';
 import {
@@ -17,9 +17,9 @@ import { useLang } from '@/lib/i18n';
 import type { CoinId, MinerStats } from '@/lib/types';
 
 const ACCENT: Record<string, string> = {
-  zion: '#ffd700',
-  qtc: '#06b6d4',
-  prl: '#c084fc',
+  zion: '#fcd116',
+  qtc: '#078930',
+  prl: '#e41e2b',
 };
 
 export default function MinerClient({
@@ -31,14 +31,18 @@ export default function MinerClient({
 }) {
   const { t, lang } = useLang();
   const [m, setM] = useState<MinerStats | null | undefined>(undefined);
+  const [hrHistory, setHrHistory] = useState<SeriesPoint[]>([]);
 
   useEffect(() => {
     setM(undefined);
-    fetchMiner(coin as CoinId, wallet).then(setM);
-    const iv = setInterval(
-      () => fetchMiner(coin as CoinId, wallet).then(setM),
-      15_000,
-    );
+    const key = `miner-hr-${coin}-${wallet.slice(0, 24)}`;
+    const tick = () =>
+      fetchMiner(coin as CoinId, wallet).then((stats) => {
+        setM(stats);
+        if (stats) setHrHistory(pushSample(key, stats.hashrate));
+      });
+    tick();
+    const iv = setInterval(tick, 15_000);
     return () => clearInterval(iv);
   }, [coin, wallet]);
 
@@ -95,17 +99,17 @@ export default function MinerClient({
           {
             k: t('Hashrate', 'Hashrate'),
             v: fmtHashrate(m.hashrate),
-            c: ACCENT[coin] ?? '#ffd700',
+            c: ACCENT[coin] ?? '#fcd116',
           },
           {
             k: t('Shary 24h (acc)', 'Shares 24h (acc)'),
             v: fmtInt(acc),
-            c: '#4ade80',
+            c: '#00ff41',
           },
           {
             k: t('Reject rate', 'Reject rate'),
             v: `${rejPct.toFixed(2)}%`,
-            c: rejPct > 3 ? '#f87171' : '#fff',
+            c: rejPct > 3 ? '#e41e2b' : '#fff',
           },
           {
             k: t('Workers', 'Workers'),
@@ -128,10 +132,21 @@ export default function MinerClient({
         ))}
       </div>
 
-      {/* Hashrate chart */}
+      {/* Hashrate chart — live series accumulated while the page is open
+          (public API has no history endpoint yet; samples persist in
+          localStorage, ~4 h rolling window) */}
       <div className="pool-card mt-5">
         <p className="kicker mb-2">{t('Hashrate — poslední 4h', 'Hashrate — last 4h')}</p>
-        <Sparkline data={m.hashrate_history} color={ACCENT[coin] ?? '#ffd700'} />
+        <AreaChart
+          data={hrHistory}
+          color={ACCENT[coin] ?? '#fcd116'}
+          height={120}
+          fmt={(v) => fmtHashrate(v)}
+          emptyLabel={t(
+            'Graf se plní každých 15 s živými daty…',
+            'Chart fills with live data every 15s…',
+          )}
+        />
       </div>
 
       {/* Balances + workers */}
