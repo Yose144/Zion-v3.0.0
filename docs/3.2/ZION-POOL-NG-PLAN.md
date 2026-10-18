@@ -522,16 +522,28 @@ zůstává dirty (pre-existing).
 
 **Standby pool — aktivace při ztrátě primary hostu:**
 
+> **Turnkey (2026-10-18):** `deploy/standby/provision-standby.sh` na edge
+> (`/opt/zion/standby/`) automatizuje kroky 1–5 na čistém VPS:
+> `bash /opt/zion/standby/provision-standby.sh root@<ip>` — user, binárka
+> (atomic mv), env file, PPLNS seed, systemd unit (enabled, NOT started —
+> vyžaduje `PROMOTE` confirm). UFW + certbot instrukce vypíše na konci.
+> **Automatická promozice záměrně není** — split-brain riziko.
+
 1. Zprovoznit druhý VPS (Contabo/Hetzner), user `zion`, UFW 8444+8445/tcp.
-2. Nainstalovat binárku + env:
-   `rsync -avz /opt/zion/V31/target/release/zion-pool root@STANDBY:/opt/zion/V31/target/release/`
-   `rsync -avz /etc/zion/edge-environment.sh root@STANDBY:/etc/zion/`
-3. **Přenést PPLNS dluh** (miners musí zůstat s unpaid balances):
-   `rsync /opt/zion/data/v31/pool-store.db /opt/zion/data/v31/pool-pplns.json → STANDBY` — sqlite db + JSON snapshot. Pool při startu restore oba.
-4. `ZION_STANDBY_L1_RPC_URL` na standby = L1 endpointy dosažitelné ze standby hostu (cross-host na primary nody, nebo lokální node replica — follower seed z primary `datadir`).
-5. Unit `deploy/systemd/zion-v31-pool-standby.service` → `/etc/systemd/system/`, `daemon-reload`, `enable --now`.
-6. DNS failover: `pool.zionterranova.com` A-record → standby IP (TTL krátké; lepší = geo-DNS / health-check failover). Miners reconnectují automaticky (stratum reconnect logika v zion-miner/SRBMiner).
-7. **⚠️ ZION_UPSTREAM_POOL_ADDR na standby NENASTAVOVAT** — share_relay by relayoval do sebe/starého primary.
+2. `provision-standby.sh` udělá 2–5; nebo ručně: binárka + env + PPLNS
+   seed + unit `deploy/systemd/zion-v31-pool-standby.service`.
+3. `ZION_STANDBY_L1_RPC_URL` na standby = L1 endpointy dosažitelné ze standby hostu (cross-host na primary nody, nebo lokální node replica — follower seed z primary `datadir`).
+4. DNS failover: `pool.zionterranova.com` A-record → standby IP (TTL krátké; lepší = geo-DNS / health-check failover). Miners reconnectují automaticky.
+5. **⚠️ ZION_UPSTREAM_POOL_ADDR na standby NENASTAVOVAT** — share_relay by relayoval do sebe/starého primary.
+
+**Teplá replikace státu (připraveno, čeká na cíl):**
+`deploy/standby/replicate-pool-state.sh` + `zion-pool-state-replicate.timer`
+(15 min kadence) — `VACUUM INTO` konzistentní sqlite snapshot + JSON
+PPLNS → rsync na `STANDBY_STATE_TARGET` (`/etc/zion/standby-replication.env`).
+Nainstalováno na edge, **timer záměrně neaktivován** — zatím neexistuje
+druhý always-on host (rig tunnel 8322 je down; SMOS rig není spolehlivý
+cíl). Aktivace = vyplnit env + `systemctl enable --now zion-pool-state-replicate.timer`.
+Snižuje unpaid drift z ~24 h (denní backup) na ≤15 min.
 
 **share_relay role (Edge→Core primitiv):** `share_relay.rs` je fire-and-forget
 relay shareků na upstream — použitý pro split-pool accounting. Pro standby

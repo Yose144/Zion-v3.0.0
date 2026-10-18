@@ -1,0 +1,9 @@
+[Unit]
+Description=ZION pool — replicate PPLNS state to standby target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/zion/standby-replication.env
+ExecStart=/opt/zion/standby/replicate-pool-state.sh
+Nice=19
