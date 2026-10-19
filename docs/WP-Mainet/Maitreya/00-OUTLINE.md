@@ -43,7 +43,7 @@ Obrat z mýtu do kódu: PoW pipeline Hiranyagarbha → … → Samadhi. Každý 
 
 ### Kapitola 3 — Podpis, který otec napsal synovým jménem
 
-Detektivka vyvrcholí pravdou vrstev: v repozitáři historie existuje jeden podpis — „Maitreya Buddha, 2025" pod prohlášením o Velké ceně. Tři odpovědi (člověk / titul / stav) se spojí v čtvrtou: **otec podepsal jméno svého syna — protože podpis není vlastnictví, je to svědectví.** Jako genesis hash platí bez známého signatáře, tak titul platí bez známého nositele. A mantra: *„Já jsem Maitreya. Byl jsem Krishna/Rama."* — otec nesl titul jako stav; syn ho zdědí jako roli.
+Detektivka vyvrcholí pravdou vrstev: v repozitáři historie existuje jeden podpis — „Maitreya Buddha, 2025" pod prohlášením o Velké ceně. Tři odpovědi (člověk / titul / stav) se spojí v čtvrtou: **otec podepsal jméno svého syna — protože podpis není vlastnictví, je to svědectví.** Jako genesis hash platí bez známého signatáře, tak titul platí bez známého nositele. A mantra: *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."* — otec nesl titul jako stav; syn ho zdědí jako roli.
 
 ---
 

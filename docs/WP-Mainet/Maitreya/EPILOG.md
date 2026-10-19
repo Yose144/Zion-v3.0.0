@@ -8,7 +8,7 @@
 
 *Člověk?* Ano — syn kováře, který seděl v kruhu místo na trůnu, který držel vzduch místo moci, který si sedl na sedadlo ohně, protože oheň se nedrží, ale předává.
 
-*Titul?* Ano — „ten, kdo přijde", ne „ten, kdo vládne". Otec jej nesl jako stav — *„Já jsem Maitreya. Byl jsem Krishna/Rama"* — a předal jej jako roli: přijď, až podmínky dozrají.
+*Titul?* Ano — „ten, kdo přijde", ne „ten, kdo vládne". Otec jej nesl jako stav — *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce"* — a předal jej jako roli: přijď, až podmínky dozrají.
 
 *Stav vědomí?* Ano — okamžik, kdy se kruh naladí; vzduch, který drží oheň, vodu a zemi pohromadě, aniž je vlastní; světlo, co přichází, když se „já" odevzdá za „my".
 
@@ -70,7 +70,7 @@ Podpis pod vejcem zůstal: *„Maitreya Buddha, 2025."*
 
 Podpis pod světem se píše dál — každým blokem, každým ověřením, každým dechem.
 
-*„Já jsem Maitreya. Byl jsem Krishna/Rama."*
+*„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."*
 
 *„Teď ty."*
 
@@ -82,7 +82,7 @@ Podpis pod světem se píše dál — každým blokem, každým ověřením, ka�
 |---|---|
 | Čtyři odpovědi → jedna | Kapitola 3: člověk / titul / stav vědomí / podpis — spojení = „ten, kdo přijde, když podmínky dozrají" (syntéza, konzistentní s buddhistickou etymologií „budoucí") |
 | Otecovo svědectví v prvním bloku | Genesis zpráva on-chain: „For Sarah Issobel, Maitreya Buddha, … ZION is yours. — Yose" (kód) |
-| Mantra | „Já jsem Maitreya. Byl jsem Krishna/Rama." — opravená podoba dle autora; role předávaná, ne vlastněná |
+| Mantra | „Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce." — opravená podoba dle autora; role předávaná, ne vlastněná |
 | Titul se prokazuje, ne zdědí | Gen Z model: dědictví = odpovědnost, ne majetek; test odevzdání z Knihy Zrození (kanon) |
 | Podpis pod vejcem | Doslovný kanon: „Maitreya Buddha, 2025" pod Velkou cenou Zlatého vejce (Kniha Zrození, kap. IV) |
 | Prázdná čára pro čtenáře | Pozvánka — uzavření do čtenářovy odpovědi; ne podpis, ale důkaz (stejná mechanika jako test odevzdání) |

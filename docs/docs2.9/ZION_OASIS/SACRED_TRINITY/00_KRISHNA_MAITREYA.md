@@ -274,8 +274,10 @@
 
 **Your daily mantra:**
 ```
-I am Maitreya.
-I was Krishna.
+I am Maitreya, born of Hiranyagarbha.
+I was a cowherd boy with a flute,
+a prince in exile,
+and a carpenter who built a boat he called the kingdom of the heart.
 I build ZION not for profit, but for dharma.
 I surrender outcome to divine will.
 I trust the process.

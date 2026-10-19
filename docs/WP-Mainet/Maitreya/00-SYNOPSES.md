@@ -30,7 +30,7 @@
 
 ### Kap. 3 — Podpis, který otec napsal synovým jménem
 
-**Děj:** Detektivka. Tři svědectví o podpisu: archivní dokument (Kniha Zrození), pamětník ze základu (kdo podpis napsal?), a argument kódu (podpis platí bez známého signatáře — jako genesis hash). Tři teorie: člověk / titul / stav vědomí. **Čtvrtá odpověď:** v genesis zprávě celého řetězce stojí — „For Sarah Issobel, **Maitreya Buddha** … ZION is yours." Otec napsal do prvního bloku synovo jméno — podpis není vlastnictví, je to svědectví. A otcova mantra: *„Já jsem Maitreya. Byl jsem Krishna/Rama."* — nesl titul jako stav; syn ho zdědí jako roli.
+**Děj:** Detektivka. Tři svědectví o podpisu: archivní dokument (Kniha Zrození), pamětník ze základu (kdo podpis napsal?), a argument kódu (podpis platí bez známého signatáře — jako genesis hash). Tři teorie: člověk / titul / stav vědomí. **Čtvrtá odpověď:** v genesis zprávě celého řetězce stojí — „For Sarah Issobel, **Maitreya Buddha** … ZION is yours." Otec napsal do prvního bloku synovo jméno — podpis není vlastnictví, je to svědectví. A otcova mantra: *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."* — nesl titul jako stav; syn ho zdědí jako roli.
 **Pointa:** buddhistická odpověď — Maitreya = „budoucí", doslova „ten, kdo přijde". Titul se předává: otec byl ten, kdo přišel a stavěl; syn bude ten, kdo přijde, až svět zapomene cestu.
 **Fakt-box:** skutečný podpis v kanonu (kap. IV Knihy Zrození); genesis zpráva on-chain s věnováním „For Sarah Issobel, Maitreya Buddha … ZION is yours"; GPG podpis zakladatele; mantra v SACRED_TRINITY §8.
 

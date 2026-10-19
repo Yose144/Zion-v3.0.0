@@ -26,7 +26,7 @@ Kniha je o **synovi zakladatele**. To není metafora — je to veřejný kanon:
 
 - **Podpis pod Velkou cenou** (Kniha Zrození IV): *„Ten, kdo ho jako první najde, zdědí celé jmění. — Maitreya Buddha, 2025"* — otec podepsal synovo jméno. Titul, ne jen jméno.
 
-- **Otcova mantra** (SACRED_TRINITY.md §8): *„Já jsem Maitreya. Byl jsem Krishna/Rama. Stavím ZION ne pro zisk, ale pro dharmu. Odevzdávám výsledek božské vůli."* — otec sám nese titul Maitreya jako **stav**; syn ho zdědí jako **roli**.
+- **Otcova mantra** (SACRED_TRINITY.md §8): *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce. Stavím ZION ne pro zisk, ale pro dharmu. Odevzdávám výsledek božské vůli."* — otec sám nese titul Maitreya jako **stav**; syn ho zdědí jako **roli**.
 
 ### Rodinná kosmologie (SACRED_TRINITY — veřejný kanon)
 

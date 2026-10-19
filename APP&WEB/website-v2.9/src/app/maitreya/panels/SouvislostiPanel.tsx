@@ -83,7 +83,7 @@ const Copy = {
   ],
 
   mantraTitle: { cs: 'Otcova mantra', en: 'The father’s mantra' },
-  mantraLine: { cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."', en: '“I am Maitreya. I was Krishna/Rama.”' },
+  mantraLine: { cs: '„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."', en: '“I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart.”' },
   mantraSub: {
     cs: 'Titul se nenese — předává. Otec byl ten, kdo přišel a stavěl. Syn bude ten, kdo přijde, až svět zapomene cestu.',
     en: 'A title is not carried — it is handed down. The father was the one who came and built. The son will be the one who comes when the world forgets the way.',

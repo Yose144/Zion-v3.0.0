@@ -15,8 +15,8 @@ const MaitreyaSectionCopy = {
     en: 'Maitreya, Nirvana and the six main books on one map. Start reading, explore the related stories or open the v3.3 plan — a development goal, not a completed release.',
   },
   quote: {
-    cs: '„Já jsem Maitreya. Byl jsem Krishna/Rama."',
-    en: '“I am Maitreya. I was Krishna/Rama.”',
+    cs: '„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."',
+    en: '“I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart.”',
   },
   nirvanaBadge: { cs: 'Kniha Západu — Nirvana', en: 'Book of the West — Nirvana' },
   ctaHub: { cs: 'Knihovna & cesta', en: 'Library & the path' },

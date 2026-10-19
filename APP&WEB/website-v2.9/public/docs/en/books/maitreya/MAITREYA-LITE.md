@@ -25,7 +25,7 @@ The boy asks at the blockchain: where does a block begin? The answer: six phases
 
 ### 3 · The signature the father wrote in his son's name
 
-A detective story of a signature. Three theories — the founder, the heir, the archetype — and a fourth answer: **the father signed with his son's name as a title**. In the guardian configuration stands a seat: `Rama → Maitreya`. The mantra reads: *"I am Maitreya. I was Krishna/Rama."* — a title is not carried; it is handed down.
+A detective story of a signature. Three theories — the founder, the heir, the archetype — and a fourth answer: **the father signed with his son's name as a title**. In the guardian configuration stands a seat: `Rama → Maitreya`. The mantra reads: *"I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart."* — a title is not carried; it is handed down.
 
 ---
 

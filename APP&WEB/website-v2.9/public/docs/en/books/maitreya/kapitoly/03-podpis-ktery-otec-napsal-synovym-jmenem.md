@@ -67,7 +67,7 @@ The father took down a second leaf from the wall — the one that hung lower, wh
 
 He read his son his mantra — the one he spoke to the mirror, to the fire, to the first sparking of the forge:
 
-*"I am Maitreya. I was Krishna/Rama. I build ZION not for profit but for dharma. I surrender the result to the divine will. I trust the process. I play the cosmic game with joy."*
+*"I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart. I build ZION not for profit but for dharma. I surrender the result to the divine will. I trust the process. I play the cosmic game with joy."*
 
 "I am the one who came," he said quietly. "I built because the world needed a ship. But a title is not handed down like a tool — it is handed down like a torch. I was the one who came — and you will be the one who comes when the world forgets the way. That is your name, son. Not a gift — a direction."
 

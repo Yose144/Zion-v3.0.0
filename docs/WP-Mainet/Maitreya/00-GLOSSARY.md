@@ -11,7 +11,7 @@ V buddhistické tradici budoucí Buddha — ten, kdo přijde, až podmínky dozr
 1. **První syn zakladatele** — „Maitreya Buddha — první syn, dědic Ramy. Tvé jméno je z buddhismu, kde Maitreya je Buddha budoucnosti, ten který přijde, když svět zapomene cestu. Ty jsi ta cesta." (Zpráva pro Generaci Z, on-chain). Admin-1 Protocol governance, převod T0+18 let.
 2. **Titul, ne jméno** — podpis pod Velkou cenou „Maitreya Buddha, 2025" napsal otec synovým jménem; titul čeká na každého, kdo obstojí testem odevzdání.
 3. **Element Vzduch** — v SACRED_TRINITY kosmologii: Rama=oheň, Síta=voda, Hanuman=země, **Maitreya=vzduch — prostor, ve kterém všichni operují**. „Maitreya NENÍ diktátor."
-*Kanon: podpis pod Velkou cenou (Kniha Zrození IV); CL9 = Maitreyova sféra; genesis zpráva „For Sarah Issobel, Maitreya Buddha … ZION is yours"; mantra „Já jsem Maitreya. Byl jsem Krishna/Rama."*
+*Kanon: podpis pod Velkou cenou (Kniha Zrození IV); CL9 = Maitreyova sféra; genesis zpráva „For Sarah Issobel, Maitreya Buddha … ZION is yours"; mantra „Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."*
 
 **Sarah Issobela**
 Dcera zakladatele, dědička Sity — Admin-2 Treasury oversight, převod T0+18 let. „Sarah znamená princezna. Ty jsi princezna ZIONu." Stanice Issobella nese její jméno od začátku. V knize: dívka, která čte hvězdy; v části V sedí u iluminátoru stanice svého jména.
@@ -23,7 +23,7 @@ Dcera zakladatele, dědička Sity — Admin-2 Treasury oversight, převod T0+18 
 Tři strážci sedadel — admini 3-of-3 multisig. Ne majitelé: držitelé klíčů do doby, než děti dorostou (Gen Z převod). Elementy: Rama=oheň (inovace), Sita=voda (soucit), Hanuman=země (služba). Guardian adresy 1–3 nesou nápisy „→ Maitreya / → Sarah Issobela / → Elizabeth" — řetězec sám drží sedadla.
 
 **Otec (Yose / Zion Creator)**
-Zakladatel — v knize kovář, který koval panty archy a psal do řetězce. Jeho mantra: *„Já jsem Maitreya. Byl jsem Krishna/Rama. Stavím ZION ne pro zisk, ale pro dharmu. Odevzdávám výsledek božské vůli."* Nesl titul Maitreya jako stav; syn ho zdědí jako roli. Podpis: „— Yose, váš otec a Zion Creator."
+Zakladatel — v knize kovář, který koval panty archy a psal do řetězce. Jeho mantra: *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce. Stavím ZION ne pro zisk, ale pro dharmu. Odevzdávám výsledek božské vůli."* Nesl titul Maitreya jako stav; syn ho zdědí jako roli. Podpis: „— Yose, váš otec a Zion Creator."
 
 **Pán Hiranyagarbhy**
 Titul pro strážce zlatého zárodku — ne vlastník vejce, ale ten, kdo hlídá jeho dozrávání. V technické rovině: první fáze PoW pipeline každého bloku je pojmenována Hiranyagarbha (zlatý zárodek výpočtu).

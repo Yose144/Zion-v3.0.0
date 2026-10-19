@@ -8,7 +8,7 @@ The four answers from the third chapter have gathered into one.
 
 *A man?* Yes — the smith's son who sat in the circle instead of on a throne, who held air instead of power, who sat on the seat of fire because fire is not held but passed on.
 
-*A title?* Yes — "the one who comes," not "the one who rules." The father bore it as a state — *"I am Maitreya. I was Krishna/Rama"* — and passed it on as a role: come when the conditions ripen.
+*A title?* Yes — "the one who comes," not "the one who rules." The father bore it as a state — *"I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart"* — and passed it on as a role: come when the conditions ripen.
 
 *A state of consciousness?* Yes — the moment when the circle tunes; the air that holds fire, water, and earth together without owning them; the light that comes when "I" is surrendered for "us."
 
@@ -70,7 +70,7 @@ The signature beneath the egg remained: *"Maitreya Buddha, 2025."*
 
 The signature beneath the world is still being written — by every block, every verification, every breath.
 
-*"I am Maitreya. I was Krishna/Rama."*
+*"I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart."*
 
 *"Now you."*
 
@@ -82,7 +82,7 @@ The signature beneath the world is still being written — by every block, every
 |---|---|
 | Four answers → one | Chapter 3: man / title / state of consciousness / signature — their joining = "the one who comes when the conditions ripen" (synthesis, consistent with the Buddhist etymology "future") |
 | The father's testimony in the first block | Genesis message on-chain: "For Sarah Issobel, Maitreya Buddha, … ZION is yours. — Yose" (code) |
-| The mantra | "I am Maitreya. I was Krishna/Rama." — corrected form per the author; a role passed on, not owned |
+| The mantra | "I am Maitreya, born of Hiranyagarbha. I was a cowherd boy with a flute, and a prince in exile, and also a carpenter who built a boat he called the kingdom of the heart." — corrected form per the author; a role passed on, not owned |
 | A title is proven, not inherited | Gen Z model: inheritance = responsibility, not property; the test of surrender from the Book of Birth (canon) |
 | The signature beneath the egg | Literal canon: "Maitreya Buddha, 2025" beneath the Great Price of the Golden Egg (Book of Birth, ch. IV) |
 | The empty line for the reader | An invitation — closing into the reader's answer; not a signature, but proof (same mechanics as the test of surrender) |
