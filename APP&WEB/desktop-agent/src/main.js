@@ -47,7 +47,7 @@ const zisClient = require('./zis-client');
 
 // ── Network Constants ───────────────────────────────────────────────────────
 // Mainnet Edge relay (Contabo VPS, Prague) — public-facing pool + node
-const PRIMARY_MAINNET_HOST = '62.171.141.136';
+const PRIMARY_MAINNET_HOST = 'pool.zionterranova.com';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Edge VPN IP — Tailscale decommissioned, same host as primary

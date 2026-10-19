@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use serde_json::json;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::auxpow_bridge::MultiAuxPowBridge;
 use crate::pool::Pool;
@@ -62,14 +62,36 @@ impl PoolApi {
         share_store: Option<Arc<ShareStore>>,
         auxpow_bridge: Option<MultiAuxPowBridge>,
     ) -> Self {
+        // Restore persisted samples so a pool restart does not wipe the
+        // public hashrate history series.
+        let mut h = std::collections::VecDeque::with_capacity(HISTORY_CAP);
+        if let Some(store) = &share_store {
+            match store.load_history(HISTORY_CAP as u32) {
+                Ok(rows) => {
+                    for (ts, hashrate, miners_online, json, accepted, rejected) in rows {
+                        let online_by_coin = serde_json::from_str(&json).unwrap_or_default();
+                        h.push_back(HistorySample {
+                            ts,
+                            hashrate,
+                            miners_online,
+                            online_by_coin,
+                            accepted,
+                            rejected,
+                        });
+                    }
+                    if !h.is_empty() {
+                        info!("history: restored {} persisted samples", h.len());
+                    }
+                }
+                Err(e) => warn!("history: restore failed: {e}"),
+            }
+        }
         Self {
             pool,
             share_store,
             auxpow_bridge,
             routing_stats: None,
-            history: Arc::new(Mutex::new(std::collections::VecDeque::with_capacity(
-                HISTORY_CAP,
-            ))),
+            history: Arc::new(Mutex::new(h)),
             public_rate: Mutex::new(std::collections::HashMap::new()),
             started_at: Instant::now(),
         }
@@ -114,13 +136,29 @@ impl PoolApi {
         info!("pool API listening on {bind_addr}");
 
         // History sampler — one snapshot per HISTORY_INTERVAL_S, ring
-        // buffer capped at HISTORY_CAP (24h).  In-memory only: a restart
-        // starts a fresh series, which the UI tolerates.
+        // buffer capped at HISTORY_CAP (24h).  Persisted to the share store
+        // when available so a restart keeps the last day of samples.
         {
             let pool = Arc::clone(&self.pool);
             let history = Arc::clone(&self.history);
+            let store = self.share_store.clone();
             std::thread::spawn(move || loop {
                 let sample = sample_history(&pool);
+                if let Some(store) = &store {
+                    let json = serde_json::to_string(&sample.online_by_coin)
+                        .unwrap_or_else(|_| "{}".to_string());
+                    if let Err(e) = store.record_history_sample(
+                        sample.ts,
+                        sample.hashrate,
+                        sample.miners_online,
+                        &json,
+                        sample.accepted,
+                        sample.rejected,
+                        HISTORY_INTERVAL_S * HISTORY_CAP as u64,
+                    ) {
+                        warn!("history: persist failed: {e}");
+                    }
+                }
                 let mut h = history.lock().expect("history lock poisoned");
                 if h.len() >= HISTORY_CAP {
                     h.pop_front();
