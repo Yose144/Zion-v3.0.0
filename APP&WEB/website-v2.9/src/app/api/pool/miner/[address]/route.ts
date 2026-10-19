@@ -1,6 +1,28 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
+
+// Pool PPLNS unpaid is pool-side accounting — the node RPC does not know it.
+// /public/v1/miner/<coin>/<wallet> → { unpaid: "<flowers>" }.
+async function fetchPoolUnpaidAtomic(address: string, timeoutMs = 4000): Promise<number | null> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(
+      `${SITE_PRIMARY_POOL_API_URL.replace(/\/$/, '')}/public/v1/miner/zion/${address}`,
+      { cache: 'no-store', signal: ctrl.signal },
+    );
+    if (!res.ok) return null;
+    const j = await res.json();
+    const unpaid = Number(j?.unpaid ?? 0);
+    return Number.isFinite(unpaid) ? unpaid : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 export const maxDuration = 30;
 
@@ -19,10 +41,38 @@ export async function GET(
   const rpc = getZionRpc();
 
   // Fetch pool stats, direct miner stats, miner list (for payout_address cross-ref), and chain info in parallel
-  const [poolStats, minerInfo, info] = await Promise.all([
+  // Kick off the two expensive block scans concurrently with the cheap
+  // lookups — they are independent of each other. Each scan is race-capped
+  // because getBlockByHeight/Header costs ~1.2 s per height; degrading to
+  // empty lists keeps the route inside its budget.
+  const headerScan = (async () => {
+    try {
+      const i = await rpc.getInfo();
+      const tip = Math.max(0, i?.height ?? 0);
+      if (tip <= 0) return [] as Awaited<ReturnType<typeof rpc.getBlockHeaders>>;
+      return await Promise.race([
+        rpc.getBlockHeaders(Math.max(0, tip - 499), tip),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('header scan timeout')), 8_000)),
+      ]);
+    } catch {
+      return [] as Awaited<ReturnType<typeof rpc.getBlockHeaders>>;
+    }
+  })();
+
+  const chainPayoutsP = Promise.race([
+    rpc.getChainPayoutsForAddress(address, 300),
+    new Promise<{ totalPaidAtomic: number; payouts: any[] }>((resolve) =>
+      setTimeout(() => resolve({ totalPaidAtomic: 0, payouts: [] }), 12_000),
+    ),
+  ]).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
+
+  const [poolStats, minerInfo, info, poolUnpaidAtomic, headers, chainPayouts] = await Promise.all([
     rpc.getPoolStats().catch(() => null),
     rpc.getMinerInfo(address).catch(() => null),
     rpc.getInfo().catch(() => null),
+    fetchPoolUnpaidAtomic(address),
+    headerScan,
+    chainPayoutsP,
   ]);
 
   // Normalize minerInfo from getMinerInfo into the shape the rest of the route expects.
@@ -78,33 +128,19 @@ export async function GET(
   const now = Math.floor(Date.now() / 1000);
   const active = lastShareTime > 0 && (now - lastShareTime) < ACTIVE_THRESHOLD_SECONDS;
 
-  // Scan recent blocks for blocks mined by this address.
-  // Use a wider window (500 blocks) since the miner may have found blocks earlier.
-  let blocks: Array<{ height: number; hash: string; reward: number; timestamp: number; server: string }> = [];
-  const tipHeight = Math.max(0, info?.height ?? 0);
-  if (tipHeight > 0) {
-    try {
-      const headers = await rpc.getBlockHeaders(Math.max(0, tipHeight - 499), tipHeight);
-      blocks = headers
-        .filter((header) => header.miner_address === address)
-        .slice()
-        .reverse()
-        .slice(0, 50)
-        .map((header) => ({
-          height: header.height,
-          hash: header.hash,
-          reward: header.reward,
-          timestamp: header.timestamp,
-          server: 'primary',
-        }));
-    } catch {
-      blocks = [];
-    }
-  }
-
-  // Robust fallback: scan on-chain account transactions from the pool wallet
-  // so miner stats survive pool restarts / lost telemetry.
-  const chainPayouts = await rpc.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
+  // Blocks mined by this address in the scanned window (newest first).
+  const blocks = headers
+    .filter((header) => header.miner_address === address)
+    .slice()
+    .reverse()
+    .slice(0, 50)
+    .map((header) => ({
+      height: header.height,
+      hash: header.hash,
+      reward: header.reward,
+      timestamp: header.timestamp,
+      server: 'primary',
+    }));
 
   const poolTotalPaidAtomic = minerInfo?.balance?.paid
     ? Math.round(minerInfo.balance.paid * ATOMIC_UNITS_PER_ZION)
@@ -147,7 +183,7 @@ export async function GET(
       efficiency,
       blocks_found: minerStats?.blocks_found ?? blocks.length,
       total_paid: totalPaidAtomic,
-      pending_balance: minerStats?.pending_balance ?? 0,
+      pending_balance: poolUnpaidAtomic ?? (minerStats?.pending_balance ?? 0),
       last_share_time: lastShareTime,
     },
     payouts,
