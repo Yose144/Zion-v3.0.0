@@ -714,3 +714,41 @@ future forensics.
   rare hard-target windows; the real work per share is a few thousand
   nonces at current pool diff — no kernel rewrite justified by these data.
 
+
+## 18. Session 9 — 4/48/48 max-performance allocation (2026-10-19, RTX 3060)
+
+User target: **ZION ~4 % / QTC ~48 % / PRL ~48 %** of GPU time at max
+throughput. Three configs measured (quad V3 session, ~100 s each):
+
+| config | ZION | QTU | PRL | GPU util |
+|---|---|---|---|---|
+| duty 4/48/48 hard-partitioned | ~0.44/s | ~100 MH/s | ~770–1120 att/s | **47 %** — sleeps don't interleave |
+| ZION=4, PRL=100, QTU=100 free | ~0.3/s | ~98 MH/s | ~740–910 att/s | 100 % — but QTU over-grabs |
+| **ZION=4, PRL=100, QTU=48** | **~0.4/s** | **~80–87 MH/s** | **~2510–2815 att/s** | **100 %** ✅ |
+
+### Winning env set
+
+```bash
+ZION_GPU_TIME_DUTY_PCT=4        # ZION ~4% of card — keeps pool session warm
+ZION_EXT_GPU_TIME_DUTY_PCT=100  # PRL (stream2) free-runs the gaps
+ZION_EXT_GPU2_TIME_DUTY_PCT=48  # QTU (stream4) self-caps ~48%
+ZION_GPU_WORK_SIZE=2048         # +31% ZION candidates/s, frees ~3GB VRAM
+ZION_PEARL_CUMULATIVE_MMA=1 ZION_PEARL_BATCH=64  # PRL winner from §16
+ZION_GPU_SKIP_CPU_RESCAN=1      # optional: removes rescan stall landmine
+```
+
+Mechanism: duty sleep = `batch_ms × (100−d)/d` after each stream's own
+batch. Hard-partitioned 4/48/48 leaves ~53 % of the card idle — sleeps
+align instead of interleaving. The winning scheme caps only QTU and lets
+PRL fill all remaining gaps: effective split ≈ 4 / ~50 / ~46.
+
+### Production mapping
+
+- **Trinity native-quad** (one zion-miner does ZION+PRL+QTU): envs above
+  as-is.
+- **SMOS rig** (SRBMiner runs QTU as a separate process): zion-miner side
+  gets `ZION_GPU_TIME_DUTY_PCT=4` + `ZION_EXT_GPU_TIME_DUTY_PCT=100`
+  (ZION@4%, PRL grabs what SRBMiner leaves — driver-level contention, no
+  duty control across processes). Per-device check on the 1070 Ti before
+  rolling `ZION_GPU_WORK_SIZE=2048`.
+
