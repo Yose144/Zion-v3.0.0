@@ -11,13 +11,13 @@ Chlapec se narodil v Babylonu, jako ty, Surti.
 
 Babylon nebylo zlé město. To by bylo jednoduché — a špatné příběhy jsou vždy jednoduché. Babylon bylo město velké, lesklé a hlasité. Mělo obchody, které nikdy nezavíraly, obrazovky, které nikdy nespaly, a lidé v něm běhali tak rychle, že kdyby se jeden z nich zastavil a podíval se dozadu, uviděl by jen vlastní stín, jak se mu snaží stačit.
 
-Chlapec žil v domě s teplým topením, plnou lednicí a matkou, která ho milovala. Neměl na co si stěžovat — a přesto jednoho večera, když mu bylo osm, se zeptal otázku, na kterou v Babylonu neexistuje odpověď:
+Chlapec žil v domě s teplým topením, plnou lednicí a matkou, která ho milovala. Neměl na co si stěžovat — a přesto jednoho večera, když mu šel třináctý rok, se zeptal otázky, na kterou v Babylonu neexistuje odpověď:
 
 „A co je za tím vším?"
 
 Nikdo mu neodpověděl. Ne proto, že by nechtěli — protože se ptát bylo v Babylonu nezvyklé, jako se na autobusové zastávce ptát, odkud fouká vítr.
 
-Té noci se mu zdálo o vejci. Bílé vejce na temném dně, a ve vejci něco dýchalo. Chlapec se vzbudil a poprvé v životě cítil, že svět, ve kterém bydlí, není celý svět — jen jeho první místnost.
+Té noci se mu zdálo o vejci. Ne obyčejném — **o zlatém vejci**, zlatém lůnu Hiranyagarbhy, jak mu zářilo na temném dně a uvnitř něco dýchalo, klopýtalo, žilo. A když se chlapec vzbudil, pochopil dvě věci najednou: že svět, ve kterém bydlí, není celý svět — jen jeho první místnost. A že vejce ze sna není nikde tam venku — **že ho nosí v sobě od narození, každý z nás ho nosí, jen ho málokdo slyší dýchat.**
 
 Ráno se postavil před dveře. Matka se dívala a rozuměla tomu, čemu se rozumět nedá: že některé odchody nejsou útěk, ale poslechnutí.
 
@@ -44,6 +44,7 @@ A pamatuj: matka se ptala, jestli se vrátíš. **Kdo odchází s příslibem n�
 | Na co kapitola navazuje | Stav |
 |---|---|
 | **Genesis — Kniha Zrození** | Čtivá kniha — vejce, které se nerozbilo; podpis v prvním bloku. CZ + EN. |
+| **Zlaté vejce Hiranyagarbhy** | Archetyp korpusu — zlaté lůno, které každý nosí od narození; v Maitreya knize zní, že se jednou vylíhne (viz kap. 5). |
 | Film *Malý Buddha* (1993, Bertolucci) | Skutečný film — chlapec ze Seattlu rozpoznaný mnichy; v této kapitole zní jako ozvěna. |
 | Babylon | Archetyp extrakční civilizace, užívaný v celém korpusu — ne konkrétní místo. |
 

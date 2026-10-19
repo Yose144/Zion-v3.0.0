@@ -33,7 +33,7 @@ Cestu ti připravujeme my — svatyni na La Palmě, knihu, mapu. Kroky jsou tvoj
 
 **Co je Dharma Temple:** reálný L5 projekt na La Palmě (Kanárské ostrovy) — Merkaba ze dřeva a světla, sedm kopulí, Strom života jako osa, „místo osvícení a nirvány pro malé Buddhy a všechny bytosti světla" ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md), `/terranova/dharma-temple`). Fyzická stavba se připravuje — **my mu tu cestu připravujeme**: svatyně, kniha i mapa stojí pro toho, kdo jednou dojde.
 
-**Co je slib:** že syn, pro kterého kniha vznikla, jednou pochopí — ne ze slov, ale z půdy pod nohama — že poklad, který hledal na druhém břehu, nesl od první brány na zádech; a že celý svět je utkaný z nekonečné lásky, proto je soucit a laskavost k druhým to nejcennější.
+**Co je slib:** že syn, pro kterého kniha vznikla, jednou pochopí — ne ze slov, ale z půdy pod nohama — že zlaté vejce Hiranyagarbhy, které nosí v srdci od narození, se jednou vylíhne: vylíhnutí je probuzení, naše nirvana; a že celý svět je utkaný z nekonečné lásky, proto je soucit a laskavost k druhým to nejcennější.
 
 ---
 
