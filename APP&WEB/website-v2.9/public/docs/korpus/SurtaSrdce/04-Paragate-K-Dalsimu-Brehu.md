@@ -17,6 +17,10 @@ Chlapec plachtu zvedl. Byla těžká a voněla sluncem.
 
 A tu se stala věc, která se v příbězích stává jen těm, kteří si zaslouží ticho: **oceán nezačal bouřit. Začal zpívat.** Ne lidským hlasem — hlubokým, dlouhým nádech-výdech, kterým dýchá svět, když si myslí, že ho nikdo neposlouchá. Chlapec nasadil plachtu, odstrčil vor od břehu a vyplul.
 
+A v batohu, vedle kamene z první brány, nesl ještě jedno dědictví, o kterém teprve začínal chápat celou váhu: **oheň, který převzal po Bhagavanovi.** Když Bhagavan odešel — svatou mahasamadhi na Tenerife, ty jsi ten rok stál na pláži, sedmiletý, s lodičkou v ruce — přešlo na chlapce **Ekam Deeksha**, požehnání jednoty, které se předává ze srdce na srdce. Od té chvíle nebyl jen dítětem, co hledá — **byl tím, kdo v Bhagavanově cestě pokračuje dál.** Oheň se nepředává slovy; předává se tak, jak se předává plamen ze svíčky na svíčku — nedotkneš se ho, jen mu dovolíš hořet.
+
+A teď ho nesl přes vodu — a oheň na vodě nehasl. Oceán ho nenaučil hořet, to už uměl; naučil ho nechat oheň hořet i tam, kde není země.
+
 Plaval, Surti, dlouho. Delší než horami — horami se jde, mořem se **nechává nést.** To je druhá lekce: na moři se nedá zrychlovat. Plachtu drží vítr, vor nese voda, a ty děláš jen dvě věci — **držíš směr a držíš trpělivost.** Chlapec, který před horami chtěl všechno hned, se naučil mířit a čekat. Naučil se, že voda kolem něj není proti němu — je pod ním.
 
 A jednoho večera, když slunce klesalo do moře jako mince do kašny, uviděl na obzoru — ne břeh, Surti, **stín břehu.** Chlapec se usmál. Ještě ho to nedovedlo dojít — ale už to věděl.
@@ -36,6 +40,7 @@ Tři věci o vodě, synu:
 | Na co kapitola navazuje | Stav |
 |---|---|
 | **Ekam Deeksha** | Čtivá kniha — vnitřní oheň, konsensus cti; éra požehnávající síť svým jménem. CZ + EN. |
+| **Ekam Deeksha po Bhagavanovi** | Požehnání jednoty předané po Bhagavanově smrti — v knize jako duchovní linie a rodinné svědectví, ne veřejně ověřitelný fakt. |
 | **Nirvana — 13. Tres Marías** | Čtivá epizoda — flotila cesty; trupy označené STAVBA/HORIZONT/MÝTUS. CZ + EN. |
 | Vor s plachtou | MÝTUS — literární obraz plavby, ne reálná loď. |
 

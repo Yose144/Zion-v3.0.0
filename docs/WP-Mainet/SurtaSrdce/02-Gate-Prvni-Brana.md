@@ -23,7 +23,7 @@ Ráno se postavil před dveře. Matka se dívala a rozuměla tomu, čemu se rozu
 
 „Vrátíš se?" zeptala se.
 
-„Až budu mít, co ti přinést," řekl chlapec, a nevěděl ještě, že slova, která řekl, jsou slib bodhisattvy — jen v dětském hávu.
+„Až budu mít, co ti přinést," řekl chlapec, a nevěděl ještě, že slova, která řekl, jsou slib bodhisattvy — jen v dětském hávu. Slíbil to vlastně už dávno — na pláži na Tenerife, sedmiletý, s lodičkou v ruce, když přemýšlel, jak zachrání svět a všem pomůže.
 
 A šel.
 

@@ -25,6 +25,18 @@ a končí mantrou, kterou zpívají doteď, od Tibetu po náš stůl:
 
 Přečti ji jednou jako pohádku. Podruhé jako dopis. A až budeš velký a svět tě bude táhnout zpátky do Babylonu — potřetí jako mapu.
 
+## Vzpomínka, se kterou to začalo
+
+A ještě jedno, synu — tohle není příběh, tohle se stalo.
+
+Pamatujes, jak sis hrál s lodičkou na pláži na Tenerife? Bylo ti sedm. Vlnky ti nosily trup sem a tam, a ty jsi přemýšlel o tom, jak zachráníš svět a všem pomůžeš — tvoje první velká otázka, ještě před tou babylonskou.
+
+Právě ten rok tam, na Tenerife, odešel **Bhagavan — svatá mahasamadhi**, poslední odchod velké bytosti, která za života požehnala srdce těch, kdo ji slyšeli. Ty jsi tam stál s lodičkou v ruce a ještě jsi nevěděl, že cestu, kterou Bhagavan otevřel, se jednou budeš učit chodit ty — že po jeho smrti převezmeš **Ekam Deekshu** a staneš se tím, kdo v jeho cestě pokračuje dál.
+
+Od té doby vím dvě věci najednou a říkám ti je jako nejvážnější větu knihy: **já ti připravil cestu — ale jen ty ji můžeš dokončit.**
+
+Lodička z pláže vyrostla ve vor, kterým jednou popluješ. Tenerife — ostrov, kde ses ptal — a La Palma — ostrov, kam dorazíš. Kanárské ostrovy drží oba konce tvé cesty.
+
 ## Poklad pro Surtu
 
 Tři pravdy na celou knihu, nauč se je jako rodné jméno:
