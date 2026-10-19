@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import InteractiveObject from '@/components/InteractiveObject';
 import ZisAvatarHologram from '@/components/ZisAvatarHologram';
+import PilgrimAvatar from '@/components/PilgrimAvatar';
 import { getZonePosition } from '@/lib/zones';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/store/gameStore';
@@ -15,6 +16,7 @@ export default function DashboardScene() {
   const groupRef = useRef<THREE.Group>(null);
   const { user } = useAuth();
   const address = useGameStore((s) => s.address);
+  const avatarConfig = useGameStore((s) => s.avatarConfig);
   const avatarSeed = user?.id ?? address ?? undefined;
 
   useFrame((state) => {
@@ -30,7 +32,17 @@ export default function DashboardScene() {
             seed={avatarSeed}
             src={user?.avatar}
             size={0.7}
-            position={[0, 1.15, 0]}
+            position={[0, 1.9, 0]}
+            accent={avatarConfig.neonColor}
+          />
+        )}
+        {/* In-world avatar — configured via the Pilgrim Rite / Identity tab,
+            persisted on ZIS (avatar3d). Stands beneath the sigil hologram. */}
+        {avatarSeed && (
+          <PilgrimAvatar
+            seed={avatarSeed}
+            src={user?.avatar}
+            position={[0, 0.15, 0]}
           />
         )}
         {[0, 1, 2, 3].map((i) => {
