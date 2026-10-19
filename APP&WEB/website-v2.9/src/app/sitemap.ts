@@ -105,6 +105,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ── Nirvana — Book of the West reader (landing lives under /maitreya#nirvana) ──
     r('/nirvana/cist', 0.7, 'monthly'),
+    // ── Surta Srdce — heart sūtra for Surta (linked from /maitreya#spolecnici) ──
+    r('/surta-srdce/cist', 0.7, 'monthly'),
 
     // ── Misc real pages ──────────────────────────────────────────────
     r('/ekam', 0.6, 'monthly'),
