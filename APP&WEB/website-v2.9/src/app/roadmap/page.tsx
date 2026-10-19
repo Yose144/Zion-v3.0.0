@@ -21,6 +21,7 @@ import {
   Globe2,
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
+import { NIRVANA_WORKSTREAMS } from '@/lib/nirvana-roadmap';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
@@ -99,7 +100,7 @@ const t = {
     nirvanaSub: 'Aspirativní architektonický cíl po stabilním vydání 3.2.',
     nirvanaTitle: '3.3 Nirvana — Global Assimilation & Attention',
     nirvanaDisclaimer: 'Nirvana je dlouhodobý aspirativní cíl, nikoli zaručené datum vydání. Představuje Velké Sjednocení celého ZION ekosystému.',
-    nirvanaCta: 'Detailní roadmapa v dokumentaci',
+    nirvanaCta: 'Plán, knihy a podmínky 3.3',
   },
   en: {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
@@ -175,7 +176,7 @@ const t = {
     nirvanaSub: 'An aspirational architectural target after a stable 3.2 release.',
     nirvanaTitle: '3.3 Nirvana — Global Assimilation & Attention',
     nirvanaDisclaimer: 'Nirvana is a long-term aspirational target, not a committed release date. It represents the grand unification of the whole ZION ecosystem.',
-    nirvanaCta: 'Detailed roadmap in docs',
+    nirvanaCta: 'The 3.3 plan, books & conditions',
   },
 };
 
@@ -403,21 +404,11 @@ export default function RoadmapPage() {
     },
   ];
 
-  const nirvanaPillars = cs
-    ? [
-        { title: 'L2 Multichain & ZIS Passkeys', desc: 'wZION/ETH a ZION/BTC AMM settlement, univerzální WebAuthn/Passkey SSO napříč všemi aplikacemi, agent sub-accounts.' },
-        { title: 'L3 Hiranyagarbha 2.4 & 2.5', desc: 'Maestro multi-agent DAG orchestrace, NCL distribuovaný compute broker, Amitabha natural intent interface a self-sovereign autonomní AI agenti.' },
-        { title: 'L4 OASIS Metaverse', desc: 'Unreal Engine 5.7 fotorealistický engine (Nanite/Lumen/MetaHumans), nízko-latenční WebGPU / Pixel Streaming preview.' },
-        { title: 'L5 Free World', desc: 'Dedikovaný webový portál, live 5 % L1 coinbase treasury tracker a globální vodní a permakulturní projekty.' },
-        { title: 'L6 Issobella', desc: 'Kvantový warp engine teoretický výzkum, DeSci repository a NCL-powered fyzikální simulace.' },
-      ]
-    : [
-        { title: 'L2 Multichain & ZIS Passkeys', desc: 'wZION/ETH & ZION/BTC AMM settlement, universal WebAuthn/Passkey SSO across all apps, agent sub-accounts.' },
-        { title: 'L3 Hiranyagarbha 2.4 & 2.5', desc: 'Maestro multi-agent DAG orchestration, NCL distributed compute broker, Amitabha natural intent interface, self-sovereign autonomous AI agents.' },
-        { title: 'L4 OASIS Metaverse', desc: 'Unreal Engine 5.7 photorealistic engine (Nanite/Lumen/MetaHumans), low-latency WebGPU / Pixel Streaming preview.' },
-        { title: 'L5 Free World', desc: 'A dedicated web portal, live 5% L1 coinbase treasury tracker, and global water & permaculture projects.' },
-        { title: 'L6 Issobella', desc: 'Quantum warp engine theoretical research, DeSci repository, and NCL-powered physics simulations.' },
-      ];
+  const nirvanaPillars = NIRVANA_WORKSTREAMS.map((w) => ({
+    layer: w.layer,
+    title: w.title[lang],
+    desc: w.goal[lang],
+  }));
 
   const postLaunch = [
     {
@@ -795,10 +786,11 @@ export default function RoadmapPage() {
 
         {/* NIRVANA HORIZON */}
         <motion.section
+          id="nirvana"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
-          className="zion-rainbow-card p-8"
+          className="zion-rainbow-card scroll-mt-28 p-8"
           style={{ '--rc': '80, 6, 105' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
@@ -820,14 +812,17 @@ export default function RoadmapPage() {
                 className="zion-rainbow-sub p-5"
                 style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
-                <h3 className="text-base font-semibold text-white">{pillar.title}</h3>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zion-purple">
+                  {pillar.layer}
+                </p>
+                <h3 className="text-base font-semibold text-white mt-2">{pillar.title}</h3>
                 <p className="text-sm text-gray-300 mt-3">{pillar.desc}</p>
               </motion.div>
             ))}
           </div>
           <p className="mt-6 text-sm text-gray-500">{copy.nirvanaDisclaimer}</p>
           <div className="mt-6">
-            <Link href="/docs" className="zion-button-secondary">
+            <Link href="/maitreya#plan-v33" className="zion-button-secondary">
               <BookOpen className="h-4 w-4" /> {copy.nirvanaCta}
             </Link>
           </div>
