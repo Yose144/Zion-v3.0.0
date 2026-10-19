@@ -699,6 +699,14 @@ impl MinerRuntime {
                 (found_nonce, Hash::new(found_hash), batch_size)
             } else if gpu_result == Some(None) {
                 // GPU ran and tested the full batch_size but found no solution.
+                // ZION_GPU_SKIP_CPU_RESCAN=1 trusts the exact pre-filter and
+                // skips the defensive CPU re-test (see V3 path for rationale).
+                if gpu_skip_cpu_rescan() {
+                    let elapsed = t_start.elapsed().as_secs_f64();
+                    self.update_hashrate(StreamId::Zion, batch_size, elapsed)
+                        .await;
+                    return Err(MinerError::NoAuxPoWSolution);
+                }
                 // CPU re-tests the same [0, batch_size) range as fallback.
                 // Total work = batch_size (GPU) + cpu_searched (CPU re-test).
                 let header = job.header.clone();
@@ -2568,6 +2576,20 @@ impl MinerRuntime {
             (n, h, estimated_nonces.max(tested.min(batch_size)))
         } else if gpu_result == Some(None) {
             // GPU ran and tested the full batch_size but found no solution.
+            // The ekam_deeksha kernels are an exact pre-filter (top-32-bit
+            // target check, no false negatives vs the full target) — hits are
+            // still locally verified before submit. ZION_GPU_SKIP_CPU_RESCAN=1
+            // trusts the kernel and skips the defensive CPU re-scan of the
+            // whole batch, which otherwise bounds throughput to CPU speed.
+            if gpu_skip_cpu_rescan() {
+                if zion_iter_debug() {
+                    info!(gpu_ms, iter_ms = t_start.elapsed().as_millis() as u64, batch_size, "v3 zion iter (skip-rescan)");
+                }
+                let elapsed = t_start.elapsed().as_secs_f64();
+                self.update_hashrate(StreamId::Zion, batch_size, elapsed)
+                    .await;
+                return Ok(false);
+            }
             // CPU re-tests the same [start_nonce, start_nonce + batch_size) range.
             // Total work = batch_size (GPU) + cpu_tested (CPU re-test).
             let threads = self.config.miner_threads.max(1);
@@ -3570,6 +3592,18 @@ fn zion_gpu_duty_sleep_ms(gpu_ms: u64) -> u64 {
         return 0;
     }
     gpu_ms.saturating_mul(100 - duty) / duty
+}
+
+fn gpu_skip_cpu_rescan() -> bool {
+    std::env::var("ZION_GPU_SKIP_CPU_RESCAN")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+fn zion_iter_debug() -> bool {
+    std::env::var("ZION_ITER_DEBUG")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
 }
 
 fn parse_gpu_backend(s: &str) -> GpuBackendKind {
