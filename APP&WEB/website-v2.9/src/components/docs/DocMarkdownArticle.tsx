@@ -1,18 +1,25 @@
 'use client';
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownDoc from './MarkdownDoc';
 
 export default function DocMarkdownArticle({
   content,
   className,
+  sourceFile,
+  bookSlugs,
 }: {
   content: string;
   className?: string;
+  /** Path relative to public/docs — enables corpus link resolution. */
+  sourceFile?: string;
+  bookSlugs?: Set<string>;
 }) {
   return (
-    <article className={className || 'prose prose-invert prose-lg max-w-none'}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-    </article>
+    <MarkdownDoc
+      content={content}
+      sourceFile={sourceFile}
+      bookSlugs={bookSlugs}
+      className={className}
+    />
   );
 }

@@ -277,7 +277,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                   Admin
                   <ArrowRight className="h-3 w-3" />
                 </Link>
-                  <Link href="/health" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">
+                  <Link href="/api/health" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">
                   View API
                   <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -396,7 +396,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 <p className="text-sm text-gray-400">Live metrics from stratum+tcp://{SITE_POOL_PRIMARY}</p>
               </div>
             </div>
-            <Link href="/pool/stats" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">
+            <Link href="/api/pool/stats" target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[0.3em] text-zion-cyan inline-flex items-center gap-1">
               {DashboardCopy.poolStats[cs ? 'cs' : 'en']}
               <ArrowRight className="h-3 w-3" />
             </Link>

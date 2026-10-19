@@ -120,6 +120,11 @@ const nextConfig: NextConfig = {
       { source: '/pool/benchmarks', destination: '/pool', permanent: true },
       { source: '/zohar', destination: '/tree-of-life', permanent: true },
       { source: '/zohar/:path*', destination: '/tree-of-life/:path*', permanent: true },
+      // Corpus + legacy link fixes
+      { source: '/oasis', destination: '/l4-oasis', permanent: true },
+      { source: '/oasis/:path*', destination: '/l4-oasis', permanent: true },
+      { source: '/health', destination: '/api/health', permanent: false },
+      { source: '/pool/stats', destination: '/api/pool/stats', permanent: false },
       // Explorer canonical slugs -> query-param pages
       { source: '/explorer/tx/:hash', destination: '/explorer/tx?hash=:hash', permanent: true },
       { source: '/explorer/address/:addr', destination: '/explorer/address?addr=:addr', permanent: true },

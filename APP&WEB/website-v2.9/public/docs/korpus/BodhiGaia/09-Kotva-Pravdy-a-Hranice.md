@@ -1,0 +1,195 @@
+# BODHI GAIA — Kapitola 9: Kotva pravdy a hranice
+## Úplný registr L5 — co je živé, co se staví, co je horizont a co je jen obraz; známé rozpory, otevřené otázky a další kroky
+
+> *„Nežádej víru tam, kde lze nabídnout důkaz. Neprodávej horizont jako současnost. Když se vize střetne s faktem, oprav vizi — nikdy fakt."* — První slib Mise Amenti
+
+---
+
+## 1. Proč má Kniha Země nejdelší kotvu
+
+Půda nezná marketing. Strom buď roste, nebo ne. Studna buď dává vodu, nebo ne. A protože L5 je vrstva, kde se ZION poprvé dotýká skutečných lidí, skutečné půdy a skutečných peněz jiných lidí, platí tu **nejpřísnější důkazní laťka celé řady** — přísnější než u mostů L2, které aspoň mají on-chain receipt.
+
+Tato kapitola je registr. Nepřepisuje [`MiseAmenti/07-Registr-Dukazu.md`](../MiseAmenti/07-Registr-Dukazu.md); **rozšiřuje** jeho sekci 5 (L4, L5, L6) o detail, který kanonický registr z důvodu stručnosti nemá. Při rozporu platí kanonický registr, `StatusV3.md` a kód.
+
+---
+
+## 2. Úplná evidence tabulka L5
+
+### 2.1 Protokol a fond
+
+| Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
+|---|---|---|---|
+| 5 % block subsidy jde do L5 fondu v každém bloku. | **ŽIVÉ** | `interní repozitář`, `v3_template.rs` (`coinbase_humanitarian`, výstup 1); `getBlockByHeight` → `transactions[].outputs`. | — |
+| Adresa L5 fondu je kanonická: `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`. | **ŽIVÉ** | `interní repozitář`; `docs/PREMINE_ADDRESSES_PUBLIC.txt`; `HARD_RESET_PLAYBOOK.md`; CLI `zion node start --human`; dashboard; web `/l5-free-world`. | Změna = třída D (konsensus). |
+| Coinbase má 4 výstupy (miner / L5 / L6 / node reward). | **ŽIVÉ (3) / STAVBA (4.)** | Výstupy 0–2 vždy; výstup 3 jen po `node_reward_activation_height` (default `u64::MAX`), jinak 1 % burn. | Activation height a on-chain evidence. |
+| Zůstatek fondu je veřejně čitelný. | **ŽIVÉ** | Explorer `/explorer` (adresa fondu); `GET /api/v1/fund/balance` na `interní port` (operator-only přes nginx `/api/free-world/`). | Veřejný portál s historií a grafem (M5 / N5). |
+| Fond dnes vyplácí granty. | **NEPLATNÝ NÁROK** (dnes) | G10: žádná automatická výplata; DAO exekuce summary-only (`interní repozitář`). | DAO UI, výplatní tx flow, guardian multisig, první impact packet. |
+
+### 2.2 Služba L5
+
+| Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
+|---|---|---|---|
+| `free-world tracker` běží na Edge a skenuje coinbase. | **ŽIVÉ** | `zion-*-service` (interní služba) active; `interní repozitář`; `StatusV3.md` update 2026-08-23; L5 na `interní port`. | Průběžný health; nezávislé srovnání skeneru s explorerem. |
+| Služba eviduje granty, projekty, komunity a fond. | **ŽIVÉ** (schema) | `interní repozitář` — tabulky `grants`, `projects`, `communities`, `fund_balance`; testy `tests/db.rs`. | Naplněná data (dnes nejsou doloženy reálné záznamy komunit v produkční DB). |
+| API `submit-to-dao` předává granty do DAO. | **STAVBA** | `dao_client.rs` → `ZION_DAO_API_ADDR` (`interní port`), `X-DAO-Key`. | E2E na Edge: grant → návrh → hlasování. |
+| API je chráněno klíčem. | **STAVBA** | `api_key` načten do `AppState`, **nevynucen** na routeru. | Middleware (`X-API-Key` / Bearer) před jakýmkoli veřejným exponováním. |
+| Hiran AI hodnotí granty. | **HORIZONT** | `hiran_bridge.rs` (defaultně `hiran_enabled = false`); na Edge není Hiran inference. | Nasazení Hiran podle `MiseAmenti/05` (A0–A2 nejdřív). |
+| CLI `zion free-world`. | **STAVBA** | `interní repozitář` — `start/status/stop` (systemd passthrough). | Přehled fondu / grantů z CLI. |
+
+### 2.3 Komunity
+
+| Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
+|---|---|---|---|
+| Zahrada Genesis existuje jako fyzické místo v aktivním rozvoji. | **STAVBA** | `public/V3/L5/docs/COMMUNITIES/genesis-garden.md` (🟡 Active development; Fáze 0 ✅, Fáze 1 🟡); web `/terranova/genesis`; OASIS panel *Active*. | Pozemek (koupě/nájem), registrovaná entita, GPS, evidence realizace (solar, vrt, stany), nezávislé ověření. |
+| Zahrada Genesis má tým strážců. | **STAVBA** | Fáze 0: „core team formation (3 Guardians)" ✅. | Veřejná (privacy-respektující) identifikace koordinátora; role podle §6.3. |
+| Zahrada Genesis přijímá hosty. | **STAVBA** | Plán: první platící hosté Q3 2026; kanály a ceník §11. | Potvrzené rezervace, pojištění, pravidla výměny. |
+| Fyzická růže byla v Zahradě Genesis zasazena. | **NEDOLOŽENO** | Žádný Day 0 packet ani jiná evidence výsadby neexistuje; scéna v epilogu *Příběhu Růže* je MÝTUS. | Splnění Gate A–D návrhu [`pilots/GENESIS-ROSE-001.md`](./pilots/GENESIS-ROSE-001.md) (**HORIZONT / NEZAHÁJENO**) + kompletní Day 0 packet. |
+| Dharma Temple je připravovaná svatyně na La Palmě. | **STAVBA (dokumentace) / HORIZONT (fyzicky)** | `dharma-temple.md` (🔵 Preparation; Fáze 0 2026 Q2–Q4 🔵); web `/terranova/dharma-temple` (3D koncept, půdorys, dokumentace). | Pozemek, entita, 5 zakládajících strážců, financování 60 000 EUR Fáze 1. |
+| Architektura Dharma Temple: Merkaba, 7 kopulí, Strom života. | **HORIZONT** (koncept) | `APP&WEB/website-v2.9/public/docs/terranova/dharma-temple.{cs,en}.md`; `DharmaTemplePreviewLazy`; `/images/dharma-temple/concept-og.png`. | Statika, povolení, rozpočet stavby. |
+| Te Pīko Ora je plánovaný pacifický uzel. | **HORIZONT** | `te-piko-ora.md` (🔵 Vision / Preparation; Fáze 0 2026–2027); web `/terranova/te-piko-ora` (*Plánováno 2027+*). | Polynéský partner, ostrov, entita, tým, rozpočet 80 000 EUR. |
+| Golden Republic Bohemia je plánovaný governance uzel v Čechách. | **HORIZONT** | `APP&WEB/website-v2.9/public/docs/terranova/golden-republic-bohemia.cs.md` (koncept, půdorys, fáze); [Kapitola 10](./10-Golden-Republic-Bohemia.md); `docs/TerraNova/06-L5-SVOBODA.md` §6.6 (Zlatá republika, 8 principů). | Pozemek (Říp region / Vysočina), entita (z.s. / z.ú.), tým 3–5 strážců, rozpočet 60 000 EUR, kulturní review. |
+| Bodhi Lanka je plánovaný akáša uzel na Srí Lance. | **HORIZONT** | [Kapitola 11](./11-Bodhi-Lanka.md); Sri Maha Bodhi (Anurádhapura, UNESCO, 288 př. n. l.) — veřejně ověřitelné; Rámájana a Ráma Setu (Adamův most) — veřejně doložené. | Pozemek (Anurádhapura vs hill country vs south coast), entita (srí lanská NGO), tým 3–5 strážců, rozpočet 80 000 EUR, kulturní review Rámájany a buddhistických motivů, partnerství s buddhistickou sáňghou. |
+| Komunity provozují Guardian node. | **NEPLATNÝ NÁROK** (dnes) | Všech pět dokumentů: instalace Fáze 2 (2027 / 2028 / 2028 / 2028 / 2029). | Hardware, konektivita, pokladna. |
+| Komunity mají multisig pokladnu 3-z-5. | **HORIZONT** | Struktura v §5.2 každého dokumentu. | Skutečné peněženky, podepisovatelé, transparentní účet. |
+| Semenná knihovna funguje. | **STAVBA (Genesis) / HORIZONT (síť)** | Genesis: „informal exchange → catalogued"; web *Seed Library — active*. | Katalog, partneři, první výměna mezi uzly (2028). |
+| Medical Table, LoRa mesh, Resonance Protocol jsou nasazeny. | **HORIZONT / MÝTUS** | Specifikace `TECH/`, `PROTOCOLS/`; `L5_L6_ACTIVATION_PLAN.md` §5 bod 13: vizionářské, neimplementované. | — |
+| Ekonomické modely komunit (break-even, příjmy) platí. | **HYPOTÉZA** | §4 každého dokumentu. | Skutečné účetnictví po první sezóně. |
+| L5 provozuje globální síť vodních / permakulturních projektů. | **HORIZONT** | `MiseAmenti/07` §5. | Impact packety a externí ověření. |
+
+### 2.4 Web a OASIS
+
+| Nárok | Stav | Důkaz či zdroj | Co je stále nutné |
+|---|---|---|---|
+| Web `/terranova`, `/terranova/genesis`, `/terranova/dharma-temple`, `/terranova/te-piko-ora`, `/l5-free-world` existují a běží. | **ŽIVÉ** | `APP&WEB/website-v2.9/src/app/terranova/**`, `l5-free-world/page.tsx`; `zion-website.service` active. | Štítky stavu (koncept / stavba) přímo v UI. |
+| OASIS ukazuje pět L5 projektů a čtyři světy. | **ŽIVÉ** (klient) | `WorldPanel.tsx` (`NOVA_ZEME_PROJECTS` — pět projektů), `worlds.ts` (`GENESIS_GARDEN`, `DHARMA_TEMPLE_LA_PALMA`, `GOLDEN_REPUBLIC_BOHEMIA`, `BODHI_LANKA`; všechny `layer: 5`). | Napojení statusů na L5 API; ověření deploy nových metadat. |
+| Avataři Sítá a Hanuman mají questy do L5. | **ŽIVÉ (dokument) / HORIZONT (mechanika)** | `SulZeme/10` §II. | Implementace v `interní repozitář`. |
+| OASIS quest odměňuje fyzickou návštěvu zahrady. | **HORIZONT** | Nápad v `genesis-garden.md` §11.2, `dharma-temple.md` §15. | Ověření, privacy, M5 gate. |
+| OASIS je fotorealistický UE 5.7 svět s instant preview. | **HORIZONT** | `MiseAmenti/07` §5. | POC (M4). |
+| Svět `GENESIS_GARDEN` v OASIS obsahuje Rose lore. | **ŽIVÉ** (existence zdrojového řádku) / **STAVBA** (nová klientská metadata; build prošel, deploy neproběhl) / **MÝTUS** (obsah) | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` — metadata světa výslovně označují Růži jako literární lore (MYTH); [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md). | Lore nesmí být čtena jako evidence fyzické rostliny ani infrastruktury; fyzická růže = NEDOLOŽENO, pilot = HORIZONT; ověření veřejného klienta po deploy. |
+
+### 2.5 Příběh a symbolika
+
+| Nárok | Stav | Poznámka |
+|---|---|---|
+| Sítá, Hanuman, Sádhu, Ana, Hina, tesař, rybář, oráč, žena s lipovou větví, Ráma. | **MÝTUS** | Archetypy (Sůl země, Rámájana) a postavy vytvořené pro tuto knihu. Nikdo netvrdí historickou ani duchovní autoritu. |
+| Bodhi Gaia = „probuzená Země". | **MÝTUS** | Obraz z návrhu Dharma Temple, rozšířený na L5. Není nábožensky závazný. |
+| Merkaba, 7 čaker, piko, tatau, wayfinding, Přemysl/Libuše, Zlatá bula, sůl smlouvy, Ráma/Sítá, Sri Maha Bodhi, Ráma Setu, akáša, prema/bhakti. | **MÝTUS / kulturní fakt** | Kulturní tradice jsou citovány s úctou; použití pro L5 vyžaduje kulturní review (třída E), zejména polynéské, české, hinduistické a buddhistické prvky — souhlas místních komunit a citlivé zacházení s posvátnými texty a náboženskými objekty. |
+| Yesod ↔ L5, slib péče. | **MÝTUS** | `docs/Zohar/01-SEFIROT-VRSTVY.md`. |
+| Lumi, Ana a zasazení druhého semínka u Nabão. | **MÝTUS** | Epilog [`../Ruze/Epilog-Zahrada-Genesis.md`](../Ruze/Epilog-Zahrada-Genesis.md) + [Kapitola 12](./12-Ruze-v-Zahrade-Genesis.md) — literární scéna; žádná událost, žádná relikvie, žádná linie, žádná „posvátná" rostlina. |
+
+---
+
+## 3. Co Bodhi Gaia není
+
+1. **Není prodej pozemků, podílů ani „tokenizované půdy".** Komunity jsou právně samostatné entity; ZION protokol nevlastní žádnou půdu a fond L5 nekupuje nemovitosti bez DAO procesu, který dnes neexistuje.
+2. **Není investice.** Žádná brána, dar ani pobyt nenese výnos. Framing „investuj do ráje" je porušení `MiseAmenti/08` §5.
+3. **Není náboženství ani lineage.** Bodhi, Dharma, Merkaba, piko, Strom života jsou obrazy. Kniha netvrdí, že ZION je posvátný text, že Dharma Temple je buddhistický chrám v tradičním smyslu, ani že kdokoliv v projektu má duchovní autoritu.
+4. **Není tvrzení o dopadu.** Bez impact packetu (příjemce, scope, rozpočet, on-chain ref., důkaz s původem, limitace, nezávislé ověření) není žádný projekt „ověřený dopad".
+5. **Není náhrada `StatusV3.md`, `MiseAmenti/07` ani komunitních dokumentů.** Kde se liší, platí ony.
+6. **Není nástroj vyloučení.** Consciousness Admission, sliby a ceremonie nesmí nikdy sloužit k označení člověka za „nižšího", „nečistého" nebo „nepřítele" (`MiseAmenti/05` §4).
+
+---
+
+## 4. Známé rozpory v dokumentaci, webu a OASIS
+
+Registr M0 („claim registry") vyžaduje, aby se rozpory hlásily bez obrany identity projektu. Toto jsou rozpory nalezené při psaní této knihy (2026-09-02):
+
+| # | Rozpor | Kde | Doporučená oprava | Třída |
+|---|---|---|---|---|
+| 1 | Humanitární podíl uveden jako **10 %** místo kanonických **5 % L5 + 5 % L6**. | `docs/TerraNova/06-L5-SVOBODA.md` §6.2 (a odhad „777 600 ZION/den") | Označit kapitolu jako historickou / opravit na 5 % a odstranit cenový odhad (porušuje zákaz predikcí ceny). | B + E |
+| 2 | ~~Lokalita Genesis Garden jako **Střední Evropa** místo **Algarve**~~ → **VYŘEŠENO 2026-10-07:** správná lokalita je **Sabacheira, concelho Tomar** — sjednoceno napříč `/l5-free-world`, `/terranova/genesis`, kartami, OASIS, mapami i registry. | — | Zápis ponechán jako historie rozhodnutí. | A |
+| 3 | Svět Dharma Temple byl označen `layer: 3` — ve zdroji již opraveno. | `APP&WEB/OasisWeb/src/domain/config/worlds.ts` (`DHARMA_TEMPLE_LA_PALMA` má `layer: 5` + tag `layer 5`) | Ověřit deploy veřejného klienta; přidat štítek „koncept". | A |
+| 4 | Lokalita Te Pīko Ora: web/OASIS **Tahiti**, komunitní dokument preferuje **Raiatea** (Tahiti jako záloha). | `PioneerProjectCards.tsx`, `WorldPanel.tsx` vs `te-piko-ora.md` §3.3 | Uvést „Raiatea / Tahiti (výběr probíhá)" všude stejně. | A |
+| 5 | Komunitní dokumenty datovány **2026-05-21**; timeline Genesis Fáze 1 „první hosté Q3 2026" — Q3 2026 již probíhá bez evidence. | `public/V3/L5/docs/COMMUNITIES/*.md` | Refresh stavů a dat; přidat sekci „Evidence" s odkazy. | B |
+| 6 | Nirvana ep. 10 uvádí konkrétní čísla („přes 23 600 plateb") a „živý graf" na `/l5-free-world`. | `docs/WP-Mainet/nirvana/10-Prameny-Zivota.md` | Čísla označit jako snímek s datem; „živý graf" ověřit nebo změnit na „stránka s adresou fondu". | B |
+| 7 | Nirvana ep. 4 popisuje ZIS s Passkeys / WebAuthn / biometrikou. | `docs/WP-Mainet/nirvana/04-Domov.md` | Podle `MiseAmenti/07` je Passkeys HORIZONT — doplnit štítek. (Mimo L5, ale nalezeno při čtení.) | B |
+| 8 | Inventář v `L5_L6_ACTIVATION_PLAN.md` §4.2 a §5 stále uvádí placeholder `fund_address`, špatný RPC port a chybějící env overrides — **kód je už opraven** (`DEFAULT_HUMANITARIAN_FUND_ADDRESS = zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`, `l1_rpc_url = interní port`, env `FREE_WORLD_*`). | `docs/3.2/L5_L6_ACTIVATION_PLAN.md` vs `interní repozitář` | Aktualizovat inventář plánu (sekce 4.2 / 5) na skutečný stav kódu; ponechat historické body jako „vyřešeno". | B |
+| 9 | OASIS statusy komunit jsou ručně psané konstanty bez zdroje v L5 API. | `WorldPanel.tsx`, `PioneerProjectCards.tsx` | Zdroj pravdy: `communities` tabulka / `GET /api/v1/projects`. | STAVBA (M5) |
+| 10 | Web `/terranova/genesis` uvádí *Seed Library — active*, komunitní dokument „informal exchange". | web vs `genesis-garden.md` §3.3 | Sjednotit stav (STAVBA), doplnit katalog nebo změnit štítek. | A |
+
+---
+
+## 5. Konsolidované otevřené otázky L5
+
+**Zahrada Genesis:** přesné GPS a výměra; kapacita solaru (kWp / kWh); právní forma (Associação / Cooperativa / hybrid); surf škola a partnerství; koordinátor Tech Guardian; sdílené protokoly s Dharma Temple; semenná knihovna (odrůdy, partneři); pojištění; EU granty (LEADER, CAP, Erasmus+).
+
+**Dharma Temple:** lokalita (sever / jih / výška); půda (koupě / nájem / spoluvlastnictví); zakládající strážci; právní forma (Asociación / Fundación / SCE); mikro-hydro (barranco, povolení); vazba na existující eko-komunity La Palmy; financování Fáze 0–1; vulkanické pojištění; koordinace semenné knihovny (2028); spolupráce s observatoří.
+
+**Te Pīko Ora:** Raiatea vs Tahiti; místní *mā'ohi* partner a způsob oslovení; customary vs státní půda; cyklonové pojištění; zdravotní evakuace; povolení na perly; partnerství s *Fa'afaite*; *tatau* mistr pro symbolické návrhy; havajská linie (KNIHA-LEHUA); expertiza mořské permakultury.
+
+**Golden Republic Bohemia:** Říp region vs Vysočina vs střední Čechy (přesná lokalita a výměra); právní forma (z.s. / z.ú. / komunitní nadace / hybrid); partnerství s českými eko-komunitami (permaculture sítě, Transition Towns, ekovesnice); MOU s Charles University a ČZU pro governance výzkum; semenná knihovna (Genobanka Praha, SEMO, lokální šlechtitelé); kulturní review Přemysl/Libuše mytologie (mýtus vs nacionalismus); kulturní review Karel IV / Zlatá bula motivů (inspirace, ne nárok na historickou autoritu); koordinátor Tech Guardian s vazbou na českou developer komunitu; EU funding (LEADER, CAP, Erasmus+, LIFE, Horizon Europe — governance research).
+
+**Bodhi Lanka:** Anurádhapura vs hill country (Kandy / Nuwara Eliya) vs south coast (přesná lokalita a výměra); právní forma (srí lanská NGO / trust / hybrid); partnerství s buddhistickou sáňghou (Sri Maha Bodhi chrám, Anurádhapura); partnerství s ayurvedickou univerzitou (např. University of Kelaniya, Gampaha Wickramarachchi Ayurveda Institute); kulturní review Rámájany (Ráma/Sítá motivy — posvátné pro hinduisty, buddhisty i Srí Lankance) a buddhistických motivů (Sri Maha Bodhi jako živý náboženský objekt, ne turistická atrakce); visa/residency pro zahraniční strážce (Srí Lanka visa policy, dlouhodobé pobytové povolení); monzunové pojištění (Yala + Maha sezóny); elefanti konflikty (zónování, ploty, respekt ke koridorům); politická stabilita (ekonomická krize 2022, monitoring).
+
+**Síť L5:** DAO UI/UX pro L5 návrhy (J4/J6); výplatní tx flow a guardian multisig; API key middleware; veřejný portál (N5); zdroj pravdy pro statusy komunit; první impact packet; Sybil-resistance pro quadratic voting; kulturní review polynéských, buddhistických, hinduistických a českých prvků.
+
+---
+
+## 6. Další kroky — mapováno na Mise Amenti M5 a plán N5
+
+| Krok | Co | Gate | Stav |
+|---|---|---|---|
+| 1 | Opravit rozpory #1, #2, #4, #10 (redakční) a #8 (config); u #3 je zdroj opraven — zůstává ověření deploy a štítek „koncept". | M0 | ❌ |
+| 2 | Refresh tří komunitních dokumentů se sekcí *Evidence* (co je doloženo, kdy, kým). | M0 / M5 | ❌ |
+| 3 | Přidat řádky L5 do `MiseAmenti/07-Registr-Dukazu.md` (tato kapitola jako zdroj). | M0 | 🔄 (návrh v [`CHANGELOG`](../MiseAmenti/CHANGELOG.md)) |
+| 4 | Vynutit API klíč na `free-world tracker` před jakýmkoli veřejným exponováním. | M1 (bezpečnost) | ❌ |
+| 5 | Zdroj pravdy statusů komunit: `communities` tabulka → web + OASIS. | M5 | ❌ |
+| 6 | Veřejný L5 portál: zůstatek, historie toků, návrhy, příjemci, milníky, výsledky. | M5 / N5 | ❌ |
+| 7 | DAO UI pro L5 návrhy + výplatní tx flow + guardian multisig (bez toho fond nerozdává). | M5 (+ J4/J6) | ❌ |
+| 8 | Definovat šablonu **impact packetu** a vybrat **jeden pilot** (nejblíž: Zahrada Genesis Fáze 1). | M5 exit gate | ❌ |
+| 9 | Kulturní review polynéských (Te Pīko Ora) a buddhistických (Dharma Temple) prvků před veřejným vydáním. | třída E | ❌ |
+| 10 | Kulturní review českých (Golden Republic Bohemia) prvků — Přemysl/Libuše mytologie a Karel IV / Zlatá bula motivy — před veřejným vydáním. | třída E | ❌ |
+| 11 | Kulturní review srí lanských (Bodhi Lanka) prvků — Rámájana (Ráma/Sítá), Sri Maha Bodhi (živý náboženský objekt), buddhistické a hinduistické motivy — před veřejným vydáním. | třída E | ❌ |
+| 12 | Kanonizace této řady po review (technika + bezpečnost + fakta + kultura). | `MiseAmenti/08` | 🔄 DRAFT |
+| 13 | Pilot [`GENESIS-ROSE-001`](./pilots/GENESIS-ROSE-001.md) — fyzické zasazení růže smí začít až po splnění Gate A–D (souhlas a místo, botanika a bezpečnost, péče, finance a tvrzení); nenahrazuje M5 exit gate. | Gate A–D pilotu | ❌ NEZAHÁJENO |
+
+---
+
+## 7. Návrh změny podle `MiseAmenti/08` §3
+
+```markdown
+## Záměr
+Sjednotit vizi a dokumentaci vrstvy L5 (Zahrada Genesis, Dharma Temple / Nová Bodhi Gaia,
+Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka) do jedné narativně-technické řady navazující na Onboarding, Sůl země a Nirvanu,
+s úplnou kotvou pravdy pro každý nárok.
+
+## Stav tvrzení
+Protokol/fond/služba: ŽIVÉ. Komunity: STAVBA (Genesis) / HORIZONT (Dharma Temple, Te Pīko Ora, Golden Republic Bohemia, Bodhi Lanka).
+Sdílené protokoly: HORIZONT. Příběh a symbolika: MÝTUS.
+
+## Důkaz
+interní repozitář (emission, v3_template, v3_compat); interní repozitář; interní repozitář;
+public/V3/L5/docs/**; APP&WEB/website-v2.9/src/app/terranova/**, l5-free-world;
+APP&WEB/OasisWeb (WorldPanel, worlds.ts); docs/3.2/L5_L6_ACTIVATION_PLAN.md;
+MiseAmenti/03, 04 (M5), 05, 07; StatusV3.md.
+
+## Rizika
+Kulturní (polynéské, buddhistické, hinduistické, srí lanské a české prvky), finanční framing (dar vs investice),
+privacy (údaje o strážcích a hostech), nadsazení stavu (koncept vs stavba),
+bezpečnost (API bez klíče, DAO exekuce).
+
+## Hranice
+Netvrdí, že komunity fungují, že fond vyplácí, že uzly běží, že OASIS odměňuje fyzické akce,
+že existuje ověřený dopad, ani že kdokoliv má duchovní autoritu.
+
+## Review
+Technický reviewer (L1/L5 fakta), bezpečnostní reviewer (fond/DAO/API), factual editor,
+kulturní konzultant pro Polynésii, buddhismus, hinduismus (Rámájana), Srí Lanku a české tradice, public-copy review před jakýmkoli výňatkem do public/.
+
+## Rollback / oprava
+Řada zůstává DRAFT do dokončení review; každý nárok lze snížit změnou štítku bez mazání textu;
+changelog zachová historii; veřejné výňatky až po schválení.
+```
+
+---
+
+## 8. Slib Knihy Země
+
+> **Strom, který nestojí, nebudeme kreslit jako stojící.**
+> **Studnu, která nedává vodu, nebudeme počítat jako dopad.**
+> **Člověka, který přijde, nebudeme zkoušet z víry, ale z uklizené kuchyně.**
+> **A když se příběh střetne s hlínou, opravíme příběh.**
+
+---
+
+*[Zpět na index Knihy Země → `00-README.md`](./00-README.md)* · *[Mise Amenti — Registr důkazů](../MiseAmenti/07-Registr-Dukazu.md)* · *[Nirvana, ep. 10 — Prameny Života](../nirvana/10-Prameny-Zivota.md)*

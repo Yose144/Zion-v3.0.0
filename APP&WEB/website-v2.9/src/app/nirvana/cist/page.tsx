@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
   BookOpen,
   FileText,
@@ -20,6 +19,8 @@ import { useLang } from '@/contexts/LanguageContext';
 import { NIRVANA_CHAPTERS, NIRVANA_PARTS, nirvanaDocPath } from '../chapters';
 
 const ACCENT = '251, 146, 60'; // amber — západ / západ slunce / Nirvana
+
+const NIRVANA_SLUGS = new Set(NIRVANA_CHAPTERS.map((c) => c.slug));
 
 const PART_ICONS: React.ComponentType<{ className?: string }>[] = [
   Compass,  // Kniha Západu
@@ -74,6 +75,7 @@ export default function NirvanaBookPage() {
   const [selectedChapter, setSelectedChapter] = useState(NIRVANA_CHAPTERS[0].slug);
   const [activePart, setActivePart] = useState(0);
   const [content, setContent] = useState('');
+  const [sourceFile, setSourceFile] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [czFallback, setCzFallback] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -115,14 +117,19 @@ export default function NirvanaBookPage() {
       setCzFallback(false);
       try {
         let response = await fetch(nirvanaDocPath(currentChapter.slug, l));
+        let resolvedPath = nirvanaDocPath(currentChapter.slug, l).replace(/^\/docs\//, '');
         // If an EN file is missing, fall back to the Czech canonical text
         if (!response.ok && l === 'en') {
           response = await fetch(nirvanaDocPath(currentChapter.slug, 'cs'));
+          resolvedPath = nirvanaDocPath(currentChapter.slug, 'cs').replace(/^\/docs\//, '');
           if (response.ok && !isCancelled) setCzFallback(true);
         }
         if (!response.ok) throw new Error(String(response.status));
         const text = await response.text();
-        if (!isCancelled) setContent(text);
+        if (!isCancelled) {
+          setContent(text);
+          setSourceFile(resolvedPath);
+        }
       } catch {
         if (!isCancelled) setContent(`# ${currentChapter.title[l]}\n\n${Copy.notAvailable[l]}`);
       } finally {
@@ -327,18 +334,12 @@ export default function NirvanaBookPage() {
                 </div>
               ) : (
                 <article className="prose prose-invert prose-lg max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      table: ({ children }) => (
-                        <div className="overflow-x-auto my-6 rounded-xl border border-white/10">
-                          <table className="min-w-full">{children}</table>
-                        </div>
-                      ),
-                    }}
-                  >
-                    {content}
-                  </ReactMarkdown>
+                  <MarkdownDoc
+                    content={content}
+                    sourceFile={sourceFile}
+                    bookSlugs={NIRVANA_SLUGS}
+                    className="contents"
+                  />
                 </article>
               )}
             </div>
