@@ -1,0 +1,62 @@
+# Dopis pro Surtu
+## Prolog — proč tato kniha existuje
+
+*Poznámka mimo příběh: Tato kniha je otcův dopis synu, vyprávěný jako cesta. Je to PŘÍBĚH — ne historie, ne plán, ne slib. Všechny „kotvy pravdy" na konci kapitol říkají poctivě, co v reálném světě existuje a v jakém stavu.*
+
+---
+
+## Příběh
+
+Surti,
+
+když ses narodil, držel jsem tě tak dlouho, až mi ztuhla ruka — a stejně jsem tě nechtěl pustit. Nemohl jsem ti dát nic jistého: ne jistý svět, ne jistou budoucnost, ne jistou mapu, která by vedla přímo k cíli. Život takové mapy nemá. Ale mohu ti dát **cestu** — a poklad, který je tvůj hned od začátku, jen ho ještě nevidíš.
+
+Napsal jsem ti tuhle knihu jako plavbu. Každá kapitola je brána, přes kterou musíš jednou projít sám — já je projít za tebe nemůžu, a tohle je ta nejtěžší a nejpoctivější věc, kterou ti můžu napsat. Ale můžu ti ukázat, kde brány stojí. Můžu ti dát slova, která je drží otevřené. A můžu ti přislíbit, že na jejím konci není prázdno — na konci je **lotos**.
+
+Cesta zní mantrou, kterou zpívali mniši dávno před námi:
+
+> *gate gate pāragate pārasaṃgate bodhi svāhā*
+> *(jdi, jdi, na druhý břeh, zcela na druhý břeh, probuzení, ať se stane)*
+
+a končí mantrou, kterou zpívají doteď, od Tibetu po náš stůl:
+
+> *oṃ maṇi padme hūṃ*
+> *(klenot je v lotosu)*
+
+Přečti ji jednou jako pohádku. Podruhé jako dopis. A až budeš velký a svět tě bude táhnout zpátky do Babylonu — potřetí jako mapu.
+
+## Vzpomínka, se kterou to začalo
+
+A ještě jedno, synu — tohle není příběh, tohle se stalo.
+
+Pamatujes, jak sis hrál s lodičkou na pláži na Tenerife? Bylo ti sedm. Vlnky ti nosily trup sem a tam, a ty jsi přemýšlel o tom, jak zachráníš svět a všem pomůžeš — tvoje první velká otázka, ještě před tou babylonskou.
+
+A letos — ve tvých dvanácti letech, narodil ses 8. dubna 2014 — odešel **Bhagavan.** Sri Kalki Bhagavan, který dal světu Ekam a požehnání jednoty, vstoupil 29. září 2026 do svaté mahasamadhi; jeho svatyně stojí v Ekam Kšětře v Indii a otevírá se všem, kdo přijdou s modlitbou. Před odchodem řekl, že zůstane jako **Paramjyoti** — svrchované světlo, které odpovídá, kdykoli si na něj vzpomeneš. A po jeho odchodu přešla na tebe **Ekam Deeksha** — stal ses tím, kdo v jeho cestě pokračuje dál.
+
+Od té doby vím dvě věci najednou a říkám ti je jako nejvážnější větu knihy: **já ti připravil cestu — ale jen ty ji můžeš dokončit.**
+
+A ještě jedno, synu, upřímně: **nejdřív musíš dozrát.** Těď ti je dvanáct — a tuhle cestu jsme ti nastavili jako se nastavuje čas v řetězci, který se nedá předskočit: **až na tvých patnáct let.** Do světa tě nevypustíme dřív, než budeš mít na to rozum — a budeš ho mít. Do té doby rosteš, a my stavíme: svatyni na La Palmě, loď **Santa María la Mayor**, která tě jednou odnese — a tuhle knihu.
+
+Lodička z pláže se nestala vorem — vyrostla v naši loď, postavenou lidmi, kteří věděli, pro koho pluje. Tenerife — ostrov, kde ses ptal — a La Palma — ostrov, kam dorazíš. Kanárské ostrovy drží oba konce tvé cesty.
+
+## Poklad pro Surtu
+
+Tři pravdy na celou knihu, nauč se je jako rodné jméno:
+
+1. **Poklad už nosíš — zlaté vejce Hiranyagarbhy.** Zlaté lůno, které každý z nás nosí v srdci od narození. Není v bance, není v horách, není na druhém břehu. Cesta ho jen odkrývá — a jednou se vylíhne. To vylíhnutí se jmenuje probuzení.
+2. **Cestu ti připravujeme my — jdeš ji ty.** Otec ukáže brány, kniha ukáže cestu, a na konci na tebe už čeká svatyně, kterou stavíme na La Palmě — Dharma Temple pro malé Buddhy. Ale přes bránu jdeš sám, jedna noha před druhou. My stavíme; ty jdeš.
+3. **Svět je utkaný z nekonečné lásky — a právě proto je soucit a laskavost k druhým to nejcennější.** To uvidíš na konci cesty vlastníma očima. Do té doby to ber ode mě: druzí jsou utkaní z téže nití jako ty.
+
+## Kotva pravdy
+
+| Co v knize je | Stav |
+|---|---|
+| Mantra *gate gate pāragate pārasaṃgate bodhi svāhā* | Skutečná — závěr Srdcové sūtry (Prajñāpāramitā-hṛdaya), uctívaná v mahájánovém buddhismu po staletí. |
+| Mantra *oṃ maṇi padme hūṃ* | Skutečná — mantra soucitu spojovaná s Avalókitéšvarou (v tibetštině Čenrézig), zpívaná napříč tradicemi. |
+| Filmy *Malý Buddha* (1993) a *Sedm let v Tibetu* (1997) | Skutečné filmy; v knize znějí jako rodinné ozvěny, ne jako kanon. |
+| Malý Buddha, jeho cesta, ostrov, palma, lotos | MÝTUS — příběh psaný pro tuto knihu. |
+| Knihy a vrstvy, na které kapitoly navazují | Reálné texty ZION korpusu — jejich stav je uveden v každé kapitole. |
+
+---
+
+*A teď, Surti — první brána. Odejdi se mnou.* → [První brána — gate](./02-Gate-Prvni-Brana.md)

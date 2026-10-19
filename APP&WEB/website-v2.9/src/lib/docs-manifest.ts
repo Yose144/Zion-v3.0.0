@@ -1,6 +1,7 @@
 import { Book, Rocket, Shield, FileText, Sparkles, Globe, Cpu, Map, AlertTriangle, GitBranch, Coins } from 'lucide-react';
 import { MAITREYA_CHAPTERS } from '@/app/maitreya/chapters';
 import { NIRVANA_CHAPTERS } from '@/app/nirvana/chapters';
+import { SURTA_CHAPTERS } from '@/app/surta-srdce/chapters';
 
 /* ═══════════════════════════════════════════
    Docs manifest — single source of truth for
@@ -245,6 +246,12 @@ export const docTitles: Record<string, LocalizedText> = {
       { cs: `Nirvana · ${c.num.cs} — ${c.title.cs}`, en: `Nirvana · ${c.num.en} — ${c.title.en}` },
     ]),
   ),
+  ...Object.fromEntries(
+    SURTA_CHAPTERS.map((c) => [
+      `book-surta-${c.slug}`,
+      { cs: `Surta Srdce · ${c.num.cs} — ${c.title.cs}`, en: `Surta Srdce · ${c.num.en} — ${c.title.en}` },
+    ]),
+  ),
 };
 
 export const versions: Version[] = [
@@ -386,6 +393,11 @@ export const sections: Section[] = [
         title: c.title.cs,
         file: `books/nirvana/kapitoly/${c.slug}.md`,
       })),
+      ...SURTA_CHAPTERS.map((c) => ({
+        id: `book-surta-${c.slug}`,
+        title: c.title.cs,
+        file: `books/surta-srdce/kapitoly/${c.slug}.md`,
+      })),
       { id: 'book-genesis', title: 'Genesis — Kniha probuzení', file: 'mainnet/genesis-book.md' },
       { id: 'book-ekam-full', title: 'Ekam Deeksha — kompletní kniha', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
       { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
@@ -512,6 +524,9 @@ export const DOC_HASH_ALIASES: Record<string, string> = {
   mainnet: 'mainnet-plan',
   'book-maitreya': `book-maitreya-${MAITREYA_CHAPTERS[0].slug}`,
   'book-nirvana': `book-nirvana-${NIRVANA_CHAPTERS[0].slug}`,
+  'book-surta': `book-surta-${SURTA_CHAPTERS[0].slug}`,
+  'book-surta-srdce': `book-surta-${SURTA_CHAPTERS[0].slug}`,
+  'surta-srdce': `book-surta-${SURTA_CHAPTERS[0].slug}`,
   whitepaper: 'wp-v3-mainnet',
   books: `book-maitreya-${MAITREYA_CHAPTERS[0].slug}`,
 };

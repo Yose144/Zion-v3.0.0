@@ -134,7 +134,7 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
           en: 'A heart sūtra for Surta — the little Buddha awakens on a lotus in the Dharma Temple on La Palma and returns as the bodhisattva of the new earth. Truth anchors + corpus compendium. Czech original.',
         },
         status: 'draft',
-        href: `${VIEW}/SurtaSrdce/00-README.md`,
+        href: `/surta-srdce/cist`,
         czOnly: true,
         rc: '251, 113, 133',
       },
