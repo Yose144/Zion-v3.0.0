@@ -9,7 +9,7 @@
 
 Chlapec na lotosu, Surti, mohl zůstat sedět navždy.
 
-Nikdo by mu to nezazlíval. Probudil se — to bylo všechno, co cesta slíbila. Mohl v palmovém stínu stát, dokud by se svět sám nenapil, a jeho jméno by šeptal oceán místo dětí. Byla to nejšťastnější chvíle jeho života — a právě proto ji opustil.
+Nikdo by mu to nezazlíval. Probudil se — to bylo všechno, co cesta slíbila. Mohl v Dharma Templu sedět, dokud by se svět sám nenapil, a jeho jméno by šeptala sopka místo dětí. Byla to nejšťastnější chvíle jeho života — a právě proto ji opustil.
 
 Protože v ní nebyl konec — byl v ní **slib.**
 
@@ -23,7 +23,7 @@ To byl slib bodhisattvy — **svāhā, ať se stane.**
 
 Slzy mu vytryskly — ne smutkem, Surti, ale z velikosti toho, co řekl. A ty slzy, jak padaly na listy lotosu, nebyly obyčejné: každá nesla v sobě světlo jedné hvězdy, kterou někde nad Babylí někdo neviděl, protože se díval dolů na obrazovku.
 
-Pak chlapec udělal něco, co nikdo nečekal: sehnul se k palmě, utrhl kokos — ne pro sebe, ale jako semínko — a položil si ho do batohu vedle kamene, který nesl od první brány.
+Pak chlapec udělal něco, co nikdo nečekal: sehnul se k palmě u zdi templu, utrhl kokos — ne pro sebe, ale jako semínko — a položil si ho do batohu vedle kamene, který nesl od první brány.
 
 „Vrátím se," řekl podruhé, už potichu, „a zasadím ho uprostřed Babylonu, aby tam rostla palma, pod kterou sedí děti."
 

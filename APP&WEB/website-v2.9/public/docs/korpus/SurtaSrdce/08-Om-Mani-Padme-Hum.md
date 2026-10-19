@@ -49,6 +49,7 @@ Tady je celá mapa, kterou kniha vypráví najednou — pro čtenáře, kteří 
 | Probuzení dědice | Maitreya — Kniha Pátá | **Čtivá** | `/maitreya/cist`, CZ+EN |
 | Západní břeh | Nirvana — kniha Západu | **Čtivá** | `/nirvana/cist`, CZ+EN |
 | Loďstvo cesty | MariaCaminho | Draft | `/docs/view/korpus/MariaCaminho/00-README.md` |
+| Svatyně na La Palmě | Dharma Temple — Nová Bodhi Gaia | Stavba — web živý | `/terranova/dharma-temple` + `/docs/view/korpus/BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md` |
 | Ticho a osa | Lumi, Sůl této země | Čtivé korpusové knihy | `/docs/view/korpus/…` |
 | Hluboká kosmologie | NirvanaCloud | Draft | `/docs/view/korpus/NirvanaCloud/00-README.md` |
 | Zahradnice planety | BodhiGaia | Draft | `/docs/view/korpus/BodhiGaia/00-README.md` |

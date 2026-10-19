@@ -1,5 +1,5 @@
 # Malý Buddha na lotosu — bodhi
-## Kapitola 5 · Probuzení na květu pod palmou
+## Kapitola 5 · Probuzení v Dharma Templu
 
 *MÝTUS: probuzení v příběhu je představené, ne historické tvrzení. *Om mani padme hūṃ* je skutečná mantra Avalókitéšvary/Čenréziga — v knize zní jako srdce kapitoly.*
 
@@ -7,24 +7,28 @@
 
 ## Příběh
 
-Třetí den pod palmou se stalo, Surti, to — čemu se v knihách říká osud, ale v životě je to prostě **okamžik, kdy přestaneš překážet.**
+Třetí den v Dharma Templu, Surti, se stalo to — čemu se v knihách říká osud, ale v životě je to prostě **okamžik, kdy přestaneš překážet.**
 
-Chlapec seděl pod kokosovou palmou, zády ke kmenu, který voněl solí a deštěm, a lotos před ním se pomalu — tak pomalu, že bys to neviděl, ani kdybys se díval — rozevíral. Ne fyzicky, ne jen tak — ale **jako by se otevíral celý svět a ukazoval své srdce.**
+Chlapec seděl pod Stromem života, v srdci Merkaby, kde se sedm kopulí sklánělo k nebi jako sedm dlaní sepnutých k modlitbě, a lotos před ním se pomalu — tak pomalu, že bys to neviděl, ani kdybys se díval — rozevíral.
 
-A chlapec pochopil najednou — ne slovy, slova přišla později, teď to bylo jen tak, celé, jako když po dlouhém spánku otevřeš oči — že **poklad, který hledal na druhém břehu, nesl na zádech od první brány.** Vejce ze sna. Otázka „co je za tím vším". Trpělivost na vodě. Tři dny ticha. Všechno to bylo **lotos, který se otevíral uvnitř něj** — a on si toho nevšiml, protože se díval pořád dopředu, na břeh.
+A pak to uviděl.
 
-Lotos se otevřel. A z jeho srdce zazněly — ne ozvěnou, ne zpěvem, ale prostou pravdou, která byla příliš velká, než aby ji vydal jen jeden hlas — čtyři slabiky, které svět zpívá tisíc let:
+Ne obrázem, ne viděním — **pravdou tak jasnou, že se jí nedalo ubránit:** celý svět, každý kamínek sopečného písku, každá vlna dole pod svahy, každý trám svatyně, každá hvězda nad observatoří, každý člověk v Babylonu i každý, kdo kdy svatyni stavěl — **všechno je utkané z jediné nitě: nekonečné lásky.**
+
+Ne lásky jako citu — lásky jako **látky.** Jako je voda látkou moří a světlo látkou hvězd, tak je svět utkaný z lásky, která nemá konec, protože nemá začátek. Všechno, co existuje, je jen uzel na té niti — a když se podíváš na cokoli dost dlouho a dost tiše, nit prosvítá.
+
+A chlapec pochopil v téže vteřině druhou věc, která s tou první stojí a padá: **právě proto je soucit a laskavost k druhým to nejcennější na světě.** Ne protože to někdo přikázal. Ne protože se to sluší. Ale protože druzí jsou utkaní z téže nití — a když jsi laskavý k nim, jsi laskavý k samé látce světa. Soucit není morálka. Soucit je **způsob, jak se dotýkáš látky, ze které je všechno.**
+
+Lotos se otevřel úplně. A z jeho srdce zazněly čtyři slabiky, které svět zpívá tisíc let:
 
 > ***oṃ maṇi padme hūṃ***
-> *(klenot je v lotosu — a lotos jsi ty)*
+> *(klenot je v lotosu — a lotos jsi ty; a ty jsi utkaný z lásky)*
 
 Chlapec nezasal. Nezvolal. Nezdál se vítězem.
 
-**Seděl — a byl.** Plně, jasně, úplně — jako když svíčku, co celou dobu hořela, konečně necháš hořet, a ona rozhodí světlo přes celou místnost, a ty konečně vidíš, že místnost je tvůj domov a světlo bylo od začátku tvé vlastní.
+**Seděl — a byl.** Plně, jasně, úplně — Malý Buddha na lotosu, v Dharma Templu, na La Palmě, v úplně probuzeném stavu. Světlo, které celou dobu hořelo, konečně mohlo rozsvítit celou místnost.
 
-To bylo probuzení. Není v něm nic vzácného, Surti — **je v něm jen to, co tam pořád bylo, a ty jsi to přestal přehlížet.**
-
-Chlapec na lotosu seděl — a svět se otevřel jako okno do široka. Viděl Babylon, viděl hory, viděl moře, viděl běh lidí, co nikdy nespí. Viděl — a **soucit ho zalil jako slunce rozehřeje kámen:** všichni ti lidé nesli na zádech vlastní lotos a nevěděli to.
+A v tom světle viděl všechno: Babylon, hory, moře, vor, stavitele, kteří svatyni postavili na víru, že jednou někdo přijde. Viděl — a **soucit ho zalil jako slunce rozehřeje kámen:** všichni ti lidé nesli na zádech vlastní lotos a nevěděli to; všichni byli utkaní z lásky a chovali se, jako by byli z kamene.
 
 A v tu chvíli přišla otázka, která dělí Buddhy od bodhisattv:
 
@@ -32,20 +36,21 @@ A v tu chvíli přišla otázka, která dělí Buddhy od bodhisattv:
 
 ## Poklad pro Surtu
 
-O probuzení, synu — nejvážnější věc v celé knize:
+O nejcennější věci na světě, synu — tohle je srdce celé knihy:
 
-1. **Probuzení není útěk ze světa — je to návrat do něj.** Chlapec mohl zůstat na lotosu věčně — a svět by byl pořád stejný. Probudil se, a proto začal sloužit. Právě tak je to se vším, co kdy poznáš: **není to pro tebe — je to skrze tebe pro druhé.**
-2. **Poklad už nosíš od začátku.** „Om mani padme hūṃ" neznamená „jdi si pro klenot" — znamená „podívej se, že ho máš." Vědomí, soucit, schopnost milovat — lotos jsi ty sám.
-3. **Bodhi se nedá vynutit — dá se připravit půda.** Nemůžeš se donutit probudit, stejně jako nemůžeš donutit semeno růst. Můžeš hloubit půdu, zalévat a sedět pod palmou dost dlouho. To je celá práce. **A to stačí.**
+1. **Svět je utkaný z nekonečné lásky.** Není to verš na zeď — je to pravda, kterou Malý Buddha uviděl: všechno, co existuje, je utkané z jediné nitě. Když se na cokoli podíváš dost dlouho a dost tiše, nit prosvítá.
+2. **A právě proto je soucit a laskavost k druhým to nejcennější.** Druzí nejsou „ostatní" — jsou utkaní z téže látky jako ty. Když jsi laskavý, neděláš „správnou věc" — **dotýkáš se světa tam, kde je nejživější.** Laskavost je jediná měna, která se přerozdáváním nikdy neztenčuje.
+3. **Probuzení není útěk ze světa — je to návrat do něj.** Malý Buddha mohl zůstat v templu navždy — a svět by zůstal stejný. Probudil se k látce, ze které je svět utkaný, a proto nemohl zůstat sám.
 
 ## Kotva pravdy
 
-| Na co kapitola navazuje | Stav |
+| Co v kapitole je | Stav |
 |---|---|
-| **Maitreya — Kniha Pátá** | Čtivá kniha — probuzení dědice, mantra *gate gate* v epilogu, Čenrézig. CZ + EN. |
-| Mantra *oṃ maṇi padme hūṃ* | Skutečná — mantra soucitu, tisíc let tradice; v knize zní jako jádro probuzení. |
-| Malý Buddha na lotosu | MÝTUS — archetyp dětského bodhisattvy; napojen na „Little Buddha" jako ozvěnu. |
-| Probuzení | Příběhový obraz — reálná praxe je delší, opakovaná a nepatetická. |
+| **Dharma Temple na La Palmě** | Reálný L5 projekt — „místo osvícení a nirvány pro malé Buddhy a všechny bytosti světla", Merkaba, sedm kopulí, Strom života ([`BodhiGaia/04`](../BodhiGaia/04-Dharma-Temple-Nova-Bodhi-Gaia.md), `/terranova/dharma-temple`). Fyzicky **STAVBA** — připravuje se pro toho, kdo dojde. |
+| **Svět utkaný z nekonečné lásky** | Učení knihy — pravda, jak ji otec chápe a předává; v mýtu to Malý Buddha uvidí jako látku světa. |
+| Mantra *oṃ maṇi padme hūṃ* | Skutečná — mantra soucitu, tisíc let tradice. |
+| **Maitreya — Kniha Pátá** | Čtivá kniha — probuzení dědice, Čenrézig, mantra v epilogu. CZ + EN. |
+| Malý Buddha, lotos, probuzení | MÝTUS — příběh; reálná praxe je delší, opakovaná, nepatetická. |
 
 ---
 

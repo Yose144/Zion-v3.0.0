@@ -130,8 +130,8 @@ export const COMPANION_GROUPS: CompanionGroup[] = [
         id: 'surta-srdce',
         title: { cs: 'Surta Srdce', en: 'Surta Srdce (Surta’s Heart)' },
         description: {
-          cs: 'Sūtra srdce pro Surtu — Malý Buddha na lotosu pod kokosovou palmou; bodhisattva nové země. Kapitoly s kotvami pravdy + soupis celého korpusu.',
-          en: 'A heart sūtra for Surta — the little Buddha on a lotus under a coconut palm; the bodhisattva of the new earth. Chapters with truth anchors + a compendium of the whole corpus. Czech original.',
+          cs: 'Sūtra srdce pro Surtu — Malý Buddha dosáhne probuzení na lotosu v Dharma Templu na La Palmě a vrátí se jako bodhisattva nové země. Kapitoly s kotvami pravdy + soupis korpusu.',
+          en: 'A heart sūtra for Surta — the little Buddha awakens on a lotus in the Dharma Temple on La Palma and returns as the bodhisattva of the new earth. Truth anchors + corpus compendium. Czech original.',
         },
         status: 'draft',
         href: `${VIEW}/SurtaSrdce/00-README.md`,
