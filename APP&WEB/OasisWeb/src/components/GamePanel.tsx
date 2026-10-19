@@ -6,7 +6,7 @@ import {
   Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package,
   ChevronRight, ChevronLeft, Plane, RefreshCw, Palette, Scan, RotateCcw, Eye, EyeOff,
   Volume2, VolumeX, Play, Pause, SkipBack, SkipForward, ListMusic, Music,
-  Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy, Globe, Fingerprint, Trash2,
+  Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy, Globe, Fingerprint, Trash2, X,
 } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress, type ShipLoadout, SHIP_MODELS, type ShipModelId } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
@@ -18,6 +18,7 @@ import type { MusicPlayerState } from './AudioEngine';
 import MiniMap from './MiniMap';
 import SocialPanel from './SocialPanel';
 import ZisAvatar from './ZisAvatar';
+import AvatarCustomizer from './AvatarCustomizer';
 import { useAuth } from '../contexts/AuthContext';
 
 const XP_PER_LEVEL = 1000;
@@ -266,6 +267,7 @@ export function IdentityTab() {
   const [webauthnOk, setWebauthnOk] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [passkeys, setPasskeys] = useState<ZisPasskey[]>([]);
+  const [editingAvatar, setEditingAvatar] = useState(false);
 
   useEffect(() => {
     import('@simplewebauthn/browser')
@@ -505,8 +507,14 @@ export function IdentityTab() {
             <User className="h-3.5 w-3.5" />
           </div>
           <p className="text-xs font-semibold text-white">Avatar</p>
-          {(user?.id || address) && (
-            <span className="ml-auto">
+          <span className="ml-auto flex items-center gap-1.5">
+            <button
+              onClick={() => setEditingAvatar(true)}
+              className="rounded-md border border-white/15 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-white/30 hover:text-white"
+            >
+              Edit
+            </button>
+            {(user?.id || address) && (
               <ZisAvatar
                 seed={user?.id ?? address ?? ''}
                 src={user?.avatar}
@@ -514,8 +522,8 @@ export function IdentityTab() {
                 alt="in-world identity"
                 animated
               />
-            </span>
-          )}
+            )}
+          </span>
         </div>
         <div className="mt-2 space-y-1">
           <div className="flex items-center justify-between text-[10px]">
@@ -605,6 +613,42 @@ export function IdentityTab() {
         <RotateCcw className="h-3 w-3" />
         Reset Progress
       </button>
+
+      <AnimatePresence>
+        {editingAvatar && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-auto fixed inset-0 z-[70] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setEditingAvatar(false)} />
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 12 }}
+              className="zion-rainbow-card relative max-h-[85vh] w-full max-w-md overflow-y-auto p-5"
+              style={{ '--rc': '217, 70, 239' } as React.CSSProperties}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-sm font-bold text-white">Customize Avatar</p>
+                <button onClick={() => setEditingAvatar(false)} className="text-white/60 hover:text-white">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <AvatarCustomizer
+                seed={user?.id ?? address ?? ''}
+                avatarSrc={user?.avatar}
+                onDone={() => {
+                  setEditingAvatar(false);
+                  addToast('Avatar updated', 'success', 2000);
+                }}
+                doneLabel="Save Avatar"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

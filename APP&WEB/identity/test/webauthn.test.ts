@@ -504,6 +504,7 @@ test('getWebAuthnConfig defaults + WEBAUTHN_ORIGINS override', async () => {
     'https://oasis.zionterranova.com',
     'https://dashboard.zionterranova.com',
     'https://freeworld.zionterranova.com',
+    'https://pool.zionterranova.com',
   ]);
 
   const prev = process.env.WEBAUTHN_ORIGINS;

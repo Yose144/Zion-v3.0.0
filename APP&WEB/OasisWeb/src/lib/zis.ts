@@ -36,12 +36,21 @@ export interface ZisOasisPlayer {
   createdAt: string;
 }
 
+/** OASIS in-world avatar configuration persisted on the ZIS user. */
+export interface ZisAvatar3d {
+  callsign?: string;
+  bodyType?: 'slim' | 'standard' | 'heavy';
+  neonColor?: string;
+  augmentation?: 'reflexes' | 'neural' | 'tech' | 'bio' | 'stealth';
+}
+
 export interface ZisUser {
   id: string;
   primaryAddress: string;
   displayName?: string | null;
   email?: string | null;
   avatar?: string | null;
+  avatar3d?: ZisAvatar3d | null;
   bio?: string | null;
   role: string;
   createdAt: string;
@@ -230,7 +239,7 @@ export async function getCurrentUser(): Promise<ZisUser | null> {
  * Update the current user's profile.
  */
 export async function updateProfile(
-  profile: { displayName?: string; email?: string | null; avatar?: string | null; bio?: string | null },
+  profile: { displayName?: string; email?: string | null; avatar?: string | null; avatar3d?: ZisAvatar3d | null; bio?: string | null },
 ): Promise<ZisUser> {
   return zisFetch<ZisUser>(`${CLIENT_PROXY_BASE}/me`, {
     method: 'PATCH',

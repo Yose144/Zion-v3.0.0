@@ -37,6 +37,7 @@ model User {
   displayName     String?
   email           String?
   avatar          String?
+  avatar3d        Json?    // OASIS in-world avatar config {callsign, bodyType, neonColor, augmentation}
   bio             String?
   role            String   @default("user") // "user" | "admin" | "moderator"
   createdAt       DateTime @default(now())
