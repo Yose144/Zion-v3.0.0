@@ -119,6 +119,28 @@ const VIEW = '/docs/view/korpus';
 
 export const COMPANION_GROUPS: CompanionGroup[] = [
   {
+    id: 'srdce',
+    title: { cs: 'Srdce kompasu — kniha pro děti', en: 'Heart of the compass — the children’s book' },
+    blurb: {
+      cs: 'Zpáteční kniha — otec píše synovi celou mapu najednou: od gate gate po om mani padme hūṃ. Soupis cesty příběhem.',
+      en: 'The return book — a father writes the whole map to his son at once: from gate gate to om mani padme hūṃ. The path as one story.',
+    },
+    items: [
+      {
+        id: 'surta-srdce',
+        title: { cs: 'Surta Srdce', en: 'Surta Srdce (Surta’s Heart)' },
+        description: {
+          cs: 'Sūtra srdce pro Surtu — Malý Buddha na lotosu pod kokosovou palmou; bodhisattva nové země. Kapitoly s kotvami pravdy + soupis celého korpusu.',
+          en: 'A heart sūtra for Surta — the little Buddha on a lotus under a coconut palm; the bodhisattva of the new earth. Chapters with truth anchors + a compendium of the whole corpus. Czech original.',
+        },
+        status: 'draft',
+        href: `${VIEW}/SurtaSrdce/00-README.md`,
+        czOnly: true,
+        rc: '251, 113, 133',
+      },
+    ],
+  },
+  {
     id: 'roots',
     title: { cs: 'Kořeny a příběh', en: 'Roots & story' },
     blurb: {
