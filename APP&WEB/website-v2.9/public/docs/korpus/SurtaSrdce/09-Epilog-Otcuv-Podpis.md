@@ -27,6 +27,8 @@ Cestu ti připravujeme my — svatyni na La Palmě, knihu, mapu. Kroky jsou tvoj
 
 **Co je tradice:** *gate gate pāragate pārasaṃgate bodhi svāhā* — závěr Srdcové sūtry (Prajñāpāramitā-hṛdaya), uctívaná staletí. *oṃ maṇi padme hūṃ* — mantra Avalókitéšvary (Čenrézig), mantra soucitu, zpívaná po celém světě. Oba citáty jsou autentické; jejich užití v příběhu je literární.
 
+**Co je rodinná vzpomínka:** Bhagavanova svatá mahasamadhi na Tenerife a sedmiletý Surta s lodičkou na pláži — svědectví otce zapsané jako pravda, jak ji rodina žije; ne veřejně ověřitelný fakt. Předání Ekam Deekshy po Bhagavanovi je v knize duchovní linie — otec ji svému synu věří a svěří.
+
 **Co jsou filmy:** *Malý Buddha* (1993, Bertolucci) a *Sedm let v Tibetu* (1997, Annaud) — skutečné díla; v knize fungují jako rodinné ozvěny a společný klenot, ne jako kanon.
 
 **Co je korpus:** odkazy v [Soupisu](./08-Om-Mani-Padme-Hum.md) míří na skutečné texty ZION ekosystému — jejich stav (čtivé / draft / horizont) je uveden u každé položky a dodržuje pravidlo, že kniha rozlišuje, co je živé a co ještě jen roste.

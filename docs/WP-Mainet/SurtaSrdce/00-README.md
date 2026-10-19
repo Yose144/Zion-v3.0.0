@@ -37,10 +37,10 @@ Otec a syn sdílejí dva filmy, které v knize zní jako ozvěny — ne jako kan
 
 | # | Kapitola | Mantra | Země cesty | Navazuje na |
 |---|---|---|---|---|
-| — | [Dopis pro Surtu](./01-Dopis-pro-Surtu.md) | — | Proč kniha, jak číst, dva filmy | — |
+| — | [Dopis pro Surtu](./01-Dopis-pro-Surtu.md) | — | Proč kniha, jak číst, dva filmy; vzpomínka z Tenerife — „já připravil cestu, jen ty ji dokončíš" | — |
 | 1 | [První brána — gate](./02-Gate-Prvni-Brana.md) | **gate** | Třináctiletý chlapec odchází z Babylonu; sen o zlatém vejci Hiranyagarbhy | Genesis |
 | 2 | [Druhá brána — gate](./03-Gate-Druha-Brana.md) | **gate** | Hory, kde nikdo nepřijde pomoct | Quantum Revolution |
-| 3 | [K dalšímu břehu — pāragate](./04-Paragate-K-Dalsimu-Brehu.md) | **pāragate** | Oceán, plachty, trpělivost | Ekam Deeksha |
+| 3 | [K dalšímu břehu — pāragate](./04-Paragate-K-Dalsimu-Brehu.md) | **pāragate** | Oceán, plachty; Ekam Deeksha po Bhagavanovi — oheň, co na vodě nehasne | Ekam Deeksha |
 | 4 | [Úplně za — pārasaṃgate](./05-Parasamgate-Uplne-Za.md) | **pārasaṃgate** | La Palma — svatyně, která čekala; my připravujeme cestu | Terra Nova + BodhiGaia/04 |
 | 5 | [Malý Buddha na lotosu — bodhi](./06-Bodhi-Maly-Buddha-na-Lotosu.md) | **bodhi** | Probuzení v Dharma Templu — zlaté vejce se vylíhlo; svět utkaný z nekonečné lásky | Maitreya + BodhiGaia/04 |
 | 6 | [Ať se stane — svāhā](./07-Svaha-Bodhisattva-Nove-Zeme.md) | **svāhā** | Slíb bodhisattvy, návrat se semínkem | Nirvana + Tres Marías |
