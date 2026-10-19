@@ -36,6 +36,15 @@
 | 100 (free) | 110 MH/s | ~1350 att/s |
 | 55 | ~131 MH/s | ~790 att/s |
 
+### SRB `--gpu-intensity` na PRL (split bias pokus)
+| PRL intensity | SRB PRL | SRB QTU | poznámka |
+|---|---|---|---|
+| default | 20.9 TH/s | 90.6 MH/s | baseline E |
+| 24 | 21.3 TH/s | 108.2 MH/s | QTU +19 %, PRL ~0 Δ — možný free win, ale šum |
+| 16 | 21.2 TH/s | 96.7 MH/s | zpět — vztah není lineární |
+
+PRL kernel si vezme co potřebuje i při nízké intensity; QTU osciluje podle fázového skládání kernelů. `i24` vypadá jako drobné vylepšení Config E (PRL ≈solo + QTU ~55 % sola → **~155 % extraction**), ale je to v rámci šumu — ponechat jako soak candidate, ne default.
+
 ---
 
 ## 3. Vítězná konfigurace — Config E (MAX extraction)
