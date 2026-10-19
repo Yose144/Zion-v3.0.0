@@ -673,6 +673,12 @@ Confirmed at 180 s windows, interleaved a/b/a/b: ws8192 → A239+A248
 (1.35/s avg), ws2048 → A315+A321 (1.77/s avg) = **+31 % accepted shares**,
 0–1 rejects throughout.
 
+Quad-mode validation (ws2048 + skip-rescan + PRL cum/b64 + QTU + VRSC on
+one V3 session): ZION **~2.9 accepted/s** (vs ~1.1/s in the §16.4 quad
+baseline), QTU ~90–98 MH/s, PRL ~770–970 att/s under 3-way contention,
+GPU 100 % util at only **3.25 GB VRAM** (ws2048 freed ~3 GB vs the 4 GB
+default pool), 0–1 rejects.
+
 Threads scale only the synthetic EWMA (iteration overhead mix); accepted
 shares are flat (A142–143 both). `ZION_NONCE_COUNT`, `ZION_CUDA_TPB`
 (64/128; 256 crashed the run), `ZION_GPU_TIME_DUTY_PCT` — all flat/no-op.
