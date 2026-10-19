@@ -136,8 +136,8 @@ export default function MaitreyaPage() {
             <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-zion-purple/15 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-10 h-44 w-44 rounded-full bg-zion-gold/10 blur-3xl" />
 
-            <div className="relative grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="space-y-3">
+            <div className="relative grid items-center gap-6 lg:grid-cols-1">
+              <div className="space-y-3 lg:mx-auto lg:w-4/5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="zion-kicker border-zion-gold/30 bg-zion-gold/10 text-zion-gold">
                     <Egg className="h-3.5 w-3.5" />
@@ -172,11 +172,11 @@ export default function MaitreyaPage() {
                 </div>
               </div>
 
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 lg:mx-auto lg:w-4/5">
                 <img
                   src="/images/maitreya/hero.webp"
                   srcSet="/images/maitreya/hero-m.webp 960w, /images/maitreya/hero.webp 1536w"
-                  sizes="(max-width: 1024px) calc(100vw - 4rem), 560px"
+                  sizes="(max-width: 1024px) calc(100vw - 4rem), 1024px"
                   alt={Copy.heroAlt[l]}
                   width={1536}
                   height={1024}

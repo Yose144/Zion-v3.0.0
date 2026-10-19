@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Egg, Sparkles, Sun, Wind } from 'lucide-react';
+import { ArrowRight, Egg, Gamepad2, Sparkles, Sun, Wind } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const MaitreyaSectionCopy = {
@@ -22,6 +22,7 @@ const MaitreyaSectionCopy = {
   ctaHub: { cs: 'Knihovna & cesta', en: 'Library & the path' },
   cta: { cs: 'Číst knihu', en: 'Read the book' },
   ctaPlan: { cs: 'Plán 3.3', en: 'The 3.3 plan' },
+  ctaGame: { cs: 'Hrát OASIS', en: 'Play OASIS' },
 };
 
 export default function MaitreyaSection() {
@@ -121,6 +122,15 @@ export default function MaitreyaSection() {
                 >
                   {MaitreyaSectionCopy.ctaPlan[cs ? 'cs' : 'en']}
                 </Link>
+                <a
+                  href="https://oasis.zionterranova.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="zion-button-secondary border-white/15 hover:border-zion-cyan/50 hover:text-zion-cyan"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  {MaitreyaSectionCopy.ctaGame[cs ? 'cs' : 'en']}
+                </a>
               </div>
             </div>
           </div>

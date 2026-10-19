@@ -25,6 +25,16 @@ const SLIDES: Slide[] = [
     href: '/maitreya#cesta',
   },
   {
+    src: '/images/maitreya/hero.webp',
+    srcM: '/images/maitreya/hero-m.webp',
+    alt: {
+      cs: 'Oasis — jedna rodina pod Stromem života: Maitreya, Krišna, tesař a děti nové země',
+      en: 'Oasis — one family under the Tree of Life: Maitreya, Krishna, the carpenter and the children of the new earth',
+    },
+    label: { cs: 'Oasis · jedna rodina', en: 'Oasis · one family' },
+    href: '/l4-oasis',
+  },
+  {
     src: '/images/l5-free-world/hero.webp',
     srcM: '/images/l5-free-world/hero-m.webp',
     alt: {
