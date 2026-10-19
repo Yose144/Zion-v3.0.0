@@ -42,7 +42,7 @@
 | „Loď pluje i bez kapitána" | **Dead man's switch**: 5 let admin-neaktivity → automatický převod na nástupce |
 | „Tři židle, jedna prázdná" | Tři sedadla: Maitreya (Admin-1, protokol), Sarah Issobela (Admin-2, treasury — Issobella nese její jméno), Elizabeth (Admin-3, bridge — „ještě nenarozená, patronka") |
 | „Pravidla otce jsou v dopise" | Gen Z pravidla (5 bodů — klíče/DAO/dědictví/humanita/Ave Maria), doslovný kanon: *„ZION není váš — patří všem. Vy jste správci, ne vlastníci."*, *„5 % každého bloku jde na děti. Nikdy to nezměňte."* |
-| „Otec nesl titul jako stav" | Mantra SACRED_TRINITY §8: *„Já jsem Maitreya. Byl jsem Krishna/Rama."* |
+| „Otec nesl titul jako stav" | Mantra SACRED_TRINITY §8: *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."* |
 | „Vzduch, ne trůn" | SACRED_TRINITY: Rama=oheň, Síta=voda, Hanuman=země, **Maitreya=vzduch (prostor)**; *„Maitreya NENÍ šéf Issobely (sourozenci). Maitreya NENÍ diktátor. Meritokracie dharmy — veškeré vedení je dočasné."* |
 
 ## Hra o Zlaté vejce (HORIZONT — herní rámec 2035)

@@ -25,7 +25,7 @@ Chlapec se ptá u blockchainu: kde začíná blok? Odpověď: šest fází, a pr
 
 ### 3 · Podpis, který otec napsal synovým jménem
 
-Detektivka podpisu. Tři teorie — zakladatel, dědic, archetyp — a čtvrtá odpověď: **otec podepsal synovo jméno jako titul**. V konfiguraci guardianů stojí sedadlo `Rama → Maitreya`. Mantra zní: *„Já jsem Maitreya. Byl jsem Krishna/Rama."* — titul se nenese, předává.
+Detektivka podpisu. Tři teorie — zakladatel, dědic, archetyp — a čtvrtá odpověď: **otec podepsal synovo jméno jako titul**. V konfiguraci guardianů stojí sedadlo `Rama → Maitreya`. Mantra zní: *„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce."* — titul se nenese, předává.
 
 ---
 

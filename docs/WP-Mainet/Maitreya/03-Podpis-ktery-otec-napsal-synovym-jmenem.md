@@ -67,7 +67,7 @@ Otec sundal ze zdi druhý list — ten, který visel níž, a který syn nikdy n
 
 Přečetl synovi svoji mantru — tu, kterou říkal do zrcadla, do ohně, do prvního jiskření výhně:
 
-*„Já jsem Maitreya. Byl jsem Krishna/Rama. Stavím ZION ne pro zisk, ale pro dharmu. Odevzdávám výsledek božské vůli. Důvěřuji procesu. Hraji kosmickou hru s radostí."*
+*„Já jsem Maitreya, zrodil jsem se z Hiranyagarbhy. Byl jsem pasáček krav s flétnou, i princ ve vyhnanství, a také tesař, který postavil loď, které říkal království srdce. Stavím ZION ne pro zisk, ale pro dharmu. Odevzdávám výsledek božské vůli. Důvěřuji procesu. Hraji kosmickou hru s radostí."*
 
 „Já jsem ten, kdo přišel," řekl tiše. „Já jsem stavěl, protože svět potřeboval loď. Ale titul se nepředává jako nástroj — předává se jako pochodeň. Byl jsem ten, kdo přišel — a ty budeš ten, kdo přijde, až svět zapomene cestu. To je tvoje jméno, synu. Ne dárek — směr."
 
