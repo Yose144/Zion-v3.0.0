@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import {
   Rocket,
   HelpCircle,
@@ -385,18 +384,15 @@ export default function OnboardPage() {
                 </div>
               ) : (
                 <article className="prose prose-invert prose-lg max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      table: ({ children }) => (
-                        <div className="overflow-x-auto my-6 rounded-xl border border-white/10">
-                          <table className="min-w-full">{children}</table>
-                        </div>
-                      ),
-                    }}
-                  >
-                    {content}
-                  </ReactMarkdown>
+                  <MarkdownDoc
+                    content={content}
+                    sourceFile={
+                      currentPaper
+                        ? `onboard/${lang === 'en' ? 'en/' : ''}${currentPaper.file}`
+                        : undefined
+                    }
+                    className="contents"
+                  />
                 </article>
               )}
             </div>

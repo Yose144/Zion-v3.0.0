@@ -13,8 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownDoc from '@/components/docs/MarkdownDoc';
 import { useLang } from '@/contexts/LanguageContext';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { CHAPTERS } from './bookData';
@@ -1949,9 +1948,7 @@ export default function TerraNovaBookClient() {
                         </h3>
                       )}
                       <article className="prose prose-invert prose-lg max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {dropCapBody}
-                        </ReactMarkdown>
+                        <MarkdownDoc content={dropCapBody} className="contents" />
                       </article>
                     </div>
                   );

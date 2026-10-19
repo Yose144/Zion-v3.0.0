@@ -279,7 +279,7 @@ export default function ApiReferencePage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
               <a
-                href="/health"
+                href="/api/health"
               target="_blank"
               rel="noreferrer"
               className="zion-button-primary"

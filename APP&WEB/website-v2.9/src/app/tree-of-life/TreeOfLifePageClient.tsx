@@ -682,19 +682,19 @@ export default function TreeOfLifePageClient() {
               {TreeOfLifeTreeOfLifePageClientCopy.zoharInZionIsNotAReligiousText[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-3 sm:grid-cols-2 pt-2">
-              <Link href="/docs/Zohar/README.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
+              <Link href="/docs/view/Zohar/README.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> docs/Zohar/README.md
               </Link>
-              <Link href="/docs/Zohar/01-SEFIROT-VRSTVY.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
+              <Link href="/docs/view/Zohar/01-SEFIROT-VRSTVY.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 01-SEFIROT-VRSTVY.md
               </Link>
-              <Link href="/docs/Zohar/02-ROADMAP.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
+              <Link href="/docs/view/Zohar/02-ROADMAP.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 02-ROADMAP.md
               </Link>
-              <Link href="/docs/Zohar/03-O-KNIZE-ZOHAR.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
+              <Link href="/docs/view/Zohar/03-O-KNIZE-ZOHAR.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 03-O-KNIZE-ZOHAR.md
               </Link>
-              <Link href="/docs/3.0.5/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-zion-cyan transition-colors">
+              <Link href="/docs/view/3.0.5/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-zion-cyan transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> evoluZion.md (Strom života metafora)
               </Link>
             </div>

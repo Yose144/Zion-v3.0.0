@@ -1,0 +1,207 @@
+# 📜 ZION MAINNET CONSTITUTION
+
+> 🔒 **FROZEN** — Tento dokument byl zmrazen v rámci interního auditu v2.9.7  
+> **SHA-256 (pre-freeze):** `c76aa00224a37ba52950f7ce9e2f72cfc87aa84f5599d3ea28e57538441a8d97`  
+> **Datum zmrazení:** 2026-06-11  
+> Jakékoli budoucí změny vyžadují nový audit a nový hash.
+
+> ✅ **TOTO JE AUTORITATIVNÍ VERZE** — označena jako kanonický zdroj pravdy 24. 2. 2026
+> Zastaralá verze: `docs/MAINNET_CONSTITUTION.md` (označena SUPERSEDED)
+
+**Version 1.0 — Immutable Protocol Charter**
+
+---
+
+## 0. Účel dokumentu
+
+Tento dokument definuje **neměnné parametry** ZION MainNetu.
+
+Jakmile je MainNet spuštěn, **žádná zde uvedená položka nesmí být změněna** bez hard forku.
+
+Tento dokument slouží jako:
+- technická ústava
+- referenční specifikace
+- veřejný závazek vůči komunitě
+
+---
+
+## 1. Identita sítě
+
+| Parametr | Hodnota |
+|----------|---------|
+| **Network name** | ZION MainNet |
+| **Chain ID** | `zion-mainnet-1` |
+| **Consensus** | Proof of Work (Cosmic Harmony v3) |
+| **Block time target** | 60 seconds |
+| **Genesis timestamp** | *(bude vyhlášeno před launch)* |
+
+---
+
+## 2. Supply & Ekonomika
+
+### 2.1 Celková nabídka
+
+| Kategorie | Hodnota | Podíl |
+|-----------|---------|-------|
+| **Total supply (max)** | 144,000,000,000 ZION | 100% |
+| **Mining supply** | 127,220,000,000 ZION | 88.35% |
+| **Genesis premine** | 16,780,000,000 ZION | 11.65% |
+
+### 2.2 Emise
+
+| Parametr | Hodnota |
+|----------|---------|
+| **Initial block reward** | 5,400.067 ZION |
+| **Block interval** | 60 s |
+| **Emission model** | Smooth decay |
+| **Mining horizon** | ~45 let |
+
+> Emise je **deterministická** a plně vypočitatelná z výšky bloku.
+
+### 2.3 Poplatky (fees)
+
+- Transakční poplatky jsou součástí protokolu
+- **Default**: fees burned
+- Žádný implicitní treasury routing v base layer
+
+---
+
+## 3. Genesis Premine — Rozdělení
+
+Genesis premine je vytvořen **výhradně v Genesis blocku**.
+
+### 3.1 Kategorie
+
+Premine je rozdělen na následující logické skupiny:
+
+| Kategorie | Účel |
+|-----------|------|
+| **ZION OASIS + Golden Egg** | OASIS reward pool (4.95B, sloty 1–3) |
+| **L5 Free World Projects** | Humanitární projekty (3.3B, sloty 4–5) |
+| **L6 Issobella** | Orbital Station & Quantum Research Fund (2.5B, slot 6, time-lock 144 000) |
+| **DAO / Governance** | Decentralizované rozhodování (1.5B, sloty 7–8, time-lock 144 000) |
+| **Humanitarian Fund** | Podpora humanitárních projektů (1.44B) |
+| **Infrastructure** | Core development & maintenance (2.59B) |
+| **Bridge Seed + Vault** | EVM bridge likvidita (0.5B) |
+
+### 3.2 Lock & Unlock pravidla
+
+- ✅ Všechny premine prostředky jsou **on-chain sledovatelné**
+- ✅ Část premine je **časově uzamčena**
+- ✅ Unlock je založen na **block height**
+- ✅ Unlock je **automatický** a nevyžaduje důvěru
+
+> **Implementační poznámka (v2.9.5):** Pole `unlock_height` existuje v `premine.rs` (`L1/core/src/blockchain/premine.rs`). V aktuální verzi v2.9.5 není unlock vynucován L1 konsensem — řídí se DAO governance (off-chain). On-chain enforcement bude aktivován při MainNet launch.
+
+> **Žádné ruční odemykání. Žádné výjimky.**
+
+---
+
+## 4. Presale Status
+
+| Položka | Stav |
+|---------|------|
+| Presale na MainNetu | ❌ **NEEXISTUJE** |
+| Presale tokeny | ❌ **NEEXISTUJÍ** |
+| Privátní alokace | ❌ **NEEXISTUJÍ** |
+
+> Historické presale koncepty byly **zrušeny v lednu 2026**.
+
+---
+
+## 5. Konsensus & Obtížnost
+
+### 5.1 Difficulty Adjustment Algorithm (DAA)
+
+| Parametr | Hodnota |
+|----------|---------|
+| **Typ** | LWMA (Linearly Weighted Moving Average) |
+| **Target block time** | 60 s |
+| **Window size** | 60 blocks |
+| **Max change per block** | +25% / −25% |
+| **Timestamp sanity** | clamp ±2× target |
+
+### 5.2 Reorg & Finality
+
+| Parametr | Hodnota |
+|----------|---------|
+| **Max reorg depth** | 10 blocks |
+| **Soft finality** | 60 blocks |
+| **Fork choice rule** | Highest accumulated work |
+
+---
+
+## 6. Validace & Bezpečnost
+
+Každý plný uzel:
+- ✅ validuje celý chain
+- ✅ odmítá neplatné bloky
+
+**Neexistuje žádný:**
+- ❌ admin klíč
+- ❌ master node
+- ❌ privilegovaný účet
+
+> Síť je **plně permissionless**.
+
+---
+
+## 7. Upgrade politika
+
+- ZION MainNet **nemá automatické upgrady**
+- Změny protokolu vyžadují:
+  - pouze **hard fork**
+  - **veřejné oznámení**
+  - **dostatečný předstih**
+
+---
+
+## 8. Neměnnost
+
+Následující položky jsou **navždy neměnné**:
+
+| Položka | Status |
+|---------|--------|
+| Chain ID | 🔒 LOCKED |
+| Total supply | 🔒 LOCKED |
+| Emission model | 🔒 LOCKED |
+| Genesis premine částky | 🔒 LOCKED |
+| Konsensus | 🔒 LOCKED |
+| DAA typ | 🔒 LOCKED |
+| Block time | 🔒 LOCKED |
+
+---
+
+## 9. Závěrečné ustanovení
+
+Tento dokument reprezentuje **společenskou smlouvu** mezi:
+- vývojáři
+- těžaři
+- uzly
+- uživateli
+- budoucími generacemi
+
+**ZION MainNet je:**
+- ✅ otevřený
+- ✅ decentralizovaný
+- ✅ suverénní
+- ✅ nezávislý
+
+---
+
+## 10. Hash & Freeze
+
+Po schválení bude:
+1. Dokument uložen do repozitáře
+2. Vygenerován **SHA-256 hash**
+3. Hash zveřejněn
+4. Dokument označen jako **IMMUTABLE**
+
+---
+
+**🔒 STAV: DRAFT → READY FOR FREEZE**
+
+---
+
+*Document Version: 1.0*  
+*Last Updated: 2026-02-03*

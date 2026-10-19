@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/gen-doc-manifest.mjs",
+    "prebuild": "node scripts/gen-doc-manifest.mjs",
     "build": "next build --webpack",
+    "check:links": "node scripts/check-doc-links.mjs",
     "postbuild": "cp -r .next/static .next/standalone/.next/ 2>/dev/null || true; cp -rL public .next/standalone/public 2>/dev/null || true",
     "analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
